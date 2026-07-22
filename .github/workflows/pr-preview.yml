@@ -34,14 +34,14 @@ jobs:
 
       # The build steps are skipped when a PR is closed: pr-preview-action only
       # needs to tear down the existing preview directory in that case.
-      # The Glossia engine (the Rust core compiled to WASM) lives in its own
-      # public repository; check it out so build_web.sh finds it.
-      - name: Checkout glossia (WASM engine)
+      # The Glossia engine (the Rust core compiled to WASM) is consumed as a
+      # published crates.io release, pinned in build_web.sh. Fetch its source
+      # tarball first so the cargo cache below can key off the extracted crate.
+      - name: Fetch glossia engine crate
         if: github.event.action != 'closed'
-        uses: actions/checkout@v4
-        with:
-          repository: asherp/glossia
-          path: glossia-src
+        run: |
+          ./build_web.sh --fetch-only
+          echo "GLOSSIA_VERSION=$(sed -n 's/.*GLOSSIA_VERSION:-\([0-9][0-9.]*\).*/\1/p' build_web.sh)" >> "$GITHUB_ENV"
 
       - name: Install Rust
         if: github.event.action != 'closed'
@@ -51,7 +51,7 @@ jobs:
         if: github.event.action != 'closed'
         uses: Swatinem/rust-cache@v2
         with:
-          workspaces: glossia-src
+          workspaces: .glossia-build/glossia-${{ env.GLOSSIA_VERSION }}
 
       - name: Install wasm-pack
         if: github.event.action != 'closed'
@@ -63,7 +63,7 @@ jobs:
       # system binary gets picked up instead and can reject modern wasm features.
       - name: Build WASM
         if: github.event.action != 'closed'
-        run: GLOSSIA_DIR=glossia-src ./build_web.sh
+        run: ./build_web.sh
 
       # On open/synchronize/reopen: deploy web/ to gh-pages under
       # pr-preview/pr-<N>/ and comment the URL. On close: remove that directory.

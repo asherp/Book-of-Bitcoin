@@ -29,13 +29,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # The Glossia engine (the Rust core compiled to WASM) lives in its own
-      # public repository; check it out so build_web.sh finds it.
-      - name: Checkout glossia (WASM engine)
-        uses: actions/checkout@v4
-        with:
-          repository: asherp/glossia
-          path: glossia-src
+      # The Glossia engine (the Rust core compiled to WASM) is consumed as a
+      # published crates.io release, pinned in build_web.sh. Fetch its source
+      # tarball first so the cargo cache below can key off the extracted crate.
+      - name: Fetch glossia engine crate
+        run: |
+          ./build_web.sh --fetch-only
+          echo "GLOSSIA_VERSION=$(sed -n 's/.*GLOSSIA_VERSION:-\([0-9][0-9.]*\).*/\1/p' build_web.sh)" >> "$GITHUB_ENV"
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -43,7 +43,7 @@ jobs:
       - name: Cache cargo build
         uses: Swatinem/rust-cache@v2
         with:
-          workspaces: glossia-src
+          workspaces: .glossia-build/glossia-${{ env.GLOSSIA_VERSION }}
 
       - name: Install wasm-pack
         run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
@@ -53,7 +53,7 @@ jobs:
       # [package.metadata.wasm-pack.profile.release] in glossia's Cargo.toml; a
       # system binary gets picked up instead and can reject modern wasm features.
       - name: Build WASM
-        run: GLOSSIA_DIR=glossia-src ./build_web.sh
+        run: ./build_web.sh
 
       # Deploy the production site to the root of gh-pages. clean-exclude keeps
       # the pr-preview/ directory (managed by the PR Preview workflow) intact so
