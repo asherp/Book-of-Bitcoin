@@ -1,5 +1,7 @@
 # The βitcoin βook
 
+**Live at [bookofbitcoin.io](https://bookofbitcoin.io/)**
+
 Bitcoin verbatim — a Bitcoin block, read as a chapter: each transaction
 rendered as a paragraph of grammatically correct [Glossia](https://glossia.io/)
 prose, with witness data collected as footnotes. Installable as a PWA and
@@ -52,6 +54,7 @@ repo's builds can succeed.
 
 - `.github/workflows/deploy-web.yml` — on every push to `main`, builds the
   WASM from the pinned glossia crate and deploys `web/` to the `gh-pages`
-  branch (GitHub Pages).
+  branch, served by GitHub Pages at [bookofbitcoin.io](https://bookofbitcoin.io/)
+  (`web/CNAME` keeps the custom-domain binding across deploys).
 - `.github/workflows/pr-preview.yml` — deploys a live preview of every pull
   request under `pr-preview/pr-<N>/` and comments the URL on the PR.
