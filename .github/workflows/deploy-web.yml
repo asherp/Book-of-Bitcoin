@@ -1,0 +1,68 @@
+name: Deploy Web App
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'web/**'
+      - 'build_web.sh'
+      - '.github/workflows/deploy-web.yml'
+  workflow_dispatch:
+
+# Pushing the built site to the gh-pages branch requires write access.
+permissions:
+  contents: write
+
+# Serialize every workflow that pushes to gh-pages under one repo-wide group.
+# Each push to gh-pages triggers GitHub's own pages-build-deployment, and Pages
+# only runs one deployment at a time — two overlapping pushes make the loser
+# fail with "Deployment failed, try again later", which is what leaves a freshly
+# deployed path (e.g. a PR preview) returning 404. The PR Preview workflow shares
+# this exact group name so production and preview deploys can never race.
+concurrency:
+  group: gh-pages-deploy
+  cancel-in-progress: false
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # The Glossia engine (the Rust core compiled to WASM) is consumed as a
+      # published crates.io release, pinned in build_web.sh. Fetch its source
+      # tarball first so the cargo cache below can key off the extracted crate.
+      - name: Fetch glossia engine crate
+        run: |
+          ./build_web.sh --fetch-only
+          echo "GLOSSIA_VERSION=$(sed -n 's/.*GLOSSIA_VERSION:-\([0-9][0-9.]*\).*/\1/p' build_web.sh)" >> "$GITHUB_ENV"
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo build
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: .glossia-build/glossia-${{ env.GLOSSIA_VERSION }}
+
+      - name: Install wasm-pack
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+
+      # NOTE: do not install a system `wasm-opt` here. wasm-pack uses its own
+      # bundled wasm-opt and runs the size pass configured under
+      # [package.metadata.wasm-pack.profile.release] in glossia's Cargo.toml; a
+      # system binary gets picked up instead and can reject modern wasm features.
+      - name: Build WASM
+        run: ./build_web.sh
+
+      # Deploy the production site to the root of gh-pages. clean-exclude keeps
+      # the pr-preview/ directory (managed by the PR Preview workflow) intact so
+      # production deploys don't wipe live preview deployments.
+      - name: Deploy to GitHub Pages (production)
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          branch: gh-pages
+          folder: web
+          clean: true
+          clean-exclude: |
+            pr-preview/
