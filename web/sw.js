@@ -1,4 +1,4 @@
-/* Bitcoin Book service worker — offline app shell.
+/* Book of Bitcoin service worker — offline app shell.
  *
  * Strategy:
  *   - Precache the app shell on install (resilient: a missing entry, e.g. an

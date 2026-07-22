@@ -1,4 +1,4 @@
-# The βitcoin βook
+# The βook of βitcoin
 
 **Live at [bookofbitcoin.io](https://bookofbitcoin.io/)**
 

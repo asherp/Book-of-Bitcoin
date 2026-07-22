@@ -1,4 +1,4 @@
-// btc-contents.js — the curated table of contents for the Bitcoin Book: notable
+// btc-contents.js — the curated table of contents for the Book of Bitcoin: notable
 // blocks and transactions. Shared by bitcoin-book.html (the "Bookmarks" list in
 // the lookup card) and bitcoin-contents.html (the table-of-contents page).
 //
