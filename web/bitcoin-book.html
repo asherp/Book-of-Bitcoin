@@ -1674,7 +1674,7 @@ function renderFrontispiece(header) {
   // merkle root) that carries the copy menu; the prose beside it is not itself
   // clickable. The rest of the fields are plain decoded numbers.
   const items = [
-    { text: `v${hf.version}`, title: 'block version' },
+    { text: hf.version, title: hf.versionTitle },
     isGenesisPrev
       ? { text: prevProse, title: 'no earlier block — this is the genesis block' }
       : { text: prevProse, mark: 'h', markClass: 'dt', sup: prevBytes,
