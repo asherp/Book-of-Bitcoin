@@ -1797,8 +1797,25 @@ function renderFrontispiece(header) {
 // the full head -- big title, hash prose, frontispiece; a section page folds
 // the chapter into the Volume/Book eyebrow line -- "Volume 1 · Book 100 ·
 // Chapter 333" -- a running head, not a heading. A block that's a curated
-// entry (Genesis, a halving, an activation, ...) earns its event name as the
-// title in both dresses; Genesis keeps its short "Genesis" form.
+// entry (a halving, an activation, ...) keeps its "Chapter n" heading and
+// carries its event name as a subtitle on the full head, and as the crumb's
+// compact name in the running head. The genesis block is subtitled "The
+// Genesis Block" without needing a curated entry.
+// Chapter headings spell their numbers out the way a book sets them --
+// "Chapter One" through "Chapter One Hundred" -- and fall back to numerals
+// past SPELLED_CHAPTER_MAX ("Chapter 101"), where spelled forms grow unwieldy.
+const SPELLED_CHAPTER_MAX = 100;
+const SPELLED_ONES = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight',
+  'Nine', 'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen',
+  'Seventeen', 'Eighteen', 'Nineteen'];
+const SPELLED_TENS = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+function chapterName(n) {
+  if (n > SPELLED_CHAPTER_MAX) return n.toLocaleString();
+  if (n === 100) return 'One Hundred';
+  if (n < 20) return SPELLED_ONES[n];
+  return SPELLED_TENS[Math.floor(n / 10)] + (n % 10 ? '-' + SPELLED_ONES[n % 10] : '');
+}
+
 function renderChapterHead(onTitlePage) {
   const { volume, book, chapter } = volumeBookChapter(state.height);
   showEyebrowCrumbs(true, true);   // a volume/book leaf may have hidden them
@@ -1807,12 +1824,13 @@ function renderChapterHead(onTitlePage) {
   const isGenesis = volume === 1 && book === 1 && chapter === 1;
   // A notable block keeps its "Chapter n" heading and carries its event name
   // as a subtitle beneath it. A height with several notable entries (the
-  // supply-cap fork carries two) shows them all, dot-separated.
+  // supply-cap fork carries two) shows them all, dot-separated. The genesis
+  // block is the one chapter subtitled outside the curated list.
   const eventTitles = NOTABLE.filter((e) => e.id === String(state.height)).map((e) => e.title);
   const eventTitle = eventTitles[0];
-  $('ch-title').textContent = isGenesis ? 'Genesis' : `Chapter ${chapter.toLocaleString()}`;
+  $('ch-title').textContent = `Chapter ${chapterName(chapter)}`;
   const subtitle = $('ch-subtitle');
-  subtitle.textContent = isGenesis ? '' : eventTitles.join(' · ');
+  subtitle.textContent = isGenesis ? 'The Genesis Block' : eventTitles.join(' · ');
   // On a section page the running head's chapter is a crumb back to the
   // chapter's own page -- no fetch needed, the block is already in state.
   const inline = $('ch-chapter-inline');
@@ -1822,7 +1840,7 @@ function renderChapterHead(onTitlePage) {
     const crumb = document.createElement('button');
     crumb.type = 'button';
     crumb.className = 'crumb';
-    crumb.textContent = eventTitle || `Chapter ${chapter}`;
+    crumb.textContent = (isGenesis ? 'The Genesis Block' : eventTitle) || `Chapter ${chapterName(chapter)}`;
     crumb.title = `Chapter page (${reference(state.height)})`;
     crumb.setAttribute('aria-label', `Open this chapter's own page (${reference(state.height)})`);
     crumb.addEventListener('click', () => { state.index = -1; showCurrentTx(); });
@@ -3215,7 +3233,7 @@ function suggestTitle(entry) {
   const { volume, book, chapter } = volumeBookChapter(place.height);
   const genesis = volume === 1 && book === 1 && chapter === 1;
   if (place.pos != null) return `${toRoman(volume)} β${book} ■${chapter} §${place.pos + 1}`;
-  return genesis ? 'Genesis' : `Chapter ${chapter}`;
+  return genesis ? 'The Genesis Block' : `Chapter ${chapterName(chapter)}`;
 }
 
 // Open a contents entry by its identifier -- a height, block hash, or txid --
