@@ -40,8 +40,12 @@
     const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     let sy = null, sx = 0, st = 0, atBottom = false;
     const go = () => {
+      // Descend into the volume the reader last ascended from (recorded by
+      // the book page's trail memory); a fresh visit opens Volume I.
+      let block = '0';
+      try { block = sessionStorage.getItem('glossia-toc-descend') || '0'; } catch (_) {}
       try { sessionStorage.setItem('glossia-book-entrance', '1'); } catch (_) {}
-      location.href = './bitcoin-book.html?block=0&page=volume';
+      location.href = './bitcoin-book.html?block=' + encodeURIComponent(block) + '&page=volume';
     };
     document.addEventListener('touchstart', (e) => {
       sy = null;
