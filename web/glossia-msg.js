@@ -329,15 +329,31 @@ export function detectLang(prose) {
 // (default 1) samples that many cover realizations and keeps the densest /
 // most coherent, same as renderArtifact -- it only changes cover words, never
 // the payload, so decoding is unaffected.
+// Deterministic for a given (hex, language, bestOf) -- SEED is fixed -- so
+// results are memoized (LRU): a caller can warm an encode ahead of time (the
+// Bitcoin book prefetches its swipe neighbours) and the eventual render is a
+// lookup instead of a WASM pass.
+const seedPhraseMemo = new Map();
+const SEED_MEMO_MAX = 400;
 export function encodeSeedPhrase(hex, langId = 'english', bestOf = 1) {
   const lang = msgLangById(langId);
   const n = Math.max(1, Math.floor(bestOf));
+  const key = `${lang.id}|${n}|${hex}`;
+  const hit = seedPhraseMemo.get(key);
+  if (hit) {
+    seedPhraseMemo.delete(key);   // move to the most-recently-used end
+    seedPhraseMemo.set(key, hit);
+    return hit;
+  }
   const r = JSON.parse(
     n > 1
       ? wasmEncodeRawBaseNBestOf(hex, lang.language, lang.wordlist, lang.dialect, SEED, n)
       : wasmEncodeRawBaseN(hex, lang.language, lang.wordlist, lang.dialect, SEED));
   if (r.error) throw new Error(r.error);
-  return { prose: (r.encoded_text || '').trim(), payloadWords: r.payload_words || [], langId: lang.id };
+  const result = { prose: (r.encoded_text || '').trim(), payloadWords: r.payload_words || [], langId: lang.id };
+  seedPhraseMemo.set(key, result);
+  while (seedPhraseMemo.size > SEED_MEMO_MAX) seedPhraseMemo.delete(seedPhraseMemo.keys().next().value);
+  return result;
 }
 
 // prose paragraph + known byte length -> { hex, payloadWords, langId }. Decodes

@@ -72,9 +72,24 @@ self.addEventListener('fetch', (event) => {
     const cache = await caches.open(CACHE);
     const cached = await cache.match(req);
 
-    const network = fetch(req).then((res) => {
+    // A validator (ETag / Last-Modified) difference between the cached copy
+    // and the fresh one means a newer build was published: after the cache is
+    // refreshed, every open page is told so it can show its Update button.
+    // Compared only for app-shell file types, and only when both sides carry
+    // a validator, so servers that send none never false-positive.
+    const validator = (r) => r.headers.get('etag') || r.headers.get('last-modified') || '';
+    const shellish = /\.(html|js|wasm|webmanifest)$|\/$/.test(url.pathname);
+    const network = fetch(req).then(async (res) => {
       // Only cache complete, same-origin OK responses.
-      if (res && res.ok && res.type === 'basic') cache.put(req, res.clone());
+      if (res && res.ok && res.type === 'basic') {
+        const fresher = !!(cached && shellish && validator(cached) && validator(res) &&
+                           validator(cached) !== validator(res));
+        await cache.put(req, res.clone());
+        if (fresher) {
+          const pages = await self.clients.matchAll({ type: 'window' });
+          for (const page of pages) page.postMessage({ type: 'update-available' });
+        }
+      }
       return res;
     }).catch(() => null);
 
