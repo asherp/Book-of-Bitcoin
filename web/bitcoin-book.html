@@ -1826,7 +1826,9 @@ function renderChapterHead(onTitlePage) {
   // as a subtitle beneath it. A height with several notable entries (the
   // supply-cap fork carries two) shows them all, dot-separated. The genesis
   // block is the one chapter subtitled outside the curated list.
-  const eventTitles = NOTABLE.filter((e) => e.id === String(state.height)).map((e) => e.title);
+  // A page: 'book' entry shares the height namespace (its id is its book's
+  // first block) but names the book's leaf, not this chapter -- excluded here.
+  const eventTitles = NOTABLE.filter((e) => e.id === String(state.height) && e.page !== 'book').map((e) => e.title);
   const eventTitle = eventTitles[0];
   $('ch-title').textContent = `Chapter ${chapterName(chapter)}`;
   const subtitle = $('ch-subtitle');
@@ -1957,6 +1959,12 @@ function renderBookLeaf() {
   title.textContent = `Book ${book.toLocaleString()}`;
   title.classList.remove('hidden');
   detachHashCopy(title);
+  // A curated book (a soft fork's signaling epoch) wears its name as the
+  // leaf's subtitle, the same dress a notable chapter wears.
+  const bookEvent = NOTABLE.find((e) => e.page === 'book' && e.id === String(state.height));
+  const subtitle = $('ch-subtitle');
+  subtitle.textContent = bookEvent ? bookEvent.title : '';
+  subtitle.classList.toggle('hidden', !bookEvent);
   $('ch-frontispiece').classList.add('hidden');
   const bookEnd = state.height + chapterCount - 1;
   const finished = tipHeight !== null && tipHeight >= bookEnd;
@@ -3248,12 +3256,16 @@ function openEntry(id, index = -1) {
 // lookup the reader uses (resolveCitation → merkle-proof), streaming in when
 // ready. A bare bookmark (which may be a block hash, not a txid) just links
 // its short hash. Clicking navigates in place, like a citation.
-function contentsRef(id, { resolve = true, index } = {}) {
+function contentsRef(id, { resolve = true, index, page } = {}) {
   const ref = document.createElement('a');
   ref.className = 'entry-ref';
-  ref.href = entryHref(id, index);
-  ref.addEventListener('click', (e) => { e.preventDefault(); openEntry(id, index ?? -1); });
-  if (isBlockId(id)) {
+  ref.href = entryHref(id, index, page);
+  ref.addEventListener('click', (e) => { e.preventDefault(); openEntry(id, page === 'book' ? -2 : index ?? -1); });
+  if (isBlockId(id) && page === 'book') {
+    // A book entry cites volume and book alone -- its leaf has no chapter.
+    const { volume, book } = volumeBookChapter(Number(id));
+    ref.textContent = `${toRoman(volume)} β${book}`;
+  } else if (isBlockId(id)) {
     ref.textContent = refFromProof(Number(id), index);
   } else if (isRelativeBlockId(id)) {
     // A tip-relative id (e.g. -1 = latest block) has no offline reference; the
@@ -3277,7 +3289,7 @@ function contentsRef(id, { resolve = true, index } = {}) {
 
 // One table-of-contents row: the title, then its clickable reference. A
 // removable row (a reader's bookmark) also gets an ✕.
-function contentsRow({ id, title, date, index, onRemove }) {
+function contentsRow({ id, title, date, index, page, onRemove }) {
   const item = document.createElement('div');
   item.className = 'entry-item';
   const t = document.createElement('span');
@@ -3286,7 +3298,7 @@ function contentsRow({ id, title, date, index, onRemove }) {
   item.append(t);
   if (date) { const d = document.createElement('span'); d.className = 'entry-date'; d.textContent = date; item.append(d); }
   // A curated transaction resolves its reference; a bookmark just links its hash.
-  item.append(contentsRef(id, { resolve: !onRemove, index }));
+  item.append(contentsRef(id, { resolve: !onRemove, index, page }));
   if (onRemove) {
     const del = document.createElement('button');
     del.type = 'button';
@@ -3303,7 +3315,7 @@ function contentsRow({ id, title, date, index, onRemove }) {
 function renderContents() {
   const list = $('contents-list');
   list.innerHTML = '';
-  for (const e of NOTABLE) list.append(contentsRow({ id: e.id, title: e.title, date: e.date, index: e.index }));
+  for (const e of NOTABLE) list.append(contentsRow({ id: e.id, title: e.title, date: e.date, index: e.index, page: e.page }));
   if (bookmarks.length) {
     const group = document.createElement('div');
     group.className = 'contents-group';

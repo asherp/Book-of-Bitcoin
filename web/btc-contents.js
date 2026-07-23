@@ -12,6 +12,15 @@
 
 import { reference } from './btc-citation.js';
 
+// An entry may carry `page: 'book'`: its id is then the first block of a book
+// (a difficulty window), and the entry opens that book's own leaf rather than
+// a chapter. The soft forks that activated by miner signaling -- the 95%
+// supermajority forks (BIP34/66/65) and the version-bits forks (CSV, SegWit,
+// Taproot) -- each mark the book their activation closed, since for them the
+// difficulty window is the ballot box; flag-day and release-based forks get
+// no book. BIP91 signaled over its own 336-block epochs, which no book
+// aligns with, so it keeps only its chapter.
+
 export const NOTABLE = [
   { title: 'The Times 03/Jan/2009 Chancellor on brink of second bailout for banks', id: '4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b' },
   { title: 'Hal Finney transaction', id: 'f4184fc596403b9d638783cf57adfe4c75c605f6356fbc91338530e9831e9e16' },
@@ -50,10 +59,14 @@ export const NOTABLE = [
   // frontispieces walk the whole notation: v1 (genesis) -> v2/v3/v4 (the
   // integer-bump era, BIP34/66/65) -> word-pair form once BIP9 version bits
   // arrive (CSV is the first version-bits fork; SegWit and Taproot follow).
+  { title: 'The Book of BIP34', id: '226128', page: 'book' },
   { title: 'BIP34 activation (v2)', id: '227931' },
   { title: 'First coinbase OP_RETURN', id: '246816' },
+  { title: 'The Book of BIP66', id: '363216', page: 'book' },
   { title: 'BIP66 activation (v3)', id: '363725' },
+  { title: 'The Book of BIP65', id: '387408', page: 'book' },
   { title: 'BIP65 activation (v4)', id: '388381' },
+  { title: 'The Book of CSV', id: '417648', page: 'book' },
   { title: 'CSV activation (version bits)', id: '419328' },
   { title: 'The Second Halving', id: '420000' },
   // The blocksize-war wedge: BIP91 locked in at 476,768 and from this block
@@ -63,6 +76,7 @@ export const NOTABLE = [
   // fork all the same.
   { title: 'BIP91 activation (SegWit mandate)', id: '477120' },
   { title: 'Bitcoin Cash fork', id: '478558' },
+  { title: 'The Book of SegWit', id: '480480', page: 'book' },
   { title: 'SegWit activation', id: '481824' },
   { title: '500K block milestone', id: '500000' },
   { title: 'The Third Halving', id: '630000' },
@@ -71,6 +85,7 @@ export const NOTABLE = [
   // actually set (…100) the way the activation chapter's no longer does.
   { title: 'Taproot lock-in', id: '687285' },
   { title: 'Romans 12:21', id: '057954bb28527ff9c7701c6fd2b7f770163718ded09745da56cc95e7606afe99' },
+  { title: 'The Book of Taproot', id: '708624', page: 'book' },
   // This txid sits in block 709,632 (Nov 14, 2021), the Taproot activation
   // block, so the citation resolves into the activation chapter at its
   // §section -- an early P2TR payment mined the moment the rules went live.
@@ -120,10 +135,12 @@ export function refFromProof(height, pos) {
 // A deep link into the book for a contents entry. An absolute or relative block
 // id opens as ?block= (with an optional ?index= selecting a transaction within
 // the block); a 64-hex value (block hash or txid) opens as ?txid=, which the
-// book resolves as a block first and a transaction second.
-export function entryHref(id, index) {
+// book resolves as a block first and a transaction second. A `page: 'book'`
+// entry opens its book's own leaf (?page=book) instead of a chapter.
+export function entryHref(id, index, page) {
   const isBlock = isBlockId(id) || isRelativeBlockId(id);
   const q = isBlock ? `block=${id}` : `txid=${id}`;
+  if (isBlock && page === 'book') return `bitcoin-book.html?${q}&page=book`;
   const idx = isBlock && index != null ? `&index=${index}` : '';
   return `bitcoin-book.html?${q}${idx}`;
 }
