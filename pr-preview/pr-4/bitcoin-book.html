@@ -173,6 +173,16 @@ body {
    full head or a volume's few lines. The min-height lives on the frame, not
    the slide, so gesture precedence can still measure the natural content. */
 #chapter.title-leaf #page-frame { min-height: 30rem; }
+/* Volume and book leaves set like a manuscript title page: the title drops
+   to the optical upper third with its mark beneath, and the span's imprint
+   (ranges, dates -- the frontispiece block) anchors near the foot, the open
+   field of the leaf between them. */
+#chapter.span-leaf #page-frame { display: flex; }
+#chapter.span-leaf #page-slide { flex: 1; display: flex; }
+#chapter.span-leaf .chapter-head { flex: 1; width: 100%; display: flex; flex-direction: column; }
+#chapter.span-leaf .chapter-title { margin-top: 4.5rem; }
+#chapter.span-leaf .chapter-hash { margin-top: 1.6rem; }
+#chapter.span-leaf .chapter-frontispiece { margin-top: auto; margin-bottom: 3.75rem; }
 .wrap { max-width: 720px; margin: 0 auto; padding: 48px 22px 100px; }
 a { color: var(--accent); text-decoration: none; }
 a:hover { text-decoration: underline; }
@@ -1847,6 +1857,7 @@ function showEyebrowCrumbs(volume, book) {
 // own leaf before the first section's page.
 function renderTitlePage() {
   renderLeafShell();
+  $('chapter').classList.remove('span-leaf');
   const { volume, book, chapter } = renderChapterHead(true);
   // The lookup field shows the chapter reference, no §: it round-trips back to
   // this very page (see parseReference).
@@ -1859,6 +1870,7 @@ function renderTitlePage() {
 // unfinished volume's range ends at the chain tip so far).
 function renderVolumeLeaf() {
   const gen = renderLeafShell();
+  $('chapter').classList.add('span-leaf');
   const { volume } = volumeBookChapter(state.height);
   showEyebrowCrumbs(false, false);
   $('ch-chapter-inline').textContent = '';
@@ -1903,6 +1915,7 @@ function renderVolumeLeaf() {
 // book's range ends at the chain tip so far).
 function renderBookLeaf() {
   const gen = renderLeafShell();
+  $('chapter').classList.add('span-leaf');
   const { volume, book, chapterCount } = volumeBookChapter(state.height);
   showEyebrowCrumbs(true, false);
   $('ch-volume').textContent = volume.toLocaleString();
@@ -1958,6 +1971,7 @@ function renderBookLeaf() {
 
 function renderChapter(para) {
   $('chapter').classList.remove('title-leaf');
+  $('chapter').classList.remove('span-leaf');
   const { volume, book, chapter } = renderChapterHead(false);
 
   // Keep the lookup field showing where we are, in the same reference form the
@@ -2943,11 +2957,14 @@ const gesture = { carouselFirst: false };
 function updateGesturePrecedence() {
   // Natural content height: the wrap, with the frame's min-height padding
   // swapped out for the slide's real height -- a stretched title leaf still
-  // counts as short, keeping its carousel-first vertical swipes.
+  // counts as short, keeping its carousel-first vertical swipes. Volume/book
+  // leaves stretch the slide itself (manuscript layout), so they are
+  // carousel-first by construction: their content is a handful of lines.
+  const spanLeaf = $('chapter').classList.contains('span-leaf');
   const wrapH = document.querySelector('.wrap').getBoundingClientRect().height;
   const frameH = $('page-frame').getBoundingClientRect().height;
   const slideH = $('page-slide').getBoundingClientRect().height;
-  const short = (wrapH - frameH + slideH) <= window.innerHeight + 24;
+  const short = spanLeaf || (wrapH - frameH + slideH) <= window.innerHeight + 24;
   gesture.carouselFirst = short;
   $('page-frame').classList.toggle('carousel-first', short);
 }
