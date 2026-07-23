@@ -347,35 +347,6 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 }
 .hash-menu .hash-menu-item:hover, .hash-menu .hash-menu-item:focus-visible { background: var(--input-bg); color: var(--ink); outline: none; }
 
-/* Table of contents: a collapsible list in the lookup card -- curated notable
-   entries, then the reader's own bookmarks. Always present (the curated set is
-   never empty). */
-.contents { margin-top: 16px; }
-.contents > summary {
-  cursor: pointer; font:500 11px/1 'IBM Plex Mono',monospace; letter-spacing:.1em; text-transform:uppercase;
-  color: var(--dim); list-style: none;
-}
-.contents > summary::-webkit-details-marker { display: none; }
-.contents > summary::before { content: '+ '; color: var(--accent); }
-.contents[open] > summary::before { content: '– '; }
-.contents-list { margin-top: 12px; display: flex; flex-direction: column; gap: 2px; }
-.contents-group {
-  margin: 12px 0 4px; padding: 0 8px; font:600 10px/1 'IBM Plex Mono',monospace; letter-spacing:.12em;
-  text-transform:uppercase; color: var(--meta);
-}
-/* A contents row: title on the left, a clickable reference on the right (the
-   manuscript's citation form), and -- for a bookmark -- a remove ✕. */
-.entry-item { display: flex; align-items: baseline; gap: 10px; padding: 4px 2px; }
-.entry-title { flex: 1; min-width: 0; font: 500 13px/1.4 'Newsreader', serif; color: var(--ink-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.entry-date { flex: none; font: 400 10.5px/1.4 'IBM Plex Mono',monospace; color: var(--meta); }
-.entry-ref { flex: none; font: 600 11.5px/1.4 'IBM Plex Mono',monospace; letter-spacing: .06em; color: var(--accent); white-space: nowrap; }
-.entry-ref:hover, .entry-ref:focus-visible { color: var(--accent-2); text-decoration: underline; outline: none; }
-.entry-ref.resolving { color: var(--meta); }
-.contents .entry-del {
-  flex: none; background: transparent; color: var(--meta); border: 1px solid transparent; border-radius: 4px;
-  font: 600 11px/1 'IBM Plex Mono',monospace; padding: 4px 7px; cursor: pointer; text-transform: none;
-}
-.contents .entry-del:hover { color: var(--error); border-color: var(--input-bd); background: transparent; }
 /* A bookmark ribbon pinned to the top-right corner of a bookmarked hash's
    prose. pointer-events:none so it never intercepts the hash's own click. */
 .hash-bookmark { position: absolute; top: -4px; right: -2px; width: 10px; height: 14px; color: var(--accent); line-height: 0; pointer-events: none; }
@@ -651,11 +622,6 @@ button:disabled { opacity: .4; cursor: not-allowed; }
       <button type="button" id="block-btn">Read</button>
     </div>
     <div id="block-status" class="status-line hidden"></div>
-
-    <details id="contents" class="contents">
-      <summary>Bookmarks</summary>
-      <div id="contents-list" class="contents-list"></div>
-    </details>
   </div>
 
   <article id="chapter" class="hidden">
@@ -1015,7 +981,7 @@ import { init, encodeSeedPhrase } from './glossia-msg.js';
 import { parseTransaction, computeTxid, parseBlockHeader, computeBlockHash } from './btc-tx.js';
 import { composeTransactionFields, composeBlockHeaderFields, groupDigits, formatBtc, renderWitness, toSuperscript, timestampInfo } from './btc-prose.js';
 import { volumeBookChapter, heightOf, toRoman, reference } from './btc-citation.js';
-import { NOTABLE, isBlockId, isRelativeBlockId, refFromProof, entryHref } from './btc-contents.js';
+import { NOTABLE } from './btc-contents.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -3134,7 +3100,6 @@ function addBookmark(entry, title) {
     bookmarks.unshift({ hex: entry.hex, label: entry.label, prose: entry.prose, title, height: place.height, pos: place.pos }); // newest first
   }
   saveBookmarks();
-  renderContents();
   syncHashFlags();
   return true;
 }
@@ -3143,7 +3108,6 @@ function removeBookmark(hex) {
   if (i < 0) return;
   bookmarks.splice(i, 1);
   saveBookmarks();
-  renderContents();
   syncHashFlags();
 }
 
@@ -3181,90 +3145,6 @@ function suggestTitle(entry) {
   const genesis = volume === 1 && book === 1 && chapter === 1;
   if (place.pos != null) return `${toRoman(volume)} β${book} ■${chapter} §${place.pos + 1}`;
   return genesis ? 'Genesis' : `Chapter ${chapter}`;
-}
-
-// Open a contents entry by its identifier -- a height, block hash, or txid --
-// through the same lookup the input uses. The loaded chapter refreshes the field.
-function openEntry(id, index = -1) {
-  $('block-input').value = id;
-  openLookup(id, index);
-}
-
-// The clickable reference for a row -- the manuscript's own citation form. A
-// block's is known offline; a transaction's is resolved by the same citation
-// lookup the reader uses (resolveCitation → merkle-proof), streaming in when
-// ready. A bare bookmark (which may be a block hash, not a txid) just links
-// its short hash. Clicking navigates in place, like a citation.
-function contentsRef(id, { resolve = true, index } = {}) {
-  const ref = document.createElement('a');
-  ref.className = 'entry-ref';
-  ref.href = entryHref(id, index);
-  ref.addEventListener('click', (e) => { e.preventDefault(); openEntry(id, index ?? -1); });
-  if (isBlockId(id)) {
-    ref.textContent = refFromProof(Number(id), index);
-  } else if (isRelativeBlockId(id)) {
-    // A tip-relative id (e.g. -1 = latest block) has no offline reference; the
-    // tip resolves it to a height, then to the citation form.
-    ref.textContent = '⋯';
-    ref.classList.add('resolving');
-    loadTipHeight()
-      .then((tip) => { ref.textContent = refFromProof(Number(tip) + Number(id) + 1, index); ref.classList.remove('resolving'); })
-      .catch(() => { ref.textContent = 'latest'; ref.classList.remove('resolving'); });
-  } else if (resolve) {
-    ref.textContent = '⋯';
-    ref.classList.add('resolving');
-    resolveCitation(id)
-      .then(({ height, pos }) => { ref.textContent = refFromProof(height, pos); ref.classList.remove('resolving'); })
-      .catch(() => { ref.textContent = `${id.slice(0, 8)}…`; ref.classList.remove('resolving'); });
-  } else {
-    ref.textContent = `${id.slice(0, 8)}…`;
-  }
-  return ref;
-}
-
-// One table-of-contents row: the title, then its clickable reference. A
-// removable row (a reader's bookmark) also gets an ✕.
-function contentsRow({ id, title, date, index, onRemove }) {
-  const item = document.createElement('div');
-  item.className = 'entry-item';
-  const t = document.createElement('span');
-  t.className = 'entry-title';
-  t.textContent = title;
-  item.append(t);
-  if (date) { const d = document.createElement('span'); d.className = 'entry-date'; d.textContent = date; item.append(d); }
-  // A curated transaction resolves its reference; a bookmark just links its hash.
-  item.append(contentsRef(id, { resolve: !onRemove, index }));
-  if (onRemove) {
-    const del = document.createElement('button');
-    del.type = 'button';
-    del.className = 'entry-del';
-    del.textContent = '✕';
-    del.title = 'remove bookmark';
-    del.addEventListener('click', onRemove);
-    item.append(del);
-  }
-  return item;
-}
-
-// The table of contents: the curated notable set, then the reader's bookmarks.
-function renderContents() {
-  const list = $('contents-list');
-  list.innerHTML = '';
-  for (const e of NOTABLE) list.append(contentsRow({ id: e.id, title: e.title, date: e.date, index: e.index }));
-  if (bookmarks.length) {
-    const group = document.createElement('div');
-    group.className = 'contents-group';
-    group.textContent = 'Your bookmarks';
-    list.append(group);
-    for (const b of bookmarks) {
-      const short = `${b.hex.slice(0, 10)}…${b.hex.slice(-6)}`;
-      list.append(contentsRow({
-        id: b.hex,
-        title: b.title || b.prose || short,
-        onRemove: () => removeBookmark(b.hex),
-      }));
-    }
-  }
 }
 
 const hashMenu = $('hash-menu');
@@ -3378,8 +3258,6 @@ const dismissOnViewportChange = () => {
 };
 window.addEventListener('resize', dismissOnViewportChange);
 window.addEventListener('scroll', dismissOnViewportChange, true);
-
-renderContents();
 
 // Entry points, in priority order: ?txid= jumps straight to a transaction's
 // section; ?block= (with optional ?index=) opens a block -- a negative height
