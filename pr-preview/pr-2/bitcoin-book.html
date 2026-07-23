@@ -1474,10 +1474,23 @@ async function loadBlockMeta(hash, { withTxids = true } = {}) {
   return { ...core, txids };
 }
 
-async function loadBlockByHeight(height, opts) {
+// height -> block hash, memoized for heights safely below the tip. This is
+// what makes a prefetched swipe commit with zero network: the block core is
+// already cached by hash, and this removes the last repeated lookup. Heights
+// within 6 blocks of the tip are never cached, so a reorg can't pin a stale
+// mapping (past 6 confirmations a reorg is not a practical concern).
+const hashByHeight = new Map();
+async function resolveBlockHash(height) {
+  const h = Number(height);
+  if (hashByHeight.has(h)) return hashByHeight.get(h);
   const res = await esploraFetch(`${ESPLORA}/block-height/${height}`);
   if (!res.ok) throw new Error(res.status === 404 ? `No block at height ${height}.` : `Esplora returned ${res.status}.`);
-  return loadBlockMeta((await res.text()).trim(), opts);
+  const hash = (await res.text()).trim();
+  if (tipHeight !== null && h <= tipHeight - 6) hashByHeight.set(h, hash);
+  return hash;
+}
+async function loadBlockByHeight(height, opts) {
+  return loadBlockMeta(await resolveBlockHash(height), opts);
 }
 
 // A block's info JSON by height (no txid list), memoized: the light metadata
@@ -1486,9 +1499,7 @@ const infoByHeight = new Map();
 function loadBlockInfoByHeight(height) {
   if (!infoByHeight.has(height)) {
     infoByHeight.set(height, (async () => {
-      const hres = await esploraFetch(`${ESPLORA}/block-height/${height}`);
-      if (!hres.ok) throw new Error(`Esplora returned ${hres.status}.`);
-      const bres = await esploraFetch(`${ESPLORA}/block/${(await hres.text()).trim()}`);
+      const bres = await esploraFetch(`${ESPLORA}/block/${await resolveBlockHash(height)}`);
       if (!bres.ok) throw new Error(`Esplora returned ${bres.status}.`);
       return bres.json();
     })().catch((e) => { infoByHeight.delete(height); throw e; }));
@@ -1613,10 +1624,10 @@ function attachHashCopy(el, hex, label, prose = el.textContent) {
   // `prose` is the readable form the menu offers to copy. The hit target may be
   // a leading mark (⋔ for a merkle root) or a persistent heading (the chapter /
   // section title), so the prose is passed in explicitly rather than read off
-  // `el`. This chapter's own hashes are bookmarkable; a merkle root leads
-  // nowhere, and the previous-block hash just points back a chapter, so both
-  // are copy-only.
-  const nav = label !== 'merkle root' && label !== 'previous block hash' && label !== 'block version';
+  // `el`. Only the chapter's own hashes are navigable, hence bookmarkable;
+  // every other label (merkle root, previous block hash, version, difficulty
+  // target, nonce) is copy-only.
+  const nav = label === 'block hash' || label === 'transaction id';
   el.classList.add('hash-copy');
   el.tabIndex = 0;
   el.setAttribute('aria-label', `${label}: ${hex} — click for menu`);
@@ -1710,9 +1721,13 @@ function renderFrontispiece(header) {
     { text: hf.timestamp, title: hf.timestampTitle },
     // The difficulty target (β) and nonce (η) are the proof-of-work marks, gold
     // like their counterparts in the body prose's mining preamble.
-    { text: hf.bits, title: hf.bitsTitle, gold: true },
+    // β and η each open a copy menu: the compact 4-byte hex, or the display
+    // form (the βₙ mark / the decimal nonce).
+    { text: hf.bits, title: hf.bitsTitle, gold: true,
+      menu: { hex: (header.bits >>> 0).toString(16).padStart(8, '0'), label: 'difficulty target', prose: hf.bits } },
     // The η mark alone is bold gold; the nonce integer beside it stays plain.
-    { text: hf.nonce, mark: 'η', markClass: 'fx-mark', title: hf.nonceTitle },
+    { text: hf.nonce, mark: 'η', markClass: 'fx-mark', title: hf.nonceTitle,
+      menu: { hex: (header.nonce >>> 0).toString(16).padStart(8, '0'), label: 'nonce', prose: hf.nonce } },
   ];
   for (const { text, title, copy, mark, markClass, gold, sup, supTitle, menu } of items) {
     const span = document.createElement('span');
@@ -1732,6 +1747,7 @@ function renderFrontispiece(header) {
     } else {
       span.textContent = text;
       if (title) span.title = title;
+      if (menu) attachHashCopy(span, menu.hex, menu.label, menu.prose);   // β: the whole mark is the handle
     }
     el.append(span);
   }
@@ -1890,6 +1906,8 @@ function renderBookLeaf() {
   beta.className = 'cfx-gold';
   beta.textContent = hf.bits;
   beta.title = hf.bitsTitle;
+  // Same copy menu as the chapter frontispiece's β: compact hex or the mark.
+  attachHashCopy(beta, (state.header.bits >>> 0).toString(16).padStart(8, '0'), 'difficulty target', hf.bits);
   line.append(beta);
   // Then the chapters the book spans, under the block glyph (■, as references
   // write chapter numbers -- chapters restart at 1 each book, so a full book
