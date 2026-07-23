@@ -161,7 +161,13 @@ const GENESIS_COINBASE = '4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b
 // block height and the transaction's index (its §section). Tried across the same
 // public mirrors the book uses.
 const ESPLORA_MIRRORS = ['https://blockstream.info/api', 'https://mempool.space/api'];
-const placeOf = (height, pos) => { const p = volumeBookChapter(height); return { ...p, section: pos == null ? null : pos + 1 }; };
+// A book-page entry (page: 'book') places at its book with no chapter -- the
+// leaf precedes every chapter of its book in reading order.
+const placeOf = (height, pos, page) => {
+  const p = volumeBookChapter(height);
+  if (page === 'book') return { volume: p.volume, book: p.book, chapter: null, section: null };
+  return { ...p, section: pos == null ? null : pos + 1 };
+};
 
 // The chain tip height, fetched once and reused across relative entries.
 let tipHeightPromise = null;
@@ -181,8 +187,8 @@ function tipHeight() {
 // An entry's placement. A block entry places from its height (with an optional
 // transaction index as its §section); a negative id counts back from the chain
 // tip; a transaction id resolves the same way a reader resolves a citation.
-async function resolvePlacement({ id, index }) {
-  if (isBlockId(id)) return placeOf(Number(id), index ?? null);
+async function resolvePlacement({ id, index, page }) {
+  if (isBlockId(id)) return placeOf(Number(id), index ?? null, page);
   if (isRelativeBlockId(id)) {
     const tip = await tipHeight();
     if (tip == null) return null;
@@ -227,6 +233,9 @@ async function resolveBookmark(b) {
 // directly under a Volume, the β-marked book leads it. Spaced like the book's
 // own citations (e.g. "β29 ■596", "■1 §1").
 function tailRef({ book, chapter, section }, underBook) {
+  // A book's own leaf: under its Book heading nothing remains to cite; under
+  // a bare Volume, the β mark alone names it.
+  if (chapter == null) return underBook ? '' : `β${book}`;
   let s = (underBook ? [`■${chapter}`] : [`β${book}`, `■${chapter}`]).join(' ');
   if (section != null) s += ` §${section}`;
   return s;
@@ -238,7 +247,7 @@ function tailRef({ book, chapter, section }, underBook) {
 function entryEl(entry, underBook) {
   const row = document.createElement('a');
   row.className = 'toc-entry' + (underBook ? ' under-book' : '') + (entry.bookmark ? ' is-bookmark' : '');
-  row.href = entryHref(entry.id, entry.index);
+  row.href = entryHref(entry.id, entry.index, entry.page);
   const t = document.createElement('span'); t.className = 'toc-title';
   // A reader's own bookmark flies the same ribbon it wears in the book, so it's
   // distinguishable from a curated entry even though it sits in reading order.
@@ -326,7 +335,7 @@ const unresolved = () => entries().filter((e) => e.tried && !e.place);
 
 // Block placements (curated, and bookmarks that stored their reference) are
 // offline, so render at once; everything else streams in as its lookup resolves.
-for (const e of NOTABLE) if (isBlockId(e.id)) placements.set(e.id, placeOf(Number(e.id), e.index ?? null));
+for (const e of NOTABLE) if (isBlockId(e.id)) placements.set(e.id, placeOf(Number(e.id), e.index ?? null, e.page));
 for (const b of bookmarks) if (Number.isInteger(b.height)) bmPlacements.set(b.hex, placeOf(b.height, b.pos ?? null));
 render();
 await Promise.all([
