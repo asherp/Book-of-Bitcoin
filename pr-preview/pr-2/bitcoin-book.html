@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Glossia Bitcoin Book — a block, read as a chapter</title>
+<title>The βook of βitcoin — a block, read as a chapter</title>
 <meta name="description" content="A Bitcoin block rendered as a chapter: each transaction a paragraph, its witness data footnotes, in grammatically correct Glossia prose.">
 <link rel="icon" type="image/png" sizes="32x32" href="./icons/beta-icon-32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="./icons/beta-icon-16.png">
@@ -17,12 +17,43 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Bitcoin Book">
+<meta name="apple-mobile-web-app-title" content="βook of βitcoin">
 <script>
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('./sw.js').catch((e) => console.warn('SW registration failed:', e));
     });
+
+    // Update affordance: the worker's stale-while-revalidate serves this page
+    // from cache, so a fresh deploy is invisible until the NEXT visit. When
+    // the background revalidation caches a newer build, the worker posts
+    // update-available to every open page; a brand-new worker taking over
+    // (controllerchange, on a page that already had one) means the same
+    // thing. Either way the Update button appears; one tap reloads onto the
+    // freshly cached build. Wired like the Install button: state is tracked
+    // eagerly, reflected onto the button once the DOM is ready.
+    (function () {
+      let updateReady = false;
+      let btn = null;
+      const reflect = () => { if (btn) btn.classList.toggle('show', updateReady); };
+      const showUpdate = () => { updateReady = true; reflect(); };
+      navigator.serviceWorker.addEventListener('message', (e) => {
+        if (e.data && e.data.type === 'update-available') showUpdate();
+      });
+      const hadController = !!navigator.serviceWorker.controller;
+      navigator.serviceWorker.addEventListener('controllerchange', () => { if (hadController) showUpdate(); });
+      const wire = () => {
+        btn = document.getElementById('update-btn');
+        if (!btn) return;
+        btn.addEventListener('click', () => location.reload());
+        reflect();
+      };
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', wire);
+      } else {
+        wire();
+      }
+    })();
   }
 
   // Reveal an in-page Install button when the browser offers to install this
@@ -71,7 +102,7 @@
 <!-- Social / rich unfurl -->
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Glossia">
-<meta property="og:title" content="Glossia Bitcoin Book — a block, read as a chapter">
+<meta property="og:title" content="The βook of βitcoin — a block, read as a chapter">
 <meta property="og:description" content="Each transaction in a Bitcoin block, rendered as a paragraph of grammatically correct prose — witness data collected as footnotes.">
 <meta property="og:url" content="https://asherp.github.io/Book-of-Bitcoin/bitcoin-book.html">
 <meta property="og:image" content="https://asherp.github.io/Book-of-Bitcoin/og-glossia.png">
@@ -79,7 +110,7 @@
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="Glossia — machine data, made human. A lossless linguistic codec.">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Glossia Bitcoin Book — a block, read as a chapter">
+<meta name="twitter:title" content="The βook of βitcoin — a block, read as a chapter">
 <meta name="twitter:description" content="Each transaction in a Bitcoin block, rendered as a paragraph of grammatically correct prose.">
 <meta name="twitter:image" content="https://asherp.github.io/Book-of-Bitcoin/og-glossia.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -124,6 +155,19 @@ a:hover { text-decoration: underline; }
 }
 .install-btn.show { display:inline-block; }
 .install-btn:hover { background:var(--accent); color:var(--btn-ink,#17140c); }
+/* Update affordance: hidden until the service worker reports that a newer
+   build has been cached behind the page (or a new worker has taken over).
+   Filled gold -- unlike the quiet Install outline -- because it's an action
+   the reader probably wants to take now; one tap reloads onto the new build. */
+.update-btn {
+  display:none; margin-right:12px; vertical-align:baseline;
+  background:var(--accent); border:1px solid var(--accent); color:var(--btn-ink);
+  border-radius:4px; padding:4px 10px; cursor:pointer;
+  font:600 11px/1 'IBM Plex Mono',monospace; letter-spacing:.08em; text-transform:uppercase;
+  transition:background .15s ease;
+}
+.update-btn.show { display:inline-block; }
+.update-btn:hover { background:var(--accent-2); border-color:var(--accent-2); }
 
 .card {
   background: var(--card); border: 1px solid var(--card-bd); border-radius: 6px;
@@ -529,8 +573,8 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 <body>
 <div class="wrap">
   <div class="masthead">
-    <span class="title">The <span class="beta">β</span>itcoin <span class="beta">β</span>ook</span>
-    <span class="home"><button type="button" id="install-btn" class="install-btn" aria-label="Install the Bitcoin Book as an app">Install</button><a href="./bitcoin-contents.html">Contents</a> · <span class="settings-menu"><a href="#" id="settings-link" role="button" aria-haspopup="dialog" aria-expanded="false">Settings</a><div id="settings-panel" class="settings-panel hidden" role="dialog" aria-label="Settings">
+    <span class="title">The <span class="beta">β</span>ook of <span class="beta">β</span>itcoin</span>
+    <span class="home"><button type="button" id="update-btn" class="update-btn" aria-label="A new version is ready — reload to update">Update</button><button type="button" id="install-btn" class="install-btn" aria-label="Install the Book of Bitcoin as an app">Install</button><a href="./bitcoin-contents.html">Contents</a> · <span class="settings-menu"><a href="#" id="settings-link" role="button" aria-haspopup="dialog" aria-expanded="false">Settings</a><div id="settings-panel" class="settings-panel hidden" role="dialog" aria-label="Settings">
       <div class="settings-title">Data source</div>
       <div class="endpoint-row">
         <select id="endpoint-select" class="endpoint-select" aria-label="Data source endpoint"></select>
@@ -2848,3 +2892,5 @@ if (txidParam) {
 </script>
 </body>
 </html>
+
+<!-- build-marker-next -->
