@@ -19,6 +19,7 @@
 import { encodeSeedPhrase } from './glossia-msg.js';
 import { findTextRuns, readableUtf8Text, tokenizeScript, bitsToTargetHex, bitsToDifficulty } from './btc-tx.js';
 import { volumeBookChapter } from './btc-citation.js';
+import { BIP39, HP_SPELLS } from './btc-wordlists.js';
 
 const ROMAN = [[1000, 'M'], [900, 'CM'], [500, 'D'], [400, 'CD'], [100, 'C'], [90, 'XC'], [50, 'L'], [40, 'XL'], [10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I']];
 function toRoman(n) {
@@ -121,6 +122,90 @@ function bitsInfo(bits) {
   return { sym: `β${toSubscript(lz)}`, title: baseTitle(` (${lz} leading zero bits)`) };
 }
 
+// ─── block version notation: ver <hp>.<english>.<signals> ──────────────
+//
+// A block's nVersion splits, under BIP9, into three fields: a 3-bit marker
+// (001), 16 bits of version-rolling scratch entropy (BIP320, bits 28-13,
+// spun by ASICs for extra nonce space), and 13 soft-fork signaling bits
+// (bits 12-0). The notation renders each field as the thing it is:
+//
+//   ver accio.library.100
+//       └────┬─────┘ └┬┘
+//       rolling bits  signaling bits, plain binary (leading zeros dropped,
+//       as two words  omitted when zero) -- bit 0 CSV, 1 SegWit, 2 Taproot
+//
+// The word pair carries the 16 rolling bits plus a parity checksum: the pair
+// spans 6 + 11 = 17 bits, one more than the field, and the spare bit is even
+// parity over the rolling bits -- so any single-bit transcription error is
+// caught, and a random wrong word is caught half the time. English is the
+// high digit, the HP spell the low digit (C = en·64 + hp, parity in bit 16),
+// but the spell is written first -- the two lists are disjoint, so each word
+// identifies its own list and the display order is free. The pair is always
+// present in marker form, which keeps the format unambiguous: a body that
+// starts with a word is BIP9 form, a bare integer (ver 1 .. ver 4) is a
+// pre-BIP9 version. accio.abandon -- both index 0, parity 0 -- is the idiom
+// for "no version rolling".
+const SIGNAL_BIT_NAMES = { 0: 'CSV (BIP68/112/113)', 1: 'SegWit (BIP141)', 2: 'Taproot (BIP341)' };
+const popcount16 = (x) => x.toString(2).split('1').length - 1;
+
+export function formatBlockVersion(version) {
+  const v = version >>> 0;
+  const hex = '0x' + v.toString(16).padStart(8, '0');
+  if ((v >>> 29) !== 0b001) {
+    // Signed for display: nVersion is an int32 on the wire, and the early
+    // versions (1-4) read as themselves.
+    return { text: `ver ${v | 0}`, title: `block version ${v | 0} (${hex}) — pre-BIP9 integer form` };
+  }
+  const R = (v >>> 13) & 0xffff;                      // BIP320 version-rolling bits
+  const S = v & 0x1fff;                               // BIP9 signaling bits
+  const C = ((popcount16(R) & 1) << 16) | R;          // 17-bit codeword: parity | rolling
+  const pair = `${HP_SPELLS[C & 63]}.${BIP39[C >>> 6]}`;
+  const rolling = R
+    ? `version-rolling bits 0x${R.toString(16).padStart(4, '0')} (BIP320 scratch entropy) as ${pair}`
+    : `${pair} — no version rolling`;
+  const signals = S
+    ? 'signaling ' + [...Array(13).keys()].filter((b) => S & (1 << b))
+        .map((b) => `bit ${b}${SIGNAL_BIT_NAMES[b] ? ' — ' + SIGNAL_BIT_NAMES[b] : ''}`).join(', ')
+    : 'no soft-fork signals';
+  return {
+    text: `ver ${pair}${S ? '.' + S.toString(2) : ''}`,
+    title: `block version ${hex} — BIP9 version-bits form; ${rolling}; ${signals}`,
+  };
+}
+
+// The inverse: "ver ..." text back to the nVersion integer, or null if the
+// text is not a well-formed version (unknown word, failed parity, oversized
+// signaling run). Word order in the pair is not significant on input -- list
+// membership disambiguates -- only the rendering above fixes spell-first.
+let WORD_INDEX = null;   // lazily built word -> { list, index } map
+export function parseBlockVersion(text) {
+  const m = String(text).trim().match(/^ver\s+(\S+)$/i);
+  if (!m) return null;
+  const parts = m[1].split('.');
+  if (parts.length === 1) {
+    if (!/^-?\d+$/.test(parts[0])) return null;
+    const n = parseInt(parts[0], 10) | 0;
+    return ((n >>> 29) & 0b111) === 0b001 ? null : n >>> 0;   // marker form never renders as an integer
+  }
+  if (!WORD_INDEX) {
+    WORD_INDEX = new Map();
+    BIP39.forEach((w, i) => WORD_INDEX.set(w, { en: i }));
+    HP_SPELLS.forEach((w, i) => WORD_INDEX.set(w, { hp: i }));
+  }
+  const a = WORD_INDEX.get(parts[0]), b = WORD_INDEX.get(parts[1]);
+  if (!a || !b) return null;
+  const en = a.en ?? b.en, hp = a.hp ?? b.hp;
+  if (en === undefined || hp === undefined) return null;      // two words from the same list
+  const C = en * 64 + hp;
+  if ((C >>> 16) !== (popcount16(C & 0xffff) & 1)) return null;   // parity checksum
+  let S = 0;
+  if (parts.length === 3) {
+    if (!/^[01]{1,13}$/.test(parts[2])) return null;
+    S = parseInt(parts[2], 2);
+  } else if (parts.length !== 2) return null;
+  return ((0b001 << 29) | ((C & 0xffff) << 13) | S) >>> 0;
+}
+
 // A block header's nTime -> { mark, title }: the mark is the human date --
 // the interpreted, legible form -- since unlike nonce there's nothing more
 // "raw" a reader would want at a glance; the title carries the literal unix
@@ -131,10 +216,11 @@ function timestampInfo(timestamp) {
 }
 
 // A parsed block header (btc-tx.js's parseBlockHeader) -> its rendered
-// fields. version, timestamp, bits and nonce are small structural numbers --
-// never entropy -- so they're rendered literally/decoded rather than
+// fields. timestamp, bits and nonce are small structural numbers -- never
+// entropy -- so they're rendered literally/decoded rather than
 // Glossia-encoded, mirroring how composeTransactionFields treats a
-// transaction's version and locktime. The nonce in particular gets no
+// transaction's version and locktime. The block version is the one field
+// that mixes entropy with structure, so it gets the ver notation above. The nonce in particular gets no
 // further decoding: it's already exactly what it looks like, the number a
 // miner incremented in the search for a hash below the bits target. The
 // previous-block hash and merkle root are genuinely opaque 32-byte hashes --
@@ -143,8 +229,9 @@ function timestampInfo(timestamp) {
 export function composeBlockHeaderFields(header) {
   const time = timestampInfo(header.timestamp);
   const bits = bitsInfo(header.bits);
+  const ver = formatBlockVersion(header.version);
   return {
-    version: String(header.version),
+    version: ver.text, versionTitle: ver.title,
     timestamp: time.mark, timestampTitle: time.title,
     bits: bits.sym, bitsTitle: bits.title,
     // The nonce rides its η mark as a subscript, the same house convention β's
