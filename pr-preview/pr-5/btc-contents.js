@@ -139,6 +139,16 @@ export const NOTABLE = [
 // exists, so it needs a chain scan to identify a good exemplar whose
 // frontispiece breaks the accio.abandon idiom.
 
+// BIP110 (reduced_data, the 2026 temporary data-limit attempt; bit 4, 55% of
+// a signaling window): nothing activated to cite -- ~0.5% signaling as of
+// July 2026. Its BIP8-style heights are citable sight unseen should it ever
+// lock in: mandatory signaling from 961,632 (V β61 ■673), lock-in by 963,648
+// (V β62 ■673), activation at 965,664 (V β63 ■673) -- three real retarget
+// boundaries, one book apart, sharing a chapter number. Until then the only
+// chain artifact is a bit-4-signaling block, which -- like the AsicBoost
+// exemplar above -- needs a chain scan to pick well; its frontispiece would
+// show …10000, the same bit BIP91 once flew.
+
 // A bare non-negative integer is an absolute block height. A negative integer is
 // a height relative to the chain tip (-1 = latest block), resolved online.
 export const isBlockId = (id) => /^[0-9]+$/.test(id);
