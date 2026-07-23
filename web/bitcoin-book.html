@@ -1349,10 +1349,10 @@ async function loadBlockMeta(hash, { withTxids = true } = {}) {
   return { ...core, txids };
 }
 
-async function loadBlockByHeight(height) {
+async function loadBlockByHeight(height, opts) {
   const res = await esploraFetch(`${ESPLORA}/block-height/${height}`);
   if (!res.ok) throw new Error(res.status === 404 ? `No block at height ${height}.` : `Esplora returned ${res.status}.`);
-  return loadBlockMeta((await res.text()).trim());
+  return loadBlockMeta((await res.text()).trim(), opts);
 }
 
 // A block's transaction count by height, from its info alone (no txid list) and
@@ -2023,12 +2023,14 @@ async function openLookup(input, index = -1) {
         if (Number(height) < 0) throw new Error(`Only ${tip + 1} blocks exist; ${input} reaches before Genesis.`);
       }
       setStatus('<span class="spinner"></span>fetching block…');
-      const meta = await loadBlockByHeight(height);
+      // A chapter-page landing (no section index) skips the heavy txid list;
+      // paging into a section fetches it on demand (ensureTxids).
+      const meta = await loadBlockByHeight(height, { withTxids: index >= 0 });
       state = { ...meta, index: clampIndex(index, meta) };
     } else if (/^[0-9a-f]{64}$/i.test(input)) {
       const hex = input.toLowerCase();
       setStatus('<span class="spinner"></span>fetching block…');
-      const meta = await loadBlockMeta(hex).catch(() => null);
+      const meta = await loadBlockMeta(hex, { withTxids: index >= 0 }).catch(() => null);
       if (meta) {
         state = { ...meta, index: clampIndex(index, meta) };
       } else {
@@ -2040,7 +2042,7 @@ async function openLookup(input, index = -1) {
       const ref = parseReference(input);
       if (!ref) throw new Error('Enter a block height, hash, transaction id, or reference (e.g. III 2 5).');
       setStatus('<span class="spinner"></span>fetching block…');
-      const meta = await loadBlockByHeight(ref.height);
+      const meta = await loadBlockByHeight(ref.height, { withTxids: ref.index >= 0 });
       state = { ...meta, index: clampIndex(ref.index, meta) };
     }
     await tipP;   // record the fresh tip before labelNav decides Next visibility
@@ -2057,12 +2059,15 @@ async function openLookup(input, index = -1) {
 // adjacent block (if one exists): forward onto its chapter page, backward onto
 // its last section.
 async function stepTx(direction) {
-  // Stepping needs the block's txid list -- loaded now if the reader opened by
-  // reference and hasn't stepped yet.
-  try { await ensureTxids(state); }
-  catch (e) { setStatus(e.message || 'Failed to load the transaction list.', 'err'); return; }
+  // Bounds come from txCount (always known); the txid list itself is only
+  // needed to address a section by position -- fetched on demand here if the
+  // reader landed on this chapter's page without it.
   const withinBlock = state.index + direction;
-  if (withinBlock >= -1 && withinBlock < state.txids.length) {
+  if (withinBlock >= -1 && withinBlock < state.txCount) {
+    if (withinBlock >= 0) {
+      try { await ensureTxids(state); }
+      catch (e) { setStatus(e.message || 'Failed to load the transaction list.', 'err'); return; }
+    }
     state.index = withinBlock;
     try {
       await showCurrentTx();
@@ -2079,7 +2084,10 @@ async function stepTx(direction) {
   $('page-next').disabled = true;
   setStatus(`<span class="spinner"></span>loading ${direction > 0 ? 'next' : 'previous'} block…`);
   try {
-    const next = await loadBlockByHeight(newHeight);
+    // Forward lands on the next chapter's own page -- no txid list needed
+    // until the reader pages into a section. Backward addresses the previous
+    // block's last transaction by position, so it needs the list now.
+    const next = await loadBlockByHeight(newHeight, { withTxids: direction < 0 });
     state = { ...next, index: direction > 0 ? -1 : next.txCount - 1 };
     await showCurrentTx();
   } catch (e) {
@@ -2102,7 +2110,7 @@ async function goToChapter(direction) {
   $('chapter-next').disabled = true;
   setStatus(`<span class="spinner"></span>loading ${direction > 0 ? 'next' : 'previous'} chapter…`);
   try {
-    const meta = await loadBlockByHeight(target);
+    const meta = await loadBlockByHeight(target, { withTxids: false });
     state = { ...meta, index: -1 };
     await showCurrentTx();
   } catch (e) {
@@ -2144,20 +2152,25 @@ async function runPendingSteps() {
 
   stepping = true;
   try {
-    // Stepping needs the block's txid list -- loaded now if the reader opened
-    // by reference and hasn't stepped yet.
-    try { await ensureTxids(state); }
-    catch (e) { setStatus(e.message || 'Failed to load the transaction list.', 'err'); return; }
+    // Bounds come from txCount; the txid list is fetched only when the burst's
+    // destination addresses a section by position (a chapter-page landing, or
+    // leaving the block, never needs the current block's list).
+    const needList = async () => {
+      try { await ensureTxids(state); return true; }
+      catch (e) { setStatus(e.message || 'Failed to load the transaction list.', 'err'); return false; }
+    };
     const target = state.index + steps;
-    if (target >= -1 && target < state.txids.length) {
+    if (target >= -1 && target < state.txCount) {
+      if (target >= 0 && !(await needList())) return;
       state.index = target;
       try {
         await showCurrentTx();
       } catch (e) {
         setStatus(e.message || 'Failed to load transaction.', 'err');
       }
-    } else if (steps > 0 && state.index < state.txids.length - 1) {
-      state.index = state.txids.length - 1;   // overshot forward -- land on the block's last tx
+    } else if (steps > 0 && state.index < state.txCount - 1) {
+      if (!(await needList())) return;
+      state.index = state.txCount - 1;          // overshot forward -- land on the block's last tx
       try { await showCurrentTx(); } catch (e) { setStatus(e.message || 'Failed to load transaction.', 'err'); }
     } else if (steps < 0 && state.index > -1) {
       state.index = -1;                         // overshot backward -- land on the chapter's own page
