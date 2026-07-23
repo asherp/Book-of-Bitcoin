@@ -286,8 +286,10 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 /* Set in the same hash-prose serif as the chapter and section hashes above
    it, one shade quieter (meta vs dim) so it still reads as a margin note. */
 .chapter-frontispiece { margin: 0 auto 4px; max-width: 46ch; font: italic 400 14.5px/1.55 'Newsreader',serif; color: var(--meta); }
-/* The middot separator stays dim even between gold fields. */
-.chapter-frontispiece .cfx + .cfx::before { content: ' · '; color: var(--meta); }
+/* Each header field on its own line, a breath of space between fields --
+   the two hash proses run long, so inline middots buried the seams. */
+.chapter-frontispiece .cfx { display: block; }
+.chapter-frontispiece .cfx + .cfx { margin-top: .45em; }
 /* The difficulty target (β) and nonce (η): proof-of-work marks, shown gold.
    (.chapter-hash carries the same mark on the book leaf, where the book's
    target sits right beneath its title.) */
