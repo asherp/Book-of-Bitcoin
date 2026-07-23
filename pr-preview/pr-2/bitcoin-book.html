@@ -305,8 +305,13 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 .chapter-frontispiece .cfx-gold, .chapter-hash .cfx-gold { color: var(--accent); }
 /* The merkle root's ⋔ mark: the clickable handle for its hash menu (copy hex /
    prose), bold and accented (like the h data mark) so it reads as the actionable
-   element while the root's prose beside it stays plain. */
-.merkle-mark { color: var(--accent); font-weight: 700; }
+   element while the root's prose beside it stays plain. Upright, like every
+   mark, against the frontispiece's italic. */
+.merkle-mark { color: var(--accent); font-weight: 700; font-style: normal; }
+/* Upright bold-gold field marks in the frontispiece: the version's v and the
+   nonce's η lead their values the way the data marks lead prose; the value
+   after each stays in the frontispiece's own plain voice. */
+.fx-mark { color: var(--accent); font-weight: 700; font-style: normal; }
 
 /* A Glossia-encoded hash (a block hash, a txid, a merkle root): the prose is
    the visible text; clicking anywhere on it opens a menu to copy the exact hex
@@ -1683,7 +1688,9 @@ function renderFrontispiece(header) {
   // merkle root) that carries the copy menu; the prose beside it is not itself
   // clickable. The rest of the fields are plain decoded numbers.
   const items = [
-    { text: hf.version, title: hf.versionTitle },
+    // The version wears its bold-gold v mark in both forms -- the pre-BIP9
+    // integer (v1) and the BIP9 word-pair (v accio.library.100).
+    { text: hf.version, mark: 'v', markClass: 'fx-mark', title: hf.versionTitle },
     isGenesisPrev
       ? { text: prevProse, title: 'no earlier block — this is the genesis block' }
       : { text: prevProse, mark: 'h', markClass: 'dt', sup: prevBytes,
@@ -1697,13 +1704,23 @@ function renderFrontispiece(header) {
     // The difficulty target (β) and nonce (η) are the proof-of-work marks, gold
     // like their counterparts in the body prose's mining preamble.
     { text: hf.bits, title: hf.bitsTitle, gold: true },
-    { text: hf.nonce, title: hf.nonceTitle, gold: true },
+    // The η mark alone is bold gold; the nonce integer beside it stays plain.
+    { text: hf.nonce, mark: 'η', markClass: 'fx-mark', title: hf.nonceTitle },
   ];
   for (const { text, title, copy, mark, markClass, gold, sup, supTitle } of items) {
     const span = document.createElement('span');
     span.className = gold ? 'cfx cfx-gold' : 'cfx';
     if (mark && copy) {
       fillMarkedHash(span, mark, markClass, copy.hex, copy.label, text, sup, supTitle);
+    } else if (mark) {
+      // A marked plain field (no hash menu): the mark leads, the value
+      // follows -- tight against a numeral (v1, η2573394689), a space before
+      // a word form (v accio.library.100).
+      const m = document.createElement('span');
+      m.className = markClass;
+      m.textContent = mark;
+      span.append(m, (/^\d/.test(text) ? '' : ' ') + text);
+      if (title) span.title = title;
     } else {
       span.textContent = text;
       if (title) span.title = title;
