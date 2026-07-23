@@ -96,7 +96,7 @@ function sequenceInfo(seq) {
 const SUBSCRIPT_DIGITS = '₀₁₂₃₄₅₆₇₈₉';
 const toSubscript = (n) => String(n).split('').map((d) => SUBSCRIPT_DIGITS[+d]).join('');
 const SUPERSCRIPT_DIGITS = '⁰¹²³⁴⁵⁶⁷⁸⁹';
-const toSuperscript = (n) => String(n).split('').map((d) => SUPERSCRIPT_DIGITS[+d]).join('');
+export const toSuperscript = (n) => String(n).split('').map((d) => SUPERSCRIPT_DIGITS[+d]).join('');
 
 // nBits (a compact difficulty target) -> { sym, title }. The target is
 // rendered as the thing it is -- the ceiling a mined hash must dip under --
@@ -122,14 +122,14 @@ function bitsInfo(bits) {
   return { sym: `β${toSubscript(lz)}`, title: baseTitle(` (${lz} leading zero bits)`) };
 }
 
-// ─── block version notation: <hp>.<english>.<signals> ──────────────────
+// ─── block version notation: <hp> <english> <signals> ──────────────────
 //
 // A block's nVersion splits, under BIP9, into three fields: a 3-bit marker
 // (001), 16 bits of version-rolling scratch entropy (BIP320, bits 28-13,
 // spun by ASICs for extra nonce space), and 13 soft-fork signaling bits
 // (bits 12-0). The notation renders each field as the thing it is:
 //
-//   accio.library.100
+//   accio library 100
 //   └────┬─────┘ └┬┘
 //   rolling bits  signaling bits, plain binary (leading zeros dropped,
 //   as two words  omitted when zero) -- bit 0 CSV, 1 SegWit, 2 Taproot
@@ -143,7 +143,7 @@ function bitsInfo(bits) {
 // identifies its own list and the display order is free. The pair is always
 // present in marker form, so BIP9 form needs no prefix at all -- it opens
 // with a word -- while a pre-BIP9 integer version keeps the traditional v
-// prefix (v1 .. v4). accio.abandon -- both index 0, parity 0 -- is the
+// prefix (v1 .. v4). accio abandon -- both index 0, parity 0 -- is the
 // idiom for "no version rolling".
 const SIGNAL_BIT_NAMES = { 0: 'CSV (BIP68/112/113)', 1: 'SegWit (BIP141)', 2: 'Taproot (BIP341)' };
 const popcount16 = (x) => x.toString(2).split('1').length - 1;
@@ -159,7 +159,7 @@ export function formatBlockVersion(version) {
   const R = (v >>> 13) & 0xffff;                      // BIP320 version-rolling bits
   const S = v & 0x1fff;                               // BIP9 signaling bits
   const C = ((popcount16(R) & 1) << 16) | R;          // 17-bit codeword: parity | rolling
-  const pair = `${HP_SPELLS[C & 63]}.${BIP39[C >>> 6]}`;
+  const pair = `${HP_SPELLS[C & 63]} ${BIP39[C >>> 6]}`;
   const rolling = R
     ? `version-rolling bits 0x${R.toString(16).padStart(4, '0')} (BIP320 scratch entropy) as ${pair}`
     : `${pair} — no version rolling`;
@@ -168,7 +168,7 @@ export function formatBlockVersion(version) {
         .map((b) => `bit ${b}${SIGNAL_BIT_NAMES[b] ? ' — ' + SIGNAL_BIT_NAMES[b] : ''}`).join(', ')
     : 'no soft-fork signals';
   return {
-    text: `${pair}${S ? '.' + S.toString(2) : ''}`,
+    text: `${pair}${S ? ' ' + S.toString(2) : ''}`,
     title: `block version ${hex} — BIP9 version-bits form; ${rolling}; ${signals}`,
   };
 }
@@ -185,7 +185,9 @@ export function parseBlockVersion(text) {
     const n = parseInt(legacy[1], 10) | 0;
     return ((n >>> 29) & 0b111) === 0b001 ? null : n >>> 0;   // marker form never renders as an integer
   }
-  const parts = t.split('.');
+  // Fields separate on spaces (as rendered) -- dots accepted on input for
+  // the older notation.
+  const parts = t.split(/[.\s]+/);
   if (!WORD_INDEX) {
     WORD_INDEX = new Map();
     BIP39.forEach((w, i) => WORD_INDEX.set(w, { en: i }));
@@ -209,7 +211,7 @@ export function parseBlockVersion(text) {
 // the interpreted, legible form -- since unlike nonce there's nothing more
 // "raw" a reader would want at a glance; the title carries the literal unix
 // value for verification against the wire bytes.
-function timestampInfo(timestamp) {
+export function timestampInfo(timestamp) {
   const date = new Date(timestamp * 1000).toISOString().slice(0, 16).replace('T', ' ');
   return { mark: `${date} UTC`, title: `unix ${timestamp}` };
 }
@@ -230,13 +232,14 @@ export function composeBlockHeaderFields(header) {
   const bits = bitsInfo(header.bits);
   const ver = formatBlockVersion(header.version);
   return {
-    version: ver.text, versionTitle: ver.title,
+    // The renderer prefixes the bold-gold v mark itself (both the integer and
+    // BIP9 word-pair forms wear it), so the text here carries no prefix.
+    version: ver.text.replace(/^v/, ''), versionTitle: ver.title,
     timestamp: time.mark, timestampTitle: time.title,
     bits: bits.sym, bitsTitle: bits.title,
-    // The nonce rides its η mark as a subscript, the same house convention β's
-    // leading-zero count follows -- a mark with its quantity tucked under it,
-    // not a bare inline number. The exact value stays legible in the title.
-    nonce: `η${toSubscript(header.nonce)}`,
+    // The nonce is a plain integer; the renderer leads it with the bold-gold
+    // η mark (like v for the version), the value itself unstyled.
+    nonce: String(header.nonce),
     nonceTitle: `nonce ${header.nonce} — the value the miner incremented while searching for a hash below the difficulty target`,
   };
 }
