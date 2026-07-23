@@ -32,6 +32,37 @@
     });
   }
 
+  // The descend gesture: a push UP starting at the page's bottom drops from
+  // the contents into Volume I's leaf -- the inverse of the book page's
+  // pull-down-above-the-volume. The contents slide up and away; the book
+  // page finishes the turn, entering from below (glossia-book-entrance).
+  (function () {
+    const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let sy = null, sx = 0, st = 0, atBottom = false;
+    const go = () => {
+      try { sessionStorage.setItem('glossia-book-entrance', '1'); } catch (_) {}
+      location.href = './bitcoin-book.html?block=0&page=volume';
+    };
+    document.addEventListener('touchstart', (e) => {
+      sy = null;
+      if (e.touches.length !== 1) return;
+      sy = e.touches[0].clientY; sx = e.touches[0].clientX; st = performance.now();
+      atBottom = window.scrollY >= document.documentElement.scrollHeight - window.innerHeight - 2;
+    }, { passive: true });
+    document.addEventListener('touchend', (e) => {
+      if (sy === null || e.changedTouches.length !== 1) return;
+      const dy = e.changedTouches[0].clientY - sy;
+      const dx = e.changedTouches[0].clientX - sx;
+      const dt = performance.now() - st;
+      sy = null;
+      if (!atBottom || dt > 600 || dy > -70 || Math.abs(dx) > Math.abs(dy) * 0.6) return;
+      if (REDUCED) { go(); return; }
+      document.body.style.transition = 'transform .2s linear';
+      document.body.style.transform = 'translateY(-100vh)';
+      setTimeout(go, 180);
+    }, { passive: true });
+  })();
+
   // Reveal an in-page Install button when the browser offers to install this
   // PWA, and drive the native prompt from it — so installing is discoverable
   // without hunting through the browser menu. Stays hidden when already

@@ -19,6 +19,16 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="βook of βitcoin">
 <script>
+  // Arriving by the contents page's push-up-at-the-bottom gesture: finish
+  // that turn here, the book sliding in from below. Set just before the
+  // navigation, consumed on first paint.
+  try {
+    if (sessionStorage.getItem('glossia-book-entrance')) {
+      sessionStorage.removeItem('glossia-book-entrance');
+      document.documentElement.classList.add('book-entrance');
+    }
+  } catch (_) {}
+
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('./sw.js').catch((e) => console.warn('SW registration failed:', e));
@@ -135,6 +145,12 @@ html, body { margin: 0; overflow-x: hidden; overflow-x: clip; overscroll-behavio
 body {
   min-height: 100vh; background: var(--page); color: var(--ink);
   font-family: 'Public Sans', system-ui, sans-serif; line-height: 1.55;
+}
+/* The entering half of the contents page's push-up descend: the book slides
+   up into place from below, matching the carousel's pace. */
+@media (prefers-reduced-motion: no-preference) {
+  .book-entrance body { animation: book-in .22s ease-out; }
+  @keyframes book-in { from { transform: translateY(100vh); } }
 }
 /* Contain the carousel turn entirely: the translated #page-slide clips at the
    article's own bounds (clip creates no scroll container, so nothing else
