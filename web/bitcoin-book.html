@@ -2212,26 +2212,6 @@ function renderChapter(para) {
   labelNav();
 }
 
-// The reference each nav button leads to, abbreviated the way a table of
-// contents abbreviates consecutive entries: show a level (volume, book, chapter)
-// only when it -- or a coarser level -- differs from where the reader is now, so
-// a step within the same chapter reads as a bare "§4", one across a chapter as
-// "■5 §1", one across a book as "β2 ■5 §1", one across an era as "II β1 ■1 §1".
-// The book carries its β sigil and the chapter its ■ (see reference() in
-// btc-citation.js). A chapter jump (section === null) always ends on the ■chapter,
-// never a §section.
-function minSharedRef(cur, target, section) {
-  const dv = target.volume !== cur.volume;
-  const db = dv || target.book !== cur.book;
-  const dc = db || target.chapter !== cur.chapter;
-  const parts = [];
-  if (dv) parts.push(toRoman(target.volume));
-  if (db) parts.push(`β${target.book}`);
-  if (dc || section == null) parts.push(`■${target.chapter}`);
-  if (section != null) parts.push(`§${section}`);
-  return parts.join(' ');
-}
-
 // Label the chapter/section nav buttons, and hide any that lead nowhere (Genesis
 // has no earlier chapter/section; the chain tip's last section none later). Each
 // label is the minimum shared reference to its destination (see minSharedRef).
@@ -2259,8 +2239,11 @@ function labelNav() {
   // The header steppers belong to leaves alone -- and step at the leaf's own
   // level: volumes on a volume leaf, books on a book leaf, chapters on a
   // chapter page. Section headers carry the eyebrow crumbs instead.
+  // Labels carry only the target's own level -- §4, ■5, β2, II -- never the
+  // higher-order parts of the reference: the page around the button (eyebrow
+  // crumbs, titles) already says where the reader is, and the full reference
+  // rides in each button's hover/aria label.
   const floor = minIndexOf(state.height);
-  const bookRef = (t) => (t.volume !== cur.volume ? `${toRoman(t.volume)} β${t.book}` : `β${t.book}`);
   let stepPrev = null, stepNext = null;   // { text, label } or null (hidden)
   if (idx === -3) {
     if (cur.volume > 1) {
@@ -2272,19 +2255,19 @@ function labelNav() {
   } else if (idx === -2) {
     if (state.height > 0) {
       const p = volumeBookChapter(bookStartOf(state.height - 1));
-      stepPrev = { text: bookRef(p), label: `Previous book (${toRoman(p.volume)} β${p.book})` };
+      stepPrev = { text: `β${p.book}`, label: `Previous book (${toRoman(p.volume)} β${p.book})` };
     }
     const nextStart = state.height + cur.chapterCount;
     if (tipHeight === null || nextStart <= tipHeight) {
       const n = volumeBookChapter(nextStart);
-      stepNext = { text: bookRef(n), label: `Next book (${toRoman(n.volume)} β${n.book})` };
+      stepNext = { text: `β${n.book}`, label: `Next book (${toRoman(n.volume)} β${n.book})` };
     }
   } else if (idx === -1) {
     if (state.height > 0) {
-      stepPrev = { text: minSharedRef(cur, volumeBookChapter(state.height - 1), null), label: `Previous chapter (${reference(state.height - 1)})` };
+      stepPrev = { text: `■${volumeBookChapter(state.height - 1).chapter}`, label: `Previous chapter (${reference(state.height - 1)})` };
     }
     if (!atTip) {
-      stepNext = { text: minSharedRef(cur, volumeBookChapter(state.height + 1), null), label: `Next chapter (${reference(state.height + 1)})` };
+      stepNext = { text: `■${volumeBookChapter(state.height + 1).chapter}`, label: `Next chapter (${reference(state.height + 1)})` };
     }
   }
   showBtn('chapter-prev', !!stepPrev);
@@ -2301,10 +2284,10 @@ function labelNav() {
   // … previous block's last § → volume leaf → book leaf → chapter page → §1 …
   if (hasPrevSection) {
     if (idx > 0) {
-      setBtn('page-prev', minSharedRef(cur, cur, idx), `Previous section (${reference(state.height)} §${idx})`);   // same chapter, target section = current 1-based index minus one
+      setBtn('page-prev', `§${idx}`, `Previous section (${reference(state.height)} §${idx})`);   // same chapter, target section = current 1-based index minus one
     } else if (idx === 0) {
       // §1 pages back to this chapter's own page -- the chapter-level reference.
-      setBtn('page-prev', minSharedRef(cur, cur, null), `Chapter page (${reference(state.height)})`);
+      setBtn('page-prev', `■${cur.chapter}`, `Chapter page (${reference(state.height)})`);
     } else if (idx - 1 >= floor) {
       // Up the leaf stack within this block: chapter page → book leaf → volume leaf.
       if (idx === -1) setBtn('page-prev', `β${cur.book}`, `Book page (${toRoman(cur.volume)} β${cur.book})`);
@@ -2313,10 +2296,9 @@ function labelNav() {
       // Off the block's first page, back into the prior block's final section;
       // its §number is that block's tx count, unknown until it loads -- shown
       // as § once resolved.
-      const t = volumeBookChapter(state.height - 1);
-      setBtn('page-prev', minSharedRef(cur, t, '…'), `Previous section (end of ${reference(state.height - 1)})`);
+      setBtn('page-prev', '§…', `Previous section (end of ${reference(state.height - 1)})`);
       loadBlockTxCount(state.height - 1)
-        .then((n) => { if (gen === renderGen) setBtn('page-prev', minSharedRef(cur, t, n), `Previous section (${reference(state.height - 1)} §${n})`); })
+        .then((n) => { if (gen === renderGen) setBtn('page-prev', `§${n}`, `Previous section (${reference(state.height - 1)} §${n})`); })
         .catch(() => {});
     }
   }
@@ -2324,11 +2306,11 @@ function labelNav() {
     if (idx === -3) {
       setBtn('page-next', `β${cur.book}`, `Book page (${toRoman(cur.volume)} β${cur.book})`);
     } else if (idx === -2) {
-      setBtn('page-next', minSharedRef(cur, cur, null), `Chapter page (${reference(state.height)})`);
+      setBtn('page-next', `■${cur.chapter}`, `Chapter page (${reference(state.height)})`);
     } else if (idx === -1) {
-      setBtn('page-next', minSharedRef(cur, cur, 1), `First section (${reference(state.height)} §1)`);   // the chapter page opens onto §1
+      setBtn('page-next', '§1', `First section (${reference(state.height)} §1)`);   // the chapter page opens onto §1
     } else if (idx < state.txCount - 1) {
-      setBtn('page-next', minSharedRef(cur, cur, idx + 2), `Next section (${reference(state.height)} §${idx + 2})`);   // same chapter, target section = current 1-based index plus one
+      setBtn('page-next', `§${idx + 2}`, `Next section (${reference(state.height)} §${idx + 2})`);   // same chapter, target section = current 1-based index plus one
     } else {
       // Crosses onto the next block's first page -- its volume or book leaf
       // when it opens one, else its chapter page.
@@ -2336,8 +2318,8 @@ function labelNav() {
       const nFloor = minIndexOf(nh);
       const t = volumeBookChapter(nh);
       if (nFloor === -3) setBtn('page-next', toRoman(t.volume), `Volume page (${toRoman(t.volume)})`);
-      else if (nFloor === -2) setBtn('page-next', bookRef(t), `Book page (${toRoman(t.volume)} β${t.book})`);
-      else setBtn('page-next', minSharedRef(cur, t, null), `Next chapter (${reference(nh)})`);
+      else if (nFloor === -2) setBtn('page-next', `β${t.book}`, `Book page (${toRoman(t.volume)} β${t.book})`);
+      else setBtn('page-next', `■${t.chapter}`, `Next chapter (${reference(nh)})`);
     }
   }
 
