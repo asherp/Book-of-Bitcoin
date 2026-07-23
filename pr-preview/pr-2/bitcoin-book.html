@@ -2499,6 +2499,45 @@ const openCrumb = (height, idx) => {
 $('ch-volume-link').addEventListener('click', () => { if (state) openCrumb(volumeStartOf(state.height), -3); });
 $('ch-book-link').addEventListener('click', () => { if (state) openCrumb(bookStartOf(state.height), -2); });
 
+// ── Swipe paging ──────────────────────────────────────────────────────────
+// A horizontal swipe turns the page at the current level: sections swipe
+// section-to-section (the foot nav's step), a chapter/book/volume leaf swipes
+// to its level neighbour (the header steppers' step). Swiping toward a
+// neighbour that doesn't exist -- before Genesis, past the tip -- is ignored,
+// using the corresponding button's visibility as the guard so swipe and
+// button can never disagree.
+function swipeStep(direction) {
+  if (!state) return;
+  if (state.index < 0) {
+    if (!$(direction > 0 ? 'chapter-next' : 'chapter-prev').classList.contains('hidden')) goToLevel(direction);
+  } else {
+    if (!$(direction > 0 ? 'page-next' : 'page-prev').classList.contains('hidden')) requestStep(direction);
+  }
+}
+// Recognize a quick, mostly-horizontal single-finger drag. Swipes that begin
+// in form fields, in horizontally scrolling regions (the pattern table), or
+// inside a popover are left to those elements.
+(() => {
+  let sx = null, sy = 0, st = 0;
+  document.addEventListener('touchstart', (e) => {
+    sx = null;
+    if (e.touches.length !== 1) return;
+    const t = e.target;
+    if (t.closest && t.closest('input, textarea, select, .pattern-scroll, .hash-menu, .settings-panel')) return;
+    sx = e.touches[0].clientX; sy = e.touches[0].clientY; st = performance.now();
+  }, { passive: true });
+  document.addEventListener('touchend', (e) => {
+    if (sx === null || e.changedTouches.length !== 1) return;
+    const dx = e.changedTouches[0].clientX - sx;
+    const dy = e.changedTouches[0].clientY - sy;
+    const dt = performance.now() - st;
+    sx = null;
+    if (dt > 600 || Math.abs(dx) < 60 || Math.abs(dy) > Math.abs(dx) * 0.6) return;
+    swipeStep(dx < 0 ? 1 : -1);   // swiping left turns to the next page
+  }, { passive: true });
+  document.addEventListener('touchcancel', () => { sx = null; }, { passive: true });
+})();
+
 // ── Data-source picker ────────────────────────────────────────────────────
 const endpointSel = $('endpoint-select');
 const hostOf = (url) => { try { return new URL(url).host; } catch { return url; } };
