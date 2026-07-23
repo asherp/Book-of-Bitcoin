@@ -1799,7 +1799,7 @@ function renderChapterHead(onTitlePage) {
     crumb.textContent = eventTitle || `Chapter ${chapter}`;
     crumb.title = `Chapter page (${reference(state.height)})`;
     crumb.setAttribute('aria-label', `Open this chapter's own page (${reference(state.height)})`);
-    crumb.addEventListener('click', () => { state.index = -1; showCurrentTx(); });
+    crumb.addEventListener('click', () => { rememberTrail(); state.index = -1; showCurrentTx(); });
     inline.append(crumb);
   }
   $('ch-title').classList.toggle('hidden', !onTitlePage);
@@ -2597,6 +2597,7 @@ $('chapter-next').addEventListener('click', () => goToLevel(1));
 // just re-render at the leaf; otherwise load the span's first block.
 const openCrumb = (height, idx) => {
   if (!state) return;
+  rememberTrail();   // a crumb is an ascent too -- descents retrace it
   if (state.height === height) { state.index = idx; showCurrentTx(); }
   else openLeafAt(height, idx);
 };
@@ -2644,6 +2645,50 @@ function swipeStep(direction) {
 // from the scroll boundaries a vertical drag is just scrolling.
 let upReady = false;    // the ascend target's data is loaded (see prefetchNeighbors)
 let downReady = false;  // a chapter page's §1 is warmed (leaf descents are same-block, always ready)
+
+// Descend memory: every ascent (vertical swipe or crumb) records the full
+// trail below the page it leaves for, keyed by the parent leaf's index, so
+// descents retrace the reader's path -- volume back to THE book, book back
+// to THE chapter, chapter back to THE section -- instead of each span's
+// first child. Entries are validated against the current span before use;
+// horizontal travel simply makes them stale, and descents fall back to the
+// first child.
+const descentMemory = { '-1': null, '-2': null, '-3': null };
+function rememberTrail() {
+  if (!state) return;
+  if (state.index >= 0) descentMemory['-1'] = { height: state.height, idx: state.index };
+  if (state.index >= -1) descentMemory['-2'] = { height: state.height, idx: -1 };
+  if (state.index >= -2) descentMemory['-3'] = { height: bookStartOf(state.height), idx: -2 };
+  try { sessionStorage.setItem('glossia-toc-descend', String(volumeStartOf(state.height))); } catch {}
+}
+function rememberedChild() {
+  if (!state) return null;
+  if (state.index === -1) {
+    const m = descentMemory['-1'];
+    return m && m.height === state.height ? m : null;
+  }
+  if (state.index === -2) {
+    const m = descentMemory['-2'];
+    return m && bookStartOf(m.height) === state.height ? m : null;
+  }
+  if (state.index === -3) {
+    const m = descentMemory['-3'];
+    return m && volumeStartOf(m.height) === state.height ? m : null;
+  }
+  return null;
+}
+async function descendTo(m) {
+  if (m.idx >= 0) {
+    // A remembered section within this chapter.
+    try { await ensureTxids(state); }
+    catch (e) { setStatus(e.message || 'Failed to load the transaction list.', 'err'); return; }
+    state.index = Math.min(m.idx, state.txCount - 1);
+    try { await showCurrentTx(); } catch (e) { setStatus(e.message || 'Failed to load transaction.', 'err'); }
+    return;
+  }
+  if (m.height === state.height) { state.index = m.idx; showCurrentTx(); return; }
+  openLeafAt(m.height, m.idx);
+}
 function levelTarget(direction) {   // +1 descend (deeper), -1 ascend
   if (!state) return null;
   if (direction < 0) {
@@ -2660,13 +2705,15 @@ function canStepVertical(direction) {
   const t = levelTarget(direction);
   if (!t) return false;
   // Descending from a volume or book leaf stays within the loaded block;
-  // only a chapter's descent into §1 has data to wait for.
-  if (direction > 0) return state.index === -1 ? downReady : true;
+  // only a chapter's descent into §1 has data to wait for (a remembered
+  // section was visited moments ago -- its data is cached).
+  if (direction > 0) return state.index === -1 ? (downReady || !!rememberedChild()) : true;
   return !!t.free || !!t.toc || upReady;   // the contents page is precached by the service worker
 }
 function swipeStepVertical(direction) {
   const t = levelTarget(direction);
   if (!t) return;
+  if (direction < 0) rememberTrail();   // ascents leave the trail descents retrace
   if (t.toc) {
     // The turn's exit has played (or reduced motion skipped it); the contents
     // page finishes the entrance itself, sliding in from the top on arrival.
@@ -2674,7 +2721,11 @@ function swipeStepVertical(direction) {
     location.href = './bitcoin-contents.html';
     return;
   }
-  if (t.linear) { stepNow(1); return; }
+  if (t.linear) {
+    const m = rememberedChild();
+    if (m) descendTo(m); else stepNow(1);
+    return;
+  }
   if (t.free) { state.index = t.idx; showCurrentTx(); return; }
   openLeafAt(t.height, t.idx);
 }
