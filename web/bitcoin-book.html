@@ -131,7 +131,7 @@
    rightward overflow -- the carousel's incoming page parked past the right
    edge -- can otherwise widen the layout viewport, dragging every fixed
    element (the loading toast, the Update pill) off-centre. */
-html, body { margin: 0; overflow-x: hidden; overflow-x: clip; }
+html, body { margin: 0; overflow-x: hidden; overflow-x: clip; overscroll-behavior-y: none; }
 body {
   min-height: 100vh; background: var(--page); color: var(--ink);
   font-family: 'Public Sans', system-ui, sans-serif; line-height: 1.55;
@@ -2636,6 +2636,41 @@ function swipeStep(direction) {
   if (!navAvailable(direction)) return;
   if (state.index < 0) goToLevel(direction); else stepNow(direction);
 }
+
+// ── Vertical swipes: one nav level up or down ─────────────────────────────
+// A pull DOWN with the page already at its top ascends a level -- section →
+// chapter page → book leaf → volume leaf; a push UP at the page's bottom
+// descends into the span's first child (a leaf's linear next page). Away
+// from the scroll boundaries a vertical drag is just scrolling.
+let upReady = false;    // the ascend target's data is loaded (see prefetchNeighbors)
+let downReady = false;  // a chapter page's §1 is warmed (leaf descents are same-block, always ready)
+function levelTarget(direction) {   // +1 descend (deeper), -1 ascend
+  if (!state) return null;
+  if (direction < 0) {
+    if (state.index >= 0) return { height: state.height, idx: -1, free: true };   // this block is already loaded
+    if (state.index === -1) return { height: bookStartOf(state.height), idx: -2 };
+    if (state.index === -2) return { height: volumeStartOf(state.height), idx: -3 };
+    return null;                    // a volume has no parent
+  }
+  // Descending from a leaf is exactly the linear next page (volume → its
+  // first book, book → its chapter, chapter → §1); a section has no child.
+  return state.index < 0 ? { linear: true } : null;
+}
+function canStepVertical(direction) {
+  const t = levelTarget(direction);
+  if (!t) return false;
+  // Descending from a volume or book leaf stays within the loaded block;
+  // only a chapter's descent into §1 has data to wait for.
+  if (direction > 0) return state.index === -1 ? downReady : true;
+  return !!t.free || upReady;
+}
+function swipeStepVertical(direction) {
+  const t = levelTarget(direction);
+  if (!t) return;
+  if (t.linear) { stepNow(1); return; }
+  if (t.free) { state.index = t.idx; showCurrentTx(); return; }
+  openLeafAt(t.height, t.idx);
+}
 // A committed swipe skips the buttons' click-debounce -- it's already a
 // single, prefetch-gated gesture -- so the turn's two halves overlap tightly.
 function stepNow(direction) {
@@ -2698,6 +2733,8 @@ async function prefetchNeighbor(st, direction) {
 function prefetchNeighbors() {
   const gen = ++prefetchGen;
   neighborReady = { '-1': false, '1': false };
+  upReady = state !== null && state.index >= 0;   // a section's parent page is this block, already loaded
+  downReady = false;
   if (!state) return;
   const st = state;
   // Deferred past the turn's entry animation: the warming encodes are main-
@@ -2709,6 +2746,22 @@ function prefetchNeighbors() {
       prefetchNeighbor(st, dir)
         .then(() => { if (gen === prefetchGen) neighborReady[dir] = true; })
         .catch(() => {});   // a failed prefetch keeps the swipe gated; the buttons still work
+    }
+    // The vertical ascend target: a chapter's book leaf / a book's volume
+    // leaf lives at its span's first block -- warm that core too.
+    const upHeight = st.index === -1 ? bookStartOf(st.height)
+                   : st.index === -2 ? volumeStartOf(st.height) : null;
+    if (upHeight !== null) {
+      loadBlockByHeight(upHeight, { withTxids: false })
+        .then(() => { if (gen === prefetchGen) upReady = true; })
+        .catch(() => {});
+    }
+    // The vertical descend target from a chapter page is its §1.
+    if (st.index === -1) {
+      ensureTxids(st)
+        .then((txids) => warmSection(txids[0]))
+        .then(() => { if (gen === prefetchGen) downReady = true; })
+        .catch(() => {});
     }
   }, 350);
 }
@@ -2735,8 +2788,10 @@ function resetSlide() {
 // (consumeSlide). The two halves overlap, so the turn reads as one
 // continuous carousel strip rather than out-to-black-then-in. No opacity
 // fade: pages slide, they don't dissolve.
-function slideOutAndStep(direction) {
+let pendingAxis = 'x';
+function slideOutAndStep(direction, axis = 'x') {
   pendingSlide = direction;
+  pendingAxis = axis;
   if (slideWatchdog) clearTimeout(slideWatchdog);
   slideWatchdog = setTimeout(resetSlide, 6000);
   const ch = $('page-slide');
@@ -2765,14 +2820,17 @@ function slideOutAndStep(direction) {
   // Linear, so the exit reads as the drag's momentum carrying on rather than
   // re-accelerating from a stop.
   ghost.style.transition = 'transform .2s linear';
-  ghost.style.transform = `translateX(${direction > 0 ? '-' : ''}${window.innerWidth}px)`;
+  const off = axis === 'x' ? window.innerWidth : window.innerHeight;
+  ghost.style.transform = `translate${axis === 'x' ? 'X' : 'Y'}(${direction > 0 ? '-' : ''}${off}px)`;
   setTimeout(() => { if (slideGhost === ghost) { ghost.remove(); slideGhost = null; } else ghost.remove(); }, 320);
   // Give the compositor two frames to commit and start the ghost's slide
   // BEFORE the destination's render work begins -- the render blocks the
   // main thread, and a transition that hasn't started yet would stall with
   // it (the visible "stuck halfway" hitch). Once running, a composited
   // transform transition glides through main-thread busyness.
-  requestAnimationFrame(() => requestAnimationFrame(() => swipeStep(direction)));
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    if (axis === 'x') swipeStep(direction); else swipeStepVertical(direction);
+  }));
 }
 
 // The entering half of the turn, run after the destination has rendered: the
@@ -2791,8 +2849,9 @@ function consumeSlide() {
   const anchor = Math.max(0, nav.getBoundingClientRect().top + window.scrollY - 10);
   if (window.scrollY > anchor) window.scrollTo(0, anchor);
   const ch = $('page-slide');
+  const off = pendingAxis === 'x' ? window.innerWidth : window.innerHeight;
   ch.style.transition = 'none';
-  ch.style.transform = `translateX(${dir > 0 ? '' : '-'}${window.innerWidth}px)`;
+  ch.style.transform = `translate${pendingAxis === 'x' ? 'X' : 'Y'}(${dir > 0 ? '' : '-'}${off}px)`;
   ch.style.visibility = '';
   ch.style.opacity = '';
   void ch.offsetWidth;   // commit the start position before animating
@@ -2805,7 +2864,7 @@ function consumeSlide() {
 // page sideways. Swipes that begin in form fields, in horizontally scrolling
 // regions (the pattern table), or inside a popover are left to those elements.
 (() => {
-  let sx = null, sy = 0, st = 0, axis = null;
+  let sx = null, sy = 0, st = 0, axis = null, atTop = false, atBottom = false;
   const snapBack = () => {
     const ch = $('page-slide');
     if (!ch.style.transform) return;
@@ -2819,6 +2878,10 @@ function consumeSlide() {
     const t = e.target;
     if (t.closest && t.closest('input, textarea, select, .pattern-scroll, .hash-menu, .settings-panel')) return;
     sx = e.touches[0].clientX; sy = e.touches[0].clientY; st = performance.now();
+    // A vertical level-swipe only exists at the scroll boundaries, judged
+    // where the gesture STARTS: elsewhere a vertical drag is scrolling.
+    atTop = window.scrollY <= 2;
+    atBottom = window.scrollY >= document.documentElement.scrollHeight - window.innerHeight - 2;
   }, { passive: true });
   document.addEventListener('touchmove', (e) => {
     if (sx === null || REDUCED_MOTION || pendingSlide) return;
@@ -2828,11 +2891,21 @@ function consumeSlide() {
       if (Math.abs(dx) < 12 && Math.abs(dy) < 12) return;
       axis = Math.abs(dx) > Math.abs(dy) ? 'h' : 'v';
     }
-    if (axis !== 'h') return;
+    const ch = $('page-slide');
+    if (axis === 'v') {
+      // Overscroll follow: pulling down at the top (ascend) or pushing up at
+      // the bottom (descend) drags the page a little, damped -- it's a level
+      // gesture, not a free pan. Anywhere else, scrolling proceeds untouched.
+      const engaged = (atTop && dy > 0) || (atBottom && dy < 0);
+      if (!engaged) return;
+      const damp = canStepVertical(dy < 0 ? 1 : -1) ? 0.5 : 0.18;
+      ch.style.transition = 'none';
+      ch.style.transform = `translateY(${dy * damp}px)`;
+      return;
+    }
     // Follow the finger; a direction with no neighbour -- or one whose data
     // hasn't finished prefetching -- only rubber-bands.
     const damp = canStep(dx < 0 ? 1 : -1) ? 1 : 0.25;
-    const ch = $('page-slide');
     ch.style.transition = 'none';
     ch.style.transform = `translateX(${dx * damp}px)`;
   }, { passive: true });
@@ -2844,9 +2917,15 @@ function consumeSlide() {
     sx = null;
     const dir = dx < 0 ? 1 : -1;   // swiping left turns to the next page
     const turn = dt <= 600 && Math.abs(dx) >= 60 && Math.abs(dy) <= Math.abs(dx) * 0.6;
+    const vdir = dy < 0 ? 1 : -1;  // pushing up descends a level, pulling down ascends
+    const vTurn = dt <= 600 && Math.abs(dy) >= 70 && Math.abs(dx) <= Math.abs(dy) * 0.6 &&
+                  ((vdir < 0 && atTop) || (vdir > 0 && atBottom));
     if (turn && !pendingSlide && canStep(dir)) {
       if (REDUCED_MOTION) swipeStep(dir);
       else slideOutAndStep(dir);
+    } else if (vTurn && !pendingSlide && canStepVertical(vdir)) {
+      if (REDUCED_MOTION) swipeStepVertical(vdir);
+      else slideOutAndStep(vdir, 'y');
     } else if (!pendingSlide) {
       snapBack();
     }
