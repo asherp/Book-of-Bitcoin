@@ -1791,7 +1791,10 @@ function renderFrontispiece(header) {
 // title in both dresses; Genesis keeps its short "Genesis" form.
 function renderChapterHead(onTitlePage) {
   const { volume, book, chapter } = volumeBookChapter(state.height);
-  showEyebrowCrumbs(true, true);   // a volume/book leaf may have hidden them
+  // The chapter's own page carries the Volume · Book crumbs; a section's
+  // running head carries just the chapter (the crumb back to its page) --
+  // the higher levels are a swipe or a crumb away, not a headline.
+  showEyebrowCrumbs(onTitlePage, onTitlePage);
   $('ch-volume').textContent = volume.toLocaleString();
   $('ch-book').textContent = book.toLocaleString();
   const isGenesis = volume === 1 && book === 1 && chapter === 1;
@@ -1802,11 +1805,10 @@ function renderChapterHead(onTitlePage) {
   const inline = $('ch-chapter-inline');
   inline.textContent = '';
   if (!onTitlePage) {
-    inline.append(' · ');
     const crumb = document.createElement('button');
     crumb.type = 'button';
     crumb.className = 'crumb';
-    crumb.textContent = eventTitle || `Chapter ${chapter}`;
+    crumb.textContent = `Chapter ${chapter.toLocaleString()}`;
     crumb.title = `Chapter page (${reference(state.height)})`;
     crumb.setAttribute('aria-label', `Open this chapter's own page (${reference(state.height)})`);
     crumb.addEventListener('click', () => { rememberTrail(); state.index = -1; showCurrentTx(); });
