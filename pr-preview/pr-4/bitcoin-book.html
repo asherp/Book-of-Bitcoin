@@ -2634,7 +2634,7 @@ function levelTarget(direction) {   // +1 descend (deeper), -1 ascend
     if (state.index >= 0) return { height: state.height, idx: -1, free: true };   // this block is already loaded
     if (state.index === -1) return { height: bookStartOf(state.height), idx: -2 };
     if (state.index === -2) return { height: volumeStartOf(state.height), idx: -3 };
-    return null;                    // a volume has no parent
+    return { toc: true };           // above the volumes sits the table of contents
   }
   // Descending from a leaf is exactly the linear next page (volume → its
   // first book, book → its chapter, chapter → §1); a section has no child.
@@ -2646,11 +2646,18 @@ function canStepVertical(direction) {
   // Descending from a volume or book leaf stays within the loaded block;
   // only a chapter's descent into §1 has data to wait for.
   if (direction > 0) return state.index === -1 ? downReady : true;
-  return !!t.free || upReady;
+  return !!t.free || !!t.toc || upReady;   // the contents page is precached by the service worker
 }
 function swipeStepVertical(direction) {
   const t = levelTarget(direction);
   if (!t) return;
+  if (t.toc) {
+    // The turn's exit has played (or reduced motion skipped it); the contents
+    // page finishes the entrance itself, sliding in from the top on arrival.
+    try { sessionStorage.setItem('glossia-toc-entrance', '1'); } catch {}
+    location.href = './bitcoin-contents.html';
+    return;
+  }
   if (t.linear) { stepNow(1); return; }
   if (t.free) { state.index = t.idx; showCurrentTx(); return; }
   openLeafAt(t.height, t.idx);

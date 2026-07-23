@@ -16,6 +16,16 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="βook of βitcoin">
 <script>
+  // Arriving by the book page's pull-down-above-the-volume gesture: finish
+  // that carousel turn here, sliding the contents in from the top. The flag
+  // is set just before the navigation and consumed on first paint.
+  try {
+    if (sessionStorage.getItem('glossia-toc-entrance')) {
+      sessionStorage.removeItem('glossia-toc-entrance');
+      document.documentElement.classList.add('toc-entrance');
+    }
+  } catch (_) {}
+
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('./sw.js').catch((e) => console.warn('SW registration failed:', e));
@@ -77,6 +87,12 @@
 * { box-sizing: border-box; }
 html, body { margin: 0; }
 body { min-height: 100vh; background: var(--page); color: var(--ink); font-family: 'Public Sans', system-ui, sans-serif; line-height: 1.55; }
+/* The entering half of the book page's ascend-above-the-volume turn: the
+   contents slide down into place, matching the carousel's pace. */
+@media (prefers-reduced-motion: no-preference) {
+  .toc-entrance body { animation: toc-in .22s ease-out; }
+  @keyframes toc-in { from { transform: translateY(-100vh); } }
+}
 .wrap { max-width: 720px; margin: 0 auto; padding: 48px 22px 100px; }
 a { color: var(--accent); text-decoration: none; }
 a:hover { text-decoration: underline; }
