@@ -215,6 +215,10 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 .chapter-frontispiece .cfx + .cfx::before { content: ' · '; color: var(--meta); }
 /* The difficulty target (β) and nonce (η): proof-of-work marks, shown gold. */
 .chapter-frontispiece .cfx-gold { color: var(--accent); }
+/* A hash rendered as prose reads in the hash-prose voice -- the italic serif
+   of the chapter and section hashes -- not the frontispiece's decoded-number
+   mono. */
+.chapter-frontispiece .cfx-serif { font: italic 400 14.5px/1.55 'Newsreader',serif; }
 /* The merkle root's ⋔ mark: the clickable handle for its hash menu (copy hex /
    prose), bold and accented (like the h data mark) so it reads as the actionable
    element while the root's prose beside it stays plain. */
@@ -1520,16 +1524,16 @@ function renderFrontispiece(header) {
     isGenesisPrev
       ? { text: prevProse, title: 'no earlier block — this is the genesis block' }
       : { text: prevProse, mark: 'h', markClass: 'dt', copy: { hex: header.prevBlockHash, label: 'previous block hash' } },
-    { text: merkleProse, mark: '⋔', markClass: 'merkle-mark', copy: { hex: header.merkleRoot, label: 'merkle root' } },
+    { text: merkleProse, mark: '⋔', markClass: 'merkle-mark', serif: true, copy: { hex: header.merkleRoot, label: 'merkle root' } },
     { text: hf.timestamp, title: hf.timestampTitle },
     // The difficulty target (β) and nonce (η) are the proof-of-work marks, gold
     // like their counterparts in the body prose's mining preamble.
     { text: hf.bits, title: hf.bitsTitle, gold: true },
     { text: hf.nonce, title: hf.nonceTitle, gold: true },
   ];
-  for (const { text, title, copy, mark, markClass, gold } of items) {
+  for (const { text, title, copy, mark, markClass, gold, serif } of items) {
     const span = document.createElement('span');
-    span.className = gold ? 'cfx cfx-gold' : 'cfx';
+    span.className = 'cfx' + (gold ? ' cfx-gold' : '') + (serif ? ' cfx-serif' : '');
     if (mark && copy) {
       fillMarkedHash(span, mark, markClass, copy.hex, copy.label, text);
     } else {
