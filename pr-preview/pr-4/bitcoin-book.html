@@ -152,6 +152,11 @@ body {
    Pinch-zoom stays native either way. */
 #page-frame { overflow: clip; }
 #page-frame.carousel-first { touch-action: pan-x pinch-zoom; }
+/* Every title leaf stands as tall as a chapter page (~30rem of content), so
+   the foot nav sits in the same place whether the leaf carries a chapter's
+   full head or a volume's few lines. The min-height lives on the frame, not
+   the slide, so gesture precedence can still measure the natural content. */
+#chapter.title-leaf #page-frame { min-height: 30rem; }
 .wrap { max-width: 720px; margin: 0 auto; padding: 48px 22px 100px; }
 a { color: var(--accent); text-decoration: none; }
 a:hover { text-decoration: underline; }
@@ -2862,8 +2867,13 @@ function consumeSlide() {
 // touch-action must be in place BEFORE a gesture starts.
 const gesture = { carouselFirst: false };
 function updateGesturePrecedence() {
-  const wrap = document.querySelector('.wrap');
-  const short = wrap.getBoundingClientRect().height <= window.innerHeight + 24;
+  // Natural content height: the wrap, with the frame's min-height padding
+  // swapped out for the slide's real height -- a stretched title leaf still
+  // counts as short, keeping its carousel-first vertical swipes.
+  const wrapH = document.querySelector('.wrap').getBoundingClientRect().height;
+  const frameH = $('page-frame').getBoundingClientRect().height;
+  const slideH = $('page-slide').getBoundingClientRect().height;
+  const short = (wrapH - frameH + slideH) <= window.innerHeight + 24;
   gesture.carouselFirst = short;
   $('page-frame').classList.toggle('carousel-first', short);
 }
