@@ -1762,14 +1762,15 @@ function renderVolumeLeaf() {
   detachHashCopy(title);
   const volEnd = heightOf(volume + 1, 1, 1) - 1;
   const finished = tipHeight !== null && tipHeight >= volEnd;
-  // Absolute block heights under the block glyph (■, as references write
-  // them); an unfinished volume has no closing block to name.
+  // The books the volume spans, under the difficulty mark (β, as references
+  // write book numbers -- books restart at 1 each volume, so a finished
+  // volume reads β1 – β105); an unfinished volume has no closing book to name.
   const line = $('ch-hash-short');
   line.classList.remove('hidden');
   line.textContent = finished
-    ? `■${state.height.toLocaleString()} – ■${volEnd.toLocaleString()}`
-    : `■${state.height.toLocaleString()} —`;
-  line.title = finished ? 'the blocks this volume spans' : 'this volume is still being written';
+    ? `β1 – β${volumeBookChapter(volEnd).book}`
+    : 'β1 —';
+  line.title = finished ? 'the books this volume spans' : 'this volume is still being written';
   const firstYear = new Date(state.block.timestamp * 1000).getUTCFullYear();
   const fp = $('ch-frontispiece');
   fp.classList.remove('hidden');
