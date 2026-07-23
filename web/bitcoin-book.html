@@ -1474,10 +1474,23 @@ async function loadBlockMeta(hash, { withTxids = true } = {}) {
   return { ...core, txids };
 }
 
-async function loadBlockByHeight(height, opts) {
+// height -> block hash, memoized for heights safely below the tip. This is
+// what makes a prefetched swipe commit with zero network: the block core is
+// already cached by hash, and this removes the last repeated lookup. Heights
+// within 6 blocks of the tip are never cached, so a reorg can't pin a stale
+// mapping (past 6 confirmations a reorg is not a practical concern).
+const hashByHeight = new Map();
+async function resolveBlockHash(height) {
+  const h = Number(height);
+  if (hashByHeight.has(h)) return hashByHeight.get(h);
   const res = await esploraFetch(`${ESPLORA}/block-height/${height}`);
   if (!res.ok) throw new Error(res.status === 404 ? `No block at height ${height}.` : `Esplora returned ${res.status}.`);
-  return loadBlockMeta((await res.text()).trim(), opts);
+  const hash = (await res.text()).trim();
+  if (tipHeight !== null && h <= tipHeight - 6) hashByHeight.set(h, hash);
+  return hash;
+}
+async function loadBlockByHeight(height, opts) {
+  return loadBlockMeta(await resolveBlockHash(height), opts);
 }
 
 // A block's info JSON by height (no txid list), memoized: the light metadata
@@ -1486,9 +1499,7 @@ const infoByHeight = new Map();
 function loadBlockInfoByHeight(height) {
   if (!infoByHeight.has(height)) {
     infoByHeight.set(height, (async () => {
-      const hres = await esploraFetch(`${ESPLORA}/block-height/${height}`);
-      if (!hres.ok) throw new Error(`Esplora returned ${hres.status}.`);
-      const bres = await esploraFetch(`${ESPLORA}/block/${(await hres.text()).trim()}`);
+      const bres = await esploraFetch(`${ESPLORA}/block/${await resolveBlockHash(height)}`);
       if (!bres.ok) throw new Error(`Esplora returned ${bres.status}.`);
       return bres.json();
     })().catch((e) => { infoByHeight.delete(height); throw e; }));
