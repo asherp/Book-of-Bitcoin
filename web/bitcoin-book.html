@@ -19,6 +19,16 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="βook of βitcoin">
 <script>
+  // Arriving by the contents page's push-up-at-the-bottom gesture: finish
+  // that turn here, the book sliding in from below. Set just before the
+  // navigation, consumed on first paint.
+  try {
+    if (sessionStorage.getItem('glossia-book-entrance')) {
+      sessionStorage.removeItem('glossia-book-entrance');
+      document.documentElement.classList.add('book-entrance');
+    }
+  } catch (_) {}
+
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('./sw.js').catch((e) => console.warn('SW registration failed:', e));
@@ -136,6 +146,12 @@ body {
   min-height: 100vh; background: var(--page); color: var(--ink);
   font-family: 'Public Sans', system-ui, sans-serif; line-height: 1.55;
 }
+/* The entering half of the contents page's push-up descend: the book slides
+   up into place from below, matching the carousel's pace. */
+@media (prefers-reduced-motion: no-preference) {
+  .book-entrance body { animation: book-in .22s ease-out; }
+  @keyframes book-in { from { transform: translateY(100vh); } }
+}
 /* Contain the carousel turn entirely: the translated #page-slide clips at the
    article's own bounds (clip creates no scroll container, so nothing else
    changes), and can never widen the page or the mobile layout viewport.
@@ -152,6 +168,21 @@ body {
    Pinch-zoom stays native either way. */
 #page-frame { overflow: clip; }
 #page-frame.carousel-first { touch-action: pan-x pinch-zoom; }
+/* Every title leaf stands as tall as a chapter page (~30rem of content), so
+   the foot nav sits in the same place whether the leaf carries a chapter's
+   full head or a volume's few lines. The min-height lives on the frame, not
+   the slide, so gesture precedence can still measure the natural content. */
+#chapter.title-leaf #page-frame { min-height: 30rem; }
+/* Volume and book leaves set like a manuscript title page: the title drops
+   to the optical upper third with its mark beneath, and the span's imprint
+   (ranges, dates -- the frontispiece block) anchors near the foot, the open
+   field of the leaf between them. */
+#chapter.span-leaf #page-frame { display: flex; }
+#chapter.span-leaf #page-slide { flex: 1; display: flex; }
+#chapter.span-leaf .chapter-head { flex: 1; width: 100%; display: flex; flex-direction: column; }
+#chapter.span-leaf .chapter-title { margin-top: 4.5rem; }
+#chapter.span-leaf .chapter-hash { margin-top: 1.6rem; }
+#chapter.span-leaf .chapter-frontispiece { margin-top: auto; margin-bottom: 3.75rem; }
 .wrap { max-width: 720px; margin: 0 auto; padding: 48px 22px 100px; }
 a { color: var(--accent); text-decoration: none; }
 a:hover { text-decoration: underline; }
@@ -351,35 +382,6 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 }
 .hash-menu .hash-menu-item:hover, .hash-menu .hash-menu-item:focus-visible { background: var(--input-bg); color: var(--ink); outline: none; }
 
-/* Table of contents: a collapsible list in the lookup card -- curated notable
-   entries, then the reader's own bookmarks. Always present (the curated set is
-   never empty). */
-.contents { margin-top: 16px; }
-.contents > summary {
-  cursor: pointer; font:500 11px/1 'IBM Plex Mono',monospace; letter-spacing:.1em; text-transform:uppercase;
-  color: var(--dim); list-style: none;
-}
-.contents > summary::-webkit-details-marker { display: none; }
-.contents > summary::before { content: '+ '; color: var(--accent); }
-.contents[open] > summary::before { content: '– '; }
-.contents-list { margin-top: 12px; display: flex; flex-direction: column; gap: 2px; }
-.contents-group {
-  margin: 12px 0 4px; padding: 0 8px; font:600 10px/1 'IBM Plex Mono',monospace; letter-spacing:.12em;
-  text-transform:uppercase; color: var(--meta);
-}
-/* A contents row: title on the left, a clickable reference on the right (the
-   manuscript's citation form), and -- for a bookmark -- a remove ✕. */
-.entry-item { display: flex; align-items: baseline; gap: 10px; padding: 4px 2px; }
-.entry-title { flex: 1; min-width: 0; font: 500 13px/1.4 'Newsreader', serif; color: var(--ink-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.entry-date { flex: none; font: 400 10.5px/1.4 'IBM Plex Mono',monospace; color: var(--meta); }
-.entry-ref { flex: none; font: 600 11.5px/1.4 'IBM Plex Mono',monospace; letter-spacing: .06em; color: var(--accent); white-space: nowrap; }
-.entry-ref:hover, .entry-ref:focus-visible { color: var(--accent-2); text-decoration: underline; outline: none; }
-.entry-ref.resolving { color: var(--meta); }
-.contents .entry-del {
-  flex: none; background: transparent; color: var(--meta); border: 1px solid transparent; border-radius: 4px;
-  font: 600 11px/1 'IBM Plex Mono',monospace; padding: 4px 7px; cursor: pointer; text-transform: none;
-}
-.contents .entry-del:hover { color: var(--error); border-color: var(--input-bd); background: transparent; }
 /* A bookmark ribbon pinned to the top-right corner of a bookmarked hash's
    prose. pointer-events:none so it never intercepts the hash's own click. */
 .hash-bookmark { position: absolute; top: -4px; right: -2px; width: 10px; height: 14px; color: var(--accent); line-height: 0; pointer-events: none; }
@@ -655,11 +657,6 @@ button:disabled { opacity: .4; cursor: not-allowed; }
       <button type="button" id="block-btn">Read</button>
     </div>
     <div id="block-status" class="status-line hidden"></div>
-
-    <details id="contents" class="contents">
-      <summary>Bookmarks</summary>
-      <div id="contents-list" class="contents-list"></div>
-    </details>
   </div>
 
   <article id="chapter" class="hidden">
@@ -1020,7 +1017,7 @@ import { init, encodeSeedPhrase } from './glossia-msg.js';
 import { parseTransaction, computeTxid, parseBlockHeader, computeBlockHash } from './btc-tx.js';
 import { composeTransactionFields, composeBlockHeaderFields, groupDigits, formatBtc, renderWitness, toSuperscript, timestampInfo } from './btc-prose.js';
 import { volumeBookChapter, heightOf, toRoman, reference } from './btc-citation.js';
-import { NOTABLE, isBlockId, isRelativeBlockId, refFromProof, entryHref } from './btc-contents.js';
+import { NOTABLE } from './btc-contents.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -1818,7 +1815,10 @@ function chapterName(n) {
 
 function renderChapterHead(onTitlePage) {
   const { volume, book, chapter } = volumeBookChapter(state.height);
-  showEyebrowCrumbs(true, true);   // a volume/book leaf may have hidden them
+  // The chapter's own page carries the Volume · Book crumbs; a section's
+  // running head carries just the chapter (the crumb back to its page) --
+  // the higher levels are a swipe or a crumb away, not a headline.
+  showEyebrowCrumbs(onTitlePage, onTitlePage);
   $('ch-volume').textContent = volume.toLocaleString();
   $('ch-book').textContent = book.toLocaleString();
   const isGenesis = volume === 1 && book === 1 && chapter === 1;
@@ -1838,14 +1838,13 @@ function renderChapterHead(onTitlePage) {
   const inline = $('ch-chapter-inline');
   inline.textContent = '';
   if (!onTitlePage) {
-    inline.append(' · ');
     const crumb = document.createElement('button');
     crumb.type = 'button';
     crumb.className = 'crumb';
     crumb.textContent = (isGenesis ? 'The Genesis Block' : eventTitle) || `Chapter ${chapterName(chapter)}`;
     crumb.title = `Chapter page (${reference(state.height)})`;
     crumb.setAttribute('aria-label', `Open this chapter's own page (${reference(state.height)})`);
-    crumb.addEventListener('click', () => { state.index = -1; showCurrentTx(); });
+    crumb.addEventListener('click', () => { rememberTrail(); state.index = -1; showCurrentTx(); });
     inline.append(crumb);
   }
   $('ch-title').classList.toggle('hidden', !onTitlePage);
@@ -1895,6 +1894,7 @@ function showEyebrowCrumbs(volume, book) {
 // own leaf before the first section's page.
 function renderTitlePage() {
   renderLeafShell();
+  $('chapter').classList.remove('span-leaf');
   const { volume, book, chapter } = renderChapterHead(true);
   // The lookup field shows the chapter reference, no §: it round-trips back to
   // this very page (see parseReference).
@@ -1907,6 +1907,7 @@ function renderTitlePage() {
 // unfinished volume's range ends at the chain tip so far).
 function renderVolumeLeaf() {
   const gen = renderLeafShell();
+  $('chapter').classList.add('span-leaf');
   const { volume } = volumeBookChapter(state.height);
   showEyebrowCrumbs(false, false);
   $('ch-chapter-inline').textContent = '';
@@ -1916,31 +1917,33 @@ function renderVolumeLeaf() {
   detachHashCopy(title);
   const volEnd = heightOf(volume + 1, 1, 1) - 1;
   const finished = tipHeight !== null && tipHeight >= volEnd;
-  // The books the volume spans, under the difficulty mark (β, as references
-  // write book numbers -- books restart at 1 each volume, so a finished
-  // volume reads β1 – β105); an unfinished volume has no closing book to name.
+  // An unfinished volume's range runs to the chain tip -- its current last
+  // recorded book -- trailed by the em dash that marks it still being
+  // written; only an unknown tip leaves the range open after book 1.
+  const tipIn = !finished && tipHeight !== null && tipHeight >= state.height ? tipHeight : null;
   const line = $('ch-hash-short');
   line.classList.remove('hidden');
   line.classList.add('plain');   // a range, not hash prose -- upright
-  line.textContent = finished
-    ? `β1 – β${volumeBookChapter(volEnd).book}`
+  line.textContent = finished ? `β1 – β${volumeBookChapter(volEnd).book}`
+    : tipIn !== null ? `β1 – β${volumeBookChapter(tipIn).book} —`
     : 'β1 —';
-  line.title = finished ? 'the books this volume spans' : 'this volume is still being written';
+  line.title = finished ? 'the books this volume spans' : 'the books recorded so far — this volume is still being written';
   const firstYear = new Date(state.block.timestamp * 1000).getUTCFullYear();
   const fp = $('ch-frontispiece');
   fp.classList.remove('hidden');
-  // An unfinished volume shows only its opening year, trailed by an em dash --
-  // the range is still being written (and no closing block exists to fetch).
-  if (!finished) {
+  const yearEnd = finished ? volEnd : tipIn;
+  if (yearEnd === null) {
     fp.textContent = `${firstYear} —`;
     fp.title = 'this volume is still being written';
   } else {
     fp.textContent = `${firstYear} – …`;
-    loadBlockStamp(volEnd).then((ts) => {
+    if (!finished) fp.title = 'the years recorded so far — this volume is still being written';
+    loadBlockStamp(yearEnd).then((ts) => {
       if (gen !== renderGen) return;
       const lastYear = new Date(ts * 1000).getUTCFullYear();
-      fp.textContent = firstYear === lastYear ? String(firstYear) : `${firstYear} – ${lastYear}`;
-    }).catch(() => {});
+      const range = firstYear === lastYear ? String(firstYear) : `${firstYear} – ${lastYear}`;
+      fp.textContent = finished ? range : `${range} —`;
+    }).catch(() => { if (gen === renderGen) fp.textContent = finished ? String(firstYear) : `${firstYear} —`; });
   }
   $('block-input').value = toRoman(volume);
   labelNav();
@@ -1951,6 +1954,7 @@ function renderVolumeLeaf() {
 // book's range ends at the chain tip so far).
 function renderBookLeaf() {
   const gen = renderLeafShell();
+  $('chapter').classList.add('span-leaf');
   const { volume, book, chapterCount } = volumeBookChapter(state.height);
   showEyebrowCrumbs(true, false);
   $('ch-volume').textContent = volume.toLocaleString();
@@ -1968,6 +1972,9 @@ function renderBookLeaf() {
   $('ch-frontispiece').classList.add('hidden');
   const bookEnd = state.height + chapterCount - 1;
   const finished = tipHeight !== null && tipHeight >= bookEnd;
+  // As on the volume leaf: an open book's range runs to the tip, its current
+  // last recorded chapter, with the em dash marking it still being written.
+  const tipIn = !finished && tipHeight !== null && tipHeight >= state.height ? tipHeight : null;
   // Right beneath the title: the book's difficulty target -- a book IS one
   // difficulty window, so its first block's β mark names the target the whole
   // book was mined against.
@@ -1992,18 +1999,21 @@ function renderBookLeaf() {
   fp.classList.remove('hidden');
   fp.textContent = '';
   const range = document.createElement('div');
-  range.textContent = finished ? `■1 – ■${chapterCount.toLocaleString()}` : '■1 —';
-  range.title = finished ? 'the chapters this book spans' : 'this book is still being written';
+  range.textContent = finished ? `■1 – ■${chapterCount.toLocaleString()}`
+    : tipIn !== null ? `■1 – ■${(tipIn - state.height + 1).toLocaleString()} —`
+    : '■1 —';
+  range.title = finished ? 'the chapters this book spans' : 'the chapters recorded so far — this book is still being written';
   fp.append(range);
   const dates = document.createElement('div');
-  if (!finished) {
+  const dateEnd = finished ? bookEnd : tipIn;
+  if (dateEnd === null) {
     dates.textContent = `${timestampInfo(state.block.timestamp).mark} —`;
   } else {
     dates.textContent = `${timestampInfo(state.block.timestamp).mark} – …`;
-    loadBlockStamp(bookEnd).then((ts) => {
+    loadBlockStamp(dateEnd).then((ts) => {
       if (gen !== renderGen) return;
-      dates.textContent = `${timestampInfo(state.block.timestamp).mark} – ${timestampInfo(ts).mark}`;
-    }).catch(() => {});
+      dates.textContent = `${timestampInfo(state.block.timestamp).mark} – ${timestampInfo(ts).mark}${finished ? '' : ' —'}`;
+    }).catch(() => { if (gen === renderGen) dates.textContent = `${timestampInfo(state.block.timestamp).mark}${finished ? '' : ' —'}`; });
   }
   fp.append(dates);
   $('block-input').value = `${toRoman(volume)} β${book}`;
@@ -2012,6 +2022,7 @@ function renderBookLeaf() {
 
 function renderChapter(para) {
   $('chapter').classList.remove('title-leaf');
+  $('chapter').classList.remove('span-leaf');
   const { volume, book, chapter } = renderChapterHead(false);
 
   // Keep the lookup field showing where we are, in the same reference form the
@@ -2244,29 +2255,8 @@ function renderChapter(para) {
   labelNav();
 }
 
-// The reference each nav button leads to, abbreviated the way a table of
-// contents abbreviates consecutive entries: show a level (volume, book, chapter)
-// only when it -- or a coarser level -- differs from where the reader is now, so
-// a step within the same chapter reads as a bare "§4", one across a chapter as
-// "■5 §1", one across a book as "β2 ■5 §1", one across an era as "II β1 ■1 §1".
-// The book carries its β sigil and the chapter its ■ (see reference() in
-// btc-citation.js). A chapter jump (section === null) always ends on the ■chapter,
-// never a §section.
-function minSharedRef(cur, target, section) {
-  const dv = target.volume !== cur.volume;
-  const db = dv || target.book !== cur.book;
-  const dc = db || target.chapter !== cur.chapter;
-  const parts = [];
-  if (dv) parts.push(toRoman(target.volume));
-  if (db) parts.push(`β${target.book}`);
-  if (dc || section == null) parts.push(`■${target.chapter}`);
-  if (section != null) parts.push(`§${section}`);
-  return parts.join(' ');
-}
-
 // Label the chapter/section nav buttons, and hide any that lead nowhere (Genesis
-// has no earlier chapter/section; the chain tip's last section none later). Each
-// label is the minimum shared reference to its destination (see minSharedRef).
+// has no earlier chapter/section; the chain tip's last section none later).
 function labelNav() {
   const cur = volumeBookChapter(state.height);
   const idx = state.index;
@@ -2291,8 +2281,11 @@ function labelNav() {
   // The header steppers belong to leaves alone -- and step at the leaf's own
   // level: volumes on a volume leaf, books on a book leaf, chapters on a
   // chapter page. Section headers carry the eyebrow crumbs instead.
+  // Labels carry only the target's own level -- §4, ■5, β2, II -- never the
+  // higher-order parts of the reference: the page around the button (eyebrow
+  // crumbs, titles) already says where the reader is, and the full reference
+  // rides in each button's hover/aria label.
   const floor = minIndexOf(state.height);
-  const bookRef = (t) => (t.volume !== cur.volume ? `${toRoman(t.volume)} β${t.book}` : `β${t.book}`);
   let stepPrev = null, stepNext = null;   // { text, label } or null (hidden)
   if (idx === -3) {
     if (cur.volume > 1) {
@@ -2304,19 +2297,19 @@ function labelNav() {
   } else if (idx === -2) {
     if (state.height > 0) {
       const p = volumeBookChapter(bookStartOf(state.height - 1));
-      stepPrev = { text: bookRef(p), label: `Previous book (${toRoman(p.volume)} β${p.book})` };
+      stepPrev = { text: `β${p.book}`, label: `Previous book (${toRoman(p.volume)} β${p.book})` };
     }
     const nextStart = state.height + cur.chapterCount;
     if (tipHeight === null || nextStart <= tipHeight) {
       const n = volumeBookChapter(nextStart);
-      stepNext = { text: bookRef(n), label: `Next book (${toRoman(n.volume)} β${n.book})` };
+      stepNext = { text: `β${n.book}`, label: `Next book (${toRoman(n.volume)} β${n.book})` };
     }
   } else if (idx === -1) {
     if (state.height > 0) {
-      stepPrev = { text: minSharedRef(cur, volumeBookChapter(state.height - 1), null), label: `Previous chapter (${reference(state.height - 1)})` };
+      stepPrev = { text: `■${volumeBookChapter(state.height - 1).chapter}`, label: `Previous chapter (${reference(state.height - 1)})` };
     }
     if (!atTip) {
-      stepNext = { text: minSharedRef(cur, volumeBookChapter(state.height + 1), null), label: `Next chapter (${reference(state.height + 1)})` };
+      stepNext = { text: `■${volumeBookChapter(state.height + 1).chapter}`, label: `Next chapter (${reference(state.height + 1)})` };
     }
   }
   showBtn('chapter-prev', !!stepPrev);
@@ -2333,10 +2326,10 @@ function labelNav() {
   // … previous block's last § → volume leaf → book leaf → chapter page → §1 …
   if (hasPrevSection) {
     if (idx > 0) {
-      setBtn('page-prev', minSharedRef(cur, cur, idx), `Previous section (${reference(state.height)} §${idx})`);   // same chapter, target section = current 1-based index minus one
+      setBtn('page-prev', `§${idx}`, `Previous section (${reference(state.height)} §${idx})`);   // same chapter, target section = current 1-based index minus one
     } else if (idx === 0) {
       // §1 pages back to this chapter's own page -- the chapter-level reference.
-      setBtn('page-prev', minSharedRef(cur, cur, null), `Chapter page (${reference(state.height)})`);
+      setBtn('page-prev', `■${cur.chapter}`, `Chapter page (${reference(state.height)})`);
     } else if (idx - 1 >= floor) {
       // Up the leaf stack within this block: chapter page → book leaf → volume leaf.
       if (idx === -1) setBtn('page-prev', `β${cur.book}`, `Book page (${toRoman(cur.volume)} β${cur.book})`);
@@ -2345,10 +2338,9 @@ function labelNav() {
       // Off the block's first page, back into the prior block's final section;
       // its §number is that block's tx count, unknown until it loads -- shown
       // as § once resolved.
-      const t = volumeBookChapter(state.height - 1);
-      setBtn('page-prev', minSharedRef(cur, t, '…'), `Previous section (end of ${reference(state.height - 1)})`);
+      setBtn('page-prev', '§…', `Previous section (end of ${reference(state.height - 1)})`);
       loadBlockTxCount(state.height - 1)
-        .then((n) => { if (gen === renderGen) setBtn('page-prev', minSharedRef(cur, t, n), `Previous section (${reference(state.height - 1)} §${n})`); })
+        .then((n) => { if (gen === renderGen) setBtn('page-prev', `§${n}`, `Previous section (${reference(state.height - 1)} §${n})`); })
         .catch(() => {});
     }
   }
@@ -2356,11 +2348,11 @@ function labelNav() {
     if (idx === -3) {
       setBtn('page-next', `β${cur.book}`, `Book page (${toRoman(cur.volume)} β${cur.book})`);
     } else if (idx === -2) {
-      setBtn('page-next', minSharedRef(cur, cur, null), `Chapter page (${reference(state.height)})`);
+      setBtn('page-next', `■${cur.chapter}`, `Chapter page (${reference(state.height)})`);
     } else if (idx === -1) {
-      setBtn('page-next', minSharedRef(cur, cur, 1), `First section (${reference(state.height)} §1)`);   // the chapter page opens onto §1
+      setBtn('page-next', '§1', `First section (${reference(state.height)} §1)`);   // the chapter page opens onto §1
     } else if (idx < state.txCount - 1) {
-      setBtn('page-next', minSharedRef(cur, cur, idx + 2), `Next section (${reference(state.height)} §${idx + 2})`);   // same chapter, target section = current 1-based index plus one
+      setBtn('page-next', `§${idx + 2}`, `Next section (${reference(state.height)} §${idx + 2})`);   // same chapter, target section = current 1-based index plus one
     } else {
       // Crosses onto the next block's first page -- its volume or book leaf
       // when it opens one, else its chapter page.
@@ -2368,8 +2360,8 @@ function labelNav() {
       const nFloor = minIndexOf(nh);
       const t = volumeBookChapter(nh);
       if (nFloor === -3) setBtn('page-next', toRoman(t.volume), `Volume page (${toRoman(t.volume)})`);
-      else if (nFloor === -2) setBtn('page-next', bookRef(t), `Book page (${toRoman(t.volume)} β${t.book})`);
-      else setBtn('page-next', minSharedRef(cur, t, null), `Next chapter (${reference(nh)})`);
+      else if (nFloor === -2) setBtn('page-next', `β${t.book}`, `Book page (${toRoman(t.volume)} β${t.book})`);
+      else setBtn('page-next', `■${t.chapter}`, `Next chapter (${reference(nh)})`);
     }
   }
 
@@ -2671,6 +2663,7 @@ $('chapter-next').addEventListener('click', () => goToLevel(1));
 // just re-render at the leaf; otherwise load the span's first block.
 const openCrumb = (height, idx) => {
   if (!state) return;
+  rememberTrail();   // a crumb is an ascent too -- descents retrace it
   if (state.height === height) { state.index = idx; showCurrentTx(); }
   else openLeafAt(height, idx);
 };
@@ -2718,13 +2711,57 @@ function swipeStep(direction) {
 // from the scroll boundaries a vertical drag is just scrolling.
 let upReady = false;    // the ascend target's data is loaded (see prefetchNeighbors)
 let downReady = false;  // a chapter page's §1 is warmed (leaf descents are same-block, always ready)
+
+// Descend memory: every ascent (vertical swipe or crumb) records the full
+// trail below the page it leaves for, keyed by the parent leaf's index, so
+// descents retrace the reader's path -- volume back to THE book, book back
+// to THE chapter, chapter back to THE section -- instead of each span's
+// first child. Entries are validated against the current span before use;
+// horizontal travel simply makes them stale, and descents fall back to the
+// first child.
+const descentMemory = { '-1': null, '-2': null, '-3': null };
+function rememberTrail() {
+  if (!state) return;
+  if (state.index >= 0) descentMemory['-1'] = { height: state.height, idx: state.index };
+  if (state.index >= -1) descentMemory['-2'] = { height: state.height, idx: -1 };
+  if (state.index >= -2) descentMemory['-3'] = { height: bookStartOf(state.height), idx: -2 };
+  try { sessionStorage.setItem('glossia-toc-descend', String(volumeStartOf(state.height))); } catch {}
+}
+function rememberedChild() {
+  if (!state) return null;
+  if (state.index === -1) {
+    const m = descentMemory['-1'];
+    return m && m.height === state.height ? m : null;
+  }
+  if (state.index === -2) {
+    const m = descentMemory['-2'];
+    return m && bookStartOf(m.height) === state.height ? m : null;
+  }
+  if (state.index === -3) {
+    const m = descentMemory['-3'];
+    return m && volumeStartOf(m.height) === state.height ? m : null;
+  }
+  return null;
+}
+async function descendTo(m) {
+  if (m.idx >= 0) {
+    // A remembered section within this chapter.
+    try { await ensureTxids(state); }
+    catch (e) { setStatus(e.message || 'Failed to load the transaction list.', 'err'); return; }
+    state.index = Math.min(m.idx, state.txCount - 1);
+    try { await showCurrentTx(); } catch (e) { setStatus(e.message || 'Failed to load transaction.', 'err'); }
+    return;
+  }
+  if (m.height === state.height) { state.index = m.idx; showCurrentTx(); return; }
+  openLeafAt(m.height, m.idx);
+}
 function levelTarget(direction) {   // +1 descend (deeper), -1 ascend
   if (!state) return null;
   if (direction < 0) {
     if (state.index >= 0) return { height: state.height, idx: -1, free: true };   // this block is already loaded
     if (state.index === -1) return { height: bookStartOf(state.height), idx: -2 };
     if (state.index === -2) return { height: volumeStartOf(state.height), idx: -3 };
-    return null;                    // a volume has no parent
+    return { toc: true };           // above the volumes sits the table of contents
   }
   // Descending from a leaf is exactly the linear next page (volume → its
   // first book, book → its chapter, chapter → §1); a section has no child.
@@ -2734,14 +2771,27 @@ function canStepVertical(direction) {
   const t = levelTarget(direction);
   if (!t) return false;
   // Descending from a volume or book leaf stays within the loaded block;
-  // only a chapter's descent into §1 has data to wait for.
-  if (direction > 0) return state.index === -1 ? downReady : true;
-  return !!t.free || upReady;
+  // only a chapter's descent into §1 has data to wait for (a remembered
+  // section was visited moments ago -- its data is cached).
+  if (direction > 0) return state.index === -1 ? (downReady || !!rememberedChild()) : true;
+  return !!t.free || !!t.toc || upReady;   // the contents page is precached by the service worker
 }
 function swipeStepVertical(direction) {
   const t = levelTarget(direction);
   if (!t) return;
-  if (t.linear) { stepNow(1); return; }
+  if (direction < 0) rememberTrail();   // ascents leave the trail descents retrace
+  if (t.toc) {
+    // The turn's exit has played (or reduced motion skipped it); the contents
+    // page finishes the entrance itself, sliding in from the top on arrival.
+    try { sessionStorage.setItem('glossia-toc-entrance', '1'); } catch {}
+    location.href = './bitcoin-contents.html';
+    return;
+  }
+  if (t.linear) {
+    const m = rememberedChild();
+    if (m) descendTo(m); else stepNow(1);
+    return;
+  }
   if (t.free) { state.index = t.idx; showCurrentTx(); return; }
   openLeafAt(t.height, t.idx);
 }
@@ -2957,8 +3007,16 @@ function consumeSlide() {
 // touch-action must be in place BEFORE a gesture starts.
 const gesture = { carouselFirst: false };
 function updateGesturePrecedence() {
-  const wrap = document.querySelector('.wrap');
-  const short = wrap.getBoundingClientRect().height <= window.innerHeight + 24;
+  // Natural content height: the wrap, with the frame's min-height padding
+  // swapped out for the slide's real height -- a stretched title leaf still
+  // counts as short, keeping its carousel-first vertical swipes. Volume/book
+  // leaves stretch the slide itself (manuscript layout), so they are
+  // carousel-first by construction: their content is a handful of lines.
+  const spanLeaf = $('chapter').classList.contains('span-leaf');
+  const wrapH = document.querySelector('.wrap').getBoundingClientRect().height;
+  const frameH = $('page-frame').getBoundingClientRect().height;
+  const slideH = $('page-slide').getBoundingClientRect().height;
+  const short = spanLeaf || (wrapH - frameH + slideH) <= window.innerHeight + 24;
   gesture.carouselFirst = short;
   $('page-frame').classList.toggle('carousel-first', short);
 }
@@ -3195,7 +3253,6 @@ function addBookmark(entry, title) {
     bookmarks.unshift({ hex: entry.hex, label: entry.label, prose: entry.prose, title, height: place.height, pos: place.pos }); // newest first
   }
   saveBookmarks();
-  renderContents();
   syncHashFlags();
   return true;
 }
@@ -3204,7 +3261,6 @@ function removeBookmark(hex) {
   if (i < 0) return;
   bookmarks.splice(i, 1);
   saveBookmarks();
-  renderContents();
   syncHashFlags();
 }
 
@@ -3242,94 +3298,6 @@ function suggestTitle(entry) {
   const genesis = volume === 1 && book === 1 && chapter === 1;
   if (place.pos != null) return `${toRoman(volume)} β${book} ■${chapter} §${place.pos + 1}`;
   return genesis ? 'The Genesis Block' : `Chapter ${chapterName(chapter)}`;
-}
-
-// Open a contents entry by its identifier -- a height, block hash, or txid --
-// through the same lookup the input uses. The loaded chapter refreshes the field.
-function openEntry(id, index = -1) {
-  $('block-input').value = id;
-  openLookup(id, index);
-}
-
-// The clickable reference for a row -- the manuscript's own citation form. A
-// block's is known offline; a transaction's is resolved by the same citation
-// lookup the reader uses (resolveCitation → merkle-proof), streaming in when
-// ready. A bare bookmark (which may be a block hash, not a txid) just links
-// its short hash. Clicking navigates in place, like a citation.
-function contentsRef(id, { resolve = true, index, page } = {}) {
-  const ref = document.createElement('a');
-  ref.className = 'entry-ref';
-  ref.href = entryHref(id, index, page);
-  ref.addEventListener('click', (e) => { e.preventDefault(); openEntry(id, page === 'book' ? -2 : index ?? -1); });
-  if (isBlockId(id) && page === 'book') {
-    // A book entry cites volume and book alone -- its leaf has no chapter.
-    const { volume, book } = volumeBookChapter(Number(id));
-    ref.textContent = `${toRoman(volume)} β${book}`;
-  } else if (isBlockId(id)) {
-    ref.textContent = refFromProof(Number(id), index);
-  } else if (isRelativeBlockId(id)) {
-    // A tip-relative id (e.g. -1 = latest block) has no offline reference; the
-    // tip resolves it to a height, then to the citation form.
-    ref.textContent = '⋯';
-    ref.classList.add('resolving');
-    loadTipHeight()
-      .then((tip) => { ref.textContent = refFromProof(Number(tip) + Number(id) + 1, index); ref.classList.remove('resolving'); })
-      .catch(() => { ref.textContent = 'latest'; ref.classList.remove('resolving'); });
-  } else if (resolve) {
-    ref.textContent = '⋯';
-    ref.classList.add('resolving');
-    resolveCitation(id)
-      .then(({ height, pos }) => { ref.textContent = refFromProof(height, pos); ref.classList.remove('resolving'); })
-      .catch(() => { ref.textContent = `${id.slice(0, 8)}…`; ref.classList.remove('resolving'); });
-  } else {
-    ref.textContent = `${id.slice(0, 8)}…`;
-  }
-  return ref;
-}
-
-// One table-of-contents row: the title, then its clickable reference. A
-// removable row (a reader's bookmark) also gets an ✕.
-function contentsRow({ id, title, date, index, page, onRemove }) {
-  const item = document.createElement('div');
-  item.className = 'entry-item';
-  const t = document.createElement('span');
-  t.className = 'entry-title';
-  t.textContent = title;
-  item.append(t);
-  if (date) { const d = document.createElement('span'); d.className = 'entry-date'; d.textContent = date; item.append(d); }
-  // A curated transaction resolves its reference; a bookmark just links its hash.
-  item.append(contentsRef(id, { resolve: !onRemove, index, page }));
-  if (onRemove) {
-    const del = document.createElement('button');
-    del.type = 'button';
-    del.className = 'entry-del';
-    del.textContent = '✕';
-    del.title = 'remove bookmark';
-    del.addEventListener('click', onRemove);
-    item.append(del);
-  }
-  return item;
-}
-
-// The table of contents: the curated notable set, then the reader's bookmarks.
-function renderContents() {
-  const list = $('contents-list');
-  list.innerHTML = '';
-  for (const e of NOTABLE) list.append(contentsRow({ id: e.id, title: e.title, date: e.date, index: e.index, page: e.page }));
-  if (bookmarks.length) {
-    const group = document.createElement('div');
-    group.className = 'contents-group';
-    group.textContent = 'Your bookmarks';
-    list.append(group);
-    for (const b of bookmarks) {
-      const short = `${b.hex.slice(0, 10)}…${b.hex.slice(-6)}`;
-      list.append(contentsRow({
-        id: b.hex,
-        title: b.title || b.prose || short,
-        onRemove: () => removeBookmark(b.hex),
-      }));
-    }
-  }
 }
 
 const hashMenu = $('hash-menu');
@@ -3443,8 +3411,6 @@ const dismissOnViewportChange = () => {
 };
 window.addEventListener('resize', dismissOnViewportChange);
 window.addEventListener('scroll', dismissOnViewportChange, true);
-
-renderContents();
 
 // Entry points, in priority order: ?txid= jumps straight to a transaction's
 // section; ?block= (with optional ?index=) opens a block -- a negative height

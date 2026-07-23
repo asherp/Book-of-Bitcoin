@@ -30,16 +30,14 @@ export const NOTABLE = [
   // would carry most of Bitcoin's history.
   { title: 'First P2PKH payment', id: '6f7cf9580f1c2dfb3c4d5d043cdbb128c640e3f20161245aa7372e9666168516' },
   { title: 'Bitcoin Pizza Day', id: '57043' },
-  // The overflow block/tx were orphaned by the corrective fork; canonical height
-  // 74,638 is the honest re-mined block that excised the ~184.4B-BTC overflow, so
-  // this entry points at the block itself (no §section) -- the supply cap's repair.
-  { title: 'Supply cap bug fix', id: '74638' },
-  // The same corrective fork carried a second ruleset: 0.3.10 also disabled a
+  // The supply-cap incident, cited at I β37 ■1846 §3 (block 74,421, section
+  // 3): the ~184.4B-BTC overflow the corrective fork went on to excise.
+  { title: 'Supply cap bug fix', id: '74421', index: 2 },
+  // The corrective fork carried a second ruleset: 0.3.10 also disabled a
   // dozen script opcodes (OP_CAT, OP_LSHIFT & co., Aug 15, 2010), following
   // 0.3.6's forced-fail OP_RETURN (July 29). Release-based soft forks with no
   // flag height, so the fork block that put the patched rules in charge of
-  // the chain is the closest thing they have to an activation chapter -- this
-  // entry deliberately shares its block with the one above.
+  // the chain is the closest thing they have to an activation chapter.
   { title: 'Script opcode purge', id: '74638' },
   // Satoshi's quiet cap: blocks past height 79,400 may not exceed 1,000,000
   // bytes -- the first height-flagged soft fork (Sept 12, 2010), and the seed
