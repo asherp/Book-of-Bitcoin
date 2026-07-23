@@ -122,17 +122,17 @@ function bitsInfo(bits) {
   return { sym: `β${toSubscript(lz)}`, title: baseTitle(` (${lz} leading zero bits)`) };
 }
 
-// ─── block version notation: ver <hp>.<english>.<signals> ──────────────
+// ─── block version notation: <hp>.<english>.<signals> ──────────────────
 //
 // A block's nVersion splits, under BIP9, into three fields: a 3-bit marker
 // (001), 16 bits of version-rolling scratch entropy (BIP320, bits 28-13,
 // spun by ASICs for extra nonce space), and 13 soft-fork signaling bits
 // (bits 12-0). The notation renders each field as the thing it is:
 //
-//   ver accio.library.100
-//       └────┬─────┘ └┬┘
-//       rolling bits  signaling bits, plain binary (leading zeros dropped,
-//       as two words  omitted when zero) -- bit 0 CSV, 1 SegWit, 2 Taproot
+//   accio.library.100
+//   └────┬─────┘ └┬┘
+//   rolling bits  signaling bits, plain binary (leading zeros dropped,
+//   as two words  omitted when zero) -- bit 0 CSV, 1 SegWit, 2 Taproot
 //
 // The word pair carries the 16 rolling bits plus a parity checksum: the pair
 // spans 6 + 11 = 17 bits, one more than the field, and the spare bit is even
@@ -141,10 +141,10 @@ function bitsInfo(bits) {
 // high digit, the HP spell the low digit (C = en·64 + hp, parity in bit 16),
 // but the spell is written first -- the two lists are disjoint, so each word
 // identifies its own list and the display order is free. The pair is always
-// present in marker form, which keeps the format unambiguous: a body that
-// starts with a word is BIP9 form, a bare integer (ver 1 .. ver 4) is a
-// pre-BIP9 version. accio.abandon -- both index 0, parity 0 -- is the idiom
-// for "no version rolling".
+// present in marker form, so BIP9 form needs no prefix at all -- it opens
+// with a word -- while a pre-BIP9 integer version keeps the traditional v
+// prefix (v1 .. v4). accio.abandon -- both index 0, parity 0 -- is the
+// idiom for "no version rolling".
 const SIGNAL_BIT_NAMES = { 0: 'CSV (BIP68/112/113)', 1: 'SegWit (BIP141)', 2: 'Taproot (BIP341)' };
 const popcount16 = (x) => x.toString(2).split('1').length - 1;
 
@@ -154,7 +154,7 @@ export function formatBlockVersion(version) {
   if ((v >>> 29) !== 0b001) {
     // Signed for display: nVersion is an int32 on the wire, and the early
     // versions (1-4) read as themselves.
-    return { text: `ver ${v | 0}`, title: `block version ${v | 0} (${hex}) — pre-BIP9 integer form` };
+    return { text: `v${v | 0}`, title: `block version ${v | 0} (${hex}) — pre-BIP9 integer form` };
   }
   const R = (v >>> 13) & 0xffff;                      // BIP320 version-rolling bits
   const S = v & 0x1fff;                               // BIP9 signaling bits
@@ -168,25 +168,24 @@ export function formatBlockVersion(version) {
         .map((b) => `bit ${b}${SIGNAL_BIT_NAMES[b] ? ' — ' + SIGNAL_BIT_NAMES[b] : ''}`).join(', ')
     : 'no soft-fork signals';
   return {
-    text: `ver ${pair}${S ? '.' + S.toString(2) : ''}`,
+    text: `${pair}${S ? '.' + S.toString(2) : ''}`,
     title: `block version ${hex} — BIP9 version-bits form; ${rolling}; ${signals}`,
   };
 }
 
-// The inverse: "ver ..." text back to the nVersion integer, or null if the
+// The inverse: notation text back to the nVersion integer, or null if the
 // text is not a well-formed version (unknown word, failed parity, oversized
 // signaling run). Word order in the pair is not significant on input -- list
 // membership disambiguates -- only the rendering above fixes spell-first.
 let WORD_INDEX = null;   // lazily built word -> { list, index } map
 export function parseBlockVersion(text) {
-  const m = String(text).trim().match(/^ver\s+(\S+)$/i);
-  if (!m) return null;
-  const parts = m[1].split('.');
-  if (parts.length === 1) {
-    if (!/^-?\d+$/.test(parts[0])) return null;
-    const n = parseInt(parts[0], 10) | 0;
+  const t = String(text).trim();
+  const legacy = t.match(/^v(-?\d+)$/i);
+  if (legacy) {
+    const n = parseInt(legacy[1], 10) | 0;
     return ((n >>> 29) & 0b111) === 0b001 ? null : n >>> 0;   // marker form never renders as an integer
   }
+  const parts = t.split('.');
   if (!WORD_INDEX) {
     WORD_INDEX = new Map();
     BIP39.forEach((w, i) => WORD_INDEX.set(w, { en: i }));
