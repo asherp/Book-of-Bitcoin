@@ -60,14 +60,14 @@ export const NOTABLE = [
   // frontispieces walk the whole notation: v1 (genesis) -> v2/v3/v4 (the
   // integer-bump era, BIP34/66/65) -> word-pair form once BIP9 version bits
   // arrive (CSV is the first version-bits fork; SegWit and Taproot follow).
-  { title: 'The Book of BIP34', id: '226128', page: 'book' },
+  { title: 'BIP34', id: '226128', page: 'book' },
   { title: 'BIP34 activation (v2)', id: '227931' },
   { title: 'First coinbase OP_RETURN', id: '246816' },
-  { title: 'The Book of BIP66', id: '363216', page: 'book' },
+  { title: 'BIP66', id: '363216', page: 'book' },
   { title: 'BIP66 activation (v3)', id: '363725' },
-  { title: 'The Book of BIP65', id: '387408', page: 'book' },
+  { title: 'BIP65', id: '387408', page: 'book' },
   { title: 'BIP65 activation (v4)', id: '388381' },
-  { title: 'The Book of CSV', id: '417648', page: 'book' },
+  { title: 'CSV', id: '417648', page: 'book' },
   { title: 'CSV activation (version bits)', id: '419328' },
   { title: 'The Second Halving', id: '420000' },
   // The blocksize-war wedge: BIP91 locked in at 476,768 and from this block
@@ -75,10 +75,10 @@ export const NOTABLE = [
   // setting bit 1 were rejected -- squeezing BIP141 over its own 95%
   // threshold. A transient rule, spent once SegWit locked in, but a soft
   // fork all the same.
-  { title: 'The Book of BIP91', id: '476448', page: 'book' },
+  { title: 'BIP91', id: '476448', page: 'book' },
   { title: 'BIP91 activation (SegWit mandate)', id: '477120' },
   { title: 'Bitcoin Cash fork', id: '478558' },
-  { title: 'The Book of SegWit', id: '480480', page: 'book' },
+  { title: 'SegWit', id: '480480', page: 'book' },
   { title: 'SegWit activation', id: '481824' },
   { title: '500K block milestone', id: '500000' },
   { title: 'The Third Halving', id: '630000' },
@@ -87,7 +87,7 @@ export const NOTABLE = [
   // actually set (…100) the way the activation chapter's no longer does.
   { title: 'Taproot lock-in', id: '687285' },
   { title: 'Romans 12:21', id: '057954bb28527ff9c7701c6fd2b7f770163718ded09745da56cc95e7606afe99' },
-  { title: 'The Book of Taproot', id: '708624', page: 'book' },
+  { title: 'Taproot', id: '708624', page: 'book' },
   // This txid sits in block 709,632 (Nov 14, 2021), the Taproot activation
   // block, so the citation resolves into the activation chapter at its
   // §section -- an early P2TR payment mined the moment the rules went live.
