@@ -25,6 +25,10 @@ import { reference } from './btc-citation.js';
 export const NOTABLE = [
   { title: 'The Times 03/Jan/2009 Chancellor on brink of second bailout for banks', id: '4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b' },
   { title: 'Hal Finney transaction', id: 'f4184fc596403b9d638783cf57adfe4c75c605f6356fbc91338530e9831e9e16' },
+  // Four days after the Finney transaction (Jan 16, 2009): the first payment
+  // to a hash of a public key rather than the key itself -- the form that
+  // would carry most of Bitcoin's history.
+  { title: 'First P2PKH payment', id: '6f7cf9580f1c2dfb3c4d5d043cdbb128c640e3f20161245aa7372e9666168516' },
   { title: 'Bitcoin Pizza Day', id: '57043' },
   // The overflow block/tx were orphaned by the corrective fork; canonical height
   // 74,638 is the honest re-mined block that excised the ~184.4B-BTC overflow, so
@@ -49,6 +53,9 @@ export const NOTABLE = [
   { title: 'Duplicate coinbase (BIP30)', id: '91842' },
   { title: '100K block milestone', id: '100000' },
   { title: 'Eligius', id: '139690' },
+  // Block 164,467 (Jan 30, 2012): the first bare-multisig output -- 1-of-2,
+  // one signature from a choice of two keys (BIP11).
+  { title: 'First multisig (1-of-2)', id: '60a20bd93aa49ab4b28d514ec10b06e1829ce6818ec06cd3aabd013ebcdc4bb1' },
   { title: 'First P2SH spend', id: 'e5779b9e78f9650debc2893fd9636d827b26b4ddfa6a8172fe8708c924f5c39d' },
   // April 1, 2012 (no joke): the first block mined under BIP16 rules. The
   // first P2SH spend above predates enforcement -- pre-activation, such
@@ -63,6 +70,9 @@ export const NOTABLE = [
   { title: 'BIP34', id: '226128', page: 'book' },
   { title: 'BIP34 activation (v2)', id: '227931' },
   { title: 'First coinbase OP_RETURN', id: '246816' },
+  // The first OP_RETURN under 0.9.0's standardness (Mar 2014), and the data
+  // it chose to immortalize: "charley loves heidi".
+  { title: 'First standard OP_RETURN', id: '8bae12b5f4c088d940733dcd1455efc6a3a69cf9340e17a981286d3778615684' },
   { title: 'BIP66', id: '363216', page: 'book' },
   { title: 'BIP66 activation (v3)', id: '363725' },
   { title: 'BIP65', id: '387408', page: 'book' },
@@ -80,6 +90,15 @@ export const NOTABLE = [
   { title: 'Bitcoin Cash fork', id: '478558' },
   { title: 'SegWit', id: '480480', page: 'book' },
   { title: 'SegWit activation', id: '481824' },
+  // The activation block's own firsts. The first witness ever used spent a
+  // P2SH-wrapped P2WPKH funded 159 blocks early (481,665) -- parked looking
+  // like any P2SH payment, revealed the moment the rules went live. The
+  // first native outputs (a P2WPKH and a P2WSH) follow in the same block;
+  // the P2WSH's reveal -- a 2-of-3 multisig under the hash -- came only when
+  // spent, and its citation resolves to wherever that spend landed.
+  { title: 'First SegWit spend', id: '8f907925d2ebe48765103e6845c06f1f2bb77c6adc1cc002865865eb5cfd5c1c' },
+  { title: 'First native SegWit outputs', id: 'dfcec48bb8491856c353306ab5febeb7e99e4d783eedf3de98f3ee0812b92bad' },
+  { title: 'First P2WSH reveal (2-of-3)', id: 'b38a88b073743bcc84170071cff4b68dec6fb5dc0bc8ffcb3d4ca632c2c78255' },
   { title: '500K block milestone', id: '500000' },
   { title: 'The Third Halving', id: '630000' },
   // The Speedy Trial threshold moment -- the widely cited lock-in block, mined
@@ -111,11 +130,14 @@ export const NOTABLE = [
 // e.g. { title: '…', id: '100000', index: 1 } opens block 100000, §2.
 
 // More transaction-level entries still to confirm against the chain before
-// adding: payment-type firsts (P2PKH, P2WPKH/P2WSH, P2TR key/script, OP_RETURN
-// spend) and a Lightning force-close revealing an HTLC. For the version story,
-// still to confirm: the first version-rolled (overt-AsicBoost, BIP320) block --
-// no canonical height exists, so it needs a chain scan to identify a good
-// exemplar whose frontispiece breaks the accio.abandon idiom.
+// adding: the first P2TR output ever (a purse.io withdrawal of 5,431 sats,
+// Dec 17, 2019, pre-activation -- txid still to confirm) and the first P2TR
+// key-path and script-path spends; a Lightning force-close revealing an HTLC
+// (the famous first LN payment, Dec 28, 2017, was off-chain, so it needs an
+// on-chain artifact). For the version story, still to confirm: the first
+// version-rolled (overt-AsicBoost, BIP320) block -- no canonical height
+// exists, so it needs a chain scan to identify a good exemplar whose
+// frontispiece breaks the accio.abandon idiom.
 
 // A bare non-negative integer is an absolute block height. A negative integer is
 // a height relative to the chain tip (-1 = latest block), resolved online.
