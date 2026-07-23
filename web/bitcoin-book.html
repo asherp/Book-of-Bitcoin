@@ -292,11 +292,12 @@ button:disabled { opacity: .4; cursor: not-allowed; }
    root, timestamp, difficulty target, nonce -- in wire order, under the
    chapter hash. A small mono line, like the manuscript's other margin notes;
    each field carries its decoded form in `title` (a tooltip). */
-/* Set in the hash-prose serif, one shade quieter (meta vs dim) -- upright by
-   default: only the hash proses themselves italicize (.cfx-hash), the decoded
-   fields (version, timestamp, β, η nonce) stand plain. */
-.chapter-frontispiece { margin: 0 auto 4px; max-width: 46ch; font: 400 14.5px/1.55 'Newsreader',serif; color: var(--meta); }
-.chapter-frontispiece .cfx-hash { font-style: italic; }
+/* The block header reads in the italic serif voice, one shade quieter than
+   the chapter hash above it (meta vs dim) -- but the two hash proses inside
+   it (previous block hash, merkle root) stand upright, so the header's own
+   fields and the encoded hashes read as two different registers. */
+.chapter-frontispiece { margin: 0 auto 4px; max-width: 46ch; font: italic 400 14.5px/1.55 'Newsreader',serif; color: var(--meta); }
+.chapter-frontispiece .cfx-hash { font-style: normal; }
 /* Each header field on its own line, a breath of space between fields --
    the two hash proses run long, so inline middots buried the seams. */
 .chapter-frontispiece .cfx { display: block; }
