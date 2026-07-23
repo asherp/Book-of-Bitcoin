@@ -1575,6 +1575,30 @@ function loadTxHex(txid) {
   return p;
 }
 
+// A section's composed page -- parsed, txid-verified, Glossia-encoded fields
+// -- memoized by txid (LRU, like loadTxHex). The neighbour prefetch warms
+// this, so a swipe turn renders straight from cache with no encode work
+// inside the animation. A bulky OP_RETURN data carrier is still deferred like
+// a witness push -- its prose streams in on scroll (see lazyEncode); every
+// other body field is encoded here.
+const fieldsCache = new Map();   // txid -> { fields, verified }, LRU order
+const FIELDS_CACHE_MAX = 12;
+async function sectionFields(txid) {
+  const cached = fieldsCache.get(txid);
+  if (cached) {
+    fieldsCache.delete(txid);
+    fieldsCache.set(txid, cached);   // move to the most-recently-used end
+    return cached;
+  }
+  const hex = await loadTxHex(txid);
+  const parsed = parseTransaction(hex);
+  const verifiedTxid = await computeTxid(parsed.baseHex);
+  const entry = { fields: composeTransactionFields(parsed, BEST_OF, lazyEncode.placeholder), verified: verifiedTxid === txid };
+  fieldsCache.set(txid, entry);
+  while (fieldsCache.size > FIELDS_CACHE_MAX) fieldsCache.delete(fieldsCache.keys().next().value);
+  return entry;
+}
+
 async function showCurrentTx() {
   // A leaf (index < 0): no transaction to fetch -- the volume (-3), book (-2),
   // or chapter (-1) page renders straight from the metadata already in state.
@@ -1593,21 +1617,15 @@ async function showCurrentTx() {
   // The current txid: from the loaded list when we have it, else the single
   // transaction we opened by id (before its block's list is ever fetched).
   const txid = state.txids ? state.txids[state.index] : state.txid;
-  const hex = await loadTxHex(txid);
-
   if (!ready) await init().catch(() => {});
-  setStatus('<span class="spinner"></span>encoding as prose…');
-
-  const parsed = parseTransaction(hex);
-  const verifiedTxid = await computeTxid(parsed.baseHex);
-  // A bulky OP_RETURN data carrier is deferred like a witness push -- its prose
-  // streams in on scroll (see lazyEncode); every other body field is encoded now.
-  const fields = composeTransactionFields(parsed, BEST_OF, lazyEncode.placeholder);
-  // Witnesses aren't encoded here either -- they're the heaviest thing to render.
+  // Parse, verify, and encode -- or, when the neighbour prefetch already
+  // warmed this section, a straight cache hit (see sectionFields).
+  const { fields, verified } = await sectionFields(txid);
+  // Witnesses aren't encoded here -- they're the heaviest thing to render.
   // renderChapter marks each witness-bearing input with a footnote reference and
   // lays out the footnotes as placeholders; their prose is encoded lazily, per
   // push, as the reader scrolls to it (see lazyEncode / renderFootnotes).
-  renderChapter({ num: state.index + 1, txid, fields, verified: verifiedTxid === txid });
+  renderChapter({ num: state.index + 1, txid, fields, verified });
   updateUrl();
   $('chapter').classList.remove('hidden');
   setStatus('');
@@ -2634,6 +2652,26 @@ function stepNow(direction) {
 // (or button press) finds it instantly and nothing is fetched twice.
 let neighborReady = { '-1': false, '1': false };
 let prefetchGen = 0;
+
+// Warm the WASM encodes a chapter page will render (encodeSeedPhrase
+// memoizes, so the eventual render is a lookup). Best-effort, and skipped
+// until the engine is ready -- the render path initializes it anyway.
+function warmLeafEncodes(core) {
+  if (!ready) return;
+  try {
+    encodeSeedPhrase(trimTrailingZeroBytes(reverseHex(core.hash)), 'english', BEST_OF);
+    if (core.header.prevBlockHash !== '00'.repeat(32)) {
+      encodeSeedPhrase(trimTrailingZeroBytes(reverseHex(core.header.prevBlockHash)), 'english', BEST_OF);
+    }
+    encodeSeedPhrase(reverseHex(core.header.merkleRoot), 'english', BEST_OF);
+  } catch { /* warming is best-effort */ }
+}
+// Warm a section fully: fields composed and cached, § txid prose encoded.
+async function warmSection(txid) {
+  if (!ready) { await loadTxHex(txid); return; }   // at least the network half
+  await sectionFields(txid);
+  encodeSeedPhrase(reverseHex(txid), 'english', BEST_OF);
+}
 async function prefetchNeighbor(st, direction) {
   if (st.index < 0) {
     const { volume, chapterCount } = volumeBookChapter(st.height);
@@ -2642,17 +2680,17 @@ async function prefetchNeighbor(st, direction) {
     else if (st.index === -2) target = direction > 0 ? st.height + chapterCount : bookStartOf(st.height - 1);
     else target = st.height + direction;
     if (target < 0) return;
-    await loadBlockByHeight(target, { withTxids: false });
+    warmLeafEncodes(await loadBlockByHeight(target, { withTxids: false }));
   } else if (direction > 0) {
     if (st.index < st.txCount - 1) {
       const txids = await ensureTxids(st);
-      await loadTxHex(txids[st.index + 1]);
+      await warmSection(txids[st.index + 1]);
     } else {
-      await loadBlockByHeight(st.height + 1, { withTxids: false });
+      warmLeafEncodes(await loadBlockByHeight(st.height + 1, { withTxids: false }));
     }
   } else if (st.index > 0) {
     const txids = await ensureTxids(st);
-    await loadTxHex(txids[st.index - 1]);
+    await warmSection(txids[st.index - 1]);
   }
 }
 function prefetchNeighbors() {
@@ -2660,12 +2698,17 @@ function prefetchNeighbors() {
   neighborReady = { '-1': false, '1': false };
   if (!state) return;
   const st = state;
-  for (const dir of [-1, 1]) {
-    if (!navAvailable(dir)) continue;
-    prefetchNeighbor(st, dir)
-      .then(() => { if (gen === prefetchGen) neighborReady[dir] = true; })
-      .catch(() => {});   // a failed prefetch keeps the swipe gated; the buttons still work
-  }
+  // Deferred past the turn's entry animation: the warming encodes are main-
+  // thread work and must never stall a transition mid-commit.
+  setTimeout(() => {
+    if (gen !== prefetchGen) return;
+    for (const dir of [-1, 1]) {
+      if (!navAvailable(dir)) continue;
+      prefetchNeighbor(st, dir)
+        .then(() => { if (gen === prefetchGen) neighborReady[dir] = true; })
+        .catch(() => {});   // a failed prefetch keeps the swipe gated; the buttons still work
+    }
+  }, 350);
 }
 
 // Restore a page parked mid-turn: called by the turn's watchdog and by any
