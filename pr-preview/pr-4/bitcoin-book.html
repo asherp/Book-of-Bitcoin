@@ -1880,31 +1880,33 @@ function renderVolumeLeaf() {
   detachHashCopy(title);
   const volEnd = heightOf(volume + 1, 1, 1) - 1;
   const finished = tipHeight !== null && tipHeight >= volEnd;
-  // The books the volume spans, under the difficulty mark (β, as references
-  // write book numbers -- books restart at 1 each volume, so a finished
-  // volume reads β1 – β105); an unfinished volume has no closing book to name.
+  // An unfinished volume's range runs to the chain tip -- its current last
+  // recorded book -- trailed by the em dash that marks it still being
+  // written; only an unknown tip leaves the range open after book 1.
+  const tipIn = !finished && tipHeight !== null && tipHeight >= state.height ? tipHeight : null;
   const line = $('ch-hash-short');
   line.classList.remove('hidden');
   line.classList.add('plain');   // a range, not hash prose -- upright
-  line.textContent = finished
-    ? `β1 – β${volumeBookChapter(volEnd).book}`
+  line.textContent = finished ? `β1 – β${volumeBookChapter(volEnd).book}`
+    : tipIn !== null ? `β1 – β${volumeBookChapter(tipIn).book} —`
     : 'β1 —';
-  line.title = finished ? 'the books this volume spans' : 'this volume is still being written';
+  line.title = finished ? 'the books this volume spans' : 'the books recorded so far — this volume is still being written';
   const firstYear = new Date(state.block.timestamp * 1000).getUTCFullYear();
   const fp = $('ch-frontispiece');
   fp.classList.remove('hidden');
-  // An unfinished volume shows only its opening year, trailed by an em dash --
-  // the range is still being written (and no closing block exists to fetch).
-  if (!finished) {
+  const yearEnd = finished ? volEnd : tipIn;
+  if (yearEnd === null) {
     fp.textContent = `${firstYear} —`;
     fp.title = 'this volume is still being written';
   } else {
     fp.textContent = `${firstYear} – …`;
-    loadBlockStamp(volEnd).then((ts) => {
+    if (!finished) fp.title = 'the years recorded so far — this volume is still being written';
+    loadBlockStamp(yearEnd).then((ts) => {
       if (gen !== renderGen) return;
       const lastYear = new Date(ts * 1000).getUTCFullYear();
-      fp.textContent = firstYear === lastYear ? String(firstYear) : `${firstYear} – ${lastYear}`;
-    }).catch(() => {});
+      const range = firstYear === lastYear ? String(firstYear) : `${firstYear} – ${lastYear}`;
+      fp.textContent = finished ? range : `${range} —`;
+    }).catch(() => { if (gen === renderGen) fp.textContent = finished ? String(firstYear) : `${firstYear} —`; });
   }
   $('block-input').value = toRoman(volume);
   labelNav();
@@ -1927,6 +1929,9 @@ function renderBookLeaf() {
   $('ch-frontispiece').classList.add('hidden');
   const bookEnd = state.height + chapterCount - 1;
   const finished = tipHeight !== null && tipHeight >= bookEnd;
+  // As on the volume leaf: an open book's range runs to the tip, its current
+  // last recorded chapter, with the em dash marking it still being written.
+  const tipIn = !finished && tipHeight !== null && tipHeight >= state.height ? tipHeight : null;
   // Right beneath the title: the book's difficulty target -- a book IS one
   // difficulty window, so its first block's β mark names the target the whole
   // book was mined against.
@@ -1951,18 +1956,21 @@ function renderBookLeaf() {
   fp.classList.remove('hidden');
   fp.textContent = '';
   const range = document.createElement('div');
-  range.textContent = finished ? `■1 – ■${chapterCount.toLocaleString()}` : '■1 —';
-  range.title = finished ? 'the chapters this book spans' : 'this book is still being written';
+  range.textContent = finished ? `■1 – ■${chapterCount.toLocaleString()}`
+    : tipIn !== null ? `■1 – ■${(tipIn - state.height + 1).toLocaleString()} —`
+    : '■1 —';
+  range.title = finished ? 'the chapters this book spans' : 'the chapters recorded so far — this book is still being written';
   fp.append(range);
   const dates = document.createElement('div');
-  if (!finished) {
+  const dateEnd = finished ? bookEnd : tipIn;
+  if (dateEnd === null) {
     dates.textContent = `${timestampInfo(state.block.timestamp).mark} —`;
   } else {
     dates.textContent = `${timestampInfo(state.block.timestamp).mark} – …`;
-    loadBlockStamp(bookEnd).then((ts) => {
+    loadBlockStamp(dateEnd).then((ts) => {
       if (gen !== renderGen) return;
-      dates.textContent = `${timestampInfo(state.block.timestamp).mark} – ${timestampInfo(ts).mark}`;
-    }).catch(() => {});
+      dates.textContent = `${timestampInfo(state.block.timestamp).mark} – ${timestampInfo(ts).mark}${finished ? '' : ' —'}`;
+    }).catch(() => { if (gen === renderGen) dates.textContent = `${timestampInfo(state.block.timestamp).mark}${finished ? '' : ' —'}`; });
   }
   fp.append(dates);
   $('block-input').value = `${toRoman(volume)} β${book}`;
