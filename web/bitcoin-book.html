@@ -193,6 +193,15 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 /* Chapter (block) navigation: prev / next flanking the Volume · Book locator. */
 .chapter-nav { display:flex; align-items:center; justify-content:center; gap:16px; margin-bottom: 14px; }
 .chapter-num { font:600 11.5px/1 'IBM Plex Mono',monospace; letter-spacing:.3em; text-transform:uppercase; color: var(--accent); }
+/* The eyebrow's Volume / Book / Chapter crumbs inherit its voice exactly;
+   hover marks them navigable. (Overrides the global gold button styling.) */
+.chapter-num .crumb {
+  background: transparent; border: none; border-radius: 0; padding: 0; cursor: pointer;
+  font: inherit; letter-spacing: inherit; text-transform: inherit; color: inherit;
+}
+.chapter-num .crumb:hover:not(:disabled), .chapter-num .crumb:focus-visible {
+  background: transparent; color: var(--accent-2); text-decoration: underline; outline: none;
+}
 /* Chapter/section navigation reads as chevron-flanked references, not boxed
    buttons: a left chevron leads a Previous reference, a right chevron trails a
    Next one. Plain accent text (labels are already cased -- text-transform:none
@@ -554,9 +563,13 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 
   <article id="chapter" class="hidden">
     <header class="chapter-head">
+      <!-- The eyebrow: chapter prev/next flank it on the chapter's own page
+           (section pages page with the foot nav instead). Its Volume / Book /
+           Chapter parts are crumbs -- each opens the start of the span it
+           names (a dedicated volume/book leaf, once those exist). -->
       <nav class="chapter-nav">
         <button type="button" id="chapter-prev" class="chapter-step hidden" aria-label="Previous chapter" title="Previous chapter"></button>
-        <div class="chapter-num">Volume <span id="ch-volume"></span> · Book <span id="ch-book"></span><span id="ch-chapter-inline"></span></div>
+        <div class="chapter-num"><button type="button" id="ch-volume-link" class="crumb" title="Start of this volume">Volume <span id="ch-volume"></span></button> · <button type="button" id="ch-book-link" class="crumb" title="Start of this book">Book <span id="ch-book"></span></button><span id="ch-chapter-inline"></span></div>
         <button type="button" id="chapter-next" class="chapter-step hidden" aria-label="Next chapter" title="Next chapter"></button>
       </nav>
       <h1 class="chapter-title" id="ch-title"></h1>
@@ -1589,7 +1602,21 @@ function renderChapterHead(onTitlePage) {
   const isGenesis = volume === 1 && book === 1 && chapter === 1;
   const eventTitle = NOTABLE.find((e) => e.id === String(state.height))?.title;
   $('ch-title').textContent = isGenesis ? 'Genesis' : (eventTitle || `Chapter ${chapter.toLocaleString()}`);
-  $('ch-chapter-inline').textContent = onTitlePage ? '' : ` · ${eventTitle || `Chapter ${chapter}`}`;
+  // On a section page the running head's chapter is a crumb back to the
+  // chapter's own page -- no fetch needed, the block is already in state.
+  const inline = $('ch-chapter-inline');
+  inline.textContent = '';
+  if (!onTitlePage) {
+    inline.append(' · ');
+    const crumb = document.createElement('button');
+    crumb.type = 'button';
+    crumb.className = 'crumb';
+    crumb.textContent = eventTitle || `Chapter ${chapter}`;
+    crumb.title = `Chapter page (${reference(state.height)})`;
+    crumb.setAttribute('aria-label', `Open this chapter's own page (${reference(state.height)})`);
+    crumb.addEventListener('click', () => { state.index = -1; showCurrentTx(); });
+    inline.append(crumb);
+  }
   $('ch-title').classList.toggle('hidden', !onTitlePage);
   $('ch-hash-short').classList.toggle('hidden', !onTitlePage);
   $('ch-frontispiece').classList.toggle('hidden', !onTitlePage);
@@ -1903,8 +1930,11 @@ function labelNav() {
   // A missing neighbour hides its button rather than greying it out. The
   // chapter's own page (idx -1) precedes §1, so Genesis's title page is the
   // book's very first page; a title page always has a next (its §1).
-  const hasPrevChapter = state.height > 0;
-  const hasNextChapter = !atTip;
+  // Chapter prev/next belong to the chapter's own page alone -- a section
+  // header carries the eyebrow crumbs instead, and the foot nav pages on.
+  const onTitlePage = idx < 0;
+  const hasPrevChapter = onTitlePage && state.height > 0;
+  const hasNextChapter = onTitlePage && !atTip;
   const hasPrevSection = !(state.height === 0 && idx < 0);
   const hasNextSection = !(atTip && idx >= state.txCount - 1);
   showBtn('chapter-prev', hasPrevChapter);
@@ -2191,6 +2221,19 @@ $('page-prev').addEventListener('click', () => requestStep(-1));
 $('page-next').addEventListener('click', () => requestStep(1));
 $('chapter-prev').addEventListener('click', () => goToChapter(-1));
 $('chapter-next').addEventListener('click', () => goToChapter(1));
+// The eyebrow crumbs: each opens the start of the span it names -- for now the
+// first chapter's own page; when dedicated volume/book leaves exist, these are
+// their entry points.
+$('ch-volume-link').addEventListener('click', () => {
+  if (!state) return;
+  const { volume } = volumeBookChapter(state.height);
+  openLookup(String(heightOf(volume, 1, 1)));
+});
+$('ch-book-link').addEventListener('click', () => {
+  if (!state) return;
+  const { volume, book } = volumeBookChapter(state.height);
+  openLookup(String(heightOf(volume, book, 1)));
+});
 
 // ── Data-source picker ────────────────────────────────────────────────────
 const endpointSel = $('endpoint-select');
