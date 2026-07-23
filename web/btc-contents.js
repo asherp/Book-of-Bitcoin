@@ -20,9 +20,17 @@ export const NOTABLE = [
   // 74,638 is the honest re-mined block that excised the ~184.4B-BTC overflow, so
   // this entry points at the block itself (no §section) -- the supply cap's repair.
   { title: 'Supply cap bug fix', id: '74638' },
+  // Satoshi's quiet cap: blocks past height 79,400 may not exceed 1,000,000
+  // bytes -- the first height-flagged soft fork (Sept 12, 2010), and the seed
+  // of the block size wars.
+  { title: '1 MB size limit activation', id: '79400' },
   { title: '100K block milestone', id: '100000' },
   { title: 'Eligius', id: '139690' },
   { title: 'First P2SH spend', id: 'e5779b9e78f9650debc2893fd9636d827b26b4ddfa6a8172fe8708c924f5c39d' },
+  // April 1, 2012 (no joke): the first block mined under BIP16 rules. The
+  // first P2SH spend above predates enforcement -- pre-activation, such
+  // outputs were spendable under the old rules with the redeem script alone.
+  { title: 'BIP16 activation (P2SH)', id: '173805' },
   { title: 'First halving', id: '210000' },
   // The block-version story, told through the chapters where each version era
   // begins (heights are Bitcoin Core chainparams consensus constants). Their
@@ -44,6 +52,9 @@ export const NOTABLE = [
   // actually set (…100) the way the activation chapter's no longer does.
   { title: 'Taproot lock-in', id: '687285' },
   { title: 'Romans 12:21', id: '057954bb28527ff9c7701c6fd2b7f770163718ded09745da56cc95e7606afe99' },
+  // This txid sits in block 709,632 (Nov 14, 2021), the Taproot activation
+  // block, so the citation resolves into the activation chapter at its
+  // §section -- an early P2TR payment mined the moment the rules went live.
   { title: 'Taproot activation', id: '777c998695de4b7ecec54c058c73b2cab71184cf1655840935cd9388923dc288' },
   { title: 'First Ordinals inscription', id: '6fb976ab49dcec017f1e201e84395983204ae1a7c2abf7ced0a85d692e442799' },
   { title: 'Largest block (at the time)', id: '774628' },
@@ -55,6 +66,13 @@ export const NOTABLE = [
 // A block entry may carry an `index`: the transaction's position within the
 // block (0-based), rendered as its §section and passed to the book as ?index=.
 // e.g. { title: '…', id: '100000', index: 1 } opens block 100000, §2.
+
+// Soft forks with no activation chapter, deliberately absent: the Aug-Sept
+// 2010 opcode disablings (OP_CAT and friends, 0.3.x releases) took effect on
+// release with no flag height; BIP30 (duplicate-txid ban) switched on by
+// timestamp (Mar 15, 2012) and was later applied to nearly the whole chain;
+// BIP42 (21M cap fix, Apr 2014) changes nothing until the 2200s. BIP91 (Jul
+// 2017) was a transient SegWit-activation aid, not a lasting rule.
 
 // More transaction-level entries still to confirm against the chain before
 // adding: payment-type firsts (P2PKH, P2WPKH/P2WSH, P2TR key/script, OP_RETURN
