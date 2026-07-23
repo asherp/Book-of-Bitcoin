@@ -89,7 +89,10 @@
 :root {
   --page:#08080a; --card:#0d0d10; --card-bd:#232228; --ink:#e8e4da; --ink-soft:#cfcabf;
   --accent:#c9a25f; --accent-2:#dcb877; --btn-ink:#17140c;
-  --dim:#8a8794; --meta:#5c5a63; --rule:#1c1b21; --hair:#2a2930;
+  /* Annotation tiers, tuned for legibility on the near-black page: --dim reads
+     at ~7:1 and --meta at ~4.8:1 (WCAG AA for the small mono it's set in),
+     while both stay clearly quieter than --ink-soft body prose. */
+  --dim:#9c99a6; --meta:#7e7b88; --rule:#24232a; --hair:#2a2930;
   --input-bg:#151519; --input-bd:#2a2930; --error:#e07b6a; --ok:#7fb98a;
 }
 * { box-sizing: border-box; }
@@ -207,7 +210,7 @@ button:disabled { opacity: .4; cursor: not-allowed; }
    root, timestamp, difficulty target, nonce -- in wire order, under the
    chapter hash. A small mono line, like the manuscript's other margin notes;
    each field carries its decoded form in `title` (a tooltip). */
-.chapter-frontispiece { margin: 0 auto 4px; max-width: 46ch; font: 500 11.5px/1.7 'IBM Plex Mono',monospace; color: var(--meta); }
+.chapter-frontispiece { margin: 0 auto 4px; max-width: 46ch; font: 500 12.5px/1.7 'IBM Plex Mono',monospace; color: var(--meta); }
 /* The middot separator stays dim even between gold fields. */
 .chapter-frontispiece .cfx + .cfx::before { content: ' · '; color: var(--meta); }
 /* The difficulty target (β) and nonce (η): proof-of-work marks, shown gold. */
@@ -306,7 +309,9 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 .section-event { display:block; margin-top:.5em; font:500 15px/1.3 'Newsreader',serif; letter-spacing:0; text-transform:none; color:var(--ink-soft); }
 /* The transaction's own txid, rendered as Glossia prose beneath the section title
    (as the block hash is beneath the chapter title). */
-.section-hash { margin: 13px auto 0; max-width: 46ch; font: italic 400 14px/1.55 'Newsreader',serif; color: var(--meta); }
+/* Dim like the chapter-hash above it -- both are the identifying hash prose of
+   the thing being read, one tier under the body, not two. */
+.section-hash { margin: 13px auto 0; max-width: 46ch; font: italic 400 14.5px/1.55 'Newsreader',serif; color: var(--dim); }
 
 .chapter-body { font-family: 'Newsreader', serif; font-size: 19px; line-height: 1.75; color: var(--ink-soft); font-variant-numeric: oldstyle-nums; }
 
@@ -328,7 +333,7 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 .tx-inputs { grid-column: left / right; grid-row: 1; display: grid; grid-template-columns: subgrid; column-gap: 1.3em; align-items: start; }
 /* padding-top nudges the small-cap reference down onto the top of the taller
    prose line beside it (the two line boxes top-align, but the glyphs don't). */
-.tx-in-cite { grid-column: 1; text-align: right; padding-top: .34em; font: 500 11.5px/1.5 'IBM Plex Mono',monospace; color: var(--dim); word-break: break-word; }
+.tx-in-cite { grid-column: 1; text-align: right; padding-top: .34em; font: 500 12px/1.5 'IBM Plex Mono',monospace; color: var(--dim); word-break: break-word; }
 /* An aligned input row's left cell: this input's citation, preceded by any
    witness-input citations that came before it in the sequence and had no
    scriptSig of their own -- stacked, in order, above it. */
@@ -345,7 +350,7 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 /* An output's forward citation -- the section that later spent it -- under its
    amount in the right margin, mirroring the left margin's provenance cites.
    Empty for an unspent output. */
-.fwd-cite { margin-top: .1em; font: 500 11.5px/1.3 'IBM Plex Mono',monospace; color: var(--dim); }
+.fwd-cite { margin-top: .1em; font: 500 12px/1.3 'IBM Plex Mono',monospace; color: var(--dim); }
 .tx-in-script { grid-column: 2; min-width: 0; }
 /* Citations for inputs with no scriptSig (witness spends) + the version note.
    They share the outputs' row in the left column, so the outputs slide up beside
@@ -445,7 +450,9 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 .tx-witness-ref { font: 500 .62em/1 'IBM Plex Mono',monospace; color: var(--accent); vertical-align: super; text-decoration: none; margin-left: .12em; }
 .tx-witness-ref:hover { text-decoration: underline; }
 .chapter-footnotes { margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--rule); }
-.footnote-entry { margin: 0 0 1.1em; font: italic 400 14.5px/1.6 'Newsreader',serif; color: var(--meta); }
+/* Witness prose is on-chain content, not marginalia: dim, not meta, so the
+   footnotes stay readable at length. */
+.footnote-entry { margin: 0 0 1.1em; font: italic 400 14.5px/1.6 'Newsreader',serif; color: var(--dim); }
 .footnote-entry:target { color: var(--ink-soft); }
 .footnote-mark { font: 500 10.5px/1 'IBM Plex Mono',monospace; color: var(--accent); margin-right: .5em; font-style: normal; vertical-align: .35em; }
 
