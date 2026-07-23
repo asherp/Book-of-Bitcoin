@@ -84,7 +84,8 @@ export const NOTABLE = [
   // capped the subsidy schedule where the 64th halving's undefined bit-shift
   // would have resurrected the 50-BTC reward. Its rules first bind at height
   // 13,440,000 -- LXV β1 ■1, the opening chapter of Volume 65, due around the
-  // year 2262. Cited now, mineable later; its lookup fails until then.
+  // year 2262. Cited now, mineable later; until then its lookup answers
+  // "Block not found. Come back in the year 2262."
   { title: 'BIP42 activation (21M cap)', id: '13440000' },
 ];
 

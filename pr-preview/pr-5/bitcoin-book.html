@@ -1499,7 +1499,9 @@ async function resolveBlockHash(height) {
   const h = Number(height);
   if (hashByHeight.has(h)) return hashByHeight.get(h);
   const res = await esploraFetch(`${ESPLORA}/block-height/${height}`);
-  if (!res.ok) throw new Error(res.status === 404 ? `No block at height ${height}.` : `Esplora returned ${res.status}.`);
+  if (!res.ok) throw Object.assign(
+    new Error(res.status === 404 ? `No block at height ${height}.` : `Esplora returned ${res.status}.`),
+    { notFound: res.status === 404 });
   const hash = (await res.text()).trim();
   if (tipHeight !== null && h <= tipHeight - 6) hashByHeight.set(h, hash);
   return hash;
@@ -2393,6 +2395,24 @@ const clampIndex = (i, meta) => {
   return Math.max(i, minIndexOf(meta.height));
 };
 
+// A 404 for a height past the chain tip is not a dead lookup but a chapter
+// unwritten, so it reads as an appointment rather than an error: the year the
+// block is due, at 52,560 ten-minute blocks a year. The book's final chapter
+// -- BIP42's activation at 13,440,000, the block that opens Volume LXV --
+// keeps its storied return date instead of the drifting projection. Every
+// other failure passes through untouched.
+const BIP42_HEIGHT = 13440000;
+const BLOCKS_PER_YEAR = 52560;
+async function unwrittenOr(e, height, tipP) {
+  if (!e.notFound) return e;
+  const tip = await tipP;
+  if (tip === null || height <= tip) return e;
+  if (height === BIP42_HEIGHT) return new Error('Block not found. Come back in the year 2262.');
+  const years = (height - tip) / BLOCKS_PER_YEAR;
+  const when = years < 1 ? 'later this year' : `in the year ${new Date().getUTCFullYear() + Math.round(years)}`;
+  return new Error(`Block not found — ■${height} has not been mined yet. Come back ${when}.`);
+}
+
 // Load whatever the reader gave us: a block height, a block hash, or a
 // transaction id. A 64-hex value is either a block hash or a txid -- they're
 // indistinguishable by shape -- so it's tried as a block first and, failing
@@ -2422,7 +2442,8 @@ async function openLookup(input, index = -1) {
       setStatus('<span class="spinner"></span>fetching block…');
       // A chapter-page landing (no section index) skips the heavy txid list;
       // paging into a section fetches it on demand (ensureTxids).
-      const meta = await loadBlockByHeight(height, { withTxids: index >= 0 });
+      const meta = await loadBlockByHeight(height, { withTxids: index >= 0 })
+        .catch(async (e) => { throw await unwrittenOr(e, Number(height), tipP); });
       state = { ...meta, index: clampIndex(index, meta) };
     } else if (/^[0-9a-f]{64}$/i.test(input)) {
       const hex = input.toLowerCase();
@@ -2439,7 +2460,8 @@ async function openLookup(input, index = -1) {
       const ref = parseReference(input);
       if (!ref) throw new Error('Enter a block height, hash, transaction id, or reference (e.g. III 2 5).');
       setStatus('<span class="spinner"></span>fetching block…');
-      const meta = await loadBlockByHeight(ref.height, { withTxids: ref.index >= 0 });
+      const meta = await loadBlockByHeight(ref.height, { withTxids: ref.index >= 0 })
+        .catch(async (e) => { throw await unwrittenOr(e, Number(ref.height), tipP); });
       state = { ...meta, index: clampIndex(ref.index, meta) };
     }
     await tipP;   // record the fresh tip before labelNav decides Next visibility
