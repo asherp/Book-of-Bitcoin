@@ -115,6 +115,10 @@ export const NOTABLE = [
   { title: 'Largest block (at the time)', id: '774628' },
   { title: 'The Fourth Halving', id: '840000' },
   { title: 'Sermon on the Mount', id: 'e53ac3be05bbeb8ea3bbfb7854a4d47eea556daea25f45ad3fe953f375ff7fd8' },
+  // Block 0000000000000000000161b65dc9cf0adfdad107b801cd87f1dcf0cfbb454654:
+  // the first block to signal for BIP110 (reduced_data) -- its frontispiece
+  // shows bit 4 set (…10000), the same bit BIP91 once flew.
+  { title: 'First BIP110 signaling block', id: '938903' },
   { title: 'Latest block', id: '-1' },
   // The one activation block that does not exist yet: BIP42 (April 1, 2014)
   // capped the subsidy schedule where the 64th halving's undefined bit-shift
@@ -144,10 +148,8 @@ export const NOTABLE = [
 // July 2026. Its BIP8-style heights are citable sight unseen should it ever
 // lock in: mandatory signaling from 961,632 (V β61 ■673), lock-in by 963,648
 // (V β62 ■673), activation at 965,664 (V β63 ■673) -- three real retarget
-// boundaries, one book apart, sharing a chapter number. Until then the only
-// chain artifact is a bit-4-signaling block, which -- like the AsicBoost
-// exemplar above -- needs a chain scan to pick well; its frontispiece would
-// show …10000, the same bit BIP91 once flew.
+// boundaries, one book apart, sharing a chapter number. The signaling story's
+// exemplar is already in the list: the first bit-4 block, V β50 ■120.
 
 // A bare non-negative integer is an absolute block height. A negative integer is
 // a height relative to the chain tip (-1 = latest block), resolved online.
