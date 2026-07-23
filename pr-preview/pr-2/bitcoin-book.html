@@ -1762,10 +1762,14 @@ function renderVolumeLeaf() {
   detachHashCopy(title);
   const volEnd = heightOf(volume + 1, 1, 1) - 1;
   const finished = tipHeight !== null && tipHeight >= volEnd;
+  // Absolute block heights under the block glyph (■, as references write
+  // them); an unfinished volume has no closing block to name.
   const line = $('ch-hash-short');
   line.classList.remove('hidden');
-  line.textContent = `Blocks ${state.height.toLocaleString()} – ${volEnd.toLocaleString()}`;
-  line.title = finished ? '' : 'this volume is still being written';
+  line.textContent = finished
+    ? `■${state.height.toLocaleString()} – ■${volEnd.toLocaleString()}`
+    : `■${state.height.toLocaleString()} —`;
+  line.title = finished ? 'the blocks this volume spans' : 'this volume is still being written';
   const firstYear = new Date(state.block.timestamp * 1000).getUTCFullYear();
   const fp = $('ch-frontispiece');
   fp.classList.remove('hidden');
@@ -1802,20 +1806,38 @@ function renderBookLeaf() {
   $('ch-frontispiece').classList.add('hidden');
   const bookEnd = state.height + chapterCount - 1;
   const finished = tipHeight !== null && tipHeight >= bookEnd;
+  // Absolute block heights under the block glyph (■, as references write
+  // them); an unfinished book has no closing block to name.
   const line = $('ch-hash-short');
   line.classList.remove('hidden');
-  // An unfinished book shows only its opening date-time, trailed by an em
-  // dash -- the range is still being written (no closing block to fetch).
+  line.textContent = finished
+    ? `■${state.height.toLocaleString()} – ■${bookEnd.toLocaleString()}`
+    : `■${state.height.toLocaleString()} —`;
+  line.title = finished ? 'the blocks this book spans' : 'this book is still being written';
+  // Beneath the heights: the book's difficulty target -- a book IS one
+  // difficulty window, so its first block's β mark names the target the whole
+  // book was mined against -- then the recorded dates (em dash while the book
+  // is still being written).
+  const fp = $('ch-frontispiece');
+  fp.classList.remove('hidden');
+  fp.textContent = '';
+  const hf = composeBlockHeaderFields(state.header);
+  const beta = document.createElement('span');
+  beta.className = 'cfx-gold';
+  beta.textContent = hf.bits;
+  beta.title = hf.bitsTitle;
+  fp.append(beta);
+  const dates = document.createElement('div');
   if (!finished) {
-    line.textContent = `${timestampInfo(state.block.timestamp).mark} —`;
-    line.title = 'this book is still being written';
+    dates.textContent = `${timestampInfo(state.block.timestamp).mark} —`;
   } else {
-    line.textContent = `${timestampInfo(state.block.timestamp).mark} – …`;
+    dates.textContent = `${timestampInfo(state.block.timestamp).mark} – …`;
     loadBlockStamp(bookEnd).then((ts) => {
       if (gen !== renderGen) return;
-      line.textContent = `${timestampInfo(state.block.timestamp).mark} – ${timestampInfo(ts).mark}`;
+      dates.textContent = `${timestampInfo(state.block.timestamp).mark} – ${timestampInfo(ts).mark}`;
     }).catch(() => {});
   }
+  fp.append(dates);
   $('block-input').value = `${toRoman(volume)} β${book}`;
   labelNav();
 }
