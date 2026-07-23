@@ -292,20 +292,18 @@ button:disabled { opacity: .4; cursor: not-allowed; }
    root, timestamp, difficulty target, nonce -- in wire order, under the
    chapter hash. A small mono line, like the manuscript's other margin notes;
    each field carries its decoded form in `title` (a tooltip). */
-/* The block header reads in the italic serif voice, one shade quieter than
-   the chapter hash above it (meta vs dim) -- but the two hash proses inside
-   it (previous block hash, merkle root) stand upright, so the header's own
-   fields and the encoded hashes read as two different registers. */
-.chapter-frontispiece { margin: 0 auto 4px; max-width: 46ch; font: italic 400 14.5px/1.55 'Newsreader',serif; color: var(--meta); }
-.chapter-frontispiece .cfx-hash { font-style: normal; }
+/* The block header stands upright throughout -- fields and hash proses
+   alike; only the chapter's own hash prose above it keeps the italic voice.
+   Same contrast tier as the section pages' apparatus (dim). */
+.chapter-frontispiece { margin: 0 auto 4px; max-width: 46ch; font: 400 14.5px/1.55 'Newsreader',serif; color: var(--dim); }
 /* Each header field on its own line, a breath of space between fields --
    the two hash proses run long, so inline middots buried the seams. */
 .chapter-frontispiece .cfx { display: block; }
 .chapter-frontispiece .cfx + .cfx { margin-top: .45em; }
-/* The difficulty target (β) and nonce (η): proof-of-work marks, shown gold.
+/* The difficulty target (β): a proof-of-work mark -- gold, bold, upright.
    (.chapter-hash carries the same mark on the book leaf, where the book's
    target sits right beneath its title.) */
-.chapter-frontispiece .cfx-gold, .chapter-hash .cfx-gold { color: var(--accent); }
+.chapter-frontispiece .cfx-gold, .chapter-hash .cfx-gold { color: var(--accent); font-weight: 700; font-style: normal; }
 /* The merkle root's ⋔ mark: the clickable handle for its hash menu (copy hex /
    prose), bold and accented (like the h data mark) so it reads as the actionable
    element while the root's prose beside it stays plain. Upright, like every
@@ -1720,7 +1718,6 @@ function renderFrontispiece(header) {
     const span = document.createElement('span');
     span.className = gold ? 'cfx cfx-gold' : 'cfx';
     if (mark && copy) {
-      span.classList.add('cfx-hash');   // hash prose alone italicizes
       fillMarkedHash(span, mark, markClass, copy.hex, copy.label, text, sup, supTitle);
     } else if (mark) {
       // A marked plain field: the mark leads, the value follows -- tight
