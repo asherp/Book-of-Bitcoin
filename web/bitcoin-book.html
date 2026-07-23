@@ -131,6 +131,9 @@ html, body { margin: 0; }
 body {
   min-height: 100vh; background: var(--page); color: var(--ink);
   font-family: 'Public Sans', system-ui, sans-serif; line-height: 1.55;
+  /* The carousel page-turn translates #chapter past the viewport edge; never
+     let that manifest as a horizontal scrollbar. */
+  overflow-x: hidden;
 }
 .wrap { max-width: 720px; margin: 0 auto; padding: 48px 22px 100px; }
 a { color: var(--accent); text-decoration: none; }
@@ -1174,6 +1177,9 @@ function setStatus(msg, kind) {
   el.className = 'status-line' + (kind ? ' ' + kind : '');
   el.innerHTML = msg;
   el.classList.toggle('hidden', !msg);
+  // A failed navigation must never leave the page stranded off-screen
+  // mid-carousel-turn (see slideOutAndStep).
+  if (kind === 'err') resetSlide();
 }
 
 // The current block's info + full ordered txid list, plus which transaction
@@ -1543,6 +1549,7 @@ async function showCurrentTx() {
     updateUrl();
     $('chapter').classList.remove('hidden');
     setStatus('');
+    consumeSlide();
     return;
   }
   setStatus('<span class="spinner"></span>fetching transaction…');
@@ -1567,6 +1574,7 @@ async function showCurrentTx() {
   updateUrl();
   $('chapter').classList.remove('hidden');
   setStatus('');
+  consumeSlide();
 }
 
 // Attach a click menu to an element already showing a Glossia-encoded hash as
@@ -2509,32 +2517,110 @@ const openCrumb = (height, idx) => {
 $('ch-volume-link').addEventListener('click', () => { if (state) openCrumb(volumeStartOf(state.height), -3); });
 $('ch-book-link').addEventListener('click', () => { if (state) openCrumb(bookStartOf(state.height), -2); });
 
-// ── Swipe paging ──────────────────────────────────────────────────────────
+// ── Swipe paging with a carousel turn ─────────────────────────────────────
 // A horizontal swipe turns the page at the current level: sections swipe
 // section-to-section (the foot nav's step), a chapter/book/volume leaf swipes
-// to its level neighbour (the header steppers' step). Swiping toward a
-// neighbour that doesn't exist -- before Genesis, past the tip -- is ignored,
-// using the corresponding button's visibility as the guard so swipe and
-// button can never disagree.
-function swipeStep(direction) {
-  if (!state) return;
-  if (state.index < 0) {
-    if (!$(direction > 0 ? 'chapter-next' : 'chapter-prev').classList.contains('hidden')) goToLevel(direction);
-  } else {
-    if (!$(direction > 0 ? 'page-next' : 'page-prev').classList.contains('hidden')) requestStep(direction);
-  }
+// to its level neighbour (the header steppers' step). The page follows the
+// finger while dragging; a committed swipe slides the page off in the travel
+// direction and the destination slides in from the opposite edge once it has
+// rendered (consumeSlide). Swiping toward a neighbour that doesn't exist --
+// before Genesis, past the tip -- rubber-bands and snaps back, using the
+// corresponding button's visibility as the guard so swipe and button can
+// never disagree.
+const REDUCED_MOTION = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+let pendingSlide = 0;        // direction of an in-flight page turn (+1 next, -1 prev)
+let slideWatchdog = null;
+
+function canStep(direction) {
+  if (!state) return false;
+  const id = state.index < 0
+    ? (direction > 0 ? 'chapter-next' : 'chapter-prev')
+    : (direction > 0 ? 'page-next' : 'page-prev');
+  return !$(id).classList.contains('hidden');
 }
-// Recognize a quick, mostly-horizontal single-finger drag. Swipes that begin
-// in form fields, in horizontally scrolling regions (the pattern table), or
-// inside a popover are left to those elements.
+function swipeStep(direction) {
+  if (!canStep(direction)) return;
+  if (state.index < 0) goToLevel(direction); else requestStep(direction);
+}
+
+// Restore a page parked mid-turn: called by the turn's watchdog and by any
+// error status, so a failed load can never leave the page stranded off-screen.
+function resetSlide() {
+  pendingSlide = 0;
+  if (slideWatchdog) { clearTimeout(slideWatchdog); slideWatchdog = null; }
+  const ch = $('chapter');
+  if (!ch.style.transform && !ch.style.opacity) return;
+  ch.style.transition = 'transform .18s ease, opacity .18s ease';
+  ch.style.transform = '';
+  ch.style.opacity = '';
+}
+
+// Commit a turn: slide the page off in the travel direction (continuing from
+// wherever the drag left it), then start the navigation. The new page slides
+// in when showCurrentTx finishes (consumeSlide).
+function slideOutAndStep(direction) {
+  pendingSlide = direction;
+  if (slideWatchdog) clearTimeout(slideWatchdog);
+  slideWatchdog = setTimeout(resetSlide, 6000);
+  const ch = $('chapter');
+  ch.style.transition = 'transform .18s ease-in, opacity .18s ease-in';
+  ch.style.transform = `translateX(${direction > 0 ? '-' : ''}${window.innerWidth}px)`;
+  ch.style.opacity = '0';
+  setTimeout(() => swipeStep(direction), 170);
+}
+
+// The entering half of the turn, run after the destination has rendered: the
+// new page starts at the opposite edge and eases to rest, opening at its top.
+function consumeSlide() {
+  if (!pendingSlide) return;
+  const dir = pendingSlide;
+  pendingSlide = 0;
+  if (slideWatchdog) { clearTimeout(slideWatchdog); slideWatchdog = null; }
+  const ch = $('chapter');
+  window.scrollTo(0, 0);
+  ch.style.transition = 'none';
+  ch.style.transform = `translateX(${dir > 0 ? '' : '-'}${window.innerWidth}px)`;
+  ch.style.opacity = '0';
+  void ch.offsetWidth;   // commit the start position before animating
+  ch.style.transition = 'transform .2s ease-out, opacity .2s ease-out';
+  ch.style.transform = '';
+  ch.style.opacity = '';
+}
+
+// Recognize a quick, mostly-horizontal single-finger drag, with the axis
+// locked on first significant movement so vertical scrolling never drags the
+// page sideways. Swipes that begin in form fields, in horizontally scrolling
+// regions (the pattern table), or inside a popover are left to those elements.
 (() => {
-  let sx = null, sy = 0, st = 0;
+  let sx = null, sy = 0, st = 0, axis = null;
+  const snapBack = () => {
+    const ch = $('chapter');
+    if (!ch.style.transform) return;
+    ch.style.transition = 'transform .15s ease, opacity .15s ease';
+    ch.style.transform = '';
+    ch.style.opacity = '';
+  };
   document.addEventListener('touchstart', (e) => {
-    sx = null;
+    sx = null; axis = null;
     if (e.touches.length !== 1) return;
     const t = e.target;
     if (t.closest && t.closest('input, textarea, select, .pattern-scroll, .hash-menu, .settings-panel')) return;
     sx = e.touches[0].clientX; sy = e.touches[0].clientY; st = performance.now();
+  }, { passive: true });
+  document.addEventListener('touchmove', (e) => {
+    if (sx === null || REDUCED_MOTION || pendingSlide) return;
+    const dx = e.touches[0].clientX - sx;
+    const dy = e.touches[0].clientY - sy;
+    if (!axis) {
+      if (Math.abs(dx) < 12 && Math.abs(dy) < 12) return;
+      axis = Math.abs(dx) > Math.abs(dy) ? 'h' : 'v';
+    }
+    if (axis !== 'h') return;
+    // Follow the finger; a direction with no neighbour only rubber-bands.
+    const damp = canStep(dx < 0 ? 1 : -1) ? 1 : 0.25;
+    const ch = $('chapter');
+    ch.style.transition = 'none';
+    ch.style.transform = `translateX(${dx * damp}px)`;
   }, { passive: true });
   document.addEventListener('touchend', (e) => {
     if (sx === null || e.changedTouches.length !== 1) return;
@@ -2542,10 +2628,16 @@ function swipeStep(direction) {
     const dy = e.changedTouches[0].clientY - sy;
     const dt = performance.now() - st;
     sx = null;
-    if (dt > 600 || Math.abs(dx) < 60 || Math.abs(dy) > Math.abs(dx) * 0.6) return;
-    swipeStep(dx < 0 ? 1 : -1);   // swiping left turns to the next page
+    const dir = dx < 0 ? 1 : -1;   // swiping left turns to the next page
+    const turn = dt <= 600 && Math.abs(dx) >= 60 && Math.abs(dy) <= Math.abs(dx) * 0.6;
+    if (turn && !pendingSlide && canStep(dir)) {
+      if (REDUCED_MOTION) swipeStep(dir);
+      else slideOutAndStep(dir);
+    } else if (!pendingSlide) {
+      snapBack();
+    }
   }, { passive: true });
-  document.addEventListener('touchcancel', () => { sx = null; }, { passive: true });
+  document.addEventListener('touchcancel', () => { sx = null; if (!pendingSlide) snapBack(); }, { passive: true });
 })();
 
 // ── Data-source picker ────────────────────────────────────────────────────
