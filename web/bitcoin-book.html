@@ -1807,14 +1807,16 @@ function renderBookLeaf() {
   $('ch-frontispiece').classList.add('hidden');
   const bookEnd = state.height + chapterCount - 1;
   const finished = tipHeight !== null && tipHeight >= bookEnd;
-  // Absolute block heights under the block glyph (■, as references write
-  // them); an unfinished book has no closing block to name.
+  // The chapters the book spans, under the block glyph (■, as references
+  // write chapter numbers -- chapters restart at 1 each book, so a full book
+  // reads ■1 – ■2,016 and an era's truncated last book ■1 – ■336); an
+  // unfinished book has no closing chapter to name.
   const line = $('ch-hash-short');
   line.classList.remove('hidden');
   line.textContent = finished
-    ? `■${state.height.toLocaleString()} – ■${bookEnd.toLocaleString()}`
-    : `■${state.height.toLocaleString()} —`;
-  line.title = finished ? 'the blocks this book spans' : 'this book is still being written';
+    ? `■1 – ■${chapterCount.toLocaleString()}`
+    : '■1 —';
+  line.title = finished ? 'the chapters this book spans' : 'this book is still being written';
   // Beneath the heights: the book's difficulty target -- a book IS one
   // difficulty window, so its first block's β mark names the target the whole
   // book was mined against -- then the recorded dates (em dash while the book
