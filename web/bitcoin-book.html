@@ -1725,14 +1725,19 @@ function renderVolumeLeaf() {
   const firstYear = new Date(state.block.timestamp * 1000).getUTCFullYear();
   const fp = $('ch-frontispiece');
   fp.classList.remove('hidden');
-  fp.textContent = `${firstYear} – …`;
-  const lastRecorded = tipHeight !== null ? Math.min(volEnd, tipHeight) : volEnd;
-  loadBlockStamp(lastRecorded).then((ts) => {
-    if (gen !== renderGen) return;
-    const lastYear = new Date(ts * 1000).getUTCFullYear();
-    fp.textContent = firstYear === lastYear ? String(firstYear) : `${firstYear} – ${lastYear}`;
-    fp.title = finished ? '' : `recorded so far — the volume runs to block ${volEnd.toLocaleString()}`;
-  }).catch(() => {});
+  // An unfinished volume shows only its opening year, trailed by an em dash --
+  // the range is still being written (and no closing block exists to fetch).
+  if (!finished) {
+    fp.textContent = `${firstYear} —`;
+    fp.title = 'this volume is still being written';
+  } else {
+    fp.textContent = `${firstYear} – …`;
+    loadBlockStamp(volEnd).then((ts) => {
+      if (gen !== renderGen) return;
+      const lastYear = new Date(ts * 1000).getUTCFullYear();
+      fp.textContent = firstYear === lastYear ? String(firstYear) : `${firstYear} – ${lastYear}`;
+    }).catch(() => {});
+  }
   $('block-input').value = toRoman(volume);
   labelNav();
 }
@@ -1755,13 +1760,18 @@ function renderBookLeaf() {
   const finished = tipHeight !== null && tipHeight >= bookEnd;
   const line = $('ch-hash-short');
   line.classList.remove('hidden');
-  line.textContent = `${timestampInfo(state.block.timestamp).mark} – …`;
-  const lastRecorded = tipHeight !== null ? Math.min(bookEnd, tipHeight) : bookEnd;
-  loadBlockStamp(lastRecorded).then((ts) => {
-    if (gen !== renderGen) return;
-    line.textContent = `${timestampInfo(state.block.timestamp).mark} – ${timestampInfo(ts).mark}`;
-    line.title = finished ? '' : `recorded so far — the book runs to block ${bookEnd.toLocaleString()}`;
-  }).catch(() => {});
+  // An unfinished book shows only its opening date-time, trailed by an em
+  // dash -- the range is still being written (no closing block to fetch).
+  if (!finished) {
+    line.textContent = `${timestampInfo(state.block.timestamp).mark} —`;
+    line.title = 'this book is still being written';
+  } else {
+    line.textContent = `${timestampInfo(state.block.timestamp).mark} – …`;
+    loadBlockStamp(bookEnd).then((ts) => {
+      if (gen !== renderGen) return;
+      line.textContent = `${timestampInfo(state.block.timestamp).mark} – ${timestampInfo(ts).mark}`;
+    }).catch(() => {});
+  }
   $('block-input').value = `${toRoman(volume)} β${book}`;
   labelNav();
 }
