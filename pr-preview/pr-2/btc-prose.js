@@ -95,7 +95,7 @@ function sequenceInfo(seq) {
 const SUBSCRIPT_DIGITS = '₀₁₂₃₄₅₆₇₈₉';
 const toSubscript = (n) => String(n).split('').map((d) => SUBSCRIPT_DIGITS[+d]).join('');
 const SUPERSCRIPT_DIGITS = '⁰¹²³⁴⁵⁶⁷⁸⁹';
-const toSuperscript = (n) => String(n).split('').map((d) => SUPERSCRIPT_DIGITS[+d]).join('');
+export const toSuperscript = (n) => String(n).split('').map((d) => SUPERSCRIPT_DIGITS[+d]).join('');
 
 // nBits (a compact difficulty target) -> { sym, title }. The target is
 // rendered as the thing it is -- the ceiling a mined hash must dip under --
