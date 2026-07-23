@@ -2614,7 +2614,14 @@ function canStep(direction) {
 }
 function swipeStep(direction) {
   if (!navAvailable(direction)) return;
-  if (state.index < 0) goToLevel(direction); else requestStep(direction);
+  if (state.index < 0) goToLevel(direction); else stepNow(direction);
+}
+// A committed swipe skips the buttons' click-debounce -- it's already a
+// single, prefetch-gated gesture -- so the turn's two halves overlap tightly.
+function stepNow(direction) {
+  pendingSteps += direction;
+  if (stepTimer !== null) { clearTimeout(stepTimer); stepTimer = null; }
+  runPendingSteps();
 }
 
 // ── Neighbour prefetch ────────────────────────────────────────────────────
@@ -2663,55 +2670,75 @@ function prefetchNeighbors() {
 
 // Restore a page parked mid-turn: called by the turn's watchdog and by any
 // error status, so a failed load can never leave the page stranded off-screen.
+let slideGhost = null;
 function resetSlide() {
   pendingSlide = 0;
   if (slideWatchdog) { clearTimeout(slideWatchdog); slideWatchdog = null; }
+  if (slideGhost) { slideGhost.remove(); slideGhost = null; }
   const ch = $('page-slide');
+  ch.style.visibility = '';
   if (!ch.style.transform && !ch.style.opacity) return;
   ch.style.transition = 'transform .18s ease, opacity .18s ease';
   ch.style.transform = '';
   ch.style.opacity = '';
 }
 
-// Commit a turn: slide the page off in the travel direction (continuing from
-// wherever the drag left it), then start the navigation. The new page slides
-// in when showCurrentTx finishes (consumeSlide).
+// Commit a turn. The outgoing page is snapshotted as a fixed-position ghost
+// that keeps sliding off in the travel direction (continuing from wherever
+// the drag left it) WHILE the real element -- hidden, its layout box kept --
+// re-renders the destination and slides in from the opposite edge
+// (consumeSlide). The two halves overlap, so the turn reads as one
+// continuous carousel strip rather than out-to-black-then-in. No opacity
+// fade: pages slide, they don't dissolve.
 function slideOutAndStep(direction) {
   pendingSlide = direction;
   if (slideWatchdog) clearTimeout(slideWatchdog);
   slideWatchdog = setTimeout(resetSlide, 6000);
   const ch = $('page-slide');
-  ch.style.transition = 'transform .18s ease-in, opacity .18s ease-in';
-  ch.style.transform = `translateX(${direction > 0 ? '-' : ''}${window.innerWidth}px)`;
-  ch.style.opacity = '0';
-  setTimeout(() => {
-    // The nav header is the turn's fixed point of reference: while the page
-    // is blank and transparent, scroll back at most to the eyebrow -- never
-    // to the document top -- so a swipe from within a long section opens the
-    // new page at its header, and a swipe with the header already in view
-    // moves the viewport not at all.
-    const nav = document.querySelector('.chapter-nav');
-    const anchor = Math.max(0, nav.getBoundingClientRect().top + window.scrollY - 10);
-    if (window.scrollY > anchor) window.scrollTo(0, anchor);
-    swipeStep(direction);
-  }, 170);
+  const rect = ch.getBoundingClientRect();   // includes any drag offset
+  const ghost = ch.cloneNode(true);
+  ghost.removeAttribute('id');
+  ghost.setAttribute('aria-hidden', 'true');
+  Object.assign(ghost.style, {
+    position: 'fixed', top: rect.top + 'px', left: rect.left + 'px',
+    width: rect.width + 'px', margin: '0', zIndex: '30',
+    pointerEvents: 'none', transition: 'none', transform: 'none',
+  });
+  document.body.appendChild(ghost);
+  slideGhost = ghost;
+  ch.style.transition = 'none';
+  ch.style.transform = '';
+  ch.style.visibility = 'hidden';
+  void ghost.offsetWidth;
+  ghost.style.transition = 'transform .22s ease-in';
+  ghost.style.transform = `translateX(${direction > 0 ? '-' : ''}${window.innerWidth}px)`;
+  setTimeout(() => { if (slideGhost === ghost) { ghost.remove(); slideGhost = null; } else ghost.remove(); }, 320);
+  swipeStep(direction);   // start loading immediately -- it overlaps the ghost's exit
 }
 
 // The entering half of the turn, run after the destination has rendered: the
-// new page starts at the opposite edge and eases to rest, opening at its top.
+// new page starts at the opposite edge and eases to rest -- typically while
+// the ghost of the old page is still on its way out.
 function consumeSlide() {
   if (!pendingSlide) return;
   const dir = pendingSlide;
   pendingSlide = 0;
   if (slideWatchdog) { clearTimeout(slideWatchdog); slideWatchdog = null; }
+  // The nav header is the turn's fixed point of reference: scroll back at
+  // most to the eyebrow -- never the document top -- while the live page is
+  // still hidden, so the movement is never seen. (The ghost is fixed-
+  // position, so the scroll doesn't move it either.)
+  const nav = document.querySelector('.chapter-nav');
+  const anchor = Math.max(0, nav.getBoundingClientRect().top + window.scrollY - 10);
+  if (window.scrollY > anchor) window.scrollTo(0, anchor);
   const ch = $('page-slide');
   ch.style.transition = 'none';
   ch.style.transform = `translateX(${dir > 0 ? '' : '-'}${window.innerWidth}px)`;
-  ch.style.opacity = '0';
-  void ch.offsetWidth;   // commit the start position before animating
-  ch.style.transition = 'transform .2s ease-out, opacity .2s ease-out';
-  ch.style.transform = '';
+  ch.style.visibility = '';
   ch.style.opacity = '';
+  void ch.offsetWidth;   // commit the start position before animating
+  ch.style.transition = 'transform .22s ease-out';
+  ch.style.transform = '';
 }
 
 // Recognize a quick, mostly-horizontal single-finger drag, with the axis
