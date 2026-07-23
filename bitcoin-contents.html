@@ -16,11 +16,56 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="βook of βitcoin">
 <script>
+  // Arriving by the book page's pull-down-above-the-volume gesture: finish
+  // that carousel turn here, sliding the contents in from the top. The flag
+  // is set just before the navigation and consumed on first paint.
+  try {
+    if (sessionStorage.getItem('glossia-toc-entrance')) {
+      sessionStorage.removeItem('glossia-toc-entrance');
+      document.documentElement.classList.add('toc-entrance');
+    }
+  } catch (_) {}
+
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('./sw.js').catch((e) => console.warn('SW registration failed:', e));
     });
   }
+
+  // The descend gesture: a push UP starting at the page's bottom drops from
+  // the contents into Volume I's leaf -- the inverse of the book page's
+  // pull-down-above-the-volume. The contents slide up and away; the book
+  // page finishes the turn, entering from below (glossia-book-entrance).
+  (function () {
+    const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let sy = null, sx = 0, st = 0, atBottom = false;
+    const go = () => {
+      // Descend into the volume the reader last ascended from (recorded by
+      // the book page's trail memory); a fresh visit opens Volume I.
+      let block = '0';
+      try { block = sessionStorage.getItem('glossia-toc-descend') || '0'; } catch (_) {}
+      try { sessionStorage.setItem('glossia-book-entrance', '1'); } catch (_) {}
+      location.href = './bitcoin-book.html?block=' + encodeURIComponent(block) + '&page=volume';
+    };
+    document.addEventListener('touchstart', (e) => {
+      sy = null;
+      if (e.touches.length !== 1) return;
+      sy = e.touches[0].clientY; sx = e.touches[0].clientX; st = performance.now();
+      atBottom = window.scrollY >= document.documentElement.scrollHeight - window.innerHeight - 2;
+    }, { passive: true });
+    document.addEventListener('touchend', (e) => {
+      if (sy === null || e.changedTouches.length !== 1) return;
+      const dy = e.changedTouches[0].clientY - sy;
+      const dx = e.changedTouches[0].clientX - sx;
+      const dt = performance.now() - st;
+      sy = null;
+      if (!atBottom || dt > 600 || dy > -70 || Math.abs(dx) > Math.abs(dy) * 0.6) return;
+      if (REDUCED) { go(); return; }
+      document.body.style.transition = 'transform .2s linear';
+      document.body.style.transform = 'translateY(-100vh)';
+      setTimeout(go, 180);
+    }, { passive: true });
+  })();
 
   // Reveal an in-page Install button when the browser offers to install this
   // PWA, and drive the native prompt from it — so installing is discoverable
@@ -77,6 +122,12 @@
 * { box-sizing: border-box; }
 html, body { margin: 0; }
 body { min-height: 100vh; background: var(--page); color: var(--ink); font-family: 'Public Sans', system-ui, sans-serif; line-height: 1.55; }
+/* The entering half of the book page's ascend-above-the-volume turn: the
+   contents slide down into place, matching the carousel's pace. */
+@media (prefers-reduced-motion: no-preference) {
+  .toc-entrance body { animation: toc-in .22s ease-out; }
+  @keyframes toc-in { from { transform: translateY(-100vh); } }
+}
 .wrap { max-width: 720px; margin: 0 auto; padding: 48px 22px 100px; }
 a { color: var(--accent); text-decoration: none; }
 a:hover { text-decoration: underline; }
