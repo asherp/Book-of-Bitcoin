@@ -2710,10 +2710,17 @@ function slideOutAndStep(direction) {
   ch.style.transform = '';
   ch.style.visibility = 'hidden';
   void ghost.offsetWidth;
-  ghost.style.transition = 'transform .22s ease-in';
+  // Linear, so the exit reads as the drag's momentum carrying on rather than
+  // re-accelerating from a stop.
+  ghost.style.transition = 'transform .2s linear';
   ghost.style.transform = `translateX(${direction > 0 ? '-' : ''}${window.innerWidth}px)`;
   setTimeout(() => { if (slideGhost === ghost) { ghost.remove(); slideGhost = null; } else ghost.remove(); }, 320);
-  swipeStep(direction);   // start loading immediately -- it overlaps the ghost's exit
+  // Give the compositor two frames to commit and start the ghost's slide
+  // BEFORE the destination's render work begins -- the render blocks the
+  // main thread, and a transition that hasn't started yet would stall with
+  // it (the visible "stuck halfway" hitch). Once running, a composited
+  // transform transition glides through main-thread busyness.
+  requestAnimationFrame(() => requestAnimationFrame(() => swipeStep(direction)));
 }
 
 // The entering half of the turn, run after the destination has rendered: the
