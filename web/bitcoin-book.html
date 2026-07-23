@@ -210,15 +210,13 @@ button:disabled { opacity: .4; cursor: not-allowed; }
    root, timestamp, difficulty target, nonce -- in wire order, under the
    chapter hash. A small mono line, like the manuscript's other margin notes;
    each field carries its decoded form in `title` (a tooltip). */
-.chapter-frontispiece { margin: 0 auto 4px; max-width: 46ch; font: 500 12.5px/1.7 'IBM Plex Mono',monospace; color: var(--meta); }
+/* Set in the same hash-prose serif as the chapter and section hashes above
+   it, one shade quieter (meta vs dim) so it still reads as a margin note. */
+.chapter-frontispiece { margin: 0 auto 4px; max-width: 46ch; font: italic 400 14.5px/1.55 'Newsreader',serif; color: var(--meta); }
 /* The middot separator stays dim even between gold fields. */
 .chapter-frontispiece .cfx + .cfx::before { content: ' · '; color: var(--meta); }
 /* The difficulty target (β) and nonce (η): proof-of-work marks, shown gold. */
 .chapter-frontispiece .cfx-gold { color: var(--accent); }
-/* A hash rendered as prose reads in the hash-prose voice -- the italic serif
-   of the chapter and section hashes -- not the frontispiece's decoded-number
-   mono. */
-.chapter-frontispiece .cfx-serif { font: italic 400 14.5px/1.55 'Newsreader',serif; }
 /* The merkle root's ⋔ mark: the clickable handle for its hash menu (copy hex /
    prose), bold and accented (like the h data mark) so it reads as the actionable
    element while the root's prose beside it stays plain. */
@@ -1524,16 +1522,16 @@ function renderFrontispiece(header) {
     isGenesisPrev
       ? { text: prevProse, title: 'no earlier block — this is the genesis block' }
       : { text: prevProse, mark: 'h', markClass: 'dt', copy: { hex: header.prevBlockHash, label: 'previous block hash' } },
-    { text: merkleProse, mark: '⋔', markClass: 'merkle-mark', serif: true, copy: { hex: header.merkleRoot, label: 'merkle root' } },
+    { text: merkleProse, mark: '⋔', markClass: 'merkle-mark', copy: { hex: header.merkleRoot, label: 'merkle root' } },
     { text: hf.timestamp, title: hf.timestampTitle },
     // The difficulty target (β) and nonce (η) are the proof-of-work marks, gold
     // like their counterparts in the body prose's mining preamble.
     { text: hf.bits, title: hf.bitsTitle, gold: true },
     { text: hf.nonce, title: hf.nonceTitle, gold: true },
   ];
-  for (const { text, title, copy, mark, markClass, gold, serif } of items) {
+  for (const { text, title, copy, mark, markClass, gold } of items) {
     const span = document.createElement('span');
-    span.className = 'cfx' + (gold ? ' cfx-gold' : '') + (serif ? ' cfx-serif' : '');
+    span.className = gold ? 'cfx cfx-gold' : 'cfx';
     if (mark && copy) {
       fillMarkedHash(span, mark, markClass, copy.hex, copy.label, text);
     } else {
