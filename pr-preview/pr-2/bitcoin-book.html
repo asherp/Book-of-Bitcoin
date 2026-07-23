@@ -228,12 +228,13 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 .endpoint-msg { margin-top:10px; font:500 12px/1.4 'IBM Plex Mono',monospace; color:var(--meta); }
 .endpoint-msg.err { color:var(--error); }
 
-/* Status/loading indicator: a floating toast pinned top-centre of the
-   viewport, out of the document flow -- appearing and vanishing without
-   shifting the page under the reader. */
+/* Status/loading indicator: a floating toast centred in the viewport --
+   over the carousel area the reader is watching during a page turn -- out
+   of the document flow, so appearing and vanishing never shifts or scrolls
+   the page under them. */
 .status-line {
-  position: fixed; z-index: 55; left: 50%; transform: translateX(-50%);
-  top: calc(12px + env(safe-area-inset-top, 0px));
+  position: fixed; z-index: 55; left: 50%; top: 42%;
+  transform: translate(-50%, -50%);
   max-width: min(70vw, 480px);
   background: var(--card); border: 1px solid var(--card-bd); border-radius: 6px;
   padding: 9px 14px; box-shadow: 0 12px 32px -12px rgba(0,0,0,.8);
@@ -2629,7 +2630,12 @@ function slideOutAndStep(direction) {
   ch.style.transition = 'transform .18s ease-in, opacity .18s ease-in';
   ch.style.transform = `translateX(${direction > 0 ? '-' : ''}${window.innerWidth}px)`;
   ch.style.opacity = '0';
-  setTimeout(() => swipeStep(direction), 170);
+  setTimeout(() => {
+    // Jump to the top while the page is blank and transparent -- the scroll
+    // is invisible here, where doing it after the render would be a lurch.
+    window.scrollTo(0, 0);
+    swipeStep(direction);
+  }, 170);
 }
 
 // The entering half of the turn, run after the destination has rendered: the
@@ -2640,7 +2646,6 @@ function consumeSlide() {
   pendingSlide = 0;
   if (slideWatchdog) { clearTimeout(slideWatchdog); slideWatchdog = null; }
   const ch = $('page-slide');
-  window.scrollTo(0, 0);
   ch.style.transition = 'none';
   ch.style.transform = `translateX(${dir > 0 ? '' : '-'}${window.innerWidth}px)`;
   ch.style.opacity = '0';
