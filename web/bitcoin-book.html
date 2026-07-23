@@ -139,10 +139,10 @@ body {
 /* Contain the carousel turn entirely: the translated #page-slide clips at the
    article's own bounds (clip creates no scroll container, so nothing else
    changes), and can never widen the page or the mobile layout viewport.
-   Every page is also a full leaf (min-height one viewport): a short page --
-   a volume or book leaf -- can then hold the nav-header scroll anchor, so a
-   turn never gets its scroll position clamped away by a short document. */
-#chapter { overflow-x: clip; min-height: 100vh; min-height: 100dvh; }
+   (A short destination's ability to hold the nav-anchor scroll is guaranteed
+   dynamically -- see consumeSlide -- so the notation key sits right after the
+   foot nav with no manufactured gap.) */
+#chapter { overflow-x: clip; }
 .wrap { max-width: 720px; margin: 0 auto; padding: 48px 22px 100px; }
 a { color: var(--accent); text-decoration: none; }
 a:hover { text-decoration: underline; }
@@ -2749,6 +2749,13 @@ function slideOutAndStep(direction) {
   });
   document.body.appendChild(ghost);
   slideGhost = ghost;
+  // Install the anchor guarantee BEFORE the destination renders: a short page
+  // replacing a long one shrinks the document, and the browser would clamp
+  // the scroll away right then -- ahead of the entering half's own scroll.
+  // Any slack lands at the very end of the page, after the notation key.
+  const nav = document.querySelector('.chapter-nav');
+  const anchor = Math.max(0, nav.getBoundingClientRect().top + window.scrollY - 10);
+  document.body.style.minHeight = window.scrollY > anchor ? `${anchor + window.innerHeight}px` : '';
   ch.style.transition = 'none';
   ch.style.transform = '';
   ch.style.visibility = 'hidden';
