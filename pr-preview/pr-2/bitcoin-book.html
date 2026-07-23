@@ -143,6 +143,9 @@ body {
    dynamically -- see consumeSlide -- so the notation key sits right after the
    foot nav with no manufactured gap.) */
 #chapter { overflow-x: clip; }
+/* The slide's stationary window: a translated #page-slide (either axis) clips
+   at the frame's bounds instead of painting over the nav chrome around it. */
+#page-frame { overflow: clip; }
 .wrap { max-width: 720px; margin: 0 auto; padding: 48px 22px 100px; }
 a { color: var(--accent); text-decoration: none; }
 a:hover { text-decoration: underline; }
@@ -662,7 +665,10 @@ button:disabled { opacity: .4; cursor: not-allowed; }
     </nav>
 
     <!-- Everything between the header nav and the foot nav: the part of the
-         page that follows the finger and slides on a page turn. -->
+         page that follows the finger and slides on a page turn. The frame
+         around it clips the slide, so a moving page never paints over the
+         chrome above or below it. -->
+    <div id="page-frame">
     <div id="page-slide">
     <header class="chapter-head">
       <h1 class="chapter-title" id="ch-title"></h1>
@@ -676,6 +682,7 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 
     <div class="chapter-footnotes hidden" id="ch-footnotes-section">
       <div id="ch-footnotes"></div>
+    </div>
     </div>
     </div>
 
@@ -2796,16 +2803,29 @@ function slideOutAndStep(direction, axis = 'x') {
   slideWatchdog = setTimeout(resetSlide, 6000);
   const ch = $('page-slide');
   const rect = ch.getBoundingClientRect();   // includes any drag offset
+  // The ghost lives inside a fixed, clipped window matching the frame's
+  // visible region, so its exit can never paint over the chrome above or
+  // below the page (and, being fixed, the anchor scroll can't move it).
+  const frect = $('page-frame').getBoundingClientRect();
+  const winTop = Math.max(frect.top, 0);
+  const winBottom = Math.min(frect.bottom, window.innerHeight);
+  const win = document.createElement('div');
+  win.setAttribute('aria-hidden', 'true');
+  Object.assign(win.style, {
+    position: 'fixed', top: winTop + 'px', left: '0', width: '100%',
+    height: Math.max(0, winBottom - winTop) + 'px',
+    overflow: 'clip', pointerEvents: 'none', zIndex: '30',
+  });
   const ghost = ch.cloneNode(true);
   ghost.removeAttribute('id');
-  ghost.setAttribute('aria-hidden', 'true');
   Object.assign(ghost.style, {
-    position: 'fixed', top: rect.top + 'px', left: rect.left + 'px',
-    width: rect.width + 'px', margin: '0', zIndex: '30',
-    pointerEvents: 'none', transition: 'none', transform: 'none',
+    position: 'absolute', top: (rect.top - winTop) + 'px', left: rect.left + 'px',
+    width: rect.width + 'px', margin: '0',
+    transition: 'none', transform: 'none',
   });
-  document.body.appendChild(ghost);
-  slideGhost = ghost;
+  win.appendChild(ghost);
+  document.body.appendChild(win);
+  slideGhost = win;
   // Install the anchor guarantee BEFORE the destination renders: a short page
   // replacing a long one shrinks the document, and the browser would clamp
   // the scroll away right then -- ahead of the entering half's own scroll.
@@ -2822,7 +2842,7 @@ function slideOutAndStep(direction, axis = 'x') {
   ghost.style.transition = 'transform .2s linear';
   const off = axis === 'x' ? window.innerWidth : window.innerHeight;
   ghost.style.transform = `translate${axis === 'x' ? 'X' : 'Y'}(${direction > 0 ? '-' : ''}${off}px)`;
-  setTimeout(() => { if (slideGhost === ghost) { ghost.remove(); slideGhost = null; } else ghost.remove(); }, 320);
+  setTimeout(() => { if (slideGhost === win) { win.remove(); slideGhost = null; } else win.remove(); }, 320);
   // Give the compositor two frames to commit and start the ghost's slide
   // BEFORE the destination's render work begins -- the render blocks the
   // main thread, and a transition that hasn't started yet would stall with
