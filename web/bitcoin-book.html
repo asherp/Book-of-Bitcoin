@@ -272,8 +272,10 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 .chapter-frontispiece { margin: 0 auto 4px; max-width: 46ch; font: italic 400 14.5px/1.55 'Newsreader',serif; color: var(--meta); }
 /* The middot separator stays dim even between gold fields. */
 .chapter-frontispiece .cfx + .cfx::before { content: ' · '; color: var(--meta); }
-/* The difficulty target (β) and nonce (η): proof-of-work marks, shown gold. */
-.chapter-frontispiece .cfx-gold { color: var(--accent); }
+/* The difficulty target (β) and nonce (η): proof-of-work marks, shown gold.
+   (.chapter-hash carries the same mark on the book leaf, where the book's
+   target sits right beneath its title.) */
+.chapter-frontispiece .cfx-gold, .chapter-hash .cfx-gold { color: var(--accent); }
 /* The merkle root's ⋔ mark: the clickable handle for its hash menu (copy hex /
    prose), bold and accented (like the h data mark) so it reads as the actionable
    element while the root's prose beside it stays plain. */
@@ -1807,29 +1809,30 @@ function renderBookLeaf() {
   $('ch-frontispiece').classList.add('hidden');
   const bookEnd = state.height + chapterCount - 1;
   const finished = tipHeight !== null && tipHeight >= bookEnd;
-  // The chapters the book spans, under the block glyph (■, as references
-  // write chapter numbers -- chapters restart at 1 each book, so a full book
-  // reads ■1 – ■2,016 and an era's truncated last book ■1 – ■336); an
-  // unfinished book has no closing chapter to name.
+  // Right beneath the title: the book's difficulty target -- a book IS one
+  // difficulty window, so its first block's β mark names the target the whole
+  // book was mined against.
   const line = $('ch-hash-short');
   line.classList.remove('hidden');
-  line.textContent = finished
-    ? `■1 – ■${chapterCount.toLocaleString()}`
-    : '■1 —';
-  line.title = finished ? 'the chapters this book spans' : 'this book is still being written';
-  // Beneath the heights: the book's difficulty target -- a book IS one
-  // difficulty window, so its first block's β mark names the target the whole
-  // book was mined against -- then the recorded dates (em dash while the book
-  // is still being written).
-  const fp = $('ch-frontispiece');
-  fp.classList.remove('hidden');
-  fp.textContent = '';
+  line.textContent = '';
   const hf = composeBlockHeaderFields(state.header);
   const beta = document.createElement('span');
   beta.className = 'cfx-gold';
   beta.textContent = hf.bits;
   beta.title = hf.bitsTitle;
-  fp.append(beta);
+  line.append(beta);
+  // Then the chapters the book spans, under the block glyph (■, as references
+  // write chapter numbers -- chapters restart at 1 each book, so a full book
+  // reads ■1 – ■2,016 and an era's truncated last book ■1 – ■336; an
+  // unfinished book has no closing chapter to name), and the recorded dates
+  // (em dash while the book is still being written).
+  const fp = $('ch-frontispiece');
+  fp.classList.remove('hidden');
+  fp.textContent = '';
+  const range = document.createElement('div');
+  range.textContent = finished ? `■1 – ■${chapterCount.toLocaleString()}` : '■1 —';
+  range.title = finished ? 'the chapters this book spans' : 'this book is still being written';
+  fp.append(range);
   const dates = document.createElement('div');
   if (!finished) {
     dates.textContent = `${timestampInfo(state.block.timestamp).mark} —`;
