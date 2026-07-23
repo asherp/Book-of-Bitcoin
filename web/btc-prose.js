@@ -230,13 +230,14 @@ export function composeBlockHeaderFields(header) {
   const bits = bitsInfo(header.bits);
   const ver = formatBlockVersion(header.version);
   return {
-    version: ver.text, versionTitle: ver.title,
+    // The renderer prefixes the bold-gold v mark itself (both the integer and
+    // BIP9 word-pair forms wear it), so the text here carries no prefix.
+    version: ver.text.replace(/^v/, ''), versionTitle: ver.title,
     timestamp: time.mark, timestampTitle: time.title,
     bits: bits.sym, bitsTitle: bits.title,
-    // The nonce rides its η mark as a subscript, the same house convention β's
-    // leading-zero count follows -- a mark with its quantity tucked under it,
-    // not a bare inline number. The exact value stays legible in the title.
-    nonce: `η${toSubscript(header.nonce)}`,
+    // The nonce is a plain integer; the renderer leads it with the bold-gold
+    // η mark (like v for the version), the value itself unstyled.
+    nonce: String(header.nonce),
     nonceTitle: `nonce ${header.nonce} — the value the miner incremented while searching for a hash below the difficulty target`,
   };
 }
