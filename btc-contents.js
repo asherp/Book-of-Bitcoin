@@ -23,7 +23,7 @@ export const NOTABLE = [
   { title: '100K block milestone', id: '100000' },
   { title: 'Eligius', id: '139690' },
   { title: 'First P2SH spend', id: 'e5779b9e78f9650debc2893fd9636d827b26b4ddfa6a8172fe8708c924f5c39d' },
-  { title: 'First halving', id: '210000' },
+  { title: 'The First Halving', id: '210000' },
   // The block-version story, told through the chapters where each version era
   // begins (heights are Bitcoin Core chainparams consensus constants). Their
   // frontispieces walk the whole notation: v1 (genesis) -> v2/v3/v4 (the
@@ -34,11 +34,11 @@ export const NOTABLE = [
   { title: 'BIP66 activation (v3)', id: '363725' },
   { title: 'BIP65 activation (v4)', id: '388381' },
   { title: 'CSV activation (version bits)', id: '419328' },
-  { title: 'Second halving', id: '420000' },
+  { title: 'The Second Halving', id: '420000' },
   { title: 'Bitcoin Cash fork', id: '478558' },
   { title: 'SegWit activation', id: '481824' },
   { title: '500K block milestone', id: '500000' },
-  { title: 'Third halving', id: '630000' },
+  { title: 'The Third Halving', id: '630000' },
   // The Speedy Trial threshold moment -- the widely cited lock-in block, mined
   // by Slush Pool inside the signaling window, so its frontispiece shows bit 2
   // actually set (…100) the way the activation chapter's no longer does.
@@ -47,7 +47,7 @@ export const NOTABLE = [
   { title: 'Taproot activation', id: '777c998695de4b7ecec54c058c73b2cab71184cf1655840935cd9388923dc288' },
   { title: 'First Ordinals inscription', id: '6fb976ab49dcec017f1e201e84395983204ae1a7c2abf7ced0a85d692e442799' },
   { title: 'Largest block (at the time)', id: '774628' },
-  { title: 'Fourth halving', id: '840000' },
+  { title: 'The Fourth Halving', id: '840000' },
   { title: 'Sermon on the Mount', id: 'e53ac3be05bbeb8ea3bbfb7854a4d47eea556daea25f45ad3fe953f375ff7fd8' },
   { title: 'Latest block', id: '-1' },
 ];
