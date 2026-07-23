@@ -131,8 +131,8 @@ html, body { margin: 0; }
 body {
   min-height: 100vh; background: var(--page); color: var(--ink);
   font-family: 'Public Sans', system-ui, sans-serif; line-height: 1.55;
-  /* The carousel page-turn translates #chapter past the viewport edge; never
-     let that manifest as a horizontal scrollbar. */
+  /* The carousel page-turn translates #page-slide past the viewport edge;
+     never let that manifest as a horizontal scrollbar. */
   overflow-x: hidden;
 }
 .wrap { max-width: 720px; margin: 0 auto; padding: 48px 22px 100px; }
@@ -628,16 +628,21 @@ button:disabled { opacity: .4; cursor: not-allowed; }
   </div>
 
   <article id="chapter" class="hidden">
+    <!-- The eyebrow: chapter prev/next flank it on the chapter's own page
+         (section pages page with the foot nav instead). Its Volume / Book /
+         Chapter parts are crumbs -- each opens the page of the span it names.
+         Sits OUTSIDE #page-slide: the navigation chrome holds still while the
+         page content slides through a carousel turn. -->
+    <nav class="chapter-nav">
+      <button type="button" id="chapter-prev" class="chapter-step hidden" aria-label="Previous chapter" title="Previous chapter"></button>
+      <div class="chapter-num"><button type="button" id="ch-volume-link" class="crumb" title="This volume's page">Volume <span id="ch-volume"></span></button><span id="ch-sep-1"> · </span><button type="button" id="ch-book-link" class="crumb" title="This book's page">Book <span id="ch-book"></span></button><span id="ch-chapter-inline"></span></div>
+      <button type="button" id="chapter-next" class="chapter-step hidden" aria-label="Next chapter" title="Next chapter"></button>
+    </nav>
+
+    <!-- Everything between the header nav and the foot nav: the part of the
+         page that follows the finger and slides on a page turn. -->
+    <div id="page-slide">
     <header class="chapter-head">
-      <!-- The eyebrow: chapter prev/next flank it on the chapter's own page
-           (section pages page with the foot nav instead). Its Volume / Book /
-           Chapter parts are crumbs -- each opens the start of the span it
-           names (a dedicated volume/book leaf, once those exist). -->
-      <nav class="chapter-nav">
-        <button type="button" id="chapter-prev" class="chapter-step hidden" aria-label="Previous chapter" title="Previous chapter"></button>
-        <div class="chapter-num"><button type="button" id="ch-volume-link" class="crumb" title="This volume's page">Volume <span id="ch-volume"></span></button><span id="ch-sep-1"> · </span><button type="button" id="ch-book-link" class="crumb" title="This book's page">Book <span id="ch-book"></span></button><span id="ch-chapter-inline"></span></div>
-        <button type="button" id="chapter-next" class="chapter-step hidden" aria-label="Next chapter" title="Next chapter"></button>
-      </nav>
       <h1 class="chapter-title" id="ch-title"></h1>
       <div class="chapter-hash" id="ch-hash-short"></div>
       <div class="chapter-frontispiece" id="ch-frontispiece"></div>
@@ -649,6 +654,7 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 
     <div class="chapter-footnotes hidden" id="ch-footnotes-section">
       <div id="ch-footnotes"></div>
+    </div>
     </div>
 
     <!-- Section paging sits at the foot of the section, after its witness
@@ -2235,6 +2241,9 @@ function labelNav() {
       else setBtn('page-next', minSharedRef(cur, t, null), `Next chapter (${reference(nh)})`);
     }
   }
+
+  // With the buttons decided, quietly ready both swipe directions' data.
+  prefetchNeighbors();
 }
 
 // Encode every witness-bearing input's witness into a numbered footnote and
@@ -2531,16 +2540,68 @@ const REDUCED_MOTION = window.matchMedia('(prefers-reduced-motion: reduce)').mat
 let pendingSlide = 0;        // direction of an in-flight page turn (+1 next, -1 prev)
 let slideWatchdog = null;
 
-function canStep(direction) {
+// A neighbour exists in that direction (the corresponding button is shown).
+function navAvailable(direction) {
   if (!state) return false;
   const id = state.index < 0
     ? (direction > 0 ? 'chapter-next' : 'chapter-prev')
     : (direction > 0 ? 'page-next' : 'page-prev');
   return !$(id).classList.contains('hidden');
 }
+// A swipe additionally waits for that neighbour's data to finish prefetching
+// (see prefetchNeighbors), so a committed turn always lands on content that
+// is ready to render; until then the drag only rubber-bands. The buttons stay
+// usable regardless -- they fetch on demand as always.
+function canStep(direction) {
+  return navAvailable(direction) && neighborReady[direction];
+}
 function swipeStep(direction) {
-  if (!canStep(direction)) return;
+  if (!navAvailable(direction)) return;
   if (state.index < 0) goToLevel(direction); else requestStep(direction);
+}
+
+// ── Neighbour prefetch ────────────────────────────────────────────────────
+// After each render, quietly pull the data the next swipe in either direction
+// would need: a leaf's level neighbour is its first block's core (info +
+// header); a section's neighbour is the adjacent transaction's hex (plus the
+// txid list, once) -- or, past the block's last section, the next block's
+// core. §1's previous page is this chapter's own leaf, already loaded.
+// Everything lands in the existing memoized caches, so the eventual swipe
+// (or button press) finds it instantly and nothing is fetched twice.
+let neighborReady = { '-1': false, '1': false };
+let prefetchGen = 0;
+async function prefetchNeighbor(st, direction) {
+  if (st.index < 0) {
+    const { volume, chapterCount } = volumeBookChapter(st.height);
+    let target;
+    if (st.index === -3) target = heightOf(volume + direction, 1, 1);
+    else if (st.index === -2) target = direction > 0 ? st.height + chapterCount : bookStartOf(st.height - 1);
+    else target = st.height + direction;
+    if (target < 0) return;
+    await loadBlockByHeight(target, { withTxids: false });
+  } else if (direction > 0) {
+    if (st.index < st.txCount - 1) {
+      const txids = await ensureTxids(st);
+      await loadTxHex(txids[st.index + 1]);
+    } else {
+      await loadBlockByHeight(st.height + 1, { withTxids: false });
+    }
+  } else if (st.index > 0) {
+    const txids = await ensureTxids(st);
+    await loadTxHex(txids[st.index - 1]);
+  }
+}
+function prefetchNeighbors() {
+  const gen = ++prefetchGen;
+  neighborReady = { '-1': false, '1': false };
+  if (!state) return;
+  const st = state;
+  for (const dir of [-1, 1]) {
+    if (!navAvailable(dir)) continue;
+    prefetchNeighbor(st, dir)
+      .then(() => { if (gen === prefetchGen) neighborReady[dir] = true; })
+      .catch(() => {});   // a failed prefetch keeps the swipe gated; the buttons still work
+  }
 }
 
 // Restore a page parked mid-turn: called by the turn's watchdog and by any
@@ -2548,7 +2609,7 @@ function swipeStep(direction) {
 function resetSlide() {
   pendingSlide = 0;
   if (slideWatchdog) { clearTimeout(slideWatchdog); slideWatchdog = null; }
-  const ch = $('chapter');
+  const ch = $('page-slide');
   if (!ch.style.transform && !ch.style.opacity) return;
   ch.style.transition = 'transform .18s ease, opacity .18s ease';
   ch.style.transform = '';
@@ -2562,7 +2623,7 @@ function slideOutAndStep(direction) {
   pendingSlide = direction;
   if (slideWatchdog) clearTimeout(slideWatchdog);
   slideWatchdog = setTimeout(resetSlide, 6000);
-  const ch = $('chapter');
+  const ch = $('page-slide');
   ch.style.transition = 'transform .18s ease-in, opacity .18s ease-in';
   ch.style.transform = `translateX(${direction > 0 ? '-' : ''}${window.innerWidth}px)`;
   ch.style.opacity = '0';
@@ -2576,7 +2637,7 @@ function consumeSlide() {
   const dir = pendingSlide;
   pendingSlide = 0;
   if (slideWatchdog) { clearTimeout(slideWatchdog); slideWatchdog = null; }
-  const ch = $('chapter');
+  const ch = $('page-slide');
   window.scrollTo(0, 0);
   ch.style.transition = 'none';
   ch.style.transform = `translateX(${dir > 0 ? '' : '-'}${window.innerWidth}px)`;
@@ -2594,7 +2655,7 @@ function consumeSlide() {
 (() => {
   let sx = null, sy = 0, st = 0, axis = null;
   const snapBack = () => {
-    const ch = $('chapter');
+    const ch = $('page-slide');
     if (!ch.style.transform) return;
     ch.style.transition = 'transform .15s ease, opacity .15s ease';
     ch.style.transform = '';
@@ -2616,9 +2677,10 @@ function consumeSlide() {
       axis = Math.abs(dx) > Math.abs(dy) ? 'h' : 'v';
     }
     if (axis !== 'h') return;
-    // Follow the finger; a direction with no neighbour only rubber-bands.
+    // Follow the finger; a direction with no neighbour -- or one whose data
+    // hasn't finished prefetching -- only rubber-bands.
     const damp = canStep(dx < 0 ? 1 : -1) ? 1 : 0.25;
-    const ch = $('chapter');
+    const ch = $('page-slide');
     ch.style.transition = 'none';
     ch.style.transform = `translateX(${dx * damp}px)`;
   }, { passive: true });
