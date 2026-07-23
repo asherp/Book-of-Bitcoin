@@ -138,8 +138,11 @@ body {
 }
 /* Contain the carousel turn entirely: the translated #page-slide clips at the
    article's own bounds (clip creates no scroll container, so nothing else
-   changes), and can never widen the page or the mobile layout viewport. */
-#chapter { overflow-x: clip; }
+   changes), and can never widen the page or the mobile layout viewport.
+   Every page is also a full leaf (min-height one viewport): a short page --
+   a volume or book leaf -- can then hold the nav-header scroll anchor, so a
+   turn never gets its scroll position clamped away by a short document. */
+#chapter { overflow-x: clip; min-height: 100vh; min-height: 100dvh; }
 .wrap { max-width: 720px; margin: 0 auto; padding: 48px 22px 100px; }
 a { color: var(--accent); text-decoration: none; }
 a:hover { text-decoration: underline; }
@@ -2636,9 +2639,14 @@ function slideOutAndStep(direction) {
   ch.style.transform = `translateX(${direction > 0 ? '-' : ''}${window.innerWidth}px)`;
   ch.style.opacity = '0';
   setTimeout(() => {
-    // Jump to the top while the page is blank and transparent -- the scroll
-    // is invisible here, where doing it after the render would be a lurch.
-    window.scrollTo(0, 0);
+    // The nav header is the turn's fixed point of reference: while the page
+    // is blank and transparent, scroll back at most to the eyebrow -- never
+    // to the document top -- so a swipe from within a long section opens the
+    // new page at its header, and a swipe with the header already in view
+    // moves the viewport not at all.
+    const nav = document.querySelector('.chapter-nav');
+    const anchor = Math.max(0, nav.getBoundingClientRect().top + window.scrollY - 10);
+    if (window.scrollY > anchor) window.scrollTo(0, anchor);
     swipeStep(direction);
   }, 170);
 }
