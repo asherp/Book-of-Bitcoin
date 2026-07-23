@@ -2213,8 +2213,7 @@ function renderChapter(para) {
 }
 
 // Label the chapter/section nav buttons, and hide any that lead nowhere (Genesis
-// has no earlier chapter/section; the chain tip's last section none later). Each
-// label is the minimum shared reference to its destination (see minSharedRef).
+// has no earlier chapter/section; the chain tip's last section none later).
 function labelNav() {
   const cur = volumeBookChapter(state.height);
   const idx = state.index;
