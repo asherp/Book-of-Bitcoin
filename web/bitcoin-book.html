@@ -889,7 +889,7 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 <script type="module">
 import { init, encodeSeedPhrase } from './glossia-msg.js';
 import { parseTransaction, computeTxid, parseBlockHeader, computeBlockHash } from './btc-tx.js';
-import { composeTransactionFields, composeBlockHeaderFields, groupDigits, formatBtc, renderWitness } from './btc-prose.js';
+import { composeTransactionFields, composeBlockHeaderFields, groupDigits, formatBtc, renderWitness, toSuperscript } from './btc-prose.js';
 import { volumeBookChapter, heightOf, toRoman, reference } from './btc-citation.js';
 import { NOTABLE, isBlockId, isRelativeBlockId, refFromProof, entryHref } from './btc-contents.js';
 
@@ -1491,13 +1491,24 @@ function attachHashCopy(el, hex, label, prose = el.textContent) {
 // Render a Glossia-encoded hash into `el` as its bold-gold data mark (h, or ⋔
 // for the merkle root) followed by the plain prose. The mark is the clickable
 // handle for the copy/bookmark menu; the prose itself is never interactive.
-function fillMarkedHash(el, mark, markClass, hex, label, prose) {
+function fillMarkedHash(el, mark, markClass, hex, label, prose, sup, supTitle) {
   el.textContent = '';
   const m = document.createElement('span');
   m.className = markClass;
   m.textContent = mark;
   attachHashCopy(m, hex, label, prose);
-  el.append(m, ' ' + prose);
+  el.append(m);
+  // The mark can carry a byte count as a superscript riding after it, the way
+  // a typed script push reads (p⁶⁵) -- a header field isn't a push, but the
+  // notation for "this prose carries n bytes" is the same.
+  if (sup) {
+    const s = document.createElement('span');
+    s.className = 'op op-push';
+    s.textContent = toSuperscript(sup);
+    if (supTitle) s.title = supTitle;
+    el.append(s);
+  }
+  el.append(' ' + prose);
 }
 
 // The block header itself, in wire order, as a small mono line under the
@@ -1510,7 +1521,9 @@ function renderFrontispiece(header) {
   el.innerHTML = '';
   const hf = composeBlockHeaderFields(header);
   const isGenesisPrev = header.prevBlockHash === '00'.repeat(32);
-  const prevProse = isGenesisPrev ? '∅' : encodeSeedPhrase(trimTrailingZeroBytes(reverseHex(header.prevBlockHash)), 'english', BEST_OF).prose;
+  const prevTrimmed = isGenesisPrev ? '' : trimTrailingZeroBytes(reverseHex(header.prevBlockHash));
+  const prevBytes = prevTrimmed.length / 2;
+  const prevProse = isGenesisPrev ? '∅' : encodeSeedPhrase(prevTrimmed, 'english', BEST_OF).prose;
   // The merkle root isn't proof-of-work-constrained, so unlike a block hash
   // it has no expected run of zero bytes worth trimming.
   const merkleProse = encodeSeedPhrase(reverseHex(header.merkleRoot), 'english', BEST_OF).prose;
@@ -1521,19 +1534,24 @@ function renderFrontispiece(header) {
     { text: `v${hf.version}`, title: 'block version' },
     isGenesisPrev
       ? { text: prevProse, title: 'no earlier block — this is the genesis block' }
-      : { text: prevProse, mark: 'h', markClass: 'dt', copy: { hex: header.prevBlockHash, label: 'previous block hash' } },
-    { text: merkleProse, mark: '⋔', markClass: 'merkle-mark', copy: { hex: header.merkleRoot, label: 'merkle root' } },
+      : { text: prevProse, mark: 'h', markClass: 'dt', sup: prevBytes,
+          supTitle: prevBytes < 32
+            ? `${prevBytes} bytes encoded — the hash's ${32 - prevBytes} trailing zero bytes (required by proof-of-work) carry nothing and are dropped`
+            : '32 bytes',
+          copy: { hex: header.prevBlockHash, label: 'previous block hash' } },
+    { text: merkleProse, mark: '⋔', markClass: 'merkle-mark', sup: 32, supTitle: '32 bytes',
+      copy: { hex: header.merkleRoot, label: 'merkle root' } },
     { text: hf.timestamp, title: hf.timestampTitle },
     // The difficulty target (β) and nonce (η) are the proof-of-work marks, gold
     // like their counterparts in the body prose's mining preamble.
     { text: hf.bits, title: hf.bitsTitle, gold: true },
     { text: hf.nonce, title: hf.nonceTitle, gold: true },
   ];
-  for (const { text, title, copy, mark, markClass, gold } of items) {
+  for (const { text, title, copy, mark, markClass, gold, sup, supTitle } of items) {
     const span = document.createElement('span');
     span.className = gold ? 'cfx cfx-gold' : 'cfx';
     if (mark && copy) {
-      fillMarkedHash(span, mark, markClass, copy.hex, copy.label, text);
+      fillMarkedHash(span, mark, markClass, copy.hex, copy.label, text, sup, supTitle);
     } else {
       span.textContent = text;
       if (title) span.title = title;
