@@ -24,12 +24,25 @@ export const NOTABLE = [
   { title: 'Eligius', id: '139690' },
   { title: 'First P2SH spend', id: 'e5779b9e78f9650debc2893fd9636d827b26b4ddfa6a8172fe8708c924f5c39d' },
   { title: 'First halving', id: '210000' },
+  // The block-version story, told through the chapters where each version era
+  // begins (heights are Bitcoin Core chainparams consensus constants). Their
+  // frontispieces walk the whole notation: v1 (genesis) -> v2/v3/v4 (the
+  // integer-bump era, BIP34/66/65) -> word-pair form once BIP9 version bits
+  // arrive (CSV is the first version-bits fork; SegWit and Taproot follow).
+  { title: 'BIP34 activation (v2)', id: '227931' },
   { title: 'First coinbase OP_RETURN', id: '246816' },
+  { title: 'BIP66 activation (v3)', id: '363725' },
+  { title: 'BIP65 activation (v4)', id: '388381' },
+  { title: 'CSV activation (version bits)', id: '419328' },
   { title: 'Second halving', id: '420000' },
   { title: 'Bitcoin Cash fork', id: '478558' },
   { title: 'SegWit activation', id: '481824' },
   { title: '500K block milestone', id: '500000' },
   { title: 'Third halving', id: '630000' },
+  // The Speedy Trial threshold moment -- the widely cited lock-in block, mined
+  // by Slush Pool inside the signaling window, so its frontispiece shows bit 2
+  // actually set (…100) the way the activation chapter's no longer does.
+  { title: 'Taproot lock-in', id: '687285' },
   { title: 'Romans 12:21', id: '057954bb28527ff9c7701c6fd2b7f770163718ded09745da56cc95e7606afe99' },
   { title: 'Taproot activation', id: '777c998695de4b7ecec54c058c73b2cab71184cf1655840935cd9388923dc288' },
   { title: 'First Ordinals inscription', id: '6fb976ab49dcec017f1e201e84395983204ae1a7c2abf7ced0a85d692e442799' },
@@ -45,7 +58,10 @@ export const NOTABLE = [
 
 // More transaction-level entries still to confirm against the chain before
 // adding: payment-type firsts (P2PKH, P2WPKH/P2WSH, P2TR key/script, OP_RETURN
-// spend) and a Lightning force-close revealing an HTLC.
+// spend) and a Lightning force-close revealing an HTLC. For the version story,
+// still to confirm: the first version-rolled (overt-AsicBoost, BIP320) block --
+// no canonical height exists, so it needs a chain scan to identify a good
+// exemplar whose frontispiece breaks the accio.abandon idiom.
 
 // A bare non-negative integer is an absolute block height. A negative integer is
 // a height relative to the chain tip (-1 = latest block), resolved online.
