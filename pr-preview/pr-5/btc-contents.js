@@ -19,7 +19,8 @@ import { reference } from './btc-citation.js';
 // Taproot) -- each mark the book their activation closed, since for them the
 // difficulty window is the ballot box; flag-day and release-based forks get
 // no book. BIP91 signaled over its own 336-block epochs, which no book
-// aligns with, so it keeps only its chapter.
+// aligns with -- but its whole drama still fits one book: III β29 opens,
+// locks it in at ■321, and activates it at ■673.
 
 export const NOTABLE = [
   { title: 'The Times 03/Jan/2009 Chancellor on brink of second bailout for banks', id: '4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b' },
@@ -74,6 +75,7 @@ export const NOTABLE = [
   // setting bit 1 were rejected -- squeezing BIP141 over its own 95%
   // threshold. A transient rule, spent once SegWit locked in, but a soft
   // fork all the same.
+  { title: 'The Book of BIP91', id: '476448', page: 'book' },
   { title: 'BIP91 activation (SegWit mandate)', id: '477120' },
   { title: 'Bitcoin Cash fork', id: '478558' },
   { title: 'The Book of SegWit', id: '480480', page: 'book' },
