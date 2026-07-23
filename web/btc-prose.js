@@ -125,7 +125,7 @@ function bitsInfo(bits) {
 // the interpreted, legible form -- since unlike nonce there's nothing more
 // "raw" a reader would want at a glance; the title carries the literal unix
 // value for verification against the wire bytes.
-function timestampInfo(timestamp) {
+export function timestampInfo(timestamp) {
   const date = new Date(timestamp * 1000).toISOString().slice(0, 16).replace('T', ' ');
   return { mark: `${date} UTC`, title: `unix ${timestamp}` };
 }

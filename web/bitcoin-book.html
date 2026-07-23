@@ -569,7 +569,7 @@ button:disabled { opacity: .4; cursor: not-allowed; }
            names (a dedicated volume/book leaf, once those exist). -->
       <nav class="chapter-nav">
         <button type="button" id="chapter-prev" class="chapter-step hidden" aria-label="Previous chapter" title="Previous chapter"></button>
-        <div class="chapter-num"><button type="button" id="ch-volume-link" class="crumb" title="Start of this volume">Volume <span id="ch-volume"></span></button> · <button type="button" id="ch-book-link" class="crumb" title="Start of this book">Book <span id="ch-book"></span></button><span id="ch-chapter-inline"></span></div>
+        <div class="chapter-num"><button type="button" id="ch-volume-link" class="crumb" title="This volume's page">Volume <span id="ch-volume"></span></button><span id="ch-sep-1"> · </span><button type="button" id="ch-book-link" class="crumb" title="This book's page">Book <span id="ch-book"></span></button><span id="ch-chapter-inline"></span></div>
         <button type="button" id="chapter-next" class="chapter-step hidden" aria-label="Next chapter" title="Next chapter"></button>
       </nav>
       <h1 class="chapter-title" id="ch-title"></h1>
@@ -906,7 +906,7 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 <script type="module">
 import { init, encodeSeedPhrase } from './glossia-msg.js';
 import { parseTransaction, computeTxid, parseBlockHeader, computeBlockHash } from './btc-tx.js';
-import { composeTransactionFields, composeBlockHeaderFields, groupDigits, formatBtc, renderWitness, toSuperscript } from './btc-prose.js';
+import { composeTransactionFields, composeBlockHeaderFields, groupDigits, formatBtc, renderWitness, toSuperscript, timestampInfo } from './btc-prose.js';
 import { volumeBookChapter, heightOf, toRoman, reference } from './btc-citation.js';
 import { NOTABLE, isBlockId, isRelativeBlockId, refFromProof, entryHref } from './btc-contents.js';
 
@@ -1175,11 +1175,10 @@ function fromRoman(s) {
 }
 
 // Parse a scripture-style reference into { height, index }. Volume comes first
-// (Roman); book and chapter are optional and each default to the first. A
-// reference without a §section opens the chapter's own page (index -1) -- the
-// title leaf before its sections:
-//   "III"        -> era 3, book 1, chapter 1's own page
-//   "III 2"      -> era 3, book 2, first chapter's own page
+// (Roman); each finer level named opens a deeper page -- the reference's depth
+// picks the leaf:
+//   "III"        -> volume III's own page
+//   "III 2"      -> era 3, book 2's own page
 //   "III 2 5"    -> chapter 5's own page
 //   "III 2 5 §3" / "III 2 5 3" -> section 3
 // A trailing ".output" (as citations print, e.g. "III 2 5 §3.1") is accepted
@@ -1197,7 +1196,25 @@ function parseReference(input) {
   const chapter = m[3] ? parseInt(m[3], 10) : 1;
   const section = m[4] ? parseInt(m[4], 10) : null;
   if (book < 1 || chapter < 1 || (section !== null && section < 1)) return null;
-  return { height: heightOf(volume, book, chapter), index: section === null ? -1 : section - 1 };
+  // The reference's depth picks the page: a §section opens that section; a
+  // chapter its own page (-1); a book its leaf (-2); a bare volume its
+  // leaf (-3). The height is always the finest named span's first block.
+  const index = section !== null ? section - 1 : m[3] ? -1 : m[2] ? -2 : -3;
+  return { height: heightOf(volume, book, chapter), index };
+}
+
+// ── Volume / book leaves ──────────────────────────────────────────────────
+// A chapter that opens a book gets a book leaf (index -2) ahead of its
+// chapter page, and one that opens a volume a volume leaf (-3) ahead of that,
+// so the linear page order runs: … previous book's last section → volume
+// leaf → book leaf → chapter page → §1 → … The leaf floor for a block is the
+// lowest index it carries.
+const volumeStartOf = (height) => heightOf(volumeBookChapter(height).volume, 1, 1);
+const bookStartOf = (height) => height - (volumeBookChapter(height).chapter - 1);
+function minIndexOf(height) {
+  const { book, chapter } = volumeBookChapter(height);
+  if (chapter !== 1) return -1;
+  return book === 1 ? -3 : -2;
 }
 
 // txid -> the spending status of every output at once (Esplora /outspends):
@@ -1368,23 +1385,27 @@ async function loadBlockByHeight(height, opts) {
   return loadBlockMeta((await res.text()).trim(), opts);
 }
 
-// A block's transaction count by height, from its info alone (no txid list) and
-// memoized. Used only to label the Previous button when it steps back across a
-// block boundary: the section it lands on is the prior block's last transaction,
-// whose §number is that block's tx count.
-const txCountByHeight = new Map();
-function loadBlockTxCount(height) {
-  if (!txCountByHeight.has(height)) {
-    txCountByHeight.set(height, (async () => {
+// A block's info JSON by height (no txid list), memoized: the light metadata
+// (tx_count, timestamp) that nav labels and the volume/book leaves read.
+const infoByHeight = new Map();
+function loadBlockInfoByHeight(height) {
+  if (!infoByHeight.has(height)) {
+    infoByHeight.set(height, (async () => {
       const hres = await esploraFetch(`${ESPLORA}/block-height/${height}`);
       if (!hres.ok) throw new Error(`Esplora returned ${hres.status}.`);
       const bres = await esploraFetch(`${ESPLORA}/block/${(await hres.text()).trim()}`);
       if (!bres.ok) throw new Error(`Esplora returned ${bres.status}.`);
-      return (await bres.json()).tx_count;
-    })().catch((e) => { txCountByHeight.delete(height); throw e; }));
+      return bres.json();
+    })().catch((e) => { infoByHeight.delete(height); throw e; }));
   }
-  return txCountByHeight.get(height);
+  return infoByHeight.get(height);
 }
+// The Previous label when it steps back across a block boundary: the section
+// it lands on is the prior block's last transaction, whose §number is that
+// block's tx count.
+const loadBlockTxCount = (height) => loadBlockInfoByHeight(height).then((b) => b.tx_count);
+// A block's timestamp, for the leaves' recorded date ranges.
+const loadBlockStamp = (height) => loadBlockInfoByHeight(height).then((b) => b.timestamp);
 
 // The chain tip height, as plain text from Esplora. Opens the book at the most
 // recent chapter when the reader arrives without a specific target.
@@ -1449,11 +1470,13 @@ function loadTxHex(txid) {
 }
 
 async function showCurrentTx() {
-  // The chapter's own page (index -1): no transaction to fetch -- the head
-  // renders straight from the block metadata already in state.
+  // A leaf (index < 0): no transaction to fetch -- the volume (-3), book (-2),
+  // or chapter (-1) page renders straight from the metadata already in state.
   if (state.index < 0) {
     if (!ready) await init().catch(() => {});
-    renderTitlePage();
+    if (state.index === -3) renderVolumeLeaf();
+    else if (state.index === -2) renderBookLeaf();
+    else renderTitlePage();
     updateUrl();
     $('chapter').classList.remove('hidden');
     setStatus('');
@@ -1508,13 +1531,25 @@ function attachHashCopy(el, hex, label, prose = el.textContent) {
   el.__hashMenu = { hex, label, prose, nav };
   if (el.__hashWired) return;
   el.__hashWired = true;
-  const open = (e) => openHashMenu(e, el.__hashMenu, el);
+  const open = (e) => { if (el.__hashMenu) openHashMenu(e, el.__hashMenu, el); };
   // A mouse click on this focusable element would otherwise scroll it into view
   // (native focus behaviour); that scroll trips the menu's scroll-dismiss and
   // closes it the instant it opens. Suppress the focus scroll on mousedown.
   el.addEventListener('mousedown', (e) => e.preventDefault());
   el.addEventListener('click', open);
   el.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(e); } });
+}
+
+// Strip the hash-menu affordance from a persistent element: the chapter-title
+// slot doubles as the volume/book leaf title, where there is no hash to copy.
+// The wired listeners stay; a null __hashMenu makes them inert.
+function detachHashCopy(el) {
+  el.classList.remove('hash-copy');
+  el.removeAttribute('aria-label');
+  el.tabIndex = -1;
+  el.__hashMenu = null;
+  el.__hex = null;
+  setHashFlag(el, false);
 }
 
 // Render a Glossia-encoded hash into `el` as its bold-gold data mark (h, or ⋔
@@ -1597,6 +1632,7 @@ function renderFrontispiece(header) {
 // title in both dresses; Genesis keeps its short "Genesis" form.
 function renderChapterHead(onTitlePage) {
   const { volume, book, chapter } = volumeBookChapter(state.height);
+  showEyebrowCrumbs(true, true);   // a volume/book leaf may have hidden them
   $('ch-volume').textContent = volume.toLocaleString();
   $('ch-book').textContent = book.toLocaleString();
   const isGenesis = volume === 1 && book === 1 && chapter === 1;
@@ -1631,16 +1667,12 @@ function renderChapterHead(onTitlePage) {
   return { volume, book, chapter };
 }
 
-// The chapter's own page: the head alone -- title, hash prose, frontispiece --
-// with the section apparatus cleared, the way a printed chapter opens on its
-// own leaf before the first section's page.
-function renderTitlePage() {
+// The shared shell of every leaf (volume, book, chapter page): clear the
+// section apparatus and drop in-flight section work. Returns the new render
+// generation so a leaf's async fills can drop stale updates.
+function renderLeafShell() {
   $('chapter').classList.add('title-leaf');
-  const { volume, book, chapter } = renderChapterHead(true);
-  // The lookup field shows the chapter reference, no §: it round-trips back to
-  // this very page (see parseReference).
-  $('block-input').value = `${toRoman(volume)} β${book} ■${chapter}`;
-  ++renderGen;             // drop in-flight section work (citations, footnotes)
+  ++renderGen;
   lazyEncode.reset();
   $('section-title').classList.add('hidden');
   $('section-hash').classList.add('hidden');
@@ -1649,6 +1681,88 @@ function renderTitlePage() {
   $('ch-footnotes-section').classList.add('hidden');
   currentFootnotes = [];
   footnotesLoaded = false;
+  return renderGen;
+}
+
+// Show/hide the eyebrow's three crumbs (volume · book · chapter-inline is
+// managed separately). A leaf hides the parts at or below its own level.
+function showEyebrowCrumbs(volume, book) {
+  $('ch-volume-link').classList.toggle('hidden', !volume);
+  $('ch-sep-1').classList.toggle('hidden', !(volume && book));
+  $('ch-book-link').classList.toggle('hidden', !book);
+}
+
+// The chapter's own page: the head alone -- title, hash prose, frontispiece --
+// with the section apparatus cleared, the way a printed chapter opens on its
+// own leaf before the first section's page.
+function renderTitlePage() {
+  renderLeafShell();
+  const { volume, book, chapter } = renderChapterHead(true);
+  // The lookup field shows the chapter reference, no §: it round-trips back to
+  // this very page (see parseReference).
+  $('block-input').value = `${toRoman(volume)} β${book} ■${chapter}`;
+  labelNav();
+}
+
+// The volume's own page: its Roman numeral over the block numbers it spans
+// and the years those blocks were recorded (the closing year streams in; an
+// unfinished volume's range ends at the chain tip so far).
+function renderVolumeLeaf() {
+  const gen = renderLeafShell();
+  const { volume } = volumeBookChapter(state.height);
+  showEyebrowCrumbs(false, false);
+  $('ch-chapter-inline').textContent = '';
+  const title = $('ch-title');
+  title.textContent = `Volume ${toRoman(volume)}`;
+  title.classList.remove('hidden');
+  detachHashCopy(title);
+  const volEnd = heightOf(volume + 1, 1, 1) - 1;
+  const finished = tipHeight !== null && tipHeight >= volEnd;
+  const line = $('ch-hash-short');
+  line.classList.remove('hidden');
+  line.textContent = `Blocks ${state.height.toLocaleString()} – ${volEnd.toLocaleString()}`;
+  line.title = finished ? '' : 'this volume is still being written';
+  const firstYear = new Date(state.block.timestamp * 1000).getUTCFullYear();
+  const fp = $('ch-frontispiece');
+  fp.classList.remove('hidden');
+  fp.textContent = `${firstYear} – …`;
+  const lastRecorded = tipHeight !== null ? Math.min(volEnd, tipHeight) : volEnd;
+  loadBlockStamp(lastRecorded).then((ts) => {
+    if (gen !== renderGen) return;
+    const lastYear = new Date(ts * 1000).getUTCFullYear();
+    fp.textContent = firstYear === lastYear ? String(firstYear) : `${firstYear} – ${lastYear}`;
+    fp.title = finished ? '' : `recorded so far — the volume runs to block ${volEnd.toLocaleString()}`;
+  }).catch(() => {});
+  $('block-input').value = toRoman(volume);
+  labelNav();
+}
+
+// The book's own page: its number over the dates and times its first and last
+// blocks were recorded (the closing timestamp streams in; an unfinished
+// book's range ends at the chain tip so far).
+function renderBookLeaf() {
+  const gen = renderLeafShell();
+  const { volume, book, chapterCount } = volumeBookChapter(state.height);
+  showEyebrowCrumbs(true, false);
+  $('ch-volume').textContent = volume.toLocaleString();
+  $('ch-chapter-inline').textContent = '';
+  const title = $('ch-title');
+  title.textContent = `Book ${book.toLocaleString()}`;
+  title.classList.remove('hidden');
+  detachHashCopy(title);
+  $('ch-frontispiece').classList.add('hidden');
+  const bookEnd = state.height + chapterCount - 1;
+  const finished = tipHeight !== null && tipHeight >= bookEnd;
+  const line = $('ch-hash-short');
+  line.classList.remove('hidden');
+  line.textContent = `${timestampInfo(state.block.timestamp).mark} – …`;
+  const lastRecorded = tipHeight !== null ? Math.min(bookEnd, tipHeight) : bookEnd;
+  loadBlockStamp(lastRecorded).then((ts) => {
+    if (gen !== renderGen) return;
+    line.textContent = `${timestampInfo(state.block.timestamp).mark} – ${timestampInfo(ts).mark}`;
+    line.title = finished ? '' : `recorded so far — the book runs to block ${bookEnd.toLocaleString()}`;
+  }).catch(() => {});
+  $('block-input').value = `${toRoman(volume)} β${book}`;
   labelNav();
 }
 
@@ -1927,37 +2041,66 @@ function labelNav() {
     if (show) b.disabled = false;   // clear any transient load-time disable
   };
 
-  // A missing neighbour hides its button rather than greying it out. The
-  // chapter's own page (idx -1) precedes §1, so Genesis's title page is the
-  // book's very first page; a title page always has a next (its §1).
-  // Chapter prev/next belong to the chapter's own page alone -- a section
-  // header carries the eyebrow crumbs instead, and the foot nav pages on.
-  const onTitlePage = idx < 0;
-  const hasPrevChapter = onTitlePage && state.height > 0;
-  const hasNextChapter = onTitlePage && !atTip;
-  const hasPrevSection = !(state.height === 0 && idx < 0);
+  // A missing neighbour hides its button rather than greying it out. The leaf
+  // stack (volume -3 → book -2 → chapter -1) precedes §1, so Genesis's volume
+  // leaf is the book's very first page; every leaf has a next within its block.
+  // The header steppers belong to leaves alone -- and step at the leaf's own
+  // level: volumes on a volume leaf, books on a book leaf, chapters on a
+  // chapter page. Section headers carry the eyebrow crumbs instead.
+  const floor = minIndexOf(state.height);
+  const bookRef = (t) => (t.volume !== cur.volume ? `${toRoman(t.volume)} β${t.book}` : `β${t.book}`);
+  let stepPrev = null, stepNext = null;   // { text, label } or null (hidden)
+  if (idx === -3) {
+    if (cur.volume > 1) {
+      stepPrev = { text: toRoman(cur.volume - 1), label: `Previous volume (${toRoman(cur.volume - 1)})` };
+    }
+    if (tipHeight === null || heightOf(cur.volume + 1, 1, 1) <= tipHeight) {
+      stepNext = { text: toRoman(cur.volume + 1), label: `Next volume (${toRoman(cur.volume + 1)})` };
+    }
+  } else if (idx === -2) {
+    if (state.height > 0) {
+      const p = volumeBookChapter(bookStartOf(state.height - 1));
+      stepPrev = { text: bookRef(p), label: `Previous book (${toRoman(p.volume)} β${p.book})` };
+    }
+    const nextStart = state.height + cur.chapterCount;
+    if (tipHeight === null || nextStart <= tipHeight) {
+      const n = volumeBookChapter(nextStart);
+      stepNext = { text: bookRef(n), label: `Next book (${toRoman(n.volume)} β${n.book})` };
+    }
+  } else if (idx === -1) {
+    if (state.height > 0) {
+      stepPrev = { text: minSharedRef(cur, volumeBookChapter(state.height - 1), null), label: `Previous chapter (${reference(state.height - 1)})` };
+    }
+    if (!atTip) {
+      stepNext = { text: minSharedRef(cur, volumeBookChapter(state.height + 1), null), label: `Next chapter (${reference(state.height + 1)})` };
+    }
+  }
+  showBtn('chapter-prev', !!stepPrev);
+  showBtn('chapter-next', !!stepNext);
+  if (stepPrev) setBtn('chapter-prev', stepPrev.text, stepPrev.label);
+  if (stepNext) setBtn('chapter-next', stepNext.text, stepNext.label);
+
+  const hasPrevSection = !(state.height === 0 && idx <= floor);
   const hasNextSection = !(atTip && idx >= state.txCount - 1);
-  showBtn('chapter-prev', hasPrevChapter);
-  showBtn('chapter-next', hasNextChapter);
   showBtn('page-prev', hasPrevSection);
   showBtn('page-next', hasNextSection);
 
-  // Chapter navigation -- the reference truncated at the chapter.
-  if (hasPrevChapter) setBtn('chapter-prev', minSharedRef(cur, volumeBookChapter(state.height - 1), null), `Previous chapter (${reference(state.height - 1)})`);
-  if (hasNextChapter) setBtn('chapter-next', minSharedRef(cur, volumeBookChapter(state.height + 1), null), `Next chapter (${reference(state.height + 1)})`);
-
-  // Section navigation -- the reference down to the §section. The chapter's own
-  // page sits between the previous chapter's last section and §1.
+  // Page navigation -- one leaf or section at a time along the linear order:
+  // … previous block's last § → volume leaf → book leaf → chapter page → §1 …
   if (hasPrevSection) {
     if (idx > 0) {
       setBtn('page-prev', minSharedRef(cur, cur, idx), `Previous section (${reference(state.height)} §${idx})`);   // same chapter, target section = current 1-based index minus one
     } else if (idx === 0) {
       // §1 pages back to this chapter's own page -- the chapter-level reference.
       setBtn('page-prev', minSharedRef(cur, cur, null), `Chapter page (${reference(state.height)})`);
+    } else if (idx - 1 >= floor) {
+      // Up the leaf stack within this block: chapter page → book leaf → volume leaf.
+      if (idx === -1) setBtn('page-prev', `β${cur.book}`, `Book page (${toRoman(cur.volume)} β${cur.book})`);
+      else setBtn('page-prev', toRoman(cur.volume), `Volume page (${toRoman(cur.volume)})`);
     } else {
-      // From the title page, back into the prior block's final section; its
-      // §number is that block's tx count, unknown until it loads -- shown as §
-      // once resolved.
+      // Off the block's first page, back into the prior block's final section;
+      // its §number is that block's tx count, unknown until it loads -- shown
+      // as § once resolved.
       const t = volumeBookChapter(state.height - 1);
       setBtn('page-prev', minSharedRef(cur, t, '…'), `Previous section (end of ${reference(state.height - 1)})`);
       loadBlockTxCount(state.height - 1)
@@ -1966,13 +2109,23 @@ function labelNav() {
     }
   }
   if (hasNextSection) {
-    if (idx < 0) {
-      setBtn('page-next', minSharedRef(cur, cur, 1), `First section (${reference(state.height)} §1)`);   // the title page opens onto §1
+    if (idx === -3) {
+      setBtn('page-next', `β${cur.book}`, `Book page (${toRoman(cur.volume)} β${cur.book})`);
+    } else if (idx === -2) {
+      setBtn('page-next', minSharedRef(cur, cur, null), `Chapter page (${reference(state.height)})`);
+    } else if (idx === -1) {
+      setBtn('page-next', minSharedRef(cur, cur, 1), `First section (${reference(state.height)} §1)`);   // the chapter page opens onto §1
     } else if (idx < state.txCount - 1) {
       setBtn('page-next', minSharedRef(cur, cur, idx + 2), `Next section (${reference(state.height)} §${idx + 2})`);   // same chapter, target section = current 1-based index plus one
     } else {
-      const t = volumeBookChapter(state.height + 1);
-      setBtn('page-next', minSharedRef(cur, t, null), `Next chapter (${reference(state.height + 1)})`);   // crosses onto the next chapter's own page
+      // Crosses onto the next block's first page -- its volume or book leaf
+      // when it opens one, else its chapter page.
+      const nh = state.height + 1;
+      const nFloor = minIndexOf(nh);
+      const t = volumeBookChapter(nh);
+      if (nFloor === -3) setBtn('page-next', toRoman(t.volume), `Volume page (${toRoman(t.volume)})`);
+      else if (nFloor === -2) setBtn('page-next', bookRef(t), `Book page (${toRoman(t.volume)} β${t.book})`);
+      else setBtn('page-next', minSharedRef(cur, t, null), `Next chapter (${reference(nh)})`);
     }
   }
 }
@@ -2016,15 +2169,23 @@ async function loadFootnotes(targetN) {
 function updateUrl() {
   const params = new URLSearchParams();
   params.set('block', String(state.height));
-  // No index = the chapter's own page; a section always writes its index
-  // (including 0, which is §1 -- distinct from the title page).
+  // No extra param = the chapter's own page; a section always writes its
+  // index (including 0, which is §1); a volume/book leaf writes ?page=.
   if (state.index >= 0) params.set('index', String(state.index));
+  else if (state.index === -2) params.set('page', 'book');
+  else if (state.index === -3) params.set('page', 'volume');
   history.replaceState(null, '', `${location.pathname}?${params.toString()}`);
 }
 
-// A section index is clamped into the block's transaction list; anything
-// negative or absent means the chapter's own page (-1).
-const clampIndex = (i, meta) => (Number.isFinite(i) && i >= 0) ? Math.min(i, meta.txCount - 1) : -1;
+// A section index is clamped into the block's transaction list; a negative
+// index is a leaf, clamped to the leaves this block actually carries (a
+// volume leaf requested on a mid-book block falls back to the chapter page);
+// absent means the chapter's own page (-1).
+const clampIndex = (i, meta) => {
+  if (!Number.isFinite(i)) return -1;
+  if (i >= 0) return Math.min(i, meta.txCount - 1);
+  return Math.max(i, minIndexOf(meta.height));
+};
 
 // Load whatever the reader gave us: a block height, a block hash, or a
 // transaction id. A 64-hex value is either a block hash or a txid -- they're
@@ -2084,16 +2245,16 @@ async function openLookup(input, index = -1) {
   }
 }
 
-// direction: +1 (Next) or -1 (Previous). Steps through the chapter's pages --
-// its own page (index -1), then its sections; at either edge, crosses into the
-// adjacent block (if one exists): forward onto its chapter page, backward onto
-// its last section.
+// direction: +1 (Next) or -1 (Previous). Steps through the block's pages --
+// its leaves (volume/book/chapter, whichever it carries), then its sections;
+// at either edge, crosses into the adjacent block (if one exists): forward
+// onto its first page, backward onto its last section.
 async function stepTx(direction) {
-  // Bounds come from txCount (always known); the txid list itself is only
-  // needed to address a section by position -- fetched on demand here if the
-  // reader landed on this chapter's page without it.
+  // Bounds come from txCount and the leaf floor (both known without the txid
+  // list); the list itself is only needed to address a section by position --
+  // fetched on demand here if the reader landed on a leaf without it.
   const withinBlock = state.index + direction;
-  if (withinBlock >= -1 && withinBlock < state.txCount) {
+  if (withinBlock >= minIndexOf(state.height) && withinBlock < state.txCount) {
     if (withinBlock >= 0) {
       try { await ensureTxids(state); }
       catch (e) { setStatus(e.message || 'Failed to load the transaction list.', 'err'); return; }
@@ -2114,11 +2275,12 @@ async function stepTx(direction) {
   $('page-next').disabled = true;
   setStatus(`<span class="spinner"></span>loading ${direction > 0 ? 'next' : 'previous'} block…`);
   try {
-    // Forward lands on the next chapter's own page -- no txid list needed
-    // until the reader pages into a section. Backward addresses the previous
-    // block's last transaction by position, so it needs the list now.
+    // Forward lands on the next block's first page (its volume/book leaf when
+    // it opens one, else its chapter page) -- no txid list needed until the
+    // reader pages into a section. Backward addresses the previous block's
+    // last transaction by position, so it needs the list now.
     const next = await loadBlockByHeight(newHeight, { withTxids: direction < 0 });
-    state = { ...next, index: direction > 0 ? -1 : next.txCount - 1 };
+    state = { ...next, index: direction > 0 ? minIndexOf(newHeight) : next.txCount - 1 };
     await showCurrentTx();
   } catch (e) {
     if (direction > 0) tipHeight = state.height;
@@ -2127,29 +2289,45 @@ async function stepTx(direction) {
   }
 }
 
-// Jump a whole chapter (block) at a time, landing on its own page. Genesis
-// has no earlier chapter and the tip none later; both are guarded by the button
-// disabled state and rechecked here.
+// Jump to a specific leaf: the volume (-3), book (-2), or chapter (-1) page
+// whose span starts at `height`. Used by the header steppers and the eyebrow
+// crumbs. Genesis has no earlier span and the tip none later; both are guarded
+// by the button visibility and rechecked here.
 let chapterLoading = false;
-async function goToChapter(direction) {
-  if (!state || chapterLoading) return;
-  const target = state.height + direction;
-  if (target < 0) return;
+async function openLeafAt(height, idx, direction = 0) {
+  if (!state || chapterLoading || height < 0) return;
   chapterLoading = true;
   $('chapter-prev').disabled = true;
   $('chapter-next').disabled = true;
-  setStatus(`<span class="spinner"></span>loading ${direction > 0 ? 'next' : 'previous'} chapter…`);
+  setStatus('<span class="spinner"></span>loading…');
   try {
-    const meta = await loadBlockByHeight(target, { withTxids: false });
-    state = { ...meta, index: -1 };
+    const meta = await loadBlockByHeight(height, { withTxids: false });
+    state = { ...meta, index: clampIndex(idx, meta) };
     await showCurrentTx();
   } catch (e) {
     if (direction > 0) tipHeight = state.height;   // asked past the tip -- remember it
-    setStatus(direction > 0 ? 'No next chapter yet — this is the current chain tip.' : (e.message || 'Failed to load previous chapter.'), 'err');
+    setStatus(direction > 0 ? 'Not written yet — this is the current chain tip.' : (e.message || 'Failed to load.'), 'err');
     labelNav();   // re-show/hide from the (unchanged) position, now that the tip may be known
   } finally {
     chapterLoading = false;
   }
+}
+
+// The header steppers walk at the current leaf's own level: volume to volume,
+// book to book, chapter to chapter -- each landing on that span's page.
+async function goToLevel(direction) {
+  if (!state) return;
+  const { volume, chapterCount } = volumeBookChapter(state.height);
+  if (state.index === -3) {
+    const v = volume + direction;
+    if (v < 1) return;
+    return openLeafAt(heightOf(v, 1, 1), -3, direction);
+  }
+  if (state.index === -2) {
+    const target = direction > 0 ? state.height + chapterCount : (state.height > 0 ? bookStartOf(state.height - 1) : -1);
+    return openLeafAt(target, -2, direction);
+  }
+  return openLeafAt(state.height + direction, -1, direction);
 }
 
 // Rapid Next/Previous clicks -- or holding the button -- would otherwise fire
@@ -2189,8 +2367,9 @@ async function runPendingSteps() {
       try { await ensureTxids(state); return true; }
       catch (e) { setStatus(e.message || 'Failed to load the transaction list.', 'err'); return false; }
     };
+    const floor = minIndexOf(state.height);
     const target = state.index + steps;
-    if (target >= -1 && target < state.txCount) {
+    if (target >= floor && target < state.txCount) {
       if (target >= 0 && !(await needList())) return;
       state.index = target;
       try {
@@ -2202,8 +2381,8 @@ async function runPendingSteps() {
       if (!(await needList())) return;
       state.index = state.txCount - 1;          // overshot forward -- land on the block's last tx
       try { await showCurrentTx(); } catch (e) { setStatus(e.message || 'Failed to load transaction.', 'err'); }
-    } else if (steps < 0 && state.index > -1) {
-      state.index = -1;                         // overshot backward -- land on the chapter's own page
+    } else if (steps < 0 && state.index > floor) {
+      state.index = floor;                      // overshot backward -- land on the block's first page
       try { await showCurrentTx(); } catch (e) { setStatus(e.message || 'Failed to load transaction.', 'err'); }
     } else {
       await stepTx(steps > 0 ? 1 : -1);         // already at the edge -- cross one block boundary
@@ -2219,21 +2398,17 @@ $('block-btn').addEventListener('click', () => openLookup($('block-input').value
 $('block-input').addEventListener('keydown', (e) => { if (e.key === 'Enter') openLookup($('block-input').value); });
 $('page-prev').addEventListener('click', () => requestStep(-1));
 $('page-next').addEventListener('click', () => requestStep(1));
-$('chapter-prev').addEventListener('click', () => goToChapter(-1));
-$('chapter-next').addEventListener('click', () => goToChapter(1));
-// The eyebrow crumbs: each opens the start of the span it names -- for now the
-// first chapter's own page; when dedicated volume/book leaves exist, these are
-// their entry points.
-$('ch-volume-link').addEventListener('click', () => {
+$('chapter-prev').addEventListener('click', () => goToLevel(-1));
+$('chapter-next').addEventListener('click', () => goToLevel(1));
+// The eyebrow crumbs: each opens the page of the span it names. Same block →
+// just re-render at the leaf; otherwise load the span's first block.
+const openCrumb = (height, idx) => {
   if (!state) return;
-  const { volume } = volumeBookChapter(state.height);
-  openLookup(String(heightOf(volume, 1, 1)));
-});
-$('ch-book-link').addEventListener('click', () => {
-  if (!state) return;
-  const { volume, book } = volumeBookChapter(state.height);
-  openLookup(String(heightOf(volume, book, 1)));
-});
+  if (state.height === height) { state.index = idx; showCurrentTx(); }
+  else openLeafAt(height, idx);
+};
+$('ch-volume-link').addEventListener('click', () => { if (state) openCrumb(volumeStartOf(state.height), -3); });
+$('ch-book-link').addEventListener('click', () => { if (state) openCrumb(bookStartOf(state.height), -2); });
 
 // ── Data-source picker ────────────────────────────────────────────────────
 const endpointSel = $('endpoint-select');
@@ -2645,9 +2820,12 @@ renderContents();
 const params = new URLSearchParams(location.search);
 const txidParam = params.get('txid');
 const blockParam = params.get('block');
-// An absent ?index= opens the chapter's own page (-1); index=0 is §1.
+// An absent ?index= opens the chapter's own page (-1); index=0 is §1;
+// ?page=volume / ?page=book open the block's volume or book leaf.
 const idxRaw = parseInt(params.get('index'), 10);
-const indexParam = Number.isFinite(idxRaw) ? idxRaw : -1;
+const pageParam = params.get('page');
+const indexParam = Number.isFinite(idxRaw) ? idxRaw
+  : pageParam === 'volume' ? -3 : pageParam === 'book' ? -2 : -1;
 if (txidParam) {
   $('block-input').value = txidParam;
   openLookup(txidParam);
