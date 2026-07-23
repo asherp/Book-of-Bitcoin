@@ -20,10 +20,23 @@ export const NOTABLE = [
   // 74,638 is the honest re-mined block that excised the ~184.4B-BTC overflow, so
   // this entry points at the block itself (no §section) -- the supply cap's repair.
   { title: 'Supply cap bug fix', id: '74638' },
+  // The same corrective fork carried a second ruleset: 0.3.10 also disabled a
+  // dozen script opcodes (OP_CAT, OP_LSHIFT & co., Aug 15, 2010), following
+  // 0.3.6's forced-fail OP_RETURN (July 29). Release-based soft forks with no
+  // flag height, so the fork block that put the patched rules in charge of
+  // the chain is the closest thing they have to an activation chapter -- this
+  // entry deliberately shares its block with the one above.
+  { title: 'Script opcode purge', id: '74638' },
   // Satoshi's quiet cap: blocks past height 79,400 may not exceed 1,000,000
   // bytes -- the first height-flagged soft fork (Sept 12, 2010), and the seed
   // of the block size wars.
   { title: '1 MB size limit activation', id: '79400' },
+  // BIP30's origin story: the coinbases of 91,812 and 91,722 were repeated
+  // verbatim by 91,842 and 91,880, overwriting them in the UTXO set. The ban
+  // on duplicate txids switched on by timestamp (Mar 15, 2012) rather than by
+  // flag block, with exactly these two offenders grandfathered forever -- so
+  // the first of them anchors the chapter.
+  { title: 'Duplicate coinbase (BIP30)', id: '91842' },
   { title: '100K block milestone', id: '100000' },
   { title: 'Eligius', id: '139690' },
   { title: 'First P2SH spend', id: 'e5779b9e78f9650debc2893fd9636d827b26b4ddfa6a8172fe8708c924f5c39d' },
@@ -43,6 +56,12 @@ export const NOTABLE = [
   { title: 'BIP65 activation (v4)', id: '388381' },
   { title: 'CSV activation (version bits)', id: '419328' },
   { title: 'The Second Halving', id: '420000' },
+  // The blocksize-war wedge: BIP91 locked in at 476,768 and from this block
+  // (July 22, 2017) briefly made SegWit signaling mandatory -- blocks not
+  // setting bit 1 were rejected -- squeezing BIP141 over its own 95%
+  // threshold. A transient rule, spent once SegWit locked in, but a soft
+  // fork all the same.
+  { title: 'BIP91 activation (SegWit mandate)', id: '477120' },
   { title: 'Bitcoin Cash fork', id: '478558' },
   { title: 'SegWit activation', id: '481824' },
   { title: '500K block milestone', id: '500000' },
@@ -61,18 +80,17 @@ export const NOTABLE = [
   { title: 'The Fourth Halving', id: '840000' },
   { title: 'Sermon on the Mount', id: 'e53ac3be05bbeb8ea3bbfb7854a4d47eea556daea25f45ad3fe953f375ff7fd8' },
   { title: 'Latest block', id: '-1' },
+  // The one activation block that does not exist yet: BIP42 (April 1, 2014)
+  // capped the subsidy schedule where the 64th halving's undefined bit-shift
+  // would have resurrected the 50-BTC reward. Its rules first bind at height
+  // 13,440,000 -- LXV β1 ■1, the opening chapter of Volume 65, due around the
+  // year 2262. Cited now, mineable later; its lookup fails until then.
+  { title: 'BIP42 activation (21M cap)', id: '13440000' },
 ];
 
 // A block entry may carry an `index`: the transaction's position within the
 // block (0-based), rendered as its §section and passed to the book as ?index=.
 // e.g. { title: '…', id: '100000', index: 1 } opens block 100000, §2.
-
-// Soft forks with no activation chapter, deliberately absent: the Aug-Sept
-// 2010 opcode disablings (OP_CAT and friends, 0.3.x releases) took effect on
-// release with no flag height; BIP30 (duplicate-txid ban) switched on by
-// timestamp (Mar 15, 2012) and was later applied to nearly the whole chain;
-// BIP42 (21M cap fix, Apr 2014) changes nothing until the 2200s. BIP91 (Jul
-// 2017) was a transient SegWit-activation aid, not a lasting rule.
 
 // More transaction-level entries still to confirm against the chain before
 // adding: payment-type firsts (P2PKH, P2WPKH/P2WSH, P2TR key/script, OP_RETURN
