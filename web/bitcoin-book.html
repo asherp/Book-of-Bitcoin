@@ -296,6 +296,10 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 #chapter-prev::before, #page-prev::before { content: '‹\00a0'; }
 #chapter-next::after, #page-next::after { content: '\00a0›'; }
 .chapter-title { font: 500 37px/1.2 'Newsreader', serif; color: var(--ink); margin: 0 0 22px; letter-spacing: -.01em; }
+/* A notable chapter's event name, set small under the unchanging "Chapter n"
+   heading. The negative top margin tucks it into the title's own 22px gap,
+   leaving 6px between the two and the usual 22px before what follows. */
+.chapter-subtitle { font: italic 500 21px/1.3 'Newsreader', serif; color: var(--dim); margin: -16px 0 22px; }
 .chapter-hash { font: italic 400 15px/1.5 'Newsreader',serif; color: var(--dim); margin: 0 auto 16px; max-width: 46ch; }
 /* The block header's own fields -- version, previous-block hash, merkle
    root, timestamp, difficulty target, nonce -- in wire order, under the
@@ -678,6 +682,7 @@ button:disabled { opacity: .4; cursor: not-allowed; }
     <div id="page-slide">
     <header class="chapter-head">
       <h1 class="chapter-title" id="ch-title"></h1>
+      <div class="chapter-subtitle hidden" id="ch-subtitle"></div>
       <div class="chapter-hash" id="ch-hash-short"></div>
       <div class="chapter-frontispiece" id="ch-frontispiece"></div>
       <h2 class="section-title" id="section-title"></h2>
@@ -1800,8 +1805,14 @@ function renderChapterHead(onTitlePage) {
   $('ch-volume').textContent = volume.toLocaleString();
   $('ch-book').textContent = book.toLocaleString();
   const isGenesis = volume === 1 && book === 1 && chapter === 1;
-  const eventTitle = NOTABLE.find((e) => e.id === String(state.height))?.title;
-  $('ch-title').textContent = isGenesis ? 'Genesis' : (eventTitle || `Chapter ${chapter.toLocaleString()}`);
+  // A notable block keeps its "Chapter n" heading and carries its event name
+  // as a subtitle beneath it. A height with several notable entries (the
+  // supply-cap fork carries two) shows them all, dot-separated.
+  const eventTitles = NOTABLE.filter((e) => e.id === String(state.height)).map((e) => e.title);
+  const eventTitle = eventTitles[0];
+  $('ch-title').textContent = isGenesis ? 'Genesis' : `Chapter ${chapter.toLocaleString()}`;
+  const subtitle = $('ch-subtitle');
+  subtitle.textContent = isGenesis ? '' : eventTitles.join(' · ');
   // On a section page the running head's chapter is a crumb back to the
   // chapter's own page -- no fetch needed, the block is already in state.
   const inline = $('ch-chapter-inline');
@@ -1818,6 +1829,7 @@ function renderChapterHead(onTitlePage) {
     inline.append(crumb);
   }
   $('ch-title').classList.toggle('hidden', !onTitlePage);
+  subtitle.classList.toggle('hidden', !onTitlePage || !subtitle.textContent);
   $('ch-hash-short').classList.toggle('hidden', !onTitlePage);
   $('ch-frontispiece').classList.toggle('hidden', !onTitlePage);
   if (onTitlePage) {
@@ -1839,6 +1851,7 @@ function renderLeafShell() {
   $('chapter').classList.add('title-leaf');
   ++renderGen;
   lazyEncode.reset();
+  $('ch-subtitle').classList.add('hidden');
   $('section-title').classList.add('hidden');
   $('section-hash').classList.add('hidden');
   $('ch-paragraphs').innerHTML = '';
