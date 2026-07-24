@@ -175,6 +175,10 @@ export function formatNetBtc(sats) {
   return `${sign}${whole}.${frac} ₿`;
 }
 
+// The same notation unsigned: a balance is what the address holds, not a
+// ledger movement, so it carries no sign.
+export const formatBalanceBtc = (sats) => formatNetBtc(sats).replace(/^[+−]/, '');
+
 // ---------------------------------------------------------------------------
 // The mapping, the store, and the renderers shared by the index-family pages.
 //
@@ -262,7 +266,9 @@ async function blockbookMap(address, from) {
     };
     await Promise.all(Array.from({ length: Math.min(BLOCKBOOK_CONCURRENCY, Math.max(pages - 1, 0)) }, worker));
     if (failed) continue;
-    return { txCount: first.txs, touches: chunks.flat() };
+    // `balance` is the address's whole confirmed balance regardless of any
+    // from-filter -- an address property, not a page one.
+    return { txCount: first.txs, balance: Number(first.balance ?? 0), touches: chunks.flat() };
   }
   return null;
 }
@@ -273,6 +279,7 @@ async function esploraMap(address) {
   const info = await esploraJson(`/address/${address}`);
   if (!info) return null;
   const txCount = info.chain_stats.tx_count;
+  const balance = info.chain_stats.funded_txo_sum - info.chain_stats.spent_txo_sum;
   const touches = [];
   let lastSeen = '';
   for (let page = 0; page < ESPLORA_MAX_PAGES && touches.length < txCount; page++) {
@@ -283,7 +290,7 @@ async function esploraMap(address) {
     lastSeen = `/${confirmed[confirmed.length - 1].txid}`;
   }
   if (!touches.length && txCount > 0) return null;   // failed mid-flight, not empty
-  return { txCount, touches };
+  return { txCount, balance, touches };
 }
 
 // Touches grouped into chapters, ascending: one row per block, the way a
@@ -395,9 +402,9 @@ async function topUp(address, cached) {
     // The from-filter is re-applied locally: a mirror that ignored it (or
     // answered with overlap) must not double-count the mapped chapters.
     const fresh = bb.touches.filter((t) => t.height >= frontier);
-    if (bb.txCount === cached.txCount && !fresh.length) return cached;
+    if (bb.txCount === cached.txCount && !fresh.length && cached.balance === bb.balance) return cached;
     const chapters = cached.chapters.concat(groupChapters(fresh));
-    const data = { at: Date.now(), txCount: bb.txCount, walked: cached.walked + fresh.length, complete: true, chapters };
+    const data = { at: Date.now(), txCount: bb.txCount, balance: bb.balance, walked: cached.walked + fresh.length, complete: true, chapters };
     await saveLine(address, data);
     return data;
   }
@@ -406,7 +413,14 @@ async function topUp(address, cached) {
   // tip). If the cap strikes before the frontier, keep the cached map --
   // complete as of its writing beats a hole.
   const info = await esploraJson(`/address/${address}`);
-  if (!info || info.chain_stats.tx_count === cached.txCount) return cached;
+  if (!info) return cached;
+  const balance = info.chain_stats.funded_txo_sum - info.chain_stats.spent_txo_sum;
+  if (info.chain_stats.tx_count === cached.txCount) {
+    if (cached.balance === balance) return cached;
+    const data = { ...cached, balance };   // an old line learns its balance
+    await saveLine(address, data);
+    return data;
+  }
   const txCount = info.chain_stats.tx_count;
   const touches = [];
   let lastSeen = '';
@@ -419,7 +433,7 @@ async function topUp(address, cached) {
     }
     if (confirmed.some((t) => t.status.block_height < frontier)) {
       const chapters = cached.chapters.concat(groupChapters(touches));
-      const data = { at: Date.now(), txCount, walked: cached.walked + touches.length, complete: true, chapters };
+      const data = { at: Date.now(), txCount, balance, walked: cached.walked + touches.length, complete: true, chapters };
       await saveLine(address, data);
       return data;
     }
@@ -440,7 +454,7 @@ export async function resolveLine(address) {
   const map = bb ?? await esploraMap(address);
   if (!map) return cached ?? null;
   const data = {
-    at: Date.now(), txCount: map.txCount, walked: map.touches.length,
+    at: Date.now(), txCount: map.txCount, balance: map.balance, walked: map.touches.length,
     complete: map.touches.length >= map.txCount, chapters: groupChapters(map.touches),
   };
   await saveLine(address, data);
