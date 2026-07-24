@@ -30,6 +30,13 @@ export const INDEXED = [
   // The address that took delivery of the 10,000 BTC for two pizzas (block
   // 57,043 -- Bitcoin Pizza Day, the contents' own chapter for it).
   { title: 'Jeremy Sturdivant — Bitcoin Pizza', address: '17SkEw2md5avVNyYgj6RiXuQKNwkXaxFyQ' },
+  // The donation address Keonne Rodriguez, Samourai Wallet's co-founder,
+  // published from federal prison (2026), appealing to the Bitcoin community
+  // for help with the legal debt of the Samourai prosecution: arrested April
+  // 2024 over the privacy wallet, a 2025 guilty plea to operating an
+  // unlicensed money-transmitting business. An open appeal, so its index
+  // line is still being written.
+  { title: 'Free Samourai — Keonne Rodriguez', address: 'bc1qtjjcvn98wh7dfd55m8kxhjcfexanttwt8gtan8' },
 ];
 
 // Addresses still to confirm against the chain before adding: the first P2PKH
