@@ -12,24 +12,12 @@
 // contents entry's id resolves to one citation, an index entry's address
 // resolves to many -- an open-ended list that grows as the address is used.
 //
-// Entries are ordered by the address's famous moment (reading order), like the
+// The curated set is donation addresses: causes the community has paid, so
+// every citation is a gift and each entry's nested listing reads as a ledger
+// of giving. Ordered by the address's famous moment (reading order), like the
 // contents -- not alphabetically; the list is short enough to scan whole.
 
 export const INDEXED = [
-  // The genesis coinbase paid its 50 BTC to Satoshi's bare public key; this is
-  // that key's address form, the most famous address in Bitcoin. The output is
-  // unspendable (the genesis coinbase was never entered into the UTXO set), yet
-  // the entry keeps growing: tributes arrive to this day, so its index trails
-  // from I β1 ■1 into the present.
-  { title: 'Satoshi Nakamoto — genesis address', address: '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa' },
-  // The recipient of the first transaction (I β1 ■171 §1). That payment went
-  // to Hal's bare public key, not this hash of it, and explorers index the two
-  // script forms separately -- so the address history opens not at the famous
-  // chapter but wherever the P2PKH form of the same key was first paid.
-  { title: 'Hal Finney', address: '1Q2TWHE3GMdB6BZKafqwxXtWAWgFt5Jvm3' },
-  // The address that took delivery of the 10,000 BTC for two pizzas (block
-  // 57,043 -- Bitcoin Pizza Day, the contents' own chapter for it).
-  { title: 'Jeremy Sturdivant — Bitcoin Pizza', address: '17SkEw2md5avVNyYgj6RiXuQKNwkXaxFyQ' },
   // The Free Ross campaign's vanity donation address (the name is mined into
   // the base58), collecting for Ross Ulbricht's defense and advocacy from the
   // Silk Road trial era (2014) through freeross.org, until the January 2025
@@ -45,12 +33,11 @@ export const INDEXED = [
   { title: 'Free Samourai — Keonne Rodriguez', address: 'bc1qtjjcvn98wh7dfd55m8kxhjcfexanttwt8gtan8' },
 ];
 
-// Addresses still to confirm against the chain before adding: the first P2PKH
-// recipient ever (tx 6f7cf958…, Jan 16 2009 -- the contents cites the
-// transaction; its output address belongs here too); the first P2SH address
-// spent from (e5779b9e…); the first native SegWit (bc1q…) and first Taproot
-// (bc1p…) addresses paid. Each is one address-decode away from its
-// already-cited transaction, but decode them from the chain, not from memory.
+// Donation addresses still to confirm against their campaigns before adding:
+// WikiLeaks' famous address (June 2010, the banking-blockade donation stream
+// Satoshi asked to hold off -- "the heat you would bring"), and the addresses
+// of the long-running institutional funds (EFF, the Tor Project). Confirm
+// each from the campaign's own publications, never from memory.
 
 // A loose shape test for the address forms the chain has used: base58 P2PKH
 // ('1…') and P2SH ('3…'), and bech32/bech32m ('bc1…', matched lowercase --
