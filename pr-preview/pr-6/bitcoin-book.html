@@ -401,10 +401,22 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 .hash-menu-title .hash-title-row .ghost { background: transparent; color: var(--dim); border: 1px solid var(--input-bd); }
 .hash-menu-title .hash-title-row .ghost:hover { background: transparent; color: var(--ink); border-color: var(--accent); }
 
-/* Per-section paging, at the foot of the section (after the witness footnotes):
-   Previous / Next pushed to opposite edges, each labelled with the section (or
-   adjacent chapter) it steps to. A rule separates it from the section above. */
-.section-nav { display:flex; align-items:center; gap:16px; margin-top: 44px; padding-top: 24px; border-top: 1px solid var(--rule); }
+/* Per-section paging: Previous / Next pushed to opposite edges, each labelled
+   with the section (or adjacent leaf) it steps to. Anchored to the bottom of
+   the screen: sticky, so on a page taller than the viewport the bar rides the
+   bottom edge -- prose scrolls behind its page-colour backing, the rule its
+   top edge -- and settles into its natural place at the section's foot (after
+   the witness footnotes) once the reader reaches it. */
+.section-nav {
+  position: sticky; bottom: 0; z-index: 40;
+  display:flex; align-items:center; gap:16px; margin-top: 44px;
+  padding: 14px 0 max(14px, env(safe-area-inset-bottom));
+  border-top: 1px solid var(--rule); background: var(--page);
+}
+/* Nothing to step to on either side (nothing precedes Genesis's opening leaf;
+   nothing follows the tip's last section while both edges are hidden): drop
+   the bar entirely rather than pin an empty rule to the screen bottom. */
+.section-nav:not(:has(button:not(.hidden))) { display: none; }
 /* Next hugs the right edge, Previous the left -- and each keeps its side even
    when the other is hidden (an absent neighbour shows no button at all). */
 #page-next { margin-left: auto; }
