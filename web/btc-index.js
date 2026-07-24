@@ -179,6 +179,17 @@ export function formatNetBtc(sats) {
 // ledger movement, so it carries no sign.
 export const formatBalanceBtc = (sats) => formatNetBtc(sats).replace(/^[+−]/, '');
 
+// The reconciliation test -- double-entry proof of a finished sync. Over a
+// truly complete confirmed history, the ledger identity is exact: the sum of
+// every chapter's net IS funded-minus-spent, the balance. So equality proves
+// the map whole, and inequality names it still syncing -- a capped walk, a
+// block that arrived mid-mapping, or a mirror that answered short. The pages
+// gate an anthology behind this: nothing is displayed or entered until its
+// numbers add up (the next revalidation converges it).
+export const ledgerSum = (data) => data.chapters.reduce((n, c) => n + c.sats, 0);
+export const reconciled = (data) =>
+  !!data && data.complete && data.balance != null && ledgerSum(data) === data.balance;
+
 // ---------------------------------------------------------------------------
 // The mapping, the store, and the renderers shared by the index-family pages.
 //

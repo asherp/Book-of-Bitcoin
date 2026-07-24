@@ -178,7 +178,7 @@ a:hover { text-decoration: underline; }
 </div>
 
 <script type="module">
-import { INDEXED, isAddress, addressScriptHex, cachedLine, resolveLine, renderAnthology, spine, blockTime, lineNote } from './btc-index.js';
+import { INDEXED, isAddress, addressScriptHex, cachedLine, resolveLine, renderAnthology, spine, blockTime, lineNote, reconciled } from './btc-index.js';
 import { volumeBookChapter, toRoman } from './btc-citation.js';
 
 // An anthology is one address's own subset of the book, opened the way a
@@ -275,14 +275,33 @@ if (!addr) {
     range.textContent = `${vols} · ${dates}`;
   };
 
+  // The anthology opens only reconciled: its ledger sum equal to the chain's
+  // balance, the double-entry proof the map is whole (see btc-index.js).
+  // Until then the leaf keeps its identity -- the name and the prose -- but
+  // the span, contents, and index stay closed behind a syncing line.
+  const view = (data) => {
+    if (reconciled(data)) {
+      renderAnthology(el, data, { bookmarks });
+      showCount(data);
+      showRange(data);
+      return;
+    }
+    el.replaceChildren();
+    count.textContent = '';
+    range.textContent = '';
+    lineNote(el, data
+      ? `still syncing — ${data.walked.toLocaleString('en-US')} of ${data.txCount.toLocaleString('en-US')} appearances collected; the anthology opens once its ledger reconciles with its balance`
+      : '…');
+  };
+
   // The stored map first -- instantly, offline included -- then the resolver
   // confirms it against the chain, tops it up, or maps afresh.
   (async () => {
     const cached = await cachedLine(addr);
-    if (cached) { renderAnthology(el, cached, { bookmarks }); showCount(cached); showRange(cached); }
-    else lineNote(el, '…');
+    view(cached);
     const data = await resolveLine(addr);
-    if (data !== cached) { renderAnthology(el, data, { bookmarks }); showCount(data); showRange(data); }
+    if (data !== cached) view(data);
+    else if (!data) { el.replaceChildren(); lineNote(el, '— the chain could not be reached'); }
   })();
 }
 </script>
