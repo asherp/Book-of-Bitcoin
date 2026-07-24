@@ -30,6 +30,12 @@ export const INDEXED = [
   // The address that took delivery of the 10,000 BTC for two pizzas (block
   // 57,043 -- Bitcoin Pizza Day, the contents' own chapter for it).
   { title: 'Jeremy Sturdivant — Bitcoin Pizza', address: '17SkEw2md5avVNyYgj6RiXuQKNwkXaxFyQ' },
+  // The Free Ross campaign's vanity donation address (the name is mined into
+  // the base58), collecting for Ross Ulbricht's defense and advocacy from the
+  // Silk Road trial era (2014) through freeross.org, until the January 2025
+  // pardon turned the cause from clemency to gratitude -- donations kept
+  // arriving after it.
+  { title: 'Free Ross — Ross Ulbricht defense fund', address: '1Ross5Np5doy4ajF9iGXzgKaC2Q3Pwwxv' },
   // The donation address Keonne Rodriguez, Samourai Wallet's co-founder,
   // published from federal prison (2026), appealing to the Bitcoin community
   // for help with the legal debt of the Samourai prosecution: arrested April
