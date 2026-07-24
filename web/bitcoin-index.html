@@ -113,12 +113,12 @@ a:hover { text-decoration: underline; }
 </div>
 
 <script type="module">
-import { INDEXED, isAddress, cachedLine, resolveLine, formatNetBtc } from './btc-index.js';
+import { INDEXED, isAddress, cachedLine, resolveLine, formatBalanceBtc } from './btc-index.js';
 
-// The shelf lists the anthologies: title and running total, nothing else --
+// The shelf lists the anthologies: title and current balance, nothing else --
 // each row opens its anthology's title page, where the address, its prose,
 // its span, its contents, and its index live. The mapping and store are
-// btc-index.js's, shared with the anthology pages, so a total the shelf
+// btc-index.js's, shared with the anthology pages, so a balance the shelf
 // resolves is a map the title page opens instantly.
 
 // A reader's own query joins the shelf: ?address=<addr> prepends a temporary
@@ -129,12 +129,16 @@ const adhoc = isAddress(q) && !INDEXED.some((e) => e.address === q)
   ? [{ title: q, address: q }] : [];
 const entries = [...adhoc, ...INDEXED];
 
-// The ledger's running total: every chapter's net, summed -- what the
-// address holds of all it was ever given. An incomplete map's total counts
-// only the chapters walked, and says so with a trailing ellipsis.
-const total = (data) => data.chapters.reduce((n, c) => n + c.sats, 0);
-const totalText = (data) =>
-  formatNetBtc(total(data)) + (data.walked < data.txCount ? ' …' : '');
+// The address's current confirmed balance -- what it holds of all it was
+// ever given -- straight from the chain stats, so it's exact whether or not
+// the map behind it is complete. A line stored before balances were kept
+// falls back to its ledger sum (equal to the balance when the map is
+// complete; approximate, and marked with an ellipsis, when it isn't).
+const balanceText = (data) => {
+  if (data.balance != null) return formatBalanceBtc(data.balance);
+  const sum = data.chapters.reduce((n, c) => n + c.sats, 0);
+  return formatBalanceBtc(sum) + (data.walked < data.txCount ? ' …' : '');
+};
 
 // Build every row at once -- titles are known offline -- and let each total
 // fill in from the store and refresh as its map resolves. Built onto a
@@ -154,7 +158,7 @@ for (const e of entries) {
   index.append(row);
   const show = (data) => {
     if (!data) { amt.textContent = '—'; amt.classList.add('pending'); return; }
-    amt.textContent = totalText(data);
+    amt.textContent = balanceText(data);
     amt.classList.remove('pending');
   };
   (async () => {
