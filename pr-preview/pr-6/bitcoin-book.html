@@ -288,9 +288,19 @@ button:disabled { opacity: .4; cursor: not-allowed; }
    would stack against the page nav's opening rule -- drop it and let the nav's
    rule close the leaf alone. */
 #chapter.title-leaf .chapter-head { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
-/* Chapter (block) navigation: prev / next flanking the Volume · Book locator. */
-.chapter-nav { display:flex; align-items:center; justify-content:center; gap:16px; margin-bottom: 14px; }
-.chapter-num { font:600 11.5px/1 'IBM Plex Mono',monospace; letter-spacing:.3em; text-transform:uppercase; color: var(--accent); }
+/* Chapter (block) navigation: prev / next flanking the Volume · Book locator.
+   A [1fr | auto | 1fr] grid keeps the locator crumb dead-centred on the page
+   even when only one stepper is showing (Genesis has no Previous, the tip no
+   Next) -- a hidden stepper leaves its track empty instead of letting the
+   crumb drift toward the survivor. The steppers hug the crumb from their
+   inner edges. */
+.chapter-nav { display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:16px; margin-bottom: 14px; }
+/* Explicit tracks: a hidden stepper (display:none) leaves the grid, and
+   auto-placement would reflow the crumb into its column -- pin each piece. */
+#chapter-prev { grid-column: 1; justify-self: end; }
+.chapter-num { grid-column: 2; }
+#chapter-next { grid-column: 3; justify-self: start; }
+.chapter-num { font:600 11.5px/1 'IBM Plex Mono',monospace; letter-spacing:.3em; text-transform:uppercase; color: var(--accent); min-width: 0; text-align: center; }
 /* The eyebrow's Volume / Book / Chapter crumbs inherit its voice exactly;
    hover marks them navigable. (Overrides the global gold button styling.) */
 .chapter-num .crumb {
@@ -429,7 +439,8 @@ button:disabled { opacity: .4; cursor: not-allowed; }
                   plus its output index (a coinbase shows ∅).
      .tx-outputs  a subgrid (row 2, body + right): every output is a [scriptPubKey
                   | amount] pair, so an amount sits on the line of its output.
-     .tx-locktime the closing locktime, right column, last band -- the end. */
+     .tx-locktime the closing locktime, centred across the full row, last
+                  band -- the end, set like a terminal colophon. */
 .tx-flow { display: grid; grid-template-columns: [left] 6.5em [body] minmax(0,1fr) [right] 7em; column-gap: 1.3em; align-items: start; }
 .tx-inputs { grid-column: left / right; grid-row: 1; display: grid; grid-template-columns: subgrid; column-gap: 1.3em; align-items: start; }
 /* padding-top nudges the small-cap reference down onto the top of the taller
@@ -466,11 +477,11 @@ button:disabled { opacity: .4; cursor: not-allowed; }
   column-gap: 1.3em; align-items: start;
 }
 .tx-out-script { grid-column: 1; min-width: 0; }
-/* Amounts and the closing locktime right-align to the page edge, like a ledger
-   column; amounts read in bitcoin (₿) with a fixed eight decimals and tabular
-   figures, so the column aligns on the point (see formatBtc in btc-prose.js). */
+/* Amounts right-align to the page edge, like a ledger column; they read in
+   bitcoin (₿) with a fixed eight decimals and tabular figures, so the column
+   aligns on the point (see formatBtc in btc-prose.js). */
 .tx-out-value  { grid-column: 2; text-align: right; font-variant-numeric: tabular-nums; }
-.tx-locktime { grid-column: right; grid-row: 3; text-align: right; font-style: normal; }
+.tx-locktime { grid-column: left / -1; grid-row: 3; text-align: center; font-style: normal; }
 .tx-note { font: italic 400 13.5px/1.4 'Newsreader',serif; color: var(--dim); }
 /* The input's sequence mark, leading the amount line beneath the reference:
    ●/○ final/respects-locktime, † replaceable (a shade warmer), ■n / Τn a
@@ -525,20 +536,22 @@ button:disabled { opacity: .4; cursor: not-allowed; }
   .tx-flow { grid-template-columns: 1fr; }
   .tx-inputs, .tx-margin-cites, .tx-outputs, .tx-locktime { grid-column: 1; grid-row: auto; display: block; }
   .tx-in-cite, .cite-amount { text-align: left; margin: 0 0 .2em; }
-  .tx-out-value, .tx-locktime { text-align: left; margin: 0 0 .55em; }
+  .tx-out-value { text-align: left; margin: 0 0 .55em; }
+  .tx-locktime { margin: 0 0 .55em; }   /* stays centred: it closes the page, not a ledger line */
   /* Stacked into one column, the drop-cap's first body line now sits directly
      below its input's citation/amount rather than beside it. The floated
      initial (line-height .82) overhangs upward, so give the lead line room to
      keep the cap clear of the amount above it. */
   .tx-line.tx-body-lead { padding-top: .8em; }
-  /* At phone widths pin the two references to the edges (space-between) so the
-     Next button can never be pushed off-screen. The buttons keep their hugged
-     size (flex 0 0 auto); the centre locator is sized by the space left between
-     them (flex 1 1 0) and wraps within it, so it can never overflow the row. On
-     wider screens the nav stays centred and compact (see base rule). */
-  .chapter-nav { gap: 9px; justify-content: space-between; }
-  .chapter-step { flex: 0 0 auto; }
-  .chapter-num { letter-spacing: .14em; min-width: 0; flex: 1 1 0; text-align: center; }
+  /* At phone widths pin the two references to the screen edges so the Next
+     button can never be pushed off-screen; the centre locator wraps within
+     the space left between them (min-width 0 in the base rule), so it can
+     never overflow the row. On wider screens the steppers hug the crumb
+     instead (see base rule). */
+  .chapter-nav { gap: 9px; }
+  #chapter-prev { justify-self: start; }
+  #chapter-next { justify-self: end; }
+  .chapter-num { letter-spacing: .14em; }
 }
 
 /* A witness-bearing input carries a small superscript index inline; the matching
@@ -557,7 +570,7 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 .notation { margin-top: 16px; }
 .notation summary {
   cursor: pointer; font:500 11px/1 'IBM Plex Mono',monospace; letter-spacing:.1em; text-transform:uppercase;
-  color: var(--dim); list-style: none;
+  color: var(--dim); list-style: none; text-align: center;
 }
 .notation summary::-webkit-details-marker { display: none; }
 .notation summary::before { content: '+ '; color: var(--accent); }
