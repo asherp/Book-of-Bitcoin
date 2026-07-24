@@ -51,3 +51,30 @@ export const isAddress = (s) =>
 // opens by txid, and the book resolves its exact §section itself -- the index,
 // like a book's, cites pages (chapters), not lines.
 export const citeHref = (txid) => `bitcoin-book.html?txid=${txid}`;
+
+// The net effect of one transaction on the address, in satoshis: outputs
+// paying the address minus inputs spending from it. Local arithmetic -- the
+// explorer's tx JSON carries each input's prevout, so no further lookups.
+// Amounts stay well inside Number's exact-integer range (all 21M BTC is
+// 2.1e15 sats, under 2^53).
+export function netSats(tx, address) {
+  let n = 0;
+  for (const o of tx.vout) if (o.scriptpubkey_address === address) n += o.value;
+  for (const i of tx.vin) if (i.prevout?.scriptpubkey_address === address) n -= i.prevout.value;
+  return n;
+}
+
+// A net satoshi amount in the book's own money notation (formatBtc in
+// btc-prose.js -- not imported, since the prose module drags in the WASM
+// engine): comma-grouped whole part, always the full eight decimal places so a
+// right-aligned column aligns on the point, the ₿ sign trailing, a bare 0 ₿
+// for nothing-net. Signed, since an index line reads as a ledger: what the
+// chapter paid the address (+) or spent from it (−).
+export function formatNetBtc(sats) {
+  if (!sats) return '0 ₿';
+  const sign = sats < 0 ? '−' : '+';
+  const abs = Math.abs(sats);
+  const whole = Math.floor(abs / 1e8).toLocaleString('en-US');
+  const frac = String(abs % 1e8).padStart(8, '0');
+  return `${sign}${whole}.${frac} ₿`;
+}
