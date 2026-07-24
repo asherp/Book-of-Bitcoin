@@ -17,9 +17,11 @@ compiled to WASM) is consumed as a published
   esplora-style endpoint (Blockstream, mempool.space, or your own node) and
   renders it as prose
 - `web/bitcoin-contents.html` — table of contents / notable blocks
+- `web/bitcoin-index.html` — back-of-book index: notable addresses, each
+  listing every chapter it appears in
 - `web/btc-tx.js`, `web/btc-prose.js`, `web/btc-citation.js`,
-  `web/btc-contents.js` — transaction parsing, prose composition, citations,
-  and contents data
+  `web/btc-contents.js`, `web/btc-index.js` — transaction parsing, prose
+  composition, citations, contents data, and index data
 - `web/glossia-msg.js` — the encoding pipeline over the Glossia WASM engine
 - `web/glossia.js`, `web/glossia_bg.wasm` — **build artifacts** (gitignored),
   produced by `build_web.sh` from the published glossia crate
