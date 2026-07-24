@@ -16,7 +16,7 @@
  * Everything here is scoped to the directory sw.js is served from, so it works
  * unchanged at the site root and under a per-PR preview subpath.
  */
-const CACHE = 'bitcoin-book-shell-v2';
+const CACHE = 'bitcoin-book-shell-v3';
 
 // App shell, relative to the SW scope. glossia.js / glossia_bg.wasm are
 // gitignored build artifacts — present after a build/deploy, possibly absent in
@@ -26,6 +26,7 @@ const SHELL = [
   './index.html',
   './bitcoin-book.html',
   './bitcoin-contents.html',
+  './bitcoin-search.html',
   './btc-tx.js',
   './btc-prose.js',
   './btc-wordlists.js',
