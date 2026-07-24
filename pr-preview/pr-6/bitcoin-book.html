@@ -2570,6 +2570,32 @@ async function stepTx(direction) {
   }
 }
 
+// A horizontal swipe crossing a block boundary at section level: forward onto
+// the next block's §1, backward onto the previous block's last section --
+// never onto the leaves between blocks. (The foot nav's buttons keep the
+// linear page order instead, threading through those leaves.)
+let sectionCrossing = false;
+async function stepSectionAcross(direction) {
+  if (sectionCrossing) return;
+  const newHeight = state.height + direction;
+  if (newHeight < 0) return;   // Genesis §1 has no previous section
+  sectionCrossing = true;
+  $('page-prev').disabled = true;
+  $('page-next').disabled = true;
+  setStatus(`<span class="spinner"></span>loading ${direction > 0 ? 'next' : 'previous'} block…`);
+  try {
+    const next = await loadBlockByHeight(newHeight, { withTxids: true });
+    state = { ...next, index: direction > 0 ? 0 : next.txCount - 1 };
+    await showCurrentTx();
+  } catch (e) {
+    if (direction > 0) tipHeight = state.height;
+    setStatus(direction > 0 ? 'No next block yet — this is the current chain tip.' : (e.message || 'Failed to load previous block.'), 'err');
+    labelNav();   // re-show/hide from the (unchanged) position, now that the tip may be known
+  } finally {
+    sectionCrossing = false;
+  }
+}
+
 // Jump to a specific leaf: the volume (-3), book (-2), or chapter (-1) page
 // whose span starts at `height`. Used by the header steppers and the eyebrow
 // crumbs. Genesis has no earlier span and the tip none later; both are guarded
@@ -2692,8 +2718,10 @@ $('ch-book-link').addEventListener('click', () => { if (state) openCrumb(bookSta
 
 // ── Swipe paging with a carousel turn ─────────────────────────────────────
 // A horizontal swipe turns the page at the current level: sections swipe
-// section-to-section (the foot nav's step), a chapter/book/volume leaf swipes
-// to its level neighbour (the header steppers' step). The page follows the
+// section-to-section -- crossing a block boundary onto the adjacent block's
+// nearest section, never up onto its leaves -- and a chapter/book/volume
+// leaf swipes to its level neighbour (the header steppers' step). The page
+// follows the
 // finger while dragging; a committed swipe slides the page off in the travel
 // direction and the destination slides in from the opposite edge once it has
 // rendered (consumeSlide). Swiping toward a neighbour that doesn't exist --
@@ -2704,13 +2732,18 @@ const REDUCED_MOTION = window.matchMedia('(prefers-reduced-motion: reduce)').mat
 let pendingSlide = 0;        // direction of an in-flight page turn (+1 next, -1 prev)
 let slideWatchdog = null;
 
-// A neighbour exists in that direction (the corresponding button is shown).
+// A neighbour exists in that direction at the CURRENT level. Leaves borrow
+// their header stepper's visibility. A section's forward neighbour matches
+// page-next's visibility (hidden exactly at the tip's last section); its
+// backward neighbour is judged at section level directly -- page-prev stays
+// visible at §1 (it steps up to the chapter page in the linear order), but
+// the level-preserving swipe needs a previous SECTION, which Genesis §1
+// alone lacks.
 function navAvailable(direction) {
   if (!state) return false;
-  const id = state.index < 0
-    ? (direction > 0 ? 'chapter-next' : 'chapter-prev')
-    : (direction > 0 ? 'page-next' : 'page-prev');
-  return !$(id).classList.contains('hidden');
+  if (state.index < 0) return !$(direction > 0 ? 'chapter-next' : 'chapter-prev').classList.contains('hidden');
+  if (direction > 0) return !$('page-next').classList.contains('hidden');
+  return state.index > 0 || state.height > 0;
 }
 // A swipe additionally waits for that neighbour's data to finish prefetching
 // (see prefetchNeighbors), so a committed turn always lands on content that
@@ -2721,7 +2754,14 @@ function canStep(direction) {
 }
 function swipeStep(direction) {
   if (!navAvailable(direction)) return;
-  if (state.index < 0) goToLevel(direction); else stepNow(direction);
+  if (state.index < 0) { goToLevel(direction); return; }
+  // Sections turn at their own level: within the block it's the foot step;
+  // at either edge the turn crosses into the adjacent block's nearest
+  // section, never up onto the leaves the linear order threads between
+  // blocks (ascending is the vertical swipe's job).
+  const target = state.index + direction;
+  if (target >= 0 && target < state.txCount) stepNow(direction);
+  else stepSectionAcross(direction);
 }
 
 // ── Vertical swipes: one nav level up or down ─────────────────────────────
@@ -2827,8 +2867,9 @@ function stepNow(direction) {
 // After each render, quietly pull the data the next swipe in either direction
 // would need: a leaf's level neighbour is its first block's core (info +
 // header); a section's neighbour is the adjacent transaction's hex (plus the
-// txid list, once) -- or, past the block's last section, the next block's
-// core. §1's previous page is this chapter's own leaf, already loaded.
+// txid list, once) -- or, across a block boundary, the adjacent block's
+// nearest section (its §1 forward, its last § backward), since the swipe
+// stays at section level rather than climbing onto the leaves.
 // Everything lands in the existing memoized caches, so the eventual swipe
 // (or button press) finds it instantly and nothing is fetched twice.
 let neighborReady = { '-1': false, '1': false };
@@ -2867,11 +2908,20 @@ async function prefetchNeighbor(st, direction) {
       const txids = await ensureTxids(st);
       await warmSection(txids[st.index + 1]);
     } else {
-      warmLeafEncodes(await loadBlockByHeight(st.height + 1, { withTxids: false }));
+      // Past the block's last section the swipe lands on the next block's §1:
+      // warm its core, head encodes, and first section.
+      const next = await loadBlockByHeight(st.height + 1, { withTxids: true });
+      warmLeafEncodes(next);
+      await warmSection(next.txids[0]);
     }
   } else if (st.index > 0) {
     const txids = await ensureTxids(st);
     await warmSection(txids[st.index - 1]);
+  } else if (st.height > 0) {
+    // §1's swipe-back lands on the previous block's last section.
+    const prev = await loadBlockByHeight(st.height - 1, { withTxids: true });
+    warmLeafEncodes(prev);
+    await warmSection(prev.txids[prev.txids.length - 1]);
   }
 }
 function prefetchNeighbors() {
