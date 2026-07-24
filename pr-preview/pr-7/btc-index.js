@@ -1,7 +1,13 @@
 // btc-index.js — the curated back-of-book index for the Bitcoin Book: notable
 // addresses, each listing every chapter where it appears. Shared by
-// bitcoin-index.html (the index page) and bitcoin-search.html (which routes an
-// address query here).
+// bitcoin-index.html (the index page — the shelf), bitcoin-anthology.html
+// (one address's own anthology), and bitcoin-search.html (which routes an
+// address query to its anthology). Besides the curated data, this module
+// carries the machinery the index-family pages share: the chain walk that
+// discovers an address's chapters, the cache that remembers them, and the
+// renderer that lays them out as nested contents.
+
+import { volumeBookChapter, toRoman } from './btc-citation.js';
 //
 // The table of contents and the index are inverses. The contents is a curated
 // list of *places* -- each entry names one block or transaction and cites it
@@ -104,4 +110,158 @@ export function formatNetBtc(sats) {
   const whole = Math.floor(abs / 1e8).toLocaleString('en-US');
   const frac = String(abs % 1e8).padStart(8, '0');
   return `${sign}${whole}.${frac} ₿`;
+}
+
+// ---------------------------------------------------------------------------
+// The chain walk, cache, and renderer shared by the index-family pages.
+
+// Citations are discovered the way the reader resolves one: from the chain,
+// tried across the same public mirrors the book uses. An address's history
+// comes from /address/<addr> (its confirmed transaction count) and
+// /address/<addr>/txs/chain (its confirmed transactions, newest first,
+// paginated by last-seen txid).
+const ESPLORA_MIRRORS = ['https://blockstream.info/api', 'https://mempool.space/api'];
+
+async function fetchJson(path) {
+  for (const base of ESPLORA_MIRRORS) {
+    try {
+      const res = await fetch(base + path);
+      if (res.ok) return await res.json();
+    } catch { /* try the next mirror */ }
+  }
+  return null;
+}
+
+// Up to maxPages pages of the address's confirmed transactions, newest first.
+// Pagination is by last-seen txid, so pages compose across mirrors. A famous
+// address accumulates history without end, so every walk is capped; the walk
+// runs newest-first -- the only direction the API pages -- so a capped line
+// holds the address's *latest* appearances and knows how many it stands among.
+async function walkChain(address, txCount, maxPages) {
+  const txs = [];
+  let lastSeen = '';
+  for (let page = 0; page < maxPages && txs.length < txCount; page++) {
+    const batch = await fetchJson(`/address/${address}/txs/chain${lastSeen}`);
+    const confirmed = (batch || []).filter((t) => t.status?.confirmed);
+    if (!confirmed.length) break;
+    txs.push(...confirmed);
+    lastSeen = `/${confirmed[confirmed.length - 1].txid}`;
+  }
+  return txs;
+}
+
+// The chapters where the address appears, ascending: one row per chapter, the
+// way a book's index lists a page once however often the name recurs on it --
+// its amount the *net* of every touch in that chapter. The walk arrives
+// newest-first, so the last write per height keeps the earliest transaction
+// there; that's the one the row opens.
+function chapterize(txs, address) {
+  const byHeight = new Map();
+  for (const t of txs) {
+    const h = t.status.block_height;
+    byHeight.set(h, { txid: t.txid, sats: (byHeight.get(h)?.sats ?? 0) + netSats(t, address) });
+  }
+  return [...byHeight.entries()]
+    .map(([height, v]) => ({ height, ...v }))
+    .sort((a, b) => a.height - b.height);
+}
+
+// Each address's resolved line is cached, so a revisit renders whole from
+// storage -- offline too -- and revalidates with a single request: the
+// confirmed tx count only ever grows, so an unchanged count means the cached
+// chapters are still the address's story to the depth already walked. A line
+// records how many pages walked it (the index skims, an anthology goes deep);
+// a request wanting more depth re-walks, and the deeper line serves both
+// pages after. Bounded to the most recently used addresses so ad-hoc queries
+// can't grow the cache without end.
+const CACHE_KEY = 'glossia-btc-index-cache';
+const CACHE_MAX_ADDRESSES = 12;
+const readCache = () => {
+  try { const v = JSON.parse(localStorage.getItem(CACHE_KEY)); return v && typeof v === 'object' ? v : {}; }
+  catch { return {}; }
+};
+const cache = readCache();
+function saveCache() {
+  const keep = Object.entries(cache).sort((a, b) => b[1].at - a[1].at).slice(0, CACHE_MAX_ADDRESSES);
+  try { localStorage.setItem(CACHE_KEY, JSON.stringify(Object.fromEntries(keep))); } catch { /* full or unavailable */ }
+}
+
+// The cached line for an address, if any -- render it instantly, then let
+// resolveLine confirm or deepen it.
+export const cachedLine = (address) => cache[address] ?? null;
+
+// Resolve an address's line to at least maxPages of depth: cached line first
+// if it's current and deep enough, else a fresh walk. Returns the cached line
+// unchanged when the chain is unreachable (offline reads still work), null
+// when there's nothing at all to show.
+export async function resolveLine(address, maxPages) {
+  const cached = cache[address];
+  const info = await fetchJson(`/address/${address}`);
+  if (!info) return cached ?? null;
+  const txCount = info.chain_stats.tx_count;
+  if (cached && cached.txCount === txCount &&
+      (cached.walked >= txCount || (cached.pages ?? 0) >= maxPages)) return cached;
+  const txs = await walkChain(address, txCount, maxPages);
+  // A walk that returned nothing for a non-empty address failed mid-flight:
+  // keep whatever the cache already tells, rather than caching the failure.
+  if (!txs.length && txCount > 0) return cached ?? null;
+  const data = { at: Date.now(), txCount, walked: txs.length, pages: maxPages, chapters: chapterize(txs, address) };
+  cache[address] = data;
+  saveCache();
+  return data;
+}
+
+// Render a resolved line the way the contents page nests its own: a Volume
+// part header, then a Book sub-header wherever two or more consecutive
+// chapters share one, each row citing only the portion of its reference the
+// headings haven't named -- mirrored, with the reference leading the row and
+// the chapter's net amount closing it. The pages that call this share the
+// idx-* styles the classes name. DOM-building lives here rather than in each
+// page so the index and an anthology stay the same reading, at different
+// depths.
+export function renderLine(el, data) {
+  el.replaceChildren();
+  if (!data) { lineNote(el, '—'); return; }
+  const rows = data.chapters.map((c) => ({ ...c, place: volumeBookChapter(c.height) }));
+  if (!rows.length) { lineNote(el, 'no appearances yet'); return; }
+  for (let i = 0; i < rows.length;) {
+    const vol = rows[i].place.volume;
+    let jv = i + 1; while (jv < rows.length && rows[jv].place.volume === vol) jv++;
+    el.append(lineHead('idx-vol', `Volume ${toRoman(vol)}`));
+    for (let k = i; k < jv;) {
+      const bk = rows[k].place.book;
+      let jb = k + 1; while (jb < jv && rows[jb].place.book === bk) jb++;
+      if (jb - k >= 2) {
+        el.append(lineHead('idx-book', `Book ${bk}`));
+        for (let m = k; m < jb; m++) el.append(lineRow(rows[m], true));
+      } else {
+        el.append(lineRow(rows[k], false));
+      }
+      k = jb;
+    }
+    i = jv;
+  }
+  // A capped walk names what it left behind; the count is of transactions,
+  // which is what the chain counts (several may share a chapter above).
+  if (data.walked < data.txCount) {
+    lineNote(el, `… the latest ${data.walked.toLocaleString('en-US')} of ${data.txCount.toLocaleString('en-US')} appearances`);
+  }
+}
+function lineRow({ txid, sats, place }, underBook) {
+  const row = document.createElement('a');
+  row.className = 'idx-row' + (underBook ? ' under-book' : '');
+  row.href = citeHref(txid);
+  const r = document.createElement('span'); r.className = 'idx-ref';
+  r.textContent = underBook ? `■${place.chapter}` : `β${place.book} ■${place.chapter}`;
+  const amt = document.createElement('span'); amt.className = 'idx-amt';
+  amt.textContent = formatNetBtc(sats);
+  row.append(r, amt);
+  return row;
+}
+function lineHead(cls, label) { const d = document.createElement('div'); d.className = cls; d.textContent = label; return d; }
+export function lineNote(el, text) {
+  const s = document.createElement('span');
+  s.className = 'idx-note';
+  s.textContent = text;
+  el.append(s);
 }

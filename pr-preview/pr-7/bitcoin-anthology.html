@@ -1,0 +1,174 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The βook of βitcoin — Anthology</title>
+<meta name="description" content="An anthology of the Glossia Bitcoin Book: one address's own subset of the book — every chapter it appears in, navigated the same way, focused on its transactions alone.">
+<link rel="icon" type="image/png" sizes="32x32" href="./icons/beta-icon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="./icons/beta-icon-16.png">
+<link rel="icon" href="./icons/beta-icon.svg" type="image/svg+xml">
+
+<!-- PWA: installable, offline-capable app shell. Shares the Bitcoin book's
+     gold-β manifest so every page installs as one "Bitcoin Book" app. -->
+<link rel="manifest" href="./bitcoin-book.webmanifest">
+<meta name="theme-color" content="#08080a">
+<link rel="apple-touch-icon" href="./icons/beta-icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="βook of βitcoin">
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js').catch((e) => console.warn('SW registration failed:', e));
+    });
+  }
+
+  // The page is assembled from ES modules that both the HTTP cache (GitHub
+  // Pages serves max-age=600) and the service worker refresh file by file, so
+  // a redeploy can briefly leave them mixed: this page from one build, a
+  // module from another. A module whose imports no longer line up fails to
+  // instantiate, and an aborted module graph renders nothing -- the anthology
+  // goes blank. Detect the blankness itself, not the error (module failures
+  // surface too many ways to catch reliably): a healthy module populates
+  // #anthology synchronously, so an empty #anthology well after load means
+  // the graph died. Recover by re-fetching this page's files with
+  // cache:'reload' -- which refreshes the HTTP cache directly and, routed
+  // through the service worker, makes its background revalidation hit the
+  // true network -- then reloading once onto the matched set. A second blank
+  // load shows a note instead of looping.
+  (function () {
+    const FILES = ['./bitcoin-anthology.html', './btc-index.js', './btc-citation.js'];
+    const FLAG = 'glossia-anthology-reloaded';
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        const el = document.getElementById('anthology');
+        if (!el || el.children.length) return;   // the module rendered; nothing to recover
+        let retried = false;
+        try { retried = !!sessionStorage.getItem(FLAG); } catch (_) {}
+        if (retried) {
+          const s = document.createElement('span');
+          s.className = 'idx-note';
+          s.textContent = 'The anthology failed to load — reload to retry.';
+          el.replaceChildren(s);
+          return;
+        }
+        try { sessionStorage.setItem(FLAG, '1'); } catch (_) {}
+        Promise.allSettled(FILES.map((u) => fetch(u, { cache: 'reload' })))
+          .then(() => setTimeout(() => location.reload(), 800));
+      }, 2000);
+    });
+  })();
+</script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,400&family=IBM+Plex+Mono:wght@400;500;600&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --page:#08080a; --card:#0d0d10; --card-bd:#232228; --ink:#e8e4da; --ink-soft:#cfcabf;
+  --accent:#c9a25f; --accent-2:#dcb877; --dim:#9c99a6; --meta:#7e7b88; --rule:#24232a; --hair:#2a2930;
+  --input-bg:#151519; --input-bd:#2a2930;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { min-height: 100vh; background: var(--page); color: var(--ink); font-family: 'Public Sans', system-ui, sans-serif; line-height: 1.55; }
+.wrap { max-width: 720px; margin: 0 auto; padding: 48px 22px 100px; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+.masthead { display:flex; align-items:baseline; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:40px; }
+.masthead .title { font:600 13px/1 'IBM Plex Mono',monospace; letter-spacing:.22em; text-transform:uppercase; color:var(--ink); }
+.masthead .title .beta { color:var(--accent); text-transform:none; font-family:'Newsreader','Source Serif 4',Georgia,serif; font-weight:600; font-size:1.12em; }
+.masthead .home { margin-left:auto; font:500 12px/1 'IBM Plex Mono',monospace; letter-spacing:.04em; }
+
+/* The anthology's own title leaf: the eyebrow names the form, the serif names
+   the anthology, the mono line beneath is the address itself -- the name whose
+   every appearance the following contents collect. */
+.page-head { text-align:center; padding-bottom:30px; margin-bottom:10px; border-bottom:1px solid var(--rule); }
+.page-eyebrow { font:600 11px/1 'IBM Plex Mono',monospace; letter-spacing:.3em; text-transform:uppercase; color:var(--accent); }
+.anth-title { margin:14px 0 0; font:500 26px/1.25 'Newsreader',serif; color:var(--ink); }
+.anth-addr { margin-top:8px; font:400 12px/1.5 'IBM Plex Mono',monospace; letter-spacing:.02em; color:var(--meta); word-break:break-all; }
+.anth-count { margin-top:6px; font:500 11px/1 'IBM Plex Mono',monospace; letter-spacing:.12em; text-transform:uppercase; color:var(--dim); }
+
+/* The nested contents, in the index family's shared idx-* classes (built by
+   btc-index.js's renderLine): Volume part headers, Book sub-headers, and
+   citation rows with the reference leading and the chapter's net amount
+   closing, full eight decimals so the column aligns on the point. */
+.idx-vol { margin:22px 0 2px; padding-top:14px; border-top:1px solid var(--hair);
+  font:600 11px/1 'IBM Plex Mono',monospace; letter-spacing:.22em; text-transform:uppercase; color:var(--accent); }
+.idx-vol:first-child { margin-top:10px; padding-top:0; border-top:none; }
+.idx-book { margin:12px 0 1px; padding-left:14px;
+  font:600 10px/1 'IBM Plex Mono',monospace; letter-spacing:.16em; text-transform:uppercase; color:var(--meta); }
+.idx-row { display:flex; align-items:baseline; gap:16px; padding:8px 2px 8px 14px; border-bottom:1px solid var(--hair); text-decoration:none; }
+.idx-row.under-book { padding-left:28px; }
+.idx-row:last-child { border-bottom:none; }
+.idx-ref { flex:none; font:600 13px/1.4 'IBM Plex Mono',monospace; letter-spacing:.06em; color:var(--accent); white-space:nowrap; font-variant-numeric:tabular-nums; }
+.idx-amt { flex:1; min-width:0; text-align:right; font:500 13px/1.4 'IBM Plex Mono',monospace; color:var(--ink-soft); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-variant-numeric:tabular-nums; }
+.idx-row:hover .idx-ref { text-decoration:underline; color:var(--accent-2); }
+.idx-row:hover .idx-amt { color:var(--ink); }
+.idx-note { display:block; margin-top:12px; padding-left:14px; font:400 12px/1.5 'IBM Plex Mono',monospace; color:var(--meta); }
+</style>
+<body>
+<div class="wrap">
+  <div class="masthead">
+    <span class="title">The <span class="beta">β</span>ook of <span class="beta">β</span>itcoin</span>
+    <span class="home"><a href="./bitcoin-book.html">Read</a> · <a href="./bitcoin-contents.html">Contents</a> · <a href="./bitcoin-index.html">Index</a> · <a href="./bitcoin-search.html">Search</a> · <a href="https://glossia.io/">Glossia</a></span>
+  </div>
+
+  <header class="page-head">
+    <div class="page-eyebrow">Anthology</div>
+    <h1 class="anth-title" id="anth-title"></h1>
+    <div class="anth-addr" id="anth-addr"></div>
+    <div class="anth-count" id="anth-count"></div>
+  </header>
+
+  <div id="anthology"></div>
+</div>
+
+<script type="module">
+import { INDEXED, isAddress, cachedLine, resolveLine, renderLine, lineNote } from './btc-index.js';
+
+// An anthology is one address's own subset of the book: the same nested
+// volume/book/chapter contents the index shows, but a whole page to itself
+// and walked far deeper -- the index skims each entry, an anthology collects
+// it. The chapters within are still the book's own: every row opens
+// bitcoin-book.html at its transaction, so the anthology is navigated the
+// same way as the book it excerpts.
+const ANTHOLOGY_TX_PAGES = 40;   // ~1,000 transactions deep, vs the index's skim
+
+const q = (new URLSearchParams(location.search).get('address') || '').trim();
+const addr = isAddress(q) ? q : (isAddress(q.toLowerCase()) ? q.toLowerCase() : null);
+
+const el = document.getElementById('anthology');
+el.replaceChildren();   // populated-or-recovered is the head script's signal
+
+if (!addr) {
+  // No (or an unreadable) address: explain the form instead of a blank page.
+  document.getElementById('anth-title').textContent = 'One address, its every chapter';
+  lineNote(el, 'An anthology collects one address’s appearances into its own contents. Open one from the Index, or put ?address=<an address> in this page’s URL.');
+} else {
+  // A curated address reads under its curated name; any other under its own.
+  const entry = INDEXED.find((e) => e.address === addr);
+  const title = entry ? entry.title : 'An uncollected address';
+  document.title = `The βook of βitcoin — Anthology · ${entry ? entry.title : addr}`;
+  document.getElementById('anth-title').textContent = title;
+  document.getElementById('anth-addr').textContent = addr;
+
+  const count = document.getElementById('anth-count');
+  const showCount = (data) => {
+    if (!data || !data.chapters.length) { count.textContent = ''; return; }
+    count.textContent = `${data.txCount.toLocaleString('en-US')} appearances · ${data.chapters.length.toLocaleString('en-US')} chapters collected`;
+  };
+
+  // Cached line first -- instantly, offline included -- then the resolver
+  // confirms it against the chain or deepens it to anthology depth.
+  const cached = cachedLine(addr);
+  if (cached) { renderLine(el, cached); showCount(cached); }
+  else lineNote(el, '…');
+  resolveLine(addr, ANTHOLOGY_TX_PAGES).then((data) => {
+    renderLine(el, data);
+    showCount(data);
+  });
+}
+</script>
+</body>
+</html>
