@@ -130,7 +130,7 @@ a:hover { text-decoration: underline; }
 <div class="wrap">
   <div class="masthead">
     <span class="title">The <span class="beta">β</span>ook of <span class="beta">β</span>itcoin</span>
-    <span class="home"><a href="./bitcoin-book.html">Read</a> · <a href="./bitcoin-contents.html">Contents</a> · <a href="./bitcoin-index.html">Index</a> · <a href="./bitcoin-search.html">Search</a> · <a href="https://glossia.io/">Glossia</a></span>
+    <span class="home"><a href="./bitcoin-book.html">Read</a> · <a href="./bitcoin-contents.html">Contents</a> · <a href="./bitcoin-index.html">Anthologies</a> · <a href="./bitcoin-search.html">Search</a> · <a href="https://glossia.io/">Glossia</a></span>
   </div>
 
   <header class="page-head">
@@ -165,7 +165,7 @@ el.replaceChildren();   // populated-or-recovered is the head script's signal
 if (!addr) {
   // No (or an unreadable) address: explain the form instead of a blank page.
   document.getElementById('anth-title').textContent = 'One address, its every chapter';
-  lineNote(el, 'An anthology collects one address’s appearances into its own contents. Open one from the Index, or put ?address=<an address> in this page’s URL.');
+  lineNote(el, 'An anthology collects one address’s appearances into its own contents. Open one from the Anthologies page, or put ?address=<an address> in this page’s URL.');
 } else {
   // A curated address reads under its curated name; any other under its own.
   const entry = INDEXED.find((e) => e.address === addr);
