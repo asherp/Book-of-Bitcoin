@@ -118,6 +118,21 @@ a.idx-title:hover .idx-addr { color:var(--dim); }
 
 /* Still resolving, failed to resolve, or the trailing "of N appearances" note. */
 .idx-note { display:block; margin-top:8px; padding-left:14px; font:400 12px/1.5 'IBM Plex Mono',monospace; color:var(--meta); }
+
+/* A book row of the preview: the β-marked book, its chapter count, its net.
+   Clicking unfolds the book's chapter rows beneath (built on first opening);
+   the caret is the fold's state. */
+.sp-row { display:flex; align-items:baseline; gap:16px; padding:7px 2px 7px 14px; border-bottom:1px solid var(--hair); text-decoration:none; cursor:pointer; }
+.sp-label { flex:none; font:600 13px/1.4 'IBM Plex Mono',monospace; letter-spacing:.06em; color:var(--accent); white-space:nowrap; font-variant-numeric:tabular-nums; }
+.sp-toggle .sp-label::before { content:'▸'; display:inline-block; width:14px; color:var(--meta); font-size:10px; }
+.sp-toggle.open .sp-label::before { content:'▾'; }
+.sp-count { flex:1; min-width:0; text-align:right; font:400 12px/1.4 'IBM Plex Mono',monospace; color:var(--meta); white-space:nowrap; font-variant-numeric:tabular-nums; }
+.sp-amt { flex:none; }
+.sp-row:hover { text-decoration:none; }
+.sp-row:hover .sp-label { color:var(--accent-2); }
+.sp-row:hover .idx-amt { color:var(--ink); }
+/* An unfolded book's chapters, stepped in beneath their row. */
+.sp-open .idx-row { padding-left:32px; }
 </style>
 <body>
 <div class="wrap">
@@ -134,14 +149,15 @@ a.idx-title:hover .idx-addr { color:var(--dim); }
 </div>
 
 <script type="module">
-import { INDEXED, isAddress, cachedLine, resolveLine, renderLine, lineNote } from './btc-index.js';
+import { INDEXED, isAddress, cachedLine, resolveLine, renderBooks, lineNote } from './btc-index.js';
 
-// The index previews: each entry renders the most recent stretch of its map,
-// however deep the map itself runs -- the mapping, store, and renderer live
-// in btc-index.js, shared with the anthology pages, so the shelf and the
-// anthologies read from one machinery and one store. An entry's title opens
-// its anthology: the whole map, with its spine.
-const PREVIEW_ROWS = 150;
+// The index previews at book altitude: each entry renders one row per book
+// of its map -- count and net -- and a book's chapters unfold only when it
+// is opened, so even the deepest map costs the shelf a few hundred rows.
+// The mapping, store, and renderers live in btc-index.js, shared with the
+// anthology pages: the shelf and the anthologies read from one machinery
+// and one store. An entry's title opens its anthology: the whole map, with
+// its spine.
 
 // A reader's own query joins the curated set: ?address=<addr> prepends a
 // temporary entry (titled by the address itself), so any address is
@@ -179,9 +195,9 @@ for (const e of entries) {
   index.append(row);
   (async () => {
     const cached = await cachedLine(e.address);
-    if (cached) renderLine(cites, cached, PREVIEW_ROWS);
+    if (cached) renderBooks(cites, cached);
     const data = await resolveLine(e.address);
-    if (data !== cached) renderLine(cites, data, PREVIEW_ROWS);
+    if (data !== cached) renderBooks(cites, data);
   })();
 }
 
