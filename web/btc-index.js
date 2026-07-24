@@ -229,31 +229,54 @@ function blockbookTouches(txs, address) {
   return out;
 }
 
-// The map via blockbook: page 1 reports the page count and the address's
-// confirmed transaction total, the remaining pages arrive in parallel (page
-// N is addressable directly -- no linked-list walk). All pages or nothing: a
-// map with a hole in the middle is worse than no map, so any unrecoverable
-// page fails the whole attempt and the caller keeps what it had.
+// The map via blockbook: page 1 reports the address's confirmed transaction
+// total, the remaining pages arrive in parallel (page N is addressable
+// directly -- no linked-list walk). The page count is NOT trusted from
+// totalPages -- live instances report it -1 (unknown) in this mode, which
+// once silently truncated every large map to its first page. For a whole
+// map the count derives from the total and the served page size; a
+// from-filtered top-up (whose set size the total doesn't describe) pages
+// forward until a short page says done. All pages or nothing: a map with a
+// hole in the middle is worse than no map, so any unrecoverable page fails
+// the whole attempt and the caller keeps what it had.
 async function blockbookMap(address, from) {
-  for (const mirror of BLOCKBOOK_MIRRORS) {
+  outer: for (const mirror of BLOCKBOOK_MIRRORS) {
     const first = await blockbookJson(mirror, blockbookPath(address, 1, from));
     if (!first || typeof first.txs !== 'number') continue;
-    const pages = first.totalPages > 0 ? first.totalPages : 1;
     const chunks = [blockbookTouches(first.transactions, address)];
-    let failed = false;
-    let next = 2;
-    const worker = async () => {
-      while (!failed) {
-        const p = next++;
-        if (p > pages) return;
-        const j = await blockbookJson(mirror, blockbookPath(address, p, from)) ??
-                  await blockbookJson(mirror, blockbookPath(address, p, from));   // one retry
-        if (!j) { failed = true; return; }
-        chunks[p - 1] = blockbookTouches(j.transactions, address);
+    // The page size actually served (the instance may cap the request's).
+    const size = Number(first.itemsOnPage) > 0 ? Number(first.itemsOnPage) : BLOCKBOOK_PAGE;
+    const firstLen = (first.transactions || []).length;
+    const reported = Number(first.totalPages);
+    if (!from || firstLen >= size) {
+      if (reported > 0 || !from) {
+        const pages = reported > 0 ? reported : Math.max(1, Math.ceil(first.txs / size));
+        let failed = false;
+        let next = 2;
+        const worker = async () => {
+          while (!failed) {
+            const p = next++;
+            if (p > pages) return;
+            const j = await blockbookJson(mirror, blockbookPath(address, p, from)) ??
+                      await blockbookJson(mirror, blockbookPath(address, p, from));   // one retry
+            if (!j) { failed = true; return; }
+            chunks[p - 1] = blockbookTouches(j.transactions, address);
+          }
+        };
+        await Promise.all(Array.from({ length: Math.min(BLOCKBOOK_CONCURRENCY, Math.max(pages - 1, 0)) }, worker));
+        if (failed) continue;
+      } else {
+        // Filtered, size unknown: read forward until a page comes up short.
+        for (let p = 2; p <= 1000; p++) {
+          const j = await blockbookJson(mirror, blockbookPath(address, p, from)) ??
+                    await blockbookJson(mirror, blockbookPath(address, p, from));   // one retry
+          if (!j) continue outer;
+          const batch = j.transactions || [];
+          chunks.push(blockbookTouches(batch, address));
+          if (batch.length < size) break;
+        }
       }
-    };
-    await Promise.all(Array.from({ length: Math.min(BLOCKBOOK_CONCURRENCY, Math.max(pages - 1, 0)) }, worker));
-    if (failed) continue;
+    }
     // `balance` is the address's whole confirmed balance regardless of any
     // from-filter -- an address property, not a page one.
     return { txCount: first.txs, balance: Number(first.balance ?? 0), touches: chunks.flat() };
