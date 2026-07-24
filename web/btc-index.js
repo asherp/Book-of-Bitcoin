@@ -40,6 +40,13 @@ export const INDEXED = [
   // donates through processor pages with no fixed address, so this fund is
   // the tribute's citable line.
   { title: 'Hal Finney Bitcoin Fund — ALS research', address: '1JsnZLEGgLJY7rbDdaKTzC2JyvfaKUpF5p' },
+  // The EFF's standing bitcoin address, published on its "Other Ways to
+  // Give" page. The foundation's bitcoin story runs the currency's whole
+  // arc of respectability: an early 2011 acceptance, withdrawn the same
+  // year over legal uncertainty, resumed for good in May 2013 -- and now a
+  // plain address on the donations page, listed among the checks and wire
+  // transfers.
+  { title: 'Electronic Frontier Foundation', address: '3LTu6uavQ4A3kgDauZipyGqcHQEUSVe2so' },
   // The donation address Keonne Rodriguez, Samourai Wallet's co-founder,
   // published from federal prison (2026), appealing to the Bitcoin community
   // for help with the legal debt of the Samourai prosecution: arrested April
@@ -50,8 +57,10 @@ export const INDEXED = [
 ];
 
 // Donation addresses still to confirm against their campaigns before adding:
-// the long-running institutional funds (EFF, the Tor Project). Confirm each
-// from the campaign's own publications, never from memory.
+// the Tor Project's (donate.torproject.org/cryptocurrency has published
+// standing wallet addresses since 2019), and Tails' bc1qtt04z… (verified on
+// tails.net/donate; Tails joined the Tor Project in 2024). Confirm each from
+// the campaign's own publications, never from memory.
 
 // A loose shape test for the address forms the chain has used: base58 P2PKH
 // ('1…') and P2SH ('3…'), and bech32/bech32m ('bc1…', matched lowercase --
