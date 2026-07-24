@@ -47,6 +47,12 @@ export const INDEXED = [
   // plain address on the donations page, listed among the checks and wire
   // transfers.
   { title: 'Electronic Frontier Foundation', address: '3LTu6uavQ4A3kgDauZipyGqcHQEUSVe2so' },
+  // The Tor Project's donation wallet, from the standing addresses page it
+  // has kept since 2019 (donate.torproject.org/cryptocurrency). The same
+  // address answers on tails.net/donate: Tails joined the Tor Project in
+  // 2024, and the anonymity network and its amnesic operating system share
+  // the one wallet.
+  { title: 'Tor Project', address: 'bc1qtt04zfgjxg7lpqhk9vk8hnmnwf88ucwww5arsd' },
   // The donation address Keonne Rodriguez, Samourai Wallet's co-founder,
   // published from federal prison (2026), appealing to the Bitcoin community
   // for help with the legal debt of the Samourai prosecution: arrested April
@@ -56,11 +62,9 @@ export const INDEXED = [
   { title: 'Free Samourai — Keonne Rodriguez', address: 'bc1qtjjcvn98wh7dfd55m8kxhjcfexanttwt8gtan8' },
 ];
 
-// Donation addresses still to confirm against their campaigns before adding:
-// the Tor Project's (donate.torproject.org/cryptocurrency has published
-// standing wallet addresses since 2019), and Tails' bc1qtt04z… (verified on
-// tails.net/donate; Tails joined the Tor Project in 2024). Confirm each from
-// the campaign's own publications, never from memory.
+// Further campaigns join the same way each of these did: the address
+// confirmed from the campaign's own publications -- never from memory --
+// and its checksum verified before it is written down.
 
 // A loose shape test for the address forms the chain has used: base58 P2PKH
 // ('1…') and P2SH ('3…'), and bech32/bech32m ('bc1…', matched lowercase --
