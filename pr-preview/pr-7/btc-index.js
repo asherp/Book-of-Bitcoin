@@ -24,6 +24,14 @@ export const INDEXED = [
   // pardon turned the cause from clemency to gratitude -- donations kept
   // arriving after it.
   { title: 'Free Ross — Ross Ulbricht defense fund', address: '1Ross5Np5doy4ajF9iGXzgKaC2Q3Pwwxv' },
+  // The Hal Finney Bitcoin Fund for ALS research, opened as Hal died (August
+  // 2014, the ice-bucket summer) after five years with the disease. The first
+  // transaction's recipient, remembered in donations toward its cure; the
+  // Bitcoin Foundation gave first. The annual Running Bitcoin Challenge
+  // (January 1-10, closing on the "Running bitcoin" tweet's anniversary)
+  // donates through processor pages with no fixed address, so this fund is
+  // the tribute's citable line.
+  { title: 'Hal Finney Bitcoin Fund — ALS research', address: '1JsnZLEGgLJY7rbDdaKTzC2JyvfaKUpF5p' },
   // The donation address Keonne Rodriguez, Samourai Wallet's co-founder,
   // published from federal prison (2026), appealing to the Bitcoin community
   // for help with the legal debt of the Samourai prosecution: arrested April
