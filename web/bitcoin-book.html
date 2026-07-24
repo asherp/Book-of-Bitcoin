@@ -298,14 +298,14 @@ button:disabled { opacity: .4; cursor: not-allowed; }
    A [1fr | auto | 1fr] grid keeps the locator crumb dead-centred on the page
    even when only one stepper is showing (Genesis has no Previous, the tip no
    Next) -- a hidden stepper leaves its track empty instead of letting the
-   crumb drift toward the survivor. The steppers hug the crumb from their
-   inner edges. */
+   crumb drift toward the survivor. The steppers pin to the row's edges,
+   spanning the full width like the foot nav below. Explicit tracks: a hidden
+   stepper (display:none) leaves the grid, and auto-placement would reflow
+   the crumb into its column. */
 .chapter-nav { display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:16px; margin-bottom: 14px; }
-/* Explicit tracks: a hidden stepper (display:none) leaves the grid, and
-   auto-placement would reflow the crumb into its column -- pin each piece. */
-#chapter-prev { grid-column: 1; justify-self: end; }
+#chapter-prev { grid-column: 1; justify-self: start; }
 .chapter-num { grid-column: 2; }
-#chapter-next { grid-column: 3; justify-self: start; }
+#chapter-next { grid-column: 3; justify-self: end; }
 .chapter-num { font:600 11.5px/1 'IBM Plex Mono',monospace; letter-spacing:.3em; text-transform:uppercase; color: var(--accent); min-width: 0; text-align: center; }
 /* The eyebrow's Volume / Book / Chapter crumbs inherit its voice exactly;
    hover marks them navigable. (Overrides the global gold button styling.) */
@@ -564,14 +564,10 @@ button:disabled { opacity: .4; cursor: not-allowed; }
      initial (line-height .82) overhangs upward, so give the lead line room to
      keep the cap clear of the amount above it. */
   .tx-line.tx-body-lead { padding-top: .8em; }
-  /* At phone widths pin the two references to the screen edges so the Next
-     button can never be pushed off-screen; the centre locator wraps within
-     the space left between them (min-width 0 in the base rule), so it can
-     never overflow the row. On wider screens the steppers hug the crumb
-     instead (see base rule). */
+  /* At phone widths the row tightens: less gap, and the centre locator's
+     tracking eases so it wraps within the space between the edge-pinned
+     steppers (min-width 0 in the base rule) instead of overflowing. */
   .chapter-nav { gap: 9px; }
-  #chapter-prev { justify-self: start; }
-  #chapter-next { justify-self: end; }
   .chapter-num { letter-spacing: .14em; }
 }
 
