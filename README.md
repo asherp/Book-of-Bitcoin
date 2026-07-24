@@ -25,8 +25,10 @@ compiled to WASM) is consumed as a published
   Blockbook instances in parallel pages, and an anthology opens only once
   its ledger sum reconciles with the chain's balance
 - `web/btc-tx.js`, `web/btc-prose.js`, `web/btc-citation.js`,
-  `web/btc-contents.js`, `web/btc-index.js` — transaction parsing, prose
-  composition, citations, contents data, and index data
+  `web/btc-contents.js`, `web/btc-index.js`, `web/btc-store.js` —
+  transaction parsing, prose composition, citations, contents data,
+  anthology data, and the archive (immutable chain data kept in IndexedDB,
+  so revisited chapters and resolved citations read offline)
 - `web/glossia-msg.js` — the encoding pipeline over the Glossia WASM engine
 - `web/glossia.js`, `web/glossia_bg.wasm` — **build artifacts** (gitignored),
   produced by `build_web.sh` from the published glossia crate
