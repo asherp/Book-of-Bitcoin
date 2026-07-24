@@ -26,7 +26,7 @@
   // Pages serves max-age=600) and the service worker refresh file by file, so
   // a redeploy can briefly leave them mixed: this page from one build, a
   // module from another. A module whose imports no longer line up fails to
-  // instantiate, and an aborted module graph renders nothing -- the index
+  // instantiate, and an aborted module graph renders nothing -- the shelf
   // goes blank. Detect the blankness itself, not the error (module failures
   // surface too many ways to catch reliably): a healthy module populates
   // #index synchronously, so an empty #index well after load means the graph
@@ -47,7 +47,7 @@
         if (retried) {
           const s = document.createElement('span');
           s.className = 'idx-note';
-          s.textContent = 'The index failed to load — reload to retry.';
+          s.textContent = 'The anthologies failed to load — reload to retry.';
           idx.replaceChildren(s);
           return;
         }
@@ -83,56 +83,20 @@ a:hover { text-decoration: underline; }
 .page-head { text-align:center; padding-bottom:30px; margin-bottom:36px; border-bottom:1px solid var(--rule); }
 .page-eyebrow { font:600 11px/1 'IBM Plex Mono',monospace; letter-spacing:.3em; text-transform:uppercase; color:var(--accent); }
 
-/* An index entry: the name on its own line -- the title in the book's serif,
-   the address itself beneath in mono -- then its citations laid out like the
-   table of contents (Volume part headers, Book sub-headers), with the row
-   mirrored: the reference on the left, and on the right the chapter's net
-   amount for the address. The name links to the entry's anthology: the same
-   line on a page of its own, walked far deeper. */
-.idx-entry { padding:18px 2px 20px; border-bottom:1px solid var(--rule); }
-.idx-title { display:block; font:500 17px/1.35 'Newsreader',serif; color:var(--ink-soft); }
-a.idx-title:hover { color:var(--ink); text-decoration:none; }
-a.idx-title:hover .idx-addr { color:var(--dim); }
-.idx-addr { display:block; margin-top:2px; font:400 11.5px/1.5 'IBM Plex Mono',monospace; letter-spacing:.02em; color:var(--meta); word-break:break-all; }
-.idx-cites { margin-top:6px; }
+/* The shelf: one row per anthology -- its title in the book's serif on the
+   left, its ledger's running total on the right -- the whole row opening the
+   anthology's own title page. Styled like the contents page's rows: the
+   shelf is a table of contents whose entries are whole books. */
+.shelf-row { display:flex; align-items:baseline; gap:16px; padding:13px 2px; border-bottom:1px solid var(--hair); text-decoration:none; }
+.shelf-title { flex:1; min-width:0; font:500 18px/1.4 'Newsreader',serif; color:var(--ink-soft); overflow-wrap:break-word; }
+.shelf-amt { flex:none; text-align:right; font:500 13px/1.4 'IBM Plex Mono',monospace; color:var(--accent); white-space:nowrap; font-variant-numeric:tabular-nums; }
+.shelf-amt.pending { color:var(--meta); font-weight:400; }
+.shelf-row:hover { text-decoration:none; }
+.shelf-row:hover .shelf-title { color:var(--ink); }
+.shelf-row:hover .shelf-amt { color:var(--accent-2); text-decoration:underline; }
 
-/* The nesting headers, scaled down a step from the contents page's -- here
-   they sit inside an entry rather than heading the whole page. */
-.idx-vol { margin:14px 0 2px; padding-top:10px; border-top:1px solid var(--hair);
-  font:600 10px/1 'IBM Plex Mono',monospace; letter-spacing:.22em; text-transform:uppercase; color:var(--accent); }
-.idx-vol:first-child { margin-top:6px; padding-top:0; border-top:none; }
-.idx-book { margin:10px 0 1px; padding-left:14px;
-  font:600 10px/1 'IBM Plex Mono',monospace; letter-spacing:.16em; text-transform:uppercase; color:var(--meta); }
-
-/* A citation row -- the contents row mirrored: the tail reference on the left
-   in the citation mono, the chapter's net amount on the right, full eight
-   decimals so the column aligns on the point. The whole row is a link into
-   the book. */
-.idx-row { display:flex; align-items:baseline; gap:16px; padding:7px 2px 7px 14px; border-bottom:1px solid var(--hair); text-decoration:none; }
-.idx-row.under-book { padding-left:28px; }
-.idx-row:last-child { border-bottom:none; }
-.idx-ref { flex:none; font:600 13px/1.4 'IBM Plex Mono',monospace; letter-spacing:.06em; color:var(--accent); white-space:nowrap; font-variant-numeric:tabular-nums; }
-.idx-amt { flex:1; min-width:0; text-align:right; font:500 13px/1.4 'IBM Plex Mono',monospace; color:var(--ink-soft); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-variant-numeric:tabular-nums; }
-.idx-row:hover .idx-ref { text-decoration:underline; color:var(--accent-2); }
-.idx-row:hover .idx-amt { color:var(--ink); }
-
-/* Still resolving, failed to resolve, or the trailing "of N appearances" note. */
-.idx-note { display:block; margin-top:8px; padding-left:14px; font:400 12px/1.5 'IBM Plex Mono',monospace; color:var(--meta); }
-
-/* A book row of the preview: the β-marked book, its chapter count, its net.
-   Clicking unfolds the book's chapter rows beneath (built on first opening);
-   the caret is the fold's state. */
-.sp-row { display:flex; align-items:baseline; gap:16px; padding:7px 2px 7px 14px; border-bottom:1px solid var(--hair); text-decoration:none; cursor:pointer; }
-.sp-label { flex:none; font:600 13px/1.4 'IBM Plex Mono',monospace; letter-spacing:.06em; color:var(--accent); white-space:nowrap; font-variant-numeric:tabular-nums; }
-.sp-toggle .sp-label::before { content:'▸'; display:inline-block; width:14px; color:var(--meta); font-size:10px; }
-.sp-toggle.open .sp-label::before { content:'▾'; }
-.sp-count { flex:1; min-width:0; text-align:right; font:400 12px/1.4 'IBM Plex Mono',monospace; color:var(--meta); white-space:nowrap; font-variant-numeric:tabular-nums; }
-.sp-amt { flex:none; }
-.sp-row:hover { text-decoration:none; }
-.sp-row:hover .sp-label { color:var(--accent-2); }
-.sp-row:hover .idx-amt { color:var(--ink); }
-/* An unfolded book's chapters, stepped in beneath their row. */
-.sp-open .idx-row { padding-left:32px; }
+/* Still resolving, or failed to resolve. */
+.idx-note { display:block; margin-top:8px; padding-left:2px; font:400 12px/1.5 'IBM Plex Mono',monospace; color:var(--meta); }
 </style>
 <body>
 <div class="wrap">
@@ -149,55 +113,56 @@ a.idx-title:hover .idx-addr { color:var(--dim); }
 </div>
 
 <script type="module">
-import { INDEXED, isAddress, cachedLine, resolveLine, renderBooks, lineNote } from './btc-index.js';
+import { INDEXED, isAddress, cachedLine, resolveLine, formatNetBtc } from './btc-index.js';
 
-// The index previews at book altitude: each entry renders one row per book
-// of its map -- count and net -- and a book's chapters unfold only when it
-// is opened, so even the deepest map costs the shelf a few hundred rows.
-// The mapping, store, and renderers live in btc-index.js, shared with the
-// anthology pages: the shelf and the anthologies read from one machinery
-// and one store. An entry's title opens its anthology: the whole map, with
-// its spine.
+// The shelf lists the anthologies: title and running total, nothing else --
+// each row opens its anthology's title page, where the address, its prose,
+// its span, its contents, and its index live. The mapping and store are
+// btc-index.js's, shared with the anthology pages, so a total the shelf
+// resolves is a map the title page opens instantly.
 
-// A reader's own query joins the curated set: ?address=<addr> prepends a
-// temporary entry (titled by the address itself), so any address is
-// indexable in place. A query that duplicates a curated address is dropped --
-// the curated title wins.
+// A reader's own query joins the shelf: ?address=<addr> prepends a temporary
+// row (titled by the address itself). A query that duplicates a curated
+// address is dropped -- the curated title wins.
 const q = (new URLSearchParams(location.search).get('address') || '').trim();
 const adhoc = isAddress(q) && !INDEXED.some((e) => e.address === q)
-  ? [{ title: q, address: q, adhoc: true }] : [];
+  ? [{ title: q, address: q }] : [];
 const entries = [...adhoc, ...INDEXED];
 
-// Build every entry at once -- name and address are known offline -- and let
-// each citation list render from cache and refresh as its chain walk resolves.
-// Built onto a cleared #index: a late module evaluation may land after the
-// head's blank-page recovery has already written its failure note.
+// The ledger's running total: every chapter's net, summed -- what the
+// address holds of all it was ever given. An incomplete map's total counts
+// only the chapters walked, and says so with a trailing ellipsis.
+const total = (data) => data.chapters.reduce((n, c) => n + c.sats, 0);
+const totalText = (data) =>
+  formatNetBtc(total(data)) + (data.walked < data.txCount ? ' …' : '');
+
+// Build every row at once -- titles are known offline -- and let each total
+// fill in from the store and refresh as its map resolves. Built onto a
+// cleared #index: a late module evaluation may land after the head's
+// blank-page recovery has already written its failure note.
 const index = document.getElementById('index');
 index.replaceChildren();
 for (const e of entries) {
-  const row = document.createElement('div');
-  row.className = 'idx-entry';
-  // The entry's name is the door to its anthology: the whole line, on a page
-  // of its own.
-  const t = document.createElement('a'); t.className = 'idx-title';
-  t.href = `bitcoin-anthology.html?address=${e.address}`;
+  const row = document.createElement('a');
+  row.className = 'shelf-row';
+  row.href = `bitcoin-anthology.html?address=${e.address}`;
+  const t = document.createElement('span'); t.className = 'shelf-title';
   t.textContent = e.title;
-  // An ad-hoc entry is titled by its address, so the mono sub-line would only
-  // repeat it; curated entries carry both name and address.
-  if (!e.adhoc) {
-    const addr = document.createElement('span'); addr.className = 'idx-addr';
-    addr.textContent = e.address;
-    t.append(addr);
-  }
-  const cites = document.createElement('div'); cites.className = 'idx-cites';
-  lineNote(cites, '…');
-  row.append(t, cites);
+  const amt = document.createElement('span'); amt.className = 'shelf-amt pending';
+  amt.textContent = '…';
+  row.append(t, amt);
   index.append(row);
+  const show = (data) => {
+    if (!data) { amt.textContent = '—'; amt.classList.add('pending'); return; }
+    amt.textContent = totalText(data);
+    amt.classList.remove('pending');
+  };
   (async () => {
     const cached = await cachedLine(e.address);
-    if (cached) renderBooks(cites, cached);
+    if (cached) show(cached);
     const data = await resolveLine(e.address);
-    if (data !== cached) renderBooks(cites, data);
+    if (data !== cached) show(data);
+    else if (!data) show(null);
   })();
 }
 
