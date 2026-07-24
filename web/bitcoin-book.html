@@ -168,10 +168,15 @@ body {
    Pinch-zoom stays native either way. */
 #page-frame { overflow: clip; }
 #page-frame.carousel-first { touch-action: pan-x pinch-zoom; }
-/* Every title leaf stands as tall as a chapter page (~30rem of content), so
-   the foot nav sits in the same place whether the leaf carries a chapter's
-   full head or a volume's few lines. The min-height lives on the frame, not
-   the slide, so gesture precedence can still measure the natural content. */
+/* The foot nav sits in the same place on every page: the bottom of the
+   screen. The wrap stretches to the viewport, the chapter fills the wrap,
+   and all slack lands inside the frame -- never the slide -- so a short
+   page's nav rests exactly where a tall page's sticky bar rides, and
+   gesture precedence can still measure the natural content (it swaps the
+   frame's height for the slide's; see updateGesturePrecedence). */
+.wrap { display: flex; flex-direction: column; min-height: 100vh; min-height: 100dvh; }
+#chapter { flex: 1 0 auto; display: flex; flex-direction: column; }
+#page-frame { flex: 1 0 auto; }
 #chapter.title-leaf #page-frame { min-height: 30rem; }
 /* Volume and book leaves set like a manuscript title page: the title drops
    to the optical upper third with its mark beneath, and the span's imprint
@@ -183,7 +188,8 @@ body {
 #chapter.span-leaf .chapter-title { margin-top: 4.5rem; }
 #chapter.span-leaf .chapter-hash { margin-top: 1.6rem; }
 #chapter.span-leaf .chapter-frontispiece { margin-top: auto; margin-bottom: 3.75rem; }
-.wrap { max-width: 720px; margin: 0 auto; padding: 48px 22px 100px; }
+/* No bottom padding: the foot nav bar is the page's own floor. */
+.wrap { max-width: 720px; margin: 0 auto; padding: 48px 22px 0; }
 a { color: var(--accent); text-decoration: none; }
 a:hover { text-decoration: underline; }
 .mono { font-family: 'IBM Plex Mono', monospace; }
@@ -223,17 +229,6 @@ a:hover { text-decoration: underline; }
 .update-btn.show { display:inline-block; }
 .update-btn:hover { background:var(--accent-2); border-color:var(--accent-2); }
 
-.card {
-  background: var(--card); border: 1px solid var(--card-bd); border-radius: 6px;
-  padding: 24px 26px 26px; box-shadow: 0 24px 60px -32px rgba(0,0,0,.7);
-}
-label { display:block; font:500 11px/1 'IBM Plex Mono',monospace; letter-spacing:.06em; text-transform:uppercase; color:var(--dim); margin-bottom:8px; }
-.lookup-row { display:flex; gap:10px; }
-#block-input {
-  flex: 1; background: var(--input-bg); border: 1px solid var(--input-bd); border-radius: 4px;
-  color: var(--ink); font: 400 14px/1.4 'IBM Plex Mono',monospace; padding: 11px 12px;
-}
-#block-input:focus { outline: none; border-color: var(--accent); }
 button {
   background: var(--accent); color: var(--btn-ink); border: none; border-radius: 4px;
   font: 600 12.5px/1 'IBM Plex Mono',monospace; letter-spacing: .04em; text-transform: uppercase;
@@ -292,16 +287,38 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 .spinner { display:inline-block; width:12px; height:12px; border:2px solid var(--rule); border-top-color: var(--accent); border-radius:50%; animation: spin .7s linear infinite; vertical-align: -1px; margin-right: 6px; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* ── the chapter itself: a manuscript page, not a utility card ── */
-#chapter { margin-top: 48px; }
+/* ── the chapter itself: a manuscript page, not a utility card ──
+   No top margin: the eyebrow bar opens the chapter right under the masthead
+   (its own padding sets the rhythm), with no dead band between them. */
+#chapter { margin-top: 0; }
 .chapter-head { text-align: center; padding-bottom: 34px; margin-bottom: 34px; border-bottom: 1px solid var(--rule); }
 /* On the chapter's own page the body is empty, so the head's closing rule
    would stack against the page nav's opening rule -- drop it and let the nav's
    rule close the leaf alone. */
 #chapter.title-leaf .chapter-head { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
-/* Chapter (block) navigation: prev / next flanking the Volume · Book locator. */
-.chapter-nav { display:flex; align-items:center; justify-content:center; gap:16px; margin-bottom: 14px; }
-.chapter-num { font:600 11.5px/1 'IBM Plex Mono',monospace; letter-spacing:.3em; text-transform:uppercase; color: var(--accent); }
+/* Chapter (block) navigation: prev / next flanking the Volume · Book locator.
+   A [1fr | auto | 1fr] grid keeps the locator crumb dead-centred on the page
+   even when only one stepper is showing (Genesis has no Previous, the tip no
+   Next) -- a hidden stepper leaves its track empty instead of letting the
+   crumb drift toward the survivor. The steppers pin to the row's edges,
+   spanning the full width like the foot nav below. Explicit tracks: a hidden
+   stepper (display:none) leaves the grid, and auto-placement would reflow
+   the crumb into its column. */
+/* Anchored to the top of the screen, mirroring the foot nav's seat at the
+   bottom: sticky, so on a page taller than the viewport the eyebrow rides
+   the top edge -- prose scrolls behind its page-colour backing, the rule its
+   bottom edge -- and the two bars frame the screen. Top padding clears a
+   notch when running standalone. */
+.chapter-nav {
+  position: sticky; top: 0; z-index: 40;
+  display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:16px;
+  margin-bottom: 14px; padding: max(14px, env(safe-area-inset-top)) 0 14px;
+  border-bottom: 1px solid var(--rule); background: var(--page);
+}
+#chapter-prev { grid-column: 1; justify-self: start; }
+.chapter-num { grid-column: 2; }
+#chapter-next { grid-column: 3; justify-self: end; }
+.chapter-num { font:600 11.5px/1 'IBM Plex Mono',monospace; letter-spacing:.3em; text-transform:uppercase; color: var(--accent); min-width: 0; text-align: center; }
 /* The eyebrow's Volume / Book / Chapter crumbs inherit its voice exactly;
    hover marks them navigable. (Overrides the global gold button styling.) */
 .chapter-num .crumb {
@@ -402,13 +419,28 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 .hash-menu-title .hash-title-row .ghost { background: transparent; color: var(--dim); border: 1px solid var(--input-bd); }
 .hash-menu-title .hash-title-row .ghost:hover { background: transparent; color: var(--ink); border-color: var(--accent); }
 
-/* Per-section paging, at the foot of the section (after the witness footnotes):
-   Previous / Next pushed to opposite edges, each labelled with the section (or
-   adjacent chapter) it steps to. A rule separates it from the section above. */
-.section-nav { display:flex; align-items:center; gap:16px; margin-top: 44px; padding-top: 24px; border-top: 1px solid var(--rule); }
-/* Next hugs the right edge, Previous the left -- and each keeps its side even
-   when the other is hidden (an absent neighbour shows no button at all). */
-#page-next { margin-left: auto; }
+/* Per-section paging: Previous / Next pushed to opposite edges, each labelled
+   with the section (or adjacent leaf) it steps to. Anchored to the bottom of
+   the screen: sticky, so on a page taller than the viewport the bar rides the
+   bottom edge -- prose scrolls behind its page-colour backing, the rule its
+   top edge -- and settles into its natural place at the section's foot (after
+   the witness footnotes) once the reader reaches it. */
+.section-nav {
+  position: sticky; bottom: 0; z-index: 40;
+  display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:16px; margin-top: 44px;
+  padding: 14px 0 max(14px, env(safe-area-inset-bottom));
+  border-top: 1px solid var(--rule); background: var(--page);
+}
+/* Previous at the left edge, Next at the right, the notation toggle centred
+   between them. Explicit tracks: a hidden stepper (display:none) leaves the
+   grid, and auto-placement would reflow the survivors off-centre. */
+#page-prev { grid-column: 1; justify-self: start; }
+.section-nav .notation { grid-column: 2; }
+#page-next { grid-column: 3; justify-self: end; }
+/* Nothing to step to on either side (nothing precedes Genesis's opening leaf;
+   nothing follows the tip's last section while both edges are hidden): drop
+   the bar entirely rather than pin an empty rule to the screen bottom. */
+.section-nav:not(:has(button:not(.hidden))) { display: none; }
 /* The section heading -- the transaction's position within its block, "§ N" --
    centred beneath the chapter frontispiece. */
 .section-title { text-align:center; margin: 22px 0 0; font:600 13px/1 'IBM Plex Mono',monospace; letter-spacing:.28em; text-transform:uppercase; color:var(--accent); }
@@ -440,7 +472,8 @@ button:disabled { opacity: .4; cursor: not-allowed; }
                   plus its output index (a coinbase shows ∅).
      .tx-outputs  a subgrid (row 2, body + right): every output is a [scriptPubKey
                   | amount] pair, so an amount sits on the line of its output.
-     .tx-locktime the closing locktime, right column, last band -- the end. */
+     .tx-locktime the closing locktime, centred across the full row, last
+                  band -- the end, set like a terminal colophon. */
 .tx-flow { display: grid; grid-template-columns: [left] 6.5em [body] minmax(0,1fr) [right] 7em; column-gap: 1.3em; align-items: start; }
 .tx-inputs { grid-column: left / right; grid-row: 1; display: grid; grid-template-columns: subgrid; column-gap: 1.3em; align-items: start; }
 /* padding-top nudges the small-cap reference down onto the top of the taller
@@ -477,11 +510,11 @@ button:disabled { opacity: .4; cursor: not-allowed; }
   column-gap: 1.3em; align-items: start;
 }
 .tx-out-script { grid-column: 1; min-width: 0; }
-/* Amounts and the closing locktime right-align to the page edge, like a ledger
-   column; amounts read in bitcoin (₿) with a fixed eight decimals and tabular
-   figures, so the column aligns on the point (see formatBtc in btc-prose.js). */
+/* Amounts right-align to the page edge, like a ledger column; they read in
+   bitcoin (₿) with a fixed eight decimals and tabular figures, so the column
+   aligns on the point (see formatBtc in btc-prose.js). */
 .tx-out-value  { grid-column: 2; text-align: right; font-variant-numeric: tabular-nums; }
-.tx-locktime { grid-column: right; grid-row: 3; text-align: right; font-style: normal; }
+.tx-locktime { grid-column: left / -1; grid-row: 3; text-align: center; font-style: normal; }
 .tx-note { font: italic 400 13.5px/1.4 'Newsreader',serif; color: var(--dim); }
 /* The input's sequence mark, leading the amount line beneath the reference:
    ●/○ final/respects-locktime, † replaceable (a shade warmer), ■n / Τn a
@@ -536,20 +569,18 @@ button:disabled { opacity: .4; cursor: not-allowed; }
   .tx-flow { grid-template-columns: 1fr; }
   .tx-inputs, .tx-margin-cites, .tx-outputs, .tx-locktime { grid-column: 1; grid-row: auto; display: block; }
   .tx-in-cite, .cite-amount { text-align: left; margin: 0 0 .2em; }
-  .tx-out-value, .tx-locktime { text-align: left; margin: 0 0 .55em; }
+  .tx-out-value { text-align: left; margin: 0 0 .55em; }
+  .tx-locktime { margin: 0 0 .55em; }   /* stays centred: it closes the page, not a ledger line */
   /* Stacked into one column, the drop-cap's first body line now sits directly
      below its input's citation/amount rather than beside it. The floated
      initial (line-height .82) overhangs upward, so give the lead line room to
      keep the cap clear of the amount above it. */
   .tx-line.tx-body-lead { padding-top: .8em; }
-  /* At phone widths pin the two references to the edges (space-between) so the
-     Next button can never be pushed off-screen. The buttons keep their hugged
-     size (flex 0 0 auto); the centre locator is sized by the space left between
-     them (flex 1 1 0) and wraps within it, so it can never overflow the row. On
-     wider screens the nav stays centred and compact (see base rule). */
-  .chapter-nav { gap: 9px; justify-content: space-between; }
-  .chapter-step { flex: 0 0 auto; }
-  .chapter-num { letter-spacing: .14em; min-width: 0; flex: 1 1 0; text-align: center; }
+  /* At phone widths the row tightens: less gap, and the centre locator's
+     tracking eases so it wraps within the space between the edge-pinned
+     steppers (min-width 0 in the base rule) instead of overflowing. */
+  .chapter-nav { gap: 9px; }
+  .chapter-num { letter-spacing: .14em; }
 }
 
 /* A witness-bearing input carries a small superscript index inline; the matching
@@ -564,16 +595,24 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 .footnote-mark { font: 500 10.5px/1 'IBM Plex Mono',monospace; color: var(--accent); margin-right: .5em; font-style: normal; vertical-align: .35em; }
 
 /* ── Notation: a key to the manuscript's sigla — the glyphs that notate a
-   script's opcodes, and the marks drawn in each transaction's margins. ── */
-.notation { margin-top: 16px; }
+   script's opcodes, and the marks drawn in each transaction's margins. Its
+   toggle sits centred in the section-nav bar; opened, the key rises above
+   the bar as a sheet (absolute against the sticky nav), scrolling within
+   itself rather than growing the bar. ── */
+.notation { margin: 0; min-width: 0; }
 .notation summary {
   cursor: pointer; font:500 11px/1 'IBM Plex Mono',monospace; letter-spacing:.1em; text-transform:uppercase;
-  color: var(--dim); list-style: none;
+  color: var(--dim); list-style: none; text-align: center;
 }
 .notation summary::-webkit-details-marker { display: none; }
 .notation summary::before { content: '+ '; color: var(--accent); }
 .notation[open] summary::before { content: '– '; }
-.notation-body { margin-top: 14px; }
+.notation-body {
+  position: absolute; bottom: 100%; left: 0; right: 0;
+  max-height: min(64vh, 560px); overflow-y: auto; overscroll-behavior: contain;
+  background: var(--page); border-top: 1px solid var(--rule);
+  padding: 16px 2px 12px;
+}
 .notation-group { margin: 0 0 22px; }
 .notation-group > h4 {
   margin: 0 0 11px; font: 600 10px/1 'IBM Plex Mono',monospace; letter-spacing:.18em;
@@ -633,7 +672,7 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 <div class="wrap">
   <div class="masthead">
     <span class="title">The <span class="beta">β</span>ook of <span class="beta">β</span>itcoin</span>
-    <span class="home"><button type="button" id="install-btn" class="install-btn" aria-label="Install the Book of Bitcoin as an app">Install</button><a href="./bitcoin-contents.html">Contents</a> · <span class="settings-menu"><a href="#" id="settings-link" role="button" aria-haspopup="dialog" aria-expanded="false">Settings</a><div id="settings-panel" class="settings-panel hidden" role="dialog" aria-label="Settings">
+    <span class="home"><button type="button" id="install-btn" class="install-btn" aria-label="Install the Book of Bitcoin as an app">Install</button><a href="./bitcoin-search.html">Search</a> · <a href="./bitcoin-contents.html">Contents</a> · <span class="settings-menu"><a href="#" id="settings-link" role="button" aria-haspopup="dialog" aria-expanded="false">Settings</a><div id="settings-panel" class="settings-panel hidden" role="dialog" aria-label="Settings">
       <div class="settings-title">Data source</div>
       <div class="endpoint-row">
         <select id="endpoint-select" class="endpoint-select" aria-label="Data source endpoint"></select>
@@ -650,14 +689,10 @@ button:disabled { opacity: .4; cursor: not-allowed; }
     </div></span></span>
   </div>
 
-  <div class="card">
-    <label for="block-input">Block height, hash, transaction id, or reference</label>
-    <div class="lookup-row">
-      <input type="text" id="block-input" class="mono" value="0" placeholder="e.g. III β2 ■5, a height, a hash, or a transaction id" autocomplete="off" spellcheck="false">
-      <button type="button" id="block-btn">Read</button>
-    </div>
-    <div id="block-status" class="status-line hidden"></div>
-  </div>
+  <!-- The loading/error toast. The lookup input itself lives on its own page
+       (bitcoin-search.html, the masthead's Search link); this page only reports
+       the progress of whatever it was asked to open. -->
+  <div id="block-status" class="status-line hidden"></div>
 
   <article id="chapter" class="hidden">
     <!-- The eyebrow: chapter prev/next flank it on the chapter's own page
@@ -695,305 +730,306 @@ button:disabled { opacity: .4; cursor: not-allowed; }
     </div>
 
     <!-- Section paging sits at the foot of the section, after its witness
-         footnotes: read the transaction through, then step to the next. -->
+         footnotes: read the transaction through, then step to the next. The
+         notation key rides between the two steppers; opened, its body rises
+         above the bar as a sheet. -->
     <nav class="section-nav">
       <button type="button" id="page-prev" class="hidden" aria-label="Previous section" title="Previous section"></button>
+      <details class="notation">
+        <summary>Notation</summary>
+        <div class="notation-body">
+          <div class="notation-group">
+            <h4>Common script patterns</h4>
+            <div class="pattern-scroll">
+            <div class="pattern-table">
+              <span class="phead"></span><span class="phead">UTXO</span><span class="phead">Validator</span><span class="phead">STXO</span><span class="phead">Witness</span>
+              <span class="pname">P2PK</span>
+                <span class="seq"><span class="ph">p</span><span class="op op-push">⁶⁵</span> <span class="op">∇</span></span>
+                <span class="seq exec"><span class="ph">s</span> <span class="ph chain">p</span> <span class="op">∇</span></span>
+                <span class="seq"><span class="ph">s</span></span>
+                <span class="seq none">—</span>
+              <span class="pname">P2PKH</span>
+                <span class="seq"><span class="op">⧉</span> <span class="op">⌖</span> <span class="ph">h</span><span class="op op-push">²⁰</span> <span class="op">≡</span> <span class="op">∇</span></span>
+                <span class="seq exec"><span class="ph">s</span> <span class="ph">p</span> <span class="op">⧉</span> <span class="op">⌖</span> <span class="ph chain">h</span> <span class="op">≡</span> <span class="op">∇</span></span>
+                <span class="seq"><span class="ph">s</span> <span class="ph">p</span></span>
+                <span class="seq none">—</span>
+              <span class="pname">Multisig</span>
+                <span class="seq"><span class="op">②</span> <span class="ph">p<sub>1</sub></span><span class="op op-push">³³</span> <span class="ph">p<sub>2</sub></span><span class="op op-push">³³</span> <span class="ph">p<sub>3</sub></span><span class="op op-push">³³</span> <span class="op">③</span> <span class="op">◇</span></span>
+                <span class="seq exec"><span class="op">⓪</span> <span class="ph">s<sub>1</sub></span> <span class="ph">s<sub>2</sub></span> <span class="op">②</span> <span class="ph">p<sub>1</sub></span> <span class="ph">p<sub>2</sub></span> <span class="ph">p<sub>3</sub></span> <span class="op">③</span> <span class="op">◇</span></span>
+                <span class="seq"><span class="op">⓪</span> <span class="ph">s<sub>1</sub></span> <span class="ph">s<sub>2</sub></span></span>
+                <span class="seq none">—</span>
+              <span class="pname">P2SH</span>
+                <span class="seq"><span class="op">⌖</span> <span class="ph">h</span><span class="op op-push">²⁰</span> <span class="op">=</span></span>
+                <span class="seq exec"><span class="ph">r</span> <span class="op">⌖</span> <span class="ph chain">h</span> <span class="op">=</span> <span class="op">(r)</span></span>
+                <span class="seq"><span class="op">(r)</span></span>
+                <span class="seq none">—</span>
+              <span class="pname">P2SH · 2-of-3</span>
+                <span class="seq"><span class="op">⌖</span> <span class="ph">h</span><span class="op op-push">²⁰</span> <span class="op">=</span></span>
+                <span class="seq exec"><span class="op">②</span> <span class="ph">p<sub>1</sub></span> <span class="ph">p<sub>2</sub></span> <span class="ph">p<sub>3</sub></span> <span class="op">③</span> <span class="op">◇</span> <span class="op">⌖</span> <span class="ph chain">h</span> <span class="op">=</span> <span class="op">(</span><span class="op">②</span> <span class="ph">p<sub>1</sub></span> <span class="ph">p<sub>2</sub></span> <span class="ph">p<sub>3</sub></span> <span class="op">③</span> <span class="op">◇</span><span class="op">)</span></span>
+                <span class="seq"><span class="op">⓪</span> <span class="ph">s<sub>1</sub></span> <span class="ph">s<sub>2</sub></span> <span class="op">②</span> <span class="ph">p<sub>1</sub></span> <span class="ph">p<sub>2</sub></span> <span class="ph">p<sub>3</sub></span> <span class="op">③</span> <span class="op">◇</span></span>
+                <span class="seq none">—</span>
+              <span class="pname">P2WPKH</span>
+                <span class="seq"><span class="op">⓪</span> <span class="ph">h</span><span class="op op-push">²⁰</span></span>
+                <span class="seq exec"><span class="ph">s</span> <span class="ph">p</span> <span class="op">⧉</span> <span class="op">⌖</span> <span class="ph chain">h</span> <span class="op">≡</span> <span class="op">∇</span></span>
+                <span class="seq none">∅</span>
+                <span class="seq"><span class="ph">s</span> <span class="ph">p</span></span>
+              <span class="pname">P2WSH</span>
+                <span class="seq"><span class="op">⓪</span> <span class="ph">h</span><span class="op op-push">³²</span></span>
+                <span class="seq exec"><span class="ph">w</span> <span class="op">Σ</span> <span class="ph chain">h</span> <span class="op">=</span> <span class="op">(w)</span></span>
+                <span class="seq none">∅</span>
+                <span class="seq"><span class="op">(w)</span></span>
+              <span class="pname">P2TR key</span>
+                <span class="seq"><span class="op">①</span> <span class="ph">p</span><span class="op op-push">³²</span></span>
+                <span class="seq exec"><span class="ph">s</span> <span class="op">∇</span></span>
+                <span class="seq none">∅</span>
+                <span class="seq"><span class="ph">s</span></span>
+              <span class="pname">P2TR script</span>
+                <span class="seq"><span class="op">①</span> <span class="ph">p</span><span class="op op-push">³²</span></span>
+                <span class="seq exec"><span class="ph">t</span> <span class="op">⋔</span> <span class="ph chain">p</span> <span class="op">=</span> <span class="op">(t)</span></span>
+                <span class="seq none">∅</span>
+                <span class="seq"><span class="ph">s</span> <span class="ph">t</span> <span class="ph">c</span></span>
+              <span class="pname">Data</span>
+                <span class="seq"><span class="op">¶</span> <span class="op op-push">ⁿ</span></span>
+                <span class="seq none">—</span>
+                <span class="seq none">—</span>
+                <span class="seq none">—</span>
+            </div>
+            </div>
+          </div>
+
+          <div class="notation-group">
+            <h4>Lightning — commitment &amp; channel scripts</h4>
+            <div class="pattern-scroll">
+            <div class="pattern-table two-party">
+              <span class="phead"></span><span class="phead">Party 1</span><span class="phead">Party 2</span><span class="phead">UTXO</span><span class="phead">Validator</span><span class="phead">STXO</span><span class="phead">Witness</span>
+              <span class="pname">Channel open · 2-of-2</span>
+                <span class="seq calc"><span class="ph">p<sub>1</sub></span> <span class="op">=</span> <span class="ph">k<sub>1</sub></span><span class="op">G</span> · <span class="ph">p<sup>0</sup></span> <span class="op">=</span> <span class="ph">k<sup>0</sup></span><span class="op">G</span> · <span class="ph">s<sub>1</sub><sup>f</sup></span> · <span class="op">Σ</span> <span class="ph">w</span> <span class="op">=</span> <span class="ph">h</span></span>
+                <span class="seq calc"><span class="ph">p<sub>2</sub></span> <span class="op">=</span> <span class="ph">k<sub>2</sub></span><span class="op">G</span> · <span class="ph">s<sub>2</sub><sup>f</sup></span> · <span class="op">Σ</span> <span class="ph">w</span> <span class="op">=</span> <span class="ph">h</span></span>
+                <span class="seq"><span class="op">⓪</span> <span class="ph">h</span></span>
+                <span class="seq exec"><span class="op">②</span> <span class="ph">p<sub>1</sub></span> <span class="ph">p<sub>2</sub></span> <span class="op">②</span> <span class="op">◇</span> <span class="op">Σ</span> <span class="ph chain">h</span> <span class="op">=</span> <span class="op">(</span><span class="op">②</span> <span class="ph">p<sub>1</sub></span> <span class="ph">p<sub>2</sub></span> <span class="op">②</span> <span class="op">◇</span><span class="op">)</span></span>
+                <span class="seq none">∅</span>
+                <span class="seq"><span class="op">⓪</span> <span class="ph">s<sub>1</sub><sup>f</sup></span> <span class="ph">s<sub>2</sub><sup>f</sup></span> · <span class="op">⓪</span> <span class="ph">s<sub>1</sub><sup><i>i</i></sup></span> <span class="ph">s<sub>2</sub><sup><i>i</i></sup></span></span>
+              <span class="pname">Channel update</span>
+                <span class="seq calc"><span class="ph">p<sup><i>i</i>+1</sup></span> <span class="op">=</span> <span class="ph">k<sup><i>i</i>+1</sup></span><span class="op">G</span> · <span class="ph">k<sup><i>i</i></sup></span></span>
+                <span class="seq calc"><span class="ph">k<sub>r</sub><sup><i>i</i></sup></span> <span class="op">=</span> <span class="ph">k<sub>2</sub></span><span class="op">Σ(</span><span class="ph">p<sub>2</sub></span><span class="op">⧺</span><span class="ph">p<sup><i>i</i></sup></span><span class="op">)</span> <span class="op">+</span> <span class="ph">k<sup><i>i</i></sup></span><span class="op">Σ(</span><span class="ph">p<sup><i>i</i></sup></span><span class="op">⧺</span><span class="ph">p<sub>2</sub></span><span class="op">)</span> · <span class="ph">s<sub>r</sub><sup><i>i</i></sup></span></span>
+                <span class="seq none">—</span>
+                <span class="seq none">—</span>
+                <span class="seq none">—</span>
+                <span class="seq none">—</span>
+              <span class="pname">Force close · to_local</span>
+                <span class="seq calc"><span class="ph">p<sup><i>i</i></sup></span> <span class="op">=</span> <span class="ph">k<sup><i>i</i></sup></span><span class="op">G</span> · <span class="ph">k<sub>1</sub><sup><i>i</i></sup></span> <span class="op">=</span> <span class="ph">k<sub>1</sub></span> <span class="op">+</span> <span class="op">Σ(</span><span class="ph">p<sup><i>i</i></sup></span><span class="op">⧺</span><span class="ph">p<sub>1</sub></span><span class="op">)</span> · <span class="ph">p<sub>1</sub><sup><i>i</i></sup></span> <span class="op">=</span> <span class="ph">k<sub>1</sub><sup><i>i</i></sup></span><span class="op">G</span> · <span class="ph">p<sub>r</sub><sup><i>i</i></sup></span> · <span class="ph">s<sub>1</sub><sup><i>i</i></sup></span> · <span class="op">Σ</span> <span class="ph">w<sup><i>i</i></sup></span> <span class="op">=</span> <span class="ph">h<sup><i>i</i></sup></span></span>
+                <span class="seq calc"><span class="ph">p<sub>1</sub><sup><i>i</i></sup></span> <span class="op">=</span> <span class="ph">p<sub>1</sub></span> <span class="op">+</span> <span class="op">Σ(</span><span class="ph">p<sup><i>i</i></sup></span><span class="op">⧺</span><span class="ph">p<sub>1</sub></span><span class="op">)</span><span class="op">G</span> · <span class="ph">p<sub>r</sub><sup><i>i</i></sup></span> <span class="op">=</span> <span class="ph">p<sub>2</sub></span><span class="op">Σ(</span><span class="ph">p<sub>2</sub></span><span class="op">⧺</span><span class="ph">p<sup><i>i</i></sup></span><span class="op">)</span> <span class="op">+</span> <span class="ph">p<sup><i>i</i></sup></span><span class="op">Σ(</span><span class="ph">p<sup><i>i</i></sup></span><span class="op">⧺</span><span class="ph">p<sub>2</sub></span><span class="op">)</span> · <span class="op">Σ</span> <span class="ph">w<sup><i>i</i></sup></span> <span class="op">=</span> <span class="ph">h<sup><i>i</i></sup></span></span>
+                <span class="seq"><span class="op">⓪</span> <span class="ph">h<sup><i>i</i></sup></span></span>
+                <span class="seq exec"><span class="op">⟨</span> <span class="ph">p<sub>r</sub><sup><i>i</i></sup></span> <span class="op">│</span> <span class="op">■</span> <span class="op">Δ</span> <span class="op">⌄</span> <span class="ph">p<sub>1</sub><sup><i>i</i></sup></span> <span class="op">⟩</span> <span class="op">∇</span> <span class="op">Σ</span> <span class="ph chain">h<sup><i>i</i></sup></span> <span class="op">=</span> <span class="op">(</span><span class="op">⟨</span> <span class="ph">p<sub>r</sub><sup><i>i</i></sup></span> <span class="op">│</span> <span class="op">■</span> <span class="op">Δ</span> <span class="op">⌄</span> <span class="ph">p<sub>1</sub><sup><i>i</i></sup></span> <span class="op">⟩</span> <span class="op">∇</span><span class="op">)</span></span>
+                <span class="seq none">∅</span>
+                <span class="seq"><span class="ph">s<sub>1</sub><sup><i>i</i></sup></span> <span class="op">⓪</span> · <span class="ph">s<sub>r</sub><sup><i>i</i></sup></span> <span class="op">①</span></span>
+              <span class="pname">Force close · to_remote</span>
+                <span class="seq calc"><span class="op">Σ</span> <span class="ph">w</span> <span class="op">=</span> <span class="ph">h</span></span>
+                <span class="seq calc"><span class="ph">p<sub>2</sub></span> <span class="op">=</span> <span class="ph">k<sub>2</sub></span><span class="op">G</span> · <span class="ph">s<sub>2</sub></span> · <span class="op">Σ</span> <span class="ph">w</span> <span class="op">=</span> <span class="ph">h</span></span>
+                <span class="seq"><span class="op">⓪</span> <span class="ph">h</span></span>
+                <span class="seq exec"><span class="ph">p<sub>2</sub></span> <span class="op">▼</span> <span class="op">①</span> <span class="op">Δ</span> <span class="op">Σ</span> <span class="ph chain">h</span> <span class="op">=</span> <span class="op">(</span><span class="ph">p<sub>2</sub></span> <span class="op">▼</span> <span class="op">①</span> <span class="op">Δ</span><span class="op">)</span></span>
+                <span class="seq none">∅</span>
+                <span class="seq"><span class="ph">s<sub>2</sub></span></span>
+              <span class="pname">Force close · anchor</span>
+                <span class="seq calc"><span class="ph">p</span> <span class="op">=</span> <span class="ph">k</span><span class="op">G</span> · <span class="ph">s</span> · <span class="op">Σ</span> <span class="ph">w</span> <span class="op">=</span> <span class="ph">h</span></span>
+                <span class="seq calc"><span class="op">Σ</span> <span class="ph">w</span> <span class="op">=</span> <span class="ph">h</span> · <span class="op">∅</span></span>
+                <span class="seq"><span class="op">⓪</span> <span class="ph">h</span></span>
+                <span class="seq exec"><span class="ph">p</span> <span class="op">∇</span> <span class="op">⧉?</span> <span class="op">¬⟨</span> <span class="op">⑯</span> <span class="op">Δ</span> <span class="op">⟩</span> <span class="op">Σ</span> <span class="ph chain">h</span> <span class="op">=</span> <span class="op">(</span><span class="ph">p</span> <span class="op">∇</span> <span class="op">⧉?</span> <span class="op">¬⟨</span> <span class="op">⑯</span> <span class="op">Δ</span> <span class="op">⟩</span><span class="op">)</span></span>
+                <span class="seq none">∅</span>
+                <span class="seq"><span class="ph">s</span> · <span class="op">∅</span></span>
+              <span class="pname">Force close · HTLC</span>
+                <span class="seq calc"><span class="ph">k<sub>1</sub><sup><i>i</i></sup></span> <span class="op">=</span> <span class="ph">k<sub>1</sub></span> <span class="op">+</span> <span class="op">Σ(</span><span class="ph">p<sup><i>i</i></sup></span><span class="op">⧺</span><span class="ph">p<sub>1</sub></span><span class="op">)</span> · <span class="ph">p<sub>1</sub><sup><i>i</i></sup></span> <span class="op">=</span> <span class="ph">k<sub>1</sub><sup><i>i</i></sup></span><span class="op">G</span> · <span class="ph">p<sub>2</sub><sup><i>i</i></sup></span> <span class="op">=</span> <span class="ph">p<sub>2</sub></span> <span class="op">+</span> <span class="op">Σ(</span><span class="ph">p<sup><i>i</i></sup></span><span class="op">⧺</span><span class="ph">p<sub>2</sub></span><span class="op">)</span><span class="op">G</span> · <span class="ph">p<sub>r</sub><sup><i>i</i></sup></span> · <span class="ph">s<sub>1</sub><sup><i>i</i></sup></span> · <span class="op">Σ</span> <span class="ph">w<sup><i>i</i></sup></span> <span class="op">=</span> <span class="ph">h<sup><i>i</i></sup></span></span>
+                <span class="seq calc"><span class="ph">k<sub>2</sub><sup><i>i</i></sup></span> <span class="op">=</span> <span class="ph">k<sub>2</sub></span> <span class="op">+</span> <span class="op">Σ(</span><span class="ph">p<sup><i>i</i></sup></span><span class="op">⧺</span><span class="ph">p<sub>2</sub></span><span class="op">)</span> · <span class="ph">p<sub>2</sub><sup><i>i</i></sup></span> <span class="op">=</span> <span class="ph">k<sub>2</sub><sup><i>i</i></sup></span><span class="op">G</span> · <span class="ph">p<sub>1</sub><sup><i>i</i></sup></span> <span class="op">=</span> <span class="ph">p<sub>1</sub></span> <span class="op">+</span> <span class="op">Σ(</span><span class="ph">p<sup><i>i</i></sup></span><span class="op">⧺</span><span class="ph">p<sub>1</sub></span><span class="op">)</span><span class="op">G</span> · <span class="ph">p<sub>r</sub><sup><i>i</i></sup></span> · <span class="ph">s<sub>2</sub><sup><i>i</i></sup></span> · <span class="op">Σ</span> <span class="ph">w<sup><i>i</i></sup></span> <span class="op">=</span> <span class="ph">h<sup><i>i</i></sup></span></span>
+                <span class="seq"><span class="op">⓪</span> <span class="ph">h<sup><i>i</i></sup></span></span>
+                <span class="seq exec"><span class="op">⟨</span> <span class="ph">p<sub>r</sub><sup><i>i</i></sup></span> <span class="op">│</span> <span class="op">⟨</span> <span class="op">Σ</span> <span class="ph">h</span> <span class="op">≡</span> <span class="ph">p<sub>1</sub><sup><i>i</i></sup></span> <span class="op">│</span> <span class="op">τ</span> <span class="op">⌄</span> <span class="ph">p<sub>2</sub><sup><i>i</i></sup></span> <span class="op">⟩</span> <span class="op">⟩</span> <span class="op">∇</span> <span class="op">Σ</span> <span class="ph chain">h<sup><i>i</i></sup></span> <span class="op">=</span> <span class="op">(</span><span class="op">⟨</span> <span class="ph">p<sub>r</sub><sup><i>i</i></sup></span> <span class="op">│</span> <span class="op">⟨</span> <span class="op">Σ</span> <span class="ph">h</span> <span class="op">≡</span> <span class="ph">p<sub>1</sub><sup><i>i</i></sup></span> <span class="op">│</span> <span class="op">τ</span> <span class="op">⌄</span> <span class="ph">p<sub>2</sub><sup><i>i</i></sup></span> <span class="op">⟩</span> <span class="op">⟩</span> <span class="op">∇</span><span class="op">)</span></span>
+                <span class="seq none">∅</span>
+                <span class="seq"><span class="ph">s<sub>1</sub><sup><i>i</i></sup></span> <span class="ph">h</span> <span class="op">①</span> <span class="op">⓪</span> · <span class="ph">s<sub>2</sub><sup><i>i</i></sup></span> <span class="op">⓪</span> <span class="op">⓪</span> · <span class="ph">s<sub>r</sub><sup><i>i</i></sup></span> <span class="op">①</span></span>
+            </div>
+            </div>
+            <p class="notation-note">The first two columns are off chain: what each party computes for itself — party 1 is the side whose force close this is. Secrets stay in their own column until an update surrenders k<sup><i>i</i></sup> across; everything else a party writes without deriving came from the other column's public points.</p>
+          </div>
+
+          <div class="notation-group">
+            <h4>Secrets &amp; the generator</h4>
+            <div class="glyph-grid">
+              <div class="glyph-row"><span class="g"><b>k</b></span><span class="m"><b>private key</b> — the secret scalar behind a public key; never on chain</span></div>
+              <div class="glyph-row"><span class="g">G</span><span class="m">the <b>generator</b> — the fixed curve point every key descends from: <b>p</b> = <b>k</b>G</span></div>
+              <div class="glyph-row"><span class="g"><b>p</b><sup>0</sup> <b>p</b><sup><i>i</i></sup> <b>p</b><sup>f</sup></span><span class="m"><b>channel state</b> — a superscript scopes a datum to a state of the channel: 0 the initial commitment sealed at funding, <i>i</i> any intermediate update, f the final, closing state. Each state the closing party draws a fresh secret k<sup><i>i</i></sup> and shares only its point p<sup><i>i</i></sup> = k<sup><i>i</i></sup>G; scripts and hashes rebuild per state. Advancing to <i>i</i>+1 revokes state <i>i</i>: k<sup><i>i</i></sup> crosses to the other side — and nothing else</span></div>
+              <div class="glyph-row"><span class="g"><b>p</b><sub>1</sub><sup><i>i</i></sup> <b>p</b><sub>2</sub><sup><i>i</i></sup> <b>p</b><sub>r</sub><sup><i>i</i></sup></span><span class="m"><b>state-scoped keys</b> — party below, state above: each side's base key folded with p<sup><i>i</i></sup>, and the revocation key; the party columns derive them in full, each side by its own route</span></div>
+            </div>
+          </div>
+
+          <div class="notation-group">
+            <h4>Pushes</h4>
+            <div class="glyph-grid">
+              <div class="glyph-row"><span class="g">²⁰</span><span class="m"><b>push</b> — the bare superscript is the byte count (²⁰ pushes twenty)</span></div>
+              <div class="glyph-row"><span class="g">↧<i>n</i> ⇊<i>n</i> ⤋<i>n</i></span><span class="m">extended push — length in a 1 / 2 / 4-byte prefix</span></div>
+            </div>
+          </div>
+
+          <div class="notation-group">
+            <h4>Signatures &amp; keys</h4>
+            <div class="glyph-grid">
+              <div class="glyph-row"><span class="g">∇</span><span class="m">check a <b>signature</b></span></div>
+              <div class="glyph-row"><span class="g">▼</span><span class="m">check a signature, <b>else fail</b></span></div>
+              <div class="glyph-row"><span class="g">◇</span><span class="m">check <b>m-of-n</b> signatures</span></div>
+              <div class="glyph-row"><span class="g">◆</span><span class="m">check m-of-n, <b>else fail</b></span></div>
+              <div class="glyph-row"><span class="g">∇₊</span><span class="m">check a signature, <b>tallying</b> (tapscript multisig)</span></div>
+            </div>
+          </div>
+
+          <div class="notation-group">
+            <h4>Hashes</h4>
+            <div class="glyph-grid">
+              <div class="glyph-row"><span class="g">⌖</span><span class="m"><b>address</b> hash · HASH160</span></div>
+              <div class="glyph-row"><span class="g">⌘</span><span class="m"><b>identity</b> hash · HASH256</span></div>
+              <div class="glyph-row"><span class="g">Σ</span><span class="m">SHA-256</span></div>
+              <div class="glyph-row"><span class="g">σ</span><span class="m">SHA-1</span></div>
+              <div class="glyph-row"><span class="g">ρ</span><span class="m">RIPEMD-160</span></div>
+            </div>
+          </div>
+
+          <div class="notation-group">
+            <h4>Timelocks</h4>
+            <div class="glyph-grid">
+              <div class="glyph-row"><span class="g">τ</span><span class="m"><b>absolute</b> — not before a fixed time or block</span></div>
+              <div class="glyph-row"><span class="g">Δ</span><span class="m"><b>relative</b> — a delay after this coin confirmed</span></div>
+            </div>
+          </div>
+
+          <div class="notation-group">
+            <h4>Numbers</h4>
+            <div class="glyph-grid">
+              <div class="glyph-row"><span class="g">⓪</span><span class="m">push zero</span></div>
+              <div class="glyph-row"><span class="g">①–⑯</span><span class="m">push a small number (1–16)</span></div>
+              <div class="glyph-row"><span class="g">⊖</span><span class="m">push minus one</span></div>
+            </div>
+          </div>
+
+          <div class="notation-group">
+            <h4>Coinbase — the mining preamble</h4>
+            <div class="glyph-grid">
+              <div class="glyph-row"><span class="g">β<i>n</i></span><span class="m">the <b>difficulty target</b> — a valid hash opens with n zero bits</span></div>
+              <div class="glyph-row"><span class="g">η<sub><i>n</i></sub></span><span class="m"><b>extranonce</b> — search space beyond the header's η</span></div>
+            </div>
+          </div>
+
+          <div class="notation-group">
+            <h4>Chapter head — the block header</h4>
+            <div class="glyph-grid">
+              <div class="glyph-row"><span class="g">v<i>n</i></span><span class="m">block <b>version</b></span></div>
+              <div class="glyph-row"><span class="g">∅</span><span class="m">no previous block — the genesis chapter</span></div>
+              <div class="glyph-row"><span class="g">β<i>n</i></span><span class="m">the <b>difficulty target</b>, as in the preamble</span></div>
+              <div class="glyph-row"><span class="g">η<sub><i>n</i></sub></span><span class="m">the <b>nonce</b> the miner landed on</span></div>
+            </div>
+          </div>
+
+          <div class="notation-group">
+            <h4>Stack</h4>
+            <div class="glyph-grid">
+              <div class="glyph-row"><span class="g">⧉</span><span class="m"><b>duplicate</b> the top item</span></div>
+              <div class="glyph-row"><span class="g">⌄</span><span class="m"><b>drop</b> the top item</span></div>
+              <div class="glyph-row"><span class="g">⧉?</span><span class="m">duplicate <b>if nonzero</b></span></div>
+              <div class="glyph-row"><span class="g">⇄</span><span class="m"><b>swap</b> the top two</span></div>
+              <div class="glyph-row"><span class="g">↻</span><span class="m"><b>rotate</b> the top three</span></div>
+              <div class="glyph-row"><span class="g">⇗</span><span class="m"><b>over</b> — copy the second to the top</span></div>
+              <div class="glyph-row"><span class="g">⌦</span><span class="m"><b>nip</b> out the second</span></div>
+              <div class="glyph-row"><span class="g">⇘</span><span class="m"><b>tuck</b> the top beneath the second</span></div>
+              <div class="glyph-row"><span class="g">⇡</span><span class="m"><b>pick</b> — copy the nth item up</span></div>
+              <div class="glyph-row"><span class="g">⥀</span><span class="m"><b>roll</b> — move the nth item up</span></div>
+              <div class="glyph-row"><span class="g">↕</span><span class="m"><b>depth</b> of the stack</span></div>
+              <div class="glyph-row"><span class="g">⇥ ⇤</span><span class="m"><b>shelve / retrieve</b> via the alt stack</span></div>
+            </div>
+          </div>
+
+          <div class="notation-group">
+            <h4>Arithmetic &amp; comparison</h4>
+            <div class="glyph-grid">
+              <div class="glyph-row"><span class="g">+ − × ÷ %</span><span class="m">arithmetic on numbers</span></div>
+              <div class="glyph-row"><span class="g">+₁ −₁ ×₂ ÷₂</span><span class="m">by one · by two</span></div>
+              <div class="glyph-row"><span class="g">∓</span><span class="m"><b>negate</b></span></div>
+              <div class="glyph-row"><span class="g">|·|</span><span class="m"><b>absolute value</b></span></div>
+              <div class="glyph-row"><span class="g">⊓ ⊔</span><span class="m"><b>min</b> · <b>max</b></span></div>
+              <div class="glyph-row"><span class="g">∈</span><span class="m"><b>within</b> a range</span></div>
+              <div class="glyph-row"><span class="g">&lt; &gt; ≤ ≥</span><span class="m">comparisons</span></div>
+              <div class="glyph-row"><span class="g">≐ ≑</span><span class="m">numbers equal? · equal, <b>else fail</b></span></div>
+              <div class="glyph-row"><span class="g">≠ ≠₀</span><span class="m">numbers differ · <b>nonzero?</b></span></div>
+              <div class="glyph-row"><span class="g">¬ ∧ ∨</span><span class="m">not · and · or</span></div>
+              <div class="glyph-row"><span class="g">« »</span><span class="m">shift left · right</span></div>
+              <div class="glyph-row"><span class="g">= ≡</span><span class="m">bytes equal? · equal, <b>else fail</b></span></div>
+            </div>
+          </div>
+
+          <div class="notation-group">
+            <h4>Bytes</h4>
+            <div class="glyph-grid">
+              <div class="glyph-row"><span class="g">⧺</span><span class="m"><b>concatenate</b></span></div>
+              <div class="glyph-row"><span class="g">⊂</span><span class="m"><b>substring</b></span></div>
+              <div class="glyph-row"><span class="g">↤ ↦</span><span class="m">keep the <b>left</b> · <b>right</b> part</span></div>
+              <div class="glyph-row"><span class="g">∼ ∩ ∪ ⊻</span><span class="m">bitwise invert · and · or · xor</span></div>
+              <div class="glyph-row"><span class="g">ℓ</span><span class="m"><b>length</b> of the top item</span></div>
+            </div>
+          </div>
+
+          <div class="notation-group">
+            <h4>Control</h4>
+            <div class="glyph-grid">
+              <div class="glyph-row"><span class="g">⟨ │ ⟩</span><span class="m">if … else … end</span></div>
+              <div class="glyph-row"><span class="g">¬⟨</span><span class="m"><b>if not</b></span></div>
+              <div class="glyph-row"><span class="g">( )</span><span class="m"><b>run</b> the revealed script (r w t)</span></div>
+              <div class="glyph-row"><span class="g">✓</span><span class="m">assert true</span></div>
+              <div class="glyph-row"><span class="g">¶</span><span class="m"><b>data output</b> — provably unspendable</span></div>
+              <div class="glyph-row"><span class="g">° °<i>n</i></span><span class="m"><b>no-op</b> · numbered no-ops</span></div>
+              <div class="glyph-row"><span class="g">‖</span><span class="m"><b>section divider</b> for signature coverage</span></div>
+              <div class="glyph-row"><span class="g">⊘ ⊘₁ ⊘₂</span><span class="m"><b>reserved</b> — invalid if executed</span></div>
+              <div class="glyph-row"><span class="g">⊘ᵛ ⊘⟨ ⊘¬⟨</span><span class="m">reserved VER family</span></div>
+              <div class="glyph-row"><span class="g">☒</span><span class="m"><b>invalid opcode</b></span></div>
+            </div>
+          </div>
+
+          <div class="notation-group">
+            <h4>Data</h4>
+            <div class="glyph-grid">
+              <div class="glyph-row"><span class="g"><b>p</b></span><span class="m"><b>public key</b></span></div>
+              <div class="glyph-row"><span class="g"><b>s</b></span><span class="m"><b>signature</b></span></div>
+              <div class="glyph-row"><span class="g"><b>h</b></span><span class="m"><b>hash</b></span></div>
+              <div class="glyph-row"><span class="g"><b>r</b></span><span class="m"><b>redeem script</b> (inside P2SH)</span></div>
+              <div class="glyph-row"><span class="g"><b>w</b></span><span class="m"><b>witness script</b> (inside P2WSH)</span></div>
+              <div class="glyph-row"><span class="g"><b>t</b></span><span class="m"><b>tapscript</b> (a Taproot leaf)</span></div>
+              <div class="glyph-row"><span class="g"><b>c</b></span><span class="m"><b>control block</b> (a Taproot script-path reveal) — leaf version <b>v</b><i>n</i>, parity subscript, then the internal key <b>p</b></span></div>
+              <div class="glyph-row"><span class="g"><b>⋔</b></span><span class="m"><b>merkle proof</b> — the revealed leaf's path in the taptree</span></div>
+              <div class="glyph-row"><span class="g"><b>a</b></span><span class="m"><b>annex</b> (reserved Taproot spend data)</span></div>
+            </div>
+            <p class="notation-note">A push of known length carries its byte count as a superscript on the mark — <b>h</b>²⁰, <b>p</b>⁶⁵; a bare, untyped push keeps its count leading (²⁰). <b>Bold</b> where the datum is on chain — a lock, or what a spend writes; <b>plain</b> where a spend introduces it at validation.</p>
+          </div>
+
+          <div class="notation-group">
+            <h4>Margin — an input's sequence</h4>
+            <div class="glyph-grid">
+              <div class="glyph-row"><span class="g">●</span><span class="m"><b>final</b></span></div>
+              <div class="glyph-row"><span class="g">○</span><span class="m">respects the locktime</span></div>
+              <div class="glyph-row"><span class="g">†</span><span class="m"><b>replaceable</b> (opt-in RBF)</span></div>
+              <div class="glyph-row"><span class="g">■<i>N</i></span><span class="m">relative: N blocks after confirmation (a count of chapters)</span></div>
+              <div class="glyph-row"><span class="g">Τ<i>Δt</i></span><span class="m">relative: a duration after confirmation (d h m s)</span></div>
+              <div class="glyph-row"><span class="g">(<i>n</i> ₿)</span><span class="m">the <b>amount spent</b> by this input — value flowing in; an output's amount stands bare (<i>n</i> ₿, no parentheses)</span></div>
+            </div>
+          </div>
+
+          <div class="notation-group">
+            <h4>Margin — the transaction's locktime &amp; other marks</h4>
+            <div class="glyph-grid">
+              <div class="glyph-row"><span class="g">□</span><span class="m">no locktime</span></div>
+              <div class="glyph-row"><span class="g"><i>v</i> β<i>b</i> ■<i>c</i></span><span class="m">not before the cited chapter (volume, β book, ■ chapter)</span></div>
+              <div class="glyph-row"><span class="g">Τ<i>t</i></span><span class="m">not before a UTC date</span></div>
+              <div class="glyph-row"><span class="g">∅</span><span class="m"><b>empty</b> — a coinbase's absent prevout, a segwit input's zero-byte script, an empty witness item</span></div>
+              <div class="glyph-row"><span class="g">§<i>n</i></span><span class="m">section — the transaction's position</span></div>
+            </div>
+          </div>
+        </div>
+      </details>
       <button type="button" id="page-next" class="hidden" aria-label="Next section" title="Next section"></button>
     </nav>
   </article>
-
-  <details class="notation">
-    <summary>Notation</summary>
-    <div class="notation-body">
-      <div class="notation-group">
-        <h4>Common script patterns</h4>
-        <div class="pattern-scroll">
-        <div class="pattern-table">
-          <span class="phead"></span><span class="phead">UTXO</span><span class="phead">Validator</span><span class="phead">STXO</span><span class="phead">Witness</span>
-          <span class="pname">P2PK</span>
-            <span class="seq"><span class="ph">p</span><span class="op op-push">⁶⁵</span> <span class="op">∇</span></span>
-            <span class="seq exec"><span class="ph">s</span> <span class="ph chain">p</span> <span class="op">∇</span></span>
-            <span class="seq"><span class="ph">s</span></span>
-            <span class="seq none">—</span>
-          <span class="pname">P2PKH</span>
-            <span class="seq"><span class="op">⧉</span> <span class="op">⌖</span> <span class="ph">h</span><span class="op op-push">²⁰</span> <span class="op">≡</span> <span class="op">∇</span></span>
-            <span class="seq exec"><span class="ph">s</span> <span class="ph">p</span> <span class="op">⧉</span> <span class="op">⌖</span> <span class="ph chain">h</span> <span class="op">≡</span> <span class="op">∇</span></span>
-            <span class="seq"><span class="ph">s</span> <span class="ph">p</span></span>
-            <span class="seq none">—</span>
-          <span class="pname">Multisig</span>
-            <span class="seq"><span class="op">②</span> <span class="ph">p<sub>1</sub></span><span class="op op-push">³³</span> <span class="ph">p<sub>2</sub></span><span class="op op-push">³³</span> <span class="ph">p<sub>3</sub></span><span class="op op-push">³³</span> <span class="op">③</span> <span class="op">◇</span></span>
-            <span class="seq exec"><span class="op">⓪</span> <span class="ph">s<sub>1</sub></span> <span class="ph">s<sub>2</sub></span> <span class="op">②</span> <span class="ph">p<sub>1</sub></span> <span class="ph">p<sub>2</sub></span> <span class="ph">p<sub>3</sub></span> <span class="op">③</span> <span class="op">◇</span></span>
-            <span class="seq"><span class="op">⓪</span> <span class="ph">s<sub>1</sub></span> <span class="ph">s<sub>2</sub></span></span>
-            <span class="seq none">—</span>
-          <span class="pname">P2SH</span>
-            <span class="seq"><span class="op">⌖</span> <span class="ph">h</span><span class="op op-push">²⁰</span> <span class="op">=</span></span>
-            <span class="seq exec"><span class="ph">r</span> <span class="op">⌖</span> <span class="ph chain">h</span> <span class="op">=</span> <span class="op">(r)</span></span>
-            <span class="seq"><span class="op">(r)</span></span>
-            <span class="seq none">—</span>
-          <span class="pname">P2SH · 2-of-3</span>
-            <span class="seq"><span class="op">⌖</span> <span class="ph">h</span><span class="op op-push">²⁰</span> <span class="op">=</span></span>
-            <span class="seq exec"><span class="op">②</span> <span class="ph">p<sub>1</sub></span> <span class="ph">p<sub>2</sub></span> <span class="ph">p<sub>3</sub></span> <span class="op">③</span> <span class="op">◇</span> <span class="op">⌖</span> <span class="ph chain">h</span> <span class="op">=</span> <span class="op">(</span><span class="op">②</span> <span class="ph">p<sub>1</sub></span> <span class="ph">p<sub>2</sub></span> <span class="ph">p<sub>3</sub></span> <span class="op">③</span> <span class="op">◇</span><span class="op">)</span></span>
-            <span class="seq"><span class="op">⓪</span> <span class="ph">s<sub>1</sub></span> <span class="ph">s<sub>2</sub></span> <span class="op">②</span> <span class="ph">p<sub>1</sub></span> <span class="ph">p<sub>2</sub></span> <span class="ph">p<sub>3</sub></span> <span class="op">③</span> <span class="op">◇</span></span>
-            <span class="seq none">—</span>
-          <span class="pname">P2WPKH</span>
-            <span class="seq"><span class="op">⓪</span> <span class="ph">h</span><span class="op op-push">²⁰</span></span>
-            <span class="seq exec"><span class="ph">s</span> <span class="ph">p</span> <span class="op">⧉</span> <span class="op">⌖</span> <span class="ph chain">h</span> <span class="op">≡</span> <span class="op">∇</span></span>
-            <span class="seq none">∅</span>
-            <span class="seq"><span class="ph">s</span> <span class="ph">p</span></span>
-          <span class="pname">P2WSH</span>
-            <span class="seq"><span class="op">⓪</span> <span class="ph">h</span><span class="op op-push">³²</span></span>
-            <span class="seq exec"><span class="ph">w</span> <span class="op">Σ</span> <span class="ph chain">h</span> <span class="op">=</span> <span class="op">(w)</span></span>
-            <span class="seq none">∅</span>
-            <span class="seq"><span class="op">(w)</span></span>
-          <span class="pname">P2TR key</span>
-            <span class="seq"><span class="op">①</span> <span class="ph">p</span><span class="op op-push">³²</span></span>
-            <span class="seq exec"><span class="ph">s</span> <span class="op">∇</span></span>
-            <span class="seq none">∅</span>
-            <span class="seq"><span class="ph">s</span></span>
-          <span class="pname">P2TR script</span>
-            <span class="seq"><span class="op">①</span> <span class="ph">p</span><span class="op op-push">³²</span></span>
-            <span class="seq exec"><span class="ph">t</span> <span class="op">⋔</span> <span class="ph chain">p</span> <span class="op">=</span> <span class="op">(t)</span></span>
-            <span class="seq none">∅</span>
-            <span class="seq"><span class="ph">s</span> <span class="ph">t</span> <span class="ph">c</span></span>
-          <span class="pname">Data</span>
-            <span class="seq"><span class="op">¶</span> <span class="op op-push">ⁿ</span></span>
-            <span class="seq none">—</span>
-            <span class="seq none">—</span>
-            <span class="seq none">—</span>
-        </div>
-        </div>
-      </div>
-
-      <div class="notation-group">
-        <h4>Lightning — commitment &amp; channel scripts</h4>
-        <div class="pattern-scroll">
-        <div class="pattern-table two-party">
-          <span class="phead"></span><span class="phead">Party 1</span><span class="phead">Party 2</span><span class="phead">UTXO</span><span class="phead">Validator</span><span class="phead">STXO</span><span class="phead">Witness</span>
-          <span class="pname">Channel open · 2-of-2</span>
-            <span class="seq calc"><span class="ph">p<sub>1</sub></span> <span class="op">=</span> <span class="ph">k<sub>1</sub></span><span class="op">G</span> · <span class="ph">p<sup>0</sup></span> <span class="op">=</span> <span class="ph">k<sup>0</sup></span><span class="op">G</span> · <span class="ph">s<sub>1</sub><sup>f</sup></span> · <span class="op">Σ</span> <span class="ph">w</span> <span class="op">=</span> <span class="ph">h</span></span>
-            <span class="seq calc"><span class="ph">p<sub>2</sub></span> <span class="op">=</span> <span class="ph">k<sub>2</sub></span><span class="op">G</span> · <span class="ph">s<sub>2</sub><sup>f</sup></span> · <span class="op">Σ</span> <span class="ph">w</span> <span class="op">=</span> <span class="ph">h</span></span>
-            <span class="seq"><span class="op">⓪</span> <span class="ph">h</span></span>
-            <span class="seq exec"><span class="op">②</span> <span class="ph">p<sub>1</sub></span> <span class="ph">p<sub>2</sub></span> <span class="op">②</span> <span class="op">◇</span> <span class="op">Σ</span> <span class="ph chain">h</span> <span class="op">=</span> <span class="op">(</span><span class="op">②</span> <span class="ph">p<sub>1</sub></span> <span class="ph">p<sub>2</sub></span> <span class="op">②</span> <span class="op">◇</span><span class="op">)</span></span>
-            <span class="seq none">∅</span>
-            <span class="seq"><span class="op">⓪</span> <span class="ph">s<sub>1</sub><sup>f</sup></span> <span class="ph">s<sub>2</sub><sup>f</sup></span> · <span class="op">⓪</span> <span class="ph">s<sub>1</sub><sup><i>i</i></sup></span> <span class="ph">s<sub>2</sub><sup><i>i</i></sup></span></span>
-          <span class="pname">Channel update</span>
-            <span class="seq calc"><span class="ph">p<sup><i>i</i>+1</sup></span> <span class="op">=</span> <span class="ph">k<sup><i>i</i>+1</sup></span><span class="op">G</span> · <span class="ph">k<sup><i>i</i></sup></span></span>
-            <span class="seq calc"><span class="ph">k<sub>r</sub><sup><i>i</i></sup></span> <span class="op">=</span> <span class="ph">k<sub>2</sub></span><span class="op">Σ(</span><span class="ph">p<sub>2</sub></span><span class="op">⧺</span><span class="ph">p<sup><i>i</i></sup></span><span class="op">)</span> <span class="op">+</span> <span class="ph">k<sup><i>i</i></sup></span><span class="op">Σ(</span><span class="ph">p<sup><i>i</i></sup></span><span class="op">⧺</span><span class="ph">p<sub>2</sub></span><span class="op">)</span> · <span class="ph">s<sub>r</sub><sup><i>i</i></sup></span></span>
-            <span class="seq none">—</span>
-            <span class="seq none">—</span>
-            <span class="seq none">—</span>
-            <span class="seq none">—</span>
-          <span class="pname">Force close · to_local</span>
-            <span class="seq calc"><span class="ph">p<sup><i>i</i></sup></span> <span class="op">=</span> <span class="ph">k<sup><i>i</i></sup></span><span class="op">G</span> · <span class="ph">k<sub>1</sub><sup><i>i</i></sup></span> <span class="op">=</span> <span class="ph">k<sub>1</sub></span> <span class="op">+</span> <span class="op">Σ(</span><span class="ph">p<sup><i>i</i></sup></span><span class="op">⧺</span><span class="ph">p<sub>1</sub></span><span class="op">)</span> · <span class="ph">p<sub>1</sub><sup><i>i</i></sup></span> <span class="op">=</span> <span class="ph">k<sub>1</sub><sup><i>i</i></sup></span><span class="op">G</span> · <span class="ph">p<sub>r</sub><sup><i>i</i></sup></span> · <span class="ph">s<sub>1</sub><sup><i>i</i></sup></span> · <span class="op">Σ</span> <span class="ph">w<sup><i>i</i></sup></span> <span class="op">=</span> <span class="ph">h<sup><i>i</i></sup></span></span>
-            <span class="seq calc"><span class="ph">p<sub>1</sub><sup><i>i</i></sup></span> <span class="op">=</span> <span class="ph">p<sub>1</sub></span> <span class="op">+</span> <span class="op">Σ(</span><span class="ph">p<sup><i>i</i></sup></span><span class="op">⧺</span><span class="ph">p<sub>1</sub></span><span class="op">)</span><span class="op">G</span> · <span class="ph">p<sub>r</sub><sup><i>i</i></sup></span> <span class="op">=</span> <span class="ph">p<sub>2</sub></span><span class="op">Σ(</span><span class="ph">p<sub>2</sub></span><span class="op">⧺</span><span class="ph">p<sup><i>i</i></sup></span><span class="op">)</span> <span class="op">+</span> <span class="ph">p<sup><i>i</i></sup></span><span class="op">Σ(</span><span class="ph">p<sup><i>i</i></sup></span><span class="op">⧺</span><span class="ph">p<sub>2</sub></span><span class="op">)</span> · <span class="op">Σ</span> <span class="ph">w<sup><i>i</i></sup></span> <span class="op">=</span> <span class="ph">h<sup><i>i</i></sup></span></span>
-            <span class="seq"><span class="op">⓪</span> <span class="ph">h<sup><i>i</i></sup></span></span>
-            <span class="seq exec"><span class="op">⟨</span> <span class="ph">p<sub>r</sub><sup><i>i</i></sup></span> <span class="op">│</span> <span class="op">■</span> <span class="op">Δ</span> <span class="op">⌄</span> <span class="ph">p<sub>1</sub><sup><i>i</i></sup></span> <span class="op">⟩</span> <span class="op">∇</span> <span class="op">Σ</span> <span class="ph chain">h<sup><i>i</i></sup></span> <span class="op">=</span> <span class="op">(</span><span class="op">⟨</span> <span class="ph">p<sub>r</sub><sup><i>i</i></sup></span> <span class="op">│</span> <span class="op">■</span> <span class="op">Δ</span> <span class="op">⌄</span> <span class="ph">p<sub>1</sub><sup><i>i</i></sup></span> <span class="op">⟩</span> <span class="op">∇</span><span class="op">)</span></span>
-            <span class="seq none">∅</span>
-            <span class="seq"><span class="ph">s<sub>1</sub><sup><i>i</i></sup></span> <span class="op">⓪</span> · <span class="ph">s<sub>r</sub><sup><i>i</i></sup></span> <span class="op">①</span></span>
-          <span class="pname">Force close · to_remote</span>
-            <span class="seq calc"><span class="op">Σ</span> <span class="ph">w</span> <span class="op">=</span> <span class="ph">h</span></span>
-            <span class="seq calc"><span class="ph">p<sub>2</sub></span> <span class="op">=</span> <span class="ph">k<sub>2</sub></span><span class="op">G</span> · <span class="ph">s<sub>2</sub></span> · <span class="op">Σ</span> <span class="ph">w</span> <span class="op">=</span> <span class="ph">h</span></span>
-            <span class="seq"><span class="op">⓪</span> <span class="ph">h</span></span>
-            <span class="seq exec"><span class="ph">p<sub>2</sub></span> <span class="op">▼</span> <span class="op">①</span> <span class="op">Δ</span> <span class="op">Σ</span> <span class="ph chain">h</span> <span class="op">=</span> <span class="op">(</span><span class="ph">p<sub>2</sub></span> <span class="op">▼</span> <span class="op">①</span> <span class="op">Δ</span><span class="op">)</span></span>
-            <span class="seq none">∅</span>
-            <span class="seq"><span class="ph">s<sub>2</sub></span></span>
-          <span class="pname">Force close · anchor</span>
-            <span class="seq calc"><span class="ph">p</span> <span class="op">=</span> <span class="ph">k</span><span class="op">G</span> · <span class="ph">s</span> · <span class="op">Σ</span> <span class="ph">w</span> <span class="op">=</span> <span class="ph">h</span></span>
-            <span class="seq calc"><span class="op">Σ</span> <span class="ph">w</span> <span class="op">=</span> <span class="ph">h</span> · <span class="op">∅</span></span>
-            <span class="seq"><span class="op">⓪</span> <span class="ph">h</span></span>
-            <span class="seq exec"><span class="ph">p</span> <span class="op">∇</span> <span class="op">⧉?</span> <span class="op">¬⟨</span> <span class="op">⑯</span> <span class="op">Δ</span> <span class="op">⟩</span> <span class="op">Σ</span> <span class="ph chain">h</span> <span class="op">=</span> <span class="op">(</span><span class="ph">p</span> <span class="op">∇</span> <span class="op">⧉?</span> <span class="op">¬⟨</span> <span class="op">⑯</span> <span class="op">Δ</span> <span class="op">⟩</span><span class="op">)</span></span>
-            <span class="seq none">∅</span>
-            <span class="seq"><span class="ph">s</span> · <span class="op">∅</span></span>
-          <span class="pname">Force close · HTLC</span>
-            <span class="seq calc"><span class="ph">k<sub>1</sub><sup><i>i</i></sup></span> <span class="op">=</span> <span class="ph">k<sub>1</sub></span> <span class="op">+</span> <span class="op">Σ(</span><span class="ph">p<sup><i>i</i></sup></span><span class="op">⧺</span><span class="ph">p<sub>1</sub></span><span class="op">)</span> · <span class="ph">p<sub>1</sub><sup><i>i</i></sup></span> <span class="op">=</span> <span class="ph">k<sub>1</sub><sup><i>i</i></sup></span><span class="op">G</span> · <span class="ph">p<sub>2</sub><sup><i>i</i></sup></span> <span class="op">=</span> <span class="ph">p<sub>2</sub></span> <span class="op">+</span> <span class="op">Σ(</span><span class="ph">p<sup><i>i</i></sup></span><span class="op">⧺</span><span class="ph">p<sub>2</sub></span><span class="op">)</span><span class="op">G</span> · <span class="ph">p<sub>r</sub><sup><i>i</i></sup></span> · <span class="ph">s<sub>1</sub><sup><i>i</i></sup></span> · <span class="op">Σ</span> <span class="ph">w<sup><i>i</i></sup></span> <span class="op">=</span> <span class="ph">h<sup><i>i</i></sup></span></span>
-            <span class="seq calc"><span class="ph">k<sub>2</sub><sup><i>i</i></sup></span> <span class="op">=</span> <span class="ph">k<sub>2</sub></span> <span class="op">+</span> <span class="op">Σ(</span><span class="ph">p<sup><i>i</i></sup></span><span class="op">⧺</span><span class="ph">p<sub>2</sub></span><span class="op">)</span> · <span class="ph">p<sub>2</sub><sup><i>i</i></sup></span> <span class="op">=</span> <span class="ph">k<sub>2</sub><sup><i>i</i></sup></span><span class="op">G</span> · <span class="ph">p<sub>1</sub><sup><i>i</i></sup></span> <span class="op">=</span> <span class="ph">p<sub>1</sub></span> <span class="op">+</span> <span class="op">Σ(</span><span class="ph">p<sup><i>i</i></sup></span><span class="op">⧺</span><span class="ph">p<sub>1</sub></span><span class="op">)</span><span class="op">G</span> · <span class="ph">p<sub>r</sub><sup><i>i</i></sup></span> · <span class="ph">s<sub>2</sub><sup><i>i</i></sup></span> · <span class="op">Σ</span> <span class="ph">w<sup><i>i</i></sup></span> <span class="op">=</span> <span class="ph">h<sup><i>i</i></sup></span></span>
-            <span class="seq"><span class="op">⓪</span> <span class="ph">h<sup><i>i</i></sup></span></span>
-            <span class="seq exec"><span class="op">⟨</span> <span class="ph">p<sub>r</sub><sup><i>i</i></sup></span> <span class="op">│</span> <span class="op">⟨</span> <span class="op">Σ</span> <span class="ph">h</span> <span class="op">≡</span> <span class="ph">p<sub>1</sub><sup><i>i</i></sup></span> <span class="op">│</span> <span class="op">τ</span> <span class="op">⌄</span> <span class="ph">p<sub>2</sub><sup><i>i</i></sup></span> <span class="op">⟩</span> <span class="op">⟩</span> <span class="op">∇</span> <span class="op">Σ</span> <span class="ph chain">h<sup><i>i</i></sup></span> <span class="op">=</span> <span class="op">(</span><span class="op">⟨</span> <span class="ph">p<sub>r</sub><sup><i>i</i></sup></span> <span class="op">│</span> <span class="op">⟨</span> <span class="op">Σ</span> <span class="ph">h</span> <span class="op">≡</span> <span class="ph">p<sub>1</sub><sup><i>i</i></sup></span> <span class="op">│</span> <span class="op">τ</span> <span class="op">⌄</span> <span class="ph">p<sub>2</sub><sup><i>i</i></sup></span> <span class="op">⟩</span> <span class="op">⟩</span> <span class="op">∇</span><span class="op">)</span></span>
-            <span class="seq none">∅</span>
-            <span class="seq"><span class="ph">s<sub>1</sub><sup><i>i</i></sup></span> <span class="ph">h</span> <span class="op">①</span> <span class="op">⓪</span> · <span class="ph">s<sub>2</sub><sup><i>i</i></sup></span> <span class="op">⓪</span> <span class="op">⓪</span> · <span class="ph">s<sub>r</sub><sup><i>i</i></sup></span> <span class="op">①</span></span>
-        </div>
-        </div>
-        <p class="notation-note">The first two columns are off chain: what each party computes for itself — party 1 is the side whose force close this is. Secrets stay in their own column until an update surrenders k<sup><i>i</i></sup> across; everything else a party writes without deriving came from the other column's public points.</p>
-      </div>
-
-      <div class="notation-group">
-        <h4>Secrets &amp; the generator</h4>
-        <div class="glyph-grid">
-          <div class="glyph-row"><span class="g"><b>k</b></span><span class="m"><b>private key</b> — the secret scalar behind a public key; never on chain</span></div>
-          <div class="glyph-row"><span class="g">G</span><span class="m">the <b>generator</b> — the fixed curve point every key descends from: <b>p</b> = <b>k</b>G</span></div>
-          <div class="glyph-row"><span class="g"><b>p</b><sup>0</sup> <b>p</b><sup><i>i</i></sup> <b>p</b><sup>f</sup></span><span class="m"><b>channel state</b> — a superscript scopes a datum to a state of the channel: 0 the initial commitment sealed at funding, <i>i</i> any intermediate update, f the final, closing state. Each state the closing party draws a fresh secret k<sup><i>i</i></sup> and shares only its point p<sup><i>i</i></sup> = k<sup><i>i</i></sup>G; scripts and hashes rebuild per state. Advancing to <i>i</i>+1 revokes state <i>i</i>: k<sup><i>i</i></sup> crosses to the other side — and nothing else</span></div>
-          <div class="glyph-row"><span class="g"><b>p</b><sub>1</sub><sup><i>i</i></sup> <b>p</b><sub>2</sub><sup><i>i</i></sup> <b>p</b><sub>r</sub><sup><i>i</i></sup></span><span class="m"><b>state-scoped keys</b> — party below, state above: each side's base key folded with p<sup><i>i</i></sup>, and the revocation key; the party columns derive them in full, each side by its own route</span></div>
-        </div>
-      </div>
-
-      <div class="notation-group">
-        <h4>Pushes</h4>
-        <div class="glyph-grid">
-          <div class="glyph-row"><span class="g">²⁰</span><span class="m"><b>push</b> — the bare superscript is the byte count (²⁰ pushes twenty)</span></div>
-          <div class="glyph-row"><span class="g">↧<i>n</i> ⇊<i>n</i> ⤋<i>n</i></span><span class="m">extended push — length in a 1 / 2 / 4-byte prefix</span></div>
-        </div>
-      </div>
-
-      <div class="notation-group">
-        <h4>Signatures &amp; keys</h4>
-        <div class="glyph-grid">
-          <div class="glyph-row"><span class="g">∇</span><span class="m">check a <b>signature</b></span></div>
-          <div class="glyph-row"><span class="g">▼</span><span class="m">check a signature, <b>else fail</b></span></div>
-          <div class="glyph-row"><span class="g">◇</span><span class="m">check <b>m-of-n</b> signatures</span></div>
-          <div class="glyph-row"><span class="g">◆</span><span class="m">check m-of-n, <b>else fail</b></span></div>
-          <div class="glyph-row"><span class="g">∇₊</span><span class="m">check a signature, <b>tallying</b> (tapscript multisig)</span></div>
-        </div>
-      </div>
-
-      <div class="notation-group">
-        <h4>Hashes</h4>
-        <div class="glyph-grid">
-          <div class="glyph-row"><span class="g">⌖</span><span class="m"><b>address</b> hash · HASH160</span></div>
-          <div class="glyph-row"><span class="g">⌘</span><span class="m"><b>identity</b> hash · HASH256</span></div>
-          <div class="glyph-row"><span class="g">Σ</span><span class="m">SHA-256</span></div>
-          <div class="glyph-row"><span class="g">σ</span><span class="m">SHA-1</span></div>
-          <div class="glyph-row"><span class="g">ρ</span><span class="m">RIPEMD-160</span></div>
-        </div>
-      </div>
-
-      <div class="notation-group">
-        <h4>Timelocks</h4>
-        <div class="glyph-grid">
-          <div class="glyph-row"><span class="g">τ</span><span class="m"><b>absolute</b> — not before a fixed time or block</span></div>
-          <div class="glyph-row"><span class="g">Δ</span><span class="m"><b>relative</b> — a delay after this coin confirmed</span></div>
-        </div>
-      </div>
-
-      <div class="notation-group">
-        <h4>Numbers</h4>
-        <div class="glyph-grid">
-          <div class="glyph-row"><span class="g">⓪</span><span class="m">push zero</span></div>
-          <div class="glyph-row"><span class="g">①–⑯</span><span class="m">push a small number (1–16)</span></div>
-          <div class="glyph-row"><span class="g">⊖</span><span class="m">push minus one</span></div>
-        </div>
-      </div>
-
-      <div class="notation-group">
-        <h4>Coinbase — the mining preamble</h4>
-        <div class="glyph-grid">
-          <div class="glyph-row"><span class="g">β<i>n</i></span><span class="m">the <b>difficulty target</b> — a valid hash opens with n zero bits</span></div>
-          <div class="glyph-row"><span class="g">η<sub><i>n</i></sub></span><span class="m"><b>extranonce</b> — search space beyond the header's η</span></div>
-        </div>
-      </div>
-
-      <div class="notation-group">
-        <h4>Chapter head — the block header</h4>
-        <div class="glyph-grid">
-          <div class="glyph-row"><span class="g">v<i>n</i></span><span class="m">block <b>version</b></span></div>
-          <div class="glyph-row"><span class="g">∅</span><span class="m">no previous block — the genesis chapter</span></div>
-          <div class="glyph-row"><span class="g">β<i>n</i></span><span class="m">the <b>difficulty target</b>, as in the preamble</span></div>
-          <div class="glyph-row"><span class="g">η<sub><i>n</i></sub></span><span class="m">the <b>nonce</b> the miner landed on</span></div>
-        </div>
-      </div>
-
-      <div class="notation-group">
-        <h4>Stack</h4>
-        <div class="glyph-grid">
-          <div class="glyph-row"><span class="g">⧉</span><span class="m"><b>duplicate</b> the top item</span></div>
-          <div class="glyph-row"><span class="g">⌄</span><span class="m"><b>drop</b> the top item</span></div>
-          <div class="glyph-row"><span class="g">⧉?</span><span class="m">duplicate <b>if nonzero</b></span></div>
-          <div class="glyph-row"><span class="g">⇄</span><span class="m"><b>swap</b> the top two</span></div>
-          <div class="glyph-row"><span class="g">↻</span><span class="m"><b>rotate</b> the top three</span></div>
-          <div class="glyph-row"><span class="g">⇗</span><span class="m"><b>over</b> — copy the second to the top</span></div>
-          <div class="glyph-row"><span class="g">⌦</span><span class="m"><b>nip</b> out the second</span></div>
-          <div class="glyph-row"><span class="g">⇘</span><span class="m"><b>tuck</b> the top beneath the second</span></div>
-          <div class="glyph-row"><span class="g">⇡</span><span class="m"><b>pick</b> — copy the nth item up</span></div>
-          <div class="glyph-row"><span class="g">⥀</span><span class="m"><b>roll</b> — move the nth item up</span></div>
-          <div class="glyph-row"><span class="g">↕</span><span class="m"><b>depth</b> of the stack</span></div>
-          <div class="glyph-row"><span class="g">⇥ ⇤</span><span class="m"><b>shelve / retrieve</b> via the alt stack</span></div>
-        </div>
-      </div>
-
-      <div class="notation-group">
-        <h4>Arithmetic &amp; comparison</h4>
-        <div class="glyph-grid">
-          <div class="glyph-row"><span class="g">+ − × ÷ %</span><span class="m">arithmetic on numbers</span></div>
-          <div class="glyph-row"><span class="g">+₁ −₁ ×₂ ÷₂</span><span class="m">by one · by two</span></div>
-          <div class="glyph-row"><span class="g">∓</span><span class="m"><b>negate</b></span></div>
-          <div class="glyph-row"><span class="g">|·|</span><span class="m"><b>absolute value</b></span></div>
-          <div class="glyph-row"><span class="g">⊓ ⊔</span><span class="m"><b>min</b> · <b>max</b></span></div>
-          <div class="glyph-row"><span class="g">∈</span><span class="m"><b>within</b> a range</span></div>
-          <div class="glyph-row"><span class="g">&lt; &gt; ≤ ≥</span><span class="m">comparisons</span></div>
-          <div class="glyph-row"><span class="g">≐ ≑</span><span class="m">numbers equal? · equal, <b>else fail</b></span></div>
-          <div class="glyph-row"><span class="g">≠ ≠₀</span><span class="m">numbers differ · <b>nonzero?</b></span></div>
-          <div class="glyph-row"><span class="g">¬ ∧ ∨</span><span class="m">not · and · or</span></div>
-          <div class="glyph-row"><span class="g">« »</span><span class="m">shift left · right</span></div>
-          <div class="glyph-row"><span class="g">= ≡</span><span class="m">bytes equal? · equal, <b>else fail</b></span></div>
-        </div>
-      </div>
-
-      <div class="notation-group">
-        <h4>Bytes</h4>
-        <div class="glyph-grid">
-          <div class="glyph-row"><span class="g">⧺</span><span class="m"><b>concatenate</b></span></div>
-          <div class="glyph-row"><span class="g">⊂</span><span class="m"><b>substring</b></span></div>
-          <div class="glyph-row"><span class="g">↤ ↦</span><span class="m">keep the <b>left</b> · <b>right</b> part</span></div>
-          <div class="glyph-row"><span class="g">∼ ∩ ∪ ⊻</span><span class="m">bitwise invert · and · or · xor</span></div>
-          <div class="glyph-row"><span class="g">ℓ</span><span class="m"><b>length</b> of the top item</span></div>
-        </div>
-      </div>
-
-      <div class="notation-group">
-        <h4>Control</h4>
-        <div class="glyph-grid">
-          <div class="glyph-row"><span class="g">⟨ │ ⟩</span><span class="m">if … else … end</span></div>
-          <div class="glyph-row"><span class="g">¬⟨</span><span class="m"><b>if not</b></span></div>
-          <div class="glyph-row"><span class="g">( )</span><span class="m"><b>run</b> the revealed script (r w t)</span></div>
-          <div class="glyph-row"><span class="g">✓</span><span class="m">assert true</span></div>
-          <div class="glyph-row"><span class="g">¶</span><span class="m"><b>data output</b> — provably unspendable</span></div>
-          <div class="glyph-row"><span class="g">° °<i>n</i></span><span class="m"><b>no-op</b> · numbered no-ops</span></div>
-          <div class="glyph-row"><span class="g">‖</span><span class="m"><b>section divider</b> for signature coverage</span></div>
-          <div class="glyph-row"><span class="g">⊘ ⊘₁ ⊘₂</span><span class="m"><b>reserved</b> — invalid if executed</span></div>
-          <div class="glyph-row"><span class="g">⊘ᵛ ⊘⟨ ⊘¬⟨</span><span class="m">reserved VER family</span></div>
-          <div class="glyph-row"><span class="g">☒</span><span class="m"><b>invalid opcode</b></span></div>
-        </div>
-      </div>
-
-      <div class="notation-group">
-        <h4>Data</h4>
-        <div class="glyph-grid">
-          <div class="glyph-row"><span class="g"><b>p</b></span><span class="m"><b>public key</b></span></div>
-          <div class="glyph-row"><span class="g"><b>s</b></span><span class="m"><b>signature</b></span></div>
-          <div class="glyph-row"><span class="g"><b>h</b></span><span class="m"><b>hash</b></span></div>
-          <div class="glyph-row"><span class="g"><b>r</b></span><span class="m"><b>redeem script</b> (inside P2SH)</span></div>
-          <div class="glyph-row"><span class="g"><b>w</b></span><span class="m"><b>witness script</b> (inside P2WSH)</span></div>
-          <div class="glyph-row"><span class="g"><b>t</b></span><span class="m"><b>tapscript</b> (a Taproot leaf)</span></div>
-          <div class="glyph-row"><span class="g"><b>c</b></span><span class="m"><b>control block</b> (a Taproot script-path reveal) — leaf version <b>v</b><i>n</i>, parity subscript, then the internal key <b>p</b></span></div>
-          <div class="glyph-row"><span class="g"><b>⋔</b></span><span class="m"><b>merkle proof</b> — the revealed leaf's path in the taptree</span></div>
-          <div class="glyph-row"><span class="g"><b>a</b></span><span class="m"><b>annex</b> (reserved Taproot spend data)</span></div>
-        </div>
-        <p class="notation-note">A push of known length carries its byte count as a superscript on the mark — <b>h</b>²⁰, <b>p</b>⁶⁵; a bare, untyped push keeps its count leading (²⁰). <b>Bold</b> where the datum is on chain — a lock, or what a spend writes; <b>plain</b> where a spend introduces it at validation.</p>
-      </div>
-
-      <div class="notation-group">
-        <h4>Margin — an input's sequence</h4>
-        <div class="glyph-grid">
-          <div class="glyph-row"><span class="g">●</span><span class="m"><b>final</b></span></div>
-          <div class="glyph-row"><span class="g">○</span><span class="m">respects the locktime</span></div>
-          <div class="glyph-row"><span class="g">†</span><span class="m"><b>replaceable</b> (opt-in RBF)</span></div>
-          <div class="glyph-row"><span class="g">■<i>N</i></span><span class="m">relative: N blocks after confirmation (a count of chapters)</span></div>
-          <div class="glyph-row"><span class="g">Τ<i>Δt</i></span><span class="m">relative: a duration after confirmation (d h m s)</span></div>
-          <div class="glyph-row"><span class="g">(<i>n</i> ₿)</span><span class="m">the <b>amount spent</b> by this input — value flowing in; an output's amount stands bare (<i>n</i> ₿, no parentheses)</span></div>
-        </div>
-      </div>
-
-      <div class="notation-group">
-        <h4>Margin — the transaction's locktime &amp; other marks</h4>
-        <div class="glyph-grid">
-          <div class="glyph-row"><span class="g">□</span><span class="m">no locktime</span></div>
-          <div class="glyph-row"><span class="g"><i>v</i> β<i>b</i> ■<i>c</i></span><span class="m">not before the cited chapter (volume, β book, ■ chapter)</span></div>
-          <div class="glyph-row"><span class="g">Τ<i>t</i></span><span class="m">not before a UTC date</span></div>
-          <div class="glyph-row"><span class="g">∅</span><span class="m"><b>empty</b> — a coinbase's absent prevout, a segwit input's zero-byte script, an empty witness item</span></div>
-          <div class="glyph-row"><span class="g">§<i>n</i></span><span class="m">section — the transaction's position</span></div>
-        </div>
-      </div>
-    </div>
-  </details>
 
   <div id="hash-menu" class="hash-menu hidden" role="menu">
     <div id="hash-menu-head" class="hash-menu-head"></div>
@@ -1392,8 +1428,7 @@ function renderCitation(citeBody, height, pos, vout) {
 // `height`) in place, then bring `scrollId` to the top of the page. The two
 // directions mirror each other: following an input's provenance scrolls to the
 // output it spends (out-N), and following an output's forward citation scrolls
-// to the input that spends it (in-N). The lookup field is refreshed by
-// renderChapter, so it isn't set here.
+// to the input that spends it (in-N).
 async function goToSection(height, index, scrollId) {
   await openLookup(String(height), index);
   if (scrollId) {
@@ -1895,10 +1930,7 @@ function showEyebrowCrumbs(volume, book) {
 function renderTitlePage() {
   renderLeafShell();
   $('chapter').classList.remove('span-leaf');
-  const { volume, book, chapter } = renderChapterHead(true);
-  // The lookup field shows the chapter reference, no §: it round-trips back to
-  // this very page (see parseReference).
-  $('block-input').value = `${toRoman(volume)} β${book} ■${chapter}`;
+  renderChapterHead(true);
   labelNav();
 }
 
@@ -1945,7 +1977,6 @@ function renderVolumeLeaf() {
       fp.textContent = finished ? range : `${range} —`;
     }).catch(() => { if (gen === renderGen) fp.textContent = finished ? String(firstYear) : `${firstYear} —`; });
   }
-  $('block-input').value = toRoman(volume);
   labelNav();
 }
 
@@ -2016,19 +2047,13 @@ function renderBookLeaf() {
     }).catch(() => { if (gen === renderGen) dates.textContent = `${timestampInfo(state.block.timestamp).mark}${finished ? '' : ' —'}`; });
   }
   fp.append(dates);
-  $('block-input').value = `${toRoman(volume)} β${book}`;
   labelNav();
 }
 
 function renderChapter(para) {
   $('chapter').classList.remove('title-leaf');
   $('chapter').classList.remove('span-leaf');
-  const { volume, book, chapter } = renderChapterHead(false);
-
-  // Keep the lookup field showing where we are, in the same reference form the
-  // citations use, so it round-trips: any navigation refreshes it, and pressing
-  // Read chapter on it returns to this very section.
-  $('block-input').value = `${toRoman(volume)} β${book} ■${chapter} §${state.index + 1}`;
+  renderChapterHead(false);
 
   $('section-title').classList.remove('hidden');
   $('section-hash').classList.remove('hidden');
@@ -2451,7 +2476,6 @@ async function unwrittenOr(e, height, tipP) {
 async function openLookup(input, index = -1) {
   input = (input || '').trim();
   $('chapter').classList.add('hidden');
-  $('block-btn').disabled = true;
   // Learn the current chain tip on every lookup (in parallel with the block
   // load) and record it, so the Next controls are exact -- shown below the tip,
   // hidden at it -- rather than optimistic. A tip fetch that fails resolves to
@@ -2499,8 +2523,6 @@ async function openLookup(input, index = -1) {
     await showCurrentTx();
   } catch (e) {
     setStatus(e.message || 'Failed to load.', 'err');
-  } finally {
-    $('block-btn').disabled = false;
   }
 }
 
@@ -2545,6 +2567,32 @@ async function stepTx(direction) {
     if (direction > 0) tipHeight = state.height;
     setStatus(direction > 0 ? 'No next block yet — this is the current chain tip.' : (e.message || 'Failed to load previous block.'), 'err');
     labelNav();   // re-show/hide from the (unchanged) position, now that the tip may be known
+  }
+}
+
+// A horizontal swipe crossing a block boundary at section level: forward onto
+// the next block's §1, backward onto the previous block's last section --
+// never onto the leaves between blocks. (The foot nav's buttons keep the
+// linear page order instead, threading through those leaves.)
+let sectionCrossing = false;
+async function stepSectionAcross(direction) {
+  if (sectionCrossing) return;
+  const newHeight = state.height + direction;
+  if (newHeight < 0) return;   // Genesis §1 has no previous section
+  sectionCrossing = true;
+  $('page-prev').disabled = true;
+  $('page-next').disabled = true;
+  setStatus(`<span class="spinner"></span>loading ${direction > 0 ? 'next' : 'previous'} block…`);
+  try {
+    const next = await loadBlockByHeight(newHeight, { withTxids: true });
+    state = { ...next, index: direction > 0 ? 0 : next.txCount - 1 };
+    await showCurrentTx();
+  } catch (e) {
+    if (direction > 0) tipHeight = state.height;
+    setStatus(direction > 0 ? 'No next block yet — this is the current chain tip.' : (e.message || 'Failed to load previous block.'), 'err');
+    labelNav();   // re-show/hide from the (unchanged) position, now that the tip may be known
+  } finally {
+    sectionCrossing = false;
   }
 }
 
@@ -2653,8 +2701,6 @@ async function runPendingSteps() {
   }
 }
 
-$('block-btn').addEventListener('click', () => openLookup($('block-input').value));
-$('block-input').addEventListener('keydown', (e) => { if (e.key === 'Enter') openLookup($('block-input').value); });
 $('page-prev').addEventListener('click', () => requestStep(-1));
 $('page-next').addEventListener('click', () => requestStep(1));
 $('chapter-prev').addEventListener('click', () => goToLevel(-1));
@@ -2672,8 +2718,10 @@ $('ch-book-link').addEventListener('click', () => { if (state) openCrumb(bookSta
 
 // ── Swipe paging with a carousel turn ─────────────────────────────────────
 // A horizontal swipe turns the page at the current level: sections swipe
-// section-to-section (the foot nav's step), a chapter/book/volume leaf swipes
-// to its level neighbour (the header steppers' step). The page follows the
+// section-to-section -- crossing a block boundary onto the adjacent block's
+// nearest section, never up onto its leaves -- and a chapter/book/volume
+// leaf swipes to its level neighbour (the header steppers' step). The page
+// follows the
 // finger while dragging; a committed swipe slides the page off in the travel
 // direction and the destination slides in from the opposite edge once it has
 // rendered (consumeSlide). Swiping toward a neighbour that doesn't exist --
@@ -2684,13 +2732,18 @@ const REDUCED_MOTION = window.matchMedia('(prefers-reduced-motion: reduce)').mat
 let pendingSlide = 0;        // direction of an in-flight page turn (+1 next, -1 prev)
 let slideWatchdog = null;
 
-// A neighbour exists in that direction (the corresponding button is shown).
+// A neighbour exists in that direction at the CURRENT level. Leaves borrow
+// their header stepper's visibility. A section's forward neighbour matches
+// page-next's visibility (hidden exactly at the tip's last section); its
+// backward neighbour is judged at section level directly -- page-prev stays
+// visible at §1 (it steps up to the chapter page in the linear order), but
+// the level-preserving swipe needs a previous SECTION, which Genesis §1
+// alone lacks.
 function navAvailable(direction) {
   if (!state) return false;
-  const id = state.index < 0
-    ? (direction > 0 ? 'chapter-next' : 'chapter-prev')
-    : (direction > 0 ? 'page-next' : 'page-prev');
-  return !$(id).classList.contains('hidden');
+  if (state.index < 0) return !$(direction > 0 ? 'chapter-next' : 'chapter-prev').classList.contains('hidden');
+  if (direction > 0) return !$('page-next').classList.contains('hidden');
+  return state.index > 0 || state.height > 0;
 }
 // A swipe additionally waits for that neighbour's data to finish prefetching
 // (see prefetchNeighbors), so a committed turn always lands on content that
@@ -2701,7 +2754,14 @@ function canStep(direction) {
 }
 function swipeStep(direction) {
   if (!navAvailable(direction)) return;
-  if (state.index < 0) goToLevel(direction); else stepNow(direction);
+  if (state.index < 0) { goToLevel(direction); return; }
+  // Sections turn at their own level: within the block it's the foot step;
+  // at either edge the turn crosses into the adjacent block's nearest
+  // section, never up onto the leaves the linear order threads between
+  // blocks (ascending is the vertical swipe's job).
+  const target = state.index + direction;
+  if (target >= 0 && target < state.txCount) stepNow(direction);
+  else stepSectionAcross(direction);
 }
 
 // ── Vertical swipes: one nav level up or down ─────────────────────────────
@@ -2807,8 +2867,9 @@ function stepNow(direction) {
 // After each render, quietly pull the data the next swipe in either direction
 // would need: a leaf's level neighbour is its first block's core (info +
 // header); a section's neighbour is the adjacent transaction's hex (plus the
-// txid list, once) -- or, past the block's last section, the next block's
-// core. §1's previous page is this chapter's own leaf, already loaded.
+// txid list, once) -- or, across a block boundary, the adjacent block's
+// nearest section (its §1 forward, its last § backward), since the swipe
+// stays at section level rather than climbing onto the leaves.
 // Everything lands in the existing memoized caches, so the eventual swipe
 // (or button press) finds it instantly and nothing is fetched twice.
 let neighborReady = { '-1': false, '1': false };
@@ -2847,11 +2908,20 @@ async function prefetchNeighbor(st, direction) {
       const txids = await ensureTxids(st);
       await warmSection(txids[st.index + 1]);
     } else {
-      warmLeafEncodes(await loadBlockByHeight(st.height + 1, { withTxids: false }));
+      // Past the block's last section the swipe lands on the next block's §1:
+      // warm its core, head encodes, and first section.
+      const next = await loadBlockByHeight(st.height + 1, { withTxids: true });
+      warmLeafEncodes(next);
+      await warmSection(next.txids[0]);
     }
   } else if (st.index > 0) {
     const txids = await ensureTxids(st);
     await warmSection(txids[st.index - 1]);
+  } else if (st.height > 0) {
+    // §1's swipe-back lands on the previous block's last section.
+    const prev = await loadBlockByHeight(st.height - 1, { withTxids: true });
+    warmLeafEncodes(prev);
+    await warmSection(prev.txids[prev.txids.length - 1]);
   }
 }
 function prefetchNeighbors() {
@@ -2947,8 +3017,9 @@ function slideOutAndStep(direction, axis = 'x') {
   // replacing a long one shrinks the document, and the browser would clamp
   // the scroll away right then -- ahead of the entering half's own scroll.
   // Any slack lands at the very end of the page, after the notation key.
-  const nav = document.querySelector('.chapter-nav');
-  const anchor = Math.max(0, nav.getBoundingClientRect().top + window.scrollY - 10);
+  // Measured on the article, the nav's static seat -- the sticky nav itself
+  // reports its stuck (viewport) position mid-scroll, not its place on the page.
+  const anchor = Math.max(0, $('chapter').getBoundingClientRect().top + window.scrollY - 10);
   document.body.style.minHeight = window.scrollY > anchor ? `${anchor + window.innerHeight}px` : '';
   ch.style.transition = 'none';
   ch.style.transform = '';
@@ -2981,9 +3052,10 @@ function consumeSlide() {
   // The nav header is the turn's fixed point of reference: scroll back at
   // most to the eyebrow -- never the document top -- while the live page is
   // still hidden, so the movement is never seen. (The ghost is fixed-
-  // position, so the scroll doesn't move it either.)
-  const nav = document.querySelector('.chapter-nav');
-  const anchor = Math.max(0, nav.getBoundingClientRect().top + window.scrollY - 10);
+  // position, so the scroll doesn't move it either.) Measured on the article,
+  // the nav's static seat -- the sticky nav itself reports its stuck
+  // (viewport) position mid-scroll, not its place on the page.
+  const anchor = Math.max(0, $('chapter').getBoundingClientRect().top + window.scrollY - 10);
   if (window.scrollY > anchor) window.scrollTo(0, anchor);
   const ch = $('page-slide');
   const off = pendingAxis === 'x' ? window.innerWidth : window.innerHeight;
@@ -3020,7 +3092,12 @@ function updateGesturePrecedence() {
   gesture.carouselFirst = short;
   $('page-frame').classList.toggle('carousel-first', short);
 }
-new ResizeObserver(updateGesturePrecedence).observe(document.body);
+// Observed on the slide as well as the body: with the shell stretched to the
+// viewport (the foot nav's fixed seat), every short page's body measures the
+// same, so only the slide's natural height betrays a page change.
+const gestureObserver = new ResizeObserver(updateGesturePrecedence);
+gestureObserver.observe(document.body);
+gestureObserver.observe($('page-slide'));
 window.addEventListener('resize', updateGesturePrecedence);
 
 (() => {
@@ -3426,10 +3503,8 @@ const pageParam = params.get('page');
 const indexParam = Number.isFinite(idxRaw) ? idxRaw
   : pageParam === 'volume' ? -3 : pageParam === 'book' ? -2 : -1;
 if (txidParam) {
-  $('block-input').value = txidParam;
   openLookup(txidParam);
 } else if (blockParam) {
-  $('block-input').value = blockParam;
   openLookup(blockParam, indexParam);
 } else {
   openLookup('-1', indexParam);
