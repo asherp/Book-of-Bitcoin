@@ -21,6 +21,42 @@
       navigator.serviceWorker.register('./sw.js').catch((e) => console.warn('SW registration failed:', e));
     });
   }
+
+  // The page is assembled from ES modules that both the HTTP cache (GitHub
+  // Pages serves max-age=600) and the service worker refresh file by file, so
+  // a redeploy can briefly leave them mixed: this page from one build, a
+  // module from another. A module whose imports no longer line up fails to
+  // instantiate, and an aborted module graph renders nothing -- the index
+  // goes blank. Detect the blankness itself, not the error (module failures
+  // surface too many ways to catch reliably): a healthy module populates
+  // #index synchronously, so an empty #index well after load means the graph
+  // died. Recover by re-fetching this page's files with cache:'reload' --
+  // which refreshes the HTTP cache directly and, routed through the service
+  // worker, makes its background revalidation hit the true network -- then
+  // reloading once onto the matched set. A second blank load shows a note
+  // instead of looping.
+  (function () {
+    const FILES = ['./bitcoin-index.html', './btc-index.js', './btc-citation.js'];
+    const FLAG = 'glossia-index-reloaded';
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        const idx = document.getElementById('index');
+        if (!idx || idx.children.length) return;   // the module rendered; nothing to recover
+        let retried = false;
+        try { retried = !!sessionStorage.getItem(FLAG); } catch (_) {}
+        if (retried) {
+          const s = document.createElement('span');
+          s.className = 'idx-note';
+          s.textContent = 'The index failed to load — reload to retry.';
+          idx.replaceChildren(s);
+          return;
+        }
+        try { sessionStorage.setItem(FLAG, '1'); } catch (_) {}
+        Promise.allSettled(FILES.map((u) => fetch(u, { cache: 'reload' })))
+          .then(() => setTimeout(() => location.reload(), 800));
+      }, 2000);
+    });
+  })();
 </script>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -254,7 +290,10 @@ function note(el, text) {
 
 // Build every entry at once -- name and address are known offline -- and let
 // each citation list render from cache and refresh as its chain walk resolves.
+// Built onto a cleared #index: a late module evaluation may land after the
+// head's blank-page recovery has already written its failure note.
 const index = document.getElementById('index');
+index.replaceChildren();
 for (const e of entries) {
   const row = document.createElement('div');
   row.className = 'idx-entry';
@@ -273,6 +312,10 @@ for (const e of entries) {
   index.append(row);
   resolveEntry(e.address, cites);
 }
+
+// The module graph loaded whole: clear the mixed-build recovery flag (set in
+// the head) so a future redeploy gets its own one-shot reload again.
+try { sessionStorage.removeItem('glossia-index-reloaded'); } catch (_) {}
 </script>
 </body>
 </html>
