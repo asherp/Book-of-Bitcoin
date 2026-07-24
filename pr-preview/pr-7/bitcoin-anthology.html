@@ -1,7 +1,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>The βook of βitcoin — Anthology</title>
-<meta name="description" content="An anthology of the Glossia Bitcoin Book: one address's own subset of the book — every chapter it appears in, navigated the same way, focused on its transactions alone.">
+<meta name="description" content="An anthology of the Glossia Bitcoin Book: one address's own subset of the book — its title page, table of contents, and index, navigated the same way as the book it excerpts.">
 <link rel="icon" type="image/png" sizes="32x32" href="./icons/beta-icon-32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="./icons/beta-icon-16.png">
 <link rel="icon" href="./icons/beta-icon.svg" type="image/svg+xml">
@@ -69,33 +69,46 @@
   --input-bg:#151519; --input-bd:#2a2930;
 }
 * { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
 html, body { margin: 0; }
 body { min-height: 100vh; background: var(--page); color: var(--ink); font-family: 'Public Sans', system-ui, sans-serif; line-height: 1.55; }
 .wrap { max-width: 720px; margin: 0 auto; padding: 48px 22px 100px; }
 a { color: var(--accent); text-decoration: none; }
 a:hover { text-decoration: underline; }
 
-.masthead { display:flex; align-items:baseline; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:40px; }
+.masthead { display:flex; align-items:baseline; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:12px; }
 .masthead .title { font:600 13px/1 'IBM Plex Mono',monospace; letter-spacing:.22em; text-transform:uppercase; color:var(--ink); }
 .masthead .title .beta { color:var(--accent); text-transform:none; font-family:'Newsreader','Source Serif 4',Georgia,serif; font-weight:600; font-size:1.12em; }
 .masthead .home { margin-left:auto; font:500 12px/1 'IBM Plex Mono',monospace; letter-spacing:.04em; }
 
-/* The anthology's own title leaf: the eyebrow names the form, the serif names
-   the anthology, the mono line beneath is the address itself -- the name whose
-   every appearance the following contents collect. */
-.page-head { text-align:center; padding-bottom:30px; margin-bottom:10px; border-bottom:1px solid var(--rule); }
+/* The anthology's title page: a full leaf. The eyebrow names the form, the
+   serif names the anthology, the mono line beneath is the address itself --
+   and the address again in the book's own tongue: its scriptPubKey read as
+   Glossia prose, the same bytes every paying chapter encodes. Then its span:
+   the volumes and the dates its chapters run. Navigation continues downward
+   into the table of contents. */
+.anth-hero { min-height: calc(100vh - 130px); display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:20px 0 8px; }
+.anth-hero.bare { min-height:auto; padding-top:60px; }
 .page-eyebrow { font:600 11px/1 'IBM Plex Mono',monospace; letter-spacing:.3em; text-transform:uppercase; color:var(--accent); }
-.anth-title { margin:14px 0 0; font:500 26px/1.25 'Newsreader',serif; color:var(--ink); }
-.anth-addr { margin-top:8px; font:400 12px/1.5 'IBM Plex Mono',monospace; letter-spacing:.02em; color:var(--meta); word-break:break-all; }
-.anth-count { margin-top:6px; font:500 11px/1 'IBM Plex Mono',monospace; letter-spacing:.12em; text-transform:uppercase; color:var(--dim); }
+.anth-title { margin:16px 0 0; font:500 30px/1.25 'Newsreader',serif; color:var(--ink); }
+.anth-addr { margin-top:10px; font:400 12px/1.5 'IBM Plex Mono',monospace; letter-spacing:.02em; color:var(--meta); word-break:break-all; }
+.anth-prose { margin:22px 0 0; max-width:560px; font:400 16px/1.7 'Newsreader',serif; font-style:italic; color:var(--ink-soft); }
+.anth-prose:empty { display:none; }
+.anth-range { margin-top:22px; font:600 12px/1.6 'IBM Plex Mono',monospace; letter-spacing:.14em; text-transform:uppercase; color:var(--accent); }
+.anth-range:empty { display:none; }
+.anth-count { margin-top:8px; font:500 11px/1 'IBM Plex Mono',monospace; letter-spacing:.12em; text-transform:uppercase; color:var(--dim); }
+.anth-down { margin-top:auto; padding-top:34px; font-size:20px; color:var(--dim); text-decoration:none; }
+.anth-down:hover { color:var(--accent); text-decoration:none; }
+.anth-hero.bare .anth-down { display:none; }
 
-/* The nested contents, in the index family's shared idx-* classes (built by
-   btc-index.js's renderLine): Volume part headers, Book sub-headers, and
-   citation rows with the reference leading and the chapter's net amount
-   closing, full eight decimals so the column aligns on the point. */
+/* The contents and index, in the shared idx-*/sp-* classes btc-index.js
+   renders into: Volume and Book headers (anthology numbering, canonical
+   designations riding alongside), citation rows with the reference leading
+   and the chapter's net closing, full eight decimals so the column aligns on
+   the point. */
 .idx-vol { margin:22px 0 2px; padding-top:14px; border-top:1px solid var(--hair);
   font:600 11px/1 'IBM Plex Mono',monospace; letter-spacing:.22em; text-transform:uppercase; color:var(--accent); }
-.idx-vol:first-child { margin-top:10px; padding-top:0; border-top:none; }
+.idx-vol:first-of-type { margin-top:10px; padding-top:0; border-top:none; }
 .idx-book { margin:12px 0 1px; padding-left:14px;
   font:600 10px/1 'IBM Plex Mono',monospace; letter-spacing:.16em; text-transform:uppercase; color:var(--meta); }
 .idx-row { display:flex; align-items:baseline; gap:16px; padding:8px 2px 8px 14px; border-bottom:1px solid var(--hair); text-decoration:none; }
@@ -107,11 +120,7 @@ a:hover { text-decoration: underline; }
 .idx-row:hover .idx-amt { color:var(--ink); }
 .idx-note { display:block; margin-top:12px; padding-left:14px; font:400 12px/1.5 'IBM Plex Mono',monospace; color:var(--meta); }
 
-/* The anthology's own contents -- the spine at a glance -- then its ledger,
-   separated by small section eyebrows. A contents row: the anthology book
-   (with its canonical designation) on the left, its chapter count and net on
-   the right; the row is an anchor into the ledger below. */
-.sp-eyebrow { margin:26px 0 0; font:600 10px/1 'IBM Plex Mono',monospace; letter-spacing:.3em; text-transform:uppercase; color:var(--dim); text-align:center; }
+.sp-eyebrow { margin:30px 0 0; font:600 10px/1 'IBM Plex Mono',monospace; letter-spacing:.3em; text-transform:uppercase; color:var(--dim); text-align:center; scroll-margin-top:26px; }
 .sp-toc { margin-bottom:8px; }
 .sp-row { display:flex; align-items:baseline; gap:16px; padding:7px 2px 7px 14px; border-bottom:1px solid var(--hair); text-decoration:none; }
 .sp-row:last-child { border-bottom:none; }
@@ -121,10 +130,22 @@ a:hover { text-decoration: underline; }
 .sp-row:hover { text-decoration:none; }
 .sp-row:hover .sp-label { text-decoration:underline; color:var(--accent-2); }
 .sp-row:hover .idx-amt { color:var(--ink); }
-/* An anchored ledger book lands with breathing room under the fixed viewport top. */
+/* An anchored index book lands with breathing room under the viewport top. */
 .idx-book[id] { scroll-margin-top: 18px; }
 /* The β sigil is a mark, not a letter: exempt from the headers' small caps. */
 .no-tt { text-transform: none; }
+
+/* A reader's bookmarked reference, inline in the contents beneath its book:
+   the ribbon it flies in the book, its title in the book's serif, its
+   remaining reference on the right. */
+.sp-bm { display:flex; align-items:baseline; gap:16px; padding:6px 2px 6px 30px; border-bottom:1px solid var(--hair); text-decoration:none; }
+.sp-bm-title { flex:1; min-width:0; font:500 14.5px/1.35 'Newsreader',serif; color:var(--ink-soft); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.sp-bm-ref { flex:none; font:600 12px/1.4 'IBM Plex Mono',monospace; letter-spacing:.06em; color:var(--accent); white-space:nowrap; font-variant-numeric:tabular-nums; }
+.sp-bm:hover { text-decoration:none; }
+.sp-bm:hover .sp-bm-title { color:var(--ink); }
+.sp-bm:hover .sp-bm-ref { text-decoration:underline; color:var(--accent-2); }
+.toc-bm { display:inline-block; width:9px; height:12px; margin-right:8px; color:var(--accent); vertical-align:baseline; }
+.toc-bm svg { display:block; width:100%; height:100%; }
 </style>
 <body>
 <div class="wrap">
@@ -133,37 +154,53 @@ a:hover { text-decoration: underline; }
     <span class="home"><a href="./bitcoin-book.html">Read</a> · <a href="./bitcoin-contents.html">Contents</a> · <a href="./bitcoin-index.html">Anthologies</a> · <a href="./bitcoin-search.html">Search</a> · <a href="https://glossia.io/">Glossia</a></span>
   </div>
 
-  <header class="page-head">
+  <header class="anth-hero" id="anth-hero">
     <div class="page-eyebrow">Anthology</div>
     <h1 class="anth-title" id="anth-title"></h1>
     <div class="anth-addr" id="anth-addr"></div>
+    <p class="anth-prose" id="anth-prose"></p>
+    <div class="anth-range" id="anth-range"></div>
     <div class="anth-count" id="anth-count"></div>
+    <a class="anth-down" href="#anth-contents" aria-label="Down to the table of contents">▾</a>
   </header>
 
   <div id="anthology"></div>
 </div>
 
 <script type="module">
-import { INDEXED, isAddress, cachedLine, resolveLine, renderAnthology, spine, lineNote } from './btc-index.js';
+import { INDEXED, isAddress, addressScriptHex, cachedLine, resolveLine, renderAnthology, spine, blockTime, lineNote } from './btc-index.js';
+import { volumeBookChapter, toRoman } from './btc-citation.js';
 
-// An anthology is one address's own subset of the book, with the book's own
-// apparatus at its scale: a contents (its spine -- non-empty books
-// renumbered consecutively, annotated with their canonical designations)
-// and a ledger (every chapter, with its net gift). Every chapter row opens
-// bitcoin-book.html at its transaction, so an anthology is navigated the
-// same way as the book it excerpts. The map behind it aims for completeness
-// (blockbook's parallel pages; the esplora walk as capped fallback) -- and
-// only a complete map draws the spine, since anthology numbering is only
-// permanent when the whole history is in hand.
+// An anthology is one address's own subset of the book, opened the way a
+// book opens: a title page (the name; the address; the address again in the
+// book's own tongue -- its scriptPubKey as Glossia prose; the span of
+// volumes and dates its chapters run), then, navigating down, its table of
+// contents -- the spine, the reader's bookmarked references beneath the
+// books that hold them, and the Index closing the list -- and the index
+// itself. Every chapter row opens bitcoin-book.html at its transaction, so
+// an anthology is navigated the same way as the book it excerpts.
 
 const q = (new URLSearchParams(location.search).get('address') || '').trim();
 const addr = isAddress(q) ? q : (isAddress(q.toLowerCase()) ? q.toLowerCase() : null);
 
 const el = document.getElementById('anthology');
 el.replaceChildren();   // populated-or-recovered is the head script's signal
+const hero = document.getElementById('anth-hero');
+
+// The reader's bookmarks (the same store the book and contents pages keep),
+// carried into the contents render; only those whose height falls on one of
+// the anthology's chapters appear.
+const readBookmarks = () => {
+  try { const v = JSON.parse(localStorage.getItem('glossia-btc-bookmarks')); return Array.isArray(v) ? v : []; }
+  catch { return []; }
+};
+const shortHex = (hex) => `${hex.slice(0, 10)}…${hex.slice(-6)}`;
+const bookmarks = readBookmarks()
+  .filter((b) => Number.isInteger(b.height))
+  .map((b) => ({ hex: b.hex, height: b.height, pos: b.pos ?? null, title: b.title || b.prose || shortHex(b.hex) }));
 
 if (!addr) {
-  // No (or an unreadable) address: explain the form instead of a blank page.
+  hero.classList.add('bare');
   document.getElementById('anth-title').textContent = 'One address, its every chapter';
   lineNote(el, 'An anthology collects one address’s appearances into its own contents. Open one from the Anthologies page, or put ?address=<an address> in this page’s URL.');
 } else {
@@ -173,6 +210,20 @@ if (!addr) {
   document.title = `The βook of βitcoin — Anthology · ${entry ? entry.title : addr}`;
   document.getElementById('anth-title').textContent = title;
   document.getElementById('anth-addr').textContent = addr;
+
+  // The address in the book's own tongue: its scriptPubKey Glossia-encoded,
+  // the same bytes (and so the same prose) every paying chapter carries. The
+  // engine is a build artifact (see README); absent or failing, the title
+  // page keeps the raw address alone.
+  (async () => {
+    const hex = addressScriptHex(addr);
+    if (!hex) return;
+    try {
+      const g = await import('./glossia-msg.js');
+      await g.init();
+      document.getElementById('anth-prose').textContent = g.encodeSeedPhrase(hex).prose;
+    } catch { /* engine not built or failed to load */ }
+  })();
 
   const count = document.getElementById('anth-count');
   const showCount = (data) => {
@@ -189,14 +240,32 @@ if (!addr) {
     count.textContent = parts.join(' · ');
   };
 
+  // The anthology's span: the volumes its chapters run, and the dates. Times
+  // ride on chapters mapped since they carried them; a map stored before
+  // then answers with two block-header lookups until its next remapping.
+  const range = document.getElementById('anth-range');
+  const showRange = async (data) => {
+    if (!data || !data.chapters.length) { range.textContent = ''; return; }
+    const first = data.chapters[0], last = data.chapters[data.chapters.length - 1];
+    const v1 = volumeBookChapter(first.height).volume, v2 = volumeBookChapter(last.height).volume;
+    const vols = v1 === v2 ? `Volume ${toRoman(v1)}` : `Volumes ${toRoman(v1)} – ${toRoman(v2)}`;
+    range.textContent = vols;
+    const t1 = first.time ?? await blockTime(first.height);
+    const t2 = last.time ?? await blockTime(last.height);
+    if (!t1 || !t2) return;
+    const fmt = (s) => new Date(s * 1000).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    const dates = fmt(t1) === fmt(t2) ? fmt(t1) : `${fmt(t1)} – ${fmt(t2)}`;
+    range.textContent = `${vols} · ${dates}`;
+  };
+
   // The stored map first -- instantly, offline included -- then the resolver
   // confirms it against the chain, tops it up, or maps afresh.
   (async () => {
     const cached = await cachedLine(addr);
-    if (cached) { renderAnthology(el, cached); showCount(cached); }
+    if (cached) { renderAnthology(el, cached, { bookmarks }); showCount(cached); showRange(cached); }
     else lineNote(el, '…');
     const data = await resolveLine(addr);
-    if (data !== cached) { renderAnthology(el, data); showCount(data); }
+    if (data !== cached) { renderAnthology(el, data, { bookmarks }); showCount(data); showRange(data); }
   })();
 }
 </script>

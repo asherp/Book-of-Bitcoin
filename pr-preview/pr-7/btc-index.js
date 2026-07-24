@@ -84,6 +84,70 @@ export const isAddress = (s) =>
 // like a book's, cites pages (chapters), not lines.
 export const citeHref = (txid) => `bitcoin-book.html?txid=${txid}`;
 
+// The address's scriptPubKey, as hex: its on-chain identity, and the exact
+// bytes the book Glossia-encodes wherever a chapter pays this address -- so a
+// title page that encodes these bytes reads the same prose the chapters do.
+// Handles the shapes isAddress admits: base58 P2PKH/P2SH (decoded without the
+// checksum pass -- shape plus the chain's own answer already validate an
+// address this module is asked about) and bech32/bech32m v0/v1 witness forms
+// (whose checksum is pure arithmetic, so it *is* checked). Null when the form
+// doesn't decode.
+const B58 = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+const B32 = 'qpzry9x8gf2tvdw0s3jn54khce6mua7l';
+const toHex = (bytes) => bytes.map((b) => b.toString(16).padStart(2, '0')).join('');
+function base58Payload(s) {
+  let n = 0n;
+  for (const c of s) {
+    const i = B58.indexOf(c);
+    if (i < 0) return null;
+    n = n * 58n + BigInt(i);
+  }
+  const bytes = [];
+  for (; n > 0n; n /= 256n) bytes.unshift(Number(n % 256n));
+  for (const c of s) { if (c !== '1') break; bytes.unshift(0); }
+  if (bytes.length !== 25) return null;               // version + hash160 + checksum
+  return { version: bytes[0], hash: bytes.slice(1, 21) };
+}
+function bech32Polymod(values) {
+  const GEN = [0x3b6a57b2, 0x26508e6d, 0x1ea119fa, 0x3d4233dd, 0x2a1462b3];
+  let chk = 1;
+  for (const v of values) {
+    const b = chk >> 25;
+    chk = ((chk & 0x1ffffff) << 5) ^ v;
+    for (let i = 0; i < 5; i++) if ((b >> i) & 1) chk ^= GEN[i];
+  }
+  return chk;
+}
+function bech32Witness(addr) {
+  const data = [...addr.slice(3)].map((c) => B32.indexOf(c));   // past the 'bc1' hrp+separator
+  if (data.includes(-1) || data.length < 7) return null;
+  const hrpExpand = [3, 3, 0, 2, 3];                  // 'bc' expanded, per BIP173
+  const version = data[0];
+  const constant = version === 0 ? 1 : 0x2bc830a3;    // bech32 for v0, bech32m above
+  if (bech32Polymod(hrpExpand.concat(data)) !== constant) return null;
+  const program = [];
+  let acc = 0, bits = 0;
+  for (const v of data.slice(1, -6)) {
+    acc = (acc << 5) | v;
+    bits += 5;
+    if (bits >= 8) { bits -= 8; program.push((acc >> bits) & 0xff); }
+  }
+  return { version, program };
+}
+export function addressScriptHex(address) {
+  if (address.startsWith('bc1')) {
+    const w = bech32Witness(address);
+    if (!w || !w.program.length) return null;
+    const op = w.version === 0 ? '00' : (0x50 + w.version).toString(16);
+    return op + w.program.length.toString(16).padStart(2, '0') + toHex(w.program);
+  }
+  const p = base58Payload(address);
+  if (!p) return null;
+  if (p.version === 0x00) return '76a914' + toHex(p.hash) + '88ac';   // P2PKH
+  if (p.version === 0x05) return 'a914' + toHex(p.hash) + '87';       // P2SH
+  return null;
+}
+
 // The net effect of one transaction on the address, in satoshis: outputs
 // paying the address minus inputs spending from it. Local arithmetic -- the
 // explorer's tx JSON carries each input's prevout, so no further lookups.
@@ -168,7 +232,7 @@ function blockbookTouches(txs, address) {
     let sats = 0;
     for (const o of t.vout || []) if (o.addresses?.includes(address)) sats += Number(o.value || 0);
     for (const i of t.vin || []) if (i.addresses?.includes(address)) sats -= Number(i.value || 0);
-    out.push({ height: t.blockHeight, txid: t.txid, sats });
+    out.push({ height: t.blockHeight, txid: t.txid, sats, time: t.blockTime || null });
   }
   return out;
 }
@@ -215,7 +279,7 @@ async function esploraMap(address) {
     const batch = await esploraJson(`/address/${address}/txs/chain${lastSeen}`);
     const confirmed = (batch || []).filter((t) => t.status?.confirmed);
     if (!confirmed.length) break;
-    for (const t of confirmed) touches.push({ height: t.status.block_height, txid: t.txid, sats: netSats(t, address) });
+    for (const t of confirmed) touches.push({ height: t.status.block_height, txid: t.txid, sats: netSats(t, address), time: t.status.block_time || null });
     lastSeen = `/${confirmed[confirmed.length - 1].txid}`;
   }
   if (!touches.length && txCount > 0) return null;   // failed mid-flight, not empty
@@ -230,11 +294,29 @@ async function esploraMap(address) {
 function groupChapters(touches) {
   const byHeight = new Map();
   for (const t of touches) {
-    byHeight.set(t.height, { txid: t.txid, sats: (byHeight.get(t.height)?.sats ?? 0) + t.sats });
+    // A block has one timestamp; any of its transactions carries it.
+    byHeight.set(t.height, { txid: t.txid, time: t.time ?? byHeight.get(t.height)?.time ?? null, sats: (byHeight.get(t.height)?.sats ?? 0) + t.sats });
   }
   return [...byHeight.entries()]
     .map(([height, v]) => ({ height, ...v }))
     .sort((a, b) => a.height - b.height);
+}
+
+// A block's timestamp by height, for maps stored before chapters carried
+// times: height -> hash (plain text) -> header (json). The title page's date
+// range needs only the first and last chapters', so two of these cover an
+// old map until its next remapping stores times throughout.
+export async function blockTime(height) {
+  for (const base of ESPLORA_MIRRORS) {
+    try {
+      const hres = await fetch(`${base}/block-height/${height}`);
+      if (!hres.ok) continue;
+      const hash = (await hres.text()).trim();
+      const bres = await fetch(`${base}/block/${hash}`);
+      if (bres.ok) return (await bres.json()).timestamp ?? null;
+    } catch { /* try the next mirror */ }
+  }
+  return null;
 }
 
 // --- The store: maps live in IndexedDB (a complete map of a busy address
@@ -310,9 +392,12 @@ async function topUp(address, cached) {
   const frontier = (cached.chapters[cached.chapters.length - 1]?.height ?? 0) + 1;
   const bb = await blockbookMap(address, frontier);
   if (bb) {
-    if (bb.txCount === cached.txCount && !bb.touches.length) return cached;
-    const chapters = cached.chapters.concat(groupChapters(bb.touches));
-    const data = { at: Date.now(), txCount: bb.txCount, walked: cached.walked + bb.touches.length, complete: true, chapters };
+    // The from-filter is re-applied locally: a mirror that ignored it (or
+    // answered with overlap) must not double-count the mapped chapters.
+    const fresh = bb.touches.filter((t) => t.height >= frontier);
+    if (bb.txCount === cached.txCount && !fresh.length) return cached;
+    const chapters = cached.chapters.concat(groupChapters(fresh));
+    const data = { at: Date.now(), txCount: bb.txCount, walked: cached.walked + fresh.length, complete: true, chapters };
     await saveLine(address, data);
     return data;
   }
@@ -330,7 +415,7 @@ async function topUp(address, cached) {
     const confirmed = (batch || []).filter((t) => t.status?.confirmed);
     if (!confirmed.length) break;
     for (const t of confirmed) {
-      if (t.status.block_height >= frontier) touches.push({ height: t.status.block_height, txid: t.txid, sats: netSats(t, address) });
+      if (t.status.block_height >= frontier) touches.push({ height: t.status.block_height, txid: t.txid, sats: netSats(t, address), time: t.status.block_time || null });
     }
     if (confirmed.some((t) => t.status.block_height < frontier)) {
       const chapters = cached.chapters.concat(groupChapters(touches));
@@ -451,66 +536,31 @@ export function renderLine(el, data, maxRows = Infinity) {
   }
 }
 
-// The shelf preview: the map at book altitude. A volume header, then a row
-// per book -- canonical designation, chapter count, net -- in the book's own
-// numbers (the renumbered spine belongs to the anthology). A book's chapter
-// rows are built only the first time it is opened and toggle thereafter, so
-// even the longest map costs the shelf a few hundred rows, not tens of
-// thousands. An incomplete map keeps its honest tail note.
-export function renderBooks(el, data) {
-  el.replaceChildren();
-  if (!data) { lineNote(el, '—'); return; }
-  if (!data.chapters.length) { lineNote(el, 'no appearances yet'); return; }
-  for (const v of bucketBooks(data.chapters)) {
-    el.append(lineHead('idx-vol', `Volume ${toRoman(v.volume)}`));
-    for (const b of v.books) {
-      const row = document.createElement('a');
-      row.className = 'sp-row sp-toggle';
-      row.href = '#';
-      const label = document.createElement('span'); label.className = 'sp-label';
-      label.textContent = `β${b.book}`;
-      const count = document.createElement('span'); count.className = 'sp-count';
-      count.textContent = `${b.chapters.length.toLocaleString('en-US')} ■`;
-      const amt = document.createElement('span'); amt.className = 'idx-amt sp-amt';
-      amt.textContent = formatNetBtc(b.sats);
-      row.append(label, count, amt);
-      el.append(row);
-      let open = null;   // the chapter rows, built on first opening
-      row.addEventListener('click', (ev) => {
-        ev.preventDefault();
-        if (!open) {
-          open = document.createElement('div');
-          open.className = 'sp-open';
-          for (const c of b.chapters) open.append(lineRow(c, true));
-          row.after(open);
-        } else {
-          open.hidden = !open.hidden;
-        }
-        row.classList.toggle('open', !open.hidden);
-      });
-    }
-  }
-  if (data.walked < data.txCount) {
-    lineNote(el, `… the latest ${data.walked.toLocaleString('en-US')} of ${data.txCount.toLocaleString('en-US')} appearances`);
-  }
-}
-
 // The anthology rendering: a contents leaf first -- the spine at a glance,
 // one row per book with its chapter count and net, each row an anchor into
-// the ledger -- then the ledger itself, every chapter row under the same
-// dual-numbered headers. Chapter rows keep their canonical ■ marks and open
-// the book proper, so an anthology is navigated the same way as the book it
-// excerpts. Ledger rows attach in animation-frame chunks so a giant
-// anthology doesn't jank its first paint. Falls back to the flat line (and
-// returns false) when the map is incomplete and no spine may be drawn.
-export function renderAnthology(el, data) {
+// the anthology's own index below; the reader's bookmarked references sit
+// inline beneath the books that hold them (opts.bookmarks -- entries with a
+// height among the map's chapters), flying the same ribbon they fly in the
+// book; and the contents' final entry is the Index itself, the way a book's
+// back matter closes its table of contents. Then the index: every chapter
+// row under the same dual-numbered headers. Chapter rows keep their
+// canonical ■ marks and open the book proper, so an anthology is navigated
+// the same way as the book it excerpts. Index rows attach in
+// animation-frame chunks so a giant anthology doesn't jank its first paint.
+// Falls back to the flat line (and returns false) when the map is
+// incomplete and no spine may be drawn.
+const BOOKMARK_RIBBON = '<svg viewBox="0 0 12 16"><path fill="currentColor" d="M0 0h12v16l-6-4-6 4z"/></svg>';
+export function renderAnthology(el, data, { bookmarks = [] } = {}) {
   const vols = spine(data);
   if (!vols) { renderLine(el, data); return false; }
   el.replaceChildren();
   const anchor = (v, b) => `v${v.volume}b${b.book}`;   // canonical, hence permanent
+  const total = data.chapters.reduce((n, c) => n + c.sats, 0);
 
   const toc = document.createElement('div'); toc.className = 'sp-toc';
-  toc.append(lineHead('sp-eyebrow', 'Contents'));
+  const contentsHead = lineHead('sp-eyebrow', 'Contents');
+  contentsHead.id = 'anth-contents';
+  toc.append(contentsHead);
   for (const v of vols) {
     toc.append(lineHead('idx-vol', `Volume ${v.n} · ${toRoman(v.volume)}`));
     for (const b of v.books) {
@@ -525,11 +575,42 @@ export function renderAnthology(el, data) {
       amt.textContent = formatNetBtc(b.sats);
       row.append(label, count, amt);
       toc.append(row);
+      // The reader's own bookmarks that fall in this book's chapters, in
+      // height order, each opening the book at its reference.
+      const heights = new Set(b.chapters.map((c) => c.height));
+      for (const bm of bookmarks.filter((m) => heights.has(m.height)).sort((a, z) => a.height - z.height)) {
+        const bmRow = document.createElement('a');
+        bmRow.className = 'sp-bm';
+        bmRow.href = citeHref(bm.hex);
+        const t = document.createElement('span'); t.className = 'sp-bm-title';
+        const rib = document.createElement('span'); rib.className = 'toc-bm';
+        rib.setAttribute('aria-label', 'your bookmark');
+        rib.innerHTML = BOOKMARK_RIBBON;
+        t.append(rib, document.createTextNode(bm.title));
+        const ref = document.createElement('span'); ref.className = 'sp-bm-ref';
+        ref.textContent = `■${volumeBookChapter(bm.height).chapter}` + (bm.pos != null ? ` §${bm.pos + 1}` : '');
+        bmRow.append(t, ref);
+        toc.append(bmRow);
+      }
     }
   }
+  // The back matter closes the contents: the anthology's own index, whole.
+  const idxRow = document.createElement('a');
+  idxRow.className = 'sp-row';
+  idxRow.href = '#anth-index';
+  const idxLabel = document.createElement('span'); idxLabel.className = 'sp-label';
+  idxLabel.textContent = 'Index';
+  const idxCount = document.createElement('span'); idxCount.className = 'sp-count';
+  idxCount.textContent = `${data.chapters.length.toLocaleString('en-US')} ■`;
+  const idxAmt = document.createElement('span'); idxAmt.className = 'idx-amt sp-amt';
+  idxAmt.textContent = formatNetBtc(total);
+  idxRow.append(idxLabel, idxCount, idxAmt);
+  toc.append(idxRow);
   el.append(toc);
 
-  el.append(lineHead('sp-eyebrow', 'Ledger'));
+  const indexHead = lineHead('sp-eyebrow', 'Index');
+  indexHead.id = 'anth-index';
+  el.append(indexHead);
   const nodes = [];
   for (const v of vols) {
     nodes.push(lineHead('idx-vol', `Volume ${v.n} · ${toRoman(v.volume)}`));
