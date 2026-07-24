@@ -287,8 +287,10 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 .spinner { display:inline-block; width:12px; height:12px; border:2px solid var(--rule); border-top-color: var(--accent); border-radius:50%; animation: spin .7s linear infinite; vertical-align: -1px; margin-right: 6px; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* ── the chapter itself: a manuscript page, not a utility card ── */
-#chapter { margin-top: 48px; }
+/* ── the chapter itself: a manuscript page, not a utility card ──
+   No top margin: the eyebrow bar opens the chapter right under the masthead
+   (its own padding sets the rhythm), with no dead band between them. */
+#chapter { margin-top: 0; }
 .chapter-head { text-align: center; padding-bottom: 34px; margin-bottom: 34px; border-bottom: 1px solid var(--rule); }
 /* On the chapter's own page the body is empty, so the head's closing rule
    would stack against the page nav's opening rule -- drop it and let the nav's
