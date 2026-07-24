@@ -17,8 +17,10 @@ compiled to WASM) is consumed as a published
   esplora-style endpoint (Blockstream, mempool.space, or your own node) and
   renders it as prose
 - `web/bitcoin-contents.html` — table of contents / notable blocks
-- `web/bitcoin-index.html` — back-of-book index: notable addresses, each
-  listing every chapter it appears in
+- `web/bitcoin-index.html` — back-of-book index: notable donation addresses,
+  each listing every chapter it appears in
+- `web/bitcoin-anthology.html` — one address's anthology: its own subset of
+  the book, the same nested contents at full depth
 - `web/btc-tx.js`, `web/btc-prose.js`, `web/btc-citation.js`,
   `web/btc-contents.js`, `web/btc-index.js` — transaction parsing, prose
   composition, citations, contents data, and index data

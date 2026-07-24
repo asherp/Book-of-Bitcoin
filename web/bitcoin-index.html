@@ -87,9 +87,12 @@ a:hover { text-decoration: underline; }
    the address itself beneath in mono -- then its citations laid out like the
    table of contents (Volume part headers, Book sub-headers), with the row
    mirrored: the reference on the left, and on the right the chapter's net
-   amount for the address. */
+   amount for the address. The name links to the entry's anthology: the same
+   line on a page of its own, walked far deeper. */
 .idx-entry { padding:18px 2px 20px; border-bottom:1px solid var(--rule); }
-.idx-title { font:500 17px/1.35 'Newsreader',serif; color:var(--ink-soft); }
+.idx-title { display:block; font:500 17px/1.35 'Newsreader',serif; color:var(--ink-soft); }
+a.idx-title:hover { color:var(--ink); text-decoration:none; }
+a.idx-title:hover .idx-addr { color:var(--dim); }
 .idx-addr { display:block; margin-top:2px; font:400 11.5px/1.5 'IBM Plex Mono',monospace; letter-spacing:.02em; color:var(--meta); word-break:break-all; }
 .idx-cites { margin-top:6px; }
 
@@ -131,162 +134,23 @@ a:hover { text-decoration: underline; }
 </div>
 
 <script type="module">
-import { INDEXED, isAddress, citeHref, netSats, formatNetBtc } from './btc-index.js';
-import { volumeBookChapter, toRoman } from './btc-citation.js';
+import { INDEXED, isAddress, cachedLine, resolveLine, renderLine, lineNote } from './btc-index.js';
 
-// Citations are discovered the way the reader resolves one: from the chain,
-// tried across the same public mirrors the book uses. An address's history
-// comes from /address/<addr> (its confirmed transaction count) and
-// /address/<addr>/txs/chain (its confirmed transactions, newest first,
-// paginated by last-seen txid).
-const ESPLORA_MIRRORS = ['https://blockstream.info/api', 'https://mempool.space/api'];
-
-// A famous address accumulates history without end (the genesis address alone
-// has thousands of tribute payments), so each entry's chain walk is capped.
-// The walk runs newest-first -- the only direction the API pages -- so a
-// capped entry lists its *latest* appearances and says how many it stands
-// among; an uncapped one is the address's complete index line.
-const MAX_TX_PAGES = 8;
-
-// Each address's resolved index line is cached, so a revisit renders whole
-// from storage -- offline too -- and revalidates with a single request: the
-// confirmed tx count only ever grows, so an unchanged count means the cached
-// chapters are still the address's complete story and the walk is skipped.
-// Bounded to the most recently used addresses so ad-hoc queries can't grow
-// the cache without end.
-const CACHE_KEY = 'glossia-btc-index-cache';
-const CACHE_MAX_ADDRESSES = 12;
-const readCache = () => {
-  try { const v = JSON.parse(localStorage.getItem(CACHE_KEY)); return v && typeof v === 'object' ? v : {}; }
-  catch { return {}; }
-};
-const cache = readCache();
-function saveCache() {
-  const keep = Object.entries(cache).sort((a, b) => b[1].at - a[1].at).slice(0, CACHE_MAX_ADDRESSES);
-  try { localStorage.setItem(CACHE_KEY, JSON.stringify(Object.fromEntries(keep))); } catch { /* full or unavailable */ }
-}
+// The index skims: each entry's chain walk is shallow, enough to read the
+// shape of a line. An entry's title opens its anthology -- the same line as
+// its own page, walked far deeper. The walk, cache, and renderer live in
+// btc-index.js, shared with the anthology page, so the two depths are one
+// machinery and one cache.
+const INDEX_TX_PAGES = 8;
 
 // A reader's own query joins the curated set: ?address=<addr> prepends a
-// temporary entry (titled by the address itself), so the search page can hand
-// any address here the way it hands blocks and transactions to the book. A
-// query that duplicates a curated address is dropped -- the curated title wins.
+// temporary entry (titled by the address itself), so any address is
+// indexable in place. A query that duplicates a curated address is dropped --
+// the curated title wins.
 const q = (new URLSearchParams(location.search).get('address') || '').trim();
 const adhoc = isAddress(q) && !INDEXED.some((e) => e.address === q)
   ? [{ title: q, address: q, adhoc: true }] : [];
 const entries = [...adhoc, ...INDEXED];
-
-async function fetchJson(path) {
-  for (const base of ESPLORA_MIRRORS) {
-    try {
-      const res = await fetch(base + path);
-      if (res.ok) return await res.json();
-    } catch { /* try the next mirror */ }
-  }
-  return null;
-}
-
-// Up to MAX_TX_PAGES pages of the address's confirmed transactions, newest
-// first. Pagination is by last-seen txid, so pages compose across mirrors.
-async function walkChain(address, txCount) {
-  const txs = [];
-  let lastSeen = '';
-  for (let page = 0; page < MAX_TX_PAGES && txs.length < txCount; page++) {
-    const batch = await fetchJson(`/address/${address}/txs/chain${lastSeen}`);
-    const confirmed = (batch || []).filter((t) => t.status?.confirmed);
-    if (!confirmed.length) break;
-    txs.push(...confirmed);
-    lastSeen = `/${confirmed[confirmed.length - 1].txid}`;
-  }
-  return txs;
-}
-
-// The chapters where the address appears, ascending: one row per chapter, the
-// way a book's index lists a page once however often the name recurs on it --
-// its amount the *net* of every touch in that chapter. The walk arrives
-// newest-first, so the last write per height keeps the earliest transaction
-// there; that's the one the row opens.
-function chapterize(txs, address) {
-  const byHeight = new Map();
-  for (const t of txs) {
-    const h = t.status.block_height;
-    byHeight.set(h, { txid: t.txid, sats: (byHeight.get(h)?.sats ?? 0) + netSats(t, address) });
-  }
-  return [...byHeight.entries()]
-    .map(([height, v]) => ({ height, ...v }))
-    .sort((a, b) => a.height - b.height);
-}
-
-// Resolve one entry: cached line first (instantly, offline included), then a
-// one-request revalidation against the confirmed tx count; only a grown count
-// walks the chain again.
-async function resolveEntry(address, cites) {
-  const cached = cache[address];
-  if (cached) renderCites(cites, cached);
-  const info = await fetchJson(`/address/${address}`);
-  if (!info) { if (!cached) renderCites(cites, null); return; }
-  const txCount = info.chain_stats.tx_count;
-  if (cached && cached.txCount === txCount) return;
-  const txs = await walkChain(address, txCount);
-  // A walk that returned nothing for a non-empty address failed mid-flight:
-  // keep whatever the cache already tells, rather than caching the failure.
-  if (!txs.length && txCount > 0) { if (!cached) renderCites(cites, null); return; }
-  const data = { at: Date.now(), txCount, walked: txs.length, chapters: chapterize(txs, address) };
-  renderCites(cites, data);
-  cache[address] = data;
-  saveCache();
-}
-
-// Render an entry's citations the way the contents page nests its own: a
-// Volume part header, then a Book sub-header wherever two or more consecutive
-// chapters share one, each row citing only the portion of its reference the
-// headings haven't named -- mirrored, with the reference leading the row and
-// the chapter's net amount closing it.
-function renderCites(el, data) {
-  el.replaceChildren();
-  if (!data) { note(el, '—'); return; }
-  const rows = data.chapters.map((c) => ({ ...c, place: volumeBookChapter(c.height) }));
-  if (!rows.length) { note(el, 'no appearances yet'); return; }
-  for (let i = 0; i < rows.length;) {
-    const vol = rows[i].place.volume;
-    let jv = i + 1; while (jv < rows.length && rows[jv].place.volume === vol) jv++;
-    el.append(head('idx-vol', `Volume ${toRoman(vol)}`));
-    for (let k = i; k < jv;) {
-      const bk = rows[k].place.book;
-      let jb = k + 1; while (jb < jv && rows[jb].place.book === bk) jb++;
-      if (jb - k >= 2) {
-        el.append(head('idx-book', `Book ${bk}`));
-        for (let m = k; m < jb; m++) el.append(rowEl(rows[m], true));
-      } else {
-        el.append(rowEl(rows[k], false));
-      }
-      k = jb;
-    }
-    i = jv;
-  }
-  // A capped walk names what it left behind; the count is of transactions,
-  // which is what the chain counts (several may share a chapter above).
-  if (data.walked < data.txCount) {
-    note(el, `… the latest ${data.walked} of ${data.txCount.toLocaleString('en-US')} appearances`);
-  }
-}
-function rowEl({ txid, sats, place }, underBook) {
-  const row = document.createElement('a');
-  row.className = 'idx-row' + (underBook ? ' under-book' : '');
-  row.href = citeHref(txid);
-  const r = document.createElement('span'); r.className = 'idx-ref';
-  r.textContent = underBook ? `■${place.chapter}` : `β${place.book} ■${place.chapter}`;
-  const amt = document.createElement('span'); amt.className = 'idx-amt';
-  amt.textContent = formatNetBtc(sats);
-  row.append(r, amt);
-  return row;
-}
-function head(cls, label) { const d = document.createElement('div'); d.className = cls; d.textContent = label; return d; }
-function note(el, text) {
-  const s = document.createElement('span');
-  s.className = 'idx-note';
-  s.textContent = text;
-  el.append(s);
-}
 
 // Build every entry at once -- name and address are known offline -- and let
 // each citation list render from cache and refresh as its chain walk resolves.
@@ -297,7 +161,10 @@ index.replaceChildren();
 for (const e of entries) {
   const row = document.createElement('div');
   row.className = 'idx-entry';
-  const t = document.createElement('div'); t.className = 'idx-title';
+  // The entry's name is the door to its anthology: the whole line, on a page
+  // of its own.
+  const t = document.createElement('a'); t.className = 'idx-title';
+  t.href = `bitcoin-anthology.html?address=${e.address}`;
   t.textContent = e.title;
   // An ad-hoc entry is titled by its address, so the mono sub-line would only
   // repeat it; curated entries carry both name and address.
@@ -307,10 +174,12 @@ for (const e of entries) {
     t.append(addr);
   }
   const cites = document.createElement('div'); cites.className = 'idx-cites';
-  note(cites, '…');
+  lineNote(cites, '…');
   row.append(t, cites);
   index.append(row);
-  resolveEntry(e.address, cites);
+  const cached = cachedLine(e.address);
+  if (cached) renderLine(cites, cached);
+  resolveLine(e.address, INDEX_TX_PAGES).then((data) => renderLine(cites, data));
 }
 
 // The module graph loaded whole: clear the mixed-build recovery flag (set in
