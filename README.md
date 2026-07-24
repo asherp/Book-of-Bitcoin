@@ -20,9 +20,10 @@ compiled to WASM) is consumed as a published
 - `web/bitcoin-index.html` — the Anthologies shelf: notable donation
   addresses, each previewed at book level and opening into its own anthology
 - `web/bitcoin-anthology.html` — one address's anthology: its own subset of
-  the book, with its own contents (non-empty books renumbered into a stable
-  spine) and ledger; complete address maps arrive via public Blockbook
-  instances in parallel pages, with the esplora walk as fallback
+  the book, opened as a title page (the address as Glossia-encoded script),
+  table of contents, and index; complete address maps arrive via public
+  Blockbook instances in parallel pages, and an anthology opens only once
+  its ledger sum reconciles with the chain's balance
 - `web/btc-tx.js`, `web/btc-prose.js`, `web/btc-citation.js`,
   `web/btc-contents.js`, `web/btc-index.js` — transaction parsing, prose
   composition, citations, contents data, and index data
