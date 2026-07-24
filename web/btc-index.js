@@ -362,29 +362,23 @@ export async function resolveLine(address) {
   return data;
 }
 
-// --- The anthology spine: the map's chapters bucketed into their canonical
-// books, empty books and volumes left out, the survivors renumbered
-// consecutively -- anthology numbers are arabic and its own, the canonical
-// designation rides alongside. The numbering is permanent: past blocks are
-// closed, so a book empty once its window is mined stays empty forever, and
-// new books can only append to the spine's end. Book numbers restart within
-// each anthology volume, mirroring the canonical scheme (β restarts each
-// era). Only a complete map may be spined: consecutive numbers computed from
-// partial history would shift as the map deepened, which is exactly the
-// instability completeness forbids.
-export function spine(data) {
-  if (!data?.complete || !data.chapters.length) return null;
+// --- The map's chapters bucketed into their canonical books: only volumes
+// and books with appearances exist as buckets (the chain's own occupancy),
+// each carrying its chapters, count, and net. Works on any map, complete or
+// not -- an incomplete map's oldest bucket simply holds only what was
+// walked, which the caller's tail note names.
+function bucketBooks(chapters) {
   const volumes = [];
   let vol = null, book = null;
-  for (const c of data.chapters) {
+  for (const c of chapters) {
     const place = volumeBookChapter(c.height);
     if (!vol || vol.volume !== place.volume) {
-      vol = { n: volumes.length + 1, volume: place.volume, books: [], sats: 0, count: 0 };
+      vol = { volume: place.volume, books: [], sats: 0, count: 0 };
       volumes.push(vol);
       book = null;
     }
     if (!book || book.book !== place.book) {
-      book = { n: vol.books.length + 1, book: place.book, chapters: [], sats: 0 };
+      book = { book: place.book, chapters: [], sats: 0 };
       vol.books.push(book);
     }
     book.chapters.push({ ...c, place });
@@ -392,6 +386,25 @@ export function spine(data) {
     vol.sats += c.sats;
     vol.count += 1;
   }
+  return volumes;
+}
+
+// The anthology spine: the buckets renumbered consecutively -- anthology
+// numbers are arabic and its own, the canonical designation rides alongside.
+// The numbering is permanent: past blocks are closed, so a book empty once
+// its window is mined stays empty forever, and new books can only append to
+// the spine's end. Book numbers restart within each anthology volume,
+// mirroring the canonical scheme (β restarts each era). Only a complete map
+// may be spined: consecutive numbers computed from partial history would
+// shift as the map deepened, which is exactly the instability completeness
+// forbids.
+export function spine(data) {
+  if (!data?.complete || !data.chapters.length) return null;
+  const volumes = bucketBooks(data.chapters);
+  volumes.forEach((v, i) => {
+    v.n = i + 1;
+    v.books.forEach((b, j) => { b.n = j + 1; });
+  });
   return volumes;
 }
 
@@ -433,6 +446,50 @@ export function renderLine(el, data, maxRows = Infinity) {
   // An incomplete map names what it left behind; the count is of
   // transactions, which is what the chain counts (several may share a
   // chapter above).
+  if (data.walked < data.txCount) {
+    lineNote(el, `… the latest ${data.walked.toLocaleString('en-US')} of ${data.txCount.toLocaleString('en-US')} appearances`);
+  }
+}
+
+// The shelf preview: the map at book altitude. A volume header, then a row
+// per book -- canonical designation, chapter count, net -- in the book's own
+// numbers (the renumbered spine belongs to the anthology). A book's chapter
+// rows are built only the first time it is opened and toggle thereafter, so
+// even the longest map costs the shelf a few hundred rows, not tens of
+// thousands. An incomplete map keeps its honest tail note.
+export function renderBooks(el, data) {
+  el.replaceChildren();
+  if (!data) { lineNote(el, '—'); return; }
+  if (!data.chapters.length) { lineNote(el, 'no appearances yet'); return; }
+  for (const v of bucketBooks(data.chapters)) {
+    el.append(lineHead('idx-vol', `Volume ${toRoman(v.volume)}`));
+    for (const b of v.books) {
+      const row = document.createElement('a');
+      row.className = 'sp-row sp-toggle';
+      row.href = '#';
+      const label = document.createElement('span'); label.className = 'sp-label';
+      label.textContent = `β${b.book}`;
+      const count = document.createElement('span'); count.className = 'sp-count';
+      count.textContent = `${b.chapters.length.toLocaleString('en-US')} ■`;
+      const amt = document.createElement('span'); amt.className = 'idx-amt sp-amt';
+      amt.textContent = formatNetBtc(b.sats);
+      row.append(label, count, amt);
+      el.append(row);
+      let open = null;   // the chapter rows, built on first opening
+      row.addEventListener('click', (ev) => {
+        ev.preventDefault();
+        if (!open) {
+          open = document.createElement('div');
+          open.className = 'sp-open';
+          for (const c of b.chapters) open.append(lineRow(c, true));
+          row.after(open);
+        } else {
+          open.hidden = !open.hidden;
+        }
+        row.classList.toggle('open', !open.hidden);
+      });
+    }
+  }
   if (data.walked < data.txCount) {
     lineNote(el, `… the latest ${data.walked.toLocaleString('en-US')} of ${data.txCount.toLocaleString('en-US')} appearances`);
   }
