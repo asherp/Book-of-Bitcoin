@@ -97,6 +97,13 @@ a:hover { text-decoration: underline; }
 .anth-addr:empty { display:none; }
 .anth-prose { margin:22px 0 0; max-width:560px; font:400 16px/1.7 'Newsreader',serif; font-style:italic; color:var(--ink-soft); }
 .anth-prose:empty { display:none; }
+/* The scriptPubKey's notation, as the book styles it: opcode glyphs in
+   accent, push marks quiet, data-type marks bold -- the grammar punctuating
+   the prose that carries the opaque bytes. */
+.anth-prose .op { color: var(--accent); font-style: normal; }
+.anth-prose .op-name { font: 600 .62em/1 'IBM Plex Mono',monospace; letter-spacing:.04em; color: var(--dim); font-style: normal; vertical-align: .14em; white-space: nowrap; }
+.anth-prose .op-push { color: var(--meta); }
+.anth-prose .dt { color: var(--accent); font-style: normal; font-weight: 700; }
 .anth-range { margin-top:22px; font:600 12px/1.6 'IBM Plex Mono',monospace; letter-spacing:.14em; text-transform:uppercase; color:var(--accent); }
 .anth-range:empty { display:none; }
 .anth-count { margin-top:8px; font:500 11px/1 'IBM Plex Mono',monospace; letter-spacing:.12em; text-transform:uppercase; color:var(--dim); }
@@ -213,18 +220,23 @@ if (!addr) {
   document.title = `The βook of βitcoin — Anthology · ${entry ? entry.title : addr}`;
   document.getElementById('anth-title').textContent = title;
 
-  // The address, once, in the book's own tongue: its scriptPubKey
-  // Glossia-encoded -- the same bytes (and so the same prose) every paying
-  // chapter carries, so the prose carries the address whole and the raw form
-  // stays off the leaf. The engine is a build artifact (see README); only
-  // when it can't be had does the mono address stand in.
+  // The address, once, in the book's own tongue: its scriptPubKey in the
+  // book's opcode notation -- glyphs for the opcodes, a typed push mark, and
+  // Glossia prose for only the genuinely opaque bytes (the hash or witness
+  // program), exactly as the same script reads in every paying chapter. So a
+  // P2PKH title page opens ⧉ ⌖ h²⁰ ⟨prose⟩ ≡ ∇, and the raw base58/bech32
+  // form has nothing left to add. The renderer and engine are the book's own
+  // (renderScript needs the WASM build; see README); only when they can't be
+  // had does the mono address stand in.
   (async () => {
     const hex = addressScriptHex(addr);
     try {
       if (!hex) throw new Error('undecodable address form');
-      const g = await import('./glossia-msg.js');
+      const [g, p] = await Promise.all([import('./glossia-msg.js'), import('./btc-prose.js')]);
       await g.init();
-      document.getElementById('anth-prose').textContent = g.encodeSeedPhrase(hex).prose;
+      // renderScript's HTML is safe by its own contract: opcode glyphs and
+      // marks are the only markup, pushed data arrives as Glossia prose.
+      document.getElementById('anth-prose').innerHTML = p.renderScript(hex, (h) => g.encodeSeedPhrase(h).prose);
     } catch {
       document.getElementById('anth-addr').textContent = addr;
     }
