@@ -18,6 +18,14 @@
 // contents -- not alphabetically; the list is short enough to scan whole.
 
 export const INDEXED = [
+  // WikiLeaks' public donation address, opened June 14, 2011, after the
+  // banking blockade -- Visa, Mastercard, PayPal, and the banks cut the
+  // organization off, and bitcoin became the way through. The donation stream
+  // Satoshi asked to hold off ("the heat you would bring") in one of his last
+  // posts; it arrived anyway, six months later, and has run ever since --
+  // thousands of gifts deep, so its listing leans hardest on the walk cap's
+  // "latest N of M" tail.
+  { title: 'WikiLeaks', address: '1HB5XMLmzFVj8ALj6mfBsbifRoD4miY36v' },
   // The Free Ross campaign's vanity donation address (the name is mined into
   // the base58), collecting for Ross Ulbricht's defense and advocacy from the
   // Silk Road trial era (2014) through freeross.org, until the January 2025
@@ -42,10 +50,8 @@ export const INDEXED = [
 ];
 
 // Donation addresses still to confirm against their campaigns before adding:
-// WikiLeaks' famous address (June 2010, the banking-blockade donation stream
-// Satoshi asked to hold off -- "the heat you would bring"), and the addresses
-// of the long-running institutional funds (EFF, the Tor Project). Confirm
-// each from the campaign's own publications, never from memory.
+// the long-running institutional funds (EFF, the Tor Project). Confirm each
+// from the campaign's own publications, never from memory.
 
 // A loose shape test for the address forms the chain has used: base58 P2PKH
 // ('1…') and P2SH ('3…'), and bech32/bech32m ('bc1…', matched lowercase --
