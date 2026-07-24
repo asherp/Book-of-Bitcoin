@@ -136,12 +136,12 @@ a.idx-title:hover .idx-addr { color:var(--dim); }
 <script type="module">
 import { INDEXED, isAddress, cachedLine, resolveLine, renderLine, lineNote } from './btc-index.js';
 
-// The index skims: each entry's chain walk is shallow, enough to read the
-// shape of a line. An entry's title opens its anthology -- the same line as
-// its own page, walked far deeper. The walk, cache, and renderer live in
-// btc-index.js, shared with the anthology page, so the two depths are one
-// machinery and one cache.
-const INDEX_TX_PAGES = 8;
+// The index previews: each entry renders the most recent stretch of its map,
+// however deep the map itself runs -- the mapping, store, and renderer live
+// in btc-index.js, shared with the anthology pages, so the shelf and the
+// anthologies read from one machinery and one store. An entry's title opens
+// its anthology: the whole map, with its spine.
+const PREVIEW_ROWS = 150;
 
 // A reader's own query joins the curated set: ?address=<addr> prepends a
 // temporary entry (titled by the address itself), so any address is
@@ -177,9 +177,12 @@ for (const e of entries) {
   lineNote(cites, '…');
   row.append(t, cites);
   index.append(row);
-  const cached = cachedLine(e.address);
-  if (cached) renderLine(cites, cached);
-  resolveLine(e.address, INDEX_TX_PAGES).then((data) => renderLine(cites, data));
+  (async () => {
+    const cached = await cachedLine(e.address);
+    if (cached) renderLine(cites, cached, PREVIEW_ROWS);
+    const data = await resolveLine(e.address);
+    if (data !== cached) renderLine(cites, data, PREVIEW_ROWS);
+  })();
 }
 
 // The module graph loaded whole: clear the mixed-build recovery flag (set in

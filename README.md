@@ -20,7 +20,9 @@ compiled to WASM) is consumed as a published
 - `web/bitcoin-index.html` — back-of-book index: notable donation addresses,
   each listing every chapter it appears in
 - `web/bitcoin-anthology.html` — one address's anthology: its own subset of
-  the book, the same nested contents at full depth
+  the book, with its own contents (non-empty books renumbered into a stable
+  spine) and ledger; complete address maps arrive via public Blockbook
+  instances in parallel pages, with the esplora walk as fallback
 - `web/btc-tx.js`, `web/btc-prose.js`, `web/btc-citation.js`,
   `web/btc-contents.js`, `web/btc-index.js` — transaction parsing, prose
   composition, citations, contents data, and index data

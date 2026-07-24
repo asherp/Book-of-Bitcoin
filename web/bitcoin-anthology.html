@@ -106,6 +106,24 @@ a:hover { text-decoration: underline; }
 .idx-row:hover .idx-ref { text-decoration:underline; color:var(--accent-2); }
 .idx-row:hover .idx-amt { color:var(--ink); }
 .idx-note { display:block; margin-top:12px; padding-left:14px; font:400 12px/1.5 'IBM Plex Mono',monospace; color:var(--meta); }
+
+/* The anthology's own contents -- the spine at a glance -- then its ledger,
+   separated by small section eyebrows. A contents row: the anthology book
+   (with its canonical designation) on the left, its chapter count and net on
+   the right; the row is an anchor into the ledger below. */
+.sp-eyebrow { margin:26px 0 0; font:600 10px/1 'IBM Plex Mono',monospace; letter-spacing:.3em; text-transform:uppercase; color:var(--dim); text-align:center; }
+.sp-toc { margin-bottom:8px; }
+.sp-row { display:flex; align-items:baseline; gap:16px; padding:7px 2px 7px 14px; border-bottom:1px solid var(--hair); text-decoration:none; }
+.sp-row:last-child { border-bottom:none; }
+.sp-label { flex:none; font:600 13px/1.4 'IBM Plex Mono',monospace; letter-spacing:.06em; color:var(--accent); white-space:nowrap; font-variant-numeric:tabular-nums; }
+.sp-count { flex:1; min-width:0; text-align:right; font:400 12px/1.4 'IBM Plex Mono',monospace; color:var(--meta); white-space:nowrap; font-variant-numeric:tabular-nums; }
+.sp-amt { flex:none; }
+.sp-row:hover .sp-label { text-decoration:underline; color:var(--accent-2); }
+.sp-row:hover .idx-amt { color:var(--ink); }
+/* An anchored ledger book lands with breathing room under the fixed viewport top. */
+.idx-book[id] { scroll-margin-top: 18px; }
+/* The β sigil is a mark, not a letter: exempt from the headers' small caps. */
+.no-tt { text-transform: none; }
 </style>
 <body>
 <div class="wrap">
@@ -125,15 +143,17 @@ a:hover { text-decoration: underline; }
 </div>
 
 <script type="module">
-import { INDEXED, isAddress, cachedLine, resolveLine, renderLine, lineNote } from './btc-index.js';
+import { INDEXED, isAddress, cachedLine, resolveLine, renderAnthology, spine, lineNote } from './btc-index.js';
 
-// An anthology is one address's own subset of the book: the same nested
-// volume/book/chapter contents the index shows, but a whole page to itself
-// and walked far deeper -- the index skims each entry, an anthology collects
-// it. The chapters within are still the book's own: every row opens
-// bitcoin-book.html at its transaction, so the anthology is navigated the
-// same way as the book it excerpts.
-const ANTHOLOGY_TX_PAGES = 40;   // ~1,000 transactions deep, vs the index's skim
+// An anthology is one address's own subset of the book, with the book's own
+// apparatus at its scale: a contents (its spine -- non-empty books
+// renumbered consecutively, annotated with their canonical designations)
+// and a ledger (every chapter, with its net gift). Every chapter row opens
+// bitcoin-book.html at its transaction, so an anthology is navigated the
+// same way as the book it excerpts. The map behind it aims for completeness
+// (blockbook's parallel pages; the esplora walk as capped fallback) -- and
+// only a complete map draws the spine, since anthology numbering is only
+// permanent when the whole history is in hand.
 
 const q = (new URLSearchParams(location.search).get('address') || '').trim();
 const addr = isAddress(q) ? q : (isAddress(q.toLowerCase()) ? q.toLowerCase() : null);
@@ -156,18 +176,27 @@ if (!addr) {
   const count = document.getElementById('anth-count');
   const showCount = (data) => {
     if (!data || !data.chapters.length) { count.textContent = ''; return; }
-    count.textContent = `${data.txCount.toLocaleString('en-US')} appearances · ${data.chapters.length.toLocaleString('en-US')} chapters collected`;
+    const parts = [
+      `${data.txCount.toLocaleString('en-US')} appearances`,
+      `${data.chapters.length.toLocaleString('en-US')} chapters`,
+    ];
+    const vols = spine(data);
+    if (vols) {
+      const books = vols.reduce((n, v) => n + v.books.length, 0);
+      parts.push(`${books.toLocaleString('en-US')} books`, `${vols.length.toLocaleString('en-US')} volumes`);
+    }
+    count.textContent = parts.join(' · ');
   };
 
-  // Cached line first -- instantly, offline included -- then the resolver
-  // confirms it against the chain or deepens it to anthology depth.
-  const cached = cachedLine(addr);
-  if (cached) { renderLine(el, cached); showCount(cached); }
-  else lineNote(el, '…');
-  resolveLine(addr, ANTHOLOGY_TX_PAGES).then((data) => {
-    renderLine(el, data);
-    showCount(data);
-  });
+  // The stored map first -- instantly, offline included -- then the resolver
+  // confirms it against the chain, tops it up, or maps afresh.
+  (async () => {
+    const cached = await cachedLine(addr);
+    if (cached) { renderAnthology(el, cached); showCount(cached); }
+    else lineNote(el, '…');
+    const data = await resolveLine(addr);
+    if (data !== cached) { renderAnthology(el, data); showCount(data); }
+  })();
 }
 </script>
 </body>
