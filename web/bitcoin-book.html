@@ -302,7 +302,17 @@ button:disabled { opacity: .4; cursor: not-allowed; }
    spanning the full width like the foot nav below. Explicit tracks: a hidden
    stepper (display:none) leaves the grid, and auto-placement would reflow
    the crumb into its column. */
-.chapter-nav { display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:16px; margin-bottom: 14px; }
+/* Anchored to the top of the screen, mirroring the foot nav's seat at the
+   bottom: sticky, so on a page taller than the viewport the eyebrow rides
+   the top edge -- prose scrolls behind its page-colour backing, the rule its
+   bottom edge -- and the two bars frame the screen. Top padding clears a
+   notch when running standalone. */
+.chapter-nav {
+  position: sticky; top: 0; z-index: 40;
+  display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:16px;
+  margin-bottom: 14px; padding: max(14px, env(safe-area-inset-top)) 0 14px;
+  border-bottom: 1px solid var(--rule); background: var(--page);
+}
 #chapter-prev { grid-column: 1; justify-self: start; }
 .chapter-num { grid-column: 2; }
 #chapter-next { grid-column: 3; justify-self: end; }
@@ -2955,8 +2965,9 @@ function slideOutAndStep(direction, axis = 'x') {
   // replacing a long one shrinks the document, and the browser would clamp
   // the scroll away right then -- ahead of the entering half's own scroll.
   // Any slack lands at the very end of the page, after the notation key.
-  const nav = document.querySelector('.chapter-nav');
-  const anchor = Math.max(0, nav.getBoundingClientRect().top + window.scrollY - 10);
+  // Measured on the article, the nav's static seat -- the sticky nav itself
+  // reports its stuck (viewport) position mid-scroll, not its place on the page.
+  const anchor = Math.max(0, $('chapter').getBoundingClientRect().top + window.scrollY - 10);
   document.body.style.minHeight = window.scrollY > anchor ? `${anchor + window.innerHeight}px` : '';
   ch.style.transition = 'none';
   ch.style.transform = '';
@@ -2989,9 +3000,10 @@ function consumeSlide() {
   // The nav header is the turn's fixed point of reference: scroll back at
   // most to the eyebrow -- never the document top -- while the live page is
   // still hidden, so the movement is never seen. (The ghost is fixed-
-  // position, so the scroll doesn't move it either.)
-  const nav = document.querySelector('.chapter-nav');
-  const anchor = Math.max(0, nav.getBoundingClientRect().top + window.scrollY - 10);
+  // position, so the scroll doesn't move it either.) Measured on the article,
+  // the nav's static seat -- the sticky nav itself reports its stuck
+  // (viewport) position mid-scroll, not its place on the page.
+  const anchor = Math.max(0, $('chapter').getBoundingClientRect().top + window.scrollY - 10);
   if (window.scrollY > anchor) window.scrollTo(0, anchor);
   const ch = $('page-slide');
   const off = pendingAxis === 'x' ? window.innerWidth : window.innerHeight;
