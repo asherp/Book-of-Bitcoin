@@ -82,16 +82,19 @@ a:hover { text-decoration: underline; }
 .masthead .home { margin-left:auto; font:500 12px/1 'IBM Plex Mono',monospace; letter-spacing:.04em; }
 
 /* The anthology's title page: a full leaf. The eyebrow names the form, the
-   serif names the anthology, the mono line beneath is the address itself --
-   and the address again in the book's own tongue: its scriptPubKey read as
-   Glossia prose, the same bytes every paying chapter encodes. Then its span:
-   the volumes and the dates its chapters run. Navigation continues downward
-   into the table of contents. */
+   serif names the anthology, and the address appears once, in the book's own
+   tongue: its scriptPubKey read as Glossia prose -- the same bytes every
+   paying chapter encodes, so the prose carries the address whole and the raw
+   base58/bech32 form has nothing left to add. (It appears, in mono, only as
+   the fallback when the engine can't be had.) Then the anthology's span: the
+   volumes and the dates its chapters run. Navigation continues downward into
+   the table of contents. */
 .anth-hero { min-height: calc(100vh - 130px); display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:20px 0 8px; }
 .anth-hero.bare { min-height:auto; padding-top:60px; }
 .page-eyebrow { font:600 11px/1 'IBM Plex Mono',monospace; letter-spacing:.3em; text-transform:uppercase; color:var(--accent); }
 .anth-title { margin:16px 0 0; font:500 30px/1.25 'Newsreader',serif; color:var(--ink); }
 .anth-addr { margin-top:10px; font:400 12px/1.5 'IBM Plex Mono',monospace; letter-spacing:.02em; color:var(--meta); word-break:break-all; }
+.anth-addr:empty { display:none; }
 .anth-prose { margin:22px 0 0; max-width:560px; font:400 16px/1.7 'Newsreader',serif; font-style:italic; color:var(--ink-soft); }
 .anth-prose:empty { display:none; }
 .anth-range { margin-top:22px; font:600 12px/1.6 'IBM Plex Mono',monospace; letter-spacing:.14em; text-transform:uppercase; color:var(--accent); }
@@ -209,20 +212,22 @@ if (!addr) {
   const title = entry ? entry.title : 'An uncollected address';
   document.title = `The βook of βitcoin — Anthology · ${entry ? entry.title : addr}`;
   document.getElementById('anth-title').textContent = title;
-  document.getElementById('anth-addr').textContent = addr;
 
-  // The address in the book's own tongue: its scriptPubKey Glossia-encoded,
-  // the same bytes (and so the same prose) every paying chapter carries. The
-  // engine is a build artifact (see README); absent or failing, the title
-  // page keeps the raw address alone.
+  // The address, once, in the book's own tongue: its scriptPubKey
+  // Glossia-encoded -- the same bytes (and so the same prose) every paying
+  // chapter carries, so the prose carries the address whole and the raw form
+  // stays off the leaf. The engine is a build artifact (see README); only
+  // when it can't be had does the mono address stand in.
   (async () => {
     const hex = addressScriptHex(addr);
-    if (!hex) return;
     try {
+      if (!hex) throw new Error('undecodable address form');
       const g = await import('./glossia-msg.js');
       await g.init();
       document.getElementById('anth-prose').textContent = g.encodeSeedPhrase(hex).prose;
-    } catch { /* engine not built or failed to load */ }
+    } catch {
+      document.getElementById('anth-addr').textContent = addr;
+    }
   })();
 
   const count = document.getElementById('anth-count');
