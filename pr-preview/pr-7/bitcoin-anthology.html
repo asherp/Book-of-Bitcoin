@@ -178,7 +178,7 @@ a:hover { text-decoration: underline; }
 </div>
 
 <script type="module">
-import { INDEXED, isAddress, addressScriptHex, cachedLine, resolveLine, renderAnthology, spine, blockTime, lineNote, reconciled } from './btc-index.js';
+import { INDEXED, isAddress, addressScriptHex, cachedLine, resolveLine, renderAnthology, spine, lineNote, reconciled } from './btc-index.js';
 import { volumeBookChapter, toRoman } from './btc-citation.js';
 
 // An anthology is one address's own subset of the book, opened the way a
@@ -257,21 +257,18 @@ if (!addr) {
     count.textContent = parts.join(' · ');
   };
 
-  // The anthology's span: the volumes its chapters run, and the dates. Times
-  // ride on chapters mapped since they carried them; a map stored before
-  // then answers with two block-header lookups until its next remapping.
+  // The anthology's span: the volumes its chapters run, and the dates --
+  // block times ride on every mapped chapter, so both ranges read straight
+  // off the map's first and last.
   const range = document.getElementById('anth-range');
-  const showRange = async (data) => {
+  const showRange = (data) => {
     if (!data || !data.chapters.length) { range.textContent = ''; return; }
     const first = data.chapters[0], last = data.chapters[data.chapters.length - 1];
     const v1 = volumeBookChapter(first.height).volume, v2 = volumeBookChapter(last.height).volume;
     const vols = v1 === v2 ? `Volume ${toRoman(v1)}` : `Volumes ${toRoman(v1)} – ${toRoman(v2)}`;
-    range.textContent = vols;
-    const t1 = first.time ?? await blockTime(first.height);
-    const t2 = last.time ?? await blockTime(last.height);
-    if (!t1 || !t2) return;
+    if (!first.time || !last.time) { range.textContent = vols; return; }
     const fmt = (s) => new Date(s * 1000).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-    const dates = fmt(t1) === fmt(t2) ? fmt(t1) : `${fmt(t1)} – ${fmt(t2)}`;
+    const dates = fmt(first.time) === fmt(last.time) ? fmt(first.time) : `${fmt(first.time)} – ${fmt(last.time)}`;
     range.textContent = `${vols} · ${dates}`;
   };
 
