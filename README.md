@@ -17,8 +17,8 @@ compiled to WASM) is consumed as a published
   esplora-style endpoint (Blockstream, mempool.space, or your own node) and
   renders it as prose
 - `web/bitcoin-contents.html` — table of contents / notable blocks
-- `web/bitcoin-index.html` — back-of-book index: notable donation addresses,
-  each listing every chapter it appears in
+- `web/bitcoin-index.html` — the Anthologies shelf: notable donation
+  addresses, each previewed at book level and opening into its own anthology
 - `web/bitcoin-anthology.html` — one address's anthology: its own subset of
   the book, with its own contents (non-empty books renumbered into a stable
   spine) and ledger; complete address maps arrive via public Blockbook
