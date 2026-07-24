@@ -168,10 +168,15 @@ body {
    Pinch-zoom stays native either way. */
 #page-frame { overflow: clip; }
 #page-frame.carousel-first { touch-action: pan-x pinch-zoom; }
-/* Every title leaf stands as tall as a chapter page (~30rem of content), so
-   the foot nav sits in the same place whether the leaf carries a chapter's
-   full head or a volume's few lines. The min-height lives on the frame, not
-   the slide, so gesture precedence can still measure the natural content. */
+/* The foot nav sits in the same place on every page: the bottom of the
+   screen. The wrap stretches to the viewport, the chapter fills the wrap,
+   and all slack lands inside the frame -- never the slide -- so a short
+   page's nav rests exactly where a tall page's sticky bar rides, and
+   gesture precedence can still measure the natural content (it swaps the
+   frame's height for the slide's; see updateGesturePrecedence). */
+.wrap { display: flex; flex-direction: column; min-height: 100vh; min-height: 100dvh; }
+#chapter { flex: 1 0 auto; display: flex; flex-direction: column; }
+#page-frame { flex: 1 0 auto; }
 #chapter.title-leaf #page-frame { min-height: 30rem; }
 /* Volume and book leaves set like a manuscript title page: the title drops
    to the optical upper third with its mark beneath, and the span's imprint
@@ -183,7 +188,8 @@ body {
 #chapter.span-leaf .chapter-title { margin-top: 4.5rem; }
 #chapter.span-leaf .chapter-hash { margin-top: 1.6rem; }
 #chapter.span-leaf .chapter-frontispiece { margin-top: auto; margin-bottom: 3.75rem; }
-.wrap { max-width: 720px; margin: 0 auto; padding: 48px 22px 100px; }
+/* No bottom padding: the foot nav bar is the page's own floor. */
+.wrap { max-width: 720px; margin: 0 auto; padding: 48px 22px 0; }
 a { color: var(--accent); text-decoration: none; }
 a:hover { text-decoration: underline; }
 .mono { font-family: 'IBM Plex Mono', monospace; }
@@ -3026,7 +3032,12 @@ function updateGesturePrecedence() {
   gesture.carouselFirst = short;
   $('page-frame').classList.toggle('carousel-first', short);
 }
-new ResizeObserver(updateGesturePrecedence).observe(document.body);
+// Observed on the slide as well as the body: with the shell stretched to the
+// viewport (the foot nav's fixed seat), every short page's body measures the
+// same, so only the slide's natural height betrays a page change.
+const gestureObserver = new ResizeObserver(updateGesturePrecedence);
+gestureObserver.observe(document.body);
+gestureObserver.observe($('page-slide'));
 window.addEventListener('resize', updateGesturePrecedence);
 
 (() => {
