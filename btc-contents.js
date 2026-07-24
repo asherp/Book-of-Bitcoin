@@ -1,6 +1,7 @@
 // btc-contents.js — the curated table of contents for the Bitcoin Book: notable
-// blocks and transactions. Shared by bitcoin-book.html (the "Bookmarks" list in
-// the lookup card) and bitcoin-contents.html (the table-of-contents page).
+// blocks and transactions. Shared by bitcoin-book.html (which names a curated
+// section beneath its § number) and bitcoin-contents.html (the table-of-contents
+// page).
 //
 // Each `id` is handed straight to the book's lookup: a bare number is a block
 // height, a 64-hex value a transaction id. Every entry is cited by its
