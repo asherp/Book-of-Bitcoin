@@ -677,30 +677,18 @@ export function periods(data) {
 // maxRows keeps the most recent rows (the map is ascending, so the cut is
 // the older head) with a leading note pointing at the anthology for the
 // whole; the trailing note names what an incomplete map never walked.
-// A run of entries as rows -- references on the left, amounts on the
+// A run of entries, one line each: the fully resolved reference on the
+// left (Roman volume, β book, ■ chapter -- the citation names every level
+// itself, so the run needs no headers of any kind), the amount on the
 // right, the most recent first (the whole ledger reads newest-down, the
-// direction the record is explored) -- APPENDED to el under their
-// reference headers alone: Volume, then Book, nothing temporal (reading
-// by time lives on the ledger's entries leaf). `cont` carries the header
-// state across appended runs, so an endless scroll continues a book
-// without repeating its heading; `held` marks rows with the chain's own
-// bookmarks. Returns cont for the next run. The callers own any clearing
-// and any notes around the run.
-export function renderRows(el, entries, cont = { volume: null, book: null }, held = null) {
-  const rows = entries.map((c) => ({ ...c, place: volumeBookChapter(c.height) })).reverse();
-  for (const row of rows) {
-    if (row.place.volume !== cont.volume) {
-      el.append(lineHead('idx-vol', `Volume ${toRoman(row.place.volume)}`));
-      cont.volume = row.place.volume;
-      cont.book = null;
-    }
-    if (row.place.book !== cont.book) {
-      el.append(lineHead('idx-book', `Book ${row.place.book}`));
-      cont.book = row.place.book;
-    }
-    el.append(lineRow(row, true, held));
+// direction the record is explored) -- APPENDED to el, so an endless
+// scroll just keeps appending. Grouping, temporal or otherwise, lives on
+// the ledger's entries leaf. `held` marks rows with the chain's own
+// bookmarks. The callers own any clearing and any notes around the run.
+export function renderRows(el, entries, held = null) {
+  for (const c of [...entries].reverse()) {
+    el.append(lineRow({ ...c, place: volumeBookChapter(c.height) }, held));
   }
-  return cont;
 }
 
 export function renderLine(el, data, maxRows = Infinity) {
@@ -874,9 +862,9 @@ function ledgerRow(c, place, balance, lastVol, lastBook, held) {
   return row;
 }
 
-function lineRow({ height, txid, sats, place }, underBook, held) {
+function lineRow({ txid, sats, place }, held) {
   const row = document.createElement('a');
-  row.className = 'idx-row' + (underBook ? ' under-book' : '');
+  row.className = 'idx-row';
   row.href = citeHref(txid);
   if (held) {
     const resting = sats > 0 ? held.get(txid) ?? 0 : 0;
@@ -884,7 +872,7 @@ function lineRow({ height, txid, sats, place }, underBook, held) {
     else row.classList.add('spent');
   }
   const r = document.createElement('span'); r.className = 'idx-ref';
-  r.textContent = underBook ? `■${place.chapter}` : `β${place.book} ■${place.chapter}`;
+  r.textContent = `${toRoman(place.volume)} β${place.book} ■${place.chapter}`;
   const amt = document.createElement('span'); amt.className = 'idx-amt';
   amt.textContent = formatNetBtc(sats);
   row.append(r, amt);

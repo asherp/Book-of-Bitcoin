@@ -477,7 +477,7 @@ if (!list.length) {
     const cached = await cachedLine(addr);
     if (!alive()) return;
     let byTxid = null;     // held marks, once the snapshot agrees
-    let cont, rowsEl, foot, note, rendered, io;
+    let rowsEl, foot, note, rendered, io;
     let busy = false;      // one draw at a time; the re-arm retriggers
     const scroll = async () => {
       if (busy || !alive()) return;
@@ -489,7 +489,7 @@ if (!list.length) {
       const len = line.entries.length;
       const take = Math.min(len - rendered, PAGE);
       if (take > 0) {
-        cont = renderRows(rowsEl, line.entries.slice(len - rendered - take, len - rendered), cont, byTxid);
+        renderRows(rowsEl, line.entries.slice(len - rendered - take, len - rendered), byTxid);
         rendered += take;
       }
       note.textContent = stateText(line);   // the reach grows as the reader reads
@@ -515,7 +515,6 @@ if (!list.length) {
       foot = document.createElement('span');
       foot.className = 'idx-note sync-note';
       el.append(note, rowsEl, foot);
-      cont = { volume: null, book: null };
       rendered = 0;
       io = new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) scroll(); },
                                     { rootMargin: '1600px 0px' });
