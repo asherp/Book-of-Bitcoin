@@ -428,6 +428,18 @@ export async function resolveLine(address, onProgress) {
   return data;
 }
 
+// The lightest possible ask: the address's chain state -- balance and
+// confirmed transaction count -- one basic-details request, no transaction
+// pages. The shelf shows balances with this alone, starting nobody's sync;
+// the mapping begins only when a reader steps into the ledger itself.
+export async function addressState(address) {
+  for (const mirror of BLOCKBOOK_MIRRORS) {
+    const j = await blockbookJson(mirror, `/address/${address}?details=basic`);
+    if (j && typeof j.txs === 'number') return { balance: Number(j.balance ?? 0), txCount: j.txs };
+  }
+  return null;
+}
+
 // The held view: the address's confirmed UTXOs -- the chain's own bookmarks,
 // each unspent output resting where its transaction left it. This is the
 // mutable complement of the map: spends shrink it, so it is a snapshot,

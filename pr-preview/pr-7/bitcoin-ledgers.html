@@ -121,21 +121,15 @@ a:hover { text-decoration: underline; }
 </div>
 
 <script type="module">
-import { INDEXED, isAddress, cachedLine, resolveLine, formatBalanceBtc, reconciled } from './btc-index.js';
+import { INDEXED, isAddress, cachedLine, addressState, formatBalanceBtc } from './btc-index.js';
 
 // The shelf lists the ledgers: title and current balance, nothing else --
-// each row opens its ledger's title page, where the address's prose, its
-// span, its summary, and its entries live. The curated donation ledgers
-// come first; any ledger the reader has kept (from its own page) follows.
-// The mapping and store are btc-index.js's, shared with the ledger pages,
-// so a balance the shelf resolves is a map the title page opens instantly.
-//
-// Every row navigates into its ledger -- the name is always a way in; the
-// ledger page shows whatever data exists and its sync state at that level.
-// The right side carries the state here: the balance once the ledger
-// reconciles (the entries' sum equal to the chain's balance -- see
-// btc-index.js), else its syncing progress, its unreconciled notice, or an
-// unreachable state that retries in place when tapped.
+// and it asks for nothing else: one basic-details request per address (the
+// balance is an address property, exact without any mapping), so browsing
+// the shelf starts nobody's sync. The mapping begins only when a reader
+// steps into a ledger, whose page shows whatever that level knows and its
+// sync state. The curated donation ledgers come first; any ledger the
+// reader has kept (from its own page) follows.
 
 // A reader's own query joins the shelf: ?address=<addr> prepends a temporary
 // row (titled by the address itself). A query that duplicates a curated
@@ -152,15 +146,6 @@ const kept = (() => {
   .map((k) => ({ title: k.title || k.address, address: k.address }));
 const entries = [...adhoc, ...INDEXED, ...kept];
 
-// A gated row's settled state: how much of the address's history the map
-// holds (still syncing), a whole map whose numbers nonetheless disagree
-// (unreconciled -- a transient the next visit converges), or a plain dash
-// when nothing resolved at all.
-const progressText = (data) => {
-  if (!data) return 'unreachable — retry';
-  if (!data.complete) return `syncing ${data.walked.toLocaleString('en-US')} / ${data.txCount.toLocaleString('en-US')}`;
-  return 'unreconciled';
-};
 
 // Build every row at once -- titles are known offline -- and let each total
 // fill in from the store and refresh as its map resolves. Built onto a
@@ -178,40 +163,30 @@ for (const e of entries) {
   amt.textContent = '…';
   row.append(t, amt);
   index.append(row);
-  // Reconciled: the balance. Not yet: the state where the balance will be --
-  // the row navigates either way; the ledger page shows what's known there.
-  const show = (data) => {
-    if (reconciled(data)) {
-      amt.textContent = formatBalanceBtc(data.balance);
-      amt.classList.remove('pending');
-      row.classList.remove('gated');
-    } else {
-      amt.textContent = progressText(data);
-      amt.classList.add('pending');
-      row.classList.add('gated');
-    }
-  };
-  // Resolution, retryable: tapping an unreachable state retries that row in
-  // place (the tap is caught before the row navigates), so a throttled
-  // moment doesn't strand the shelf until a full reload.
-  let settled;         // undefined while in flight; the resolved line (or null) after
+  // The balance, three ways: last-known from the store instantly (in the
+  // quiet pending style, an honest "as of last sync"), then the live one
+  // from the chain stats in full ink -- or, with neither to be had,
+  // "unreachable" retrying in place when tapped (the tap is caught before
+  // the row navigates), so a throttled moment doesn't strand the shelf.
+  let settled;         // undefined while in flight; the state (or null) after
   const resolve = async () => {
     settled = undefined;
     amt.textContent = '…';
     amt.classList.add('pending');
     const cached = await cachedLine(e.address);
-    if (cached) show(cached);
-    // The sync, live: pages tick the row as they land. A row that opens
-    // straight from a reconciled store skips the theater -- its quiet
-    // revalidation shouldn't dress the balance back down to a progress line.
-    const onProgress = reconciled(cached) ? undefined : (gathered, total) => {
-      amt.textContent = `syncing ${gathered.toLocaleString('en-US')} / ${total.toLocaleString('en-US')}`;
-      amt.classList.add('pending');
-      row.classList.add('gated');
-    };
-    const data = await resolveLine(e.address, onProgress);
-    settled = data ?? null;
-    show(settled);
+    if (cached?.balance != null) amt.textContent = formatBalanceBtc(cached.balance);
+    const state = await addressState(e.address);
+    if (state) {
+      settled = state;
+      amt.textContent = formatBalanceBtc(state.balance);
+      amt.classList.remove('pending');
+      row.classList.remove('gated');
+    } else if (cached?.balance != null) {
+      settled = { balance: cached.balance };   // last known; the ledger page will refresh it
+    } else {
+      settled = null;
+      amt.textContent = 'unreachable — retry';
+    }
   };
   amt.addEventListener('click', (ev) => {
     if (settled !== null) return;           // any real state: the row navigates
