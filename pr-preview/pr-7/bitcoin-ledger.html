@@ -369,12 +369,17 @@ if (!addr) {
 
   // The stored map first -- instantly, offline included -- then the resolver
   // confirms it against the chain (topping up or mapping afresh) while the
-  // held snapshot arrives beside it; the final render carries both.
+  // held snapshot arrives beside it; the final render carries both. While a
+  // fresh mapping runs, the gate's syncing line ticks with it.
   (async () => {
     const heldP = heldCoins(addr);
     const cached = await cachedLine(addr);
     view(cached, null);
-    const [data, held] = await Promise.all([resolveLine(addr), heldP]);
+    const onProgress = reconciled(cached) ? undefined : (gathered, total) => {
+      const note = el.querySelector('.idx-note');
+      if (note) note.textContent = `still syncing — ${gathered.toLocaleString('en-US')} of ${total.toLocaleString('en-US')} transactions gathered; the ledger opens once its entries reconcile with its balance`;
+    };
+    const [data, held] = await Promise.all([resolveLine(addr, onProgress), heldP]);
     if (data) view(data, held);
     else if (!cached) { el.replaceChildren(); lineNote(el, '— the chain could not be reached'); }
   })();

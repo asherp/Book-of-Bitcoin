@@ -241,7 +241,7 @@ function blockbookTouches(txs, address) {
 // forward until a short page says done. All pages or nothing: a map with a
 // hole in the middle is worse than no map, so any unrecoverable page fails
 // the whole attempt and the caller keeps what it had.
-async function blockbookMap(address, from) {
+async function blockbookMap(address, from, onProgress) {
   outer: for (const mirror of BLOCKBOOK_MIRRORS) {
     const first = await blockbookJson(mirror, blockbookPath(address, 1, from));
     if (!first || typeof first.txs !== 'number') continue;
@@ -250,6 +250,11 @@ async function blockbookMap(address, from) {
     const size = Number(first.itemsOnPage) > 0 ? Number(first.itemsOnPage) : BLOCKBOOK_PAGE;
     const firstLen = (first.transactions || []).length;
     const reported = Number(first.totalPages);
+    // Live sync state for whoever is watching: transactions gathered so far
+    // against the address's total, ticked as each page lands.
+    let gathered = firstLen;
+    const tick = () => { try { onProgress?.(gathered, first.txs); } catch (_) { /* a watcher's error is not the map's */ } };
+    tick();
     if (!from || firstLen >= size) {
       if (reported > 0 || !from) {
         const pages = reported > 0 ? reported : Math.max(1, Math.ceil(first.txs / size));
@@ -263,6 +268,8 @@ async function blockbookMap(address, from) {
                       await blockbookJson(mirror, blockbookPath(address, p, from));   // one retry
             if (!j) { failed = true; return; }
             chunks[p - 1] = blockbookTouches(j.transactions, address);
+            gathered += (j.transactions || []).length;
+            tick();
           }
         };
         await Promise.all(Array.from({ length: Math.min(BLOCKBOOK_CONCURRENCY, Math.max(pages - 1, 0)) }, worker));
@@ -275,6 +282,8 @@ async function blockbookMap(address, from) {
           if (!j) continue outer;
           const batch = j.transactions || [];
           chunks.push(blockbookTouches(batch, address));
+          gathered += batch.length;
+          tick();
           if (batch.length < size) break;
         }
       }
@@ -379,9 +388,9 @@ async function saveLine(address, data) {
 // carries whatever is. Heights above the frontier are disjoint from the map
 // by construction, so merging is concatenation. Unreachable mirrors leave
 // the stored map standing, complete as of its writing.
-async function topUp(address, cached) {
+async function topUp(address, cached, onProgress) {
   const frontier = (cached.entries[cached.entries.length - 1]?.height ?? 0) + 1;
-  const bb = await blockbookMap(address, frontier);
+  const bb = await blockbookMap(address, frontier, onProgress);
   if (!bb) return cached;
   // The from-filter is re-applied locally: a mirror that ignored it (or
   // answered with overlap) must not double-count the mapped history.
@@ -396,11 +405,12 @@ async function topUp(address, cached) {
 // Resolve an address's map: the stored one confirmed-or-topped-up when it's
 // complete, else a fresh whole mapping. Returns the stored map unchanged
 // when the mirrors are unreachable (offline reads still work), null when
-// there's nothing at all to show.
-export async function resolveLine(address) {
+// there's nothing at all to show. `onProgress(gathered, total)` ticks as
+// pages land, so a page can show the sync live.
+export async function resolveLine(address, onProgress) {
   const cached = await cachedLine(address);
-  if (cached?.complete) return topUp(address, cached);
-  const map = await blockbookMap(address);
+  if (cached?.complete) return topUp(address, cached, onProgress);
+  const map = await blockbookMap(address, undefined, onProgress);
   if (!map) return cached ?? null;
   const data = {
     v: LINE_V, at: Date.now(), txCount: map.txCount, balance: map.balance, walked: map.touches.length,
