@@ -303,8 +303,8 @@ if (!addr) {
   const count = document.getElementById('anth-count');
   const n = (v, one, many) => `${v.toLocaleString('en-US')} ${v === 1 ? one : many}`;
   const showCount = (data) => {
-    if (!data || !data.chapters.length) { count.textContent = ''; return; }
-    const parts = [n(data.txCount, 'entry', 'entries')];
+    if (!data || !data.entries.length) { count.textContent = ''; return; }
+    const parts = [n(data.entries.length, 'entry', 'entries')];
     const years = periods(data);
     if (years) {
       const quarters = years.reduce((nq, y) => nq + y.quarters.length, 0);
@@ -318,8 +318,8 @@ if (!addr) {
   // off the map's first and last.
   const range = document.getElementById('anth-range');
   const showRange = (data) => {
-    if (!data || !data.chapters.length) { range.textContent = ''; return; }
-    const first = data.chapters[0], last = data.chapters[data.chapters.length - 1];
+    if (!data || !data.entries.length) { range.textContent = ''; return; }
+    const first = data.entries[0], last = data.entries[data.entries.length - 1];
     const v1 = volumeBookChapter(first.height).volume, v2 = volumeBookChapter(last.height).volume;
     const vols = v1 === v2 ? `Volume ${toRoman(v1)}` : `Volumes ${toRoman(v1)} – ${toRoman(v2)}`;
     if (!first.time || !last.time) { range.textContent = vols; return; }
@@ -342,9 +342,9 @@ if (!addr) {
     if (held.count === 0) {
       heldEl.append('nothing still held — every gift has moved on');
     } else {
-      heldEl.append(amt, ` still held · ${held.count.toLocaleString('en-US')} coins resting in ${held.byHeight.size.toLocaleString('en-US')} chapters`);
+      heldEl.append(amt, ` still held · ${n(held.count, 'coin', 'coins')} outstanding`);
     }
-    return held.byHeight;
+    return held.byTxid;
   };
 
   // The anthology opens only reconciled: its ledger sum equal to the chain's
@@ -363,7 +363,7 @@ if (!addr) {
     range.textContent = '';
     heldEl.replaceChildren();
     lineNote(el, data
-      ? `still syncing — ${data.walked.toLocaleString('en-US')} of ${data.txCount.toLocaleString('en-US')} appearances collected; the ledger opens once its entries reconcile with its balance`
+      ? `still syncing — ${data.walked.toLocaleString('en-US')} of ${data.txCount.toLocaleString('en-US')} transactions collected; the ledger opens once its entries reconcile with its balance`
       : '…');
   };
 
