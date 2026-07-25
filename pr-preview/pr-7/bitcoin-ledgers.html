@@ -217,7 +217,7 @@ a:hover { text-decoration: underline; }
 </div>
 
 <script type="module">
-import { INDEXED, isAddress, cachedLine, addressState, lastKnownState, formatBalanceBtc, blockbookFailureText,
+import { INDEXED, isAddress, keptLedgers, sameAddresses, cachedLine, addressState, lastKnownState, formatBalanceBtc, blockbookFailureText,
          DEFAULT_BLOCKBOOK, blockbookCustom, blockbookSelected, blockbookPageSize, setBlockbookSettings } from './btc-index.js';
 
 // --- Settings: where the ledgers ask, and how much each ask carries.
@@ -291,20 +291,21 @@ import { INDEXED, isAddress, cachedLine, addressState, lastKnownState, formatBal
 // sync state. The curated donation ledgers come first; any ledger the
 // reader has kept (from its own page) follows.
 
-// A reader's own query joins the shelf: ?address=<addr> prepends a temporary
-// row (titled by the address itself). A query that duplicates a curated
-// address is dropped -- the curated title wins.
+// A reader's own query joins the shelf: ?address=<addr>[,<addr>…] prepends a
+// temporary ledger of those addresses (titled by the first, with a count
+// when there are more). A query that duplicates a curated or kept ledger is
+// dropped -- the shelved title wins.
 const q = (new URLSearchParams(location.search).get('address') || '').trim();
-const adhoc = isAddress(q) && !INDEXED.some((e) => e.address === q)
-  ? [{ title: q, address: q }] : [];
+const qList = q.split(',').map((s) => s.trim()).filter(isAddress);
+const untitled = (l) => l.addresses[0] + (l.addresses.length > 1 ? ` +${l.addresses.length - 1}` : '');
 // The reader's kept ledgers (written by the ledger page's Keep button),
-// titled by their addresses, shelved after the curated ones.
-const kept = (() => {
-  try { const v = JSON.parse(localStorage.getItem('glossia-btc-ledgers')); return Array.isArray(v) ? v : []; }
-  catch { return []; }
-})().filter((k) => isAddress(k.address) && !INDEXED.some((e) => e.address === k.address) && !adhoc.some((e) => e.address === k.address))
-  .map((k) => ({ title: k.title || k.address, address: k.address }));
-const entries = [...adhoc, ...INDEXED, ...kept];
+// titled by their addresses when untitled, shelved after the curated ones.
+const kept = keptLedgers().filter((k) => !INDEXED.some((e) => sameAddresses(e.addresses, k.addresses)));
+const adhoc = qList.length
+  && !INDEXED.some((e) => sameAddresses(e.addresses, qList))
+  && !kept.some((k) => sameAddresses(k.addresses, qList))
+  ? [{ title: '', addresses: qList }] : [];
+const entries = [...adhoc, ...INDEXED, ...kept].map((e) => ({ ...e, title: e.title || untitled(e) }));
 
 
 // Build every row at once -- titles are known offline -- and let each total
@@ -317,7 +318,7 @@ const probes = [];   // one per row, walked in order below
 for (const e of entries) {
   const row = document.createElement('a');
   row.className = 'shelf-row gated';
-  row.href = `bitcoin-ledger.html?address=${e.address}`;   // the name always leads in
+  row.href = `bitcoin-ledger.html?address=${e.addresses.join(',')}`;   // the name always leads in
   const t = document.createElement('span'); t.className = 'shelf-title';
   t.textContent = e.title;
   const amt = document.createElement('span'); amt.className = 'shelf-amt pending';
@@ -332,13 +333,28 @@ for (const e of entries) {
   // caught before the row navigates), so a bad moment doesn't strand the
   // shelf.
   let settled;         // undefined while in flight; the state (or null) after
+  // A ledger's balance is the sum over its member addresses -- and a sum is
+  // shown only when every member answered (a partial sum would read as the
+  // whole). One stale member makes the whole figure last-known.
+  const stateOf = async (ask) => {
+    const states = [];
+    for (const a of e.addresses) {
+      const s = ask ? await addressState(a) : lastKnownState(a);
+      if (!s) return null;
+      states.push(s);
+    }
+    return { balance: states.reduce((n, s) => n + s.balance, 0),
+             stale: states.some((s) => s.stale) || undefined };
+  };
   const resolve = async (ask = true) => {
     settled = undefined;
     amt.textContent = '…';
     amt.classList.add('pending');
-    const cached = await cachedLine(e.address);
-    if (cached?.balance != null) amt.textContent = formatBalanceBtc(cached.balance);
-    const state = ask ? await addressState(e.address) : lastKnownState(e.address);
+    const lines = await Promise.all(e.addresses.map((a) => cachedLine(a)));
+    const cached = lines.every((c) => c?.balance != null)
+      ? { balance: lines.reduce((n, c) => n + c.balance, 0) } : null;
+    if (cached) amt.textContent = formatBalanceBtc(cached.balance);
+    const state = await stateOf(ask);
     if (state && !state.stale) {
       settled = state;
       amt.textContent = formatBalanceBtc(state.balance);
