@@ -192,9 +192,49 @@ export const reconciled = (data) =>
 // mirrors leave the stored state standing -- complete, or a checkpoint to
 // resume -- or, with nothing stored, the syncing gate.
 
-const BLOCKBOOK_MIRRORS = ['https://btc1.trezor.io/api/v2', 'https://btc2.trezor.io/api/v2'];
-const BLOCKBOOK_PAGE = 1000;
+// --- Where and how the chain is asked: the reader's to set (the Ledgers
+// page's Settings), stored in localStorage and read at call time, so a
+// change applies from the very next fetch. `Where`: the Blockbook instances
+// tried, in order, the selected one first -- Trezor's public pair by
+// default, a self-hosted node by choice. `How`: the page size, i.e. how
+// much history each height-range ask carries -- smaller bites are gentler
+// on public instances and checkpoint more often; bigger ones finish sooner.
+export const DEFAULT_BLOCKBOOK = ['https://btc1.trezor.io/api/v2', 'https://btc2.trezor.io/api/v2'];
+const BB_CUSTOM_KEY = 'glossia-btc-blockbook-custom';
+const BB_SELECTED_KEY = 'glossia-btc-blockbook-selected';
+const BB_PAGESIZE_KEY = 'glossia-btc-blockbook-pagesize';
+const BLOCKBOOK_PAGE_DEFAULT = 1000;
 const BLOCKBOOK_CONCURRENCY = 4;
+export function blockbookCustom() {
+  try { const v = JSON.parse(localStorage.getItem(BB_CUSTOM_KEY)); return Array.isArray(v) ? v.filter((u) => typeof u === 'string') : []; }
+  catch { return []; }
+}
+function blockbookMirrors() {
+  const all = [...DEFAULT_BLOCKBOOK, ...blockbookCustom()];
+  let sel = null;
+  try { sel = localStorage.getItem(BB_SELECTED_KEY); } catch { /* unavailable */ }
+  return sel && all.includes(sel) ? [sel, ...all.filter((u) => u !== sel)] : all;
+}
+export const blockbookSelected = () => blockbookMirrors()[0];
+export function blockbookPageSize() {
+  let v = NaN;
+  try { v = Number(localStorage.getItem(BB_PAGESIZE_KEY)); } catch { /* unavailable */ }
+  return v >= 25 && v <= 1000 ? Math.floor(v) : BLOCKBOOK_PAGE_DEFAULT;
+}
+// The settings writer: pass only what changes; null restores a default.
+export function setBlockbookSettings({ custom, selected, pageSize } = {}) {
+  try {
+    if (custom !== undefined) localStorage.setItem(BB_CUSTOM_KEY, JSON.stringify(custom));
+    if (selected !== undefined) {
+      if (selected === null) localStorage.removeItem(BB_SELECTED_KEY);
+      else localStorage.setItem(BB_SELECTED_KEY, selected);
+    }
+    if (pageSize !== undefined) {
+      if (pageSize === null) localStorage.removeItem(BB_PAGESIZE_KEY);
+      else localStorage.setItem(BB_PAGESIZE_KEY, String(pageSize));
+    }
+  } catch { /* unavailable; settings just don't stick */ }
+}
 
 // One blockbook request, with patience: a throttle (429) or a server-side
 // stumble (5xx) gets brief backed-off retries before the mirror is given up
@@ -219,7 +259,7 @@ async function blockbookJson(mirror, path) {
 // below one (the checkpointed walk's cursor -- that set is closed history,
 // immutable, so its pagination never shifts).
 const blockbookPath = (address, page, from, to) =>
-  `/address/${address}?details=txslight&pageSize=${BLOCKBOOK_PAGE}&page=${page}` +
+  `/address/${address}?details=txslight&pageSize=${blockbookPageSize()}&page=${page}` +
   (from ? `&from=${from}` : '') + (to != null ? `&to=${to}` : '');
 
 // A blockbook transaction's touches on the address: what its outputs paid
@@ -247,12 +287,12 @@ function blockbookTouches(txs, address) {
 // unrecoverable page fails the attempt and the caller keeps what it had.
 // (The whole-history walk lives in mapWhole, which banks as it goes.)
 async function blockbookMap(address, from, onProgress) {
-  outer: for (const mirror of BLOCKBOOK_MIRRORS) {
+  outer: for (const mirror of blockbookMirrors()) {
     const first = await blockbookJson(mirror, blockbookPath(address, 1, from));
     if (!first || typeof first.txs !== 'number') continue;
     const chunks = [blockbookTouches(first.transactions, address)];
     // The page size actually served (the instance may cap the request's).
-    const size = Number(first.itemsOnPage) > 0 ? Number(first.itemsOnPage) : BLOCKBOOK_PAGE;
+    const size = Number(first.itemsOnPage) > 0 ? Number(first.itemsOnPage) : blockbookPageSize();
     const firstLen = (first.transactions || []).length;
     const reported = Number(first.totalPages);
     // Live sync state for whoever is watching: transactions gathered so far
@@ -427,13 +467,13 @@ async function mapWhole(address, resume, onProgress) {
   const tick = () => { try { onProgress?.(walked, txCount); } catch (_) { /* a watcher's error is not the map's */ } };
   if (resume) tick();
   let madeProgress = false;
-  mirrors: for (const mirror of BLOCKBOOK_MIRRORS) {
+  mirrors: for (const mirror of blockbookMirrors()) {
     for (;;) {
       // A fresh run's first ask is unfiltered -- it learns the set's ceiling
       // and the address totals; every later ask is ≤ cursor.
       const j = await blockbookJson(mirror, blockbookPath(address, 1, undefined, cursor));
       if (!j || typeof j.txs !== 'number') continue mirrors;
-      const size = Number(j.itemsOnPage) > 0 ? Number(j.itemsOnPage) : BLOCKBOOK_PAGE;
+      const size = Number(j.itemsOnPage) > 0 ? Number(j.itemsOnPage) : blockbookPageSize();
       if (ceil === null) { txCount = j.txs; balance = Number(j.balance ?? 0); }
       let recs = blockbookTouches(j.transactions, address);
       if (ceil === null) ceil = recs[0]?.height ?? 0;
@@ -491,7 +531,7 @@ export async function resolveLine(address, onProgress) {
 // pages. The shelf shows balances with this alone, starting nobody's sync;
 // the mapping begins only when a reader steps into the ledger itself.
 export async function addressState(address) {
-  for (const mirror of BLOCKBOOK_MIRRORS) {
+  for (const mirror of blockbookMirrors()) {
     const j = await blockbookJson(mirror, `/address/${address}?details=basic`);
     if (j && typeof j.txs === 'number') return { balance: Number(j.balance ?? 0), txCount: j.txs };
   }
@@ -508,7 +548,7 @@ export async function addressState(address) {
 // identity (Σ held = balance = Σ entries); callers display the held view
 // only when it agrees, the same discipline the gate keeps.
 export async function heldCoins(address) {
-  for (const mirror of BLOCKBOOK_MIRRORS) {
+  for (const mirror of blockbookMirrors()) {
     const utxos = await blockbookJson(mirror, `/utxo/${address}?confirmed=true`);
     if (!Array.isArray(utxos)) continue;
     const byTxid = new Map();
