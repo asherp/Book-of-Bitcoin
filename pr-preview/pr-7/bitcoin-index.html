@@ -1,7 +1,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>The βook of βitcoin — Anthologies</title>
-<meta name="description" content="The anthologies of the Glossia Bitcoin Book: notable donation addresses, each collected into its own subset of the book — every chapter it appears in, read as a ledger of giving.">
+<title>The βook of βitcoin — Ledgers</title>
+<meta name="description" content="The ledgers of the Glossia Bitcoin Book: notable donation addresses — and any the reader keeps — each a view of the manuscript focused on amounts, reconciled against the chain.">
 <link rel="icon" type="image/png" sizes="32x32" href="./icons/beta-icon-32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="./icons/beta-icon-16.png">
 <link rel="icon" href="./icons/beta-icon.svg" type="image/svg+xml">
@@ -47,7 +47,7 @@
         if (retried) {
           const s = document.createElement('span');
           s.className = 'idx-note';
-          s.textContent = 'The anthologies failed to load — reload to retry.';
+          s.textContent = 'The ledgers failed to load — reload to retry.';
           idx.replaceChildren(s);
           return;
         }
@@ -110,7 +110,7 @@ a:hover { text-decoration: underline; }
   </div>
 
   <header class="page-head">
-    <div class="page-eyebrow">Anthologies</div>
+    <div class="page-eyebrow">Ledgers</div>
   </header>
 
   <div id="index"></div>
@@ -119,13 +119,14 @@ a:hover { text-decoration: underline; }
 <script type="module">
 import { INDEXED, isAddress, cachedLine, resolveLine, formatBalanceBtc, reconciled } from './btc-index.js';
 
-// The shelf lists the anthologies: title and current balance, nothing else --
-// each row opens its anthology's title page, where the address, its prose,
-// its span, its contents, and its index live. The mapping and store are
-// btc-index.js's, shared with the anthology pages, so a balance the shelf
-// resolves is a map the title page opens instantly.
+// The shelf lists the ledgers: title and current balance, nothing else --
+// each row opens its ledger's title page, where the address's prose, its
+// span, its summary, and its entries live. The curated donation ledgers
+// come first; any ledger the reader has kept (from its own page) follows.
+// The mapping and store are btc-index.js's, shared with the ledger pages,
+// so a balance the shelf resolves is a map the title page opens instantly.
 //
-// A row opens only once its anthology reconciles -- the ledger sum equal to
+// A row opens only once its ledger reconciles -- the entries' sum equal to
 // the chain's balance, the double-entry proof the map is whole (see
 // btc-index.js). Until then the row stands gated: its syncing progress where
 // the balance will be, and no way in.
@@ -136,7 +137,14 @@ import { INDEXED, isAddress, cachedLine, resolveLine, formatBalanceBtc, reconcil
 const q = (new URLSearchParams(location.search).get('address') || '').trim();
 const adhoc = isAddress(q) && !INDEXED.some((e) => e.address === q)
   ? [{ title: q, address: q }] : [];
-const entries = [...adhoc, ...INDEXED];
+// The reader's kept ledgers (written by the ledger page's Keep button),
+// titled by their addresses, shelved after the curated ones.
+const kept = (() => {
+  try { const v = JSON.parse(localStorage.getItem('glossia-btc-ledgers')); return Array.isArray(v) ? v : []; }
+  catch { return []; }
+})().filter((k) => isAddress(k.address) && !INDEXED.some((e) => e.address === k.address) && !adhoc.some((e) => e.address === k.address))
+  .map((k) => ({ title: k.title || k.address, address: k.address }));
+const entries = [...adhoc, ...INDEXED, ...kept];
 
 // A gated row's progress line: how much of the address's history the map
 // holds so far. A line that failed to resolve at all shows a plain dash.
