@@ -169,12 +169,12 @@ export const formatBalanceBtc = (sats) => formatNetBtc(sats).replace(/^[+−]/, 
 
 // The reconciliation test -- double-entry proof of a finished sync. Over a
 // truly complete confirmed history, the ledger identity is exact: the sum of
-// every chapter's net IS funded-minus-spent, the balance. So equality proves
-// the map whole, and inequality names it still syncing -- a capped walk, a
-// block that arrived mid-mapping, or a mirror that answered short. The pages
-// gate an anthology behind this: nothing is displayed or entered until its
-// numbers add up (the next revalidation converges it).
-export const ledgerSum = (data) => data.chapters.reduce((n, c) => n + c.sats, 0);
+// every entry (credits less debits) IS funded-minus-spent, the balance. So
+// equality proves the map whole, and inequality names it still syncing -- a
+// capped walk, a block that arrived mid-mapping, or a mirror that answered
+// short. The pages gate a ledger behind this: nothing is displayed or
+// entered until its numbers add up (the next revalidation converges it).
+export const ledgerSum = (data) => data.entries.reduce((n, c) => n + c.sats, 0);
 export const reconciled = (data) =>
   !!data && data.complete && data.balance != null && ledgerSum(data) === data.balance;
 
@@ -214,17 +214,19 @@ const blockbookPath = (address, page, from) =>
   `/address/${address}?details=txslight&pageSize=${BLOCKBOOK_PAGE}&page=${page}` +
   (from ? `&from=${from}` : '');
 
-// A blockbook transaction's touches on the address, as {height, txid, sats}.
-// Mempool transactions ride with a non-positive height and are left out --
-// the map holds mined history only.
+// A blockbook transaction's touches on the address: what its outputs paid
+// in (credit) and its inputs drew out (debit), kept apart -- a ledger does
+// not net within a transaction, let alone within a block. One record per
+// transaction; the entries derive from it. Mempool transactions ride with a
+// non-positive height and are left out -- the map holds mined history only.
 function blockbookTouches(txs, address) {
   const out = [];
   for (const t of txs || []) {
     if (!(t.blockHeight > 0)) continue;
-    let sats = 0;
-    for (const o of t.vout || []) if (o.addresses?.includes(address)) sats += Number(o.value || 0);
-    for (const i of t.vin || []) if (i.addresses?.includes(address)) sats -= Number(i.value || 0);
-    out.push({ height: t.blockHeight, txid: t.txid, sats, time: t.blockTime || null });
+    let credit = 0, debit = 0;
+    for (const o of t.vout || []) if (o.addresses?.includes(address)) credit += Number(o.value || 0);
+    for (const i of t.vin || []) if (i.addresses?.includes(address)) debit += Number(i.value || 0);
+    out.push({ height: t.blockHeight, txid: t.txid, time: t.blockTime || null, credit, debit });
   }
   return out;
 }
@@ -284,20 +286,22 @@ async function blockbookMap(address, from) {
   return null;
 }
 
-// Touches grouped into chapters, ascending: one row per block, the way a
-// book's index lists a page once however often the name recurs on it -- its
-// amount the *net* of every touch there. Sources list newest-first, so the
-// last write per height keeps the earliest transaction; that's the one the
-// chapter's row opens.
-function groupChapters(touches) {
-  const byHeight = new Map();
-  for (const t of touches) {
-    // A block has one timestamp; any of its transactions carries it.
-    byHeight.set(t.height, { txid: t.txid, time: t.time ?? byHeight.get(t.height)?.time ?? null, sats: (byHeight.get(t.height)?.sats ?? 0) + t.sats });
+// Records -> ledger entries, ascending. Each entry is one *side* of one
+// transaction: its outputs to the address (a credit, positive) or its inputs
+// from it (a debit, negative) -- never a block's net: blocks hold many
+// transactions, and an entry references what moved, not where it stood. A
+// transaction that both receives and spends makes two entries, credit
+// listed first; one that names the address without moving value posts a
+// bare 0, so the map stays as complete as the count it reconciles against.
+function buildEntries(records) {
+  const entries = [];
+  for (const r of records) {
+    if (r.credit > 0) entries.push({ height: r.height, txid: r.txid, time: r.time, sats: r.credit });
+    if (r.debit > 0) entries.push({ height: r.height, txid: r.txid, time: r.time, sats: -r.debit });
+    if (!r.credit && !r.debit) entries.push({ height: r.height, txid: r.txid, time: r.time, sats: 0 });
   }
-  return [...byHeight.entries()]
-    .map(([height, v]) => ({ height, ...v }))
-    .sort((a, b) => a.height - b.height);
+  return entries.sort((a, b) =>
+    a.height - b.height || (a.txid < b.txid ? -1 : a.txid > b.txid ? 1 : b.sats - a.sats));
 }
 
 
@@ -347,9 +351,13 @@ const readRegistry = () => {
 };
 
 // The stored map for an address, if any -- render it instantly, then let
-// resolveLine confirm or extend it.
+// resolveLine confirm or extend it. Lines are versioned: the schema moved
+// from per-block chapters to per-side entries, and a line from before the
+// move reads as absent, so the next resolution remaps it whole.
+const LINE_V = 2;
 export async function cachedLine(address) {
-  return (await idb('readonly', (s) => s.get(address))) || null;
+  const line = await idb('readonly', (s) => s.get(address));
+  return line && line.v === LINE_V ? line : null;
 }
 async function saveLine(address, data) {
   await idb('readwrite', (s) => s.put(data, address));
@@ -372,15 +380,15 @@ async function saveLine(address, data) {
 // by construction, so merging is concatenation. Unreachable mirrors leave
 // the stored map standing, complete as of its writing.
 async function topUp(address, cached) {
-  const frontier = (cached.chapters[cached.chapters.length - 1]?.height ?? 0) + 1;
+  const frontier = (cached.entries[cached.entries.length - 1]?.height ?? 0) + 1;
   const bb = await blockbookMap(address, frontier);
   if (!bb) return cached;
   // The from-filter is re-applied locally: a mirror that ignored it (or
-  // answered with overlap) must not double-count the mapped chapters.
+  // answered with overlap) must not double-count the mapped history.
   const fresh = bb.touches.filter((t) => t.height >= frontier);
   if (bb.txCount === cached.txCount && !fresh.length && cached.balance === bb.balance) return cached;
-  const chapters = cached.chapters.concat(groupChapters(fresh));
-  const data = { at: Date.now(), txCount: bb.txCount, balance: bb.balance, walked: cached.walked + fresh.length, complete: true, chapters };
+  const entries = cached.entries.concat(buildEntries(fresh));
+  const data = { v: LINE_V, at: Date.now(), txCount: bb.txCount, balance: bb.balance, walked: cached.walked + fresh.length, complete: true, entries };
   await saveLine(address, data);
   return data;
 }
@@ -395,38 +403,39 @@ export async function resolveLine(address) {
   const map = await blockbookMap(address);
   if (!map) return cached ?? null;
   const data = {
-    at: Date.now(), txCount: map.txCount, balance: map.balance, walked: map.touches.length,
-    complete: map.touches.length >= map.txCount, chapters: groupChapters(map.touches),
+    v: LINE_V, at: Date.now(), txCount: map.txCount, balance: map.balance, walked: map.touches.length,
+    complete: map.touches.length >= map.txCount, entries: buildEntries(map.touches),
   };
   await saveLine(address, data);
   return data;
 }
 
 // The held view: the address's confirmed UTXOs -- the chain's own bookmarks,
-// each unspent output resting at the chapter of its creation. This is the
+// each unspent output resting where its transaction left it. This is the
 // mutable complement of the map: spends shrink it, so it is a snapshot,
 // fetched fresh beside every resolution and never stored. Returns the sum,
-// the coin count, and sats-still-resting by height, or null when the
-// mirrors can't be had. Its sum is the third reconciliation identity
-// (Σ held = balance = Σ chapter nets); callers display the held view only
-// when it agrees, the same discipline the gate keeps.
+// the coin count, and sats-still-resting by txid (a UTXO belongs to a
+// transaction's outputs, so the join to credit entries is exact), or null
+// when the mirrors can't be had. Its sum is the third reconciliation
+// identity (Σ held = balance = Σ entries); callers display the held view
+// only when it agrees, the same discipline the gate keeps.
 export async function heldCoins(address) {
   for (const mirror of BLOCKBOOK_MIRRORS) {
     const utxos = await blockbookJson(mirror, `/utxo/${address}?confirmed=true`);
     if (!Array.isArray(utxos)) continue;
-    const byHeight = new Map();
+    const byTxid = new Map();
     let sum = 0;
     for (const u of utxos) {
       const sats = Number(u.value || 0);
       sum += sats;
-      if (u.height > 0) byHeight.set(u.height, (byHeight.get(u.height) ?? 0) + sats);
+      byTxid.set(u.txid, (byTxid.get(u.txid) ?? 0) + sats);
     }
-    return { sum, count: utxos.length, byHeight };
+    return { sum, count: utxos.length, byTxid };
   }
   return null;
 }
 
-// --- The ledger's periods: chapters bucketed by the calendar quarter of
+// --- The ledger's periods: entries bucketed by the calendar quarter of
 // their block time -- the organization accountants keep, years then
 // quarters, in place of the manuscript's own volumes and books (every entry
 // still cites its canonical place in those; the citation is the folio
@@ -437,16 +446,16 @@ export async function heldCoins(address) {
 // gate's rule); a closed quarter is as append-only as the chain that
 // timestamps it.
 export function periods(data) {
-  if (!data?.complete || !data.chapters.length) return null;
+  if (!data?.complete || !data.entries.length) return null;
   const byKey = new Map();
-  for (const c of data.chapters) {
+  for (const c of data.entries) {
     const d = new Date((c.time ?? 0) * 1000);
     const year = d.getUTCFullYear();
     const q = Math.floor(d.getUTCMonth() / 3) + 1;
     const key = year * 10 + q;
     let b = byKey.get(key);
-    if (!b) { b = { year, q, chapters: [], sats: 0 }; byKey.set(key, b); }
-    b.chapters.push(c);
+    if (!b) { b = { year, q, entries: [], sats: 0 }; byKey.set(key, b); }
+    b.entries.push(c);
     b.sats += c.sats;
   }
   const quarters = [...byKey.values()].sort((a, b) => a.year - b.year || a.q - b.q);
@@ -456,7 +465,7 @@ export function periods(data) {
     if (!y || y.year !== qt.year) { y = { year: qt.year, quarters: [], sats: 0, count: 0 }; years.push(y); }
     y.quarters.push(qt);
     y.sats += qt.sats;
-    y.count += qt.chapters.length;
+    y.count += qt.entries.length;
   }
   return years;
 }
@@ -473,10 +482,10 @@ export function periods(data) {
 export function renderLine(el, data, maxRows = Infinity) {
   el.replaceChildren();
   if (!data) { lineNote(el, '—'); return; }
-  let rows = data.chapters.map((c) => ({ ...c, place: volumeBookChapter(c.height) }));
+  let rows = data.entries.map((c) => ({ ...c, place: volumeBookChapter(c.height) }));
   if (!rows.length) { lineNote(el, 'no appearances yet'); return; }
   if (rows.length > maxRows) {
-    lineNote(el, `… ${(rows.length - maxRows).toLocaleString('en-US')} earlier chapters, collected in the anthology`);
+    lineNote(el, `… ${(rows.length - maxRows).toLocaleString('en-US')} earlier entries, collected in the ledger`);
     rows = rows.slice(rows.length - maxRows);
   }
   for (let i = 0; i < rows.length;) {
@@ -518,23 +527,24 @@ export function renderLine(el, data, maxRows = Infinity) {
 // animation-frame chunks so a giant ledger doesn't jank its first paint.
 // Falls back to the flat line (and returns false) when the map is
 // incomplete and no periods may be drawn.
-// opts.held (heldCoins' byHeight map, verified against the balance by the
-// caller) marks the entries with the chain's own bookmarks: an entry whose
-// value has all moved on reads dimmed; where value still rests, full ink --
-// and a quarter dims likewise when nothing from it remains outstanding.
+// opts.held (heldCoins' byTxid map, verified against the balance by the
+// caller) marks the entries with the chain's own bookmarks: a credit whose
+// outputs have all moved on reads dimmed (debits, being departures, always
+// do); where value still rests, full ink -- and a quarter dims likewise when
+// nothing from it remains outstanding.
 const BOOKMARK_RIBBON = '<svg viewBox="0 0 12 16"><path fill="currentColor" d="M0 0h12v16l-6-4-6 4z"/></svg>';
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 export function renderLedger(el, data, { bookmarks = [], held = null } = {}) {
-  const years = periods(data);
+  // Running balances post in entry order -- the ledger's true posting order
+  // -- so the final balance is exactly the one the gate proved. Two entries
+  // can share a height and even a txid, so the balance rides on a copy of
+  // each entry rather than keying a map.
+  let bal = 0;
+  const posted = data.entries.map((c) => ({ ...c, bal: (bal += c.sats) }));
+  const years = periods({ ...data, entries: posted });
   if (!years) { renderLine(el, data); return false; }
   el.replaceChildren();
   const anchor = (y, q) => `y${y}q${q}`;
-
-  // Running balances post in height order -- the ledger's true posting
-  // order -- so the final balance is exactly the one the gate proved.
-  const running = new Map();
-  let bal = 0;
-  for (const c of data.chapters) { bal += c.sats; running.set(c.height, bal); }
 
   const toc = document.createElement('div'); toc.className = 'sp-toc';
   const summaryHead = lineHead('sp-eyebrow', 'Summary');
@@ -545,19 +555,19 @@ export function renderLedger(el, data, { bookmarks = [], held = null } = {}) {
     for (const qt of y.quarters) {
       const row = document.createElement('a');
       row.className = 'sp-row';
-      if (held && !qt.chapters.some((c) => (held.get(c.height) ?? 0) > 0)) row.classList.add('spent');
+      if (held && !qt.entries.some((c) => c.sats > 0 && (held.get(c.txid) ?? 0) > 0)) row.classList.add('spent');
       row.href = `#${anchor(qt.year, qt.q)}`;
       const label = document.createElement('span'); label.className = 'sp-label';
       label.textContent = `Q${qt.q}`;
       const count = document.createElement('span'); count.className = 'sp-count';
-      count.textContent = `${qt.chapters.length.toLocaleString('en-US')} ■`;
+      count.textContent = `${qt.entries.length.toLocaleString('en-US')} §`;
       const amt = document.createElement('span'); amt.className = 'idx-amt sp-amt';
       amt.textContent = formatNetBtc(qt.sats);
       row.append(label, count, amt);
       toc.append(row);
-      // The reader's own bookmarks that fall in this quarter's chapters, in
+      // The reader's own bookmarks that fall in this quarter's blocks, in
       // height order, each opening the book at its reference.
-      const heights = new Set(qt.chapters.map((c) => c.height));
+      const heights = new Set(qt.entries.map((c) => c.height));
       for (const bm of bookmarks.filter((m) => heights.has(m.height)).sort((a, z) => a.height - z.height)) {
         const bmRow = document.createElement('a');
         bmRow.className = 'sp-bm';
@@ -581,7 +591,7 @@ export function renderLedger(el, data, { bookmarks = [], held = null } = {}) {
   const closeLabel = document.createElement('span'); closeLabel.className = 'sp-label';
   closeLabel.textContent = 'Closing balance';
   const closeCount = document.createElement('span'); closeCount.className = 'sp-count';
-  closeCount.textContent = `${data.chapters.length.toLocaleString('en-US')} ■`;
+  closeCount.textContent = `${data.entries.length.toLocaleString('en-US')} §`;
   const closeAmt = document.createElement('span'); closeAmt.className = 'idx-amt sp-amt';
   closeAmt.textContent = formatBalanceBtc(data.balance ?? bal);
   closeRow.append(closeLabel, closeCount, closeAmt);
@@ -599,9 +609,9 @@ export function renderLedger(el, data, { bookmarks = [], held = null } = {}) {
       h.id = anchor(qt.year, qt.q);
       nodes.push(h);
       let lastVol = 0, lastBook = 0;
-      for (const c of qt.chapters) {
+      for (const c of qt.entries) {
         const place = volumeBookChapter(c.height);
-        nodes.push(ledgerRow(c, place, running.get(c.height), lastVol, lastBook, held));
+        nodes.push(ledgerRow(c, place, c.bal, lastVol, lastBook, held));
         lastVol = place.volume; lastBook = place.book;
       }
     }
@@ -626,8 +636,10 @@ function ledgerRow(c, place, balance, lastVol, lastBook, held) {
   row.className = 'idx-row entry';
   row.href = citeHref(c.txid);
   if (held) {
-    const resting = held.get(c.height) ?? 0;
-    if (resting > 0) row.title = `still held here: ${formatBalanceBtc(resting)}`;
+    // A UTXO belongs to a transaction's outputs, so only a credit entry can
+    // still be held; a debit is a departure by nature and reads dimmed.
+    const resting = c.sats > 0 ? held.get(c.txid) ?? 0 : 0;
+    if (resting > 0) row.title = `still held: ${formatBalanceBtc(resting)}`;
     else row.classList.add('spent');
   }
   const when = document.createElement('span'); when.className = 'idx-when';
@@ -653,8 +665,8 @@ function lineRow({ height, txid, sats, place }, underBook, held) {
   row.className = 'idx-row' + (underBook ? ' under-book' : '');
   row.href = citeHref(txid);
   if (held) {
-    const resting = held.get(height) ?? 0;
-    if (resting > 0) row.title = `still held here: ${formatBalanceBtc(resting)}`;
+    const resting = sats > 0 ? held.get(txid) ?? 0 : 0;
+    if (resting > 0) row.title = `still held: ${formatBalanceBtc(resting)}`;
     else row.classList.add('spent');
   }
   const r = document.createElement('span'); r.className = 'idx-ref';
