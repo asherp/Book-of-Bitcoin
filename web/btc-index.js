@@ -198,12 +198,20 @@ const BLOCKBOOK_MIRRORS = ['https://btc1.trezor.io/api/v2', 'https://btc2.trezor
 const BLOCKBOOK_PAGE = 1000;
 const BLOCKBOOK_CONCURRENCY = 4;
 
+// One blockbook request, with patience: a throttle (429) or a server-side
+// stumble (5xx) gets brief backed-off retries before the mirror is given up
+// on -- public instances rate-limit, and one refused page must not fail a
+// whole 27-page map. A definitive refusal (404 and kin) returns at once.
 async function blockbookJson(mirror, path) {
-  try {
-    const res = await fetch(mirror + path);
-    if (res.ok) return await res.json();
-  } catch { /* unreachable or CORS-refused */ }
-  return null;
+  for (let attempt = 0; ; attempt++) {
+    try {
+      const res = await fetch(mirror + path);
+      if (res.ok) return await res.json();
+      if (res.status < 500 && res.status !== 429) return null;
+    } catch { /* unreachable or CORS-refused */ }
+    if (attempt >= 2) return null;
+    await new Promise((r) => setTimeout(r, 400 * 2 ** attempt + Math.random() * 200));
+  }
 }
 
 // One blockbook address page: `txslight` detail carries each transaction's
