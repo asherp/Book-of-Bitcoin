@@ -305,7 +305,7 @@ a:hover { text-decoration: underline; }
 </div>
 
 <script type="module">
-import { isAddress, ledgerFor, keptLedgers, saveKeptLedgers, sameAddresses, addressScriptHex, cachedLine, resolveLine, extendLine, renderLedger, renderRows, periods, lineNote, reconciled, heldCoins, formatBalanceBtc, chainFailureText } from './btc-index.js';
+import { isAddress, ledgerFor, keptLedgers, saveKeptLedgers, sameAddresses, addressScriptHex, cachedLine, resolveLine, extendLine, renderLedger, renderRows, periods, lineNote, reconciled, ledgerSum, heldCoins, formatBalanceBtc, chainFailureText } from './btc-index.js';
 import { volumeBookChapter, toRoman } from './btc-citation.js';
 
 // A ledger is a titled set of addresses, read the way the book is read.
@@ -502,12 +502,21 @@ if (!list.length) {
     let busy = false;      // one draw at a time; the re-arm retriggers
     // The unsynced entry: an unreferenced line heading the record for the
     // transactions not yet gathered -- their count standing where the
-    // citations will -- retiring once the record is whole.
+    // citations will -- retiring once the record is whole. Their net is
+    // arithmetic, not a guess: the chain's balance less the banked sum is
+    // exactly what the remainder moved -- the opening balance the visible
+    // record stands on, which is also why it posts as a credit (a balance
+    // is never negative; a debit here would mean inconsistent data, shown
+    // honestly as such).
     const setUnsynced = (l) => {
       if (!unsyn) return;
       const left = l.txCount - l.walked;
       if (l.complete || left <= 0) { unsyn.remove(); return; }
-      unsyn.firstChild.textContent = `${left.toLocaleString('en-US')} §`;
+      const net = (l.balance ?? 0) - ledgerSum(l);
+      unsyn.children[0].textContent = `${left.toLocaleString('en-US')} §`;
+      unsyn.children[1].textContent = net < 0 ? formatBalanceBtc(-net) : '';
+      unsyn.children[2].textContent = net >= 0 ? formatBalanceBtc(net) : '';
+      unsyn.title = 'the net of the transactions not yet gathered — the balance the record below stands on';
     };
     const scroll = async () => {
       if (busy || !alive()) return;
