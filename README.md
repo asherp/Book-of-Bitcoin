@@ -22,18 +22,17 @@ compiled to WASM) is consumed as a published
 - `web/bitcoin-ledger.html` — one ledger: a view of the manuscript focused
   on amounts. A ledger is a titled set of addresses (most hold one), read
   with the book's own carousel swipes (`?address=a,b,…` names the set).
-  Horizontally, its leaves: a title page per address (the address as its
-  Glossia-encoded scriptPubKey, plus the state of what's gathered), and
-  past the last address the ledger's entries page — everything banked,
-  merged and hierarchical in time with running balance, held coins in full
-  ink and spent ones dimmed. Vertically, on an address's leaf, the record:
-  a push up from the title reveals the latest 25 transactions, each
-  further push a page deeper into the past, the next page prefetching
-  while the current one is read. Nothing backfills on its own —
-  exploration is the sync — and every page found is banked for good, from
-  the same Esplora-compatible endpoints the reading pages use; a ledger
-  reconciles its entries against the chain's balance before its numbers
-  are trusted
+  Its leaves: a title page per address (the address as its Glossia-encoded
+  scriptPubKey, plus the state of what's gathered) with the address's
+  record scrolling endlessly below — newest first, organized by reference
+  alone (Volume, then Book), the next page prefetching as the reader nears
+  the bottom — and past the last address the ledger's entries page: the
+  one view organized by time, everything banked merged into one account
+  with running balance, held coins in full ink and spent ones dimmed.
+  Nothing backfills on its own — exploration is the sync — and every page
+  found is banked for good, from the same Esplora-compatible endpoints the
+  reading pages use; a ledger reconciles its entries against the chain's
+  balance before its numbers are trusted
 - `web/btc-tx.js`, `web/btc-prose.js`, `web/btc-citation.js`,
   `web/btc-contents.js`, `web/btc-index.js`, `web/btc-store.js` —
   transaction parsing, prose composition, citations, contents data,

@@ -229,13 +229,6 @@ a:hover { text-decoration: underline; }
 .anth-pager a:hover { color:var(--accent); text-decoration:none; }
 .anth-pager a.off { opacity:.25; pointer-events:none; }
 
-/* A thumbed page of the record is the whole leaf: the hero steps aside and
-   the slice of entries stands alone, its date span as the running head and
-   the turn marks (▴ back toward the title, ▾ older) at head and foot. */
-#ledger-slide.thumbed .anth-hero { display:none; }
-.page-turn { display:block; text-align:center; padding:16px 0 6px; font-size:19px; color:var(--dim); text-decoration:none; }
-.page-turn:hover { color:var(--accent); text-decoration:none; }
-.sp-eyebrow.page-span { margin:4px 0 10px; }
 
 /* A reader's bookmarked reference, inline in the contents beneath its book:
    the ribbon it flies in the book, its title in the book's serif, its
@@ -299,14 +292,14 @@ import { volumeBookChapter, toRoman } from './btc-citation.js';
 // address in the book's own tongue, its scriptPubKey as Glossia prose; the
 // span and state of what's been gathered), and past the last address the
 // ledger's own entries page -- everything banked, merged into one account,
-// hierarchical in time. Vertically, on an address's leaf, the record
-// itself: a push up from the title turns to the latest 25 transactions,
-// and each further push turns a page deeper into the past -- while the
-// reader reads one page, the next quietly prefetches, so the turn reveals
-// instantly: the same experience as thumbing through the reader. Nothing
-// backfills on its own -- exploration is the sync, and every page found is
-// banked for good. Every entry row opens bitcoin-book.html at its
-// transaction, so a ledger is navigated the same way as the book it
+// hierarchical in time: the one view organized by the calendar. Below an
+// address's title lies its record, organized by reference alone -- Volume,
+// then Book, newest first -- as an endless scroll: the latest 25 render at
+// once, and as the reader nears the bottom the next page has already
+// prefetched, so the past keeps arriving with nothing to wait for.
+// Nothing backfills on its own -- exploration is the sync, and every page
+// found is banked for good. Every entry row opens bitcoin-book.html at
+// its transaction, so a ledger is navigated the same way as the book it
 // excerpts.
 
 const q = (new URLSearchParams(location.search).get('address') || '').trim();
@@ -462,16 +455,19 @@ if (!list.length) {
     return inflight.get(addr);
   };
 
-  // The title leaf's resolution: the stored line first -- instantly,
+  // ── The record: an endless scroll, reference-organized ───────────────────
+  // The address leaf's resolution: the stored line first -- instantly,
   // offline included -- then the head refreshed against the chain (new
   // arrivals only; no backfill) while the held snapshot arrives beside it.
-  // The title page carries the state line, not the record: the record is
-  // below, a push down at a time. `alive` guards every landing: a result
-  // belonging to a leaf already turned away from paints nothing.
-  // `banked` mirrors the line's reach for the turn gates, which can't wait
-  // on the store.
-  const banked = new Map();   // address -> { len, complete }
-  const noteBank = (addr, d) => { if (d) banked.set(addr, { len: d.entries.length, complete: !!d.complete }); };
+  // Below the title, the record itself: the banked entries newest-first
+  // under Volume and Book headers alone (reading by time lives on the
+  // entries leaf), drawn a chunk at a time. A sentinel at the foot watches
+  // the scroll from well above the bottom: nearing it draws the next chunk
+  // from the bank, and when the bank runs low the next page fetches ahead
+  // -- so the past keeps arriving with nothing to wait for. `alive` guards
+  // every landing: a result belonging to a leaf already turned away from
+  // paints nothing.
+  const PAGE = 25;
   const stateText = (d) => !d.complete
     ? `the latest ${d.walked.toLocaleString('en-US')} of ${d.txCount.toLocaleString('en-US')} transactions gathered`
     : reconciled(d) ? 'the whole record gathered · reconciled with the chain'
@@ -480,81 +476,58 @@ if (!list.length) {
     const heldP = heldCoins(addr);
     const cached = await cachedLine(addr);
     if (!alive()) return;
-    noteBank(addr, cached);
+    let byTxid = null;     // held marks, once the snapshot agrees
+    let cont, rowsEl, foot, note, rendered, io;
+    let busy = false;      // one draw at a time; the re-arm retriggers
+    const scroll = async () => {
+      if (busy || !alive()) return;
+      busy = true;
+      let line = await cachedLine(addr);
+      if (!alive() || !line) { busy = false; return; }
+      if (line.entries.length <= rendered && !line.complete) line = await extendLine(addr) ?? line;
+      if (!alive()) { busy = false; return; }
+      const len = line.entries.length;
+      const take = Math.min(len - rendered, PAGE);
+      if (take > 0) {
+        cont = renderRows(rowsEl, line.entries.slice(len - rendered - take, len - rendered), cont, byTxid);
+        rendered += take;
+      }
+      note.textContent = stateText(line);   // the reach grows as the reader reads
+      foot.textContent = line.complete && rendered >= len ? '— the beginning of the record' : '…';
+      // The fetch ahead: keep a page banked beyond what's drawn.
+      if (!line.complete && len - rendered < PAGE) extendLine(addr);
+      busy = false;
+      // Re-arm: appending moved the sentinel; observe it afresh so a foot
+      // still within reach fires again.
+      if (io) { io.unobserve(foot); io.observe(foot); }
+    };
     const paint = (data, held) => {
       showCount(data);
       showRange(data);
-      if (held) heldView(data, held);
+      byTxid = held ? heldView(data, held) : byTxid;
       el.replaceChildren();
-      lineNote(el, stateText(data));
+      io?.disconnect();
+      note = document.createElement('span');
+      note.className = 'idx-note sync-note';
+      note.id = 'anth-contents';   // the hero's ▾ lands here
+      note.textContent = stateText(data);
+      rowsEl = document.createElement('div');
+      foot = document.createElement('span');
+      foot.className = 'idx-note sync-note';
+      el.append(note, rowsEl, foot);
+      cont = { volume: null, book: null };
+      rendered = 0;
+      io = new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) scroll(); },
+                                    { rootMargin: '1600px 0px' });
+      io.observe(foot);
+      scroll();
     };
     if (cached) paint(cached, null);
     else { el.replaceChildren(); lineNote(el, '…'); }
     const [data, held] = await Promise.all([lineOnce(addr), heldP]);
     if (!alive()) return;
-    noteBank(addr, data);
     if (data) paint(data, held);
     else if (!cached) unreachable(alive, () => runResolve(addr, alive));
-  };
-
-  // ── A thumbed page: one 25-entry slice of the banked record ─────────────
-  // Depth 1 is the latest 25, each deeper page 25 older; the slice renders
-  // wholly from the bank (the thumb ahead already fetched it), references
-  // on the left and amounts on the right, under a small span of its dates.
-  // While the reader reads, the next page down prefetches -- the book's own
-  // trick -- so the next push reveals with nothing to wait for.
-  const PAGE = 25;
-  const pageSlice = (line, d) =>
-    line.entries.slice(Math.max(0, line.entries.length - PAGE * d), line.entries.length - PAGE * (d - 1));
-  const turnLink = (glyph, dir, label) => {
-    const a = document.createElement('a');
-    a.className = 'page-turn';
-    a.href = '#';
-    a.textContent = glyph;
-    a.setAttribute('aria-label', label);
-    a.addEventListener('click', (ev) => { ev.preventDefault(); turn(dir, 'y'); });
-    return a;
-  };
-  const runPage = async (addr, alive) => {
-    const line = await cachedLine(addr);
-    if (!alive()) return;
-    noteBank(addr, line);
-    el.replaceChildren();
-    if (!line || !line.entries.length) { lineNote(el, '—'); return; }
-    el.append(turnLink('▴', -1, 'Back toward the title'));
-    const slice = pageSlice(line, depth);
-    const head = document.createElement('div');
-    head.className = 'sp-eyebrow page-span';
-    // The span reads newest – oldest, the order the rows below run.
-    const fmt = (s) => new Date(s * 1000).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-    const a1 = slice[slice.length - 1], a2 = slice[0];
-    if (a1?.time && a2?.time) head.textContent = fmt(a1.time) === fmt(a2.time) ? fmt(a1.time) : `${fmt(a1.time)} – ${fmt(a2.time)}`;
-    el.append(head);
-    renderRows(el, slice);
-    // The foot names what lies below: another page, a fetch under way, or
-    // the beginning of the record.
-    const foot = document.createElement('div');
-    el.append(foot);
-    const setFoot = (l) => {
-      foot.replaceChildren();
-      if (l.entries.length > PAGE * depth) {
-        foot.append(turnLink('▾', 1, 'Older entries'));
-      } else {
-        const s = document.createElement('span');
-        s.className = 'idx-note sync-note';
-        s.textContent = l.complete ? '— the beginning of the record' : '… reaching for older entries';
-        foot.append(s);
-      }
-    };
-    setFoot(line);
-    // The thumb ahead: while this page is read, the next one fetches.
-    if (!line.complete && line.entries.length < PAGE * (depth + 1)) {
-      extendLine(addr).then((l2) => {
-        if (!l2) return;
-        noteBank(addr, l2);
-        if (alive()) setFoot(l2);
-      });
-    }
   };
 
   // ── The entries leaf: the ledger read whole ──────────────────────────────
@@ -613,14 +586,13 @@ if (!list.length) {
   };
 
   // ── The leaves ───────────────────────────────────────────────────────────
-  // One leaf per address and, past the last, the entries leaf -- the ledger
-  // read whole (however much has been gathered). On an address's leaf,
-  // depth: 0 is the title page; each level below it one thumbed page of the
-  // record. Rendering is generation-guarded: turning the page bumps the
+  // One leaf per address -- its title page with the record scrolling
+  // endlessly below -- and, past the last, the entries leaf: the ledger
+  // read whole (however much has been gathered), organized by time.
+  // Rendering is generation-guarded: turning the page bumps the
   // generation, and every async continuation from the leaf left behind
   // checks it before touching the DOM.
   const leafCount = addrs.length + 1;
-  let depth = 0;
   let gen = 0;
   const pager = document.getElementById('anth-pager');
   const renderPager = () => {
@@ -645,8 +617,6 @@ if (!list.length) {
     const g = ++gen;
     const alive = () => g === gen;
     renderPager();
-    // A thumbed page is the whole leaf: the hero steps aside below depth 0.
-    slide.classList.toggle('thumbed', at < addrs.length && depth > 0);
     // A fresh leaf: clear what the last one wrote before its own data lands.
     document.getElementById('anth-addr').textContent = '';
     document.getElementById('anth-prose').replaceChildren();
@@ -659,10 +629,6 @@ if (!list.length) {
       return;
     }
     const addr = addrs[at];
-    if (depth > 0) {
-      runPage(addr, alive);
-      return;
-    }
 
     // The address, once, in the book's own tongue: its scriptPubKey in the
     // book's opcode notation -- glyphs for the opcodes, a typed push mark,
@@ -694,32 +660,17 @@ if (!list.length) {
   // A committed turn snapshots the outgoing leaf as a fixed ghost that keeps
   // sliding off in the travel direction WHILE the real slide -- hidden --
   // re-renders the destination and glides in from the opposite edge. The
-  // two halves overlap, so the turn reads as one continuous strip. Axis
-  // 'x' turns between the ledger's leaves (and resets the depth to the
-  // title); axis 'y' thumbs the record: down is older, up is back, the
-  // title at the top.
+  // two halves overlap, so the turn reads as one continuous strip.
   const REDUCED_MOTION = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const slide = document.getElementById('ledger-slide');
   const canTurn = (dir) => at + dir >= 0 && at + dir < leafCount;
-  // A push down needs the next page's entries already banked (the prefetch
-  // fills them while the current page is read); until then it rubber-bands.
-  const canTurnV = (dir) => {
-    if (at >= addrs.length) return false;
-    if (dir < 0) return depth > 0;
-    const b = banked.get(addrs[at]);
-    return !!b && b.len > PAGE * depth;
-  };
-  const step = (dir, axis) => {
-    if (axis === 'y') depth += dir;
-    else { at += dir; depth = 0; }
-    openLeaf();
-  };
+  const step = (dir) => { at += dir; openLeaf(); };
   let turning = false;
-  function turn(dir, axis = 'x') {
-    if (turning || (axis === 'x' ? !canTurn(dir) : !canTurnV(dir))) return;
+  function turn(dir) {
+    if (turning || !canTurn(dir)) return;
     if (REDUCED_MOTION) {
       slide.style.transform = '';
-      step(dir, axis);
+      step(dir);
       window.scrollTo(0, 0);
       return;
     }
@@ -744,16 +695,15 @@ if (!list.length) {
     slide.style.visibility = 'hidden';
     void ghost.offsetWidth;
     // Linear, so the exit reads as the drag's momentum carrying on.
-    const off = axis === 'x' ? window.innerWidth : window.innerHeight;
     ghost.style.transition = 'transform .2s linear';
-    ghost.style.transform = `translate${axis === 'x' ? 'X' : 'Y'}(${dir > 0 ? '-' : ''}${off}px)`;
+    ghost.style.transform = `translateX(${dir > 0 ? '-' : ''}${window.innerWidth}px)`;
     setTimeout(() => win.remove(), 320);
     // Two frames for the compositor to start the ghost's slide BEFORE the
     // destination's render work blocks the main thread.
     requestAnimationFrame(() => requestAnimationFrame(() => {
-      step(dir, axis);
-      window.scrollTo(0, 0);   // a new leaf opens at its head, unseen while hidden
-      slide.style.transform = `translate${axis === 'x' ? 'X' : 'Y'}(${dir > 0 ? '' : '-'}${off}px)`;
+      step(dir);
+      window.scrollTo(0, 0);   // a new leaf opens at its title, unseen while hidden
+      slide.style.transform = `translateX(${dir > 0 ? '' : '-'}${window.innerWidth}px)`;
       slide.style.visibility = '';
       void slide.offsetWidth;
       slide.style.transition = 'transform .22s ease-out';
@@ -762,15 +712,13 @@ if (!list.length) {
     }));
   }
 
-  // Recognize a quick single-finger drag, the axis locked on first
-  // significant movement so a scroll never drags the leaf sideways. A
-  // horizontal drag turns between leaves; a vertical one thumbs the record
-  // -- engaged from the scroll boundaries (a page taller than the viewport
-  // scrolls as normal in between), which on a short page means anywhere.
-  // Either way the leaf follows the finger, and a direction with no
-  // neighbour -- or a page still prefetching -- only rubber-bands.
+  // Recognize a quick, mostly-horizontal single-finger drag, the axis
+  // locked on first significant movement so the record's scroll never
+  // drags the leaf sideways. The leaf follows the finger; a direction with
+  // no neighbour only rubber-bands. Vertical is simply the scroll: the
+  // record arrives endlessly beneath the title.
   (() => {
-    let sx = null, sy = 0, st = 0, axis = null, atTop = false, atBottom = false;
+    let sx = null, sy = 0, st = 0, axis = null;
     const snapBack = () => {
       if (!slide.style.transform) return;
       slide.style.transition = 'transform .15s ease';
@@ -782,13 +730,7 @@ if (!list.length) {
       const t = e.target;
       if (t.closest && t.closest('input, textarea, select')) return;
       sx = e.touches[0].clientX; sy = e.touches[0].clientY; st = performance.now();
-      atTop = window.scrollY <= 2;
-      atBottom = window.scrollY >= document.documentElement.scrollHeight - window.innerHeight - 2;
     }, { passive: true });
-    // The title leaf has nothing meaningful to scroll: any vertical drag
-    // there is a thumb. A thumbed page taller than the viewport engages
-    // only from its scroll boundaries.
-    const vEngaged = (dy) => at < addrs.length && (depth === 0 || (atTop && dy > 0) || (atBottom && dy < 0));
     document.addEventListener('touchmove', (e) => {
       if (sx === null || REDUCED_MOTION || turning) return;
       const dx = e.touches[0].clientX - sx;
@@ -797,13 +739,7 @@ if (!list.length) {
         if (Math.abs(dx) < 12 && Math.abs(dy) < 12) return;
         axis = Math.abs(dx) > Math.abs(dy) ? 'h' : 'v';
       }
-      if (axis === 'v') {
-        if (!vEngaged(dy)) return;
-        const damp = canTurnV(dy < 0 ? 1 : -1) ? 0.5 : 0.18;
-        slide.style.transition = 'none';
-        slide.style.transform = `translateY(${dy * damp}px)`;
-        return;
-      }
+      if (axis === 'v') return;
       const damp = canTurn(dx < 0 ? 1 : -1) ? 1 : 0.25;
       slide.style.transition = 'none';
       slide.style.transform = `translateX(${dx * damp}px)`;
@@ -815,24 +751,12 @@ if (!list.length) {
       const dt = performance.now() - st;
       sx = null;
       const dir = dx < 0 ? 1 : -1;   // swiping left turns to the next leaf
-      const vdir = dy < 0 ? 1 : -1;  // pushing up thumbs deeper; pulling down back toward the title
       const commit = axis === 'h' && dt <= 600 && Math.abs(dx) >= 60 && Math.abs(dy) <= Math.abs(dx) * 0.6;
-      const vCommit = axis === 'v' && vEngaged(dy) && dt <= 600 && Math.abs(dy) >= 70 && Math.abs(dx) <= Math.abs(dy) * 0.6;
       if (commit && !turning && canTurn(dir)) turn(dir);
-      else if (vCommit && !turning && canTurnV(vdir)) turn(vdir, 'y');
       else if (!turning) snapBack();
     }, { passive: true });
     document.addEventListener('touchcancel', () => { sx = null; if (!turning) snapBack(); }, { passive: true });
   })();
-
-  // The hero's ▾: on an address's leaf it turns down into the record (the
-  // same turn the swipe makes); on the entries leaf it keeps its anchor
-  // scroll into the summary.
-  document.querySelector('.anth-down').addEventListener('click', (ev) => {
-    if (at >= addrs.length) return;
-    ev.preventDefault();
-    turn(1, 'y');
-  });
 
   openLeaf();
 }

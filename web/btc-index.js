@@ -494,21 +494,36 @@ async function topUp(address, cached, onProgress) {
 // ledger's pages is what reaches deeper, one prefetched page at a time,
 // and every page found is kept. The final short page marks the line
 // complete: the record read to its beginning.
-export async function extendLine(address) {
+async function extendOnce(address) {
   const cached = await cachedLine(address);
   if (!cached || cached.complete || cached.lastSeen == null) return cached;
   for (const mirror of esploraMirrors()) {
     const page = await esploraJson(mirror, chainPage(address, cached.lastSeen));
     if (!Array.isArray(page)) continue;
     const recs = esploraTouches(page, address);
-    const complete = page.length < ESPLORA_PAGE;
+    const walked = cached.walked + recs.length;
+    // A short page ends the record -- and so does the count: every known
+    // transaction walked means nothing older remains, sparing the empty
+    // probe a record sized an exact multiple of the page would otherwise
+    // cost. (Arrivals since the count was taken land above the head; the
+    // next visit's top-up carries them.)
+    const complete = page.length < ESPLORA_PAGE || (cached.txCount > 0 && walked >= cached.txCount);
     const data = { v: LINE_V, at: Date.now(), txCount: cached.txCount, balance: cached.balance,
-                   walked: cached.walked + recs.length, complete, entries: buildEntries(recs).concat(cached.entries) };
+                   walked, complete, entries: buildEntries(recs).concat(cached.entries) };
     if (!complete) data.lastSeen = page[page.length - 1].txid;
     await saveLine(address, data);
     return data;
   }
   return cached;   // unreachable: the line stands as it was
+}
+// Single-flight per address: a reader's scroll and the fetch-ahead may ask
+// together, and both must share one page rather than fetch it twice.
+const extending = new Map();
+export function extendLine(address) {
+  if (!extending.has(address)) {
+    extending.set(address, extendOnce(address).finally(() => extending.delete(address)));
+  }
+  return extending.get(address);
 }
 
 // Resolve an address's head: the stored line -- however deep the reader has
@@ -529,7 +544,8 @@ export async function resolveLine(address, onProgress) {
     const page = await esploraJson(mirror, chainPage(address, null));
     if (!Array.isArray(page)) continue;
     const recs = esploraTouches(page, address);
-    const complete = page.length < ESPLORA_PAGE;
+    // Short page or every known transaction walked: the record is whole.
+    const complete = page.length < ESPLORA_PAGE || (cs.tx_count > 0 && recs.length >= cs.tx_count);
     const data = { v: LINE_V, at: Date.now(), txCount: cs.tx_count,
                    balance: Number(cs.funded_txo_sum) - Number(cs.spent_txo_sum),
                    walked: recs.length, complete, entries: buildEntries(recs) };
@@ -661,30 +677,30 @@ export function periods(data) {
 // maxRows keeps the most recent rows (the map is ascending, so the cut is
 // the older head) with a leading note pointing at the anthology for the
 // whole; the trailing note names what an incomplete map never walked.
-// A run of entries as rows under their canonical headers -- references on
-// the left, amounts on the right, the most recent first (the whole ledger
-// reads newest-down, the direction the record is explored) -- APPENDED to
-// el (the callers own any clearing and any notes around the run). The
-// thumbed pages of a ledger and the flat line below both read through this.
-export function renderRows(el, entries) {
+// A run of entries as rows -- references on the left, amounts on the
+// right, the most recent first (the whole ledger reads newest-down, the
+// direction the record is explored) -- APPENDED to el under their
+// reference headers alone: Volume, then Book, nothing temporal (reading
+// by time lives on the ledger's entries leaf). `cont` carries the header
+// state across appended runs, so an endless scroll continues a book
+// without repeating its heading; `held` marks rows with the chain's own
+// bookmarks. Returns cont for the next run. The callers own any clearing
+// and any notes around the run.
+export function renderRows(el, entries, cont = { volume: null, book: null }, held = null) {
   const rows = entries.map((c) => ({ ...c, place: volumeBookChapter(c.height) })).reverse();
-  for (let i = 0; i < rows.length;) {
-    const vol = rows[i].place.volume;
-    let jv = i + 1; while (jv < rows.length && rows[jv].place.volume === vol) jv++;
-    el.append(lineHead('idx-vol', `Volume ${toRoman(vol)}`));
-    for (let k = i; k < jv;) {
-      const bk = rows[k].place.book;
-      let jb = k + 1; while (jb < jv && rows[jb].place.book === bk) jb++;
-      if (jb - k >= 2) {
-        el.append(lineHead('idx-book', `Book ${bk}`));
-        for (let m = k; m < jb; m++) el.append(lineRow(rows[m], true));
-      } else {
-        el.append(lineRow(rows[k], false));
-      }
-      k = jb;
+  for (const row of rows) {
+    if (row.place.volume !== cont.volume) {
+      el.append(lineHead('idx-vol', `Volume ${toRoman(row.place.volume)}`));
+      cont.volume = row.place.volume;
+      cont.book = null;
     }
-    i = jv;
+    if (row.place.book !== cont.book) {
+      el.append(lineHead('idx-book', `Book ${row.place.book}`));
+      cont.book = row.place.book;
+    }
+    el.append(lineRow(row, true, held));
   }
+  return cont;
 }
 
 export function renderLine(el, data, maxRows = Infinity) {
