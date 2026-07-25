@@ -217,7 +217,7 @@ a:hover { text-decoration: underline; }
 </div>
 
 <script type="module">
-import { INDEXED, isAddress, cachedLine, addressState, formatBalanceBtc, blockbookFailureText,
+import { INDEXED, isAddress, cachedLine, addressState, lastKnownState, formatBalanceBtc, blockbookFailureText,
          DEFAULT_BLOCKBOOK, blockbookCustom, blockbookSelected, blockbookPageSize, setBlockbookSettings } from './btc-index.js';
 
 // --- Settings: where the ledgers ask, and how much each ask carries.
@@ -324,11 +324,13 @@ for (const e of entries) {
   amt.textContent = '…';
   row.append(t, amt);
   index.append(row);
-  // The balance, three ways: last-known from the store instantly (in the
-  // quiet pending style, an honest "as of last sync"), then the live one
-  // from the chain stats in full ink -- or, with neither to be had,
-  // "unreachable" retrying in place when tapped (the tap is caught before
-  // the row navigates), so a throttled moment doesn't strand the shelf.
+  // The balance, four ways: an answer under ten minutes old serves from
+  // memory in full ink, no network at all; past that a live probe refreshes
+  // it; a probe that fails everywhere falls to the last-known figure (the
+  // quiet pending style, an honest "as of last time"); and with nothing
+  // ever known, "unreachable" retrying in place when tapped (the tap is
+  // caught before the row navigates), so a bad moment doesn't strand the
+  // shelf.
   let settled;         // undefined while in flight; the state (or null) after
   const resolve = async (ask = true) => {
     settled = undefined;
@@ -336,14 +338,17 @@ for (const e of entries) {
     amt.classList.add('pending');
     const cached = await cachedLine(e.address);
     if (cached?.balance != null) amt.textContent = formatBalanceBtc(cached.balance);
-    const state = ask ? await addressState(e.address) : null;
-    if (state) {
+    const state = ask ? await addressState(e.address) : lastKnownState(e.address);
+    if (state && !state.stale) {
       settled = state;
       amt.textContent = formatBalanceBtc(state.balance);
       amt.classList.remove('pending');
       row.classList.remove('gated');
+    } else if (state) {
+      settled = state;   // last known; the ledger page will refresh it
+      amt.textContent = formatBalanceBtc(state.balance);
     } else if (cached?.balance != null) {
-      settled = { balance: cached.balance };   // last known; the ledger page will refresh it
+      settled = { balance: cached.balance, stale: true };   // as of its last sync
     } else {
       settled = null;
       amt.textContent = `${blockbookFailureText()} — retry`;
@@ -361,14 +366,15 @@ for (const e of entries) {
 
 // Walk the probes one row at a time rather than firing them all at once: a
 // shelf-wide burst from one phone is exactly what trips a mirror's rate
-// limiter. And a row that comes up entirely empty -- every source tried,
-// nothing back -- has proven the network, not the address, so the remaining
-// rows settle from the store without each rediscovering the outage. Every
-// row's amount stays tappable to ask again.
+// limiter. And a row whose probe failed everywhere -- nothing back, or only
+// the stale last-known figure -- has proven the network, not the address,
+// so the remaining rows settle from memory without each rediscovering the
+// outage. Every unanswered amount stays tappable to ask again.
 (async () => {
   let down = false;
   for (const probe of probes) {
-    if (await probe(!down) === null && !down) down = true;
+    const s = await probe(!down);
+    if (!down && (s === null || s.stale)) down = true;
   }
 })();
 

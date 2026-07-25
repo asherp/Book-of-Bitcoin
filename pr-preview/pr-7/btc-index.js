@@ -567,7 +567,46 @@ export async function resolveLine(address, onProgress) {
 // rejections all collapse to "unreachable" in a browser. Blockbook stays
 // as the fallback here, and remains the mapping's sole source.
 const ESPLORA_MIRRORS = ['https://blockstream.info/api', 'https://mempool.space/api'];
+
+// The balance memory: a probe's answer is good for ten minutes -- balances
+// move at chain speed, roughly a block, not at page-load speed -- so a
+// shelf revisited within that window asks the network nothing. And the
+// last answer is never thrown away: when every source fails, the state
+// comes back marked `stale: true` -- last known, shown quietly -- rather
+// than nothing at all. Kept in localStorage (a few dozen bytes per
+// address), pruned oldest-first past a generous cap.
+const BALANCE_KEY = 'glossia-btc-balances';
+const BALANCE_TTL = 10 * 60 * 1000;
+const BALANCE_MAX = 48;
+const balanceCache = () => {
+  try { const v = JSON.parse(localStorage.getItem(BALANCE_KEY)); return v && typeof v === 'object' ? v : {}; }
+  catch { return {}; }
+};
+function keepBalance(address, state) {
+  try {
+    const all = balanceCache();
+    all[address] = { balance: state.balance, txCount: state.txCount, at: Date.now() };
+    const keys = Object.keys(all);
+    if (keys.length > BALANCE_MAX) {
+      keys.sort((a, b) => all[a].at - all[b].at);
+      for (const k of keys.slice(0, keys.length - BALANCE_MAX)) delete all[k];
+    }
+    localStorage.setItem(BALANCE_KEY, JSON.stringify(all));
+  } catch (_) { /* full or unavailable; the next probe asks again */ }
+}
+// The remembered state without any network: fresh within the window,
+// `stale: true` past it, null if this address was never answered.
+export function lastKnownState(address) {
+  const e = balanceCache()[address];
+  if (!e || typeof e.balance !== 'number') return null;
+  return Date.now() - e.at < BALANCE_TTL
+    ? { balance: e.balance, txCount: e.txCount }
+    : { balance: e.balance, txCount: e.txCount, stale: true };
+}
+
 export async function addressState(address) {
+  const known = lastKnownState(address);
+  if (known && !known.stale) return known;
   for (const base of ESPLORA_MIRRORS) {
     try {
       const res = await fetch(`${base}/address/${address}`);
@@ -575,15 +614,21 @@ export async function addressState(address) {
       const c = (await res.json())?.chain_stats;
       if (c && typeof c.tx_count === 'number') {
         lastFailure = null;
-        return { balance: c.funded_txo_sum - c.spent_txo_sum, txCount: c.tx_count };
+        const state = { balance: c.funded_txo_sum - c.spent_txo_sum, txCount: c.tx_count };
+        keepBalance(address, state);
+        return state;
       }
     } catch { lastFailure = { network: true }; }
   }
   for (const mirror of blockbookMirrors()) {
     const j = await blockbookJson(mirror, `/address/${address}?details=basic`);
-    if (j && typeof j.txs === 'number') return { balance: Number(j.balance ?? 0), txCount: j.txs };
+    if (j && typeof j.txs === 'number') {
+      const state = { balance: Number(j.balance ?? 0), txCount: j.txs };
+      keepBalance(address, state);
+      return state;
+    }
   }
-  return null;
+  return known;   // every source failed: the last answer, marked stale -- or null
 }
 
 // The held view: the address's confirmed UTXOs -- the chain's own bookmarks,
