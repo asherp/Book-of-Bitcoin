@@ -146,11 +146,15 @@ const kept = (() => {
   .map((k) => ({ title: k.title || k.address, address: k.address }));
 const entries = [...adhoc, ...INDEXED, ...kept];
 
-// A gated row's progress line: how much of the address's history the map
-// holds so far. A line that failed to resolve at all shows a plain dash.
-const progressText = (data) => data
-  ? `syncing ${data.walked.toLocaleString('en-US')} / ${data.txCount.toLocaleString('en-US')}`
-  : '—';
+// A gated row's settled state: how much of the address's history the map
+// holds (still syncing), a whole map whose numbers nonetheless disagree
+// (unreconciled -- a transient the next visit converges), or a plain dash
+// when nothing resolved at all.
+const progressText = (data) => {
+  if (!data) return '—';
+  if (!data.complete) return `syncing ${data.walked.toLocaleString('en-US')} / ${data.txCount.toLocaleString('en-US')}`;
+  return 'unreconciled';
+};
 
 // Build every row at once -- titles are known offline -- and let each total
 // fill in from the store and refresh as its map resolves. Built onto a
@@ -185,9 +189,19 @@ for (const e of entries) {
   (async () => {
     const cached = await cachedLine(e.address);
     if (cached) show(cached);
-    const data = await resolveLine(e.address);
+    // The sync, live: pages tick the row as they land. A row that opens
+    // straight from a reconciled store skips the theater -- its quiet
+    // revalidation shouldn't dress the balance back down to a progress line.
+    const onProgress = reconciled(cached) ? undefined : (gathered, total) => {
+      amt.textContent = `syncing ${gathered.toLocaleString('en-US')} / ${total.toLocaleString('en-US')}`;
+      amt.classList.add('pending');
+      row.removeAttribute('href');
+      row.classList.add('gated');
+    };
+    const data = await resolveLine(e.address, onProgress);
     if (data !== cached) show(data);
     else if (!data) show(null);
+    else show(data);   // settled on the cached line: pin the final state over any ticks
   })();
 }
 
