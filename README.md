@@ -25,10 +25,11 @@ compiled to WASM) is consumed as a published
   scriptPubKey), a summary by year and quarter, and the entries — date,
   citation, net, running balance — with held coins in full ink and spent
   ones dimmed. A multi-address ledger turns between its leaves with the
-  book's own carousel swipe (`?address=a,b,…` names the set). Complete
-  address maps arrive via public Blockbook instances in parallel pages,
-  and a ledger opens only once its entries reconcile with the chain's
-  balance
+  book's own carousel swipe (`?address=a,b,…` names the set). Address maps
+  arrive from the same Esplora-compatible endpoints the reading pages use,
+  newest transactions first with the history backfilled gradually behind
+  them (checkpointed, so interrupted syncs resume), and a ledger reconciles
+  its entries against the chain's balance before its numbers are trusted
 - `web/btc-tx.js`, `web/btc-prose.js`, `web/btc-citation.js`,
   `web/btc-contents.js`, `web/btc-index.js`, `web/btc-store.js` —
   transaction parsing, prose composition, citations, contents data,

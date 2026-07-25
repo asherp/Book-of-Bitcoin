@@ -228,86 +228,71 @@ export const reconciled = (data) =>
 // The mapping, the store, and the renderers shared by the index-family pages.
 //
 // An address's *map* is the complete list of its entries -- every movement
-// of value it was party to. Blockbook instances (Trezor's indexer) feed it,
-// and only they. Because past blocks are closed -- a transaction can never
-// be inserted into mined history -- the map is built durable-first: a
-// checkpointed walk (mapWhole) banks closed stretches of history as it
-// descends, so found data survives any interruption and resyncs resume
-// rather than restart; and a later top-up asks only for blocks above the
-// mapped frontier (&from=), which cannot overlap what's banked. Unreachable
-// mirrors leave the stored state standing -- complete, or a checkpoint to
-// resume -- or, with nothing stored, the syncing gate.
+// of value it was party to. Esplora instances feed it, newest first.
+// Because past blocks are closed -- a transaction can never be inserted
+// into mined history -- the map is built durable-first: a checkpointed walk
+// (mapWhole) banks the most recent transactions immediately and backfills
+// the history gradually behind them, so found data survives any
+// interruption and resyncs resume rather than restart; and a later top-up
+// reads only above the mapped frontier, which cannot overlap what's
+// banked. Unreachable mirrors leave the stored state standing -- complete,
+// or a checkpoint to resume -- or, with nothing stored, the syncing gate.
 
-// --- Where and how the chain is asked: the reader's to set (the Ledgers
-// page's Settings), stored in localStorage and read at call time, so a
-// change applies from the very next fetch. `Where`: the Blockbook instances
-// tried, in order, the selected one first -- Trezor's public pair by
-// default, a self-hosted node by choice. `How`: the page size, i.e. how
-// much history each height-range ask carries -- smaller bites are gentler
-// on public instances and checkpoint more often; bigger ones finish sooner.
-// Trezor's public instances (btc1..btc5), then Zelcore's independently
-// operated one -- a different operator means a different rate-limiter, so
-// the list survives any single provider throttling a busy reader.
-export const DEFAULT_BLOCKBOOK = [
-  'https://btc1.trezor.io/api/v2',
-  'https://btc2.trezor.io/api/v2',
-  'https://btc3.trezor.io/api/v2',
-  'https://btc4.trezor.io/api/v2',
-  'https://btc5.trezor.io/api/v2',
-  'https://blockbook.btc.zelcore.io/api/v2',
-];
-const BB_CUSTOM_KEY = 'glossia-btc-blockbook-custom';
-const BB_SELECTED_KEY = 'glossia-btc-blockbook-selected';
-const BB_PAGESIZE_KEY = 'glossia-btc-blockbook-pagesize';
-const BLOCKBOOK_PAGE_DEFAULT = 1000;
-const BLOCKBOOK_CONCURRENCY = 4;
-export function blockbookCustom() {
-  try { const v = JSON.parse(localStorage.getItem(BB_CUSTOM_KEY)); return Array.isArray(v) ? v.filter((u) => typeof u === 'string') : []; }
-  catch { return []; }
+// --- Where the chain is asked: Esplora-compatible endpoints (Blockstream,
+// mempool.space, or the reader's own node) -- the same API family, and the
+// same stored settings, as the book's reading pages, so one Data source
+// choice serves the whole app. Custom endpoints and the selected preference
+// live in localStorage and are read at call time, so a change applies from
+// the very next fetch. (The Blockbook pool served the mapping for a while;
+// its rejections arrive without CORS headers, so from a browser every
+// failure -- throttle, block, outage -- collapsed to a nameless
+// "unreachable". Esplora's error responses keep their names, and its
+// per-transaction pagination suits the newest-first backfill.)
+export const DEFAULT_ESPLORA = ['https://blockstream.info/api', 'https://mempool.space/api'];
+const ENDPOINTS_KEY = 'glossia-btc-endpoints';   // custom endpoints: [{label,url}] -- the book page's own store
+const SELECTED_KEY = 'glossia-btc-endpoint';     // preferred endpoint url
+export function esploraCustom() {
+  try {
+    const v = JSON.parse(localStorage.getItem(ENDPOINTS_KEY));
+    return Array.isArray(v) ? v.map((m) => (m && typeof m.url === 'string' ? m.url : null)).filter(Boolean) : [];
+  } catch { return []; }
 }
-function blockbookMirrors() {
-  const all = [...DEFAULT_BLOCKBOOK, ...blockbookCustom()];
+function esploraMirrors() {
+  const all = [...DEFAULT_ESPLORA, ...esploraCustom()];
   let sel = null;
-  try { sel = localStorage.getItem(BB_SELECTED_KEY); } catch { /* unavailable */ }
+  try { sel = localStorage.getItem(SELECTED_KEY); } catch { /* unavailable */ }
   return sel && all.includes(sel) ? [sel, ...all.filter((u) => u !== sel)] : all;
 }
-export const blockbookSelected = () => blockbookMirrors()[0];
-export function blockbookPageSize() {
-  let v = NaN;
-  try { v = Number(localStorage.getItem(BB_PAGESIZE_KEY)); } catch { /* unavailable */ }
-  return v >= 25 && v <= 1000 ? Math.floor(v) : BLOCKBOOK_PAGE_DEFAULT;
-}
-// The settings writer: pass only what changes; null restores a default.
-export function setBlockbookSettings({ custom, selected, pageSize } = {}) {
+export const esploraSelected = () => esploraMirrors()[0];
+// The settings writer: pass only what changes; null restores the default.
+// Custom endpoints are written in the book page's {label, url} shape, so
+// either page's picker reads the other's additions.
+const hostOf = (url) => { try { return new URL(url).host; } catch { return url; } };
+export function setEsploraSettings({ custom, selected } = {}) {
   try {
-    if (custom !== undefined) localStorage.setItem(BB_CUSTOM_KEY, JSON.stringify(custom));
+    if (custom !== undefined) localStorage.setItem(ENDPOINTS_KEY, JSON.stringify(custom.map((url) => ({ label: hostOf(url), url }))));
     if (selected !== undefined) {
-      if (selected === null) localStorage.removeItem(BB_SELECTED_KEY);
-      else localStorage.setItem(BB_SELECTED_KEY, selected);
-    }
-    if (pageSize !== undefined) {
-      if (pageSize === null) localStorage.removeItem(BB_PAGESIZE_KEY);
-      else localStorage.setItem(BB_PAGESIZE_KEY, String(pageSize));
+      if (selected === null) localStorage.removeItem(SELECTED_KEY);
+      else localStorage.setItem(SELECTED_KEY, selected);
     }
   } catch { /* unavailable; settings just don't stick */ }
 }
 
-// One blockbook request, with patience: a throttle (429) honors its
+// One esplora request, with patience: a throttle (429) honors its
 // Retry-After (capped -- past a few seconds the UI state serves better than
 // a hang) and a server-side stumble (5xx) gets brief backed-off retries
 // before the mirror is given up on -- public instances rate-limit, and one
-// refused page must not fail a whole 27-page map. A definitive refusal (404
-// and kin) returns at once. The last failure's nature is kept so the pages
-// can name it: a throttle reads differently from a refusal or a dead
-// network.
+// refused page must not fail a whole walk. A definitive refusal (404 and
+// kin) returns at once. The last failure's nature is kept so the pages can
+// name it: a throttle reads differently from a refusal or a dead network.
 let lastFailure = null;
-export function blockbookFailureText() {
+export function chainFailureText() {
   if (lastFailure?.status === 429) return 'throttled (429)';
   if (lastFailure?.status) return `refused (${lastFailure.status})`;
   return typeof navigator !== 'undefined' && navigator.onLine === false ? 'offline' : 'unreachable';
 }
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-async function blockbookJson(mirror, path) {
+async function esploraJson(mirror, path) {
   for (let attempt = 0; ; attempt++) {
     let delay = 400 * 2 ** attempt + Math.random() * 200;
     try {
@@ -323,90 +308,42 @@ async function blockbookJson(mirror, path) {
   }
 }
 
-// One blockbook address page: `txslight` detail carries each transaction's
-// height and its in/out values inline (values are decimal-sats strings), so
-// a page of a thousand transactions is one request. `from` filters to blocks
-// at or above a height (the top-up primitive); `to` filters to blocks at or
-// below one (the checkpointed walk's cursor -- that set is closed history,
-// immutable, so its pagination never shifts).
-const blockbookPath = (address, page, from, to) =>
-  `/address/${address}?details=txslight&pageSize=${blockbookPageSize()}&page=${page}` +
-  (from ? `&from=${from}` : '') + (to != null ? `&to=${to}` : '');
+// One page of an address's confirmed history, newest first: 25 transactions
+// with their full inputs and outputs. The cursor is the last transaction
+// already walked -- esplora resumes strictly after it, a bookmark into
+// closed history that no new arrival can shift (and one that means the same
+// thing on every mirror, so a resumed walk is free to switch).
+const ESPLORA_PAGE = 25;
+const chainPage = (address, lastSeen) =>
+  `/address/${address}/txs/chain${lastSeen ? `/${lastSeen}` : ''}`;
 
-// A blockbook transaction's touches on the address: what its outputs paid
+// An esplora transaction's touches on the address: what its outputs paid
 // in (credit) and its inputs drew out (debit), kept apart -- a ledger does
 // not net within a transaction, let alone within a block. One record per
-// transaction; the entries derive from it. Mempool transactions ride with a
-// non-positive height and are left out -- the map holds mined history only.
-function blockbookTouches(txs, address) {
+// transaction; the entries derive from it. Unconfirmed transactions are
+// left out -- the map holds mined history only.
+function esploraTouches(txs, address) {
   const out = [];
   for (const t of txs || []) {
-    if (!(t.blockHeight > 0)) continue;
+    if (!t.status?.confirmed || !(t.status.block_height > 0)) continue;
     let credit = 0, debit = 0;
-    for (const o of t.vout || []) if (o.addresses?.includes(address)) credit += Number(o.value || 0);
-    for (const i of t.vin || []) if (i.addresses?.includes(address)) debit += Number(i.value || 0);
-    out.push({ height: t.blockHeight, txid: t.txid, time: t.blockTime || null, credit, debit });
+    for (const o of t.vout || []) if (o.scriptpubkey_address === address) credit += Number(o.value || 0);
+    for (const i of t.vin || []) if (i.prevout?.scriptpubkey_address === address) debit += Number(i.value || 0);
+    out.push({ height: t.status.block_height, txid: t.txid, time: t.status.block_time || null, credit, debit });
   }
   return out;
 }
 
-// The delta fetch, for top-ups: everything from a height upward. The page
-// count is NOT trusted from totalPages -- live instances report it -1
-// (unknown) -- so a filtered ask (whose set size the reported total doesn't
-// describe) pages forward until a short page says done. All pages or
-// nothing here: a delta with a hole would corrupt the banked map, so any
-// unrecoverable page fails the attempt and the caller keeps what it had.
-// (The whole-history walk lives in mapWhole, which banks as it goes.)
-async function blockbookMap(address, from, onProgress) {
-  outer: for (const mirror of blockbookMirrors()) {
-    const first = await blockbookJson(mirror, blockbookPath(address, 1, from));
-    if (!first || typeof first.txs !== 'number') continue;
-    const chunks = [blockbookTouches(first.transactions, address)];
-    // The page size actually served (the instance may cap the request's).
-    const size = Number(first.itemsOnPage) > 0 ? Number(first.itemsOnPage) : blockbookPageSize();
-    const firstLen = (first.transactions || []).length;
-    const reported = Number(first.totalPages);
-    // Live sync state for whoever is watching: transactions gathered so far
-    // against the address's total, ticked as each page lands.
-    let gathered = firstLen;
-    const tick = () => { try { onProgress?.(gathered, first.txs); } catch (_) { /* a watcher's error is not the map's */ } };
-    tick();
-    if (!from || firstLen >= size) {
-      if (reported > 0 || !from) {
-        const pages = reported > 0 ? reported : Math.max(1, Math.ceil(first.txs / size));
-        let failed = false;
-        let next = 2;
-        const worker = async () => {
-          while (!failed) {
-            const p = next++;
-            if (p > pages) return;
-            const j = await blockbookJson(mirror, blockbookPath(address, p, from)) ??
-                      await blockbookJson(mirror, blockbookPath(address, p, from));   // one retry
-            if (!j) { failed = true; return; }
-            chunks[p - 1] = blockbookTouches(j.transactions, address);
-            gathered += (j.transactions || []).length;
-            tick();
-          }
-        };
-        await Promise.all(Array.from({ length: Math.min(BLOCKBOOK_CONCURRENCY, Math.max(pages - 1, 0)) }, worker));
-        if (failed) continue;
-      } else {
-        // Filtered, size unknown: read forward until a page comes up short.
-        for (let p = 2; p <= 1000; p++) {
-          const j = await blockbookJson(mirror, blockbookPath(address, p, from)) ??
-                    await blockbookJson(mirror, blockbookPath(address, p, from));   // one retry
-          if (!j) continue outer;
-          const batch = j.transactions || [];
-          chunks.push(blockbookTouches(batch, address));
-          gathered += batch.length;
-          tick();
-          if (batch.length < size) break;
-        }
-      }
+// The address's chain state -- confirmed balance and transaction count --
+// straight from /address/:addr, no memory: the mapper reconciles against
+// the chain's now, not a remembered figure.
+async function chainState(address) {
+  for (const mirror of esploraMirrors()) {
+    const j = await esploraJson(mirror, `/address/${address}`);
+    const c = j?.chain_stats;
+    if (c && typeof c.tx_count === 'number') {
+      return { balance: Number(c.funded_txo_sum) - Number(c.spent_txo_sum), txCount: c.tx_count };
     }
-    // `balance` is the address's whole confirmed balance regardless of any
-    // from-filter -- an address property, not a page one.
-    return { txCount: first.txs, balance: Number(first.balance ?? 0), touches: chunks.flat() };
   }
   return null;
 }
@@ -480,13 +417,20 @@ const readRegistry = () => {
 };
 
 // The stored map for an address, if any -- render it instantly, then let
-// resolveLine confirm or extend it. Lines are versioned: the schema moved
-// from per-block chapters to per-side entries, and a line from before the
-// move reads as absent, so the next resolution remaps it whole.
-const LINE_V = 2;
+// resolveLine confirm or extend it. Lines are versioned: v2 moved per-block
+// chapters to per-side entries; v3 moved the backfill cursor from a
+// blockbook height (`low`) to an esplora txid (`lastSeen`). A complete v2
+// line carries no cursor and its entries are identical in shape, so it
+// upgrades in place -- nothing already synced refetches. An incomplete v2
+// checkpoint belongs to the old walk and reads as absent; the next
+// resolution maps afresh, newest first.
+const LINE_V = 3;
 export async function cachedLine(address) {
   const line = await idb('readonly', (s) => s.get(address));
-  return line && line.v === LINE_V ? line : null;
+  if (!line) return null;
+  if (line.v === LINE_V) return line;
+  if (line.v === 2 && line.complete) return { ...line, v: LINE_V };
+  return null;
 }
 async function saveLine(address, data) {
   await idb('readwrite', (s) => s.put(data, address));
@@ -502,39 +446,54 @@ async function saveLine(address, data) {
 
 // --- Resolution: aim for the complete map, keep it current for pennies.
 
-// A complete cached map tops up from its frontier: new appearances can only
-// live in blocks above the highest mapped one, so a single from-filtered
-// page both checks freshness (the total is unchanged -> nothing new) and
-// carries whatever is. Heights above the frontier are disjoint from the map
-// by construction, so merging is concatenation. Unreachable mirrors leave
-// the stored map standing, complete as of its writing.
+// A complete cached map tops up from the tip: new appearances can only lie
+// in blocks above the highest mapped one, so the walk reads newest pages
+// until it steps below that frontier. The address totals are checked first,
+// making the common case -- nothing new -- one small request; and the delta
+// is all pages or nothing, since a delta with a hole would corrupt the map.
+// Heights above the frontier are disjoint from the map by construction, so
+// merging is concatenation. Unreachable mirrors leave the stored map
+// standing, complete as of its writing.
 async function topUp(address, cached, onProgress) {
   const frontier = (cached.entries[cached.entries.length - 1]?.height ?? 0) + 1;
-  const bb = await blockbookMap(address, frontier, onProgress);
-  if (!bb) return cached;
-  // The from-filter is re-applied locally: a mirror that ignored it (or
-  // answered with overlap) must not double-count the mapped history.
-  const fresh = bb.touches.filter((t) => t.height >= frontier);
-  if (bb.txCount === cached.txCount && !fresh.length && cached.balance === bb.balance) return cached;
-  const entries = cached.entries.concat(buildEntries(fresh));
-  const data = { v: LINE_V, at: Date.now(), txCount: bb.txCount, balance: bb.balance, walked: cached.walked + fresh.length, complete: true, entries };
-  await saveLine(address, data);
-  return data;
+  outer: for (const mirror of esploraMirrors()) {
+    const j = await esploraJson(mirror, `/address/${address}`);
+    const cs = j?.chain_stats;
+    if (!cs || typeof cs.tx_count !== 'number') continue;
+    const txCount = cs.tx_count;
+    const balance = Number(cs.funded_txo_sum) - Number(cs.spent_txo_sum);
+    if (txCount === cached.txCount && balance === cached.balance) return cached;
+    let cursor = null;
+    const fresh = [];
+    for (;;) {
+      const page = await esploraJson(mirror, chainPage(address, cursor));
+      if (!Array.isArray(page)) continue outer;
+      const recs = esploraTouches(page, address);
+      fresh.push(...recs.filter((r) => r.height >= frontier));
+      try { onProgress?.(cached.walked + fresh.length, txCount); } catch (_) { /* a watcher's error is not the map's */ }
+      if (page.length < ESPLORA_PAGE || recs.some((r) => r.height < frontier)) break;
+      cursor = page[page.length - 1].txid;
+    }
+    const entries = cached.entries.concat(buildEntries(fresh));
+    const data = { v: LINE_V, at: Date.now(), txCount, balance, walked: cached.walked + fresh.length, complete: true, entries };
+    await saveLine(address, data);
+    return data;
+  }
+  return cached;
 }
 
-// The whole map, gathered newest-to-oldest by a height cursor and BANKED as
-// it goes. Each iteration asks for everything at or below the cursor -- an
-// immutable set, those blocks being closed -- keeps the entries strictly
-// above the page's lowest height (a page may split a block, so the boundary
-// block is left for the next iteration to fetch whole), persists the
-// checkpoint, and steps the cursor down. An interrupted run -- a throttled
-// mirror, a closed tab -- therefore loses at most one page of work, and a
-// resume continues from the banked low, independent of mirror and page
-// size: closed periods, once found, are kept. The final short page banks
-// everything and marks the line complete.
+// The whole map, gathered newest-to-oldest and BANKED as it goes: the most
+// recent transactions land first -- the page a reader opens shows the
+// latest entries almost immediately -- and the history backfills gradually
+// behind them. Each iteration asks for the next 25 confirmed transactions
+// after the cursor (the last txid already walked -- closed history, so the
+// pagination never shifts), banks their entries, persists the checkpoint,
+// and steps on. An interrupted run -- a throttled mirror, a closed tab --
+// therefore loses at most one page of work, and a resume continues from
+// the banked cursor on any mirror: closed periods, once found, are kept.
+// The final short page marks the line complete.
 async function mapWhole(address, resume, onProgress) {
-  let ceil = resume?.ceil ?? null;
-  let cursor = resume?.low ?? null;
+  let cursor = resume?.lastSeen ?? null;
   let entries = resume ? resume.entries : [];
   let walked = resume?.walked ?? 0;
   let txCount = resume?.txCount ?? 0;
@@ -542,46 +501,35 @@ async function mapWhole(address, resume, onProgress) {
   const tick = () => { try { onProgress?.(walked, txCount); } catch (_) { /* a watcher's error is not the map's */ } };
   if (resume) tick();
   let madeProgress = false;
-  mirrors: for (const mirror of blockbookMirrors()) {
+  mirrors: for (const mirror of esploraMirrors()) {
+    // The address totals first: what the walk reconciles against. Refreshed
+    // on every attempt (a resume may be days later), never trusted stale.
+    const j = await esploraJson(mirror, `/address/${address}`);
+    const cs = j?.chain_stats;
+    if (!cs || typeof cs.tx_count !== 'number') continue;
+    txCount = cs.tx_count;
+    balance = Number(cs.funded_txo_sum) - Number(cs.spent_txo_sum);
     for (;;) {
-      // A fresh run's first ask is unfiltered -- it learns the set's ceiling
-      // and the address totals; every later ask is ≤ cursor.
-      const j = await blockbookJson(mirror, blockbookPath(address, 1, undefined, cursor));
-      if (!j || typeof j.txs !== 'number') continue mirrors;
-      const size = Number(j.itemsOnPage) > 0 ? Number(j.itemsOnPage) : blockbookPageSize();
-      if (ceil === null) { txCount = j.txs; balance = Number(j.balance ?? 0); }
-      let recs = blockbookTouches(j.transactions, address);
-      if (ceil === null) ceil = recs[0]?.height ?? 0;
-      let short = (j.transactions || []).length < size;
-      // A single block wider than a page: keep paging the same cursor until
-      // the height breaks or the set ends, so the block can bank whole.
-      for (let p = 2; !short && recs.length && recs.every((r) => r.height === recs[0].height); p++) {
-        const j2 = await blockbookJson(mirror, blockbookPath(address, p, undefined, cursor));
-        if (!j2) continue mirrors;
-        recs = recs.concat(blockbookTouches(j2.transactions, address));
-        short = (j2.transactions || []).length < size;
-      }
-      if (short) {
-        entries = buildEntries(recs).concat(entries);
-        walked += recs.length;
+      const page = await esploraJson(mirror, chainPage(address, cursor));
+      if (!Array.isArray(page)) continue mirrors;
+      const recs = esploraTouches(page, address);
+      entries = buildEntries(recs).concat(entries);
+      walked += recs.length;
+      if (page.length < ESPLORA_PAGE) {
         const data = { v: LINE_V, at: Date.now(), txCount, balance, walked, complete: true, entries };
         await saveLine(address, data);
         tick();
         return data;
       }
-      const low = recs[recs.length - 1].height;
-      const bank = recs.filter((r) => r.height > low);
-      entries = buildEntries(bank).concat(entries);
-      walked += bank.length;
-      cursor = low;
+      cursor = page[page.length - 1].txid;
       madeProgress = true;
-      await saveLine(address, { v: LINE_V, at: Date.now(), txCount, balance, walked, complete: false, ceil, low, entries });
+      await saveLine(address, { v: LINE_V, at: Date.now(), txCount, balance, walked, complete: false, lastSeen: cursor, entries });
       tick();
     }
   }
   // Mirrors exhausted mid-run: whatever was banked is the result -- the next
   // visit resumes from it rather than starting over.
-  if (madeProgress || resume) return { v: LINE_V, at: Date.now(), txCount, balance, walked, complete: false, ceil, low: cursor, entries };
+  if (madeProgress || resume) return { v: LINE_V, at: Date.now(), txCount, balance, walked, complete: false, lastSeen: cursor, entries };
   return null;
 }
 
@@ -595,7 +543,7 @@ async function mapWhole(address, resume, onProgress) {
 export async function resolveLine(address, onProgress) {
   const cached = await cachedLine(address);
   if (cached?.complete) return topUp(address, cached, onProgress);
-  const resume = cached && cached.low != null ? cached : null;
+  const resume = cached && cached.lastSeen != null ? cached : null;
   const line = await mapWhole(address, resume, onProgress);
   if (!line) return cached ?? null;
   return line.complete ? topUp(address, line, onProgress) : line;
@@ -606,14 +554,6 @@ export async function resolveLine(address, onProgress) {
 // The shelf shows balances with this alone, starting nobody's sync; the
 // mapping begins only when a reader steps into the ledger itself.
 //
-// Esplora answers first: /address/:addr carries the confirmed funded and
-// spent sums (their difference IS the balance) and the transaction count,
-// and its public mirrors put CORS headers on error responses too -- so a
-// throttle from them reads as a throttle, where the blockbook pool's bare
-// rejections all collapse to "unreachable" in a browser. Blockbook stays
-// as the fallback here, and remains the mapping's sole source.
-const ESPLORA_MIRRORS = ['https://blockstream.info/api', 'https://mempool.space/api'];
-
 // The balance memory: a probe's answer is good for ten minutes -- balances
 // move at chain speed, roughly a block, not at page-load speed -- so a
 // shelf revisited within that window asks the network nothing. And the
@@ -653,27 +593,8 @@ export function lastKnownState(address) {
 export async function addressState(address) {
   const known = lastKnownState(address);
   if (known && !known.stale) return known;
-  for (const base of ESPLORA_MIRRORS) {
-    try {
-      const res = await fetch(`${base}/address/${address}`);
-      if (!res.ok) { lastFailure = { status: res.status }; continue; }
-      const c = (await res.json())?.chain_stats;
-      if (c && typeof c.tx_count === 'number') {
-        lastFailure = null;
-        const state = { balance: c.funded_txo_sum - c.spent_txo_sum, txCount: c.tx_count };
-        keepBalance(address, state);
-        return state;
-      }
-    } catch { lastFailure = { network: true }; }
-  }
-  for (const mirror of blockbookMirrors()) {
-    const j = await blockbookJson(mirror, `/address/${address}?details=basic`);
-    if (j && typeof j.txs === 'number') {
-      const state = { balance: Number(j.balance ?? 0), txCount: j.txs };
-      keepBalance(address, state);
-      return state;
-    }
-  }
+  const state = await chainState(address);
+  if (state) { keepBalance(address, state); return state; }
   return known;   // every source failed: the last answer, marked stale -- or null
 }
 
@@ -687,17 +608,19 @@ export async function addressState(address) {
 // identity (Σ held = balance = Σ entries); callers display the held view
 // only when it agrees, the same discipline the gate keeps.
 export async function heldCoins(address) {
-  for (const mirror of blockbookMirrors()) {
-    const utxos = await blockbookJson(mirror, `/utxo/${address}?confirmed=true`);
+  for (const mirror of esploraMirrors()) {
+    const utxos = await esploraJson(mirror, `/address/${address}/utxo`);
     if (!Array.isArray(utxos)) continue;
     const byTxid = new Map();
-    let sum = 0;
+    let sum = 0, count = 0;
     for (const u of utxos) {
+      if (!u.status?.confirmed) continue;   // the held view is mined history only
       const sats = Number(u.value || 0);
       sum += sats;
+      count++;
       byTxid.set(u.txid, (byTxid.get(u.txid) ?? 0) + sats);
     }
-    return { sum, count: utxos.length, byTxid };
+    return { sum, count, byTxid };
   }
   return null;
 }
