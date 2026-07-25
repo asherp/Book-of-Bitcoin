@@ -18,8 +18,46 @@
 <script>
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js').catch((e) => console.warn('SW registration failed:', e));
+      navigator.serviceWorker.register('./sw.js').then((reg) => {
+        // An installed app can resume from the background for days without a
+        // navigation, never rechecking for a new build: check again on every
+        // return to the foreground.
+        document.addEventListener('visibilitychange', () => {
+          if (document.visibilityState === 'visible') reg.update().catch(() => {});
+        });
+      }).catch((e) => console.warn('SW registration failed:', e));
     });
+
+    // Update affordance: the worker's stale-while-revalidate serves this page
+    // from cache, so a fresh deploy is invisible until the NEXT visit. When
+    // the background revalidation caches a newer build, the worker posts
+    // update-available to every open page; a brand-new worker taking over
+    // (controllerchange, on a page that already had one) means the same
+    // thing. Either way the Update button appears; one tap reloads onto the
+    // freshly cached build.
+    (function () {
+      let updateReady = false;
+      let btn = null;
+      const reflect = () => { if (btn) btn.classList.toggle('show', updateReady); };
+      const showUpdate = () => { updateReady = true; reflect(); };
+      navigator.serviceWorker.addEventListener('message', (e) => {
+        if (e.data && e.data.type === 'update-available') showUpdate();
+      });
+      const hadController = !!navigator.serviceWorker.controller;
+      navigator.serviceWorker.addEventListener('controllerchange', () => { if (hadController) showUpdate(); });
+      const wire = () => {
+        btn = document.getElementById('update-btn');
+        if (!btn) return;
+        btn.addEventListener('click', () => location.reload());
+        reflect();
+      };
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', wire);
+      } else {
+        wire();
+      }
+    })();
+
   }
 
   // The page is assembled from ES modules that both the HTTP cache (GitHub
@@ -188,8 +226,22 @@ a:hover { text-decoration: underline; }
 .sp-bm:hover .sp-bm-ref { text-decoration:underline; color:var(--accent-2); }
 .toc-bm { display:inline-block; width:9px; height:12px; margin-right:8px; color:var(--accent); vertical-align:baseline; }
 .toc-bm svg { display:block; width:100%; height:100%; }
+
+/* Update affordance: pinned top-left (the settings menu owns the right),
+   revealed when a newer build has been cached behind this page. */
+.update-btn {
+  display:none; position:fixed; z-index:60;
+  top:calc(12px + env(safe-area-inset-top, 0px)); left:14px;
+  background:var(--accent); border:1px solid var(--accent); color:#17140c;
+  border-radius:4px; padding:6px 12px; cursor:pointer;
+  font:600 11px/1 'IBM Plex Mono',monospace; letter-spacing:.08em; text-transform:uppercase;
+  box-shadow:0 8px 24px -8px rgba(0,0,0,.8);
+}
+.update-btn.show { display:inline-block; }
+.update-btn:hover { background:var(--accent-2); border-color:var(--accent-2); }
 </style>
 <body>
+<button type="button" id="update-btn" class="update-btn" aria-label="A new version is ready — reload to update">Update</button>
 <div class="wrap">
   <div class="masthead">
     <span class="title">The <span class="beta">β</span>ook of <span class="beta">β</span>itcoin</span>
