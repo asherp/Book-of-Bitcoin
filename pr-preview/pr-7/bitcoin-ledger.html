@@ -202,6 +202,22 @@ a:hover { text-decoration: underline; }
 .acct-heads { display:flex; gap:10px; align-items:baseline; padding:10px 2px 2px 14px;
   font:600 9.5px/1 'IBM Plex Mono',monospace; letter-spacing:.14em; text-transform:uppercase; color:var(--meta); }
 .acct-heads .h-ref { flex:1; }
+/* The totals bar: the reader pages' foot-nav seat -- sticky at the screen
+   bottom, the rule its top edge, prose scrolling behind its page-colour
+   backing -- holding the column sums and the balance they net to. */
+.hidden { display:none !important; }
+.acct-totals { position:sticky; bottom:0; z-index:40;
+  display:flex; gap:10px; align-items:baseline; margin-top:30px;
+  padding:12px 2px max(12px, env(safe-area-inset-bottom)) 14px;
+  border-top:1px solid var(--rule); background:var(--page); }
+.acct-totals .t-bal { flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.acct-totals .t-label { font:600 9.5px/1 'IBM Plex Mono',monospace; letter-spacing:.14em; text-transform:uppercase; color:var(--meta); margin-right:6px; }
+.acct-totals .t-fig { font:600 13px/1.4 'IBM Plex Mono',monospace; color:var(--accent); font-variant-numeric:tabular-nums; }
+.acct-totals .idx-amt { flex:none; font-size:12.5px; color:var(--ink-soft); }
+@media (max-width: 560px) {
+  .acct-totals .idx-amt { font-size:11px; }
+  .acct-totals .t-fig { font-size:12px; }
+}
 @media (max-width: 560px) {
   .idx-row.acct .idx-amt { font-size:11px; }
   .col-deb, .col-cred { width:84px; }
@@ -300,6 +316,19 @@ a:hover { text-decoration: underline; }
       </header>
 
       <div id="anthology"></div>
+
+      <!-- The totals bar, seated the way the reader's foot nav sits: sticky
+           at the screen bottom while the record scrolls, settling at its
+           foot when the reader arrives. It rules the running record off at
+           every moment: the column sums (the unsynced remainder included,
+           so the books always add up mid-scroll) and the balance they net
+           to. -->
+      <div class="acct-totals hidden" id="acct-totals">
+        <span class="t-bal"><span class="t-label">balance</span> <span class="t-fig" id="t-balance"></span></span>
+        <span class="idx-amt col-deb" id="t-debit"></span>
+        <span class="idx-amt col-cred" id="t-credit"></span>
+        <span class="idx-status col-status" id="t-count"></span>
+      </div>
     </div>
   </div>
 </div>
@@ -448,6 +477,7 @@ if (!list.length) {
   };
   const unreachable = (alive, retry) => {
     el.replaceChildren();
+    totalsBar.classList.add('hidden');
     count.textContent = '';
     range.textContent = '';
     heldEl.replaceChildren();
@@ -489,6 +519,25 @@ if (!list.length) {
   // every landing: a result belonging to a leaf already turned away from
   // paints nothing.
   const PAGE = 25;
+  // The totals bar rules the record off at every moment: Σ debit, Σ credit
+  // (the unsynced remainder posted into its column, so the books add up
+  // mid-scroll, not just at completion), the transaction count, and the
+  // balance the columns net to. Hidden wherever there is no record to rule.
+  const totalsBar = document.getElementById('acct-totals');
+  const showTotals = (line) => {
+    if (!line || !line.entries.length) { totalsBar.classList.add('hidden'); return; }
+    let debit = 0, credit = 0;
+    for (const c of line.entries) { if (c.sats < 0) debit -= c.sats; else credit += c.sats; }
+    if (!line.complete) {
+      const net = (line.balance ?? 0) - ledgerSum(line);
+      if (net >= 0) credit += net; else debit += -net;
+    }
+    document.getElementById('t-balance').textContent = formatBalanceBtc(line.balance ?? credit - debit);
+    document.getElementById('t-debit').textContent = debit ? formatBalanceBtc(debit) : '';
+    document.getElementById('t-credit').textContent = formatBalanceBtc(credit);
+    document.getElementById('t-count').textContent = `${line.txCount.toLocaleString('en-US')} §`;
+    totalsBar.classList.remove('hidden');
+  };
   const stateText = (d) => !d.complete
     ? `the latest ${d.walked.toLocaleString('en-US')} of ${d.txCount.toLocaleString('en-US')} transactions gathered`
     : reconciled(d) ? 'the whole record gathered · reconciled with the chain'
@@ -533,6 +582,7 @@ if (!list.length) {
       }
       note.textContent = stateText(line);   // the reach grows as the reader reads
       setUnsynced(line);
+      showTotals(line);
       foot.textContent = line.complete && rendered >= len ? '— the beginning of the record' : '…';
       // The fetch ahead: keep a page banked beyond what's drawn.
       if (!line.complete && len - rendered < PAGE) extendLine(addr);
@@ -680,6 +730,7 @@ if (!list.length) {
     const alive = () => g === gen;
     renderPager();
     // A fresh leaf: clear what the last one wrote before its own data lands.
+    totalsBar.classList.add('hidden');   // the record's paint re-seats it
     document.getElementById('anth-addr').textContent = '';
     document.getElementById('anth-prose').replaceChildren();
     count.textContent = '';
