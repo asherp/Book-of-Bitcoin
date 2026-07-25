@@ -301,13 +301,14 @@ if (!addr) {
   })();
 
   const count = document.getElementById('anth-count');
+  const n = (v, one, many) => `${v.toLocaleString('en-US')} ${v === 1 ? one : many}`;
   const showCount = (data) => {
     if (!data || !data.chapters.length) { count.textContent = ''; return; }
-    const parts = [`${data.txCount.toLocaleString('en-US')} entries`];
+    const parts = [n(data.txCount, 'entry', 'entries')];
     const years = periods(data);
     if (years) {
-      const quarters = years.reduce((n, y) => n + y.quarters.length, 0);
-      parts.push(`${quarters.toLocaleString('en-US')} quarters`, `${years.length.toLocaleString('en-US')} years`);
+      const quarters = years.reduce((nq, y) => nq + y.quarters.length, 0);
+      parts.push(n(quarters, 'quarter', 'quarters'), n(years.length, 'year', 'years'));
     }
     count.textContent = parts.join(' · ');
   };
