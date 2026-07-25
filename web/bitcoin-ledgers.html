@@ -104,12 +104,56 @@ a:hover { text-decoration: underline; }
 /* The build stamp: when the served page was last modified, so "is my page
    stale" is answerable at a glance rather than guessed at. */
 .page-stamp { margin-top:34px; text-align:center; font:400 10px/1 'IBM Plex Mono',monospace; letter-spacing:.08em; color:var(--meta); }
+
+/* Settings: where the ledgers ask (Blockbook instances, the chosen one
+   first) and how much history each ask carries -- in the book page's own
+   settings-panel manner. */
+.settings-menu { position:relative; }
+.settings-panel { position:absolute; right:0; top:24px; z-index:10; width:min(420px, 92vw);
+  background:var(--card); border:1px solid var(--card-bd); border-radius:6px; padding:16px 18px 18px;
+  box-shadow:0 24px 60px -32px rgba(0,0,0,.8); text-align:left; }
+.settings-panel.hidden { display:none; }
+.settings-title { font:600 10px/1 'IBM Plex Mono',monospace; letter-spacing:.16em; text-transform:uppercase; color:var(--dim); margin:14px 0 8px; }
+.settings-title:first-child { margin-top:0; }
+.endpoint-row { display:flex; gap:8px; }
+.bb-select { flex:1; min-width:0; background:var(--input-bg); border:1px solid var(--input-bd); border-radius:4px;
+  color:var(--ink); font:400 12px/1.4 'IBM Plex Mono',monospace; padding:8px 8px; }
+.bb-select:focus { outline:none; border-color:var(--accent); }
+.ghost-btn, .save-btn { background:transparent; border:1px solid var(--input-bd); color:var(--dim); border-radius:4px;
+  padding:0 10px; cursor:pointer; font:600 10.5px/1 'IBM Plex Mono',monospace; letter-spacing:.06em; text-transform:uppercase; }
+.ghost-btn:hover:not(:disabled), .save-btn:hover { border-color:var(--accent); color:var(--accent); }
+.ghost-btn:disabled { opacity:.4; cursor:default; }
+.endpoint-add-row { display:flex; gap:8px; margin-top:8px; }
+.endpoint-add-row.hidden { display:none; }
+.endpoint-add-row input { flex:1; min-width:0; background:var(--input-bg); border:1px solid var(--input-bd); border-radius:4px;
+  color:var(--ink); font:400 12px/1.4 'IBM Plex Mono',monospace; padding:8px 8px; }
+.endpoint-add-row input:focus { outline:none; border-color:var(--accent); }
+.settings-note { margin-top:12px; font:400 10.5px/1.6 'IBM Plex Mono',monospace; color:var(--meta); }
 </style>
 <body>
 <div class="wrap">
   <div class="masthead">
     <span class="title">The <span class="beta">β</span>ook of <span class="beta">β</span>itcoin</span>
-    <span class="home"><a href="./bitcoin-book.html">Read</a> · <a href="./bitcoin-contents.html">Contents</a> · <a href="./bitcoin-search.html">Search</a> · <a href="https://glossia.io/">Glossia</a></span>
+    <span class="home"><a href="./bitcoin-book.html">Read</a> · <a href="./bitcoin-contents.html">Contents</a> · <a href="./bitcoin-search.html">Search</a> · <span class="settings-menu"><a href="#" id="settings-link" role="button" aria-haspopup="dialog" aria-expanded="false">Settings</a><div id="settings-panel" class="settings-panel hidden" role="dialog" aria-label="Ledger settings">
+      <div class="settings-title">Blockbook source</div>
+      <div class="endpoint-row">
+        <select id="bb-select" class="bb-select" aria-label="Blockbook endpoint"></select>
+        <button type="button" id="bb-add" class="ghost-btn">+ Add</button>
+        <button type="button" id="bb-remove" class="ghost-btn" disabled>Remove</button>
+      </div>
+      <div id="bb-add-row" class="endpoint-add-row hidden">
+        <input type="text" id="bb-url" placeholder="https://your-blockbook/api/v2" autocomplete="off" spellcheck="false">
+        <button type="button" id="bb-save" class="save-btn">Save</button>
+      </div>
+      <div class="settings-title">Transactions per ask</div>
+      <select id="bb-size" class="bb-select" aria-label="Transactions per request">
+        <option value="1000">1,000 — fewest requests</option>
+        <option value="500">500</option>
+        <option value="250">250 — gentler, checkpoints oftener</option>
+        <option value="100">100</option>
+      </select>
+      <div class="settings-note">Where the ledgers ask (the chosen source is tried first) and how much history each height-range ask carries. Applies from the next fetch; banked history is never refetched.</div>
+    </div></span> · <a href="https://glossia.io/">Glossia</a></span>
   </div>
 
   <header class="page-head">
@@ -121,7 +165,71 @@ a:hover { text-decoration: underline; }
 </div>
 
 <script type="module">
-import { INDEXED, isAddress, cachedLine, addressState, formatBalanceBtc } from './btc-index.js';
+import { INDEXED, isAddress, cachedLine, addressState, formatBalanceBtc,
+         DEFAULT_BLOCKBOOK, blockbookCustom, blockbookSelected, blockbookPageSize, setBlockbookSettings } from './btc-index.js';
+
+// --- Settings: where the ledgers ask, and how much each ask carries.
+// Reads and writes btc-index.js's stored settings; the machinery reads them
+// at call time, so a change applies from the very next fetch on any page.
+{
+  const link = document.getElementById('settings-link');
+  const panel = document.getElementById('settings-panel');
+  const select = document.getElementById('bb-select');
+  const removeBtn = document.getElementById('bb-remove');
+  const addRow = document.getElementById('bb-add-row');
+  const urlInput = document.getElementById('bb-url');
+  const sizeSel = document.getElementById('bb-size');
+  const shortName = (u) => u.replace(/^https?:\/\//, '').replace(/\/api\/v2\/?$/, '');
+  const rebuild = () => {
+    select.replaceChildren();
+    for (const u of [...DEFAULT_BLOCKBOOK, ...blockbookCustom()]) {
+      const o = document.createElement('option');
+      o.value = u;
+      o.textContent = shortName(u) + (DEFAULT_BLOCKBOOK.includes(u) ? '' : ' · yours');
+      select.append(o);
+    }
+    select.value = blockbookSelected();
+    removeBtn.disabled = DEFAULT_BLOCKBOOK.includes(select.value);
+    sizeSel.value = String(blockbookPageSize());
+  };
+  link.addEventListener('click', (ev) => {
+    ev.preventDefault();
+    const open = panel.classList.toggle('hidden');
+    link.setAttribute('aria-expanded', String(!open));
+    if (!open) rebuild();
+  });
+  select.addEventListener('change', () => {
+    setBlockbookSettings({ selected: DEFAULT_BLOCKBOOK[0] === select.value ? null : select.value });
+    rebuild();
+  });
+  sizeSel.addEventListener('change', () => {
+    setBlockbookSettings({ pageSize: sizeSel.value === '1000' ? null : Number(sizeSel.value) });
+  });
+  removeBtn.addEventListener('click', () => {
+    const u = select.value;
+    setBlockbookSettings({ custom: blockbookCustom().filter((c) => c !== u), selected: null });
+    rebuild();
+  });
+  document.getElementById('bb-add').addEventListener('click', () => {
+    addRow.classList.toggle('hidden');
+    urlInput.focus();
+  });
+  document.getElementById('bb-save').addEventListener('click', () => {
+    // Normalized to the /api/v2 base the module appends paths to.
+    let u = urlInput.value.trim().replace(/\/+$/, '');
+    if (!/^https?:\/\//.test(u)) return;
+    if (!/\/api\/v2$/.test(u)) u += '/api/v2';
+    if (![...DEFAULT_BLOCKBOOK, ...blockbookCustom()].includes(u)) {
+      setBlockbookSettings({ custom: [...blockbookCustom(), u], selected: u });
+    } else {
+      setBlockbookSettings({ selected: u });
+    }
+    urlInput.value = '';
+    addRow.classList.add('hidden');
+    rebuild();
+  });
+  rebuild();
+}
 
 // The shelf lists the ledgers: title and current balance, nothing else --
 // and it asks for nothing else: one basic-details request per address (the
