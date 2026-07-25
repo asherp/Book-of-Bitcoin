@@ -574,9 +574,6 @@ if (!list.length) {
     heldEl.replaceChildren();
 
     if (at >= addrs.length) {
-      // The entries leaf carries no single address: its subtitle counts the
-      // members whose entries it merges.
-      document.getElementById('anth-addr').textContent = `${addrs.length} addresses, one account`;
       runEntries(alive);
       return;
     }
