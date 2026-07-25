@@ -31,7 +31,14 @@
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js').catch((e) => console.warn('SW registration failed:', e));
+      navigator.serviceWorker.register('./sw.js').then((reg) => {
+        // An installed app can resume from the background for days without a
+        // navigation, never rechecking for a new build: check again on every
+        // return to the foreground.
+        document.addEventListener('visibilitychange', () => {
+          if (document.visibilityState === 'visible') reg.update().catch(() => {});
+        });
+      }).catch((e) => console.warn('SW registration failed:', e));
     });
 
     // Update affordance: the worker's stale-while-revalidate serves this page
