@@ -390,6 +390,10 @@ function buildEntries(records) {
 // themselves. Bounded to the most recently used addresses so ad-hoc queries
 // can't grow the store without end.
 
+// Ask the browser to treat this origin's storage as persistent -- installed
+// apps are usually granted it silently -- so what is kept here survives
+// storage pressure instead of standing in the "best effort" eviction line.
+try { navigator.storage?.persist?.().catch(() => { /* denied: merely evictable */ }); } catch (_) { /* unavailable */ }
 const DB_NAME = 'glossia-btc-index';
 const DB_STORE = 'lines';
 const REGISTRY_KEY = 'glossia-btc-index-registry';

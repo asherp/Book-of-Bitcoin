@@ -357,9 +357,22 @@ for (const e of entries) {
   resolve();
 }
 
-// The build stamp: the served file's own last-modified time -- stale-cache
-// questions answered by reading, not guessing.
-document.getElementById('page-stamp').textContent = `page as served · ${document.lastModified}`;
+// The build stamp: the served file's own last-modified time, and the
+// storage verdict -- whether the browser has promised to keep the archive
+// and maps (persistent) or may evict them under pressure (evictable), with
+// the amount held. Stale-cache and lost-data questions answered by reading,
+// not guessing.
+(async () => {
+  const stamp = document.getElementById('page-stamp');
+  let storage = '';
+  try {
+    const persisted = await navigator.storage?.persisted?.();
+    const est = await navigator.storage?.estimate?.();
+    const mb = est?.usage != null ? ` · ${(est.usage / 1048576).toFixed(1)} MB held` : '';
+    storage = ` · storage ${persisted ? 'persistent' : 'evictable'}${mb}`;
+  } catch (_) { /* unavailable */ }
+  stamp.textContent = `page as served · ${document.lastModified}${storage}`;
+})();
 
 // The module graph loaded whole: clear the mixed-build recovery flag (set in
 // the head) so a future redeploy gets its own one-shot reload again.
