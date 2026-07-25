@@ -215,6 +215,20 @@ a:hover { text-decoration: underline; }
 /* The β sigil is a mark, not a letter: exempt from the headers' small caps. */
 .no-tt { text-transform: none; }
 
+/* The carousel, as the book turns its pages: the slide carries the whole
+   leaf (hero and entries) sideways under the finger; the frame clips its
+   travel so a mid-turn leaf never widens the document. */
+#ledger-frame { overflow-x: clip; }
+/* The pager under the title: this leaf's place among the ledger's
+   addresses, with arrows for hands without a touchscreen. Absent entirely
+   on a one-address ledger. */
+.anth-pager { margin-top:14px; display:flex; gap:10px; align-items:baseline; justify-content:center;
+  font:600 11px/1 'IBM Plex Mono',monospace; letter-spacing:.14em; text-transform:uppercase; color:var(--dim); }
+.anth-pager:empty { display:none; }
+.anth-pager a { color:var(--dim); font-size:15px; padding:0 8px; text-decoration:none; }
+.anth-pager a:hover { color:var(--accent); text-decoration:none; }
+.anth-pager a.off { opacity:.25; pointer-events:none; }
+
 /* A reader's bookmarked reference, inline in the contents beneath its book:
    the ribbon it flies in the book, its title in the book's serif, its
    remaining reference on the right. */
@@ -248,36 +262,44 @@ a:hover { text-decoration: underline; }
     <span class="home"><a href="./bitcoin-book.html">Read</a> · <a href="./bitcoin-contents.html">Contents</a> · <a href="./bitcoin-ledgers.html">Ledgers</a> · <a href="./bitcoin-search.html">Search</a> · <a href="https://glossia.io/">Glossia</a></span>
   </div>
 
-  <header class="anth-hero" id="anth-hero">
-    <div class="page-eyebrow">Ledger</div>
-    <h1 class="anth-title" id="anth-title"></h1>
-    <div class="anth-addr" id="anth-addr"></div>
-    <p class="anth-prose" id="anth-prose"></p>
-    <div class="anth-range" id="anth-range"></div>
-    <div class="anth-count" id="anth-count"></div>
-    <div class="anth-held" id="anth-held"></div>
-    <button type="button" class="anth-keep" id="anth-keep"></button>
-    <a class="anth-down" href="#anth-contents" aria-label="Down to the summary and entries">▾</a>
-  </header>
+  <div id="ledger-frame">
+    <div id="ledger-slide">
+      <header class="anth-hero" id="anth-hero">
+        <div class="page-eyebrow">Ledger</div>
+        <h1 class="anth-title" id="anth-title"></h1>
+        <div class="anth-pager" id="anth-pager"></div>
+        <div class="anth-addr" id="anth-addr"></div>
+        <p class="anth-prose" id="anth-prose"></p>
+        <div class="anth-range" id="anth-range"></div>
+        <div class="anth-count" id="anth-count"></div>
+        <div class="anth-held" id="anth-held"></div>
+        <button type="button" class="anth-keep" id="anth-keep"></button>
+        <a class="anth-down" href="#anth-contents" aria-label="Down to the summary and entries">▾</a>
+      </header>
 
-  <div id="anthology"></div>
+      <div id="anthology"></div>
+    </div>
+  </div>
 </div>
 
 <script type="module">
-import { INDEXED, isAddress, addressScriptHex, cachedLine, resolveLine, renderLedger, periods, lineNote, reconciled, heldCoins, formatBalanceBtc, blockbookFailureText } from './btc-index.js';
+import { isAddress, ledgerFor, keptLedgers, saveKeptLedgers, sameAddresses, addressScriptHex, cachedLine, resolveLine, renderLedger, periods, lineNote, reconciled, heldCoins, formatBalanceBtc, blockbookFailureText } from './btc-index.js';
 import { volumeBookChapter, toRoman } from './btc-citation.js';
 
-// An anthology is one address's own subset of the book, opened the way a
-// book opens: a title page (the name; the address; the address again in the
-// book's own tongue -- its scriptPubKey as Glossia prose; the span of
-// volumes and dates its chapters run), then, navigating down, its table of
-// contents -- the spine, the reader's bookmarked references beneath the
-// books that hold them, and the Index closing the list -- and the index
-// itself. Every chapter row opens bitcoin-book.html at its transaction, so
-// an anthology is navigated the same way as the book it excerpts.
+// A ledger is a titled set of addresses, opened the way a book opens: each
+// address is a leaf -- a title page (the name; the address in the book's own
+// tongue, its scriptPubKey as Glossia prose; the span of volumes and dates
+// its chapters run), then, navigating down, its entries by year and quarter.
+// A ledger of several addresses turns between them the way the book turns
+// its pages: swipe left for the next leaf, right for the previous, with the
+// pager's arrows standing in for hands without a touchscreen. (A vertical
+// swipe holds no meaning here yet; it stays an ordinary scroll.) Every
+// chapter row opens bitcoin-book.html at its transaction, so a ledger is
+// navigated the same way as the book it excerpts.
 
 const q = (new URLSearchParams(location.search).get('address') || '').trim();
-const addr = isAddress(q) ? q : (isAddress(q.toLowerCase()) ? q.toLowerCase() : null);
+const norm = (s) => (isAddress(s) ? s : isAddress(s.toLowerCase()) ? s.toLowerCase() : null);
+const list = q ? q.split(',').map((s) => norm(s.trim())).filter(Boolean) : [];
 
 const el = document.getElementById('anthology');
 el.replaceChildren();   // populated-or-recovered is the head script's signal
@@ -285,7 +307,7 @@ const hero = document.getElementById('anth-hero');
 
 // The reader's bookmarks (the same store the book and contents pages keep),
 // carried into the contents render; only those whose height falls on one of
-// the anthology's chapters appear.
+// the ledger's chapters appear.
 const readBookmarks = () => {
   try { const v = JSON.parse(localStorage.getItem('glossia-btc-bookmarks')); return Array.isArray(v) ? v : []; }
   catch { return []; }
@@ -295,64 +317,42 @@ const bookmarks = readBookmarks()
   .filter((b) => Number.isInteger(b.height))
   .map((b) => ({ hex: b.hex, height: b.height, pos: b.pos ?? null, title: b.title || b.prose || shortHex(b.hex) }));
 
-if (!addr) {
+if (!list.length) {
   hero.classList.add('bare');
   document.getElementById('anth-title').textContent = 'One address, its every entry';
-  lineNote(el, 'A ledger is one address’s view of the manuscript, focused on amounts. Open one from the Ledgers page, or put ?address=<an address> in this page’s URL.');
+  lineNote(el, 'A ledger is a view of the manuscript focused on amounts — one address, or a set of them turned like leaves. Open one from the Ledgers page, or put ?address=<an address>[,<another>…] in this page’s URL.');
 } else {
-  // A curated address reads under its curated name; any other under its own.
-  const entry = INDEXED.find((e) => e.address === addr);
-  const title = entry ? entry.title : 'An unkept address';
-  document.title = `The βook of βitcoin — Ledger · ${entry ? entry.title : addr}`;
+  // The URL names the ledger: one member address opens the whole ledger it
+  // belongs to (curated or kept), positioned on that address; a list opens
+  // as exactly those leaves.
+  const ledger = ledgerFor(list);
+  const addrs = ledger.addresses;
+  let at = ledger.at;
+  const title = ledger.title || (addrs.length > 1 ? 'An unkept ledger' : 'An unkept address');
+  document.title = `The βook of βitcoin — Ledger · ${ledger.title || addrs.join(', ')}`;
   document.getElementById('anth-title').textContent = title;
 
-  // Keeping a ledger: any address the reader watches joins the curated ones
-  // on the Ledgers shelf, from the same small store the shelf reads. Curated
+  // Keeping a ledger: the whole set of addresses joins the curated ones on
+  // the Ledgers shelf, from the same registry the shelf reads. Curated
   // ledgers are already shelved, so they carry no button.
-  const KEPT_KEY = 'glossia-btc-ledgers';
-  const readKept = () => {
-    try { const v = JSON.parse(localStorage.getItem(KEPT_KEY)); return Array.isArray(v) ? v : []; }
-    catch { return []; }
-  };
-  if (!entry) {
+  if (!ledger.curated) {
     const keepBtn = document.getElementById('anth-keep');
     keepBtn.classList.add('show');
     const reflect = () => {
-      const kept = readKept().some((k) => k.address === addr);
+      const kept = keptLedgers().some((k) => sameAddresses(k.addresses, addrs));
       keepBtn.classList.toggle('kept', kept);
       keepBtn.textContent = kept ? 'Kept on the shelf — remove' : 'Keep this ledger on the shelf';
     };
     keepBtn.addEventListener('click', () => {
-      const kept = readKept();
-      const has = kept.some((k) => k.address === addr);
-      const next = has ? kept.filter((k) => k.address !== addr) : [...kept, { address: addr }];
-      try { localStorage.setItem(KEPT_KEY, JSON.stringify(next)); } catch (_) { /* unavailable */ }
+      const kept = keptLedgers();
+      const has = kept.some((k) => k.addresses && sameAddresses(k.addresses, addrs));
+      saveKeptLedgers(has
+        ? kept.filter((k) => !sameAddresses(k.addresses, addrs))
+        : [...kept, { title: ledger.title, addresses: addrs }]);
       reflect();
     });
     reflect();
   }
-
-  // The address, once, in the book's own tongue: its scriptPubKey in the
-  // book's opcode notation -- glyphs for the opcodes, a typed push mark, and
-  // Glossia prose for only the genuinely opaque bytes (the hash or witness
-  // program), exactly as the same script reads in every paying chapter. So a
-  // P2PKH title page opens ⧉ ⌖ h²⁰ ⟨prose⟩ ≡ ∇, and the raw base58/bech32
-  // form has nothing left to add. The renderer and engine are the book's own
-  // (renderScript needs the WASM build; see README); only when they can't be
-  // had does the mono address stand in.
-  (async () => {
-    const hex = addressScriptHex(addr);
-    try {
-      if (!hex) throw new Error('undecodable address form');
-      const [g, p] = await Promise.all([import('./glossia-msg.js'), import('./btc-prose.js')]);
-      await g.init();
-      // renderScript's HTML is safe by its own contract: opcode glyphs and
-      // marks are the only markup, pushed data arrives as Glossia prose.
-      document.getElementById('anth-prose').innerHTML = p.renderScript(hex, (h) => g.encodeSeedPhrase(h).prose);
-    } catch {
-      document.getElementById('anth-addr').textContent = addr;
-    }
-  })();
 
   const count = document.getElementById('anth-count');
   const n = (v, one, many) => `${v.toLocaleString('en-US')} ${v === 1 ? one : many}`;
@@ -367,9 +367,9 @@ if (!addr) {
     count.textContent = parts.join(' · ');
   };
 
-  // The anthology's span: the volumes its chapters run, and the dates --
-  // block times ride on every mapped chapter, so both ranges read straight
-  // off the map's first and last.
+  // The leaf's span: the volumes its chapters run, and the dates -- block
+  // times ride on every mapped chapter, so both ranges read straight off
+  // the map's first and last.
   const range = document.getElementById('anth-range');
   const showRange = (data) => {
     if (!data || !data.entries.length) { range.textContent = ''; return; }
@@ -401,7 +401,7 @@ if (!addr) {
     return held.byTxid;
   };
 
-  // Whatever this level knows, shown with its sync state. A reconciled
+  // Whatever this leaf knows, shown with its sync state. A reconciled
   // ledger reads whole -- periods, entries, running balance, held marks. A
   // ledger not yet reconciled still shows its available data (the entries
   // gathered so far, or a whole map awaiting agreement), headed by a sync
@@ -421,7 +421,7 @@ if (!addr) {
       el.prepend(s);
     }
   };
-  const unreachable = () => {
+  const unreachable = (addr, alive) => {
     el.replaceChildren();
     count.textContent = '';
     range.textContent = '';
@@ -432,29 +432,217 @@ if (!addr) {
     const a = document.createElement('a');
     a.href = '#';
     a.textContent = 'retry';
-    a.addEventListener('click', (ev) => { ev.preventDefault(); runResolve(); });
+    a.addEventListener('click', (ev) => { ev.preventDefault(); if (alive()) runResolve(addr, alive); });
     s.append(a);
     el.append(s);
+  };
+
+  // One resolution per address, shared across leaf turns: a reader flipping
+  // away and back re-joins the sync already running rather than starting a
+  // rival walk over the same checkpoints. The progress tick is re-pointed at
+  // whichever leaf currently shows the address.
+  const inflight = new Map();   // address -> resolveLine promise
+  const progress = new Map();   // address -> the current leaf's tick
+  const lineOnce = (addr) => {
+    if (!inflight.has(addr)) {
+      inflight.set(addr, resolveLine(addr, (gathered, total) => progress.get(addr)?.(gathered, total))
+        .finally(() => inflight.delete(addr)));
+    }
+    return inflight.get(addr);
   };
 
   // The stored map first -- instantly, offline included -- then the resolver
   // confirms it against the chain (topping up or mapping afresh) while the
   // held snapshot arrives beside it; the final render carries both. While a
-  // fresh mapping runs, the sync note ticks with it.
-  const runResolve = async () => {
+  // fresh mapping runs, the sync note ticks with it. `alive` guards every
+  // landing: a result belonging to a leaf already turned away from paints
+  // nothing.
+  const runResolve = async (addr, alive) => {
     const heldP = heldCoins(addr);
     const cached = await cachedLine(addr);
+    if (!alive()) return;
     if (cached) view(cached, null);
     else { el.replaceChildren(); lineNote(el, '…'); }
-    const onProgress = reconciled(cached) ? undefined : (gathered, total) => {
-      const note = el.querySelector('.idx-note');
-      if (note) note.textContent = `still syncing — ${gathered.toLocaleString('en-US')} of ${total.toLocaleString('en-US')} transactions gathered`;
-    };
-    const [data, held] = await Promise.all([resolveLine(addr, onProgress), heldP]);
+    if (reconciled(cached)) {
+      progress.delete(addr);
+    } else {
+      progress.set(addr, (gathered, total) => {
+        if (!alive()) return;
+        const note = el.querySelector('.idx-note');
+        if (note) note.textContent = `still syncing — ${gathered.toLocaleString('en-US')} of ${total.toLocaleString('en-US')} transactions gathered`;
+      });
+    }
+    const [data, held] = await Promise.all([lineOnce(addr), heldP]);
+    if (!alive()) return;
     if (data) view(data, held);
-    else if (!cached) unreachable();
+    else if (!cached) unreachable(addr, alive);
   };
-  runResolve();
+
+  // ── The leaf: everything one address puts on the page ────────────────────
+  // Rendering is generation-guarded: turning the page bumps the generation,
+  // and every async continuation from the leaf left behind checks it before
+  // touching the DOM.
+  let gen = 0;
+  const pager = document.getElementById('anth-pager');
+  const renderPager = () => {
+    pager.replaceChildren();
+    if (addrs.length < 2) return;
+    const arrow = (glyph, dir, label) => {
+      const a = document.createElement('a');
+      a.href = '#';
+      a.textContent = glyph;
+      a.setAttribute('aria-label', label);
+      a.classList.toggle('off', !canTurn(dir));
+      a.addEventListener('click', (ev) => { ev.preventDefault(); turn(dir); });
+      return a;
+    };
+    const pos = document.createElement('span');
+    pos.textContent = `${at + 1} of ${addrs.length}`;
+    pager.append(arrow('‹', -1, 'Previous address'), pos, arrow('›', 1, 'Next address'));
+  };
+
+  const openAddress = () => {
+    const g = ++gen;
+    const alive = () => g === gen;
+    const addr = addrs[at];
+    renderPager();
+    // A fresh leaf: clear what the last one wrote before its own data lands.
+    document.getElementById('anth-addr').textContent = '';
+    document.getElementById('anth-prose').replaceChildren();
+    count.textContent = '';
+    range.textContent = '';
+    heldEl.replaceChildren();
+
+    // The address, once, in the book's own tongue: its scriptPubKey in the
+    // book's opcode notation -- glyphs for the opcodes, a typed push mark,
+    // and Glossia prose for only the genuinely opaque bytes (the hash or
+    // witness program), exactly as the same script reads in every paying
+    // chapter. So a P2PKH title page opens ⧉ ⌖ h²⁰ ⟨prose⟩ ≡ ∇, and the raw
+    // base58/bech32 form has nothing left to add. The renderer and engine
+    // are the book's own (renderScript needs the WASM build; see README);
+    // only when they can't be had does the mono address stand in.
+    (async () => {
+      const hex = addressScriptHex(addr);
+      try {
+        if (!hex) throw new Error('undecodable address form');
+        const [gl, p] = await Promise.all([import('./glossia-msg.js'), import('./btc-prose.js')]);
+        await gl.init();
+        if (!alive()) return;
+        // renderScript's HTML is safe by its own contract: opcode glyphs and
+        // marks are the only markup, pushed data arrives as Glossia prose.
+        document.getElementById('anth-prose').innerHTML = p.renderScript(hex, (h) => gl.encodeSeedPhrase(h).prose);
+      } catch {
+        if (alive()) document.getElementById('anth-addr').textContent = addr;
+      }
+    })();
+
+    runResolve(addr, alive);
+  };
+
+  // ── Turning the leaves, as the book turns its pages ──────────────────────
+  // A committed turn snapshots the outgoing leaf as a fixed ghost that keeps
+  // sliding off in the travel direction WHILE the real slide -- hidden --
+  // re-renders the destination and glides in from the opposite edge. The
+  // two halves overlap, so the turn reads as one continuous strip.
+  const REDUCED_MOTION = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const slide = document.getElementById('ledger-slide');
+  const canTurn = (dir) => at + dir >= 0 && at + dir < addrs.length;
+  let turning = false;
+  function turn(dir) {
+    if (!canTurn(dir) || turning) return;
+    if (REDUCED_MOTION) {
+      slide.style.transform = '';
+      at += dir;
+      openAddress();
+      window.scrollTo(0, 0);
+      return;
+    }
+    turning = true;
+    const rect = slide.getBoundingClientRect();   // includes any drag offset
+    const win = document.createElement('div');
+    win.setAttribute('aria-hidden', 'true');
+    Object.assign(win.style, {
+      position: 'fixed', top: '0', left: '0', width: '100%', height: '100%',
+      overflow: 'clip', pointerEvents: 'none', zIndex: '30',
+    });
+    const ghost = slide.cloneNode(true);
+    ghost.removeAttribute('id');
+    Object.assign(ghost.style, {
+      position: 'absolute', top: rect.top + 'px', left: rect.left + 'px',
+      width: rect.width + 'px', margin: '0', transition: 'none', transform: 'none',
+    });
+    win.appendChild(ghost);
+    document.body.appendChild(win);
+    slide.style.transition = 'none';
+    slide.style.transform = '';
+    slide.style.visibility = 'hidden';
+    void ghost.offsetWidth;
+    // Linear, so the exit reads as the drag's momentum carrying on.
+    ghost.style.transition = 'transform .2s linear';
+    ghost.style.transform = `translateX(${dir > 0 ? '-' : ''}${window.innerWidth}px)`;
+    setTimeout(() => win.remove(), 320);
+    // Two frames for the compositor to start the ghost's slide BEFORE the
+    // destination's render work blocks the main thread.
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      at += dir;
+      openAddress();
+      window.scrollTo(0, 0);   // a new leaf opens at its title, unseen while hidden
+      slide.style.transform = `translateX(${dir > 0 ? '' : '-'}${window.innerWidth}px)`;
+      slide.style.visibility = '';
+      void slide.offsetWidth;
+      slide.style.transition = 'transform .22s ease-out';
+      slide.style.transform = '';
+      setTimeout(() => { slide.style.transition = ''; turning = false; }, 260);
+    }));
+  }
+
+  // Recognize a quick, mostly-horizontal single-finger drag, the axis locked
+  // on first significant movement so vertical scrolling never drags the leaf
+  // sideways. The leaf follows the finger; a direction with no neighbour
+  // only rubber-bands. Vertical drags are left entirely to the scroll --
+  // their swipe meaning here is unassigned (yet).
+  (() => {
+    let sx = null, sy = 0, st = 0, axis = null;
+    const snapBack = () => {
+      if (!slide.style.transform) return;
+      slide.style.transition = 'transform .15s ease';
+      slide.style.transform = '';
+    };
+    document.addEventListener('touchstart', (e) => {
+      sx = null; axis = null;
+      if (e.touches.length !== 1 || turning) return;
+      const t = e.target;
+      if (t.closest && t.closest('input, textarea, select')) return;
+      sx = e.touches[0].clientX; sy = e.touches[0].clientY; st = performance.now();
+    }, { passive: true });
+    document.addEventListener('touchmove', (e) => {
+      if (sx === null || REDUCED_MOTION || turning) return;
+      const dx = e.touches[0].clientX - sx;
+      const dy = e.touches[0].clientY - sy;
+      if (!axis) {
+        if (Math.abs(dx) < 12 && Math.abs(dy) < 12) return;
+        axis = Math.abs(dx) > Math.abs(dy) ? 'h' : 'v';
+      }
+      if (axis === 'v') return;
+      const damp = canTurn(dx < 0 ? 1 : -1) ? 1 : 0.25;
+      slide.style.transition = 'none';
+      slide.style.transform = `translateX(${dx * damp}px)`;
+    }, { passive: true });
+    document.addEventListener('touchend', (e) => {
+      if (sx === null || e.changedTouches.length !== 1) return;
+      const dx = e.changedTouches[0].clientX - sx;
+      const dy = e.changedTouches[0].clientY - sy;
+      const dt = performance.now() - st;
+      sx = null;
+      const dir = dx < 0 ? 1 : -1;   // swiping left turns to the next leaf
+      const commit = axis === 'h' && dt <= 600 && Math.abs(dx) >= 60 && Math.abs(dy) <= Math.abs(dx) * 0.6;
+      if (commit && !turning && canTurn(dir)) turn(dir);
+      else if (!turning) snapBack();
+    }, { passive: true });
+    document.addEventListener('touchcancel', () => { sx = null; if (!turning) snapBack(); }, { passive: true });
+  })();
+
+  openAddress();
 }
 </script>
 </body>

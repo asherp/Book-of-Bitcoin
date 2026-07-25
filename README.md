@@ -19,13 +19,16 @@ compiled to WASM) is consumed as a published
 - `web/bitcoin-contents.html` — table of contents / notable blocks
 - `web/bitcoin-ledgers.html` — the Ledgers shelf: notable donation addresses
   (and any address the reader keeps), each with its current balance
-- `web/bitcoin-ledger.html` — one address's ledger: a view of the
-  manuscript focused on amounts. A title page (the address as its
-  Glossia-encoded scriptPubKey), a summary by year and quarter, and the
-  entries — date, citation, net, running balance — with held coins in full
-  ink and spent ones dimmed. Complete address maps arrive via public
-  Blockbook instances in parallel pages, and a ledger opens only once its
-  entries reconcile with the chain's balance
+- `web/bitcoin-ledger.html` — one ledger: a view of the manuscript focused
+  on amounts. A ledger is a titled set of addresses (most hold one); each
+  address is a leaf — a title page (the address as its Glossia-encoded
+  scriptPubKey), a summary by year and quarter, and the entries — date,
+  citation, net, running balance — with held coins in full ink and spent
+  ones dimmed. A multi-address ledger turns between its leaves with the
+  book's own carousel swipe (`?address=a,b,…` names the set). Complete
+  address maps arrive via public Blockbook instances in parallel pages,
+  and a ledger opens only once its entries reconcile with the chain's
+  balance
 - `web/btc-tx.js`, `web/btc-prose.js`, `web/btc-citation.js`,
   `web/btc-contents.js`, `web/btc-index.js`, `web/btc-store.js` —
   transaction parsing, prose composition, citations, contents data,
