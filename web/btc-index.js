@@ -426,50 +426,39 @@ export async function heldCoins(address) {
   return null;
 }
 
-// --- The map's chapters bucketed into their canonical books: only volumes
-// and books with appearances exist as buckets (the chain's own occupancy),
-// each carrying its chapters, count, and net. Works on any map, complete or
-// not -- an incomplete map's oldest bucket simply holds only what was
-// walked, which the caller's tail note names.
-function bucketBooks(chapters) {
-  const volumes = [];
-  let vol = null, book = null;
-  for (const c of chapters) {
-    const place = volumeBookChapter(c.height);
-    if (!vol || vol.volume !== place.volume) {
-      vol = { volume: place.volume, books: [], sats: 0, count: 0 };
-      volumes.push(vol);
-      book = null;
-    }
-    if (!book || book.book !== place.book) {
-      book = { book: place.book, chapters: [], sats: 0 };
-      vol.books.push(book);
-    }
-    book.chapters.push({ ...c, place });
-    book.sats += c.sats;
-    vol.sats += c.sats;
-    vol.count += 1;
-  }
-  return volumes;
-}
-
-// The anthology spine: the buckets renumbered consecutively -- anthology
-// numbers are arabic and its own, the canonical designation rides alongside.
-// The numbering is permanent: past blocks are closed, so a book empty once
-// its window is mined stays empty forever, and new books can only append to
-// the spine's end. Book numbers restart within each anthology volume,
-// mirroring the canonical scheme (β restarts each era). Only a complete map
-// may be spined: consecutive numbers computed from partial history would
-// shift as the map deepened, which is exactly the instability completeness
-// forbids.
-export function spine(data) {
+// --- The ledger's periods: chapters bucketed by the calendar quarter of
+// their block time -- the organization accountants keep, years then
+// quarters, in place of the manuscript's own volumes and books (every entry
+// still cites its canonical place in those; the citation is the folio
+// reference, the period is just the filing). Buckets are keyed rather than
+// run-length: block timestamps may wobble a couple of hours against height
+// order near a boundary, and a keyed bucket absorbs the straggler instead
+// of splitting the quarter in two. Only a complete map gets periods (the
+// gate's rule); a closed quarter is as append-only as the chain that
+// timestamps it.
+export function periods(data) {
   if (!data?.complete || !data.chapters.length) return null;
-  const volumes = bucketBooks(data.chapters);
-  volumes.forEach((v, i) => {
-    v.n = i + 1;
-    v.books.forEach((b, j) => { b.n = j + 1; });
-  });
-  return volumes;
+  const byKey = new Map();
+  for (const c of data.chapters) {
+    const d = new Date((c.time ?? 0) * 1000);
+    const year = d.getUTCFullYear();
+    const q = Math.floor(d.getUTCMonth() / 3) + 1;
+    const key = year * 10 + q;
+    let b = byKey.get(key);
+    if (!b) { b = { year, q, chapters: [], sats: 0 }; byKey.set(key, b); }
+    b.chapters.push(c);
+    b.sats += c.sats;
+  }
+  const quarters = [...byKey.values()].sort((a, b) => a.year - b.year || a.q - b.q);
+  const years = [];
+  for (const qt of quarters) {
+    let y = years[years.length - 1];
+    if (!y || y.year !== qt.year) { y = { year: qt.year, quarters: [], sats: 0, count: 0 }; years.push(y); }
+    y.quarters.push(qt);
+    y.sats += qt.sats;
+    y.count += qt.chapters.length;
+  }
+  return years;
 }
 
 // --- Renderers. The pages that call these share the idx-*/sp-* styles the
@@ -515,53 +504,60 @@ export function renderLine(el, data, maxRows = Infinity) {
   }
 }
 
-// The anthology rendering: a contents leaf first -- the spine at a glance,
-// one row per book with its chapter count and net, each row an anchor into
-// the anthology's own index below; the reader's bookmarked references sit
-// inline beneath the books that hold them (opts.bookmarks -- entries with a
-// height among the map's chapters), flying the same ribbon they fly in the
-// book; and the contents' final entry is the Index itself, the way a book's
-// back matter closes its table of contents. Then the index: every chapter
-// row under the same dual-numbered headers. Chapter rows keep their
-// canonical ■ marks and open the book proper, so an anthology is navigated
-// the same way as the book it excerpts. Index rows attach in
-// animation-frame chunks so a giant anthology doesn't jank its first paint.
+// The ledger rendering: a summary leaf first -- years then quarters, one
+// row per quarter with its entry count and net, each an anchor into the
+// entries below; the reader's bookmarked references sit inline beneath the
+// quarters that hold them, flying the same ribbon they fly in the book; and
+// the summary closes on the closing balance, the way a ledger rules off.
+// Then the entries themselves: date, the citation into the manuscript (the
+// folio reference, compressed against the previous entry's -- volume and
+// book named only when they change), the entry's net, and the running
+// balance -- which, posted in height order over a reconciled map, lands its
+// final row exactly on the chain's balance. Every entry opens
+// bitcoin-book.html at its transaction; entry rows attach in
+// animation-frame chunks so a giant ledger doesn't jank its first paint.
 // Falls back to the flat line (and returns false) when the map is
-// incomplete and no spine may be drawn.
+// incomplete and no periods may be drawn.
 // opts.held (heldCoins' byHeight map, verified against the balance by the
-// caller) marks the ledger with the chain's own bookmarks: a chapter whose
-// gifts have all moved on reads dimmed; where value still rests, full ink --
-// and the books of the contents dim likewise when nothing in them remains.
+// caller) marks the entries with the chain's own bookmarks: an entry whose
+// value has all moved on reads dimmed; where value still rests, full ink --
+// and a quarter dims likewise when nothing from it remains outstanding.
 const BOOKMARK_RIBBON = '<svg viewBox="0 0 12 16"><path fill="currentColor" d="M0 0h12v16l-6-4-6 4z"/></svg>';
-export function renderAnthology(el, data, { bookmarks = [], held = null } = {}) {
-  const vols = spine(data);
-  if (!vols) { renderLine(el, data); return false; }
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+export function renderLedger(el, data, { bookmarks = [], held = null } = {}) {
+  const years = periods(data);
+  if (!years) { renderLine(el, data); return false; }
   el.replaceChildren();
-  const anchor = (v, b) => `v${v.volume}b${b.book}`;   // canonical, hence permanent
-  const total = data.chapters.reduce((n, c) => n + c.sats, 0);
+  const anchor = (y, q) => `y${y}q${q}`;
+
+  // Running balances post in height order -- the ledger's true posting
+  // order -- so the final balance is exactly the one the gate proved.
+  const running = new Map();
+  let bal = 0;
+  for (const c of data.chapters) { bal += c.sats; running.set(c.height, bal); }
 
   const toc = document.createElement('div'); toc.className = 'sp-toc';
-  const contentsHead = lineHead('sp-eyebrow', 'Contents');
-  contentsHead.id = 'anth-contents';
-  toc.append(contentsHead);
-  for (const v of vols) {
-    toc.append(lineHead('idx-vol', `Volume ${v.n} · ${toRoman(v.volume)}`));
-    for (const b of v.books) {
+  const summaryHead = lineHead('sp-eyebrow', 'Summary');
+  summaryHead.id = 'anth-contents';
+  toc.append(summaryHead);
+  for (const y of years) {
+    toc.append(lineHead('idx-vol', String(y.year)));
+    for (const qt of y.quarters) {
       const row = document.createElement('a');
       row.className = 'sp-row';
-      if (held && !b.chapters.some((c) => (held.get(c.height) ?? 0) > 0)) row.classList.add('spent');
-      row.href = `#${anchor(v, b)}`;
+      if (held && !qt.chapters.some((c) => (held.get(c.height) ?? 0) > 0)) row.classList.add('spent');
+      row.href = `#${anchor(qt.year, qt.q)}`;
       const label = document.createElement('span'); label.className = 'sp-label';
-      label.textContent = `Book ${b.n} · β${b.book}`;
+      label.textContent = `Q${qt.q}`;
       const count = document.createElement('span'); count.className = 'sp-count';
-      count.textContent = `${b.chapters.length.toLocaleString('en-US')} ■`;
+      count.textContent = `${qt.chapters.length.toLocaleString('en-US')} ■`;
       const amt = document.createElement('span'); amt.className = 'idx-amt sp-amt';
-      amt.textContent = formatNetBtc(b.sats);
+      amt.textContent = formatNetBtc(qt.sats);
       row.append(label, count, amt);
       toc.append(row);
-      // The reader's own bookmarks that fall in this book's chapters, in
+      // The reader's own bookmarks that fall in this quarter's chapters, in
       // height order, each opening the book at its reference.
-      const heights = new Set(b.chapters.map((c) => c.height));
+      const heights = new Set(qt.chapters.map((c) => c.height));
       for (const bm of bookmarks.filter((m) => heights.has(m.height)).sort((a, z) => a.height - z.height)) {
         const bmRow = document.createElement('a');
         bmRow.className = 'sp-bm';
@@ -578,37 +574,36 @@ export function renderAnthology(el, data, { bookmarks = [], held = null } = {}) 
       }
     }
   }
-  // The back matter closes the contents: the anthology's own index, whole.
-  const idxRow = document.createElement('a');
-  idxRow.className = 'sp-row';
-  idxRow.href = '#anth-index';
-  const idxLabel = document.createElement('span'); idxLabel.className = 'sp-label';
-  idxLabel.textContent = 'Index';
-  const idxCount = document.createElement('span'); idxCount.className = 'sp-count';
-  idxCount.textContent = `${data.chapters.length.toLocaleString('en-US')} ■`;
-  const idxAmt = document.createElement('span'); idxAmt.className = 'idx-amt sp-amt';
-  idxAmt.textContent = formatNetBtc(total);
-  idxRow.append(idxLabel, idxCount, idxAmt);
-  toc.append(idxRow);
+  // The summary rules off on the closing balance.
+  const closeRow = document.createElement('a');
+  closeRow.className = 'sp-row';
+  closeRow.href = '#anth-index';
+  const closeLabel = document.createElement('span'); closeLabel.className = 'sp-label';
+  closeLabel.textContent = 'Closing balance';
+  const closeCount = document.createElement('span'); closeCount.className = 'sp-count';
+  closeCount.textContent = `${data.chapters.length.toLocaleString('en-US')} ■`;
+  const closeAmt = document.createElement('span'); closeAmt.className = 'idx-amt sp-amt';
+  closeAmt.textContent = formatBalanceBtc(data.balance ?? bal);
+  closeRow.append(closeLabel, closeCount, closeAmt);
+  toc.append(closeRow);
   el.append(toc);
 
-  const indexHead = lineHead('sp-eyebrow', 'Index');
-  indexHead.id = 'anth-index';
-  el.append(indexHead);
+  const entriesHead = lineHead('sp-eyebrow', 'Entries');
+  entriesHead.id = 'anth-index';
+  el.append(entriesHead);
   const nodes = [];
-  for (const v of vols) {
-    nodes.push(lineHead('idx-vol', `Volume ${v.n} · ${toRoman(v.volume)}`));
-    for (const b of v.books) {
-      // The canonical designation rides in a transform-exempt span: the
-      // headers set in small caps, but β is a sigil, not a letter to case.
-      const h = lineHead('idx-book', `Book ${b.n} · `);
-      const sig = document.createElement('span');
-      sig.className = 'no-tt';
-      sig.textContent = `β${b.book}`;
-      h.append(sig);
-      h.id = anchor(v, b);
+  for (const y of years) {
+    nodes.push(lineHead('idx-vol', String(y.year)));
+    for (const qt of y.quarters) {
+      const h = lineHead('idx-book', `Q${qt.q} ${qt.year}`);
+      h.id = anchor(qt.year, qt.q);
       nodes.push(h);
-      for (const c of b.chapters) nodes.push(lineRow(c, true, held));
+      let lastVol = 0, lastBook = 0;
+      for (const c of qt.chapters) {
+        const place = volumeBookChapter(c.height);
+        nodes.push(ledgerRow(c, place, running.get(c.height), lastVol, lastBook, held));
+        lastVol = place.volume; lastBook = place.book;
+      }
     }
   }
   const CHUNK = 800;
@@ -620,6 +615,37 @@ export function renderAnthology(el, data, { bookmarks = [], held = null } = {}) 
     if (i < nodes.length) requestAnimationFrame(attach);
   })();
   return true;
+}
+
+// One ledger entry: date · citation · net · running balance. The citation
+// compresses against its predecessor -- Roman volume and β book named only
+// when they change -- the tail-reference idiom carried into a date-ordered
+// listing.
+function ledgerRow(c, place, balance, lastVol, lastBook, held) {
+  const row = document.createElement('a');
+  row.className = 'idx-row entry';
+  row.href = citeHref(c.txid);
+  if (held) {
+    const resting = held.get(c.height) ?? 0;
+    if (resting > 0) row.title = `still held here: ${formatBalanceBtc(resting)}`;
+    else row.classList.add('spent');
+  }
+  const when = document.createElement('span'); when.className = 'idx-when';
+  const d = c.time ? new Date(c.time * 1000) : null;
+  when.textContent = d ? `${MONTHS[d.getUTCMonth()]} ${d.getUTCDate()}` : '—';
+  const r = document.createElement('span'); r.className = 'idx-ref';
+  const parts = [];
+  if (place.volume !== lastVol) parts.push(toRoman(place.volume));
+  if (place.book !== lastBook || place.volume !== lastVol) parts.push(`β${place.book}`);
+  parts.push(`■${place.chapter}`);
+  r.textContent = parts.join(' ');
+  const amt = document.createElement('span'); amt.className = 'idx-amt';
+  amt.textContent = formatNetBtc(c.sats);
+  const rb = document.createElement('span'); rb.className = 'idx-bal';
+  rb.textContent = formatBalanceBtc(balance);
+  rb.title = 'balance after this chapter';
+  row.append(when, r, amt, rb);
+  return row;
 }
 
 function lineRow({ height, txid, sats, place }, underBook, held) {

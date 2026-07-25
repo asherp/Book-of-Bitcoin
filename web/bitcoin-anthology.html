@@ -1,7 +1,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>The βook of βitcoin — Anthology</title>
-<meta name="description" content="An anthology of the Glossia Bitcoin Book: one address's own subset of the book — its title page, table of contents, and index, navigated the same way as the book it excerpts.">
+<title>The βook of βitcoin — Ledger</title>
+<meta name="description" content="A ledger of the Glossia Bitcoin Book: one address's view of the manuscript, focused on amounts — entries by year and quarter, each citing its chapter, with running balance and reconciliation.">
 <link rel="icon" type="image/png" sizes="32x32" href="./icons/beta-icon-32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="./icons/beta-icon-16.png">
 <link rel="icon" href="./icons/beta-icon.svg" type="image/svg+xml">
@@ -26,7 +26,7 @@
   // Pages serves max-age=600) and the service worker refresh file by file, so
   // a redeploy can briefly leave them mixed: this page from one build, a
   // module from another. A module whose imports no longer line up fails to
-  // instantiate, and an aborted module graph renders nothing -- the anthology
+  // instantiate, and an aborted module graph renders nothing -- the ledger
   // goes blank. Detect the blankness itself, not the error (module failures
   // surface too many ways to catch reliably): a healthy module populates
   // #anthology synchronously, so an empty #anthology well after load means
@@ -47,7 +47,7 @@
         if (retried) {
           const s = document.createElement('span');
           s.className = 'idx-note';
-          s.textContent = 'The anthology failed to load — reload to retry.';
+          s.textContent = 'The ledger failed to load — reload to retry.';
           el.replaceChildren(s);
           return;
         }
@@ -145,14 +145,33 @@ a:hover { text-decoration: underline; }
 .sp-row:hover .idx-amt { color:var(--ink); }
 /* An anchored index book lands with breathing room under the viewport top. */
 .idx-book[id] { scroll-margin-top: 18px; }
-/* The chain's own bookmarks: a chapter (or a whole book) whose gifts have
+/* A ledger entry's columns: the date in quiet mono, the citation into the
+   manuscript, the entry's net, and the running balance ruling the row off.
+   The balance column steps aside on narrow leaves. */
+.idx-row.entry { gap:12px; }
+.idx-when { flex:none; width:46px; font:400 11px/1.4 'IBM Plex Mono',monospace; color:var(--meta); white-space:nowrap; font-variant-numeric:tabular-nums; }
+.idx-bal { flex:none; min-width:104px; text-align:right; font:400 12px/1.4 'IBM Plex Mono',monospace; color:var(--dim); white-space:nowrap; font-variant-numeric:tabular-nums; }
+.idx-row.entry:hover .idx-bal { color:var(--ink-soft); }
+@media (max-width: 560px) { .idx-bal { display:none; } }
+
+/* The chain's own bookmarks: an entry (or a whole quarter) whose value has
    all moved on reads dimmed; where value still rests, full ink. */
 .idx-row.spent .idx-ref { color:var(--meta); }
 .idx-row.spent .idx-amt { color:var(--meta); }
+.idx-row.spent .idx-bal { color:var(--meta); }
 .idx-row.spent:hover .idx-ref { color:var(--dim); }
 .idx-row.spent:hover .idx-amt { color:var(--dim); }
 .sp-row.spent .sp-label { color:var(--meta); }
 .sp-row.spent:hover .sp-label { color:var(--dim); }
+
+/* Keeping an unkept ledger: the shelf affordance, in the Install button's
+   quiet outline manner. Hidden for curated ledgers (already shelved). */
+.anth-keep { display:none; margin-top:22px; background:transparent; border:1px solid var(--input-bd); color:var(--dim);
+  border-radius:4px; padding:6px 14px; cursor:pointer; font:600 11px/1 'IBM Plex Mono',monospace; letter-spacing:.08em; text-transform:uppercase;
+  transition:border-color .15s ease, color .15s ease; }
+.anth-keep.show { display:inline-block; }
+.anth-keep:hover { border-color:var(--accent); color:var(--accent); }
+.anth-keep.kept { border-color:var(--accent); color:var(--accent); }
 /* The β sigil is a mark, not a letter: exempt from the headers' small caps. */
 .no-tt { text-transform: none; }
 
@@ -172,25 +191,26 @@ a:hover { text-decoration: underline; }
 <div class="wrap">
   <div class="masthead">
     <span class="title">The <span class="beta">β</span>ook of <span class="beta">β</span>itcoin</span>
-    <span class="home"><a href="./bitcoin-book.html">Read</a> · <a href="./bitcoin-contents.html">Contents</a> · <a href="./bitcoin-index.html">Anthologies</a> · <a href="./bitcoin-search.html">Search</a> · <a href="https://glossia.io/">Glossia</a></span>
+    <span class="home"><a href="./bitcoin-book.html">Read</a> · <a href="./bitcoin-contents.html">Contents</a> · <a href="./bitcoin-index.html">Ledgers</a> · <a href="./bitcoin-search.html">Search</a> · <a href="https://glossia.io/">Glossia</a></span>
   </div>
 
   <header class="anth-hero" id="anth-hero">
-    <div class="page-eyebrow">Anthology</div>
+    <div class="page-eyebrow">Ledger</div>
     <h1 class="anth-title" id="anth-title"></h1>
     <div class="anth-addr" id="anth-addr"></div>
     <p class="anth-prose" id="anth-prose"></p>
     <div class="anth-range" id="anth-range"></div>
     <div class="anth-count" id="anth-count"></div>
     <div class="anth-held" id="anth-held"></div>
-    <a class="anth-down" href="#anth-contents" aria-label="Down to the table of contents">▾</a>
+    <button type="button" class="anth-keep" id="anth-keep"></button>
+    <a class="anth-down" href="#anth-contents" aria-label="Down to the summary and entries">▾</a>
   </header>
 
   <div id="anthology"></div>
 </div>
 
 <script type="module">
-import { INDEXED, isAddress, addressScriptHex, cachedLine, resolveLine, renderAnthology, spine, lineNote, reconciled, heldCoins, formatBalanceBtc } from './btc-index.js';
+import { INDEXED, isAddress, addressScriptHex, cachedLine, resolveLine, renderLedger, periods, lineNote, reconciled, heldCoins, formatBalanceBtc } from './btc-index.js';
 import { volumeBookChapter, toRoman } from './btc-citation.js';
 
 // An anthology is one address's own subset of the book, opened the way a
@@ -223,14 +243,40 @@ const bookmarks = readBookmarks()
 
 if (!addr) {
   hero.classList.add('bare');
-  document.getElementById('anth-title').textContent = 'One address, its every chapter';
-  lineNote(el, 'An anthology collects one address’s appearances into its own contents. Open one from the Anthologies page, or put ?address=<an address> in this page’s URL.');
+  document.getElementById('anth-title').textContent = 'One address, its every entry';
+  lineNote(el, 'A ledger is one address’s view of the manuscript, focused on amounts. Open one from the Ledgers page, or put ?address=<an address> in this page’s URL.');
 } else {
   // A curated address reads under its curated name; any other under its own.
   const entry = INDEXED.find((e) => e.address === addr);
-  const title = entry ? entry.title : 'An uncollected address';
-  document.title = `The βook of βitcoin — Anthology · ${entry ? entry.title : addr}`;
+  const title = entry ? entry.title : 'An unkept address';
+  document.title = `The βook of βitcoin — Ledger · ${entry ? entry.title : addr}`;
   document.getElementById('anth-title').textContent = title;
+
+  // Keeping a ledger: any address the reader watches joins the curated ones
+  // on the Ledgers shelf, from the same small store the shelf reads. Curated
+  // ledgers are already shelved, so they carry no button.
+  const KEPT_KEY = 'glossia-btc-ledgers';
+  const readKept = () => {
+    try { const v = JSON.parse(localStorage.getItem(KEPT_KEY)); return Array.isArray(v) ? v : []; }
+    catch { return []; }
+  };
+  if (!entry) {
+    const keepBtn = document.getElementById('anth-keep');
+    keepBtn.classList.add('show');
+    const reflect = () => {
+      const kept = readKept().some((k) => k.address === addr);
+      keepBtn.classList.toggle('kept', kept);
+      keepBtn.textContent = kept ? 'Kept on the shelf — remove' : 'Keep this ledger on the shelf';
+    };
+    keepBtn.addEventListener('click', () => {
+      const kept = readKept();
+      const has = kept.some((k) => k.address === addr);
+      const next = has ? kept.filter((k) => k.address !== addr) : [...kept, { address: addr }];
+      try { localStorage.setItem(KEPT_KEY, JSON.stringify(next)); } catch (_) { /* unavailable */ }
+      reflect();
+    });
+    reflect();
+  }
 
   // The address, once, in the book's own tongue: its scriptPubKey in the
   // book's opcode notation -- glyphs for the opcodes, a typed push mark, and
@@ -258,13 +304,13 @@ if (!addr) {
   const showCount = (data) => {
     if (!data || !data.chapters.length) { count.textContent = ''; return; }
     const parts = [
-      `${data.txCount.toLocaleString('en-US')} appearances`,
+      `${data.txCount.toLocaleString('en-US')} entries`,
       `${data.chapters.length.toLocaleString('en-US')} chapters`,
     ];
-    const vols = spine(data);
-    if (vols) {
-      const books = vols.reduce((n, v) => n + v.books.length, 0);
-      parts.push(`${books.toLocaleString('en-US')} books`, `${vols.length.toLocaleString('en-US')} volumes`);
+    const years = periods(data);
+    if (years) {
+      const quarters = years.reduce((n, y) => n + y.quarters.length, 0);
+      parts.push(`${quarters.toLocaleString('en-US')} quarters`, `${years.length.toLocaleString('en-US')} years`);
     }
     count.textContent = parts.join(' · ');
   };
@@ -309,7 +355,7 @@ if (!addr) {
   // the span, contents, and index stay closed behind a syncing line.
   const view = (data, held) => {
     if (reconciled(data)) {
-      renderAnthology(el, data, { bookmarks, held: heldView(data, held) });
+      renderLedger(el, data, { bookmarks, held: heldView(data, held) });
       showCount(data);
       showRange(data);
       return;
@@ -319,7 +365,7 @@ if (!addr) {
     range.textContent = '';
     heldEl.replaceChildren();
     lineNote(el, data
-      ? `still syncing — ${data.walked.toLocaleString('en-US')} of ${data.txCount.toLocaleString('en-US')} appearances collected; the anthology opens once its ledger reconciles with its balance`
+      ? `still syncing — ${data.walked.toLocaleString('en-US')} of ${data.txCount.toLocaleString('en-US')} appearances collected; the ledger opens once its entries reconcile with its balance`
       : '…');
   };
 

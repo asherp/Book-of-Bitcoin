@@ -17,13 +17,15 @@ compiled to WASM) is consumed as a published
   esplora-style endpoint (Blockstream, mempool.space, or your own node) and
   renders it as prose
 - `web/bitcoin-contents.html` — table of contents / notable blocks
-- `web/bitcoin-index.html` — the Anthologies shelf: notable donation
-  addresses, each previewed at book level and opening into its own anthology
-- `web/bitcoin-anthology.html` — one address's anthology: its own subset of
-  the book, opened as a title page (the address as Glossia-encoded script),
-  table of contents, and index; complete address maps arrive via public
-  Blockbook instances in parallel pages, and an anthology opens only once
-  its ledger sum reconciles with the chain's balance
+- `web/bitcoin-index.html` — the Ledgers shelf: notable donation addresses
+  (and any address the reader keeps), each with its current balance
+- `web/bitcoin-anthology.html` — one address's ledger: a view of the
+  manuscript focused on amounts. A title page (the address as its
+  Glossia-encoded scriptPubKey), a summary by year and quarter, and the
+  entries — date, citation, net, running balance — with held coins in full
+  ink and spent ones dimmed. Complete address maps arrive via public
+  Blockbook instances in parallel pages, and a ledger opens only once its
+  entries reconcile with the chain's balance
 - `web/btc-tx.js`, `web/btc-prose.js`, `web/btc-citation.js`,
   `web/btc-contents.js`, `web/btc-index.js`, `web/btc-store.js` —
   transaction parsing, prose composition, citations, contents data,
