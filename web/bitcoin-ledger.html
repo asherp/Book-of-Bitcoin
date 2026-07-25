@@ -194,7 +194,11 @@ a:hover { text-decoration: underline; }
 .col-deb, .col-cred { flex:none; width:100px; text-align:right; }
 .col-status { flex:none; width:56px; text-align:right; font:600 9.5px/1.6 'IBM Plex Mono',monospace; letter-spacing:.08em; text-transform:uppercase; color:var(--meta); }
 .idx-status.unspent { color:var(--accent); }
-.idx-status.pending { color:var(--meta); font-style:italic; }
+/* The unsynced entry: an unreferenced line heading the record -- the
+   not-yet-gathered transaction count standing where its citations will,
+   retiring once the record is whole. */
+.idx-row.unsynced { cursor:default; }
+.idx-row.unsynced .idx-ref, .idx-row.unsynced:hover .idx-ref { color:var(--meta); text-decoration:none; }
 .acct-heads { display:flex; gap:10px; align-items:baseline; padding:10px 2px 2px 14px;
   font:600 9.5px/1 'IBM Plex Mono',monospace; letter-spacing:.14em; text-transform:uppercase; color:var(--meta); }
 .acct-heads .h-ref { flex:1; }
@@ -494,8 +498,17 @@ if (!list.length) {
     const cached = await cachedLine(addr);
     if (!alive()) return;
     let byTxid = null;     // held marks, once the snapshot agrees
-    let rowsEl, foot, note, rendered, io;
+    let rowsEl, foot, note, unsyn, rendered, io;
     let busy = false;      // one draw at a time; the re-arm retriggers
+    // The unsynced entry: an unreferenced line heading the record for the
+    // transactions not yet gathered -- their count standing where the
+    // citations will -- retiring once the record is whole.
+    const setUnsynced = (l) => {
+      if (!unsyn) return;
+      const left = l.txCount - l.walked;
+      if (l.complete || left <= 0) { unsyn.remove(); return; }
+      unsyn.firstChild.textContent = `${left.toLocaleString('en-US')} §`;
+    };
     const scroll = async () => {
       if (busy || !alive()) return;
       busy = true;
@@ -510,6 +523,7 @@ if (!list.length) {
         rendered += take;
       }
       note.textContent = stateText(line);   // the reach grows as the reader reads
+      setUnsynced(line);
       foot.textContent = line.complete && rendered >= len ? '— the beginning of the record' : '…';
       // The fetch ahead: keep a page banked beyond what's drawn.
       if (!line.complete && len - rendered < PAGE) extendLine(addr);
@@ -545,7 +559,16 @@ if (!list.length) {
         }
         el.append(heads);
       }
-      el.append(rowsEl, foot);
+      unsyn = document.createElement('div');
+      unsyn.className = 'idx-row acct unsynced';
+      const uRef = document.createElement('span'); uRef.className = 'idx-ref';
+      const uDeb = document.createElement('span'); uDeb.className = 'idx-amt col-deb';
+      const uCred = document.createElement('span'); uCred.className = 'idx-amt col-cred';
+      const uSt = document.createElement('span'); uSt.className = 'idx-status col-status';
+      uSt.textContent = 'unsynced';
+      unsyn.append(uRef, uDeb, uCred, uSt);
+      el.append(unsyn, rowsEl, foot);
+      setUnsynced(data);
       rendered = 0;
       io = new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) scroll(); },
                                     { rootMargin: '1600px 0px' });
