@@ -1,11 +1,11 @@
-// btc-index.js — the curated back-of-book index for the Bitcoin Book: notable
-// addresses, each listing every chapter where it appears. Shared by
-// bitcoin-index.html (the index page — the shelf), bitcoin-anthology.html
-// (one address's own anthology), and bitcoin-search.html (which routes an
-// address query to its anthology). Besides the curated data, this module
-// carries the machinery the index-family pages share: the mapping that
-// discovers an address's chapters, the store that remembers them, and the
-// renderers that lay them out.
+// btc-index.js — the ledgers of the Bitcoin Book: notable addresses, each a
+// view of the manuscript focused on amounts. Shared by bitcoin-ledgers.html
+// (the shelf), bitcoin-ledger.html (one address's ledger), and
+// bitcoin-search.html (which routes an address query to its ledger). Besides
+// the curated data, this module carries the machinery the ledger pages
+// share: the mapping that discovers an address's chapters, the store that
+// remembers them, and the renderers that lay them out. (The filename keeps
+// its index-era name so cached module graphs never mix builds.)
 
 import { volumeBookChapter, toRoman } from './btc-citation.js';
 

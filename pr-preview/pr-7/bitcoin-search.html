@@ -79,7 +79,7 @@ button:hover { background: var(--accent-2); }
 <div class="wrap">
   <div class="masthead">
     <span class="title">The <span class="beta">β</span>ook of <span class="beta">β</span>itcoin</span>
-    <span class="home"><a href="./bitcoin-book.html">Read</a> · <a href="./bitcoin-contents.html">Contents</a> · <a href="./bitcoin-index.html">Ledgers</a> · <a href="https://glossia.io/">Glossia</a></span>
+    <span class="home"><a href="./bitcoin-book.html">Read</a> · <a href="./bitcoin-contents.html">Contents</a> · <a href="./bitcoin-ledgers.html">Ledgers</a> · <a href="https://glossia.io/">Glossia</a></span>
   </div>
 
   <header class="page-head">
@@ -101,7 +101,7 @@ button:hover { background: var(--accent-2); }
     <a class="example" href="./bitcoin-book.html?block=III%20%CE%B22%20%E2%96%A05"><span class="example-what">a chapter, by the book's own citation</span><span class="example-form">III β2 ■5</span></a>
     <a class="example" href="./bitcoin-book.html?block=57043"><span class="example-what">Bitcoin Pizza Day's chapter, by height</span><span class="example-form">57043</span></a>
     <a class="example" href="./bitcoin-book.html?txid=a1075db55d416d3ca199f55b6084e2115b9345e16c5cf302fc80e9d5fbf5d48d"><span class="example-what">the pizza transaction's own section, by its id</span><span class="example-form">a1075db5…f5d48d</span></a>
-    <a class="example" href="./bitcoin-anthology.html?address=1Ross5Np5doy4ajF9iGXzgKaC2Q3Pwwxv"><span class="example-what">an address's ledger — every chapter it appears in, with amounts</span><span class="example-form">1Ross5Np…Pwwxv</span></a>
+    <a class="example" href="./bitcoin-ledger.html?address=1Ross5Np5doy4ajF9iGXzgKaC2Q3Pwwxv"><span class="example-what">an address's ledger — every chapter it appears in, with amounts</span><span class="example-form">1Ross5Np…Pwwxv</span></a>
   </div>
 </div>
 
@@ -120,7 +120,7 @@ const go = () => {
   // Uppercase bech32 (the QR form) is normalized to the lowercase form the
   // ledger queries with; base58 stays as typed (its case is significant).
   const addr = isAddress(q) ? q : (isAddress(q.toLowerCase()) ? q.toLowerCase() : null);
-  if (addr) { location.href = './bitcoin-anthology.html?address=' + encodeURIComponent(addr); return; }
+  if (addr) { location.href = './bitcoin-ledger.html?address=' + encodeURIComponent(addr); return; }
   location.href = './bitcoin-book.html?block=' + encodeURIComponent(q);
 };
 document.getElementById('block-btn').addEventListener('click', go);
