@@ -677,14 +677,15 @@ export function periods(data) {
 // maxRows keeps the most recent rows (the map is ascending, so the cut is
 // the older head) with a leading note pointing at the anthology for the
 // whole; the trailing note names what an incomplete map never walked.
-// A run of entries, one line each: the fully resolved reference on the
-// left (Roman volume, β book, ■ chapter -- the citation names every level
-// itself, so the run needs no headers of any kind), the amount on the
-// right, the most recent first (the whole ledger reads newest-down, the
-// direction the record is explored) -- APPENDED to el, so an endless
-// scroll just keeps appending. Grouping, temporal or otherwise, lives on
-// the ledger's entries leaf. `held` marks rows with the chain's own
-// bookmarks. The callers own any clearing and any notes around the run.
+// A run of entries, one line each, most recent first (the whole ledger
+// reads newest-down, the direction the record is explored): the fully
+// resolved reference leading (Roman volume, β book, ■ chapter -- the
+// citation names every level itself, so the run needs no headers of any
+// kind), then the bookkeeping columns -- debit, credit, status. APPENDED
+// to el, so an endless scroll just keeps appending. Grouping, temporal or
+// otherwise, lives on the ledger's entries leaf. `held` feeds the status
+// column from the chain's own bookmarks. The callers own any clearing and
+// any notes around the run.
 export function renderRows(el, entries, held = null) {
   for (const c of [...entries].reverse()) {
     el.append(lineRow({ ...c, place: volumeBookChapter(c.height) }, held));
@@ -862,20 +863,34 @@ function ledgerRow(c, place, balance, lastVol, lastBook, held) {
   return row;
 }
 
+// One record line: the citation whole, then debit, credit, status. An
+// entry is one side of one transaction, so exactly one amount column
+// carries ink (a zero-value touch posts a bare 0 credit). Status reads
+// the chain's own bookmarks -- `held` while any of a credit's coins still
+// rest at the address, `spent` once the value has moved on (a debit being
+// a departure by nature) -- and stays silent when the UTXO snapshot can't
+// be trusted.
 function lineRow({ txid, sats, place }, held) {
   const row = document.createElement('a');
-  row.className = 'idx-row';
+  row.className = 'idx-row acct';
   row.href = citeHref(txid);
+  const resting = held && sats > 0 ? held.get(txid) ?? 0 : 0;
   if (held) {
-    const resting = sats > 0 ? held.get(txid) ?? 0 : 0;
     if (resting > 0) row.title = `still held: ${formatBalanceBtc(resting)}`;
     else row.classList.add('spent');
   }
   const r = document.createElement('span'); r.className = 'idx-ref';
   r.textContent = `${toRoman(place.volume)} β${place.book} ■${place.chapter}`;
-  const amt = document.createElement('span'); amt.className = 'idx-amt';
-  amt.textContent = formatNetBtc(sats);
-  row.append(r, amt);
+  const deb = document.createElement('span'); deb.className = 'idx-amt col-deb';
+  deb.textContent = sats < 0 ? formatBalanceBtc(-sats) : '';
+  const cred = document.createElement('span'); cred.className = 'idx-amt col-cred';
+  cred.textContent = sats > 0 ? formatBalanceBtc(sats) : sats === 0 ? '0 ₿' : '';
+  const st = document.createElement('span'); st.className = 'idx-status col-status';
+  if (held) {
+    if (resting > 0) { st.textContent = 'held'; st.classList.add('held'); }
+    else if (sats !== 0) st.textContent = 'spent';
+  }
+  row.append(r, deb, cred, st);
   return row;
 }
 function lineHead(cls, label) { const d = document.createElement('div'); d.className = cls; d.textContent = label; return d; }
