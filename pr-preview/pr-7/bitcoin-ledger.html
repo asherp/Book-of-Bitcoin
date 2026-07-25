@@ -525,8 +525,9 @@ if (!list.length) {
     const slice = pageSlice(line, depth);
     const head = document.createElement('div');
     head.className = 'sp-eyebrow page-span';
+    // The span reads newest – oldest, the order the rows below run.
     const fmt = (s) => new Date(s * 1000).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-    const a1 = slice[0], a2 = slice[slice.length - 1];
+    const a1 = slice[slice.length - 1], a2 = slice[0];
     if (a1?.time && a2?.time) head.textContent = fmt(a1.time) === fmt(a2.time) ? fmt(a1.time) : `${fmt(a1.time)} – ${fmt(a2.time)}`;
     el.append(head);
     renderRows(el, slice);

@@ -662,11 +662,12 @@ export function periods(data) {
 // the older head) with a leading note pointing at the anthology for the
 // whole; the trailing note names what an incomplete map never walked.
 // A run of entries as rows under their canonical headers -- references on
-// the left, amounts on the right -- APPENDED to el (the callers own any
-// clearing and any notes around the run). The thumbed pages of a ledger
-// and the flat line below both read through this.
+// the left, amounts on the right, the most recent first (the whole ledger
+// reads newest-down, the direction the record is explored) -- APPENDED to
+// el (the callers own any clearing and any notes around the run). The
+// thumbed pages of a ledger and the flat line below both read through this.
 export function renderRows(el, entries) {
-  const rows = entries.map((c) => ({ ...c, place: volumeBookChapter(c.height) }));
+  const rows = entries.map((c) => ({ ...c, place: volumeBookChapter(c.height) })).reverse();
   for (let i = 0; i < rows.length;) {
     const vol = rows[i].place.volume;
     let jv = i + 1; while (jv < rows.length && rows[jv].place.volume === vol) jv++;
@@ -691,11 +692,11 @@ export function renderLine(el, data, maxRows = Infinity) {
   if (!data) { lineNote(el, '—'); return; }
   let rows = data.entries;
   if (!rows.length) { lineNote(el, 'no appearances yet'); return; }
-  if (rows.length > maxRows) {
-    lineNote(el, `… ${(rows.length - maxRows).toLocaleString('en-US')} earlier entries, collected in the ledger`);
-    rows = rows.slice(rows.length - maxRows);
-  }
+  const cut = rows.length - maxRows;
+  if (cut > 0) rows = rows.slice(cut);
   renderRows(el, rows);
+  // Newest-first, so anything cut or never walked lies below the rows.
+  if (cut > 0) lineNote(el, `… ${cut.toLocaleString('en-US')} earlier entries, collected in the ledger`);
   // An incomplete map names what it left behind; the count is of
   // transactions, which is what the chain counts (several may share a
   // chapter above).
@@ -704,17 +705,19 @@ export function renderLine(el, data, maxRows = Infinity) {
   }
 }
 
-// The ledger rendering: a summary leaf first -- years then quarters, one
-// row per quarter with its entry count and net, each an anchor into the
-// entries below; the reader's bookmarked references sit inline beneath the
-// quarters that hold them, flying the same ribbon they fly in the book; and
-// the summary closes on the closing balance, the way a ledger rules off.
-// Then the entries themselves: date, the citation into the manuscript (the
-// folio reference, compressed against the previous entry's -- volume and
-// book named only when they change), the entry's net, and the running
-// balance -- which, posted in height order over a reconciled map, lands its
-// final row exactly on the chain's balance. Every entry opens
-// bitcoin-book.html at its transaction; entry rows attach in
+// The ledger rendering: a summary leaf first -- years then quarters, the
+// most recent first (the whole ledger reads newest-down, the direction the
+// record is explored), one row per quarter with its entry count and net,
+// each an anchor into the entries below; the reader's bookmarked
+// references sit inline beneath the quarters that hold them, flying the
+// same ribbon they fly in the book; and the summary rules off on the
+// closing balance. Then the entries themselves, newest first: date, the
+// citation into the manuscript (the folio reference, compressed against
+// the previous entry's -- volume and book named only when they change),
+// the entry's net, and the running balance -- posted in height order over
+// a reconciled map, so the TOP row carries exactly the chain's current
+// balance and the record drains back toward its beginning. Every entry
+// opens bitcoin-book.html at its transaction; entry rows attach in
 // animation-frame chunks so a giant ledger doesn't jank its first paint.
 // Falls back to the flat line (and returns false) when the map is
 // incomplete and no periods may be drawn.
@@ -736,12 +739,15 @@ export function renderLedger(el, data, { bookmarks = [], held = null } = {}) {
   if (!years) { renderLine(el, data); return false; }
   el.replaceChildren();
   const anchor = (y, q) => `y${y}q${q}`;
+  // Balances post oldest-first (their true order); the reading runs
+  // newest-first, so every listing below iterates the periods reversed.
+  const recent = [...years].reverse().map((y) => ({ ...y, quarters: [...y.quarters].reverse() }));
 
   const toc = document.createElement('div'); toc.className = 'sp-toc';
   const summaryHead = lineHead('sp-eyebrow', 'Summary');
   summaryHead.id = 'anth-contents';
   toc.append(summaryHead);
-  for (const y of years) {
+  for (const y of recent) {
     toc.append(lineHead('idx-vol', String(y.year)));
     for (const qt of y.quarters) {
       const row = document.createElement('a');
@@ -756,10 +762,11 @@ export function renderLedger(el, data, { bookmarks = [], held = null } = {}) {
       amt.textContent = formatNetBtc(qt.sats);
       row.append(label, count, amt);
       toc.append(row);
-      // The reader's own bookmarks that fall in this quarter's blocks, in
-      // height order, each opening the book at its reference.
+      // The reader's own bookmarks that fall in this quarter's blocks,
+      // newest first like everything else, each opening the book at its
+      // reference.
       const heights = new Set(qt.entries.map((c) => c.height));
-      for (const bm of bookmarks.filter((m) => heights.has(m.height)).sort((a, z) => a.height - z.height)) {
+      for (const bm of bookmarks.filter((m) => heights.has(m.height)).sort((a, z) => z.height - a.height)) {
         const bmRow = document.createElement('a');
         bmRow.className = 'sp-bm';
         bmRow.href = citeHref(bm.hex);
@@ -793,14 +800,14 @@ export function renderLedger(el, data, { bookmarks = [], held = null } = {}) {
   entriesHead.id = 'anth-index';
   el.append(entriesHead);
   const nodes = [];
-  for (const y of years) {
+  for (const y of recent) {
     nodes.push(lineHead('idx-vol', String(y.year)));
     for (const qt of y.quarters) {
       const h = lineHead('idx-book', `Q${qt.q} ${qt.year}`);
       h.id = anchor(qt.year, qt.q);
       nodes.push(h);
       let lastVol = 0, lastBook = 0;
-      for (const c of qt.entries) {
+      for (const c of [...qt.entries].reverse()) {
         const place = volumeBookChapter(c.height);
         nodes.push(ledgerRow(c, place, c.bal, lastVol, lastBook, held));
         lastVol = place.volume; lastBook = place.book;
