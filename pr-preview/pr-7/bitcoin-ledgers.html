@@ -143,9 +143,9 @@ a:hover { text-decoration: underline; }
    stale" is answerable at a glance rather than guessed at. */
 .page-stamp { margin-top:34px; text-align:center; font:400 10px/1 'IBM Plex Mono',monospace; letter-spacing:.08em; color:var(--meta); }
 
-/* Settings: where the ledgers ask (Blockbook instances, the chosen one
-   first) and how much history each ask carries -- in the book page's own
-   settings-panel manner. */
+/* Settings: where the chain is asked (Esplora-compatible endpoints, the
+   chosen one first) -- the same stored choice the book page's Data source
+   picker reads, in its own settings-panel manner. */
 .settings-menu { position:relative; }
 .settings-panel { position:absolute; right:0; top:24px; z-index:10; width:min(420px, 92vw);
   background:var(--card); border:1px solid var(--card-bd); border-radius:6px; padding:16px 18px 18px;
@@ -187,24 +187,17 @@ a:hover { text-decoration: underline; }
   <div class="masthead">
     <span class="title">The <span class="beta">β</span>ook of <span class="beta">β</span>itcoin</span>
     <span class="home"><a href="./bitcoin-book.html">Read</a> · <a href="./bitcoin-contents.html">Contents</a> · <a href="./bitcoin-search.html">Search</a> · <span class="settings-menu"><a href="#" id="settings-link" role="button" aria-haspopup="dialog" aria-expanded="false">Settings</a><div id="settings-panel" class="settings-panel hidden" role="dialog" aria-label="Ledger settings">
-      <div class="settings-title">Blockbook source</div>
+      <div class="settings-title">Data source</div>
       <div class="endpoint-row">
-        <select id="bb-select" class="bb-select" aria-label="Blockbook endpoint"></select>
+        <select id="bb-select" class="bb-select" aria-label="Esplora endpoint"></select>
         <button type="button" id="bb-add" class="ghost-btn">+ Add</button>
         <button type="button" id="bb-remove" class="ghost-btn" disabled>Remove</button>
       </div>
       <div id="bb-add-row" class="endpoint-add-row hidden">
-        <input type="text" id="bb-url" placeholder="https://your-blockbook/api/v2" autocomplete="off" spellcheck="false">
+        <input type="text" id="bb-url" placeholder="https://your-esplora/api" autocomplete="off" spellcheck="false">
         <button type="button" id="bb-save" class="save-btn">Save</button>
       </div>
-      <div class="settings-title">Transactions per ask</div>
-      <select id="bb-size" class="bb-select" aria-label="Transactions per request">
-        <option value="1000">1,000 — fewest requests</option>
-        <option value="500">500</option>
-        <option value="250">250 — gentler, checkpoints oftener</option>
-        <option value="100">100</option>
-      </select>
-      <div class="settings-note">Where the ledgers ask (the chosen source is tried first) and how much history each height-range ask carries. Applies from the next fetch; banked history is never refetched.</div>
+      <div class="settings-note">Where the ledgers ask — Esplora-compatible endpoints, the chosen one tried first; the book's reading pages share this choice. Applies from the next fetch; banked history is never refetched.</div>
     </div></span> · <a href="https://glossia.io/">Glossia</a></span>
   </div>
 
@@ -217,12 +210,13 @@ a:hover { text-decoration: underline; }
 </div>
 
 <script type="module">
-import { INDEXED, isAddress, keptLedgers, sameAddresses, cachedLine, addressState, lastKnownState, formatBalanceBtc, blockbookFailureText,
-         DEFAULT_BLOCKBOOK, blockbookCustom, blockbookSelected, blockbookPageSize, setBlockbookSettings } from './btc-index.js';
+import { INDEXED, isAddress, keptLedgers, sameAddresses, cachedLine, addressState, lastKnownState, formatBalanceBtc, chainFailureText,
+         DEFAULT_ESPLORA, esploraCustom, esploraSelected, setEsploraSettings } from './btc-index.js';
 
-// --- Settings: where the ledgers ask, and how much each ask carries.
-// Reads and writes btc-index.js's stored settings; the machinery reads them
-// at call time, so a change applies from the very next fetch on any page.
+// --- Settings: where the chain is asked. Reads and writes the same stored
+// endpoint choice as the book page's Data source picker; the machinery
+// reads it at call time, so a change applies from the very next fetch on
+// any page.
 {
   const link = document.getElementById('settings-link');
   const panel = document.getElementById('settings-panel');
@@ -230,19 +224,17 @@ import { INDEXED, isAddress, keptLedgers, sameAddresses, cachedLine, addressStat
   const removeBtn = document.getElementById('bb-remove');
   const addRow = document.getElementById('bb-add-row');
   const urlInput = document.getElementById('bb-url');
-  const sizeSel = document.getElementById('bb-size');
-  const shortName = (u) => u.replace(/^https?:\/\//, '').replace(/\/api\/v2\/?$/, '');
+  const shortName = (u) => u.replace(/^https?:\/\//, '').replace(/\/api\/?$/, '');
   const rebuild = () => {
     select.replaceChildren();
-    for (const u of [...DEFAULT_BLOCKBOOK, ...blockbookCustom()]) {
+    for (const u of [...DEFAULT_ESPLORA, ...esploraCustom()]) {
       const o = document.createElement('option');
       o.value = u;
-      o.textContent = shortName(u) + (DEFAULT_BLOCKBOOK.includes(u) ? '' : ' · yours');
+      o.textContent = shortName(u) + (DEFAULT_ESPLORA.includes(u) ? '' : ' · yours');
       select.append(o);
     }
-    select.value = blockbookSelected();
-    removeBtn.disabled = DEFAULT_BLOCKBOOK.includes(select.value);
-    sizeSel.value = String(blockbookPageSize());
+    select.value = esploraSelected();
+    removeBtn.disabled = DEFAULT_ESPLORA.includes(select.value);
   };
   link.addEventListener('click', (ev) => {
     ev.preventDefault();
@@ -251,15 +243,12 @@ import { INDEXED, isAddress, keptLedgers, sameAddresses, cachedLine, addressStat
     if (!open) rebuild();
   });
   select.addEventListener('change', () => {
-    setBlockbookSettings({ selected: DEFAULT_BLOCKBOOK[0] === select.value ? null : select.value });
+    setEsploraSettings({ selected: DEFAULT_ESPLORA[0] === select.value ? null : select.value });
     rebuild();
-  });
-  sizeSel.addEventListener('change', () => {
-    setBlockbookSettings({ pageSize: sizeSel.value === '1000' ? null : Number(sizeSel.value) });
   });
   removeBtn.addEventListener('click', () => {
     const u = select.value;
-    setBlockbookSettings({ custom: blockbookCustom().filter((c) => c !== u), selected: null });
+    setEsploraSettings({ custom: esploraCustom().filter((c) => c !== u), selected: null });
     rebuild();
   });
   document.getElementById('bb-add').addEventListener('click', () => {
@@ -267,14 +256,12 @@ import { INDEXED, isAddress, keptLedgers, sameAddresses, cachedLine, addressStat
     urlInput.focus();
   });
   document.getElementById('bb-save').addEventListener('click', () => {
-    // Normalized to the /api/v2 base the module appends paths to.
-    let u = urlInput.value.trim().replace(/\/+$/, '');
+    const u = urlInput.value.trim().replace(/\/+$/, '');
     if (!/^https?:\/\//.test(u)) return;
-    if (!/\/api\/v2$/.test(u)) u += '/api/v2';
-    if (![...DEFAULT_BLOCKBOOK, ...blockbookCustom()].includes(u)) {
-      setBlockbookSettings({ custom: [...blockbookCustom(), u], selected: u });
+    if (![...DEFAULT_ESPLORA, ...esploraCustom()].includes(u)) {
+      setEsploraSettings({ custom: [...esploraCustom(), u], selected: u });
     } else {
-      setBlockbookSettings({ selected: u });
+      setEsploraSettings({ selected: u });
     }
     urlInput.value = '';
     addRow.classList.add('hidden');
@@ -367,7 +354,7 @@ for (const e of entries) {
       settled = { balance: cached.balance, stale: true };   // as of its last sync
     } else {
       settled = null;
-      amt.textContent = `${blockbookFailureText()} — retry`;
+      amt.textContent = `${chainFailureText()} — retry`;
     }
     return settled;
   };

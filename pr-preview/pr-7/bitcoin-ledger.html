@@ -283,7 +283,7 @@ a:hover { text-decoration: underline; }
 </div>
 
 <script type="module">
-import { isAddress, ledgerFor, keptLedgers, saveKeptLedgers, sameAddresses, addressScriptHex, cachedLine, resolveLine, renderLedger, periods, lineNote, reconciled, heldCoins, formatBalanceBtc, blockbookFailureText } from './btc-index.js';
+import { isAddress, ledgerFor, keptLedgers, saveKeptLedgers, sameAddresses, addressScriptHex, cachedLine, resolveLine, renderLedger, periods, lineNote, reconciled, heldCoins, formatBalanceBtc, chainFailureText } from './btc-index.js';
 import { volumeBookChapter, toRoman } from './btc-citation.js';
 
 // A ledger is a titled set of addresses, opened the way a book opens: each
@@ -430,7 +430,7 @@ if (!list.length) {
     heldEl.replaceChildren();
     const s = document.createElement('span');
     s.className = 'idx-note';
-    s.append(`— the chain could not be reached (${blockbookFailureText()}) · `);
+    s.append(`— the chain could not be reached (${chainFailureText()}) · `);
     const a = document.createElement('a');
     a.href = '#';
     a.textContent = 'retry';
