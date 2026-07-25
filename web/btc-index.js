@@ -199,7 +199,17 @@ export const reconciled = (data) =>
 // default, a self-hosted node by choice. `How`: the page size, i.e. how
 // much history each height-range ask carries -- smaller bites are gentler
 // on public instances and checkpoint more often; bigger ones finish sooner.
-export const DEFAULT_BLOCKBOOK = ['https://btc1.trezor.io/api/v2', 'https://btc2.trezor.io/api/v2'];
+// Trezor's public instances (btc1..btc5), then Zelcore's independently
+// operated one -- a different operator means a different rate-limiter, so
+// the list survives any single provider throttling a busy reader.
+export const DEFAULT_BLOCKBOOK = [
+  'https://btc1.trezor.io/api/v2',
+  'https://btc2.trezor.io/api/v2',
+  'https://btc3.trezor.io/api/v2',
+  'https://btc4.trezor.io/api/v2',
+  'https://btc5.trezor.io/api/v2',
+  'https://blockbook.btc.zelcore.io/api/v2',
+];
 const BB_CUSTOM_KEY = 'glossia-btc-blockbook-custom';
 const BB_SELECTED_KEY = 'glossia-btc-blockbook-selected';
 const BB_PAGESIZE_KEY = 'glossia-btc-blockbook-pagesize';
@@ -236,19 +246,34 @@ export function setBlockbookSettings({ custom, selected, pageSize } = {}) {
   } catch { /* unavailable; settings just don't stick */ }
 }
 
-// One blockbook request, with patience: a throttle (429) or a server-side
-// stumble (5xx) gets brief backed-off retries before the mirror is given up
-// on -- public instances rate-limit, and one refused page must not fail a
-// whole 27-page map. A definitive refusal (404 and kin) returns at once.
+// One blockbook request, with patience: a throttle (429) honors its
+// Retry-After (capped -- past a few seconds the UI state serves better than
+// a hang) and a server-side stumble (5xx) gets brief backed-off retries
+// before the mirror is given up on -- public instances rate-limit, and one
+// refused page must not fail a whole 27-page map. A definitive refusal (404
+// and kin) returns at once. The last failure's nature is kept so the pages
+// can name it: a throttle reads differently from a refusal or a dead
+// network.
+let lastFailure = null;
+export function blockbookFailureText() {
+  if (lastFailure?.status === 429) return 'throttled (429)';
+  if (lastFailure?.status) return `refused (${lastFailure.status})`;
+  return typeof navigator !== 'undefined' && navigator.onLine === false ? 'offline' : 'unreachable';
+}
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 async function blockbookJson(mirror, path) {
   for (let attempt = 0; ; attempt++) {
+    let delay = 400 * 2 ** attempt + Math.random() * 200;
     try {
       const res = await fetch(mirror + path);
-      if (res.ok) return await res.json();
+      if (res.ok) { lastFailure = null; return await res.json(); }
+      lastFailure = { status: res.status };
       if (res.status < 500 && res.status !== 429) return null;
-    } catch { /* unreachable or CORS-refused */ }
+      const ra = Number(res.headers.get('Retry-After'));
+      if (res.status === 429 && ra > 0) delay = Math.min(ra * 1000, 5000);
+    } catch { lastFailure = { network: true }; /* unreachable or CORS-refused */ }
     if (attempt >= 2) return null;
-    await new Promise((r) => setTimeout(r, 400 * 2 ** attempt + Math.random() * 200));
+    await sleep(delay);
   }
 }
 
