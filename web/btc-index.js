@@ -227,16 +227,17 @@ export const reconciled = (data) =>
 // ---------------------------------------------------------------------------
 // The mapping, the store, and the renderers shared by the index-family pages.
 //
-// An address's *map* is the complete list of its entries -- every movement
-// of value it was party to. Esplora instances feed it, newest first.
+// An address's *map* grows as the reader reads it. Esplora instances feed
+// it, newest first: opening a ledger fetches the latest page (resolveLine),
+// and each thumb deeper into the past fetches exactly one more
+// (extendLine) -- there is no automatic backfill; exploration is the sync.
 // Because past blocks are closed -- a transaction can never be inserted
-// into mined history -- the map is built durable-first: a checkpointed walk
-// (mapWhole) banks the most recent transactions immediately and backfills
-// the history gradually behind them, so found data survives any
-// interruption and resyncs resume rather than restart; and a later top-up
-// reads only above the mapped frontier, which cannot overlap what's
-// banked. Unreachable mirrors leave the stored state standing -- complete,
-// or a checkpoint to resume -- or, with nothing stored, the syncing gate.
+// into mined history -- every page found is banked for good: found data
+// survives any interruption, revisits resume at the banked cursor rather
+// than restart, and a later top-up reads only above the banked frontier,
+// which cannot overlap what's kept. Unreachable mirrors leave the stored
+// state standing -- however deep it reaches -- or, with nothing stored,
+// the syncing gate.
 
 // --- Where the chain is asked: Esplora-compatible endpoints (Blockstream,
 // mempool.space, or the reader's own node) -- the same API family, and the
@@ -446,14 +447,16 @@ async function saveLine(address, data) {
 
 // --- Resolution: aim for the complete map, keep it current for pennies.
 
-// A complete cached map tops up from the tip: new appearances can only lie
-// in blocks above the highest mapped one, so the walk reads newest pages
-// until it steps below that frontier. The address totals are checked first,
-// making the common case -- nothing new -- one small request; and the delta
-// is all pages or nothing, since a delta with a hole would corrupt the map.
-// Heights above the frontier are disjoint from the map by construction, so
-// merging is concatenation. Unreachable mirrors leave the stored map
-// standing, complete as of its writing.
+// A cached line -- complete or thumbed-partway -- tops up from the tip: new
+// appearances can only lie in blocks above the highest banked one, so the
+// walk reads newest pages until it steps below that frontier. The address
+// totals are checked first, making the common case -- nothing new -- one
+// small request; and the delta is all pages or nothing, since a delta with
+// a hole would corrupt the map. Heights above the frontier are disjoint
+// from what's banked by construction, so merging is concatenation, and the
+// line's completeness (and its backfill cursor) ride through untouched.
+// Unreachable mirrors leave the stored line standing, current as of its
+// writing.
 async function topUp(address, cached, onProgress) {
   const frontier = (cached.entries[cached.entries.length - 1]?.height ?? 0) + 1;
   outer: for (const mirror of esploraMirrors()) {
@@ -475,78 +478,67 @@ async function topUp(address, cached, onProgress) {
       cursor = page[page.length - 1].txid;
     }
     const entries = cached.entries.concat(buildEntries(fresh));
-    const data = { v: LINE_V, at: Date.now(), txCount, balance, walked: cached.walked + fresh.length, complete: true, entries };
+    const data = { v: LINE_V, at: Date.now(), txCount, balance, walked: cached.walked + fresh.length, complete: !!cached.complete, entries };
+    if (!data.complete) data.lastSeen = cached.lastSeen;
     await saveLine(address, data);
     return data;
   }
   return cached;
 }
 
-// The whole map, gathered newest-to-oldest and BANKED as it goes: the most
-// recent transactions land first -- the page a reader opens shows the
-// latest entries almost immediately -- and the history backfills gradually
-// behind them. Each iteration asks for the next 25 confirmed transactions
-// after the cursor (the last txid already walked -- closed history, so the
-// pagination never shifts), banks their entries, persists the checkpoint,
-// and steps on. An interrupted run -- a throttled mirror, a closed tab --
-// therefore loses at most one page of work, and a resume continues from
-// the banked cursor on any mirror: closed periods, once found, are kept.
-// The final short page marks the line complete.
-async function mapWhole(address, resume, onProgress) {
-  let cursor = resume?.lastSeen ?? null;
-  let entries = resume ? resume.entries : [];
-  let walked = resume?.walked ?? 0;
-  let txCount = resume?.txCount ?? 0;
-  let balance = resume?.balance ?? 0;
-  const tick = () => { try { onProgress?.(walked, txCount); } catch (_) { /* a watcher's error is not the map's */ } };
-  if (resume) tick();
-  let madeProgress = false;
-  mirrors: for (const mirror of esploraMirrors()) {
-    // The address totals first: what the walk reconciles against. Refreshed
-    // on every attempt (a resume may be days later), never trusted stale.
+// One page deeper into the past: the next 25 confirmed transactions after
+// the banked cursor (the last txid already walked -- closed history, so
+// the pagination never shifts, and the cursor means the same thing on
+// every mirror), banked and returned. This is the whole backfill now:
+// nothing walks the history on its own -- the reader thumbing down the
+// ledger's pages is what reaches deeper, one prefetched page at a time,
+// and every page found is kept. The final short page marks the line
+// complete: the record read to its beginning.
+export async function extendLine(address) {
+  const cached = await cachedLine(address);
+  if (!cached || cached.complete || cached.lastSeen == null) return cached;
+  for (const mirror of esploraMirrors()) {
+    const page = await esploraJson(mirror, chainPage(address, cached.lastSeen));
+    if (!Array.isArray(page)) continue;
+    const recs = esploraTouches(page, address);
+    const complete = page.length < ESPLORA_PAGE;
+    const data = { v: LINE_V, at: Date.now(), txCount: cached.txCount, balance: cached.balance,
+                   walked: cached.walked + recs.length, complete, entries: buildEntries(recs).concat(cached.entries) };
+    if (!complete) data.lastSeen = page[page.length - 1].txid;
+    await saveLine(address, data);
+    return data;
+  }
+  return cached;   // unreachable: the line stands as it was
+}
+
+// Resolve an address's head: the stored line -- however deep the reader has
+// thumbed it -- refreshed from the tip (new arrivals land above the banked
+// frontier), or, with nothing stored, the first page of its history: the
+// latest 25 transactions and the address totals. No backfill runs on its
+// own; deeper pages arrive only as the reader thumbs down (extendLine).
+// Returns the stored state unchanged when the mirrors are unreachable
+// (offline reads still work), null when there's nothing at all to show.
+// `onProgress(gathered, total)` ticks when the head lands.
+export async function resolveLine(address, onProgress) {
+  const cached = await cachedLine(address);
+  if (cached) return topUp(address, cached, onProgress);
+  for (const mirror of esploraMirrors()) {
     const j = await esploraJson(mirror, `/address/${address}`);
     const cs = j?.chain_stats;
     if (!cs || typeof cs.tx_count !== 'number') continue;
-    txCount = cs.tx_count;
-    balance = Number(cs.funded_txo_sum) - Number(cs.spent_txo_sum);
-    for (;;) {
-      const page = await esploraJson(mirror, chainPage(address, cursor));
-      if (!Array.isArray(page)) continue mirrors;
-      const recs = esploraTouches(page, address);
-      entries = buildEntries(recs).concat(entries);
-      walked += recs.length;
-      if (page.length < ESPLORA_PAGE) {
-        const data = { v: LINE_V, at: Date.now(), txCount, balance, walked, complete: true, entries };
-        await saveLine(address, data);
-        tick();
-        return data;
-      }
-      cursor = page[page.length - 1].txid;
-      madeProgress = true;
-      await saveLine(address, { v: LINE_V, at: Date.now(), txCount, balance, walked, complete: false, lastSeen: cursor, entries });
-      tick();
-    }
+    const page = await esploraJson(mirror, chainPage(address, null));
+    if (!Array.isArray(page)) continue;
+    const recs = esploraTouches(page, address);
+    const complete = page.length < ESPLORA_PAGE;
+    const data = { v: LINE_V, at: Date.now(), txCount: cs.tx_count,
+                   balance: Number(cs.funded_txo_sum) - Number(cs.spent_txo_sum),
+                   walked: recs.length, complete, entries: buildEntries(recs) };
+    if (!complete) data.lastSeen = page[page.length - 1].txid;
+    await saveLine(address, data);
+    try { onProgress?.(data.walked, data.txCount); } catch (_) { /* a watcher's error is not the map's */ }
+    return data;
   }
-  // Mirrors exhausted mid-run: whatever was banked is the result -- the next
-  // visit resumes from it rather than starting over.
-  if (madeProgress || resume) return { v: LINE_V, at: Date.now(), txCount, balance, walked, complete: false, lastSeen: cursor, entries };
   return null;
-}
-
-// Resolve an address's map: the stored one confirmed-or-topped-up when it's
-// complete; a banked checkpoint resumed and finished (then topped up for
-// anything above its ceiling); a fresh checkpointed walk otherwise. Returns
-// the stored state unchanged when the mirrors are unreachable (offline
-// reads still work), null when there's nothing at all to show.
-// `onProgress(gathered, total)` ticks as pages land, so a page can show the
-// sync live.
-export async function resolveLine(address, onProgress) {
-  const cached = await cachedLine(address);
-  if (cached?.complete) return topUp(address, cached, onProgress);
-  const resume = cached && cached.lastSeen != null ? cached : null;
-  const line = await mapWhole(address, resume, onProgress);
-  if (!line) return cached ?? null;
-  return line.complete ? topUp(address, line, onProgress) : line;
 }
 
 // The lightest possible ask: the address's chain state -- balance and
@@ -669,15 +661,12 @@ export function periods(data) {
 // maxRows keeps the most recent rows (the map is ascending, so the cut is
 // the older head) with a leading note pointing at the anthology for the
 // whole; the trailing note names what an incomplete map never walked.
-export function renderLine(el, data, maxRows = Infinity) {
-  el.replaceChildren();
-  if (!data) { lineNote(el, '—'); return; }
-  let rows = data.entries.map((c) => ({ ...c, place: volumeBookChapter(c.height) }));
-  if (!rows.length) { lineNote(el, 'no appearances yet'); return; }
-  if (rows.length > maxRows) {
-    lineNote(el, `… ${(rows.length - maxRows).toLocaleString('en-US')} earlier entries, collected in the ledger`);
-    rows = rows.slice(rows.length - maxRows);
-  }
+// A run of entries as rows under their canonical headers -- references on
+// the left, amounts on the right -- APPENDED to el (the callers own any
+// clearing and any notes around the run). The thumbed pages of a ledger
+// and the flat line below both read through this.
+export function renderRows(el, entries) {
+  const rows = entries.map((c) => ({ ...c, place: volumeBookChapter(c.height) }));
   for (let i = 0; i < rows.length;) {
     const vol = rows[i].place.volume;
     let jv = i + 1; while (jv < rows.length && rows[jv].place.volume === vol) jv++;
@@ -695,6 +684,18 @@ export function renderLine(el, data, maxRows = Infinity) {
     }
     i = jv;
   }
+}
+
+export function renderLine(el, data, maxRows = Infinity) {
+  el.replaceChildren();
+  if (!data) { lineNote(el, '—'); return; }
+  let rows = data.entries;
+  if (!rows.length) { lineNote(el, 'no appearances yet'); return; }
+  if (rows.length > maxRows) {
+    lineNote(el, `… ${(rows.length - maxRows).toLocaleString('en-US')} earlier entries, collected in the ledger`);
+    rows = rows.slice(rows.length - maxRows);
+  }
+  renderRows(el, rows);
   // An incomplete map names what it left behind; the count is of
   // transactions, which is what the chain counts (several may share a
   // chapter above).

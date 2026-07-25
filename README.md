@@ -20,16 +20,20 @@ compiled to WASM) is consumed as a published
 - `web/bitcoin-ledgers.html` — the Ledgers shelf: notable donation addresses
   (and any address the reader keeps), each with its current balance
 - `web/bitcoin-ledger.html` — one ledger: a view of the manuscript focused
-  on amounts. A ledger is a titled set of addresses (most hold one); each
-  address is a leaf — a title page (the address as its Glossia-encoded
-  scriptPubKey), a summary by year and quarter, and the entries — date,
-  citation, net, running balance — with held coins in full ink and spent
-  ones dimmed. A multi-address ledger turns between its leaves with the
-  book's own carousel swipe (`?address=a,b,…` names the set). Address maps
-  arrive from the same Esplora-compatible endpoints the reading pages use,
-  newest transactions first with the history backfilled gradually behind
-  them (checkpointed, so interrupted syncs resume), and a ledger reconciles
-  its entries against the chain's balance before its numbers are trusted
+  on amounts. A ledger is a titled set of addresses (most hold one), read
+  with the book's own carousel swipes (`?address=a,b,…` names the set).
+  Horizontally, its leaves: a title page per address (the address as its
+  Glossia-encoded scriptPubKey, plus the state of what's gathered), and
+  past the last address the ledger's entries page — everything banked,
+  merged and hierarchical in time with running balance, held coins in full
+  ink and spent ones dimmed. Vertically, on an address's leaf, the record:
+  a push up from the title reveals the latest 25 transactions, each
+  further push a page deeper into the past, the next page prefetching
+  while the current one is read. Nothing backfills on its own —
+  exploration is the sync — and every page found is banked for good, from
+  the same Esplora-compatible endpoints the reading pages use; a ledger
+  reconciles its entries against the chain's balance before its numbers
+  are trusted
 - `web/btc-tx.js`, `web/btc-prose.js`, `web/btc-citation.js`,
   `web/btc-contents.js`, `web/btc-index.js`, `web/btc-store.js` —
   transaction parsing, prose composition, citations, contents data,
