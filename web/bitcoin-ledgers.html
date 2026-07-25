@@ -284,7 +284,7 @@ import { INDEXED, isAddress, cachedLine, addressState, formatBalanceBtc, blockbo
 }
 
 // The shelf lists the ledgers: title and current balance, nothing else --
-// and it asks for nothing else: one basic-details request per address (the
+// and it asks for nothing else: one chain-state request per address (the
 // balance is an address property, exact without any mapping), so browsing
 // the shelf starts nobody's sync. The mapping begins only when a reader
 // steps into a ledger, whose page shows whatever that level knows and its
@@ -313,6 +313,7 @@ const entries = [...adhoc, ...INDEXED, ...kept];
 // blank-page recovery has already written its failure note.
 const index = document.getElementById('index');
 index.replaceChildren();
+const probes = [];   // one per row, walked in order below
 for (const e of entries) {
   const row = document.createElement('a');
   row.className = 'shelf-row gated';
@@ -329,13 +330,13 @@ for (const e of entries) {
   // "unreachable" retrying in place when tapped (the tap is caught before
   // the row navigates), so a throttled moment doesn't strand the shelf.
   let settled;         // undefined while in flight; the state (or null) after
-  const resolve = async () => {
+  const resolve = async (ask = true) => {
     settled = undefined;
     amt.textContent = '…';
     amt.classList.add('pending');
     const cached = await cachedLine(e.address);
     if (cached?.balance != null) amt.textContent = formatBalanceBtc(cached.balance);
-    const state = await addressState(e.address);
+    const state = ask ? await addressState(e.address) : null;
     if (state) {
       settled = state;
       amt.textContent = formatBalanceBtc(state.balance);
@@ -347,6 +348,7 @@ for (const e of entries) {
       settled = null;
       amt.textContent = `${blockbookFailureText()} — retry`;
     }
+    return settled;
   };
   amt.addEventListener('click', (ev) => {
     if (settled !== null) return;           // any real state: the row navigates
@@ -354,8 +356,21 @@ for (const e of entries) {
     ev.stopPropagation();
     resolve();
   });
-  resolve();
+  probes.push(resolve);
 }
+
+// Walk the probes one row at a time rather than firing them all at once: a
+// shelf-wide burst from one phone is exactly what trips a mirror's rate
+// limiter. And a row that comes up entirely empty -- every source tried,
+// nothing back -- has proven the network, not the address, so the remaining
+// rows settle from the store without each rediscovering the outage. Every
+// row's amount stays tappable to ask again.
+(async () => {
+  let down = false;
+  for (const probe of probes) {
+    if (await probe(!down) === null && !down) down = true;
+  }
+})();
 
 // The build stamp: the served file's own last-modified time, and the
 // storage verdict -- whether the browser has promised to keep the archive
