@@ -556,10 +556,29 @@ export async function resolveLine(address, onProgress) {
 }
 
 // The lightest possible ask: the address's chain state -- balance and
-// confirmed transaction count -- one basic-details request, no transaction
-// pages. The shelf shows balances with this alone, starting nobody's sync;
-// the mapping begins only when a reader steps into the ledger itself.
+// confirmed transaction count -- one small request, no transaction pages.
+// The shelf shows balances with this alone, starting nobody's sync; the
+// mapping begins only when a reader steps into the ledger itself.
+//
+// Esplora answers first: /address/:addr carries the confirmed funded and
+// spent sums (their difference IS the balance) and the transaction count,
+// and its public mirrors put CORS headers on error responses too -- so a
+// throttle from them reads as a throttle, where the blockbook pool's bare
+// rejections all collapse to "unreachable" in a browser. Blockbook stays
+// as the fallback here, and remains the mapping's sole source.
+const ESPLORA_MIRRORS = ['https://blockstream.info/api', 'https://mempool.space/api'];
 export async function addressState(address) {
+  for (const base of ESPLORA_MIRRORS) {
+    try {
+      const res = await fetch(`${base}/address/${address}`);
+      if (!res.ok) { lastFailure = { status: res.status }; continue; }
+      const c = (await res.json())?.chain_stats;
+      if (c && typeof c.tx_count === 'number') {
+        lastFailure = null;
+        return { balance: c.funded_txo_sum - c.spent_txo_sum, txCount: c.tx_count };
+      }
+    } catch { lastFailure = { network: true }; }
+  }
   for (const mirror of blockbookMirrors()) {
     const j = await blockbookJson(mirror, `/address/${address}?details=basic`);
     if (j && typeof j.txs === 'number') return { balance: Number(j.balance ?? 0), txCount: j.txs };
