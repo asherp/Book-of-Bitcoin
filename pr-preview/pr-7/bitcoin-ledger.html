@@ -132,6 +132,8 @@ a:hover { text-decoration: underline; }
 .idx-row:hover .idx-ref { text-decoration:underline; color:var(--accent-2); }
 .idx-row:hover .idx-amt { color:var(--ink); }
 .idx-note { display:block; margin-top:12px; padding-left:14px; font:400 12px/1.5 'IBM Plex Mono',monospace; color:var(--meta); }
+/* The sync state, heading whatever data this level has to show. */
+.idx-note.sync-note { text-align:center; padding-left:0; margin:22px 0 0; color:var(--dim); }
 
 .sp-eyebrow { margin:30px 0 0; font:600 10px/1 'IBM Plex Mono',monospace; letter-spacing:.3em; text-transform:uppercase; color:var(--dim); text-align:center; scroll-margin-top:26px; }
 .sp-toc { margin-bottom:8px; }
@@ -347,42 +349,60 @@ if (!addr) {
     return held.byTxid;
   };
 
-  // The anthology opens only reconciled: its ledger sum equal to the chain's
-  // balance, the double-entry proof the map is whole (see btc-index.js).
-  // Until then the leaf keeps its identity -- the name and the prose -- but
-  // the span, contents, and index stay closed behind a syncing line.
+  // Whatever this level knows, shown with its sync state. A reconciled
+  // ledger reads whole -- periods, entries, running balance, held marks. A
+  // ledger not yet reconciled still shows its available data (the entries
+  // gathered so far, or a whole map awaiting agreement), headed by a sync
+  // note saying exactly where it stands; only the held marks wait for the
+  // full triple agreement. Nothing at all yields an unreachable note that
+  // retries in place.
   const view = (data, held) => {
-    if (reconciled(data)) {
-      renderLedger(el, data, { bookmarks, held: heldView(data, held) });
-      showCount(data);
-      showRange(data);
-      return;
+    renderLedger(el, data, { bookmarks, held: heldView(data, held) });
+    showCount(data);
+    showRange(data);
+    if (!reconciled(data)) {
+      const s = document.createElement('span');
+      s.className = 'idx-note sync-note';
+      s.textContent = data.complete
+        ? 'unreconciled — this map disagrees with the chain balance; resyncing on the next visit'
+        : `still syncing — ${data.walked.toLocaleString('en-US')} of ${data.txCount.toLocaleString('en-US')} transactions gathered`;
+      el.prepend(s);
     }
+  };
+  const unreachable = () => {
     el.replaceChildren();
     count.textContent = '';
     range.textContent = '';
     heldEl.replaceChildren();
-    lineNote(el, data
-      ? `still syncing — ${data.walked.toLocaleString('en-US')} of ${data.txCount.toLocaleString('en-US')} transactions collected; the ledger opens once its entries reconcile with its balance`
-      : '…');
+    const s = document.createElement('span');
+    s.className = 'idx-note';
+    s.append('— the chain could not be reached · ');
+    const a = document.createElement('a');
+    a.href = '#';
+    a.textContent = 'retry';
+    a.addEventListener('click', (ev) => { ev.preventDefault(); runResolve(); });
+    s.append(a);
+    el.append(s);
   };
 
   // The stored map first -- instantly, offline included -- then the resolver
   // confirms it against the chain (topping up or mapping afresh) while the
   // held snapshot arrives beside it; the final render carries both. While a
-  // fresh mapping runs, the gate's syncing line ticks with it.
-  (async () => {
+  // fresh mapping runs, the sync note ticks with it.
+  const runResolve = async () => {
     const heldP = heldCoins(addr);
     const cached = await cachedLine(addr);
-    view(cached, null);
+    if (cached) view(cached, null);
+    else { el.replaceChildren(); lineNote(el, '…'); }
     const onProgress = reconciled(cached) ? undefined : (gathered, total) => {
       const note = el.querySelector('.idx-note');
-      if (note) note.textContent = `still syncing — ${gathered.toLocaleString('en-US')} of ${total.toLocaleString('en-US')} transactions gathered; the ledger opens once its entries reconcile with its balance`;
+      if (note) note.textContent = `still syncing — ${gathered.toLocaleString('en-US')} of ${total.toLocaleString('en-US')} transactions gathered`;
     };
     const [data, held] = await Promise.all([resolveLine(addr, onProgress), heldP]);
     if (data) view(data, held);
-    else if (!cached) { el.replaceChildren(); lineNote(el, '— the chain could not be reached'); }
-  })();
+    else if (!cached) unreachable();
+  };
+  runResolve();
 }
 </script>
 </body>
