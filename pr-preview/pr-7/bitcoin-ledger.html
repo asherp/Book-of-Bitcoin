@@ -185,6 +185,22 @@ a:hover { text-decoration: underline; }
 .sp-row:hover .idx-amt { color:var(--ink); }
 /* An anchored index book lands with breathing room under the viewport top. */
 .idx-book[id] { scroll-margin-top: 18px; }
+/* The record's bookkeeping columns: the citation leads (and flexes), then
+   debit, credit, status -- one amount per line, since an entry is one side
+   of one transaction. The heads rule the columns above the run. */
+.idx-row.acct { gap:10px; }
+.idx-row.acct .idx-ref { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; }
+.idx-row.acct .idx-amt { flex:none; font-size:12.5px; }
+.col-deb, .col-cred { flex:none; width:100px; text-align:right; }
+.col-status { flex:none; width:48px; text-align:right; font:600 9.5px/1.6 'IBM Plex Mono',monospace; letter-spacing:.08em; text-transform:uppercase; color:var(--meta); }
+.idx-status.held { color:var(--accent); }
+.acct-heads { display:flex; gap:10px; align-items:baseline; padding:10px 2px 2px 14px;
+  font:600 9.5px/1 'IBM Plex Mono',monospace; letter-spacing:.14em; text-transform:uppercase; color:var(--meta); }
+.acct-heads .h-ref { flex:1; }
+@media (max-width: 560px) {
+  .idx-row.acct .idx-amt { font-size:11px; }
+  .col-deb, .col-cred { width:84px; }
+}
 /* A ledger entry's columns: the date in quiet mono, the citation into the
    manuscript, the entry's net, and the running balance ruling the row off.
    The balance column steps aside on narrow leaves. */
@@ -514,7 +530,20 @@ if (!list.length) {
       rowsEl = document.createElement('div');
       foot = document.createElement('span');
       foot.className = 'idx-note sync-note';
-      el.append(note, rowsEl, foot);
+      el.append(note);
+      // The bookkeeping heads rule the columns once there are rows to rule.
+      if (data.entries.length) {
+        const heads = document.createElement('div');
+        heads.className = 'acct-heads';
+        const hRef = document.createElement('span'); hRef.className = 'h-ref';
+        heads.append(hRef);
+        for (const [cls, label] of [['col-deb', 'debit'], ['col-cred', 'credit'], ['col-status', 'status']]) {
+          const h = document.createElement('span'); h.className = cls; h.textContent = label;
+          heads.append(h);
+        }
+        el.append(heads);
+      }
+      el.append(rowsEl, foot);
       rendered = 0;
       io = new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) scroll(); },
                                     { rootMargin: '1600px 0px' });
