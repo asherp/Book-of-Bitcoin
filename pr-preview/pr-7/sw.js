@@ -16,7 +16,7 @@
  * Everything here is scoped to the directory sw.js is served from, so it works
  * unchanged at the site root and under a per-PR preview subpath.
  */
-const CACHE = 'bitcoin-book-shell-v10';
+const CACHE = 'bitcoin-book-shell-v11';
 
 // App shell, relative to the SW scope. glossia.js / glossia_bg.wasm are
 // gitignored build artifacts — present after a build/deploy, possibly absent in
@@ -68,6 +68,20 @@ self.addEventListener('activate', (event) => {
   })());
 });
 
+// Refetch the whole shell, cache-bypassing, one run at a time -- the same
+// sweep a fresh install does, triggered when a new build is first noticed.
+// The single in-flight promise coalesces concurrent triggers (several files
+// of one deploy revalidating together); it resets on completion so the next
+// deploy gets its own sweep.
+let shellRefresh = null;
+function refreshShell(cache) {
+  if (!shellRefresh) {
+    shellRefresh = Promise.allSettled(SHELL.map((url) => cache.add(new Request(url, { cache: 'reload' }))))
+      .then(() => { shellRefresh = null; });
+  }
+  return shellRefresh;
+}
+
 self.addEventListener('fetch', (event) => {
   const req = event.request;
   if (req.method !== 'GET') return;
@@ -80,10 +94,13 @@ self.addEventListener('fetch', (event) => {
     const cached = await cache.match(req);
 
     // A validator (ETag / Last-Modified) difference between the cached copy
-    // and the fresh one means a newer build was published: after the cache is
-    // refreshed, every open page is told so it can show its Update button.
-    // Compared only for app-shell file types, and only when both sides carry
-    // a validator, so servers that send none never false-positive.
+    // and the fresh one means a newer build was published: a deploy replaces
+    // the whole shell at once, so ONE fresher file proves a new build.
+    // Refresh the entire shell before announcing, so the Update button on
+    // any page delivers every page -- an update taken anywhere is taken
+    // everywhere, and no later navigation can mix builds. Compared only for
+    // app-shell file types, and only when both sides carry a validator, so
+    // servers that send none never false-positive.
     const validator = (r) => r.headers.get('etag') || r.headers.get('last-modified') || '';
     const shellish = /\.(html|js|wasm|webmanifest)$|\/$/.test(url.pathname);
     const network = fetch(req).then(async (res) => {
@@ -93,6 +110,7 @@ self.addEventListener('fetch', (event) => {
                            validator(cached) !== validator(res));
         await cache.put(req, res.clone());
         if (fresher) {
+          await refreshShell(cache);
           const pages = await self.clients.matchAll({ type: 'window' });
           for (const page of pages) page.postMessage({ type: 'update-available' });
         }
