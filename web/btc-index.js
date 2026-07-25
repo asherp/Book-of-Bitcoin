@@ -866,17 +866,18 @@ function ledgerRow(c, place, balance, lastVol, lastBook, held) {
 // One record line: the citation whole, then debit, credit, status. An
 // entry is one side of one transaction, so exactly one amount column
 // carries ink (a zero-value touch posts a bare 0 credit). Status reads
-// the chain's own bookmarks -- `held` while any of a credit's coins still
-// rest at the address, `spent` once the value has moved on (a debit being
-// a departure by nature) -- and stays silent when the UTXO snapshot can't
-// be trusted.
+// the chain's own bookmarks: `unspent` while any of a credit's coins
+// still rest at the address, `spent` once the value has moved on (a debit
+// being a departure by nature), and `pending` while the UTXO snapshot
+// hasn't yet agreed with the chain -- the verdict awaits, never guesses.
+// A zero-value touch carries no coin to have a status.
 function lineRow({ txid, sats, place }, held) {
   const row = document.createElement('a');
   row.className = 'idx-row acct';
   row.href = citeHref(txid);
   const resting = held && sats > 0 ? held.get(txid) ?? 0 : 0;
   if (held) {
-    if (resting > 0) row.title = `still held: ${formatBalanceBtc(resting)}`;
+    if (resting > 0) row.title = `still unspent: ${formatBalanceBtc(resting)}`;
     else row.classList.add('spent');
   }
   const r = document.createElement('span'); r.className = 'idx-ref';
@@ -886,9 +887,10 @@ function lineRow({ txid, sats, place }, held) {
   const cred = document.createElement('span'); cred.className = 'idx-amt col-cred';
   cred.textContent = sats > 0 ? formatBalanceBtc(sats) : sats === 0 ? '0 ₿' : '';
   const st = document.createElement('span'); st.className = 'idx-status col-status';
-  if (held) {
-    if (resting > 0) { st.textContent = 'held'; st.classList.add('held'); }
-    else if (sats !== 0) st.textContent = 'spent';
+  if (sats !== 0) {
+    if (!held) { st.textContent = 'pending'; st.classList.add('pending'); }
+    else if (resting > 0) { st.textContent = 'unspent'; st.classList.add('unspent'); }
+    else st.textContent = 'spent';
   }
   row.append(r, deb, cred, st);
   return row;
