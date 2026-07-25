@@ -101,6 +101,10 @@ a:hover { text-decoration: underline; }
 
 /* Still resolving, or failed to resolve. */
 .idx-note { display:block; margin-top:8px; padding-left:2px; font:400 12px/1.5 'IBM Plex Mono',monospace; color:var(--meta); }
+
+/* The build stamp: when the served page was last modified, so "is my page
+   stale" is answerable at a glance rather than guessed at. */
+.page-stamp { margin-top:34px; text-align:center; font:400 10px/1 'IBM Plex Mono',monospace; letter-spacing:.08em; color:var(--meta); }
 </style>
 <body>
 <div class="wrap">
@@ -114,6 +118,7 @@ a:hover { text-decoration: underline; }
   </header>
 
   <div id="index"></div>
+  <div class="page-stamp" id="page-stamp"></div>
 </div>
 
 <script type="module">
@@ -151,7 +156,7 @@ const entries = [...adhoc, ...INDEXED, ...kept];
 // (unreconciled -- a transient the next visit converges), or a plain dash
 // when nothing resolved at all.
 const progressText = (data) => {
-  if (!data) return '—';
+  if (!data) return 'unreachable — retry';
   if (!data.complete) return `syncing ${data.walked.toLocaleString('en-US')} / ${data.txCount.toLocaleString('en-US')}`;
   return 'unreconciled';
 };
@@ -186,7 +191,13 @@ for (const e of entries) {
       row.classList.add('gated');
     }
   };
-  (async () => {
+  // Resolution, retryable: an unreachable row keeps its state tappable, so
+  // a throttled moment doesn't strand the shelf until a full reload.
+  let settled;         // undefined while in flight; the resolved line (or null) after
+  const resolve = async () => {
+    settled = undefined;
+    amt.textContent = '…';
+    amt.classList.add('pending');
     const cached = await cachedLine(e.address);
     if (cached) show(cached);
     // The sync, live: pages tick the row as they land. A row that opens
@@ -199,11 +210,20 @@ for (const e of entries) {
       row.classList.add('gated');
     };
     const data = await resolveLine(e.address, onProgress);
-    if (data !== cached) show(data);
-    else if (!data) show(null);
-    else show(data);   // settled on the cached line: pin the final state over any ticks
-  })();
+    settled = data ?? null;
+    show(settled);
+  };
+  row.addEventListener('click', (ev) => {
+    if (row.getAttribute('href')) return;   // an open ledger navigates as ever
+    ev.preventDefault();
+    if (settled === null) resolve();        // only the unreachable state retries
+  });
+  resolve();
 }
+
+// The build stamp: the served file's own last-modified time -- stale-cache
+// questions answered by reading, not guessing.
+document.getElementById('page-stamp').textContent = `page as served · ${document.lastModified}`;
 
 // The module graph loaded whole: clear the mixed-build recovery flag (set in
 // the head) so a future redeploy gets its own one-shot reload again.
