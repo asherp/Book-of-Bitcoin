@@ -402,6 +402,30 @@ export async function resolveLine(address) {
   return data;
 }
 
+// The held view: the address's confirmed UTXOs -- the chain's own bookmarks,
+// each unspent output resting at the chapter of its creation. This is the
+// mutable complement of the map: spends shrink it, so it is a snapshot,
+// fetched fresh beside every resolution and never stored. Returns the sum,
+// the coin count, and sats-still-resting by height, or null when the
+// mirrors can't be had. Its sum is the third reconciliation identity
+// (Σ held = balance = Σ chapter nets); callers display the held view only
+// when it agrees, the same discipline the gate keeps.
+export async function heldCoins(address) {
+  for (const mirror of BLOCKBOOK_MIRRORS) {
+    const utxos = await blockbookJson(mirror, `/utxo/${address}?confirmed=true`);
+    if (!Array.isArray(utxos)) continue;
+    const byHeight = new Map();
+    let sum = 0;
+    for (const u of utxos) {
+      const sats = Number(u.value || 0);
+      sum += sats;
+      if (u.height > 0) byHeight.set(u.height, (byHeight.get(u.height) ?? 0) + sats);
+    }
+    return { sum, count: utxos.length, byHeight };
+  }
+  return null;
+}
+
 // --- The map's chapters bucketed into their canonical books: only volumes
 // and books with appearances exist as buckets (the chain's own occupancy),
 // each carrying its chapters, count, and net. Works on any map, complete or
@@ -504,8 +528,12 @@ export function renderLine(el, data, maxRows = Infinity) {
 // animation-frame chunks so a giant anthology doesn't jank its first paint.
 // Falls back to the flat line (and returns false) when the map is
 // incomplete and no spine may be drawn.
+// opts.held (heldCoins' byHeight map, verified against the balance by the
+// caller) marks the ledger with the chain's own bookmarks: a chapter whose
+// gifts have all moved on reads dimmed; where value still rests, full ink --
+// and the books of the contents dim likewise when nothing in them remains.
 const BOOKMARK_RIBBON = '<svg viewBox="0 0 12 16"><path fill="currentColor" d="M0 0h12v16l-6-4-6 4z"/></svg>';
-export function renderAnthology(el, data, { bookmarks = [] } = {}) {
+export function renderAnthology(el, data, { bookmarks = [], held = null } = {}) {
   const vols = spine(data);
   if (!vols) { renderLine(el, data); return false; }
   el.replaceChildren();
@@ -521,6 +549,7 @@ export function renderAnthology(el, data, { bookmarks = [] } = {}) {
     for (const b of v.books) {
       const row = document.createElement('a');
       row.className = 'sp-row';
+      if (held && !b.chapters.some((c) => (held.get(c.height) ?? 0) > 0)) row.classList.add('spent');
       row.href = `#${anchor(v, b)}`;
       const label = document.createElement('span'); label.className = 'sp-label';
       label.textContent = `Book ${b.n} · β${b.book}`;
@@ -579,7 +608,7 @@ export function renderAnthology(el, data, { bookmarks = [] } = {}) {
       h.append(sig);
       h.id = anchor(v, b);
       nodes.push(h);
-      for (const c of b.chapters) nodes.push(lineRow(c, true));
+      for (const c of b.chapters) nodes.push(lineRow(c, true, held));
     }
   }
   const CHUNK = 800;
@@ -593,10 +622,15 @@ export function renderAnthology(el, data, { bookmarks = [] } = {}) {
   return true;
 }
 
-function lineRow({ txid, sats, place }, underBook) {
+function lineRow({ height, txid, sats, place }, underBook, held) {
   const row = document.createElement('a');
   row.className = 'idx-row' + (underBook ? ' under-book' : '');
   row.href = citeHref(txid);
+  if (held) {
+    const resting = held.get(height) ?? 0;
+    if (resting > 0) row.title = `still held here: ${formatBalanceBtc(resting)}`;
+    else row.classList.add('spent');
+  }
   const r = document.createElement('span'); r.className = 'idx-ref';
   r.textContent = underBook ? `■${place.chapter}` : `β${place.book} ■${place.chapter}`;
   const amt = document.createElement('span'); amt.className = 'idx-amt';

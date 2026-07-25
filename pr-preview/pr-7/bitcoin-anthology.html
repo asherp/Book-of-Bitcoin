@@ -107,6 +107,9 @@ a:hover { text-decoration: underline; }
 .anth-range { margin-top:22px; font:600 12px/1.6 'IBM Plex Mono',monospace; letter-spacing:.14em; text-transform:uppercase; color:var(--accent); }
 .anth-range:empty { display:none; }
 .anth-count { margin-top:8px; font:500 11px/1 'IBM Plex Mono',monospace; letter-spacing:.12em; text-transform:uppercase; color:var(--dim); }
+.anth-held { margin-top:8px; font:500 11px/1.6 'IBM Plex Mono',monospace; letter-spacing:.12em; text-transform:uppercase; color:var(--dim); }
+.anth-held:empty { display:none; }
+.anth-held .held-amt { color:var(--accent); }
 .anth-down { margin-top:auto; padding-top:34px; font-size:20px; color:var(--dim); text-decoration:none; }
 .anth-down:hover { color:var(--accent); text-decoration:none; }
 .anth-hero.bare .anth-down { display:none; }
@@ -142,6 +145,14 @@ a:hover { text-decoration: underline; }
 .sp-row:hover .idx-amt { color:var(--ink); }
 /* An anchored index book lands with breathing room under the viewport top. */
 .idx-book[id] { scroll-margin-top: 18px; }
+/* The chain's own bookmarks: a chapter (or a whole book) whose gifts have
+   all moved on reads dimmed; where value still rests, full ink. */
+.idx-row.spent .idx-ref { color:var(--meta); }
+.idx-row.spent .idx-amt { color:var(--meta); }
+.idx-row.spent:hover .idx-ref { color:var(--dim); }
+.idx-row.spent:hover .idx-amt { color:var(--dim); }
+.sp-row.spent .sp-label { color:var(--meta); }
+.sp-row.spent:hover .sp-label { color:var(--dim); }
 /* The β sigil is a mark, not a letter: exempt from the headers' small caps. */
 .no-tt { text-transform: none; }
 
@@ -171,6 +182,7 @@ a:hover { text-decoration: underline; }
     <p class="anth-prose" id="anth-prose"></p>
     <div class="anth-range" id="anth-range"></div>
     <div class="anth-count" id="anth-count"></div>
+    <div class="anth-held" id="anth-held"></div>
     <a class="anth-down" href="#anth-contents" aria-label="Down to the table of contents">▾</a>
   </header>
 
@@ -178,7 +190,7 @@ a:hover { text-decoration: underline; }
 </div>
 
 <script type="module">
-import { INDEXED, isAddress, addressScriptHex, cachedLine, resolveLine, renderAnthology, spine, lineNote, reconciled } from './btc-index.js';
+import { INDEXED, isAddress, addressScriptHex, cachedLine, resolveLine, renderAnthology, spine, lineNote, reconciled, heldCoins, formatBalanceBtc } from './btc-index.js';
 import { volumeBookChapter, toRoman } from './btc-citation.js';
 
 // An anthology is one address's own subset of the book, opened the way a
@@ -272,13 +284,32 @@ if (!addr) {
     range.textContent = `${vols} · ${dates}`;
   };
 
+  // The held line, and the ledger's ink: the chain's own bookmarks. The
+  // UTXO snapshot is trusted only when it closes the triangle -- Σ held
+  // equal to the balance the gate already proved against the ledger sum --
+  // the same discipline everywhere: no number displays until it adds up.
+  // (A mid-spend race simply skips the view; the next visit agrees again.)
+  const heldEl = document.getElementById('anth-held');
+  const heldView = (data, held) => {
+    if (!held || !data || held.sum !== data.balance) return null;
+    heldEl.replaceChildren();
+    const amt = document.createElement('span'); amt.className = 'held-amt';
+    amt.textContent = formatBalanceBtc(held.sum);
+    if (held.count === 0) {
+      heldEl.append('nothing still held — every gift has moved on');
+    } else {
+      heldEl.append(amt, ` still held · ${held.count.toLocaleString('en-US')} coins resting in ${held.byHeight.size.toLocaleString('en-US')} chapters`);
+    }
+    return held.byHeight;
+  };
+
   // The anthology opens only reconciled: its ledger sum equal to the chain's
   // balance, the double-entry proof the map is whole (see btc-index.js).
   // Until then the leaf keeps its identity -- the name and the prose -- but
   // the span, contents, and index stay closed behind a syncing line.
-  const view = (data) => {
+  const view = (data, held) => {
     if (reconciled(data)) {
-      renderAnthology(el, data, { bookmarks });
+      renderAnthology(el, data, { bookmarks, held: heldView(data, held) });
       showCount(data);
       showRange(data);
       return;
@@ -286,19 +317,22 @@ if (!addr) {
     el.replaceChildren();
     count.textContent = '';
     range.textContent = '';
+    heldEl.replaceChildren();
     lineNote(el, data
       ? `still syncing — ${data.walked.toLocaleString('en-US')} of ${data.txCount.toLocaleString('en-US')} appearances collected; the anthology opens once its ledger reconciles with its balance`
       : '…');
   };
 
   // The stored map first -- instantly, offline included -- then the resolver
-  // confirms it against the chain, tops it up, or maps afresh.
+  // confirms it against the chain (topping up or mapping afresh) while the
+  // held snapshot arrives beside it; the final render carries both.
   (async () => {
+    const heldP = heldCoins(addr);
     const cached = await cachedLine(addr);
-    view(cached);
-    const data = await resolveLine(addr);
-    if (data !== cached) view(data);
-    else if (!data) { el.replaceChildren(); lineNote(el, '— the chain could not be reached'); }
+    view(cached, null);
+    const [data, held] = await Promise.all([resolveLine(addr), heldP]);
+    if (data) view(data, held);
+    else if (!cached) { el.replaceChildren(); lineNote(el, '— the chain could not be reached'); }
   })();
 }
 </script>
