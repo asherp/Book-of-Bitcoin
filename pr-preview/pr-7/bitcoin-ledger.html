@@ -292,7 +292,9 @@ import { volumeBookChapter, toRoman } from './btc-citation.js';
 // its chapters run), then, navigating down, its entries by year and quarter.
 // A ledger of several addresses turns between them the way the book turns
 // its pages: swipe left for the next leaf, right for the previous, with the
-// pager's arrows standing in for hands without a touchscreen. (A vertical
+// pager's arrows standing in for hands without a touchscreen -- and past
+// the last address leaf lies the ledger's own entries page, every member's
+// entries merged into one account, hierarchical in time. (A vertical
 // swipe holds no meaning here yet; it stays an ordinary scroll.) Every
 // chapter row opens bitcoin-book.html at its transaction, so a ledger is
 // navigated the same way as the book it excerpts.
@@ -421,7 +423,7 @@ if (!list.length) {
       el.prepend(s);
     }
   };
-  const unreachable = (addr, alive) => {
+  const unreachable = (alive, retry) => {
     el.replaceChildren();
     count.textContent = '';
     range.textContent = '';
@@ -432,7 +434,7 @@ if (!list.length) {
     const a = document.createElement('a');
     a.href = '#';
     a.textContent = 'retry';
-    a.addEventListener('click', (ev) => { ev.preventDefault(); if (alive()) runResolve(addr, alive); });
+    a.addEventListener('click', (ev) => { ev.preventDefault(); if (alive()) retry(); });
     s.append(a);
     el.append(s);
   };
@@ -475,18 +477,77 @@ if (!list.length) {
     const [data, held] = await Promise.all([lineOnce(addr), heldP]);
     if (!alive()) return;
     if (data) view(data, held);
-    else if (!cached) unreachable(addr, alive);
+    else if (!cached) unreachable(alive, () => runResolve(addr, alive));
   };
 
-  // ── The leaf: everything one address puts on the page ────────────────────
-  // Rendering is generation-guarded: turning the page bumps the generation,
-  // and every async continuation from the leaf left behind checks it before
-  // touching the DOM.
+  // ── The entries leaf: the ledger read whole ──────────────────────────────
+  // Past the last address lies the ledger's own entries page: every member's
+  // entries merged into one account, hierarchical in time -- years, then
+  // quarters, then the entries themselves, references on the left and
+  // amounts on the right, the running balance now running across the whole
+  // set. The merge is a sort: entries already carry their heights, and the
+  // same ordering the per-address maps keep (height, then txid, credits
+  // before debits) interleaves them exactly.
+  const mergeLines = (lines) => {
+    const present = lines.filter(Boolean);
+    if (!present.length) return null;
+    const entries = present.flatMap((l) => l.entries).sort((a, b) =>
+      a.height - b.height || (a.txid < b.txid ? -1 : a.txid > b.txid ? 1 : b.sats - a.sats));
+    return {
+      txCount: present.reduce((n, l) => n + l.txCount, 0),
+      balance: present.every((l) => l.balance != null) ? present.reduce((n, l) => n + l.balance, 0) : null,
+      walked: present.reduce((n, l) => n + l.walked, 0),
+      complete: present.length === addrs.length && present.every((l) => l.complete),
+      entries,
+    };
+  };
+  const mergeHeld = (helds) => {
+    if (helds.some((h) => !h)) return null;
+    const byTxid = new Map();
+    let sum = 0, count2 = 0;
+    for (const h of helds) {
+      sum += h.sum; count2 += h.count;
+      for (const [t, v] of h.byTxid) byTxid.set(t, (byTxid.get(t) ?? 0) + v);
+    }
+    return { sum, count: count2, byTxid };
+  };
+  const runEntries = async (alive) => {
+    const heldP = Promise.all(addrs.map((a) => heldCoins(a)));
+    const cachedAll = await Promise.all(addrs.map((a) => cachedLine(a)));
+    if (!alive()) return;
+    const cached = mergeLines(cachedAll);
+    if (cached) view(cached, null);
+    else { el.replaceChildren(); lineNote(el, '…'); }
+    // Every member's sync ticks reach this leaf's one note, summed.
+    const latest = new Map(addrs.map((a, i) => [a, { g: cachedAll[i]?.walked ?? 0, t: cachedAll[i]?.txCount ?? 0 }]));
+    const tickNote = () => {
+      if (!alive()) return;
+      const gathered = [...latest.values()].reduce((n2, v) => n2 + v.g, 0);
+      const total = [...latest.values()].reduce((n2, v) => n2 + v.t, 0);
+      const note = el.querySelector('.idx-note');
+      if (note) note.textContent = `still syncing — ${gathered.toLocaleString('en-US')} of ${total.toLocaleString('en-US')} transactions gathered`;
+    };
+    for (const a of addrs) progress.set(a, (gathered, total) => { latest.set(a, { g: gathered, t: total }); tickNote(); });
+    const [lines, helds] = await Promise.all([Promise.all(addrs.map(lineOnce)), heldP]);
+    if (!alive()) return;
+    const data = mergeLines(lines.map((l, i) => l ?? cachedAll[i]));
+    if (data) view(data, mergeHeld(helds));
+    else unreachable(alive, () => runEntries(alive));
+  };
+
+  // ── The leaves ───────────────────────────────────────────────────────────
+  // A ledger of several addresses has one leaf per address and, past the
+  // last, the entries leaf -- the ledger read whole. (A one-address ledger
+  // IS its entries page already; it gets no second leaf.) Rendering is
+  // generation-guarded: turning the page bumps the generation, and every
+  // async continuation from the leaf left behind checks it before touching
+  // the DOM.
+  const leafCount = addrs.length > 1 ? addrs.length + 1 : 1;
   let gen = 0;
   const pager = document.getElementById('anth-pager');
   const renderPager = () => {
     pager.replaceChildren();
-    if (addrs.length < 2) return;
+    if (leafCount < 2) return;
     const arrow = (glyph, dir, label) => {
       const a = document.createElement('a');
       a.href = '#';
@@ -497,14 +558,13 @@ if (!list.length) {
       return a;
     };
     const pos = document.createElement('span');
-    pos.textContent = `${at + 1} of ${addrs.length}`;
-    pager.append(arrow('‹', -1, 'Previous address'), pos, arrow('›', 1, 'Next address'));
+    pos.textContent = at < addrs.length ? `${at + 1} of ${addrs.length}` : 'entries';
+    pager.append(arrow('‹', -1, 'Previous leaf'), pos, arrow('›', 1, 'Next leaf'));
   };
 
-  const openAddress = () => {
+  const openLeaf = () => {
     const g = ++gen;
     const alive = () => g === gen;
-    const addr = addrs[at];
     renderPager();
     // A fresh leaf: clear what the last one wrote before its own data lands.
     document.getElementById('anth-addr').textContent = '';
@@ -512,6 +572,15 @@ if (!list.length) {
     count.textContent = '';
     range.textContent = '';
     heldEl.replaceChildren();
+
+    if (at >= addrs.length) {
+      // The entries leaf carries no single address: its subtitle counts the
+      // members whose entries it merges.
+      document.getElementById('anth-addr').textContent = `${addrs.length} addresses, one account`;
+      runEntries(alive);
+      return;
+    }
+    const addr = addrs[at];
 
     // The address, once, in the book's own tongue: its scriptPubKey in the
     // book's opcode notation -- glyphs for the opcodes, a typed push mark,
@@ -546,14 +615,14 @@ if (!list.length) {
   // two halves overlap, so the turn reads as one continuous strip.
   const REDUCED_MOTION = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const slide = document.getElementById('ledger-slide');
-  const canTurn = (dir) => at + dir >= 0 && at + dir < addrs.length;
+  const canTurn = (dir) => at + dir >= 0 && at + dir < leafCount;
   let turning = false;
   function turn(dir) {
     if (!canTurn(dir) || turning) return;
     if (REDUCED_MOTION) {
       slide.style.transform = '';
       at += dir;
-      openAddress();
+      openLeaf();
       window.scrollTo(0, 0);
       return;
     }
@@ -585,7 +654,7 @@ if (!list.length) {
     // destination's render work blocks the main thread.
     requestAnimationFrame(() => requestAnimationFrame(() => {
       at += dir;
-      openAddress();
+      openLeaf();
       window.scrollTo(0, 0);   // a new leaf opens at its title, unseen while hidden
       slide.style.transform = `translateX(${dir > 0 ? '' : '-'}${window.innerWidth}px)`;
       slide.style.visibility = '';
@@ -642,7 +711,7 @@ if (!list.length) {
     document.addEventListener('touchcancel', () => { sx = null; if (!turning) snapBack(); }, { passive: true });
   })();
 
-  openAddress();
+  openLeaf();
 }
 </script>
 </body>
