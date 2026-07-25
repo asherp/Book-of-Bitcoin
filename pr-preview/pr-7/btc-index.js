@@ -129,11 +129,9 @@ export function ledgerFor(list) {
 // A citation link into the book for one appearance: the transaction's chapter
 // opens by txid, and the book resolves its exact §section itself. An output
 // index deepens the landing (&out=N): the book brings that output to the
-// top, the same landing its own marginalia make. A ledger address rides
-// along (&ledger=): the book names the portfolio above the referenced
-// paragraph, and the name leads back to that ledger.
-export const citeHref = (txid, out, ledger) =>
-  `bitcoin-book.html?txid=${txid}${out != null ? `&out=${out}` : ''}${ledger ? `&ledger=${ledger}` : ''}`;
+// top, the same landing its own marginalia make.
+export const citeHref = (txid, out) =>
+  `bitcoin-book.html?txid=${txid}${out != null ? `&out=${out}` : ''}`;
 
 // The address's scriptPubKey, as hex: its on-chain identity, and the exact
 // bytes the book Glossia-encodes wherever a chapter pays this address -- so a
@@ -699,9 +697,9 @@ export function periods(data) {
 // otherwise, lives on the ledger's entries leaf. `held` feeds the status
 // column from the chain's own bookmarks. The callers own any clearing and
 // any notes around the run.
-export function renderRows(el, entries, held = null, from = null) {
+export function renderRows(el, entries, held = null) {
   for (const c of [...entries].reverse()) {
-    el.append(lineRow({ ...c, place: volumeBookChapter(c.height) }, held, from));
+    el.append(lineRow({ ...c, place: volumeBookChapter(c.height) }, held));
   }
 }
 
@@ -896,12 +894,10 @@ export async function sectionOf(txid) {
 // hasn't agreed with the chain -- the verdict waits, never guesses.
 // (`pending` is reserved for mempool transactions, which the map doesn't
 // carry yet.) A zero-value touch carries no coin to have a status.
-function lineRow({ txid, sats, place, out }, held, from) {
+function lineRow({ txid, sats, place, out }, held) {
   const row = document.createElement('a');
   row.className = 'idx-row acct';
-  // A credit lands the book on its output; the ledger's address rides
-  // along so the book can name the portfolio above the paragraph.
-  row.href = citeHref(txid, out, from);
+  row.href = citeHref(txid, out);   // a credit lands the book on its output
   const resting = held && sats > 0 ? held.get(txid) ?? 0 : 0;
   if (held) {
     if (resting > 0) row.title = `still unspent: ${formatBalanceBtc(resting)}`;

@@ -451,12 +451,6 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 /* The section heading -- the transaction's position within its block, "§ N" --
    centred beneath the chapter frontispiece. */
 .section-title { text-align:center; margin: 22px 0 0; font:600 13px/1 'IBM Plex Mono',monospace; letter-spacing:.28em; text-transform:uppercase; color:var(--accent); }
-/* The portfolio's mark: a citation followed in from a ledger names its
-   ledger above the referenced paragraph -- the name identifies the address
-   -- and leads back to that ledger. It rides the slide, retiring with the
-   page it annotated. */
-.ledger-mark { text-align:center; margin: 14px 0 4px; }
-.ledger-mark a { font: 500 16px/1.4 'Newsreader',serif; color: var(--accent); }
 .section-num { display:block; }
 /* A curated transaction's name, beneath its § number -- the section's answer to
    a chapter's event title (serif, mixed case, quieter than the accent numeral). */
@@ -3552,27 +3546,8 @@ const indexParam = Number.isFinite(idxRaw) ? idxRaw
   : pageParam === 'volume' ? -3 : pageParam === 'book' ? -2 : -1;
 if (txidParam) {
   const outRaw = parseInt(params.get('out'), 10);
-  const ledgerParam = params.get('ledger');
-  Promise.resolve(openLookup(txidParam)).then(async () => {
+  Promise.resolve(openLookup(txidParam)).then(() => {
     if (Number.isFinite(outRaw)) $(`out-${outRaw}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    // A citation followed in from a ledger carries its portfolio: the
-    // ledger's name stands above the referenced paragraph -- the name
-    // identifies the address -- and leads back to that ledger. The mark
-    // rides the slide, so the next page turn retires it with the page it
-    // annotated.
-    if (!ledgerParam) return;
-    try {
-      const { ledgerFor, isAddress } = await import('./btc-index.js');
-      if (!isAddress(ledgerParam)) return;
-      const led = ledgerFor([ledgerParam]);
-      const mark = document.createElement('div');
-      mark.className = 'ledger-mark';
-      const a = document.createElement('a');
-      a.href = `bitcoin-ledger.html?address=${led.addresses.join(',')}`;
-      a.textContent = led.title || ledgerParam;
-      mark.append(a);
-      $('page-slide')?.prepend(mark);
-    } catch { /* the mark is a courtesy; the page stands without it */ }
   }).catch(() => { /* the lookup's own error handling has the page */ });
 } else if (blockParam) {
   openLookup(blockParam, indexParam);
