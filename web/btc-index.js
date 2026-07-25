@@ -129,9 +129,11 @@ export function ledgerFor(list) {
 // A citation link into the book for one appearance: the transaction's chapter
 // opens by txid, and the book resolves its exact §section itself. An output
 // index deepens the landing (&out=N): the book brings that output to the
-// top, the same landing its own marginalia make.
-export const citeHref = (txid, out) =>
-  `bitcoin-book.html?txid=${txid}${out != null ? `&out=${out}` : ''}`;
+// top, the same landing its own marginalia make. A ledger address rides
+// along (&ledger=): the book names the portfolio above the referenced
+// paragraph, and the name leads back to that ledger.
+export const citeHref = (txid, out, ledger) =>
+  `bitcoin-book.html?txid=${txid}${out != null ? `&out=${out}` : ''}${ledger ? `&ledger=${ledger}` : ''}`;
 
 // The address's scriptPubKey, as hex: its on-chain identity, and the exact
 // bytes the book Glossia-encodes wherever a chapter pays this address -- so a
@@ -697,9 +699,9 @@ export function periods(data) {
 // otherwise, lives on the ledger's entries leaf. `held` feeds the status
 // column from the chain's own bookmarks. The callers own any clearing and
 // any notes around the run.
-export function renderRows(el, entries, held = null) {
+export function renderRows(el, entries, held = null, from = null) {
   for (const c of [...entries].reverse()) {
-    el.append(lineRow({ ...c, place: volumeBookChapter(c.height) }, held));
+    el.append(lineRow({ ...c, place: volumeBookChapter(c.height) }, held, from));
   }
 }
 
@@ -874,42 +876,15 @@ function ledgerRow(c, place, balance, lastVol, lastBook, held) {
   return row;
 }
 
-// The section of a transaction within its chapter -- its position in the
-// block, the § of a full citation. The merkle proof names it (and is the
-// smallest ask that does); a placement is immutable, so once found it goes
-// to the archive's placements store -- the same one the contents page
-// keeps -- and renders forever after, offline included. Requests are
-// memoized per txid (a transaction that both credits and debits posts two
-// rows but asks once) and ride a few lanes wide, so a page of rows doesn't
-// burst the mirror.
-const SECTION_LANES = 4;
-let sectionActive = 0;
-const sectionWaiters = [];
-async function inSectionLane(fn) {
-  if (sectionActive >= SECTION_LANES) await new Promise((r) => sectionWaiters.push(r));
-  sectionActive++;
-  try { return await fn(); }
-  finally { sectionActive--; sectionWaiters.shift()?.(); }
-}
-async function findSection(txid) {
-  const kept = await storeGet('placements', txid);
-  if (kept && Number.isInteger(kept.pos)) return kept.pos;
-  for (const mirror of esploraMirrors()) {
-    const j = await esploraJson(mirror, `/tx/${txid}/merkle-proof`);
-    if (j && Number.isInteger(j.pos)) {
-      if (j.block_height > 0) storePut('placements', txid, { height: j.block_height, pos: j.pos });
-      return j.pos;
-    }
-  }
-  return null;
-}
-const sectionMemo = new Map();
-export function sectionOf(txid) {
-  if (!sectionMemo.has(txid)) {
-    sectionMemo.set(txid, inSectionLane(() => findSection(txid))
-      .then((pos) => { if (pos == null) sectionMemo.delete(txid); return pos; }));
-  }
-  return sectionMemo.get(txid);
+// The section of a transaction within its chapter -- the § of a full
+// citation -- read from the archive ALONE, never fetched: the book
+// archives every placement it resolves (and the contents page its own),
+// so sections fill in as the reader actually visits the cited paragraphs.
+// The record makes no lookups of its own -- a thousand rows cost nothing
+// -- and an unknown section simply waits to be read.
+export async function sectionOf(txid) {
+  const kept = await storeGet('citations', txid) ?? await storeGet('placements', txid);
+  return kept && Number.isInteger(kept.pos) ? kept.pos : null;
 }
 
 // One record line: the citation whole, then debit, credit, status. An
@@ -921,10 +896,12 @@ export function sectionOf(txid) {
 // hasn't agreed with the chain -- the verdict waits, never guesses.
 // (`pending` is reserved for mempool transactions, which the map doesn't
 // carry yet.) A zero-value touch carries no coin to have a status.
-function lineRow({ txid, sats, place, out }, held) {
+function lineRow({ txid, sats, place, out }, held, from) {
   const row = document.createElement('a');
   row.className = 'idx-row acct';
-  row.href = citeHref(txid, out);   // a credit lands the book on its output
+  // A credit lands the book on its output; the ledger's address rides
+  // along so the book can name the portfolio above the paragraph.
+  row.href = citeHref(txid, out, from);
   const resting = held && sats > 0 ? held.get(txid) ?? 0 : 0;
   if (held) {
     if (resting > 0) row.title = `still unspent: ${formatBalanceBtc(resting)}`;
@@ -932,15 +909,13 @@ function lineRow({ txid, sats, place, out }, held) {
   }
   const r = document.createElement('span'); r.className = 'idx-ref';
   r.textContent = `${toRoman(place.volume)} β${place.book} ■${place.chapter}`;
-  // The section arrives when the placement resolves (instantly from the
-  // archive on a revisit); until then a quiet ellipsis holds its seat. A
-  // credit's citation runs to its output -- §section.output, as the
-  // reader's marginalia print it.
+  // The section joins the citation only once the archive knows it -- a
+  // paragraph the reader has visited fills in (§section.output, as the
+  // reader's marginalia print it); the rest wait to be read.
   const sec = document.createElement('span');
-  sec.textContent = ' §…';
   r.append(sec);
   sectionOf(txid).then((pos) => {
-    sec.textContent = pos != null ? ` §${pos + 1}${out != null ? `.${out}` : ''}` : '';
+    if (pos != null) sec.textContent = ` §${pos + 1}${out != null ? `.${out}` : ''}`;
   });
   const deb = document.createElement('span'); deb.className = 'idx-amt col-deb';
   deb.textContent = sats < 0 ? formatBalanceBtc(-sats) : '';

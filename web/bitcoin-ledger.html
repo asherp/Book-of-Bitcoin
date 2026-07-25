@@ -577,7 +577,7 @@ if (!list.length) {
       const len = line.entries.length;
       const take = Math.min(len - rendered, PAGE);
       if (take > 0) {
-        renderRows(rowsEl, line.entries.slice(len - rendered - take, len - rendered), byTxid);
+        renderRows(rowsEl, line.entries.slice(len - rendered - take, len - rendered), byTxid, addr);
         rendered += take;
       }
       note.textContent = stateText(line);   // the reach grows as the reader reads
