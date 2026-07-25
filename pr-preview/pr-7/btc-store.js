@@ -12,6 +12,10 @@
 // capped and pruned oldest-first (an 'at' index over write time), so the
 // archive stays a bounded working set, not an unbounded chain mirror.
 
+// Ask the browser to treat this origin's storage as persistent -- installed
+// apps are usually granted it silently -- so what is kept here survives
+// storage pressure instead of standing in the "best effort" eviction line.
+try { navigator.storage?.persist?.().catch(() => { /* denied: merely evictable */ }); } catch (_) { /* unavailable */ }
 const DB_NAME = 'glossia-btc-archive';
 const STORES = {
   placements: 4000,   // txid / block hash -> { height, pos }   (contents page)
