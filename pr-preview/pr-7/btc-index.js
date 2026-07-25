@@ -868,9 +868,10 @@ function ledgerRow(c, place, balance, lastVol, lastBook, held) {
 // carries ink (a zero-value touch posts a bare 0 credit). Status reads
 // the chain's own bookmarks: `unspent` while any of a credit's coins
 // still rest at the address, `spent` once the value has moved on (a debit
-// being a departure by nature), and `pending` while the UTXO snapshot
-// hasn't yet agreed with the chain -- the verdict awaits, never guesses.
-// A zero-value touch carries no coin to have a status.
+// being a departure by nature); it stays silent while the UTXO snapshot
+// hasn't agreed with the chain -- the verdict waits, never guesses.
+// (`pending` is reserved for mempool transactions, which the map doesn't
+// carry yet.) A zero-value touch carries no coin to have a status.
 function lineRow({ txid, sats, place }, held) {
   const row = document.createElement('a');
   row.className = 'idx-row acct';
@@ -887,9 +888,8 @@ function lineRow({ txid, sats, place }, held) {
   const cred = document.createElement('span'); cred.className = 'idx-amt col-cred';
   cred.textContent = sats > 0 ? formatBalanceBtc(sats) : sats === 0 ? '0 ₿' : '';
   const st = document.createElement('span'); st.className = 'idx-status col-status';
-  if (sats !== 0) {
-    if (!held) { st.textContent = 'pending'; st.classList.add('pending'); }
-    else if (resting > 0) { st.textContent = 'unspent'; st.classList.add('unspent'); }
+  if (held && sats !== 0) {
+    if (resting > 0) { st.textContent = 'unspent'; st.classList.add('unspent'); }
     else st.textContent = 'spent';
   }
   row.append(r, deb, cred, st);
