@@ -181,18 +181,16 @@ export const reconciled = (data) =>
 // ---------------------------------------------------------------------------
 // The mapping, the store, and the renderers shared by the index-family pages.
 //
-// An address's *map* is the complete list of its chapters -- every block it
-// appears in, with the net of its touches there. Blockbook instances
-// (Trezor's indexer) feed it, and only they: their big random-access pages
-// bring a complete map in a handful of parallel requests, and because past
-// blocks are closed -- a transaction can never be inserted into mined
-// history -- a later top-up asks only for blocks above the mapped frontier
-// (&from=), which cannot overlap what's mapped. There is no partial-source
-// fallback: the anthology pages gate on reconciliation (the ledger sum equal
-// to the chain's balance), and a walk that cannot finish would only ever
-// produce maps that never open. Unreachable mirrors leave the stored map
-// standing -- complete as of its writing -- or, with nothing stored, the
-// syncing gate.
+// An address's *map* is the complete list of its entries -- every movement
+// of value it was party to. Blockbook instances (Trezor's indexer) feed it,
+// and only they. Because past blocks are closed -- a transaction can never
+// be inserted into mined history -- the map is built durable-first: a
+// checkpointed walk (mapWhole) banks closed stretches of history as it
+// descends, so found data survives any interruption and resyncs resume
+// rather than restart; and a later top-up asks only for blocks above the
+// mapped frontier (&from=), which cannot overlap what's banked. Unreachable
+// mirrors leave the stored state standing -- complete, or a checkpoint to
+// resume -- or, with nothing stored, the syncing gate.
 
 const BLOCKBOOK_MIRRORS = ['https://btc1.trezor.io/api/v2', 'https://btc2.trezor.io/api/v2'];
 const BLOCKBOOK_PAGE = 1000;
@@ -217,10 +215,12 @@ async function blockbookJson(mirror, path) {
 // One blockbook address page: `txslight` detail carries each transaction's
 // height and its in/out values inline (values are decimal-sats strings), so
 // a page of a thousand transactions is one request. `from` filters to blocks
-// at or above a height -- the top-up primitive.
-const blockbookPath = (address, page, from) =>
+// at or above a height (the top-up primitive); `to` filters to blocks at or
+// below one (the checkpointed walk's cursor -- that set is closed history,
+// immutable, so its pagination never shifts).
+const blockbookPath = (address, page, from, to) =>
   `/address/${address}?details=txslight&pageSize=${BLOCKBOOK_PAGE}&page=${page}` +
-  (from ? `&from=${from}` : '');
+  (from ? `&from=${from}` : '') + (to != null ? `&to=${to}` : '');
 
 // A blockbook transaction's touches on the address: what its outputs paid
 // in (credit) and its inputs drew out (debit), kept apart -- a ledger does
@@ -239,16 +239,13 @@ function blockbookTouches(txs, address) {
   return out;
 }
 
-// The map via blockbook: page 1 reports the address's confirmed transaction
-// total, the remaining pages arrive in parallel (page N is addressable
-// directly -- no linked-list walk). The page count is NOT trusted from
-// totalPages -- live instances report it -1 (unknown) in this mode, which
-// once silently truncated every large map to its first page. For a whole
-// map the count derives from the total and the served page size; a
-// from-filtered top-up (whose set size the total doesn't describe) pages
-// forward until a short page says done. All pages or nothing: a map with a
-// hole in the middle is worse than no map, so any unrecoverable page fails
-// the whole attempt and the caller keeps what it had.
+// The delta fetch, for top-ups: everything from a height upward. The page
+// count is NOT trusted from totalPages -- live instances report it -1
+// (unknown) -- so a filtered ask (whose set size the reported total doesn't
+// describe) pages forward until a short page says done. All pages or
+// nothing here: a delta with a hole would corrupt the banked map, so any
+// unrecoverable page fails the attempt and the caller keeps what it had.
+// (The whole-history walk lives in mapWhole, which banks as it goes.)
 async function blockbookMap(address, from, onProgress) {
   outer: for (const mirror of BLOCKBOOK_MIRRORS) {
     const first = await blockbookJson(mirror, blockbookPath(address, 1, from));
@@ -410,22 +407,83 @@ async function topUp(address, cached, onProgress) {
   return data;
 }
 
+// The whole map, gathered newest-to-oldest by a height cursor and BANKED as
+// it goes. Each iteration asks for everything at or below the cursor -- an
+// immutable set, those blocks being closed -- keeps the entries strictly
+// above the page's lowest height (a page may split a block, so the boundary
+// block is left for the next iteration to fetch whole), persists the
+// checkpoint, and steps the cursor down. An interrupted run -- a throttled
+// mirror, a closed tab -- therefore loses at most one page of work, and a
+// resume continues from the banked low, independent of mirror and page
+// size: closed periods, once found, are kept. The final short page banks
+// everything and marks the line complete.
+async function mapWhole(address, resume, onProgress) {
+  let ceil = resume?.ceil ?? null;
+  let cursor = resume?.low ?? null;
+  let entries = resume ? resume.entries : [];
+  let walked = resume?.walked ?? 0;
+  let txCount = resume?.txCount ?? 0;
+  let balance = resume?.balance ?? 0;
+  const tick = () => { try { onProgress?.(walked, txCount); } catch (_) { /* a watcher's error is not the map's */ } };
+  if (resume) tick();
+  let madeProgress = false;
+  mirrors: for (const mirror of BLOCKBOOK_MIRRORS) {
+    for (;;) {
+      // A fresh run's first ask is unfiltered -- it learns the set's ceiling
+      // and the address totals; every later ask is ≤ cursor.
+      const j = await blockbookJson(mirror, blockbookPath(address, 1, undefined, cursor));
+      if (!j || typeof j.txs !== 'number') continue mirrors;
+      const size = Number(j.itemsOnPage) > 0 ? Number(j.itemsOnPage) : BLOCKBOOK_PAGE;
+      if (ceil === null) { txCount = j.txs; balance = Number(j.balance ?? 0); }
+      let recs = blockbookTouches(j.transactions, address);
+      if (ceil === null) ceil = recs[0]?.height ?? 0;
+      let short = (j.transactions || []).length < size;
+      // A single block wider than a page: keep paging the same cursor until
+      // the height breaks or the set ends, so the block can bank whole.
+      for (let p = 2; !short && recs.length && recs.every((r) => r.height === recs[0].height); p++) {
+        const j2 = await blockbookJson(mirror, blockbookPath(address, p, undefined, cursor));
+        if (!j2) continue mirrors;
+        recs = recs.concat(blockbookTouches(j2.transactions, address));
+        short = (j2.transactions || []).length < size;
+      }
+      if (short) {
+        entries = buildEntries(recs).concat(entries);
+        walked += recs.length;
+        const data = { v: LINE_V, at: Date.now(), txCount, balance, walked, complete: true, entries };
+        await saveLine(address, data);
+        tick();
+        return data;
+      }
+      const low = recs[recs.length - 1].height;
+      const bank = recs.filter((r) => r.height > low);
+      entries = buildEntries(bank).concat(entries);
+      walked += bank.length;
+      cursor = low;
+      madeProgress = true;
+      await saveLine(address, { v: LINE_V, at: Date.now(), txCount, balance, walked, complete: false, ceil, low, entries });
+      tick();
+    }
+  }
+  // Mirrors exhausted mid-run: whatever was banked is the result -- the next
+  // visit resumes from it rather than starting over.
+  if (madeProgress || resume) return { v: LINE_V, at: Date.now(), txCount, balance, walked, complete: false, ceil, low: cursor, entries };
+  return null;
+}
+
 // Resolve an address's map: the stored one confirmed-or-topped-up when it's
-// complete, else a fresh whole mapping. Returns the stored map unchanged
-// when the mirrors are unreachable (offline reads still work), null when
-// there's nothing at all to show. `onProgress(gathered, total)` ticks as
-// pages land, so a page can show the sync live.
+// complete; a banked checkpoint resumed and finished (then topped up for
+// anything above its ceiling); a fresh checkpointed walk otherwise. Returns
+// the stored state unchanged when the mirrors are unreachable (offline
+// reads still work), null when there's nothing at all to show.
+// `onProgress(gathered, total)` ticks as pages land, so a page can show the
+// sync live.
 export async function resolveLine(address, onProgress) {
   const cached = await cachedLine(address);
   if (cached?.complete) return topUp(address, cached, onProgress);
-  const map = await blockbookMap(address, undefined, onProgress);
-  if (!map) return cached ?? null;
-  const data = {
-    v: LINE_V, at: Date.now(), txCount: map.txCount, balance: map.balance, walked: map.touches.length,
-    complete: map.touches.length >= map.txCount, entries: buildEntries(map.touches),
-  };
-  await saveLine(address, data);
-  return data;
+  const resume = cached && cached.low != null ? cached : null;
+  const line = await mapWhole(address, resume, onProgress);
+  if (!line) return cached ?? null;
+  return line.complete ? topUp(address, line, onProgress) : line;
 }
 
 // The lightest possible ask: the address's chain state -- balance and
