@@ -527,7 +527,7 @@ export function renderLine(el, data, maxRows = Infinity) {
   // transactions, which is what the chain counts (several may share a
   // chapter above).
   if (data.walked < data.txCount) {
-    lineNote(el, `… the latest ${data.walked.toLocaleString('en-US')} of ${data.txCount.toLocaleString('en-US')} appearances`);
+    lineNote(el, `… the latest ${data.walked.toLocaleString('en-US')} of ${data.txCount.toLocaleString('en-US')} transactions`);
   }
 }
 
