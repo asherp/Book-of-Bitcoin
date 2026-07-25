@@ -212,7 +212,7 @@ a:hover { text-decoration: underline; }
 </div>
 
 <script type="module">
-import { INDEXED, isAddress, addressScriptHex, cachedLine, resolveLine, renderLedger, periods, lineNote, reconciled, heldCoins, formatBalanceBtc } from './btc-index.js';
+import { INDEXED, isAddress, addressScriptHex, cachedLine, resolveLine, renderLedger, periods, lineNote, reconciled, heldCoins, formatBalanceBtc, blockbookFailureText } from './btc-index.js';
 import { volumeBookChapter, toRoman } from './btc-citation.js';
 
 // An anthology is one address's own subset of the book, opened the way a
@@ -376,7 +376,7 @@ if (!addr) {
     heldEl.replaceChildren();
     const s = document.createElement('span');
     s.className = 'idx-note';
-    s.append('— the chain could not be reached · ');
+    s.append(`— the chain could not be reached (${blockbookFailureText()}) · `);
     const a = document.createElement('a');
     a.href = '#';
     a.textContent = 'retry';

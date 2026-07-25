@@ -165,7 +165,7 @@ a:hover { text-decoration: underline; }
 </div>
 
 <script type="module">
-import { INDEXED, isAddress, cachedLine, addressState, formatBalanceBtc,
+import { INDEXED, isAddress, cachedLine, addressState, formatBalanceBtc, blockbookFailureText,
          DEFAULT_BLOCKBOOK, blockbookCustom, blockbookSelected, blockbookPageSize, setBlockbookSettings } from './btc-index.js';
 
 // --- Settings: where the ledgers ask, and how much each ask carries.
@@ -293,7 +293,7 @@ for (const e of entries) {
       settled = { balance: cached.balance };   // last known; the ledger page will refresh it
     } else {
       settled = null;
-      amt.textContent = 'unreachable — retry';
+      amt.textContent = `${blockbookFailureText()} — retry`;
     }
   };
   amt.addEventListener('click', (ev) => {
