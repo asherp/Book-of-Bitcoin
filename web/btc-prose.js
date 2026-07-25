@@ -568,8 +568,9 @@ function csvMark(value) {
 // mining preamble's leading pushes into β/η marks. Opcode glyphs, OP_* names
 // and the preamble marks are the only HTML added here; pushed data is Glossia
 // prose (safe) and quoted ASCII is escaped, so the result is safe to render
-// via innerHTML like before.
-function renderScript(hex, collect, { eligible = false, nested = false, preamble = false } = {}) {
+// via innerHTML like before. Exported for the anthology title page, which
+// reads an address as its scriptPubKey in this same notation.
+export function renderScript(hex, collect, { eligible = false, nested = false, preamble = false } = {}) {
   const toks = tokenizeScript(hex);
   // A P2SH scriptSig ends with its redeemScript, pushed as data; reveal that
   // final push as opcodes when it parses as a genuine script.

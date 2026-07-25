@@ -31,7 +31,14 @@
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js').catch((e) => console.warn('SW registration failed:', e));
+      navigator.serviceWorker.register('./sw.js').then((reg) => {
+        // An installed app can resume from the background for days without a
+        // navigation, never rechecking for a new build: check again on every
+        // return to the foreground.
+        document.addEventListener('visibilitychange', () => {
+          if (document.visibilityState === 'visible') reg.update().catch(() => {});
+        });
+      }).catch((e) => console.warn('SW registration failed:', e));
     });
 
     // Update affordance: the worker's stale-while-revalidate serves this page
@@ -672,7 +679,7 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 <div class="wrap">
   <div class="masthead">
     <span class="title">The <span class="beta">β</span>ook of <span class="beta">β</span>itcoin</span>
-    <span class="home"><button type="button" id="install-btn" class="install-btn" aria-label="Install the Book of Bitcoin as an app">Install</button><a href="./bitcoin-search.html">Search</a> · <a href="./bitcoin-contents.html">Contents</a> · <span class="settings-menu"><a href="#" id="settings-link" role="button" aria-haspopup="dialog" aria-expanded="false">Settings</a><div id="settings-panel" class="settings-panel hidden" role="dialog" aria-label="Settings">
+    <span class="home"><button type="button" id="install-btn" class="install-btn" aria-label="Install the Book of Bitcoin as an app">Install</button><a href="./bitcoin-search.html">Search</a> · <a href="./bitcoin-contents.html">Contents</a> · <a href="./bitcoin-ledgers.html">Ledgers</a> · <span class="settings-menu"><a href="#" id="settings-link" role="button" aria-haspopup="dialog" aria-expanded="false">Settings</a><div id="settings-panel" class="settings-panel hidden" role="dialog" aria-label="Settings">
       <div class="settings-title">Data source</div>
       <div class="endpoint-row">
         <select id="endpoint-select" class="endpoint-select" aria-label="Data source endpoint"></select>
@@ -1054,6 +1061,7 @@ import { parseTransaction, computeTxid, parseBlockHeader, computeBlockHash } fro
 import { composeTransactionFields, composeBlockHeaderFields, groupDigits, formatBtc, renderWitness, toSuperscript, timestampInfo } from './btc-prose.js';
 import { volumeBookChapter, heightOf, toRoman, reference } from './btc-citation.js';
 import { NOTABLE } from './btc-contents.js';
+import { storeGet, storePut } from './btc-store.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -1294,6 +1302,10 @@ let renderGen = 0;
 function resolveCitation(txid) {
   if (!citationCache.has(txid)) {
     citationCache.set(txid, (async () => {
+      // A confirmed placement (and the outputs behind it) is immutable, so
+      // the archive answers first and forever.
+      const kept = await storeGet('citations', txid);
+      if (kept) return kept;
       const [mpRes, txRes] = await Promise.all([
         esploraFetch(`${ESPLORA}/tx/${txid}/merkle-proof`),
         esploraFetch(`${ESPLORA}/tx/${txid}`),
@@ -1301,7 +1313,9 @@ function resolveCitation(txid) {
       if (!mpRes.ok) throw new Error(`Esplora returned ${mpRes.status}`);
       const mp = await mpRes.json();
       const tx = txRes.ok ? await txRes.json() : null;
-      return { height: mp.block_height, pos: mp.pos, outputs: tx ? tx.vout : null };
+      const entry = { height: mp.block_height, pos: mp.pos, outputs: tx ? tx.vout : null };
+      storePut('citations', txid, entry);
+      return entry;
     })().catch((e) => { citationCache.delete(txid); throw e; }));
   }
   return citationCache.get(txid);
@@ -1473,9 +1487,13 @@ const txidsCache = new Map();
 function fetchTxids(hash) {
   if (!txidsCache.has(hash)) {
     txidsCache.set(hash, (async () => {
+      const kept = await storeGet('txids', hash);   // a block's list is immutable by its hash
+      if (kept) return kept;
       const res = await esploraFetch(`${ESPLORA}/block/${hash}/txids`);
       if (!res.ok) throw new Error(`Esplora returned ${res.status} fetching the transaction list.`);
-      return res.json();
+      const txids = await res.json();
+      storePut('txids', hash, txids);
+      return txids;
     })().catch((e) => { txidsCache.delete(hash); throw e; }));
   }
   return txidsCache.get(hash);
@@ -1495,6 +1513,18 @@ const blockCoreCache = new Map();   // hash -> Promise<{ hash, height, block, tx
 function loadBlockCore(hash) {
   if (!blockCoreCache.has(hash)) {
     blockCoreCache.set(hash, (async () => {
+      // The archive keeps the fetched ingredients (info json + header hex);
+      // the parse and the hash check are recomputed on every load, so a kept
+      // block re-earns its verification exactly like a fresh one.
+      const build = async (block, headerHex) => {
+        // Parsed from the raw 80-byte header, not trusted from the JSON --
+        // same self-parsed, self-verified stance as a transaction's txid.
+        const header = parseBlockHeader(headerHex);
+        const headerVerified = (await computeBlockHash(headerHex)) === hash;
+        return { hash, height: block.height, block, txCount: block.tx_count, header, headerVerified };
+      };
+      const kept = await storeGet('blocks', hash);
+      if (kept) return build(kept.block, kept.headerHex);
       const [blockRes, headerRes] = await Promise.all([
         esploraFetch(`${ESPLORA}/block/${hash}`),
         esploraFetch(`${ESPLORA}/block/${hash}/header`),
@@ -1503,11 +1533,8 @@ function loadBlockCore(hash) {
       if (!headerRes.ok) throw new Error(`Esplora returned ${headerRes.status} fetching the block header.`);
       const block = await blockRes.json();
       const headerHex = (await headerRes.text()).trim();
-      // Parsed from the raw 80-byte header, not trusted from the JSON above --
-      // same self-parsed, self-verified stance as a transaction's txid.
-      const header = parseBlockHeader(headerHex);
-      const headerVerified = (await computeBlockHash(headerHex)) === hash;
-      return { hash, height: block.height, block, txCount: block.tx_count, header, headerVerified };
+      storePut('blocks', hash, { block, headerHex });
+      return build(block, headerHex);
     })().catch((e) => { blockCoreCache.delete(hash); throw e; }));
   }
   return blockCoreCache.get(hash);
@@ -1535,12 +1562,20 @@ const hashByHeight = new Map();
 async function resolveBlockHash(height) {
   const h = Number(height);
   if (hashByHeight.has(h)) return hashByHeight.get(h);
+  // The archive answers under the same six-confirmation rule the memo keeps:
+  // a mapping is only ever written safely below the tip, so a kept one is
+  // final and serves without the network.
+  const kept = await storeGet('heights', h);
+  if (kept) { hashByHeight.set(h, kept); return kept; }
   const res = await esploraFetch(`${ESPLORA}/block-height/${height}`);
   if (!res.ok) throw Object.assign(
     new Error(res.status === 404 ? `No block at height ${height}.` : `Esplora returned ${res.status}.`),
     { notFound: res.status === 404 });
   const hash = (await res.text()).trim();
-  if (tipHeight !== null && h <= tipHeight - 6) hashByHeight.set(h, hash);
+  if (tipHeight !== null && h <= tipHeight - 6) {
+    hashByHeight.set(h, hash);
+    storePut('heights', h, hash);
+  }
   return hash;
 }
 async function loadBlockByHeight(height, opts) {
@@ -1619,9 +1654,13 @@ function loadTxHex(txid) {
     return cached;
   }
   const p = (async () => {
+    const kept = await storeGet('tx', txid);   // a transaction's bytes are its txid's forever
+    if (kept) return kept;
     const r = await esploraFetch(`${ESPLORA}/tx/${txid}/hex`);
     if (!r.ok) throw new Error(`Esplora returned ${r.status} fetching tx ${txid.slice(0, 8)}…`);
-    return (await r.text()).trim();
+    const hex = (await r.text()).trim();
+    storePut('tx', txid, hex);
+    return hex;
   })().catch((e) => { txHexCache.delete(txid); throw e; });
   txHexCache.set(txid, p);
   // Evict least-recently-used entries past the cap (Map iterates oldest-first).
@@ -3490,9 +3529,12 @@ window.addEventListener('resize', dismissOnViewportChange);
 window.addEventListener('scroll', dismissOnViewportChange, true);
 
 // Entry points, in priority order: ?txid= jumps straight to a transaction's
-// section; ?block= (with optional ?index=) opens a block -- a negative height
-// counts back from the chain tip, so ?block=-1 is the latest block; otherwise
-// the book opens at the chain tip (-1), the latest chapter rather than Genesis.
+// section (an added &out=N then brings that output to the top -- the same
+// landing the marginalia's in-page cites make, reachable from a full
+// §section.output citation elsewhere, e.g. a ledger row); ?block= (with
+// optional ?index=) opens a block -- a negative height counts back from the
+// chain tip, so ?block=-1 is the latest block; otherwise the book opens at
+// the chain tip (-1), the latest chapter rather than Genesis.
 const params = new URLSearchParams(location.search);
 const txidParam = params.get('txid');
 const blockParam = params.get('block');
@@ -3503,7 +3545,10 @@ const pageParam = params.get('page');
 const indexParam = Number.isFinite(idxRaw) ? idxRaw
   : pageParam === 'volume' ? -3 : pageParam === 'book' ? -2 : -1;
 if (txidParam) {
-  openLookup(txidParam);
+  const outRaw = parseInt(params.get('out'), 10);
+  Promise.resolve(openLookup(txidParam)).then(() => {
+    if (Number.isFinite(outRaw)) $(`out-${outRaw}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }).catch(() => { /* the lookup's own error handling has the page */ });
 } else if (blockParam) {
   openLookup(blockParam, indexParam);
 } else {

@@ -28,7 +28,14 @@
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js').catch((e) => console.warn('SW registration failed:', e));
+      navigator.serviceWorker.register('./sw.js').then((reg) => {
+        // An installed app can resume from the background for days without a
+        // navigation, never rechecking for a new build: check again on every
+        // return to the foreground.
+        document.addEventListener('visibilitychange', () => {
+          if (document.visibilityState === 'visible') reg.update().catch(() => {});
+        });
+      }).catch((e) => console.warn('SW registration failed:', e));
     });
   }
 
@@ -181,7 +188,7 @@ a:hover { text-decoration: underline; }
 <div class="wrap">
   <div class="masthead">
     <span class="title">The <span class="beta">β</span>ook of <span class="beta">β</span>itcoin</span>
-    <span class="home"><button type="button" id="install-btn" class="install-btn" aria-label="Install the Bitcoin Book as an app">Install</button><a href="./bitcoin-book.html">Read</a> · <a href="./bitcoin-search.html">Search</a> · <a href="https://glossia.io/">Glossia</a></span>
+    <span class="home"><button type="button" id="install-btn" class="install-btn" aria-label="Install the Bitcoin Book as an app">Install</button><a href="./bitcoin-book.html">Read</a> · <a href="./bitcoin-ledgers.html">Ledgers</a> · <a href="./bitcoin-search.html">Search</a> · <a href="https://glossia.io/">Glossia</a></span>
   </div>
 
   <header class="page-head">
@@ -194,6 +201,7 @@ a:hover { text-decoration: underline; }
 <script type="module">
 import { NOTABLE, isBlockId, isRelativeBlockId, entryHref } from './btc-contents.js';
 import { volumeBookChapter, toRoman } from './btc-citation.js';
+import { storeGet, storePut } from './btc-store.js';
 
 const BOOKMARKS_KEY = 'glossia-btc-bookmarks';
 const readBookmarks = () => {
@@ -237,7 +245,9 @@ function tipHeight() {
 
 // An entry's placement. A block entry places from its height (with an optional
 // transaction index as its §section); a negative id counts back from the chain
-// tip; a transaction id resolves the same way a reader resolves a citation.
+// tip; a transaction id resolves the same way a reader resolves a citation --
+// once: a confirmed placement is immutable, so the archive (btc-store.js)
+// answers every later visit offline and for free.
 async function resolvePlacement({ id, index, page }) {
   if (isBlockId(id)) return placeOf(Number(id), index ?? null, page);
   if (isRelativeBlockId(id)) {
@@ -247,11 +257,14 @@ async function resolvePlacement({ id, index, page }) {
     return height >= 0 ? placeOf(height, index ?? null) : null;
   }
   if (id === GENESIS_COINBASE) return placeOf(0, 0);
+  const kept = await storeGet('placements', id);
+  if (kept) return placeOf(kept.height, kept.pos);
   for (const base of ESPLORA_MIRRORS) {
     try {
       const res = await fetch(`${base}/tx/${id}/merkle-proof`);
       if (!res.ok) continue;
       const mp = await res.json();
+      storePut('placements', id, { height: mp.block_height, pos: mp.pos });
       return placeOf(mp.block_height, mp.pos);
     } catch { /* try the next mirror */ }
   }
@@ -264,16 +277,28 @@ async function resolvePlacement({ id, index, page }) {
 // the chapter), then a txid's merkle proof (height + section), like the book.
 async function resolveBookmark(b) {
   if (Number.isInteger(b.height)) return placeOf(b.height, b.pos ?? null);
+  // A legacy bookmark's hex resolves once; the archive keeps the answer
+  // (whether it proved a block hash or a txid) like any other placement.
+  const kept = await storeGet('placements', b.hex);
+  if (kept) return placeOf(kept.height, kept.pos);
   for (const base of ESPLORA_MIRRORS) {
     try {
       const res = await fetch(`${base}/block/${b.hex}`);
-      if (res.ok) return placeOf((await res.json()).height, null);
+      if (res.ok) {
+        const height = (await res.json()).height;
+        storePut('placements', b.hex, { height, pos: null });
+        return placeOf(height, null);
+      }
     } catch { /* try the next mirror */ }
   }
   for (const base of ESPLORA_MIRRORS) {
     try {
       const res = await fetch(`${base}/tx/${b.hex}/merkle-proof`);
-      if (res.ok) { const mp = await res.json(); return placeOf(mp.block_height, mp.pos); }
+      if (res.ok) {
+        const mp = await res.json();
+        storePut('placements', b.hex, { height: mp.block_height, pos: mp.pos });
+        return placeOf(mp.block_height, mp.pos);
+      }
     } catch { /* try the next mirror */ }
   }
   return null;

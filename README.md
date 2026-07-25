@@ -17,9 +17,27 @@ compiled to WASM) is consumed as a published
   esplora-style endpoint (Blockstream, mempool.space, or your own node) and
   renders it as prose
 - `web/bitcoin-contents.html` — table of contents / notable blocks
+- `web/bitcoin-ledgers.html` — the Ledgers shelf: notable donation addresses
+  (and any address the reader keeps), each with its current balance
+- `web/bitcoin-ledger.html` — one ledger: a view of the manuscript focused
+  on amounts. A ledger is a titled set of addresses (most hold one), read
+  with the book's own carousel swipes (`?address=a,b,…` names the set).
+  Its leaves: a title page per address (the address as its Glossia-encoded
+  scriptPubKey, plus the state of what's gathered) with the address's
+  record scrolling endlessly below — newest first, organized by reference
+  alone (Volume, then Book), the next page prefetching as the reader nears
+  the bottom — and past the last address the ledger's entries page: the
+  one view organized by time, everything banked merged into one account
+  with running balance, held coins in full ink and spent ones dimmed.
+  Nothing backfills on its own — exploration is the sync — and every page
+  found is banked for good, from the same Esplora-compatible endpoints the
+  reading pages use; a ledger reconciles its entries against the chain's
+  balance before its numbers are trusted
 - `web/btc-tx.js`, `web/btc-prose.js`, `web/btc-citation.js`,
-  `web/btc-contents.js` — transaction parsing, prose composition, citations,
-  and contents data
+  `web/btc-contents.js`, `web/btc-index.js`, `web/btc-store.js` —
+  transaction parsing, prose composition, citations, contents data,
+  anthology data, and the archive (immutable chain data kept in IndexedDB,
+  so revisited chapters and resolved citations read offline)
 - `web/glossia-msg.js` — the encoding pipeline over the Glossia WASM engine
 - `web/glossia.js`, `web/glossia_bg.wasm` — **build artifacts** (gitignored),
   produced by `build_web.sh` from the published glossia crate
