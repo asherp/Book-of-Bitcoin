@@ -3529,9 +3529,12 @@ window.addEventListener('resize', dismissOnViewportChange);
 window.addEventListener('scroll', dismissOnViewportChange, true);
 
 // Entry points, in priority order: ?txid= jumps straight to a transaction's
-// section; ?block= (with optional ?index=) opens a block -- a negative height
-// counts back from the chain tip, so ?block=-1 is the latest block; otherwise
-// the book opens at the chain tip (-1), the latest chapter rather than Genesis.
+// section (an added &out=N then brings that output to the top -- the same
+// landing the marginalia's in-page cites make, reachable from a full
+// §section.output citation elsewhere, e.g. a ledger row); ?block= (with
+// optional ?index=) opens a block -- a negative height counts back from the
+// chain tip, so ?block=-1 is the latest block; otherwise the book opens at
+// the chain tip (-1), the latest chapter rather than Genesis.
 const params = new URLSearchParams(location.search);
 const txidParam = params.get('txid');
 const blockParam = params.get('block');
@@ -3542,7 +3545,10 @@ const pageParam = params.get('page');
 const indexParam = Number.isFinite(idxRaw) ? idxRaw
   : pageParam === 'volume' ? -3 : pageParam === 'book' ? -2 : -1;
 if (txidParam) {
-  openLookup(txidParam);
+  const outRaw = parseInt(params.get('out'), 10);
+  Promise.resolve(openLookup(txidParam)).then(() => {
+    if (Number.isFinite(outRaw)) $(`out-${outRaw}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }).catch(() => { /* the lookup's own error handling has the page */ });
 } else if (blockParam) {
   openLookup(blockParam, indexParam);
 } else {

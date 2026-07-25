@@ -127,9 +127,11 @@ export function ledgerFor(list) {
 }
 
 // A citation link into the book for one appearance: the transaction's chapter
-// opens by txid, and the book resolves its exact §section itself -- the index,
-// like a book's, cites pages (chapters), not lines.
-export const citeHref = (txid) => `bitcoin-book.html?txid=${txid}`;
+// opens by txid, and the book resolves its exact §section itself. An output
+// index deepens the landing (&out=N): the book brings that output to the
+// top, the same landing its own marginalia make.
+export const citeHref = (txid, out) =>
+  `bitcoin-book.html?txid=${txid}${out != null ? `&out=${out}` : ''}`;
 
 // The address's scriptPubKey, as hex: its on-chain identity, and the exact
 // bytes the book Glossia-encodes wherever a chapter pays this address -- so a
@@ -325,15 +327,20 @@ const chainPage = (address, lastSeen) =>
 // transaction; the entries derive from it. Unconfirmed transactions are
 // left out -- the map holds mined history only.
 function esploraTouches(txs, address) {
-  const out = [];
+  const recs = [];
   for (const t of txs || []) {
     if (!t.status?.confirmed || !(t.status.block_height > 0)) continue;
-    let credit = 0, debit = 0;
-    for (const o of t.vout || []) if (o.scriptpubkey_address === address) credit += Number(o.value || 0);
+    let credit = 0, debit = 0, out = null;
+    (t.vout || []).forEach((o, i) => {
+      if (o.scriptpubkey_address === address) {
+        credit += Number(o.value || 0);
+        if (out === null) out = i;   // the first paying output: the citation's .index
+      }
+    });
     for (const i of t.vin || []) if (i.prevout?.scriptpubkey_address === address) debit += Number(i.value || 0);
-    out.push({ height: t.status.block_height, txid: t.txid, time: t.status.block_time || null, credit, debit });
+    recs.push({ height: t.status.block_height, txid: t.txid, time: t.status.block_time || null, credit, debit, out });
   }
-  return out;
+  return recs;
 }
 
 // The address's chain state -- confirmed balance and transaction count --
@@ -360,7 +367,10 @@ async function chainState(address) {
 function buildEntries(records) {
   const entries = [];
   for (const r of records) {
-    if (r.credit > 0) entries.push({ height: r.height, txid: r.txid, time: r.time, sats: r.credit });
+    // A credit entry carries its output index -- the .index of a full
+    // citation (§section.output) and the book's landing for it. Debits are
+    // departures through inputs; their citation stops at the section.
+    if (r.credit > 0) entries.push({ height: r.height, txid: r.txid, time: r.time, sats: r.credit, ...(r.out != null ? { out: r.out } : {}) });
     if (r.debit > 0) entries.push({ height: r.height, txid: r.txid, time: r.time, sats: -r.debit });
     if (!r.credit && !r.debit) entries.push({ height: r.height, txid: r.txid, time: r.time, sats: 0 });
   }
@@ -911,10 +921,10 @@ export function sectionOf(txid) {
 // hasn't agreed with the chain -- the verdict waits, never guesses.
 // (`pending` is reserved for mempool transactions, which the map doesn't
 // carry yet.) A zero-value touch carries no coin to have a status.
-function lineRow({ txid, sats, place }, held) {
+function lineRow({ txid, sats, place, out }, held) {
   const row = document.createElement('a');
   row.className = 'idx-row acct';
-  row.href = citeHref(txid);
+  row.href = citeHref(txid, out);   // a credit lands the book on its output
   const resting = held && sats > 0 ? held.get(txid) ?? 0 : 0;
   if (held) {
     if (resting > 0) row.title = `still unspent: ${formatBalanceBtc(resting)}`;
@@ -923,11 +933,15 @@ function lineRow({ txid, sats, place }, held) {
   const r = document.createElement('span'); r.className = 'idx-ref';
   r.textContent = `${toRoman(place.volume)} β${place.book} ■${place.chapter}`;
   // The section arrives when the placement resolves (instantly from the
-  // archive on a revisit); until then a quiet ellipsis holds its seat.
+  // archive on a revisit); until then a quiet ellipsis holds its seat. A
+  // credit's citation runs to its output -- §section.output, as the
+  // reader's marginalia print it.
   const sec = document.createElement('span');
   sec.textContent = ' §…';
   r.append(sec);
-  sectionOf(txid).then((pos) => { sec.textContent = pos != null ? ` §${pos + 1}` : ''; });
+  sectionOf(txid).then((pos) => {
+    sec.textContent = pos != null ? ` §${pos + 1}${out != null ? `.${out}` : ''}` : '';
+  });
   const deb = document.createElement('span'); deb.className = 'idx-amt col-deb';
   deb.textContent = sats < 0 ? formatBalanceBtc(-sats) : '';
   const cred = document.createElement('span'); cred.className = 'idx-amt col-cred';
