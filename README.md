@@ -17,9 +17,9 @@ compiled to WASM) is consumed as a published
   esplora-style endpoint (Blockstream, mempool.space, or your own node) and
   renders it as prose
 - `web/bitcoin-contents.html` — table of contents / notable blocks
-- `web/bitcoin-index.html` — the Ledgers shelf: notable donation addresses
+- `web/bitcoin-ledgers.html` — the Ledgers shelf: notable donation addresses
   (and any address the reader keeps), each with its current balance
-- `web/bitcoin-anthology.html` — one address's ledger: a view of the
+- `web/bitcoin-ledger.html` — one address's ledger: a view of the
   manuscript focused on amounts. A title page (the address as its
   Glossia-encoded scriptPubKey), a summary by year and quarter, and the
   entries — date, citation, net, running balance — with held coins in full

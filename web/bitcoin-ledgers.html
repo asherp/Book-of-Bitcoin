@@ -1,0 +1,199 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The βook of βitcoin — Ledgers</title>
+<meta name="description" content="The ledgers of the Glossia Bitcoin Book: notable donation addresses — and any the reader keeps — each a view of the manuscript focused on amounts, reconciled against the chain.">
+<link rel="icon" type="image/png" sizes="32x32" href="./icons/beta-icon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="./icons/beta-icon-16.png">
+<link rel="icon" href="./icons/beta-icon.svg" type="image/svg+xml">
+
+<!-- PWA: installable, offline-capable app shell. Shares the Bitcoin book's
+     gold-β manifest so every page installs as one "Bitcoin Book" app. -->
+<link rel="manifest" href="./bitcoin-book.webmanifest">
+<meta name="theme-color" content="#08080a">
+<link rel="apple-touch-icon" href="./icons/beta-icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="βook of βitcoin">
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js').catch((e) => console.warn('SW registration failed:', e));
+    });
+  }
+
+  // The page is assembled from ES modules that both the HTTP cache (GitHub
+  // Pages serves max-age=600) and the service worker refresh file by file, so
+  // a redeploy can briefly leave them mixed: this page from one build, a
+  // module from another. A module whose imports no longer line up fails to
+  // instantiate, and an aborted module graph renders nothing -- the shelf
+  // goes blank. Detect the blankness itself, not the error (module failures
+  // surface too many ways to catch reliably): a healthy module populates
+  // #index synchronously, so an empty #index well after load means the graph
+  // died. Recover by re-fetching this page's files with cache:'reload' --
+  // which refreshes the HTTP cache directly and, routed through the service
+  // worker, makes its background revalidation hit the true network -- then
+  // reloading once onto the matched set. A second blank load shows a note
+  // instead of looping.
+  (function () {
+    const FILES = ['./bitcoin-ledgers.html', './btc-index.js', './btc-citation.js'];
+    const FLAG = 'glossia-index-reloaded';
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        const idx = document.getElementById('index');
+        if (!idx || idx.children.length) return;   // the module rendered; nothing to recover
+        let retried = false;
+        try { retried = !!sessionStorage.getItem(FLAG); } catch (_) {}
+        if (retried) {
+          const s = document.createElement('span');
+          s.className = 'idx-note';
+          s.textContent = 'The ledgers failed to load — reload to retry.';
+          idx.replaceChildren(s);
+          return;
+        }
+        try { sessionStorage.setItem(FLAG, '1'); } catch (_) {}
+        Promise.allSettled(FILES.map((u) => fetch(u, { cache: 'reload' })))
+          .then(() => setTimeout(() => location.reload(), 800));
+      }, 2000);
+    });
+  })();
+</script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,400&family=IBM+Plex+Mono:wght@400;500;600&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --page:#08080a; --card:#0d0d10; --card-bd:#232228; --ink:#e8e4da; --ink-soft:#cfcabf;
+  --accent:#c9a25f; --accent-2:#dcb877; --dim:#9c99a6; --meta:#7e7b88; --rule:#24232a; --hair:#2a2930;
+  --input-bg:#151519; --input-bd:#2a2930;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { min-height: 100vh; background: var(--page); color: var(--ink); font-family: 'Public Sans', system-ui, sans-serif; line-height: 1.55; }
+.wrap { max-width: 720px; margin: 0 auto; padding: 48px 22px 100px; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+.masthead { display:flex; align-items:baseline; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:40px; }
+.masthead .title { font:600 13px/1 'IBM Plex Mono',monospace; letter-spacing:.22em; text-transform:uppercase; color:var(--ink); }
+.masthead .title .beta { color:var(--accent); text-transform:none; font-family:'Newsreader','Source Serif 4',Georgia,serif; font-weight:600; font-size:1.12em; }
+.masthead .home { margin-left:auto; font:500 12px/1 'IBM Plex Mono',monospace; letter-spacing:.04em; }
+
+.page-head { text-align:center; padding-bottom:30px; margin-bottom:36px; border-bottom:1px solid var(--rule); }
+.page-eyebrow { font:600 11px/1 'IBM Plex Mono',monospace; letter-spacing:.3em; text-transform:uppercase; color:var(--accent); }
+
+/* The shelf: one row per anthology -- its title in the book's serif on the
+   left, its ledger's running total on the right -- the whole row opening the
+   anthology's own title page. Styled like the contents page's rows: the
+   shelf is a table of contents whose entries are whole books. */
+.shelf-row { display:flex; align-items:baseline; gap:16px; padding:13px 2px; border-bottom:1px solid var(--hair); text-decoration:none; }
+.shelf-title { flex:1; min-width:0; font:500 18px/1.4 'Newsreader',serif; color:var(--ink-soft); overflow-wrap:break-word; }
+.shelf-amt { flex:none; text-align:right; font:500 13px/1.4 'IBM Plex Mono',monospace; color:var(--accent); white-space:nowrap; font-variant-numeric:tabular-nums; }
+.shelf-amt.pending { color:var(--meta); font-weight:400; }
+.shelf-row:hover { text-decoration:none; }
+.shelf-row:hover .shelf-title { color:var(--ink); }
+.shelf-row:hover .shelf-amt { color:var(--accent-2); text-decoration:underline; }
+/* A gated row -- its anthology still syncing -- neither invites nor answers. */
+.shelf-row.gated { cursor:default; }
+.shelf-row.gated:hover .shelf-title { color:var(--ink-soft); }
+.shelf-row.gated:hover .shelf-amt { color:var(--meta); text-decoration:none; }
+
+/* Still resolving, or failed to resolve. */
+.idx-note { display:block; margin-top:8px; padding-left:2px; font:400 12px/1.5 'IBM Plex Mono',monospace; color:var(--meta); }
+</style>
+<body>
+<div class="wrap">
+  <div class="masthead">
+    <span class="title">The <span class="beta">β</span>ook of <span class="beta">β</span>itcoin</span>
+    <span class="home"><a href="./bitcoin-book.html">Read</a> · <a href="./bitcoin-contents.html">Contents</a> · <a href="./bitcoin-search.html">Search</a> · <a href="https://glossia.io/">Glossia</a></span>
+  </div>
+
+  <header class="page-head">
+    <div class="page-eyebrow">Ledgers</div>
+  </header>
+
+  <div id="index"></div>
+</div>
+
+<script type="module">
+import { INDEXED, isAddress, cachedLine, resolveLine, formatBalanceBtc, reconciled } from './btc-index.js';
+
+// The shelf lists the ledgers: title and current balance, nothing else --
+// each row opens its ledger's title page, where the address's prose, its
+// span, its summary, and its entries live. The curated donation ledgers
+// come first; any ledger the reader has kept (from its own page) follows.
+// The mapping and store are btc-index.js's, shared with the ledger pages,
+// so a balance the shelf resolves is a map the title page opens instantly.
+//
+// A row opens only once its ledger reconciles -- the entries' sum equal to
+// the chain's balance, the double-entry proof the map is whole (see
+// btc-index.js). Until then the row stands gated: its syncing progress where
+// the balance will be, and no way in.
+
+// A reader's own query joins the shelf: ?address=<addr> prepends a temporary
+// row (titled by the address itself). A query that duplicates a curated
+// address is dropped -- the curated title wins.
+const q = (new URLSearchParams(location.search).get('address') || '').trim();
+const adhoc = isAddress(q) && !INDEXED.some((e) => e.address === q)
+  ? [{ title: q, address: q }] : [];
+// The reader's kept ledgers (written by the ledger page's Keep button),
+// titled by their addresses, shelved after the curated ones.
+const kept = (() => {
+  try { const v = JSON.parse(localStorage.getItem('glossia-btc-ledgers')); return Array.isArray(v) ? v : []; }
+  catch { return []; }
+})().filter((k) => isAddress(k.address) && !INDEXED.some((e) => e.address === k.address) && !adhoc.some((e) => e.address === k.address))
+  .map((k) => ({ title: k.title || k.address, address: k.address }));
+const entries = [...adhoc, ...INDEXED, ...kept];
+
+// A gated row's progress line: how much of the address's history the map
+// holds so far. A line that failed to resolve at all shows a plain dash.
+const progressText = (data) => data
+  ? `syncing ${data.walked.toLocaleString('en-US')} / ${data.txCount.toLocaleString('en-US')}`
+  : '—';
+
+// Build every row at once -- titles are known offline -- and let each total
+// fill in from the store and refresh as its map resolves. Built onto a
+// cleared #index: a late module evaluation may land after the head's
+// blank-page recovery has already written its failure note.
+const index = document.getElementById('index');
+index.replaceChildren();
+for (const e of entries) {
+  const row = document.createElement('a');
+  row.className = 'shelf-row gated';   // opens only when its numbers add up
+  const t = document.createElement('span'); t.className = 'shelf-title';
+  t.textContent = e.title;
+  const amt = document.createElement('span'); amt.className = 'shelf-amt pending';
+  amt.textContent = '…';
+  row.append(t, amt);
+  index.append(row);
+  // Reconciled: the balance, and the row opens. Not yet: the progress line,
+  // and the row stays inert (an <a> without href neither clicks nor tabs).
+  const show = (data) => {
+    if (reconciled(data)) {
+      amt.textContent = formatBalanceBtc(data.balance);
+      amt.classList.remove('pending');
+      row.setAttribute('href', `bitcoin-ledger.html?address=${e.address}`);
+      row.classList.remove('gated');
+    } else {
+      amt.textContent = progressText(data);
+      amt.classList.add('pending');
+      row.removeAttribute('href');
+      row.classList.add('gated');
+    }
+  };
+  (async () => {
+    const cached = await cachedLine(e.address);
+    if (cached) show(cached);
+    const data = await resolveLine(e.address);
+    if (data !== cached) show(data);
+    else if (!data) show(null);
+  })();
+}
+
+// The module graph loaded whole: clear the mixed-build recovery flag (set in
+// the head) so a future redeploy gets its own one-shot reload again.
+try { sessionStorage.removeItem('glossia-index-reloaded'); } catch (_) {}
+</script>
+</body>
+</html>
