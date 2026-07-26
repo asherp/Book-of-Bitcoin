@@ -330,11 +330,12 @@ button:disabled { opacity: .4; cursor: not-allowed; }
    rides the right end of the eyebrow bar, on the chapter label's line, the
    way a printed folio sits in a running head. It shares the right grid cell
    with the chapter-next stepper: the stepper belongs to leaves alone and the
-   folio to section pages alone, so the two never show together. Lowercase
-   against the eyebrow's uppercase, dim against its gold -- an annotation,
-   not a crumb. Census-resolved, so it fills in a beat after the section
-   renders; absent when no census answers. */
-#page-folio { grid-column: 3; justify-self: end; font:500 11px/1 'IBM Plex Mono',monospace; letter-spacing:.14em; text-transform:none; color:var(--dim); white-space:nowrap; font-variant-numeric:tabular-nums; }
+   folio to section pages alone, so the two never show together. A bare,
+   unpunctuated number, dim against the eyebrow's gold -- an annotation, not
+   a crumb; the hover title carries the readable form. Census-resolved, so
+   it fills in a beat after the section renders; absent when no census
+   answers. */
+#page-folio { grid-column: 3; justify-self: end; font:500 11px/1 'IBM Plex Mono',monospace; letter-spacing:.14em; color:var(--dim); white-space:nowrap; font-variant-numeric:tabular-nums; }
 .chapter-num { font:600 11.5px/1 'IBM Plex Mono',monospace; letter-spacing:.3em; text-transform:uppercase; color: var(--accent); min-width: 0; text-align: center; }
 /* The eyebrow's Volume / Book / Chapter crumbs inherit its voice exactly;
    hover marks them navigable. (Overrides the global gold button styling.) */
@@ -1048,7 +1049,7 @@ button:disabled { opacity: .4; cursor: not-allowed; }
               <div class="glyph-row"><span class="g">Τ<i>t</i></span><span class="m">not before a UTC date</span></div>
               <div class="glyph-row"><span class="g">∅</span><span class="m"><b>empty</b> — a coinbase's absent prevout, a segwit input's zero-byte script, an empty witness item</span></div>
               <div class="glyph-row"><span class="g">§<i>n</i></span><span class="m">section — the transaction's position</span></div>
-              <div class="glyph-row"><span class="g">p. <i>n</i></span><span class="m"><b>page</b> — the transaction's running number in the whole chain, counted since genesis (one page per transaction)</span></div>
+              <div class="glyph-row"><span class="g"><i>n</i></span><span class="m"><b>page</b> — the bare number at the running head's right edge: the transaction's running count in the whole chain since genesis (one page per transaction)</span></div>
             </div>
           </div>
         </div>
@@ -1645,7 +1646,9 @@ async function fillFolio(el, gen) {
   bankAnchor(h + 1, anchor + count, anchorFinalAt(h + 1));
   if (gen !== renderGen) return;
   const page = anchor + idx + 1;
-  el.textContent = `p. ${formatPage(page)}`;
+  // The folio prints bare -- digits alone, unpunctuated; the hover title
+  // carries the readable form and the explanation.
+  el.textContent = String(page);
   el.title = `page ${formatPage(page)} — transaction ${formatPage(page)} of the chain: pages count every transaction since genesis, in block order`;
 }
 
