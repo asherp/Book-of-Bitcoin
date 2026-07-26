@@ -452,6 +452,12 @@ button:disabled { opacity: .4; cursor: not-allowed; }
    centred beneath the chapter frontispiece. */
 .section-title { text-align:center; margin: 22px 0 0; font:600 13px/1 'IBM Plex Mono',monospace; letter-spacing:.28em; text-transform:uppercase; color:var(--accent); }
 .section-num { display:block; }
+/* The section's folio -- its page number in the chain's running count of
+   transactions (one page per transaction since genesis; see btc-pages.js).
+   Census-resolved, so it fills in a beat after the § number. Dim, an
+   annotation under the title's gold, and lowercase against the title's
+   uppercase -- a printed folio, not a heading. */
+.section-page { display:block; margin-top:.6em; font:500 11px/1 'IBM Plex Mono',monospace; letter-spacing:.18em; text-transform:none; color:var(--dim); }
 /* A curated transaction's name, beneath its § number -- the section's answer to
    a chapter's event title (serif, mixed case, quieter than the accent numeral). */
 .section-event { display:block; margin-top:.5em; font:500 15px/1.3 'Newsreader',serif; letter-spacing:0; text-transform:none; color:var(--ink-soft); }
@@ -1030,6 +1036,7 @@ button:disabled { opacity: .4; cursor: not-allowed; }
               <div class="glyph-row"><span class="g">Τ<i>t</i></span><span class="m">not before a UTC date</span></div>
               <div class="glyph-row"><span class="g">∅</span><span class="m"><b>empty</b> — a coinbase's absent prevout, a segwit input's zero-byte script, an empty witness item</span></div>
               <div class="glyph-row"><span class="g">§<i>n</i></span><span class="m">section — the transaction's position</span></div>
+              <div class="glyph-row"><span class="g">p. <i>n</i></span><span class="m"><b>page</b> — the transaction's running number in the whole chain, counted since genesis (one page per transaction)</span></div>
             </div>
           </div>
         </div>
@@ -1062,6 +1069,7 @@ import { composeTransactionFields, composeBlockHeaderFields, groupDigits, format
 import { volumeBookChapter, heightOf, toRoman, reference } from './btc-citation.js';
 import { NOTABLE } from './btc-contents.js';
 import { storeGet, storePut } from './btc-store.js';
+import { pageAnchor, bankAnchor, peekAnchor, formatPage } from './btc-pages.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -1602,6 +1610,32 @@ const loadBlockTxCount = (height) => loadBlockInfoByHeight(height).then((b) => b
 // A block's timestamp, for the leaves' recorded date ranges.
 const loadBlockStamp = (height) => loadBlockInfoByHeight(height).then((b) => b.timestamp);
 
+// The six-confirmation rule for banking a page anchor (btc-pages.js): only a
+// safely buried height's running count is final -- the same rule the
+// height→hash archive keeps.
+const anchorFinalAt = (h) => tipHeight !== null && h <= tipHeight - 6;
+
+// Fill a section's folio -- its page number in the chain's running count of
+// transactions -- once the block's anchor resolves (banked, derived, or one
+// census call; see btc-pages.js). The span is replaced by any later render,
+// so a stale fill simply lands on a detached node. When no census endpoint
+// answers, the folio stays absent: an annotation, never a gate on reading.
+async function fillFolio(el) {
+  const h = state.height, idx = state.index, count = state.txCount;
+  let anchor;
+  try { anchor = await pageAnchor(h, anchorFinalAt(h)); }
+  catch { return; }   // census unreachable -- try again on a later visit
+  // With this block's anchor in hand, the next block's is pure arithmetic --
+  // bank it so reading onward (across the chapter turn into §1) never asks
+  // the census. The backward derivation rides labelNav's previous-count
+  // fetch, which is the moment the prior block's tx_count is known.
+  bankAnchor(h + 1, anchor + count, anchorFinalAt(h + 1));
+  if (!el.isConnected) return;
+  const page = anchor + idx + 1;
+  el.textContent = `p. ${formatPage(page)}`;
+  el.title = `page ${formatPage(page)} — transaction ${formatPage(page)} of the chain: pages count every transaction since genesis, in block order`;
+}
+
 // The chain tip height, as plain text from Esplora. Opens the book at the most
 // recent chapter when the reader arrives without a specific target.
 async function loadTipHeight() {
@@ -2114,13 +2148,24 @@ function renderChapter(para) {
   // transaction that's a curated entry earns its name beneath the § number, the
   // way a notable block earns its event name as the chapter title.
   const titleAttr = `txid ${para.txid}${para.verified ? '' : ' — could not be independently verified'}`;
-  const sectionEvent = NOTABLE.find((e) => e.id === para.txid)?.title;
+  // A curated entry names its section whether it cites a txid or a
+  // height+index -- the latter is how the twice-confirmed BIP30 coinbases are
+  // cited, since their shared txid alone can't tell the two printings apart.
+  const sectionEvent = NOTABLE.find((e) => e.id === para.txid
+    || (e.id === String(state.height) && e.index === state.index))?.title;
   const sectionTitle = $('section-title');
   sectionTitle.textContent = '';
   const secNum = document.createElement('span');
   secNum.className = 'section-num';
   secNum.textContent = `§ ${para.num}`;
   sectionTitle.append(secNum);
+  // The folio, beneath the § number: this transaction's page in the whole
+  // chain's running count. Filled asynchronously once the anchor resolves;
+  // absent (not an error) when no census endpoint answers.
+  const folio = document.createElement('span');
+  folio.className = 'section-page';
+  sectionTitle.append(folio);
+  fillFolio(folio);
   if (sectionEvent) {
     const secEv = document.createElement('span');
     secEv.className = 'section-event';
@@ -2403,8 +2448,16 @@ function labelNav() {
       // its §number is that block's tx count, unknown until it loads -- shown
       // as § once resolved.
       setBtn('page-prev', '§…', `Previous section (end of ${reference(state.height - 1)})`);
-      loadBlockTxCount(state.height - 1)
-        .then((n) => { if (gen === renderGen) setBtn('page-prev', `§${n}`, `Previous section (${reference(state.height - 1)} §${n})`); })
+      const h = state.height;
+      loadBlockTxCount(h - 1)
+        .then((n) => {
+          if (gen === renderGen) setBtn('page-prev', `§${n}`, `Previous section (${reference(h - 1)} §${n})`);
+          // The moment the prior block's tx count is known, its page anchor is
+          // arithmetic off this block's (when that one is already in hand) --
+          // banked so stepping back across the boundary never asks the census.
+          const a = peekAnchor(h);
+          if (a !== null) bankAnchor(h - 1, a - n, anchorFinalAt(h - 1));
+        })
         .catch(() => {});
     }
   }
