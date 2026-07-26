@@ -179,9 +179,8 @@ a:hover { text-decoration: underline; }
 
 /* Projected chapters -- the mempool, ordered as a miner would mine it. These
    continue the contents past the tip, so they dress like ordinary rows but in
-   the manuscript's pencil rather than its ink: dim titles, meta-grey
-   references (a provisional number, not a citation), and each row a shade
-   fainter than the one above -- the queue dissolving into the unwritten. */
+   the manuscript's pencil rather than its ink: dim titles and meta-grey
+   references (a provisional number, not a citation). */
 .toc-proj-head { display:flex; align-items:baseline; gap:14px; }
 .toc-proj-src { font:400 10px/1 'IBM Plex Mono',monospace; letter-spacing:.08em; text-transform:none; color:var(--meta); }
 .toc-entry.projected .toc-title { color:var(--dim); font-style:italic; }
@@ -426,9 +425,9 @@ const unresolved = () => entries().filter((e) => e.tried && !e.place);
 //   /v1/fees/recommended        (mempool.space backend only) -- minimumFee,
 //                               the purge floor.
 // Only the first projected chapter is a real forecast; each one deeper is
-// more a statement about the queue now than about any future block -- the
-// rows fade accordingly, and everything past the detailed entries collapses
-// into one backlog row.
+// more a statement about the queue now than about any future block -- so
+// everything past the detailed entries collapses into one backlog row, and
+// each row's hover title carries its caveats.
 const MVB = 1_000_000;   // one block's worth of virtual bytes
 
 // Try a path against each mirror in turn (the v1 paths only answer on a
@@ -458,11 +457,10 @@ function projRef(height, tipVolume) {
 // One projected row: expected wait, then the row's text, then its
 // provisional reference; the whole row opens the book at that height, which
 // answers with the chapter's place in the queue.
-function projEntryEl({ height, eta, etaTitle, text, textTitle, ref, refTitle, fade }) {
+function projEntryEl({ height, eta, etaTitle, text, textTitle, ref, refTitle }) {
   const row = document.createElement('a');
   row.className = 'toc-entry under-book projected';
   row.href = entryHref(String(height));
-  row.style.opacity = String(fade);
   const etaEl = document.createElement('span');
   etaEl.className = 'toc-proj-eta';
   etaEl.textContent = eta;
@@ -514,7 +512,6 @@ function buildProjected(tip, summary, blocks, minFee, srcBase) {
     blocks.forEach((b, i) => {
       const height = tip + 1 + i;
       const isAggregate = i === blocks.length - 1 && b.blockVSize > 1.05 * MVB;
-      const fade = Math.max(0.55, 1 - i * 0.06);
       if (!isAggregate) {
         const lo = fmtFee(b.feeRange[0] ?? b.medianFee), hi = fmtFee(b.feeRange[b.feeRange.length - 1] ?? b.medianFee);
         wrap.append(projEntryEl({
@@ -524,7 +521,6 @@ function buildProjected(tip, summary, blocks, minFee, srcBase) {
           textTitle: `${b.nTx.toLocaleString()} transactions, ${(b.blockVSize / MVB).toFixed(2)} MvB — fees ${lo}–${hi} sat/vB, ${(b.totalFees / 1e8).toFixed(3)} BTC in total`,
           ref: projRef(height, tipVolume),
           refTitle: `provisional — ■${height.toLocaleString()} if the queue holds; every block mined ahead of it renumbers the rest`,
-          fade,
         }));
       } else {
         // The backlog: everything past the detailed entries, one fading row.
@@ -537,7 +533,6 @@ function buildProjected(tip, summary, blocks, minFee, srcBase) {
           textTitle: `${(b.blockVSize / MVB).toFixed(1)} MvB of queued transactions below ~${fmtFee(b.medianFee)} sat/vB`,
           ref: `${projRef(height, tipVolume)} – ${projRef(last, tipVolume)}`,
           refTitle: 'the deep queue has no reliable ordering — these chapters are a guess about the queue today, not about any future block',
-          fade: 0.5,
         }));
       }
     });
@@ -550,7 +545,6 @@ function buildProjected(tip, summary, blocks, minFee, srcBase) {
       textTitle: 'this mirror serves only mempool totals — a mempool.space-backed source adds per-chapter projections',
       ref: `${projRef(tip + 1, tipVolume)} – ${projRef(tip + chapters, tipVolume)}`,
       refTitle: 'provisional — the chapters the current queue would fill',
-      fade: 0.85,
     }));
   }
 
