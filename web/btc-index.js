@@ -1,11 +1,12 @@
 // btc-index.js — the ledgers of the Bitcoin Book: notable addresses, each a
-// view of the manuscript focused on amounts. Shared by bitcoin-ledgers.html
-// (the shelf), bitcoin-ledger.html (one ledger, turned address by address), and
-// bitcoin-search.html (which routes an address query to its ledger). Besides
-// the curated data, this module carries the machinery the ledger pages
-// share: the mapping that discovers an address's chapters, the store that
-// remembers them, and the renderers that lay them out. (The filename keeps
-// its index-era name so cached module graphs never mix builds.)
+// view of the manuscript focused on amounts. Shared by bitcoin-ledger.html
+// (the Ledger compendium: every ledger in one document, ledgers over
+// addresses over entries) and bitcoin-search.html (which routes an address
+// query there). Besides the curated data, this module carries the machinery
+// the ledger pages share: the mapping that discovers an address's chapters,
+// the store that remembers them, and the renderers that lay them out. (The
+// filename keeps its index-era name so cached module graphs never mix
+// builds.)
 
 import { volumeBookChapter, toRoman } from './btc-citation.js';
 import { storeGet, storePut } from './btc-store.js';
@@ -849,6 +850,12 @@ function ledgerRow(c, place, balance, lastVol, lastBook, held) {
   const row = document.createElement('a');
   row.className = 'idx-row entry';
   row.href = citeHref(c.txid);
+  // The row names its entry (txid + sats name one side of one transaction)
+  // and, on a merged listing, its home address -- the ledger page's dive
+  // reads these to pull in the entry's own leaf.
+  row.dataset.txid = c.txid;
+  row.dataset.sats = String(c.sats);
+  if (c.addr) row.dataset.addr = c.addr;
   if (held) {
     // A UTXO belongs to a transaction's outputs, so only a credit entry can
     // still be held; a debit is a departure by nature and reads dimmed.
@@ -894,10 +901,14 @@ export async function sectionOf(txid) {
 // hasn't agreed with the chain -- the verdict waits, never guesses.
 // (`pending` is reserved for mempool transactions, which the map doesn't
 // carry yet.) A zero-value touch carries no coin to have a status.
-function lineRow({ txid, sats, place, out }, held) {
+function lineRow({ txid, sats, place, out, addr }, held) {
   const row = document.createElement('a');
   row.className = 'idx-row acct';
   row.href = citeHref(txid, out);   // a credit lands the book on its output
+  // The row names its entry, for the ledger page's dive (see ledgerRow).
+  row.dataset.txid = txid;
+  row.dataset.sats = String(sats);
+  if (addr) row.dataset.addr = addr;
   const resting = held && sats > 0 ? held.get(txid) ?? 0 : 0;
   if (held) {
     if (resting > 0) row.title = `still unspent: ${formatBalanceBtc(resting)}`;

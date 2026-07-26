@@ -17,22 +17,24 @@ compiled to WASM) is consumed as a published
   esplora-style endpoint (Blockstream, mempool.space, or your own node) and
   renders it as prose
 - `web/bitcoin-contents.html` — table of contents / notable blocks
-- `web/bitcoin-ledgers.html` — the Ledgers shelf: notable donation addresses
-  (and any address the reader keeps), each with its current balance
-- `web/bitcoin-ledger.html` — one ledger: a view of the manuscript focused
-  on amounts. A ledger is a titled set of addresses (most hold one), read
-  with the book's own carousel swipes (`?address=a,b,…` names the set).
-  Its leaves: a title page per address (the address as its Glossia-encoded
-  scriptPubKey, plus the state of what's gathered) with the address's
-  record scrolling endlessly below — newest first, organized by reference
-  alone (Volume, then Book), the next page prefetching as the reader nears
-  the bottom — and past the last address the ledger's entries page: the
-  one view organized by time, everything banked merged into one account
-  with running balance, held coins in full ink and spent ones dimmed.
-  Nothing backfills on its own — exploration is the sync — and every page
-  found is banked for good, from the same Esplora-compatible endpoints the
-  reading pages use; a ledger reconciles its entries against the chain's
-  balance before its numbers are trusted
+- `web/bitcoin-ledger.html` — the Ledger: a compendium of every ledger
+  (curated donation addresses, any the reader keeps, and ad-hoc
+  `?address=a,b,…` queries) in one document, read the way the book is
+  read, three levels deep. Ledger title leaves at the top (title, balance,
+  span — horizontal swipes browse between ledgers; a push up descends);
+  address leaves below (a title page per address, its record scrolling
+  endlessly below, newest first by reference; past the last address the
+  merged entries leaf, organized by time; pulling down at the top ascends);
+  and entry leaves underneath (one transaction as its own page, rendered
+  from the bank alone — vertical swipes walk the address's timeline, a
+  swipe over the record dives into the entry nearest the finger, and a
+  swipe right is the one door back). Nothing backfills on its own —
+  exploration is the sync — and every page found is banked for good, from
+  the same Esplora-compatible endpoints the reading pages use; a ledger
+  reconciles its entries against the chain's balance before its numbers
+  are trusted
+- `web/bitcoin-ledgers.html` — the old Ledgers shelf, now a redirect to
+  the compendium (kept for bookmarks and cached mastheads)
 - `web/btc-tx.js`, `web/btc-prose.js`, `web/btc-citation.js`,
   `web/btc-contents.js`, `web/btc-index.js`, `web/btc-store.js` —
   transaction parsing, prose composition, citations, contents data,

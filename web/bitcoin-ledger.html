@@ -1,7 +1,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>The βook of βitcoin — Ledger</title>
-<meta name="description" content="A ledger of the Glossia Bitcoin Book: one address's view of the manuscript, focused on amounts — entries by year and quarter, each citing its chapter, with running balance and reconciliation.">
+<meta name="description" content="The Ledger of the Glossia Bitcoin Book: a compendium of notable donation addresses — and any the reader keeps — each a view of the manuscript focused on amounts, reconciled against the chain.">
 <link rel="icon" type="image/png" sizes="32x32" href="./icons/beta-icon-32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="./icons/beta-icon-16.png">
 <link rel="icon" href="./icons/beta-icon.svg" type="image/svg+xml">
@@ -108,7 +108,7 @@
 }
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
-html, body { margin: 0; }
+html, body { margin: 0; overscroll-behavior-y: contain; }
 body { min-height: 100vh; background: var(--page); color: var(--ink); font-family: 'Public Sans', system-ui, sans-serif; line-height: 1.55; }
 .wrap { max-width: 720px; margin: 0 auto; padding: 48px 22px 100px; }
 a { color: var(--accent); text-decoration: none; }
@@ -119,6 +119,32 @@ a:hover { text-decoration: underline; }
 .masthead .title .beta { color:var(--accent); text-transform:none; font-family:'Newsreader','Source Serif 4',Georgia,serif; font-weight:600; font-size:1.12em; }
 .masthead .home { margin-left:auto; font:500 12px/1 'IBM Plex Mono',monospace; letter-spacing:.04em; }
 
+/* Settings: where the chain is asked (Esplora-compatible endpoints, the
+   chosen one first) -- the same stored choice the book page's Data source
+   picker reads, in its own settings-panel manner. Seated here since the
+   compendium took the shelf's place, and its Settings seat with it. */
+.settings-menu { position:relative; }
+.settings-panel { position:absolute; right:0; top:24px; z-index:10; width:min(420px, 92vw);
+  background:var(--card); border:1px solid var(--card-bd); border-radius:6px; padding:16px 18px 18px;
+  box-shadow:0 24px 60px -32px rgba(0,0,0,.8); text-align:left; }
+.settings-panel.hidden { display:none; }
+.settings-title { font:600 10px/1 'IBM Plex Mono',monospace; letter-spacing:.16em; text-transform:uppercase; color:var(--dim); margin:14px 0 8px; }
+.settings-title:first-child { margin-top:0; }
+.endpoint-row { display:flex; gap:8px; }
+.bb-select { flex:1; min-width:0; background:var(--input-bg); border:1px solid var(--input-bd); border-radius:4px;
+  color:var(--ink); font:400 12px/1.4 'IBM Plex Mono',monospace; padding:8px 8px; }
+.bb-select:focus { outline:none; border-color:var(--accent); }
+.ghost-btn, .save-btn { background:transparent; border:1px solid var(--input-bd); color:var(--dim); border-radius:4px;
+  padding:0 10px; cursor:pointer; font:600 10.5px/1 'IBM Plex Mono',monospace; letter-spacing:.06em; text-transform:uppercase; }
+.ghost-btn:hover:not(:disabled), .save-btn:hover { border-color:var(--accent); color:var(--accent); }
+.ghost-btn:disabled { opacity:.4; cursor:default; }
+.endpoint-add-row { display:flex; gap:8px; margin-top:8px; }
+.endpoint-add-row.hidden { display:none; }
+.endpoint-add-row input { flex:1; min-width:0; background:var(--input-bg); border:1px solid var(--input-bd); border-radius:4px;
+  color:var(--ink); font:400 12px/1.4 'IBM Plex Mono',monospace; padding:8px 8px; }
+.endpoint-add-row input:focus { outline:none; border-color:var(--accent); }
+.settings-note { margin-top:12px; font:400 10.5px/1.6 'IBM Plex Mono',monospace; color:var(--meta); }
+
 /* The anthology's title page: a full leaf. The eyebrow names the form, the
    serif names the anthology, and the address appears once, in the book's own
    tongue: its scriptPubKey read as Glossia prose -- the same bytes every
@@ -128,8 +154,10 @@ a:hover { text-decoration: underline; }
    volumes and the dates its chapters run. Navigation continues downward into
    the table of contents. */
 .anth-hero { min-height: calc(100vh - 130px); display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:20px 0 8px; }
-.anth-hero.bare { min-height:auto; padding-top:60px; }
 .page-eyebrow { font:600 11px/1 'IBM Plex Mono',monospace; letter-spacing:.3em; text-transform:uppercase; color:var(--accent); }
+/* The eyebrow as a crumb: on an address leaf it points a level up, to the
+   compendium's title leaf for this ledger. */
+.page-eyebrow a { color:inherit; }
 .anth-title { margin:16px 0 0; font:500 30px/1.25 'Newsreader',serif; color:var(--ink); }
 .anth-addr { margin-top:10px; font:400 12px/1.5 'IBM Plex Mono',monospace; letter-spacing:.02em; color:var(--meta); word-break:break-all; }
 .anth-addr:empty { display:none; }
@@ -145,12 +173,20 @@ a:hover { text-decoration: underline; }
 .anth-range { margin-top:22px; font:600 12px/1.6 'IBM Plex Mono',monospace; letter-spacing:.14em; text-transform:uppercase; color:var(--accent); }
 .anth-range:empty { display:none; }
 .anth-count { margin-top:8px; font:500 11px/1 'IBM Plex Mono',monospace; letter-spacing:.12em; text-transform:uppercase; color:var(--dim); }
+.anth-count:empty { display:none; }
 .anth-held { margin-top:8px; font:500 11px/1.6 'IBM Plex Mono',monospace; letter-spacing:.12em; text-transform:uppercase; color:var(--dim); }
 .anth-held:empty { display:none; }
 .anth-held .held-amt { color:var(--accent); }
 .anth-down { margin-top:auto; padding-top:34px; font-size:20px; color:var(--dim); text-decoration:none; }
 .anth-down:hover { color:var(--accent); text-decoration:none; }
-.anth-hero.bare .anth-down { display:none; }
+
+/* The ledger's balance, headlining its title leaf -- the shelf row's figure,
+   with a whole leaf to breathe on. Quiet pending style while unsettled or
+   last-known; tappable to retry when nothing was ever known. */
+.anth-balance { margin-top:26px; font:500 22px/1.3 'IBM Plex Mono',monospace; color:var(--accent); white-space:nowrap; font-variant-numeric:tabular-nums; }
+.anth-balance:empty { display:none; }
+.anth-balance.pending { color:var(--meta); font-weight:400; font-size:14px; }
+.anth-balance.retry { cursor:pointer; }
 
 /* The contents and index, in the shared idx-*/sp-* classes btc-index.js
    renders into: Volume and Book headers (anthology numbering, canonical
@@ -242,7 +278,8 @@ a:hover { text-decoration: underline; }
 .sp-row.spent:hover .sp-label { color:var(--dim); }
 
 /* Keeping an unkept ledger: the shelf affordance, in the Install button's
-   quiet outline manner. Hidden for curated ledgers (already shelved). */
+   quiet outline manner. On the ledger's own title leaf -- curated ledgers
+   (already shelved) carry no button. */
 .anth-keep { display:none; margin-top:22px; background:transparent; border:1px solid var(--input-bd); color:var(--dim);
   border-radius:4px; padding:6px 14px; cursor:pointer; font:600 11px/1 'IBM Plex Mono',monospace; letter-spacing:.08em; text-transform:uppercase;
   transition:border-color .15s ease, color .15s ease; }
@@ -252,19 +289,37 @@ a:hover { text-decoration: underline; }
 /* The β sigil is a mark, not a letter: exempt from the headers' small caps. */
 .no-tt { text-transform: none; }
 
+/* The entry leaf: one transaction of the record, read as its own page. The
+   net amount headlines in the record's own mono; beneath it the date, then
+   the entry's particulars ruled like a small account card -- the citation
+   into the manuscript (the one door to the book), the running balance where
+   the map is whole, the coin's status, and the entry's place in the record. */
+.entry-amt { margin:18px 0 0; font:500 30px/1.25 'IBM Plex Mono',monospace; color:var(--ink); white-space:nowrap; font-variant-numeric:tabular-nums; }
+.entry-amt.credit { color:var(--accent); }
+.entry-when { margin-top:12px; font:400 12px/1.6 'IBM Plex Mono',monospace; letter-spacing:.06em; color:var(--dim); }
+.entry-card { margin-top:34px; width:min(440px, 100%); text-align:left; border-top:1px solid var(--rule); }
+.entry-card .e-row { display:flex; align-items:baseline; justify-content:space-between; gap:16px; padding:10px 2px; border-bottom:1px solid var(--hair); }
+.entry-card .e-k { flex:none; font:600 10px/1.6 'IBM Plex Mono',monospace; letter-spacing:.14em; text-transform:uppercase; color:var(--meta); }
+.entry-card .e-v { flex:1; min-width:0; text-align:right; font:500 13px/1.5 'IBM Plex Mono',monospace; color:var(--ink-soft);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-variant-numeric:tabular-nums; }
+.entry-card .e-v.unspent { color:var(--accent); }
+.entry-note { margin-top:20px; font:400 11px/1.6 'IBM Plex Mono',monospace; color:var(--meta); }
+.entry-note:empty { display:none; }
+
 /* The carousel, as the book turns its pages: the slide carries the whole
-   leaf (hero and entries) sideways under the finger; the frame clips its
-   travel so a mid-turn leaf never widens the document. */
-#ledger-frame { overflow-x: clip; }
-/* The pager under the title: this leaf's place among the ledger's
-   addresses, with arrows for hands without a touchscreen. Absent entirely
-   on a one-address ledger. */
+   leaf sideways -- or, at entry level, upward through time -- under the
+   finger; the frame clips its travel so a mid-turn leaf never widens or
+   lengthens the document. */
+#ledger-frame { overflow: clip; }
+/* The pager under the title: this leaf's place among its level's siblings,
+   with arrows for hands without a touchscreen. */
 .anth-pager { margin-top:14px; display:flex; gap:10px; align-items:baseline; justify-content:center;
   font:600 11px/1 'IBM Plex Mono',monospace; letter-spacing:.14em; text-transform:uppercase; color:var(--dim); }
 .anth-pager:empty { display:none; }
 .anth-pager a { color:var(--dim); font-size:15px; padding:0 8px; text-decoration:none; }
 .anth-pager a:hover { color:var(--accent); text-decoration:none; }
 .anth-pager a.off { opacity:.25; pointer-events:none; }
+.anth-pager a.word { font-size:11px; letter-spacing:.14em; }
 
 
 /* A reader's bookmarked reference, inline in the contents beneath its book:
@@ -297,22 +352,45 @@ a:hover { text-decoration: underline; }
 <div class="wrap">
   <div class="masthead">
     <span class="title">The <span class="beta">β</span>ook of <span class="beta">β</span>itcoin</span>
-    <span class="home"><a href="./bitcoin-book.html">Read</a> · <a href="./bitcoin-contents.html">Contents</a> · <a href="./bitcoin-ledgers.html">Ledgers</a> · <a href="./bitcoin-search.html">Search</a></span>
+    <span class="home"><a href="./bitcoin-book.html">Read</a> · <a href="./bitcoin-contents.html">Contents</a> · <a href="./bitcoin-search.html">Search</a> · <span class="settings-menu"><a href="#" id="settings-link" role="button" aria-haspopup="dialog" aria-expanded="false">Settings</a><div id="settings-panel" class="settings-panel hidden" role="dialog" aria-label="Ledger settings">
+      <div class="settings-title">Data source</div>
+      <div class="endpoint-row">
+        <select id="bb-select" class="bb-select" aria-label="Esplora endpoint"></select>
+        <button type="button" id="bb-add" class="ghost-btn">+ Add</button>
+        <button type="button" id="bb-remove" class="ghost-btn" disabled>Remove</button>
+      </div>
+      <div id="bb-add-row" class="endpoint-add-row hidden">
+        <input type="text" id="bb-url" placeholder="https://your-esplora/api" autocomplete="off" spellcheck="false">
+        <button type="button" id="bb-save" class="save-btn">Save</button>
+      </div>
+      <div class="settings-note">Where the ledgers ask — Esplora-compatible endpoints, the chosen one tried first; the book's reading pages share this choice. Applies from the next fetch; banked history is never refetched.</div>
+    </div></span></span>
   </div>
 
   <div id="ledger-frame">
     <div id="ledger-slide">
       <header class="anth-hero" id="anth-hero">
-        <div class="page-eyebrow">Ledger</div>
+        <div class="page-eyebrow" id="anth-eyebrow">Ledger</div>
         <h1 class="anth-title" id="anth-title"></h1>
         <div class="anth-pager" id="anth-pager"></div>
+        <div class="anth-balance" id="anth-balance"></div>
         <div class="anth-addr" id="anth-addr"></div>
         <p class="anth-prose" id="anth-prose"></p>
         <div class="anth-range" id="anth-range"></div>
         <div class="anth-count" id="anth-count"></div>
         <div class="anth-held" id="anth-held"></div>
         <button type="button" class="anth-keep" id="anth-keep"></button>
-        <a class="anth-down" href="#anth-contents" aria-label="Down to the summary and entries">▾</a>
+        <a class="anth-down" id="anth-down" href="#anth-contents" aria-label="Down into this leaf">▾</a>
+      </header>
+
+      <!-- The entry leaf's own hero: one transaction, read as a page. -->
+      <header class="anth-hero hidden" id="entry-hero">
+        <div class="page-eyebrow" id="entry-eyebrow"></div>
+        <h1 class="entry-amt" id="entry-amt"></h1>
+        <div class="anth-pager" id="entry-pager"></div>
+        <div class="entry-when" id="entry-when"></div>
+        <div class="entry-card" id="entry-card"></div>
+        <div class="entry-note" id="entry-note"></div>
       </header>
 
       <div id="anthology"></div>
@@ -334,545 +412,1016 @@ a:hover { text-decoration: underline; }
 </div>
 
 <script type="module">
-import { isAddress, ledgerFor, keptLedgers, saveKeptLedgers, sameAddresses, addressScriptHex, cachedLine, resolveLine, extendLine, renderLedger, renderRows, periods, lineNote, reconciled, ledgerSum, heldCoins, formatBalanceBtc, chainFailureText } from './btc-index.js';
+import { INDEXED, isAddress, keptLedgers, saveKeptLedgers, sameAddresses, addressScriptHex, cachedLine, resolveLine,
+         extendLine, renderLedger, renderRows, periods, lineNote, reconciled, ledgerSum, heldCoins, addressState, lastKnownState,
+         formatBalanceBtc, formatNetBtc, chainFailureText, citeHref, sectionOf,
+         DEFAULT_ESPLORA, esploraCustom, esploraSelected, setEsploraSettings } from './btc-index.js';
 import { volumeBookChapter, toRoman } from './btc-citation.js';
 
-// A ledger is a titled set of addresses, read the way the book is read.
-// Horizontally, its leaves: one title page per address (the name; the
-// address in the book's own tongue, its scriptPubKey as Glossia prose; the
-// span and state of what's been gathered), and past the last address the
-// ledger's own entries page -- everything banked, merged into one account,
-// hierarchical in time: the one view organized by the calendar. Below an
-// address's title lies its record, organized by reference alone -- Volume,
-// then Book, newest first -- as an endless scroll: the latest 25 render at
-// once, and as the reader nears the bottom the next page has already
-// prefetched, so the past keeps arriving with nothing to wait for.
-// Nothing backfills on its own -- exploration is the sync, and every page
-// found is banked for good. Every entry row opens bitcoin-book.html at
-// its transaction, so a ledger is navigated the same way as the book it
-// excerpts.
+// The Ledger is a compendium now: every ledger in one document, read the way
+// the book is read, three levels deep.
+//
+//   Ledger title leaves    one per ledger (curated first, then kept, then an
+//                          ad-hoc ?address= query) -- title, balance, span.
+//                          Horizontal swipes browse between ledgers; pushing
+//                          up (or ▾) descends into the ledger's addresses.
+//   Address leaves         one title page per address, its record scrolling
+//                          endlessly below (newest first, by reference), and
+//                          past the last address the merged entries leaf --
+//                          organized by time. Horizontal swipes at the hero
+//                          turn between them; pulling down at the top
+//                          ascends to the ledger's title leaf. A horizontal
+//                          swipe OVER the record pulls in the page of the
+//                          entry nearest the finger.
+//   Entry leaves           one transaction of the record, read as a page,
+//                          from the bank alone -- no fetch. Vertical swipes
+//                          walk the address's timeline (up = older, the
+//                          direction the record scrolls; gated on the next
+//                          page of history at the banked frontier); a swipe
+//                          right returns to the record, scrolled to the
+//                          entry left off at. Left of the record there is
+//                          nothing: the swipe rubber-bands. The record is
+//                          the only door.
 
+// --- Settings: where the chain is asked. Reads and writes the same stored
+// endpoint choice as the book page's Data source picker; the machinery
+// reads it at call time, so a change applies from the very next fetch on
+// any page.
+{
+  const link = document.getElementById('settings-link');
+  const panel = document.getElementById('settings-panel');
+  const select = document.getElementById('bb-select');
+  const removeBtn = document.getElementById('bb-remove');
+  const addRow = document.getElementById('bb-add-row');
+  const urlInput = document.getElementById('bb-url');
+  const shortName = (u) => u.replace(/^https?:\/\//, '').replace(/\/api\/?$/, '');
+  const rebuild = () => {
+    select.replaceChildren();
+    for (const u of [...DEFAULT_ESPLORA, ...esploraCustom()]) {
+      const o = document.createElement('option');
+      o.value = u;
+      o.textContent = shortName(u) + (DEFAULT_ESPLORA.includes(u) ? '' : ' · yours');
+      select.append(o);
+    }
+    select.value = esploraSelected();
+    removeBtn.disabled = DEFAULT_ESPLORA.includes(select.value);
+  };
+  link.addEventListener('click', (ev) => {
+    ev.preventDefault();
+    const open = panel.classList.toggle('hidden');
+    link.setAttribute('aria-expanded', String(!open));
+    if (!open) rebuild();
+  });
+  select.addEventListener('change', () => {
+    setEsploraSettings({ selected: DEFAULT_ESPLORA[0] === select.value ? null : select.value });
+    rebuild();
+  });
+  removeBtn.addEventListener('click', () => {
+    const u = select.value;
+    setEsploraSettings({ custom: esploraCustom().filter((c) => c !== u), selected: null });
+    rebuild();
+  });
+  document.getElementById('bb-add').addEventListener('click', () => {
+    addRow.classList.toggle('hidden');
+    urlInput.focus();
+  });
+  document.getElementById('bb-save').addEventListener('click', () => {
+    const u = urlInput.value.trim().replace(/\/+$/, '');
+    if (!/^https?:\/\//.test(u)) return;
+    if (![...DEFAULT_ESPLORA, ...esploraCustom()].includes(u)) {
+      setEsploraSettings({ custom: [...esploraCustom(), u], selected: u });
+    } else {
+      setEsploraSettings({ selected: u });
+    }
+    urlInput.value = '';
+    addRow.classList.add('hidden');
+    rebuild();
+  });
+  rebuild();
+}
+
+// ── The compendium's ledgers ───────────────────────────────────────────────
+// Curated donation ledgers first, then any the reader has kept, and a
+// ?address=<addr>[,<addr>…] query that matches none of them prepends a
+// temporary ledger of exactly those addresses. A query that names a member
+// of a shelved ledger opens that whole ledger, positioned on the address.
 const q = (new URLSearchParams(location.search).get('address') || '').trim();
 const norm = (s) => (isAddress(s) ? s : isAddress(s.toLowerCase()) ? s.toLowerCase() : null);
-const list = q ? q.split(',').map((s) => norm(s.trim())).filter(Boolean) : [];
+const qList = q ? q.split(',').map((s) => norm(s.trim())).filter(Boolean) : [];
+const untitled = (l) => l.addresses[0] + (l.addresses.length > 1 ? ` +${l.addresses.length - 1}` : '');
+const kept = keptLedgers().filter((k) => !INDEXED.some((e) => sameAddresses(e.addresses, k.addresses)));
+// One member address names its whole ledger (ledgerFor's rule); only a query
+// matching nothing shelved joins as its own temporary ledger.
+const matchesQuery = (e) => (qList.length === 1
+  ? e.addresses.includes(qList[0]) : sameAddresses(e.addresses, qList));
+const adhoc = qList.length && ![...INDEXED, ...kept].some(matchesQuery)
+  ? [{ title: '', addresses: qList, curated: false }] : [];
+const LEDGERS = [
+  ...adhoc,
+  ...INDEXED.map((e) => ({ ...e, curated: true })),
+  ...kept.map((e) => ({ ...e, curated: false })),
+].map((e) => ({ ...e, name: e.title || untitled(e) }));
 
+// ── Where the reader stands ────────────────────────────────────────────────
+//   level 'ledger'  : the title leaf of LEDGERS[li]
+//   level 'address' : leaf `at` of that ledger (addrs.length = entries leaf)
+//   level 'entry'   : one entry of entryAddr's record. The current entry is
+//                     named by KEY, not index: extending the record PREPENDS
+//                     older entries (the array is ascending), so an index
+//                     would silently drift mid-read.
+let level = 'ledger';
+let li = 0;
+let at = 0;
+let entryAddr = null;
+let entryKey = null;          // { txid, sats }
+const rememberedAt = new Map();   // li -> the address leaf a descent returns to
+let landAt = null;            // { txid, sats } -- scroll the record here on return
+
+if (qList.length) {
+  const i = LEDGERS.findIndex((e) => (qList.length === 1
+    ? e.addresses.includes(qList[0]) : sameAddresses(e.addresses, qList)));
+  li = Math.max(0, i);
+  level = 'address';
+  at = Math.max(0, LEDGERS[li].addresses.indexOf(qList[0]));
+}
+
+const cur = () => LEDGERS[li];
+const entryKeyOf = (e) => ({ txid: e.txid, sats: e.sats });
+const findEntry = (line, key) =>
+  line ? line.entries.findIndex((e) => e.txid === key.txid && e.sats === key.sats) : -1;
+
+// The URL follows the reader (replaceState -- browsing is not history), so a
+// reload or a share names the ledger being read; the compendium's own top
+// level is the bare page.
+function syncUrl() {
+  try {
+    const url = level === 'ledger' ? location.pathname
+      : `${location.pathname}?address=${cur().addresses.join(',')}`;
+    history.replaceState(null, '', url);
+  } catch (_) { /* unavailable */ }
+  document.title = level === 'ledger' && !qList.length
+    ? 'The βook of βitcoin — Ledger'
+    : `The βook of βitcoin — Ledger · ${cur().name}`;
+}
+
+// ── Shared leaf furniture ──────────────────────────────────────────────────
 const el = document.getElementById('anthology');
 el.replaceChildren();   // populated-or-recovered is the head script's signal
 const hero = document.getElementById('anth-hero');
+const entryHero = document.getElementById('entry-hero');
+const eyebrow = document.getElementById('anth-eyebrow');
+const pager = document.getElementById('anth-pager');
+const balanceEl = document.getElementById('anth-balance');
+const count = document.getElementById('anth-count');
+const range = document.getElementById('anth-range');
+const heldEl = document.getElementById('anth-held');
+const keepBtn = document.getElementById('anth-keep');
+const downEl = document.getElementById('anth-down');
+const totalsBar = document.getElementById('acct-totals');
 
-// The reader's bookmarks (the same store the book and contents pages keep),
-// carried into the contents render; only those whose height falls on one of
-// the ledger's chapters appear.
 const readBookmarks = () => {
   try { const v = JSON.parse(localStorage.getItem('glossia-btc-bookmarks')); return Array.isArray(v) ? v : []; }
   catch { return []; }
 };
 const shortHex = (hex) => `${hex.slice(0, 10)}…${hex.slice(-6)}`;
+const shortAddr = (a) => (a.length > 17 ? `${a.slice(0, 8)}…${a.slice(-6)}` : a);
 const bookmarks = readBookmarks()
   .filter((b) => Number.isInteger(b.height))
   .map((b) => ({ hex: b.hex, height: b.height, pos: b.pos ?? null, title: b.title || b.prose || shortHex(b.hex) }));
 
-if (!list.length) {
-  hero.classList.add('bare');
-  document.getElementById('anth-title').textContent = 'One address, its every entry';
-  lineNote(el, 'A ledger is a view of the manuscript focused on amounts — one address, or a set of them turned like leaves. Open one from the Ledgers page, or put ?address=<an address>[,<another>…] in this page’s URL.');
-} else {
-  // The URL names the ledger: one member address opens the whole ledger it
-  // belongs to (curated or kept), positioned on that address; a list opens
-  // as exactly those leaves.
-  const ledger = ledgerFor(list);
-  const addrs = ledger.addresses;
-  let at = ledger.at;
-  const title = ledger.title || (addrs.length > 1 ? 'An unkept ledger' : 'An unkept address');
-  document.title = `The βook of βitcoin — Ledger · ${ledger.title || addrs.join(', ')}`;
-  document.getElementById('anth-title').textContent = title;
+const n = (v, one, many) => `${v.toLocaleString('en-US')} ${v === 1 ? one : many}`;
 
-  // Keeping a ledger: the whole set of addresses joins the curated ones on
-  // the Ledgers shelf, from the same registry the shelf reads. Curated
-  // ledgers are already shelved, so they carry no button.
-  if (!ledger.curated) {
-    const keepBtn = document.getElementById('anth-keep');
+const showCount = (data) => {
+  if (!data || !data.entries.length) { count.textContent = ''; return; }
+  const parts = [n(data.entries.length, 'entry', 'entries')];
+  const years = periods(data);
+  if (years) {
+    const quarters = years.reduce((nq, y) => nq + y.quarters.length, 0);
+    parts.push(n(quarters, 'quarter', 'quarters'), n(years.length, 'year', 'years'));
+  }
+  count.textContent = parts.join(' · ');
+};
+
+// The leaf's span: the volumes its chapters run, and the dates -- block
+// times ride on every mapped chapter, so both ranges read straight off
+// the map's first and last.
+const showRange = (data) => {
+  if (!data || !data.entries.length) { range.textContent = ''; return; }
+  const first = data.entries[0], last = data.entries[data.entries.length - 1];
+  const v1 = volumeBookChapter(first.height).volume, v2 = volumeBookChapter(last.height).volume;
+  const vols = v1 === v2 ? `Volume ${toRoman(v1)}` : `Volumes ${toRoman(v1)} – ${toRoman(v2)}`;
+  if (!first.time || !last.time) { range.textContent = vols; return; }
+  const fmt = (s) => new Date(s * 1000).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  const dates = fmt(first.time) === fmt(last.time) ? fmt(first.time) : `${fmt(first.time)} – ${fmt(last.time)}`;
+  range.textContent = `${vols} · ${dates}`;
+};
+
+// The held line, and the ledger's ink: the chain's own bookmarks. The
+// UTXO snapshot is trusted only when it closes the triangle -- Σ held
+// equal to the balance the gate already proved against the ledger sum --
+// the same discipline everywhere: no number displays until it adds up.
+// (A mid-spend race simply skips the view; the next visit agrees again.)
+const heldView = (data, held) => {
+  if (!held || !data || held.sum !== data.balance) return null;
+  heldEl.replaceChildren();
+  const amt = document.createElement('span'); amt.className = 'held-amt';
+  amt.textContent = formatBalanceBtc(held.sum);
+  if (held.count === 0) {
+    heldEl.append('nothing still held — every gift has moved on');
+  } else {
+    heldEl.append(amt, ` still held · ${n(held.count, 'coin', 'coins')} outstanding`);
+  }
+  return held.byTxid;
+};
+
+// The entry leaf reads the held snapshot too (its status line); once per
+// address per visit-window is plenty for a view that changes at chain speed.
+const heldMemo = new Map();   // address -> { at, p }
+const HELD_TTL = 10 * 60 * 1000;
+function heldFresh(addr) {
+  const m = heldMemo.get(addr);
+  if (m && Date.now() - m.at < HELD_TTL) return m.p;
+  const p = heldCoins(addr);
+  heldMemo.set(addr, { at: Date.now(), p });
+  return p;
+}
+
+// Whatever this leaf knows, shown with its state. A reconciled ledger
+// reads whole -- periods, entries, running balance, held marks. A ledger
+// not yet whole still shows everything banked so far, headed by a note
+// saying exactly how far the record has been read; only the held marks
+// wait for the full triple agreement. Nothing at all yields an
+// unreachable note that retries in place.
+const view = (data, held) => {
+  renderLedger(el, data, { bookmarks, held: heldView(data, held) });
+  showCount(data);
+  showRange(data);
+  if (!reconciled(data)) {
+    const s = document.createElement('span');
+    s.className = 'idx-note sync-note';
+    s.textContent = data.complete
+      ? 'unreconciled — this map disagrees with the chain balance; resyncing on the next visit'
+      : `${data.walked.toLocaleString('en-US')} of ${data.txCount.toLocaleString('en-US')} transactions gathered — thumbing an address’s pages reaches deeper`;
+    el.prepend(s);
+  }
+};
+const unreachable = (alive, retry) => {
+  el.replaceChildren();
+  totalsBar.classList.add('hidden');
+  count.textContent = '';
+  range.textContent = '';
+  heldEl.replaceChildren();
+  const s = document.createElement('span');
+  s.className = 'idx-note';
+  s.append(`— the chain could not be reached (${chainFailureText()}) · `);
+  const a = document.createElement('a');
+  a.href = '#';
+  a.textContent = 'retry';
+  a.addEventListener('click', (ev) => { ev.preventDefault(); if (alive()) retry(); });
+  s.append(a);
+  el.append(s);
+};
+
+// One resolution per address, shared across leaf turns: a reader flipping
+// away and back re-joins the sync already running rather than starting a
+// rival walk over the same checkpoints. The progress tick is re-pointed at
+// whichever leaf currently shows the address.
+const inflight = new Map();   // address -> resolveLine promise
+const progress = new Map();   // address -> the current leaf's tick
+const lineOnce = (addr) => {
+  if (!inflight.has(addr)) {
+    inflight.set(addr, resolveLine(addr, (gathered, total) => progress.get(addr)?.(gathered, total))
+      .finally(() => inflight.delete(addr)));
+  }
+  return inflight.get(addr);
+};
+
+// ── The record: an endless scroll, reference-organized ───────────────────
+// The address leaf's resolution: the stored line first -- instantly,
+// offline included -- then the head refreshed against the chain (new
+// arrivals only; no backfill) while the held snapshot arrives beside it.
+// Below the title, the record itself: the banked entries newest-first
+// under Volume and Book headers alone (reading by time lives on the
+// entries leaf), drawn a chunk at a time. A sentinel at the foot watches
+// the scroll from well above the bottom: nearing it draws the next chunk
+// from the bank, and when the bank runs low the next page fetches ahead
+// -- so the past keeps arriving with nothing to wait for. `alive` guards
+// every landing: a result belonging to a leaf already turned away from
+// paints nothing.
+const PAGE = 25;
+// The totals bar rules the record off at every moment: Σ debit, Σ credit
+// (the unsynced remainder posted into its column, so the books add up
+// mid-scroll, not just at completion), the transaction count, and the
+// balance the columns net to. Hidden wherever there is no record to rule.
+const showTotals = (line) => {
+  if (!line || !line.entries.length) { totalsBar.classList.add('hidden'); return; }
+  let debit = 0, credit = 0;
+  for (const c of line.entries) { if (c.sats < 0) debit -= c.sats; else credit += c.sats; }
+  if (!line.complete) {
+    const net = (line.balance ?? 0) - ledgerSum(line);
+    if (net >= 0) credit += net; else debit += -net;
+  }
+  document.getElementById('t-balance').textContent = formatBalanceBtc(line.balance ?? credit - debit);
+  document.getElementById('t-debit').textContent = debit ? formatBalanceBtc(debit) : '';
+  document.getElementById('t-credit').textContent = formatBalanceBtc(credit);
+  document.getElementById('t-count').textContent = `${line.txCount.toLocaleString('en-US')} §`;
+  totalsBar.classList.remove('hidden');
+};
+const stateText = (d) => !d.complete
+  ? `the latest ${d.walked.toLocaleString('en-US')} of ${d.txCount.toLocaleString('en-US')} transactions gathered`
+  : reconciled(d) ? 'the whole record gathered · reconciled with the chain'
+  : 'unreconciled — this map disagrees with the chain balance';
+const runResolve = async (addr, alive) => {
+  const heldP = heldFresh(addr);
+  const cached = await cachedLine(addr);
+  if (!alive()) return;
+  let byTxid = null;     // held marks, once the snapshot agrees
+  let rowsEl, foot, note, unsyn, rendered, io;
+  let busy = false;      // one draw at a time; the re-arm retriggers
+  // The unsynced entry: an unreferenced line heading the record for the
+  // transactions not yet gathered -- their count standing where the
+  // citations will -- retiring once the record is whole. Their net is
+  // arithmetic, not a guess: the chain's balance less the banked sum is
+  // exactly what the remainder moved -- the opening balance the visible
+  // record stands on, which is also why it posts as a credit (a balance
+  // is never negative; a debit here would mean inconsistent data, shown
+  // honestly as such).
+  const setUnsynced = (l) => {
+    if (!unsyn) return;
+    const left = l.txCount - l.walked;
+    if (l.complete || left <= 0) { unsyn.remove(); return; }
+    const net = (l.balance ?? 0) - ledgerSum(l);
+    unsyn.children[0].textContent = `${left.toLocaleString('en-US')} §`;
+    unsyn.children[1].textContent = net < 0 ? formatBalanceBtc(-net) : '';
+    unsyn.children[2].textContent = net >= 0 ? formatBalanceBtc(net) : '';
+    unsyn.title = 'the net of the transactions not yet gathered — the balance the record below stands on';
+  };
+  // The landing: a dive returned from the entry leaves wants the record
+  // scrolled to the entry left off at. Draw until its row exists, then
+  // center it -- a dive can only reach banked entries, so the row is
+  // always eventually drawn, no fetch required. The landing survives the
+  // resolve's repaint (which momentarily empties the list, clamping the
+  // scroll to the top) by re-arming for a short window after it settles.
+  let landed = null, landTime = 0;
+  const tryLand = () => {
+    if (!landAt) return false;
+    const row = rowsEl?.querySelector(`[data-txid="${landAt.txid}"][data-sats="${landAt.sats}"]`);
+    if (!row) return true;   // keep drawing
+    landed = landAt; landTime = performance.now();
+    landAt = null;
+    requestAnimationFrame(() => row.scrollIntoView({ block: 'center', behavior: 'instant' }));
+    return false;
+  };
+  const scroll = async () => {
+    if (busy || !alive()) return;
+    busy = true;
+    let line = await cachedLine(addr);
+    if (!alive() || !line) { busy = false; return; }
+    if (line.entries.length <= rendered && !line.complete) line = await extendLine(addr) ?? line;
+    if (!alive()) { busy = false; return; }
+    const len = line.entries.length;
+    const take = Math.min(len - rendered, PAGE);
+    if (take > 0) {
+      renderRows(rowsEl, line.entries.slice(len - rendered - take, len - rendered), byTxid);
+      rendered += take;
+    }
+    note.textContent = stateText(line);   // the reach grows as the reader reads
+    setUnsynced(line);
+    showTotals(line);
+    foot.textContent = line.complete && rendered >= len ? '— the beginning of the record' : '…';
+    // The fetch ahead: keep a page banked beyond what's drawn.
+    if (!line.complete && len - rendered < PAGE) extendLine(addr);
+    busy = false;
+    // The landing keeps drawing until its row exists (banked, so bounded).
+    if (tryLand() && rendered < len) { queueMicrotask(scroll); return; }
+    // Re-arm: appending moved the sentinel; observe it afresh so a foot
+    // still within reach fires again.
+    if (io) { io.unobserve(foot); io.observe(foot); }
+  };
+  const paint = (data, held) => {
+    showCount(data);
+    showRange(data);
+    if (!landAt && landed && performance.now() - landTime < 3000) landAt = landed;
+    byTxid = held ? heldView(data, held) : byTxid;
+    el.replaceChildren();
+    io?.disconnect();
+    note = document.createElement('span');
+    note.className = 'idx-note sync-note';
+    note.id = 'anth-contents';   // the hero's ▾ lands here
+    note.textContent = stateText(data);
+    rowsEl = document.createElement('div');
+    foot = document.createElement('span');
+    foot.className = 'idx-note sync-note';
+    el.append(note);
+    // The bookkeeping heads rule the columns once there are rows to rule.
+    if (data.entries.length) {
+      const heads = document.createElement('div');
+      heads.className = 'acct-heads';
+      const hRef = document.createElement('span'); hRef.className = 'h-ref';
+      hRef.textContent = 'reference';
+      heads.append(hRef);
+      for (const [cls, label] of [['col-deb', 'debit'], ['col-cred', 'credit'], ['col-status', 'status']]) {
+        const h = document.createElement('span'); h.className = cls; h.textContent = label;
+        heads.append(h);
+      }
+      el.append(heads);
+    }
+    unsyn = document.createElement('div');
+    unsyn.className = 'idx-row acct unsynced';
+    const uRef = document.createElement('span'); uRef.className = 'idx-ref';
+    const uDeb = document.createElement('span'); uDeb.className = 'idx-amt col-deb';
+    const uCred = document.createElement('span'); uCred.className = 'idx-amt col-cred';
+    const uSt = document.createElement('span'); uSt.className = 'idx-status col-status';
+    uSt.textContent = 'unsynced';
+    unsyn.append(uRef, uDeb, uCred, uSt);
+    el.append(unsyn, rowsEl, foot);
+    setUnsynced(data);
+    rendered = 0;
+    io = new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) scroll(); },
+                                  { rootMargin: '1600px 0px' });
+    io.observe(foot);
+    scroll();
+  };
+  if (cached) paint(cached, null);
+  else { el.replaceChildren(); lineNote(el, '…'); }
+  const [data, held] = await Promise.all([lineOnce(addr), heldP]);
+  if (!alive()) return;
+  if (data) paint(data, held);
+  else if (!cached) unreachable(alive, () => runResolve(addr, alive));
+};
+
+// ── The entries leaf: the ledger read whole ──────────────────────────────
+// Past the last address lies the ledger's own entries page: every member's
+// entries merged into one account, hierarchical in time -- years, then
+// quarters, then the entries themselves, references on the left and
+// amounts on the right, the running balance now running across the whole
+// set. The merge is a sort: entries already carry their heights, and the
+// same ordering the per-address maps keep (height, then txid, credits
+// before debits) interleaves them exactly. Each merged entry is tagged
+// with its home address, so a dive from this leaf lands in the right
+// column of the ledger.
+const mergeLines = (lines, addrs) => {
+  const tagged = lines.map((l, i) => (l ? { line: l, addr: addrs[i] } : null)).filter(Boolean);
+  if (!tagged.length) return null;
+  const entries = tagged.flatMap(({ line, addr }) => line.entries.map((e) => ({ ...e, addr }))).sort((a, b) =>
+    a.height - b.height || (a.txid < b.txid ? -1 : a.txid > b.txid ? 1 : b.sats - a.sats));
+  const present = tagged.map((t) => t.line);
+  return {
+    txCount: present.reduce((s, l) => s + l.txCount, 0),
+    balance: present.every((l) => l.balance != null) ? present.reduce((s, l) => s + l.balance, 0) : null,
+    walked: present.reduce((s, l) => s + l.walked, 0),
+    complete: present.length === addrs.length && present.every((l) => l.complete),
+    entries,
+  };
+};
+const mergeHeld = (helds) => {
+  if (helds.some((h) => !h)) return null;
+  const byTxid = new Map();
+  let sum = 0, count2 = 0;
+  for (const h of helds) {
+    sum += h.sum; count2 += h.count;
+    for (const [t, v] of h.byTxid) byTxid.set(t, (byTxid.get(t) ?? 0) + v);
+  }
+  return { sum, count: count2, byTxid };
+};
+const runEntries = async (alive) => {
+  const addrs = cur().addresses;
+  const heldP = Promise.all(addrs.map((a) => heldFresh(a)));
+  const cachedAll = await Promise.all(addrs.map((a) => cachedLine(a)));
+  if (!alive()) return;
+  const cached = mergeLines(cachedAll, addrs);
+  if (cached) view(cached, null);
+  else { el.replaceChildren(); lineNote(el, '…'); }
+  // Every member's sync ticks reach this leaf's one note, summed.
+  const latest = new Map(addrs.map((a, i) => [a, { g: cachedAll[i]?.walked ?? 0, t: cachedAll[i]?.txCount ?? 0 }]));
+  const tickNote = () => {
+    if (!alive()) return;
+    const gathered = [...latest.values()].reduce((n2, v) => n2 + v.g, 0);
+    const total = [...latest.values()].reduce((n2, v) => n2 + v.t, 0);
+    const note = el.querySelector('.idx-note');
+    if (note) note.textContent = `still syncing — ${gathered.toLocaleString('en-US')} of ${total.toLocaleString('en-US')} transactions gathered`;
+  };
+  for (const a of addrs) progress.set(a, (gathered, total) => { latest.set(a, { g: gathered, t: total }); tickNote(); });
+  const [lines, helds] = await Promise.all([Promise.all(addrs.map(lineOnce)), heldP]);
+  if (!alive()) return;
+  const data = mergeLines(lines.map((l, i) => l ?? cachedAll[i]), addrs);
+  if (data) view(data, mergeHeld(helds));
+  else unreachable(alive, () => runEntries(alive));
+};
+
+// ── The three leaves ───────────────────────────────────────────────────────
+// Rendering is generation-guarded: turning any page bumps the generation,
+// and every async continuation from the leaf left behind checks it before
+// touching the DOM.
+let gen = 0;
+
+// What the current leaf's neighbours are, per axis -- the drag's damping and
+// the commit's guard read this, so gesture and pager can never disagree.
+// Entry-level vertical availability is refreshed whenever the leaf renders.
+let entryNav = { newer: false, older: false, reaching: false };
+
+const clearHero = () => {
+  totalsBar.classList.add('hidden');   // the record's paint re-seats it
+  balanceEl.textContent = '';
+  balanceEl.className = 'anth-balance';
+  balanceEl.onclick = null;
+  document.getElementById('anth-addr').textContent = '';
+  document.getElementById('anth-prose').replaceChildren();
+  count.textContent = '';
+  range.textContent = '';
+  heldEl.replaceChildren();
+  keepBtn.classList.remove('show');
+};
+
+const arrow = (glyph, label, off, act, word = false) => {
+  const a = document.createElement('a');
+  a.href = '#';
+  a.textContent = glyph;
+  if (word) a.classList.add('word');
+  a.setAttribute('aria-label', label);
+  a.classList.toggle('off', off);
+  a.addEventListener('click', (ev) => { ev.preventDefault(); act(); });
+  return a;
+};
+
+// The ledger's title leaf: the shelf row, grown into a full page -- the
+// name, the balance (one chain-state request per member address; browsing
+// the compendium starts nobody's sync), how many addresses it spans, and
+// the Keep affordance for a ledger the reader brought. ▾ (or a push up)
+// descends into the addresses.
+const openLedgerLeaf = (alive) => {
+  eyebrow.textContent = 'Ledger';
+  document.getElementById('anth-title').textContent = cur().name;
+  pager.replaceChildren(
+    arrow('‹', 'Previous ledger', li <= 0, () => turnLedger(-1)),
+    Object.assign(document.createElement('span'), { textContent: `${li + 1} of ${LEDGERS.length}` }),
+    arrow('›', 'Next ledger', li >= LEDGERS.length - 1, () => turnLedger(1)),
+  );
+  downEl.setAttribute('href', '#');
+  downEl.onclick = (ev) => { ev.preventDefault(); descend(); };
+  downEl.setAttribute('aria-label', 'Down into the ledger’s addresses');
+
+  // Keeping a ledger: the whole set of addresses joins the compendium's
+  // standing list, from the same registry it reads. Curated ledgers are
+  // already shelved, so they carry no button.
+  if (!cur().curated) {
     keepBtn.classList.add('show');
     const reflect = () => {
-      const kept = keptLedgers().some((k) => sameAddresses(k.addresses, addrs));
-      keepBtn.classList.toggle('kept', kept);
-      keepBtn.textContent = kept ? 'Kept on the shelf — remove' : 'Keep this ledger on the shelf';
+      const isKept = keptLedgers().some((k) => sameAddresses(k.addresses, cur().addresses));
+      keepBtn.classList.toggle('kept', isKept);
+      keepBtn.textContent = isKept ? 'Kept in the compendium — remove' : 'Keep this ledger in the compendium';
     };
-    keepBtn.addEventListener('click', () => {
-      const kept = keptLedgers();
-      const has = kept.some((k) => k.addresses && sameAddresses(k.addresses, addrs));
+    keepBtn.onclick = () => {
+      const all = keptLedgers();
+      const has = all.some((k) => k.addresses && sameAddresses(k.addresses, cur().addresses));
       saveKeptLedgers(has
-        ? kept.filter((k) => !sameAddresses(k.addresses, addrs))
-        : [...kept, { title: ledger.title, addresses: addrs }]);
+        ? all.filter((k) => !sameAddresses(k.addresses, cur().addresses))
+        : [...all, { title: cur().title, addresses: cur().addresses }]);
       reflect();
-    });
+    };
     reflect();
   }
 
-  const count = document.getElementById('anth-count');
-  const n = (v, one, many) => `${v.toLocaleString('en-US')} ${v === 1 ? one : many}`;
-  const showCount = (data) => {
-    if (!data || !data.entries.length) { count.textContent = ''; return; }
-    const parts = [n(data.entries.length, 'entry', 'entries')];
-    const years = periods(data);
-    if (years) {
-      const quarters = years.reduce((nq, y) => nq + y.quarters.length, 0);
-      parts.push(n(quarters, 'quarter', 'quarters'), n(years.length, 'year', 'years'));
+  // Something below the fold for the recovery check, and for the reader: the
+  // leaf's own contents line.
+  el.replaceChildren();
+  lineNote(el, `${n(cur().addresses.length, 'address', 'addresses')} — ▾ opens the record`);
+
+  // The balance, four ways (the shelf's discipline, one ledger at a time):
+  // an answer under ten minutes old serves from memory in full ink; past
+  // that a live probe refreshes it; a probe that fails everywhere falls to
+  // the last-known figure (the quiet pending style); with nothing ever
+  // known, "unreachable" retrying in place when tapped. A sum shows only
+  // when every member answered -- a partial sum would read as the whole.
+  const stateOf = async (ask) => {
+    const states = [];
+    for (const a of cur().addresses) {
+      const s = ask ? await addressState(a) : lastKnownState(a);
+      if (!s) return null;
+      states.push(s);
     }
-    count.textContent = parts.join(' · ');
+    return { balance: states.reduce((s2, st) => s2 + st.balance, 0),
+             stale: states.some((st) => st.stale) || undefined };
   };
-
-  // The leaf's span: the volumes its chapters run, and the dates -- block
-  // times ride on every mapped chapter, so both ranges read straight off
-  // the map's first and last.
-  const range = document.getElementById('anth-range');
-  const showRange = (data) => {
-    if (!data || !data.entries.length) { range.textContent = ''; return; }
-    const first = data.entries[0], last = data.entries[data.entries.length - 1];
-    const v1 = volumeBookChapter(first.height).volume, v2 = volumeBookChapter(last.height).volume;
-    const vols = v1 === v2 ? `Volume ${toRoman(v1)}` : `Volumes ${toRoman(v1)} – ${toRoman(v2)}`;
-    if (!first.time || !last.time) { range.textContent = vols; return; }
-    const fmt = (s) => new Date(s * 1000).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-    const dates = fmt(first.time) === fmt(last.time) ? fmt(first.time) : `${fmt(first.time)} – ${fmt(last.time)}`;
-    range.textContent = `${vols} · ${dates}`;
-  };
-
-  // The held line, and the ledger's ink: the chain's own bookmarks. The
-  // UTXO snapshot is trusted only when it closes the triangle -- Σ held
-  // equal to the balance the gate already proved against the ledger sum --
-  // the same discipline everywhere: no number displays until it adds up.
-  // (A mid-spend race simply skips the view; the next visit agrees again.)
-  const heldEl = document.getElementById('anth-held');
-  const heldView = (data, held) => {
-    if (!held || !data || held.sum !== data.balance) return null;
-    heldEl.replaceChildren();
-    const amt = document.createElement('span'); amt.className = 'held-amt';
-    amt.textContent = formatBalanceBtc(held.sum);
-    if (held.count === 0) {
-      heldEl.append('nothing still held — every gift has moved on');
+  const probe = async () => {
+    balanceEl.textContent = '…';
+    balanceEl.className = 'anth-balance pending';
+    balanceEl.onclick = null;
+    const lines = await Promise.all(cur().addresses.map((a) => cachedLine(a)));
+    if (!alive()) return;
+    const banked = lines.every((c) => c?.balance != null)
+      ? lines.reduce((s2, c) => s2 + c.balance, 0) : null;
+    if (banked != null) balanceEl.textContent = formatBalanceBtc(banked);
+    const state = await stateOf(true);
+    if (!alive()) return;
+    if (state && !state.stale) {
+      balanceEl.textContent = formatBalanceBtc(state.balance);
+      balanceEl.className = 'anth-balance';
+    } else if (state) {
+      balanceEl.textContent = formatBalanceBtc(state.balance);   // last known
+    } else if (banked != null) {
+      balanceEl.textContent = formatBalanceBtc(banked);          // as of its last sync
     } else {
-      heldEl.append(amt, ` still held · ${n(held.count, 'coin', 'coins')} outstanding`);
-    }
-    return held.byTxid;
-  };
-
-  // Whatever this leaf knows, shown with its state. A reconciled ledger
-  // reads whole -- periods, entries, running balance, held marks. A ledger
-  // not yet whole still shows everything banked so far, headed by a note
-  // saying exactly how far the record has been read; only the held marks
-  // wait for the full triple agreement. Nothing at all yields an
-  // unreachable note that retries in place.
-  const view = (data, held) => {
-    renderLedger(el, data, { bookmarks, held: heldView(data, held) });
-    showCount(data);
-    showRange(data);
-    if (!reconciled(data)) {
-      const s = document.createElement('span');
-      s.className = 'idx-note sync-note';
-      s.textContent = data.complete
-        ? 'unreconciled — this map disagrees with the chain balance; resyncing on the next visit'
-        : `${data.walked.toLocaleString('en-US')} of ${data.txCount.toLocaleString('en-US')} transactions gathered — thumbing an address’s pages reaches deeper`;
-      el.prepend(s);
+      balanceEl.textContent = `${chainFailureText()} — retry`;
+      balanceEl.classList.add('retry');
+      balanceEl.onclick = () => { if (alive()) probe(); };
     }
   };
-  const unreachable = (alive, retry) => {
-    el.replaceChildren();
-    totalsBar.classList.add('hidden');
-    count.textContent = '';
-    range.textContent = '';
-    heldEl.replaceChildren();
-    const s = document.createElement('span');
-    s.className = 'idx-note';
-    s.append(`— the chain could not be reached (${chainFailureText()}) · `);
-    const a = document.createElement('a');
-    a.href = '#';
-    a.textContent = 'retry';
-    a.addEventListener('click', (ev) => { ev.preventDefault(); if (alive()) retry(); });
-    s.append(a);
-    el.append(s);
-  };
+  probe();
+};
 
-  // One resolution per address, shared across leaf turns: a reader flipping
-  // away and back re-joins the sync already running rather than starting a
-  // rival walk over the same checkpoints. The progress tick is re-pointed at
-  // whichever leaf currently shows the address.
-  const inflight = new Map();   // address -> resolveLine promise
-  const progress = new Map();   // address -> the current leaf's tick
-  const lineOnce = (addr) => {
-    if (!inflight.has(addr)) {
-      inflight.set(addr, resolveLine(addr, (gathered, total) => progress.get(addr)?.(gathered, total))
-        .finally(() => inflight.delete(addr)));
-    }
-    return inflight.get(addr);
-  };
-
-  // ── The record: an endless scroll, reference-organized ───────────────────
-  // The address leaf's resolution: the stored line first -- instantly,
-  // offline included -- then the head refreshed against the chain (new
-  // arrivals only; no backfill) while the held snapshot arrives beside it.
-  // Below the title, the record itself: the banked entries newest-first
-  // under Volume and Book headers alone (reading by time lives on the
-  // entries leaf), drawn a chunk at a time. A sentinel at the foot watches
-  // the scroll from well above the bottom: nearing it draws the next chunk
-  // from the bank, and when the bank runs low the next page fetches ahead
-  // -- so the past keeps arriving with nothing to wait for. `alive` guards
-  // every landing: a result belonging to a leaf already turned away from
-  // paints nothing.
-  const PAGE = 25;
-  // The totals bar rules the record off at every moment: Σ debit, Σ credit
-  // (the unsynced remainder posted into its column, so the books add up
-  // mid-scroll, not just at completion), the transaction count, and the
-  // balance the columns net to. Hidden wherever there is no record to rule.
-  const totalsBar = document.getElementById('acct-totals');
-  const showTotals = (line) => {
-    if (!line || !line.entries.length) { totalsBar.classList.add('hidden'); return; }
-    let debit = 0, credit = 0;
-    for (const c of line.entries) { if (c.sats < 0) debit -= c.sats; else credit += c.sats; }
-    if (!line.complete) {
-      const net = (line.balance ?? 0) - ledgerSum(line);
-      if (net >= 0) credit += net; else debit += -net;
-    }
-    document.getElementById('t-balance').textContent = formatBalanceBtc(line.balance ?? credit - debit);
-    document.getElementById('t-debit').textContent = debit ? formatBalanceBtc(debit) : '';
-    document.getElementById('t-credit').textContent = formatBalanceBtc(credit);
-    document.getElementById('t-count').textContent = `${line.txCount.toLocaleString('en-US')} §`;
-    totalsBar.classList.remove('hidden');
-  };
-  const stateText = (d) => !d.complete
-    ? `the latest ${d.walked.toLocaleString('en-US')} of ${d.txCount.toLocaleString('en-US')} transactions gathered`
-    : reconciled(d) ? 'the whole record gathered · reconciled with the chain'
-    : 'unreconciled — this map disagrees with the chain balance';
-  const runResolve = async (addr, alive) => {
-    const heldP = heldCoins(addr);
-    const cached = await cachedLine(addr);
-    if (!alive()) return;
-    let byTxid = null;     // held marks, once the snapshot agrees
-    let rowsEl, foot, note, unsyn, rendered, io;
-    let busy = false;      // one draw at a time; the re-arm retriggers
-    // The unsynced entry: an unreferenced line heading the record for the
-    // transactions not yet gathered -- their count standing where the
-    // citations will -- retiring once the record is whole. Their net is
-    // arithmetic, not a guess: the chain's balance less the banked sum is
-    // exactly what the remainder moved -- the opening balance the visible
-    // record stands on, which is also why it posts as a credit (a balance
-    // is never negative; a debit here would mean inconsistent data, shown
-    // honestly as such).
-    const setUnsynced = (l) => {
-      if (!unsyn) return;
-      const left = l.txCount - l.walked;
-      if (l.complete || left <= 0) { unsyn.remove(); return; }
-      const net = (l.balance ?? 0) - ledgerSum(l);
-      unsyn.children[0].textContent = `${left.toLocaleString('en-US')} §`;
-      unsyn.children[1].textContent = net < 0 ? formatBalanceBtc(-net) : '';
-      unsyn.children[2].textContent = net >= 0 ? formatBalanceBtc(net) : '';
-      unsyn.title = 'the net of the transactions not yet gathered — the balance the record below stands on';
-    };
-    const scroll = async () => {
-      if (busy || !alive()) return;
-      busy = true;
-      let line = await cachedLine(addr);
-      if (!alive() || !line) { busy = false; return; }
-      if (line.entries.length <= rendered && !line.complete) line = await extendLine(addr) ?? line;
-      if (!alive()) { busy = false; return; }
-      const len = line.entries.length;
-      const take = Math.min(len - rendered, PAGE);
-      if (take > 0) {
-        renderRows(rowsEl, line.entries.slice(len - rendered - take, len - rendered), byTxid);
-        rendered += take;
-      }
-      note.textContent = stateText(line);   // the reach grows as the reader reads
-      setUnsynced(line);
-      showTotals(line);
-      foot.textContent = line.complete && rendered >= len ? '— the beginning of the record' : '…';
-      // The fetch ahead: keep a page banked beyond what's drawn.
-      if (!line.complete && len - rendered < PAGE) extendLine(addr);
-      busy = false;
-      // Re-arm: appending moved the sentinel; observe it afresh so a foot
-      // still within reach fires again.
-      if (io) { io.unobserve(foot); io.observe(foot); }
-    };
-    const paint = (data, held) => {
-      showCount(data);
-      showRange(data);
-      byTxid = held ? heldView(data, held) : byTxid;
-      el.replaceChildren();
-      io?.disconnect();
-      note = document.createElement('span');
-      note.className = 'idx-note sync-note';
-      note.id = 'anth-contents';   // the hero's ▾ lands here
-      note.textContent = stateText(data);
-      rowsEl = document.createElement('div');
-      foot = document.createElement('span');
-      foot.className = 'idx-note sync-note';
-      el.append(note);
-      // The bookkeeping heads rule the columns once there are rows to rule.
-      if (data.entries.length) {
-        const heads = document.createElement('div');
-        heads.className = 'acct-heads';
-        const hRef = document.createElement('span'); hRef.className = 'h-ref';
-        hRef.textContent = 'reference';
-        heads.append(hRef);
-        for (const [cls, label] of [['col-deb', 'debit'], ['col-cred', 'credit'], ['col-status', 'status']]) {
-          const h = document.createElement('span'); h.className = cls; h.textContent = label;
-          heads.append(h);
-        }
-        el.append(heads);
-      }
-      unsyn = document.createElement('div');
-      unsyn.className = 'idx-row acct unsynced';
-      const uRef = document.createElement('span'); uRef.className = 'idx-ref';
-      const uDeb = document.createElement('span'); uDeb.className = 'idx-amt col-deb';
-      const uCred = document.createElement('span'); uCred.className = 'idx-amt col-cred';
-      const uSt = document.createElement('span'); uSt.className = 'idx-status col-status';
-      uSt.textContent = 'unsynced';
-      unsyn.append(uRef, uDeb, uCred, uSt);
-      el.append(unsyn, rowsEl, foot);
-      setUnsynced(data);
-      rendered = 0;
-      io = new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) scroll(); },
-                                    { rootMargin: '1600px 0px' });
-      io.observe(foot);
-      scroll();
-    };
-    if (cached) paint(cached, null);
-    else { el.replaceChildren(); lineNote(el, '…'); }
-    const [data, held] = await Promise.all([lineOnce(addr), heldP]);
-    if (!alive()) return;
-    if (data) paint(data, held);
-    else if (!cached) unreachable(alive, () => runResolve(addr, alive));
-  };
-
-  // ── The entries leaf: the ledger read whole ──────────────────────────────
-  // Past the last address lies the ledger's own entries page: every member's
-  // entries merged into one account, hierarchical in time -- years, then
-  // quarters, then the entries themselves, references on the left and
-  // amounts on the right, the running balance now running across the whole
-  // set. The merge is a sort: entries already carry their heights, and the
-  // same ordering the per-address maps keep (height, then txid, credits
-  // before debits) interleaves them exactly.
-  const mergeLines = (lines) => {
-    const present = lines.filter(Boolean);
-    if (!present.length) return null;
-    const entries = present.flatMap((l) => l.entries).sort((a, b) =>
-      a.height - b.height || (a.txid < b.txid ? -1 : a.txid > b.txid ? 1 : b.sats - a.sats));
-    return {
-      txCount: present.reduce((n, l) => n + l.txCount, 0),
-      balance: present.every((l) => l.balance != null) ? present.reduce((n, l) => n + l.balance, 0) : null,
-      walked: present.reduce((n, l) => n + l.walked, 0),
-      complete: present.length === addrs.length && present.every((l) => l.complete),
-      entries,
-    };
-  };
-  const mergeHeld = (helds) => {
-    if (helds.some((h) => !h)) return null;
-    const byTxid = new Map();
-    let sum = 0, count2 = 0;
-    for (const h of helds) {
-      sum += h.sum; count2 += h.count;
-      for (const [t, v] of h.byTxid) byTxid.set(t, (byTxid.get(t) ?? 0) + v);
-    }
-    return { sum, count: count2, byTxid };
-  };
-  const runEntries = async (alive) => {
-    const heldP = Promise.all(addrs.map((a) => heldCoins(a)));
-    const cachedAll = await Promise.all(addrs.map((a) => cachedLine(a)));
-    if (!alive()) return;
-    const cached = mergeLines(cachedAll);
-    if (cached) view(cached, null);
-    else { el.replaceChildren(); lineNote(el, '…'); }
-    // Every member's sync ticks reach this leaf's one note, summed.
-    const latest = new Map(addrs.map((a, i) => [a, { g: cachedAll[i]?.walked ?? 0, t: cachedAll[i]?.txCount ?? 0 }]));
-    const tickNote = () => {
-      if (!alive()) return;
-      const gathered = [...latest.values()].reduce((n2, v) => n2 + v.g, 0);
-      const total = [...latest.values()].reduce((n2, v) => n2 + v.t, 0);
-      const note = el.querySelector('.idx-note');
-      if (note) note.textContent = `still syncing — ${gathered.toLocaleString('en-US')} of ${total.toLocaleString('en-US')} transactions gathered`;
-    };
-    for (const a of addrs) progress.set(a, (gathered, total) => { latest.set(a, { g: gathered, t: total }); tickNote(); });
-    const [lines, helds] = await Promise.all([Promise.all(addrs.map(lineOnce)), heldP]);
-    if (!alive()) return;
-    const data = mergeLines(lines.map((l, i) => l ?? cachedAll[i]));
-    if (data) view(data, mergeHeld(helds));
-    else unreachable(alive, () => runEntries(alive));
-  };
-
-  // ── The leaves ───────────────────────────────────────────────────────────
-  // One leaf per address -- its title page with the record scrolling
-  // endlessly below -- and, past the last, the entries leaf: the ledger
-  // read whole (however much has been gathered), organized by time.
-  // Rendering is generation-guarded: turning the page bumps the
-  // generation, and every async continuation from the leaf left behind
-  // checks it before touching the DOM.
-  const leafCount = addrs.length + 1;
-  let gen = 0;
-  const pager = document.getElementById('anth-pager');
-  const renderPager = () => {
-    pager.replaceChildren();
-    const arrow = (glyph, dir, label) => {
-      const a = document.createElement('a');
-      a.href = '#';
-      a.textContent = glyph;
-      a.setAttribute('aria-label', label);
-      a.classList.toggle('off', !canTurn(dir));
-      a.addEventListener('click', (ev) => { ev.preventDefault(); turn(dir); });
-      return a;
-    };
+// An address leaf (or, past the last address, the entries leaf): the hero
+// as it always was, the eyebrow now the crumb up to the ledger's title.
+const openAddressLeaf = (alive) => {
+  const addrs = cur().addresses;
+  eyebrow.replaceChildren(arrowless('▴ ' + cur().name, () => ascend()));
+  document.getElementById('anth-title').textContent = cur().name;
+  pager.replaceChildren();
+  if (addrs.length + 1 > 1) {
     const pos = document.createElement('span');
     pos.textContent = at < addrs.length
       ? (addrs.length > 1 ? `${at + 1} of ${addrs.length}` : 'title')
       : 'entries';
-    pager.append(arrow('‹', -1, 'Previous leaf'), pos, arrow('›', 1, 'Next leaf'));
-  };
-
-  const openLeaf = () => {
-    const g = ++gen;
-    const alive = () => g === gen;
-    renderPager();
-    // A fresh leaf: clear what the last one wrote before its own data lands.
-    totalsBar.classList.add('hidden');   // the record's paint re-seats it
-    document.getElementById('anth-addr').textContent = '';
-    document.getElementById('anth-prose').replaceChildren();
-    count.textContent = '';
-    range.textContent = '';
-    heldEl.replaceChildren();
-
-    if (at >= addrs.length) {
-      runEntries(alive);
-      return;
-    }
-    const addr = addrs[at];
-
-    // The address, once, in the book's own tongue: its scriptPubKey in the
-    // book's opcode notation -- glyphs for the opcodes, a typed push mark,
-    // and Glossia prose for only the genuinely opaque bytes (the hash or
-    // witness program), exactly as the same script reads in every paying
-    // chapter. So a P2PKH title page opens ⧉ ⌖ h²⁰ ⟨prose⟩ ≡ ∇, and the raw
-    // base58/bech32 form has nothing left to add. The renderer and engine
-    // are the book's own (renderScript needs the WASM build; see README);
-    // only when they can't be had does the mono address stand in.
-    (async () => {
-      const hex = addressScriptHex(addr);
-      try {
-        if (!hex) throw new Error('undecodable address form');
-        const [gl, p] = await Promise.all([import('./glossia-msg.js'), import('./btc-prose.js')]);
-        await gl.init();
-        if (!alive()) return;
-        // renderScript's HTML is safe by its own contract: opcode glyphs and
-        // marks are the only markup, pushed data arrives as Glossia prose.
-        document.getElementById('anth-prose').innerHTML = p.renderScript(hex, (h) => gl.encodeSeedPhrase(h).prose);
-      } catch {
-        if (alive()) document.getElementById('anth-addr').textContent = addr;
-      }
-    })();
-
-    runResolve(addr, alive);
-  };
-
-  // ── Turning the leaves, as the book turns its pages ──────────────────────
-  // A committed turn snapshots the outgoing leaf as a fixed ghost that keeps
-  // sliding off in the travel direction WHILE the real slide -- hidden --
-  // re-renders the destination and glides in from the opposite edge. The
-  // two halves overlap, so the turn reads as one continuous strip.
-  const REDUCED_MOTION = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const slide = document.getElementById('ledger-slide');
-  const canTurn = (dir) => at + dir >= 0 && at + dir < leafCount;
-  const step = (dir) => { at += dir; openLeaf(); };
-  let turning = false;
-  function turn(dir) {
-    if (turning || !canTurn(dir)) return;
-    if (REDUCED_MOTION) {
-      slide.style.transform = '';
-      step(dir);
-      window.scrollTo(0, 0);
-      return;
-    }
-    turning = true;
-    const rect = slide.getBoundingClientRect();   // includes any drag offset
-    const win = document.createElement('div');
-    win.setAttribute('aria-hidden', 'true');
-    Object.assign(win.style, {
-      position: 'fixed', top: '0', left: '0', width: '100%', height: '100%',
-      overflow: 'clip', pointerEvents: 'none', zIndex: '30',
-    });
-    const ghost = slide.cloneNode(true);
-    ghost.removeAttribute('id');
-    Object.assign(ghost.style, {
-      position: 'absolute', top: rect.top + 'px', left: rect.left + 'px',
-      width: rect.width + 'px', margin: '0', transition: 'none', transform: 'none',
-    });
-    win.appendChild(ghost);
-    document.body.appendChild(win);
-    slide.style.transition = 'none';
-    slide.style.transform = '';
-    slide.style.visibility = 'hidden';
-    void ghost.offsetWidth;
-    // Linear, so the exit reads as the drag's momentum carrying on.
-    ghost.style.transition = 'transform .2s linear';
-    ghost.style.transform = `translateX(${dir > 0 ? '-' : ''}${window.innerWidth}px)`;
-    setTimeout(() => win.remove(), 320);
-    // Two frames for the compositor to start the ghost's slide BEFORE the
-    // destination's render work blocks the main thread.
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-      step(dir);
-      window.scrollTo(0, 0);   // a new leaf opens at its title, unseen while hidden
-      slide.style.transform = `translateX(${dir > 0 ? '' : '-'}${window.innerWidth}px)`;
-      slide.style.visibility = '';
-      void slide.offsetWidth;
-      slide.style.transition = 'transform .22s ease-out';
-      slide.style.transform = '';
-      setTimeout(() => { slide.style.transition = ''; turning = false; }, 260);
-    }));
+    pager.append(
+      arrow('‹', 'Previous leaf', at <= 0, () => turnAddress(-1)),
+      pos,
+      arrow('›', 'Next leaf', at >= addrs.length, () => turnAddress(1)),
+    );
   }
+  downEl.setAttribute('href', '#anth-contents');
+  downEl.onclick = null;
+  downEl.setAttribute('aria-label', 'Down to the summary and entries');
 
-  // Recognize a quick, mostly-horizontal single-finger drag, the axis
-  // locked on first significant movement so the record's scroll never
-  // drags the leaf sideways. The leaf follows the finger; a direction with
-  // no neighbour only rubber-bands. Vertical is simply the scroll: the
-  // record arrives endlessly beneath the title.
-  (() => {
-    let sx = null, sy = 0, st = 0, axis = null;
-    const snapBack = () => {
-      if (!slide.style.transform) return;
-      slide.style.transition = 'transform .15s ease';
-      slide.style.transform = '';
-    };
-    document.addEventListener('touchstart', (e) => {
-      sx = null; axis = null;
-      if (e.touches.length !== 1 || turning) return;
-      const t = e.target;
-      if (t.closest && t.closest('input, textarea, select')) return;
-      sx = e.touches[0].clientX; sy = e.touches[0].clientY; st = performance.now();
-    }, { passive: true });
-    document.addEventListener('touchmove', (e) => {
-      if (sx === null || REDUCED_MOTION || turning) return;
-      const dx = e.touches[0].clientX - sx;
-      const dy = e.touches[0].clientY - sy;
-      if (!axis) {
-        if (Math.abs(dx) < 12 && Math.abs(dy) < 12) return;
-        axis = Math.abs(dx) > Math.abs(dy) ? 'h' : 'v';
-      }
-      if (axis === 'v') return;
-      const damp = canTurn(dx < 0 ? 1 : -1) ? 1 : 0.25;
-      slide.style.transition = 'none';
-      slide.style.transform = `translateX(${dx * damp}px)`;
-    }, { passive: true });
-    document.addEventListener('touchend', (e) => {
-      if (sx === null || e.changedTouches.length !== 1) return;
-      const dx = e.changedTouches[0].clientX - sx;
-      const dy = e.changedTouches[0].clientY - sy;
-      const dt = performance.now() - st;
-      sx = null;
-      const dir = dx < 0 ? 1 : -1;   // swiping left turns to the next leaf
-      const commit = axis === 'h' && dt <= 600 && Math.abs(dx) >= 60 && Math.abs(dy) <= Math.abs(dx) * 0.6;
-      if (commit && !turning && canTurn(dir)) turn(dir);
-      else if (!turning) snapBack();
-    }, { passive: true });
-    document.addEventListener('touchcancel', () => { sx = null; if (!turning) snapBack(); }, { passive: true });
+  if (at >= addrs.length) {
+    runEntries(alive);
+    return;
+  }
+  const addr = addrs[at];
+
+  // The address, once, in the book's own tongue: its scriptPubKey in the
+  // book's opcode notation -- glyphs for the opcodes, a typed push mark,
+  // and Glossia prose for only the genuinely opaque bytes (the hash or
+  // witness program), exactly as the same script reads in every paying
+  // chapter. So a P2PKH title page opens ⧉ ⌖ h²⁰ ⟨prose⟩ ≡ ∇, and the raw
+  // base58/bech32 form has nothing left to add. The renderer and engine
+  // are the book's own (renderScript needs the WASM build; see README);
+  // only when they can't be had does the mono address stand in.
+  (async () => {
+    const hex = addressScriptHex(addr);
+    try {
+      if (!hex) throw new Error('undecodable address form');
+      const [gl, p] = await Promise.all([import('./glossia-msg.js'), import('./btc-prose.js')]);
+      await gl.init();
+      if (!alive()) return;
+      // renderScript's HTML is safe by its own contract: opcode glyphs and
+      // marks are the only markup, pushed data arrives as Glossia prose.
+      document.getElementById('anth-prose').innerHTML = p.renderScript(hex, (h) => gl.encodeSeedPhrase(h).prose);
+    } catch {
+      if (alive()) document.getElementById('anth-addr').textContent = addr;
+    }
   })();
 
-  openLeaf();
+  runResolve(addr, alive);
+};
+const arrowless = (text, act) => {
+  const a = document.createElement('a');
+  a.href = '#';
+  a.textContent = text;
+  a.addEventListener('click', (ev) => { ev.preventDefault(); act(); });
+  return a;
+};
+
+// The entry leaf: one transaction of the record, from the bank alone. The
+// net amount headlines; the card beneath carries the citation (the one
+// door into the book), the date, the coin's status once the held snapshot
+// agrees, the running balance where the map is whole, and the entry's
+// place in the record. Vertical neighbours prefetch: nearing the banked
+// frontier quietly pulls the next page of history, so the gate almost
+// never holds.
+const openEntryLeaf = async (alive) => {
+  const line = await cachedLine(entryAddr);
+  if (!alive()) return;
+  const ei = findEntry(line, entryKey);
+  if (ei < 0) { level = 'address'; openView(); return; }   // the bank moved underfoot; surface
+  const e = line.entries[ei];
+  const len = line.entries.length;
+  entryNav = { newer: ei < len - 1, older: ei > 0, frontier: !line.complete, reaching: false };
+
+  const entryEyebrow = document.getElementById('entry-eyebrow');
+  entryEyebrow.replaceChildren();
+  const crumb = document.createElement('a');
+  crumb.href = '#';
+  crumb.textContent = '‹ record';
+  crumb.addEventListener('click', (ev) => { ev.preventDefault(); returnToRecord(); });
+  entryEyebrow.append(crumb, ` · ${cur().name}`);
+
+  const amt = document.getElementById('entry-amt');
+  amt.textContent = formatNetBtc(e.sats);
+  amt.classList.toggle('credit', e.sats > 0);
+
+  const when = document.getElementById('entry-when');
+  when.textContent = e.time
+    ? new Date(e.time * 1000).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+    : '—';
+
+  document.getElementById('entry-pager').replaceChildren(
+    arrow('▴', 'Newer entry', !entryNav.newer, () => turnEntry(-1)),
+    Object.assign(document.createElement('span'),
+      { textContent: `${(len - ei).toLocaleString('en-US')} of ${len.toLocaleString('en-US')}${line.complete ? '' : ' banked'}` }),
+    arrow('▾', 'Older entry', !(entryNav.older || !line.complete), () => turnEntry(1)),
+  );
+
+  const card = document.getElementById('entry-card');
+  card.replaceChildren();
+  const row = (k, v) => {
+    const r = document.createElement('div'); r.className = 'e-row';
+    const kEl = document.createElement('span'); kEl.className = 'e-k'; kEl.textContent = k;
+    const vEl = document.createElement('span'); vEl.className = 'e-v';
+    if (v instanceof Node) vEl.append(v); else vEl.textContent = v;
+    r.append(kEl, vEl);
+    card.append(r);
+    return vEl;
+  };
+  // The citation, whole: the door to the manuscript's own page for this
+  // transaction. The § joins once the archive knows it (a paragraph the
+  // reader has visited); the rest wait to be read.
+  const place = volumeBookChapter(e.height);
+  const cite = document.createElement('a');
+  cite.href = citeHref(e.txid, e.out);
+  cite.textContent = `${toRoman(place.volume)} β${place.book} ■${place.chapter}`;
+  const refEl = row('reference', cite);
+  sectionOf(e.txid).then((pos) => {
+    if (pos != null && alive()) cite.textContent += ` §${pos + 1}${e.out != null ? `.${e.out}` : ''}`;
+  });
+  if (cur().addresses.length > 1) row('address', shortAddr(entryAddr));
+  // The running balance is the sum of everything up to this entry -- an
+  // opening the record stands on. Over an incomplete map that opening is
+  // unknown, so the figure waits rather than guesses.
+  if (line.complete) {
+    let bal = 0;
+    for (let i = 0; i <= ei; i++) bal += line.entries[i].sats;
+    row('balance after', formatBalanceBtc(bal));
+  }
+  const stEl = row('status', e.sats === 0 ? '—' : '…');
+  if (e.sats !== 0) {
+    heldFresh(entryAddr).then((held) => {
+      if (!alive()) return;
+      if (!held || line.balance == null || held.sum !== line.balance) { stEl.textContent = '—'; return; }
+      const resting = e.sats > 0 ? held.byTxid.get(e.txid) ?? 0 : 0;
+      stEl.textContent = resting > 0 ? 'unspent' : 'spent';
+      stEl.classList.toggle('unspent', resting > 0);
+    });
+  }
+
+  const noteEl = document.getElementById('entry-note');
+  noteEl.textContent = '';
+  // The fetch ahead: nearing the banked frontier pulls the next page of
+  // history, so the older-swipe lands on content already banked.
+  if (!line.complete && ei < 3) {
+    if (ei === 0) noteEl.textContent = 'reaching deeper — the next page of history is fetching…';
+    extendLine(entryAddr).then(async () => {
+      if (!alive()) return;
+      const fresh = await cachedLine(entryAddr);
+      if (!alive() || !fresh) return;
+      const at2 = findEntry(fresh, entryKey);
+      entryNav = { newer: at2 < fresh.entries.length - 1, older: at2 > 0, frontier: !fresh.complete, reaching: false };
+      if (at2 >= 0) {
+        document.getElementById('entry-pager').children[2]?.classList.toggle('off', !(entryNav.older || !fresh.complete));
+        noteEl.textContent = ei === 0 && at2 > 0 ? 'older entries arrived — ▾ continues' : '';
+      }
+    });
+  }
+};
+
+// ── Opening a view ─────────────────────────────────────────────────────────
+const openView = () => {
+  const g = ++gen;
+  const alive = () => g === gen;
+  clearHero();
+  syncUrl();
+  const onEntry = level === 'entry';
+  hero.classList.toggle('hidden', onEntry);
+  entryHero.classList.toggle('hidden', !onEntry);
+  if (onEntry) { el.replaceChildren(); openEntryLeaf(alive); return; }
+  if (level === 'ledger') { openLedgerLeaf(alive); return; }
+  openAddressLeaf(alive);
+};
+
+// ── Turning the leaves, as the book turns its pages ──────────────────────
+// A committed turn snapshots the outgoing leaf as a fixed ghost that keeps
+// sliding off in the travel direction WHILE the real slide -- hidden --
+// re-renders the destination and glides in from the opposite edge. The
+// two halves overlap, so the turn reads as one continuous strip. `axis`
+// picks the direction of travel: 'x' for level siblings, 'y' for the
+// vertical moves -- level changes, and time at entry level.
+const REDUCED_MOTION = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const slide = document.getElementById('ledger-slide');
+let turning = false;
+function turnTo(step, dir, axis = 'x') {
+  if (turning) return;
+  if (REDUCED_MOTION) {
+    slide.style.transform = '';
+    step();
+    openView();
+    window.scrollTo({ top: 0, behavior: 'instant' });
+    return;
+  }
+  turning = true;
+  const rect = slide.getBoundingClientRect();   // includes any drag offset
+  const win = document.createElement('div');
+  win.setAttribute('aria-hidden', 'true');
+  Object.assign(win.style, {
+    position: 'fixed', top: '0', left: '0', width: '100%', height: '100%',
+    overflow: 'clip', pointerEvents: 'none', zIndex: '30',
+  });
+  const ghost = slide.cloneNode(true);
+  ghost.removeAttribute('id');
+  Object.assign(ghost.style, {
+    position: 'absolute', top: rect.top + 'px', left: rect.left + 'px',
+    width: rect.width + 'px', margin: '0', transition: 'none', transform: 'none',
+  });
+  win.appendChild(ghost);
+  document.body.appendChild(win);
+  slide.style.transition = 'none';
+  slide.style.transform = '';
+  slide.style.visibility = 'hidden';
+  void ghost.offsetWidth;
+  const span = axis === 'x' ? window.innerWidth : window.innerHeight;
+  const move = (v) => (axis === 'x' ? `translateX(${v}px)` : `translateY(${v}px)`);
+  // Linear, so the exit reads as the drag's momentum carrying on.
+  ghost.style.transition = 'transform .2s linear';
+  ghost.style.transform = move(dir > 0 ? -span : span);
+  setTimeout(() => win.remove(), 320);
+  // Two frames for the compositor to start the ghost's slide BEFORE the
+  // destination's render work blocks the main thread.
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    step();
+    openView();
+    window.scrollTo({ top: 0, behavior: 'instant' });   // a new leaf opens at its head, unseen while hidden
+    slide.style.transform = move(dir > 0 ? span : -span);
+    slide.style.visibility = '';
+    void slide.offsetWidth;
+    slide.style.transition = 'transform .22s ease-out';
+    slide.style.transform = '';
+    setTimeout(() => { slide.style.transition = ''; turning = false; }, 260);
+  }));
 }
+
+// The moves, one per edge of the grammar.
+const canLedger = (dir) => level === 'ledger' && li + dir >= 0 && li + dir < LEDGERS.length;
+const canAddress = (dir) => level === 'address' && at + dir >= 0 && at + dir <= cur().addresses.length;
+function turnLedger(dir) { if (canLedger(dir)) turnTo(() => { li += dir; }, dir, 'x'); }
+function turnAddress(dir) { if (canAddress(dir)) turnTo(() => { at += dir; }, dir, 'x'); }
+function ascend() {
+  if (level !== 'address') return;
+  rememberedAt.set(li, at);
+  turnTo(() => { level = 'ledger'; }, -1, 'y');
+}
+function descend() {
+  if (level !== 'ledger') return;
+  turnTo(() => { level = 'address'; at = rememberedAt.get(li) ?? 0; }, 1, 'y');
+}
+// The dive: a swipe over the record pulls in the page of the entry under
+// the finger. The row knows its entry (txid + sats name one side of one
+// transaction) and, on the merged leaf, its home address.
+function dive(row) {
+  const addr = row.dataset.addr || cur().addresses[at];
+  if (!addr) return;
+  entryAddr = addr;
+  entryKey = { txid: row.dataset.txid, sats: Number(row.dataset.sats) };
+  turnTo(() => { level = 'entry'; }, 1, 'x');
+}
+// The one door out of an entry: back to the record, scrolled to the entry
+// left off at -- the list follows the dive.
+function returnToRecord() {
+  if (level !== 'entry') return;
+  landAt = { ...entryKey };
+  const idx = cur().addresses.indexOf(entryAddr);
+  turnTo(() => { level = 'address'; at = Math.max(0, idx); }, -1, 'x');
+}
+// Time, at entry level: +1 is older (the direction the record scrolls),
+// -1 newer. At the banked frontier the older-turn asks for the next page
+// and holds until it lands -- the same prefetch-gated contract as every
+// other turn on the site.
+async function turnEntry(dir) {
+  if (level !== 'entry' || turning) return;
+  const line = await cachedLine(entryAddr);
+  const ei = findEntry(line, entryKey);
+  if (ei < 0) return;
+  if (dir > 0) {   // older
+    if (ei > 0) { const k = entryKeyOf(line.entries[ei - 1]); turnTo(() => { entryKey = k; }, 1, 'y'); }
+    else if (!line.complete && !entryNav.reaching) {
+      entryNav.reaching = true;
+      document.getElementById('entry-note').textContent = 'reaching deeper — the next page of history is fetching…';
+      const fresh = await extendLine(entryAddr) ?? line;
+      entryNav.reaching = false;
+      if (level !== 'entry') return;
+      const at2 = findEntry(fresh, entryKey);
+      if (at2 > 0) { const k = entryKeyOf(fresh.entries[at2 - 1]); turnTo(() => { entryKey = k; }, 1, 'y'); }
+      else document.getElementById('entry-note').textContent =
+        fresh.complete ? '— the beginning of the record' : `the chain could not be reached (${chainFailureText()})`;
+    }
+  } else if (ei < line.entries.length - 1) {   // newer
+    const k = entryKeyOf(line.entries[ei + 1]);
+    turnTo(() => { entryKey = k; }, -1, 'y');
+  }
+}
+
+// ── The gestures ───────────────────────────────────────────────────────────
+// One handler, level-aware. The axis locks on first significant movement
+// so a scroll never drags a leaf sideways. The zone under the finger picks
+// the horizontal meaning on an address leaf: over the record, a leftward
+// swipe dives into the entry nearest the touch; anywhere else it turns the
+// address carousel. Vertically: at ledger level a push up descends; at
+// address level a pull down FROM THE TOP ascends (anywhere lower it is
+// simply the scroll); at entry level both directions walk the timeline.
+// A direction with nothing behind it only rubber-bands.
+(() => {
+  let sx = null, sy = 0, st = 0, axis = null, startRow = null, topStart = false;
+  const snapBack = () => {
+    if (!slide.style.transform) return;
+    slide.style.transition = 'transform .15s ease';
+    slide.style.transform = '';
+  };
+  const hDamp = (dx) => {
+    const dir = dx < 0 ? 1 : -1;
+    if (level === 'ledger') return canLedger(dir) ? 1 : 0.25;
+    if (level === 'address') {
+      if (startRow) return dx < 0 ? 1 : 0.25;          // the dive pulls leftward only
+      return canAddress(dir) ? 1 : 0.25;
+    }
+    return dx > 0 ? 1 : 0.25;                          // entry: right returns; left is the edge
+  };
+  const vArmed = (dy) => {
+    if (level === 'ledger') return true;               // up descends; down rubber-bands
+    if (level === 'entry') return true;                // the timeline
+    return topStart && dy > 0;                         // address: pull down from the top ascends
+  };
+  const vDamp = (dy) => {
+    if (level === 'ledger') return dy < 0 ? 1 : 0.25;
+    if (level === 'address') return 1;
+    // Entry level: up is older -- full travel while older entries exist or
+    // the frontier can still be reached for; down is newer.
+    if (dy < 0) return entryNav.older || entryNav.frontier ? 1 : 0.25;
+    return entryNav.newer ? 1 : 0.25;
+  };
+  document.addEventListener('touchstart', (e) => {
+    sx = null; axis = null; startRow = null;
+    if (e.touches.length !== 1 || turning) return;
+    const t = e.target;
+    if (t.closest && t.closest('input, textarea, select, .settings-panel')) return;
+    startRow = t.closest ? t.closest('.idx-row[data-txid]') : null;
+    topStart = window.scrollY <= 1;
+    sx = e.touches[0].clientX; sy = e.touches[0].clientY; st = performance.now();
+  }, { passive: true });
+  document.addEventListener('touchmove', (e) => {
+    if (sx === null || REDUCED_MOTION || turning) return;
+    const dx = e.touches[0].clientX - sx;
+    const dy = e.touches[0].clientY - sy;
+    if (!axis) {
+      if (Math.abs(dx) < 12 && Math.abs(dy) < 12) return;
+      axis = Math.abs(dx) > Math.abs(dy) ? 'h' : 'v';
+    }
+    if (axis === 'h') {
+      slide.style.transition = 'none';
+      slide.style.transform = `translateX(${dx * hDamp(dx)}px)`;
+    } else if (vArmed(dy)) {
+      slide.style.transition = 'none';
+      slide.style.transform = `translateY(${dy * vDamp(dy)}px)`;
+    }
+  }, { passive: true });
+  document.addEventListener('touchend', (e) => {
+    if (sx === null || e.changedTouches.length !== 1) return;
+    const dx = e.changedTouches[0].clientX - sx;
+    const dy = e.changedTouches[0].clientY - sy;
+    const dt = performance.now() - st;
+    const row = startRow;
+    sx = null; startRow = null;
+    if (turning) return;
+    const hCommit = axis === 'h' && dt <= 600 && Math.abs(dx) >= 60 && Math.abs(dy) <= Math.abs(dx) * 0.6;
+    const vCommit = axis === 'v' && dt <= 600 && Math.abs(dy) >= 70 && Math.abs(dx) <= Math.abs(dy) * 0.6;
+    if (hCommit) {
+      const dir = dx < 0 ? 1 : -1;   // swiping left travels forward
+      if (level === 'ledger' && canLedger(dir)) return turnLedger(dir);
+      if (level === 'address') {
+        if (row && dir > 0) return dive(row);
+        if (!row && canAddress(dir)) return turnAddress(dir);
+      }
+      if (level === 'entry' && dir < 0) return returnToRecord();
+      return snapBack();
+    }
+    if (vCommit && vArmed(dy)) {
+      if (level === 'ledger' && dy < 0) return descend();
+      if (level === 'address' && topStart && dy > 0) return ascend();
+      if (level === 'entry') return void turnEntry(dy < 0 ? 1 : -1).then(() => { if (!turning) snapBack(); });
+      return snapBack();
+    }
+    snapBack();
+  }, { passive: true });
+  document.addEventListener('touchcancel', () => { sx = null; startRow = null; if (!turning) snapBack(); }, { passive: true });
+})();
+
+openView();
 </script>
 </body>
 </html>
