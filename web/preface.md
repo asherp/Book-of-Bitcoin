@@ -145,14 +145,32 @@ only claim this book makes that cannot be allowed to bend.
 
 The most visible editorial judgment in this book is the shelf of ledgers, and
 it deserves an account. A ledger follows one address through the manuscript,
-gathering every chapter that touches it. I could have chosen any addresses at
-all; I chose donation addresses — causes the community has paid for.
+gathering every chapter that touches it.
 
-The reason is that a donation address turns a ledger into something worth
-reading. Every entry is a gift, from someone, at a moment, and read end to end
-an address's record becomes an account of who showed up and when. It is also
-the choice I most want examined: it is my judgment, not the chain's, and it is
-filed accordingly.
+Two criteria decide what is kept. The address has to matter — historically, or
+because reading it teaches something. And it has to be public already:
+published by its owner, or entered into a public record, long before this book
+existed. The donation addresses the shelf opens with are the plainest case of
+both, and the same standard admits addresses posted as proof of reserves,
+coins seized by state actors, the addresses of exchange breaches, addresses
+entered into court filings. The list will grow along those lines.
+
+The second criterion is not a formality. Setting an address in prose here
+discloses nothing that was not already disclosed; what the book adds is
+legibility, not exposure. That distinction is one I intend to keep, and it is
+why no address arrives on the shelf without a public source behind it.
+
+The first criterion is the one I care about most, and its teaching is
+uncomfortable. A ledger read end to end shows precisely what anyone can learn
+about an address from the chain alone — every counterparty, every amount,
+every date, assembled without permission, without special access, and without
+the owner ever being asked. It is worth seeing plainly, once, on an address
+whose owner has already accepted that exposure, because the same is true of
+yours. Read one of these ledgers and you have read the method by which your own
+would be read. The corpus is only everyone's at once.
+
+Which addresses earn a place remains my judgment rather than the chain's, and
+it is filed accordingly.
 
 ## A note on languages
 

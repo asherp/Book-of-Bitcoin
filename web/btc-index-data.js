@@ -8,8 +8,8 @@
 // itself — and is licensed CC BY 4.0, separately from the machinery that
 // discovers and renders these ledgers (btc-index.js, MIT OR Apache-2.0) and
 // from the book's prose (CC0, the chain's own speech). See the README's
-// License section. The chain says an address received coins; that a cause is
-// worth a reader's attention, and what to name it, is somebody's judgment —
+// License section. The chain says an address received coins; that the address
+// is worth a reader's attention, and what to call it, is somebody's judgment —
 // and judgment carries a name.
 //
 // The table of contents and the index are inverses. The contents is a curated
@@ -21,10 +21,18 @@
 // contents entry's id resolves to one citation, an index entry's address
 // resolves to many -- an open-ended list that grows as the address is used.
 //
-// The curated set is donation addresses: causes the community has paid, so
-// every citation is a gift and each entry's nested listing reads as a ledger
-// of giving. Ordered by the address's famous moment (reading order), like the
-// contents -- not alphabetically; the list is short enough to scan whole.
+// Two criteria decide what is kept. The address has to matter -- historically,
+// or because reading it teaches something about how the chain reads anyone.
+// And it has to be public already: published by its owner, or entered into a
+// public record, before this book set it down. Donation addresses are the
+// plainest case of both and the shelf opens with them; the same standard
+// admits proof-of-reserves addresses, coins seized by state actors, exchange
+// breaches, and addresses entered into court filings.
+//
+// The public-already criterion is what keeps the shelf honest: a ledger here
+// adds legibility, never exposure. Ordered by the address's famous moment
+// (reading order), like the contents -- not alphabetically; the list is short
+// enough to scan whole.
 //
 // A ledger is a titled set of addresses -- most hold one, but a campaign
 // that rotated wallets, or a reader gathering their own, may hold several.
@@ -75,6 +83,9 @@ export const INDEXED = [
   { title: 'Free Samourai — Keonne Rodriguez', addresses: ['bc1qtjjcvn98wh7dfd55m8kxhjcfexanttwt8gtan8'] },
 ];
 
-// Further campaigns join the same way each of these did: the address
-// confirmed from the campaign's own publications -- never from memory --
-// and its checksum verified before it is written down.
+// Further entries join the same way each of these did: the address confirmed
+// against its primary public source -- the owner's own publication, the
+// filing, the proof, the indictment -- never from memory, and its checksum
+// verified before it is written down. Public-already is a criterion and not
+// an assumption: an address that cannot be sourced to a public record does
+// not belong on this shelf, however interesting its history.

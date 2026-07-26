@@ -97,8 +97,9 @@ compiled to WASM) is consumed as a published
   readable here in the repository and rendered into the leaf above, so the
   book and the repository cannot drift apart
 - `web/bitcoin-contents.html` — table of contents / notable blocks
-- `web/bitcoin-ledgers.html` — the Ledgers shelf: notable donation addresses
-  (and any address the reader keeps), each with its current balance
+- `web/bitcoin-ledgers.html` — the Ledgers shelf: curated addresses of
+  historical or pedagogical note, all of them already public (and any address
+  the reader keeps), each with its current balance
 - `web/bitcoin-ledger.html` — one ledger: a view of the manuscript focused
   on amounts. A ledger is a titled set of addresses (most hold one), read
   with the book's own carousel swipes (`?address=a,b,…` names the set).
@@ -120,9 +121,9 @@ compiled to WASM) is consumed as a published
   so revisited chapters and resolved citations read offline)
 - `web/btc-contents-data.js`, `web/btc-index-data.js` — the curated entries
   themselves: which blocks and addresses the book keeps, what they are
-  called, and the notes explaining why. The editorial layer, kept in its own
-  files because it is licensed apart from the machinery that renders it
-  (see [License](#license))
+  called, the criteria they are kept on, and the notes explaining why. The
+  editorial layer, kept in its own files because it is licensed apart from the
+  machinery that renders it (see [License](#license))
 - **The sigla** — the marks the manuscript is written in, and where each
   lives:
   - the opcode alphabet (`OPCODE_SYMBOLS` in `web/btc-sigla.js`): a glyph per
