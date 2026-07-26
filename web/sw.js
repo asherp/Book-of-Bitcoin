@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 /* Bitcoin Book service worker — offline app shell.
  *
  * Strategy:
@@ -16,7 +17,7 @@
  * Everything here is scoped to the directory sw.js is served from, so it works
  * unchanged at the site root and under a per-PR preview subpath.
  */
-const CACHE = 'bitcoin-book-shell-v12';
+const CACHE = 'bitcoin-book-shell-v17';
 
 // App shell, relative to the SW scope. glossia.js / glossia_bg.wasm are
 // gitignored build artifacts — present after a build/deploy, possibly absent in
@@ -27,17 +28,24 @@ const SHELL = [
   './bitcoin-book.html',
   './bitcoin-anthology.html',
   './bitcoin-contents.html',
+  './bitcoin-front.html',
+  './preface.md',
   './bitcoin-index.html',
   './bitcoin-ledger.html',
   './bitcoin-ledgers.html',
   './bitcoin-search.html',
   './btc-tx.js',
   './btc-prose.js',
+  './btc-sigla.js',
+  './btc-notation.js',
+  './notation.css',
   './btc-wordlists.js',
   './btc-citation.js',
   './btc-contents.js',
+  './btc-contents-data.js',
   './btc-pages.js',
   './btc-index.js',
+  './btc-index-data.js',
   './btc-store.js',
   './bitcoin-book.webmanifest',
   './icons/beta-icon.svg',
