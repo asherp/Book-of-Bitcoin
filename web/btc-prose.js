@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+//
 // btc-prose.js — compose a Bitcoin transaction's Glossia prose, field by
 // field, in wire order: small structural integers (version, counts, an
 // input's referenced output index and sequence, an output's value,

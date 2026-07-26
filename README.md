@@ -200,6 +200,12 @@ not a toll; it is the label that keeps commentary distinguishable from record.
 nothing here tries to claim otherwise. What CC BY covers is the body of
 editorial work — the selection, the arrangement, and the writing.)
 
+The boundary is a file boundary, so a machine can see it too. The editorial
+data lives in `web/btc-contents-data.js` and `web/btc-index-data.js`, each
+carrying `SPDX-License-Identifier: CC-BY-4.0`; every other source file carries
+`MIT OR Apache-2.0`. The modules that render them re-export the data, so the
+split costs importers nothing.
+
 ### Commentary by others
 
 Commentary written by anyone other than this book's author is that person's

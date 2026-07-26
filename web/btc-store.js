@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+//
 // btc-store.js — the book's archive: immutable chain data, kept. Everything
 // the reader has already fetched of the closed past -- a block's info and
 // header, its txid list, a transaction's bytes, a citation's placement -- is
