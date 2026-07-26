@@ -98,21 +98,36 @@ adds, `<` compares, `∧` and `∨` are the boolean pair — and where it had no
 the mark was chosen to look like what it does. Disabled opcodes get marks like
 any other: a script is notation whether or not the network would still run it.
 
-I should be plain about the standing of this. The divisions of the book were
-discovered in the chain; **the sigla were not.** They are the one genuinely
-invented thing here, and inventions can simply be wrong — a mark that suggests
-the wrong relation, a family that should not have been a family, a glyph that
-fails to render in somebody's typeface. I have tried to be disciplined about
-it, but I am one reader making one set of choices about a language other people
-know far better than I do.
+These are notation in the sense mathematics means it. `e` and `π` are
+conventions: they were chosen, they stuck, and they now name particular things
+exactly. Nobody holds that a paper writing a constant under some other letter
+is *wrong* — it is different, and it is perfectly fine so long as it says what
+it means. That is why mathematical writing defines the notation it introduces,
+and it is why this book carries a key to its own. A notation does not claim to
+be right. It undertakes to be unambiguous.
 
-So the mapping is offered rather than declared, and I would genuinely welcome
-argument about it — particularly from developers who have worked with Script
-for years and have opinions about what these operations *are*. If a mark
-misrepresents an opcode you know intimately, that is worth more to me than
-politeness. The notation is dedicated to the public domain precisely so that
-it can be argued with, forked, and improved without anyone's permission,
-including mine.
+The obvious objection is that Bitcoin already has a notation, and it is
+`OP_DUP` and `OP_CHECKSIG`. So it does, and for anyone who reads Bitcoin Core
+it serves perfectly well. But it serves only them, and reading a book should
+not require reading a codebase first. That is the position Latin once held
+over scripture: you could read it, if you had been taught it. Translations were
+not made because Latin was wrong. They were made because a text almost nobody
+can read is a text almost nobody reads.
+
+There is a second reason, and it settled the matter. `OP_CHECKSIGVERIFY` is
+English. This book intends to be read in other languages, and a script set in
+English opcode names would remain stuck in English however the prose around it
+changed. A mark has no such problem: `∇` is `∇` to every reader. So the sigla
+are chosen to be recognizable on sight and to belong to no language in
+particular — the same requirement the rest of the book is already under.
+
+Conventions of this kind settle over time, through use and argument, and that
+is exactly what I am inviting. If you have worked with Script for years and
+think a mark points at the wrong operation, or that a family would be better
+drawn another way, I would like to hear it — that discussion is how a notation
+becomes a shared convention rather than one person's preference. The sigla are
+dedicated to the public domain so that the conversation needs nobody's
+permission, mine included.
 
 ## Check it yourself
 
