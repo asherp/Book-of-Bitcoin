@@ -5,6 +5,10 @@ rendered as a paragraph of grammatically correct [Glossia](https://glossia.io/)
 prose, with witness data collected as footnotes. Installable as a PWA and
 offline-capable.
 
+The book states all of this in its own voice, at length, in
+[the preface](web/preface.md) — what follows here is the short form, for a
+reader arriving at the repository rather than the book.
+
 ## A literal translation
 
 The βitcoin βook is a verbatim translation of the chain into human language:
@@ -75,12 +79,16 @@ compiled to WASM) is consumed as a published
 - `web/bitcoin-book.html` — the book: fetches a block from a configurable
   esplora-style endpoint (Blockstream, mempool.space, or your own node) and
   renders it as prose
-- `web/bitcoin-front.html` — the front matter, sitting to the left of the
-  contents on the horizontal axis: title leaf, terms (the copyright page,
-  saying the reverse of one), colophon, and the author's preface — the leaf
-  that adjoins the contents. It owns no vertical axis deliberately: the
-  contents remains the single leaf above the volumes, so an ascent from
-  Volume I lands there and nowhere else
+- `web/bitcoin-front.html` — the front matter, straddling the contents on the
+  horizontal axis in the standard order: title leaf, terms (the copyright
+  page, saying the reverse of one), colophon, **then the contents**, and the
+  preface after it — front matter that orients the reader precedes front
+  matter that argues. It owns no vertical axis deliberately: the contents
+  remains the single leaf above the volumes, so an ascent from Volume I lands
+  there and nowhere else
+- `web/preface.md` — the preface itself, in Markdown: the canonical copy,
+  readable here in the repository and rendered into the leaf above, so the
+  book and the repository cannot drift apart
 - `web/bitcoin-contents.html` — table of contents / notable blocks
 - `web/bitcoin-ledgers.html` — the Ledgers shelf: notable donation addresses
   (and any address the reader keeps), each with its current balance

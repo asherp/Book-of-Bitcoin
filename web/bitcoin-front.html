@@ -14,16 +14,17 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="βook of βitcoin">
 <script>
-  // The front matter sits to the LEFT of the table of contents on the book's
-  // horizontal axis: title, terms, colophon, preface, then the contents. It
-  // owns no vertical axis of its own -- the contents remains the single leaf
-  // above the volumes, so an ascent from Volume I still lands there and
-  // nowhere else. Arriving from the contents (a rightward swipe, i.e. turning
-  // back) finishes that turn here, entering from the left.
+  // The front matter straddles the table of contents on the book's horizontal
+  // axis, in the standard order: title, terms, colophon, CONTENTS, preface.
+  // It owns no vertical axis of its own -- the contents remains the single
+  // leaf above the volumes, so an ascent from Volume I still lands there and
+  // nowhere else. Arriving from the contents finishes that turn here, entering
+  // from whichever side the reader turned.
   try {
-    if (sessionStorage.getItem('glossia-front-entrance')) {
+    const dir = sessionStorage.getItem('glossia-front-entrance');
+    if (dir) {
       sessionStorage.removeItem('glossia-front-entrance');
-      document.documentElement.classList.add('front-entrance');
+      document.documentElement.classList.add(dir === 'fwd' ? 'front-entrance-fwd' : 'front-entrance');
     }
   } catch (_) {}
 
@@ -56,6 +57,8 @@ body { min-height: 100vh; background: var(--page); color: var(--ink); font-famil
 @media (prefers-reduced-motion: no-preference) {
   .front-entrance body { animation: front-in .22s ease-out; }
   @keyframes front-in { from { transform: translateX(-100vw); } }
+  .front-entrance-fwd body { animation: front-in-fwd .22s ease-out; }
+  @keyframes front-in-fwd { from { transform: translateX(100vw); } }
 }
 
 .wrap { max-width: 720px; margin: 0 auto; padding: 48px 22px 100px; }
@@ -191,112 +194,11 @@ a:hover { text-decoration: underline; }
       </div>
     </section>
 
-    <!-- ── Preface ───────────────────────────────────────────────────── -->
+    <!-- ── Preface: prose rendered from web/preface.md, the canonical copy,
+         so the book and the repository never drift apart. ────────────── -->
     <section class="leaf" id="leaf-preface" data-name="Preface">
       <header class="page-head"><div class="page-eyebrow">Preface</div></header>
-      <div class="leaf-body">
-        <p class="lead">This is a book of transactions, and I have added
-          nothing to them. That sentence is the whole method, but it takes a
-          few pages to say what it means and why it was worth the trouble.</p>
-
-        <h3>What the book is</h3>
-        <p>Bitcoin's ledger is public and has always been readable in the sense
-          that the bytes are there for anyone to fetch. It is not readable in
-          the sense that a person can sit with it. A transaction is a run of
-          hexadecimal; you can verify it, index it, or search it, but you
-          cannot <em>read</em> it, and so almost nobody does. What everyone
-          reads instead is somebody's summary of it.</p>
-        <p>So this book translates. Each transaction is rendered into
-          grammatical prose in which the transaction's own bytes are the
-          words — not described, not summarized, not encoded into a footnote,
-          but carried in the sentence you are reading. Filter a passage against
-          the payload wordlist and the transaction comes back out: every byte,
-          in order, nothing added and nothing dropped. The translation is
-          exact and it runs both ways.</p>
-        <p>Like any translation, the phrasing belongs to the language. The
-          words that hold a sentence together — the articles, the verbs of
-          motion, the connective tissue that turns a payload into English — are
-          the translator's grammar, not the chain's. Render the same
-          transaction twice and you may get two different sentences. Both are
-          faithful; both decode to the identical bytes. If you compare two
-          copies of this book and find them worded differently, you have not
-          found an error, you have found the difference between a translation
-          and a transcription. The content is what survives, and here it
-          survives provably.</p>
-
-        <h3>Why it is arranged this way</h3>
-        <p>The chain came with a structure and I saw no reason to invent
-          another. A block is a chapter. A difficulty window — the two weeks of
-          work between adjustments — is a book. Volumes gather the books. A
-          transaction is a section within its chapter, and every passage cites
-          itself in that form: <span class="siglum">III β2 ■5 §1</span>, the
-          volume in Roman, the book after the difficulty mark, the chapter after
-          the block mark, the section last.</p>
-        <p>Nothing in that scheme is my invention except the marks themselves.
-          The divisions were already in the chain; I have only given them the
-          names a book gives its parts. That is the general principle here: the
-          organization should be discovered rather than imposed, so that a
-          reader who learns the citation form learns something about Bitcoin and
-          not merely something about my filing.</p>
-
-        <h3>The record and the readings of it</h3>
-        <p>Two kinds of writing sit in this book and I have worked to keep them
-          apart on the page.</p>
-        <p>The <strong>record</strong> is what the chain says: this output moved
-          to this script at this height. It has no author. Any two people who
-          read it honestly read the same thing, and neither of them owns it.</p>
-        <p>The <strong>readings</strong> are what people say about the record —
-          that a block is worth your attention, that a transaction bought a
-          pizza, that an address belongs to a named party, that a run of outputs
-          moved together and therefore share an owner. Each of those is a claim
-          made by somebody, resting on evidence and inference, and each can be
-          wrong.</p>
-        <p>In this book a passage <em>is</em> its transaction and an annotation
-          is plainly a name someone attached. I have tried to make that visible
-          typographically, so that you never have to wonder which you are
-          looking at. Elsewhere the two are printed flush against each other —
-          an attribution label rendered with exactly the authority of the ledger
-          entry beneath it — and the effect is that a reading borrows a
-          certainty it has not earned. Sometimes the stakes of that are
-          somebody's money or somebody's liberty.</p>
-        <p>None of which is to say commentary is idle. This book is full of it,
-          and the better a reading is, the more it deserves a name on it. The
-          claim is narrower: the record belongs to no one, a reading belongs to
-          whoever made it, and a reader is owed the difference.</p>
-
-        <h3>Check it yourself</h3>
-        <p>The argument above is only worth as much as its verifiability, so
-          none of it asks for trust. Take any passage. Keep the words that
-          appear in the payload wordlist, drop the rest, and convert what
-          remains back to bytes — the book's own tools will do it, and so will
-          anyone else's. What you get is the raw transaction. Hash it and you
-          have the transaction id; look that up in any block explorer and you
-          are back at the chain you started from.</p>
-        <p>A passage that fails this test is a bug, and a serious one. Fidelity
-          is the only claim this book makes that cannot be allowed to bend.</p>
-
-        <h3>On the ledgers</h3>
-        <p>The most visible editorial judgment in this book is the shelf of
-          ledgers, and it deserves an account. A ledger follows one address
-          through the manuscript, gathering every chapter that touches it. I
-          could have chosen any addresses at all; I chose donation addresses —
-          causes the community has paid for.</p>
-        <p>The reason is that a donation address turns a ledger into something
-          worth reading. Every entry is a gift, from someone, at a moment, and
-          read end to end an address's record becomes an account of who showed
-          up and when. It is also the choice I most want examined: it is my
-          judgment, not the chain's, and it is filed accordingly.</p>
-
-        <h3>A note on languages</h3>
-        <p>The book reads in English today. The engine speaks other languages,
-          and the intent is that a reader chooses their own. That changes
-          nothing above. A passage in another language is the same transaction
-          under different grammar and decodes to the identical bytes — the words
-          differ, the book does not.</p>
-
-        <p class="sign">Read it as a book, and check it as a ledger.
-          <span class="who">Asher Pembroke</span></p>
-      </div>
+      <div class="leaf-body" id="preface-body"><p>…</p></div>
     </section>
 
   </div>
@@ -311,18 +213,22 @@ a:hover { text-decoration: underline; }
 <script type="module">
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //
-// The front matter's horizontal axis. The leaves sit to the LEFT of the table
-// of contents, in the order a book puts them: title, terms, colophon, preface,
-// and then the contents itself -- so turning forward from the last leaf leaves
-// this page for bitcoin-contents.html, and turning back from the contents
-// arrives here on the preface.
+// The front matter's horizontal axis, in the standard order a book puts it:
+// title, terms, colophon, THEN the table of contents, and the preface after it
+// -- front matter that orients the reader (title, rights, contents) precedes
+// front matter that argues. The contents keeps its own page, so this one holds
+// leaves on both sides of it and steps through it as a virtual leaf.
 //
 // This page deliberately owns no vertical axis. The contents remains the one
 // leaf above the volumes, so an ascent from Volume I lands there and nowhere
 // else; the front matter is reachable only along the horizontal.
 import { reference } from './btc-citation.js';
 
-const LEAVES = ['leaf-title', 'leaf-terms', 'leaf-colophon', 'leaf-preface'];
+// Standard front-matter order, with the contents in its traditional place --
+// after the title, terms, and colophon, and BEFORE the preface. CONTENTS is a
+// virtual leaf: stepping onto it leaves this page for bitcoin-contents.html.
+const CONTENTS = '__contents__';
+const LEAVES = ['leaf-title', 'leaf-terms', 'leaf-colophon', CONTENTS, 'leaf-preface'];
 const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const $ = (id) => document.getElementById(id);
 
@@ -332,30 +238,41 @@ const $ = (id) => document.getElementById(id);
 const wanted = new URLSearchParams(location.search).get('leaf');
 let at = Math.max(0, LEAVES.findIndex((id) => id === 'leaf-' + (wanted || 'title')));
 
+const label = (i) => LEAVES[i] === CONTENTS ? 'Contents' : $(LEAVES[i]).dataset.name;
+
 function show(i) {
   at = i;
-  LEAVES.forEach((id, n) => $(id).classList.toggle('current', n === i));
-  $('leaf-where').textContent = $(LEAVES[i]).dataset.name;
+  LEAVES.forEach((id, n) => { if (id !== CONTENTS) $(id).classList.toggle('current', n === i); });
+  $('leaf-where').textContent = label(i);
   $('leaf-prev').disabled = i === 0;
-  $('leaf-next').textContent = i === LEAVES.length - 1 ? 'Contents →' : 'Next →';
+  $('leaf-prev').textContent = '← ' + (i > 0 ? label(i - 1) : 'Previous');
+  $('leaf-next').textContent = (i < LEAVES.length - 1 ? label(i + 1) : 'Read') + ' →';
   window.scrollTo(0, 0);
 }
 
-// Turning forward past the last leaf is the turn into the table of contents:
-// play this page's exit, and let the contents finish the entrance.
-function toContents() {
-  try { sessionStorage.setItem('glossia-toc-entrance', '1'); } catch (_) {}
-  const go = () => { location.href = './bitcoin-contents.html'; };
+// Stepping onto the contents leaves this page for its own; the contents
+// finishes the entrance. Turning forward past the preface -- the last leaf of
+// the front matter -- opens the book itself at Volume I.
+function leave(href, dir, flag) {
+  try { if (flag) sessionStorage.setItem(flag, '1'); } catch (_) {}
+  const go = () => { location.href = href; };
   if (REDUCED) { go(); return; }
   document.body.style.transition = 'transform .2s linear';
-  document.body.style.transform = 'translateX(-100vw)';
+  document.body.style.transform = `translateX(${dir > 0 ? -100 : 100}vw)`;
   setTimeout(go, 180);
 }
 
 const step = (dir) => {
-  if (dir > 0 && at === LEAVES.length - 1) { toContents(); return; }
   const next = at + dir;
-  if (next < 0 || next >= LEAVES.length) return;
+  if (next < 0) return;
+  if (next >= LEAVES.length) {
+    leave('./bitcoin-book.html?block=0&page=volume', 1, 'glossia-book-entrance');
+    return;
+  }
+  if (LEAVES[next] === CONTENTS) {
+    leave('./bitcoin-contents.html', dir, 'glossia-toc-entrance');
+    return;
+  }
   if (REDUCED) { show(next); return; }
   const slide = $('leaf-slide');
   slide.style.transition = 'transform .12s ease-in, opacity .12s ease-in';
@@ -398,6 +315,40 @@ document.addEventListener('touchend', (e) => {
   if (dt > 600 || Math.abs(dx) < 60 || Math.abs(dy) > Math.abs(dx) * 0.6) return;
   step(dx < 0 ? 1 : -1);
 }, { passive: true });
+
+// The preface is prose, so it lives as prose: web/preface.md is the canonical
+// copy, linked from the README and rendered here. One document, two readers.
+// Only the subset the preface uses is supported -- ## headings, paragraphs,
+// **strong**, *em*, `code`, and a closing "-- line / name" signature.
+function renderMarkdown(src) {
+  const esc = (t) => t.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+  const inline = (t) => esc(t)
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*([^*]+)\*/g, '<em>$1</em>');
+  const blocks = src.split(/\n\s*\n/).map((b) => b.trim()).filter(Boolean);
+  let lead = true;
+  return blocks.map((b) => {
+    if (b.startsWith('# ')) return '';                       // the title is the leaf's own eyebrow
+    if (b.startsWith('## ')) { lead = false; return `<h3>${inline(b.slice(3))}</h3>`; }
+    if (b.startsWith('— ') || b.startsWith('-- ')) {
+      const [line, who] = b.replace(/^(—|--)\s*/, '').split(' / ');
+      return `<p class="sign">${inline(line)}<span class="who">${inline(who || '')}</span></p>`;
+    }
+    const cls = lead ? ' class="lead"' : '';
+    lead = false;
+    return `<p${cls}>${inline(b.replace(/\n/g, ' '))}</p>`;
+  }).join('\n');
+}
+(async () => {
+  try {
+    const r = await fetch('./preface.md');
+    if (!r.ok) throw new Error(r.status);
+    $('preface-body').innerHTML = renderMarkdown(await r.text());
+  } catch (_) {
+    $('preface-body').innerHTML = '<p>The preface could not be loaded. It is also in the repository, as <code>web/preface.md</code>.</p>';
+  }
+})();
 
 // The colophon's live fields: the engine build actually loaded, the endpoint
 // actually answering, and where the chain stood when this copy was read.

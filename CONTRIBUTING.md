@@ -57,6 +57,16 @@ family conventions (a shared base glyph, subscripts distinguishing variants),
 and that it is an ordinary Unicode character that renders in the book's
 monospace faces.
 
+## The preface
+
+The preface is `web/preface.md`, and that file is the canonical copy — the
+book renders it into its front matter, and the README links to it, so there is
+one document rather than two that drift. Edit it as Markdown; only the subset
+it already uses is rendered (`##` headings, paragraphs, `**strong**`, `*em*`,
+`` `code` ``, and the closing signature line).
+
+Like the rest of the editorial layer it is CC BY 4.0.
+
 ## The rendered prose
 
 The book's prose — the transactions themselves, rendered into language — is
