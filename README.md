@@ -125,10 +125,11 @@ compiled to WASM) is consumed as a published
   (see [License](#license))
 - **The sigla** — the marks the manuscript is written in, and where each
   lives:
-  - the opcode alphabet (`OPCODE_SYMBOLS` in `web/btc-prose.js`): a glyph per
+  - the opcode alphabet (`OPCODE_SYMBOLS` in `web/btc-sigla.js`): a glyph per
     opcode, families sharing a base mark with a subscript convention for
     their variants — `⧉` DUP, `⧉₂` 2DUP, `∇` CHECKSIG, `∇₊` CHECKSIGADD,
-    `°₄` NOP4. Opcodes without a glyph fall back to their `OP_*` name
+    `°₄` NOP4. All 110 defined opcodes have one; the reader's key is the
+    sigla leaf of the front matter, and a compact one rides the book page
   - the citation sigla (`web/btc-citation.js`): Roman volumes, `β` the
     difficulty mark (a book is a difficulty window), `■` the block mark (a
     chapter is a block), `§` the section (a transaction) — e.g. `III β2 ■5 §1`
@@ -137,8 +138,9 @@ compiled to WASM) is consumed as a published
     signaling bits in plain binary (`accio library 100`). Invertible: the
     notation reads back to the nVersion integer
   - the amount conventions (`web/btc-prose.js`): `₿`, and the lone satoshi
-  - the reader's key to all of it is built into `web/bitcoin-book.html`, behind
-    the notation toggle in the section-nav bar
+  - the reader's key to all of it: the sigla leaf in `web/bitcoin-front.html`
+    (the whole table, plus the reference-format diagram), and the notation
+    toggle in `web/bitcoin-book.html`'s section-nav bar while reading
 - `web/glossia-msg.js` — the encoding pipeline over the Glossia WASM engine
 - `web/glossia.js`, `web/glossia_bg.wasm` — **build artifacts** (gitignored),
   produced by `build_web.sh` from the published glossia crate
