@@ -39,6 +39,7 @@
   }
 </script>
 
+<link rel="stylesheet" href="./notation.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,400&family=IBM+Plex+Mono:wght@400;500;600&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
@@ -130,7 +131,12 @@ body.at-title .title-leaf { min-height: 100vh; cursor: pointer; }
 .ref-gloss { margin-top: 5px; font: 400 13px/1.4 'Newsreader', serif; color: var(--meta); max-width: 15ch; margin-left: auto; margin-right: auto; }
 .ref-reading { margin-top: 1.6em; font: 400 15px/1.65 'Newsreader', serif; color: var(--dim); }
 
-/* The opcode key: one group at a time, each mark beside the name it stands
+/* The shared notation key, at rest: the book page floats the same markup as a
+   sheet above its nav bar (see .notation-body in notation.css); here it simply
+   sits in the leaf, so it takes room rather than positioning. */
+.notation-at-rest { margin: 1.5em 0 0; }
+
+/* The opcode index: one group at a time, each mark beside the name it stands
    for. Rendered from the same tables the book renders scripts from. */
 .sig-group { margin: 2em 0 0; }
 .sig-group > h4 { margin: 0 0 .5em; font: 600 10px/1 'IBM Plex Mono', monospace; letter-spacing: .2em; text-transform: uppercase; color: var(--meta); }
@@ -244,10 +250,15 @@ body.at-title .title-leaf { min-height: 100vh; cursor: pointer; }
           may stop early — <code>III β2</code> names the whole book, and
           <code>III β2 ■5</code> the whole chapter.</p>
 
-        <h3>The opcodes</h3>
-        <p>One mark per opcode, families sharing a base and separating by
-          subscript. Hover or tap a mark in the book to see the name it stands
-          for; the whole set is below.</p>
+        <h3>The marks</h3>
+        <p>What the marks mean, group by group — the same key the book opens
+          over a chapter, here at rest and whole.</p>
+        <div id="notation-key" class="notation-at-rest"></div>
+
+        <h3>Every opcode</h3>
+        <p>The key above glosses the marks worth explaining; this is the index
+          behind it — one line per opcode, families sharing a base glyph and
+          separating by subscript.</p>
         <div id="sigla-key"></div>
         <p class="sig-count" id="sigla-count"></p>
       </div>
@@ -278,6 +289,7 @@ body.at-title .title-leaf { min-height: 100vh; cursor: pointer; }
 // after the title and terms, and BEFORE the preface. CONTENTS is a
 // virtual leaf: stepping onto it leaves this page for bitcoin-contents.html.
 import { OPCODE_SYMBOLS, OPCODE_NAMES, OPCODE_GROUPS } from './btc-sigla.js';
+import { NOTATION_HTML } from './btc-notation.js';
 
 const CONTENTS = '__contents__';
 const LEAVES = ['leaf-title', 'leaf-terms', CONTENTS, 'leaf-preface', 'leaf-sigla'];
@@ -407,7 +419,10 @@ function renderMarkdown(src) {
   }
 })();
 
-// The opcode key, straight from the tables the book renders scripts from.
+// The shared notation key -- the same markup the book page's toggle opens.
+$('notation-key').innerHTML = NOTATION_HTML;
+
+// The opcode index, straight from the tables the book renders scripts from.
 (function renderSigla() {
   const esc = (t) => t.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
   const seen = new Set();

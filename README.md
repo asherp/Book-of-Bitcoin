@@ -84,11 +84,16 @@ compiled to WASM) is consumed as a published
   page, saying the reverse of one), **then the contents**, and after it the
   preface and the sigla — front matter that orients the reader precedes front
   matter that argues. The sigla leaf carries the reference-format diagram and
-  the full opcode key, rendered from the same tables the book sets scripts
-  with; it lives in the front matter because a chain with no last block has no
+  the whole notation key — the shared glossed groups the book's toggle opens,
+  then the exhaustive opcode index generated from the same tables the book
+  sets scripts with; it lives in the front matter because a chain with no last block has no
   back for an appendix to sit in. It owns no vertical axis deliberately: the
   contents remains the single leaf above the volumes, so an ascent from
   Volume I lands there and nowhere else
+- `web/btc-notation.js`, `web/notation.css` — the key to the sigla, markup and
+  styles, shared by the two places it is read: the book page's notation toggle
+  (opened over a chapter) and the front matter's sigla leaf (the whole key at
+  rest). One copy, so a mark explained in one is explained in the other
 - `web/btc-sigla.js` — the opcode alphabet: a mark for every opcode and the
   canonical `OP_*` name behind it, plus the groups the key reads in. Split out
   of `btc-prose.js` so the sigla leaf can render the real table without
