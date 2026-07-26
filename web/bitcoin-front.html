@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<!-- SPDX-License-Identifier: MIT OR Apache-2.0 -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>The βook of βitcoin — Front Matter</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="The front matter of the Book of Bitcoin: title, terms, colophon, and the author's preface.">
+<link rel="icon" href="./icons/beta-icon.svg" type="image/svg+xml">
+<link rel="manifest" href="./bitcoin-book.webmanifest">
+<meta name="theme-color" content="#08080a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="βook of βitcoin">
+<script>
+  // The front matter sits to the LEFT of the table of contents on the book's
+  // horizontal axis: title, terms, colophon, preface, then the contents. It
+  // owns no vertical axis of its own -- the contents remains the single leaf
+  // above the volumes, so an ascent from Volume I still lands there and
+  // nowhere else. Arriving from the contents (a rightward swipe, i.e. turning
+  // back) finishes that turn here, entering from the left.
+  try {
+    if (sessionStorage.getItem('glossia-front-entrance')) {
+      sessionStorage.removeItem('glossia-front-entrance');
+      document.documentElement.classList.add('front-entrance');
+    }
+  } catch (_) {}
+
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js').then((reg) => {
+        document.addEventListener('visibilitychange', () => {
+          if (document.visibilityState === 'visible') reg.update().catch(() => {});
+        });
+      }).catch((e) => console.warn('SW registration failed:', e));
+    });
+  }
+</script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,400&family=IBM+Plex+Mono:wght@400;500;600&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --page:#08080a; --card:#0d0d10; --card-bd:#232228; --ink:#e8e4da; --ink-soft:#cfcabf;
+  --accent:#c9a25f; --accent-2:#dcb877; --dim:#9c99a6; --meta:#7e7b88; --rule:#24232a; --hair:#2a2930;
+  --input-bg:#151519; --input-bd:#2a2930;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { min-height: 100vh; background: var(--page); color: var(--ink); font-family: 'Public Sans', system-ui, sans-serif; line-height: 1.55; }
+
+/* The entering half of a turn back from the contents: this leaf slides in
+   from the left, matching the carousel's pace on the book page. */
+@media (prefers-reduced-motion: no-preference) {
+  .front-entrance body { animation: front-in .22s ease-out; }
+  @keyframes front-in { from { transform: translateX(-100vw); } }
+}
+
+.wrap { max-width: 720px; margin: 0 auto; padding: 48px 22px 100px; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+.masthead { display:flex; align-items:baseline; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:40px; }
+.masthead .title { font:600 13px/1 'IBM Plex Mono',monospace; letter-spacing:.22em; text-transform:uppercase; color:var(--ink); }
+.masthead .title .beta { color:var(--accent); text-transform:none; font-family:'Newsreader','Source Serif 4',Georgia,serif; font-weight:600; font-size:1.12em; }
+.masthead .home { margin-left:auto; font:500 12px/1 'IBM Plex Mono',monospace; letter-spacing:.04em; }
+
+.page-head { text-align:center; padding-bottom:30px; margin-bottom:36px; border-bottom:1px solid var(--rule); }
+.page-eyebrow { font:600 11px/1 'IBM Plex Mono',monospace; letter-spacing:.3em; text-transform:uppercase; color:var(--accent); }
+
+/* One leaf at a time, the others parked. The slide element carries the turn's
+   transform so the leaf can be exited and entered like a book page. */
+#leaf-slide { will-change: transform; }
+.leaf { display: none; }
+.leaf.current { display: block; }
+
+/* ── The title leaf: set like a manuscript title page — the title in the
+   upper third, the imprint line resting at the foot, open field between. ── */
+.title-leaf { min-height: 62vh; display: flex; flex-direction: column; text-align: center; }
+.title-leaf .work-title { margin: 3.2rem 0 0; font: 300 clamp(38px, 11vw, 68px)/1.08 'Newsreader', serif; color: var(--ink); letter-spacing: -.02em; }
+.title-leaf .work-title .beta { color: var(--accent); font-weight: 400; }
+.title-leaf .work-sub { margin: 1.5rem auto 0; max-width: 34ch; font: italic 400 17px/1.6 'Newsreader', serif; color: var(--dim); }
+.title-leaf .work-imprint { margin-top: auto; padding-top: 3rem; font: 400 12px/1.8 'IBM Plex Mono', monospace; letter-spacing: .12em; text-transform: uppercase; color: var(--meta); }
+
+/* Body prose across the terms, colophon, and preface leaves. */
+.leaf-body { font: 400 17.5px/1.72 'Newsreader', serif; color: var(--ink-soft); }
+.leaf-body p { margin: 0 0 1.15em; }
+.leaf-body p.lead::first-letter { float: left; font-size: 3.1em; line-height: .82; padding: .06em .09em 0 0; color: var(--accent); font-weight: 400; }
+.leaf-body h3 { margin: 2.2em 0 .7em; font: 600 11px/1 'IBM Plex Mono', monospace; letter-spacing: .22em; text-transform: uppercase; color: var(--accent); }
+.leaf-body em { font-style: italic; }
+.leaf-body strong { font-weight: 600; color: var(--ink); }
+.leaf-body code, .leaf-body .siglum { font-family: 'IBM Plex Mono', monospace; font-size: .88em; color: var(--accent-2); }
+.leaf-body .sign { margin-top: 2.4em; font: italic 400 16px/1.6 'Newsreader', serif; color: var(--dim); text-align: right; }
+.leaf-body .sign .who { display: block; font-style: normal; font-family: 'IBM Plex Mono', monospace; font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--meta); margin-top: .5em; }
+
+/* The terms leaf keeps the register of a copyright page — small, plain,
+   itemized — and says the opposite of one. */
+.terms-list { margin: 1.6em 0 0; padding: 0; list-style: none; border-top: 1px solid var(--rule); }
+.terms-list li { display: flex; gap: 18px; align-items: baseline; padding: 11px 2px; border-bottom: 1px solid var(--hair); font: 400 15px/1.5 'Newsreader', serif; color: var(--ink-soft); }
+.terms-list .what { flex: 1; min-width: 0; }
+.terms-list .term { flex: none; min-width: 120px; text-align: right; font: 600 12px/1.5 'IBM Plex Mono', monospace; letter-spacing: .06em; color: var(--accent); }
+.terms-note { margin-top: 1.5em; font: 400 14px/1.65 'Newsreader', serif; color: var(--meta); }
+
+/* The colophon reads as a record, not prose: field and value. */
+.colo-list { margin: 1.4em 0 0; padding: 0; list-style: none; }
+.colo-list li { display: flex; gap: 18px; align-items: baseline; padding: 9px 2px; border-bottom: 1px solid var(--hair); }
+.colo-list .field { flex: none; width: 150px; font: 600 10.5px/1.5 'IBM Plex Mono', monospace; letter-spacing: .16em; text-transform: uppercase; color: var(--meta); }
+.colo-list .value { flex: 1; min-width: 0; font: 400 14.5px/1.55 'IBM Plex Mono', monospace; color: var(--ink-soft); word-break: break-word; }
+
+/* Leaf navigation, in the section-nav idiom of the book page: previous at the
+   left edge, next at the right, the leaf's own name centred between them. */
+.leaf-nav {
+  position: sticky; bottom: 0; z-index: 5; margin-top: 40px;
+  display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 10px;
+  padding: 12px 0 calc(12px + env(safe-area-inset-bottom, 0px));
+  background: linear-gradient(to top, var(--page) 72%, transparent);
+}
+.leaf-nav button {
+  background: transparent; color: var(--dim); border: 1px solid var(--input-bd); border-radius: 4px;
+  padding: 6px 12px; cursor: pointer; font: 500 11px/1 'IBM Plex Mono', monospace;
+  letter-spacing: .08em; text-transform: uppercase; transition: color .15s ease, border-color .15s ease;
+}
+.leaf-nav button:hover:not(:disabled) { color: var(--ink); border-color: var(--accent); }
+.leaf-nav button:disabled { opacity: .3; cursor: default; }
+.leaf-nav .prev { justify-self: start; }
+.leaf-nav .next { justify-self: end; }
+.leaf-nav .where { font: 600 10.5px/1 'IBM Plex Mono', monospace; letter-spacing: .2em; text-transform: uppercase; color: var(--meta); }
+</style>
+<body>
+<div class="wrap">
+  <div class="masthead">
+    <span class="title">The <span class="beta">β</span>ook of <span class="beta">β</span>itcoin</span>
+    <span class="home"><a href="./bitcoin-book.html">Read</a> · <a href="./bitcoin-contents.html">Contents</a> · <a href="./bitcoin-ledgers.html">Ledgers</a> · <a href="./bitcoin-search.html">Search</a> · <a href="https://glossia.io/">Glossia</a></span>
+  </div>
+
+  <div id="leaf-slide">
+
+    <!-- ── Title leaf ────────────────────────────────────────────────── -->
+    <section class="leaf title-leaf" id="leaf-title" data-name="Title">
+      <h1 class="work-title">The <span class="beta">β</span>ook<br>of <span class="beta">β</span>itcoin</h1>
+      <p class="work-sub">The chain, translated verbatim: every transaction set
+        down in language, and every byte still in it.</p>
+      <div class="work-imprint">Read from the chain itself · No edition, no printing</div>
+    </section>
+
+    <!-- ── Terms leaf: the copyright page, saying the opposite ────────── -->
+    <section class="leaf" id="leaf-terms" data-name="Terms">
+      <header class="page-head"><div class="page-eyebrow">Terms</div></header>
+      <div class="leaf-body">
+        <p class="lead">No rights reserved over the text of this book. What
+          follows is where a copyright page would sit, and it is here to say
+          the reverse of what one usually says.</p>
+        <p>The record is not mine to hold. The readings of it are mine only in
+          the sense that my name belongs on them, so that you can weigh them
+          and disagree.</p>
+        <ul class="terms-list">
+          <li><span class="what">The prose — the chain's own speech, in every language</span><span class="term">Public domain</span></li>
+          <li><span class="what">The sigla — the alphabet that prose is written in</span><span class="term">Public domain</span></li>
+          <li><span class="what">Annotations, names, curation, this preface</span><span class="term">CC BY 4.0</span></li>
+          <li><span class="what">Commentary by others</span><span class="term">Theirs</span></li>
+          <li><span class="what">The software that renders it</span><span class="term">MIT / Apache-2.0</span></li>
+        </ul>
+        <p class="terms-note">Quote any passage freely, at any length, in any
+          medium, with or without credit. Full terms, and the reasoning behind
+          each of them, are in the repository's README.</p>
+      </div>
+    </section>
+
+    <!-- ── Colophon ──────────────────────────────────────────────────── -->
+    <section class="leaf" id="leaf-colophon" data-name="Colophon">
+      <header class="page-head"><div class="page-eyebrow">Colophon</div></header>
+      <div class="leaf-body">
+        <p class="lead">A colophon belongs at the back of a book, after the last
+          page. This book has no last page — the chain is still being written —
+          so its production note sits here instead, among the other things true
+          of the whole work rather than of any one chapter.</p>
+        <ul class="colo-list">
+          <li><span class="field">Engine</span><span class="value" id="colo-engine">Glossia (pinned in build_web.sh)</span></li>
+          <li><span class="field">Encoding</span><span class="value">BIP39 English payload wordlist · body dialect</span></li>
+          <li><span class="field">Source</span><span class="value" id="colo-endpoint">Esplora-compatible endpoints</span></li>
+          <li><span class="field">Set in</span><span class="value">Newsreader · IBM Plex Mono · Public Sans</span></li>
+          <li><span class="field">Read at</span><span class="value" id="colo-read">—</span></li>
+        </ul>
+        <p class="terms-note">Nothing here is needed to read the book; it is
+          here so that a reading can be reproduced. Two renderings made by
+          different engine versions may word a passage differently and still
+          decode to the same bytes — the colophon says which rendering you are
+          holding.</p>
+      </div>
+    </section>
+
+    <!-- ── Preface ───────────────────────────────────────────────────── -->
+    <section class="leaf" id="leaf-preface" data-name="Preface">
+      <header class="page-head"><div class="page-eyebrow">Preface</div></header>
+      <div class="leaf-body">
+        <p class="lead">This is a book of transactions, and I have added
+          nothing to them. That sentence is the whole method, but it takes a
+          few pages to say what it means and why it was worth the trouble.</p>
+
+        <h3>What the book is</h3>
+        <p>Bitcoin's ledger is public and has always been readable in the sense
+          that the bytes are there for anyone to fetch. It is not readable in
+          the sense that a person can sit with it. A transaction is a run of
+          hexadecimal; you can verify it, index it, or search it, but you
+          cannot <em>read</em> it, and so almost nobody does. What everyone
+          reads instead is somebody's summary of it.</p>
+        <p>So this book translates. Each transaction is rendered into
+          grammatical prose in which the transaction's own bytes are the
+          words — not described, not summarized, not encoded into a footnote,
+          but carried in the sentence you are reading. Filter a passage against
+          the payload wordlist and the transaction comes back out: every byte,
+          in order, nothing added and nothing dropped. The translation is
+          exact and it runs both ways.</p>
+        <p>Like any translation, the phrasing belongs to the language. The
+          words that hold a sentence together — the articles, the verbs of
+          motion, the connective tissue that turns a payload into English — are
+          the translator's grammar, not the chain's. Render the same
+          transaction twice and you may get two different sentences. Both are
+          faithful; both decode to the identical bytes. If you compare two
+          copies of this book and find them worded differently, you have not
+          found an error, you have found the difference between a translation
+          and a transcription. The content is what survives, and here it
+          survives provably.</p>
+
+        <h3>Why it is arranged this way</h3>
+        <p>The chain came with a structure and I saw no reason to invent
+          another. A block is a chapter. A difficulty window — the two weeks of
+          work between adjustments — is a book. Volumes gather the books. A
+          transaction is a section within its chapter, and every passage cites
+          itself in that form: <span class="siglum">III β2 ■5 §1</span>, the
+          volume in Roman, the book after the difficulty mark, the chapter after
+          the block mark, the section last.</p>
+        <p>Nothing in that scheme is my invention except the marks themselves.
+          The divisions were already in the chain; I have only given them the
+          names a book gives its parts. That is the general principle here: the
+          organization should be discovered rather than imposed, so that a
+          reader who learns the citation form learns something about Bitcoin and
+          not merely something about my filing.</p>
+
+        <h3>The record and the readings of it</h3>
+        <p>Two kinds of writing sit in this book and I have worked to keep them
+          apart on the page.</p>
+        <p>The <strong>record</strong> is what the chain says: this output moved
+          to this script at this height. It has no author. Any two people who
+          read it honestly read the same thing, and neither of them owns it.</p>
+        <p>The <strong>readings</strong> are what people say about the record —
+          that a block is worth your attention, that a transaction bought a
+          pizza, that an address belongs to a named party, that a run of outputs
+          moved together and therefore share an owner. Each of those is a claim
+          made by somebody, resting on evidence and inference, and each can be
+          wrong.</p>
+        <p>In this book a passage <em>is</em> its transaction and an annotation
+          is plainly a name someone attached. I have tried to make that visible
+          typographically, so that you never have to wonder which you are
+          looking at. Elsewhere the two are printed flush against each other —
+          an attribution label rendered with exactly the authority of the ledger
+          entry beneath it — and the effect is that a reading borrows a
+          certainty it has not earned. Sometimes the stakes of that are
+          somebody's money or somebody's liberty.</p>
+        <p>None of which is to say commentary is idle. This book is full of it,
+          and the better a reading is, the more it deserves a name on it. The
+          claim is narrower: the record belongs to no one, a reading belongs to
+          whoever made it, and a reader is owed the difference.</p>
+
+        <h3>Check it yourself</h3>
+        <p>The argument above is only worth as much as its verifiability, so
+          none of it asks for trust. Take any passage. Keep the words that
+          appear in the payload wordlist, drop the rest, and convert what
+          remains back to bytes — the book's own tools will do it, and so will
+          anyone else's. What you get is the raw transaction. Hash it and you
+          have the transaction id; look that up in any block explorer and you
+          are back at the chain you started from.</p>
+        <p>A passage that fails this test is a bug, and a serious one. Fidelity
+          is the only claim this book makes that cannot be allowed to bend.</p>
+
+        <h3>On the ledgers</h3>
+        <p>The most visible editorial judgment in this book is the shelf of
+          ledgers, and it deserves an account. A ledger follows one address
+          through the manuscript, gathering every chapter that touches it. I
+          could have chosen any addresses at all; I chose donation addresses —
+          causes the community has paid for.</p>
+        <p>The reason is that a donation address turns a ledger into something
+          worth reading. Every entry is a gift, from someone, at a moment, and
+          read end to end an address's record becomes an account of who showed
+          up and when. It is also the choice I most want examined: it is my
+          judgment, not the chain's, and it is filed accordingly.</p>
+
+        <h3>A note on languages</h3>
+        <p>The book reads in English today. The engine speaks other languages,
+          and the intent is that a reader chooses their own. That changes
+          nothing above. A passage in another language is the same transaction
+          under different grammar and decodes to the identical bytes — the words
+          differ, the book does not.</p>
+
+        <p class="sign">Read it as a book, and check it as a ledger.
+          <span class="who">Asher Pembroke</span></p>
+      </div>
+    </section>
+
+  </div>
+
+  <nav class="leaf-nav" aria-label="Front matter">
+    <button type="button" class="prev" id="leaf-prev">← Previous</button>
+    <span class="where" id="leaf-where">Title</span>
+    <button type="button" class="next" id="leaf-next">Next →</button>
+  </nav>
+</div>
+
+<script type="module">
+// SPDX-License-Identifier: MIT OR Apache-2.0
+//
+// The front matter's horizontal axis. The leaves sit to the LEFT of the table
+// of contents, in the order a book puts them: title, terms, colophon, preface,
+// and then the contents itself -- so turning forward from the last leaf leaves
+// this page for bitcoin-contents.html, and turning back from the contents
+// arrives here on the preface.
+//
+// This page deliberately owns no vertical axis. The contents remains the one
+// leaf above the volumes, so an ascent from Volume I lands there and nowhere
+// else; the front matter is reachable only along the horizontal.
+import { reference } from './btc-citation.js';
+
+const LEAVES = ['leaf-title', 'leaf-terms', 'leaf-colophon', 'leaf-preface'];
+const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const $ = (id) => document.getElementById(id);
+
+// ?leaf=preface (or any leaf's short name) opens directly on that leaf; the
+// contents page uses it to land its turn-back on the preface, the leaf that
+// adjoins it.
+const wanted = new URLSearchParams(location.search).get('leaf');
+let at = Math.max(0, LEAVES.findIndex((id) => id === 'leaf-' + (wanted || 'title')));
+
+function show(i) {
+  at = i;
+  LEAVES.forEach((id, n) => $(id).classList.toggle('current', n === i));
+  $('leaf-where').textContent = $(LEAVES[i]).dataset.name;
+  $('leaf-prev').disabled = i === 0;
+  $('leaf-next').textContent = i === LEAVES.length - 1 ? 'Contents →' : 'Next →';
+  window.scrollTo(0, 0);
+}
+
+// Turning forward past the last leaf is the turn into the table of contents:
+// play this page's exit, and let the contents finish the entrance.
+function toContents() {
+  try { sessionStorage.setItem('glossia-toc-entrance', '1'); } catch (_) {}
+  const go = () => { location.href = './bitcoin-contents.html'; };
+  if (REDUCED) { go(); return; }
+  document.body.style.transition = 'transform .2s linear';
+  document.body.style.transform = 'translateX(-100vw)';
+  setTimeout(go, 180);
+}
+
+const step = (dir) => {
+  if (dir > 0 && at === LEAVES.length - 1) { toContents(); return; }
+  const next = at + dir;
+  if (next < 0 || next >= LEAVES.length) return;
+  if (REDUCED) { show(next); return; }
+  const slide = $('leaf-slide');
+  slide.style.transition = 'transform .12s ease-in, opacity .12s ease-in';
+  slide.style.transform = `translateX(${dir > 0 ? -40 : 40}px)`;
+  slide.style.opacity = '0';
+  setTimeout(() => {
+    show(next);
+    slide.style.transition = 'none';
+    slide.style.transform = `translateX(${dir > 0 ? 40 : -40}px)`;
+    requestAnimationFrame(() => {
+      slide.style.transition = 'transform .16s ease-out, opacity .16s ease-out';
+      slide.style.transform = 'translateX(0)';
+      slide.style.opacity = '1';
+    });
+  }, 110);
+};
+
+$('leaf-prev').addEventListener('click', () => step(-1));
+$('leaf-next').addEventListener('click', () => step(1));
+document.addEventListener('keydown', (e) => {
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  if (e.key === 'ArrowRight') step(1);
+  else if (e.key === 'ArrowLeft') step(-1);
+});
+
+// Horizontal swipes turn the leaves, in the book page's gesture idiom: a
+// committed turn is a quick, mostly-horizontal drag of some distance.
+let sx = null, sy = 0, st = 0;
+document.addEventListener('touchstart', (e) => {
+  sx = null;
+  if (e.touches.length !== 1) return;
+  sx = e.touches[0].clientX; sy = e.touches[0].clientY; st = performance.now();
+}, { passive: true });
+document.addEventListener('touchend', (e) => {
+  if (sx === null || e.changedTouches.length !== 1) return;
+  const dx = e.changedTouches[0].clientX - sx;
+  const dy = e.changedTouches[0].clientY - sy;
+  const dt = performance.now() - st;
+  sx = null;
+  if (dt > 600 || Math.abs(dx) < 60 || Math.abs(dy) > Math.abs(dx) * 0.6) return;
+  step(dx < 0 ? 1 : -1);
+}, { passive: true });
+
+// The colophon's live fields: the engine build actually loaded, the endpoint
+// actually answering, and where the chain stood when this copy was read.
+(async () => {
+  try {
+    const sel = localStorage.getItem('glossia-btc-endpoint');
+    const host = sel ? new URL(sel).host : 'blockstream.info';
+    $('colo-endpoint').textContent = host;
+  } catch (_) {}
+  try {
+    const mod = await import('./glossia.js');
+    await mod.default();
+    if (mod.version) $('colo-engine').textContent = 'Glossia ' + mod.version();
+  } catch (_) { /* an unbuilt WASM artifact leaves the pinned label in place */ }
+  try {
+    const sel = localStorage.getItem('glossia-btc-endpoint') || 'https://blockstream.info/api';
+    const r = await fetch(sel + '/blocks/tip/height');
+    if (r.ok) {
+      const h = Number(await r.text());
+      if (Number.isFinite(h)) $('colo-read').textContent = reference(h) + '  (block ' + h.toLocaleString() + ')';
+    }
+  } catch (_) { $('colo-read').textContent = 'offline'; }
+})();
+
+show(at);
+</script>
+</body>
+</html>

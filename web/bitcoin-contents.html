@@ -61,12 +61,30 @@
       sy = e.touches[0].clientY; sx = e.touches[0].clientX; st = performance.now();
       atBottom = window.scrollY >= document.documentElement.scrollHeight - window.innerHeight - 2;
     }, { passive: true });
+    // Turning BACK from the contents: a rightward swipe leads into the front
+    // matter, which sits to the left of the contents on the horizontal axis
+    // (title, terms, colophon, preface). It lands on the preface, the leaf
+    // that adjoins the contents. This is purely horizontal and leaves the
+    // vertical axis below untouched -- the contents remains the one leaf above
+    // the volumes, so an ascent from Volume I still lands here.
+    const goFront = () => {
+      try { sessionStorage.setItem('glossia-front-entrance', '1'); } catch (_) {}
+      location.href = './bitcoin-front.html?leaf=preface';
+    };
     document.addEventListener('touchend', (e) => {
       if (sy === null || e.changedTouches.length !== 1) return;
       const dy = e.changedTouches[0].clientY - sy;
       const dx = e.changedTouches[0].clientX - sx;
       const dt = performance.now() - st;
       sy = null;
+      // A committed horizontal turn: quick, far enough, and mostly sideways.
+      if (dt <= 600 && dx >= 60 && Math.abs(dy) <= Math.abs(dx) * 0.6) {
+        if (REDUCED) { goFront(); return; }
+        document.body.style.transition = 'transform .2s linear';
+        document.body.style.transform = 'translateX(100vw)';
+        setTimeout(goFront, 180);
+        return;
+      }
       if (!atBottom || dt > 600 || dy > -70 || Math.abs(dx) > Math.abs(dy) * 0.6) return;
       if (REDUCED) { go(); return; }
       document.body.style.transition = 'transform .2s linear';
@@ -189,7 +207,7 @@ a:hover { text-decoration: underline; }
 <div class="wrap">
   <div class="masthead">
     <span class="title">The <span class="beta">β</span>ook of <span class="beta">β</span>itcoin</span>
-    <span class="home"><button type="button" id="install-btn" class="install-btn" aria-label="Install the Bitcoin Book as an app">Install</button><a href="./bitcoin-book.html">Read</a> · <a href="./bitcoin-ledgers.html">Ledgers</a> · <a href="./bitcoin-search.html">Search</a> · <a href="https://glossia.io/">Glossia</a></span>
+    <span class="home"><button type="button" id="install-btn" class="install-btn" aria-label="Install the Bitcoin Book as an app">Install</button><a href="./bitcoin-front.html?leaf=preface">Preface</a> · <a href="./bitcoin-book.html">Read</a> · <a href="./bitcoin-ledgers.html">Ledgers</a> · <a href="./bitcoin-search.html">Search</a> · <a href="https://glossia.io/">Glossia</a></span>
   </div>
 
   <header class="page-head">

@@ -75,6 +75,12 @@ compiled to WASM) is consumed as a published
 - `web/bitcoin-book.html` — the book: fetches a block from a configurable
   esplora-style endpoint (Blockstream, mempool.space, or your own node) and
   renders it as prose
+- `web/bitcoin-front.html` — the front matter, sitting to the left of the
+  contents on the horizontal axis: title leaf, terms (the copyright page,
+  saying the reverse of one), colophon, and the author's preface — the leaf
+  that adjoins the contents. It owns no vertical axis deliberately: the
+  contents remains the single leaf above the volumes, so an ascent from
+  Volume I lands there and nowhere else
 - `web/bitcoin-contents.html` — table of contents / notable blocks
 - `web/bitcoin-ledgers.html` — the Ledgers shelf: notable donation addresses
   (and any address the reader keeps), each with its current balance
