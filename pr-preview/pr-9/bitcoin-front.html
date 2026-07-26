@@ -5,7 +5,7 @@
 <meta charset="utf-8">
 <title>The βook of βitcoin — Front Matter</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="description" content="The front matter of the Book of Bitcoin: title, terms, and the author's preface.">
+<meta name="description" content="The front matter of the Book of Bitcoin: title, terms, the author's preface, and the key to the sigla.">
 <link rel="icon" href="./icons/beta-icon.svg" type="image/svg+xml">
 <link rel="manifest" href="./bitcoin-book.webmanifest">
 <meta name="theme-color" content="#08080a">
@@ -15,7 +15,7 @@
 <meta name="apple-mobile-web-app-title" content="βook of βitcoin">
 <script>
   // The front matter straddles the table of contents on the book's horizontal
-  // axis, in the standard order: title, terms, CONTENTS, preface.
+  // axis, in the standard order: title, terms, CONTENTS, preface, sigla.
   // It owns no vertical axis of its own -- the contents remains the single
   // leaf above the volumes, so an ascent from Volume I still lands there and
   // nowhere else. Arriving from the contents finishes that turn here, entering
@@ -117,6 +117,29 @@ body.at-title .title-leaf { min-height: 100vh; cursor: pointer; }
 .terms-list .term { flex: none; min-width: 120px; text-align: right; font: 600 12px/1.5 'IBM Plex Mono', monospace; letter-spacing: .06em; color: var(--accent); }
 .terms-note { margin-top: 1.5em; font: 400 14px/1.65 'Newsreader', serif; color: var(--meta); }
 
+/* ── The sigla leaf ───────────────────────────────────────────────────
+   The reference diagram sets the citation large and hangs each part's name
+   beneath it on a rule, the way a figure annotates a formula. It scrolls
+   inside itself on a narrow screen rather than forcing the page sideways. */
+.ref-figure { margin: 1.8em 0 0; overflow-x: auto; }
+.ref-parts { display: grid; grid-auto-flow: column; justify-content: start; gap: 26px; min-width: min-content; padding-bottom: 4px; }
+.ref-part { text-align: center; }
+.ref-token { font: 500 30px/1.1 'IBM Plex Mono', monospace; color: var(--accent-2); white-space: nowrap; }
+.ref-stem { height: 20px; border-left: 1px solid var(--rule); width: 0; margin: 6px auto 6px; }
+.ref-name { font: 600 10px/1.3 'IBM Plex Mono', monospace; letter-spacing: .18em; text-transform: uppercase; color: var(--ink-soft); white-space: nowrap; }
+.ref-gloss { margin-top: 5px; font: 400 13px/1.4 'Newsreader', serif; color: var(--meta); max-width: 15ch; margin-left: auto; margin-right: auto; }
+.ref-reading { margin-top: 1.6em; font: 400 15px/1.65 'Newsreader', serif; color: var(--dim); }
+
+/* The opcode key: one group at a time, each mark beside the name it stands
+   for. Rendered from the same tables the book renders scripts from. */
+.sig-group { margin: 2em 0 0; }
+.sig-group > h4 { margin: 0 0 .5em; font: 600 10px/1 'IBM Plex Mono', monospace; letter-spacing: .2em; text-transform: uppercase; color: var(--meta); }
+.sig-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); gap: 1px 14px; }
+.sig-row { display: flex; align-items: baseline; gap: 10px; padding: 5px 2px; border-bottom: 1px solid var(--hair); min-width: 0; }
+.sig-mark { flex: none; min-width: 2.1em; text-align: center; font: 500 17px/1.3 'IBM Plex Mono', monospace; color: var(--accent-2); }
+.sig-name { flex: 1; min-width: 0; font: 400 12px/1.35 'IBM Plex Mono', monospace; color: var(--dim); overflow-wrap: anywhere; }
+.sig-count { margin-top: 1.6em; font: 400 13.5px/1.6 'Newsreader', serif; color: var(--meta); }
+
 /* Leaf navigation, in the section-nav idiom of the book page: previous at the
    left edge, next at the right, the leaf's own name centred between them. */
 .leaf-nav {
@@ -180,6 +203,56 @@ body.at-title .title-leaf { min-height: 100vh; cursor: pointer; }
       <div class="leaf-body" id="preface-body"><p>…</p></div>
     </section>
 
+
+    <!-- ── Sigla: the key to the marks, and the citation form ──────────── -->
+    <section class="leaf" id="leaf-sigla" data-name="Sigla">
+      <header class="page-head"><div class="page-eyebrow">Sigla</div></header>
+      <div class="leaf-body">
+        <p class="lead">Every passage in this book cites itself, and every
+          script in it is set in marks. Both are read here.</p>
+
+        <h3>The reference</h3>
+        <p>A citation names a place in the chain, one level at a time. Each
+          level carries the sign of what it is:</p>
+        <div class="ref-figure">
+          <div class="ref-parts">
+            <div class="ref-part">
+              <div class="ref-token">III</div><div class="ref-stem"></div>
+              <div class="ref-name">Volume</div>
+              <div class="ref-gloss">an era of supply, opened by a halving</div>
+            </div>
+            <div class="ref-part">
+              <div class="ref-token">β2</div><div class="ref-stem"></div>
+              <div class="ref-name">Book</div>
+              <div class="ref-gloss">a difficulty window, β its mark</div>
+            </div>
+            <div class="ref-part">
+              <div class="ref-token">■5</div><div class="ref-stem"></div>
+              <div class="ref-name">Chapter</div>
+              <div class="ref-gloss">a block, ■ its mark</div>
+            </div>
+            <div class="ref-part">
+              <div class="ref-token">§1</div><div class="ref-stem"></div>
+              <div class="ref-name">Section</div>
+              <div class="ref-gloss">a transaction within the block</div>
+            </div>
+          </div>
+        </div>
+        <p class="ref-reading">Read aloud: the fifth block of the second
+          difficulty window of the third halving era, first transaction. The
+          volume is set in Roman numerals, as a book's volumes are. A citation
+          may stop early — <code>III β2</code> names the whole book, and
+          <code>III β2 ■5</code> the whole chapter.</p>
+
+        <h3>The opcodes</h3>
+        <p>One mark per opcode, families sharing a base and separating by
+          subscript. Hover or tap a mark in the book to see the name it stands
+          for; the whole set is below.</p>
+        <div id="sigla-key"></div>
+        <p class="sig-count" id="sigla-count"></p>
+      </div>
+    </section>
+
   </div>
 
   <nav class="leaf-nav" aria-label="Front matter">
@@ -193,7 +266,7 @@ body.at-title .title-leaf { min-height: 100vh; cursor: pointer; }
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //
 // The front matter's horizontal axis, in the standard order a book puts it:
-// title, terms, THEN the table of contents, and the preface after it
+// title, terms, THEN the table of contents, then the preface and the sigla
 // -- front matter that orients the reader (title, rights, contents) precedes
 // front matter that argues. The contents keeps its own page, so this one holds
 // leaves on both sides of it and steps through it as a virtual leaf.
@@ -204,8 +277,10 @@ body.at-title .title-leaf { min-height: 100vh; cursor: pointer; }
 // Standard front-matter order, with the contents in its traditional place --
 // after the title and terms, and BEFORE the preface. CONTENTS is a
 // virtual leaf: stepping onto it leaves this page for bitcoin-contents.html.
+import { OPCODE_SYMBOLS, OPCODE_NAMES, OPCODE_GROUPS } from './btc-sigla.js';
+
 const CONTENTS = '__contents__';
-const LEAVES = ['leaf-title', 'leaf-terms', CONTENTS, 'leaf-preface'];
+const LEAVES = ['leaf-title', 'leaf-terms', CONTENTS, 'leaf-preface', 'leaf-sigla'];
 const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const $ = (id) => document.getElementById(id);
 
@@ -330,6 +405,28 @@ function renderMarkdown(src) {
   } catch (_) {
     $('preface-body').innerHTML = '<p>The preface could not be loaded. It is also in the repository, as <code>web/preface.md</code>.</p>';
   }
+})();
+
+// The opcode key, straight from the tables the book renders scripts from.
+(function renderSigla() {
+  const esc = (t) => t.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+  const seen = new Set();
+  $('sigla-key').innerHTML = OPCODE_GROUPS.map((g) => {
+    const rows = g.bytes.map((b) => {
+      seen.add(b);
+      return `<div class="sig-row"><span class="sig-mark">${esc(OPCODE_SYMBOLS[b] || '')}</span>` +
+             `<span class="sig-name">${esc((OPCODE_NAMES[b] || 'OP_UNKNOWN').replace(/^OP_/, ''))}</span></div>`;
+    }).join('');
+    return `<div class="sig-group"><h4>${esc(g.title)}</h4><div class="sig-grid">${rows}</div></div>`;
+  }).join('');
+  // If an opcode is ever added to the tables without being placed in a group,
+  // say so here rather than let the key quietly under-report itself.
+  const all = Object.keys(OPCODE_NAMES).map(Number);
+  const missed = all.filter((b) => !seen.has(b));
+  const n = all.length;
+  $('sigla-count').textContent = missed.length
+    ? `${n} opcodes defined; ${missed.length} not yet placed in the key above.`
+    : `${n} opcodes are defined as of this writing, and all ${n} have a mark of their own.`;
 })();
 
 show(at);
