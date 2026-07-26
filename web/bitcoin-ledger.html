@@ -426,7 +426,7 @@ a:hover { text-decoration: underline; }
 <script type="module">
 import { INDEXED, isAddress, keptLedgers, saveKeptLedgers, sameAddresses, addressScriptHex, cachedLine, resolveLine,
          extendLine, renderLedger, renderRows, periods, lineNote, reconciled, ledgerSum, heldCoins, addressState, lastKnownState,
-         formatBalanceBtc, formatNetBtc, chainFailureText, citeHref, sectionOf,
+         formatBalanceBtc, formatNetBtc, chainFailureText, citeHref, sectionOf, sectionOfFetched, passageTxid, passageEntries,
          DEFAULT_ESPLORA, esploraCustom, esploraSelected, setEsploraSettings } from './btc-index.js';
 import { volumeBookChapter, heightOf, toRoman } from './btc-citation.js';
 
@@ -561,6 +561,7 @@ let li = 0;
 let at = 0;
 let entryAddr = null;
 let entryKey = null;          // { txid, sats }
+let adhocEntry = null;        // a landed passage below the banked frontier, carried whole
 const rememberedAt = new Map();   // li -> the address leaf a descent returns to
 let landAt = null;            // { txid, sats } -- scroll the record here on return
 
@@ -1129,10 +1130,17 @@ const openEntryLeaf = async (alive) => {
   const line = await cachedLine(entryAddr);
   if (!alive()) return;
   const ei = findEntry(line, entryKey);
-  if (ei < 0) { level = 'address'; openView(); return; }   // the bank moved underfoot; surface
-  const e = line.entries[ei];
-  const len = line.entries.length;
-  entryNav = { newer: ei < len - 1, older: ei > 0, frontier: !line.complete, reaching: false };
+  // A passage landed on by reference may sit below the banked frontier: it
+  // renders from its own fetched entry (adhocEntry), banking nothing, with
+  // the timeline walk waiting until the record's own reading reaches it.
+  const adhoc = ei < 0 && adhocEntry && adhocEntry.txid === entryKey.txid && adhocEntry.sats === entryKey.sats
+    ? adhocEntry : null;
+  if (ei < 0 && !adhoc) { level = 'address'; openView(); return; }   // the bank moved underfoot; surface
+  const e = adhoc ?? line.entries[ei];
+  const len = line?.entries.length ?? 0;
+  entryNav = adhoc
+    ? { newer: false, older: false, frontier: false, reaching: false }
+    : { newer: ei < len - 1, older: ei > 0, frontier: !line.complete, reaching: false };
 
   // The passage's citation, heading the leaf: βoβ (the βook of βitcoin's
   // own sigil) and the full reference -- Roman volume, β book, ■ chapter,
@@ -1152,7 +1160,10 @@ const openEntryLeaf = async (alive) => {
     } catch (_) { /* unavailable */ }
   };
   stampUrl(null);
-  sectionOf(e.txid).then((pos) => {
+  // The section: from the archive, or one merkle proof (banked forever) --
+  // so the citation and the URL always carry their §, ready to share.
+  const secP = sectionOfFetched(e.txid);
+  secP.then((pos) => {
     if (pos == null || !alive()) return;
     citeText += ` §${pos + 1}${e.out != null ? `.${e.out}` : ''}`;
     citeEl.textContent = citeText;
@@ -1187,8 +1198,9 @@ const openEntryLeaf = async (alive) => {
   document.getElementById('entry-pager').replaceChildren(
     arrow('▴', 'Newer entry', !entryNav.newer, () => turnEntry(-1)),
     Object.assign(document.createElement('span'),
-      { textContent: `${(len - ei).toLocaleString('en-US')} of ${len.toLocaleString('en-US')}${line.complete ? '' : ' banked'}` }),
-    arrow('▾', 'Older entry', !(entryNav.older || !line.complete), () => turnEntry(1)),
+      { textContent: adhoc ? 'not yet banked'
+          : `${(len - ei).toLocaleString('en-US')} of ${len.toLocaleString('en-US')}${line.complete ? '' : ' banked'}` }),
+    arrow('▾', 'Older entry', adhoc || !(entryNav.older || !line.complete), () => turnEntry(1)),
   );
 
   const card = document.getElementById('entry-card');
@@ -1208,15 +1220,15 @@ const openEntryLeaf = async (alive) => {
   const cite = document.createElement('a');
   cite.href = citeHref(e.txid, e.out);
   cite.textContent = `${toRoman(place.volume)} β${place.book} ■${place.chapter}`;
-  const refEl = row('reference', cite);
-  sectionOf(e.txid).then((pos) => {
+  row('reference', cite);
+  secP.then((pos) => {
     if (pos != null && alive()) cite.textContent += ` §${pos + 1}${e.out != null ? `.${e.out}` : ''}`;
   });
   if (cur().addresses.length > 1) row('address', shortAddr(entryAddr));
   // The running balance is the sum of everything up to this entry -- an
   // opening the record stands on. Over an incomplete map that opening is
   // unknown, so the figure waits rather than guesses.
-  if (line.complete) {
+  if (!adhoc && line.complete) {
     let bal = 0;
     for (let i = 0; i <= ei; i++) bal += line.entries[i].sats;
     row('balance after', formatBalanceBtc(bal));
@@ -1225,7 +1237,7 @@ const openEntryLeaf = async (alive) => {
   if (e.sats !== 0) {
     heldFresh(entryAddr).then((held) => {
       if (!alive()) return;
-      if (!held || line.balance == null || held.sum !== line.balance) { stEl.textContent = '—'; return; }
+      if (!held || line?.balance == null || held.sum !== line.balance) { stEl.textContent = '—'; return; }
       const resting = e.sats > 0 ? held.byTxid.get(e.txid) ?? 0 : 0;
       stEl.textContent = resting > 0 ? 'unspent' : 'spent';
       stEl.classList.toggle('unspent', resting > 0);
@@ -1233,10 +1245,10 @@ const openEntryLeaf = async (alive) => {
   }
 
   const noteEl = document.getElementById('entry-note');
-  noteEl.textContent = '';
+  noteEl.textContent = adhoc ? 'below the banked record — reading the address’s pages will reach it' : '';
   // The fetch ahead: nearing the banked frontier pulls the next page of
   // history, so the older-swipe lands on content already banked.
-  if (!line.complete && ei < 3) {
+  if (!adhoc && line && !line.complete && ei < 3) {
     if (ei === 0) noteEl.textContent = 'reaching deeper — the next page of history is fetching…';
     extendLine(entryAddr).then(async () => {
       if (!alive()) return;
@@ -1356,6 +1368,7 @@ document.getElementById('anthology').addEventListener('click', (ev) => {
 function dive(row) {
   const addr = row.dataset.addr || cur().addresses[at];
   if (!addr) return;
+  adhocEntry = null;   // a row dive is banked by definition
   entryAddr = addr;
   entryKey = { txid: row.dataset.txid, sats: Number(row.dataset.sats) };
   turnTo(() => { level = 'entry'; }, 1, 'x');
@@ -1364,7 +1377,11 @@ function dive(row) {
 // left off at -- the list follows the dive.
 function returnToRecord() {
   if (level !== 'entry') return;
-  landAt = { ...entryKey };
+  // A banked passage lands the record on its row; one below the frontier
+  // has no row to land on -- the record opens where its reading stands.
+  const wasAdhoc = adhocEntry && adhocEntry.txid === entryKey.txid && adhocEntry.sats === entryKey.sats;
+  landAt = wasAdhoc ? null : { ...entryKey };
+  adhocEntry = null;
   const idx = cur().addresses.indexOf(entryAddr);
   turnTo(() => { level = 'address'; at = Math.max(0, idx); }, -1, 'x');
 }
@@ -1494,65 +1511,66 @@ openView();
 
 // ── Landing on a shared passage ───────────────────────────────────────────
 // A URL carrying ?address=…&p=v…b…c…[s…][o…] opens the compendium on the
-// address leaf and then walks the bank to the referenced passage: the
-// height comes straight from the citation arithmetic (heightOf), the entry
-// from the banked record -- extended page by page into history when the
-// reference lies below the banked frontier, the same walk a reader
-// thumbing there would make. Among entries sharing the height, the output
-// index names the credit side; no output names the debit when one exists;
-// a §section filters only where the archive already knows sections.
-// Nothing found (or mirrors unreachable) leaves the reader on the address
-// leaf, the record open where the walk stopped.
+// address leaf and then jumps to the referenced passage. The height comes
+// straight from the citation arithmetic (heightOf); the banked records are
+// checked first (offline-friendly, and a shared link usually names recent
+// history); and a reference below the banked frontier is not walked to but
+// jumped to: the §section inverts to a txid in two small requests (block
+// hash by height, the block's txid at that index -- passageTxid), and the
+// passage renders from its own fetched entry, banking nothing. Among
+// entries sharing a height, the output index names the credit side; no
+// output names the debit when one exists; a §section filters banked
+// candidates only where the archive already knows sections. Nothing found
+// (or mirrors unreachable) leaves the reader on the address leaf.
 if (pRef && qList.length) (async () => {
   const g = gen;                          // abandon if the reader turns away
   const alive = () => g === gen;
-  const pick = async (line) => {
+  const side = (entries) => {
+    if (!entries?.length) return null;
+    if (pRef.o != null) return entries.find((e) => e.out === pRef.o) ?? entries[0];
+    return entries.find((e) => e.sats < 0) ?? entries[0];
+  };
+  const pickBanked = async (line) => {
     const cands = (line?.entries ?? []).filter((e) => e.height === pRef.height);
     if (!cands.length) return null;
-    let sel = cands;
-    if (pRef.o != null) sel = cands.filter((e) => e.out === pRef.o);
-    else if (cands.some((e) => e.sats < 0)) sel = cands.filter((e) => e.sats < 0);
-    if (pRef.s != null && sel.length > 1) {
-      for (const e of sel) {
+    if (pRef.s != null && cands.length > 1) {
+      // Keep candidates whose archived section agrees (or is unknown --
+      // the archive filters, it never disqualifies what it hasn't read).
+      const kept = [];
+      for (const e of cands) {
         const pos = await sectionOf(e.txid);
-        if (pos != null && pos + 1 === pRef.s) return e;
+        if (pos == null || pos + 1 === pRef.s) kept.push(e);
       }
+      return side(kept.length ? kept : cands);
     }
-    return sel[0] ?? cands[0];
+    return side(cands);
   };
-  const land = (addr, e) => {
+  const land = (addr, e, adhoc) => {
     if (!alive()) return;
+    adhocEntry = adhoc ? e : null;
     entryAddr = addr;
     entryKey = entryKeyOf(e);
     level = 'entry';
     openView();
   };
   const addrs = cur().addresses;
-  // The banked records first -- a shared link usually names recent history.
   for (const a of addrs) {
-    const hit = await pick(await cachedLine(a) ?? await lineOnce(a));
+    const hit = await pickBanked(await cachedLine(a) ?? await lineOnce(a));
     if (!alive()) return;
-    if (hit) return land(a, hit);
+    if (hit) return land(a, hit, false);
   }
-  // Then deeper: extend whichever member's record could still contain the
-  // height, until every candidate is complete, has reached below it, or
-  // stops progressing (unreachable mirrors).
-  for (;;) {
-    let progressed = false;
-    for (const a of addrs) {
-      const line = await cachedLine(a);
-      if (!alive()) return;
-      const oldest = line?.entries[0]?.height ?? Infinity;
-      if (!line || line.complete || oldest <= pRef.height) continue;
-      const before = line.entries.length;
-      const ext = await extendLine(a);
-      if (!alive()) return;
-      if (ext && ext.entries.length > before) progressed = true;
-      const hit = await pick(ext);
-      if (!alive()) return;
-      if (hit) return land(a, hit);
-    }
-    if (!progressed) return;
+  // Below the frontier: invert the citation to its txid and jump.
+  if (pRef.s == null) return;   // without a section there is nothing to invert
+  const txid = await passageTxid(pRef.height, pRef.s - 1);
+  if (!alive() || !txid) return;
+  for (const a of addrs) {
+    const line = await cachedLine(a);
+    if (!alive()) return;
+    const banked = side((line?.entries ?? []).filter((e) => e.txid === txid));
+    if (banked) return land(a, banked, false);
+    const built = side(await passageEntries(a, txid));
+    if (!alive()) return;
+    if (built) return land(a, built, true);
   }
 })();
 </script>

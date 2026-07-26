@@ -892,6 +892,58 @@ export async function sectionOf(txid) {
   return kept && Number.isInteger(kept.pos) ? kept.pos : null;
 }
 
+// The section, fetched when the archive doesn't know it: one merkle proof
+// -- the same request the book resolves citations with -- banked into the
+// placements store ({height, pos}, the contents page's own shape) so it is
+// fetched at most once, ever. This is what completes a passage's citation
+// (§section) without walking anything: a proof names the position directly.
+export async function sectionOfFetched(txid) {
+  const kept = await sectionOf(txid);
+  if (kept != null) return kept;
+  for (const mirror of esploraMirrors()) {
+    const mp = await esploraJson(mirror, `/tx/${txid}/merkle-proof`);
+    if (mp && Number.isInteger(mp.pos)) {
+      storePut('placements', txid, { height: mp.block_height, pos: mp.pos });
+      return mp.pos;
+    }
+  }
+  return null;
+}
+
+// Esplora's plain-text answers (block hash by height, txid by position).
+async function esploraText(mirror, path) {
+  try {
+    const r = await fetch(mirror + path);
+    return r.ok ? (await r.text()).trim() : null;
+  } catch { return null; }
+}
+
+// A citation, inverted: height + section -> the txid that sits there,
+// straight from the chain (block hash by height, then the block's txid at
+// that index) -- two small requests, no history walked. This is how a
+// shared passage reference (v…b…c…s…) lands without carrying any txid.
+export async function passageTxid(height, pos) {
+  for (const mirror of esploraMirrors()) {
+    const hash = await esploraText(mirror, `/block-height/${height}`);
+    if (!hash || !/^[0-9a-f]{64}$/.test(hash)) continue;
+    const txid = await esploraText(mirror, `/block/${hash}/txid/${pos}`);
+    if (txid && /^[0-9a-f]{64}$/.test(txid)) return txid;
+  }
+  return null;
+}
+
+// One transaction's touches on an address, shaped as ledger entries -- for
+// rendering a passage that the banked record hasn't reached yet. The bank
+// is untouched: a passage viewed this way banks nothing until the record's
+// own walk arrives at it.
+export async function passageEntries(address, txid) {
+  for (const mirror of esploraMirrors()) {
+    const tx = await esploraJson(mirror, `/tx/${txid}`);
+    if (tx && tx.txid === txid) return buildEntries(esploraTouches([tx], address));
+  }
+  return null;
+}
+
 // One record line: the citation whole, then debit, credit, status. An
 // entry is one side of one transaction, so exactly one amount column
 // carries ink (a zero-value touch posts a bare 0 credit). Status reads
