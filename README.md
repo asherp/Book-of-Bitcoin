@@ -81,11 +81,11 @@ compiled to WASM) is consumed as a published
   renders it as prose
 - `web/bitcoin-front.html` — the front matter, straddling the contents on the
   horizontal axis in the standard order: title leaf, terms (the copyright
-  page, saying the reverse of one), colophon, **then the contents**, and the
-  preface after it — front matter that orients the reader precedes front
-  matter that argues. It owns no vertical axis deliberately: the contents
-  remains the single leaf above the volumes, so an ascent from Volume I lands
-  there and nowhere else
+  page, saying the reverse of one), **then the contents**, and the preface
+  after it — front matter that orients the reader precedes front matter that
+  argues. It owns no vertical axis deliberately: the contents remains the
+  single leaf above the volumes, so an ascent from Volume I lands there and
+  nowhere else
 - `web/preface.md` — the preface itself, in Markdown: the canonical copy,
   readable here in the repository and rendered into the leaf above, so the
   book and the repository cannot drift apart
