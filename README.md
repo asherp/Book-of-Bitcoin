@@ -81,11 +81,18 @@ compiled to WASM) is consumed as a published
   renders it as prose
 - `web/bitcoin-front.html` — the front matter, straddling the contents on the
   horizontal axis in the standard order: title leaf, terms (the copyright
-  page, saying the reverse of one), **then the contents**, and the preface
-  after it — front matter that orients the reader precedes front matter that
-  argues. It owns no vertical axis deliberately: the contents remains the
-  single leaf above the volumes, so an ascent from Volume I lands there and
-  nowhere else
+  page, saying the reverse of one), **then the contents**, and after it the
+  preface and the sigla — front matter that orients the reader precedes front
+  matter that argues. The sigla leaf carries the reference-format diagram and
+  the full opcode key, rendered from the same tables the book sets scripts
+  with; it lives in the front matter because a chain with no last block has no
+  back for an appendix to sit in. It owns no vertical axis deliberately: the
+  contents remains the single leaf above the volumes, so an ascent from
+  Volume I lands there and nowhere else
+- `web/btc-sigla.js` — the opcode alphabet: a mark for every opcode and the
+  canonical `OP_*` name behind it, plus the groups the key reads in. Split out
+  of `btc-prose.js` so the sigla leaf can render the real table without
+  pulling in the WASM engine through the prose composer
 - `web/preface.md` — the preface itself, in Markdown: the canonical copy,
   readable here in the repository and rendered into the leaf above, so the
   book and the repository cannot drift apart

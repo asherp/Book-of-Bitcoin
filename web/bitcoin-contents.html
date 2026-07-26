@@ -62,9 +62,9 @@
       atBottom = window.scrollY >= document.documentElement.scrollHeight - window.innerHeight - 2;
     }, { passive: true });
     // The contents sits inside the front matter on the horizontal axis, in the
-    // standard order: title, terms, CONTENTS, preface. So both
+    // standard order: title, terms, CONTENTS, preface, sigla. So both
     // sideways turns lead to a front-matter leaf -- back to the terms,
-    // forward to the preface. Purely horizontal: the vertical axis below is
+    // forward to the preface (the sigla follow it on that page). Purely horizontal: the vertical axis below is
     // untouched, and the contents remains the one leaf above the volumes, so
     // an ascent from Volume I still lands here.
     const goFront = (leaf, dir) => {
@@ -369,8 +369,34 @@ function head(cls, label) { const d = document.createElement('div'); d.className
 // Entries arrive in reading order (ascending height), so anything sharing a
 // volume or book is already contiguous.
 const toc = document.getElementById('toc');
+
+// The front matter that argues or informs -- the preface and the sigla -- is
+// listed here as a book's contents lists them. The title and the terms are
+// not: a table of contents omits the title and copyright pages, and both of
+// those sit before the contents in reading order anyway. Neither entry has a
+// chain reference, so both take the dash the stylesheet already styles.
+const FRONT = [
+  { title: 'Preface', leaf: 'preface' },
+  { title: 'Sigla — the marks, and the citation form', leaf: 'sigla' },
+];
+function frontEl({ title, leaf }) {
+  const row = document.createElement('a');
+  row.className = 'toc-entry';
+  row.href = `./bitcoin-front.html?leaf=${leaf}`;
+  const t = document.createElement('span');
+  t.className = 'toc-title';
+  t.textContent = title;
+  const r = document.createElement('span');
+  r.className = 'toc-ref none';
+  r.textContent = '—';
+  row.append(t, r);
+  return row;
+}
+
 function render() {
   toc.replaceChildren();
+  toc.append(head('toc-vol', 'Front matter'));
+  for (const f of FRONT) toc.append(frontEl(f));
   const entries = placed();
   for (let i = 0; i < entries.length;) {
     const vol = entries[i].place.volume;
