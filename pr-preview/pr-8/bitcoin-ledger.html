@@ -405,6 +405,7 @@ a:hover { text-decoration: underline; }
         <h1 class="entry-amt" id="entry-amt"></h1>
         <div class="anth-pager" id="entry-pager"></div>
         <div class="entry-when" id="entry-when"></div>
+        <p class="anth-prose" id="entry-prose"></p>
         <div class="entry-card" id="entry-card"></div>
         <div class="entry-note" id="entry-note"></div>
       </header>
@@ -665,6 +666,29 @@ const heldView = (data, held) => {
   }
   return held.byTxid;
 };
+
+// The referenced txo's prose, rendered once per address: a txo paying an
+// address carries exactly addressScriptHex(address), so every entry of the
+// address quotes the same script -- render it once, reuse it across the
+// timeline's pages. Null when the engine (the WASM build) can't be had;
+// the leaf simply carries no prose then, as the hero carries the mono form.
+const txoProseMemo = new Map();   // address -> Promise<html|null>
+function txoProse(addr) {
+  if (!txoProseMemo.has(addr)) {
+    txoProseMemo.set(addr, (async () => {
+      try {
+        const hex = addressScriptHex(addr);
+        if (!hex) return null;
+        const [gl, p] = await Promise.all([import('./glossia-msg.js'), import('./btc-prose.js')]);
+        await gl.init();
+        // renderScript's HTML is safe by its own contract: opcode glyphs and
+        // marks are the only markup, pushed data arrives as Glossia prose.
+        return p.renderScript(hex, (h) => gl.encodeSeedPhrase(h).prose);
+      } catch { return null; }
+    })());
+  }
+  return txoProseMemo.get(addr);
+}
 
 // The entry leaf reads the held snapshot too (its status line); once per
 // address per visit-window is plenty for a view that changes at chain speed.
@@ -1123,18 +1147,10 @@ const openAddressLeaf = (alive) => {
   // are the book's own (renderScript needs the WASM build; see README);
   // only when they can't be had does the mono address stand in.
   (async () => {
-    const hex = addressScriptHex(addr);
-    try {
-      if (!hex) throw new Error('undecodable address form');
-      const [gl, p] = await Promise.all([import('./glossia-msg.js'), import('./btc-prose.js')]);
-      await gl.init();
-      if (!alive()) return;
-      // renderScript's HTML is safe by its own contract: opcode glyphs and
-      // marks are the only markup, pushed data arrives as Glossia prose.
-      document.getElementById('anth-prose').innerHTML = p.renderScript(hex, (h) => gl.encodeSeedPhrase(h).prose);
-    } catch {
-      if (alive()) document.getElementById('anth-addr').textContent = addr;
-    }
+    const html = await txoProse(addr);
+    if (!alive()) return;
+    if (html) document.getElementById('anth-prose').innerHTML = html;
+    else document.getElementById('anth-addr').textContent = addr;
   })();
 
   runResolve(addr, alive);
@@ -1197,8 +1213,25 @@ const openEntryLeaf = async (alive) => {
     citeEl.textContent = citeText;
     stampUrl(pos + 1);
   });
+  // The passage itself: the referenced txo, reproduced as the book prints
+  // it -- the output's script in the book's opcode notation, its opaque
+  // bytes as Glossia prose (⓪ h²⁰ ⟨prose⟩ for a witness output, ⧉ ⌖ h²⁰
+  // ⟨prose⟩ ≡ ∇ for P2PKH). A txo paying this address carries exactly the
+  // address's own scriptPubKey -- a debit spends one of the same shape --
+  // so the passage renders offline, from the address alone, and reads
+  // identically wherever the manuscript prints it. Rendered once per
+  // address and reused across the timeline.
+  const proseEl = document.getElementById('entry-prose');
+  proseEl.replaceChildren();
+  (async () => {
+    const html = await txoProse(entryAddr);
+    if (html && alive()) proseEl.innerHTML = html;
+  })();
   citeEl.onclick = async () => {
-    try { await navigator.clipboard.writeText(`${citeText}\n${location.href}`); } catch { return; }
+    const quote = proseEl.textContent
+      ? `${citeText}\n${proseEl.textContent}\n${location.href}`
+      : `${citeText}\n${location.href}`;
+    try { await navigator.clipboard.writeText(quote); } catch { return; }
     const tag = document.createElement('span');
     tag.className = 'copied';
     tag.textContent = 'copied';
