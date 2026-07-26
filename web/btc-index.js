@@ -892,23 +892,28 @@ export async function sectionOf(txid) {
   return kept && Number.isInteger(kept.pos) ? kept.pos : null;
 }
 
-// The section, fetched when the archive doesn't know it: one merkle proof
-// -- the same request the book resolves citations with -- banked into the
-// placements store ({height, pos}, the contents page's own shape) so it is
-// fetched at most once, ever. This is what completes a passage's citation
-// (§section) without walking anything: a proof names the position directly.
-export async function sectionOfFetched(txid) {
-  const kept = await sectionOf(txid);
-  if (kept != null) return kept;
+// A transaction's placement -- height and section -- from the archive when
+// it knows (the book's citations store first, which also carries the
+// referenced outputs; the placements store second), and otherwise from one
+// merkle proof -- the same request the book resolves citations with --
+// banked into placements ({height, pos}) so it is fetched at most once,
+// ever. This is what completes a passage's citation (§section), and what
+// resolves a reproduced section's margin citations, without walking
+// anything: a proof names the position directly.
+export async function citePlace(txid) {
+  const kept = await storeGet('citations', txid) ?? await storeGet('placements', txid);
+  if (kept && Number.isInteger(kept.pos) && Number.isInteger(kept.height)) return kept;
   for (const mirror of esploraMirrors()) {
     const mp = await esploraJson(mirror, `/tx/${txid}/merkle-proof`);
     if (mp && Number.isInteger(mp.pos)) {
-      storePut('placements', txid, { height: mp.block_height, pos: mp.pos });
-      return mp.pos;
+      const rec = { height: mp.block_height, pos: mp.pos };
+      storePut('placements', txid, rec);
+      return rec;
     }
   }
   return null;
 }
+export const sectionOfFetched = async (txid) => (await citePlace(txid))?.pos ?? null;
 
 // Esplora's plain-text answers (block hash by height, txid by position).
 async function esploraText(mirror, path) {
