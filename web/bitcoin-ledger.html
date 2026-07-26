@@ -1509,20 +1509,33 @@ async function turnEntry(dir) {
 
 openView();
 
-// ── Landing on a shared passage ───────────────────────────────────────────
-// A URL carrying ?address=…&p=v…b…c…[s…][o…] opens the compendium on the
-// address leaf and then jumps to the referenced passage. The height comes
-// straight from the citation arithmetic (heightOf); the banked records are
-// checked first (offline-friendly, and a shared link usually names recent
-// history); and a reference below the banked frontier is not walked to but
-// jumped to: the §section inverts to a txid in two small requests (block
-// hash by height, the block's txid at that index -- passageTxid), and the
-// passage renders from its own fetched entry, banking nothing. Among
+// ── Landing on a shared reference ─────────────────────────────────────────
+// A URL carrying ?p=v…b…c…[s…][o…] routes by what the reference names.
+// v…b…c… alone names a CHAPTER, and opens the chapter itself, in the book.
+// A §section makes it a passage: with a ledger context (?address=…) the
+// compendium lands on the entry leaf -- banked records checked first
+// (offline-friendly, and a shared link usually names recent history), and
+// a reference below the banked frontier is not walked to but jumped to:
+// the §section inverts to a txid in two small requests (block hash by
+// height, the block's txid at that index -- passageTxid), and the passage
+// renders from its own fetched entry, banking nothing. Without a ledger
+// context the same inversion opens the book at the § itself. Among
 // entries sharing a height, the output index names the credit side; no
 // output names the debit when one exists; a §section filters banked
 // candidates only where the archive already knows sections. Nothing found
 // (or mirrors unreachable) leaves the reader on the address leaf.
-if (pRef && qList.length) (async () => {
+if (pRef) (async () => {
+  // A reference without a § names the chapter, not a passage of it.
+  if (pRef.s == null && pRef.o == null) {
+    location.href = `./bitcoin-book.html?block=${pRef.height}`;
+    return;
+  }
+  // No ledger named: the reference reads in the manuscript itself.
+  if (!qList.length) {
+    const txid = pRef.s != null ? await passageTxid(pRef.height, pRef.s - 1) : null;
+    location.href = txid ? citeHref(txid, pRef.o ?? undefined) : `./bitcoin-book.html?block=${pRef.height}`;
+    return;
+  }
   const g = gen;                          // abandon if the reader turns away
   const alive = () => g === gen;
   const side = (entries) => {
