@@ -81,6 +81,39 @@ better a reading is, the more it deserves a name on it. The claim is narrower:
 the record belongs to no one, a reading belongs to whoever made it, and a
 reader is owed the difference.
 
+## On the sigla
+
+A script is the one part of a transaction that is already a language, and it
+deserved better than to be shouted. `OP_DUP OP_HASH160 … OP_EQUALVERIFY
+OP_CHECKSIG` is a legible enough machine listing and an unreadable enough
+sentence; set it in a paragraph and the paragraph stops.
+
+So every opcode has been given a mark. There are 110 of them defined as of this
+writing, and all 110 have one — no fallbacks, no gaps, no two alike. Families
+share a base glyph and distinguish their variants by subscript, so the shape
+carries the kinship: `⧉` duplicates, `⧉₂` duplicates a pair, `⧉₃` a triple;
+`∇` checks a signature, `▼` checks and verifies, `∇₊` checks and adds. Where
+an opcode already had a symbol in ordinary mathematical use it kept it — `+`
+adds, `<` compares, `∧` and `∨` are the boolean pair — and where it had none,
+the mark was chosen to look like what it does. Disabled opcodes get marks like
+any other: a script is notation whether or not the network would still run it.
+
+I should be plain about the standing of this. The divisions of the book were
+discovered in the chain; **the sigla were not.** They are the one genuinely
+invented thing here, and inventions can simply be wrong — a mark that suggests
+the wrong relation, a family that should not have been a family, a glyph that
+fails to render in somebody's typeface. I have tried to be disciplined about
+it, but I am one reader making one set of choices about a language other people
+know far better than I do.
+
+So the mapping is offered rather than declared, and I would genuinely welcome
+argument about it — particularly from developers who have worked with Script
+for years and have opinions about what these operations *are*. If a mark
+misrepresents an opcode you know intimately, that is worth more to me than
+politeness. The notation is dedicated to the public domain precisely so that
+it can be argued with, forked, and improved without anyone's permission,
+including mine.
+
 ## Check it yourself
 
 The argument above is only worth as much as its verifiability, so none of it

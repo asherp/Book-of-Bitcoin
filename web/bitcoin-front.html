@@ -84,6 +84,14 @@ a:hover { text-decoration: underline; }
    leaf. */
 .leaf.current.title-leaf { display: flex; }
 
+/* On the title leaf the title is the whole page: the masthead and the leaf
+   navigation are withdrawn, and the leaf fills the viewport. Turning is by
+   swipe, arrow key, or a tap anywhere -- the leaf itself is the control, so
+   nothing has to be drawn to make it work. */
+body.at-title .masthead, body.at-title .leaf-nav { display: none; }
+body.at-title .wrap { padding-top: 0; padding-bottom: 0; }
+body.at-title .title-leaf { min-height: 100vh; cursor: pointer; }
+
 /* ── The title leaf: set like a manuscript title page — the title in the
    upper third, the imprint line resting at the foot, open field between. ── */
 .title-leaf { min-height: 62vh; flex-direction: column; justify-content: center; text-align: center; }
@@ -118,12 +126,12 @@ a:hover { text-decoration: underline; }
   background: linear-gradient(to top, var(--page) 72%, transparent);
 }
 .leaf-nav button {
-  background: transparent; color: var(--dim); border: 1px solid var(--input-bd); border-radius: 4px;
-  padding: 6px 12px; cursor: pointer; font: 500 11px/1 'IBM Plex Mono', monospace;
-  letter-spacing: .08em; text-transform: uppercase; transition: color .15s ease, border-color .15s ease;
+  background: transparent; color: var(--dim); border: none; border-radius: 0;
+  padding: 6px 2px; cursor: pointer; font: 500 11px/1 'IBM Plex Mono', monospace;
+  letter-spacing: .08em; text-transform: uppercase; transition: color .15s ease;
 }
-.leaf-nav button:hover:not(:disabled) { color: var(--ink); border-color: var(--accent); }
-.leaf-nav button:disabled { opacity: .3; cursor: default; }
+.leaf-nav button:hover:not(:disabled) { color: var(--ink); text-decoration: underline; }
+.leaf-nav button:disabled { opacity: 0; cursor: default; pointer-events: none; }
 .leaf-nav .prev { justify-self: start; }
 .leaf-nav .next { justify-self: end; }
 .leaf-nav .where { font: 600 10.5px/1 'IBM Plex Mono', monospace; letter-spacing: .2em; text-transform: uppercase; color: var(--meta); }
@@ -212,6 +220,7 @@ const label = (i) => LEAVES[i] === CONTENTS ? 'Contents' : $(LEAVES[i]).dataset.
 function show(i) {
   at = i;
   LEAVES.forEach((id, n) => { if (id !== CONTENTS) $(id).classList.toggle('current', n === i); });
+  document.body.classList.toggle('at-title', LEAVES[i] === 'leaf-title');
   $('leaf-where').textContent = label(i);
   $('leaf-prev').disabled = i === 0;
   $('leaf-prev').textContent = '← ' + (i > 0 ? label(i - 1) : 'Previous');
@@ -258,6 +267,10 @@ const step = (dir) => {
     });
   }, 110);
 };
+
+// The title leaf carries no visible control, so the leaf is one: a tap or
+// click anywhere on it turns forward.
+$('leaf-title').addEventListener('click', () => step(1));
 
 $('leaf-prev').addEventListener('click', () => step(-1));
 $('leaf-next').addEventListener('click', () => step(1));
