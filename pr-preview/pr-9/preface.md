@@ -31,11 +31,21 @@ transcription. The content is what survives, and here it survives provably.
 ## Why it is arranged this way
 
 The chain came with a structure and I saw no reason to invent another. A block
-is a chapter. A difficulty window — the two weeks of work between adjustments —
-is a book. Volumes gather the books. A transaction is a section within its
-chapter, and every passage cites itself in that form: `III β2 ■5 §1`, the
-volume in Roman, the book after the difficulty mark, the chapter after the
-block mark, the section last.
+is a chapter. A difficulty window — the two weeks of work between retargets —
+is a book. A volume is an era of supply: the 210,000 blocks from one halving to
+the next, opening each time the subsidy paid to miners is cut in half. A
+transaction is a section within its chapter, and every passage cites itself in
+that form: `III β2 ■5 §1`, the volume in Roman, the book after the difficulty
+mark, the chapter after the block mark, the section last.
+
+The two do not divide evenly, and I have let the seam show. A halving era is
+not a whole number of difficulty windows — 210,000 blocks comes to about 104
+and a sixth of them — so the last book of every volume is a short one, 336
+blocks where the others run 2,016, and book numbering begins again at 1 with
+each new era rather than running on. A tidier scheme would have papered over
+that. This one leaves it visible, because the ragged last book is a real fact
+about Bitcoin: supply and difficulty are two different clocks, and they do not
+keep step.
 
 Nothing in that scheme is my invention except the marks themselves. The
 divisions were already in the chain; I have only given them the names a book
