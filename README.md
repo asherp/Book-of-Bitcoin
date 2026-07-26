@@ -38,6 +38,20 @@ compiled to WASM) is consumed as a published
   transaction parsing, prose composition, citations, contents data,
   anthology data, and the archive (immutable chain data kept in IndexedDB,
   so revisited chapters and resolved citations read offline)
+- `web/btc-pages.js` — page numbers: one transaction is one page, numbered
+  by the chain's running transaction count since genesis. Each section shows
+  its folio — a bare, unpunctuated number — at the right end of the running
+  head, on the chapter label's line: the count of transactions in every
+  block before its own, plus its position in the block. A fresh
+  block's anchor is a census lookup — a source that can sum per-block
+  transaction counts over a height range: Blockchair's aggregation API
+  first, mempool.space's `reward-stats` (tip-relative totalTx, differenced
+  over two self-verifying windows) as fallback; anchors are banked for
+  good in the archive and neighbouring
+  blocks' derived arithmetically, so reading on from an anchored chapter
+  never re-asks. The two BIP30-grandfathered coinbases were each confirmed
+  twice, and pages count positions, not distinct txids — so each owns two
+  pages, all four cited in the table of contents
 - `web/glossia-msg.js` — the encoding pipeline over the Glossia WASM engine
 - `web/glossia.js`, `web/glossia_bg.wasm` — **build artifacts** (gitignored),
   produced by `build_web.sh` from the published glossia crate

@@ -24,16 +24,21 @@ const STORES = {
   txids: 120,         // block hash -> [txid…]  (a big block's list runs to ~100s of KB)
   tx: 4000,           // txid -> raw hex
   heights: 8000,      // height -> block hash   (six confirmations deep or more)
+  pages: 8000,        // height -> running tx count before it (six confirmations deep or more; btc-pages.js)
 };
 
 let dbPromise = null;
 function db() {
   if (!dbPromise) dbPromise = new Promise((resolve) => {
     try {
-      const req = indexedDB.open(DB_NAME, 1);
+      const req = indexedDB.open(DB_NAME, 2);   // v2 added 'pages'
       req.onupgradeneeded = () => {
+        // Create whatever stores this version knows and the database doesn't --
+        // a fresh install builds them all, an upgrade only the newcomers.
         for (const name of Object.keys(STORES)) {
-          req.result.createObjectStore(name).createIndex('at', 'at');
+          if (!req.result.objectStoreNames.contains(name)) {
+            req.result.createObjectStore(name).createIndex('at', 'at');
+          }
         }
       };
       req.onsuccess = () => resolve(req.result);

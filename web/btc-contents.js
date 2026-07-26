@@ -44,12 +44,22 @@ export const NOTABLE = [
   // bytes -- the first height-flagged soft fork (Sept 12, 2010), and the seed
   // of the block size wars.
   { title: '1 MB size limit activation', id: '79400' },
-  // BIP30's origin story: the coinbases of 91,812 and 91,722 were repeated
-  // verbatim by 91,842 and 91,880, overwriting them in the UTXO set. The ban
-  // on duplicate txids switched on by timestamp (Mar 15, 2012) rather than by
-  // flag block, with exactly these two offenders grandfathered forever -- so
-  // the first of them anchors the chapter.
-  { title: 'Duplicate coinbase (BIP30)', id: '91842' },
+  // BIP30's origin story: the coinbases of 91,722 and 91,812 were repeated
+  // verbatim by 91,880 and 91,842, overwriting them in the UTXO set -- the
+  // only two txids ever confirmed twice:
+  //   e3bf3d07d4b0375638d5f1db5255fe07ba2c4cb067cd81b84ee974b6585fb468 (91,722 -> 91,880)
+  //   d5d27987d2a3dfc724e359870c6644b40e497bdc0589a033220fe15429d88599 (91,812 -> 91,842)
+  // The ban on duplicate txids switched on by timestamp (Mar 15, 2012) rather
+  // than by flag block, with exactly these two offenders grandfathered
+  // forever. All four printings are cited by height (§1 of their blocks) --
+  // a txid lookup can only ever land on one of a duplicate's two sections --
+  // and each printing owns its own page number: pages count positions, not
+  // distinct txids, so the chain's page count runs exactly two past its
+  // distinct-txid count, and these are the two (see btc-pages.js).
+  { title: 'Duplicated coinbase e3bf…468, first printing', id: '91722', index: 0 },
+  { title: 'Duplicated coinbase d5d2…599, first printing', id: '91812', index: 0 },
+  { title: 'Duplicated coinbase d5d2…599, second printing (BIP30)', id: '91842', index: 0 },
+  { title: 'Duplicated coinbase e3bf…468, second printing (BIP30)', id: '91880', index: 0 },
   { title: '100K block milestone', id: '100000' },
   { title: 'Eligius', id: '139690' },
   // Block 164,467 (Jan 30, 2012): the first bare-multisig output -- 1-of-2,
