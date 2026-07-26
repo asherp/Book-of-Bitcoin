@@ -313,37 +313,74 @@ a:hover { text-decoration: underline; }
 .entry-amt { margin-top:16px; font:500 20px/1.25 'IBM Plex Mono',monospace; color:var(--ink); white-space:nowrap; font-variant-numeric:tabular-nums; }
 .entry-amt.credit { color:var(--accent); }
 .entry-when { margin-top:12px; font:400 12px/1.6 'IBM Plex Mono',monospace; letter-spacing:.06em; color:var(--dim); }
-/* The section, whole, in the reader's own manuscript layout: no labels --
-   each input a [citation | scriptSig] row with the spent amount and the
-   sequence mark in the left margin, each output a [scriptPubKey | amount]
-   row with the value in the right margin, the locktime a centred closing
-   colophon. The referenced txo carries the accent rule, so the quoted
-   line reads in context. */
-.entry-section { margin-top:34px; width:min(620px,100%); text-align:left;
-  font:400 16.5px/1.72 'Newsreader',serif; color:var(--ink-soft); font-variant-numeric:oldstyle-nums; }
+/* The section, whole, in the reader's own manuscript layout -- the book
+   page's classes, metrics and grid verbatim (chapter-body type, the
+   [left margin | body | right margin] tx-flow grid, margin cites for
+   witness-only inputs and the version note, sequence marks, witness
+   footnotes, forward citations, the drop cap), scoped under this leaf --
+   so a passage here renders exactly as its § does in the reader. The one
+   addition beyond the title's txid prose: the referenced txo carries the
+   accent rule (.hit), so the quoted line reads in context. */
+.entry-section { margin-top:34px; width:100%; text-align:left;
+  font-family:'Newsreader',serif; font-size:19px; line-height:1.75; color:var(--ink-soft); font-variant-numeric:oldstyle-nums; }
 .entry-section:empty { display:none; }
-.entry-section .sec-in, .entry-section .sec-out { display:flex; gap:1.1em; align-items:flex-start; margin:0 0 .9em; }
-.entry-section .sec-cite { flex:none; width:6em; text-align:right; padding-top:.34em;
-  font:500 11.5px/1.5 'IBM Plex Mono',monospace; color:var(--dim); word-break:break-word; }
-.entry-section .sec-cite a { color:var(--accent); }
-.entry-section .sec-cite a:hover { color:var(--accent-2); }
-.entry-section .sec-cite .unres { color:var(--meta); }
-.entry-section .cite-amt { margin-top:.1em; font:italic 400 11.5px/1.4 'Newsreader',serif; color:var(--meta); font-variant-numeric:tabular-nums; }
+.entry-section .tx-wrap { position:relative; margin:0 0 2em; }
+.entry-section .tx-flow { display:grid; grid-template-columns:[left] 6.5em [body] minmax(0,1fr) [right] 7em; column-gap:1.3em; align-items:start; }
+.entry-section .tx-inputs { grid-column:left / right; grid-row:1; display:grid; grid-template-columns:subgrid; column-gap:1.3em; align-items:start; }
+.entry-section .tx-in-cite { grid-column:1; text-align:right; padding-top:.34em; font:500 12px/1.5 'IBM Plex Mono',monospace; color:var(--dim); word-break:break-word; }
+.entry-section .tx-in-cite-group { grid-column:1; }
+.entry-section .tx-in-cite-group > .tx-in-cite + .tx-in-cite { margin-top:.5em; }
+.entry-section .tx-in-cite.resolving { color:var(--meta); }
+.entry-section .tx-in-cite.cite-unresolved { color:var(--meta); font-style:italic; }
+.entry-section .tx-in-cite.tx-version { color:var(--meta); letter-spacing:.03em; }
+.entry-section .cite-section-link { color:var(--accent); text-decoration:none; }
+.entry-section .cite-section-link:hover { color:var(--accent-2); text-decoration:underline; }
+.entry-section .cite-amount { margin-top:.1em; text-align:right; font:italic 400 12px/1.3 'Newsreader',serif; color:var(--meta); font-variant-numeric:tabular-nums; }
+.entry-section .fwd-cite { margin-top:.1em; font:500 12px/1.3 'IBM Plex Mono',monospace; color:var(--dim); }
+.entry-section .tx-in-script { grid-column:2; min-width:0; }
+.entry-section .tx-margin-cites { grid-column:left; grid-row:2; align-self:start; }
+.entry-section .tx-outputs { grid-column:body / -1; grid-row:2;
+  display:grid; grid-template-columns:minmax(0,1fr) 7em; grid-template-columns:subgrid; column-gap:1.3em; align-items:start; }
+.entry-section .tx-out-script { grid-column:1; min-width:0; }
+.entry-section .tx-out-value { grid-column:2; text-align:right; font-variant-numeric:tabular-nums; }
+.entry-section .tx-locktime { grid-column:left / -1; grid-row:3; text-align:center; font-style:normal; }
+.entry-section .tx-note { font:italic 400 13.5px/1.4 'Newsreader',serif; color:var(--dim); }
 .entry-section .tx-seq { font-style:normal; color:var(--meta); }
-.entry-section .sec-body { flex:1; min-width:0; overflow-wrap:break-word; }
-.entry-section .sec-body.hit { border-left:2px solid var(--accent); padding-left:.62em; margin-left:calc(-.62em - 2px); border-radius:1px; }
-.entry-section .sec-val { flex:none; width:6.4em; text-align:right;
-  font:italic 400 13px/1.6 'Newsreader',serif; color:var(--dim); white-space:nowrap; font-variant-numeric:tabular-nums; }
-.entry-section .sec-val.hit { color:var(--accent); }
-.entry-section .sec-lock { text-align:center; font:italic 400 13px/1.5 'Newsreader',serif; color:var(--dim); margin-top:.5em; }
-@media (max-width: 480px) { .entry-section .sec-cite { width:4.6em; } .entry-section .sec-val { width:5.6em; } }
+.entry-section .tx-seq-rbf { color:var(--accent-2); }
+.entry-section .tx-seq-block, .entry-section .tx-seq-time { color:var(--dim); font-variant-numeric:normal; }
+.entry-section .tx-line { margin:0 0 .55em; }
+.entry-section .tx-line.tx-body-lead::first-letter {
+  font-size:3.4em; float:left; line-height:.82; padding:.04em .07em 0 0;
+  font-weight:500; color:var(--accent); }
 /* The book's script notation, wherever the ledger prints it. */
 .entry-section .op { color: var(--accent); font-style: normal; }
 .entry-section .op-name { font: 600 .62em/1 'IBM Plex Mono',monospace; letter-spacing:.04em; color: var(--dim); font-style: normal; vertical-align: .14em; white-space: nowrap; }
 .entry-section .op-push { color: var(--meta); }
 .entry-section .dt { color: var(--accent); font-style: normal; font-weight: 700; }
 .entry-section .wit-sep, .entry-section .wit-empty { color:var(--meta); font-style:normal; }
-.entry-section .tx-ascii { margin:0 0 .55em; padding:.12em 0 .12em 1.05em; border-left:2px solid var(--accent); border-radius:1px; font-style:italic; }
+.entry-section .tx-ascii { margin:0 0 .55em; padding:.12em 0 .12em 1.05em;
+  border-left:2px solid var(--accent); border-radius:1px;
+  font:italic 400 17.5px/1.6 'Newsreader',serif; color:var(--ink-soft); }
+.entry-section .tab { display:inline-block; width:4ch; }
+.entry-section .tx-witness-ref { font:500 .62em/1 'IBM Plex Mono',monospace; color:var(--accent); vertical-align:super; text-decoration:none; margin-left:.12em; }
+.entry-section .tx-witness-ref:hover { text-decoration:underline; }
+.entry-section .chapter-footnotes { margin-top:48px; padding-top:24px; border-top:1px solid var(--rule); }
+.entry-section .footnote-entry { margin:0 0 1.1em; font:italic 400 14.5px/1.6 'Newsreader',serif; color:var(--dim); }
+.entry-section .footnote-entry:target { color:var(--ink-soft); }
+.entry-section .footnote-mark { font:500 10.5px/1 'IBM Plex Mono',monospace; color:var(--accent); margin-right:.5em; font-style:normal; vertical-align:.35em; }
+/* The one mark the reader doesn't draw: the txo this entry references. */
+.entry-section .tx-out-script.hit { border-left:2px solid var(--accent); padding-left:.62em; margin-left:calc(-.62em - 2px); border-radius:1px; }
+.entry-section .tx-out-value.hit { color:var(--accent); }
+@media (max-width: 560px) {
+  /* The reader's own collapse: every band one column, citations leading
+     their input, amounts following their output. */
+  .entry-section .tx-flow { grid-template-columns:1fr; }
+  .entry-section .tx-inputs, .entry-section .tx-margin-cites, .entry-section .tx-outputs, .entry-section .tx-locktime { grid-column:1; grid-row:auto; display:block; }
+  .entry-section .tx-in-cite, .entry-section .cite-amount { text-align:left; margin:0 0 .2em; }
+  .entry-section .tx-out-value { text-align:left; margin:0 0 .55em; }
+  .entry-section .tx-locktime { margin:0 0 .55em; }
+  .entry-section .tx-line.tx-body-lead { padding-top:.8em; }
+}
 .entry-card { margin-top:34px; width:min(440px, 100%); text-align:left; border-top:1px solid var(--rule); }
 .entry-card .e-row { display:flex; align-items:baseline; justify-content:space-between; gap:16px; padding:10px 2px; border-bottom:1px solid var(--hair); }
 .entry-card .e-k { flex:none; font:600 10px/1.6 'IBM Plex Mono',monospace; letter-spacing:.14em; text-transform:uppercase; color:var(--meta); }
@@ -470,7 +507,7 @@ a:hover { text-decoration: underline; }
 <script type="module">
 import { INDEXED, isAddress, keptLedgers, saveKeptLedgers, sameAddresses, addressScriptHex, cachedLine, resolveLine,
          extendLine, renderLedger, renderRows, periods, lineNote, reconciled, ledgerSum, heldCoins, addressState, lastKnownState,
-         formatBalanceBtc, formatNetBtc, chainFailureText, citeHref, sectionOf, sectionOfFetched, citePlace, passageTxid, passageEntries, txHexOf,
+         formatBalanceBtc, formatNetBtc, chainFailureText, citeHref, sectionOf, sectionOfFetched, citePlace, passageTxid, passageEntries, txHexOf, outspendsOf,
          DEFAULT_ESPLORA, esploraCustom, esploraSelected, setEsploraSettings } from './btc-index.js';
 import { volumeBookChapter, heightOf, toRoman } from './btc-citation.js';
 
@@ -734,8 +771,9 @@ function txoProse(addr) {
 // from the bytes, never trusted -- and every field Glossia-encoded through
 // composeTransactionFields. The title is the transaction's own name in the
 // book's tongue: its txid (byte-reversed, as the book prints hashes) as
-// prose. Witnesses render inline while modest; a data-carrier-sized one
-// defers to the book, exactly as the book itself defers them on scroll.
+// prose. Witnesses become numbered footnotes, as the book sets them; a
+// data-carrier-sized one defers to the book, exactly as the book itself
+// defers them on scroll.
 // Memoized per txid, a dozen deep, like the book's own fields cache.
 const reverseHex = (h) => (h.match(/../g) || []).reverse().join('');
 const sectionMemo = new Map();   // txid -> Promise<{fields, verified, titleProse, witHtml}|null>
@@ -754,11 +792,14 @@ function sectionFor(txid) {
         const enc = (h) => gl.encodeSeedPhrase(h, 'english', 5).prose;
         const fields = p.composeTransactionFields(parsed, 5);
         const titleProse = enc(reverseHex(txid));
-        // Per-input witness prose: null = nothing to show, a string = the
-        // rendered items, undefined = too bulky here (the book's lazy
-        // scroll-in treatment is the right home for a data carrier).
+        // Per-input witness prose, footnote-shaped as the book shapes it:
+        // null = no witness (no footnote), '∅' = an all-zero witness (the
+        // coinbase reserved value, an empty stack), a string = the rendered
+        // items, undefined = too bulky here (the book's lazy scroll-in
+        // treatment is the right home for a data carrier).
         const witHtml = fields.inputs.map((v) => {
-          if (!v.witnessItems.length || v.witnessZero) return null;
+          if (!v.witnessHex) return null;
+          if (v.witnessZero) return '∅';
           const bytes = v.witnessItems.reduce((n2, it) => n2 + it.length / 2, 0);
           return bytes <= 2048 ? p.renderWitness(v.witnessItems, enc) : undefined;
         });
@@ -1315,78 +1356,210 @@ const openEntryLeaf = async (alive) => {
       return;
     }
     titleEl.textContent = s.titleProse;
-    // Inputs: [citation | scriptSig] rows, the reader's manuscript layout.
-    // The margin citation resolves archive-first, then by one banked merkle
-    // proof (citePlace) -- the book's own resolution -- and the spent
-    // amount joins it only when the citations archive carries the outputs.
-    // A witness-only input (empty scriptSig) carries its witness prose as
-    // its body, in place of the book's footnote apparatus.
+    // The section, built exactly as the reader builds it (renderSection in
+    // bitcoin-book.html): the tx-flow grid's horizontal bands -- inputs a
+    // [citation | scriptSig] subgrid, witness-only citations and the
+    // version note stacked in the margin, outputs a [scriptPubKey | amount]
+    // subgrid, the locktime a centred colophon -- with the drop cap on the
+    // first body line, ASCII set as quote blocks, and witness stacks as
+    // numbered footnotes. Only the margin citations resolve differently:
+    // archive-first, then one banked merkle proof (citePlace), with the
+    // spent amount joining when the citations archive carries the outputs.
+    const wrap = document.createElement('div');
+    wrap.className = 'tx-wrap' + (s.verified ? '' : ' unverified');
+    const flow = document.createElement('div'); flow.className = 'tx-flow';
+    const inputsEl = document.createElement('div'); inputsEl.className = 'tx-inputs';
+    const marginEl = document.createElement('div'); marginEl.className = 'tx-margin-cites';
+    const outputsEl = document.createElement('div'); outputsEl.className = 'tx-outputs';
+    let leadUsed = false;
+    // Composed HTML is the book's own contract: glyphs and marks are the
+    // only markup, opaque bytes arrive as prose, quoted ASCII is escaped.
+    const addLine = (container, html) => {
+      if (!html) return;
+      const p2 = document.createElement('p');
+      const lead = !leadUsed && !html.startsWith('<span class="op op-push"');
+      leadUsed = true;
+      p2.className = 'tx-line' + (lead ? ' tx-body-lead' : '');
+      p2.innerHTML = html;
+      container.append(p2);
+    };
+    const addQuote = (container, html) => {
+      if (!html) return;
+      const q2 = document.createElement('blockquote');
+      q2.className = 'tx-ascii';
+      q2.innerHTML = html;
+      container.append(q2);
+    };
+    const seqSpan = (inp) => {
+      const sq = document.createElement('span');
+      sq.className = `tx-seq tx-seq-${inp.sequenceKind}`;
+      sq.title = inp.sequenceTitle;
+      if (inp.sequenceRbf && inp.sequence) {
+        const dagger = document.createElement('span');
+        dagger.className = 'tx-seq-rbf';
+        dagger.textContent = '†';
+        sq.append(dagger, ` ${inp.sequence}`);
+      } else {
+        sq.textContent = inp.sequenceRbf ? '†' : inp.sequence;
+      }
+      return sq;
+    };
+    const witnessRef = (n2) => {
+      const a = document.createElement('a');
+      a.className = 'tx-witness-ref';
+      a.href = `#fn-${n2}`;
+      a.textContent = String(n2);
+      a.title = 'witness — see footnote';
+      a.addEventListener('click', (ev) => {
+        ev.preventDefault();
+        secEl.querySelector(`#fn-${n2}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+      return a;
+    };
+    const footnotes = [];
+    // Citations with no scriptSig body to sit beside -- witness-spend inputs,
+    // and the version note -- stack above the next scriptSig input's own
+    // citation, or beside the outputs when none follows (the book's rule).
+    const pendingMargin = [];
+    if (s.fields.version !== '1') {
+      const vc = document.createElement('div');
+      vc.className = 'tx-in-cite tx-version';
+      vc.textContent = `v${s.fields.version}`;
+      pendingMargin.push(vc);
+    }
     s.fields.inputs.forEach((v, i) => {
-      const r = document.createElement('div'); r.className = 'sec-in';
-      const cite = document.createElement('div'); cite.className = 'sec-cite';
+      const cite = document.createElement('div'); cite.className = 'tx-in-cite';
       const citeBody = document.createElement('span');
-      if (v.isNullPrevout) citeBody.textContent = '∅';
+      citeBody.className = 'cite-body';
+      const amtLine = document.createElement('div'); amtLine.className = 'cite-amount';
+      if (v.isNullPrevout) citeBody.textContent = '∅';   // coinbase: no previous output
       else {
-        citeBody.className = 'unres';
-        citeBody.textContent = `${v.prevTxid.slice(0, 8)}… .${v.prevVout}`;
+        citeBody.textContent = '⋯';   // placeholder until the reference resolves
+        cite.classList.add('resolving');
         (async () => {
           const pl = await citePlace(v.prevTxid);
-          if (!pl || !alive()) return;
+          if (!alive()) return;
+          if (!pl) {
+            citeBody.textContent = `${v.prevTxid.slice(0, 8)}… .${v.prevVout}`;
+            cite.classList.remove('resolving');
+            cite.classList.add('cite-unresolved');
+            cite.title = `${v.prevTxid}:${v.prevVout} — reference could not be resolved`;
+            return;
+          }
           const p2 = volumeBookChapter(pl.height);
           const a = document.createElement('a');
+          a.className = 'cite-section-link';
           a.href = citeHref(v.prevTxid, v.prevVout);
           a.textContent = `${toRoman(p2.volume)} β${p2.book} ■${p2.chapter} §${pl.pos + 1}.${v.prevVout}`;
+          a.title = `go to §${pl.pos + 1}.${v.prevVout}`;
           citeBody.replaceChildren(a);
-          citeBody.className = '';
+          cite.classList.remove('resolving');
+          cite.title = `${v.prevTxid}:${v.prevVout}`;
           const spent = pl.outputs?.[v.prevVout]?.value;
           if (spent != null) {
             const amt2 = document.createElement('span');
             amt2.textContent = ` (${formatBalanceBtc(spent)})`;
-            amt2.title = 'the amount this input spends';
+            amt2.title = `the amount this input spends: ${spent.toLocaleString('en-US')} satoshis`;
             amtLine.append(amt2);
           }
         })();
       }
-      const amtLine = document.createElement('div'); amtLine.className = 'cite-amt';
-      const seq = document.createElement('span'); seq.className = 'tx-seq';
-      seq.textContent = v.sequence; seq.title = v.sequenceTitle;
-      amtLine.append(seq);
-      cite.append(citeBody, amtLine);
-      const bodyEl = document.createElement('div'); bodyEl.className = 'sec-body';
-      // Composed HTML is the book's own contract: glyphs and marks are the
-      // only markup, opaque bytes arrive as prose.
-      const wit = s.witHtml[i] === undefined
-        ? '<span class="wit-empty">witness — a data carrier; read it in the book</span>'
-        : s.witHtml[i];
-      bodyEl.innerHTML = [v.script, wit].filter(Boolean).join('<span class="wit-sep"> · </span>');
-      r.append(cite, bodyEl);
-      secEl.append(r);
+      cite.append(citeBody);
+      if (v.witnessHex) { footnotes.push({ n: footnotes.length + 1, html: s.witHtml[i] }); cite.append(witnessRef(footnotes.length)); }
+      amtLine.prepend(seqSpan(v));
+      cite.append(amtLine);
+      // An input that renders a scriptSig holds an aligned row, any pending
+      // margin citations stacked above its own; a witness-only input (empty
+      // scriptSig) just joins the pending list, so the outputs slide up.
+      if (v.scriptAscii || v.script) {
+        const citeCell = document.createElement('div');
+        citeCell.className = 'tx-in-cite-group';
+        for (const pm of pendingMargin) citeCell.append(pm);
+        pendingMargin.length = 0;
+        citeCell.append(cite);
+        const scriptCell = document.createElement('div');
+        scriptCell.className = 'tx-in-script';
+        if (v.scriptAscii) addQuote(scriptCell, v.scriptAscii);
+        else addLine(scriptCell, v.script);
+        inputsEl.append(citeCell, scriptCell);
+      } else {
+        pendingMargin.push(cite);
+      }
     });
-    // Outputs: [scriptPubKey | amount] rows, the value in the right margin;
-    // the referenced txo carries the accent rule.
+    for (const pm of pendingMargin) marginEl.append(pm);
+    // Outputs: [scriptPubKey | amount] rows; the referenced txo carries the
+    // accent rule. Each amount carries a forward-citation cell, filled with
+    // the section that later spent it once the outspends answer.
+    const fwdCells = [];
     s.fields.outputs.forEach((o, i) => {
-      const r = document.createElement('div'); r.className = 'sec-out';
       const hit = e.sats > 0 && e.out === i;
-      const bodyEl = document.createElement('div'); bodyEl.className = 'sec-body sec-script' + (hit ? ' hit' : '');
-      bodyEl.innerHTML = o.script;
-      const val = document.createElement('div'); val.className = 'sec-val' + (hit ? ' hit' : '');
-      val.textContent = o.value; val.title = o.valueTitle;
-      r.append(bodyEl, val);
-      secEl.append(r);
+      const scriptCell = document.createElement('div');
+      scriptCell.className = 'tx-out-script' + (hit ? ' hit' : '');
+      if (o.scriptAscii) addQuote(scriptCell, o.scriptAscii); else addLine(scriptCell, o.script);
+      const valueCell = document.createElement('div');
+      valueCell.className = 'tx-note tx-out-value' + (hit ? ' hit' : '');
+      valueCell.textContent = o.value; valueCell.title = o.valueTitle;
+      const fwd = document.createElement('div');
+      fwd.className = 'fwd-cite';
+      valueCell.append(fwd);
+      fwdCells.push(fwd);
+      outputsEl.append(scriptCell, valueCell);
     });
     // The closing colophon: the locktime, centred -- and the self-check's
-    // verdict only when it failed (a verified section says nothing).
-    const lock = document.createElement('div'); lock.className = 'sec-lock';
+    // verdict only when it failed (a verified section says nothing; the
+    // version note stands in the margin, as the book sets it).
+    const lock = document.createElement('div'); lock.className = 'tx-note tx-locktime';
     lock.textContent = s.fields.locktime
-      + (s.fields.version !== '1' ? ` · v${s.fields.version}` : '')
       + (s.verified ? '' : ' · unverified — the bytes did not hash to this txid');
     lock.title = s.fields.locktimeTitle;
-    secEl.append(lock);
+    flow.append(inputsEl, marginEl, outputsEl, lock);
+    wrap.append(flow);
+    secEl.replaceChildren(wrap);
+    // The witness footnotes, at the section's foot as the book sets them.
+    // The prose is already composed (sectionFor caps a data-carrier-sized
+    // stack, deferring it to the book's lazy scroll-in treatment).
+    if (footnotes.length) {
+      const fnSec = document.createElement('div');
+      fnSec.className = 'chapter-footnotes';
+      for (const fn of footnotes) {
+        const p2 = document.createElement('p');
+        p2.className = 'footnote-entry';
+        p2.id = `fn-${fn.n}`;
+        p2.innerHTML = `<span class="footnote-mark">${fn.n}</span>` + (fn.html === undefined
+          ? '<span class="wit-empty">a data carrier — read it in the book</span>'
+          : fn.html ?? '∅');
+        fnSec.append(p2);
+      }
+      secEl.append(fnSec);
+    }
+    // Forward citations: the right margin's mirror of the left's provenance
+    // -- where each output's value went next. One outspends call covers
+    // every output; each confirmed spender resolves through citePlace (the
+    // same banked resolution as the margin cites). An unspent output leaves
+    // its cell empty, and any failure stays silent -- a missing forward
+    // reference is absence, not an error.
+    (async () => {
+      const spends = await outspendsOf(e.txid);
+      if (!spends || !alive()) return;
+      fwdCells.forEach(async (cell, i) => {
+        const sp = spends[i];
+        if (!sp || !sp.spent || !sp.txid || !sp.status || !sp.status.confirmed) return;
+        const pl = await citePlace(sp.txid);
+        if (!pl || !alive()) return;
+        const p2 = volumeBookChapter(pl.height);
+        const a = document.createElement('a');
+        a.className = 'cite-section-link';
+        a.href = citeHref(sp.txid);
+        a.textContent = `${toRoman(p2.volume)} β${p2.book} ■${p2.chapter} §${pl.pos + 1}`;
+        a.title = `spent by input ${sp.vin + 1} of ${sp.txid}`;
+        cell.append(a);
+      });
+    })();
   })();
   citeEl.onclick = async () => {
     // The quoted line: the referenced txo out of the section, or the lone
     // txo when the section isn't rendered -- citation, passage, link.
-    const line = secEl.querySelector('.sec-script.hit')?.textContent
+    const line = secEl.querySelector('.tx-out-script.hit')?.textContent
       || proseEl.textContent || '';
     const quote = line ? `${citeText}\n${line}\n${location.href}` : `${citeText}\n${location.href}`;
     try { await navigator.clipboard.writeText(quote); } catch { return; }

@@ -968,6 +968,26 @@ export async function txHexOf(txid) {
   return null;
 }
 
+// The spending status of every output of a transaction at once (Esplora
+// /outspends) -- what fills a reproduced section's forward citations, the
+// same call the book makes. Chain-mutable (an unspent output spends later),
+// so it is memoized for the session only, never banked; null when no mirror
+// answers, and a missing forward reference is absence, not an error.
+const outspendsMemo = new Map();
+export function outspendsOf(txid) {
+  if (!outspendsMemo.has(txid)) {
+    outspendsMemo.set(txid, (async () => {
+      for (const mirror of esploraMirrors()) {
+        const spends = await esploraJson(mirror, `/tx/${txid}/outspends`);
+        if (Array.isArray(spends)) return spends;
+      }
+      outspendsMemo.delete(txid);   // nothing answered -- ask again next time
+      return null;
+    })());
+  }
+  return outspendsMemo.get(txid);
+}
+
 // One record line: the citation whole, then debit, credit, status. An
 // entry is one side of one transaction, so exactly one amount column
 // carries ink (a zero-value touch posts a bare 0 credit). Status reads
