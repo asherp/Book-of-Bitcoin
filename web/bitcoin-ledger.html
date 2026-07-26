@@ -294,6 +294,15 @@ a:hover { text-decoration: underline; }
    the entry's particulars ruled like a small account card -- the citation
    into the manuscript (the one door to the book), the running balance where
    the map is whole, the coin's status, and the entry's place in the record. */
+/* The passage's citation, heading the leaf: βoβ and the full reference --
+   the handle a passage is quoted by (social media included), so a tap
+   copies it. No text-transform: uppercasing would turn the β sigils into
+   capital Betas, which read as plain Bs. */
+.entry-cite { margin-bottom:20px; font:600 12.5px/1 'IBM Plex Mono',monospace; letter-spacing:.14em; color:var(--accent);
+  cursor:pointer; white-space:nowrap; font-variant-numeric:tabular-nums; }
+.entry-cite:empty { display:none; }
+.entry-cite:hover { color:var(--accent-2); }
+.entry-cite .copied { margin-left:10px; font-weight:400; font-size:10px; letter-spacing:.08em; color:var(--dim); }
 .entry-amt { margin:18px 0 0; font:500 30px/1.25 'IBM Plex Mono',monospace; color:var(--ink); white-space:nowrap; font-variant-numeric:tabular-nums; }
 .entry-amt.credit { color:var(--accent); }
 .entry-when { margin-top:12px; font:400 12px/1.6 'IBM Plex Mono',monospace; letter-spacing:.06em; color:var(--dim); }
@@ -383,8 +392,11 @@ a:hover { text-decoration: underline; }
         <a class="anth-down" id="anth-down" href="#anth-contents" aria-label="Down into this leaf">▾</a>
       </header>
 
-      <!-- The entry leaf's own hero: one transaction, read as a page. -->
+      <!-- The entry leaf's own hero: one transaction, read as a page. The
+           passage's citation heads it -- βoβ and the full reference, the
+           handle a passage is quoted by. -->
       <header class="anth-hero hidden" id="entry-hero">
+        <div class="entry-cite" id="entry-cite" role="button" title="Copy this passage’s reference"></div>
         <div class="page-eyebrow" id="entry-eyebrow"></div>
         <h1 class="entry-amt" id="entry-amt"></h1>
         <div class="anth-pager" id="entry-pager"></div>
@@ -1107,6 +1119,28 @@ const openEntryLeaf = async (alive) => {
   const len = line.entries.length;
   entryNav = { newer: ei < len - 1, older: ei > 0, frontier: !line.complete, reaching: false };
 
+  // The passage's citation, heading the leaf: βoβ (the βook of βitcoin's
+  // own sigil) and the full reference -- Roman volume, β book, ■ chapter,
+  // §section.output once the archive knows the section. This is the handle
+  // a passage is quoted by; a tap copies it.
+  const place = volumeBookChapter(e.height);
+  const citeEl = document.getElementById('entry-cite');
+  let citeText = `βoβ ${toRoman(place.volume)} β${place.book} ■${place.chapter}`;
+  citeEl.textContent = citeText;
+  sectionOf(e.txid).then((pos) => {
+    if (pos == null || !alive()) return;
+    citeText += ` §${pos + 1}${e.out != null ? `.${e.out}` : ''}`;
+    citeEl.textContent = citeText;
+  });
+  citeEl.onclick = async () => {
+    try { await navigator.clipboard.writeText(citeText); } catch { return; }
+    const tag = document.createElement('span');
+    tag.className = 'copied';
+    tag.textContent = 'copied';
+    citeEl.append(tag);
+    setTimeout(() => tag.remove(), 1200);
+  };
+
   const entryEyebrow = document.getElementById('entry-eyebrow');
   entryEyebrow.replaceChildren();
   const crumb = document.createElement('a');
@@ -1145,7 +1179,6 @@ const openEntryLeaf = async (alive) => {
   // The citation, whole: the door to the manuscript's own page for this
   // transaction. The § joins once the archive knows it (a paragraph the
   // reader has visited); the rest wait to be read.
-  const place = volumeBookChapter(e.height);
   const cite = document.createElement('a');
   cite.href = citeHref(e.txid, e.out);
   cite.textContent = `${toRoman(place.volume)} β${place.book} ■${place.chapter}`;
@@ -1281,9 +1314,19 @@ function descend() {
   if (level !== 'ledger') return;
   turnTo(() => { level = 'address'; at = rememberedAt.get(li) ?? 0; }, 1, 'y');
 }
-// The dive: a swipe over the record pulls in the page of the entry under
-// the finger. The row knows its entry (txid + sats name one side of one
-// transaction) and, on the merged leaf, its home address.
+// The dive: a swipe over the record -- or, for hands on a mouse, a plain
+// click on a row -- pulls in the page of the entry under the pointer. The
+// row knows its entry (txid + sats name one side of one transaction) and,
+// on the merged leaf, its home address. The row's own href (the book) still
+// serves a modified or middle click, and the entry leaf's reference is the
+// walking-pace door to the manuscript.
+document.getElementById('anthology').addEventListener('click', (ev) => {
+  const row = ev.target.closest && ev.target.closest('.idx-row[data-txid]');
+  if (!row || turning) return;
+  if (ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey || ev.button !== 0) return;
+  ev.preventDefault();
+  dive(row);
+});
 function dive(row) {
   const addr = row.dataset.addr || cur().addresses[at];
   if (!addr) return;
