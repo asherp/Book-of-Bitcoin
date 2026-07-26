@@ -108,6 +108,7 @@ button:hover { background: var(--accent-2); }
     <a class="example" href="./bitcoin-book.html?block=III%20%CE%B22%20%E2%96%A05"><span class="example-what">a chapter, by the book's own citation</span><span class="example-form">III β2 ■5</span></a>
     <a class="example" href="./bitcoin-book.html?block=57043"><span class="example-what">Bitcoin Pizza Day's chapter, by height</span><span class="example-form">57043</span></a>
     <a class="example" href="./bitcoin-book.html?txid=a1075db55d416d3ca199f55b6084e2115b9345e16c5cf302fc80e9d5fbf5d48d"><span class="example-what">the pizza transaction's own section, by its id</span><span class="example-form">a1075db5…f5d48d</span></a>
+    <a class="example" href="./bitcoin-book.html?p=v1b29c596"><span class="example-what">the same chapter, by its reference alone — as a βoβ quote carries it</span><span class="example-form">v1b29c596</span></a>
     <a class="example" href="./bitcoin-ledger.html?address=1Ross5Np5doy4ajF9iGXzgKaC2Q3Pwwxv"><span class="example-what">an address's ledger — every chapter it appears in, with amounts</span><span class="example-form">1Ross5Np…Pwwxv</span></a>
   </div>
 </div>
@@ -116,11 +117,24 @@ button:hover { background: var(--accent-2); }
 // The book page resolves every input form itself (?block= accepts a height, a
 // negative tip-relative height, a 64-hex block hash or txid, and the citation
 // form alike), so searching is a hand-off: carry the query there and let the
-// book open it. The one form the book doesn't take is an address -- an address
-// is not a place but a name, so it hands off to its Ledger instead: the
-// address's view of the manuscript, focused on amounts.
+// book open it. Two forms route specially: an address is not a place but a
+// name, so it hands off to its Ledger instead (the address's view of the
+// manuscript, focused on amounts); and a passage reference -- in either
+// spelling, the Latin URL form (v1b50c1807s85o4) or the quoted βoβ form
+// (βoβ I β50 ■1807 §85.4) -- hands the book the reference whole (?p=…),
+// which resolves it by citation arithmetic alone: no txid involved.
 import { isAddress } from './btc-index.js';
 const input = document.getElementById('block-input');
+const ROMAN = { I: 1, V: 5, X: 10, L: 50, C: 100, D: 500, M: 1000 };
+const fromRoman = (s) => [...s.toUpperCase()].reduce((n, c, i, a) =>
+  n + (ROMAN[c] < ROMAN[a[i + 1]] ? -ROMAN[c] : ROMAN[c]), 0);
+// The reference, in either spelling, normalized to the Latin URL form.
+const latinReference = (q) => {
+  if (/^v\d+b\d+c\d+(?:s\d+)?(?:o\d+)?$/i.test(q)) return q.toLowerCase();
+  const m = /^(?:βoβ\s+)?([IVXLCDM]+)\s*β(\d+)\s*■(\d+)(?:\s*§(\d+)(?:\.(\d+))?)?$/i.exec(q);
+  if (!m) return null;
+  return `v${fromRoman(m[1])}b${m[2]}c${m[3]}${m[4] ? `s${m[4]}` : ''}${m[5] ? `o${m[5]}` : ''}`;
+};
 const go = () => {
   const q = input.value.trim();
   if (!q) { input.focus(); return; }
@@ -128,6 +142,8 @@ const go = () => {
   // ledger queries with; base58 stays as typed (its case is significant).
   const addr = isAddress(q) ? q : (isAddress(q.toLowerCase()) ? q.toLowerCase() : null);
   if (addr) { location.href = './bitcoin-ledger.html?address=' + encodeURIComponent(addr); return; }
+  const ref = latinReference(q);
+  if (ref) { location.href = './bitcoin-book.html?p=' + encodeURIComponent(ref); return; }
   location.href = './bitcoin-book.html?block=' + encodeURIComponent(q);
 };
 document.getElementById('block-btn').addEventListener('click', go);
