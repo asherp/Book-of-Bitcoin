@@ -5,6 +5,27 @@ rendered as a paragraph of grammatically correct [Glossia](https://glossia.io/)
 prose, with witness data collected as footnotes. Installable as a PWA and
 offline-capable.
 
+## A literal translation
+
+The βitcoin βook is a verbatim translation of the chain into human language:
+every byte of every transaction is carried in the words of the prose, and can
+be read back out exactly — filter a passage against the payload wordlist and
+the transaction returns, byte for byte, in order, with nothing added and
+nothing omitted.
+
+Like any translation, the phrasing belongs to the language: the connective
+words that make a transaction into a sentence are the translator's grammar,
+not the author's words, and the same transaction can be rendered in more than
+one way. What survives every rendering is the content — losslessly, and
+provably so. The book reads in English today, and the engine speaks other
+languages; as the reader's own language becomes selectable, none of this
+changes. The words differ, the book does not.
+
+Which is the argument the book exists to make: **a transaction is a form of
+speech.** It can be set down in prose, read aloud, quoted, transcribed by
+hand, and carried back to the chain intact. That is not a metaphor about
+transactions — it is a demonstration, and every page is a witness to it.
+
 Originally part of the [asherp/glossia](https://github.com/asherp/glossia)
 repository; the book now lives here, while the Glossia engine (the Rust core
 compiled to WASM) is consumed as a published
@@ -76,7 +97,12 @@ repo's builds can succeed.
 
 ## License
 
-Licensed under either of
+Two licenses, because there are two kinds of material here.
+
+### The code
+
+The software in this repository — the pages, scripts, and build tooling — is
+licensed under either of
 
 - Apache License, Version 2.0 ([LICENSE-APACHE](LICENSE-APACHE) or
   http://www.apache.org/licenses/LICENSE-2.0)
@@ -90,3 +116,25 @@ Unless you explicitly state otherwise, any contribution intentionally
 submitted for inclusion in this work by you, as defined in the Apache-2.0
 license, shall be dual licensed as above, without any additional terms or
 conditions.
+
+### The book
+
+The prose the book renders — its chapters, paragraphs, passages, in every
+language — is dedicated to the public domain under
+[CC0 1.0 Universal](LICENSE-CC0). No rights reserved. Quote it, print it,
+recite it, republish it, build on it, in whole or in part, with or without
+attribution, for any purpose.
+
+Not as a generosity, but as a matter of consistency. The passages are a
+literal, mechanical translation of public chain data — invertible, with no
+authorial judgment anywhere in the loop. A translation that faithful authors
+nothing, and so has nothing to license. Any other choice would contradict the
+book itself: to require permission to quote a transaction, or credit for
+having transcribed one, is to claim someone else's speech as your own work.
+CC0 says plainly what the book argues at length — **these words are not mine;
+they are Bitcoin's, made readable.** Speech needs no license to be quoted.
+
+(Where the book's text is accompanied by material genuinely written by a
+human — introductions, essays, annotations in an authorial voice — that
+material is the author's own speech and is offered under the same CC0 terms,
+so that no part of the book carries a condition the rest does not.)
