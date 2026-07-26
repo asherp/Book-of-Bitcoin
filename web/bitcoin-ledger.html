@@ -428,7 +428,7 @@ import { INDEXED, isAddress, keptLedgers, saveKeptLedgers, sameAddresses, addres
          extendLine, renderLedger, renderRows, periods, lineNote, reconciled, ledgerSum, heldCoins, addressState, lastKnownState,
          formatBalanceBtc, formatNetBtc, chainFailureText, citeHref, sectionOf,
          DEFAULT_ESPLORA, esploraCustom, esploraSelected, setEsploraSettings } from './btc-index.js';
-import { volumeBookChapter, toRoman } from './btc-citation.js';
+import { volumeBookChapter, heightOf, toRoman } from './btc-citation.js';
 
 // The Ledger is a compendium now: every ledger in one document, read the way
 // the book is read, three levels deep.
@@ -520,6 +520,21 @@ import { volumeBookChapter, toRoman } from './btc-citation.js';
 const q = (new URLSearchParams(location.search).get('address') || '').trim();
 const norm = (s) => (isAddress(s) ? s : isAddress(s.toLowerCase()) ? s.toLowerCase() : null);
 const qList = q ? q.split(',').map((s) => norm(s.trim())).filter(Boolean) : [];
+
+// A passage named in the URL: the citation itself, carried in Latin --
+// v4b1c3s85o4 for volume 4, book 1, chapter 3, §85, output .4 (section and
+// output optional) -- so a shared reference navigates without any txid: the
+// reference IS the address of the passage, on the page as on social media.
+const pQ = (new URLSearchParams(location.search).get('p') || '').trim();
+const pMatch = /^v(\d+)b(\d+)c(\d+)(?:s(\d+))?(?:o(\d+))?$/i.exec(pQ);
+const pRef = pMatch ? { height: heightOf(+pMatch[1], +pMatch[2], +pMatch[3]),
+                        s: pMatch[4] != null ? +pMatch[4] : null,
+                        o: pMatch[5] != null ? +pMatch[5] : null } : null;
+// The same reference, written: what an entry leaf stamps into the URL.
+const latinRef = (height, s, o) => {
+  const pl = volumeBookChapter(height);
+  return `v${pl.volume}b${pl.book}c${pl.chapter}${s != null ? `s${s}` : ''}${o != null ? `o${o}` : ''}`;
+};
 const untitled = (l) => l.addresses[0] + (l.addresses.length > 1 ? ` +${l.addresses.length - 1}` : '');
 const kept = keptLedgers().filter((k) => !INDEXED.some((e) => sameAddresses(e.addresses, k.addresses)));
 // One member address names its whole ledger (ledgerFor's rule); only a query
@@ -1122,18 +1137,29 @@ const openEntryLeaf = async (alive) => {
   // The passage's citation, heading the leaf: βoβ (the βook of βitcoin's
   // own sigil) and the full reference -- Roman volume, β book, ■ chapter,
   // §section.output once the archive knows the section. This is the handle
-  // a passage is quoted by; a tap copies it.
+  // a passage is quoted by -- the β sigils keep a search for it unambiguous
+  // -- and the same reference rides the URL in Latin (v1b50c1807s85o4), so
+  // the quoted form and the shared link name the passage identically. A
+  // tap copies both: the citation, then this page's own address.
   const place = volumeBookChapter(e.height);
   const citeEl = document.getElementById('entry-cite');
   let citeText = `βoβ ${toRoman(place.volume)} β${place.book} ■${place.chapter}`;
   citeEl.textContent = citeText;
+  const stampUrl = (s) => {
+    try {
+      history.replaceState(null, '',
+        `${location.pathname}?address=${cur().addresses.join(',')}&p=${latinRef(e.height, s, e.out ?? null)}`);
+    } catch (_) { /* unavailable */ }
+  };
+  stampUrl(null);
   sectionOf(e.txid).then((pos) => {
     if (pos == null || !alive()) return;
     citeText += ` §${pos + 1}${e.out != null ? `.${e.out}` : ''}`;
     citeEl.textContent = citeText;
+    stampUrl(pos + 1);
   });
   citeEl.onclick = async () => {
-    try { await navigator.clipboard.writeText(citeText); } catch { return; }
+    try { await navigator.clipboard.writeText(`${citeText}\n${location.href}`); } catch { return; }
     const tag = document.createElement('span');
     tag.className = 'copied';
     tag.textContent = 'copied';
@@ -1465,6 +1491,70 @@ async function turnEntry(dir) {
 })();
 
 openView();
+
+// ── Landing on a shared passage ───────────────────────────────────────────
+// A URL carrying ?address=…&p=v…b…c…[s…][o…] opens the compendium on the
+// address leaf and then walks the bank to the referenced passage: the
+// height comes straight from the citation arithmetic (heightOf), the entry
+// from the banked record -- extended page by page into history when the
+// reference lies below the banked frontier, the same walk a reader
+// thumbing there would make. Among entries sharing the height, the output
+// index names the credit side; no output names the debit when one exists;
+// a §section filters only where the archive already knows sections.
+// Nothing found (or mirrors unreachable) leaves the reader on the address
+// leaf, the record open where the walk stopped.
+if (pRef && qList.length) (async () => {
+  const g = gen;                          // abandon if the reader turns away
+  const alive = () => g === gen;
+  const pick = async (line) => {
+    const cands = (line?.entries ?? []).filter((e) => e.height === pRef.height);
+    if (!cands.length) return null;
+    let sel = cands;
+    if (pRef.o != null) sel = cands.filter((e) => e.out === pRef.o);
+    else if (cands.some((e) => e.sats < 0)) sel = cands.filter((e) => e.sats < 0);
+    if (pRef.s != null && sel.length > 1) {
+      for (const e of sel) {
+        const pos = await sectionOf(e.txid);
+        if (pos != null && pos + 1 === pRef.s) return e;
+      }
+    }
+    return sel[0] ?? cands[0];
+  };
+  const land = (addr, e) => {
+    if (!alive()) return;
+    entryAddr = addr;
+    entryKey = entryKeyOf(e);
+    level = 'entry';
+    openView();
+  };
+  const addrs = cur().addresses;
+  // The banked records first -- a shared link usually names recent history.
+  for (const a of addrs) {
+    const hit = await pick(await cachedLine(a) ?? await lineOnce(a));
+    if (!alive()) return;
+    if (hit) return land(a, hit);
+  }
+  // Then deeper: extend whichever member's record could still contain the
+  // height, until every candidate is complete, has reached below it, or
+  // stops progressing (unreachable mirrors).
+  for (;;) {
+    let progressed = false;
+    for (const a of addrs) {
+      const line = await cachedLine(a);
+      if (!alive()) return;
+      const oldest = line?.entries[0]?.height ?? Infinity;
+      if (!line || line.complete || oldest <= pRef.height) continue;
+      const before = line.entries.length;
+      const ext = await extendLine(a);
+      if (!alive()) return;
+      if (ext && ext.entries.length > before) progressed = true;
+      const hit = await pick(ext);
+      if (!alive()) return;
+      if (hit) return land(a, hit);
+    }
+    if (!progressed) return;
+  }
+})();
 </script>
 </body>
 </html>
