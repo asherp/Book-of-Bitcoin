@@ -3528,7 +3528,7 @@ const dismissOnViewportChange = () => {
 window.addEventListener('resize', dismissOnViewportChange);
 window.addEventListener('scroll', dismissOnViewportChange, true);
 
-// Entry points, in priority order: ?p= opens a citation carried whole in
+// Entry points, in priority order: ?ref= opens a citation carried whole in
 // Latin (v1b50c1807s85o4 -- volume, book, chapter, then optional §section
 // and .output) -- the reference IS the address, no txid anywhere: the
 // height is citation arithmetic and the section is the block's own index;
@@ -3540,7 +3540,7 @@ window.addEventListener('scroll', dismissOnViewportChange, true);
 // chain tip, so ?block=-1 is the latest block; otherwise the book opens at
 // the chain tip (-1), the latest chapter rather than Genesis.
 const params = new URLSearchParams(location.search);
-const pParam = /^v(\d+)b(\d+)c(\d+)(?:s(\d+))?(?:o(\d+))?$/i.exec((params.get('p') || '').trim());
+const pParam = /^v(\d+)b(\d+)c(\d+)(?:s(\d+))?(?:o(\d+))?$/i.exec((params.get('ref') || '').trim());
 const txidParam = params.get('txid');
 const blockParam = params.get('block');
 // An absent ?index= opens the chapter's own page (-1); index=0 is §1;

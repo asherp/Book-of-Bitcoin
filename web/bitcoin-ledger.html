@@ -525,7 +525,7 @@ const qList = q ? q.split(',').map((s) => norm(s.trim())).filter(Boolean) : [];
 // v4b1c3s85o4 for volume 4, book 1, chapter 3, §85, output .4 (section and
 // output optional) -- so a shared reference navigates without any txid: the
 // reference IS the address of the passage, on the page as on social media.
-const pQ = (new URLSearchParams(location.search).get('p') || '').trim();
+const pQ = (new URLSearchParams(location.search).get('ref') || '').trim();
 const pMatch = /^v(\d+)b(\d+)c(\d+)(?:s(\d+))?(?:o(\d+))?$/i.exec(pQ);
 const pRef = pMatch ? { height: heightOf(+pMatch[1], +pMatch[2], +pMatch[3]),
                         s: pMatch[4] != null ? +pMatch[4] : null,
@@ -1156,7 +1156,7 @@ const openEntryLeaf = async (alive) => {
   const stampUrl = (s) => {
     try {
       history.replaceState(null, '',
-        `${location.pathname}?address=${cur().addresses.join(',')}&p=${latinRef(e.height, s, e.out ?? null)}`);
+        `${location.pathname}?address=${cur().addresses.join(',')}&ref=${latinRef(e.height, s, e.out ?? null)}`);
     } catch (_) { /* unavailable */ }
   };
   stampUrl(null);
@@ -1226,7 +1226,7 @@ const openEntryLeaf = async (alive) => {
     cite.textContent += ` §${pos + 1}${e.out != null ? `.${e.out}` : ''}`;
     // With the § known the reference alone names the place -- the door to
     // the book carries the citation, not a txid.
-    cite.href = `./bitcoin-book.html?p=${latinRef(e.height, pos + 1, e.out ?? null)}`;
+    cite.href = `./bitcoin-book.html?ref=${latinRef(e.height, pos + 1, e.out ?? null)}`;
   });
   if (cur().addresses.length > 1) row('address', shortAddr(entryAddr));
   // The running balance is the sum of everything up to this entry -- an
@@ -1514,7 +1514,7 @@ async function turnEntry(dir) {
 openView();
 
 // ── Landing on a shared reference ─────────────────────────────────────────
-// A URL carrying ?p=v…b…c…[s…][o…] routes by what the reference names.
+// A URL carrying ?ref=v…b…c…[s…][o…] routes by what the reference names.
 // v…b…c… alone names a CHAPTER, and opens the chapter itself, in the book.
 // A §section makes it a passage: with a ledger context (?address=…) the
 // compendium lands on the entry leaf -- banked records checked first
@@ -1531,11 +1531,11 @@ openView();
 if (pRef) (async () => {
   // A reference without a § names the chapter, not a passage of it -- and
   // a §-reference without a ledger context reads in the manuscript itself.
-  // Either way the book takes the reference whole (?p=…): the URL carries
+  // Either way the book takes the reference whole (?ref=…): the URL carries
   // the citation and nothing else -- a txid never rides beside (or instead
   // of) the reference that already names the same place.
   if ((pRef.s == null && pRef.o == null) || !qList.length) {
-    location.href = `./bitcoin-book.html?p=${encodeURIComponent(pQ)}`;
+    location.href = `./bitcoin-book.html?ref=${encodeURIComponent(pQ)}`;
     return;
   }
   const g = gen;                          // abandon if the reader turns away
