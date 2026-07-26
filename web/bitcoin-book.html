@@ -1871,8 +1871,8 @@ function renderFrontispiece(header) {
 // Chapter 333" -- a running head, not a heading. A block that's a curated
 // entry (a halving, an activation, ...) keeps its "Chapter n" heading and
 // carries its event name as a subtitle on the full head, and as the crumb's
-// compact name in the running head. The genesis block is subtitled "The
-// Genesis Block" without needing a curated entry.
+// compact name in the running head -- the genesis block included, which is a
+// curated entry like the halvings rather than a special case here.
 // Chapter headings spell their numbers out the way a book sets them --
 // "Chapter One" through "Chapter One Hundred" -- and fall back to numerals
 // past SPELLED_CHAPTER_MAX ("Chapter 101"), where spelled forms grow unwieldy.
@@ -1896,18 +1896,18 @@ function renderChapterHead(onTitlePage) {
   showEyebrowCrumbs(onTitlePage, onTitlePage);
   $('ch-volume').textContent = volume.toLocaleString();
   $('ch-book').textContent = book.toLocaleString();
-  const isGenesis = volume === 1 && book === 1 && chapter === 1;
   // A notable block keeps its "Chapter n" heading and carries its event name
   // as a subtitle beneath it. A height with several notable entries (the
   // supply-cap fork carries two) shows them all, dot-separated. The genesis
-  // block is the one chapter subtitled outside the curated list.
+  // block is one of those entries -- it used to be subtitled from a hardcoded
+  // case here, which kept it out of the table of contents.
   // A page: 'book' entry shares the height namespace (its id is its book's
   // first block) but names the book's leaf, not this chapter -- excluded here.
   const eventTitles = NOTABLE.filter((e) => e.id === String(state.height) && e.page !== 'book').map((e) => e.title);
   const eventTitle = eventTitles[0];
   $('ch-title').textContent = `Chapter ${chapterName(chapter)}`;
   const subtitle = $('ch-subtitle');
-  subtitle.textContent = isGenesis ? 'The Genesis Block' : eventTitles.join(' · ');
+  subtitle.textContent = eventTitles.join(' · ');
   // On a section page the running head's chapter is a crumb back to the
   // chapter's own page -- no fetch needed, the block is already in state.
   const inline = $('ch-chapter-inline');
@@ -1916,7 +1916,7 @@ function renderChapterHead(onTitlePage) {
     const crumb = document.createElement('button');
     crumb.type = 'button';
     crumb.className = 'crumb';
-    crumb.textContent = (isGenesis ? 'The Genesis Block' : eventTitle) || `Chapter ${chapterName(chapter)}`;
+    crumb.textContent = eventTitle || `Chapter ${chapterName(chapter)}`;
     crumb.title = `Chapter page (${reference(state.height)})`;
     crumb.setAttribute('aria-label', `Open this chapter's own page (${reference(state.height)})`);
     crumb.addEventListener('click', () => { rememberTrail(); state.index = -1; showCurrentTx(); });
@@ -2355,6 +2355,9 @@ function labelNav() {
   if (idx === -3) {
     if (cur.volume > 1) {
       stepPrev = { text: toRoman(cur.volume - 1), label: `Previous volume (${toRoman(cur.volume - 1)})` };
+    } else {
+      // Before Volume I lies the front matter, whose last leaf is the sigla.
+      stepPrev = { text: 'Sigla', label: 'Back to the front matter (the sigla)' };
     }
     if (tipHeight === null || heightOf(cur.volume + 1, 1, 1) <= tipHeight) {
       stepNext = { text: toRoman(cur.volume + 1), label: `Next volume (${toRoman(cur.volume + 1)})` };
@@ -2662,12 +2665,25 @@ async function openLeafAt(height, idx, direction = 0) {
 
 // The header steppers walk at the current leaf's own level: volume to volume,
 // book to book, chapter to chapter -- each landing on that span's page.
+// Volume I's own leaf is the first page of the body, and the sigla are the
+// last leaf of the front matter -- so turning back from it leaves the book for
+// the front matter, the inverse of the turn that opened Volume I from there.
+// (A swipe has already played its exit; the front matter finishes the entrance
+// on arrival. A button press just navigates.)
+function atFrontMatterEdge() {
+  return !!state && state.index === -3 && volumeBookChapter(state.height).volume === 1;
+}
+function toFrontMatter() {
+  try { sessionStorage.setItem('glossia-front-entrance', 'back'); } catch {}
+  location.href = './bitcoin-front.html?leaf=sigla';
+}
+
 async function goToLevel(direction) {
   if (!state) return;
   const { volume, chapterCount } = volumeBookChapter(state.height);
   if (state.index === -3) {
     const v = volume + direction;
-    if (v < 1) return;
+    if (v < 1) { if (direction < 0) toFrontMatter(); return; }
     return openLeafAt(heightOf(v, 1, 1), -3, direction);
   }
   if (state.index === -2) {
@@ -2790,6 +2806,7 @@ function navAvailable(direction) {
 // is ready to render; until then the drag only rubber-bands. The buttons stay
 // usable regardless -- they fetch on demand as always.
 function canStep(direction) {
+  if (direction < 0 && atFrontMatterEdge()) return true;   // a page turn, nothing to prefetch
   return navAvailable(direction) && neighborReady[direction];
 }
 function swipeStep(direction) {
