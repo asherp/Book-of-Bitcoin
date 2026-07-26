@@ -307,9 +307,34 @@ a:hover { text-decoration: underline; }
 .entry-cite:empty { display:none; }
 .entry-cite:hover { color:var(--accent-2); }
 .entry-cite .copied { margin-left:10px; font-weight:400; font-size:10px; letter-spacing:.08em; color:var(--dim); }
-.entry-amt { margin:18px 0 0; font:500 30px/1.25 'IBM Plex Mono',monospace; color:var(--ink); white-space:nowrap; font-variant-numeric:tabular-nums; }
+/* The passage's title: the transaction's own name in the book's tongue --
+   its txid as Glossia prose, the italic serif voice every hash speaks in. */
+.entry-title { margin:14px 0 0; max-width:560px; font:italic 400 17px/1.65 'Newsreader',serif; font-weight:400; color:var(--ink-soft); }
+.entry-amt { margin-top:16px; font:500 20px/1.25 'IBM Plex Mono',monospace; color:var(--ink); white-space:nowrap; font-variant-numeric:tabular-nums; }
 .entry-amt.credit { color:var(--accent); }
 .entry-when { margin-top:12px; font:400 12px/1.6 'IBM Plex Mono',monospace; letter-spacing:.06em; color:var(--dim); }
+/* The section, whole: inputs then outputs, each script in the book's
+   opcode notation with its opaque bytes as prose; the referenced txo
+   carries the accent rule, so the quoted line reads in context. */
+.entry-section { margin-top:30px; width:min(560px,100%); text-align:left; }
+.entry-section:empty { display:none; }
+.entry-section .sec-head { margin:18px 0 4px; font:600 10px/1 'IBM Plex Mono',monospace; letter-spacing:.24em; text-transform:uppercase; color:var(--meta); }
+.entry-section .sec-head:first-child { margin-top:0; }
+.entry-section .sec-row { padding:9px 2px 9px 12px; border-bottom:1px solid var(--hair);
+  font:400 15px/1.65 'Newsreader',serif; font-style:italic; color:var(--ink-soft); overflow-wrap:break-word; }
+.entry-section .sec-row:last-child { border-bottom:none; }
+.entry-section .sec-row.hit { border-left:2px solid var(--accent); padding-left:10px; }
+.entry-section .sec-val { display:block; font:500 11.5px/1.6 'IBM Plex Mono',monospace; font-style:normal; color:var(--dim); white-space:nowrap; font-variant-numeric:tabular-nums; }
+.entry-section .sec-row.hit .sec-val { color:var(--accent); }
+.entry-section .sec-wit { display:block; margin-top:6px; font-size:13px; color:var(--dim); }
+.entry-section .sec-meta { margin-top:12px; font:400 10.5px/1.6 'IBM Plex Mono',monospace; font-style:normal; color:var(--meta); text-align:center; }
+/* The book's script notation, wherever the ledger prints it. */
+.entry-section .op { color: var(--accent); font-style: normal; }
+.entry-section .op-name { font: 600 .62em/1 'IBM Plex Mono',monospace; letter-spacing:.04em; color: var(--dim); font-style: normal; vertical-align: .14em; white-space: nowrap; }
+.entry-section .op-push { color: var(--meta); }
+.entry-section .dt { color: var(--accent); font-style: normal; font-weight: 700; }
+.entry-section .seq-mark { font:500 12px/1 'IBM Plex Mono',monospace; font-style:normal; color:var(--meta); margin-right:8px; }
+.entry-section .wit-empty { color:var(--meta); font-style:normal; }
 .entry-card { margin-top:34px; width:min(440px, 100%); text-align:left; border-top:1px solid var(--rule); }
 .entry-card .e-row { display:flex; align-items:baseline; justify-content:space-between; gap:16px; padding:10px 2px; border-bottom:1px solid var(--hair); }
 .entry-card .e-k { flex:none; font:600 10px/1.6 'IBM Plex Mono',monospace; letter-spacing:.14em; text-transform:uppercase; color:var(--meta); }
@@ -398,13 +423,18 @@ a:hover { text-decoration: underline; }
 
       <!-- The entry leaf's own hero: one transaction, read as a page. The
            passage's citation heads it -- βoβ and the full reference, the
-           handle a passage is quoted by. -->
+           handle a passage is quoted by. The page is titled by the
+           transaction's own name in the book's tongue -- its txid as
+           Glossia prose -- and beneath the ledger's particulars the WHOLE
+           section is reproduced, so the referenced txo reads in context. -->
       <header class="anth-hero hidden" id="entry-hero">
         <div class="entry-cite" id="entry-cite" role="button" title="Copy this passage’s reference"></div>
         <div class="page-eyebrow" id="entry-eyebrow"></div>
-        <h1 class="entry-amt" id="entry-amt"></h1>
+        <h1 class="entry-title" id="entry-title"></h1>
         <div class="anth-pager" id="entry-pager"></div>
         <div class="entry-when" id="entry-when"></div>
+        <div class="entry-amt" id="entry-amt"></div>
+        <div class="entry-section" id="entry-section"></div>
         <p class="anth-prose" id="entry-prose"></p>
         <div class="entry-card" id="entry-card"></div>
         <div class="entry-note" id="entry-note"></div>
@@ -431,7 +461,7 @@ a:hover { text-decoration: underline; }
 <script type="module">
 import { INDEXED, isAddress, keptLedgers, saveKeptLedgers, sameAddresses, addressScriptHex, cachedLine, resolveLine,
          extendLine, renderLedger, renderRows, periods, lineNote, reconciled, ledgerSum, heldCoins, addressState, lastKnownState,
-         formatBalanceBtc, formatNetBtc, chainFailureText, citeHref, sectionOf, sectionOfFetched, passageTxid, passageEntries,
+         formatBalanceBtc, formatNetBtc, chainFailureText, citeHref, sectionOf, sectionOfFetched, passageTxid, passageEntries, txHexOf,
          DEFAULT_ESPLORA, esploraCustom, esploraSelected, setEsploraSettings } from './btc-index.js';
 import { volumeBookChapter, heightOf, toRoman } from './btc-citation.js';
 
@@ -688,6 +718,47 @@ function txoProse(addr) {
     })());
   }
   return txoProseMemo.get(addr);
+}
+
+// The whole section, composed the way the book composes it: the banked (or
+// fetched-once) raw bytes, parsed and self-verified -- the txid recomputed
+// from the bytes, never trusted -- and every field Glossia-encoded through
+// composeTransactionFields. The title is the transaction's own name in the
+// book's tongue: its txid (byte-reversed, as the book prints hashes) as
+// prose. Witnesses render inline while modest; a data-carrier-sized one
+// defers to the book, exactly as the book itself defers them on scroll.
+// Memoized per txid, a dozen deep, like the book's own fields cache.
+const reverseHex = (h) => (h.match(/../g) || []).reverse().join('');
+const sectionMemo = new Map();   // txid -> Promise<{fields, verified, titleProse, witHtml}|null>
+const SECTION_MEMO_MAX = 12;
+function sectionFor(txid) {
+  if (!sectionMemo.has(txid)) {
+    sectionMemo.set(txid, (async () => {
+      try {
+        const [gl, p, t] = await Promise.all([
+          import('./glossia-msg.js'), import('./btc-prose.js'), import('./btc-tx.js')]);
+        await gl.init();
+        const hex = await txHexOf(txid);
+        if (!hex) return null;
+        const parsed = t.parseTransaction(hex);
+        const verified = (await t.computeTxid(parsed.baseHex)) === txid;
+        const enc = (h) => gl.encodeSeedPhrase(h, 'english', 5).prose;
+        const fields = p.composeTransactionFields(parsed, 5);
+        const titleProse = enc(reverseHex(txid));
+        // Per-input witness prose: null = nothing to show, a string = the
+        // rendered items, undefined = too bulky here (the book's lazy
+        // scroll-in treatment is the right home for a data carrier).
+        const witHtml = fields.inputs.map((v) => {
+          if (!v.witnessItems.length || v.witnessZero) return null;
+          const bytes = v.witnessItems.reduce((n2, it) => n2 + it.length / 2, 0);
+          return bytes <= 2048 ? p.renderWitness(v.witnessItems, enc) : undefined;
+        });
+        return { fields, verified, titleProse, witHtml };
+      } catch { return null; }
+    })());
+    while (sectionMemo.size > SECTION_MEMO_MAX) sectionMemo.delete(sectionMemo.keys().next().value);
+  }
+  return sectionMemo.get(txid);
 }
 
 // The entry leaf reads the held snapshot too (its status line); once per
@@ -1213,24 +1284,73 @@ const openEntryLeaf = async (alive) => {
     citeEl.textContent = citeText;
     stampUrl(pos + 1);
   });
-  // The passage itself: the referenced txo, reproduced as the book prints
-  // it -- the output's script in the book's opcode notation, its opaque
-  // bytes as Glossia prose (⓪ h²⁰ ⟨prose⟩ for a witness output, ⧉ ⌖ h²⁰
-  // ⟨prose⟩ ≡ ∇ for P2PKH). A txo paying this address carries exactly the
-  // address's own scriptPubKey -- a debit spends one of the same shape --
-  // so the passage renders offline, from the address alone, and reads
-  // identically wherever the manuscript prints it. Rendered once per
-  // address and reused across the timeline.
+  // The passage itself: the WHOLE section, reproduced as the book prints
+  // it -- the page titled by the transaction's own name (its txid as
+  // Glossia prose), then every input and output, each script in the book's
+  // opcode notation with its opaque bytes as prose -- so the referenced
+  // txo (carrying the accent rule) reads in context. When the section
+  // can't be had (engine or bytes unavailable), the lone txo stands in,
+  // rendered offline from the address alone.
   const proseEl = document.getElementById('entry-prose');
+  const titleEl = document.getElementById('entry-title');
+  const secEl = document.getElementById('entry-section');
   proseEl.replaceChildren();
+  titleEl.textContent = '';
+  secEl.replaceChildren();
   (async () => {
-    const html = await txoProse(entryAddr);
-    if (html && alive()) proseEl.innerHTML = html;
+    const s = await sectionFor(e.txid);
+    if (!alive()) return;
+    if (!s) {
+      const html = await txoProse(entryAddr);
+      if (html && alive()) proseEl.innerHTML = html;
+      return;
+    }
+    titleEl.textContent = s.titleProse;
+    const head = (label) => {
+      const h = document.createElement('div'); h.className = 'sec-head'; h.textContent = label;
+      secEl.append(h);
+    };
+    head(n(s.fields.inputs.length, 'input', 'inputs'));
+    s.fields.inputs.forEach((v, i) => {
+      const r = document.createElement('div'); r.className = 'sec-row';
+      const seq = document.createElement('span'); seq.className = 'seq-mark';
+      seq.textContent = v.sequence; seq.title = v.sequenceTitle;
+      const sc = document.createElement('span'); sc.className = 'sec-script';
+      // Composed HTML is the book's own contract: glyphs and marks are the
+      // only markup, opaque bytes arrive as prose.
+      sc.innerHTML = v.script || (v.isNullPrevout ? '∅' : '');
+      r.append(seq, sc);
+      if (s.witHtml[i] !== null) {
+        const w = document.createElement('span'); w.className = 'sec-wit';
+        if (s.witHtml[i] === undefined) w.textContent = '⌞ witness — a data carrier; read it in the book';
+        else w.innerHTML = '⌞ ' + s.witHtml[i];
+        r.append(w);
+      }
+      secEl.append(r);
+    });
+    head(n(s.fields.outputs.length, 'output', 'outputs'));
+    s.fields.outputs.forEach((o, i) => {
+      const r = document.createElement('div'); r.className = 'sec-row';
+      if (e.sats > 0 && e.out === i) r.classList.add('hit');
+      const val = document.createElement('span'); val.className = 'sec-val';
+      val.textContent = o.value; val.title = o.valueTitle;
+      const sc = document.createElement('span'); sc.className = 'sec-script';
+      sc.innerHTML = o.script;
+      r.append(val, sc);
+      secEl.append(r);
+    });
+    const meta = document.createElement('div'); meta.className = 'sec-meta';
+    meta.textContent = `v${s.fields.version} · ${s.fields.locktime}`
+      + (s.verified ? '' : ' · unverified — the bytes did not hash to this txid');
+    meta.title = s.fields.locktimeTitle;
+    secEl.append(meta);
   })();
   citeEl.onclick = async () => {
-    const quote = proseEl.textContent
-      ? `${citeText}\n${proseEl.textContent}\n${location.href}`
-      : `${citeText}\n${location.href}`;
+    // The quoted line: the referenced txo out of the section, or the lone
+    // txo when the section isn't rendered -- citation, passage, link.
+    const line = secEl.querySelector('.sec-row.hit .sec-script')?.textContent
+      || proseEl.textContent || '';
+    const quote = line ? `${citeText}\n${line}\n${location.href}` : `${citeText}\n${location.href}`;
     try { await navigator.clipboard.writeText(quote); } catch { return; }
     const tag = document.createElement('span');
     tag.className = 'copied';
