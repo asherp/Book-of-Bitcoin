@@ -944,6 +944,25 @@ export async function passageEntries(address, txid) {
   return null;
 }
 
+// A transaction's raw hex, from the same archive the book keeps ('tx' --
+// immutable, the txid is its hash), fetched once on a miss and banked: a
+// passage read in the ledger warms the book's cache, and vice versa.
+export async function txHexOf(txid) {
+  const kept = await storeGet('tx', txid);
+  if (kept) return kept;
+  for (const mirror of esploraMirrors()) {
+    try {
+      const r = await fetch(`${mirror}/tx/${txid}/hex`);
+      if (!r.ok) continue;
+      const hex = (await r.text()).trim();
+      if (!/^[0-9a-f]+$/i.test(hex)) continue;
+      storePut('tx', txid, hex);
+      return hex;
+    } catch { continue; }
+  }
+  return null;
+}
+
 // One record line: the citation whole, then debit, credit, status. An
 // entry is one side of one transaction, so exactly one amount column
 // carries ink (a zero-value touch posts a bare 0 credit). Status reads
