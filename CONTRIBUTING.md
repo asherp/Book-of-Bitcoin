@@ -41,6 +41,22 @@ yours, and it travels with your name on it.
 If you would rather contribute commentary under different terms, say so in the
 pull request and it can be discussed before merge.
 
+## The sigla
+
+A new or revised mark — a glyph for an opcode that lacks one, a better mark
+for one that has a poor fit — is a contribution to the notation, which is
+dedicated to the public domain under [CC0](LICENSE-CC0). Contribute one and
+you are adding to an alphabet nobody owns, yours included.
+
+The code implementing it is code, on the usual dual terms; your writing about
+why the mark fits is commentary, on the CC BY terms above. Both live in the
+same pull request, and neither needs separating out by hand.
+
+Two things to check before proposing a mark: that it follows the existing
+family conventions (a shared base glyph, subscripts distinguishing variants),
+and that it is an ordinary Unicode character that renders in the book's
+monospace faces.
+
 ## The rendered prose
 
 The book's prose — the transactions themselves, rendered into language — is

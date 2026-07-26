@@ -97,6 +97,27 @@ compiled to WASM) is consumed as a published
   transaction parsing, prose composition, citations, contents data,
   anthology data, and the archive (immutable chain data kept in IndexedDB,
   so revisited chapters and resolved citations read offline)
+- `web/btc-contents-data.js`, `web/btc-index-data.js` — the curated entries
+  themselves: which blocks and addresses the book keeps, what they are
+  called, and the notes explaining why. The editorial layer, kept in its own
+  files because it is licensed apart from the machinery that renders it
+  (see [License](#license))
+- **The sigla** — the marks the manuscript is written in, and where each
+  lives:
+  - the opcode alphabet (`OPCODE_SYMBOLS` in `web/btc-prose.js`): a glyph per
+    opcode, families sharing a base mark with a subscript convention for
+    their variants — `⧉` DUP, `⧉₂` 2DUP, `∇` CHECKSIG, `∇₊` CHECKSIGADD,
+    `°₄` NOP4. Opcodes without a glyph fall back to their `OP_*` name
+  - the citation sigla (`web/btc-citation.js`): Roman volumes, `β` the
+    difficulty mark (a book is a difficulty window), `■` the block mark (a
+    chapter is a block), `§` the section (a transaction) — e.g. `III β2 ■5 §1`
+  - the block-version notation (`web/btc-prose.js`): BIP9's fields rendered as
+    what they are — a word pair carrying the 16 version-rolling bits, then the
+    signaling bits in plain binary (`accio library 100`). Invertible: the
+    notation reads back to the nVersion integer
+  - the amount conventions (`web/btc-prose.js`): `₿`, and the lone satoshi
+  - the reader's key to all of it is built into `web/bitcoin-book.html`, behind
+    the notation toggle in the section-nav bar
 - `web/glossia-msg.js` — the encoding pipeline over the Glossia WASM engine
 - `web/glossia.js`, `web/glossia_bg.wasm` — **build artifacts** (gitignored),
   produced by `build_web.sh` from the published glossia crate
@@ -135,7 +156,7 @@ repo's builds can succeed.
 
 ## License
 
-Four kinds of material live here, and the terms follow the distinction the
+Five kinds of material live here, and the terms follow the distinction the
 book argues for: the record belongs to no one, the readings belong to their
 readers.
 
@@ -143,7 +164,8 @@ readers.
 |---|---|
 | Code | MIT OR Apache-2.0 |
 | The book's prose — the chain's own speech | CC0 1.0 (public domain) |
-| Annotations, names, curation, the citation scheme | CC BY 4.0 |
+| The sigla — the alphabet that prose is written in | CC0 1.0 (public domain) |
+| Annotations, names, curation | CC BY 4.0 |
 | Commentary by others | Theirs — not licensed here |
 
 ### The code
@@ -181,14 +203,51 @@ having transcribed one, is to claim someone else's speech as your own work.
 CC0 says plainly what the book argues at length — **these words are not mine;
 they are Bitcoin's, made readable.** Speech needs no license to be quoted.
 
+### The sigla
+
+The notation the book writes in — the opcode alphabet, the citation sigla, the
+block-version notation, the amount conventions — is dedicated to the public
+domain under [CC0 1.0 Universal](LICENSE-CC0), on the same terms as the prose,
+and for the same reason.
+
+Sigla are orthography, not commentary. `⧉` *is* OP_DUP, the way a payload word
+*is* its bytes: a substitution that carries the thing across and can be
+reversed back to it. A siglum asserts nothing about the record — it is the
+alphabet the record is written in.
+
+Which is also why it cannot be licensed any other way without contradiction. A
+passage that renders a script contains those glyphs; if the alphabet demanded
+attribution, every quoted passage carrying a script would carry an obligation
+with it, and the public-domain prose above would be written in an alphabet that
+is not. Nor would a notation under conditions ever become anyone's habit — a
+writing system earns its life by being adopted, and attribution is friction.
+Write `⧉` for OP_DUP wherever you like, credit no one, and change it where it
+serves you better.
+
+(As with the prose, this mostly formalizes what is already the case. The glyphs
+are ordinary Unicode characters, uncopyrightable individually, and a system of
+notation is a system rather than an expression of one. The opcode *names* the
+key falls back on — `OP_DUP`, `OP_CHECKSIG` — are Bitcoin Core's, taken from
+its MIT-licensed sources and acknowledged with thanks.)
+
+What remains editorial is the writing *about* the notation: why `∇` for
+CHECKSIG, how the subscript convention orders a family, the notes in the
+reader's key. Design rationale is commentary, and is covered below.
+
+No file split is needed for any of this, because the two things live at
+different levels. The lookup tables that implement the notation are source
+code and stay MIT OR Apache-2.0 along with the files holding them; the CC0
+dedication is over the notation itself — the convention that `⧉` means
+OP_DUP — which is not a file and belongs to no one.
+
 ### The annotations
 
 The editorial layer around the prose — the curated table of contents and the
 ledgers, the names attached to notable blocks and transactions, the notes
-explaining why each was chosen, the volume·book·chapter·§section citation
-scheme, and any introductions or essays — is authored work, and is licensed
-under [CC BY 4.0](LICENSE-CC-BY). Reuse it freely, including commercially;
-just credit it.
+explaining why each was chosen, the exposition of the notation, and any
+introductions or essays — is authored work, and is licensed under
+[CC BY 4.0](LICENSE-CC-BY). Reuse it freely, including commercially; just
+credit it.
 
 The different terms are the point. Nobody wrote the transactions, so nobody
 signs them. Somebody did decide that a particular block is worth a reader's
