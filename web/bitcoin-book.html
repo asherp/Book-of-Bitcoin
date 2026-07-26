@@ -1053,7 +1053,7 @@ import { init, encodeSeedPhrase } from './glossia-msg.js';
 import { parseTransaction, computeTxid, parseBlockHeader, computeBlockHash } from './btc-tx.js';
 import { composeTransactionFields, composeBlockHeaderFields, groupDigits, formatBtc, renderWitness, toSuperscript, timestampInfo } from './btc-prose.js';
 import { volumeBookChapter, heightOf, toRoman, reference } from './btc-citation.js';
-import { NOTABLE } from './btc-contents.js';
+import { NOTABLE, blocksEta } from './btc-contents.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -2452,19 +2452,41 @@ const clampIndex = (i, meta) => {
 };
 
 // A 404 for a height past the chain tip is not a dead lookup but a chapter
-// unwritten, so it reads as an appointment rather than an error: the year the
-// block is due, at 52,560 ten-minute blocks a year. The book's final chapter
-// -- BIP42's activation at 13,440,000, the block that opens Volume LXV --
-// keeps its storied return date instead of the drifting projection. Every
-// other failure passes through untouched.
+// unwritten, so it reads as an appointment rather than an error. A height
+// within the mempool's reach is closer still -- a chapter already forming:
+// the queue of fee-paying transactions extends the contents ≈ vsize ÷ 1 MvB
+// blocks past the tip, so a height inside that span answers with its place
+// in the queue and an expected wait instead of a calendar year. (/mempool is
+// vanilla Esplora, so any mirror can answer; a failure falls through to the
+// calendar.) Deeper heights get the year the block is due, at 52,560
+// ten-minute blocks a year. The book's final chapter -- BIP42's activation
+// at 13,440,000, the block that opens Volume LXV -- keeps its storied
+// return date instead of the drifting projection. Every other failure
+// passes through untouched.
 const BIP42_HEIGHT = 13440000;
 const BLOCKS_PER_YEAR = 52560;
+const MEMPOOL_REACH_MAX = 1008;   // a week of blocks -- beyond any plausible queue, skip the fetch
 async function unwrittenOr(e, height, tipP) {
   if (!e.notFound) return e;
   const tip = await tipP;
   if (tip === null || height <= tip) return e;
   if (height === BIP42_HEIGHT) return new Error('Block not found. Come back in the year 2262.');
-  const years = (height - tip) / BLOCKS_PER_YEAR;
+  const ahead = height - tip;
+  if (ahead <= MEMPOOL_REACH_MAX) {
+    try {
+      const res = await esploraFetch(`${ESPLORA}/mempool`);
+      if (res.ok) {
+        const mp = await res.json();
+        const depth = Math.ceil(mp.vsize / 1_000_000);
+        if (ahead <= depth) {
+          return new Error(`■${height.toLocaleString()} has not been mined yet — but its chapter is forming: `
+            + `the mempool holds ≈ ${depth} chapters of sections, and this one stands ${ahead === 1 ? 'next' : `${ahead} deep`} in the queue. `
+            + `Come back in ${blocksEta(ahead).replace('≈ ', 'about ')}.`);
+        }
+      }
+    } catch { /* the queue is unreadable -- fall through to the calendar */ }
+  }
+  const years = ahead / BLOCKS_PER_YEAR;
   const when = years < 1 ? 'later this year' : `in the year ${new Date().getUTCFullYear() + Math.round(years)}`;
   return new Error(`Block not found — ■${height} has not been mined yet. Come back ${when}.`);
 }
