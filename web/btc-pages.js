@@ -10,10 +10,12 @@
 // twice, so each owns two pages and the chain's page count runs exactly two
 // past its distinct-txid count.
 //
-// Esplora has no running-total endpoint, so a fresh anchor comes from a census
-// endpoint that can sum per-block transaction counts over a height range in
-// one call — Blockchair's aggregation API (`?a=sum(transaction_count)`). Any
-// endpoint answering "total transactions in blocks 0..h-1" can stand in. An
+// Esplora has no running-total endpoint, so a fresh anchor comes from a
+// census source that can sum per-block transaction counts over a height
+// range: Blockchair's aggregation API answers "total in blocks 0..h-1" in
+// one call, and mempool.space's reward-stats (totalTx over the last N
+// blocks, tip-relative) yields the same anchor as the difference of two
+// windows. Any endpoint answering either question can stand in. An
 // anchor over buried blocks is immutable, so each height is asked of the
 // census at most once per device — banked in the archive ('pages',
 // btc-store.js) — and neighbouring anchors are derived for free from the
@@ -28,23 +30,55 @@
 
 import { storeGet, storePut } from './btc-store.js';
 
-const CENSUS_MIRRORS = ['https://api.blockchair.com/bitcoin/blocks'];
-
 const anchorCache = new Map();   // height -> Promise<number> (in flight or settled)
 const resolvedAnchors = new Map();   // height -> number (settled only; peekAnchor's view)
 
+const json = async (url) => { const r = await fetch(url); return r.ok ? r.json() : null; };
+
+// Blockchair's aggregation API answers the question directly: the summed
+// transaction_count over blocks 0..h-1, one call.
+async function blockchairAnchor(height) {
+  const j = await json(`https://api.blockchair.com/bitcoin/blocks?a=sum(transaction_count)&q=id(0..${height - 1})`);
+  const row = Array.isArray(j?.data) ? j.data[0] : null;
+  return row == null ? NaN : Number(row['sum(transaction_count)'] ?? Object.values(row)[0]);
+}
+
+// mempool.space's reward-stats sums totalTx over the LAST n blocks (tip-
+// relative), so the anchor is the difference of two windows:
+//
+//   anchor(h) = totalTx(0..tip) - totalTx(h..tip)
+//             = reward-stats(tip+1).totalTx - reward-stats(tip-h+1).totalTx
+//
+// Each answer echoes the window it actually covered (startBlock/endBlock),
+// which makes the subtraction self-verifying: both windows must end at the
+// same tip and start exactly where expected, or the answer is refused (a
+// block arrived between the calls, or the instance capped the window) and
+// the next census source is tried.
+async function mempoolAnchor(height) {
+  const base = 'https://mempool.space/api';
+  const tipRes = await fetch(`${base}/blocks/tip/height`);
+  if (!tipRes.ok) return NaN;
+  const tip = Number((await tipRes.text()).trim());
+  if (!Number.isFinite(tip) || tip < height) return NaN;
+  const stats = (n) => json(`${base}/v1/mining/reward-stats/${n}`);
+  const [whole, tail] = await Promise.all([stats(tip + 1), stats(tip - height + 1)]);
+  if (!whole || !tail) return NaN;
+  if (Number(whole.startBlock) !== 0 || Number(tail.startBlock) !== height
+    || Number(whole.endBlock) !== Number(tail.endBlock)) return NaN;
+  return Number(whole.totalTx) - Number(tail.totalTx);
+}
+
+// Census sources, tried in order until one gives a plausible answer.
+const CENSUS_SOURCES = [blockchairAnchor, mempoolAnchor];
+
 async function fetchAnchor(height) {
-  for (const base of CENSUS_MIRRORS) {
+  for (const source of CENSUS_SOURCES) {
     try {
-      const res = await fetch(`${base}?a=sum(transaction_count)&q=id(0..${height - 1})`);
-      if (!res.ok) continue;
-      const j = await res.json();
-      const row = Array.isArray(j?.data) ? j.data[0] : null;
-      const v = row == null ? NaN : Number(row['sum(transaction_count)'] ?? Object.values(row)[0]);
-      // Every block carries at least its coinbase, so a sane sum over `height`
-      // blocks is never below `height`. Anything else is a malformed answer.
+      const v = await source(height);
+      // Every block carries at least its coinbase, so a sane count over
+      // `height` blocks is never below `height`. Anything else is malformed.
       if (Number.isFinite(v) && v >= height) return v;
-    } catch { /* try the next census mirror */ }
+    } catch { /* try the next census source */ }
   }
   return null;
 }
