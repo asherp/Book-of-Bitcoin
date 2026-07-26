@@ -86,8 +86,8 @@ compiled to WASM) is consumed as a published
   matter that argues. The sigla leaf carries the reference-format diagram and
   the whole notation key — the shared glossed groups the book's toggle opens,
   then the exhaustive opcode index generated from the same tables the book
-  sets scripts with; it lives in the front matter because a chain with no last block has no
-  back for an appendix to sit in. It owns no vertical axis deliberately: the
+  sets scripts with; it lives in the front matter because a chain with no last
+  block has no back for an appendix to sit in. It owns no vertical axis deliberately: the
   contents remains the single leaf above the volumes, so an ascent from
   Volume I lands there and nowhere else
 - `web/btc-notation.js`, `web/notation.css` — the key to the sigla, markup and
