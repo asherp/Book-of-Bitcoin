@@ -30,6 +30,9 @@
 // locks it in at ■321, and activates it at ■673.
 
 export const NOTABLE = [
+  // Block 0 itself. Its coinbase follows as the next entry -- the chapter
+  // precedes its own §1 in reading order.
+  { title: 'The Genesis Block', id: '0' },
   { title: 'The Times 03/Jan/2009 Chancellor on brink of second bailout for banks', id: '4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b' },
   { title: 'Hal Finney transaction', id: 'f4184fc596403b9d638783cf57adfe4c75c605f6356fbc91338530e9831e9e16' },
   // Four days after the Finney transaction (Jan 16, 2009): the first payment
