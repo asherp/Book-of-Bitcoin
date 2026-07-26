@@ -78,8 +78,12 @@
     const FLAG = 'glossia-anthology-reloaded';
     window.addEventListener('load', () => {
       setTimeout(() => {
+        // Healthy means the module rendered: the anthology has content, or
+        // the reader has already dived to an entry leaf -- which empties
+        // the anthology legitimately (its hero is the whole page).
         const el = document.getElementById('anthology');
-        if (!el || el.children.length) return;   // the module rendered; nothing to recover
+        const entry = document.getElementById('entry-hero');
+        if (!el || el.children.length || (entry && !entry.classList.contains('hidden'))) return;
         let retried = false;
         try { retried = !!sessionStorage.getItem(FLAG); } catch (_) {}
         if (retried) {
@@ -299,20 +303,19 @@ a:hover { text-decoration: underline; }
    into the manuscript (the one door to the book), the running balance where
    the map is whole, the coin's status, and the entry's place in the record. */
 /* The passage's citation, heading the leaf: βoβ and the full reference --
-   the handle a passage is quoted by (social media included), so a tap
-   copies it. No text-transform: uppercasing would turn the β sigils into
-   capital Betas, which read as plain Bs. */
+   the handle a passage is quoted by (social media included), and the door
+   back into the reader: a tap opens the passage in the manuscript itself.
+   No text-transform: uppercasing would turn the β sigils into capital
+   Betas, which read as plain Bs. */
 .entry-cite { margin-bottom:20px; font:600 12.5px/1 'IBM Plex Mono',monospace; letter-spacing:.14em; color:var(--accent);
-  cursor:pointer; white-space:nowrap; font-variant-numeric:tabular-nums; }
+  white-space:nowrap; font-variant-numeric:tabular-nums; }
 .entry-cite:empty { display:none; }
-.entry-cite:hover { color:var(--accent-2); }
-.entry-cite .copied { margin-left:10px; font-weight:400; font-size:10px; letter-spacing:.08em; color:var(--dim); }
+.entry-cite:hover { color:var(--accent-2); text-decoration:none; }
 /* The passage's title: the transaction's own name in the book's tongue --
    its txid as Glossia prose, the italic serif voice every hash speaks in. */
 .entry-title { margin:14px 0 0; max-width:560px; font:italic 400 17px/1.65 'Newsreader',serif; font-weight:400; color:var(--ink-soft); }
 .entry-amt { margin-top:16px; font:500 20px/1.25 'IBM Plex Mono',monospace; color:var(--ink); white-space:nowrap; font-variant-numeric:tabular-nums; }
 .entry-amt.credit { color:var(--accent); }
-.entry-when { margin-top:12px; font:400 12px/1.6 'IBM Plex Mono',monospace; letter-spacing:.06em; color:var(--dim); }
 /* The section, whole, in the reader's own manuscript layout -- the book
    page's classes, metrics and grid verbatim (chapter-body type, the
    [left margin | body | right margin] tx-flow grid, margin cites for
@@ -467,18 +470,17 @@ a:hover { text-decoration: underline; }
         <a class="anth-down" id="anth-down" href="#anth-contents" aria-label="Down into this leaf">▾</a>
       </header>
 
-      <!-- The entry leaf's own hero: one transaction, read as a page. The
-           passage's citation heads it -- βoβ and the full reference, the
-           handle a passage is quoted by. The page is titled by the
-           transaction's own name in the book's tongue -- its txid as
-           Glossia prose -- and beneath the ledger's particulars the WHOLE
-           section is reproduced, so the referenced txo reads in context. -->
+      <!-- The entry leaf's own hero: one transaction, read as a page, bare
+           of the compendium's chrome (no masthead, no crumbs, no pager --
+           swipes alone move through the timeline, as the reader's pages
+           turn). The passage's citation heads it -- βoβ and the full
+           reference, the door back into the reader. The page is titled by
+           the transaction's own name in the book's tongue -- its txid as
+           Glossia prose -- and beneath the entry's net the WHOLE section
+           is reproduced, so the referenced txo reads in context. -->
       <header class="anth-hero hidden" id="entry-hero">
-        <div class="entry-cite" id="entry-cite" role="button" title="Copy this passage’s reference"></div>
-        <div class="page-eyebrow" id="entry-eyebrow"></div>
+        <a class="entry-cite" id="entry-cite"></a>
         <h1 class="entry-title" id="entry-title"></h1>
-        <div class="anth-pager" id="entry-pager"></div>
-        <div class="entry-when" id="entry-when"></div>
         <div class="entry-amt" id="entry-amt"></div>
         <div class="entry-section" id="entry-section"></div>
         <p class="anth-prose" id="entry-prose"></p>
@@ -1312,12 +1314,15 @@ const openEntryLeaf = async (alive) => {
   // §section.output once the archive knows the section. This is the handle
   // a passage is quoted by -- the β sigils keep a search for it unambiguous
   // -- and the same reference rides the URL in Latin (v1b50c1807s85o4), so
-  // the quoted form and the shared link name the passage identically. A
-  // tap copies both: the citation, then this page's own address.
+  // the quoted form and the shared link name the passage identically. It
+  // is also the door into the manuscript: a tap opens this passage in the
+  // reader -- by its reference once the § is known, by txid until then.
   const place = volumeBookChapter(e.height);
   const citeEl = document.getElementById('entry-cite');
   let citeText = `βoβ ${toRoman(place.volume)} β${place.book} ■${place.chapter}`;
   citeEl.textContent = citeText;
+  citeEl.href = citeHref(e.txid, e.out);   // exact by txid until the § is known
+  citeEl.title = 'read this passage in the book';
   const stampUrl = (s) => {
     try {
       history.replaceState(null, '',
@@ -1332,6 +1337,8 @@ const openEntryLeaf = async (alive) => {
     if (pos == null || !alive()) return;
     citeText += ` §${pos + 1}${e.out != null ? `.${e.out}` : ''}`;
     citeEl.textContent = citeText;
+    // With the § known the reference alone names the place in the reader.
+    citeEl.href = `./bitcoin-book.html?ref=${latinRef(e.height, pos + 1, e.out ?? null)}`;
     stampUrl(pos + 1);
   });
   // The passage itself: the WHOLE section, reproduced as the book prints
@@ -1455,7 +1462,19 @@ const openEntryLeaf = async (alive) => {
           citeBody.replaceChildren(a);
           cite.classList.remove('resolving');
           cite.title = `${v.prevTxid}:${v.prevVout}`;
-          const spent = pl.outputs?.[v.prevVout]?.value;
+          // The amount this input spends, as the reader margins it: from
+          // the citations archive when it carries the outputs, otherwise
+          // read off the referenced transaction's own bytes -- immutable,
+          // banked forever after one fetch (txHexOf, the same store the
+          // book warms), the value parsed out rather than asked for.
+          let spent = pl.outputs?.[v.prevVout]?.value;
+          if (spent == null) {
+            try {
+              const hx = await txHexOf(v.prevTxid);
+              if (hx) spent = (await import('./btc-tx.js')).parseTransaction(hx).vout[v.prevVout]?.value;
+            } catch (_) { /* absence, not an error */ }
+            if (!alive()) return;
+          }
           if (spent != null) {
             const amt2 = document.createElement('span');
             amt2.textContent = ` (${formatBalanceBtc(spent)})`;
@@ -1556,41 +1575,9 @@ const openEntryLeaf = async (alive) => {
       });
     })();
   })();
-  citeEl.onclick = async () => {
-    // The quoted line: the referenced txo out of the section, or the lone
-    // txo when the section isn't rendered -- citation, passage, link.
-    const line = secEl.querySelector('.tx-out-script.hit')?.textContent
-      || proseEl.textContent || '';
-    const quote = line ? `${citeText}\n${line}\n${location.href}` : `${citeText}\n${location.href}`;
-    try { await navigator.clipboard.writeText(quote); } catch { return; }
-    const tag = document.createElement('span');
-    tag.className = 'copied';
-    tag.textContent = 'copied';
-    citeEl.append(tag);
-    setTimeout(() => tag.remove(), 1200);
-  };
-
-  const entryEyebrow = document.getElementById('entry-eyebrow');
-  entryEyebrow.replaceChildren();
-  const crumb = document.createElement('a');
-  crumb.href = '#';
-  crumb.textContent = '‹ record';
-  crumb.addEventListener('click', (ev) => { ev.preventDefault(); returnToRecord(); });
-  entryEyebrow.append(crumb, ` · ${cur().name}`);
-
   const amt = document.getElementById('entry-amt');
   amt.textContent = formatNetBtc(e.sats);
   amt.classList.toggle('credit', e.sats > 0);
-
-  const when = document.getElementById('entry-when');
-  when.textContent = e.time
-    ? new Date(e.time * 1000).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
-    : '—';
-
-  document.getElementById('entry-pager').replaceChildren(
-    arrow('▴', 'Newer entry', !entryNav.newer, () => turnEntry(-1)),
-    arrow('▾', 'Older entry', adhoc || !(entryNav.older || !line.complete), () => turnEntry(1)),
-  );
 
   const card = document.getElementById('entry-card');
   card.replaceChildren();
@@ -1649,10 +1636,7 @@ const openEntryLeaf = async (alive) => {
       if (!alive() || !fresh) return;
       const at2 = findEntry(fresh, entryKey);
       entryNav = { newer: at2 < fresh.entries.length - 1, older: at2 > 0, frontier: !fresh.complete, reaching: false };
-      if (at2 >= 0) {
-        document.getElementById('entry-pager').children[1]?.classList.toggle('off', !(entryNav.older || !fresh.complete));
-        noteEl.textContent = ei === 0 && at2 > 0 ? 'older entries arrived — ▾ continues' : '';
-      }
+      if (at2 >= 0) noteEl.textContent = ei === 0 && at2 > 0 ? 'older entries arrived — a push up continues' : '';
     });
   }
 };
@@ -1664,6 +1648,9 @@ const openView = () => {
   clearHero();
   syncUrl();
   const onEntry = level === 'entry';
+  // A passage is read bare, as the manuscript's pages are: the compendium's
+  // masthead stands down while an entry leaf is open.
+  document.querySelector('.masthead').classList.toggle('hidden', onEntry);
   hero.classList.toggle('hidden', onEntry);
   entryHero.classList.toggle('hidden', !onEntry);
   if (onEntry) { el.replaceChildren(); openEntryLeaf(alive); return; }
@@ -1816,7 +1803,7 @@ async function turnEntry(dir) {
 // simply the scroll); at entry level both directions walk the timeline.
 // A direction with nothing behind it only rubber-bands.
 (() => {
-  let sx = null, sy = 0, st = 0, axis = null, startRow = null, topStart = false;
+  let sx = null, sy = 0, st = 0, axis = null, startRow = null, topStart = false, botStart = false, shortStart = false;
   const snapBack = () => {
     if (!slide.style.transform) return;
     slide.style.transition = 'transform .15s ease';
@@ -1831,18 +1818,24 @@ async function turnEntry(dir) {
     }
     return dx > 0 ? 1 : 0.25;                          // entry: right returns; left is the edge
   };
+  // The vertical swipe engages the way the reader's does: anywhere on a
+  // page short enough not to scroll, and only from the scroll boundaries
+  // on a tall one -- pulling down at the top, pushing up at the bottom --
+  // so a long passage scrolls as prose first and turns only at its edges.
   const vArmed = (dy) => {
     if (level === 'ledger') return true;               // up descends; down rubber-bands
-    if (level === 'entry') return true;                // the timeline
+    if (level === 'entry') return shortStart || (topStart && dy > 0) || (botStart && dy < 0);
     return topStart && dy > 0;                         // address: pull down from the top ascends
   };
+  // The follow is the reader's too: half-speed toward a live neighbour,
+  // a firm rubber-band toward nothing.
   const vDamp = (dy) => {
-    if (level === 'ledger') return dy < 0 ? 1 : 0.25;
-    if (level === 'address') return 1;
-    // Entry level: up is older -- full travel while older entries exist or
-    // the frontier can still be reached for; down is newer.
-    if (dy < 0) return entryNav.older || entryNav.frontier ? 1 : 0.25;
-    return entryNav.newer ? 1 : 0.25;
+    if (level === 'ledger') return dy < 0 ? 0.5 : 0.18;
+    if (level === 'address') return 0.5;
+    // Entry level: up is older -- live while older entries exist or the
+    // frontier can still be reached for; down is newer.
+    if (dy < 0) return entryNav.older || entryNav.frontier ? 0.5 : 0.18;
+    return entryNav.newer ? 0.5 : 0.18;
   };
   document.addEventListener('touchstart', (e) => {
     sx = null; axis = null; startRow = null;
@@ -1850,7 +1843,9 @@ async function turnEntry(dir) {
     const t = e.target;
     if (t.closest && t.closest('input, textarea, select, .settings-panel')) return;
     startRow = t.closest ? t.closest('.idx-row[data-txid]') : null;
-    topStart = window.scrollY <= 1;
+    topStart = window.scrollY <= 2;
+    botStart = window.scrollY >= document.documentElement.scrollHeight - window.innerHeight - 2;
+    shortStart = document.documentElement.scrollHeight <= window.innerHeight + 24;
     sx = e.touches[0].clientX; sy = e.touches[0].clientY; st = performance.now();
   }, { passive: true });
   document.addEventListener('touchmove', (e) => {
