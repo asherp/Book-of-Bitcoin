@@ -40,8 +40,9 @@ compiled to WASM) is consumed as a published
   so revisited chapters and resolved citations read offline)
 - `web/btc-pages.js` — page numbers: one transaction is one page, numbered
   by the chain's running transaction count since genesis. Each section shows
-  its folio (`p. n`) beneath its § number: the count of transactions in
-  every block before its own, plus its position in the block. A fresh
+  its folio (`p. n`) at the right end of the running head, on the chapter
+  label's line: the count of transactions in every block before its own,
+  plus its position in the block. A fresh
   block's anchor is a census lookup — a source that can sum per-block
   transaction counts over a height range: Blockchair's aggregation API
   first, mempool.space's `reward-stats` (tip-relative totalTx, differenced
