@@ -302,13 +302,14 @@ a:hover { text-decoration: underline; }
    the entry's particulars ruled like a small account card -- the citation
    into the manuscript (the one door to the book), the running balance where
    the map is whole, the coin's status, and the entry's place in the record. */
-/* The passage's citation, heading the leaf: βoβ and the full reference --
-   the handle a passage is quoted by (social media included), and the door
-   back into the reader: a tap opens the passage in the manuscript itself.
-   No text-transform: uppercasing would turn the β sigils into capital
-   Betas, which read as plain Bs. */
-.entry-cite { margin-bottom:20px; font:600 12.5px/1 'IBM Plex Mono',monospace; letter-spacing:.14em; color:var(--accent);
-  white-space:nowrap; font-variant-numeric:tabular-nums; }
+/* The passage's citation as the leaf's eyebrow -- the page-eyebrow manner
+   the compendium's other leaves open with, carrying βoβ and the full
+   reference: the handle a passage is quoted by (social media included),
+   and the door back into the reader -- a tap opens the passage in the
+   manuscript itself. No text-transform: uppercasing would turn the β
+   sigils into capital Betas, which read as plain Bs. */
+.entry-cite { font:600 11px/1.6 'IBM Plex Mono',monospace; letter-spacing:.3em; text-transform:none;
+  color:var(--accent); text-align:center; font-variant-numeric:tabular-nums; }
 .entry-cite:empty { display:none; }
 .entry-cite:hover { color:var(--accent-2); text-decoration:none; }
 /* The passage's title: the transaction's own name in the book's tongue --
@@ -361,6 +362,7 @@ a:hover { text-decoration: underline; }
 .entry-section .op-push { color: var(--meta); }
 .entry-section .dt { color: var(--accent); font-style: normal; font-weight: 700; }
 .entry-section .wit-sep, .entry-section .wit-empty { color:var(--meta); font-style:normal; }
+.entry-section .glossia-lazy { color:var(--dim); }
 .entry-section .tx-ascii { margin:0 0 .55em; padding:.12em 0 .12em 1.05em;
   border-left:2px solid var(--accent); border-radius:1px;
   font:italic 400 17.5px/1.6 'Newsreader',serif; color:var(--ink-soft); }
@@ -473,11 +475,11 @@ a:hover { text-decoration: underline; }
       <!-- The entry leaf's own hero: one transaction, read as a page, bare
            of the compendium's chrome (no masthead, no crumbs, no pager --
            swipes alone move through the timeline, as the reader's pages
-           turn). The passage's citation heads it -- βoβ and the full
-           reference, the door back into the reader. The page is titled by
-           the transaction's own name in the book's tongue -- its txid as
-           Glossia prose -- and beneath the entry's net the WHOLE section
-           is reproduced, so the referenced txo reads in context. -->
+           turn). The passage's citation is the leaf's eyebrow -- βoβ and
+           the full reference, the door back into the reader. The page is
+           titled by the transaction's own name in the book's tongue -- its
+           txid as Glossia prose -- and beneath the entry's net the WHOLE
+           section is reproduced, so the referenced txo reads in context. -->
       <header class="anth-hero hidden" id="entry-hero">
         <a class="entry-cite" id="entry-cite"></a>
         <h1 class="entry-title" id="entry-title"></h1>
@@ -797,8 +799,9 @@ function sectionFor(txid) {
         // Per-input witness prose, footnote-shaped as the book shapes it:
         // null = no witness (no footnote), '∅' = an all-zero witness (the
         // coinbase reserved value, an empty stack), a string = the rendered
-        // items, undefined = too bulky here (the book's lazy scroll-in
-        // treatment is the right home for a data carrier).
+        // items, undefined = data-carrier-sized -- encoded lazily when its
+        // footnote scrolls near, the book's own deferral, so building the
+        // leaf stays cheap while nothing is ever left out.
         const witHtml = fields.inputs.map((v) => {
           if (!v.witnessHex) return null;
           if (v.witnessZero) return '∅';
@@ -1484,7 +1487,7 @@ const openEntryLeaf = async (alive) => {
         })();
       }
       cite.append(citeBody);
-      if (v.witnessHex) { footnotes.push({ n: footnotes.length + 1, html: s.witHtml[i] }); cite.append(witnessRef(footnotes.length)); }
+      if (v.witnessHex) { footnotes.push({ n: footnotes.length + 1, html: s.witHtml[i], items: v.witnessItems }); cite.append(witnessRef(footnotes.length)); }
       amtLine.prepend(seqSpan(v));
       cite.append(amtLine);
       // An input that renders a scriptSig holds an aligned row, any pending
@@ -1535,21 +1538,52 @@ const openEntryLeaf = async (alive) => {
     wrap.append(flow);
     secEl.replaceChildren(wrap);
     // The witness footnotes, at the section's foot as the book sets them.
-    // The prose is already composed (sectionFor caps a data-carrier-sized
-    // stack, deferring it to the book's lazy scroll-in treatment).
+    // A modest stack's prose is already composed; a data-carrier-sized one
+    // streams in when its footnote scrolls near -- the book's own lazy
+    // treatment: the stack renders with a dim placeholder per data push,
+    // and each push's prose is encoded one macrotask at a time, so a
+    // kilobyte-scale inscription never blocks the leaf.
     if (footnotes.length) {
       const fnSec = document.createElement('div');
       fnSec.className = 'chapter-footnotes';
+      const lazyFns = [];
       for (const fn of footnotes) {
         const p2 = document.createElement('p');
         p2.className = 'footnote-entry';
         p2.id = `fn-${fn.n}`;
-        p2.innerHTML = `<span class="footnote-mark">${fn.n}</span>` + (fn.html === undefined
-          ? '<span class="wit-empty">a data carrier — read it in the book</span>'
-          : fn.html ?? '∅');
+        const mark = `<span class="footnote-mark">${fn.n}</span>`;
+        if (fn.html === undefined) {
+          p2.innerHTML = mark + '<span class="glossia-lazy">…</span>';
+          lazyFns.push({ el: p2, mark, items: fn.items });
+        } else {
+          p2.innerHTML = mark + (fn.html ?? '∅');
+        }
         fnSec.append(p2);
       }
       secEl.append(fnSec);
+      if (lazyFns.length) {
+        const io2 = new IntersectionObserver((es2) => {
+          for (const en of es2) {
+            if (!en.isIntersecting) continue;
+            io2.unobserve(en.target);
+            const job = lazyFns.find((l) => l.el === en.target);
+            if (job) (async () => {
+              const [gl, p3] = await Promise.all([import('./glossia-msg.js'), import('./btc-prose.js')]);
+              await gl.init();
+              if (!alive()) return;
+              const chunks = [];
+              const placeholder = (hex) => { chunks.push(hex); return `<span class="glossia-lazy" data-wchunk="${chunks.length - 1}">…</span>`; };
+              job.el.innerHTML = job.mark + p3.renderWitness(job.items, placeholder);
+              for (const spanEl of [...job.el.querySelectorAll('[data-wchunk]')]) {
+                await new Promise((r2) => setTimeout(r2, 0));
+                if (!alive()) return;
+                spanEl.outerHTML = gl.encodeSeedPhrase(chunks[+spanEl.dataset.wchunk], 'english', 5).prose;
+              }
+            })();
+          }
+        }, { rootMargin: '800px 0px' });
+        for (const l of lazyFns) io2.observe(l.el);
+      }
     }
     // Forward citations: the right margin's mirror of the left's provenance
     // -- where each output's value went next. One outspends call covers
