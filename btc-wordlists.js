@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+//
 // btc-wordlists.js -- the two payload wordlists behind the block-version
 // notation in btc-prose.js (formatBlockVersion). Extracted verbatim, in list
 // order, from the Glossia language data: BIP39 is english/payload_bip39.yaml

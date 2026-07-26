@@ -1,3 +1,4 @@
+<!-- SPDX-License-Identifier: MIT OR Apache-2.0 -->
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>The βook of βitcoin — Search</title>
@@ -18,7 +19,14 @@
 <script>
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js').catch((e) => console.warn('SW registration failed:', e));
+      navigator.serviceWorker.register('./sw.js').then((reg) => {
+        // An installed app can resume from the background for days without a
+        // navigation, never rechecking for a new build: check again on every
+        // return to the foreground.
+        document.addEventListener('visibilitychange', () => {
+          if (document.visibilityState === 'visible') reg.update().catch(() => {});
+        });
+      }).catch((e) => console.warn('SW registration failed:', e));
     });
   }
 </script>
@@ -79,7 +87,7 @@ button:hover { background: var(--accent-2); }
 <div class="wrap">
   <div class="masthead">
     <span class="title">The <span class="beta">β</span>ook of <span class="beta">β</span>itcoin</span>
-    <span class="home"><a href="./bitcoin-book.html">Read</a> · <a href="./bitcoin-contents.html">Contents</a> · <a href="https://glossia.io/">Glossia</a></span>
+    <span class="home"><a href="./bitcoin-book.html">Read</a> · <a href="./bitcoin-contents.html">Contents</a> · <a href="./bitcoin-ledgers.html">Ledgers</a> · <a href="https://glossia.io/">Glossia</a></span>
   </div>
 
   <header class="page-head">
@@ -87,9 +95,9 @@ button:hover { background: var(--accent-2); }
   </header>
 
   <div class="card">
-    <label for="block-input">Block height, hash, transaction id, or reference</label>
+    <label for="block-input">Block height, hash, transaction id, reference, or address</label>
     <div class="lookup-row">
-      <input type="text" id="block-input" class="mono" placeholder="e.g. III β2 ■5, a height, a hash, or a transaction id" autocomplete="off" spellcheck="false" autofocus>
+      <input type="text" id="block-input" class="mono" placeholder="e.g. III β2 ■5, a height, a hash, a transaction id, or an address" autocomplete="off" spellcheck="false" autofocus>
       <button type="button" id="block-btn">Read</button>
     </div>
   </div>
@@ -101,18 +109,26 @@ button:hover { background: var(--accent-2); }
     <a class="example" href="./bitcoin-book.html?block=III%20%CE%B22%20%E2%96%A05"><span class="example-what">a chapter, by the book's own citation</span><span class="example-form">III β2 ■5</span></a>
     <a class="example" href="./bitcoin-book.html?block=57043"><span class="example-what">Bitcoin Pizza Day's chapter, by height</span><span class="example-form">57043</span></a>
     <a class="example" href="./bitcoin-book.html?txid=a1075db55d416d3ca199f55b6084e2115b9345e16c5cf302fc80e9d5fbf5d48d"><span class="example-what">the pizza transaction's own section, by its id</span><span class="example-form">a1075db5…f5d48d</span></a>
+    <a class="example" href="./bitcoin-ledger.html?address=1Ross5Np5doy4ajF9iGXzgKaC2Q3Pwwxv"><span class="example-what">an address's ledger — every chapter it appears in, with amounts</span><span class="example-form">1Ross5Np…Pwwxv</span></a>
   </div>
 </div>
 
-<script>
+<script type="module">
 // The book page resolves every input form itself (?block= accepts a height, a
 // negative tip-relative height, a 64-hex block hash or txid, and the citation
 // form alike), so searching is a hand-off: carry the query there and let the
-// book open it.
+// book open it. The one form the book doesn't take is an address -- an address
+// is not a place but a name, so it hands off to its Ledger instead: the
+// address's view of the manuscript, focused on amounts.
+import { isAddress } from './btc-index.js';
 const input = document.getElementById('block-input');
 const go = () => {
   const q = input.value.trim();
   if (!q) { input.focus(); return; }
+  // Uppercase bech32 (the QR form) is normalized to the lowercase form the
+  // ledger queries with; base58 stays as typed (its case is significant).
+  const addr = isAddress(q) ? q : (isAddress(q.toLowerCase()) ? q.toLowerCase() : null);
+  if (addr) { location.href = './bitcoin-ledger.html?address=' + encodeURIComponent(addr); return; }
   location.href = './bitcoin-book.html?block=' + encodeURIComponent(q);
 };
 document.getElementById('block-btn').addEventListener('click', go);
