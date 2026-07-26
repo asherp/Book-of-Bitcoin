@@ -373,8 +373,15 @@ a:hover { text-decoration: underline; }
 .entry-section .footnote-entry { margin:0 0 1.1em; font:italic 400 14.5px/1.6 'Newsreader',serif; color:var(--dim); }
 .entry-section .footnote-entry:target { color:var(--ink-soft); }
 .entry-section .footnote-mark { font:500 10.5px/1 'IBM Plex Mono',monospace; color:var(--accent); margin-right:.5em; font-style:normal; vertical-align:.35em; }
-/* The one mark the reader doesn't draw: the txo this entry references. */
+/* The one mark the reader doesn't draw: the txo this entry references --
+   the accent rule beside it, and its prose set bold: the pushed bytes of
+   this scriptPubKey are the address itself in the book's tongue, so the
+   line the entry is about stands out from the page's other prose. The
+   opcode glyphs keep their ordinary weight (the reset below); the small
+   mono OP_* and data marks carry their own weights already. */
 .entry-section .tx-out-script.hit { border-left:2px solid var(--accent); padding-left:.62em; margin-left:calc(-.62em - 2px); border-radius:1px; }
+.entry-section .tx-out-script.hit .tx-line { font-weight:600; }
+.entry-section .tx-out-script.hit .op { font-weight:400; }
 .entry-section .tx-out-value.hit { color:var(--accent); }
 @media (max-width: 560px) {
   /* The reader's own collapse: every band one column, citations leading
@@ -1098,9 +1105,12 @@ const runEntries = async (alive) => {
 let gen = 0;
 
 // What the current leaf's neighbours are, per axis -- the drag's damping and
-// the commit's guard read this, so gesture and pager can never disagree.
-// Entry-level vertical availability is refreshed whenever the leaf renders.
-let entryNav = { newer: false, older: false, reaching: false };
+// the commit's guard read this, so gesture and commit can never disagree.
+// Entry-level vertical availability is refreshed whenever the leaf renders;
+// readyNewer/readyOlder flip once the neighbour's section has been
+// pregenerated (the reader's neighborReady), which is what actually opens
+// the swipe.
+let entryNav = { newer: false, older: false, readyNewer: false, readyOlder: false };
 
 const clearHero = () => {
   totalsBar.classList.add('hidden');   // the record's paint re-seats it
@@ -1309,8 +1319,26 @@ const openEntryLeaf = async (alive) => {
   const e = adhoc ?? line.entries[ei];
   const len = line?.entries.length ?? 0;
   entryNav = adhoc
-    ? { newer: false, older: false, frontier: false, reaching: false }
-    : { newer: ei < len - 1, older: ei > 0, frontier: !line.complete, reaching: false };
+    ? { newer: false, older: false, readyNewer: false, readyOlder: false }
+    : { newer: ei < len - 1, older: ei > 0, readyNewer: false, readyOlder: false };
+
+  // Neighbour prefetch, the reader's own discipline (prefetchNeighbors in
+  // the book): after this leaf renders, quietly pregenerate the section
+  // either vertical swipe would land on -- sectionFor composes and encodes
+  // into its memo and the citation's § proof banks alongside, so the
+  // eventual turn is a lookup, landing on content ready to render. A swipe
+  // commits only onto a warmed neighbour (turnEntry); until then the drag
+  // rubber-bands. Deferred past the turn's entry animation, and warming
+  // settles ready even when the chain can't be reached -- the leaf's
+  // banked core still renders offline, so the timeline never strands.
+  const warmEntry = async (t) => {
+    try { await sectionFor(t.txid); await citePlace(t.txid); } catch (_) { /* the leaf's fallback still renders */ }
+  };
+  if (!adhoc) setTimeout(() => {
+    if (!alive()) return;
+    if (entryNav.newer) warmEntry(line.entries[ei + 1]).then(() => { if (alive()) entryNav.readyNewer = true; });
+    if (entryNav.older) warmEntry(line.entries[ei - 1]).then(() => { if (alive()) entryNav.readyOlder = true; });
+  }, 350);
 
   // The passage's citation, heading the leaf: βoβ (the βook of βitcoin's
   // own sigil) and the full reference -- Roman volume, β book, ■ chapter,
@@ -1661,7 +1689,8 @@ const openEntryLeaf = async (alive) => {
   const noteEl = document.getElementById('entry-note');
   noteEl.textContent = adhoc ? 'below the banked record — reading the address’s pages will reach it' : '';
   // The fetch ahead: nearing the banked frontier pulls the next page of
-  // history, so the older-swipe lands on content already banked.
+  // history, and the newly landed older neighbour warms like any other --
+  // the older-swipe stays gated until the leaf it would open is ready.
   if (!adhoc && line && !line.complete && ei < 3) {
     if (ei === 0) noteEl.textContent = 'reaching deeper — the next page of history is fetching…';
     extendLine(entryAddr).then(async () => {
@@ -1669,7 +1698,11 @@ const openEntryLeaf = async (alive) => {
       const fresh = await cachedLine(entryAddr);
       if (!alive() || !fresh) return;
       const at2 = findEntry(fresh, entryKey);
-      entryNav = { newer: at2 < fresh.entries.length - 1, older: at2 > 0, frontier: !fresh.complete, reaching: false };
+      entryNav = { newer: at2 < fresh.entries.length - 1, older: at2 > 0,
+                   readyNewer: entryNav.readyNewer, readyOlder: entryNav.readyOlder };
+      if (at2 > 0 && !entryNav.readyOlder) {
+        warmEntry(fresh.entries[at2 - 1]).then(() => { if (alive()) entryNav.readyOlder = true; });
+      }
       if (at2 >= 0) noteEl.textContent = ei === 0 && at2 > 0 ? 'older entries arrived — a push up continues' : '';
     });
   }
@@ -1800,28 +1833,20 @@ function returnToRecord() {
   turnTo(() => { level = 'address'; at = Math.max(0, idx); }, -1, 'x');
 }
 // Time, at entry level: +1 is older (the direction the record scrolls),
-// -1 newer. At the banked frontier the older-turn asks for the next page
-// and holds until it lands -- the same prefetch-gated contract as every
-// other turn on the site.
+// -1 newer. A turn commits only onto a neighbour whose section has been
+// pregenerated (openEntryLeaf's warming) -- the reader's prefetch-gated
+// contract: until the destination is ready to render, the swipe only
+// rubber-bands. At the banked frontier the fetch-ahead and the warming
+// are already reaching for the next page; the older-swipe opens the
+// moment they land.
 async function turnEntry(dir) {
   if (level !== 'entry' || turning) return;
   const line = await cachedLine(entryAddr);
   const ei = findEntry(line, entryKey);
   if (ei < 0) return;
   if (dir > 0) {   // older
-    if (ei > 0) { const k = entryKeyOf(line.entries[ei - 1]); turnTo(() => { entryKey = k; }, 1, 'y'); }
-    else if (!line.complete && !entryNav.reaching) {
-      entryNav.reaching = true;
-      document.getElementById('entry-note').textContent = 'reaching deeper — the next page of history is fetching…';
-      const fresh = await extendLine(entryAddr) ?? line;
-      entryNav.reaching = false;
-      if (level !== 'entry') return;
-      const at2 = findEntry(fresh, entryKey);
-      if (at2 > 0) { const k = entryKeyOf(fresh.entries[at2 - 1]); turnTo(() => { entryKey = k; }, 1, 'y'); }
-      else document.getElementById('entry-note').textContent =
-        fresh.complete ? '— the beginning of the record' : `the chain could not be reached (${chainFailureText()})`;
-    }
-  } else if (ei < line.entries.length - 1) {   // newer
+    if (ei > 0 && entryNav.readyOlder) { const k = entryKeyOf(line.entries[ei - 1]); turnTo(() => { entryKey = k; }, 1, 'y'); }
+  } else if (ei < line.entries.length - 1 && entryNav.readyNewer) {   // newer
     const k = entryKeyOf(line.entries[ei + 1]);
     turnTo(() => { entryKey = k; }, -1, 'y');
   }
@@ -1862,14 +1887,15 @@ async function turnEntry(dir) {
     return topStart && dy > 0;                         // address: pull down from the top ascends
   };
   // The follow is the reader's too: half-speed toward a live neighbour,
-  // a firm rubber-band toward nothing.
+  // a firm rubber-band toward nothing -- and a neighbour counts as live
+  // only once its section has been pregenerated, so the finger feels the
+  // same gate the commit enforces.
   const vDamp = (dy) => {
     if (level === 'ledger') return dy < 0 ? 0.5 : 0.18;
     if (level === 'address') return 0.5;
-    // Entry level: up is older -- live while older entries exist or the
-    // frontier can still be reached for; down is newer.
-    if (dy < 0) return entryNav.older || entryNav.frontier ? 0.5 : 0.18;
-    return entryNav.newer ? 0.5 : 0.18;
+    // Entry level: up is older, down is newer.
+    if (dy < 0) return entryNav.older && entryNav.readyOlder ? 0.5 : 0.18;
+    return entryNav.newer && entryNav.readyNewer ? 0.5 : 0.18;
   };
   document.addEventListener('touchstart', (e) => {
     sx = null; axis = null; startRow = null;
