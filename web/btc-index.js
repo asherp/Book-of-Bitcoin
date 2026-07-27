@@ -900,18 +900,30 @@ export async function sectionOf(txid) {
 // ever. This is what completes a passage's citation (§section), and what
 // resolves a reproduced section's margin citations, without walking
 // anything: a proof names the position directly.
-export async function citePlace(txid) {
-  const kept = await storeGet('citations', txid) ?? await storeGet('placements', txid);
-  if (kept && Number.isInteger(kept.pos) && Number.isInteger(kept.height)) return kept;
-  for (const mirror of esploraMirrors()) {
-    const mp = await esploraJson(mirror, `/tx/${txid}/merkle-proof`);
-    if (mp && Number.isInteger(mp.pos)) {
-      const rec = { height: mp.block_height, pos: mp.pos };
-      storePut('placements', txid, rec);
-      return rec;
-    }
+// Single-flight per txid (the book's citationCache discipline): a section
+// whose inputs spend several outputs of one transaction, or a neighbour
+// warming racing the leaf's own resolvers, must share one proof fetch --
+// not race duplicates before the placement banks. Settled entries clear,
+// so a failed resolution (mirrors unreachable) is asked again next time
+// while a success answers from the archive forever.
+const citePlaceInflight = new Map();
+export function citePlace(txid) {
+  if (!citePlaceInflight.has(txid)) {
+    citePlaceInflight.set(txid, (async () => {
+      const kept = await storeGet('citations', txid) ?? await storeGet('placements', txid);
+      if (kept && Number.isInteger(kept.pos) && Number.isInteger(kept.height)) return kept;
+      for (const mirror of esploraMirrors()) {
+        const mp = await esploraJson(mirror, `/tx/${txid}/merkle-proof`);
+        if (mp && Number.isInteger(mp.pos)) {
+          const rec = { height: mp.block_height, pos: mp.pos };
+          storePut('placements', txid, rec);
+          return rec;
+        }
+      }
+      return null;
+    })().finally(() => citePlaceInflight.delete(txid)));
   }
-  return null;
+  return citePlaceInflight.get(txid);
 }
 export const sectionOfFetched = async (txid) => (await citePlace(txid))?.pos ?? null;
 
@@ -966,6 +978,51 @@ export async function txHexOf(txid) {
     } catch { continue; }
   }
   return null;
+}
+
+// Every input's spent amount in one request sized by the transaction
+// itself: Esplora has no endpoint for a single referenced output's value
+// (/outspend/:vout carries spend status only), but a transaction's own
+// JSON (/tx/:txid) lists each input's prevout -- value included -- so a
+// section's margin amounts never require fetching the referenced
+// transactions, however enormous (an exchange batch withdrawal) those
+// are. Confirmed prevouts are immutable; memoized for the session, with
+// the book's citations archive still answering first upstream.
+const prevoutsMemo = new Map();
+export function prevoutValuesOf(txid) {
+  if (!prevoutsMemo.has(txid)) {
+    prevoutsMemo.set(txid, (async () => {
+      for (const mirror of esploraMirrors()) {
+        const j = await esploraJson(mirror, `/tx/${txid}`);
+        if (j && j.txid === txid && Array.isArray(j.vin)) {
+          return j.vin.map((v) => (v.prevout && v.prevout.value != null ? Number(v.prevout.value) : null));
+        }
+      }
+      prevoutsMemo.delete(txid);   // nothing answered -- ask again next time
+      return null;
+    })());
+  }
+  return prevoutsMemo.get(txid);
+}
+
+// The spending status of every output of a transaction at once (Esplora
+// /outspends) -- what fills a reproduced section's forward citations, the
+// same call the book makes. Chain-mutable (an unspent output spends later),
+// so it is memoized for the session only, never banked; null when no mirror
+// answers, and a missing forward reference is absence, not an error.
+const outspendsMemo = new Map();
+export function outspendsOf(txid) {
+  if (!outspendsMemo.has(txid)) {
+    outspendsMemo.set(txid, (async () => {
+      for (const mirror of esploraMirrors()) {
+        const spends = await esploraJson(mirror, `/tx/${txid}/outspends`);
+        if (Array.isArray(spends)) return spends;
+      }
+      outspendsMemo.delete(txid);   // nothing answered -- ask again next time
+      return null;
+    })());
+  }
+  return outspendsMemo.get(txid);
 }
 
 // One record line: the citation whole, then debit, credit, status. An
