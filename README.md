@@ -197,6 +197,22 @@ repo's builds can succeed.
 - `.github/workflows/pr-preview.yml` — deploys a live preview of every pull
   request under `pr-preview/pr-<N>/` and comments the URL on the PR.
 
+## Reading without JavaScript (crawlers, AI assistants)
+
+The book composes its prose in the browser, so the pages ship as empty app
+shells — a crawler or an AI assistant's URL fetch gets no passage text from
+them. For those readers the deploy also publishes a static layer:
+
+- `/llms.txt` — the site explained for machine readers: where the text
+  lives, the citation scheme, the app's URL grammar, and how any passage on
+  the chain can be reconstructed from public data with the published engine.
+- `/passages/` — every curated table-of-contents entry pre-rendered as plain
+  markdown (prose, frontispiece, witness footnotes), generated at deploy
+  time by `tools/prerender-passages.mjs` running the same parse → compose →
+  encode pipeline in Node against the freshly built WASM.
+- `/robots.txt` + `/sitemap.xml` — crawlers welcome, and pointed at all of
+  the above.
+
 ## License
 
 Five kinds of material live here, and the terms follow the distinction the
