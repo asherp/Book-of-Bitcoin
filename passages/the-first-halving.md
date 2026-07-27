@@ -10,7 +10,7 @@
 - **Block:** 210,000 — The First Halving
 - **Block hash:** `000000000000048b95347e83192f69cf0366076336c639f9b7228e9ba171342e`
 - **Transaction id:** `76a30f7eefb41cd01733b23218faea8a1a1a2f6bbf1a2c11e4bc77f62c8e7ce9`
-- **Read live:** https://asherp.github.io/Book-of-Bitcoin/bitcoin-book.html?txid=76a30f7eefb41cd01733b23218faea8a1a1a2f6bbf1a2c11e4bc77f62c8e7ce9
+- **Read live:** https://bookofbitcoin.io/bitcoin-book.html?txid=76a30f7eefb41cd01733b23218faea8a1a1a2f6bbf1a2c11e4bc77f62c8e7ce9
 
 ## Chapter frontispiece — block 210,000
 
@@ -43,5 +43,5 @@ Transaction id, as prose: *Tap truly tongue our menu. The cow undo knock. Aid ma
 bytes (decodable with the [glossia](https://crates.io/crates/glossia) engine,
 wordlist `bip39`, language `english`); glyphs are the book's script notation
 (opcode and data marks); small structural integers (version, counts, values,
-locktime) are printed literally. See [/llms.txt](https://asherp.github.io/Book-of-Bitcoin/llms.txt) for how any
+locktime) are printed literally. See [/llms.txt](https://bookofbitcoin.io/llms.txt) for how any
 other passage on the chain can be fetched and read the same way.

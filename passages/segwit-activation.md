@@ -10,7 +10,7 @@
 - **Block:** 481,824 — SegWit activation
 - **Block hash:** `0000000000000000001c8018d9cb3b742ef25114f27563e3fc4a1902167f9893`
 - **Transaction id:** `da917699942e4a96272401b534381a75512eeebe8403084500bd637bd47168b3`
-- **Read live:** https://asherp.github.io/Book-of-Bitcoin/bitcoin-book.html?txid=da917699942e4a96272401b534381a75512eeebe8403084500bd637bd47168b3
+- **Read live:** https://bookofbitcoin.io/bitcoin-book.html?txid=da917699942e4a96272401b534381a75512eeebe8403084500bd637bd47168b3
 
 ## Chapter frontispiece — block 481,824
 
@@ -50,5 +50,5 @@ Transaction id, as prose: *Recall drum insect to walnut. Design set lens before 
 bytes (decodable with the [glossia](https://crates.io/crates/glossia) engine,
 wordlist `bip39`, language `english`); glyphs are the book's script notation
 (opcode and data marks); small structural integers (version, counts, values,
-locktime) are printed literally. See [/llms.txt](https://asherp.github.io/Book-of-Bitcoin/llms.txt) for how any
+locktime) are printed literally. See [/llms.txt](https://bookofbitcoin.io/llms.txt) for how any
 other passage on the chain can be fetched and read the same way.

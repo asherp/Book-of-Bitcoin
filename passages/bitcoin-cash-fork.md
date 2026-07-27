@@ -10,7 +10,7 @@
 - **Block:** 478,558 — Bitcoin Cash fork
 - **Block hash:** `0000000000000000011865af4122fe3b144e2cbeea86142e8ff2fb4107352d43`
 - **Transaction id:** `d89853f0fb659caad5b7680656b0aaca8f3093fffe525d4ba422b93f8a52f070`
-- **Read live:** https://asherp.github.io/Book-of-Bitcoin/bitcoin-book.html?txid=d89853f0fb659caad5b7680656b0aaca8f3093fffe525d4ba422b93f8a52f070
+- **Read live:** https://bookofbitcoin.io/bitcoin-book.html?txid=d89853f0fb659caad5b7680656b0aaca8f3093fffe525d4ba422b93f8a52f070
 
 ## Chapter frontispiece — block 478,558
 
@@ -45,5 +45,5 @@ Transaction id, as prose: *Its ill yes little get penalty. Our legal ear is mutu
 bytes (decodable with the [glossia](https://crates.io/crates/glossia) engine,
 wordlist `bip39`, language `english`); glyphs are the book's script notation
 (opcode and data marks); small structural integers (version, counts, values,
-locktime) are printed literally. See [/llms.txt](https://asherp.github.io/Book-of-Bitcoin/llms.txt) for how any
+locktime) are printed literally. See [/llms.txt](https://bookofbitcoin.io/llms.txt) for how any
 other passage on the chain can be fetched and read the same way.

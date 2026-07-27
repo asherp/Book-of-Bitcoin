@@ -10,7 +10,7 @@
 - **Block:** 308,570
 - **Block hash:** `000000000000000004c31376d7619bf0f0d65af6fb028d3b4a410ea39d22554c`
 - **Transaction id:** `8bae12b5f4c088d940733dcd1455efc6a3a69cf9340e17a981286d3778615684`
-- **Read live:** https://asherp.github.io/Book-of-Bitcoin/bitcoin-book.html?txid=8bae12b5f4c088d940733dcd1455efc6a3a69cf9340e17a981286d3778615684
+- **Read live:** https://bookofbitcoin.io/bitcoin-book.html?txid=8bae12b5f4c088d940733dcd1455efc6a3a69cf9340e17a981286d3778615684
 
 ## Chapter frontispiece — block 308,570
 
@@ -45,5 +45,5 @@ Transaction id, as prose: *Lounge reason its fun human. Spoon may get dolphin. I
 bytes (decodable with the [glossia](https://crates.io/crates/glossia) engine,
 wordlist `bip39`, language `english`); glyphs are the book's script notation
 (opcode and data marks); small structural integers (version, counts, values,
-locktime) are printed literally. See [/llms.txt](https://asherp.github.io/Book-of-Bitcoin/llms.txt) for how any
+locktime) are printed literally. See [/llms.txt](https://bookofbitcoin.io/llms.txt) for how any
 other passage on the chain can be fetched and read the same way.

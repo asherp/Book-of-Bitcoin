@@ -10,7 +10,7 @@
 - **Block:** 170
 - **Block hash:** `00000000d1145790a8694403d4063f323d499e655c83426834d4ce2f8dd4a2ee`
 - **Transaction id:** `f4184fc596403b9d638783cf57adfe4c75c605f6356fbc91338530e9831e9e16`
-- **Read live:** https://asherp.github.io/Book-of-Bitcoin/bitcoin-book.html?txid=f4184fc596403b9d638783cf57adfe4c75c605f6356fbc91338530e9831e9e16
+- **Read live:** https://bookofbitcoin.io/bitcoin-book.html?txid=f4184fc596403b9d638783cf57adfe4c75c605f6356fbc91338530e9831e9e16
 
 ## Chapter frontispiece — block 170
 
@@ -45,5 +45,5 @@ Transaction id, as prose: *Bird get its valley to path. Sponsor get analyst per 
 bytes (decodable with the [glossia](https://crates.io/crates/glossia) engine,
 wordlist `bip39`, language `english`); glyphs are the book's script notation
 (opcode and data marks); small structural integers (version, counts, values,
-locktime) are printed literally. See [/llms.txt](https://asherp.github.io/Book-of-Bitcoin/llms.txt) for how any
+locktime) are printed literally. See [/llms.txt](https://bookofbitcoin.io/llms.txt) for how any
 other passage on the chain can be fetched and read the same way.

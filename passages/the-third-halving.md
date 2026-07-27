@@ -10,7 +10,7 @@
 - **Block:** 630,000 — The Third Halving
 - **Block hash:** `000000000000000000024bead8df69990852c202db0e0097c1a12ea637d7e96d`
 - **Transaction id:** `cc2ca076fd04c2aeed6d02151c447ced3d09be6fb4d4ef36cb5ed4e7a3260566`
-- **Read live:** https://asherp.github.io/Book-of-Bitcoin/bitcoin-book.html?txid=cc2ca076fd04c2aeed6d02151c447ced3d09be6fb4d4ef36cb5ed4e7a3260566
+- **Read live:** https://bookofbitcoin.io/bitcoin-book.html?txid=cc2ca076fd04c2aeed6d02151c447ced3d09be6fb4d4ef36cb5ed4e7a3260566
 
 ## Chapter frontispiece — block 630,000
 
@@ -52,5 +52,5 @@ Transaction id, as prose: *Gravity circle its pottery to soul. Echo see grain fo
 bytes (decodable with the [glossia](https://crates.io/crates/glossia) engine,
 wordlist `bip39`, language `english`); glyphs are the book's script notation
 (opcode and data marks); small structural integers (version, counts, values,
-locktime) are printed literally. See [/llms.txt](https://asherp.github.io/Book-of-Bitcoin/llms.txt) for how any
+locktime) are printed literally. See [/llms.txt](https://bookofbitcoin.io/llms.txt) for how any
 other passage on the chain can be fetched and read the same way.

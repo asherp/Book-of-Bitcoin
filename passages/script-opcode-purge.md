@@ -10,7 +10,7 @@
 - **Block:** 74,638 — Script opcode purge
 - **Block hash:** `000000000069e1affe7161ab4bcbeacebb4ddf155b50e807f42de971b688a09b`
 - **Transaction id:** `2ae30f63b1507761b5541f7a723f566abb0701e5f8a97927980381341b5d8cbd`
-- **Read live:** https://asherp.github.io/Book-of-Bitcoin/bitcoin-book.html?txid=2ae30f63b1507761b5541f7a723f566abb0701e5f8a97927980381341b5d8cbd
+- **Read live:** https://bookofbitcoin.io/bitcoin-book.html?txid=2ae30f63b1507761b5541f7a723f566abb0701e5f8a97927980381341b5d8cbd
 
 ## Chapter frontispiece — block 74,638
 
@@ -43,5 +43,5 @@ Transaction id, as prose: *Its rural glass egg to harbor. Pop awake slot over cr
 bytes (decodable with the [glossia](https://crates.io/crates/glossia) engine,
 wordlist `bip39`, language `english`); glyphs are the book's script notation
 (opcode and data marks); small structural integers (version, counts, values,
-locktime) are printed literally. See [/llms.txt](https://asherp.github.io/Book-of-Bitcoin/llms.txt) for how any
+locktime) are printed literally. See [/llms.txt](https://bookofbitcoin.io/llms.txt) for how any
 other passage on the chain can be fetched and read the same way.

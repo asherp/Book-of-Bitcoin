@@ -10,7 +10,7 @@
 - **Block:** 246,816 — First coinbase OP_RETURN
 - **Block hash:** `000000000000000a6913ee4ada3b92bed9f1398ad8f22f4f944a5d5593197d68`
 - **Transaction id:** `c4397247190d3f8d88b587990d1c374d6b0ae25ebf9ced81ea8b69665b43d7de`
-- **Read live:** https://asherp.github.io/Book-of-Bitcoin/bitcoin-book.html?txid=c4397247190d3f8d88b587990d1c374d6b0ae25ebf9ced81ea8b69665b43d7de
+- **Read live:** https://bookofbitcoin.io/bitcoin-book.html?txid=c4397247190d3f8d88b587990d1c374d6b0ae25ebf9ced81ea8b69665b43d7de
 
 ## Chapter frontispiece — block 246,816
 
@@ -617,5 +617,5 @@ Transaction id, as prose: *Cop tell ring to strategy. Our smoke are obvious. Its
 bytes (decodable with the [glossia](https://crates.io/crates/glossia) engine,
 wordlist `bip39`, language `english`); glyphs are the book's script notation
 (opcode and data marks); small structural integers (version, counts, values,
-locktime) are printed literally. See [/llms.txt](https://asherp.github.io/Book-of-Bitcoin/llms.txt) for how any
+locktime) are printed literally. See [/llms.txt](https://bookofbitcoin.io/llms.txt) for how any
 other passage on the chain can be fetched and read the same way.

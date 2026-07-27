@@ -10,7 +10,7 @@
 - **Block:** 388,381 — BIP65 activation (v4)
 - **Block hash:** `000000000000000004c2b624ed5d7756c508d90fd0da2c7c679febfa6c4735f0`
 - **Transaction id:** `8b6f7958d15e6ec35b1afb90132808c306c4957d8de6f5b72024805360291ec3`
-- **Read live:** https://asherp.github.io/Book-of-Bitcoin/bitcoin-book.html?txid=8b6f7958d15e6ec35b1afb90132808c306c4957d8de6f5b72024805360291ec3
+- **Read live:** https://bookofbitcoin.io/bitcoin-book.html?txid=8b6f7958d15e6ec35b1afb90132808c306c4957d8de6f5b72024805360291ec3
 
 ## Chapter frontispiece — block 388,381
 
@@ -43,5 +43,5 @@ Transaction id, as prose: *Ban may seek to vanish. Fix get poem across cow. Its 
 bytes (decodable with the [glossia](https://crates.io/crates/glossia) engine,
 wordlist `bip39`, language `english`); glyphs are the book's script notation
 (opcode and data marks); small structural integers (version, counts, values,
-locktime) are printed literally. See [/llms.txt](https://asherp.github.io/Book-of-Bitcoin/llms.txt) for how any
+locktime) are printed literally. See [/llms.txt](https://bookofbitcoin.io/llms.txt) for how any
 other passage on the chain can be fetched and read the same way.

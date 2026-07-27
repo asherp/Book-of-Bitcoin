@@ -10,7 +10,7 @@
 - **Block:** 227,931 — BIP34 activation (v2)
 - **Block hash:** `000000000000024b89b42a942fe0d9fea3bb44ab7bd1b19115dd6a759c0808b8`
 - **Transaction id:** `48c23788fa9931b840a1e4735a0fd028d46280281c9a96347c8fc226d7f87153`
-- **Read live:** https://asherp.github.io/Book-of-Bitcoin/bitcoin-book.html?txid=48c23788fa9931b840a1e4735a0fd028d46280281c9a96347c8fc226d7f87153
+- **Read live:** https://bookofbitcoin.io/bitcoin-book.html?txid=48c23788fa9931b840a1e4735a0fd028d46280281c9a96347c8fc226d7f87153
 
 ## Chapter frontispiece — block 227,931
 
@@ -43,5 +43,5 @@ Transaction id, as prose: *Fat may set more cupboard. The eternal cigar get safe
 bytes (decodable with the [glossia](https://crates.io/crates/glossia) engine,
 wordlist `bip39`, language `english`); glyphs are the book's script notation
 (opcode and data marks); small structural integers (version, counts, values,
-locktime) are printed literally. See [/llms.txt](https://asherp.github.io/Book-of-Bitcoin/llms.txt) for how any
+locktime) are printed literally. See [/llms.txt](https://bookofbitcoin.io/llms.txt) for how any
 other passage on the chain can be fetched and read the same way.

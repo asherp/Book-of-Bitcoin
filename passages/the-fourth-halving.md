@@ -10,7 +10,7 @@
 - **Block:** 840,000 — The Fourth Halving
 - **Block hash:** `0000000000000000000320283a032748cef8227873ff4872689bf23f1cda83a5`
 - **Transaction id:** `a0db149ace545beabbd87a8d6b20ffd6aa3b5a50e58add49a3d435f898c272cf`
-- **Read live:** https://asherp.github.io/Book-of-Bitcoin/bitcoin-book.html?txid=a0db149ace545beabbd87a8d6b20ffd6aa3b5a50e58add49a3d435f898c272cf
+- **Read live:** https://bookofbitcoin.io/bitcoin-book.html?txid=a0db149ace545beabbd87a8d6b20ffd6aa3b5a50e58add49a3d435f898c272cf
 
 ## Chapter frontispiece — block 840,000
 
@@ -52,5 +52,5 @@ Transaction id, as prose: *Its sorry noodle plate tax. The vacant front see facu
 bytes (decodable with the [glossia](https://crates.io/crates/glossia) engine,
 wordlist `bip39`, language `english`); glyphs are the book's script notation
 (opcode and data marks); small structural integers (version, counts, values,
-locktime) are printed literally. See [/llms.txt](https://asherp.github.io/Book-of-Bitcoin/llms.txt) for how any
+locktime) are printed literally. See [/llms.txt](https://bookofbitcoin.io/llms.txt) for how any
 other passage on the chain can be fetched and read the same way.

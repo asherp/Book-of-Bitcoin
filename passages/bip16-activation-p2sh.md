@@ -10,7 +10,7 @@
 - **Block:** 173,805 — BIP16 activation (P2SH)
 - **Block hash:** `00000000000000ce80a7e057163a4db1d5ad7b20fb6f598c9597b9665c8fb0d4`
 - **Transaction id:** `ee1ddad7899f13b0118693800a719e337eb3fb355986346fa68848dc1bbe5276`
-- **Read live:** https://asherp.github.io/Book-of-Bitcoin/bitcoin-book.html?txid=ee1ddad7899f13b0118693800a719e337eb3fb355986346fa68848dc1bbe5276
+- **Read live:** https://bookofbitcoin.io/bitcoin-book.html?txid=ee1ddad7899f13b0118693800a719e337eb3fb355986346fa68848dc1bbe5276
 
 ## Chapter frontispiece — block 173,805
 
@@ -43,5 +43,5 @@ Transaction id, as prose: *An iron nominee manage review. The mass farm rubber t
 bytes (decodable with the [glossia](https://crates.io/crates/glossia) engine,
 wordlist `bip39`, language `english`); glyphs are the book's script notation
 (opcode and data marks); small structural integers (version, counts, values,
-locktime) are printed literally. See [/llms.txt](https://asherp.github.io/Book-of-Bitcoin/llms.txt) for how any
+locktime) are printed literally. See [/llms.txt](https://bookofbitcoin.io/llms.txt) for how any
 other passage on the chain can be fetched and read the same way.

@@ -10,7 +10,7 @@
 - **Block:** 774,628 — Largest block (at the time)
 - **Block hash:** `0000000000000000000515e202c8ae73c8155fc472422d7593af87aa74f2cf3d`
 - **Transaction id:** `6bbc98096c36ab96515b11073bfc840ee30ddb28423f3c87db2717fa3613c181`
-- **Read live:** https://asherp.github.io/Book-of-Bitcoin/bitcoin-book.html?txid=6bbc98096c36ab96515b11073bfc840ee30ddb28423f3c87db2717fa3613c181
+- **Read live:** https://bookofbitcoin.io/bitcoin-book.html?txid=6bbc98096c36ab96515b11073bfc840ee30ddb28423f3c87db2717fa3613c181
 
 ## Chapter frontispiece — block 774,628
 
@@ -50,5 +50,5 @@ Transaction id, as prose: *Limb is ancient to soap. Vintage include our universe
 bytes (decodable with the [glossia](https://crates.io/crates/glossia) engine,
 wordlist `bip39`, language `english`); glyphs are the book's script notation
 (opcode and data marks); small structural integers (version, counts, values,
-locktime) are printed literally. See [/llms.txt](https://asherp.github.io/Book-of-Bitcoin/llms.txt) for how any
+locktime) are printed literally. See [/llms.txt](https://bookofbitcoin.io/llms.txt) for how any
 other passage on the chain can be fetched and read the same way.

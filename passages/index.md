@@ -3,9 +3,9 @@
 > Static markdown renderings of the book's table of contents — the blocks and
 > transactions worth a reader's attention, each one a Bitcoin transaction
 > rendered verbatim as Glossia prose. The live book renders any passage on the
-> chain, in the browser: https://asherp.github.io/Book-of-Bitcoin/
+> chain, in the browser: https://bookofbitcoin.io/
 
-See [/llms.txt](https://asherp.github.io/Book-of-Bitcoin/llms.txt) for the site's structure, the citation
+See [/llms.txt](https://bookofbitcoin.io/llms.txt) for the site's structure, the citation
 scheme, and how to read passages beyond this curated set.
 
 - [The Genesis Block](./the-genesis-block.md) — I β1 ■1 §1

@@ -10,7 +10,7 @@
 - **Block:** 938,903 — First BIP110 signaling block
 - **Block hash:** `0000000000000000000161b65dc9cf0adfdad107b801cd87f1dcf0cfbb454654`
 - **Transaction id:** `22983eecd523947149ffebef474114d5efafc25989df8fa348f13105aad236ba`
-- **Read live:** https://asherp.github.io/Book-of-Bitcoin/bitcoin-book.html?txid=22983eecd523947149ffebef474114d5efafc25989df8fa348f13105aad236ba
+- **Read live:** https://bookofbitcoin.io/bitcoin-book.html?txid=22983eecd523947149ffebef474114d5efafc25989df8fa348f13105aad236ba
 
 ## Chapter frontispiece — block 938,903
 
@@ -114,5 +114,5 @@ Transaction id, as prose: *Riot repair pride to apology. Business may picture cu
 bytes (decodable with the [glossia](https://crates.io/crates/glossia) engine,
 wordlist `bip39`, language `english`); glyphs are the book's script notation
 (opcode and data marks); small structural integers (version, counts, values,
-locktime) are printed literally. See [/llms.txt](https://asherp.github.io/Book-of-Bitcoin/llms.txt) for how any
+locktime) are printed literally. See [/llms.txt](https://bookofbitcoin.io/llms.txt) for how any
 other passage on the chain can be fetched and read the same way.

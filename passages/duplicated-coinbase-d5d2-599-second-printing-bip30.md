@@ -10,7 +10,7 @@
 - **Block:** 91,842 — Duplicated coinbase d5d2…599, second printing (BIP30)
 - **Block hash:** `00000000000a4d0a398161ffc163c503763b1f4360639393e0e4c8e300e0caec`
 - **Transaction id:** `d5d27987d2a3dfc724e359870c6644b40e497bdc0589a033220fe15429d88599`
-- **Read live:** https://asherp.github.io/Book-of-Bitcoin/bitcoin-book.html?txid=d5d27987d2a3dfc724e359870c6644b40e497bdc0589a033220fe15429d88599
+- **Read live:** https://bookofbitcoin.io/bitcoin-book.html?txid=d5d27987d2a3dfc724e359870c6644b40e497bdc0589a033220fe15429d88599
 
 ## Chapter frontispiece — block 91,842
 
@@ -43,5 +43,5 @@ Transaction id, as prose: *Its office conduct apart prefer axis. Much soldier se
 bytes (decodable with the [glossia](https://crates.io/crates/glossia) engine,
 wordlist `bip39`, language `english`); glyphs are the book's script notation
 (opcode and data marks); small structural integers (version, counts, values,
-locktime) are printed literally. See [/llms.txt](https://asherp.github.io/Book-of-Bitcoin/llms.txt) for how any
+locktime) are printed literally. See [/llms.txt](https://bookofbitcoin.io/llms.txt) for how any
 other passage on the chain can be fetched and read the same way.

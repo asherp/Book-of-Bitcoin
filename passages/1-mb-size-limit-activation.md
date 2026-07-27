@@ -10,7 +10,7 @@
 - **Block:** 79,400 — 1 MB size limit activation
 - **Block hash:** `000000000021d821ec06be7173f413690bc5c4bc648dfa70b3b6763236f055b7`
 - **Transaction id:** `518efe6a5ad3733f2d8665045a3d29c55e02b7d21d15a43438fcdeaba67abf72`
-- **Read live:** https://asherp.github.io/Book-of-Bitcoin/bitcoin-book.html?txid=518efe6a5ad3733f2d8665045a3d29c55e02b7d21d15a43438fcdeaba67abf72
+- **Read live:** https://bookofbitcoin.io/bitcoin-book.html?txid=518efe6a5ad3733f2d8665045a3d29c55e02b7d21d15a43438fcdeaba67abf72
 
 ## Chapter frontispiece — block 79,400
 
@@ -43,5 +43,5 @@ Transaction id, as prose: *Increase wink to predict for fish. Pop used its brigh
 bytes (decodable with the [glossia](https://crates.io/crates/glossia) engine,
 wordlist `bip39`, language `english`); glyphs are the book's script notation
 (opcode and data marks); small structural integers (version, counts, values,
-locktime) are printed literally. See [/llms.txt](https://asherp.github.io/Book-of-Bitcoin/llms.txt) for how any
+locktime) are printed literally. See [/llms.txt](https://bookofbitcoin.io/llms.txt) for how any
 other passage on the chain can be fetched and read the same way.

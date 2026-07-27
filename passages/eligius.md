@@ -10,7 +10,7 @@
 - **Block:** 139,690 — Eligius
 - **Block hash:** `0000000000000187fe9ed54d5d7f14effa808e6710cf978353cdb96c412b2a03`
 - **Transaction id:** `cbbaa0a64924fe1d6ace3352f23242aa0028d4e0ff6ae8ed615244d66079cfb1`
-- **Read live:** https://asherp.github.io/Book-of-Bitcoin/bitcoin-book.html?txid=cbbaa0a64924fe1d6ace3352f23242aa0028d4e0ff6ae8ed615244d66079cfb1
+- **Read live:** https://bookofbitcoin.io/bitcoin-book.html?txid=cbbaa0a64924fe1d6ace3352f23242aa0028d4e0ff6ae8ed615244d66079cfb1
 
 ## Chapter frontispiece — block 139,690
 
@@ -273,5 +273,5 @@ Transaction id, as prose: *A range due knock its flag. Pop prosper our early cou
 bytes (decodable with the [glossia](https://crates.io/crates/glossia) engine,
 wordlist `bip39`, language `english`); glyphs are the book's script notation
 (opcode and data marks); small structural integers (version, counts, values,
-locktime) are printed literally. See [/llms.txt](https://asherp.github.io/Book-of-Bitcoin/llms.txt) for how any
+locktime) are printed literally. See [/llms.txt](https://bookofbitcoin.io/llms.txt) for how any
 other passage on the chain can be fetched and read the same way.

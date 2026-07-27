@@ -10,7 +10,7 @@
 - **Block:** 776,549
 - **Block hash:** `00000000000000000006d46071808986a33fd94bad3a5039c8d7626ac0405a6c`
 - **Transaction id:** `e53ac3be05bbeb8ea3bbfb7854a4d47eea556daea25f45ad3fe953f375ff7fd8`
-- **Read live:** https://asherp.github.io/Book-of-Bitcoin/bitcoin-book.html?txid=e53ac3be05bbeb8ea3bbfb7854a4d47eea556daea25f45ad3fe953f375ff7fd8
+- **Read live:** https://bookofbitcoin.io/bitcoin-book.html?txid=e53ac3be05bbeb8ea3bbfb7854a4d47eea556daea25f45ad3fe953f375ff7fd8
 
 ## Chapter frontispiece — block 776,549
 
@@ -47,5 +47,5 @@ Transaction id, as prose: *Such zoo get talent to trade. Our direct panther rela
 bytes (decodable with the [glossia](https://crates.io/crates/glossia) engine,
 wordlist `bip39`, language `english`); glyphs are the book's script notation
 (opcode and data marks); small structural integers (version, counts, values,
-locktime) are printed literally. See [/llms.txt](https://asherp.github.io/Book-of-Bitcoin/llms.txt) for how any
+locktime) are printed literally. See [/llms.txt](https://bookofbitcoin.io/llms.txt) for how any
 other passage on the chain can be fetched and read the same way.

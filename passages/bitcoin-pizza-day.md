@@ -10,7 +10,7 @@
 - **Block:** 57,043 — Bitcoin Pizza Day
 - **Block hash:** `00000000152340ca42227603908689183edc47355204e7aca59383b0aaac1fd8`
 - **Transaction id:** `bd9075d78e65a98fb054cb33cf0ecf14e3e7f8b3150231df8680919a79ac8fe5`
-- **Read live:** https://asherp.github.io/Book-of-Bitcoin/bitcoin-book.html?txid=bd9075d78e65a98fb054cb33cf0ecf14e3e7f8b3150231df8680919a79ac8fe5
+- **Read live:** https://bookofbitcoin.io/bitcoin-book.html?txid=bd9075d78e65a98fb054cb33cf0ecf14e3e7f8b3150231df8680919a79ac8fe5
 
 ## Chapter frontispiece — block 57,043
 
@@ -43,5 +43,5 @@ Transaction id, as prose: *Its tortoise get the latin bunker. Cry blossom drop t
 bytes (decodable with the [glossia](https://crates.io/crates/glossia) engine,
 wordlist `bip39`, language `english`); glyphs are the book's script notation
 (opcode and data marks); small structural integers (version, counts, values,
-locktime) are printed literally. See [/llms.txt](https://asherp.github.io/Book-of-Bitcoin/llms.txt) for how any
+locktime) are printed literally. See [/llms.txt](https://bookofbitcoin.io/llms.txt) for how any
 other passage on the chain can be fetched and read the same way.
