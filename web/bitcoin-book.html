@@ -925,7 +925,7 @@ button:disabled { opacity: .4; cursor: not-allowed; }
               <div class="glyph-row"><span class="g">□<i>n</i></span><span class="m">the <b>expected chapter mark</b> — a projected, not-yet-mined block cited by the place it would take; the number holds only while the queue does (a bare □ in a transaction's margin is the no-locktime mark)</span></div>
               <div class="glyph-row"><span class="g">—</span><span class="m"><b>unwritten</b> — a projected chapter's header slot, empty until a miner writes it</span></div>
               <div class="glyph-row"><span class="g">⋯</span><span class="m"><b>not yet knowable</b> — a value still resolving, or a projected chapter's predecessor, itself unwritten</span></div>
-              <div class="glyph-row"><span class="g">due ≈ <i>t</i></span><span class="m">a projected chapter's <b>expected wait</b> — blocks land one per ten minutes on average, so an estimate k blocks out spreads about ±10·√k minutes</span></div>
+              <div class="glyph-row"><span class="g">eta ≈ <i>t</i></span><span class="m">a projected chapter's <b>expected wait</b> — blocks land one per ten minutes on average, so an estimate k blocks out spreads about ±10·√k minutes</span></div>
             </div>
           </div>
 
@@ -1734,6 +1734,9 @@ async function stepProjected(height, where = -1) {
 // A websocket that won't connect degrades to a slow REST poll.
 const liveProjection = (() => {
   let ws = null, retryTimer = null, pollTimer = null, active = false;
+  let trackedTx = null;          // the section's txid the feed is following
+  let lastSectionSync = 0;       // last manifest refresh for a same-block § drift
+  let reseatInflight = false;
 
   const clearTimers = () => {
     if (retryTimer) { clearTimeout(retryTimer); retryTimer = null; }
@@ -1741,8 +1744,20 @@ const liveProjection = (() => {
   };
   const stop = () => {
     active = false;
+    trackedTx = null;
     clearTimers();
     if (ws) { try { ws.close(); } catch {} ws = null; }
+  };
+
+  // Follow (or stop following) the on-screen section's transaction. The
+  // backend replaces a client's tracked tx on each send; anything non-hex
+  // ('stop') clears it.
+  const sendTrack = () => {
+    if (!ws || ws.readyState !== 1) return;
+    const want = (state && state.projected && state.index >= 0 && state.txids) ? state.txids[state.index] : null;
+    if (want === trackedTx) return;
+    trackedTx = want;
+    try { ws.send(JSON.stringify({ 'track-tx': want || 'stop' })); } catch {}
   };
 
   // The queue reshuffled: re-cut the cached projection, re-seat this
@@ -1766,24 +1781,71 @@ const liveProjection = (() => {
   };
 
   // A block was mined: every projected chapter moves one nearer the tip --
-  // and if the new ink covers this very height, trade the pencil for it.
+  // and if the new ink covers a chapter page's very height, trade the pencil
+  // for it, silently: the frontage speaks for itself. A section never turns
+  // on the block alone -- its transaction may or may not have made it in --
+  // it waits for its own verdict: txConfirmed (mined) or txPosition
+  // (re-queued) names where it landed.
   const applyBlock = async (block) => {
     if (!block || !Number.isFinite(block.height)) return;
     if (tipHeight !== null && block.height <= tipHeight) return;   // stale or repeated
     tipHeight = block.height;
     projectedCache = null;   // every projected height re-seats
     if (!state || !state.projected) return;
-    if (state.height <= tipHeight) {
-      stop();
-      await openLookup(String(state.height));
-      setStatus('This chapter has just been mined — the page you were reading is now in ink.');
-      return;
-    }
     if (state.index === -1) {
+      if (state.height <= tipHeight) {
+        stop();
+        await openLookup(String(state.height));
+        return;
+      }
       try { await stepProjected(state.height, -1); } catch { /* keep the snapshot */ }
     } else {
       labelNav();
     }
+  };
+
+  // The tracked transaction moved in the projection: re-seat its section in
+  // place -- new chapter (eyebrow, crumb, URL) and new § around an unchanged
+  // body. A same-block § drift refreshes the manifest at most every 20 s; a
+  // change of projected block re-seats at once.
+  const applyTxPosition = async (tp) => {
+    if (!tp || !state || !state.projected || state.index < 0 || tipHeight === null) return;
+    if (!state.txids || state.txids[state.index] !== tp.txid) return;
+    const b = tp.position && Number.isFinite(tp.position.block) ? tp.position.block : null;
+    if (b === null) return;
+    const now = Date.now();
+    if (b === state.projIndex && now - lastSectionSync < 20_000) return;
+    if (reseatInflight) return;
+    reseatInflight = true;
+    try {
+      const manifest = await fetchProjectedManifest(b);
+      if (!state || !state.projected || state.index < 0) return;
+      if (!state.txids || state.txids[state.index] !== tp.txid) return;   // the reader paged on meanwhile
+      const idx = manifest.findIndex((t) => t.txid === tp.txid);
+      if (idx < 0) return;   // raced another reshuffle -- the next push tries again
+      lastSectionSync = now;
+      const height = tipHeight + 1 + b;
+      const moved = height !== state.height || idx !== state.index;
+      state.projIndex = b;
+      state.height = height;
+      state.manifest = manifest;
+      state.txids = manifest.map((t) => t.txid);
+      state.txCount = state.txids.length;
+      state.index = idx;
+      state.proj = projectedCache?.blocks?.[b] ?? state.proj;
+      if (moved) refreshProjectedSectionFurniture();
+    } catch { /* the next push tries again */ }
+    finally { reseatInflight = false; }
+  };
+
+  // The tracked transaction was mined: its section now exists in ink. Open
+  // it by txid -- the lookup resolves the real chapter and § -- and let the
+  // page speak for itself.
+  const applyTxConfirmed = async (txid) => {
+    if (!state || !state.projected || state.index < 0) return;
+    if (!state.txids || state.txids[state.index] !== txid) return;
+    stop();
+    await openLookup(txid);
   };
 
   const handleMessage = (ev) => {
@@ -1791,6 +1853,8 @@ const liveProjection = (() => {
     try { msg = JSON.parse(ev.data); } catch { return; }
     if (msg['mempool-blocks']) applyBlocks(msg['mempool-blocks']);
     if (msg.block) applyBlock(msg.block);
+    if (msg.txPosition) applyTxPosition(msg.txPosition);
+    if (msg.txConfirmed) applyTxConfirmed(msg.txConfirmed);
   };
 
   const startPolling = () => {
@@ -1807,7 +1871,10 @@ const liveProjection = (() => {
     if (!mempoolBackendBase) { startPolling(); return; }
     try { ws = new WebSocket(`${mempoolBackendBase.replace(/^http/, 'ws')}/v1/ws`); }
     catch { ws = null; startPolling(); return; }
-    ws.addEventListener('open', () => { try { ws.send(JSON.stringify({ action: 'want', data: ['blocks', 'mempool-blocks'] })); } catch {} });
+    ws.addEventListener('open', () => {
+      try { ws.send(JSON.stringify({ action: 'want', data: ['blocks', 'mempool-blocks'] })); } catch {}
+      sendTrack();
+    });
     ws.addEventListener('message', handleMessage);
     ws.addEventListener('close', () => {
       ws = null;
@@ -1818,11 +1885,13 @@ const liveProjection = (() => {
 
   return {
     // Called after every page render: the feed runs exactly while a
-    // projected page is on screen, and not a moment longer.
+    // projected page is on screen, and not a moment longer -- and keeps its
+    // tracked transaction in step with the section on screen.
     sync: () => {
       const want = !!(state && state.projected);
       if (want && !active) { active = true; connect(); }
       else if (!want && active) stop();
+      else if (want) sendTrack();
     },
   };
 })();
@@ -2189,7 +2258,7 @@ function renderProjectedHead(onTitlePage) {
   $('ch-book').textContent = book.toLocaleString();
   $('ch-title').textContent = `Chapter ${chapterName(chapter)}`;
   const subtitle = $('ch-subtitle');
-  subtitle.textContent = `Projected — due ${blocksEta(k + 1)}`;
+  subtitle.textContent = `Projected — eta ${blocksEta(k + 1)}`;
   subtitle.title = 'a draft chapter read from the mempool: these transactions are what a miner working right now would take, in the order they pay for';
   const inline = $('ch-chapter-inline');
   inline.textContent = '';
@@ -2238,7 +2307,7 @@ function renderProjectedHead(onTitlePage) {
     ? { mark: 'h', markClass: 'dt', text: '⋯', title: 'the previous block — the chain tip, resolving…' }
     : { text: '⋯', title: 'the previous chapter is itself unwritten' });
   slot({ mark: '⋔', markClass: 'merkle-mark', text: '—', title: 'no merkle root until the section list is sealed' });
-  slot({ text: `due ${blocksEta(k + 1)}`, title: `no timestamp until mined — expected in about ${(k + 1) * 10} min, give or take ${Math.round(10 * Math.sqrt(k + 1))}: block arrivals average one per ten minutes` });
+  slot({ text: `eta ${blocksEta(k + 1)}`, title: `no timestamp until mined — expected in about ${(k + 1) * 10} min, give or take ${Math.round(10 * Math.sqrt(k + 1))}: block arrivals average one per ten minutes` });
   const betaSpan = slot({ text: 'β —', gold: true, title: 'the difficulty target' });
   slot({ mark: 'η', markClass: 'fx-mark', text: '—', title: 'no nonce until the proof of work is found' });
 
@@ -2418,6 +2487,29 @@ function renderBookLeaf() {
   labelNav();
 }
 
+// A projected section's price of admission, as its event line: the effective
+// fee rate the ordering ran on, marked as a package rate where it departs
+// from the transaction's own fee ÷ vsize (family money -- CPFP).
+function projectedRateLine(m) {
+  const fmtR = (f) => f >= 10 ? String(Math.round(f)) : String(Math.round(f * 10) / 10);
+  const own = m.vsize ? m.fee / m.vsize : m.rate;
+  return `~${fmtR(m.rate)} sat/vB${Math.abs(m.rate - own) > 0.05 ? ' — package rate (CPFP)' : ''}`;
+}
+
+// Re-seat a projected section's furniture in place -- eyebrow and running-
+// head crumb, § number, rate line, URL, nav -- around an unchanged body: the
+// live tracker moves the page's address, never its text.
+function refreshProjectedSectionFurniture() {
+  renderProjectedHead(false);
+  const secNum = document.querySelector('#section-title .section-num');
+  if (secNum) secNum.textContent = `§ ${state.index + 1}`;
+  const m = state.manifest && state.manifest[state.index];
+  const ev = document.querySelector('#section-title .section-event');
+  if (ev && m && Number.isFinite(m.rate)) ev.textContent = projectedRateLine(m);
+  updateUrl();
+  labelNav();
+}
+
 function renderChapter(para) {
   $('chapter').classList.remove('title-leaf');
   $('chapter').classList.remove('span-leaf');
@@ -2450,11 +2542,7 @@ function renderChapter(para) {
   let sectionEvent = NOTABLE.find((e) => e.id === para.txid)?.title;
   if (!sectionEvent && state.projected && state.manifest) {
     const m = state.manifest[state.index];
-    if (m && Number.isFinite(m.rate)) {
-      const fmtR = (f) => f >= 10 ? String(Math.round(f)) : String(Math.round(f * 10) / 10);
-      const own = m.vsize ? m.fee / m.vsize : m.rate;
-      sectionEvent = `~${fmtR(m.rate)} sat/vB${Math.abs(m.rate - own) > 0.05 ? ' — package rate (CPFP)' : ''}`;
-    }
+    if (m && Number.isFinite(m.rate)) sectionEvent = projectedRateLine(m);
   }
   const sectionTitle = $('section-title');
   sectionTitle.textContent = '';

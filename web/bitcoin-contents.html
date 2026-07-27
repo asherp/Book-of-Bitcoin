@@ -509,7 +509,7 @@ function buildProjected(tip, summary, blocks, minFee, srcBase) {
 
   const etaTitleFor = (k) => {
     const spread = Math.round(10 * Math.sqrt(k));
-    return `due in about ${k * 10} min, give or take ${spread} — block arrivals average one per ten minutes`;
+    return `eta about ${k * 10} min, give or take ${spread} — block arrivals average one per ten minutes`;
   };
 
   if (blocks && blocks.length) {
