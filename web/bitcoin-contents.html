@@ -171,6 +171,12 @@ a:hover { text-decoration: underline; }
 import { NOTABLE, isBlockId, isRelativeBlockId, entryHref, blocksEta } from './btc-contents.js';
 import { volumeBookChapter, toRoman } from './btc-citation.js';
 import { storeGet, storePut } from './btc-store.js';
+import { seedArchive } from './btc-seed.js';
+
+// A first visit provisions the archive with the curated passages' chain data
+// (idle-time, once ever; see btc-seed.js), so this page's entries -- and the
+// book pages behind them -- open like revisits.
+seedArchive();
 
 const BOOKMARKS_KEY = 'glossia-btc-bookmarks';
 const readBookmarks = () => {
