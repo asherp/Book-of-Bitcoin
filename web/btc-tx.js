@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+//
 // btc-tx.js — a small, dependency-free Bitcoin transaction wire-format
 // parser: raw tx hex -> structured fields (version, vin, vout, locktime,
 // witness, size/vsize/weight), plus address derivation from scriptPubKey.

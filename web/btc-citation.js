@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+//
 // btc-citation.js — the book's three-tier block numbering. Volume = a
 // halving era (210,000 blocks -- the block subsidy halves at each
 // boundary). Book = a difficulty-adjustment window (2016 blocks -- Bitcoin

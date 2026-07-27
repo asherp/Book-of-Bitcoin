@@ -4,3 +4,8 @@ web/glossia_bg.wasm
 
 # Local clone made by build_web.sh when no glossia checkout is provided.
 .glossia-build/
+
+# Deploy-time artifacts of tools/prerender-passages.mjs — the static markdown
+# passages and sitemap are generated fresh on every deploy, not committed.
+web/passages/
+web/sitemap.xml
