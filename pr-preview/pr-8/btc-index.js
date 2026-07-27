@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+//
 // btc-index.js — the ledgers of the Bitcoin Book: notable addresses, each a
 // view of the manuscript focused on amounts. Shared by bitcoin-ledger.html
 // (the Ledger compendium: every ledger in one document, ledgers over
@@ -7,76 +9,16 @@
 // the store that remembers them, and the renderers that lay them out. (The
 // filename keeps its index-era name so cached module graphs never mix
 // builds.)
+//
+// The curated ledgers themselves -- which addresses the book keeps, and the
+// story behind each -- are editorial work and live in btc-index-data.js under
+// CC BY 4.0; they are re-exported here so importers see one module. See the
+// README's License section.
 
 import { volumeBookChapter, toRoman } from './btc-citation.js';
 import { storeGet, storePut } from './btc-store.js';
 
-// The table of contents and the index are inverses. The contents is a curated
-// list of *places* -- each entry names one block or transaction and cites it
-// once. The index is a curated list of *names* -- each entry is an address,
-// and its citations are discovered from the chain at read time: every
-// transaction that touches the address becomes a chapter citation, the way a
-// name in a book's index trails the run of pages it appears on. So where a
-// contents entry's id resolves to one citation, an index entry's address
-// resolves to many -- an open-ended list that grows as the address is used.
-//
-// The curated set is donation addresses: causes the community has paid, so
-// every citation is a gift and each entry's nested listing reads as a ledger
-// of giving. Ordered by the address's famous moment (reading order), like the
-// contents -- not alphabetically; the list is short enough to scan whole.
-//
-// A ledger is a titled set of addresses -- most hold one, but a campaign
-// that rotated wallets, or a reader gathering their own, may hold several.
-// Each address keeps its own map (one line in the store); the ledger is the
-// grouping above them, and its page turns between them like leaves.
-
-export const INDEXED = [
-  // WikiLeaks' public donation address, opened June 14, 2011, after the
-  // banking blockade -- Visa, Mastercard, PayPal, and the banks cut the
-  // organization off, and bitcoin became the way through. The donation stream
-  // Satoshi asked to hold off ("the heat you would bring") in one of his last
-  // posts; it arrived anyway, six months later, and has run ever since --
-  // thousands of gifts deep, the shelf's longest anthology.
-  { title: 'WikiLeaks', addresses: ['1HB5XMLmzFVj8ALj6mfBsbifRoD4miY36v'] },
-  // The Free Ross campaign's vanity donation address (the name is mined into
-  // the base58), collecting for Ross Ulbricht's defense and advocacy from the
-  // Silk Road trial era (2014) through freeross.org, until the January 2025
-  // pardon turned the cause from clemency to gratitude -- donations kept
-  // arriving after it.
-  { title: 'Free Ross — Ross Ulbricht defense fund', addresses: ['1Ross5Np5doy4ajF9iGXzgKaC2Q3Pwwxv'] },
-  // The Hal Finney Bitcoin Fund for ALS research, opened as Hal died (August
-  // 2014, the ice-bucket summer) after five years with the disease. The first
-  // transaction's recipient, remembered in donations toward its cure; the
-  // Bitcoin Foundation gave first. The annual Running Bitcoin Challenge
-  // (January 1-10, closing on the "Running bitcoin" tweet's anniversary)
-  // donates through processor pages with no fixed address, so this fund is
-  // the tribute's citable line.
-  { title: 'Hal Finney Bitcoin Fund — ALS research', addresses: ['1JsnZLEGgLJY7rbDdaKTzC2JyvfaKUpF5p'] },
-  // The EFF's standing bitcoin address, published on its "Other Ways to
-  // Give" page. The foundation's bitcoin story runs the currency's whole
-  // arc of respectability: an early 2011 acceptance, withdrawn the same
-  // year over legal uncertainty, resumed for good in May 2013 -- and now a
-  // plain address on the donations page, listed among the checks and wire
-  // transfers.
-  { title: 'Electronic Frontier Foundation', addresses: ['3LTu6uavQ4A3kgDauZipyGqcHQEUSVe2so'] },
-  // The Tor Project's donation wallet, from the standing addresses page it
-  // has kept since 2019 (donate.torproject.org/cryptocurrency). The same
-  // address answers on tails.net/donate: Tails joined the Tor Project in
-  // 2024, and the anonymity network and its amnesic operating system share
-  // the one wallet.
-  { title: 'Tor Project', addresses: ['bc1qtt04zfgjxg7lpqhk9vk8hnmnwf88ucwww5arsd'] },
-  // The donation address Keonne Rodriguez, Samourai Wallet's co-founder,
-  // published from federal prison (2026), appealing to the Bitcoin community
-  // for help with the legal debt of the Samourai prosecution: arrested April
-  // 2024 over the privacy wallet, a 2025 guilty plea to operating an
-  // unlicensed money-transmitting business. An open appeal, so its index
-  // line is still being written.
-  { title: 'Free Samourai — Keonne Rodriguez', addresses: ['bc1qtjjcvn98wh7dfd55m8kxhjcfexanttwt8gtan8'] },
-];
-
-// Further campaigns join the same way each of these did: the address
-// confirmed from the campaign's own publications -- never from memory --
-// and its checksum verified before it is written down.
+export { INDEXED } from './btc-index-data.js';
 
 // A loose shape test for the address forms the chain has used: base58 P2PKH
 // ('1…') and P2SH ('3…'), and bech32/bech32m ('bc1…', matched lowercase --
@@ -900,18 +842,30 @@ export async function sectionOf(txid) {
 // ever. This is what completes a passage's citation (§section), and what
 // resolves a reproduced section's margin citations, without walking
 // anything: a proof names the position directly.
-export async function citePlace(txid) {
-  const kept = await storeGet('citations', txid) ?? await storeGet('placements', txid);
-  if (kept && Number.isInteger(kept.pos) && Number.isInteger(kept.height)) return kept;
-  for (const mirror of esploraMirrors()) {
-    const mp = await esploraJson(mirror, `/tx/${txid}/merkle-proof`);
-    if (mp && Number.isInteger(mp.pos)) {
-      const rec = { height: mp.block_height, pos: mp.pos };
-      storePut('placements', txid, rec);
-      return rec;
-    }
+// Single-flight per txid (the book's citationCache discipline): a section
+// whose inputs spend several outputs of one transaction, or a neighbour
+// warming racing the leaf's own resolvers, must share one proof fetch --
+// not race duplicates before the placement banks. Settled entries clear,
+// so a failed resolution (mirrors unreachable) is asked again next time
+// while a success answers from the archive forever.
+const citePlaceInflight = new Map();
+export function citePlace(txid) {
+  if (!citePlaceInflight.has(txid)) {
+    citePlaceInflight.set(txid, (async () => {
+      const kept = await storeGet('citations', txid) ?? await storeGet('placements', txid);
+      if (kept && Number.isInteger(kept.pos) && Number.isInteger(kept.height)) return kept;
+      for (const mirror of esploraMirrors()) {
+        const mp = await esploraJson(mirror, `/tx/${txid}/merkle-proof`);
+        if (mp && Number.isInteger(mp.pos)) {
+          const rec = { height: mp.block_height, pos: mp.pos };
+          storePut('placements', txid, rec);
+          return rec;
+        }
+      }
+      return null;
+    })().finally(() => citePlaceInflight.delete(txid)));
   }
-  return null;
+  return citePlaceInflight.get(txid);
 }
 export const sectionOfFetched = async (txid) => (await citePlace(txid))?.pos ?? null;
 
@@ -966,6 +920,51 @@ export async function txHexOf(txid) {
     } catch { continue; }
   }
   return null;
+}
+
+// Every input's spent amount in one request sized by the transaction
+// itself: Esplora has no endpoint for a single referenced output's value
+// (/outspend/:vout carries spend status only), but a transaction's own
+// JSON (/tx/:txid) lists each input's prevout -- value included -- so a
+// section's margin amounts never require fetching the referenced
+// transactions, however enormous (an exchange batch withdrawal) those
+// are. Confirmed prevouts are immutable; memoized for the session, with
+// the book's citations archive still answering first upstream.
+const prevoutsMemo = new Map();
+export function prevoutValuesOf(txid) {
+  if (!prevoutsMemo.has(txid)) {
+    prevoutsMemo.set(txid, (async () => {
+      for (const mirror of esploraMirrors()) {
+        const j = await esploraJson(mirror, `/tx/${txid}`);
+        if (j && j.txid === txid && Array.isArray(j.vin)) {
+          return j.vin.map((v) => (v.prevout && v.prevout.value != null ? Number(v.prevout.value) : null));
+        }
+      }
+      prevoutsMemo.delete(txid);   // nothing answered -- ask again next time
+      return null;
+    })());
+  }
+  return prevoutsMemo.get(txid);
+}
+
+// The spending status of every output of a transaction at once (Esplora
+// /outspends) -- what fills a reproduced section's forward citations, the
+// same call the book makes. Chain-mutable (an unspent output spends later),
+// so it is memoized for the session only, never banked; null when no mirror
+// answers, and a missing forward reference is absence, not an error.
+const outspendsMemo = new Map();
+export function outspendsOf(txid) {
+  if (!outspendsMemo.has(txid)) {
+    outspendsMemo.set(txid, (async () => {
+      for (const mirror of esploraMirrors()) {
+        const spends = await esploraJson(mirror, `/tx/${txid}/outspends`);
+        if (Array.isArray(spends)) return spends;
+      }
+      outspendsMemo.delete(txid);   // nothing answered -- ask again next time
+      return null;
+    })());
+  }
+  return outspendsMemo.get(txid);
 }
 
 // One record line: the citation whole, then debit, credit, status. An

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+//
 // glossia-msg.js — message → encrypted Glossia artifact, as an ES module.
 //
 // Shared content pipeline for the demo panel (index.html) and the bulletin
