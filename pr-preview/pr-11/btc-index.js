@@ -900,18 +900,30 @@ export async function sectionOf(txid) {
 // ever. This is what completes a passage's citation (§section), and what
 // resolves a reproduced section's margin citations, without walking
 // anything: a proof names the position directly.
-export async function citePlace(txid) {
-  const kept = await storeGet('citations', txid) ?? await storeGet('placements', txid);
-  if (kept && Number.isInteger(kept.pos) && Number.isInteger(kept.height)) return kept;
-  for (const mirror of esploraMirrors()) {
-    const mp = await esploraJson(mirror, `/tx/${txid}/merkle-proof`);
-    if (mp && Number.isInteger(mp.pos)) {
-      const rec = { height: mp.block_height, pos: mp.pos };
-      storePut('placements', txid, rec);
-      return rec;
-    }
+// Single-flight per txid (the book's citationCache discipline): a section
+// whose inputs spend several outputs of one transaction, or a neighbour
+// warming racing the leaf's own resolvers, must share one proof fetch --
+// not race duplicates before the placement banks. Settled entries clear,
+// so a failed resolution (mirrors unreachable) is asked again next time
+// while a success answers from the archive forever.
+const citePlaceInflight = new Map();
+export function citePlace(txid) {
+  if (!citePlaceInflight.has(txid)) {
+    citePlaceInflight.set(txid, (async () => {
+      const kept = await storeGet('citations', txid) ?? await storeGet('placements', txid);
+      if (kept && Number.isInteger(kept.pos) && Number.isInteger(kept.height)) return kept;
+      for (const mirror of esploraMirrors()) {
+        const mp = await esploraJson(mirror, `/tx/${txid}/merkle-proof`);
+        if (mp && Number.isInteger(mp.pos)) {
+          const rec = { height: mp.block_height, pos: mp.pos };
+          storePut('placements', txid, rec);
+          return rec;
+        }
+      }
+      return null;
+    })().finally(() => citePlaceInflight.delete(txid)));
   }
-  return null;
+  return citePlaceInflight.get(txid);
 }
 export const sectionOfFetched = async (txid) => (await citePlace(txid))?.pos ?? null;
 
