@@ -86,16 +86,23 @@ export function htmlToText(s) {
 const reverseHex = (hex) => (hex.match(/../g) || []).reverse().join('');
 const trimTrailingZeroBytes = (hex) => hex.replace(/(00)+$/, '');
 
-// The block-hash notation ⓪ⁿhᵐ (matches bitcoin-book.html): the hash's
-// trailing proof-of-work zeros (internal order) are dropped before encoding
-// and written as the push-zero mark with the dropped zero-bit count as its
-// superscript; h carries the remaining, encoded bit count. n + m = 256.
+// The block-hash notation ⓪ⁿ⌘ᵐ (matches bitcoin-book.html): ⓪ carries the
+// hash's exact leading-zero-bit count -- the mining vernacular for the
+// proof-of-work -- and ⌘ (OP_HASH256, the double-SHA256 that produced the
+// hash) carries the remaining m = 256 - n bits, which are what the prose
+// encodes. ⌘'s superscript counts bits by definition; the trim underneath is
+// byte-granular (⌊n/8⌋ zero bytes dropped, ⌈m/8⌉ bytes encoded).
 const blockHashParts = (displayHex) => {
   const hex = trimTrailingZeroBytes(reverseHex(displayHex));
-  const zeroBits = (64 - hex.length) * 4;
+  const stripped = displayHex.replace(/^0+/, '');
+  let zeroBits = (displayHex.length - stripped.length) * 4;
+  if (stripped) {
+    const d = parseInt(stripped[0], 16);   // zero bits inside the first significant hex digit
+    zeroBits += d >= 8 ? 0 : d >= 4 ? 1 : d >= 2 ? 2 : 3;
+  }
   return { hex, zeroBits, remainBits: 256 - zeroBits };
 };
-const hashNotation = ({ zeroBits, remainBits }) => `⓪${toSuperscript(zeroBits)} h${toSuperscript(remainBits)}`;
+const hashNotation = ({ zeroBits, remainBits }) => `⓪${toSuperscript(zeroBits)} ⌘${toSuperscript(remainBits)}`;
 
 const proseOf = (hex) => encodeSeedPhrase(hex, 'english', BEST_OF).prose;
 
@@ -222,10 +229,11 @@ export function passageMd({ title, height, blockHash, header, txCount, txid, ind
   md.push(`bytes (decodable with the [glossia](https://crates.io/crates/glossia) engine,`);
   md.push(`wordlist \`bip39\`, language \`english\`); glyphs are the book's script notation`);
   md.push(`(opcode and data marks); small structural integers (version, counts, values,`);
-  md.push(`locktime) are printed literally. A block hash reads ⓪ⁿ hᵐ — its n trailing`);
-  md.push(`proof-of-work zero bits (internal byte order) are dropped, and the remaining`);
-  md.push(`m = 256 − n bits are what the prose encodes. See [/llms.txt](${SITE}/llms.txt)`);
-  md.push(`for how any other passage on the chain can be fetched and read the same way.`);
+  md.push(`locktime) are printed literally. A block hash reads ⓪ⁿ ⌘ᵐ — n leading`);
+  md.push(`proof-of-work zero bits, then the remaining m = 256 − n bits of the`);
+  md.push(`double-SHA256 (⌘, OP_HASH256), Glossia-encoded as ⌈m/8⌉ bytes. See`);
+  md.push(`[/llms.txt](${SITE}/llms.txt) for how any other passage on the chain can be`);
+  md.push(`fetched and read the same way.`);
   md.push('');
   return md.join('\n');
 }
