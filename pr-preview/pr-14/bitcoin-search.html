@@ -16,24 +16,14 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="βook of βitcoin">
-<script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js').then((reg) => {
-        // An installed app can resume from the background for days without a
-        // navigation, never rechecking for a new build: check again on every
-        // return to the foreground.
-        document.addEventListener('visibilitychange', () => {
-          if (document.visibilityState === 'visible') reg.update().catch(() => {});
-        });
-      }).catch((e) => console.warn('SW registration failed:', e));
-    });
-  }
-</script>
+<!-- The shared masthead chrome: service worker registration and the Install /
+     Update affordances on the title's line, one copy for every page. -->
+<script src="./btc-chrome.js"></script>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,400&family=IBM+Plex+Mono:wght@400;500;600&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./btc-chrome.css">
 <style>
 :root {
   --page:#08080a; --card:#0d0d10; --card-bd:#232228; --ink:#e8e4da; --ink-soft:#cfcabf;
@@ -46,11 +36,6 @@ body { min-height: 100vh; background: var(--page); color: var(--ink); font-famil
 .wrap { max-width: 720px; margin: 0 auto; padding: 48px 22px 100px; }
 a { color: var(--accent); text-decoration: none; }
 a:hover { text-decoration: underline; }
-
-.masthead { display:flex; align-items:baseline; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:40px; }
-.masthead .title { font:600 13px/1 'IBM Plex Mono',monospace; letter-spacing:.22em; text-transform:uppercase; color:var(--ink); }
-.masthead .title .beta { color:var(--accent); text-transform:none; font-family:'Newsreader','Source Serif 4',Georgia,serif; font-weight:600; font-size:1.12em; }
-.masthead .home { margin-left:auto; font:500 12px/1 'IBM Plex Mono',monospace; letter-spacing:.04em; }
 
 .page-head { text-align:center; padding-bottom:30px; margin-bottom:36px; border-bottom:1px solid var(--rule); }
 .page-eyebrow { font:600 11px/1 'IBM Plex Mono',monospace; letter-spacing:.3em; text-transform:uppercase; color:var(--accent); }
@@ -87,7 +72,7 @@ button:hover { background: var(--accent-2); }
 <div class="wrap">
   <div class="masthead">
     <span class="title">The <span class="beta">β</span>ook of <span class="beta">β</span>itcoin</span>
-    <span class="home"><a href="./bitcoin-book.html">Read</a> · <a href="./bitcoin-contents.html">Contents</a> · <a href="./bitcoin-ledgers.html">Ledgers</a> · <a href="https://glossia.io/">Glossia</a></span>
+    <span class="home"><a href="./bitcoin-book.html">Read</a> · <a href="./bitcoin-contents.html">Contents</a> · <a href="./bitcoin-ledger.html">Ledger</a></span>
   </div>
 
   <header class="page-head">
@@ -109,6 +94,7 @@ button:hover { background: var(--accent-2); }
     <a class="example" href="./bitcoin-book.html?block=III%20%CE%B22%20%E2%96%A05"><span class="example-what">a chapter, by the book's own citation</span><span class="example-form">III β2 ■5</span></a>
     <a class="example" href="./bitcoin-book.html?block=57043"><span class="example-what">Bitcoin Pizza Day's chapter, by height</span><span class="example-form">57043</span></a>
     <a class="example" href="./bitcoin-book.html?txid=a1075db55d416d3ca199f55b6084e2115b9345e16c5cf302fc80e9d5fbf5d48d"><span class="example-what">the pizza transaction's own section, by its id</span><span class="example-form">a1075db5…f5d48d</span></a>
+    <a class="example" href="./bitcoin-book.html?ref=v1b29c596"><span class="example-what">the same chapter, by its reference alone — as a βoβ quote carries it</span><span class="example-form">v1b29c596</span></a>
     <a class="example" href="./bitcoin-ledger.html?address=1Ross5Np5doy4ajF9iGXzgKaC2Q3Pwwxv"><span class="example-what">an address's ledger — every chapter it appears in, with amounts</span><span class="example-form">1Ross5Np…Pwwxv</span></a>
   </div>
 </div>
@@ -117,11 +103,24 @@ button:hover { background: var(--accent-2); }
 // The book page resolves every input form itself (?block= accepts a height, a
 // negative tip-relative height, a 64-hex block hash or txid, and the citation
 // form alike), so searching is a hand-off: carry the query there and let the
-// book open it. The one form the book doesn't take is an address -- an address
-// is not a place but a name, so it hands off to its Ledger instead: the
-// address's view of the manuscript, focused on amounts.
+// book open it. Two forms route specially: an address is not a place but a
+// name, so it hands off to its Ledger instead (the address's view of the
+// manuscript, focused on amounts); and a passage reference -- in either
+// spelling, the Latin URL form (v1b50c1807s85o4) or the quoted βoβ form
+// (βoβ I β50 ■1807 §85.4) -- hands the book the reference whole (?ref=…),
+// which resolves it by citation arithmetic alone: no txid involved.
 import { isAddress } from './btc-index.js';
 const input = document.getElementById('block-input');
+const ROMAN = { I: 1, V: 5, X: 10, L: 50, C: 100, D: 500, M: 1000 };
+const fromRoman = (s) => [...s.toUpperCase()].reduce((n, c, i, a) =>
+  n + (ROMAN[c] < ROMAN[a[i + 1]] ? -ROMAN[c] : ROMAN[c]), 0);
+// The reference, in either spelling, normalized to the Latin URL form.
+const latinReference = (q) => {
+  if (/^v\d+b\d+c\d+(?:s\d+)?(?:o\d+)?$/i.test(q)) return q.toLowerCase();
+  const m = /^(?:βoβ\s+)?([IVXLCDM]+)\s*β(\d+)\s*■(\d+)(?:\s*§(\d+)(?:\.(\d+))?)?$/i.exec(q);
+  if (!m) return null;
+  return `v${fromRoman(m[1])}b${m[2]}c${m[3]}${m[4] ? `s${m[4]}` : ''}${m[5] ? `o${m[5]}` : ''}`;
+};
 const go = () => {
   const q = input.value.trim();
   if (!q) { input.focus(); return; }
@@ -129,6 +128,8 @@ const go = () => {
   // ledger queries with; base58 stays as typed (its case is significant).
   const addr = isAddress(q) ? q : (isAddress(q.toLowerCase()) ? q.toLowerCase() : null);
   if (addr) { location.href = './bitcoin-ledger.html?address=' + encodeURIComponent(addr); return; }
+  const ref = latinReference(q);
+  if (ref) { location.href = './bitcoin-book.html?ref=' + encodeURIComponent(ref); return; }
   location.href = './bitcoin-book.html?block=' + encodeURIComponent(q);
 };
 document.getElementById('block-btn').addEventListener('click', go);

@@ -30,107 +30,25 @@
     }
   } catch (_) {}
 
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js').then((reg) => {
-        // An installed app can resume from the background for days without a
-        // navigation, never rechecking for a new build: check again on every
-        // return to the foreground.
-        document.addEventListener('visibilitychange', () => {
-          if (document.visibilityState === 'visible') reg.update().catch(() => {});
-        });
-      }).catch((e) => console.warn('SW registration failed:', e));
-    });
-
-    // Update affordance: the worker's stale-while-revalidate serves this page
-    // from cache, so a fresh deploy is invisible until the NEXT visit. When
-    // the background revalidation caches a newer build, the worker posts
-    // update-available to every open page; a brand-new worker taking over
-    // (controllerchange, on a page that already had one) means the same
-    // thing. Either way the Update button appears; one tap reloads onto the
-    // freshly cached build. Wired like the Install button: state is tracked
-    // eagerly, reflected onto the button once the DOM is ready.
-    (function () {
-      let updateReady = false;
-      let btn = null;
-      const reflect = () => { if (btn) btn.classList.toggle('show', updateReady); };
-      const showUpdate = () => { updateReady = true; reflect(); };
-      navigator.serviceWorker.addEventListener('message', (e) => {
-        if (e.data && e.data.type === 'update-available') showUpdate();
-      });
-      const hadController = !!navigator.serviceWorker.controller;
-      navigator.serviceWorker.addEventListener('controllerchange', () => { if (hadController) showUpdate(); });
-      const wire = () => {
-        btn = document.getElementById('update-btn');
-        if (!btn) return;
-        btn.addEventListener('click', () => location.reload());
-        reflect();
-      };
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', wire);
-      } else {
-        wire();
-      }
-    })();
-  }
-
-  // Reveal an in-page Install button when the browser offers to install this
-  // PWA, and drive the native prompt from it — so installing is discoverable
-  // without hunting through the browser menu. Stays hidden when already
-  // installed (running standalone) or on browsers that don't support prompting.
-  // This script runs in <head>, before #install-btn is parsed, so the
-  // beforeinstallprompt listener is registered eagerly (the event can fire
-  // before DOMContentLoaded) and the button is wired up once the DOM is ready.
-  (function () {
-    const standalone = window.matchMedia('(display-mode: standalone)').matches ||
-                       window.navigator.standalone === true;
-    if (standalone) return;
-    let deferredPrompt = null;
-    let btn = null;
-    const reflect = () => { if (btn) btn.classList.toggle('show', !!deferredPrompt); };
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault();
-      deferredPrompt = e;
-      reflect();
-    });
-    window.addEventListener('appinstalled', () => {
-      deferredPrompt = null;
-      reflect();
-    });
-    const wire = () => {
-      btn = document.getElementById('install-btn');
-      if (!btn) return;
-      btn.addEventListener('click', async () => {
-        if (!deferredPrompt) return;
-        deferredPrompt.prompt();
-        try { await deferredPrompt.userChoice; } catch (_) {}
-        deferredPrompt = null;
-        reflect();
-      });
-      reflect();
-    };
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', wire);
-    } else {
-      wire();
-    }
-  })();
 </script>
+<!-- The shared masthead chrome: service worker registration and the Install /
+     Update affordances on the title's line, one copy for every page. -->
+<script src="./btc-chrome.js"></script>
 
 <!-- Social / rich unfurl -->
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Glossia">
 <meta property="og:title" content="The βook of βitcoin — a block, read as a chapter">
 <meta property="og:description" content="Each transaction in a Bitcoin block, rendered as a paragraph of grammatically correct prose — witness data collected as footnotes.">
-<meta property="og:url" content="https://asherp.github.io/Book-of-Bitcoin/bitcoin-book.html">
-<meta property="og:image" content="https://asherp.github.io/Book-of-Bitcoin/og-glossia.png">
+<meta property="og:url" content="https://bookofbitcoin.io/bitcoin-book.html">
+<meta property="og:image" content="https://bookofbitcoin.io/og-glossia.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="Glossia — machine data, made human. A lossless linguistic codec.">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="The βook of βitcoin — a block, read as a chapter">
 <meta name="twitter:description" content="Each transaction in a Bitcoin block, rendered as a paragraph of grammatically correct prose.">
-<meta name="twitter:image" content="https://asherp.github.io/Book-of-Bitcoin/og-glossia.png">
+<meta name="twitter:image" content="https://bookofbitcoin.io/og-glossia.png">
 
 <!-- Machine readers: passages are composed in-browser by the WASM engine, so
      this document arrives with no passage text in it. /llms.txt says where
@@ -142,7 +60,7 @@
   "@type": "Book",
   "name": "The βook of βitcoin",
   "alternateName": "Book of Bitcoin",
-  "url": "https://asherp.github.io/Book-of-Bitcoin/bitcoin-book.html",
+  "url": "https://bookofbitcoin.io/bitcoin-book.html",
   "abstract": "The Bitcoin block chain read as a book: each block a chapter, each transaction a section of grammatically correct Glossia prose, witness data as footnotes. Every byte of every transaction is carried in the words and decodes back out exactly.",
   "genre": "verbatim translation of the Bitcoin block chain",
   "inLanguage": "en",
@@ -155,6 +73,7 @@
 }
 </script>
 <link rel="stylesheet" href="./notation.css">
+<link rel="stylesheet" href="./btc-chrome.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,300;1,6..72,400;1,6..72,500&family=IBM+Plex+Mono:wght@400;500;600&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
@@ -227,39 +146,9 @@ a:hover { text-decoration: underline; }
 .mono { font-family: 'IBM Plex Mono', monospace; }
 .hidden { display: none !important; }
 
-.masthead { display:flex; align-items:baseline; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:24px; }
-.masthead .title { font:600 13px/1 'IBM Plex Mono',monospace; letter-spacing:.22em; text-transform:uppercase; color:var(--ink); }
-.masthead .title .beta { color:var(--accent); text-transform:none; font-family:'Newsreader','Source Serif 4',Georgia,serif; font-weight:600; font-size:1.12em; }
-.masthead .sub { font:400 13px/1.4 'Public Sans',sans-serif; color:var(--dim); }
-.masthead .home { margin-left:auto; font:500 12px/1 'IBM Plex Mono',monospace; letter-spacing:.04em; }
-/* Install-as-app affordance: hidden until the browser fires beforeinstallprompt
-   (Chrome/Edge/Android), so it appears only when the app is actually
-   installable and not already installed. On iOS Safari it stays hidden — that
-   platform installs via Share → Add to Home Screen instead. Lives inside the
-   masthead title, so it always shares the book title's line even when the
-   masthead's nav wraps below on narrow screens. */
-.install-btn {
-  display:none; margin-left:12px; vertical-align:baseline; background:transparent;
-  border:1px solid var(--accent); color:var(--accent); border-radius:4px; padding:4px 10px;
-  cursor:pointer; font:600 11px/1 'IBM Plex Mono',monospace; letter-spacing:.08em; text-transform:uppercase;
-  transition:background .15s ease, color .15s ease;
-}
-.install-btn.show { display:inline-block; }
-.install-btn:hover { background:var(--accent); color:var(--btn-ink,#17140c); }
-/* Update affordance: hidden until the service worker reports that a newer
-   build has been cached behind the page (or a new worker has taken over).
-   Sits inline on the masthead title's line, beside Install -- filled gold,
-   unlike the quiet Install outline, because it's an action the reader
-   probably wants to take now. */
-.update-btn {
-  display:none; margin-left:12px; vertical-align:baseline;
-  background:var(--accent); border:1px solid var(--accent); color:var(--btn-ink);
-  border-radius:4px; padding:4px 10px; cursor:pointer;
-  font:600 11px/1 'IBM Plex Mono',monospace; letter-spacing:.08em; text-transform:uppercase;
-  transition:background .15s ease;
-}
-.update-btn.show { display:inline-block; }
-.update-btn:hover { background:var(--accent-2); border-color:var(--accent-2); }
+/* Masthead chrome comes from btc-chrome.css; only this page's reading layout
+   pulls the chapter closer beneath it. */
+.masthead { margin-bottom:24px; }
 
 button {
   background: var(--accent); color: var(--btn-ink); border: none; border-radius: 4px;
@@ -666,10 +555,8 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 </noscript>
 <div class="wrap">
   <div class="masthead">
-    <!-- Install and Update ride the title's own line: revealed by the browser's
-         install prompt and the service worker's newer-build signal respectively. -->
-    <span class="title">The <span class="beta">β</span>ook of <span class="beta">β</span>itcoin<button type="button" id="install-btn" class="install-btn" aria-label="Install the Book of Bitcoin as an app">Install</button><button type="button" id="update-btn" class="update-btn" aria-label="A new version is ready — reload to update">Update</button></span>
-    <span class="home"><a href="./bitcoin-search.html">Search</a> · <a href="./bitcoin-contents.html">Contents</a> · <a href="./bitcoin-ledgers.html">Ledgers</a> · <span class="settings-menu"><a href="#" id="settings-link" role="button" aria-haspopup="dialog" aria-expanded="false">Settings</a><div id="settings-panel" class="settings-panel hidden" role="dialog" aria-label="Settings">
+    <span class="title">The <span class="beta">β</span>ook of <span class="beta">β</span>itcoin</span>
+    <span class="home"><a href="./bitcoin-search.html">Search</a> · <a href="./bitcoin-contents.html">Contents</a> · <a href="./bitcoin-ledger.html">Ledger</a> · <span class="settings-menu"><a href="#" id="settings-link" role="button" aria-haspopup="dialog" aria-expanded="false">Settings</a><div id="settings-panel" class="settings-panel hidden" role="dialog" aria-label="Settings">
       <div class="settings-title">Data source</div>
       <div class="endpoint-row">
         <select id="endpoint-select" class="endpoint-select" aria-label="Data source endpoint"></select>
@@ -3310,7 +3197,11 @@ const dismissOnViewportChange = () => {
 window.addEventListener('resize', dismissOnViewportChange);
 window.addEventListener('scroll', dismissOnViewportChange, true);
 
-// Entry points, in priority order: ?txid= jumps straight to a transaction's
+// Entry points, in priority order: ?ref= opens a citation carried whole in
+// Latin (v1b50c1807s85o4 -- volume, book, chapter, then optional §section
+// and .output) -- the reference IS the address, no txid anywhere: the
+// height is citation arithmetic and the section is the block's own index;
+// ?txid= jumps straight to a transaction's
 // section (an added &out=N then brings that output to the top -- the same
 // landing the marginalia's in-page cites make, reachable from a full
 // §section.output citation elsewhere, e.g. a ledger row); ?block= (with
@@ -3318,6 +3209,7 @@ window.addEventListener('scroll', dismissOnViewportChange, true);
 // chain tip, so ?block=-1 is the latest block; otherwise the book opens at
 // the chain tip (-1), the latest chapter rather than Genesis.
 const params = new URLSearchParams(location.search);
+const pParam = /^v(\d+)b(\d+)c(\d+)(?:s(\d+))?(?:o(\d+))?$/i.exec((params.get('ref') || '').trim());
 const txidParam = params.get('txid');
 const blockParam = params.get('block');
 // An absent ?index= opens the chapter's own page (-1); index=0 is §1;
@@ -3326,7 +3218,14 @@ const idxRaw = parseInt(params.get('index'), 10);
 const pageParam = params.get('page');
 const indexParam = Number.isFinite(idxRaw) ? idxRaw
   : pageParam === 'volume' ? -3 : pageParam === 'book' ? -2 : -1;
-if (txidParam) {
+if (pParam) {
+  const pHeight = heightOf(+pParam[1], +pParam[2], +pParam[3]);
+  const pIndex = pParam[4] != null ? +pParam[4] - 1 : -1;   // §1 is index 0
+  const pOut = pParam[5] != null ? +pParam[5] : NaN;
+  Promise.resolve(openLookup(String(pHeight), pIndex)).then(() => {
+    if (Number.isFinite(pOut) && pIndex >= 0) $(`out-${pOut}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }).catch(() => { /* the lookup's own error handling has the page */ });
+} else if (txidParam) {
   const outRaw = parseInt(params.get('out'), 10);
   Promise.resolve(openLookup(txidParam)).then(() => {
     if (Number.isFinite(outRaw)) $(`out-${outRaw}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
