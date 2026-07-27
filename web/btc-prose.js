@@ -716,11 +716,16 @@ export function renderWitness(items, encode) {
 // OP_RETURN payload only: OP_RETURN is the one body field that can carry a bulky
 // data-carrier blob, so the caller can pass a placeholder emitter to defer its
 // encoding until it scrolls into view, exactly as witness pushes are deferred.
-export function composeTransactionFields(parsed, bestOf = 1, lazyData = null) {
+// `encoder`, when supplied, stands in for encodeSeedPhrase itself (same
+// signature and result shape) -- a caller can record the exact pushes a
+// section will encode (a dry run) or serve them from its own store, so a
+// giant section can be encoded in yielded chunks rather than one long pass.
+export function composeTransactionFields(parsed, bestOf = 1, lazyData = null, encoder = null) {
   const payloadWords = [];
+  const enc = encoder || encodeSeedPhrase;
   const collect = (hex) => {
     if (!hex) return '';
-    const r = encodeSeedPhrase(hex, 'english', bestOf);
+    const r = enc(hex, 'english', bestOf);
     payloadWords.push(...r.payloadWords);
     return r.prose;
   };

@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //
 // btc-index.js — the ledgers of the Bitcoin Book: notable addresses, each a
-// view of the manuscript focused on amounts. Shared by bitcoin-ledgers.html
-// (the shelf), bitcoin-ledger.html (one ledger, turned address by address), and
-// bitcoin-search.html (which routes an address query to its ledger). This
-// module is the machinery the ledger pages share: the mapping that discovers
-// an address's chapters, the store that remembers them, and the renderers that
-// lay them out. (The filename keeps its index-era name so cached module graphs
-// never mix builds.)
+// view of the manuscript focused on amounts. Shared by bitcoin-ledger.html
+// (the Ledger compendium: every ledger in one document, ledgers over
+// addresses over entries) and bitcoin-search.html (which routes an address
+// query there). Besides the curated data, this module carries the machinery
+// the ledger pages share: the mapping that discovers an address's chapters,
+// the store that remembers them, and the renderers that lay them out. (The
+// filename keeps its index-era name so cached module graphs never mix
+// builds.)
 //
 // The curated ledgers themselves -- which addresses the book keeps, and the
 // story behind each -- are editorial work and live in btc-index-data.js under
@@ -791,6 +792,12 @@ function ledgerRow(c, place, balance, lastVol, lastBook, held) {
   const row = document.createElement('a');
   row.className = 'idx-row entry';
   row.href = citeHref(c.txid);
+  // The row names its entry (txid + sats name one side of one transaction)
+  // and, on a merged listing, its home address -- the ledger page's dive
+  // reads these to pull in the entry's own leaf.
+  row.dataset.txid = c.txid;
+  row.dataset.sats = String(c.sats);
+  if (c.addr) row.dataset.addr = c.addr;
   if (held) {
     // A UTXO belongs to a transaction's outputs, so only a credit entry can
     // still be held; a debit is a departure by nature and reads dimmed.
@@ -827,6 +834,139 @@ export async function sectionOf(txid) {
   return kept && Number.isInteger(kept.pos) ? kept.pos : null;
 }
 
+// A transaction's placement -- height and section -- from the archive when
+// it knows (the book's citations store first, which also carries the
+// referenced outputs; the placements store second), and otherwise from one
+// merkle proof -- the same request the book resolves citations with --
+// banked into placements ({height, pos}) so it is fetched at most once,
+// ever. This is what completes a passage's citation (§section), and what
+// resolves a reproduced section's margin citations, without walking
+// anything: a proof names the position directly.
+// Single-flight per txid (the book's citationCache discipline): a section
+// whose inputs spend several outputs of one transaction, or a neighbour
+// warming racing the leaf's own resolvers, must share one proof fetch --
+// not race duplicates before the placement banks. Settled entries clear,
+// so a failed resolution (mirrors unreachable) is asked again next time
+// while a success answers from the archive forever.
+const citePlaceInflight = new Map();
+export function citePlace(txid) {
+  if (!citePlaceInflight.has(txid)) {
+    citePlaceInflight.set(txid, (async () => {
+      const kept = await storeGet('citations', txid) ?? await storeGet('placements', txid);
+      if (kept && Number.isInteger(kept.pos) && Number.isInteger(kept.height)) return kept;
+      for (const mirror of esploraMirrors()) {
+        const mp = await esploraJson(mirror, `/tx/${txid}/merkle-proof`);
+        if (mp && Number.isInteger(mp.pos)) {
+          const rec = { height: mp.block_height, pos: mp.pos };
+          storePut('placements', txid, rec);
+          return rec;
+        }
+      }
+      return null;
+    })().finally(() => citePlaceInflight.delete(txid)));
+  }
+  return citePlaceInflight.get(txid);
+}
+export const sectionOfFetched = async (txid) => (await citePlace(txid))?.pos ?? null;
+
+// Esplora's plain-text answers (block hash by height, txid by position).
+async function esploraText(mirror, path) {
+  try {
+    const r = await fetch(mirror + path);
+    return r.ok ? (await r.text()).trim() : null;
+  } catch { return null; }
+}
+
+// A citation, inverted: height + section -> the txid that sits there,
+// straight from the chain (block hash by height, then the block's txid at
+// that index) -- two small requests, no history walked. This is how a
+// shared passage reference (v…b…c…s…) lands without carrying any txid.
+export async function passageTxid(height, pos) {
+  for (const mirror of esploraMirrors()) {
+    const hash = await esploraText(mirror, `/block-height/${height}`);
+    if (!hash || !/^[0-9a-f]{64}$/.test(hash)) continue;
+    const txid = await esploraText(mirror, `/block/${hash}/txid/${pos}`);
+    if (txid && /^[0-9a-f]{64}$/.test(txid)) return txid;
+  }
+  return null;
+}
+
+// One transaction's touches on an address, shaped as ledger entries -- for
+// rendering a passage that the banked record hasn't reached yet. The bank
+// is untouched: a passage viewed this way banks nothing until the record's
+// own walk arrives at it.
+export async function passageEntries(address, txid) {
+  for (const mirror of esploraMirrors()) {
+    const tx = await esploraJson(mirror, `/tx/${txid}`);
+    if (tx && tx.txid === txid) return buildEntries(esploraTouches([tx], address));
+  }
+  return null;
+}
+
+// A transaction's raw hex, from the same archive the book keeps ('tx' --
+// immutable, the txid is its hash), fetched once on a miss and banked: a
+// passage read in the ledger warms the book's cache, and vice versa.
+export async function txHexOf(txid) {
+  const kept = await storeGet('tx', txid);
+  if (kept) return kept;
+  for (const mirror of esploraMirrors()) {
+    try {
+      const r = await fetch(`${mirror}/tx/${txid}/hex`);
+      if (!r.ok) continue;
+      const hex = (await r.text()).trim();
+      if (!/^[0-9a-f]+$/i.test(hex)) continue;
+      storePut('tx', txid, hex);
+      return hex;
+    } catch { continue; }
+  }
+  return null;
+}
+
+// Every input's spent amount in one request sized by the transaction
+// itself: Esplora has no endpoint for a single referenced output's value
+// (/outspend/:vout carries spend status only), but a transaction's own
+// JSON (/tx/:txid) lists each input's prevout -- value included -- so a
+// section's margin amounts never require fetching the referenced
+// transactions, however enormous (an exchange batch withdrawal) those
+// are. Confirmed prevouts are immutable; memoized for the session, with
+// the book's citations archive still answering first upstream.
+const prevoutsMemo = new Map();
+export function prevoutValuesOf(txid) {
+  if (!prevoutsMemo.has(txid)) {
+    prevoutsMemo.set(txid, (async () => {
+      for (const mirror of esploraMirrors()) {
+        const j = await esploraJson(mirror, `/tx/${txid}`);
+        if (j && j.txid === txid && Array.isArray(j.vin)) {
+          return j.vin.map((v) => (v.prevout && v.prevout.value != null ? Number(v.prevout.value) : null));
+        }
+      }
+      prevoutsMemo.delete(txid);   // nothing answered -- ask again next time
+      return null;
+    })());
+  }
+  return prevoutsMemo.get(txid);
+}
+
+// The spending status of every output of a transaction at once (Esplora
+// /outspends) -- what fills a reproduced section's forward citations, the
+// same call the book makes. Chain-mutable (an unspent output spends later),
+// so it is memoized for the session only, never banked; null when no mirror
+// answers, and a missing forward reference is absence, not an error.
+const outspendsMemo = new Map();
+export function outspendsOf(txid) {
+  if (!outspendsMemo.has(txid)) {
+    outspendsMemo.set(txid, (async () => {
+      for (const mirror of esploraMirrors()) {
+        const spends = await esploraJson(mirror, `/tx/${txid}/outspends`);
+        if (Array.isArray(spends)) return spends;
+      }
+      outspendsMemo.delete(txid);   // nothing answered -- ask again next time
+      return null;
+    })());
+  }
+  return outspendsMemo.get(txid);
+}
+
 // One record line: the citation whole, then debit, credit, status. An
 // entry is one side of one transaction, so exactly one amount column
 // carries ink (a zero-value touch posts a bare 0 credit). Status reads
@@ -836,10 +976,14 @@ export async function sectionOf(txid) {
 // hasn't agreed with the chain -- the verdict waits, never guesses.
 // (`pending` is reserved for mempool transactions, which the map doesn't
 // carry yet.) A zero-value touch carries no coin to have a status.
-function lineRow({ txid, sats, place, out }, held) {
+function lineRow({ txid, sats, place, out, addr }, held) {
   const row = document.createElement('a');
   row.className = 'idx-row acct';
   row.href = citeHref(txid, out);   // a credit lands the book on its output
+  // The row names its entry, for the ledger page's dive (see ledgerRow).
+  row.dataset.txid = txid;
+  row.dataset.sats = String(sats);
+  if (addr) row.dataset.addr = addr;
   const resting = held && sats > 0 ? held.get(txid) ?? 0 : 0;
   if (held) {
     if (resting > 0) row.title = `still unspent: ${formatBalanceBtc(resting)}`;
