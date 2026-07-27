@@ -235,9 +235,11 @@ a:hover { text-decoration: underline; }
 /* Install-as-app affordance: hidden until the browser fires beforeinstallprompt
    (Chrome/Edge/Android), so it appears only when the app is actually
    installable and not already installed. On iOS Safari it stays hidden — that
-   platform installs via Share → Add to Home Screen instead. */
+   platform installs via Share → Add to Home Screen instead. Lives inside the
+   masthead title, so it always shares the book title's line even when the
+   masthead's nav wraps below on narrow screens. */
 .install-btn {
-  display:none; margin-right:12px; vertical-align:baseline; background:transparent;
+  display:none; margin-left:12px; vertical-align:baseline; background:transparent;
   border:1px solid var(--accent); color:var(--accent); border-radius:4px; padding:4px 10px;
   cursor:pointer; font:600 11px/1 'IBM Plex Mono',monospace; letter-spacing:.08em; text-transform:uppercase;
   transition:background .15s ease, color .15s ease;
@@ -670,8 +672,8 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 <button type="button" id="update-btn" class="update-btn" aria-label="A new version is ready — reload to update">Update</button>
 <div class="wrap">
   <div class="masthead">
-    <span class="title">The <span class="beta">β</span>ook of <span class="beta">β</span>itcoin</span>
-    <span class="home"><button type="button" id="install-btn" class="install-btn" aria-label="Install the Book of Bitcoin as an app">Install</button><a href="./bitcoin-search.html">Search</a> · <a href="./bitcoin-contents.html">Contents</a> · <a href="./bitcoin-ledgers.html">Ledgers</a> · <span class="settings-menu"><a href="#" id="settings-link" role="button" aria-haspopup="dialog" aria-expanded="false">Settings</a><div id="settings-panel" class="settings-panel hidden" role="dialog" aria-label="Settings">
+    <span class="title">The <span class="beta">β</span>ook of <span class="beta">β</span>itcoin<button type="button" id="install-btn" class="install-btn" aria-label="Install the Book of Bitcoin as an app">Install</button></span>
+    <span class="home"><a href="./bitcoin-search.html">Search</a> · <a href="./bitcoin-contents.html">Contents</a> · <a href="./bitcoin-ledgers.html">Ledgers</a> · <span class="settings-menu"><a href="#" id="settings-link" role="button" aria-haspopup="dialog" aria-expanded="false">Settings</a><div id="settings-panel" class="settings-panel hidden" role="dialog" aria-label="Settings">
       <div class="settings-title">Data source</div>
       <div class="endpoint-row">
         <select id="endpoint-select" class="endpoint-select" aria-label="Data source endpoint"></select>
