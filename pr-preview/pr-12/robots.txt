@@ -1,8 +1,0 @@
-# The βook of βitcoin — everything here is meant to be read, by anyone and
-# anything. AI crawlers welcome: start at /llms.txt, which explains where the
-# passage text actually lives (the pages are client-rendered shells).
-
-User-agent: *
-Allow: /
-
-Sitemap: https://asherp.github.io/Book-of-Bitcoin/sitemap.xml
