@@ -1,3 +1,4 @@
+<!-- SPDX-License-Identifier: MIT OR Apache-2.0 -->
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>The βook of βitcoin — Table of Contents</title>
@@ -26,12 +27,6 @@
     }
   } catch (_) {}
 
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js').catch((e) => console.warn('SW registration failed:', e));
-    });
-  }
-
   // The descend gesture: a push UP starting at the page's bottom drops from
   // the contents into Volume I's leaf -- the inverse of the book page's
   // pull-down-above-the-volume. The contents slide up and away; the book
@@ -53,12 +48,33 @@
       sy = e.touches[0].clientY; sx = e.touches[0].clientX; st = performance.now();
       atBottom = window.scrollY >= document.documentElement.scrollHeight - window.innerHeight - 2;
     }, { passive: true });
+    // The contents sits inside the front matter on the horizontal axis, in the
+    // standard order: title, terms, CONTENTS, preface, sigla. So both
+    // sideways turns lead to a front-matter leaf -- back to the terms,
+    // forward to the preface (the sigla follow it on that page). Purely horizontal: the vertical axis below is
+    // untouched, and the contents remains the one leaf above the volumes, so
+    // an ascent from Volume I still lands here.
+    const goFront = (leaf, dir) => {
+      try { sessionStorage.setItem('glossia-front-entrance', dir); } catch (_) {}
+      location.href = './bitcoin-front.html?leaf=' + leaf;
+    };
     document.addEventListener('touchend', (e) => {
       if (sy === null || e.changedTouches.length !== 1) return;
       const dy = e.changedTouches[0].clientY - sy;
       const dx = e.changedTouches[0].clientX - sx;
       const dt = performance.now() - st;
       sy = null;
+      // A committed horizontal turn: quick, far enough, and mostly sideways.
+      if (dt <= 600 && Math.abs(dx) >= 60 && Math.abs(dy) <= Math.abs(dx) * 0.6) {
+        const back = dx > 0;                       // swiping right turns back
+        const leaf = back ? 'terms' : 'preface';
+        const dir = back ? 'back' : 'fwd';
+        if (REDUCED) { goFront(leaf, dir); return; }
+        document.body.style.transition = 'transform .2s linear';
+        document.body.style.transform = `translateX(${back ? 100 : -100}vw)`;
+        setTimeout(() => goFront(leaf, dir), 180);
+        return;
+      }
       if (!atBottom || dt > 600 || dy > -70 || Math.abs(dx) > Math.abs(dy) * 0.6) return;
       if (REDUCED) { go(); return; }
       document.body.style.transition = 'transform .2s linear';
@@ -67,52 +83,15 @@
     }, { passive: true });
   })();
 
-  // Reveal an in-page Install button when the browser offers to install this
-  // PWA, and drive the native prompt from it — so installing is discoverable
-  // without hunting through the browser menu. Stays hidden when already
-  // installed (running standalone) or on browsers that don't support prompting.
-  // This script runs in <head>, before #install-btn is parsed, so the
-  // beforeinstallprompt listener is registered eagerly (the event can fire
-  // before DOMContentLoaded) and the button is wired up once the DOM is ready.
-  (function () {
-    const standalone = window.matchMedia('(display-mode: standalone)').matches ||
-                       window.navigator.standalone === true;
-    if (standalone) return;
-    let deferredPrompt = null;
-    let btn = null;
-    const reflect = () => { if (btn) btn.classList.toggle('show', !!deferredPrompt); };
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault();
-      deferredPrompt = e;
-      reflect();
-    });
-    window.addEventListener('appinstalled', () => {
-      deferredPrompt = null;
-      reflect();
-    });
-    const wire = () => {
-      btn = document.getElementById('install-btn');
-      if (!btn) return;
-      btn.addEventListener('click', async () => {
-        if (!deferredPrompt) return;
-        deferredPrompt.prompt();
-        try { await deferredPrompt.userChoice; } catch (_) {}
-        deferredPrompt = null;
-        reflect();
-      });
-      reflect();
-    };
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', wire);
-    } else {
-      wire();
-    }
-  })();
 </script>
+<!-- The shared masthead chrome: service worker registration and the Install /
+     Update affordances on the title's line, one copy for every page. -->
+<script src="./btc-chrome.js"></script>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,400&family=IBM+Plex+Mono:wght@400;500;600&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./btc-chrome.css">
 <style>
 :root {
   --page:#08080a; --card:#0d0d10; --card-bd:#232228; --ink:#e8e4da; --ink-soft:#cfcabf;
@@ -131,23 +110,6 @@ body { min-height: 100vh; background: var(--page); color: var(--ink); font-famil
 .wrap { max-width: 720px; margin: 0 auto; padding: 48px 22px 100px; }
 a { color: var(--accent); text-decoration: none; }
 a:hover { text-decoration: underline; }
-
-.masthead { display:flex; align-items:baseline; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:40px; }
-.masthead .title { font:600 13px/1 'IBM Plex Mono',monospace; letter-spacing:.22em; text-transform:uppercase; color:var(--ink); }
-.masthead .title .beta { color:var(--accent); text-transform:none; font-family:'Newsreader','Source Serif 4',Georgia,serif; font-weight:600; font-size:1.12em; }
-.masthead .home { margin-left:auto; font:500 12px/1 'IBM Plex Mono',monospace; letter-spacing:.04em; }
-/* Install-as-app affordance: hidden until the browser fires beforeinstallprompt
-   (Chrome/Edge/Android), so it appears only when the app is actually
-   installable and not already installed. On iOS Safari it stays hidden — that
-   platform installs via Share → Add to Home Screen instead. */
-.install-btn {
-  display:none; margin-right:12px; vertical-align:baseline; background:transparent;
-  border:1px solid var(--accent); color:var(--accent); border-radius:4px; padding:4px 10px;
-  cursor:pointer; font:600 11px/1 'IBM Plex Mono',monospace; letter-spacing:.08em; text-transform:uppercase;
-  transition:background .15s ease, color .15s ease;
-}
-.install-btn.show { display:inline-block; }
-.install-btn:hover { background:var(--accent); color:var(--btn-ink,#17140c); }
 
 .page-head { text-align:center; padding-bottom:30px; margin-bottom:36px; border-bottom:1px solid var(--rule); }
 .page-eyebrow { font:600 11px/1 'IBM Plex Mono',monospace; letter-spacing:.3em; text-transform:uppercase; color:var(--accent); }
@@ -195,7 +157,7 @@ a:hover { text-decoration: underline; }
 <div class="wrap">
   <div class="masthead">
     <span class="title">The <span class="beta">β</span>ook of <span class="beta">β</span>itcoin</span>
-    <span class="home"><button type="button" id="install-btn" class="install-btn" aria-label="Install the Bitcoin Book as an app">Install</button><a href="./bitcoin-book.html">Read</a> · <a href="./bitcoin-search.html">Search</a> · <a href="https://glossia.io/">Glossia</a></span>
+    <span class="home"><a href="./bitcoin-front.html?leaf=preface">Preface</a> · <a href="./bitcoin-book.html">Read</a> · <a href="./bitcoin-ledger.html">Ledger</a> · <a href="./bitcoin-search.html">Search</a></span>
   </div>
 
   <header class="page-head">
@@ -208,6 +170,7 @@ a:hover { text-decoration: underline; }
 <script type="module">
 import { NOTABLE, isBlockId, isRelativeBlockId, entryHref, blocksEta } from './btc-contents.js';
 import { volumeBookChapter, toRoman } from './btc-citation.js';
+import { storeGet, storePut } from './btc-store.js';
 
 const BOOKMARKS_KEY = 'glossia-btc-bookmarks';
 const readBookmarks = () => {
@@ -251,7 +214,9 @@ function tipHeight() {
 
 // An entry's placement. A block entry places from its height (with an optional
 // transaction index as its §section); a negative id counts back from the chain
-// tip; a transaction id resolves the same way a reader resolves a citation.
+// tip; a transaction id resolves the same way a reader resolves a citation --
+// once: a confirmed placement is immutable, so the archive (btc-store.js)
+// answers every later visit offline and for free.
 async function resolvePlacement({ id, index, page }) {
   if (isBlockId(id)) return placeOf(Number(id), index ?? null, page);
   if (isRelativeBlockId(id)) {
@@ -261,11 +226,14 @@ async function resolvePlacement({ id, index, page }) {
     return height >= 0 ? placeOf(height, index ?? null) : null;
   }
   if (id === GENESIS_COINBASE) return placeOf(0, 0);
+  const kept = await storeGet('placements', id);
+  if (kept) return placeOf(kept.height, kept.pos);
   for (const base of ESPLORA_MIRRORS) {
     try {
       const res = await fetch(`${base}/tx/${id}/merkle-proof`);
       if (!res.ok) continue;
       const mp = await res.json();
+      storePut('placements', id, { height: mp.block_height, pos: mp.pos });
       return placeOf(mp.block_height, mp.pos);
     } catch { /* try the next mirror */ }
   }
@@ -278,16 +246,28 @@ async function resolvePlacement({ id, index, page }) {
 // the chapter), then a txid's merkle proof (height + section), like the book.
 async function resolveBookmark(b) {
   if (Number.isInteger(b.height)) return placeOf(b.height, b.pos ?? null);
+  // A legacy bookmark's hex resolves once; the archive keeps the answer
+  // (whether it proved a block hash or a txid) like any other placement.
+  const kept = await storeGet('placements', b.hex);
+  if (kept) return placeOf(kept.height, kept.pos);
   for (const base of ESPLORA_MIRRORS) {
     try {
       const res = await fetch(`${base}/block/${b.hex}`);
-      if (res.ok) return placeOf((await res.json()).height, null);
+      if (res.ok) {
+        const height = (await res.json()).height;
+        storePut('placements', b.hex, { height, pos: null });
+        return placeOf(height, null);
+      }
     } catch { /* try the next mirror */ }
   }
   for (const base of ESPLORA_MIRRORS) {
     try {
       const res = await fetch(`${base}/tx/${b.hex}/merkle-proof`);
-      if (res.ok) { const mp = await res.json(); return placeOf(mp.block_height, mp.pos); }
+      if (res.ok) {
+        const mp = await res.json();
+        storePut('placements', b.hex, { height: mp.block_height, pos: mp.pos });
+        return placeOf(mp.block_height, mp.pos);
+      }
     } catch { /* try the next mirror */ }
   }
   return null;
@@ -340,8 +320,34 @@ const toc = document.getElementById('toc');
 // The projected section (the mempool, see below), rebuilt by loadProjected and
 // re-slotted after the chain tip's row on every render.
 let projectedSection = null;
+
+// The front matter that argues or informs -- the preface and the sigla -- is
+// listed here as a book's contents lists them. The title and the terms are
+// not: a table of contents omits the title and copyright pages, and both of
+// those sit before the contents in reading order anyway. Neither entry has a
+// chain reference, so both take the dash the stylesheet already styles.
+const FRONT = [
+  { title: 'Preface', leaf: 'preface' },
+  { title: 'Sigla — the marks, and the citation form', leaf: 'sigla' },
+];
+function frontEl({ title, leaf }) {
+  const row = document.createElement('a');
+  row.className = 'toc-entry';
+  row.href = `./bitcoin-front.html?leaf=${leaf}`;
+  const t = document.createElement('span');
+  t.className = 'toc-title';
+  t.textContent = title;
+  const r = document.createElement('span');
+  r.className = 'toc-ref none';
+  r.textContent = '—';
+  row.append(t, r);
+  return row;
+}
+
 function render() {
   toc.replaceChildren();
+  toc.append(head('toc-vol', 'Front matter'));
+  for (const f of FRONT) toc.append(frontEl(f));
   const entries = placed();
   for (let i = 0; i < entries.length;) {
     const vol = entries[i].place.volume;

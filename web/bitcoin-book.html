@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- SPDX-License-Identifier: MIT OR Apache-2.0 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -29,100 +30,50 @@
     }
   } catch (_) {}
 
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js').catch((e) => console.warn('SW registration failed:', e));
-    });
-
-    // Update affordance: the worker's stale-while-revalidate serves this page
-    // from cache, so a fresh deploy is invisible until the NEXT visit. When
-    // the background revalidation caches a newer build, the worker posts
-    // update-available to every open page; a brand-new worker taking over
-    // (controllerchange, on a page that already had one) means the same
-    // thing. Either way the Update button appears; one tap reloads onto the
-    // freshly cached build. Wired like the Install button: state is tracked
-    // eagerly, reflected onto the button once the DOM is ready.
-    (function () {
-      let updateReady = false;
-      let btn = null;
-      const reflect = () => { if (btn) btn.classList.toggle('show', updateReady); };
-      const showUpdate = () => { updateReady = true; reflect(); };
-      navigator.serviceWorker.addEventListener('message', (e) => {
-        if (e.data && e.data.type === 'update-available') showUpdate();
-      });
-      const hadController = !!navigator.serviceWorker.controller;
-      navigator.serviceWorker.addEventListener('controllerchange', () => { if (hadController) showUpdate(); });
-      const wire = () => {
-        btn = document.getElementById('update-btn');
-        if (!btn) return;
-        btn.addEventListener('click', () => location.reload());
-        reflect();
-      };
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', wire);
-      } else {
-        wire();
-      }
-    })();
-  }
-
-  // Reveal an in-page Install button when the browser offers to install this
-  // PWA, and drive the native prompt from it — so installing is discoverable
-  // without hunting through the browser menu. Stays hidden when already
-  // installed (running standalone) or on browsers that don't support prompting.
-  // This script runs in <head>, before #install-btn is parsed, so the
-  // beforeinstallprompt listener is registered eagerly (the event can fire
-  // before DOMContentLoaded) and the button is wired up once the DOM is ready.
-  (function () {
-    const standalone = window.matchMedia('(display-mode: standalone)').matches ||
-                       window.navigator.standalone === true;
-    if (standalone) return;
-    let deferredPrompt = null;
-    let btn = null;
-    const reflect = () => { if (btn) btn.classList.toggle('show', !!deferredPrompt); };
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault();
-      deferredPrompt = e;
-      reflect();
-    });
-    window.addEventListener('appinstalled', () => {
-      deferredPrompt = null;
-      reflect();
-    });
-    const wire = () => {
-      btn = document.getElementById('install-btn');
-      if (!btn) return;
-      btn.addEventListener('click', async () => {
-        if (!deferredPrompt) return;
-        deferredPrompt.prompt();
-        try { await deferredPrompt.userChoice; } catch (_) {}
-        deferredPrompt = null;
-        reflect();
-      });
-      reflect();
-    };
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', wire);
-    } else {
-      wire();
-    }
-  })();
 </script>
+<!-- The shared masthead chrome: service worker registration and the Install /
+     Update affordances on the title's line, one copy for every page. -->
+<script src="./btc-chrome.js"></script>
 
 <!-- Social / rich unfurl -->
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Glossia">
 <meta property="og:title" content="The βook of βitcoin — a block, read as a chapter">
 <meta property="og:description" content="Each transaction in a Bitcoin block, rendered as a paragraph of grammatically correct prose — witness data collected as footnotes.">
-<meta property="og:url" content="https://asherp.github.io/Book-of-Bitcoin/bitcoin-book.html">
-<meta property="og:image" content="https://asherp.github.io/Book-of-Bitcoin/og-glossia.png">
+<meta property="og:url" content="https://bookofbitcoin.io/bitcoin-book.html">
+<meta property="og:image" content="https://bookofbitcoin.io/og-glossia.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="Glossia — machine data, made human. A lossless linguistic codec.">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="The βook of βitcoin — a block, read as a chapter">
 <meta name="twitter:description" content="Each transaction in a Bitcoin block, rendered as a paragraph of grammatically correct prose.">
-<meta name="twitter:image" content="https://asherp.github.io/Book-of-Bitcoin/og-glossia.png">
+<meta name="twitter:image" content="https://bookofbitcoin.io/og-glossia.png">
+
+<!-- Machine readers: passages are composed in-browser by the WASM engine, so
+     this document arrives with no passage text in it. /llms.txt says where
+     the static text lives and how any passage can be reconstructed. -->
+<link rel="sitemap" type="application/xml" href="./sitemap.xml">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Book",
+  "name": "The βook of βitcoin",
+  "alternateName": "Book of Bitcoin",
+  "url": "https://bookofbitcoin.io/bitcoin-book.html",
+  "abstract": "The Bitcoin block chain read as a book: each block a chapter, each transaction a section of grammatically correct Glossia prose, witness data as footnotes. Every byte of every transaction is carried in the words and decodes back out exactly.",
+  "genre": "verbatim translation of the Bitcoin block chain",
+  "inLanguage": "en",
+  "isAccessibleForFree": true,
+  "workExample": {
+    "@type": "Chapter",
+    "name": "A Bitcoin block, read as a chapter",
+    "description": "Rendered on demand in the browser; static markdown renderings of the curated passages are listed at /passages/index.md."
+  }
+}
+</script>
+<link rel="stylesheet" href="./notation.css">
+<link rel="stylesheet" href="./btc-chrome.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,300;1,6..72,400;1,6..72,500&family=IBM+Plex+Mono:wght@400;500;600&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
@@ -195,39 +146,9 @@ a:hover { text-decoration: underline; }
 .mono { font-family: 'IBM Plex Mono', monospace; }
 .hidden { display: none !important; }
 
-.masthead { display:flex; align-items:baseline; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:24px; }
-.masthead .title { font:600 13px/1 'IBM Plex Mono',monospace; letter-spacing:.22em; text-transform:uppercase; color:var(--ink); }
-.masthead .title .beta { color:var(--accent); text-transform:none; font-family:'Newsreader','Source Serif 4',Georgia,serif; font-weight:600; font-size:1.12em; }
-.masthead .sub { font:400 13px/1.4 'Public Sans',sans-serif; color:var(--dim); }
-.masthead .home { margin-left:auto; font:500 12px/1 'IBM Plex Mono',monospace; letter-spacing:.04em; }
-/* Install-as-app affordance: hidden until the browser fires beforeinstallprompt
-   (Chrome/Edge/Android), so it appears only when the app is actually
-   installable and not already installed. On iOS Safari it stays hidden — that
-   platform installs via Share → Add to Home Screen instead. */
-.install-btn {
-  display:none; margin-right:12px; vertical-align:baseline; background:transparent;
-  border:1px solid var(--accent); color:var(--accent); border-radius:4px; padding:4px 10px;
-  cursor:pointer; font:600 11px/1 'IBM Plex Mono',monospace; letter-spacing:.08em; text-transform:uppercase;
-  transition:background .15s ease, color .15s ease;
-}
-.install-btn.show { display:inline-block; }
-.install-btn:hover { background:var(--accent); color:var(--btn-ink,#17140c); }
-/* Update affordance: hidden until the service worker reports that a newer
-   build has been cached behind the page (or a new worker has taken over).
-   Pinned to the top-right corner of the viewport -- above the page, clear of
-   the notch -- and filled gold, unlike the quiet Install outline, because
-   it's an action the reader probably wants to take now. */
-.update-btn {
-  display:none; position:fixed; z-index:60;
-  top:calc(12px + env(safe-area-inset-top, 0px)); right:14px;
-  background:var(--accent); border:1px solid var(--accent); color:var(--btn-ink);
-  border-radius:4px; padding:6px 12px; cursor:pointer;
-  font:600 11px/1 'IBM Plex Mono',monospace; letter-spacing:.08em; text-transform:uppercase;
-  box-shadow:0 8px 24px -8px rgba(0,0,0,.8);
-  transition:background .15s ease;
-}
-.update-btn.show { display:inline-block; }
-.update-btn:hover { background:var(--accent-2); border-color:var(--accent-2); }
+/* Masthead chrome comes from btc-chrome.css; only this page's reading layout
+   pulls the chapter closer beneath it. */
+.masthead { margin-bottom:24px; }
 
 button {
   background: var(--accent); color: var(--btn-ink); border: none; border-radius: 4px;
@@ -318,6 +239,17 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 #chapter-prev { grid-column: 1; justify-self: start; }
 .chapter-num { grid-column: 2; }
 #chapter-next { grid-column: 3; justify-self: end; }
+/* The section's folio -- its page number in the chain's running count of
+   transactions (one page per transaction since genesis; see btc-pages.js) --
+   rides the right end of the eyebrow bar, on the chapter label's line, the
+   way a printed folio sits in a running head. It shares the right grid cell
+   with the chapter-next stepper: the stepper belongs to leaves alone and the
+   folio to section pages alone, so the two never show together. A bare,
+   unpunctuated number, dim against the eyebrow's gold -- an annotation, not
+   a crumb; the hover title carries the readable form. Census-resolved, so
+   it fills in a beat after the section renders; absent when no census
+   answers. */
+#page-folio { grid-column: 3; justify-self: end; font:500 11px/1 'IBM Plex Mono',monospace; letter-spacing:.14em; color:var(--dim); white-space:nowrap; font-variant-numeric:tabular-nums; }
 .chapter-num { font:600 11.5px/1 'IBM Plex Mono',monospace; letter-spacing:.3em; text-transform:uppercase; color: var(--accent); min-width: 0; text-align: center; }
 /* The eyebrow's Volume / Book / Chapter crumbs inherit its voice exactly;
    hover marks them navigable. (Overrides the global gold button styling.) */
@@ -581,6 +513,9 @@ button:disabled { opacity: .4; cursor: not-allowed; }
      steppers (min-width 0 in the base rule) instead of overflowing. */
   .chapter-nav { gap: 9px; }
   .chapter-num { letter-spacing: .14em; }
+  /* The folio tightens with the row, so a ten-digit page number and a long
+     chapter crumb can share the bar without overflowing. */
+  #page-folio { font-size: 10px; letter-spacing: .06em; }
 }
 
 /* A witness-bearing input carries a small superscript index inline; the matching
@@ -594,85 +529,34 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 .footnote-entry:target { color: var(--ink-soft); }
 .footnote-mark { font: 500 10.5px/1 'IBM Plex Mono',monospace; color: var(--accent); margin-right: .5em; font-style: normal; vertical-align: .35em; }
 
-/* ── Notation: a key to the manuscript's sigla — the glyphs that notate a
-   script's opcodes, and the marks drawn in each transaction's margins. Its
-   toggle sits centred in the section-nav bar; opened, the key rises above
-   the bar as a sheet (absolute against the sticky nav), scrolling within
-   itself rather than growing the bar. ── */
-.notation { margin: 0; min-width: 0; }
-.notation summary {
-  cursor: pointer; font:500 11px/1 'IBM Plex Mono',monospace; letter-spacing:.1em; text-transform:uppercase;
-  color: var(--dim); list-style: none; text-align: center;
-}
-.notation summary::-webkit-details-marker { display: none; }
-.notation summary::before { content: '+ '; color: var(--accent); }
-.notation[open] summary::before { content: '– '; }
-.notation-body {
-  position: absolute; bottom: 100%; left: 0; right: 0;
-  max-height: min(64vh, 560px); overflow-y: auto; overscroll-behavior: contain;
-  background: var(--page); border-top: 1px solid var(--rule);
-  padding: 16px 2px 12px;
-}
-.notation-group { margin: 0 0 22px; }
-.notation-group > h4 {
-  margin: 0 0 11px; font: 600 10px/1 'IBM Plex Mono',monospace; letter-spacing:.18em;
-  text-transform: uppercase; color: var(--accent);
-}
-.glyph-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(215px, 1fr)); gap: 7px 22px; }
-.glyph-row { display: flex; align-items: baseline; gap: 12px; }
-.glyph-row .g {
-  flex: 0 0 1.7em; text-align: center;
-  font: 400 17px/1.3 'Newsreader', system-ui, 'Segoe UI Symbol', 'Apple Symbols', serif;
-  color: var(--ink); font-variant-numeric: normal;
-}
-.glyph-row .g i { font-style: normal; opacity: .5; font-size: .82em; }
-.glyph-row .m { font: 400 13px/1.45 'Public Sans', sans-serif; color: var(--dim); }
-.glyph-row .m b { color: var(--ink-soft); font-weight: 500; }
-/* Data-type letters (p s h r w t) glow gold in the key, as they do on chain. */
-.glyph-row .g b { color: var(--accent); }
-.notation-note { margin: 12px 0 0; font-size: 12px; line-height: 1.5; color: var(--meta); }
-/* Common script patterns: one row per payment type, read as a state
-   transition -- the unspent output at rest (UTXO), the script a node runs then
-   discards (validator), and the spend that consumes it, split across where it
-   lives on the wire: the input's scriptSig (STXO) and its witness (Witness).
-   Legacy types write the STXO and leave the witness empty; segwit types empty
-   the scriptSig (∅) and write the witness. Wide, so it scrolls in its own
-   container on narrow screens. */
-.pattern-scroll { overflow-x: auto; }
-.pattern-table { display: grid; grid-template-columns: repeat(5, max-content); gap: 9px 22px; align-items: baseline; }
-.pattern-table .phead, .pattern-table .pname { font: 600 10px/1.5 'IBM Plex Mono',monospace; letter-spacing: .06em; text-transform: uppercase; color: var(--meta); white-space: nowrap; }
-.pattern-table .phead { color: var(--accent); }
-.pattern-table .seq { font: 400 16px/1.5 'Newsreader', system-ui, 'Segoe UI Symbol', serif; color: var(--ink-soft); white-space: nowrap; }
-.pattern-table .none { color: var(--meta); }
-/* Gold and bold mark what the chain keeps: the UTXO's lock, the STXO's
-   authorization, and any datum read from a confirmed output -- a committed
-   hash. White, regular weight marks the ephemeral validator: the operations it
-   runs, plus the transaction's own data, which stays unverified until a block
-   puts it on chain (where it turns gold). Bold carries the split into a
-   black-and-white print. */
-.pattern-table .op { font-weight: 700; }
-.pattern-table .op-push { font-weight: 400; }
-.pattern-table .ph { color: var(--accent); font-style: normal; font-weight: 700; }
-.pattern-table .seq.exec .op, .pattern-table .seq.exec .ph { color: var(--ink); font-weight: 400; }
-.pattern-table .seq.exec .ph.chain { color: var(--accent); font-weight: 700; }
-/* The Lightning table carries two extra columns: what each channel party
-   computes independently, off chain -- keys from its own secret k, signatures,
-   and the same script hash h, reached without a secret crossing the wire.
-   Off-chain work never turns gold, so calc rows render plain throughout. */
-.pattern-table.two-party { grid-template-columns: repeat(7, max-content); }
-.pattern-table .seq.calc .op, .pattern-table .seq.calc .ph { color: var(--ink); font-weight: 400; }
-@media (max-width: 480px) { .glyph-grid { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
-<!-- Update affordance: pinned to the page's top-right corner (fixed, so it
-     stays in reach mid-chapter), revealed by the service worker when a newer
-     build has been cached behind this page. One tap reloads onto it. -->
-<button type="button" id="update-btn" class="update-btn" aria-label="A new version is ready — reload to update">Update</button>
+<noscript>
+  <div style="max-width:44rem;margin:3rem auto;padding:0 1.25rem;font-family:Georgia,serif;line-height:1.6">
+    <h1>The βook of βitcoin</h1>
+    <p>The Bitcoin block chain, read as a book: each block a chapter, each
+    transaction a section of grammatically correct Glossia prose, witness data
+    collected as footnotes. Every byte of every transaction is carried in the
+    words of the prose and decodes back out exactly.</p>
+    <p>Passages are composed here, in the browser, by a WASM engine — so with
+    JavaScript off (or fetched by a crawler) this page carries no passage
+    text. The book is still readable without it:</p>
+    <ul>
+      <li><a href="./passages/index.md">Curated passages as plain markdown</a>
+        — the Genesis block, the Hal Finney transaction, Bitcoin Pizza Day,
+        the halvings, the soft-fork activations, and the rest.</li>
+      <li><a href="./preface.md">The preface</a> — the book in its own voice.</li>
+      <li><a href="./llms.txt">llms.txt</a> — the site's structure, citation
+        scheme, and how to reconstruct any passage on the chain from public
+        data with the published engine.</li>
+    </ul>
+  </div>
+</noscript>
 <div class="wrap">
   <div class="masthead">
     <span class="title">The <span class="beta">β</span>ook of <span class="beta">β</span>itcoin</span>
-    <span class="home"><button type="button" id="install-btn" class="install-btn" aria-label="Install the Book of Bitcoin as an app">Install</button><a href="./bitcoin-search.html">Search</a> · <a href="./bitcoin-contents.html">Contents</a> · <span class="settings-menu"><a href="#" id="settings-link" role="button" aria-haspopup="dialog" aria-expanded="false">Settings</a><div id="settings-panel" class="settings-panel hidden" role="dialog" aria-label="Settings">
+    <span class="home"><a href="./bitcoin-search.html">Search</a> · <a href="./bitcoin-contents.html">Contents</a> · <a href="./bitcoin-ledger.html">Ledger</a> · <span class="settings-menu"><a href="#" id="settings-link" role="button" aria-haspopup="dialog" aria-expanded="false">Settings</a><div id="settings-panel" class="settings-panel hidden" role="dialog" aria-label="Settings">
       <div class="settings-title">Data source</div>
       <div class="endpoint-row">
         <select id="endpoint-select" class="endpoint-select" aria-label="Data source endpoint"></select>
@@ -704,6 +588,11 @@ button:disabled { opacity: .4; cursor: not-allowed; }
       <button type="button" id="chapter-prev" class="chapter-step hidden" aria-label="Previous chapter" title="Previous chapter"></button>
       <div class="chapter-num"><button type="button" id="ch-volume-link" class="crumb" title="This volume's page">Volume <span id="ch-volume"></span></button><span id="ch-sep-1"> · </span><button type="button" id="ch-book-link" class="crumb" title="This book's page">Book <span id="ch-book"></span></button><span id="ch-chapter-inline"></span></div>
       <button type="button" id="chapter-next" class="chapter-step hidden" aria-label="Next chapter" title="Next chapter"></button>
+      <!-- The folio: a section's page number in the chain's running count of
+           transactions, at the right end of the running head (see btc-pages.js).
+           Occupies the stepper's grid cell -- the stepper shows on leaves, the
+           folio on section pages, never both. -->
+      <span id="page-folio" class="hidden"></span>
     </nav>
 
     <!-- Everything between the header nav and the foot nav: the part of the
@@ -737,301 +626,7 @@ button:disabled { opacity: .4; cursor: not-allowed; }
       <button type="button" id="page-prev" class="hidden" aria-label="Previous section" title="Previous section"></button>
       <details class="notation">
         <summary>Notation</summary>
-        <div class="notation-body">
-          <div class="notation-group">
-            <h4>Common script patterns</h4>
-            <div class="pattern-scroll">
-            <div class="pattern-table">
-              <span class="phead"></span><span class="phead">UTXO</span><span class="phead">Validator</span><span class="phead">STXO</span><span class="phead">Witness</span>
-              <span class="pname">P2PK</span>
-                <span class="seq"><span class="ph">p</span><span class="op op-push">⁶⁵</span> <span class="op">∇</span></span>
-                <span class="seq exec"><span class="ph">s</span> <span class="ph chain">p</span> <span class="op">∇</span></span>
-                <span class="seq"><span class="ph">s</span></span>
-                <span class="seq none">—</span>
-              <span class="pname">P2PKH</span>
-                <span class="seq"><span class="op">⧉</span> <span class="op">⌖</span> <span class="ph">h</span><span class="op op-push">²⁰</span> <span class="op">≡</span> <span class="op">∇</span></span>
-                <span class="seq exec"><span class="ph">s</span> <span class="ph">p</span> <span class="op">⧉</span> <span class="op">⌖</span> <span class="ph chain">h</span> <span class="op">≡</span> <span class="op">∇</span></span>
-                <span class="seq"><span class="ph">s</span> <span class="ph">p</span></span>
-                <span class="seq none">—</span>
-              <span class="pname">Multisig</span>
-                <span class="seq"><span class="op">②</span> <span class="ph">p<sub>1</sub></span><span class="op op-push">³³</span> <span class="ph">p<sub>2</sub></span><span class="op op-push">³³</span> <span class="ph">p<sub>3</sub></span><span class="op op-push">³³</span> <span class="op">③</span> <span class="op">◇</span></span>
-                <span class="seq exec"><span class="op">⓪</span> <span class="ph">s<sub>1</sub></span> <span class="ph">s<sub>2</sub></span> <span class="op">②</span> <span class="ph">p<sub>1</sub></span> <span class="ph">p<sub>2</sub></span> <span class="ph">p<sub>3</sub></span> <span class="op">③</span> <span class="op">◇</span></span>
-                <span class="seq"><span class="op">⓪</span> <span class="ph">s<sub>1</sub></span> <span class="ph">s<sub>2</sub></span></span>
-                <span class="seq none">—</span>
-              <span class="pname">P2SH</span>
-                <span class="seq"><span class="op">⌖</span> <span class="ph">h</span><span class="op op-push">²⁰</span> <span class="op">=</span></span>
-                <span class="seq exec"><span class="ph">r</span> <span class="op">⌖</span> <span class="ph chain">h</span> <span class="op">=</span> <span class="op">(r)</span></span>
-                <span class="seq"><span class="op">(r)</span></span>
-                <span class="seq none">—</span>
-              <span class="pname">P2SH · 2-of-3</span>
-                <span class="seq"><span class="op">⌖</span> <span class="ph">h</span><span class="op op-push">²⁰</span> <span class="op">=</span></span>
-                <span class="seq exec"><span class="op">②</span> <span class="ph">p<sub>1</sub></span> <span class="ph">p<sub>2</sub></span> <span class="ph">p<sub>3</sub></span> <span class="op">③</span> <span class="op">◇</span> <span class="op">⌖</span> <span class="ph chain">h</span> <span class="op">=</span> <span class="op">(</span><span class="op">②</span> <span class="ph">p<sub>1</sub></span> <span class="ph">p<sub>2</sub></span> <span class="ph">p<sub>3</sub></span> <span class="op">③</span> <span class="op">◇</span><span class="op">)</span></span>
-                <span class="seq"><span class="op">⓪</span> <span class="ph">s<sub>1</sub></span> <span class="ph">s<sub>2</sub></span> <span class="op">②</span> <span class="ph">p<sub>1</sub></span> <span class="ph">p<sub>2</sub></span> <span class="ph">p<sub>3</sub></span> <span class="op">③</span> <span class="op">◇</span></span>
-                <span class="seq none">—</span>
-              <span class="pname">P2WPKH</span>
-                <span class="seq"><span class="op">⓪</span> <span class="ph">h</span><span class="op op-push">²⁰</span></span>
-                <span class="seq exec"><span class="ph">s</span> <span class="ph">p</span> <span class="op">⧉</span> <span class="op">⌖</span> <span class="ph chain">h</span> <span class="op">≡</span> <span class="op">∇</span></span>
-                <span class="seq none">∅</span>
-                <span class="seq"><span class="ph">s</span> <span class="ph">p</span></span>
-              <span class="pname">P2WSH</span>
-                <span class="seq"><span class="op">⓪</span> <span class="ph">h</span><span class="op op-push">³²</span></span>
-                <span class="seq exec"><span class="ph">w</span> <span class="op">Σ</span> <span class="ph chain">h</span> <span class="op">=</span> <span class="op">(w)</span></span>
-                <span class="seq none">∅</span>
-                <span class="seq"><span class="op">(w)</span></span>
-              <span class="pname">P2TR key</span>
-                <span class="seq"><span class="op">①</span> <span class="ph">p</span><span class="op op-push">³²</span></span>
-                <span class="seq exec"><span class="ph">s</span> <span class="op">∇</span></span>
-                <span class="seq none">∅</span>
-                <span class="seq"><span class="ph">s</span></span>
-              <span class="pname">P2TR script</span>
-                <span class="seq"><span class="op">①</span> <span class="ph">p</span><span class="op op-push">³²</span></span>
-                <span class="seq exec"><span class="ph">t</span> <span class="op">⋔</span> <span class="ph chain">p</span> <span class="op">=</span> <span class="op">(t)</span></span>
-                <span class="seq none">∅</span>
-                <span class="seq"><span class="ph">s</span> <span class="ph">t</span> <span class="ph">c</span></span>
-              <span class="pname">Data</span>
-                <span class="seq"><span class="op">¶</span> <span class="op op-push">ⁿ</span></span>
-                <span class="seq none">—</span>
-                <span class="seq none">—</span>
-                <span class="seq none">—</span>
-            </div>
-            </div>
-          </div>
-
-          <div class="notation-group">
-            <h4>Lightning — commitment &amp; channel scripts</h4>
-            <div class="pattern-scroll">
-            <div class="pattern-table two-party">
-              <span class="phead"></span><span class="phead">Party 1</span><span class="phead">Party 2</span><span class="phead">UTXO</span><span class="phead">Validator</span><span class="phead">STXO</span><span class="phead">Witness</span>
-              <span class="pname">Channel open · 2-of-2</span>
-                <span class="seq calc"><span class="ph">p<sub>1</sub></span> <span class="op">=</span> <span class="ph">k<sub>1</sub></span><span class="op">G</span> · <span class="ph">p<sup>0</sup></span> <span class="op">=</span> <span class="ph">k<sup>0</sup></span><span class="op">G</span> · <span class="ph">s<sub>1</sub><sup>f</sup></span> · <span class="op">Σ</span> <span class="ph">w</span> <span class="op">=</span> <span class="ph">h</span></span>
-                <span class="seq calc"><span class="ph">p<sub>2</sub></span> <span class="op">=</span> <span class="ph">k<sub>2</sub></span><span class="op">G</span> · <span class="ph">s<sub>2</sub><sup>f</sup></span> · <span class="op">Σ</span> <span class="ph">w</span> <span class="op">=</span> <span class="ph">h</span></span>
-                <span class="seq"><span class="op">⓪</span> <span class="ph">h</span></span>
-                <span class="seq exec"><span class="op">②</span> <span class="ph">p<sub>1</sub></span> <span class="ph">p<sub>2</sub></span> <span class="op">②</span> <span class="op">◇</span> <span class="op">Σ</span> <span class="ph chain">h</span> <span class="op">=</span> <span class="op">(</span><span class="op">②</span> <span class="ph">p<sub>1</sub></span> <span class="ph">p<sub>2</sub></span> <span class="op">②</span> <span class="op">◇</span><span class="op">)</span></span>
-                <span class="seq none">∅</span>
-                <span class="seq"><span class="op">⓪</span> <span class="ph">s<sub>1</sub><sup>f</sup></span> <span class="ph">s<sub>2</sub><sup>f</sup></span> · <span class="op">⓪</span> <span class="ph">s<sub>1</sub><sup><i>i</i></sup></span> <span class="ph">s<sub>2</sub><sup><i>i</i></sup></span></span>
-              <span class="pname">Channel update</span>
-                <span class="seq calc"><span class="ph">p<sup><i>i</i>+1</sup></span> <span class="op">=</span> <span class="ph">k<sup><i>i</i>+1</sup></span><span class="op">G</span> · <span class="ph">k<sup><i>i</i></sup></span></span>
-                <span class="seq calc"><span class="ph">k<sub>r</sub><sup><i>i</i></sup></span> <span class="op">=</span> <span class="ph">k<sub>2</sub></span><span class="op">Σ(</span><span class="ph">p<sub>2</sub></span><span class="op">⧺</span><span class="ph">p<sup><i>i</i></sup></span><span class="op">)</span> <span class="op">+</span> <span class="ph">k<sup><i>i</i></sup></span><span class="op">Σ(</span><span class="ph">p<sup><i>i</i></sup></span><span class="op">⧺</span><span class="ph">p<sub>2</sub></span><span class="op">)</span> · <span class="ph">s<sub>r</sub><sup><i>i</i></sup></span></span>
-                <span class="seq none">—</span>
-                <span class="seq none">—</span>
-                <span class="seq none">—</span>
-                <span class="seq none">—</span>
-              <span class="pname">Force close · to_local</span>
-                <span class="seq calc"><span class="ph">p<sup><i>i</i></sup></span> <span class="op">=</span> <span class="ph">k<sup><i>i</i></sup></span><span class="op">G</span> · <span class="ph">k<sub>1</sub><sup><i>i</i></sup></span> <span class="op">=</span> <span class="ph">k<sub>1</sub></span> <span class="op">+</span> <span class="op">Σ(</span><span class="ph">p<sup><i>i</i></sup></span><span class="op">⧺</span><span class="ph">p<sub>1</sub></span><span class="op">)</span> · <span class="ph">p<sub>1</sub><sup><i>i</i></sup></span> <span class="op">=</span> <span class="ph">k<sub>1</sub><sup><i>i</i></sup></span><span class="op">G</span> · <span class="ph">p<sub>r</sub><sup><i>i</i></sup></span> · <span class="ph">s<sub>1</sub><sup><i>i</i></sup></span> · <span class="op">Σ</span> <span class="ph">w<sup><i>i</i></sup></span> <span class="op">=</span> <span class="ph">h<sup><i>i</i></sup></span></span>
-                <span class="seq calc"><span class="ph">p<sub>1</sub><sup><i>i</i></sup></span> <span class="op">=</span> <span class="ph">p<sub>1</sub></span> <span class="op">+</span> <span class="op">Σ(</span><span class="ph">p<sup><i>i</i></sup></span><span class="op">⧺</span><span class="ph">p<sub>1</sub></span><span class="op">)</span><span class="op">G</span> · <span class="ph">p<sub>r</sub><sup><i>i</i></sup></span> <span class="op">=</span> <span class="ph">p<sub>2</sub></span><span class="op">Σ(</span><span class="ph">p<sub>2</sub></span><span class="op">⧺</span><span class="ph">p<sup><i>i</i></sup></span><span class="op">)</span> <span class="op">+</span> <span class="ph">p<sup><i>i</i></sup></span><span class="op">Σ(</span><span class="ph">p<sup><i>i</i></sup></span><span class="op">⧺</span><span class="ph">p<sub>2</sub></span><span class="op">)</span> · <span class="op">Σ</span> <span class="ph">w<sup><i>i</i></sup></span> <span class="op">=</span> <span class="ph">h<sup><i>i</i></sup></span></span>
-                <span class="seq"><span class="op">⓪</span> <span class="ph">h<sup><i>i</i></sup></span></span>
-                <span class="seq exec"><span class="op">⟨</span> <span class="ph">p<sub>r</sub><sup><i>i</i></sup></span> <span class="op">│</span> <span class="op">■</span> <span class="op">Δ</span> <span class="op">⌄</span> <span class="ph">p<sub>1</sub><sup><i>i</i></sup></span> <span class="op">⟩</span> <span class="op">∇</span> <span class="op">Σ</span> <span class="ph chain">h<sup><i>i</i></sup></span> <span class="op">=</span> <span class="op">(</span><span class="op">⟨</span> <span class="ph">p<sub>r</sub><sup><i>i</i></sup></span> <span class="op">│</span> <span class="op">■</span> <span class="op">Δ</span> <span class="op">⌄</span> <span class="ph">p<sub>1</sub><sup><i>i</i></sup></span> <span class="op">⟩</span> <span class="op">∇</span><span class="op">)</span></span>
-                <span class="seq none">∅</span>
-                <span class="seq"><span class="ph">s<sub>1</sub><sup><i>i</i></sup></span> <span class="op">⓪</span> · <span class="ph">s<sub>r</sub><sup><i>i</i></sup></span> <span class="op">①</span></span>
-              <span class="pname">Force close · to_remote</span>
-                <span class="seq calc"><span class="op">Σ</span> <span class="ph">w</span> <span class="op">=</span> <span class="ph">h</span></span>
-                <span class="seq calc"><span class="ph">p<sub>2</sub></span> <span class="op">=</span> <span class="ph">k<sub>2</sub></span><span class="op">G</span> · <span class="ph">s<sub>2</sub></span> · <span class="op">Σ</span> <span class="ph">w</span> <span class="op">=</span> <span class="ph">h</span></span>
-                <span class="seq"><span class="op">⓪</span> <span class="ph">h</span></span>
-                <span class="seq exec"><span class="ph">p<sub>2</sub></span> <span class="op">▼</span> <span class="op">①</span> <span class="op">Δ</span> <span class="op">Σ</span> <span class="ph chain">h</span> <span class="op">=</span> <span class="op">(</span><span class="ph">p<sub>2</sub></span> <span class="op">▼</span> <span class="op">①</span> <span class="op">Δ</span><span class="op">)</span></span>
-                <span class="seq none">∅</span>
-                <span class="seq"><span class="ph">s<sub>2</sub></span></span>
-              <span class="pname">Force close · anchor</span>
-                <span class="seq calc"><span class="ph">p</span> <span class="op">=</span> <span class="ph">k</span><span class="op">G</span> · <span class="ph">s</span> · <span class="op">Σ</span> <span class="ph">w</span> <span class="op">=</span> <span class="ph">h</span></span>
-                <span class="seq calc"><span class="op">Σ</span> <span class="ph">w</span> <span class="op">=</span> <span class="ph">h</span> · <span class="op">∅</span></span>
-                <span class="seq"><span class="op">⓪</span> <span class="ph">h</span></span>
-                <span class="seq exec"><span class="ph">p</span> <span class="op">∇</span> <span class="op">⧉?</span> <span class="op">¬⟨</span> <span class="op">⑯</span> <span class="op">Δ</span> <span class="op">⟩</span> <span class="op">Σ</span> <span class="ph chain">h</span> <span class="op">=</span> <span class="op">(</span><span class="ph">p</span> <span class="op">∇</span> <span class="op">⧉?</span> <span class="op">¬⟨</span> <span class="op">⑯</span> <span class="op">Δ</span> <span class="op">⟩</span><span class="op">)</span></span>
-                <span class="seq none">∅</span>
-                <span class="seq"><span class="ph">s</span> · <span class="op">∅</span></span>
-              <span class="pname">Force close · HTLC</span>
-                <span class="seq calc"><span class="ph">k<sub>1</sub><sup><i>i</i></sup></span> <span class="op">=</span> <span class="ph">k<sub>1</sub></span> <span class="op">+</span> <span class="op">Σ(</span><span class="ph">p<sup><i>i</i></sup></span><span class="op">⧺</span><span class="ph">p<sub>1</sub></span><span class="op">)</span> · <span class="ph">p<sub>1</sub><sup><i>i</i></sup></span> <span class="op">=</span> <span class="ph">k<sub>1</sub><sup><i>i</i></sup></span><span class="op">G</span> · <span class="ph">p<sub>2</sub><sup><i>i</i></sup></span> <span class="op">=</span> <span class="ph">p<sub>2</sub></span> <span class="op">+</span> <span class="op">Σ(</span><span class="ph">p<sup><i>i</i></sup></span><span class="op">⧺</span><span class="ph">p<sub>2</sub></span><span class="op">)</span><span class="op">G</span> · <span class="ph">p<sub>r</sub><sup><i>i</i></sup></span> · <span class="ph">s<sub>1</sub><sup><i>i</i></sup></span> · <span class="op">Σ</span> <span class="ph">w<sup><i>i</i></sup></span> <span class="op">=</span> <span class="ph">h<sup><i>i</i></sup></span></span>
-                <span class="seq calc"><span class="ph">k<sub>2</sub><sup><i>i</i></sup></span> <span class="op">=</span> <span class="ph">k<sub>2</sub></span> <span class="op">+</span> <span class="op">Σ(</span><span class="ph">p<sup><i>i</i></sup></span><span class="op">⧺</span><span class="ph">p<sub>2</sub></span><span class="op">)</span> · <span class="ph">p<sub>2</sub><sup><i>i</i></sup></span> <span class="op">=</span> <span class="ph">k<sub>2</sub><sup><i>i</i></sup></span><span class="op">G</span> · <span class="ph">p<sub>1</sub><sup><i>i</i></sup></span> <span class="op">=</span> <span class="ph">p<sub>1</sub></span> <span class="op">+</span> <span class="op">Σ(</span><span class="ph">p<sup><i>i</i></sup></span><span class="op">⧺</span><span class="ph">p<sub>1</sub></span><span class="op">)</span><span class="op">G</span> · <span class="ph">p<sub>r</sub><sup><i>i</i></sup></span> · <span class="ph">s<sub>2</sub><sup><i>i</i></sup></span> · <span class="op">Σ</span> <span class="ph">w<sup><i>i</i></sup></span> <span class="op">=</span> <span class="ph">h<sup><i>i</i></sup></span></span>
-                <span class="seq"><span class="op">⓪</span> <span class="ph">h<sup><i>i</i></sup></span></span>
-                <span class="seq exec"><span class="op">⟨</span> <span class="ph">p<sub>r</sub><sup><i>i</i></sup></span> <span class="op">│</span> <span class="op">⟨</span> <span class="op">Σ</span> <span class="ph">h</span> <span class="op">≡</span> <span class="ph">p<sub>1</sub><sup><i>i</i></sup></span> <span class="op">│</span> <span class="op">τ</span> <span class="op">⌄</span> <span class="ph">p<sub>2</sub><sup><i>i</i></sup></span> <span class="op">⟩</span> <span class="op">⟩</span> <span class="op">∇</span> <span class="op">Σ</span> <span class="ph chain">h<sup><i>i</i></sup></span> <span class="op">=</span> <span class="op">(</span><span class="op">⟨</span> <span class="ph">p<sub>r</sub><sup><i>i</i></sup></span> <span class="op">│</span> <span class="op">⟨</span> <span class="op">Σ</span> <span class="ph">h</span> <span class="op">≡</span> <span class="ph">p<sub>1</sub><sup><i>i</i></sup></span> <span class="op">│</span> <span class="op">τ</span> <span class="op">⌄</span> <span class="ph">p<sub>2</sub><sup><i>i</i></sup></span> <span class="op">⟩</span> <span class="op">⟩</span> <span class="op">∇</span><span class="op">)</span></span>
-                <span class="seq none">∅</span>
-                <span class="seq"><span class="ph">s<sub>1</sub><sup><i>i</i></sup></span> <span class="ph">h</span> <span class="op">①</span> <span class="op">⓪</span> · <span class="ph">s<sub>2</sub><sup><i>i</i></sup></span> <span class="op">⓪</span> <span class="op">⓪</span> · <span class="ph">s<sub>r</sub><sup><i>i</i></sup></span> <span class="op">①</span></span>
-            </div>
-            </div>
-            <p class="notation-note">The first two columns are off chain: what each party computes for itself — party 1 is the side whose force close this is. Secrets stay in their own column until an update surrenders k<sup><i>i</i></sup> across; everything else a party writes without deriving came from the other column's public points.</p>
-          </div>
-
-          <div class="notation-group">
-            <h4>Secrets &amp; the generator</h4>
-            <div class="glyph-grid">
-              <div class="glyph-row"><span class="g"><b>k</b></span><span class="m"><b>private key</b> — the secret scalar behind a public key; never on chain</span></div>
-              <div class="glyph-row"><span class="g">G</span><span class="m">the <b>generator</b> — the fixed curve point every key descends from: <b>p</b> = <b>k</b>G</span></div>
-              <div class="glyph-row"><span class="g"><b>p</b><sup>0</sup> <b>p</b><sup><i>i</i></sup> <b>p</b><sup>f</sup></span><span class="m"><b>channel state</b> — a superscript scopes a datum to a state of the channel: 0 the initial commitment sealed at funding, <i>i</i> any intermediate update, f the final, closing state. Each state the closing party draws a fresh secret k<sup><i>i</i></sup> and shares only its point p<sup><i>i</i></sup> = k<sup><i>i</i></sup>G; scripts and hashes rebuild per state. Advancing to <i>i</i>+1 revokes state <i>i</i>: k<sup><i>i</i></sup> crosses to the other side — and nothing else</span></div>
-              <div class="glyph-row"><span class="g"><b>p</b><sub>1</sub><sup><i>i</i></sup> <b>p</b><sub>2</sub><sup><i>i</i></sup> <b>p</b><sub>r</sub><sup><i>i</i></sup></span><span class="m"><b>state-scoped keys</b> — party below, state above: each side's base key folded with p<sup><i>i</i></sup>, and the revocation key; the party columns derive them in full, each side by its own route</span></div>
-            </div>
-          </div>
-
-          <div class="notation-group">
-            <h4>Pushes</h4>
-            <div class="glyph-grid">
-              <div class="glyph-row"><span class="g">²⁰</span><span class="m"><b>push</b> — the bare superscript is the byte count (²⁰ pushes twenty)</span></div>
-              <div class="glyph-row"><span class="g">↧<i>n</i> ⇊<i>n</i> ⤋<i>n</i></span><span class="m">extended push — length in a 1 / 2 / 4-byte prefix</span></div>
-            </div>
-          </div>
-
-          <div class="notation-group">
-            <h4>Signatures &amp; keys</h4>
-            <div class="glyph-grid">
-              <div class="glyph-row"><span class="g">∇</span><span class="m">check a <b>signature</b></span></div>
-              <div class="glyph-row"><span class="g">▼</span><span class="m">check a signature, <b>else fail</b></span></div>
-              <div class="glyph-row"><span class="g">◇</span><span class="m">check <b>m-of-n</b> signatures</span></div>
-              <div class="glyph-row"><span class="g">◆</span><span class="m">check m-of-n, <b>else fail</b></span></div>
-              <div class="glyph-row"><span class="g">∇₊</span><span class="m">check a signature, <b>tallying</b> (tapscript multisig)</span></div>
-            </div>
-          </div>
-
-          <div class="notation-group">
-            <h4>Hashes</h4>
-            <div class="glyph-grid">
-              <div class="glyph-row"><span class="g">⌖</span><span class="m"><b>address</b> hash · HASH160</span></div>
-              <div class="glyph-row"><span class="g">⌘</span><span class="m"><b>identity</b> hash · HASH256</span></div>
-              <div class="glyph-row"><span class="g">Σ</span><span class="m">SHA-256</span></div>
-              <div class="glyph-row"><span class="g">σ</span><span class="m">SHA-1</span></div>
-              <div class="glyph-row"><span class="g">ρ</span><span class="m">RIPEMD-160</span></div>
-            </div>
-          </div>
-
-          <div class="notation-group">
-            <h4>Timelocks</h4>
-            <div class="glyph-grid">
-              <div class="glyph-row"><span class="g">τ</span><span class="m"><b>absolute</b> — not before a fixed time or block</span></div>
-              <div class="glyph-row"><span class="g">Δ</span><span class="m"><b>relative</b> — a delay after this coin confirmed</span></div>
-            </div>
-          </div>
-
-          <div class="notation-group">
-            <h4>Numbers</h4>
-            <div class="glyph-grid">
-              <div class="glyph-row"><span class="g">⓪</span><span class="m">push zero</span></div>
-              <div class="glyph-row"><span class="g">①–⑯</span><span class="m">push a small number (1–16)</span></div>
-              <div class="glyph-row"><span class="g">⊖</span><span class="m">push minus one</span></div>
-            </div>
-          </div>
-
-          <div class="notation-group">
-            <h4>Coinbase — the mining preamble</h4>
-            <div class="glyph-grid">
-              <div class="glyph-row"><span class="g">β<i>n</i></span><span class="m">the <b>difficulty target</b> — a valid hash opens with n zero bits</span></div>
-              <div class="glyph-row"><span class="g">η<sub><i>n</i></sub></span><span class="m"><b>extranonce</b> — search space beyond the header's η</span></div>
-            </div>
-          </div>
-
-          <div class="notation-group">
-            <h4>Chapter head — the block header</h4>
-            <div class="glyph-grid">
-              <div class="glyph-row"><span class="g">v<i>n</i></span><span class="m">block <b>version</b></span></div>
-              <div class="glyph-row"><span class="g">∅</span><span class="m">no previous block — the genesis chapter</span></div>
-              <div class="glyph-row"><span class="g">β<i>n</i></span><span class="m">the <b>difficulty target</b>, as in the preamble</span></div>
-              <div class="glyph-row"><span class="g">η<sub><i>n</i></sub></span><span class="m">the <b>nonce</b> the miner landed on</span></div>
-              <div class="glyph-row"><span class="g">■<i>n</i></span><span class="m">the <b>chapter mark</b> — a mined block cited by its place within its book (n counts chapters, never a raw height); in a margin, the same glyph counts chapters of relative delay</span></div>
-              <div class="glyph-row"><span class="g">□<i>n</i></span><span class="m">the <b>expected chapter mark</b> — a projected, not-yet-mined block cited by the place it would take; the number holds only while the queue does (a bare □ in a transaction's margin is the no-locktime mark)</span></div>
-              <div class="glyph-row"><span class="g">—</span><span class="m"><b>unwritten</b> — a projected chapter's header slot, empty until a miner writes it</span></div>
-              <div class="glyph-row"><span class="g">⋯</span><span class="m"><b>not yet knowable</b> — a value still resolving, or a projected chapter's predecessor, itself unwritten</span></div>
-              <div class="glyph-row"><span class="g">eta ≈ <i>t</i></span><span class="m">a projected chapter's <b>expected wait</b> — blocks land one per ten minutes on average, so an estimate k blocks out spreads about ±10·√k minutes</span></div>
-            </div>
-          </div>
-
-          <div class="notation-group">
-            <h4>Stack</h4>
-            <div class="glyph-grid">
-              <div class="glyph-row"><span class="g">⧉</span><span class="m"><b>duplicate</b> the top item</span></div>
-              <div class="glyph-row"><span class="g">⌄</span><span class="m"><b>drop</b> the top item</span></div>
-              <div class="glyph-row"><span class="g">⧉?</span><span class="m">duplicate <b>if nonzero</b></span></div>
-              <div class="glyph-row"><span class="g">⇄</span><span class="m"><b>swap</b> the top two</span></div>
-              <div class="glyph-row"><span class="g">↻</span><span class="m"><b>rotate</b> the top three</span></div>
-              <div class="glyph-row"><span class="g">⇗</span><span class="m"><b>over</b> — copy the second to the top</span></div>
-              <div class="glyph-row"><span class="g">⌦</span><span class="m"><b>nip</b> out the second</span></div>
-              <div class="glyph-row"><span class="g">⇘</span><span class="m"><b>tuck</b> the top beneath the second</span></div>
-              <div class="glyph-row"><span class="g">⇡</span><span class="m"><b>pick</b> — copy the nth item up</span></div>
-              <div class="glyph-row"><span class="g">⥀</span><span class="m"><b>roll</b> — move the nth item up</span></div>
-              <div class="glyph-row"><span class="g">↕</span><span class="m"><b>depth</b> of the stack</span></div>
-              <div class="glyph-row"><span class="g">⇥ ⇤</span><span class="m"><b>shelve / retrieve</b> via the alt stack</span></div>
-            </div>
-          </div>
-
-          <div class="notation-group">
-            <h4>Arithmetic &amp; comparison</h4>
-            <div class="glyph-grid">
-              <div class="glyph-row"><span class="g">+ − × ÷ %</span><span class="m">arithmetic on numbers</span></div>
-              <div class="glyph-row"><span class="g">+₁ −₁ ×₂ ÷₂</span><span class="m">by one · by two</span></div>
-              <div class="glyph-row"><span class="g">∓</span><span class="m"><b>negate</b></span></div>
-              <div class="glyph-row"><span class="g">|·|</span><span class="m"><b>absolute value</b></span></div>
-              <div class="glyph-row"><span class="g">⊓ ⊔</span><span class="m"><b>min</b> · <b>max</b></span></div>
-              <div class="glyph-row"><span class="g">∈</span><span class="m"><b>within</b> a range</span></div>
-              <div class="glyph-row"><span class="g">&lt; &gt; ≤ ≥</span><span class="m">comparisons</span></div>
-              <div class="glyph-row"><span class="g">≐ ≑</span><span class="m">numbers equal? · equal, <b>else fail</b></span></div>
-              <div class="glyph-row"><span class="g">≠ ≠₀</span><span class="m">numbers differ · <b>nonzero?</b></span></div>
-              <div class="glyph-row"><span class="g">¬ ∧ ∨</span><span class="m">not · and · or</span></div>
-              <div class="glyph-row"><span class="g">« »</span><span class="m">shift left · right</span></div>
-              <div class="glyph-row"><span class="g">= ≡</span><span class="m">bytes equal? · equal, <b>else fail</b></span></div>
-            </div>
-          </div>
-
-          <div class="notation-group">
-            <h4>Bytes</h4>
-            <div class="glyph-grid">
-              <div class="glyph-row"><span class="g">⧺</span><span class="m"><b>concatenate</b></span></div>
-              <div class="glyph-row"><span class="g">⊂</span><span class="m"><b>substring</b></span></div>
-              <div class="glyph-row"><span class="g">↤ ↦</span><span class="m">keep the <b>left</b> · <b>right</b> part</span></div>
-              <div class="glyph-row"><span class="g">∼ ∩ ∪ ⊻</span><span class="m">bitwise invert · and · or · xor</span></div>
-              <div class="glyph-row"><span class="g">ℓ</span><span class="m"><b>length</b> of the top item</span></div>
-            </div>
-          </div>
-
-          <div class="notation-group">
-            <h4>Control</h4>
-            <div class="glyph-grid">
-              <div class="glyph-row"><span class="g">⟨ │ ⟩</span><span class="m">if … else … end</span></div>
-              <div class="glyph-row"><span class="g">¬⟨</span><span class="m"><b>if not</b></span></div>
-              <div class="glyph-row"><span class="g">( )</span><span class="m"><b>run</b> the revealed script (r w t)</span></div>
-              <div class="glyph-row"><span class="g">✓</span><span class="m">assert true</span></div>
-              <div class="glyph-row"><span class="g">¶</span><span class="m"><b>data output</b> — provably unspendable</span></div>
-              <div class="glyph-row"><span class="g">° °<i>n</i></span><span class="m"><b>no-op</b> · numbered no-ops</span></div>
-              <div class="glyph-row"><span class="g">‖</span><span class="m"><b>section divider</b> for signature coverage</span></div>
-              <div class="glyph-row"><span class="g">⊘ ⊘₁ ⊘₂</span><span class="m"><b>reserved</b> — invalid if executed</span></div>
-              <div class="glyph-row"><span class="g">⊘ᵛ ⊘⟨ ⊘¬⟨</span><span class="m">reserved VER family</span></div>
-              <div class="glyph-row"><span class="g">☒</span><span class="m"><b>invalid opcode</b></span></div>
-            </div>
-          </div>
-
-          <div class="notation-group">
-            <h4>Data</h4>
-            <div class="glyph-grid">
-              <div class="glyph-row"><span class="g"><b>p</b></span><span class="m"><b>public key</b></span></div>
-              <div class="glyph-row"><span class="g"><b>s</b></span><span class="m"><b>signature</b></span></div>
-              <div class="glyph-row"><span class="g"><b>h</b></span><span class="m"><b>hash</b></span></div>
-              <div class="glyph-row"><span class="g"><b>r</b></span><span class="m"><b>redeem script</b> (inside P2SH)</span></div>
-              <div class="glyph-row"><span class="g"><b>w</b></span><span class="m"><b>witness script</b> (inside P2WSH)</span></div>
-              <div class="glyph-row"><span class="g"><b>t</b></span><span class="m"><b>tapscript</b> (a Taproot leaf)</span></div>
-              <div class="glyph-row"><span class="g"><b>c</b></span><span class="m"><b>control block</b> (a Taproot script-path reveal) — leaf version <b>v</b><i>n</i>, parity subscript, then the internal key <b>p</b></span></div>
-              <div class="glyph-row"><span class="g"><b>⋔</b></span><span class="m"><b>merkle proof</b> — the revealed leaf's path in the taptree</span></div>
-              <div class="glyph-row"><span class="g"><b>a</b></span><span class="m"><b>annex</b> (reserved Taproot spend data)</span></div>
-            </div>
-            <p class="notation-note">A push of known length carries its byte count as a superscript on the mark — <b>h</b>²⁰, <b>p</b>⁶⁵; a bare, untyped push keeps its count leading (²⁰). <b>Bold</b> where the datum is on chain — a lock, or what a spend writes; <b>plain</b> where a spend introduces it at validation.</p>
-          </div>
-
-          <div class="notation-group">
-            <h4>Margin — an input's sequence</h4>
-            <div class="glyph-grid">
-              <div class="glyph-row"><span class="g">●</span><span class="m"><b>final</b></span></div>
-              <div class="glyph-row"><span class="g">○</span><span class="m">respects the locktime</span></div>
-              <div class="glyph-row"><span class="g">†</span><span class="m"><b>replaceable</b> (opt-in RBF)</span></div>
-              <div class="glyph-row"><span class="g">■<i>N</i></span><span class="m">relative: N blocks after confirmation (a count of chapters)</span></div>
-              <div class="glyph-row"><span class="g">Τ<i>Δt</i></span><span class="m">relative: a duration after confirmation (d h m s)</span></div>
-              <div class="glyph-row"><span class="g">(<i>n</i> ₿)</span><span class="m">the <b>amount spent</b> by this input — value flowing in; an output's amount stands bare (<i>n</i> ₿, no parentheses)</span></div>
-            </div>
-          </div>
-
-          <div class="notation-group">
-            <h4>Margin — the transaction's locktime &amp; other marks</h4>
-            <div class="glyph-grid">
-              <div class="glyph-row"><span class="g">□</span><span class="m">no locktime</span></div>
-              <div class="glyph-row"><span class="g"><i>v</i> β<i>b</i> ■<i>c</i></span><span class="m">not before the cited chapter (volume, β book, ■ chapter)</span></div>
-              <div class="glyph-row"><span class="g">Τ<i>t</i></span><span class="m">not before a UTC date</span></div>
-              <div class="glyph-row"><span class="g">∅</span><span class="m"><b>empty</b> — a coinbase's absent prevout, a segwit input's zero-byte script, an empty witness item</span></div>
-              <div class="glyph-row"><span class="g">§<i>n</i></span><span class="m">section — the transaction's position</span></div>
-              <div class="glyph-row"><span class="g">§<i>n</i> †</span><span class="m"><b>superseded</b> — a draft replaced by fee; the book keeps its page seated beneath the successor that took its §</span></div>
-            </div>
-          </div>
-        </div>
+        <div class="notation-body"></div>
       </details>
       <button type="button" id="page-next" class="hidden" aria-label="Next section" title="Next section"></button>
     </nav>
@@ -1060,6 +655,14 @@ import { parseTransaction, computeTxid, parseBlockHeader, computeBlockHash } fro
 import { composeTransactionFields, composeBlockHeaderFields, groupDigits, formatBtc, renderWitness, toSuperscript, timestampInfo } from './btc-prose.js';
 import { volumeBookChapter, heightOf, toRoman, reference } from './btc-citation.js';
 import { NOTABLE, blocksEta } from './btc-contents.js';
+import { NOTATION_HTML } from './btc-notation.js';
+
+// The notation key's markup is shared with the front matter's sigla leaf, so
+// the toggle here and the key at rest there can never explain a mark
+// differently. Filled once, on load.
+document.querySelector('.notation-body').innerHTML = NOTATION_HTML;
+import { storeGet, storePut } from './btc-store.js';
+import { pageAnchor, bankAnchor, peekAnchor, formatPage } from './btc-pages.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -1300,6 +903,10 @@ let renderGen = 0;
 function resolveCitation(txid) {
   if (!citationCache.has(txid)) {
     citationCache.set(txid, (async () => {
+      // A confirmed placement (and the outputs behind it) is immutable, so
+      // the archive answers first and forever.
+      const kept = await storeGet('citations', txid);
+      if (kept) return kept;
       const [mpRes, txRes] = await Promise.all([
         esploraFetch(`${ESPLORA}/tx/${txid}/merkle-proof`),
         esploraFetch(`${ESPLORA}/tx/${txid}`),
@@ -1307,7 +914,9 @@ function resolveCitation(txid) {
       if (!mpRes.ok) throw new Error(`Esplora returned ${mpRes.status}`);
       const mp = await mpRes.json();
       const tx = txRes.ok ? await txRes.json() : null;
-      return { height: mp.block_height, pos: mp.pos, outputs: tx ? tx.vout : null };
+      const entry = { height: mp.block_height, pos: mp.pos, outputs: tx ? tx.vout : null };
+      storePut('citations', txid, entry);
+      return entry;
     })().catch((e) => { citationCache.delete(txid); throw e; }));
   }
   return citationCache.get(txid);
@@ -1479,9 +1088,13 @@ const txidsCache = new Map();
 function fetchTxids(hash) {
   if (!txidsCache.has(hash)) {
     txidsCache.set(hash, (async () => {
+      const kept = await storeGet('txids', hash);   // a block's list is immutable by its hash
+      if (kept) return kept;
       const res = await esploraFetch(`${ESPLORA}/block/${hash}/txids`);
       if (!res.ok) throw new Error(`Esplora returned ${res.status} fetching the transaction list.`);
-      return res.json();
+      const txids = await res.json();
+      storePut('txids', hash, txids);
+      return txids;
     })().catch((e) => { txidsCache.delete(hash); throw e; }));
   }
   return txidsCache.get(hash);
@@ -1512,6 +1125,18 @@ const blockCoreCache = new Map();   // hash -> Promise<{ hash, height, block, tx
 function loadBlockCore(hash) {
   if (!blockCoreCache.has(hash)) {
     blockCoreCache.set(hash, (async () => {
+      // The archive keeps the fetched ingredients (info json + header hex);
+      // the parse and the hash check are recomputed on every load, so a kept
+      // block re-earns its verification exactly like a fresh one.
+      const build = async (block, headerHex) => {
+        // Parsed from the raw 80-byte header, not trusted from the JSON --
+        // same self-parsed, self-verified stance as a transaction's txid.
+        const header = parseBlockHeader(headerHex);
+        const headerVerified = (await computeBlockHash(headerHex)) === hash;
+        return { hash, height: block.height, block, txCount: block.tx_count, header, headerVerified };
+      };
+      const kept = await storeGet('blocks', hash);
+      if (kept) return build(kept.block, kept.headerHex);
       const [blockRes, headerRes] = await Promise.all([
         esploraFetch(`${ESPLORA}/block/${hash}`),
         esploraFetch(`${ESPLORA}/block/${hash}/header`),
@@ -1520,11 +1145,8 @@ function loadBlockCore(hash) {
       if (!headerRes.ok) throw new Error(`Esplora returned ${headerRes.status} fetching the block header.`);
       const block = await blockRes.json();
       const headerHex = (await headerRes.text()).trim();
-      // Parsed from the raw 80-byte header, not trusted from the JSON above --
-      // same self-parsed, self-verified stance as a transaction's txid.
-      const header = parseBlockHeader(headerHex);
-      const headerVerified = (await computeBlockHash(headerHex)) === hash;
-      return { hash, height: block.height, block, txCount: block.tx_count, header, headerVerified };
+      storePut('blocks', hash, { block, headerHex });
+      return build(block, headerHex);
     })().catch((e) => { blockCoreCache.delete(hash); throw e; }));
   }
   return blockCoreCache.get(hash);
@@ -1552,12 +1174,20 @@ const hashByHeight = new Map();
 async function resolveBlockHash(height) {
   const h = Number(height);
   if (hashByHeight.has(h)) return hashByHeight.get(h);
+  // The archive answers under the same six-confirmation rule the memo keeps:
+  // a mapping is only ever written safely below the tip, so a kept one is
+  // final and serves without the network.
+  const kept = await storeGet('heights', h);
+  if (kept) { hashByHeight.set(h, kept); return kept; }
   const res = await esploraFetch(`${ESPLORA}/block-height/${height}`);
   if (!res.ok) throw Object.assign(
     new Error(res.status === 404 ? `No block at height ${height}.` : `Esplora returned ${res.status}.`),
     { notFound: res.status === 404 });
   const hash = (await res.text()).trim();
-  if (tipHeight !== null && h <= tipHeight - 6) hashByHeight.set(h, hash);
+  if (tipHeight !== null && h <= tipHeight - 6) {
+    hashByHeight.set(h, hash);
+    storePut('heights', h, hash);
+  }
   return hash;
 }
 async function loadBlockByHeight(height, opts) {
@@ -1583,6 +1213,51 @@ function loadBlockInfoByHeight(height) {
 const loadBlockTxCount = (height) => loadBlockInfoByHeight(height).then((b) => b.tx_count);
 // A block's timestamp, for the leaves' recorded date ranges.
 const loadBlockStamp = (height) => loadBlockInfoByHeight(height).then((b) => b.timestamp);
+
+// The six-confirmation rule for banking a page anchor (btc-pages.js): only a
+// safely buried height's running count is final -- the same rule the
+// height→hash archive keeps.
+const anchorFinalAt = (h) => tipHeight !== null && h <= tipHeight - 6;
+
+// Fill the running head's folio -- the section's page number in the chain's
+// running count of transactions -- once the block's anchor resolves (banked,
+// derived, or one census call; see btc-pages.js). The folio element is
+// persistent chrome, so a fill that outlives its section (gen no longer
+// current) is dropped. When no census endpoint answers, the folio stays
+// absent: an annotation, never a gate on reading.
+async function fillFolio(el, gen) {
+  const h = state.height, idx = state.index, count = state.txCount;
+  let anchor;
+  // A projected § can only take a provisional folio, and only by arithmetic:
+  // the census cannot be asked about blocks that don't exist yet (a range
+  // query past the tip answers with the sum through the tip -- silently
+  // wrong for anything deeper). The tip's own fillFolio banks tip+1, so
+  // reading onward into the projection numbers itself; an unknown anchor
+  // leaves the corner blank.
+  if (state.projected) {
+    anchor = peekAnchor(h);
+    if (anchor === null) return;
+    bankAnchor(h + 1, anchor + count, false);
+    if (gen !== renderGen) return;
+    const page = anchor + idx + 1;
+    el.textContent = String(page);
+    el.title = `page ${formatPage(page)} — provisional: the page this transaction would take if the queue holds`;
+    return;
+  }
+  try { anchor = await pageAnchor(h, anchorFinalAt(h)); }
+  catch { return; }   // census unreachable -- try again on a later visit
+  // With this block's anchor in hand, the next block's is pure arithmetic --
+  // bank it so reading onward (across the chapter turn into §1) never asks
+  // the census. The backward derivation rides labelNav's previous-count
+  // fetch, which is the moment the prior block's tx_count is known.
+  bankAnchor(h + 1, anchor + count, anchorFinalAt(h + 1));
+  if (gen !== renderGen) return;
+  const page = anchor + idx + 1;
+  // The folio prints bare -- digits alone, unpunctuated; the hover title
+  // carries the readable form and the explanation.
+  el.textContent = String(page);
+  el.title = `page ${formatPage(page)} — transaction ${formatPage(page)} of the chain: pages count every transaction since genesis, in block order`;
+}
 
 // The chain tip height, as plain text from Esplora. Opens the book at the most
 // recent chapter when the reader arrives without a specific target.
@@ -2044,9 +1719,13 @@ function loadTxHex(txid) {
     return cached;
   }
   const p = (async () => {
+    const kept = await storeGet('tx', txid);   // a transaction's bytes are its txid's forever
+    if (kept) return kept;
     const r = await esploraFetch(`${ESPLORA}/tx/${txid}/hex`);
     if (!r.ok) throw new Error(`Esplora returned ${r.status} fetching tx ${txid.slice(0, 8)}…`);
-    return (await r.text()).trim();
+    const hex = (await r.text()).trim();
+    storePut('tx', txid, hex);
+    return hex;
   })().catch((e) => { txHexCache.delete(txid); throw e; });
   txHexCache.set(txid, p);
   // Evict least-recently-used entries past the cap (Map iterates oldest-first).
@@ -2353,8 +2032,8 @@ function renderFrontispiece(header) {
 // Chapter 333" -- a running head, not a heading. A block that's a curated
 // entry (a halving, an activation, ...) keeps its "Chapter n" heading and
 // carries its event name as a subtitle on the full head, and as the crumb's
-// compact name in the running head. The genesis block is subtitled "The
-// Genesis Block" without needing a curated entry.
+// compact name in the running head -- the genesis block included, which is a
+// curated entry like the halvings rather than a special case here.
 // Chapter headings spell their numbers out the way a book sets them --
 // "Chapter One" through "Chapter One Hundred" -- and fall back to numerals
 // past SPELLED_CHAPTER_MAX ("Chapter 101"), where spelled forms grow unwieldy.
@@ -2379,18 +2058,18 @@ function renderChapterHead(onTitlePage) {
   showEyebrowCrumbs(onTitlePage, onTitlePage);
   $('ch-volume').textContent = volume.toLocaleString();
   $('ch-book').textContent = book.toLocaleString();
-  const isGenesis = volume === 1 && book === 1 && chapter === 1;
   // A notable block keeps its "Chapter n" heading and carries its event name
   // as a subtitle beneath it. A height with several notable entries (the
   // supply-cap fork carries two) shows them all, dot-separated. The genesis
-  // block is the one chapter subtitled outside the curated list.
+  // block is one of those entries -- it used to be subtitled from a hardcoded
+  // case here, which kept it out of the table of contents.
   // A page: 'book' entry shares the height namespace (its id is its book's
   // first block) but names the book's leaf, not this chapter -- excluded here.
   const eventTitles = NOTABLE.filter((e) => e.id === String(state.height) && e.page !== 'book').map((e) => e.title);
   const eventTitle = eventTitles[0];
   $('ch-title').textContent = `Chapter ${chapterName(chapter)}`;
   const subtitle = $('ch-subtitle');
-  subtitle.textContent = isGenesis ? 'The Genesis Block' : eventTitles.join(' · ');
+  subtitle.textContent = eventTitles.join(' · ');
   // On a section page the running head's chapter is a crumb back to the
   // chapter's own page -- no fetch needed, the block is already in state.
   const inline = $('ch-chapter-inline');
@@ -2399,7 +2078,7 @@ function renderChapterHead(onTitlePage) {
     const crumb = document.createElement('button');
     crumb.type = 'button';
     crumb.className = 'crumb';
-    crumb.textContent = (isGenesis ? 'The Genesis Block' : eventTitle) || `Chapter ${chapterName(chapter)}`;
+    crumb.textContent = eventTitle || `Chapter ${chapterName(chapter)}`;
     crumb.title = `Chapter page (${reference(state.height)})`;
     crumb.setAttribute('aria-label', `Open this chapter's own page (${reference(state.height)})`);
     crumb.addEventListener('click', () => { rememberTrail(); state.ghost = null; state.index = -1; showCurrentTx(); });
@@ -2525,6 +2204,9 @@ function renderLeafShell() {
   ++renderGen;
   lazyEncode.reset();
   $('ch-subtitle').classList.add('hidden');
+  // A leaf has no folio -- pages belong to sections -- and its grid cell goes
+  // back to the chapter-next stepper.
+  $('page-folio').classList.add('hidden');
   $('section-title').classList.add('hidden');
   $('section-hash').classList.add('hidden');
   $('ch-paragraphs').innerHTML = '';
@@ -2733,6 +2415,7 @@ function renderGhostTombstone(txid) {
   sectionTitle.append(up);
   sectionTitle.title = `txid ${txid} — replaced by fee; its raw form was never recorded here`;
   attachHashCopy(sectionTitle, txid, 'transaction id', txidProse);
+  $('page-folio').classList.add('hidden');   // a superseded draft holds no page of its own
   const body = $('ch-paragraphs');
   body.innerHTML = '';
   const note = document.createElement('p');
@@ -2776,11 +2459,15 @@ function renderChapter(para) {
   // transaction that's a curated entry earns its name beneath the § number, the
   // way a notable block earns its event name as the chapter title.
   const titleAttr = `txid ${para.txid}${para.verified ? '' : ' — could not be independently verified'}`;
-  // A projected section's event line is its price of admission: the
+  // A curated entry names its section whether it cites a txid or a
+  // height+index -- the latter is how the twice-confirmed BIP30 coinbases are
+  // cited, since their shared txid alone can't tell the two printings apart.
+  // A projected section's event line is otherwise its price of admission: the
   // effective fee rate the ordering ran on. Where that rate departs from the
   // transaction's own fee ÷ vsize, the difference is family money -- a
   // child-pays-for-parent package moving together -- and the line says so.
-  let sectionEvent = NOTABLE.find((e) => e.id === para.txid)?.title;
+  let sectionEvent = NOTABLE.find((e) => e.id === para.txid
+    || (e.id === String(state.height) && e.index === state.index))?.title;
   if (!sectionEvent && para.ghost) sectionEvent = '† replaced by fee';
   if (!sectionEvent && state.projected && state.manifest) {
     const m = state.manifest[state.index];
@@ -2854,6 +2541,14 @@ function renderChapter(para) {
       });
     }).catch(() => {});
   }
+
+  // The folio at the right end of the running head: empty until this block's
+  // anchor resolves, so a stale page number never rides into a new section.
+  const folio = $('page-folio');
+  folio.textContent = '';
+  folio.title = '';
+  folio.classList.remove('hidden');
+  fillFolio(folio, gen);
   const flow = document.createElement('div');
   flow.className = 'tx-flow';
   const inputsEl = document.createElement('div');
@@ -3079,6 +2774,9 @@ function labelNav() {
   if (idx === -3) {
     if (cur.volume > 1) {
       stepPrev = { text: toRoman(cur.volume - 1), label: `Previous volume (${toRoman(cur.volume - 1)})` };
+    } else {
+      // Before Volume I lies the front matter, whose last leaf is the sigla.
+      stepPrev = { text: 'Sigla', label: 'Back to the front matter (the sigla)' };
     }
     if (tipHeight === null || heightOf(cur.volume + 1, 1, 1) <= tipHeight) {
       stepNext = { text: toRoman(cur.volume + 1), label: `Next volume (${toRoman(cur.volume + 1)})` };
@@ -3134,8 +2832,16 @@ function labelNav() {
       // its §number is that block's tx count, unknown until it loads -- shown
       // as § once resolved.
       setBtn('page-prev', '§…', `Previous section (end of ${referenceOf(state.height - 1)})`);
-      loadBlockTxCount(state.height - 1)
-        .then((n) => { if (gen === renderGen) setBtn('page-prev', `§${n}`, `Previous section (${reference(state.height - 1)} §${n})`); })
+      const h = state.height;
+      loadBlockTxCount(h - 1)
+        .then((n) => {
+          if (gen === renderGen) setBtn('page-prev', `§${n}`, `Previous section (${referenceOf(h - 1)} §${n})`);
+          // The moment the prior block's tx count is known, its page anchor is
+          // arithmetic off this block's (when that one is already in hand) --
+          // banked so stepping back across the boundary never asks the census.
+          const a = peekAnchor(h);
+          if (a !== null) bankAnchor(h - 1, a - n, anchorFinalAt(h - 1));
+        })
         .catch(() => {});
     }
   }
@@ -3475,12 +3181,25 @@ async function openLeafAt(height, idx, direction = 0) {
 
 // The header steppers walk at the current leaf's own level: volume to volume,
 // book to book, chapter to chapter -- each landing on that span's page.
+// Volume I's own leaf is the first page of the body, and the sigla are the
+// last leaf of the front matter -- so turning back from it leaves the book for
+// the front matter, the inverse of the turn that opened Volume I from there.
+// (A swipe has already played its exit; the front matter finishes the entrance
+// on arrival. A button press just navigates.)
+function atFrontMatterEdge() {
+  return !!state && state.index === -3 && volumeBookChapter(state.height).volume === 1;
+}
+function toFrontMatter() {
+  try { sessionStorage.setItem('glossia-front-entrance', 'back'); } catch {}
+  location.href = './bitcoin-front.html?leaf=sigla';
+}
+
 async function goToLevel(direction) {
   if (!state) return;
   const { volume, chapterCount } = volumeBookChapter(state.height);
   if (state.index === -3) {
     const v = volume + direction;
-    if (v < 1) return;
+    if (v < 1) { if (direction < 0) toFrontMatter(); return; }
     return openLeafAt(heightOf(v, 1, 1), -3, direction);
   }
   if (state.index === -2) {
@@ -3613,6 +3332,7 @@ function navAvailable(direction) {
 // is ready to render; until then the drag only rubber-bands. The buttons stay
 // usable regardless -- they fetch on demand as always.
 function canStep(direction) {
+  if (direction < 0 && atFrontMatterEdge()) return true;   // a page turn, nothing to prefetch
   return navAvailable(direction) && neighborReady[direction];
 }
 function swipeStep(direction) {
@@ -4386,11 +4106,19 @@ const dismissOnViewportChange = () => {
 window.addEventListener('resize', dismissOnViewportChange);
 window.addEventListener('scroll', dismissOnViewportChange, true);
 
-// Entry points, in priority order: ?txid= jumps straight to a transaction's
-// section; ?block= (with optional ?index=) opens a block -- a negative height
-// counts back from the chain tip, so ?block=-1 is the latest block; otherwise
-// the book opens at the chain tip (-1), the latest chapter rather than Genesis.
+// Entry points, in priority order: ?ref= opens a citation carried whole in
+// Latin (v1b50c1807s85o4 -- volume, book, chapter, then optional §section
+// and .output) -- the reference IS the address, no txid anywhere: the
+// height is citation arithmetic and the section is the block's own index;
+// ?txid= jumps straight to a transaction's
+// section (an added &out=N then brings that output to the top -- the same
+// landing the marginalia's in-page cites make, reachable from a full
+// §section.output citation elsewhere, e.g. a ledger row); ?block= (with
+// optional ?index=) opens a block -- a negative height counts back from the
+// chain tip, so ?block=-1 is the latest block; otherwise the book opens at
+// the chain tip (-1), the latest chapter rather than Genesis.
 const params = new URLSearchParams(location.search);
+const pParam = /^v(\d+)b(\d+)c(\d+)(?:s(\d+))?(?:o(\d+))?$/i.exec((params.get('ref') || '').trim());
 const txidParam = params.get('txid');
 const blockParam = params.get('block');
 // An absent ?index= opens the chapter's own page (-1); index=0 is §1;
@@ -4399,8 +4127,18 @@ const idxRaw = parseInt(params.get('index'), 10);
 const pageParam = params.get('page');
 const indexParam = Number.isFinite(idxRaw) ? idxRaw
   : pageParam === 'volume' ? -3 : pageParam === 'book' ? -2 : -1;
-if (txidParam) {
-  openLookup(txidParam);
+if (pParam) {
+  const pHeight = heightOf(+pParam[1], +pParam[2], +pParam[3]);
+  const pIndex = pParam[4] != null ? +pParam[4] - 1 : -1;   // §1 is index 0
+  const pOut = pParam[5] != null ? +pParam[5] : NaN;
+  Promise.resolve(openLookup(String(pHeight), pIndex)).then(() => {
+    if (Number.isFinite(pOut) && pIndex >= 0) $(`out-${pOut}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }).catch(() => { /* the lookup's own error handling has the page */ });
+} else if (txidParam) {
+  const outRaw = parseInt(params.get('out'), 10);
+  Promise.resolve(openLookup(txidParam)).then(() => {
+    if (Number.isFinite(outRaw)) $(`out-${outRaw}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }).catch(() => { /* the lookup's own error handling has the page */ });
 } else if (blockParam) {
   openLookup(blockParam, indexParam);
 } else {
