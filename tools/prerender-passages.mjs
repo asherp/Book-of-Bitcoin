@@ -234,9 +234,14 @@ const SEED_MAX_TXIDS_JSON = 32 * 1024;
 // past this it stays on-demand like any uncurated passage's bytes.
 const SEED_MAX_TX_HEX = 256 * 1024;
 
-export const emptySeed = () => ({ heights: {}, blocks: {}, txids: {}, tx: {}, placements: {} });
+// A citation's outputs beyond this JSON size stay on-demand -- an output-heavy
+// transaction's vout list is the whole value of the seeded citation, and a
+// truncated one would be kept forever (the archive never refetches).
+const SEED_MAX_OUTPUTS_JSON = 32 * 1024;
 
-export function addToSeed(seed, { entryId, height, blockHash, block, headerHex, txid, pos, txHex, txids }) {
+export const emptySeed = () => ({ heights: {}, blocks: {}, txids: {}, tx: {}, placements: {}, citations: {} });
+
+export function addToSeed(seed, { entryId, height, blockHash, block, headerHex, txid, pos, txHex, txids, outputs }) {
   seed.heights[height] = blockHash;
   seed.blocks[blockHash] = { block, headerHex };
   if (txHex && txHex.length <= SEED_MAX_TX_HEX) seed.tx[txid] = txHex;
@@ -245,6 +250,12 @@ export function addToSeed(seed, { entryId, height, blockHash, block, headerHex, 
   // from their height offline already.
   if (entryId && isTxid(entryId)) seed.placements[entryId] = { height, pos };
   if (txids && JSON.stringify(txids).length <= SEED_MAX_TXIDS_JSON) seed.txids[blockHash] = txids;
+  // The curated transactions are the ones most likely to be cited from other
+  // chapters; seed the citation only WITH its outputs -- a kept { outputs:
+  // null } would answer forever, worse than the network's full answer.
+  if (outputs && JSON.stringify(outputs).length <= SEED_MAX_OUTPUTS_JSON) {
+    seed.citations[txid] = { height, pos, outputs };
+  }
 }
 
 export function seedJson(seed) {
@@ -292,9 +303,15 @@ async function renderEntry(entry, seed) {
   const parsed = parseTransaction(hex);
   const fields = composeTransactionFields(parsed, BEST_OF, encodeCapped);
 
+  // The outputs behind this transaction's citation (resolveCitation shows a
+  // spent output's amount under a reference). Its own fetch, and best-effort
+  // on its own: a miss costs the seed one citation, never the passage.
+  let outputs = null;
+  try { outputs = (await esplora(`/tx/${txid}`, 'json'))?.vout ?? null; } catch { /* stays on-demand */ }
+
   addToSeed(seed, {
     entryId: entry.id, height, blockHash: ctx.blockHash, block: ctx.block,
-    headerHex: ctx.headerHex, txid, pos: index, txHex: hex, txids,
+    headerHex: ctx.headerHex, txid, pos: index, txHex: hex, txids, outputs,
   });
 
   return {
@@ -375,8 +392,8 @@ async function main() {
     const json = seedJson(seed);
     await writeFile(SEED_OUT, json);
     console.log(`  seed.json: ${Object.keys(seed.blocks).length} blocks, ` +
-      `${Object.keys(seed.tx).length} transactions, ${Object.keys(seed.txids).length} txid lists ` +
-      `(${Math.round(json.length / 1024)} KB)`);
+      `${Object.keys(seed.tx).length} transactions, ${Object.keys(seed.txids).length} txid lists, ` +
+      `${Object.keys(seed.citations).length} citations (${Math.round(json.length / 1024)} KB)`);
   }
   console.log(`\n${rendered.length} passages rendered, ${skipped} skipped.`);
   if (!rendered.length) {
