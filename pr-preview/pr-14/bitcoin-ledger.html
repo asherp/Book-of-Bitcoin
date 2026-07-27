@@ -280,24 +280,21 @@ a:hover { text-decoration: underline; }
 .toc-bm { display:inline-block; width:9px; height:12px; margin-right:8px; color:var(--accent); vertical-align:baseline; }
 .toc-bm svg { display:block; width:100%; height:100%; }
 
-/* Update affordance: pinned top-left (the settings menu owns the right),
-   revealed when a newer build has been cached behind this page. */
+/* Update affordance: inline on the masthead title's line, revealed when a
+   newer build has been cached behind this page. */
 .update-btn {
-  display:none; position:fixed; z-index:60;
-  top:calc(12px + env(safe-area-inset-top, 0px)); left:14px;
+  display:none; margin-left:12px; vertical-align:baseline;
   background:var(--accent); border:1px solid var(--accent); color:#17140c;
-  border-radius:4px; padding:6px 12px; cursor:pointer;
+  border-radius:4px; padding:4px 10px; cursor:pointer;
   font:600 11px/1 'IBM Plex Mono',monospace; letter-spacing:.08em; text-transform:uppercase;
-  box-shadow:0 8px 24px -8px rgba(0,0,0,.8);
 }
 .update-btn.show { display:inline-block; }
 .update-btn:hover { background:var(--accent-2); border-color:var(--accent-2); }
 </style>
 <body>
-<button type="button" id="update-btn" class="update-btn" aria-label="A new version is ready — reload to update">Update</button>
 <div class="wrap">
   <div class="masthead">
-    <span class="title">The <span class="beta">β</span>ook of <span class="beta">β</span>itcoin</span>
+    <span class="title">The <span class="beta">β</span>ook of <span class="beta">β</span>itcoin<button type="button" id="update-btn" class="update-btn" aria-label="A new version is ready — reload to update">Update</button></span>
     <span class="home"><a href="./bitcoin-book.html">Read</a> · <a href="./bitcoin-contents.html">Contents</a> · <a href="./bitcoin-ledgers.html">Ledgers</a> · <a href="./bitcoin-search.html">Search</a> · <a href="https://glossia.io/">Glossia</a></span>
   </div>
 

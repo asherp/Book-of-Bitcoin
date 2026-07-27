@@ -248,16 +248,14 @@ a:hover { text-decoration: underline; }
 .install-btn:hover { background:var(--accent); color:var(--btn-ink,#17140c); }
 /* Update affordance: hidden until the service worker reports that a newer
    build has been cached behind the page (or a new worker has taken over).
-   Pinned to the top-right corner of the viewport -- above the page, clear of
-   the notch -- and filled gold, unlike the quiet Install outline, because
-   it's an action the reader probably wants to take now. */
+   Sits inline on the masthead title's line, beside Install -- filled gold,
+   unlike the quiet Install outline, because it's an action the reader
+   probably wants to take now. */
 .update-btn {
-  display:none; position:fixed; z-index:60;
-  top:calc(12px + env(safe-area-inset-top, 0px)); right:14px;
+  display:none; margin-left:12px; vertical-align:baseline;
   background:var(--accent); border:1px solid var(--accent); color:var(--btn-ink);
-  border-radius:4px; padding:6px 12px; cursor:pointer;
+  border-radius:4px; padding:4px 10px; cursor:pointer;
   font:600 11px/1 'IBM Plex Mono',monospace; letter-spacing:.08em; text-transform:uppercase;
-  box-shadow:0 8px 24px -8px rgba(0,0,0,.8);
   transition:background .15s ease;
 }
 .update-btn.show { display:inline-block; }
@@ -666,13 +664,11 @@ button:disabled { opacity: .4; cursor: not-allowed; }
     </ul>
   </div>
 </noscript>
-<!-- Update affordance: pinned to the page's top-right corner (fixed, so it
-     stays in reach mid-chapter), revealed by the service worker when a newer
-     build has been cached behind this page. One tap reloads onto it. -->
-<button type="button" id="update-btn" class="update-btn" aria-label="A new version is ready — reload to update">Update</button>
 <div class="wrap">
   <div class="masthead">
-    <span class="title">The <span class="beta">β</span>ook of <span class="beta">β</span>itcoin<button type="button" id="install-btn" class="install-btn" aria-label="Install the Book of Bitcoin as an app">Install</button></span>
+    <!-- Install and Update ride the title's own line: revealed by the browser's
+         install prompt and the service worker's newer-build signal respectively. -->
+    <span class="title">The <span class="beta">β</span>ook of <span class="beta">β</span>itcoin<button type="button" id="install-btn" class="install-btn" aria-label="Install the Book of Bitcoin as an app">Install</button><button type="button" id="update-btn" class="update-btn" aria-label="A new version is ready — reload to update">Update</button></span>
     <span class="home"><a href="./bitcoin-search.html">Search</a> · <a href="./bitcoin-contents.html">Contents</a> · <a href="./bitcoin-ledgers.html">Ledgers</a> · <span class="settings-menu"><a href="#" id="settings-link" role="button" aria-haspopup="dialog" aria-expanded="false">Settings</a><div id="settings-panel" class="settings-panel hidden" role="dialog" aria-label="Settings">
       <div class="settings-title">Data source</div>
       <div class="endpoint-row">
