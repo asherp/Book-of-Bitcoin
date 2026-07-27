@@ -1481,8 +1481,19 @@ function fetchTxids(hash) {
   return txidsCache.get(hash);
 }
 // Populate `st.txids` on first use, so Prev/Next has the list to step through.
+// A projected chapter's list is its manifest -- the websocket's template-
+// ordered transactions -- and the manifest's length supersedes the REST
+// figure's nTx (the queue moved between the two reads).
 async function ensureTxids(st) {
-  if (!st.txids) st.txids = await fetchTxids(st.hash);
+  if (!st.txids) {
+    if (st.projected) {
+      st.manifest = await projectedManifest(st.projIndex);
+      st.txids = st.manifest.map((t) => t.txid);
+      st.txCount = st.txids.length;
+    } else {
+      st.txids = await fetchTxids(st.hash);
+    }
+  }
   return st.txids;
 }
 
@@ -1575,6 +1586,142 @@ async function loadTipHeight() {
   return (await res.text()).trim();
 }
 
+// ── Projected chapters: the book past the tip ─────────────────────────────
+// The mempool, cut into template-sized blocks the way a miner would take
+// them (highest package fee rate first, CPFP-aware), pages as provisional
+// chapters at heights tip+1, tip+2, … Their figures come from a
+// mempool.space-backed mirror's /v1/fees/mempool-blocks; their manifests --
+// each projected block's transactions in template order -- from the same
+// backend's websocket, since no REST route carries them. A projected
+// chapter has no hash and no header: those are exactly what mining writes.
+const MVB = 1_000_000;   // one block's worth of virtual bytes
+
+// The v1 endpoints only answer on a mempool.space-backed mirror, and
+// esploraFetch treats a 404 as definitive (no failover), so this walks the
+// mirrors itself. The mirror that answers is remembered: its host also
+// serves the manifest websocket.
+let mempoolBackendBase = null;
+async function mempoolBackendFetch(path) {
+  const order = ESPLORA_MIRRORS.map((_, i) => (preferred + i) % ESPLORA_MIRRORS.length);
+  for (const idx of order) {
+    const base = ESPLORA_MIRRORS[idx];
+    try {
+      const res = await fetch(`${base}${path}`);
+      if (res.ok) { mempoolBackendBase = base; return await res.json(); }
+    } catch { /* try the next mirror */ }
+  }
+  return null;
+}
+
+// The projection, cached briefly -- the queue reshuffles with every arrival,
+// but stepping between projected chapters shouldn't refetch per page. Only
+// whole blocks page as chapters; the backend's final entry aggregates the
+// deep backlog whenever more remains (recognizable by exceeding the 1 MvB a
+// real block can hold) and is dropped here -- those depths keep the
+// "come back" message instead. Manifests are cached on the same snapshot,
+// so a refresh drops them together.
+let projectedCache = null;   // { at, blocks, manifests }
+const PROJECTED_TTL = 60_000;
+async function loadProjection() {
+  if (projectedCache && Date.now() - projectedCache.at < PROJECTED_TTL) return projectedCache;
+  const blocks = await mempoolBackendFetch('/v1/fees/mempool-blocks');
+  projectedCache = {
+    at: Date.now(),
+    blocks: Array.isArray(blocks)
+      ? blocks.filter((b, i) => i < blocks.length - 1 || b.blockVSize <= 1.05 * MVB)
+      : null,
+    manifests: new Map(),
+  };
+  return projectedCache;
+}
+// How many chapters past the tip page as real projected chapters right now.
+const projectedReach = () => projectedCache?.blocks?.length ?? 0;
+
+// A projected block's manifest over the backend websocket: subscribe with
+// {"track-mempool-block": k}, take the first full listing for our index
+// (later frames are deltas -- the draft being reshuffled -- which a book
+// page deliberately ignores: each opening is a snapshot), close. The wire
+// rows are compressed: [txid, fee, vsize, value, rate, flags, time, acc],
+// in template order; `rate` is the effective (ancestor-package) fee rate,
+// so a rate above fee/vsize marks a child-pays-for-parent passenger.
+function fetchProjectedManifest(k) {
+  return new Promise((resolve, reject) => {
+    if (!mempoolBackendBase) { reject(new Error('No projection source is reachable.')); return; }
+    let ws;
+    try { ws = new WebSocket(`${mempoolBackendBase.replace(/^http/, 'ws')}/v1/ws`); }
+    catch (e) { reject(e); return; }
+    let settled = false;
+    const fail = (msg) => { if (settled) return; settled = true; try { ws.close(); } catch {} reject(new Error(msg)); };
+    const timer = setTimeout(() => fail('The projection feed timed out.'), 15000);
+    ws.addEventListener('open', () => { try { ws.send(JSON.stringify({ 'track-mempool-block': k })); } catch {} });
+    ws.addEventListener('error', () => { clearTimeout(timer); fail('The projection feed failed.'); });
+    ws.addEventListener('close', () => { clearTimeout(timer); fail('The projection feed closed early.'); });
+    ws.addEventListener('message', (ev) => {
+      try {
+        const pbt = JSON.parse(ev.data)['projected-block-transactions'];
+        if (!pbt || pbt.index !== k || !Array.isArray(pbt.blockTransactions)) return;
+        clearTimeout(timer);
+        settled = true;
+        try { ws.close(); } catch {}
+        resolve(pbt.blockTransactions.map((t) => ({ txid: t[0], fee: t[1], vsize: t[2], value: t[3], rate: t[4] })));
+      } catch { /* not ours -- keep listening */ }
+    });
+  });
+}
+function projectedManifest(k) {
+  const snap = projectedCache;
+  if (!snap.manifests.has(k)) {
+    snap.manifests.set(k, fetchProjectedManifest(k).catch((e) => { snap.manifests.delete(k); throw e; }));
+  }
+  return snap.manifests.get(k);
+}
+
+// Open a projected chapter. `where` picks the page: -1 the chapter's own
+// page, a number that section, 'last' the final section (stepping backward
+// across a projected boundary). Returns false when the height is past the
+// projection's pageable reach -- the caller falls back to the queue/calendar
+// message. A manifest that can't be read still opens the chapter page (its
+// figures are REST-served); only its sections are out of reach.
+async function stepProjected(height, where = -1) {
+  const proj = await loadProjection().catch(() => null);
+  if (tipHeight === null || !proj || !proj.blocks) return false;
+  const k = height - tipHeight - 1;
+  if (k < 0 || k >= proj.blocks.length) return false;
+  const b = proj.blocks[k];
+  state = {
+    projected: true, projIndex: k, proj: b,
+    hash: null, height, block: null, header: null,
+    txCount: b.nTx, txids: null, manifest: null, index: -1,
+  };
+  let manifestErr = null;
+  if (where !== -1) {
+    try {
+      await ensureTxids(state);
+      state.index = where === 'last' ? state.txCount - 1 : Math.min(where, state.txCount - 1);
+    } catch (e) { manifestErr = e; }
+  }
+  await showCurrentTx();
+  if (manifestErr) setStatus('The projected manifest could not be read from this source — the chapter opens, but its sections are out of reach.', 'err');
+  return true;
+}
+
+// Resolve a height that may lie past the tip: a mined block loads normally;
+// a height within the projection opens as a projected chapter (returning
+// {done} -- stepProjected has already rendered); anything deeper throws the
+// queue/calendar message. Leaf requests (index -2/-3) never go projected --
+// an unwritten book has no leaf to open.
+async function loadHeightOrProjected(height, index, tipP) {
+  try {
+    return { meta: await loadBlockByHeight(height, { withTxids: index >= 0 }) };
+  } catch (e) {
+    const tip = await tipP;
+    if (e && e.notFound && tip !== null && height > tip && index >= -1) {
+      if (await stepProjected(height, index >= 0 ? index : -1)) return { done: true };
+    }
+    throw await unwrittenOr(e, height, tipP);
+  }
+}
+
 // A txid -> the block that confirmed it, plus the transaction's index within
 // that block (its section). The section comes from the merkle proof's position, so
 // opening one transaction never downloads the whole block's txid list -- that's
@@ -1587,7 +1734,7 @@ async function loadBlockByTxid(txid) {
   ]);
   if (!txRes.ok) throw new Error(txRes.status === 404 ? `No transaction ${txid.slice(0, 8)}…` : `Esplora returned ${txRes.status}.`);
   const tx = await txRes.json();
-  if (!tx.status || !tx.status.confirmed) throw new Error('That transaction is unconfirmed — it has no section yet.');
+  if (!tx.status || !tx.status.confirmed) throw new Error('That transaction is unconfirmed — it has no section yet. If it pays its way, it sits in one of the projected chapters past the tip.');
   const hash = tx.status.block_hash;
   if (mpRes.ok) {
     const meta = await loadBlockMeta(hash, { withTxids: false });
@@ -1849,6 +1996,7 @@ function chapterName(n) {
 }
 
 function renderChapterHead(onTitlePage) {
+  if (state.projected) return renderProjectedHead(onTitlePage);
   const { volume, book, chapter } = volumeBookChapter(state.height);
   // The chapter's own page carries the Volume · Book crumbs; a section's
   // running head carries just the chapter (the crumb back to its page) --
@@ -1895,6 +2043,102 @@ function renderChapterHead(onTitlePage) {
     attachHashCopy($('ch-title'), state.hash, 'block hash', hashProse);
     renderFrontispiece(state.header);
   }
+  return { volume, book, chapter };
+}
+
+// The projected chapter's head: the inversion of a mined chapter's. There,
+// the header is certain and immutable while nothing else is on the page;
+// here the body is a live draft and the header does not exist -- so the
+// frontispiece shows the six header slots with most of them empty. Two are
+// already determined and fill in from the tip: the first projected
+// chapter's previous-block hash IS the tip's hash, and within the tip's own
+// difficulty window the target β is already law (a book is one difficulty
+// window). The hash line, having no hash to encode, carries the draft's
+// figures. Everything renders from state (REST figures) -- the manifest is
+// only needed once the reader pages into a section.
+function renderProjectedHead(onTitlePage) {
+  const gen = renderGen;
+  const { volume, book, chapter } = volumeBookChapter(state.height);
+  const k = state.projIndex;
+  showEyebrowCrumbs(onTitlePage, onTitlePage);
+  $('ch-volume').textContent = volume.toLocaleString();
+  $('ch-book').textContent = book.toLocaleString();
+  $('ch-title').textContent = `Chapter ${chapterName(chapter)}`;
+  const subtitle = $('ch-subtitle');
+  subtitle.textContent = `Projected — due ${blocksEta(k + 1)}`;
+  subtitle.title = 'a draft chapter read from the mempool: these transactions are what a miner working right now would take, in the order they pay for';
+  const inline = $('ch-chapter-inline');
+  inline.textContent = '';
+  if (!onTitlePage) {
+    const crumb = document.createElement('button');
+    crumb.type = 'button';
+    crumb.className = 'crumb';
+    crumb.textContent = `Chapter ${chapterName(chapter)}`;
+    crumb.title = `Projected chapter page (${reference(state.height)})`;
+    crumb.setAttribute('aria-label', `Open this projected chapter's own page (${reference(state.height)})`);
+    crumb.addEventListener('click', () => { rememberTrail(); state.index = -1; showCurrentTx(); });
+    inline.append(crumb);
+  }
+  $('ch-title').classList.toggle('hidden', !onTitlePage);
+  subtitle.classList.toggle('hidden', !onTitlePage);
+  $('ch-hash-short').classList.toggle('hidden', !onTitlePage);
+  $('ch-frontispiece').classList.toggle('hidden', !onTitlePage);
+  if (!onTitlePage) return { volume, book, chapter };
+
+  detachHashCopy($('ch-title'));   // no hash exists yet -- nothing to copy or bookmark
+  const b = state.proj;
+  const line = $('ch-hash-short');
+  line.classList.add('plain');   // figures, not hash prose -- upright
+  line.textContent = `${b.nTx.toLocaleString()} § · ${(b.blockVSize / MVB).toFixed(2)} MvB · ${(b.totalFees / 1e8).toFixed(4)} ₿ in fees`;
+  line.title = 'the draft’s figures — a snapshot of the queue, reshuffled by every arrival and renumbered by every block';
+
+  const el = $('ch-frontispiece');
+  el.innerHTML = '';
+  const slot = ({ mark, markClass, text, title, gold }) => {
+    const span = document.createElement('span');
+    span.className = gold ? 'cfx cfx-gold' : 'cfx';
+    if (mark) {
+      const m = document.createElement('span');
+      m.className = markClass;
+      m.textContent = mark;
+      span.append(m, (/^[\d]/.test(text) ? '' : ' ') + text);
+    } else {
+      span.textContent = text;
+    }
+    if (title) span.title = title;
+    el.append(span);
+    return span;
+  };
+  slot({ mark: 'v', markClass: 'fx-mark', text: '—', title: 'no version until a miner writes one — and with it, their rule vote' });
+  const prevSpan = slot(k === 0
+    ? { mark: 'h', markClass: 'dt', text: '⋯', title: 'the previous block — the chain tip, resolving…' }
+    : { text: '⋯', title: 'the previous chapter is itself unwritten' });
+  slot({ mark: '⋔', markClass: 'merkle-mark', text: '—', title: 'no merkle root until the section list is sealed' });
+  slot({ text: `due ${blocksEta(k + 1)}`, title: `no timestamp until mined — expected in about ${(k + 1) * 10} min, give or take ${Math.round(10 * Math.sqrt(k + 1))}: block arrivals average one per ten minutes` });
+  const betaSpan = slot({ text: 'β —', gold: true, title: 'the difficulty target' });
+  slot({ mark: 'η', markClass: 'fx-mark', text: '—', title: 'no nonce until the proof of work is found' });
+
+  // The determined slots fill from the tip's (cached) core.
+  loadBlockByHeight(tipHeight, { withTxids: false }).then((tipCore) => {
+    if (gen !== renderGen) return;
+    if (k === 0) {
+      const prevTrimmed = trimTrailingZeroBytes(reverseHex(tipCore.hash));
+      const prevBytes = prevTrimmed.length / 2;
+      const prose = encodeSeedPhrase(prevTrimmed, 'english', BEST_OF).prose;
+      fillMarkedHash(prevSpan, 'h', 'dt', tipCore.hash, 'previous block hash', prose, prevBytes,
+        prevBytes < 32
+          ? `${prevBytes} bytes encoded — the hash's ${32 - prevBytes} trailing zero bytes (required by proof-of-work) carry nothing and are dropped`
+          : '32 bytes');
+      prevSpan.title = 'already determined: whatever this chapter becomes, it follows the tip';
+    }
+    if (bookStartOf(state.height) === bookStartOf(tipCore.height)) {
+      const hf = composeBlockHeaderFields(tipCore.header);
+      betaSpan.textContent = hf.bits;
+      betaSpan.title = `${hf.bitsTitle} — already law for this chapter: a book is one difficulty window`;
+    } else {
+      betaSpan.title = 'this chapter opens a new book, and a new book means a retarget — its difficulty target is not yet set';
+    }
+  }).catch(() => { /* the tip's core is a nicety here -- the slots stay pending */ });
   return { volume, book, chapter };
 }
 
@@ -2075,7 +2319,19 @@ function renderChapter(para) {
   // transaction that's a curated entry earns its name beneath the § number, the
   // way a notable block earns its event name as the chapter title.
   const titleAttr = `txid ${para.txid}${para.verified ? '' : ' — could not be independently verified'}`;
-  const sectionEvent = NOTABLE.find((e) => e.id === para.txid)?.title;
+  // A projected section's event line is its price of admission: the
+  // effective fee rate the ordering ran on. Where that rate departs from the
+  // transaction's own fee ÷ vsize, the difference is family money -- a
+  // child-pays-for-parent package moving together -- and the line says so.
+  let sectionEvent = NOTABLE.find((e) => e.id === para.txid)?.title;
+  if (!sectionEvent && state.projected && state.manifest) {
+    const m = state.manifest[state.index];
+    if (m && Number.isFinite(m.rate)) {
+      const fmtR = (f) => f >= 10 ? String(Math.round(f)) : String(Math.round(f * 10) / 10);
+      const own = m.vsize ? m.fee / m.vsize : m.rate;
+      sectionEvent = `~${fmtR(m.rate)} sat/vB${Math.abs(m.rate - own) > 0.05 ? ' — package rate (CPFP)' : ''}`;
+    }
+  }
   const sectionTitle = $('section-title');
   sectionTitle.textContent = '';
   const secNum = document.createElement('span');
@@ -2285,8 +2541,18 @@ function renderChapter(para) {
 function labelNav() {
   const cur = volumeBookChapter(state.height);
   const idx = state.index;
-  const atTip = tipHeight !== null && state.height >= tipHeight;
+  const atTip = !state.projected && tipHeight !== null && state.height >= tipHeight;
   const gen = renderGen;   // a slow previous-count fetch must not overwrite a later section's label
+  // Standing at the tip, the next page is a question for the mempool: load
+  // the projection (once) and relabel, so Next appears exactly when a
+  // projected chapter exists to step into.
+  const reach = projectedReach();
+  if (atTip && !projectedCache) {
+    loadProjection().then(() => { if (gen === renderGen) labelNav(); }).catch(() => {});
+  }
+  // Whether the current line of pages ends here: a mined chapter at the tip
+  // with no projection, or the last projected chapter.
+  const lineEnds = state.projected ? state.projIndex >= reach - 1 : (atTip && reach === 0);
 
   const setBtn = (id, text, label) => {
     const b = $(id);
@@ -2310,7 +2576,7 @@ function labelNav() {
   // higher-order parts of the reference: the page around the button (eyebrow
   // crumbs, titles) already says where the reader is, and the full reference
   // rides in each button's hover/aria label.
-  const floor = minIndexOf(state.height);
+  const floor = state.projected ? -1 : minIndexOf(state.height);   // projected chapters carry no leaves
   let stepPrev = null, stepNext = null;   // { text, label } or null (hidden)
   if (idx === -3) {
     if (cur.volume > 1) {
@@ -2333,8 +2599,13 @@ function labelNav() {
     if (state.height > 0) {
       stepPrev = { text: `■${volumeBookChapter(state.height - 1).chapter}`, label: `Previous chapter (${reference(state.height - 1)})` };
     }
-    if (!atTip) {
+    // Forward: a mined chapter below the tip steps normally; at the tip (or
+    // among projected chapters) the next chapter exists only as far as the
+    // projection reaches.
+    if (!atTip && !state.projected) {
       stepNext = { text: `■${volumeBookChapter(state.height + 1).chapter}`, label: `Next chapter (${reference(state.height + 1)})` };
+    } else if (!lineEnds) {
+      stepNext = { text: `■${volumeBookChapter(state.height + 1).chapter}`, label: `Next chapter — projected (${reference(state.height + 1)})` };
     }
   }
   showBtn('chapter-prev', !!stepPrev);
@@ -2343,7 +2614,7 @@ function labelNav() {
   if (stepNext) setBtn('chapter-next', stepNext.text, stepNext.label);
 
   const hasPrevSection = !(state.height === 0 && idx <= floor);
-  const hasNextSection = !(atTip && idx >= state.txCount - 1);
+  const hasNextSection = !(lineEnds && idx >= state.txCount - 1);
   showBtn('page-prev', hasPrevSection);
   showBtn('page-next', hasNextSection);
 
@@ -2380,13 +2651,15 @@ function labelNav() {
       setBtn('page-next', `§${idx + 2}`, `Next section (${reference(state.height)} §${idx + 2})`);   // same chapter, target section = current 1-based index plus one
     } else {
       // Crosses onto the next block's first page -- its volume or book leaf
-      // when it opens one, else its chapter page.
+      // when it opens one, else its chapter page. A projected next chapter
+      // carries no leaves, whatever its height would open.
       const nh = state.height + 1;
-      const nFloor = minIndexOf(nh);
+      const projNext = tipHeight !== null && nh > tipHeight;
+      const nFloor = projNext ? -1 : minIndexOf(nh);
       const t = volumeBookChapter(nh);
       if (nFloor === -3) setBtn('page-next', toRoman(t.volume), `Volume page (${toRoman(t.volume)})`);
       else if (nFloor === -2) setBtn('page-next', `β${t.book}`, `Book page (${toRoman(t.volume)} β${t.book})`);
-      else setBtn('page-next', `■${t.chapter}`, `Next chapter (${reference(nh)})`);
+      else setBtn('page-next', `■${t.chapter}`, `Next chapter${projNext ? ' — projected' : ''} (${reference(nh)})`);
     }
   }
 
@@ -2518,10 +2791,12 @@ async function openLookup(input, index = -1) {
       }
       setStatus('<span class="spinner"></span>fetching block…');
       // A chapter-page landing (no section index) skips the heavy txid list;
-      // paging into a section fetches it on demand (ensureTxids).
-      const meta = await loadBlockByHeight(height, { withTxids: index >= 0 })
-        .catch(async (e) => { throw await unwrittenOr(e, Number(height), tipP); });
-      state = { ...meta, index: clampIndex(index, meta) };
+      // paging into a section fetches it on demand (ensureTxids). A height
+      // past the tip but within the mempool's projection opens as a
+      // projected chapter instead of an unwritten one.
+      const r = await loadHeightOrProjected(Number(height), index, tipP);
+      if (r.done) return;   // opened projected -- already rendered
+      state = { ...r.meta, index: clampIndex(index, r.meta) };
     } else if (/^[0-9a-f]{64}$/i.test(input)) {
       const hex = input.toLowerCase();
       setStatus('<span class="spinner"></span>fetching block…');
@@ -2537,9 +2812,9 @@ async function openLookup(input, index = -1) {
       const ref = parseReference(input);
       if (!ref) throw new Error('Enter a block height, hash, transaction id, or reference (e.g. III 2 5).');
       setStatus('<span class="spinner"></span>fetching block…');
-      const meta = await loadBlockByHeight(ref.height, { withTxids: ref.index >= 0 })
-        .catch(async (e) => { throw await unwrittenOr(e, Number(ref.height), tipP); });
-      state = { ...meta, index: clampIndex(ref.index, meta) };
+      const r = await loadHeightOrProjected(Number(ref.height), ref.index, tipP);
+      if (r.done) return;   // opened projected -- already rendered
+      state = { ...r.meta, index: clampIndex(ref.index, r.meta) };
     }
     await tipP;   // record the fresh tip before labelNav decides Next visibility
     await showCurrentTx();
@@ -2557,7 +2832,7 @@ async function stepTx(direction) {
   // list); the list itself is only needed to address a section by position --
   // fetched on demand here if the reader landed on a leaf without it.
   const withinBlock = state.index + direction;
-  if (withinBlock >= minIndexOf(state.height) && withinBlock < state.txCount) {
+  if (withinBlock >= (state.projected ? -1 : minIndexOf(state.height)) && withinBlock < state.txCount) {
     if (withinBlock >= 0) {
       try { await ensureTxids(state); }
       catch (e) { setStatus(e.message || 'Failed to load the transaction list.', 'err'); return; }
@@ -2576,6 +2851,25 @@ async function stepTx(direction) {
 
   $('page-prev').disabled = true;
   $('page-next').disabled = true;
+
+  // The seam and beyond: a target past the tip is a projected chapter --
+  // forward onto its chapter page, backward (between projected chapters)
+  // onto the nearer one's last section. Past the projection's reach the
+  // step dead-ends with the queue's answer.
+  if (tipHeight !== null && newHeight > tipHeight) {
+    setStatus('<span class="spinner"></span>reading the mempool…');
+    try {
+      if (await stepProjected(newHeight, direction > 0 ? -1 : 'last')) return;
+      setStatus(projectedReach() > 0
+        ? 'The projection ends here — deeper chapters are only a backlog, with no reliable order yet.'
+        : 'No next block yet — this is the current chain tip.', 'err');
+    } catch (e) {
+      setStatus(e.message || 'Failed to read the mempool.', 'err');
+    }
+    labelNav();
+    return;
+  }
+
   setStatus(`<span class="spinner"></span>loading ${direction > 0 ? 'next' : 'previous'} block…`);
   try {
     // Forward lands on the next block's first page (its volume/book leaf when
@@ -2604,6 +2898,25 @@ async function stepSectionAcross(direction) {
   sectionCrossing = true;
   $('page-prev').disabled = true;
   $('page-next').disabled = true;
+  // Section-level crossing past the tip lands on a projected chapter's
+  // nearest section: forward onto its §1, backward onto its last.
+  if (tipHeight !== null && newHeight > tipHeight) {
+    setStatus('<span class="spinner"></span>reading the mempool…');
+    try {
+      if (!(await stepProjected(newHeight, direction > 0 ? 0 : 'last'))) {
+        setStatus(projectedReach() > 0
+          ? 'The projection ends here — deeper chapters are only a backlog, with no reliable order yet.'
+          : 'No next block yet — this is the current chain tip.', 'err');
+        labelNav();
+      }
+    } catch (e) {
+      setStatus(e.message || 'Failed to read the mempool.', 'err');
+      labelNav();
+    } finally {
+      sectionCrossing = false;
+    }
+    return;
+  }
   setStatus(`<span class="spinner"></span>loading ${direction > 0 ? 'next' : 'previous'} block…`);
   try {
     const next = await loadBlockByHeight(newHeight, { withTxids: true });
@@ -2630,6 +2943,17 @@ async function openLeafAt(height, idx, direction = 0) {
   $('chapter-next').disabled = true;
   setStatus('<span class="spinner"></span>loading…');
   try {
+    // A chapter-level target past the tip is a projected chapter (leaves
+    // never project -- an unwritten book has no leaf).
+    if (tipHeight !== null && height > tipHeight && idx === -1) {
+      if (!(await stepProjected(height, -1))) {
+        setStatus(projectedReach() > 0
+          ? 'The projection ends here — deeper chapters are only a backlog, with no reliable order yet.'
+          : 'Not written yet — this is the current chain tip.', 'err');
+        labelNav();
+      }
+      return;
+    }
     const meta = await loadBlockByHeight(height, { withTxids: false });
     state = { ...meta, index: clampIndex(idx, meta) };
     await showCurrentTx();
@@ -2696,7 +3020,7 @@ async function runPendingSteps() {
       try { await ensureTxids(state); return true; }
       catch (e) { setStatus(e.message || 'Failed to load the transaction list.', 'err'); return false; }
     };
-    const floor = minIndexOf(state.height);
+    const floor = state.projected ? -1 : minIndexOf(state.height);
     const target = state.index + steps;
     if (target >= floor && target < state.txCount) {
       if (target >= 0 && !(await needList())) return;
@@ -2917,6 +3241,22 @@ async function warmSection(txid) {
   encodeSeedPhrase(reverseHex(txid), 'english', BEST_OF);
 }
 async function prefetchNeighbor(st, direction) {
+  // A neighbour past the tip is a projected chapter. Its chapter page needs
+  // only the projection's REST figures; a section-level landing (swiping off
+  // a chapter's last section) needs the projected manifest and first section
+  // too. Reaching past the projection leaves the swipe gated, as ever.
+  const projTarget = st.index === -1 ? st.height + direction
+    : (st.index >= 0 && direction > 0 && st.index >= st.txCount - 1 ? st.height + 1 : null);
+  if (projTarget !== null && tipHeight !== null && projTarget > tipHeight) {
+    const proj = await loadProjection();
+    const k = projTarget - tipHeight - 1;
+    if (!proj.blocks || k < 0 || k >= proj.blocks.length) throw new Error('past the projection');
+    if (st.index >= 0) {
+      const manifest = await projectedManifest(k);
+      if (manifest.length) await warmSection(manifest[0].txid);
+    }
+    return;
+  }
   if (st.index < 0) {
     const { volume, chapterCount } = volumeBookChapter(st.height);
     let target;
@@ -3334,6 +3674,7 @@ const saveBookmarks = () => { try { localStorage.setItem(BOOKMARKS_KEY, JSON.str
 // declines the bookmark rather than saving one whose citation can't be resolved.
 function entryPlacement(entry) {
   if (!state || !Number.isInteger(state.height)) return null;
+  if (state.projected) return null;   // a projected page has no settled reference to bookmark yet
   if (entry.label === 'transaction id') return { height: state.height, pos: state.index };
   return { height: state.height, pos: null };   // a block hash -- this chapter
 }
