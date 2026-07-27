@@ -205,8 +205,24 @@ button:disabled { opacity: .4; cursor: not-allowed; }
   font: 500 13px/1.4 'IBM Plex Mono',monospace;
 }
 .status-line.err { color: var(--error); }
-.spinner { display:inline-block; width:12px; height:12px; border:2px solid var(--rule); border-top-color: var(--accent); border-radius:50%; animation: spin .7s linear infinite; vertical-align: -1px; margin-right: 6px; }
-@keyframes spin { to { transform: rotate(360deg); } }
+/* The loading mark is the book's own notation, not a borrowed ring: the four
+   sigla of the pay-to-pubkey-hash template -- ⧉ ⌖ ≡ ∇ (OP_DUP, OP_HASH160,
+   OP_EQUALVERIFY, OP_CHECKSIG), the script most of the chain's record is
+   written in -- read out one at a time on a shared clock. Stacked spans in a
+   fixed-width cell (the glyphs' advance widths differ, and the toast must not
+   breathe), each fading in as its predecessor fades out; the markup comes from
+   SPINNER_HTML, so the glyph list lives in one place. Under reduced motion the
+   cycle stops on ⧉ and the mark stands still. */
+.spinner { position:relative; display:inline-block; width:1.3em; height:1.2em; vertical-align:-3px; margin-right:5px; color:var(--accent); }
+.spinner span { position:absolute; inset:0; text-align:center; line-height:1.2; opacity:0; animation: sigla-read 2s linear infinite; }
+.spinner span:nth-child(2) { animation-delay:.5s; }
+.spinner span:nth-child(3) { animation-delay:1s; }
+.spinner span:nth-child(4) { animation-delay:1.5s; }
+@keyframes sigla-read { 0% { opacity:0; } 8%, 25% { opacity:1; } 33%, 100% { opacity:0; } }
+@media (prefers-reduced-motion: reduce) {
+  .spinner span { animation:none; }
+  .spinner span:first-child { opacity:1; }
+}
 
 /* ── the chapter itself: a manuscript page, not a utility card ──
    No top margin: the eyebrow bar opens the chapter right under the masthead
@@ -860,6 +876,15 @@ const lazyEncode = (() => {
 let ready = false;
 init().then(() => { ready = true; }).catch((e) => console.error('WASM init failed:', e));
 
+// The loading mark's markup (see .spinner in the stylesheet): the P2PKH
+// template's sigla in script order, each glyph carrying its OP_* name as a
+// hover title just as it would in a chapter. Decorative -- the words after it
+// say what's happening -- so the whole mark is hidden from the reader's ear.
+const SPINNER_HTML = '<span class="spinner" aria-hidden="true">'
+  + [['⧉', 'OP_DUP'], ['⌖', 'OP_HASH160'], ['≡', 'OP_EQUALVERIFY'], ['∇', 'OP_CHECKSIG']]
+    .map(([glyph, name]) => `<span title="${name}">${glyph}</span>`).join('')
+  + '</span>';
+
 function setStatus(msg, kind) {
   const el = $('block-status');
   el.className = 'status-line' + (kind ? ' ' + kind : '');
@@ -1336,7 +1361,7 @@ async function showCurrentTx() {
     consumeSlide();
     return;
   }
-  setStatus('<span class="spinner"></span>fetching transaction…');
+  setStatus(SPINNER_HTML + 'fetching transaction…');
   // The current txid: from the loaded list when we have it, else the single
   // transaction we opened by id (before its block's list is ever fetched).
   const txid = state.txids ? state.txids[state.index] : state.txid;
@@ -2182,13 +2207,13 @@ async function openLookup(input, index = -1) {
       // A negative height counts back from the chain tip: -1 is the latest
       // block, -2 the one before it, and so on.
       if (input.startsWith('-')) {
-        setStatus('<span class="spinner"></span>fetching latest block…');
+        setStatus(SPINNER_HTML + 'fetching latest block…');
         const tip = await tipP;   // the shared tip fetch (already recorded in tipHeight on success)
         if (tip === null) throw new Error('Could not reach the chain tip to resolve a relative height.');
         height = String(tip + Number(input) + 1);
         if (Number(height) < 0) throw new Error(`Only ${tip + 1} blocks exist; ${input} reaches before Genesis.`);
       }
-      setStatus('<span class="spinner"></span>fetching block…');
+      setStatus(SPINNER_HTML + 'fetching block…');
       // A chapter-page landing (no section index) skips the heavy txid list;
       // paging into a section fetches it on demand (ensureTxids).
       const meta = await loadBlockByHeight(height, { withTxids: index >= 0 })
@@ -2196,19 +2221,19 @@ async function openLookup(input, index = -1) {
       state = { ...meta, index: clampIndex(index, meta) };
     } else if (/^[0-9a-f]{64}$/i.test(input)) {
       const hex = input.toLowerCase();
-      setStatus('<span class="spinner"></span>fetching block…');
+      setStatus(SPINNER_HTML + 'fetching block…');
       const meta = await loadBlockMeta(hex, { withTxids: index >= 0 }).catch(() => null);
       if (meta) {
         state = { ...meta, index: clampIndex(index, meta) };
       } else {
-        setStatus('<span class="spinner"></span>locating transaction…');
+        setStatus(SPINNER_HTML + 'locating transaction…');
         const loc = await loadBlockByTxid(hex);
         state = { ...loc.meta, index: loc.index, txid: loc.txid };
       }
     } else {
       const ref = parseReference(input);
       if (!ref) throw new Error('Enter a block height, hash, transaction id, or reference (e.g. III 2 5).');
-      setStatus('<span class="spinner"></span>fetching block…');
+      setStatus(SPINNER_HTML + 'fetching block…');
       const meta = await loadBlockByHeight(ref.height, { withTxids: ref.index >= 0 })
         .catch(async (e) => { throw await unwrittenOr(e, Number(ref.height), tipP); });
       state = { ...meta, index: clampIndex(ref.index, meta) };
@@ -2248,7 +2273,7 @@ async function stepTx(direction) {
 
   $('page-prev').disabled = true;
   $('page-next').disabled = true;
-  setStatus(`<span class="spinner"></span>loading ${direction > 0 ? 'next' : 'previous'} block…`);
+  setStatus(SPINNER_HTML + `loading ${direction > 0 ? 'next' : 'previous'} block…`);
   try {
     // Forward lands on the next block's first page (its volume/book leaf when
     // it opens one, else its chapter page) -- no txid list needed until the
@@ -2276,7 +2301,7 @@ async function stepSectionAcross(direction) {
   sectionCrossing = true;
   $('page-prev').disabled = true;
   $('page-next').disabled = true;
-  setStatus(`<span class="spinner"></span>loading ${direction > 0 ? 'next' : 'previous'} block…`);
+  setStatus(SPINNER_HTML + `loading ${direction > 0 ? 'next' : 'previous'} block…`);
   try {
     const next = await loadBlockByHeight(newHeight, { withTxids: true });
     state = { ...next, index: direction > 0 ? 0 : next.txCount - 1 };
@@ -2300,7 +2325,7 @@ async function openLeafAt(height, idx, direction = 0) {
   chapterLoading = true;
   $('chapter-prev').disabled = true;
   $('chapter-next').disabled = true;
-  setStatus('<span class="spinner"></span>loading…');
+  setStatus(SPINNER_HTML + 'loading…');
   try {
     const meta = await loadBlockByHeight(height, { withTxids: false });
     state = { ...meta, index: clampIndex(idx, meta) };
