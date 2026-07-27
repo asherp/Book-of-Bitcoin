@@ -1919,6 +1919,8 @@ const liveProjection = (() => {
     const seat = state.txids[state.index];
     if (!seat || newTxid === seat) return;
     await recordReplaced(seat, newTxid);
+    rbfHistoryCache.delete(seat);
+    rbfHistoryCache.delete(newTxid);   // the successor's history just grew
     if (!state.ghost) state.ghost = seat;
     if (state.manifest && state.manifest[state.index]) {
       state.manifest[state.index] = { ...state.manifest[state.index], txid: newTxid };
@@ -2080,12 +2082,49 @@ async function recordReplaced(oldTxid, newTxid) {
   try { localStorage.setItem(REPLACED_KEY, JSON.stringify(replacedLedger)); } catch {}
 }
 // Open a superseded draft beneath the section on screen: seed its hex from
-// the ledger (the network no longer has it) and render it as the ghost.
+// the ledger (the network no longer has it) and render it as the ghost. A
+// ghost whose hex this reader never held falls back to loadTxHex -- and,
+// failing that, to the tombstone (see showCurrentTx).
 function openGhost(oldTxid) {
   const rec = replacedLedger[oldTxid];
   if (rec && rec.hex && !txHexCache.has(oldTxid)) txHexCache.set(oldTxid, Promise.resolve(rec.hex));
   state.ghost = oldTxid;
   showCurrentTx();
+}
+
+// Backfill: successions this reader never witnessed, from the backend's RBF
+// archive (/v1/tx/:txid/rbf -- { replacements: tree | null, replaces:
+// txid[] | null }). The reader's own ledger answers first and always; the
+// archive adds what it knows, which for mined transactions is roughly the
+// last day (mined trees expire from it after ~24 h). Every tree node's
+// stripped figures are harvested into ghostMeta so a hexless ghost can at
+// least render its tombstone, and archive successions join the in-memory
+// ledger (not persisted -- they're refetchable and carry no hex).
+const rbfHistoryCache = new Map();   // txid -> Promise<{ predecessors: string[] }>
+const ghostMeta = new Map();         // txid -> { fee, vsize, value, rate, time }
+function loadRbfHistory(txid) {
+  if (!rbfHistoryCache.has(txid)) {
+    rbfHistoryCache.set(txid, (async () => {
+      const preds = new Set(Object.keys(replacedLedger).filter((k) => replacedLedger[k].by === txid));
+      const h = await mempoolBackendFetch(`/v1/tx/${txid}/rbf`).catch(() => null);
+      if (h) {
+        for (const p of (h.replaces || [])) preds.add(p);
+        const walk = (node) => {
+          if (!node || !node.tx) return;
+          ghostMeta.set(node.tx.txid, { fee: node.tx.fee, vsize: node.tx.vsize, value: node.tx.value, rate: node.tx.rate, time: node.time });
+          for (const child of node.replaces || []) {
+            if (!child || !child.tx) continue;
+            if (!replacedLedger[child.tx.txid]) replacedLedger[child.tx.txid] = { by: node.tx.txid, at: child.time || 0 };
+            if (node.tx.txid === txid) preds.add(child.tx.txid);
+            walk(child);
+          }
+        };
+        walk(h.replacements);
+      }
+      return { predecessors: [...preds] };
+    })());
+  }
+  return rbfHistoryCache.get(txid);
 }
 
 // A section's composed page -- parsed, txid-verified, Glossia-encoded fields
@@ -2133,17 +2172,35 @@ async function showCurrentTx() {
   // A ghost -- a fee-replaced draft seated beneath its successor -- renders
   // its own body while the seat (list entry, tracking, §) stays the
   // successor's.
-  const txid = (state.projected && state.ghost) ? state.ghost
+  const txid = state.ghost ? state.ghost
     : state.txids ? state.txids[state.index] : state.txid;
   if (!ready) await init().catch(() => {});
   // Parse, verify, and encode -- or, when the neighbour prefetch already
-  // warmed this section, a straight cache hit (see sectionFields).
-  const { fields, verified } = await sectionFields(txid);
+  // warmed this section, a straight cache hit (see sectionFields). A ghost
+  // whose raw bytes nobody holds anymore -- replaced before this reader
+  // ever saw it, dropped by every mempool since -- gets its tombstone: the
+  // succession is remembered even where the text is not.
+  let entry;
+  try {
+    entry = await sectionFields(txid);
+  } catch (e) {
+    if (state.ghost === txid) {
+      renderGhostTombstone(txid);
+      updateUrl();
+      $('chapter').classList.remove('hidden');
+      setStatus('');
+      consumeSlide();
+      liveProjection.sync();
+      return;
+    }
+    throw e;
+  }
+  const { fields, verified } = entry;
   // Witnesses aren't encoded here -- they're the heaviest thing to render.
   // renderChapter marks each witness-bearing input with a footnote reference and
   // lays out the footnotes as placeholders; their prose is encoded lazily, per
   // push, as the reader scrolls to it (see lazyEncode / renderFootnotes).
-  renderChapter({ num: state.index + 1, txid, fields, verified, ghost: !!(state.projected && state.ghost) });
+  renderChapter({ num: state.index + 1, txid, fields, verified, ghost: !!state.ghost });
   updateUrl();
   $('chapter').classList.remove('hidden');
   setStatus('');
@@ -2345,7 +2402,7 @@ function renderChapterHead(onTitlePage) {
     crumb.textContent = (isGenesis ? 'The Genesis Block' : eventTitle) || `Chapter ${chapterName(chapter)}`;
     crumb.title = `Chapter page (${reference(state.height)})`;
     crumb.setAttribute('aria-label', `Open this chapter's own page (${reference(state.height)})`);
-    crumb.addEventListener('click', () => { rememberTrail(); state.index = -1; showCurrentTx(); });
+    crumb.addEventListener('click', () => { rememberTrail(); state.ghost = null; state.index = -1; showCurrentTx(); });
     inline.append(crumb);
   }
   $('ch-title').classList.toggle('hidden', !onTitlePage);
@@ -2637,6 +2694,63 @@ function refreshProjectedSectionFurniture() {
   labelNav();
 }
 
+// The tombstone: a superseded draft whose raw text this reader never held.
+// No endpoint serves a replaced transaction's bytes once the pool has
+// dropped them, so the page carries what the succession remembers -- the
+// txid (encodable always), the archive's stripped figures, and the rung up
+// to the transaction that replaced it.
+function renderGhostTombstone(txid) {
+  $('chapter').classList.remove('title-leaf');
+  $('chapter').classList.remove('span-leaf');
+  renderChapterHead(false);
+  ++renderGen;
+  lazyEncode.reset();
+  $('section-title').classList.remove('hidden');
+  $('section-hash').classList.remove('hidden');
+  const { prose: txidProse } = encodeSeedPhrase(reverseHex(txid), 'english', BEST_OF);
+  $('section-hash').textContent = txidProse;
+  const sectionTitle = $('section-title');
+  sectionTitle.textContent = '';
+  const secNum = document.createElement('span');
+  secNum.className = 'section-num';
+  secNum.textContent = `§ ${state.index + 1}`;
+  const dag = document.createElement('span');
+  dag.className = 'tx-seq-rbf section-ghost-mark';
+  dag.textContent = ' †';
+  dag.title = 'replaced by fee — this draft was superseded; the section above holds the seat';
+  secNum.append(dag);
+  sectionTitle.append(secNum);
+  const secEv = document.createElement('span');
+  secEv.className = 'section-event';
+  secEv.textContent = '† replaced by fee';
+  sectionTitle.append(secEv);
+  const up = document.createElement('a');
+  up.className = 'section-event ghost-up';
+  up.href = '#';
+  up.textContent = 'its successor ↑';
+  up.title = 'the transaction that replaced this one — the current holder of this §';
+  up.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); state.ghost = null; showCurrentTx(); });
+  sectionTitle.append(up);
+  sectionTitle.title = `txid ${txid} — replaced by fee; its raw form was never recorded here`;
+  attachHashCopy(sectionTitle, txid, 'transaction id', txidProse);
+  const body = $('ch-paragraphs');
+  body.innerHTML = '';
+  const note = document.createElement('p');
+  note.className = 'footnote-entry';
+  const m = ghostMeta.get(txid);
+  const fmtR = (f) => f >= 10 ? String(Math.round(f)) : String(Math.round(f * 10) / 10);
+  note.textContent = (m
+    ? `${(m.fee ?? 0).toLocaleString()} sat over ${(m.vsize ?? 0).toLocaleString()} vB (~${fmtR(m.rate ?? (m.vsize ? m.fee / m.vsize : 0))} sat/vB), moving ${formatBtc(m.value ?? 0)}${m.time ? ` — replaced ${timestampInfo(m.time).mark}` : ''}. `
+    : '')
+    + 'Its raw text is gone with the mempools that dropped it — only its place in the succession survives.';
+  body.append(note);
+  $('ch-footnotes').innerHTML = '';
+  $('ch-footnotes-section').classList.add('hidden');
+  currentFootnotes = [];
+  footnotesLoaded = false;
+  labelNav();
+}
+
 function renderChapter(para) {
   $('chapter').classList.remove('title-leaf');
   $('chapter').classList.remove('span-leaf');
@@ -2702,17 +2816,12 @@ function renderChapter(para) {
     up.href = '#';
     up.textContent = 'its successor ↑';
     up.title = 'the transaction that replaced this one — the current holder of this §';
-    up.addEventListener('click', (e) => { e.preventDefault(); state.ghost = null; showCurrentTx(); });
+    up.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); state.ghost = null; showCurrentTx(); });
     sectionTitle.append(up);
-  } else if (state.projected && predecessorOf(para.txid)) {
-    const down = document.createElement('a');
-    down.className = 'section-event ghost-down';
-    down.href = '#';
-    down.textContent = '† replaces an earlier draft ↓';
-    down.title = 'this transaction took its seat by fee — the draft it replaced is kept beneath';
-    down.addEventListener('click', (e) => { e.preventDefault(); openGhost(predecessorOf(para.txid)); });
-    sectionTitle.append(down);
   }
+  // Rungs down are appended asynchronously once the succession lookup
+  // answers -- see the loadRbfHistory kick below, which serves mined and
+  // projected sections alike.
   sectionTitle.title = titleAttr;
   // The section title is the clickable handle for the txid's copy/bookmark
   // menu (attached after the rebuild above, which re-adds the bookmark ribbon).
@@ -2725,6 +2834,26 @@ function renderChapter(para) {
   // [scriptPubKey | amount] subgrid; the locktime closes on the right.
   const gen = ++renderGen;
   lazyEncode.reset();   // drop chunks still pending from the previous section (body + footnotes)
+
+  // Successions are looked up for EVERY section, mined or projected: the
+  // reader's own ledger answers at once; the backend's RBF archive
+  // backfills what this reader never witnessed. Each predecessor found
+  // gains a rung down beneath the § title.
+  if (!para.ghost) {
+    loadRbfHistory(para.txid).then((h) => {
+      if (gen !== renderGen || !h || !h.predecessors.length) return;
+      const sectionTitleEl = $('section-title');
+      h.predecessors.forEach((p, i) => {
+        const down = document.createElement('a');
+        down.className = 'section-event ghost-down';
+        down.href = '#';
+        down.textContent = h.predecessors.length > 1 ? `† replaces draft ${i + 1} ↓` : '† replaces an earlier draft ↓';
+        down.title = `this transaction took its seat by fee — it replaced ${p}`;
+        down.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); openGhost(p); });
+        sectionTitleEl.append(down);
+      });
+    }).catch(() => {});
+  }
   const flow = document.createElement('div');
   flow.className = 'tx-flow';
   const inputsEl = document.createElement('div');
@@ -3011,7 +3140,7 @@ function labelNav() {
     }
   }
   if (hasNextSection) {
-    if (state.projected && state.ghost && idx >= 0) {
+    if (state.ghost && idx >= 0) {
       // A ghost's only forward step is up: the transaction that replaced it.
       setBtn('page-next', `§${idx + 1}`, `Its successor — the current holder of §${idx + 1}`);
     } else if (idx === -3) {
@@ -3207,7 +3336,7 @@ async function stepTx(direction) {
   // Bounds come from txCount and the leaf floor (both known without the txid
   // list); the list itself is only needed to address a section by position --
   // fetched on demand here if the reader landed on a leaf without it.
-  if (state.projected) state.ghost = null;   // stepping leaves a ghost behind
+  state.ghost = null;   // stepping leaves a ghost behind
   const withinBlock = state.index + direction;
   if (withinBlock >= (state.projected ? -1 : minIndexOf(state.height)) && withinBlock < state.txCount) {
     if (withinBlock >= 0) {
@@ -3272,7 +3401,7 @@ async function stepSectionAcross(direction) {
   if (sectionCrossing) return;
   const newHeight = state.height + direction;
   if (newHeight < 0) return;   // Genesis §1 has no previous section
-  if (state.projected) state.ghost = null;
+  state.ghost = null;
   sectionCrossing = true;
   $('page-prev').disabled = true;
   $('page-next').disabled = true;
@@ -3392,12 +3521,12 @@ async function runPendingSteps() {
   // A ghost hangs beneath its successor, off the line of sections: forward
   // climbs back up to the seat (the transaction that replaced it); any other
   // step leaves the ghost behind and walks the line as usual.
-  if (state.projected && state.ghost && steps > 0) {
+  if (state.ghost && steps > 0) {
     state.ghost = null;
     try { await showCurrentTx(); } catch (e) { setStatus(e.message || 'Failed to load transaction.', 'err'); }
     return;
   }
-  if (state.projected) state.ghost = null;
+  state.ghost = null;
 
   stepping = true;
   try {
@@ -3538,7 +3667,7 @@ function rememberedChild() {
   return null;
 }
 async function descendTo(m) {
-  if (state.projected) state.ghost = null;
+  state.ghost = null;
   if (m.idx >= 0) {
     // A remembered section within this chapter.
     try { await ensureTxids(state); }
@@ -3556,7 +3685,7 @@ function levelTarget(direction) {   // +1 descend (deeper), -1 ascend
     if (state.index >= 0) {
       // Up from a superseded draft is its successor -- the transaction that
       // replaced it and holds the seat -- not the chapter page.
-      if (state.projected && state.ghost) return { unghost: true };
+      if (state.ghost) return { unghost: true };
       return { height: state.height, idx: -1, free: true };   // this block is already loaded
     }
     if (state.index === -1) return { height: bookStartOf(state.height), idx: -2 };
@@ -3568,7 +3697,7 @@ function levelTarget(direction) {   // +1 descend (deeper), -1 ascend
   // unless it took its seat by fee, in which case the draft it replaced
   // hangs beneath it, kept by the ledger.
   if (state.index < 0) return { linear: true };
-  if (state.projected && !state.ghost && state.txids) {
+  if (!state.ghost && state.txids) {
     const prev = predecessorOf(state.txids[state.index]);
     if (prev) return { ghost: prev };
   }
