@@ -5,6 +5,8 @@ rendered as a paragraph of grammatically correct [Glossia](https://glossia.io/)
 prose, with witness data collected as footnotes. Installable as a PWA and
 offline-capable.
 
+**Read the book: <https://asherp.github.io/Book-of-Bitcoin/>**
+
 The book states all of this in its own voice, at length, in
 [the preface](web/preface.md) — what follows here is the short form, for a
 reader arriving at the repository rather than the book.
