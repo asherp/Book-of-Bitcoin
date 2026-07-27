@@ -17,7 +17,7 @@
  * Everything here is scoped to the directory sw.js is served from, so it works
  * unchanged at the site root and under a per-PR preview subpath.
  */
-const CACHE = 'bitcoin-book-shell-v18';
+const CACHE = 'bitcoin-book-shell-v19';
 
 // App shell, relative to the SW scope. glossia.js / glossia_bg.wasm are
 // gitignored build artifacts — present after a build/deploy, possibly absent in
@@ -39,6 +39,8 @@ const SHELL = [
   './btc-sigla.js',
   './btc-notation.js',
   './notation.css',
+  './btc-chrome.js',
+  './btc-chrome.css',
   './btc-wordlists.js',
   './btc-citation.js',
   './btc-contents.js',
@@ -111,7 +113,7 @@ self.addEventListener('fetch', (event) => {
     // app-shell file types, and only when both sides carry a validator, so
     // servers that send none never false-positive.
     const validator = (r) => r.headers.get('etag') || r.headers.get('last-modified') || '';
-    const shellish = /\.(html|js|wasm|webmanifest)$|\/$/.test(url.pathname);
+    const shellish = /\.(html|js|css|wasm|webmanifest)$|\/$/.test(url.pathname);
     const network = fetch(req).then(async (res) => {
       // Only cache complete, same-origin OK responses.
       if (res && res.ok && res.type === 'basic') {
