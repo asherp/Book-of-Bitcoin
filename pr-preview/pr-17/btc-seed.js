@@ -37,7 +37,7 @@ export function seedArchive() {
       // the way through.
       for (const [store, entries] of Object.entries({
         heights: seed.heights, blocks: seed.blocks, txids: seed.txids,
-        tx: seed.tx, placements: seed.placements,
+        tx: seed.tx, placements: seed.placements, citations: seed.citations,
       })) {
         for (const [k, v] of Object.entries(entries || {})) {
           storePut(store, store === 'heights' ? Number(k) : k, v);
