@@ -835,6 +835,29 @@ function trimTrailingZeroBytes(hex) {
   return hex.slice(0, end);
 }
 
+// The block-hash notation ⓪ⁿhᵐ. The dropped zeros are written out rather than
+// silently elided: the push-zero mark (⓪) carries the count of zero BITS
+// dropped as its superscript, and the h mark carries the remaining bit count
+// -- what the prose beside it encodes -- so the two superscripts always sum
+// to 256 and the full hash is exactly reconstructable from the notation.
+// (The trim is byte-granular -- Glossia encodes whole bytes -- so both counts
+// are multiples of 8.) Takes the display-order hex; returns the internal-order
+// trimmed hex to encode plus the two counts.
+function blockHashParts(displayHex) {
+  const hex = trimTrailingZeroBytes(reverseHex(displayHex));
+  const zeroBits = (64 - hex.length) * 4;
+  return { hex, zeroBits, remainBits: 256 - zeroBits };
+}
+const zeroBitsTitle = (n) => `${n} zero bits (${n / 8} bytes) — the hash's proof-of-work zeros, dropped before encoding`;
+const remainBitsTitle = (m) => `the hash's remaining ${m} bits (${m / 8} bytes), Glossia-encoded in the prose`;
+// The notation as plain text (for the copy menu and any text-only surface).
+const hashNotationText = ({ zeroBits, remainBits }) =>
+  `⓪${toSuperscript(zeroBits)} h${toSuperscript(remainBits)}`;
+// The notation as markup: gold marks, dim push-count superscripts.
+const hashNotationHtml = ({ zeroBits, remainBits }) =>
+  `<span class="cfx-gold" title="${zeroBitsTitle(zeroBits)}">⓪</span><span class="op op-push">${toSuperscript(zeroBits)}</span> ` +
+  `<span class="cfx-gold" title="${remainBitsTitle(remainBits)}">h</span><span class="op op-push">${toSuperscript(remainBits)}</span>`;
+
 // Encode-on-scroll for script/witness prose. A data push is capped at 520 bytes
 // (MAX_SCRIPT_ELEMENT_SIZE), so any large payload -- an inscription's tapscript,
 // a bulky OP_RETURN -- already arrives pre-split into a run of bounded pushes.
@@ -1435,16 +1458,33 @@ function detachHashCopy(el) {
 // Render a Glossia-encoded hash into `el` as its bold-gold data mark (h, or ⋔
 // for the merkle root) followed by the plain prose. The mark is the clickable
 // handle for the copy/bookmark menu; the prose itself is never interactive.
-function fillMarkedHash(el, mark, markClass, hex, label, prose, sup, supTitle) {
+// `zeros` ({ sup, title }), for a block hash, leads the mark with the ⓪
+// push-zero glyph carrying the dropped proof-of-work zero-bit count.
+function fillMarkedHash(el, mark, markClass, hex, label, prose, sup, supTitle, zeros) {
   el.textContent = '';
+  if (zeros) {
+    const z = document.createElement('span');
+    z.className = markClass;
+    z.textContent = '⓪';
+    z.title = zeros.title;
+    el.append(z);
+    const zs = document.createElement('span');
+    zs.className = 'op op-push';
+    zs.textContent = toSuperscript(zeros.sup);
+    zs.title = zeros.title;
+    el.append(zs, ' ');
+  }
   const m = document.createElement('span');
   m.className = markClass;
   m.textContent = mark;
-  attachHashCopy(m, hex, label, prose);
+  // A block hash's copy-text carries its full ⓪ⁿhᵐ notation, so the text form
+  // states the dropped zeros just as the page does.
+  attachHashCopy(m, hex, label, (zeros ? `⓪${toSuperscript(zeros.sup)} ${mark}${toSuperscript(sup)} ` : '') + prose);
   el.append(m);
-  // The mark can carry a byte count as a superscript riding after it, the way
-  // a typed script push reads (p⁶⁵) -- a header field isn't a push, but the
-  // notation for "this prose carries n bytes" is the same.
+  // The mark can carry a count as a superscript riding after it, the way a
+  // typed script push reads (p⁶⁵) -- a header field isn't a push, but the
+  // notation is the same. The merkle root's ⋔ counts bytes; a block hash's h
+  // counts the encoded BITS, pairing with the ⓪ mark so the two sum to 256.
   if (sup) {
     const s = document.createElement('span');
     s.className = 'op op-push';
@@ -1459,15 +1499,17 @@ function fillMarkedHash(el, mark, markClass, hex, label, prose, sup, supTitle) {
 // chapter hash: version, previous-block hash, merkle root, timestamp,
 // difficulty target, nonce. The two hashes are Glossia-encoded here (like
 // the chapter/section hash above); the rest come pre-decoded from
-// composeBlockHeaderFields. Genesis has no previous block, shown as ∅.
+// composeBlockHeaderFields. Genesis has no previous block: all 256 bits are
+// zero, which the notation states literally as ⓪²⁵⁶ -- nothing to encode.
 function renderFrontispiece(header) {
   const el = $('ch-frontispiece');
   el.innerHTML = '';
   const hf = composeBlockHeaderFields(header);
   const isGenesisPrev = header.prevBlockHash === '00'.repeat(32);
-  const prevTrimmed = isGenesisPrev ? '' : trimTrailingZeroBytes(reverseHex(header.prevBlockHash));
-  const prevBytes = prevTrimmed.length / 2;
-  const prevProse = isGenesisPrev ? '∅' : encodeSeedPhrase(prevTrimmed, 'english', BEST_OF).prose;
+  const prevParts = isGenesisPrev ? null : blockHashParts(header.prevBlockHash);
+  const prevProse = isGenesisPrev
+    ? '⓪' + toSuperscript(256)
+    : encodeSeedPhrase(prevParts.hex, 'english', BEST_OF).prose;
   // The merkle root isn't proof-of-work-constrained, so unlike a block hash
   // it has no expected run of zero bytes worth trimming.
   const merkleProse = encodeSeedPhrase(reverseHex(header.merkleRoot), 'english', BEST_OF).prose;
@@ -1482,11 +1524,10 @@ function renderFrontispiece(header) {
       menu: { hex: (header.version >>> 0).toString(16).padStart(8, '0'), label: 'block version',
               prose: /^\d/.test(hf.version) ? `v${hf.version}` : hf.version } },
     isGenesisPrev
-      ? { text: prevProse, title: 'no earlier block — this is the genesis block' }
-      : { text: prevProse, mark: 'h', markClass: 'dt', sup: prevBytes,
-          supTitle: prevBytes < 32
-            ? `${prevBytes} bytes encoded — the hash's ${32 - prevBytes} trailing zero bytes (required by proof-of-work) carry nothing and are dropped`
-            : '32 bytes',
+      ? { text: prevProse, title: 'no earlier block — this is the genesis block (all 256 bits zero)' }
+      : { text: prevProse, mark: 'h', markClass: 'dt', sup: prevParts.remainBits,
+          supTitle: remainBitsTitle(prevParts.remainBits),
+          zeros: prevParts.zeroBits ? { sup: prevParts.zeroBits, title: zeroBitsTitle(prevParts.zeroBits) } : null,
           copy: { hex: header.prevBlockHash, label: 'previous block hash' } },
     { text: merkleProse, mark: '⋔', markClass: 'merkle-mark', sup: 32, supTitle: '32 bytes',
       copy: { hex: header.merkleRoot, label: 'merkle root' } },
@@ -1501,11 +1542,11 @@ function renderFrontispiece(header) {
     { text: hf.nonce, mark: 'η', markClass: 'fx-mark', title: hf.nonceTitle,
       menu: { hex: (header.nonce >>> 0).toString(16).padStart(8, '0'), label: 'nonce', prose: hf.nonce } },
   ];
-  for (const { text, title, copy, mark, markClass, gold, sup, supTitle, menu } of items) {
+  for (const { text, title, copy, mark, markClass, gold, sup, supTitle, zeros, menu } of items) {
     const span = document.createElement('span');
     span.className = gold ? 'cfx cfx-gold' : 'cfx';
     if (mark && copy) {
-      fillMarkedHash(span, mark, markClass, copy.hex, copy.label, text, sup, supTitle);
+      fillMarkedHash(span, mark, markClass, copy.hex, copy.label, text, sup, supTitle, zeros);
     } else if (mark) {
       // A marked plain field: the mark leads, the value follows -- tight
       // against a numeral (v1, η2573394689), a space before a word form
@@ -1587,12 +1628,14 @@ function renderChapterHead(onTitlePage) {
   $('ch-hash-short').classList.toggle('hidden', !onTitlePage);
   $('ch-frontispiece').classList.toggle('hidden', !onTitlePage);
   if (onTitlePage) {
-    const { prose: hashProse } = encodeSeedPhrase(trimTrailingZeroBytes(reverseHex(state.hash)), 'english', BEST_OF);
-    // The hash prose stands alone, unmarked; the chapter title above it is the
-    // clickable handle for its copy/bookmark menu.
+    const parts = blockHashParts(state.hash);
+    const { prose: hashProse } = encodeSeedPhrase(parts.hex, 'english', BEST_OF);
+    // The hash prose leads with its ⓪ⁿhᵐ marks -- the dropped proof-of-work
+    // zeros and the encoded remainder made explicit; the chapter title above
+    // it is the clickable handle for its copy/bookmark menu.
     $('ch-hash-short').classList.remove('plain');   // hash prose: italic voice
-    $('ch-hash-short').textContent = hashProse;
-    attachHashCopy($('ch-title'), state.hash, 'block hash', hashProse);
+    $('ch-hash-short').innerHTML = `${hashNotationHtml(parts)} ${hashProse}`;   // marks + Glossia prose -- safe as innerHTML
+    attachHashCopy($('ch-title'), state.hash, 'block hash', `${hashNotationText(parts)} ${hashProse}`);
     renderFrontispiece(state.header);
   }
   return { volume, book, chapter };
@@ -2620,9 +2663,9 @@ let prefetchGen = 0;
 function warmLeafEncodes(core) {
   if (!ready) return;
   try {
-    encodeSeedPhrase(trimTrailingZeroBytes(reverseHex(core.hash)), 'english', BEST_OF);
+    encodeSeedPhrase(blockHashParts(core.hash).hex, 'english', BEST_OF);
     if (core.header.prevBlockHash !== '00'.repeat(32)) {
-      encodeSeedPhrase(trimTrailingZeroBytes(reverseHex(core.header.prevBlockHash)), 'english', BEST_OF);
+      encodeSeedPhrase(blockHashParts(core.header.prevBlockHash).hex, 'english', BEST_OF);
     }
     encodeSeedPhrase(reverseHex(core.header.merkleRoot), 'english', BEST_OF);
   } catch { /* warming is best-effort */ }

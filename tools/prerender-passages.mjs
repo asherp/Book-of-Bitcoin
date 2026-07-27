@@ -32,7 +32,7 @@ import { createHash } from 'node:crypto';
 
 import { init, encodeSeedPhrase } from '../web/glossia-msg.js';
 import { parseTransaction, parseBlockHeader } from '../web/btc-tx.js';
-import { composeTransactionFields, composeBlockHeaderFields, renderWitness } from '../web/btc-prose.js';
+import { composeTransactionFields, composeBlockHeaderFields, renderWitness, toSuperscript } from '../web/btc-prose.js';
 import { volumeBookChapter, toRoman, reference } from '../web/btc-citation.js';
 import { NOTABLE } from '../web/btc-contents-data.js';
 
@@ -86,6 +86,17 @@ export function htmlToText(s) {
 const reverseHex = (hex) => (hex.match(/../g) || []).reverse().join('');
 const trimTrailingZeroBytes = (hex) => hex.replace(/(00)+$/, '');
 
+// The block-hash notation ⓪ⁿhᵐ (matches bitcoin-book.html): the hash's
+// trailing proof-of-work zeros (internal order) are dropped before encoding
+// and written as the push-zero mark with the dropped zero-bit count as its
+// superscript; h carries the remaining, encoded bit count. n + m = 256.
+const blockHashParts = (displayHex) => {
+  const hex = trimTrailingZeroBytes(reverseHex(displayHex));
+  const zeroBits = (64 - hex.length) * 4;
+  return { hex, zeroBits, remainBits: 256 - zeroBits };
+};
+const hashNotation = ({ zeroBits, remainBits }) => `⓪${toSuperscript(zeroBits)} h${toSuperscript(remainBits)}`;
+
 const proseOf = (hex) => encodeSeedPhrase(hex, 'english', BEST_OF).prose;
 
 // The capped encoder handed to the composer for OP_RETURN payloads and used
@@ -114,9 +125,10 @@ export function slugify(title) {
 export function frontispieceMd(header) {
   const hf = composeBlockHeaderFields(header);
   const isGenesisPrev = header.prevBlockHash === '00'.repeat(32);
+  const prevParts = isGenesisPrev ? null : blockHashParts(header.prevBlockHash);
   const prev = isGenesisPrev
-    ? '∅ (no earlier block — this is the genesis block)'
-    : `h ${proseOf(trimTrailingZeroBytes(reverseHex(header.prevBlockHash)))}`;
+    ? `⓪${toSuperscript(256)} (no earlier block — this is the genesis block; all 256 bits zero)`
+    : `${hashNotation(prevParts)} ${proseOf(prevParts.hex)}`;
   const lines = [
     `- **version:** v${htmlToText(hf.version)} — ${htmlToText(hf.versionTitle)}`,
     `- **previous block:** ${prev}`,
@@ -197,7 +209,8 @@ export function passageMd({ title, height, blockHash, header, txCount, txid, ind
   md.push('');
   md.push(`## Chapter frontispiece — block ${height.toLocaleString('en-US')}`);
   md.push('');
-  md.push(`Block hash, as prose: *${proseOf(trimTrailingZeroBytes(reverseHex(blockHash)))}*`);
+  const bh = blockHashParts(blockHash);
+  md.push(`Block hash, as prose: ${hashNotation(bh)} *${proseOf(bh.hex)}*`);
   md.push('');
   md.push(frontispieceMd(header));
   md.push('');
@@ -209,8 +222,10 @@ export function passageMd({ title, height, blockHash, header, txCount, txid, ind
   md.push(`bytes (decodable with the [glossia](https://crates.io/crates/glossia) engine,`);
   md.push(`wordlist \`bip39\`, language \`english\`); glyphs are the book's script notation`);
   md.push(`(opcode and data marks); small structural integers (version, counts, values,`);
-  md.push(`locktime) are printed literally. See [/llms.txt](${SITE}/llms.txt) for how any`);
-  md.push(`other passage on the chain can be fetched and read the same way.`);
+  md.push(`locktime) are printed literally. A block hash reads ⓪ⁿ hᵐ — its n trailing`);
+  md.push(`proof-of-work zero bits (internal byte order) are dropped, and the remaining`);
+  md.push(`m = 256 − n bits are what the prose encodes. See [/llms.txt](${SITE}/llms.txt)`);
+  md.push(`for how any other passage on the chain can be fetched and read the same way.`);
   md.push('');
   return md.join('\n');
 }

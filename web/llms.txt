@@ -77,8 +77,12 @@ transaction the way the book does:
    `bip39`, dialect `body`, seed `42`, best-of `5`. `decode_raw_base_n(text,
    language, wordlist, byte_count)` reverses it.
 3. The book encodes only genuinely opaque bytes (prevout txids, scripts,
-   witness pushes, hashes — hashes byte-reversed to internal order, a block
-   hash's trailing proof-of-work zero bytes trimmed). Small structural
+   witness pushes, hashes — hashes byte-reversed to internal order). A block
+   hash is written ⓪ⁿ hᵐ: its n trailing proof-of-work zero bits (internal
+   order) are dropped and stated on the push-zero mark's superscript, and
+   the remaining m = 256 − n bits are what the prose encodes — the two
+   superscripts always sum to 256, so the full hash reconstructs exactly
+   (decode the prose to m/8 bytes, append n/8 zero bytes). Small structural
    integers — version, counts, output values, locktime — are printed
    literally, and scripts are rendered in opcode notation. The exact rules
    are `web/btc-prose.js` in the repository.

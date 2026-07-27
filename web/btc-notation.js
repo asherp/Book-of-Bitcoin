@@ -192,7 +192,9 @@ export const NOTATION_HTML = `
             <h4>Chapter head — the block header</h4>
             <div class="glyph-grid">
               <div class="glyph-row"><span class="g">v<i>n</i></span><span class="m">block <b>version</b></span></div>
-              <div class="glyph-row"><span class="g">∅</span><span class="m">no previous block — the genesis chapter</span></div>
+              <div class="glyph-row"><span class="g">⓪<sup><i>n</i></sup></span><span class="m">a block hash's <i>n</i> <b>proof-of-work zero bits</b>, dropped before encoding</span></div>
+              <div class="glyph-row"><span class="g">h<sup><i>m</i></sup></span><span class="m">the hash's remaining <i>m</i> <b>bits</b>, Glossia-encoded (<i>n</i>+<i>m</i> = 256)</span></div>
+              <div class="glyph-row"><span class="g">⓪<sup>256</sup></span><span class="m">no previous block — the genesis chapter</span></div>
               <div class="glyph-row"><span class="g">β<i>n</i></span><span class="m">the <b>difficulty target</b>, as in the preamble</span></div>
               <div class="glyph-row"><span class="g">η<sub><i>n</i></sub></span><span class="m">the <b>nonce</b> the miner landed on</span></div>
             </div>
