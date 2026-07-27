@@ -1483,10 +1483,20 @@ const liveProjection = (() => {
     try { ws.send(JSON.stringify({ 'track-mempool-block': want === null ? -1 : want })); } catch {}
   };
 
-  // The queue reshuffled: re-cut the cached projection, re-seat this
-  // chapter's figures, and repaint the head when its numbers moved.
+  // The queue reshuffled: re-cut the cached projection and re-seat this
+  // chapter's figures. Surgically -- a push arrives every few seconds when
+  // the pool is busy, and rebuilding the head each time would flash its
+  // async slots (the tip's hash prose, β) back through their placeholders.
+  // Only the figures line's text is touched, and the nav relabels only when
+  // the projection's reach actually changed.
+  const refreshProjectedFigures = () => {
+    if (!state || !state.projected || state.index !== -1) return;
+    const b = state.proj;
+    $('ch-hash-short').textContent = `${b.nTx.toLocaleString()} § · ${(b.blockVSize / MVB).toFixed(2)} MvB · ${(b.totalFees / 1e8).toFixed(4)} ₿ in fees`;
+  };
   const applyBlocks = (blocks) => {
     if (!Array.isArray(blocks) || !state || !state.projected || tipHeight === null) return;
+    const reachBefore = projectedReach();
     projectedCache = {
       at: Date.now(),
       blocks: blocks.filter((b, i) => i < blocks.length - 1 || b.blockVSize <= 1.05 * MVB),
@@ -1499,8 +1509,8 @@ const liveProjection = (() => {
     state.projIndex = k;
     state.proj = b;
     if (!state.txids) state.txCount = b.nTx;
-    if (moved && state.index === -1) renderProjectedHead(true);
-    labelNav();
+    if (moved) refreshProjectedFigures();
+    if (projectedReach() !== reachBefore) labelNav();
   };
 
   // A block was mined: every projected chapter moves one nearer the tip --
