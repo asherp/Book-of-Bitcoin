@@ -921,7 +921,8 @@ button:disabled { opacity: .4; cursor: not-allowed; }
               <div class="glyph-row"><span class="g">∅</span><span class="m">no previous block — the genesis chapter</span></div>
               <div class="glyph-row"><span class="g">β<i>n</i></span><span class="m">the <b>difficulty target</b>, as in the preamble</span></div>
               <div class="glyph-row"><span class="g">η<sub><i>n</i></sub></span><span class="m">the <b>nonce</b> the miner landed on</span></div>
-              <div class="glyph-row"><span class="g">■<i>n</i></span><span class="m">the <b>chapter mark</b> — a block cited by its place within its book (n counts chapters, never a raw height); in a margin, the same glyph counts chapters of relative delay</span></div>
+              <div class="glyph-row"><span class="g">■<i>n</i></span><span class="m">the <b>chapter mark</b> — a mined block cited by its place within its book (n counts chapters, never a raw height); in a margin, the same glyph counts chapters of relative delay</span></div>
+              <div class="glyph-row"><span class="g">□<i>n</i></span><span class="m">the <b>expected chapter mark</b> — a projected, not-yet-mined block cited by the place it would take; the number holds only while the queue does (a bare □ in a transaction's margin is the no-locktime mark)</span></div>
               <div class="glyph-row"><span class="g">—</span><span class="m"><b>unwritten</b> — a projected chapter's header slot, empty until a miner writes it</span></div>
               <div class="glyph-row"><span class="g">⋯</span><span class="m"><b>not yet knowable</b> — a value still resolving, or a projected chapter's predecessor, itself unwritten</span></div>
               <div class="glyph-row"><span class="g">due ≈ <i>t</i></span><span class="m">a projected chapter's <b>expected wait</b> — blocks land one per ten minutes on average, so an estimate k blocks out spreads about ±10·√k minutes</span></div>
@@ -1641,6 +1642,16 @@ async function loadProjection() {
 // How many chapters past the tip page as real projected chapters right now.
 const projectedReach = () => projectedCache?.blocks?.length ?? 0;
 
+// The chapter mark for a height: ■ states fact (a mined block's place in
+// its book), □ expectation (an unmined block cited by the place it would
+// take -- good only while the queue holds). References follow suit.
+const chapterMark = (height) => (tipHeight !== null && height > tipHeight) ? '□' : '■';
+function referenceOf(height) {
+  if (tipHeight === null || height <= tipHeight) return reference(height);
+  const p = volumeBookChapter(height);
+  return `${toRoman(p.volume)} β${p.book} □${p.chapter}`;
+}
+
 // A projected block's manifest over the backend websocket: subscribe with
 // {"track-mempool-block": k}, take the first full listing for our index
 // (later frames are deltas -- the draft being reshuffled -- which a book
@@ -2078,8 +2089,8 @@ function renderProjectedHead(onTitlePage) {
     crumb.type = 'button';
     crumb.className = 'crumb';
     crumb.textContent = `Chapter ${chapterName(chapter)}`;
-    crumb.title = `Projected chapter page (${reference(state.height)})`;
-    crumb.setAttribute('aria-label', `Open this projected chapter's own page (${reference(state.height)})`);
+    crumb.title = `Projected chapter page (${referenceOf(state.height)})`;
+    crumb.setAttribute('aria-label', `Open this projected chapter's own page (${referenceOf(state.height)})`);
     crumb.addEventListener('click', () => { rememberTrail(); state.index = -1; showCurrentTx(); });
     inline.append(crumb);
   }
@@ -2601,15 +2612,16 @@ function labelNav() {
     }
   } else if (idx === -1) {
     if (state.height > 0) {
-      stepPrev = { text: `■${volumeBookChapter(state.height - 1).chapter}`, label: `Previous chapter (${reference(state.height - 1)})` };
+      stepPrev = { text: `${chapterMark(state.height - 1)}${volumeBookChapter(state.height - 1).chapter}`, label: `Previous chapter (${referenceOf(state.height - 1)})` };
     }
     // Forward: a mined chapter below the tip steps normally; at the tip (or
     // among projected chapters) the next chapter exists only as far as the
-    // projection reaches.
+    // projection reaches -- and wears the expected-chapter mark □, since its
+    // number holds only while the queue does.
     if (!atTip && !state.projected) {
       stepNext = { text: `■${volumeBookChapter(state.height + 1).chapter}`, label: `Next chapter (${reference(state.height + 1)})` };
     } else if (!lineEnds) {
-      stepNext = { text: `■${volumeBookChapter(state.height + 1).chapter}`, label: `Next chapter — projected (${reference(state.height + 1)})` };
+      stepNext = { text: `□${volumeBookChapter(state.height + 1).chapter}`, label: `Next chapter — projected (${referenceOf(state.height + 1)})` };
     }
   }
   showBtn('chapter-prev', !!stepPrev);
@@ -2626,10 +2638,10 @@ function labelNav() {
   // … previous block's last § → volume leaf → book leaf → chapter page → §1 …
   if (hasPrevSection) {
     if (idx > 0) {
-      setBtn('page-prev', `§${idx}`, `Previous section (${reference(state.height)} §${idx})`);   // same chapter, target section = current 1-based index minus one
+      setBtn('page-prev', `§${idx}`, `Previous section (${referenceOf(state.height)} §${idx})`);   // same chapter, target section = current 1-based index minus one
     } else if (idx === 0) {
       // §1 pages back to this chapter's own page -- the chapter-level reference.
-      setBtn('page-prev', `■${cur.chapter}`, `Chapter page (${reference(state.height)})`);
+      setBtn('page-prev', `${chapterMark(state.height)}${cur.chapter}`, `Chapter page (${referenceOf(state.height)})`);
     } else if (idx - 1 >= floor) {
       // Up the leaf stack within this block: chapter page → book leaf → volume leaf.
       if (idx === -1) setBtn('page-prev', `β${cur.book}`, `Book page (${toRoman(cur.volume)} β${cur.book})`);
@@ -2638,7 +2650,7 @@ function labelNav() {
       // Off the block's first page, back into the prior block's final section;
       // its §number is that block's tx count, unknown until it loads -- shown
       // as § once resolved.
-      setBtn('page-prev', '§…', `Previous section (end of ${reference(state.height - 1)})`);
+      setBtn('page-prev', '§…', `Previous section (end of ${referenceOf(state.height - 1)})`);
       loadBlockTxCount(state.height - 1)
         .then((n) => { if (gen === renderGen) setBtn('page-prev', `§${n}`, `Previous section (${reference(state.height - 1)} §${n})`); })
         .catch(() => {});
@@ -2650,9 +2662,9 @@ function labelNav() {
     } else if (idx === -2) {
       setBtn('page-next', `■${cur.chapter}`, `Chapter page (${reference(state.height)})`);
     } else if (idx === -1) {
-      setBtn('page-next', '§1', `First section (${reference(state.height)} §1)`);   // the chapter page opens onto §1
+      setBtn('page-next', '§1', `First section (${referenceOf(state.height)} §1)`);   // the chapter page opens onto §1
     } else if (idx < state.txCount - 1) {
-      setBtn('page-next', `§${idx + 2}`, `Next section (${reference(state.height)} §${idx + 2})`);   // same chapter, target section = current 1-based index plus one
+      setBtn('page-next', `§${idx + 2}`, `Next section (${referenceOf(state.height)} §${idx + 2})`);   // same chapter, target section = current 1-based index plus one
     } else {
       // Crosses onto the next block's first page -- its volume or book leaf
       // when it opens one, else its chapter page. A projected next chapter
@@ -2663,7 +2675,7 @@ function labelNav() {
       const t = volumeBookChapter(nh);
       if (nFloor === -3) setBtn('page-next', toRoman(t.volume), `Volume page (${toRoman(t.volume)})`);
       else if (nFloor === -2) setBtn('page-next', `β${t.book}`, `Book page (${toRoman(t.volume)} β${t.book})`);
-      else setBtn('page-next', `■${t.chapter}`, `Next chapter${projNext ? ' — projected' : ''} (${reference(nh)})`);
+      else setBtn('page-next', `${projNext ? '□' : '■'}${t.chapter}`, `Next chapter${projNext ? ' — projected' : ''} (${referenceOf(nh)})`);
     }
   }
 
@@ -2756,7 +2768,7 @@ async function unwrittenOr(e, height, tipP) {
         const mp = await res.json();
         const depth = Math.ceil(mp.vsize / 1_000_000);
         if (ahead <= depth) {
-          return new Error(`Block ${height.toLocaleString()} (${reference(height)}) has not been mined yet — but its chapter is forming: `
+          return new Error(`Block ${height.toLocaleString()} (${referenceOf(height)}) has not been mined yet — but its chapter is forming: `
             + `the mempool holds ≈ ${depth} chapters of sections, and this one stands ${ahead === 1 ? 'next' : `${ahead} deep`} in the queue. `
             + `Come back in ${blocksEta(ahead).replace('≈ ', 'about ')}.`);
         }
@@ -2765,9 +2777,10 @@ async function unwrittenOr(e, height, tipP) {
   }
   const years = ahead / BLOCKS_PER_YEAR;
   const when = years < 1 ? 'later this year' : `in the year ${new Date().getUTCFullYear() + Math.round(years)}`;
-  // Cited by reference, never by ■height: the ■n mark counts chapters within
-  // a book, so a raw height after it would be outside the notation.
-  return new Error(`Block not found — ${height.toLocaleString()} (${reference(height)}) has not been mined yet. Come back ${when}.`);
+  // Cited by reference, never by ■height: the chapter marks count chapters
+  // within a book, so a raw height after one would be outside the notation --
+  // and an unmined chapter's is the expected mark □, not the settled ■.
+  return new Error(`Block not found — ${height.toLocaleString()} (${referenceOf(height)}) has not been mined yet. Come back ${when}.`);
 }
 
 // Load whatever the reader gave us: a block height, a block hash, or a

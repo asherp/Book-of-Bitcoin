@@ -207,7 +207,7 @@ a:hover { text-decoration: underline; }
 
 <script type="module">
 import { NOTABLE, isBlockId, isRelativeBlockId, entryHref, blocksEta } from './btc-contents.js';
-import { volumeBookChapter, toRoman, reference } from './btc-citation.js';
+import { volumeBookChapter, toRoman } from './btc-citation.js';
 
 const BOOKMARKS_KEY = 'glossia-btc-bookmarks';
 const readBookmarks = () => {
@@ -446,12 +446,18 @@ const hostOf = (url) => { try { return new URL(url).host; } catch { return url; 
 // Fee rates arrive as floats; one decimal under 10 sat/vB, whole above.
 const fmtFee = (f) => f >= 10 ? String(Math.round(f)) : String(Math.round(f * 10) / 10);
 
-// The provisional reference for a not-yet-mined height: same β/■ notation,
-// but pencil, not ink -- the number holds only if the queue does.
+// The provisional reference for a not-yet-mined height: the expected-chapter
+// mark □ where a mined chapter's reference wears ■ -- the number holds only
+// if the queue does.
 function projRef(height, tipVolume) {
   const p = volumeBookChapter(height);
   const vol = p.volume === tipVolume ? '' : `${toRoman(p.volume)} `;
-  return `${vol}β${p.book} ■${p.chapter}`;
+  return `${vol}β${p.book} □${p.chapter}`;
+}
+// The full expected reference, for hover titles.
+function expRef(height) {
+  const p = volumeBookChapter(height);
+  return `${toRoman(p.volume)} β${p.book} □${p.chapter}`;
 }
 
 // One projected row: expected wait, then the row's text, then its
@@ -520,7 +526,7 @@ function buildProjected(tip, summary, blocks, minFee, srcBase) {
           text: `${b.nTx.toLocaleString()} § · ~${fmtFee(b.medianFee)} sat/vB`,
           textTitle: `${b.nTx.toLocaleString()} transactions, ${(b.blockVSize / MVB).toFixed(2)} MvB — fees ${lo}–${hi} sat/vB, ${(b.totalFees / 1e8).toFixed(3)} BTC in total`,
           ref: projRef(height, tipVolume),
-          refTitle: `provisional — block ${height.toLocaleString()} (${reference(height)}) if the queue holds; every block mined ahead of it renumbers the rest`,
+          refTitle: `provisional — block ${height.toLocaleString()} (${expRef(height)}) if the queue holds; every block mined ahead of it renumbers the rest`,
         }));
       } else {
         // The backlog: everything past the detailed entries, one fading row.
