@@ -17,7 +17,7 @@
  * Everything here is scoped to the directory sw.js is served from, so it works
  * unchanged at the site root and under a per-PR preview subpath.
  */
-const CACHE = 'bitcoin-book-shell-v19';
+const CACHE = 'bitcoin-book-shell-v20';
 
 // App shell, relative to the SW scope. glossia.js / glossia_bg.wasm are
 // gitignored build artifacts — present after a build/deploy, possibly absent in
@@ -59,6 +59,8 @@ const SHELL = [
   './glossia.js',
   './glossia_bg.wasm',
   './glossia-msg.js',
+  './btc-seed.js',
+  './passages/seed.json',   // deploy artifact like the WASM: absent in a bare checkout, tolerated
 ];
 
 self.addEventListener('install', (event) => {

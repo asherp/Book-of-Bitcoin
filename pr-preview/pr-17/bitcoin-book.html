@@ -678,7 +678,13 @@ import { NOTATION_HTML } from './btc-notation.js';
 // differently. Filled once, on load.
 document.querySelector('.notation-body').innerHTML = NOTATION_HTML;
 import { storeGet, storePut } from './btc-store.js';
+import { seedArchive } from './btc-seed.js';
 import { pageAnchor, bankAnchor, peekAnchor, formatPage } from './btc-pages.js';
+
+// A first visit provisions the archive with the curated passages' chain data
+// (idle-time, once ever; see btc-seed.js) -- the contents page's entries then
+// open like revisits.
+seedArchive();
 
 const $ = (id) => document.getElementById(id);
 
