@@ -1,0 +1,47 @@
+# The Second Halving
+
+> A passage of **The βook of βitcoin** — the Bitcoin chain read as a book. This is
+> block 420,000 read as a chapter, and its transaction 1
+> (of 1,257) read as a section of Glossia prose. Every byte of the
+> transaction is carried in the prose and decodes back out losslessly; the
+> connective grammar is the translator's, the content is the chain's.
+
+- **Citation:** III β1 ■1 §1 (Volume III, Book 1, Chapter 1, section 1)
+- **Block:** 420,000 — The Second Halving
+- **Block hash:** `000000000000000002cce816c0ab2c5c269cb081896b7dcb34b8422d6b74ffa1`
+- **Transaction id:** `5787c3d0740f13f280118404405f1c93fb7a63a953fa482b13e23c3b03a14bd4`
+- **Read live:** https://asherp.github.io/Book-of-Bitcoin/bitcoin-book.html?txid=5787c3d0740f13f280118404405f1c93fb7a63a953fa482b13e23c3b03a14bd4
+
+## Chapter frontispiece — block 420,000
+
+Block hash, as prose: *Peanut wing bracket to fold. Our clog bounce combine. Its pulp maze assault. Check see an erosion. Security yes field cow. A bed is able. Some tackle slot to avoid.*
+
+- **version:** vaccio abandon — block version 0x20000000 — BIP9 version-bits form; accio abandon — no version rolling; no soft-fork signals
+- **previous block:** h Its sorry alien grunt payment. Beef may scheme fiber. Its pumpkin rebel cop. Our brisk lap may open. Our guy endorse to unfold. Mass grow its hidden son. Our low pie adapt blossom.
+  - hex: `000000000000000003035bc31911d3eea46c8a23b36d6d558141d1d09cc960cf`
+- **merkle root:** ⋔ The wheel too see language. Son may predict main. A son oppose soap. Reform get turtle to our hidden lip. The over bulk may cave layer. Rebel around fruit map. Our inner mother see history to floor. Ski may mushroom the army via its divorce.
+  - hex: `028323a5bcacb0057274ee0a4366e5671278bc736b57176d9bb929c3a69e0ffa`
+- **timestamp:** 2016-07-09 16:46 UTC
+- **difficulty target:** β₆₉ — nBits 180526fd — a valid block hash must read below 00000000000000000526fd000000000000000000000000000000000000000000 (69 leading zero bits) — difficulty 213,398,925,331 (relative to the genesis block)
+- **nonce:** η 2193437364
+
+## § 1 — The Second Halving
+
+Transaction id, as prose: *Stairs fringe dolphin to island. Soda see another pudding. Butter father to enrich. Team warm a crack. Cook yes abandon mountain. Our bag always see its luggage. A bus escape gift to bubble. Its theme may see cop.*
+
+- **version:** 1
+- **input 1:** coinbase (∅ — no previous output; new coin)
+  - script: 420000 ¹⁵ “七彩神仙鱼” ³² “Chandler Guo loves YangYang Jin.” ⁴ “🐟” ¹⁵ “Mined by zzhhzz” ⓪ ⓪ ⓪ ⓪ ⓪ ⓪ ⓪ ⓪ ⓪ ⓪ ⓪ ⓪ ⓪ ⓪ ⓪ ⓪ ⓪ ⓪ ⓪ ⓪ ⓪ ⓪ ⓪ ⓪ ⓪ ⓪
+  - sequence: ■40089 — replaceable; relative locktime 40089 blocks after the input's confirmation
+- **output 1:** 13.07569681 ₿
+  - script: ⧉ ⌖ h²⁰ Sight code kite to torch. Habit mail to avoid. Clump around spawn round. Crawl air throw to project. ≡ ∇
+- **locktime:** Τ1996-02-29 14:24 — locktime: not before 1996-02-29 14:24 UTC (unix 825603862)
+
+---
+
+*Reading the notation:* italic prose passages are Glossia encodings of the raw
+bytes (decodable with the [glossia](https://crates.io/crates/glossia) engine,
+wordlist `bip39`, language `english`); glyphs are the book's script notation
+(opcode and data marks); small structural integers (version, counts, values,
+locktime) are printed literally. See [/llms.txt](https://asherp.github.io/Book-of-Bitcoin/llms.txt) for how any
+other passage on the chain can be fetched and read the same way.

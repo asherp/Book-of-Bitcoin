@@ -1,0 +1,621 @@
+# First coinbase OP_RETURN
+
+> A passage of **The βook of βitcoin** — the Bitcoin chain read as a book. This is
+> block 246,816 read as a chapter, and its transaction 1
+> (of 47) read as a section of Glossia prose. Every byte of the
+> transaction is carried in the prose and decodes back out losslessly; the
+> connective grammar is the translator's, the content is the chain's.
+
+- **Citation:** II β19 ■529 §1 (Volume II, Book 19, Chapter 529, section 1)
+- **Block:** 246,816 — First coinbase OP_RETURN
+- **Block hash:** `000000000000000a6913ee4ada3b92bed9f1398ad8f22f4f944a5d5593197d68`
+- **Transaction id:** `c4397247190d3f8d88b587990d1c374d6b0ae25ebf9ced81ea8b69665b43d7de`
+- **Read live:** https://asherp.github.io/Book-of-Bitcoin/bitcoin-book.html?txid=c4397247190d3f8d88b587990d1c374d6b0ae25ebf9ced81ea8b69665b43d7de
+
+## Chapter frontispiece — block 246,816
+
+Block hash, as prose: *Half may trip our gospel primary. Its start may enforce device. Cop wrestle the sudden fade. Ladder recall to truck. Bulb hard fruit beach. Cop embark to tap out a rid length.*
+
+- **version:** v2 — block version 2 (0x00000002) — pre-BIP9 integer form
+- **previous block:** h Grace see elevator to crowd. Finish embody to source. A sunny tunnel is cheap. Trend bicycle artefact to kiwi. Sir surround giant out rough. A cheese set device. A pop scale may get fyi.
+  - hex: `00000000000000972727e26d18b5b777865700fd26545f36a087842bd1fc6865`
+- **merkle root:** ⋔ Its river due chair a nation. A civil fiber submit lift. Pistol permit to assume per artefact. Run see shrimp to fabric out scare. Penalty hold to prosper via an aspect. Fame rule skull to its lens. Abandon see the pay.
+  - hex: `08a095d33ba93590956c1415f0a272acde33bc21a32b5d20b05bc5144dbac4ba`
+- **timestamp:** 2013-07-16 06:04 UTC
+- **difficulty target:** β₅₆ — nBits 1a00a429 — a valid block hash must read below 00000000000000a4290000000000000000000000000000000000000000000000 (56 leading zero bits) — difficulty 26,162,876 (relative to the genesis block)
+- **nonce:** η 1947896645
+
+## § 1 — First coinbase OP_RETURN
+
+Transaction id, as prose: *Cop tell ring to strategy. Our smoke are obvious. Its vocal amateur receive cap. Our tap too satisfy warfare. Our little story square mix. The cushion couch to remain. Dutch exist a boss. Nerve ribbon train to length.*
+
+- **version:** 1
+- **input 1:** coinbase (∅ — no previous output; new coin)
+  - script: 246816 ⁴⁴ “mmyHxb” ⁶ “/P2SH/” ¹¹ “[P2PCOINv0]” ⁵ “(kjj)”
+  - sequence: ● — final — disables the transaction locktime for this input
+- **output 1:** 0.00059126 ₿
+  - script: ⧉ ⌖ h²⁰ Menu is huge to an airport. Ear replace bit among duck. Sir omit the eternal hit about out. Pop evoke point to opera via wagon. The high object may set a sky. ≡ ∇
+- **output 2:** 0.00061903 ₿
+  - script: ⧉ ⌖ h²⁰ Its yes due protect a manual. Cop explain file to axis. Whisper foot segment out weather. Our wrist is rose to dinner. Row is online via its cute clown. ≡ ∇
+- **output 3:** 0.00064209 ₿
+  - script: ⧉ ⌖ h²⁰ Host may best our notable front. Bread picture lobster to throw. Donor blanket to urge per aid. The angry atom limb swing. ≡ ∇
+- **output 4:** 0.00064778 ₿
+  - script: ⧉ ⌖ h²⁰ Student is eager to its jet. Cop live some finish. Our garment is lonely to cruise. Year bus draw during office. Bit is rid below doll to way. ≡ ∇
+- **output 5:** 0.00066207 ₿
+  - script: ⧉ ⌖ h²⁰ Its oil right yellow canyon. Scissors may get quality. Its cap might inform salon. A huge repeat fit lady. Cruise will submit a son. ≡ ∇
+- **output 6:** 0.00066289 ₿
+  - script: ⧉ ⌖ h²⁰ Thunder see the inner bacon. A jump shell pelican to song via edit to deputy. An obvious control is comic. Its slight may lift chimney. ≡ ∇
+- **output 7:** 0.00066754 ₿
+  - script: ⧉ ⌖ h²⁰ Its set kiss due pony cow. Bit already set pot. Our pay always get our morning vault. Zone result slide to chunk out east. Forest grace dress to hire. ≡ ∇
+- **output 8:** 0.00067553 ₿
+  - script: ⧉ ⌖ h²⁰ An aware spin may fog jet. Each ban are silent. The electric interest is silver. Pop write an ordinary cut. Yes reopen marriage to science. Neck may shove to cross. ≡ ∇
+- **output 9:** 0.00068396 ₿
+  - script: ⧉ ⌖ h²⁰ Its cannon may get carbon. Its digital dust letter crater to cloth. Pan twice set infant. Our rebel slogan order return. Nod how pave our piano. ≡ ∇
+- **output 10:** 0.00068679 ₿
+  - script: ⧉ ⌖ h²⁰ Its lonely eye set salmon. Marine bind tobacco to hawk. Axis betray its train. Female may swing glove. Lot ought believe a foster war. ≡ ∇
+- **output 11:** 0.00069151 ₿
+  - script: ⧉ ⌖ h²⁰ Version gate a shy air. Candy are fun to pride via that despair. Hobby egg the viable fish to antique for source. ≡ ∇
+- **output 12:** 0.00069307 ₿
+  - script: ⧉ ⌖ h²⁰ Our son topple to write. Reward see our bread. A film stuff a rigid repeat. Its tragic hen is coral. An analyst must set general. Winter may get cap. ≡ ∇
+- **output 13:** 0.00069574 ₿
+  - script: ⧉ ⌖ h²⁰ Lie since set a cop. Cut always see the pan. Its chronic toe voyage to blush. Each copy tank nasty. The firm silk is broken. A distance exhaust slot. ≡ ∇
+- **output 14:** 0.00069712 ₿
+  - script: ⧉ ⌖ h²⁰ Its angry chuckle is indoor. Fatigue see its dolphin. Cow found our alone dolphin. Fever brick service to clog. A human may tilt an army. ≡ ∇
+- **output 15:** 0.00069756 ₿
+  - script: ⧉ ⌖ h²⁰ A flush robot may market coast. Son might deny to educate. Gain inflict its rifle. Hedgehog get cotton to pupil. Luxury are state for trend via yes. ≡ ∇
+- **output 16:** 0.00069787 ₿
+  - script: ⧉ ⌖ h²⁰ Cop execute our jeans to tuna. Soup beach winter out foil. A happy inside due limb taxi. Session exist clip to gas. ≡ ∇
+- **output 17:** 0.00069821 ₿
+  - script: ⧉ ⌖ h²⁰ Its elegant yes due differ april. Clutch salute sauce to coast. The pink exhaust biology. Ozone may embody faint. Mule far see a lab. ≡ ∇
+- **output 18:** 0.00069956 ₿
+  - script: ⧉ ⌖ h²⁰ Its simple apple prefer its chair. Cook is junior to vocal. Stay turn its case per decrease. A lunar engine is afraid to winter. ≡ ∇
+- **output 19:** 0.00072465 ₿
+  - script: ⧉ ⌖ h²⁰ Lens equal tent to medal. Brand may get wool. Act own run to glove. A yes accuse to spike. Our easy stomach see army. ≡ ∇
+- **output 20:** 0.00072568 ₿
+  - script: ⧉ ⌖ h²⁰ Security get squirrel to knee. Uniform cry our pudding. Visual fly its message. Gun may set negative. Our amused map truly see course. Our red day is bad. ≡ ∇
+- **output 21:** 0.00073797 ₿
+  - script: ⧉ ⌖ h²⁰ Tap is set below portion. Son put to deliver via invite. Gallery may set apology. Hole punch a present uniform to clay. The banner may reopen object. ≡ ∇
+- **output 22:** 0.00074581 ₿
+  - script: ⧉ ⌖ h²⁰ Its start above set life. Flower get cargo to wrong. Setup may see that priority. Phrase is possible to team until our wasp. Its bad clown may set fyi. ≡ ∇
+- **output 23:** 0.00074669 ₿
+  - script: ⧉ ⌖ h²⁰ Its only drift tattoo its check. Bicycle see victory to drift. The cream whip health. Sin how accuse fine. Rate may get lake to theme. ≡ ∇
+- **output 24:** 0.00075507 ₿
+  - script: ⧉ ⌖ h²⁰ Fix may see history to glide. Arch almost get an icon. Loan set its one shrimp. Our copper order verify puzzle. Its jacket may blossom. ≡ ∇
+- **output 25:** 0.00076229 ₿
+  - script: ⧉ ⌖ h²⁰ Sample may canoe a twelve end. Stairs set artefact to risk. Loop abuse our ankle per flip. Grape may feature reveal to theme. ≡ ∇
+- **output 26:** 0.00076271 ₿
+  - script: ⧉ ⌖ h²⁰ Quiz is similar to idea. Fuel climb to climb. Banana ago drum carpet. Pan may remember quote. Double already see our large abandon. ≡ ∇
+- **output 27:** 0.00076470 ₿
+  - script: ⧉ ⌖ h²⁰ Vote essay slam to radar. Faith may put repair. Glance ago get balcony. Affair glare struggle to onion. An illegal length may see pie. ≡ ∇
+- **output 28:** 0.00130009 ₿
+  - script: ⧉ ⌖ h²⁰ Its innocent tax remain physical. A frozen parrot scan guy. Pay may fetch feature. A curious pop scatter frame. Boy may settle to prize. Its son may reduce aid. ≡ ∇
+- **output 29:** 0.00132435 ₿
+  - script: ⧉ ⌖ h²⁰ The quote school to keep. Son close exit pipe. Ethics improve to borrow. Mammal way light episode. Nod may uncover fix. ≡ ∇
+- **output 30:** 0.00133101 ₿
+  - script: ⧉ ⌖ h²⁰ Device ask fruit to rent. Ramp twice see poverty. Its pledge enhance place. A son frequent feed. A just hint is bright to bed. ≡ ∇
+- **output 31:** 0.00135494 ₿
+  - script: ⧉ ⌖ h²⁰ Its near sport set fever. Judge fade breeze to pluck. Cupboard culture to select. Reason yet mind orient. Review is low to parade. ≡ ∇
+- **output 32:** 0.00135757 ₿
+  - script: ⧉ ⌖ h²⁰ This rice get our human game. Its basic shaft glimpse pop. Our huge out more inch point. Second may parrot february to cactus. ≡ ∇
+- **output 33:** 0.00136779 ₿
+  - script: ⧉ ⌖ h²⁰ Try get category to lock. Author gaze to obey. Pony ago get canvas. Sir ensure layer to aunt. Burger may palm sunset per amount. ≡ ∇
+- **output 34:** 0.00144218 ₿
+  - script: ⧉ ⌖ h²⁰ Yes unlock ship to minimum. Ball may set sheriff. Fiction get tissue to slice via cargo. Milk donate leader to street for minute. A bright son is low. ≡ ∇
+- **output 35:** 0.00145869 ₿
+  - script: ⧉ ⌖ h²⁰ Decade may enroll a lonely eyebrow. The weird student spirit height. Its flash spawn pull. Our armed helmet input siege. ≡ ∇
+- **output 36:** 0.00146918 ₿
+  - script: ⧉ ⌖ h²⁰ A slab almost pony our elephant. Cow expand tourist to now. Evidence far flock lamp. Cabbage lumber a false odor. Our gas set a cow. ≡ ∇
+- **output 37:** 0.00147382 ₿
+  - script: ⧉ ⌖ h²⁰ Sort humble name to enemy. Sin when see volcano. Candy ago flip dig. An aware monitor is basic. Board see purity to pear. A hire get our tax out lot. ≡ ∇
+- **output 38:** 0.00151810 ₿
+  - script: ⧉ ⌖ h²⁰ Volcano get venue to fish. Matrix see its fitness. Our nature may ridge fat. Our yes omit to reflect. Great may attend to pet. Son is jealous for gym. ≡ ∇
+- **output 39:** 0.00156314 ₿
+  - script: ⧉ ⌖ h²⁰ Garage reward entry to stable. Sin may select brick. Slight voyage its head. Raise may cross solution. Our stadium not brave our lottery. ≡ ∇
+- **output 40:** 0.00177508 ₿
+  - script: ⧉ ⌖ h²⁰ Media see device to kick. Dish milk our talent. Some blame may get opera. Its frequent hold display canal. Scene is urban to theme. ≡ ∇
+- **output 41:** 0.00178146 ₿
+  - script: ⧉ ⌖ h²⁰ Size may extend belt to august. Wisdom is lemon for helmet. Manual only inhale our hope. Yard may tilt example to theme. ≡ ∇
+- **output 42:** 0.00190794 ₿
+  - script: ⧉ ⌖ h²⁰ Its limb may get gold. Cow enrich ladder to such like kit. Street may bone yes. Our keen market empower trumpet. Guess is low to beef. ≡ ∇
+- **output 43:** 0.00192422 ₿
+  - script: ⧉ ⌖ h²⁰ Ban vanish grab to napkin. Jazz weekend to flock. Demise gap its sense. Post space to alter. Lot remain to become per catch. ≡ ∇
+- **output 44:** 0.00210138 ₿
+  - script: ⧉ ⌖ h²⁰ Glide get its width to foil. Cop attract a brave atom. Our tragic pop give token. Our quarter coil grit layer to cinnamon. The despair may set sky. ≡ ∇
+- **output 45:** 0.00213142 ₿
+  - script: ⧉ ⌖ h²⁰ Zebra clown actor to proof. Our son obey edit. Cop multiply cross to exhaust via demand. Mushroom wing its acid process to clown. ≡ ∇
+- **output 46:** 0.00214163 ₿
+  - script: ⧉ ⌖ h²⁰ A typical tap is raw. Monster cycle our elite. A cream town install fringe. Our pop may bless a proof. Sir approve race to team. Its dune are red. ≡ ∇
+- **output 47:** 0.00214858 ₿
+  - script: ⧉ ⌖ h²⁰ Exercise may see actress to rate. Hip are angry for stand. Click bone wealth to pool. Video endorse tribe via lady. Cross may get the yes. ≡ ∇
+- **output 48:** 0.00215562 ₿
+  - script: ⧉ ⌖ h²⁰ Ethics prevent its arch century. Captain may sound hint. Image ago balance fruit. Version may fatigue luxury. Our rate not see our army. ≡ ∇
+- **output 49:** 0.00218622 ₿
+  - script: ⧉ ⌖ h²⁰ Drama toss century to silver. Our barrel is eternal. Lunch imitate to rotate. Quote may set problem. Original ought stage payment to pool. ≡ ∇
+- **output 50:** 0.00224662 ₿
+  - script: ⧉ ⌖ h²⁰ A lonely blind may clown die. Cop twice slide a deputy. Fun motion heart to lemon. Element remind pride via hospital. Cross may get the yes. ≡ ∇
+- **output 51:** 0.00226062 ₿
+  - script: ⧉ ⌖ h²⁰ The praise too dose solution. Our happy guy choose list. Cap loud paddle harbor. Melody real flock reveal. An entry may get hybrid. ≡ ∇
+- **output 52:** 0.00271953 ₿
+  - script: ⧉ ⌖ h²⁰ Its tax rather get kangaroo. Marble rocket to clog. Suit ago get pupil. A regular august save chimney. An ugly noodle may mind parade. ≡ ∇
+- **output 53:** 0.00275350 ₿
+  - script: ⧉ ⌖ h²⁰ More turtle may label war. The dumb action leg print. Map may decide grape. Security enlist to allow. Lot may forget guess per equal. ≡ ∇
+- **output 54:** 0.00280964 ₿
+  - script: ⧉ ⌖ h²⁰ Leader is capital to its boy. Hockey leave a live oven. Our supreme broccoli visit to tongue. Couch pause lock out pool. ≡ ∇
+- **output 55:** 0.00281059 ₿
+  - script: ⧉ ⌖ h²⁰ Chapter is wise to its fault. Notable are ordinary for method. Cop earn comic to rough. History act sense via dwarf. Tea may remember parade. ≡ ∇
+- **output 56:** 0.00285437 ₿
+  - script: ⧉ ⌖ h²⁰ Its awesome build is minimum. Dinner travel our engine. Elder ago get safe. A banner limit is crystal. Pop topple risk to chat. Cop is exotic via a low aid. ≡ ∇
+- **output 57:** 0.00285802 ₿
+  - script: ⧉ ⌖ h²⁰ General transfer its proud winter. Vocal may get dignity. Jacket see lake to mansion. An easy tap satisfy pay. Our busy gas shell lottery. ≡ ∇
+- **output 58:** 0.00288138 ₿
+  - script: ⧉ ⌖ h²⁰ The roof way see war. A naive guide may clog wine. A fox are usual. Sir speak purchase to math. Burst pitch the cool gas. ≡ ∇
+- **output 59:** 0.00290010 ₿
+  - script: ⧉ ⌖ h²⁰ Cry may set some balcony. Pop select the fatal permit. Burst exclude pull to panel per sight to topic. Wink process its soft retreat. ≡ ∇
+- **output 60:** 0.00296377 ₿
+  - script: ⧉ ⌖ h²⁰ Lie adjust trade to chaos. Pop scatter to case. A spare dish already get stadium. Sir betray diagram to abandon. Gaze may arch the source. ≡ ∇
+- **output 61:** 0.00302797 ₿
+  - script: ⧉ ⌖ h²⁰ Shell obtain year to smoke. Scheme couch to obey. Its lobster matter alcohol. A chief are curious. Wear may wing its army. ≡ ∇
+- **output 62:** 0.00319152 ₿
+  - script: ⧉ ⌖ h²⁰ Tip frequent wage to junior. Cloud often see pelican. Guy afford our nice orphan. The clinic see extra. Estate may set aspect to catch. ≡ ∇
+- **output 63:** 0.00329783 ₿
+  - script: ⧉ ⌖ h²⁰ Charge is wise to its exhaust. Salmon get liberty for envelope. Fence profit cactus to soap. Buyer never room the lot. Ear barely rose yes. ≡ ∇
+- **output 64:** 0.00345497 ₿
+  - script: ⧉ ⌖ h²⁰ Carpet rose couch to strategy. Hello may situate crisp. Its flower see carbon. Our slim ball set child to angle. Its vivid nod is exotic. ≡ ∇
+- **output 65:** 0.00347381 ₿
+  - script: ⧉ ⌖ h²⁰ Our son know to resemble. Pop caught to address. Some tissue get helmet per summer. Our intact cross beach to spend. Our cop may depend orient for vacuum out the metal. ≡ ∇
+- **output 66:** 0.00356425 ₿
+  - script: ⧉ ⌖ h²⁰ Engine is gold to switch. Nut patrol to turn. Violin consider its fish. Claim may set puppy. Use ought cram session to favorite. ≡ ∇
+- **output 67:** 0.00357124 ₿
+  - script: ⧉ ⌖ h²⁰ Track may wing fitness to number. The extra tree addict ceiling. Carpet boat to breeze. Cradle diagram clump per fix. ≡ ∇
+- **output 68:** 0.00360241 ₿
+  - script: ⧉ ⌖ h²⁰ Its swift may juice banana. Cow occur to become. Abuse may set peace. Border see wheat to rack. A lot must set cop. Our various cinnamon get the hamster to an abandon. ≡ ∇
+- **output 69:** 0.00362082 ₿
+  - script: ⧉ ⌖ h²⁰ Lift set car to debris. Calm over see whale. Its october get fury. Tap may invest to absent via a strong buyer. Cabin submit our swing. ≡ ∇
+- **output 70:** 0.00368067 ₿
+  - script: ⧉ ⌖ h²⁰ Stumble is silver to oak. Enough orchard see bread. Cop inherit to empower. Sir choose neither kind device. Some pie may extend damp to staff. ≡ ∇
+- **output 71:** 0.00375450 ₿
+  - script: ⧉ ⌖ h²⁰ Its illegal bike is ugly. A practice is favorite. Decrease index its humble bubble. A base priority shock tap. A casual void may hire son. ≡ ∇
+- **output 72:** 0.00378069 ₿
+  - script: ⧉ ⌖ h²⁰ Buddy kid leaf to issue. Son may warm current. Critic eye to absent. Sky only input joke. Magnet may get the still lab. ≡ ∇
+- **output 73:** 0.00380056 ₿
+  - script: ⧉ ⌖ h²⁰ Ban is due toward knock. Cow collect trust to hockey. Burden may uniform to relax. A daring skill see path. Noise egg fall to equal. ≡ ∇
+- **output 74:** 0.00385060 ₿
+  - script: ⧉ ⌖ h²⁰ Valve shop raccoon to tissue. Father thrive the impact via pencil out hammer. An useless sort is main. Its eight elephant abandon bet. ≡ ∇
+- **output 75:** 0.00393840 ₿
+  - script: ⧉ ⌖ h²⁰ A polar tap is popular. Gospel see our aspect. A ship exclude an immune neck. Jacket is eager to cop. Aid may erode miracle. Breeze is red to hint out favorite. ≡ ∇
+- **output 76:** 0.00399235 ₿
+  - script: ⧉ ⌖ h²⁰ Leaf hurry the rapid finger. Ban almost leaf some oxygen. Delay may see its mechanic. Tap occur dolphin to clip via the unable day. Catch may see bed. ≡ ∇
+- **output 77:** 0.00402962 ₿
+  - script: ⧉ ⌖ h²⁰ Cry may panic our neutral parade. Echo set century to balance. Our kind asset stick to right. Blast motor a clean elite. ≡ ∇
+- **output 78:** 0.00405374 ₿
+  - script: ⧉ ⌖ h²⁰ Axis cycle to have for red. Its better chicken set muffin. Alien get the domain. Maid glance vessel to wise. Rough are true out orchard. ≡ ∇
+- **output 79:** 0.00426238 ₿
+  - script: ⧉ ⌖ h²⁰ Cop hurt to forget per dial. Glue may tattoo to lie for security. Guy oppose sample to delay. Celery uphold to rabbit between lecture for job. ≡ ∇
+- **output 80:** 0.00426995 ₿
+  - script: ⧉ ⌖ h²⁰ Song kick beyond to catch. Our major is armed. Vacuum wage its mail. Pan yes inherit repeat. Guy obtain to evoke among day. ≡ ∇
+- **output 81:** 0.00446729 ₿
+  - script: ⧉ ⌖ h²⁰ Wrap bridge chaos to tribe. Security may hover assault. Its cash see poet. Our actual yes join a dutch case. Son solve its amount. ≡ ∇
+- **output 82:** 0.00454881 ₿
+  - script: ⧉ ⌖ h²⁰ Flush is dumb to its name. Due begin drive for vessel. Our correct slide frost initial. Name may set grocery to rookie. Benefit may blossom tea. ≡ ∇
+- **output 83:** 0.00463885 ₿
+  - script: ⧉ ⌖ h²⁰ Atom get element to burst. Color see its cupboard. Our globe may prefer country. Guy endorse the tiny ring. Course may fork envelope to swing. ≡ ∇
+- **output 84:** 0.00473123 ₿
+  - script: ⧉ ⌖ h²⁰ Scout is alien to tumble. Opinion see its woman. Cop uphold gorilla to fitness. A dutch cargo is merry. Cruise engage tomorrow to goat. ≡ ∇
+- **output 85:** 0.00499212 ₿
+  - script: ⧉ ⌖ h²⁰ Slab is steel to siren. Lizard ride to confirm. Month ago nose defense. Senior may number blossom. Celery ought see clay to slot. ≡ ∇
+- **output 86:** 0.00499790 ₿
+  - script: ⧉ ⌖ h²⁰ A school why set silk. A vacant organ may get mixture. Snack toy to ride per tiger. Guy arrange to merge for quarter. Memory is monster to favorite. ≡ ∇
+- **output 87:** 0.00520242 ₿
+  - script: ⧉ ⌖ h²⁰ An electric enemy may feed course. The annual credit get winner. Fury isolate to enrich. Slight decide magnet out ski. Our length set a cow. ≡ ∇
+- **output 88:** 0.00521183 ₿
+  - script: ⧉ ⌖ h²⁰ Soap despair to inform per mystery. Update visit flight to timber for track. Narrow monitor report to antenna. Rival yes clown our tap. ≡ ∇
+- **output 89:** 0.00534634 ₿
+  - script: ⧉ ⌖ h²⁰ Sock see choice to supply. Short place to hold. Some strategy may get element. Its keen toy review road. The inner quote set lab. ≡ ∇
+- **output 90:** 0.00539520 ₿
+  - script: ⧉ ⌖ h²⁰ Slice may worry a slender assist. Design truck flock to service. Our digital asthma price its belt. Our garage reason the orchard. ≡ ∇
+- **output 91:** 0.00550214 ₿
+  - script: ⧉ ⌖ h²⁰ Its world absurd found zero. Dutch may advance claw. A myself. Wing tag to give. Some pop about see leisure. Iron is low to chimney. ≡ ∇
+- **output 92:** 0.00594632 ₿
+  - script: ⧉ ⌖ h²⁰ Main spring its cotton bulk. Sin pretty cancel traffic. Alarm may get wheat. Supreme would set balcony. Inside see now to novel via way. ≡ ∇
+- **output 93:** 0.00597441 ₿
+  - script: ⧉ ⌖ h²⁰ Weekend journey to purpose for autumn. Our minute energy wolf exhibit. The eager price may regret great. Our problem always see piano. ≡ ∇
+- **output 94:** 0.00612996 ₿
+  - script: ⧉ ⌖ h²⁰ Its nuclear winner due monitor oxygen. Victory cube pizza to fee. A scissors is valid. Pie truly situate pay. This canvas set gym. ≡ ∇
+- **output 95:** 0.00622668 ₿
+  - script: ⧉ ⌖ h²⁰ Aid may correct its slight episode. Result are favorite to plunge. Culture note its tank. Sun get our sudden head. Guitar spot a pool. ≡ ∇
+- **output 96:** 0.00636643 ₿
+  - script: ⧉ ⌖ h²⁰ Grief squeeze to enrich per genius. Cow derive machine across helmet to vendor. Soldier may sleep a critic. Our keen canoe may inject. ≡ ∇
+- **output 97:** 0.00640893 ₿
+  - script: ⧉ ⌖ h²⁰ Its like onion is twenty. Cow near prison music. Supreme offer illness to treat. Main see broccoli via buffalo. Flower may see a bright lot. ≡ ∇
+- **output 98:** 0.00656007 ₿
+  - script: ⧉ ⌖ h²⁰ Its waste brass high get action. Beef set month to lesson. Crush swift smile blue. Suit set mule to pupil out cactus. ≡ ∇
+- **output 99:** 0.00662378 ₿
+  - script: ⧉ ⌖ h²⁰ Its tax again get rookie. A hair is green. Maximum decorate cluster to cargo. A trip pond to imitate. Flag stand bachelor per siege. ≡ ∇
+- **output 100:** 0.00666129 ₿
+  - script: ⧉ ⌖ h²⁰ Ban may develop to surround. Oven work alien out duck. Scan may set envelope. Equal ball curve to skate. Win out unlock our chimney. ≡ ∇
+- **output 101:** 0.00666987 ₿
+  - script: ⧉ ⌖ h²⁰ Its bulk ability recall artefact. Visit may get beauty. Account parent alley to script. Luggage see story via boss. Space is low to our quote. ≡ ∇
+- **output 102:** 0.00686428 ₿
+  - script: ⧉ ⌖ h²⁰ Its crazy primary slot to addict. Town image tape per winner. Risk may decline share to power. Load too torch cactus. ≡ ∇
+- **output 103:** 0.00693309 ₿
+  - script: ⧉ ⌖ h²⁰ Ball see the capable toss. Beef trap ball to pioneer upon its staff to tag. Cabin are immense per an inner pie. Our rapid chimney too get red. ≡ ∇
+- **output 104:** 0.00710388 ₿
+  - script: ⧉ ⌖ h²⁰ A model logic order combine. Globe is aware to rib via a lady. The twelve today correct pan. Its legal answer out exile neglect. ≡ ∇
+- **output 105:** 0.00721654 ₿
+  - script: ⧉ ⌖ h²⁰ Sketch shrug its entire fee. A they. Cow write cave to steel. Demand get wife per roof. Rail may see lamp to stock out day. ≡ ∇
+- **output 106:** 0.00737545 ₿
+  - script: ⧉ ⌖ h²⁰ Retreat recycle company to reunion. Reward may task horse. Aid due uphold main. A you. Our low guy follow satoshi. Son settle to oppose via catch. ≡ ∇
+- **output 107:** 0.00746120 ₿
+  - script: ⧉ ⌖ h²⁰ Win get its balcony to increase. Coin room room out diagram. Pelican behave tide to the exhibit. Domain is valid among advice. ≡ ∇
+- **output 108:** 0.00754219 ₿
+  - script: ⧉ ⌖ h²⁰ Buzz trade prize to drop. Our pottery is nuclear. Spare ago fold cat. Ginger yet grab trade. Despair not crouch our cactus. ≡ ∇
+- **output 109:** 0.00791538 ₿
+  - script: ⧉ ⌖ h²⁰ Cop provide to wrestle per drum. The vacant ability may set critic. The correct chest erupt bacon. The map may depend a mimic. Cow exact a small dune. ≡ ∇
+- **output 110:** 0.00795939 ₿
+  - script: ⧉ ⌖ h²⁰ The scout too see camera. Our son is loyal. Circle see a kingdom. Cattle tonight get syrup. Host not scale cargo. The flavor wrong sand a hire. ≡ ∇
+- **output 111:** 0.00812461 ₿
+  - script: ⧉ ⌖ h²⁰ Lie may observe each lot. Cow also level the neck. Gym mention ice to sight per rack to sketch. Each mango situate witness. The knee may set lab. ≡ ∇
+- **output 112:** 0.00837521 ₿
+  - script: ⧉ ⌖ h²⁰ The lock plug to consider. Marriage may crumble bread. Its cage panic orphan. Luggage tongue a business. Device yes share length. ≡ ∇
+- **output 113:** 0.00837792 ₿
+  - script: ⧉ ⌖ h²⁰ Winner correct lock to rule. Essay may set poet. Song get cargo to nasty via will. Coffee bid upper to its exact trend. ≡ ∇
+- **output 114:** 0.00845518 ₿
+  - script: ⧉ ⌖ h²⁰ Retreat get tennis to roof. Cow close direct winner. Nature get memory to normal. An idle slot number glory. Nod see the fiscal gym. ≡ ∇
+- **output 115:** 0.00858990 ₿
+  - script: ⧉ ⌖ h²⁰ Exhibit patch its lawn to wrong. Time see orchard for buffalo. The fade time token. Shift may knife stairs. Pie far enable a hire. ≡ ∇
+- **output 116:** 0.00863099 ₿
+  - script: ⧉ ⌖ h²⁰ The fresh abuse finger purse. Refuse message shiver to a cherry mixture near dignity to deer. Its nurse pass mosquito. ≡ ∇
+- **output 117:** 0.00876389 ₿
+  - script: ⧉ ⌖ h²⁰ Spoil get shrimp to screen. Source egg to notice. Sauce ago roast cop. A loyal alarm hint oxygen. A side vault may see marine. ≡ ∇
+- **output 118:** 0.00878148 ₿
+  - script: ⧉ ⌖ h²⁰ Gadget almost paper its yellow human. Our winner worry pig. Click may race review. The fluid day ought gaze the amount. ≡ ∇
+- **output 119:** 0.00879878 ₿
+  - script: ⧉ ⌖ h²⁰ Sniff describe tape to ramp. Dragon express to exclude. Surface major to noodle. Panic crack a pelican. Meadow cross the dig. ≡ ∇
+- **output 120:** 0.00883619 ₿
+  - script: ⧉ ⌖ h²⁰ Drip may set some corn. Pop dismiss element to boat. An anchor almost get senior. Soup set whale to course. Emotion shine the key scale. ≡ ∇
+- **output 121:** 0.00898846 ₿
+  - script: ⧉ ⌖ h²⁰ Loop spirit mango to ginger. Tree may brave gauge. Beef forward get hobby. Object may set buyer. Our tired push beef out. ≡ ∇
+- **output 122:** 0.00928836 ₿
+  - script: ⧉ ⌖ h²⁰ Lobster too cup our display. Son else thrive pie. Yes undo a welcome stool. A stomach is tiny. Dawn expire work to master. Marine may ban for hit. ≡ ∇
+- **output 123:** 0.00958692 ₿
+  - script: ⧉ ⌖ h²⁰ River is private below tax. Son enroll boat to husband. Skill ago get banana. A genuine ritual rifle drive. Our piano not say our quote. ≡ ∇
+- **output 124:** 0.00959116 ₿
+  - script: ⧉ ⌖ h²⁰ Welcome set our urban catalog. Few coyote trouble tiger. A wrong column fork to tumble. Pop remind to dice via our safe. Nod may reduce bed. ≡ ∇
+- **output 125:** 0.00998374 ₿
+  - script: ⧉ ⌖ h²⁰ Praise idle to vanish for local. Sadness may brief to please. A fresh trophy too face pumpkin. Egg may finger animal to its lab. ≡ ∇
+- **output 126:** 0.01038669 ₿
+  - script: ⧉ ⌖ h²⁰ Claw may set some arena. Our famous public snake voice. Its brave noise improve design. Master due humor its nuclear subway. The theme may get map. ≡ ∇
+- **output 127:** 0.01039487 ₿
+  - script: ⧉ ⌖ h²⁰ An empty tip doctor crystal. Antenna glide food to museum via another street. Report may protect to embody out rail to army. ≡ ∇
+- **output 128:** 0.01042052 ₿
+  - script: ⧉ ⌖ h²⁰ Dilemma spell its east human. Punch may get festival. Its spirit today color meat. Some leg yes see junior. Our sir flee to taxi. A son are exotic. ≡ ∇
+- **output 129:** 0.01062377 ₿
+  - script: ⧉ ⌖ h²⁰ Ban is due until drum. Express is smooth to city. Its false audit is glad. Moment venture fan to stamp. Wife out carry our cactus. ≡ ∇
+- **output 130:** 0.01067230 ₿
+  - script: ⧉ ⌖ h²⁰ A post where see its lamp. Network get gallery to satoshi. Eyebrow see flight for exit. Athlete trick sock to pencil. Seed may set lab. ≡ ∇
+- **output 131:** 0.01137380 ₿
+  - script: ⧉ ⌖ h²⁰ Hunt is keen to its sound. A reward elbow to erase. A lot is awesome. Tap may arrange a next. Yes afford a seminar. Turtle finish mix to goat. ≡ ∇
+- **output 132:** 0.01140430 ₿
+  - script: ⧉ ⌖ h²⁰ Its hood may get quantum. Its endless august is certain to noble. The lesson bubble move. Peanut see radar to problem. Mother may catch to slot. ≡ ∇
+- **output 133:** 0.01149568 ₿
+  - script: ⧉ ⌖ h²⁰ Ethics is happy to a claim. Talk is zero out final. Equal due clock a small pet. Unknown too set poverty. The debris is curious to gas. ≡ ∇
+- **output 134:** 0.01154534 ₿
+  - script: ⧉ ⌖ h²⁰ Its evil language set gloom. The mutual twelve blossom spider. Our scale is adult. Echo may layer tap. Our real bottom shove to swing. ≡ ∇
+- **output 135:** 0.01166093 ₿
+  - script: ⧉ ⌖ h²⁰ Pill is clever to sort. Pop follow to account. Jewel allow yard for spider. Jacket see the small tattoo. Desert may attack an exotic son. ≡ ∇
+- **output 136:** 0.01171192 ₿
+  - script: ⧉ ⌖ h²⁰ Its muffin may get mosquito. Cow reduce scrub to usage for million. The foot is armed. Thumb may see garbage to corn. Onion pave to recycle for a hire. ≡ ∇
+- **output 137:** 0.01175326 ₿
+  - script: ⧉ ⌖ h²⁰ Road answer cannon to churn. Alcohol may get frog. Its viable cop assume wrap. Flame report our next actress. Language is hot to its swing. ≡ ∇
+- **output 138:** 0.01176382 ₿
+  - script: ⧉ ⌖ h²⁰ Merit set lens to question. Our spell salute yellow. Its radio fall history. Drop see a stadium. Sky far expect example. Pop oppose its retreat. ≡ ∇
+- **output 139:** 0.01191509 ₿
+  - script: ⧉ ⌖ h²⁰ Coyote is unfair to process. Grace rough to skate. Aid due quit solid. Bone hope bike to mimic. Balcony may see priority per way. ≡ ∇
+- **output 140:** 0.01206016 ₿
+  - script: ⧉ ⌖ h²⁰ Film squeeze clutch to match. Son may know tourist. Liquid reform to please. Sky across frame day. Depth may get bean to quote. ≡ ∇
+- **output 141:** 0.01221300 ₿
+  - script: ⧉ ⌖ h²⁰ Cop oppose the local fury. Its cow predict to indicate. Pass may note hobby. Gossip pond crop to post. Pop follow essence out divorce. ≡ ∇
+- **output 142:** 0.01231967 ₿
+  - script: ⧉ ⌖ h²⁰ Cop bless our car to second. Trap expire theory out festival. Trip are silly to the dice. Eyebrow reform street via youth. The length may set a ear. ≡ ∇
+- **output 143:** 0.01248922 ₿
+  - script: ⧉ ⌖ h²⁰ Scrub may prevent misery to history. The slab may get boy. Lot ago inflict issue. Sponsor space security to penalty. Friend may tube lab. ≡ ∇
+- **output 144:** 0.01251714 ₿
+  - script: ⧉ ⌖ h²⁰ Year is cherry to its carpet. Trust crop retreat out sponsor. Town pet our punch to save. A cinnamon genre flag slot. ≡ ∇
+- **output 145:** 0.01269270 ₿
+  - script: ⧉ ⌖ h²⁰ Point get zebra to jelly. Cow adapt to truck. Weasel may clown purity. A gold squirrel fork map. Fyi thrive sweet to kiwi. Elite may see the guy. ≡ ∇
+- **output 146:** 0.01277705 ₿
+  - script: ⧉ ⌖ h²⁰ Its merit may quit maple. Cow never see alien. Rate may knock bonus. Pop thrive what hot city. Reject see chef to bag. A trend get our tax out lot. ≡ ∇
+- **output 147:** 0.01280830 ₿
+  - script: ⧉ ⌖ h²⁰ Its various range set cloth. The similar tornado divert laundry. Book may get pelican. Permit would set physical. Violin see hood to our exotic series. ≡ ∇
+- **output 148:** 0.01306717 ₿
+  - script: ⧉ ⌖ h²⁰ Trouble see version to melody. Hint see our atom. A fatal wrap wave an office. Its kid bar oppose decline. The marble may set mosquito. ≡ ∇
+- **output 149:** 0.01316773 ₿
+  - script: ⧉ ⌖ h²⁰ Its insane purse due see duty. Spirit hover to erupt. A minimum gown too set owner. Canoe predict family to banner. Our red piano get chimney. ≡ ∇
+- **output 150:** 0.01333521 ₿
+  - script: ⧉ ⌖ h²⁰ Cop explain the old hope. Carbon draw gorilla to head. Flat ago get festival. Birth set a similar key. An off flavor may submit out. ≡ ∇
+- **output 151:** 0.01343894 ₿
+  - script: ⧉ ⌖ h²⁰ Its shift may predict fancy. Cow already glow pottery. Grunt is ordinary to icon. Some news online see faith. Idea out search our mosquito. ≡ ∇
+- **output 152:** 0.01365659 ₿
+  - script: ⧉ ⌖ h²⁰ Bind is dumb to poverty. Symbol see its slogan. A they. Response humor to display. Pyramid cruise hammer per cup. Our entire theme is low. ≡ ∇
+- **output 153:** 0.01371769 ₿
+  - script: ⧉ ⌖ h²⁰ Wrap set elevator to crouch. Our rent mandate room. Its planet roof map. Nod set jet between subway to pole. Average perfect quiz for swing. ≡ ∇
+- **output 154:** 0.01396379 ₿
+  - script: ⧉ ⌖ h²⁰ A jet later divert our spread. Its secret interest home write the super. Dad may see envelope to tissue. Flight point infant via slot. ≡ ∇
+- **output 155:** 0.01522766 ₿
+  - script: ⧉ ⌖ h²⁰ Cop follow helmet to fat. Scissors reform to point. Aid due carry dragon. An area display to leave. Anxiety squeeze symbol per metal. ≡ ∇
+- **output 156:** 0.01552309 ₿
+  - script: ⧉ ⌖ h²⁰ Its steel meadow accuse basket. Cactus may get excess. Cop could suggest to donate. Pop erase film per face. Lot may uphold a fabric. Our intact gym is big. ≡ ∇
+- **output 157:** 0.01573621 ₿
+  - script: ⧉ ⌖ h²⁰ Its human mammal curve to wrong. Broom see celery for cabbage. A sin is annual. Police patrol maple to share. A silly guy sell village. ≡ ∇
+- **output 158:** 0.01580914 ₿
+  - script: ⧉ ⌖ h²⁰ Rookie riot split to exhaust. The gentle shove must say script via paddle. Crouch may iron solution to our canal out project. ≡ ∇
+- **output 159:** 0.01628318 ₿
+  - script: ⧉ ⌖ h²⁰ Its tax apart comfort cat. Invite set our green debris. Kangaroo bike what grit. Guy earn to process. Lot may melt our crazy source. ≡ ∇
+- **output 160:** 0.01673450 ₿
+  - script: ⧉ ⌖ h²⁰ Pelican edge its furnace to snake. Subject enroll kidney per matrix. The weird item may flock giraffe. Person see lawsuit to marine. ≡ ∇
+- **output 161:** 0.01677663 ₿
+  - script: ⧉ ⌖ h²⁰ Pyramid soldier catch to industry. Son slow mail spy. The garbage is various. Romance yes get panther. Lip must flock dig. Lot out idle an exotic bet. ≡ ∇
+- **output 162:** 0.01684633 ₿
+  - script: ⧉ ⌖ h²⁰ Ethics may solve luggage to trade. Bike wear the fluid winter. Fault shoot to pool. Analyst flavor ripple per length. ≡ ∇
+- **output 163:** 0.01732501 ₿
+  - script: ⧉ ⌖ h²⁰ Fashion dry number to bone. Son may pave royal. Opinion see a buffalo. Filter yes grow attitude. Custom may square vessel to piano. ≡ ∇
+- **output 164:** 0.01788259 ₿
+  - script: ⧉ ⌖ h²⁰ Head tenant its pottery to feel. Our intact lava is twelve. The memory design logic. Ceiling may see story. Town shall powder cactus to die. ≡ ∇
+- **output 165:** 0.01814517 ₿
+  - script: ⧉ ⌖ h²⁰ Lie set tax among library. Its foster security boil to believe. Our stable suspect confirm a out giraffe. Its lucky pan may exclude to solve for harbor. Chimney may set its bed. ≡ ∇
+- **output 166:** 0.01850196 ₿
+  - script: ⧉ ⌖ h²⁰ Visit enroll security to grape. Eyebrow may push laundry. Pop accuse to spring. Snow claw the true patient via soldier out hybrid. ≡ ∇
+- **output 167:** 0.01863139 ₿
+  - script: ⧉ ⌖ h²⁰ Cop teach carpet to ball. Vessel fault our planet. Aid due hover concert. Desk acquire garbage to tap. More anchor see bulb per cactus. ≡ ∇
+- **output 168:** 0.01868950 ₿
+  - script: ⧉ ⌖ h²⁰ Alcohol is fresh to cut. Cow expand visual out version per autumn. The fever see initial. Our arctic cousin charge an eternal glow. Our vintage yes get advice. ≡ ∇
+- **output 169:** 0.01897562 ₿
+  - script: ⧉ ⌖ h²⁰ Strike offer crane to verb. Boost may get matrix. Matrix remove its ill inquiry. Film see giraffe to crater. Our wing not see our lab. ≡ ∇
+- **output 170:** 0.01951946 ₿
+  - script: ⧉ ⌖ h²⁰ Two prosper wire to number. Hawk market patient via our cover for canoe. Vendor vanish our hungry wrap. A velvet are new to trend. ≡ ∇
+- **output 171:** 0.01973431 ₿
+  - script: ⧉ ⌖ h²⁰ Grab too sock our produce. Son may dismiss excess. Pitch doctor a vote. Future follow to protect. Stay not excuse diary. The map is bright to hit. ≡ ∇
+- **output 172:** 0.01990327 ₿
+  - script: ⧉ ⌖ h²⁰ Denial narrow its crash to master. Health see hub for express. Recall tomorrow journey yes. Set may prepare beef. Wall are arctic to goat. ≡ ∇
+- **output 173:** 0.02016036 ₿
+  - script: ⧉ ⌖ h²⁰ Refuse is wise to blossom. Shop voice to die. Its useless success knife banner. Dinner see lava to hand. Our raven disease may see goat. ≡ ∇
+- **output 174:** 0.02018763 ₿
+  - script: ⧉ ⌖ h²⁰ Doll print fox to decrease. Son educate to attract via play out fossil. A virtual sir know kitten. Our hollow cinnamon panel to foster. ≡ ∇
+- **output 175:** 0.02063785 ₿
+  - script: ⧉ ⌖ h²⁰ Yes manage guard to equal. Our son is bright. Trigger palm a copy. Phone yes get extra. Lip ago grow suit. A portion worry limit to series. ≡ ∇
+- **output 176:** 0.02143510 ₿
+  - script: ⧉ ⌖ h²⁰ Pop dismiss pear to marriage. Quiz license our tray. A bundle east record stereo. Our layer is sorry to pot. Jet due adapt creek. Aid may avoid yes. ≡ ∇
+- **output 177:** 0.02160991 ₿
+  - script: ⧉ ⌖ h²⁰ Alcohol may burst tank to crack. Cow educate permit for three. Our sunny lunch belt claim. Bonus may piece fog to staff. ≡ ∇
+- **output 178:** 0.02225541 ₿
+  - script: ⧉ ⌖ h²⁰ Balcony get fee to antenna. Cargo dice our donkey. Food ago get tornado. Some cricket not set zero. Pop flee our genuine bike. Its kingdom yet inject tax. ≡ ∇
+- **output 179:** 0.02243279 ₿
+  - script: ⧉ ⌖ h²⁰ High finish oven to stuff. Buffalo may get avocado. Trash keep assault to property. Dilemma kick a present ladder. Our source may map to lie. ≡ ∇
+- **output 180:** 0.02287171 ₿
+  - script: ⧉ ⌖ h²⁰ Debris may panel to cry. A pretty fit book eyebrow. Much salad get attitude to census. Sky far inherit minute. Decrease out get lottery. ≡ ∇
+- **output 181:** 0.02354565 ₿
+  - script: ⧉ ⌖ h²⁰ Damp may thumb tiger to theory. The vital term get cupboard. A lot is innocent. Elite set engine to muscle. Guy inspire to accuse. A seed may scale due. ≡ ∇
+- **output 182:** 0.02397734 ₿
+  - script: ⧉ ⌖ h²⁰ Saddle is stable to its license. Vendor muscle a huge bus. Our useless economy get our pie. Its popular uniform may drive cloth. Wild could amount to tea. ≡ ∇
+- **output 183:** 0.02418589 ₿
+  - script: ⧉ ⌖ h²⁰ Crawl limit soul to whale. Harvest may room permit. Grunt ago pitch cop. A real wreck arrange affair. Our garden not see our village. ≡ ∇
+- **output 184:** 0.02465245 ₿
+  - script: ⧉ ⌖ h²⁰ Sight drop exit to village. Sand may get hockey. Its cap might carry venue. A drastic pop clean impact. General ramp balcony to pool. ≡ ∇
+- **output 185:** 0.02513074 ₿
+  - script: ⧉ ⌖ h²⁰ Bundle get magnet to million. Target relax to space. Aid due include ankle. Size author output to recall. Fog may scrub our marine pan. ≡ ∇
+- **output 186:** 0.02521551 ₿
+  - script: ⧉ ⌖ h²⁰ Repair may ranch our canvas kiwi. Affair undo beauty to spider. Our patient get tree per choice. Pilot may dry shield to equal. ≡ ∇
+- **output 187:** 0.02536708 ₿
+  - script: ⧉ ⌖ h²⁰ The roast too see april. Son may announce cigar. Choice when foam sentence. A sir may oblige faint. Bed long set stadium. Our genuine hair gas ban. ≡ ∇
+- **output 188:** 0.02550085 ₿
+  - script: ⧉ ⌖ h²⁰ Lottery may set what arrest. Bacon is cut toward hit. Pay may sell wet. Decrease see salad to hollow. Guy rebuild filter via traffic. Son may ignore our source to tap. ≡ ∇
+- **output 189:** 0.02664004 ₿
+  - script: ⧉ ⌖ h²⁰ Stock feature rhythm to tone. Theory may wrap kiwi. Its route recycle middle. Wolf see a wealth. Credit yes reject quote. ≡ ∇
+- **output 190:** 0.02680683 ₿
+  - script: ⧉ ⌖ h²⁰ Its correct permit get our video. Alcohol may horse pull. Cop too invest an aerobic crawl. Hybrid too letter clog. Shop not busy way. ≡ ∇
+- **output 191:** 0.02745919 ₿
+  - script: ⧉ ⌖ h²⁰ Mail get valley to elite. A gown is rich. Quiz enrich history to shed. Library see heart via trigger. Our journey out fly our way. ≡ ∇
+- **output 192:** 0.02780983 ₿
+  - script: ⧉ ⌖ h²⁰ Its donor may stumble coffee. Pop know its mule. Our cool cap emerge cost. Shove jelly bus to pair. Cereal may upgrade an exotic out. ≡ ∇
+- **output 193:** 0.02840268 ₿
+  - script: ⧉ ⌖ h²⁰ Its jet out accuse its minimum. The shy utility access reveal to town per crew to champion. Fish set dolphin via horse. Its gentle pool may set its series. ≡ ∇
+- **output 194:** 0.02849117 ₿
+  - script: ⧉ ⌖ h²⁰ Its honey may get quality. Its polar guy decide our only tilt. Relief how set fox. Woman reject wool to total. An illegal vintage job son. ≡ ∇
+- **output 195:** 0.02851621 ₿
+  - script: ⧉ ⌖ h²⁰ Trial siege ban upon tax. Dig attend armor to talk. Demand judge jewel for noble. Chat sentence swallow to tuna. Our neglect may map to lie. ≡ ∇
+- **output 196:** 0.02886597 ₿
+  - script: ⧉ ⌖ h²⁰ Oak set april to excuse. Smoke may carry visual. Its rookie room lot. Our ill crash set opinion to water. Axis yes situate tomato. ≡ ∇
+- **output 197:** 0.02988200 ₿
+  - script: ⧉ ⌖ h²⁰ The pop not ensure turtle. All guy bring doctor. Its act see client. An orphan abandon later merge the cop. Cow reflect frost to whale. The object tie to ban. ≡ ∇
+- **output 198:** 0.03037511 ₿
+  - script: ⧉ ⌖ h²⁰ Its heavy praise set winner. Course adapt second to elite. A kitchen is easy. Sir enlist reveal beyond twelve. Some stairs may see the exotic lot. ≡ ∇
+- **output 199:** 0.03079247 ₿
+  - script: ⧉ ⌖ h²⁰ Will abuse mass to skull. The rocket jump luggage via our civil banner. Some grocery may get yard. Its ugly cop prosper patrol. Some amount may get tea. ≡ ∇
+- **output 200:** 0.03089737 ₿
+  - script: ⧉ ⌖ h²⁰ Today get estate inside tax. Set erase idea to shrug. Aid due defy bird. Trash pluck interest to pond. Matter may fence a bright pan. ≡ ∇
+- **output 201:** 0.03182695 ₿
+  - script: ⧉ ⌖ h²⁰ Stand may team reform to screen. Script is brisk for hub. Purity spell our inner gossip. Map may inspire trial to bag. Each chimney is rid. ≡ ∇
+- **output 202:** 0.03309345 ₿
+  - script: ⧉ ⌖ h²⁰ Its mail alone scrub next. Fork may essay survey. A cop is eternal. Our keen twenty set stove. This garage see shoe to goat. ≡ ∇
+- **output 203:** 0.03359261 ₿
+  - script: ⧉ ⌖ h²⁰ Grief garden skull to mandate. Our apology rack mimic. Moment link to spoil. Transfer quiz a symptom. Chief yes avoid cow. ≡ ∇
+- **output 204:** 0.03360023 ₿
+  - script: ⧉ ⌖ h²⁰ Wash get magnet to ginger. Pop humble its crisp. Mandate get soul to genre. A blind gravity is capable. Oval bag liberty to chimney. ≡ ∇
+- **output 205:** 0.03388240 ₿
+  - script: ⧉ ⌖ h²⁰ Its correct chaos due captain upper. Wealth is cereal to token. A velvet wire region per region. Horse see timber to our popular metal. ≡ ∇
+- **output 206:** 0.03534240 ₿
+  - script: ⧉ ⌖ h²⁰ Cabbage correct to define for pot. A set okay crumble lie. A bitter sir clean the post. Bargain set its large boil. Nation prevent tooth to cactus. ≡ ∇
+- **output 207:** 0.03659198 ₿
+  - script: ⧉ ⌖ h²⁰ A pop wine is usual. Our tie are crucial. An one steel filter to proof. Walk tilt orient for uncle. An immune much frame parade. ≡ ∇
+- **output 208:** 0.03683708 ₿
+  - script: ⧉ ⌖ h²⁰ Wash may tattoo to erase. Our ball are rapid. Its jazz grunt joke person. Sir attract permit to traffic. Sweet may see a nuclear lot. Our aid may reduce. ≡ ∇
+- **output 209:** 0.03702405 ₿
+  - script: ⧉ ⌖ h²⁰ Shadow grant to merge per wisdom. Casino get body to slight via assault. Elephant cable to flower. Sibling stand tumble via marine. ≡ ∇
+- **output 210:** 0.03707004 ₿
+  - script: ⧉ ⌖ h²⁰ Athlete may slab eyebrow to spike. Alpha is slender for cycle. Our brown trash quit cattle. Our aerobic state may set door. The scale is pop. ≡ ∇
+- **output 211:** 0.03770818 ₿
+  - script: ⧉ ⌖ h²⁰ Lie may quit each silk. Tie may isolate a noodle. Its sir forget turtle to panda. Its easy neck pepper work. Burden nose the acoustic due. Its tie are foster. ≡ ∇
+- **output 212:** 0.03809357 ₿
+  - script: ⧉ ⌖ h²⁰ Bicycle may egg giant to name. The pigeon may rally doll. Our frequent athlete far grab garlic. Law question a bitter catch. ≡ ∇
+- **output 213:** 0.03971717 ₿
+  - script: ⧉ ⌖ h²⁰ Its sort may get illness. Its ancient guy decorate silk to crowd. Blast how set hockey. Million confirm tube to buyer. A broken candy staff son. ≡ ∇
+- **output 214:** 0.04021126 ₿
+  - script: ⧉ ⌖ h²⁰ Cake see black to upper. Our tie are outer. Pay easily pride an abstract hire. Report gather its ready surprise. Half is lucky to amount. ≡ ∇
+- **output 215:** 0.04108326 ₿
+  - script: ⧉ ⌖ h²⁰ Brand twice range a junior. The frequent nature is dizzy to a young. Guy evoke orient per bullet for mammal. Essence may get its weird scale. ≡ ∇
+- **output 216:** 0.04244370 ₿
+  - script: ⧉ ⌖ h²⁰ Limit see drama to link. Pop devote our jungle. Some sir appear debate to rug. Its cop may enforce chest. A yes embark jeans. Best see jeans to village. ≡ ∇
+- **output 217:** 0.04387838 ₿
+  - script: ⧉ ⌖ h²⁰ Due around doctor its set survey. Our whale out get the notable. Son decorate to author. Our fatal tool see burger. Spray tape hotel to its material staff. ≡ ∇
+- **output 218:** 0.04387895 ₿
+  - script: ⧉ ⌖ h²⁰ Its alert guitar may get donor. Cow uncover blade to ostrich. Pipe far renew cement. Suit nurse stove about rice. The despair are red. ≡ ∇
+- **output 219:** 0.04460924 ₿
+  - script: ⧉ ⌖ h²⁰ Crater see the raw crisp. Its easy aim wrestle a nod toward diamond to artist. Some recipe rough sausage per cat. List how get its ugly bet. ≡ ∇
+- **output 220:** 0.04515143 ₿
+  - script: ⧉ ⌖ h²⁰ Its pill may taste material. Pop endorse its entry. Our sure thought accuse ghost. A balance upgrade to spread. Our outdoor silver see goat. ≡ ∇
+- **output 221:** 0.04530106 ₿
+  - script: ⧉ ⌖ h²⁰ Aid may obtain twist to tonight. March scheme cliff out beauty. Hunt shed to service for hockey. Visit inhale glance to theme. ≡ ∇
+- **output 222:** 0.04645799 ₿
+  - script: ⧉ ⌖ h²⁰ Brother repeat avocado to upper. Exhibit may disagree cage. Aid due deliver trade. Nephew are kind to radio. A vocal ladder inject pan. ≡ ∇
+- **output 223:** 0.04776065 ₿
+  - script: ⧉ ⌖ h²⁰ Cinnamon catalog bike to steel. Son receive to index via siege out couple. A sad legend season laugh. Rubber may get salad to mosquito. ≡ ∇
+- **output 224:** 0.04805677 ₿
+  - script: ⧉ ⌖ h²⁰ Its shrug get the human use. Monster sail trumpet to input. The aunt bicycle youth. Hobby may cart spring. Pie far attract a copy. ≡ ∇
+- **output 225:** 0.04841663 ₿
+  - script: ⧉ ⌖ h²⁰ Oyster may prepare hill to sort. The small stand get tortoise. Athlete vapor to own. A worth cactus exist map. Cow teach to inject for a yes. ≡ ∇
+- **output 226:** 0.05153862 ₿
+  - script: ⧉ ⌖ h²⁰ Voyage barely see a lot. Its lazy son execute earth. Shoulder bicycle inch to switch per our unable supreme. Each grief mouse piano. Fix may set its bed. ≡ ∇
+- **output 227:** 0.05211954 ₿
+  - script: ⧉ ⌖ h²⁰ Hawk barely get its super dilemma. Body may rubber the ear. A someone. Athlete harbor affair to champion. Ridge mean to dismiss via despair. ≡ ∇
+- **output 228:** 0.05653385 ₿
+  - script: ⧉ ⌖ h²⁰ Due truly get its true door. Economy quiz kiwi to air. The rally shiver village. Sin may become orphan. Visa far web a blossom. ≡ ∇
+- **output 229:** 0.05675253 ₿
+  - script: ⧉ ⌖ h²⁰ Apology equal bag to balcony. Our buddy is cute. A cop is bitter. Goat see the polar accident. Riot spring to increase per dinner. The lot yes avoid cop. ≡ ∇
+- **output 230:** 0.06027327 ₿
+  - script: ⧉ ⌖ h²⁰ Wear join squeeze to elder. Forum may saddle mercy. Its joke emerge control. Sir indicate a type. Wood yes soap village. ≡ ∇
+- **output 231:** 0.06043772 ₿
+  - script: ⧉ ⌖ h²⁰ Century may mention to correct. A someone. Aid also resource love. Arrow may collect envelope. Dwarf behind govern our merry marine. ≡ ∇
+- **output 232:** 0.06082842 ₿
+  - script: ⧉ ⌖ h²⁰ Barrel fish reject to brick. Ozone idle to protect. Negative ago get solution. A night scissors uniform glove. A dumb divorce may see pie. ≡ ∇
+- **output 233:** 0.06109824 ₿
+  - script: ⧉ ⌖ h²⁰ Cop promote to reopen per fat. The insect may set its grape. A close impulse dry twist. A road own to convince. Cow obscure refuse via staff. ≡ ∇
+- **output 234:** 0.06290826 ₿
+  - script: ⧉ ⌖ h²⁰ The lazy lab see trophy. Razor may taxi aim. Tube situate to unveil. Diamond spend to unlock. Client yes cash gas. ≡ ∇
+- **output 235:** 0.06368845 ₿
+  - script: ⧉ ⌖ h²⁰ Bicycle get sword to coach. Force see its pyramid. Utility alter our live code. A faint curtain auction tax. Guy observe to equip via abandon. ≡ ∇
+- **output 236:** 0.06564291 ₿
+  - script: ⧉ ⌖ h²⁰ Our beyond canoe to clarify. Sun tomorrow squeeze lip. An outer wedding get umbrella. Surge inflict strike to jewel. The employ may set elite. ≡ ∇
+- **output 237:** 0.06571918 ₿
+  - script: ⧉ ⌖ h²⁰ Rival due cup its hidden vessel. Scare wonder the innocent feel. Our rural sin may gather pot. Our pay often see its private brief. Capital may slot the sin. ≡ ∇
+- **output 238:** 0.06595766 ₿
+  - script: ⧉ ⌖ h²⁰ Its excuse render bench to color. Goddess pride chair per side. Dish may ready cry below sin. A pay else escape siege. ≡ ∇
+- **output 239:** 0.06602252 ₿
+  - script: ⧉ ⌖ h²⁰ Its junk october powder sibling. Usage may get worth. Carpet is naive to pan. Tap may empower helmet per our exotic flock. Bonus is gentle to lottery. ≡ ∇
+- **output 240:** 0.06822986 ₿
+  - script: ⧉ ⌖ h²⁰ Its waste ripple fence to admit. Opinion see artefact for visit. The secret copy bamboo. Print may thumb grass. Glow far see a piano. ≡ ∇
+- **output 241:** 0.06886539 ₿
+  - script: ⧉ ⌖ h²⁰ Toss get its planet to neck. Sniff renew bike out clock. Its new desk hunt to please. Pie also set hamster. The tumble is outdoor to lottery. ≡ ∇
+- **output 242:** 0.07176200 ₿
+  - script: ⧉ ⌖ h²⁰ Tobacco cushion resource to crime. Daughter may get genius. Warfare is robust to law. Midnight yes spray our drip. Nod exist sound to army. ≡ ∇
+- **output 243:** 0.07315310 ₿
+  - script: ⧉ ⌖ h²⁰ Tonight is lucky to basket. Cube see its nominee. Ketchup acquire umbrella to venue. A yellow pitch parade powder. Our enemy may neglect to see. ≡ ∇
+- **output 244:** 0.07334977 ₿
+  - script: ⧉ ⌖ h²⁰ Shock may set some pear. Our rural vehicle scare festival. Sight may barrel to learn. Panda may get reunion for point. Burger set car to length. ≡ ∇
+- **output 245:** 0.07742086 ₿
+  - script: ⧉ ⌖ h²⁰ Danger get coyote to feed. Purpose work our initial. Spoil retreat its license. Fence may mouse mansion. Actress ought see pelican to despair. ≡ ∇
+- **output 246:** 0.07966750 ₿
+  - script: ⧉ ⌖ h²⁰ Stereo is loyal to a pot. Ban correct the spatial cigar. Gadget work to total. Poem is gentle outside stairs. Song may get the kind way. ≡ ∇
+- **output 247:** 0.08130459 ₿
+  - script: ⧉ ⌖ h²⁰ Crazy cage cake to spawn. Spray may cool riot. Reform ago ball soup. Pan may humble scrub. Ship ought see mystery to rose. ≡ ∇
+- **output 248:** 0.08430582 ₿
+  - script: ⧉ ⌖ h²⁰ Cabin get gown to island. Crew collect our night. Citizen ago chalk critic. Sting may ring tap. A curious museum ought labor marine. ≡ ∇
+- **output 249:** 0.08512213 ₿
+  - script: ⧉ ⌖ h²⁰ Its sea may best cow. Its hit once see its big misery. Shuffle trash verb into south. Our normal see any art. Sock get fox to series. ≡ ∇
+- **output 250:** 0.08649081 ₿
+  - script: ⧉ ⌖ h²⁰ Legend set nominee to balcony. Our ozone submit figure. Its brass bulk coil. Route finger a turkey. Son arrive its captain. A bed is ugly. ≡ ∇
+- **output 251:** 0.08656312 ₿
+  - script: ⧉ ⌖ h²⁰ Weird may uncover kitchen to bus. The dance may index shiver. Our nice need doctor its dial. Upgrade mix index to goat. ≡ ∇
+- **output 252:** 0.09343469 ₿
+  - script: ⧉ ⌖ h²⁰ Its mass love almost see december. Year may get that mistake. Two far set health. Defense may get its ginger pen. Torch get album to hire. ≡ ∇
+- **output 253:** 0.09654328 ₿
+  - script: ⧉ ⌖ h²⁰ Its access may get unknown. Cow ask lake to brother for habit. Pan may topple yes. Lap only see our crucial cricket. Its ordinary cop say goose. A aid may warm piano. ≡ ∇
+- **output 254:** 0.09704342 ₿
+  - script: ⧉ ⌖ h²⁰ Image raven to dismiss per grief. Its chronic wet voyage myth to arrow. Urge may set an antenna. Our smooth foil are rural. Each tomato is rid. ≡ ∇
+- **output 255:** 0.09798275 ₿
+  - script: ⧉ ⌖ h²⁰ Juice see donkey to stereo. Much rough suit census. Caution set wisdom to its mean list to object. Each match job swing. ≡ ∇
+- **output 256:** 0.10186599 ₿
+  - script: ⧉ ⌖ h²⁰ The phone caution to emerge. Son may seek body. A clutch are large. Critic sting release beyond junior. Poet not glimpse equal. ≡ ∇
+- **output 257:** 0.10235488 ₿
+  - script: ⧉ ⌖ h²⁰ Patient may scatter hobby to neglect. Panda set sauce out wild. A happy minor outside get town. Warrior give tray to project. ≡ ∇
+- **output 258:** 0.11091582 ₿
+  - script: ⧉ ⌖ h²⁰ Its final accident stem bean. Hole may occur december. Cop relax to follow. Skirt bargain door per tap. An absent map may assume marine. ≡ ∇
+- **output 259:** 0.11399514 ₿
+  - script: ⧉ ⌖ h²⁰ Its cool crazy smile ramp. Science may get visa. Its crater could interest reveal. Our rapid business say loop. Our armor may amount to see. ≡ ∇
+- **output 260:** 0.11863578 ₿
+  - script: ⧉ ⌖ h²⁰ Matter see same to paddle. Level scale to exchange. Rub defy torch per cash. Its clown see example to special. Each square mask cross. ≡ ∇
+- **output 261:** 0.13320879 ₿
+  - script: ⧉ ⌖ h²⁰ Its climb may clump burger. Cow always see lemon. Dune may tone upgrade. Lake rotate artefact to bachelor. Movie see our brisk retreat. ≡ ∇
+- **output 262:** 0.13362606 ₿
+  - script: ⧉ ⌖ h²⁰ A smart joy may shell apology. The mixed margin edge steel. Its axis bubble mirror. Hobby play our capable cross. ≡ ∇
+- **output 263:** 0.14875742 ₿
+  - script: ⧉ ⌖ h²⁰ A glad knock may get gospel. Major see grief toward subject. Advance far diet sketch. Medal major member to grab. Our equal set a cow. ≡ ∇
+- **output 264:** 0.16902825 ₿
+  - script: ⧉ ⌖ h²⁰ Stuff may set some length. Lot may govern our yes. Pay soon dose hurdle. Its lava get our envelope. Cow achieve crazy to envelope. Some frost bundle our shoe via the rose. ≡ ∇
+- **output 265:** 0.19114436 ₿
+  - script: ⧉ ⌖ h²⁰ Orbit may riot sentence to aspect. Hour is rude for kick. Our digital arrow get neutral. Ostrich may raise a fossil. Yes undo a cross. ≡ ∇
+- **output 266:** 0.19208686 ₿
+  - script: ⧉ ⌖ h²⁰ A digital essence set zoo. Mosquito merge caution to a sound via morning to globe. Some crime may present claim. Pop occur to oppose for winter. ≡ ∇
+- **output 267:** 0.19837479 ₿
+  - script: ⧉ ⌖ h²⁰ Tortoise get envelope toward path. Sin may educate gloom. Mango ago get visual. Honey motor snake to swallow. Flash is subject per our dune. ≡ ∇
+- **output 268:** 0.20520341 ₿
+  - script: ⧉ ⌖ h²⁰ Glance see brain to move. Suit stuff to enjoy. Bulb govern a strong jacket. An you. Pot may caught to involve. Tuition is pop for tomato. ≡ ∇
+- **output 269:** 0.20584498 ₿
+  - script: ⧉ ⌖ h²⁰ Its average buddy together feel jet. Cow assume each hockey. Soldier far see country. Its ceiling is slender. A second main spirit social to copy. ≡ ∇
+- **output 270:** 0.20739421 ₿
+  - script: ⧉ ⌖ h²⁰ Lens too see its august. A happy wool is lunar. A row are federal. Theory may sort its salad. The cow earn to decrease. A hit may satisfy to relax via opinion out marine. ≡ ∇
+- **output 271:** 0.23495270 ₿
+  - script: ⧉ ⌖ h²⁰ Above is vivid upon tax. Set not remain its clutch. Cop resemble our trim drill. Tap between lecture the error. Debate fall cup to clown. ≡ ∇
+- **output 272:** 0.24038916 ₿
+  - script: ⧉ ⌖ h²⁰ Solution is simple to hazard. Pop remind to enhance. Cop may predict to say. Patch portion yard per culture. Our alert love balance amount. ≡ ∇
+- **output 273:** 0.25023270 ₿
+  - script: ⧉ ⌖ h²⁰ Impact deal dust to summer. Soda set brother via our gown out craft. Our deer may exist to donor. Sir sell either casual tomato. ≡ ∇
+- **output 274:** 0.25843972 ₿
+  - script: ⧉ ⌖ h²⁰ Coffee get sibling to kid. Our cow are heavy. Drama may rabbit cousin. Our panic lawsuit are sad. Smoke remove fyi across map. Its tie later see favorite. ≡ ∇
+- **output 275:** 0.26930454 ₿
+  - script: ⧉ ⌖ h²⁰ Its fit bomb taxi fine. Bread may decrease cow. Its capable debris neglect company. Tap where knee our prize. The mountain see its length. ≡ ∇
+- **output 276:** 0.27628316 ₿
+  - script: ⧉ ⌖ h²⁰ Its typical tax is fragile. Boss see more month. Photo ago amount snow. The pan is simple. Next may merge a broken jar. Our pop neck may equal sky. ≡ ∇
+- **output 277:** 0.30627600 ₿
+  - script: ⧉ ⌖ h²⁰ Its repeat may get sunset. Cow announce kite to blanket for clap. The pan is false. Trust may see height to cousin. Guitar pave tobacco for our latin swing. ≡ ∇
+- **output 278:** 0.35411039 ₿
+  - script: ⧉ ⌖ h²⁰ Symptom machine its intact tea. Our casual guy is inner. Fancy muscle to define. Ginger little sell a lip. Our angry shuffle may number dune. ≡ ∇
+- **output 279:** 0.37675691 ₿
+  - script: ⧉ ⌖ h²⁰ Tail begin tuna to lounge. Sin must flash fault. Drink may get sheriff. Bike would detect exchange. Cluster see our fluid slot. ≡ ∇
+- **output 280:** 0.41044403 ₿
+  - script: ⧉ ⌖ h²⁰ Museum see wise to face. Our tie are strong. A lens raise a hungry mule. Its select album resemble video. Call may stick to foster. ≡ ∇
+- **output 281:** 0.93937089 ₿
+  - script: ⧉ ⌖ h²⁰ Bar is ordinary to salmon. General bronze our aspect. Struggle tomorrow get method. Maximum may stone sauce. A various potato ought see gym. ≡ ∇
+- **output 282:** 1.17780989 ₿
+  - script: ⧉ ⌖ h²⁰ Laundry predict to receive for tuna. Daring add cousin to book. Six lend to identify. Dynamic is cheap per trick. Swing map to eat via the cut. ≡ ∇
+- **output 283:** 1.31524808 ₿
+  - script: ⧉ ⌖ h²⁰ Its eternal tax spend worth. Tissue set kiwi to clay. A size is casual. Some pattern yes see elite. Our robust fyi dry twelve. Cop is huge to a low despair. ≡ ∇
+- **output 284:** 2.55100974 ₿
+  - script: ⧉ ⌖ h²⁰ Its huge bean is sorry. Ribbon see its honey. Card hurry gate to tissue. An usual orchard set food. A map when see our maple. Piano yes get its tea. ≡ ∇
+- **output 285:** 3.15518145 ₿
+  - script: ⧉ ⌖ h²⁰ Logic appear hobby to first. Ripple may get injury. Attitude extend member to play. Our quick entry may sustain. Our lap out absent our mosquito. ≡ ∇
+- **output 286:** 5.44644588 ₿
+  - script: ⧉ ⌖ h²⁰ Its tax under get fyi. Its bitter poverty bicycle cigar. Its unusual spring get desk. Exile sniff thing to chapter. Arctic may see cheese per catch. ≡ ∇
+- **output 287:** 0.11774948 ₿
+  - script: p⁶⁵ Agent write author to silk. Plunge may angle town. Copper demand to exist. Extra may govern diesel. Our seminar not include our purse. Its cop discover to observe. The fish may romance square. The lucky yes collect olive. Record scare a donkey to coin. Farm get clinic per a ticket. Leaf sight end to roast. Our elegant son derive plug. A lab are regular to a welcome stairs. Stem see fame to fame. Clinic get odor per gas. ∇
+- **output 288:** 0 ₿
+  - script: ¶ ⁴⁰ Asthma spike scheme to knock. Spin force mobile via our torch for noise. Puppy window our rapid width. Some lyrics get guilt to refuse. Prize may tape to govern. Magic set its sad boost. Some usage divorce the abandon to our abandon. Its able abstract is hybrid. Abandon not set son.
+- **locktime:** □ — no locktime — final with respect to time
+
+---
+
+*Reading the notation:* italic prose passages are Glossia encodings of the raw
+bytes (decodable with the [glossia](https://crates.io/crates/glossia) engine,
+wordlist `bip39`, language `english`); glyphs are the book's script notation
+(opcode and data marks); small structural integers (version, counts, values,
+locktime) are printed literally. See [/llms.txt](https://asherp.github.io/Book-of-Bitcoin/llms.txt) for how any
+other passage on the chain can be fetched and read the same way.
