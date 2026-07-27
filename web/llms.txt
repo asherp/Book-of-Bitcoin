@@ -17,14 +17,14 @@ engine.
 
 ## Static text (no JavaScript required)
 
-- [Curated passages](https://asherp.github.io/Book-of-Bitcoin/passages/index.md):
+- [Curated passages](https://bookofbitcoin.io/passages/index.md):
   the book's table of contents — the Genesis block, the Hal Finney
   transaction, Bitcoin Pizza Day, halvings, soft-fork activations, and the
   rest — each pre-rendered as a plain markdown passage, prose and footnotes
   included.
-- [Preface](https://asherp.github.io/Book-of-Bitcoin/preface.md): the book's
+- [Preface](https://bookofbitcoin.io/preface.md): the book's
   front matter — what the book is and why, in its own voice. Plain markdown.
-- [Sitemap](https://asherp.github.io/Book-of-Bitcoin/sitemap.xml)
+- [Sitemap](https://bookofbitcoin.io/sitemap.xml)
 - [Source repository](https://github.com/asherp/Book-of-Bitcoin): the entire
   site, including the prose-composition rules (`web/btc-prose.js`), the
   citation scheme (`web/btc-citation.js`), and the curated table of contents
