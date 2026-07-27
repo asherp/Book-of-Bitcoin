@@ -1,0 +1,3275 @@
+<!DOCTYPE html>
+<!-- SPDX-License-Identifier: MIT OR Apache-2.0 -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The βook of βitcoin — a block, read as a chapter</title>
+<meta name="description" content="A Bitcoin block rendered as a chapter: each transaction a paragraph, its witness data footnotes, in grammatically correct Glossia prose.">
+<link rel="icon" type="image/png" sizes="32x32" href="./icons/beta-icon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="./icons/beta-icon-16.png">
+<link rel="icon" href="./icons/beta-icon.svg" type="image/svg+xml">
+
+<!-- PWA: installable, offline-capable app shell. Its own manifest + gold-β icon
+     give the Bitcoin book a distinct installable identity that opens to the book. -->
+<link rel="manifest" href="./bitcoin-book.webmanifest">
+<meta name="theme-color" content="#08080a">
+<link rel="apple-touch-icon" href="./icons/beta-icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="βook of βitcoin">
+<script>
+  // Arriving by the contents page's push-up-at-the-bottom gesture: finish
+  // that turn here, the book sliding in from below. Set just before the
+  // navigation, consumed on first paint.
+  try {
+    if (sessionStorage.getItem('glossia-book-entrance')) {
+      sessionStorage.removeItem('glossia-book-entrance');
+      document.documentElement.classList.add('book-entrance');
+    }
+  } catch (_) {}
+
+</script>
+<!-- The shared masthead chrome: service worker registration and the Install /
+     Update affordances on the title's line, one copy for every page. -->
+<script src="./btc-chrome.js"></script>
+
+<!-- Social / rich unfurl -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="The βook of βitcoin">
+<meta property="og:title" content="The βook of βitcoin — a block, read as a chapter">
+<meta property="og:description" content="Each transaction in a Bitcoin block, rendered as a paragraph of grammatically correct prose — witness data collected as footnotes. Every byte decodes back out exactly.">
+<meta property="og:url" content="https://bookofbitcoin.io/bitcoin-book.html">
+<meta property="og:image" content="https://bookofbitcoin.io/og-bookofbitcoin.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="The βook of βitcoin — the Bitcoin block chain, read as a book. A gold β on a dark cover.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="The βook of βitcoin — a block, read as a chapter">
+<meta name="twitter:description" content="Each transaction in a Bitcoin block, rendered as a paragraph of grammatically correct prose.">
+<meta name="twitter:image" content="https://bookofbitcoin.io/og-bookofbitcoin.png">
+
+<!-- Machine readers: passages are composed in-browser by the WASM engine, so
+     this document arrives with no passage text in it. /llms.txt says where
+     the static text lives and how any passage can be reconstructed. -->
+<link rel="sitemap" type="application/xml" href="./sitemap.xml">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Book",
+  "name": "The βook of βitcoin",
+  "alternateName": "Book of Bitcoin",
+  "url": "https://bookofbitcoin.io/bitcoin-book.html",
+  "abstract": "The Bitcoin block chain read as a book: each block a chapter, each transaction a section of grammatically correct Glossia prose, witness data as footnotes. Every byte of every transaction is carried in the words and decodes back out exactly.",
+  "genre": "verbatim translation of the Bitcoin block chain",
+  "inLanguage": "en",
+  "isAccessibleForFree": true,
+  "workExample": {
+    "@type": "Chapter",
+    "name": "A Bitcoin block, read as a chapter",
+    "description": "Rendered on demand in the browser; static markdown renderings of the curated passages are listed at /passages/index.md."
+  }
+}
+</script>
+<link rel="stylesheet" href="./notation.css">
+<link rel="stylesheet" href="./btc-chrome.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,300;1,6..72,400;1,6..72,500&family=IBM+Plex+Mono:wght@400;500;600&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --page:#08080a; --card:#0d0d10; --card-bd:#232228; --ink:#e8e4da; --ink-soft:#cfcabf;
+  --accent:#c9a25f; --accent-2:#dcb877; --btn-ink:#17140c;
+  /* Annotation tiers, tuned for legibility on the near-black page: --dim reads
+     at ~7:1 and --meta at ~4.8:1 (WCAG AA for the small mono it's set in),
+     while both stay clearly quieter than --ink-soft body prose. */
+  --dim:#9c99a6; --meta:#7e7b88; --rule:#24232a; --hair:#2a2930;
+  --input-bg:#151519; --input-bd:#2a2930; --error:#e07b6a; --ok:#7fb98a;
+}
+* { box-sizing: border-box; }
+/* overflow-x on BOTH roots, preferring clip (no scroll container): on mobile,
+   rightward overflow -- the carousel's incoming page parked past the right
+   edge -- can otherwise widen the layout viewport, dragging every fixed
+   element (the loading toast, the Update pill) off-centre. */
+html, body { margin: 0; overflow-x: hidden; overflow-x: clip; overscroll-behavior-y: none; }
+body {
+  min-height: 100vh; background: var(--page); color: var(--ink);
+  font-family: 'Public Sans', system-ui, sans-serif; line-height: 1.55;
+}
+/* The entering half of the contents page's push-up descend: the book slides
+   up into place from below, matching the carousel's pace. */
+@media (prefers-reduced-motion: no-preference) {
+  .book-entrance body { animation: book-in .22s ease-out; }
+  @keyframes book-in { from { transform: translateY(100vh); } }
+}
+/* Contain the carousel turn entirely: the translated #page-slide clips at the
+   article's own bounds (clip creates no scroll container, so nothing else
+   changes), and can never widen the page or the mobile layout viewport.
+   (A short destination's ability to hold the nav-anchor scroll is guaranteed
+   dynamically -- see consumeSlide -- so the notation key sits right after the
+   foot nav with no manufactured gap.) */
+#chapter { overflow-x: clip; }
+/* The slide's stationary window: a translated #page-slide (either axis) clips
+   at the frame's bounds instead of painting over the nav chrome around it.
+   On a page with nothing meaningful to scroll (the leaves), carousel-first:
+   touch-action reserves vertical drags that start here for the level swipe.
+   A page taller than the viewport keeps native scrolling in the frame, and
+   levels engage from the scroll boundaries instead (see the touch handlers).
+   Pinch-zoom stays native either way. */
+#page-frame { overflow: clip; }
+#page-frame.carousel-first { touch-action: pan-x pinch-zoom; }
+/* The foot nav sits in the same place on every page: the bottom of the
+   screen. The wrap stretches to the viewport, the chapter fills the wrap,
+   and all slack lands inside the frame -- never the slide -- so a short
+   page's nav rests exactly where a tall page's sticky bar rides, and
+   gesture precedence can still measure the natural content (it swaps the
+   frame's height for the slide's; see updateGesturePrecedence). */
+.wrap { display: flex; flex-direction: column; min-height: 100vh; min-height: 100dvh; }
+#chapter { flex: 1 0 auto; display: flex; flex-direction: column; }
+#page-frame { flex: 1 0 auto; }
+#chapter.title-leaf #page-frame { min-height: 30rem; }
+/* Volume and book leaves set like a manuscript title page: the title drops
+   to the optical upper third with its mark beneath, and the span's imprint
+   (ranges, dates -- the frontispiece block) anchors near the foot, the open
+   field of the leaf between them. */
+#chapter.span-leaf #page-frame { display: flex; }
+#chapter.span-leaf #page-slide { flex: 1; display: flex; }
+#chapter.span-leaf .chapter-head { flex: 1; width: 100%; display: flex; flex-direction: column; }
+#chapter.span-leaf .chapter-title { margin-top: 4.5rem; }
+#chapter.span-leaf .chapter-hash { margin-top: 1.6rem; }
+#chapter.span-leaf .chapter-frontispiece { margin-top: auto; margin-bottom: 3.75rem; }
+/* No bottom padding: the foot nav bar is the page's own floor. */
+.wrap { max-width: 720px; margin: 0 auto; padding: 48px 22px 0; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+.mono { font-family: 'IBM Plex Mono', monospace; }
+.hidden { display: none !important; }
+
+/* Masthead chrome comes from btc-chrome.css; only this page's reading layout
+   pulls the chapter closer beneath it. */
+.masthead { margin-bottom:24px; }
+
+button {
+  background: var(--accent); color: var(--btn-ink); border: none; border-radius: 4px;
+  font: 600 12.5px/1 'IBM Plex Mono',monospace; letter-spacing: .04em; text-transform: uppercase;
+  padding: 0 20px; cursor: pointer; transition: background .15s ease;
+}
+button:hover:not(:disabled) { background: var(--accent-2); }
+button:disabled { opacity: .4; cursor: not-allowed; }
+
+/* ── Settings popover (top-right): holds the data-source picker ── */
+.settings-menu { position:relative; }
+.settings-panel {
+  position:absolute; z-index:45; top:calc(100% + 10px); right:0; text-align:left;
+  width:min(340px, 86vw); padding:15px 16px 16px;
+  background:var(--card); border:1px solid var(--card-bd); border-radius:8px;
+  box-shadow:0 16px 40px -10px rgba(0,0,0,.75);
+}
+.settings-title { font:600 11px/1 'IBM Plex Mono',monospace; letter-spacing:.1em; text-transform:uppercase; color:var(--dim); margin-bottom:11px; }
+
+/* ── data-source picker: choose the Esplora-compatible endpoint, add custom ── */
+.endpoint-row { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.endpoint-select {
+  flex:1; min-width:170px; background:var(--input-bg); border:1px solid var(--input-bd); border-radius:4px;
+  color:var(--ink-soft); font:400 12.5px/1.4 'IBM Plex Mono',monospace; padding:8px 10px; cursor:pointer;
+}
+.endpoint-select:focus { outline:none; border-color:var(--accent); }
+.ghost-btn {
+  background:transparent; color:var(--dim); border:1px solid var(--input-bd);
+  font:600 11px/1 'IBM Plex Mono',monospace; letter-spacing:.04em; text-transform:uppercase;
+  padding:8px 12px; border-radius:4px; cursor:pointer; transition:border-color .15s ease, color .15s ease;
+}
+.ghost-btn:hover:not(:disabled) { color:var(--ink); border-color:var(--accent); background:transparent; }
+.ghost-btn:disabled { opacity:.35; cursor:not-allowed; }
+.endpoint-add-row { display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; }
+.endpoint-add-row input {
+  flex:1; min-width:140px; background:var(--input-bg); border:1px solid var(--input-bd); border-radius:4px;
+  color:var(--ink); font:400 13px/1.4 'IBM Plex Mono',monospace; padding:9px 11px;
+}
+.endpoint-add-row input:focus { outline:none; border-color:var(--accent); }
+.endpoint-add-row #endpoint-label { flex:0 0 32%; }
+.endpoint-msg { margin-top:10px; font:500 12px/1.4 'IBM Plex Mono',monospace; color:var(--meta); }
+.endpoint-msg.err { color:var(--error); }
+
+/* Status/loading indicator: a floating toast centred in the viewport --
+   over the carousel area the reader is watching during a page turn -- out
+   of the document flow, so appearing and vanishing never shifts or scrolls
+   the page under them. */
+.status-line {
+  position: fixed; z-index: 55; left: 50%; top: 42%;
+  transform: translate(-50%, -50%);
+  max-width: min(70vw, 480px);
+  background: var(--card); border: 1px solid var(--card-bd); border-radius: 6px;
+  padding: 9px 14px; box-shadow: 0 12px 32px -12px rgba(0,0,0,.8);
+  font: 500 13px/1.4 'IBM Plex Mono',monospace;
+}
+.status-line.err { color: var(--error); }
+/* The loading mark is the book's own notation, not a borrowed ring: the four
+   sigla of the pay-to-pubkey-hash template -- ⧉ ⌖ ≡ ∇ (OP_DUP, OP_HASH160,
+   OP_EQUALVERIFY, OP_CHECKSIG), the script most of the chain's record is
+   written in -- read out one at a time on a shared clock. Stacked spans in a
+   fixed-width cell (the glyphs' advance widths differ, and the toast must not
+   breathe), each fading in as its predecessor fades out; the markup comes from
+   SPINNER_HTML, so the glyph list lives in one place. Under reduced motion the
+   cycle stops on ⧉ and the mark stands still. */
+.spinner { position:relative; display:inline-block; width:1.3em; height:1.2em; vertical-align:-3px; margin-right:5px; color:var(--accent); }
+.spinner span { position:absolute; inset:0; text-align:center; line-height:1.2; opacity:0; animation: sigla-read 2s linear infinite; }
+.spinner span:nth-child(2) { animation-delay:.5s; }
+.spinner span:nth-child(3) { animation-delay:1s; }
+.spinner span:nth-child(4) { animation-delay:1.5s; }
+@keyframes sigla-read { 0% { opacity:0; } 8%, 25% { opacity:1; } 33%, 100% { opacity:0; } }
+@media (prefers-reduced-motion: reduce) {
+  .spinner span { animation:none; }
+  .spinner span:first-child { opacity:1; }
+}
+
+/* ── the chapter itself: a manuscript page, not a utility card ──
+   No top margin: the eyebrow bar opens the chapter right under the masthead
+   (its own padding sets the rhythm), with no dead band between them. */
+#chapter { margin-top: 0; }
+.chapter-head { text-align: center; padding-bottom: 34px; margin-bottom: 34px; border-bottom: 1px solid var(--rule); }
+/* On the chapter's own page the body is empty, so the head's closing rule
+   would stack against the page nav's opening rule -- drop it and let the nav's
+   rule close the leaf alone. */
+#chapter.title-leaf .chapter-head { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+/* Chapter (block) navigation: prev / next flanking the Volume · Book locator.
+   A [1fr | auto | 1fr] grid keeps the locator crumb dead-centred on the page
+   even when only one stepper is showing (Genesis has no Previous, the tip no
+   Next) -- a hidden stepper leaves its track empty instead of letting the
+   crumb drift toward the survivor. The steppers pin to the row's edges,
+   spanning the full width like the foot nav below. Explicit tracks: a hidden
+   stepper (display:none) leaves the grid, and auto-placement would reflow
+   the crumb into its column. */
+/* Anchored to the top of the screen, mirroring the foot nav's seat at the
+   bottom: sticky, so on a page taller than the viewport the eyebrow rides
+   the top edge -- prose scrolls behind its page-colour backing, the rule its
+   bottom edge -- and the two bars frame the screen. Top padding clears a
+   notch when running standalone. */
+.chapter-nav {
+  position: sticky; top: 0; z-index: 40;
+  display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:16px;
+  margin-bottom: 14px; padding: max(14px, env(safe-area-inset-top)) 0 14px;
+  border-bottom: 1px solid var(--rule); background: var(--page);
+}
+#chapter-prev { grid-column: 1; justify-self: start; }
+.chapter-num { grid-column: 2; }
+#chapter-next { grid-column: 3; justify-self: end; }
+/* The section's folio -- its page number in the chain's running count of
+   transactions (one page per transaction since genesis; see btc-pages.js) --
+   rides the right end of the eyebrow bar, on the chapter label's line, the
+   way a printed folio sits in a running head. It shares the right grid cell
+   with the chapter-next stepper: the stepper belongs to leaves alone and the
+   folio to section pages alone, so the two never show together. A bare,
+   unpunctuated number, dim against the eyebrow's gold -- an annotation, not
+   a crumb; the hover title carries the readable form. Census-resolved, so
+   it fills in a beat after the section renders; absent when no census
+   answers. */
+#page-folio { grid-column: 3; justify-self: end; font:500 11px/1 'IBM Plex Mono',monospace; letter-spacing:.14em; color:var(--dim); white-space:nowrap; font-variant-numeric:tabular-nums; }
+.chapter-num { font:600 11.5px/1 'IBM Plex Mono',monospace; letter-spacing:.3em; text-transform:uppercase; color: var(--accent); min-width: 0; text-align: center; }
+/* The eyebrow's Volume / Book / Chapter crumbs inherit its voice exactly;
+   hover marks them navigable. (Overrides the global gold button styling.) */
+.chapter-num .crumb {
+  background: transparent; border: none; border-radius: 0; padding: 0; cursor: pointer;
+  font: inherit; letter-spacing: inherit; text-transform: inherit; color: inherit;
+}
+.chapter-num .crumb:hover:not(:disabled), .chapter-num .crumb:focus-visible {
+  background: transparent; color: var(--accent-2); text-decoration: underline; outline: none;
+}
+/* Chapter/section navigation reads as chevron-flanked references, not boxed
+   buttons: a left chevron leads a Previous reference, a right chevron trails a
+   Next one. Plain accent text (labels are already cased -- text-transform:none
+   keeps the book's lowercase β from becoming a Latin-looking capital Β); nowrap
+   so a two-part label like "β59 ■2016" stays on one line. */
+.chapter-step, .section-nav button {
+  background: transparent; border: none; border-radius: 0; padding: 2px 2px;
+  color: var(--accent); font: 600 14px/1.2 'IBM Plex Mono',monospace;
+  letter-spacing: .04em; text-transform: none; white-space: nowrap; cursor: pointer;
+}
+.chapter-step:hover:not(:disabled), .section-nav button:hover:not(:disabled) {
+  background: transparent; color: var(--accent-2); text-decoration: underline;
+}
+#chapter-prev::before, #page-prev::before { content: '‹\00a0'; }
+#chapter-next::after, #page-next::after { content: '\00a0›'; }
+.chapter-title { font: 500 37px/1.2 'Newsreader', serif; color: var(--ink); margin: 0 0 22px; letter-spacing: -.01em; }
+/* A notable chapter's event name, set small under the unchanging "Chapter n"
+   heading. The negative top margin tucks it into the title's own 22px gap,
+   leaving 6px between the two and the usual 22px before what follows. */
+.chapter-subtitle { font: italic 500 21px/1.3 'Newsreader', serif; color: var(--dim); margin: -16px 0 22px; }
+.chapter-hash { font: italic 400 15px/1.5 'Newsreader',serif; color: var(--dim); margin: 0 auto 16px; max-width: 46ch; }
+/* The block header's own fields -- version, previous-block hash, merkle
+   root, timestamp, difficulty target, nonce -- in wire order, under the
+   chapter hash. A small mono line, like the manuscript's other margin notes;
+   each field carries its decoded form in `title` (a tooltip). */
+/* The block header stands upright throughout -- fields and hash proses
+   alike; only the chapter's own hash prose above it keeps the italic voice.
+   Same contrast tier as the section pages' apparatus (dim). */
+.chapter-frontispiece { margin: 0 auto 4px; max-width: 46ch; font: 400 14.5px/1.55 'Newsreader',serif; color: var(--dim); }
+/* Each header field on its own line, a breath of space between fields --
+   the two hash proses run long, so inline middots buried the seams. */
+.chapter-frontispiece .cfx { display: block; }
+.chapter-frontispiece .cfx + .cfx { margin-top: .45em; }
+/* The difficulty target (β): a proof-of-work mark -- gold, bold, upright.
+   (.chapter-hash carries the same mark on the book leaf, where the book's
+   target sits right beneath its title.) */
+.chapter-frontispiece .cfx-gold, .chapter-hash .cfx-gold { color: var(--accent); font-weight: 700; font-style: normal; }
+/* The merkle root's ⋔ mark: the clickable handle for its hash menu (copy hex /
+   prose), bold and accented (like the h data mark) so it reads as the actionable
+   element while the root's prose beside it stays plain. Upright, like every
+   mark, against the frontispiece's italic. */
+.merkle-mark { color: var(--accent); font-weight: 700; font-style: normal; }
+/* Upright bold-gold field marks in the frontispiece: the version's v and the
+   nonce's η lead their values the way the data marks lead prose; the value
+   after each stays in the frontispiece's own plain voice. */
+.fx-mark { color: var(--accent); font-weight: 700; font-style: normal; }
+
+/* A Glossia-encoded hash (a block hash, a txid, a merkle root): the prose is
+   the visible text; clicking anywhere on it opens a menu to copy the exact hex
+   it encodes or bookmark it. The raw hex itself is never shown -- copying it is
+   more reliable than selecting a string this long by hand on a touch device. */
+.hash-copy { position: relative; cursor: pointer; }
+
+/* Context menu raised by clicking a hash / txid: copy the hex, or bookmark it. */
+.hash-menu {
+  position: fixed; z-index: 40; min-width: 172px; padding: 6px;
+  background: var(--card); border: 1px solid var(--card-bd); border-radius: 7px;
+  box-shadow: 0 18px 44px -18px rgba(0,0,0,.8);
+}
+.hash-menu-head {
+  padding: 6px 8px 8px; color: var(--dim); font: 600 10.5px/1 'IBM Plex Mono',monospace;
+  letter-spacing: .1em; text-transform: uppercase; border-bottom: 1px solid var(--rule); margin-bottom: 5px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 260px;
+}
+.hash-menu .hash-menu-item {
+  display: block; width: 100%; text-align: left; background: transparent; color: var(--ink-soft);
+  border: none; border-radius: 4px; padding: 8px 9px; cursor: pointer;
+  font: 500 12.5px/1.2 'IBM Plex Mono',monospace; letter-spacing: .02em; text-transform: none;
+}
+.hash-menu .hash-menu-item:hover, .hash-menu .hash-menu-item:focus-visible { background: var(--input-bg); color: var(--ink); outline: none; }
+
+/* A bookmark ribbon pinned to the top-right corner of a bookmarked hash's
+   prose. pointer-events:none so it never intercepts the hash's own click. */
+.hash-bookmark { position: absolute; top: -4px; right: -2px; width: 10px; height: 14px; color: var(--accent); line-height: 0; pointer-events: none; }
+.hash-bookmark svg { display: block; width: 100%; height: 100%; }
+
+/* The title-entry form the menu swaps to when bookmarking: the title becomes a
+   table-of-contents entry. */
+.hash-menu-title { padding: 4px; }
+.hash-menu-title input {
+  width: 100%; background: var(--input-bg); border: 1px solid var(--input-bd); border-radius: 4px;
+  color: var(--ink); font: 400 12.5px/1.4 'IBM Plex Mono',monospace; padding: 8px 9px; margin-bottom: 7px;
+}
+.hash-menu-title input:focus { outline: none; border-color: var(--accent); }
+.hash-title-row { display: flex; gap: 6px; }
+.hash-menu-title .hash-title-row button {
+  flex: 1; padding: 8px 10px; font: 600 11.5px/1 'IBM Plex Mono',monospace; letter-spacing: .04em; text-transform: uppercase;
+}
+.hash-menu-title .hash-title-row .ghost { background: transparent; color: var(--dim); border: 1px solid var(--input-bd); }
+.hash-menu-title .hash-title-row .ghost:hover { background: transparent; color: var(--ink); border-color: var(--accent); }
+
+/* Per-section paging: Previous / Next pushed to opposite edges, each labelled
+   with the section (or adjacent leaf) it steps to. Anchored to the bottom of
+   the screen: sticky, so on a page taller than the viewport the bar rides the
+   bottom edge -- prose scrolls behind its page-colour backing, the rule its
+   top edge -- and settles into its natural place at the section's foot (after
+   the witness footnotes) once the reader reaches it. */
+.section-nav {
+  position: sticky; bottom: 0; z-index: 40;
+  display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:16px; margin-top: 44px;
+  padding: 14px 0 max(14px, env(safe-area-inset-bottom));
+  border-top: 1px solid var(--rule); background: var(--page);
+}
+/* Previous at the left edge, Next at the right, the notation toggle centred
+   between them. Explicit tracks: a hidden stepper (display:none) leaves the
+   grid, and auto-placement would reflow the survivors off-centre. */
+#page-prev { grid-column: 1; justify-self: start; }
+.section-nav .notation { grid-column: 2; }
+#page-next { grid-column: 3; justify-self: end; }
+/* Nothing to step to on either side (nothing precedes Genesis's opening leaf;
+   nothing follows the tip's last section while both edges are hidden): drop
+   the bar entirely rather than pin an empty rule to the screen bottom. */
+.section-nav:not(:has(button:not(.hidden))) { display: none; }
+/* The section heading -- the transaction's position within its block, "§ N" --
+   centred beneath the chapter frontispiece. */
+.section-title { text-align:center; margin: 22px 0 0; font:600 13px/1 'IBM Plex Mono',monospace; letter-spacing:.28em; text-transform:uppercase; color:var(--accent); }
+.section-num { display:block; }
+/* A curated transaction's name, beneath its § number -- the section's answer to
+   a chapter's event title (serif, mixed case, quieter than the accent numeral). */
+.section-event { display:block; margin-top:.5em; font:500 15px/1.3 'Newsreader',serif; letter-spacing:0; text-transform:none; color:var(--ink-soft); }
+/* The transaction's own txid, rendered as Glossia prose beneath the section title
+   (as the block hash is beneath the chapter title). */
+/* Dim like the chapter-hash above it -- both are the identifying hash prose of
+   the thing being read, one tier under the body, not two. */
+.section-hash { margin: 13px auto 0; max-width: 46ch; font: italic 400 14.5px/1.55 'Newsreader',serif; color: var(--dim); }
+/* The volume/book leaves borrow the chapter-hash slot for their range and
+   target lines -- not hash prose, so they stand upright. */
+.chapter-hash.plain, .chapter-hash .cfx-gold { font-style: normal; }
+
+.chapter-body { font-family: 'Newsreader', serif; font-size: 19px; line-height: 1.75; color: var(--ink-soft); font-variant-numeric: oldstyle-nums; }
+
+/* Each transaction is a manuscript page: a left margin for provenance (what
+   this text refers back to), a body for the canonical prose, and a right
+   margin for consequences (what this text produces / how it ends). */
+.tx-wrap { position: relative; margin: 0 0 2em; }
+
+/* A three-column manuscript grid -- [left margin | body | right margin] --
+   laid out in horizontal bands, each part aligned with the body it annotates:
+     .tx-inputs   a subgrid (row 1, left + body): every input is a [citation |
+                  scriptSig] pair, so an input's provenance sits on its own line.
+                  The citation is the referenced output's volume·book·chapter·section
+                  plus its output index (a coinbase shows ∅).
+     .tx-outputs  a subgrid (row 2, body + right): every output is a [scriptPubKey
+                  | amount] pair, so an amount sits on the line of its output.
+     .tx-locktime the closing locktime, centred across the full row, last
+                  band -- the end, set like a terminal colophon. */
+.tx-flow { display: grid; grid-template-columns: [left] 6.5em [body] minmax(0,1fr) [right] 7em; column-gap: 1.3em; align-items: start; }
+.tx-inputs { grid-column: left / right; grid-row: 1; display: grid; grid-template-columns: subgrid; column-gap: 1.3em; align-items: start; }
+/* padding-top nudges the small-cap reference down onto the top of the taller
+   prose line beside it (the two line boxes top-align, but the glyphs don't). */
+.tx-in-cite { grid-column: 1; text-align: right; padding-top: .34em; font: 500 12px/1.5 'IBM Plex Mono',monospace; color: var(--dim); word-break: break-word; }
+/* An aligned input row's left cell: this input's citation, preceded by any
+   witness-input citations that came before it in the sequence and had no
+   scriptSig of their own -- stacked, in order, above it. */
+.tx-in-cite-group { grid-column: 1; }
+.tx-in-cite-group > .tx-in-cite + .tx-in-cite { margin-top: .5em; }
+.tx-in-cite.resolving { color: var(--meta); }
+.tx-in-cite.cite-unresolved { color: var(--meta); font-style: italic; }
+.tx-in-cite.tx-version { color: var(--meta); letter-spacing: .03em; }
+/* Margin references are live citations -- gold, like every other reference
+   in the book (nav labels, contents rows, crumbs). */
+.cite-section-link { color: var(--accent); text-decoration: none; }
+.cite-section-link:hover { color: var(--accent-2); text-decoration: underline; }
+/* The amount of the output this input spends, under its reference. Right-aligned
+   to the body gutter, like the reference above it and the output amounts opposite. */
+.cite-amount { margin-top: .1em; text-align: right; font: italic 400 12px/1.3 'Newsreader',serif; color: var(--meta); font-variant-numeric: tabular-nums; }
+/* An output's forward citation -- the section that later spent it -- under its
+   amount in the right margin, mirroring the left margin's provenance cites.
+   Empty for an unspent output. */
+.fwd-cite { margin-top: .1em; font: 500 12px/1.3 'IBM Plex Mono',monospace; color: var(--dim); }
+.tx-in-script { grid-column: 2; min-width: 0; }
+/* Citations for inputs with no scriptSig (witness spends) + the version note.
+   They share the outputs' row in the left column, so the outputs slide up beside
+   them instead of being pushed below an input band full of empty body cells. The
+   stacked citations top-align with the first output. */
+.tx-margin-cites { grid-column: left; grid-row: 2; align-self: start; }
+.tx-outputs {
+  grid-column: body / -1; grid-row: 2;
+  display: grid; grid-template-columns: minmax(0,1fr) 7em; grid-template-columns: subgrid;
+  column-gap: 1.3em; align-items: start;
+}
+.tx-out-script { grid-column: 1; min-width: 0; }
+/* Amounts right-align to the page edge, like a ledger column; they read in
+   bitcoin (₿) with a fixed eight decimals and tabular figures, so the column
+   aligns on the point (see formatBtc in btc-prose.js). */
+.tx-out-value  { grid-column: 2; text-align: right; font-variant-numeric: tabular-nums; }
+.tx-locktime { grid-column: left / -1; grid-row: 3; text-align: center; font-style: normal; }
+.tx-note { font: italic 400 13.5px/1.4 'Newsreader',serif; color: var(--dim); }
+/* The input's sequence mark, leading the amount line beneath the reference:
+   ●/○ final/respects-locktime, † replaceable (a shade warmer), ■n / Τn a
+   relative block / time delay. */
+.tx-seq { font-style: normal; color: var(--meta); }
+.tx-seq-rbf { color: var(--accent-2); }
+.tx-seq-block, .tx-seq-time { color: var(--dim); font-variant-numeric: normal; }
+.tx-line { margin: 0 0 .55em; }
+/* Opcodes rendered inline in a script: a defined opcode shows as its Glossia
+   glyph (accent, so the grammar punctuates the prose data pushes); an opcode
+   we haven't given a glyph falls back to Bitcoin Core's OP_* name in small mono. */
+.op { color: var(--accent); font-style: normal; }
+.op-name { font: 600 .62em/1 'IBM Plex Mono',monospace; letter-spacing:.04em; color: var(--dim); font-style: normal; vertical-align: .14em; white-space: nowrap; }
+/* A push opcode's mark (↧ₙ and the OP_PUSHDATA variants): quieter than the
+   operational opcodes -- it frames the data that follows rather than acting
+   on the stack, so it shouldn't compete with the prose it introduces. */
+.op-push { color: var(--meta); }
+/* A data type mark (p s h r w t): names what the prose after it carries.
+   Dim like the push count it rides with -- annotation, not instruction. */
+/* Data marks (p s h r w t) in live prose: bold, since a confirmed
+   transaction's data is on chain. In the pattern table the same letters go
+   plain where a spend introduces them at validation (see .seq.exec .ph). */
+.dt { color: var(--accent); font-style: normal; font-weight: 700; }
+/* A witness footnote is a stack of items; a thin middot separates each, and an
+   empty stack item shows as ∅. */
+.wit-sep, .wit-empty { color: var(--meta); font-style: normal; }
+/* A push chunk whose prose hasn't been encoded yet -- it streams in when it
+   scrolls near the viewport (see lazyEncode). Shown as a dim ellipsis until
+   then; each data push is its own chunk, so a large witness fills piecewise. */
+.glossia-lazy { color: var(--dim); }
+/* Verbatim human-readable text embedded in a script (a coinbase mining-pool
+   tag, an OP_RETURN message) is a foreign voice quoted into the transaction,
+   not part of its prose -- so it's set as a quote block (a marginal accent
+   rule, indented, italic) rather than wrapped in inline quotation marks. */
+.tx-ascii {
+  margin: 0 0 .55em; padding: .12em 0 .12em 1.05em;
+  border-left: 2px solid var(--accent); border-radius: 1px;
+  font: italic 400 17.5px/1.6 'Newsreader',serif; color: var(--ink-soft);
+}
+/* A tab inside a quoted embedded message (see quoteText in btc-prose.js): a
+   fixed-width gap, so column-aligned text keeps its spacing instead of
+   collapsing to a single space. */
+.tab { display: inline-block; width: 4ch; }
+.tx-line.tx-body-lead::first-letter {
+  font-size: 3.4em; float: left; line-height: .82; padding: .04em .07em 0 0;
+  font-weight: 500; color: var(--accent);
+}
+@media (max-width: 560px) {
+  /* Collapse every band into one column: each margin cell becomes a full-width
+     block stacked with the body it annotated. Citations lead their input;
+     amounts follow their output -- position alone carries the sense. */
+  .tx-flow { grid-template-columns: 1fr; }
+  .tx-inputs, .tx-margin-cites, .tx-outputs, .tx-locktime { grid-column: 1; grid-row: auto; display: block; }
+  .tx-in-cite, .cite-amount { text-align: left; margin: 0 0 .2em; }
+  .tx-out-value { text-align: left; margin: 0 0 .55em; }
+  .tx-locktime { margin: 0 0 .55em; }   /* stays centred: it closes the page, not a ledger line */
+  /* Stacked into one column, the drop-cap's first body line now sits directly
+     below its input's citation/amount rather than beside it. The floated
+     initial (line-height .82) overhangs upward, so give the lead line room to
+     keep the cap clear of the amount above it. */
+  .tx-line.tx-body-lead { padding-top: .8em; }
+  /* At phone widths the row tightens: less gap, and the centre locator's
+     tracking eases so it wraps within the space between the edge-pinned
+     steppers (min-width 0 in the base rule) instead of overflowing. */
+  .chapter-nav { gap: 9px; }
+  .chapter-num { letter-spacing: .14em; }
+  /* The folio tightens with the row, so a ten-digit page number and a long
+     chapter crumb can share the bar without overflowing. */
+  #page-folio { font-size: 10px; letter-spacing: .06em; }
+}
+
+/* A witness-bearing input carries a small superscript index inline; the matching
+   witness prose collects at the foot of the page. */
+.tx-witness-ref { font: 500 .62em/1 'IBM Plex Mono',monospace; color: var(--accent); vertical-align: super; text-decoration: none; margin-left: .12em; }
+.tx-witness-ref:hover { text-decoration: underline; }
+.chapter-footnotes { margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--rule); }
+/* Witness prose is on-chain content, not marginalia: dim, not meta, so the
+   footnotes stay readable at length. */
+.footnote-entry { margin: 0 0 1.1em; font: italic 400 14.5px/1.6 'Newsreader',serif; color: var(--dim); }
+.footnote-entry:target { color: var(--ink-soft); }
+.footnote-mark { font: 500 10.5px/1 'IBM Plex Mono',monospace; color: var(--accent); margin-right: .5em; font-style: normal; vertical-align: .35em; }
+
+</style>
+</head>
+<body>
+<noscript>
+  <div style="max-width:44rem;margin:3rem auto;padding:0 1.25rem;font-family:Georgia,serif;line-height:1.6">
+    <h1>The βook of βitcoin</h1>
+    <p>The Bitcoin block chain, read as a book: each block a chapter, each
+    transaction a section of grammatically correct Glossia prose, witness data
+    collected as footnotes. Every byte of every transaction is carried in the
+    words of the prose and decodes back out exactly.</p>
+    <p>Passages are composed here, in the browser, by a WASM engine — so with
+    JavaScript off (or fetched by a crawler) this page carries no passage
+    text. The book is still readable without it:</p>
+    <ul>
+      <li><a href="./passages/index.md">Curated passages as plain markdown</a>
+        — the Genesis block, the Hal Finney transaction, Bitcoin Pizza Day,
+        the halvings, the soft-fork activations, and the rest.</li>
+      <li><a href="./preface.md">The preface</a> — the book in its own voice.</li>
+      <li><a href="./llms.txt">llms.txt</a> — the site's structure, citation
+        scheme, and how to reconstruct any passage on the chain from public
+        data with the published engine.</li>
+    </ul>
+  </div>
+</noscript>
+<div class="wrap">
+  <div class="masthead">
+    <span class="title">The <span class="beta">β</span>ook of <span class="beta">β</span>itcoin</span>
+    <span class="home"><a href="./bitcoin-search.html">Search</a> · <a href="./bitcoin-contents.html">Contents</a> · <a href="./bitcoin-ledger.html">Ledger</a> · <span class="settings-menu"><a href="#" id="settings-link" role="button" aria-haspopup="dialog" aria-expanded="false">Settings</a><div id="settings-panel" class="settings-panel hidden" role="dialog" aria-label="Settings">
+      <div class="settings-title">Data source</div>
+      <div class="endpoint-row">
+        <select id="endpoint-select" class="endpoint-select" aria-label="Data source endpoint"></select>
+        <button type="button" id="endpoint-add" class="ghost-btn">+ Add</button>
+        <button type="button" id="endpoint-remove" class="ghost-btn" disabled>Remove</button>
+      </div>
+      <div id="endpoint-add-row" class="endpoint-add-row hidden">
+        <input type="text" id="endpoint-label" class="mono" placeholder="Label (optional)" autocomplete="off" spellcheck="false">
+        <input type="text" id="endpoint-url" class="mono" placeholder="https://your-node/api" autocomplete="off" spellcheck="false">
+        <button type="button" id="endpoint-save">Save</button>
+        <button type="button" id="endpoint-cancel" class="ghost-btn">Cancel</button>
+      </div>
+      <div id="endpoint-msg" class="endpoint-msg hidden"></div>
+    </div></span></span>
+  </div>
+
+  <!-- The loading/error toast. The lookup input itself lives on its own page
+       (bitcoin-search.html, the masthead's Search link); this page only reports
+       the progress of whatever it was asked to open. -->
+  <div id="block-status" class="status-line hidden"></div>
+
+  <article id="chapter" class="hidden">
+    <!-- The eyebrow: chapter prev/next flank it on the chapter's own page
+         (section pages page with the foot nav instead). Its Volume / Book /
+         Chapter parts are crumbs -- each opens the page of the span it names.
+         Sits OUTSIDE #page-slide: the navigation chrome holds still while the
+         page content slides through a carousel turn. -->
+    <nav class="chapter-nav">
+      <button type="button" id="chapter-prev" class="chapter-step hidden" aria-label="Previous chapter" title="Previous chapter"></button>
+      <div class="chapter-num"><button type="button" id="ch-volume-link" class="crumb" title="This volume's page">Volume <span id="ch-volume"></span></button><span id="ch-sep-1"> · </span><button type="button" id="ch-book-link" class="crumb" title="This book's page">Book <span id="ch-book"></span></button><span id="ch-chapter-inline"></span></div>
+      <button type="button" id="chapter-next" class="chapter-step hidden" aria-label="Next chapter" title="Next chapter"></button>
+      <!-- The folio: a section's page number in the chain's running count of
+           transactions, at the right end of the running head (see btc-pages.js).
+           Occupies the stepper's grid cell -- the stepper shows on leaves, the
+           folio on section pages, never both. -->
+      <span id="page-folio" class="hidden"></span>
+    </nav>
+
+    <!-- Everything between the header nav and the foot nav: the part of the
+         page that follows the finger and slides on a page turn. The frame
+         around it clips the slide, so a moving page never paints over the
+         chrome above or below it. -->
+    <div id="page-frame">
+    <div id="page-slide">
+    <header class="chapter-head">
+      <h1 class="chapter-title" id="ch-title"></h1>
+      <div class="chapter-subtitle hidden" id="ch-subtitle"></div>
+      <div class="chapter-hash" id="ch-hash-short"></div>
+      <div class="chapter-frontispiece" id="ch-frontispiece"></div>
+      <h2 class="section-title" id="section-title"></h2>
+      <div class="section-hash" id="section-hash"></div>
+    </header>
+
+    <div class="chapter-body" id="ch-paragraphs"></div>
+
+    <div class="chapter-footnotes hidden" id="ch-footnotes-section">
+      <div id="ch-footnotes"></div>
+    </div>
+    </div>
+    </div>
+
+    <!-- Section paging sits at the foot of the section, after its witness
+         footnotes: read the transaction through, then step to the next. The
+         notation key rides between the two steppers; opened, its body rises
+         above the bar as a sheet. -->
+    <nav class="section-nav">
+      <button type="button" id="page-prev" class="hidden" aria-label="Previous section" title="Previous section"></button>
+      <details class="notation">
+        <summary>Notation</summary>
+        <div class="notation-body"></div>
+      </details>
+      <button type="button" id="page-next" class="hidden" aria-label="Next section" title="Next section"></button>
+    </nav>
+  </article>
+
+  <div id="hash-menu" class="hash-menu hidden" role="menu">
+    <div id="hash-menu-head" class="hash-menu-head"></div>
+    <div id="hash-menu-actions">
+      <button type="button" class="hash-menu-item" data-act="copy" role="menuitem">Copy hex</button>
+      <button type="button" class="hash-menu-item" data-act="copy-text" role="menuitem">Copy text</button>
+      <button type="button" class="hash-menu-item" data-act="bookmark" role="menuitem">Bookmark</button>
+    </div>
+    <div id="hash-menu-title" class="hash-menu-title hidden">
+      <input type="text" id="hash-title-input" class="mono" placeholder="Title for contents" autocomplete="off" spellcheck="false">
+      <div class="hash-title-row">
+        <button type="button" data-act="title-save">Save</button>
+        <button type="button" class="ghost" data-act="title-cancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { init, encodeSeedPhrase } from './glossia-msg.js';
+import { parseTransaction, computeTxid, parseBlockHeader, computeBlockHash } from './btc-tx.js';
+import { composeTransactionFields, composeBlockHeaderFields, groupDigits, formatBtc, renderWitness, toSuperscript, timestampInfo } from './btc-prose.js';
+import { volumeBookChapter, heightOf, toRoman, reference } from './btc-citation.js';
+import { NOTABLE } from './btc-contents.js';
+import { NOTATION_HTML } from './btc-notation.js';
+
+// The notation key's markup is shared with the front matter's sigla leaf, so
+// the toggle here and the key at rest there can never explain a mark
+// differently. Filled once, on load.
+document.querySelector('.notation-body').innerHTML = NOTATION_HTML;
+import { storeGet, storePut } from './btc-store.js';
+import { seedArchive } from './btc-seed.js';
+import { pageAnchor, bankAnchor, peekAnchor, formatPage } from './btc-pages.js';
+
+// A first visit provisions the archive with the curated passages' chain data
+// (idle-time, once ever; see btc-seed.js) -- the contents page's entries then
+// open like revisits.
+seedArchive();
+
+const $ = (id) => document.getElementById(id);
+
+// ── Data sources: Esplora-compatible endpoints ───────────────────────────
+// Two built-in public mirrors, plus any custom endpoints the reader adds (a
+// self-hosted Esplora/Electrs node, another public mirror). All expose the
+// identical REST API (/tx, /block, /block-height, …), so a URL built against
+// one can be replayed against any other by swapping the base -- which is what
+// esploraFetch does when a mirror rate-limits. Custom endpoints and the
+// current selection persist in localStorage.
+const BUILTIN_MIRRORS = [
+  { label: 'Blockstream', url: 'https://blockstream.info/api' },
+  { label: 'mempool.space', url: 'https://mempool.space/api' },
+];
+const ENDPOINTS_KEY = 'glossia-btc-endpoints'; // custom endpoints: [{label,url}]
+const SELECTED_KEY = 'glossia-btc-endpoint';   // selected endpoint url
+
+const readCustomMirrors = () => {
+  try {
+    const v = JSON.parse(localStorage.getItem(ENDPOINTS_KEY));
+    return Array.isArray(v) ? v.filter((m) => m && typeof m.url === 'string') : [];
+  } catch { return []; }
+};
+
+let customMirrors = readCustomMirrors();
+const allMirrors = () => [...BUILTIN_MIRRORS, ...customMirrors];
+
+// The live list of endpoint URLs the fetch layer tries, built-ins first. It is
+// mutated IN PLACE (never reassigned) so esploraFetch's closure always sees the
+// current set as custom endpoints are added or removed.
+const ESPLORA_MIRRORS = allMirrors().map((m) => m.url);
+const ESPLORA = BUILTIN_MIRRORS[0].url; // stable base callers build URLs against
+let preferred = 0;                      // index into ESPLORA_MIRRORS to try first
+const BEST_OF = 5;
+
+// Rebuild ESPLORA_MIRRORS in place from the built-ins + current customs.
+function syncMirrors() {
+  ESPLORA_MIRRORS.length = 0;
+  for (const m of allMirrors()) ESPLORA_MIRRORS.push(m.url);
+}
+
+// Restore the reader's saved endpoint choice, if it's still in the list.
+(() => {
+  const saved = localStorage.getItem(SELECTED_KEY);
+  const i = saved ? ESPLORA_MIRRORS.indexOf(saved) : -1;
+  if (i >= 0) preferred = i;
+})();
+
+// Every Esplora request goes through this throttle rather than the raw fetch.
+// A single transaction can fan out into dozens of lookups at once (a citation
+// per input, a forward citation per output, footnotes), and the public Esplora
+// instance sheds those bursts with 429/503. Three defenses, in order of
+// importance:
+//   1. a concurrency cap -- at most CONCURRENCY requests in flight, the rest
+//      queued -- which flattens the bursts that trip the limiter in the first
+//      place;
+//   2. exponential backoff with jitter on 429/503, honoring a Retry-After
+//      header when the server sends one, for the times we're throttled anyway;
+//   3. mirror failover -- once a mirror's own retry budget is spent (still
+//      throttled, or a network/CORS failure), the request is replayed against
+//      the next mirror, and that mirror becomes preferred so the rest of the
+//      burst skips the dead one instead of each re-discovering it.
+// Jitter matters: without it, a batch of parallel failures would all retry in
+// lockstep and re-burst. Returns a normal Response, so callers' .ok/.json()/
+// .text() handling is unchanged.
+const esploraFetch = (() => {
+  const CONCURRENCY = 3;
+  const MAX_RETRIES = 4;
+  const RETRYABLE = new Set([429, 503]);
+  let active = 0;
+  const queue = [];
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  const pump = () => { while (active < CONCURRENCY && queue.length) queue.shift()(); };
+
+  // Rewrite a URL built against any known mirror onto `base`. A URL that
+  // doesn't match a mirror (shouldn't happen) is left untouched.
+  const onMirror = (url, base) => {
+    for (const m of ESPLORA_MIRRORS) {
+      if (url.startsWith(m)) return base + url.slice(m.length);
+    }
+    return url;
+  };
+
+  return (url, opts) => new Promise((resolve, reject) => {
+    queue.push(async () => {
+      active++;
+      try {
+        // Visit each mirror once, starting from the one that last served us.
+        const order = ESPLORA_MIRRORS.map((_, i) => (preferred + i) % ESPLORA_MIRRORS.length);
+        let lastErr = null;
+        for (let mi = 0; mi < order.length; mi++) {
+          const idx = order[mi];
+          const target = onMirror(url, ESPLORA_MIRRORS[idx]);
+          const lastMirror = mi === order.length - 1;
+          for (let attempt = 0; ; attempt++) {
+            let res;
+            try {
+              res = await fetch(target, opts);
+            } catch (e) {
+              // Network-level failure (offline, DNS, CORS). Retry a few times
+              // with backoff, then fall through to the next mirror.
+              lastErr = e;
+              if (attempt >= MAX_RETRIES) break;
+              await sleep((2 ** attempt) * 500 + Math.random() * 250);
+              continue;
+            }
+            if (!RETRYABLE.has(res.status) || attempt >= MAX_RETRIES) {
+              // A definitive answer (ok, 404, …) ends the search. A still-
+              // throttled response with a mirror left in reserve falls through
+              // to try it; on the last mirror we surface it as-is.
+              if (RETRYABLE.has(res.status) && !lastMirror) break;
+              preferred = idx; // this mirror is serving us -- stick with it
+              resolve(res);
+              return;
+            }
+            const retryAfter = Number(res.headers.get('Retry-After'));
+            const backoff = Number.isFinite(retryAfter) && retryAfter > 0
+              ? retryAfter * 1000
+              : (2 ** attempt) * 500 + Math.random() * 250;
+            await sleep(backoff);
+          }
+          // This mirror is exhausted; prefer the next one for queued requests.
+          preferred = (idx + 1) % ESPLORA_MIRRORS.length;
+        }
+        // Every mirror failed with a network-level error.
+        reject(lastErr || new Error('All Esplora mirrors failed'));
+      } finally {
+        active--;
+        pump();
+      }
+    });
+    pump();
+  });
+})();
+
+// Esplora's block hash, like a txid, is displayed byte-reversed relative to its
+// internal (wire/hashing) byte order -- see btc-tx.js's txid handling. Reverse
+// it back before encoding so the prose carries the hash's actual bytes.
+function reverseHex(hex) { return (hex.match(/../g) || []).reverse().join(''); }
+
+// A block hash's leading (display-order) zero bytes -- required by proof-of-work,
+// and longer for higher-difficulty blocks -- become TRAILING zero bytes once
+// reversed into internal order. They carry no information, so drop them before
+// encoding rather than spending payload words on them.
+function trimTrailingZeroBytes(hex) {
+  let end = hex.length;
+  while (end >= 2 && hex.slice(end - 2, end) === '00') end -= 2;
+  return hex.slice(0, end);
+}
+
+// Encode-on-scroll for script/witness prose. A data push is capped at 520 bytes
+// (MAX_SCRIPT_ELEMENT_SIZE), so any large payload -- an inscription's tapscript,
+// a bulky OP_RETURN -- already arrives pre-split into a run of bounded pushes.
+// We exploit that: renderScript/renderWitness emit each push as a placeholder
+// rather than encoding it, and an IntersectionObserver Glossia-encodes each one
+// only as it scrolls near the viewport. So a kilobyte-scale witness never blocks
+// the main thread up front; its prose streams in chunk by chunk, and pushes the
+// reader never scrolls to are never encoded at all. Structure (type marks, push
+// counts, opcode glyphs) still renders eagerly, so the skeleton is instant.
+const lazyEncode = (() => {
+  const fill = (el) => {
+    const hex = el.dataset.hex;
+    if (hex === undefined) return;   // already filled
+    delete el.dataset.hex;
+    el.classList.remove('glossia-lazy');
+    el.innerHTML = encodeSeedPhrase(hex, 'english', BEST_OF).prose;   // Glossia prose -- safe as innerHTML
+  };
+  // rootMargin pre-encodes a chunk before it enters view, so a scrolling reader
+  // almost never sees the raw placeholder.
+  const io = ('IntersectionObserver' in window)
+    ? new IntersectionObserver((entries, obs) => {
+        for (const e of entries) {
+          if (!e.isIntersecting) continue;
+          obs.unobserve(e.target);
+          fill(e.target);
+        }
+      }, { rootMargin: '600px 0px' })
+    : null;
+  return {
+    // A push's prose, deferred: hex rides in a data attribute (hex is [0-9a-f],
+    // safe unquoted) and the ⋯ gives the span a layout box so the observer fires.
+    placeholder: (hex) => hex ? `<span class="glossia-lazy" data-hex="${hex}">⋯</span>` : '',
+    // Drop pending chunks from a previous section (their nodes are already detached).
+    reset: () => { if (io) io.disconnect(); },
+    // Start watching every placeholder under `root`; encode all now if the
+    // browser has no IntersectionObserver.
+    observe: (root) => {
+      const pending = root.querySelectorAll('.glossia-lazy');
+      if (io) pending.forEach((el) => io.observe(el));
+      else pending.forEach(fill);
+    },
+  };
+})();
+
+let ready = false;
+init().then(() => { ready = true; }).catch((e) => console.error('WASM init failed:', e));
+
+// The loading mark's markup (see .spinner in the stylesheet): the P2PKH
+// template's sigla in script order, each glyph carrying its OP_* name as a
+// hover title just as it would in a chapter. Decorative -- the words after it
+// say what's happening -- so the whole mark is hidden from the reader's ear.
+const SPINNER_HTML = '<span class="spinner" aria-hidden="true">'
+  + [['⧉', 'OP_DUP'], ['⌖', 'OP_HASH160'], ['≡', 'OP_EQUALVERIFY'], ['∇', 'OP_CHECKSIG']]
+    .map(([glyph, name]) => `<span title="${name}">${glyph}</span>`).join('')
+  + '</span>';
+
+function setStatus(msg, kind) {
+  const el = $('block-status');
+  el.className = 'status-line' + (kind ? ' ' + kind : '');
+  el.innerHTML = msg;
+  el.classList.toggle('hidden', !msg);
+  // A failed navigation must never leave the page stranded off-screen
+  // mid-carousel-turn (see slideOutAndStep).
+  if (kind === 'err') resetSlide();
+}
+
+// The current block's info + full ordered txid list, plus which transaction
+// within it is on screen -- fetched once per block, so stepping between
+// transactions inside it needs no further list fetch. `null` before the
+// first successful load.
+let state = null;   // { hash, height, block, txids, index }
+
+// The chain tip isn't knowable in advance -- discovered only by trying to
+// fetch the next block and having it 404 -- so it's cached once learned
+// rather than reprobed on every step off the same last block.
+let tipHeight = null;
+
+// The on-screen transaction's per-input witnesses ({ n, hex }), stashed so they
+// can be encoded lazily -- as numbered footnotes -- when the reader clicks an
+// input's witness reference rather than on every load. `footnotesLoaded` guards
+// against re-encoding on repeat clicks.
+let currentFootnotes = [];
+let footnotesLoaded = false;
+
+// Each input's prevout is shown as a citation to the output it spends -- the
+// referenced transaction's volume·book·chapter·section. Resolving one needs a
+// lookup (its block height + position in that block), so results are memoized
+// by txid and `renderGen` lets a citation that resolves after the reader has
+// paged away drop its stale DOM update.
+const citationCache = new Map();   // txid -> Promise<{ height, pos, outputs }>
+let renderGen = 0;
+
+// txid -> { height, pos, outputs } for the referenced transaction: the merkle
+// proof gives its confirming height and index within that block (the section),
+// while /tx gives its outputs (so a spent output's amount can be shown under
+// the reference). Fetched together, memoized by txid.
+function resolveCitation(txid) {
+  if (!citationCache.has(txid)) {
+    citationCache.set(txid, (async () => {
+      // A confirmed placement (and the outputs behind it) is immutable, so
+      // the archive answers first and forever.
+      const kept = await storeGet('citations', txid);
+      if (kept) return kept;
+      const [mpRes, txRes] = await Promise.all([
+        esploraFetch(`${ESPLORA}/tx/${txid}/merkle-proof`),
+        esploraFetch(`${ESPLORA}/tx/${txid}`),
+      ]);
+      if (!mpRes.ok) throw new Error(`Esplora returned ${mpRes.status}`);
+      const mp = await mpRes.json();
+      const tx = txRes.ok ? await txRes.json() : null;
+      const entry = { height: mp.block_height, pos: mp.pos, outputs: tx ? tx.vout : null };
+      storePut('citations', txid, entry);
+      return entry;
+    })().catch((e) => { citationCache.delete(txid); throw e; }));
+  }
+  return citationCache.get(txid);
+}
+
+// toRoman is imported from btc-citation.js (shared with the contents page).
+
+// Parse a Roman numeral (a volume) -- the inverse of toRoman. Returns NaN on
+// any non-Roman character so a malformed token is rejected, not misread.
+function fromRoman(s) {
+  const val = { I: 1, V: 5, X: 10, L: 50, C: 100, D: 500, M: 1000 };
+  let total = 0, prev = 0;
+  for (let i = s.length - 1; i >= 0; i--) {
+    const v = val[s[i]];
+    if (!v) return NaN;
+    if (v < prev) total -= v; else { total += v; prev = v; }
+  }
+  return total;
+}
+
+// Parse a scripture-style reference into { height, index }. Volume comes first
+// (Roman); each finer level named opens a deeper page -- the reference's depth
+// picks the leaf:
+//   "III"        -> volume III's own page
+//   "III 2"      -> era 3, book 2's own page
+//   "III 2 5"    -> chapter 5's own page
+//   "III 2 5 §3" / "III 2 5 3" -> section 3
+// A trailing ".output" (as citations print, e.g. "III 2 5 §3.1") is accepted
+// and ignored -- it picks an output within the section, not another section.
+// Returns null when the string isn't a reference at all.
+function parseReference(input) {
+  const s = input.trim().replace(/\s+/g, ' ');
+  // The book (β2) and chapter (■5) sigils are optional on input -- a bare
+  // "III 2 5" resolves just as "III β2 ■5" does.
+  const m = s.match(/^([ivxlcdm]+)(?:\s+β?(\d+))?(?:\s+■?(\d+))?(?:\s+§?(\d+)(?:\.\d+)?)?$/i);
+  if (!m) return null;
+  const volume = fromRoman(m[1].toUpperCase());
+  if (!Number.isFinite(volume) || volume < 1) return null;
+  const book = m[2] ? parseInt(m[2], 10) : 1;
+  const chapter = m[3] ? parseInt(m[3], 10) : 1;
+  const section = m[4] ? parseInt(m[4], 10) : null;
+  if (book < 1 || chapter < 1 || (section !== null && section < 1)) return null;
+  // The reference's depth picks the page: a §section opens that section; a
+  // chapter its own page (-1); a book its leaf (-2); a bare volume its
+  // leaf (-3). The height is always the finest named span's first block.
+  const index = section !== null ? section - 1 : m[3] ? -1 : m[2] ? -2 : -3;
+  return { height: heightOf(volume, book, chapter), index };
+}
+
+// ── Volume / book leaves ──────────────────────────────────────────────────
+// A chapter that opens a book gets a book leaf (index -2) ahead of its
+// chapter page, and one that opens a volume a volume leaf (-3) ahead of that,
+// so the linear page order runs: … previous book's last section → volume
+// leaf → book leaf → chapter page → §1 → … The leaf floor for a block is the
+// lowest index it carries.
+const volumeStartOf = (height) => heightOf(volumeBookChapter(height).volume, 1, 1);
+const bookStartOf = (height) => height - (volumeBookChapter(height).chapter - 1);
+function minIndexOf(height) {
+  const { book, chapter } = volumeBookChapter(height);
+  if (chapter !== 1) return -1;
+  return book === 1 ? -3 : -2;
+}
+
+// txid -> the spending status of every output at once (Esplora /outspends):
+// [{ spent, txid, vin, status }] in output order. Memoized like citations.
+const outspendsCache = new Map();
+function loadOutspends(txid) {
+  if (!outspendsCache.has(txid)) {
+    outspendsCache.set(txid, (async () => {
+      const res = await esploraFetch(`${ESPLORA}/tx/${txid}/outspends`);
+      if (!res.ok) throw new Error(`Esplora returned ${res.status}`);
+      return res.json();
+    })().catch((e) => { outspendsCache.delete(txid); throw e; }));
+  }
+  return outspendsCache.get(txid);
+}
+
+// Fill each output's forward-citation cell with the section that spent it --
+// the mirror of the input margin's provenance cites: the left margin says
+// where value came from, the right margin says where it went next. One
+// outspends call covers every output; each confirmed spender then resolves
+// through the same memoized citation lookup as a prevout. An unspent (or
+// unconfirmed-spend) output leaves its cell empty, and any failure stays
+// silent -- a missing forward reference is absence, not an error.
+async function resolveForwardCitations(txid, cells, gen) {
+  try {
+    const spends = await loadOutspends(txid);
+    await Promise.all(cells.map(async (cell, i) => {
+      const sp = spends[i];
+      if (!sp || !sp.spent || !sp.txid || !sp.status || !sp.status.confirmed) return;
+      try {
+        const { height, pos } = await resolveCitation(sp.txid);
+        if (gen !== renderGen) return;
+        const { volume, book, chapter } = volumeBookChapter(height);
+        const link = document.createElement('a');
+        link.className = 'cite-section-link';
+        link.href = `?block=${height}&index=${pos}`;
+        link.textContent = `${toRoman(volume)} β${book} ■${chapter} §${pos + 1}`;
+        link.title = `spent by input ${sp.vin + 1} of ${sp.txid}`;
+        link.addEventListener('click', (e) => { e.preventDefault(); goToSection(height, pos, `in-${sp.vin}`); });
+        cell.append(link);
+      } catch { /* unresolvable spender -- leave the cell empty */ }
+    }));
+  } catch { /* outspends unavailable -- every cell stays empty */ }
+}
+
+// Populate a citation cell with the scripture-style reference "volume(Roman)
+// book chapter §section.verse" -- the section is the transaction, the verse its
+// output index (e.g. "XII 37 184 §17.2"), the whole of which links to that
+// section.
+function renderCitation(citeBody, height, pos, vout) {
+  const { volume, book, chapter } = volumeBookChapter(height);
+  const link = document.createElement('a');
+  link.className = 'cite-section-link';
+  link.href = `?block=${height}&index=${pos}`;
+  link.textContent = `${toRoman(volume)} β${book} ■${chapter} §${pos + 1}.${vout}`;
+  link.title = `go to §${pos + 1}.${vout}`;
+  link.addEventListener('click', (e) => { e.preventDefault(); goToSection(height, pos, `out-${vout}`); });
+  citeBody.textContent = '';
+  citeBody.append(link);
+}
+
+// Navigate to a referenced section (the transaction at `index` in the block at
+// `height`) in place, then bring `scrollId` to the top of the page. The two
+// directions mirror each other: following an input's provenance scrolls to the
+// output it spends (out-N), and following an output's forward citation scrolls
+// to the input that spends it (in-N).
+async function goToSection(height, index, scrollId) {
+  await openLookup(String(height), index);
+  if (scrollId) {
+    const el = $(scrollId);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+}
+
+// Fill each pending citation cell once its reference resolves; skip if the
+// reader has since paged to another section (gen no longer current).
+async function resolveCitations(pending, gen) {
+  await Promise.all(pending.map(async ({ citeBody, cite, amtVal, txid, vout }) => {
+    try {
+      const { height, pos, outputs } = await resolveCitation(txid);
+      if (gen !== renderGen) return;
+      renderCitation(citeBody, height, pos, vout);
+      cite.classList.remove('resolving');
+      cite.title = `${txid}:${vout}`;
+      // The amount of the referenced output -- what this input spends -- sits on
+      // the line beneath the reference, after the sequence mark, in parentheses:
+      // the mark for value flowing IN, where an output's amount (value flowing
+      // out) stands bare.
+      if (amtVal && outputs && outputs[vout]) {
+        amtVal.textContent = `(${formatBtc(outputs[vout].value)})`;
+        amtVal.title = `the amount this input spends: ${groupDigits(String(outputs[vout].value))} satoshis`;
+      }
+    } catch (e) {
+      if (gen !== renderGen) return;
+      citeBody.textContent = `${txid.slice(0, 8)}… .${vout}`;
+      cite.classList.remove('resolving');
+      cite.classList.add('cite-unresolved');
+      cite.title = `${txid}:${vout} — reference could not be resolved`;
+    }
+  }));
+}
+
+// A block's ordered txid list, memoized by block hash. It's the heaviest part
+// of a block's metadata -- every transaction hash -- so it's fetched on its own
+// and only when needed: opening one transaction by id doesn't need it (its section
+// comes from the merkle proof), only stepping through the block does.
+const txidsCache = new Map();
+function fetchTxids(hash) {
+  if (!txidsCache.has(hash)) {
+    txidsCache.set(hash, (async () => {
+      const kept = await storeGet('txids', hash);   // a block's list is immutable by its hash
+      if (kept) return kept;
+      const res = await esploraFetch(`${ESPLORA}/block/${hash}/txids`);
+      if (!res.ok) throw new Error(`Esplora returned ${res.status} fetching the transaction list.`);
+      const txids = await res.json();
+      storePut('txids', hash, txids);
+      return txids;
+    })().catch((e) => { txidsCache.delete(hash); throw e; }));
+  }
+  return txidsCache.get(hash);
+}
+// Populate `st.txids` on first use, so Prev/Next has the list to step through.
+async function ensureTxids(st) {
+  if (!st.txids) st.txids = await fetchTxids(st.hash);
+  return st.txids;
+}
+
+// The immutable core of a block's metadata -- its info and header, everything
+// but the txid list. A block hash permanently determines this content, so it's
+// memoized by hash: revisiting a block (e.g. stepping Next then back) re-fetches
+// nothing. Keyed by hash, not height, so a tip reorg can never serve stale data
+// -- a different block is a different hash. The shared objects are read-only.
+const blockCoreCache = new Map();   // hash -> Promise<{ hash, height, block, txCount, header, headerVerified }>
+function loadBlockCore(hash) {
+  if (!blockCoreCache.has(hash)) {
+    blockCoreCache.set(hash, (async () => {
+      // The archive keeps the fetched ingredients (info json + header hex);
+      // the parse and the hash check are recomputed on every load, so a kept
+      // block re-earns its verification exactly like a fresh one.
+      const build = async (block, headerHex) => {
+        // Parsed from the raw 80-byte header, not trusted from the JSON --
+        // same self-parsed, self-verified stance as a transaction's txid.
+        const header = parseBlockHeader(headerHex);
+        const headerVerified = (await computeBlockHash(headerHex)) === hash;
+        return { hash, height: block.height, block, txCount: block.tx_count, header, headerVerified };
+      };
+      const kept = await storeGet('blocks', hash);
+      if (kept) return build(kept.block, kept.headerHex);
+      const [blockRes, headerRes] = await Promise.all([
+        esploraFetch(`${ESPLORA}/block/${hash}`),
+        esploraFetch(`${ESPLORA}/block/${hash}/header`),
+      ]);
+      if (!blockRes.ok) throw new Error(`Esplora returned ${blockRes.status} fetching block info.`);
+      if (!headerRes.ok) throw new Error(`Esplora returned ${headerRes.status} fetching the block header.`);
+      const block = await blockRes.json();
+      const headerHex = (await headerRes.text()).trim();
+      storePut('blocks', hash, { block, headerHex });
+      return build(block, headerHex);
+    })().catch((e) => { blockCoreCache.delete(hash); throw e; }));
+  }
+  return blockCoreCache.get(hash);
+}
+
+// `withTxids: false` leaves the (heavy) txid list unfetched -- used when opening
+// a single transaction, whose section index comes from its merkle proof instead.
+// The block's transaction count still comes from its info (tx_count), so section
+// bounds and Next work without the list. Core (info + header) and the txid list
+// are each memoized, so a re-visit re-fetches neither.
+async function loadBlockMeta(hash, { withTxids = true } = {}) {
+  const [core, txids] = await Promise.all([
+    loadBlockCore(hash),
+    withTxids ? fetchTxids(hash) : Promise.resolve(null),
+  ]);
+  return { ...core, txids };
+}
+
+// height -> block hash, memoized for heights safely below the tip. This is
+// what makes a prefetched swipe commit with zero network: the block core is
+// already cached by hash, and this removes the last repeated lookup. Heights
+// within 6 blocks of the tip are never cached, so a reorg can't pin a stale
+// mapping (past 6 confirmations a reorg is not a practical concern).
+const hashByHeight = new Map();
+async function resolveBlockHash(height) {
+  const h = Number(height);
+  if (hashByHeight.has(h)) return hashByHeight.get(h);
+  // The archive answers under the same six-confirmation rule the memo keeps:
+  // a mapping is only ever written safely below the tip, so a kept one is
+  // final and serves without the network.
+  const kept = await storeGet('heights', h);
+  if (kept) { hashByHeight.set(h, kept); return kept; }
+  const res = await esploraFetch(`${ESPLORA}/block-height/${height}`);
+  if (!res.ok) throw Object.assign(
+    new Error(res.status === 404 ? `No block at height ${height}.` : `Esplora returned ${res.status}.`),
+    { notFound: res.status === 404 });
+  const hash = (await res.text()).trim();
+  if (tipHeight !== null && h <= tipHeight - 6) {
+    hashByHeight.set(h, hash);
+    storePut('heights', h, hash);
+  }
+  return hash;
+}
+async function loadBlockByHeight(height, opts) {
+  return loadBlockMeta(await resolveBlockHash(height), opts);
+}
+
+// A block's info JSON by height (no txid list), memoized: the light metadata
+// (tx_count, timestamp) that nav labels and the volume/book leaves read.
+const infoByHeight = new Map();
+function loadBlockInfoByHeight(height) {
+  if (!infoByHeight.has(height)) {
+    infoByHeight.set(height, (async () => {
+      const bres = await esploraFetch(`${ESPLORA}/block/${await resolveBlockHash(height)}`);
+      if (!bres.ok) throw new Error(`Esplora returned ${bres.status}.`);
+      return bres.json();
+    })().catch((e) => { infoByHeight.delete(height); throw e; }));
+  }
+  return infoByHeight.get(height);
+}
+// The Previous label when it steps back across a block boundary: the section
+// it lands on is the prior block's last transaction, whose §number is that
+// block's tx count.
+const loadBlockTxCount = (height) => loadBlockInfoByHeight(height).then((b) => b.tx_count);
+// A block's timestamp, for the leaves' recorded date ranges.
+const loadBlockStamp = (height) => loadBlockInfoByHeight(height).then((b) => b.timestamp);
+
+// The six-confirmation rule for banking a page anchor (btc-pages.js): only a
+// safely buried height's running count is final -- the same rule the
+// height→hash archive keeps.
+const anchorFinalAt = (h) => tipHeight !== null && h <= tipHeight - 6;
+
+// Fill the running head's folio -- the section's page number in the chain's
+// running count of transactions -- once the block's anchor resolves (banked,
+// derived, or one census call; see btc-pages.js). The folio element is
+// persistent chrome, so a fill that outlives its section (gen no longer
+// current) is dropped. When no census endpoint answers, the folio stays
+// absent: an annotation, never a gate on reading.
+async function fillFolio(el, gen) {
+  const h = state.height, idx = state.index, count = state.txCount;
+  let anchor;
+  try { anchor = await pageAnchor(h, anchorFinalAt(h)); }
+  catch { return; }   // census unreachable -- try again on a later visit
+  // With this block's anchor in hand, the next block's is pure arithmetic --
+  // bank it so reading onward (across the chapter turn into §1) never asks
+  // the census. The backward derivation rides labelNav's previous-count
+  // fetch, which is the moment the prior block's tx_count is known.
+  bankAnchor(h + 1, anchor + count, anchorFinalAt(h + 1));
+  if (gen !== renderGen) return;
+  const page = anchor + idx + 1;
+  // The folio prints bare -- digits alone, unpunctuated; the hover title
+  // carries the readable form and the explanation.
+  el.textContent = String(page);
+  el.title = `page ${formatPage(page)} — transaction ${formatPage(page)} of the chain: pages count every transaction since genesis, in block order`;
+}
+
+// The chain tip height, as plain text from Esplora. Opens the book at the most
+// recent chapter when the reader arrives without a specific target.
+async function loadTipHeight() {
+  const res = await esploraFetch(`${ESPLORA}/blocks/tip/height`);
+  if (!res.ok) throw new Error(`Esplora returned ${res.status}.`);
+  return (await res.text()).trim();
+}
+
+// A txid -> the block that confirmed it, plus the transaction's index within
+// that block (its section). The section comes from the merkle proof's position, so
+// opening one transaction never downloads the whole block's txid list -- that's
+// deferred (ensureTxids) until the reader steps Prev/Next. This is what makes
+// navigation by reference fast regardless of how large the block is.
+async function loadBlockByTxid(txid) {
+  const [txRes, mpRes] = await Promise.all([
+    esploraFetch(`${ESPLORA}/tx/${txid}`),
+    esploraFetch(`${ESPLORA}/tx/${txid}/merkle-proof`),
+  ]);
+  if (!txRes.ok) throw new Error(txRes.status === 404 ? `No transaction ${txid.slice(0, 8)}…` : `Esplora returned ${txRes.status}.`);
+  const tx = await txRes.json();
+  if (!tx.status || !tx.status.confirmed) throw new Error('That transaction is unconfirmed — it has no section yet.');
+  const hash = tx.status.block_hash;
+  if (mpRes.ok) {
+    const meta = await loadBlockMeta(hash, { withTxids: false });
+    return { meta, index: (await mpRes.json()).pos, txid };
+  }
+  // No merkle proof -- fall back to locating the tx in the full txid list.
+  const meta = await loadBlockMeta(hash);
+  const index = meta.txids.indexOf(txid);
+  if (index < 0) throw new Error('Transaction not found in its confirming block.');
+  return { meta, index, txid };
+}
+
+// A confirmed transaction's raw hex is immutable -- the txid is its hash -- so
+// it's memoized. Re-opening a section, or stepping back to one, re-parses from
+// cache instead of re-fetching the (potentially large) hex. Unlike the block
+// core (small, kept unbounded), a single tx hex can run to kilobytes -- an
+// inscription witness, megabytes -- so this cache is bounded by a small LRU: the
+// least-recently-viewed entries fall out once the cap is reached, which is fine
+// since navigation only ever needs a handful at once. A Map keeps insertion
+// order, so re-inserting on a hit marks it most-recently-used and the oldest key
+// is always first.
+const TX_HEX_CACHE_MAX = 64;
+const txHexCache = new Map();   // txid -> Promise<hex>, ordered least- to most-recently-used
+function loadTxHex(txid) {
+  const cached = txHexCache.get(txid);
+  if (cached) {
+    txHexCache.delete(txid);
+    txHexCache.set(txid, cached);   // move to the most-recently-used end
+    return cached;
+  }
+  const p = (async () => {
+    const kept = await storeGet('tx', txid);   // a transaction's bytes are its txid's forever
+    if (kept) return kept;
+    const r = await esploraFetch(`${ESPLORA}/tx/${txid}/hex`);
+    if (!r.ok) throw new Error(`Esplora returned ${r.status} fetching tx ${txid.slice(0, 8)}…`);
+    const hex = (await r.text()).trim();
+    storePut('tx', txid, hex);
+    return hex;
+  })().catch((e) => { txHexCache.delete(txid); throw e; });
+  txHexCache.set(txid, p);
+  // Evict least-recently-used entries past the cap (Map iterates oldest-first).
+  while (txHexCache.size > TX_HEX_CACHE_MAX) txHexCache.delete(txHexCache.keys().next().value);
+  return p;
+}
+
+// A section's composed page -- parsed, txid-verified, Glossia-encoded fields
+// -- memoized by txid (LRU, like loadTxHex). The neighbour prefetch warms
+// this, so a swipe turn renders straight from cache with no encode work
+// inside the animation. A bulky OP_RETURN data carrier is still deferred like
+// a witness push -- its prose streams in on scroll (see lazyEncode); every
+// other body field is encoded here.
+const fieldsCache = new Map();   // txid -> { fields, verified }, LRU order
+const FIELDS_CACHE_MAX = 12;
+async function sectionFields(txid) {
+  const cached = fieldsCache.get(txid);
+  if (cached) {
+    fieldsCache.delete(txid);
+    fieldsCache.set(txid, cached);   // move to the most-recently-used end
+    return cached;
+  }
+  const hex = await loadTxHex(txid);
+  const parsed = parseTransaction(hex);
+  const verifiedTxid = await computeTxid(parsed.baseHex);
+  const entry = { fields: composeTransactionFields(parsed, BEST_OF, lazyEncode.placeholder), verified: verifiedTxid === txid };
+  fieldsCache.set(txid, entry);
+  while (fieldsCache.size > FIELDS_CACHE_MAX) fieldsCache.delete(fieldsCache.keys().next().value);
+  return entry;
+}
+
+async function showCurrentTx() {
+  // A leaf (index < 0): no transaction to fetch -- the volume (-3), book (-2),
+  // or chapter (-1) page renders straight from the metadata already in state.
+  if (state.index < 0) {
+    if (!ready) await init().catch(() => {});
+    if (state.index === -3) renderVolumeLeaf();
+    else if (state.index === -2) renderBookLeaf();
+    else renderTitlePage();
+    updateUrl();
+    $('chapter').classList.remove('hidden');
+    setStatus('');
+    consumeSlide();
+    return;
+  }
+  setStatus(SPINNER_HTML + 'fetching transaction…');
+  // The current txid: from the loaded list when we have it, else the single
+  // transaction we opened by id (before its block's list is ever fetched).
+  const txid = state.txids ? state.txids[state.index] : state.txid;
+  if (!ready) await init().catch(() => {});
+  // Parse, verify, and encode -- or, when the neighbour prefetch already
+  // warmed this section, a straight cache hit (see sectionFields).
+  const { fields, verified } = await sectionFields(txid);
+  // Witnesses aren't encoded here -- they're the heaviest thing to render.
+  // renderChapter marks each witness-bearing input with a footnote reference and
+  // lays out the footnotes as placeholders; their prose is encoded lazily, per
+  // push, as the reader scrolls to it (see lazyEncode / renderFootnotes).
+  renderChapter({ num: state.index + 1, txid, fields, verified });
+  updateUrl();
+  $('chapter').classList.remove('hidden');
+  setStatus('');
+  consumeSlide();
+}
+
+// Attach a click menu to an element already showing a Glossia-encoded hash as
+// prose: `hex` is the exact raw value that prose encodes. Clicking (or
+// Enter/Space) opens the hash menu -- copy the hex, or bookmark it; the raw hex
+// is never revealed on the page. A hash that's a lookup target (a block hash,
+// previous-block hash, or txid) can be bookmarked; a merkle root, which leads
+// nowhere, is copy-only.
+function attachHashCopy(el, hex, label, prose = el.textContent) {
+  // `prose` is the readable form the menu offers to copy. The hit target may be
+  // a leading mark (⋔ for a merkle root) or a persistent heading (the chapter /
+  // section title), so the prose is passed in explicitly rather than read off
+  // `el`. Only the chapter's own hashes are navigable, hence bookmarkable;
+  // every other label (merkle root, previous block hash, version, difficulty
+  // target, nonce) is copy-only.
+  const nav = label === 'block hash' || label === 'transaction id';
+  el.classList.add('hash-copy');
+  el.tabIndex = 0;
+  el.setAttribute('aria-label', `${label}: ${hex} — click for menu`);
+  el.__hex = nav ? hex : null;             // only navigable hashes are bookmarkable, so only they get a flag
+  if (nav) setHashFlag(el, isBookmarked(hex));   // show the bookmark glyph if this hash is already saved
+  // A persistent element (a title) is re-attached with fresh hash data on every
+  // section render: the menu params live on the element and are re-read at open
+  // time, while the listeners are wired exactly once.
+  el.__hashMenu = { hex, label, prose, nav };
+  if (el.__hashWired) return;
+  el.__hashWired = true;
+  const open = (e) => { if (el.__hashMenu) openHashMenu(e, el.__hashMenu, el); };
+  // A mouse click on this focusable element would otherwise scroll it into view
+  // (native focus behaviour); that scroll trips the menu's scroll-dismiss and
+  // closes it the instant it opens. Suppress the focus scroll on mousedown.
+  el.addEventListener('mousedown', (e) => e.preventDefault());
+  el.addEventListener('click', open);
+  el.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(e); } });
+}
+
+// Strip the hash-menu affordance from a persistent element: the chapter-title
+// slot doubles as the volume/book leaf title, where there is no hash to copy.
+// The wired listeners stay; a null __hashMenu makes them inert.
+function detachHashCopy(el) {
+  el.classList.remove('hash-copy');
+  el.removeAttribute('aria-label');
+  el.tabIndex = -1;
+  el.__hashMenu = null;
+  el.__hex = null;
+  setHashFlag(el, false);
+}
+
+// Render a Glossia-encoded hash into `el` as its bold-gold data mark (h, or ⋔
+// for the merkle root) followed by the plain prose. The mark is the clickable
+// handle for the copy/bookmark menu; the prose itself is never interactive.
+function fillMarkedHash(el, mark, markClass, hex, label, prose, sup, supTitle) {
+  el.textContent = '';
+  const m = document.createElement('span');
+  m.className = markClass;
+  m.textContent = mark;
+  attachHashCopy(m, hex, label, prose);
+  el.append(m);
+  // The mark can carry a byte count as a superscript riding after it, the way
+  // a typed script push reads (p⁶⁵) -- a header field isn't a push, but the
+  // notation for "this prose carries n bytes" is the same.
+  if (sup) {
+    const s = document.createElement('span');
+    s.className = 'op op-push';
+    s.textContent = toSuperscript(sup);
+    if (supTitle) s.title = supTitle;
+    el.append(s);
+  }
+  el.append(' ' + prose);
+}
+
+// The block header itself, in wire order, as a small mono line under the
+// chapter hash: version, previous-block hash, merkle root, timestamp,
+// difficulty target, nonce. The two hashes are Glossia-encoded here (like
+// the chapter/section hash above); the rest come pre-decoded from
+// composeBlockHeaderFields. Genesis has no previous block, shown as ∅.
+function renderFrontispiece(header) {
+  const el = $('ch-frontispiece');
+  el.innerHTML = '';
+  const hf = composeBlockHeaderFields(header);
+  const isGenesisPrev = header.prevBlockHash === '00'.repeat(32);
+  const prevTrimmed = isGenesisPrev ? '' : trimTrailingZeroBytes(reverseHex(header.prevBlockHash));
+  const prevBytes = prevTrimmed.length / 2;
+  const prevProse = isGenesisPrev ? '∅' : encodeSeedPhrase(prevTrimmed, 'english', BEST_OF).prose;
+  // The merkle root isn't proof-of-work-constrained, so unlike a block hash
+  // it has no expected run of zero bytes worth trimming.
+  const merkleProse = encodeSeedPhrase(reverseHex(header.merkleRoot), 'english', BEST_OF).prose;
+  // Each on-chain hash leads with a bold-gold mark (h for a hash, ⋔ for the
+  // merkle root) that carries the copy menu; the prose beside it is not itself
+  // clickable. The rest of the fields are plain decoded numbers.
+  const items = [
+    // The version wears its bold-gold v mark in both forms -- the pre-BIP9
+    // integer (v1) and the BIP9 word-pair (v accio library 100) -- and the
+    // mark opens a copy menu: the compact hex, or the notation text.
+    { text: hf.version, mark: 'v', markClass: 'fx-mark', title: hf.versionTitle,
+      menu: { hex: (header.version >>> 0).toString(16).padStart(8, '0'), label: 'block version',
+              prose: /^\d/.test(hf.version) ? `v${hf.version}` : hf.version } },
+    isGenesisPrev
+      ? { text: prevProse, title: 'no earlier block — this is the genesis block' }
+      : { text: prevProse, mark: 'h', markClass: 'dt', sup: prevBytes,
+          supTitle: prevBytes < 32
+            ? `${prevBytes} bytes encoded — the hash's ${32 - prevBytes} trailing zero bytes (required by proof-of-work) carry nothing and are dropped`
+            : '32 bytes',
+          copy: { hex: header.prevBlockHash, label: 'previous block hash' } },
+    { text: merkleProse, mark: '⋔', markClass: 'merkle-mark', sup: 32, supTitle: '32 bytes',
+      copy: { hex: header.merkleRoot, label: 'merkle root' } },
+    { text: hf.timestamp, title: hf.timestampTitle },
+    // The difficulty target (β) and nonce (η) are the proof-of-work marks, gold
+    // like their counterparts in the body prose's mining preamble.
+    // β and η each open a copy menu: the compact 4-byte hex, or the display
+    // form (the βₙ mark / the decimal nonce).
+    { text: hf.bits, title: hf.bitsTitle, gold: true,
+      menu: { hex: (header.bits >>> 0).toString(16).padStart(8, '0'), label: 'difficulty target', prose: hf.bits } },
+    // The η mark alone is bold gold; the nonce integer beside it stays plain.
+    { text: hf.nonce, mark: 'η', markClass: 'fx-mark', title: hf.nonceTitle,
+      menu: { hex: (header.nonce >>> 0).toString(16).padStart(8, '0'), label: 'nonce', prose: hf.nonce } },
+  ];
+  for (const { text, title, copy, mark, markClass, gold, sup, supTitle, menu } of items) {
+    const span = document.createElement('span');
+    span.className = gold ? 'cfx cfx-gold' : 'cfx';
+    if (mark && copy) {
+      fillMarkedHash(span, mark, markClass, copy.hex, copy.label, text, sup, supTitle);
+    } else if (mark) {
+      // A marked plain field: the mark leads, the value follows -- tight
+      // against a numeral (v1, η2573394689), a space before a word form
+      // (v accio library 100). A `menu` makes the mark a copy handle.
+      const m = document.createElement('span');
+      m.className = markClass;
+      m.textContent = mark;
+      if (menu) attachHashCopy(m, menu.hex, menu.label, menu.prose);
+      span.append(m, (/^\d/.test(text) ? '' : ' ') + text);
+      if (title) span.title = title;
+    } else {
+      span.textContent = text;
+      if (title) span.title = title;
+      if (menu) attachHashCopy(span, menu.hex, menu.label, menu.prose);   // β: the whole mark is the handle
+    }
+    el.append(span);
+  }
+}
+
+// The chapter head in its two dresses. The chapter's own page (index -1) wears
+// the full head -- big title, hash prose, frontispiece; a section page folds
+// the chapter into the Volume/Book eyebrow line -- "Volume 1 · Book 100 ·
+// Chapter 333" -- a running head, not a heading. A block that's a curated
+// entry (a halving, an activation, ...) keeps its "Chapter n" heading and
+// carries its event name as a subtitle on the full head, and as the crumb's
+// compact name in the running head -- the genesis block included, which is a
+// curated entry like the halvings rather than a special case here.
+// Chapter headings spell their numbers out the way a book sets them --
+// "Chapter One" through "Chapter One Hundred" -- and fall back to numerals
+// past SPELLED_CHAPTER_MAX ("Chapter 101"), where spelled forms grow unwieldy.
+const SPELLED_CHAPTER_MAX = 100;
+const SPELLED_ONES = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight',
+  'Nine', 'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen',
+  'Seventeen', 'Eighteen', 'Nineteen'];
+const SPELLED_TENS = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+function chapterName(n) {
+  if (n > SPELLED_CHAPTER_MAX) return n.toLocaleString();
+  if (n === 100) return 'One Hundred';
+  if (n < 20) return SPELLED_ONES[n];
+  return SPELLED_TENS[Math.floor(n / 10)] + (n % 10 ? '-' + SPELLED_ONES[n % 10] : '');
+}
+
+function renderChapterHead(onTitlePage) {
+  const { volume, book, chapter } = volumeBookChapter(state.height);
+  // The chapter's own page carries the Volume · Book crumbs; a section's
+  // running head carries just the chapter (the crumb back to its page) --
+  // the higher levels are a swipe or a crumb away, not a headline.
+  showEyebrowCrumbs(onTitlePage, onTitlePage);
+  $('ch-volume').textContent = volume.toLocaleString();
+  $('ch-book').textContent = book.toLocaleString();
+  // A notable block keeps its "Chapter n" heading and carries its event name
+  // as a subtitle beneath it. A height with several notable entries (the
+  // supply-cap fork carries two) shows them all, dot-separated. The genesis
+  // block is one of those entries -- it used to be subtitled from a hardcoded
+  // case here, which kept it out of the table of contents.
+  // A page: 'book' entry shares the height namespace (its id is its book's
+  // first block) but names the book's leaf, not this chapter -- excluded here.
+  const eventTitles = NOTABLE.filter((e) => e.id === String(state.height) && e.page !== 'book').map((e) => e.title);
+  const eventTitle = eventTitles[0];
+  $('ch-title').textContent = `Chapter ${chapterName(chapter)}`;
+  const subtitle = $('ch-subtitle');
+  subtitle.textContent = eventTitles.join(' · ');
+  // On a section page the running head's chapter is a crumb back to the
+  // chapter's own page -- no fetch needed, the block is already in state.
+  const inline = $('ch-chapter-inline');
+  inline.textContent = '';
+  if (!onTitlePage) {
+    const crumb = document.createElement('button');
+    crumb.type = 'button';
+    crumb.className = 'crumb';
+    crumb.textContent = eventTitle || `Chapter ${chapterName(chapter)}`;
+    crumb.title = `Chapter page (${reference(state.height)})`;
+    crumb.setAttribute('aria-label', `Open this chapter's own page (${reference(state.height)})`);
+    crumb.addEventListener('click', () => { rememberTrail(); state.index = -1; showCurrentTx(); });
+    inline.append(crumb);
+  }
+  $('ch-title').classList.toggle('hidden', !onTitlePage);
+  subtitle.classList.toggle('hidden', !onTitlePage || !subtitle.textContent);
+  $('ch-hash-short').classList.toggle('hidden', !onTitlePage);
+  $('ch-frontispiece').classList.toggle('hidden', !onTitlePage);
+  if (onTitlePage) {
+    const { prose: hashProse } = encodeSeedPhrase(trimTrailingZeroBytes(reverseHex(state.hash)), 'english', BEST_OF);
+    // The hash prose stands alone, unmarked; the chapter title above it is the
+    // clickable handle for its copy/bookmark menu.
+    $('ch-hash-short').classList.remove('plain');   // hash prose: italic voice
+    $('ch-hash-short').textContent = hashProse;
+    attachHashCopy($('ch-title'), state.hash, 'block hash', hashProse);
+    renderFrontispiece(state.header);
+  }
+  return { volume, book, chapter };
+}
+
+// The shared shell of every leaf (volume, book, chapter page): clear the
+// section apparatus and drop in-flight section work. Returns the new render
+// generation so a leaf's async fills can drop stale updates.
+function renderLeafShell() {
+  $('chapter').classList.add('title-leaf');
+  ++renderGen;
+  lazyEncode.reset();
+  $('ch-subtitle').classList.add('hidden');
+  // A leaf has no folio -- pages belong to sections -- and its grid cell goes
+  // back to the chapter-next stepper.
+  $('page-folio').classList.add('hidden');
+  $('section-title').classList.add('hidden');
+  $('section-hash').classList.add('hidden');
+  $('ch-paragraphs').innerHTML = '';
+  $('ch-footnotes').innerHTML = '';
+  $('ch-footnotes-section').classList.add('hidden');
+  currentFootnotes = [];
+  footnotesLoaded = false;
+  return renderGen;
+}
+
+// Show/hide the eyebrow's three crumbs (volume · book · chapter-inline is
+// managed separately). A leaf hides the parts at or below its own level.
+function showEyebrowCrumbs(volume, book) {
+  $('ch-volume-link').classList.toggle('hidden', !volume);
+  $('ch-sep-1').classList.toggle('hidden', !(volume && book));
+  $('ch-book-link').classList.toggle('hidden', !book);
+}
+
+// The chapter's own page: the head alone -- title, hash prose, frontispiece --
+// with the section apparatus cleared, the way a printed chapter opens on its
+// own leaf before the first section's page.
+function renderTitlePage() {
+  renderLeafShell();
+  $('chapter').classList.remove('span-leaf');
+  renderChapterHead(true);
+  labelNav();
+}
+
+// The volume's own page: its Roman numeral over the block numbers it spans
+// and the years those blocks were recorded (the closing year streams in; an
+// unfinished volume's range ends at the chain tip so far).
+function renderVolumeLeaf() {
+  const gen = renderLeafShell();
+  $('chapter').classList.add('span-leaf');
+  const { volume } = volumeBookChapter(state.height);
+  showEyebrowCrumbs(false, false);
+  $('ch-chapter-inline').textContent = '';
+  const title = $('ch-title');
+  title.textContent = `Volume ${toRoman(volume)}`;
+  title.classList.remove('hidden');
+  detachHashCopy(title);
+  const volEnd = heightOf(volume + 1, 1, 1) - 1;
+  const finished = tipHeight !== null && tipHeight >= volEnd;
+  // An unfinished volume's range runs to the chain tip -- its current last
+  // recorded book -- trailed by the em dash that marks it still being
+  // written; only an unknown tip leaves the range open after book 1.
+  const tipIn = !finished && tipHeight !== null && tipHeight >= state.height ? tipHeight : null;
+  const line = $('ch-hash-short');
+  line.classList.remove('hidden');
+  line.classList.add('plain');   // a range, not hash prose -- upright
+  line.textContent = finished ? `β1 – β${volumeBookChapter(volEnd).book}`
+    : tipIn !== null ? `β1 – β${volumeBookChapter(tipIn).book} —`
+    : 'β1 —';
+  line.title = finished ? 'the books this volume spans' : 'the books recorded so far — this volume is still being written';
+  const firstYear = new Date(state.block.timestamp * 1000).getUTCFullYear();
+  const fp = $('ch-frontispiece');
+  fp.classList.remove('hidden');
+  const yearEnd = finished ? volEnd : tipIn;
+  if (yearEnd === null) {
+    fp.textContent = `${firstYear} —`;
+    fp.title = 'this volume is still being written';
+  } else {
+    fp.textContent = `${firstYear} – …`;
+    if (!finished) fp.title = 'the years recorded so far — this volume is still being written';
+    loadBlockStamp(yearEnd).then((ts) => {
+      if (gen !== renderGen) return;
+      const lastYear = new Date(ts * 1000).getUTCFullYear();
+      const range = firstYear === lastYear ? String(firstYear) : `${firstYear} – ${lastYear}`;
+      fp.textContent = finished ? range : `${range} —`;
+    }).catch(() => { if (gen === renderGen) fp.textContent = finished ? String(firstYear) : `${firstYear} —`; });
+  }
+  labelNav();
+}
+
+// The book's own page: its number over the dates and times its first and last
+// blocks were recorded (the closing timestamp streams in; an unfinished
+// book's range ends at the chain tip so far).
+function renderBookLeaf() {
+  const gen = renderLeafShell();
+  $('chapter').classList.add('span-leaf');
+  const { volume, book, chapterCount } = volumeBookChapter(state.height);
+  showEyebrowCrumbs(true, false);
+  $('ch-volume').textContent = volume.toLocaleString();
+  $('ch-chapter-inline').textContent = '';
+  const title = $('ch-title');
+  title.textContent = `Book ${book.toLocaleString()}`;
+  title.classList.remove('hidden');
+  detachHashCopy(title);
+  // A curated book (a soft fork's signaling epoch) wears its name as the
+  // leaf's subtitle, the same dress a notable chapter wears.
+  const bookEvent = NOTABLE.find((e) => e.page === 'book' && e.id === String(state.height));
+  const subtitle = $('ch-subtitle');
+  subtitle.textContent = bookEvent ? bookEvent.title : '';
+  subtitle.classList.toggle('hidden', !bookEvent);
+  $('ch-frontispiece').classList.add('hidden');
+  const bookEnd = state.height + chapterCount - 1;
+  const finished = tipHeight !== null && tipHeight >= bookEnd;
+  // As on the volume leaf: an open book's range runs to the tip, its current
+  // last recorded chapter, with the em dash marking it still being written.
+  const tipIn = !finished && tipHeight !== null && tipHeight >= state.height ? tipHeight : null;
+  // Right beneath the title: the book's difficulty target -- a book IS one
+  // difficulty window, so its first block's β mark names the target the whole
+  // book was mined against.
+  const line = $('ch-hash-short');
+  line.classList.remove('hidden');
+  line.classList.add('plain');   // a target mark, not hash prose -- upright
+  line.textContent = '';
+  const hf = composeBlockHeaderFields(state.header);
+  const beta = document.createElement('span');
+  beta.className = 'cfx-gold';
+  beta.textContent = hf.bits;
+  beta.title = hf.bitsTitle;
+  // Same copy menu as the chapter frontispiece's β: compact hex or the mark.
+  attachHashCopy(beta, (state.header.bits >>> 0).toString(16).padStart(8, '0'), 'difficulty target', hf.bits);
+  line.append(beta);
+  // Then the chapters the book spans, under the block glyph (■, as references
+  // write chapter numbers -- chapters restart at 1 each book, so a full book
+  // reads ■1 – ■2,016 and an era's truncated last book ■1 – ■336; an
+  // unfinished book has no closing chapter to name), and the recorded dates
+  // (em dash while the book is still being written).
+  const fp = $('ch-frontispiece');
+  fp.classList.remove('hidden');
+  fp.textContent = '';
+  const range = document.createElement('div');
+  range.textContent = finished ? `■1 – ■${chapterCount.toLocaleString()}`
+    : tipIn !== null ? `■1 – ■${(tipIn - state.height + 1).toLocaleString()} —`
+    : '■1 —';
+  range.title = finished ? 'the chapters this book spans' : 'the chapters recorded so far — this book is still being written';
+  fp.append(range);
+  const dates = document.createElement('div');
+  const dateEnd = finished ? bookEnd : tipIn;
+  if (dateEnd === null) {
+    dates.textContent = `${timestampInfo(state.block.timestamp).mark} —`;
+  } else {
+    dates.textContent = `${timestampInfo(state.block.timestamp).mark} – …`;
+    loadBlockStamp(dateEnd).then((ts) => {
+      if (gen !== renderGen) return;
+      dates.textContent = `${timestampInfo(state.block.timestamp).mark} – ${timestampInfo(ts).mark}${finished ? '' : ' —'}`;
+    }).catch(() => { if (gen === renderGen) dates.textContent = `${timestampInfo(state.block.timestamp).mark}${finished ? '' : ' —'}`; });
+  }
+  fp.append(dates);
+  labelNav();
+}
+
+function renderChapter(para) {
+  $('chapter').classList.remove('title-leaf');
+  $('chapter').classList.remove('span-leaf');
+  renderChapterHead(false);
+
+  $('section-title').classList.remove('hidden');
+  $('section-hash').classList.remove('hidden');
+
+  // This section's own txid, encoded as prose beneath the section title. Reversed
+  // to internal byte order first (like the block hash) so it carries the txid's
+  // actual bytes; every byte kept, since a txid has no droppable leading zeros.
+  const { prose: txidProse } = encodeSeedPhrase(reverseHex(para.txid), 'english', BEST_OF);
+  // Unmarked, like the chapter hash: the section title carries the txid's menu.
+  $('section-hash').textContent = txidProse;
+
+  const body = $('ch-paragraphs');
+  body.innerHTML = '';
+
+  const wrap = document.createElement('div');
+  wrap.className = 'tx-wrap' + (para.verified ? '' : ' unverified');
+
+  // The transaction's position within its block titles the section ("§ 3"). A
+  // transaction that's a curated entry earns its name beneath the § number, the
+  // way a notable block earns its event name as the chapter title.
+  const titleAttr = `txid ${para.txid}${para.verified ? '' : ' — could not be independently verified'}`;
+  // A curated entry names its section whether it cites a txid or a
+  // height+index -- the latter is how the twice-confirmed BIP30 coinbases are
+  // cited, since their shared txid alone can't tell the two printings apart.
+  const sectionEvent = NOTABLE.find((e) => e.id === para.txid
+    || (e.id === String(state.height) && e.index === state.index))?.title;
+  const sectionTitle = $('section-title');
+  sectionTitle.textContent = '';
+  const secNum = document.createElement('span');
+  secNum.className = 'section-num';
+  secNum.textContent = `§ ${para.num}`;
+  sectionTitle.append(secNum);
+  if (sectionEvent) {
+    const secEv = document.createElement('span');
+    secEv.className = 'section-event';
+    secEv.textContent = sectionEvent;
+    sectionTitle.append(secEv);
+  }
+  sectionTitle.title = titleAttr;
+  // The section title is the clickable handle for the txid's copy/bookmark
+  // menu (attached after the rebuild above, which re-adds the bookmark ribbon).
+  attachHashCopy(sectionTitle, para.txid, 'transaction id', txidProse);
+
+  // The transaction is laid out in horizontal bands (see .tx-flow CSS). The
+  // inputs are a [citation | scriptSig] subgrid: each input's provenance -- the
+  // volume·book·chapter·section of the output it spends, plus that output's index
+  // -- sits in the left margin, level with its scriptSig. The outputs are a
+  // [scriptPubKey | amount] subgrid; the locktime closes on the right.
+  const gen = ++renderGen;
+  lazyEncode.reset();   // drop chunks still pending from the previous section (body + footnotes)
+  // The folio at the right end of the running head: empty until this block's
+  // anchor resolves, so a stale page number never rides into a new section.
+  const folio = $('page-folio');
+  folio.textContent = '';
+  folio.title = '';
+  folio.classList.remove('hidden');
+  fillFolio(folio, gen);
+  const flow = document.createElement('div');
+  flow.className = 'tx-flow';
+  const inputsEl = document.createElement('div');
+  inputsEl.className = 'tx-inputs';
+  // Citations for inputs with nothing in the body to annotate -- a witness spend
+  // has an empty scriptSig -- plus the version note. They can't align to a body
+  // line, so they sit in the left column of the outputs band instead of holding
+  // an input row open; that lets the outputs slide up beside them (see CSS).
+  const marginEl = document.createElement('div');
+  marginEl.className = 'tx-margin-cites';
+  const outputsEl = document.createElement('div');
+  outputsEl.className = 'tx-outputs';
+  let leadUsed = false;
+  const pendingCites = [];
+  const fwdCells = [];
+
+  // A body line; the first one across the whole transaction claims the drop
+  // cap -- unless it opens with a bare push count (⁶⁹ …), whose superscript's
+  // first digit would be blown up into a giant numeral, tearing the mark
+  // apart. In that case the cap is forfeited for the transaction, not
+  // deferred to a later line (an illuminated initial belongs at the top).
+  const addLine = (container, html) => {
+    if (!html) return null;
+    const p = document.createElement('p');
+    const lead = !leadUsed && !html.startsWith('<span class="op op-push"');
+    leadUsed = true;
+    p.className = 'tx-line' + (lead ? ' tx-body-lead' : '');
+    p.innerHTML = html;
+    container.append(p);
+    return p;
+  };
+  // Detected ASCII (a coinbase tag, an OP_RETURN message) is set as a quote
+  // block instead of an inline-quoted line -- and never claims the drop cap.
+  const addQuote = (container, html) => {
+    if (!html) return;
+    const q = document.createElement('blockquote');
+    q.className = 'tx-ascii';
+    q.innerHTML = html;
+    container.append(q);
+  };
+  // The input's sequence mark, leading the amount line beneath its reference:
+  // ● final · ○ respects locktime · † replaceable · † ■n / † Τn replaceable with
+  // a relative block / time delay. The † is kept a shade warmer than the delay
+  // it precedes, so it reads as its own mark.
+  const seqSpan = (inp) => {
+    const s = document.createElement('span');
+    s.className = `tx-seq tx-seq-${inp.sequenceKind}`;
+    s.title = inp.sequenceTitle;
+    if (inp.sequenceRbf && inp.sequence) {
+      const dagger = document.createElement('span');
+      dagger.className = 'tx-seq-rbf';
+      dagger.textContent = '†';
+      s.append(dagger, ` ${inp.sequence}`);
+    } else {
+      s.textContent = inp.sequenceRbf ? '†' : inp.sequence;
+    }
+    return s;
+  };
+  // A superscript index tying a witness-bearing input to its footnote; clicking
+  // it encodes the footnotes (once) and scrolls to this one.
+  const witnessRef = (n) => {
+    const a = document.createElement('a');
+    a.className = 'tx-witness-ref';
+    a.href = `#fn-${n}`;
+    a.textContent = String(n);
+    a.title = 'witness — see footnote';
+    a.addEventListener('click', (e) => { e.preventDefault(); loadFootnotes(n); });
+    return a;
+  };
+
+  const f = para.fields;
+  const footnotes = [];
+  // Citations with no scriptSig body to sit beside -- witness-spend inputs, and
+  // the version note -- accumulate here in input order and flush into the next
+  // scriptSig row's left column (stacked above that input's own citation), so
+  // they keep their place in the input sequence without holding a row open.
+  // Whatever is still pending after the last scriptSig (trailing witness inputs,
+  // or every input when the whole transaction is segwit) goes to the margin band
+  // beside the outputs. This preserves input order even when witness and legacy
+  // inputs alternate -- the two kinds are not assumed to be contiguous.
+  const pendingMargin = [];
+  if (f.version !== '1') {
+    const cite = document.createElement('div');
+    cite.className = 'tx-in-cite tx-version';
+    cite.textContent = `v${f.version}`;
+    pendingMargin.push(cite);
+  }
+  let inputIndex = 0;
+  for (const inp of f.inputs) {
+    const cite = document.createElement('div');
+    cite.className = 'tx-in-cite';
+    cite.id = `in-${inputIndex++}`;   // an output's forward citation scrolls here so the spending input leads the page
+    const citeBody = document.createElement('span');
+    citeBody.className = 'cite-body';
+    if (inp.isNullPrevout) {
+      citeBody.textContent = '∅';   // coinbase: no previous output
+    } else {
+      citeBody.textContent = '⋯';   // placeholder until the reference resolves
+      cite.classList.add('resolving');
+    }
+    // The reference leads the citation, then -- for a witness-bearing input --
+    // its footnote superscript (numbered in input order).
+    cite.append(citeBody);
+    if (inp.witnessHex) { footnotes.push({ n: footnotes.length + 1, items: inp.witnessItems, zero: inp.witnessZero }); cite.append(witnessRef(footnotes.length)); }
+    // A second line sits beneath the reference: the sequence mark leads it, then
+    // the amount of the output this input spends (filled on resolve, into its own
+    // span so the mark survives). A coinbase has no prevout, so its line carries
+    // the sequence mark alone.
+    const amtLine = document.createElement('div');
+    amtLine.className = 'cite-amount';
+    amtLine.append(seqSpan(inp));
+    if (!inp.isNullPrevout) {
+      const amtVal = document.createElement('span');   // the spent output's amount, filled on resolve
+      amtLine.append(' ', amtVal);
+      pendingCites.push({ citeBody, cite, amtVal, txid: inp.prevTxid, vout: inp.prevVout });
+    }
+    cite.append(amtLine);
+    // A witness spend has an empty scriptSig (no body content). An input that
+    // renders a scriptSig gets an aligned row: its left cell carries any pending
+    // witness-input citations that preceded it (in order) stacked above its own,
+    // and its scriptSig fills the body. An empty input just joins the pending
+    // list, so the outputs can slide up past it.
+    if (inp.scriptAscii || inp.script) {
+      const citeCell = document.createElement('div');
+      citeCell.className = 'tx-in-cite-group';
+      for (const p of pendingMargin) citeCell.append(p);
+      pendingMargin.length = 0;
+      citeCell.append(cite);
+      const scriptCell = document.createElement('div');
+      scriptCell.className = 'tx-in-script';
+      if (inp.scriptAscii) addQuote(scriptCell, inp.scriptAscii);
+      else addLine(scriptCell, inp.script);
+      inputsEl.append(citeCell, scriptCell);
+    } else {
+      pendingMargin.push(cite);
+    }
+  }
+  // Trailing citations with no scriptSig left to attach to sit beside the outputs.
+  for (const p of pendingMargin) marginEl.append(p);
+  currentFootnotes = footnotes;
+  f.outputs.forEach((out, i) => {
+    const scriptCell = document.createElement('div');
+    scriptCell.className = 'tx-out-script';
+    scriptCell.id = `out-${i}`;   // a referencing input scrolls here so this output leads the page
+    if (out.scriptAscii) addQuote(scriptCell, out.scriptAscii); else addLine(scriptCell, out.script);
+    const valueCell = document.createElement('div');
+    valueCell.className = 'tx-note tx-out-value';
+    valueCell.textContent = out.value;
+    valueCell.title = out.valueTitle;
+    // Forward citation placeholder: filled with the section that later spent
+    // this output, once the outspends resolve. An unspent output keeps it
+    // empty -- still-live value has no forward reference.
+    const fwd = document.createElement('div');
+    fwd.className = 'fwd-cite';
+    valueCell.append(fwd);
+    fwdCells.push(fwd);
+    outputsEl.append(scriptCell, valueCell);
+  });
+  const lock = document.createElement('div');
+  lock.className = 'tx-note tx-locktime';
+  lock.textContent = f.locktime;
+  lock.title = f.locktimeTitle;
+
+  flow.append(inputsEl, marginEl, outputsEl, lock);
+  wrap.append(flow);
+  body.append(wrap);
+  lazyEncode.observe(body);   // encode any deferred OP_RETURN payload as it scrolls into view
+  resolveCitations(pendingCites, gen);
+  resolveForwardCitations(para.txid, fwdCells, gen);
+
+  // Footnotes are reset, then expanded automatically once the transaction is on
+  // screen (renderFootnotes runs async so the prose paints first).
+  $('ch-footnotes').innerHTML = '';
+  $('ch-footnotes-section').classList.add('hidden');
+  footnotesLoaded = false;
+  renderFootnotes(gen);
+
+  labelNav();
+}
+
+// Label the chapter/section nav buttons, and hide any that lead nowhere (Genesis
+// has no earlier chapter/section; the chain tip's last section none later).
+function labelNav() {
+  const cur = volumeBookChapter(state.height);
+  const idx = state.index;
+  const atTip = tipHeight !== null && state.height >= tipHeight;
+  const gen = renderGen;   // a slow previous-count fetch must not overwrite a later section's label
+
+  const setBtn = (id, text, label) => {
+    const b = $(id);
+    b.textContent = text;
+    b.title = label;
+    b.setAttribute('aria-label', label);
+  };
+  const showBtn = (id, show) => {
+    const b = $(id);
+    b.classList.toggle('hidden', !show);
+    if (show) b.disabled = false;   // clear any transient load-time disable
+  };
+
+  // A missing neighbour hides its button rather than greying it out. The leaf
+  // stack (volume -3 → book -2 → chapter -1) precedes §1, so Genesis's volume
+  // leaf is the book's very first page; every leaf has a next within its block.
+  // The header steppers belong to leaves alone -- and step at the leaf's own
+  // level: volumes on a volume leaf, books on a book leaf, chapters on a
+  // chapter page. Section headers carry the eyebrow crumbs instead.
+  // Labels carry only the target's own level -- §4, ■5, β2, II -- never the
+  // higher-order parts of the reference: the page around the button (eyebrow
+  // crumbs, titles) already says where the reader is, and the full reference
+  // rides in each button's hover/aria label.
+  const floor = minIndexOf(state.height);
+  let stepPrev = null, stepNext = null;   // { text, label } or null (hidden)
+  if (idx === -3) {
+    if (cur.volume > 1) {
+      stepPrev = { text: toRoman(cur.volume - 1), label: `Previous volume (${toRoman(cur.volume - 1)})` };
+    } else {
+      // Before Volume I lies the front matter, whose last leaf is the sigla.
+      stepPrev = { text: 'Sigla', label: 'Back to the front matter (the sigla)' };
+    }
+    if (tipHeight === null || heightOf(cur.volume + 1, 1, 1) <= tipHeight) {
+      stepNext = { text: toRoman(cur.volume + 1), label: `Next volume (${toRoman(cur.volume + 1)})` };
+    }
+  } else if (idx === -2) {
+    if (state.height > 0) {
+      const p = volumeBookChapter(bookStartOf(state.height - 1));
+      stepPrev = { text: `β${p.book}`, label: `Previous book (${toRoman(p.volume)} β${p.book})` };
+    }
+    const nextStart = state.height + cur.chapterCount;
+    if (tipHeight === null || nextStart <= tipHeight) {
+      const n = volumeBookChapter(nextStart);
+      stepNext = { text: `β${n.book}`, label: `Next book (${toRoman(n.volume)} β${n.book})` };
+    }
+  } else if (idx === -1) {
+    if (state.height > 0) {
+      stepPrev = { text: `■${volumeBookChapter(state.height - 1).chapter}`, label: `Previous chapter (${reference(state.height - 1)})` };
+    }
+    if (!atTip) {
+      stepNext = { text: `■${volumeBookChapter(state.height + 1).chapter}`, label: `Next chapter (${reference(state.height + 1)})` };
+    }
+  }
+  showBtn('chapter-prev', !!stepPrev);
+  showBtn('chapter-next', !!stepNext);
+  if (stepPrev) setBtn('chapter-prev', stepPrev.text, stepPrev.label);
+  if (stepNext) setBtn('chapter-next', stepNext.text, stepNext.label);
+
+  const hasPrevSection = !(state.height === 0 && idx <= floor);
+  const hasNextSection = !(atTip && idx >= state.txCount - 1);
+  showBtn('page-prev', hasPrevSection);
+  showBtn('page-next', hasNextSection);
+
+  // Page navigation -- one leaf or section at a time along the linear order:
+  // … previous block's last § → volume leaf → book leaf → chapter page → §1 …
+  if (hasPrevSection) {
+    if (idx > 0) {
+      setBtn('page-prev', `§${idx}`, `Previous section (${reference(state.height)} §${idx})`);   // same chapter, target section = current 1-based index minus one
+    } else if (idx === 0) {
+      // §1 pages back to this chapter's own page -- the chapter-level reference.
+      setBtn('page-prev', `■${cur.chapter}`, `Chapter page (${reference(state.height)})`);
+    } else if (idx - 1 >= floor) {
+      // Up the leaf stack within this block: chapter page → book leaf → volume leaf.
+      if (idx === -1) setBtn('page-prev', `β${cur.book}`, `Book page (${toRoman(cur.volume)} β${cur.book})`);
+      else setBtn('page-prev', toRoman(cur.volume), `Volume page (${toRoman(cur.volume)})`);
+    } else {
+      // Off the block's first page, back into the prior block's final section;
+      // its §number is that block's tx count, unknown until it loads -- shown
+      // as § once resolved.
+      setBtn('page-prev', '§…', `Previous section (end of ${reference(state.height - 1)})`);
+      const h = state.height;
+      loadBlockTxCount(h - 1)
+        .then((n) => {
+          if (gen === renderGen) setBtn('page-prev', `§${n}`, `Previous section (${reference(h - 1)} §${n})`);
+          // The moment the prior block's tx count is known, its page anchor is
+          // arithmetic off this block's (when that one is already in hand) --
+          // banked so stepping back across the boundary never asks the census.
+          const a = peekAnchor(h);
+          if (a !== null) bankAnchor(h - 1, a - n, anchorFinalAt(h - 1));
+        })
+        .catch(() => {});
+    }
+  }
+  if (hasNextSection) {
+    if (idx === -3) {
+      setBtn('page-next', `β${cur.book}`, `Book page (${toRoman(cur.volume)} β${cur.book})`);
+    } else if (idx === -2) {
+      setBtn('page-next', `■${cur.chapter}`, `Chapter page (${reference(state.height)})`);
+    } else if (idx === -1) {
+      setBtn('page-next', '§1', `First section (${reference(state.height)} §1)`);   // the chapter page opens onto §1
+    } else if (idx < state.txCount - 1) {
+      setBtn('page-next', `§${idx + 2}`, `Next section (${reference(state.height)} §${idx + 2})`);   // same chapter, target section = current 1-based index plus one
+    } else {
+      // Crosses onto the next block's first page -- its volume or book leaf
+      // when it opens one, else its chapter page.
+      const nh = state.height + 1;
+      const nFloor = minIndexOf(nh);
+      const t = volumeBookChapter(nh);
+      if (nFloor === -3) setBtn('page-next', toRoman(t.volume), `Volume page (${toRoman(t.volume)})`);
+      else if (nFloor === -2) setBtn('page-next', `β${t.book}`, `Book page (${toRoman(t.volume)} β${t.book})`);
+      else setBtn('page-next', `■${t.chapter}`, `Next chapter (${reference(nh)})`);
+    }
+  }
+
+  // With the buttons decided, quietly ready both swipe directions' data.
+  prefetchNeighbors();
+}
+
+// Encode every witness-bearing input's witness into a numbered footnote and
+// reveal the footnotes section. Done once per transaction, and skipped if the
+// reader has paged to another section before the (heavy) encoding finishes.
+async function renderFootnotes(gen) {
+  if (footnotesLoaded || !currentFootnotes.length) return;
+  if (!ready) await init().catch(() => {});
+  // Yield once so the transaction paints before we lay out the footnotes.
+  await new Promise((r) => setTimeout(r, 0));
+  if (gen !== renderGen) return;
+  const el = $('ch-footnotes');
+  el.innerHTML = '';
+  for (const fn of currentFootnotes) {
+    // An all-zero witness (coinbase reserved value, empty stack) shows ∅ instead
+    // of a run of zero-words. Every other witness item's prose is emitted as a
+    // placeholder (renderWitness feeds each push through lazyEncode.placeholder)
+    // and encoded when it scrolls into view -- building the DOM stays cheap even
+    // for a kilobyte-scale inscription witness.
+    const prose = fn.zero ? '∅' : renderWitness(fn.items, lazyEncode.placeholder);
+    const p = document.createElement('p');
+    p.className = 'footnote-entry';
+    p.id = `fn-${fn.n}`;
+    p.innerHTML = `<span class="footnote-mark">${fn.n}</span>${prose}`;
+    el.append(p);
+  }
+  $('ch-footnotes-section').classList.remove('hidden');
+  footnotesLoaded = true;
+  lazyEncode.observe(el);   // stream each push's prose in as the reader scrolls to it
+}
+
+// A witness reference: make sure the footnotes are rendered, then scroll to this one.
+async function loadFootnotes(targetN) {
+  await renderFootnotes(renderGen);
+  const target = $(`fn-${targetN}`);
+  if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function updateUrl() {
+  const params = new URLSearchParams();
+  params.set('block', String(state.height));
+  // No extra param = the chapter's own page; a section always writes its
+  // index (including 0, which is §1); a volume/book leaf writes ?page=.
+  if (state.index >= 0) params.set('index', String(state.index));
+  else if (state.index === -2) params.set('page', 'book');
+  else if (state.index === -3) params.set('page', 'volume');
+  history.replaceState(null, '', `${location.pathname}?${params.toString()}`);
+}
+
+// A section index is clamped into the block's transaction list; a negative
+// index is a leaf, clamped to the leaves this block actually carries (a
+// volume leaf requested on a mid-book block falls back to the chapter page);
+// absent means the chapter's own page (-1).
+const clampIndex = (i, meta) => {
+  if (!Number.isFinite(i)) return -1;
+  if (i >= 0) return Math.min(i, meta.txCount - 1);
+  return Math.max(i, minIndexOf(meta.height));
+};
+
+// A 404 for a height past the chain tip is not a dead lookup but a chapter
+// unwritten, so it reads as an appointment rather than an error: the year the
+// block is due, at 52,560 ten-minute blocks a year. The book's final chapter
+// -- BIP42's activation at 13,440,000, the block that opens Volume LXV --
+// keeps its storied return date instead of the drifting projection. Every
+// other failure passes through untouched.
+const BIP42_HEIGHT = 13440000;
+const BLOCKS_PER_YEAR = 52560;
+async function unwrittenOr(e, height, tipP) {
+  if (!e.notFound) return e;
+  const tip = await tipP;
+  if (tip === null || height <= tip) return e;
+  if (height === BIP42_HEIGHT) return new Error('Block not found. Come back in the year 2262.');
+  const years = (height - tip) / BLOCKS_PER_YEAR;
+  const when = years < 1 ? 'later this year' : `in the year ${new Date().getUTCFullYear() + Math.round(years)}`;
+  return new Error(`Block not found — ■${height} has not been mined yet. Come back ${when}.`);
+}
+
+// Load whatever the reader gave us: a block height, a block hash, or a
+// transaction id. A 64-hex value is either a block hash or a txid -- they're
+// indistinguishable by shape -- so it's tried as a block first and, failing
+// that, as a txid, which jumps straight to that transaction's section.
+async function openLookup(input, index = -1) {
+  input = (input || '').trim();
+  $('chapter').classList.add('hidden');
+  // Learn the current chain tip on every lookup (in parallel with the block
+  // load) and record it, so the Next controls are exact -- shown below the tip,
+  // hidden at it -- rather than optimistic. A tip fetch that fails resolves to
+  // null and leaves the previous tipHeight untouched; only a -1 lookup, which
+  // needs the tip to resolve a relative height, treats that failure as an error.
+  const tipP = loadTipHeight().then((t) => { tipHeight = Number(t); return tipHeight; }, () => null);
+  try {
+    if (/^-?\d+$/.test(input)) {
+      let height = input;
+      // A negative height counts back from the chain tip: -1 is the latest
+      // block, -2 the one before it, and so on.
+      if (input.startsWith('-')) {
+        setStatus(SPINNER_HTML + 'fetching latest block…');
+        const tip = await tipP;   // the shared tip fetch (already recorded in tipHeight on success)
+        if (tip === null) throw new Error('Could not reach the chain tip to resolve a relative height.');
+        height = String(tip + Number(input) + 1);
+        if (Number(height) < 0) throw new Error(`Only ${tip + 1} blocks exist; ${input} reaches before Genesis.`);
+      }
+      setStatus(SPINNER_HTML + 'fetching block…');
+      // A chapter-page landing (no section index) skips the heavy txid list;
+      // paging into a section fetches it on demand (ensureTxids).
+      const meta = await loadBlockByHeight(height, { withTxids: index >= 0 })
+        .catch(async (e) => { throw await unwrittenOr(e, Number(height), tipP); });
+      state = { ...meta, index: clampIndex(index, meta) };
+    } else if (/^[0-9a-f]{64}$/i.test(input)) {
+      const hex = input.toLowerCase();
+      setStatus(SPINNER_HTML + 'fetching block…');
+      const meta = await loadBlockMeta(hex, { withTxids: index >= 0 }).catch(() => null);
+      if (meta) {
+        state = { ...meta, index: clampIndex(index, meta) };
+      } else {
+        setStatus(SPINNER_HTML + 'locating transaction…');
+        const loc = await loadBlockByTxid(hex);
+        state = { ...loc.meta, index: loc.index, txid: loc.txid };
+      }
+    } else {
+      const ref = parseReference(input);
+      if (!ref) throw new Error('Enter a block height, hash, transaction id, or reference (e.g. III 2 5).');
+      setStatus(SPINNER_HTML + 'fetching block…');
+      const meta = await loadBlockByHeight(ref.height, { withTxids: ref.index >= 0 })
+        .catch(async (e) => { throw await unwrittenOr(e, Number(ref.height), tipP); });
+      state = { ...meta, index: clampIndex(ref.index, meta) };
+    }
+    await tipP;   // record the fresh tip before labelNav decides Next visibility
+    await showCurrentTx();
+  } catch (e) {
+    setStatus(e.message || 'Failed to load.', 'err');
+  }
+}
+
+// direction: +1 (Next) or -1 (Previous). Steps through the block's pages --
+// its leaves (volume/book/chapter, whichever it carries), then its sections;
+// at either edge, crosses into the adjacent block (if one exists): forward
+// onto its first page, backward onto its last section.
+async function stepTx(direction) {
+  // Bounds come from txCount and the leaf floor (both known without the txid
+  // list); the list itself is only needed to address a section by position --
+  // fetched on demand here if the reader landed on a leaf without it.
+  const withinBlock = state.index + direction;
+  if (withinBlock >= minIndexOf(state.height) && withinBlock < state.txCount) {
+    if (withinBlock >= 0) {
+      try { await ensureTxids(state); }
+      catch (e) { setStatus(e.message || 'Failed to load the transaction list.', 'err'); return; }
+    }
+    state.index = withinBlock;
+    try {
+      await showCurrentTx();
+    } catch (e) {
+      setStatus(e.message || 'Failed to load transaction.', 'err');
+    }
+    return;
+  }
+
+  const newHeight = state.height + direction;
+  if (newHeight < 0) return;   // Genesis has no earlier block
+
+  $('page-prev').disabled = true;
+  $('page-next').disabled = true;
+  setStatus(SPINNER_HTML + `loading ${direction > 0 ? 'next' : 'previous'} block…`);
+  try {
+    // Forward lands on the next block's first page (its volume/book leaf when
+    // it opens one, else its chapter page) -- no txid list needed until the
+    // reader pages into a section. Backward addresses the previous block's
+    // last transaction by position, so it needs the list now.
+    const next = await loadBlockByHeight(newHeight, { withTxids: direction < 0 });
+    state = { ...next, index: direction > 0 ? minIndexOf(newHeight) : next.txCount - 1 };
+    await showCurrentTx();
+  } catch (e) {
+    if (direction > 0) tipHeight = state.height;
+    setStatus(direction > 0 ? 'No next block yet — this is the current chain tip.' : (e.message || 'Failed to load previous block.'), 'err');
+    labelNav();   // re-show/hide from the (unchanged) position, now that the tip may be known
+  }
+}
+
+// A horizontal swipe crossing a block boundary at section level: forward onto
+// the next block's §1, backward onto the previous block's last section --
+// never onto the leaves between blocks. (The foot nav's buttons keep the
+// linear page order instead, threading through those leaves.)
+let sectionCrossing = false;
+async function stepSectionAcross(direction) {
+  if (sectionCrossing) return;
+  const newHeight = state.height + direction;
+  if (newHeight < 0) return;   // Genesis §1 has no previous section
+  sectionCrossing = true;
+  $('page-prev').disabled = true;
+  $('page-next').disabled = true;
+  setStatus(SPINNER_HTML + `loading ${direction > 0 ? 'next' : 'previous'} block…`);
+  try {
+    const next = await loadBlockByHeight(newHeight, { withTxids: true });
+    state = { ...next, index: direction > 0 ? 0 : next.txCount - 1 };
+    await showCurrentTx();
+  } catch (e) {
+    if (direction > 0) tipHeight = state.height;
+    setStatus(direction > 0 ? 'No next block yet — this is the current chain tip.' : (e.message || 'Failed to load previous block.'), 'err');
+    labelNav();   // re-show/hide from the (unchanged) position, now that the tip may be known
+  } finally {
+    sectionCrossing = false;
+  }
+}
+
+// Jump to a specific leaf: the volume (-3), book (-2), or chapter (-1) page
+// whose span starts at `height`. Used by the header steppers and the eyebrow
+// crumbs. Genesis has no earlier span and the tip none later; both are guarded
+// by the button visibility and rechecked here.
+let chapterLoading = false;
+async function openLeafAt(height, idx, direction = 0) {
+  if (!state || chapterLoading || height < 0) return;
+  chapterLoading = true;
+  $('chapter-prev').disabled = true;
+  $('chapter-next').disabled = true;
+  setStatus(SPINNER_HTML + 'loading…');
+  try {
+    const meta = await loadBlockByHeight(height, { withTxids: false });
+    state = { ...meta, index: clampIndex(idx, meta) };
+    await showCurrentTx();
+  } catch (e) {
+    if (direction > 0) tipHeight = state.height;   // asked past the tip -- remember it
+    setStatus(direction > 0 ? 'Not written yet — this is the current chain tip.' : (e.message || 'Failed to load.'), 'err');
+    labelNav();   // re-show/hide from the (unchanged) position, now that the tip may be known
+  } finally {
+    chapterLoading = false;
+  }
+}
+
+// The header steppers walk at the current leaf's own level: volume to volume,
+// book to book, chapter to chapter -- each landing on that span's page.
+// Volume I's own leaf is the first page of the body, and the sigla are the
+// last leaf of the front matter -- so turning back from it leaves the book for
+// the front matter, the inverse of the turn that opened Volume I from there.
+// (A swipe has already played its exit; the front matter finishes the entrance
+// on arrival. A button press just navigates.)
+function atFrontMatterEdge() {
+  return !!state && state.index === -3 && volumeBookChapter(state.height).volume === 1;
+}
+function toFrontMatter() {
+  try { sessionStorage.setItem('glossia-front-entrance', 'back'); } catch {}
+  location.href = './bitcoin-front.html?leaf=sigla';
+}
+
+async function goToLevel(direction) {
+  if (!state) return;
+  const { volume, chapterCount } = volumeBookChapter(state.height);
+  if (state.index === -3) {
+    const v = volume + direction;
+    if (v < 1) { if (direction < 0) toFrontMatter(); return; }
+    return openLeafAt(heightOf(v, 1, 1), -3, direction);
+  }
+  if (state.index === -2) {
+    const target = direction > 0 ? state.height + chapterCount : (state.height > 0 ? bookStartOf(state.height - 1) : -1);
+    return openLeafAt(target, -2, direction);
+  }
+  return openLeafAt(state.height + direction, -1, direction);
+}
+
+// Rapid Next/Previous clicks -- or holding the button -- would otherwise fire
+// one transaction load, and its whole citation/outspend fan-out, per click,
+// with every intermediate load instantly stale. Debounce so a burst collapses
+// to a single load at the net destination. The net offset is accumulated and
+// applied once the clicks settle (STEP_DEBOUNCE_MS of quiet): if it stays
+// inside the current block it's a single load with no list re-fetch; if it runs
+// off an edge the burst lands on that edge, and a further step then crosses one
+// block via the existing boundary logic (never skipping blocks in one gesture).
+const STEP_DEBOUNCE_MS = 180;
+let stepTimer = null;
+let pendingSteps = 0;
+let stepping = false;
+
+function requestStep(direction) {
+  pendingSteps += direction;
+  if (stepTimer !== null) clearTimeout(stepTimer);
+  stepTimer = setTimeout(runPendingSteps, STEP_DEBOUNCE_MS);
+}
+
+async function runPendingSteps() {
+  stepTimer = null;
+  // A previous burst is still loading -- re-arm and let it finish first so two
+  // loads never overlap.
+  if (stepping) { stepTimer = setTimeout(runPendingSteps, STEP_DEBOUNCE_MS); return; }
+  const steps = pendingSteps;
+  pendingSteps = 0;
+  if (!state || steps === 0) return;
+
+  stepping = true;
+  try {
+    // Bounds come from txCount; the txid list is fetched only when the burst's
+    // destination addresses a section by position (a chapter-page landing, or
+    // leaving the block, never needs the current block's list).
+    const needList = async () => {
+      try { await ensureTxids(state); return true; }
+      catch (e) { setStatus(e.message || 'Failed to load the transaction list.', 'err'); return false; }
+    };
+    const floor = minIndexOf(state.height);
+    const target = state.index + steps;
+    if (target >= floor && target < state.txCount) {
+      if (target >= 0 && !(await needList())) return;
+      state.index = target;
+      try {
+        await showCurrentTx();
+      } catch (e) {
+        setStatus(e.message || 'Failed to load transaction.', 'err');
+      }
+    } else if (steps > 0 && state.index < state.txCount - 1) {
+      if (!(await needList())) return;
+      state.index = state.txCount - 1;          // overshot forward -- land on the block's last tx
+      try { await showCurrentTx(); } catch (e) { setStatus(e.message || 'Failed to load transaction.', 'err'); }
+    } else if (steps < 0 && state.index > floor) {
+      state.index = floor;                      // overshot backward -- land on the block's first page
+      try { await showCurrentTx(); } catch (e) { setStatus(e.message || 'Failed to load transaction.', 'err'); }
+    } else {
+      await stepTx(steps > 0 ? 1 : -1);         // already at the edge -- cross one block boundary
+    }
+  } finally {
+    stepping = false;
+    // Clicks that arrived mid-load are still pending -- run them next.
+    if (pendingSteps !== 0 && stepTimer === null) stepTimer = setTimeout(runPendingSteps, STEP_DEBOUNCE_MS);
+  }
+}
+
+$('page-prev').addEventListener('click', () => requestStep(-1));
+$('page-next').addEventListener('click', () => requestStep(1));
+$('chapter-prev').addEventListener('click', () => goToLevel(-1));
+$('chapter-next').addEventListener('click', () => goToLevel(1));
+// The eyebrow crumbs: each opens the page of the span it names. Same block →
+// just re-render at the leaf; otherwise load the span's first block.
+const openCrumb = (height, idx) => {
+  if (!state) return;
+  rememberTrail();   // a crumb is an ascent too -- descents retrace it
+  if (state.height === height) { state.index = idx; showCurrentTx(); }
+  else openLeafAt(height, idx);
+};
+$('ch-volume-link').addEventListener('click', () => { if (state) openCrumb(volumeStartOf(state.height), -3); });
+$('ch-book-link').addEventListener('click', () => { if (state) openCrumb(bookStartOf(state.height), -2); });
+
+// ── Swipe paging with a carousel turn ─────────────────────────────────────
+// A horizontal swipe turns the page at the current level: sections swipe
+// section-to-section -- crossing a block boundary onto the adjacent block's
+// nearest section, never up onto its leaves -- and a chapter/book/volume
+// leaf swipes to its level neighbour (the header steppers' step). The page
+// follows the
+// finger while dragging; a committed swipe slides the page off in the travel
+// direction and the destination slides in from the opposite edge once it has
+// rendered (consumeSlide). Swiping toward a neighbour that doesn't exist --
+// before Genesis, past the tip -- rubber-bands and snaps back, using the
+// corresponding button's visibility as the guard so swipe and button can
+// never disagree.
+const REDUCED_MOTION = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+let pendingSlide = 0;        // direction of an in-flight page turn (+1 next, -1 prev)
+let slideWatchdog = null;
+
+// A neighbour exists in that direction at the CURRENT level. Leaves borrow
+// their header stepper's visibility. A section's forward neighbour matches
+// page-next's visibility (hidden exactly at the tip's last section); its
+// backward neighbour is judged at section level directly -- page-prev stays
+// visible at §1 (it steps up to the chapter page in the linear order), but
+// the level-preserving swipe needs a previous SECTION, which Genesis §1
+// alone lacks.
+function navAvailable(direction) {
+  if (!state) return false;
+  if (state.index < 0) return !$(direction > 0 ? 'chapter-next' : 'chapter-prev').classList.contains('hidden');
+  if (direction > 0) return !$('page-next').classList.contains('hidden');
+  return state.index > 0 || state.height > 0;
+}
+// A swipe additionally waits for that neighbour's data to finish prefetching
+// (see prefetchNeighbors), so a committed turn always lands on content that
+// is ready to render; until then the drag only rubber-bands. The buttons stay
+// usable regardless -- they fetch on demand as always.
+function canStep(direction) {
+  if (direction < 0 && atFrontMatterEdge()) return true;   // a page turn, nothing to prefetch
+  return navAvailable(direction) && neighborReady[direction];
+}
+function swipeStep(direction) {
+  if (!navAvailable(direction)) return;
+  if (state.index < 0) { goToLevel(direction); return; }
+  // Sections turn at their own level: within the block it's the foot step;
+  // at either edge the turn crosses into the adjacent block's nearest
+  // section, never up onto the leaves the linear order threads between
+  // blocks (ascending is the vertical swipe's job).
+  const target = state.index + direction;
+  if (target >= 0 && target < state.txCount) stepNow(direction);
+  else stepSectionAcross(direction);
+}
+
+// ── Vertical swipes: one nav level up or down ─────────────────────────────
+// A pull DOWN with the page already at its top ascends a level -- section →
+// chapter page → book leaf → volume leaf; a push UP at the page's bottom
+// descends into the span's first child (a leaf's linear next page). Away
+// from the scroll boundaries a vertical drag is just scrolling.
+let upReady = false;    // the ascend target's data is loaded (see prefetchNeighbors)
+let downReady = false;  // a chapter page's §1 is warmed (leaf descents are same-block, always ready)
+
+// Descend memory: every ascent (vertical swipe or crumb) records the full
+// trail below the page it leaves for, keyed by the parent leaf's index, so
+// descents retrace the reader's path -- volume back to THE book, book back
+// to THE chapter, chapter back to THE section -- instead of each span's
+// first child. Entries are validated against the current span before use;
+// horizontal travel simply makes them stale, and descents fall back to the
+// first child.
+const descentMemory = { '-1': null, '-2': null, '-3': null };
+function rememberTrail() {
+  if (!state) return;
+  if (state.index >= 0) descentMemory['-1'] = { height: state.height, idx: state.index };
+  if (state.index >= -1) descentMemory['-2'] = { height: state.height, idx: -1 };
+  if (state.index >= -2) descentMemory['-3'] = { height: bookStartOf(state.height), idx: -2 };
+  try { sessionStorage.setItem('glossia-toc-descend', String(volumeStartOf(state.height))); } catch {}
+}
+function rememberedChild() {
+  if (!state) return null;
+  if (state.index === -1) {
+    const m = descentMemory['-1'];
+    return m && m.height === state.height ? m : null;
+  }
+  if (state.index === -2) {
+    const m = descentMemory['-2'];
+    return m && bookStartOf(m.height) === state.height ? m : null;
+  }
+  if (state.index === -3) {
+    const m = descentMemory['-3'];
+    return m && volumeStartOf(m.height) === state.height ? m : null;
+  }
+  return null;
+}
+async function descendTo(m) {
+  if (m.idx >= 0) {
+    // A remembered section within this chapter.
+    try { await ensureTxids(state); }
+    catch (e) { setStatus(e.message || 'Failed to load the transaction list.', 'err'); return; }
+    state.index = Math.min(m.idx, state.txCount - 1);
+    try { await showCurrentTx(); } catch (e) { setStatus(e.message || 'Failed to load transaction.', 'err'); }
+    return;
+  }
+  if (m.height === state.height) { state.index = m.idx; showCurrentTx(); return; }
+  openLeafAt(m.height, m.idx);
+}
+function levelTarget(direction) {   // +1 descend (deeper), -1 ascend
+  if (!state) return null;
+  if (direction < 0) {
+    if (state.index >= 0) return { height: state.height, idx: -1, free: true };   // this block is already loaded
+    if (state.index === -1) return { height: bookStartOf(state.height), idx: -2 };
+    if (state.index === -2) return { height: volumeStartOf(state.height), idx: -3 };
+    return { toc: true };           // above the volumes sits the table of contents
+  }
+  // Descending from a leaf is exactly the linear next page (volume → its
+  // first book, book → its chapter, chapter → §1); a section has no child.
+  return state.index < 0 ? { linear: true } : null;
+}
+function canStepVertical(direction) {
+  const t = levelTarget(direction);
+  if (!t) return false;
+  // Descending from a volume or book leaf stays within the loaded block;
+  // only a chapter's descent into §1 has data to wait for (a remembered
+  // section was visited moments ago -- its data is cached).
+  if (direction > 0) return state.index === -1 ? (downReady || !!rememberedChild()) : true;
+  return !!t.free || !!t.toc || upReady;   // the contents page is precached by the service worker
+}
+function swipeStepVertical(direction) {
+  const t = levelTarget(direction);
+  if (!t) return;
+  if (direction < 0) rememberTrail();   // ascents leave the trail descents retrace
+  if (t.toc) {
+    // The turn's exit has played (or reduced motion skipped it); the contents
+    // page finishes the entrance itself, sliding in from the top on arrival.
+    try { sessionStorage.setItem('glossia-toc-entrance', '1'); } catch {}
+    location.href = './bitcoin-contents.html';
+    return;
+  }
+  if (t.linear) {
+    const m = rememberedChild();
+    if (m) descendTo(m); else stepNow(1);
+    return;
+  }
+  if (t.free) { state.index = t.idx; showCurrentTx(); return; }
+  openLeafAt(t.height, t.idx);
+}
+// A committed swipe skips the buttons' click-debounce -- it's already a
+// single, prefetch-gated gesture -- so the turn's two halves overlap tightly.
+function stepNow(direction) {
+  pendingSteps += direction;
+  if (stepTimer !== null) { clearTimeout(stepTimer); stepTimer = null; }
+  runPendingSteps();
+}
+
+// ── Neighbour prefetch ────────────────────────────────────────────────────
+// After each render, quietly pull the data the next swipe in either direction
+// would need: a leaf's level neighbour is its first block's core (info +
+// header); a section's neighbour is the adjacent transaction's hex (plus the
+// txid list, once) -- or, across a block boundary, the adjacent block's
+// nearest section (its §1 forward, its last § backward), since the swipe
+// stays at section level rather than climbing onto the leaves.
+// Everything lands in the existing memoized caches, so the eventual swipe
+// (or button press) finds it instantly and nothing is fetched twice.
+let neighborReady = { '-1': false, '1': false };
+let prefetchGen = 0;
+
+// Warm the WASM encodes a chapter page will render (encodeSeedPhrase
+// memoizes, so the eventual render is a lookup). Best-effort, and skipped
+// until the engine is ready -- the render path initializes it anyway.
+function warmLeafEncodes(core) {
+  if (!ready) return;
+  try {
+    encodeSeedPhrase(trimTrailingZeroBytes(reverseHex(core.hash)), 'english', BEST_OF);
+    if (core.header.prevBlockHash !== '00'.repeat(32)) {
+      encodeSeedPhrase(trimTrailingZeroBytes(reverseHex(core.header.prevBlockHash)), 'english', BEST_OF);
+    }
+    encodeSeedPhrase(reverseHex(core.header.merkleRoot), 'english', BEST_OF);
+  } catch { /* warming is best-effort */ }
+}
+// Warm a section fully: fields composed and cached, § txid prose encoded.
+async function warmSection(txid) {
+  if (!ready) { await loadTxHex(txid); return; }   // at least the network half
+  await sectionFields(txid);
+  encodeSeedPhrase(reverseHex(txid), 'english', BEST_OF);
+}
+async function prefetchNeighbor(st, direction) {
+  if (st.index < 0) {
+    const { volume, chapterCount } = volumeBookChapter(st.height);
+    let target;
+    if (st.index === -3) target = heightOf(volume + direction, 1, 1);
+    else if (st.index === -2) target = direction > 0 ? st.height + chapterCount : bookStartOf(st.height - 1);
+    else target = st.height + direction;
+    if (target < 0) return;
+    warmLeafEncodes(await loadBlockByHeight(target, { withTxids: false }));
+  } else if (direction > 0) {
+    if (st.index < st.txCount - 1) {
+      const txids = await ensureTxids(st);
+      await warmSection(txids[st.index + 1]);
+    } else {
+      // Past the block's last section the swipe lands on the next block's §1:
+      // warm its core, head encodes, and first section.
+      const next = await loadBlockByHeight(st.height + 1, { withTxids: true });
+      warmLeafEncodes(next);
+      await warmSection(next.txids[0]);
+    }
+  } else if (st.index > 0) {
+    const txids = await ensureTxids(st);
+    await warmSection(txids[st.index - 1]);
+  } else if (st.height > 0) {
+    // §1's swipe-back lands on the previous block's last section.
+    const prev = await loadBlockByHeight(st.height - 1, { withTxids: true });
+    warmLeafEncodes(prev);
+    await warmSection(prev.txids[prev.txids.length - 1]);
+  }
+}
+function prefetchNeighbors() {
+  const gen = ++prefetchGen;
+  neighborReady = { '-1': false, '1': false };
+  upReady = state !== null && state.index >= 0;   // a section's parent page is this block, already loaded
+  downReady = false;
+  if (!state) return;
+  const st = state;
+  // Deferred past the turn's entry animation: the warming encodes are main-
+  // thread work and must never stall a transition mid-commit.
+  setTimeout(() => {
+    if (gen !== prefetchGen) return;
+    for (const dir of [-1, 1]) {
+      if (!navAvailable(dir)) continue;
+      prefetchNeighbor(st, dir)
+        .then(() => { if (gen === prefetchGen) neighborReady[dir] = true; })
+        .catch(() => {});   // a failed prefetch keeps the swipe gated; the buttons still work
+    }
+    // The vertical ascend target: a chapter's book leaf / a book's volume
+    // leaf lives at its span's first block -- warm that core too.
+    const upHeight = st.index === -1 ? bookStartOf(st.height)
+                   : st.index === -2 ? volumeStartOf(st.height) : null;
+    if (upHeight !== null) {
+      loadBlockByHeight(upHeight, { withTxids: false })
+        .then(() => { if (gen === prefetchGen) upReady = true; })
+        .catch(() => {});
+    }
+    // The vertical descend target from a chapter page is its §1.
+    if (st.index === -1) {
+      ensureTxids(st)
+        .then((txids) => warmSection(txids[0]))
+        .then(() => { if (gen === prefetchGen) downReady = true; })
+        .catch(() => {});
+    }
+  }, 350);
+}
+
+// Restore a page parked mid-turn: called by the turn's watchdog and by any
+// error status, so a failed load can never leave the page stranded off-screen.
+let slideGhost = null;
+function resetSlide() {
+  pendingSlide = 0;
+  if (slideWatchdog) { clearTimeout(slideWatchdog); slideWatchdog = null; }
+  if (slideGhost) { slideGhost.remove(); slideGhost = null; }
+  const ch = $('page-slide');
+  ch.style.visibility = '';
+  if (!ch.style.transform && !ch.style.opacity) return;
+  ch.style.transition = 'transform .18s ease, opacity .18s ease';
+  ch.style.transform = '';
+  ch.style.opacity = '';
+}
+
+// Commit a turn. The outgoing page is snapshotted as a fixed-position ghost
+// that keeps sliding off in the travel direction (continuing from wherever
+// the drag left it) WHILE the real element -- hidden, its layout box kept --
+// re-renders the destination and slides in from the opposite edge
+// (consumeSlide). The two halves overlap, so the turn reads as one
+// continuous carousel strip rather than out-to-black-then-in. No opacity
+// fade: pages slide, they don't dissolve.
+let pendingAxis = 'x';
+function slideOutAndStep(direction, axis = 'x') {
+  pendingSlide = direction;
+  pendingAxis = axis;
+  if (slideWatchdog) clearTimeout(slideWatchdog);
+  slideWatchdog = setTimeout(resetSlide, 6000);
+  const ch = $('page-slide');
+  const rect = ch.getBoundingClientRect();   // includes any drag offset
+  // The ghost lives inside a fixed, clipped window matching the frame's
+  // visible region, so its exit can never paint over the chrome above or
+  // below the page (and, being fixed, the anchor scroll can't move it).
+  const frect = $('page-frame').getBoundingClientRect();
+  const winTop = Math.max(frect.top, 0);
+  const winBottom = Math.min(frect.bottom, window.innerHeight);
+  const win = document.createElement('div');
+  win.setAttribute('aria-hidden', 'true');
+  Object.assign(win.style, {
+    position: 'fixed', top: winTop + 'px', left: '0', width: '100%',
+    height: Math.max(0, winBottom - winTop) + 'px',
+    overflow: 'clip', pointerEvents: 'none', zIndex: '30',
+  });
+  const ghost = ch.cloneNode(true);
+  ghost.removeAttribute('id');
+  Object.assign(ghost.style, {
+    position: 'absolute', top: (rect.top - winTop) + 'px', left: rect.left + 'px',
+    width: rect.width + 'px', margin: '0',
+    transition: 'none', transform: 'none',
+  });
+  win.appendChild(ghost);
+  document.body.appendChild(win);
+  slideGhost = win;
+  // Install the anchor guarantee BEFORE the destination renders: a short page
+  // replacing a long one shrinks the document, and the browser would clamp
+  // the scroll away right then -- ahead of the entering half's own scroll.
+  // Any slack lands at the very end of the page, after the notation key.
+  // Measured on the article, the nav's static seat -- the sticky nav itself
+  // reports its stuck (viewport) position mid-scroll, not its place on the page.
+  const anchor = Math.max(0, $('chapter').getBoundingClientRect().top + window.scrollY - 10);
+  document.body.style.minHeight = window.scrollY > anchor ? `${anchor + window.innerHeight}px` : '';
+  ch.style.transition = 'none';
+  ch.style.transform = '';
+  ch.style.visibility = 'hidden';
+  void ghost.offsetWidth;
+  // Linear, so the exit reads as the drag's momentum carrying on rather than
+  // re-accelerating from a stop.
+  ghost.style.transition = 'transform .2s linear';
+  const off = axis === 'x' ? window.innerWidth : window.innerHeight;
+  ghost.style.transform = `translate${axis === 'x' ? 'X' : 'Y'}(${direction > 0 ? '-' : ''}${off}px)`;
+  setTimeout(() => { if (slideGhost === win) { win.remove(); slideGhost = null; } else win.remove(); }, 320);
+  // Give the compositor two frames to commit and start the ghost's slide
+  // BEFORE the destination's render work begins -- the render blocks the
+  // main thread, and a transition that hasn't started yet would stall with
+  // it (the visible "stuck halfway" hitch). Once running, a composited
+  // transform transition glides through main-thread busyness.
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    if (axis === 'x') swipeStep(direction); else swipeStepVertical(direction);
+  }));
+}
+
+// The entering half of the turn, run after the destination has rendered: the
+// new page starts at the opposite edge and eases to rest -- typically while
+// the ghost of the old page is still on its way out.
+function consumeSlide() {
+  if (!pendingSlide) return;
+  const dir = pendingSlide;
+  pendingSlide = 0;
+  if (slideWatchdog) { clearTimeout(slideWatchdog); slideWatchdog = null; }
+  // The nav header is the turn's fixed point of reference: scroll back at
+  // most to the eyebrow -- never the document top -- while the live page is
+  // still hidden, so the movement is never seen. (The ghost is fixed-
+  // position, so the scroll doesn't move it either.) Measured on the article,
+  // the nav's static seat -- the sticky nav itself reports its stuck
+  // (viewport) position mid-scroll, not its place on the page.
+  const anchor = Math.max(0, $('chapter').getBoundingClientRect().top + window.scrollY - 10);
+  if (window.scrollY > anchor) window.scrollTo(0, anchor);
+  const ch = $('page-slide');
+  const off = pendingAxis === 'x' ? window.innerWidth : window.innerHeight;
+  ch.style.transition = 'none';
+  ch.style.transform = `translate${pendingAxis === 'x' ? 'X' : 'Y'}(${dir > 0 ? '' : '-'}${off}px)`;
+  ch.style.visibility = '';
+  ch.style.opacity = '';
+  void ch.offsetWidth;   // commit the start position before animating
+  ch.style.transition = 'transform .22s ease-out';
+  ch.style.transform = '';
+}
+
+// Recognize a quick, mostly-horizontal single-finger drag, with the axis
+// locked on first significant movement so vertical scrolling never drags the
+// page sideways. Swipes that begin in form fields, in horizontally scrolling
+// regions (the pattern table), or inside a popover are left to those elements.
+// Carousel-first only when the page has nothing meaningful to scroll (the
+// natural content -- measured on .wrap, so the anchor guarantee's minHeight
+// slack doesn't count -- fits the viewport). Kept current by a resize
+// observer, since footnotes and lazy prose change the page's height, and
+// touch-action must be in place BEFORE a gesture starts.
+const gesture = { carouselFirst: false };
+function updateGesturePrecedence() {
+  // Natural content height: the wrap, with the frame's min-height padding
+  // swapped out for the slide's real height -- a stretched title leaf still
+  // counts as short, keeping its carousel-first vertical swipes. Volume/book
+  // leaves stretch the slide itself (manuscript layout), so they are
+  // carousel-first by construction: their content is a handful of lines.
+  const spanLeaf = $('chapter').classList.contains('span-leaf');
+  const wrapH = document.querySelector('.wrap').getBoundingClientRect().height;
+  const frameH = $('page-frame').getBoundingClientRect().height;
+  const slideH = $('page-slide').getBoundingClientRect().height;
+  const short = spanLeaf || (wrapH - frameH + slideH) <= window.innerHeight + 24;
+  gesture.carouselFirst = short;
+  $('page-frame').classList.toggle('carousel-first', short);
+}
+// Observed on the slide as well as the body: with the shell stretched to the
+// viewport (the foot nav's fixed seat), every short page's body measures the
+// same, so only the slide's natural height betrays a page change.
+const gestureObserver = new ResizeObserver(updateGesturePrecedence);
+gestureObserver.observe(document.body);
+gestureObserver.observe($('page-slide'));
+window.addEventListener('resize', updateGesturePrecedence);
+
+(() => {
+  let sx = null, sy = 0, st = 0, axis = null, inFrame = false, atTop = false, atBottom = false;
+  const snapBack = () => {
+    const ch = $('page-slide');
+    if (!ch.style.transform) return;
+    ch.style.transition = 'transform .15s ease, opacity .15s ease';
+    ch.style.transform = '';
+    ch.style.opacity = '';
+  };
+  document.addEventListener('touchstart', (e) => {
+    sx = null; axis = null;
+    if (e.touches.length !== 1) return;
+    const t = e.target;
+    if (t.closest && t.closest('input, textarea, select, .pattern-scroll, .hash-menu, .settings-panel')) return;
+    sx = e.touches[0].clientX; sy = e.touches[0].clientY; st = performance.now();
+    // A vertical drag starting inside the carousel frame is a level swipe --
+    // anywhere on a short page (carousel-first), or from the scroll
+    // boundaries on a tall one. Starting on the chrome around the frame, it
+    // scrolls the page as normal.
+    inFrame = !!(t.closest && t.closest('#page-frame'));
+    atTop = window.scrollY <= 2;
+    atBottom = window.scrollY >= document.documentElement.scrollHeight - window.innerHeight - 2;
+  }, { passive: true });
+  document.addEventListener('touchmove', (e) => {
+    if (sx === null || REDUCED_MOTION || pendingSlide) return;
+    const dx = e.touches[0].clientX - sx;
+    const dy = e.touches[0].clientY - sy;
+    if (!axis) {
+      if (Math.abs(dx) < 12 && Math.abs(dy) < 12) return;
+      axis = Math.abs(dx) > Math.abs(dy) ? 'h' : 'v';
+    }
+    const ch = $('page-slide');
+    if (axis === 'v') {
+      // Level follow: inside the frame the page tracks the finger, damped --
+      // pulling down leads toward the parent level, pushing up toward the
+      // child. On a tall page this only engages from the scroll boundaries
+      // (elsewhere the drag is scrolling); outside the frame we do nothing.
+      const engaged = inFrame && (gesture.carouselFirst || (atTop && dy > 0) || (atBottom && dy < 0));
+      if (!engaged) return;
+      const damp = canStepVertical(dy < 0 ? 1 : -1) ? 0.5 : 0.18;
+      ch.style.transition = 'none';
+      ch.style.transform = `translateY(${dy * damp}px)`;
+      return;
+    }
+    // Follow the finger; a direction with no neighbour -- or one whose data
+    // hasn't finished prefetching -- only rubber-bands.
+    const damp = canStep(dx < 0 ? 1 : -1) ? 1 : 0.25;
+    ch.style.transition = 'none';
+    ch.style.transform = `translateX(${dx * damp}px)`;
+  }, { passive: true });
+  document.addEventListener('touchend', (e) => {
+    if (sx === null || e.changedTouches.length !== 1) return;
+    const dx = e.changedTouches[0].clientX - sx;
+    const dy = e.changedTouches[0].clientY - sy;
+    const dt = performance.now() - st;
+    sx = null;
+    const dir = dx < 0 ? 1 : -1;   // swiping left turns to the next page
+    const turn = dt <= 600 && Math.abs(dx) >= 60 && Math.abs(dy) <= Math.abs(dx) * 0.6;
+    const vdir = dy < 0 ? 1 : -1;  // pushing up descends a level, pulling down ascends
+    const vEngaged = inFrame && (gesture.carouselFirst || (vdir < 0 && atTop) || (vdir > 0 && atBottom));
+    const vTurn = vEngaged && dt <= 600 && Math.abs(dy) >= 70 && Math.abs(dx) <= Math.abs(dy) * 0.6;
+    if (turn && !pendingSlide && canStep(dir)) {
+      if (REDUCED_MOTION) swipeStep(dir);
+      else slideOutAndStep(dir);
+    } else if (vTurn && !pendingSlide && canStepVertical(vdir)) {
+      if (REDUCED_MOTION) swipeStepVertical(vdir);
+      else slideOutAndStep(vdir, 'y');
+    } else if (!pendingSlide) {
+      snapBack();
+    }
+  }, { passive: true });
+  document.addEventListener('touchcancel', () => { sx = null; if (!pendingSlide) snapBack(); }, { passive: true });
+})();
+
+// ── Data-source picker ────────────────────────────────────────────────────
+const endpointSel = $('endpoint-select');
+const hostOf = (url) => { try { return new URL(url).host; } catch { return url; } };
+
+let endpointMsgTimer = null;
+function setEndpointMsg(text, isErr) {
+  const el = $('endpoint-msg');
+  el.textContent = text || '';
+  el.classList.toggle('hidden', !text);
+  el.classList.toggle('err', !!isErr);
+  if (endpointMsgTimer) { clearTimeout(endpointMsgTimer); endpointMsgTimer = null; }
+  if (text && !isErr) endpointMsgTimer = setTimeout(() => el.classList.add('hidden'), 2600);
+}
+
+function persistCustomMirrors() {
+  try { localStorage.setItem(ENDPOINTS_KEY, JSON.stringify(customMirrors)); } catch {}
+}
+
+// Repaint the dropdown from the current mirror list and selection.
+function renderEndpoints() {
+  const current = ESPLORA_MIRRORS[preferred];
+  endpointSel.innerHTML = '';
+  for (const m of allMirrors()) {
+    const opt = document.createElement('option');
+    opt.value = m.url;
+    opt.textContent = `${m.label} — ${hostOf(m.url)}`;
+    endpointSel.append(opt);
+  }
+  endpointSel.value = current;
+  // "Remove" only applies to a custom (non-built-in) selection.
+  $('endpoint-remove').disabled = !customMirrors.some((m) => m.url === current);
+}
+
+// Make `url` the preferred source. `reload` re-runs the current lookup so the
+// change takes effect immediately (e.g. retrying a load that just rate-limited).
+function selectEndpoint(url, { reload = true } = {}) {
+  syncMirrors();
+  const i = ESPLORA_MIRRORS.indexOf(url);
+  if (i < 0) return;
+  preferred = i;
+  try { localStorage.setItem(SELECTED_KEY, url); } catch {}
+  renderEndpoints();
+  setEndpointMsg(`Data source: ${hostOf(url)}`);
+  // Reload the current chapter/section from state (not the input box, which Next/
+  // Prev navigation doesn't update) so the new source takes effect at once.
+  if (reload && state) openLookup(String(state.height), state.index);
+}
+
+function closeAddForm() {
+  $('endpoint-add-row').classList.add('hidden');
+  $('endpoint-label').value = '';
+  $('endpoint-url').value = '';
+  setEndpointMsg('');
+}
+
+function saveCustomEndpoint() {
+  let url = $('endpoint-url').value.trim();
+  let label = $('endpoint-label').value.trim();
+  if (!url) { setEndpointMsg('Enter an endpoint URL.', true); return; }
+  if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+  try { new URL(url); } catch { setEndpointMsg('That doesn’t look like a valid URL.', true); return; }
+  url = url.replace(/\/+$/, ''); // strip trailing slash so onMirror prefixes match
+  if (allMirrors().some((m) => m.url === url)) { selectEndpoint(url); closeAddForm(); return; }
+  customMirrors.push({ label: label || hostOf(url), url });
+  persistCustomMirrors();
+  syncMirrors();
+  closeAddForm();
+  selectEndpoint(url);
+}
+
+endpointSel.addEventListener('change', () => selectEndpoint(endpointSel.value));
+$('endpoint-add').addEventListener('click', () => {
+  const row = $('endpoint-add-row');
+  row.classList.toggle('hidden');
+  if (!row.classList.contains('hidden')) $('endpoint-url').focus();
+});
+$('endpoint-cancel').addEventListener('click', closeAddForm);
+$('endpoint-save').addEventListener('click', saveCustomEndpoint);
+$('endpoint-url').addEventListener('keydown', (e) => { if (e.key === 'Enter') saveCustomEndpoint(); });
+$('endpoint-label').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('endpoint-url').focus(); });
+$('endpoint-remove').addEventListener('click', () => {
+  const current = ESPLORA_MIRRORS[preferred];
+  const idx = customMirrors.findIndex((m) => m.url === current);
+  if (idx < 0) return;
+  customMirrors.splice(idx, 1);
+  persistCustomMirrors();
+  syncMirrors();
+  selectEndpoint(BUILTIN_MIRRORS[0].url); // fall back to the primary built-in
+});
+
+renderEndpoints();
+
+// ── Settings popover ──────────────────────────────────────────────────────
+// The masthead "Settings" link toggles a small popover holding the data-source
+// picker; it dismisses on an outside click or Escape.
+const settingsLink = $('settings-link');
+const settingsPanel = $('settings-panel');
+function closeSettings() {
+  settingsPanel.classList.add('hidden');
+  settingsLink.setAttribute('aria-expanded', 'false');
+  closeAddForm();   // collapse the add-endpoint form when the popover closes
+}
+settingsLink.addEventListener('click', (e) => {
+  e.preventDefault();
+  const nowHidden = settingsPanel.classList.toggle('hidden');
+  settingsLink.setAttribute('aria-expanded', nowHidden ? 'false' : 'true');
+  if (nowHidden) closeAddForm();
+});
+document.addEventListener('click', (e) => {
+  if (settingsPanel.classList.contains('hidden')) return;
+  if (settingsPanel.contains(e.target) || settingsLink.contains(e.target)) return;
+  closeSettings();
+});
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !settingsPanel.classList.contains('hidden')) closeSettings(); });
+
+// ── Hash menu + bookmarks ─────────────────────────────────────────────────
+// Clicking any Glossia-encoded hash opens a small menu (Copy hex / Bookmark).
+// Bookmarks -- navigable hashes the reader wants to return to (block hashes,
+// previous-block hashes, txids) -- persist in localStorage and list in the card.
+// Each carries a reader-supplied title, which a table of contents will draw on.
+const BOOKMARKS_KEY = 'glossia-btc-bookmarks';
+const readBookmarks = () => {
+  try { const v = JSON.parse(localStorage.getItem(BOOKMARKS_KEY)); return Array.isArray(v) ? v : []; }
+  catch { return []; }
+};
+let bookmarks = readBookmarks();
+const isBookmarked = (hex) => bookmarks.some((b) => b.hex === hex);
+const saveBookmarks = () => { try { localStorage.setItem(BOOKMARKS_KEY, JSON.stringify(bookmarks)); } catch {} };
+
+// The curated entries (NOTABLE) live in btc-contents.js, shared with the
+// table-of-contents page; they lead the Bookmarks list here.
+
+// The reference a bookmarkable hash points at, taken from the section on screen:
+// a txid is a section within this block; the block hash is this whole chapter.
+// Returns null when it can't be placed (no block loaded) -- the caller then
+// declines the bookmark rather than saving one whose citation can't be resolved.
+function entryPlacement(entry) {
+  if (!state || !Number.isInteger(state.height)) return null;
+  if (entry.label === 'transaction id') return { height: state.height, pos: state.index };
+  return { height: state.height, pos: null };   // a block hash -- this chapter
+}
+
+// Add (or retitle) a bookmark, then refresh the contents and every on-page flag.
+// A new bookmark is stored with its resolved reference (height + section) so the
+// table of contents can slot it into reading order; returns false (saving
+// nothing) when the reference can't be resolved.
+function addBookmark(entry, title) {
+  const existing = bookmarks.find((b) => b.hex === entry.hex);
+  if (existing) {
+    existing.title = title;
+  } else {
+    const place = entryPlacement(entry);
+    if (!place) return false;
+    bookmarks.unshift({ hex: entry.hex, label: entry.label, prose: entry.prose, title, height: place.height, pos: place.pos }); // newest first
+  }
+  saveBookmarks();
+  syncHashFlags();
+  return true;
+}
+function removeBookmark(hex) {
+  const i = bookmarks.findIndex((b) => b.hex === hex);
+  if (i < 0) return;
+  bookmarks.splice(i, 1);
+  saveBookmarks();
+  syncHashFlags();
+}
+
+// Show/hide a bookmark ribbon at the top-right corner of a hash's prose to
+// match its saved state.
+function setHashFlag(el, on) {
+  let mark = el.querySelector(':scope > .hash-bookmark');
+  if (on && !mark) {
+    mark = document.createElement('span');
+    mark.className = 'hash-bookmark';
+    mark.title = 'bookmarked';
+    mark.setAttribute('aria-hidden', 'true');
+    mark.innerHTML = '<svg viewBox="0 0 12 16"><path fill="currentColor" d="M0 0h12v16l-6-4-6 4z"/></svg>';
+    el.appendChild(mark);
+  } else if (!on && mark) {
+    mark.remove();
+  }
+}
+// Re-sync every on-page hash's flag after the bookmark set changes.
+function syncHashFlags() {
+  for (const el of document.querySelectorAll('.hash-copy')) {
+    if (el.__hex) setHashFlag(el, isBookmarked(el.__hex));
+  }
+}
+
+// A first-guess title for the entry, drawn from the current section (every
+// bookmarkable hash on the page belongs to the chapter on screen). The reader
+// can accept or edit it.
+function suggestTitle(entry) {
+  const b = bookmarks.find((x) => x.hex === entry.hex);
+  if (b && b.title) return b.title;               // keep an existing title when retitling
+  const place = entryPlacement(entry);
+  if (!place) return '';
+  const { volume, book, chapter } = volumeBookChapter(place.height);
+  const genesis = volume === 1 && book === 1 && chapter === 1;
+  if (place.pos != null) return `${toRoman(volume)} β${book} ■${chapter} §${place.pos + 1}`;
+  return genesis ? 'The Genesis Block' : `Chapter ${chapterName(chapter)}`;
+}
+
+const hashMenu = $('hash-menu');
+const menuCopyBtn = hashMenu.querySelector('[data-act="copy"]');
+const menuCopyTextBtn = hashMenu.querySelector('[data-act="copy-text"]');
+const menuBmBtn = hashMenu.querySelector('[data-act="bookmark"]');
+const titleInput = $('hash-title-input');
+let menuEntry = null;
+let menuPoint = { x: 0, y: 0 };
+
+// Clamp the menu to the viewport at its remembered anchor point -- re-run after
+// a mode switch changes its height.
+function positionMenu() {
+  const pad = 8;
+  const r = hashMenu.getBoundingClientRect();
+  hashMenu.style.left = `${Math.min(Math.max(pad, menuPoint.x), window.innerWidth - r.width - pad)}px`;
+  hashMenu.style.top = `${Math.min(Math.max(pad, menuPoint.y), window.innerHeight - r.height - pad)}px`;
+}
+
+// Toggle between the action list and the title-entry form.
+let menuMode = 'actions';
+// A scroll or resize fired as a side-effect of opening (the browser bringing the
+// just-clicked hash or the menu into view) must not dismiss the menu. Ignore
+// viewport changes until this moment, set a beat after each open.
+let menuSettleUntil = 0;
+function setMenuMode(mode) {
+  menuMode = mode;
+  $('hash-menu-actions').classList.toggle('hidden', mode === 'title');
+  $('hash-menu-title').classList.toggle('hidden', mode !== 'title');
+  positionMenu();
+}
+
+function openHashMenu(ev, entry, anchorEl) {
+  ev.preventDefault();
+  ev.stopPropagation();
+  menuEntry = entry;
+  $('hash-menu-head').textContent = entry.label;
+  menuCopyBtn.textContent = 'Copy hex';
+  menuCopyTextBtn.textContent = 'Copy text';
+  menuBmBtn.classList.toggle('hidden', !entry.nav);
+  if (entry.nav) menuBmBtn.textContent = isBookmarked(entry.hex) ? 'Remove bookmark' : 'Bookmark';
+  hashMenu.classList.remove('hidden');
+  setMenuMode('actions');
+  // Anchor at the click; for a keyboard open, sit under the element.
+  if (ev.type === 'keydown' && anchorEl) { const a = anchorEl.getBoundingClientRect(); menuPoint = { x: a.left, y: a.bottom + 4 }; }
+  else menuPoint = { x: ev.clientX, y: ev.clientY };
+  positionMenu();
+  // Pull focus into the menu only for a keyboard open. On a mouse open, moving
+  // focus to a menu button can scroll it into view (preventScroll isn't honored
+  // everywhere), and that scroll would trip the dismiss below and close the menu
+  // the instant it appeared.
+  if (ev.type === 'keydown') menuCopyBtn.focus({ preventScroll: true });
+  menuSettleUntil = performance.now() + 400;
+}
+
+function closeHashMenu() { hashMenu.classList.add('hidden'); menuEntry = null; }
+
+menuCopyBtn.addEventListener('click', () => {
+  if (!menuEntry) return;
+  navigator.clipboard.writeText(menuEntry.hex).then(() => {
+    menuCopyBtn.textContent = 'Copied ✓';
+    setTimeout(closeHashMenu, 650);
+  }).catch(closeHashMenu);
+});
+// Copy the Glossia prose itself (the readable encoding), not the raw hex.
+menuCopyTextBtn.addEventListener('click', () => {
+  if (!menuEntry) return;
+  navigator.clipboard.writeText(menuEntry.prose).then(() => {
+    menuCopyTextBtn.textContent = 'Copied ✓';
+    setTimeout(closeHashMenu, 650);
+  }).catch(closeHashMenu);
+});
+menuBmBtn.addEventListener('click', () => {
+  if (!menuEntry) return;
+  if (isBookmarked(menuEntry.hex)) { removeBookmark(menuEntry.hex); closeHashMenu(); return; }
+  // Not yet saved: swap to the title form so the reader can name this entry.
+  titleInput.value = suggestTitle(menuEntry);
+  setMenuMode('title');
+  titleInput.focus({ preventScroll: true });
+  titleInput.select();
+});
+
+function saveTitle() {
+  if (!menuEntry) return;
+  if (addBookmark(menuEntry, titleInput.value.trim())) { closeHashMenu(); return; }
+  // The reference couldn't be resolved, so nothing was saved -- say so instead
+  // of silently closing on a bookmark that wouldn't appear in the contents.
+  closeHashMenu();
+  setStatus('Could not resolve this reference — bookmark not saved.', 'err');
+}
+hashMenu.querySelector('[data-act="title-save"]').addEventListener('click', saveTitle);
+hashMenu.querySelector('[data-act="title-cancel"]').addEventListener('click', () => setMenuMode('actions'));
+titleInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') { e.preventDefault(); saveTitle(); }
+  else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); setMenuMode('actions'); }
+});
+
+// Dismiss on an outside press, Escape, scroll, or resize. mousedown (not click)
+// so opening the menu on one hash doesn't immediately close it.
+document.addEventListener('mousedown', (e) => {
+  if (!hashMenu.classList.contains('hidden') && !hashMenu.contains(e.target)) closeHashMenu();
+});
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeHashMenu(); });
+// Dismiss on a genuine user scroll or resize -- but never while the title form
+// is up, so a mobile keyboard's viewport resize (or a focus scroll) can't
+// discard a half-typed bookmark title.
+const dismissOnViewportChange = () => {
+  if (menuMode === 'title') return;                  // never nuke a title being typed
+  if (performance.now() < menuSettleUntil) return;   // ignore the open's own scroll
+  closeHashMenu();
+};
+window.addEventListener('resize', dismissOnViewportChange);
+window.addEventListener('scroll', dismissOnViewportChange, true);
+
+// Entry points, in priority order: ?ref= opens a citation carried whole in
+// Latin (v1b50c1807s85o4 -- volume, book, chapter, then optional §section
+// and .output) -- the reference IS the address, no txid anywhere: the
+// height is citation arithmetic and the section is the block's own index;
+// ?txid= jumps straight to a transaction's
+// section (an added &out=N then brings that output to the top -- the same
+// landing the marginalia's in-page cites make, reachable from a full
+// §section.output citation elsewhere, e.g. a ledger row); ?block= (with
+// optional ?index=) opens a block -- a negative height counts back from the
+// chain tip, so ?block=-1 is the latest block; otherwise the book opens at
+// the chain tip (-1), the latest chapter rather than Genesis.
+const params = new URLSearchParams(location.search);
+const pParam = /^v(\d+)b(\d+)c(\d+)(?:s(\d+))?(?:o(\d+))?$/i.exec((params.get('ref') || '').trim());
+const txidParam = params.get('txid');
+const blockParam = params.get('block');
+// An absent ?index= opens the chapter's own page (-1); index=0 is §1;
+// ?page=volume / ?page=book open the block's volume or book leaf.
+const idxRaw = parseInt(params.get('index'), 10);
+const pageParam = params.get('page');
+const indexParam = Number.isFinite(idxRaw) ? idxRaw
+  : pageParam === 'volume' ? -3 : pageParam === 'book' ? -2 : -1;
+if (pParam) {
+  const pHeight = heightOf(+pParam[1], +pParam[2], +pParam[3]);
+  const pIndex = pParam[4] != null ? +pParam[4] - 1 : -1;   // §1 is index 0
+  const pOut = pParam[5] != null ? +pParam[5] : NaN;
+  Promise.resolve(openLookup(String(pHeight), pIndex)).then(() => {
+    if (Number.isFinite(pOut) && pIndex >= 0) $(`out-${pOut}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }).catch(() => { /* the lookup's own error handling has the page */ });
+} else if (txidParam) {
+  const outRaw = parseInt(params.get('out'), 10);
+  Promise.resolve(openLookup(txidParam)).then(() => {
+    if (Number.isFinite(outRaw)) $(`out-${outRaw}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }).catch(() => { /* the lookup's own error handling has the page */ });
+} else if (blockParam) {
+  openLookup(blockParam, indexParam);
+} else {
+  openLookup('-1', indexParam);
+}
+</script>
+</body>
+</html>
+
+<!-- build-marker-next -->
+
+<!-- build-marker-next -->
