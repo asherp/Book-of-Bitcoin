@@ -2,7 +2,9 @@
 //
 // tools/prerender-passages.mjs — pre-render the curated passages (the table
 // of contents in web/btc-contents-data.js) as static markdown under
-// web/passages/, plus a sitemap.xml for the whole site.
+// web/passages/, plus a sitemap.xml for the whole site, plus an archive seed
+// (web/passages/seed.json) of the chain data behind those passages, which the
+// reading pages import into IndexedDB on a first visit (web/btc-seed.js).
 //
 // Why this exists: the book is a pure client-side app — a passage's prose is
 // composed in the browser by the Glossia WASM engine from data fetched off
@@ -26,6 +28,7 @@
 
 import { readFile, mkdir, writeFile } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
+import { createHash } from 'node:crypto';
 
 import { init, encodeSeedPhrase } from '../web/glossia-msg.js';
 import { parseTransaction, parseBlockHeader } from '../web/btc-tx.js';
@@ -36,6 +39,7 @@ import { NOTABLE } from '../web/btc-contents-data.js';
 export const SITE = 'https://bookofbitcoin.io';
 const OUT_DIR = new URL('../web/passages/', import.meta.url);
 const SITEMAP = new URL('../web/sitemap.xml', import.meta.url);
+const SEED_OUT = new URL('../web/passages/seed.json', import.meta.url);
 
 // Match the book's rendering choices exactly (bitcoin-book.html).
 const BEST_OF = 5;
@@ -211,6 +215,56 @@ export function passageMd({ title, height, blockHash, header, txCount, txid, ind
   return md.join('\n');
 }
 
+// ─── archive seed ───────────────────────────────────────────────────────
+//
+// Alongside each passage's markdown, collect the exact ingredients the
+// reading pages keep in IndexedDB (btc-store.js): everything renderEntry
+// fetches anyway, shaped store -> key -> value so the client-side import
+// (web/btc-seed.js) is a dumb loop and the stored shapes can never drift
+// from what the pages' own loaders write after the same fetches. All of it
+// is immutable chain data, keyed by hash / txid / deep height -- exactly the
+// archive's admission rule.
+
+// A big block's txid list stays on-demand (it can run to ~100s of KB); under
+// this JSON size (~480 txids) it ships, and the curated block entries that
+// need the list to open their §section read offline on a first visit.
+const SEED_MAX_TXIDS_JSON = 32 * 1024;
+
+// A data-carrier transaction (an inscription) can run to megabytes of hex;
+// past this it stays on-demand like any uncurated passage's bytes.
+const SEED_MAX_TX_HEX = 256 * 1024;
+
+// A citation's outputs beyond this JSON size stay on-demand -- an output-heavy
+// transaction's vout list is the whole value of the seeded citation, and a
+// truncated one would be kept forever (the archive never refetches).
+const SEED_MAX_OUTPUTS_JSON = 32 * 1024;
+
+export const emptySeed = () => ({ heights: {}, blocks: {}, txids: {}, tx: {}, placements: {}, citations: {} });
+
+export function addToSeed(seed, { entryId, height, blockHash, block, headerHex, txid, pos, txHex, txids, outputs }) {
+  seed.heights[height] = blockHash;
+  seed.blocks[blockHash] = { block, headerHex };
+  if (txHex && txHex.length <= SEED_MAX_TX_HEX) seed.tx[txid] = txHex;
+  // A txid entry's placement, keyed by the id exactly as the contents data
+  // writes it -- the same key resolvePlacement looks up. Block entries place
+  // from their height offline already.
+  if (entryId && isTxid(entryId)) seed.placements[entryId] = { height, pos };
+  if (txids && JSON.stringify(txids).length <= SEED_MAX_TXIDS_JSON) seed.txids[blockHash] = txids;
+  // The curated transactions are the ones most likely to be cited from other
+  // chapters; seed the citation only WITH its outputs -- a kept { outputs:
+  // null } would answer forever, worse than the network's full answer.
+  if (outputs && JSON.stringify(outputs).length <= SEED_MAX_OUTPUTS_JSON) {
+    seed.citations[txid] = { height, pos, outputs };
+  }
+}
+
+export function seedJson(seed) {
+  // Content-stamped so the client can mark what it imported; identical chain
+  // data across deploys yields an identical stamp, and no reader re-imports.
+  const stamp = createHash('sha256').update(JSON.stringify(seed)).digest('hex').slice(0, 16);
+  return JSON.stringify({ v: 1, stamp, ...seed });
+}
+
 // ─── per-entry pipeline ─────────────────────────────────────────────────
 
 const isTxid = (id) => /^[0-9a-f]{64}$/i.test(id);
@@ -220,10 +274,10 @@ async function blockContext(height) {
   if (!blockHash) return null;                       // not mined yet (BIP42's 13,440,000)
   const headerHex = await esplora(`/block/${blockHash}/header`);
   const meta = await esplora(`/block/${blockHash}`, 'json');
-  return { blockHash, header: parseBlockHeader(headerHex), txCount: meta.tx_count };
+  return { blockHash, headerHex, block: meta, header: parseBlockHeader(headerHex), txCount: meta.tx_count };
 }
 
-async function renderEntry(entry) {
+async function renderEntry(entry, seed) {
   if (entry.page === 'book' || entry.id === '-1') return null;   // a leaf / the moving tip — no static passage
 
   let height, index, txid;
@@ -240,13 +294,25 @@ async function renderEntry(entry) {
 
   const ctx = await blockContext(height);
   if (!ctx) return null;
+  let txids = null;
   if (!txid) {
-    const txids = await esplora(`/block/${ctx.blockHash}/txids`, 'json');
+    txids = await esplora(`/block/${ctx.blockHash}/txids`, 'json');
     txid = txids[index];
   }
   const hex = await esplora(`/tx/${txid}/hex`);
   const parsed = parseTransaction(hex);
   const fields = composeTransactionFields(parsed, BEST_OF, encodeCapped);
+
+  // The outputs behind this transaction's citation (resolveCitation shows a
+  // spent output's amount under a reference). Its own fetch, and best-effort
+  // on its own: a miss costs the seed one citation, never the passage.
+  let outputs = null;
+  try { outputs = (await esplora(`/tx/${txid}`, 'json'))?.vout ?? null; } catch { /* stays on-demand */ }
+
+  addToSeed(seed, {
+    entryId: entry.id, height, blockHash: ctx.blockHash, block: ctx.block,
+    headerHex: ctx.headerHex, txid, pos: index, txHex: hex, txids, outputs,
+  });
 
   return {
     slug: slugify(entry.title),
@@ -302,10 +368,11 @@ async function main() {
   await mkdir(OUT_DIR, { recursive: true });
 
   const rendered = [];
+  const seed = emptySeed();
   let skipped = 0;
   for (const entry of NOTABLE) {
     try {
-      const r = await renderEntry(entry);
+      const r = await renderEntry(entry, seed);
       if (!r) { skipped++; continue; }
       await writeFile(new URL(`${r.slug}.md`, OUT_DIR), r.md);
       rendered.push(r);
@@ -318,6 +385,16 @@ async function main() {
 
   await writeFile(new URL('index.md', OUT_DIR), indexMd(rendered));
   await writeFile(SITEMAP, sitemapXml(rendered));
+  // The archive seed rides with the passages -- but only when something
+  // rendered: an explorer outage must not ship an empty seed, whose stamp
+  // would mark first-time readers as provisioned with nothing.
+  if (rendered.length) {
+    const json = seedJson(seed);
+    await writeFile(SEED_OUT, json);
+    console.log(`  seed.json: ${Object.keys(seed.blocks).length} blocks, ` +
+      `${Object.keys(seed.tx).length} transactions, ${Object.keys(seed.txids).length} txid lists, ` +
+      `${Object.keys(seed.citations).length} citations (${Math.round(json.length / 1024)} KB)`);
+  }
   console.log(`\n${rendered.length} passages rendered, ${skipped} skipped.`);
   if (!rendered.length) {
     // Still exit 0: an explorer outage must not block the site deploy. The
