@@ -5,4 +5,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://asherp.github.io/Book-of-Bitcoin/sitemap.xml
+Sitemap: https://bookofbitcoin.io/sitemap.xml

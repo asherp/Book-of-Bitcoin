@@ -33,7 +33,7 @@ import { composeTransactionFields, composeBlockHeaderFields, renderWitness } fro
 import { volumeBookChapter, toRoman, reference } from '../web/btc-citation.js';
 import { NOTABLE } from '../web/btc-contents-data.js';
 
-export const SITE = 'https://asherp.github.io/Book-of-Bitcoin';
+export const SITE = 'https://bookofbitcoin.io';
 const OUT_DIR = new URL('../web/passages/', import.meta.url);
 const SITEMAP = new URL('../web/sitemap.xml', import.meta.url);
 
