@@ -921,6 +921,10 @@ button:disabled { opacity: .4; cursor: not-allowed; }
               <div class="glyph-row"><span class="g">∅</span><span class="m">no previous block — the genesis chapter</span></div>
               <div class="glyph-row"><span class="g">β<i>n</i></span><span class="m">the <b>difficulty target</b>, as in the preamble</span></div>
               <div class="glyph-row"><span class="g">η<sub><i>n</i></sub></span><span class="m">the <b>nonce</b> the miner landed on</span></div>
+              <div class="glyph-row"><span class="g">■<i>n</i></span><span class="m">the <b>chapter mark</b> — a block cited by its place within its book (n counts chapters, never a raw height); in a margin, the same glyph counts chapters of relative delay</span></div>
+              <div class="glyph-row"><span class="g">—</span><span class="m"><b>unwritten</b> — a projected chapter's header slot, empty until a miner writes it</span></div>
+              <div class="glyph-row"><span class="g">⋯</span><span class="m"><b>not yet knowable</b> — a value still resolving, or a projected chapter's predecessor, itself unwritten</span></div>
+              <div class="glyph-row"><span class="g">due ≈ <i>t</i></span><span class="m">a projected chapter's <b>expected wait</b> — blocks land one per ten minutes on average, so an estimate k blocks out spreads about ±10·√k minutes</span></div>
             </div>
           </div>
 
@@ -2752,7 +2756,7 @@ async function unwrittenOr(e, height, tipP) {
         const mp = await res.json();
         const depth = Math.ceil(mp.vsize / 1_000_000);
         if (ahead <= depth) {
-          return new Error(`■${height.toLocaleString()} has not been mined yet — but its chapter is forming: `
+          return new Error(`Block ${height.toLocaleString()} (${reference(height)}) has not been mined yet — but its chapter is forming: `
             + `the mempool holds ≈ ${depth} chapters of sections, and this one stands ${ahead === 1 ? 'next' : `${ahead} deep`} in the queue. `
             + `Come back in ${blocksEta(ahead).replace('≈ ', 'about ')}.`);
         }
@@ -2761,7 +2765,9 @@ async function unwrittenOr(e, height, tipP) {
   }
   const years = ahead / BLOCKS_PER_YEAR;
   const when = years < 1 ? 'later this year' : `in the year ${new Date().getUTCFullYear() + Math.round(years)}`;
-  return new Error(`Block not found — ■${height} has not been mined yet. Come back ${when}.`);
+  // Cited by reference, never by ■height: the ■n mark counts chapters within
+  // a book, so a raw height after it would be outside the notation.
+  return new Error(`Block not found — ${height.toLocaleString()} (${reference(height)}) has not been mined yet. Come back ${when}.`);
 }
 
 // Load whatever the reader gave us: a block height, a block hash, or a

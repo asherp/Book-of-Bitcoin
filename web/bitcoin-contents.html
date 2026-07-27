@@ -207,7 +207,7 @@ a:hover { text-decoration: underline; }
 
 <script type="module">
 import { NOTABLE, isBlockId, isRelativeBlockId, entryHref, blocksEta } from './btc-contents.js';
-import { volumeBookChapter, toRoman } from './btc-citation.js';
+import { volumeBookChapter, toRoman, reference } from './btc-citation.js';
 
 const BOOKMARKS_KEY = 'glossia-btc-bookmarks';
 const readBookmarks = () => {
@@ -520,7 +520,7 @@ function buildProjected(tip, summary, blocks, minFee, srcBase) {
           text: `${b.nTx.toLocaleString()} § · ~${fmtFee(b.medianFee)} sat/vB`,
           textTitle: `${b.nTx.toLocaleString()} transactions, ${(b.blockVSize / MVB).toFixed(2)} MvB — fees ${lo}–${hi} sat/vB, ${(b.totalFees / 1e8).toFixed(3)} BTC in total`,
           ref: projRef(height, tipVolume),
-          refTitle: `provisional — ■${height.toLocaleString()} if the queue holds; every block mined ahead of it renumbers the rest`,
+          refTitle: `provisional — block ${height.toLocaleString()} (${reference(height)}) if the queue holds; every block mined ahead of it renumbers the rest`,
         }));
       } else {
         // The backlog: everything past the detailed entries, one fading row.
