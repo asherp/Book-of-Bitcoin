@@ -518,7 +518,7 @@ a:hover { text-decoration: underline; }
 <script type="module">
 import { INDEXED, isAddress, keptLedgers, saveKeptLedgers, sameAddresses, addressScriptHex, cachedLine, resolveLine,
          extendLine, renderLedger, renderRows, periods, lineNote, reconciled, ledgerSum, heldCoins, addressState, lastKnownState,
-         formatBalanceBtc, formatNetBtc, chainFailureText, citeHref, sectionOf, sectionOfFetched, citePlace, passageTxid, passageEntries, txHexOf, outspendsOf,
+         formatBalanceBtc, formatNetBtc, chainFailureText, citeHref, sectionOf, sectionOfFetched, citePlace, passageTxid, passageEntries, txHexOf, outspendsOf, prevoutValuesOf,
          DEFAULT_ESPLORA, esploraCustom, esploraSelected, setEsploraSettings } from './btc-index.js';
 import { volumeBookChapter, heightOf, toRoman } from './btc-citation.js';
 
@@ -1490,6 +1490,12 @@ const openEntryLeaf = async (alive) => {
       return a;
     };
     const footnotes = [];
+    // The margin amounts' one fetch, shared by every input and made only
+    // if some input needs it: this transaction's own JSON carries each
+    // input's prevout value, so no referenced transaction is ever pulled
+    // down just to price a margin line.
+    let prevoutsP = null;
+    const prevouts = () => (prevoutsP ??= prevoutValuesOf(e.txid));
     // Citations with no scriptSig body to sit beside -- witness-spend inputs,
     // and the version note -- stack above the next scriptSig input's own
     // citation, or beside the outputs when none follows (the book's rule).
@@ -1530,15 +1536,11 @@ const openEntryLeaf = async (alive) => {
           cite.title = `${v.prevTxid}:${v.prevVout}`;
           // The amount this input spends, as the reader margins it: from
           // the citations archive when it carries the outputs, otherwise
-          // read off the referenced transaction's own bytes -- immutable,
-          // banked forever after one fetch (txHexOf, the same store the
-          // book warms), the value parsed out rather than asked for.
+          // from this transaction's own JSON (prevouts, one shared fetch)
+          // -- never by downloading the referenced transaction itself.
           let spent = pl.outputs?.[v.prevVout]?.value;
           if (spent == null) {
-            try {
-              const hx = await txHexOf(v.prevTxid);
-              if (hx) spent = (await import('./btc-tx.js')).parseTransaction(hx).vout[v.prevVout]?.value;
-            } catch (_) { /* absence, not an error */ }
+            spent = (await prevouts())?.[i] ?? null;
             if (!alive()) return;
           }
           if (spent != null) {
