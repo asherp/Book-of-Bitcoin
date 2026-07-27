@@ -968,6 +968,31 @@ export async function txHexOf(txid) {
   return null;
 }
 
+// Every input's spent amount in one request sized by the transaction
+// itself: Esplora has no endpoint for a single referenced output's value
+// (/outspend/:vout carries spend status only), but a transaction's own
+// JSON (/tx/:txid) lists each input's prevout -- value included -- so a
+// section's margin amounts never require fetching the referenced
+// transactions, however enormous (an exchange batch withdrawal) those
+// are. Confirmed prevouts are immutable; memoized for the session, with
+// the book's citations archive still answering first upstream.
+const prevoutsMemo = new Map();
+export function prevoutValuesOf(txid) {
+  if (!prevoutsMemo.has(txid)) {
+    prevoutsMemo.set(txid, (async () => {
+      for (const mirror of esploraMirrors()) {
+        const j = await esploraJson(mirror, `/tx/${txid}`);
+        if (j && j.txid === txid && Array.isArray(j.vin)) {
+          return j.vin.map((v) => (v.prevout && v.prevout.value != null ? Number(v.prevout.value) : null));
+        }
+      }
+      prevoutsMemo.delete(txid);   // nothing answered -- ask again next time
+      return null;
+    })());
+  }
+  return prevoutsMemo.get(txid);
+}
+
 // The spending status of every output of a transaction at once (Esplora
 // /outspends) -- what fills a reproduced section's forward citations, the
 // same call the book makes. Chain-mutable (an unspent output spends later),
