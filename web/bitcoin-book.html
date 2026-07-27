@@ -1720,6 +1720,113 @@ async function stepProjected(height, where = -1) {
   return true;
 }
 
+// ── Live frontage ─────────────────────────────────────────────────────────
+// While a projected page is on screen, the backend websocket keeps its head
+// honest: {"action":"want","data":["blocks","mempool-blocks"]} answers at
+// once with the current projection, then pushes 'mempool-blocks' on every
+// reshuffle of the queue and 'block' whenever one is mined. The chapter
+// page's figures repaint in place as the draft moves; a mined block
+// re-seats the chapter one nearer the tip (the ETA shortens, β and the
+// prev-hash slot re-resolve, k = 0 gains its predecessor) -- and when the
+// new ink covers THIS very height, the page reloads itself as the mined
+// chapter: the pencil inked over, live. Sections keep their deliberate
+// manifest snapshot; on them the feed only advances the tip and the nav.
+// A websocket that won't connect degrades to a slow REST poll.
+const liveProjection = (() => {
+  let ws = null, retryTimer = null, pollTimer = null, active = false;
+
+  const clearTimers = () => {
+    if (retryTimer) { clearTimeout(retryTimer); retryTimer = null; }
+    if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+  };
+  const stop = () => {
+    active = false;
+    clearTimers();
+    if (ws) { try { ws.close(); } catch {} ws = null; }
+  };
+
+  // The queue reshuffled: re-cut the cached projection, re-seat this
+  // chapter's figures, and repaint the head when its numbers moved.
+  const applyBlocks = (blocks) => {
+    if (!Array.isArray(blocks) || !state || !state.projected || tipHeight === null) return;
+    projectedCache = {
+      at: Date.now(),
+      blocks: blocks.filter((b, i) => i < blocks.length - 1 || b.blockVSize <= 1.05 * MVB),
+      manifests: new Map(),   // the draft moved; already-open sections keep their snapshot
+    };
+    const k = state.height - tipHeight - 1;
+    if (k < 0 || k >= projectedCache.blocks.length) { labelNav(); return; }   // out of reach now -- the nav adjusts, the page keeps its snapshot
+    const b = projectedCache.blocks[k];
+    const moved = state.proj.nTx !== b.nTx || state.proj.totalFees !== b.totalFees || state.proj.blockVSize !== b.blockVSize;
+    state.projIndex = k;
+    state.proj = b;
+    if (!state.txids) state.txCount = b.nTx;
+    if (moved && state.index === -1) renderProjectedHead(true);
+    labelNav();
+  };
+
+  // A block was mined: every projected chapter moves one nearer the tip --
+  // and if the new ink covers this very height, trade the pencil for it.
+  const applyBlock = async (block) => {
+    if (!block || !Number.isFinite(block.height)) return;
+    if (tipHeight !== null && block.height <= tipHeight) return;   // stale or repeated
+    tipHeight = block.height;
+    projectedCache = null;   // every projected height re-seats
+    if (!state || !state.projected) return;
+    if (state.height <= tipHeight) {
+      stop();
+      await openLookup(String(state.height));
+      setStatus('This chapter has just been mined — the page you were reading is now in ink.');
+      return;
+    }
+    if (state.index === -1) {
+      try { await stepProjected(state.height, -1); } catch { /* keep the snapshot */ }
+    } else {
+      labelNav();
+    }
+  };
+
+  const handleMessage = (ev) => {
+    let msg;
+    try { msg = JSON.parse(ev.data); } catch { return; }
+    if (msg['mempool-blocks']) applyBlocks(msg['mempool-blocks']);
+    if (msg.block) applyBlock(msg.block);
+  };
+
+  const startPolling = () => {
+    if (pollTimer) return;
+    pollTimer = setInterval(async () => {
+      if (!active || document.hidden) return;
+      const blocks = await mempoolBackendFetch('/v1/fees/mempool-blocks');
+      if (active && Array.isArray(blocks)) applyBlocks(blocks);
+    }, 45_000);
+  };
+
+  const connect = () => {
+    if (!active || ws) return;
+    if (!mempoolBackendBase) { startPolling(); return; }
+    try { ws = new WebSocket(`${mempoolBackendBase.replace(/^http/, 'ws')}/v1/ws`); }
+    catch { ws = null; startPolling(); return; }
+    ws.addEventListener('open', () => { try { ws.send(JSON.stringify({ action: 'want', data: ['blocks', 'mempool-blocks'] })); } catch {} });
+    ws.addEventListener('message', handleMessage);
+    ws.addEventListener('close', () => {
+      ws = null;
+      if (active && !retryTimer) retryTimer = setTimeout(() => { retryTimer = null; connect(); }, 10_000);
+    });
+    ws.addEventListener('error', () => { try { ws.close(); } catch {} });
+  };
+
+  return {
+    // Called after every page render: the feed runs exactly while a
+    // projected page is on screen, and not a moment longer.
+    sync: () => {
+      const want = !!(state && state.projected);
+      if (want && !active) { active = true; connect(); }
+      else if (!want && active) stop();
+    },
+  };
+})();
+
 // Resolve a height that may lie past the tip: a mined block loads normally;
 // a height within the projection opens as a projected chapter (returning
 // {done} -- stepProjected has already rendered); anything deeper throws the
@@ -1827,6 +1934,7 @@ async function showCurrentTx() {
     $('chapter').classList.remove('hidden');
     setStatus('');
     consumeSlide();
+    liveProjection.sync();
     return;
   }
   setStatus('<span class="spinner"></span>fetching transaction…');
@@ -1846,6 +1954,7 @@ async function showCurrentTx() {
   $('chapter').classList.remove('hidden');
   setStatus('');
   consumeSlide();
+  liveProjection.sync();
 }
 
 // Attach a click menu to an element already showing a Glossia-encoded hash as
