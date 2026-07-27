@@ -800,8 +800,43 @@ function sectionFor(txid) {
         if (!hex) return null;
         const parsed = t.parseTransaction(hex);
         const verified = (await t.computeTxid(parsed.baseHex)) === txid;
-        const enc = (h) => gl.encodeSeedPhrase(h, 'english', 5).prose;
-        const fields = p.composeTransactionFields(parsed, 5);
+        // The encodes, in yielded chunks: a giant section (an exchange
+        // batch withdrawal runs to hundreds of outputs) composed in one
+        // synchronous pass freezes the page for its whole duration --
+        // gestures, scrolling and the timeline's gate with it. So the
+        // compose is dry-run first with a recording encoder to list the
+        // exact pushes it will encode (compaction, nested reveals and the
+        // coinbase preamble included), each is encoded with the event
+        // loop yielded to between chunks, and the real compose then reads
+        // the results back as lookups. Warming a neighbour costs the same
+        // work but never the page's responsiveness.
+        const proseMemo = new Map();
+        let slice = performance.now();
+        const chunkEncode = async (hexes) => {
+          for (const h of hexes) {
+            if (!h || proseMemo.has(h)) continue;
+            if (performance.now() - slice > 24) {
+              await new Promise((r2) => setTimeout(r2, 0));
+              slice = performance.now();
+            }
+            proseMemo.set(h, gl.encodeSeedPhrase(h, 'english', 5));
+          }
+        };
+        const record = [];
+        const recording = (h) => { record.push(h); return { prose: '', payloadWords: [] }; };
+        p.composeTransactionFields(parsed, 5, null, recording);
+        for (const v of parsed.vin) {   // the eager witness stacks encode too
+          const items = v.witness || [];
+          if (!items.length || items.every((it) => /^0*$/.test(it))) continue;
+          if (items.reduce((n2, it) => n2 + it.length / 2, 0) <= 2048) {
+            p.renderWitness(items, (h) => { record.push(h); return ''; });
+          }
+        }
+        record.push(reverseHex(txid));
+        await chunkEncode(record);
+        const memoEnc = (h, lang, n) => proseMemo.get(h) ?? gl.encodeSeedPhrase(h, lang ?? 'english', n ?? 5);
+        const enc = (h) => memoEnc(h).prose;
+        const fields = p.composeTransactionFields(parsed, 5, null, memoEnc);
         const titleProse = enc(reverseHex(txid));
         // Per-input witness prose, footnote-shaped as the book shapes it:
         // null = no witness (no footnote), '∅' = an all-zero witness (the
