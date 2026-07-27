@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'web/**'
+      - 'tools/**'
       - 'build_web.sh'
       - '.github/workflows/deploy-web.yml'
   workflow_dispatch:
@@ -54,6 +55,16 @@ jobs:
       # system binary gets picked up instead and can reject modern wasm features.
       - name: Build WASM
         run: ./build_web.sh
+
+      # Pre-render the curated passages as static markdown (web/passages/) and
+      # generate sitemap.xml — the text AI crawlers and no-JS readers actually
+      # get, since the live pages compose their prose in the browser. Runs the
+      # same parse/compose/encode pipeline in Node against the WASM artifact
+      # just built. Best-effort: the script skips entries whose explorer data
+      # can't be fetched and always exits 0, so an explorer outage never blocks
+      # a deploy (the sitemap still ships, covering whatever rendered).
+      - name: Pre-render curated passages
+        run: node tools/prerender-passages.mjs
 
       # Deploy the production site to the root of gh-pages. clean-exclude keeps
       # the pr-preview/ directory (managed by the PR Preview workflow) intact so

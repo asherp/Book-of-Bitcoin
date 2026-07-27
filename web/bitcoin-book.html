@@ -131,6 +131,29 @@
 <meta name="twitter:title" content="The βook of βitcoin — a block, read as a chapter">
 <meta name="twitter:description" content="Each transaction in a Bitcoin block, rendered as a paragraph of grammatically correct prose.">
 <meta name="twitter:image" content="https://asherp.github.io/Book-of-Bitcoin/og-glossia.png">
+
+<!-- Machine readers: passages are composed in-browser by the WASM engine, so
+     this document arrives with no passage text in it. /llms.txt says where
+     the static text lives and how any passage can be reconstructed. -->
+<link rel="sitemap" type="application/xml" href="./sitemap.xml">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Book",
+  "name": "The βook of βitcoin",
+  "alternateName": "Book of Bitcoin",
+  "url": "https://asherp.github.io/Book-of-Bitcoin/bitcoin-book.html",
+  "abstract": "The Bitcoin block chain read as a book: each block a chapter, each transaction a section of grammatically correct Glossia prose, witness data as footnotes. Every byte of every transaction is carried in the words and decodes back out exactly.",
+  "genre": "verbatim translation of the Bitcoin block chain",
+  "inLanguage": "en",
+  "isAccessibleForFree": true,
+  "workExample": {
+    "@type": "Chapter",
+    "name": "A Bitcoin block, read as a chapter",
+    "description": "Rendered on demand in the browser; static markdown renderings of the curated passages are listed at /passages/index.md."
+  }
+}
+</script>
 <link rel="stylesheet" href="./notation.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -620,6 +643,27 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 </style>
 </head>
 <body>
+<noscript>
+  <div style="max-width:44rem;margin:3rem auto;padding:0 1.25rem;font-family:Georgia,serif;line-height:1.6">
+    <h1>The βook of βitcoin</h1>
+    <p>The Bitcoin block chain, read as a book: each block a chapter, each
+    transaction a section of grammatically correct Glossia prose, witness data
+    collected as footnotes. Every byte of every transaction is carried in the
+    words of the prose and decodes back out exactly.</p>
+    <p>Passages are composed here, in the browser, by a WASM engine — so with
+    JavaScript off (or fetched by a crawler) this page carries no passage
+    text. The book is still readable without it:</p>
+    <ul>
+      <li><a href="./passages/index.md">Curated passages as plain markdown</a>
+        — the Genesis block, the Hal Finney transaction, Bitcoin Pizza Day,
+        the halvings, the soft-fork activations, and the rest.</li>
+      <li><a href="./preface.md">The preface</a> — the book in its own voice.</li>
+      <li><a href="./llms.txt">llms.txt</a> — the site's structure, citation
+        scheme, and how to reconstruct any passage on the chain from public
+        data with the published engine.</li>
+    </ul>
+  </div>
+</noscript>
 <!-- Update affordance: pinned to the page's top-right corner (fixed, so it
      stays in reach mid-chapter), revealed by the service worker when a newer
      build has been cached behind this page. One tap reloads onto it. -->
