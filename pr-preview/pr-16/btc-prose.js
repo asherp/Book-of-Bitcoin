@@ -539,15 +539,15 @@ export function renderScript(hex, collect, { eligible = false, nested = false, p
       if (!t.push) { parts.push(mark); return; }              // a zero-length extended push -- the mark alone
       // The witness commitment (BIP141): in a coinbase, an OP_RETURN whose
       // 36-byte push opens with the aa21a9ed marker carries
-      // SHA256d(witness-tree root ‖ reserved value) -- the testimony binding
+      // ⌘(witness-tree root ‖ reserved value) -- the testimony binding
       // every witness (every footnote) in this block to the chain, through
       // this one output. The marker reads as its own ⋔𝑤 mark and the 32
       // committed bytes as a gold on-chain datum; the root itself is the
       // preimage -- committed here, never written anywhere.
       if (coinbase && prevOp === 0x6a && t.push.length === 72 && t.push.slice(0, 8).toLowerCase() === 'aa21a9ed') {
         parts.push(
-          markToken('⋔<sub>w</sub>', 'witness commitment (BIP141 marker aa21a9ed) — SHA256d(witness-tree root ‖ reserved value): every witness in this block, bound to the chain through this coinbase. The root is the preimage — committed here, never written on chain'),
-          dataMark('h', 'the 32 committed bytes — the hash over the witness-tree root and the coinbase witness’s reserved value') + pushToken(0, 32),
+          markToken('⋔<sub>w</sub>', 'witness commitment (BIP141 marker aa21a9ed) — ⌘(witness-tree root ‖ reserved value), the identity hash: every witness in this block, bound to the chain through this coinbase. The root is the preimage — committed here, never written on chain'),
+          dataMark('h', 'the 32 committed bytes — ⌘ over the witness-tree root and the coinbase witness’s reserved value') + pushToken(0, 32),
           collect(t.push.slice(8)),
         );
         return;
