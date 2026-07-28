@@ -9,3 +9,7 @@ web/glossia_bg.wasm
 # passages and sitemap are generated fresh on every deploy, not committed.
 web/passages/
 web/sitemap.xml
+
+# The Twitter bot's watermark and replied-to ledger (tools/twitter-bot/) —
+# per-deployment runtime state, carried in the Actions cache, not in git.
+tools/twitter-bot/state.json

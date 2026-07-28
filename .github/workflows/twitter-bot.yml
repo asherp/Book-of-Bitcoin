@@ -1,0 +1,88 @@
+name: Twitter Bot
+
+# Watch the hashtag on a schedule and answer citations with chapter and
+# verse (tools/twitter-bot/). Each run is one pass: search since the last
+# watermark, reply to what parses, save state. The Glossia engine is
+# fetched from the deployed site at runtime, so this job needs Node and
+# nothing else — no Rust toolchain, no WASM build.
+#
+# Runs only when the X credentials are configured as repository secrets:
+#   X_BEARER_TOKEN                                  (app-only, for search)
+#   X_API_KEY / X_API_SECRET / X_ACCESS_TOKEN / X_ACCESS_SECRET
+#                                                   (OAuth 1.0a, for posting)
+# Mind your API tier: recent search is not available on the free tier, and
+# the schedule below assumes a plan that allows polling. Widen the cron or
+# disable the workflow to match your limits.
+
+on:
+  schedule:
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Search and render, but post nothing'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+# One pass at a time; a scheduled run arriving while another is mid-pass
+# would race it on the state watermark.
+concurrency:
+  group: twitter-bot
+  cancel-in-progress: false
+
+jobs:
+  reply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Check credentials
+        id: creds
+        env:
+          BEARER: ${{ secrets.X_BEARER_TOKEN }}
+        run: |
+          if [ -n "$BEARER" ]; then
+            echo "have=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "have=false" >> "$GITHUB_OUTPUT"
+            echo "X secrets not configured; skipping the pass." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      # The bot's watermark and replied-to ledger, carried between runs in
+      # the Actions cache: restore the newest prior state, save this run's
+      # under a fresh key.
+      - name: Restore state
+        if: steps.creds.outputs.have == 'true'
+        uses: actions/cache/restore@v4
+        with:
+          path: tools/twitter-bot/state.json
+          key: twitter-bot-state-${{ github.run_id }}
+          restore-keys: |
+            twitter-bot-state-
+
+      - name: Run a pass
+        if: steps.creds.outputs.have == 'true'
+        env:
+          X_BEARER_TOKEN: ${{ secrets.X_BEARER_TOKEN }}
+          X_API_KEY: ${{ secrets.X_API_KEY }}
+          X_API_SECRET: ${{ secrets.X_API_SECRET }}
+          X_ACCESS_TOKEN: ${{ secrets.X_ACCESS_TOKEN }}
+          X_ACCESS_SECRET: ${{ secrets.X_ACCESS_SECRET }}
+          BOT_HASHTAG: ${{ vars.BOT_HASHTAG }}
+          BOT_HANDLE: ${{ vars.BOT_HANDLE }}
+        run: |
+          node tools/twitter-bot/bot.mjs ${{ inputs.dry_run && '--dry-run' || '' }}
+
+      - name: Save state
+        if: always() && steps.creds.outputs.have == 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: tools/twitter-bot/state.json
+          key: twitter-bot-state-${{ github.run_id }}

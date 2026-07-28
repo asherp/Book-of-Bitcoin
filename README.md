@@ -168,6 +168,12 @@ compiled to WASM) is consumed as a published
 - `web/glossia.js`, `web/glossia_bg.wasm` — **build artifacts** (gitignored),
   produced by `build_web.sh` from the published glossia crate
 - `web/sw.js`, `web/bitcoin-book.webmanifest`, `web/icons/` — PWA shell
+- `tools/twitter-bot/` — the reply bot: watches a hashtag on X for citations
+  (`III β2 ■5 §1`, ascii and packed-hashtag forms, block heights, txids) and
+  answers each with chapter and verse — the canonical citation, the section's
+  txid quoted as decodable Glossia prose, and a deep link into the book. See
+  its [README](tools/twitter-bot/README.md); deployed by
+  `.github/workflows/twitter-bot.yml`
 
 ## Building & running locally
 
