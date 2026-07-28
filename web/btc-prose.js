@@ -549,9 +549,11 @@ export function renderScript(hex, collect, { eligible = false, nested = false, p
           markToken('⋔<sub>w</sub>', 'witness commitment (BIP141 marker aa21a9ed) — ⌘(witness-tree root ‖ reserved value), the identity hash: every witness in this block, bound to the chain through this coinbase. The root is the preimage — committed here, never written on chain'),
           // Read like a payment script: the operation glyph leads its datum
           // (⌖ h²⁰ in P2SH, ⌘ h³² here) -- the line itself says how the
-          // bytes were made. The ⌘ is provenance notation, not an executed
-          // opcode: the script only carries the digest.
-          markToken('⌘', 'the identity hash that made the committed bytes — ⌘(witness-tree root ‖ reserved value); notation for provenance, not an executed opcode'),
+          // bytes were made. But unlike a lock's ⌖, no ⌘ opcode is written
+          // on chain -- the script only carries the digest -- so the mark
+          // wears the apparatus grey of the push-count superscripts (the
+          // page's own notation), never the gold of chain ink.
+          '<span class="op op-push" title="the identity hash that made the committed bytes — ⌘(witness-tree root ‖ reserved value); the book’s provenance notation, not an opcode written on chain">⌘</span>',
           dataMark('h', 'the 32 committed bytes — the digest itself; the witness-tree root is its preimage, never written on chain') + pushToken(0, 32),
           collect(t.push.slice(8)),
         );
