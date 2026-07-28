@@ -3,20 +3,28 @@
 // btc-fontscale.js — the reader's type sizes, one number per region of the
 // page: the body (the prose, its in-line notes and quoted voices, and the
 // head matter's hash prose -- display type like the chapter title never
-// scales), the margins (citations, amounts, forward cites), the witness
-// footnotes, and the notation key. Each region beyond the body FOLLOWS the
-// body until the reader deliberately diverges it -- a page reads coherently
-// by default, and only splits where a preference was actually expressed.
+// scales), the sigla (the opcode glyphs, push marks and data letters set
+// inline in that prose), the margins (citations, amounts, forward cites),
+// the witness footnotes, and the notation key. Each region beyond the body
+// FOLLOWS the body until the reader deliberately diverges it -- a page reads
+// coherently by default, and only splits where a preference was actually
+// expressed.
 //
-// The scales live in --scale-body / --scale-margins / --scale-footnotes /
-// --scale-notation on <html>, always written as effective values (a region
-// that follows the body carries the body's number), so stylesheets opt sizes
-// in with a plain calc(Npx * var(--scale-<region>, 1)) and a page that never
-// loads this module simply reads at 100%. Importing the module applies the
-// saved scales before first paint; the choices persist in localStorage
-// alongside the reader's other preferences.
+// The scales live in --scale-body / --scale-sigla / --scale-margins /
+// --scale-footnotes / --scale-notation on <html>, always written as
+// effective values (a region that follows the body carries the body's
+// number), so stylesheets opt sizes in with a plain
+// calc(Npx * var(--scale-<region>, 1)) and a page that never loads this
+// module simply reads at 100%. The sigla are the one region set INSIDE
+// another's text rather than in a place of its own, so the module also
+// writes --scale-sigla-ratio -- the sigla scale over the body scale -- and
+// the glyph rules multiply 1em by it: at 100% the marks sit flush with the
+// prose around them, and a diverged sigla scale means "the size the glyphs
+// would have if the body read at that scale", wherever they appear.
+// Importing the module applies the saved scales before first paint; the
+// choices persist in localStorage alongside the reader's other preferences.
 
-export const REGIONS = ['body', 'margins', 'footnotes', 'notation'];
+export const REGIONS = ['body', 'sigla', 'margins', 'footnotes', 'notation'];
 export const FONT_SCALE_MIN = 0.7;    // 19px prose reads at ~13px
 export const FONT_SCALE_MAX = 1.6;    // ...and at ~30px
 export const FONT_SCALE_STEP = 0.1;   // the settings buttons' stride
@@ -34,7 +42,7 @@ const normalize = (v) => {
 
 // body always holds a number; the other regions hold a number when diverged,
 // null while they follow the body.
-const scales = { body: 1, margins: null, footnotes: null, notation: null };
+const scales = { body: 1, sigla: null, margins: null, footnotes: null, notation: null };
 
 (() => {
   try {
@@ -58,6 +66,11 @@ const apply = () => {
     if (allDefault) s.removeProperty(`--scale-${r}`);
     else s.setProperty(`--scale-${r}`, String(v));
   }
+  // The sigla ride inside the body's text, so their rules size in em: write
+  // the ratio the ems multiply by. 1 (removed) while the sigla follow along.
+  const ratio = Math.round(((scales.sigla ?? scales.body) / scales.body) * 10000) / 10000;
+  if (ratio === 1) s.removeProperty('--scale-sigla-ratio');
+  else s.setProperty('--scale-sigla-ratio', String(ratio));
 };
 
 const persist = () => {

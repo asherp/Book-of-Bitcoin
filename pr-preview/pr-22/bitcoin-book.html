@@ -527,6 +527,16 @@ button:disabled { opacity: .4; cursor: not-allowed; }
    transaction's data is on chain. In the pattern table the same letters go
    plain where a spend introduces them at validation (see .seq.exec .ph). */
 .dt { color: var(--accent); font-style: normal; font-weight: 700; }
+/* The sigla set inline in the reading matter -- opcode glyphs, push marks,
+   data letters, and the small-mono fallback names -- can be sized apart from
+   the prose they punctuate: --scale-sigla-ratio is the sigla scale over the
+   body scale (btc-fontscale.js; 1 while the sigla follow the body), so the
+   marks sit flush with the surrounding text until diverged, then grow or
+   shrink relative to it wherever they appear -- prose, hash lines, witness
+   footnotes. Scoped to the page slide: the notation key sizes its own glyphs
+   from --scale-notation, and must not compound with this. */
+#page-slide .op, #page-slide .dt { font-size: calc(1em * var(--scale-sigla-ratio, 1)); }
+#page-slide .op-name { font-size: calc(.62em * var(--scale-sigla-ratio, 1)); }
 /* A witness footnote is a stack of items; a thin middot separates each, and an
    empty stack item shows as ∅. */
 .wit-sep, .wit-empty { color: var(--meta); font-style: normal; }
@@ -617,9 +627,12 @@ button:disabled { opacity: .4; cursor: not-allowed; }
       <div class="settings-title">Text size</div>
       <!-- One row per region. Every region beyond the body follows it (value
            dimmed) until its own buttons split it off; Reset rejoins them all
-           at 100%. Pinching on a region does the same as its buttons. -->
+           at 100%. Pinching on a region does the same as its buttons — except
+           the sigla, which sit inline in the prose where no pinch could
+           single them out: theirs is a settings-only row. -->
       <div class="fontscale-grid">
         <span class="fs-label">Body</span><button type="button" class="ghost-btn" data-fs="body" data-fs-d="-1" aria-label="Smaller body text">A−</button><span class="fs-value" data-fs-v="body" aria-live="polite">100%</span><button type="button" class="ghost-btn" data-fs="body" data-fs-d="1" aria-label="Larger body text">A+</button>
+        <span class="fs-label">Sigla</span><button type="button" class="ghost-btn" data-fs="sigla" data-fs-d="-1" aria-label="Smaller sigla marks">A−</button><span class="fs-value" data-fs-v="sigla">100%</span><button type="button" class="ghost-btn" data-fs="sigla" data-fs-d="1" aria-label="Larger sigla marks">A+</button>
         <span class="fs-label">Margins</span><button type="button" class="ghost-btn" data-fs="margins" data-fs-d="-1" aria-label="Smaller margin text">A−</button><span class="fs-value" data-fs-v="margins">100%</span><button type="button" class="ghost-btn" data-fs="margins" data-fs-d="1" aria-label="Larger margin text">A+</button>
         <span class="fs-label">Footnotes</span><button type="button" class="ghost-btn" data-fs="footnotes" data-fs-d="-1" aria-label="Smaller footnote text">A−</button><span class="fs-value" data-fs-v="footnotes">100%</span><button type="button" class="ghost-btn" data-fs="footnotes" data-fs-d="1" aria-label="Larger footnote text">A+</button>
         <span class="fs-label">Notation</span><button type="button" class="ghost-btn" data-fs="notation" data-fs-d="-1" aria-label="Smaller notation text">A−</button><span class="fs-value" data-fs-v="notation">100%</span><button type="button" class="ghost-btn" data-fs="notation" data-fs-d="1" aria-label="Larger notation text">A+</button>
