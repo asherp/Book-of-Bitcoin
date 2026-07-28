@@ -1788,21 +1788,28 @@ function renderBookLeaf() {
   line.classList.add('plain');   // a target mark, not hash prose -- upright
   line.textContent = '';
   const hf = composeBlockHeaderFields(state.header);
+  // On the book leaf the < speaks for the whole shelf beneath it: every
+  // chapter hash in this book reads below the target the window was mined
+  // against.
+  const bookBitsTitle = hf.bitsExpr
+    ? `the proof of work — every chapter hash in this book, read as a 256-bit number, is below this target. ${hf.bitsTitle}`
+    : hf.bitsTitle;
   const beta = document.createElement('span');
   beta.className = 'cfx-gold';
   beta.textContent = hf.bits;
-  beta.title = hf.bitsTitle;
+  beta.title = bookBitsTitle;
   // Same copy menu as the chapter frontispiece's β: compact hex or the mark
   // with its exact m×256ᵉ target expression.
   attachHashCopy(beta, (state.header.bits >>> 0).toString(16).padStart(8, '0'), 'difficulty target',
     hf.bitsExpr ? `${hf.bits} ${hf.bitsExpr}` : hf.bits);
   line.append(beta);
-  // The exact target beside the mark, plain against β's gold -- a book IS one
-  // difficulty window, so its leaf states the window's ceiling in full.
+  // The inequality beside the mark, plain against β's gold -- a book IS one
+  // difficulty window, so its leaf states the window's ceiling in full, in
+  // the same β₇₈ < 213529×256²⁰ form as a chapter's frontispiece.
   if (hf.bitsExpr) {
     const expr = document.createElement('span');
-    expr.textContent = ' ' + hf.bitsExpr;
-    expr.title = hf.bitsTitle;
+    expr.textContent = ' < ' + hf.bitsExpr;
+    expr.title = bookBitsTitle;
     line.append(expr);
   }
   // Then the chapters the book spans, under the block glyph (■, as references
