@@ -320,7 +320,14 @@ function pushToken(form, byteLen) {
   const title = form
     ? `OP_PUSHDATA${form} — push ${byteLen} bytes, the length in a ${form}-byte prefix`
     : `OP_PUSHBYTES_${byteLen} — push the next ${byteLen} bytes`;
-  return `<span class="op op-push" title="${title}">${PUSH_GLYPHS[form] || ''}${toSuperscript(byteLen)}</span>`;
+  // A direct push carries no glyph: its mark IS the byte count, a superscript
+  // numeral saying how much of the prose after it the push holds -- data
+  // annotation rather than an operation. Marked op-count so it reads at the
+  // prose's own size (see bitcoin-book.html), which also keeps the count
+  // riding a data mark (p⁶⁵, h³²) matched to the letter it follows. The
+  // PUSHDATA arrows are opcode marks, and keep their count with them.
+  const glyph = PUSH_GLYPHS[form] || '';
+  return `<span class="op op-push${glyph ? '' : ' op-count'}" title="${title}">${glyph}${toSuperscript(byteLen)}</span>`;
 }
 
 // ─── DER signature compaction ──────────────────────────────────────────

@@ -116,9 +116,16 @@ body {
    touch-action reserves vertical drags that start here for the level swipe.
    A page taller than the viewport keeps native scrolling in the frame, and
    levels engage from the scroll boundaries instead (see the touch handlers).
-   Pinch-zoom stays native either way. */
-#page-frame { overflow: clip; }
-#page-frame.carousel-first { touch-action: pan-x pinch-zoom; }
+   A pinch that starts on the reading matter is the book's own gesture -- it
+   sets the type size (reflowing the text, the e-reader way) instead of
+   optically magnifying the page, so touch-action here excludes pinch-zoom
+   (see the pinch handler). Starting on the chrome around the frame, pinch
+   still zooms natively. The notation sheet claims its pinch the same way,
+   keeping both of its own scroll axes (the sheet's vertical, the pattern
+   table's horizontal). */
+#page-frame { overflow: clip; touch-action: pan-x pan-y; }
+#page-frame.carousel-first { touch-action: pan-x; }
+.notation-body { touch-action: pan-x pan-y; }
 /* The foot nav sits in the same place on every page: the bottom of the
    screen. The wrap stretches to the viewport, the chapter fills the wrap,
    and all slack lands inside the frame -- never the slide -- so a short
@@ -167,6 +174,19 @@ button:disabled { opacity: .4; cursor: not-allowed; }
   box-shadow:0 16px 40px -10px rgba(0,0,0,.75);
 }
 .settings-title { font:600 11px/1 'IBM Plex Mono',monospace; letter-spacing:.1em; text-transform:uppercase; color:var(--dim); margin-bottom:11px; }
+.settings-panel .settings-title:not(:first-child) { margin-top:16px; }
+
+/* ── text-size control: one row per region of the page, stepping the same
+      per-region scales the pinch gesture writes (see btc-fontscale.js). A
+      region that still follows the body shows its value dimmed. ── */
+.fontscale-grid { display:grid; grid-template-columns:1fr max-content 5ch max-content; gap:8px 10px; align-items:center; }
+.fs-label { font:500 11px/1 'IBM Plex Mono',monospace; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-soft); }
+.fs-value {
+  text-align:center; font:500 12.5px/1 'IBM Plex Mono',monospace;
+  color:var(--ink-soft); font-variant-numeric:tabular-nums;
+}
+.fs-value.fs-linked { color:var(--meta); }
+.fontscale-foot { display:flex; justify-content:flex-end; margin-top:10px; }
 
 /* ── data-source picker: choose the Esplora-compatible endpoint, add custom ── */
 .endpoint-row { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
@@ -296,7 +316,7 @@ button:disabled { opacity: .4; cursor: not-allowed; }
    heading. The negative top margin tucks it into the title's own 22px gap,
    leaving 6px between the two and the usual 22px before what follows. */
 .chapter-subtitle { font: italic 500 21px/1.3 'Newsreader', serif; color: var(--dim); margin: -16px 0 22px; }
-.chapter-hash { font: italic 400 15px/1.5 'Newsreader',serif; color: var(--dim); margin: 0 auto 16px; max-width: 46ch; }
+.chapter-hash { font: italic 400 calc(15px * var(--scale-body, 1))/1.5 'Newsreader',serif; color: var(--dim); margin: 0 auto 16px; max-width: 46ch; }
 /* The block header's own fields -- version, previous-block hash, merkle
    root, timestamp, difficulty target, nonce -- in wire order, under the
    chapter hash. A small mono line, like the manuscript's other margin notes;
@@ -304,7 +324,7 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 /* The block header stands upright throughout -- fields and hash proses
    alike; only the chapter's own hash prose above it keeps the italic voice.
    Same contrast tier as the section pages' apparatus (dim). */
-.chapter-frontispiece { margin: 0 auto 4px; max-width: 46ch; font: 400 14.5px/1.55 'Newsreader',serif; color: var(--dim); }
+.chapter-frontispiece { margin: 0 auto 4px; max-width: 46ch; font: 400 calc(14.5px * var(--scale-body, 1))/1.55 'Newsreader',serif; color: var(--dim); }
 /* Each header field on its own line, a breath of space between fields --
    the two hash proses run long, so inline middots buried the seams. */
 .chapter-frontispiece .cfx { display: block; }
@@ -400,12 +420,20 @@ button:disabled { opacity: .4; cursor: not-allowed; }
    (as the block hash is beneath the chapter title). */
 /* Dim like the chapter-hash above it -- both are the identifying hash prose of
    the thing being read, one tier under the body, not two. */
-.section-hash { margin: 13px auto 0; max-width: 46ch; font: italic 400 14.5px/1.55 'Newsreader',serif; color: var(--dim); }
+.section-hash { margin: 13px auto 0; max-width: 46ch; font: italic 400 calc(14.5px * var(--scale-body, 1))/1.55 'Newsreader',serif; color: var(--dim); }
 /* The volume/book leaves borrow the chapter-hash slot for their range and
    target lines -- not hash prose, so they stand upright. */
 .chapter-hash.plain, .chapter-hash .cfx-gold { font-style: normal; }
 
-.chapter-body { font-family: 'Newsreader', serif; font-size: 19px; line-height: 1.75; color: var(--ink-soft); font-variant-numeric: oldstyle-nums; }
+/* The reading matter follows the reader's chosen type sizes, one per region:
+   --scale-body / --scale-margins / --scale-footnotes / --scale-notation (set
+   on <html> by btc-fontscale.js -- the settings rows and the pinch gesture
+   both write them; 1 when unset). The module writes effective values, so
+   every region follows the body until the reader splits it off. The prose
+   column's em-based inline marks and drop cap ride the body; the sizes set
+   in px below opt into their region one by one. The page's chrome -- titles,
+   nav, eyebrow, folio, settings -- deliberately holds still. */
+.chapter-body { font-family: 'Newsreader', serif; font-size: calc(19px * var(--scale-body, 1)); line-height: 1.75; color: var(--ink-soft); font-variant-numeric: oldstyle-nums; }
 
 /* Each transaction is a manuscript page: a left margin for provenance (what
    this text refers back to), a body for the canonical prose, and a right
@@ -422,11 +450,17 @@ button:disabled { opacity: .4; cursor: not-allowed; }
                   | amount] pair, so an amount sits on the line of its output.
      .tx-locktime the closing locktime, centred across the full row, last
                   band -- the end, set like a terminal colophon. */
-.tx-flow { display: grid; grid-template-columns: [left] 6.5em [body] minmax(0,1fr) [right] 7em; column-gap: 1.3em; align-items: start; }
+/* The margin columns hug their content: fit-content, capped at 6.5em/7em of
+   the 19px base prose -- the caps sized from the margins' own scale, so
+   diverging the margin text re-proportions its columns with it instead of
+   leaving small type adrift in body-wide gutters. A column narrower than its
+   cap (short citations, an unspent output's bare amount) gives the slack to
+   the prose instead of holding it as dead space against the page edge. */
+.tx-flow { display: grid; grid-template-columns: [left] fit-content(calc(6.5 * 19px * var(--scale-margins, 1))) [body] minmax(0,1fr) [right] fit-content(calc(7 * 19px * var(--scale-margins, 1))); column-gap: 1.3em; align-items: start; }
 .tx-inputs { grid-column: left / right; grid-row: 1; display: grid; grid-template-columns: subgrid; column-gap: 1.3em; align-items: start; }
 /* padding-top nudges the small-cap reference down onto the top of the taller
    prose line beside it (the two line boxes top-align, but the glyphs don't). */
-.tx-in-cite { grid-column: 1; text-align: right; padding-top: .34em; font: 500 12px/1.5 'IBM Plex Mono',monospace; color: var(--dim); word-break: break-word; }
+.tx-in-cite { grid-column: 1; text-align: right; padding-top: .34em; font: 500 calc(12px * var(--scale-margins, 1))/1.5 'IBM Plex Mono',monospace; color: var(--dim); word-break: break-word; }
 /* An aligned input row's left cell: this input's citation, preceded by any
    witness-input citations that came before it in the sequence and had no
    scriptSig of their own -- stacked, in order, above it. */
@@ -441,11 +475,14 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 .cite-section-link:hover { color: var(--accent-2); text-decoration: underline; }
 /* The amount of the output this input spends, under its reference. Right-aligned
    to the body gutter, like the reference above it and the output amounts opposite. */
-.cite-amount { margin-top: .1em; text-align: right; font: italic 400 12px/1.3 'Newsreader',serif; color: var(--meta); font-variant-numeric: tabular-nums; }
+.cite-amount { margin-top: .1em; text-align: right; font: italic 400 calc(12px * var(--scale-margins, 1))/1.3 'Newsreader',serif; color: var(--meta); font-variant-numeric: tabular-nums; white-space: nowrap; }
 /* An output's forward citation -- the section that later spent it -- under its
    amount in the right margin, mirroring the left margin's provenance cites.
    Empty for an unspent output. */
-.fwd-cite { margin-top: .1em; font: 500 12px/1.3 'IBM Plex Mono',monospace; color: var(--dim); }
+/* white-space back to normal: the forward citation rides INSIDE the value
+   cell and must not inherit its nowrap -- a long reference wraps at the
+   column's cap instead of overflowing the page. */
+.fwd-cite { margin-top: .1em; font: 500 calc(12px * var(--scale-margins, 1))/1.3 'IBM Plex Mono',monospace; color: var(--dim); white-space: normal; }
 .tx-in-script { grid-column: 2; min-width: 0; }
 /* Citations for inputs with no scriptSig (witness spends) + the version note.
    They share the outputs' row in the left column, so the outputs slide up beside
@@ -454,16 +491,20 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 .tx-margin-cites { grid-column: left; grid-row: 2; align-self: start; }
 .tx-outputs {
   grid-column: body / -1; grid-row: 2;
-  display: grid; grid-template-columns: minmax(0,1fr) 7em; grid-template-columns: subgrid;
+  display: grid; grid-template-columns: minmax(0,1fr) fit-content(calc(7 * 19px * var(--scale-margins, 1))); grid-template-columns: subgrid;
   column-gap: 1.3em; align-items: start;
 }
 .tx-out-script { grid-column: 1; min-width: 0; }
 /* Amounts right-align to the page edge, like a ledger column; they read in
    bitcoin (₿) with a fixed eight decimals and tabular figures, so the column
    aligns on the point (see formatBtc in btc-prose.js). */
-.tx-out-value  { grid-column: 2; text-align: right; font-variant-numeric: tabular-nums; }
+/* Sized like the .tx-note it also is (13.5px), but from the margins' scale --
+   the amounts are the right margin's text. nowrap: under fit-content sizing
+   an amount must count as one piece, never wrap its ₿ onto a line of its own
+   to satisfy a narrower column. */
+.tx-out-value  { grid-column: 2; text-align: right; font-size: calc(13.5px * var(--scale-margins, 1)); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .tx-locktime { grid-column: left / -1; grid-row: 3; text-align: center; font-style: normal; }
-.tx-note { font: italic 400 13.5px/1.4 'Newsreader',serif; color: var(--dim); }
+.tx-note { font: italic 400 calc(13.5px * var(--scale-body, 1))/1.4 'Newsreader',serif; color: var(--dim); }
 /* The input's sequence mark, leading the amount line beneath the reference:
    ●/○ final/respects-locktime, † replaceable (a shade warmer), ■n / Τn a
    relative block / time delay. */
@@ -486,6 +527,25 @@ button:disabled { opacity: .4; cursor: not-allowed; }
    transaction's data is on chain. In the pattern table the same letters go
    plain where a spend introduces them at validation (see .seq.exec .ph). */
 .dt { color: var(--accent); font-style: normal; font-weight: 700; }
+/* The sigla set inline in the reading matter -- the opcode glyphs, the push
+   marks, and the small-mono fallback names for opcodes with no glyph -- can
+   be sized apart from the prose they punctuate: --scale-sigla-ratio is the
+   sigla scale over the body scale (btc-fontscale.js; 1 while the sigla
+   follow the body), so the marks sit flush with the surrounding text until
+   diverged, then grow or shrink relative to it wherever they appear --
+   prose, hash lines, witness footnotes. Scoped to the page slide: the
+   notation key sizes its own glyphs from --scale-notation, and must not
+   compound with this.
+   The data-type letters (.dt -- p s h r w t) are deliberately NOT here.
+   They name what the prose after them carries, so they are the transaction's
+   data speaking, not the script's operations: they stay at the prose's own
+   size and read as part of the sentence. So does a bare byte count (.op-count
+   -- a direct push's whole mark, and the count riding a data letter or a
+   header field's mark): it measures the data, and 1em against the prose it
+   annotates holds it there whatever the sigla do around it. */
+#page-slide .op { font-size: calc(1em * var(--scale-sigla-ratio, 1)); }
+#page-slide .op-name { font-size: calc(.62em * var(--scale-sigla-ratio, 1)); }
+#page-slide .op.op-count { font-size: 1em; }
 /* A witness footnote is a stack of items; a thin middot separates each, and an
    empty stack item shows as ∅. */
 .wit-sep, .wit-empty { color: var(--meta); font-style: normal; }
@@ -500,7 +560,7 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 .tx-ascii {
   margin: 0 0 .55em; padding: .12em 0 .12em 1.05em;
   border-left: 2px solid var(--accent); border-radius: 1px;
-  font: italic 400 17.5px/1.6 'Newsreader',serif; color: var(--ink-soft);
+  font: italic 400 calc(17.5px * var(--scale-body, 1))/1.6 'Newsreader',serif; color: var(--ink-soft);
 }
 /* A tab inside a quoted embedded message (see quoteText in btc-prose.js): a
    fixed-width gap, so column-aligned text keeps its spacing instead of
@@ -541,9 +601,9 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 .chapter-footnotes { margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--rule); }
 /* Witness prose is on-chain content, not marginalia: dim, not meta, so the
    footnotes stay readable at length. */
-.footnote-entry { margin: 0 0 1.1em; font: italic 400 14.5px/1.6 'Newsreader',serif; color: var(--dim); }
+.footnote-entry { margin: 0 0 1.1em; font: italic 400 calc(14.5px * var(--scale-footnotes, 1))/1.6 'Newsreader',serif; color: var(--dim); }
 .footnote-entry:target { color: var(--ink-soft); }
-.footnote-mark { font: 500 10.5px/1 'IBM Plex Mono',monospace; color: var(--accent); margin-right: .5em; font-style: normal; vertical-align: .35em; }
+.footnote-mark { font: 500 calc(10.5px * var(--scale-footnotes, 1))/1 'IBM Plex Mono',monospace; color: var(--accent); margin-right: .5em; font-style: normal; vertical-align: .35em; }
 
 </style>
 </head>
@@ -573,6 +633,20 @@ button:disabled { opacity: .4; cursor: not-allowed; }
   <div class="masthead">
     <span class="title">The <span class="beta">β</span>ook of <span class="beta">β</span>itcoin</span>
     <span class="home"><a href="./bitcoin-search.html">Search</a> · <a href="./bitcoin-contents.html">Contents</a> · <a href="./bitcoin-ledger.html">Ledger</a> · <span class="settings-menu"><a href="#" id="settings-link" role="button" aria-haspopup="dialog" aria-expanded="false">Settings</a><div id="settings-panel" class="settings-panel hidden" role="dialog" aria-label="Settings">
+      <div class="settings-title">Text size</div>
+      <!-- One row per region. Every region beyond the body follows it (value
+           dimmed) until its own buttons split it off; Reset rejoins them all
+           at 100%. Pinching on a region does the same as its buttons — except
+           the sigla, which sit inline in the prose where no pinch could
+           single them out: theirs is a settings-only row. -->
+      <div class="fontscale-grid">
+        <span class="fs-label">Body</span><button type="button" class="ghost-btn" data-fs="body" data-fs-d="-1" aria-label="Smaller body text">A−</button><span class="fs-value" data-fs-v="body" aria-live="polite">100%</span><button type="button" class="ghost-btn" data-fs="body" data-fs-d="1" aria-label="Larger body text">A+</button>
+        <span class="fs-label">Sigla</span><button type="button" class="ghost-btn" data-fs="sigla" data-fs-d="-1" aria-label="Smaller sigla marks">A−</button><span class="fs-value" data-fs-v="sigla">100%</span><button type="button" class="ghost-btn" data-fs="sigla" data-fs-d="1" aria-label="Larger sigla marks">A+</button>
+        <span class="fs-label">Margins</span><button type="button" class="ghost-btn" data-fs="margins" data-fs-d="-1" aria-label="Smaller margin text">A−</button><span class="fs-value" data-fs-v="margins">100%</span><button type="button" class="ghost-btn" data-fs="margins" data-fs-d="1" aria-label="Larger margin text">A+</button>
+        <span class="fs-label">Footnotes</span><button type="button" class="ghost-btn" data-fs="footnotes" data-fs-d="-1" aria-label="Smaller footnote text">A−</button><span class="fs-value" data-fs-v="footnotes">100%</span><button type="button" class="ghost-btn" data-fs="footnotes" data-fs-d="1" aria-label="Larger footnote text">A+</button>
+        <span class="fs-label">Notation</span><button type="button" class="ghost-btn" data-fs="notation" data-fs-d="-1" aria-label="Smaller notation text">A−</button><span class="fs-value" data-fs-v="notation">100%</span><button type="button" class="ghost-btn" data-fs="notation" data-fs-d="1" aria-label="Larger notation text">A+</button>
+      </div>
+      <div class="fontscale-foot"><button type="button" id="fontscale-reset" class="ghost-btn">Reset</button></div>
       <div class="settings-title">Data source</div>
       <div class="endpoint-row">
         <select id="endpoint-select" class="endpoint-select" aria-label="Data source endpoint"></select>
@@ -593,6 +667,10 @@ button:disabled { opacity: .4; cursor: not-allowed; }
        (bitcoin-search.html, the masthead's Search link); this page only reports
        the progress of whatever it was asked to open. -->
   <div id="block-status" class="status-line hidden"></div>
+
+  <!-- The pinch gesture's readout: the type size as a percentage, floating
+       like the status toast, while the fingers are down and a beat after. -->
+  <div id="fontscale-toast" class="status-line hidden" aria-hidden="true"></div>
 
   <article id="chapter" class="hidden">
     <!-- The eyebrow: chapter prev/next flank it on the chapter's own page
@@ -679,6 +757,10 @@ import { NOTATION_HTML } from './btc-notation.js';
 document.querySelector('.notation-body').innerHTML = NOTATION_HTML;
 import { storeGet, storePut } from './btc-store.js';
 import { seedArchive } from './btc-seed.js';
+// Applies the saved per-region type sizes on import; the settings rows and
+// the pinch gesture below both write through setFontScale.
+import { REGIONS, fontScale, setFontScale, resetFontScales, fontScaleDiverged,
+         FONT_SCALE_MIN, FONT_SCALE_MAX, FONT_SCALE_STEP } from './btc-fontscale.js';
 import { pageAnchor, bankAnchor, peekAnchor, formatPage } from './btc-pages.js';
 
 // A first visit provisions the archive with the curated passages' chain data
@@ -1989,7 +2071,7 @@ function fillMarkedHash(el, mark, markClass, hex, label, prose, sup, supTitle) {
   // notation for "this prose carries n bytes" is the same.
   if (sup) {
     const s = document.createElement('span');
-    s.className = 'op op-push';
+    s.className = 'op op-push op-count';   // a bare count: prose-sized, like a push's
     s.textContent = toSuperscript(sup);
     if (supTitle) s.title = supTitle;
     el.append(s);
@@ -3831,6 +3913,109 @@ window.addEventListener('resize', updateGesturePrecedence);
   document.addEventListener('touchcancel', () => { sx = null; if (!pendingSlide) snapBack(); }, { passive: true });
 })();
 
+// ── Pinch: the type sizes ─────────────────────────────────────────────────
+// Two fingers on the reading matter set the type size of the region under
+// them, the e-reader way: the text reflows at the new size instead of the
+// page magnifying into a pannable bitmap. The gesture writes the same
+// per-region scales as the settings rows (btc-fontscale.js), quantized to
+// 0.05 so the page reflows a handful of times per pinch, not per frame. The
+// content under the fingers is held stationary through each reflow by
+// re-scrolling against an anchor element sampled at the pinch's centre.
+// Scoped to the page frame and the notation sheet -- whose touch-action
+// already excludes native pinch-zoom -- so a pinch on the chrome around them
+// still zooms the browser natively.
+//
+// Region resolution: both fingers on the notation sheet -> notation; both in
+// the witness footnotes -> footnotes; both inside one of the manuscript
+// grid's margin columns -> margins, but ONLY where that grid actually lays
+// the margins out as columns -- below 560px the layout collapses them inline
+// with the prose (see the .tx-flow media query), there is no strip of screen
+// that IS the margin, and a pinch there could only be aimed at the text as a
+// whole. The gate reads the live grid geometry rather than the viewport, so
+// it tracks the layout exactly: a phone turned landscape regains its margin
+// columns and their pinch with them. Everything else -> body.
+(() => {
+  const SURFACES = '#page-frame, .notation-body';
+  const on = (t, sel) => !!(t && t.closest && t.closest(sel));
+  const LABELS = { body: 'Text', margins: 'Margins', footnotes: 'Footnotes', notation: 'Notation' };
+  let d0 = 0, s0 = 1, region = 'body', anchor = null, anchorTop = 0, hideTimer = null;
+  const dist = (t) => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+  const toast = () => {
+    const el = $('fontscale-toast');
+    el.textContent = `${LABELS[region]} ${Math.round(fontScale(region) * 100)}%`;
+    el.classList.remove('hidden');
+    if (hideTimer) clearTimeout(hideTimer);
+    hideTimer = setTimeout(() => el.classList.add('hidden'), 700);
+  };
+  // The margin columns' screen bands, or null while the grid is collapsed to
+  // a single column. All .tx-flow grids share the page's content width, so
+  // any one of them answers for the column geometry.
+  const marginBands = () => {
+    const flow = document.querySelector('#ch-paragraphs .tx-flow');
+    if (!flow) return null;
+    // The computed value interleaves the grid's line names with the track
+    // sizes ("[left] 123px [body] ..."); only the px tracks count.
+    const cols = getComputedStyle(flow).gridTemplateColumns.split(' ').filter((c) => c.endsWith('px'));
+    if (cols.length !== 3) return null;   // collapsed: margins ride inline with the prose
+    const w1 = parseFloat(cols[0]), w3 = parseFloat(cols[2]);
+    if (!(w1 > 0) || !(w3 > 0)) return null;
+    const r = flow.getBoundingClientRect();
+    return { left: [r.left, r.left + w1], right: [r.right - w3, r.right] };
+  };
+  const regionOf = (a, b) => {
+    if (on(a.target, '.notation-body') && on(b.target, '.notation-body')) return 'notation';
+    if (on(a.target, '.chapter-footnotes') && on(b.target, '.chapter-footnotes')) return 'footnotes';
+    if (on(a.target, '#ch-paragraphs') && on(b.target, '#ch-paragraphs')) {
+      const bands = marginBands();
+      const inBand = (x, band) => x >= band[0] && x <= band[1];
+      if (bands && ((inBand(a.clientX, bands.left) && inBand(b.clientX, bands.left)) ||
+                    (inBand(a.clientX, bands.right) && inBand(b.clientX, bands.right)))) return 'margins';
+    }
+    return 'body';
+  };
+  document.addEventListener('touchstart', (e) => {
+    if (e.touches.length !== 2) return;
+    if (!on(e.touches[0].target, SURFACES) || !on(e.touches[1].target, SURFACES)) return;
+    e.preventDefault();   // Safari starts a viewport zoom from here otherwise
+    // A second finger landing mid-swipe: abandon the slide follow cleanly
+    // (the swipe tracker has already reset itself on this same event).
+    const ch = $('page-slide');
+    ch.style.transition = ''; ch.style.transform = ''; ch.style.opacity = '';
+    d0 = dist(e.touches);
+    region = regionOf(e.touches[0], e.touches[1]);
+    s0 = fontScale(region);
+    const cx = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+    const cy = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+    anchor = document.elementFromPoint(cx, cy);
+    anchorTop = anchor ? anchor.getBoundingClientRect().top : 0;
+    toast();
+  }, { passive: false });
+  document.addEventListener('touchmove', (e) => {
+    if (!d0 || e.touches.length !== 2) return;
+    e.preventDefault();
+    const want = Math.round((s0 * dist(e.touches) / d0) * 20) / 20;   // 0.05 quanta
+    if (want !== fontScale(region)) {
+      setFontScale(region, want);
+      // Reflow done (getBoundingClientRect forces layout): put the anchor
+      // back where the fingers found it.
+      if (anchor && anchor.isConnected) {
+        const dy = anchor.getBoundingClientRect().top - anchorTop;
+        if (dy) window.scrollBy(0, dy);
+      }
+      reflectFontScale();
+    }
+    toast();
+  }, { passive: false });
+  const done = (e) => { if (d0 && e.touches.length < 2) { d0 = 0; anchor = null; } };
+  document.addEventListener('touchend', done, { passive: true });
+  document.addEventListener('touchcancel', done, { passive: true });
+  // Safari's proprietary gesture events drive its viewport zoom on paths
+  // touch-action doesn't govern; cancel them on the same surfaces.
+  for (const type of ['gesturestart', 'gesturechange']) {
+    document.addEventListener(type, (e) => { if (on(e.target, SURFACES)) e.preventDefault(); });
+  }
+})();
+
 // ── Data-source picker ────────────────────────────────────────────────────
 const endpointSel = $('endpoint-select');
 const hostOf = (url) => { try { return new URL(url).host; } catch { return url; } };
@@ -3922,6 +4107,35 @@ $('endpoint-remove').addEventListener('click', () => {
 });
 
 renderEndpoints();
+
+// ── Text size ─────────────────────────────────────────────────────────────
+// One settings row per region, stepping the same per-region scales the pinch
+// gesture writes (btc-fontscale.js): applied live, persisted, and read
+// wherever the book's reading matter is set -- including the notation key
+// here and at rest on the front matter's sigla leaf. A region that still
+// follows the body shows its value dimmed; stepping it splits it off; Reset
+// rejoins everything at 100%.
+function reflectFontScale() {
+  for (const r of REGIONS) {
+    const el = document.querySelector(`[data-fs-v="${r}"]`);
+    el.textContent = Math.round(fontScale(r) * 100) + '%';
+    el.classList.toggle('fs-linked', r !== 'body' && !fontScaleDiverged(r));
+  }
+  for (const btn of document.querySelectorAll('[data-fs]')) {
+    const s = fontScale(btn.dataset.fs);
+    btn.disabled = Number(btn.dataset.fsD) < 0 ? s <= FONT_SCALE_MIN : s >= FONT_SCALE_MAX;
+  }
+  $('fontscale-reset').disabled = REGIONS.every((r) => fontScale(r) === 1 && !fontScaleDiverged(r));
+}
+for (const btn of document.querySelectorAll('[data-fs]')) {
+  btn.addEventListener('click', () => {
+    const r = btn.dataset.fs;
+    setFontScale(r, fontScale(r) + Number(btn.dataset.fsD) * FONT_SCALE_STEP);
+    reflectFontScale();
+  });
+}
+$('fontscale-reset').addEventListener('click', () => { resetFontScales(); reflectFontScale(); });
+reflectFontScale();
 
 // ── Settings popover ──────────────────────────────────────────────────────
 // The masthead "Settings" link toggles a small popover holding the data-source
