@@ -39,6 +39,14 @@ export const NOTABLE = [
   // to a hash of a public key rather than the key itself -- the form that
   // would carry most of Bitcoin's history.
   { title: 'First P2PKH payment', id: '6f7cf9580f1c2dfb3c4d5d043cdbb128c640e3f20161245aa7372e9666168516' },
+  // Dec 30, 2009: sixteen windows in, the retarget first moves -- nBits
+  // 1d00ffff -> 1d00d86a, difficulty 1 -> ~1.18. Height 32,256 is 16×2016,
+  // so this chapter opens I β17, the first book mined against a target other
+  // than genesis's. In the frontispiece's notation the demand holds at β₃₂
+  // while the mantissa slips 65535 -> 55402: the first adjustment lives
+  // entirely inside the target's mantissa, below the resolution of a
+  // zero-bit count.
+  { title: 'First difficulty adjustment', id: '32256' },
   { title: 'Bitcoin Pizza Day', id: '57043' },
   // The supply-cap incident, cited at I β37 ■1846 §3 (block 74,421, section
   // 3): the ~184.4B-BTC overflow the corrective fork went on to excise.
