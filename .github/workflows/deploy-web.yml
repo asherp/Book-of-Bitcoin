@@ -30,6 +30,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Every production deploy is a release, versioned by calendar:
+      # vYYYY.0M.0D.HH — the UTC date and hour the deploy started. A second
+      # release in the same hour appends the minute (vYYYY.0M.0D.HH.MM) to
+      # stay unique; the gh-pages-deploy concurrency group serializes these
+      # runs, so two deploys can never compute the same version.
+      - name: Compute release version
+        run: |
+          git fetch --quiet origin 'refs/tags/*:refs/tags/*'
+          version="$(date -u +%Y.%m.%d.%H)"
+          if git rev-parse -q --verify "refs/tags/v${version}" >/dev/null; then
+            version="${version}.$(date -u +%M)"
+          fi
+          echo "VERSION=${version}" >> "$GITHUB_ENV"
+
       # The Glossia engine (the Rust core compiled to WASM) is consumed as a
       # published crates.io release, pinned in build_web.sh. Fetch its source
       # tarball first so the cargo cache below can key off the extracted crate.
@@ -66,6 +80,11 @@ jobs:
       - name: Pre-render curated passages
         run: node tools/prerender-passages.mjs
 
+      # Stamp the version into the deployed site so a running copy can be
+      # asked which release it is: https://bookofbitcoin.io/version.json
+      - name: Stamp version.json
+        run: printf '{"version":"%s"}\n' "$VERSION" > web/version.json
+
       # Deploy the production site to the root of gh-pages. clean-exclude keeps
       # the pr-preview/ directory (managed by the PR Preview workflow) intact so
       # production deploys don't wipe live preview deployments.
@@ -77,3 +96,12 @@ jobs:
           clean: true
           clean-exclude: |
             pr-preview/
+
+      # Tag the commit only after the deploy step succeeded, so every tag
+      # marks a release that actually shipped.
+      - name: Tag release
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "v${VERSION}" -m "Release ${VERSION}"
+          git push origin "refs/tags/v${VERSION}"

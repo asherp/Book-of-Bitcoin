@@ -20,10 +20,15 @@
   // Arriving by the book page's pull-down-above-the-volume gesture: finish
   // that carousel turn here, sliding the contents in from the top. The flag
   // is set just before the navigation and consumed on first paint.
+  // The flag's value carries the turn's direction: 'up' is the cover being
+  // lifted away beneath us (the front page's swipe-up), so the contents
+  // enter from below; anything else is the classic ascent, entering from
+  // the top.
   try {
-    if (sessionStorage.getItem('glossia-toc-entrance')) {
+    const entrance = sessionStorage.getItem('glossia-toc-entrance');
+    if (entrance) {
       sessionStorage.removeItem('glossia-toc-entrance');
-      document.documentElement.classList.add('toc-entrance');
+      document.documentElement.classList.add(entrance === 'up' ? 'toc-entrance-up' : 'toc-entrance');
     }
   } catch (_) {}
 
@@ -33,7 +38,7 @@
   // page finishes the turn, entering from below (glossia-book-entrance).
   (function () {
     const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    let sy = null, sx = 0, st = 0, atBottom = false;
+    let sy = null, sx = 0, st = 0, atBottom = false, atTop = false;
     const go = () => {
       // Descend into the volume the reader last ascended from (recorded by
       // the book page's trail memory); a fresh visit opens Volume I.
@@ -47,6 +52,7 @@
       if (e.touches.length !== 1) return;
       sy = e.touches[0].clientY; sx = e.touches[0].clientX; st = performance.now();
       atBottom = window.scrollY >= document.documentElement.scrollHeight - window.innerHeight - 2;
+      atTop = window.scrollY <= 2;
     }, { passive: true });
     // The contents sits inside the front matter on the horizontal axis, in the
     // standard order: title, terms, CONTENTS, preface, sigla. So both
@@ -75,6 +81,18 @@
         setTimeout(() => goFront(leaf, dir), 180);
         return;
       }
+      // A pull DOWN starting at the page's top rises from the contents back
+      // to the cover -- the inverse of the cover's lift-away: the contents
+      // sink, and the cover drops back into place from above.
+      if (atTop && dt <= 600 && dy >= 70 && Math.abs(dx) <= dy * 0.6) {
+        try { sessionStorage.setItem('glossia-front-entrance', 'drop'); } catch (_) {}
+        const goCover = () => { location.href = './bitcoin-front.html'; };
+        if (REDUCED) { goCover(); return; }
+        document.body.style.transition = 'transform .2s linear';
+        document.body.style.transform = 'translateY(100vh)';
+        setTimeout(goCover, 180);
+        return;
+      }
       if (!atBottom || dt > 600 || dy > -70 || Math.abs(dx) > Math.abs(dy) * 0.6) return;
       if (REDUCED) { go(); return; }
       document.body.style.transition = 'transform .2s linear';
@@ -99,13 +117,20 @@
   --input-bg:#151519; --input-bd:#2a2930;
 }
 * { box-sizing: border-box; }
-html, body { margin: 0; }
+/* overscroll-behavior keeps the browser's pull-to-refresh from swallowing
+   the pull-down-at-top turn back to the cover (the book page does the same
+   for its own vertical turns). */
+html, body { margin: 0; overscroll-behavior-y: none; }
 body { min-height: 100vh; background: var(--page); color: var(--ink); font-family: 'Public Sans', system-ui, sans-serif; line-height: 1.55; }
 /* The entering half of the book page's ascend-above-the-volume turn: the
    contents slide down into place, matching the carousel's pace. */
 @media (prefers-reduced-motion: no-preference) {
   .toc-entrance body { animation: toc-in .22s ease-out; }
   @keyframes toc-in { from { transform: translateY(-100vh); } }
+  /* …and the entering half of the cover's lift-away: the contents rise into
+     place from below as the cover slides up and off. */
+  .toc-entrance-up body { animation: toc-in-up .22s ease-out; }
+  @keyframes toc-in-up { from { transform: translateY(100vh); } }
 }
 .wrap { max-width: 720px; margin: 0 auto; padding: 48px 22px 100px; }
 a { color: var(--accent); text-decoration: none; }

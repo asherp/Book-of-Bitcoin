@@ -9,3 +9,6 @@ web/glossia_bg.wasm
 # passages and sitemap are generated fresh on every deploy, not committed.
 web/passages/
 web/sitemap.xml
+
+# Deploy-time release stamp — written by the deploy workflow, not committed.
+web/version.json
