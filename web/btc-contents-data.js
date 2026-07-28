@@ -91,6 +91,18 @@ export const NOTABLE = [
   // The first OP_RETURN under 0.9.0's standardness (Mar 2014), and the data
   // it chose to immortalize: "charley loves heidi".
   { title: 'First standard OP_RETURN', id: '8bae12b5f4c088d940733dcd1455efc6a3a69cf9340e17a981286d3778615684' },
+  // The oldest proof anyone can still replay: the OpenTimestamps client ships
+  // examples/hello-world.txt.ots, which commits sha256("Hello World!\n") to
+  // this transaction. Replaying its operations -- a RIPEMD-160, the raw
+  // transaction wrapped around the result, then eleven levels of merkle path
+  // -- lands on this chapter's merkle root, and that landing is the whole of
+  // what a timestamp asserts. It predates the calendar servers by a year and
+  // wears the older dress: the commitment sits where a public key's hash
+  // belongs, so the passage reads as an ordinary 100,000-satoshi payment to
+  // someone who has never existed and can never sign. The proof's own
+  // arithmetic places it at §1352; drop the .ots on the search page and the
+  // book resolves it, checks it, and opens it here.
+  { title: 'The Hello World timestamp', id: '7e9f0f7d9daa2d9e51b2e22f4abe814c3f90539afa778a9bef88dc64627cb2ec' },
   { title: 'BIP66', id: '363216', page: 'book' },
   { title: 'BIP66 activation (v3)', id: '363725' },
   { title: 'BIP65', id: '387408', page: 'book' },

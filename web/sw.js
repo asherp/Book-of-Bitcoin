@@ -49,6 +49,7 @@ const SHELL = [
   './btc-index.js',
   './btc-index-data.js',
   './btc-store.js',
+  './btc-ots.js',
   './btc-fontscale.js',
   './bitcoin-book.webmanifest',
   './icons/beta-icon.svg',

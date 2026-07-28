@@ -122,6 +122,18 @@ compiled to WASM) is consumed as a published
   are trusted
 - `web/bitcoin-ledgers.html` — the old Ledgers shelf, now a redirect to
   the compendium (kept for bookmarks and cached mastheads)
+- `web/btc-ots.js` — an OpenTimestamps proof reader, read by the search page:
+  a `.ots` file is a citation written in someone else's notation, and this
+  turns it back into one of the book's. Replaying a proof's commitment
+  operations — append, prepend, sha256, ripemd160 (implemented here; no
+  browser offers it, and proofs older than the calendar servers need it) —
+  yields the merkle root of a Bitcoin block, and the attestation the
+  operations end in names that block's height. The merkle path gives the
+  §section too: each step appends the sibling on the right or prepends the one
+  on the left, so the directions read from the bottom of the tree up spell the
+  transaction's position in binary. The module claims nothing — it reports
+  what the proof asserts, and the search page checks that root against the
+  chapter's own header, which is the entirety of OpenTimestamps verification
 - `web/btc-tx.js`, `web/btc-prose.js`, `web/btc-citation.js`,
   `web/btc-contents.js`, `web/btc-index.js`, `web/btc-store.js` —
   transaction parsing, prose composition, citations, contents data,
