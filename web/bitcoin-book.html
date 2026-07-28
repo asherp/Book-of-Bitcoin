@@ -116,9 +116,16 @@ body {
    touch-action reserves vertical drags that start here for the level swipe.
    A page taller than the viewport keeps native scrolling in the frame, and
    levels engage from the scroll boundaries instead (see the touch handlers).
-   Pinch-zoom stays native either way. */
-#page-frame { overflow: clip; }
-#page-frame.carousel-first { touch-action: pan-x pinch-zoom; }
+   A pinch that starts on the reading matter is the book's own gesture -- it
+   sets the type size (reflowing the text, the e-reader way) instead of
+   optically magnifying the page, so touch-action here excludes pinch-zoom
+   (see the pinch handler). Starting on the chrome around the frame, pinch
+   still zooms natively. The notation sheet claims its pinch the same way,
+   keeping both of its own scroll axes (the sheet's vertical, the pattern
+   table's horizontal). */
+#page-frame { overflow: clip; touch-action: pan-x pan-y; }
+#page-frame.carousel-first { touch-action: pan-x; }
+.notation-body { touch-action: pan-x pan-y; }
 /* The foot nav sits in the same place on every page: the bottom of the
    screen. The wrap stretches to the viewport, the chapter fills the wrap,
    and all slack lands inside the frame -- never the slide -- so a short
@@ -167,6 +174,16 @@ button:disabled { opacity: .4; cursor: not-allowed; }
   box-shadow:0 16px 40px -10px rgba(0,0,0,.75);
 }
 .settings-title { font:600 11px/1 'IBM Plex Mono',monospace; letter-spacing:.1em; text-transform:uppercase; color:var(--dim); margin-bottom:11px; }
+.settings-panel .settings-title:not(:first-child) { margin-top:16px; }
+
+/* ── text-size control: step the reading matter's --font-scale (the pinch
+      gesture writes the same number; see btc-fontscale.js) ── */
+.fontscale-row { display:flex; align-items:center; gap:10px; }
+.fontscale-row #fontscale-value {
+  min-width:4ch; text-align:center; font:500 12.5px/1 'IBM Plex Mono',monospace;
+  color:var(--ink-soft); font-variant-numeric:tabular-nums;
+}
+.fontscale-row #fontscale-reset { margin-left:auto; }
 
 /* ── data-source picker: choose the Esplora-compatible endpoint, add custom ── */
 .endpoint-row { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
@@ -296,7 +313,7 @@ button:disabled { opacity: .4; cursor: not-allowed; }
    heading. The negative top margin tucks it into the title's own 22px gap,
    leaving 6px between the two and the usual 22px before what follows. */
 .chapter-subtitle { font: italic 500 21px/1.3 'Newsreader', serif; color: var(--dim); margin: -16px 0 22px; }
-.chapter-hash { font: italic 400 15px/1.5 'Newsreader',serif; color: var(--dim); margin: 0 auto 16px; max-width: 46ch; }
+.chapter-hash { font: italic 400 calc(15px * var(--font-scale, 1))/1.5 'Newsreader',serif; color: var(--dim); margin: 0 auto 16px; max-width: 46ch; }
 /* The block header's own fields -- version, previous-block hash, merkle
    root, timestamp, difficulty target, nonce -- in wire order, under the
    chapter hash. A small mono line, like the manuscript's other margin notes;
@@ -304,7 +321,7 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 /* The block header stands upright throughout -- fields and hash proses
    alike; only the chapter's own hash prose above it keeps the italic voice.
    Same contrast tier as the section pages' apparatus (dim). */
-.chapter-frontispiece { margin: 0 auto 4px; max-width: 46ch; font: 400 14.5px/1.55 'Newsreader',serif; color: var(--dim); }
+.chapter-frontispiece { margin: 0 auto 4px; max-width: 46ch; font: 400 calc(14.5px * var(--font-scale, 1))/1.55 'Newsreader',serif; color: var(--dim); }
 /* Each header field on its own line, a breath of space between fields --
    the two hash proses run long, so inline middots buried the seams. */
 .chapter-frontispiece .cfx { display: block; }
@@ -400,12 +417,17 @@ button:disabled { opacity: .4; cursor: not-allowed; }
    (as the block hash is beneath the chapter title). */
 /* Dim like the chapter-hash above it -- both are the identifying hash prose of
    the thing being read, one tier under the body, not two. */
-.section-hash { margin: 13px auto 0; max-width: 46ch; font: italic 400 14.5px/1.55 'Newsreader',serif; color: var(--dim); }
+.section-hash { margin: 13px auto 0; max-width: 46ch; font: italic 400 calc(14.5px * var(--font-scale, 1))/1.55 'Newsreader',serif; color: var(--dim); }
 /* The volume/book leaves borrow the chapter-hash slot for their range and
    target lines -- not hash prose, so they stand upright. */
 .chapter-hash.plain, .chapter-hash .cfx-gold { font-style: normal; }
 
-.chapter-body { font-family: 'Newsreader', serif; font-size: 19px; line-height: 1.75; color: var(--ink-soft); font-variant-numeric: oldstyle-nums; }
+/* The reading matter follows the reader's chosen type size: --font-scale (set
+   on <html> by btc-fontscale.js -- the settings control and the pinch gesture
+   both write it; 1 when unset). The prose column's em-based marginalia and
+   drop cap ride along; the sizes set in px below opt in one by one. The page's
+   chrome -- titles, nav, eyebrow, folio, settings -- deliberately holds still. */
+.chapter-body { font-family: 'Newsreader', serif; font-size: calc(19px * var(--font-scale, 1)); line-height: 1.75; color: var(--ink-soft); font-variant-numeric: oldstyle-nums; }
 
 /* Each transaction is a manuscript page: a left margin for provenance (what
    this text refers back to), a body for the canonical prose, and a right
@@ -426,7 +448,7 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 .tx-inputs { grid-column: left / right; grid-row: 1; display: grid; grid-template-columns: subgrid; column-gap: 1.3em; align-items: start; }
 /* padding-top nudges the small-cap reference down onto the top of the taller
    prose line beside it (the two line boxes top-align, but the glyphs don't). */
-.tx-in-cite { grid-column: 1; text-align: right; padding-top: .34em; font: 500 12px/1.5 'IBM Plex Mono',monospace; color: var(--dim); word-break: break-word; }
+.tx-in-cite { grid-column: 1; text-align: right; padding-top: .34em; font: 500 calc(12px * var(--font-scale, 1))/1.5 'IBM Plex Mono',monospace; color: var(--dim); word-break: break-word; }
 /* An aligned input row's left cell: this input's citation, preceded by any
    witness-input citations that came before it in the sequence and had no
    scriptSig of their own -- stacked, in order, above it. */
@@ -441,11 +463,11 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 .cite-section-link:hover { color: var(--accent-2); text-decoration: underline; }
 /* The amount of the output this input spends, under its reference. Right-aligned
    to the body gutter, like the reference above it and the output amounts opposite. */
-.cite-amount { margin-top: .1em; text-align: right; font: italic 400 12px/1.3 'Newsreader',serif; color: var(--meta); font-variant-numeric: tabular-nums; }
+.cite-amount { margin-top: .1em; text-align: right; font: italic 400 calc(12px * var(--font-scale, 1))/1.3 'Newsreader',serif; color: var(--meta); font-variant-numeric: tabular-nums; }
 /* An output's forward citation -- the section that later spent it -- under its
    amount in the right margin, mirroring the left margin's provenance cites.
    Empty for an unspent output. */
-.fwd-cite { margin-top: .1em; font: 500 12px/1.3 'IBM Plex Mono',monospace; color: var(--dim); }
+.fwd-cite { margin-top: .1em; font: 500 calc(12px * var(--font-scale, 1))/1.3 'IBM Plex Mono',monospace; color: var(--dim); }
 .tx-in-script { grid-column: 2; min-width: 0; }
 /* Citations for inputs with no scriptSig (witness spends) + the version note.
    They share the outputs' row in the left column, so the outputs slide up beside
@@ -463,7 +485,7 @@ button:disabled { opacity: .4; cursor: not-allowed; }
    aligns on the point (see formatBtc in btc-prose.js). */
 .tx-out-value  { grid-column: 2; text-align: right; font-variant-numeric: tabular-nums; }
 .tx-locktime { grid-column: left / -1; grid-row: 3; text-align: center; font-style: normal; }
-.tx-note { font: italic 400 13.5px/1.4 'Newsreader',serif; color: var(--dim); }
+.tx-note { font: italic 400 calc(13.5px * var(--font-scale, 1))/1.4 'Newsreader',serif; color: var(--dim); }
 /* The input's sequence mark, leading the amount line beneath the reference:
    ●/○ final/respects-locktime, † replaceable (a shade warmer), ■n / Τn a
    relative block / time delay. */
@@ -500,7 +522,7 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 .tx-ascii {
   margin: 0 0 .55em; padding: .12em 0 .12em 1.05em;
   border-left: 2px solid var(--accent); border-radius: 1px;
-  font: italic 400 17.5px/1.6 'Newsreader',serif; color: var(--ink-soft);
+  font: italic 400 calc(17.5px * var(--font-scale, 1))/1.6 'Newsreader',serif; color: var(--ink-soft);
 }
 /* A tab inside a quoted embedded message (see quoteText in btc-prose.js): a
    fixed-width gap, so column-aligned text keeps its spacing instead of
@@ -541,9 +563,9 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 .chapter-footnotes { margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--rule); }
 /* Witness prose is on-chain content, not marginalia: dim, not meta, so the
    footnotes stay readable at length. */
-.footnote-entry { margin: 0 0 1.1em; font: italic 400 14.5px/1.6 'Newsreader',serif; color: var(--dim); }
+.footnote-entry { margin: 0 0 1.1em; font: italic 400 calc(14.5px * var(--font-scale, 1))/1.6 'Newsreader',serif; color: var(--dim); }
 .footnote-entry:target { color: var(--ink-soft); }
-.footnote-mark { font: 500 10.5px/1 'IBM Plex Mono',monospace; color: var(--accent); margin-right: .5em; font-style: normal; vertical-align: .35em; }
+.footnote-mark { font: 500 calc(10.5px * var(--font-scale, 1))/1 'IBM Plex Mono',monospace; color: var(--accent); margin-right: .5em; font-style: normal; vertical-align: .35em; }
 
 </style>
 </head>
@@ -573,6 +595,13 @@ button:disabled { opacity: .4; cursor: not-allowed; }
   <div class="masthead">
     <span class="title">The <span class="beta">β</span>ook of <span class="beta">β</span>itcoin</span>
     <span class="home"><a href="./bitcoin-search.html">Search</a> · <a href="./bitcoin-contents.html">Contents</a> · <a href="./bitcoin-ledger.html">Ledger</a> · <span class="settings-menu"><a href="#" id="settings-link" role="button" aria-haspopup="dialog" aria-expanded="false">Settings</a><div id="settings-panel" class="settings-panel hidden" role="dialog" aria-label="Settings">
+      <div class="settings-title">Text size</div>
+      <div class="fontscale-row">
+        <button type="button" id="fontscale-down" class="ghost-btn" aria-label="Smaller text">A−</button>
+        <span id="fontscale-value" aria-live="polite">100%</span>
+        <button type="button" id="fontscale-up" class="ghost-btn" aria-label="Larger text">A+</button>
+        <button type="button" id="fontscale-reset" class="ghost-btn">Reset</button>
+      </div>
       <div class="settings-title">Data source</div>
       <div class="endpoint-row">
         <select id="endpoint-select" class="endpoint-select" aria-label="Data source endpoint"></select>
@@ -593,6 +622,10 @@ button:disabled { opacity: .4; cursor: not-allowed; }
        (bitcoin-search.html, the masthead's Search link); this page only reports
        the progress of whatever it was asked to open. -->
   <div id="block-status" class="status-line hidden"></div>
+
+  <!-- The pinch gesture's readout: the type size as a percentage, floating
+       like the status toast, while the fingers are down and a beat after. -->
+  <div id="fontscale-toast" class="status-line hidden" aria-hidden="true"></div>
 
   <article id="chapter" class="hidden">
     <!-- The eyebrow: chapter prev/next flank it on the chapter's own page
@@ -679,6 +712,9 @@ import { NOTATION_HTML } from './btc-notation.js';
 document.querySelector('.notation-body').innerHTML = NOTATION_HTML;
 import { storeGet, storePut } from './btc-store.js';
 import { seedArchive } from './btc-seed.js';
+// Applies the saved type size on import; the settings control and the pinch
+// gesture below both write through setFontScale.
+import { fontScale, setFontScale, FONT_SCALE_MIN, FONT_SCALE_MAX, FONT_SCALE_STEP } from './btc-fontscale.js';
 import { pageAnchor, bankAnchor, peekAnchor, formatPage } from './btc-pages.js';
 
 // A first visit provisions the archive with the curated passages' chain data
@@ -2913,6 +2949,70 @@ window.addEventListener('resize', updateGesturePrecedence);
   document.addEventListener('touchcancel', () => { sx = null; if (!pendingSlide) snapBack(); }, { passive: true });
 })();
 
+// ── Pinch: the type size ──────────────────────────────────────────────────
+// Two fingers on the reading matter set the type size, the e-reader way: the
+// text reflows at the new size instead of the page magnifying into a pannable
+// bitmap. The gesture writes the same --font-scale as the settings control
+// (btc-fontscale.js), quantized to 0.05 so the page reflows a handful of
+// times per pinch, not per frame. The content under the fingers is held
+// stationary through each reflow by re-scrolling against an anchor element
+// sampled at the pinch's centre. Scoped to the page frame and the notation
+// sheet -- whose touch-action already excludes native pinch-zoom -- so a
+// pinch on the chrome around them still zooms the browser natively.
+(() => {
+  const SURFACES = '#page-frame, .notation-body';
+  const on = (t) => !!(t && t.closest && t.closest(SURFACES));
+  let d0 = 0, s0 = 1, anchor = null, anchorTop = 0, hideTimer = null;
+  const dist = (t) => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+  const toast = (s) => {
+    const el = $('fontscale-toast');
+    el.textContent = `Aa ${Math.round(s * 100)}%`;
+    el.classList.remove('hidden');
+    if (hideTimer) clearTimeout(hideTimer);
+    hideTimer = setTimeout(() => el.classList.add('hidden'), 700);
+  };
+  document.addEventListener('touchstart', (e) => {
+    if (e.touches.length !== 2) return;
+    if (!on(e.touches[0].target) || !on(e.touches[1].target)) return;
+    e.preventDefault();   // Safari starts a viewport zoom from here otherwise
+    // A second finger landing mid-swipe: abandon the slide follow cleanly
+    // (the swipe tracker has already reset itself on this same event).
+    const ch = $('page-slide');
+    ch.style.transition = ''; ch.style.transform = ''; ch.style.opacity = '';
+    d0 = dist(e.touches);
+    s0 = fontScale();
+    const cx = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+    const cy = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+    anchor = document.elementFromPoint(cx, cy);
+    anchorTop = anchor ? anchor.getBoundingClientRect().top : 0;
+    toast(s0);
+  }, { passive: false });
+  document.addEventListener('touchmove', (e) => {
+    if (!d0 || e.touches.length !== 2) return;
+    e.preventDefault();
+    const want = Math.round((s0 * dist(e.touches) / d0) * 20) / 20;   // 0.05 quanta
+    if (want !== fontScale()) {
+      const applied = setFontScale(want);
+      // Reflow done (getBoundingClientRect forces layout): put the anchor
+      // back where the fingers found it.
+      if (anchor && anchor.isConnected) {
+        const dy = anchor.getBoundingClientRect().top - anchorTop;
+        if (dy) window.scrollBy(0, dy);
+      }
+      reflectFontScale();
+    }
+    toast(fontScale());
+  }, { passive: false });
+  const done = (e) => { if (d0 && e.touches.length < 2) { d0 = 0; anchor = null; } };
+  document.addEventListener('touchend', done, { passive: true });
+  document.addEventListener('touchcancel', done, { passive: true });
+  // Safari's proprietary gesture events drive its viewport zoom on paths
+  // touch-action doesn't govern; cancel them on the same surfaces.
+  for (const type of ['gesturestart', 'gesturechange']) {
+    document.addEventListener(type, (e) => { if (on(e.target)) e.preventDefault(); });
+  }
+})();
+
 // ── Data-source picker ────────────────────────────────────────────────────
 const endpointSel = $('endpoint-select');
 const hostOf = (url) => { try { return new URL(url).host; } catch { return url; } };
@@ -3004,6 +3104,23 @@ $('endpoint-remove').addEventListener('click', () => {
 });
 
 renderEndpoints();
+
+// ── Text size ─────────────────────────────────────────────────────────────
+// The settings buttons step the same --font-scale the pinch gesture writes
+// (btc-fontscale.js): applied live, persisted, and read wherever the book's
+// reading matter is set -- including the notation key here and at rest on the
+// front matter's sigla leaf.
+function reflectFontScale() {
+  const s = fontScale();
+  $('fontscale-value').textContent = Math.round(s * 100) + '%';
+  $('fontscale-down').disabled = s <= FONT_SCALE_MIN;
+  $('fontscale-up').disabled = s >= FONT_SCALE_MAX;
+  $('fontscale-reset').disabled = s === 1;
+}
+$('fontscale-down').addEventListener('click', () => { setFontScale(fontScale() - FONT_SCALE_STEP); reflectFontScale(); });
+$('fontscale-up').addEventListener('click', () => { setFontScale(fontScale() + FONT_SCALE_STEP); reflectFontScale(); });
+$('fontscale-reset').addEventListener('click', () => { setFontScale(1); reflectFontScale(); });
+reflectFontScale();
 
 // ── Settings popover ──────────────────────────────────────────────────────
 // The masthead "Settings" link toggles a small popover holding the data-source
