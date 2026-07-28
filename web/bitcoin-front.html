@@ -298,6 +298,7 @@ body.at-title .title-leaf { min-height: 100vh; cursor: pointer; }
 // virtual leaf: stepping onto it leaves this page for bitcoin-contents.html.
 import { OPCODE_SYMBOLS, OPCODE_NAMES, OPCODE_GROUPS } from './btc-sigla.js';
 import { NOTATION_HTML } from './btc-notation.js';
+import './btc-fontscale.js';   // the reader's type size: the sigla leaf's key follows the book page's setting
 
 const CONTENTS = '__contents__';
 const LEAVES = ['leaf-title', 'leaf-terms', CONTENTS, 'leaf-preface', 'leaf-sigla'];
