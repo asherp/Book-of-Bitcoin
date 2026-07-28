@@ -136,11 +136,11 @@ export function frontispieceMd(header) {
   const prev = isGenesisPrev
     ? `⓪${toSuperscript(256)} (no earlier block — this is the genesis block; all 256 bits zero)`
     : `${hashNotation(prevParts)} ${proseOf(prevParts.hex)}`;
-  // The difficulty target leads, as on the live page: the block hash printed
-  // just above the frontispiece reads below it -- the < line between them
-  // (added by passageMd) states the proof of work as the inequality it is.
+  // The difficulty target leads, as on the live page: β₇₈ < 213529×256²⁰ --
+  // the < binding the block hash printed just above the frontispiece to the
+  // exact target, the proof of work stated as the inequality it is.
   const lines = [
-    `- **difficulty target:** ${htmlToText(hf.bits)}${hf.bitsExpr ? ` ${hf.bitsExpr}` : ''} — ${htmlToText(hf.bitsTitle)}`,
+    `- **difficulty target:** ${htmlToText(hf.bits)}${hf.bitsExpr ? ` < ${hf.bitsExpr} — the block hash above reads below this target` : ''} — ${htmlToText(hf.bitsTitle)}`,
     `- **version:** v${htmlToText(hf.version)} — ${htmlToText(hf.versionTitle)}`,
     `- **previous block:** ${prev}`,
     isGenesisPrev ? null : `  - hex: \`${header.prevBlockHash}\``,
@@ -221,8 +221,6 @@ export function passageMd({ title, height, blockHash, header, txCount, txid, ind
   md.push('');
   const bh = blockHashParts(blockHash);
   md.push(`Block hash, as prose: ${hashNotation(bh)} *${proseOf(bh.hex)}*`);
-  md.push('');
-  md.push(`< — the proof of work: the hash above, read as a 256-bit number, is below the difficulty target:`);
   md.push('');
   md.push(frontispieceMd(header));
   md.push('');
