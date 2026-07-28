@@ -312,7 +312,7 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 /* The difficulty target (β): a proof-of-work mark -- gold, bold, upright.
    (.chapter-hash carries the same mark on the book leaf, where the book's
    target sits right beneath its title.) */
-.chapter-frontispiece .cfx-gold, .chapter-hash .cfx-gold { color: var(--accent); font-weight: 700; font-style: normal; }
+.chapter-frontispiece .cfx-gold, .chapter-hash .cfx-gold, .section-hash .cfx-gold { color: var(--accent); font-weight: 700; font-style: normal; }
 /* The merkle root's ⋔ mark: the clickable handle for its hash menu (copy hex /
    prose), bold and accented (like the h data mark) so it reads as the actionable
    element while the root's prose beside it stays plain. Upright, like every
@@ -1851,8 +1851,13 @@ function renderChapter(para) {
   // to internal byte order first (like the block hash) so it carries the txid's
   // actual bytes; every byte kept, since a txid has no droppable leading zeros.
   const { prose: txidProse } = encodeSeedPhrase(reverseHex(para.txid), 'english', BEST_OF);
-  // Unmarked, like the chapter hash: the section title carries the txid's menu.
-  $('section-hash').textContent = txidProse;
+  // The ⌘ identity mark leads, as on the chapter hash -- a txid is the same
+  // double-SHA256, with no proof-of-work zeros to state: all 256 bits encoded,
+  // and the superscript (bits, ⌘'s unit) says so. The section title carries
+  // the txid's copy/bookmark menu.
+  const txidMarkTitle = 'transaction id — the double-SHA256 of this transaction&#39;s bytes, its identity; all 256 bits carried in the prose';
+  $('section-hash').innerHTML =
+    `<span class="cfx-gold" title="${txidMarkTitle}">⌘</span><span class="op op-push">${toSuperscript(256)}</span> ${txidProse}`;
 
   const body = $('ch-paragraphs');
   body.innerHTML = '';
@@ -1884,7 +1889,7 @@ function renderChapter(para) {
   sectionTitle.title = titleAttr;
   // The section title is the clickable handle for the txid's copy/bookmark
   // menu (attached after the rebuild above, which re-adds the bookmark ribbon).
-  attachHashCopy(sectionTitle, para.txid, 'transaction id', txidProse);
+  attachHashCopy(sectionTitle, para.txid, 'transaction id', `⌘${toSuperscript(256)} ${txidProse}`);
 
   // The transaction is laid out in horizontal bands (see .tx-flow CSS). The
   // inputs are a [citation | scriptSig] subgrid: each input's provenance -- the

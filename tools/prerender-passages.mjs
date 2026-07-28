@@ -158,7 +158,7 @@ export function sectionMd({ txid, fields, sectionNum, eventTitle }) {
   const out = [];
   out.push(`## § ${sectionNum}${eventTitle ? ` — ${eventTitle}` : ''}`);
   out.push('');
-  out.push(`Transaction id, as prose: *${proseOf(reverseHex(txid))}*`);
+  out.push(`Transaction id, as prose: ⌘${toSuperscript(256)} *${proseOf(reverseHex(txid))}*`);
   out.push('');
   out.push(`- **version:** ${fields.version}`);
   fields.inputs.forEach((inp, i) => {
