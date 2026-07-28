@@ -61,7 +61,7 @@ mid-serialization on the wire, but it is spending apparatus rather than
 speech, so it gathers at the foot of the page as footnotes, each marked from
 the input that carries it. And the header's difficulty target is raised out
 of its slot — the wire runs timestamp, target, nonce — to stand directly
-beneath the chapter's own hash with a plain < between them, so that the proof
+beneath the chapter's own hash, a plain < binding the two, so that the proof
 of work reads as what it is: a number below a ceiling. Everywhere else, the
 order of the page is the order of the bytes; where it is not, the departure
 is on purpose and in the open.
