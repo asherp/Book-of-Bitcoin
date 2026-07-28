@@ -185,6 +185,7 @@ export const NOTATION_HTML = `
             <div class="glyph-grid">
               <div class="glyph-row"><span class="g">β<i>n</i></span><span class="m">the <b>difficulty target</b> — a valid hash opens with n zero bits</span></div>
               <div class="glyph-row"><span class="g">η<sub><i>n</i></sub></span><span class="m"><b>extranonce</b> — search space beyond the header's η</span></div>
+              <div class="glyph-row"><span class="g">⋔<sub>w</sub></span><span class="m">the <b>witness commitment</b> — in the coinbase, an OP_RETURN carrying SHA256d(witness-tree root ‖ reserved value): the block's witnesses — its footnotes — bound to the chain through §1. The root is committed, never written; no wtxid appears on chain, only this testimony to all of them</span></div>
             </div>
           </div>
 
