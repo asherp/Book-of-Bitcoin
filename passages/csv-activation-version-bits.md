@@ -14,20 +14,20 @@
 
 ## Chapter frontispiece — block 419,328
 
-Block hash, as prose: *Pop remember post to magnet. Color busy to behave. Device consider lecture per rubber. Field knock to trim out grant. Its math nose our patient cactus.*
+Block hash, as prose: ⓪⁶⁹ ⌘¹⁸⁷ *Pop remember post to magnet. Color busy to behave. Device consider lecture per rubber. Field knock to trim out grant. Its math nose our patient cactus.*
 
 - **version:** vaccio abandon — block version 0x20000000 — BIP9 version-bits form; accio abandon — no version rolling; no soft-fork signals
-- **previous block:** h Drama may invite our cut tray. Cow embark a genius garden. Animal far dry sauce. Cover sting matrix to lunch. Hope approve letter via blossom. The chimney is red.
+- **previous block:** ⓪⁶⁹ ⌘¹⁸⁷ Drama may invite our cut tray. Cow embark a genius garden. Animal far dry sauce. Cover sting matrix to lunch. Hope approve letter via blossom. The chimney is red.
   - hex: `0000000000000000051804b4c2da5298c4573386bf1d4242bf0e26a49ec32e42`
 - **merkle root:** ⋔ What visual surround town to marriage. Bus thank our crucial inch per cigar for a genuine oil. Cop loud mistake a polar rubber. Mail too man find. Die not confirm damage. Device found to scale.
   - hex: `0e57797073975ad93086e6dde91b43e84c851d4572a3f1f73d8428736a9fdef9`
 - **timestamp:** 2016-07-04 23:16 UTC
-- **difficulty target:** β₆₉ — nBits 180526fd — a valid block hash must read below 00000000000000000526fd000000000000000000000000000000000000000000 (69 leading zero bits) — difficulty 213,398,925,331 (relative to the genesis block)
+- **difficulty target:** β₆₉ < 337661×256²¹ — the block hash above reads below this target — nBits 180526fd — mantissa 337661 shifted up 21 bytes: the target 00000000000000000526fd000000000000000000000000000000000000000000, which a valid block hash must read below (69 leading zero bits) — difficulty 213,398,925,331 (relative to the genesis block)
 - **nonce:** η 1353150910
 
 ## § 1 — CSV activation (version bits)
 
-Transaction id, as prose: *Input display ecology to matrix. State may unfold soccer. Its trumpet draft trash. Marriage find to cancel. Tomato yes badge anxiety. Faint may get envelope to census. Flight piece term per punch. Our theme is pop.*
+Transaction id, as prose: ⌘²⁵⁶ *Input display ecology to matrix. State may unfold soccer. Its trumpet draft trash. Marriage find to cancel. Tomato yes badge anxiety. Faint may get envelope to census. Flight piece term per punch. Our theme is pop.*
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
@@ -45,5 +45,8 @@ Transaction id, as prose: *Input display ecology to matrix. State may unfold soc
 bytes (decodable with the [glossia](https://crates.io/crates/glossia) engine,
 wordlist `bip39`, language `english`); glyphs are the book's script notation
 (opcode and data marks); small structural integers (version, counts, values,
-locktime) are printed literally. See [/llms.txt](https://bookofbitcoin.io/llms.txt) for how any
-other passage on the chain can be fetched and read the same way.
+locktime) are printed literally. A block hash reads ⓪ⁿ ⌘ᵐ — n leading
+proof-of-work zero bits, then the remaining m = 256 − n bits of the
+double-SHA256 (⌘, OP_HASH256), Glossia-encoded as ⌈m/8⌉ bytes. See
+[/llms.txt](https://bookofbitcoin.io/llms.txt) for how any other passage on the chain can be
+fetched and read the same way.

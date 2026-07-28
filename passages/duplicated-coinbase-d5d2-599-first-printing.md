@@ -14,20 +14,20 @@
 
 ## Chapter frontispiece — block 91,812
 
-Block hash, as prose: *Control see kangaroo to dinosaur. Our public are digital. A odd sir found to iron. Its glad cop is urban. A yes unveil soap. Gain see horn to vehicle. Debris may see earth. Cop keep a pistol. A rose beef is pop.*
+Block hash, as prose: ⓪⁴⁴ ⌘²¹² *Control see kangaroo to dinosaur. Our public are digital. A odd sir found to iron. Its glad cop is urban. A yes unveil soap. Gain see horn to vehicle. Debris may see earth. Cop keep a pistol. A rose beef is pop.*
 
 - **version:** v1 — block version 1 (0x00000001) — pre-BIP9 integer form
-- **previous block:** h August rally its warfare to combine. Pop convince divorce for chalk. A sin is mixed. A wood net quote damage. Cupboard easily see an artwork. The cow may situate its pop circle. The pan soon see a cloth. Advice may get ear.
+- **previous block:** ⓪⁴⁶ ⌘²¹⁰ August rally its warfare to combine. Pop convince divorce for chalk. A sin is mixed. A wood net quote damage. Cupboard easily see an artwork. The cow may situate its pop circle. The pan soon see a cloth. Advice may get ear.
   - hex: `000000000002afe839294d4e038b5c831bc09632fd717c0980f8f216dc2b360f`
 - **merkle root:** ⋔ A grant due get our cousin. Ear may slim sky. The cow is strong. Pie may awake its hidden pulp. The tape may set noble. Pot very rail whale. Tax when see dinosaur. Sign may cook upon garage. Its cap is vast. Lake set the danger. Sir attract gown to cactus.
   - hex: `49991d7653bec6efebee7d11f27ca2dffcc35ebe95ee5eebd602916b2f2fa665`
 - **timestamp:** 2010-11-14 17:59 UTC
-- **difficulty target:** β₄₄ — nBits 1b0e7256 — a valid block hash must read below 00000000000e7256000000000000000000000000000000000000000000000000 (44 leading zero bits) — difficulty 4,536 (relative to the genesis block)
+- **difficulty target:** β₄₄ < 946774×256²⁴ — the block hash above reads below this target — nBits 1b0e7256 — mantissa 946774 shifted up 24 bytes: the target 00000000000e7256000000000000000000000000000000000000000000000000, which a valid block hash must read below (44 leading zero bits) — difficulty 4,536 (relative to the genesis block)
 - **nonce:** η 1166692788
 
 ## § 1 — Duplicated coinbase d5d2…599, first printing
 
-Transaction id, as prose: *Its office conduct apart prefer axis. Much soldier see bachelor. Alarm get toilet to spoil. Buddy dust credit out craft. Our twenty tobacco may change wave. Element is chronic to row. The rude pot may ensure our parade.*
+Transaction id, as prose: ⌘²⁵⁶ *Its office conduct apart prefer axis. Much soldier see bachelor. Alarm get toilet to spoil. Buddy dust credit out craft. Our twenty tobacco may change wave. Element is chronic to row. The rude pot may ensure our parade.*
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
@@ -43,5 +43,8 @@ Transaction id, as prose: *Its office conduct apart prefer axis. Much soldier se
 bytes (decodable with the [glossia](https://crates.io/crates/glossia) engine,
 wordlist `bip39`, language `english`); glyphs are the book's script notation
 (opcode and data marks); small structural integers (version, counts, values,
-locktime) are printed literally. See [/llms.txt](https://bookofbitcoin.io/llms.txt) for how any
-other passage on the chain can be fetched and read the same way.
+locktime) are printed literally. A block hash reads ⓪ⁿ ⌘ᵐ — n leading
+proof-of-work zero bits, then the remaining m = 256 − n bits of the
+double-SHA256 (⌘, OP_HASH256), Glossia-encoded as ⌈m/8⌉ bytes. See
+[/llms.txt](https://bookofbitcoin.io/llms.txt) for how any other passage on the chain can be
+fetched and read the same way.

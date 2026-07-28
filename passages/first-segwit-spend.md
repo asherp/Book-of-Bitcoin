@@ -14,20 +14,20 @@
 
 ## Chapter frontispiece — block 481,824
 
-Block hash, as prose: *Its tax near sentence sheriff. The aerobic net is lazy. A mirror is huge. A velvet penalty set lady. Friend may dry tourist to good. Cow avoid its bright hit via aid.*
+Block hash, as prose: ⓪⁷⁵ ⌘¹⁸¹ *Its tax near sentence sheriff. The aerobic net is lazy. A mirror is huge. A velvet penalty set lady. Friend may dry tourist to good. Cow avoid its bright hit via aid.*
 
 - **version:** vaccio abandon 10 — block version 0x20000002 — BIP9 version-bits form; accio abandon — no version rolling; signaling bit 1 — SegWit (BIP141)
-- **previous block:** h Length swing flavor to chapter. Episode may elbow type. Runway ago wine usage. Check may crack buzz. Border ought style bulb to slam.
+- **previous block:** ⓪⁷² ⌘¹⁸⁴ Length swing flavor to chapter. Episode may elbow type. Runway ago wine usage. Check may crack buzz. Border ought style bulb to slam.
   - hex: `000000000000000000cbeff0b533f8e1189cf09dfbebf57a8ebe349362811b80`
 - **merkle root:** ⋔ Dolphin get its mixture to limb. Zone get wrist per world. The total timber rival alcohol to body. Sun oppose item per faculty. Cupboard yes abuse dynamic. A red may approve matter. Cow speak the rub. Some pan barely thunder length.
   - hex: `6438250cad442b982801ae6994edb8a9ec63c0a0ba117779fbe7ef7f07cad140`
 - **timestamp:** 2017-08-24 01:57 UTC
-- **difficulty target:** β₇₁ — nBits 18013ce9 — a valid block hash must read below 0000000000000000013ce9000000000000000000000000000000000000000000 (71 leading zero bits) — difficulty 888,171,856,257 (relative to the genesis block)
+- **difficulty target:** β₇₁ < 81129×256²¹ — the block hash above reads below this target — nBits 18013ce9 — mantissa 81129 shifted up 21 bytes: the target 0000000000000000013ce9000000000000000000000000000000000000000000, which a valid block hash must read below (71 leading zero bits) — difficulty 888,171,856,257 (relative to the genesis block)
 - **nonce:** η 575995682
 
 ## § 13 — First SegWit spend
 
-Transaction id, as prose: *Its brisk tree fire strategy. Few drink is arch. Aid due adjust symbol. Fault see column to file. A want then see our pie. Lot between get a tie. Its amazing son away club a weird. Stumble set car to rubber. Drama may theme pot.*
+Transaction id, as prose: ⌘²⁵⁶ *Its brisk tree fire strategy. Few drink is arch. Aid due adjust symbol. Fault see column to file. A want then see our pie. Lot between get a tie. Its amazing son away club a weird. Stumble set car to rubber. Drama may theme pot.*
 
 - **version:** 1
 - **input 1:** spends output 0 of `38c8c6473f149aa698c9868f266102def0e370ddfd4c5adb5916417940963658`
@@ -50,5 +50,8 @@ Transaction id, as prose: *Its brisk tree fire strategy. Few drink is arch. Aid 
 bytes (decodable with the [glossia](https://crates.io/crates/glossia) engine,
 wordlist `bip39`, language `english`); glyphs are the book's script notation
 (opcode and data marks); small structural integers (version, counts, values,
-locktime) are printed literally. See [/llms.txt](https://bookofbitcoin.io/llms.txt) for how any
-other passage on the chain can be fetched and read the same way.
+locktime) are printed literally. A block hash reads ⓪ⁿ ⌘ᵐ — n leading
+proof-of-work zero bits, then the remaining m = 256 − n bits of the
+double-SHA256 (⌘, OP_HASH256), Glossia-encoded as ⌈m/8⌉ bytes. See
+[/llms.txt](https://bookofbitcoin.io/llms.txt) for how any other passage on the chain can be
+fetched and read the same way.

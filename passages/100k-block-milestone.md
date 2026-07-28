@@ -14,20 +14,20 @@
 
 ## Chapter frontispiece — block 100,000
 
-Block hash, as prose: *An alone tap is civil. Young cup to position. A broken language is unique. Crouch mother club to pilot. The minute fever race lift. Camera may eye update to alcohol.*
+Block hash, as prose: ⓪⁴⁶ ⌘²¹⁰ *An alone tap is civil. Young cup to position. A broken language is unique. Crouch mother club to pilot. The minute fever race lift. Camera may eye update to alcohol.*
 
 - **version:** v1 — block version 1 (0x00000001) — pre-BIP9 integer form
-- **previous block:** h An exotic mosquito may edge comic. Plastic would link to make. Such absurd update our slow recipe. The vacant swallow get success. Success may slot wedding to a cross advice.
+- **previous block:** ⓪⁴⁶ ⌘²¹⁰ An exotic mosquito may edge comic. Plastic would link to make. Such absurd update our slow recipe. The vacant swallow get success. Success may slot wedding to a cross advice.
   - hex: `000000000002d01c1fccc21636b607dfd930d31d01c3a62104612a1719011250`
 - **merkle root:** ⋔ Green may run to enable. Pop fetch to snap. Theory ski license for notice. Gun torch dust to method. Lobster may see vessel per immune. Embrace may control to uniform. Guy enable service for catalog via pond for gas.
   - hex: `f3e94742aca4b5ef85488dc37c06c3282295ffec960994b2c0d5ac2a25a95766`
 - **timestamp:** 2010-12-29 11:57 UTC
-- **difficulty target:** β₄₅ — nBits 1b04864c — a valid block hash must read below 000000000004864c000000000000000000000000000000000000000000000000 (45 leading zero bits) — difficulty 14,484 (relative to the genesis block)
+- **difficulty target:** β₄₅ < 296524×256²⁴ — the block hash above reads below this target — nBits 1b04864c — mantissa 296524 shifted up 24 bytes: the target 000000000004864c000000000000000000000000000000000000000000000000, which a valid block hash must read below (45 leading zero bits) — difficulty 14,484 (relative to the genesis block)
 - **nonce:** η 274148111
 
 ## § 1 — 100K block milestone
 
-Transaction id, as prose: *Its manual hub set cigar. Son teach penalty to arena. Young deal its click. Pan rather gauge release. Flavor margin to solve per our guilt. Hundred vacuum neither tiny tank. Way fall a length.*
+Transaction id, as prose: ⌘²⁵⁶ *Its manual hub set cigar. Son teach penalty to arena. Young deal its click. Pan rather gauge release. Flavor margin to solve per our guilt. Hundred vacuum neither tiny tank. Way fall a length.*
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
@@ -43,5 +43,8 @@ Transaction id, as prose: *Its manual hub set cigar. Son teach penalty to arena.
 bytes (decodable with the [glossia](https://crates.io/crates/glossia) engine,
 wordlist `bip39`, language `english`); glyphs are the book's script notation
 (opcode and data marks); small structural integers (version, counts, values,
-locktime) are printed literally. See [/llms.txt](https://bookofbitcoin.io/llms.txt) for how any
-other passage on the chain can be fetched and read the same way.
+locktime) are printed literally. A block hash reads ⓪ⁿ ⌘ᵐ — n leading
+proof-of-work zero bits, then the remaining m = 256 − n bits of the
+double-SHA256 (⌘, OP_HASH256), Glossia-encoded as ⌈m/8⌉ bytes. See
+[/llms.txt](https://bookofbitcoin.io/llms.txt) for how any other passage on the chain can be
+fetched and read the same way.

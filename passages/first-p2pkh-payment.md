@@ -14,20 +14,20 @@
 
 ## Chapter frontispiece — block 728
 
-Block hash, as prose: *Kit is hip to its ranch. Our endless pop may seek. Our curious red is awesome. A female language abuse urge. Inside may nose charge. Actor would see the pretty maximum to device out slide. Its panic sir avoid to cut.*
+Block hash, as prose: ⓪³² ⌘²²⁴ *Kit is hip to its ranch. Our endless pop may seek. Our curious red is awesome. A female language abuse urge. Inside may nose charge. Actor would see the pretty maximum to device out slide. Its panic sir avoid to cut.*
 
 - **version:** v1 — block version 1 (0x00000001) — pre-BIP9 integer form
-- **previous block:** h Wave quarter to defy for staff. Our live middle erode deputy. Position may identify fortune to zoo. A key is strong. Cop govern taste to orchard via next. The unique wire scale cow.
+- **previous block:** ⓪³⁵ ⌘²²¹ Wave quarter to defy for staff. Our live middle erode deputy. Position may identify fortune to zoo. A key is strong. Cop govern taste to orchard via next. The unique wire scale cow.
   - hex: `000000001c7eb6ab129cf14659aea1f77f6e116ea8da2193182b08eae6ecf5f7`
 - **merkle root:** ⋔ Its giant slight fog satoshi. Bamboo may get grief. Dove see laptop to year. Our tap add to expect. Pop empower balance outside saddle. Marble set gadget to desk. Airport web novel out hill per a wise theme.
   - hex: `1f7fd770697c167ca75e3d742f3b1b81244165e0fee87310cd20b15f6975b961`
 - **timestamp:** 2009-01-16 19:18 UTC
-- **difficulty target:** β₃₂ — nBits 1d00ffff — a valid block hash must read below 00000000ffff0000000000000000000000000000000000000000000000000000 (32 leading zero bits) — difficulty 1 (relative to the genesis block)
+- **difficulty target:** β₃₂ < 65535×256²⁶ — the block hash above reads below this target — nBits 1d00ffff — mantissa 65535 shifted up 26 bytes: the target 00000000ffff0000000000000000000000000000000000000000000000000000, which a valid block hash must read below (32 leading zero bits) — difficulty 1 (relative to the genesis block)
 - **nonce:** η 95106676
 
 ## § 2 — First P2PKH payment
 
-Transaction id, as prose: *Its set bird due chunk red. Ban often clump the toddler. Squirrel hammer its method. Acid is novel to south. Our middle mention are unique. Row is useless to its merry essay. A treat is slender. Day void a lake to a vast theme.*
+Transaction id, as prose: ⌘²⁵⁶ *Its set bird due chunk red. Ban often clump the toddler. Squirrel hammer its method. Acid is novel to south. Our middle mention are unique. Row is useless to its merry essay. A treat is slender. Day void a lake to a vast theme.*
 
 - **version:** 1
 - **input 1:** spends output 0 of `ff3dc8b461305acc5900d31602f2dafebfc406e5b050b14a352294f0965e0bf6`
@@ -46,5 +46,8 @@ Transaction id, as prose: *Its set bird due chunk red. Ban often clump the toddl
 bytes (decodable with the [glossia](https://crates.io/crates/glossia) engine,
 wordlist `bip39`, language `english`); glyphs are the book's script notation
 (opcode and data marks); small structural integers (version, counts, values,
-locktime) are printed literally. See [/llms.txt](https://bookofbitcoin.io/llms.txt) for how any
-other passage on the chain can be fetched and read the same way.
+locktime) are printed literally. A block hash reads ⓪ⁿ ⌘ᵐ — n leading
+proof-of-work zero bits, then the remaining m = 256 − n bits of the
+double-SHA256 (⌘, OP_HASH256), Glossia-encoded as ⌈m/8⌉ bytes. See
+[/llms.txt](https://bookofbitcoin.io/llms.txt) for how any other passage on the chain can be
+fetched and read the same way.

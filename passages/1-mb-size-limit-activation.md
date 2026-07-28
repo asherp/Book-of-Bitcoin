@@ -14,20 +14,20 @@
 
 ## Chapter frontispiece — block 79,400
 
-Block hash, as prose: *Tap resemble question to assault. Our gossip is hidden. Fluid may sentence faculty to gorilla. Tower yes get course. A bed is bitter. Muffin when see each soccer. Daughter is alone to genre. Invite is big via dragon.*
+Block hash, as prose: ⓪⁴² ⌘²¹⁴ *Tap resemble question to assault. Our gossip is hidden. Fluid may sentence faculty to gorilla. Tower yes get course. A bed is bitter. Muffin when see each soccer. Daughter is alone to genre. Invite is big via dragon.*
 
 - **version:** v1 — block version 1 (0x00000001) — pre-BIP9 integer form
-- **previous block:** h Recall park its fame to aisle. Business fan penalty per arrow. The lunch may ensure the razor. A civil muffin is able. Bus get danger to a common ozone. A big toe why hire due.
+- **previous block:** ⓪⁴² ⌘²¹⁴ Recall park its fame to aisle. Business fan penalty per arrow. The lunch may ensure the razor. A civil muffin is able. Bus get danger to a common ozone. A big toe why hire due.
   - hex: `0000000000368ed3732ebbb9870012c994ca6a298565a0a8a5f0d182490974b3`
 - **merkle root:** ⋔ Its double get shaft to repair. A glad source plug cap. Sir pave plastic to thumb via foil. Month flush recipe above puppy. Miracle far side knock. The guy twice set artwork. Swarm may used red below a theme.
   - hex: `3785dfb79d06ad7befc76b842b013aebac3d4e6be13065a84d014d31da9eb841`
 - **timestamp:** 2010-09-12 22:37 UTC
-- **difficulty target:** β₄₁ — nBits 1b5bede6 — a valid block hash must read below 00000000005bede6000000000000000000000000000000000000000000000000 (41 leading zero bits) — difficulty 712.88 (relative to the genesis block)
+- **difficulty target:** β₄₁ < 6024678×256²⁴ — the block hash above reads below this target — nBits 1b5bede6 — mantissa 6024678 shifted up 24 bytes: the target 00000000005bede6000000000000000000000000000000000000000000000000, which a valid block hash must read below (41 leading zero bits) — difficulty 712.88 (relative to the genesis block)
 - **nonce:** η 3610144003
 
 ## § 1 — 1 MB size limit activation
 
-Transaction id, as prose: *Increase wink to predict for fish. Pop used its bright spoon. Our sin live build. A noble scene is rural. A family pact set gym to million. Mail hazard its table per pluck. Pluck leg deer to cactus.*
+Transaction id, as prose: ⌘²⁵⁶ *Increase wink to predict for fish. Pop used its bright spoon. Our sin live build. A noble scene is rural. A family pact set gym to million. Mail hazard its table per pluck. Pluck leg deer to cactus.*
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
@@ -43,5 +43,8 @@ Transaction id, as prose: *Increase wink to predict for fish. Pop used its brigh
 bytes (decodable with the [glossia](https://crates.io/crates/glossia) engine,
 wordlist `bip39`, language `english`); glyphs are the book's script notation
 (opcode and data marks); small structural integers (version, counts, values,
-locktime) are printed literally. See [/llms.txt](https://bookofbitcoin.io/llms.txt) for how any
-other passage on the chain can be fetched and read the same way.
+locktime) are printed literally. A block hash reads ⓪ⁿ ⌘ᵐ — n leading
+proof-of-work zero bits, then the remaining m = 256 − n bits of the
+double-SHA256 (⌘, OP_HASH256), Glossia-encoded as ⌈m/8⌉ bytes. See
+[/llms.txt](https://bookofbitcoin.io/llms.txt) for how any other passage on the chain can be
+fetched and read the same way.

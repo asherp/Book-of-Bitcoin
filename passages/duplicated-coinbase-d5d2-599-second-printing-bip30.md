@@ -14,20 +14,20 @@
 
 ## Chapter frontispiece — block 91,842
 
-Block hash, as prose: *A jet under finish our ability. Its shy mixture may set an icon. The exact hockey gate body. Each solution is ugly. Detail are rapid among umbrella. License sign nation to beef.*
+Block hash, as prose: ⓪⁴⁴ ⌘²¹² *A jet under finish our ability. Its shy mixture may set an icon. The exact hockey gate body. Each solution is ugly. Detail are rapid among umbrella. License sign nation to beef.*
 
 - **version:** v1 — block version 1 (0x00000001) — pre-BIP9 integer form
-- **previous block:** h Cactus medal wife to fantasy. Gain may set garbage. Essence dawn gap to height for census. Camera switch grab to fatigue via response to royal. Goose get maple per beef.
+- **previous block:** ⓪⁴⁴ ⌘²¹² Cactus medal wife to fantasy. Gain may set garbage. Essence dawn gap to height for census. Camera switch grab to fatigue via response to royal. Goose get maple per beef.
   - hex: `00000000000a1e92acbcbdf594cac25d1095544d5fbf5113bfec85a9eb4b1120`
 - **merkle root:** ⋔ Its office conduct apart prefer axis. Much soldier see bachelor. Alarm get toilet to spoil. Buddy dust credit out craft. Our twenty tobacco may change wave. Element is chronic to row. The rude pot may ensure our parade.
   - hex: `d5d27987d2a3dfc724e359870c6644b40e497bdc0589a033220fe15429d88599`
 - **timestamp:** 2010-11-14 21:04 UTC
-- **difficulty target:** β₄₄ — nBits 1b0e7256 — a valid block hash must read below 00000000000e7256000000000000000000000000000000000000000000000000 (44 leading zero bits) — difficulty 4,536 (relative to the genesis block)
+- **difficulty target:** β₄₄ < 946774×256²⁴ — the block hash above reads below this target — nBits 1b0e7256 — mantissa 946774 shifted up 24 bytes: the target 00000000000e7256000000000000000000000000000000000000000000000000, which a valid block hash must read below (44 leading zero bits) — difficulty 4,536 (relative to the genesis block)
 - **nonce:** η 3778549762
 
 ## § 1 — Duplicated coinbase d5d2…599, second printing (BIP30)
 
-Transaction id, as prose: *Its office conduct apart prefer axis. Much soldier see bachelor. Alarm get toilet to spoil. Buddy dust credit out craft. Our twenty tobacco may change wave. Element is chronic to row. The rude pot may ensure our parade.*
+Transaction id, as prose: ⌘²⁵⁶ *Its office conduct apart prefer axis. Much soldier see bachelor. Alarm get toilet to spoil. Buddy dust credit out craft. Our twenty tobacco may change wave. Element is chronic to row. The rude pot may ensure our parade.*
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
@@ -43,5 +43,8 @@ Transaction id, as prose: *Its office conduct apart prefer axis. Much soldier se
 bytes (decodable with the [glossia](https://crates.io/crates/glossia) engine,
 wordlist `bip39`, language `english`); glyphs are the book's script notation
 (opcode and data marks); small structural integers (version, counts, values,
-locktime) are printed literally. See [/llms.txt](https://bookofbitcoin.io/llms.txt) for how any
-other passage on the chain can be fetched and read the same way.
+locktime) are printed literally. A block hash reads ⓪ⁿ ⌘ᵐ — n leading
+proof-of-work zero bits, then the remaining m = 256 − n bits of the
+double-SHA256 (⌘, OP_HASH256), Glossia-encoded as ⌈m/8⌉ bytes. See
+[/llms.txt](https://bookofbitcoin.io/llms.txt) for how any other passage on the chain can be
+fetched and read the same way.

@@ -14,20 +14,20 @@
 
 ## Chapter frontispiece — block 709,632
 
-Block hash, as prose: *Duty may bar a heavy letter. The due twice place spawn. Our cotton course far exist idea. A loyal spice select plunge. Movie yes get an alcohol.*
+Block hash, as prose: ⓪⁷⁷ ⌘¹⁷⁹ *Duty may bar a heavy letter. The due twice place spawn. Our cotton course far exist idea. A loyal spice select plunge. Movie yes get an alcohol.*
 
 - **version:** vaccio letter 100 — block version 0x20200004 — BIP9 version-bits form; version-rolling bits 0x0100 (BIP320 scratch entropy) as accio letter; signaling bit 2 — Taproot (BIP341)
-- **previous block:** h Smile tower other sponsor to usage. Dentist inch to inform. Attack get health per sketch for rookie via glass bar utility. Eight set an absurd.
+- **previous block:** ⓪⁷⁹ ⌘¹⁷⁷ Smile tower other sponsor to usage. Dentist inch to inform. Attack get health per sketch for rookie via glass bar utility. Eight set an absurd.
   - hex: `000000000000000000013712fc242ee6dd28476d0e9c931c75f83e6974c6bccc`
 - **merkle root:** ⋔ The jewel too gaze balcony. Our huge wise divorce pluck. A hungry magnet twice give bed. A merry couple may set potato to such dial. Warfare not exclude old. Divorce may see library to bulb. Lip due have divorce.
   - hex: `6ada3b10082068de09f7e819b65113d3c58969fd857aab2980c65f374714ec77`
 - **timestamp:** 2021-11-14 05:15 UTC
-- **difficulty target:** β₇₆ — nBits 170c69ea — a valid block hash must read below 0000000000000000000c69ea0000000000000000000000000000000000000000 (76 leading zero bits) — difficulty 22,674,148,233,453 (relative to the genesis block)
+- **difficulty target:** β₇₆ < 813546×256²⁰ — the block hash above reads below this target — nBits 170c69ea — mantissa 813546 shifted up 20 bytes: the target 0000000000000000000c69ea0000000000000000000000000000000000000000, which a valid block hash must read below (76 leading zero bits) — difficulty 22,674,148,233,453 (relative to the genesis block)
 - **nonce:** η 1410298626
 
 ## § 2 — Taproot activation
 
-Transaction id, as prose: *Match ball its gorilla to bachelor. Ear may devote the son. A far pay once champion nod. Each ear may melt a bitter label. Sir afford our hurdle to private. Degree copy praise per shift. The initial napkin rule flash. An erosion vault theme.*
+Transaction id, as prose: ⌘²⁵⁶ *Match ball its gorilla to bachelor. Ear may devote the son. A far pay once champion nod. Each ear may melt a bitter label. Sir afford our hurdle to private. Degree copy praise per shift. The initial napkin rule flash. An erosion vault theme.*
 
 - **version:** 2
 - **input 1:** spends output 0 of `bed322446b458193f83e5cdb861b697219f82fa46938f0a49fbf6d801c119dfe`
@@ -49,5 +49,8 @@ Transaction id, as prose: *Match ball its gorilla to bachelor. Ear may devote th
 bytes (decodable with the [glossia](https://crates.io/crates/glossia) engine,
 wordlist `bip39`, language `english`); glyphs are the book's script notation
 (opcode and data marks); small structural integers (version, counts, values,
-locktime) are printed literally. See [/llms.txt](https://bookofbitcoin.io/llms.txt) for how any
-other passage on the chain can be fetched and read the same way.
+locktime) are printed literally. A block hash reads ⓪ⁿ ⌘ᵐ — n leading
+proof-of-work zero bits, then the remaining m = 256 − n bits of the
+double-SHA256 (⌘, OP_HASH256), Glossia-encoded as ⌈m/8⌉ bytes. See
+[/llms.txt](https://bookofbitcoin.io/llms.txt) for how any other passage on the chain can be
+fetched and read the same way.

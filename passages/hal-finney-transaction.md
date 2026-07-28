@@ -14,20 +14,20 @@
 
 ## Chapter frontispiece — block 170
 
-Block hash, as prose: *Upgrade birth cash to garbage. Our sin is unhappy. Boss ago get patient. Pan expire a fragile coconut. An myself. Kidney may catalog to lock. Its exotic hammer have duty. Beyond may claim to avoid.*
+Block hash, as prose: ⓪³² ⌘²²⁴ *Upgrade birth cash to garbage. Our sin is unhappy. Boss ago get patient. Pan expire a fragile coconut. An myself. Kidney may catalog to lock. Its exotic hammer have duty. Beyond may claim to avoid.*
 
 - **version:** v1 — block version 1 (0x00000001) — pre-BIP9 integer form
-- **previous block:** h Fiber get umbrella to action. Our valley are obvious. Its half head pony hammer. Some risk soon see corn. A tired trophy may set horror. Son explain clown to youth. A record dust parade.
+- **previous block:** ⓪³⁴ ⌘²²² Fiber get umbrella to action. Our valley are obvious. Its half head pony hammer. Some risk soon see corn. A tired trophy may set horror. Son explain clown to youth. A record dust parade.
   - hex: `000000002a22cfee1f2c846adbd12b3e183d4f97683f85dad08a79780a84bd55`
 - **merkle root:** ⋔ Yellow too list a crazy. Son may appear canvas. Frame wet a lecture. Sense indicate the arch. Frog may get sweet to orbit. Joy see uncle for recipe. Board is strong to actress. Grace bind the rapid parade.
   - hex: `7dac2c5666815c17a3b36427de37bb9d2e2c5ccec3f8633eb91a4205cb4c10ff`
 - **timestamp:** 2009-01-12 03:30 UTC
-- **difficulty target:** β₃₂ — nBits 1d00ffff — a valid block hash must read below 00000000ffff0000000000000000000000000000000000000000000000000000 (32 leading zero bits) — difficulty 1 (relative to the genesis block)
+- **difficulty target:** β₃₂ < 65535×256²⁶ — the block hash above reads below this target — nBits 1d00ffff — mantissa 65535 shifted up 26 bytes: the target 00000000ffff0000000000000000000000000000000000000000000000000000, which a valid block hash must read below (32 leading zero bits) — difficulty 1 (relative to the genesis block)
 - **nonce:** η 1889418792
 
 ## § 2 — Hal Finney transaction
 
-Transaction id, as prose: *Bird get its valley to path. Sponsor get analyst per oil. The eight mistake get our curious rabbit. The immense tunnel may get soup. Find game the vacant manual. Brother excite license to hobby. A pole how glow the length.*
+Transaction id, as prose: ⌘²⁵⁶ *Bird get its valley to path. Sponsor get analyst per oil. The eight mistake get our curious rabbit. The immense tunnel may get soup. Find game the vacant manual. Brother excite license to hobby. A pole how glow the length.*
 
 - **version:** 1
 - **input 1:** spends output 0 of `0437cd7f8525ceed2324359c2d0ba26006d92d856a9c20fa0241106ee5a597c9`
@@ -45,5 +45,8 @@ Transaction id, as prose: *Bird get its valley to path. Sponsor get analyst per 
 bytes (decodable with the [glossia](https://crates.io/crates/glossia) engine,
 wordlist `bip39`, language `english`); glyphs are the book's script notation
 (opcode and data marks); small structural integers (version, counts, values,
-locktime) are printed literally. See [/llms.txt](https://bookofbitcoin.io/llms.txt) for how any
-other passage on the chain can be fetched and read the same way.
+locktime) are printed literally. A block hash reads ⓪ⁿ ⌘ᵐ — n leading
+proof-of-work zero bits, then the remaining m = 256 − n bits of the
+double-SHA256 (⌘, OP_HASH256), Glossia-encoded as ⌈m/8⌉ bytes. See
+[/llms.txt](https://bookofbitcoin.io/llms.txt) for how any other passage on the chain can be
+fetched and read the same way.

@@ -14,20 +14,20 @@
 
 ## Chapter frontispiece — block 687,285
 
-Block hash, as prose: *Pistol see gloom to can. Style mother to conduct. Border stamp scheme per royal. Its funny pop together nurse bet. Our lap may invest coyote to the logic for army.*
+Block hash, as prose: ⓪⁷⁶ ⌘¹⁸⁰ *Pistol see gloom to can. Style mother to conduct. Border stamp scheme per royal. Its funny pop together nurse bet. Our lap may invest coyote to the logic for army.*
 
 - **version:** vdensaugeo zoo 100 — block version 0x3fff0004 — BIP9 version-bits form; version-rolling bits 0xfff8 (BIP320 scratch entropy) as densaugeo zoo; signaling bit 2 — Taproot (BIP341)
-- **previous block:** h Yes excite dust to lawsuit. Our message blame rack. Pop receive to rabbit. The raw wonder execute network via a busy chunk. Warrior not thank absurd.
+- **previous block:** ⓪⁷⁹ ⌘¹⁷⁷ Yes excite dust to lawsuit. Our message blame rack. Pop receive to rabbit. The raw wonder execute network via a busy chunk. Warrior not thank absurd.
   - hex: `00000000000000000001fed67d51f261ca3ca19fb281e52c6173f1c5f889c84e`
 - **merkle root:** ⋔ Guilt is spatial to a talent. Pop allow essence for celery. The domain set story. Inquiry how see a rare tissue. Garlic explain shove to offer. The cow may observe an ugly winner. A son is afraid. Pan when cook the hedgehog. Ban exist its abandon.
   - hex: `f013d5fa127d127c1fecc35c268e09e52f8b43d674b43e104ad454837513ba67`
 - **timestamp:** 2021-06-12 12:18 UTC
-- **difficulty target:** β₇₆ — nBits 170d5f7b — a valid block hash must read below 0000000000000000000d5f7b0000000000000000000000000000000000000000 (76 leading zero bits) — difficulty 21,047,730,572,452 (relative to the genesis block)
+- **difficulty target:** β₇₆ < 876411×256²⁰ — the block hash above reads below this target — nBits 170d5f7b — mantissa 876411 shifted up 20 bytes: the target 0000000000000000000d5f7b0000000000000000000000000000000000000000, which a valid block hash must read below (76 leading zero bits) — difficulty 21,047,730,572,452 (relative to the genesis block)
 - **nonce:** η 2091155766
 
 ## § 1 — Taproot lock-in
 
-Transaction id, as prose: *Its record may jelly display. Cow cool our safe. Sir renew to arrange. A curious pop describe mesh. Black see forum to trophy. Son remain a tissue. Scale may arrange escape. The sure dune cause to edit. Siege may parade lot.*
+Transaction id, as prose: ⌘²⁵⁶ *Its record may jelly display. Cow cool our safe. Sir renew to arrange. A curious pop describe mesh. Black see forum to trophy. Son remain a tissue. Scale may arrange escape. The sure dune cause to edit. Siege may parade lot.*
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
@@ -52,5 +52,8 @@ Transaction id, as prose: *Its record may jelly display. Cow cool our safe. Sir 
 bytes (decodable with the [glossia](https://crates.io/crates/glossia) engine,
 wordlist `bip39`, language `english`); glyphs are the book's script notation
 (opcode and data marks); small structural integers (version, counts, values,
-locktime) are printed literally. See [/llms.txt](https://bookofbitcoin.io/llms.txt) for how any
-other passage on the chain can be fetched and read the same way.
+locktime) are printed literally. A block hash reads ⓪ⁿ ⌘ᵐ — n leading
+proof-of-work zero bits, then the remaining m = 256 − n bits of the
+double-SHA256 (⌘, OP_HASH256), Glossia-encoded as ⌈m/8⌉ bytes. See
+[/llms.txt](https://bookofbitcoin.io/llms.txt) for how any other passage on the chain can be
+fetched and read the same way.

@@ -14,20 +14,20 @@
 
 ## Chapter frontispiece — block 630,000
 
-Block hash, as prose: *Hospital may exchange our social era. Tube set this foster yes. Pot may achieve swallow. Bid nest bachelor to notable. Our useful glove may enact. Each son is acoustic.*
+Block hash, as prose: ⓪⁷⁸ ⌘¹⁷⁸ *Hospital may exchange our social era. Tube set this foster yes. Pot may achieve swallow. Bid nest bachelor to notable. Our useful glove may enact. Each son is acoustic.*
 
 - **version:** vaccio abandon — block version 0x20000000 — BIP9 version-bits form; accio abandon — no version rolling; no soft-fork signals
-- **previous block:** h Bullet frequent proof to donor. Son may inhale stone. Some screen is soft. A pop is keen. Trouble shoulder rescue to force. Echo see a mad hole. Our artist is pop.
+- **previous block:** ⓪⁷⁶ ⌘¹⁸⁰ Bullet frequent proof to donor. Son may inhale stone. Some screen is soft. A pop is keen. Trouble shoulder rescue to force. Echo see a mad hole. Our artist is pop.
   - hex: `0000000000000000000d656be18bb095db1b23bd797266b0ac3ba720b1962b1e`
 - **merkle root:** ⋔ Its artwork may get liberty. Its genuine above like our humble midnight. The fyi is angry. A grant may doctor to scatter. Cow caught a soft glow via grace. Year get setup to anchor. The license indicate display for width. Egg may set cactus.
   - hex: `b191f5f973b9040e81c4f75f99c7e43c92010ba8654718e3dd1a4800851d300d`
 - **timestamp:** 2020-05-11 19:23 UTC
-- **difficulty target:** β₇₅ — nBits 17117a39 — a valid block hash must read below 000000000000000000117a390000000000000000000000000000000000000000 (75 leading zero bits) — difficulty 16,104,807,485,529 (relative to the genesis block)
+- **difficulty target:** β₇₅ < 1145401×256²⁰ — the block hash above reads below this target — nBits 17117a39 — mantissa 1145401 shifted up 20 bytes: the target 000000000000000000117a390000000000000000000000000000000000000000, which a valid block hash must read below (75 leading zero bits) — difficulty 16,104,807,485,529 (relative to the genesis block)
 - **nonce:** η 2302182970
 
 ## § 411 — First P2WSH reveal (2-of-3)
 
-Transaction id, as prose: *Few bike may vacuum grab. Gospel ought bus copper. A weekend is armed. Toss are fossil to suit. Our swarm see its kidney. Our tap differ the cactus to a bleak chapter. A son attract trophy. The deposit may dust its client to gas.*
+Transaction id, as prose: ⌘²⁵⁶ *Few bike may vacuum grab. Gospel ought bus copper. A weekend is armed. Toss are fossil to suit. Our swarm see its kidney. Our tap differ the cactus to a bleak chapter. A son attract trophy. The deposit may dust its client to gas.*
 
 - **version:** 1
 - **input 1:** spends output 1 of `46ebe264b0115a439732554b2b390b11b332b5b5692958b1754aa0ee57b64265`
@@ -49,5 +49,8 @@ Transaction id, as prose: *Few bike may vacuum grab. Gospel ought bus copper. A 
 bytes (decodable with the [glossia](https://crates.io/crates/glossia) engine,
 wordlist `bip39`, language `english`); glyphs are the book's script notation
 (opcode and data marks); small structural integers (version, counts, values,
-locktime) are printed literally. See [/llms.txt](https://bookofbitcoin.io/llms.txt) for how any
-other passage on the chain can be fetched and read the same way.
+locktime) are printed literally. A block hash reads ⓪ⁿ ⌘ᵐ — n leading
+proof-of-work zero bits, then the remaining m = 256 − n bits of the
+double-SHA256 (⌘, OP_HASH256), Glossia-encoded as ⌈m/8⌉ bytes. See
+[/llms.txt](https://bookofbitcoin.io/llms.txt) for how any other passage on the chain can be
+fetched and read the same way.

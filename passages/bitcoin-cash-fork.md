@@ -14,20 +14,20 @@
 
 ## Chapter frontispiece — block 478,558
 
-Block hash, as prose: *Drip have dove to loop. Sand is elegant via reunion out a move. Our turkey may vapor to bean. Its chronic cop say bachelor. The cow allow to uncover. Blossom amount to sit.*
+Block hash, as prose: ⓪⁷¹ ⌘¹⁸⁵ *Drip have dove to loop. Sand is elegant via reunion out a move. Our turkey may vapor to bean. Its chronic cop say bachelor. The cow allow to uncover. Blossom amount to sit.*
 
 - **version:** vaccio abandon 10 — block version 0x20000002 — BIP9 version-bits form; accio abandon — no version rolling; signaling bit 1 — SegWit (BIP141)
-- **previous block:** h Tomorrow may equal art to black. Citizen garage sun via exercise. Its voice rescue initial. Sheriff see oak to priority. Train set cricket via twelve.
+- **previous block:** ⓪⁷² ⌘¹⁸⁴ Tomorrow may equal art to black. Citizen garage sun via exercise. Its voice rescue initial. Sheriff see oak to priority. Train set cricket via twelve.
   - hex: `000000000000000000eb9bc1f9557dc9e2cfe576f57a52f6be94720b338029e4`
 - **merkle root:** ⋔ Lie enhance divorce to flag. Album edit to defy. A habit truly size pop. Our cop connect antenna to episode. Sir rotate tribe out radar. Box process a tie. Our pretty pop used cotton. Our female mechanic is nice to gas.
   - hex: `5b65144f6518bf4795abd428acd0c3fb2527e4e5c94b0f5a7366f4826001884a`
 - **timestamp:** 2017-08-01 13:16 UTC
-- **difficulty target:** β₇₁ — nBits 18014735 — a valid block hash must read below 0000000000000000014735000000000000000000000000000000000000000000 (71 leading zero bits) — difficulty 860,221,984,436 (relative to the genesis block)
+- **difficulty target:** β₇₁ < 83765×256²¹ — the block hash above reads below this target — nBits 18014735 — mantissa 83765 shifted up 21 bytes: the target 0000000000000000014735000000000000000000000000000000000000000000, which a valid block hash must read below (71 leading zero bits) — difficulty 860,221,984,436 (relative to the genesis block)
 - **nonce:** η 1968823574
 
 ## § 1 — Bitcoin Cash fork
 
-Transaction id, as prose: *Its ill yes little get penalty. Our legal ear is mutual. Fall may coin to prevent out year. Wish slow buzz our primary flag. Fix snack result to pull out poem. Slogan sample clap to gloom. Abandon die to hit.*
+Transaction id, as prose: ⌘²⁵⁶ *Its ill yes little get penalty. Our legal ear is mutual. Fall may coin to prevent out year. Wish slow buzz our primary flag. Fix snack result to pull out poem. Slogan sample clap to gloom. Abandon die to hit.*
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
@@ -45,5 +45,8 @@ Transaction id, as prose: *Its ill yes little get penalty. Our legal ear is mutu
 bytes (decodable with the [glossia](https://crates.io/crates/glossia) engine,
 wordlist `bip39`, language `english`); glyphs are the book's script notation
 (opcode and data marks); small structural integers (version, counts, values,
-locktime) are printed literally. See [/llms.txt](https://bookofbitcoin.io/llms.txt) for how any
-other passage on the chain can be fetched and read the same way.
+locktime) are printed literally. A block hash reads ⓪ⁿ ⌘ᵐ — n leading
+proof-of-work zero bits, then the remaining m = 256 − n bits of the
+double-SHA256 (⌘, OP_HASH256), Glossia-encoded as ⌈m/8⌉ bytes. See
+[/llms.txt](https://bookofbitcoin.io/llms.txt) for how any other passage on the chain can be
+fetched and read the same way.

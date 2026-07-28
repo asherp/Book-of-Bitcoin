@@ -14,20 +14,20 @@
 
 ## Chapter frontispiece — block 74,638
 
-Block hash, as prose: *Its option may get affair. Cow collect toilet to name for wheel. Cabbage may set anxiety. Some force shall puzzle our square. Its jealous upgrade grant concert. History impose a voice to weapon for the spirit.*
+Block hash, as prose: ⓪⁴¹ ⌘²¹⁵ *Its option may get affair. Cow collect toilet to name for wheel. Cabbage may set anxiety. Some force shall puzzle our square. Its jealous upgrade grant concert. History impose a voice to weapon for the spirit.*
 
 - **version:** v1 — block version 1 (0x00000001) — pre-BIP9 integer form
-- **previous block:** h Love may image toss to arrow. Cow discover its lunar note. Cereal base our dust. Battle unfold book to loop. Lawsuit ship ketchup via creek. Foam may scale son.
+- **previous block:** ⓪⁴¹ ⌘²¹⁵ Love may image toss to arrow. Cow discover its lunar note. Cereal base our dust. Battle unfold book to loop. Lawsuit ship ketchup via creek. Foam may scale son.
   - hex: `0000000000606865e679308edf079991764d88e8122ca9250aef5386962b6e84`
 - **merkle root:** ⋔ Cop protect the sudden cop. Its hit are loyal. Ski how bike yard. A future autumn see sheriff. Finger get its brass member. Ocean edge our future turtle. Panther may dress cross. Resource prison clay to gesture via our theme.
   - hex: `5f5854b0ca5bd054c89f57a7978c8e69c56cdc8ac57da097fd6321651212bbac`
 - **timestamp:** 2010-08-15 23:53 UTC
-- **difficulty target:** β₄₀ — nBits 1c00800e — a valid block hash must read below 0000000000800e00000000000000000000000000000000000000000000000000 (40 leading zero bits) — difficulty 511.77 (relative to the genesis block)
+- **difficulty target:** β₄₀ < 32782×256²⁵ — the block hash above reads below this target — nBits 1c00800e — mantissa 32782 shifted up 25 bytes: the target 0000000000800e00000000000000000000000000000000000000000000000000, which a valid block hash must read below (40 leading zero bits) — difficulty 511.77 (relative to the genesis block)
 - **nonce:** η 3333514074
 
 ## § 1 — Script opcode purge
 
-Transaction id, as prose: *Its rural glass egg to harbor. Pop awake slot over cry. The wedding chimney may draft item. Pistol see cabbage to size. A dumb feed prison fruit. Pause bike margin to million via divorce.*
+Transaction id, as prose: ⌘²⁵⁶ *Its rural glass egg to harbor. Pop awake slot over cry. The wedding chimney may draft item. Pistol see cabbage to size. A dumb feed prison fruit. Pause bike margin to million via divorce.*
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
@@ -43,5 +43,8 @@ Transaction id, as prose: *Its rural glass egg to harbor. Pop awake slot over cr
 bytes (decodable with the [glossia](https://crates.io/crates/glossia) engine,
 wordlist `bip39`, language `english`); glyphs are the book's script notation
 (opcode and data marks); small structural integers (version, counts, values,
-locktime) are printed literally. See [/llms.txt](https://bookofbitcoin.io/llms.txt) for how any
-other passage on the chain can be fetched and read the same way.
+locktime) are printed literally. A block hash reads ⓪ⁿ ⌘ᵐ — n leading
+proof-of-work zero bits, then the remaining m = 256 − n bits of the
+double-SHA256 (⌘, OP_HASH256), Glossia-encoded as ⌈m/8⌉ bytes. See
+[/llms.txt](https://bookofbitcoin.io/llms.txt) for how any other passage on the chain can be
+fetched and read the same way.

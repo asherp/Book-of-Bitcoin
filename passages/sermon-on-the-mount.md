@@ -14,20 +14,20 @@
 
 ## Chapter frontispiece — block 776,549
 
-Block hash, as prose: *Hobby spirit its copy to state. Coin see tomato for torch. Sin also pull gain. Exit either hammer scan. Sheriff too box alcohol.*
+Block hash, as prose: ⓪⁷⁷ ⌘¹⁷⁹ *Hobby spirit its copy to state. Coin see tomato for torch. Sin also pull gain. Exit either hammer scan. Sheriff too box alcohol.*
 
 - **version:** vdiffindo length — block version 0x2000e000 — BIP9 version-bits form; version-rolling bits 0x0007 (BIP320 scratch entropy) as diffindo length; no soft-fork signals
-- **previous block:** h Lie may suffer each recall. Tie again chase our lot. Each pan may lend the original. Its hurt cop may inherit ecology. Car pioneer to sell. Museum endorse chest via blouse out advice.
+- **previous block:** ⓪⁷⁷ ⌘¹⁷⁹ Lie may suffer each recall. Tie again chase our lot. Each pan may lend the original. Its hurt cop may inherit ecology. Car pioneer to sell. Museum endorse chest via blouse out advice.
   - hex: `00000000000000000004c1e089931ab9e1944a04469ef35b39ff5793126cb6d8`
 - **merkle root:** ⋔ The sir attract to accuse. Issue phone to predict. Cap off see favorite. Sadness is noble to an one auto. Quote pretty budget nod. The jealous loop may see seminar. Cop deny shaft to jungle. Celery loan a noble cactus.
   - hex: `6925065182bc135787c31fe41d3ba20a583e54b395ef0595329bcad1da35c00e`
 - **timestamp:** 2023-02-14 20:02 UTC
-- **difficulty target:** β₇₇ — nBits 17073039 — a valid block hash must read below 0000000000000000000730390000000000000000000000000000000000000000 (77 leading zero bits) — difficulty 39,156,400,059,293 (relative to the genesis block)
+- **difficulty target:** β₇₇ < 471097×256²⁰ — the block hash above reads below this target — nBits 17073039 — mantissa 471097 shifted up 20 bytes: the target 0000000000000000000730390000000000000000000000000000000000000000, which a valid block hash must read below (77 leading zero bits) — difficulty 39,156,400,059,293 (relative to the genesis block)
 - **nonce:** η 1037642624
 
 ## § 732 — Sermon on the Mount
 
-Transaction id, as prose: *Such zoo get talent to trade. Our direct panther relax program. Pencil may inflict fever to stay. A pie is unhappy. Fall faint buyer to roof out broccoli. Road invite fossil to ghost. Twist parade its lot.*
+Transaction id, as prose: ⌘²⁵⁶ *Such zoo get talent to trade. Our direct panther relax program. Pencil may inflict fever to stay. A pie is unhappy. Fall faint buyer to roof out broccoli. Road invite fossil to ghost. Twist parade its lot.*
 
 - **version:** 1
 - **input 1:** spends output 0 of `a20b94103ef74b2463de12a7f2fb78cdcf757aebcf16f9b811b6b40352cb1153`
@@ -47,5 +47,8 @@ Transaction id, as prose: *Such zoo get talent to trade. Our direct panther rela
 bytes (decodable with the [glossia](https://crates.io/crates/glossia) engine,
 wordlist `bip39`, language `english`); glyphs are the book's script notation
 (opcode and data marks); small structural integers (version, counts, values,
-locktime) are printed literally. See [/llms.txt](https://bookofbitcoin.io/llms.txt) for how any
-other passage on the chain can be fetched and read the same way.
+locktime) are printed literally. A block hash reads ⓪ⁿ ⌘ᵐ — n leading
+proof-of-work zero bits, then the remaining m = 256 − n bits of the
+double-SHA256 (⌘, OP_HASH256), Glossia-encoded as ⌈m/8⌉ bytes. See
+[/llms.txt](https://bookofbitcoin.io/llms.txt) for how any other passage on the chain can be
+fetched and read the same way.

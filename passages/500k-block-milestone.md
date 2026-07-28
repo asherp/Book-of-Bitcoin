@@ -14,20 +14,20 @@
 
 ## Chapter frontispiece — block 500,000
 
-Block hash, as prose: *Affair may uncover a chronic major. Crystal is giant to stool. Object eye to hover. A bar wild brief plastic. Sugar are youth to catch.*
+Block hash, as prose: ⓪⁷⁴ ⌘¹⁸² *Affair may uncover a chronic major. Crystal is giant to stool. Object eye to hover. A bar wild brief plastic. Sugar are youth to catch.*
 
 - **version:** vaccio abandon — block version 0x20000000 — BIP9 version-bits form; accio abandon — no version rolling; no soft-fork signals
-- **previous block:** h Bomb exercise throw to belt. Son is low during aid. Yes direct baby to the boring hero to metal. Its season alone filter grit. Pot reduce slush to jungle.
+- **previous block:** ⓪⁷³ ⌘¹⁸³ Bomb exercise throw to belt. Son is low during aid. Yes direct baby to the boring hero to metal. Its season alone filter grit. Pot reduce slush to jungle.
   - hex: `0000000000000000007962066dcd6675830883516bcf40047d42740a85eb2919`
 - **merkle root:** ⋔ Buyer bag its kitten to knock. Our ear already people bit. Sir submit work to clay via snow. Sir reduce daughter to seed. Vacuum dawn husband per fabric. A frog set century. Behind charge mixture to feel per cactus.
   - hex: `31951c69428a95a46b517ffb0de12fec1bd0b2392aec07b64573e03ded31621f`
 - **timestamp:** 2017-12-18 18:35 UTC
-- **difficulty target:** β₇₂ — nBits 18009645 — a valid block hash must read below 0000000000000000009645000000000000000000000000000000000000000000 (72 leading zero bits) — difficulty 1,873,105,475,222 (relative to the genesis block)
+- **difficulty target:** β₇₂ < 38469×256²¹ — the block hash above reads below this target — nBits 18009645 — mantissa 38469 shifted up 21 bytes: the target 0000000000000000009645000000000000000000000000000000000000000000, which a valid block hash must read below (72 leading zero bits) — difficulty 1,873,105,475,222 (relative to the genesis block)
 - **nonce:** η 1560058197
 
 ## § 1 — 500K block milestone
 
-Transaction id, as prose: *The stock unveil to adjust. Chaos may find horror. Siren around get novel. Surge twist a tuna. Machine yes warm maple. Liar may decrease blouse to pop. Our hard wing may shed to follow. Frame may set a cactus.*
+Transaction id, as prose: ⌘²⁵⁶ *The stock unveil to adjust. Chaos may find horror. Siren around get novel. Surge twist a tuna. Machine yes warm maple. Liar may decrease blouse to pop. Our hard wing may shed to follow. Frame may set a cactus.*
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
@@ -50,5 +50,8 @@ Transaction id, as prose: *The stock unveil to adjust. Chaos may find horror. Si
 bytes (decodable with the [glossia](https://crates.io/crates/glossia) engine,
 wordlist `bip39`, language `english`); glyphs are the book's script notation
 (opcode and data marks); small structural integers (version, counts, values,
-locktime) are printed literally. See [/llms.txt](https://bookofbitcoin.io/llms.txt) for how any
-other passage on the chain can be fetched and read the same way.
+locktime) are printed literally. A block hash reads ⓪ⁿ ⌘ᵐ — n leading
+proof-of-work zero bits, then the remaining m = 256 − n bits of the
+double-SHA256 (⌘, OP_HASH256), Glossia-encoded as ⌈m/8⌉ bytes. See
+[/llms.txt](https://bookofbitcoin.io/llms.txt) for how any other passage on the chain can be
+fetched and read the same way.

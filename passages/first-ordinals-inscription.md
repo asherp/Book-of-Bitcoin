@@ -14,20 +14,20 @@
 
 ## Chapter frontispiece — block 767,430
 
-Block hash, as prose: *A vital canyon may plate die. Cop barely destroy a row. Pot how crumble royal. Staff see thought between safe. Pupil may set alien. Demand are express to base via the acoustic rub.*
+Block hash, as prose: ⓪⁷⁸ ⌘¹⁷⁸ *A vital canyon may plate die. Cop barely destroy a row. Pot how crumble royal. Staff see thought between safe. Pupil may set alien. Demand are express to base via the acoustic rub.*
 
 - **version:** vdepulso average — block version 0x23f0a000 — BIP9 version-bits form; version-rolling bits 0x1f85 (BIP320 scratch entropy) as depulso average; no soft-fork signals
-- **previous block:** h Session obey the nasty noise. Still junk a mean peanut to lens out an extra slab. An olive gadget may recall runway. A filter is acoustic.
+- **previous block:** ⓪⁷⁸ ⌘¹⁷⁸ Session obey the nasty noise. Still junk a mean peanut to lens out an extra slab. An olive gadget may recall runway. A filter is acoustic.
   - hex: `00000000000000000002b35aef66eb15cd2b232a800f75a2f25cedca4cfe52c4`
 - **merkle root:** ⋔ Giggle solve its awesome ban. Lot live to trap. Snack angle its huge kangaroo. A desert hospital mandate desk. Cash may stay an electric plastic. Apology may phone glow to slam. Son situate a napkin. Divorce may see ban.
   - hex: `ba6493b1ec318e4e01a63b3ab546be83c3b77587797533029a755e4142dcf961`
 - **timestamp:** 2022-12-14 20:32 UTC
-- **difficulty target:** β₇₆ — nBits 17083830 — a valid block hash must read below 0000000000000000000838300000000000000000000000000000000000000000 (76 leading zero bits) — difficulty 34,244,331,613,176 (relative to the genesis block)
+- **difficulty target:** β₇₆ < 538672×256²⁰ — the block hash above reads below this target — nBits 17083830 — mantissa 538672 shifted up 20 bytes: the target 0000000000000000000838300000000000000000000000000000000000000000, which a valid block hash must read below (76 leading zero bits) — difficulty 34,244,331,613,176 (relative to the genesis block)
 - **nonce:** η 758036153
 
 ## § 2323 — First Ordinals inscription
 
-Transaction id, as prose: *Odor demand to argue for sport. Pop surround its half design. Our voice section disease. Family donate culture to orphan. Our die away set our series. Bunker way kite review. One is robust to toss. Theme see the tax.*
+Transaction id, as prose: ⌘²⁵⁶ *Odor demand to argue for sport. Pop surround its half design. Our voice section disease. Family donate culture to orphan. Our die away set our series. Bunker way kite review. One is robust to toss. Theme see the tax.*
 
 - **version:** 1
 - **input 1:** spends output 0 of `274bda6667e60bedede0d87f351220da4089427e6122f7d0bbd8e662b3796358`
@@ -47,5 +47,8 @@ Transaction id, as prose: *Odor demand to argue for sport. Pop surround its half
 bytes (decodable with the [glossia](https://crates.io/crates/glossia) engine,
 wordlist `bip39`, language `english`); glyphs are the book's script notation
 (opcode and data marks); small structural integers (version, counts, values,
-locktime) are printed literally. See [/llms.txt](https://bookofbitcoin.io/llms.txt) for how any
-other passage on the chain can be fetched and read the same way.
+locktime) are printed literally. A block hash reads ⓪ⁿ ⌘ᵐ — n leading
+proof-of-work zero bits, then the remaining m = 256 − n bits of the
+double-SHA256 (⌘, OP_HASH256), Glossia-encoded as ⌈m/8⌉ bytes. See
+[/llms.txt](https://bookofbitcoin.io/llms.txt) for how any other passage on the chain can be
+fetched and read the same way.

@@ -14,20 +14,20 @@
 
 ## Chapter frontispiece — block 388,381
 
-Block hash, as prose: *Its usual yes pretty swamp volume. A rigid recipe may set ear. A vague opera source to learn. Drama too melt guess. Puzzle not set region. Nothing may search the cactus.*
+Block hash, as prose: ⓪⁶⁹ ⌘¹⁸⁷ *Its usual yes pretty swamp volume. A rigid recipe may set ear. A vague opera source to learn. Drama too melt guess. Puzzle not set region. Nothing may search the cactus.*
 
 - **version:** v4 — block version 4 (0x00000004) — pre-BIP9 integer form
-- **previous block:** h Its mind due pair a security. A heavy talk voice sir. Set modify to multiply. A daring cradle to oblige. Cop consider donkey out dignity via recall. Son ignore way to elite.
+- **previous block:** ⓪⁶⁸ ⌘¹⁸⁸ Its mind due pair a security. A heavy talk voice sir. Set modify to multiply. A daring cradle to oblige. Cop consider donkey out dignity via recall. Son ignore way to elite.
   - hex: `000000000000000009f886db2c7c12a497603e86378bace3ead93d350be3f38c`
 - **merkle root:** ⋔ Its excess may climb to drink. Due soon culture a pop. Sir consider to enjoy out skull. Our potato appear a shoot. Yes gather an oxygen. Web set fantasy to raise. Bracket devote our rigid cereal via its curious math per anchor. Our theme is ago.
   - hex: `1f02125fc392e79ac71a89c594f1e539301a53c1a856ae925e58a3670c61854e`
 - **timestamp:** 2015-12-14 17:24 UTC
-- **difficulty target:** β₆₈ — nBits 180de64f — a valid block hash must read below 00000000000000000de64f000000000000000000000000000000000000000000 (68 leading zero bits) — difficulty 79,102,380,900 (relative to the genesis block)
+- **difficulty target:** β₆₈ < 910927×256²¹ — the block hash above reads below this target — nBits 180de64f — mantissa 910927 shifted up 21 bytes: the target 00000000000000000de64f000000000000000000000000000000000000000000, which a valid block hash must read below (68 leading zero bits) — difficulty 79,102,380,900 (relative to the genesis block)
 - **nonce:** η 3169047320
 
 ## § 1 — BIP65 activation (v4)
 
-Transaction id, as prose: *Ban may seek to vanish. Fix get poem across cow. Its aware thank rubber miracle. Guy uncover the illegal assault. A correct beef may exact buyer. A bottom task swear its sad hit. Our better device sail gas.*
+Transaction id, as prose: ⌘²⁵⁶ *Ban may seek to vanish. Fix get poem across cow. Its aware thank rubber miracle. Guy uncover the illegal assault. A correct beef may exact buyer. A bottom task swear its sad hit. Our better device sail gas.*
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
@@ -43,5 +43,8 @@ Transaction id, as prose: *Ban may seek to vanish. Fix get poem across cow. Its 
 bytes (decodable with the [glossia](https://crates.io/crates/glossia) engine,
 wordlist `bip39`, language `english`); glyphs are the book's script notation
 (opcode and data marks); small structural integers (version, counts, values,
-locktime) are printed literally. See [/llms.txt](https://bookofbitcoin.io/llms.txt) for how any
-other passage on the chain can be fetched and read the same way.
+locktime) are printed literally. A block hash reads ⓪ⁿ ⌘ᵐ — n leading
+proof-of-work zero bits, then the remaining m = 256 − n bits of the
+double-SHA256 (⌘, OP_HASH256), Glossia-encoded as ⌈m/8⌉ bytes. See
+[/llms.txt](https://bookofbitcoin.io/llms.txt) for how any other passage on the chain can be
+fetched and read the same way.

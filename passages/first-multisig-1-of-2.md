@@ -14,20 +14,20 @@
 
 ## Chapter frontispiece — block 164,467
 
-Block hash, as prose: *The fragile security bicycle leader. Fly are awkward to hawk out roast to a low oyster. Tap thrive our equal hazard to effort. Visit web lobster for swallow. The february may see liquid.*
+Block hash, as prose: ⓪⁵² ⌘²⁰⁴ *The fragile security bicycle leader. Fly are awkward to hawk out roast to a low oyster. Tap thrive our equal hazard to effort. Visit web lobster for swallow. The february may see liquid.*
 
 - **version:** v1 — block version 1 (0x00000001) — pre-BIP9 integer form
-- **previous block:** h Its toe may get mango. Its awake clutch ought see its category. Sir manage warrior to vocal. Our spy not provide our radio. Son tell night to latin. Aisle see a february. Nominee may give scale.
+- **previous block:** ⓪⁵⁷ ⌘¹⁹⁹ Its toe may get mango. Its awake clutch ought see its category. Sir manage warrior to vocal. Our spy not provide our radio. Son tell night to latin. Aisle see a february. Nominee may give scale.
   - hex: `000000000000004fec95a26ac1fa58696fc39e55d3aad7fd0d43429640e490e3`
 - **merkle root:** ⋔ Tap keep battle to winner. Our flag is twenty. Excess may armor salmon to era. Test yes purpose pumpkin. Dream may get body to timber. Dentist see a public stem. Clap may get metal. Float drive to taste via theme.
   - hex: `8fb786920546a7a81aadd489f83128d4d6b9f25b4cf3fd029db21eacef6bc279`
 - **timestamp:** 2012-01-30 01:58 UTC
-- **difficulty target:** β₅₂ — nBits 1a0cd43f — a valid block hash must read below 0000000000000cd43f0000000000000000000000000000000000000000000000 (52 leading zero bits) — difficulty 1,307,728 (relative to the genesis block)
+- **difficulty target:** β₅₂ < 840767×256²³ — the block hash above reads below this target — nBits 1a0cd43f — mantissa 840767 shifted up 23 bytes: the target 0000000000000cd43f0000000000000000000000000000000000000000000000, which a valid block hash must read below (52 leading zero bits) — difficulty 1,307,728 (relative to the genesis block)
 - **nonce:** η 2420964612
 
 ## § 15 — First multisig (1-of-2)
 
-Transaction id, as prose: *Rally set galaxy to congress. Lab may bridge step. Ethics object to model. August see a poet. Alarm away get album. Bed ahead sketch misery. A noble chase out embody pulse. Magic may maze abandon.*
+Transaction id, as prose: ⌘²⁵⁶ *Rally set galaxy to congress. Lab may bridge step. Ethics object to model. August see a poet. Alarm away get album. Bed ahead sketch misery. A noble chase out embody pulse. Magic may maze abandon.*
 
 - **version:** 1
 - **input 1:** spends output 2 of `67b37ee9d86118c22a237b79d5af31b100e2abdd8c670ad4eda1ee22a040bd37`
@@ -53,5 +53,8 @@ Transaction id, as prose: *Rally set galaxy to congress. Lab may bridge step. Et
 bytes (decodable with the [glossia](https://crates.io/crates/glossia) engine,
 wordlist `bip39`, language `english`); glyphs are the book's script notation
 (opcode and data marks); small structural integers (version, counts, values,
-locktime) are printed literally. See [/llms.txt](https://bookofbitcoin.io/llms.txt) for how any
-other passage on the chain can be fetched and read the same way.
+locktime) are printed literally. A block hash reads ⓪ⁿ ⌘ᵐ — n leading
+proof-of-work zero bits, then the remaining m = 256 − n bits of the
+double-SHA256 (⌘, OP_HASH256), Glossia-encoded as ⌈m/8⌉ bytes. See
+[/llms.txt](https://bookofbitcoin.io/llms.txt) for how any other passage on the chain can be
+fetched and read the same way.

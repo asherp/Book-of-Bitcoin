@@ -14,20 +14,20 @@
 
 ## Chapter frontispiece — block 173,805
 
-Block hash, as prose: *Start love its strike to sniff. Offer see skull for cousin. Combine will set adult. Twin may see problem. A cut tap below set other flock. Winter pole all length.*
+Block hash, as prose: ⓪⁵⁶ ⌘²⁰⁰ *Start love its strike to sniff. Offer see skull for cousin. Combine will set adult. Twin may see problem. A cut tap below set other flock. Winter pole all length.*
 
 - **version:** v1 — block version 1 (0x00000001) — pre-BIP9 integer form
-- **previous block:** h Its bulb together imitate tea. The naive scrap close firm. Pigeon may teach aid. A they. A steel churn alter gravity. Our home industry baby major. Light yes get its tea.
+- **previous block:** ⓪⁵³ ⌘²⁰³ Its bulb together imitate tea. The naive scrap close firm. Pigeon may teach aid. A they. A steel churn alter gravity. Our home industry baby major. Light yes get its tea.
   - hex: `00000000000006ce101199431bcc76609454139cde25d55557165cc9c575fc1d`
 - **merkle root:** ⋔ Gold may allow a hip autumn. Recipe retreat the ugly velvet. Trial very get setup. Gravity reform olive to game. River culture wire via medal. Its stuff may joke hawk. Cop sell to divorce out a rid due.
   - hex: `dab0d384c76b29869f35d6cd5734450b33125f3ee890073b703bdb87afd54064`
 - **timestamp:** 2012-04-01 00:43 UTC
-- **difficulty target:** β₅₂ — nBits 1a0a507e — a valid block hash must read below 0000000000000a507e0000000000000000000000000000000000000000000000 (52 leading zero bits) — difficulty 1,626,553 (relative to the genesis block)
+- **difficulty target:** β₅₂ < 675966×256²³ — the block hash above reads below this target — nBits 1a0a507e — mantissa 675966 shifted up 23 bytes: the target 0000000000000a507e0000000000000000000000000000000000000000000000, which a valid block hash must read below (52 leading zero bits) — difficulty 1,626,553 (relative to the genesis block)
 - **nonce:** η 3963693786
 
 ## § 1 — BIP16 activation (P2SH)
 
-Transaction id, as prose: *An iron nominee manage review. The mass farm rubber to move via float. Rub quit pay under wise to delay out decade. Claw bar its maid to mirror. Agent set disease for output. An unfair jeans are big to our scale.*
+Transaction id, as prose: ⌘²⁵⁶ *An iron nominee manage review. The mass farm rubber to move via float. Rub quit pay under wise to delay out decade. Claw bar its maid to mirror. Agent set disease for output. An unfair jeans are big to our scale.*
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
@@ -43,5 +43,8 @@ Transaction id, as prose: *An iron nominee manage review. The mass farm rubber t
 bytes (decodable with the [glossia](https://crates.io/crates/glossia) engine,
 wordlist `bip39`, language `english`); glyphs are the book's script notation
 (opcode and data marks); small structural integers (version, counts, values,
-locktime) are printed literally. See [/llms.txt](https://bookofbitcoin.io/llms.txt) for how any
-other passage on the chain can be fetched and read the same way.
+locktime) are printed literally. A block hash reads ⓪ⁿ ⌘ᵐ — n leading
+proof-of-work zero bits, then the remaining m = 256 − n bits of the
+double-SHA256 (⌘, OP_HASH256), Glossia-encoded as ⌈m/8⌉ bytes. See
+[/llms.txt](https://bookofbitcoin.io/llms.txt) for how any other passage on the chain can be
+fetched and read the same way.

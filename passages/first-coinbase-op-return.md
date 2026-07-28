@@ -14,20 +14,20 @@
 
 ## Chapter frontispiece — block 246,816
 
-Block hash, as prose: *Half may trip our gospel primary. Its start may enforce device. Cop wrestle the sudden fade. Ladder recall to truck. Bulb hard fruit beach. Cop embark to tap out a rid length.*
+Block hash, as prose: ⓪⁶⁰ ⌘¹⁹⁶ *Half may trip our gospel primary. Its start may enforce device. Cop wrestle the sudden fade. Ladder recall to truck. Bulb hard fruit beach. Cop embark to tap out a rid length.*
 
 - **version:** v2 — block version 2 (0x00000002) — pre-BIP9 integer form
-- **previous block:** h Grace see elevator to crowd. Finish embody to source. A sunny tunnel is cheap. Trend bicycle artefact to kiwi. Sir surround giant out rough. A cheese set device. A pop scale may get fyi.
+- **previous block:** ⓪⁵⁶ ⌘²⁰⁰ Grace see elevator to crowd. Finish embody to source. A sunny tunnel is cheap. Trend bicycle artefact to kiwi. Sir surround giant out rough. A cheese set device. A pop scale may get fyi.
   - hex: `00000000000000972727e26d18b5b777865700fd26545f36a087842bd1fc6865`
 - **merkle root:** ⋔ Its river due chair a nation. A civil fiber submit lift. Pistol permit to assume per artefact. Run see shrimp to fabric out scare. Penalty hold to prosper via an aspect. Fame rule skull to its lens. Abandon see the pay.
   - hex: `08a095d33ba93590956c1415f0a272acde33bc21a32b5d20b05bc5144dbac4ba`
 - **timestamp:** 2013-07-16 06:04 UTC
-- **difficulty target:** β₅₆ — nBits 1a00a429 — a valid block hash must read below 00000000000000a4290000000000000000000000000000000000000000000000 (56 leading zero bits) — difficulty 26,162,876 (relative to the genesis block)
+- **difficulty target:** β₅₆ < 42025×256²³ — the block hash above reads below this target — nBits 1a00a429 — mantissa 42025 shifted up 23 bytes: the target 00000000000000a4290000000000000000000000000000000000000000000000, which a valid block hash must read below (56 leading zero bits) — difficulty 26,162,876 (relative to the genesis block)
 - **nonce:** η 1947896645
 
 ## § 1 — First coinbase OP_RETURN
 
-Transaction id, as prose: *Cop tell ring to strategy. Our smoke are obvious. Its vocal amateur receive cap. Our tap too satisfy warfare. Our little story square mix. The cushion couch to remain. Dutch exist a boss. Nerve ribbon train to length.*
+Transaction id, as prose: ⌘²⁵⁶ *Cop tell ring to strategy. Our smoke are obvious. Its vocal amateur receive cap. Our tap too satisfy warfare. Our little story square mix. The cushion couch to remain. Dutch exist a boss. Nerve ribbon train to length.*
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
@@ -617,5 +617,8 @@ Transaction id, as prose: *Cop tell ring to strategy. Our smoke are obvious. Its
 bytes (decodable with the [glossia](https://crates.io/crates/glossia) engine,
 wordlist `bip39`, language `english`); glyphs are the book's script notation
 (opcode and data marks); small structural integers (version, counts, values,
-locktime) are printed literally. See [/llms.txt](https://bookofbitcoin.io/llms.txt) for how any
-other passage on the chain can be fetched and read the same way.
+locktime) are printed literally. A block hash reads ⓪ⁿ ⌘ᵐ — n leading
+proof-of-work zero bits, then the remaining m = 256 − n bits of the
+double-SHA256 (⌘, OP_HASH256), Glossia-encoded as ⌈m/8⌉ bytes. See
+[/llms.txt](https://bookofbitcoin.io/llms.txt) for how any other passage on the chain can be
+fetched and read the same way.

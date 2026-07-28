@@ -14,20 +14,20 @@
 
 ## Chapter frontispiece — block 308,570
 
-Block hash, as prose: *Era may set some poverty. Our polar ecology get tomato. Pink is odd until a park. Winner may ready to remember. Tiger answer rail out fruit. A second seek cactus.*
+Block hash, as prose: ⓪⁶⁹ ⌘¹⁸⁷ *Era may set some poverty. Our polar ecology get tomato. Pink is odd until a park. Winner may ready to remember. Tiger answer rail out fruit. A second seek cactus.*
 
 - **version:** v2 — block version 2 (0x00000002) — pre-BIP9 integer form
-- **previous block:** h Palace thunder to thrive for hedgehog. Our awesome dust worry now. Print may fog middle to wire. Abstract embark the salt. Our lucky blouse may pool fyi.
+- **previous block:** ⓪⁶⁶ ⌘¹⁹⁰ Palace thunder to thrive for hedgehog. Our awesome dust worry now. Print may fog middle to wire. Abstract embark the salt. Our lucky blouse may pool fyi.
   - hex: `0000000000000000351825acaf900e107e314acbaab974bf880841b584333c9f`
 - **merkle root:** ⋔ Kick get horn to harbor. Clay see its width. Our fancy atom get ketchup. Flag set body to judge. Still see our ill desert. Setup may foster a stereo. The wide scare rough blur. Weapon get timber to theme.
   - hex: `8fb8f087215e01579fd5e02271770ee7eae21d2358cf93c3a5ac1f15a4b12d7a`
 - **timestamp:** 2014-06-30 05:45 UTC
-- **difficulty target:** β₆₅ — nBits 18415fd1 — a valid block hash must read below 0000000000000000415fd1000000000000000000000000000000000000000000 (65 leading zero bits) — difficulty 16,818,461,371 (relative to the genesis block)
+- **difficulty target:** β₆₅ < 4284369×256²¹ — the block hash above reads below this target — nBits 18415fd1 — mantissa 4284369 shifted up 21 bytes: the target 0000000000000000415fd1000000000000000000000000000000000000000000, which a valid block hash must read below (65 leading zero bits) — difficulty 16,818,461,371 (relative to the genesis block)
 - **nonce:** η 1936185103
 
 ## § 109 — First standard OP_RETURN
 
-Transaction id, as prose: *Lounge reason its fun human. Spoon may get dolphin. Its picture could tide crunch. A smooth claim is elegant. Our humble pride farm police. Infant almost set its giraffe. Limit ensure our matter to riot per a gas.*
+Transaction id, as prose: ⌘²⁵⁶ *Lounge reason its fun human. Spoon may get dolphin. Its picture could tide crunch. A smooth claim is elegant. Our humble pride farm police. Infant almost set its giraffe. Limit ensure our matter to riot per a gas.*
 
 - **version:** 1
 - **input 1:** spends output 1 of `8e40bb1db9029dd648432c56c295788221c1dd97fe1dbee52f767d605fba58c8`
@@ -45,5 +45,8 @@ Transaction id, as prose: *Lounge reason its fun human. Spoon may get dolphin. I
 bytes (decodable with the [glossia](https://crates.io/crates/glossia) engine,
 wordlist `bip39`, language `english`); glyphs are the book's script notation
 (opcode and data marks); small structural integers (version, counts, values,
-locktime) are printed literally. See [/llms.txt](https://bookofbitcoin.io/llms.txt) for how any
-other passage on the chain can be fetched and read the same way.
+locktime) are printed literally. A block hash reads ⓪ⁿ ⌘ᵐ — n leading
+proof-of-work zero bits, then the remaining m = 256 − n bits of the
+double-SHA256 (⌘, OP_HASH256), Glossia-encoded as ⌈m/8⌉ bytes. See
+[/llms.txt](https://bookofbitcoin.io/llms.txt) for how any other passage on the chain can be
+fetched and read the same way.

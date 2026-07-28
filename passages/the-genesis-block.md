@@ -14,19 +14,19 @@
 
 ## Chapter frontispiece — block 0
 
-Block hash, as prose: *Husband behave actor to hospital. Brass ride alley via our stairs for effort. Our indoor worry get palace. Cradle double to nurse per clip. Our ancient today too culture craft.*
+Block hash, as prose: ⓪⁴³ ⌘²¹³ *Husband behave actor to hospital. Brass ride alley via our stairs for effort. Our indoor worry get palace. Cradle double to nurse per clip. Our ancient today too culture craft.*
 
 - **version:** v1 — block version 1 (0x00000001) — pre-BIP9 integer form
-- **previous block:** ∅ (no earlier block — this is the genesis block)
+- **previous block:** ⓪²⁵⁶ (no earlier block — this is the genesis block; all 256 bits zero)
 - **merkle root:** ⋔ Its desert buyer leg visual. Raise may float twelve. Tortoise ago get dinosaur. A desert phrase seed wish. Lot may assume athlete to bacon. Eye mushroom pony for image per pigeon. Monkey is junior to divorce.
   - hex: `4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b`
 - **timestamp:** 2009-01-03 18:15 UTC
-- **difficulty target:** β₃₂ — nBits 1d00ffff — a valid block hash must read below 00000000ffff0000000000000000000000000000000000000000000000000000 (32 leading zero bits) — difficulty 1 (relative to the genesis block)
+- **difficulty target:** β₃₂ < 65535×256²⁶ — the block hash above reads below this target — nBits 1d00ffff — mantissa 65535 shifted up 26 bytes: the target 00000000ffff0000000000000000000000000000000000000000000000000000, which a valid block hash must read below (32 leading zero bits) — difficulty 1 (relative to the genesis block)
 - **nonce:** η 2083236893
 
 ## § 1 — The Genesis Block
 
-Transaction id, as prose: *Its desert buyer leg visual. Raise may float twelve. Tortoise ago get dinosaur. A desert phrase seed wish. Lot may assume athlete to bacon. Eye mushroom pony for image per pigeon. Monkey is junior to divorce.*
+Transaction id, as prose: ⌘²⁵⁶ *Its desert buyer leg visual. Raise may float twelve. Tortoise ago get dinosaur. A desert phrase seed wish. Lot may assume athlete to bacon. Eye mushroom pony for image per pigeon. Monkey is junior to divorce.*
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
@@ -42,5 +42,8 @@ Transaction id, as prose: *Its desert buyer leg visual. Raise may float twelve. 
 bytes (decodable with the [glossia](https://crates.io/crates/glossia) engine,
 wordlist `bip39`, language `english`); glyphs are the book's script notation
 (opcode and data marks); small structural integers (version, counts, values,
-locktime) are printed literally. See [/llms.txt](https://bookofbitcoin.io/llms.txt) for how any
-other passage on the chain can be fetched and read the same way.
+locktime) are printed literally. A block hash reads ⓪ⁿ ⌘ᵐ — n leading
+proof-of-work zero bits, then the remaining m = 256 − n bits of the
+double-SHA256 (⌘, OP_HASH256), Glossia-encoded as ⌈m/8⌉ bytes. See
+[/llms.txt](https://bookofbitcoin.io/llms.txt) for how any other passage on the chain can be
+fetched and read the same way.

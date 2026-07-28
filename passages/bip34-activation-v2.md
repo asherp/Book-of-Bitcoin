@@ -14,20 +14,20 @@
 
 ## Chapter frontispiece — block 227,931
 
-Block hash, as prose: *Retreat doctor check to turn. Punch set member via our egg out demand. Knife focus to confirm for elevator. Its unique cop is useless. Its salad are luxury. Region may engage scene.*
+Block hash, as prose: ⓪⁵⁴ ⌘²⁰² *Retreat doctor check to turn. Punch set member via our egg out demand. Knife focus to confirm for elevator. Its unique cop is useless. Its salad are luxury. Region may engage scene.*
 
 - **version:** v2 — block version 2 (0x00000002) — pre-BIP9 integer form
-- **previous block:** h Its stomach may get ethics. Cow remain our foster laptop to erosion. Fyi long set day. Need see that popular vintage. Raccoon evolve hotel to praise. A lonely son once dog a dig.
+- **previous block:** ⓪⁵⁴ ⌘²⁰² Its stomach may get ethics. Cow remain our foster laptop to erosion. Fyi long set day. Need see that popular vintage. Raccoon evolve hotel to praise. A lonely son once dog a dig.
   - hex: `0000000000000251b3834c8d5b9c041bfaa0fedb93c0f16099d0072ed6b629d6`
 - **merkle root:** ⋔ River sentence its busy plate. Sin may develop scorpion. Tide ago topple gloom. Pan may suggest wonder. Sketch ought term a polar minor. Our lot about write a century. Tag holiday lecture to analyst for member to parade.
   - hex: `b5a210f067b674af84fe0348e34ef71d65f41f7b6329777882c913d37c7cd8ba`
 - **timestamp:** 2013-03-25 07:30 UTC
-- **difficulty target:** β₅₄ — nBits 1a02816e — a valid block hash must read below 00000000000002816e0000000000000000000000000000000000000000000000 (54 leading zero bits) — difficulty 6,695,826 (relative to the genesis block)
+- **difficulty target:** β₅₄ < 164206×256²³ — the block hash above reads below this target — nBits 1a02816e — mantissa 164206 shifted up 23 bytes: the target 00000000000002816e0000000000000000000000000000000000000000000000, which a valid block hash must read below (54 leading zero bits) — difficulty 6,695,826 (relative to the genesis block)
 - **nonce:** η 2483358230
 
 ## § 1 — BIP34 activation (v2)
 
-Transaction id, as prose: *Fat may set more cupboard. The eternal cigar get safe. Spoil may spy to bring. Dune board portion via minimum. Amateur may hawk lady to pattern. Alarm arrest crop for a possible brief. The ankle may abandon pan.*
+Transaction id, as prose: ⌘²⁵⁶ *Fat may set more cupboard. The eternal cigar get safe. Spoil may spy to bring. Dune board portion via minimum. Amateur may hawk lady to pattern. Alarm arrest crop for a possible brief. The ankle may abandon pan.*
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
@@ -43,5 +43,8 @@ Transaction id, as prose: *Fat may set more cupboard. The eternal cigar get safe
 bytes (decodable with the [glossia](https://crates.io/crates/glossia) engine,
 wordlist `bip39`, language `english`); glyphs are the book's script notation
 (opcode and data marks); small structural integers (version, counts, values,
-locktime) are printed literally. See [/llms.txt](https://bookofbitcoin.io/llms.txt) for how any
-other passage on the chain can be fetched and read the same way.
+locktime) are printed literally. A block hash reads ⓪ⁿ ⌘ᵐ — n leading
+proof-of-work zero bits, then the remaining m = 256 − n bits of the
+double-SHA256 (⌘, OP_HASH256), Glossia-encoded as ⌈m/8⌉ bytes. See
+[/llms.txt](https://bookofbitcoin.io/llms.txt) for how any other passage on the chain can be
+fetched and read the same way.

@@ -14,20 +14,20 @@
 
 ## Chapter frontispiece — block 666,666
 
-Block hash, as prose: *Milk away get our black lens. Van cave its marble offer. Swift base our pass. Arm get its cheap taste. Spirit quarter an arch.*
+Block hash, as prose: ⓪⁷⁶ ⌘¹⁸⁰ *Milk away get our black lens. Van cave its marble offer. Swift base our pass. Arm get its cheap taste. Spirit quarter an arch.*
 
 - **version:** vaccio abandon — block version 0x20000000 — BIP9 version-bits form; accio abandon — no version rolling; no soft-fork signals
-- **previous block:** h A pet maximum demand spray. The tiny daughter allow our excuse to scrub. Now see bulb per hammer. Board pride either trap to artist.
+- **previous block:** ⓪⁷⁶ ⌘¹⁸⁰ A pet maximum demand spray. The tiny daughter allow our excuse to scrub. Now see bulb per hammer. Board pride either trap to artist.
   - hex: `0000000000000000000d3ac711558b41b477e4d2c178aa816f267ee9e82c71a3`
 - **merkle root:** ⋔ Hobby set our awful moment. Apology may set broom. Cube tunnel salmon to snack for coffee. Tap perfect firm to ritual via its home chef. Device giggle the vast caution. Bed too excite brown. Map not settle rookie. Our abandon is pop.
   - hex: `f0ee88d161a79234fe61e5d109daa8ab2b8ca605cdf3a5fa6acc31853b16426c`
 - **timestamp:** 2021-01-18 23:28 UTC
-- **difficulty target:** β₇₆ — nBits 170da8a1 — a valid block hash must read below 0000000000000000000da8a10000000000000000000000000000000000000000 (76 leading zero bits) — difficulty 20,607,418,304,386 (relative to the genesis block)
+- **difficulty target:** β₇₆ < 895137×256²⁰ — the block hash above reads below this target — nBits 170da8a1 — mantissa 895137 shifted up 20 bytes: the target 0000000000000000000da8a10000000000000000000000000000000000000000, which a valid block hash must read below (76 leading zero bits) — difficulty 20,607,418,304,386 (relative to the genesis block)
 - **nonce:** η 1795946055
 
 ## § 3 — Romans 12:21
 
-Transaction id, as prose: *An okay tap is viable. Pop oblige our song. A fresh clock harbor to pay. Lip real speak our valid assist. Coconut author to swim for yes. Our endless toe ignore to divert. Garlic may picture map. Each bet is merry. The pretty tomato is pop to parade.*
+Transaction id, as prose: ⌘²⁵⁶ *An okay tap is viable. Pop oblige our song. A fresh clock harbor to pay. Lip real speak our valid assist. Coconut author to swim for yes. Our endless toe ignore to divert. Garlic may picture map. Each bet is merry. The pretty tomato is pop to parade.*
 
 - **version:** 1
 - **input 1:** spends output 4 of `5462b136cb81f5d200656d92240ccf60ad8428092d7fb99c91efde17d03a13ff`
@@ -51,5 +51,8 @@ Transaction id, as prose: *An okay tap is viable. Pop oblige our song. A fresh c
 bytes (decodable with the [glossia](https://crates.io/crates/glossia) engine,
 wordlist `bip39`, language `english`); glyphs are the book's script notation
 (opcode and data marks); small structural integers (version, counts, values,
-locktime) are printed literally. See [/llms.txt](https://bookofbitcoin.io/llms.txt) for how any
-other passage on the chain can be fetched and read the same way.
+locktime) are printed literally. A block hash reads ⓪ⁿ ⌘ᵐ — n leading
+proof-of-work zero bits, then the remaining m = 256 − n bits of the
+double-SHA256 (⌘, OP_HASH256), Glossia-encoded as ⌈m/8⌉ bytes. See
+[/llms.txt](https://bookofbitcoin.io/llms.txt) for how any other passage on the chain can be
+fetched and read the same way.

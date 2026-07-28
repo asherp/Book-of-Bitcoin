@@ -14,20 +14,20 @@
 
 ## Chapter frontispiece — block 938,903
 
-Block hash, as prose: *February may cram a humble paper. Assist juice the busy parent. Its retreat direct issue. Safe provide tool to item. The lot slow set absurd.*
+Block hash, as prose: ⓪⁷⁹ ⌘¹⁷⁷ *February may cram a humble paper. Assist juice the busy parent. Its retreat direct issue. Safe provide tool to item. The lot slow set absurd.*
 
 - **version:** vevanesca acid 10000 — block version 0x20792010 — BIP9 version-bits form; version-rolling bits 0x03c9 (BIP320 scratch entropy) as evanesca acid; signaling bit 4
-- **previous block:** h Warfare require to bring for width. Our action near cram magnet. Recipe may bring swarm to raise. Million swap the exhibit. Our seat may set an absurd.
+- **previous block:** ⓪⁷⁹ ⌘¹⁷⁷ Warfare require to bring for width. Our action near cram magnet. Recipe may bring swarm to raise. Million swap the exhibit. Our seat may set an absurd.
   - hex: `0000000000000000000112e693b6cb98d86d87a3b32f8c0c272960fd70e016f7`
 - **merkle root:** ⋔ Sort empty face to organ. Chief may get eyebrow. Its indoor catalog lounge chicken. Throw limit embrace to buffalo. Our album not pluck our gravity. Lot vanish tube to dress. Our curious recipe get the immune theme per ban.
   - hex: `6f5c675f5321a82b1e66357d413b88f44085f744841fc19ca27c324e462589cf`
 - **timestamp:** 2026-03-01 18:41 UTC
-- **difficulty target:** β₇₉ — nBits 1701f303 — a valid block hash must read below 00000000000000000001f3030000000000000000000000000000000000000000 (79 leading zero bits) — difficulty 144,398,401,518,101 (relative to the genesis block)
+- **difficulty target:** β₇₉ < 127747×256²⁰ — the block hash above reads below this target — nBits 1701f303 — mantissa 127747 shifted up 20 bytes: the target 00000000000000000001f3030000000000000000000000000000000000000000, which a valid block hash must read below (79 leading zero bits) — difficulty 144,398,401,518,101 (relative to the genesis block)
 - **nonce:** η 2599598768
 
 ## § 1 — First BIP110 signaling block
 
-Transaction id, as prose: *Riot repair pride to apology. Business may picture cut. Its mixed winner matter sock. Program text eyebrow to camera. Cabbage may word our young out. Its entire cop govern element. Gain butter gauge to divorce.*
+Transaction id, as prose: ⌘²⁵⁶ *Riot repair pride to apology. Business may picture cut. Its mixed winner matter sock. Program text eyebrow to camera. Cabbage may word our young out. Its entire cop govern element. Gain butter gauge to divorce.*
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
@@ -114,5 +114,8 @@ Transaction id, as prose: *Riot repair pride to apology. Business may picture cu
 bytes (decodable with the [glossia](https://crates.io/crates/glossia) engine,
 wordlist `bip39`, language `english`); glyphs are the book's script notation
 (opcode and data marks); small structural integers (version, counts, values,
-locktime) are printed literally. See [/llms.txt](https://bookofbitcoin.io/llms.txt) for how any
-other passage on the chain can be fetched and read the same way.
+locktime) are printed literally. A block hash reads ⓪ⁿ ⌘ᵐ — n leading
+proof-of-work zero bits, then the remaining m = 256 − n bits of the
+double-SHA256 (⌘, OP_HASH256), Glossia-encoded as ⌈m/8⌉ bytes. See
+[/llms.txt](https://bookofbitcoin.io/llms.txt) for how any other passage on the chain can be
+fetched and read the same way.

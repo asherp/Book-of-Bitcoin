@@ -40,8 +40,13 @@ scheme, and how to read passages beyond this curated set.
 - [First native SegWit outputs](./first-native-segwit-outputs.md) — III β31 ■1345 §533
 - [First P2WSH reveal (2-of-3)](./first-p2wsh-reveal-2-of-3.md) — IV β1 ■1 §411
 - [500K block milestone](./500k-block-milestone.md) — III β40 ■1377 §1
+- [Difficulty −15.13%](./difficulty-1513.md) — III β66 ■1345 §1
+- [Difficulty −15.95%](./difficulty-1595.md) — III β101 ■1345 §1
 - [The Third Halving](./the-third-halving.md) — IV β1 ■1 §1
+- [Difficulty −16.05%](./difficulty-1605.md) — IV β13 ■1009 §1
+- [Difficulty −15.97%](./difficulty-1597.md) — IV β28 ■1009 §1
 - [Taproot lock-in](./taproot-lock-in.md) — IV β29 ■838 §1
+- [Difficulty −27.94%](./difficulty-2794.md) — IV β30 ■1009 §1
 - [Romans 12:21](./romans-12-21.md) — IV β19 ■379 §3
 - [Taproot activation](./taproot-activation.md) — IV β40 ■1009 §2
 - [First Ordinals inscription](./first-ordinals-inscription.md) — IV β69 ■343 §2323

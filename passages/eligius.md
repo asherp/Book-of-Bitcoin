@@ -14,20 +14,20 @@
 
 ## Chapter frontispiece — block 139,690
 
-Block hash, as prose: *Ban add eyebrow to space. Our cow are sunny. Orphan may prefer atom. Wheat away detect a parent. Volume vanish distance inside rival. Page see vintage to scare.*
+Block hash, as prose: ⓪⁵⁵ ⌘²⁰¹ *Ban add eyebrow to space. Our cow are sunny. Orphan may prefer atom. Wheat away detect a parent. Volume vanish distance inside rival. Page see vintage to scare.*
 
 - **version:** v1 — block version 1 (0x00000001) — pre-BIP9 integer form
-- **previous block:** h Lamp saddle pride to biology. Marriage evoke walnut via our slab for glue. Yes used our fatal subway. A rural speed wreck to pay. A myself. Alien is cinnamon to screen.
+- **previous block:** ⓪⁵³ ⌘²⁰³ Lamp saddle pride to biology. Marriage evoke walnut via our slab for glue. Yes used our fatal subway. A rural speed wreck to pay. A myself. Alien is cinnamon to screen.
   - hex: `00000000000006234506928c3fa2d91b6c4ef9fd6357b63d9c84380baabad77c`
 - **merkle root:** ⋔ Shine may see industry to slush. An awkward vehicle strike series. A bid far build our moon. Cow pave to thrive. A big bit may scatter to train. Sky twice differ the analyst. Some purpose are old. Sense say drift to scale for scale.
   - hex: `06b085feeb6168ce5508eed13ace079c7086f2d11db00031ae1f6f083167eec5`
 - **timestamp:** 2011-08-05 08:42 UTC
-- **difficulty target:** β₅₂ — nBits 1a08e1e5 — a valid block hash must read below 00000000000008e1e50000000000000000000000000000000000000000000000 (52 leading zero bits) — difficulty 1,888,787 (relative to the genesis block)
+- **difficulty target:** β₅₂ < 582117×256²³ — the block hash above reads below this target — nBits 1a08e1e5 — mantissa 582117 shifted up 23 bytes: the target 00000000000008e1e50000000000000000000000000000000000000000000000, which a valid block hash must read below (52 leading zero bits) — difficulty 1,888,787 (relative to the genesis block)
 - **nonce:** η 2398400105
 
 ## § 1 — Eligius
 
-Transaction id, as prose: *A range due knock its flag. Pop prosper our early couch. Its response ask zoo. Guy allow anxiety to access. Our red picnic get bonus. Cow sing edit to its solar rub. Guy may extend legend to embrace. Cop omit to expect. Twenty may gas son.*
+Transaction id, as prose: ⌘²⁵⁶ *A range due knock its flag. Pop prosper our early couch. Its response ask zoo. Guy allow anxiety to access. Our red picnic get bonus. Cow sing edit to its solar rub. Guy may extend legend to embrace. Cop omit to expect. Twenty may gas son.*
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
@@ -273,5 +273,8 @@ Transaction id, as prose: *A range due knock its flag. Pop prosper our early cou
 bytes (decodable with the [glossia](https://crates.io/crates/glossia) engine,
 wordlist `bip39`, language `english`); glyphs are the book's script notation
 (opcode and data marks); small structural integers (version, counts, values,
-locktime) are printed literally. See [/llms.txt](https://bookofbitcoin.io/llms.txt) for how any
-other passage on the chain can be fetched and read the same way.
+locktime) are printed literally. A block hash reads ⓪ⁿ ⌘ᵐ — n leading
+proof-of-work zero bits, then the remaining m = 256 − n bits of the
+double-SHA256 (⌘, OP_HASH256), Glossia-encoded as ⌈m/8⌉ bytes. See
+[/llms.txt](https://bookofbitcoin.io/llms.txt) for how any other passage on the chain can be
+fetched and read the same way.

@@ -14,20 +14,20 @@
 
 ## Chapter frontispiece — block 420,000
 
-Block hash, as prose: *Peanut wing bracket to fold. Our clog bounce combine. Its pulp maze assault. Check see an erosion. Security yes field cow. A bed is able. Some tackle slot to avoid.*
+Block hash, as prose: ⓪⁷⁰ ⌘¹⁸⁶ *Peanut wing bracket to fold. Our clog bounce combine. Its pulp maze assault. Check see an erosion. Security yes field cow. A bed is able. Some tackle slot to avoid.*
 
 - **version:** vaccio abandon — block version 0x20000000 — BIP9 version-bits form; accio abandon — no version rolling; no soft-fork signals
-- **previous block:** h Its sorry alien grunt payment. Beef may scheme fiber. Its pumpkin rebel cop. Our brisk lap may open. Our guy endorse to unfold. Mass grow its hidden son. Our low pie adapt blossom.
+- **previous block:** ⓪⁷⁰ ⌘¹⁸⁶ Its sorry alien grunt payment. Beef may scheme fiber. Its pumpkin rebel cop. Our brisk lap may open. Our guy endorse to unfold. Mass grow its hidden son. Our low pie adapt blossom.
   - hex: `000000000000000003035bc31911d3eea46c8a23b36d6d558141d1d09cc960cf`
 - **merkle root:** ⋔ The wheel too see language. Son may predict main. A son oppose soap. Reform get turtle to our hidden lip. The over bulk may cave layer. Rebel around fruit map. Our inner mother see history to floor. Ski may mushroom the army via its divorce.
   - hex: `028323a5bcacb0057274ee0a4366e5671278bc736b57176d9bb929c3a69e0ffa`
 - **timestamp:** 2016-07-09 16:46 UTC
-- **difficulty target:** β₆₉ — nBits 180526fd — a valid block hash must read below 00000000000000000526fd000000000000000000000000000000000000000000 (69 leading zero bits) — difficulty 213,398,925,331 (relative to the genesis block)
+- **difficulty target:** β₆₉ < 337661×256²¹ — the block hash above reads below this target — nBits 180526fd — mantissa 337661 shifted up 21 bytes: the target 00000000000000000526fd000000000000000000000000000000000000000000, which a valid block hash must read below (69 leading zero bits) — difficulty 213,398,925,331 (relative to the genesis block)
 - **nonce:** η 2193437364
 
 ## § 1 — The Second Halving
 
-Transaction id, as prose: *Stairs fringe dolphin to island. Soda see another pudding. Butter father to enrich. Team warm a crack. Cook yes abandon mountain. Our bag always see its luggage. A bus escape gift to bubble. Its theme may see cop.*
+Transaction id, as prose: ⌘²⁵⁶ *Stairs fringe dolphin to island. Soda see another pudding. Butter father to enrich. Team warm a crack. Cook yes abandon mountain. Our bag always see its luggage. A bus escape gift to bubble. Its theme may see cop.*
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
@@ -43,5 +43,8 @@ Transaction id, as prose: *Stairs fringe dolphin to island. Soda see another pud
 bytes (decodable with the [glossia](https://crates.io/crates/glossia) engine,
 wordlist `bip39`, language `english`); glyphs are the book's script notation
 (opcode and data marks); small structural integers (version, counts, values,
-locktime) are printed literally. See [/llms.txt](https://bookofbitcoin.io/llms.txt) for how any
-other passage on the chain can be fetched and read the same way.
+locktime) are printed literally. A block hash reads ⓪ⁿ ⌘ᵐ — n leading
+proof-of-work zero bits, then the remaining m = 256 − n bits of the
+double-SHA256 (⌘, OP_HASH256), Glossia-encoded as ⌈m/8⌉ bytes. See
+[/llms.txt](https://bookofbitcoin.io/llms.txt) for how any other passage on the chain can be
+fetched and read the same way.

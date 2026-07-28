@@ -14,20 +14,20 @@
 
 ## Chapter frontispiece — block 840,000
 
-Block hash, as prose: *Its pitch may burst mandate. Pop lend to claim. Cow reflect cap since cable. Guy inflict scissors to sail. Orient list light per trim. The advice due adapt lap.*
+Block hash, as prose: ⓪⁷⁸ ⌘¹⁷⁸ *Its pitch may burst mandate. Pop lend to claim. Cow reflect cap since cable. Guy inflict scissors to sail. Orient list light per trim. The advice due adapt lap.*
 
 - **version:** vmuffliato practice — block version 0x2a5fe000 — BIP9 version-bits form; version-rolling bits 0x52ff (BIP320 scratch entropy) as muffliato practice; no soft-fork signals
-- **previous block:** h Process picnic cattle to athlete. Chaos may get stove. Fee see health to spawn. Help noise member via hand. Sport may clown a comic absurd.
+- **previous block:** ⓪⁷⁹ ⌘¹⁷⁷ Process picnic cattle to athlete. Chaos may get stove. Fee see health to spawn. Help noise member via hand. Sport may clown a comic absurd.
   - hex: `0000000000000000000172014ba58d66455762add0512355ad651207918494ab`
 - **merkle root:** ⋔ Exhibit essay rub into jeans. Essence is far during wish. Its reason cable dolphin. Caution off see world. Anchor is antique to tumble. Street page energy out corn. Pond calm hire to gas.
   - hex: `031b417c3a1828ddf3d6527fc210daafcc9218e81f98257f88d4d43bd7a5894f`
 - **timestamp:** 2024-04-20 00:09 UTC
-- **difficulty target:** β₇₈ — nBits 17034219 — a valid block hash must read below 0000000000000000000342190000000000000000000000000000000000000000 (78 leading zero bits) — difficulty 86,388,558,925,171 (relative to the genesis block)
+- **difficulty target:** β₇₈ < 213529×256²⁰ — the block hash above reads below this target — nBits 17034219 — mantissa 213529 shifted up 20 bytes: the target 0000000000000000000342190000000000000000000000000000000000000000, which a valid block hash must read below (78 leading zero bits) — difficulty 86,388,558,925,171 (relative to the genesis block)
 - **nonce:** η 3932395645
 
 ## § 1 — The Fourth Halving
 
-Transaction id, as prose: *Its sorry noodle plate tax. The vacant front see faculty. Cherry ago rally torch. Lizard may set moment. Fiber husband to mother per purchase. Quantum suffer tent to nothing. Praise trust an apology. The hub may abandon pan.*
+Transaction id, as prose: ⌘²⁵⁶ *Its sorry noodle plate tax. The vacant front see faculty. Cherry ago rally torch. Lizard may set moment. Fiber husband to mother per purchase. Quantum suffer tent to nothing. Praise trust an apology. The hub may abandon pan.*
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
@@ -52,5 +52,8 @@ Transaction id, as prose: *Its sorry noodle plate tax. The vacant front see facu
 bytes (decodable with the [glossia](https://crates.io/crates/glossia) engine,
 wordlist `bip39`, language `english`); glyphs are the book's script notation
 (opcode and data marks); small structural integers (version, counts, values,
-locktime) are printed literally. See [/llms.txt](https://bookofbitcoin.io/llms.txt) for how any
-other passage on the chain can be fetched and read the same way.
+locktime) are printed literally. A block hash reads ⓪ⁿ ⌘ᵐ — n leading
+proof-of-work zero bits, then the remaining m = 256 − n bits of the
+double-SHA256 (⌘, OP_HASH256), Glossia-encoded as ⌈m/8⌉ bytes. See
+[/llms.txt](https://bookofbitcoin.io/llms.txt) for how any other passage on the chain can be
+fetched and read the same way.
