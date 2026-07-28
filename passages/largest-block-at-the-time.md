@@ -37,7 +37,7 @@ Transaction id, as prose: *Limb is ancient to soap. Vintage include our universe
 - **output 1:** 6.25875047 ₿
   - script: ⧉ ⌖ h²⁰ Toe host pigeon to release. Box may orient sausage. Its ocean double warrior. An artist are bleak. Check get soccer to blossom. ≡ ∇
 - **output 2:** 0 ₿
-  - script: ¶ ³⁶ A war pretty ask kitten. Hope may dwarf salmon to hybrid. Light see a door. Sky far oblige strategy. Bed ahead set guitar. Our upgrade ago get kidney. The sure pay is easy. Chair gas response to hill. Yes unlock to allow out magnet per cricket. Its seed may scale ban.
+  - script: ¶ ⋔w h³² A cute pelican set tennis. A retreat get dolphin to camera via slot to twin. Action recycle jar per rule. Its unfair pop ago carry base. Copy forward to remind out warfare to addict for seed. Nod often thumb theme.
 - **locktime:** □ — no locktime — final with respect to time
 
 ### Witness footnotes

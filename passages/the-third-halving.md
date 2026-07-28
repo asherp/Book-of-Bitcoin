@@ -37,7 +37,7 @@ Transaction id, as prose: *Gravity circle its pottery to soul. Echo see grain fo
 - **output 1:** 7.15968084 ₿
   - script: ⧉ ⌖ h²⁰ Balcony set tennis to case. Miracle may gesture woman. Its boy remove lot. Our eternal wall may laugh to enter. Broccoli may toss its goat. ≡ ∇
 - **output 2:** 0 ₿
-  - script: ¶ ³⁶ Its tax pretty ask kitten. Son frequent judge to train. A cop is raw. Sugar route onion to evidence. Track may frown inquiry per blast. The program move to destroy. Each anchor is young. The humble spray pulse analyst. Mobile may erase abandon.
+  - script: ¶ ⋔w h³² Comic rough get our vicious flock. Hockey set furnace to estate. Our cheap infant far conduct denial. Arm sting a silent bulk. A loud zero set danger. Tea truly get strategy. The aerobic elbow plate length.
 - **output 3:** 0 ₿
   - script: ¶ ³⁶ “0	XDp”
 - **locktime:** □ — no locktime — final with respect to time

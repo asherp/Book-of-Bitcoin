@@ -36,7 +36,7 @@ Transaction id, as prose: *A lab due case its flame. Ear define our bright metho
 - **output 1:** 12.55159445 ₿
   - script: ⧉ ⌖ h²⁰ Day box more keen post. Casino rain some sock to run. Leisure crouch to derive. Symbol may tone some way. ≡ ∇
 - **output 2:** 0 ₿
-  - script: ¶ ³⁶ Lie pretty ask a kiwi. Practice duck our body. A famous tilt name daring. Pop may develop paper to island. The rigid upset is famous. An excess divide entry. Bus trim whisper to story via magnet. Tiger now scale due.
+  - script: ¶ ⋔w h³² Start get peanut to arrest. Power valve to enact. Bridge ago bundle exit. Robot may table wasp. Power point to cable per place. Month set violin to wool. Hero drill a valley. The slide may theme pan.
 - **locktime:** □ — no locktime — final with respect to time
 
 ---

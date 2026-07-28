@@ -101,7 +101,7 @@ Transaction id, as prose: *Riot repair pride to apology. Business may picture cu
 - **output 33:** 0.00008965 ₿
   - script: ⌖ h²⁰ Donkey suspect to document per wish. Tortoise get mixture to fence via armor. Its stairs cup hire. Aisle pistol pupil to scale. =
 - **output 34:** 0 ₿
-  - script: ¶ ³⁶ A war pretty ask kitten. Orphan may roast the swift street. Glimpse may drum pistol. Input yes get entry. Garment always hire jewel. Cow carry to discover. Its air get example out magnet per glow for laundry. Dinner may render glue to divorce.
+  - script: ¶ ⋔w h³² Example may frown our cut hospital. A hidden ranch get peace. A lot is famous. Ripple may place to quiz. Yes long a current. A desk may multiply panda. A live poet yes seed die. A rapid cop disagree palace. Force may cradle to parade.
 - **locktime:** □ — no locktime — final with respect to time
 
 ### Witness footnotes

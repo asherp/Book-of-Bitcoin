@@ -37,7 +37,7 @@ Transaction id, as prose: *The stock unveil to adjust. Chaos may find horror. Si
 - **output 1:** 15.89351625 ₿
   - script: ⌖ h²⁰ Card get its kingdom to fancy. Cop leave grocery per result. Industry agree task to matrix via rib. Pluck spend the very way. =
 - **output 2:** 0 ₿
-  - script: ¶ ³⁶ Its tax pretty ask kitten. Cage set our antique place. Apple ago get elephant. A subject gossip set doll. Pop earn mother to case. Bullet grid angle for an easy blast. Gain is copper to chimney. Yes install to borrow for fire. The diamond abandon get cap.
+  - script: ¶ ⋔w h³² Pop avoid lumber to spray. An aim is physical. A hip raven park to pencil. Its elite muscle monitor rebel. Love carry arm to quarter. Blood neglect to deny. Minimum may clog ozone via a length.
 - **locktime:** □ — no locktime — final with respect to time
 
 ### Witness footnotes

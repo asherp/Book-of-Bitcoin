@@ -39,7 +39,7 @@ Transaction id, as prose: *Its record may jelly display. Cow cool our safe. Sir 
 - **output 2:** 0 ₿
   - script: ¶ ↧⁴¹ “RSKBLOCK:”
 - **output 3:** 0 ₿
-  - script: ¶ ³⁶ Due pretty ask its set kitten. Cow expand to cancel out garage. Its space almost label some travel. Glass kite our idle now to program. Good seed a patient next. Army sting the unique pitch to brush. A someone. Our conduct scale son.
+  - script: ¶ ⋔w h³² Its chimney far see our mountain. Its quick trial address dignity to video. Cousin is rural out reunion. Slide sting rate to thumb. The yes is spatial. Son enjoy alcohol to helmet. Our walnut fan may attend travel per blast via its gas.
 - **locktime:** □ — no locktime — final with respect to time
 
 ### Witness footnotes

@@ -36,7 +36,7 @@ Transaction id, as prose: *Its ill yes little get penalty. Our legal ear is mutu
 - **output 1:** 12.61890202 ₿
   - script: ⌖ h²⁰ A they. Jet may brave bird. Sir cancel language to aunt per police to case out marble. Friend pioneer still to critic. Shallow may equal tea. =
 - **output 2:** 0 ₿
-  - script: ¶ ³⁶ Lie pretty ask a kitten. Our gasp are bright. A seven aspect slim to battle. Its dry monitor bring plunge. The first disorder season goat. Tax may require eyebrow to carpet. Base may see earth. A club load essay. Quiz not scale row.
+  - script: ¶ ⋔w h³² Copy mix girl to mammal. Tourist may answer canyon. A cop is shy. Asthma square produce to panic. Three may see a rare fortune. Chunk badge an annual pencil to noodle. Scrap pledge our subject theme.
 - **locktime:** □ — no locktime — final with respect to time
 
 ---

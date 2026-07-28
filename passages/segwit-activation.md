@@ -37,7 +37,7 @@ Transaction id, as prose: *Recall drum insect to walnut. Design set lens before 
 - **output 1:** 14.62514269 ₿
   - script: ⧉ ⌖ h²⁰ Its club may lunch primary. Pop flee to cap. Its sunny crouch ski cigar. Frost tunnel rule to hand. Panda is crazy per our object. ≡ ∇
 - **output 2:** 0 ₿
-  - script: ¶ ³⁶ “vXiAG&M ”
+  - script: ¶ ⋔w h³² History is tiny to lemon. Uniform first allow giant. Choice ago elbow crash. Pan else see artist. Our page not set our adult. Its angry skull network category. Slogan approve turn to kiss for number to abandon.
 - **locktime:** □ — no locktime — final with respect to time
 
 ### Witness footnotes

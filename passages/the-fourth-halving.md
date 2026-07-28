@@ -39,7 +39,7 @@ Transaction id, as prose: *Its sorry noodle plate tax. The vacant front see facu
 - **output 2:** 0 ₿
   - script: ¶ ⁴¹ “RSKBLOCK:R”
 - **output 3:** 0 ₿
-  - script: ¶ ³⁶ Its tax pretty ask kiwi. The awkward pop achieve ozone. August ago oil accident. Yellow may set luggage. Decade sing to squeeze per pigeon. The silent income screen fall. Slush offer our frozen judge to rose. Tooth may see mom. Its abandon are far.
+  - script: ¶ ⋔w h³² Mask is abstract to its exercise. Due always smooth a pot. Out may absent zebra to draw. Our brisk gorilla may hawk. Each son is false. Tomorrow are rich to general. Cinnamon tower its erosion per sir. The cop put rough. Task may include our electric abandon.
 - **locktime:** □ — no locktime — final with respect to time
 
 ### Witness footnotes
