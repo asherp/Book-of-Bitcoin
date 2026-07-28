@@ -3,8 +3,9 @@
 // btc-fontscale.js — the reader's type sizes, one number per region of the
 // page: the body (the prose, its in-line notes and quoted voices, and the
 // head matter's hash prose -- display type like the chapter title never
-// scales), the sigla (the opcode glyphs, push marks and data letters set
-// inline in that prose), the margins (citations, amounts, forward cites),
+// scales), the sigla (the opcode glyphs and push marks set inline in that
+// prose -- not the data-type letters, which name what the prose carries and
+// so stay at its size), the margins (citations, amounts, forward cites),
 // the witness footnotes, and the notation key. Each region beyond the body
 // FOLLOWS the body until the reader deliberately diverges it -- a page reads
 // coherently by default, and only splits where a preference was actually

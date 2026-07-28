@@ -527,15 +527,20 @@ button:disabled { opacity: .4; cursor: not-allowed; }
    transaction's data is on chain. In the pattern table the same letters go
    plain where a spend introduces them at validation (see .seq.exec .ph). */
 .dt { color: var(--accent); font-style: normal; font-weight: 700; }
-/* The sigla set inline in the reading matter -- opcode glyphs, push marks,
-   data letters, and the small-mono fallback names -- can be sized apart from
-   the prose they punctuate: --scale-sigla-ratio is the sigla scale over the
-   body scale (btc-fontscale.js; 1 while the sigla follow the body), so the
-   marks sit flush with the surrounding text until diverged, then grow or
-   shrink relative to it wherever they appear -- prose, hash lines, witness
-   footnotes. Scoped to the page slide: the notation key sizes its own glyphs
-   from --scale-notation, and must not compound with this. */
-#page-slide .op, #page-slide .dt { font-size: calc(1em * var(--scale-sigla-ratio, 1)); }
+/* The sigla set inline in the reading matter -- the opcode glyphs, the push
+   marks, and the small-mono fallback names for opcodes with no glyph -- can
+   be sized apart from the prose they punctuate: --scale-sigla-ratio is the
+   sigla scale over the body scale (btc-fontscale.js; 1 while the sigla
+   follow the body), so the marks sit flush with the surrounding text until
+   diverged, then grow or shrink relative to it wherever they appear --
+   prose, hash lines, witness footnotes. Scoped to the page slide: the
+   notation key sizes its own glyphs from --scale-notation, and must not
+   compound with this.
+   The data-type letters (.dt -- p s h r w t) are deliberately NOT here.
+   They name what the prose after them carries, so they are the transaction's
+   data speaking, not the script's operations: they stay at the prose's own
+   size and read as part of the sentence. */
+#page-slide .op { font-size: calc(1em * var(--scale-sigla-ratio, 1)); }
 #page-slide .op-name { font-size: calc(.62em * var(--scale-sigla-ratio, 1)); }
 /* A witness footnote is a stack of items; a thin middot separates each, and an
    empty stack item shows as ∅. */
