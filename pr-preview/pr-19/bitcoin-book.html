@@ -1552,13 +1552,20 @@ function renderFrontispiece(header) {
     // like their counterparts in the body prose's mining preamble.
     // β and η each open a copy menu: the compact 4-byte hex, or the display
     // form (the βₙ mark / the decimal nonce).
-    { text: hf.bits, title: hf.bitsTitle, gold: true,
-      menu: { hex: (header.bits >>> 0).toString(16).padStart(8, '0'), label: 'difficulty target', prose: hf.bits } },
+    // The target wears both faces: the gold β mark's subscript is the leading
+    // zero run (the demand, the mining vernacular), and beside it the exact
+    // target as nBits stores it -- mantissa × 256^byte-shift, the superscript
+    // counting the trailing zero bytes. Together they name all 256 bits.
+    hf.bitsExpr
+      ? { text: hf.bitsExpr, mark: hf.bits, markClass: 'fx-mark', gap: true, title: hf.bitsTitle,
+          menu: { hex: (header.bits >>> 0).toString(16).padStart(8, '0'), label: 'difficulty target', prose: `${hf.bits} ${hf.bitsExpr}` } }
+      : { text: hf.bits, title: hf.bitsTitle, gold: true,
+          menu: { hex: (header.bits >>> 0).toString(16).padStart(8, '0'), label: 'difficulty target', prose: hf.bits } },
     // The η mark alone is bold gold; the nonce integer beside it stays plain.
     { text: hf.nonce, mark: 'η', markClass: 'fx-mark', title: hf.nonceTitle,
       menu: { hex: (header.nonce >>> 0).toString(16).padStart(8, '0'), label: 'nonce', prose: hf.nonce } },
   ];
-  for (const { text, title, copy, mark, markClass, gold, sup, supTitle, zeros, menu } of items) {
+  for (const { text, title, copy, mark, markClass, gold, sup, supTitle, zeros, gap, menu } of items) {
     const span = document.createElement('span');
     span.className = gold ? 'cfx cfx-gold' : 'cfx';
     if (mark && copy) {
@@ -1566,12 +1573,14 @@ function renderFrontispiece(header) {
     } else if (mark) {
       // A marked plain field: the mark leads, the value follows -- tight
       // against a numeral (v1, η2573394689), a space before a word form
-      // (v accio library 100). A `menu` makes the mark a copy handle.
+      // (v accio library 100) -- or where `gap` insists on one (β₇₈'s target
+      // expression is a product beside the mark, not a value it prefixes).
+      // A `menu` makes the mark a copy handle.
       const m = document.createElement('span');
       m.className = markClass;
       m.textContent = mark;
       if (menu) attachHashCopy(m, menu.hex, menu.label, menu.prose);
-      span.append(m, (/^\d/.test(text) ? '' : ' ') + text);
+      span.append(m, (gap || !/^\d/.test(text) ? ' ' : '') + text);
       if (title) span.title = title;
     } else {
       span.textContent = text;
@@ -1780,9 +1789,19 @@ function renderBookLeaf() {
   beta.className = 'cfx-gold';
   beta.textContent = hf.bits;
   beta.title = hf.bitsTitle;
-  // Same copy menu as the chapter frontispiece's β: compact hex or the mark.
-  attachHashCopy(beta, (state.header.bits >>> 0).toString(16).padStart(8, '0'), 'difficulty target', hf.bits);
+  // Same copy menu as the chapter frontispiece's β: compact hex or the mark
+  // with its exact m×256ᵉ target expression.
+  attachHashCopy(beta, (state.header.bits >>> 0).toString(16).padStart(8, '0'), 'difficulty target',
+    hf.bitsExpr ? `${hf.bits} ${hf.bitsExpr}` : hf.bits);
   line.append(beta);
+  // The exact target beside the mark, plain against β's gold -- a book IS one
+  // difficulty window, so its leaf states the window's ceiling in full.
+  if (hf.bitsExpr) {
+    const expr = document.createElement('span');
+    expr.textContent = ' ' + hf.bitsExpr;
+    expr.title = hf.bitsTitle;
+    line.append(expr);
+  }
   // Then the chapters the book spans, under the block glyph (■, as references
   // write chapter numbers -- chapters restart at 1 each book, so a full book
   // reads ■1 – ■2,016 and an era's truncated last book ■1 – ■336; an
