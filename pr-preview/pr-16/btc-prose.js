@@ -547,14 +547,10 @@ export function renderScript(hex, collect, { eligible = false, nested = false, p
       if (coinbase && prevOp === 0x6a && t.push.length === 72 && t.push.slice(0, 8).toLowerCase() === 'aa21a9ed') {
         parts.push(
           markToken('⋔<sub>w</sub>', 'witness commitment (BIP141 marker aa21a9ed) — ⌘(witness-tree root ‖ reserved value), the identity hash: every witness in this block, bound to the chain through this coinbase. The root is the preimage — committed here, never written on chain'),
-          // Read like a payment script: the operation glyph leads its datum
-          // (⌖ h²⁰ in P2SH, ⌘ h³² here) -- the line itself says how the
-          // bytes were made. But unlike a lock's ⌖, no ⌘ opcode is written
-          // on chain -- the script only carries the digest -- so the mark
-          // wears the apparatus grey of the push-count superscripts (the
-          // page's own notation), never the gold of chain ink.
-          '<span class="op op-push" title="the identity hash that made the committed bytes — ⌘(witness-tree root ‖ reserved value); the book’s provenance notation, not an opcode written on chain">⌘</span>',
-          dataMark('h', 'the 32 committed bytes — the digest itself; the witness-tree root is its preimage, never written on chain') + pushToken(0, 32),
+          // The ⋔w mark alone names the tree; how the digest was made
+          // (⌘ over root ‖ reserved) lives in the titles and the Notation
+          // key rather than crowding the line.
+          dataMark('h', 'the 32 committed bytes — ⌘(witness-tree root ‖ reserved value); the root is the preimage, never written on chain') + pushToken(0, 32),
           collect(t.push.slice(8)),
         );
         return;
