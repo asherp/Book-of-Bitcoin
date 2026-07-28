@@ -211,6 +211,11 @@ release, and the deploy workflow handles the versioning itself: it computes
 the version, stamps it into the site as `/version.json`, and tags the commit
 after the deploy succeeds. Nothing is versioned by hand.
 
+Because the version *is* the deploy time, any two stamps say how far apart
+they are. The app uses this: when the service worker caches a newer build,
+the Update button reports the gap between the running copy and the latest
+release ("Update · 3 days behind").
+
 ## Reading without JavaScript (crawlers, AI assistants)
 
 The book composes its prose in the browser, so the pages ship as empty app
