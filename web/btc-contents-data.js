@@ -50,16 +50,26 @@ export const NOTABLE = [
   // The difficulty series: the record's own drama, cited at its retarget
   // boundaries (each a multiple of 2016) and titled only by the percentage
   // the adjustment moved -- the number is the chain's fact, readable off two
-  // consecutive frontispieces; the stories behind the swings are left to
-  // other tellings. Figures from the canonical difficulty history. The five
-  // largest climbs are all from 2010; the deep cuts cluster later.
-  { title: 'Difficulty +49%', id: '42336' },      // Feb 24, 2010: 2.53 -> 3.78
-  { title: 'Difficulty +51%', id: '52416' },      // Apr 21, 2010: 7.82 -> 11.85
+  // consecutive frontispieces. The stories behind the swings belong to the
+  // annotation layer (a coming PR); until then they live here in the
+  // margins, as commentary plainly filed as commentary. Figures from the
+  // canonical difficulty history. The five largest climbs are all from
+  // 2010; the deep cuts cluster later -- and the asymmetry is the series'
+  // real teaching: hashrate arrives faster than it leaves. The up-clamp
+  // (×4) was hit once; the deepest cut ever is −27.94%, nowhere near the
+  // −75% floor.
+  { title: 'Difficulty +49%', id: '42336' },      // Feb 24, 2010: 2.53 -> 3.78, the CPU-era adoption climb steepening
+  { title: 'Difficulty +51%', id: '52416' },      // Apr 21, 2010: 7.82 -> 11.85, the climb's peak grade
   // May 19, 2010: 12.85 -> 11.46. Sixteen windows flat, twelve adjustments
-  // up -- the thirteenth is the first ever to go down.
+  // up -- the thirteenth is the first ever to go down: the earliest wave of
+  // curiosity ebbing, three chapters before a reader reaches Pizza Day.
   { title: 'First difficulty decrease (−10.8%)', id: '56448' },
   { title: 'Bitcoin Pizza Day', id: '57043' },
-  { title: 'Difficulty +45%', id: '58464' },      // May 29, 2010: 11.46 -> 16.62
+  { title: 'Difficulty +45%', id: '58464' },      // May 29, 2010: 11.46 -> 16.62, the ebb reversed inside one window
+  // The July 2010 spike, in two windows: Bitcoin v0.3's announcement hit
+  // Slashdot on July 11, 2010, and the newcomers -- among them the first GPU
+  // miners on what had been a CPU chain -- doubled the network inside a
+  // window, then quadrupled it.
   { title: 'Difficulty +93%', id: '66528' },      // Jul 13, 2010: 23.50 -> 45.38
   // Jul 16, 2010: 45.38 -> 181.54 -- 2,016 blocks in under four days, and the
   // only retarget ever to reach the ×4 consensus clamp in either direction.
@@ -95,7 +105,11 @@ export const NOTABLE = [
   { title: 'Duplicated coinbase e3bf…468, second printing (BIP30)', id: '91880', index: 0 },
   { title: '100K block milestone', id: '100000' },
   { title: 'Eligius', id: '139690' },
-  { title: 'Difficulty −18.03%', id: '151200' },  // Oct 31, 2011: the deepest cut of the chain's first decade
+  // Oct 31, 2011: the deepest cut of the chain's first decade -- the first
+  // bubble's aftermath. June 2011 had taken the price to ~$32 and the
+  // headlines with it; by Halloween it sat under $3, and the miners the
+  // bubble had drawn were unplugging.
+  { title: 'Difficulty −18.03%', id: '151200' },
   // Block 164,467 (Jan 30, 2012): the first bare-multisig output -- 1-of-2,
   // one signature from a choice of two keys (BIP11).
   { title: 'First multisig (1-of-2)', id: '60a20bd93aa49ab4b28d514ec10b06e1829ce6818ec06cd3aabd013ebcdc4bb1' },
@@ -143,16 +157,21 @@ export const NOTABLE = [
   { title: 'First native SegWit outputs', id: 'dfcec48bb8491856c353306ab5febeb7e99e4d783eedf3de98f3ee0812b92bad' },
   { title: 'First P2WSH reveal (2-of-3)', id: 'b38a88b073743bcc84170071cff4b68dec6fb5dc0bc8ffcb3d4ca632c2c78255' },
   { title: '500K block milestone', id: '500000' },
-  { title: 'Difficulty −15.13%', id: '552384' },  // Dec 3, 2018
-  { title: 'Difficulty −15.95%', id: '622944' },  // Mar 26, 2020
+  { title: 'Difficulty −15.13%', id: '552384' },  // Dec 3, 2018: the 2018 bear market's capitulation -- price a fifth of its peak, older ASICs shut off at a loss
+  { title: 'Difficulty −15.95%', id: '622944' },  // Mar 26, 2020: the covid crash -- Black Thursday (Mar 12) halved the price in a day, and the marginal miners followed it down
   { title: 'The Third Halving', id: '630000' },
-  { title: 'Difficulty −16.05%', id: '655200' },  // Nov 3, 2020
-  { title: 'Difficulty −15.97%', id: '685440' },  // May 30, 2021
+  { title: 'Difficulty −16.05%', id: '655200' },  // Nov 3, 2020: Sichuan's wet season ending -- the annual migration off cheap hydro, seasonal weather written into the target
+  { title: 'Difficulty −15.97%', id: '685440' },  // May 30, 2021: China's first regulatory squeeze on mining, five weeks before the ban proper
   // The Speedy Trial threshold moment -- the widely cited lock-in block, mined
   // by Slush Pool inside the signaling window, so its frontispiece shows bit 2
   // actually set (…100) the way the activation chapter's no longer does.
   { title: 'Taproot lock-in', id: '687285' },
-  { title: 'Difficulty −27.94%', id: '689472' },  // Jul 3, 2021: the largest downward adjustment ever
+  // Jul 3, 2021: the largest downward adjustment ever -- China's blanket
+  // mining ban, roughly half the network's hashrate unplugged in weeks. The
+  // frontispieces on either side of this boundary are the ban in two lines
+  // of β; the recovery that follows, as the exiled machines came back online
+  // elsewhere, took the rest of the year.
+  { title: 'Difficulty −27.94%', id: '689472' },
   { title: 'Romans 12:21', id: '057954bb28527ff9c7701c6fd2b7f770163718ded09745da56cc95e7606afe99' },
   { title: 'Taproot', id: '708624', page: 'book' },
   // This txid sits in block 709,632 (Nov 14, 2021), the Taproot activation
