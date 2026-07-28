@@ -1511,12 +1511,14 @@ function fillMarkedHash(el, mark, markClass, hex, label, prose, sup, supTitle, z
   el.append(' ' + prose);
 }
 
-// The block header itself, in wire order, as a small mono line under the
-// chapter hash: version, previous-block hash, merkle root, timestamp,
-// difficulty target, nonce. The two hashes are Glossia-encoded here (like
-// the chapter/section hash above); the rest come pre-decoded from
-// composeBlockHeaderFields. Genesis has no previous block: all 256 bits are
-// zero, which the notation states literally as ⓪²⁵⁶ -- nothing to encode.
+// The block header under the chapter hash, opening with the proof-of-work
+// inequality -- < then the difficulty target, so the hash above visibly
+// reads below its ceiling -- then the remaining fields in wire order:
+// version, previous-block hash, merkle root, timestamp, nonce. The two
+// hashes are Glossia-encoded here (like the chapter/section hash above);
+// the rest come pre-decoded from composeBlockHeaderFields. Genesis has no
+// previous block: all 256 bits are zero, which the notation states
+// literally as ⓪²⁵⁶ -- nothing to encode.
 function renderFrontispiece(header) {
   const el = $('ch-frontispiece');
   el.innerHTML = '';
@@ -1533,6 +1535,23 @@ function renderFrontispiece(header) {
   // the merkle root) that carries the copy menu; the prose beside it is not
   // itself clickable. The rest of the fields are plain decoded numbers.
   const items = [
+    // The proof of work, stated as the inequality it is. The chapter hash
+    // (the prose just above) reads, as a 256-bit number, below the book's
+    // difficulty target -- so a bare < opens the frontispiece with the target
+    // on the next line, and validity is visible on the page. nBits' wire slot
+    // is between timestamp and nonce; the target is raised here to sit under
+    // the hash it disciplines.
+    { text: '<', title: 'the proof of work — the chapter hash above, read as a 256-bit number, is below the difficulty target beneath' },
+    // The target wears both faces: the gold β mark's subscript is the leading
+    // zero run (the demand, the mining vernacular), and beside it the exact
+    // target as nBits stores it -- mantissa × 256^byte-shift, the superscript
+    // counting the trailing zero bytes. Together they name all 256 bits.
+    // β opens a copy menu: the compact 4-byte hex, or the display form.
+    hf.bitsExpr
+      ? { text: hf.bitsExpr, mark: hf.bits, markClass: 'fx-mark', gap: true, title: hf.bitsTitle,
+          menu: { hex: (header.bits >>> 0).toString(16).padStart(8, '0'), label: 'difficulty target', prose: `${hf.bits} ${hf.bitsExpr}` } }
+      : { text: hf.bits, title: hf.bitsTitle, gold: true,
+          menu: { hex: (header.bits >>> 0).toString(16).padStart(8, '0'), label: 'difficulty target', prose: hf.bits } },
     // The version wears its bold-gold v mark in both forms -- the pre-BIP9
     // integer (v1) and the BIP9 word-pair (v accio library 100) -- and the
     // mark opens a copy menu: the compact hex, or the notation text.
@@ -1548,20 +1567,9 @@ function renderFrontispiece(header) {
     { text: merkleProse, mark: '⋔', markClass: 'merkle-mark', sup: 32, supTitle: '32 bytes',
       copy: { hex: header.merkleRoot, label: 'merkle root' } },
     { text: hf.timestamp, title: hf.timestampTitle },
-    // The difficulty target (β) and nonce (η) are the proof-of-work marks, gold
-    // like their counterparts in the body prose's mining preamble.
-    // β and η each open a copy menu: the compact 4-byte hex, or the display
-    // form (the βₙ mark / the decimal nonce).
-    // The target wears both faces: the gold β mark's subscript is the leading
-    // zero run (the demand, the mining vernacular), and beside it the exact
-    // target as nBits stores it -- mantissa × 256^byte-shift, the superscript
-    // counting the trailing zero bytes. Together they name all 256 bits.
-    hf.bitsExpr
-      ? { text: hf.bitsExpr, mark: hf.bits, markClass: 'fx-mark', gap: true, title: hf.bitsTitle,
-          menu: { hex: (header.bits >>> 0).toString(16).padStart(8, '0'), label: 'difficulty target', prose: `${hf.bits} ${hf.bitsExpr}` } }
-      : { text: hf.bits, title: hf.bitsTitle, gold: true,
-          menu: { hex: (header.bits >>> 0).toString(16).padStart(8, '0'), label: 'difficulty target', prose: hf.bits } },
     // The η mark alone is bold gold; the nonce integer beside it stays plain.
+    // (η's proof-of-work partner β sits at the top of the frontispiece, under
+    // the < that binds it to the chapter hash.)
     { text: hf.nonce, mark: 'η', markClass: 'fx-mark', title: hf.nonceTitle,
       menu: { hex: (header.nonce >>> 0).toString(16).padStart(8, '0'), label: 'nonce', prose: hf.nonce } },
   ];

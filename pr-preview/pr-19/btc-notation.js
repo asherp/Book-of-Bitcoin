@@ -195,6 +195,7 @@ export const NOTATION_HTML = `
               <div class="glyph-row"><span class="g">⓪<sup><i>n</i></sup></span><span class="m">a block hash's <i>n</i> leading <b>proof-of-work zero bits</b></span></div>
               <div class="glyph-row"><span class="g">⌘<sup><i>m</i></sup></span><span class="m">the hash's remaining <i>m</i> <b>bits</b>, Glossia-encoded — ⌘'s superscript counts bits (<i>n</i>+<i>m</i> = 256)</span></div>
               <div class="glyph-row"><span class="g">⓪<sup>256</sup></span><span class="m">no previous block — the genesis chapter</span></div>
+              <div class="glyph-row"><span class="g">&lt;</span><span class="m">the <b>proof of work</b> — the chapter hash, as a 256-bit number, reads below the target beneath it</span></div>
               <div class="glyph-row"><span class="g">β<i>n</i></span><span class="m">the <b>difficulty target</b>, as in the preamble</span></div>
               <div class="glyph-row"><span class="g"><i>m</i>×256<sup><i>e</i></sup></span><span class="m">the target written <b>exactly</b> — nBits' mantissa shifted up <i>e</i> whole zero bytes; its leading zeros are β's demand</span></div>
               <div class="glyph-row"><span class="g">η<sub><i>n</i></sub></span><span class="m">the <b>nonce</b> the miner landed on</span></div>
