@@ -55,6 +55,27 @@ jobs:
             echo "X secrets not configured; skipping the pass." >> "$GITHUB_STEP_SUMMARY"
           fi
 
+      # Playwright renders a verse too long for a tweet as a passage image
+      # (tools/twitter-bot/image.mjs). It is optional at runtime — a missing
+      # or broken renderer costs the images, never the pass — but install it
+      # here so the images ride. Chromium is cached between runs.
+      - name: Install the image renderer
+        if: steps.creds.outputs.have == 'true'
+        working-directory: tools/twitter-bot
+        run: npm install --no-audit --no-fund
+
+      - name: Cache Chromium
+        if: steps.creds.outputs.have == 'true'
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ hashFiles('tools/twitter-bot/package.json') }}
+
+      - name: Install Chromium
+        if: steps.creds.outputs.have == 'true'
+        working-directory: tools/twitter-bot
+        run: npx playwright install --with-deps chromium
+
       # The bot's watermark and replied-to ledger, carried between runs in
       # the Actions cache: restore the newest prior state, save this run's
       # under a fresh key.

@@ -86,10 +86,13 @@ export async function searchRecent({ bearer, query, sinceId = null, maxResults =
   return { tweets, newestId: json.meta?.newest_id || null };
 }
 
-// Post `text` as a reply to `inReplyTo` (or a standalone tweet without it).
-export async function postTweet({ creds, text, inReplyTo = null, apiBase = DEFAULT_API_BASE }) {
+// Post `text` as a reply to `inReplyTo` (or a standalone tweet without it),
+// with any uploaded media attached.
+export async function postTweet({ creds, text, inReplyTo = null, mediaIds = [], apiBase = DEFAULT_API_BASE }) {
   const url = `${apiBase}/2/tweets`;
-  const body = inReplyTo ? { text, reply: { in_reply_to_tweet_id: inReplyTo } } : { text };
+  const body = { text };
+  if (inReplyTo) body.reply = { in_reply_to_tweet_id: inReplyTo };
+  if (mediaIds.length) body.media = { media_ids: mediaIds };
   const res = await fetch(url, {
     method: 'POST',
     headers: {
@@ -99,4 +102,40 @@ export async function postTweet({ creds, text, inReplyTo = null, apiBase = DEFAU
     body: JSON.stringify(body),
   });
   return (await checked(res, url)).data;
+}
+
+// Upload an image (v2 simple upload: one multipart POST — a passage PNG is
+// far under the size that needs chunking) and return its media id. A
+// multipart body contributes nothing to the OAuth signature, same as JSON.
+// The response's id field has moved across API generations; accept each.
+export async function uploadMedia({ creds, media, mimeType = 'image/png', apiBase = DEFAULT_API_BASE }) {
+  const url = `${apiBase}/2/media/upload`;
+  const form = new FormData();
+  form.append('media', new Blob([media], { type: mimeType }), 'passage.png');
+  form.append('media_category', 'tweet_image');
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { authorization: oauth1Header({ method: 'POST', url, ...creds }) },
+    body: form,
+  });
+  const json = await checked(res, url);
+  const id = json.data?.id || json.id || json.media_id_string;
+  if (!id) throw new XApiError(200, `no media id in upload response: ${JSON.stringify(json).slice(0, 200)}`, url);
+  return String(id);
+}
+
+// Attach alt text to uploaded media — the passage itself, for readers who
+// won't see the page. Best-effort by design: a metadata failure must never
+// cost the reply, so callers may fire and forget.
+export async function setAltText({ creds, mediaId, text, apiBase = DEFAULT_API_BASE }) {
+  const url = `${apiBase}/2/media/metadata`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      authorization: oauth1Header({ method: 'POST', url, ...creds }),
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify({ id: mediaId, metadata: { alt_text: { text } } }),
+  });
+  if (!res.ok) throw new XApiError(res.status, (await res.text()).slice(0, 400), url);
 }

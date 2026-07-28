@@ -42,8 +42,12 @@ import { readFile, writeFile, mkdir, rename } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
 
 import { parseCitation } from './citation.mjs';
-import { resolveCitation, composeReply, composeUnwritten, composeNoSection } from './quote.mjs';
-import { searchRecent, postTweet, XApiError } from './x-api.mjs';
+import {
+  resolveCitation, composeReply, composeUnwritten, composeNoSection,
+  passageHtml, passageAltText,
+} from './quote.mjs';
+import { loadRenderer } from './image.mjs';
+import { searchRecent, postTweet, uploadMedia, setAltText, XApiError } from './x-api.mjs';
 
 const SITE = process.env.BOT_SITE || 'https://bookofbitcoin.io';
 const HASHTAG = process.env.BOT_HASHTAG || '#bookofbitcoin';
@@ -125,7 +129,9 @@ async function saveState(state) {
 
 // ─── one tweet -> one reply (or a reason not to) ────────────────────────
 //
-// Returns { text } to post, or { skip: reason } to pass silently.
+// Returns { text, passage } to post — `passage` non-null when the verse
+// outgrew the tweet and should ride along as a rendered image — or
+// { skip: reason } to pass silently.
 
 export async function replyFor(text, { esplora: fetchFn, proseOf, site = SITE, replyUnwritten = REPLY_UNWRITTEN } = {}) {
   const cit = parseCitation(text);
@@ -134,15 +140,33 @@ export async function replyFor(text, { esplora: fetchFn, proseOf, site = SITE, r
   const r = await resolveCitation(cit, fetchFn);
   switch (r.status) {
     case 'ok':
-      return { text: composeReply({ height: r.height, index: r.index, txid: r.txid, site, proseOf }) };
+      return composeReply({ height: r.height, index: r.index, txid: r.txid, site, proseOf });
     case 'unwritten':
       return replyUnwritten
-        ? { text: composeUnwritten({ height: r.height, tip: r.tip, site }) }
+        ? { text: composeUnwritten({ height: r.height, tip: r.tip, site }), passage: null }
         : { skip: `chapter ${r.height} not yet mined` };
     case 'no-section':
-      return { text: composeNoSection({ height: r.height, section: r.section, txCount: r.txCount, site }) };
+      return { text: composeNoSection({ height: r.height, section: r.section, txCount: r.txCount, site }), passage: null };
     default:
       return { skip: 'txid not found on chain' };
+  }
+}
+
+// Render + upload the passage image for an overflowing reply. Best-effort
+// end to end: no renderer, a render failure, or an upload failure each
+// cost only the image — the ellipsized text still answers. Returns the
+// media ids to attach ([] on any miss).
+async function passageMedia(outcome, { renderer, creds, site }) {
+  if (!outcome.passage || !renderer) return [];
+  try {
+    const png = await renderer.render(passageHtml({ ...outcome.passage, site }));
+    const mediaId = await uploadMedia({ creds, media: png });
+    try { await setAltText({ creds, mediaId, text: passageAltText(outcome.passage) }); }
+    catch (e) { console.warn(`  (alt text failed: ${e.message})`); }
+    return [mediaId];
+  } catch (e) {
+    console.warn(`  (passage image failed: ${e.message} — replying with text alone)`);
+    return [];
   }
 }
 
@@ -162,14 +186,29 @@ async function main() {
   const proseOf = await ensureEngine();
 
   // --render: the whole pipeline minus X — parse the given text, resolve it
-  // against the chain, print the reply. The way to try the bot with no
-  // developer account at all.
+  // against the chain, print the reply (and write the passage image beside
+  // it when the verse overflows). The way to try the bot with no developer
+  // account at all.
   if (renderAt !== -1) {
     const text = args[renderAt + 1];
     if (!text) { console.error('usage: bot.mjs --render "<tweet text>"'); process.exit(1); }
     const r = await replyFor(text, { esplora, proseOf });
     if (r.skip) { console.log(`(no reply: ${r.skip})`); return; }
     console.log(r.text);
+    if (r.passage) {
+      const renderer = await loadRenderer();
+      if (renderer) {
+        const png = await renderer.render(passageHtml({ ...r.passage, site: SITE }));
+        await renderer.close();
+        const out = 'passage.png';
+        await writeFile(out, png);
+        console.log(`\n(verse overflows — full passage written to ${out}, ` +
+          `alt text: ${JSON.stringify(passageAltText(r.passage)).slice(0, 80)}…)`);
+      } else {
+        console.log('\n(verse overflows — with Playwright installed the full passage would ride as an image; ' +
+          'npm install in tools/twitter-bot/)');
+      }
+    }
     return;
   }
 
@@ -184,6 +223,11 @@ async function main() {
   const state = await loadState();
   const handle = (process.env.BOT_HANDLE || '').replace(/^@/, '');
   const query = `${HASHTAG} -is:retweet${handle ? ` -from:${handle}` : ''}`;
+
+  // The image renderer, for verses that outgrow the tweet. Optional: when
+  // Playwright isn't installed the pass runs text-only.
+  const renderer = await loadRenderer();
+  if (!renderer) console.log('(no image renderer — overflowing verses will be ellipsized in text)');
 
   let tweets, newestId;
   try {
@@ -214,16 +258,18 @@ async function main() {
     }
 
     if (dryRun) {
-      console.log(`  ${tweet.id}: would reply:\n${outcome.text.replace(/^/gm, '    ')}`);
+      const note = outcome.passage ? (renderer ? ' [with passage image]' : ' [verse ellipsized — no renderer]') : '';
+      console.log(`  ${tweet.id}: would reply${note}:\n${outcome.text.replace(/^/gm, '    ')}`);
       replies++;
       continue;                                    // dry runs mark nothing: the real run answers these
     }
 
     try {
-      const posted = await postTweet({ creds, text: outcome.text, inReplyTo: tweet.id });
+      const mediaIds = await passageMedia(outcome, { renderer, creds, site: SITE });
+      const posted = await postTweet({ creds, text: outcome.text, inReplyTo: tweet.id, mediaIds });
       state.replied[tweet.id] = { at: new Date().toISOString(), replyId: posted.id };
       replies++;
-      console.log(`  ${tweet.id}: replied ${posted.id}`);
+      console.log(`  ${tweet.id}: replied ${posted.id}${mediaIds.length ? ' (with passage image)' : ''}`);
     } catch (e) {
       if (e instanceof XApiError && e.rateLimited) { console.warn('rate limited on post; stopping this pass'); break; }
       console.warn(`  ${tweet.id}: post failed (${e.message}) — left for the next pass`);
@@ -245,6 +291,7 @@ async function main() {
     }
     await saveState(state);
   }
+  if (renderer) await renderer.close();
   console.log(`${replies} repl${replies === 1 ? 'y' : 'ies'}${dryRun ? ' (dry run — nothing posted, nothing recorded)' : ''}.`);
 }
 

@@ -13,3 +13,6 @@ web/sitemap.xml
 # The Twitter bot's watermark and replied-to ledger (tools/twitter-bot/) —
 # per-deployment runtime state, carried in the Actions cache, not in git.
 tools/twitter-bot/state.json
+tools/twitter-bot/node_modules/
+tools/twitter-bot/package-lock.json
+passage.png

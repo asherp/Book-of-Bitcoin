@@ -17,8 +17,9 @@ import { access } from 'node:fs/promises';
 import { fromRoman, parseCitation } from './citation.mjs';
 import {
   weighText, composeReply, composeUnwritten, composeNoSection,
-  resolveCitation, titleFor, TWEET_WEIGHT_BUDGET,
+  resolveCitation, titleFor, passageHtml, passageAltText, TWEET_WEIGHT_BUDGET,
 } from './quote.mjs';
+import { loadRenderer } from './image.mjs';
 import { oauth1Header } from './x-api.mjs';
 import { replyFor } from './bot.mjs';
 
@@ -78,32 +79,46 @@ test('weighing matches X: latin 1, ■ 2, β and § 1', () => {
 
 const PIZZA_TXID = 'a1075db55d416d3ca199f55b6084e2115b9345e16c5cf302fc80e9d5fbf5d48d';
 
-test('a reply carries citation, title, verse, and link, within budget', () => {
-  const proseOf = () => ({ prose: 'A short verse of prose.', payloadWords: ['short', 'verse', 'prose'] });
-  const text = composeReply({ height: 57043, index: 0, txid: 'ab'.repeat(32), site: SITE, proseOf });
+test('a fitting verse rides whole in text, with no passage image', () => {
+  const proseOf = () => ({ prose: 'A short verse of prose.' });
+  const { text, passage } = composeReply({ height: 57043, index: 0, txid: 'ab'.repeat(32), site: SITE, proseOf });
   assert.match(text, /^I β29 ■596 §1 — Bitcoin Pizza Day\n/);
   assert.match(text, /“A short verse of prose\.”/);
   assert.ok(text.endsWith(`${SITE}/bitcoin-book.html?block=57043&index=0`));
   assert.ok(weighText(text) <= TWEET_WEIGHT_BUDGET);
+  assert.equal(passage, null);
 });
 
-test('an overweight verse falls back to payload words, then an ellipsis', () => {
-  const longProse = 'word '.repeat(120).trim();
-  const payloadWords = Array.from({ length: 24 }, (_, i) => `w${i}`);
-  const proseOf = () => ({ prose: longProse, payloadWords });
-  const text = composeReply({ height: 422020, index: 4, txid: 'cd'.repeat(32), site: SITE, proseOf });
-  assert.match(text, /“w0 w1 /);                  // slimmed to payload words
-  assert.ok(!text.includes(longProse));
+test('an overflowing verse keeps its cover words: ellipsized in text, whole in the passage', () => {
+  const longProse = Array.from({ length: 120 }, (_, i) => `word${i}`).join(' ');
+  const proseOf = () => ({ prose: longProse });
+  const { text, passage } = composeReply({ height: 422020, index: 4, txid: 'cd'.repeat(32), site: SITE, proseOf });
+
+  assert.match(text, /“word0 word1 /);            // the verse itself, from its first word
+  assert.match(text, /…”/);                       // trimmed at a word boundary, marked honestly
   const urlWeight = 23;
   assert.ok(weighText(text.slice(0, text.lastIndexOf('https://'))) + urlWeight <= TWEET_WEIGHT_BUDGET);
 
-  const hugeWords = Array.from({ length: 80 }, () => 'juggernaut');
-  const text2 = composeReply({
-    height: 422020, index: 4, txid: 'cd'.repeat(32), site: SITE,
-    proseOf: () => ({ prose: hugeWords.join(' '), payloadWords: hugeWords }),
+  assert.ok(passage, 'expected a passage for the image');
+  assert.equal(passage.verse, longProse);         // unabridged — cover words never stripped
+  assert.equal(passage.cite, 'III β2 ■5 §5');
+});
+
+test('the passage page escapes its text and carries the whole verse', () => {
+  const html = passageHtml({
+    cite: 'I β1 ■1 §1',
+    title: 'A <title> & "quotes"',
+    verse: 'A verse with <angle> brackets & ampersands.',
+    site: SITE,
   });
-  assert.match(text2, /…”/);                      // last resort: a trimmed excerpt
-  assert.ok(weighText(text2.slice(0, text2.lastIndexOf('https://'))) + urlWeight <= TWEET_WEIGHT_BUDGET);
+  assert.ok(html.includes('A &lt;title&gt; &amp; &quot;quotes&quot;'));
+  assert.ok(html.includes('A verse with &lt;angle&gt; brackets &amp; ampersands.'));
+  assert.ok(!html.includes('<angle>'));
+  assert.ok(html.includes('bookofbitcoin.io'));
+
+  const alt = passageAltText({ cite: 'I β1 ■1 §1', title: 'T', verse: 'v '.repeat(600).trim() });
+  assert.ok(alt.length <= 1000);
+  assert.ok(alt.endsWith('…'));
 });
 
 test('titles resolve txid-first, then height, never book leaves', () => {
@@ -216,13 +231,29 @@ test('a genesis citation renders a decodable verse', { skip: !engineBuilt && 'we
   assert.ok(r.text.includes(`${SITE}/bitcoin-book.html?block=0&index=0`));
   assert.ok(weighText(r.text.slice(0, r.text.lastIndexOf('https://'))) + 23 <= TWEET_WEIGHT_BUDGET);
 
-  // The verse must decode back to the txid — the book's core promise, held
-  // even in a tweet. (The quoted verse may be the slimmed payload-only form;
-  // both decode identically.)
-  const verse = r.text.match(/“([^”]+)”/)[1].replace(/…$/, '');
-  const reversed = decodeSeedPhrase(verse, 32, 'english').hex;
+  // The genesis verse (with its long curated title) outweighs a tweet, so
+  // the full passage rides as an image: the tweet's excerpt ends in an
+  // ellipsis, and the passage's verse — cover words and all — must decode
+  // back to the txid, the book's core promise held at full length. (The
+  // decoder filters prose against the wordlist, so cover words pass through.)
+  assert.ok(r.passage, 'expected the verse to overflow into a passage image');
+  assert.match(r.text, /…”/);
+  const reversed = decodeSeedPhrase(r.passage.verse, 32, 'english').hex;
   const txid = (reversed.match(/../g) || []).reverse().join('');
   assert.equal(txid, GENESIS_TXID);
+});
+
+// ─── the passage image, when Playwright is installed ────────────────────
+
+const renderer = await loadRenderer();
+
+test('the passage page renders to a PNG', { skip: !renderer && 'playwright not installed' }, async () => {
+  const png = await renderer.render(passageHtml({
+    cite: 'I β1 ■1 §1', title: 'The Genesis Block', verse: 'A verse.', site: SITE,
+  }));
+  await renderer.close();
+  assert.ok(png.length > 1000, 'expected a real image');
+  assert.deepEqual([...png.subarray(0, 8)], [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 });
 
 test('a tweet with the hashtag but no citation is passed over', async () => {

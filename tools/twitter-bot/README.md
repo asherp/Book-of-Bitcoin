@@ -1,11 +1,19 @@
 # The reply bot — chapter and verse, on demand
 
-A zero-dependency Node bot that watches a hashtag on X (Twitter) for
-citations of the βook of βitcoin and answers each with chapter and verse:
-the passage's canonical citation, its curated title when the table of
-contents names one, the section's transaction id quoted as Glossia prose —
-a verse that decodes back to the txid, the book's promise held even at
-tweet length — and a deep link into the live book.
+A Node bot that watches a hashtag on X (Twitter) for citations of the
+βook of βitcoin and answers each with chapter and verse: the passage's
+canonical citation, its curated title when the table of contents names
+one, the section's transaction id quoted as Glossia prose — a verse that
+decodes back to the txid, the book's promise held even in a tweet — and a
+deep link into the live book.
+
+The verse is always quoted whole, cover words and all — the cover is the
+grammar that makes the payload read as a sentence, and stripping it would
+quote the book in a voice it does not have. A verse that fits X's 280
+rides in the tweet text and decodes right off the timeline. A verse that
+doesn't is ellipsized in the text at a word boundary, and the full
+passage rides as an attached image — a page of the book: dark paper, gold
+citation, serif prose — with the whole verse as the image's alt text.
 
 ```
 tweet:   #bookofbitcoin III β2 ■5 §1
@@ -41,8 +49,17 @@ Requires Node ≥ 20. The Glossia engine (`web/glossia.js` +
 `web/glossia_bg.wasm`) is a build artifact; if it is missing the bot
 fetches it from the deployed site, so no Rust toolchain is needed.
 
+The one dependency, and it is optional, is Playwright — headless Chromium
+renders the passage images. Without it the bot runs text-only and
+overflowing verses stay ellipsized; with it they ride whole:
+
+```sh
+cd tools/twitter-bot && npm install     # optional: enables passage images
+```
+
 ```sh
 # Try it with no credentials at all: parse + resolve + render to stdout
+# (writes passage.png beside it when the verse overflows)
 node tools/twitter-bot/bot.mjs --render "III β2 ■5 §1"
 
 # One real pass: search, reply, save state
@@ -103,7 +120,12 @@ the Actions cache between runs.
 
 - `bot.mjs` — the pass itself: engine bootstrap, search, reply, state
 - `citation.mjs` — tweet text → citation, in all the forms above
-- `quote.mjs` — citation → chain data → the reply, weighed as X weighs it
-- `x-api.mjs` — the two API calls, with OAuth 1.0a signing, no dependencies
-- `test.mjs` — the offline suite; the last test renders a real verse
-  through the WASM engine when `./build_web.sh` has run, and skips when not
+- `quote.mjs` — citation → chain data → the reply, weighed as X weighs
+  it; also the passage page (HTML) and its alt text for the image path
+- `image.mjs` — passage page → PNG, via Playwright's Chromium; absent
+  Playwright, `loadRenderer()` returns null and nothing else degrades
+- `x-api.mjs` — the API calls (search, post, media upload, alt text),
+  with OAuth 1.0a signing on `node:crypto`
+- `test.mjs` — the offline suite; the deeper tests render a real verse
+  through the WASM engine (when `./build_web.sh` has run) and a real PNG
+  (when Playwright is installed), and skip cleanly when not
