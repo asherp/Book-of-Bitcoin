@@ -170,10 +170,11 @@ compiled to WASM) is consumed as a published
 - `web/sw.js`, `web/bitcoin-book.webmanifest`, `web/icons/` — PWA shell
 - `tools/twitter-bot/` — the reply bot: watches a hashtag on X for citations
   (`III β2 ■5 §1`, ascii and packed-hashtag forms, block heights, txids) and
-  answers each with chapter and verse — the canonical citation, the section's
-  txid quoted whole as decodable Glossia prose, and a deep link into the
-  book. A verse too long for the tweet is ellipsized in text and rides whole
-  as a rendered page of the book (image + alt text). See its
+  answers each with chapter and verse — the canonical citation and the
+  section itself in the book's notation: scripts as opcode sigla, amounts in
+  ₿, witness footnotes, the txid as decodable Glossia prose, and a deep link
+  into the book. A section too long for the tweet is ellipsized in text and
+  rides whole as a rendered page of the book (image + alt text). See its
   [README](tools/twitter-bot/README.md); deployed by
   `.github/workflows/twitter-bot.yml`
 

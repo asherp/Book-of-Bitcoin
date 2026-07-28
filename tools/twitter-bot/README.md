@@ -3,24 +3,29 @@
 A Node bot that watches a hashtag on X (Twitter) for citations of the
 βook of βitcoin and answers each with chapter and verse: the passage's
 canonical citation, its curated title when the table of contents names
-one, the section's transaction id quoted as Glossia prose — a verse that
-decodes back to the txid, the book's promise held even in a tweet — and a
-deep link into the live book.
+one, the section itself quoted in the book's notation — scripts as opcode
+sigla (⧉ ⌗ ∇ …), amounts in ₿, the sequence and locktime marks, witness
+data as footnotes, and the txid-as-prose line every passage opens with —
+and a deep link into the live book.
 
-The verse is always quoted whole, cover words and all — the cover is the
-grammar that makes the payload read as a sentence, and stripping it would
-quote the book in a voice it does not have. A verse that fits X's 280
-rides in the tweet text and decodes right off the timeline. A verse that
-doesn't is ellipsized in the text at a word boundary, and the full
-passage rides as an attached image — a page of the book: dark paper, gold
-citation, serif prose — with the whole verse as the image's alt text.
+The quote is always set whole, sigla and cover words alike — the cover is
+the grammar that makes the payload read as a sentence, and stripping
+either would quote the book in a voice it does not have. A section small
+enough for X's 280 rides in the tweet text. One that isn't — nearly all
+of them — is ellipsized in the text at a word boundary, and the full
+passage rides as an attached image: a page of the book, dark paper, gold
+citation, the section's fields in the manuscript's margin layout, with
+the whole passage as the image's alt text.
 
 ```
-tweet:   #bookofbitcoin III β2 ■5 §1
+tweet:   #bookofbitcoin I β1 ■1 §1
 
-reply:   III β2 ■5 §1
-         “…the verse: the section's txid as Glossia prose…”
-         https://bookofbitcoin.io/bitcoin-book.html?block=422020&index=0
+reply:   I β1 ■1 §1 — The Times 03/Jan/2009 Chancellor on brink of…
+         “version 1 input ∅ coinbase — new coin — β₃₂ η₄ ⁶⁹ “The Times
+         03/Jan/2009 Chancellor on brink of second bailout for banks” · ●
+         output 50.00000000 ₿ — p⁶⁵ Cop afford detail to satoshi…”
+         + the full passage as an image
+         https://bookofbitcoin.io/bitcoin-book.html?block=0&index=0
 ```
 
 ## What it answers

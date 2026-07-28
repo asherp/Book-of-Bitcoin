@@ -7,8 +7,11 @@
 // Someone tweets "#bookofbitcoin III β2 ■5 §1" (or the ascii "III b2 c5 s1",
 // a packed "#IIIb2c5s1", "block 170 §2", or a bare txid) and the bot replies
 // with the passage's canonical citation, its curated title if the table of
-// contents names it, the section's transaction id quoted as Glossia prose —
-// a verse that decodes back to the txid — and a deep link into the live book.
+// contents names it, and the section itself quoted in the book's notation —
+// scripts as opcode sigla, amounts in ₿, witness footnotes, the txid as
+// decodable Glossia prose — with a deep link into the live book. A section
+// too long for the tweet (nearly all of them) is ellipsized in text and
+// rides whole as an attached image, a rendered page of the book.
 //
 // One pass per invocation: search since the last seen tweet, reply to what
 // parses, save state, exit. Run it from cron (or the twitter-bot.yml
@@ -44,7 +47,7 @@ import { pathToFileURL } from 'node:url';
 import { parseCitation } from './citation.mjs';
 import {
   resolveCitation, composeReply, composeUnwritten, composeNoSection,
-  passageHtml, passageAltText,
+  sectionParts, passageHtml, passageAltText,
 } from './quote.mjs';
 import { loadRenderer } from './image.mjs';
 import { searchRecent, postTweet, uploadMedia, setAltText, XApiError } from './x-api.mjs';
@@ -58,6 +61,12 @@ const STATE_PATH = process.env.BOT_STATE || new URL('./state.json', import.meta.
 // Match the book's rendering choices exactly (bitcoin-book.html /
 // tools/prerender-passages.mjs).
 const BEST_OF = 5;
+
+// A witness push or OP_RETURN payload beyond this many bytes is summarized
+// instead of encoded — a data carrier (an inscription) can run to megabytes
+// of prose, which belongs on the live page, not in a reply. Same cap as the
+// prerenderer's.
+const MAX_ENCODE_BYTES = 8192;
 
 const ESPLORA_MIRRORS = ['https://blockstream.info/api', 'https://mempool.space/api'];
 
@@ -78,12 +87,16 @@ async function esplora(path, kind = 'text') {
 
 // ─── the engine ─────────────────────────────────────────────────────────
 //
-// glossia-msg.js imports ./glossia.js statically, so the artifacts must be
-// in place before the module is; hence the dynamic import after the check.
+// glossia-msg.js (and btc-prose.js, which encodes through it) import
+// ./glossia.js statically, so the artifacts must be in place before either
+// module is; hence the dynamic imports after the check.
+//
+// Returns { proseOf, sectionOf }: hex -> Glossia prose, and raw tx hex ->
+// the section's composed fields as sectionParts (quote.mjs) lays them out.
 
 const WEB = new URL('../../web/', import.meta.url);
 
-async function ensureEngine() {
+export async function ensureEngine() {
   for (const name of ['glossia.js', 'glossia_bg.wasm']) {
     const dest = new URL(name, WEB);
     try { await readFile(dest); continue; } catch { /* missing — fetch it */ }
@@ -99,7 +112,30 @@ async function ensureEngine() {
   const wasmBytes = await readFile(new URL('glossia_bg.wasm', WEB));
   try { await init({ module_or_path: wasmBytes }); }
   catch { await init(wasmBytes); }
-  return (hex) => encodeSeedPhrase(hex, 'english', BEST_OF);
+
+  const { parseTransaction } = await import('../../web/btc-tx.js');
+  const { composeTransactionFields, renderWitness } = await import('../../web/btc-prose.js');
+
+  // Real prose for reasonable payloads, an honest placeholder beyond the
+  // cap — mirrors the prerenderer's treatment of data carriers.
+  const encodeCapped = (hex, lang = 'english', bestOf = BEST_OF) => {
+    const bytes = hex.length / 2;
+    if (bytes > MAX_ENCODE_BYTES) {
+      const note = `⟨${bytes.toLocaleString('en-US')} bytes of data — the live page renders it in full⟩`;
+      return { prose: note, payloadWords: [] };
+    }
+    return encodeSeedPhrase(hex, lang, bestOf);
+  };
+  const proseWithCap = (hex) => encodeCapped(hex).prose;
+
+  return {
+    proseOf: (hex) => encodeSeedPhrase(hex, 'english', BEST_OF),
+    sectionOf: (hex) => {
+      const fields = composeTransactionFields(parseTransaction(hex), BEST_OF, proseWithCap, encodeCapped);
+      return sectionParts(fields, (inp) =>
+        inp.witnessItems.length ? (inp.witnessZero ? '∅' : renderWitness(inp.witnessItems, proseWithCap)) : null);
+    },
+  };
 }
 
 // ─── state ──────────────────────────────────────────────────────────────
@@ -133,14 +169,23 @@ async function saveState(state) {
 // outgrew the tweet and should ride along as a rendered image — or
 // { skip: reason } to pass silently.
 
-export async function replyFor(text, { esplora: fetchFn, proseOf, site = SITE, replyUnwritten = REPLY_UNWRITTEN } = {}) {
+export async function replyFor(text, { esplora: fetchFn, proseOf, sectionOf = null, site = SITE, replyUnwritten = REPLY_UNWRITTEN } = {}) {
   const cit = parseCitation(text);
   if (!cit) return { skip: 'no citation found' };
 
   const r = await resolveCitation(cit, fetchFn);
   switch (r.status) {
-    case 'ok':
-      return composeReply({ height: r.height, index: r.index, txid: r.txid, site, proseOf });
+    case 'ok': {
+      // The section itself — scripts in the sigla, amounts in ₿ — set from
+      // the transaction's bytes. Best-effort: a missing hex or a compose
+      // failure falls back to quoting the txid as prose.
+      let section = null;
+      if (r.hex && sectionOf) {
+        try { section = sectionOf(r.hex); }
+        catch (e) { console.warn(`  (section compose failed: ${e.message} — quoting the txid prose)`); }
+      }
+      return composeReply({ height: r.height, index: r.index, txid: r.txid, site, proseOf, section });
+    }
     case 'unwritten':
       return replyUnwritten
         ? { text: composeUnwritten({ height: r.height, tip: r.tip, site }), passage: null }
@@ -183,7 +228,7 @@ async function main() {
   const dryRun = args.includes('--dry-run');
   const renderAt = args.indexOf('--render');
 
-  const proseOf = await ensureEngine();
+  const { proseOf, sectionOf } = await ensureEngine();
 
   // --render: the whole pipeline minus X — parse the given text, resolve it
   // against the chain, print the reply (and write the passage image beside
@@ -192,7 +237,7 @@ async function main() {
   if (renderAt !== -1) {
     const text = args[renderAt + 1];
     if (!text) { console.error('usage: bot.mjs --render "<tweet text>"'); process.exit(1); }
-    const r = await replyFor(text, { esplora, proseOf });
+    const r = await replyFor(text, { esplora, proseOf, sectionOf });
     if (r.skip) { console.log(`(no reply: ${r.skip})`); return; }
     console.log(r.text);
     if (r.passage) {
@@ -245,7 +290,7 @@ async function main() {
 
     let outcome;
     try {
-      outcome = await replyFor(tweet.text, { esplora, proseOf });
+      outcome = await replyFor(tweet.text, { esplora, proseOf, sectionOf });
     } catch (e) {
       console.warn(`  ${tweet.id}: resolve failed (${e.message}) — left for the next pass`);
       continue;                                    // transient (explorer outage); not marked, retried later

@@ -19,9 +19,10 @@ import {
   weighText, composeReply, composeUnwritten, composeNoSection,
   resolveCitation, titleFor, passageHtml, passageAltText, TWEET_WEIGHT_BUDGET,
 } from './quote.mjs';
+import { sectionParts } from './quote.mjs';
 import { loadRenderer } from './image.mjs';
 import { oauth1Header } from './x-api.mjs';
-import { replyFor } from './bot.mjs';
+import { replyFor, ensureEngine } from './bot.mjs';
 
 const SITE = 'https://bookofbitcoin.io';
 
@@ -90,6 +91,8 @@ test('a fitting verse rides whole in text, with no passage image', () => {
 });
 
 test('an overflowing verse keeps its cover words: ellipsized in text, whole in the passage', () => {
+  // No section (the bytes couldn't be fetched): the verse falls back to the
+  // txid as prose, still quoted whole in the passage.
   const longProse = Array.from({ length: 120 }, (_, i) => `word${i}`).join(' ');
   const proseOf = () => ({ prose: longProse });
   const { text, passage } = composeReply({ height: 422020, index: 4, txid: 'cd'.repeat(32), site: SITE, proseOf });
@@ -100,25 +103,86 @@ test('an overflowing verse keeps its cover words: ellipsized in text, whole in t
   assert.ok(weighText(text.slice(0, text.lastIndexOf('https://'))) + urlWeight <= TWEET_WEIGHT_BUDGET);
 
   assert.ok(passage, 'expected a passage for the image');
-  assert.equal(passage.verse, longProse);         // unabridged — cover words never stripped
+  assert.equal(passage.txidProse, longProse);     // unabridged — cover words never stripped
+  assert.equal(passage.section, null);
   assert.equal(passage.cite, 'III β2 ■5 §5');
+  assert.ok(passageHtml({ ...passage, site: SITE }).includes('word119'), 'the page carries the verse whole');
 });
 
-test('the passage page escapes its text and carries the whole verse', () => {
+test('a section that fits still rides in text; footnotes force the image', () => {
+  const short = { rows: [{ label: 'version', text: '1' }], footnotes: [], flat: 'version 1 · out 0 ₿ ∇' };
+  const proseOf = () => ({ prose: 'unused fallback' });
+  const inText = composeReply({ height: 170, index: 1, txid: 'ab'.repeat(32), site: SITE, proseOf, section: short });
+  assert.equal(inText.passage, null);
+  assert.match(inText.text, /“version 1 · out 0 ₿ ∇”/);
+
+  const withNotes = composeReply({
+    height: 170, index: 1, txid: 'ab'.repeat(32), site: SITE, proseOf,
+    section: { ...short, footnotes: ['φ sig'] },
+  });
+  assert.ok(withNotes.passage, 'witness footnotes belong on the page, not flattened into a tweet');
+});
+
+test('a section lays out in wire order with its sigla, witness as footnotes', () => {
+  const fields = {
+    version: '1',
+    inputs: [{
+      isNullPrevout: false, prevTxid: 'ee'.repeat(32), prevVout: 1,
+      script: '<span title="OP_DUP">⧉</span> some prose', sequence: '<span title="final">∞</span>',
+      witnessItems: ['aa'], witnessZero: false,
+    }],
+    outputs: [{ value: '50.00000000 ₿', script: '<span title="OP_HASH160">⌗</span> prose <span title="OP_CHECKSIG">∇</span>' }],
+    locktime: '<span title="none">⊘</span>',
+  };
+  const s = sectionParts(fields, (inp) => (inp.witnessItems.length ? 'φ sig ρ key' : null));
+
+  assert.deepEqual(s.rows.map((r) => r.label), ['version', 'input', 'output', 'locktime']);
+  assert.match(s.rows[1].text, /^spends eeeeeeee…:1 — ⧉ some prose · ∞ ⁽1⁾$/);
+  assert.equal(s.rows[2].text, '50.00000000 ₿ — ⌗ prose ∇');
+  assert.deepEqual(s.footnotes, ['φ sig ρ key']);
+  assert.match(s.flat, /version 1\ninput spends/);   // the tweet's flowing form, sigla intact
+});
+
+test('the passage page escapes its text and sets the section in rows', () => {
+  const section = {
+    rows: [
+      { label: 'version', text: '1' },
+      { label: 'output', text: '50.00000000 ₿ — ⌗ <angle> & prose ∇' },
+    ],
+    footnotes: ['a & footnote'],
+    flat: 'version 1\noutput 50.00000000 ₿ — ⌗ <angle> & prose ∇',
+  };
   const html = passageHtml({
     cite: 'I β1 ■1 §1',
     title: 'A <title> & "quotes"',
-    verse: 'A verse with <angle> brackets & ampersands.',
+    txidProse: 'The txid as <prose>.',
+    section,
     site: SITE,
   });
   assert.ok(html.includes('A &lt;title&gt; &amp; &quot;quotes&quot;'));
-  assert.ok(html.includes('A verse with &lt;angle&gt; brackets &amp; ampersands.'));
+  assert.ok(html.includes('The txid as &lt;prose&gt;.'));
+  assert.ok(html.includes('⌗ &lt;angle&gt; &amp; prose ∇'));
+  assert.ok(html.includes('a &amp; footnote'));
   assert.ok(!html.includes('<angle>'));
   assert.ok(html.includes('bookofbitcoin.io'));
 
-  const alt = passageAltText({ cite: 'I β1 ■1 §1', title: 'T', verse: 'v '.repeat(600).trim() });
+  const alt = passageAltText({ cite: 'I β1 ■1 §1', title: 'T', txidProse: 'p', section: { flat: 'v '.repeat(600).trim(), footnotes: [] } });
   assert.ok(alt.length <= 1000);
   assert.ok(alt.endsWith('…'));
+});
+
+test('a grand section is cut honestly for the page', () => {
+  const rows = [
+    { label: 'version', text: '2' },
+    ...Array.from({ length: 60 }, (_, i) => ({ label: `input ${i + 1}`, text: `spends ${i}` })),
+    { label: 'locktime', text: '⊘' },
+  ];
+  const html = passageHtml({
+    cite: 'IV β1 ■1 §2', title: null, txidProse: 'p',
+    section: { rows, footnotes: [], flat: '' }, site: SITE,
+  });
+  assert.match(html, /38 more fields — the live page carries the whole section/);
+  assert.ok(html.includes('locktime'), 'the last row survives the cut');
 });
 
 test('titles resolve txid-first, then height, never book leaves', () => {
@@ -144,6 +208,16 @@ test('the unwritten and no-section replies read gently', () => {
 const GENESIS_HASH = '000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f';
 const GENESIS_TXID = '4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b';
 
+// The genesis coinbase, byte for byte: v1, one null-prevout input whose
+// scriptSig carries the restated target, the extranonce, and the Times
+// headline; one 50 ₿ P2PK output; locktime 0.
+const GENESIS_TX_HEX =
+  '01000000010000000000000000000000000000000000000000000000000000000000000000ffffffff4d04ffff001d' +
+  '0104455468652054696d65732030332f4a616e2f32303039204368616e63656c6c6f72206f6e206272696e6b206f66' +
+  '207365636f6e64206261696c6f757420666f722062616e6b73ffffffff0100f2052a01000000434104678afdb0fe55' +
+  '48271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38c4f35504e51ec112de5c384df7ba' +
+  '0b8d578a4c702b6bf11d5fac00000000';
+
 function stubEsplora(routes) {
   return async (path) => {
     if (path in routes) return routes[path];
@@ -155,20 +229,22 @@ const genesisRoutes = {
   '/block-height/0': GENESIS_HASH,
   [`/block/${GENESIS_HASH}`]: { tx_count: 1 },
   [`/block/${GENESIS_HASH}/txids`]: [GENESIS_TXID],
+  [`/tx/${GENESIS_TXID}/hex`]: GENESIS_TX_HEX,
 };
 
-test('a height citation resolves to its section txid', async () => {
+test('a height citation resolves to its section txid and bytes', async () => {
   const r = await resolveCitation({ height: 0, section: 1 }, stubEsplora(genesisRoutes));
-  assert.deepEqual(r, { status: 'ok', height: 0, index: 0, txid: GENESIS_TXID, txCount: 1 });
+  assert.deepEqual(r, { status: 'ok', height: 0, index: 0, txid: GENESIS_TXID, txCount: 1, hex: GENESIS_TX_HEX });
 });
 
-test('a txid citation resolves through its merkle proof', async () => {
+test('a txid citation resolves through its merkle proof; missing bytes cost only the hex', async () => {
   const r = await resolveCitation({ txid: GENESIS_TXID, section: null }, stubEsplora({
     [`/tx/${GENESIS_TXID}/merkle-proof`]: { block_height: 0, pos: 0 },
   }));
   assert.equal(r.status, 'ok');
   assert.equal(r.height, 0);
   assert.equal(r.index, 0);
+  assert.equal(r.hex, null);                        // the stub has no hex route — best-effort, not fatal
 });
 
 test('future chapters and absent sections come back named', async () => {
@@ -217,28 +293,35 @@ test('the OAuth 1.0a signature matches the documented example', () => {
 
 const engineBuilt = await access(new URL('../../web/glossia.js', import.meta.url)).then(() => true, () => false);
 
-test('a genesis citation renders a decodable verse', { skip: !engineBuilt && 'web/glossia.js not built' }, async () => {
-  const { init, encodeSeedPhrase, decodeSeedPhrase } = await import('../../web/glossia-msg.js');
-  const { readFile } = await import('node:fs/promises');
-  const wasmBytes = await readFile(new URL('../../web/glossia_bg.wasm', import.meta.url));
-  try { await init({ module_or_path: wasmBytes }); }
-  catch { await init(wasmBytes); }
-  const proseOf = (hex) => encodeSeedPhrase(hex, 'english', 5);
+test('a genesis citation quotes the section — sigla, headline, amount — and decodes', { skip: !engineBuilt && 'web/glossia.js not built' }, async () => {
+  const { proseOf, sectionOf } = await ensureEngine();
 
-  const r = await replyFor('#bookofbitcoin I β1 ■1 §1', { esplora: stubEsplora(genesisRoutes), proseOf });
+  const r = await replyFor('#bookofbitcoin I β1 ■1 §1', { esplora: stubEsplora(genesisRoutes), proseOf, sectionOf });
   assert.ok(r.text, 'expected a reply');
   assert.match(r.text, /^I β1 ■1 §1 — The Times 03\/Jan\/2009/);
   assert.ok(r.text.includes(`${SITE}/bitcoin-book.html?block=0&index=0`));
   assert.ok(weighText(r.text.slice(0, r.text.lastIndexOf('https://'))) + 23 <= TWEET_WEIGHT_BUDGET);
 
-  // The genesis verse (with its long curated title) outweighs a tweet, so
-  // the full passage rides as an image: the tweet's excerpt ends in an
-  // ellipsis, and the passage's verse — cover words and all — must decode
-  // back to the txid, the book's core promise held at full length. (The
-  // decoder filters prose against the wordlist, so cover words pass through.)
-  assert.ok(r.passage, 'expected the verse to overflow into a passage image');
+  // The section outweighs a tweet, so the full passage rides as an image:
+  // the tweet's excerpt is ellipsized, and the passage carries the whole
+  // section in the book's notation.
+  assert.ok(r.passage, 'expected the section to overflow into a passage image');
   assert.match(r.text, /…”/);
-  const reversed = decodeSeedPhrase(r.passage.verse, 32, 'english').hex;
+  const { section, txidProse } = r.passage;
+  assert.ok(section, 'expected the composed section');
+  assert.match(section.flat, /version 1\n/);
+  assert.ok(section.flat.includes('∅ coinbase'), 'the null prevout reads as coinbase');
+  assert.ok(section.flat.includes('The Times 03/Jan/2009 Chancellor on brink of second bailout for banks'),
+    'the headline rides verbatim in the scriptSig quote');
+  assert.ok(section.flat.includes('50.00000000 ₿'), 'the subsidy reads in ₿');
+  assert.ok(section.flat.includes('∇'), 'OP_CHECKSIG reads as its siglum');
+
+  // And the opening verse — the txid as prose, cover words and all — must
+  // still decode back to the txid: the book's core promise, held in the
+  // quote. (The decoder filters prose against the wordlist, so cover words
+  // pass through.)
+  const { decodeSeedPhrase } = await import('../../web/glossia-msg.js');
+  const reversed = decodeSeedPhrase(txidProse, 32, 'english').hex;
   const txid = (reversed.match(/../g) || []).reverse().join('');
   assert.equal(txid, GENESIS_TXID);
 });

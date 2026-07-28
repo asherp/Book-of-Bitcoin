@@ -47,18 +47,27 @@ export function weighText(s) {
 // ─── citation -> chain data ─────────────────────────────────────────────
 //
 // Resolve to the section's txid and its canonical address. Returns one of
-//   { status: 'ok', height, index, txid, txCount }
+//   { status: 'ok', height, index, txid, txCount, hex }
 //   { status: 'unwritten', height, tip }        — chapter not yet mined
 //   { status: 'no-section', height, section, txCount }
 //   { status: 'not-found' }                     — txid unknown to the chain
 // `cit` is parseCitation's output; `esplora(path, kind)` fetches with the
-// book's mirror fallback and returns null on a 404.
+// book's mirror fallback and returns null on a 404. The transaction's raw
+// hex — the bytes the section quote is set from — is best-effort on its
+// own: a miss costs the reply its section, never the citation.
 
 export async function resolveCitation(cit, esplora) {
+  const rawHex = async (txid) => {
+    try { return await esplora(`/tx/${txid}/hex`); } catch { return null; }
+  };
+
   if (cit.txid) {
     const proof = await esplora(`/tx/${cit.txid}/merkle-proof`, 'json');
     if (!proof) return { status: 'not-found' };
-    return { status: 'ok', height: proof.block_height, index: proof.pos, txid: cit.txid, txCount: null };
+    return {
+      status: 'ok', height: proof.block_height, index: proof.pos, txid: cit.txid,
+      txCount: null, hex: await rawHex(cit.txid),
+    };
   }
 
   const { height, section } = cit;
@@ -72,7 +81,8 @@ export async function resolveCitation(cit, esplora) {
   if (section > txCount) return { status: 'no-section', height, section, txCount };
 
   const txids = await esplora(`/block/${blockHash}/txids`, 'json');
-  return { status: 'ok', height, index: section - 1, txid: txids[section - 1], txCount };
+  const txid = txids[section - 1];
+  return { status: 'ok', height, index: section - 1, txid, txCount, hex: await rawHex(txid) };
 }
 
 // The curated title for a passage, if the table of contents names it. A
@@ -86,59 +96,159 @@ export function titleFor(height, index, txid) {
   return hit ? hit.title : null;
 }
 
+// ─── the section, as the manuscript sets it ─────────────────────────────
+//
+// The quote is the passage itself, in the book's notation: scripts as
+// opcode sigla (⧉ ⌗ ∇ …), amounts in ₿, the sequence and locktime marks,
+// witness data as footnotes. btc-prose.js composes each field as an HTML
+// fragment (glyphs ride in <span title=…> hover tokens); a tweet or an
+// image keeps the visible text — exactly what a sighted reader of the
+// page sees. Same treatment as tools/prerender-passages.mjs.
+
+export function htmlToText(s) {
+  return String(s)
+    .replace(/<br\s*\/?>/g, '\n')
+    .replace(/<span class="tab"><\/span>/g, '\t')
+    .replace(/<sup[^>]*>([^<]*)<\/sup>/g, '$1')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"').replace(/&#39;/g, "'");
+}
+
+const shortId = (txid) => `${txid.slice(0, 8)}…`;
+
+// composeTransactionFields output (plus a caller-supplied witness renderer:
+// input -> HTML or null) -> the section as labeled rows and footnotes, all
+// plain text with the sigla intact, in wire order.
+//
+//   rows:      [{ label, text }]           — the manuscript page's margin layout
+//   footnotes: ['…']                       — witness data, numbered per input
+//   flat:      'version 1\ninput: …'       — the rows as flowing text, for a tweet
+export function sectionParts(fields, witnessHtml = () => null) {
+  const rows = [];
+  const footnotes = [];
+
+  rows.push({ label: 'version', text: fields.version });
+  fields.inputs.forEach((inp, i) => {
+    const label = `input${fields.inputs.length > 1 ? ` ${i + 1}` : ''}`;
+    const src = inp.isNullPrevout ? '∅ coinbase — new coin' : `spends ${shortId(inp.prevTxid)}:${inp.prevVout}`;
+    const script = htmlToText(inp.script).trim();
+    const seq = htmlToText(inp.sequence).trim();
+    const wit = witnessHtml(inp, i);
+    if (wit != null) footnotes.push(htmlToText(wit).trim());
+    const foot = wit != null ? ` ⁽${footnotes.length}⁾` : '';
+    rows.push({ label, text: `${src}${script ? ` — ${script}` : ''}${seq ? ` · ${seq}` : ''}${foot}` });
+  });
+  fields.outputs.forEach((o, i) => {
+    const label = `output${fields.outputs.length > 1 ? ` ${i + 1}` : ''}`;
+    rows.push({ label, text: `${htmlToText(o.value)} — ${htmlToText(o.script).trim()}` });
+  });
+  rows.push({ label: 'locktime', text: htmlToText(fields.locktime).trim() });
+
+  const flat = rows.map((r) => `${r.label} ${r.text}`).join('\n');
+  return { rows, footnotes, flat };
+}
+
 // ─── the reply itself ───────────────────────────────────────────────────
 
 const reverseHex = (hex) => (hex.match(/../g) || []).reverse().join('');
 
-// Compose the reply for a resolved passage. The verse is the txid as prose —
-// cover words and all: the cover is the grammar that makes the payload read
-// as a sentence, and stripping it would quote the book in a voice it does
-// not have. When the full verse fits the budget, the tweet carries it whole
-// and decodes back to the txid. When it does not, the tweet carries an
-// ellipsized excerpt (trimmed at a word boundary) and `passage` carries the
-// full verse for rendering as an attached image — the passage as a page of
-// the book, unabridged, with the excerpt as its caption.
+// Compose the reply for a resolved passage. The verse quoted is the section
+// itself in the book's notation — the sigla, the amounts, the marks — with
+// its cover words intact everywhere prose appears: the cover is the grammar
+// that makes the payload read as a sentence, and stripping it would quote
+// the book in a voice it does not have. When the whole section fits the
+// budget it rides in the tweet text; when it does not — nearly always — the
+// tweet carries an ellipsized excerpt (trimmed at a word boundary) and
+// `passage` carries the full section for rendering as an attached image:
+// the passage as a page of the book, unabridged.
+//
+// `section` (sectionParts output) may be null when the transaction's bytes
+// couldn't be fetched; the verse then falls back to the txid as prose — the
+// line every passage opens with — so the reply still quotes something true.
 //
 // Returns { text, passage }; passage is null when the verse fit in text.
-export function composeReply({ height, index, txid, site, proseOf }) {
+export function composeReply({ height, index, txid, site, proseOf, section = null }) {
   const cite = `${reference(height)} §${index + 1}`;
   const title = titleFor(height, index, txid);
   const url = `${site}/bitcoin-book.html?block=${height}&index=${index}`;
   const head = title ? `${cite} — ${title}` : cite;
 
-  const verse = proseOf(reverseHex(txid)).prose.trim();
+  const txidProse = proseOf(reverseHex(txid)).prose.trim();
+  const verse = section ? section.flat : txidProse;
   const frame = (v) => `${head}\n\n“${v}”\n\n${url}`;
   const budget = TWEET_WEIGHT_BUDGET - URL_WEIGHT - weighText(frame('').replace(url, ''));
 
-  if (weighText(verse) <= budget) return { text: frame(verse), passage: null };
+  if (weighText(verse) <= budget && !(section && section.footnotes.length)) {
+    return { text: frame(verse), passage: null };
+  }
 
-  const words = verse.split(' ');
+  const words = verse.split(/\s+/);
   while (words.length > 1 && weighText(words.join(' ') + '…') > budget) words.pop();
   return {
     text: frame(words.join(' ') + '…'),
-    passage: { cite, title, verse, url, height, index, txid },
+    passage: { cite, title, txidProse, section, url, height, index, txid },
   };
 }
 
 // ─── the passage as a page ──────────────────────────────────────────────
 //
-// The overflow image: the full verse laid out as a page of the book — its
+// The overflow image: the passage laid out as a page of the book — its
 // dark paper, gold citation, Newsreader-style serif prose (system serif
-// stands in where the webfont isn't installed). Self-contained HTML, no
-// external resources; image.mjs screenshots the .card element.
+// stands in where the webfont isn't installed), the section's fields in
+// the manuscript's margin layout with the sigla intact, witness data as
+// footnotes. Self-contained HTML, no external resources; image.mjs
+// screenshots the .card element.
+
+// A grand section (hundreds of inputs, an inscription's footnotes) is cut
+// honestly for the image: past these caps a rule line says what remains,
+// and the live page carries the rest.
+const IMAGE_MAX_ROWS = 24;
+const IMAGE_MAX_FOOTNOTE_CHARS = 900;
 
 const escapeHtml = (s) => String(s)
   .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
   .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 
-export function passageHtml({ cite, title, verse, site }) {
+export function passageHtml({ cite, title, txidProse, section, site }) {
   const host = String(site).replace(/^https?:\/\//, '');
+
+  let body;
+  if (section) {
+    let rows = section.rows;
+    let more = '';
+    if (rows.length > IMAGE_MAX_ROWS) {
+      // Keep the head of the page and its last row (the locktime), and say
+      // how much the cut hides.
+      const hidden = rows.length - IMAGE_MAX_ROWS;
+      rows = [...rows.slice(0, IMAGE_MAX_ROWS - 1), rows[rows.length - 1]];
+      more = `<p class="more">⋯ ${hidden.toLocaleString('en-US')} more field${hidden === 1 ? '' : 's'} — the live page carries the whole section</p>`;
+    }
+    const rowsHtml = rows.map((r) =>
+      `<div class="row"><span class="label">${escapeHtml(r.label)}</span><span class="text">${escapeHtml(r.text)}</span></div>`
+    ).join('\n');
+    const notes = section.footnotes.map((f, i) => {
+      const cut = f.length > IMAGE_MAX_FOOTNOTE_CHARS ? f.slice(0, IMAGE_MAX_FOOTNOTE_CHARS) + ' ⋯' : f;
+      return `<div class="row note"><span class="label">${i + 1}</span><span class="text">${escapeHtml(cut)}</span></div>`;
+    }).join('\n');
+    body = `
+  <p class="verse">${escapeHtml(txidProse)}</p>
+  <div class="fields">
+${rowsHtml}
+  </div>
+  ${more}
+  ${notes ? `<div class="notes">${notes}</div>` : ''}`;
+  } else {
+    body = `
+  <p class="verse big">${escapeHtml(txidProse)}</p>`;
+  }
+
   return `<!doctype html>
 <meta charset="utf-8">
 <style>
   body { margin: 0; background: #08080a; }
   .card {
-    width: 1200px; box-sizing: border-box; padding: 76px 88px 60px;
+    width: 1200px; box-sizing: border-box; padding: 72px 84px 56px;
     background: #08080a; color: #cfcabf;
     font-family: 'Newsreader', Georgia, 'Times New Roman', serif;
   }
@@ -146,21 +256,36 @@ export function passageHtml({ cite, title, verse, site }) {
     font: 600 25px/1 'IBM Plex Mono', ui-monospace, Menlo, monospace;
     color: #c9a25f; letter-spacing: .08em; margin: 0 0 14px;
   }
-  .title { font-weight: 500; font-size: 34px; line-height: 1.25; color: #e8e4da; margin: 0 0 40px; letter-spacing: -.01em; }
-  .verse { font-style: italic; font-size: 34px; line-height: 1.65; color: #e8e4da; margin: 0; }
+  .title { font-weight: 500; font-size: 33px; line-height: 1.25; color: #e8e4da; margin: 0 0 30px; letter-spacing: -.01em; }
+  .verse { font-style: italic; font-size: 27px; line-height: 1.6; color: #e8e4da; margin: 0 0 34px; }
+  .verse.big { font-size: 34px; line-height: 1.65; margin-bottom: 0; }
   .verse::before { content: '“'; color: #c9a25f; }
   .verse::after { content: '”'; color: #c9a25f; }
+  .fields, .notes { border-top: 1px solid #232228; padding-top: 26px; }
+  .notes { margin-top: 26px; }
+  .row { display: flex; gap: 26px; margin: 0 0 16px; }
+  .row:last-child { margin-bottom: 0; }
+  .label {
+    flex: 0 0 128px; text-align: right;
+    font: 500 17px/1.9 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+    color: #c9a25f; letter-spacing: .04em;
+  }
+  .text { font-size: 24px; line-height: 1.55; color: #cfcabf; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .note .text { font-size: 20px; color: #a8a294; }
+  .more {
+    margin: 20px 0 0; font: 400 18px/1.4 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+    color: #8f8a7e;
+  }
   .foot {
-    margin-top: 52px; display: flex; justify-content: space-between; align-items: baseline;
+    margin-top: 48px; display: flex; justify-content: space-between; align-items: baseline;
     font: 400 19px/1 'IBM Plex Mono', ui-monospace, Menlo, monospace; color: #8f8a7e;
   }
   .foot .beta { color: #c9a25f; }
 </style>
 <body>
 <div class="card">
-  <p class="cite"${title ? '' : ' style="margin-bottom:40px"'}>${escapeHtml(cite)}</p>
-  ${title ? `<p class="title">${escapeHtml(title)}</p>` : ''}
-  <p class="verse">${escapeHtml(verse)}</p>
+  <p class="cite"${title ? '' : ' style="margin-bottom:30px"'}>${escapeHtml(cite)}</p>
+  ${title ? `<p class="title">${escapeHtml(title)}</p>` : ''}${body}
   <div class="foot">
     <span>${escapeHtml(host)}</span>
     <span>every <span class="beta">β</span>yte decodes back — the chain&#39;s own speech</span>
@@ -170,8 +295,9 @@ export function passageHtml({ cite, title, verse, site }) {
 }
 
 // The image's alt text: the whole passage, for readers who won't see the
-// page. X caps alt text at 1,000 characters; the verse nearly always fits.
-export function passageAltText({ cite, title, verse }) {
+// page. X caps alt text at 1,000 characters.
+export function passageAltText({ cite, title, txidProse, section }) {
+  const verse = section ? section.flat.replace(/\n/g, ' · ') : txidProse;
   const full = `${cite}${title ? ` — ${title}` : ''} — “${verse}”`;
   return full.length <= 1000 ? full : full.slice(0, 999) + '…';
 }
