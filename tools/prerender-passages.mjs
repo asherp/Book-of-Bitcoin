@@ -136,17 +136,18 @@ export function frontispieceMd(header) {
   const prev = isGenesisPrev
     ? `⓪${toSuperscript(256)} (no earlier block — this is the genesis block; all 256 bits zero)`
     : `${hashNotation(prevParts)} ${proseOf(prevParts.hex)}`;
-  // The difficulty target leads, as on the live page: β₇₈ < 213529×256²⁰ --
-  // the < binding the block hash printed just above the frontispiece to the
-  // exact target, the proof of work stated as the inequality it is.
+  // Wire order throughout, as on the live page. The difficulty row states
+  // the proof of work as the inequality it is -- β₇₈ < 213529×256²⁰ -- the
+  // < binding the block hash printed above the frontispiece to the exact
+  // target, without the field leaving its wire slot.
   const lines = [
-    `- **difficulty target:** ${htmlToText(hf.bits)}${hf.bitsExpr ? ` < ${hf.bitsExpr} — the block hash above reads below this target` : ''} — ${htmlToText(hf.bitsTitle)}`,
     `- **version:** v${htmlToText(hf.version)} — ${htmlToText(hf.versionTitle)}`,
     `- **previous block:** ${prev}`,
     isGenesisPrev ? null : `  - hex: \`${header.prevBlockHash}\``,
     `- **merkle root:** ⋔ ${proseOf(reverseHex(header.merkleRoot))}`,
     `  - hex: \`${header.merkleRoot}\``,
     `- **timestamp:** ${hf.timestamp}`,
+    `- **difficulty target:** ${htmlToText(hf.bits)}${hf.bitsExpr ? ` < ${hf.bitsExpr} — the block hash above reads below this target` : ''} — ${htmlToText(hf.bitsTitle)}`,
     `- **nonce:** η ${hf.nonce}`,
   ];
   return lines.filter(Boolean).join('\n');
