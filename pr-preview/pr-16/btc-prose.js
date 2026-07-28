@@ -547,7 +547,10 @@ export function renderScript(hex, collect, { eligible = false, nested = false, p
       if (coinbase && prevOp === 0x6a && t.push.length === 72 && t.push.slice(0, 8).toLowerCase() === 'aa21a9ed') {
         parts.push(
           markToken('⋔<sub>w</sub>', 'witness commitment (BIP141 marker aa21a9ed) — ⌘(witness-tree root ‖ reserved value), the identity hash: every witness in this block, bound to the chain through this coinbase. The root is the preimage — committed here, never written on chain'),
-          dataMark('h', 'the 32 committed bytes — ⌘ over the witness-tree root and the coinbase witness’s reserved value') + pushToken(0, 32),
+          // The digest wears ⌘, not the generic h: the mark itself says these
+          // 32 bytes are an identity-hash output -- the book is read as much
+          // as it is hovered.
+          dataMark('⌘', 'the 32 committed bytes — the identity hash ⌘ over (witness-tree root ‖ reserved value); the root is the preimage, never written') + pushToken(0, 32),
           collect(t.push.slice(8)),
         );
         return;
