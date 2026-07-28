@@ -1510,7 +1510,53 @@ async function stepProjected(height, where = -1) {
 }
 
 // ── Live frontage ─────────────────────────────────────────────────────────
-// While a projected page is on screen, the backend websocket keeps its head
+// The reader is on the chain tip's own chapter page: the last written
+// chapter, the one page besides the projected ones that the chain can still
+// change under. A section of the tip block doesn't count -- a reader inside
+// a chapter is reading, not watching the head of the chain.
+const atTipPage = () => !!(state && !state.projected && state.index === -1
+  && tipHeight !== null && state.height === tipHeight);
+
+// The tip moved while its own page was on screen, so the page follows it:
+// the new latest block opens in place of the old one, which -- no longer the
+// latest -- loses its clock with the render. The block announcement can beat
+// the REST mirror's index by a second or two, so a lookup that doesn't answer
+// yet is retried a few times; the fetch runs quietly behind the page already
+// on screen, which stays put until its successor is ready to replace it.
+// A reader who turns a page during any of this takes the wheel back: the
+// follow is only ever allowed to replace the page it was watching, untouched.
+const TIP_FOLLOW_TRIES = 4;
+const TIP_FOLLOW_WAIT = 2_000;
+let tipFollowing = false;
+async function followTip() {
+  if (tipFollowing) return;   // one follow at a time -- it re-aims at the current tip itself
+  tipFollowing = true;
+  tipClock.retire();          // this page is not the latest block anymore, whatever the fetch does next
+  let mine = state;
+  // Still the page this follow owns: the same state object (a step within
+  // the block edits it in place, so the index is checked too), a chapter
+  // page, and behind the tip.
+  const ours = () => state === mine && !state.projected && state.index === -1;
+  try {
+    for (let tries = 0; tries < TIP_FOLLOW_TRIES; tries++) {
+      if (!ours() || tipHeight === null || state.height >= tipHeight) return;
+      const target = tipHeight;
+      const meta = await loadBlockByHeight(target, { withTxids: false }).catch(() => null);
+      if (!ours()) return;
+      if (!meta) { await new Promise((r) => setTimeout(r, TIP_FOLLOW_WAIT * (tries + 1))); continue; }
+      state = mine = { ...meta, index: -1 };
+      await showCurrentTx();
+      tries = -1;   // caught the tip we aimed at; if it moved again mid-fetch, aim again
+    }
+    // The mirror never answered for the new tip. Stay on the block we have,
+    // repainted: it isn't the latest anymore, so its clock comes off (and
+    // with it, on the render, the feed that was watching for this).
+    if (ours()) await showCurrentTx();
+  } finally { tipFollowing = false; }
+}
+
+// While a page that the chain can still change is on screen -- a projected
+// chapter, or the chain tip's own -- the backend websocket keeps its head
 // honest: {"action":"want","data":["blocks","mempool-blocks"]} answers at
 // once with the current projection, then pushes 'mempool-blocks' on every
 // reshuffle of the queue and 'block' whenever one is mined. The chapter
@@ -1518,15 +1564,19 @@ async function stepProjected(height, where = -1) {
 // re-seats the chapter one nearer the tip (the ETA shortens, β and the
 // prev-hash slot re-resolve, k = 0 gains its predecessor) -- and when the
 // new ink covers THIS very height, the page reloads itself as the mined
-// chapter: the pencil inked over, live. Sections keep their deliberate
-// manifest snapshot; on them the feed only advances the tip and the nav.
+// chapter: the pencil inked over, live. On the tip's page the same push does
+// the same work one chapter later: the block that was the latest is now the
+// second latest, so the page turns to the one that took its place. Sections
+// keep their deliberate manifest snapshot; on them the feed only advances the
+// tip and the nav.
 // A websocket that won't connect degrades to a slow REST poll.
 const liveProjection = (() => {
-  let ws = null, retryTimer = null, pollTimer = null, active = false;
+  let ws = null, retryTimer = null, pollTimer = null, active = false, connecting = false;
   let trackedTx = null;          // the section's txid the feed is following
   let subBlock = null;           // projected-block index the manifest feed follows
   let expectedSeq = null;        // next delta sequence expected on that feed
   let pendingBlockSwitch = null; // block index a txPosition says we're moving to
+  let wanted = null;             // the 'want' set last sent on this socket
 
   const clearTimers = () => {
     if (retryTimer) { clearTimeout(retryTimer); retryTimer = null; }
@@ -1538,8 +1588,22 @@ const liveProjection = (() => {
     subBlock = null;
     expectedSeq = null;
     pendingBlockSwitch = null;
+    wanted = null;
     clearTimers();
     if (ws) { try { ws.close(); } catch {} ws = null; }
+  };
+
+  // What the page on screen needs pushed to it. A projected chapter is a cut
+  // of the queue, so it wants every reshuffle; the tip's page only wants to
+  // hear when it stops being the tip. The backend takes the whole set on each
+  // 'want', so this is sent again whenever the page changes what it needs.
+  const sendWant = () => {
+    if (!ws || ws.readyState !== 1) return;
+    const data = (state && state.projected) ? ['blocks', 'mempool-blocks'] : ['blocks'];
+    const key = data.join(',');
+    if (key === wanted) return;
+    wanted = key;
+    try { ws.send(JSON.stringify({ action: 'want', data })); } catch {}
   };
 
   // Follow (or stop following) the on-screen section's transaction. The
@@ -1604,9 +1668,17 @@ const liveProjection = (() => {
   const applyBlock = async (block) => {
     if (!block || !Number.isFinite(block.height)) return;
     if (tipHeight !== null && block.height <= tipHeight) return;   // stale or repeated
+    const wasTip = atTipPage();
     tipHeight = block.height;
     projectedCache = null;   // every projected height re-seats
-    if (!state || !state.projected) return;
+    if (!state || !state.projected) {
+      // The tip's page was on screen: turn it to the block that just took the
+      // tip. The page it leaves keeps nothing of its lateness -- the clock is
+      // rendered from the tip, so it comes off wherever that chapter is read
+      // next.
+      if (wasTip) await followTip();
+      return;
+    }
     if (state.index === -1) {
       if (state.height <= tipHeight) {
         stop();
@@ -1745,18 +1817,36 @@ const liveProjection = (() => {
     if (pollTimer) return;
     pollTimer = setInterval(async () => {
       if (!active || document.hidden) return;
+      // On the tip's page there is no projection to refresh -- the one thing
+      // worth asking is whether the tip is still the tip. Vanilla Esplora
+      // answers that, so this fallback works on any mirror.
+      if (atTipPage()) {
+        const t = Number(await loadTipHeight().catch(() => NaN));
+        if (active && Number.isFinite(t)) applyBlock({ height: t });
+        return;
+      }
       const blocks = await mempoolBackendFetch('/v1/fees/mempool-blocks');
       if (active && Array.isArray(blocks)) applyBlocks(blocks);
     }, 45_000);
   };
 
-  const connect = () => {
-    if (!active || ws) return;
-    if (!mempoolBackendBase) { startPolling(); return; }
+  const connect = async () => {
+    if (!active || ws || connecting) return;
+    // The backend host is learned from the first projection fetch; a reader
+    // who arrived straight at the chain tip has made none, so probe for it
+    // here -- the websocket is what makes the tip turn the moment a block
+    // lands rather than at the next poll.
+    if (!mempoolBackendBase) {
+      connecting = true;
+      try { await mempoolBackendFetch('/v1/fees/mempool-blocks'); } finally { connecting = false; }
+      if (!active || ws) return;
+      if (!mempoolBackendBase) { startPolling(); return; }
+    }
     try { ws = new WebSocket(`${mempoolBackendBase.replace(/^http/, 'ws')}/v1/ws`); }
     catch { ws = null; startPolling(); return; }
     ws.addEventListener('open', () => {
-      try { ws.send(JSON.stringify({ action: 'want', data: ['blocks', 'mempool-blocks'] })); } catch {}
+      wanted = null;   // a fresh socket subscribes to nothing until told
+      sendWant();
       sendTrack();
       sendBlockSub();
     });
@@ -1769,14 +1859,15 @@ const liveProjection = (() => {
   };
 
   return {
-    // Called after every page render: the feed runs exactly while a
-    // projected page is on screen, and not a moment longer -- and keeps its
-    // tracked transaction in step with the section on screen.
+    // Called after every page render: the feed runs exactly while a page the
+    // chain can still change is on screen -- a projected chapter, or the
+    // tip's own -- and not a moment longer, and keeps its tracked transaction
+    // in step with the section on screen.
     sync: () => {
-      const want = !!(state && state.projected);
+      const want = !!(state && state.projected) || atTipPage();
       if (want && !active) { active = true; connect(); }
       else if (!want && active) stop();
-      else if (want) { sendTrack(); sendBlockSub(); }
+      else if (want) { sendWant(); sendTrack(); sendBlockSub(); }
     },
   };
 })();
@@ -2149,6 +2240,61 @@ function renderFrontispiece(header) {
   }
 }
 
+// ── The tip's clock ───────────────────────────────────────────────────────
+// Every chapter in the book is finished except the last, and the last is only
+// finished until the next one arrives. Its page says so: the chain tip wears
+// "latest block: T+3m40s" as its subtitle, counting up from the block's own
+// timestamp, a second at a time, for as long as it stands at the head of the
+// chain. Nothing else on a mined page moves.
+// The clock is a property of the tip, not of the block -- it comes off the
+// moment the page stops being the tip's: another chapter opened, a section
+// entered, or the next block mined (which turns the page to the new tip and
+// leaves this one plain).
+const tipClock = (() => {
+  let timer = null, el = null, since = 0, sep = '';
+  const stop = () => {
+    if (timer) { clearInterval(timer); timer = null; }
+    el = null;
+  };
+  // A miner's timestamp may sit ahead of the reader's clock -- consensus
+  // allows it to run up to two hours fast -- so the age is floored at zero
+  // rather than counting backwards toward the block.
+  const paint = () => {
+    if (!el || !el.isConnected) { stop(); return; }   // the subtitle was rewritten out from under us
+    const s = Math.max(0, Math.floor(Date.now() / 1000 - since));
+    const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60;
+    const pad = (n) => String(n).padStart(2, '0');
+    const age = h ? `T+${h}h${pad(m)}m${pad(sec)}s` : m ? `T+${m}m${pad(sec)}s` : `T+${sec}s`;
+    el.textContent = `${sep}latest block: ${age}`;
+  };
+  return {
+    // Hang the running age off the end of the subtitle line, after whatever
+    // the chapter already carries there (a curated block keeps its name), and
+    // start the tick. The separator rides inside the same span, so retiring
+    // the clock takes the whole phrase with it.
+    show(subtitle, timestamp) {
+      stop();
+      since = timestamp;
+      sep = subtitle.textContent ? ' · ' : '';
+      el = document.createElement('span');
+      el.title = 'how long this block has stood at the head of the chain — counted from the timestamp its miner wrote';
+      subtitle.append(el);
+      paint();
+      timer = setInterval(paint, 1000);
+    },
+    // The block stopped being the tip while its page is still on screen (its
+    // successor is being fetched): the line comes off at once rather than
+    // counting on under a claim that has just stopped being true.
+    retire() {
+      const host = el && el.parentNode;
+      if (el) el.remove();
+      stop();
+      if (host && !host.textContent) host.classList.add('hidden');
+    },
+    stop,
+  };
+})();
+
 // The chapter head in its two dresses. The chapter's own page (index -1) wears
 // the full head -- big title, hash prose, frontispiece; a section page folds
 // the chapter into the Volume/Book eyebrow line -- "Volume 1 · Book 100 ·
@@ -2173,6 +2319,7 @@ function chapterName(n) {
 }
 
 function renderChapterHead(onTitlePage) {
+  tipClock.stop();   // re-started below if this render is the tip's own page
   if (state.projected) return renderProjectedHead(onTitlePage);
   const { volume, book, chapter } = volumeBookChapter(state.height);
   // The chapter's own page carries the Volume · Book crumbs; a section's
@@ -2193,6 +2340,8 @@ function renderChapterHead(onTitlePage) {
   $('ch-title').textContent = `Chapter ${chapterName(chapter)}`;
   const subtitle = $('ch-subtitle');
   subtitle.textContent = eventTitles.join(' · ');
+  // The chain tip, and only on its own page, carries the running clock.
+  if (onTitlePage && atTipPage()) tipClock.show(subtitle, state.block.timestamp);
   // On a section page the running head's chapter is a crumb back to the
   // chapter's own page -- no fetch needed, the block is already in state.
   const inline = $('ch-chapter-inline');
@@ -2326,6 +2475,7 @@ function renderLeafShell() {
   $('chapter').classList.add('title-leaf');
   ++renderGen;
   lazyEncode.reset();
+  tipClock.stop();
   $('ch-subtitle').classList.add('hidden');
   // A leaf has no folio -- pages belong to sections -- and its grid cell goes
   // back to the chapter-next stepper.
