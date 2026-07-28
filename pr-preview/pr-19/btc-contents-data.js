@@ -46,28 +46,21 @@ export const NOTABLE = [
   // mantissa slips 65535 -> 55402: the first adjustment lives entirely
   // inside the target's mantissa, below the resolution of a zero-bit count.
   { title: 'First difficulty adjustment', id: '30240', page: 'book' },
-  // The difficulty series: the record's own drama, each entry citing the
-  // BOOK whose pace earned the adjustment rather than the chapter where the
-  // new target first bound. A retarget is a verdict on the 2,016 blocks
-  // behind it, and a book is exactly those blocks -- the leaf's date range
-  // is the evidence the adjustment was computed from. Titled only by the
-  // percentage moved: the number is the chain's fact, readable off two
-  // consecutive book leaves. The stories behind the swings belong to the
-  // annotation layer (a coming PR); until then they live here in the
-  // margins, as commentary plainly filed as commentary. Figures from the
-  // canonical difficulty history. The five largest climbs are all from
-  // 2010; the deep cuts cluster later -- and the asymmetry is the series'
-  // real teaching: hashrate arrives faster than it leaves. The up-clamp
-  // (×4) was hit once; the deepest cut ever is −27.94%, nowhere near the
-  // −75% floor.
+  // The difficulty series, each entry citing the BOOK whose pace earned the
+  // adjustment rather than the chapter where the new target first bound: a
+  // retarget is computed from the 2,016 blocks behind it, and a book is
+  // exactly those blocks. Titled only by the percentage moved. The stories
+  // behind the swings belong to the annotation layer (a coming PR); the
+  // notes below are drafted for it to pick up. Figures from the canonical
+  // difficulty history. The five largest climbs are all from 2010; the deep
+  // cuts cluster later. The up-clamp (×4) was hit once; the deepest cut ever
+  // is −27.94%, against a −75% floor.
   //
   // Only Volume I can be cited this way. Book numbering restarts at each
   // halving and 210,000 is not a multiple of 2016, so from Volume II on a
   // real retarget window straddles two books -- offset 672 blocks in Volume
   // III, 1,008 in Volume IV -- and no book names it. Those later entries
-  // stay on their retarget chapter, below. That is the seam the preface
-  // leaves visible (supply and difficulty are two different clocks), showing
-  // up in the contents as the difficulty story losing its books.
+  // stay on their retarget chapter, below.
   { title: 'Difficulty +49%', id: '40320', page: 'book' },   // I β21, closing Feb 24, 2010: 2.53 -> 3.78, the CPU-era climb steepening
   { title: 'Difficulty +51%', id: '50400', page: 'book' },   // I β26, closing Apr 21, 2010: 7.82 -> 11.85, the climb's peak grade
   // I β28, closing May 19, 2010: 12.85 -> 11.46. Sixteen windows flat, then
@@ -75,8 +68,7 @@ export const NOTABLE = [
   // the earliest wave of curiosity ebbing.
   { title: 'First difficulty decrease (−10.8%)', id: '54432', page: 'book' },
   // I β29, closing May 29, 2010: 11.46 -> 16.62, the ebb reversed inside a
-  // single window -- and it is the window Pizza Day sits in, at ■596, so
-  // this leaf stands directly before its own most famous chapter.
+  // single window -- the window Pizza Day sits in, at ■596.
   { title: 'Difficulty +45%', id: '56448', page: 'book' },
   { title: 'Bitcoin Pizza Day', id: '57043' },
   // The July 2010 spike, in two consecutive books: Bitcoin v0.3's
@@ -122,9 +114,7 @@ export const NOTABLE = [
   // I β75, closing Oct 31, 2011: the deepest cut of the chain's first decade
   // -- the first bubble's aftermath. June 2011 had taken the price to ~$32
   // and the headlines with it; by Halloween it sat under $3, and the miners
-  // the bubble had drawn were unplugging. The last adjustment a book can
-  // name: every cut below falls in a later volume, where the windows no
-  // longer line up with the books.
+  // the bubble had drawn were unplugging. The last entry a book can cite.
   { title: 'Difficulty −18.03%', id: '149184', page: 'book' },
   // Block 164,467 (Jan 30, 2012): the first bare-multisig output -- 1-of-2,
   // one signature from a choice of two keys (BIP11).
@@ -173,9 +163,9 @@ export const NOTABLE = [
   { title: 'First native SegWit outputs', id: 'dfcec48bb8491856c353306ab5febeb7e99e4d783eedf3de98f3ee0812b92bad' },
   { title: 'First P2WSH reveal (2-of-3)', id: 'b38a88b073743bcc84170071cff4b68dec6fb5dc0bc8ffcb3d4ca632c2c78255' },
   { title: '500K block milestone', id: '500000' },
-  // From here the difficulty series loses its books: these windows straddle
-  // two apiece (see the note at the head of the series), so each cut is
-  // cited by the chapter where its new, looser target first bound.
+  // These windows straddle two books apiece (see the note at the head of the
+  // series), so each cut below is cited by the chapter where its new target
+  // first bound.
   { title: 'Difficulty −15.13%', id: '552384' },  // Dec 3, 2018: the 2018 bear market's capitulation -- price a fifth of its peak, older ASICs shut off at a loss
   { title: 'Difficulty −15.95%', id: '622944' },  // Mar 26, 2020: the covid crash -- Black Thursday (Mar 12) halved the price in a day, and the marginal miners followed it down
   { title: 'The Third Halving', id: '630000' },
