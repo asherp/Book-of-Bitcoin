@@ -24,7 +24,11 @@
     const dir = sessionStorage.getItem('glossia-front-entrance');
     if (dir) {
       sessionStorage.removeItem('glossia-front-entrance');
-      document.documentElement.classList.add(dir === 'fwd' ? 'front-entrance-fwd' : 'front-entrance');
+      // 'drop' is the contents' pull-down-at-top: the cover falls back into
+      // place from above. The other values finish a horizontal turn.
+      document.documentElement.classList.add(
+        dir === 'drop' ? 'front-entrance-drop' :
+        dir === 'fwd' ? 'front-entrance-fwd' : 'front-entrance');
     }
   } catch (_) {}
 
@@ -55,6 +59,10 @@ body { min-height: 100vh; background: var(--page); color: var(--ink); font-famil
   @keyframes front-in { from { transform: translateX(-100vw); } }
   .front-entrance-fwd body { animation: front-in-fwd .22s ease-out; }
   @keyframes front-in-fwd { from { transform: translateX(100vw); } }
+  /* The entering half of the contents' pull-down turn: the cover drops back
+     into place from above as the contents sink away below. */
+  .front-entrance-drop body { animation: front-in-drop .22s ease-out; }
+  @keyframes front-in-drop { from { transform: translateY(-100vh); } }
 }
 
 .wrap { max-width: 720px; margin: 0 auto; padding: 48px 22px 100px; }
@@ -86,9 +94,15 @@ body.at-title .title-leaf { min-height: 100vh; cursor: pointer; }
 
 /* ── The title leaf: set like a manuscript title page — the title in the
    upper third, the imprint line resting at the foot, open field between. ── */
-.title-leaf { min-height: 62vh; flex-direction: column; justify-content: center; text-align: center; }
+.title-leaf { min-height: 62vh; flex-direction: column; justify-content: center; text-align: center; position: relative; }
 .title-leaf .work-title { margin: 0; font: 300 clamp(38px, 11vw, 68px)/1.08 'Newsreader', serif; color: var(--ink); letter-spacing: -.02em; }
 .title-leaf .work-title .beta { color: var(--accent); font-weight: 400; }
+/* The edition line: the release stamp (vYYYY.0M.0D.HH, the deploy time),
+   set quietly at the leaf's bottom third like an imprint's edition notice.
+   Filled by btc-chrome.js from version.json; empty (invisible) in a bare
+   checkout that has no stamp. */
+.title-leaf .work-version { position: absolute; top: 68%; left: 0; right: 0; text-align: center;
+  font: 500 11px/1 'IBM Plex Mono', monospace; letter-spacing: .18em; color: var(--meta); }
 
 /* Body prose across the terms and preface leaves. */
 .leaf-body { font: 400 17.5px/1.72 'Newsreader', serif; color: var(--ink-soft); }
@@ -168,6 +182,7 @@ body.at-title .title-leaf { min-height: 100vh; cursor: pointer; }
     <!-- ── Title leaf: the title, and nothing else yet ─────────────────── -->
     <section class="leaf title-leaf" id="leaf-title" data-name="Title">
       <h1 class="work-title">The <span class="beta">β</span>ook<br>of <span class="beta">β</span>itcoin</h1>
+      <div class="work-version" data-app-version></div>
     </section>
 
     <!-- ── Terms leaf: the copyright page, saying the opposite ────────── -->
@@ -273,14 +288,17 @@ body.at-title .title-leaf { min-height: 100vh; cursor: pointer; }
 // front matter that argues. The contents keeps its own page, so this one holds
 // leaves on both sides of it and steps through it as a virtual leaf.
 //
-// This page deliberately owns no vertical axis. The contents remains the one
-// leaf above the volumes, so an ascent from Volume I lands there and nowhere
-// else; the front matter is reachable only along the horizontal.
+// This page owns almost no vertical axis. The contents remains the one leaf
+// above the volumes, so an ascent from Volume I lands there and nowhere else;
+// the front matter is reachable only along the horizontal. The one vertical
+// gesture is the cover's: swiping up on the title leaf lifts the cover away
+// to the contents (leaveUp below).
 // Standard front-matter order, with the contents in its traditional place --
 // after the title and terms, and BEFORE the preface. CONTENTS is a
 // virtual leaf: stepping onto it leaves this page for bitcoin-contents.html.
 import { OPCODE_SYMBOLS, OPCODE_NAMES, OPCODE_GROUPS } from './btc-sigla.js';
 import { NOTATION_HTML } from './btc-notation.js';
+import './btc-fontscale.js';   // the reader's type size: the sigla leaf's key follows the book page's setting
 
 const CONTENTS = '__contents__';
 const LEAVES = ['leaf-title', 'leaf-terms', CONTENTS, 'leaf-preface', 'leaf-sigla'];
@@ -315,6 +333,20 @@ function leave(href, dir, flag) {
   if (REDUCED) { go(); return; }
   document.body.style.transition = 'transform .2s linear';
   document.body.style.transform = `translateX(${dir > 0 ? -100 : 100}vw)`;
+  setTimeout(go, 180);
+}
+
+// Swiping up on the cover lifts it away to the table of contents — the one
+// vertical gesture the front matter allows, and only on the title leaf: the
+// cover rises the way a cover is lifted, and the contents follow from below.
+// The horizontal order (title, terms, CONTENTS, …) is untouched, and the
+// contents remains the one leaf above the volumes on the book's own axis.
+function leaveUp() {
+  try { sessionStorage.setItem('glossia-toc-entrance', 'up'); } catch (_) {}
+  const go = () => { location.href = './bitcoin-contents.html'; };
+  if (REDUCED) { go(); return; }
+  document.body.style.transition = 'transform .2s linear';
+  document.body.style.transform = 'translateY(-100vh)';
   setTimeout(go, 180);
 }
 
@@ -372,6 +404,12 @@ document.addEventListener('touchend', (e) => {
   const dy = e.changedTouches[0].clientY - sy;
   const dt = performance.now() - st;
   sx = null;
+  // On the title leaf only: a committed upward swipe lifts the cover away
+  // to the contents (see leaveUp above).
+  if (LEAVES[at] === 'leaf-title' && dt <= 600 && dy <= -70 && Math.abs(dx) <= Math.abs(dy) * 0.6) {
+    leaveUp();
+    return;
+  }
   if (dt > 600 || Math.abs(dx) < 60 || Math.abs(dy) > Math.abs(dx) * 0.6) return;
   step(dx < 0 ? 1 : -1);
 }, { passive: true });
