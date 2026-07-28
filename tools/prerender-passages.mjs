@@ -143,7 +143,7 @@ export function frontispieceMd(header) {
     `- **merkle root:** ⋔ ${proseOf(reverseHex(header.merkleRoot))}`,
     `  - hex: \`${header.merkleRoot}\``,
     `- **timestamp:** ${hf.timestamp}`,
-    `- **difficulty target:** ${htmlToText(hf.bits)} — ${htmlToText(hf.bitsTitle)}`,
+    `- **difficulty target:** ${htmlToText(hf.bits)}${hf.bitsExpr ? ` ${hf.bitsExpr}` : ''} — ${htmlToText(hf.bitsTitle)}`,
     `- **nonce:** η ${hf.nonce}`,
   ];
   return lines.filter(Boolean).join('\n');
