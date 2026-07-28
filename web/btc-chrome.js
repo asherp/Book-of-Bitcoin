@@ -73,7 +73,20 @@
   const fetchVersion = () =>
     fetch('./version.json').then((r) => (r.ok ? r.json() : null))
       .then((j) => (j && j.version) || null).catch(() => null);
-  fetchVersion().then((v) => { runningVersion = v; });
+  // Any page can carry an empty [data-app-version] element (the cover's
+  // edition line does); it gets the running stamp once that's known.
+  const reflectVersion = () => {
+    if (!runningVersion) return;
+    document.querySelectorAll('[data-app-version]').forEach((el) => { el.textContent = 'v' + runningVersion; });
+  };
+  fetchVersion().then((v) => {
+    runningVersion = v;
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', reflectVersion);
+    } else {
+      reflectVersion();
+    }
+  });
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {

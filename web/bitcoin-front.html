@@ -86,9 +86,15 @@ body.at-title .title-leaf { min-height: 100vh; cursor: pointer; }
 
 /* ── The title leaf: set like a manuscript title page — the title in the
    upper third, the imprint line resting at the foot, open field between. ── */
-.title-leaf { min-height: 62vh; flex-direction: column; justify-content: center; text-align: center; }
+.title-leaf { min-height: 62vh; flex-direction: column; justify-content: center; text-align: center; position: relative; }
 .title-leaf .work-title { margin: 0; font: 300 clamp(38px, 11vw, 68px)/1.08 'Newsreader', serif; color: var(--ink); letter-spacing: -.02em; }
 .title-leaf .work-title .beta { color: var(--accent); font-weight: 400; }
+/* The edition line: the release stamp (vYYYY.0M.0D.HH, the deploy time),
+   set quietly at the leaf's bottom third like an imprint's edition notice.
+   Filled by btc-chrome.js from version.json; empty (invisible) in a bare
+   checkout that has no stamp. */
+.title-leaf .work-version { position: absolute; top: 68%; left: 0; right: 0; text-align: center;
+  font: 500 11px/1 'IBM Plex Mono', monospace; letter-spacing: .18em; color: var(--meta); }
 
 /* Body prose across the terms and preface leaves. */
 .leaf-body { font: 400 17.5px/1.72 'Newsreader', serif; color: var(--ink-soft); }
@@ -168,6 +174,7 @@ body.at-title .title-leaf { min-height: 100vh; cursor: pointer; }
     <!-- ── Title leaf: the title, and nothing else yet ─────────────────── -->
     <section class="leaf title-leaf" id="leaf-title" data-name="Title">
       <h1 class="work-title">The <span class="beta">β</span>ook<br>of <span class="beta">β</span>itcoin</h1>
+      <div class="work-version" data-app-version></div>
     </section>
 
     <!-- ── Terms leaf: the copyright page, saying the opposite ────────── -->
