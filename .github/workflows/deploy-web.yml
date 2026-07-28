@@ -31,16 +31,18 @@ jobs:
       - uses: actions/checkout@v4
 
       # Every production deploy is a release, versioned by calendar:
-      # vYYYY.0M.0D.N where the date is the UTC deploy date and N counts the
-      # releases made that day, starting at 1. Several releases a day just
-      # keep incrementing N. The gh-pages-deploy concurrency group serializes
-      # these runs, so two deploys can never compute the same number.
+      # vYYYY.0M.0D.HH — the UTC date and hour the deploy started. A second
+      # release in the same hour appends the minute (vYYYY.0M.0D.HH.MM) to
+      # stay unique; the gh-pages-deploy concurrency group serializes these
+      # runs, so two deploys can never compute the same version.
       - name: Compute release version
         run: |
           git fetch --quiet origin 'refs/tags/*:refs/tags/*'
-          today="$(date -u +%Y.%m.%d)"
-          last="$(git tag --list "v${today}.*" | awk -F. '{print $NF}' | sort -n | tail -1)"
-          echo "VERSION=${today}.$(( ${last:-0} + 1 ))" >> "$GITHUB_ENV"
+          version="$(date -u +%Y.%m.%d.%H)"
+          if git rev-parse -q --verify "refs/tags/v${version}" >/dev/null; then
+            version="${version}.$(date -u +%M)"
+          fi
+          echo "VERSION=${version}" >> "$GITHUB_ENV"
 
       # The Glossia engine (the Rust core compiled to WASM) is consumed as a
       # published crates.io release, pinned in build_web.sh. Fetch its source

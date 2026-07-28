@@ -203,13 +203,13 @@ repo's builds can succeed.
 ### Versioning
 
 Releases are versioned by calendar — [CalVer](https://calver.org/), in the
-form `vYYYY.0M.0D.N`: the UTC date of the deploy, then a counter for the
-releases made that day (`v2026.07.28.1`, `v2026.07.28.2`, …). Since every
-push to `main` deploys, every deploy *is* a release, and the deploy workflow
-handles the versioning itself: it computes the next number from the existing
-tags, stamps it into the site as `/version.json`, and tags the commit after
-the deploy succeeds. Nothing is versioned by hand, and any number of releases
-can ship in a day.
+form `vYYYY.0M.0D.HH`: the UTC date and hour the deploy started
+(`v2026.07.28.14` for a 2pm deploy). A second release in the same hour
+appends the minute (`v2026.07.28.14.37`) so versions stay unique however
+many ship in a day. Since every push to `main` deploys, every deploy *is* a
+release, and the deploy workflow handles the versioning itself: it computes
+the version, stamps it into the site as `/version.json`, and tags the commit
+after the deploy succeeds. Nothing is versioned by hand.
 
 ## Reading without JavaScript (crawlers, AI assistants)
 
