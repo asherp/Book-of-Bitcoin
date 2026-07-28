@@ -24,7 +24,11 @@
     const dir = sessionStorage.getItem('glossia-front-entrance');
     if (dir) {
       sessionStorage.removeItem('glossia-front-entrance');
-      document.documentElement.classList.add(dir === 'fwd' ? 'front-entrance-fwd' : 'front-entrance');
+      // 'drop' is the contents' pull-down-at-top: the cover falls back into
+      // place from above. The other values finish a horizontal turn.
+      document.documentElement.classList.add(
+        dir === 'drop' ? 'front-entrance-drop' :
+        dir === 'fwd' ? 'front-entrance-fwd' : 'front-entrance');
     }
   } catch (_) {}
 
@@ -55,6 +59,10 @@ body { min-height: 100vh; background: var(--page); color: var(--ink); font-famil
   @keyframes front-in { from { transform: translateX(-100vw); } }
   .front-entrance-fwd body { animation: front-in-fwd .22s ease-out; }
   @keyframes front-in-fwd { from { transform: translateX(100vw); } }
+  /* The entering half of the contents' pull-down turn: the cover drops back
+     into place from above as the contents sink away below. */
+  .front-entrance-drop body { animation: front-in-drop .22s ease-out; }
+  @keyframes front-in-drop { from { transform: translateY(-100vh); } }
 }
 
 .wrap { max-width: 720px; margin: 0 auto; padding: 48px 22px 100px; }
