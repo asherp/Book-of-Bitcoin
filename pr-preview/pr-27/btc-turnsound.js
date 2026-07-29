@@ -34,10 +34,17 @@
 //   book      a heavier gathering — a low body joins the rustle
 //   volume    a tome, deepest and slowest to settle
 //
-// So a voice is a centre frequency, a decay, and (for the two deep levels) a
-// sine thump under the noise: a level's pitch falls and its tail lengthens as
-// the binding gets heavier, which is what makes a vertical swipe audibly an
-// ascent rather than just another turn.
+// So a voice is a centre frequency, a duration, and (for the two deep levels)
+// a sine thump under the noise: a level's pitch falls and its travel
+// lengthens as the binding gets heavier, which is what makes a vertical swipe
+// audibly an ascent rather than just another turn.
+//
+// Every voice moves through the same three moments, because a turn is a
+// gesture and not an impact -- the sheet is caught, swept through the air,
+// and set down. The friction swells to the middle of that travel rather than
+// slamming open; the buckling clicks spread across it, leaning late; and the
+// thump lands after the swell, not with the first contact. Skip the swell and
+// the sound reads as a click or a hiss no matter how long you make it.
 //
 // Autoplay policy shapes the rest. An AudioContext built outside a user
 // gesture starts suspended, but once resumed inside ANY gesture it stays
@@ -65,11 +72,18 @@ export const LEVELS = ['section', 'chapter', 'book', 'volume'];
 // clickHz  where those clicks sit; they ring above the friction they ride on
 // body     a sine thump under it all (Hz), for the bound levels; 0 for none
 const VOICES = {
-  section: { hz: 2550, q: 0.85, attack: 0.004, decay: 0.085, gain: 0.190, rate: 1.35, clicks: 5,  clickHz: 3100, body: 0 },
-  chapter: { hz: 1450, q: 0.75, attack: 0.006, decay: 0.135, gain: 0.200, rate: 1.00, clicks: 8,  clickHz: 2250, body: 0 },
-  book:    { hz:  780, q: 0.65, attack: 0.008, decay: 0.200, gain: 0.115, rate: 0.80, clicks: 12, clickHz: 1600, body: 104 },
-  volume:  { hz:  420, q: 0.55, attack: 0.010, decay: 0.300, gain: 0.110, rate: 0.62, clicks: 16, clickHz: 1050, body: 58 },
+  section: { hz: 2550, q: 0.85, attack: 0.010, decay: 0.240, gain: 0.150, rate: 1.35, clicks: 12, clickHz: 3100, body: 0 },
+  chapter: { hz: 1450, q: 0.75, attack: 0.012, decay: 0.360, gain: 0.155, rate: 1.00, clicks: 18, clickHz: 2250, body: 0 },
+  book:    { hz:  780, q: 0.65, attack: 0.015, decay: 0.540, gain: 0.140, rate: 0.80, clicks: 26, clickHz: 1600, body: 104 },
+  volume:  { hz:  420, q: 0.55, attack: 0.018, decay: 0.820, gain: 0.145, rate: 0.62, clicks: 36, clickHz: 1050, body: 58 },
 };
+
+// Where the sweep peaks, as a fraction of the decay. A page turn is not a
+// burst: the sheet is picked up, swept through the air -- loudest around the
+// middle of its travel -- and then lands. An envelope that slams open and
+// decays reads as a click or a hiss however long you make it; the swell is
+// what makes it a turn.
+const SWELL_AT = 0.45;
 
 // The crumpling law: p(E) ∝ E^-α over CRUMPLE_RANGE decades of energy.
 const CRUMPLE_ALPHA = 1.4;      // mid of the measured 1.3–1.6
@@ -88,15 +102,16 @@ function clickAmplitude() {
 // A turn's whole train of buckling events, written into one buffer: the
 // clicks cost a single source and a single filter between them rather than a
 // node apiece. Each click is a couple of milliseconds of noise under a steep
-// decay -- an impulse, near enough -- and they cluster toward the start,
-// where the leaf is doing its bending.
+// decay -- an impulse, near enough.
 function crumpleBuffer(ac, v) {
   const len = Math.ceil(ac.sampleRate * v.decay);
   const buf = ac.createBuffer(1, len, ac.sampleRate);
   const d = buf.getChannelData(0);
   const clickLen = Math.ceil(ac.sampleRate * CLICK_SECONDS);
   for (let n = 0; n < v.clicks; n++) {
-    const at = Math.floor(len * Math.random() ** 1.7);
+    // Spread across the whole turn, leaning late: the sheet buckles as it
+    // sweeps and as it lands, not all at the instant it is picked up.
+    const at = Math.floor(len * Math.random() ** 0.8);
     const amp = clickAmplitude();
     for (let i = 0; i < clickLen && at + i < len; i++) {
       d[at + i] += (Math.random() * 2 - 1) * amp * Math.exp(-i / (clickLen * 0.28));
@@ -138,11 +153,13 @@ function context() {
   return ctx;
 }
 
-// One second of white noise, generated once and read from a random offset per
-// turn, so no two turns draw the same grain.
+// Two seconds of white noise, generated once and read from a random offset
+// per turn, so no two turns draw the same grain. Two rather than one: the
+// longest voice runs most of a second, and a buffer barely longer than the
+// sound leaves no room for the offset to vary.
 function noise(ac) {
   if (noiseBuf) return noiseBuf;
-  noiseBuf = ac.createBuffer(1, Math.floor(ac.sampleRate), ac.sampleRate);
+  noiseBuf = ac.createBuffer(1, Math.floor(ac.sampleRate * 2), ac.sampleRate);
   const d = noiseBuf.getChannelData(0);
   for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
   return noiseBuf;
@@ -225,9 +242,14 @@ export function playTurn(level) {
 
     const g = ac.createGain();
     // Ramped from near-silence rather than zero: an exponential ramp cannot
-    // start at 0, and a stepped start would click.
+    // start at 0, and a stepped start would click. Three stages -- the sheet
+    // is caught at once (so the sound still answers the gesture immediately),
+    // swells as it sweeps, then falls away as it lands. The swell is linear:
+    // an exponential rise from near-silence sounds like a tape running
+    // backwards, where a linear one just gets louder.
     g.gain.setValueAtTime(0.0001, t0);
-    g.gain.exponentialRampToValueAtTime(v.gain, t0 + v.attack);
+    g.gain.exponentialRampToValueAtTime(v.gain * 0.35, t0 + v.attack);
+    g.gain.linearRampToValueAtTime(v.gain, t0 + v.decay * SWELL_AT);
     g.gain.exponentialRampToValueAtTime(0.0001, t0 + v.decay);
 
     src.connect(band).connect(band2).connect(g).connect(master);
@@ -245,24 +267,28 @@ export function playTurn(level) {
     cband.frequency.value = v.clickHz * wobble;
     cband.Q.value = 2.2;   // focused: an impulse is broadband, and a loose band leaves it hissy
     const cg = ac.createGain();
-    cg.gain.value = v.gain * 2.0;
+    cg.gain.value = v.gain * 3.0;
     crumple.connect(cband).connect(cg).connect(master);
     crumple.start(t0);
     crumple.stop(t0 + tail);
 
     // The bound levels get a body under the rustle — the boards of a book,
     // the heft of a tome — pitched down as it lands, the way a thump does.
+    // It arrives AFTER the swell, not with the first contact: the gathering
+    // comes down at the end of the sweep, which is what gives the turn its
+    // weight rather than just its depth.
     if (v.body) {
+      const lands = t0 + v.decay * 0.6;
       const osc = ac.createOscillator();
       osc.type = 'sine';
-      osc.frequency.setValueAtTime(v.body * 1.35, t0);
-      osc.frequency.exponentialRampToValueAtTime(v.body * 0.8, t0 + v.decay * 0.8);
+      osc.frequency.setValueAtTime(v.body * 1.35, lands);
+      osc.frequency.exponentialRampToValueAtTime(v.body * 0.8, t0 + v.decay);
       const bg = ac.createGain();
-      bg.gain.setValueAtTime(0.0001, t0);
-      bg.gain.exponentialRampToValueAtTime(v.gain * 0.4, t0 + 0.012);
-      bg.gain.exponentialRampToValueAtTime(0.0001, t0 + v.decay * 0.9);
+      bg.gain.setValueAtTime(0.0001, lands);
+      bg.gain.exponentialRampToValueAtTime(v.gain * 0.4, lands + 0.015);
+      bg.gain.exponentialRampToValueAtTime(0.0001, t0 + v.decay);
       osc.connect(bg).connect(master);
-      osc.start(t0);
+      osc.start(lands);
       osc.stop(t0 + tail);
     }
   } catch { /* a turn never fails on its sound */ }
