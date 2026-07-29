@@ -153,6 +153,19 @@ the first real pass still answers everything it found. Tweet something
 with the tag from another account first, or point `BOT_HASHTAG` at a tag
 that already has traffic.
 
+**3½ — a whole pass, against stand-ins.** Drives search → resolve →
+render → upload → reply → record with no account and no network:
+
+```sh
+node tools/twitter-bot/rehearse.mjs
+```
+
+It asserts a cold pass posts nothing, a warm pass answers the two
+citations (with images) and passes over the bare tag, and a repeat pass
+answers nothing twice — exiting non-zero on the first mismatch, so it can
+gate a deploy. What it cannot prove is that the real X API accepts what
+the bot sends; only rung 4 does that.
+
 **4 — live.** All five credentials, and start deliberately: set
 `BOT_HASHTAG` to something private (`#bookofbitcointest`) and
 `BOT_MAX_REPLIES=1`, tweet a citation at it, and run one pass. Check the
@@ -163,6 +176,86 @@ checkbox) before you let the schedule have it.
 Every failure path prints one line and exits non-zero — a missing
 credential, an unreachable explorer, a missing engine. `BOT_DEBUG=1` adds
 the stack.
+
+## Deploying it
+
+The bot is a single pass that exits — not a daemon — so deploying it means
+choosing what runs it on a schedule. Anything that can run `node` every so
+often will do.
+
+### On GitHub Actions (included)
+
+`.github/workflows/twitter-bot.yml` runs a pass every 30 minutes. It skips
+itself quietly until the credentials exist, so merging it changes nothing
+until you opt in:
+
+1. **Add the five secrets** — Settings → Secrets and variables → Actions →
+   *Secrets*: `X_BEARER_TOKEN`, `X_API_KEY`, `X_API_SECRET`,
+   `X_ACCESS_TOKEN`, `X_ACCESS_SECRET`.
+2. **Add the variables you want** — same page, *Variables* tab:
+   `BOT_HASHTAG`, `BOT_HANDLE` (the bot's own handle, so it never answers
+   itself), `BOT_MAX_REPLIES`, `BOT_SITE`. All optional; all have defaults.
+3. **Rehearse it first** — Actions → Twitter Bot → *Run workflow*, with the
+   **dry run** box ticked. It searches for real and posts nothing.
+4. **Let it run.** Untick the box, or wait for the schedule.
+
+Each pass appends its log to the run summary, so the Actions page reads as
+a history of what the bot said and why.
+
+Two things to know about this deployment:
+
+- **The schedule is approximate.** GitHub's cron is best-effort and often
+  runs late under load. A tweet may wait an hour for its answer. Also,
+  scheduled workflows are disabled automatically after 60 days without a
+  commit to the repository — if the book goes quiet, so does the bot, and
+  GitHub emails you when it happens.
+- **State lives in the Actions cache**, which is evicted after about a week
+  without a hit. The ledger is in the same file as the watermark, so an
+  eviction is indistinguishable from a first run — which is exactly why a
+  pass with no state answers nothing (see below). At 30-minute intervals
+  eviction should never happen; after a long pause, it costs you a few
+  unanswered tweets rather than a burst of late ones.
+
+### Anywhere else
+
+The bot needs Node ≥ 20 and, for images, Playwright's Chromium. On a small
+VM, a cron line is the whole deployment:
+
+```cron
+*/30 * * * * cd /srv/book-of-bitcoin && \
+  X_BEARER_TOKEN=… X_API_KEY=… X_API_SECRET=… \
+  X_ACCESS_TOKEN=… X_ACCESS_SECRET=… \
+  /usr/bin/node tools/twitter-bot/bot.mjs >> /var/log/bookbot.log 2>&1
+```
+
+`state.json` then lives on disk, which is more durable than the Actions
+cache — set `BOT_STATE` to put it somewhere that survives a redeploy. Point
+`BOT_ESPLORA` at your own node if you'd rather not lean on the public
+mirrors.
+
+The pass exits non-zero on failure with a one-line reason, so any
+supervisor that reads exit codes will tell you the truth about it.
+
+### Cold starts, and why the first pass is silent
+
+A pass that finds no state at all — a first deployment, a wiped cache, a
+fresh clone — takes the watermark and **replies to nothing**, then answers
+normally from the next pass on. Both situations look identical from inside
+the bot, and the dangerous one is the second: the replied-to ledger is in
+the file that vanished, so answering what the search returns could mean
+replying to a week of tweets at once. A bot that says nothing on its first
+run is a bug report; one that says fifty things at once is an incident.
+
+So expect the first pass to be quiet. That is correct. If you actually
+want the backlog answered, run it once with `BOT_COLD_START=reply`.
+
+### Keeping it honest
+
+`.github/workflows/twitter-bot-test.yml` runs on every change to the bot —
+or to the book modules it composes passages through, since a change to
+`btc-prose.js` reaches the bot's output directly. It runs the suite twice
+(bare checkout, then with the engine and browser present) and rehearses a
+full pass. No credentials, and it cannot reach X or the chain.
 
 ## Credentials
 
@@ -192,6 +285,8 @@ your rate limits.
 | `BOT_MAX_REPLIES` | `5` | replies per pass; the rest wait for the next one |
 | `BOT_REPLY_UNWRITTEN` | `1` | set `0` to skip future-chapter citations silently |
 | `BOT_ESPLORA` | the two public mirrors | chain source(s), comma-separated — your own node, or a local stand-in |
+| `BOT_X_API` | `https://api.x.com` | the X API base — point it at a stand-in to rehearse a pass |
+| `BOT_COLD_START` | — | set `reply` to answer the backlog on a stateless first pass |
 | `BOT_DEBUG` | — | set `1` to print a stack on failure, not just the message |
 | `BOT_IMAGE_WIDTH` | `1200` | passage image width, in CSS px (rendered at 2×) |
 | `BOT_IMAGE_HEIGHT` | `1500` | passage image height; the fit follows the geometry |
@@ -220,6 +315,8 @@ the Actions cache between runs.
   `loadRenderer()` returns null and nothing else degrades
 - `x-api.mjs` — the API calls (search, post, media upload, alt text),
   with OAuth 1.0a signing on `node:crypto`
+- `rehearse.mjs` — a whole pass against local stand-ins for the chain
+  and for X: the posting path, exercised before it can reach anybody
 - `test.mjs` — the offline suite; the deeper tests render a real verse
   through the WASM engine (when `./build_web.sh` has run) and a real PNG
   (when Playwright is installed), and skip cleanly when not

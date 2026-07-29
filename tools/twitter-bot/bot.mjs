@@ -34,6 +34,9 @@
 //   BOT_MAX_REPLIES   replies per pass (default 5)
 //   BOT_REPLY_UNWRITTEN  set to 0 to skip, rather than answer, citations of
 //                     chapters the chain has not reached
+//   BOT_X_API         the X API base (default https://api.x.com) -- point it at a
+//                     stand-in to rehearse a whole pass without an account
+//   BOT_COLD_START    set to 'reply' to answer the backlog on a first pass
 //   BOT_ESPLORA       chain source(s), comma-separated — your own node, or a
 //                     local stand-in for testing (default: the public mirrors)
 //   BOT_DEBUG         set to 1 to print a stack on failure, not just the message
@@ -57,9 +60,13 @@ import {
   sectionParts, passageAltText, PAGE_WIDTH, PAGE_HEIGHT,
 } from './quote.mjs';
 import { loadRenderer } from './image.mjs';
-import { searchRecent, postTweet, uploadMedia, setAltText, XApiError } from './x-api.mjs';
+import { searchRecent, postTweet, uploadMedia, setAltText, XApiError, DEFAULT_API_BASE } from './x-api.mjs';
 
 const SITE = process.env.BOT_SITE || 'https://bookofbitcoin.io';
+// Where the X API lives. Overridable so a whole pass can be rehearsed
+// against a stand-in -- the one path the offline suite cannot reach, since
+// it is the only one that posts.
+const API_BASE = process.env.BOT_X_API || DEFAULT_API_BASE;
 const HASHTAG = process.env.BOT_HASHTAG || '#bookofbitcoin';
 const MAX_REPLIES = parseInt(process.env.BOT_MAX_REPLIES || '5', 10);
 const REPLY_UNWRITTEN = process.env.BOT_REPLY_UNWRITTEN !== '0';
@@ -199,9 +206,24 @@ async function resolveInputCitations(fields, fetchFn) {
 
 const REPLIED_KEEP = 1000;
 
+// A cold start is a pass with no state at all: a first deployment, or a
+// state file that went away under the bot (the workflow keeps it in the
+// Actions cache, which is evicted after about a week of no hits). Both
+// look identical from here, and the second is the dangerous one — the
+// replied ledger is in that same file, so answering what the search
+// returns would re-answer up to a week of tweets at once.
+//
+// So a cold pass replies to nothing. It takes the watermark, records why,
+// and answers from the next pass on. The cost is that a genuinely new
+// deployment ignores the backlog already under its tag, which is the
+// right trade: a bot that says nothing on its first run is a bug report,
+// a bot that says fifty things at once is an incident. Set
+// BOT_COLD_START=reply to answer the backlog anyway.
+const COLD_START_REPLIES = process.env.BOT_COLD_START === 'reply';
+
 async function loadState() {
-  try { return JSON.parse(await readFile(STATE_PATH, 'utf8')); }
-  catch { return { sinceId: null, replied: {} }; }
+  try { return { ...JSON.parse(await readFile(STATE_PATH, 'utf8')), cold: false }; }
+  catch { return { sinceId: null, replied: {}, cold: true }; }
 }
 
 async function saveState(state) {
@@ -212,7 +234,13 @@ async function saveState(state) {
   }
   await mkdir(new URL('.', pathToFileURL(STATE_PATH)), { recursive: true });
   const tmp = STATE_PATH + '.tmp';
-  await writeFile(tmp, JSON.stringify(state, null, 2));
+  // `cold` describes this pass, not the state; it is decided by whether the
+  // file existed, so persisting it would be both redundant and misleading.
+  const { cold, ...persisted } = state;
+  await writeFile(tmp, JSON.stringify(persisted, null, 2));
+  // Written to a sibling and renamed: a pass killed mid-write (a workflow
+  // cancelled, a container reclaimed) leaves the previous state intact
+  // rather than a truncated file the next pass would read as a cold start.
   await rename(tmp, STATE_PATH);
 }
 
@@ -261,8 +289,8 @@ async function passageMedia(outcome, { renderer, creds, site }) {
   try {
     const { png, fontSize, fitted } = await renderer.render(outcome.passage, { site, ...IMAGE });
     console.log(`  (passage set at ${fontSize.toFixed(1)}px${fitted ? '' : ', clipped to its opening'})`);
-    const mediaId = await uploadMedia({ creds, media: png });
-    try { await setAltText({ creds, mediaId, text: passageAltText(outcome.passage) }); }
+    const mediaId = await uploadMedia({ creds, media: png, apiBase: API_BASE });
+    try { await setAltText({ creds, mediaId, text: passageAltText(outcome.passage), apiBase: API_BASE }); }
     catch (e) { console.warn(`  (alt text failed: ${e.message})`); }
     return [mediaId];
   } catch (e) {
@@ -332,12 +360,23 @@ async function main() {
 
   let tweets, newestId;
   try {
-    ({ tweets, newestId } = await searchRecent({ bearer, query, sinceId: state.sinceId }));
+    ({ tweets, newestId } = await searchRecent({ bearer, query, sinceId: state.sinceId, apiBase: API_BASE }));
   } catch (e) {
     if (e instanceof XApiError && e.rateLimited) { console.warn('rate limited on search; next run will catch up'); return; }
     throw e;
   }
   console.log(`${tweets.length} tweet(s) for ${JSON.stringify(query)} since ${state.sinceId || 'the beginning'}`);
+
+  // A cold pass takes the watermark and answers nothing (see loadState).
+  if (state.cold && !COLD_START_REPLIES && !dryRun) {
+    state.sinceId = newestId || state.sinceId;
+    await saveState(state);
+    console.log(`cold start: no prior state, so this pass answers nothing and marks ` +
+      `${tweets.length} tweet(s) as already seen. Replies begin next pass. ` +
+      `(BOT_COLD_START=reply to answer the backlog instead.)`);
+    if (renderer) await renderer.close();
+    return;
+  }
 
   let replies = 0;
   for (const tweet of tweets) {
@@ -367,7 +406,7 @@ async function main() {
 
     try {
       const mediaIds = await passageMedia(outcome, { renderer, creds, site: SITE });
-      const posted = await postTweet({ creds, text: outcome.text, inReplyTo: tweet.id, mediaIds });
+      const posted = await postTweet({ creds, text: outcome.text, inReplyTo: tweet.id, mediaIds, apiBase: API_BASE });
       state.replied[tweet.id] = { at: new Date().toISOString(), replyId: posted.id };
       replies++;
       console.log(`  ${tweet.id}: replied ${posted.id}${mediaIds.length ? ' (with passage image)' : ''}`);

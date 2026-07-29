@@ -78,7 +78,17 @@ jobs:
 
       # The bot's watermark and replied-to ledger, carried between runs in
       # the Actions cache: restore the newest prior state, save this run's
-      # under a fresh key.
+      # under a fresh key (cache entries are immutable, so state moves
+      # forward by writing a new one each pass).
+      #
+      # The cache is the weak link in this deployment: GitHub evicts entries
+      # after about a week without a hit, and the ledger lives in the same
+      # file as the watermark, so an eviction looks exactly like a first
+      # run. That is what the bot's cold-start rule is for — a pass with no
+      # state takes the watermark and answers nothing, so a lost cache
+      # costs a few unanswered tweets instead of replaying a week of them.
+      # Passes run every 30 minutes, well inside the eviction window, so
+      # this should only ever bite after a long pause.
       - name: Restore state
         if: steps.creds.outputs.have == 'true'
         uses: actions/cache/restore@v4
@@ -98,8 +108,14 @@ jobs:
           X_ACCESS_SECRET: ${{ secrets.X_ACCESS_SECRET }}
           BOT_HASHTAG: ${{ vars.BOT_HASHTAG }}
           BOT_HANDLE: ${{ vars.BOT_HANDLE }}
+          BOT_MAX_REPLIES: ${{ vars.BOT_MAX_REPLIES }}
+          BOT_SITE: ${{ vars.BOT_SITE }}
+        # bash (rather than the default sh) for pipefail: the pass's exit
+        # code is the run's verdict, and must not be masked by tee's.
+        shell: bash
         run: |
-          node tools/twitter-bot/bot.mjs ${{ inputs.dry_run && '--dry-run' || '' }}
+          node tools/twitter-bot/bot.mjs ${{ inputs.dry_run && '--dry-run' || '' }} \
+            | tee -a "$GITHUB_STEP_SUMMARY"
 
       - name: Save state
         if: always() && steps.creds.outputs.have == 'true'
