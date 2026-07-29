@@ -102,28 +102,40 @@ const toSubscript = (n) => String(n).split('').map((d) => SUBSCRIPT_DIGITS[+d]).
 // composer still find it here.
 export { toSuperscript };
 
-// nBits (a compact difficulty target) -> { sym, title }. The target is
+// nBits (a compact difficulty target) -> { sym, expr, title }. The target is
 // rendered as the thing it is -- the ceiling a mined hash must dip under --
-// and β's subscript is that demand in its physical unit: the number of
-// leading zero BITS a valid hash must open with. Genesis (difficulty 1) is
-// β₃₂, and the subscript climbs as difficulty rises -- each +1 is a
-// doubling of the work. The mantissa is deliberately not shown: βₙ is a
-// summary mark, and the exact compact nBits, the full 256-bit target and
-// the difficulty ratio all ride in the hover title. A target looser than
-// the genesis baseline (never on mainnet) falls back to the raw compact
-// hex.
+// in two faces that together account for all 256 of its bits. β's subscript
+// is the demand in its physical unit: the number of leading zero BITS a
+// valid hash must open with (genesis, difficulty 1, is β₃₂; each +1 is a
+// doubling of the work). `expr` is the target written exactly, in nBits' own
+// floating-point structure: the mantissa as a plain integer times 256 raised
+// to the byte-shift exponent -- 65535×256²⁶ for genesis -- whose superscript
+// is literally the count of trailing zero bytes below the mantissa's
+// resolution. The subscript states the target's leading zero run, the
+// expression its significant bits and trailing run; leading zeros stay on β
+// because they are not legible from m×256ᵉ at a glance (they are
+// 256 − 8e − bitlen(m)). The exact compact nBits, the full 256-bit target
+// and the difficulty ratio all ride in the hover title. A target looser
+// than the genesis baseline (never on mainnet) falls back to the raw
+// compact hex, with no expression.
 function bitsInfo(bits) {
   const targetHex = bitsToTargetHex(bits);
   const difficulty = bitsToDifficulty(bits);
   const diffStr = difficulty.toLocaleString(undefined, { maximumFractionDigits: difficulty < 1000 ? 2 : 0 });
   const compact = bits.toString(16).padStart(8, '0');
   const zeros = targetHex.length - targetHex.replace(/^0+/, '').length;
-  const baseTitle = (extra) => `nBits ${compact} — a valid block hash must read below ${targetHex}${extra} — difficulty ${diffStr} (relative to the genesis block)`;
-  if (zeros < 8) return { sym: compact, title: baseTitle('') };
+  const tail = `difficulty ${diffStr} (relative to the genesis block)`;
+  if (zeros < 8) return { sym: compact, expr: '', title: `nBits ${compact} — a valid block hash must read below ${targetHex} — ${tail}` };
   // Zero bits inside the first significant hex digit: 1 -> 3, 2-3 -> 2, 4-7 -> 1, 8-f -> 0.
   const first = parseInt(targetHex[zeros], 16);
   const lz = zeros * 4 + (first >= 8 ? 0 : first >= 4 ? 1 : first >= 2 ? 2 : 3);
-  return { sym: `β${toSubscript(lz)}`, title: baseTitle(` (${lz} leading zero bits)`) };
+  const exponent = bits >>> 24;
+  const mantissa = bits & 0x007fffff;   // top mantissa bit is a sign flag, masked off
+  const expr = exponent >= 3 ? `${mantissa}×256${toSuperscript(exponent - 3)}` : '';
+  return {
+    sym: `β${toSubscript(lz)}`, expr,
+    title: `nBits ${compact} — mantissa ${mantissa} shifted up ${exponent - 3} bytes: the target ${targetHex}, which a valid block hash must read below (${lz} leading zero bits) — ${tail}`,
+  };
 }
 
 // ─── block version notation: <hp> <english> <signals> ──────────────────
@@ -240,7 +252,7 @@ export function composeBlockHeaderFields(header) {
     // BIP9 word-pair forms wear it), so the text here carries no prefix.
     version: ver.text.replace(/^v/, ''), versionTitle: ver.title,
     timestamp: time.mark, timestampTitle: time.title,
-    bits: bits.sym, bitsTitle: bits.title,
+    bits: bits.sym, bitsExpr: bits.expr, bitsTitle: bits.title,
     // The nonce is a plain integer; the renderer leads it with the bold-gold
     // η mark (like v for the version), the value itself unstyled.
     nonce: String(header.nonce),

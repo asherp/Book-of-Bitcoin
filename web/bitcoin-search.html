@@ -81,13 +81,11 @@ button:hover { background: var(--accent-2); }
 .proof-key { flex:none; width:96px; font:500 10.5px/1.9 'IBM Plex Mono',monospace; letter-spacing:.06em; text-transform:uppercase; color:var(--meta); }
 .proof-val { flex:1; min-width:0; overflow-wrap:anywhere; font:400 12.5px/1.7 'IBM Plex Mono',monospace; color:var(--ink-soft); }
 
-/* The book's own marks, on the book's own terms: the data mark (h) and the
-   merkle mark (⋔) bold gold, the byte count riding after them as a
-   superscript, and the hash itself set as prose in the reading face -- the
-   same dress the chapter hash and the frontispiece wear, so a figure means the
-   same thing here as it does on the page it points to. Until the engine
-   arrives the figure stands in hex, mono; the mark and its count do not wait
-   on it. */
+/* The book's own marks, on the book's own terms: the identity mark (⌘), the
+   data mark (h) and the merkle mark (⋔) bold gold, each with its count riding
+   after it as a superscript, and the hash itself set as prose in the reading
+   face -- the same dress the chapter hash and the frontispiece wear, so a
+   figure means the same thing here as it does on the page it points to. */
 .dt, .merkle-mark { color: var(--accent); font-weight: 700; font-style: normal; }
 .op-count { color: var(--meta); font-size: .85em; }
 .proof-figure { font: italic 400 14px/1.55 'Newsreader',serif; color: var(--dim); }
@@ -229,10 +227,15 @@ const glossia = () => (engine ||= import('./glossia-msg.js').then(async (m) => {
 // mark still names what it is, and the mark's title still carries the hex for
 // a reader checking against an explorer, which is where the book keeps hex
 // too (behind the copy menu, never on the page).
-const figure = (hex, mark, markClass, title, reverse) => ({ hex, mark, markClass, title, reverse });
-const hash = (hex, title) => figure(hex, 'h', 'dt', title, false);
-const chainHash = (hex, title) => figure(hex, 'h', 'dt', title, true);
-const merkle = (hex, title) => figure(hex, '⋔', 'merkle-mark', title, true);
+const figure = (hex, mark, markClass, sup, title, reverse) => ({ hex, mark, markClass, sup, title, reverse });
+// A file's digest: a single SHA-256, not the chain's double, so it takes the
+// generic data mark and counts bytes like every other push.
+const hash = (hex, title) => figure(hex, 'h', 'dt', hex.length / 2, title, false);
+// A txid: the same double-SHA256 a block hash is, with no proof-of-work zeros
+// to state -- so it wears ⌘ with the full bit count, exactly as the section
+// frontage does in the book.
+const identity = (hex, title) => figure(hex, '⌘', 'dt', 256, title, true);
+const merkle = (hex, title) => figure(hex, '⋔', 'merkle-mark', hex.length / 2, title, true);
 
 // Every figure on the page, waiting to be read out as prose once the engine
 // lands. The hex is what a reader can check against an explorer, so it stays
@@ -268,8 +271,8 @@ const say = (rows, verdict = null, href = null, label = '') => {
       m.className = val.markClass; m.textContent = val.mark;
       m.title = `${val.title}\n${val.hex}`;      // the mark carries the hex, as the book's copy menu does
       const sup = document.createElement('span');
-      sup.className = 'op-count'; sup.textContent = toSuperscript(val.hex.length / 2);
-      sup.title = `${val.hex.length / 2} bytes`;
+      sup.className = 'op-count'; sup.textContent = toSuperscript(val.sup);
+      sup.title = val.mark === '⌘' ? `${val.sup} bits — ⌘'s superscript counts bits` : `${val.sup} bytes`;
       const fig = document.createElement('span');
       fig.className = 'proof-figure waiting'; fig.textContent = '…';
       v.append(m, sup, ' ', fig);
@@ -340,7 +343,7 @@ async function readProof(fileList) {
     ? `./bitcoin-book.html?ref=v${volume}b${book}c${chapter}s${section}`
     : `./bitcoin-book.html?block=${att.height}`;
   rows.push(['stamped into', `block ${att.height} — ${cite}`]);
-  if (att.txid) rows.push(['transaction', chainHash(att.txid, 'the transaction carrying the commitment — its txid')]);
+  if (att.txid) rows.push(['transaction', identity(att.txid, 'the transaction carrying the commitment — its txid')]);
   rows.push(['merkle root', merkle(att.merkleRoot, 'the merkle root the proof reduces to — what the block header must commit to')]);
   say(rows, ['Asking the chain for that block…', 'unsure']);
 

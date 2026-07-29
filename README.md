@@ -138,10 +138,12 @@ compiled to WASM) is consumed as a published
   chapter's own header, which is the entirety of OpenTimestamps verification.
   The three hashes a proof turns on — the stamped file's digest, the
   transaction carrying the commitment, and the merkle root the operations
-  reduce to — are set the way the book sets any hash: the mark first (`h` for a
-  hash, `⋔` for the merkle root) with its byte count riding after it, then the
-  figure itself as Glossia prose, the chain's two written in the byte order
-  they actually are and the digest in the order it was computed. The engine is
+  reduce to — are set the way the book sets each of them: `⌘²⁵⁶` for the txid
+  (the same identity mark, and the same bit count, the section frontage
+  wears), `⋔³²` for the merkle root, and `h³²` for the digest, which is a
+  single SHA-256 rather than the chain's double and so takes the generic hash
+  mark. Then the figure itself as Glossia prose — the chain's two written in
+  the byte order they actually are, the digest in the order it was computed. The engine is
   imported only when a proof arrives, so a typed lookup carries no WASM; until
   it lands a figure reads as an ellipsis, and if it never lands the hash stays
   unsaid rather than falling back to hex — hex is the one notation this book
@@ -177,14 +179,13 @@ compiled to WASM) is consumed as a published
     their variants — `⧉` DUP, `⧉₂` 2DUP, `∇` CHECKSIG, `∇₊` CHECKSIGADD,
     `°₄` NOP4. All 110 defined opcodes have one; the reader's key is the
     sigla leaf of the front matter, and a compact one rides the book page
-  - the zero tail (`zeroTail` in `web/btc-sigla.js`): `0ⁿ`, the run of zero
-    bytes closing a mined hash's prose. A block hash is printed
-    leading-zeros-first and hashed the other way round, so in the order the
-    prose is written those zeros come *last* — and the notation puts them
-    where they are, after the words rather than before them. They are the
-    proof of work and nothing else, so the book counts them instead of
-    spending payload words on them: `h²⁷ …prose… 0⁵` is 27 encoded bytes
-    then 5 zero bytes, 32 in all
+  - the block-hash notation (`web/bitcoin-book.html`): `⌘ᵐ …prose… ⓪ⁿ`. `⌘`
+    is OP_HASH256, naming the double-SHA256 that produced the hash, and its
+    superscript counts *bits* — uniquely; every other mark's counts bytes —
+    so it pairs with `⓪`, the proof-of-work zeros, and the two always sum to
+    256. The zeros close the line rather than opening it because that is
+    where they are: a hash is printed leading-zeros-first and hashed the
+    other way round, and the prose is written in the order it was hashed
   - the citation sigla (`web/btc-citation.js`): Roman volumes, `β` the
     difficulty mark (a book is a difficulty window), `■` the block mark (a
     chapter is a block), `§` the section (a transaction) — e.g. `III β2 ■5 §1`

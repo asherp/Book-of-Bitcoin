@@ -11,22 +11,13 @@
 // public domain is the notation itself -- the convention that a mark means an
 // opcode -- which is not a file. See the README's License section.)
 
-// The byte count a mark carries as a superscript riding after it (h³², p⁶⁵ --
-// "this prose carries n bytes"). Part of the notation rather than the prose,
-// so it lives here with the marks and can be set by a page that has no use for
-// the engine; btc-prose.js re-exports it for the renderer that does.
+// The count a mark carries as a superscript riding after it (h³², p⁶⁵ --
+// "this prose carries n bytes"; ⌘²⁵⁶, uniquely, counts bits). Part of the
+// notation rather than the prose, so it lives here with the marks and can be
+// set by a page that has no use for the engine; btc-prose.js re-exports it for
+// the renderer that does.
 const SUPERSCRIPT_DIGITS = '⁰¹²³⁴⁵⁶⁷⁸⁹';
 export const toSuperscript = (n) => String(n).split('').map((d) => SUPERSCRIPT_DIGITS[+d]).join('');
-
-// The zero tail of a mined hash: 0ⁿ, n zero bytes, written AFTER the prose.
-//
-// A block hash is printed leading-zeros-first, but it is *hashed* the other way
-// round -- so read in the order the prose is written, the proof of work is a run
-// of zero bytes at the END. They carry nothing, so the book counts them instead
-// of spending payload words on them, and the count belongs where the bytes do:
-// following the words, not prefixing them. h²⁷ … 0⁵ reads as what it is -- 27
-// bytes of hash, then five bytes of work.
-export const zeroTail = (n) => (n > 0 ? `0${toSuperscript(n)}` : '');
 
 // Opcode byte -> Glossia glyph. Every defined opcode has one; families share
 // a base glyph, with the house subscript convention distinguishing variants
