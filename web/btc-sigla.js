@@ -18,6 +18,16 @@
 const SUPERSCRIPT_DIGITS = '⁰¹²³⁴⁵⁶⁷⁸⁹';
 export const toSuperscript = (n) => String(n).split('').map((d) => SUPERSCRIPT_DIGITS[+d]).join('');
 
+// The zero tail of a mined hash: 0ⁿ, n zero bytes, written AFTER the prose.
+//
+// A block hash is printed leading-zeros-first, but it is *hashed* the other way
+// round -- so read in the order the prose is written, the proof of work is a run
+// of zero bytes at the END. They carry nothing, so the book counts them instead
+// of spending payload words on them, and the count belongs where the bytes do:
+// following the words, not prefixing them. h²⁷ … 0⁵ reads as what it is -- 27
+// bytes of hash, then five bytes of work.
+export const zeroTail = (n) => (n > 0 ? `0${toSuperscript(n)}` : '');
+
 // Opcode byte -> Glossia glyph. Every defined opcode has one; families share
 // a base glyph, with the house subscript convention distinguishing variants
 // (⧉₂ = 2DUP, °₄ = NOP4, ∇₊ = CHECKSIGADD). Disabled opcodes keep their

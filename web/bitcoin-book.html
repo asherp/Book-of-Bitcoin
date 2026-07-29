@@ -338,6 +338,11 @@ button:disabled { opacity: .4; cursor: not-allowed; }
    element while the root's prose beside it stays plain. Upright, like every
    mark, against the frontispiece's italic. */
 .merkle-mark { color: var(--accent); font-weight: 700; font-style: normal; }
+/* The zero tail (0ⁿ) closing a mined hash's prose: gold like β and η, the other
+   marks that belong to the work rather than to the record. It sits after the
+   words because that is where the bytes sit -- a hash is printed
+   leading-zeros-first and hashed the other way round. */
+.pow-zero { color: var(--accent); font-weight: 700; font-style: normal; }
 /* Upright bold-gold field marks in the frontispiece: the version's v and the
    nonce's η lead their values the way the data marks lead prose; the value
    after each stays in the frontispiece's own plain voice. */
@@ -747,6 +752,7 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 import { init, encodeSeedPhrase } from './glossia-msg.js';
 import { parseTransaction, computeTxid, parseBlockHeader, computeBlockHash } from './btc-tx.js';
 import { composeTransactionFields, composeBlockHeaderFields, groupDigits, formatBtc, renderWitness, toSuperscript, timestampInfo } from './btc-prose.js';
+import { zeroTail } from './btc-sigla.js';
 import { volumeBookChapter, heightOf, toRoman, reference } from './btc-citation.js';
 import { NOTABLE, blocksEta } from './btc-contents.js';
 import { NOTATION_HTML } from './btc-notation.js';
@@ -2059,7 +2065,18 @@ function detachHashCopy(el) {
 // Render a Glossia-encoded hash into `el` as its bold-gold data mark (h, or ⋔
 // for the merkle root) followed by the plain prose. The mark is the clickable
 // handle for the copy/bookmark menu; the prose itself is never interactive.
-function fillMarkedHash(el, mark, markClass, hex, label, prose, sup, supTitle) {
+// The zero tail: the run of zero bytes a mined hash ends in once it is read in
+// the order it was hashed. Gold, like β and η -- the other marks that belong to
+// the work rather than to the record.
+function zeroTailMark(zeros) {
+  const s = document.createElement('span');
+  s.className = 'pow-zero';
+  s.textContent = zeroTail(zeros);
+  s.title = `${zeros} zero bytes — the proof of work itself. Printed, a block hash opens with them; hashed, it ends with them, which is the order the prose is written in. They carry nothing, so they are counted here rather than spent as payload words`;
+  return s;
+}
+
+function fillMarkedHash(el, mark, markClass, hex, label, prose, sup, supTitle, zeros = 0) {
   el.textContent = '';
   const m = document.createElement('span');
   m.className = markClass;
@@ -2077,6 +2094,8 @@ function fillMarkedHash(el, mark, markClass, hex, label, prose, sup, supTitle) {
     el.append(s);
   }
   el.append(' ' + prose);
+  // What the prose does not carry, written where the bytes actually sit.
+  if (zeros) el.append(' ', zeroTailMark(zeros));
 }
 
 // The block header itself, in wire order, as a small mono line under the
@@ -2108,9 +2127,7 @@ function renderFrontispiece(header) {
     isGenesisPrev
       ? { text: prevProse, title: 'no earlier block — this is the genesis block' }
       : { text: prevProse, mark: 'h', markClass: 'dt', sup: prevBytes,
-          supTitle: prevBytes < 32
-            ? `${prevBytes} bytes encoded — the hash's ${32 - prevBytes} trailing zero bytes (required by proof-of-work) carry nothing and are dropped`
-            : '32 bytes',
+          supTitle: `${prevBytes} bytes encoded`, zeros: 32 - prevBytes,
           copy: { hex: header.prevBlockHash, label: 'previous block hash' } },
     { text: merkleProse, mark: '⋔', markClass: 'merkle-mark', sup: 32, supTitle: '32 bytes',
       copy: { hex: header.merkleRoot, label: 'merkle root' } },
@@ -2125,11 +2142,11 @@ function renderFrontispiece(header) {
     { text: hf.nonce, mark: 'η', markClass: 'fx-mark', title: hf.nonceTitle,
       menu: { hex: (header.nonce >>> 0).toString(16).padStart(8, '0'), label: 'nonce', prose: hf.nonce } },
   ];
-  for (const { text, title, copy, mark, markClass, gold, sup, supTitle, menu } of items) {
+  for (const { text, title, copy, mark, markClass, gold, sup, supTitle, menu, zeros } of items) {
     const span = document.createElement('span');
     span.className = gold ? 'cfx cfx-gold' : 'cfx';
     if (mark && copy) {
-      fillMarkedHash(span, mark, markClass, copy.hex, copy.label, text, sup, supTitle);
+      fillMarkedHash(span, mark, markClass, copy.hex, copy.label, text, sup, supTitle, zeros);
     } else if (mark) {
       // A marked plain field: the mark leads, the value follows -- tight
       // against a numeral (v1, η2573394689), a space before a word form
@@ -2212,11 +2229,15 @@ function renderChapterHead(onTitlePage) {
   $('ch-hash-short').classList.toggle('hidden', !onTitlePage);
   $('ch-frontispiece').classList.toggle('hidden', !onTitlePage);
   if (onTitlePage) {
-    const { prose: hashProse } = encodeSeedPhrase(trimTrailingZeroBytes(reverseHex(state.hash)), 'english', BEST_OF);
+    const hashTrimmed = trimTrailingZeroBytes(reverseHex(state.hash));
+    const { prose: hashProse } = encodeSeedPhrase(hashTrimmed, 'english', BEST_OF);
     // The hash prose stands alone, unmarked; the chapter title above it is the
-    // clickable handle for its copy/bookmark menu.
+    // clickable handle for its copy/bookmark menu. What follows the words is
+    // the work: the zero bytes the prose does not carry, counted where they sit.
     $('ch-hash-short').classList.remove('plain');   // hash prose: italic voice
     $('ch-hash-short').textContent = hashProse;
+    const hashZeros = 32 - hashTrimmed.length / 2;
+    if (hashZeros) $('ch-hash-short').append(' ', zeroTailMark(hashZeros));
     attachHashCopy($('ch-title'), state.hash, 'block hash', hashProse);
     renderFrontispiece(state.header);
   }
@@ -2303,9 +2324,7 @@ function renderProjectedHead(onTitlePage) {
       const prevBytes = prevTrimmed.length / 2;
       const prose = encodeSeedPhrase(prevTrimmed, 'english', BEST_OF).prose;
       fillMarkedHash(prevSpan, 'h', 'dt', tipCore.hash, 'previous block hash', prose, prevBytes,
-        prevBytes < 32
-          ? `${prevBytes} bytes encoded — the hash's ${32 - prevBytes} trailing zero bytes (required by proof-of-work) carry nothing and are dropped`
-          : '32 bytes');
+        `${prevBytes} bytes encoded`, 32 - prevBytes);
       prevSpan.title = 'already determined: whatever this chapter becomes, it follows the tip';
     }
     if (bookStartOf(state.height) === bookStartOf(tipCore.height)) {

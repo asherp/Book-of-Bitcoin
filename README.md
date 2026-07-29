@@ -177,6 +177,14 @@ compiled to WASM) is consumed as a published
     their variants — `⧉` DUP, `⧉₂` 2DUP, `∇` CHECKSIG, `∇₊` CHECKSIGADD,
     `°₄` NOP4. All 110 defined opcodes have one; the reader's key is the
     sigla leaf of the front matter, and a compact one rides the book page
+  - the zero tail (`zeroTail` in `web/btc-sigla.js`): `0ⁿ`, the run of zero
+    bytes closing a mined hash's prose. A block hash is printed
+    leading-zeros-first and hashed the other way round, so in the order the
+    prose is written those zeros come *last* — and the notation puts them
+    where they are, after the words rather than before them. They are the
+    proof of work and nothing else, so the book counts them instead of
+    spending payload words on them: `h²⁷ …prose… 0⁵` is 27 encoded bytes
+    then 5 zero bytes, 32 in all
   - the citation sigla (`web/btc-citation.js`): Roman volumes, `β` the
     difficulty mark (a book is a difficulty window), `■` the block mark (a
     chapter is a block), `§` the section (a transaction) — e.g. `III β2 ■5 §1`

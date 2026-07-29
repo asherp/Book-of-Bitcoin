@@ -279,6 +279,7 @@ export const NOTATION_HTML = `
               <div class="glyph-row"><span class="g"><b>c</b></span><span class="m"><b>control block</b> (a Taproot script-path reveal) — leaf version <b>v</b><i>n</i>, parity subscript, then the internal key <b>p</b></span></div>
               <div class="glyph-row"><span class="g"><b>⋔</b></span><span class="m"><b>merkle proof</b> — the revealed leaf's path in the taptree</span></div>
               <div class="glyph-row"><span class="g"><b>a</b></span><span class="m"><b>annex</b> (reserved Taproot spend data)</span></div>
+              <div class="glyph-row"><span class="g"><b>0</b><i>ⁿ</i></span><span class="m">the <b>zero tail</b> — n zero bytes closing a mined hash. Written <i>after</i> the prose, because that is where they are: a block hash is printed leading-zeros-first and hashed the other way round, and the prose is written in the order it was hashed. They are the proof of work and carry nothing else, so they are counted rather than spent as payload words</span></div>
             </div>
             <p class="notation-note">A push of known length carries its byte count as a superscript on the mark — <b>h</b>²⁰, <b>p</b>⁶⁵; a bare, untyped push keeps its count leading (²⁰). <b>Bold</b> where the datum is on chain — a lock, or what a spend writes; <b>plain</b> where a spend introduces it at validation.</p>
           </div>

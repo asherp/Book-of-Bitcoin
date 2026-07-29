@@ -82,7 +82,11 @@ transaction the way the book does:
    language, wordlist, byte_count)` reverses it.
 3. The book encodes only genuinely opaque bytes (prevout txids, scripts,
    witness pushes, hashes — hashes byte-reversed to internal order, a block
-   hash's trailing proof-of-work zero bytes trimmed). Small structural
+   hash's trailing proof-of-work zero bytes trimmed and written after the
+   prose as `0ⁿ` rather than spent as payload words: reversed, the leading
+   zeros a hash is printed with land at the end, which is where the notation
+   puts them, so `h²⁷ …prose… 0⁵` is 27 encoded bytes then 5 zero bytes,
+   32 in all). Small structural
    integers — version, counts, output values, locktime — are printed
    literally, and scripts are rendered in opcode notation. The exact rules
    are `web/btc-prose.js` in the repository.

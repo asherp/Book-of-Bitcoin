@@ -34,6 +34,7 @@ import { init, encodeSeedPhrase } from '../web/glossia-msg.js';
 import { parseTransaction, parseBlockHeader } from '../web/btc-tx.js';
 import { composeTransactionFields, composeBlockHeaderFields, renderWitness } from '../web/btc-prose.js';
 import { volumeBookChapter, toRoman, reference } from '../web/btc-citation.js';
+import { zeroTail } from '../web/btc-sigla.js';
 import { NOTABLE } from '../web/btc-contents-data.js';
 
 export const SITE = 'https://bookofbitcoin.io';
@@ -88,6 +89,15 @@ const trimTrailingZeroBytes = (hex) => hex.replace(/(00)+$/, '');
 
 const proseOf = (hex) => encodeSeedPhrase(hex, 'english', BEST_OF).prose;
 
+// A mined hash, set the way the book sets one: its prose, then the zero tail --
+// the run of zero bytes the proof of work forces, which lands after the words
+// because a hash is printed leading-zeros-first and hashed the other way round.
+function minedHashProse(displayHex) {
+  const trimmed = trimTrailingZeroBytes(reverseHex(displayHex));
+  const tail = zeroTail(32 - trimmed.length / 2);
+  return proseOf(trimmed) + (tail ? ` ${tail}` : '');
+}
+
 // The capped encoder handed to the composer for OP_RETURN payloads and used
 // for witness pushes: real prose for reasonable sizes, an honest placeholder
 // beyond the cap.
@@ -116,7 +126,7 @@ export function frontispieceMd(header) {
   const isGenesisPrev = header.prevBlockHash === '00'.repeat(32);
   const prev = isGenesisPrev
     ? '∅ (no earlier block — this is the genesis block)'
-    : `h ${proseOf(trimTrailingZeroBytes(reverseHex(header.prevBlockHash)))}`;
+    : `h ${minedHashProse(header.prevBlockHash)}`;
   const lines = [
     `- **version:** v${htmlToText(hf.version)} — ${htmlToText(hf.versionTitle)}`,
     `- **previous block:** ${prev}`,
@@ -197,7 +207,7 @@ export function passageMd({ title, height, blockHash, header, txCount, txid, ind
   md.push('');
   md.push(`## Chapter frontispiece — block ${height.toLocaleString('en-US')}`);
   md.push('');
-  md.push(`Block hash, as prose: *${proseOf(trimTrailingZeroBytes(reverseHex(blockHash)))}*`);
+  md.push(`Block hash, as prose: *${minedHashProse(blockHash)}*`);
   md.push('');
   md.push(frontispieceMd(header));
   md.push('');
