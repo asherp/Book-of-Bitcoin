@@ -142,8 +142,10 @@ compiled to WASM) is consumed as a published
   hash, `⋔` for the merkle root) with its byte count riding after it, then the
   figure itself as Glossia prose, the chain's two written in the byte order
   they actually are and the digest in the order it was computed. The engine is
-  imported only when a proof arrives, so a typed lookup carries no WASM and the
-  hex stands wherever the prose cannot be composed
+  imported only when a proof arrives, so a typed lookup carries no WASM; until
+  it lands a figure reads as an ellipsis, and if it never lands the hash stays
+  unsaid rather than falling back to hex — hex is the one notation this book
+  does not write in, and it lives where the book keeps it, behind the mark
 - `web/btc-tx.js`, `web/btc-prose.js`, `web/btc-citation.js`,
   `web/btc-contents.js`, `web/btc-index.js`, `web/btc-store.js` —
   transaction parsing, prose composition, citations, contents data,

@@ -90,8 +90,8 @@ button:hover { background: var(--accent-2); }
    on it. */
 .dt, .merkle-mark { color: var(--accent); font-weight: 700; font-style: normal; }
 .op-count { color: var(--meta); font-size: .85em; }
-.proof-figure { font: 400 12.5px/1.7 'IBM Plex Mono',monospace; }
-.proof-figure.prose { font: italic 400 14px/1.55 'Newsreader',serif; color: var(--dim); }
+.proof-figure { font: italic 400 14px/1.55 'Newsreader',serif; color: var(--dim); }
+.proof-figure.waiting { color: var(--meta); }
 .proof-verdict { margin-top:14px; font:400 14px/1.5 'Newsreader',serif; }
 .proof-verdict.good { color:var(--ink); }
 .proof-verdict.bad { color:#e08b7a; }
@@ -218,10 +218,17 @@ let engine = null;
 const glossia = () => (engine ||= import('./glossia-msg.js').then(async (m) => { await m.init(); return m; }));
 
 // A hash, as the book sets one: its mark, the byte count riding after it as a
-// superscript, then the figure itself. `reverse` turns a hash displayed in the
-// chain's backwards order into the bytes it actually is, which is what the
-// prose must carry -- a txid and a merkle root are written that way, a file's
-// digest is not.
+// superscript, then the figure itself in words. `reverse` turns a hash
+// displayed in the chain's backwards order into the bytes it actually is,
+// which is what the prose must carry -- a txid and a merkle root are written
+// that way, a file's digest is not.
+//
+// The words are the figure; there is no hex fallback, because hex is the one
+// notation this book does not write in. A hash with no prose yet reads as an
+// ellipsis, and a hash the engine never arrives to say stays unsaid -- the
+// mark still names what it is, and the mark's title still carries the hex for
+// a reader checking against an explorer, which is where the book keeps hex
+// too (behind the copy menu, never on the page).
 const figure = (hex, mark, markClass, title, reverse) => ({ hex, mark, markClass, title, reverse });
 const hash = (hex, title) => figure(hex, 'h', 'dt', title, false);
 const chainHash = (hex, title) => figure(hex, 'h', 'dt', title, true);
@@ -230,7 +237,9 @@ const merkle = (hex, title) => figure(hex, '⋔', 'merkle-mark', title, true);
 // Every figure on the page, waiting to be read out as prose once the engine
 // lands. The hex is what a reader can check against an explorer, so it stays
 // in the figure's title after the words replace it.
-const prosed = new Map();     // encoded hex -> its prose; the result is redrawn as the chain answers
+const prosed = new Map();     // encoded bytes -> their prose; the result is redrawn as the chain answers
+const UNSAID = 'the engine that puts a hash into words did not load';
+const unsay = (el) => { el.textContent = 'unsaid'; el.title = UNSAID; el.classList.add('waiting'); };
 function setProse(cells) {
   if (!cells.length) return;
   glossia().then((m) => {
@@ -239,10 +248,10 @@ function setProse(cells) {
         const bytes = reverse ? reverseHex(hex) : hex;
         if (!prosed.has(bytes)) prosed.set(bytes, m.encodeSeedPhrase(bytes, 'english', BEST_OF).prose);
         el.textContent = prosed.get(bytes);
-        el.classList.add('prose');
-      } catch { /* the hex stands */ }
+        el.classList.remove('waiting');
+      } catch { unsay(el); }
     }
-  }).catch(() => { /* no engine here: the hex stands, and says the same thing */ });
+  }).catch(() => { for (const { el } of cells) unsay(el); });
 }
 
 const say = (rows, verdict = null, href = null, label = '') => {
@@ -257,12 +266,12 @@ const say = (rows, verdict = null, href = null, label = '') => {
     } else {
       const m = document.createElement('span');
       m.className = val.markClass; m.textContent = val.mark;
-      if (val.title) m.title = val.title;
+      m.title = `${val.title}\n${val.hex}`;      // the mark carries the hex, as the book's copy menu does
       const sup = document.createElement('span');
       sup.className = 'op-count'; sup.textContent = toSuperscript(val.hex.length / 2);
       sup.title = `${val.hex.length / 2} bytes`;
       const fig = document.createElement('span');
-      fig.className = 'proof-figure'; fig.textContent = val.hex; fig.title = val.hex;
+      fig.className = 'proof-figure waiting'; fig.textContent = '…';
       v.append(m, sup, ' ', fig);
       cells.push({ el: fig, hex: val.hex, reverse: val.reverse });
     }
