@@ -187,108 +187,304 @@ export function composeReply({ height, index, txid, site, proseOf, section = nul
   while (words.length > 1 && weighText(words.join(' ') + '…') > budget) words.pop();
   return {
     text: frame(words.join(' ') + '…'),
-    passage: { cite, title, txidProse, section, url, height, index, txid },
+    passage: { cite, title, sectionNum: index + 1, txidProse, section, url, height, index, txid },
   };
 }
 
+
 // ─── the passage as a page ──────────────────────────────────────────────
 //
-// The overflow image: the passage laid out as a page of the book — its
-// dark paper, gold citation, Newsreader-style serif prose (system serif
-// stands in where the webfont isn't installed), the section's fields in
-// the manuscript's margin layout with the sigla intact, witness data as
-// footnotes. Self-contained HTML, no external resources; image.mjs
-// screenshots the .card element.
-
-// A grand section (hundreds of inputs, an inscription's footnotes) is cut
-// honestly for the image: past these caps a rule line says what remains,
-// and the live page carries the rest.
-const IMAGE_MAX_ROWS = 24;
-const IMAGE_MAX_FOOTNOTE_CHARS = 900;
+// The overflow image: the passage set the way bitcoin-book.html sets it —
+// the § heading and its event title, the txid as prose beneath, a rule,
+// then the transaction as a manuscript page: a three-column band grid
+// with provenance in the left margin, the canonical prose in the body
+// (the first line taking the illuminated initial), amounts in the right
+// margin, and the locktime centred as a colophon. Witness data follows as
+// numbered footnotes.
+//
+// The markup and the class names are the book's own, and so is the CSS —
+// transposed from bitcoin-book.html into em units off a single root size,
+// so image.mjs can scale the whole page by that one number to fit a target
+// image (see fitFontSize). The running head and the section nav are the
+// app's furniture, not the page's, and are left out; the colophon carries
+// the citation instead.
+//
+// Field fragments arrive from btc-prose.js as HTML (opcode glyphs, data
+// marks, quoted embedded text) and are inserted as markup, exactly as the
+// book inserts them — btc-prose.js escapes the untrusted parts (a coinbase
+// tag, an OP_RETURN message) at the source. Only strings this module owns
+// — the title, citation, and host — are escaped here.
 
 const escapeHtml = (s) => String(s)
   .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
   .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 
-export function passageHtml({ cite, title, txidProse, section, site }) {
-  const host = String(site).replace(/^https?:\/\//, '');
+// Page geometry, in pixels. 4:5 is the tallest portrait X shows uncropped
+// in a timeline, so it buys the most room for a passage.
+export const PAGE_WIDTH = 1200;
+export const PAGE_HEIGHT = 1500;
 
-  let body;
-  if (section) {
-    let rows = section.rows;
-    let more = '';
-    if (rows.length > IMAGE_MAX_ROWS) {
-      // Keep the head of the page and its last row (the locktime), and say
-      // how much the cut hides.
-      const hidden = rows.length - IMAGE_MAX_ROWS;
-      rows = [...rows.slice(0, IMAGE_MAX_ROWS - 1), rows[rows.length - 1]];
-      more = `<p class="more">⋯ ${hidden.toLocaleString('en-US')} more field${hidden === 1 ? '' : 's'} — the live page carries the whole section</p>`;
-    }
-    const rowsHtml = rows.map((r) =>
-      `<div class="row"><span class="label">${escapeHtml(r.label)}</span><span class="text">${escapeHtml(r.text)}</span></div>`
-    ).join('\n');
-    const notes = section.footnotes.map((f, i) => {
-      const cut = f.length > IMAGE_MAX_FOOTNOTE_CHARS ? f.slice(0, IMAGE_MAX_FOOTNOTE_CHARS) + ' ⋯' : f;
-      return `<div class="row note"><span class="label">${i + 1}</span><span class="text">${escapeHtml(cut)}</span></div>`;
-    }).join('\n');
-    body = `
-  <p class="verse">${escapeHtml(txidProse)}</p>
-  <div class="fields">
-${rowsHtml}
-  </div>
-  ${more}
-  ${notes ? `<div class="notes">${notes}</div>` : ''}`;
-  } else {
-    body = `
-  <p class="verse big">${escapeHtml(txidProse)}</p>`;
+// The root size the page is set from. The renderer searches this range for
+// the largest size whose passage still fits the page; a passage too long
+// even at the floor keeps the floor and shows its opening — the top of the
+// page — with the colophon still pinned beneath it.
+//
+// The ceiling is generous on purpose: a short section (a one-input, one-
+// output spend) should be set large and airy rather than marooned at the
+// top of an empty page, and the book's own proportions hold at any size
+// because every measure is an em off this one. The floor is where a
+// passage stops shrinking and starts being clipped — below it the prose
+// stops being readable in a timeline, so more of the page is a worse
+// trade than less of the passage.
+export const FONT_MIN = 9;
+export const FONT_MAX = 46;
+
+// A witness footnote past this many characters is cut with an ellipsis: an
+// inscription's stack can run to megabytes, and the live page carries it.
+const FOOTNOTE_MAX_CHARS = 2000;
+
+// The identity-hash mark and its bit count, leading the txid prose exactly
+// as the book leads it (⌘ is HASH256 in the sigla; a txid is 256 bits).
+const HASH_MARK = '<span class="dt">⌘</span><sup>256</sup> ';
+
+const shortRef = (txid, vout) => `${txid.slice(0, 6)}…:${vout}`;
+
+// The transaction, as the book lays it out. `fields` is
+// composeTransactionFields output; `footnotesHtml[i]` is the rendered
+// witness for the i-th witness-bearing input (in input order), and
+// `citations[i]` an optional resolved reference for input i's prevout.
+export function txFlowHtml(fields, footnotesHtml = [], citations = []) {
+  const inputRows = [];
+  const marginCites = [];
+  const outputRows = [];
+
+  // The first body line across the whole transaction claims the drop cap —
+  // unless it opens with a bare push count, whose superscript's first digit
+  // would be blown up into a giant numeral. Forfeited, not deferred: an
+  // illuminated initial belongs at the top. (bitcoin-book.html, addLine.)
+  let leadUsed = false;
+  const line = (html) => {
+    if (!html) return '';
+    const lead = !leadUsed && !html.startsWith('<span class="op op-push"');
+    leadUsed = true;
+    return `<p class="tx-line${lead ? ' tx-body-lead' : ''}">${html}</p>`;
+  };
+  // Embedded human-readable text is a foreign voice quoted into the
+  // transaction — a quote block, and never the drop cap.
+  const quote = (html) => (html ? `<blockquote class="tx-ascii">${html}</blockquote>` : '');
+
+  const pendingMargin = [];
+  if (fields.version !== '1') {
+    pendingMargin.push(`<div class="tx-in-cite tx-version">v${escapeHtml(fields.version)}</div>`);
   }
+
+  let footnoteNum = 0;
+  fields.inputs.forEach((inp, i) => {
+    const ref = inp.isNullPrevout
+      ? '∅'
+      : escapeHtml(citations[i] || shortRef(inp.prevTxid, inp.prevVout));
+    const hasWitness = footnotesHtml[footnoteNum] !== undefined && inp.witnessItems.length;
+    const witRef = hasWitness ? `<sup class="tx-witness-ref">${++footnoteNum}</sup>` : '';
+    const seqClass = `tx-seq tx-seq-${inp.sequenceKind}`;
+    const seq = inp.sequenceRbf && inp.sequence
+      ? `<span class="${seqClass}"><span class="tx-seq-rbf">†</span> ${inp.sequence}</span>`
+      : `<span class="${seqClass}">${inp.sequenceRbf ? '†' : inp.sequence}</span>`;
+    const cite =
+      `<div class="tx-in-cite"><span class="cite-body">${ref}</span>${witRef}` +
+      `<div class="cite-amount">${seq}</div></div>`;
+
+    // A witness spend has an empty scriptSig and no body to sit beside; it
+    // joins the pending list so the outputs can slide up past it.
+    if (inp.scriptAscii || inp.script) {
+      const group = `<div class="tx-in-cite-group">${pendingMargin.join('')}${cite}</div>`;
+      pendingMargin.length = 0;
+      const body = inp.scriptAscii ? quote(inp.scriptAscii) : line(inp.script);
+      inputRows.push(group, `<div class="tx-in-script">${body}</div>`);
+    } else {
+      pendingMargin.push(cite);
+    }
+  });
+  marginCites.push(...pendingMargin);
+
+  fields.outputs.forEach((out) => {
+    const body = out.scriptAscii ? quote(out.scriptAscii) : line(out.script);
+    outputRows.push(
+      `<div class="tx-out-script">${body}</div>`,
+      `<div class="tx-note tx-out-value">${out.value}</div>`,
+    );
+  });
+
+  const notes = footnotesHtml.length
+    ? `<div class="footnotes">${footnotesHtml.map((f, i) => {
+        const cut = f.length > FOOTNOTE_MAX_CHARS ? `${f.slice(0, FOOTNOTE_MAX_CHARS)} ⋯` : f;
+        return `<p class="footnote"><sup>${i + 1}</sup> ${cut}</p>`;
+      }).join('')}</div>`
+    : '';
+
+  return `<div class="tx-flow">
+  <div class="tx-inputs">${inputRows.join('')}</div>
+  <div class="tx-margin-cites">${marginCites.join('')}</div>
+  <div class="tx-outputs">${outputRows.join('')}</div>
+  <div class="tx-note tx-locktime">${fields.locktime}</div>
+</div>${notes}`;
+}
+
+// The whole page. `fontSize` is the root size the renderer has settled on;
+// `width` / `height` fix the image. A section may be absent (its bytes
+// couldn't be fetched), in which case the txid prose stands alone.
+export function passageHtml({
+  cite, title, sectionNum, txidProse, section, site,
+  fontSize = 19, width = PAGE_WIDTH, height = PAGE_HEIGHT, clipped = false,
+}) {
+  const host = String(site).replace(/^https?:\/\//, '');
+  const flow = section
+    ? txFlowHtml(section.fields, section.footnotesHtml || [], section.citations || [])
+    : '';
 
   return `<!doctype html>
 <meta charset="utf-8">
 <style>
-  body { margin: 0; background: #08080a; }
-  .card {
-    width: 1200px; box-sizing: border-box; padding: 72px 84px 56px;
-    background: #08080a; color: #cfcabf;
-    font-family: 'Newsreader', Georgia, 'Times New Roman', serif;
+  /* The book's own palette (bitcoin-book.html). */
+  :root {
+    --page:#08080a; --ink:#e8e4da; --ink-soft:#cfcabf; --dim:#8f8a7e;
+    --meta:#6f6a60; --rule:#232228; --accent:#c9a25f; --accent-2:#dcb877;
   }
-  .cite {
-    font: 600 25px/1 'IBM Plex Mono', ui-monospace, Menlo, monospace;
-    color: #c9a25f; letter-spacing: .08em; margin: 0 0 14px;
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--page); }
+
+  /* One root size drives the whole page: every measure below is in em, so
+     the renderer fits a passage by scaling this single number. */
+  .page {
+    width: ${width}px; height: ${height}px; font-size: ${fontSize}px;
+    background: var(--page); color: var(--ink-soft);
+    font-family: 'Newsreader', Georgia, 'Liberation Serif', 'Times New Roman', serif;
+    font-variant-numeric: oldstyle-nums;
+    display: flex; flex-direction: column;
+    padding: 2.2em 2.6em 1.4em;
   }
-  .title { font-weight: 500; font-size: 33px; line-height: 1.25; color: #e8e4da; margin: 0 0 30px; letter-spacing: -.01em; }
-  .verse { font-style: italic; font-size: 27px; line-height: 1.6; color: #e8e4da; margin: 0 0 34px; }
-  .verse.big { font-size: 34px; line-height: 1.65; margin-bottom: 0; }
-  .verse::before { content: '“'; color: #c9a25f; }
-  .verse::after { content: '”'; color: #c9a25f; }
-  .fields, .notes { border-top: 1px solid #232228; padding-top: 26px; }
-  .notes { margin-top: 26px; }
-  .row { display: flex; gap: 26px; margin: 0 0 16px; }
-  .row:last-child { margin-bottom: 0; }
-  .label {
-    flex: 0 0 128px; text-align: right;
-    font: 500 17px/1.9 'IBM Plex Mono', ui-monospace, Menlo, monospace;
-    color: #c9a25f; letter-spacing: .04em;
+  /* A passage longer than the page keeps its opening and is clipped here —
+     the top of the page, with the colophon still pinned beneath it. */
+  .content { flex: 1 1 auto; min-height: 0; overflow: hidden; }
+
+  /* ── the section heading ── */
+  .section-title {
+    text-align: center; margin: 0; font: 600 .68em/1 'IBM Plex Mono', ui-monospace, monospace;
+    letter-spacing: .28em; text-transform: uppercase; color: var(--accent);
   }
-  .text { font-size: 24px; line-height: 1.55; color: #cfcabf; white-space: pre-wrap; overflow-wrap: anywhere; }
-  .note .text { font-size: 20px; color: #a8a294; }
-  .more {
-    margin: 20px 0 0; font: 400 18px/1.4 'IBM Plex Mono', ui-monospace, Menlo, monospace;
-    color: #8f8a7e;
+  .section-event {
+    display: block; margin-top: .8em; font: 500 1.15em/1.3 'Newsreader', Georgia, serif;
+    letter-spacing: 0; text-transform: none; color: var(--ink-soft);
   }
-  .foot {
-    margin-top: 48px; display: flex; justify-content: space-between; align-items: baseline;
-    font: 400 19px/1 'IBM Plex Mono', ui-monospace, Menlo, monospace; color: #8f8a7e;
+  .section-hash {
+    margin: .9em auto 0; max-width: 46ch; text-align: center;
+    font: italic 400 .76em/1.55 'Newsreader', Georgia, serif; color: var(--dim);
   }
-  .foot .beta { color: #c9a25f; }
+  .section-hash sup { font-size: .7em; vertical-align: .35em; }
+  .rule { border: 0; border-top: 1px solid var(--rule); margin: 1.6em 0; }
+
+  /* ── the transaction as a manuscript page ── */
+  .tx-flow {
+    display: grid;
+    grid-template-columns: [left] 6.5em [body] minmax(0,1fr) [right] 7em;
+    column-gap: 1.3em; align-items: start;
+    line-height: 1.75;
+  }
+  .tx-inputs {
+    grid-column: left / right; grid-row: 1;
+    display: grid; grid-template-columns: subgrid; column-gap: 1.3em; align-items: start;
+  }
+  .tx-in-cite {
+    grid-column: 1; text-align: right; padding-top: .34em;
+    font: 500 .63em/1.5 'IBM Plex Mono', ui-monospace, monospace;
+    color: var(--dim); word-break: break-word;
+  }
+  .tx-in-cite-group { grid-column: 1; }
+  .tx-in-cite-group > .tx-in-cite + .tx-in-cite { margin-top: .5em; }
+  .tx-in-cite.tx-version { color: var(--meta); letter-spacing: .03em; }
+  .tx-witness-ref { color: var(--accent); font-size: .8em; vertical-align: .4em; margin-left: .2em; }
+  .cite-amount {
+    margin-top: .1em; text-align: right;
+    font: italic 400 1em/1.3 'Newsreader', Georgia, serif; color: var(--meta);
+    font-variant-numeric: tabular-nums;
+  }
+  .tx-in-script { grid-column: 2; min-width: 0; }
+  .tx-margin-cites { grid-column: left; grid-row: 2; align-self: start; }
+  .tx-outputs {
+    grid-column: body / -1; grid-row: 2;
+    display: grid; grid-template-columns: subgrid; column-gap: 1.3em; align-items: start;
+  }
+  .tx-out-script { grid-column: 1; min-width: 0; }
+  .tx-out-value { grid-column: 2; text-align: right; font-variant-numeric: tabular-nums; }
+  .tx-locktime { grid-column: left / -1; grid-row: 3; text-align: center; font-style: normal; }
+  .tx-note { font: italic 400 .71em/1.4 'Newsreader', Georgia, serif; color: var(--dim); }
+  .tx-seq { font-style: normal; color: var(--meta); }
+  .tx-seq-rbf { color: var(--accent-2); }
+  .tx-seq-block, .tx-seq-time { color: var(--dim); font-variant-numeric: normal; }
+  .tx-line { margin: 0 0 .55em; }
+
+  /* Opcodes and marks inside a script — the grammar that punctuates the
+     prose data pushes. */
+  .op { color: var(--accent); font-style: normal; }
+  .op-name {
+    font: 600 .62em/1 'IBM Plex Mono', ui-monospace, monospace; letter-spacing: .04em;
+    color: var(--dim); font-style: normal; vertical-align: .14em; white-space: nowrap;
+  }
+  .op-push { color: var(--meta); }
+  .dt { color: var(--accent); font-style: normal; font-weight: 700; }
+  .wit-sep, .wit-empty { color: var(--meta); font-style: normal; }
+  .glossia-lazy { color: var(--dim); }
+  .tx-ascii {
+    margin: 0 0 .55em; padding: .12em 0 .12em 1.05em;
+    border-left: 2px solid var(--accent); border-radius: 1px;
+    font: italic 400 .92em/1.6 'Newsreader', Georgia, serif; color: var(--ink-soft);
+  }
+  .tab { display: inline-block; width: 4ch; }
+  /* The illuminated initial opening the transaction's prose. */
+  .tx-line.tx-body-lead::first-letter {
+    font-size: 3.4em; float: left; line-height: .82; padding: .04em .07em 0 0;
+    font-weight: 500; color: var(--accent);
+  }
+
+  /* ── witness footnotes ── */
+  .footnotes { margin-top: 1.6em; padding-top: 1.2em; border-top: 1px solid var(--rule); }
+  .footnote {
+    margin: 0 0 .6em; font: 400 .8em/1.6 'Newsreader', Georgia, serif; color: var(--dim);
+    overflow-wrap: anywhere;
+  }
+  .footnote sup { color: var(--accent); margin-right: .3em; }
+
+  /* A passage clipped at the page's foot says so in the book's own idiom —
+     the ⋯ it uses wherever prose is elided — rather than stopping mid-word
+     and letting the reader think that was the end of it. */
+  .continues {
+    flex: 0 0 auto; text-align: center; margin-top: .5em;
+    font-size: 1.1em; line-height: 1; color: var(--meta);
+  }
+
+  /* ── the colophon (the app's running head and nav belong to the app) ── */
+  .colophon {
+    flex: 0 0 auto; margin-top: 1.2em; padding-top: .9em; border-top: 1px solid var(--rule);
+    display: flex; justify-content: space-between; align-items: baseline;
+    font: 400 .66em/1 'IBM Plex Mono', ui-monospace, monospace; color: var(--meta);
+    letter-spacing: .06em;
+  }
+  .colophon .cite { color: var(--accent); }
 </style>
 <body>
-<div class="card">
-  <p class="cite"${title ? '' : ' style="margin-bottom:30px"'}>${escapeHtml(cite)}</p>
-  ${title ? `<p class="title">${escapeHtml(title)}</p>` : ''}${body}
-  <div class="foot">
+<div class="page" id="page">
+  <div class="content" id="content">
+    <h2 class="section-title">
+      <span class="section-num">§ ${escapeHtml(String(sectionNum))}</span>
+      ${title ? `<span class="section-event">${escapeHtml(title)}</span>` : ''}
+    </h2>
+    <div class="section-hash">${HASH_MARK}${escapeHtml(txidProse)}</div>
+    <hr class="rule">
+    ${flow}
+  </div>
+  ${clipped ? '<div class="continues" title="the passage continues on the live page">⋯</div>' : ''}
+  <div class="colophon">
     <span>${escapeHtml(host)}</span>
-    <span>every <span class="beta">β</span>yte decodes back — the chain&#39;s own speech</span>
+    <span class="cite">${escapeHtml(cite)}</span>
   </div>
 </div>
 </body>`;

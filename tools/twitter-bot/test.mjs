@@ -17,9 +17,9 @@ import { access } from 'node:fs/promises';
 import { fromRoman, parseCitation } from './citation.mjs';
 import {
   weighText, composeReply, composeUnwritten, composeNoSection,
-  resolveCitation, titleFor, passageHtml, passageAltText, TWEET_WEIGHT_BUDGET,
+  resolveCitation, titleFor, sectionParts, passageHtml, passageAltText,
+  TWEET_WEIGHT_BUDGET, FONT_MIN,
 } from './quote.mjs';
-import { sectionParts } from './quote.mjs';
 import { loadRenderer } from './image.mjs';
 import { oauth1Header } from './x-api.mjs';
 import { replyFor, ensureEngine } from './bot.mjs';
@@ -143,46 +143,86 @@ test('a section lays out in wire order with its sigla, witness as footnotes', ()
   assert.match(s.flat, /version 1\ninput spends/);   // the tweet's flowing form, sigla intact
 });
 
-test('the passage page escapes its text and sets the section in rows', () => {
-  const section = {
-    rows: [
-      { label: 'version', text: '1' },
-      { label: 'output', text: '50.00000000 ₿ — ⌗ <angle> & prose ∇' },
-    ],
-    footnotes: ['a & footnote'],
-    flat: 'version 1\noutput 50.00000000 ₿ — ⌗ <angle> & prose ∇',
-  };
-  const html = passageHtml({
-    cite: 'I β1 ■1 §1',
-    title: 'A <title> & "quotes"',
-    txidProse: 'The txid as <prose>.',
-    section,
-    site: SITE,
-  });
-  assert.ok(html.includes('A &lt;title&gt; &amp; &quot;quotes&quot;'));
-  assert.ok(html.includes('The txid as &lt;prose&gt;.'));
-  assert.ok(html.includes('⌗ &lt;angle&gt; &amp; prose ∇'));
-  assert.ok(html.includes('a &amp; footnote'));
-  assert.ok(!html.includes('<angle>'));
-  assert.ok(html.includes('bookofbitcoin.io'));
-
-  const alt = passageAltText({ cite: 'I β1 ■1 §1', title: 'T', txidProse: 'p', section: { flat: 'v '.repeat(600).trim(), footnotes: [] } });
-  assert.ok(alt.length <= 1000);
-  assert.ok(alt.endsWith('…'));
+// A minimal composeTransactionFields-shaped object: one spend, one output.
+const stubFields = (over = {}) => ({
+  version: '1',
+  inputs: [{
+    isNullPrevout: false, prevTxid: 'ee'.repeat(32), prevVout: 1,
+    script: '<span class="op">⧉</span> some prose', scriptAscii: null,
+    sequence: '●', sequenceKind: 'final', sequenceTitle: 'final', sequenceRbf: false,
+    witnessItems: [], witnessZero: false, witnessHex: '',
+  }],
+  outputs: [{ value: '50.00000000 ₿', scriptAscii: null, script: '<span class="op">⌗</span> prose <span class="op">∇</span>' }],
+  locktime: '□',
+  ...over,
 });
 
-test('a grand section is cut honestly for the page', () => {
-  const rows = [
-    { label: 'version', text: '2' },
-    ...Array.from({ length: 60 }, (_, i) => ({ label: `input ${i + 1}`, text: `spends ${i}` })),
-    { label: 'locktime', text: '⊘' },
-  ];
+test('the page sets the transaction in the book\'s manuscript grid', () => {
   const html = passageHtml({
-    cite: 'IV β1 ■1 §2', title: null, txidProse: 'p',
-    section: { rows, footnotes: [], flat: '' }, site: SITE,
+    cite: 'I β1 ■1 §1', title: 'A <title> & "quotes"', sectionNum: 1,
+    txidProse: 'The txid as prose.',
+    section: { fields: stubFields(), footnotesHtml: ['φ sig <b>ρ</b> key'], citations: ['I β1 ■1 §2 ⁄0'] },
+    site: SITE,
   });
-  assert.match(html, /38 more fields — the live page carries the whole section/);
-  assert.ok(html.includes('locktime'), 'the last row survives the cut');
+
+  // The book's own class names and bands.
+  for (const cls of ['tx-flow', 'tx-inputs', 'tx-in-cite', 'tx-in-script', 'tx-outputs',
+    'tx-out-value', 'tx-locktime', 'section-title', 'section-hash', 'colophon']) {
+    assert.ok(html.includes(cls), `expected the ${cls} band`);
+  }
+  assert.ok(html.includes('tx-body-lead'), 'the opening line takes the illuminated initial');
+  assert.ok(html.includes('I β1 ■1 §2 ⁄0'), 'the resolved citation stands in the left margin');
+  assert.ok(html.includes('50.00000000 ₿'));
+  assert.ok(html.includes('φ sig <b>ρ</b> key'), 'witness markup rides through as markup');
+
+  // Composed field fragments are markup and stay markup; strings this
+  // module owns are escaped.
+  assert.ok(html.includes('<span class="op">∇</span>'));
+  assert.ok(html.includes('A &lt;title&gt; &amp; &quot;quotes&quot;'));
+  assert.ok(!html.includes('A <title>'));
+});
+
+test('the page falls back to the short prevout when no citation resolved', () => {
+  const html = passageHtml({
+    cite: 'I β1 ■1 §1', title: null, sectionNum: 1, txidProse: 'p',
+    section: { fields: stubFields(), footnotesHtml: [] }, site: SITE,
+  });
+  assert.ok(html.includes('eeeeee…:1'), 'an unresolved input still names what it spends');
+});
+
+test('a coinbase reads ∅, and a clipped passage says it continues', () => {
+  const coinbase = stubFields({
+    inputs: [{
+      isNullPrevout: true, prevTxid: '', prevVout: 0,
+      script: '<span class="op">β</span> prose', scriptAscii: null,
+      sequence: '●', sequenceKind: 'final', sequenceTitle: 'final', sequenceRbf: false,
+      witnessItems: [], witnessZero: false, witnessHex: '',
+    }],
+  });
+  const section = { fields: coinbase, footnotesHtml: [] };
+  const plain = passageHtml({ cite: 'I β1 ■1 §1', sectionNum: 1, txidProse: 'p', section, site: SITE });
+  assert.ok(plain.includes('>∅<'), 'a coinbase spends nothing');
+  assert.ok(!plain.includes('class="continues"'));
+
+  const cut = passageHtml({ cite: 'I β1 ■1 §1', sectionNum: 1, txidProse: 'p', section, site: SITE, clipped: true });
+  assert.ok(cut.includes('class="continues"'), 'a clipped passage marks that it continues');
+});
+
+test('the page carries the requested geometry and root size', () => {
+  const html = passageHtml({
+    cite: 'I β1 ■1 §1', sectionNum: 1, txidProse: 'p', section: null, site: SITE,
+    fontSize: 12.5, width: 900, height: 1600,
+  });
+  assert.match(html, /width: 900px; height: 1600px; font-size: 12\.5px/);
+});
+
+test('alt text carries the passage within X\'s cap', () => {
+  const alt = passageAltText({
+    cite: 'I β1 ■1 §1', title: 'T', txidProse: 'p',
+    section: { flat: 'v '.repeat(600).trim(), footnotes: [] },
+  });
+  assert.ok(alt.length <= 1000);
+  assert.ok(alt.endsWith('…'));
 });
 
 test('titles resolve txid-first, then height, never book leaves', () => {
@@ -330,13 +370,31 @@ test('a genesis citation quotes the section — sigla, headline, amount — and 
 
 const renderer = await loadRenderer();
 
-test('the passage page renders to a PNG', { skip: !renderer && 'playwright not installed' }, async () => {
-  const png = await renderer.render(passageHtml({
-    cite: 'I β1 ■1 §1', title: 'The Genesis Block', verse: 'A verse.', site: SITE,
-  }));
+test('the renderer fits the root size to the page, and clips only when it must', { skip: !renderer && 'playwright not installed' }, async () => {
+  const passage = {
+    cite: 'I β1 ■1 §1', title: 'The Genesis Block', sectionNum: 1,
+    txidProse: 'A short verse of prose.',
+    section: { fields: stubFields(), footnotesHtml: [] },
+  };
+
+  const short = await renderer.render(passage, { site: SITE });
+  assert.deepEqual([...short.png.subarray(0, 8)], [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+  assert.ok(short.fitted, 'a one-line section fits');
+  assert.ok(short.fontSize > 20, `a short passage is set large, got ${short.fontSize}`);
+
+  // The same page, with a section far too long for it: the search bottoms
+  // out at the floor and the passage is shown from its opening.
+  const manyInputs = stubFields({
+    inputs: Array.from({ length: 80 }, () => stubFields().inputs[0]),
+    outputs: Array.from({ length: 80 }, () => stubFields().outputs[0]),
+  });
+  const long = await renderer.render(
+    { ...passage, section: { fields: manyInputs, footnotesHtml: [] } }, { site: SITE });
+  assert.equal(long.fontSize, FONT_MIN, 'a passage past the floor keeps the floor');
+  assert.equal(long.fitted, false, 'and is clipped to its opening');
+  assert.ok(long.fontSize < short.fontSize, 'a longer passage is set smaller');
+
   await renderer.close();
-  assert.ok(png.length > 1000, 'expected a real image');
-  assert.deepEqual([...png.subarray(0, 8)], [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 });
 
 test('a tweet with the hashtag but no citation is passed over', async () => {

@@ -34,6 +34,8 @@
 //   BOT_MAX_REPLIES   replies per pass (default 5)
 //   BOT_REPLY_UNWRITTEN  set to 0 to skip, rather than answer, citations of
 //                     chapters the chain has not reached
+//   BOT_IMAGE_WIDTH / BOT_IMAGE_HEIGHT
+//                     the passage image's size (default 1200x1500, 4:5)
 //   BOT_SITE          the book's origin (default https://bookofbitcoin.io)
 //   BOT_STATE         state file path (default tools/twitter-bot/state.json)
 //
@@ -44,10 +46,12 @@
 import { readFile, writeFile, mkdir, rename } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
 
+import { reference } from '../../web/btc-citation.js';
+
 import { parseCitation } from './citation.mjs';
 import {
   resolveCitation, composeReply, composeUnwritten, composeNoSection,
-  sectionParts, passageHtml, passageAltText,
+  sectionParts, passageAltText, PAGE_WIDTH, PAGE_HEIGHT,
 } from './quote.mjs';
 import { loadRenderer } from './image.mjs';
 import { searchRecent, postTweet, uploadMedia, setAltText, XApiError } from './x-api.mjs';
@@ -57,6 +61,15 @@ const HASHTAG = process.env.BOT_HASHTAG || '#bookofbitcoin';
 const MAX_REPLIES = parseInt(process.env.BOT_MAX_REPLIES || '5', 10);
 const REPLY_UNWRITTEN = process.env.BOT_REPLY_UNWRITTEN !== '0';
 const STATE_PATH = process.env.BOT_STATE || new URL('./state.json', import.meta.url).pathname;
+
+// The passage image's size. The page is set from one root font size and
+// every measure is an em off it, so the renderer fits any passage to
+// whatever geometry is asked for here (see image.mjs). The default 4:5 is
+// the tallest portrait X shows uncropped in a timeline.
+const IMAGE = {
+  width: parseInt(process.env.BOT_IMAGE_WIDTH || '', 10) || PAGE_WIDTH,
+  height: parseInt(process.env.BOT_IMAGE_HEIGHT || '', 10) || PAGE_HEIGHT,
+};
 
 // Match the book's rendering choices exactly (bitcoin-book.html /
 // tools/prerender-passages.mjs).
@@ -130,12 +143,41 @@ export async function ensureEngine() {
 
   return {
     proseOf: (hex) => encodeSeedPhrase(hex, 'english', BEST_OF),
+    // The section, in both registers the reply needs: the composed fields
+    // and rendered witness HTML (which the passage image sets as a
+    // manuscript page), and the flattened text forms (which the tweet and
+    // the alt text quote).
     sectionOf: (hex) => {
       const fields = composeTransactionFields(parseTransaction(hex), BEST_OF, proseWithCap, encodeCapped);
-      return sectionParts(fields, (inp) =>
-        inp.witnessItems.length ? (inp.witnessZero ? '∅' : renderWitness(inp.witnessItems, proseWithCap)) : null);
+      const witnessOf = (inp) =>
+        (inp.witnessItems.length ? (inp.witnessZero ? '∅' : renderWitness(inp.witnessItems, proseWithCap)) : null);
+      const footnotesHtml = fields.inputs.map(witnessOf).filter((w) => w !== null);
+      return { ...sectionParts(fields, witnessOf), fields, footnotesHtml };
     },
   };
+}
+
+// The left margin's provenance: each input's prevout resolved to its
+// volume·book·chapter·section, the way the book resolves it (a merkle-proof
+// lookup per prevout). Bounded and best-effort — this runs only on the
+// image path, an unresolved input keeps its short txid, and a failure costs
+// the margin one reference, never the reply.
+const MAX_CITE_LOOKUPS = 8;
+
+async function resolveInputCitations(fields, fetchFn) {
+  const spends = fields.inputs
+    .map((inp, i) => ({ inp, i }))
+    .filter(({ inp }) => !inp.isNullPrevout);
+  if (!spends.length || spends.length > MAX_CITE_LOOKUPS) return [];
+
+  const citations = [];
+  await Promise.all(spends.map(async ({ inp, i }) => {
+    try {
+      const proof = await fetchFn(`/tx/${inp.prevTxid}/merkle-proof`, 'json');
+      if (proof) citations[i] = `${reference(proof.block_height)} §${proof.pos + 1} ⁄${inp.prevVout}`;
+    } catch { /* the short txid stands in */ }
+  }));
+  return citations;
 }
 
 // ─── state ──────────────────────────────────────────────────────────────
@@ -181,8 +223,10 @@ export async function replyFor(text, { esplora: fetchFn, proseOf, sectionOf = nu
       // failure falls back to quoting the txid as prose.
       let section = null;
       if (r.hex && sectionOf) {
-        try { section = sectionOf(r.hex); }
-        catch (e) { console.warn(`  (section compose failed: ${e.message} — quoting the txid prose)`); }
+        try {
+          section = sectionOf(r.hex);
+          section.citations = await resolveInputCitations(section.fields, fetchFn);
+        } catch (e) { console.warn(`  (section compose failed: ${e.message} — quoting the txid prose)`); }
       }
       return composeReply({ height: r.height, index: r.index, txid: r.txid, site, proseOf, section });
     }
@@ -204,7 +248,8 @@ export async function replyFor(text, { esplora: fetchFn, proseOf, sectionOf = nu
 async function passageMedia(outcome, { renderer, creds, site }) {
   if (!outcome.passage || !renderer) return [];
   try {
-    const png = await renderer.render(passageHtml({ ...outcome.passage, site }));
+    const { png, fontSize, fitted } = await renderer.render(outcome.passage, { site, ...IMAGE });
+    console.log(`  (passage set at ${fontSize.toFixed(1)}px${fitted ? '' : ', clipped to its opening'})`);
     const mediaId = await uploadMedia({ creds, media: png });
     try { await setAltText({ creds, mediaId, text: passageAltText(outcome.passage) }); }
     catch (e) { console.warn(`  (alt text failed: ${e.message})`); }
@@ -243,14 +288,14 @@ async function main() {
     if (r.passage) {
       const renderer = await loadRenderer();
       if (renderer) {
-        const png = await renderer.render(passageHtml({ ...r.passage, site: SITE }));
+        const { png, fontSize, fitted } = await renderer.render(r.passage, { site: SITE, ...IMAGE });
         await renderer.close();
         const out = 'passage.png';
         await writeFile(out, png);
-        console.log(`\n(verse overflows — full passage written to ${out}, ` +
-          `alt text: ${JSON.stringify(passageAltText(r.passage)).slice(0, 80)}…)`);
+        console.log(`\n(passage written to ${out} — set at ${fontSize.toFixed(1)}px` +
+          `${fitted ? ', whole' : ', clipped to its opening'})`);
       } else {
-        console.log('\n(verse overflows — with Playwright installed the full passage would ride as an image; ' +
+        console.log('\n(passage overflows the tweet — with Playwright installed it would ride as an image; ' +
           'npm install in tools/twitter-bot/)');
       }
     }
