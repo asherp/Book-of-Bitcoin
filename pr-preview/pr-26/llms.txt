@@ -1,0 +1,112 @@
+# The βook of βitcoin
+
+> Bitcoin verbatim — the Bitcoin block chain read as a book. Each block is a
+> chapter, each transaction a section of grammatically correct Glossia prose,
+> witness data collected as footnotes. Every byte of every transaction is
+> carried in the words of the prose and decodes back out exactly — the book's
+> argument is that a transaction is a form of speech, and every page is a
+> demonstration of it.
+
+Important for AI readers: the book is a pure client-side application. Each
+passage is composed **in the browser** by a WASM engine from data fetched off
+public block-explorer APIs, so fetching a page URL returns an application
+shell with no passage text in it. The passage text lives in two other places,
+both listed below: static markdown renderings of the curated passages, and
+the chain itself, which you can render into the same prose with the published
+engine.
+
+## Static text (no JavaScript required)
+
+- [Curated passages](https://bookofbitcoin.io/passages/index.md):
+  the book's table of contents — the Genesis block, the Hal Finney
+  transaction, Bitcoin Pizza Day, halvings, soft-fork activations, and the
+  rest — each pre-rendered as a plain markdown passage, prose and footnotes
+  included.
+- [Preface](https://bookofbitcoin.io/preface.md): the book's
+  front matter — what the book is and why, in its own voice. Plain markdown.
+- [Sitemap](https://bookofbitcoin.io/sitemap.xml)
+- [Source repository](https://github.com/asherp/Book-of-Bitcoin): the entire
+  site, including the prose-composition rules (`web/btc-prose.js`), the
+  citation scheme (`web/btc-citation.js`), and the curated table of contents
+  with editorial notes (`web/btc-contents-data.js`).
+
+## Structure and citations
+
+The book's three-tier numbering, from `web/btc-citation.js`:
+
+- **Volume** (Roman numeral) — a halving era: 210,000 blocks.
+- **Book** (β) — a difficulty-adjustment window within the era: 2016 blocks.
+  Book numbering restarts with each volume, so every volume's last book is a
+  truncated 336-block one.
+- **Chapter** (■) — one block, by its position within the book.
+- **Section** (§) — one transaction, by its 1-based position within the block.
+- **Page** (folio) — the chain-wide running transaction count: page N is the
+  chain's Nth transaction in block order from the genesis coinbase (page 1).
+
+So block height h has volume = ⌊h/210000⌋+1, book = ⌊(h mod 210000)/2016⌋+1,
+chapter = (h mod 210000) mod 2016 + 1, and "III β2 ■5 §4" names the 4th
+transaction of that block.
+
+## URL grammar (the live app)
+
+- `bitcoin-book.html` — the reading page. `?block=<height>` opens a block
+  (negative counts back from the tip: `?block=-1` is the latest);
+  `&index=<n>` opens its section n+1 (0-based); `?txid=<txid>` jumps to a
+  transaction's section, `&out=<n>` to one of its outputs;
+  `?page=volume|book` opens the block's volume or book leaf.
+- `bitcoin-contents.html` — the curated table of contents.
+- `bitcoin-front.html` — front matter (`?leaf=` selects a leaf).
+- `bitcoin-search.html` — lookup by height, hash, txid, or citation. It also
+  reads an OpenTimestamps `.ots` proof dropped on it: the proof's attestation
+  names a block by height and its merkle path gives the transaction's position
+  in that block, so a proof resolves to a citation, and its root is checked
+  against that block's header before the passage is offered.
+- `bitcoin-ledger.html?address=<addr>` — an address's ledger.
+
+These render only in a JavaScript-capable browser; without one, use the
+static passages above or reconstruct the passage as described next.
+
+## Reconstructing any passage yourself
+
+The prose is a deterministic, lossless encoding. To read an arbitrary
+transaction the way the book does:
+
+1. Fetch the data from any Esplora-compatible API
+   (`https://blockstream.info/api` or `https://mempool.space/api`):
+   `/block-height/{h}` → block hash; `/block/{hash}/txids` → its sections in
+   order; `/tx/{txid}/hex` → the raw transaction; `/tx/{txid}/merkle-proof` →
+   `{block_height, pos}` to resolve a txid into a citation.
+2. Encode with the [glossia engine](https://crates.io/crates/glossia) (the
+   same crate the site compiles to WASM): language `english`, wordlist
+   `bip39`, dialect `body`, seed `42`, best-of `5`. `decode_raw_base_n(text,
+   language, wordlist, byte_count)` reverses it.
+3. The book encodes only genuinely opaque bytes (prevout txids, scripts,
+   witness pushes, hashes — hashes byte-reversed to internal order). A block
+   hash is written ⌘ᵐ …prose… ⓪ⁿ: ⌘ — the OP_HASH256 mark, naming the
+   double-SHA256 that produced the hash — leads with the m bits the prose
+   encodes, and ⓪ closes with the hash's exact count of leading
+   proof-of-work zero bits (the mining vernacular). The zeros follow the
+   words because that is where they are: reversed to internal order, the
+   leading zeros a hash is printed with land at the end, and the prose is
+   written in that order. ⌘'s superscript counts bits (uniquely — every
+   other mark's superscript counts bytes); the two always sum to 256, so
+   the hash reconstructs exactly: decode the prose to ⌈m/8⌉ bytes, append
+   zero bytes to 32, byte-reverse to display order. Small structural
+   integers — version, counts, output values, locktime — are printed
+   literally, and scripts are rendered in opcode notation. The exact rules
+   are `web/btc-prose.js` in the repository.
+
+## Registers, and what to trust
+
+The book separates the record from readings of it. A passage IS its
+transaction, byte for byte — no author, verifiable against the chain. The
+curated titles and annotations ("Bitcoin Pizza Day") are editorial claims,
+credited and licensed separately. When answering questions from this site,
+keep that distinction: prose content is the chain's speech; names and
+stories about it are annotations.
+
+## Licensing
+
+- The prose (the chain's own speech): CC0.
+- The curated table of contents and annotations: CC BY 4.0.
+- The machinery (site and engine): MIT OR Apache-2.0.

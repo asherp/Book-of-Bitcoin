@@ -1,0 +1,383 @@
+<!-- SPDX-License-Identifier: MIT OR Apache-2.0 -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The βook of βitcoin — Search</title>
+<meta name="description" content="Look up any chapter of the Glossia Bitcoin Book: a block height, a block hash, a transaction id, the book's own citation form, or an OpenTimestamps proof.">
+<link rel="icon" type="image/png" sizes="32x32" href="./icons/beta-icon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="./icons/beta-icon-16.png">
+<link rel="icon" href="./icons/beta-icon.svg" type="image/svg+xml">
+
+<!-- PWA: installable, offline-capable app shell. Shares the Bitcoin book's
+     gold-β manifest so every page installs as one "Bitcoin Book" app. -->
+<link rel="manifest" href="./bitcoin-book.webmanifest">
+<meta name="theme-color" content="#08080a">
+<link rel="apple-touch-icon" href="./icons/beta-icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="βook of βitcoin">
+<!-- The shared masthead chrome: service worker registration and the Install /
+     Update affordances on the title's line, one copy for every page. -->
+<script src="./btc-chrome.js"></script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,400&family=IBM+Plex+Mono:wght@400;500;600&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./btc-chrome.css">
+<style>
+:root {
+  --page:#08080a; --card:#0d0d10; --card-bd:#232228; --ink:#e8e4da; --ink-soft:#cfcabf;
+  --accent:#c9a25f; --accent-2:#dcb877; --dim:#9c99a6; --meta:#7e7b88; --rule:#24232a; --hair:#2a2930;
+  --input-bg:#151519; --input-bd:#2a2930; --btn-ink:#17140c;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { min-height: 100vh; background: var(--page); color: var(--ink); font-family: 'Public Sans', system-ui, sans-serif; line-height: 1.55; }
+.wrap { max-width: 720px; margin: 0 auto; padding: 48px 22px 100px; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+.mono { font-family: 'IBM Plex Mono', monospace; }
+
+.page-head { text-align:center; padding-bottom:30px; margin-bottom:36px; border-bottom:1px solid var(--rule); }
+.page-eyebrow { font:600 11px/1 'IBM Plex Mono',monospace; letter-spacing:.3em; text-transform:uppercase; color:var(--accent); }
+
+.card {
+  background: var(--card); border: 1px solid var(--card-bd); border-radius: 6px;
+  padding: 24px 26px 26px; box-shadow: 0 24px 60px -32px rgba(0,0,0,.7);
+}
+label { display:block; font:500 11px/1 'IBM Plex Mono',monospace; letter-spacing:.06em; text-transform:uppercase; color:var(--dim); margin-bottom:8px; }
+.lookup-row { display:flex; gap:10px; }
+#block-input {
+  flex: 1; min-width: 0; background: var(--input-bg); border: 1px solid var(--input-bd); border-radius: 4px;
+  color: var(--ink); font: 400 14px/1.4 'IBM Plex Mono',monospace; padding: 11px 12px;
+}
+#block-input:focus { outline: none; border-color: var(--accent); }
+button {
+  background: var(--accent); color: var(--btn-ink); border: none; border-radius: 4px;
+  font: 600 12.5px/1 'IBM Plex Mono',monospace; letter-spacing: .04em; text-transform: uppercase;
+  padding: 0 20px; cursor: pointer; transition: background .15s ease;
+}
+button:hover { background: var(--accent-2); }
+
+/* The proof card: a lookup whose query arrives as a file. It sits under the
+   typed one because it answers the same question in another notation -- where
+   in the manuscript is this? -- and it is the only lookup here that can be
+   wrong, so it keeps room for a verdict beneath it. */
+.proof-card { margin-top: 18px; }
+.proof-drop {
+  border: 1px dashed var(--input-bd); border-radius: 4px; background: var(--input-bg);
+  padding: 16px 16px 14px; text-align: center; transition: border-color .15s ease, background .15s ease;
+}
+.proof-drop.over { border-color: var(--accent); background: #191712; }
+.proof-say { display:block; font:400 13.5px/1.5 'Newsreader',serif; color:var(--dim); margin-bottom:11px; }
+.ghost {
+  background: none; color: var(--accent); border: 1px solid var(--input-bd);
+  padding: 8px 16px; font-size: 11.5px;
+}
+.ghost:hover { background: none; border-color: var(--accent); color: var(--accent-2); }
+
+.proof-result { margin-top: 16px; font:400 13.5px/1.6 'Public Sans',sans-serif; color:var(--ink-soft); }
+.proof-line { display:flex; gap:14px; padding:5px 2px; border-bottom:1px solid var(--hair); }
+.proof-key { flex:none; width:96px; font:500 10.5px/1.9 'IBM Plex Mono',monospace; letter-spacing:.06em; text-transform:uppercase; color:var(--meta); }
+.proof-val { flex:1; min-width:0; overflow-wrap:anywhere; font:400 12.5px/1.7 'IBM Plex Mono',monospace; color:var(--ink-soft); }
+
+/* The book's own marks, on the book's own terms: the identity mark (⌘), the
+   data mark (h) and the merkle mark (⋔) bold gold, each with its count riding
+   after it as a superscript, and the hash itself set as prose in the reading
+   face -- the same dress the chapter hash and the frontispiece wear, so a
+   figure means the same thing here as it does on the page it points to. */
+.dt, .merkle-mark { color: var(--accent); font-weight: 700; font-style: normal; }
+.op-count { color: var(--meta); font-size: .85em; }
+.proof-figure { font: italic 400 14px/1.55 'Newsreader',serif; color: var(--dim); }
+.proof-figure.waiting { color: var(--meta); }
+.proof-verdict { margin-top:14px; font:400 14px/1.5 'Newsreader',serif; }
+.proof-verdict.good { color:var(--ink); }
+.proof-verdict.bad { color:#e08b7a; }
+.proof-verdict.unsure { color:var(--dim); }
+.proof-open { display:inline-block; margin-top:14px; font:500 13px/1 'IBM Plex Mono',monospace; }
+.hidden { display: none; }
+
+/* Worked examples beneath the card: each opens the page it cites, so the
+   citation forms are learned by using them rather than by reading a legend. */
+.examples { margin-top: 28px; }
+.examples-title { font:600 10px/1 'IBM Plex Mono',monospace; letter-spacing:.16em; text-transform:uppercase; color:var(--meta); margin-bottom:4px; padding-left:2px; }
+.example { display:flex; align-items:baseline; gap:16px; padding:9px 2px; border-bottom:1px solid var(--hair); text-decoration:none; }
+.example-what { flex:1; min-width:0; font:500 15px/1.35 'Newsreader',serif; color:var(--ink-soft); }
+.example-form { flex:none; max-width:55%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-align:right; font:500 12.5px/1.6 'IBM Plex Mono',monospace; color:var(--accent); }
+.example:hover .example-what { color:var(--ink); }
+.example:hover .example-form { color:var(--accent-2); text-decoration:underline; }
+</style>
+<body>
+<div class="wrap">
+  <div class="masthead">
+    <span class="title">The <span class="beta">β</span>ook of <span class="beta">β</span>itcoin</span>
+    <span class="home"><a href="./bitcoin-book.html">Read</a> · <a href="./bitcoin-contents.html">Contents</a> · <a href="./bitcoin-ledger.html">Ledger</a></span>
+  </div>
+
+  <header class="page-head">
+    <div class="page-eyebrow">Search</div>
+  </header>
+
+  <div class="card">
+    <label for="block-input">Block height, hash, transaction id, reference, or address</label>
+    <div class="lookup-row">
+      <input type="text" id="block-input" class="mono" placeholder="e.g. III β2 ■5, a height, a hash, a transaction id, or an address" autocomplete="off" spellcheck="false" autofocus>
+      <button type="button" id="block-btn">Read</button>
+    </div>
+  </div>
+
+  <div class="card proof-card">
+    <label for="proof-file">OpenTimestamps proof</label>
+    <div class="proof-drop" id="proof-drop">
+      <span class="proof-say">A proof is a citation in another hand: it names the chapter a file was stamped
+        into, and its merkle path spells the §section. Drop a <span class="mono">.ots</span> here —
+        together with the file it stamps, to check that too.</span>
+      <button type="button" class="ghost" id="proof-pick">Choose a file</button>
+      <input type="file" id="proof-file" multiple hidden>
+    </div>
+    <div class="proof-result hidden" id="proof-result"></div>
+  </div>
+
+  <div class="examples">
+    <div class="examples-title">For example</div>
+    <a class="example" href="./bitcoin-book.html?block=0"><span class="example-what">the Genesis block, by height</span><span class="example-form">0</span></a>
+    <a class="example" href="./bitcoin-book.html?block=-1"><span class="example-what">the latest block — a negative height counts back from the chain tip</span><span class="example-form">-1</span></a>
+    <a class="example" href="./bitcoin-book.html?block=III%20%CE%B22%20%E2%96%A05"><span class="example-what">a chapter, by the book's own citation</span><span class="example-form">III β2 ■5</span></a>
+    <a class="example" href="./bitcoin-book.html?block=57043"><span class="example-what">Bitcoin Pizza Day's chapter, by height</span><span class="example-form">57043</span></a>
+    <a class="example" href="./bitcoin-book.html?txid=a1075db55d416d3ca199f55b6084e2115b9345e16c5cf302fc80e9d5fbf5d48d"><span class="example-what">the pizza transaction's own section, by its id</span><span class="example-form">a1075db5…f5d48d</span></a>
+    <a class="example" href="./bitcoin-book.html?ref=v1b29c596"><span class="example-what">the same chapter, by its reference alone — as a βoβ quote carries it</span><span class="example-form">v1b29c596</span></a>
+    <a class="example" href="./bitcoin-ledger.html?address=1Ross5Np5doy4ajF9iGXzgKaC2Q3Pwwxv"><span class="example-what">an address's ledger — every chapter it appears in, with amounts</span><span class="example-form">1Ross5Np…Pwwxv</span></a>
+  </div>
+</div>
+
+<script type="module">
+// The book page resolves every input form itself (?block= accepts a height, a
+// negative tip-relative height, a 64-hex block hash or txid, and the citation
+// form alike), so searching is a hand-off: carry the query there and let the
+// book open it. Two forms route specially: an address is not a place but a
+// name, so it hands off to its Ledger instead (the address's view of the
+// manuscript, focused on amounts); and a passage reference -- in either
+// spelling, the Latin URL form (v1b50c1807s85o4) or the quoted βoβ form
+// (βoβ I β50 ■1807 §85.4) -- hands the book the reference whole (?ref=…),
+// which resolves it by citation arithmetic alone: no txid involved.
+import { isAddress } from './btc-index.js';
+const input = document.getElementById('block-input');
+const ROMAN = { I: 1, V: 5, X: 10, L: 50, C: 100, D: 500, M: 1000 };
+const fromRoman = (s) => [...s.toUpperCase()].reduce((n, c, i, a) =>
+  n + (ROMAN[c] < ROMAN[a[i + 1]] ? -ROMAN[c] : ROMAN[c]), 0);
+// The reference, in either spelling, normalized to the Latin URL form.
+const latinReference = (q) => {
+  if (/^v\d+b\d+c\d+(?:s\d+)?(?:o\d+)?$/i.test(q)) return q.toLowerCase();
+  const m = /^(?:βoβ\s+)?([IVXLCDM]+)\s*β(\d+)\s*■(\d+)(?:\s*§(\d+)(?:\.(\d+))?)?$/i.exec(q);
+  if (!m) return null;
+  return `v${fromRoman(m[1])}b${m[2]}c${m[3]}${m[4] ? `s${m[4]}` : ''}${m[5] ? `o${m[5]}` : ''}`;
+};
+const go = () => {
+  const q = input.value.trim();
+  if (!q) { input.focus(); return; }
+  // Uppercase bech32 (the QR form) is normalized to the lowercase form the
+  // ledger queries with; base58 stays as typed (its case is significant).
+  const addr = isAddress(q) ? q : (isAddress(q.toLowerCase()) ? q.toLowerCase() : null);
+  if (addr) { location.href = './bitcoin-ledger.html?address=' + encodeURIComponent(addr); return; }
+  const ref = latinReference(q);
+  if (ref) { location.href = './bitcoin-book.html?ref=' + encodeURIComponent(ref); return; }
+  location.href = './bitcoin-book.html?block=' + encodeURIComponent(q);
+};
+document.getElementById('block-btn').addEventListener('click', go);
+input.addEventListener('keydown', (e) => { if (e.key === 'Enter') go(); });
+
+// --- A proof as a query -------------------------------------------------
+//
+// An OpenTimestamps proof answers the same question the box above does, in
+// another notation: it names a block by height, and its merkle path names the
+// transaction's position in that block -- so it resolves to a reference by
+// arithmetic alone, with nothing asked of the chain. What the chain is asked
+// for is the one thing that makes a timestamp true rather than merely stated:
+// the block's merkle root, which the proof's operations must reduce to. Until
+// that comparison is made a proof is an assertion, and the verdict below says
+// so in as many words.
+import { parseOtsProof, isOtsProof, digestOf, earliestBitcoin } from './btc-ots.js';
+import { blockAt } from './btc-index.js';
+import { volumeBookChapter, reference } from './btc-citation.js';
+import { toSuperscript } from './btc-sigla.js';
+
+const drop = document.getElementById('proof-drop');
+const result = document.getElementById('proof-result');
+const fileInput = document.getElementById('proof-file');
+const stamp = (ts) => new Date(ts * 1000).toISOString().slice(0, 16).replace('T', ' ');
+const reverseHex = (hex) => (hex.match(/../g) || []).reverse().join('');
+const BEST_OF = 5;                                     // the book's cover-word quality
+
+// The engine, fetched only once a proof arrives. A page that answers typed
+// lookups should not carry a megabyte of WASM to do it, and a checkout without
+// the build artifact must still search -- so the import is dynamic, and prose
+// is an upgrade over the hex rather than a condition for showing it.
+let engine = null;
+const glossia = () => (engine ||= import('./glossia-msg.js').then(async (m) => { await m.init(); return m; }));
+
+// A hash, as the book sets one: its mark, the byte count riding after it as a
+// superscript, then the figure itself in words. `reverse` turns a hash
+// displayed in the chain's backwards order into the bytes it actually is,
+// which is what the prose must carry -- a txid and a merkle root are written
+// that way, a file's digest is not.
+//
+// The words are the figure; there is no hex fallback, because hex is the one
+// notation this book does not write in. A hash with no prose yet reads as an
+// ellipsis, and a hash the engine never arrives to say stays unsaid -- the
+// mark still names what it is, and the mark's title still carries the hex for
+// a reader checking against an explorer, which is where the book keeps hex
+// too (behind the copy menu, never on the page).
+const figure = (hex, mark, markClass, sup, title, reverse) => ({ hex, mark, markClass, sup, title, reverse });
+// A file's digest: a single SHA-256, not the chain's double, so it takes the
+// generic data mark and counts bytes like every other push.
+const hash = (hex, title) => figure(hex, 'h', 'dt', hex.length / 2, title, false);
+// A txid: the same double-SHA256 a block hash is, with no proof-of-work zeros
+// to state -- so it wears ⌘ with the full bit count, exactly as the section
+// frontage does in the book.
+const identity = (hex, title) => figure(hex, '⌘', 'dt', 256, title, true);
+const merkle = (hex, title) => figure(hex, '⋔', 'merkle-mark', hex.length / 2, title, true);
+
+// Every figure on the page, waiting to be read out as prose once the engine
+// lands. The hex is what a reader can check against an explorer, so it stays
+// in the figure's title after the words replace it.
+const prosed = new Map();     // encoded bytes -> their prose; the result is redrawn as the chain answers
+const UNSAID = 'the engine that puts a hash into words did not load';
+const unsay = (el) => { el.textContent = 'unsaid'; el.title = UNSAID; el.classList.add('waiting'); };
+function setProse(cells) {
+  if (!cells.length) return;
+  glossia().then((m) => {
+    for (const { el, hex, reverse } of cells) {
+      try {
+        const bytes = reverse ? reverseHex(hex) : hex;
+        if (!prosed.has(bytes)) prosed.set(bytes, m.encodeSeedPhrase(bytes, 'english', BEST_OF).prose);
+        el.textContent = prosed.get(bytes);
+        el.classList.remove('waiting');
+      } catch { unsay(el); }
+    }
+  }).catch(() => { for (const { el } of cells) unsay(el); });
+}
+
+const say = (rows, verdict = null, href = null, label = '') => {
+  result.innerHTML = '';
+  const cells = [];
+  for (const [key, val] of rows) {
+    const line = document.createElement('div'); line.className = 'proof-line';
+    const k = document.createElement('div'); k.className = 'proof-key'; k.textContent = key;
+    const v = document.createElement('div'); v.className = 'proof-val';
+    if (typeof val === 'string') {
+      v.textContent = val;
+    } else {
+      const m = document.createElement('span');
+      m.className = val.markClass; m.textContent = val.mark;
+      m.title = `${val.title}\n${val.hex}`;      // the mark carries the hex, as the book's copy menu does
+      const sup = document.createElement('span');
+      sup.className = 'op-count'; sup.textContent = toSuperscript(val.sup);
+      sup.title = val.mark === '⌘' ? `${val.sup} bits — ⌘'s superscript counts bits` : `${val.sup} bytes`;
+      const fig = document.createElement('span');
+      fig.className = 'proof-figure waiting'; fig.textContent = '…';
+      v.append(m, sup, ' ', fig);
+      cells.push({ el: fig, hex: val.hex, reverse: val.reverse });
+    }
+    line.append(k, v); result.append(line);
+  }
+  setProse(cells);
+  if (verdict) {
+    const p = document.createElement('div');
+    p.className = `proof-verdict ${verdict[1]}`; p.textContent = verdict[0];
+    result.append(p);
+  }
+  if (href) {
+    const a = document.createElement('a');
+    a.className = 'proof-open'; a.href = href; a.textContent = label;
+    result.append(a);
+  }
+  result.classList.remove('hidden');
+};
+
+async function readProof(fileList) {
+  const files = [...fileList];
+  if (!files.length) return;
+  say([['reading', files.map((f) => f.name).join(', ')]]);
+  const read = await Promise.all(files.map(async (f) => ({ name: f.name, bytes: new Uint8Array(await f.arrayBuffer()) })));
+  // The proof is recognized by its magic, not its name: a proof saved as
+  // anything at all is still a proof, and the file beside it is the subject.
+  const proof = read.find((f) => isOtsProof(f.bytes));
+  if (!proof) {
+    say([['dropped', read.map((f) => f.name).join(', ')]],
+      ['No OpenTimestamps proof here — a .ots file opens with its own magic, and none of these do.', 'bad']);
+    return;
+  }
+  let parsed;
+  try { parsed = await parseOtsProof(proof.bytes); }
+  catch (e) { say([['proof', proof.name]], [`This proof will not read: ${e.message}.`, 'bad']); return; }
+
+  // The digest is the proof's subject, and it is not a chain hash: it is
+  // written in the order it was computed, so it is encoded in that order.
+  const rows = [['proof', proof.name],
+    [parsed.hash, hash(parsed.digest, `${parsed.hash} digest — the bytes this proof commits to`)]];
+
+  // A proof commits to a digest, not to a file. With the subject in hand too,
+  // the reader can see for themselves which file this proof is about.
+  const subject = read.find((f) => f !== proof);
+  if (subject) {
+    const digest = await digestOf(subject.bytes, parsed.hash);
+    rows.push([subject.name, digest === parsed.digest ? 'matches the proof' : 'does NOT match the proof']);
+  }
+
+  const att = earliestBitcoin(parsed.attestations);
+  if (!att) {
+    const pending = parsed.attestations.filter((a) => a.kind === 'pending').map((a) => a.uri);
+    const other = parsed.attestations.filter((a) => a.kind !== 'pending').map((a) => a.kind);
+    for (const uri of pending) rows.push(['pending', uri]);
+    for (const kind of other) rows.push(['attested', `${kind} — a chain this book does not read`]);
+    say(rows, [pending.length
+      ? 'Not in a block yet. The calendars above are holding this digest for the next transaction they publish; come back and upgrade the proof once it confirms.'
+      : 'This proof reaches no Bitcoin block, so it names no chapter here.', 'unsure']);
+    return;
+  }
+
+  const { volume, book, chapter } = volumeBookChapter(att.height);
+  const section = att.index === null ? null : att.index + 1;
+  const cite = reference(att.height) + (section ? ` §${section}` : '');
+  const href = section
+    ? `./bitcoin-book.html?ref=v${volume}b${book}c${chapter}s${section}`
+    : `./bitcoin-book.html?block=${att.height}`;
+  rows.push(['stamped into', `block ${att.height} — ${cite}`]);
+  if (att.txid) rows.push(['transaction', identity(att.txid, 'the transaction carrying the commitment — its txid')]);
+  rows.push(['merkle root', merkle(att.merkleRoot, 'the merkle root the proof reduces to — what the block header must commit to')]);
+  say(rows, ['Asking the chain for that block…', 'unsure']);
+
+  // The verification, entire: the operations reduce to 32 bytes, and those
+  // bytes either are the merkle root the block's header commits to or they
+  // are not. Nothing else about the proof matters, and no calendar is
+  // consulted -- an upgraded proof needs nobody's word for anything.
+  const block = await blockAt(att.height);
+  if (!block) {
+    say(rows, ['The chain could not be reached, so nothing here is verified — the reference below is what the proof claims, not what has been checked.', 'unsure'],
+      href, `Read ${cite} →`);
+    return;
+  }
+  if (block.merkleRoot !== att.merkleRoot) {
+    rows.push(['chain says', merkle(block.merkleRoot, "the merkle root that block's header actually commits to")]);
+    say(rows, ['The roots differ. This proof does not commit to that block, whatever it says.', 'bad']);
+    return;
+  }
+  rows.push(['mined', `${stamp(block.timestamp)} UTC`]);
+  say(rows, [`Verified. The digest above existed by the time this chapter was mined${
+    subject ? ', and the file beside the proof is the one it attests' : ''}.`, 'good'],
+  href, `Read ${cite} →`);
+}
+
+document.getElementById('proof-pick').addEventListener('click', () => fileInput.click());
+// Cleared after each read so that choosing the same proof twice still asks.
+fileInput.addEventListener('change', () => { const f = fileInput.files; readProof(f).finally(() => { fileInput.value = ''; }); });
+for (const type of ['dragenter', 'dragover']) {
+  drop.addEventListener(type, (e) => { e.preventDefault(); drop.classList.add('over'); });
+}
+for (const type of ['dragleave', 'drop']) {
+  drop.addEventListener(type, (e) => { e.preventDefault(); drop.classList.remove('over'); });
+}
+drop.addEventListener('drop', (e) => { if (e.dataTransfer?.files?.length) readProof(e.dataTransfer.files); });
+</script>
+</body>
+</html>
