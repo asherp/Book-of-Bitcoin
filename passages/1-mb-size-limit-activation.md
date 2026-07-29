@@ -31,7 +31,7 @@ Transaction id, as prose: ⌘²⁵⁶ *Increase wink to predict for fish. Pop us
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
-  - script: β₄₁ η₁₉₂₉
+  - script: β₄₁ 6024678×256²⁴ η₁₉₂₉
   - sequence: ● — final — disables the transaction locktime for this input
 - **output 1:** 50.00000000 ₿
   - script: p⁶⁵ Advice access to invite for uniform. December may guard to rotate. A first too set an excess. A popular length thunder case. Deal sponsor orbit like crack. The vast guy attract tonight to flavor. Anxiety may set stadium. Our son alone pipe other goat. Pay real escape chaos. Its scrap wash word rack. Its blade first split the dad. Valve is various to choice. Barrel ramp other lunch. Our wreck is bad to our parade. ∇

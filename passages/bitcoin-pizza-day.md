@@ -31,7 +31,7 @@ Transaction id, as prose: ⌘²⁵⁶ *Its tortoise get the latin bunker. Cry bl
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
-  - script: β₃₅ η₁₁₈
+  - script: β₃₅ 1416228×256²⁵ η₁₁₈
   - sequence: ● — final — disables the transaction locktime for this input
 - **output 1:** 50.99000000 ₿
   - script: p⁶⁵ Agent ask the solid comfort. A velvet bind brief ripple to frown out a hollow solution. Move retreat to frown via section. Plug see a summer to theme. Sense license our muscle. Hurry may work tiger to help. Picnic get ability out zoo. Nose renew search to call. Museum set our ordinary buddy. Yes tell bean to seminar out a minimum. Ban may engage slight to bonus. Ethics may get still via an okay son. An actual notable parade lie. ∇

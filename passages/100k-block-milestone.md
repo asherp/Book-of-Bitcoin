@@ -31,7 +31,7 @@ Transaction id, as prose: ⌘²⁵⁶ *Its manual hub set cigar. Son teach penal
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
-  - script: β₄₅ η₅₁₈
+  - script: β₄₅ 296524×256²⁴ η₅₁₈
   - sequence: ● — final — disables the transaction locktime for this input
 - **output 1:** 50.00000000 ₿
   - script: p⁶⁵ Advice due get such perfect red. Cop enlist lab to myth. A survey draw cube per swift. Gym see tray to session out car. A real ear always excite a dial. December get the veteran. A talent pencil stairs. Set why suffer its lift. Cap must repair version. A myself. Gown set denial to crater per laptop. Our dumb window are vicious. Tongue may see dinner. Treat web a chronic die. A long dignity may admit venue. Cop retire lawn to the length. ∇

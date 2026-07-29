@@ -31,7 +31,7 @@ Transaction id, as prose: ⌘²⁵⁶ *Its hamster pepper stomach to hollow. Exc
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
-  - script: β₄₄ ⓪
+  - script: β₄₄ 946774×256²⁴ ⓪
   - sequence: ● — final — disables the transaction locktime for this input
 - **output 1:** 50.00000000 ₿
   - script: p⁶⁵ An advice why set yes. A myself. Sign see our gadget. A door coast the clean flower. Our uncle get dune to gold. Any red may keep tortoise. A next set boy. An immense son may cancel leopard. A myself. An immense bean get zebra to bundle. A bleak start pipe barrel. A due may say some skill to cushion. Yes describe smoke via its vivid pan. Each red is vibrant. Dash neither set that clay. Wool goose tornado to cereal. Habit set a bonus. Snack see soul to cactus. ∇

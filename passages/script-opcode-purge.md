@@ -31,7 +31,7 @@ Transaction id, as prose: ⌘²⁵⁶ *Its rural glass egg to harbor. Pop awake 
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
-  - script: β₄₀ η₁₅₄₈
+  - script: β₄₀ 32782×256²⁵ η₁₅₄₈
   - sequence: ● — final — disables the transaction locktime for this input
 - **output 1:** 50.00000000 ₿
   - script: p⁶⁵ Aid again see its urban jet. Cow ask to enroll. Rich far fetch glue. Cattle get biology to satoshi. Another palm due clip its raw horror. A red limit are famous. An annual yes accuse egg. Skate bid to ignore. Dance see laptop for water out path. Our eternal surprise tape son. Its soft bit is alone. Pitch quick set sweet. Twin get a buffalo. Client see sibling to mango. Cow equip the random die. Aid thrive pudding to breeze. Rub far betray its illegal gas. ∇

@@ -30,7 +30,7 @@ Transaction id, as prose: ⌘²⁵⁶ *Its desert buyer leg visual. Raise may fl
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
-  - script: β₃₂ η₄ ⁶⁹ “The Times 03/Jan/2009 Chancellor on brink of second bailout for banks”
+  - script: β₃₂ 65535×256²⁶ η₄ ⁶⁹ “The Times 03/Jan/2009 Chancellor on brink of second bailout for banks”
   - sequence: ● — final — disables the transaction locktime for this input
 - **output 1:** 50.00000000 ₿
   - script: p⁶⁵ Cop afford detail to satoshi. Giggle torch our piano. Organ ago get coconut. A vast crime equip hotel. Alarm may see hero to pass. A bright cop decorate essay via oxygen. Shift get attitude to autumn. Manual set its strategy for enemy. Ban remove average to oil. Our vicious cow give snap per party via topic. Voyage is dwarf to royal for seminar. The tax is cheap. The ten door are minute to rough. Its narrow theory repeat weasel. Some cop install to theme. ∇

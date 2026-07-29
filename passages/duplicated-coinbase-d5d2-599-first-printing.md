@@ -31,7 +31,7 @@ Transaction id, as prose: ⌘²⁵⁶ *Its office conduct apart prefer axis. Muc
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
-  - script: β₄₄ ⓪
+  - script: β₄₄ 946774×256²⁴ ⓪
   - sequence: ● — final — disables the transaction locktime for this input
 - **output 1:** 50.00000000 ₿
   - script: p⁶⁵ Yes afford dwarf to robot. Weasel endorse to found. A fix is raw. Our twin wheel exist creek to team. Soap yes get defense. A bed is raw. Key pause panda to moral. Combine alarm to afford. Impact see cake via dose out whisper. February work tuna to burst via a clerk. Potato father to observe for pattern. Arena wrestle to gather. Sail may see vintage. Kingdom set an intact north. Hen is unfair to kidney. Its length is big per guy. ∇
