@@ -188,6 +188,11 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 .fs-value.fs-linked { color:var(--meta); }
 .fontscale-foot { display:flex; justify-content:flex-end; margin-top:10px; }
 
+/* ── page-turn sound: a single opt-in switch (see btc-turnsound.js) ── */
+.sound-row { display:flex; align-items:center; gap:9px; cursor:pointer; }
+.sound-row span { font:500 12.5px/1.4 'IBM Plex Mono',monospace; color:var(--ink-soft); }
+.sound-row input { accent-color:var(--accent); width:15px; height:15px; margin:0; cursor:pointer; }
+
 /* ── data-source picker: choose the Esplora-compatible endpoint, add custom ── */
 .endpoint-row { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
 .endpoint-select {
@@ -647,6 +652,11 @@ button:disabled { opacity: .4; cursor: not-allowed; }
         <span class="fs-label">Notation</span><button type="button" class="ghost-btn" data-fs="notation" data-fs-d="-1" aria-label="Smaller notation text">A−</button><span class="fs-value" data-fs-v="notation">100%</span><button type="button" class="ghost-btn" data-fs="notation" data-fs-d="1" aria-label="Larger notation text">A+</button>
       </div>
       <div class="fontscale-foot"><button type="button" id="fontscale-reset" class="ghost-btn">Reset</button></div>
+      <div class="settings-title">Sound</div>
+      <!-- Off until asked for: a book makes no noise unless the reader wants
+           one. Switching it on is also the gesture that unlocks the audio
+           context, so the chain's own turns can sound later without one. -->
+      <label class="sound-row"><input type="checkbox" id="turn-sound"><span>Page-turn sound</span></label>
       <div class="settings-title">Data source</div>
       <div class="endpoint-row">
         <select id="endpoint-select" class="endpoint-select" aria-label="Data source endpoint"></select>
@@ -762,6 +772,7 @@ import { seedArchive } from './btc-seed.js';
 import { REGIONS, fontScale, setFontScale, resetFontScales, fontScaleDiverged,
          FONT_SCALE_MIN, FONT_SCALE_MAX, FONT_SCALE_STEP } from './btc-fontscale.js';
 import { pageAnchor, bankAnchor, peekAnchor, formatPage } from './btc-pages.js';
+import { playTurn, levelOfIndex, soundEnabled, setSoundEnabled } from './btc-turnsound.js';
 
 // A first visit provisions the archive with the curated passages' chain data
 // (idle-time, once ever; see btc-seed.js) -- the contents page's entries then
@@ -1631,6 +1642,7 @@ async function followTip() {
       if (!ours()) return;
       if (!meta) { await new Promise((r) => setTimeout(r, TIP_FOLLOW_WAIT * (tries + 1))); continue; }
       state = mine = { ...meta, index: -1 };
+      playTurn('chapter');   // the chain turned this page; it sounds like any other
       await showCurrentTx();
       tries = -1;   // caught the tip we aimed at; if it moved again mid-fetch, aim again
     }
@@ -1768,9 +1780,14 @@ const liveProjection = (() => {
     if (state.index === -1) {
       if (state.height <= tipHeight) {
         stop();
+        playTurn('chapter');   // the pencil inked over: this chapter page turns into itself, mined
         await openLookup(String(state.height));
         return;
       }
+      // Every projected chapter re-seats one nearer the tip: the page the
+      // reader is on becomes a different chapter, which is a turn like any
+      // other and sounds like one.
+      playTurn('chapter');
       try { await stepProjected(state.height, -1); } catch { /* keep the snapshot */ }
     } else {
       // A section's best provisional guess: same projected block, one nearer
@@ -3650,7 +3667,44 @@ let stepTimer = null;
 let pendingSteps = 0;
 let stepping = false;
 
+// ── The turn's voice ──────────────────────────────────────────────────────
+// A turn sounds at the level it LANDS on -- a sheet, a page, a gathering, a
+// tome (btc-turnsound.js) -- so swiping up through the bindings is audibly an
+// ascent rather than just another turn. Which level that is must be known
+// before the destination renders: the sound belongs to the gesture, not to
+// the load that follows it. So each landing is predicted here, the same way
+// the step that follows computes it for real.
+
+// A linear step: the foot nav, which threads through the leaves between
+// blocks rather than staying at one level.
+function linearLevel(direction) {
+  if (!state) return 'chapter';
+  const floor = state.projected ? -1 : minIndexOf(state.height);
+  const target = state.index + direction;
+  if (target >= floor && target < state.txCount) return levelOfIndex(target);
+  // A burst that overshoots lands on this block's own edge, at that level.
+  if (direction > 0 && state.index < state.txCount - 1) return 'section';
+  if (direction < 0 && state.index > floor) return levelOfIndex(floor);
+  // Off the edge: backward onto the previous block's last section; forward
+  // onto the next block's first page, which is its leaf floor -- except past
+  // the tip, where a projected chapter always opens at its chapter page.
+  if (direction < 0) return 'section';
+  const next = state.height + 1;
+  return tipHeight !== null && next > tipHeight ? 'chapter' : levelOfIndex(minIndexOf(next));
+}
+
+// A vertical swipe, read off the very target the swipe itself will take.
+function verticalLevel(direction) {
+  const t = levelTarget(direction);
+  if (!t) return null;
+  if (t.ghost || t.unghost) return 'section';           // the ledger's drafts hang at section level
+  if (t.toc) return 'volume';                           // above the volumes, and leaving on their note
+  if (t.linear) return levelOfIndex(state.index + 1);   // a leaf descends to its first child
+  return levelOfIndex(t.idx);
+}
+
 function requestStep(direction) {
+  playTurn(linearLevel(direction));
   pendingSteps += direction;
   if (stepTimer !== null) clearTimeout(stepTimer);
   stepTimer = setTimeout(runPendingSteps, STEP_DEBOUNCE_MS);
@@ -3713,8 +3767,9 @@ async function runPendingSteps() {
 
 $('page-prev').addEventListener('click', () => requestStep(-1));
 $('page-next').addEventListener('click', () => requestStep(1));
-$('chapter-prev').addEventListener('click', () => goToLevel(-1));
-$('chapter-next').addEventListener('click', () => goToLevel(1));
+// The header steppers turn at the leaf's own level, so both sound as it.
+$('chapter-prev').addEventListener('click', () => { playTurn(levelOfIndex(state ? state.index : -1)); goToLevel(-1); });
+$('chapter-next').addEventListener('click', () => { playTurn(levelOfIndex(state ? state.index : -1)); goToLevel(1); });
 // The eyebrow crumbs: each opens the page of the span it names. Same block →
 // just re-render at the leaf; otherwise load the span's first block.
 const openCrumb = (height, idx) => {
@@ -4205,10 +4260,15 @@ window.addEventListener('resize', updateGesturePrecedence);
     const vdir = dy < 0 ? 1 : -1;  // pushing up descends a level, pulling down ascends
     const vEngaged = inFrame && (gesture.carouselFirst || (vdir < 0 && atTop) || (vdir > 0 && atBottom));
     const vTurn = vEngaged && dt <= 600 && Math.abs(dy) >= 70 && Math.abs(dx) <= Math.abs(dy) * 0.6;
+    // The sound goes on the commit, ahead of the branch: a reader who has
+    // asked for reduced motion still hears the page they turned.
     if (turn && !pendingSlide && canStep(dir)) {
+      playTurn(levelOfIndex(state ? state.index : -1));   // a horizontal turn keeps its level
       if (REDUCED_MOTION) swipeStep(dir);
       else slideOutAndStep(dir);
     } else if (vTurn && !pendingSlide && canStepVertical(vdir)) {
+      const landing = verticalLevel(vdir);
+      if (landing) playTurn(landing);
       if (REDUCED_MOTION) swipeStepVertical(vdir);
       else slideOutAndStep(vdir, 'y');
     } else if (!pendingSlide) {
@@ -4441,6 +4501,15 @@ for (const btn of document.querySelectorAll('[data-fs]')) {
 }
 $('fontscale-reset').addEventListener('click', () => { resetFontScales(); reflectFontScale(); });
 reflectFontScale();
+
+// ── The page-turn sound's switch ──────────────────────────────────────────
+// The change handler runs inside the click that flipped it, which is what
+// lets the audio context start (see btc-turnsound.js); switching it on
+// answers with a chapter's turn, so the choice is audible at the moment it
+// is made.
+const turnSoundBox = $('turn-sound');
+turnSoundBox.checked = soundEnabled();
+turnSoundBox.addEventListener('change', () => setSoundEnabled(turnSoundBox.checked));
 
 // ── Settings popover ──────────────────────────────────────────────────────
 // The masthead "Settings" link toggles a small popover holding the data-source
