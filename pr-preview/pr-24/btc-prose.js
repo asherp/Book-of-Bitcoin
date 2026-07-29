@@ -537,6 +537,12 @@ export function renderScript(hex, collect, { eligible = false, nested = false, p
   // the extranonce must directly follow it; anything else ends the hunt and
   // the push falls through to the ordinary treatment.
   let pre = preamble ? 'target' : 'done';
+  // The preamble sits on its own line: it is the miner's own bookkeeping,
+  // not the coinbase's message, so the break after its last mark lets what
+  // the miner actually wrote (the genesis headline, a tag) open a line of
+  // its own. Recorded as an index rather than pushed as a part, so a
+  // scriptSig that is preamble and nothing else ends without a stray break.
+  let breakAfter = -1;
   let prevOp = null;   // the opcode preceding a push -- context for its type mark
   toks.forEach((t, i) => {
     if (t.op !== undefined) {
@@ -557,6 +563,7 @@ export function renderScript(hex, collect, { eligible = false, nested = false, p
           // mark names the target and the expression writes it out.
           parts.push(markToken(info.expr ? `${info.sym} ${info.expr}` : info.sym,
             `the difficulty target this block was mined against — ${info.title}`));
+          breakAfter = parts.length - 1;
           pre = 'extranonce';
           return;
         }
@@ -565,6 +572,7 @@ export function renderScript(hex, collect, { eligible = false, nested = false, p
         const n = extranonceFromPush(t.push);
         if (n !== null) {
           parts.push(markToken(`η${toSubscript(n)}`, `extranonce ${n} — the counter the miner rolled once the header's 32-bit nonce (η) was exhausted`));
+          breakAfter = parts.length - 1;
           return;
         }
       }
@@ -626,6 +634,9 @@ export function renderScript(hex, collect, { eligible = false, nested = false, p
       parts.push(collect(t.trunc));                           // malformed tail -- carry it as prose
     }
   });
+  // The break rides on the last preamble mark rather than standing as its own
+  // part, so a plain-text rendering (which drops the tag) keeps single spaces.
+  if (breakAfter >= 0 && breakAfter < parts.length - 1) parts[breakAfter] += '<br>';
   return parts.join(' ');
 }
 
