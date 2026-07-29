@@ -183,7 +183,7 @@ export const NOTATION_HTML = `
           <div class="notation-group">
             <h4>Coinbase — the mining preamble</h4>
             <div class="glyph-grid">
-              <div class="glyph-row"><span class="g">β<i>n</i></span><span class="m">the <b>difficulty target</b> — a valid hash opens with n zero bits</span></div>
+              <div class="glyph-row"><span class="g">β<i>n</i> <i>m</i>×256<sup><i>e</i></sup></span><span class="m">the <b>difficulty target</b> the miner restated in the coinbase, in the chapter head's own notation — a valid hash opens with n zero bits, and the target is exactly nBits' mantissa shifted up e whole zero bytes</span></div>
               <div class="glyph-row"><span class="g">η<sub><i>n</i></sub></span><span class="m"><b>extranonce</b> — search space beyond the header's η</span></div>
               <div class="glyph-row"><span class="g">⋔<sub>w</sub></span><span class="m">the <b>witness commitment</b> — in the coinbase, an OP_RETURN carrying ⌘(witness-tree root ‖ reserved value): the block's witnesses — its footnotes — bound to the chain through §1. The root is committed, never written; no wtxid appears on chain, only this testimony to all of them</span></div>
             </div>
@@ -198,7 +198,7 @@ export const NOTATION_HTML = `
               <div class="glyph-row"><span class="g">⓪<sup>256</sup></span><span class="m">no previous block — the genesis chapter</span></div>
               <div class="glyph-row"><span class="g">&lt;</span><span class="m">the <b>proof of work</b> — on β's line, binding the chapter hash above to the target after the sign</span></div>
               <div class="glyph-row"><span class="g">β<i>n</i></span><span class="m">the <b>difficulty target</b>, as in the preamble</span></div>
-              <div class="glyph-row"><span class="g"><i>m</i>×256<sup><i>e</i></sup></span><span class="m">the target written <b>exactly</b> — nBits' mantissa shifted up <i>e</i> whole zero bytes; its leading zeros are β's demand</span></div>
+              <div class="glyph-row"><span class="g"><i>m</i>×256<sup><i>e</i></sup></span><span class="m">the target written <b>exactly</b> — nBits' mantissa shifted up <i>e</i> whole zero bytes; its leading zeros are β's demand. The early coinbase preamble carries the same pair</span></div>
               <div class="glyph-row"><span class="g">η<sub><i>n</i></sub></span><span class="m">the <b>nonce</b> the miner landed on</span></div>
               <div class="glyph-row"><span class="g">■<i>n</i></span><span class="m">the <b>chapter mark</b> — a mined block cited by its place within its book (n counts chapters, never a raw height); in a margin, the same glyph counts chapters of relative delay</span></div>
               <div class="glyph-row"><span class="g">□<i>n</i></span><span class="m">the <b>expected chapter mark</b> — a projected, not-yet-mined block cited by the place it would take; the number holds only while the queue does (a bare □ in a transaction's margin is the no-locktime mark)</span></div>

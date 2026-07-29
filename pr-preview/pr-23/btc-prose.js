@@ -325,8 +325,8 @@ function opToken(code) {
 // OP_PUSHDATA1/2/4, whose length rides in a separate prefix -- arrow weight
 // matching prefix width: ↧ⁿ (1-byte), ⇊ⁿ (2-byte), ⤋ⁿ (4-byte). The pushed data itself
 // follows the mark, as prose or an inline quote. (The coinbase preamble's
-// βₙ and ηn marks fold their push opcode in -- the mark alone determines
-// the exact bytes.)
+// βₙ m×256ᵉ and ηn marks fold their push opcode in -- what the mark writes
+// out determines the exact bytes, the push width included.)
 const PUSH_GLYPHS = { 0: '', 1: '↧', 2: '⇊', 4: '⤋' };
 function pushToken(form, byteLen) {
   const title = form
@@ -402,10 +402,17 @@ function derToCompact(hex) {
 // restating the block's compact difficulty target (the header's nBits,
 // byte for byte), then a small-integer push -- the extranonce, the counter
 // a miner rolled once the header's 32-bit nonce was exhausted. Both are
-// numbers, not entropy, so they render as decoded marks (βₙ, ηn) rather
-// than payload words -- which also lets embedded text (the genesis
+// numbers, not entropy, so they render as decoded marks (βₙ m×256ᵉ, ηn)
+// rather than payload words -- which also lets embedded text (the genesis
 // headline) stand as the coinbase's first words instead of trailing runs
 // of bytes-as-prose.
+//
+// The target takes the frontispiece's full notation, mark and expression
+// both, not β alone: β's subscript is a leading-zero-BIT count, and many
+// distinct nBits share one count, so the mark by itself names the demand
+// without fixing the bytes that stated it. m×256ᵉ is nBits' own mantissa
+// and byte-shift, so the pair reconstructs the pushed word exactly -- the
+// same standard every other mark in the notation holds to.
 
 const reverseHexStr = (hex) => (hex.match(/../g) || []).reverse().join('');
 
@@ -530,6 +537,12 @@ export function renderScript(hex, collect, { eligible = false, nested = false, p
   // the extranonce must directly follow it; anything else ends the hunt and
   // the push falls through to the ordinary treatment.
   let pre = preamble ? 'target' : 'done';
+  // The preamble sits on its own line: it is the miner's own bookkeeping,
+  // not the coinbase's message, so the break after its last mark lets what
+  // the miner actually wrote (the genesis headline, a tag) open a line of
+  // its own. Recorded as an index rather than pushed as a part, so a
+  // scriptSig that is preamble and nothing else ends without a stray break.
+  let breakAfter = -1;
   let prevOp = null;   // the opcode preceding a push -- context for its type mark
   toks.forEach((t, i) => {
     if (t.op !== undefined) {
@@ -542,7 +555,15 @@ export function renderScript(hex, collect, { eligible = false, nested = false, p
         const bits = compactBitsFromPush(t.push);
         if (bits !== null) {
           const info = bitsInfo(bits);
-          parts.push(markToken(info.sym, `the difficulty target this block was mined against — ${info.title}`));
+          // The same two faces the frontispiece gives the header's nBits: β's
+          // demand (the leading zero bits a valid hash must open with) and,
+          // beside it, the target written exactly as mantissa × 256ᵉ. No <
+          // between them -- the frontispiece's sign binds the chapter hash
+          // above it to the target, and no hash stands on this line; here the
+          // mark names the target and the expression writes it out.
+          parts.push(markToken(info.expr ? `${info.sym} ${info.expr}` : info.sym,
+            `the difficulty target this block was mined against — ${info.title}`));
+          breakAfter = parts.length - 1;
           pre = 'extranonce';
           return;
         }
@@ -551,6 +572,7 @@ export function renderScript(hex, collect, { eligible = false, nested = false, p
         const n = extranonceFromPush(t.push);
         if (n !== null) {
           parts.push(markToken(`η${toSubscript(n)}`, `extranonce ${n} — the counter the miner rolled once the header's 32-bit nonce (η) was exhausted`));
+          breakAfter = parts.length - 1;
           return;
         }
       }
@@ -612,6 +634,9 @@ export function renderScript(hex, collect, { eligible = false, nested = false, p
       parts.push(collect(t.trunc));                           // malformed tail -- carry it as prose
     }
   });
+  // The break rides on the last preamble mark rather than standing as its own
+  // part, so a plain-text rendering (which drops the tag) keeps single spaces.
+  if (breakAfter >= 0 && breakAfter < parts.length - 1) parts[breakAfter] += '<br>';
   return parts.join(' ');
 }
 
