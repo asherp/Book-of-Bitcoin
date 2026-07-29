@@ -1052,6 +1052,11 @@ let renderGen = 0;
 // proof gives its confirming height and index within that block (the section),
 // while /tx gives its outputs (so a spent output's amount can be shown under
 // the reference). Fetched together, memoized by txid.
+// An unmined transaction has no merkle proof and so no settled place in the
+// book -- but its outputs are readable all the same, so it answers with a
+// null placement instead of failing: the amount still prints, and the queue
+// is asked where the draft sits (see projectedCitation). That answer is
+// never banked and never kept -- the moment it is mined it is wrong.
 function resolveCitation(txid) {
   if (!citationCache.has(txid)) {
     citationCache.set(txid, (async () => {
@@ -1063,9 +1068,13 @@ function resolveCitation(txid) {
         esploraFetch(`${ESPLORA}/tx/${txid}/merkle-proof`),
         esploraFetch(`${ESPLORA}/tx/${txid}`),
       ]);
-      if (!mpRes.ok) throw new Error(`Esplora returned ${mpRes.status}`);
-      const mp = await mpRes.json();
+      if (!mpRes.ok && mpRes.status !== 404) throw new Error(`Esplora returned ${mpRes.status}`);
       const tx = txRes.ok ? await txRes.json() : null;
+      if (!mpRes.ok) {
+        citationCache.delete(txid);
+        return { height: null, pos: null, outputs: tx ? tx.vout : null };
+      }
+      const mp = await mpRes.json();
       const entry = { height: mp.block_height, pos: mp.pos, outputs: tx ? tx.vout : null };
       storePut('citations', txid, entry);
       return entry;
@@ -1161,7 +1170,7 @@ async function resolveForwardCitations(txid, cells, gen) {
       if (!sp || !sp.spent || !sp.txid || !sp.status || !sp.status.confirmed) return;
       try {
         const { height, pos } = await resolveCitation(sp.txid);
-        if (gen !== renderGen) return;
+        if (gen !== renderGen || height === null) return;   // confirmed a moment ago, not yet provable: no cell rather than a wrong one
         const { volume, book, chapter } = volumeBookChapter(height);
         const link = document.createElement('a');
         link.className = 'cite-section-link';
@@ -1180,11 +1189,12 @@ async function resolveForwardCitations(txid, cells, gen) {
 // output index (e.g. "XII 37 184 §17.2"), the whole of which links to that
 // section.
 function renderCitation(citeBody, height, pos, vout) {
-  const { volume, book, chapter } = volumeBookChapter(height);
   const link = document.createElement('a');
   link.className = 'cite-section-link';
   link.href = `?block=${height}&index=${pos}`;
-  link.textContent = `${toRoman(volume)} β${book} ■${chapter} §${pos + 1}.${vout}`;
+  // A citation into a chapter past the tip wears the expected mark □ (see
+  // referenceOf): the section it names holds only as long as the queue does.
+  link.textContent = `${referenceOf(height)} §${pos + 1}.${vout}`;
   link.title = `go to §${pos + 1}.${vout}`;
   link.addEventListener('click', (e) => { e.preventDefault(); goToSection(height, pos, `out-${vout}`); });
   citeBody.textContent = '';
@@ -1204,6 +1214,28 @@ async function goToSection(height, index, scrollId) {
   }
 }
 
+// A prevout whose transaction isn't mined has no merkle proof and so no
+// settled citation -- but it may still have a place: a draft in the queue,
+// most often the CPFP parent riding in the very same projected chapter as
+// the section being read. Look for it in the manifests already in hand --
+// the chapter on screen first, then any other kept on the current
+// projection snapshot -- and cite where it sits. Nothing is fetched here: a
+// citation is an annotation on the page, not a reason to pull a megabyte of
+// draft down a second websocket.
+async function projectedCitation(txid) {
+  if (tipHeight === null) return null;
+  const tries = [];
+  if (state && state.projected && state.manifest) tries.push([state.projIndex, Promise.resolve(state.manifest)]);
+  for (const [k, p] of (projectedCache?.manifests ?? [])) tries.push([k, p]);
+  for (const [k, p] of tries) {
+    let manifest;
+    try { manifest = await p; } catch { continue; }
+    const pos = manifest.findIndex((t) => t.txid === txid);
+    if (pos >= 0) return { height: tipHeight + 1 + k, pos };
+  }
+  return null;
+}
+
 // Fill each pending citation cell once its reference resolves; skip if the
 // reader has since paged to another section (gen no longer current).
 async function resolveCitations(pending, gen) {
@@ -1211,20 +1243,35 @@ async function resolveCitations(pending, gen) {
     try {
       const { height, pos, outputs } = await resolveCitation(txid);
       if (gen !== renderGen) return;
-      renderCitation(citeBody, height, pos, vout);
+      // Mined: the settled section. Unmined: wherever the queue currently
+      // drafts it, cited with the expected mark. Neither one prints a txid --
+      // a hash is not a reference, and the page keeps every hash where the
+      // rest of them live, in the hover label.
+      const place = height !== null ? { height, pos } : await projectedCitation(txid);
+      if (gen !== renderGen) return;
       cite.classList.remove('resolving');
-      cite.title = `${txid}:${vout}`;
+      if (place) {
+        renderCitation(citeBody, place.height, place.pos, vout);
+        cite.title = height !== null ? `${txid}:${vout}`
+          : `${txid}:${vout} — unmined: cited where the queue drafts it now`;
+      } else {
+        // Unmined and outside every chapter the queue has drafted: there is
+        // no reference to print, so the cell says exactly that.
+        citeBody.textContent = `§… .${vout}`;
+        cite.classList.add('cite-unresolved');
+        cite.title = `${txid}:${vout} — unmined, and in no drafted chapter: it has no reference yet`;
+      }
       // The amount of the referenced output -- what this input spends -- sits on
       // the line beneath the reference, after the sequence mark, in parentheses:
       // the mark for value flowing IN, where an output's amount (value flowing
-      // out) stands bare.
+      // out) stands bare. A draft's outputs read the same as a mined one's.
       if (amtVal && outputs && outputs[vout]) {
         amtVal.textContent = `(${formatBtc(outputs[vout].value)})`;
         amtVal.title = `the amount this input spends: ${groupDigits(String(outputs[vout].value))} satoshis`;
       }
     } catch (e) {
       if (gen !== renderGen) return;
-      citeBody.textContent = `${txid.slice(0, 8)}… .${vout}`;
+      citeBody.textContent = `§… .${vout}`;
       cite.classList.remove('resolving');
       cite.classList.add('cite-unresolved');
       cite.title = `${txid}:${vout} — reference could not be resolved`;
