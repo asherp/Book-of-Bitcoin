@@ -10,6 +10,9 @@ web/glossia_bg.wasm
 web/passages/
 web/sitemap.xml
 
+# Deploy-time release stamp — written by the deploy workflow, not committed.
+web/version.json
+
 # The Twitter bot's watermark and replied-to ledger (tools/twitter-bot/) —
 # per-deployment runtime state, carried in the Actions cache, not in git.
 tools/twitter-bot/state.json

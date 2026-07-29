@@ -20,10 +20,15 @@
   // Arriving by the book page's pull-down-above-the-volume gesture: finish
   // that carousel turn here, sliding the contents in from the top. The flag
   // is set just before the navigation and consumed on first paint.
+  // The flag's value carries the turn's direction: 'up' is the cover being
+  // lifted away beneath us (the front page's swipe-up), so the contents
+  // enter from below; anything else is the classic ascent, entering from
+  // the top.
   try {
-    if (sessionStorage.getItem('glossia-toc-entrance')) {
+    const entrance = sessionStorage.getItem('glossia-toc-entrance');
+    if (entrance) {
       sessionStorage.removeItem('glossia-toc-entrance');
-      document.documentElement.classList.add('toc-entrance');
+      document.documentElement.classList.add(entrance === 'up' ? 'toc-entrance-up' : 'toc-entrance');
     }
   } catch (_) {}
 
@@ -33,7 +38,7 @@
   // page finishes the turn, entering from below (glossia-book-entrance).
   (function () {
     const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    let sy = null, sx = 0, st = 0, atBottom = false;
+    let sy = null, sx = 0, st = 0, atBottom = false, atTop = false;
     const go = () => {
       // Descend into the volume the reader last ascended from (recorded by
       // the book page's trail memory); a fresh visit opens Volume I.
@@ -47,6 +52,7 @@
       if (e.touches.length !== 1) return;
       sy = e.touches[0].clientY; sx = e.touches[0].clientX; st = performance.now();
       atBottom = window.scrollY >= document.documentElement.scrollHeight - window.innerHeight - 2;
+      atTop = window.scrollY <= 2;
     }, { passive: true });
     // The contents sits inside the front matter on the horizontal axis, in the
     // standard order: title, terms, CONTENTS, preface, sigla. So both
@@ -75,6 +81,18 @@
         setTimeout(() => goFront(leaf, dir), 180);
         return;
       }
+      // A pull DOWN starting at the page's top rises from the contents back
+      // to the cover -- the inverse of the cover's lift-away: the contents
+      // sink, and the cover drops back into place from above.
+      if (atTop && dt <= 600 && dy >= 70 && Math.abs(dx) <= dy * 0.6) {
+        try { sessionStorage.setItem('glossia-front-entrance', 'drop'); } catch (_) {}
+        const goCover = () => { location.href = './bitcoin-front.html'; };
+        if (REDUCED) { goCover(); return; }
+        document.body.style.transition = 'transform .2s linear';
+        document.body.style.transform = 'translateY(100vh)';
+        setTimeout(goCover, 180);
+        return;
+      }
       if (!atBottom || dt > 600 || dy > -70 || Math.abs(dx) > Math.abs(dy) * 0.6) return;
       if (REDUCED) { go(); return; }
       document.body.style.transition = 'transform .2s linear';
@@ -99,13 +117,20 @@
   --input-bg:#151519; --input-bd:#2a2930;
 }
 * { box-sizing: border-box; }
-html, body { margin: 0; }
+/* overscroll-behavior keeps the browser's pull-to-refresh from swallowing
+   the pull-down-at-top turn back to the cover (the book page does the same
+   for its own vertical turns). */
+html, body { margin: 0; overscroll-behavior-y: none; }
 body { min-height: 100vh; background: var(--page); color: var(--ink); font-family: 'Public Sans', system-ui, sans-serif; line-height: 1.55; }
 /* The entering half of the book page's ascend-above-the-volume turn: the
    contents slide down into place, matching the carousel's pace. */
 @media (prefers-reduced-motion: no-preference) {
   .toc-entrance body { animation: toc-in .22s ease-out; }
   @keyframes toc-in { from { transform: translateY(-100vh); } }
+  /* …and the entering half of the cover's lift-away: the contents rise into
+     place from below as the cover slides up and off. */
+  .toc-entrance-up body { animation: toc-in-up .22s ease-out; }
+  @keyframes toc-in-up { from { transform: translateY(100vh); } }
 }
 .wrap { max-width: 720px; margin: 0 auto; padding: 48px 22px 100px; }
 a { color: var(--accent); text-decoration: none; }
@@ -138,6 +163,20 @@ a:hover { text-decoration: underline; }
    ribbon it flies in the book. */
 .toc-bm { display:inline-block; width:9px; height:12px; margin-right:8px; color:var(--accent); vertical-align:baseline; }
 .toc-bm svg { display:block; width:100%; height:100%; }
+
+/* Projected chapters -- the mempool, ordered as a miner would mine it. These
+   continue the contents past the tip, so they dress like ordinary rows but in
+   the manuscript's pencil rather than its ink: dim titles and meta-grey
+   references (a provisional number, not a citation). */
+.toc-proj-head { display:flex; align-items:baseline; gap:14px; }
+.toc-proj-src { font:400 10px/1 'IBM Plex Mono',monospace; letter-spacing:.08em; text-transform:none; color:var(--meta); }
+.toc-entry.projected .toc-title { color:var(--dim); font-style:italic; }
+.toc-entry.projected .toc-ref { color:var(--meta); font-weight:400; }
+.toc-entry.projected:hover .toc-title { color:var(--ink-soft); }
+.toc-entry.projected:hover .toc-ref { color:var(--dim); }
+.toc-proj-eta { font:500 11px/1.4 'IBM Plex Mono',monospace; letter-spacing:.04em; color:var(--meta); flex:none; min-width:74px; font-variant-numeric:tabular-nums; }
+/* The closing figures -- queue total, eviction floor -- are a note, not a row. */
+.toc-proj-note { padding:10px 2px 2px 16px; font:400 12px/1.6 'Public Sans',sans-serif; color:var(--meta); }
 </style>
 <body>
 <div class="wrap">
@@ -154,7 +193,7 @@ a:hover { text-decoration: underline; }
 </div>
 
 <script type="module">
-import { NOTABLE, isBlockId, isRelativeBlockId, entryHref } from './btc-contents.js';
+import { NOTABLE, isBlockId, isRelativeBlockId, entryHref, blocksEta } from './btc-contents.js';
 import { volumeBookChapter, toRoman } from './btc-citation.js';
 import { storeGet, storePut } from './btc-store.js';
 import { seedArchive } from './btc-seed.js';
@@ -284,6 +323,7 @@ function tailRef({ book, chapter, section }, underBook) {
 function entryEl(entry, underBook) {
   const row = document.createElement('a');
   row.className = 'toc-entry' + (underBook ? ' under-book' : '') + (entry.bookmark ? ' is-bookmark' : '');
+  row.dataset.entryId = entry.id;   // the projected section anchors after the tip's row
   row.href = entryHref(entry.id, entry.index, entry.page);
   const t = document.createElement('span'); t.className = 'toc-title';
   // A reader's own bookmark flies the same ribbon it wears in the book, so it's
@@ -308,6 +348,9 @@ function head(cls, label) { const d = document.createElement('div'); d.className
 // Entries arrive in reading order (ascending height), so anything sharing a
 // volume or book is already contiguous.
 const toc = document.getElementById('toc');
+// The projected section (the mempool, see below), rebuilt by loadProjected and
+// re-slotted after the chain tip's row on every render.
+let projectedSection = null;
 
 // The front matter that argues or informs -- the preface and the sigla -- is
 // listed here as a book's contents lists them. The title and the terms are
@@ -361,6 +404,14 @@ function render() {
     toc.append(head('toc-vol', 'Unresolved'));
     for (const e of stranded) toc.append(entryEl(e, false));
   }
+  // The contents run on past the tip: the projected chapters slot in directly
+  // after the latest block's row -- between the written book and the entries
+  // (BIP42) whose heights outreach any mempool. Without a resolved tip there
+  // is no row to anchor to (and no heights to project), so the section waits.
+  if (projectedSection) {
+    const tipRow = toc.querySelector('.toc-entry[data-entry-id="-1"]');
+    if (tipRow) tipRow.after(projectedSection);
+  }
 }
 
 // Block placements are offline, so render them at once; transaction citations
@@ -396,11 +447,199 @@ const placed = () => entries()
     || a.place.chapter - b.place.chapter || (a.place.section ?? 0) - (b.place.section ?? 0));
 const unresolved = () => entries().filter((e) => e.tried && !e.place);
 
+// ── Projected chapters: the mempool, read as far as it extends ────────────
+// The queue of transactions no block has yet recorded, ordered the way a
+// miner would take them (highest package fee rate first), continues the
+// contents past the tip as provisional chapters: heights tip+1, tip+2, …
+// with an expected arrival instead of a recorded date. Three sources, each
+// optional, degrading gracefully:
+//   /mempool                    (any Esplora) -- totals + fee histogram: how
+//                               far the contents extend (vsize ÷ 1 MvB) and
+//                               where the eviction floor sits;
+//   /v1/fees/mempool-blocks     (mempool.space backend only) -- the queue cut
+//                               into template-sized projected blocks, CPFP-
+//                               aware, each with tx count and fee figures;
+//   /v1/fees/recommended        (mempool.space backend only) -- minimumFee,
+//                               the purge floor.
+// Only the first projected chapter is a real forecast; each one deeper is
+// more a statement about the queue now than about any future block -- so
+// everything past the detailed entries collapses into one backlog row, and
+// each row's hover title carries its caveats.
+const MVB = 1_000_000;   // one block's worth of virtual bytes
+
+// Try a path against each mirror in turn (the v1 paths only answer on a
+// mempool.space-backed mirror; vanilla Esplora 404s and the loop moves on).
+async function anyMirror(path) {
+  for (const base of ESPLORA_MIRRORS) {
+    try {
+      const res = await fetch(`${base}${path}`);
+      if (res.ok) return { data: await res.json(), base };
+    } catch { /* try the next mirror */ }
+  }
+  return null;
+}
+
+const hostOf = (url) => { try { return new URL(url).host; } catch { return url; } };
+// Fee rates arrive as floats; one decimal under 10 sat/vB, whole above.
+const fmtFee = (f) => f >= 10 ? String(Math.round(f)) : String(Math.round(f * 10) / 10);
+
+// The provisional reference for a not-yet-mined height: the expected-chapter
+// mark □ where a mined chapter's reference wears ■ -- the number holds only
+// if the queue does.
+function projRef(height, tipVolume) {
+  const p = volumeBookChapter(height);
+  const vol = p.volume === tipVolume ? '' : `${toRoman(p.volume)} `;
+  return `${vol}β${p.book} □${p.chapter}`;
+}
+// The full expected reference, for hover titles.
+function expRef(height) {
+  const p = volumeBookChapter(height);
+  return `${toRoman(p.volume)} β${p.book} □${p.chapter}`;
+}
+
+// One projected row: expected wait, then the row's text, then its
+// provisional reference; the whole row opens the book at that height, which
+// answers with the chapter's place in the queue.
+function projEntryEl({ height, eta, etaTitle, text, textTitle, ref, refTitle }) {
+  const row = document.createElement('a');
+  row.className = 'toc-entry under-book projected';
+  row.href = entryHref(String(height));
+  const etaEl = document.createElement('span');
+  etaEl.className = 'toc-proj-eta';
+  etaEl.textContent = eta;
+  if (etaTitle) etaEl.title = etaTitle;
+  const t = document.createElement('span');
+  t.className = 'toc-title';
+  t.textContent = text;
+  if (textTitle) t.title = textTitle;
+  const r = document.createElement('span');
+  r.className = 'toc-ref';
+  r.textContent = ref;
+  if (refTitle) r.title = refTitle;
+  row.append(etaEl, t, r);
+  return row;
+}
+
+// Build the whole section from whatever resolved: the heading (naming the
+// mirror whose mempool this is -- every node's differs), the detailed
+// projected chapters, the backlog row, and the closing figures.
+function buildProjected(tip, summary, blocks, minFee, srcBase) {
+  const tipVolume = volumeBookChapter(tip).volume;
+  const wrap = document.createElement('div');
+  const heading = document.createElement('div');
+  heading.className = 'toc-vol toc-proj-head';
+  const label = document.createElement('span');
+  label.textContent = 'Projected · The Mempool';
+  const src = document.createElement('span');
+  src.className = 'toc-proj-src';
+  const at = new Date();
+  const hh = String(at.getUTCHours()).padStart(2, '0'), mm = String(at.getUTCMinutes()).padStart(2, '0');
+  src.textContent = `as seen from ${hostOf(srcBase)} · ${hh}:${mm} UTC`;
+  src.title = 'a mempool is one node’s view of the queue — every node’s differs, and this page is a snapshot';
+  heading.append(label, src);
+  wrap.append(heading);
+
+  // Total queue depth in chapters: from the summary's vsize when we have it,
+  // else from the projected blocks alone.
+  const projVsize = blocks ? blocks.reduce((s, b) => s + b.blockVSize, 0) : 0;
+  const chapters = Math.max(1, Math.ceil((summary ? summary.vsize : projVsize) / MVB));
+
+  const etaTitleFor = (k) => {
+    const spread = Math.round(10 * Math.sqrt(k));
+    return `eta about ${k * 10} min, give or take ${spread} — block arrivals average one per ten minutes`;
+  };
+
+  if (blocks && blocks.length) {
+    // A real projected block never exceeds 1 MvB of vsize; a bigger final
+    // entry is the backend's own aggregate of everything deeper.
+    blocks.forEach((b, i) => {
+      const height = tip + 1 + i;
+      const isAggregate = i === blocks.length - 1 && b.blockVSize > 1.05 * MVB;
+      if (!isAggregate) {
+        const lo = fmtFee(b.feeRange[0] ?? b.medianFee), hi = fmtFee(b.feeRange[b.feeRange.length - 1] ?? b.medianFee);
+        wrap.append(projEntryEl({
+          height,
+          eta: blocksEta(i + 1), etaTitle: etaTitleFor(i + 1),
+          text: `${b.nTx.toLocaleString()} § · ~${fmtFee(b.medianFee)} sat/vB`,
+          textTitle: `${b.nTx.toLocaleString()} transactions, ${(b.blockVSize / MVB).toFixed(2)} MvB — fees ${lo}–${hi} sat/vB, ${(b.totalFees / 1e8).toFixed(3)} BTC in total`,
+          ref: projRef(height, tipVolume),
+          refTitle: `provisional — block ${height.toLocaleString()} (${expRef(height)}) if the queue holds; every block mined ahead of it renumbers the rest`,
+        }));
+      } else {
+        // The backlog: everything past the detailed entries, one fading row.
+        const span = Math.max(1, Math.round(b.blockVSize / MVB));
+        const last = height + span - 1;
+        wrap.append(projEntryEl({
+          height,
+          eta: '⋯', etaTitle: `clearing ${blocksEta(i + span)} from now at current throughput — if nothing better-paying arrives first`,
+          text: `the backlog — ${b.nTx.toLocaleString()} § across ≈ ${span} more chapters`,
+          textTitle: `${(b.blockVSize / MVB).toFixed(1)} MvB of queued transactions below ~${fmtFee(b.medianFee)} sat/vB`,
+          ref: `${projRef(height, tipVolume)} – ${projRef(last, tipVolume)}`,
+          refTitle: 'the deep queue has no reliable ordering — these chapters are a guess about the queue today, not about any future block',
+        }));
+      }
+    });
+  } else if (summary) {
+    // No mempool.space backend reachable: the depth alone, from any Esplora.
+    wrap.append(projEntryEl({
+      height: tip + 1,
+      eta: blocksEta(1), etaTitle: etaTitleFor(1),
+      text: `${summary.count.toLocaleString()} § waiting across ≈ ${chapters} chapters`,
+      textTitle: 'this mirror serves only mempool totals — a mempool.space-backed source adds per-chapter projections',
+      ref: `${projRef(tip + 1, tipVolume)} – ${projRef(tip + chapters, tipVolume)}`,
+      refTitle: 'provisional — the chapters the current queue would fill',
+    }));
+  }
+
+  // The closing figures: how much is waiting, and the floor beneath which
+  // the pool sheds transactions when it fills.
+  if (summary) {
+    const note = document.createElement('div');
+    note.className = 'toc-proj-note';
+    let s = `${(summary.vsize / MVB).toFixed(1)} MvB waiting · ${summary.count.toLocaleString()} transactions · ≈ ${chapters} chapters at ~10 min each`;
+    if (minFee != null && minFee > 1) {
+      // The histogram is (feerate, vsize) bins, highest first; what sits at
+      // or below the purge floor is the first to be forgotten.
+      const atRisk = (summary.fee_histogram || []).reduce((s2, [r, v]) => r <= minFee ? s2 + v : s2, 0);
+      s += ` · eviction floor ≈ ${fmtFee(minFee)} sat/vB`;
+      if (atRisk > MVB / 20) s += ` — the ${(atRisk / MVB).toFixed(1)} MvB at it first to be forgotten`;
+    }
+    note.textContent = s;
+    note.title = 'transactions the network holds but no block has recorded; a full mempool evicts from the bottom of the fee range, and everything here expires if unmined for two weeks';
+    wrap.append(note);
+  }
+  return wrap;
+}
+
+async function loadProjected() {
+  const tip = await tipHeight();
+  if (tip == null) return;
+  const [sum, blocks, rec] = await Promise.all([
+    anyMirror('/mempool'),
+    anyMirror('/v1/fees/mempool-blocks'),
+    anyMirror('/v1/fees/recommended'),
+  ]);
+  if (!sum && !blocks) return;   // nowhere to read a queue from -- the contents simply end at the tip
+  projectedSection = buildProjected(
+    tip,
+    sum ? sum.data : null,
+    blocks && Array.isArray(blocks.data) && blocks.data.length ? blocks.data : null,
+    rec ? rec.data.minimumFee : null,
+    (blocks || sum).base,
+  );
+  render();
+}
+
 // Block placements (curated, and bookmarks that stored their reference) are
 // offline, so render at once; everything else streams in as its lookup resolves.
 for (const e of NOTABLE) if (isBlockId(e.id)) placements.set(e.id, placeOf(Number(e.id), e.index ?? null, e.page));
 for (const b of bookmarks) if (Number.isInteger(b.height)) bmPlacements.set(b.hex, placeOf(b.height, b.pos ?? null));
 render();
+// The projected section loads alongside the citation lookups, and the queue
+// keeps moving -- blocks land, replacements arrive -- so it refreshes itself
+// each minute while the page is on screen.
+loadProjected();
+setInterval(() => { if (!document.hidden) loadProjected(); }, 60_000);
 await Promise.all([
   ...NOTABLE.filter((e) => !placements.has(e.id)).map(async (e) => {
     placements.set(e.id, await resolvePlacement(e));

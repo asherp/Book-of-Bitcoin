@@ -243,9 +243,17 @@ export const FONT_MAX = 46;
 // inscription's stack can run to megabytes, and the live page carries it.
 const FOOTNOTE_MAX_CHARS = 2000;
 
-// The identity-hash mark and its bit count, leading the txid prose exactly
-// as the book leads it (⌘ is HASH256 in the sigla; a txid is 256 bits).
-const HASH_MARK = '<span class="dt">⌘</span><sup>256</sup> ';
+// The identity-hash mark leading the txid prose, exactly as the book leads
+// it: ⌘ is HASH256 in the sigla, and a txid is the double-SHA256 of the
+// transaction's bytes with no proof-of-work zeros to state — so all 256
+// bits ride in the prose, and the superscript (bits, ⌘'s unit) says so.
+// The superscript is written literally rather than through btc-prose.js's
+// toSuperscript, because this module must stay engine-free: btc-prose.js
+// imports the WASM bundle, and quote.mjs has to load on a bare checkout.
+const TXID_MARK_TITLE = 'transaction id — the double-SHA256 of this transaction&#39;s bytes, ' +
+  'its identity; all 256 bits carried in the prose';
+const HASH_MARK =
+  `<span class="cfx-gold" title="${TXID_MARK_TITLE}">⌘</span><span class="op op-push">²⁵⁶</span> `;
 
 const shortRef = (txid, vout) => `${txid.slice(0, 6)}…:${vout}`;
 
@@ -379,7 +387,7 @@ export function passageHtml({
     margin: .9em auto 0; max-width: 46ch; text-align: center;
     font: italic 400 .76em/1.55 'Newsreader', Georgia, serif; color: var(--dim);
   }
-  .section-hash sup { font-size: .7em; vertical-align: .35em; }
+  .section-hash .cfx-gold { color: var(--accent); font-weight: 700; font-style: normal; }
   .rule { border: 0; border-top: 1px solid var(--rule); margin: 1.6em 0; }
 
   /* ── the transaction as a manuscript page ── */
@@ -414,7 +422,7 @@ export function passageHtml({
     display: grid; grid-template-columns: subgrid; column-gap: 1.3em; align-items: start;
   }
   .tx-out-script { grid-column: 1; min-width: 0; }
-  .tx-out-value { grid-column: 2; text-align: right; font-variant-numeric: tabular-nums; }
+  .tx-out-value { grid-column: 2; text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
   .tx-locktime { grid-column: left / -1; grid-row: 3; text-align: center; font-style: normal; }
   .tx-note { font: italic 400 .71em/1.4 'Newsreader', Georgia, serif; color: var(--dim); }
   .tx-seq { font-style: normal; color: var(--meta); }

@@ -17,7 +17,7 @@
  * Everything here is scoped to the directory sw.js is served from, so it works
  * unchanged at the site root and under a per-PR preview subpath.
  */
-const CACHE = 'bitcoin-book-shell-v20';
+const CACHE = 'bitcoin-book-shell-v21';
 
 // App shell, relative to the SW scope. glossia.js / glossia_bg.wasm are
 // gitignored build artifacts — present after a build/deploy, possibly absent in
@@ -49,6 +49,7 @@ const SHELL = [
   './btc-index.js',
   './btc-index-data.js',
   './btc-store.js',
+  './btc-fontscale.js',
   './bitcoin-book.webmanifest',
   './icons/beta-icon.svg',
   './icons/beta-icon-16.png',
@@ -61,7 +62,21 @@ const SHELL = [
   './glossia-msg.js',
   './btc-seed.js',
   './passages/seed.json',   // deploy artifact like the WASM: absent in a bare checkout, tolerated
+  './version.json',         // deploy artifact: the CalVer release stamp, absent in a bare checkout
 ];
+
+// The cached version.json is the release stamp of the build the reader is
+// running, so it must only ever change in lockstep with the rest of the shell
+// (install / refreshShell) — never by runtime revalidation, which would
+// restamp an old build with a new version. Read it to tell an update's
+// recipient how far behind they are.
+const VERSION_URL = './version.json';
+async function cachedVersion(cache) {
+  try {
+    const res = await cache.match(VERSION_URL);
+    return res ? ((await res.json()).version || null) : null;
+  } catch (_) { return null; }
+}
 
 self.addEventListener('install', (event) => {
   event.waitUntil((async () => {
@@ -117,15 +132,21 @@ self.addEventListener('fetch', (event) => {
     const validator = (r) => r.headers.get('etag') || r.headers.get('last-modified') || '';
     const shellish = /\.(html|js|css|wasm|webmanifest)$|\/$/.test(url.pathname);
     const network = fetch(req).then(async (res) => {
-      // Only cache complete, same-origin OK responses.
-      if (res && res.ok && res.type === 'basic') {
+      // Only cache complete, same-origin OK responses — and never version.json,
+      // whose cached copy must stay in lockstep with the shell build it stamps
+      // (it updates via install/refreshShell only; see cachedVersion above).
+      if (res && res.ok && res.type === 'basic' && !url.pathname.endsWith('/version.json')) {
         const fresher = !!(cached && shellish && validator(cached) && validator(res) &&
                            validator(cached) !== validator(res));
         await cache.put(req, res.clone());
         if (fresher) {
+          // Read the release stamp before the sweep replaces it and after,
+          // so pages can say how far behind the running build is.
+          const current = await cachedVersion(cache);
           await refreshShell(cache);
+          const latest = await cachedVersion(cache);
           const pages = await self.clients.matchAll({ type: 'window' });
-          for (const page of pages) page.postMessage({ type: 'update-available' });
+          for (const page of pages) page.postMessage({ type: 'update-available', current, latest });
         }
       }
       return res;

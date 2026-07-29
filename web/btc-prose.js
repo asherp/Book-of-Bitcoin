@@ -100,28 +100,40 @@ const toSubscript = (n) => String(n).split('').map((d) => SUBSCRIPT_DIGITS[+d]).
 const SUPERSCRIPT_DIGITS = '⁰¹²³⁴⁵⁶⁷⁸⁹';
 export const toSuperscript = (n) => String(n).split('').map((d) => SUPERSCRIPT_DIGITS[+d]).join('');
 
-// nBits (a compact difficulty target) -> { sym, title }. The target is
+// nBits (a compact difficulty target) -> { sym, expr, title }. The target is
 // rendered as the thing it is -- the ceiling a mined hash must dip under --
-// and β's subscript is that demand in its physical unit: the number of
-// leading zero BITS a valid hash must open with. Genesis (difficulty 1) is
-// β₃₂, and the subscript climbs as difficulty rises -- each +1 is a
-// doubling of the work. The mantissa is deliberately not shown: βₙ is a
-// summary mark, and the exact compact nBits, the full 256-bit target and
-// the difficulty ratio all ride in the hover title. A target looser than
-// the genesis baseline (never on mainnet) falls back to the raw compact
-// hex.
+// in two faces that together account for all 256 of its bits. β's subscript
+// is the demand in its physical unit: the number of leading zero BITS a
+// valid hash must open with (genesis, difficulty 1, is β₃₂; each +1 is a
+// doubling of the work). `expr` is the target written exactly, in nBits' own
+// floating-point structure: the mantissa as a plain integer times 256 raised
+// to the byte-shift exponent -- 65535×256²⁶ for genesis -- whose superscript
+// is literally the count of trailing zero bytes below the mantissa's
+// resolution. The subscript states the target's leading zero run, the
+// expression its significant bits and trailing run; leading zeros stay on β
+// because they are not legible from m×256ᵉ at a glance (they are
+// 256 − 8e − bitlen(m)). The exact compact nBits, the full 256-bit target
+// and the difficulty ratio all ride in the hover title. A target looser
+// than the genesis baseline (never on mainnet) falls back to the raw
+// compact hex, with no expression.
 function bitsInfo(bits) {
   const targetHex = bitsToTargetHex(bits);
   const difficulty = bitsToDifficulty(bits);
   const diffStr = difficulty.toLocaleString(undefined, { maximumFractionDigits: difficulty < 1000 ? 2 : 0 });
   const compact = bits.toString(16).padStart(8, '0');
   const zeros = targetHex.length - targetHex.replace(/^0+/, '').length;
-  const baseTitle = (extra) => `nBits ${compact} — a valid block hash must read below ${targetHex}${extra} — difficulty ${diffStr} (relative to the genesis block)`;
-  if (zeros < 8) return { sym: compact, title: baseTitle('') };
+  const tail = `difficulty ${diffStr} (relative to the genesis block)`;
+  if (zeros < 8) return { sym: compact, expr: '', title: `nBits ${compact} — a valid block hash must read below ${targetHex} — ${tail}` };
   // Zero bits inside the first significant hex digit: 1 -> 3, 2-3 -> 2, 4-7 -> 1, 8-f -> 0.
   const first = parseInt(targetHex[zeros], 16);
   const lz = zeros * 4 + (first >= 8 ? 0 : first >= 4 ? 1 : first >= 2 ? 2 : 3);
-  return { sym: `β${toSubscript(lz)}`, title: baseTitle(` (${lz} leading zero bits)`) };
+  const exponent = bits >>> 24;
+  const mantissa = bits & 0x007fffff;   // top mantissa bit is a sign flag, masked off
+  const expr = exponent >= 3 ? `${mantissa}×256${toSuperscript(exponent - 3)}` : '';
+  return {
+    sym: `β${toSubscript(lz)}`, expr,
+    title: `nBits ${compact} — mantissa ${mantissa} shifted up ${exponent - 3} bytes: the target ${targetHex}, which a valid block hash must read below (${lz} leading zero bits) — ${tail}`,
+  };
 }
 
 // ─── block version notation: <hp> <english> <signals> ──────────────────
@@ -238,7 +250,7 @@ export function composeBlockHeaderFields(header) {
     // BIP9 word-pair forms wear it), so the text here carries no prefix.
     version: ver.text.replace(/^v/, ''), versionTitle: ver.title,
     timestamp: time.mark, timestampTitle: time.title,
-    bits: bits.sym, bitsTitle: bits.title,
+    bits: bits.sym, bitsExpr: bits.expr, bitsTitle: bits.title,
     // The nonce is a plain integer; the renderer leads it with the bold-gold
     // η mark (like v for the version), the value itself unstyled.
     nonce: String(header.nonce),
@@ -320,7 +332,14 @@ function pushToken(form, byteLen) {
   const title = form
     ? `OP_PUSHDATA${form} — push ${byteLen} bytes, the length in a ${form}-byte prefix`
     : `OP_PUSHBYTES_${byteLen} — push the next ${byteLen} bytes`;
-  return `<span class="op op-push" title="${title}">${PUSH_GLYPHS[form] || ''}${toSuperscript(byteLen)}</span>`;
+  // A direct push carries no glyph: its mark IS the byte count, a superscript
+  // numeral saying how much of the prose after it the push holds -- data
+  // annotation rather than an operation. Marked op-count so it reads at the
+  // prose's own size (see bitcoin-book.html), which also keeps the count
+  // riding a data mark (p⁶⁵, h³²) matched to the letter it follows. The
+  // PUSHDATA arrows are opcode marks, and keep their count with them.
+  const glyph = PUSH_GLYPHS[form] || '';
+  return `<span class="op op-push${glyph ? '' : ' op-count'}" title="${title}">${glyph}${toSuperscript(byteLen)}</span>`;
 }
 
 // ─── DER signature compaction ──────────────────────────────────────────
@@ -501,7 +520,7 @@ function csvMark(value) {
 // prose (safe) and quoted ASCII is escaped, so the result is safe to render
 // via innerHTML like before. Exported for the anthology title page, which
 // reads an address as its scriptPubKey in this same notation.
-export function renderScript(hex, collect, { eligible = false, nested = false, preamble = false } = {}) {
+export function renderScript(hex, collect, { eligible = false, nested = false, preamble = false, coinbase = false } = {}) {
   const toks = tokenizeScript(hex);
   // A P2SH scriptSig ends with its redeemScript, pushed as data; reveal that
   // final push as opcodes when it parses as a genuine script.
@@ -537,6 +556,24 @@ export function renderScript(hex, collect, { eligible = false, nested = false, p
       }
       const mark = pushToken(t.pushForm || 0, t.push.length / 2);
       if (!t.push) { parts.push(mark); return; }              // a zero-length extended push -- the mark alone
+      // The witness commitment (BIP141): in a coinbase, an OP_RETURN whose
+      // 36-byte push opens with the aa21a9ed marker carries
+      // ⌘(witness-tree root ‖ reserved value) -- the testimony binding
+      // every witness (every footnote) in this block to the chain, through
+      // this one output. The marker reads as its own ⋔𝑤 mark and the 32
+      // committed bytes as a gold on-chain datum; the root itself is the
+      // preimage -- committed here, never written anywhere.
+      if (coinbase && prevOp === 0x6a && t.push.length === 72 && t.push.slice(0, 8).toLowerCase() === 'aa21a9ed') {
+        parts.push(
+          markToken('⋔<sub>w</sub>', 'witness commitment (BIP141 marker aa21a9ed) — ⌘(witness-tree root ‖ reserved value), the identity hash: every witness in this block, bound to the chain through this coinbase. The root is the preimage — committed here, never written on chain'),
+          // The ⋔w mark alone names the tree; how the digest was made
+          // (⌘ over root ‖ reserved) lives in the titles and the Notation
+          // key rather than crowding the line.
+          dataMark('h', 'the 32 committed bytes — ⌘(witness-tree root ‖ reserved value); the root is the preimage, never written on chain') + pushToken(0, 32),
+          collect(t.push.slice(8)),
+        );
+        return;
+      }
       if (i === redeemIdx && looksLikeScript(t.push)) {
         // reveal the redeemScript, typed r
         parts.push(dataMark('r', 'redeem script — revealed as opcodes') + mark, renderScript(t.push, collect));
@@ -774,6 +811,10 @@ export function composeTransactionFields(parsed, bestOf = 1, lazyData = null, en
     };
   });
 
+  // A coinbase's outputs carry one script no other transaction may: the
+  // witness commitment -- recognized by renderScript only under this flag,
+  // so an OP_RETURN that merely mimics the marker elsewhere stays plain data.
+  const isCoinbaseTx = parsed.vin.length === 1 && parsed.vin[0].txid === '00'.repeat(32);
   const outputs = parsed.vout.map((o) => {
     // A scriptPubKey is always genuine script, rendered in opcode notation. An
     // OP_RETURN (¶) payload is `eligible` for inline ASCII quoting, so an
@@ -783,7 +824,7 @@ export function composeTransactionFields(parsed, bestOf = 1, lazyData = null, en
     // caller supplies `lazyData`; an ASCII payload is still quoted inline by
     // `eligible` before either encoder is reached, so only opaque bytes defer.
     const encodeData = (isOpReturn && lazyData) ? lazyData : collect;
-    return { script: renderScript(o.scriptPubKey, encodeData, { eligible: isOpReturn }), scriptAscii: null, value: formatBtc(o.value), valueTitle: `${groupDigits(String(o.value))} satoshis` };
+    return { script: renderScript(o.scriptPubKey, encodeData, { eligible: isOpReturn, coinbase: isCoinbaseTx }), scriptAscii: null, value: formatBtc(o.value), valueTitle: `${groupDigits(String(o.value))} satoshis` };
   });
 
   const lock = locktimeInfo(parsed.locktime);

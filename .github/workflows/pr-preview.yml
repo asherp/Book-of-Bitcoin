@@ -65,6 +65,16 @@ jobs:
         if: github.event.action != 'closed'
         run: ./build_web.sh
 
+      # Previews are not releases — they get no tag and no place in the CalVer
+      # sequence — but the cover's edition line and version.json should still
+      # work, so stamp the preview's deploy time marked as the preview it is
+      # (v2026.07.28.14-pr21). The -prN suffix deliberately fails the CalVer
+      # parse in btc-chrome.js, so the Update button's behind-arithmetic
+      # stays off on previews.
+      - name: Stamp preview version.json
+        if: github.event.action != 'closed'
+        run: printf '{"version":"%s-pr%s"}\n' "$(date -u +%Y.%m.%d.%H)" "${{ github.event.pull_request.number }}" > web/version.json
+
       # On open/synchronize/reopen: deploy web/ to gh-pages under
       # pr-preview/pr-<N>/ and comment the URL. On close: remove that directory.
       - name: Deploy PR preview
