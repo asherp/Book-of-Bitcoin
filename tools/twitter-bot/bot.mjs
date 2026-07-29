@@ -34,6 +34,9 @@
 //   BOT_MAX_REPLIES   replies per pass (default 5)
 //   BOT_REPLY_UNWRITTEN  set to 0 to skip, rather than answer, citations of
 //                     chapters the chain has not reached
+//   BOT_ESPLORA       chain source(s), comma-separated — your own node, or a
+//                     local stand-in for testing (default: the public mirrors)
+//   BOT_DEBUG         set to 1 to print a stack on failure, not just the message
 //   BOT_IMAGE_WIDTH / BOT_IMAGE_HEIGHT
 //                     the passage image's size (default 1200x1500, 4:5)
 //   BOT_SITE          the book's origin (default https://bookofbitcoin.io)
@@ -81,7 +84,15 @@ const BEST_OF = 5;
 // prerenderer's.
 const MAX_ENCODE_BYTES = 8192;
 
-const ESPLORA_MIRRORS = ['https://blockstream.info/api', 'https://mempool.space/api'];
+// The chain sources, tried in order. The public mirrors by default — the
+// same two the reading pages and the prerenderer use — or any
+// Esplora-compatible endpoint(s) you point BOT_ESPLORA at, comma-separated:
+// your own node, or a local stand-in when testing the bot offline.
+const ESPLORA_MIRRORS = (process.env.BOT_ESPLORA || '')
+  .split(',').map((s) => s.trim().replace(/\/$/, '')).filter(Boolean);
+if (!ESPLORA_MIRRORS.length) {
+  ESPLORA_MIRRORS.push('https://blockstream.info/api', 'https://mempool.space/api');
+}
 
 async function esplora(path, kind = 'text') {
   let lastErr;
@@ -386,5 +397,14 @@ async function main() {
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  await main();
+  // A pass that dies — an explorer outage, a missing engine, a bad
+  // credential — says what went wrong in one line and exits non-zero. The
+  // stack is behind BOT_DEBUG=1: a scheduled run's log should read as a
+  // report, not a crash dump, and cron treats the exit code as the verdict.
+  await main().catch((e) => {
+    console.error(`error: ${e.message}`);
+    if (process.env.BOT_DEBUG === '1') console.error(e);
+    else console.error('(set BOT_DEBUG=1 for the stack)');
+    process.exit(1);
+  });
 }

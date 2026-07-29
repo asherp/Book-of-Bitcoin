@@ -105,6 +105,65 @@ Each invocation is one pass: search since the last seen tweet, reply to
 what parses (capped per pass), write `state.json`, exit. Run it from cron,
 or let `.github/workflows/twitter-bot.yml` do it on a schedule.
 
+## Testing it
+
+Four rungs, each one needing more than the last. Stop wherever you have
+the confidence you want — nothing below rung 3 can post anything.
+
+**1 — the suite.** No network, no credentials, no engine required:
+
+```sh
+node --test tools/twitter-bot/test.mjs
+```
+
+Covers citation parsing in every form, tweet weighing as X weighs it,
+reply composition, the manuscript page's bands and escaping, and the
+OAuth 1.0a signature against X's published vector. Two tests deepen when
+the optional pieces are present — one renders a real verse through the
+WASM engine (after `./build_web.sh`), one renders a real PNG (after
+`npm install`) — and skip cleanly when they aren't. Both states should
+pass, and it is worth running both.
+
+**2 — one passage, end to end.** Resolves against the chain and prints
+the reply the bot would post, writing `passage.png` beside it:
+
+```sh
+node tools/twitter-bot/bot.mjs --render "I β1 ■1 §1"
+node tools/twitter-bot/bot.mjs --render "block 57043"      # Pizza Day
+node tools/twitter-bot/bot.mjs --render "gm no citation"   # answers nothing
+```
+
+This is the rung that shows you the actual output — read the tweet text,
+open the image, check the citation. No X account needed.
+
+To exercise it with no outbound network at all, point `BOT_ESPLORA` at
+any Esplora-compatible endpoint: your own node, or a few canned routes
+(`/block-height/N`, `/block/<hash>`, `/block/<hash>/txids`,
+`/tx/<txid>/hex`) served locally.
+
+**3 — a real pass, posting nothing.** Needs `X_BEARER_TOKEN` only:
+
+```sh
+X_BEARER_TOKEN=… node tools/twitter-bot/bot.mjs --dry-run
+```
+
+Searches the live hashtag and prints the replies it *would* post, marking
+which would carry an image. Records nothing and advances no watermark, so
+the first real pass still answers everything it found. Tweet something
+with the tag from another account first, or point `BOT_HASHTAG` at a tag
+that already has traffic.
+
+**4 — live.** All five credentials, and start deliberately: set
+`BOT_HASHTAG` to something private (`#bookofbitcointest`) and
+`BOT_MAX_REPLIES=1`, tweet a citation at it, and run one pass. Check the
+reply, then move the tag to the real one. The workflow can be driven by
+hand from the Actions tab (`workflow_dispatch`, with a **dry run**
+checkbox) before you let the schedule have it.
+
+Every failure path prints one line and exits non-zero — a missing
+credential, an unreachable explorer, a missing engine. `BOT_DEBUG=1` adds
+the stack.
+
 ## Credentials
 
 Create an app in the [X developer portal](https://developer.x.com/) with
@@ -132,6 +191,8 @@ your rate limits.
 | `BOT_HANDLE` | — | the bot's own @handle, excluded from search |
 | `BOT_MAX_REPLIES` | `5` | replies per pass; the rest wait for the next one |
 | `BOT_REPLY_UNWRITTEN` | `1` | set `0` to skip future-chapter citations silently |
+| `BOT_ESPLORA` | the two public mirrors | chain source(s), comma-separated — your own node, or a local stand-in |
+| `BOT_DEBUG` | — | set `1` to print a stack on failure, not just the message |
 | `BOT_IMAGE_WIDTH` | `1200` | passage image width, in CSS px (rendered at 2×) |
 | `BOT_IMAGE_HEIGHT` | `1500` | passage image height; the fit follows the geometry |
 | `BOT_SITE` | `https://bookofbitcoin.io` | the book's origin, for links and the engine |
