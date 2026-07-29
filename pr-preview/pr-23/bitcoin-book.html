@@ -2736,8 +2736,13 @@ function projectedRateLine(m) {
 // live tracker moves the page's address, never its text.
 function refreshProjectedSectionFurniture() {
   renderProjectedHead(false);
+  // The § number is the span's leading text node; a ghost's replaceability
+  // dagger rides after it as an element of its own, so write the text alone
+  // -- a reseat moves the seat, it doesn't revoke the mark.
   const secNum = document.querySelector('#section-title .section-num');
-  if (secNum) secNum.textContent = `§ ${state.index + 1}`;
+  const num = `§ ${state.index + 1}`;
+  if (secNum && secNum.firstChild && secNum.firstChild.nodeType === Node.TEXT_NODE) secNum.firstChild.nodeValue = num;
+  else if (secNum) secNum.textContent = num;
   if (!state.ghost) {
     const m = state.manifest && state.manifest[state.index];
     const ev = document.querySelector('#section-title .section-event');
