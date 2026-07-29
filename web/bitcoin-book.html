@@ -1696,14 +1696,24 @@ const liveProjection = (() => {
   };
 
   // Install a manifest for the section on screen and re-seat its furniture
-  // when its address moved. A listing that no longer carries the transaction
-  // is ignored -- txPosition or txConfirmed names where it went instead.
+  // when what the page says about it changed. A listing that no longer
+  // carries the transaction is ignored -- txPosition or txConfirmed names
+  // where it went instead.
   const reseatSection = (k, manifest, txid) => {
     const idx = manifest.findIndex((t) => t.txid === txid);
     if (idx < 0) return;
     pendingBlockSwitch = null;
     const height = tipHeight + 1 + k;
-    const moved = height !== state.height || idx !== state.index;
+    // A projected section shows two live things: where it sits (chapter, §)
+    // and what it is paying to sit there. A reshuffle that leaves the seat
+    // alone can still change the price -- a CPFP child arriving lifts the
+    // package rate under it, a sibling's family breaking up drops it -- and
+    // the rate line is on screen, so that counts as a move as much as the §
+    // does.
+    const was = state.manifest && state.manifest[state.index];
+    const now = manifest[idx];
+    const moved = height !== state.height || idx !== state.index
+      || (was && now && was.rate !== now.rate);
     state.projIndex = k;
     state.height = height;
     state.manifest = manifest;
