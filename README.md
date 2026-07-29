@@ -99,7 +99,9 @@ compiled to WASM) is consumed as a published
 - `web/btc-sigla.js` — the opcode alphabet: a mark for every opcode and the
   canonical `OP_*` name behind it, plus the groups the key reads in. Split out
   of `btc-prose.js` so the sigla leaf can render the real table without
-  pulling in the WASM engine through the prose composer
+  pulling in the WASM engine through the prose composer. The superscript byte
+  count that rides on a mark (`h³²`, `p⁶⁵`) lives here for the same reason —
+  it is notation, not prose, and the search page sets it without the engine
 - `web/preface.md` — the preface itself, in Markdown: the canonical copy,
   readable here in the repository and rendered into the leaf above, so the
   book and the repository cannot drift apart
@@ -133,7 +135,15 @@ compiled to WASM) is consumed as a published
   on the left, so the directions read from the bottom of the tree up spell the
   transaction's position in binary. The module claims nothing — it reports
   what the proof asserts, and the search page checks that root against the
-  chapter's own header, which is the entirety of OpenTimestamps verification
+  chapter's own header, which is the entirety of OpenTimestamps verification.
+  The three hashes a proof turns on — the stamped file's digest, the
+  transaction carrying the commitment, and the merkle root the operations
+  reduce to — are set the way the book sets any hash: the mark first (`h` for a
+  hash, `⋔` for the merkle root) with its byte count riding after it, then the
+  figure itself as Glossia prose, the chain's two written in the byte order
+  they actually are and the digest in the order it was computed. The engine is
+  imported only when a proof arrives, so a typed lookup carries no WASM and the
+  hex stands wherever the prose cannot be composed
 - `web/btc-tx.js`, `web/btc-prose.js`, `web/btc-citation.js`,
   `web/btc-contents.js`, `web/btc-index.js`, `web/btc-store.js` —
   transaction parsing, prose composition, citations, contents data,

@@ -11,6 +11,13 @@
 // public domain is the notation itself -- the convention that a mark means an
 // opcode -- which is not a file. See the README's License section.)
 
+// The byte count a mark carries as a superscript riding after it (h³², p⁶⁵ --
+// "this prose carries n bytes"). Part of the notation rather than the prose,
+// so it lives here with the marks and can be set by a page that has no use for
+// the engine; btc-prose.js re-exports it for the renderer that does.
+const SUPERSCRIPT_DIGITS = '⁰¹²³⁴⁵⁶⁷⁸⁹';
+export const toSuperscript = (n) => String(n).split('').map((d) => SUPERSCRIPT_DIGITS[+d]).join('');
+
 // Opcode byte -> Glossia glyph. Every defined opcode has one; families share
 // a base glyph, with the house subscript convention distinguishing variants
 // (⧉₂ = 2DUP, °₄ = NOP4, ∇₊ = CHECKSIGADD). Disabled opcodes keep their

@@ -97,8 +97,10 @@ function sequenceInfo(seq) {
 
 const SUBSCRIPT_DIGITS = '₀₁₂₃₄₅₆₇₈₉';
 const toSubscript = (n) => String(n).split('').map((d) => SUBSCRIPT_DIGITS[+d]).join('');
-const SUPERSCRIPT_DIGITS = '⁰¹²³⁴⁵⁶⁷⁸⁹';
-export const toSuperscript = (n) => String(n).split('').map((d) => SUPERSCRIPT_DIGITS[+d]).join('');
+// The superscript byte count lives with the sigla, where a page that wants the
+// notation without the engine can reach it; re-exported so importers of the
+// composer still find it here.
+export { toSuperscript };
 
 // nBits (a compact difficulty target) -> { sym, title }. The target is
 // rendered as the thing it is -- the ceiling a mined hash must dip under --
@@ -294,7 +296,7 @@ const quoteText = (s) => escapeHtml(s)
 // legible ASCII) -- exactly what carried the whole script before opcodes had
 // their own marks.
 
-import { OPCODE_SYMBOLS, OPCODE_NAMES } from './btc-sigla.js';
+import { OPCODE_SYMBOLS, OPCODE_NAMES, toSuperscript } from './btc-sigla.js';
 
 // One opcode -> its HTML: the glyph (accent-styled, canonical OP_* name as
 // its hover title), or the bare OP_* name for a byte with no glyph. The

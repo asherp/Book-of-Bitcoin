@@ -80,6 +80,18 @@ button:hover { background: var(--accent-2); }
 .proof-line { display:flex; gap:14px; padding:5px 2px; border-bottom:1px solid var(--hair); }
 .proof-key { flex:none; width:96px; font:500 10.5px/1.9 'IBM Plex Mono',monospace; letter-spacing:.06em; text-transform:uppercase; color:var(--meta); }
 .proof-val { flex:1; min-width:0; overflow-wrap:anywhere; font:400 12.5px/1.7 'IBM Plex Mono',monospace; color:var(--ink-soft); }
+
+/* The book's own marks, on the book's own terms: the data mark (h) and the
+   merkle mark (⋔) bold gold, the byte count riding after them as a
+   superscript, and the hash itself set as prose in the reading face -- the
+   same dress the chapter hash and the frontispiece wear, so a figure means the
+   same thing here as it does on the page it points to. Until the engine
+   arrives the figure stands in hex, mono; the mark and its count do not wait
+   on it. */
+.dt, .merkle-mark { color: var(--accent); font-weight: 700; font-style: normal; }
+.op-count { color: var(--meta); font-size: .85em; }
+.proof-figure { font: 400 12.5px/1.7 'IBM Plex Mono',monospace; }
+.proof-figure.prose { font: italic 400 14px/1.55 'Newsreader',serif; color: var(--dim); }
 .proof-verdict { margin-top:14px; font:400 14px/1.5 'Newsreader',serif; }
 .proof-verdict.good { color:var(--ink); }
 .proof-verdict.bad { color:#e08b7a; }
@@ -189,20 +201,74 @@ input.addEventListener('keydown', (e) => { if (e.key === 'Enter') go(); });
 import { parseOtsProof, isOtsProof, digestOf, earliestBitcoin } from './btc-ots.js';
 import { blockAt } from './btc-index.js';
 import { volumeBookChapter, reference } from './btc-citation.js';
+import { toSuperscript } from './btc-sigla.js';
 
 const drop = document.getElementById('proof-drop');
 const result = document.getElementById('proof-result');
 const fileInput = document.getElementById('proof-file');
 const stamp = (ts) => new Date(ts * 1000).toISOString().slice(0, 16).replace('T', ' ');
+const reverseHex = (hex) => (hex.match(/../g) || []).reverse().join('');
+const BEST_OF = 5;                                     // the book's cover-word quality
+
+// The engine, fetched only once a proof arrives. A page that answers typed
+// lookups should not carry a megabyte of WASM to do it, and a checkout without
+// the build artifact must still search -- so the import is dynamic, and prose
+// is an upgrade over the hex rather than a condition for showing it.
+let engine = null;
+const glossia = () => (engine ||= import('./glossia-msg.js').then(async (m) => { await m.init(); return m; }));
+
+// A hash, as the book sets one: its mark, the byte count riding after it as a
+// superscript, then the figure itself. `reverse` turns a hash displayed in the
+// chain's backwards order into the bytes it actually is, which is what the
+// prose must carry -- a txid and a merkle root are written that way, a file's
+// digest is not.
+const figure = (hex, mark, markClass, title, reverse) => ({ hex, mark, markClass, title, reverse });
+const hash = (hex, title) => figure(hex, 'h', 'dt', title, false);
+const chainHash = (hex, title) => figure(hex, 'h', 'dt', title, true);
+const merkle = (hex, title) => figure(hex, '⋔', 'merkle-mark', title, true);
+
+// Every figure on the page, waiting to be read out as prose once the engine
+// lands. The hex is what a reader can check against an explorer, so it stays
+// in the figure's title after the words replace it.
+const prosed = new Map();     // encoded hex -> its prose; the result is redrawn as the chain answers
+function setProse(cells) {
+  if (!cells.length) return;
+  glossia().then((m) => {
+    for (const { el, hex, reverse } of cells) {
+      try {
+        const bytes = reverse ? reverseHex(hex) : hex;
+        if (!prosed.has(bytes)) prosed.set(bytes, m.encodeSeedPhrase(bytes, 'english', BEST_OF).prose);
+        el.textContent = prosed.get(bytes);
+        el.classList.add('prose');
+      } catch { /* the hex stands */ }
+    }
+  }).catch(() => { /* no engine here: the hex stands, and says the same thing */ });
+}
 
 const say = (rows, verdict = null, href = null, label = '') => {
   result.innerHTML = '';
+  const cells = [];
   for (const [key, val] of rows) {
     const line = document.createElement('div'); line.className = 'proof-line';
     const k = document.createElement('div'); k.className = 'proof-key'; k.textContent = key;
-    const v = document.createElement('div'); v.className = 'proof-val'; v.textContent = val;
+    const v = document.createElement('div'); v.className = 'proof-val';
+    if (typeof val === 'string') {
+      v.textContent = val;
+    } else {
+      const m = document.createElement('span');
+      m.className = val.markClass; m.textContent = val.mark;
+      if (val.title) m.title = val.title;
+      const sup = document.createElement('span');
+      sup.className = 'op-count'; sup.textContent = toSuperscript(val.hex.length / 2);
+      sup.title = `${val.hex.length / 2} bytes`;
+      const fig = document.createElement('span');
+      fig.className = 'proof-figure'; fig.textContent = val.hex; fig.title = val.hex;
+      v.append(m, sup, ' ', fig);
+      cells.push({ el: fig, hex: val.hex, reverse: val.reverse });
+    }
     line.append(k, v); result.append(line);
   }
+  setProse(cells);
   if (verdict) {
     const p = document.createElement('div');
     p.className = `proof-verdict ${verdict[1]}`; p.textContent = verdict[0];
@@ -233,7 +299,10 @@ async function readProof(fileList) {
   try { parsed = await parseOtsProof(proof.bytes); }
   catch (e) { say([['proof', proof.name]], [`This proof will not read: ${e.message}.`, 'bad']); return; }
 
-  const rows = [['proof', proof.name], ['digest', `${parsed.hash} ${parsed.digest}`]];
+  // The digest is the proof's subject, and it is not a chain hash: it is
+  // written in the order it was computed, so it is encoded in that order.
+  const rows = [['proof', proof.name],
+    [parsed.hash, hash(parsed.digest, `${parsed.hash} digest — the bytes this proof commits to`)]];
 
   // A proof commits to a digest, not to a file. With the subject in hand too,
   // the reader can see for themselves which file this proof is about.
@@ -262,8 +331,8 @@ async function readProof(fileList) {
     ? `./bitcoin-book.html?ref=v${volume}b${book}c${chapter}s${section}`
     : `./bitcoin-book.html?block=${att.height}`;
   rows.push(['stamped into', `block ${att.height} — ${cite}`]);
-  if (att.txid) rows.push(['transaction', att.txid]);
-  rows.push(['merkle root', att.merkleRoot]);
+  if (att.txid) rows.push(['transaction', chainHash(att.txid, 'the transaction carrying the commitment — its txid')]);
+  rows.push(['merkle root', merkle(att.merkleRoot, 'the merkle root the proof reduces to — what the block header must commit to')]);
   say(rows, ['Asking the chain for that block…', 'unsure']);
 
   // The verification, entire: the operations reduce to 32 bytes, and those
@@ -277,7 +346,7 @@ async function readProof(fileList) {
     return;
   }
   if (block.merkleRoot !== att.merkleRoot) {
-    rows.push(['chain says', block.merkleRoot]);
+    rows.push(['chain says', merkle(block.merkleRoot, "the merkle root that block's header actually commits to")]);
     say(rows, ['The roots differ. This proof does not commit to that block, whatever it says.', 'bad']);
     return;
   }
