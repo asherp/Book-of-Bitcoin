@@ -28,6 +28,7 @@
 // argument, which is the one thing this book will not do.
 
 import { parseOtsProof, earliestBitcoin, digestOf } from './btc-ots.js';
+import { parseTransaction } from './btc-tx.js';
 import { volumeBookChapter, reference, latinRefOf } from './btc-citation.js';
 
 const KEPT_KEY = 'glossia-btc-proofs';
@@ -102,7 +103,7 @@ export const volumeOf = (place) => volumeBookChapter(place.height);
 // re-hashed and nothing is trusted. A shape the reader does not recognise is
 // left as a plain run of operations rather than forced into the three
 // movements -- an honest "these steps happened" beats a tidy lie.
-export function ladderOf(attestation) {
+export function ladderOf(attestation, digest = '') {
   const steps = attestation.steps || [];
   const rungs = [];
   let i = 0;
@@ -113,10 +114,20 @@ export function ladderOf(attestation) {
     rungs.push({ kind: 'commit', op: steps[i].op, arg: steps[i].arg, result: steps[i].result });
   }
   if (wrapAt !== -1) {
+    // What the transaction was wrapped around: the rung above, or the file's
+    // own digest where nothing was done to it first.
+    const committed = rungs.length ? rungs[rungs.length - 1].result : digest;
     rungs.push({
       kind: 'transaction',
       prefix: steps[wrapAt].arg,
       suffix: steps[wrapAt + 1].arg,
+      committed,
+      // Which output holds it. This is the finest address the citation scheme
+      // reaches, and the proof knows it exactly: rebuild the transaction from
+      // the bytes the proof carries and find the script the commitment sits
+      // in. A modern proof puts it in an OP_RETURN; an old one buried it where
+      // a public key's hash belongs.
+      out: outputHolding(steps[wrapAt].arg + committed + steps[wrapAt + 1].arg, committed),
       // The txid, in the order the chain prints it -- this rung IS a passage,
       // and a passage is cited by the txid a reader would look up.
       result: steps[wrapAt + 3].result,
@@ -146,6 +157,19 @@ export function ladderOf(attestation) {
   for (; i < steps.length; i++) rungs.push({ kind: 'step', op: steps[i].op, arg: steps[i].arg, result: steps[i].result });
   if (rungs.length) rungs[rungs.length - 1].isRoot = true;
   return rungs;
+}
+
+// The output whose script carries the commitment, or null if the transaction
+// will not parse or no single output holds it. Nothing is guessed: the bytes
+// are the proof's own, and the answer is either there or it is not.
+function outputHolding(txHex, committed) {
+  if (!committed) return null;
+  try {
+    const holders = parseTransaction(txHex).vout
+      .map((o, n) => (o.scriptPubKey.includes(committed) ? n : -1))
+      .filter((n) => n >= 0);
+    return holders.length === 1 ? holders[0] : null;
+  } catch { return null; }
 }
 
 // ─── the bundled proofs ─────────────────────────────────────────────────

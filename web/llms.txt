@@ -114,13 +114,16 @@ reaches it instead.
   stands in the contents beside the bundled ones. Nothing is uploaded; the
   bundled proofs are `web/proofs/*.ots`, listed in `web/appendix.yaml`.
 - `bitcoin-proof.html?digest=<sha256>` — one timestamped file's own leaf,
-  which every Appendix IV row opens: titled by the file's name, and setting
-  its proof as a ladder read a rung at a time — the digest, the commitment,
-  the transaction the commitment was buried in, then one rung per merkle
-  level with the sibling beside it, each value Glossia prose, ending on the
-  root the chapter's header commits to. The file itself is never shown or
-  held: only its name is known, and a button opens the reader's own copy to
-  hash in the browser and compare against the digest.
+  which every Appendix IV row opens. Front matter: the file's name, and its
+  digest as prose — the whole of what the chain was told about it. Then the
+  proof written out paragraph by paragraph, each paragraph one value the last
+  hashes into: the commitment, the transaction, then each merkle level's
+  sibling and result in turn, ending on the root. The margin carries a
+  citation only where the paragraph beside it is on chain — the transaction,
+  cited down to the output holding the commitment (`§section.out`), and the
+  root, cited to the chapter whose header commits to it. The file itself is
+  never shown or held: a button opens the reader's own copy to hash in the
+  browser and compare against the digest.
 - `bitcoin-front.html` — front matter (`?leaf=` selects a leaf).
 - `bitcoin-search.html` — lookup by height, hash, txid, or citation.
 - `bitcoin-ledger.html?address=<addr>` — the passage that address is, in the

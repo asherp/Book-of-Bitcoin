@@ -224,10 +224,16 @@ compiled to WASM) is consumed as a published
   IV row opens. A proof is a straight line of operations from a digest to a
   merkle root, and every value along that line is 32 bytes of hash — which is
   to say every value along it is a passage the book can set in words. So the
-  leaf lays the proof out as a ladder and sets each rung as prose: the digest,
-  the commitment, the transaction it was buried in, then one rung per merkle
-  level with its sibling beside it, ending on the root the chapter's own header
-  commits to — and that last rung is the one value the chain is asked about.
+  front matter carries the file's name and its digest as prose, and the proof
+  is written out beneath it paragraph by paragraph, each paragraph a value the
+  one above hashes into, ending on the root. Nothing explains itself: the
+  marks say what each value is, and **the margin carries a citation exactly
+  where the paragraph beside it is on chain** — the transaction, cited down to
+  the output the commitment sits in (`§1352.1`, the finest address the scheme
+  reaches, found by rebuilding the transaction from the proof's own bytes), and
+  the root, cited to the chapter whose header commits to it, with a ✓ once that
+  header has been asked. Every other paragraph's margin is empty, which is the
+  page's argument: a proof is mostly arithmetic, and touches the chain twice.
   The file is titled but never shown: it was never on the chain, was never
   uploaded, and is not the book's to hold. A button opens the reader's own copy
   through the native file dialogue, hashes it in the browser and says whether
