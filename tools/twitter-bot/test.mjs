@@ -21,8 +21,14 @@ import {
   TWEET_WEIGHT_BUDGET, FONT_MIN,
 } from './quote.mjs';
 import { loadRenderer } from './image.mjs';
+import { loadEditorial } from '../editorial.mjs';
 import { oauth1Header } from './x-api.mjs';
 import { replyFor, ensureEngine } from './bot.mjs';
+
+// The curated titles come from web/notables.yaml, read off disk exactly as the
+// bot reads it (bot.mjs loads the same index at import; this is here so the
+// tests hold when they are run against quote.mjs alone).
+await loadEditorial();
 
 const SITE = 'https://bookofbitcoin.io';
 

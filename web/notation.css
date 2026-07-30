@@ -5,27 +5,34 @@
  * section-nav bar) and the front matter's sigla leaf (the whole key at rest).
  * Shared so the two can never drift apart; the markup they share is in
  * btc-notation.js.
+ *
+ * The file also holds the chrome of the sheet itself — the toggle in the nav
+ * bar and the panel it raises — because the bar now carries two of them: the
+ * notation key, which every page has, and the commentary on this passage,
+ * which only some do (btc-commentary.js). Two keys to a page, dressed alike
+ * and opening into the same slot, so a reader learns one gesture.
  */
 
-/* ── Notation: a key to the manuscript's sigla — the glyphs that notate a
-   script's opcodes, and the marks drawn in each transaction's margins. Its
-   toggle sits centred in the section-nav bar; opened, the key rises above
-   the bar as a sheet (absolute against the sticky nav), scrolling within
-   itself rather than growing the bar. ── */
-.notation { margin: 0; min-width: 0; }
-.notation summary {
+/* ── The nav bar's sheets: a toggle centred in the section-nav bar which,
+   opened, raises its panel above the bar (absolute against the sticky nav),
+   scrolling within itself rather than growing the bar. ── */
+.nav-sheet { margin: 0; min-width: 0; }
+.nav-sheet summary {
   cursor: pointer; font:500 11px/1 'IBM Plex Mono',monospace; letter-spacing:.1em; text-transform:uppercase;
   color: var(--dim); list-style: none; text-align: center;
 }
-.notation summary::-webkit-details-marker { display: none; }
-.notation summary::before { content: '+ '; color: var(--accent); }
-.notation[open] summary::before { content: '– '; }
-.notation-body {
+.nav-sheet summary::-webkit-details-marker { display: none; }
+.nav-sheet summary::before { content: '+ '; color: var(--accent); }
+.nav-sheet[open] summary::before { content: '– '; }
+.nav-sheet-body {
   position: absolute; bottom: 100%; left: 0; right: 0;
   max-height: min(64vh, 560px); overflow-y: auto; overscroll-behavior: contain;
   background: var(--page); border-top: 1px solid var(--rule);
   padding: 16px 2px 12px;
 }
+
+/* ── Notation: a key to the manuscript's sigla — the glyphs that notate a
+   script's opcodes, and the marks drawn in each transaction's margins. ── */
 /* The key's text follows the reader's chosen type size for the notation
    region (--scale-notation, set on <html> by btc-fontscale.js; 1 wherever it
    isn't -- the module writes effective values, so the key follows the body

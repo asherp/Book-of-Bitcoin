@@ -175,7 +175,12 @@ a:hover { text-decoration: underline; }
 </div>
 
 <script type="module">
-import { APPENDIX } from './btc-contents.js';
+import { loadNotables, appendix } from './btc-contents.js';
+
+// The appendix is read from appendix.yaml (btc-notables.js), so it arrives
+// asynchronously; this leaf IS one of its parts, so it waits for it.
+await loadNotables();
+const APPENDIX = appendix();
 import { chainTip } from './btc-mempool.js';
 import { toRoman, volumeBookChapter, heightOf } from './btc-citation.js';
 

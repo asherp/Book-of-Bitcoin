@@ -16,7 +16,7 @@
 // prose, backed by the WASM engine) — so the whole module tests offline.
 
 import { reference, footnoteMark } from '../../web/btc-citation.js';
-import { NOTABLE } from '../../web/btc-contents-data.js';
+import { places, placeTitle } from '../../web/btc-notables.js';
 
 // ─── tweet length, as X counts it ───────────────────────────────────────
 //
@@ -86,14 +86,19 @@ export async function resolveCitation(cit, esplora) {
 }
 
 // The curated title for a passage, if the table of contents names it. A
-// txid entry names the transaction itself and wins; a height entry names
-// the chapter's section 1 (or its explicit `index`) and comes second. Book
-// leaves name a difficulty window, not a passage, and are skipped.
+// txid place names the transaction itself and wins; a height place names the
+// chapter's section 1 (or its explicit `index`) and comes second. Leaves name a
+// difficulty window or a volume, and addresses name a ledger; neither is a
+// passage, and both are skipped.
+//
+// Read off the loaded index (btc-notables.js), which the caller loads once at
+// start-up -- loadEditorial() in tools/editorial.mjs. Unloaded, this simply
+// finds nothing, and a reply carries its citation without a curated name.
 export function titleFor(height, index, txid) {
-  const passages = NOTABLE.filter((e) => e.page !== 'book');
-  const hit = passages.find((e) => e.id === txid)
-    || passages.find((e) => e.id === String(height) && (e.index ?? 0) === index);
-  return hit ? hit.title : null;
+  const passages = places().filter((p) => !p.page && !p.address);
+  const hit = passages.find((p) => p.id === txid)
+    || passages.find((p) => p.id === String(height) && (p.index ?? 0) === index);
+  return hit ? placeTitle(hit) : null;
 }
 
 // ─── the section, as the manuscript sets it ─────────────────────────────

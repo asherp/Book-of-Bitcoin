@@ -78,6 +78,7 @@
 }
 </script>
 <link rel="stylesheet" href="./notation.css">
+<link rel="stylesheet" href="./commentary.css">
 <link rel="stylesheet" href="./btc-chrome.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -129,12 +130,13 @@ body {
    sets the type size (reflowing the text, the e-reader way) instead of
    optically magnifying the page, so touch-action here excludes pinch-zoom
    (see the pinch handler). Starting on the chrome around the frame, pinch
-   still zooms natively. The notation sheet claims its pinch the same way,
-   keeping both of its own scroll axes (the sheet's vertical, the pattern
-   table's horizontal). */
+   still zooms natively. The nav bar's sheets -- the notation key and the
+   commentary on this passage -- claim their pinch the same way, keeping both
+   of their own scroll axes (the sheet's vertical, the pattern table's
+   horizontal). */
 #page-frame { overflow: clip; touch-action: pan-x pan-y; }
 #page-frame.carousel-first { touch-action: pan-x; }
-.notation-body { touch-action: pan-x pan-y; }
+.nav-sheet-body { touch-action: pan-x pan-y; }
 /* The foot nav sits in the same place on every page: the bottom of the
    screen. The wrap stretches to the viewport, the chapter fills the wrap,
    and all slack lands inside the frame -- never the slide -- so a short
@@ -408,12 +410,34 @@ button:disabled { opacity: .4; cursor: not-allowed; }
   padding: 14px 0 max(14px, env(safe-area-inset-bottom));
   border-top: 1px solid var(--rule); background: var(--page);
 }
-/* Previous at the left edge, Next at the right, the notation toggle centred
+/* Previous at the left edge, Next at the right, the page's keys centred
    between them. Explicit tracks: a hidden stepper (display:none) leaves the
-   grid, and auto-placement would reflow the survivors off-centre. */
+   grid, and auto-placement would reflow the survivors off-centre.
+   Two keys ride that centre: Notation, which every page carries, and
+   Commentary, which appears only where the passage in front of the reader has
+   a curated reading (btc-commentary.js) -- so its absence is information too.
+   Both raise their sheet into the one slot above the bar, and opening either
+   closes the other. */
 #page-prev { grid-column: 1; justify-self: start; }
-.section-nav .notation { grid-column: 2; }
+.section-nav .nav-keys { grid-column: 2; display: flex; align-items: center; justify-content: center; gap: 20px; }
 #page-next { grid-column: 3; justify-self: end; }
+.commentary-body { padding-bottom: 16px; }
+/* The sheet's own typography — the measure, the readings, the byline, the terms
+   — is commentary.css, shared with the Ledger's leaf-borne readings, so a
+   reading looks the same wherever the book offers one. */
+/* A future chapter's reading, set beneath the answer that its block is unmined:
+   the page a consensus height has until a miner writes one. Centred like the
+   status line above it, in the commentary's own measure (commentary.css). */
+#future-commentary { margin: 40px auto 0; max-width: 560px; padding: 0 22px 60px; }
+#future-commentary:empty { display: none; }
+/* The book's answer for a chapter nobody has written yet — when it is due —
+   standing as the leaf's first line rather than as the toast it would be if
+   there were nothing to read beneath it. */
+.future-answer {
+  margin: 0 0 22px; padding-bottom: 16px; border-bottom: 1px solid var(--rule);
+  font: 500 calc(12.5px * var(--scale-commentary, 1))/1.5 'IBM Plex Mono',monospace;
+  color: var(--dim);
+}
 /* Nothing to step to on either side (nothing precedes Genesis's opening leaf;
    nothing follows the tip's last section while both edges are hidden): drop
    the bar entirely rather than pin an empty rule to the screen bottom. */
@@ -654,6 +678,7 @@ button:disabled { opacity: .4; cursor: not-allowed; }
         <span class="fs-label">Margins</span><button type="button" class="ghost-btn" data-fs="margins" data-fs-d="-1" aria-label="Smaller margin text">A−</button><span class="fs-value" data-fs-v="margins">100%</span><button type="button" class="ghost-btn" data-fs="margins" data-fs-d="1" aria-label="Larger margin text">A+</button>
         <span class="fs-label">Footnotes</span><button type="button" class="ghost-btn" data-fs="footnotes" data-fs-d="-1" aria-label="Smaller footnote text">A−</button><span class="fs-value" data-fs-v="footnotes">100%</span><button type="button" class="ghost-btn" data-fs="footnotes" data-fs-d="1" aria-label="Larger footnote text">A+</button>
         <span class="fs-label">Notation</span><button type="button" class="ghost-btn" data-fs="notation" data-fs-d="-1" aria-label="Smaller notation text">A−</button><span class="fs-value" data-fs-v="notation">100%</span><button type="button" class="ghost-btn" data-fs="notation" data-fs-d="1" aria-label="Larger notation text">A+</button>
+        <span class="fs-label">Commentary</span><button type="button" class="ghost-btn" data-fs="commentary" data-fs-d="-1" aria-label="Smaller commentary text">A−</button><span class="fs-value" data-fs-v="commentary">100%</span><button type="button" class="ghost-btn" data-fs="commentary" data-fs-d="1" aria-label="Larger commentary text">A+</button>
       </div>
       <div class="fontscale-foot"><button type="button" id="fontscale-reset" class="ghost-btn">Reset</button></div>
       <div class="settings-title">Data source</div>
@@ -676,6 +701,9 @@ button:disabled { opacity: .4; cursor: not-allowed; }
        (bitcoin-search.html, the masthead's Search link); this page only reports
        the progress of whatever it was asked to open. -->
   <div id="block-status" class="status-line hidden"></div>
+  <!-- A future chapter's reading, set where its passage would be. Empty on
+       every other page (see futureCommentary). -->
+  <div id="future-commentary"></div>
 
   <!-- The pinch gesture's readout: the type size as a percentage, floating
        like the status toast, while the fingers are down and a beat after. -->
@@ -723,14 +751,22 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 
     <!-- Section paging sits at the foot of the section, after its witness
          footnotes: read the transaction through, then step to the next. The
-         notation key rides between the two steppers; opened, its body rises
-         above the bar as a sheet. -->
+         page's keys ride between the two steppers; opened, either one's body
+         rises above the bar as a sheet. Commentary comes first because it is
+         about the page in hand, and it is present only when this passage has a
+         curated reading -- the notation key is the same on every page. -->
     <nav class="section-nav">
       <button type="button" id="page-prev" class="hidden" aria-label="Previous section" title="Previous section"></button>
-      <details class="notation">
-        <summary>Notation</summary>
-        <div class="notation-body"></div>
-      </details>
+      <div class="nav-keys">
+        <details class="nav-sheet commentary hidden" id="commentary">
+          <summary title="Commentary on this passage — a reading of the record, credited to whoever wrote it">Commentary</summary>
+          <div class="nav-sheet-body commentary-body" id="commentary-body"></div>
+        </details>
+        <details class="nav-sheet notation">
+          <summary>Notation</summary>
+          <div class="notation-body nav-sheet-body"></div>
+        </details>
+      </div>
       <button type="button" id="page-next" class="hidden" aria-label="Next section" title="Next section"></button>
     </nav>
   </article>
@@ -756,14 +792,37 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 import { init, encodeSeedPhrase } from './glossia-msg.js';
 import { parseTransaction, computeTxid, parseBlockHeader, computeBlockHash } from './btc-tx.js';
 import { composeTransactionFields, composeBlockHeaderFields, groupDigits, formatBtc, renderWitness, toSuperscript, timestampInfo } from './btc-prose.js';
-import { volumeBookChapter, heightOf, toRoman, reference, footnoteMark } from './btc-citation.js';
-import { NOTABLE, blocksEta } from './btc-contents.js';
+import { volumeBookChapter, heightOf, toRoman, reference, parseReference, footnoteMark } from './btc-citation.js';
+import { loadNotables, places, placeTitle, blocksEta } from './btc-contents.js';
+import { queueLabel } from './btc-mempool.js';
 import { NOTATION_HTML } from './btc-notation.js';
+import { commentaryFor, commentaryHtml, resolveCommentary } from './btc-commentary.js';
+
+// The curated index -- which blocks and transactions are notable, what they are
+// called, and which readings they carry -- is read from notables.yaml rather
+// than baked into a script, so it arrives asynchronously. Started here, awaited
+// once before the first lookup at the foot of this module.
+loadNotables();
 
 // The notation key's markup is shared with the front matter's sigla leaf, so
 // the toggle here and the key at rest there can never explain a mark
 // differently. Filled once, on load.
 document.querySelector('.notation-body').innerHTML = NOTATION_HTML;
+
+// The nav bar carries two keys into the same slot above it -- the notation key
+// and, where the passage has one, its commentary. Opening either closes the
+// other: one sheet is over the page at a time, so a reader is never reading a
+// reading and a mark at once. Opening the commentary key is also what fetches
+// its prose -- the index says a reading exists, the file says what it says.
+for (const sheet of document.querySelectorAll('.section-nav .nav-sheet')) {
+  sheet.addEventListener('toggle', () => {
+    if (!sheet.open) return;
+    for (const other of document.querySelectorAll('.section-nav .nav-sheet')) {
+      if (other !== sheet) other.open = false;
+    }
+    if (sheet.id === 'commentary') fillCommentary();
+  });
+}
 import { storeGet, storePut } from './btc-store.js';
 import { seedArchive } from './btc-seed.js';
 // Applies the saved per-region type sizes on import; the settings rows and
@@ -1109,47 +1168,13 @@ function resolveCitation(txid) {
 
 // toRoman is imported from btc-citation.js (shared with the contents page).
 
-// Parse a Roman numeral (a volume) -- the inverse of toRoman. Returns NaN on
-// any non-Roman character so a malformed token is rejected, not misread.
-function fromRoman(s) {
-  const val = { I: 1, V: 5, X: 10, L: 50, C: 100, D: 500, M: 1000 };
-  let total = 0, prev = 0;
-  for (let i = s.length - 1; i >= 0; i--) {
-    const v = val[s[i]];
-    if (!v) return NaN;
-    if (v < prev) total -= v; else { total += v; prev = v; }
-  }
-  return total;
-}
-
-// Parse a scripture-style reference into { height, index }. Volume comes first
-// (Roman); each finer level named opens a deeper page -- the reference's depth
-// picks the leaf:
-//   "III"        -> volume III's own page
-//   "III 2"      -> era 3, book 2's own page
-//   "III 2 5"    -> chapter 5's own page
-//   "III 2 5 §3" / "III 2 5 3" -> section 3
-// A trailing ".output" (as citations print, e.g. "III 2 5 §3.1") is accepted
-// and ignored -- it picks an output within the section, not another section.
-// Returns null when the string isn't a reference at all.
-function parseReference(input) {
-  const s = input.trim().replace(/\s+/g, ' ');
-  // The book (β2) and chapter (■5) sigils are optional on input -- a bare
-  // "III 2 5" resolves just as "III β2 ■5" does.
-  const m = s.match(/^([ivxlcdm]+)(?:\s+β?(\d+))?(?:\s+■?(\d+))?(?:\s+§?(\d+)(?:\.\d+)?)?$/i);
-  if (!m) return null;
-  const volume = fromRoman(m[1].toUpperCase());
-  if (!Number.isFinite(volume) || volume < 1) return null;
-  const book = m[2] ? parseInt(m[2], 10) : 1;
-  const chapter = m[3] ? parseInt(m[3], 10) : 1;
-  const section = m[4] ? parseInt(m[4], 10) : null;
-  if (book < 1 || chapter < 1 || (section !== null && section < 1)) return null;
-  // The reference's depth picks the page: a §section opens that section; a
-  // chapter its own page (-1); a book its leaf (-2); a bare volume its
-  // leaf (-3). The height is always the finest named span's first block.
-  const index = section !== null ? section - 1 : m[3] ? -1 : m[2] ? -2 : -3;
-  return { height: heightOf(volume, book, chapter), index };
-}
+// A scripture-style reference resolves through btc-citation.js -- parseReference
+// there is the one reader for both spellings ("III β2 ■5", "v3b2c5"), shared
+// with the search box and with the curated contents' own `id:` field. Its depth
+// picks the page: a §section opens that section; a chapter its own page (-1); a
+// book its leaf (-2); a bare volume its leaf (-3), the height always being the
+// finest named span's first block. A trailing ".output" is carried as `out`,
+// which picks an output within the section rather than another section.
 
 // ── Volume / book leaves ──────────────────────────────────────────────────
 // A chapter that opens a book gets a book leaf (index -2) ahead of its
@@ -2494,7 +2519,9 @@ function renderChapterHead(onTitlePage) {
   // case here, which kept it out of the table of contents.
   // A page: 'book' entry shares the height namespace (its id is its book's
   // first block) but names the book's leaf, not this chapter -- excluded here.
-  const eventTitles = NOTABLE.filter((e) => e.id === String(state.height) && e.page !== 'book').map((e) => e.title);
+  const eventTitles = places()
+    .filter((p) => p.id === String(state.height) && !p.page && !p.address)
+    .map(placeTitle);
   const eventTitle = eventTitles[0];
   $('ch-title').textContent = `Chapter ${chapterName(chapter)}`;
   const subtitle = $('ch-subtitle');
@@ -2556,7 +2583,12 @@ function renderProjectedHead(onTitlePage) {
   $('ch-book').textContent = book.toLocaleString();
   $('ch-title').textContent = `Chapter ${chapterName(chapter)}`;
   const subtitle = $('ch-subtitle');
-  subtitle.textContent = `Projected — eta ${blocksEta(k + 1)}`;
+  // Named the way Appendix I names it -- alpha for the draft at the head of
+  // the queue, then the ones behind it. A mined chapter's subtitle carries
+  // what it is known for; a draft has nothing it is known for yet, so it
+  // carries its place in the queue and how long that place is expected to
+  // last.
+  subtitle.textContent = `${queueLabel(k + 1)} — ETA ${blocksEta(k + 1)}`;
   subtitle.title = 'a draft chapter read from the mempool: these transactions are what a miner working right now would take, in the order they pay for';
   const inline = $('ch-chapter-inline');
   inline.textContent = '';
@@ -2605,7 +2637,7 @@ function renderProjectedHead(onTitlePage) {
     ? { mark: 'h', markClass: 'dt', text: '⋯', title: 'the previous block — the chain tip, resolving…' }
     : { text: '⋯', title: 'the previous chapter is itself unwritten' });
   slot({ mark: '⋔', markClass: 'merkle-mark', text: '—', title: 'no merkle root until the section list is sealed' });
-  slot({ text: `eta ${blocksEta(k + 1)}`, title: `no timestamp until mined — expected in about ${(k + 1) * 10} min, give or take ${Math.round(10 * Math.sqrt(k + 1))}: block arrivals average one per ten minutes` });
+  slot({ text: `ETA ${blocksEta(k + 1)}`, title: `no timestamp until mined — expected in about ${(k + 1) * 10} min, give or take ${Math.round(10 * Math.sqrt(k + 1))}: block arrivals average one per ten minutes` });
   const betaSpan = slot({ text: 'β —', gold: true, title: 'the difficulty target' });
   slot({ mark: 'η', markClass: 'fx-mark', text: '—', title: 'no nonce until the proof of work is found' });
 
@@ -2736,9 +2768,9 @@ function renderBookLeaf() {
   detachHashCopy(title);
   // A curated book (a soft fork's signaling epoch) wears its name as the
   // leaf's subtitle, the same dress a notable chapter wears.
-  const bookEvent = NOTABLE.find((e) => e.page === 'book' && e.id === String(state.height));
+  const bookEvent = places().find((p) => p.page === 'book' && p.id === String(state.height));
   const subtitle = $('ch-subtitle');
-  subtitle.textContent = bookEvent ? bookEvent.title : '';
+  subtitle.textContent = bookEvent ? placeTitle(bookEvent) : '';
   subtitle.classList.toggle('hidden', !bookEvent);
   $('ch-frontispiece').classList.add('hidden');
   const bookEnd = state.height + chapterCount - 1;
@@ -2932,8 +2964,9 @@ function renderChapter(para) {
   // effective fee rate the ordering ran on. Where that rate departs from the
   // transaction's own fee ÷ vsize, the difference is family money -- a
   // child-pays-for-parent package moving together -- and the line says so.
-  let sectionEvent = NOTABLE.find((e) => e.id === para.txid
-    || (e.id === String(state.height) && e.index === state.index))?.title;
+  const sectionPlace = places().find((p) => !p.page && !p.address
+    && (p.id === para.txid || (p.id === String(state.height) && p.index === state.index)));
+  let sectionEvent = sectionPlace && placeTitle(sectionPlace);
   if (!sectionEvent && para.ghost) sectionEvent = '† replaced by fee';
   if (!sectionEvent && state.projected && state.manifest) {
     const m = state.manifest[state.index];
@@ -3354,8 +3387,70 @@ function labelNav() {
     }
   }
 
+  // The commentary key belongs to the page, not to the steppers, but it lives
+  // in the same bar and every render path passes through here.
+  syncCommentary();
+
   // With the buttons decided, quietly ready both swipe directions' data.
   prefetchNeighbors();
+}
+
+// The txid the reader is looking at: from the loaded list when we have it, else
+// the single transaction opened by id before its block's list was ever
+// fetched. Null on a leaf, and on a ghost -- a fee-replaced draft holds no
+// curated seat, its successor does (see syncCommentary).
+function currentTxid() {
+  if (!state || state.index < 0 || state.ghost) return null;
+  return state.txids ? state.txids[state.index] : (state.txid || null);
+}
+
+// Fit the commentary key to the page in front of the reader: the curated
+// readings of this passage, or no key at all. Absence is information -- the
+// book keeps places it has not yet said anything about, and a toggle that
+// opened onto nothing would blur the difference between an unannotated passage
+// and an unremarkable one.
+//
+// Only the index is consulted here, so the key appears with the page and
+// nothing is fetched to decide it. The prose lives in commentary/*.md and
+// arrives when the sheet is opened (fillCommentary) -- the reader who never
+// opens it never pays for it, and the sheet's own state says which page it
+// belongs to.
+let commentaryItems = [];      // the readings matched to the page on screen
+let commentaryFilled = false;  // whether the sheet is holding their prose
+
+function syncCommentary() {
+  const box = $('commentary');
+  // A projected chapter is not yet a place -- nothing curated can be about a
+  // block no miner has written. A ghost's own draft is nobody's curated entry.
+  commentaryItems = (!state || state.projected || state.ghost) ? [] : commentaryFor({
+    height: state.height,
+    index: state.index,
+    txid: currentTxid(),
+  });
+  commentaryFilled = false;
+  $('commentary-body').innerHTML = '';
+  box.classList.toggle('hidden', !commentaryItems.length);
+  if (!commentaryItems.length) {
+    box.open = false;                 // never reopen onto an empty sheet after a page turn
+    return;
+  }
+  // Turned the page with the sheet already open: the reader is reading
+  // commentary, so bring this page's.
+  if (box.open) fillCommentary();
+}
+
+// Fetch this page's readings and set them. Called on the sheet's first opening
+// (and on a page turn while it is open); each file is read once per session.
+async function fillCommentary() {
+  if (commentaryFilled || !commentaryItems.length) return;
+  const mine = commentaryItems;                       // the page this fill belongs to
+  const body = $('commentary-body');
+  body.innerHTML = '<div class="commentary-measure"><p class="commentary-loading">reading…</p></div>';
+  await resolveCommentary(mine);
+  if (commentaryItems !== mine) return;               // page turned mid-read: that page's fill won
+  commentaryFilled = true;
+  // Built from authored Markdown, escaped at the source (btc-markdown.js).
+  body.innerHTML = commentaryHtml(mine);
 }
 
 // Encode every witness-bearing input's witness into a numbered footnote and
@@ -3428,13 +3523,19 @@ const clampIndex = (i, meta) => {
 // return date instead of the drifting projection. Every other failure
 // passes through untouched.
 const BIP42_HEIGHT = 13440000;
+// An unwritten chapter's answer carries the height it is about, so the page can
+// set that chapter's curated reading beneath it -- a future chapter has no
+// passage to annotate, and its reading is the whole of what there is to read
+// (see futureCommentary).
+const unwritten = (err, height) => Object.assign(err, { height });
+
 const BLOCKS_PER_YEAR = 52560;
 const MEMPOOL_REACH_MAX = 1008;   // a week of blocks -- beyond any plausible queue, skip the fetch
 async function unwrittenOr(e, height, tipP) {
   if (!e.notFound) return e;
   const tip = await tipP;
   if (tip === null || height <= tip) return e;
-  if (height === BIP42_HEIGHT) return new Error('Block not found. Come back in the year 2262.');
+  if (height === BIP42_HEIGHT) return unwritten(new Error('Block not found. Come back in the year 2262.'), height);
   const ahead = height - tip;
   if (ahead <= MEMPOOL_REACH_MAX) {
     try {
@@ -3443,9 +3544,9 @@ async function unwrittenOr(e, height, tipP) {
         const mp = await res.json();
         const depth = Math.ceil(mp.vsize / 1_000_000);
         if (ahead <= depth) {
-          return new Error(`Block ${height.toLocaleString()} (${referenceOf(height)}) has not been mined yet — but its chapter is forming: `
+          return unwritten(new Error(`Block ${height.toLocaleString()} (${referenceOf(height)}) has not been mined yet — but its chapter is forming: `
             + `the mempool holds ≈ ${depth} chapters of sections, and this one stands ${ahead === 1 ? 'next' : `${ahead} deep`} in the queue. `
-            + `Come back in ${blocksEta(ahead).replace('≈ ', 'about ')}.`);
+            + `Come back in about ${blocksEta(ahead)}.`), height);
         }
       }
     } catch { /* the queue is unreadable -- fall through to the calendar */ }
@@ -3455,7 +3556,7 @@ async function unwrittenOr(e, height, tipP) {
   // Cited by reference, never by ■height: the chapter marks count chapters
   // within a book, so a raw height after one would be outside the notation --
   // and an unmined chapter's is the expected mark □, not the settled ■.
-  return new Error(`Block not found — ${height.toLocaleString()} (${referenceOf(height)}) has not been mined yet. Come back ${when}.`);
+  return unwritten(new Error(`Block not found — ${height.toLocaleString()} (${referenceOf(height)}) has not been mined yet. Come back ${when}.`), height);
 }
 
 // Load whatever the reader gave us: a block height, a block hash, or a
@@ -3465,6 +3566,7 @@ async function unwrittenOr(e, height, tipP) {
 async function openLookup(input, index = -1) {
   input = (input || '').trim();
   $('chapter').classList.add('hidden');
+  $('future-commentary').replaceChildren();   // a reading belongs to the answer that raised it
   // Learn the current chain tip on every lookup (in parallel with the block
   // load) and record it, so the Next controls are exact -- shown below the tip,
   // hidden at it -- rather than optimistic. A tip fetch that fails resolves to
@@ -3513,8 +3615,39 @@ async function openLookup(input, index = -1) {
     await tipP;   // record the fresh tip before labelNav decides Next visibility
     await showCurrentTx();
   } catch (e) {
-    setStatus(e.message || 'Failed to load.', 'err');
+    const message = e.message || 'Failed to load.';
+    setStatus(message, 'err');
+    futureCommentary(e.height ?? null, message);
   }
+}
+
+// A chapter consensus has numbered and no miner has written: the book answers
+// with the date it is due, and -- where the appendix keeps a reading for that
+// height (Appendix II, Future Chapters) -- with what the rule binding there
+// will mean for the transactions that follow it. The reading IS the page: there
+// is no passage yet to set it beside, so it opens in place rather than as a
+// sheet over anything.
+async function futureCommentary(height, message) {
+  const box = $('future-commentary');
+  box.replaceChildren();
+  if (height == null) return;
+  const items = commentaryFor({ height, index: -1 });
+  if (!items.length) return;                      // no reading: the answer stands alone, as a toast
+  // With a reading to set, the answer stops being a passing toast and becomes
+  // the leaf's first line -- the page says when the chapter is due, then what
+  // the rule binding there will mean for the passages that follow it.
+  setStatus('');
+  const answer = document.createElement('div');
+  answer.className = 'commentary-measure';
+  answer.innerHTML = '<p class="future-answer"></p>';
+  answer.firstChild.textContent = message;
+  const reading = document.createElement('div');
+  reading.innerHTML = '<div class="commentary-measure"><p class="commentary-loading">reading…</p></div>';
+  box.append(answer, reading);
+  await resolveCommentary(items);
+  if (!box.contains(reading)) return;             // the reader moved on
+  // Authored Markdown, escaped at the source (btc-markdown.js).
+  reading.innerHTML = commentaryHtml(items);
 }
 
 // direction: +1 (Next) or -1 (Previous). Steps through the block's pages --
@@ -4315,8 +4448,9 @@ window.addEventListener('resize', updateGesturePrecedence);
 // already excludes native pinch-zoom -- so a pinch on the chrome around them
 // still zooms the browser natively.
 //
-// Region resolution: both fingers on the notation sheet -> notation; both in
-// the witness footnotes -> footnotes; both inside one of the manuscript
+// Region resolution: both fingers on the notation sheet -> notation; both on
+// the commentary sheet -> commentary, each sheet setting the region it is
+// actually written in; both in the witness footnotes -> footnotes; both inside one of the manuscript
 // grid's margin columns -> margins, but ONLY where that grid actually lays
 // the margins out as columns -- below 560px the layout collapses them inline
 // with the prose (see the .tx-flow media query), there is no strip of screen
@@ -4325,9 +4459,9 @@ window.addEventListener('resize', updateGesturePrecedence);
 // it tracks the layout exactly: a phone turned landscape regains its margin
 // columns and their pinch with them. Everything else -> body.
 (() => {
-  const SURFACES = '#page-frame, .notation-body';
+  const SURFACES = '#page-frame, .nav-sheet-body';
   const on = (t, sel) => !!(t && t.closest && t.closest(sel));
-  const LABELS = { body: 'Text', margins: 'Margins', footnotes: 'Footnotes', notation: 'Notation' };
+  const LABELS = { body: 'Text', margins: 'Margins', footnotes: 'Footnotes', notation: 'Notation', commentary: 'Commentary' };
   let d0 = 0, s0 = 1, region = 'body', anchor = null, anchorTop = 0, hideTimer = null;
   const dist = (t) => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
   const toast = () => {
@@ -4354,6 +4488,7 @@ window.addEventListener('resize', updateGesturePrecedence);
   };
   const regionOf = (a, b) => {
     if (on(a.target, '.notation-body') && on(b.target, '.notation-body')) return 'notation';
+    if (on(a.target, '.commentary-body') && on(b.target, '.commentary-body')) return 'commentary';
     if (on(a.target, '.chapter-footnotes') && on(b.target, '.chapter-footnotes')) return 'footnotes';
     if (on(a.target, '#ch-paragraphs') && on(b.target, '#ch-paragraphs')) {
       const bands = marginBands();
@@ -4502,7 +4637,8 @@ renderEndpoints();
 // One settings row per region, stepping the same per-region scales the pinch
 // gesture writes (btc-fontscale.js): applied live, persisted, and read
 // wherever the book's reading matter is set -- including the notation key
-// here and at rest on the front matter's sigla leaf. A region that still
+// here and at rest on the front matter's sigla leaf, and a passage's
+// commentary here and on the Ledger's leaves. A region that still
 // follows the body shows its value dimmed; stepping it splits it off; Reset
 // rejoins everything at 100%.
 function reflectFontScale() {
@@ -4571,8 +4707,8 @@ const keyOf = (b) => bookmarkKey(b.hex, b.vout ?? null);
 const isBookmarked = (hex, vout = null) => bookmarks.some((b) => keyOf(b) === bookmarkKey(hex, vout));
 const saveBookmarks = () => { try { localStorage.setItem(BOOKMARKS_KEY, JSON.stringify(bookmarks)); } catch {} };
 
-// The curated entries (NOTABLE) live in btc-contents.js, shared with the
-// table-of-contents page; they lead the Bookmarks list here.
+// The curated entries live in notables.yaml, loaded through btc-contents.js and
+// shared with the table-of-contents page; they lead the Bookmarks list here.
 
 // The reference a bookmarkable hash points at, taken from the section on screen:
 // a txid is a section within this block; the block hash is this whole chapter.
@@ -4779,7 +4915,7 @@ window.addEventListener('scroll', dismissOnViewportChange, true);
 // chain tip, so ?block=-1 is the latest block; otherwise the book opens at
 // the chain tip (-1), the latest chapter rather than Genesis.
 const params = new URLSearchParams(location.search);
-const pParam = /^v(\d+)b(\d+)c(\d+)(?:s(\d+))?(?:o(\d+))?$/i.exec((params.get('ref') || '').trim());
+const pParam = parseReference(params.get('ref') || '');
 const txidParam = params.get('txid');
 const blockParam = params.get('block');
 // An absent ?index= opens the chapter's own page (-1); index=0 is §1;
@@ -4788,12 +4924,17 @@ const idxRaw = parseInt(params.get('index'), 10);
 const pageParam = params.get('page');
 const indexParam = Number.isFinite(idxRaw) ? idxRaw
   : pageParam === 'volume' ? -3 : pageParam === 'book' ? -2 : -1;
+// The curated index before the first lookup: a chapter must not paint once
+// without its curated name and again with it. A local file (precached by the
+// service worker), so this costs a read rather than a round trip -- and a read
+// that fails resolves empty, leaving the book to render the chain uncurated
+// rather than not at all.
+await loadNotables();
+
 if (pParam) {
-  const pHeight = heightOf(+pParam[1], +pParam[2], +pParam[3]);
-  const pIndex = pParam[4] != null ? +pParam[4] - 1 : -1;   // §1 is index 0
-  const pOut = pParam[5] != null ? +pParam[5] : NaN;
-  Promise.resolve(openLookup(String(pHeight), pIndex)).then(() => {
-    if (Number.isFinite(pOut) && pIndex >= 0) $(`out-${pOut}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  const pOut = pParam.out;
+  Promise.resolve(openLookup(String(pParam.height), pParam.index)).then(() => {
+    if (pOut != null && pParam.index >= 0) $(`out-${pOut}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }).catch(() => { /* the lookup's own error handling has the page */ });
 } else if (txidParam) {
   const outRaw = parseInt(params.get('out'), 10);
@@ -4801,6 +4942,8 @@ if (pParam) {
     if (Number.isFinite(outRaw)) $(`out-${outRaw}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }).catch(() => { /* the lookup's own error handling has the page */ });
 } else if (blockParam) {
+  // ?block= takes every form the search box does, references included -- a
+  // reference carries its own depth, which openLookup reads off it.
   openLookup(blockParam, indexParam);
 } else {
   openLookup('-1', indexParam);

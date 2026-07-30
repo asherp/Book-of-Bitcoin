@@ -61,6 +61,13 @@ import {
 } from './quote.mjs';
 import { loadRenderer } from './image.mjs';
 import { searchRecent, postTweet, uploadMedia, setAltText, XApiError, DEFAULT_API_BASE } from './x-api.mjs';
+import { loadEditorial } from '../editorial.mjs';
+
+// The curated index, read off the working tree once (tools/editorial.mjs): it
+// is what lets a reply carry the book's name for a passage as well as its
+// citation. A failed read leaves the index empty and the replies unnamed —
+// never unanswered.
+await loadEditorial();
 
 const SITE = process.env.BOT_SITE || 'https://bookofbitcoin.io';
 // Where the X API lives. Overridable so a whole pass can be rehearsed
