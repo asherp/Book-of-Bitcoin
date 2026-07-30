@@ -351,6 +351,15 @@ button:disabled { opacity: .4; cursor: not-allowed; }
    it is a reading of the line above, not another field. */
 .chapter-hash .book-target { white-space: nowrap; }
 .chapter-hash .book-move { margin-top: .4em; }
+/* The notation key, cut to the page: a row the page does not use leaves the
+   flow entirely. The pattern tables are grids whose cells are direct children,
+   so anything short of display:none would leave a hole in their columns. */
+.key-cut { display: none !important; }
+/* The scope line above the key: what the sheet is showing, and the control
+   that opens it in full. Dim and small -- apparatus about the key, not part
+   of it. */
+.key-scope { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0 0 14px; }
+.key-scope-note { font: italic 400 calc(13px * var(--scale-notation, 1))/1.4 'Newsreader',serif; color: var(--meta); }
 /* The merkle root's ⋔ mark: the clickable handle for its hash menu (copy hex /
    prose), bold and accented (like the h data mark) so it reads as the actionable
    element while the root's prose beside it stays plain. Upright, like every
@@ -803,6 +812,8 @@ import { volumeBookChapter, heightOf, windowStartOf, retargetInside, toRoman, re
 import { loadNotables, places, placeTitle, blocksEta } from './btc-contents.js';
 import { queueLabel } from './btc-mempool.js';
 import { NOTATION_HTML } from './btc-notation.js';
+import { transactionTemplates } from './btc-templates.js';
+import { collectMarks, applyKeyFilter } from './btc-key-filter.js';
 import { commentaryFor, commentaryHtml, resolveCommentary } from './btc-commentary.js';
 
 // The curated index -- which blocks and transactions are notable, what they are
@@ -814,7 +825,47 @@ loadNotables();
 // The notation key's markup is shared with the front matter's sigla leaf, so
 // the toggle here and the key at rest there can never explain a mark
 // differently. Filled once, on load.
-document.querySelector('.notation-body').innerHTML = NOTATION_HTML;
+//
+// Where the two part is scope, not content. The leaf is the key at rest and
+// stays whole; here it is opened over a transaction, so it is cut to the marks
+// that transaction actually prints (btc-key-filter.js) and carries the control
+// that puts the rest back.
+const KEY_SCOPE_HTML = `
+          <div class="key-scope">
+            <span class="key-scope-note">the marks on this page</span>
+            <button type="button" id="key-scope-btn" class="ghost-btn">Whole key</button>
+          </div>`;
+document.querySelector('.notation-body').innerHTML = KEY_SCOPE_HTML + NOTATION_HTML;
+
+// The script patterns the page in hand carries; empty on a leaf, which has no
+// transaction under it.
+let pageTemplates = new Set();
+// Sticky across pages within a reading: a reader who asked for the whole key
+// is not asking again at every turn.
+let keyShowAll = false;
+
+// Cut the key to the page. Recomputed when the sheet opens and again whenever
+// the page beneath it changes, so a reader who turns pages with the key open
+// sees it follow. Nothing to do while it is shut.
+function refreshNotationKey() {
+  const sheet = document.querySelector('.section-nav .nav-sheet.notation');
+  const body = document.querySelector('.notation-body');
+  if (!sheet || !sheet.open || !body) return;
+  applyKeyFilter(body, {
+    marks: collectMarks($('page-slide')),
+    templates: pageTemplates,
+    showAll: keyShowAll,
+  });
+  const btn = body.querySelector('#key-scope-btn');
+  const note = body.querySelector('.key-scope-note');
+  if (btn) btn.textContent = keyShowAll ? 'This page' : 'Whole key';
+  if (note) note.textContent = keyShowAll ? 'every mark the book uses' : 'the marks on this page';
+}
+
+// querySelector rather than the $ helper: this runs during module evaluation,
+// and $ is not defined until further down.
+document.querySelector('#key-scope-btn')
+  .addEventListener('click', () => { keyShowAll = !keyShowAll; refreshNotationKey(); });
 
 // The nav bar carries two keys into the same slot above it -- the notation key
 // and, where the passage has one, its commentary. Opening either closes the
@@ -828,6 +879,7 @@ for (const sheet of document.querySelectorAll('.section-nav .nav-sheet')) {
       if (other !== sheet) other.open = false;
     }
     if (sheet.id === 'commentary') fillCommentary();
+    else refreshNotationKey();
   });
 }
 import { storeGet, storePut } from './btc-store.js';
@@ -2190,7 +2242,13 @@ async function sectionFields(txid) {
   const hex = await loadTxHex(txid);
   const parsed = parseTransaction(hex);
   const verifiedTxid = await computeTxid(parsed.baseHex);
-  const entry = { fields: composeTransactionFields(parsed, BEST_OF, lazyEncode.placeholder), verified: verifiedTxid === txid };
+  const entry = {
+    fields: composeTransactionFields(parsed, BEST_OF, lazyEncode.placeholder),
+    verified: verifiedTxid === txid,
+    // Which of the notation key's script patterns this section puts on the
+    // page, for the key's filter. Classified once, beside the fields.
+    templates: transactionTemplates(parsed),
+  };
   fieldsCache.set(txid, entry);
   while (fieldsCache.size > FIELDS_CACHE_MAX) fieldsCache.delete(fieldsCache.keys().next().value);
   return entry;
@@ -2204,10 +2262,12 @@ async function showCurrentTx() {
     if (state.index === -3) renderVolumeLeaf();
     else if (state.index === -2) renderBookLeaf();
     else renderTitlePage();
+    pageTemplates = new Set();
     updateUrl();
     $('chapter').classList.remove('hidden');
     setStatus('');
     consumeSlide();
+    refreshNotationKey();
     liveProjection.sync();
     return;
   }
@@ -2231,10 +2291,12 @@ async function showCurrentTx() {
   } catch (e) {
     if (state.ghost === txid) {
       renderGhostTombstone(txid);
+      pageTemplates = new Set();
       updateUrl();
       $('chapter').classList.remove('hidden');
       setStatus('');
       consumeSlide();
+      refreshNotationKey();
       liveProjection.sync();
       return;
     }
@@ -2246,10 +2308,12 @@ async function showCurrentTx() {
   // lays out the footnotes as placeholders; their prose is encoded lazily, per
   // push, as the reader scrolls to it (see lazyEncode / renderFootnotes).
   renderChapter({ num: state.index + 1, txid, fields, verified, ghost: !!state.ghost });
+  pageTemplates = entry.templates ?? new Set();
   updateUrl();
   $('chapter').classList.remove('hidden');
   setStatus('');
   consumeSlide();
+  refreshNotationKey();
   liveProjection.sync();
 }
 
@@ -2784,6 +2848,9 @@ function appendBookTarget(parent, bits, governs) {
   parent.append(beta);
   if (info.expr) {
     const expr = document.createElement('span');
+    // Marked mk: the < is a mark of the notation like any other, and the key's
+    // filter has to be able to see it here as it does in the frontispiece.
+    expr.className = 'mk';
     expr.textContent = ' < ' + info.expr;
     expr.title = title;
     parent.append(expr);

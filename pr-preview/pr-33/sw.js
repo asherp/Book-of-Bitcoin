@@ -39,6 +39,8 @@ const SHELL = [
   './btc-prose.js',
   './btc-sigla.js',
   './btc-notation.js',
+  './btc-templates.js',
+  './btc-key-filter.js',
   './btc-commentary.js',
   './btc-notables.js',
   './btc-yaml.js',
