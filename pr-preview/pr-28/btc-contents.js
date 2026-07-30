@@ -6,7 +6,7 @@
 // bitcoin-contents.html (the table-of-contents page).
 //
 // The curated entries themselves -- which blocks and transactions are notable,
-// what they are called, and what the appendix gathers after them -- are
+// what they are called, and what the appendices gather after them -- are
 // editorial work and live in btc-contents-data.js under CC BY 4.0; they are
 // re-exported here so importers see one module. See the README's License
 // section.
