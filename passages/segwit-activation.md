@@ -44,6 +44,17 @@ Transaction id, as prose: ⌘²⁵⁶ *Recall drum insect to walnut. Design set 
 
 a. ∅
 
+## Commentary
+
+> A reading of the record, not the record. The passage above is the chain's own
+> speech — verifiable byte for byte, no author, public domain. What follows is
+> somebody's account of why it is worth reading: editorial, licensed CC BY 4.0,
+> and no more authoritative than the argument behind it.
+
+From 24 August 2017 the witness — the signatures and the scripts that satisfy a lock — is committed to the block through a tree of its own and left out of the name of the transaction it authorizes.
+
+Which is why this book has footnotes. A section's witness is quoted beneath its passage, bound into the chapter through the witness commitment in §1, never inside the transaction's own identity. Transaction malleability ends here, and for the same reason a payment channel can be built out of transactions that have been signed but not yet published.
+
 ---
 
 *Reading the notation:* italic prose passages are Glossia encodings of the raw

@@ -37,6 +37,15 @@ Transaction id, as prose: ⌘²⁵⁶ *Its manual hub set cigar. Son teach penal
   - script: p⁶⁵ Advice due get such perfect red. Cop enlist lab to myth. A survey draw cube per swift. Gym see tray to session out car. A real ear always excite a dial. December get the veteran. A talent pencil stairs. Set why suffer its lift. Cap must repair version. A myself. Gown set denial to crater per laptop. Our dumb window are vicious. Tongue may see dinner. Treat web a chronic die. A long dignity may admit venue. Cop retire lawn to the length. ∇
 - **locktime:** □ — no locktime — final with respect to time
 
+## Commentary
+
+> A reading of the record, not the record. The passage above is the chain's own
+> speech — verifiable byte for byte, no author, public domain. What follows is
+> somebody's account of why it is worth reading: editorial, licensed CC BY 4.0,
+> and no more authoritative than the argument behind it.
+
+A round number is not an event. Nothing in the rules changes at one hundred thousand; the only reason to stop here is that we count in tens. The book keeps such chapters anyway, because a reader wants somewhere to stand — and because the frontispieces either side of the milestone show how little the chain notices it.
+
 ---
 
 *Reading the notation:* italic prose passages are Glossia encodings of the raw

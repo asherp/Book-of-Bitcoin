@@ -39,6 +39,15 @@ Transaction id, as prose: ⌘²⁵⁶ *Its ill yes little get penalty. Our legal
   - script: ¶ ⋔w h³² Copy mix girl to mammal. Tourist may answer canyon. A cop is shy. Asthma square produce to panic. Three may see a rare fortune. Chunk badge an annual pencil to noodle. Scrap pledge our subject theme.
 - **locktime:** □ — no locktime — final with respect to time
 
+## Commentary
+
+> A reading of the record, not the record. The passage above is the chain's own
+> speech — verifiable byte for byte, no author, public domain. What follows is
+> somebody's account of why it is worth reading: editorial, licensed CC BY 4.0,
+> and no more authoritative than the argument behind it.
+
+The last chapter both chains share. On 1 August 2017 a competing implementation began building on this block under different rules, and everything after it is two records rather than one. Nothing in this chapter marks the split: a chain fork is not an event inside a block, it is a disagreement about which blocks come next. This book reads one of the two, and says so here rather than leaving a reader to assume there is only one.
+
 ---
 
 *Reading the notation:* italic prose passages are Glossia encodings of the raw

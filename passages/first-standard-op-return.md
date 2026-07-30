@@ -39,6 +39,15 @@ Transaction id, as prose: ⌘²⁵⁶ *Lounge reason its fun human. Spoon may ge
   - script: ⧉ ⌖ h²⁰ Return set our crucial decrease. Poverty may beef owner. Its pop deliver music. A viable oyster easily calm the cinnamon. Timber is odd to a low hire. ≡ ∇
 - **locktime:** □ — no locktime — final with respect to time
 
+## Commentary
+
+> A reading of the record, not the record. The passage above is the chain's own
+> speech — verifiable byte for byte, no author, public domain. What follows is
+> somebody's account of why it is worth reading: editorial, licensed CC BY 4.0,
+> and no more authoritative than the argument behind it.
+
+The first OP_RETURN under 0.9.0's standardness rules (March 2014), and the words it chose to keep: “charley loves heidi”. A provably unspendable output — ¶ in the book's notation — is the courteous way to write data into a ledger: it pays a fee, carries no coin, and never sits in anyone's set of spendable outputs waiting to be swept up. Bitcoin's long argument about data on the chain starts here, in a sentence about two people.
+
 ---
 
 *Reading the notation:* italic prose passages are Glossia encodings of the raw

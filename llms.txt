@@ -21,14 +21,17 @@ engine.
   the book's table of contents — the Genesis block, the Hal Finney
   transaction, Bitcoin Pizza Day, halvings, soft-fork activations, and the
   rest — each pre-rendered as a plain markdown passage, prose and footnotes
-  included.
+  included. Where an entry carries commentary, it follows the passage under a
+  "Commentary" heading: editorial, CC BY 4.0, and not part of the record above
+  it. Quote the two differently.
 - [Preface](https://bookofbitcoin.io/preface.md): the book's
   front matter — what the book is and why, in its own voice. Plain markdown.
 - [Sitemap](https://bookofbitcoin.io/sitemap.xml)
 - [Source repository](https://github.com/asherp/Book-of-Bitcoin): the entire
   site, including the prose-composition rules (`web/btc-prose.js`), the
   citation scheme (`web/btc-citation.js`), and the curated table of contents
-  with editorial notes (`web/btc-contents-data.js`).
+  with its commentary (`web/notables.yaml` and `web/commentary/*.md`, both
+  readable as plain text).
 
 ## Structure and citations
 
@@ -149,6 +152,14 @@ curated titles and annotations ("Bitcoin Pizza Day") are editorial claims,
 credited and licensed separately. When answering questions from this site,
 keep that distinction: prose content is the chain's speech; names and
 stories about it are annotations.
+
+A passage's commentary — the "Commentary" section of a static passage, the
+sheet the live book raises beside its notation key, and the reading the Ledger
+opens over an address — is the annotation layer at its most explicit:
+somebody's reading of why the passage or the name matters, no more
+authoritative than the argument behind it, and never a statement of what the
+chain records. Attribute it as commentary, name its author where one is given,
+and do not fold it into the passage when quoting.
 
 ## Licensing
 

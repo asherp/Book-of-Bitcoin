@@ -108,6 +108,15 @@ Transaction id, as prose: ⌘²⁵⁶ *Riot repair pride to apology. Business ma
 
 a. ∅
 
+## Commentary
+
+> A reading of the record, not the record. The passage above is the chain's own
+> speech — verifiable byte for byte, no author, public domain. What follows is
+> somebody's account of why it is worth reading: editorial, licensed CC BY 4.0,
+> and no more authoritative than the argument behind it.
+
+The first block to signal for BIP110 (reduced_data): its frontispiece shows bit 4 set (…10000) — the same bit BIP91 once flew. A signal is not an activation and this one may never become one; the book keeps the chapter because a ballot cast is part of the record whatever the count turns out to be.
+
 ---
 
 *Reading the notation:* italic prose passages are Glossia encodings of the raw

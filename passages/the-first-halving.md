@@ -37,6 +37,15 @@ Transaction id, as prose: ⌘²⁵⁶ *Tap truly tongue our menu. The cow undo k
   - script: ⧉ ⌖ h²⁰ Trophy cube debate to bullet. Artefact may control faint. Its decline blush gospel. Source sense a father. Fee yes blossom die. ≡ ∇
 - **locktime:** □ — no locktime — final with respect to time
 
+## Commentary
+
+> A reading of the record, not the record. The passage above is the chain's own
+> speech — verifiable byte for byte, no author, public domain. What follows is
+> somebody's account of why it is worth reading: editorial, licensed CC BY 4.0,
+> and no more authoritative than the argument behind it.
+
+This chapter opens Volume II. Every 210,000 blocks the subsidy halves — fifty coins to twenty-five, 28 November 2012 — which is why this book's volumes are halving eras rather than a shelf's convenience: they are the unit of the chain's own arithmetic. The whole monetary policy is one line of that arithmetic, checked by every node against a block it did not make.
+
 ---
 
 *Reading the notation:* italic prose passages are Glossia encodings of the raw

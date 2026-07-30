@@ -39,6 +39,15 @@ Transaction id, as prose: ⌘²⁵⁶ *Input display ecology to matrix. State ma
   - script: ⧉ ⌖ h²⁰ Fruit is unfair to icon. Degree see its law. Our cap may rebuild tea. A lap already see general. Lot erupt snap to pulp. Pumpkin see a violin via frown for our hire. ≡ ∇
 - **locktime:** □ — no locktime — final with respect to time
 
+## Commentary
+
+> A reading of the record, not the record. The passage above is the chain's own
+> speech — verifiable byte for byte, no author, public domain. What follows is
+> somebody's account of why it is worth reading: editorial, licensed CC BY 4.0,
+> and no more authoritative than the argument behind it.
+
+Relative timelocks (BIP68, 112, 113) — Δ in the book's notation: not before so many blocks after the coin being spent was itself confirmed. Absolute time says when; relative time says how long after, which is what a payment channel needs to give a wronged party a window in which to react. The Lightning table in the notation key is written almost entirely in this mark and the last one.
+
 ---
 
 *Reading the notation:* italic prose passages are Glossia encodings of the raw

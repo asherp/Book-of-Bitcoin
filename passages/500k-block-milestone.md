@@ -44,6 +44,15 @@ Transaction id, as prose: ⌘²⁵⁶ *The stock unveil to adjust. Chaos may fin
 
 a. ∅
 
+## Commentary
+
+> A reading of the record, not the record. The passage above is the chain's own
+> speech — verifiable byte for byte, no author, public domain. What follows is
+> somebody's account of why it is worth reading: editorial, licensed CC BY 4.0,
+> and no more authoritative than the argument behind it.
+
+Another round number, and this one arrived in December 2017 — the month the queue for block space grew long enough that a fee stopped being a rounding error and became a bid. Everyone who had spent the previous seven years arguing about a limit found out that month what one feels like.
+
 ---
 
 *Reading the notation:* italic prose passages are Glossia encodings of the raw

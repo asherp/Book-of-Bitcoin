@@ -37,6 +37,15 @@ Transaction id, as prose: ⌘²⁵⁶ *Ban may seek to vanish. Fix get poem acro
   - script: ⧉ ⌖ h²⁰ Its club may lunch primary. Pop flee to cap. Its sunny crouch ski cigar. Frost tunnel rule to hand. Panda is crazy per our object. ≡ ∇
 - **locktime:** □ — no locktime — final with respect to time
 
+## Commentary
+
+> A reading of the record, not the record. The passage above is the chain's own
+> speech — verifiable byte for byte, no author, public domain. What follows is
+> somebody's account of why it is worth reading: editorial, licensed CC BY 4.0,
+> and no more authoritative than the argument behind it.
+
+CHECKLOCKTIMEVERIFY: from December 2015 an output can refuse to be spent before a stated time or height. The book draws it τ. It is the first opcode that lets a lock make a promise about the future rather than about a key, and everything later built on delay — escrows, vaults, payment channels — begins with a mark for “not before”.
+
 ---
 
 *Reading the notation:* italic prose passages are Glossia encodings of the raw

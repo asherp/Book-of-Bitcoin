@@ -158,12 +158,20 @@ a:hover { text-decoration: underline; }
 </div>
 
 <script type="module">
-import { NOTABLE, APPENDIX, isBlockId, isRelativeBlockId, entryHref } from './btc-contents.js';
-import { readQueue, buildQueue, sourceLine } from './btc-mempool.js';
+import { loadNotables, places, placeTitle, appendix, isBlockId, isRelativeBlockId, entryHref } from './btc-contents.js';
+import { creditLine, commentaryForAddresses } from './btc-commentary.js';
+import { readQueue, buildQueue } from './btc-mempool.js';
 import { INDEXED, keptLedgers, sameAddresses } from './btc-index.js';
 import { volumeBookChapter, toRoman, expectedReference } from './btc-citation.js';
 import { storeGet, storePut } from './btc-store.js';
 import { seedArchive } from './btc-seed.js';
+
+// The curated index and its appendix are read from notables.yaml and
+// appendix.yaml, so they arrive asynchronously -- and everything below builds
+// on them, the appendices' own names included, so the page waits here once. A
+// failed read leaves a contents of the reader's own bookmarks plus a line
+// saying what could not be read.
+await loadNotables();
 
 // A first visit provisions the archive with the curated passages' chain data
 // (idle-time, once ever; see btc-seed.js), so this page's entries -- and the
@@ -191,6 +199,7 @@ const ESPLORA_MIRRORS = ['https://blockstream.info/api', 'https://mempool.space/
 // leaf precedes every chapter of its book in reading order.
 const placeOf = (height, pos, page, vout = null) => {
   const p = volumeBookChapter(height);
+  if (page === 'volume') return { volume: p.volume, book: null, chapter: null, section: null };
   if (page === 'book') return { volume: p.volume, book: p.book, chapter: null, section: null };
   // An output rides its section's citation with its vout appended -- §1.0,
   // as the book prints it (renderCitation in bitcoin-book.html).
@@ -217,8 +226,8 @@ function tipHeight() {
 // tip; a transaction id resolves the same way a reader resolves a citation --
 // once: a confirmed placement is immutable, so the archive (btc-store.js)
 // answers every later visit offline and for free.
-async function resolvePlacement({ id, index, page }) {
-  if (isBlockId(id)) return placeOf(Number(id), index ?? null, page);
+async function resolvePlacement({ id, index, page, out = null }) {
+  if (isBlockId(id)) return placeOf(Number(id), index ?? null, page, out);
   if (isRelativeBlockId(id)) {
     const tip = await tipHeight();
     if (tip == null) return null;
@@ -278,6 +287,8 @@ async function resolveBookmark(b) {
 // directly under a Volume, the β-marked book leads it. Spaced like the book's
 // own citations (e.g. "β29 ■596", "■1 §1").
 function tailRef({ book, chapter, section, vout }, underBook) {
+  // A volume's own leaf: the Volume heading above the row has already named it.
+  if (book == null) return '';
   // A book's own leaf: under its Book heading nothing remains to cite; under
   // a bare Volume, the β mark alone names it.
   if (chapter == null) return underBook ? '' : `β${book}`;
@@ -293,7 +304,7 @@ function entryEl(entry, underBook) {
   const row = document.createElement('a');
   row.className = 'toc-entry' + (underBook ? ' under-book' : '') + (entry.bookmark ? ' is-bookmark' : '');
   row.dataset.entryId = entry.id;   // the projected section anchors after the tip's row
-  row.href = entryHref(entry.id, entry.index, entry.page, entry.vout ?? null);
+  row.href = entryHref(entry.id, entry.index, entry.page, entry.vout ?? entry.out ?? null);
   const t = document.createElement('span'); t.className = 'toc-title';
   // A reader's own bookmark flies the same ribbon it wears in the book, so it's
   // distinguishable from a curated entry even though it sits in reading order.
@@ -303,6 +314,10 @@ function entryEl(entry, underBook) {
     t.append(bm);
   }
   t.append(document.createTextNode(entry.title));
+  // An entry that carries a credited reading says so, and says whose: the
+  // contents is where a reader decides what to open, and "commentary by
+  // so-and-so" is the kind of thing that decides it.
+  addCredit(t, creditLine(entry));
   const r = document.createElement('span'); r.className = 'toc-ref';
   if (entry.place) r.textContent = tailRef(entry.place, underBook);
   else { r.textContent = '—'; r.classList.add('none'); }
@@ -310,6 +325,20 @@ function entryEl(entry, underBook) {
   return row;
 }
 function head(cls, label) { const d = document.createElement('div'); d.className = cls; d.textContent = label; return d; }
+
+// The credit a row wears when its subject carries a reading somebody signed
+// (btc-commentary.js decides; the book's own readings take no line, or nearly
+// every row would wear one and none would stand out). Set in the annotation
+// register, beneath the title, so a row's name and a reading of it stay
+// distinguishable at a glance.
+function addCredit(titleEl, credit) {
+  if (!credit) return;
+  const c = document.createElement('span');
+  c.className = 'toc-commentary';
+  c.textContent = credit.label;
+  c.title = credit.title;
+  titleEl.append(c);
+}
 
 // Render the placed entries as a nested contents: a Volume part header, then a
 // Book sub-header wherever two or more consecutive entries share one, so each
@@ -348,12 +377,12 @@ function frontEl({ title, leaf }) {
 // ── The appendices: the contents' back matter ─────────────────────────────
 // What belongs to the book but not to its reading order -- reading order
 // being the order blocks were mined. Three of them, in the order
-// btc-contents-data.js sets: the mempool (built live, below), the future
+// appendix.yaml sets: the mempool (built live, below), the future
 // chapters, and the ledgers. They are numbered by their position in that
 // list, not by what actually renders, so a part that cannot be built -- an
 // unreachable mempool -- never renumbers the ones after it.
-const appendixLabel = (part) => `Appendix ${toRoman(APPENDIX.indexOf(part) + 1)} · ${part.title}`;
-const MEMPOOL_PART = APPENDIX.find((p) => p.kind === 'mempool');
+const appendixLabel = (part) => `Appendix ${toRoman(appendix().indexOf(part) + 1)} · ${part.title}`;
+const MEMPOOL_PART = appendix().find((p) => p.kind === 'mempool');
 
 // Each appendix has a leaf of its own, and its heading here is the door to
 // it: the queue and the future chapters are leaves of the appendix page, and
@@ -426,6 +455,16 @@ function ledgerEl(ledger, isKept) {
   // to their first address, the same stand-in name the Ledger page gives
   // them -- a name in the title column, never a citation in the reference's.
   t.append(document.createTextNode(ledger.title || shortAddr(ledger.addresses[0])));
+  // A ledger whose addresses carry a credited reading says so here, as a
+  // chapter's row does: the readings themselves open on the Ledger's leaves.
+  const named = [...new Set(commentaryForAddresses(ledger.addresses)
+    .flatMap((it) => it.readings.filter((rd) => rd.by).map((rd) => rd.by)))];
+  if (named.length) {
+    addCredit(t, {
+      label: `commentary by ${named.join(' · ')}`,
+      title: `${named.length > 1 ? 'readings' : 'a reading'} by ${named.join(', ')} — editorial, opened on this ledger's own leaves`,
+    });
+  }
   const r = document.createElement('span');
   r.className = 'toc-ref none';
   r.textContent = '—';
@@ -472,6 +511,16 @@ document.addEventListener('click', (ev) => {
 
 function render() {
   toc.replaceChildren();
+  // The curation is a file this page reads (notables.yaml); if it could not be
+  // read, the page says so rather than presenting an empty contents as though
+  // the book kept nothing. The reader's own bookmarks still list below.
+  if (loadNotables.error) {
+    const warn = document.createElement('div');
+    warn.className = 'toc-proj-note';
+    warn.textContent = 'The curated contents could not be read (web/notables.yaml). '
+      + 'Any bookmarks of your own are listed below; reload to try again.';
+    toc.append(warn);
+  }
   toc.append(head('toc-vol', 'Front matter'));
   for (const f of FRONT) toc.append(frontEl(f));
   const entries = placed();
@@ -498,7 +547,7 @@ function render() {
   // line and the turn from the tip to the next provisional chapter stays one
   // step down the page. Its section is built asynchronously (and skipped
   // entirely when no queue can be read), so only what exists is appended.
-  for (const part of APPENDIX) {
+  for (const part of appendix()) {
     if (part.kind === 'mempool') { if (projectedSection) toc.append(projectedSection); }
     else if (part.kind === 'entries') toc.append(chaptersEl(part));
     else if (part.kind === 'ledgers') toc.append(ledgersEl(part));
@@ -517,13 +566,18 @@ function render() {
 // stream in as each resolves, slotting into their volume and book in order. An
 // entry whose lookup fails (placement null) drops to an "Unresolved" tail
 // rather than printing its raw id.
-const placements = new Map();          // NOTABLE id -> place | null (once attempted)
+// A curated entry may be found in several places (the twice-confirmed coinbases
+// are one thing in four), and the contents lists PLACES: one row each, in
+// reading order, all carrying their entry's title and their own `as`. Keyed by
+// id+index, because two places of one entry can share a height.
+const placeKey = (p) => `${p.id}#${p.index ?? ''}`;
+const placements = new Map();          // place key -> citation | null (once attempted)
 const bmPlacements = new Map();        // bookmark hex -> place | null (once attempted)
 
 // A reader's bookmarks join the curated set in one list. A bookmark that is
 // already a curated entry is dropped (the curated title wins) so it isn't listed
 // twice.
-const NOTABLE_IDS = new Set(NOTABLE.map((e) => e.id));
+const NOTABLE_IDS = new Set(places().map((p) => p.id));
 // A bookmark is keyed by what it names: a hash by itself, an output by its
 // hash and vout (the same key bitcoin-book.html writes). A bookmarked output
 // is never a curated entry, so only hash bookmarks are dropped as duplicates.
@@ -533,7 +587,8 @@ const bookmarks = readBookmarks().filter((b) => b.vout != null || !NOTABLE_IDS.h
 // Every entry -- curated or bookmarked -- carrying whatever placement has
 // resolved so far. A bookmark reuses its stored title and flies the book's ribbon.
 const entries = () => [
-  ...NOTABLE.map((e) => ({ ...e, place: placements.get(e.id), tried: placements.has(e.id) })),
+  ...places().filter((p) => !p.address).map((p) => ({ ...p, title: placeTitle(p), commentary: p.entry.commentary,
+    place: placements.get(placeKey(p)), tried: placements.has(placeKey(p)) })),
   ...bookmarks.map((b) => ({
     id: b.hex, index: b.pos ?? undefined, vout: b.vout ?? undefined,
     title: b.title || b.prose || shortHex(b.hex),
@@ -554,24 +609,23 @@ const unresolved = () => entries().filter((e) => e.tried && !e.place);
 // ── Appendix I: the mempool, read as far as it extends ────────────────────
 // The queue itself is read and set by btc-mempool.js, shared with the
 // appendix's own page. Here it needs only its heading -- the appendix's
-// name, a link to that page, and the line naming the node the queue was
-// read from.
+// name, and a link to that page, where what a mempool is gets said at
+// length.
 async function loadProjected() {
   const tip = await tipHeight();
   const queue = await readQueue(tip, ESPLORA_MIRRORS);
   if (!queue) return;   // nowhere to read a queue from -- the contents simply end at the tip
-  const heading = head('toc-vol toc-proj-head', '');
-  const label = document.createElement('span');
-  label.className = 'toc-proj-label';
-  label.append(appendixLink(MEMPOOL_PART));
-  heading.append(label, sourceLine(queue.srcBase));
+  // The queue is readable even if the appendix file was not: name the part from
+  // what loaded, and fall back to the plain heading rather than losing the
+  // section that gathers the chapters already forming.
+  const heading = MEMPOOL_PART ? partHead(MEMPOOL_PART) : head('toc-vol', 'The Mempool');
   projectedSection = buildQueue(queue, heading);
   render();
 }
 
 // Block placements (curated, and bookmarks that stored their reference) are
 // offline, so render at once; everything else streams in as its lookup resolves.
-for (const e of NOTABLE) if (isBlockId(e.id)) placements.set(e.id, placeOf(Number(e.id), e.index ?? null, e.page));
+for (const p of places()) if (!p.address && isBlockId(p.id)) placements.set(placeKey(p), placeOf(Number(p.id), p.index ?? null, p.page, p.out ?? null));
 for (const b of bookmarks) {
   if (Number.isInteger(b.height)) bmPlacements.set(bmKey(b), placeOf(b.height, b.pos ?? null, undefined, b.vout ?? null));
 }
@@ -582,8 +636,8 @@ render();
 loadProjected();
 setInterval(() => { if (!document.hidden) loadProjected(); }, 60_000);
 await Promise.all([
-  ...NOTABLE.filter((e) => !placements.has(e.id)).map(async (e) => {
-    placements.set(e.id, await resolvePlacement(e));
+  ...places().filter((p) => !p.address && !placements.has(placeKey(p))).map(async (p) => {
+    placements.set(placeKey(p), await resolvePlacement(p));
     render();
   }),
   ...bookmarks.filter((b) => !bmPlacements.has(bmKey(b))).map(async (b) => {

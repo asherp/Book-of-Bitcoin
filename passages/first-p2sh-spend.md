@@ -37,6 +37,15 @@ Transaction id, as prose: ⌘²⁵⁶ *Its oven may get cabbage. Its empty map m
   - script: ⧉ ⌖ h²⁰ Fork excite its common tax. Set satisfy hour to animal. October ago wire junk. Pan may inspire moment. Wealth ought ball reveal to rose. ≡ ∇
 - **locktime:** □ — no locktime — final with respect to time
 
+## Commentary
+
+> A reading of the record, not the record. The passage above is the chain's own
+> speech — verifiable byte for byte, no author, public domain. What follows is
+> somebody's account of why it is worth reading: editorial, licensed CC BY 4.0,
+> and no more authoritative than the argument behind it.
+
+The first spend of a pay-to-script-hash output — a lock that says only “the script whose hash is this” and leaves the terms to the spend that reveals them. This one predates enforcement: before BIP16 activated, such an output could be spent under the old rules with the redeem script alone. The same bytes meant one thing the week this section was written and another a few weeks later, which is what a soft fork is. The book renders the reveal as (r): the run of a script the chain had never seen until it was needed.
+
 ---
 
 *Reading the notation:* italic prose passages are Glossia encodings of the raw

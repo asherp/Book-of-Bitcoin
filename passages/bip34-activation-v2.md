@@ -37,6 +37,15 @@ Transaction id, as prose: ⌘²⁵⁶ *Fat may set more cupboard. The eternal ci
   - script: ⧉ ⌖ h²⁰ Focus set our olympic test. Son before carry copy. Banana may set tray. Uniform teach act to range behind jeans. Our hire get red. ≡ ∇
 - **locktime:** □ — no locktime — final with respect to time
 
+## Commentary
+
+> A reading of the record, not the record. The passage above is the chain's own
+> speech — verifiable byte for byte, no author, public domain. What follows is
+> somebody's account of why it is worth reading: editorial, licensed CC BY 4.0,
+> and no more authoritative than the argument behind it.
+
+From this chapter a coinbase must state the height of the block it sits in — the chain's first self-referential rule. It also ends the duplicate-coinbase problem structurally: two blocks at different heights can no longer write the same coinbase, so the accident BIP30 had to grandfather cannot recur.
+
 ---
 
 *Reading the notation:* italic prose passages are Glossia encodings of the raw

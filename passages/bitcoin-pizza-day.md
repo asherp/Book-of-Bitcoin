@@ -37,6 +37,17 @@ Transaction id, as prose: ⌘²⁵⁶ *Its tortoise get the latin bunker. Cry bl
   - script: p⁶⁵ Agent ask the solid comfort. A velvet bind brief ripple to frown out a hollow solution. Move retreat to frown via section. Plug see a summer to theme. Sense license our muscle. Hurry may work tiger to help. Picnic get ability out zoo. Nose renew search to call. Museum set our ordinary buddy. Yes tell bean to seminar out a minimum. Ban may engage slight to bonus. Ethics may get still via an okay son. An actual notable parade lie. ∇
 - **locktime:** □ — no locktime — final with respect to time
 
+## Commentary
+
+> A reading of the record, not the record. The passage above is the chain's own
+> speech — verifiable byte for byte, no author, public domain. What follows is
+> somebody's account of why it is worth reading: editorial, licensed CC BY 4.0,
+> and no more authoritative than the argument behind it.
+
+Ten thousand coins for two pizzas, 22 May 2010 — arranged on a forum between a man who offered the coins and a man who ordered the food, and remembered ever since as the first time bitcoin bought a physical thing.
+
+What the record says is that ten thousand coins moved to a script. That they bought pizza is testimony from the people involved; no node checked it, and nothing in this passage carries it. Everything the day is famous for lives in that gap — the implied price, the regret, the anniversary. The chain has no opinion about lunch, which is exactly why the claim needs a name on it.
+
 ---
 
 *Reading the notation:* italic prose passages are Glossia encodings of the raw

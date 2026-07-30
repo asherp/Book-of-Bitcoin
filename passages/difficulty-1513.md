@@ -44,6 +44,15 @@ Transaction id, as prose: ⌘²⁵⁶ *Garden may nest to verify. Return see its
 
 a. ∅
 
+## Commentary
+
+> A reading of the record, not the record. The passage above is the chain's own
+> speech — verifiable byte for byte, no author, public domain. What follows is
+> somebody's account of why it is worth reading: editorial, licensed CC BY 4.0,
+> and no more authoritative than the argument behind it.
+
+3 December 2018: the 2018 bear market's capitulation. The price sat at a fifth of its peak, and older machines that had been marginal became losses — the target recording, a fortnight late as always, that they had been switched off.
+
 ---
 
 *Reading the notation:* italic prose passages are Glossia encodings of the raw

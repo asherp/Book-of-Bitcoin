@@ -81,6 +81,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,400&family=IBM+Plex+Mono:wght@400;500;600&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="./btc-chrome.css">
+<link rel="stylesheet" href="./commentary.css">
 <style>
 :root {
   --page:#08080a; --card:#0d0d10; --card-bd:#232228; --ink:#e8e4da; --ink-soft:#cfcabf;
@@ -470,6 +471,12 @@ a:hover { text-decoration: underline; }
         <div class="anth-range" id="anth-range"></div>
         <div class="anth-count" id="anth-count"></div>
         <div class="anth-held" id="anth-held"></div>
+        <!-- The readings kept on this name, where the curated index has any
+             (web/notables.yaml): a toggle in the leaf itself, opening the same
+             sheet the reading page raises over a passage. A ledger's title leaf
+             shows every reading its addresses carry; an address's leaf shows
+             its own. -->
+        <div id="anth-commentary"></div>
         <button type="button" class="anth-keep" id="anth-keep"></button>
         <!-- A ledger the reader brings is named before it is shelved: it
              becomes a row in their own contents, and a row is read by its
@@ -526,9 +533,16 @@ import { INDEXED, isAddress, keptLedgers, saveKeptLedgers, sameAddresses, addres
          extendLine, renderLedger, renderRows, periods, lineNote, reconciled, ledgerSum, heldCoins, addressState, lastKnownState,
          formatBalanceBtc, formatNetBtc, chainFailureText, citeHref, sectionOf, sectionOfFetched, citePlace, passageTxid, passageEntries, txHexOf, outspendsOf, prevoutValuesOf,
          DEFAULT_ESPLORA, esploraCustom, esploraSelected, setEsploraSettings } from './btc-index.js';
-import { volumeBookChapter, heightOf, toRoman } from './btc-citation.js';
+import { volumeBookChapter, heightOf, toRoman, parseReference, latinRefOf } from './btc-citation.js';
 import { BIP39, HP_SPELLS } from './btc-wordlists.js';
-import { APPENDIX } from './btc-contents.js';
+import { appendix } from './btc-contents.js';
+import './btc-fontscale.js';   // the reader's type sizes: a ledger's readings are set at the size the book page's Commentary row chose
+import { loadNotables } from './btc-notables.js';
+import { commentaryForAddresses, commentaryHtml, resolveCommentary } from './btc-commentary.js';
+
+// The curated index, started at import and never waited on: a ledger's record
+// is the page, and its readings are an annotation that arrives when it arrives.
+const notablesReady = loadNotables();
 
 // The Ledger is a compendium now: every ledger in one document, read the way
 // the book is read, four levels deep.
@@ -652,15 +666,13 @@ const qPage = (new URLSearchParams(location.search).get('page') || '').trim();
 // output optional) -- so a shared reference navigates without any txid: the
 // reference IS the address of the passage, on the page as on social media.
 const pQ = (new URLSearchParams(location.search).get('ref') || '').trim();
-const pMatch = /^v(\d+)b(\d+)c(\d+)(?:s(\d+))?(?:o(\d+))?$/i.exec(pQ);
-const pRef = pMatch ? { height: heightOf(+pMatch[1], +pMatch[2], +pMatch[3]),
-                        s: pMatch[4] != null ? +pMatch[4] : null,
-                        o: pMatch[5] != null ? +pMatch[5] : null } : null;
+// Read and written by btc-citation.js, the one parser for the citation scheme
+// -- shared with the book's own lookup, the search box, and the curated
+// contents, so a reference that resolves anywhere resolves here.
+const pParsed = parseReference(pQ);
+const pRef = pParsed ? { height: pParsed.height, s: pParsed.section, o: pParsed.out } : null;
 // The same reference, written: what an entry leaf stamps into the URL.
-const latinRef = (height, s, o) => {
-  const pl = volumeBookChapter(height);
-  return `v${pl.volume}b${pl.book}c${pl.chapter}${s != null ? `s${s}` : ''}${o != null ? `o${o}` : ''}`;
-};
+const latinRef = (height, s, o) => latinRefOf(height, s, o);
 const untitled = (l) => l.addresses[0] + (l.addresses.length > 1 ? ` +${l.addresses.length - 1}` : '');
 const kept = keptLedgers().filter((k) => !INDEXED.some((e) => sameAddresses(e.addresses, k.addresses)));
 // One member address names its whole ledger (ledgerFor's rule); only a query
@@ -678,6 +690,11 @@ const LEDGERS = [
 // The appendix this compendium is, taken from the contents' own list so the
 // leaf and the row cannot disagree about its number or its explanation. The
 // appendix before it is a leaf of bitcoin-appendix.html, one swipe back.
+//
+// This is the one thing the page waits for the index on -- a heading has to be
+// right the first time it is painted, where a reading can arrive late.
+await notablesReady;
+const APPENDIX = appendix();
 const LEDGER_PART = APPENDIX.find((p) => p.kind === 'ledgers');
 const PART_INDEX = APPENDIX.indexOf(LEDGER_PART);
 const PART_LABEL = LEDGER_PART ? `Appendix ${toRoman(PART_INDEX + 1)} · ${LEDGER_PART.title}` : 'Ledgers';
@@ -1205,6 +1222,7 @@ const clearHero = () => {
   balanceEl.className = 'anth-balance';
   balanceEl.onclick = null;
   document.getElementById('anth-subtitle').textContent = '';
+  document.getElementById('anth-commentary').replaceChildren();
   const prose = document.getElementById('anth-prose');
   prose.replaceChildren();
   prose.classList.remove('explainer', 'passage');   // each leaf sets the prose it wants, at its own size
@@ -1213,6 +1231,45 @@ const clearHero = () => {
   heldEl.replaceChildren();
   keepBtn.classList.remove('show');
   closeTitleForm();   // a half-typed name does not follow the reader to the next leaf
+};
+
+// The readings kept on the name this leaf is about: a ledger's title leaf shows
+// every reading its member addresses carry, an address's leaf shows its own.
+// The index is an enhancement here, never a gate -- a ledger's record is the
+// page, and if the curated readings never arrive the leaf is simply a leaf.
+//
+// As in the reading page: the index says whether there is a reading and whose,
+// which is all the toggle needs; the prose is fetched when the toggle is opened.
+// A reading of a ledger is a reading of a NAME -- that these coins are that
+// party's -- which is exactly the kind of claim this book keeps set apart from
+// the record and signed. Hence the same sheet the reading page raises.
+const showCommentary = (addresses, alive) => {
+  const box = document.getElementById('anth-commentary');
+  box.replaceChildren();
+  notablesReady.then(() => {
+    if (!alive()) return;
+    const items = commentaryForAddresses(addresses);
+    if (!items.length) return;
+    const named = [...new Set(items.flatMap((it) => it.readings.filter((r) => r.by).map((r) => r.by)))];
+    const details = document.createElement('details');
+    details.className = 'leaf-commentary';
+    const summary = document.createElement('summary');
+    summary.textContent = named.length ? `Commentary by ${named.join(' · ')}` : 'Commentary';
+    summary.title = 'a reading of this ledger — editorial, credited, and no more authoritative than its argument';
+    const body = document.createElement('div');
+    let filled = false;
+    details.addEventListener('toggle', async () => {
+      if (!details.open || filled) return;
+      body.innerHTML = '<div class="commentary-measure"><p class="commentary-loading">reading…</p></div>';
+      await resolveCommentary(items);
+      if (!alive()) return;
+      filled = true;
+      // Authored Markdown, escaped at the source (btc-markdown.js).
+      body.innerHTML = commentaryHtml(items);
+    });
+    details.append(summary, body);
+    box.append(details);
+  });
 };
 
 // Bookmarking an address (or a whole unkept ledger): the same ribbon the
@@ -1383,6 +1440,7 @@ const openLedgerLeaf = (alive) => {
   downEl.setAttribute('aria-label', 'Down into the ledger’s passages');
 
   showBookmark();
+  showCommentary(cur().addresses, alive);
 
   // Something below the fold for the recovery check, and for the reader: the
   // leaf's own contents line.
@@ -1459,10 +1517,12 @@ const openAddressLeaf = (alive) => {
   showBookmark();   // a searched address lands here; the ribbon is at hand
 
   if (at >= addrs.length) {
+    showCommentary(addrs, alive);   // the merged entries leaf reads for the whole ledger
     runEntries(alive);
     return;
   }
   const addr = addrs[at];
+  showCommentary([addr], alive);
 
   // The passage itself, and it is this leaf's title: the address's
   // scriptPubKey in the book's opcode notation -- glyphs for the opcodes, a

@@ -46,6 +46,15 @@ Transaction id, as prose: ⌘²⁵⁶ *Gravity circle its pottery to soul. Echo 
 
 a. ∅
 
+## Commentary
+
+> A reading of the record, not the record. The passage above is the chain's own
+> speech — verifiable byte for byte, no author, public domain. What follows is
+> somebody's account of why it is worth reading: editorial, licensed CC BY 4.0,
+> and no more authoritative than the argument behind it.
+
+Six and a quarter coins from here (11 May 2020), and the first chapter of Volume IV. Third time, same arithmetic: the block that pays half of what the block before it paid, because 630,000 divides three times and not because anyone decided anything in 2020.
+
 ---
 
 *Reading the notation:* italic prose passages are Glossia encodings of the raw

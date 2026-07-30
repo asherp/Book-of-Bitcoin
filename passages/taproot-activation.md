@@ -43,6 +43,15 @@ Transaction id, as prose: ⌘²⁵⁶ *Match ball its gorilla to bachelor. Ear m
 
 a. s Cop achieve to idle per bet. Sin sustain to unveil. Our fitness may announce peace. Map isolate tomorrow to solid. Exile gate the vast craft via pool. The mansion is hidden. Our visual note may get a silver. Tea may speak melody. Sail set the meadow. Gasp see virus to wood. Catch file chef per stick via minimum. Cow hurt to depart. An industry boss to avoid per its amateur daughter. Our unique caution may unfold mercy. Velvet see our van. Its trophy may winter cactus. · p Its actual category due see deer. The bit is jealous. Soldier is nuclear about pie. Tap early earn hope. Limit across set its story. Smoke get the wisdom. A chapter protect engine. Carpet always grant our prize. Warrior may balance its cap.
 
+## Commentary
+
+> A reading of the record, not the record. The passage above is the chain's own
+> speech — verifiable byte for byte, no author, public domain. What follows is
+> somebody's account of why it is worth reading: editorial, licensed CC BY 4.0,
+> and no more authoritative than the argument behind it.
+
+An early Taproot payment, mined the moment the rules went live — the citation resolves into the activation chapter at its own §section. From here an output can be a single thirty-two-byte key standing for either a signature or a whole tree of scripts, and a spend reveals only which route it took (the book draws the reveal ⋔, a leaf's path through the tree). It is the first upgrade whose main achievement is that most spends now say less.
+
 ---
 
 *Reading the notation:* italic prose passages are Glossia encodings of the raw

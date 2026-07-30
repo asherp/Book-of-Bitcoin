@@ -50,6 +50,15 @@ Transaction id, as prose: ⌘²⁵⁶ *Glance spice its canvas blanket. Dolphin 
 
 a. ∅
 
+## Commentary
+
+> A reading of the record, not the record. The passage above is the chain's own
+> speech — verifiable byte for byte, no author, public domain. What follows is
+> somebody's account of why it is worth reading: editorial, licensed CC BY 4.0,
+> and no more authoritative than the argument behind it.
+
+30 May 2021: China's first regulatory squeeze on mining, five weeks before the ban proper. The cut that reads, in hindsight, like the tremor before the entry three below.
+
 ---
 
 *Reading the notation:* italic prose passages are Glossia encodings of the raw

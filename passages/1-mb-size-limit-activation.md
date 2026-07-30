@@ -37,6 +37,15 @@ Transaction id, as prose: ⌘²⁵⁶ *Increase wink to predict for fish. Pop us
   - script: p⁶⁵ Advice access to invite for uniform. December may guard to rotate. A first too set an excess. A popular length thunder case. Deal sponsor orbit like crack. The vast guy attract tonight to flavor. Anxiety may set stadium. Our son alone pipe other goat. Pay real escape chaos. Its scrap wash word rack. Its blade first split the dad. Valve is various to choice. Barrel ramp other lunch. Our wreck is bad to our parade. ∇
 - **locktime:** □ — no locktime — final with respect to time
 
+## Commentary
+
+> A reading of the record, not the record. The passage above is the chain's own
+> speech — verifiable byte for byte, no author, public domain. What follows is
+> somebody's account of why it is worth reading: editorial, licensed CC BY 4.0,
+> and no more authoritative than the argument behind it.
+
+Satoshi's quiet cap: from height 79,400 a block may not exceed 1,000,000 bytes. The first height-flagged soft fork (12 September 2010), announced almost nowhere, and the seed of the block size wars — seven years of argument over one sentence about how long a chapter may be, and who gets to write it.
+
 ---
 
 *Reading the notation:* italic prose passages are Glossia encodings of the raw

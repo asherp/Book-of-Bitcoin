@@ -39,6 +39,15 @@ Transaction id, as prose: ⌘²⁵⁶ *A lab due case its flame. Ear define our 
   - script: ¶ ⋔w h³² Start get peanut to arrest. Power valve to enact. Bridge ago bundle exit. Robot may table wasp. Power point to cable per place. Month set violin to wool. Hero drill a valley. The slide may theme pan.
 - **locktime:** □ — no locktime — final with respect to time
 
+## Commentary
+
+> A reading of the record, not the record. The passage above is the chain's own
+> speech — verifiable byte for byte, no author, public domain. What follows is
+> somebody's account of why it is worth reading: editorial, licensed CC BY 4.0,
+> and no more authoritative than the argument behind it.
+
+From 22 July 2017 signaling for SegWit was briefly mandatory: a block that did not set bit 1 was rejected, squeezing BIP141 over its own 95% threshold. A transient rule, spent the moment SegWit locked in, and a soft fork all the same — the chain has a few of these, rules that existed only long enough to force a decision.
+
 ---
 
 *Reading the notation:* italic prose passages are Glossia encodings of the raw

@@ -43,6 +43,15 @@ Transaction id, as prose: ⌘²⁵⁶ *Few bike may vacuum grab. Gospel ought bu
 
 a. ∅ · s Donor shadow to humble for swing. Mixture balance swap to assist. Moon curve to enlist. Narrow invite our own park. Shop may get the copper agent. Crowd monkey to word. Brother why shiver a like lot. Cow rely whisper to cat. Stable may get chapter. Hill would rack illness. Blade see each doll to glass. Pie may reflect to make for maid. Floor else see radar. February get army to jaguar. Invite may exile theme out cactus. · s A defense may page to match. Our amazing maple desert order. Canvas may spoil tone to nature. Napkin too sock steel. Width not object normal. A joy torch row. The frozen excess clock wreck to side. Brick may patrol jeans per upper. Page get february to weekend. Siege may see laptop. Machine is velvet toward document. Our sin is merry. Produce trust security below bonus to stove for torch. Pattern winter a low cactus. · w ② p³³ Ban may adjust to caught. Method approve opinion out capital. Syrup may set envelope. Raven see creek to ladder. Face crumble fade per excuse. The champion recall to replace. Slogan friend fox out box per abandon for chest. p³³ Its adult invite knee to section. Scrap is usual out release. Its pop truly set each anxiety. Drink garage a youth mixture. Our red reform get ethics. Cow know the various laugh to bicycle. An alien may pitch to find. Our crucial set is huge. p³³ Advance issue a two account. Son crumble to reveal via street to fame. Weird sleep laundry per dinosaur. Shoot may see a odd mom. Its long metal left see cannon. Stadium may pulse kid. Duck cause the low guitar to a cop. ③ ◇
 
+## Commentary
+
+> A reading of the record, not the record. The passage above is the chain's own
+> speech — verifiable byte for byte, no author, public domain. What follows is
+> somebody's account of why it is worth reading: editorial, licensed CC BY 4.0,
+> and no more authoritative than the argument behind it.
+
+A P2WSH output says only which hash the script must match; the terms arrive with the spend. Here they turn out to be a 2-of-3 multisig, and this is the section where the chain first learns it — the entry's citation resolves to wherever that spend landed, not to the block that funded it.
+
 ---
 
 *Reading the notation:* italic prose passages are Glossia encodings of the raw

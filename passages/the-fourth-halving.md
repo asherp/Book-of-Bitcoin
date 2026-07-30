@@ -46,6 +46,15 @@ Transaction id, as prose: ⌘²⁵⁶ *Its sorry noodle plate tax. The vacant fr
 
 a. ∅
 
+## Commentary
+
+> A reading of the record, not the record. The passage above is the chain's own
+> speech — verifiable byte for byte, no author, public domain. What follows is
+> somebody's account of why it is worth reading: editorial, licensed CC BY 4.0,
+> and no more authoritative than the argument behind it.
+
+Three and an eighth coins from here (April 2024), and the first chapter of Volume V. By this halving the subsidy was no longer most of what a miner earned — this very block carried a fee market louder than its own reward, which is the transition the schedule has been arranging since the genesis chapter.
+
 ---
 
 *Reading the notation:* italic prose passages are Glossia encodings of the raw

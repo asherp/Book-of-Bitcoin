@@ -44,6 +44,15 @@ Transaction id, as prose: ⌘²⁵⁶ *Limb is ancient to soap. Vintage include 
 
 a. ∅
 
+## Commentary
+
+> A reading of the record, not the record. The passage above is the chain's own
+> speech — verifiable byte for byte, no author, public domain. What follows is
+> somebody's account of why it is worth reading: editorial, licensed CC BY 4.0,
+> and no more authoritative than the argument behind it.
+
+A single inscription filling almost the whole block: a chapter that is one long section and little else. Block space is the scarce good this entire system prices, and this is what it looks like when one buyer takes nearly all of it at once.
+
 ---
 
 *Reading the notation:* italic prose passages are Glossia encodings of the raw

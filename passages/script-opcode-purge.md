@@ -37,6 +37,15 @@ Transaction id, as prose: ⌘²⁵⁶ *Its rural glass egg to harbor. Pop awake 
   - script: p⁶⁵ Aid again see its urban jet. Cow ask to enroll. Rich far fetch glue. Cattle get biology to satoshi. Another palm due clip its raw horror. A red limit are famous. An annual yes accuse egg. Skate bid to ignore. Dance see laptop for water out path. Our eternal surprise tape son. Its soft bit is alone. Pitch quick set sweet. Twin get a buffalo. Client see sibling to mango. Cow equip the random die. Aid thrive pudding to breeze. Rub far betray its illegal gas. ∇
 - **locktime:** □ — no locktime — final with respect to time
 
+## Commentary
+
+> A reading of the record, not the record. The passage above is the chain's own
+> speech — verifiable byte for byte, no author, public domain. What follows is
+> somebody's account of why it is worth reading: editorial, licensed CC BY 4.0,
+> and no more authoritative than the argument behind it.
+
+The corrective fork of 15 August 2010 carried a second ruleset with it: 0.3.10 also disabled a dozen script opcodes — OP_CAT, the shifts and the splices — following 0.3.6's forced-fail OP_RETURN a fortnight earlier. Both are release-based soft forks with no flag height, so the fork block that put the patched rules in charge of the chain is the closest thing they have to an activation chapter. A good part of the sigla leaf is a list of things a script may no longer do; most of them stopped here.
+
 ---
 
 *Reading the notation:* italic prose passages are Glossia encodings of the raw

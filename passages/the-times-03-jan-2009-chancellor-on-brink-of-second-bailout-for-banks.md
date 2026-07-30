@@ -36,6 +36,17 @@ Transaction id, as prose: ⌘²⁵⁶ *Its desert buyer leg visual. Raise may fl
   - script: p⁶⁵ Cop afford detail to satoshi. Giggle torch our piano. Organ ago get coconut. A vast crime equip hotel. Alarm may see hero to pass. A bright cop decorate essay via oxygen. Shift get attitude to autumn. Manual set its strategy for enemy. Ban remove average to oil. Our vicious cow give snap per party via topic. Voyage is dwarf to royal for seminar. The tax is cheap. The ten door are minute to rough. Its narrow theory repeat weasel. Some cop install to theme. ∇
 - **locktime:** □ — no locktime — final with respect to time
 
+## Commentary
+
+> A reading of the record, not the record. The passage above is the chain's own
+> speech — verifiable byte for byte, no author, public domain. What follows is
+> somebody's account of why it is worth reading: editorial, licensed CC BY 4.0,
+> and no more authoritative than the argument behind it.
+
+A coinbase input spends nothing, so its script is a slot a miner may write anything into. The first one holds the front-page headline of The Times of London for 3 January 2009.
+
+It does two things at once. It is a date stamp — a block cannot have been made before the newspaper it quotes, which is how anyone reading later can see the chain was not backdated. And it is an argument: the rescue of the banks, named in the opening sentence of a system built so that nobody has to be rescued. It is the closest thing to an editorial line anywhere in this book, and the chain itself wrote it.
+
 ---
 
 *Reading the notation:* italic prose passages are Glossia encodings of the raw

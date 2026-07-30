@@ -42,6 +42,15 @@ Transaction id, as prose: ⌘²⁵⁶ *Pudding may fruit duty to balcony. Upset 
 
 a. s Its marine may base divide. Cow remove to hawk. Pan may obtain coyote. A world bag see bonus. Fyi resist deal to opinion. Fee enrich chaos for change. Day see hero to broom. Basket may set muffin. Wagon exile to inhale. Text target fish for a cliff. Firm grace public to example out frown to gym. A muscle due see food. Yes decorate the reunion. Swift emerge update to stereo out marble to water via wait. Scale may set cactus. · p Action borrow its cereal raven. Fiber may repair cow. Its indoor journey combine grit. Guy inspire the select rival. Goddess may radio a virtual father. Its power century get envelope to hire. The slice may forward math.
 
+## Commentary
+
+> A reading of the record, not the record. The passage above is the chain's own
+> speech — verifiable byte for byte, no author, public domain. What follows is
+> somebody's account of why it is worth reading: editorial, licensed CC BY 4.0,
+> and no more authoritative than the argument behind it.
+
+The first outputs written in the new form outright — a P2WPKH and a P2WSH, in the activation block — rather than wrapped in a P2SH hash for the benefit of software that had not been upgraded. The book sets them ⓪ h²⁰ and ⓪ h³²: a version byte, then a commitment, and nothing else.
+
 ---
 
 *Reading the notation:* italic prose passages are Glossia encodings of the raw

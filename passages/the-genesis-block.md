@@ -36,6 +36,17 @@ Transaction id, as prose: ⌘²⁵⁶ *Its desert buyer leg visual. Raise may fl
   - script: p⁶⁵ Cop afford detail to satoshi. Giggle torch our piano. Organ ago get coconut. A vast crime equip hotel. Alarm may see hero to pass. A bright cop decorate essay via oxygen. Shift get attitude to autumn. Manual set its strategy for enemy. Ban remove average to oil. Our vicious cow give snap per party via topic. Voyage is dwarf to royal for seminar. The tax is cheap. The ten door are minute to rough. Its narrow theory repeat weasel. Some cop install to theme. ∇
 - **locktime:** □ — no locktime — final with respect to time
 
+## Commentary
+
+> A reading of the record, not the record. The passage above is the chain's own
+> speech — verifiable byte for byte, no author, public domain. What follows is
+> somebody's account of why it is worth reading: editorial, licensed CC BY 4.0,
+> and no more authoritative than the argument behind it.
+
+The one chapter with no predecessor. Every other block cites the hash of the one before it; this header carries 256 zero bits where that citation goes — the book writes it as it is, an empty slot rather than a beginning.
+
+It is also the only chapter nobody had to fetch: the genesis block ships inside the software, hardcoded into every node that has ever validated anything, so no reader takes it on anyone's authority. Its fifty coins have never moved, and by a quirk of the original code the reward was never entered into the set of spendable outputs at all. The book opens with a page of speech that cannot be answered and a coin that cannot be spent.
+
 ---
 
 *Reading the notation:* italic prose passages are Glossia encodings of the raw

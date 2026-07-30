@@ -37,6 +37,15 @@ Transaction id, as prose: ⌘²⁵⁶ *Stairs fringe dolphin to island. Soda see
   - script: ⧉ ⌖ h²⁰ Sight code kite to torch. Habit mail to avoid. Clump around spawn round. Crawl air throw to project. ≡ ∇
 - **locktime:** Τ1996-02-29 14:24 — locktime: not before 1996-02-29 14:24 UTC (unix 825603862)
 
+## Commentary
+
+> A reading of the record, not the record. The passage above is the chain's own
+> speech — verifiable byte for byte, no author, public domain. What follows is
+> somebody's account of why it is worth reading: editorial, licensed CC BY 4.0,
+> and no more authoritative than the argument behind it.
+
+Twelve and a half coins from here (9 July 2016), and the first chapter of Volume III. The first halving happened to a few thousand people; this one had an audience, a countdown, and a price chart — none of which the schedule consults.
+
 ---
 
 *Reading the notation:* italic prose passages are Glossia encodings of the raw

@@ -48,6 +48,15 @@ Transaction id, as prose: ⌘²⁵⁶ *Hurdle may space some autumn. Our urban s
 
 a. ∅
 
+## Commentary
+
+> A reading of the record, not the record. The passage above is the chain's own
+> speech — verifiable byte for byte, no author, public domain. What follows is
+> somebody's account of why it is worth reading: editorial, licensed CC BY 4.0,
+> and no more authoritative than the argument behind it.
+
+3 July 2021: the largest downward adjustment ever recorded, against a floor of −75%. China's blanket ban on mining unplugged roughly half the network's hash power in a matter of weeks. The frontispieces either side of this boundary are the ban in two lines of β; the recovery, as the exiled machines came back online elsewhere, took the rest of the year.
+
 ---
 
 *Reading the notation:* italic prose passages are Glossia encodings of the raw

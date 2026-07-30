@@ -44,6 +44,15 @@ Transaction id, as prose: ⌘²⁵⁶ *Its brisk tree fire strategy. Few drink i
 
 a. s Its primary beef job its season. Ring see food to menu. The pass garage sand. Film may mix output. Angle reform edit to train. A fyi enrich to topple. Uncle get zoo per our arena. A strategy exist column to the ago gossip. Its hit is rude. Son enhance seat to castle per fury. Cube okay reason figure. Month may set canvas. Its lap vanish onion. Orchard may choose silver. Sir dismiss to let. Lip again floor pop. A due is tired. Source may see cactus. · p The acoustic voyage see blue. Our layer is brisk. Aid may inject illness to gravity. Its aerobic damp is just. Plastic whip cigar to spare. Spring see a nasty balcony. Report may soldier swim. A big copy shall vault the panda.
 
+## Commentary
+
+> A reading of the record, not the record. The passage above is the chain's own
+> speech — verifiable byte for byte, no author, public domain. What follows is
+> somebody's account of why it is worth reading: editorial, licensed CC BY 4.0,
+> and no more authoritative than the argument behind it.
+
+The first witness ever used, in the activation block itself: it spends a P2SH-wrapped P2WPKH output funded 159 blocks early, parked looking like any ordinary P2SH payment and revealed the moment the rules went live. Somebody had the transaction ready and waiting.
+
 ---
 
 *Reading the notation:* italic prose passages are Glossia encodings of the raw

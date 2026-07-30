@@ -40,6 +40,15 @@ Transaction id, as prose: ⌘²⁵⁶ *Its set bird due chunk red. Ban often clu
   - script: ⧉ ⌖ h²⁰ Bargain is fragile to its jet. Cow imitate each bag. Lot ago prefer profit. Buyer is rude to twenty. Its son may enjoy. A polar tax erase senior. Balcony copy our sky. ≡ ∇
 - **locktime:** □ — no locktime — final with respect to time
 
+## Commentary
+
+> A reading of the record, not the record. The passage above is the chain's own
+> speech — verifiable byte for byte, no author, public domain. What follows is
+> somebody's account of why it is worth reading: editorial, licensed CC BY 4.0,
+> and no more authoritative than the argument behind it.
+
+Four days after the Finney transaction (16 January 2009): the first payment made to the hash of a public key rather than to the key itself — the form that would carry most of Bitcoin's history. Paying a hash keeps the key out of sight until the coin is spent, and shortens what has to be written down, read aloud, or printed on paper. The book sets the pattern ⧉ ⌖ h²⁰ ≡ ∇, and a reader will meet those five marks more often than any other line in the manuscript.
+
 ---
 
 *Reading the notation:* italic prose passages are Glossia encodings of the raw

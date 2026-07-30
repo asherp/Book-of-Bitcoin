@@ -17,7 +17,7 @@
  * Everything here is scoped to the directory sw.js is served from, so it works
  * unchanged at the site root and under a per-PR preview subpath.
  */
-const CACHE = 'bitcoin-book-shell-v22';
+const CACHE = 'bitcoin-book-shell-v26';
 
 // App shell, relative to the SW scope. glossia.js / glossia_bg.wasm are
 // gitignored build artifacts — present after a build/deploy, possibly absent in
@@ -39,13 +39,20 @@ const SHELL = [
   './btc-prose.js',
   './btc-sigla.js',
   './btc-notation.js',
+  './btc-commentary.js',
+  './btc-notables.js',
+  './btc-yaml.js',
+  './btc-markdown.js',
+  './btc-lookup.js',
+  './notables.yaml',   // the curated contents, read at runtime (its commentary files ride along; see shellUrls)
+  './appendix.yaml',   // …and what it gathers after the volumes
   './notation.css',
+  './commentary.css',
   './btc-chrome.js',
   './btc-chrome.css',
   './btc-wordlists.js',
   './btc-citation.js',
   './btc-contents.js',
-  './btc-contents-data.js',
   './btc-mempool.js',
   './btc-toc.css',
   './btc-pages.js',
@@ -68,6 +75,24 @@ const SHELL = [
   './version.json',         // deploy artifact: the CalVer release stamp, absent in a bare checkout
 ];
 
+// The shell, plus the commentary files web/notables.yaml points at. The
+// editorial layer is authored as loose Markdown and referenced from that file,
+// so the list is data rather than something to keep in step by hand: read the
+// index and take its `file:` lines. Only filenames are wanted, so a regex is
+// enough (btc-yaml.js is an ES module and a classic worker cannot import it) --
+// and a miss costs one file its precache, nothing more: the runtime's
+// stale-while-revalidate caches it the first time it is opened.
+async function shellUrls() {
+  try {
+    const res = await fetch('./notables.yaml', { cache: 'reload' });
+    if (!res.ok) throw new Error(String(res.status));
+    const files = [...(await res.text()).matchAll(/^\s*-?\s*file:\s*(\S+)\s*$/gm)].map((m) => m[1]);
+    return SHELL.concat([...new Set(files)].map((f) => `./commentary/${f}`));
+  } catch (_) {
+    return SHELL;   // no index: the shell alone, and commentary caches as it is read
+  }
+}
+
 // The cached version.json is the release stamp of the build the reader is
 // running, so it must only ever change in lockstep with the rest of the shell
 // (install / refreshShell) — never by runtime revalidation, which would
@@ -86,7 +111,8 @@ self.addEventListener('install', (event) => {
     const cache = await caches.open(CACHE);
     // Add entries individually so one 404 (e.g. an unbuilt artifact) doesn't
     // reject the whole install — anything missing is filled in at runtime.
-    await Promise.allSettled(SHELL.map((url) => cache.add(new Request(url, { cache: 'reload' }))));
+    const urls = await shellUrls();
+    await Promise.allSettled(urls.map((url) => cache.add(new Request(url, { cache: 'reload' }))));
     await self.skipWaiting();
   })());
 });
@@ -107,7 +133,8 @@ self.addEventListener('activate', (event) => {
 let shellRefresh = null;
 function refreshShell(cache) {
   if (!shellRefresh) {
-    shellRefresh = Promise.allSettled(SHELL.map((url) => cache.add(new Request(url, { cache: 'reload' }))))
+    shellRefresh = shellUrls()
+      .then((urls) => Promise.allSettled(urls.map((url) => cache.add(new Request(url, { cache: 'reload' })))))
       .then(() => { shellRefresh = null; });
   }
   return shellRefresh;

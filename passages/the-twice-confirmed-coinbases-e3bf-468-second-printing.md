@@ -1,4 +1,4 @@
-# Duplicated coinbase e3bf…468, second printing (BIP30)
+# The twice-confirmed coinbases — e3bf…468, second printing
 
 > A passage of **The βook of βitcoin** — the Bitcoin chain read as a book. This is
 > block 91,880 read as a chapter, and its transaction 1
@@ -7,7 +7,7 @@
 > connective grammar is the translator's, the content is the chain's.
 
 - **Citation:** I β46 ■1161 §1 (Volume I, Book 46, Chapter 1161, section 1)
-- **Block:** 91,880 — Duplicated coinbase e3bf…468, second printing (BIP30)
+- **Block:** 91,880 — The twice-confirmed coinbases — e3bf…468, second printing
 - **Block hash:** `00000000000743f190a18c5577a3c2d2a1f610ae9601ac046a38084ccb7cd721`
 - **Transaction id:** `e3bf3d07d4b0375638d5f1db5255fe07ba2c4cb067cd81b84ee974b6585fb468`
 - **Read live:** https://bookofbitcoin.io/bitcoin-book.html?txid=e3bf3d07d4b0375638d5f1db5255fe07ba2c4cb067cd81b84ee974b6585fb468
@@ -25,7 +25,7 @@ Block hash, as prose: ⌘²¹¹ *Canyon room its crazy object. Logic may crush b
 - **difficulty target:** β₄₄ < 946774×256²⁴ — the block hash above reads below this target — nBits 1b0e7256 — mantissa 946774 shifted up 24 bytes: the target 00000000000e7256000000000000000000000000000000000000000000000000, which a valid block hash must read below (44 leading zero bits) — difficulty 4,536 (relative to the genesis block)
 - **nonce:** η 2306754076
 
-## § 1 — Duplicated coinbase e3bf…468, second printing (BIP30)
+## § 1 — The twice-confirmed coinbases — e3bf…468, second printing
 
 Transaction id, as prose: ⌘²⁵⁶ *Its hamster pepper stomach to hollow. Excess may point the tilt. Sky defy its guilt. List may see the arctic. Cow inject to lend. Click enter lawsuit via steel for section. Our mistake set giant to document. Paddle see zebra via gas.*
 
@@ -36,6 +36,19 @@ Transaction id, as prose: ⌘²⁵⁶ *Its hamster pepper stomach to hollow. Exc
 - **output 1:** 50.00000000 ₿
   - script: p⁶⁵ An advice why set yes. A myself. Sign see our gadget. A door coast the clean flower. Our uncle get dune to gold. Any red may keep tortoise. A next set boy. An immense son may cancel leopard. A myself. An immense bean get zebra to bundle. A bleak start pipe barrel. A due may say some skill to cushion. Yes describe smoke via its vivid pan. Each red is vibrant. Dash neither set that clay. Wool goose tornado to cereal. Habit set a bonus. Snack see soul to cactus. ∇
 - **locktime:** □ — no locktime — final with respect to time
+
+## Commentary
+
+> A reading of the record, not the record. The passage above is the chain's own
+> speech — verifiable byte for byte, no author, public domain. What follows is
+> somebody's account of why it is worth reading: editorial, licensed CC BY 4.0,
+> and no more authoritative than the argument behind it.
+
+The only two transactions ever confirmed twice, each in four printings between them. Two miners running the same default configuration produced byte-identical coinbases, and nothing in the rules yet forbade it — so each second printing overwrote its first in the set of spendable outputs and destroyed that reward. The book prints all four, because all four were written.
+
+BIP30's ban on duplicate transaction ids switched on by timestamp (15 March 2012) rather than by flag block, with exactly these two offenders grandfathered forever: a rule that had to be written around the record instead of over it. BIP34 later closed the hole structurally — a coinbase must state its own height, so two blocks can no longer write the same one.
+
+Each printing owns its own page here. Pages count positions in the chain, not distinct transaction ids, so the book's page count runs exactly two past the chain's count of distinct transactions — and these are the two.
 
 ---
 

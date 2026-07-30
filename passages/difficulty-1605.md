@@ -48,6 +48,15 @@ Transaction id, as prose: ⌘²⁵⁶ *Demand get soda to height. Our hunt are e
 
 a. ∅
 
+## Commentary
+
+> A reading of the record, not the record. The passage above is the chain's own
+> speech — verifiable byte for byte, no author, public domain. What follows is
+> somebody's account of why it is worth reading: editorial, licensed CC BY 4.0,
+> and no more authoritative than the argument behind it.
+
+3 November 2020: Sichuan's wet season ending. The annual migration off cheap hydro, written into the chain's target as plainly as weather is written into a river gauge — and the clearest case in the series of the chain recording something entirely physical.
+
 ---
 
 *Reading the notation:* italic prose passages are Glossia encodings of the raw

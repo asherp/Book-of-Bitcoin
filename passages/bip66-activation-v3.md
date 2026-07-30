@@ -37,6 +37,17 @@ Transaction id, as prose: ⌘²⁵⁶ *A vague drum may vote army. Finger market
   - script: ⧉ ⌖ h²⁰ News captain action to repeat. Error set our female via balance out tattoo. Jelly boss a solar square. Our faith may section to reduce. ≡ ∇
 - **locktime:** □ — no locktime — final with respect to time
 
+## Commentary
+
+> A reading of the record, not the record. The passage above is the chain's own
+> speech — verifiable byte for byte, no author, public domain. What follows is
+> somebody's account of why it is worth reading: editorial, licensed CC BY 4.0,
+> and no more authoritative than the argument behind it.
+
+Strict DER encoding: a signature must from here be written one way only. The rule closed a class of disagreement that came from asking a general-purpose cryptography library what counted as a signature — a consensus system cannot delegate that question.
+
+Its activation also produced the chain's most instructive accident: miners building on a block they had not themselves validated extended an invalid chain for several blocks, and the split was resolved by hash power and phone calls rather than by rules. A soft fork is only as strong as the validation standing behind the signals.
+
 ---
 
 *Reading the notation:* italic prose passages are Glossia encodings of the raw

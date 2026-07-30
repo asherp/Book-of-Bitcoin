@@ -37,6 +37,15 @@ Transaction id, as prose: ⌘²⁵⁶ *An iron nominee manage review. The mass f
   - script: ⧉ ⌖ h²⁰ The powder too pepper cereal. That repair may share meat. A festival combine pill to monkey. Domain is afraid via a hungry piano. ≡ ∇
 - **locktime:** □ — no locktime — final with respect to time
 
+## Commentary
+
+> A reading of the record, not the record. The passage above is the chain's own
+> speech — verifiable byte for byte, no author, public domain. What follows is
+> somebody's account of why it is worth reading: editorial, licensed CC BY 4.0,
+> and no more authoritative than the argument behind it.
+
+1 April 2012, no joke: the first block mined under BIP16 rules. An activation chapter for a soft fork looks like any other chapter — the change is in what the chain will no longer accept, not in anything printed here. From this page on, a hash in an output can stand for terms of any complexity, and the reader learns them only when someone spends it.
+
 ---
 
 *Reading the notation:* italic prose passages are Glossia encodings of the raw

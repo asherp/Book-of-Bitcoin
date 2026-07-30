@@ -46,6 +46,15 @@ Transaction id, as prose: ⌘²⁵⁶ *A summer may sketch to author. Our awake 
 
 a. ∅
 
+## Commentary
+
+> A reading of the record, not the record. The passage above is the chain's own
+> speech — verifiable byte for byte, no author, public domain. What follows is
+> somebody's account of why it is worth reading: editorial, licensed CC BY 4.0,
+> and no more authoritative than the argument behind it.
+
+26 March 2020: the covid crash. Black Thursday, two weeks earlier, halved the price in a day and the marginal miners followed it down. Read the series and the target is a slow, honest instrument — it never predicts anything, and it never misses anything either.
+
 ---
 
 *Reading the notation:* italic prose passages are Glossia encodings of the raw
