@@ -176,10 +176,11 @@ fluency every time.
 
 - Build with `./build_web.sh` and serve over HTTP (`python3 -m http.server -d
   web 8080`); see the README for details.
-- Editing the contents or its commentary? Run `node tools/check-editorial.mjs`.
-  It reads `web/notables.yaml` and `web/commentary/*.md` the way the browser
-  will and reports anything that would reach a reader as a missing reading or an
-  empty contents. The deploy and every PR preview run it too.
+- Editing the contents, its appendix or its commentary? Run `node
+  tools/check-editorial.mjs`. It reads `web/notables.yaml`, `web/appendix.yaml`
+  and `web/commentary/*.md` the way the browser will and reports anything that
+  would reach a reader as a missing reading or an empty contents. The deploy and
+  every PR preview run it too.
 - Pull requests get a live preview deployed automatically.
 - For substantial commentary or a new curated entry, opening an issue first is
   a good way to check it fits before writing it.

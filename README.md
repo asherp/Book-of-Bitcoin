@@ -134,23 +134,77 @@ compiled to WASM) is consumed as a published
 - `web/preface.md` — the preface itself, in Markdown: the canonical copy,
   readable here in the repository and rendered into the leaf above, so the
   book and the repository cannot drift apart
-- `web/bitcoin-contents.html` — table of contents / notable blocks
+- `web/bitcoin-contents.html` — table of contents / notable blocks, closing
+  with three appendices: back matter for what reading order cannot carry,
+  reading order being the order blocks were mined. Each is listed here and
+  explained on a leaf of its own, its heading the door down into it.
+  **I · The Mempool** — the chapters the queue is already forming, first of
+  the three because the volumes close on the chain tip's row, so the turn
+  from the tip to the next provisional chapter stays one step down the page.
+  **II · Future Chapters** — heights consensus has already fixed but no
+  queue can reach (BIP42's 21M cap at 13,440,000; BIP110's flag heights,
+  should it lock in), cited in full but marked □ until a block earns them
+  the ■. **III · Ledgers** — the shelf of curated ledgers and any the reader
+  keeps, the only entries with no reference at all, since the chain never
+  writes an address, only the script one stands for; the contents and the
+  index are inverses, and this is where the contents points at the other
+- `web/bitcoin-appendix.html` — the appendix leaves (`?part=mempool`,
+  `?part=future`): a title leaf saying what the appendix gathers and why
+  that cannot be read in sequence, with what it gathers one level below.
+  Appendix I descends into the queue's **first chapter itself** — the block
+  a reader reaches by swiping forward off the chain tip — read in the book
+  like any other, marked □, and walked chapter by chapter from there; the
+  ascent from any of them lands back on this leaf, since a draft chapter
+  belongs to no volume or book of the body (the queue's own equivalent of a
+  book is still to be written). Appendix II descends the same way, into the
+  first height consensus has already fixed — the book answers an unmined
+  chapter with the date it is due. Neither leaf lists what it gathers: the
+  listing is the contents' business.
+  Appendix III's leaf is the Ledger compendium's own title page, since a
+  shelf of ledgers is what that page already is. The appendices sit at the
+  **volumes' own level**: the line runs Volume I … Volume V, Appendix I,
+  II, III, so the last volume's forward turn leaves the body for the
+  mempool and Appendix I's backward turn comes straight back to it. All
+  three ascend to the contents, as a volume does — a pull down at the top,
+  and the masthead's Contents
+- `web/btc-mempool.js`, `web/btc-toc.css` — the queue read as the chapters
+  it is about to become, and how a list of chapters is set. Shared by the
+  contents and the appendix leaves so a projected chapter reads the same in
+  the list and on its own page
 - `web/bitcoin-ledger.html` — the Ledger: a compendium of every ledger
   (curated donation addresses, any the reader keeps, and ad-hoc
   `?address=a,b,…` queries) in one document, read the way the book is
-  read, three levels deep. Ledger title leaves at the top (title, balance,
-  span — horizontal swipes browse between ledgers; a push up descends);
-  address leaves below (a title page per address, its record scrolling
-  endlessly below, newest first by reference; past the last address the
-  merged entries leaf, organized by time; pulling down at the top ascends);
-  and entry leaves underneath (one transaction as its own page, rendered
-  from the bank alone — vertical swipes walk the address's timeline, a
-  swipe over the record dives into the entry nearest the finger, and a
-  swipe right is the one door back). Nothing backfills on its own —
+  read, four levels deep. A URL names the leaf it wants the way the book's
+  does: `?address=…` opens the passage that address is, `&page=ledger`
+  opens the ledger holding it at its title leaf (which is what a named
+  ledger in the contents links to), and a bare visit opens the appendix
+  leaf above them all. The appendix leaf at the top — the compendium is
+  the contents' **Appendix III**, and this leaf carries that name and the
+  paragraph saying what a ledger is; it lists nothing, because the contents
+  already lists the ledgers, and a pull down at the top (or the ▴ crumb)
+  ascends there. Ledger title leaves beneath it (title, balance, span —
+  horizontal swipes browse between ledgers; a push up descends) — one title
+  page per ledger, and the only one. Passage leaves below those: a ledger is
+  a set of scripts, not one address — organizations rotate them, and an xpub
+  (when the shelf takes them) will gather every leaf of one key — so each
+  script gets a leaf titled by the passage itself — the script in the book's
+  own prose, and not also in base58 or bech32 beneath it: an address is the
+  machine's rendering of the same script, and the book prints its own — with
+  the chapters that passage appears in listed below, newest first by
+  reference; past the last passage the ledger's whole table of entries,
+  organized by time. And entry leaves underneath (one
+  transaction as its own page, rendered from the bank alone — vertical
+  swipes walk the timeline, a swipe over the record dives into the entry
+  nearest the finger, and a swipe right is the one door back). Nothing backfills on its own —
   exploration is the sync — and every page found is banked for good, from
   the same Esplora-compatible endpoints the reading pages use; a ledger
   reconciles its entries against the chain's balance before its numbers
-  are trusted
+  are trusted. Keeping a ledger names it first — it becomes a row in the
+  reader's own contents (Appendix III), and the naming field opens on a
+  suggestion in the block version's own notation: one HP spell and one
+  BIP39 word, drawn from sixteen random bits where a miner puts BIP320's
+  version-rolling scratch entropy, so the name reads back as a well-formed
+  nVersion
 - `web/bitcoin-ledgers.html` — the old Ledgers shelf, now a redirect to
   the compendium (kept for bookmarks and cached mastheads)
 - `web/btc-tx.js`, `web/btc-prose.js`, `web/btc-citation.js`,
@@ -172,8 +226,10 @@ compiled to WASM) is consumed as a published
   never re-asks. The two BIP30-grandfathered coinbases were each confirmed
   twice, and pages count positions, not distinct txids — so each owns two
   pages, all four cited in the table of contents
-- `web/notables.yaml`, `web/commentary/*.md` — the curated entries themselves,
-  and the readings of them: which blocks and transactions the book keeps, what
+- `web/notables.yaml`, `web/appendix.yaml`, `web/commentary/*.md` — the curated
+  entries themselves, what the contents gathers after the volumes (the
+  appendices: the mempool, the future chapters whose citations consensus has
+  already fixed, and the ledgers), and the readings of them: which blocks and transactions the book keeps, what
   they are called, and one Markdown file per reading, referenced by the entry it
   belongs to (`by:` naming whoever wrote it, absent for the book's own voice).
   An entry's `id:` is written in any form the search box takes — a height, a
@@ -429,8 +485,8 @@ nothing here tries to claim otherwise. What CC BY covers is the body of
 editorial work — the selection, the arrangement, and the writing.)
 
 The boundary is a file boundary, so a machine can see it too. The editorial
-matter lives in `web/notables.yaml`, `web/commentary/*.md` and
-`web/btc-index-data.js`, each carrying `SPDX-License-Identifier: CC-BY-4.0` (in
+matter lives in `web/notables.yaml`, `web/appendix.yaml`, `web/commentary/*.md`
+and `web/btc-index-data.js`, each carrying `SPDX-License-Identifier: CC-BY-4.0` (in
 a Markdown file, as an HTML comment — Markdown has no header of its own); every
 other source file carries `MIT OR Apache-2.0`. Nothing is compiled from the one
 into the other: the machinery reads the authored files at runtime, so a reader

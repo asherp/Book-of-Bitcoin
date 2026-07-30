@@ -23,10 +23,15 @@
   // Arriving by the contents page's push-up-at-the-bottom gesture: finish
   // that turn here, the book sliding in from below. Set just before the
   // navigation, consumed on first paint.
+  // Arriving by the contents page's push-up-at-the-bottom gesture the book
+  // slides in from below; arriving by a backward turn out of Appendix I --
+  // the appendices sit at the volumes' own level, just past the last of
+  // them -- it slides in from the left, the way the reader pushed.
   try {
-    if (sessionStorage.getItem('glossia-book-entrance')) {
+    const dir = sessionStorage.getItem('glossia-book-entrance');
+    if (dir) {
       sessionStorage.removeItem('glossia-book-entrance');
-      document.documentElement.classList.add('book-entrance');
+      document.documentElement.classList.add(dir === 'back' ? 'book-entrance-back' : 'book-entrance');
     }
   } catch (_) {}
 
@@ -103,6 +108,10 @@ body {
 @media (prefers-reduced-motion: no-preference) {
   .book-entrance body { animation: book-in .22s ease-out; }
   @keyframes book-in { from { transform: translateY(100vh); } }
+  /* …and the entering half of a backward turn out of Appendix I: the last
+     volume comes in from the left, the line of volumes resuming. */
+  .book-entrance-back body { animation: book-in-back .22s ease-out; }
+  @keyframes book-in-back { from { transform: translateX(-100vw); } }
 }
 /* Contain the carousel turn entirely: the translated #page-slide clips at the
    article's own bounds (clip creates no scroll container, so nothing else
@@ -692,7 +701,7 @@ button:disabled { opacity: .4; cursor: not-allowed; }
          page content slides through a carousel turn. -->
     <nav class="chapter-nav">
       <button type="button" id="chapter-prev" class="chapter-step hidden" aria-label="Previous chapter" title="Previous chapter"></button>
-      <div class="chapter-num"><button type="button" id="ch-volume-link" class="crumb" title="This volume's page">Volume <span id="ch-volume"></span></button><span id="ch-sep-1"> · </span><button type="button" id="ch-book-link" class="crumb" title="This book's page">Book <span id="ch-book"></span></button><span id="ch-chapter-inline"></span></div>
+      <div class="chapter-num"><button type="button" id="ch-volume-link" class="crumb" title="This volume's page">Volume <span id="ch-volume"></span></button><span id="ch-sep-1"> · </span><button type="button" id="ch-book-link" class="crumb" title="This book's page">Book <span id="ch-book"></span></button><button type="button" id="ch-appendix-link" class="crumb hidden" title="The appendix this draft chapter belongs to">Appendix I</button><span id="ch-chapter-inline"></span></div>
       <button type="button" id="chapter-next" class="chapter-step hidden" aria-label="Next chapter" title="Next chapter"></button>
       <!-- The folio: a section's page number in the chain's running count of
            transactions, at the right end of the running head (see btc-pages.js).
@@ -2529,7 +2538,11 @@ function renderProjectedHead(onTitlePage) {
   const gen = renderGen;
   const { volume, book, chapter } = volumeBookChapter(state.height);
   const k = state.projIndex;
-  showEyebrowCrumbs(onTitlePage, onTitlePage);
+  // A draft chapter hangs under Appendix I, not under a volume and a book of
+  // the body: no block has placed it in one, and the queue's own equivalent
+  // of a book is still to be written. So the crumb above it -- and the
+  // ascent -- is the appendix.
+  showEyebrowCrumbs(false, false, onTitlePage);
   $('ch-volume').textContent = volume.toLocaleString();
   $('ch-book').textContent = book.toLocaleString();
   $('ch-title').textContent = `Chapter ${chapterName(chapter)}`;
@@ -2635,10 +2648,11 @@ function renderLeafShell() {
 
 // Show/hide the eyebrow's three crumbs (volume · book · chapter-inline is
 // managed separately). A leaf hides the parts at or below its own level.
-function showEyebrowCrumbs(volume, book) {
+function showEyebrowCrumbs(volume, book, appendix = false) {
   $('ch-volume-link').classList.toggle('hidden', !volume);
   $('ch-sep-1').classList.toggle('hidden', !(volume && book));
   $('ch-book-link').classList.toggle('hidden', !book);
+  $('ch-appendix-link').classList.toggle('hidden', !appendix);
 }
 
 // The chapter's own page: the head alone -- title, hash prose, frontispiece --
@@ -3231,6 +3245,11 @@ function labelNav() {
     }
     if (tipHeight === null || heightOf(cur.volume + 1, 1, 1) <= tipHeight) {
       stepNext = { text: toRoman(cur.volume + 1), label: `Next volume (${toRoman(cur.volume + 1)})` };
+    } else {
+      // Past the last volume the appendices carry on at the volumes' own
+      // level -- the mempool first, since its chapters are the ones the
+      // chain is about to write.
+      stepNext = { text: 'Appendix', label: 'On to the appendices (I — the mempool)' };
     }
   } else if (idx === -2) {
     if (state.height > 0) {
@@ -3706,6 +3725,25 @@ function toFrontMatter() {
   try { sessionStorage.setItem('glossia-front-entrance', 'back'); } catch {}
   location.href = './bitcoin-front.html?leaf=sigla';
 }
+// …and at the other end of the volumes lie the appendices, which sit at the
+// volumes' own level: the last volume's forward turn leaves the body for
+// Appendix I, and that leaf's backward turn comes straight back here. Only
+// the tip says which volume is last, so with no tip yet the edge is unknown
+// and the turn stays an ordinary one.
+function atAppendixEdge() {
+  return !!state && state.index === -3 && tipHeight !== null
+    && volumeBookChapter(state.height).volume >= volumeBookChapter(tipHeight).volume;
+}
+function toAppendix() {
+  try { sessionStorage.setItem('glossia-appendix-entrance', 'fwd'); } catch {}
+  location.href = './bitcoin-appendix.html?part=mempool';
+}
+// Above a draft chapter is Appendix I's own leaf: the ascent lifts this page
+// away and the appendix drops in from above, as an ascent does.
+function toAppendixLeaf() {
+  try { sessionStorage.setItem('glossia-appendix-entrance', 'drop'); } catch {}
+  location.href = './bitcoin-appendix.html?part=mempool';
+}
 
 async function goToLevel(direction) {
   if (!state) return;
@@ -3713,6 +3751,7 @@ async function goToLevel(direction) {
   if (state.index === -3) {
     const v = volume + direction;
     if (v < 1) { if (direction < 0) toFrontMatter(); return; }
+    if (direction > 0 && atAppendixEdge()) { toAppendix(); return; }
     return openLeafAt(heightOf(v, 1, 1), -3, direction);
   }
   if (state.index === -2) {
@@ -3810,6 +3849,7 @@ const openCrumb = (height, idx) => {
 };
 $('ch-volume-link').addEventListener('click', () => { if (state) openCrumb(volumeStartOf(state.height), -3); });
 $('ch-book-link').addEventListener('click', () => { if (state) openCrumb(bookStartOf(state.height), -2); });
+$('ch-appendix-link').addEventListener('click', () => toAppendixLeaf());
 
 // ── Swipe paging with a carousel turn ─────────────────────────────────────
 // A horizontal swipe turns the page at the current level: sections swipe
@@ -3845,7 +3885,11 @@ function navAvailable(direction) {
 // is ready to render; until then the drag only rubber-bands. The buttons stay
 // usable regardless -- they fetch on demand as always.
 function canStep(direction) {
-  if (direction < 0 && atFrontMatterEdge()) return true;   // a page turn, nothing to prefetch
+  // Either end of the volumes leaves this page for another -- the front
+  // matter behind Volume I, the appendices past the last volume -- and a
+  // page turn has nothing to prefetch.
+  if (direction < 0 && atFrontMatterEdge()) return true;
+  if (direction > 0 && atAppendixEdge()) return true;
   return navAvailable(direction) && neighborReady[direction];
 }
 function swipeStep(direction) {
@@ -3921,6 +3965,8 @@ function levelTarget(direction) {   // +1 descend (deeper), -1 ascend
       if (state.ghost) return { unghost: true };
       return { height: state.height, idx: -1, free: true };   // this block is already loaded
     }
+    // A draft chapter's parent is the appendix, not a book of the body.
+    if (state.index === -1 && state.projected) return { appendix: true };
     if (state.index === -1) return { height: bookStartOf(state.height), idx: -2 };
     if (state.index === -2) return { height: volumeStartOf(state.height), idx: -3 };
     return { toc: true };           // above the volumes sits the table of contents
@@ -3945,7 +3991,9 @@ function canStepVertical(direction) {
   // lives in the ledger, so its rungs are always ready.
   if (t.ghost || t.unghost) return true;
   if (direction > 0) return state.index === -1 ? (downReady || !!rememberedChild()) : true;
-  return !!t.free || !!t.toc || upReady;   // the contents page is precached by the service worker
+  // The contents and the appendix leaves are precached by the service worker,
+  // so an ascent onto either is a page turn with nothing to wait for.
+  return !!t.free || !!t.toc || !!t.appendix || upReady;
 }
 function swipeStepVertical(direction) {
   const t = levelTarget(direction);
@@ -3960,6 +4008,7 @@ function swipeStepVertical(direction) {
     location.href = './bitcoin-contents.html';
     return;
   }
+  if (t.appendix) { toAppendixLeaf(); return; }
   if (t.linear) {
     const m = rememberedChild();
     if (m) descendTo(m); else stepNow(1);

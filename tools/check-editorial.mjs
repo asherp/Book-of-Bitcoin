@@ -5,8 +5,9 @@
 //
 //   node tools/check-editorial.mjs
 //
-// The curated contents and its commentary are hand-authored files with nothing
-// generated from them (web/notables.yaml, web/commentary/*.md), which is what
+// The curated contents, its appendix and its commentary are hand-authored files
+// with nothing generated from them (web/notables.yaml, web/appendix.yaml,
+// web/commentary/*.md), which is what
 // makes them pleasant to write and also what makes a typo shippable: a mangled
 // line, a renamed file, a reading nothing points at. This is the check that
 // stands in for a build step. It parses the index with the same reader the
@@ -17,7 +18,7 @@
 // too, ahead of everything expensive.
 
 import { readdir, readFile } from 'node:fs/promises';
-import { parseNotables, setNotables, places, placeTitle } from '../web/btc-notables.js';
+import { parseNotables, parseAppendix, setNotables, places, placeTitle } from '../web/btc-notables.js';
 import { parseYamlSequence } from '../web/btc-yaml.js';
 import { parseReference } from '../web/btc-citation.js';
 import { looksLikeAddress } from '../web/btc-lookup.js';
@@ -30,7 +31,11 @@ const problems = [];
 const notes = [];
 
 const source = await readFile(new URL('notables.yaml', WEB), 'utf8');
-const entries = setNotables(parseNotables(source));
+// The appendix is authored the same way and read by the same machinery: parts
+// the contents gathers after the volumes, one of which lists places of its own.
+const backSource = await readFile(new URL('appendix.yaml', WEB), 'utf8');
+const parts = parseAppendix(backSource);
+const entries = setNotables(parseNotables(source), parts);
 if (!entries.length) problems.push('notables.yaml parsed to no entries at all');
 // An entry may be found in several places; the checks below are per place,
 // since a place is what a row, a title and a static passage are made of.
@@ -113,8 +118,21 @@ for (const e of entries) {
 const onDisk = (await readdir(new URL('commentary/', WEB))).filter((f) => f.endsWith('.md'));
 for (const f of onDisk) if (!referenced.has(f)) notes.push(`commentary/${f} is not referenced by any entry — nothing will show it`);
 
+// The appendix's own places: each must resolve to a height like any other, and
+// a part that lists none but says it will is a part that renders empty.
+for (const part of parts) {
+  if (part.kind !== 'entries') continue;
+  for (const e of part.entries) {
+    if (!/^-?[0-9]+$/.test(e.id) && !/^[0-9a-f]{64}$/.test(e.id)) {
+      problems.push(`appendix "${part.title}": "${e.title}" has an id that is neither a block height nor a 64-hex id`);
+    }
+    if (!e.note) notes.push(`appendix "${part.title}": "${e.title}" carries no note — the row will have nothing to say on hover`);
+  }
+}
+
 const credited = entries.flatMap((e) => readingsOf(e).filter((r) => r.by).map((r) => r.by));
 console.log(`notables.yaml: ${entries.length} entries in ${allPlaces.length} places, ${referenced.size} readings`
+  + `; appendix.yaml: ${parts.map((p) => p.title).join(', ')}`
   + `${credited.length ? `, credited to ${[...new Set(credited)].join(', ')}` : ''}`);
 for (const n of notes) console.warn(`  note: ${n}`);
 for (const p of problems) console.error(`  error: ${p}`);

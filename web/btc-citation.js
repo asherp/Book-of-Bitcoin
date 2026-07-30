@@ -83,7 +83,9 @@ export function fromRoman(s) {
 //
 //   the quoted form, as the book prints it and a reader would say it --
 //   "III β2 ■5", "I β29 ■596 §85", "βoβ I β50 ■1807 §85.4"; the β ■ § sigils
-//   are optional on input, so a bare "III 2 5" resolves the same way
+//   are optional on input, so a bare "III 2 5" resolves the same way, and □
+//   reads wherever ■ does (a height's place is fixed by consensus, not by
+//   mining -- see expectedReference below, which prints the same difference)
 //   the URL form, as a citation travels in a link -- "v3b2c5", "v1b29c596s85",
 //   "v1b50c1807s85o4"
 //
@@ -102,7 +104,7 @@ export function fromRoman(s) {
 // book's. (Every ?ref= link the pages generate is chapter-deep or finer, so
 // nothing that already exists reads differently for the shorter forms being
 // admitted here.)
-const QUOTED_REF = /^(?:βoβ\s+)?([ivxlcdm]+)(?:[\s]+β?\s*(\d+))?(?:[\s]+■?\s*(\d+))?(?:[\s]+§?\s*(\d+)(?:\.(\d+))?)?$/i;
+const QUOTED_REF = /^(?:βoβ\s+)?([ivxlcdm]+)(?:[\s]+β?\s*(\d+))?(?:[\s]+[■□]?\s*(\d+))?(?:[\s]+§?\s*(\d+)(?:\.(\d+))?)?$/i;
 const URL_REF = /^v(\d+)(?:b(\d+))?(?:c(\d+))?(?:s(\d+))?(?:o(\d+))?$/i;
 
 export function parseReference(input) {
@@ -146,6 +148,15 @@ export function latinRefOf(height, section = null, out = null) {
   return `v${volume}b${book}c${chapter}`
     + (section != null ? `s${section}` : '')
     + (out != null ? `o${out}` : '');
+}
+
+// The same reference for a height no block has reached: the expected-chapter
+// mark □ where a mined chapter wears ■ (e.g. "LXV β1 □1"). The arithmetic is
+// identical -- a height's place is fixed by consensus, not by mining -- so
+// only the mark differs, and it differs to say the block is still owed. Read
+// by the mempool's projections and the contents' Appendix II.
+export function expectedReference(height) {
+  return reference(height).replace('■', '□');
 }
 
 // ─── footnote marks: letters, not numerals ──────────────────────────────
