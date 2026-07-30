@@ -75,15 +75,18 @@ export function commentaryFor({ height = null, index = null, txid = null } = {})
   const h = height == null ? null : String(height);
   const i = Number.isInteger(index) ? index : null;
   const id = typeof txid === 'string' ? txid.toLowerCase() : null;
-  return itemsOf(notables().filter((e) => {
-    if (e.address) return false;                    // a name, not a place: it reads in the Ledger
-    if (i === -3) return e.page === 'volume' && e.id === h;
-    if (i === -2) return e.page === 'book' && e.id === h;
-    if (e.page) return false;                       // a leaf is the only place its entry speaks
-    if (i === -1) return e.id === h;
-    if (i !== null && i >= 0) return e.id === id || (e.id === h && e.index === i);
+  // An entry is kept once however many places it is found in, so a match on any
+  // of its places brings its readings -- written once, wherever they are met.
+  const here = (p) => {
+    if (p.address) return false;                    // a name, not a place: it reads in the Ledger
+    if (i === -3) return p.page === 'volume' && p.id === h;
+    if (i === -2) return p.page === 'book' && p.id === h;
+    if (p.page) return false;                       // a leaf is the only place it speaks
+    if (i === -1) return p.id === h;
+    if (i !== null && i >= 0) return p.id === id || (p.id === h && p.index === i);
     return false;
-  }));
+  };
+  return itemsOf(notables().filter((e) => e.places.some(here)));
 }
 
 // The readings kept for one or more addresses -- what a ledger is: a titled set
@@ -97,11 +100,11 @@ export function commentaryForAddresses(addresses) {
   const wanted = (Array.isArray(addresses) ? addresses : [addresses]).filter(Boolean);
   if (!wanted.length) return [];
   // In the order the ledger holds its addresses, not the order the index does.
-  return wanted.flatMap((a) => itemsOf(notables().filter((e) => e.address === a)));
+  return wanted.flatMap((a) => itemsOf(notables().filter((e) => e.places.some((p) => p.address === a))));
 }
 
 const itemsOf = (entries) => entries
-  .map((e) => ({ id: e.id, title: e.title, readings: readingsOf(e) }))
+  .map((e) => ({ title: e.title, readings: readingsOf(e) }))
   .filter((it) => it.readings.length);
 
 // Fetch the prose for a set of matched entries and hand back items whose

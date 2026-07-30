@@ -34,7 +34,7 @@ import { init, encodeSeedPhrase } from '../web/glossia-msg.js';
 import { parseTransaction, parseBlockHeader } from '../web/btc-tx.js';
 import { composeTransactionFields, composeBlockHeaderFields, renderWitness, toSuperscript } from '../web/btc-prose.js';
 import { volumeBookChapter, toRoman, reference } from '../web/btc-citation.js';
-import { parseNotables, setNotables } from '../web/btc-notables.js';
+import { parseNotables, setNotables, places, placeTitle } from '../web/btc-notables.js';
 import { readingsOf, commentaryLines, resolveCommentary } from '../web/btc-commentary.js';
 
 // The editorial layer is authored as files -- notables.yaml and commentary/*.md
@@ -43,7 +43,12 @@ import { readingsOf, commentaryLines, resolveCommentary } from '../web/btc-comme
 // can never disagree about what the curation says.
 const EDITORIAL = new URL('../web/', import.meta.url);
 const readEditorial = (path) => readFile(new URL(path, EDITORIAL), 'utf8');
-const NOTABLE = setNotables(parseNotables(await readEditorial('notables.yaml')));
+setNotables(parseNotables(await readEditorial('notables.yaml')));
+// The passages are one per PLACE, not one per entry: an entry may be found in
+// several (the twice-confirmed BIP30 coinbases are one thing in four), and each
+// place is its own passage on the chain -- carrying, as the live page does, the
+// one reading their entry holds.
+const PLACES = places();
 
 export const SITE = 'https://bookofbitcoin.io';
 const OUT_DIR = new URL('../web/passages/', import.meta.url);
@@ -211,7 +216,7 @@ export function sectionMd({ txid, fields, sectionNum, eventTitle }) {
 // from the record just as plainly, and a crawler that flattens the page must
 // not be able to quote one as the other.
 export async function commentaryMd(entry) {
-  const items = [{ title: entry.title, readings: readingsOf(entry) }];
+  const items = [{ title: entry.title ?? '', readings: readingsOf(entry) }];
   await resolveCommentary(items, { read: readEditorial });
   const lines = commentaryLines(items);
   if (!lines.length) return [];
@@ -231,9 +236,9 @@ export async function passageMd({ title, entry, height, blockHash, header, txCou
   const { volume, book, chapter } = volumeBookChapter(height);
   const cite = `${reference(height)} §${index + 1}`;
   const liveUrl = `${SITE}/bitcoin-book.html?txid=${txid}`;
-  const chapterEvents = NOTABLE
-    .filter((e) => e.id === String(height) && e.page !== 'book')
-    .map((e) => e.title);
+  const chapterEvents = PLACES
+    .filter((p) => p.id === String(height) && !p.page && !p.address)
+    .map(placeTitle);
 
   const md = [];
   md.push(`# ${title}`);
@@ -262,7 +267,7 @@ export async function passageMd({ title, entry, height, blockHash, header, txCou
   // The annotation layer, where this passage has one. A static passage is
   // generated from exactly one curated entry, so it prints that entry's
   // readings -- no matching to do.
-  md.push(...await commentaryMd(entry || { title }));
+  md.push(...await commentaryMd(entry || { title, commentary: [] }));
   md.push('---');
   md.push('');
   md.push(`*Reading the notation:* italic prose passages are Glossia encodings of the raw`);
@@ -340,19 +345,22 @@ async function blockContext(height) {
   return { blockHash, headerHex, block: meta, header: parseBlockHeader(headerHex), txCount: meta.tx_count };
 }
 
-async function renderEntry(entry, seed) {
-  if (entry.page || entry.id === '-1') return null;   // a leaf (book or volume) / the moving tip — no static passage
+async function renderEntry(place, seed) {
+  // A leaf, a name, or the moving tip: no static passage to render.
+  if (place.page || place.address || place.id === '-1') return null;
+  const entry = place.entry;
+  const title = placeTitle(place);
 
   let height, index, txid;
-  if (isTxid(entry.id)) {
-    txid = entry.id.toLowerCase();
+  if (isTxid(place.id)) {
+    txid = place.id.toLowerCase();
     const proof = await esplora(`/tx/${txid}/merkle-proof`, 'json');
     if (!proof) return null;
     height = proof.block_height;
     index = proof.pos;
   } else {
-    height = parseInt(entry.id, 10);
-    index = entry.index ?? 0;                        // a block entry reads from its coinbase
+    height = parseInt(place.id, 10);
+    index = place.index ?? 0;                        // a block place reads from its coinbase
   }
 
   const ctx = await blockContext(height);
@@ -373,17 +381,17 @@ async function renderEntry(entry, seed) {
   try { outputs = (await esplora(`/tx/${txid}`, 'json'))?.vout ?? null; } catch { /* stays on-demand */ }
 
   addToSeed(seed, {
-    entryId: entry.id, height, blockHash: ctx.blockHash, block: ctx.block,
+    entryId: place.id, height, blockHash: ctx.blockHash, block: ctx.block,
     headerHex: ctx.headerHex, txid, pos: index, txHex: hex, txids, outputs,
   });
 
   return {
-    slug: slugify(entry.title),
-    title: entry.title,
+    slug: slugify(title),
+    title,
     height,
     index,
     txid,
-    md: await passageMd({ title: entry.title, entry, height, index, txid, fields, ...ctx }),
+    md: await passageMd({ title, entry, height, index, txid, fields, ...ctx }),
   };
 }
 
@@ -433,16 +441,16 @@ async function main() {
   const rendered = [];
   const seed = emptySeed();
   let skipped = 0;
-  for (const entry of NOTABLE) {
+  for (const place of PLACES) {
     try {
-      const r = await renderEntry(entry, seed);
+      const r = await renderEntry(place, seed);
       if (!r) { skipped++; continue; }
       await writeFile(new URL(`${r.slug}.md`, OUT_DIR), r.md);
       rendered.push(r);
       console.log(`  ok  ${r.slug}.md  (${reference(r.height)} §${r.index + 1})`);
     } catch (e) {
       skipped++;
-      console.warn(`  SKIP ${entry.title}: ${e.message}`);
+      console.warn(`  SKIP ${placeTitle(place)}: ${e.message}`);
     }
   }
 

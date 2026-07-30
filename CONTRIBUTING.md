@@ -71,6 +71,26 @@ in either spelling and to any depth (`III β2 ■5`, `I β29 ■596 §85`,
 height when the file is read, so nothing downstream sees a new shape, and the
 checker prints what each one resolved to.
 
+An entry found in **more than one place** writes `ids:` in place of `id:`, each
+item a place with its own `as:` — what that place is within the entry:
+
+```yaml
+- title: The twice-confirmed coinbases
+  ids:
+    - id: 91722
+      index: 0
+      as: e3bf…468, first printing
+    - id: 91880
+      index: 0
+      as: e3bf…468, second printing
+  commentary:
+    - file: bip30-duplicate-coinbases.md
+```
+
+The contents lists a row per place, each citing its own chapter and carrying the
+`as` after the title; the reading belongs to the entry, so it is written once
+and met at every one of them.
+
 An `id` may also be an **address**, which is how a reading is attached to a
 ledger rather than to a passage:
 

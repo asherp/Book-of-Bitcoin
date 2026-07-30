@@ -179,7 +179,10 @@ compiled to WASM) is consumed as a published
   An entry's `id:` is written in any form the search box takes — a height, a
   64-hex id, a citation to whatever depth is meant (`I β29 ■596 §85`, resolved by
   arithmetic when the file is read), or an address, which names a ledger rather
-  than a place and so reads in the Ledger instead of opening a chapter.
+  than a place and so reads in the Ledger instead of opening a chapter. An entry
+  found in more than one place writes `ids:` and gives each an `as:` — the two
+  twice-confirmed coinbases are one thing in four printings, so the contents
+  carries four rows and the reading beneath them is written once.
   YAML and Markdown rather than JavaScript because this is the part of the
   repository written by people who are writing rather than programming — and
   nothing is generated from them: the browser reads these files as they stand,

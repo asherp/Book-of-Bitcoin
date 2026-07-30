@@ -767,7 +767,7 @@ import { init, encodeSeedPhrase } from './glossia-msg.js';
 import { parseTransaction, computeTxid, parseBlockHeader, computeBlockHash } from './btc-tx.js';
 import { composeTransactionFields, composeBlockHeaderFields, groupDigits, formatBtc, renderWitness, toSuperscript, timestampInfo } from './btc-prose.js';
 import { volumeBookChapter, heightOf, toRoman, reference, parseReference } from './btc-citation.js';
-import { loadNotables, notables, blocksEta } from './btc-contents.js';
+import { loadNotables, places, placeTitle, blocksEta } from './btc-contents.js';
 import { NOTATION_HTML } from './btc-notation.js';
 import { commentaryFor, commentaryHtml, resolveCommentary } from './btc-commentary.js';
 
@@ -2468,7 +2468,9 @@ function renderChapterHead(onTitlePage) {
   // case here, which kept it out of the table of contents.
   // A page: 'book' entry shares the height namespace (its id is its book's
   // first block) but names the book's leaf, not this chapter -- excluded here.
-  const eventTitles = notables().filter((e) => e.id === String(state.height) && e.page !== 'book').map((e) => e.title);
+  const eventTitles = places()
+    .filter((p) => p.id === String(state.height) && !p.page && !p.address)
+    .map(placeTitle);
   const eventTitle = eventTitles[0];
   $('ch-title').textContent = `Chapter ${chapterName(chapter)}`;
   const subtitle = $('ch-subtitle');
@@ -2705,9 +2707,9 @@ function renderBookLeaf() {
   detachHashCopy(title);
   // A curated book (a soft fork's signaling epoch) wears its name as the
   // leaf's subtitle, the same dress a notable chapter wears.
-  const bookEvent = notables().find((e) => e.page === 'book' && e.id === String(state.height));
+  const bookEvent = places().find((p) => p.page === 'book' && p.id === String(state.height));
   const subtitle = $('ch-subtitle');
-  subtitle.textContent = bookEvent ? bookEvent.title : '';
+  subtitle.textContent = bookEvent ? placeTitle(bookEvent) : '';
   subtitle.classList.toggle('hidden', !bookEvent);
   $('ch-frontispiece').classList.add('hidden');
   const bookEnd = state.height + chapterCount - 1;
@@ -2901,8 +2903,9 @@ function renderChapter(para) {
   // effective fee rate the ordering ran on. Where that rate departs from the
   // transaction's own fee ÷ vsize, the difference is family money -- a
   // child-pays-for-parent package moving together -- and the line says so.
-  let sectionEvent = notables().find((e) => e.id === para.txid
-    || (e.id === String(state.height) && e.index === state.index))?.title;
+  const sectionPlace = places().find((p) => !p.page && !p.address
+    && (p.id === para.txid || (p.id === String(state.height) && p.index === state.index)));
+  let sectionEvent = sectionPlace && placeTitle(sectionPlace);
   if (!sectionEvent && para.ghost) sectionEvent = '† replaced by fee';
   if (!sectionEvent && state.projected && state.manifest) {
     const m = state.manifest[state.index];

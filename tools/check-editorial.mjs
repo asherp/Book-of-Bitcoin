@@ -17,7 +17,7 @@
 // too, ahead of everything expensive.
 
 import { readdir, readFile } from 'node:fs/promises';
-import { parseNotables } from '../web/btc-notables.js';
+import { parseNotables, setNotables, places, placeTitle } from '../web/btc-notables.js';
 import { parseYamlSequence } from '../web/btc-yaml.js';
 import { parseReference } from '../web/btc-citation.js';
 import { looksLikeAddress } from '../web/btc-lookup.js';
@@ -30,51 +30,57 @@ const problems = [];
 const notes = [];
 
 const source = await readFile(new URL('notables.yaml', WEB), 'utf8');
-const entries = parseNotables(source);
+const entries = setNotables(parseNotables(source));
 if (!entries.length) problems.push('notables.yaml parsed to no entries at all');
+// An entry may be found in several places; the checks below are per place,
+// since a place is what a row, a title and a static passage are made of.
+const allPlaces = places();
 
 // An id may be written as a reference ("I β29 ■596 §85") and is resolved to a
 // height by arithmetic; show the resolution, so an author can see that the
 // citation they wrote points where they think it does.
 for (const raw of parseYamlSequence(source)) {
-  const ref = parseReference(String(raw.id ?? '').trim());
-  if (!ref) continue;
-  notes.push(`"${raw.title}": ${raw.id} resolves to block ${ref.height}`
-    + (ref.section !== null ? ` §${ref.section}` : ref.index === -2 ? " (its book's leaf)" : ref.index === -3 ? " (its volume's leaf)" : '')
-    + (ref.out !== null ? `.${ref.out}` : ''));
+  for (const p of raw.ids ?? [raw]) {
+    const ref = parseReference(String(p.id ?? '').trim());
+    if (!ref) continue;
+    notes.push(`"${raw.title}"${p.as ? ` (${p.as})` : ''}: ${p.id} resolves to block ${ref.height}`
+      + (ref.section !== null ? ` §${ref.section}` : ref.index === -2 ? " (its book's leaf)" : ref.index === -3 ? " (its volume's leaf)" : '')
+      + (ref.out !== null ? `.${ref.out}` : ''));
+  }
 }
 
-// Ids must be unique: the pages key placements, bookmarks and seeds by id, so a
-// duplicate silently shadows an entry. A height+index pair is the exception —
-// the BIP30 coinbases share a txid and are told apart by their index.
+// Places must be unique: the pages key placements, bookmarks and seeds by id, so
+// a duplicate silently shadows one. A height+index pair is what tells two places
+// at one height apart — how the twice-confirmed BIP30 coinbases are cited.
 const seen = new Map();
-for (const e of entries) {
+for (const e of allPlaces) {
+  const name = placeTitle(e);
   const key = `${e.id}#${e.index ?? ''}`;
-  if (seen.has(key)) problems.push(`duplicate entry: "${e.title}" repeats the id of "${seen.get(key)}"`);
-  seen.set(key, e.title);
+  if (seen.has(key)) problems.push(`duplicate place: "${name}" repeats the id of "${seen.get(key)}"`);
+  seen.set(key, name);
   if (e.address) {
     // An address entry names a ledger, not a place. It needs no shelving here
     // (the Ledger opens any address, curated or not), but a reading kept on an
     // address nobody has shelved will only be met by a reader who goes looking
     // for that address — worth saying, never an error.
-    if (!looksLikeAddress(e.address)) problems.push(`"${e.title}": id "${e.address}" does not look like an address`);
+    if (!looksLikeAddress(e.address)) problems.push(`"${name}": id "${e.address}" does not look like an address`);
     else if (!INDEXED.some((l) => l.addresses.includes(e.address))) {
-      notes.push(`"${e.title}": ${e.address} is not shelved in btc-index-data.js — its reading shows only on an ad-hoc ledger`);
+      notes.push(`"${name}": ${e.address} is not shelved in btc-index-data.js — its reading shows only on an ad-hoc ledger`);
     }
   } else if (!/^-?[0-9]+$/.test(e.id) && !/^[0-9a-f]{64}$/.test(e.id)) {
-    problems.push(`"${e.title}": id "${e.id}" is neither a block height nor a 64-hex id`);
+    problems.push(`"${name}": id "${e.id}" is neither a block height nor a 64-hex id`);
   }
   if (e.page !== undefined && e.page !== 'book' && e.page !== 'volume') {
-    problems.push(`"${e.title}": page: ${e.page} — only "book" and "volume" are understood`);
+    problems.push(`"${name}": page: ${e.page} — only "book" and "volume" are understood`);
   }
   if (e.out !== undefined && !(Number.isInteger(e.out) && e.out >= 0)) {
-    problems.push(`"${e.title}": out must be a whole output number, got ${e.out}`);
+    problems.push(`"${name}": out must be a whole output number, got ${e.out}`);
   }
   if (e.out !== undefined && !(e.index >= 0)) {
-    problems.push(`"${e.title}": out names an output within a section, so it needs a §section reference`);
+    problems.push(`"${name}": out names an output within a section, so it needs a §section reference`);
   }
   if (e.index !== undefined && !Number.isInteger(e.index)) {
-    problems.push(`"${e.title}": index must be a whole number, got ${e.index}`);
+    problems.push(`"${name}": index must be a whole number, got ${e.index}`);
   }
 }
 
@@ -108,7 +114,7 @@ const onDisk = (await readdir(new URL('commentary/', WEB))).filter((f) => f.ends
 for (const f of onDisk) if (!referenced.has(f)) notes.push(`commentary/${f} is not referenced by any entry — nothing will show it`);
 
 const credited = entries.flatMap((e) => readingsOf(e).filter((r) => r.by).map((r) => r.by));
-console.log(`notables.yaml: ${entries.length} entries, ${referenced.size} readings`
+console.log(`notables.yaml: ${entries.length} entries in ${allPlaces.length} places, ${referenced.size} readings`
   + `${credited.length ? `, credited to ${[...new Set(credited)].join(', ')}` : ''}`);
 for (const n of notes) console.warn(`  note: ${n}`);
 for (const p of problems) console.error(`  error: ${p}`);

@@ -45,7 +45,25 @@
 # gives its block height and index, yielding volume·book·chapter·§section.
 # Ordered chronologically (reading order).
 #
-# The fields, all optional but `title` and `id`:
+# An entry may be found in more than one place. Write `ids:` instead of `id:`,
+# each item a place of its own (with its own index / page / out where it needs
+# them), and `as:` naming what that place is within the entry — the contents
+# prints it after the title, so rows sharing a name still say which is which.
+# The readings below belong to the entry, so one reading serves every place: the
+# four printings of the two twice-confirmed coinbases are one story, told once.
+#
+#   - title: The twice-confirmed coinbases
+#     ids:
+#       - id: '91722'
+#         index: 0
+#         as: e3bf…468, first printing
+#       - id: '91880'
+#         index: 0
+#         as: e3bf…468, second printing
+#     commentary:
+#       - file: bip30-duplicate-coinbases.md
+#
+# The fields, all optional but `title` and `id` (or `ids`):
 #
 #   index: 2          the transaction's position within the block (0-based),
 #                     rendered as its §section — how the twice-confirmed BIP30
@@ -168,36 +186,34 @@
   id: '79400'
   commentary:
     - file: 1-mb-size-limit-activation.md
-# BIP30's origin story: the coinbases of 91,722 and 91,812 were repeated
-# verbatim by 91,880 and 91,842, overwriting them in the UTXO set — the only
-# two txids ever confirmed twice:
+# BIP30's origin story, and the clearest case for `ids:` — one thing the book
+# keeps, found in four places. The coinbases of 91,722 and 91,812 were repeated
+# verbatim by 91,880 and 91,842, overwriting them in the UTXO set — the only two
+# txids ever confirmed twice:
 #   e3bf3d07d4b0375638d5f1db5255fe07ba2c4cb067cd81b84ee974b6585fb468 (91,722 -> 91,880)
 #   d5d27987d2a3dfc724e359870c6644b40e497bdc0589a033220fe15429d88599 (91,812 -> 91,842)
-# All four printings are cited by height (§1 of their blocks) — a txid lookup
-# can only ever land on one of a duplicate's two sections — and each printing
-# owns its own page number: pages count positions, not distinct txids, so the
-# chain's page count runs exactly two past its distinct-txid count, and these
-# are the two (see btc-pages.js).
-- title: Duplicated coinbase e3bf…468, first printing
-  id: '91722'
-  index: 0
+# All four printings are cited by height (§1 of their blocks) — a txid lookup can
+# only ever land on one of a duplicate's two sections — and each owns its own
+# page number: pages count positions, not distinct txids, so the chain's page
+# count runs exactly two past its distinct-txid count, and these are the two (see
+# btc-pages.js). `as` is what tells the four rows apart in the contents; the
+# reading beneath them is written once.
+- title: The twice-confirmed coinbases
+  ids:
+    - id: '91722'
+      index: 0
+      as: e3bf…468, first printing
+    - id: '91812'
+      index: 0
+      as: d5d2…599, first printing
+    - id: '91842'
+      index: 0
+      as: d5d2…599, second printing
+    - id: '91880'
+      index: 0
+      as: e3bf…468, second printing
   commentary:
-    - file: bip30-e3bf-first-printing.md
-- title: Duplicated coinbase d5d2…599, first printing
-  id: '91812'
-  index: 0
-  commentary:
-    - file: bip30-d5d2-first-printing.md
-- title: Duplicated coinbase d5d2…599, second printing (BIP30)
-  id: '91842'
-  index: 0
-  commentary:
-    - file: bip30-d5d2-second-printing.md
-- title: Duplicated coinbase e3bf…468, second printing (BIP30)
-  id: '91880'
-  index: 0
-  commentary:
-    - file: bip30-e3bf-second-printing.md
+    - file: bip30-duplicate-coinbases.md
 - title: 100K block milestone
   id: '100000'
   commentary:

@@ -201,7 +201,7 @@ a:hover { text-decoration: underline; }
 </div>
 
 <script type="module">
-import { loadNotables, notables, isBlockId, isRelativeBlockId, entryHref, blocksEta } from './btc-contents.js';
+import { loadNotables, places, placeTitle, isBlockId, isRelativeBlockId, entryHref, blocksEta } from './btc-contents.js';
 import { creditLine } from './btc-commentary.js';
 import { volumeBookChapter, toRoman } from './btc-citation.js';
 import { storeGet, storePut } from './btc-store.js';
@@ -475,19 +475,25 @@ function render() {
 // reader's own bookmarks plus a line saying what could not be read.
 await loadNotables();
 
-const placements = new Map();          // curated id -> place | null (once attempted)
+// A curated entry may be found in several places (the twice-confirmed BIP30
+// coinbases are one thing in four), and the contents lists PLACES: one row each,
+// in reading order, all carrying their entry's title and their own `as`. Keyed
+// by id+index, because two places of one entry can share a height.
+const placeKey = (p) => `${p.id}#${p.index ?? ''}`;
+const placements = new Map();          // place key -> citation | null (once attempted)
 const bmPlacements = new Map();        // bookmark hex -> place | null (once attempted)
 
 // A reader's bookmarks join the curated set in one list. A bookmark that is
 // already a curated entry is dropped (the curated title wins) so it isn't listed
 // twice.
-const NOTABLE_IDS = new Set(notables().map((e) => e.id));
+const NOTABLE_IDS = new Set(places().map((p) => p.id));
 const bookmarks = readBookmarks().filter((b) => !NOTABLE_IDS.has(b.hex));
 
 // Every entry -- curated or bookmarked -- carrying whatever placement has
 // resolved so far. A bookmark reuses its stored title and flies the book's ribbon.
 const entries = () => [
-  ...notables().map((e) => ({ ...e, place: placements.get(e.id), tried: placements.has(e.id) })),
+  ...places().map((p) => ({ ...p, title: placeTitle(p), commentary: p.entry.commentary,
+    place: placements.get(placeKey(p)), tried: placements.has(placeKey(p)) })),
   ...bookmarks.map((b) => ({
     id: b.hex, index: b.pos ?? undefined, title: b.title || b.prose || shortHex(b.hex),
     bookmark: true, place: bmPlacements.get(b.hex), tried: bmPlacements.has(b.hex),
@@ -696,7 +702,7 @@ async function loadProjected() {
 
 // Block placements (curated, and bookmarks that stored their reference) are
 // offline, so render at once; everything else streams in as its lookup resolves.
-for (const e of notables()) if (isBlockId(e.id)) placements.set(e.id, placeOf(Number(e.id), e.index ?? null, e.page));
+for (const p of places()) if (isBlockId(p.id)) placements.set(placeKey(p), placeOf(Number(p.id), p.index ?? null, p.page));
 for (const b of bookmarks) if (Number.isInteger(b.height)) bmPlacements.set(b.hex, placeOf(b.height, b.pos ?? null));
 render();
 // The projected section loads alongside the citation lookups, and the queue
@@ -705,8 +711,8 @@ render();
 loadProjected();
 setInterval(() => { if (!document.hidden) loadProjected(); }, 60_000);
 await Promise.all([
-  ...notables().filter((e) => !e.address && !placements.has(e.id)).map(async (e) => {
-    placements.set(e.id, await resolvePlacement(e));
+  ...places().filter((p) => !p.address && !placements.has(placeKey(p))).map(async (p) => {
+    placements.set(placeKey(p), await resolvePlacement(p));
     render();
   }),
   ...bookmarks.filter((b) => !bmPlacements.has(b.hex)).map(async (b) => {
