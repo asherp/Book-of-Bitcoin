@@ -453,8 +453,10 @@ function ledgerEl(ledger, isKept) {
     bm.innerHTML = '<svg viewBox="0 0 12 16"><path fill="currentColor" d="M0 0h12v16l-6-4-6 4z"/></svg>';
     t.append(bm);
   }
-  // A kept ledger may carry no title of its own; then its first address
-  // names it -- as a name, which is what the index is a list of.
+  // A kept ledger is named by its reader before it is shelved, so a title is
+  // what a row prints. Ledgers kept before that was asked of them fall back
+  // to their first address, the same stand-in name the Ledger page gives
+  // them -- a name in the title column, never a citation in the reference's.
   t.append(document.createTextNode(ledger.title || shortAddr(ledger.addresses[0])));
   const r = document.createElement('span');
   r.className = 'toc-ref none';

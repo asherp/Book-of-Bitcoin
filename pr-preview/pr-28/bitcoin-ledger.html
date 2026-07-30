@@ -252,6 +252,19 @@ a:hover { text-decoration: underline; }
 .anth-keep.kept { border-color:var(--accent); color:var(--accent); }
 .anth-keep .keep-rib { display:inline-block; width:8px; height:11px; margin-right:8px; vertical-align:-1px; }
 .anth-keep .keep-rib svg { display:block; width:100%; height:100%; }
+/* Naming a ledger on the way to the shelf: the settings panel's manner --
+   the same field and the same two buttons, since it asks the same kind of
+   question. Wraps on a narrow leaf rather than squeezing the field. */
+.keep-title { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; max-width:440px; }
+.keep-title.hidden { display:none; }
+.keep-title input { flex:1 1 200px; min-width:0; background:var(--input-bg); border:1px solid var(--input-bd); border-radius:4px;
+  color:var(--ink); font:400 12px/1.4 'IBM Plex Mono',monospace; padding:8px; }
+.keep-title input:focus { outline:none; border-color:var(--accent); }
+/* In the settings panel these buttons stretch to the height of the field
+   beside them; on their own row they have to stand their own height. */
+.keep-title-row { display:flex; gap:8px; }
+.keep-title-row button { padding:8px 12px; }
+.keep-title .save-btn:disabled { opacity:.4; cursor:default; border-color:var(--input-bd); color:var(--dim); }
 /* The kept mark on a title leaf: the contents' ribbon, beside the name. */
 .anth-title .toc-bm { width:12px; height:16px; margin-right:12px; vertical-align:baseline; }
 /* The β sigil is a mark, not a letter: exempt from the headers' small caps. */
@@ -423,6 +436,16 @@ a:hover { text-decoration: underline; }
         <div class="anth-count" id="anth-count"></div>
         <div class="anth-held" id="anth-held"></div>
         <button type="button" class="anth-keep" id="anth-keep"></button>
+        <!-- A ledger the reader brings is named before it is shelved: it
+             becomes a row in their own contents, and a row is read by its
+             title. Opens under the button; the ledger is kept on save. -->
+        <div class="keep-title hidden" id="keep-title">
+          <input type="text" id="keep-title-input" placeholder="Title for the contents" autocomplete="off" spellcheck="false" maxlength="80">
+          <div class="keep-title-row">
+            <button type="button" class="save-btn" id="keep-title-save">Keep</button>
+            <button type="button" class="ghost-btn" id="keep-title-cancel">Cancel</button>
+          </div>
+        </div>
         <a class="anth-down" id="anth-down" href="#anth-contents" aria-label="Down into this leaf">▾</a>
       </header>
 
@@ -643,6 +666,8 @@ const count = document.getElementById('anth-count');
 const range = document.getElementById('anth-range');
 const heldEl = document.getElementById('anth-held');
 const keepBtn = document.getElementById('anth-keep');
+const keepTitle = document.getElementById('keep-title');
+const keepTitleInput = document.getElementById('keep-title-input');
 const downEl = document.getElementById('anth-down');
 const totalsBar = document.getElementById('acct-totals');
 
@@ -1105,6 +1130,7 @@ const clearHero = () => {
   range.textContent = '';
   heldEl.replaceChildren();
   keepBtn.classList.remove('show');
+  closeTitleForm();   // a half-typed name does not follow the reader to the next leaf
 };
 
 // Bookmarking an address (or a whole unkept ledger): the same ribbon the
@@ -1138,16 +1164,63 @@ const showBookmark = () => {
       }
     }
   };
+  // Shelving asks for a name first. A ledger arrives here from a ?address=
+  // query, which carries addresses and nothing else -- and a kept ledger is
+  // a row in the reader's own table of contents, where a row is read by its
+  // title. So an untitled ledger opens the naming form instead of saving,
+  // and the save is what keeps it. Removing needs no name.
+  const shelve = (title) => {
+    saveKeptLedgers([...keptLedgers(), { title, addresses: cur().addresses }]);
+    // The ledger now has the name it was kept under: this leaf, the pager's
+    // count, and the shelf all read it from here.
+    cur().title = title;
+    cur().name = title;
+    document.getElementById('anth-title').textContent = title;
+    closeTitleForm();
+    reflect();
+  };
   keepBtn.onclick = () => {
     const all = keptLedgers();
     const has = all.some((k) => k.addresses && sameAddresses(k.addresses, cur().addresses));
-    saveKeptLedgers(has
-      ? all.filter((k) => !sameAddresses(k.addresses, cur().addresses))
-      : [...all, { title: cur().title, addresses: cur().addresses }]);
-    reflect();
+    if (has) {
+      saveKeptLedgers(all.filter((k) => !sameAddresses(k.addresses, cur().addresses)));
+      closeTitleForm();
+      reflect();
+    } else if (cur().title.trim()) {
+      shelve(cur().title.trim());
+    } else {
+      openTitleForm(shelve);
+    }
   };
   reflect();
 };
+
+// The naming form under the Keep button. Save stays out of reach until
+// something is typed -- the whole point is that no ledger is shelved
+// nameless -- and Enter saves, Escape gives up, as the field's shape
+// suggests.
+const keepTitleSave = document.getElementById('keep-title-save');
+const keepTitleCancel = document.getElementById('keep-title-cancel');
+function closeTitleForm() {
+  keepTitle.classList.add('hidden');
+  keepTitleInput.value = '';
+  keepTitleSave.disabled = true;
+}
+function openTitleForm(onSave) {
+  keepTitle.classList.remove('hidden');
+  keepTitleInput.value = '';
+  keepTitleSave.disabled = true;
+  keepTitleInput.focus();
+  const commit = () => { const t = keepTitleInput.value.trim(); if (t) onSave(t); };
+  keepTitleSave.onclick = commit;
+  keepTitleInput.oninput = () => { keepTitleSave.disabled = !keepTitleInput.value.trim(); };
+  keepTitleInput.onkeydown = (ev) => {
+    if (ev.key === 'Enter') { ev.preventDefault(); commit(); }
+    else if (ev.key === 'Escape') { ev.preventDefault(); closeTitleForm(); }
+    ev.stopPropagation();   // the leaf's own arrow keys must not turn the page mid-name
+  };
+}
+keepTitleCancel.onclick = () => closeTitleForm();
 
 const arrow = (glyph, label, off, act, word = false) => {
   const a = document.createElement('a');
