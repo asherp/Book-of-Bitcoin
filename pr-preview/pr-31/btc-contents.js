@@ -27,19 +27,23 @@ export const isBlockId = (id) => /^[0-9]+$/.test(id);
 export const isRelativeBlockId = (id) => /^-[0-9]+$/.test(id);
 
 // The expected wait for k more blocks, at one block per ten minutes on
-// average, as compact text ("≈ 40 min", "≈ 6 h 30 min", "≈ 2 d 4 h").
+// average, as compact text ("40 min", "6 h 30 min", "2 d 4 h").
 // Block arrivals are memoryless, so the clock starts at "now" no matter how
 // long the current block has been brewing -- and an estimate k blocks out
 // carries a spread of about ±10·√k minutes, so deeper figures are read as
-// order-of-magnitude, not appointments. Shared by the table of contents
-// (projected chapters) and the book (the not-yet-mined chapter's message).
+// order-of-magnitude, not appointments.
+//
+// The duration only; how it is hedged belongs to the caller, which knows what
+// it is setting it beside -- "ETA 40 min" on a draft chapter's head, "come
+// back in about 40 min" in a sentence. A figure that carried its own ≈ would
+// double the hedge wherever the surrounding words already said it.
 export function blocksEta(k) {
   const mins = k * 10;
-  if (mins < 60) return `≈ ${mins} min`;
+  if (mins < 60) return `${mins} min`;
   const h = Math.floor(mins / 60), m = mins % 60;
-  if (h < 24) return m ? `≈ ${h} h ${m} min` : `≈ ${h} h`;
+  if (h < 24) return m ? `${h} h ${m} min` : `${h} h`;
   const d = Math.floor(h / 24), hr = h % 24;
-  return hr ? `≈ ${d} d ${hr} h` : `≈ ${d} d`;
+  return hr ? `${d} d ${hr} h` : `${d} d`;
 }
 
 // The offline reference for a block id (volume·book·chapter). A transaction id
