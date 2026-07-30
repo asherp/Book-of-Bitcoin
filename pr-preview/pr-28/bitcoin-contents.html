@@ -189,10 +189,12 @@ const GENESIS_COINBASE = '4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b
 const ESPLORA_MIRRORS = ['https://blockstream.info/api', 'https://mempool.space/api'];
 // A book-page entry (page: 'book') places at its book with no chapter -- the
 // leaf precedes every chapter of its book in reading order.
-const placeOf = (height, pos, page) => {
+const placeOf = (height, pos, page, vout = null) => {
   const p = volumeBookChapter(height);
   if (page === 'book') return { volume: p.volume, book: p.book, chapter: null, section: null };
-  return { ...p, section: pos == null ? null : pos + 1 };
+  // An output rides its section's citation with its vout appended -- §1.0,
+  // as the book prints it (renderCitation in bitcoin-book.html).
+  return { ...p, section: pos == null ? null : pos + 1, vout: pos == null ? null : vout };
 };
 
 // The chain tip height, fetched once and reused across relative entries.
@@ -275,12 +277,12 @@ async function resolveBookmark(b) {
 // Under a Book heading only the ■chapter (and a transaction's §section) remains;
 // directly under a Volume, the β-marked book leads it. Spaced like the book's
 // own citations (e.g. "β29 ■596", "■1 §1").
-function tailRef({ book, chapter, section }, underBook) {
+function tailRef({ book, chapter, section, vout }, underBook) {
   // A book's own leaf: under its Book heading nothing remains to cite; under
   // a bare Volume, the β mark alone names it.
   if (chapter == null) return underBook ? '' : `β${book}`;
   let s = (underBook ? [`■${chapter}`] : [`β${book}`, `■${chapter}`]).join(' ');
-  if (section != null) s += ` §${section}`;
+  if (section != null) s += ` §${section}${vout == null ? '' : `.${vout}`}`;
   return s;
 }
 
@@ -291,7 +293,7 @@ function entryEl(entry, underBook) {
   const row = document.createElement('a');
   row.className = 'toc-entry' + (underBook ? ' under-book' : '') + (entry.bookmark ? ' is-bookmark' : '');
   row.dataset.entryId = entry.id;   // the projected section anchors after the tip's row
-  row.href = entryHref(entry.id, entry.index, entry.page);
+  row.href = entryHref(entry.id, entry.index, entry.page, entry.vout ?? null);
   const t = document.createElement('span'); t.className = 'toc-title';
   // A reader's own bookmark flies the same ribbon it wears in the book, so it's
   // distinguishable from a curated entry even though it sits in reading order.
@@ -522,15 +524,20 @@ const bmPlacements = new Map();        // bookmark hex -> place | null (once att
 // already a curated entry is dropped (the curated title wins) so it isn't listed
 // twice.
 const NOTABLE_IDS = new Set(NOTABLE.map((e) => e.id));
-const bookmarks = readBookmarks().filter((b) => !NOTABLE_IDS.has(b.hex));
+// A bookmark is keyed by what it names: a hash by itself, an output by its
+// hash and vout (the same key bitcoin-book.html writes). A bookmarked output
+// is never a curated entry, so only hash bookmarks are dropped as duplicates.
+const bmKey = (b) => (b.vout == null ? b.hex : `${b.hex}:${b.vout}`);
+const bookmarks = readBookmarks().filter((b) => b.vout != null || !NOTABLE_IDS.has(b.hex));
 
 // Every entry -- curated or bookmarked -- carrying whatever placement has
 // resolved so far. A bookmark reuses its stored title and flies the book's ribbon.
 const entries = () => [
   ...NOTABLE.map((e) => ({ ...e, place: placements.get(e.id), tried: placements.has(e.id) })),
   ...bookmarks.map((b) => ({
-    id: b.hex, index: b.pos ?? undefined, title: b.title || b.prose || shortHex(b.hex),
-    bookmark: true, place: bmPlacements.get(b.hex), tried: bmPlacements.has(b.hex),
+    id: b.hex, index: b.pos ?? undefined, vout: b.vout ?? undefined,
+    title: b.title || b.prose || shortHex(b.hex),
+    bookmark: true, place: bmPlacements.get(bmKey(b)), tried: bmPlacements.has(bmKey(b)),
   })),
 ];
 
@@ -565,7 +572,9 @@ async function loadProjected() {
 // Block placements (curated, and bookmarks that stored their reference) are
 // offline, so render at once; everything else streams in as its lookup resolves.
 for (const e of NOTABLE) if (isBlockId(e.id)) placements.set(e.id, placeOf(Number(e.id), e.index ?? null, e.page));
-for (const b of bookmarks) if (Number.isInteger(b.height)) bmPlacements.set(b.hex, placeOf(b.height, b.pos ?? null));
+for (const b of bookmarks) {
+  if (Number.isInteger(b.height)) bmPlacements.set(bmKey(b), placeOf(b.height, b.pos ?? null, undefined, b.vout ?? null));
+}
 render();
 // The projected section loads alongside the citation lookups, and the queue
 // keeps moving -- blocks land, replacements arrive -- so it refreshes itself
@@ -577,8 +586,10 @@ await Promise.all([
     placements.set(e.id, await resolvePlacement(e));
     render();
   }),
-  ...bookmarks.filter((b) => !bmPlacements.has(b.hex)).map(async (b) => {
-    bmPlacements.set(b.hex, await resolveBookmark(b));
+  ...bookmarks.filter((b) => !bmPlacements.has(bmKey(b))).map(async (b) => {
+    // An output bookmark resolves through its transaction, then takes its vout.
+    const place = await resolveBookmark(b);
+    bmPlacements.set(bmKey(b), place && b.vout != null ? { ...place, vout: b.vout } : place);
     render();
   }),
 ]);
