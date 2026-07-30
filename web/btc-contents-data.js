@@ -202,29 +202,50 @@ export const NOTABLE = [
 // block (0-based), rendered as its §section and passed to the book as ?index=.
 // e.g. { title: '…', id: '100000', index: 1 } opens block 100000, §2.
 
-// ── The appendix ──────────────────────────────────────────────────────────
+// ── The appendices ────────────────────────────────────────────────────────
 // A chain with no last block has no back, which is why the sigla sit in the
-// front matter (see the README). What can still be gathered at the end is an
-// appendix to the CONTENTS: entries that belong to the book but not to its
-// reading order, since reading order is the order blocks were mined and
-// these have not been.
+// front matter (see the README). What can still be gathered at the end of
+// the CONTENTS is what belongs to the book but not to its reading order --
+// reading order being the order blocks were mined.
 //
-// Part one, the provisional chapters. A height is a citation the moment
-// consensus fixes it, whether or not a block has reached it: the reference
-// is exact and computable today, and only the ■ is unearned -- so these
-// entries print the expected mark □, the same mark the mempool's projections
-// wear, and their lookups answer with a date instead of a page. They are
-// listed apart rather than in reading order because a chapter cited before
-// it exists cannot be read in sequence with chapters that do: dropped in
-// among the volumes, BIP42 alone opened a Volume LXV two centuries wide.
+// Three, numbered like volumes and rendered in this order:
 //
-// Ordered by height, as the contents are. `entries` take the same shape as
+//   I   The Mempool -- the chapters the queue is already forming, which is
+//       why it comes first: it opens where the volumes close, so the turn
+//       from the chain tip to the next provisional chapter stays a single
+//       step down the page. Built live by the page from the queue itself
+//       (bitcoin-contents.html); nothing to list here but its heading.
+//   II  Future Chapters -- heights consensus has already fixed, too far out
+//       for any queue to reach: flag days, activations, the 21M cap. A
+//       height is a citation the moment consensus fixes it, whether or not
+//       a block has reached it -- the reference is exact and computable
+//       today and only the ■ is unearned, so these print the expected mark
+//       □, the same mark the mempool's projections wear, and their lookups
+//       answer with a date instead of a page. Listed apart rather than in
+//       reading order because a chapter cited before it exists cannot be
+//       read in sequence with chapters that do: dropped in among the
+//       volumes, BIP42 alone opened a Volume LXV two centuries wide.
+//   III Ledgers -- the shelf of curated ledgers (btc-index-data.js), and
+//       any the reader keeps. Addresses, not chapters: an entry here cites
+//       no one place but a run of them, discovered at read time, so it
+//       carries its address where a chapter carries its reference. The
+//       contents and the index are inverses; this is where the contents
+//       points at the other one.
+//
+// A part's `kind` says who fills it: 'entries' is listed below, 'mempool'
+// and 'ledgers' are gathered by the page. Entries take the same shape as
 // NOTABLE's -- `id` is handed to the same lookup -- with a `note` carrying
 // the caveat the row shows on hover. Editorial, like the titles: what is
-// promised here is a citation, not a prophecy.
+// promised is a citation, not a prophecy.
 export const APPENDIX = [
   {
-    part: 'Provisional chapters',
+    kind: 'mempool',
+    title: 'The Mempool',
+    note: 'The chapters the queue is already forming, ordered as a miner would take them — provisional numbers that hold only while the queue does, and only the first is a real forecast.',
+  },
+  {
+    kind: 'entries',
+    title: 'Future Chapters',
     note: 'Chapters whose citations are fixed but whose blocks are unmined: consensus has named the height, the chain has yet to reach it. Each reference carries □, the expected-chapter mark, until a block earns it the ■.',
     entries: [
       // BIP110 (reduced_data, the 2026 temporary data-limit attempt; bit 4,
@@ -249,6 +270,11 @@ export const APPENDIX = [
       { title: 'BIP42 activation (21M cap)', id: '13440000',
         note: 'The book’s last chapter, and the only one whose date is already known: BIP42’s cap first binds at 13,440,000, the opening chapter of Volume LXV, due around the year 2262.' },
     ],
+  },
+  {
+    kind: 'ledgers',
+    title: 'Ledgers',
+    note: 'Addresses the book keeps a ledger for, and any the reader keeps. A ledger cites no single chapter but the run of them its address appears in, discovered from the chain as it is read — so each is named by its address where a chapter is named by its reference.',
   },
 ];
 

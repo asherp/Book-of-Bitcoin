@@ -103,14 +103,18 @@ compiled to WASM) is consumed as a published
 - `web/preface.md` — the preface itself, in Markdown: the canonical copy,
   readable here in the repository and rendered into the leaf above, so the
   book and the repository cannot drift apart
-- `web/bitcoin-contents.html` — table of contents / notable blocks. It runs
-  past the chain tip twice over: the mempool continues it as projected
-  chapters right after the latest block's row, and an appendix closes it —
-  back matter for what reading order cannot carry, since reading order is
-  the order blocks were mined. Its first part, the provisional chapters,
-  lists heights consensus has already fixed (BIP42's 21M cap at 13,440,000;
-  BIP110's flag heights, should it lock in), cited in full but marked □
-  until a block earns them the ■
+- `web/bitcoin-contents.html` — table of contents / notable blocks, closing
+  with three appendices: back matter for what reading order cannot carry,
+  reading order being the order blocks were mined. **I · The Mempool** —
+  the chapters the queue is already forming, first of the three because the
+  volumes close on the chain tip's row, so the turn from the tip to the next
+  provisional chapter stays one step down the page. **II · Future Chapters**
+  — heights consensus has already fixed but no queue can reach (BIP42's 21M
+  cap at 13,440,000; BIP110's flag heights, should it lock in), cited in
+  full but marked □ until a block earns them the ■. **III · Ledgers** — the
+  shelf of curated ledgers and any the reader keeps, named by address
+  because a ledger cites a run of chapters rather than one; the contents and
+  the index are inverses, and this is where the contents points at the other
 - `web/bitcoin-ledger.html` — the Ledger: a compendium of every ledger
   (curated donation addresses, any the reader keeps, and ad-hoc
   `?address=a,b,…` queries) in one document, read the way the book is
