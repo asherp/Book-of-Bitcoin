@@ -143,7 +143,7 @@ export function witnessPageHtml({
   const mark = footnoteMark(footnoteIndex);
   const cite = citationOf(height, sectionNum, mark);
   const url = `${site}${passagePath(height, sectionNum, mark)}`;
-  const card = cardUrl || `${site}/og-glossia.png`;
+  const card = cardUrl || `${site}/og-bookofbitcoin.png`;
   const sectionUrl = `${site}${passagePath(height, sectionNum)}`;
   const appUrl = `${site}/bitcoin-book.html?txid=${txid}#fn-${mark}`;
   const pageTitle = `${cite}${title ? ` — ${title}` : ''} · The βook of βitcoin`;
@@ -225,7 +225,7 @@ export function outputPageHtml({
 }) {
   const cite = citationOf(height, sectionNum, outputNum);
   const url = `${site}${passagePath(height, sectionNum, outputNum)}`;
-  const card = cardUrl || `${site}/og-glossia.png`;
+  const card = cardUrl || `${site}/og-bookofbitcoin.png`;
   const appUrl = `${site}/bitcoin-book.html?txid=${txid}&out=${outputNum}`;
   const sectionUrl = `${site}${passagePath(height, sectionNum)}`;
   const out = section?.fields?.outputs?.[outputNum];
@@ -327,7 +327,7 @@ export function chapterPageHtml({
 }) {
   const cite = reference(height);
   const url = `${site}${passagePath(height)}`;
-  const card = cardUrl || `${site}/og-glossia.png`;
+  const card = cardUrl || `${site}/og-bookofbitcoin.png`;
   const appUrl = `${site}/bitcoin-book.html?block=${height}`;
   const pageTitle = `${cite}${title ? ` — ${title}` : ''} · The βook of βitcoin`;
 
@@ -423,7 +423,7 @@ export function passagePageHtml({
   const cite = `${reference(height)} §${sectionNum}`;
   const path = passagePath(height, sectionNum);
   const url = `${site}${path}`;
-  const card = cardUrl || `${site}/og-glossia.png`;
+  const card = cardUrl || `${site}/og-bookofbitcoin.png`;
   const appUrl = `${site}/bitcoin-book.html?block=${height}&index=${sectionNum - 1}`;
   const pageTitle = `${cite}${title ? ` — ${title}` : ''} · The βook of βitcoin`;
 
