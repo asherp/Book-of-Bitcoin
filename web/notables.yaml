@@ -18,22 +18,43 @@
 # files as they stand (btc-yaml.js reads the small subset used here, and fails
 # loudly rather than guessing).
 #
-# Each `id` is handed straight to the book's lookup: a bare number is a block
-# height, a 64-hex value a transaction id. Every entry is cited by its
-# reference, never its raw id: a block's is known offline (volume·book·chapter
-# from its height); a transaction's is resolved the same way the reader resolves
-# a citation — a /tx/<txid>/merkle-proof lookup gives its block height and
-# index, yielding volume·book·chapter·§section. Ordered chronologically (reading
-# order).
+# An `id` is written in any form the search box takes (the grammar is
+# btc-lookup.js, one parser for the whole book, so a form that works in one
+# place works in every place):
+#
+#   57043                a block height
+#   -1                   counted back from the chain tip: -1 is the latest block
+#   4a5e1e…33b           a 64-hex transaction id (or a block hash)
+#   III β2 ■5            the book's own citation — sigils optional ("III 2 5")
+#   I β29 ■596 §85       …to whatever depth is meant: a section here
+#   I β29 ■596 §85.4     …an output within that section
+#   v1b29c596s85         the same citation in the spelling a link carries
+#
+# A reference is resolved by arithmetic when the file is read, into exactly the
+# height and index an entry would otherwise carry by hand — and its depth says
+# which page it means, so `III β2` is a book's leaf and `III` a volume's. Write
+# whichever form reads better where you are working; `node
+# tools/check-editorial.mjs` prints what each one resolved to.
+#
+# Every entry is cited by its reference, never its raw id: a block's is known
+# offline (volume·book·chapter from its height); a transaction's is resolved the
+# same way the reader resolves a citation — a /tx/<txid>/merkle-proof lookup
+# gives its block height and index, yielding volume·book·chapter·§section.
+# Ordered chronologically (reading order).
 #
 # The fields, all optional but `title` and `id`:
 #
 #   index: 2          the transaction's position within the block (0-based),
 #                     rendered as its §section — how the twice-confirmed BIP30
-#                     coinbases are cited, their txid alone being ambiguous
+#                     coinbases are cited, their txid alone being ambiguous.
+#                     A §section reference sets this instead, and a reference
+#                     that disagrees with it is an error rather than a ranking
 #   page: book        the id is then the first block of a book (a difficulty
 #                     window) and the entry opens that book's own leaf rather
-#                     than a chapter
+#                     than a chapter; `page: volume` likewise for a volume's.
+#                     A book- or volume-deep reference sets this too
+#   out: 4            an output within the section, as a §85.4 reference names —
+#                     the page opens at that output
 #   commentary:       the readings of this passage, in reading order, each one a
 #     - file: x.md    Markdown file in commentary/. A file with no `by` is the
 #     - file: y.md    book's own reading, unsigned, because the book is its
@@ -128,13 +149,14 @@
   page: book
   commentary:
     - file: difficulty-300.md
-# The supply-cap incident, cited at I β37 ■1846 §3 (block 74,421, section 3):
-# the ~184.4B-BTC overflow the corrective fork went on to excise. No published
-# reading until the section is re-checked against the chain the book reads
-# from — the story is well known, this passage's exact place in it less so.
+# The supply-cap incident: the ~184.4B-BTC overflow the corrective fork went on
+# to excise. Written as the citation it is usually given by — which resolves to
+# block 74,421, section 3 (see tools/check-editorial.mjs, which prints what each
+# reference resolved to). No published reading until the section is re-checked
+# against the chain the book reads from — the story is well known, this passage's
+# exact place in it less so.
 - title: Supply cap bug fix
-  id: '74421'
-  index: 2
+  id: I β37 ■1846 §3
 - title: Script opcode purge
   id: '74638'
   commentary:

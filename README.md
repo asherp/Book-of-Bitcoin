@@ -113,6 +113,13 @@ compiled to WASM) is consumed as a published
   it throws rather than guesses — a silent misread of editorial data is worse
   than a loud failure) and the Markdown subset the book's prose is written in,
   shared by the preface leaf and the commentary sheet
+- `web/btc-lookup.js` — everything the book answers to, in one grammar: a block
+  height, a tip-relative height, a 64-hex id, a reference in either spelling
+  (parsed by `btc-citation.js`, the citation scheme's own module), or an address
+  — which is not a place but a name, and so hands off to the Ledger. The search
+  box, the book's `?block=` / `?ref=` lookups, the ledger's `?ref=` routing and a
+  curated entry's `id:` all read through it, so a form learned anywhere works
+  everywhere, and a citation resolves the same way in all four
 - `web/btc-sigla.js` — the opcode alphabet: a mark for every opcode and the
   canonical `OP_*` name behind it, plus the groups the key reads in. Split out
   of `btc-prose.js` so the sigla leaf can render the real table without
@@ -162,6 +169,9 @@ compiled to WASM) is consumed as a published
   and the readings of them: which blocks and transactions the book keeps, what
   they are called, and one Markdown file per reading, referenced by the entry it
   belongs to (`by:` naming whoever wrote it, absent for the book's own voice).
+  An entry's `id:` is written in any form the search box takes — a height, a
+  64-hex id, or a citation to whatever depth is meant (`I β29 ■596 §85`), which
+  is resolved by arithmetic when the file is read.
   YAML and Markdown rather than JavaScript because this is the part of the
   repository written by people who are writing rather than programming — and
   nothing is generated from them: the browser reads these files as they stand,

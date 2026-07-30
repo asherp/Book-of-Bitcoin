@@ -809,7 +809,7 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 import { init, encodeSeedPhrase } from './glossia-msg.js';
 import { parseTransaction, computeTxid, parseBlockHeader, computeBlockHash } from './btc-tx.js';
 import { composeTransactionFields, composeBlockHeaderFields, groupDigits, formatBtc, renderWitness, toSuperscript, timestampInfo } from './btc-prose.js';
-import { volumeBookChapter, heightOf, toRoman, reference } from './btc-citation.js';
+import { volumeBookChapter, heightOf, toRoman, reference, parseReference } from './btc-citation.js';
 import { loadNotables, notables, blocksEta } from './btc-contents.js';
 import { NOTATION_HTML } from './btc-notation.js';
 import { commentaryFor, commentaryHtml, resolveCommentary } from './btc-commentary.js';
@@ -1169,47 +1169,13 @@ function resolveCitation(txid) {
 
 // toRoman is imported from btc-citation.js (shared with the contents page).
 
-// Parse a Roman numeral (a volume) -- the inverse of toRoman. Returns NaN on
-// any non-Roman character so a malformed token is rejected, not misread.
-function fromRoman(s) {
-  const val = { I: 1, V: 5, X: 10, L: 50, C: 100, D: 500, M: 1000 };
-  let total = 0, prev = 0;
-  for (let i = s.length - 1; i >= 0; i--) {
-    const v = val[s[i]];
-    if (!v) return NaN;
-    if (v < prev) total -= v; else { total += v; prev = v; }
-  }
-  return total;
-}
-
-// Parse a scripture-style reference into { height, index }. Volume comes first
-// (Roman); each finer level named opens a deeper page -- the reference's depth
-// picks the leaf:
-//   "III"        -> volume III's own page
-//   "III 2"      -> era 3, book 2's own page
-//   "III 2 5"    -> chapter 5's own page
-//   "III 2 5 §3" / "III 2 5 3" -> section 3
-// A trailing ".output" (as citations print, e.g. "III 2 5 §3.1") is accepted
-// and ignored -- it picks an output within the section, not another section.
-// Returns null when the string isn't a reference at all.
-function parseReference(input) {
-  const s = input.trim().replace(/\s+/g, ' ');
-  // The book (β2) and chapter (■5) sigils are optional on input -- a bare
-  // "III 2 5" resolves just as "III β2 ■5" does.
-  const m = s.match(/^([ivxlcdm]+)(?:\s+β?(\d+))?(?:\s+■?(\d+))?(?:\s+§?(\d+)(?:\.\d+)?)?$/i);
-  if (!m) return null;
-  const volume = fromRoman(m[1].toUpperCase());
-  if (!Number.isFinite(volume) || volume < 1) return null;
-  const book = m[2] ? parseInt(m[2], 10) : 1;
-  const chapter = m[3] ? parseInt(m[3], 10) : 1;
-  const section = m[4] ? parseInt(m[4], 10) : null;
-  if (book < 1 || chapter < 1 || (section !== null && section < 1)) return null;
-  // The reference's depth picks the page: a §section opens that section; a
-  // chapter its own page (-1); a book its leaf (-2); a bare volume its
-  // leaf (-3). The height is always the finest named span's first block.
-  const index = section !== null ? section - 1 : m[3] ? -1 : m[2] ? -2 : -3;
-  return { height: heightOf(volume, book, chapter), index };
-}
+// A scripture-style reference resolves through btc-citation.js -- parseReference
+// there is the one reader for both spellings ("III β2 ■5", "v3b2c5"), shared
+// with the search box and with the curated contents' own `id:` field. Its depth
+// picks the page: a §section opens that section; a chapter its own page (-1); a
+// book its leaf (-2); a bare volume its leaf (-3), the height always being the
+// finest named span's first block. A trailing ".output" is carried as `out`,
+// which picks an output within the section rather than another section.
 
 // ── Volume / book leaves ──────────────────────────────────────────────────
 // A chapter that opens a book gets a book leaf (index -2) ahead of its
@@ -4826,7 +4792,7 @@ window.addEventListener('scroll', dismissOnViewportChange, true);
 // chain tip, so ?block=-1 is the latest block; otherwise the book opens at
 // the chain tip (-1), the latest chapter rather than Genesis.
 const params = new URLSearchParams(location.search);
-const pParam = /^v(\d+)b(\d+)c(\d+)(?:s(\d+))?(?:o(\d+))?$/i.exec((params.get('ref') || '').trim());
+const pParam = parseReference(params.get('ref') || '');
 const txidParam = params.get('txid');
 const blockParam = params.get('block');
 // An absent ?index= opens the chapter's own page (-1); index=0 is §1;
@@ -4843,11 +4809,9 @@ const indexParam = Number.isFinite(idxRaw) ? idxRaw
 await loadNotables();
 
 if (pParam) {
-  const pHeight = heightOf(+pParam[1], +pParam[2], +pParam[3]);
-  const pIndex = pParam[4] != null ? +pParam[4] - 1 : -1;   // §1 is index 0
-  const pOut = pParam[5] != null ? +pParam[5] : NaN;
-  Promise.resolve(openLookup(String(pHeight), pIndex)).then(() => {
-    if (Number.isFinite(pOut) && pIndex >= 0) $(`out-${pOut}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  const pOut = pParam.out;
+  Promise.resolve(openLookup(String(pParam.height), pParam.index)).then(() => {
+    if (pOut != null && pParam.index >= 0) $(`out-${pOut}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }).catch(() => { /* the lookup's own error handling has the page */ });
 } else if (txidParam) {
   const outRaw = parseInt(params.get('out'), 10);
@@ -4855,6 +4819,8 @@ if (pParam) {
     if (Number.isFinite(outRaw)) $(`out-${outRaw}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }).catch(() => { /* the lookup's own error handling has the page */ });
 } else if (blockParam) {
+  // ?block= takes every form the search box does, references included -- a
+  // reference carries its own depth, which openLookup reads off it.
   openLookup(blockParam, indexParam);
 } else {
   openLookup('-1', indexParam);

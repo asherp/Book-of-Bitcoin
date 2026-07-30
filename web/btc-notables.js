@@ -24,6 +24,7 @@
 // normalizer, one set of rules about what an entry means.
 
 import { parseYamlSequence } from './btc-yaml.js';
+import { parseLookup, looksLikeAddress } from './btc-lookup.js';
 
 export const NOTABLES_FILE = 'notables.yaml';
 export const COMMENTARY_DIR = 'commentary/';
@@ -36,17 +37,63 @@ const fetchRead = async (path) => {
   return res.text();
 };
 
-// An entry as the rest of the book expects it. Ids are strings everywhere --
-// they are compared against String(height) and against txids -- so a YAML
-// author may write `id: 57043` without thinking about it and still get '57043'.
-// A txid is lowercased for the same reason: the comparison is the point, not
+// An entry as the rest of the book expects it.
+//
+// `id` takes every form the search box takes (btc-lookup.js): a height, a
+// tip-relative height, a 64-hex transaction id or block hash, or a reference in
+// either spelling -- "I β29 ■596 §85" and "v1b29c596s85" name the same passage
+// as `id: 57043` with `index: 84`, and an author may write whichever reads
+// better where they are working. A reference is resolved here, by arithmetic
+// alone, into exactly the height / index / page an entry would otherwise carry
+// by hand, so nothing downstream learns a new shape:
+//
+//   III                 volume III's leaf          page: volume
+//   III β2              book 2's leaf              page: book
+//   III β2 ■5           that chapter               (an entry's default)
+//   I β29 ■596 §85      that section               index: 84
+//   I β29 ■596 §85.4    that section's 4th output  index: 84, out: 4
+//
+// Ids stay strings, because they are compared against String(height) and
+// against txids -- so `id: 57043` unquoted in YAML still matches -- and a
+// 64-hex id is lowercased for the same reason: the comparison is the point, not
 // the spelling.
 function normalize(raw, i) {
-  const id = String(raw.id ?? '').trim();
-  if (!raw.title || !id) throw new Error(`btc-notables: entry ${i + 1} needs a title and an id`);
-  const entry = { title: String(raw.title), id: /^[0-9a-fA-F]{64}$/.test(id) ? id.toLowerCase() : id };
+  const written = String(raw.id ?? '').trim();
+  if (!raw.title || !written) throw new Error(`btc-notables: entry ${i + 1} needs a title and an id`);
+  const title = String(raw.title);
+  const found = parseLookup(written, { isAddress: looksLikeAddress });
+  if (found.kind === 'address') {
+    // The contents lists places; an address is a name, and names are the
+    // ledgers' index (btc-index-data.js). Saying so beats resolving to nothing.
+    throw new Error(`btc-notables: "${title}" has an address as its id — an address is a ledger entry (btc-index-data.js), not a chapter`);
+  }
+  if (!found.kind) {
+    throw new Error(`btc-notables: "${title}" has an id that is neither a height, a 64-hex id, nor a reference: ${written}`);
+  }
+  const ref = found.kind === 'reference' ? found.reference : null;
+  const id = ref ? String(ref.height) : (found.kind === 'hex' ? found.hex : written);
+  const entry = { title, id };
   if (raw.index !== undefined) entry.index = Number(raw.index);
   if (raw.page !== undefined) entry.page = String(raw.page);
+  if (ref) {
+    // A reference already says which page it means; a second, conflicting
+    // statement of that is a mistake worth naming rather than silently ranking.
+    const depth = ref.index >= 0 ? { index: ref.index }
+      : ref.index === -2 ? { page: 'book' }
+      : ref.index === -3 ? { page: 'volume' }
+      : {};
+    for (const [k, v] of Object.entries(depth)) {
+      if (entry[k] !== undefined && entry[k] !== v) {
+        throw new Error(`btc-notables: "${title}" says ${k}: ${entry[k]}, but its reference ${written} says ${k}: ${v}`);
+      }
+      entry[k] = v;
+    }
+    if (ref.index === -1 && (entry.index !== undefined || entry.page !== undefined)) {
+      throw new Error(`btc-notables: "${title}" carries an index or page beside a chapter reference (${written}) — name the section in the reference instead`);
+    }
+    if (ref.out !== null) entry.out = ref.out;
+  }
+  if (raw.out !== undefined) entry.out = Number(raw.out);
   if (raw.commentary) {
     entry.commentary = raw.commentary.map((c) => {
       if (!c.file && !c.note) throw new Error(`btc-notables: a reading of "${entry.title}" has neither file nor note`);

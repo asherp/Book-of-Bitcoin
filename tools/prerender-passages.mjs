@@ -341,7 +341,7 @@ async function blockContext(height) {
 }
 
 async function renderEntry(entry, seed) {
-  if (entry.page === 'book' || entry.id === '-1') return null;   // a leaf / the moving tip — no static passage
+  if (entry.page || entry.id === '-1') return null;   // a leaf (book or volume) / the moving tip — no static passage
 
   let height, index, txid;
   if (isTxid(entry.id)) {

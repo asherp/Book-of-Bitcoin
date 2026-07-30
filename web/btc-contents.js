@@ -55,12 +55,15 @@ export function refFromProof(height, pos) {
 // A deep link into the book for a contents entry. An absolute or relative block
 // id opens as ?block= (with an optional ?index= selecting a transaction within
 // the block); a 64-hex value (block hash or txid) opens as ?txid=, which the
-// book resolves as a block first and a transaction second. A `page: 'book'`
-// entry opens its book's own leaf (?page=book) instead of a chapter.
-export function entryHref(id, index, page) {
+// book resolves as a block first and a transaction second. A `page` of 'book' or
+// 'volume' opens that leaf (?page=…) instead of a chapter, and an `out` -- which
+// only a §section.output reference gives an entry -- lands on that output within
+// the section, exactly as a citation carrying one does.
+export function entryHref(id, index, page, out) {
   const isBlock = isBlockId(id) || isRelativeBlockId(id);
   const q = isBlock ? `block=${id}` : `txid=${id}`;
-  if (isBlock && page === 'book') return `bitcoin-book.html?${q}&page=book`;
+  if (isBlock && (page === 'book' || page === 'volume')) return `bitcoin-book.html?${q}&page=${page}`;
   const idx = isBlock && index != null ? `&index=${index}` : '';
-  return `bitcoin-book.html?${q}${idx}`;
+  const o = out != null ? `&out=${out}` : '';
+  return `bitcoin-book.html?${q}${idx}${o}`;
 }

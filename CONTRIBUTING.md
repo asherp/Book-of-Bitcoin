@@ -64,11 +64,21 @@ Then point the entry at it in `web/notables.yaml`:
       href: https://your-site.example        # optional
 ```
 
+An `id` may be written in any form the search box accepts — a height, a
+tip-relative height (`-1`), a 64-hex transaction id, or the book's own citation
+in either spelling and to any depth (`III β2 ■5`, `I β29 ■596 §85`,
+`v1b29c596s85`, and `III β2` for a book's leaf). A reference is resolved to a
+height when the file is read, so nothing downstream sees a new shape, and the
+checker prints what each one resolved to. Addresses are the one thing rejected
+outright: an address is not a place but a name, and names are the ledgers'
+index (`web/btc-index-data.js`).
+
 The YAML is read by a small subset parser (`web/btc-yaml.js`, which documents
 exactly what it understands and throws rather than guesses): keep comments on
 their own line, and quote a value that opens with a quote or reads as a bare
 number where you meant text. Nothing is generated from either file — the browser
 reads them as they stand.
+
 The book page then offers your reading on that passage as a Commentary sheet
 beside the notation key, the table of contents credits it on the passage's row
 ("commentary by Your Name"), and the static passage under `/passages/` prints it

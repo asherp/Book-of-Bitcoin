@@ -229,10 +229,12 @@ const GENESIS_COINBASE = '4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b
 // block height and the transaction's index (its §section). Tried across the same
 // public mirrors the book uses.
 const ESPLORA_MIRRORS = ['https://blockstream.info/api', 'https://mempool.space/api'];
-// A book-page entry (page: 'book') places at its book with no chapter -- the
-// leaf precedes every chapter of its book in reading order.
+// A leaf entry (page: 'book' or 'volume' -- what a book- or volume-deep
+// reference resolves to) places at that level with nothing finer: the leaf
+// precedes every chapter beneath it in reading order.
 const placeOf = (height, pos, page) => {
   const p = volumeBookChapter(height);
+  if (page === 'volume') return { volume: p.volume, book: null, chapter: null, section: null };
   if (page === 'book') return { volume: p.volume, book: p.book, chapter: null, section: null };
   return { ...p, section: pos == null ? null : pos + 1 };
 };
@@ -318,6 +320,8 @@ async function resolveBookmark(b) {
 // directly under a Volume, the β-marked book leads it. Spaced like the book's
 // own citations (e.g. "β29 ■596", "■1 §1").
 function tailRef({ book, chapter, section }, underBook) {
+  // A volume's own leaf: the Volume heading above the row has already named it.
+  if (book == null) return '';
   // A book's own leaf: under its Book heading nothing remains to cite; under
   // a bare Volume, the β mark alone names it.
   if (chapter == null) return underBook ? '' : `β${book}`;
@@ -333,7 +337,7 @@ function entryEl(entry, underBook) {
   const row = document.createElement('a');
   row.className = 'toc-entry' + (underBook ? ' under-book' : '') + (entry.bookmark ? ' is-bookmark' : '');
   row.dataset.entryId = entry.id;   // the projected section anchors after the tip's row
-  row.href = entryHref(entry.id, entry.index, entry.page);
+  row.href = entryHref(entry.id, entry.index, entry.page, entry.out);
   const t = document.createElement('span'); t.className = 'toc-title';
   // A reader's own bookmark flies the same ribbon it wears in the book, so it's
   // distinguishable from a curated entry even though it sits in reading order.
@@ -480,8 +484,11 @@ const entries = () => [
 // entries contiguous, which the nested render relies on.
 const placed = () => entries()
   .filter((e) => e.place)
-  .sort((a, b) => a.place.volume - b.place.volume || a.place.book - b.place.book
-    || a.place.chapter - b.place.chapter || (a.place.section ?? 0) - (b.place.section ?? 0));
+  // A leaf's unnamed levels sort ahead of everything beneath it (a volume's
+  // leaf precedes its books, a book's its chapters) -- reading order, and the
+  // null must not fall through the comparator as a NaN.
+  .sort((a, b) => a.place.volume - b.place.volume || (a.place.book ?? 0) - (b.place.book ?? 0)
+    || (a.place.chapter ?? 0) - (b.place.chapter ?? 0) || (a.place.section ?? 0) - (b.place.section ?? 0));
 const unresolved = () => entries().filter((e) => e.tried && !e.place);
 
 // ── Projected chapters: the mempool, read as far as it extends ────────────

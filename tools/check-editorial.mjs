@@ -18,6 +18,8 @@
 
 import { readdir, readFile } from 'node:fs/promises';
 import { parseNotables } from '../web/btc-notables.js';
+import { parseYamlSequence } from '../web/btc-yaml.js';
+import { parseReference } from '../web/btc-citation.js';
 import { readingsOf } from '../web/btc-commentary.js';
 import { markdownParagraphs } from '../web/btc-markdown.js';
 
@@ -25,8 +27,20 @@ const WEB = new URL('../web/', import.meta.url);
 const problems = [];
 const notes = [];
 
-const entries = parseNotables(await readFile(new URL('notables.yaml', WEB), 'utf8'));
+const source = await readFile(new URL('notables.yaml', WEB), 'utf8');
+const entries = parseNotables(source);
 if (!entries.length) problems.push('notables.yaml parsed to no entries at all');
+
+// An id may be written as a reference ("I β29 ■596 §85") and is resolved to a
+// height by arithmetic; show the resolution, so an author can see that the
+// citation they wrote points where they think it does.
+for (const raw of parseYamlSequence(source)) {
+  const ref = parseReference(String(raw.id ?? '').trim());
+  if (!ref) continue;
+  notes.push(`"${raw.title}": ${raw.id} resolves to block ${ref.height}`
+    + (ref.section !== null ? ` §${ref.section}` : ref.index === -2 ? " (its book's leaf)" : ref.index === -3 ? " (its volume's leaf)" : '')
+    + (ref.out !== null ? `.${ref.out}` : ''));
+}
 
 // Ids must be unique: the pages key placements, bookmarks and seeds by id, so a
 // duplicate silently shadows an entry. A height+index pair is the exception —
@@ -39,8 +53,14 @@ for (const e of entries) {
   if (!/^-?[0-9]+$/.test(e.id) && !/^[0-9a-f]{64}$/.test(e.id)) {
     problems.push(`"${e.title}": id "${e.id}" is neither a block height nor a 64-hex id`);
   }
-  if (e.page !== undefined && e.page !== 'book') {
-    problems.push(`"${e.title}": page: ${e.page} — only "book" is understood`);
+  if (e.page !== undefined && e.page !== 'book' && e.page !== 'volume') {
+    problems.push(`"${e.title}": page: ${e.page} — only "book" and "volume" are understood`);
+  }
+  if (e.out !== undefined && !(Number.isInteger(e.out) && e.out >= 0)) {
+    problems.push(`"${e.title}": out must be a whole output number, got ${e.out}`);
+  }
+  if (e.out !== undefined && !(e.index >= 0)) {
+    problems.push(`"${e.title}": out names an output within a section, so it needs a §section reference`);
   }
   if (e.index !== undefined && !Number.isInteger(e.index)) {
     problems.push(`"${e.title}": index must be a whole number, got ${e.index}`);

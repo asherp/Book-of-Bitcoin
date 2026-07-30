@@ -467,7 +467,7 @@ import { INDEXED, isAddress, keptLedgers, saveKeptLedgers, sameAddresses, addres
          extendLine, renderLedger, renderRows, periods, lineNote, reconciled, ledgerSum, heldCoins, addressState, lastKnownState,
          formatBalanceBtc, formatNetBtc, chainFailureText, citeHref, sectionOf, sectionOfFetched, citePlace, passageTxid, passageEntries, txHexOf, outspendsOf, prevoutValuesOf,
          DEFAULT_ESPLORA, esploraCustom, esploraSelected, setEsploraSettings } from './btc-index.js';
-import { volumeBookChapter, heightOf, toRoman } from './btc-citation.js';
+import { volumeBookChapter, toRoman, parseReference, latinRefOf } from './btc-citation.js';
 
 // The Ledger is a compendium now: every ledger in one document, read the way
 // the book is read, three levels deep.
@@ -565,15 +565,13 @@ const qList = q ? q.split(',').map((s) => norm(s.trim())).filter(Boolean) : [];
 // output optional) -- so a shared reference navigates without any txid: the
 // reference IS the address of the passage, on the page as on social media.
 const pQ = (new URLSearchParams(location.search).get('ref') || '').trim();
-const pMatch = /^v(\d+)b(\d+)c(\d+)(?:s(\d+))?(?:o(\d+))?$/i.exec(pQ);
-const pRef = pMatch ? { height: heightOf(+pMatch[1], +pMatch[2], +pMatch[3]),
-                        s: pMatch[4] != null ? +pMatch[4] : null,
-                        o: pMatch[5] != null ? +pMatch[5] : null } : null;
+// Read and written by btc-citation.js, the one parser for the citation scheme
+// -- shared with the book's own lookup, the search box, and the curated
+// contents, so a reference that resolves anywhere resolves here.
+const pParsed = parseReference(pQ);
+const pRef = pParsed ? { height: pParsed.height, s: pParsed.section, o: pParsed.out } : null;
 // The same reference, written: what an entry leaf stamps into the URL.
-const latinRef = (height, s, o) => {
-  const pl = volumeBookChapter(height);
-  return `v${pl.volume}b${pl.book}c${pl.chapter}${s != null ? `s${s}` : ''}${o != null ? `o${o}` : ''}`;
-};
+const latinRef = (height, s, o) => latinRefOf(height, s, o);
 const untitled = (l) => l.addresses[0] + (l.addresses.length > 1 ? ` +${l.addresses.length - 1}` : '');
 const kept = keptLedgers().filter((k) => !INDEXED.some((e) => sameAddresses(e.addresses, k.addresses)));
 // One member address names its whole ledger (ledgerFor's rule); only a query
