@@ -123,12 +123,14 @@ export function htmlToText(s) {
 const reverseHex = (hex) => (hex.match(/../g) || []).reverse().join('');
 const trimTrailingZeroBytes = (hex) => hex.replace(/(00)+$/, '');
 
-// The block-hash notation ⓪ⁿ⌘ᵐ (matches bitcoin-book.html): ⓪ carries the
-// hash's exact leading-zero-bit count -- the mining vernacular for the
-// proof-of-work -- and ⌘ (OP_HASH256, the double-SHA256 that produced the
-// hash) carries the remaining m = 256 - n bits, which are what the prose
-// encodes. ⌘'s superscript counts bits by definition; the trim underneath is
-// byte-granular (⌊n/8⌋ zero bytes dropped, ⌈m/8⌉ bytes encoded).
+// The block-hash notation ⌘ᵐ … ⓪ⁿ (matches bitcoin-book.html): ⌘ (OP_HASH256,
+// the double-SHA256 that produced the hash) carries m = 256 - n bits, which
+// are what the prose encodes, and ⓪ closes the line with the hash's exact
+// leading-zero-bit count -- the mining vernacular for the proof-of-work.
+// ⌘'s superscript counts bits by definition; the trim underneath is
+// byte-granular (⌊n/8⌋ zero bytes dropped, ⌈m/8⌉ bytes encoded). The zeros
+// follow the prose because that is where they sit in the bytes it encodes:
+// internal order, trimmed off the end, appended back to rebuild the hash.
 const blockHashParts = (displayHex) => {
   const hex = trimTrailingZeroBytes(reverseHex(displayHex));
   const stripped = displayHex.replace(/^0+/, '');
@@ -139,7 +141,9 @@ const blockHashParts = (displayHex) => {
   }
   return { hex, zeroBits, remainBits: 256 - zeroBits };
 };
-const hashNotation = ({ zeroBits, remainBits }) => `⓪${toSuperscript(zeroBits)} ⌘${toSuperscript(remainBits)}`;
+// Takes the prose it wraps: the marks sit either side of it, so the order
+// lives in one place and no caller can assemble it wrongly.
+const hashNotation = ({ zeroBits, remainBits }, prose) => `⌘${toSuperscript(remainBits)} ${prose} ⓪${toSuperscript(zeroBits)}`;
 
 const proseOf = (hex) => encodeSeedPhrase(hex, 'english', BEST_OF).prose;
 
@@ -172,7 +176,7 @@ export function frontispieceMd(header) {
   const prevParts = isGenesisPrev ? null : blockHashParts(header.prevBlockHash);
   const prev = isGenesisPrev
     ? `⓪${toSuperscript(256)} (no earlier block — this is the genesis block; all 256 bits zero)`
-    : `${hashNotation(prevParts)} ${proseOf(prevParts.hex)}`;
+    : hashNotation(prevParts, proseOf(prevParts.hex));
   // Wire order throughout, as on the live page. The difficulty row states
   // the proof of work as the inequality it is -- β₇₈ < 213529×256²⁰ -- the
   // < binding the block hash printed above the frontispiece to the exact
@@ -289,7 +293,7 @@ export async function passageMd({ title, entry, height, blockHash, header, txCou
   md.push(`## Chapter frontispiece — block ${height.toLocaleString('en-US')}`);
   md.push('');
   const bh = blockHashParts(blockHash);
-  md.push(`Block hash, as prose: ${hashNotation(bh)} *${proseOf(bh.hex)}*`);
+  md.push(`Block hash, as prose: ${hashNotation(bh, `*${proseOf(bh.hex)}*`)}`);
   md.push('');
   md.push(frontispieceMd(header));
   md.push('');
@@ -305,9 +309,10 @@ export async function passageMd({ title, entry, height, blockHash, header, txCou
   md.push(`bytes (decodable with the [glossia](https://crates.io/crates/glossia) engine,`);
   md.push(`wordlist \`bip39\`, language \`english\`); glyphs are the book's script notation`);
   md.push(`(opcode and data marks); small structural integers (version, counts, values,`);
-  md.push(`locktime) are printed literally. A block hash reads ⓪ⁿ ⌘ᵐ — n leading`);
-  md.push(`proof-of-work zero bits, then the remaining m = 256 − n bits of the`);
-  md.push(`double-SHA256 (⌘, OP_HASH256), Glossia-encoded as ⌈m/8⌉ bytes. See`);
+  md.push(`locktime) are printed literally. A block hash reads ⌘ᵐ <prose> ⓪ⁿ — the`);
+  md.push(`m = 256 − n bits of the double-SHA256 (⌘, OP_HASH256), Glossia-encoded as`);
+  md.push(`⌈m/8⌉ bytes, then the n proof-of-work zero bits that follow them in the`);
+  md.push(`internal-order bytes the prose encodes. See`);
   md.push(`[/llms.txt](${SITE}/llms.txt) for how any other passage on the chain can be`);
   md.push(`fetched and read the same way.`);
   md.push('');
@@ -435,7 +440,7 @@ async function renderEntry(place, seed) {
     footnotesHtml: fields.inputs.map(witnessOf),
   };
 
-  // The chapter head: the block hash as prose in its ⓪ⁿ⌘ᵐ notation, and the
+  // The chapter head: the block hash as prose in its ⌘ᵐ … ⓪ⁿ notation, and the
   // header's fields as frontispiece rows -- the same fields, in the same wire
   // order, that frontispieceMd writes for the markdown passage.
   const bh = blockHashParts(ctx.blockHash);
@@ -446,7 +451,7 @@ async function renderEntry(place, seed) {
     { mark: 'v', text: htmlToText(hf.version) },
     isGenesisPrev
       ? { text: `⓪${toSuperscript(256)} — no earlier block; this is the genesis block` }
-      : { text: `${hashNotation(prevParts)} ${proseOf(prevParts.hex)}` },
+      : { text: hashNotation(prevParts, proseOf(prevParts.hex)) },
     { mark: '⋔', text: proseOf(reverseHex(ctx.header.merkleRoot)), gap: true },
     { text: hf.timestamp },
     hf.bitsExpr
