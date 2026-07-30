@@ -4226,7 +4226,9 @@ function swipeStep(direction) {
 // descends into the span's first child (a leaf's linear next page). Away
 // from the scroll boundaries a vertical drag is just scrolling.
 let upReady = false;    // the ascend target's data is loaded (see prefetchNeighbors)
-let downReady = false;  // a chapter page's §1 is warmed (leaf descents are same-block, always ready)
+let downReady = false;  // the descend target is warmed: a chapter page's §1, or a
+                        // volume leaf's book leaf, whose closing difficulty target
+                        // is another block's (a book leaf's own descent is same-block)
 
 // Descend memory: every ascent (vertical swipe or crumb) records the full
 // trail below the page it leaves for, keyed by the parent leaf's index, so
@@ -4306,7 +4308,13 @@ function canStepVertical(direction) {
   // section was visited moments ago -- its data is cached). A ghost's hex
   // lives in the ledger, so its rungs are always ready.
   if (t.ghost || t.unghost) return true;
-  if (direction > 0) return state.index === -1 ? (downReady || !!rememberedChild()) : true;
+  // A volume leaf's descent is the exception to "stays within the loaded
+  // block": the book leaf it lands on states a closing difficulty target that
+  // belongs to the retarget block, not to this one.
+  if (direction > 0) {
+    if (state.index === -1) return downReady || !!rememberedChild();
+    return state.index === -3 ? downReady : true;
+  }
   // The contents and the appendix leaves are precached by the service worker,
   // so an ascent onto either is a page turn with nothing to wait for.
   return !!t.free || !!t.toc || !!t.appendix || upReady;
@@ -4366,6 +4374,26 @@ function warmLeafEncodes(core) {
     encodeSeedPhrase(reverseHex(core.header.merkleRoot), 'english', BEST_OF);
   } catch { /* warming is best-effort */ }
 }
+// Warm what a book leaf needs beyond its own first block. Where the book
+// straddles a retarget it states two difficulty targets, and the second is
+// the retarget block's -- another block, another fetch. Warmed here so a turn
+// onto a book leaf lands with both in hand and the closing target does not
+// arrive after the page has already settled.
+//
+// Resolves immediately for a book that is one whole difficulty window (all of
+// Volume I, every volume's short last book) and for one whose retarget the
+// chain has not reached, since neither has a second target to wait for.
+// The retarget block a book leaf's closing target is read from, or null where
+// the leaf states a single target and nothing has to be fetched for it.
+function bookTargetCut(height) {
+  const cut = retargetInside(height, volumeBookChapter(height).chapterCount);
+  return cut === null || (tipHeight !== null && tipHeight < cut) ? null : cut;
+}
+function warmBookTargets(height) {
+  const cut = bookTargetCut(height);
+  return cut === null ? Promise.resolve() : loadBlockInfoByHeight(cut);
+}
+
 // Warm a section fully: fields composed and cached, § txid prose encoded.
 async function warmSection(txid) {
   if (!ready) { await loadTxHex(txid); return; }   // at least the network half
@@ -4397,6 +4425,11 @@ async function prefetchNeighbor(st, direction) {
     else target = st.height + direction;
     if (target < 0) return;
     warmLeafEncodes(await loadBlockByHeight(target, { withTxids: false }));
+    // Stepping between book leaves, the page landed on states two targets
+    // where its book straddles a retarget. Swallowed on failure: the leaf
+    // renders either way, and a second target that cannot be fetched is no
+    // reason to hold the turn -- the gate is for the ordinary case.
+    if (st.index === -2) await warmBookTargets(target).catch(() => {});
   } else if (direction > 0) {
     if (st.index < st.txCount - 1) {
       const txids = await ensureTxids(st);
@@ -4422,7 +4455,10 @@ function prefetchNeighbors() {
   const gen = ++prefetchGen;
   neighborReady = { '-1': false, '1': false };
   upReady = state !== null && state.index >= 0;   // a section's parent page is this block, already loaded
-  downReady = false;
+  // A volume leaf descends onto a book leaf in the same block. Where that leaf
+  // states one target there is nothing to fetch and the descent is ready at
+  // once -- waiting on the prefetch timer would gate a turn on nothing.
+  downReady = state !== null && state.index === -3 && bookTargetCut(state.height) === null;
   if (!state) return;
   const st = state;
   // Deferred past the turn's entry animation: the warming encodes are main-
@@ -4441,6 +4477,9 @@ function prefetchNeighbors() {
                    : st.index === -2 ? volumeStartOf(st.height) : null;
     if (upHeight !== null) {
       loadBlockByHeight(upHeight, { withTxids: false })
+        // A chapter ascends onto its book leaf, which may state two targets;
+        // a book leaf ascends onto a volume leaf, which states none.
+        .then(() => (st.index === -1 ? warmBookTargets(upHeight).catch(() => {}) : null))
         .then(() => { if (gen === prefetchGen) upReady = true; })
         .catch(() => {});
     }
@@ -4450,6 +4489,13 @@ function prefetchNeighbors() {
         .then((txids) => warmSection(txids[0]))
         .then(() => { if (gen === prefetchGen) downReady = true; })
         .catch(() => {});
+    } else if (st.index === -3) {
+      // A volume leaf descends onto this height's book leaf: the same block,
+      // so nothing to load for the leaf itself, but its closing target is
+      // another block's. Ready either way once the attempt is over.
+      warmBookTargets(st.height)
+        .catch(() => {})
+        .then(() => { if (gen === prefetchGen) downReady = true; });
     }
   }, 350);
 }
