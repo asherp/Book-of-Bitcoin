@@ -121,10 +121,10 @@ compiled to WASM) is consumed as a published
   `?part=future`): each says what it gathers and why that cannot be read in
   sequence, and sets it out in full — the queue with its figures, refreshed
   each minute, or the future chapters with the editorial note behind each.
-  Appendix III needs no leaf here: a shelf of ledgers is what the Ledger
-  compendium already is, so the contents points straight at it. All three
-  ascend to the contents — a pull down at the top, or the ▴ crumb — and turn
-  sideways between one another in their numbered order
+  Appendix III's leaf is the Ledger compendium's own title page, since a
+  shelf of ledgers is what that page already is. All three ascend to the
+  contents — a pull down at the top, or the ▴ crumb — and turn sideways
+  between one another in their numbered order
 - `web/btc-mempool.js`, `web/btc-toc.css` — the queue read as the chapters
   it is about to become, and how a list of chapters is set. Shared by the
   contents and the appendix leaves so a projected chapter reads the same in
@@ -132,15 +132,21 @@ compiled to WASM) is consumed as a published
 - `web/bitcoin-ledger.html` — the Ledger: a compendium of every ledger
   (curated donation addresses, any the reader keeps, and ad-hoc
   `?address=a,b,…` queries) in one document, read the way the book is
-  read, three levels deep. Ledger title leaves at the top (title, balance,
-  span — horizontal swipes browse between ledgers; a push up descends);
-  address leaves below (a title page per address, its record scrolling
-  endlessly below, newest first by reference; past the last address the
-  merged entries leaf, organized by time; pulling down at the top ascends);
-  and entry leaves underneath (one transaction as its own page, rendered
-  from the bank alone — vertical swipes walk the address's timeline, a
-  swipe over the record dives into the entry nearest the finger, and a
-  swipe right is the one door back). Nothing backfills on its own —
+  read, four levels deep. The appendix leaf at the top — the compendium is
+  the contents' **Appendix III**, and this leaf carries that name and the
+  paragraph saying what a ledger is; it lists nothing, because the contents
+  already lists the ledgers, and a pull down at the top (or the ▴ crumb)
+  ascends there. Ledger title leaves beneath it (title, balance, span —
+  horizontal swipes browse between ledgers; a push up descends). Passage
+  leaves below those: a ledger is a set of scripts, not one address —
+  organizations rotate them, and an xpub (when the shelf takes them) will
+  gather every leaf of one key — so each script gets a leaf, read as the
+  passage the book renders it as, with the chapters it appears in listed
+  beneath, newest first by reference; past the last passage the merged
+  entries leaf, organized by time. And entry leaves underneath (one
+  transaction as its own page, rendered from the bank alone — vertical
+  swipes walk the timeline, a swipe over the record dives into the entry
+  nearest the finger, and a swipe right is the one door back). Nothing backfills on its own —
   exploration is the sync — and every page found is banked for good, from
   the same Esplora-compatible endpoints the reading pages use; a ledger
   reconciles its entries against the chain's balance before its numbers

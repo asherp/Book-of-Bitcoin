@@ -226,12 +226,16 @@ export const NOTABLE = [
 //       read in sequence with chapters that do: dropped in among the
 //       volumes, BIP42 alone opened a Volume LXV two centuries wide.
 //   III Ledgers -- the shelf of curated ledgers (btc-index-data.js), and
-//       any the reader keeps. Addresses, not chapters, and so the only
+//       any the reader keeps. Keepers, not chapters, and so the only
 //       entries in the contents with no reference at all: the chain never
 //       writes an address, only the script one stands for, and a ledger's
-//       chapters are discovered by reading rather than cited in advance.
-//       The contents and the index are inverses; this is where the contents
-//       points at the other one.
+//       chapters are discovered by reading rather than cited in advance. A
+//       ledger holds as many scripts as its keeper uses -- one address, a
+//       rotated set, or every leaf of an extended key -- each read as a
+//       passage on the Ledger compendium's own leaves, which is why this
+//       part lists ledgers here and explains itself there. The contents and
+//       the index are inverses; this is where the contents points at the
+//       other one.
 //
 // A part's `kind` says who fills it: 'entries' is listed below, 'mempool'
 // and 'ledgers' are gathered by the page. Entries take the same shape as
@@ -275,7 +279,7 @@ export const APPENDIX = [
   {
     kind: 'ledgers',
     title: 'Ledgers',
-    note: 'Addresses the book keeps a ledger for, and any the reader keeps. These carry no reference: the chain never writes an address, only the script one stands for, so a ledger is not cited but discovered — its chapters found by reading, and its run of them open-ended.',
+    note: 'A ledger gathers what one keeper spends from — a single address, a set rotated over the years, or in time every leaf of one extended key — and reads each of its scripts as a passage, with the chapters that passage appears in listed beneath it. Nothing here carries a reference: the chain never writes an address, only the script one stands for, so a ledger is not cited but discovered, and its run of chapters stays open-ended.',
   },
 ];
 
