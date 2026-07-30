@@ -160,7 +160,7 @@ a:hover { text-decoration: underline; }
 <script type="module">
 import { loadNotables, places, placeTitle, appendix, isBlockId, isRelativeBlockId, entryHref } from './btc-contents.js';
 import { creditLine, commentaryForAddresses } from './btc-commentary.js';
-import { readQueue, buildQueue, sourceLine } from './btc-mempool.js';
+import { readQueue, buildQueue } from './btc-mempool.js';
 import { INDEXED, keptLedgers, sameAddresses } from './btc-index.js';
 import { volumeBookChapter, toRoman, expectedReference } from './btc-citation.js';
 import { storeGet, storePut } from './btc-store.js';
@@ -609,21 +609,16 @@ const unresolved = () => entries().filter((e) => e.tried && !e.place);
 // ── Appendix I: the mempool, read as far as it extends ────────────────────
 // The queue itself is read and set by btc-mempool.js, shared with the
 // appendix's own page. Here it needs only its heading -- the appendix's
-// name, a link to that page, and the line naming the node the queue was
-// read from.
+// name, and a link to that page, where what a mempool is gets said at
+// length.
 async function loadProjected() {
   const tip = await tipHeight();
   const queue = await readQueue(tip, ESPLORA_MIRRORS);
   if (!queue) return;   // nowhere to read a queue from -- the contents simply end at the tip
-  const heading = head('toc-vol toc-proj-head', '');
-  const label = document.createElement('span');
-  label.className = 'toc-proj-label';
   // The queue is readable even if the appendix file was not: name the part from
   // what loaded, and fall back to the plain heading rather than losing the
   // section that gathers the chapters already forming.
-  if (MEMPOOL_PART) label.append(appendixLink(MEMPOOL_PART));
-  else label.textContent = 'The Mempool';
-  heading.append(label, sourceLine(queue.srcBase));
+  const heading = MEMPOOL_PART ? partHead(MEMPOOL_PART) : head('toc-vol', 'The Mempool');
   projectedSection = buildQueue(queue, heading);
   render();
 }
