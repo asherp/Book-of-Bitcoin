@@ -118,9 +118,12 @@ compiled to WASM) is consumed as a published
   writes an address, only the script one stands for; the contents and the
   index are inverses, and this is where the contents points at the other
 - `web/bitcoin-appendix.html` — the appendix leaves (`?part=mempool`,
-  `?part=future`): each says what it gathers and why that cannot be read in
-  sequence, and sets it out in full — the queue with its figures, refreshed
-  each minute, or the future chapters with the editorial note behind each.
+  `?part=future`), two deep as a volume is: a title leaf saying what the
+  appendix gathers and why that cannot be read in sequence, and beneath it
+  (`&page=list`, or a push up / ▾) the list itself — the queue with its
+  figures, refreshed each minute while it is the leaf on screen, or the
+  future chapters with the editorial note behind each. A title page is not a
+  list, so the list is read only once the reader descends to it.
   Appendix III's leaf is the Ledger compendium's own title page, since a
   shelf of ledgers is what that page already is. The appendices sit at the
   **volumes' own level**: the line runs Volume I … Volume V, Appendix I,

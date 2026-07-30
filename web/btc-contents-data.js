@@ -246,11 +246,15 @@ export const APPENDIX = [
   {
     kind: 'mempool',
     title: 'The Mempool',
+    // What the leaf below the appendix's own holds -- the queue read as the
+    // chapters it is about to become.
+    list: 'Provisional Chapters',
     note: 'The chapters the queue is already forming, ordered as a miner would take them — provisional numbers that hold only while the queue does, and only the first is a real forecast.',
   },
   {
     kind: 'entries',
     title: 'Future Chapters',
+    list: 'Future Chapters',
     note: 'Chapters whose citations are fixed but whose blocks are unmined: consensus has named the height, the chain has yet to reach it. Each reference carries □, the expected-chapter mark, until a block earns it the ■.',
     entries: [
       // BIP110 (reduced_data, the 2026 temporary data-limit attempt; bit 4,

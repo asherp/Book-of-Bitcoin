@@ -39,7 +39,7 @@
   // forward to the one after.
   (function () {
     const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    let sy = null, sx = 0, st = 0, atTop = false;
+    let sy = null, sx = 0, st = 0, atTop = false, atBottom = false;
     // Filled by the module once it knows which appendix this is; a turn
     // before then simply has nowhere to go.
     window.__appxTurns = { prev: null, next: null };
@@ -70,6 +70,7 @@
       if (e.touches.length !== 1) return;
       sy = e.touches[0].clientY; sx = e.touches[0].clientX; st = performance.now();
       atTop = window.scrollY <= 2;
+      atBottom = window.scrollY >= document.documentElement.scrollHeight - window.innerHeight - 2;
     }, { passive: true });
     document.addEventListener('touchend', (e) => {
       if (sy === null || e.changedTouches.length !== 1) return;
@@ -77,13 +78,25 @@
       const dx = e.changedTouches[0].clientX - sx;
       const dt = performance.now() - st;
       sy = null;
+      const onTitle = !window.__appxLevel || window.__appxLevel() === 'title';
       // A committed horizontal turn: quick, far enough, and mostly sideways.
-      // Nothing that way and the edge simply holds.
+      // The appendices turn between one another at their own level, which is
+      // the title page's; the list below turns nowhere sideways.
       if (dt <= 600 && Math.abs(dx) >= 60 && Math.abs(dy) <= Math.abs(dx) * 0.6) {
-        window.__appxTurn(dx > 0);                 // swiping right turns back
+        if (onTitle) window.__appxTurn(dx > 0);    // swiping right turns back
         return;
       }
-      if (atTop && dt <= 600 && dy >= 70 && Math.abs(dx) <= dy * 0.6) window.__appxAscend();
+      // A push UP from the foot of the title page descends into the list, as
+      // it descends from the contents into the book.
+      if (onTitle && atBottom && dt <= 600 && dy <= -70 && Math.abs(dx) <= Math.abs(dy) * 0.6) {
+        window.__appxDescend();
+        return;
+      }
+      // A pull DOWN from the top rises one level: off the list back to the
+      // title page, and off the title page out to the contents.
+      if (atTop && dt <= 600 && dy >= 70 && Math.abs(dx) <= dy * 0.6) {
+        if (onTitle) window.__appxAscend(); else window.__appxClimb();
+      }
     }, { passive: true });
   })();
 </script>
@@ -134,6 +147,14 @@ a:hover { text-decoration: underline; }
 .appx-title { margin:0; font:300 clamp(28px,7vw,40px)/1.15 'Newsreader',serif; color:var(--ink); letter-spacing:-.01em; }
 .appx-subtitle { margin-top:10px; font:400 19px/1.35 'Newsreader',serif; color:var(--dim); }
 .appx-src { margin-top:12px; }
+/* The crumb up, on the leaf below the appendix's own title page. */
+.appx-up { display:inline-block; margin-bottom:16px; font:600 10px/1 'IBM Plex Mono',monospace; letter-spacing:.18em; text-transform:uppercase; color:var(--meta); }
+.appx-up:hover { color:var(--accent); }
+/* The descent, as the book's leaves wear it: one mark, centred, at the foot
+   of the title page. */
+.appx-down { display:block; margin:34px auto 0; width:2em; text-align:center; font-size:20px; line-height:1; color:var(--dim); }
+.appx-down:hover { color:var(--accent); text-decoration:none; }
+.hidden { display:none !important; }
 .appx-note { max-width:56ch; margin:22px auto 30px; font:400 15px/1.7 'Newsreader',serif; color:var(--ink-soft); text-align:left; }
 
 /* The rows themselves are btc-toc.css's, so a projected chapter reads the
@@ -162,6 +183,7 @@ a:hover { text-decoration: underline; }
   </div>
 
   <header class="page-head">
+    <a class="appx-up hidden" id="appx-up" href="#">▴</a>
     <h1 class="appx-title" id="appx-title"></h1>
     <div class="appx-subtitle" id="appx-subtitle"></div>
     <div class="appx-src" id="appx-src"></div>
@@ -170,6 +192,7 @@ a:hover { text-decoration: underline; }
 
   <div id="appx-body"></div>
 
+  <a class="appx-down" id="appx-down" href="#" aria-label="Down into the appendix">▾</a>
   <nav class="appx-turns" id="appx-turns"></nav>
 </div>
 
@@ -197,10 +220,65 @@ const hrefFor = (p) => p.kind === 'ledgers'
   ? './bitcoin-ledger.html'
   : `./bitcoin-appendix.html?part=${p.kind === 'mempool' ? 'mempool' : 'future'}`;
 
-document.title = `The βook of βitcoin — ${label(part)}`;
-$('appx-title').textContent = `Appendix ${numeral(index)}`;
-$('appx-subtitle').textContent = part.title;
-$('appx-note').textContent = part.note || '';
+// Two leaves, as a volume has: the appendix's own title page, and beneath it
+// what it gathers. The title page carries the name and the explanation and
+// nothing else -- a title page is not a list -- and a push up (or ▾) descends
+// to the list itself, which a pull down at its top returns from. ?page=list
+// names the lower leaf, the way ?page=volume|book names the book's.
+let level = new URLSearchParams(location.search).get('page') === 'list' ? 'list' : 'title';
+
+function syncUrl() {
+  const q = `?part=${wanted === 'future' ? 'future' : 'mempool'}${level === 'list' ? '&page=list' : ''}`;
+  try { history.replaceState(null, '', location.pathname + q); } catch (_) { /* unavailable */ }
+  document.title = level === 'list'
+    ? `The βook of βitcoin — ${part.list || part.title}`
+    : `The βook of βitcoin — ${label(part)}`;
+}
+
+function renderLevel() {
+  const onList = level === 'list';
+  $('appx-up').classList.toggle('hidden', !onList);
+  $('appx-up').textContent = `▴ Appendix ${numeral(index)}`;
+  $('appx-title').textContent = onList ? (part.list || part.title) : `Appendix ${numeral(index)}`;
+  $('appx-subtitle').textContent = onList ? '' : part.title;
+  $('appx-note').textContent = onList ? '' : (part.note || '');
+  $('appx-note').classList.toggle('hidden', onList);
+  $('appx-body').classList.toggle('hidden', !onList);
+  $('appx-src').classList.toggle('hidden', !onList);
+  $('appx-down').classList.toggle('hidden', onList);
+  $('appx-turns').classList.toggle('hidden', onList);
+  syncUrl();
+  if (onList) fill();
+}
+
+// The turn between the two, played as the book plays a descent: the leaf
+// being left slides away, and the one arriving comes in from the other side.
+let turning = false;
+function turnLevel(to) {
+  if (turning || to === level) return;
+  const down = to === 'list';
+  const wrap = document.querySelector('.wrap');
+  const finish = () => { level = to; renderLevel(); window.scrollTo({ top: 0, behavior: 'instant' }); };
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { finish(); return; }
+  turning = true;
+  wrap.style.transition = 'transform .18s linear';
+  wrap.style.transform = `translateY(${down ? -100 : 100}vh)`;
+  setTimeout(() => {
+    finish();
+    wrap.style.transition = 'none';
+    wrap.style.transform = `translateY(${down ? 100 : -100}vh)`;
+    requestAnimationFrame(() => {
+      wrap.style.transition = 'transform .18s ease-out';
+      wrap.style.transform = '';
+      setTimeout(() => { turning = false; }, 180);
+    });
+  }, 170);
+}
+window.__appxLevel = () => level;
+window.__appxDescend = () => turnLevel('list');
+window.__appxClimb = () => turnLevel('title');
+$('appx-down').addEventListener('click', (ev) => { ev.preventDefault(); turnLevel('list'); });
+$('appx-up').addEventListener('click', (ev) => { ev.preventDefault(); turnLevel('title'); });
 
 // The neighbours, in the appendices' numbered order -- named at the foot and
 // handed to the gesture layer, so a swipe and a tap turn to the same leaf.
@@ -296,12 +374,16 @@ function showChapters() {
   body.replaceChildren(frag);
 }
 
-if (kind === 'mempool') {
+// The list is read when the reader descends to it, not before: a title page
+// asks nothing of the network. The queue keeps moving once opened, so it
+// refreshes each minute while that leaf is the one on screen.
+let filled = false;
+function fill() {
+  if (kind !== 'mempool') { if (!filled) { filled = true; showChapters(); } return; }
   showMempool();
-  setInterval(() => { if (!document.hidden) showMempool(); }, 60_000);
-} else {
-  showChapters();
 }
+setInterval(() => { if (!document.hidden && level === 'list' && kind === 'mempool') showMempool(); }, 60_000);
+renderLevel();
 </script>
 </body>
 </html>
