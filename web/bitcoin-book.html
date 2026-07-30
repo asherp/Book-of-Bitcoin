@@ -794,6 +794,7 @@ import { parseTransaction, computeTxid, parseBlockHeader, computeBlockHash } fro
 import { composeTransactionFields, composeBlockHeaderFields, groupDigits, formatBtc, renderWitness, toSuperscript, timestampInfo } from './btc-prose.js';
 import { volumeBookChapter, heightOf, toRoman, reference, parseReference, footnoteMark } from './btc-citation.js';
 import { loadNotables, places, placeTitle, blocksEta } from './btc-contents.js';
+import { queueLabel } from './btc-mempool.js';
 import { NOTATION_HTML } from './btc-notation.js';
 import { commentaryFor, commentaryHtml, resolveCommentary } from './btc-commentary.js';
 
@@ -2563,7 +2564,12 @@ function renderProjectedHead(onTitlePage) {
   $('ch-book').textContent = book.toLocaleString();
   $('ch-title').textContent = `Chapter ${chapterName(chapter)}`;
   const subtitle = $('ch-subtitle');
-  subtitle.textContent = `Projected — eta ${blocksEta(k + 1)}`;
+  // Named the way Appendix I names it -- alpha for the draft at the head of
+  // the queue, then the ones behind it. A mined chapter's subtitle carries
+  // what it is known for; a draft has nothing it is known for yet, so it
+  // carries its place in the queue and how long that place is expected to
+  // last.
+  subtitle.textContent = `${queueLabel(k + 1)} — eta ${blocksEta(k + 1)}`;
   subtitle.title = 'a draft chapter read from the mempool: these transactions are what a miner working right now would take, in the order they pay for';
   const inline = $('ch-chapter-inline');
   inline.textContent = '';
