@@ -33,7 +33,7 @@ Transaction id, as prose: ⌘²⁵⁶ *Its brisk tree fire strategy. Few drink i
 - **input 1:** spends output 0 of `38c8c6473f149aa698c9868f266102def0e370ddfd4c5adb5916417940963658`
   - script: ²² Abandon pigeon badge to sphere. Liquid may web magnet. Profit ago get animal. Ski bench rice to alien. A park may fork a home.
   - sequence: ● — final — disables the transaction locktime for this input
-  - witness: see footnote 1
+  - witness: see footnote a
 - **output 1:** 0.00311000 ₿
   - script: ⌖ h²⁰ Carpet is armed to its light. A cow carry to reduce. Chunk see salmon for age. Leopard divorce abandon to hello. Company may bounce catch. =
 - **output 2:** 0 ₿
@@ -42,7 +42,7 @@ Transaction id, as prose: ⌘²⁵⁶ *Its brisk tree fire strategy. Few drink i
 
 ### Witness footnotes
 
-1. s Its primary beef job its season. Ring see food to menu. The pass garage sand. Film may mix output. Angle reform edit to train. A fyi enrich to topple. Uncle get zoo per our arena. A strategy exist column to the ago gossip. Its hit is rude. Son enhance seat to castle per fury. Cube okay reason figure. Month may set canvas. Its lap vanish onion. Orchard may choose silver. Sir dismiss to let. Lip again floor pop. A due is tired. Source may see cactus. · p The acoustic voyage see blue. Our layer is brisk. Aid may inject illness to gravity. Its aerobic damp is just. Plastic whip cigar to spare. Spring see a nasty balcony. Report may soldier swim. A big copy shall vault the panda.
+a. s Its primary beef job its season. Ring see food to menu. The pass garage sand. Film may mix output. Angle reform edit to train. A fyi enrich to topple. Uncle get zoo per our arena. A strategy exist column to the ago gossip. Its hit is rude. Son enhance seat to castle per fury. Cube okay reason figure. Month may set canvas. Its lap vanish onion. Orchard may choose silver. Sir dismiss to let. Lip again floor pop. A due is tired. Source may see cactus. · p The acoustic voyage see blue. Our layer is brisk. Aid may inject illness to gravity. Its aerobic damp is just. Plastic whip cigar to spare. Spring see a nasty balcony. Report may soldier swim. A big copy shall vault the panda.
 
 ---
 

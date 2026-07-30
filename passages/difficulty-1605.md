@@ -33,7 +33,7 @@ Transaction id, as prose: ⌘²⁵⁶ *Demand get soda to height. Our hunt are e
 - **input 1:** coinbase (∅ — no previous output; new coin)
   - script: 655200 1604392099 ⧉? ⥀ ⁴⁷ “BTC.com/” ⓪ ¹² Phrase output scare to tag. The goat flower its fresh theme via abandon. ⓪ ⓪ ⓪
   - sequence: ● — final — disables the transaction locktime for this input
-  - witness: see footnote 1
+  - witness: see footnote a
 - **output 1:** 8.33134574 ₿
   - script: ⓪ h²⁰ Oak set lawsuit to suit. Magnet may train sauce. Its pottery thunder six. Arm see a lava. Son promote to reopen. Our art foster rub.
 - **output 2:** 0 ₿
@@ -46,7 +46,7 @@ Transaction id, as prose: ⌘²⁵⁶ *Demand get soda to height. Our hunt are e
 
 ### Witness footnotes
 
-1. ∅
+a. ∅
 
 ---
 

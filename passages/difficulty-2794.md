@@ -33,7 +33,7 @@ Transaction id, as prose: ⌘²⁵⁶ *Hurdle may space some autumn. Our urban s
 - **input 1:** coinbase (∅ — no previous output; new coin)
   - script: “Mined by AntPool720”
   - sequence: ● — final — disables the transaction locktime for this input
-  - witness: see footnote 1
+  - witness: see footnote a
 - **output 1:** 6.58657646 ₿
   - script: ⧉ ⌖ h²⁰ Balcony set tennis to case. Miracle may gesture woman. Its boy remove lot. Our eternal wall may laugh to enter. Broccoli may toss its goat. ≡ ∇
 - **output 2:** 0 ₿
@@ -46,7 +46,7 @@ Transaction id, as prose: ⌘²⁵⁶ *Hurdle may space some autumn. Our urban s
 
 ### Witness footnotes
 
-1. ∅
+a. ∅
 
 ---
 

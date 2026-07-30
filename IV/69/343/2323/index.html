@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IV β69 ■343 §2323 — First Ordinals inscription · The βook of βitcoin</title>
+<link rel="canonical" href="https://bookofbitcoin.io/IV/69/343/2323/">
+
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="The βook of βitcoin">
+<meta property="og:title" content="IV β69 ■343 §2323 — First Ordinals inscription">
+<meta property="og:url" content="https://bookofbitcoin.io/IV/69/343/2323/">
+<meta property="og:image" content="https://bookofbitcoin.io/cards/IV-69-343-2323.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="IV β69 ■343 §2323 — the passage, set as a page of the book">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="IV β69 ■343 §2323 — First Ordinals inscription">
+<meta name="twitter:image" content="https://bookofbitcoin.io/cards/IV-69-343-2323.png">
+<style>
+  :root {
+    --page:#08080a; --ink:#e8e4da; --ink-soft:#cfcabf; --dim:#8f8a7e;
+    --meta:#6f6a60; --rule:#232228; --accent:#c9a25f; --accent-2:#dcb877;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--page); }
+
+  /* One root size drives the whole page: every measure below is in em, so
+     the renderer fits a passage by scaling this single number. */
+  .page {
+    width: 100%; max-width: 54rem; margin: 0 auto;
+    font-size: 19px;
+    background: var(--page); color: var(--ink-soft);
+    font-family: 'Newsreader', Georgia, 'Liberation Serif', 'Times New Roman', serif;
+    font-variant-numeric: oldstyle-nums;
+    display: flex; flex-direction: column;
+    padding: 2.2em 2.6em 1.4em;
+  }
+  /* In a fixed-size card, a passage longer than the page keeps its opening
+     and is clipped here — the top of the page, with the colophon still
+     pinned beneath it. A web page has no such limit and simply grows. */
+  .content { flex: 1 1 auto; min-height: 0;  }
+
+  /* ── the section heading ── */
+  .section-title {
+    text-align: center; margin: 0; font: 600 .68em/1 'IBM Plex Mono', ui-monospace, monospace;
+    letter-spacing: .28em; text-transform: uppercase; color: var(--accent);
+  }
+  /* A footnote letter is part of an address; the heading's uppercase
+     transform must not raise it, or §1.a would read as §1.A. */
+  .fn-mark { text-transform: none; }
+  .section-event {
+    display: block; margin-top: .8em; font: 500 1.15em/1.3 'Newsreader', Georgia, serif;
+    letter-spacing: 0; text-transform: none; color: var(--ink-soft);
+  }
+  .section-hash {
+    margin: .9em auto 0; max-width: 46ch; text-align: center;
+    font: italic 400 .76em/1.55 'Newsreader', Georgia, serif; color: var(--dim);
+  }
+  .section-hash .cfx-gold { color: var(--accent); font-weight: 700; font-style: normal; }
+  .rule { border: 0; border-top: 1px solid var(--rule); margin: 1.6em 0; }
+
+  /* ── the transaction as a manuscript page ── */
+  .tx-flow {
+    display: grid;
+    grid-template-columns: [left] 6.5em [body] minmax(0,1fr) [right] 7em;
+    column-gap: 1.3em; align-items: start;
+    line-height: 1.75;
+  }
+  .tx-inputs {
+    grid-column: left / right; grid-row: 1;
+    display: grid; grid-template-columns: subgrid; column-gap: 1.3em; align-items: start;
+  }
+  .tx-in-cite {
+    grid-column: 1; text-align: right; padding-top: .34em;
+    font: 500 .63em/1.5 'IBM Plex Mono', ui-monospace, monospace;
+    color: var(--dim); word-break: break-word;
+  }
+  .tx-in-cite-group { grid-column: 1; }
+  .tx-in-cite-group > .tx-in-cite + .tx-in-cite { margin-top: .5em; }
+  .tx-in-cite.tx-version { color: var(--meta); letter-spacing: .03em; }
+  .tx-witness-ref { color: var(--accent); font-size: .8em; vertical-align: .4em; margin-left: .2em; }
+  .cite-amount {
+    margin-top: .1em; text-align: right;
+    font: italic 400 1em/1.3 'Newsreader', Georgia, serif; color: var(--meta);
+    font-variant-numeric: tabular-nums;
+  }
+  .tx-in-script { grid-column: 2; min-width: 0; }
+  .tx-margin-cites { grid-column: left; grid-row: 2; align-self: start; }
+  .tx-outputs {
+    grid-column: body / -1; grid-row: 2;
+    display: grid; grid-template-columns: subgrid; column-gap: 1.3em; align-items: start;
+  }
+  .tx-out-script { grid-column: 1; min-width: 0; }
+  .tx-out-value { grid-column: 2; text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .tx-locktime { grid-column: left / -1; grid-row: 3; text-align: center; font-style: normal; }
+  .tx-note { font: italic 400 .71em/1.4 'Newsreader', Georgia, serif; color: var(--dim); }
+  .tx-seq { font-style: normal; color: var(--meta); }
+  .tx-seq-rbf { color: var(--accent-2); }
+  .tx-seq-block, .tx-seq-time { color: var(--dim); font-variant-numeric: normal; }
+  .tx-line { margin: 0 0 .55em; }
+
+  /* Opcodes and marks inside a script — the grammar that punctuates the
+     prose data pushes. */
+  .op { color: var(--accent); font-style: normal; }
+  .op-name {
+    font: 600 .62em/1 'IBM Plex Mono', ui-monospace, monospace; letter-spacing: .04em;
+    color: var(--dim); font-style: normal; vertical-align: .14em; white-space: nowrap;
+  }
+  .op-push { color: var(--meta); }
+  .dt { color: var(--accent); font-style: normal; font-weight: 700; }
+  .wit-sep, .wit-empty { color: var(--meta); font-style: normal; }
+  .glossia-lazy { color: var(--dim); }
+  .tx-ascii {
+    margin: 0 0 .55em; padding: .12em 0 .12em 1.05em;
+    border-left: 2px solid var(--accent); border-radius: 1px;
+    font: italic 400 .92em/1.6 'Newsreader', Georgia, serif; color: var(--ink-soft);
+  }
+  .tab { display: inline-block; width: 4ch; }
+  /* The illuminated initial opening the transaction's prose. */
+  .tx-line.tx-body-lead::first-letter {
+    font-size: 3.4em; float: left; line-height: .82; padding: .04em .07em 0 0;
+    font-weight: 500; color: var(--accent);
+  }
+
+  /* ── witness footnotes ── */
+  .footnotes { margin-top: 1.6em; padding-top: 1.2em; border-top: 1px solid var(--rule); }
+  .footnote {
+    margin: 0 0 .6em; font: 400 .8em/1.6 'Newsreader', Georgia, serif; color: var(--dim);
+    overflow-wrap: anywhere;
+  }
+  .footnote sup { color: var(--accent); margin-right: .3em; }
+
+  /* ── a chapter card's head (bitcoin-book.html's chapter leaf) ── */
+  .chapter-head { text-align: center; justify-content: center; }
+  .chapter-title {
+    font: 500 1.95em/1.2 'Newsreader', Georgia, serif; color: var(--ink);
+    margin: 0 0 1.15em; letter-spacing: -.01em;
+  }
+  .chapter-hash {
+    font: italic 400 .79em/1.5 'Newsreader', Georgia, serif; color: var(--dim);
+    margin: 0 auto .85em; max-width: 46ch;
+  }
+  .chapter-hash .cfx-gold { color: var(--accent); font-weight: 700; font-style: normal; }
+  .chapter-head .cfx { display: block; font: 400 .76em/1.55 'Newsreader', Georgia, serif; color: var(--dim); }
+  .chapter-head .cfx + .cfx { margin-top: .45em; }
+  .fx-mark { color: var(--accent); font-weight: 700; font-style: normal; }
+
+  /* ── an output card: the amount over the script it locks ── */
+  .out-one { max-width: 46ch; margin: 0 auto; }
+  .out-value { text-align: center; margin-bottom: 1.1em; font-size: .95em; }
+  .out-script { min-width: 0; }
+
+  /* ── a witness card: the footnote alone, under its letter ── */
+  .wit-one { max-width: 46ch; margin: 0 auto; }
+  .wit-one .footnote { font-size: .9em; }
+  .wit-one .footnote sup { color: var(--accent); margin-right: .4em; }
+
+  /* A passage clipped at the page's foot says so in the book's own idiom —
+     the ⋯ it uses wherever prose is elided — rather than stopping mid-word
+     and letting the reader think that was the end of it. */
+  .continues {
+    flex: 0 0 auto; text-align: center; margin-top: .5em;
+    font-size: 1.1em; line-height: 1; color: var(--meta);
+  }
+
+  /* ── the colophon (the app's running head and nav belong to the app) ── */
+  .colophon {
+    flex: 0 0 auto; margin-top: 1.2em; padding-top: .9em; border-top: 1px solid var(--rule);
+    display: flex; justify-content: space-between; align-items: baseline;
+    font: 400 .66em/1 'IBM Plex Mono', ui-monospace, monospace; color: var(--meta);
+    letter-spacing: .06em;
+  }
+  .colophon .cite { color: var(--accent); }
+
+  body { padding: 2rem 1rem 3rem; }
+  .nav {
+    max-width: 54rem; margin: 0 auto 1.5rem; display: flex; gap: 1.2em; flex-wrap: wrap;
+    font: 400 13px/1.5 'IBM Plex Mono', ui-monospace, monospace; letter-spacing: .04em;
+  }
+  .nav a { color: #c9a25f; text-decoration: none; }
+  .nav a:hover { text-decoration: underline; }
+  .also {
+    max-width: 54rem; margin: 1.6rem auto 0; padding-top: 1.2rem; border-top: 1px solid #232228;
+    font: 400 14px/1.7 'Newsreader', Georgia, serif; color: #8f8a7e;
+  }
+  .also a { color: #c9a25f; text-decoration: none; }
+  .also a:hover { text-decoration: underline; }
+  .also code { font: 400 12.5px/1.5 'IBM Plex Mono', ui-monospace, monospace; overflow-wrap: anywhere; }
+  /* The page is read, not screenshotted, so its type may scale with the
+     viewport the way the reading pages' does. */
+  @media (max-width: 640px) { .page { font-size: 16px; padding: 1.4em 1.2em; } }
+</style>
+</head>
+<body>
+<nav class="nav">
+  <a href="https://bookofbitcoin.io/">The βook of βitcoin</a>
+  <a href="https://bookofbitcoin.io/bitcoin-contents.html">Contents</a>
+  <a href="https://bookofbitcoin.io/bitcoin-book.html?block=767430&amp;index=2322">Read this in the book →</a>
+</nav>
+<div class="page">
+  <div class="content">
+    <h1 class="section-title">
+      <span class="section-num">§ 2323</span>
+      <span class="section-event">First Ordinals inscription</span>
+    </h1>
+    <div class="section-hash"><span class="cfx-gold">⌘</span><span class="op op-push">²⁵⁶</span> Odor demand to argue for sport. Pop surround its half design. Our voice section disease. Family donate culture to orphan. Our die away set our series. Bunker way kite review. One is robust to toss. Theme see the tax.</div>
+    <hr class="rule">
+    <div class="tx-flow">
+  <div class="tx-inputs"></div>
+  <div class="tx-margin-cites"><div class="tx-in-cite"><span class="cite-body">274bda…:0</span><sup class="tx-witness-ref">a</sup><div class="cite-amount"><span class="tx-seq tx-seq-rbf">†</span></div></div></div>
+  <div class="tx-outputs"><div class="tx-out-script"><p class="tx-line tx-body-lead"><span class="op" title="OP_0">⓪</span> <span class="dt" title="hash">h</span><span class="op op-push op-count" title="OP_PUSHBYTES_20 — push the next 20 bytes">²⁰</span> Gift cloud bamboo to lobster. Sin may deny tail. A repair is obvious. Some tap ahead shield tent. Guide may foam sibling to lab.</p></div><div class="tx-note tx-out-value">0.00009678 ₿</div></div>
+  <div class="tx-note tx-locktime">□</div>
+</div><div class="footnotes"><p class="footnote"><sup>a</sup> <span class="dt" title="signature">s</span> Benefit may flower our swift walnut. Its wise evil pass same. Lot close permit exile. Map may sustain son. Tea there put peasant. Matrix are bright to find via suit to physical. A someone. Chunk dance to smooth per ice. Lie may fetch waste. Our neutral coconut would expose antenna. Cause get wisdom to material. The guy have to recycle. Win may see buffalo per a web for fire. Its angry trash shield curtain. Its over thought may submit aid.<span class="wit-sep"> · </span><span class="dt" title="tapscript — a Taproot leaf, revealed as opcodes">t</span> <span class="dt" title="public key — x-only">p</span><span class="op op-push op-count" title="OP_PUSHBYTES_32 — push the next 32 bytes">³²</span> Cop enforce topic to record. Hip see its jungle. Our black setup cloud lion. Sir uncover term to timber. Lot may inject cattle per screen. Son foster demise to chicken. Shove fruit to inflict. The fantasy may credit parade. <span class="op" title="OP_CHECKSIG">∇</span> <span class="op" title="OP_0">⓪</span> <span class="op" title="OP_IF">⟨</span> <span class="op op-push op-count" title="OP_PUSHBYTES_3 — push the next 3 bytes">³</span> “ord” <span class="op" title="pushed number — 1">1</span> <span class="op op-push op-count" title="OP_PUSHBYTES_9 — push the next 9 bytes">⁹</span> “image/png” <span class="op" title="OP_0">⓪</span> <span class="op op-push" title="OP_PUSHDATA2 — push 520 bytes, the length in a 2-byte prefix">⇊⁵²⁰</span> Its matter may list mushroom. Pop borrow its payment. Cow agree abandon to abandon. Our yes ask to engage. Our baby piano abandon ability. Mosquito abandon tap about cactus. The dolphin abandon abandon. Celery quote title to abandon. Abandon account the party shed. Tap may carry zoo. A zoo abandon its rid abandon. Cop may betray the mad dawn to abandon. Abandon may flush to enable. Our capital fence an immense rich. Tuition may color act to the bet. Yes donate scan per wire. Chuckle may patrol market to i ⋯</p></div>
+  </div>
+  <div class="colophon">
+    <span>bookofbitcoin.io</span>
+    <span class="cite">IV β69 ■343 §2323</span>
+  </div>
+</div>
+<div class="also">
+  <p>This passage is block 767,430 read as a chapter, and its
+  transaction 2323 read as a section. The prose is a lossless encoding of the
+  transaction's bytes: filter it against the BIP39 English wordlist and the transaction
+  returns, byte for byte. The connective grammar is the translator's; the content is the
+  chain's.</p>
+  <p>Block hash <code>000000000000000000029730547464f056f8b6e2e0a02eaf69c24389983a04f5</code><br>
+  Transaction <code>6fb976ab49dcec017f1e201e84395983204ae1a7c2abf7ced0a85d692e442799</code></p>
+  <p>Outputs: <a href="https://bookofbitcoin.io/IV/69/343/2323/0/">§2323.0</a></p>
+  <p>Witnesses: <a href="https://bookofbitcoin.io/IV/69/343/2323/a/">§2323.a</a></p>
+  <p><a href="https://bookofbitcoin.io/bitcoin-book.html?block=767430&amp;index=2322">Read it in the book</a> · <a href="https://bookofbitcoin.io/passages/first-ordinals-inscription.md">as plain markdown</a> · <a href="https://bookofbitcoin.io/llms.txt">how to reconstruct any passage yourself</a></p>
+</div>
+</body>
+</html>

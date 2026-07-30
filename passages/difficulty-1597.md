@@ -33,7 +33,7 @@ Transaction id, as prose: ⌘²⁵⁶ *Glance spice its canvas blanket. Dolphin 
 - **input 1:** coinbase (∅ — no previous output; new coin)
   - script: 685440 ⁴⁴ “I]ϩ<1” ⁸ “/F2Pool/” ¹⁸ “Mined by manasi20s” ⓪ ⓪ ⓪ ⓪ ⓪ ⓪ ⓪ ⓪ ⓪ ⓪ ⓪ ⓪ ⓪ ⓪ ⓪ ⓪ ⓪ ⁵ Abstract is hundred above abandon.
   - sequence: ■0 — replaceable; relative locktime 0 blocks after the input's confirmation
-  - witness: see footnote 1
+  - witness: see footnote a
 - **output 1:** 6.92922309 ₿
   - script: ⧉ ⌖ h²⁰ Sight code kite to torch. Habit mail to avoid. Clump around spawn round. Crawl air throw to project. ≡ ∇
 - **output 2:** 0 ₿
@@ -48,7 +48,7 @@ Transaction id, as prose: ⌘²⁵⁶ *Glance spice its canvas blanket. Dolphin 
 
 ### Witness footnotes
 
-1. ∅
+a. ∅
 
 ---
 

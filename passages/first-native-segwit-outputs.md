@@ -33,14 +33,14 @@ Transaction id, as prose: ⌘²⁵⁶ *Pudding may fruit duty to balcony. Upset 
 - **input 1:** spends output 1 of `9f37d671d8adb470a8bada662fb0216dc4c907964f329fc79d5e8c0191e30574`
   - script: ²² The abandon too piece future. Sir behave ecology to vault. Some cattle may tongue a tourist. An used row again get the deer. Parade see dentist to blouse per paper.
   - sequence: ● — final — disables the transaction locktime for this input
-  - witness: see footnote 1
+  - witness: see footnote a
 - **output 1:** 0.00194300 ₿
   - script: ⓪ h²⁰ Miracle space minimum to sense. Decade may merit moon. Sausage way get neutral. A row are clever. Abstract may expire all winter.
 - **locktime:** □ — no locktime — final with respect to time
 
 ### Witness footnotes
 
-1. s Its marine may base divide. Cow remove to hawk. Pan may obtain coyote. A world bag see bonus. Fyi resist deal to opinion. Fee enrich chaos for change. Day see hero to broom. Basket may set muffin. Wagon exile to inhale. Text target fish for a cliff. Firm grace public to example out frown to gym. A muscle due see food. Yes decorate the reunion. Swift emerge update to stereo out marble to water via wait. Scale may set cactus. · p Action borrow its cereal raven. Fiber may repair cow. Its indoor journey combine grit. Guy inspire the select rival. Goddess may radio a virtual father. Its power century get envelope to hire. The slice may forward math.
+a. s Its marine may base divide. Cow remove to hawk. Pan may obtain coyote. A world bag see bonus. Fyi resist deal to opinion. Fee enrich chaos for change. Day see hero to broom. Basket may set muffin. Wagon exile to inhale. Text target fish for a cliff. Firm grace public to example out frown to gym. A muscle due see food. Yes decorate the reunion. Swift emerge update to stereo out marble to water via wait. Scale may set cactus. · p Action borrow its cereal raven. Fiber may repair cow. Its indoor journey combine grit. Guy inspire the select rival. Goddess may radio a virtual father. Its power century get envelope to hire. The slice may forward math.
 
 ---
 

@@ -47,7 +47,48 @@ So block height h has volume = ⌊h/210000⌋+1, book = ⌊(h mod 210000)/2016�
 chapter = (h mod 210000) mod 2016 + 1, and "III β2 ■5 §4" names the 4th
 transaction of that block.
 
-## URL grammar (the live app)
+## URL grammar
+
+### Citation paths — an address per level
+
+Every curated entry also lives at its citation, written as a path, at the
+level the citation names:
+
+    III β2 ■5        ->  https://bookofbitcoin.io/III/2/5/      a chapter (a block)
+    III β2 ■5 §1     ->  https://bookofbitcoin.io/III/2/5/1/    a section (a transaction)
+    III β2 ■5 §1.0   ->  https://bookofbitcoin.io/III/2/5/1/0/  an output of it
+    III β2 ■5 §1.a   ->  https://bookofbitcoin.io/III/2/5/1/a/  a witness of it
+
+Volume in Roman, then book, chapter and section as numerals, with the sigla
+implied by position. Each path stops where the printed reference stops. The
+section is 1-based; the last segment says for itself what it names — a
+numeral is an output (0-based, the index Bitcoin gives a vout, printed §1.0)
+and a letter is a witness footnote (§1.a).
+
+Footnotes are lettered, not numbered: a, b, c … skipping q, which at
+superscript size is too near a g. That leaves 25 letters, and the run
+continues in bijective base-25 — aa after z, aaa after zz — so singles cover
+1–25, doubles 26–650, triples 651 up. A witness is addressed by the footnote
+letter its section's margin prints, counted over the witness-bearing inputs
+in input order.
+
+These are ordinary HTML pages, readable without JavaScript, each titled by
+its citation and carrying its own preview image: a chapter page carries the
+block's title page — its hash as prose and the header's fields as a
+frontispiece — and leads to the curated sections inside it; a section page
+carries the transaction in full and leads to its outputs and witnesses; an
+output page carries the amount and the script that locks it; a witness page
+carries that input's stack, as its footnote. Prefer these when citing or
+linking; they are the canonical, shareable form, and the sitemap lists them.
+
+The grammar is invertible, the same arithmetic as the citation scheme above:
+height = (volume−1)×210000 + (book−1)×2016 + (chapter−1), the section is the
+1-based transaction index, the output its 0-based vout. So a path can be
+computed for any address on the chain — but only curated ones are
+pre-rendered today; anything else 404s, and the query-string form below
+reaches it instead.
+
+### The live app
 
 - `bitcoin-book.html` — the reading page. `?block=<height>` opens a block
   (negative counts back from the tip: `?block=-1` is the latest);

@@ -33,7 +33,7 @@ Transaction id, as prose: ⌘²⁵⁶ *The stock unveil to adjust. Chaos may fin
 - **input 1:** coinbase (∅ — no previous output; new coin)
   - script: “o8Zc/BTC.COM/”
   - sequence: ● — final — disables the transaction locktime for this input
-  - witness: see footnote 1
+  - witness: see footnote a
 - **output 1:** 15.89351625 ₿
   - script: ⌖ h²⁰ Card get its kingdom to fancy. Cop leave grocery per result. Industry agree task to matrix via rib. Pluck spend the very way. =
 - **output 2:** 0 ₿
@@ -42,7 +42,7 @@ Transaction id, as prose: ⌘²⁵⁶ *The stock unveil to adjust. Chaos may fin
 
 ### Witness footnotes
 
-1. ∅
+a. ∅
 
 ---
 

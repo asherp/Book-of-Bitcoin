@@ -33,7 +33,7 @@ Transaction id, as prose: ⌘²⁵⁶ *Riot repair pride to apology. Business ma
 - **input 1:** coinbase (∅ — no previous output; new coin)
   - script: 938903 ³⁰ “< OCEAN.XYZ >” “Barefoot Mining” ⁷ Bar scale bargain to rule. Alarm may abandon cut. ¹⁴ Noise is diesel to drip. Theme avoid to abandon. Abandon abandon its abandon. Abandon may abandon tax.
   - sequence: ● — final — disables the transaction locktime for this input
-  - witness: see footnote 1
+  - witness: see footnote a
 - **output 1:** 0 ₿
   - script: ¶ ²⁰ “OCB1P”
 - **output 2:** 0.77796915 ₿
@@ -106,7 +106,7 @@ Transaction id, as prose: ⌘²⁵⁶ *Riot repair pride to apology. Business ma
 
 ### Witness footnotes
 
-1. ∅
+a. ∅
 
 ---
 

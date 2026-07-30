@@ -33,7 +33,7 @@ Transaction id, as prose: ⌘²⁵⁶ *Gravity circle its pottery to soul. Echo 
 - **input 1:** coinbase (∅ — no previous output; new coin)
   - script: “Mined by AntPool119”
   - sequence: ● — final — disables the transaction locktime for this input
-  - witness: see footnote 1
+  - witness: see footnote a
 - **output 1:** 7.15968084 ₿
   - script: ⧉ ⌖ h²⁰ Balcony set tennis to case. Miracle may gesture woman. Its boy remove lot. Our eternal wall may laugh to enter. Broccoli may toss its goat. ≡ ∇
 - **output 2:** 0 ₿
@@ -44,7 +44,7 @@ Transaction id, as prose: ⌘²⁵⁶ *Gravity circle its pottery to soul. Echo 
 
 ### Witness footnotes
 
-1. ∅
+a. ∅
 
 ---
 

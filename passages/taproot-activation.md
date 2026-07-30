@@ -32,7 +32,7 @@ Transaction id, as prose: ⌘²⁵⁶ *Match ball its gorilla to bachelor. Ear m
 - **version:** 2
 - **input 1:** spends output 0 of `bed322446b458193f83e5cdb861b697219f82fa46938f0a49fbf6d801c119dfe`
   - sequence: ● — final — disables the transaction locktime for this input
-  - witness: see footnote 1
+  - witness: see footnote a
 - **output 1:** 0.00030000 ₿
   - script: ① p³² Grid is ten to its gossip. Moon get action for robot. Young people spray to eyebrow. End enact son near cop. Each guy is legal. Winner drill food to exhibit out embrace. The boring cow explain due. Bed enrich zone to gas.
 - **output 2:** 0 ₿
@@ -41,7 +41,7 @@ Transaction id, as prose: ⌘²⁵⁶ *Match ball its gorilla to bachelor. Ear m
 
 ### Witness footnotes
 
-1. s Cop achieve to idle per bet. Sin sustain to unveil. Our fitness may announce peace. Map isolate tomorrow to solid. Exile gate the vast craft via pool. The mansion is hidden. Our visual note may get a silver. Tea may speak melody. Sail set the meadow. Gasp see virus to wood. Catch file chef per stick via minimum. Cow hurt to depart. An industry boss to avoid per its amateur daughter. Our unique caution may unfold mercy. Velvet see our van. Its trophy may winter cactus. · p Its actual category due see deer. The bit is jealous. Soldier is nuclear about pie. Tap early earn hope. Limit across set its story. Smoke get the wisdom. A chapter protect engine. Carpet always grant our prize. Warrior may balance its cap.
+a. s Cop achieve to idle per bet. Sin sustain to unveil. Our fitness may announce peace. Map isolate tomorrow to solid. Exile gate the vast craft via pool. The mansion is hidden. Our visual note may get a silver. Tea may speak melody. Sail set the meadow. Gasp see virus to wood. Catch file chef per stick via minimum. Cow hurt to depart. An industry boss to avoid per its amateur daughter. Our unique caution may unfold mercy. Velvet see our van. Its trophy may winter cactus. · p Its actual category due see deer. The bit is jealous. Soldier is nuclear about pie. Tap early earn hope. Limit across set its story. Smoke get the wisdom. A chapter protect engine. Carpet always grant our prize. Warrior may balance its cap.
 
 ---
 

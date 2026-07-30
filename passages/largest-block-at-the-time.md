@@ -33,7 +33,7 @@ Transaction id, as prose: ⌘²⁵⁶ *Limb is ancient to soap. Vintage include 
 - **input 1:** coinbase (∅ — no previous output; new coin)
   - script: 774628 ⁴⁹ “\ Powered by Luxor Tech \”
   - sequence: ● — final — disables the transaction locktime for this input
-  - witness: see footnote 1
+  - witness: see footnote a
 - **output 1:** 6.25875047 ₿
   - script: ⧉ ⌖ h²⁰ Toe host pigeon to release. Box may orient sausage. Its ocean double warrior. An artist are bleak. Check get soccer to blossom. ≡ ∇
 - **output 2:** 0 ₿
@@ -42,7 +42,7 @@ Transaction id, as prose: ⌘²⁵⁶ *Limb is ancient to soap. Vintage include 
 
 ### Witness footnotes
 
-1. ∅
+a. ∅
 
 ---
 

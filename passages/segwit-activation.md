@@ -33,7 +33,7 @@ Transaction id, as prose: ⌘²⁵⁶ *Recall drum insect to walnut. Design set 
 - **input 1:** coinbase (∅ — no previous output; new coin)
   - script: “/BTCC/ Support /NYA/”
   - sequence: ■0 — replaceable; relative locktime 0 blocks after the input's confirmation
-  - witness: see footnote 1
+  - witness: see footnote a
 - **output 1:** 14.62514269 ₿
   - script: ⧉ ⌖ h²⁰ Its club may lunch primary. Pop flee to cap. Its sunny crouch ski cigar. Frost tunnel rule to hand. Panda is crazy per our object. ≡ ∇
 - **output 2:** 0 ₿
@@ -42,7 +42,7 @@ Transaction id, as prose: ⌘²⁵⁶ *Recall drum insect to walnut. Design set 
 
 ### Witness footnotes
 
-1. ∅
+a. ∅
 
 ---
 

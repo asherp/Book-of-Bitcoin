@@ -33,7 +33,7 @@ Transaction id, as prose: ⌘²⁵⁶ *Its sorry noodle plate tax. The vacant fr
 - **input 1:** coinbase (∅ — no previous output; new coin)
   - script: 840000 ²⁵ “/ViaBTC/Mined by buzz120/” ⁴⁴ Its wide tax is vibrant. Pop forget to chuckle. Its relief off attend switch. Pattern are main to great. Pop choose metal out cruise. Jump drop urge to tumble for arm. Physical little target our maximum. The base is wood to the same advice. Abandon may abandon abandon to abandon per abandon. ¹⁶ Flavor set chaos to divorce. Our book demand middle. Its chat image lot. A they. Banner yes divorce abandon. ⓪ ⓪ ⓪ ⓪
   - sequence: ● — final — disables the transaction locktime for this input
-  - witness: see footnote 1
+  - witness: see footnote a
 - **output 1:** 40.75061499 ₿
   - script: ⧉ ⌖ h²⁰ Its fat lemon play to empty. Bench is eight for chimney. Hedgehog topple kangaroo to pottery. Exercise guide spoon via trend. ≡ ∇
 - **output 2:** 0 ₿
@@ -44,7 +44,7 @@ Transaction id, as prose: ⌘²⁵⁶ *Its sorry noodle plate tax. The vacant fr
 
 ### Witness footnotes
 
-1. ∅
+a. ∅
 
 ---
 

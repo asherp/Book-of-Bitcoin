@@ -33,7 +33,7 @@ Transaction id, as prose: ⌘²⁵⁶ *A summer may sketch to author. Our awake 
 - **input 1:** coinbase (∅ — no previous output; new coin)
   - script: 622944 ²⁶ “/ViaBTC/Mined by sanpaolo/” ⁴⁴ A wide tap is vibrant. Pop forget to wrestle. A wise melody get a physical. Each cop are outdoor. Its term are adult. Moment may see siren. Doctor get a peace. Aim floor table to dove. Shell fish to involve out the power kiwi. Its tie once set its ability. Immune due see series. Abandon abandon abandon to abandon out abandon. ¹⁶ Cop inject nation during absurd. Wasp may crush vendor. Senior ago get syrup. Hill set length to abandon.
   - sequence: ● — final — disables the transaction locktime for this input
-  - witness: see footnote 1
+  - witness: see footnote a
 - **output 1:** 12.72123454 ₿
   - script: ⧉ ⌖ h²⁰ Its fat lemon play to empty. Bench is eight for chimney. Hedgehog topple kangaroo to pottery. Exercise guide spoon via trend. ≡ ∇
 - **output 2:** 0 ₿
@@ -44,7 +44,7 @@ Transaction id, as prose: ⌘²⁵⁶ *A summer may sketch to author. Our awake 
 
 ### Witness footnotes
 
-1. ∅
+a. ∅
 
 ---
 

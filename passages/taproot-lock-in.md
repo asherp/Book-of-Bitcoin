@@ -33,7 +33,7 @@ Transaction id, as prose: ⌘²⁵⁶ *Its record may jelly display. Cow cool ou
 - **input 1:** coinbase (∅ — no previous output; new coin)
   - script: “/slush/”
   - sequence: ■0 — replaceable; relative locktime 0 blocks after the input's confirmation
-  - witness: see footnote 1
+  - witness: see footnote a
 - **output 1:** 6.52032931 ₿
   - script: ⧉ ⌖ h²⁰ Lab price refuse to reward. Noodle may excuse virus. Its step ready west. Pottery prison a lamp. Shiver yes get advice. ≡ ∇
 - **output 2:** 0 ₿
@@ -44,7 +44,7 @@ Transaction id, as prose: ⌘²⁵⁶ *Its record may jelly display. Cow cool ou
 
 ### Witness footnotes
 
-1. ∅
+a. ∅
 
 ---
 

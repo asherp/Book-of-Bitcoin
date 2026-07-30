@@ -33,7 +33,7 @@ Transaction id, as prose: ⌘²⁵⁶ *Garden may nest to verify. Return see its
 - **input 1:** coinbase (∅ — no previous output; new coin)
   - script: “a,/BTC.TOP/”
   - sequence: ● — final — disables the transaction locktime for this input
-  - witness: see footnote 1
+  - witness: see footnote a
 - **output 1:** 12.76129339 ₿
   - script: ⧉ ⌖ h²⁰ Its ripple long our two bullet. Goddess may truck few abandon. The sketch set cupboard. Equal damp alley until its project. ≡ ∇
 - **output 2:** 0 ₿
@@ -42,7 +42,7 @@ Transaction id, as prose: ⌘²⁵⁶ *Garden may nest to verify. Return see its
 
 ### Witness footnotes
 
-1. ∅
+a. ∅
 
 ---
 

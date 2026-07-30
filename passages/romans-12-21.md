@@ -32,7 +32,7 @@ Transaction id, as prose: ⌘²⁵⁶ *An okay tap is viable. Pop oblige our son
 - **version:** 1
 - **input 1:** spends output 4 of `5462b136cb81f5d200656d92240ccf60ad8428092d7fb99c91efde17d03a13ff`
   - sequence: ○ — not replaceable, but respects the transaction locktime
-  - witness: see footnote 1
+  - witness: see footnote a
 - **output 1:** 0.00432100 ₿
   - script: ⧉ ⌖ h²⁰ Pull may see dirt to whip. A hidden hand get crazy. Genre far set misery. Our arctic rocket may sting stove. Ripple might exile favorite. ≡ ∇
 - **output 2:** 0.00432100 ₿
@@ -43,7 +43,7 @@ Transaction id, as prose: ⌘²⁵⁶ *An okay tap is viable. Pop oblige our son
 
 ### Witness footnotes
 
-1. s Its unaware scorpion feature its survey. Work is real to champion. A real egg too omit leader. Dirt is odd to dance via warrior. Guy pave toast to mobile per coast. Hood may satisfy the bulk to burden. Our tired area limb our civil set. Ban long subject tip. Elevator may get goddess. Minor is acoustic to a merry decline. Our smart family soap soldier to power. Board may inform out. Its loud suit are cruel. Van is marine to its cactus. · p Ban adapt debris to local. Check see its athlete. Our priority may set shaft. Other void beef a vacant knife to fatigue. Nominee void soul out ranch. Scrap chunk muscle to eyebrow for jet. Yes rotate grant to punch.
+a. s Its unaware scorpion feature its survey. Work is real to champion. A real egg too omit leader. Dirt is odd to dance via warrior. Guy pave toast to mobile per coast. Hood may satisfy the bulk to burden. Our tired area limb our civil set. Ban long subject tip. Elevator may get goddess. Minor is acoustic to a merry decline. Our smart family soap soldier to power. Board may inform out. Its loud suit are cruel. Van is marine to its cactus. · p Ban adapt debris to local. Check see its athlete. Our priority may set shaft. Other void beef a vacant knife to fatigue. Nominee void soul out ranch. Scrap chunk muscle to eyebrow for jet. Yes rotate grant to punch.
 
 ---
 
