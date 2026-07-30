@@ -154,8 +154,6 @@ a:hover { text-decoration: underline; }
    its number, and this is the appendix. */
 .anth-subtitle { margin-top:10px; font:400 19px/1.35 'Newsreader',serif; color:var(--dim); }
 .anth-subtitle:empty { display:none; }
-.anth-addr { margin-top:10px; font:400 12px/1.5 'IBM Plex Mono',monospace; letter-spacing:.02em; color:var(--meta); word-break:break-all; }
-.anth-addr:empty { display:none; }
 .anth-prose { margin:22px 0 0; max-width:560px; font:400 16px/1.7 'Newsreader',serif; font-style:italic; color:var(--ink-soft); }
 .anth-prose:empty { display:none; }
 /* On a passage leaf the script IS the leaf's title, so it is set at a
@@ -468,7 +466,6 @@ a:hover { text-decoration: underline; }
         <div class="anth-subtitle" id="anth-subtitle"></div>
         <div class="anth-pager" id="anth-pager"></div>
         <p class="anth-prose" id="anth-prose"></p>
-        <div class="anth-addr" id="anth-addr"></div>
         <div class="anth-balance" id="anth-balance"></div>
         <div class="anth-range" id="anth-range"></div>
         <div class="anth-count" id="anth-count"></div>
@@ -1207,7 +1204,6 @@ const clearHero = () => {
   balanceEl.textContent = '';
   balanceEl.className = 'anth-balance';
   balanceEl.onclick = null;
-  document.getElementById('anth-addr').textContent = '';
   document.getElementById('anth-subtitle').textContent = '';
   const prose = document.getElementById('anth-prose');
   prose.replaceChildren();
@@ -1473,11 +1469,12 @@ const openAddressLeaf = (alive) => {
   // typed push mark, and Glossia prose for only the genuinely opaque bytes
   // (the hash or witness program), exactly as the same script reads in every
   // chapter that pays it. So a P2PKH passage opens ⧉ ⌖ h²⁰ ⟨prose⟩ ≡ ∇, and
-  // the base58/bech32 form beneath is only the address that stands for it.
-  // The renderer and engine are the book's own (renderScript needs the WASM
-  // build; see README); when they cannot be had the address takes the title
-  // slot, since a leaf with nothing at its head is no leaf.
-  document.getElementById('anth-addr').textContent = addr;
+  // the base58 or bech32 form is not printed beneath it: an address is the
+  // machine's rendering of this same script, and the book's rendering is the
+  // one the book prints. (The URL still carries it, and the ledger is still
+  // found by it.) The renderer and engine are the book's own (renderScript
+  // needs the WASM build; see README); only when they cannot be had does the
+  // address stand in at the head, since a leaf with nothing there is no leaf.
   (async () => {
     const html = await txoProse(addr);
     if (!alive()) return;
@@ -1487,7 +1484,6 @@ const openAddressLeaf = (alive) => {
       prose.innerHTML = html;
     } else {
       document.getElementById('anth-title').textContent = shortAddr(addr);
-      document.getElementById('anth-addr').textContent = '';
     }
   })();
 
