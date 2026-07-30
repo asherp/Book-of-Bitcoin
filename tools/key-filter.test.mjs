@@ -15,7 +15,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { marksOf, rowShows } from '../web/btc-key-filter.js';
+import { marksOf, rowShows, isHidden } from '../web/btc-key-filter.js';
 import { NOTATION_HTML } from '../web/btc-notation.js';
 
 // Every glyph row as the filter sees it: the cell's markup and its data-marks.
@@ -139,4 +139,28 @@ test('a template id in the key is one the classifier hands back', async () => {
   for (const id of outputTemplates('76a9' + P(20) + '88ac')) assert.ok(tagged.has(id), id);
   for (const id of outputTemplates('51' + P(32))) assert.ok(tagged.has(id), id);
   for (const id of outputTemplates('00' + P(32))) assert.ok(tagged.has(id), id);
+});
+
+test('what the page has folded away is not on the page', () => {
+  // The shape a section page really has: the chapter's head still in the
+  // document, hidden, holding the last chapter page's header marks, with the
+  // transaction's own marks live beside it.
+  const node = (cls, parent) => {
+    const n = { classList: { contains: (c) => cls.split(' ').includes(c) }, parentElement: parent };
+    return n;
+  };
+  const slide = node('', null);
+  const head = node('chapter-head', slide);
+  const frontispiece = node('chapter-frontispiece hidden', head);   // folded away on a section
+  const beta = node('cfx cfx-gold', frontispiece);                  // β₇₈, from the last chapter page
+  const body = node('chapter-body', slide);
+  const dup = node('op', body);                                     // ⧉, the transaction's own
+
+  assert.equal(isHidden(beta, slide), true, "a section must not show the chapter's header marks");
+  assert.equal(isHidden(dup, slide), false, "the transaction's own marks are on the page");
+  // The walk stops at the root: a hidden ancestor above it is not this
+  // collector's business, and must not blank the whole page.
+  const outer = node('hidden', null);
+  slide.parentElement = outer;
+  assert.equal(isHidden(dup, slide), false);
 });

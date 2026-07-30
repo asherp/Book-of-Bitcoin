@@ -24,6 +24,23 @@
 const MARK_SELECTOR = '.op, .dt, .cfx, .cfx-gold, .fx-mark, .merkle-mark, '
   + '.tx-seq, .tx-locktime, .cite-amount, .tx-out-value, .section-num, .mk';
 
+// Is this element inside something the page has folded away?
+//
+// A chapter and a section share one set of elements and take turns in them.
+// A section page keeps the chapter's own head -- the hash prose and the
+// header frontispiece -- in the document and merely hides it, still holding
+// the marks of whichever chapter page was last drawn. Read literally that
+// makes every transaction look as though it were showing a block header, so
+// what is folded away is not on the page and does not open a row. Walks to
+// the root inclusive; above it is the caller's business.
+export function isHidden(el, root) {
+  for (let n = el; n; n = n.parentElement) {
+    if (n.classList && n.classList.contains('hidden')) return true;
+    if (n === root) break;
+  }
+  return false;
+}
+
 // The marks a rendered page is actually showing, as the exact strings their
 // spans carry -- '⧉', '■840000', 'β₇₈', 'III β2 ■5'.
 //
@@ -34,6 +51,7 @@ export function collectMarks(root) {
   const marks = new Set();
   if (!root) return marks;
   for (const el of root.querySelectorAll(MARK_SELECTOR)) {
+    if (isHidden(el, root)) continue;
     const text = el.textContent.trim();
     if (text) marks.add(text);
     if (el.classList.contains('op-count')) marks.add('push:count');
