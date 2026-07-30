@@ -84,6 +84,24 @@ export function commentaryFor({ height = null, index = null, txid = null } = {})
     .filter((it) => it.readings.length);
 }
 
+// A one-line credit for surfaces that LIST passages rather than open them --
+// the table of contents, where a reader is deciding what to open and "commentary
+// by so-and-so" is the kind of thing that decides it.
+//
+// Only a CREDITED reading earns the line. The book's own note gets none, for the
+// same reason a printed anthology's contents does not mark the editor's own
+// headnotes: the book is the voice you are already reading, so marking it would
+// tag nearly every row and distinguish nothing. A name is news. Null where there
+// is no name to print, which is the caller's cue to print nothing.
+export function creditLine(entry) {
+  const named = readingsOf(entry).filter((r) => r.by).map((r) => r.by);
+  if (!named.length) return null;
+  return {
+    label: `commentary by ${named.join(' · ')}`,
+    title: `${named.length > 1 ? 'readings' : 'a reading'} by ${named.join(', ')} — editorial, offered beside the passage and no more authoritative than its argument`,
+  };
+}
+
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => (
   { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 

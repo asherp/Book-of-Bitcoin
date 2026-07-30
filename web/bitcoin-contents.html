@@ -159,6 +159,14 @@ a:hover { text-decoration: underline; }
 .toc-entry:hover .toc-title { color:var(--ink); }
 .toc-entry:hover .toc-ref, .toc-entry:focus-visible .toc-ref { text-decoration:underline; color:var(--accent-2); }
 .toc-entry:focus-visible { outline:none; }
+/* An entry whose passage carries a reading (btc-commentary.js) wears a credit
+   line beneath its title: "commentary", or "commentary by" whoever wrote it.
+   The annotation register -- small monospace, meta-grey -- so it reads as a
+   note about the row rather than part of the row's name, and so a contents
+   scanned quickly still separates the record's places from readings of them. */
+.toc-commentary { display:block; margin-top:.3em; font:400 10.5px/1.4 'IBM Plex Mono',monospace; letter-spacing:.08em; text-transform:uppercase; color:var(--meta); }
+.toc-entry:hover .toc-commentary { color:var(--dim); }
+
 /* A reader's own bookmark, sitting inline in reading order, wears the same
    ribbon it flies in the book. */
 .toc-bm { display:inline-block; width:9px; height:12px; margin-right:8px; color:var(--accent); vertical-align:baseline; }
@@ -194,6 +202,7 @@ a:hover { text-decoration: underline; }
 
 <script type="module">
 import { NOTABLE, isBlockId, isRelativeBlockId, entryHref, blocksEta } from './btc-contents.js';
+import { creditLine } from './btc-commentary.js';
 import { volumeBookChapter, toRoman } from './btc-citation.js';
 import { storeGet, storePut } from './btc-store.js';
 import { seedArchive } from './btc-seed.js';
@@ -334,6 +343,19 @@ function entryEl(entry, underBook) {
     t.append(bm);
   }
   t.append(document.createTextNode(entry.title));
+  // An entry that carries a reading says so, and says whose: the contents is
+  // where a reader decides what to open, and "commentary by so-and-so" is the
+  // kind of thing that decides it. Set as a credit line under the title, in
+  // the register the book keeps for annotation -- never mistakable for the
+  // entry's own name.
+  const credit = creditLine(entry);
+  if (credit) {
+    const c = document.createElement('span');
+    c.className = 'toc-commentary';
+    c.textContent = credit.label;
+    c.title = credit.title;
+    t.append(c);
+  }
   const r = document.createElement('span'); r.className = 'toc-ref';
   if (entry.place) r.textContent = tailRef(entry.place, underBook);
   else { r.textContent = '—'; r.classList.add('none'); }
