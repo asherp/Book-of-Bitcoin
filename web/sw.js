@@ -17,7 +17,7 @@
  * Everything here is scoped to the directory sw.js is served from, so it works
  * unchanged at the site root and under a per-PR preview subpath.
  */
-const CACHE = 'bitcoin-book-shell-v22';
+const CACHE = 'bitcoin-book-shell-v27';
 
 // App shell, relative to the SW scope. glossia.js / glossia_bg.wasm are
 // gitignored build artifacts — present after a build/deploy, possibly absent in
@@ -28,6 +28,7 @@ const SHELL = [
   './bitcoin-book.html',
   './bitcoin-anthology.html',
   './bitcoin-contents.html',
+  './bitcoin-appendix.html',
   './bitcoin-front.html',
   './preface.md',
   './bitcoin-index.html',
@@ -38,17 +39,27 @@ const SHELL = [
   './btc-prose.js',
   './btc-sigla.js',
   './btc-notation.js',
+  './btc-commentary.js',
+  './btc-notables.js',
+  './btc-yaml.js',
+  './btc-markdown.js',
+  './btc-lookup.js',
+  './notables.yaml',   // the curated contents, read at runtime (its commentary files ride along; see shellUrls)
+  './appendix.yaml',   // …and what it gathers after the volumes
   './notation.css',
+  './commentary.css',
   './btc-chrome.js',
   './btc-chrome.css',
   './btc-wordlists.js',
   './btc-citation.js',
   './btc-contents.js',
-  './btc-contents-data.js',
+  './btc-mempool.js',
+  './btc-toc.css',
   './btc-pages.js',
   './btc-index.js',
   './btc-index-data.js',
   './btc-store.js',
+  './btc-fontscale.js',
   './bitcoin-book.webmanifest',
   './icons/beta-icon.svg',
   './icons/beta-icon-16.png',
@@ -61,14 +72,47 @@ const SHELL = [
   './glossia-msg.js',
   './btc-seed.js',
   './passages/seed.json',   // deploy artifact like the WASM: absent in a bare checkout, tolerated
+  './version.json',         // deploy artifact: the CalVer release stamp, absent in a bare checkout
 ];
+
+// The shell, plus the commentary files web/notables.yaml points at. The
+// editorial layer is authored as loose Markdown and referenced from that file,
+// so the list is data rather than something to keep in step by hand: read the
+// index and take its `file:` lines. Only filenames are wanted, so a regex is
+// enough (btc-yaml.js is an ES module and a classic worker cannot import it) --
+// and a miss costs one file its precache, nothing more: the runtime's
+// stale-while-revalidate caches it the first time it is opened.
+async function shellUrls() {
+  try {
+    const res = await fetch('./notables.yaml', { cache: 'reload' });
+    if (!res.ok) throw new Error(String(res.status));
+    const files = [...(await res.text()).matchAll(/^\s*-?\s*file:\s*(\S+)\s*$/gm)].map((m) => m[1]);
+    return SHELL.concat([...new Set(files)].map((f) => `./commentary/${f}`));
+  } catch (_) {
+    return SHELL;   // no index: the shell alone, and commentary caches as it is read
+  }
+}
+
+// The cached version.json is the release stamp of the build the reader is
+// running, so it must only ever change in lockstep with the rest of the shell
+// (install / refreshShell) — never by runtime revalidation, which would
+// restamp an old build with a new version. Read it to tell an update's
+// recipient how far behind they are.
+const VERSION_URL = './version.json';
+async function cachedVersion(cache) {
+  try {
+    const res = await cache.match(VERSION_URL);
+    return res ? ((await res.json()).version || null) : null;
+  } catch (_) { return null; }
+}
 
 self.addEventListener('install', (event) => {
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE);
     // Add entries individually so one 404 (e.g. an unbuilt artifact) doesn't
     // reject the whole install — anything missing is filled in at runtime.
-    await Promise.allSettled(SHELL.map((url) => cache.add(new Request(url, { cache: 'reload' }))));
+    const urls = await shellUrls();
+    await Promise.allSettled(urls.map((url) => cache.add(new Request(url, { cache: 'reload' }))));
     await self.skipWaiting();
   })());
 });
@@ -89,7 +133,8 @@ self.addEventListener('activate', (event) => {
 let shellRefresh = null;
 function refreshShell(cache) {
   if (!shellRefresh) {
-    shellRefresh = Promise.allSettled(SHELL.map((url) => cache.add(new Request(url, { cache: 'reload' }))))
+    shellRefresh = shellUrls()
+      .then((urls) => Promise.allSettled(urls.map((url) => cache.add(new Request(url, { cache: 'reload' })))))
       .then(() => { shellRefresh = null; });
   }
   return shellRefresh;
@@ -117,15 +162,21 @@ self.addEventListener('fetch', (event) => {
     const validator = (r) => r.headers.get('etag') || r.headers.get('last-modified') || '';
     const shellish = /\.(html|js|css|wasm|webmanifest)$|\/$/.test(url.pathname);
     const network = fetch(req).then(async (res) => {
-      // Only cache complete, same-origin OK responses.
-      if (res && res.ok && res.type === 'basic') {
+      // Only cache complete, same-origin OK responses — and never version.json,
+      // whose cached copy must stay in lockstep with the shell build it stamps
+      // (it updates via install/refreshShell only; see cachedVersion above).
+      if (res && res.ok && res.type === 'basic' && !url.pathname.endsWith('/version.json')) {
         const fresher = !!(cached && shellish && validator(cached) && validator(res) &&
                            validator(cached) !== validator(res));
         await cache.put(req, res.clone());
         if (fresher) {
+          // Read the release stamp before the sweep replaces it and after,
+          // so pages can say how far behind the running build is.
+          const current = await cachedVersion(cache);
           await refreshShell(cache);
+          const latest = await cachedVersion(cache);
           const pages = await self.clients.matchAll({ type: 'window' });
-          for (const page of pages) page.postMessage({ type: 'update-available' });
+          for (const page of pages) page.postMessage({ type: 'update-available', current, latest });
         }
       }
       return res;

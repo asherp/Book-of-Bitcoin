@@ -30,6 +30,29 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # The curated contents and its commentary are hand-authored files that
+      # nothing is generated from (web/notables.yaml, web/commentary/*.md), so
+      # this is the check that stands in for a build step: it reads them the way
+      # the browser will and fails on anything that would reach a reader as a
+      # missing reading or an empty contents. Cheap, and ahead of everything
+      # expensive.
+      - name: Check the editorial layer
+        run: node tools/check-editorial.mjs
+
+      # Every production deploy is a release, versioned by calendar:
+      # vYYYY.0M.0D.HH — the UTC date and hour the deploy started. A second
+      # release in the same hour appends the minute (vYYYY.0M.0D.HH.MM) to
+      # stay unique; the gh-pages-deploy concurrency group serializes these
+      # runs, so two deploys can never compute the same version.
+      - name: Compute release version
+        run: |
+          git fetch --quiet origin 'refs/tags/*:refs/tags/*'
+          version="$(date -u +%Y.%m.%d.%H)"
+          if git rev-parse -q --verify "refs/tags/v${version}" >/dev/null; then
+            version="${version}.$(date -u +%M)"
+          fi
+          echo "VERSION=${version}" >> "$GITHUB_ENV"
+
       # The Glossia engine (the Rust core compiled to WASM) is consumed as a
       # published crates.io release, pinned in build_web.sh. Fetch its source
       # tarball first so the cargo cache below can key off the extracted crate.
@@ -56,15 +79,41 @@ jobs:
       - name: Build WASM
         run: ./build_web.sh
 
+      # Headless Chromium, for the passage cards: each curated passage's page
+      # carries its own og:image, rendered by the same renderer the reply bot
+      # uses (tools/twitter-bot/image.mjs). Optional at runtime — without it
+      # the pages still ship and fall back to the site's standing card — so
+      # this step must never fail the deploy.
+      - name: Cache Chromium
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ hashFiles('tools/twitter-bot/package.json') }}
+
+      - name: Install the card renderer
+        continue-on-error: true
+        working-directory: tools/twitter-bot
+        run: |
+          npm install --no-audit --no-fund
+          npx playwright install --with-deps chromium
+
       # Pre-render the curated passages as static markdown (web/passages/) and
       # generate sitemap.xml — the text AI crawlers and no-JS readers actually
       # get, since the live pages compose their prose in the browser. Runs the
       # same parse/compose/encode pipeline in Node against the WASM artifact
-      # just built. Best-effort: the script skips entries whose explorer data
-      # can't be fetched and always exits 0, so an explorer outage never blocks
-      # a deploy (the sitemap still ships, covering whatever rendered).
+      # just built. Also writes each passage's page at its citation path
+      # (web/III/2/5/1/) with its own card under web/cards/, so a shared link
+      # previews as that passage rather than as the site (tools/passage-page.mjs).
+      # Best-effort: the script skips entries whose explorer data can't be
+      # fetched and always exits 0, so an explorer outage never blocks a deploy
+      # (the sitemap still ships, covering whatever rendered).
       - name: Pre-render curated passages
         run: node tools/prerender-passages.mjs
+
+      # Stamp the version into the deployed site so a running copy can be
+      # asked which release it is: https://bookofbitcoin.io/version.json
+      - name: Stamp version.json
+        run: printf '{"version":"%s"}\n' "$VERSION" > web/version.json
 
       # Deploy the production site to the root of gh-pages. clean-exclude keeps
       # the pr-preview/ directory (managed by the PR Preview workflow) intact so
@@ -77,3 +126,12 @@ jobs:
           clean: true
           clean-exclude: |
             pr-preview/
+
+      # Tag the commit only after the deploy step succeeded, so every tag
+      # marks a release that actually shipped.
+      - name: Tag release
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "v${VERSION}" -m "Release ${VERSION}"
+          git push origin "refs/tags/v${VERSION}"

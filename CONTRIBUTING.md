@@ -41,6 +41,97 @@ yours, and it travels with your name on it.
 If you would rather contribute commentary under different terms, say so in the
 pull request and it can be discussed before merge.
 
+Where it goes: two files, both meant to be written by hand. Put the reading
+itself in `web/commentary/` as Markdown, named for the passage —
+`web/commentary/bitcoin-pizza-day-your-name.md`:
+
+```markdown
+<!-- SPDX-License-Identifier: CC-BY-4.0 -->
+
+What you have to say about it. Ordinary paragraphs, blank line between them;
+`**strong**`, `*em*` and `` `code` `` if you want them.
+```
+
+Then point the entry at it in `web/notables.yaml`:
+
+```yaml
+- title: Bitcoin Pizza Day
+  id: 57043
+  commentary:
+    - file: bitcoin-pizza-day.md
+    - file: bitcoin-pizza-day-your-name.md
+      by: Your Name
+      href: https://your-site.example        # optional
+```
+
+An `id` may be written in any form the search box accepts — a height, a
+tip-relative height (`-1`), a 64-hex transaction id, or the book's own citation
+in either spelling and to any depth (`III β2 ■5`, `I β29 ■596 §85`,
+`v1b29c596s85`, and `III β2` for a book's leaf). A reference is resolved to a
+height when the file is read, so nothing downstream sees a new shape, and the
+checker prints what each one resolved to.
+
+An entry found in **more than one place** writes `ids:` in place of `id:`, each
+item a place with its own `as:` — what that place is within the entry:
+
+```yaml
+- title: The twice-confirmed coinbases
+  ids:
+    - id: 91722
+      index: 0
+      as: e3bf…468, first printing
+    - id: 91880
+      index: 0
+      as: e3bf…468, second printing
+  commentary:
+    - file: bip30-duplicate-coinbases.md
+```
+
+The contents lists a row per place, each citing its own chapter and carrying the
+`as` after the title; the reading belongs to the entry, so it is written once
+and met at every one of them.
+
+An `id` may also be an **address**, which is how a reading is attached to a
+ledger rather than to a passage:
+
+```yaml
+- title: WikiLeaks
+  id: 1HB5XMLmzFVj8ALj6mfBsbifRoD4miY36v
+  commentary:
+    - file: wikileaks-ledger.md
+```
+
+An address is a name rather than a place, so it opens no chapter: the row reads
+in the Ledger, and the reading opens on that ledger's title leaf and on the
+address's own leaf. Which ledgers the book shelves, and what each is called, is
+still `web/btc-index-data.js`; an entry in `notables.yaml` is about a reading,
+not a shelving, and a reading kept on an unshelved address still opens when
+somebody looks that address up (the checker says so, as a note rather than an
+error).
+
+A reading of a name deserves more care than a reading of a passage, not less.
+That coins at an address are some party's is an inference — usually a good one
+when the party published the address themselves, which is the standard the
+shelf is kept to, and still an inference. Say who is claiming it and on what
+evidence; the Ledger will keep it beside the record rather than inside it.
+
+The YAML is read by a small subset parser (`web/btc-yaml.js`, which documents
+exactly what it understands and throws rather than guesses): keep comments on
+their own line, and quote a value that opens with a quote or reads as a bare
+number where you meant text. Nothing is generated from either file — the browser
+reads them as they stand.
+
+The book page then offers your reading on that passage as a Commentary sheet
+beside the notation key, the table of contents credits it on the passage's row
+("commentary by Your Name"), and the static passage under `/passages/` prints it
+after the record. All three carry your name. The book's own readings are the
+files with no `by:`; a contributed one is never merged into that voice.
+
+Two things a note has to do, whoever writes it: say what the record actually
+says, and mark plainly where it stops saying it. "Ten thousand coins moved to a
+script" is the record; "they bought two pizzas" is testimony from the people
+involved, and a reader is entitled to see which is which.
+
 ## The sigla
 
 A new or revised mark — a glyph for an opcode that lacks one, a better mark
@@ -85,6 +176,11 @@ fluency every time.
 
 - Build with `./build_web.sh` and serve over HTTP (`python3 -m http.server -d
   web 8080`); see the README for details.
+- Editing the contents, its appendix or its commentary? Run `node
+  tools/check-editorial.mjs`. It reads `web/notables.yaml`, `web/appendix.yaml`
+  and `web/commentary/*.md` the way the browser will and reports anything that
+  would reach a reader as a missing reading or an empty contents. The deploy and
+  every PR preview run it too.
 - Pull requests get a live preview deployed automatically.
 - For substantial commentary or a new curated entry, opening an issue first is
   a good way to check it fits before writing it.

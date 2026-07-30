@@ -9,3 +9,19 @@ web/glossia_bg.wasm
 # passages and sitemap are generated fresh on every deploy, not committed.
 web/passages/
 web/sitemap.xml
+# …along with the citation pages (web/III/2/5/1/) and their cards. The volume
+# directories are Roman numerals at the web root; the pattern is case-
+# sensitive, so it cannot catch web/icons/, and it matches directories only,
+# so it cannot catch web/CNAME.
+web/cards/
+web/[IVXLCDM]*/
+
+# Deploy-time release stamp — written by the deploy workflow, not committed.
+web/version.json
+
+# The Twitter bot's watermark and replied-to ledger (tools/twitter-bot/) —
+# per-deployment runtime state, carried in the Actions cache, not in git.
+tools/twitter-bot/state.json
+tools/twitter-bot/node_modules/
+tools/twitter-bot/package-lock.json
+passage.png
