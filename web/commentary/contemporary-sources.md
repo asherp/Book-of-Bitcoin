@@ -1,6 +1,8 @@
 <!-- SPDX-License-Identifier: CC-BY-4.0 -->
 
-A timestamp proof is an argument, and this leaf is that argument written out. Read from the top: the file's digest, then each value the one above hashes into, down to the merkle root. Every line is 32 bytes of hash, which is why every line can be prose — the same encoding the chapters are set in, doing the same work.
+A contemporary source is what a historian calls a document written at the time it speaks of, by someone who was there — and the hardest thing about one has always been proving it is what it claims. Dates on paper are written by whoever holds the pen. What an OpenTimestamps proof supplies is the missing half: not who wrote this, or whether it is true, but that it existed by a particular block, and so before everything the chain has recorded since. That is a narrow claim, and it is the one claim nobody can forge.
+
+A proof is an argument, and this leaf is that argument written out. Read from the top: the file's digest, then each value the one above hashes into, down to the merkle root. Every line is 32 bytes of hash, which is why every line can be prose — the same encoding the chapters are set in, doing the same work.
 
 The margin is the part worth watching. It carries a citation exactly twice. Once beside the transaction, cited down to the output the commitment actually sits in, because that output is where the file's digest crossed over into the chain and became something the book can name. Once beside the root, cited to the chapter whose header commits to it. Between those two everything is real, checkable, and nowhere: the intermediate hashes exist only while the proof is being replayed, and nothing in the book can cite them. A proof is mostly arithmetic. It touches the chain twice.
 

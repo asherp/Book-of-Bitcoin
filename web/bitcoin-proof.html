@@ -139,7 +139,7 @@ import { loadNotables, appendix } from './btc-contents.js';
 await loadNotables();
 import { proofByDigest, ladderOf, citeOf, attests } from './btc-proofs.js';
 import { readingsOf, resolveCommentary, commentaryHtml } from './btc-commentary.js';
-import { reference, latinRefOf } from './btc-citation.js';
+import { reference, latinRefOf, toRoman } from './btc-citation.js';
 import { blockAt } from './btc-index.js';
 import { toSuperscript } from './btc-sigla.js';
 
@@ -150,10 +150,13 @@ let engine = null;
 const glossia = () => (engine ||= import('./glossia-msg.js').then(async (m) => { await m.init(); return m; }));
 
 const part = appendix().find((p) => p.kind === 'proofs');
+// The appendix's own number and name, so a rename in appendix.yaml reaches
+// every page that points back at it.
+const partLabel = part ? `Appendix ${toRoman(appendix().indexOf(part) + 1)} · ${part.title}` : 'the appendix';
 const proof = await proofByDigest(new URLSearchParams(location.search).get('digest') || '', part);
 if (!proof) {
   $('leaf-title').textContent = 'Not in this appendix';
-  turn('./bitcoin-appendix.html?part=proofs', '‹ Appendix IV · Timestamped Files');
+  turn('./bitcoin-appendix.html?part=proofs', `‹ ${partLabel}`);
 } else {
   render(proof);
 }
@@ -202,7 +205,7 @@ function render(proof) {
   setProse(cells);
 
   commentary(proof);
-  turn('./bitcoin-appendix.html?part=proofs', '‹ Appendix IV · Timestamped Files');
+  turn('./bitcoin-appendix.html?part=proofs', `‹ ${partLabel}`);
   turn(`./bitcoin-book.html?ref=${latinRefOf(proof.place.height, section)}`, `${citeOf(proof.place)} ›`, true);
 }
 

@@ -100,20 +100,20 @@ reaches it instead.
   `?page=volume|book` opens the block's volume or book leaf.
 - `bitcoin-contents.html` — the curated table of contents, closing with four
   appendices: I the mempool's projected chapters, II heights consensus has
-  fixed but no block has reached, III the shelf of ledgers, IV the timestamped
-  files — files whose OpenTimestamps proofs anchor them into a chapter.
+  fixed but no block has reached, III the shelf of ledgers, IV contemporary
+  sources — documents whose OpenTimestamps proofs date them into a chapter.
 - `bitcoin-appendix.html?part=mempool|future|proofs` — an appendix's title
   leaf: its name and what it gathers. Below each is its first chapter, in the
   book itself: `?block=<tip+1>` for the queue (and the ascent from any
   projected chapter returns to that leaf), the first fixed height for Appendix
-  II, the earliest chapter any listed file is stamped into for Appendix IV.
+  II, the earliest chapter any listed source is stamped into for Appendix IV.
   Appendix III's leaves are `bitcoin-ledger.html`'s. Appendix IV's leaf also
   carries the proof picker: a `.ots` dropped there is replayed, checked against
   its block's own header, and kept in the reader's own browser — the citation
   it resolves to (chapter and §section, both stated by the proof itself) then
   stands in the contents beside the bundled ones. Nothing is uploaded; the
   bundled proofs are `web/proofs/*.ots`, listed in `web/appendix.yaml`.
-- `bitcoin-proof.html?digest=<sha256>` — one timestamped file's own leaf,
+- `bitcoin-proof.html?digest=<sha256>` — one contemporary source's own leaf,
   which every Appendix IV row opens. Front matter: the file's name, and its
   digest as prose — the whole of what the chain was told about it. Then the
   proof written out paragraph by paragraph, each paragraph one value the last

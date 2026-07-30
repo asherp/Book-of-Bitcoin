@@ -34,11 +34,13 @@
 #       leaves, which is why this part lists ledgers here and explains itself
 #       there. The contents and the index are inverses; this is where the
 #       contents points at the other one.
-#   IV  Timestamped Files — files whose existence this chain attests: an
-#       OpenTimestamps proof reduces a file's digest to the merkle root of one
-#       block, so it cites a chapter and a §section the way any passage is
-#       cited. Listed apart because the file is not in the book — what is in
-#       the book is the transaction its proof lands on, and the file is the
+#   IV  Contemporary Sources — documents whose existence this chain attests,
+#       in the sense a historian means: written at the time, and provably so.
+#       An OpenTimestamps proof reduces a file's digest to the merkle root of
+#       one block, so a document that never touched the chain is nonetheless
+#       dated by it, and cited at the chapter and §section its proof lands in.
+#       Listed apart because the document is not in the book — what is in the
+#       book is the transaction its proof lands on, and the document is the
 #       thing outside the chain that the chain is being asked about. The
 #       entries below ship with the app; a reader's own proofs, dropped on the
 #       appendix's leaf, are kept beside them the way bookmarks are.
@@ -104,15 +106,15 @@
   note: A ledger gathers what one keeper spends from — a single address, a set rotated over the years, or in time every leaf of one extended key — and reads each of its scripts as a passage, with the chapters that passage appears in listed beneath it. Nothing here carries a reference: the chain never writes an address, only the script one stands for, so a ledger is not cited but discovered, and its run of chapters stays open-ended.
 
 - kind: proofs
-  title: Timestamped Files
-  note: Files whose existence the chain attests. An OpenTimestamps proof reduces a file's digest, through a merkle path, to the root one block header commits to — so a file that has never touched the chain is nonetheless cited by it, at the chapter and section its proof lands in. Drop a proof at the foot of this appendix and it is kept here beside these.
+  title: Contemporary Sources
+  note: Documents whose existence the chain attests — contemporary in the sense a historian means it: written at the time, and provably so. An OpenTimestamps proof reduces a document's digest, through a merkle path, to the root one block header commits to, so a file that never touched the chain is nonetheless dated by it, and cited at the chapter and section its proof lands in. Drop a proof at the foot of this appendix and it is kept here beside these.
   # A reading of what this part gathers, rather than of any one file in it: the
   # leaves raise it beneath each file's own, which is where the page explains
   # itself. The leaf itself explains nothing — it sets the proof and gets out of
   # the way; saying what a proof IS is a reading, and readings are signed and
   # kept apart from the record.
   commentary:
-    - file: timestamped-files.md
+    - file: contemporary-sources.md
   entries:
     - title: Hello World!
       proof: hello-world.txt.ots
