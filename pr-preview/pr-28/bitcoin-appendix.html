@@ -28,7 +28,8 @@
     if (dir) {
       sessionStorage.removeItem('glossia-appendix-entrance');
       document.documentElement.classList.add(
-        dir === 'fwd' ? 'appx-entrance-fwd' : dir === 'back' ? 'appx-entrance-back' : 'appx-entrance');
+        dir === 'fwd' ? 'appx-entrance-fwd' : dir === 'back' ? 'appx-entrance-back'
+        : dir === 'drop' ? 'appx-entrance-drop' : 'appx-entrance');
     }
   } catch (_) {}
 
@@ -133,6 +134,10 @@ body { min-height: 100vh; background: var(--page); color: var(--ink); font-famil
   @keyframes appx-in-fwd { from { transform: translateX(100vw); } }
   .appx-entrance-back body { animation: appx-in-back .22s ease-out; }
   @keyframes appx-in-back { from { transform: translateX(-100vw); } }
+  /* …and the entering half of an ascent out of a draft chapter: the appendix
+     drops back into place from above as the chapter sinks. */
+  .appx-entrance-drop body { animation: appx-in-drop .22s ease-out; }
+  @keyframes appx-in-drop { from { transform: translateY(-100vh); } }
 }
 .wrap { max-width: 720px; margin: 0 auto; padding: 48px 22px 100px; }
 a { color: var(--accent); text-decoration: none; }
@@ -146,7 +151,6 @@ a:hover { text-decoration: underline; }
 .page-head { text-align:center; padding:8px 0 26px; margin-bottom:14px; border-bottom:1px solid var(--rule); }
 .appx-title { margin:0; font:300 clamp(28px,7vw,40px)/1.15 'Newsreader',serif; color:var(--ink); letter-spacing:-.01em; }
 .appx-subtitle { margin-top:10px; font:400 19px/1.35 'Newsreader',serif; color:var(--dim); }
-.appx-src { margin-top:12px; }
 /* The crumb up, on the leaf below the appendix's own title page. */
 .appx-up { display:inline-block; margin-bottom:16px; font:600 10px/1 'IBM Plex Mono',monospace; letter-spacing:.18em; text-transform:uppercase; color:var(--meta); }
 .appx-up:hover { color:var(--accent); }
@@ -186,7 +190,6 @@ a:hover { text-decoration: underline; }
     <a class="appx-up hidden" id="appx-up" href="#">▴</a>
     <h1 class="appx-title" id="appx-title"></h1>
     <div class="appx-subtitle" id="appx-subtitle"></div>
-    <div class="appx-src" id="appx-src"></div>
   </header>
   <p class="appx-note" id="appx-note"></p>
 
@@ -198,7 +201,7 @@ a:hover { text-decoration: underline; }
 
 <script type="module">
 import { APPENDIX, entryHref } from './btc-contents.js';
-import { readQueue, buildQueue, sourceLine, chainTip } from './btc-mempool.js';
+import { chainTip } from './btc-mempool.js';
 import { toRoman, expectedReference, volumeBookChapter, heightOf } from './btc-citation.js';
 
 // ── One appendix, given a leaf of its own ─────────────────────────────────
@@ -225,7 +228,35 @@ const hrefFor = (p) => p.kind === 'ledgers'
 // nothing else -- a title page is not a list -- and a push up (or ▾) descends
 // to the list itself, which a pull down at its top returns from. ?page=list
 // names the lower leaf, the way ?page=volume|book names the book's.
-let level = new URLSearchParams(location.search).get('page') === 'list' ? 'list' : 'title';
+// Appendix I has no list of its own to descend into: what lies below it is
+// the queue's first chapter -- the very block a reader reaches by swiping
+// forward off the chain tip -- read in the book like any other, marked □.
+// From there the queue is walked chapter by chapter, and the ascent from any
+// of them lands back on this leaf. (The mempool's own equivalent of a book,
+// the level between, is still to be written.) Appendix II does have a list,
+// so it keeps its lower leaf here.
+const HAS_LIST = kind !== 'mempool';
+let level = HAS_LIST && new URLSearchParams(location.search).get('page') === 'list' ? 'list' : 'title';
+// Appendix I's descent, once the chain says where the queue begins.
+let firstDraft = null;
+if (!HAS_LIST) {
+  chainTip().then((tip) => {
+    if (tip == null) return;
+    firstDraft = `./bitcoin-book.html?block=${tip + 1}`;
+    $('appx-down').classList.remove('hidden');
+  }).catch(() => { /* no tip: nothing below to open */ });
+}
+function descend() {
+  if (HAS_LIST) { turnLevel('list'); return; }
+  if (!firstDraft) return;
+  // A descent, so the chapter rises from below as this leaf slides up.
+  try { sessionStorage.setItem('glossia-book-entrance', '1'); } catch (_) {}
+  const go = () => { location.href = firstDraft; };
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { go(); return; }
+  document.body.style.transition = 'transform .2s linear';
+  document.body.style.transform = 'translateY(-100vh)';
+  setTimeout(go, 180);
+}
 
 function syncUrl() {
   const q = `?part=${wanted === 'future' ? 'future' : 'mempool'}${level === 'list' ? '&page=list' : ''}`;
@@ -244,8 +275,7 @@ function renderLevel() {
   $('appx-note').textContent = onList ? '' : (part.note || '');
   $('appx-note').classList.toggle('hidden', onList);
   $('appx-body').classList.toggle('hidden', !onList);
-  $('appx-src').classList.toggle('hidden', !onList);
-  $('appx-down').classList.toggle('hidden', onList);
+  $('appx-down').classList.toggle('hidden', onList || (!HAS_LIST && !firstDraft));
   $('appx-turns').classList.toggle('hidden', onList);
   syncUrl();
   if (onList) fill();
@@ -275,9 +305,9 @@ function turnLevel(to) {
   }, 170);
 }
 window.__appxLevel = () => level;
-window.__appxDescend = () => turnLevel('list');
+window.__appxDescend = () => descend();
 window.__appxClimb = () => turnLevel('title');
-$('appx-down').addEventListener('click', (ev) => { ev.preventDefault(); turnLevel('list'); });
+$('appx-down').addEventListener('click', (ev) => { ev.preventDefault(); descend(); });
 $('appx-up').addEventListener('click', (ev) => { ev.preventDefault(); turnLevel('title'); });
 
 // The neighbours, in the appendices' numbered order -- named at the foot and
@@ -321,27 +351,6 @@ if (!prev) {
   }).catch(() => { /* no tip, no way back but the contents */ });
 }
 
-// ── Appendix I: the queue ─────────────────────────────────────────────────
-// Read and set by btc-mempool.js, the same module the contents' Appendix I
-// rows come from -- so the leaf and the list cannot disagree about what is
-// waiting. It keeps moving (blocks land, replacements arrive), so the leaf
-// refreshes itself each minute while it is on screen.
-async function showMempool() {
-  const body = $('appx-body');
-  const queue = await readQueue(await chainTip());
-  if (!queue) {
-    if (!body.children.length) {
-      const p = document.createElement('p');
-      p.className = 'appx-empty';
-      p.textContent = 'No queue could be read from here — the chapters below the tip are unknown until a mirror answers.';
-      body.replaceChildren(p);
-    }
-    return;
-  }
-  $('appx-src').replaceChildren(sourceLine(queue.srcBase));
-  body.replaceChildren(buildQueue(queue));
-}
-
 // ── Appendix II: the chapters already numbered ────────────────────────────
 // Each row as the contents sets it -- title, then the whole expected
 // reference, marked □ -- with the note the contents can only offer on hover
@@ -374,15 +383,13 @@ function showChapters() {
   body.replaceChildren(frag);
 }
 
-// The list is read when the reader descends to it, not before: a title page
-// asks nothing of the network. The queue keeps moving once opened, so it
-// refreshes each minute while that leaf is the one on screen.
+// The list is set when the reader descends to it, not before: a title page
+// asks nothing of the network, and Appendix II's list is offline anyway --
+// every reference in it is computed from a height.
 let filled = false;
 function fill() {
-  if (kind !== 'mempool') { if (!filled) { filled = true; showChapters(); } return; }
-  showMempool();
+  if (!filled) { filled = true; showChapters(); }
 }
-setInterval(() => { if (!document.hidden && level === 'list' && kind === 'mempool') showMempool(); }, 60_000);
 renderLevel();
 </script>
 </body>
