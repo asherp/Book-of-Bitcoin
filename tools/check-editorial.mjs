@@ -95,7 +95,8 @@ for (const e of allPlaces) {
 // the same way a written one does.
 const readingBearers = [
   ...entries,
-  ...parts.filter((p) => p.kind === 'entries').flatMap((p) => p.entries),
+  ...parts,                                       // a part may carry a reading of what it gathers
+  ...parts.filter((p) => p.entries).flatMap((p) => p.entries),
 ];
 const referenced = new Set();
 for (const e of readingBearers) {

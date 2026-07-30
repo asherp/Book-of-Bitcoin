@@ -22,6 +22,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,400&family=IBM+Plex+Mono:wght@400;500;600&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="./btc-chrome.css">
+<link rel="stylesheet" href="./commentary.css">
 <style>
 :root {
   --page:#08080a; --card:#0d0d10; --card-bd:#232228; --ink:#e8e4da; --ink-soft:#cfcabf;
@@ -106,6 +107,16 @@ a:hover { text-decoration: underline; }
   </header>
 
   <div id="proof"></div>
+
+  <!-- The reading of this page, kept where every other reading is kept: behind
+       a toggle, over the record rather than in it, signed by whoever wrote it.
+       The leaf itself says nothing about what a proof is -- that is a reading,
+       and readings carry names. -->
+  <details class="leaf-commentary hidden" id="commentary">
+    <summary title="A reading of this proof — editorial, and kept apart from the record above it">Commentary</summary>
+    <div class="commentary-body" id="commentary-body"></div>
+  </details>
+
   <nav class="leaf-turns" id="leaf-turns"></nav>
 </div>
 
@@ -127,6 +138,7 @@ a:hover { text-decoration: underline; }
 import { loadNotables, appendix } from './btc-contents.js';
 await loadNotables();
 import { proofByDigest, ladderOf, citeOf, attests } from './btc-proofs.js';
+import { readingsOf, resolveCommentary, commentaryHtml } from './btc-commentary.js';
 import { reference, latinRefOf } from './btc-citation.js';
 import { blockAt } from './btc-index.js';
 import { toSuperscript } from './btc-sigla.js';
@@ -189,6 +201,7 @@ function render(proof) {
   }
   setProse(cells);
 
+  commentary(proof);
   turn('./bitcoin-appendix.html?part=proofs', '‹ Appendix IV · Timestamped Files');
   turn(`./bitcoin-book.html?ref=${latinRefOf(proof.place.height, section)}`, `${citeOf(proof.place)} ›`, true);
 }
@@ -272,6 +285,32 @@ function openable(proof) {
       out.title = 'that file could not be read here';
     }
     input.value = '';
+  });
+}
+
+// The readings this leaf can raise: the file's own, where the appendix gave it
+// one, and the part's -- a reading of what a timestamp proves, which belongs to
+// every file listed here and so is written once. Specific before general, the
+// order a reader wants them in. Nothing is fetched until the sheet is opened;
+// the index knows only that there is something to open.
+function commentary(proof) {
+  const items = [];
+  if (proof.entry && readingsOf(proof.entry).length) {
+    items.push({ title: proof.title, readings: readingsOf(proof.entry) });
+  }
+  if (readingsOf(part).length) items.push({ title: part.title, readings: readingsOf(part) });
+  if (!items.length) return;
+  const box = $('commentary');
+  const body = $('commentary-body');
+  box.classList.remove('hidden');
+  let filled = false;
+  box.addEventListener('toggle', async () => {
+    if (!box.open || filled) return;
+    filled = true;
+    body.innerHTML = '<div class="commentary-measure"><p class="commentary-loading">reading…</p></div>';
+    await resolveCommentary(items);
+    // Built from authored Markdown, escaped at the source (btc-markdown.js).
+    body.innerHTML = commentaryHtml(items);
   });
 }
 

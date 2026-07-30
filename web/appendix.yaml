@@ -106,8 +106,17 @@
 - kind: proofs
   title: Timestamped Files
   note: Files whose existence the chain attests. An OpenTimestamps proof reduces a file's digest, through a merkle path, to the root one block header commits to — so a file that has never touched the chain is nonetheless cited by it, at the chapter and section its proof lands in. Drop a proof at the foot of this appendix and it is kept here beside these.
+  # A reading of what this part gathers, rather than of any one file in it: the
+  # leaves raise it beneath each file's own, which is where the page explains
+  # itself. The leaf itself explains nothing — it sets the proof and gets out of
+  # the way; saying what a proof IS is a reading, and readings are signed and
+  # kept apart from the record.
+  commentary:
+    - file: timestamped-files.md
   entries:
     - title: Hello World!
       proof: hello-world.txt.ots
       subject: hello-world.txt
       note: The OpenTimestamps client's own example proof, and the oldest anyone can still replay — May 2015, a year before the calendar servers, its commitment sitting where a public key's hash belongs.
+      commentary:
+        - file: the-hello-world-timestamp.md

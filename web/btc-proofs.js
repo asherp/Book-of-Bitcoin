@@ -188,7 +188,8 @@ export async function loadBundled(entry, base = PROOF_DIR) {
     if (sub.ok) checked = await attests(proof, new Uint8Array(await sub.arrayBuffer()));
   }
   return { ...proof, title: entry.title, file: entry.subject || entry.proof, subject: entry.subject || null,
-    proofFile: entry.proof, note: entry.note, checked, bundled: true };
+    proofFile: entry.proof, note: entry.note, checked, bundled: true,
+    entry };   // kept so the file's leaf can raise the reading the index gave it
 }
 
 // Every bundled proof that reaches a block, in reading order. One that cannot be

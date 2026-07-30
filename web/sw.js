@@ -17,7 +17,7 @@
  * Everything here is scoped to the directory sw.js is served from, so it works
  * unchanged at the site root and under a per-PR preview subpath.
  */
-const CACHE = 'bitcoin-book-shell-v29';
+const CACHE = 'bitcoin-book-shell-v30';
 
 // App shell, relative to the SW scope. glossia.js / glossia_bg.wasm are
 // gitignored build artifacts — present after a build/deploy, possibly absent in
@@ -99,8 +99,13 @@ async function shellUrls() {
     try {
       const back = await fetch('./appendix.yaml', { cache: 'reload' });
       if (back.ok) {
-        const named = [...(await back.text()).matchAll(/^\s*-?\s*(?:proof|subject):\s*(\S+)\s*$/gm)].map((m) => m[1]);
+        const backText = await back.text();
+        const named = [...backText.matchAll(/^\s*-?\s*(?:proof|subject):\s*(\S+)\s*$/gm)].map((m) => m[1]);
         proofs = [...new Set(named)].map((f) => `./proofs/${f}`);
+        // …and the readings the appendix itself references, which the index's
+        // own sweep above never sees.
+        const backFiles = [...backText.matchAll(/^\s*-?\s*file:\s*(\S+)\s*$/gm)].map((m) => m[1]);
+        for (const f of new Set(backFiles)) if (!commentary.includes(`./commentary/${f}`)) commentary.push(`./commentary/${f}`);
       }
     } catch (_) { /* no appendix: the bundled proofs cache as they are read */ }
     return SHELL.concat(commentary, proofs);
