@@ -1,0 +1,283 @@
+<!-- SPDX-License-Identifier: MIT OR Apache-2.0 -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The βook of βitcoin — Appendix</title>
+<meta name="description" content="The appendices of the Glossia Bitcoin Book: the mempool read as the chapters it is about to become, and the chapters consensus has already numbered but no block has reached.">
+<link rel="icon" type="image/png" sizes="32x32" href="./icons/beta-icon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="./icons/beta-icon-16.png">
+<link rel="icon" href="./icons/beta-icon.svg" type="image/svg+xml">
+
+<!-- PWA: installable, offline-capable app shell. Shares the Bitcoin book's
+     gold-β manifest so every page installs as one "Bitcoin Book" app. -->
+<link rel="manifest" href="./bitcoin-book.webmanifest">
+<meta name="theme-color" content="#08080a">
+<link rel="apple-touch-icon" href="./icons/beta-icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="βook of βitcoin">
+<script>
+  // An appendix is back matter: it sits below the contents, so arriving is a
+  // descent (the leaf rises from beneath the list) and leaving is an ascent
+  // (the leaf sinks, the contents drop back in from above). The flag is set
+  // just before the navigation and consumed on first paint.
+  try {
+    if (sessionStorage.getItem('glossia-appendix-entrance')) {
+      sessionStorage.removeItem('glossia-appendix-entrance');
+      document.documentElement.classList.add('appx-entrance');
+    }
+  } catch (_) {}
+
+  // The ascent: a pull DOWN starting at the page's top rises from the
+  // appendix back to the contents -- the inverse of the heading's descent.
+  // Sideways turns walk the appendices in their numbered order, the way the
+  // front matter's leaves turn: back to the appendix before this one,
+  // forward to the one after.
+  (function () {
+    const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let sy = null, sx = 0, st = 0, atTop = false;
+    // Filled by the module once it knows which appendix this is; a turn
+    // before then simply has nowhere to go.
+    window.__appxTurns = { prev: null, next: null };
+    const leave = (href, transform, flag) => {
+      try { sessionStorage.setItem(flag, '1'); } catch (_) {}
+      const go = () => { location.href = href; };
+      if (REDUCED) { go(); return; }
+      document.body.style.transition = 'transform .2s linear';
+      document.body.style.transform = transform;
+      setTimeout(go, 180);
+    };
+    window.__appxAscend = () => leave('./bitcoin-contents.html', 'translateY(100vh)', 'glossia-toc-entrance');
+    // One turn sideways, in either direction: the leaf slides off the way
+    // the reader pushed it, and the neighbour enters from the other side.
+    // Ledger-bound turns wake that page's own entrance instead.
+    window.__appxTurn = (back) => {
+      const to = back ? window.__appxTurns.prev : window.__appxTurns.next;
+      if (!to) return;
+      const flag = to.includes('bitcoin-ledger') ? 'glossia-ledger-entrance' : 'glossia-appendix-entrance';
+      leave(to, `translateX(${back ? 100 : -100}vw)`, flag);
+    };
+    document.addEventListener('touchstart', (e) => {
+      sy = null;
+      if (e.touches.length !== 1) return;
+      sy = e.touches[0].clientY; sx = e.touches[0].clientX; st = performance.now();
+      atTop = window.scrollY <= 2;
+    }, { passive: true });
+    document.addEventListener('touchend', (e) => {
+      if (sy === null || e.changedTouches.length !== 1) return;
+      const dy = e.changedTouches[0].clientY - sy;
+      const dx = e.changedTouches[0].clientX - sx;
+      const dt = performance.now() - st;
+      sy = null;
+      // A committed horizontal turn: quick, far enough, and mostly sideways.
+      // Nothing that way and the edge simply holds.
+      if (dt <= 600 && Math.abs(dx) >= 60 && Math.abs(dy) <= Math.abs(dx) * 0.6) {
+        window.__appxTurn(dx > 0);                 // swiping right turns back
+        return;
+      }
+      if (atTop && dt <= 600 && dy >= 70 && Math.abs(dx) <= dy * 0.6) window.__appxAscend();
+    }, { passive: true });
+  })();
+</script>
+<!-- The shared masthead chrome: service worker registration and the Install /
+     Update affordances on the title's line, one copy for every page. -->
+<script src="./btc-chrome.js"></script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,400&family=IBM+Plex+Mono:wght@400;500;600&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./btc-chrome.css">
+<!-- How a list of chapters is set: headings, rows, and the pencil the unmined
+     ones are written in. Shared with the table of contents. -->
+<link rel="stylesheet" href="./btc-toc.css">
+<style>
+:root {
+  --page:#08080a; --card:#0d0d10; --card-bd:#232228; --ink:#e8e4da; --ink-soft:#cfcabf;
+  --accent:#c9a25f; --accent-2:#dcb877; --dim:#9c99a6; --meta:#7e7b88; --rule:#24232a; --hair:#2a2930;
+  --input-bg:#151519; --input-bd:#2a2930;
+}
+* { box-sizing: border-box; }
+/* overscroll-behavior keeps the browser's pull-to-refresh from swallowing
+   the pull-down-at-top ascent back to the contents. */
+html, body { margin: 0; overscroll-behavior-y: none; }
+body { min-height: 100vh; background: var(--page); color: var(--ink); font-family: 'Public Sans', system-ui, sans-serif; line-height: 1.55; }
+/* The entering half of the contents' descent into an appendix: the leaf
+   rises into place from below, matching the carousel's pace. */
+@media (prefers-reduced-motion: no-preference) {
+  .appx-entrance body { animation: appx-in .22s ease-out; }
+  @keyframes appx-in { from { transform: translateY(100vh); } }
+}
+.wrap { max-width: 720px; margin: 0 auto; padding: 48px 22px 100px; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* The leaf's head: the crumb back up to the contents, the appendix's number
+   as the eyebrow, its name as the title, and then the paragraph saying what
+   is gathered here and why it could not be gathered in reading order. */
+.page-head { text-align:center; padding-bottom:26px; margin-bottom:14px; border-bottom:1px solid var(--rule); }
+.appx-up { display:inline-block; margin-bottom:18px; font:600 10px/1 'IBM Plex Mono',monospace; letter-spacing:.18em; text-transform:uppercase; color:var(--meta); }
+.appx-up:hover { color:var(--accent); }
+.page-eyebrow { font:600 11px/1 'IBM Plex Mono',monospace; letter-spacing:.3em; text-transform:uppercase; color:var(--accent); }
+.appx-title { margin:14px 0 0; font:300 clamp(28px,7vw,40px)/1.15 'Newsreader',serif; color:var(--ink); letter-spacing:-.01em; }
+.appx-src { margin-top:12px; }
+.appx-note { max-width:56ch; margin:22px auto 30px; font:400 15px/1.7 'Newsreader',serif; color:var(--ink-soft); text-align:left; }
+
+/* The rows themselves are btc-toc.css's, so a projected chapter reads the
+   same here as it does in the contents. What this leaf adds is room for each
+   entry's own note beneath it -- in the contents that note is a hover title;
+   here, where there is a page for it, it is set as prose. */
+.appx-row-note { margin:0; padding:6px 2px 13px 32px; max-width:60ch; font:400 12.5px/1.65 'Public Sans',sans-serif; color:var(--meta); }
+/* The rule belongs under the note, not between a row and its own note: an
+   entry and what is said about it are one entry. */
+.toc-entry:has(+ .appx-row-note) { border-bottom:none; padding-bottom:2px; }
+.appx-row-note { border-bottom:1px solid var(--hair); }
+.appx-empty { padding:24px 2px; font:400 14px/1.7 'Newsreader',serif; color:var(--dim); }
+
+/* The other appendices, at the foot: the leaf's own turns, spelled out for
+   hands that are not swiping. */
+.appx-turns { display:flex; flex-wrap:wrap; gap:10px 26px; margin-top:44px; padding-top:18px; border-top:1px solid var(--rule);
+  font:600 10px/1.5 'IBM Plex Mono',monospace; letter-spacing:.14em; text-transform:uppercase; }
+.appx-turns a { color:var(--meta); }
+.appx-turns a:hover { color:var(--accent); }
+</style>
+<body>
+<div class="wrap">
+  <div class="masthead">
+    <span class="title">The <span class="beta">β</span>ook of <span class="beta">β</span>itcoin</span>
+    <span class="home"><a href="./bitcoin-contents.html">Contents</a> · <a href="./bitcoin-book.html">Read</a> · <a href="./bitcoin-ledger.html">Ledger</a> · <a href="./bitcoin-search.html">Search</a></span>
+  </div>
+
+  <header class="page-head">
+    <a class="appx-up" id="appx-up" href="./bitcoin-contents.html">▴ Contents</a>
+    <div class="page-eyebrow" id="appx-number"></div>
+    <h1 class="appx-title" id="appx-title"></h1>
+    <div class="appx-src" id="appx-src"></div>
+  </header>
+  <p class="appx-note" id="appx-note"></p>
+
+  <div id="appx-body"></div>
+
+  <nav class="appx-turns" id="appx-turns"></nav>
+</div>
+
+<script type="module">
+import { APPENDIX, entryHref } from './btc-contents.js';
+import { readQueue, buildQueue, sourceLine, chainTip } from './btc-mempool.js';
+import { toRoman, expectedReference } from './btc-citation.js';
+
+// ── One appendix, given a leaf of its own ─────────────────────────────────
+// The contents lists what each appendix holds; this is where an appendix
+// says what it is. Which one is named by ?part=: the queue, or the chapters
+// consensus has numbered ahead of the chain. The third appendix, the
+// ledgers, has a leaf already -- the Ledger compendium -- and the contents
+// points straight at it, so it is only ever a neighbour here.
+const PARTS = { mempool: 'mempool', future: 'entries' };
+const wanted = new URLSearchParams(location.search).get('part');
+const kind = PARTS[wanted] || 'mempool';
+const part = APPENDIX.find((p) => p.kind === kind) || APPENDIX[0];
+const index = APPENDIX.indexOf(part);
+
+const $ = (id) => document.getElementById(id);
+const numeral = (i) => toRoman(i + 1);
+const label = (p) => `Appendix ${numeral(APPENDIX.indexOf(p))} · ${p.title}`;
+const hrefFor = (p) => p.kind === 'ledgers'
+  ? './bitcoin-ledger.html'
+  : `./bitcoin-appendix.html?part=${p.kind === 'mempool' ? 'mempool' : 'future'}`;
+
+document.title = `The βook of βitcoin — ${label(part)}`;
+$('appx-number').textContent = `Appendix ${numeral(index)}`;
+$('appx-title').textContent = part.title;
+$('appx-note').textContent = part.note || '';
+
+// The crumb and the pull-down-at-the-top ascend to the same place, so the
+// crumb plays the same turn: the leaf sinks and the contents drop back in.
+$('appx-up').addEventListener('click', (ev) => {
+  if (ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey || ev.button !== 0) return;
+  ev.preventDefault();
+  window.__appxAscend();
+});
+
+// The neighbours, in the appendices' numbered order -- named at the foot and
+// handed to the gesture layer, so a swipe and a tap turn to the same leaf.
+const prev = APPENDIX[index - 1] || null;
+const next = APPENDIX[index + 1] || null;
+window.__appxTurns = { prev: prev && hrefFor(prev), next: next && hrefFor(next) };
+const turns = $('appx-turns');
+for (const [p, glyph] of [[prev, '‹ '], [next, '']]) {
+  if (!p) continue;
+  const a = document.createElement('a');
+  a.href = hrefFor(p);
+  a.textContent = `${glyph}${label(p)}${glyph ? '' : ' ›'}`;
+  if (p === next) a.style.marginLeft = 'auto';
+  // Tapping a neighbour plays the same sideways turn the swipe plays, so
+  // the two agree about which way the leaves lie.
+  a.addEventListener('click', (ev) => {
+    if (ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey || ev.button !== 0) return;
+    ev.preventDefault();
+    window.__appxTurn(p === prev);
+  });
+  turns.append(a);
+}
+
+// ── Appendix I: the queue ─────────────────────────────────────────────────
+// Read and set by btc-mempool.js, the same module the contents' Appendix I
+// rows come from -- so the leaf and the list cannot disagree about what is
+// waiting. It keeps moving (blocks land, replacements arrive), so the leaf
+// refreshes itself each minute while it is on screen.
+async function showMempool() {
+  const body = $('appx-body');
+  const queue = await readQueue(await chainTip());
+  if (!queue) {
+    if (!body.children.length) {
+      const p = document.createElement('p');
+      p.className = 'appx-empty';
+      p.textContent = 'No queue could be read from here — the chapters below the tip are unknown until a mirror answers.';
+      body.replaceChildren(p);
+    }
+    return;
+  }
+  $('appx-src').replaceChildren(sourceLine(queue.srcBase));
+  body.replaceChildren(buildQueue(queue));
+}
+
+// ── Appendix II: the chapters already numbered ────────────────────────────
+// Each row as the contents sets it -- title, then the whole expected
+// reference, marked □ -- with the note the contents can only offer on hover
+// set out beneath it as prose. The rows link into the book, which answers an
+// unmined height with the date it is due instead of a page.
+function showChapters() {
+  const body = $('appx-body');
+  const frag = document.createDocumentFragment();
+  for (const e of part.entries) {
+    const height = Number(e.id);
+    const row = document.createElement('a');
+    row.className = 'toc-entry under-book projected';
+    row.href = entryHref(e.id);
+    const t = document.createElement('span');
+    t.className = 'toc-title';
+    t.textContent = e.title;
+    const r = document.createElement('span');
+    r.className = 'toc-ref';
+    r.textContent = expectedReference(height);
+    r.title = `expected — block ${height.toLocaleString()} has not been mined, so its chapter carries □ rather than ■`;
+    row.append(t, r);
+    frag.append(row);
+    if (e.note) {
+      const n = document.createElement('p');
+      n.className = 'appx-row-note';
+      n.textContent = e.note;
+      frag.append(n);
+    }
+  }
+  body.replaceChildren(frag);
+}
+
+if (kind === 'mempool') {
+  showMempool();
+  setInterval(() => { if (!document.hidden) showMempool(); }, 60_000);
+} else {
+  showChapters();
+}
+</script>
+</body>
+</html>

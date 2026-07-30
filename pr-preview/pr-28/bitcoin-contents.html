@@ -110,6 +110,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,400&family=IBM+Plex+Mono:wght@400;500;600&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="./btc-chrome.css">
+<!-- How a list of chapters is set: headings, rows, and the pencil the unmined
+     ones are written in. Shared with the appendix leaves. -->
+<link rel="stylesheet" href="./btc-toc.css">
 <style>
 :root {
   --page:#08080a; --card:#0d0d10; --card-bd:#232228; --ink:#e8e4da; --ink-soft:#cfcabf;
@@ -139,54 +142,6 @@ a:hover { text-decoration: underline; }
 .page-head { text-align:center; padding-bottom:30px; margin-bottom:36px; border-bottom:1px solid var(--rule); }
 .page-eyebrow { font:600 11px/1 'IBM Plex Mono',monospace; letter-spacing:.3em; text-transform:uppercase; color:var(--accent); }
 
-/* The contents nest by the book's own citation scheme: a Volume part header,
-   then a Book sub-header whenever consecutive entries share one, so each row
-   need only cite the portion of its reference that its heading hasn't already
-   named -- a chapter under its book, or a book·chapter under its volume. */
-.toc-vol { margin:36px 0 4px; padding-top:15px; border-top:1px solid var(--rule);
-  font:600 11px/1 'IBM Plex Mono',monospace; letter-spacing:.22em; text-transform:uppercase; color:var(--accent); }
-.toc-vol:first-child { margin-top:8px; padding-top:0; border-top:none; }
-.toc-book { margin:15px 0 1px; padding-left:16px;
-  font:600 10px/1 'IBM Plex Mono',monospace; letter-spacing:.16em; text-transform:uppercase; color:var(--meta); }
-
-/* A contents row: title on the left, its remaining reference on the right; the
-   whole row navigates into the book, the manuscript's own citation form. */
-.toc-entry { display:flex; align-items:baseline; gap:16px; padding:9px 2px 9px 16px; border-bottom:1px solid var(--hair); text-decoration:none; }
-.toc-entry.under-book { padding-left:32px; }
-.toc-title { flex:1; min-width:0; font:500 17px/1.35 'Newsreader',serif; color:var(--ink-soft); }
-.toc-ref { flex:none; min-width:84px; text-align:right; font:600 13px/1.4 'IBM Plex Mono',monospace; letter-spacing:.06em; color:var(--accent); white-space:nowrap; font-variant-numeric:tabular-nums; }
-.toc-ref.none { color:var(--meta); font-weight:400; }
-.toc-entry:hover .toc-title { color:var(--ink); }
-.toc-entry:hover .toc-ref, .toc-entry:focus-visible .toc-ref { text-decoration:underline; color:var(--accent-2); }
-.toc-entry:focus-visible { outline:none; }
-/* A reader's own bookmark, sitting inline in reading order, wears the same
-   ribbon it flies in the book. */
-.toc-bm { display:inline-block; width:9px; height:12px; margin-right:8px; color:var(--accent); vertical-align:baseline; }
-.toc-bm svg { display:block; width:100%; height:100%; }
-
-/* Unmined chapters -- the mempool's projections below, and the appendix's
-   provisional chapters at the foot of the page. Both continue the contents
-   past the tip, so they dress like ordinary rows but in the manuscript's
-   pencil rather than its ink: dim titles and meta-grey references (a
-   provisional number, not a citation). */
-/* The mempool's heading carries a second line naming the node it was read
-   from. On a narrow screen that line drops beneath the heading whole rather
-   than breaking the appendix's name across two lines beside it. */
-.toc-proj-head { display:flex; align-items:baseline; gap:14px; flex-wrap:wrap; }
-.toc-proj-head .toc-proj-label { flex:none; }
-.toc-proj-src { font:400 10px/1.5 'IBM Plex Mono',monospace; letter-spacing:.08em; text-transform:none; color:var(--meta); }
-.toc-entry.projected .toc-title { color:var(--dim); font-style:italic; }
-.toc-entry.projected .toc-ref { color:var(--meta); font-weight:400; }
-.toc-entry.projected:hover .toc-title { color:var(--ink-soft); }
-.toc-entry.projected:hover .toc-ref { color:var(--dim); }
-.toc-proj-eta { font:500 11px/1.4 'IBM Plex Mono',monospace; letter-spacing:.04em; color:var(--meta); flex:none; min-width:74px; font-variant-numeric:tabular-nums; }
-/* The closing figures -- queue total, eviction floor -- are a note, not a row. */
-.toc-proj-note { padding:10px 2px 2px 32px; font:400 12px/1.6 'Public Sans',sans-serif; color:var(--meta); }
-
-/* Each appendix opens with a note saying what its rows are and why they sit
-   outside reading order -- set like the mempool's closing figures, and
-   indented to the rows it introduces. */
-.toc-part-note { padding:8px 2px 6px 32px; font:400 12px/1.6 'Public Sans',sans-serif; color:var(--meta); }
 </style>
 <body>
 <div class="wrap">
@@ -203,9 +158,10 @@ a:hover { text-decoration: underline; }
 </div>
 
 <script type="module">
-import { NOTABLE, APPENDIX, isBlockId, isRelativeBlockId, entryHref, blocksEta } from './btc-contents.js';
+import { NOTABLE, APPENDIX, isBlockId, isRelativeBlockId, entryHref } from './btc-contents.js';
+import { readQueue, buildQueue, sourceLine } from './btc-mempool.js';
 import { INDEXED, keptLedgers, sameAddresses } from './btc-index.js';
-import { volumeBookChapter, toRoman } from './btc-citation.js';
+import { volumeBookChapter, toRoman, expectedReference } from './btc-citation.js';
 import { storeGet, storePut } from './btc-store.js';
 import { seedArchive } from './btc-seed.js';
 
@@ -397,21 +353,25 @@ function frontEl({ title, leaf }) {
 const appendixLabel = (part) => `Appendix ${toRoman(APPENDIX.indexOf(part) + 1)} · ${part.title}`;
 const MEMPOOL_PART = APPENDIX.find((p) => p.kind === 'mempool');
 
-// A part's heading and its note. The note says what the rows are and why
-// they sit outside reading order; the mempool's heading takes a second line
-// naming the node it was read from, so the heading element is returned for
-// the caller to dress further.
+// Each appendix has a leaf of its own, and its heading here is the door to
+// it: the queue and the future chapters are leaves of the appendix page, and
+// the ledgers' leaf is the Ledger compendium, which is what a shelf of
+// ledgers is. What the appendix is and why it sits outside reading order is
+// said on that leaf, not here -- the contents lists, the leaf explains.
+const appendixHref = (part) => part.kind === 'ledgers'
+  ? './bitcoin-ledger.html'
+  : `./bitcoin-appendix.html?part=${part.kind === 'mempool' ? 'mempool' : 'future'}`;
+function appendixLink(part) {
+  const a = document.createElement('a');
+  a.className = 'appx-link';
+  a.href = appendixHref(part);
+  a.textContent = appendixLabel(part);
+  return a;
+}
 function partHead(part) {
-  const frag = document.createDocumentFragment();
-  const heading = head('toc-vol', appendixLabel(part));
-  frag.append(heading);
-  if (part.note) {
-    const n = document.createElement('div');
-    n.className = 'toc-part-note';
-    n.textContent = part.note;
-    frag.append(n);
-  }
-  return { frag, heading };
+  const heading = head('toc-vol', '');
+  heading.append(appendixLink(part));
+  return heading;
 }
 
 // Appendix II: chapters cited in full but marked □, the expected-chapter mark
@@ -420,7 +380,8 @@ function partHead(part) {
 // date it is due instead of a page. Offline, like every reference computed
 // from a height.
 function chaptersEl(part) {
-  const { frag } = partHead(part);
+  const frag = document.createDocumentFragment();
+  frag.append(partHead(part));
   for (const e of part.entries) frag.append(provisionalEl(e));
   return frag;
 }
@@ -435,7 +396,8 @@ function chaptersEl(part) {
 // Ledger compendium at that ledger, the way a contents row opens the book at
 // its chapter.
 function ledgersEl(part) {
-  const { frag } = partHead(part);
+  const frag = document.createDocumentFragment();
+  frag.append(partHead(part));
   const kept = keptLedgers().filter((k) => !INDEXED.some((e) => sameAddresses(e.addresses, k.addresses)));
   for (const l of INDEXED) frag.append(ledgerEl(l, false));
   for (const l of kept) frag.append(ledgerEl(l, true));
@@ -479,11 +441,28 @@ function provisionalEl(entry) {
   if (entry.note) t.title = entry.note;
   const r = document.createElement('span');
   r.className = 'toc-ref';
-  r.textContent = expRef(height);
+  r.textContent = expectedReference(height);
   r.title = `expected — block ${height.toLocaleString()} has not been mined, so its chapter carries □ rather than ■`;
   row.append(t, r);
   return row;
 }
+
+// An appendix's heading turns the page down into its leaf, so it turns the
+// way the contents' other descents do: the list slides up and away, and the
+// leaf enters from below (the flag it consumes on first paint). A modified
+// click, or a reader who has asked for less motion, just follows the link.
+document.addEventListener('click', (ev) => {
+  const link = ev.target.closest && ev.target.closest('.appx-link');
+  if (!link || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey || ev.button !== 0) return;
+  ev.preventDefault();
+  const flag = link.getAttribute('href').includes('bitcoin-ledger') ? 'glossia-ledger-entrance' : 'glossia-appendix-entrance';
+  try { sessionStorage.setItem(flag, '1'); } catch (_) {}
+  const go = () => { location.href = link.getAttribute('href'); };
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { go(); return; }
+  document.body.style.transition = 'transform .2s linear';
+  document.body.style.transform = 'translateY(-100vh)';
+  setTimeout(go, 180);
+});
 
 function render() {
   toc.replaceChildren();
@@ -562,196 +541,20 @@ const placed = () => entries()
 const unresolved = () => entries().filter((e) => e.tried && !e.place);
 
 // ── Appendix I: the mempool, read as far as it extends ────────────────────
-// The queue of transactions no block has yet recorded, ordered the way a
-// miner would take them (highest package fee rate first), continues the
-// contents past the tip as provisional chapters: heights tip+1, tip+2, …
-// with an expected arrival instead of a recorded date. Three sources, each
-// optional, degrading gracefully:
-//   /mempool                    (any Esplora) -- totals + fee histogram: how
-//                               far the contents extend (vsize ÷ 1 MvB) and
-//                               where the eviction floor sits;
-//   /v1/fees/mempool-blocks     (mempool.space backend only) -- the queue cut
-//                               into template-sized projected blocks, CPFP-
-//                               aware, each with tx count and fee figures;
-//   /v1/fees/recommended        (mempool.space backend only) -- minimumFee,
-//                               the purge floor.
-// Only the first projected chapter is a real forecast; each one deeper is
-// more a statement about the queue now than about any future block -- so
-// everything past the detailed entries collapses into one backlog row, and
-// each row's hover title carries its caveats.
-const MVB = 1_000_000;   // one block's worth of virtual bytes
-
-// Try a path against each mirror in turn (the v1 paths only answer on a
-// mempool.space-backed mirror; vanilla Esplora 404s and the loop moves on).
-async function anyMirror(path) {
-  for (const base of ESPLORA_MIRRORS) {
-    try {
-      const res = await fetch(`${base}${path}`);
-      if (res.ok) return { data: await res.json(), base };
-    } catch { /* try the next mirror */ }
-  }
-  return null;
-}
-
-const hostOf = (url) => { try { return new URL(url).host; } catch { return url; } };
-// Fee rates arrive as floats; one decimal under 10 sat/vB, whole above.
-const fmtFee = (f) => f >= 10 ? String(Math.round(f)) : String(Math.round(f * 10) / 10);
-
-// The provisional reference for a not-yet-mined height: the expected-chapter
-// mark □ where a mined chapter's reference wears ■ -- the number holds only
-// if the queue does.
-function projRef(height, tipVolume) {
-  const p = volumeBookChapter(height);
-  const vol = p.volume === tipVolume ? '' : `${toRoman(p.volume)} `;
-  return `${vol}β${p.book} □${p.chapter}`;
-}
-// A span of projected chapters -- the backlog's rows. Within one book the
-// book is named once and the marks run on, the book's own idiom for a range
-// (a volume leaf reads ■1 – ■2,016); across a book boundary each end is
-// cited in full, since the second names a book the first did not.
-function projRange(from, to, tipVolume) {
-  const a = volumeBookChapter(from), b = volumeBookChapter(to);
-  const sameBook = a.volume === b.volume && a.book === b.book;
-  return `${projRef(from, tipVolume)} – ${sameBook ? `□${b.chapter}` : projRef(to, tipVolume)}`;
-}
-// The full expected reference, for hover titles.
-function expRef(height) {
-  const p = volumeBookChapter(height);
-  return `${toRoman(p.volume)} β${p.book} □${p.chapter}`;
-}
-
-// One projected row: expected wait, then the row's text, then its
-// provisional reference; the whole row opens the book at that height, which
-// answers with the chapter's place in the queue.
-function projEntryEl({ height, eta, etaTitle, text, textTitle, ref, refTitle }) {
-  const row = document.createElement('a');
-  row.className = 'toc-entry under-book projected';
-  row.href = entryHref(String(height));
-  const etaEl = document.createElement('span');
-  etaEl.className = 'toc-proj-eta';
-  etaEl.textContent = eta;
-  if (etaTitle) etaEl.title = etaTitle;
-  const t = document.createElement('span');
-  t.className = 'toc-title';
-  t.textContent = text;
-  if (textTitle) t.title = textTitle;
-  const r = document.createElement('span');
-  r.className = 'toc-ref';
-  r.textContent = ref;
-  if (refTitle) r.title = refTitle;
-  row.append(etaEl, t, r);
-  return row;
-}
-
-// Build the whole section from whatever resolved: the appendix's heading and
-// note, dressed with the mirror whose mempool this is (every node's differs),
-// the detailed projected chapters, the backlog row, and the closing figures.
-function buildProjected(tip, summary, blocks, minFee, srcBase) {
-  const tipVolume = volumeBookChapter(tip).volume;
-  const wrap = document.createElement('div');
-  const { frag, heading } = partHead(MEMPOOL_PART);
-  heading.classList.add('toc-proj-head');
-  heading.textContent = '';
-  const label = document.createElement('span');
-  label.className = 'toc-proj-label';
-  label.textContent = appendixLabel(MEMPOOL_PART);
-  const src = document.createElement('span');
-  src.className = 'toc-proj-src';
-  const at = new Date();
-  const hh = String(at.getUTCHours()).padStart(2, '0'), mm = String(at.getUTCMinutes()).padStart(2, '0');
-  src.textContent = `as seen from ${hostOf(srcBase)} · ${hh}:${mm} UTC`;
-  src.title = 'a mempool is one node’s view of the queue — every node’s differs, and this page is a snapshot';
-  heading.append(label, src);
-  wrap.append(frag);
-
-  // Total queue depth in chapters: from the summary's vsize when we have it,
-  // else from the projected blocks alone.
-  const projVsize = blocks ? blocks.reduce((s, b) => s + b.blockVSize, 0) : 0;
-  const chapters = Math.max(1, Math.ceil((summary ? summary.vsize : projVsize) / MVB));
-
-  const etaTitleFor = (k) => {
-    const spread = Math.round(10 * Math.sqrt(k));
-    return `eta about ${k * 10} min, give or take ${spread} — block arrivals average one per ten minutes`;
-  };
-
-  if (blocks && blocks.length) {
-    // A real projected block never exceeds 1 MvB of vsize; a bigger final
-    // entry is the backend's own aggregate of everything deeper.
-    blocks.forEach((b, i) => {
-      const height = tip + 1 + i;
-      const isAggregate = i === blocks.length - 1 && b.blockVSize > 1.05 * MVB;
-      if (!isAggregate) {
-        const lo = fmtFee(b.feeRange[0] ?? b.medianFee), hi = fmtFee(b.feeRange[b.feeRange.length - 1] ?? b.medianFee);
-        wrap.append(projEntryEl({
-          height,
-          eta: blocksEta(i + 1), etaTitle: etaTitleFor(i + 1),
-          text: `${b.nTx.toLocaleString()} § · ~${fmtFee(b.medianFee)} sat/vB`,
-          textTitle: `${b.nTx.toLocaleString()} transactions, ${(b.blockVSize / MVB).toFixed(2)} MvB — fees ${lo}–${hi} sat/vB, ${(b.totalFees / 1e8).toFixed(3)} BTC in total`,
-          ref: projRef(height, tipVolume),
-          refTitle: `provisional — block ${height.toLocaleString()} (${expRef(height)}) if the queue holds; every block mined ahead of it renumbers the rest`,
-        }));
-      } else {
-        // The backlog: everything past the detailed entries, one fading row.
-        const span = Math.max(1, Math.round(b.blockVSize / MVB));
-        const last = height + span - 1;
-        wrap.append(projEntryEl({
-          height,
-          eta: '⋯', etaTitle: `clearing ${blocksEta(i + span)} from now at current throughput — if nothing better-paying arrives first`,
-          text: `the backlog — ${b.nTx.toLocaleString()} § across ≈ ${span} more chapters`,
-          textTitle: `${(b.blockVSize / MVB).toFixed(1)} MvB of queued transactions below ~${fmtFee(b.medianFee)} sat/vB`,
-          ref: projRange(height, last, tipVolume),
-          refTitle: 'the deep queue has no reliable ordering — these chapters are a guess about the queue today, not about any future block',
-        }));
-      }
-    });
-  } else if (summary) {
-    // No mempool.space backend reachable: the depth alone, from any Esplora.
-    wrap.append(projEntryEl({
-      height: tip + 1,
-      eta: blocksEta(1), etaTitle: etaTitleFor(1),
-      text: `${summary.count.toLocaleString()} § waiting across ≈ ${chapters} chapters`,
-      textTitle: 'this mirror serves only mempool totals — a mempool.space-backed source adds per-chapter projections',
-      ref: projRange(tip + 1, tip + chapters, tipVolume),
-      refTitle: 'provisional — the chapters the current queue would fill',
-    }));
-  }
-
-  // The closing figures: how much is waiting, and the floor beneath which
-  // the pool sheds transactions when it fills.
-  if (summary) {
-    const note = document.createElement('div');
-    note.className = 'toc-proj-note';
-    let s = `${(summary.vsize / MVB).toFixed(1)} MvB waiting · ${summary.count.toLocaleString()} transactions · ≈ ${chapters} chapters at ~10 min each`;
-    if (minFee != null && minFee > 1) {
-      // The histogram is (feerate, vsize) bins, highest first; what sits at
-      // or below the purge floor is the first to be forgotten.
-      const atRisk = (summary.fee_histogram || []).reduce((s2, [r, v]) => r <= minFee ? s2 + v : s2, 0);
-      s += ` · eviction floor ≈ ${fmtFee(minFee)} sat/vB`;
-      if (atRisk > MVB / 20) s += ` — the ${(atRisk / MVB).toFixed(1)} MvB at it first to be forgotten`;
-    }
-    note.textContent = s;
-    note.title = 'transactions the network holds but no block has recorded; a full mempool evicts from the bottom of the fee range, and everything here expires if unmined for two weeks';
-    wrap.append(note);
-  }
-  return wrap;
-}
-
+// The queue itself is read and set by btc-mempool.js, shared with the
+// appendix's own page. Here it needs only its heading -- the appendix's
+// name, a link to that page, and the line naming the node the queue was
+// read from.
 async function loadProjected() {
   const tip = await tipHeight();
-  if (tip == null) return;
-  const [sum, blocks, rec] = await Promise.all([
-    anyMirror('/mempool'),
-    anyMirror('/v1/fees/mempool-blocks'),
-    anyMirror('/v1/fees/recommended'),
-  ]);
-  if (!sum && !blocks) return;   // nowhere to read a queue from -- the contents simply end at the tip
-  projectedSection = buildProjected(
-    tip,
-    sum ? sum.data : null,
-    blocks && Array.isArray(blocks.data) && blocks.data.length ? blocks.data : null,
-    rec ? rec.data.minimumFee : null,
-    (blocks || sum).base,
-  );
+  const queue = await readQueue(tip, ESPLORA_MIRRORS);
+  if (!queue) return;   // nowhere to read a queue from -- the contents simply end at the tip
+  const heading = head('toc-vol toc-proj-head', '');
+  const label = document.createElement('span');
+  label.className = 'toc-proj-label';
+  label.append(appendixLink(MEMPOOL_PART));
+  heading.append(label, sourceLine(queue.srcBase));
+  projectedSection = buildQueue(queue, heading);
   render();
 }
 
