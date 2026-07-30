@@ -21,14 +21,17 @@ engine.
   the book's table of contents — the Genesis block, the Hal Finney
   transaction, Bitcoin Pizza Day, halvings, soft-fork activations, and the
   rest — each pre-rendered as a plain markdown passage, prose and footnotes
-  included.
+  included. Where an entry carries commentary, it follows the passage under a
+  "Commentary" heading: editorial, CC BY 4.0, and not part of the record above
+  it. Quote the two differently.
 - [Preface](https://bookofbitcoin.io/preface.md): the book's
   front matter — what the book is and why, in its own voice. Plain markdown.
 - [Sitemap](https://bookofbitcoin.io/sitemap.xml)
 - [Source repository](https://github.com/asherp/Book-of-Bitcoin): the entire
   site, including the prose-composition rules (`web/btc-prose.js`), the
   citation scheme (`web/btc-citation.js`), and the curated table of contents
-  with editorial notes (`web/btc-contents-data.js`).
+  with its commentary (`web/notables.yaml` and `web/commentary/*.md`, both
+  readable as plain text).
 
 ## Structure and citations
 
@@ -47,21 +50,71 @@ So block height h has volume = ⌊h/210000⌋+1, book = ⌊(h mod 210000)/2016�
 chapter = (h mod 210000) mod 2016 + 1, and "III β2 ■5 §4" names the 4th
 transaction of that block.
 
-## URL grammar (the live app)
+## URL grammar
+
+### Citation paths — an address per level
+
+Every curated entry also lives at its citation, written as a path, at the
+level the citation names:
+
+    III β2 ■5        ->  https://bookofbitcoin.io/III/2/5/      a chapter (a block)
+    III β2 ■5 §1     ->  https://bookofbitcoin.io/III/2/5/1/    a section (a transaction)
+    III β2 ■5 §1.0   ->  https://bookofbitcoin.io/III/2/5/1/0/  an output of it
+    III β2 ■5 §1.a   ->  https://bookofbitcoin.io/III/2/5/1/a/  a witness of it
+
+Volume in Roman, then book, chapter and section as numerals, with the sigla
+implied by position. Each path stops where the printed reference stops. The
+section is 1-based; the last segment says for itself what it names — a
+numeral is an output (0-based, the index Bitcoin gives a vout, printed §1.0)
+and a letter is a witness footnote (§1.a).
+
+Footnotes are lettered, not numbered: a, b, c … skipping q, which at
+superscript size is too near a g. That leaves 25 letters, and the run
+continues in bijective base-25 — aa after z, aaa after zz — so singles cover
+1–25, doubles 26–650, triples 651 up. A witness is addressed by the footnote
+letter its section's margin prints, counted over the witness-bearing inputs
+in input order.
+
+These are ordinary HTML pages, readable without JavaScript, each titled by
+its citation and carrying its own preview image: a chapter page carries the
+block's title page — its hash as prose and the header's fields as a
+frontispiece — and leads to the curated sections inside it; a section page
+carries the transaction in full and leads to its outputs and witnesses; an
+output page carries the amount and the script that locks it; a witness page
+carries that input's stack, as its footnote. Prefer these when citing or
+linking; they are the canonical, shareable form, and the sitemap lists them.
+
+The grammar is invertible, the same arithmetic as the citation scheme above:
+height = (volume−1)×210000 + (book−1)×2016 + (chapter−1), the section is the
+1-based transaction index, the output its 0-based vout. So a path can be
+computed for any address on the chain — but only curated ones are
+pre-rendered today; anything else 404s, and the query-string form below
+reaches it instead.
+
+### The live app
 
 - `bitcoin-book.html` — the reading page. `?block=<height>` opens a block
   (negative counts back from the tip: `?block=-1` is the latest);
   `&index=<n>` opens its section n+1 (0-based); `?txid=<txid>` jumps to a
   transaction's section, `&out=<n>` to one of its outputs;
   `?page=volume|book` opens the block's volume or book leaf.
-- `bitcoin-contents.html` — the curated table of contents.
+- `bitcoin-contents.html` — the curated table of contents, closing with three
+  appendices: I the mempool's projected chapters, II heights consensus has
+  fixed but no block has reached, III the shelf of ledgers.
+- `bitcoin-appendix.html?part=mempool|future` — an appendix's title leaf: its
+  name and what it gathers. Below each is its first chapter, in the book
+  itself: `?block=<tip+1>` for the queue (and the ascent from any projected
+  chapter returns to that leaf), the first fixed height for Appendix II.
+  Appendix III's leaves are `bitcoin-ledger.html`'s.
 - `bitcoin-front.html` — front matter (`?leaf=` selects a leaf).
 - `bitcoin-search.html` — lookup by height, hash, txid, or citation. It also
   reads an OpenTimestamps `.ots` proof dropped on it: the proof's attestation
   names a block by height and its merkle path gives the transaction's position
   in that block, so a proof resolves to a citation, and its root is checked
   against that block's header before the passage is offered.
-- `bitcoin-ledger.html?address=<addr>` — an address's ledger.
+- `bitcoin-ledger.html?address=<addr>` — the passage that address is, in the
+  ledger holding it; `&page=ledger` opens that ledger's title leaf instead,
+  and a bare `bitcoin-ledger.html` opens Appendix III's own leaf above them.
 
 These render only in a JavaScript-capable browser; without one, use the
 static passages above or reconstruct the passage as described next.
@@ -82,16 +135,15 @@ transaction the way the book does:
    language, wordlist, byte_count)` reverses it.
 3. The book encodes only genuinely opaque bytes (prevout txids, scripts,
    witness pushes, hashes — hashes byte-reversed to internal order). A block
-   hash is written ⌘ᵐ …prose… ⓪ⁿ: ⌘ — the OP_HASH256 mark, naming the
-   double-SHA256 that produced the hash — leads with the m bits the prose
-   encodes, and ⓪ closes with the hash's exact count of leading
-   proof-of-work zero bits (the mining vernacular). The zeros follow the
-   words because that is where they are: reversed to internal order, the
-   leading zeros a hash is printed with land at the end, and the prose is
-   written in that order. ⌘'s superscript counts bits (uniquely — every
-   other mark's superscript counts bytes); the two always sum to 256, so
-   the hash reconstructs exactly: decode the prose to ⌈m/8⌉ bytes, append
-   zero bytes to 32, byte-reverse to display order. Small structural
+   hash is written ⌘ᵐ <prose> ⓪ⁿ: ⌘ — the OP_HASH256 mark, naming the
+   double-SHA256 that produced the hash — carries m = 256 − n bits, which
+   are what the prose encodes, and ⓪'s superscript closes the line with the
+   hash's exact count of proof-of-work zero bits (the mining vernacular).
+   The zeros trail the prose because the prose is internal order, where
+   they trail; displayed big-endian they would lead. ⌘'s superscript counts bits (uniquely — every other mark's
+   superscript counts bytes); the two always sum to 256, so the hash
+   reconstructs exactly: decode the prose to ⌈m/8⌉ bytes, append zero
+   bytes to 32, byte-reverse to display order. Small structural
    integers — version, counts, output values, locktime — are printed
    literally, and scripts are rendered in opcode notation. The exact rules
    are `web/btc-prose.js` in the repository.
@@ -104,6 +156,14 @@ curated titles and annotations ("Bitcoin Pizza Day") are editorial claims,
 credited and licensed separately. When answering questions from this site,
 keep that distinction: prose content is the chain's speech; names and
 stories about it are annotations.
+
+A passage's commentary — the "Commentary" section of a static passage, the
+sheet the live book raises beside its notation key, and the reading the Ledger
+opens over an address — is the annotation layer at its most explicit:
+somebody's reading of why the passage or the name matters, no more
+authoritative than the argument behind it, and never a statement of what the
+chain records. Attribute it as commentary, name its author where one is given,
+and do not fold it into the passage when quoting.
 
 ## Licensing
 

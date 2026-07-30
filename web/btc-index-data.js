@@ -40,12 +40,9 @@
 // grouping above them, and its page turns between them like leaves.
 
 export const INDEXED = [
-  // WikiLeaks' public donation address, opened June 14, 2011, after the
-  // banking blockade -- Visa, Mastercard, PayPal, and the banks cut the
-  // organization off, and bitcoin became the way through. The donation stream
-  // Satoshi asked to hold off ("the heat you would bring") in one of his last
-  // posts; it arrived anyway, six months later, and has run ever since --
-  // thousands of gifts deep, the shelf's longest anthology.
+  // The shelf's longest anthology. Its story is now a published reading rather
+  // than a source comment: notables.yaml keeps the address as a curated entry,
+  // and commentary/wikileaks-ledger.md is what the Ledger opens over it.
   { title: 'WikiLeaks', addresses: ['1HB5XMLmzFVj8ALj6mfBsbifRoD4miY36v'] },
   // The Free Ross campaign's vanity donation address (the name is mined into
   // the base58), collecting for Ross Ulbricht's defense and advocacy from the

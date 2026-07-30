@@ -96,6 +96,37 @@ compiled to WASM) is consumed as a published
   styles, shared by the two places it is read: the book page's notation toggle
   (opened over a chapter) and the front matter's sigla leaf (the whole key at
   rest). One copy, so a mark explained in one is explained in the other
+- `web/btc-commentary.js`, `web/btc-notables.js` — the annotation layer's
+  machinery: the loader for the editorial files, which curated reading applies
+  to the page in front of the reader, and the markup that sets it. The book page
+  carries a **Commentary** key beside the notation one, and only where the
+  passage has a reading — a chapter's leaf, a book's leaf, or a section that a
+  curated entry names; opened, it raises the same kind of sheet the notation key
+  does, over the passage rather than into it — a reading kept apart from the
+  record it reads, which is the argument the preface makes at length.
+  The split follows what each surface needs: the index says *whether* a passage
+  has a reading and *whose*, which is enough for the key on the page and the
+  credit in the contents, so only opening the sheet fetches a word of prose.
+  Absence is information: most entries carry no reading, and the key does not
+  appear when there is nothing to open. The Ledger offers the same sheet over a
+  *name*: a curated entry may be an address, and its readings open on that
+  ledger's title leaf and on the address's own — a reading of a name being
+  precisely the kind of claim this book insists on setting apart and signing
+- `web/commentary.css` — a reading set as a reading, styled once for both places
+  it is met: the sheet the reading page raises over a passage, and the toggle the
+  Ledger opens in a leaf
+- `web/btc-yaml.js`, `web/btc-markdown.js` — the two small readers the authored
+  files need: a deliberately narrow YAML subset (documented in the module, and
+  it throws rather than guesses — a silent misread of editorial data is worse
+  than a loud failure) and the Markdown subset the book's prose is written in,
+  shared by the preface leaf and the commentary sheet
+- `web/btc-lookup.js` — everything the book answers to, in one grammar: a block
+  height, a tip-relative height, a 64-hex id, a reference in either spelling
+  (parsed by `btc-citation.js`, the citation scheme's own module), or an address
+  — which is not a place but a name, and so hands off to the Ledger. The search
+  box, the book's `?block=` / `?ref=` lookups, the ledger's `?ref=` routing and a
+  curated entry's `id:` all read through it, so a form learned anywhere works
+  everywhere, and a citation resolves the same way in all four
 - `web/btc-sigla.js` — the opcode alphabet: a mark for every opcode and the
   canonical `OP_*` name behind it, plus the groups the key reads in. Split out
   of `btc-prose.js` so the sigla leaf can render the real table without
@@ -105,23 +136,77 @@ compiled to WASM) is consumed as a published
 - `web/preface.md` — the preface itself, in Markdown: the canonical copy,
   readable here in the repository and rendered into the leaf above, so the
   book and the repository cannot drift apart
-- `web/bitcoin-contents.html` — table of contents / notable blocks
+- `web/bitcoin-contents.html` — table of contents / notable blocks, closing
+  with three appendices: back matter for what reading order cannot carry,
+  reading order being the order blocks were mined. Each is listed here and
+  explained on a leaf of its own, its heading the door down into it.
+  **I · The Mempool** — the chapters the queue is already forming, first of
+  the three because the volumes close on the chain tip's row, so the turn
+  from the tip to the next provisional chapter stays one step down the page.
+  **II · Future Chapters** — heights consensus has already fixed but no
+  queue can reach (BIP42's 21M cap at 13,440,000; BIP110's flag heights,
+  should it lock in), cited in full but marked □ until a block earns them
+  the ■. **III · Ledgers** — the shelf of curated ledgers and any the reader
+  keeps, the only entries with no reference at all, since the chain never
+  writes an address, only the script one stands for; the contents and the
+  index are inverses, and this is where the contents points at the other
+- `web/bitcoin-appendix.html` — the appendix leaves (`?part=mempool`,
+  `?part=future`): a title leaf saying what the appendix gathers and why
+  that cannot be read in sequence, with what it gathers one level below.
+  Appendix I descends into the queue's **first chapter itself** — the block
+  a reader reaches by swiping forward off the chain tip — read in the book
+  like any other, marked □, and walked chapter by chapter from there; the
+  ascent from any of them lands back on this leaf, since a draft chapter
+  belongs to no volume or book of the body (the queue's own equivalent of a
+  book is still to be written). Appendix II descends the same way, into the
+  first height consensus has already fixed — the book answers an unmined
+  chapter with the date it is due. Neither leaf lists what it gathers: the
+  listing is the contents' business.
+  Appendix III's leaf is the Ledger compendium's own title page, since a
+  shelf of ledgers is what that page already is. The appendices sit at the
+  **volumes' own level**: the line runs Volume I … Volume V, Appendix I,
+  II, III, so the last volume's forward turn leaves the body for the
+  mempool and Appendix I's backward turn comes straight back to it. All
+  three ascend to the contents, as a volume does — a pull down at the top,
+  and the masthead's Contents
+- `web/btc-mempool.js`, `web/btc-toc.css` — the queue read as the chapters
+  it is about to become, and how a list of chapters is set. Shared by the
+  contents and the appendix leaves so a projected chapter reads the same in
+  the list and on its own page
 - `web/bitcoin-ledger.html` — the Ledger: a compendium of every ledger
   (curated donation addresses, any the reader keeps, and ad-hoc
   `?address=a,b,…` queries) in one document, read the way the book is
-  read, three levels deep. Ledger title leaves at the top (title, balance,
-  span — horizontal swipes browse between ledgers; a push up descends);
-  address leaves below (a title page per address, its record scrolling
-  endlessly below, newest first by reference; past the last address the
-  merged entries leaf, organized by time; pulling down at the top ascends);
-  and entry leaves underneath (one transaction as its own page, rendered
-  from the bank alone — vertical swipes walk the address's timeline, a
-  swipe over the record dives into the entry nearest the finger, and a
-  swipe right is the one door back). Nothing backfills on its own —
+  read, four levels deep. A URL names the leaf it wants the way the book's
+  does: `?address=…` opens the passage that address is, `&page=ledger`
+  opens the ledger holding it at its title leaf (which is what a named
+  ledger in the contents links to), and a bare visit opens the appendix
+  leaf above them all. The appendix leaf at the top — the compendium is
+  the contents' **Appendix III**, and this leaf carries that name and the
+  paragraph saying what a ledger is; it lists nothing, because the contents
+  already lists the ledgers, and a pull down at the top (or the ▴ crumb)
+  ascends there. Ledger title leaves beneath it (title, balance, span —
+  horizontal swipes browse between ledgers; a push up descends) — one title
+  page per ledger, and the only one. Passage leaves below those: a ledger is
+  a set of scripts, not one address — organizations rotate them, and an xpub
+  (when the shelf takes them) will gather every leaf of one key — so each
+  script gets a leaf titled by the passage itself — the script in the book's
+  own prose, and not also in base58 or bech32 beneath it: an address is the
+  machine's rendering of the same script, and the book prints its own — with
+  the chapters that passage appears in listed below, newest first by
+  reference; past the last passage the ledger's whole table of entries,
+  organized by time. And entry leaves underneath (one
+  transaction as its own page, rendered from the bank alone — vertical
+  swipes walk the timeline, a swipe over the record dives into the entry
+  nearest the finger, and a swipe right is the one door back). Nothing backfills on its own —
   exploration is the sync — and every page found is banked for good, from
   the same Esplora-compatible endpoints the reading pages use; a ledger
   reconciles its entries against the chain's balance before its numbers
-  are trusted
+  are trusted. Keeping a ledger names it first — it becomes a row in the
+  reader's own contents (Appendix III), and the naming field opens on a
+  suggestion in the block version's own notation: one HP spell and one
+  BIP39 word, drawn from sixteen random bits where a miner puts BIP320's
+  version-rolling scratch entropy, so the name reads back as a well-formed
+  nVersion
 - `web/bitcoin-ledgers.html` — the old Ledgers shelf, now a redirect to
   the compendium (kept for bookmarks and cached mastheads)
 - `web/btc-ots.js` — an OpenTimestamps proof reader, read by the search page:
@@ -167,11 +252,27 @@ compiled to WASM) is consumed as a published
   never re-asks. The two BIP30-grandfathered coinbases were each confirmed
   twice, and pages count positions, not distinct txids — so each owns two
   pages, all four cited in the table of contents
-- `web/btc-contents-data.js`, `web/btc-index-data.js` — the curated entries
-  themselves: which blocks and addresses the book keeps, what they are
-  called, the criteria they are kept on, and the notes explaining why. The
-  editorial layer, kept in its own files because it is licensed apart from the
-  machinery that renders it (see [License](#license))
+- `web/notables.yaml`, `web/appendix.yaml`, `web/commentary/*.md` — the curated
+  entries themselves, what the contents gathers after the volumes (the
+  appendices: the mempool, the future chapters whose citations consensus has
+  already fixed, and the ledgers), and the readings of them: which blocks and transactions the book keeps, what
+  they are called, and one Markdown file per reading, referenced by the entry it
+  belongs to (`by:` naming whoever wrote it, absent for the book's own voice).
+  An entry's `id:` is written in any form the search box takes — a height, a
+  64-hex id, a citation to whatever depth is meant (`I β29 ■596 §85`, resolved by
+  arithmetic when the file is read), or an address, which names a ledger rather
+  than a place and so reads in the Ledger instead of opening a chapter. An entry
+  found in more than one place writes `ids:` and gives each an `as:` — the two
+  twice-confirmed coinbases are one thing in four printings, so the contents
+  carries four rows and the reading beneath them is written once.
+  YAML and Markdown rather than JavaScript because this is the part of the
+  repository written by people who are writing rather than programming — and
+  nothing is generated from them: the browser reads these files as they stand,
+  the same files a contributor edits and the pre-renderer reads off disk
+- `web/btc-index-data.js` — the same editorial layer for the ledgers: which
+  addresses the book keeps, what they are called, and the story that earned each
+  one its place. The editorial layer is kept in its own files because it is
+  licensed apart from the machinery that renders it (see [License](#license))
 - **The sigla** — the marks the manuscript is written in, and where each
   lives:
   - the opcode alphabet (`OPCODE_SYMBOLS` in `web/btc-sigla.js`): a glyph per
@@ -188,7 +289,10 @@ compiled to WASM) is consumed as a published
     other way round, and the prose is written in the order it was hashed
   - the citation sigla (`web/btc-citation.js`): Roman volumes, `β` the
     difficulty mark (a book is a difficulty window), `■` the block mark (a
-    chapter is a block), `§` the section (a transaction) — e.g. `III β2 ■5 §1`
+    chapter is a block), `§` the section (a transaction) — e.g. `III β2 ■5 §1`,
+    with an output appended as `§1.0` and a witness as its footnote letter,
+    `§1.a`. Footnotes are lettered a, b, c … skipping `q` (too near a `g` at
+    superscript size) and continuing in bijective base-25 — `aa` after `z`
   - the block-version notation (`web/btc-prose.js`): BIP9's fields rendered as
     what they are — a word pair carrying the 16 version-rolling bits, then the
     signaling bits in plain binary (`accio library 100`). Invertible: the
@@ -201,6 +305,21 @@ compiled to WASM) is consumed as a published
 - `web/glossia.js`, `web/glossia_bg.wasm` — **build artifacts** (gitignored),
   produced by `build_web.sh` from the published glossia crate
 - `web/sw.js`, `web/bitcoin-book.webmanifest`, `web/icons/` — PWA shell
+- `tools/passage-page.mjs` — a chapter, a section, or an output as a page at
+  its own citation path, with its own Open Graph card. The reading pages take a passage as a query
+  string, and static hosting serves one `<head>` per file, so every passage
+  would otherwise preview identically when shared. Called at deploy time by
+  `tools/prerender-passages.mjs`, and it renders its cards with the reply
+  bot's renderer — one renderer, two consumers, the same page either way
+- `tools/twitter-bot/` — the reply bot: watches a hashtag on X for citations
+  (`III β2 ■5 §1`, ascii and packed-hashtag forms, block heights, txids) and
+  answers each with chapter and verse — the canonical citation and the
+  section itself in the book's notation: scripts as opcode sigla, amounts in
+  ₿, witness footnotes, the txid as decodable Glossia prose, and a deep link
+  into the book. A section too long for the tweet is ellipsized in text and
+  rides whole as a rendered page of the book (image + alt text). See its
+  [README](tools/twitter-bot/README.md); deployed by
+  `.github/workflows/twitter-bot.yml`
 
 ## Building & running locally
 
@@ -227,9 +346,10 @@ repo's builds can succeed.
 
 ## Deployment
 
-- `.github/workflows/deploy-web.yml` — on every push to `main`, builds the
-  WASM from the pinned glossia crate and deploys `web/` to the `gh-pages`
-  branch (GitHub Pages).
+- `.github/workflows/deploy-web.yml` — on every push to `main`, checks the
+  editorial layer (`tools/check-editorial.mjs`, below), builds the WASM from the
+  pinned glossia crate and deploys `web/` to the `gh-pages` branch (GitHub
+  Pages).
 - `.github/workflows/pr-preview.yml` — deploys a live preview of every pull
   request under `pr-preview/pr-<N>/` and comments the URL on the PR.
 
@@ -259,11 +379,38 @@ them. For those readers the deploy also publishes a static layer:
   lives, the citation scheme, the app's URL grammar, and how any passage on
   the chain can be reconstructed from public data with the published engine.
 - `/passages/` — every curated table-of-contents entry pre-rendered as plain
-  markdown (prose, frontispiece, witness footnotes), generated at deploy
-  time by `tools/prerender-passages.mjs` running the same parse → compose →
-  encode pipeline in Node against the freshly built WASM.
+  markdown (prose, frontispiece, witness footnotes, and the entry's
+  commentary where it has any — last, behind its own heading and terms, so a
+  reader that flattens the page cannot quote the reading as the record),
+  generated at deploy time by `tools/prerender-passages.mjs` running the same
+  parse → compose → encode pipeline in Node against the freshly built WASM.
+- `/III/2/5/`, `/III/2/5/1/`, `/III/2/5/1/0/`, `/III/2/5/1/a/` — the curated
+  entries as HTML pages at their citations, written as paths, one address per
+  level: a chapter (a block), a section (a transaction), and then either an
+  output of it or one of its witnesses. Each path stops where the printed
+  reference stops, and the last segment says for itself what it names — a
+  numeral is an output (§1.0, the 0-based vout), a letter a witness footnote
+  (§1.a). A chapter page carries the block's title page (hash prose and the
+  header's frontispiece) and leads to its sections; a section page carries
+  the transaction and leads to its outputs and witnesses; an output page
+  carries the amount and the script locking it; a witness page carries that
+  input's stack. Each has its own Open Graph tags and a preview card rendered
+  from its own head (`web/cards/`) — and no description tag: the card is the
+  passage and the title is its address. A shared link therefore previews as
+  *that* address rather than as the site, which the reading pages cannot do,
+  since they take a passage as a query string and static hosting gives every
+  query the same `<head>`. Built by `tools/passage-page.mjs`, using the
+  reply bot's renderer.
 - `/robots.txt` + `/sitemap.xml` — crawlers welcome, and pointed at all of
   the above.
+
+Since the editorial layer is authored by hand with nothing generated from it,
+`tools/check-editorial.mjs` stands in for a build step: it reads
+`web/notables.yaml` and `web/commentary/*.md` exactly as the browser does and
+fails on anything a reader would meet as a missing reading or an empty contents
+— a mangled line, a renamed file, a duplicate id. Run it before opening a pull
+request; the deploy and the PR preview both run it first, ahead of the WASM
+build.
 
 ## License
 
@@ -371,10 +518,12 @@ nothing here tries to claim otherwise. What CC BY covers is the body of
 editorial work — the selection, the arrangement, and the writing.)
 
 The boundary is a file boundary, so a machine can see it too. The editorial
-data lives in `web/btc-contents-data.js` and `web/btc-index-data.js`, each
-carrying `SPDX-License-Identifier: CC-BY-4.0`; every other source file carries
-`MIT OR Apache-2.0`. The modules that render them re-export the data, so the
-split costs importers nothing.
+matter lives in `web/notables.yaml`, `web/appendix.yaml`, `web/commentary/*.md`
+and `web/btc-index-data.js`, each carrying `SPDX-License-Identifier: CC-BY-4.0` (in
+a Markdown file, as an HTML comment — Markdown has no header of its own); every
+other source file carries `MIT OR Apache-2.0`. Nothing is compiled from the one
+into the other: the machinery reads the authored files at runtime, so a reader
+can always see which words came from whom.
 
 ### Commentary by others
 
@@ -386,6 +535,9 @@ them is between the user and the writer.
 Commentary contributed to this repository is licensed by its author under
 CC BY 4.0 — credited to them, on the same terms as the rest of the editorial
 layer — so that it can be published and quoted with the book. See
-[CONTRIBUTING.md](CONTRIBUTING.md). Commentary written by readers inside the
+[CONTRIBUTING.md](CONTRIBUTING.md). The data has a place for it: an entry's
+`commentary:` list holds readings by others, each carrying its author's name
+(and a link, if they give one) through to the sheet the book opens — the
+book's own `note:` is the unsigned one, because the book is its author. Commentary written by readers inside the
 app, should the book ever accept it, is governed by that app's terms rather
 than by this file.

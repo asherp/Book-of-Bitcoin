@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //
 // tools/prerender-passages.mjs — pre-render the curated passages (the table
-// of contents in web/btc-contents-data.js) as static markdown under
+// of contents in web/notables.yaml) as static markdown under
 // web/passages/, plus a sitemap.xml for the whole site, plus an archive seed
 // (web/passages/seed.json) of the chain data behind those passages, which the
 // reading pages import into IndexedDB on a first visit (web/btc-seed.js).
@@ -33,13 +33,37 @@ import { createHash } from 'node:crypto';
 import { init, encodeSeedPhrase } from '../web/glossia-msg.js';
 import { parseTransaction, parseBlockHeader } from '../web/btc-tx.js';
 import { composeTransactionFields, composeBlockHeaderFields, renderWitness, toSuperscript } from '../web/btc-prose.js';
-import { volumeBookChapter, toRoman, reference } from '../web/btc-citation.js';
-import { NOTABLE } from '../web/btc-contents-data.js';
+import { volumeBookChapter, toRoman, reference, footnoteMark } from '../web/btc-citation.js';
+import { places, placeTitle } from '../web/btc-notables.js';
+import { readingsOf, commentaryLines, resolveCommentary } from '../web/btc-commentary.js';
+import { loadEditorial, readEditorial } from './editorial.mjs';
+import { sectionParts } from './twitter-bot/quote.mjs';
+import { loadRenderer } from './twitter-bot/image.mjs';
+import {
+  passagePath, cardPath, passagePageHtml, chapterPageHtml, outputPageHtml,
+  witnessPageHtml, witnessSegment, citationOf, passagesByPath,
+  CARD_WIDTH, CARD_HEIGHT,
+} from './passage-page.mjs';
+
+// The editorial layer is authored as files -- notables.yaml and commentary/*.md
+// -- and the browser reads them over HTTP; here they are read off disk through
+// the same parser and normalizer (tools/editorial.mjs), so the static passages
+// and the live page can never disagree about what the curation says.
+await loadEditorial();
+// The passages are one per PLACE, not one per entry: an entry may be found in
+// several (the twice-confirmed BIP30 coinbases are one thing in four), and each
+// place is its own passage on the chain -- carrying, as the live page does, the
+// one reading their entry holds.
+const PLACES = places();
 
 export const SITE = 'https://bookofbitcoin.io';
 const OUT_DIR = new URL('../web/passages/', import.meta.url);
 const SITEMAP = new URL('../web/sitemap.xml', import.meta.url);
 const SEED_OUT = new URL('../web/passages/seed.json', import.meta.url);
+// Each passage also gets a page at its citation's own path (web/III/2/5/1/)
+// and a card under web/cards/ -- see tools/passage-page.mjs for why.
+const WEB_DIR = new URL('../web/', import.meta.url);
+const CARDS_DIR = new URL('../web/cards/', import.meta.url);
 
 // Match the book's rendering choices exactly (bitcoin-book.html).
 const BEST_OF = 5;
@@ -50,7 +74,20 @@ const BEST_OF = 5;
 // file. Body scripts are never this large in the curated set.
 const MAX_ENCODE_BYTES = 8192;
 
-const ESPLORA_MIRRORS = ['https://blockstream.info/api', 'https://mempool.space/api'];
+// Each curated section's outputs get pages of their own -- an output is the
+// finest address the citation scheme reaches, and where value actually sits.
+// A section with hundreds of outputs would flood the deploy, so the pages
+// stop here and the count dropped is logged rather than silently truncated.
+const MAX_OUTPUT_PAGES = 20;
+
+// The public mirrors, or whatever PRERENDER_ESPLORA points at (comma-separated
+// Esplora-compatible endpoints) — a local node, or a stand-in when testing the
+// deploy pipeline offline. Same knob the reply bot takes as BOT_ESPLORA.
+const ESPLORA_MIRRORS = (process.env.PRERENDER_ESPLORA || '')
+  .split(',').map((s) => s.trim().replace(/\/$/, '')).filter(Boolean);
+if (!ESPLORA_MIRRORS.length) {
+  ESPLORA_MIRRORS.push('https://blockstream.info/api', 'https://mempool.space/api');
+}
 
 // ─── fetch, with mirror fallback ────────────────────────────────────────
 
@@ -87,13 +124,13 @@ const reverseHex = (hex) => (hex.match(/../g) || []).reverse().join('');
 const trimTrailingZeroBytes = (hex) => hex.replace(/(00)+$/, '');
 
 // The block-hash notation ⌘ᵐ … ⓪ⁿ (matches bitcoin-book.html): ⌘ (OP_HASH256,
-// the double-SHA256 that produced the hash) leads with the m = 256 - n bits
-// the prose encodes, and ⓪ closes with the hash's exact leading-zero-bit count
-// -- the mining vernacular for the proof-of-work. The zeros follow the words
-// because that is where they are: a block hash is printed leading-zeros-first
-// and hashed the other way round, and the prose is written in the order it was
-// hashed. ⌘'s superscript counts bits by definition; the trim underneath is
-// byte-granular (⌊n/8⌋ zero bytes dropped, ⌈m/8⌉ bytes encoded).
+// the double-SHA256 that produced the hash) carries m = 256 - n bits, which
+// are what the prose encodes, and ⓪ closes the line with the hash's exact
+// leading-zero-bit count -- the mining vernacular for the proof-of-work.
+// ⌘'s superscript counts bits by definition; the trim underneath is
+// byte-granular (⌊n/8⌋ zero bytes dropped, ⌈m/8⌉ bytes encoded). The zeros
+// follow the prose because that is where they sit in the bytes it encodes:
+// internal order, trimmed off the end, appended back to rebuild the hash.
 const blockHashParts = (displayHex) => {
   const hex = trimTrailingZeroBytes(reverseHex(displayHex));
   const stripped = displayHex.replace(/^0+/, '');
@@ -104,8 +141,9 @@ const blockHashParts = (displayHex) => {
   }
   return { hex, zeroBits, remainBits: 256 - zeroBits };
 };
-const hashNotation = ({ zeroBits, remainBits }, prose) =>
-  `⌘${toSuperscript(remainBits)} ${prose}${zeroBits ? ` ⓪${toSuperscript(zeroBits)}` : ''}`;
+// Takes the prose it wraps: the marks sit either side of it, so the order
+// lives in one place and no caller can assemble it wrongly.
+const hashNotation = ({ zeroBits, remainBits }, prose) => `⌘${toSuperscript(remainBits)} ${prose} ⓪${toSuperscript(zeroBits)}`;
 
 const proseOf = (hex) => encodeSeedPhrase(hex, 'english', BEST_OF).prose;
 
@@ -164,6 +202,16 @@ export function sectionMd({ txid, fields, sectionNum, eventTitle }) {
   out.push('');
   out.push(`Transaction id, as prose: ⌘${toSuperscript(256)} *${proseOf(reverseHex(txid))}*`);
   out.push('');
+  // Footnotes are lettered (a, b, c …) by their input's position: BIP144
+  // gives every input of a segwit transaction a witness, an empty stack
+  // included, so the footnotes run with the inputs one for one. That is the
+  // same run bitcoin-book.html builds, so a reference here names the footnote
+  // the live page does.
+  const witnessed = fields.inputs
+    .map((inp, i) => ({ inp, i }))
+    .filter(({ inp }) => inp.witnessHex);
+  const markOfInput = new Map(witnessed.map(({ i }) => [i, footnoteMark(i + 1)]));
+
   out.push(`- **version:** ${fields.version}`);
   fields.inputs.forEach((inp, i) => {
     const src = inp.isNullPrevout
@@ -173,8 +221,8 @@ export function sectionMd({ txid, fields, sectionNum, eventTitle }) {
     const script = htmlToText(inp.script).trim();
     if (script) out.push(`  - script: ${script}`);
     out.push(`  - sequence: ${htmlToText(inp.sequence)} — ${htmlToText(inp.sequenceTitle)}`);
-    if (inp.witnessItems.length) {
-      out.push(`  - witness: see footnote ${i + 1}`);
+    if (markOfInput.has(i)) {
+      out.push(`  - witness: see footnote ${markOfInput.get(i)}`);
     }
   });
   fields.outputs.forEach((o, i) => {
@@ -183,28 +231,49 @@ export function sectionMd({ txid, fields, sectionNum, eventTitle }) {
   });
   out.push(`- **locktime:** ${htmlToText(fields.locktime)} — ${htmlToText(fields.locktimeTitle)}`);
 
-  const witnessed = fields.inputs
-    .map((inp, i) => ({ inp, i }))
-    .filter(({ inp }) => inp.witnessItems.length);
   if (witnessed.length) {
     out.push('');
     out.push('### Witness footnotes');
     out.push('');
     for (const { inp, i } of witnessed) {
       const w = inp.witnessZero ? '∅' : htmlToText(renderWitness(inp.witnessItems, encodeCapped));
-      out.push(`${i + 1}. ${w}`);
+      out.push(`${markOfInput.get(i)}. ${w}`);
     }
   }
   return out.join('\n');
 }
 
-export function passageMd({ title, height, blockHash, header, txCount, txid, index, fields }) {
+// The curated entry's commentary, where it has any: the authored Markdown files
+// themselves, read off disk, behind their own heading and their own terms. The
+// live book floats the same words as a sheet over the passage; here they sit
+// after it,
+// ruled off — a reader without JavaScript has to be able to tell the reading
+// from the record just as plainly, and a crawler that flattens the page must
+// not be able to quote one as the other.
+export async function commentaryMd(entry) {
+  const items = [{ title: entry.title ?? '', readings: readingsOf(entry) }];
+  await resolveCommentary(items, { read: readEditorial });
+  const lines = commentaryLines(items);
+  if (!lines.length) return [];
+  return [
+    '## Commentary',
+    '',
+    '> A reading of the record, not the record. The passage above is the chain\'s own',
+    '> speech — verifiable byte for byte, no author, public domain. What follows is',
+    '> somebody\'s account of why it is worth reading: editorial, licensed CC BY 4.0,',
+    '> and no more authoritative than the argument behind it.',
+    '',
+    ...lines.flatMap((l) => [l, '']),
+  ];
+}
+
+export async function passageMd({ title, entry, height, blockHash, header, txCount, txid, index, fields }) {
   const { volume, book, chapter } = volumeBookChapter(height);
   const cite = `${reference(height)} §${index + 1}`;
   const liveUrl = `${SITE}/bitcoin-book.html?txid=${txid}`;
-  const chapterEvents = NOTABLE
-    .filter((e) => e.id === String(height) && e.page !== 'book')
-    .map((e) => e.title);
+  const chapterEvents = PLACES
+    .filter((p) => p.id === String(height) && !p.page && !p.address)
+    .map(placeTitle);
 
   const md = [];
   md.push(`# ${title}`);
@@ -230,17 +299,20 @@ export function passageMd({ title, height, blockHash, header, txCount, txid, ind
   md.push('');
   md.push(sectionMd({ txid, fields, sectionNum: index + 1, eventTitle: title }));
   md.push('');
+  // The annotation layer, where this passage has one. A static passage is
+  // generated from exactly one curated entry, so it prints that entry's
+  // readings -- no matching to do.
+  md.push(...await commentaryMd(entry || { title, commentary: [] }));
   md.push('---');
   md.push('');
   md.push(`*Reading the notation:* italic prose passages are Glossia encodings of the raw`);
   md.push(`bytes (decodable with the [glossia](https://crates.io/crates/glossia) engine,`);
   md.push(`wordlist \`bip39\`, language \`english\`); glyphs are the book's script notation`);
   md.push(`(opcode and data marks); small structural integers (version, counts, values,`);
-  md.push(`locktime) are printed literally. A block hash reads ⌘ᵐ … ⓪ⁿ — the m`);
-  md.push(`bits of double-SHA256 (⌘, OP_HASH256) the prose encodes, then the n`);
-  md.push(`leading proof-of-work zero bits, which land after the words because the`);
-  md.push(`prose is written in the order the hash was taken, not the order it is`);
-  md.push(`printed (m + n = 256, ⌈m/8⌉ bytes encoded). See`);
+  md.push(`locktime) are printed literally. A block hash reads ⌘ᵐ <prose> ⓪ⁿ — the`);
+  md.push(`m = 256 − n bits of the double-SHA256 (⌘, OP_HASH256), Glossia-encoded as`);
+  md.push(`⌈m/8⌉ bytes, then the n proof-of-work zero bits that follow them in the`);
+  md.push(`internal-order bytes the prose encodes. See`);
   md.push(`[/llms.txt](${SITE}/llms.txt) for how any other passage on the chain can be`);
   md.push(`fetched and read the same way.`);
   md.push('');
@@ -309,19 +381,28 @@ async function blockContext(height) {
   return { blockHash, headerHex, block: meta, header: parseBlockHeader(headerHex), txCount: meta.tx_count };
 }
 
-async function renderEntry(entry, seed) {
-  if (entry.page === 'book' || entry.id === '-1') return null;   // a leaf / the moving tip — no static passage
+async function renderEntry(place, seed) {
+  // A leaf, a name, or the moving tip: no static passage to render.
+  if (place.page || place.address || place.id === '-1') return null;
+  const entry = place.entry;
+  const title = placeTitle(place);
 
   let height, index, txid;
-  if (isTxid(entry.id)) {
-    txid = entry.id.toLowerCase();
+  const fromTxid = isTxid(place.id);
+  // Which level of the citation this row names. A transaction id names a
+  // section outright; a height with an explicit `index` names that section
+  // (the twice-confirmed coinbases and the supply-cap bug are cited this way);
+  // a bare height names the chapter -- the block itself.
+  const isChapter = !fromTxid && place.index === undefined;
+  if (fromTxid) {
+    txid = place.id.toLowerCase();
     const proof = await esplora(`/tx/${txid}/merkle-proof`, 'json');
     if (!proof) return null;
     height = proof.block_height;
     index = proof.pos;
   } else {
-    height = parseInt(entry.id, 10);
-    index = entry.index ?? 0;                        // a block entry reads from its coinbase
+    height = parseInt(place.id, 10);
+    index = place.index ?? 0;                        // a block place reads from its coinbase
   }
 
   const ctx = await blockContext(height);
@@ -342,17 +423,60 @@ async function renderEntry(entry, seed) {
   try { outputs = (await esplora(`/tx/${txid}`, 'json'))?.vout ?? null; } catch { /* stays on-demand */ }
 
   addToSeed(seed, {
-    entryId: entry.id, height, blockHash: ctx.blockHash, block: ctx.block,
+    entryId: place.id, height, blockHash: ctx.blockHash, block: ctx.block,
     headerHex: ctx.headerHex, txid, pos: index, txHex: hex, txids, outputs,
   });
 
+  // The section in the shape the page and the card set it: composed fields
+  // plus rendered witness HTML, exactly as the reply bot builds it.
+  // One witness per input, as BIP144 serializes them -- see the same rule in
+  // tools/twitter-bot/bot.mjs. Dense, so a footnote's letter is its input's
+  // position rather than its place in a filtered run.
+  const witnessOf = (inp) =>
+    (inp.witnessHex ? (inp.witnessZero ? '∅' : renderWitness(inp.witnessItems, encodeCapped)) : null);
+  const section = {
+    ...sectionParts(fields, witnessOf),
+    fields,
+    footnotesHtml: fields.inputs.map(witnessOf),
+  };
+
+  // The chapter head: the block hash as prose in its ⌘ᵐ … ⓪ⁿ notation, and the
+  // header's fields as frontispiece rows -- the same fields, in the same wire
+  // order, that frontispieceMd writes for the markdown passage.
+  const bh = blockHashParts(ctx.blockHash);
+  const hf = composeBlockHeaderFields(ctx.header);
+  const isGenesisPrev = ctx.header.prevBlockHash === '00'.repeat(32);
+  const prevParts = isGenesisPrev ? null : blockHashParts(ctx.header.prevBlockHash);
+  const frontispieceRows = [
+    { mark: 'v', text: htmlToText(hf.version) },
+    isGenesisPrev
+      ? { text: `⓪${toSuperscript(256)} — no earlier block; this is the genesis block` }
+      : { text: hashNotation(prevParts, proseOf(prevParts.hex)) },
+    { mark: '⋔', text: proseOf(reverseHex(ctx.header.merkleRoot)), gap: true },
+    { text: hf.timestamp },
+    hf.bitsExpr
+      ? { mark: htmlToText(hf.bits), text: `< ${hf.bitsExpr}`, gap: true }
+      : { text: htmlToText(hf.bits) },
+    { mark: 'η', text: hf.nonce, gap: true },
+  ];
+
   return {
-    slug: slugify(entry.title),
-    title: entry.title,
+    slug: slugify(title),
+    title,
+    fromTxid,
+    isChapter,
     height,
     index,
     txid,
-    md: passageMd({ title: entry.title, height, index, txid, fields, ...ctx }),
+    blockHash: ctx.blockHash,
+    txCount: ctx.txCount,
+    section,
+    blockProse: proseOf(bh.hex),
+    blockHashNotation: `<span class="cfx-gold">⓪</span><span class="op op-push">${toSuperscript(bh.zeroBits)}</span> ` +
+      `<span class="cfx-gold">⌘</span><span class="op op-push">${toSuperscript(bh.remainBits)}</span>`,
+    frontispieceRows,
+    txidProse: proseOf(reverseHex(txid)),
+    md: await passageMd({ title, entry, height, index, txid, fields, ...ctx }),
   };
 }
 
@@ -371,18 +495,25 @@ export function indexMd(rendered) {
   md.push('scheme, and how to read passages beyond this curated set.');
   md.push('');
   for (const r of rendered) {
-    md.push(`- [${r.title}](./${r.slug}.md) — ${reference(r.height)} §${r.index + 1}`);
+    md.push(`- [${r.title}](./${r.slug}.md) — ${reference(r.height)} §${r.index + 1} ` +
+      `([as a page](${SITE}${passagePath(r.height, r.isChapter ? null : r.index + 1)}))`);
   }
   md.push('');
   return md.join('\n');
 }
 
-export function sitemapXml(rendered) {
+export function sitemapXml(rendered, outputPaths = []) {
   const pages = [
     '', 'bitcoin-book.html', 'bitcoin-contents.html', 'bitcoin-front.html',
+    'bitcoin-appendix.html?part=mempool', 'bitcoin-appendix.html?part=future',
     'bitcoin-search.html', 'bitcoin-ledger.html', 'bitcoin-ledgers.html',
     'preface.md', 'llms.txt', 'passages/index.md',
     ...rendered.map((r) => `passages/${r.slug}.md`),
+    // The citation paths: a passage's canonical, shareable address, each
+    // carrying its own card (see tools/passage-page.mjs). Listed without the
+    // leading slash passagePath returns, since SITE supplies it.
+    ...passagesByPath(rendered).map((r) => passagePath(r.height, r.isChapter ? null : r.index + 1).slice(1)),
+    ...outputPaths.map((p) => p.slice(1)),
   ];
   const urls = pages.map((p) => `  <url><loc>${SITE}/${p}</loc></url>`).join('\n');
   return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`;
@@ -402,21 +533,164 @@ async function main() {
   const rendered = [];
   const seed = emptySeed();
   let skipped = 0;
-  for (const entry of NOTABLE) {
+  for (const place of PLACES) {
     try {
-      const r = await renderEntry(entry, seed);
+      const r = await renderEntry(place, seed);
       if (!r) { skipped++; continue; }
       await writeFile(new URL(`${r.slug}.md`, OUT_DIR), r.md);
       rendered.push(r);
       console.log(`  ok  ${r.slug}.md  (${reference(r.height)} §${r.index + 1})`);
     } catch (e) {
       skipped++;
-      console.warn(`  SKIP ${entry.title}: ${e.message}`);
+      console.warn(`  SKIP ${placeTitle(place)}: ${e.message}`);
     }
   }
 
+  // ─── the citation pages, and their cards ──────────────────────────────
+  //
+  // Each passage gets a page at its own citation path, carrying its own
+  // og:image. The card is rendered by the reply bot's renderer (headless
+  // Chromium), which is optional here exactly as it is there: without it the
+  // pages still ship and fall back to the site's standing card, so a deploy
+  // never turns on a browser being installable.
   await writeFile(new URL('index.md', OUT_DIR), indexMd(rendered));
-  await writeFile(SITEMAP, sitemapXml(rendered));
+
+  let renderer = null;
+  try { renderer = await loadRenderer(); } catch { /* pages without cards */ }
+  if (!renderer && rendered.length) {
+    console.warn('  no image renderer — citation pages will ship with the standing card');
+  }
+  let cards = 0;
+  const outputPaths = [];          // the output pages written, for the sitemap
+  const pages = passagesByPath(rendered);
+  for (const r of pages) {
+    // A row names a chapter or a section, and each gets the page its citation
+    // addresses: /I/1/1/ for the block, /I/1/1/1/ for the transaction that
+    // opens it. Both carry a card of their own head.
+    const sectionNum = r.isChapter ? null : r.index + 1;
+    let cardUrl = null;
+    if (renderer) {
+      try {
+        const passage = r.isChapter
+          ? {
+            cite: reference(r.height), title: r.title, chapter: true,
+            blockProse: r.blockProse, blockHashNotation: r.blockHashNotation,
+            frontispieceRows: r.frontispieceRows,
+          }
+          : {
+            cite: `${reference(r.height)} §${sectionNum}`, title: r.title, sectionNum,
+            txidProse: r.txidProse, section: r.section,
+          };
+        const { png } = await renderer.render(passage,
+          { site: SITE, width: CARD_WIDTH, height: CARD_HEIGHT });
+        await mkdir(CARDS_DIR, { recursive: true });
+        await writeFile(new URL(cardPath(r.height, sectionNum).replace(/^\/cards\//, ''), CARDS_DIR), png);
+        cardUrl = SITE + cardPath(r.height, sectionNum);
+        cards++;
+      } catch (e) {
+        console.warn(`  card SKIP ${r.slug}: ${e.message}`);
+      }
+    }
+
+    // How many of this section's outputs get their own page. A chapter has
+    // none of its own; a section's are capped, and the drop is stated.
+    const outCount = r.isChapter ? 0 : (r.section?.fields?.outputs?.length ?? 0);
+    const outPages = Math.min(outCount, MAX_OUTPUT_PAGES);
+    if (outCount > outPages) {
+      console.log(`  (${r.slug}: ${outCount - outPages} of ${outCount} outputs left without pages, past the cap of ${MAX_OUTPUT_PAGES})`);
+    }
+
+    const dir = new URL(`.${passagePath(r.height, sectionNum)}`, WEB_DIR);
+    await mkdir(dir, { recursive: true });
+    const html = r.isChapter
+      ? chapterPageHtml({
+        site: SITE, height: r.height, title: r.title,
+        blockProse: r.blockProse, blockHashNotation: r.blockHashNotation,
+        frontispieceRows: r.frontispieceRows, txCount: r.txCount,
+        blockHash: r.blockHash, cardUrl, slug: r.slug,
+        // The curated sections of this block, so a chapter page leads to the
+        // passages the contents names inside it.
+        sections: pages
+          .filter((x) => !x.isChapter && x.height === r.height)
+          .map((x) => ({ num: x.index + 1, title: x.title }))
+          .sort((a, b) => a.num - b.num),
+      })
+      : passagePageHtml({
+        site: SITE, height: r.height, sectionNum, title: r.title,
+        txidProse: r.txidProse, section: r.section, txCount: r.txCount,
+        blockHash: r.blockHash, txid: r.txid, cardUrl, slug: r.slug,
+        outputs: outPages,
+        witnesses: Math.min(r.section?.footnotesHtml?.length ?? 0, MAX_OUTPUT_PAGES),
+      });
+    await writeFile(new URL('index.html', dir), html);
+    console.log(`  ${r.isChapter ? 'chapter' : 'section'} ${passagePath(r.height, sectionNum)}${cardUrl ? '  + card' : ''}`);
+
+    // …and a page per output, each with a card of its own line.
+    for (let o = 0; o < outPages; o++) {
+      let outCardUrl = null;
+      if (renderer) {
+        try {
+          const { png } = await renderer.render({
+            cite: citationOf(r.height, sectionNum, o), title: r.title,
+            sectionNum, outputNum: o, section: r.section, txidProse: r.txidProse,
+          }, { site: SITE, width: CARD_WIDTH, height: CARD_HEIGHT });
+          await writeFile(new URL(cardPath(r.height, sectionNum, o).replace(/^\/cards\//, ''), CARDS_DIR), png);
+          outCardUrl = SITE + cardPath(r.height, sectionNum, o);
+          cards++;
+        } catch (e) {
+          console.warn(`  card SKIP ${r.slug} §${sectionNum}.${o}: ${e.message}`);
+        }
+      }
+      const outDir = new URL(`.${passagePath(r.height, sectionNum, o)}`, WEB_DIR);
+      await mkdir(outDir, { recursive: true });
+      await writeFile(new URL('index.html', outDir), outputPageHtml({
+        site: SITE, height: r.height, sectionNum, outputNum: o, title: r.title,
+        section: r.section, txid: r.txid, cardUrl: outCardUrl, slug: r.slug,
+      }));
+      outputPaths.push(passagePath(r.height, sectionNum, o));
+    }
+
+    // …and one per witness, addressed by its footnote letter. There are as
+    // many as the section has witness-bearing inputs, which is bounded by its
+    // input count; the same cap applies.
+    // A witness page per input that has one, addressed by that input's
+    // letter -- so §1.b is always input 2's witness.
+    const dense = r.isChapter ? [] : (r.section?.footnotesHtml ?? []);
+    const notes = dense.map((f, i) => ({ f, i })).filter(({ f }) => f != null);
+    const notePages = Math.min(notes.length, MAX_OUTPUT_PAGES);
+    if (notes.length > notePages) {
+      console.log(`  (${r.slug}: ${notes.length - notePages} of ${notes.length} witnesses left without pages, past the cap of ${MAX_OUTPUT_PAGES})`);
+    }
+    for (let k = 0; k < notePages; k++) {
+      const { f: note, i: inputIndex } = notes[k];
+      const w = inputIndex;
+      const mark = witnessSegment(inputIndex + 1);
+      let witCardUrl = null;
+      if (renderer) {
+        try {
+          const { png } = await renderer.render({
+            cite: citationOf(r.height, sectionNum, mark), title: r.title,
+            sectionNum, witnessMark: mark, witnessHtml: note, txidProse: r.txidProse,
+          }, { site: SITE, width: CARD_WIDTH, height: CARD_HEIGHT });
+          await writeFile(new URL(cardPath(r.height, sectionNum, mark).replace(/^\/cards\//, ''), CARDS_DIR), png);
+          witCardUrl = SITE + cardPath(r.height, sectionNum, mark);
+          cards++;
+        } catch (e) {
+          console.warn(`  card SKIP ${r.slug} §${sectionNum}.${mark}: ${e.message}`);
+        }
+      }
+      const witDir = new URL(`.${passagePath(r.height, sectionNum, mark)}`, WEB_DIR);
+      await mkdir(witDir, { recursive: true });
+      await writeFile(new URL('index.html', witDir), witnessPageHtml({
+        site: SITE, height: r.height, sectionNum, footnoteIndex: inputIndex + 1, title: r.title,
+        witnessHtml: note, txid: r.txid, cardUrl: witCardUrl, slug: r.slug,
+      }));
+      outputPaths.push(passagePath(r.height, sectionNum, mark));
+    }
+  }
+  if (renderer) await renderer.close();
+
+  await writeFile(SITEMAP, sitemapXml(rendered, outputPaths));
   // The archive seed rides with the passages -- but only when something
   // rendered: an explorer outage must not ship an empty seed, whose stamp
   // would mark first-time readers as provisioned with nothing.
@@ -427,7 +701,8 @@ async function main() {
       `${Object.keys(seed.tx).length} transactions, ${Object.keys(seed.txids).length} txid lists, ` +
       `${Object.keys(seed.citations).length} citations (${Math.round(json.length / 1024)} KB)`);
   }
-  console.log(`\n${rendered.length} passages rendered, ${skipped} skipped.`);
+  console.log(`\n${rendered.length} passages rendered, ${skipped} skipped; ` +
+    `${pages.length} citation pages, ${outputPaths.length} output/witness pages, ${cards} cards.`);
   if (!rendered.length) {
     // Still exit 0: an explorer outage must not block the site deploy. The
     // shell, llms.txt and sitemap still ship; passages return next deploy.
