@@ -895,6 +895,16 @@ function closeSheet(sheet) {
   setTimeout(() => { if (sheet.classList.contains('closing')) done(); }, 400);
 }
 
+// A sheet is a panel over the page, so a click on the page puts it down --
+// the same rule the settings panel keeps. The exemption is the nav bar the
+// sheet is anchored to: its steppers page the book, and a reader paging with
+// the key open is watching it follow the page (see refreshNotationKey), not
+// asking to be rid of it.
+document.addEventListener('click', (e) => {
+  if (e.target.closest && e.target.closest('.section-nav')) return;
+  for (const sheet of document.querySelectorAll('.section-nav .nav-sheet')) closeSheet(sheet);
+});
+
 // Swipe a sheet away: a drag downward that begins with the panel already
 // scrolled to its top puts it down. The sheet is a panel over the page, and
 // pushing it back down is the gesture its shape suggests; scrolled anywhere
