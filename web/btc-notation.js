@@ -188,7 +188,6 @@ export const NOTATION_HTML = `
               <div class="glyph-row"><span class="g">η<sub><i>n</i></sub></span><span class="m"><b>extranonce</b> — search space beyond the header's η, the counter a miner rolls once the header's 32 bits are exhausted. It follows the opening mark in either era: behind ■ from BIP34 on, behind β before it, its value subscript in both. Read as the number it is, like the header's own nonce — which also keeps it out of the margin below, where a counter's bytes are entropy and better than a third of them pass for printable text by chance</span></div>
               <div class="glyph-row"><span class="g">⋔<sub>w</sub></span><span class="m">the <b>witness commitment</b> — in the coinbase, an OP_RETURN carrying ⌘(witness-tree root ‖ reserved value): the block's witnesses — its footnotes — bound to the chain through §1. The root is committed, never written; no wtxid appears on chain, only this testimony to all of them</span></div>
             </div>
-            <p class="notation-note">Nothing on chain marks where a miner's tag ends and his counter begins — the margin is one byte string, and the seam is not written down. So a counter byte that happens to be printable reads inside the quotation, and the quotation is the bytes, not the pool's intent. The book states what is there and declines to guess the seam: the older reading guessed, and turned a pool's own <span class="op">|</span> into an opcode.</p>
           </div>
 
           <div class="notation-group">
@@ -286,7 +285,6 @@ export const NOTATION_HTML = `
               <div class="glyph-row"><span class="g"><b>⋔</b></span><span class="m"><b>merkle proof</b> — the revealed leaf's path in the taptree</span></div>
               <div class="glyph-row"><span class="g"><b>a</b></span><span class="m"><b>annex</b> (reserved Taproot spend data)</span></div>
             </div>
-            <p class="notation-note">A push of known length carries its byte count as a superscript on the mark — <b>h</b>²⁰, <b>p</b>⁶⁵; a bare, untyped push keeps its count leading (²⁰). One mark is the exception: ⌘'s superscript counts <i>bits</i> — the chapter head's block hashes read ⌘ᵐ … ⓪ⁿ, the proof-of-work zeros in the mining trade's own unit, standing after the prose as they stand after its bytes. <b>Bold</b> where the datum is on chain — a lock, or what a spend writes; <b>plain</b> where a spend introduces it at validation.</p>
           </div>
 
           <div class="notation-group">
