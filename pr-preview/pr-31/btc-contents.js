@@ -18,7 +18,7 @@
 import { reference } from './btc-citation.js';
 import { looksLikeAddress } from './btc-lookup.js';
 
-export { loadNotables, notables } from './btc-notables.js';
+export { loadNotables, notables, places, placeTitle } from './btc-notables.js';
 
 // A bare non-negative integer is an absolute block height. A negative integer is
 // a height relative to the chain tip (-1 = latest block), resolved online.
@@ -57,10 +57,11 @@ export function refFromProof(height, pos) {
 // relative block id opens as ?block= (with an optional ?index= selecting a
 // transaction within the block); a 64-hex value (block hash or txid) opens as
 // ?txid=, which the book resolves as a block first and a transaction second. A
-// `page` of 'book' or 'volume' opens that leaf (?page=…) instead of a chapter, and an `out` -- which
-// only a §section.output reference gives an entry -- lands on that output within
-// the section, exactly as a citation carrying one does.
-export function entryHref(id, index, page, out) {
+// `page` of 'book' or 'volume' opens that leaf (?page=…) instead of a chapter,
+// and an output -- a bookmarked one, or the one a §section.output reference
+// names -- lands on that output within the section rather than on the section
+// alone, exactly as a citation carrying one does.
+export function entryHref(id, index, page, vout = null) {
   // An address is a name, not a place: it has no chapter to open, and reads in
   // the Ledger -- the same hand-off the search box makes.
   if (looksLikeAddress(id)) return `bitcoin-ledger.html?address=${id}`;
@@ -68,6 +69,6 @@ export function entryHref(id, index, page, out) {
   const q = isBlock ? `block=${id}` : `txid=${id}`;
   if (isBlock && (page === 'book' || page === 'volume')) return `bitcoin-book.html?${q}&page=${page}`;
   const idx = isBlock && index != null ? `&index=${index}` : '';
-  const o = out != null ? `&out=${out}` : '';
-  return `bitcoin-book.html?${q}${idx}${o}`;
+  const out = vout == null ? '' : `&out=${vout}`;
+  return `bitcoin-book.html?${q}${idx}${out}`;
 }
