@@ -196,18 +196,61 @@ export const NOTABLE = [
   // shows bit 4 set (…10000), the same bit BIP91 once flew.
   { title: 'First BIP110 signaling block', id: '938903' },
   { title: 'Latest block', id: '-1' },
-  // The one activation block that does not exist yet: BIP42 (April 1, 2014)
-  // capped the subsidy schedule where the 64th halving's undefined bit-shift
-  // would have resurrected the 50-BTC reward. Its rules first bind at height
-  // 13,440,000 -- LXV β1 ■1, the opening chapter of Volume 65, due around the
-  // year 2262. Cited now, mineable later; until then its lookup answers
-  // "Block not found. Come back in the year 2262."
-  { title: 'BIP42 activation (21M cap)', id: '13440000' },
 ];
 
 // A block entry may carry an `index`: the transaction's position within the
 // block (0-based), rendered as its §section and passed to the book as ?index=.
 // e.g. { title: '…', id: '100000', index: 1 } opens block 100000, §2.
+
+// ── The appendix ──────────────────────────────────────────────────────────
+// A chain with no last block has no back, which is why the sigla sit in the
+// front matter (see the README). What can still be gathered at the end is an
+// appendix to the CONTENTS: entries that belong to the book but not to its
+// reading order, since reading order is the order blocks were mined and
+// these have not been.
+//
+// Part one, the provisional chapters. A height is a citation the moment
+// consensus fixes it, whether or not a block has reached it: the reference
+// is exact and computable today, and only the ■ is unearned -- so these
+// entries print the expected mark □, the same mark the mempool's projections
+// wear, and their lookups answer with a date instead of a page. They are
+// listed apart rather than in reading order because a chapter cited before
+// it exists cannot be read in sequence with chapters that do: dropped in
+// among the volumes, BIP42 alone opened a Volume LXV two centuries wide.
+//
+// Ordered by height, as the contents are. `entries` take the same shape as
+// NOTABLE's -- `id` is handed to the same lookup -- with a `note` carrying
+// the caveat the row shows on hover. Editorial, like the titles: what is
+// promised here is a citation, not a prophecy.
+export const APPENDIX = [
+  {
+    part: 'Provisional chapters',
+    note: 'Chapters whose citations are fixed but whose blocks are unmined: consensus has named the height, the chain has yet to reach it. Each reference carries □, the expected-chapter mark, until a block earns it the ■.',
+    entries: [
+      // BIP110 (reduced_data, the 2026 temporary data-limit attempt; bit 4,
+      // 55% of a signaling window): nothing has activated to cite -- ~0.5%
+      // signaling as of July 2026 -- but its BIP8-style heights are citable
+      // sight unseen, three real retarget boundaries one book apart, sharing
+      // a chapter number. Conditional in a way BIP42's height is not: the
+      // blocks will be mined either way, on schedule, and will carry these
+      // names only if the fork locks in. The signaling story's exemplar is
+      // already in the contents proper: the first bit-4 block, V β50 ■120.
+      { title: 'BIP110 mandatory signaling', id: '961632',
+        note: 'BIP8-style flag height — mandatory signaling from 961,632, should BIP110 lock in. ~0.5% of blocks signaling as of July 2026, against a 55% threshold.' },
+      { title: 'BIP110 lock-in', id: '963648',
+        note: 'Lock-in by 963,648, one book on, should the threshold be met.' },
+      { title: 'BIP110 activation', id: '965664',
+        note: 'Activation at 965,664, one book after lock-in — the height where the reduced data limit would first bind.' },
+      // The one activation block whose height is already consensus and still
+      // will not exist for two centuries: BIP42 (April 1, 2014) capped the
+      // subsidy schedule where the 64th halving's undefined bit-shift would
+      // have resurrected the 50-BTC reward. Cited now, mineable later; until
+      // then its lookup answers "Block not found. Come back in the year 2262."
+      { title: 'BIP42 activation (21M cap)', id: '13440000',
+        note: 'The book’s last chapter, and the only one whose date is already known: BIP42’s cap first binds at 13,440,000, the opening chapter of Volume LXV, due around the year 2262.' },
+    ],
+  },
+];
 
 // More transaction-level entries still to confirm against the chain before
 // adding: the first P2TR output ever (a purse.io withdrawal of 5,431 sats,
@@ -218,11 +261,7 @@ export const NOTABLE = [
 // version-rolled (overt-AsicBoost, BIP320) block -- no canonical height
 // exists, so it needs a chain scan to identify a good exemplar whose
 // frontispiece breaks the accio.abandon idiom.
-
-// BIP110 (reduced_data, the 2026 temporary data-limit attempt; bit 4, 55% of
-// a signaling window): nothing activated to cite -- ~0.5% signaling as of
-// July 2026. Its BIP8-style heights are citable sight unseen should it ever
-// lock in: mandatory signaling from 961,632 (V β61 ■673), lock-in by 963,648
-// (V β62 ■673), activation at 965,664 (V β63 ■673) -- three real retarget
-// boundaries, one book apart, sharing a chapter number. The signaling story's
-// exemplar is already in the list: the first bit-4 block, V β50 ■120.
+//
+// These are candidates, not citations, so they stay comments: the appendix's
+// provisional part lists chapters whose references are already exact, not
+// chapters whose subjects are still being looked for.

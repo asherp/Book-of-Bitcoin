@@ -103,7 +103,14 @@ compiled to WASM) is consumed as a published
 - `web/preface.md` — the preface itself, in Markdown: the canonical copy,
   readable here in the repository and rendered into the leaf above, so the
   book and the repository cannot drift apart
-- `web/bitcoin-contents.html` — table of contents / notable blocks
+- `web/bitcoin-contents.html` — table of contents / notable blocks. It runs
+  past the chain tip twice over: the mempool continues it as projected
+  chapters right after the latest block's row, and an appendix closes it —
+  back matter for what reading order cannot carry, since reading order is
+  the order blocks were mined. Its first part, the provisional chapters,
+  lists heights consensus has already fixed (BIP42's 21M cap at 13,440,000;
+  BIP110's flag heights, should it lock in), cited in full but marked □
+  until a block earns them the ■
 - `web/bitcoin-ledger.html` — the Ledger: a compendium of every ledger
   (curated donation addresses, any the reader keeps, and ad-hoc
   `?address=a,b,…` queries) in one document, read the way the book is

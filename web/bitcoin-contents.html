@@ -164,10 +164,11 @@ a:hover { text-decoration: underline; }
 .toc-bm { display:inline-block; width:9px; height:12px; margin-right:8px; color:var(--accent); vertical-align:baseline; }
 .toc-bm svg { display:block; width:100%; height:100%; }
 
-/* Projected chapters -- the mempool, ordered as a miner would mine it. These
-   continue the contents past the tip, so they dress like ordinary rows but in
-   the manuscript's pencil rather than its ink: dim titles and meta-grey
-   references (a provisional number, not a citation). */
+/* Unmined chapters -- the mempool's projections below, and the appendix's
+   provisional chapters at the foot of the page. Both continue the contents
+   past the tip, so they dress like ordinary rows but in the manuscript's
+   pencil rather than its ink: dim titles and meta-grey references (a
+   provisional number, not a citation). */
 .toc-proj-head { display:flex; align-items:baseline; gap:14px; }
 .toc-proj-src { font:400 10px/1 'IBM Plex Mono',monospace; letter-spacing:.08em; text-transform:none; color:var(--meta); }
 .toc-entry.projected .toc-title { color:var(--dim); font-style:italic; }
@@ -177,6 +178,11 @@ a:hover { text-decoration: underline; }
 .toc-proj-eta { font:500 11px/1.4 'IBM Plex Mono',monospace; letter-spacing:.04em; color:var(--meta); flex:none; min-width:74px; font-variant-numeric:tabular-nums; }
 /* The closing figures -- queue total, eviction floor -- are a note, not a row. */
 .toc-proj-note { padding:10px 2px 2px 16px; font:400 12px/1.6 'Public Sans',sans-serif; color:var(--meta); }
+
+/* The appendix's parts each open with a note saying what their rows are and
+   why they sit outside reading order -- set like the mempool's closing
+   figures, indented to its rows. */
+.toc-part-note { padding:8px 2px 6px 32px; font:400 12px/1.6 'Public Sans',sans-serif; color:var(--meta); }
 </style>
 <body>
 <div class="wrap">
@@ -193,7 +199,7 @@ a:hover { text-decoration: underline; }
 </div>
 
 <script type="module">
-import { NOTABLE, isBlockId, isRelativeBlockId, entryHref, blocksEta } from './btc-contents.js';
+import { NOTABLE, APPENDIX, isBlockId, isRelativeBlockId, entryHref, blocksEta } from './btc-contents.js';
 import { volumeBookChapter, toRoman } from './btc-citation.js';
 import { storeGet, storePut } from './btc-store.js';
 import { seedArchive } from './btc-seed.js';
@@ -375,6 +381,48 @@ function frontEl({ title, leaf }) {
   return row;
 }
 
+// ── The appendix: the contents' back matter ───────────────────────────────
+// What belongs to the book but not to its reading order -- reading order
+// being the order blocks were mined. Part one, the provisional chapters:
+// heights consensus has already fixed, cited in full but marked □, the
+// expected-chapter mark the mempool's projections wear, since no block has
+// earned them an ■. Every row still links into the book, which answers an
+// unmined height with the date it is due instead of a page. The parts and
+// their entries are editorial (btc-contents-data.js); this only sets them,
+// and does so offline -- an expected reference is computed from its height.
+function appendixEl(part) {
+  const frag = document.createDocumentFragment();
+  frag.append(head('toc-book', part.part));
+  if (part.note) {
+    const n = document.createElement('div');
+    n.className = 'toc-part-note';
+    n.textContent = part.note;
+    frag.append(n);
+  }
+  for (const e of part.entries) frag.append(provisionalEl(e));
+  return frag;
+}
+
+// One provisional row, dressed like a projected chapter: the title, then the
+// whole expected reference -- volume and all, since no Volume heading stands
+// above the appendix to have named it already.
+function provisionalEl(entry) {
+  const height = Number(entry.id);
+  const row = document.createElement('a');
+  row.className = 'toc-entry under-book projected';
+  row.href = entryHref(entry.id);
+  const t = document.createElement('span');
+  t.className = 'toc-title';
+  t.textContent = entry.title;
+  if (entry.note) t.title = entry.note;
+  const r = document.createElement('span');
+  r.className = 'toc-ref';
+  r.textContent = expRef(height);
+  r.title = `expected — block ${height.toLocaleString()} has not been mined, so its chapter carries □ rather than ■`;
+  row.append(t, r);
+  return row;
+}
+
 function render() {
   toc.replaceChildren();
   toc.append(head('toc-vol', 'Front matter'));
@@ -405,12 +453,18 @@ function render() {
     for (const e of stranded) toc.append(entryEl(e, false));
   }
   // The contents run on past the tip: the projected chapters slot in directly
-  // after the latest block's row -- between the written book and the entries
-  // (BIP42) whose heights outreach any mempool. Without a resolved tip there
-  // is no row to anchor to (and no heights to project), so the section waits.
+  // after the latest block's row, closing the volumes with the chapters the
+  // queue is already forming. Without a resolved tip there is no row to
+  // anchor to (and no heights to project), so the section waits.
   if (projectedSection) {
     const tipRow = toc.querySelector('.toc-entry[data-entry-id="-1"]');
     if (tipRow) tipRow.after(projectedSection);
+  }
+  // Last, the appendix: the heights cited before their blocks exist, too far
+  // out for any mempool to reach and so outside reading order entirely.
+  if (APPENDIX.length) {
+    toc.append(head('toc-vol', 'Appendix'));
+    for (const part of APPENDIX) toc.append(appendixEl(part));
   }
 }
 
