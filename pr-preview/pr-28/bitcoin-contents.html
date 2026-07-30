@@ -427,10 +427,13 @@ function chaptersEl(part) {
 
 // Appendix III: the shelf of ledgers -- the curated ones, then any the reader
 // keeps, which fly the same ribbon a reader's bookmark flies in the contents
-// above. A ledger has no one citation to print, so its address stands in the
-// reference's place; a ledger of several is named by its first, counted after.
-// The rows open the Ledger compendium at that ledger, the way a contents row
-// opens the book at its chapter.
+// above. These rows take the dash the front matter takes, and for a plainer
+// reason than an unresolved lookup: a ledger has no reference because the
+// chain never writes an address. It writes the script an address stands for,
+// and the ledger's chapters are discovered from that as it is read -- so
+// there is nothing to cite here, only somewhere to go. The rows open the
+// Ledger compendium at that ledger, the way a contents row opens the book at
+// its chapter.
 function ledgersEl(part) {
   const { frag } = partHead(part);
   const kept = keptLedgers().filter((k) => !INDEXED.some((e) => sameAddresses(e.addresses, k.addresses)));
@@ -450,12 +453,12 @@ function ledgerEl(ledger, isKept) {
     bm.innerHTML = '<svg viewBox="0 0 12 16"><path fill="currentColor" d="M0 0h12v16l-6-4-6 4z"/></svg>';
     t.append(bm);
   }
+  // A kept ledger may carry no title of its own; then its first address
+  // names it -- as a name, which is what the index is a list of.
   t.append(document.createTextNode(ledger.title || shortAddr(ledger.addresses[0])));
   const r = document.createElement('span');
   r.className = 'toc-ref none';
-  const more = ledger.addresses.length - 1;
-  r.textContent = shortAddr(ledger.addresses[0]) + (more ? ` +${more}` : '');
-  r.title = ledger.addresses.join('\n');
+  r.textContent = '—';
   row.append(t, r);
   return row;
 }

@@ -226,10 +226,11 @@ export const NOTABLE = [
 //       read in sequence with chapters that do: dropped in among the
 //       volumes, BIP42 alone opened a Volume LXV two centuries wide.
 //   III Ledgers -- the shelf of curated ledgers (btc-index-data.js), and
-//       any the reader keeps. Addresses, not chapters: an entry here cites
-//       no one place but a run of them, discovered at read time, so it
-//       carries its address where a chapter carries its reference. The
-//       contents and the index are inverses; this is where the contents
+//       any the reader keeps. Addresses, not chapters, and so the only
+//       entries in the contents with no reference at all: the chain never
+//       writes an address, only the script one stands for, and a ledger's
+//       chapters are discovered by reading rather than cited in advance.
+//       The contents and the index are inverses; this is where the contents
 //       points at the other one.
 //
 // A part's `kind` says who fills it: 'entries' is listed below, 'mempool'
@@ -274,7 +275,7 @@ export const APPENDIX = [
   {
     kind: 'ledgers',
     title: 'Ledgers',
-    note: 'Addresses the book keeps a ledger for, and any the reader keeps. A ledger cites no single chapter but the run of them its address appears in, discovered from the chain as it is read — so each is named by its address where a chapter is named by its reference.',
+    note: 'Addresses the book keeps a ledger for, and any the reader keeps. These carry no reference: the chain never writes an address, only the script one stands for, so a ledger is not cited but discovered — its chapters found by reading, and its run of them open-ended.',
   },
 ];
 
