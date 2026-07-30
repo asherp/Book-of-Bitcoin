@@ -101,7 +101,9 @@ test('a post-BIP34 coinbase opens with ■height and reads no opcodes after it',
   const script = fields.inputs[0].script;
 
   assert.match(script, /■960281/, 'the height is written raw, under its mark');
-  assert.match(script, /op-blockmark/, 'the mark declines the drop cap');
+  // The mark opens the body, so the ■ takes the drop cap and the height reads
+  // on from it at one size -- which only holds while the mark leads the line.
+  assert.ok(script.startsWith('<span class="op op-blockmark"'), 'the mark leads the body line');
   assert.ok(script.includes('MARA Made in USA'), 'the pool tag is quoted');
   assert.ok(script.includes('|v05'), 'including the punctuation the pool wrote');
 

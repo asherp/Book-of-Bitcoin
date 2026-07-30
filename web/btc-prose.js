@@ -493,9 +493,12 @@ export function bip34HeightPush(hex) {
 }
 
 // The height mark: ■ with the raw height, carrying the push's whole meaning.
-// Marked op-blockmark so the body line can decline the drop cap -- ::first-letter
-// would blow up the ■ alone and leave its digits at prose size, tearing the mark
-// in half exactly as a bare push count would (see bitcoin-book.html's addLine).
+// Marked op-blockmark to name the span for what it is -- and this is the one
+// mark that WANTS the drop cap. ::first-letter takes the ■ and leaves the
+// height whole and at one size, so the block's own sigil is illuminated on the
+// block's own first page, with the number it states reading straight on from
+// it. (A bare push count can't do that: its cap would eat a digit and leave
+// the rest of the numeral behind. See bitcoin-book.html's addLine.)
 const blockHeightMark = (height) => `<span class="op op-blockmark" title="BIP34 — the block writes its own height, ${groupDigits(String(height))}, into the coinbase: the push that makes every coinbase distinct. Everything after it is the miner's own margin, under no rule">■${height}</span>`;
 
 // The miner's margin -> its display: readable runs quoted, everything between
