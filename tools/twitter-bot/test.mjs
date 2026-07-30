@@ -137,7 +137,8 @@ test('a section lays out in wire order with its sigla, witness as footnotes', ()
   const s = sectionParts(fields, (inp) => (inp.witnessItems.length ? 'φ sig ρ key' : null));
 
   assert.deepEqual(s.rows.map((r) => r.label), ['version', 'input', 'output', 'locktime']);
-  assert.match(s.rows[1].text, /^spends eeeeeeee…:1 — ⧉ some prose · ∞ ⁽1⁾$/);
+  // The footnote marker is a letter, matching the page and the live app.
+  assert.match(s.rows[1].text, /^spends eeeeeeee…:1 — ⧉ some prose · ∞ ⁽a⁾$/);
   assert.equal(s.rows[2].text, '50.00000000 ₿ — ⌗ prose ∇');
   assert.deepEqual(s.footnotes, ['φ sig ρ key']);
   assert.match(s.flat, /version 1\ninput spends/);   // the tweet's flowing form, sigla intact

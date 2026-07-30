@@ -16,6 +16,7 @@
 //   III β2 ■5        ->   /III/2/5/       a chapter: one block
 //   III β2 ■5 §1     ->   /III/2/5/1/     a section: one transaction
 //   III β2 ■5 §1.0   ->   /III/2/5/1/0/   an output of that transaction
+//   III β2 ■5 §1.a   ->   /III/2/5/1/a/   a witness of it, by its footnote
 //
 // each a directory with an index.html of its own: a title that is the
 // citation, an og:image (rendered by the same renderer the reply bot uses),
@@ -24,19 +25,20 @@
 // address; a prose gloss would only be commentary sitting where the record
 // belongs.
 //
-// Volume in Roman, then book, chapter, section and output as numerals — the
-// reference format the book already prints, with the sigla implied by
-// position. The path is invertible: heightOf(volume, book, chapter) gives the
-// height back, so the URL grammar and the citation scheme are the same
-// scheme. That is what makes it extend past the curated set later — a
-// renderer at the edge can answer any /V/B/C/S/O the same way, because
-// nothing about the path depends on it having been pre-rendered.
+// Volume in Roman, then book, chapter and section as numerals, and last an
+// output's index or a witness's letter — the reference format the book
+// already prints, with the sigla implied by position. The path is invertible:
+// heightOf(volume, book, chapter) gives the height back, and partOfSegment
+// reads the last segment, so the URL grammar and the citation scheme are the
+// same scheme. That is what makes it extend past the curated set later — a
+// renderer at the edge can answer any of these the same way, because nothing
+// about the path depends on it having been pre-rendered.
 //
 // This runs at deploy time from tools/prerender-passages.mjs, which already
 // fetches and composes every curated passage; this module only turns what it
 // has into a page and a card.
 
-import { volumeBookChapter, toRoman, reference } from '../web/btc-citation.js';
+import { volumeBookChapter, toRoman, reference, footnoteMark, footnoteIndexOf } from '../web/btc-citation.js';
 import { passageCss, txFlowHtml, htmlToText } from './twitter-bot/quote.mjs';
 
 // Cards are 1200x630 (1.91:1) — the shape the site's existing og:image
@@ -49,41 +51,60 @@ const escapeHtml = (s) => String(s)
   .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
   .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 
-// A height, and optionally a section and an output -> the citation's path,
-// each level stopping where the printed reference stops:
+// A height, and optionally a section and one part of it -> the citation's
+// path, each level stopping where the printed reference stops:
 //
 //   /V/B/C/       a chapter   III β2 ■5        one block
 //   /V/B/C/S/     a section   III β2 ■5 §1     one transaction
-//   /V/B/C/S/O/   an output   III β2 ■5 §1.0   one output of it
+//   /V/B/C/S/0/   an output   III β2 ■5 §1.0   one output of it
+//   /V/B/C/S/a/   a witness   III β2 ■5 §1.a   one input's witness, its footnote
 //
-// The section is 1-based and the output 0-based — the book's own convention
-// (renderCitation in bitcoin-book.html sets a prevout as §1.0), and the one
-// Bitcoin itself uses for a vout. The URL reads as the citation reads.
-export function passagePath(height, section = null, output = null) {
+// The last segment's own form says which it is, so no sixth level is needed:
+// a numeral is an output — 0-based, as Bitcoin numbers a vout, and as the
+// book prints a prevout (renderCitation sets §1.0) — and a letter is a
+// witness footnote, lettered a, b, c the way the book letters its notes. The
+// two can never collide, and the URL reads as the citation reads.
+//
+// `part` is null, a non-negative integer, or a footnote mark ('a', 'aa').
+export function passagePath(height, section = null, part = null) {
   const { volume, book, chapter } = volumeBookChapter(height);
   const base = `/${toRoman(volume)}/${book}/${chapter}/`;
   if (section === null) return base;
-  if (output === null) return `${base}${section}/`;
-  return `${base}${section}/${output}/`;
+  if (part === null) return `${base}${section}/`;
+  return `${base}${section}/${part}/`;
 }
 
 // Where the card for that address lives. Keyed by the same coordinates, so a
 // path and its card are trivially derivable from each other — no manifest to
 // keep in step. Each card carries exactly the segments its path does.
-export function cardPath(height, section = null, output = null) {
+export function cardPath(height, section = null, part = null) {
   const { volume, book, chapter } = volumeBookChapter(height);
   const parts = [toRoman(volume), book, chapter];
   if (section !== null) parts.push(section);
-  if (output !== null) parts.push(output);
+  if (part !== null) parts.push(part);
   return `/cards/${parts.join('-')}.png`;
 }
 
-// The citation an address prints: "III β2 ■5", "… §1", "… §1.0".
-export function citationOf(height, section = null, output = null) {
+// The citation an address prints: "III β2 ■5", "… §1", "… §1.0", "… §1.a".
+export function citationOf(height, section = null, part = null) {
   const base = reference(height);
   if (section === null) return base;
-  return output === null ? `${base} §${section}` : `${base} §${section}.${output}`;
+  return part === null ? `${base} §${section}` : `${base} §${section}.${part}`;
 }
+
+// What a last segment names: an output (a numeral) or a witness footnote (a
+// letter). Returns { output } or { witness } — the 1-based footnote index —
+// or null when the segment is neither, so a bad address is refused rather
+// than guessed at. The inverse of the paths above.
+export function partOfSegment(segment) {
+  const s = String(segment ?? '');
+  if (/^\d+$/.test(s)) return { output: Number(s) };
+  const n = footnoteIndexOf(s);
+  return n === null ? null : { witness: n };
+}
+
+// The mark a witness footnote is addressed by: its letter.
+export const witnessSegment = (footnoteIndex) => footnoteMark(footnoteIndex);
 
 // One page per address. A contents row names a chapter or a section --
 // never both -- and the two live at different paths, so block 0's chapter
@@ -106,6 +127,91 @@ export function passagesByPath(rendered) {
 }
 
 
+
+
+// ─── a witness: one input's testimony, as its footnote ──────────────────
+//
+// A witness belongs to an input, and the book has never numbered inputs —
+// an input is named by the output it spends. What it does number, or rather
+// letter, is the footnote each witness-bearing input carries, so that is the
+// address: §1.a is the witness of the first witness-bearing input of §1.
+// One letter, one stack, and the same mark the section's margin prints.
+export function witnessPageHtml({
+  site, height, sectionNum, footnoteIndex, title, witnessHtml, txid,
+  cardUrl = null, slug = null,
+}) {
+  const mark = footnoteMark(footnoteIndex);
+  const cite = citationOf(height, sectionNum, mark);
+  const url = `${site}${passagePath(height, sectionNum, mark)}`;
+  const card = cardUrl || `${site}/og-glossia.png`;
+  const sectionUrl = `${site}${passagePath(height, sectionNum)}`;
+  const appUrl = `${site}/bitcoin-book.html?txid=${txid}#fn-${mark}`;
+  const pageTitle = `${cite}${title ? ` — ${title}` : ''} · The βook of βitcoin`;
+
+  return `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>${escapeHtml(pageTitle)}</title>
+<link rel="canonical" href="${escapeHtml(url)}">
+
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="The βook of βitcoin">
+<meta property="og:title" content="${escapeHtml(cite)}${title ? ` — ${escapeHtml(title)}` : ''}">
+<meta property="og:url" content="${escapeHtml(url)}">
+<meta property="og:image" content="${escapeHtml(card)}">
+<meta property="og:image:width" content="${CARD_WIDTH}">
+<meta property="og:image:height" content="${CARD_HEIGHT}">
+<meta property="og:image:alt" content="${escapeHtml(`${cite} — the witness, as its footnote`)}">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="${escapeHtml(cite)}${title ? ` — ${escapeHtml(title)}` : ''}">
+<meta name="twitter:image" content="${escapeHtml(card)}">
+<style>${passageCss({ fontSize: 19, fixed: false })}${WITNESS_CSS}
+</style>
+</head>
+<body>
+<nav class="nav">
+  <a href="${escapeHtml(site)}/">The βook of βitcoin</a>
+  <a href="${escapeHtml(sectionUrl)}">§${sectionNum}, the whole section</a>
+  <a href="${escapeHtml(appUrl)}">Read it in the book →</a>
+</nav>
+<div class="page">
+  <div class="content">
+    <h1 class="section-title"><span class="section-num">§ ${sectionNum}.<span class="fn-mark">${mark}</span></span>${
+      title ? `<span class="section-event">${escapeHtml(title)}</span>` : ''}</h1>
+    <hr class="rule">
+    <div class="wit-one">
+      <p class="footnote"><sup>${mark}</sup> ${witnessHtml || '∅'}</p>
+    </div>
+  </div>
+  <div class="colophon">
+    <span>${escapeHtml(String(site).replace(/^https?:\/\//, ''))}</span>
+    <span class="cite">${escapeHtml(cite)}</span>
+  </div>
+</div>
+<div class="also">
+  <p>Footnote ${mark} of the transaction at ${escapeHtml(citationOf(height, sectionNum))} — the witness
+  of one of its inputs: the stack of items that satisfies the script it spends, each item's prose a
+  lossless encoding of its bytes. The book collects witnesses as footnotes because that is what they
+  are: testimony carried alongside the text, not part of the sentence.</p>
+  <p>Transaction <code>${escapeHtml(txid)}</code></p>
+  <p><a href="${escapeHtml(sectionUrl)}">The whole section</a> · <a href="${escapeHtml(appUrl)}">read it in the book</a>${
+    slug ? ` · <a href="${escapeHtml(`${site}/passages/${slug}.md`)}">as plain markdown</a>` : ''}</p>
+</div>
+</body>
+</html>
+`;
+}
+
+// A footnote set as its whole page rather than in a stack under one.
+const WITNESS_CSS = `
+  /* A footnote letter is part of an address, so it stays lowercase. */
+  .fn-mark { text-transform: none; }
+  .wit-one { max-width: 46ch; margin: 0 auto; }
+  .wit-one .footnote { font-size: .9em; }
+  .wit-one .footnote sup { color: #c9a25f; margin-right: .4em; }
+`;
 
 // ─── an output: one output of one transaction ───────────────────────────
 //
@@ -312,7 +418,7 @@ const CHAPTER_CSS = `
 // site's standing card rather than declaring one that does not exist.
 export function passagePageHtml({
   site, height, sectionNum, title, txidProse, section, txCount, blockHash, txid,
-  cardUrl = null, slug = null, outputs = 0,
+  cardUrl = null, slug = null, outputs = 0, witnesses = 0,
 }) {
   const cite = `${reference(height)} §${sectionNum}`;
   const path = passagePath(height, sectionNum);
@@ -332,6 +438,13 @@ export function passagePageHtml({
     ? `<p>Outputs: ${Array.from({ length: outputs }, (_, i) =>
         `<a href="${escapeHtml(`${site}${passagePath(height, sectionNum, i)}`)}">§${sectionNum}.${i}</a>`
       ).join(' · ')}</p>`
+    : '';
+  // …and its witnesses, by the letters its margin prints.
+  const witLinks = witnesses > 0
+    ? `<p>Witnesses: ${Array.from({ length: witnesses }, (_, i) => {
+        const mark = footnoteMark(i + 1);
+        return `<a href="${escapeHtml(`${site}${passagePath(height, sectionNum, mark)}`)}">§${sectionNum}.${mark}</a>`;
+      }).join(' · ')}</p>`
     : '';
 
   return `<!doctype html>
@@ -403,6 +516,7 @@ export function passagePageHtml({
   <p>Block hash <code>${escapeHtml(blockHash)}</code><br>
   Transaction <code>${escapeHtml(txid)}</code></p>
   ${outLinks}
+  ${witLinks}
   <p><a href="${escapeHtml(appUrl)}">Read it in the book</a>${slug ? ` · <a href="${escapeHtml(`${site}/passages/${slug}.md`)}">as plain markdown</a>` : ''} · <a href="${escapeHtml(site)}/llms.txt">how to reconstruct any passage yourself</a></p>
 </div>
 </body>

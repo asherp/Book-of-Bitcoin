@@ -33,13 +33,14 @@ import { createHash } from 'node:crypto';
 import { init, encodeSeedPhrase } from '../web/glossia-msg.js';
 import { parseTransaction, parseBlockHeader } from '../web/btc-tx.js';
 import { composeTransactionFields, composeBlockHeaderFields, renderWitness, toSuperscript } from '../web/btc-prose.js';
-import { volumeBookChapter, toRoman, reference } from '../web/btc-citation.js';
+import { volumeBookChapter, toRoman, reference, footnoteMark } from '../web/btc-citation.js';
 import { NOTABLE } from '../web/btc-contents-data.js';
 import { sectionParts } from './twitter-bot/quote.mjs';
 import { loadRenderer } from './twitter-bot/image.mjs';
 import {
   passagePath, cardPath, passagePageHtml, chapterPageHtml, outputPageHtml,
-  citationOf, passagesByPath, CARD_WIDTH, CARD_HEIGHT,
+  witnessPageHtml, witnessSegment, citationOf, passagesByPath,
+  CARD_WIDTH, CARD_HEIGHT,
 } from './passage-page.mjs';
 
 export const SITE = 'https://bookofbitcoin.io';
@@ -184,6 +185,17 @@ export function sectionMd({ txid, fields, sectionNum, eventTitle }) {
   out.push('');
   out.push(`Transaction id, as prose: ⌘${toSuperscript(256)} *${proseOf(reverseHex(txid))}*`);
   out.push('');
+  // Footnotes are lettered (a, b, c …) and counted over the witness-bearing
+  // inputs in input order — the same run bitcoin-book.html builds, so a
+  // reference here names the same footnote the live page does. Numbering by
+  // input index instead (as this once did) drifts the moment a transaction
+  // mixes witness and legacy inputs: with witnesses on inputs 1 and 3, the
+  // page's a and b would read here as 1 and 3.
+  const witnessed = fields.inputs
+    .map((inp, i) => ({ inp, i }))
+    .filter(({ inp }) => inp.witnessItems.length);
+  const markOfInput = new Map(witnessed.map(({ i }, n) => [i, footnoteMark(n + 1)]));
+
   out.push(`- **version:** ${fields.version}`);
   fields.inputs.forEach((inp, i) => {
     const src = inp.isNullPrevout
@@ -194,7 +206,7 @@ export function sectionMd({ txid, fields, sectionNum, eventTitle }) {
     if (script) out.push(`  - script: ${script}`);
     out.push(`  - sequence: ${htmlToText(inp.sequence)} — ${htmlToText(inp.sequenceTitle)}`);
     if (inp.witnessItems.length) {
-      out.push(`  - witness: see footnote ${i + 1}`);
+      out.push(`  - witness: see footnote ${markOfInput.get(i)}`);
     }
   });
   fields.outputs.forEach((o, i) => {
@@ -203,16 +215,13 @@ export function sectionMd({ txid, fields, sectionNum, eventTitle }) {
   });
   out.push(`- **locktime:** ${htmlToText(fields.locktime)} — ${htmlToText(fields.locktimeTitle)}`);
 
-  const witnessed = fields.inputs
-    .map((inp, i) => ({ inp, i }))
-    .filter(({ inp }) => inp.witnessItems.length);
   if (witnessed.length) {
     out.push('');
     out.push('### Witness footnotes');
     out.push('');
     for (const { inp, i } of witnessed) {
       const w = inp.witnessZero ? '∅' : htmlToText(renderWitness(inp.witnessItems, encodeCapped));
-      out.push(`${i + 1}. ${w}`);
+      out.push(`${markOfInput.get(i)}. ${w}`);
     }
   }
   return out.join('\n');
@@ -559,6 +568,7 @@ async function main() {
         txidProse: r.txidProse, section: r.section, txCount: r.txCount,
         blockHash: r.blockHash, txid: r.txid, cardUrl, slug: r.slug,
         outputs: outPages,
+        witnesses: Math.min(r.section?.footnotesHtml?.length ?? 0, MAX_OUTPUT_PAGES),
       });
     await writeFile(new URL('index.html', dir), html);
     console.log(`  ${r.isChapter ? 'chapter' : 'section'} ${passagePath(r.height, sectionNum)}${cardUrl ? '  + card' : ''}`);
@@ -587,6 +597,39 @@ async function main() {
       }));
       outputPaths.push(passagePath(r.height, sectionNum, o));
     }
+
+    // …and one per witness, addressed by its footnote letter. There are as
+    // many as the section has witness-bearing inputs, which is bounded by its
+    // input count; the same cap applies.
+    const notes = r.isChapter ? [] : (r.section?.footnotesHtml ?? []);
+    const notePages = Math.min(notes.length, MAX_OUTPUT_PAGES);
+    if (notes.length > notePages) {
+      console.log(`  (${r.slug}: ${notes.length - notePages} of ${notes.length} witnesses left without pages, past the cap of ${MAX_OUTPUT_PAGES})`);
+    }
+    for (let w = 0; w < notePages; w++) {
+      const mark = witnessSegment(w + 1);
+      let witCardUrl = null;
+      if (renderer) {
+        try {
+          const { png } = await renderer.render({
+            cite: citationOf(r.height, sectionNum, mark), title: r.title,
+            sectionNum, witnessMark: mark, witnessHtml: notes[w], txidProse: r.txidProse,
+          }, { site: SITE, width: CARD_WIDTH, height: CARD_HEIGHT });
+          await writeFile(new URL(cardPath(r.height, sectionNum, mark).replace(/^\/cards\//, ''), CARDS_DIR), png);
+          witCardUrl = SITE + cardPath(r.height, sectionNum, mark);
+          cards++;
+        } catch (e) {
+          console.warn(`  card SKIP ${r.slug} §${sectionNum}.${mark}: ${e.message}`);
+        }
+      }
+      const witDir = new URL(`.${passagePath(r.height, sectionNum, mark)}`, WEB_DIR);
+      await mkdir(witDir, { recursive: true });
+      await writeFile(new URL('index.html', witDir), witnessPageHtml({
+        site: SITE, height: r.height, sectionNum, footnoteIndex: w + 1, title: r.title,
+        witnessHtml: notes[w], txid: r.txid, cardUrl: witCardUrl, slug: r.slug,
+      }));
+      outputPaths.push(passagePath(r.height, sectionNum, mark));
+    }
   }
   if (renderer) await renderer.close();
 
@@ -602,7 +645,7 @@ async function main() {
       `${Object.keys(seed.citations).length} citations (${Math.round(json.length / 1024)} KB)`);
   }
   console.log(`\n${rendered.length} passages rendered, ${skipped} skipped; ` +
-    `${pages.length} citation pages, ${outputPaths.length} output pages, ${cards} cards.`);
+    `${pages.length} citation pages, ${outputPaths.length} output/witness pages, ${cards} cards.`);
   if (!rendered.length) {
     // Still exit 0: an explorer outage must not block the site deploy. The
     // shell, llms.txt and sitemap still ship; passages return next deploy.

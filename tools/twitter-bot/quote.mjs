@@ -15,7 +15,7 @@
 // (fetch, with mirror fallback; see bot.mjs) and `proseOf` (hex -> Glossia
 // prose, backed by the WASM engine) — so the whole module tests offline.
 
-import { reference } from '../../web/btc-citation.js';
+import { reference, footnoteMark } from '../../web/btc-citation.js';
 import { NOTABLE } from '../../web/btc-contents-data.js';
 
 // ─── tweet length, as X counts it ───────────────────────────────────────
@@ -136,7 +136,7 @@ export function sectionParts(fields, witnessHtml = () => null) {
     const seq = htmlToText(inp.sequence).trim();
     const wit = witnessHtml(inp, i);
     if (wit != null) footnotes.push(htmlToText(wit).trim());
-    const foot = wit != null ? ` ⁽${footnotes.length}⁾` : '';
+    const foot = wit != null ? ` ⁽${footnoteMark(footnotes.length)}⁾` : '';
     rows.push({ label, text: `${src}${script ? ` — ${script}` : ''}${seq ? ` · ${seq}` : ''}${foot}` });
   });
   fields.outputs.forEach((o, i) => {
@@ -299,7 +299,7 @@ export function txFlowHtml(fields, footnotesHtml = [], citations = []) {
       ? '∅'
       : escapeHtml(citations[i] || shortRef(inp.prevTxid, inp.prevVout));
     const hasWitness = footnotesHtml[footnoteNum] !== undefined && inp.witnessItems.length;
-    const witRef = hasWitness ? `<sup class="tx-witness-ref">${++footnoteNum}</sup>` : '';
+    const witRef = hasWitness ? `<sup class="tx-witness-ref">${footnoteMark(++footnoteNum)}</sup>` : '';
     const seqClass = `tx-seq tx-seq-${inp.sequenceKind}`;
     const seq = inp.sequenceRbf && inp.sequence
       ? `<span class="${seqClass}"><span class="tx-seq-rbf">†</span> ${inp.sequence}</span>`
@@ -332,7 +332,7 @@ export function txFlowHtml(fields, footnotesHtml = [], citations = []) {
   const notes = footnotesHtml.length
     ? `<div class="footnotes">${footnotesHtml.map((f, i) => {
         const cut = f.length > FOOTNOTE_MAX_CHARS ? `${f.slice(0, FOOTNOTE_MAX_CHARS)} ⋯` : f;
-        return `<p class="footnote"><sup>${i + 1}</sup> ${cut}</p>`;
+        return `<p class="footnote"><sup>${footnoteMark(i + 1)}</sup> ${cut}</p>`;
       }).join('')}</div>`
     : '';
 
@@ -380,6 +380,9 @@ export function passageCss({ fontSize = 19, width = PAGE_WIDTH, height = PAGE_HE
     text-align: center; margin: 0; font: 600 .68em/1 'IBM Plex Mono', ui-monospace, monospace;
     letter-spacing: .28em; text-transform: uppercase; color: var(--accent);
   }
+  /* A footnote letter is part of an address; the heading's uppercase
+     transform must not raise it, or §1.a would read as §1.A. */
+  .fn-mark { text-transform: none; }
   .section-event {
     display: block; margin-top: .8em; font: 500 1.15em/1.3 'Newsreader', Georgia, serif;
     letter-spacing: 0; text-transform: none; color: var(--ink-soft);
@@ -482,6 +485,11 @@ export function passageCss({ fontSize = 19, width = PAGE_WIDTH, height = PAGE_HE
   .out-value { text-align: center; margin-bottom: 1.1em; font-size: .95em; }
   .out-script { min-width: 0; }
 
+  /* ── a witness card: the footnote alone, under its letter ── */
+  .wit-one { max-width: 46ch; margin: 0 auto; }
+  .wit-one .footnote { font-size: .9em; }
+  .wit-one .footnote sup { color: var(--accent); margin-right: .4em; }
+
   /* A passage clipped at the page's foot says so in the book's own idiom —
      the ⋯ it uses wherever prose is elided — rather than stopping mid-word
      and letting the reader think that was the end of it. */
@@ -509,9 +517,10 @@ export function passageHtml({
   // A chapter card instead of a section card: the block's head, composed by
   // the caller (tools/prerender-passages.mjs) the same way its page is.
   chapter = false, blockProse = '', blockHashNotation = '', frontispieceRows = [],
-  // Or one output of the section — the finest address the book has, its
-  // amount over the script it locks.
+  // Or one output of the section — its amount over the script it locks.
   outputNum = null,
+  // Or one witness, as its lettered footnote.
+  witnessMark = null, witnessHtml = '',
   fontSize = 19, width = PAGE_WIDTH, height = PAGE_HEIGHT, clipped = false,
 }) {
   const host = String(site).replace(/^https?:\/\//, '');
@@ -523,6 +532,14 @@ export function passageHtml({
   // frontispiece — rather than a transaction, so a shared chapter link
   // previews as the chapter's title page. The frame, and the fit, are the
   // same either way; only what fills .content differs.
+  // One witness, set as its own card: the footnote alone, under its letter.
+  const witHead = witnessMark !== null ? [
+    `<h2 class="section-title"><span class="section-num">§ ${escapeHtml(String(sectionNum))}.<span class="fn-mark">${escapeHtml(String(witnessMark))}</span></span>` +
+      `${title ? `<span class="section-event">${escapeHtml(title)}</span>` : ''}</h2>`,
+    '<hr class="rule">',
+    `<div class="wit-one"><p class="footnote"><sup>${escapeHtml(String(witnessMark))}</sup> ${witnessHtml || '∅'}</p></div>`,
+  ].join('\n    ') : null;
+
   // One output, set as its own card: the amount over its script.
   const out = outputNum !== null ? section?.fields?.outputs?.[outputNum] : null;
   const outHead = out ? [
@@ -535,7 +552,7 @@ export function passageHtml({
       : `<p class="tx-line">${out.script}</p>`}</div></div>`,
   ].join('\n    ') : null;
 
-  const head = outHead !== null ? outHead : chapter ? [
+  const head = witHead !== null ? witHead : outHead !== null ? outHead : chapter ? [
     `<h1 class="chapter-title">${escapeHtml(title || '')}</h1>`,
     `<div class="chapter-hash">${blockHashNotation} ${escapeHtml(blockProse)}</div>`,
     ...frontispieceRows.map(({ mark, text, gap }) => {

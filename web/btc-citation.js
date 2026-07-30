@@ -58,3 +58,48 @@ export function reference(height) {
   const { volume, book, chapter } = volumeBookChapter(height);
   return `${toRoman(volume)} β${book} ■${chapter}`;
 }
+
+// ─── footnote marks: letters, not numerals ──────────────────────────────
+//
+// A witness footnote is lettered the way a book letters its notes — a, b, c
+// — not numbered, so a superscript mark never reads as arithmetic beside the
+// numerals the prose is full of (push counts, amounts, indices). The
+// alphabet omits q: at superscript size, and in the serif the book sets, a
+// q is too near a g, and a footnote mark is the one glyph a reader must
+// identify at a glance to find its note.
+//
+// That leaves 25 letters, and the run continues in bijective base-25 —
+// aa after z, aaa after zz — the same scheme a spreadsheet letters its
+// columns in. So single letters cover 1–25, doubles 26–650 (25 × 25 = 625
+// of them, starting at 26), triples 651 upward. The doubles' span is what
+// puts the third letter at 651 rather than 626.
+const FOOTNOTE_ALPHABET = 'abcdefghijklmnoprstuvwxyz';   // no q
+export const FOOTNOTE_BASE = FOOTNOTE_ALPHABET.length;   // 25
+
+// A 1-based footnote index -> its mark. 1 is 'a', 25 'z', 26 'aa', 651 'aaa'.
+export function footnoteMark(n) {
+  let i = Math.floor(n);
+  if (!Number.isFinite(i) || i < 1) return '';
+  let out = '';
+  while (i > 0) {
+    const r = (i - 1) % FOOTNOTE_BASE;
+    out = FOOTNOTE_ALPHABET[r] + out;
+    i = Math.floor((i - 1) / FOOTNOTE_BASE);
+  }
+  return out;
+}
+
+// The inverse: a mark -> its 1-based index, or null if it isn't one (an
+// unknown letter, a q, anything else). Lets a lettered address be read back
+// to the footnote it names.
+export function footnoteIndexOf(mark) {
+  const s = String(mark || '').toLowerCase();
+  if (!s || !/^[a-z]+$/.test(s)) return null;
+  let n = 0;
+  for (const ch of s) {
+    const i = FOOTNOTE_ALPHABET.indexOf(ch);
+    if (i < 0) return null;                  // a q, or not a letter of the run
+    n = n * FOOTNOTE_BASE + (i + 1);
+  }
+  return n || null;
+}

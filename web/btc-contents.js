@@ -52,10 +52,12 @@ export function refFromProof(height, pos) {
 // the block); a 64-hex value (block hash or txid) opens as ?txid=, which the
 // book resolves as a block first and a transaction second. A `page: 'book'`
 // entry opens its book's own leaf (?page=book) instead of a chapter.
-export function entryHref(id, index, page) {
+export function entryHref(id, index, page, vout = null) {
   const isBlock = isBlockId(id) || isRelativeBlockId(id);
   const q = isBlock ? `block=${id}` : `txid=${id}`;
   if (isBlock && page === 'book') return `bitcoin-book.html?${q}&page=book`;
   const idx = isBlock && index != null ? `&index=${index}` : '';
-  return `bitcoin-book.html?${q}${idx}`;
+  // A bookmarked output opens the book at that output, not just its section.
+  const out = vout == null ? '' : `&out=${vout}`;
+  return `bitcoin-book.html?${q}${idx}${out}`;
 }

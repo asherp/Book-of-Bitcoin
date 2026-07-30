@@ -155,7 +155,10 @@ compiled to WASM) is consumed as a published
     sigla leaf of the front matter, and a compact one rides the book page
   - the citation sigla (`web/btc-citation.js`): Roman volumes, `β` the
     difficulty mark (a book is a difficulty window), `■` the block mark (a
-    chapter is a block), `§` the section (a transaction) — e.g. `III β2 ■5 §1`
+    chapter is a block), `§` the section (a transaction) — e.g. `III β2 ■5 §1`,
+    with an output appended as `§1.0` and a witness as its footnote letter,
+    `§1.a`. Footnotes are lettered a, b, c … skipping `q` (too near a `g` at
+    superscript size) and continuing in bijective base-25 — `aa` after `z`
   - the block-version notation (`web/btc-prose.js`): BIP9's fields rendered as
     what they are — a word pair carrying the 16 version-rolling bits, then the
     signaling bits in plain binary (`accio library 100`). Invertible: the
@@ -244,15 +247,17 @@ them. For those readers the deploy also publishes a static layer:
   markdown (prose, frontispiece, witness footnotes), generated at deploy
   time by `tools/prerender-passages.mjs` running the same parse → compose →
   encode pipeline in Node against the freshly built WASM.
-- `/III/2/5/`, `/III/2/5/1/`, `/III/2/5/1/0/` — the curated entries as HTML
-  pages at their citations, written as paths, one address per level: a
-  chapter (a block), a section (a transaction), an output of it. Each path
-  stops where the printed reference stops, and the pair reads as the book
-  prints it — §1.0, a 1-based section and a 0-based vout. A chapter page
-  carries the block's title page (hash prose and the header's frontispiece)
-  and leads to its sections; a section page carries the transaction and
-  leads to its outputs; an output page carries the amount and the script
-  locking it. Each has its own Open Graph tags and a preview card rendered
+- `/III/2/5/`, `/III/2/5/1/`, `/III/2/5/1/0/`, `/III/2/5/1/a/` — the curated
+  entries as HTML pages at their citations, written as paths, one address per
+  level: a chapter (a block), a section (a transaction), and then either an
+  output of it or one of its witnesses. Each path stops where the printed
+  reference stops, and the last segment says for itself what it names — a
+  numeral is an output (§1.0, the 0-based vout), a letter a witness footnote
+  (§1.a). A chapter page carries the block's title page (hash prose and the
+  header's frontispiece) and leads to its sections; a section page carries
+  the transaction and leads to its outputs and witnesses; an output page
+  carries the amount and the script locking it; a witness page carries that
+  input's stack. Each has its own Open Graph tags and a preview card rendered
   from its own head (`web/cards/`) — and no description tag: the card is the
   passage and the title is its address. A shared link therefore previews as
   *that* address rather than as the site, which the reading pages cannot do,

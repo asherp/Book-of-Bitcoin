@@ -57,18 +57,28 @@ level the citation names:
     III β2 ■5        ->  https://bookofbitcoin.io/III/2/5/      a chapter (a block)
     III β2 ■5 §1     ->  https://bookofbitcoin.io/III/2/5/1/    a section (a transaction)
     III β2 ■5 §1.0   ->  https://bookofbitcoin.io/III/2/5/1/0/  an output of it
+    III β2 ■5 §1.a   ->  https://bookofbitcoin.io/III/2/5/1/a/  a witness of it
 
-Volume in Roman, then book, chapter, section and output as numerals, with the
-sigla implied by position. Each path stops where the printed reference stops.
-The section is 1-based; the output is 0-based, the same index Bitcoin gives a
-vout, and the book prints the pair as §1.0.
+Volume in Roman, then book, chapter and section as numerals, with the sigla
+implied by position. Each path stops where the printed reference stops. The
+section is 1-based; the last segment says for itself what it names — a
+numeral is an output (0-based, the index Bitcoin gives a vout, printed §1.0)
+and a letter is a witness footnote (§1.a).
+
+Footnotes are lettered, not numbered: a, b, c … skipping q, which at
+superscript size is too near a g. That leaves 25 letters, and the run
+continues in bijective base-25 — aa after z, aaa after zz — so singles cover
+1–25, doubles 26–650, triples 651 up. A witness is addressed by the footnote
+letter its section's margin prints, counted over the witness-bearing inputs
+in input order.
 
 These are ordinary HTML pages, readable without JavaScript, each titled by
 its citation and carrying its own preview image: a chapter page carries the
 block's title page — its hash as prose and the header's fields as a
 frontispiece — and leads to the curated sections inside it; a section page
-carries the transaction in full and leads to its outputs; an output page
-carries the amount and the script that locks it. Prefer these when citing or
+carries the transaction in full and leads to its outputs and witnesses; an
+output page carries the amount and the script that locks it; a witness page
+carries that input's stack, as its footnote. Prefer these when citing or
 linking; they are the canonical, shareable form, and the sitemap lists them.
 
 The grammar is invertible, the same arithmetic as the citation scheme above:

@@ -9,10 +9,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { heightOf, volumeBookChapter, reference } from '../web/btc-citation.js';
+import { heightOf, volumeBookChapter, reference, footnoteMark, footnoteIndexOf } from '../web/btc-citation.js';
 import {
   passagePath, cardPath, citationOf, passagePageHtml, chapterPageHtml,
-  outputPageHtml, passagesByPath, CARD_WIDTH, CARD_HEIGHT,
+  outputPageHtml, witnessPageHtml, witnessSegment, partOfSegment,
+  passagesByPath, CARD_WIDTH, CARD_HEIGHT,
 } from './passage-page.mjs';
 
 const SITE = 'https://bookofbitcoin.io';
@@ -243,4 +244,106 @@ test('a section page leads down to the outputs that were written', () => {
   assert.ok(some.includes('/I/1/1/1/0/'));
   assert.ok(some.includes('/I/1/1/1/1/'));
   assert.ok(some.includes('§1.0'));
+});
+
+// ─── footnote marks, and witness addresses ──────────────────────────────
+
+test('footnote marks letter in bijective base-25, skipping q', () => {
+  assert.equal(footnoteMark(1), 'a');
+  assert.equal(footnoteMark(16), 'p');
+  assert.equal(footnoteMark(17), 'r', 'q is skipped: p is followed by r');
+  assert.equal(footnoteMark(25), 'z');
+  // Doubles begin after the 25 singles and cover 25×25 = 625 of them, so the
+  // third letter arrives at 651 rather than 626.
+  assert.equal(footnoteMark(26), 'aa');
+  assert.equal(footnoteMark(650), 'zz');
+  assert.equal(footnoteMark(651), 'aaa');
+  assert.equal(footnoteMark(16275), 'zzz');
+  assert.ok(!Array.from({ length: 700 }, (_, i) => footnoteMark(i + 1)).join('').includes('q'),
+    'no mark anywhere contains a q');
+  // Out of range yields nothing rather than a bogus mark.
+  assert.equal(footnoteMark(0), '');
+  assert.equal(footnoteMark(-1), '');
+});
+
+test('a footnote mark reads back to its index', () => {
+  for (const n of [1, 16, 17, 25, 26, 27, 650, 651, 16275]) {
+    assert.equal(footnoteIndexOf(footnoteMark(n)), n, `round trip at ${n}`);
+  }
+  assert.equal(footnoteIndexOf('q'), null, 'q is not a mark');
+  assert.equal(footnoteIndexOf('aq'), null);
+  assert.equal(footnoteIndexOf(''), null);
+  assert.equal(footnoteIndexOf('a1'), null);
+  assert.equal(footnoteIndexOf('AA'), 26, 'case-insensitive');
+});
+
+test('a witness is addressed by its letter, an output by its numeral', () => {
+  assert.equal(passagePath(0, 1, 'a'), '/I/1/1/1/a/');
+  assert.equal(passagePath(0, 1, 0), '/I/1/1/1/0/');
+  assert.equal(citationOf(0, 1, 'a'), 'I β1 ■1 §1.a');
+  assert.equal(cardPath(0, 1, 'a'), '/cards/I-1-1-1-a.png');
+  assert.equal(witnessSegment(2), 'b');
+});
+
+test('a last segment says for itself what it names', () => {
+  // The form discriminates, so no sixth level is needed and the two can
+  // never collide.
+  assert.deepEqual(partOfSegment('0'), { output: 0 });
+  assert.deepEqual(partOfSegment('12'), { output: 12 });
+  assert.deepEqual(partOfSegment('a'), { witness: 1 });
+  assert.deepEqual(partOfSegment('aa'), { witness: 26 });
+  assert.equal(partOfSegment('q'), null, 'a refused address, not a guessed one');
+  assert.equal(partOfSegment('-1'), null);
+  assert.equal(partOfSegment(''), null);
+});
+
+// ─── the witness page ───────────────────────────────────────────────────
+
+const witnessPage = (over = {}) => witnessPageHtml({
+  site: SITE, height: 0, sectionNum: 1, footnoteIndex: 1, title: 'The Genesis Block',
+  witnessHtml: '<span class="dt">s</span> a signature <span class="wit-sep">·</span> <span class="dt">p</span> a key',
+  txid: 'ab'.repeat(32), cardUrl: `${SITE}/cards/I-1-1-1-a.png`, slug: 'the-genesis-block',
+  ...over,
+});
+
+test('a witness page is addressed and cited by its footnote letter', () => {
+  const html = witnessPage();
+  assert.match(html, /<meta property="og:url" content="https:\/\/bookofbitcoin\.io\/I\/1\/1\/1\/a\/">/);
+  assert.match(html, /<meta property="og:image" content="https:\/\/bookofbitcoin\.io\/cards\/I-1-1-1-a\.png">/);
+  assert.match(html, /<meta property="og:title" content="I β1 ■1 §1\.a — The Genesis Block">/);
+  // The letter is wrapped so the heading's uppercase transform cannot raise
+  // it — an address is lowercase, and §1.A would name nothing.
+  assert.ok(html.includes('§ 1.<span class="fn-mark">a</span>'));
+  assert.match(html, /\.fn-mark \{ text-transform: none; \}/);
+  assert.ok(html.includes('a signature'), 'the witness stack rides through as markup');
+  assert.ok(html.includes('/I/1/1/1/'), 'a way back up to the whole section');
+  assert.ok(html.includes('#fn-a'), 'and into the book at that footnote');
+  assert.ok(!/description/.test(html), 'no description tag here either');
+});
+
+test('the second witness is b, the twenty-sixth aa', () => {
+  assert.ok(witnessPage({ footnoteIndex: 2 }).includes('<span class="fn-mark">b</span>'));
+  assert.match(witnessPage({ footnoteIndex: 26 }), /og:url" content="[^"]*\/1\/aa\//);
+});
+
+test('a section page leads down to its witnesses as well as its outputs', () => {
+  const html = page({ outputs: 2, witnesses: 2 });
+  assert.ok(html.includes('Outputs:'));
+  assert.ok(html.includes('Witnesses:'));
+  assert.ok(html.includes('/I/1/1/1/a/'));
+  assert.ok(html.includes('§1.b'));
+});
+
+// ─── the app's deep link to a bookmarked output ──────────────────────────
+
+test('a contents link opens the book at a bookmarked output', async () => {
+  const { entryHref } = await import('../web/btc-contents.js');
+  const txid = 'ab'.repeat(32);
+  assert.equal(entryHref(txid), `bitcoin-book.html?txid=${txid}`);
+  assert.equal(entryHref(txid, undefined, undefined, 1), `bitcoin-book.html?txid=${txid}&out=1`);
+  assert.equal(entryHref(txid, undefined, undefined, 0), `bitcoin-book.html?txid=${txid}&out=0`,
+    'output 0 is an address, not an absent one');
+  // A block entry keeps its index, and a book leaf ignores the vout.
+  assert.equal(entryHref('170', 2), 'bitcoin-book.html?block=170&index=2');
+  assert.equal(entryHref('170', 2, 'book'), 'bitcoin-book.html?block=170&page=book');
 });
