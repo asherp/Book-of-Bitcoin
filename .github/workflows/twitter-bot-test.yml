@@ -23,6 +23,7 @@ on:
       - 'web/glossia-msg.js'
       - 'tools/passage-page.mjs'
       - 'tools/prerender-passages.mjs'
+      - 'tools/coinbase-notation.test.mjs'
       - '.github/workflows/twitter-bot-test.yml'
   pull_request:
     paths:
@@ -34,6 +35,7 @@ on:
       - 'web/glossia-msg.js'
       - 'tools/passage-page.mjs'
       - 'tools/prerender-passages.mjs'
+      - 'tools/coinbase-notation.test.mjs'
   workflow_dispatch:
 
 permissions:
@@ -51,7 +53,7 @@ jobs:
         with:
           node-version: 22
       - name: Run the suite (bare checkout)
-        run: node --test tools/twitter-bot/test.mjs tools/passage-page.test.mjs
+        run: node --test tools/twitter-bot/test.mjs tools/passage-page.test.mjs tools/coinbase-notation.test.mjs
 
   # The same suite with everything present, plus the full-pass rehearsal.
   rehearsal:
@@ -97,12 +99,13 @@ jobs:
         working-directory: tools/twitter-bot
         run: npx playwright install --with-deps chromium
 
-      # With the engine and the browser present, the two tests that skip on
-      # a bare checkout now run: one renders a real verse and asserts it
-      # decodes back to the genesis txid, the other renders a real PNG and
-      # asserts the fit.
+      # With the engine and the browser present, the tests that skip on a bare
+      # checkout now run: one renders a real verse and asserts it decodes back
+      # to the genesis txid, one renders a real PNG and asserts the fit, and
+      # the coinbase suite's composition checks (which need btc-prose.js to
+      # import, engine and all) come off the bench.
       - name: Run the suite (engine + renderer)
-        run: node --test tools/twitter-bot/test.mjs tools/passage-page.test.mjs
+        run: node --test tools/twitter-bot/test.mjs tools/passage-page.test.mjs tools/coinbase-notation.test.mjs
 
       - name: Rehearse a full pass
         run: node tools/twitter-bot/rehearse.mjs

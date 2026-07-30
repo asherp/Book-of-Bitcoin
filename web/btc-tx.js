@@ -372,6 +372,51 @@ function scriptPushes(bytes) {
   return pushes;
 }
 
+// A byte string split into its readable text runs and the binary spans around
+// them, in order, with EVERY byte accounted for exactly once: the segments
+// concatenate back to the input. A text segment is { text }, a binary one
+// { hex }. A run shorter than `minRun` isn't text -- it stays inside the binary
+// span surrounding it, so the floor never costs a byte (see TEXT_MIN_RUN for
+// why there is a floor at all).
+//
+// This is the whole-blob reading, and it exists because the alternative loses
+// bytes. A caller that wants only the legible parts of a payload can take the
+// text segments and drop the rest; a caller rendering a region it must
+// reproduce -- a coinbase's tail past the BIP34 height, which is arbitrary
+// miner data under no rule at all -- renders the binary segments too, as prose,
+// and keeps the round trip.
+export function splitReadableRuns(hex, { minRun = TEXT_MIN_RUN } = {}) {
+  const bytes = hexToBytes(hex);
+  const out = [];
+  let binStart = 0;                 // first byte of the binary span still open
+  let runStart = -1, runChars = 0, runText = '';
+  const flushBinary = (end) => { if (end > binStart) out.push({ hex: bytesToHex(bytes.subarray(binStart, end)) }); };
+  // Close the run open at runStart, ending at `end`. Long enough to count as
+  // text: emit the binary span before it, then the run, and reopen the binary
+  // span after it. Too short: drop the run and leave its bytes in the open
+  // binary span, which simply grows past them.
+  const closeRun = (end) => {
+    if (runChars >= minRun) { flushBinary(runStart); out.push({ text: runText }); binStart = end; }
+    runStart = -1; runChars = 0; runText = '';
+  };
+  let i = 0;
+  while (i < bytes.length) {
+    const d = utf8At(bytes, i);
+    if (d && isReadableCp(d.cp)) {
+      if (runStart < 0) runStart = i;
+      runText += String.fromCodePoint(d.cp);
+      runChars++;
+      i += d.len;
+    } else {
+      closeRun(i);
+      i += d ? d.len : 1;           // skip a readable-but-control char, or one bad byte
+    }
+  }
+  closeRun(bytes.length);
+  flushBinary(bytes.length);
+  return out;
+}
+
 // The maximal runs of readable UTF-8 text in a byte string, each at least
 // `minRun` characters. An unreadable character or an invalid UTF-8 byte ends the
 // current run. When `segment` is set (a whole scriptSig, e.g. a coinbase), each
@@ -380,25 +425,19 @@ function scriptPushes(bytes) {
 // already a single push's data, e.g. an OP_RETURN payload), the blob is scanned
 // as-is -- re-parsing raw data as script would mis-split it, since a byte like
 // 0x0a (newline) doubles as a push opcode.
+//
+// Lossy by design: this answers "what text is in here", so the bytes between
+// the runs are dropped. Anything that must reproduce its input wants
+// splitReadableRuns instead.
 export function findTextRuns(hex, { minRun = TEXT_MIN_RUN, segment = true } = {}) {
   const bytes = hexToBytes(hex);
   const pushes = segment ? scriptPushes(bytes) : null;
   // Scan each script push, or the raw blob when segmentation is off, the bytes
   // aren't clean script (null), or a push-less blob yields no segments.
   const segments = pushes && pushes.length ? pushes : [bytes];
-  const found = [];
-  for (const seg of segments) {
-    let run = '', count = 0;
-    const flush = () => { if (count >= minRun) found.push(run); run = ''; count = 0; };
-    let i = 0;
-    while (i < seg.length) {
-      const d = utf8At(seg, i);
-      if (d && isReadableCp(d.cp)) { run += String.fromCodePoint(d.cp); count++; i += d.len; }
-      else { flush(); i += d ? d.len : 1; }   // skip a readable-but-control char, or one bad byte
-    }
-    flush();
-  }
-  return found;
+  return segments.flatMap((seg) => splitReadableRuns(bytesToHex(seg), { minRun })
+    .filter((s) => s.text !== undefined)
+    .map((s) => s.text));
 }
 
 // A whole byte string that is valid UTF-8 and entirely readable -> its decoded
