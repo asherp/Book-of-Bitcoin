@@ -94,7 +94,13 @@ body.at-title .title-leaf { min-height: 100vh; cursor: pointer; }
 
 /* ── The title leaf: set like a manuscript title page — the title in the
    upper third, the imprint line resting at the foot, open field between. ── */
-.title-leaf { min-height: 62vh; flex-direction: column; justify-content: center; text-align: center; position: relative; }
+/* The title sits above the leaf's midline: the centring is done against a
+   content box shortened at the foot, which lifts the block by half the
+   padding (to roughly the upper third) while leaving the leaf itself a full
+   viewport tall -- so the version line, positioned against the padding box,
+   keeps its place. */
+.title-leaf { min-height: 62vh; flex-direction: column; justify-content: center; text-align: center; position: relative;
+  padding-bottom: 24vh; }
 .title-leaf .work-title { margin: 0; font: 300 clamp(38px, 11vw, 68px)/1.08 'Newsreader', serif; color: var(--ink); letter-spacing: -.02em; }
 .title-leaf .work-title .beta { color: var(--accent); font-weight: 400; }
 /* The edition line: the release stamp (vYYYY.0M.0D.HH, the deploy time),

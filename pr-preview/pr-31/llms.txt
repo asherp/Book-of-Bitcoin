@@ -98,10 +98,19 @@ reaches it instead.
   `&index=<n>` opens its section n+1 (0-based); `?txid=<txid>` jumps to a
   transaction's section, `&out=<n>` to one of its outputs;
   `?page=volume|book` opens the block's volume or book leaf.
-- `bitcoin-contents.html` — the curated table of contents.
+- `bitcoin-contents.html` — the curated table of contents, closing with three
+  appendices: I the mempool's projected chapters, II heights consensus has
+  fixed but no block has reached, III the shelf of ledgers.
+- `bitcoin-appendix.html?part=mempool|future` — an appendix's title leaf: its
+  name and what it gathers. Below each is its first chapter, in the book
+  itself: `?block=<tip+1>` for the queue (and the ascent from any projected
+  chapter returns to that leaf), the first fixed height for Appendix II.
+  Appendix III's leaves are `bitcoin-ledger.html`'s.
 - `bitcoin-front.html` — front matter (`?leaf=` selects a leaf).
 - `bitcoin-search.html` — lookup by height, hash, txid, or citation.
-- `bitcoin-ledger.html?address=<addr>` — an address's ledger.
+- `bitcoin-ledger.html?address=<addr>` — the passage that address is, in the
+  ledger holding it; `&page=ledger` opens that ledger's title leaf instead,
+  and a bare `bitcoin-ledger.html` opens Appendix III's own leaf above them.
 
 These render only in a JavaScript-capable browser; without one, use the
 static passages above or reconstruct the passage as described next.

@@ -27,6 +27,7 @@ import { parseYamlSequence } from './btc-yaml.js';
 import { parseLookup, looksLikeAddress } from './btc-lookup.js';
 
 export const NOTABLES_FILE = 'notables.yaml';
+export const APPENDIX_FILE = 'appendix.yaml';
 export const COMMENTARY_DIR = 'commentary/';
 
 // In the browser, paths are relative to the page (all reading pages sit beside
@@ -138,6 +139,37 @@ function normalize(raw, i) {
   return withCommentary(entry, raw);
 }
 
+// A part of the appendix -- what the contents gathers after the volumes
+// (appendix.yaml). `kind` says who fills it: 'entries' lists its own, which are
+// places like any other and resolve the same way, so a future chapter may be
+// written as the height consensus fixed or as the reference that height already
+// has (LXV β1 □1); 'mempool' and 'ledgers' are gathered by the page from the
+// queue and from the shelf, and carry only their heading and its note.
+function normalizePart(raw, i) {
+  const kind = String(raw.kind ?? '').trim();
+  const title = String(raw.title ?? '').trim();
+  if (!kind || !title) throw new Error(`btc-notables: appendix part ${i + 1} needs a kind and a title`);
+  if (!['mempool', 'entries', 'ledgers'].includes(kind)) {
+    throw new Error(`btc-notables: appendix part "${title}" has an unknown kind: ${kind}`);
+  }
+  const part = { kind, title };
+  if (raw.note) part.note = String(raw.note);
+  if (kind === 'entries') {
+    if (!Array.isArray(raw.entries) || !raw.entries.length) {
+      throw new Error(`btc-notables: appendix part "${title}" lists no entries`);
+    }
+    part.entries = raw.entries.map((e) => {
+      const place = normalizePlace(e, String(e.title ?? title));
+      return { ...place, title: String(e.title ?? ''), note: e.note ? String(e.note) : undefined };
+    });
+  }
+  return part;
+}
+
+export function parseAppendix(yamlText) {
+  return parseYamlSequence(yamlText).map(normalizePart);
+}
+
 // The readings an entry carries, whatever its places name: a chapter, a section,
 // an address. Each is a Markdown file in commentary/ (or a short note written
 // inline), and a `by` makes it somebody's rather than the book's. They hang on
@@ -163,6 +195,7 @@ export function parseNotables(yamlText) {
 }
 
 let entries = [];
+let parts = [];
 let loading = null;
 
 // Load the index once. Resolves to the entries; on failure resolves to an empty
@@ -172,13 +205,21 @@ let loading = null;
 // say so out loud (the table of contents does; the book page does not need to).
 export function loadNotables({ read = fetchRead } = {}) {
   if (!loading) {
-    loading = read(NOTABLES_FILE)
-      .then((text) => { entries = parseNotables(text); return entries; })
+    // The contents and its appendix are two files and two failures: a mangled
+    // appendix must not cost the reader the volumes, or the other way about.
+    const index = read(NOTABLES_FILE)
+      .then((text) => { entries = parseNotables(text); })
       .catch((e) => {
         loadNotables.error = e;
         console.warn('btc-notables: could not read the curated contents —', e.message);
-        return entries;
       });
+    const back = read(APPENDIX_FILE)
+      .then((text) => { parts = parseAppendix(text); })
+      .catch((e) => {
+        loadNotables.appendixError = e;
+        console.warn('btc-notables: could not read the appendix —', e.message);
+      });
+    loading = Promise.all([index, back]).then(() => entries);
   }
   return loading;
 }
@@ -200,11 +241,18 @@ export const places = () => entries.flatMap((entry) =>
 // "The twice-confirmed coinbases — e3bf…468, first printing".
 export const placeTitle = (place) => (place.as ? `${place.title} — ${place.as}` : place.title);
 
+// The appendix's parts, synchronously, like notables(): what the contents
+// gathers after the volumes. Empty until loadNotables() resolves -- and empty
+// too if that file alone could not be read, which costs the contents its
+// appendices and nothing else.
+export const appendix = () => parts;
+
 // Seed the index directly, for a caller that already has the file in hand
 // (Node reading it off disk, a test). Marks the load as done, so nothing
 // fetches afterwards.
-export function setNotables(list) {
+export function setNotables(list, appendixParts = parts) {
   entries = list;
+  parts = appendixParts;
   loading = Promise.resolve(entries);
   return entries;
 }
