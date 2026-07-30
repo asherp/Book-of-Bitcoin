@@ -141,13 +141,14 @@ compiled to WASM) is consumed as a published
   paragraph saying what a ledger is; it lists nothing, because the contents
   already lists the ledgers, and a pull down at the top (or the ▴ crumb)
   ascends there. Ledger title leaves beneath it (title, balance, span —
-  horizontal swipes browse between ledgers; a push up descends). Passage
-  leaves below those: a ledger is a set of scripts, not one address —
-  organizations rotate them, and an xpub (when the shelf takes them) will
-  gather every leaf of one key — so each script gets a leaf, read as the
-  passage the book renders it as, with the chapters it appears in listed
-  beneath, newest first by reference; past the last passage the merged
-  entries leaf, organized by time. And entry leaves underneath (one
+  horizontal swipes browse between ledgers; a push up descends) — one title
+  page per ledger, and the only one. Passage leaves below those: a ledger is
+  a set of scripts, not one address — organizations rotate them, and an xpub
+  (when the shelf takes them) will gather every leaf of one key — so each
+  script gets a leaf titled by the passage itself, the script in the book's
+  own prose, with the address beneath it and the chapters it appears in
+  listed below, newest first by reference; past the last passage the
+  ledger's whole table of entries, organized by time. And entry leaves underneath (one
   transaction as its own page, rendered from the bank alone — vertical
   swipes walk the timeline, a swipe over the record dives into the entry
   nearest the finger, and a swipe right is the one door back). Nothing backfills on its own —

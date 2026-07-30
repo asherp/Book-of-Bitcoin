@@ -142,10 +142,16 @@ a:hover { text-decoration: underline; }
    compendium's title leaf for this ledger. */
 .page-eyebrow a { color:inherit; }
 .anth-title { margin:16px 0 0; font:500 30px/1.25 'Newsreader',serif; color:var(--ink); }
+/* A ledger has one title page. A passage leaf carries no name of its own --
+   the passage is its title, set below -- so the empty heading takes no room. */
+.anth-title:empty { display:none; }
 .anth-addr { margin-top:10px; font:400 12px/1.5 'IBM Plex Mono',monospace; letter-spacing:.02em; color:var(--meta); word-break:break-all; }
 .anth-addr:empty { display:none; }
 .anth-prose { margin:22px 0 0; max-width:560px; font:400 16px/1.7 'Newsreader',serif; font-style:italic; color:var(--ink-soft); }
 .anth-prose:empty { display:none; }
+/* On a passage leaf the script IS the leaf's title, so it is set at a
+   title's size -- the same voice, only louder. */
+.anth-prose.passage { margin-top:16px; font-size:21px; line-height:1.55; color:var(--ink); }
 /* The appendix leaf says what the shelf is; that is plain prose, not a
    passage's script read aloud, so it drops the italic the prose wears. */
 .anth-prose.explainer { font-style:normal; text-align:left; max-width:56ch; }
@@ -451,9 +457,9 @@ a:hover { text-decoration: underline; }
         <div class="page-eyebrow" id="anth-eyebrow">Ledger</div>
         <h1 class="anth-title" id="anth-title"></h1>
         <div class="anth-pager" id="anth-pager"></div>
-        <div class="anth-balance" id="anth-balance"></div>
-        <div class="anth-addr" id="anth-addr"></div>
         <p class="anth-prose" id="anth-prose"></p>
+        <div class="anth-addr" id="anth-addr"></div>
+        <div class="anth-balance" id="anth-balance"></div>
         <div class="anth-range" id="anth-range"></div>
         <div class="anth-count" id="anth-count"></div>
         <div class="anth-held" id="anth-held"></div>
@@ -535,16 +541,19 @@ import { APPENDIX } from './btc-contents.js';
 //                          Horizontal swipes browse between ledgers; pushing
 //                          up (or ▾) descends into the ledger's passages,
 //                          pulling down at the top ascends to the appendix.
+//                          A ledger has one title page, and this is it.
 //   Passage leaves         a ledger is a set of scripts, not one address:
 //                          organizations rotate addresses, and an xpub (when
 //                          the shelf takes them) gathers every leaf of one
 //                          key. So the level below a ledger is one leaf per
-//                          passage -- the script in the book's own prose,
-//                          the same words every chapter that pays it uses --
-//                          with its appearances listed beneath as references,
-//                          newest first. Past the last passage the merged
-//                          entries leaf gathers the ledger's appearances in
-//                          one timeline. Horizontal swipes at the hero turn
+//                          passage, TITLED BY THE PASSAGE -- the script in
+//                          the book's own prose, the same words every
+//                          chapter that pays it uses -- with the address
+//                          beneath it and its appearances listed below as
+//                          references, newest first. The ledger's name is
+//                          the eyebrow here, not a second title. Past the
+//                          last passage the ledger's whole table of entries
+//                          gathers every appearance in one timeline. Horizontal swipes at the hero turn
 //                          between them; pulling down at the top ascends to
 //                          the ledger's title leaf. A horizontal swipe OVER
 //                          the record pulls in the page of the entry nearest
@@ -1191,7 +1200,7 @@ const clearHero = () => {
   document.getElementById('anth-addr').textContent = '';
   const prose = document.getElementById('anth-prose');
   prose.replaceChildren();
-  prose.classList.remove('explainer');   // only the appendix leaf sets prose that is not a script
+  prose.classList.remove('explainer', 'passage');   // each leaf sets the prose it wants, at its own size
   count.textContent = '';
   range.textContent = '';
   heldEl.replaceChildren();
@@ -1417,17 +1426,18 @@ const openLedgerLeaf = (alive) => {
   probe();
 };
 
-// An address leaf (or, past the last address, the entries leaf): the hero
-// as it always was, the eyebrow now the crumb up to the ledger's title.
+// A passage leaf (or, past the last passage, the ledger's table of entries).
+// A ledger has ONE title page, the leaf above; this one is titled by the
+// passage it sets -- the script in the book's own prose -- with the ledger's
+// name in the eyebrow, as the crumb back up to it.
 const openAddressLeaf = (alive) => {
   const addrs = cur().addresses;
   eyebrow.replaceChildren(arrowless('▴ ' + cur().name, () => ascend()));
-  document.getElementById('anth-title').textContent = cur().name;
   pager.replaceChildren();
   if (addrs.length + 1 > 1) {
     const pos = document.createElement('span');
     pos.textContent = at < addrs.length
-      ? (addrs.length > 1 ? `${at + 1} of ${addrs.length}` : 'title')
+      ? (addrs.length > 1 ? `passage ${at + 1} of ${addrs.length}` : 'passage')
       : 'entries';
     pager.append(
       arrow('‹', 'Previous leaf', at <= 0, () => turnAddress(-1)),
@@ -1446,19 +1456,27 @@ const openAddressLeaf = (alive) => {
   }
   const addr = addrs[at];
 
-  // The address, once, in the book's own tongue: its scriptPubKey in the
-  // book's opcode notation -- glyphs for the opcodes, a typed push mark,
-  // and Glossia prose for only the genuinely opaque bytes (the hash or
-  // witness program), exactly as the same script reads in every paying
-  // chapter. So a P2PKH title page opens ⧉ ⌖ h²⁰ ⟨prose⟩ ≡ ∇, and the raw
-  // base58/bech32 form has nothing left to add. The renderer and engine
-  // are the book's own (renderScript needs the WASM build; see README);
-  // only when they can't be had does the mono address stand in.
+  // The passage itself, and it is this leaf's title: the address's
+  // scriptPubKey in the book's opcode notation -- glyphs for the opcodes, a
+  // typed push mark, and Glossia prose for only the genuinely opaque bytes
+  // (the hash or witness program), exactly as the same script reads in every
+  // chapter that pays it. So a P2PKH passage opens ⧉ ⌖ h²⁰ ⟨prose⟩ ≡ ∇, and
+  // the base58/bech32 form beneath is only the address that stands for it.
+  // The renderer and engine are the book's own (renderScript needs the WASM
+  // build; see README); when they cannot be had the address takes the title
+  // slot, since a leaf with nothing at its head is no leaf.
+  document.getElementById('anth-addr').textContent = addr;
   (async () => {
     const html = await txoProse(addr);
     if (!alive()) return;
-    if (html) document.getElementById('anth-prose').innerHTML = html;
-    else document.getElementById('anth-addr').textContent = addr;
+    if (html) {
+      const prose = document.getElementById('anth-prose');
+      prose.classList.add('passage');
+      prose.innerHTML = html;
+    } else {
+      document.getElementById('anth-title').textContent = shortAddr(addr);
+      document.getElementById('anth-addr').textContent = '';
+    }
   })();
 
   runResolve(addr, alive);
