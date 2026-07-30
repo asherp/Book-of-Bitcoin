@@ -2588,7 +2588,7 @@ function renderProjectedHead(onTitlePage) {
   // what it is known for; a draft has nothing it is known for yet, so it
   // carries its place in the queue and how long that place is expected to
   // last.
-  subtitle.textContent = `${queueLabel(k + 1)} — eta ${blocksEta(k + 1)}`;
+  subtitle.textContent = `${queueLabel(k + 1)} — ETA ${blocksEta(k + 1)}`;
   subtitle.title = 'a draft chapter read from the mempool: these transactions are what a miner working right now would take, in the order they pay for';
   const inline = $('ch-chapter-inline');
   inline.textContent = '';
@@ -2637,7 +2637,7 @@ function renderProjectedHead(onTitlePage) {
     ? { mark: 'h', markClass: 'dt', text: '⋯', title: 'the previous block — the chain tip, resolving…' }
     : { text: '⋯', title: 'the previous chapter is itself unwritten' });
   slot({ mark: '⋔', markClass: 'merkle-mark', text: '—', title: 'no merkle root until the section list is sealed' });
-  slot({ text: `eta ${blocksEta(k + 1)}`, title: `no timestamp until mined — expected in about ${(k + 1) * 10} min, give or take ${Math.round(10 * Math.sqrt(k + 1))}: block arrivals average one per ten minutes` });
+  slot({ text: `ETA ${blocksEta(k + 1)}`, title: `no timestamp until mined — expected in about ${(k + 1) * 10} min, give or take ${Math.round(10 * Math.sqrt(k + 1))}: block arrivals average one per ten minutes` });
   const betaSpan = slot({ text: 'β —', gold: true, title: 'the difficulty target' });
   slot({ mark: 'η', markClass: 'fx-mark', text: '—', title: 'no nonce until the proof of work is found' });
 
@@ -3546,7 +3546,7 @@ async function unwrittenOr(e, height, tipP) {
         if (ahead <= depth) {
           return unwritten(new Error(`Block ${height.toLocaleString()} (${referenceOf(height)}) has not been mined yet — but its chapter is forming: `
             + `the mempool holds ≈ ${depth} chapters of sections, and this one stands ${ahead === 1 ? 'next' : `${ahead} deep`} in the queue. `
-            + `Come back in ${blocksEta(ahead).replace('≈ ', 'about ')}.`), height);
+            + `Come back in about ${blocksEta(ahead)}.`), height);
         }
       }
     } catch { /* the queue is unreadable -- fall through to the calendar */ }
