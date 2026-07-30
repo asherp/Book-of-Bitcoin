@@ -125,9 +125,10 @@ compiled to WASM) is consumed as a published
   like any other, marked □, and walked chapter by chapter from there; the
   ascent from any of them lands back on this leaf, since a draft chapter
   belongs to no volume or book of the body (the queue's own equivalent of a
-  book is still to be written). Appendix II has a list rather than a run, so
-  its lower leaf (`&page=list`, or a push up / ▾) sets the future chapters
-  out with the editorial note behind each.
+  book is still to be written). Appendix II descends the same way, into the
+  first height consensus has already fixed — the book answers an unmined
+  chapter with the date it is due. Neither leaf lists what it gathers: the
+  listing is the contents' business.
   Appendix III's leaf is the Ledger compendium's own title page, since a
   shelf of ledgers is what that page already is. The appendices sit at the
   **volumes' own level**: the line runs Volume I … Volume V, Appendix I,
@@ -155,10 +156,12 @@ compiled to WASM) is consumed as a published
   page per ledger, and the only one. Passage leaves below those: a ledger is
   a set of scripts, not one address — organizations rotate them, and an xpub
   (when the shelf takes them) will gather every leaf of one key — so each
-  script gets a leaf titled by the passage itself, the script in the book's
-  own prose, with the address beneath it and the chapters it appears in
-  listed below, newest first by reference; past the last passage the
-  ledger's whole table of entries, organized by time. And entry leaves underneath (one
+  script gets a leaf titled by the passage itself — the script in the book's
+  own prose, and not also in base58 or bech32 beneath it: an address is the
+  machine's rendering of the same script, and the book prints its own — with
+  the chapters that passage appears in listed below, newest first by
+  reference; past the last passage the ledger's whole table of entries,
+  organized by time. And entry leaves underneath (one
   transaction as its own page, rendered from the bank alone — vertical
   swipes walk the timeline, a swipe over the record dives into the entry
   nearest the finger, and a swipe right is the one door back). Nothing backfills on its own —
