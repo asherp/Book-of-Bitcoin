@@ -11,8 +11,8 @@ import assert from 'node:assert/strict';
 
 import { heightOf, volumeBookChapter, reference } from '../web/btc-citation.js';
 import {
-  passagePath, cardPath, passagePageHtml, chapterPageHtml, passageDescription,
-  chapterDescription, passagesByPath, CARD_WIDTH, CARD_HEIGHT,
+  passagePath, cardPath, citationOf, passagePageHtml, chapterPageHtml,
+  outputPageHtml, passagesByPath, CARD_WIDTH, CARD_HEIGHT,
 } from './passage-page.mjs';
 
 const SITE = 'https://bookofbitcoin.io';
@@ -36,11 +36,31 @@ const section = () => ({
 // ─── the path is the citation ───────────────────────────────────────────
 
 test('a path names the level its citation names', () => {
-  // A chapter is cited "I β1 ■1" and stops at three segments; a section adds
-  // its §, and so does the path.
-  assert.equal(passagePath(0), '/I/1/1/');
+  // Each level stops where the printed reference stops.
+  assert.equal(passagePath(0), '/I/1/1/');           // I β1 ■1      a chapter
   assert.equal(passagePath(0, null), '/I/1/1/');
-  assert.equal(passagePath(0, 1), '/I/1/1/1/');
+  assert.equal(passagePath(0, 1), '/I/1/1/1/');      // I β1 ■1 §1   a section
+  assert.equal(passagePath(0, 1, 0), '/I/1/1/1/0/'); // I β1 ■1 §1.0 an output
+  assert.equal(passagePath(0, 1, 7), '/I/1/1/1/7/');
+});
+
+test('a citation reads as its path does, at every level', () => {
+  // The book's own notation: a 1-based section, a dot, a 0-based output
+  // (renderCitation in bitcoin-book.html).
+  assert.equal(citationOf(0), 'I β1 ■1');
+  assert.equal(citationOf(0, 1), 'I β1 ■1 §1');
+  assert.equal(citationOf(0, 1, 0), 'I β1 ■1 §1.0');
+  assert.equal(citationOf(heightOf(3, 2, 5), 4, 2), 'III β2 ■5 §4.2');
+});
+
+test('no page carries a description tag', () => {
+  // The card carries the passage and the title carries its address; a prose
+  // gloss would be commentary sitting where the record belongs.
+  for (const html of [page(), chapterPage(), outputPage()]) {
+    assert.ok(!/<meta[^>]+name="description"/.test(html), 'no meta description');
+    assert.ok(!/og:description/.test(html), 'no og:description');
+    assert.ok(!/twitter:description/.test(html), 'no twitter:description');
+  }
 });
 
 test('a passage path is its citation, and inverts back to the height', () => {
@@ -63,10 +83,11 @@ test('a passage path is its citation, and inverts back to the height', () => {
   }
 });
 
-test('a card is keyed by the same coordinates as its page, at either level', () => {
-  assert.equal(cardPath(0, 1), '/cards/I-1-1-1.png');
+test('a card is keyed by the same coordinates as its page, at every level', () => {
+  assert.equal(cardPath(0), '/cards/I-1-1.png');              // the chapter
+  assert.equal(cardPath(0, 1), '/cards/I-1-1-1.png');         // the section
+  assert.equal(cardPath(0, 1, 0), '/cards/I-1-1-1-0.png');    // the output
   assert.equal(cardPath(heightOf(3, 2, 5), 2), '/cards/III-2-5-2.png');
-  assert.equal(cardPath(0), '/cards/I-1-1.png');            // the chapter's own card
   assert.equal(cardPath(heightOf(3, 2, 5)), '/cards/III-2-5.png');
 });
 
@@ -144,17 +165,6 @@ test('the page sets the passage in the book\'s grid, responsively', () => {
   assert.ok(html.includes('bitcoin-book.html?block=0&amp;index=0'));
 });
 
-test('the description says what the passage is, and escapes what it quotes', () => {
-  const d = passageDescription({ height: 57043, section: 2, title: 'A "quoted" & <odd> title', txCount: 4 });
-  assert.match(d, /Block 57,043 read as a chapter/);
-  assert.match(d, /transaction 2 of 4/);
-  assert.match(d, /Volume I, book 29, chapter 596, section 2/);
-  // The raw description carries the title verbatim; the page escapes it.
-  const html = page({ title: 'A "quoted" & <odd> title' });
-  assert.ok(html.includes('&quot;quoted&quot; &amp; &lt;odd&gt;'));
-  assert.ok(!html.includes('<odd>'));
-});
-
 // ─── the chapter page ───────────────────────────────────────────────────
 
 const chapterPage = (over = {}) => chapterPageHtml({
@@ -194,11 +204,43 @@ test('a chapter page sets its frontispiece and leads to its sections', () => {
   assert.ok(html.includes('§1 The Times'));
 });
 
-test('a chapter description counts its sections, and agrees with itself', () => {
-  assert.match(chapterDescription({ height: 170, txCount: 2 }), /its 2 transactions read as sections/);
-  const d = chapterDescription({ height: 0, title: 'The Genesis Block', txCount: 1 });
-  assert.match(d, /Block 0 read as a chapter/);
-  assert.match(d, /its one transaction read as its only section/);
-  assert.match(d, /Volume I, book 1, chapter 1\./);
-  assert.ok(!d.includes('section 1.'), 'a chapter names no section');
+
+// ─── the output page ────────────────────────────────────────────────────
+
+const outputPage = (over = {}) => outputPageHtml({
+  site: SITE, height: 0, sectionNum: 1, outputNum: 0,
+  title: 'The Genesis Block', section: section(), txid: 'ab'.repeat(32),
+  cardUrl: `${SITE}/cards/I-1-1-1-0.png`, slug: 'the-genesis-block',
+  ...over,
+});
+
+test('an output is addressed and cited as §N.M', () => {
+  const html = outputPage();
+  assert.match(html, /<meta property="og:url" content="https:\/\/bookofbitcoin\.io\/I\/1\/1\/1\/0\/">/);
+  assert.match(html, /<meta property="og:image" content="https:\/\/bookofbitcoin\.io\/cards\/I-1-1-1-0\.png">/);
+  assert.match(html, /<meta property="og:title" content="I β1 ■1 §1\.0 — The Genesis Block">/);
+  assert.ok(html.includes('§ 1.0'), 'the heading is the output, not the section');
+});
+
+test('an output page carries its amount and its script, and leads back up', () => {
+  const html = outputPage();
+  assert.ok(html.includes('50.00000000 ₿'), 'the amount it holds');
+  assert.ok(html.includes('∇'), 'the script that locks it, in opcode notation');
+  assert.ok(html.includes('/I/1/1/1/'), 'a way back up to the whole section');
+  // The app addresses an output by txid and out index, not by block+index.
+  assert.ok(html.includes(`?txid=${'ab'.repeat(32)}&amp;out=0`));
+});
+
+test('an output that could not be composed says so rather than rendering blank', () => {
+  const html = outputPage({ outputNum: 9 });    // no such output in the stub
+  assert.ok(html.includes('could not be composed'));
+});
+
+test('a section page leads down to the outputs that were written', () => {
+  const none = page();
+  assert.ok(!none.includes('Outputs:'), 'no output pages, no list');
+  const some = page({ outputs: 2 });
+  assert.ok(some.includes('/I/1/1/1/0/'));
+  assert.ok(some.includes('/I/1/1/1/1/'));
+  assert.ok(some.includes('§1.0'));
 });

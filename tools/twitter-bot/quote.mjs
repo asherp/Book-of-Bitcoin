@@ -267,13 +267,20 @@ export function txFlowHtml(fields, footnotesHtml = [], citations = []) {
   const outputRows = [];
 
   // The first body line across the whole transaction claims the drop cap —
-  // unless it opens with a bare push count, whose superscript's first digit
-  // would be blown up into a giant numeral. Forfeited, not deferred: an
-  // illuminated initial belongs at the top. (bitcoin-book.html, addLine.)
+  // unless it opens with a mark rather than a word. A bare push count (⁶⁹ …)
+  // would have its superscript's first digit blown up into a giant numeral;
+  // a data mark (p⁶⁵, s⁷¹, h³²) would be torn from the count riding with it,
+  // leaving a giant P beside an orphaned 65. Either way the mark is
+  // annotation, not the opening word of the prose, so it cannot be
+  // illuminated. Forfeited, not deferred: an illuminated initial belongs at
+  // the top. (bitcoin-book.html's addLine guards the push count; the data
+  // mark is the same hazard one span over.)
+  const opensWithMark = (html) =>
+    html.startsWith('<span class="op op-push') || html.startsWith('<span class="dt"');
   let leadUsed = false;
-  const line = (html) => {
+  const line = (html, { illuminate = true } = {}) => {
     if (!html) return '';
-    const lead = !leadUsed && !html.startsWith('<span class="op op-push"');
+    const lead = illuminate && !leadUsed && !opensWithMark(html);
     leadUsed = true;
     return `<p class="tx-line${lead ? ' tx-body-lead' : ''}">${html}</p>`;
   };
@@ -470,6 +477,11 @@ export function passageCss({ fontSize = 19, width = PAGE_WIDTH, height = PAGE_HE
   .chapter-head .cfx + .cfx { margin-top: .45em; }
   .fx-mark { color: var(--accent); font-weight: 700; font-style: normal; }
 
+  /* ── an output card: the amount over the script it locks ── */
+  .out-one { max-width: 46ch; margin: 0 auto; }
+  .out-value { text-align: center; margin-bottom: 1.1em; font-size: .95em; }
+  .out-script { min-width: 0; }
+
   /* A passage clipped at the page's foot says so in the book's own idiom —
      the ⋯ it uses wherever prose is elided — rather than stopping mid-word
      and letting the reader think that was the end of it. */
@@ -497,6 +509,9 @@ export function passageHtml({
   // A chapter card instead of a section card: the block's head, composed by
   // the caller (tools/prerender-passages.mjs) the same way its page is.
   chapter = false, blockProse = '', blockHashNotation = '', frontispieceRows = [],
+  // Or one output of the section — the finest address the book has, its
+  // amount over the script it locks.
+  outputNum = null,
   fontSize = 19, width = PAGE_WIDTH, height = PAGE_HEIGHT, clipped = false,
 }) {
   const host = String(site).replace(/^https?:\/\//, '');
@@ -508,7 +523,19 @@ export function passageHtml({
   // frontispiece — rather than a transaction, so a shared chapter link
   // previews as the chapter's title page. The frame, and the fit, are the
   // same either way; only what fills .content differs.
-  const head = chapter ? [
+  // One output, set as its own card: the amount over its script.
+  const out = outputNum !== null ? section?.fields?.outputs?.[outputNum] : null;
+  const outHead = out ? [
+    `<h2 class="section-title"><span class="section-num">§ ${escapeHtml(String(sectionNum))}.${escapeHtml(String(outputNum))}</span>` +
+      `${title ? `<span class="section-event">${escapeHtml(title)}</span>` : ''}</h2>`,
+    '<hr class="rule">',
+    `<div class="out-one"><div class="tx-note out-value">${out.value}</div>`,
+    `<div class="out-script">${out.scriptAscii
+      ? `<blockquote class="tx-ascii">${out.scriptAscii}</blockquote>`
+      : `<p class="tx-line">${out.script}</p>`}</div></div>`,
+  ].join('\n    ') : null;
+
+  const head = outHead !== null ? outHead : chapter ? [
     `<h1 class="chapter-title">${escapeHtml(title || '')}</h1>`,
     `<div class="chapter-hash">${blockHashNotation} ${escapeHtml(blockProse)}</div>`,
     ...frontispieceRows.map(({ mark, text, gap }) => {

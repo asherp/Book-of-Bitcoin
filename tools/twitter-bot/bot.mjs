@@ -175,11 +175,12 @@ export async function ensureEngine() {
   };
 }
 
-// The left margin's provenance: each input's prevout resolved to its
-// volume·book·chapter·section, the way the book resolves it (a merkle-proof
-// lookup per prevout). Bounded and best-effort — this runs only on the
-// image path, an unresolved input keeps its short txid, and a failure costs
-// the margin one reference, never the reply.
+// The left margin's provenance: each input's prevout resolved to the output
+// it spends, cited as the book cites it -- "III β2 ■5 §1.0", a 1-based
+// section then a dot then the 0-based vout (renderCitation in
+// bitcoin-book.html). Bounded and best-effort: this runs only on the image
+// path, an unresolved input keeps its short txid, and a failure costs the
+// margin one reference, never the reply.
 const MAX_CITE_LOOKUPS = 8;
 
 async function resolveInputCitations(fields, fetchFn) {
@@ -192,7 +193,7 @@ async function resolveInputCitations(fields, fetchFn) {
   await Promise.all(spends.map(async ({ inp, i }) => {
     try {
       const proof = await fetchFn(`/tx/${inp.prevTxid}/merkle-proof`, 'json');
-      if (proof) citations[i] = `${reference(proof.block_height)} §${proof.pos + 1} ⁄${inp.prevVout}`;
+      if (proof) citations[i] = `${reference(proof.block_height)} §${proof.pos + 1}.${inp.prevVout}`;
     } catch { /* the short txid stands in */ }
   }));
   return citations;

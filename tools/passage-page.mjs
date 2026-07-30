@@ -13,22 +13,24 @@
 // So each curated entry also gets a real path — its citation, written as
 // one, at the level the citation actually names:
 //
-//   III β2 ■5 §1   ->   /III/2/5/1/     a section: one transaction
-//   III β2 ■5      ->   /III/2/5/       a chapter: one block
+//   III β2 ■5        ->   /III/2/5/       a chapter: one block
+//   III β2 ■5 §1     ->   /III/2/5/1/     a section: one transaction
+//   III β2 ■5 §1.0   ->   /III/2/5/1/0/   an output of that transaction
 //
-// which is a directory with an index.html of its own: per-passage title,
-// description, and og:image (the passage rendered as a card by the same
-// renderer the reply bot uses), plus the passage set out in readable HTML
-// underneath. Volume in Roman, then book, chapter and section as numerals —
-// the reference format the book already prints, with the sigla implied by
-// position. The path is invertible: heightOf(volume, book, chapter) gives
-// the height back, so the URL grammar and the citation scheme are the same
+// each a directory with an index.html of its own: a title that is the
+// citation, an og:image (rendered by the same renderer the reply bot uses),
+// and the thing itself set out in readable HTML underneath. No description
+// tag anywhere — the card carries the passage and the title carries its
+// address; a prose gloss would only be commentary sitting where the record
+// belongs.
+//
+// Volume in Roman, then book, chapter, section and output as numerals — the
+// reference format the book already prints, with the sigla implied by
+// position. The path is invertible: heightOf(volume, book, chapter) gives the
+// height back, so the URL grammar and the citation scheme are the same
 // scheme. That is what makes it extend past the curated set later — a
-// renderer at the edge can answer any /V/B/C/S the same way, because
-// nothing about the path depends on the passage having been pre-rendered.
-//
-// A section defaults to 1, so /III/2/5/ is the chapter's opening section —
-// the same default the bot's citation parser applies.
+// renderer at the edge can answer any /V/B/C/S/O the same way, because
+// nothing about the path depends on it having been pre-rendered.
 //
 // This runs at deploy time from tools/prerender-passages.mjs, which already
 // fetches and composes every curated passage; this module only turns what it
@@ -47,24 +49,40 @@ const escapeHtml = (s) => String(s)
   .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
   .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 
-// A height, and a section or null -> the citation's path. A section names a
-// transaction and gets four segments; null names the chapter itself — the
-// block — and stops at three, exactly as the printed reference does (a
-// chapter is cited "III β2 ■5", a section "III β2 ■5 §1"). The URL should
-// read as the citation reads, and name the same thing.
-export function passagePath(height, section = null) {
+// A height, and optionally a section and an output -> the citation's path,
+// each level stopping where the printed reference stops:
+//
+//   /V/B/C/       a chapter   III β2 ■5        one block
+//   /V/B/C/S/     a section   III β2 ■5 §1     one transaction
+//   /V/B/C/S/O/   an output   III β2 ■5 §1.0   one output of it
+//
+// The section is 1-based and the output 0-based — the book's own convention
+// (renderCitation in bitcoin-book.html sets a prevout as §1.0), and the one
+// Bitcoin itself uses for a vout. The URL reads as the citation reads.
+export function passagePath(height, section = null, output = null) {
   const { volume, book, chapter } = volumeBookChapter(height);
   const base = `/${toRoman(volume)}/${book}/${chapter}/`;
-  return section === null ? base : `${base}${section}/`;
+  if (section === null) return base;
+  if (output === null) return `${base}${section}/`;
+  return `${base}${section}/${output}/`;
 }
 
 // Where the card for that address lives. Keyed by the same coordinates, so a
 // path and its card are trivially derivable from each other — no manifest to
-// keep in step. A chapter's card carries no section segment, like its path.
-export function cardPath(height, section = null) {
+// keep in step. Each card carries exactly the segments its path does.
+export function cardPath(height, section = null, output = null) {
   const { volume, book, chapter } = volumeBookChapter(height);
-  const base = `${toRoman(volume)}-${book}-${chapter}`;
-  return `/cards/${section === null ? base : `${base}-${section}`}.png`;
+  const parts = [toRoman(volume), book, chapter];
+  if (section !== null) parts.push(section);
+  if (output !== null) parts.push(output);
+  return `/cards/${parts.join('-')}.png`;
+}
+
+// The citation an address prints: "III β2 ■5", "… §1", "… §1.0".
+export function citationOf(height, section = null, output = null) {
+  const base = reference(height);
+  if (section === null) return base;
+  return output === null ? `${base} §${section}` : `${base} §${section}.${output}`;
 }
 
 // One page per address. A contents row names a chapter or a section --
@@ -87,17 +105,91 @@ export function passagesByPath(rendered) {
   return [...byPath.values()];
 }
 
-// The card's alt text, and the page's og:description: what this passage is,
-// in one sentence a reader gets nothing else from.
-export function passageDescription({ height, section, title, txCount }) {
-  const { volume, book, chapter } = volumeBookChapter(height);
-  const where = `Volume ${toRoman(volume)}, book ${book}, chapter ${chapter}, section ${section}`;
-  const of = txCount ? ` of ${txCount.toLocaleString('en-US')}` : '';
-  return `${title ? `${title}. ` : ''}Block ${height.toLocaleString('en-US')} read as a chapter, ` +
-    `its transaction ${section}${of} read as a section of Glossia prose — every byte of the ` +
-    `transaction carried in the words, and decodable back out. ${where}.`;
+
+
+// ─── an output: one output of one transaction ───────────────────────────
+//
+// The finest address the book has: III β2 ■5 §1.0 — an output, which is
+// where value actually sits. The page carries what the book sets on an
+// output's line: its amount, and its scriptPubKey in opcode notation. The
+// composed section already holds both, so this only picks the one out.
+export function outputPageHtml({
+  site, height, sectionNum, outputNum, title, section, txid,
+  cardUrl = null, slug = null,
+}) {
+  const cite = citationOf(height, sectionNum, outputNum);
+  const url = `${site}${passagePath(height, sectionNum, outputNum)}`;
+  const card = cardUrl || `${site}/og-glossia.png`;
+  const appUrl = `${site}/bitcoin-book.html?txid=${txid}&out=${outputNum}`;
+  const sectionUrl = `${site}${passagePath(height, sectionNum)}`;
+  const out = section?.fields?.outputs?.[outputNum];
+  const pageTitle = `${cite}${title ? ` — ${title}` : ''} · The βook of βitcoin`;
+
+  return `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>${escapeHtml(pageTitle)}</title>
+<link rel="canonical" href="${escapeHtml(url)}">
+
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="The βook of βitcoin">
+<meta property="og:title" content="${escapeHtml(cite)}${title ? ` — ${escapeHtml(title)}` : ''}">
+<meta property="og:url" content="${escapeHtml(url)}">
+<meta property="og:image" content="${escapeHtml(card)}">
+<meta property="og:image:width" content="${CARD_WIDTH}">
+<meta property="og:image:height" content="${CARD_HEIGHT}">
+<meta property="og:image:alt" content="${escapeHtml(`${cite} — the output, set as the book sets it`)}">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="${escapeHtml(cite)}${title ? ` — ${escapeHtml(title)}` : ''}">
+<meta name="twitter:image" content="${escapeHtml(card)}">
+<style>${passageCss({ fontSize: 19, fixed: false })}${OUTPUT_CSS}
+</style>
+</head>
+<body>
+<nav class="nav">
+  <a href="${escapeHtml(site)}/">The βook of βitcoin</a>
+  <a href="${escapeHtml(sectionUrl)}">§${sectionNum}, the whole section</a>
+  <a href="${escapeHtml(appUrl)}">Read it in the book →</a>
+</nav>
+<div class="page">
+  <div class="content">
+    <h1 class="section-title"><span class="section-num">§ ${sectionNum}.${outputNum}</span>${
+      title ? `<span class="section-event">${escapeHtml(title)}</span>` : ''}</h1>
+    <hr class="rule">
+    ${out ? `<div class="out-one">
+      <div class="tx-note out-value">${out.value}</div>
+      <div class="out-script">${out.scriptAscii
+        ? `<blockquote class="tx-ascii">${out.scriptAscii}</blockquote>`
+        : `<p class="tx-line">${out.script}</p>`}</div>
+    </div>` : '<p class="tx-line">This output could not be composed.</p>'}
+  </div>
+  <div class="colophon">
+    <span>${escapeHtml(String(site).replace(/^https?:\/\//, ''))}</span>
+    <span class="cite">${escapeHtml(cite)}</span>
+  </div>
+</div>
+<div class="also">
+  <p>Output ${outputNum} of the transaction at ${escapeHtml(citationOf(height, sectionNum))} — its amount
+  above, and the script that must be satisfied to spend it, set in the book's opcode notation.
+  Any prose in it is a lossless encoding of the script's own bytes.</p>
+  <p>Transaction <code>${escapeHtml(txid)}</code>:${outputNum}</p>
+  <p><a href="${escapeHtml(sectionUrl)}">The whole section</a> · <a href="${escapeHtml(appUrl)}">read it in the book</a>${
+    slug ? ` · <a href="${escapeHtml(`${site}/passages/${slug}.md`)}">as plain markdown</a>` : ''}</p>
+</div>
+</body>
+</html>
+`;
 }
 
+// An output's own line, centred as its whole page: the amount above the
+// script it locks, rather than in the ledger column a section puts it in.
+const OUTPUT_CSS = `
+  .out-one { max-width: 46ch; margin: 0 auto; }
+  .out-value { text-align: center; margin-bottom: 1.1em; font-size: .95em; }
+  .out-script { min-width: 0; }
+`;
 
 // ─── a chapter: the block's own page ────────────────────────────────────
 //
@@ -131,7 +223,6 @@ export function chapterPageHtml({
   const url = `${site}${passagePath(height)}`;
   const card = cardUrl || `${site}/og-glossia.png`;
   const appUrl = `${site}/bitcoin-book.html?block=${height}`;
-  const description = chapterDescription({ height, title, txCount });
   const pageTitle = `${cite}${title ? ` — ${title}` : ''} · The βook of βitcoin`;
 
   const contents = sections.length
@@ -147,12 +238,10 @@ export function chapterPageHtml({
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${escapeHtml(pageTitle)}</title>
 <link rel="canonical" href="${escapeHtml(url)}">
-<meta name="description" content="${escapeHtml(description)}">
 
 <meta property="og:type" content="article">
 <meta property="og:site_name" content="The βook of βitcoin">
 <meta property="og:title" content="${escapeHtml(cite)}${title ? ` — ${escapeHtml(title)}` : ''}">
-<meta property="og:description" content="${escapeHtml(description)}">
 <meta property="og:url" content="${escapeHtml(url)}">
 <meta property="og:image" content="${escapeHtml(card)}">
 <meta property="og:image:width" content="${CARD_WIDTH}">
@@ -160,7 +249,6 @@ export function chapterPageHtml({
 <meta property="og:image:alt" content="${escapeHtml(`${cite} — the chapter's title page`)}">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="${escapeHtml(cite)}${title ? ` — ${escapeHtml(title)}` : ''}">
-<meta name="twitter:description" content="${escapeHtml(description)}">
 <meta name="twitter:image" content="${escapeHtml(card)}">
 <style>${passageCss({ fontSize: 19, fixed: false })}${CHAPTER_CSS}
 </style>
@@ -196,16 +284,6 @@ export function chapterPageHtml({
 `;
 }
 
-export function chapterDescription({ height, title, txCount }) {
-  const { volume, book, chapter } = volumeBookChapter(height);
-  const n = !txCount ? 'its transactions read as sections'
-    : txCount === 1 ? 'its one transaction read as its only section'
-      : `its ${txCount.toLocaleString('en-US')} transactions read as sections`;
-  return `${title ? `${title}. ` : ''}Block ${height.toLocaleString('en-US')} read as a chapter of ` +
-    `The βook of βitcoin — its header decoded, and ${n} of Glossia prose, each carrying its ` +
-    `transaction's bytes losslessly. Volume ${toRoman(volume)}, book ${book}, chapter ${chapter}.`;
-}
-
 // The chapter head's own rules, from bitcoin-book.html. The centred title,
 // the hash prose beneath it, and the frontispiece rows.
 const CHAPTER_CSS = `
@@ -234,18 +312,26 @@ const CHAPTER_CSS = `
 // site's standing card rather than declaring one that does not exist.
 export function passagePageHtml({
   site, height, sectionNum, title, txidProse, section, txCount, blockHash, txid,
-  cardUrl = null, slug = null,
+  cardUrl = null, slug = null, outputs = 0,
 }) {
   const cite = `${reference(height)} §${sectionNum}`;
   const path = passagePath(height, sectionNum);
   const url = `${site}${path}`;
   const card = cardUrl || `${site}/og-glossia.png`;
-  const description = passageDescription({ height, section: sectionNum, title, txCount });
   const appUrl = `${site}/bitcoin-book.html?block=${height}&index=${sectionNum - 1}`;
   const pageTitle = `${cite}${title ? ` — ${title}` : ''} · The βook of βitcoin`;
 
   const flow = section
     ? txFlowHtml(section.fields, section.footnotesHtml || [], section.citations || [])
+    : '';
+
+  // The outputs of this section, each addressable in its own right — the
+  // finest level the citation scheme reaches. `outputs` is the count that was
+  // actually written as pages, so the list never points at a 404.
+  const outLinks = outputs > 0
+    ? `<p>Outputs: ${Array.from({ length: outputs }, (_, i) =>
+        `<a href="${escapeHtml(`${site}${passagePath(height, sectionNum, i)}`)}">§${sectionNum}.${i}</a>`
+      ).join(' · ')}</p>`
     : '';
 
   return `<!doctype html>
@@ -255,12 +341,10 @@ export function passagePageHtml({
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${escapeHtml(pageTitle)}</title>
 <link rel="canonical" href="${escapeHtml(url)}">
-<meta name="description" content="${escapeHtml(description)}">
 
 <meta property="og:type" content="article">
 <meta property="og:site_name" content="The βook of βitcoin">
 <meta property="og:title" content="${escapeHtml(cite)}${title ? ` — ${escapeHtml(title)}` : ''}">
-<meta property="og:description" content="${escapeHtml(description)}">
 <meta property="og:url" content="${escapeHtml(url)}">
 <meta property="og:image" content="${escapeHtml(card)}">
 <meta property="og:image:width" content="${CARD_WIDTH}">
@@ -268,7 +352,6 @@ export function passagePageHtml({
 <meta property="og:image:alt" content="${escapeHtml(`${cite} — the passage, set as a page of the book`)}">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="${escapeHtml(cite)}${title ? ` — ${escapeHtml(title)}` : ''}">
-<meta name="twitter:description" content="${escapeHtml(description)}">
 <meta name="twitter:image" content="${escapeHtml(card)}">
 <style>${passageCss({ fontSize: 19, fixed: false })}
   body { padding: 2rem 1rem 3rem; }
@@ -319,6 +402,7 @@ export function passagePageHtml({
   chain's.</p>
   <p>Block hash <code>${escapeHtml(blockHash)}</code><br>
   Transaction <code>${escapeHtml(txid)}</code></p>
+  ${outLinks}
   <p><a href="${escapeHtml(appUrl)}">Read it in the book</a>${slug ? ` · <a href="${escapeHtml(`${site}/passages/${slug}.md`)}">as plain markdown</a>` : ''} · <a href="${escapeHtml(site)}/llms.txt">how to reconstruct any passage yourself</a></p>
 </div>
 </body>

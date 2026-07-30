@@ -38,8 +38,8 @@ import { NOTABLE } from '../web/btc-contents-data.js';
 import { sectionParts } from './twitter-bot/quote.mjs';
 import { loadRenderer } from './twitter-bot/image.mjs';
 import {
-  passagePath, cardPath, passagePageHtml, chapterPageHtml, passagesByPath,
-  CARD_WIDTH, CARD_HEIGHT,
+  passagePath, cardPath, passagePageHtml, chapterPageHtml, outputPageHtml,
+  citationOf, passagesByPath, CARD_WIDTH, CARD_HEIGHT,
 } from './passage-page.mjs';
 
 export const SITE = 'https://bookofbitcoin.io';
@@ -59,6 +59,12 @@ const BEST_OF = 5;
 // of prose, which belongs on the live page's lazy renderer, not in a static
 // file. Body scripts are never this large in the curated set.
 const MAX_ENCODE_BYTES = 8192;
+
+// Each curated section's outputs get pages of their own -- an output is the
+// finest address the citation scheme reaches, and where value actually sits.
+// A section with hundreds of outputs would flood the deploy, so the pages
+// stop here and the count dropped is logged rather than silently truncated.
+const MAX_OUTPUT_PAGES = 20;
 
 // The public mirrors, or whatever PRERENDER_ESPLORA points at (comma-separated
 // Esplora-compatible endpoints) — a local node, or a stand-in when testing the
@@ -436,7 +442,7 @@ export function indexMd(rendered) {
   return md.join('\n');
 }
 
-export function sitemapXml(rendered) {
+export function sitemapXml(rendered, outputPaths = []) {
   const pages = [
     '', 'bitcoin-book.html', 'bitcoin-contents.html', 'bitcoin-front.html',
     'bitcoin-search.html', 'bitcoin-ledger.html', 'bitcoin-ledgers.html',
@@ -446,6 +452,7 @@ export function sitemapXml(rendered) {
     // carrying its own card (see tools/passage-page.mjs). Listed without the
     // leading slash passagePath returns, since SITE supplies it.
     ...passagesByPath(rendered).map((r) => passagePath(r.height, r.isChapter ? null : r.index + 1).slice(1)),
+    ...outputPaths.map((p) => p.slice(1)),
   ];
   const urls = pages.map((p) => `  <url><loc>${SITE}/${p}</loc></url>`).join('\n');
   return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`;
@@ -493,6 +500,7 @@ async function main() {
     console.warn('  no image renderer — citation pages will ship with the standing card');
   }
   let cards = 0;
+  const outputPaths = [];          // the output pages written, for the sitemap
   const pages = passagesByPath(rendered);
   for (const r of pages) {
     // A row names a chapter or a section, and each gets the page its citation
@@ -523,6 +531,14 @@ async function main() {
       }
     }
 
+    // How many of this section's outputs get their own page. A chapter has
+    // none of its own; a section's are capped, and the drop is stated.
+    const outCount = r.isChapter ? 0 : (r.section?.fields?.outputs?.length ?? 0);
+    const outPages = Math.min(outCount, MAX_OUTPUT_PAGES);
+    if (outCount > outPages) {
+      console.log(`  (${r.slug}: ${outCount - outPages} of ${outCount} outputs left without pages, past the cap of ${MAX_OUTPUT_PAGES})`);
+    }
+
     const dir = new URL(`.${passagePath(r.height, sectionNum)}`, WEB_DIR);
     await mkdir(dir, { recursive: true });
     const html = r.isChapter
@@ -542,13 +558,39 @@ async function main() {
         site: SITE, height: r.height, sectionNum, title: r.title,
         txidProse: r.txidProse, section: r.section, txCount: r.txCount,
         blockHash: r.blockHash, txid: r.txid, cardUrl, slug: r.slug,
+        outputs: outPages,
       });
     await writeFile(new URL('index.html', dir), html);
     console.log(`  ${r.isChapter ? 'chapter' : 'section'} ${passagePath(r.height, sectionNum)}${cardUrl ? '  + card' : ''}`);
+
+    // …and a page per output, each with a card of its own line.
+    for (let o = 0; o < outPages; o++) {
+      let outCardUrl = null;
+      if (renderer) {
+        try {
+          const { png } = await renderer.render({
+            cite: citationOf(r.height, sectionNum, o), title: r.title,
+            sectionNum, outputNum: o, section: r.section, txidProse: r.txidProse,
+          }, { site: SITE, width: CARD_WIDTH, height: CARD_HEIGHT });
+          await writeFile(new URL(cardPath(r.height, sectionNum, o).replace(/^\/cards\//, ''), CARDS_DIR), png);
+          outCardUrl = SITE + cardPath(r.height, sectionNum, o);
+          cards++;
+        } catch (e) {
+          console.warn(`  card SKIP ${r.slug} §${sectionNum}.${o}: ${e.message}`);
+        }
+      }
+      const outDir = new URL(`.${passagePath(r.height, sectionNum, o)}`, WEB_DIR);
+      await mkdir(outDir, { recursive: true });
+      await writeFile(new URL('index.html', outDir), outputPageHtml({
+        site: SITE, height: r.height, sectionNum, outputNum: o, title: r.title,
+        section: r.section, txid: r.txid, cardUrl: outCardUrl, slug: r.slug,
+      }));
+      outputPaths.push(passagePath(r.height, sectionNum, o));
+    }
   }
   if (renderer) await renderer.close();
 
-  await writeFile(SITEMAP, sitemapXml(rendered));
+  await writeFile(SITEMAP, sitemapXml(rendered, outputPaths));
   // The archive seed rides with the passages -- but only when something
   // rendered: an explorer outage must not ship an empty seed, whose stamp
   // would mark first-time readers as provisioned with nothing.
@@ -560,7 +602,7 @@ async function main() {
       `${Object.keys(seed.citations).length} citations (${Math.round(json.length / 1024)} KB)`);
   }
   console.log(`\n${rendered.length} passages rendered, ${skipped} skipped; ` +
-    `${pages.length} citation pages, ${cards} cards.`);
+    `${pages.length} citation pages, ${outputPaths.length} output pages, ${cards} cards.`);
   if (!rendered.length) {
     // Still exit 0: an explorer outage must not block the site deploy. The
     // shell, llms.txt and sitemap still ship; passages return next deploy.

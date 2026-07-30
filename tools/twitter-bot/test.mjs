@@ -161,7 +161,7 @@ test('the page sets the transaction in the book\'s manuscript grid', () => {
   const html = passageHtml({
     cite: 'I β1 ■1 §1', title: 'A <title> & "quotes"', sectionNum: 1,
     txidProse: 'The txid as prose.',
-    section: { fields: stubFields(), footnotesHtml: ['φ sig <b>ρ</b> key'], citations: ['I β1 ■1 §2 ⁄0'] },
+    section: { fields: stubFields(), footnotesHtml: ['φ sig <b>ρ</b> key'], citations: ['I β1 ■1 §2.0'] },
     site: SITE,
   });
 
@@ -171,7 +171,7 @@ test('the page sets the transaction in the book\'s manuscript grid', () => {
     assert.ok(html.includes(cls), `expected the ${cls} band`);
   }
   assert.ok(html.includes('tx-body-lead'), 'the opening line takes the illuminated initial');
-  assert.ok(html.includes('I β1 ■1 §2 ⁄0'), 'the resolved citation stands in the left margin');
+  assert.ok(html.includes('I β1 ■1 §2.0'), 'the resolved citation stands in the left margin');
   assert.ok(html.includes('50.00000000 ₿'));
   assert.ok(html.includes('φ sig <b>ρ</b> key'), 'witness markup rides through as markup');
 
