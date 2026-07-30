@@ -73,6 +73,7 @@
 }
 </script>
 <link rel="stylesheet" href="./notation.css">
+<link rel="stylesheet" href="./commentary.css">
 <link rel="stylesheet" href="./btc-chrome.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -412,53 +413,9 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 .section-nav .nav-keys { grid-column: 2; display: flex; align-items: center; justify-content: center; gap: 20px; }
 #page-next { grid-column: 3; justify-self: end; }
 .commentary-body { padding-bottom: 16px; }
-/* Set as reading matter, at the body's own size: commentary is prose to be
-   read, not a table to be consulted, so it follows --scale-body (and a pinch
-   on the sheet sets that region, like a pinch on the page itself). One measure
-   holds the whole sheet -- readings and terms alike, so they share a left edge
-   though they are set at different sizes -- and it is centred, so the sheet
-   reads as a leaf laid over the page rather than a panel bolted to the chrome.
-   The measure carries the prose's own font, since ch resolves per element. */
-.commentary-measure {
-  max-width: 46ch; margin: 0 auto;
-  font: 400 calc(15.5px * var(--scale-body, 1))/1.6 'Newsreader',serif;
-}
-.commentary-entry { margin: 0 0 26px; }
-.commentary-entry:last-of-type { margin-bottom: 18px; }
-/* The reading's subject, in the same monospace eyebrow the section titles use
-   for a curated name -- a heading, deliberately not the passage's own title
-   type: this names what is being commented on, it does not retitle the page. */
-.commentary-name {
-  margin: 0 0 10px; font: 600 calc(10px * var(--scale-body, 1))/1.5 'IBM Plex Mono',monospace;
-  letter-spacing: .18em; text-transform: uppercase; color: var(--accent);
-}
-.commentary-entry p {
-  margin: 0 0 .8em; font: 400 calc(15.5px * var(--scale-body, 1))/1.6 'Newsreader',serif;
-  color: var(--ink-soft); font-variant-numeric: oldstyle-nums;
-}
-.commentary-entry p:last-child { margin-bottom: 0; }
-/* A contributed reading's byline. The name is the point of the whole layer --
-   it is what lets a reader weigh the claim -- so it sits in the accent, quiet
-   but not hidden. */
-/* While a reading is being read off disk, and where one could not be: an
-   annotation's failure is worth stating (the record on the page is unaffected),
-   never worth a blank sheet. */
-.commentary-loading, .commentary-missing {
-  margin: 0; font: italic 400 calc(14px * var(--scale-body, 1))/1.6 'Newsreader',serif; color: var(--meta);
-}
-.commentary-missing code { font: 400 calc(12px * var(--scale-body, 1))/1.5 'IBM Plex Mono',monospace; color: var(--dim); }
-.commentary-by { font-style: italic; color: var(--dim); }
-.commentary-by a { color: var(--accent); text-decoration: none; border-bottom: 1px solid var(--rule); }
-.commentary-by a:hover { border-bottom-color: var(--accent); }
-/* The terms, at the foot of every sheet: a sheet can be read on its own, and a
-   claim of authority is exactly what commentary must not borrow from the
-   record it sits over. Ruled off, one tier down from the prose above it. */
-.commentary-terms {
-  margin: 0; padding-top: 12px; border-top: 1px solid var(--rule);
-  font: 400 calc(11.5px * var(--scale-body, 1))/1.55 'Public Sans',sans-serif; color: var(--meta);
-}
-.commentary-terms a { color: var(--meta); }
-.commentary-terms a:hover { color: var(--accent); }
+/* The sheet's own typography — the measure, the readings, the byline, the terms
+   — is commentary.css, shared with the Ledger's leaf-borne readings, so a
+   reading looks the same wherever the book offers one. */
 /* Nothing to step to on either side (nothing precedes Genesis's opening leaf;
    nothing follows the tip's last section while both edges are hidden): drop
    the bar entirely rather than pin an empty rule to the screen bottom. */

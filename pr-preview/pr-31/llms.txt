@@ -103,8 +103,9 @@ keep that distinction: prose content is the chain's speech; names and
 stories about it are annotations.
 
 A passage's commentary — the "Commentary" section of a static passage, the
-sheet the live book raises beside its notation key — is the annotation layer
-at its most explicit: somebody's reading of why the passage matters, no more
+sheet the live book raises beside its notation key, and the reading the Ledger
+opens over an address — is the annotation layer at its most explicit:
+somebody's reading of why the passage or the name matters, no more
 authoritative than the argument behind it, and never a statement of what the
 chain records. Attribute it as commentary, name its author where one is given,
 and do not fold it into the passage when quoting.

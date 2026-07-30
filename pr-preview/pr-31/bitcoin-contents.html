@@ -217,6 +217,7 @@ const readBookmarks = () => {
   try { const v = JSON.parse(localStorage.getItem(BOOKMARKS_KEY)); return Array.isArray(v) ? v : []; }
   catch { return []; }
 };
+const shortAddr = (a) => (a.length > 17 ? `${a.slice(0, 8)}…${a.slice(-6)}` : a);
 const shortHex = (hex) => `${hex.slice(0, 10)}…${hex.slice(-6)}`;
 
 // The genesis coinbase places offline -- block 0, first transaction -- so the
@@ -361,7 +362,10 @@ function entryEl(entry, underBook) {
     t.append(c);
   }
   const r = document.createElement('span'); r.className = 'toc-ref';
-  if (entry.place) r.textContent = tailRef(entry.place, underBook);
+  // A ledger row cites no chapter: the name's own address stands in its place,
+  // abbreviated as the Ledger abbreviates it.
+  if (entry.address) { r.textContent = shortAddr(entry.address); r.title = entry.address; }
+  else if (entry.place) r.textContent = tailRef(entry.place, underBook);
   else { r.textContent = '—'; r.classList.add('none'); }
   row.append(t, r);
   return row;
@@ -433,6 +437,18 @@ function render() {
     }
     i = jv;
   }
+  // The ledgers: names rather than places, so they take no reference and sort
+  // into no volume. They close the contents under their own heading, each row
+  // opening its ledger -- the book's other document, where a name's record is
+  // read. (The Ledger shelves these too; here they are listed because they are
+  // curated entries like any other, and because a reading kept on a name is
+  // worth meeting where a reader is choosing what to read.)
+  const shelf = ledgers();
+  if (shelf.length) {
+    toc.append(head('toc-vol', 'Ledgers'));
+    for (const e of shelf) toc.append(entryEl(e, false));
+  }
+
   // Entries whose citation could not be resolved fall to the end under a dash,
   // still linked so the book can resolve and open them on the next attempt.
   const stranded = unresolved();
@@ -482,14 +498,18 @@ const entries = () => [
 // position): a transaction's or bookmark's height is unknown offline, so it can
 // only take its place once it resolves. This keeps each volume's (and book's)
 // entries contiguous, which the nested render relies on.
+// The ledgers the contents keeps: address entries, which have no chapter to
+// place and so no reference to sort by -- they read in the Ledger, and are
+// listed under their own heading at the foot of the contents.
+const ledgers = () => entries().filter((e) => e.address);
 const placed = () => entries()
-  .filter((e) => e.place)
+  .filter((e) => !e.address && e.place)
   // A leaf's unnamed levels sort ahead of everything beneath it (a volume's
   // leaf precedes its books, a book's its chapters) -- reading order, and the
   // null must not fall through the comparator as a NaN.
   .sort((a, b) => a.place.volume - b.place.volume || (a.place.book ?? 0) - (b.place.book ?? 0)
     || (a.place.chapter ?? 0) - (b.place.chapter ?? 0) || (a.place.section ?? 0) - (b.place.section ?? 0));
-const unresolved = () => entries().filter((e) => e.tried && !e.place);
+const unresolved = () => entries().filter((e) => !e.address && e.tried && !e.place);
 
 // ── Projected chapters: the mempool, read as far as it extends ────────────
 // The queue of transactions no block has yet recorded, ordered the way a
@@ -685,7 +705,7 @@ render();
 loadProjected();
 setInterval(() => { if (!document.hidden) loadProjected(); }, 60_000);
 await Promise.all([
-  ...notables().filter((e) => !placements.has(e.id)).map(async (e) => {
+  ...notables().filter((e) => !e.address && !placements.has(e.id)).map(async (e) => {
     placements.set(e.id, await resolvePlacement(e));
     render();
   }),

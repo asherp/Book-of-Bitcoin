@@ -16,6 +16,7 @@
 // reads notables() synchronously from then on.
 
 import { reference } from './btc-citation.js';
+import { looksLikeAddress } from './btc-lookup.js';
 
 export { loadNotables, notables } from './btc-notables.js';
 
@@ -52,14 +53,17 @@ export function refFromProof(height, pos) {
   return reference(height) + (pos != null ? ` §${pos + 1}` : '');
 }
 
-// A deep link into the book for a contents entry. An absolute or relative block
-// id opens as ?block= (with an optional ?index= selecting a transaction within
-// the block); a 64-hex value (block hash or txid) opens as ?txid=, which the
-// book resolves as a block first and a transaction second. A `page` of 'book' or
-// 'volume' opens that leaf (?page=…) instead of a chapter, and an `out` -- which
+// A deep link for a contents entry. An address opens its ledger; an absolute or
+// relative block id opens as ?block= (with an optional ?index= selecting a
+// transaction within the block); a 64-hex value (block hash or txid) opens as
+// ?txid=, which the book resolves as a block first and a transaction second. A
+// `page` of 'book' or 'volume' opens that leaf (?page=…) instead of a chapter, and an `out` -- which
 // only a §section.output reference gives an entry -- lands on that output within
 // the section, exactly as a citation carrying one does.
 export function entryHref(id, index, page, out) {
+  // An address is a name, not a place: it has no chapter to open, and reads in
+  // the Ledger -- the same hand-off the search box makes.
+  if (looksLikeAddress(id)) return `bitcoin-ledger.html?address=${id}`;
   const isBlock = isBlockId(id) || isRelativeBlockId(id);
   const q = isBlock ? `block=${id}` : `txid=${id}`;
   if (isBlock && (page === 'book' || page === 'volume')) return `bitcoin-book.html?${q}&page=${page}`;

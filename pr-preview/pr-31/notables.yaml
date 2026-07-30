@@ -29,6 +29,9 @@
 #   I β29 ■596 §85       …to whatever depth is meant: a section here
 #   I β29 ■596 §85.4     …an output within that section
 #   v1b29c596s85         the same citation in the spelling a link carries
+#   1HB5XMLmzFVj8AL…     an address — a name rather than a place, so it opens
+#                        no chapter: the entry reads in the Ledger, and its
+#                        readings are readings of that name
 #
 # A reference is resolved by arithmetic when the file is read, into exactly the
 # height and index an entry would otherwise carry by hand — and its depth says
@@ -371,6 +374,22 @@
   id: '938903'
   commentary:
     - file: first-bip110-signaling-block.md
+# ── The ledgers ───────────────────────────────────────────────────────────
+# A curated entry may name an ADDRESS instead of a place in the chain. An
+# address is a name rather than a place, so it opens no chapter: the row reads
+# in the Ledger (bitcoin-ledger.html), which is where a name's record is kept —
+# and the readings below it are readings of a name, which is the kind of claim
+# this book is most insistent about crediting. That these coins are that party's
+# is somebody's assertion, however well evidenced; the Ledger sets it apart from
+# the record exactly as the reading page sets a passage's commentary apart.
+#
+# Which ledgers the book shelves, and what each is called, is still
+# btc-index-data.js; an entry here is about a reading, not a shelving.
+- title: WikiLeaks
+  id: 1HB5XMLmzFVj8ALj6mfBsbifRoD4miY36v
+  commentary:
+    - file: wikileaks-ledger.md
+
 - title: Latest block
   id: '-1'
   commentary:

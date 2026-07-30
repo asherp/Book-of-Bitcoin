@@ -58,6 +58,7 @@ export function creditLine(entry) {
 // page's own titles are matched in bitcoin-book.html -- so the sheet can never
 // annotate something the page does not name:
 //
+//   index -3  a volume's leaf    the `page: volume` entry at this height
 //   index -2  a book's leaf      the `page: book` entry at this height
 //   index -1  a chapter's leaf   every entry at this height (the block's own
 //                                readings, and those of the sections it names)
@@ -65,25 +66,43 @@ export function creditLine(entry) {
 //                                height+index (how the twice-confirmed BIP30
 //                                coinbases are cited, their txid being shared)
 //
-// A volume leaf keeps no curated readings, and neither does a projected chapter
-// or a fee-replaced draft: callers pass what they are showing, and anything
-// unmatched simply comes back empty. Synchronous, off the loaded index -- the
-// prose arrives later, through resolveCommentary.
+// A projected chapter keeps no curated readings, and neither does a fee-replaced
+// draft: callers pass what they are showing, and anything unmatched simply comes
+// back empty. Synchronous, off the loaded index -- the prose arrives later,
+// through resolveCommentary. Addresses are matched separately, below: they are
+// names rather than places, and they read in the Ledger.
 export function commentaryFor({ height = null, index = null, txid = null } = {}) {
   const h = height == null ? null : String(height);
   const i = Number.isInteger(index) ? index : null;
   const id = typeof txid === 'string' ? txid.toLowerCase() : null;
-  return notables()
-    .filter((e) => {
-      if (i === -2) return e.page === 'book' && e.id === h;
-      if (e.page === 'book') return false;            // a book's leaf is the only place its entry speaks
-      if (i === -1) return e.id === h;
-      if (i !== null && i >= 0) return e.id === id || (e.id === h && e.index === i);
-      return false;
-    })
-    .map((e) => ({ id: e.id, title: e.title, readings: readingsOf(e) }))
-    .filter((it) => it.readings.length);
+  return itemsOf(notables().filter((e) => {
+    if (e.address) return false;                    // a name, not a place: it reads in the Ledger
+    if (i === -3) return e.page === 'volume' && e.id === h;
+    if (i === -2) return e.page === 'book' && e.id === h;
+    if (e.page) return false;                       // a leaf is the only place its entry speaks
+    if (i === -1) return e.id === h;
+    if (i !== null && i >= 0) return e.id === id || (e.id === h && e.index === i);
+    return false;
+  }));
 }
+
+// The readings kept for one or more addresses -- what a ledger is: a titled set
+// of addresses, so its title leaf shows every reading its members carry, and an
+// address's own leaf shows just that address's. Commentary on a ledger is
+// commentary on the record of a name, which is exactly the kind of claim the
+// book insists on crediting: that these coins are that party's is somebody's
+// reading, however well evidenced, and it belongs beside the record rather than
+// inside it.
+export function commentaryForAddresses(addresses) {
+  const wanted = (Array.isArray(addresses) ? addresses : [addresses]).filter(Boolean);
+  if (!wanted.length) return [];
+  // In the order the ledger holds its addresses, not the order the index does.
+  return wanted.flatMap((a) => itemsOf(notables().filter((e) => e.address === a)));
+}
+
+const itemsOf = (entries) => entries
+  .map((e) => ({ id: e.id, title: e.title, readings: readingsOf(e) }))
+  .filter((it) => it.readings.length);
 
 // Fetch the prose for a set of matched entries and hand back items whose
 // readings each carry their Markdown `source` -- or an `error`, which the
@@ -137,7 +156,7 @@ function readingHtml(r) {
 // record it sits over.
 const TERMS_HTML = `
             <p class="commentary-terms">Commentary — a reading of the record, not the record.
-              The passage beneath is the chain's own speech, verifiable byte for byte and in
+              The record it annotates is the chain's own speech, verifiable byte for byte and in
               the public domain; this is somebody's account of why it is worth reading, and no
               more authoritative than the argument behind it.
               <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a>,

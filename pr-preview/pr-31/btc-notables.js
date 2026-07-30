@@ -62,13 +62,21 @@ function normalize(raw, i) {
   if (!raw.title || !written) throw new Error(`btc-notables: entry ${i + 1} needs a title and an id`);
   const title = String(raw.title);
   const found = parseLookup(written, { isAddress: looksLikeAddress });
-  if (found.kind === 'address') {
-    // The contents lists places; an address is a name, and names are the
-    // ledgers' index (btc-index-data.js). Saying so beats resolving to nothing.
-    throw new Error(`btc-notables: "${title}" has an address as its id — an address is a ledger entry (btc-index-data.js), not a chapter`);
-  }
   if (!found.kind) {
-    throw new Error(`btc-notables: "${title}" has an id that is neither a height, a 64-hex id, nor a reference: ${written}`);
+    throw new Error(`btc-notables: "${title}" has an id that is neither a height, a 64-hex id, a reference, nor an address: ${written}`);
+  }
+  // An address is kept the way the search box treats one: not a place in the
+  // chain but a name, so it reads in the Ledger rather than as a chapter. It is
+  // still a curated entry, and still carries readings -- which is how commentary
+  // comes to be attached to a particular ledger.
+  if (found.kind === 'address') {
+    const entry = { title, id: found.address, address: found.address };
+    for (const field of ['index', 'page', 'out']) {
+      if (raw[field] !== undefined) {
+        throw new Error(`btc-notables: "${title}" is an address, so it has no ${field} — that names a position within a chapter`);
+      }
+    }
+    return withCommentary(entry, raw);
   }
   const ref = found.kind === 'reference' ? found.reference : null;
   const id = ref ? String(ref.height) : (found.kind === 'hex' ? found.hex : written);
@@ -94,6 +102,13 @@ function normalize(raw, i) {
     if (ref.out !== null) entry.out = ref.out;
   }
   if (raw.out !== undefined) entry.out = Number(raw.out);
+  return withCommentary(entry, raw);
+}
+
+// The readings an entry carries, however the entry names its subject: a chapter,
+// a section, or an address. Each is a Markdown file in commentary/ (or a short
+// note written inline), and a `by` makes it somebody's rather than the book's.
+function withCommentary(entry, raw) {
   if (raw.commentary) {
     entry.commentary = raw.commentary.map((c) => {
       if (!c.file && !c.note) throw new Error(`btc-notables: a reading of "${entry.title}" has neither file nor note`);
