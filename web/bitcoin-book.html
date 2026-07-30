@@ -546,9 +546,18 @@ button:disabled { opacity: .4; cursor: not-allowed; }
    the amounts are the right margin's text. nowrap: under fit-content sizing
    an amount must count as one piece, never wrap its ₿ onto a line of its own
    to satisfy a narrower column. */
-.tx-out-value  { grid-column: 2; text-align: right; font-size: calc(13.5px * var(--scale-margins, 1)); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.tx-out-value  { grid-column: 2; text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .tx-locktime { grid-column: left / -1; grid-row: 3; text-align: center; font-style: normal; }
 .tx-note { font: italic 400 calc(13.5px * var(--scale-body, 1))/1.4 'Newsreader',serif; color: var(--dim); }
+/* The amount's size, on both its classes. An amount is a .tx-note as well as
+   a .tx-out-value, and .tx-note sets the font shorthand -- font-size included
+   -- so at equal specificity the rule declared later would win and size the
+   right margin from the body's scale. Naming both classes settles it by
+   specificity instead of by source order. Only the size: the rest of the
+   voice (italic Newsreader, its line-height) is the note's, as it should be,
+   and layout stays on .tx-out-value alone so the narrow-screen override below
+   still reaches it. */
+.tx-note.tx-out-value { font-size: calc(13.5px * var(--scale-margins, 1)); }
 /* The input's sequence mark, leading the amount line beneath the reference:
    ●/○ final/respects-locktime, † replaceable (a shade warmer), ■n / Τn a
    relative block / time delay. */
@@ -902,6 +911,10 @@ function closeSheet(sheet) {
 // asking to be rid of it.
 document.addEventListener('click', (e) => {
   if (e.target.closest && e.target.closest('.section-nav')) return;
+  for (const sheet of document.querySelectorAll('.section-nav .nav-sheet')) closeSheet(sheet);
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape') return;
   for (const sheet of document.querySelectorAll('.section-nav .nav-sheet')) closeSheet(sheet);
 });
 
