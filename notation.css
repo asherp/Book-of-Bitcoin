@@ -30,6 +30,35 @@
   background: var(--page); border-top: 1px solid var(--rule);
   padding: 16px 2px 12px;
 }
+/* The sheet rises and falls rather than blinking. Short — a key is furniture,
+   and a reader opening one mid-sentence should not be made to wait for it.
+   Opening needs no script: the panel is display:none until the details opens,
+   so simply appearing starts the animation. Closing does, since the panel has
+   to finish falling before the details drops it (see closeSheet). */
+@keyframes sheet-rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+/* No from: the fall starts wherever the panel is, so one released past the
+   dismiss threshold carries on from the finger instead of snapping back to
+   zero first. Clicked shut, it starts at rest and falls the whole way. */
+@keyframes sheet-fall { to { opacity: 0; transform: translateY(24px); } }
+.nav-sheet[open] > .nav-sheet-body { animation: sheet-rise 130ms cubic-bezier(.2,.7,.3,1); }
+.nav-sheet.closing > .nav-sheet-body { animation: sheet-fall 110ms ease-in forwards; }
+/* A finger dragging the sheet down carries it, so the gesture is visibly the
+   one that dismisses it; released short of the threshold, it springs back. */
+.nav-sheet.dragging > .nav-sheet-body { animation: none; transition: none; }
+.nav-sheet.springing > .nav-sheet-body { transition: transform 120ms ease-out; transform: none; }
+@media (prefers-reduced-motion: reduce) {
+  .nav-sheet[open] > .nav-sheet-body, .nav-sheet.closing > .nav-sheet-body { animation: none; }
+  .nav-sheet.springing > .nav-sheet-body { transition: none; }
+}
+
+/* The scope line above the key: what the sheet is showing, and the way to the
+   whole of it. Apparatus about the key, not part of it. */
+.key-scope { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 0 0 14px; }
+.key-scope-note { font: italic 400 calc(13px * var(--scale-notation, 1))/1.4 'Newsreader',serif; color: var(--meta); }
+.key-scope-link {
+  font: 500 calc(11px * var(--scale-notation, 1))/1 'IBM Plex Mono',monospace;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--accent); white-space: nowrap;
+}
 
 /* ── Notation: a key to the manuscript's sigla — the glyphs that notate a
    script's opcodes, and the marks drawn in each transaction's margins. ── */
