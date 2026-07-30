@@ -44,6 +44,10 @@ const fromBase64 = (text) => Uint8Array.from(atob(text), (c) => c.charCodeAt(0))
 export async function readProof(bytes) {
   const parsed = await parseOtsProof(bytes);
   const att = earliestBitcoin(parsed.attestations);
+  // Which output the commitment sits in -- read off the ladder, since the proof
+  // carries the transaction's own bytes either side of it. It completes the
+  // citation (§section.out) and lets the cited passage find its way back here.
+  const tx = att && ladderOf(att, parsed.digest).find((r) => r.kind === 'transaction');
   return {
     digest: parsed.digest,
     hash: parsed.hash,
@@ -55,6 +59,7 @@ export async function readProof(bytes) {
       section: att.index === null ? null : att.index + 1,
       txid: att.txid,
       merkleRoot: att.merkleRoot,
+      out: tx?.out ?? null,
     },
   };
 }
@@ -67,9 +72,10 @@ export const attests = async (proof, subjectBytes) =>
 // The citation a place reads as, and the link that opens it. A proof always
 // names a chapter; whether it names a §section depends on its merkle path being
 // readable (btc-ots.js says so by leaving `index` null), so both forms are here.
-export const citeOf = (place) => reference(place.height) + (place.section ? ` §${place.section}` : '');
+export const citeOf = (place) => reference(place.height) + (place.section ? ` §${place.section}` : '')
+  + (place.section && place.out != null ? `.${place.out}` : '');
 export const hrefOf = (place) => (place.section
-  ? `./bitcoin-book.html?ref=${latinRefOf(place.height, place.section)}`
+  ? `./bitcoin-book.html?ref=${latinRefOf(place.height, place.section, place.out ?? undefined)}`
   : `./bitcoin-book.html?block=${place.height}`);
 // Reading order, the same order the book itself is in: by chapter, then by
 // section within it. A file's own date has nothing to do with it — where a
@@ -254,6 +260,19 @@ export const isKept = (digest) => keptProofs().some((p) => p.digest === digest);
 
 // The whole appendix, bundled and kept together in reading order -- what the
 // contents lists under Appendix IV and what its leaf shows above the picker.
+// The other direction. A passage cannot say what it dated -- the chain writes
+// commitments, not their meanings -- so this answers it from the appendix: the
+// listed works whose commitment sits in THIS output of THIS section, numbered
+// by their place in the list, so a passage's margin can print "Appendix IV.1"
+// and mean a row a reader can go and find.
+export function citedAt(listed, { height, section, out }) {
+  return listed
+    .map((proof, i) => ({ proof, n: i + 1 }))
+    .filter(({ proof }) => proof.place.height === height
+      && proof.place.section === section
+      && proof.place.out === out);
+}
+
 // A proof's own page: Appendix IV's rows open the ladder rather than jumping
 // straight into the book, because the ladder is the thing this appendix has
 // to show. The chapter is one step further on, at the foot of it.

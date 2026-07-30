@@ -1,6 +1,8 @@
 <!-- SPDX-License-Identifier: CC-BY-4.0 -->
 
-A contemporary source is what a historian calls a document written at the time it speaks of, by someone who was there — and the hardest thing about one has always been proving it is what it claims. Dates on paper are written by whoever holds the pen. What an OpenTimestamps proof supplies is the missing half: not who wrote this, or whether it is true, but that it existed by a particular block, and so before everything the chain has recorded since. That is a narrow claim, and it is the one claim nobody can forge.
+Every other reference in this book points inward. A chapter, a section, an output — the citation scheme is a way of naming things the book already contains, and following one always lands you back inside it. These point the other way: at documents outside the text, which the book does not hold and never will, and which it can nonetheless cite because the chain has dated them.
+
+That is the whole of what is being claimed, and it is worth being exact about how little it is. Not who wrote the thing. Not that it is true. Only that it existed by a particular block, and therefore before everything the chain has recorded since. Dates on paper are written by whoever holds the pen; this one is not, which is what makes it worth citing at all.
 
 A proof is an argument, and this leaf is that argument written out. Read from the top: the file's digest, then each value the one above hashes into, down to the merkle root. Every line is 32 bytes of hash, which is why every line can be prose — the same encoding the chapters are set in, doing the same work.
 

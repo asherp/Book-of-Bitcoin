@@ -209,9 +209,10 @@ compiled to WASM) is consumed as a published
   nVersion
 - `web/bitcoin-ledgers.html` — the old Ledgers shelf, now a redirect to
   the compendium (kept for bookmarks and cached mastheads)
-- `web/btc-proofs.js`, `web/proofs/` — Appendix IV, *Contemporary Sources*:
-  documents whose existence the chain attests, in the sense a historian means —
-  written at the time, and provably so. A file is not a passage and is not
+- `web/btc-proofs.js`, `web/proofs/` — Appendix IV, *Citations*: works cited
+  outside this text, whose existence the chain attests. Every other reference in
+  the book points inward at a chapter it contains; these point outward, and the
+  passage that dates one carries the back-reference in its margin. A file is not a passage and is not
   on the chain at all — what is on the chain is the commitment its proof
   reduces to — so an entry here is a file's name and the citation its proof
   lands on, which the proof states by itself, offline. Two sources listed as
