@@ -89,9 +89,15 @@ for (const e of allPlaces) {
   }
 }
 
-// Every referenced reading must exist, say something, and carry its licence.
+// Every referenced reading must exist, say something, and carry its licence --
+// the contents' and the appendix's alike, a future chapter carrying a reading
+// the same way a written one does.
+const readingBearers = [
+  ...entries,
+  ...parts.filter((p) => p.kind === 'entries').flatMap((p) => p.entries),
+];
 const referenced = new Set();
-for (const e of entries) {
+for (const e of readingBearers) {
   for (const r of readingsOf(e)) {
     if (!r.file) continue;                        // an inline note: nothing on disk to check
     referenced.add(r.file);
@@ -130,7 +136,7 @@ for (const part of parts) {
   }
 }
 
-const credited = entries.flatMap((e) => readingsOf(e).filter((r) => r.by).map((r) => r.by));
+const credited = readingBearers.flatMap((e) => readingsOf(e).filter((r) => r.by).map((r) => r.by));
 console.log(`notables.yaml: ${entries.length} entries in ${allPlaces.length} places, ${referenced.size} readings`
   + `; appendix.yaml: ${parts.map((p) => p.title).join(', ')}`
   + `${credited.length ? `, credited to ${[...new Set(credited)].join(', ')}` : ''}`);

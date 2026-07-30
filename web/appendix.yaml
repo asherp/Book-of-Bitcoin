@@ -62,12 +62,18 @@
     - title: BIP110 mandatory signaling
       id: '961632'
       note: BIP8-style flag height — mandatory signaling from 961,632, should BIP110 lock in. ~0.5% of blocks signaling as of July 2026, against a 55% threshold.
+      commentary:
+        - file: bip110-mandatory-signaling.md
     - title: BIP110 lock-in
       id: '963648'
       note: Lock-in by 963,648, one book on, should the threshold be met.
+      commentary:
+        - file: bip110-lock-in.md
     - title: BIP110 activation
       id: '965664'
       note: Activation at 965,664, one book after lock-in — the height where the reduced data limit would first bind.
+      commentary:
+        - file: bip110-activation.md
     # The one activation block whose height is already consensus and still will
     # not exist for two centuries: BIP42 (April 1, 2014) capped the subsidy
     # schedule where the 64th halving's undefined bit-shift would have resurrected
@@ -76,6 +82,8 @@
     - title: BIP42 activation (21M cap)
       id: LXV β1 □1
       note: The book's last chapter, and the only one whose date is already known: BIP42's cap first binds at 13,440,000, the opening chapter of Volume LXV, due around the year 2262.
+      commentary:
+        - file: bip42-activation-21m-cap.md
 
 - kind: ledgers
   title: Ledgers of Note

@@ -425,6 +425,19 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 /* The sheet's own typography — the measure, the readings, the byline, the terms
    — is commentary.css, shared with the Ledger's leaf-borne readings, so a
    reading looks the same wherever the book offers one. */
+/* A future chapter's reading, set beneath the answer that its block is unmined:
+   the page a consensus height has until a miner writes one. Centred like the
+   status line above it, in the commentary's own measure (commentary.css). */
+#future-commentary { margin: 40px auto 0; max-width: 560px; padding: 0 22px 60px; }
+#future-commentary:empty { display: none; }
+/* The book's answer for a chapter nobody has written yet — when it is due —
+   standing as the leaf's first line rather than as the toast it would be if
+   there were nothing to read beneath it. */
+.future-answer {
+  margin: 0 0 22px; padding-bottom: 16px; border-bottom: 1px solid var(--rule);
+  font: 500 calc(12.5px * var(--scale-commentary, 1))/1.5 'IBM Plex Mono',monospace;
+  color: var(--dim);
+}
 /* Nothing to step to on either side (nothing precedes Genesis's opening leaf;
    nothing follows the tip's last section while both edges are hidden): drop
    the bar entirely rather than pin an empty rule to the screen bottom. */
@@ -688,6 +701,9 @@ button:disabled { opacity: .4; cursor: not-allowed; }
        (bitcoin-search.html, the masthead's Search link); this page only reports
        the progress of whatever it was asked to open. -->
   <div id="block-status" class="status-line hidden"></div>
+  <!-- A future chapter's reading, set where its passage would be. Empty on
+       every other page (see futureCommentary). -->
+  <div id="future-commentary"></div>
 
   <!-- The pinch gesture's readout: the type size as a percentage, floating
        like the status toast, while the fingers are down and a beat after. -->
@@ -3477,13 +3493,19 @@ const clampIndex = (i, meta) => {
 // return date instead of the drifting projection. Every other failure
 // passes through untouched.
 const BIP42_HEIGHT = 13440000;
+// An unwritten chapter's answer carries the height it is about, so the page can
+// set that chapter's curated reading beneath it -- a future chapter has no
+// passage to annotate, and its reading is the whole of what there is to read
+// (see futureCommentary).
+const unwritten = (err, height) => Object.assign(err, { height });
+
 const BLOCKS_PER_YEAR = 52560;
 const MEMPOOL_REACH_MAX = 1008;   // a week of blocks -- beyond any plausible queue, skip the fetch
 async function unwrittenOr(e, height, tipP) {
   if (!e.notFound) return e;
   const tip = await tipP;
   if (tip === null || height <= tip) return e;
-  if (height === BIP42_HEIGHT) return new Error('Block not found. Come back in the year 2262.');
+  if (height === BIP42_HEIGHT) return unwritten(new Error('Block not found. Come back in the year 2262.'), height);
   const ahead = height - tip;
   if (ahead <= MEMPOOL_REACH_MAX) {
     try {
@@ -3492,9 +3514,9 @@ async function unwrittenOr(e, height, tipP) {
         const mp = await res.json();
         const depth = Math.ceil(mp.vsize / 1_000_000);
         if (ahead <= depth) {
-          return new Error(`Block ${height.toLocaleString()} (${referenceOf(height)}) has not been mined yet — but its chapter is forming: `
+          return unwritten(new Error(`Block ${height.toLocaleString()} (${referenceOf(height)}) has not been mined yet — but its chapter is forming: `
             + `the mempool holds ≈ ${depth} chapters of sections, and this one stands ${ahead === 1 ? 'next' : `${ahead} deep`} in the queue. `
-            + `Come back in ${blocksEta(ahead).replace('≈ ', 'about ')}.`);
+            + `Come back in ${blocksEta(ahead).replace('≈ ', 'about ')}.`), height);
         }
       }
     } catch { /* the queue is unreadable -- fall through to the calendar */ }
@@ -3504,7 +3526,7 @@ async function unwrittenOr(e, height, tipP) {
   // Cited by reference, never by ■height: the chapter marks count chapters
   // within a book, so a raw height after one would be outside the notation --
   // and an unmined chapter's is the expected mark □, not the settled ■.
-  return new Error(`Block not found — ${height.toLocaleString()} (${referenceOf(height)}) has not been mined yet. Come back ${when}.`);
+  return unwritten(new Error(`Block not found — ${height.toLocaleString()} (${referenceOf(height)}) has not been mined yet. Come back ${when}.`), height);
 }
 
 // Load whatever the reader gave us: a block height, a block hash, or a
@@ -3514,6 +3536,7 @@ async function unwrittenOr(e, height, tipP) {
 async function openLookup(input, index = -1) {
   input = (input || '').trim();
   $('chapter').classList.add('hidden');
+  $('future-commentary').replaceChildren();   // a reading belongs to the answer that raised it
   // Learn the current chain tip on every lookup (in parallel with the block
   // load) and record it, so the Next controls are exact -- shown below the tip,
   // hidden at it -- rather than optimistic. A tip fetch that fails resolves to
@@ -3562,8 +3585,39 @@ async function openLookup(input, index = -1) {
     await tipP;   // record the fresh tip before labelNav decides Next visibility
     await showCurrentTx();
   } catch (e) {
-    setStatus(e.message || 'Failed to load.', 'err');
+    const message = e.message || 'Failed to load.';
+    setStatus(message, 'err');
+    futureCommentary(e.height ?? null, message);
   }
+}
+
+// A chapter consensus has numbered and no miner has written: the book answers
+// with the date it is due, and -- where the appendix keeps a reading for that
+// height (Appendix II, Future Chapters) -- with what the rule binding there
+// will mean for the transactions that follow it. The reading IS the page: there
+// is no passage yet to set it beside, so it opens in place rather than as a
+// sheet over anything.
+async function futureCommentary(height, message) {
+  const box = $('future-commentary');
+  box.replaceChildren();
+  if (height == null) return;
+  const items = commentaryFor({ height, index: -1 });
+  if (!items.length) return;                      // no reading: the answer stands alone, as a toast
+  // With a reading to set, the answer stops being a passing toast and becomes
+  // the leaf's first line -- the page says when the chapter is due, then what
+  // the rule binding there will mean for the passages that follow it.
+  setStatus('');
+  const answer = document.createElement('div');
+  answer.className = 'commentary-measure';
+  answer.innerHTML = '<p class="future-answer"></p>';
+  answer.firstChild.textContent = message;
+  const reading = document.createElement('div');
+  reading.innerHTML = '<div class="commentary-measure"><p class="commentary-loading">reading…</p></div>';
+  box.append(answer, reading);
+  await resolveCommentary(items);
+  if (!box.contains(reading)) return;             // the reader moved on
+  // Authored Markdown, escaped at the source (btc-markdown.js).
+  reading.innerHTML = commentaryHtml(items);
 }
 
 // direction: +1 (Next) or -1 (Previous). Steps through the block's pages --
