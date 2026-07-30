@@ -111,14 +111,14 @@ body { min-height: 100vh; background: var(--page); color: var(--ink); font-famil
 a { color: var(--accent); text-decoration: none; }
 a:hover { text-decoration: underline; }
 
-/* The leaf's head: the crumb back up to the contents, the appendix's number
-   as the eyebrow, its name as the title, and then the paragraph saying what
-   is gathered here and why it could not be gathered in reading order. */
-.page-head { text-align:center; padding-bottom:26px; margin-bottom:14px; border-bottom:1px solid var(--rule); }
-.appx-up { display:inline-block; margin-bottom:18px; font:600 10px/1 'IBM Plex Mono',monospace; letter-spacing:.18em; text-transform:uppercase; color:var(--meta); }
-.appx-up:hover { color:var(--accent); }
-.page-eyebrow { font:600 11px/1 'IBM Plex Mono',monospace; letter-spacing:.3em; text-transform:uppercase; color:var(--accent); }
-.appx-title { margin:14px 0 0; font:300 clamp(28px,7vw,40px)/1.15 'Newsreader',serif; color:var(--ink); letter-spacing:-.01em; }
+/* The leaf's head: the appendix's number as its title, its name beneath,
+   and then the paragraph saying what is gathered here and why it could not
+   be gathered in reading order. Nothing stands above the title -- the ways
+   out are the masthead's Contents, the pull down at the top, and the turns
+   at the foot. */
+.page-head { text-align:center; padding:8px 0 26px; margin-bottom:14px; border-bottom:1px solid var(--rule); }
+.appx-title { margin:0; font:300 clamp(28px,7vw,40px)/1.15 'Newsreader',serif; color:var(--ink); letter-spacing:-.01em; }
+.appx-subtitle { margin-top:10px; font:400 19px/1.35 'Newsreader',serif; color:var(--dim); }
 .appx-src { margin-top:12px; }
 .appx-note { max-width:56ch; margin:22px auto 30px; font:400 15px/1.7 'Newsreader',serif; color:var(--ink-soft); text-align:left; }
 
@@ -148,9 +148,8 @@ a:hover { text-decoration: underline; }
   </div>
 
   <header class="page-head">
-    <a class="appx-up" id="appx-up" href="./bitcoin-contents.html">▴ Contents</a>
-    <div class="page-eyebrow" id="appx-number"></div>
     <h1 class="appx-title" id="appx-title"></h1>
+    <div class="appx-subtitle" id="appx-subtitle"></div>
     <div class="appx-src" id="appx-src"></div>
   </header>
   <p class="appx-note" id="appx-note"></p>
@@ -185,17 +184,9 @@ const hrefFor = (p) => p.kind === 'ledgers'
   : `./bitcoin-appendix.html?part=${p.kind === 'mempool' ? 'mempool' : 'future'}`;
 
 document.title = `The βook of βitcoin — ${label(part)}`;
-$('appx-number').textContent = `Appendix ${numeral(index)}`;
-$('appx-title').textContent = part.title;
+$('appx-title').textContent = `Appendix ${numeral(index)}`;
+$('appx-subtitle').textContent = part.title;
 $('appx-note').textContent = part.note || '';
-
-// The crumb and the pull-down-at-the-top ascend to the same place, so the
-// crumb plays the same turn: the leaf sinks and the contents drop back in.
-$('appx-up').addEventListener('click', (ev) => {
-  if (ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey || ev.button !== 0) return;
-  ev.preventDefault();
-  window.__appxAscend();
-});
 
 // The neighbours, in the appendices' numbered order -- named at the foot and
 // handed to the gesture layer, so a swipe and a tap turn to the same leaf.

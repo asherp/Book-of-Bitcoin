@@ -145,6 +145,10 @@ a:hover { text-decoration: underline; }
 /* A ledger has one title page. A passage leaf carries no name of its own --
    the passage is its title, set below -- so the empty heading takes no room. */
 .anth-title:empty { display:none; }
+/* What the title names, said plainly beneath it: the appendix leaf's title is
+   its number, and this is the appendix. */
+.anth-subtitle { margin-top:10px; font:400 19px/1.35 'Newsreader',serif; color:var(--dim); }
+.anth-subtitle:empty { display:none; }
 .anth-addr { margin-top:10px; font:400 12px/1.5 'IBM Plex Mono',monospace; letter-spacing:.02em; color:var(--meta); word-break:break-all; }
 .anth-addr:empty { display:none; }
 .anth-prose { margin:22px 0 0; max-width:560px; font:400 16px/1.7 'Newsreader',serif; font-style:italic; color:var(--ink-soft); }
@@ -456,6 +460,7 @@ a:hover { text-decoration: underline; }
       <header class="anth-hero" id="anth-hero">
         <div class="page-eyebrow" id="anth-eyebrow">Ledger</div>
         <h1 class="anth-title" id="anth-title"></h1>
+        <div class="anth-subtitle" id="anth-subtitle"></div>
         <div class="anth-pager" id="anth-pager"></div>
         <p class="anth-prose" id="anth-prose"></p>
         <div class="anth-addr" id="anth-addr"></div>
@@ -1198,6 +1203,7 @@ const clearHero = () => {
   balanceEl.className = 'anth-balance';
   balanceEl.onclick = null;
   document.getElementById('anth-addr').textContent = '';
+  document.getElementById('anth-subtitle').textContent = '';
   const prose = document.getElementById('anth-prose');
   prose.replaceChildren();
   prose.classList.remove('explainer', 'passage');   // each leaf sets the prose it wants, at its own size
@@ -1343,13 +1349,14 @@ const arrow = (glyph, label, off, act, word = false) => {
 // and a reader arrives here from that list. Below it the shelf; above it the
 // contents; behind it the appendix before this one, on its own page.
 const openAppendixLeaf = () => {
-  eyebrow.replaceChildren(arrowless('▴ Contents', () => toContents()));
-  document.getElementById('anth-title').textContent = PART_LABEL;
-  pager.replaceChildren(
-    arrow('‹', PREV_PART ? `Previous appendix — ${PREV_PART.title}` : 'Previous appendix', !PREV_PART, () => toPrevAppendix()),
-    Object.assign(document.createElement('span'), { textContent: `Appendix ${toRoman(PART_INDEX + 1)} of ${toRoman(APPENDIX.length)}` }),
-    arrow('›', 'Next appendix', true, () => {}),
-  );
+  // Nothing above the title but the masthead: the leaf is titled by its
+  // number and named beneath it, and the ways out of it are the ones the
+  // book's leaves always have -- the pull down at the top, the swipe back,
+  // and the masthead's own Contents.
+  eyebrow.replaceChildren();
+  document.getElementById('anth-title').textContent = `Appendix ${toRoman(PART_INDEX + 1)}`;
+  document.getElementById('anth-subtitle').textContent = LEDGER_PART ? LEDGER_PART.title : 'Ledgers';
+  pager.replaceChildren();
   const prose = document.getElementById('anth-prose');
   prose.classList.add('explainer');
   prose.textContent = LEDGER_PART ? LEDGER_PART.note : '';
@@ -1363,7 +1370,7 @@ const openAppendixLeaf = () => {
 const openLedgerLeaf = (alive) => {
   // The eyebrow is the crumb up, as it is on a passage leaf -- and above a
   // ledger's title leaf is the appendix this shelf is.
-  eyebrow.replaceChildren(arrowless('▴ ' + PART_LABEL, () => ascend()));
+  eyebrow.replaceChildren(arrowless(`▴ Appendix ${toRoman(PART_INDEX + 1)}`, () => ascend()));
   document.getElementById('anth-title').textContent = cur().name;
   pager.replaceChildren(
     arrow('‹', 'Previous ledger', li <= 0, () => turnLedger(-1)),
