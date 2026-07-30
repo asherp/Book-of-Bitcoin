@@ -278,7 +278,7 @@ export const APPENDIX = [
   },
   {
     kind: 'ledgers',
-    title: 'Ledgers',
+    title: 'Ledgers of Note',
     note: 'A ledger gathers what one keeper spends from — a single address, a set rotated over the years, or in time every leaf of one extended key — and reads each of its scripts as a passage, with the chapters that passage appears in listed beneath it. Nothing here carries a reference: the chain never writes an address, only the script one stands for, so a ledger is not cited but discovered, and its run of chapters stays open-ended.',
   },
 ];

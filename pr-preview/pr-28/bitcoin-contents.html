@@ -462,7 +462,7 @@ document.addEventListener('click', (ev) => {
   if (!link || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey || ev.button !== 0) return;
   ev.preventDefault();
   const flag = link.getAttribute('href').includes('bitcoin-ledger') ? 'glossia-ledger-entrance' : 'glossia-appendix-entrance';
-  try { sessionStorage.setItem(flag, '1'); } catch (_) {}
+  try { sessionStorage.setItem(flag, 'down'); } catch (_) {}   // a descent: the leaf rises from below
   const go = () => { location.href = link.getAttribute('href'); };
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { go(); return; }
   document.body.style.transition = 'transform .2s linear';

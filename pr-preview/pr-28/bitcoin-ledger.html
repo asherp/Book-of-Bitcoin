@@ -26,9 +26,12 @@
   // sinks, the contents drop in from above. The flag is set just before the
   // navigation and consumed on first paint.
   try {
-    if (sessionStorage.getItem('glossia-ledger-entrance')) {
+    const dir = sessionStorage.getItem('glossia-ledger-entrance');
+    if (dir) {
       sessionStorage.removeItem('glossia-ledger-entrance');
-      document.documentElement.classList.add('ledger-entrance');
+      // A descent from the contents rises from below; a forward turn along
+      // the volumes' line -- out of Appendix II -- arrives from the right.
+      document.documentElement.classList.add(dir === 'fwd' ? 'ledger-entrance-fwd' : 'ledger-entrance');
     }
   } catch (_) {}
 </script>
@@ -93,6 +96,8 @@ body { min-height: 100vh; background: var(--page); color: var(--ink); font-famil
 @media (prefers-reduced-motion: no-preference) {
   .ledger-entrance body { animation: ledger-in .22s ease-out; }
   @keyframes ledger-in { from { transform: translateY(100vh); } }
+  .ledger-entrance-fwd body { animation: ledger-in-fwd .22s ease-out; }
+  @keyframes ledger-in-fwd { from { transform: translateX(100vw); } }
 }
 .wrap { max-width: 720px; margin: 0 auto; padding: 48px 22px 100px; }
 a { color: var(--accent); text-decoration: none; }
@@ -145,6 +150,10 @@ a:hover { text-decoration: underline; }
 /* A ledger has one title page. A passage leaf carries no name of its own --
    the passage is its title, set below -- so the empty heading takes no room. */
 .anth-title:empty { display:none; }
+/* What the title names, said plainly beneath it: the appendix leaf's title is
+   its number, and this is the appendix. */
+.anth-subtitle { margin-top:10px; font:400 19px/1.35 'Newsreader',serif; color:var(--dim); }
+.anth-subtitle:empty { display:none; }
 .anth-addr { margin-top:10px; font:400 12px/1.5 'IBM Plex Mono',monospace; letter-spacing:.02em; color:var(--meta); word-break:break-all; }
 .anth-addr:empty { display:none; }
 .anth-prose { margin:22px 0 0; max-width:560px; font:400 16px/1.7 'Newsreader',serif; font-style:italic; color:var(--ink-soft); }
@@ -456,6 +465,7 @@ a:hover { text-decoration: underline; }
       <header class="anth-hero" id="anth-hero">
         <div class="page-eyebrow" id="anth-eyebrow">Ledger</div>
         <h1 class="anth-title" id="anth-title"></h1>
+        <div class="anth-subtitle" id="anth-subtitle"></div>
         <div class="anth-pager" id="anth-pager"></div>
         <p class="anth-prose" id="anth-prose"></p>
         <div class="anth-addr" id="anth-addr"></div>
@@ -1198,6 +1208,7 @@ const clearHero = () => {
   balanceEl.className = 'anth-balance';
   balanceEl.onclick = null;
   document.getElementById('anth-addr').textContent = '';
+  document.getElementById('anth-subtitle').textContent = '';
   const prose = document.getElementById('anth-prose');
   prose.replaceChildren();
   prose.classList.remove('explainer', 'passage');   // each leaf sets the prose it wants, at its own size
@@ -1343,13 +1354,14 @@ const arrow = (glyph, label, off, act, word = false) => {
 // and a reader arrives here from that list. Below it the shelf; above it the
 // contents; behind it the appendix before this one, on its own page.
 const openAppendixLeaf = () => {
-  eyebrow.replaceChildren(arrowless('▴ Contents', () => toContents()));
-  document.getElementById('anth-title').textContent = PART_LABEL;
-  pager.replaceChildren(
-    arrow('‹', PREV_PART ? `Previous appendix — ${PREV_PART.title}` : 'Previous appendix', !PREV_PART, () => toPrevAppendix()),
-    Object.assign(document.createElement('span'), { textContent: `Appendix ${toRoman(PART_INDEX + 1)} of ${toRoman(APPENDIX.length)}` }),
-    arrow('›', 'Next appendix', true, () => {}),
-  );
+  // Nothing above the title but the masthead: the leaf is titled by its
+  // number and named beneath it, and the ways out of it are the ones the
+  // book's leaves always have -- the pull down at the top, the swipe back,
+  // and the masthead's own Contents.
+  eyebrow.replaceChildren();
+  document.getElementById('anth-title').textContent = `Appendix ${toRoman(PART_INDEX + 1)}`;
+  document.getElementById('anth-subtitle').textContent = LEDGER_PART ? LEDGER_PART.title : 'Ledgers';
+  pager.replaceChildren();
   const prose = document.getElementById('anth-prose');
   prose.classList.add('explainer');
   prose.textContent = LEDGER_PART ? LEDGER_PART.note : '';
@@ -1363,7 +1375,7 @@ const openAppendixLeaf = () => {
 const openLedgerLeaf = (alive) => {
   // The eyebrow is the crumb up, as it is on a passage leaf -- and above a
   // ledger's title leaf is the appendix this shelf is.
-  eyebrow.replaceChildren(arrowless('▴ ' + PART_LABEL, () => ascend()));
+  eyebrow.replaceChildren(arrowless(`▴ Appendix ${toRoman(PART_INDEX + 1)}`, () => ascend()));
   document.getElementById('anth-title').textContent = cur().name;
   pager.replaceChildren(
     arrow('‹', 'Previous ledger', li <= 0, () => turnLedger(-1)),
@@ -1994,8 +2006,8 @@ function ascend() {
 // the reader here -- the compendium sinks, the contents drop back in from
 // above -- and it leaves the page, so it is played on the body rather than
 // on the slide.
-function leavePage(href, transform, flag) {
-  try { sessionStorage.setItem(flag, '1'); } catch (_) {}
+function leavePage(href, transform, flag, value = '1') {
+  try { sessionStorage.setItem(flag, value); } catch (_) {}
   const go = () => { location.href = href; };
   if (REDUCED_MOTION) { go(); return; }
   document.body.style.transition = 'transform .2s linear';
@@ -2007,7 +2019,7 @@ const toContents = () => leavePage('./bitcoin-contents.html', 'translateY(100vh)
 // in their numbered order, and the ones before this are leaves of their own
 // page. Nothing follows Appendix III, so only the backward turn exists.
 const toPrevAppendix = () => {
-  if (PREV_PART_HREF) leavePage(PREV_PART_HREF, 'translateX(100vw)', 'glossia-appendix-entrance');
+  if (PREV_PART_HREF) leavePage(PREV_PART_HREF, 'translateX(100vw)', 'glossia-appendix-entrance', 'back');
 };
 function descend() {
   if (level === 'appendix') return turnTo(() => { level = 'ledger'; }, 1, 'y');

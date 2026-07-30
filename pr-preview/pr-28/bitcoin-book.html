@@ -23,10 +23,15 @@
   // Arriving by the contents page's push-up-at-the-bottom gesture: finish
   // that turn here, the book sliding in from below. Set just before the
   // navigation, consumed on first paint.
+  // Arriving by the contents page's push-up-at-the-bottom gesture the book
+  // slides in from below; arriving by a backward turn out of Appendix I --
+  // the appendices sit at the volumes' own level, just past the last of
+  // them -- it slides in from the left, the way the reader pushed.
   try {
-    if (sessionStorage.getItem('glossia-book-entrance')) {
+    const dir = sessionStorage.getItem('glossia-book-entrance');
+    if (dir) {
       sessionStorage.removeItem('glossia-book-entrance');
-      document.documentElement.classList.add('book-entrance');
+      document.documentElement.classList.add(dir === 'back' ? 'book-entrance-back' : 'book-entrance');
     }
   } catch (_) {}
 
@@ -102,6 +107,10 @@ body {
 @media (prefers-reduced-motion: no-preference) {
   .book-entrance body { animation: book-in .22s ease-out; }
   @keyframes book-in { from { transform: translateY(100vh); } }
+  /* …and the entering half of a backward turn out of Appendix I: the last
+     volume comes in from the left, the line of volumes resuming. */
+  .book-entrance-back body { animation: book-in-back .22s ease-out; }
+  @keyframes book-in-back { from { transform: translateX(-100vw); } }
 }
 /* Contain the carousel turn entirely: the translated #page-slide clips at the
    article's own bounds (clip creates no scroll container, so nothing else
@@ -3220,6 +3229,11 @@ function labelNav() {
     }
     if (tipHeight === null || heightOf(cur.volume + 1, 1, 1) <= tipHeight) {
       stepNext = { text: toRoman(cur.volume + 1), label: `Next volume (${toRoman(cur.volume + 1)})` };
+    } else {
+      // Past the last volume the appendices carry on at the volumes' own
+      // level -- the mempool first, since its chapters are the ones the
+      // chain is about to write.
+      stepNext = { text: 'Appendix', label: 'On to the appendices (I — the mempool)' };
     }
   } else if (idx === -2) {
     if (state.height > 0) {
@@ -3633,6 +3647,19 @@ function toFrontMatter() {
   try { sessionStorage.setItem('glossia-front-entrance', 'back'); } catch {}
   location.href = './bitcoin-front.html?leaf=sigla';
 }
+// …and at the other end of the volumes lie the appendices, which sit at the
+// volumes' own level: the last volume's forward turn leaves the body for
+// Appendix I, and that leaf's backward turn comes straight back here. Only
+// the tip says which volume is last, so with no tip yet the edge is unknown
+// and the turn stays an ordinary one.
+function atAppendixEdge() {
+  return !!state && state.index === -3 && tipHeight !== null
+    && volumeBookChapter(state.height).volume >= volumeBookChapter(tipHeight).volume;
+}
+function toAppendix() {
+  try { sessionStorage.setItem('glossia-appendix-entrance', 'fwd'); } catch {}
+  location.href = './bitcoin-appendix.html?part=mempool';
+}
 
 async function goToLevel(direction) {
   if (!state) return;
@@ -3640,6 +3667,7 @@ async function goToLevel(direction) {
   if (state.index === -3) {
     const v = volume + direction;
     if (v < 1) { if (direction < 0) toFrontMatter(); return; }
+    if (direction > 0 && atAppendixEdge()) { toAppendix(); return; }
     return openLeafAt(heightOf(v, 1, 1), -3, direction);
   }
   if (state.index === -2) {
@@ -3772,7 +3800,11 @@ function navAvailable(direction) {
 // is ready to render; until then the drag only rubber-bands. The buttons stay
 // usable regardless -- they fetch on demand as always.
 function canStep(direction) {
-  if (direction < 0 && atFrontMatterEdge()) return true;   // a page turn, nothing to prefetch
+  // Either end of the volumes leaves this page for another -- the front
+  // matter behind Volume I, the appendices past the last volume -- and a
+  // page turn has nothing to prefetch.
+  if (direction < 0 && atFrontMatterEdge()) return true;
+  if (direction > 0 && atAppendixEdge()) return true;
   return navAvailable(direction) && neighborReady[direction];
 }
 function swipeStep(direction) {
