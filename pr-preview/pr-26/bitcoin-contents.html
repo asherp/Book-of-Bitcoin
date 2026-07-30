@@ -159,6 +159,7 @@ a:hover { text-decoration: underline; }
 
 <script type="module">
 import { loadNotables, places, placeTitle, appendix, isBlockId, isRelativeBlockId, entryHref } from './btc-contents.js';
+import { allProofs, citeOf, hrefOf } from './btc-proofs.js';
 import { creditLine, commentaryForAddresses } from './btc-commentary.js';
 import { readQueue, buildQueue } from './btc-mempool.js';
 import { INDEXED, keptLedgers, sameAddresses } from './btc-index.js';
@@ -350,6 +351,11 @@ const toc = document.getElementById('toc');
 // appended as Appendix I on every render -- directly after the volumes, whose
 // last row is the chain tip's.
 let projectedSection = null;
+// Appendix IV's section, built once the proofs have been read: each is fetched
+// (the bundled ones) or unpacked from storage (the reader's) and replayed, all
+// of it offline but none of it synchronous, so the section arrives after the
+// first paint the way the queue's does.
+let proofSection = null;
 
 // The front matter that argues or informs -- the preface and the sigla -- is
 // listed here as a book's contents lists them. The title and the terms are
@@ -389,9 +395,10 @@ const MEMPOOL_PART = appendix().find((p) => p.kind === 'mempool');
 // the ledgers' leaf is the Ledger compendium, which is what a shelf of
 // ledgers is. What the appendix is and why it sits outside reading order is
 // said on that leaf, not here -- the contents lists, the leaf explains.
-const appendixHref = (part) => part.kind === 'ledgers'
+const APPENDIX_PART = { mempool: 'mempool', entries: 'future', proofs: 'proofs' };
+const appendixHref = (part) => (part.kind === 'ledgers'
   ? './bitcoin-ledger.html'
-  : `./bitcoin-appendix.html?part=${part.kind === 'mempool' ? 'mempool' : 'future'}`;
+  : `./bitcoin-appendix.html?part=${APPENDIX_PART[part.kind]}`);
 function appendixLink(part) {
   const a = document.createElement('a');
   a.className = 'appx-link';
@@ -434,6 +441,43 @@ function ledgersEl(part) {
   for (const l of kept) frag.append(ledgerEl(l, true));
   return frag;
 }
+// Appendix IV: the files the chain attests. A row's title is a file's name --
+// the one thing here that is not the chain's -- and its reference is the
+// chapter and §section the file's proof lands in, read out of the proof itself
+// with nothing asked of the chain. The bundled proofs come first by reading
+// order like everything else; a reader's own fly the ribbon a bookmark flies,
+// because that is what they are: something this reader put in the book.
+// A wrapper element rather than a fragment, for the reason the queue's section
+// is one: this section is built once and appended on every render, and a
+// fragment empties itself the first time it is appended.
+function proofsEl(part, proofs) {
+  const wrap = document.createElement('div');
+  wrap.append(partHead(part));
+  for (const p of proofs) wrap.append(proofEl(p));
+  return wrap;
+}
+function proofEl(proof) {
+  const row = document.createElement('a');
+  row.className = 'toc-entry under-book' + (proof.kept ? ' is-bookmark' : '');
+  row.href = hrefOf(proof.place);
+  const t = document.createElement('span');
+  t.className = 'toc-title';
+  if (proof.kept) {
+    const bm = document.createElement('span'); bm.className = 'toc-bm'; bm.setAttribute('aria-label', 'your proof');
+    bm.innerHTML = '<svg viewBox="0 0 12 16"><path fill="currentColor" d="M0 0h12v16l-6-4-6 4z"/></svg>';
+    t.append(bm);
+  }
+  t.append(document.createTextNode(proof.title));
+  // What the row is really claiming, said in full on hover: this file's digest,
+  // and the chapter its proof reduces to.
+  row.title = `${proof.file} — ${proof.hash} ${proof.digest}, stamped into ${citeOf(proof.place)}`;
+  const r = document.createElement('span');
+  r.className = 'toc-ref';
+  r.textContent = citeOf(proof.place);
+  row.append(t, r);
+  return row;
+}
+
 const shortAddr = (a) => `${a.slice(0, 6)}…${a.slice(-4)}`;
 function ledgerEl(ledger, isKept) {
   const row = document.createElement('a');
@@ -551,6 +595,7 @@ function render() {
     if (part.kind === 'mempool') { if (projectedSection) toc.append(projectedSection); }
     else if (part.kind === 'entries') toc.append(chaptersEl(part));
     else if (part.kind === 'ledgers') toc.append(ledgersEl(part));
+    else if (part.kind === 'proofs') { if (proofSection) toc.append(proofSection); }
   }
   // Entries whose citation could not be resolved fall past even the
   // appendices, under a dash -- still linked, so the book can resolve and
@@ -611,6 +656,18 @@ const unresolved = () => entries().filter((e) => e.tried && !e.place);
 // appendix's own page. Here it needs only its heading -- the appendix's
 // name, and a link to that page, where what a mempool is gets said at
 // length.
+// The timestamped files, bundled and kept, read and placed by their own proofs.
+// A failure here costs the appendix its list and nothing else: the heading is
+// the contents' door to the leaf, where a reader can always drop another proof.
+async function loadProofs() {
+  const part = appendix().find((p) => p.kind === 'proofs');
+  if (!part) return;
+  let listed = [];
+  try { listed = await allProofs(part); } catch { /* nothing readable: the heading stands alone */ }
+  proofSection = proofsEl(part, listed);
+  render();
+}
+
 async function loadProjected() {
   const tip = await tipHeight();
   const queue = await readQueue(tip, ESPLORA_MIRRORS);
@@ -633,6 +690,7 @@ render();
 // The projected section loads alongside the citation lookups, and the queue
 // keeps moving -- blocks land, replacements arrive -- so it refreshes itself
 // each minute while the page is on screen.
+loadProofs();
 loadProjected();
 setInterval(() => { if (!document.hidden) loadProjected(); }, 60_000);
 await Promise.all([

@@ -150,6 +150,57 @@ a:hover { text-decoration: underline; }
 .hidden { display:none !important; }
 .appx-note { max-width:56ch; margin:22px auto 30px; font:400 15px/1.7 'Newsreader',serif; color:var(--ink-soft); text-align:left; }
 
+/* Appendix IV's foot: the picker. A leaf lists nothing, as a rule -- the
+   contents lists, the leaf explains -- but this appendix is the one a reader
+   can add to, and the adding has to happen somewhere. It sits at the END,
+   after the note and after what is already kept, so the page still reads as a
+   leaf and the invitation comes last, the way a subscription card sits at the
+   back of a book rather than the front. */
+.proof-card { margin:34px auto 0; max-width:56ch; }
+.proof-drop {
+  border:1px dashed var(--input-bd); border-radius:4px; background:var(--input-bg);
+  padding:16px 16px 14px; text-align:center; transition:border-color .15s ease, background .15s ease;
+}
+.proof-drop.over { border-color:var(--accent); background:#191712; }
+.proof-say { display:block; font:400 13.5px/1.5 'Newsreader',serif; color:var(--dim); margin-bottom:11px; }
+.ghost {
+  background:none; color:var(--accent); border:1px solid var(--input-bd); border-radius:4px;
+  padding:8px 16px; font:600 11.5px/1 'IBM Plex Mono',monospace; letter-spacing:.04em;
+  text-transform:uppercase; cursor:pointer;
+}
+.ghost:hover { border-color:var(--accent); color:var(--accent-2); }
+.mono { font-family:'IBM Plex Mono',monospace; }
+
+.proof-result { margin-top:16px; font:400 13.5px/1.6 'Public Sans',sans-serif; color:var(--ink-soft); }
+.proof-line { display:flex; gap:14px; padding:5px 2px; border-bottom:1px solid var(--hair); }
+.proof-key { flex:none; width:96px; font:500 10.5px/1.9 'IBM Plex Mono',monospace; letter-spacing:.06em; text-transform:uppercase; color:var(--meta); }
+.proof-val { flex:1; min-width:0; overflow-wrap:anywhere; }
+/* The book's own marks, on the book's own terms: ⌘ the identity hash, h a
+   hash, ⋔ the merkle root, each with its count riding after it, and the hash
+   itself set as prose in the reading face. */
+.dt, .merkle-mark { color:var(--accent); font-weight:700; font-style:normal; }
+.op-count { color:var(--meta); font-size:.85em; }
+.proof-figure { font:italic 400 14px/1.55 'Newsreader',serif; color:var(--dim); }
+.proof-figure.waiting { color:var(--meta); }
+.proof-verdict { margin-top:14px; font:400 14px/1.5 'Newsreader',serif; }
+.proof-verdict.good { color:var(--ink); }
+.proof-verdict.bad { color:#e08b7a; }
+.proof-verdict.unsure { color:var(--dim); }
+.proof-open { display:inline-block; margin-top:14px; font:500 13px/1 'IBM Plex Mono',monospace; }
+
+/* What is already kept, listed above the picker: the appendix's own rows, in
+   reading order, each one a door into the book. A reader's own carry the
+   ribbon a bookmark carries, and the ✕ that takes it back out again. */
+.proof-list { max-width:56ch; margin:26px auto 0; }
+.proof-row { display:flex; align-items:baseline; gap:14px; padding:8px 2px; border-bottom:1px solid var(--hair); }
+.proof-row a { flex:1; min-width:0; display:flex; align-items:baseline; gap:10px; color:var(--ink-soft); }
+.proof-row a:hover { color:var(--ink); }
+.proof-name { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font:500 15px/1.35 'Newsreader',serif; }
+.proof-cite { flex:none; font:500 12.5px/1.6 'IBM Plex Mono',monospace; color:var(--accent); }
+.proof-bm { flex:none; width:8px; color:var(--accent); }
+.proof-drop-btn { flex:none; background:none; border:none; color:var(--meta); cursor:pointer; font-size:13px; line-height:1; padding:2px 4px; }
+.proof-drop-btn:hover { color:#e08b7a; }
+
 /* The other appendices, at the foot: the leaf's own turns, spelled out for
    hands that are not swiping. */
 .appx-turns { display:flex; flex-wrap:wrap; gap:10px 26px; margin-top:44px; padding-top:18px; border-top:1px solid var(--rule);
@@ -169,6 +220,19 @@ a:hover { text-decoration: underline; }
     <div class="appx-subtitle" id="appx-subtitle"></div>
   </header>
   <p class="appx-note" id="appx-note"></p>
+
+  <div class="proof-list hidden" id="proof-list"></div>
+
+  <div class="proof-card hidden" id="proof-card">
+    <div class="proof-drop" id="proof-drop">
+      <span class="proof-say">Drop an OpenTimestamps proof here — with the file it stamps, to check that too —
+        and this appendix keeps it. A <span class="mono">.ots</span> names the chapter its file was
+        stamped into; the book checks that against the block's own header before it lists it.</span>
+      <button type="button" class="ghost" id="proof-pick">Choose a file</button>
+      <input type="file" id="proof-file" multiple hidden>
+    </div>
+    <div class="proof-result hidden" id="proof-result"></div>
+  </div>
 
   <a class="appx-down" id="appx-down" href="#" aria-label="Down into the appendix">▾</a>
   <nav class="appx-turns" id="appx-turns"></nav>
@@ -190,7 +254,7 @@ import { toRoman, volumeBookChapter, heightOf } from './btc-citation.js';
 // consensus has numbered ahead of the chain. The third appendix, the
 // ledgers, has a leaf already -- the Ledger compendium -- and the contents
 // points straight at it, so it is only ever a neighbour here.
-const PARTS = { mempool: 'mempool', future: 'entries' };
+const PARTS = { mempool: 'mempool', future: 'entries', proofs: 'proofs' };
 const wanted = new URLSearchParams(location.search).get('part');
 const kind = PARTS[wanted] || 'mempool';
 const part = APPENDIX.find((p) => p.kind === kind) || APPENDIX[0];
@@ -199,9 +263,10 @@ const index = APPENDIX.indexOf(part);
 const $ = (id) => document.getElementById(id);
 const numeral = (i) => toRoman(i + 1);
 const label = (p) => `Appendix ${numeral(APPENDIX.indexOf(p))} · ${p.title}`;
-const hrefFor = (p) => p.kind === 'ledgers'
+const PART_QUERY = { mempool: 'mempool', entries: 'future', proofs: 'proofs' };
+const hrefFor = (p) => (p.kind === 'ledgers'
   ? './bitcoin-ledger.html'
-  : `./bitcoin-appendix.html?part=${p.kind === 'mempool' ? 'mempool' : 'future'}`;
+  : `./bitcoin-appendix.html?part=${PART_QUERY[p.kind]}`);
 
 // An appendix leaf lists nothing: what it gathers lies below it, and below
 // it is the first chapter of what it gathers, read in the book like any
@@ -220,7 +285,9 @@ document.title = `The βook of βitcoin — ${label(part)}`;
 // Where the descent lands. Appendix II's first chapter is known offline (a
 // height is a citation); Appendix I's waits on the tip, and the ▾ appears
 // with it -- an unknown queue has no first chapter to open.
-let firstChapter = kind === 'mempool' ? null : `./bitcoin-book.html?block=${part.entries[0].id}`;
+let firstChapter = (kind === 'mempool' || kind === 'proofs')
+  ? null                                  // the queue waits on the tip; the proofs wait on being read
+  : `./bitcoin-book.html?block=${part.entries[0].id}`;
 $('appx-down').classList.toggle('hidden', !firstChapter);
 if (kind === 'mempool') {
   chainTip().then((tip) => {
@@ -272,6 +339,224 @@ if (next) turnLink(hrefFor(next), `${label(next)} ›`, false);
 // volume's own leaf, which is the page this one continues from. Which volume
 // is last is a question for the chain, so the turn is wired once the tip
 // answers -- until then a backward swipe simply has nowhere to go.
+// ── Appendix IV: the files, and the door for adding one ───────────────────
+//
+// The rule for a leaf is that it lists nothing -- the contents lists, the leaf
+// explains. This appendix bends it, for the reason it exists: it is the one a
+// reader can add to, and what they add has to be shown back to them somewhere
+// they can also take it out again. So the leaf carries the list and, at its
+// foot, the picker: a proof dropped there is read, checked against the block
+// its own bytes name, and kept -- after which it stands in the contents beside
+// the bundled ones, under the ribbon a bookmark flies.
+if (kind === 'proofs') {
+  const { allProofs, readProof, attests, keepProof, dropProof, citeOf, hrefOf } = await import('./btc-proofs.js');
+  const { isOtsProof } = await import('./btc-ots.js');
+  const { blockAt } = await import('./btc-index.js');
+  const { toSuperscript } = await import('./btc-sigla.js');
+
+  const listEl = $('proof-list');
+  const card = $('proof-card');
+  const result = $('proof-result');
+  const fileInput = $('proof-file');
+  const dropZone = $('proof-drop');
+  card.classList.remove('hidden');
+
+  // The list, rebuilt from storage and from the bundled index each time it
+  // changes. The first row is also where the ▾ descends to: an appendix opens
+  // at the first chapter of what it gathers, and here that is the earliest
+  // chapter any of these files was stamped into.
+  async function paintList() {
+    const listed = await allProofs(part).catch(() => []);
+    listEl.textContent = '';
+    for (const proof of listed) {
+      const row = document.createElement('div');
+      row.className = 'proof-row';
+      const a = document.createElement('a');
+      a.href = hrefOf(proof.place);
+      if (proof.kept) {
+        const bm = document.createElement('span');
+        bm.className = 'proof-bm'; bm.setAttribute('aria-label', 'your proof');
+        bm.innerHTML = '<svg viewBox="0 0 12 16" width="8"><path fill="currentColor" d="M0 0h12v16l-6-4-6 4z"/></svg>';
+        a.append(bm);
+      }
+      const name = document.createElement('span');
+      name.className = 'proof-name'; name.textContent = proof.title;
+      const cite = document.createElement('span');
+      cite.className = 'proof-cite'; cite.textContent = citeOf(proof.place);
+      a.append(name, cite);
+      // What the row claims, in full, on hover -- including whether anyone has
+      // yet asked the chain about it.
+      a.title = `${proof.file} — ${proof.hash} ${proof.digest}\nstamped into ${citeOf(proof.place)}`
+        + (proof.verified === false ? '\nnot yet checked against the chain' : '');
+      row.append(a);
+      if (proof.kept) {
+        const x = document.createElement('button');
+        x.type = 'button'; x.className = 'proof-drop-btn'; x.textContent = '✕';
+        x.title = `Take "${proof.title}" out of this appendix`;
+        x.setAttribute('aria-label', `Remove ${proof.title}`);
+        x.addEventListener('click', () => { dropProof(proof.digest); paintList(); });
+        row.append(x);
+      }
+      listEl.append(row);
+    }
+    listEl.classList.toggle('hidden', !listed.length);
+    if (listed.length) {
+      firstChapter = hrefOf(listed[0].place);
+      $('appx-down').classList.remove('hidden');
+    }
+  }
+  await paintList();
+
+  // The picker, moved here from the search page: a proof is a query, but it is
+  // also a thing a reader keeps, and keeping belongs where the kept things are.
+  const stamp = (ts) => new Date(ts * 1000).toISOString().slice(0, 16).replace('T', ' ');
+  const reverseHex = (hex) => (hex.match(/../g) || []).reverse().join('');
+  const BEST_OF = 5;
+  let engine = null;
+  const glossia = () => (engine ||= import('./glossia-msg.js').then(async (m) => { await m.init(); return m; }));
+
+  // A hash, as the book sets one: its mark, its count, then the figure itself
+  // in words. There is no hex fallback -- hex is the one notation this book
+  // does not write in -- so a figure the engine never arrives to say stays
+  // unsaid, with the hex on the mark for a reader checking an explorer.
+  const figure = (hex, mark, markClass, sup, title, reverse) => ({ hex, mark, markClass, sup, title, reverse });
+  const hashFig = (hex, title) => figure(hex, 'h', 'dt', hex.length / 2, title, false);
+  const identityFig = (hex, title) => figure(hex, '⌘', 'dt', 256, title, true);
+  const merkleFig = (hex, title) => figure(hex, '⋔', 'merkle-mark', hex.length / 2, title, true);
+
+  const prosed = new Map();
+  const UNSAID = 'the engine that puts a hash into words did not load';
+  const unsay = (el) => { el.textContent = 'unsaid'; el.title = UNSAID; el.classList.add('waiting'); };
+  function setProse(cells) {
+    if (!cells.length) return;
+    glossia().then((m) => {
+      for (const { el, hex, reverse } of cells) {
+        try {
+          const bytes = reverse ? reverseHex(hex) : hex;
+          if (!prosed.has(bytes)) prosed.set(bytes, m.encodeSeedPhrase(bytes, 'english', BEST_OF).prose);
+          el.textContent = prosed.get(bytes);
+          el.classList.remove('waiting');
+        } catch { unsay(el); }
+      }
+    }).catch(() => { for (const { el } of cells) unsay(el); });
+  }
+
+  const say = (rows, verdict = null, href = null, label = '') => {
+    result.textContent = '';
+    const cells = [];
+    for (const [key, val] of rows) {
+      const line = document.createElement('div'); line.className = 'proof-line';
+      const k = document.createElement('div'); k.className = 'proof-key'; k.textContent = key;
+      const v = document.createElement('div'); v.className = 'proof-val';
+      if (typeof val === 'string') {
+        v.textContent = val;
+      } else {
+        const m = document.createElement('span');
+        m.className = val.markClass; m.textContent = val.mark;
+        m.title = `${val.title}\n${val.hex}`;      // the mark carries the hex, as the book's copy menu does
+        const sup = document.createElement('span');
+        sup.className = 'op-count'; sup.textContent = toSuperscript(val.sup);
+        sup.title = val.mark === '⌘' ? `${val.sup} bits — ⌘'s superscript counts bits` : `${val.sup} bytes`;
+        const fig = document.createElement('span');
+        fig.className = 'proof-figure waiting'; fig.textContent = '…';
+        v.append(m, sup, ' ', fig);
+        cells.push({ el: fig, hex: val.hex, reverse: val.reverse });
+      }
+      line.append(k, v); result.append(line);
+    }
+    setProse(cells);
+    if (verdict) {
+      const el = document.createElement('div');
+      el.className = `proof-verdict ${verdict[1]}`; el.textContent = verdict[0];
+      result.append(el);
+    }
+    if (href) {
+      const a = document.createElement('a');
+      a.className = 'proof-open'; a.href = href; a.textContent = label;
+      result.append(a);
+    }
+    result.classList.remove('hidden');
+  };
+
+  async function takeProof(fileList) {
+    const files = [...fileList];
+    if (!files.length) return;
+    say([['reading', files.map((f) => f.name).join(', ')]]);
+    const read = await Promise.all(files.map(async (f) => ({ name: f.name, bytes: new Uint8Array(await f.arrayBuffer()) })));
+    // The proof is recognized by its magic, not its name: a proof saved as
+    // anything at all is still a proof, and the file beside it is the subject.
+    const file = read.find((f) => isOtsProof(f.bytes));
+    if (!file) {
+      say([['dropped', read.map((f) => f.name).join(', ')]],
+        ['No OpenTimestamps proof here — a .ots file opens with its own magic, and none of these do.', 'bad']);
+      return;
+    }
+    let proof;
+    try { proof = await readProof(file.bytes); }
+    catch (e) { say([['proof', file.name]], [`This proof will not read: ${e.message}.`, 'bad']); return; }
+
+    const rows = [['proof', file.name],
+      [proof.hash, hashFig(proof.digest, `${proof.hash} digest — the bytes this proof commits to`)]];
+
+    // A proof commits to a digest, not to a file. With the subject in hand too,
+    // the reader can see for themselves which file this proof is about -- and
+    // the entry is named after that file rather than after the proof.
+    const subject = read.find((f) => f !== file);
+    let checked = null;
+    let title = file.name.replace(/\.ots$/i, '');
+    if (subject) {
+      checked = await attests(proof, subject.bytes);
+      rows.push([subject.name, checked ? 'matches the proof' : 'does NOT match the proof']);
+      if (checked) title = subject.name;
+    }
+
+    if (!proof.place) {
+      for (const uri of proof.pending) rows.push(['pending', uri]);
+      say(rows, [proof.pending.length
+        ? 'Not in a block yet, so there is no chapter to keep it under. The calendars above are holding this digest for the next transaction they publish; come back and upgrade the proof once it confirms.'
+        : 'This proof reaches no Bitcoin block, so it names no chapter here.', 'unsure']);
+      return;
+    }
+
+    const cite = citeOf(proof.place);
+    const href = hrefOf(proof.place);
+    rows.push(['stamped into', `block ${proof.place.height} — ${cite}`]);
+    if (proof.place.txid) rows.push(['transaction', identityFig(proof.place.txid, 'the transaction carrying the commitment — its txid')]);
+    rows.push(['merkle root', merkleFig(proof.place.merkleRoot, 'the merkle root the proof reduces to — what the block header must commit to')]);
+    say(rows, ['Asking the chain for that block…', 'unsure']);
+
+    // The verification, entire: the operations reduce to 32 bytes, and those
+    // bytes either are the merkle root the block's header commits to or they
+    // are not. Nothing else about the proof matters, and no calendar is
+    // consulted -- an upgraded proof needs nobody's word for anything.
+    const block = await blockAt(proof.place.height).catch(() => null);
+    if (block && block.merkleRoot !== proof.place.merkleRoot) {
+      rows.push(['chain says', merkleFig(block.merkleRoot, "the merkle root that block's header actually commits to")]);
+      say(rows, ['The roots differ. This proof does not commit to that block, whatever it says — nothing has been kept.', 'bad']);
+      return;
+    }
+    const verified = !!block;
+    if (verified) rows.push(['mined', `${stamp(block.timestamp)} UTC`]);
+    keepProof({ file: subject ? subject.name : file.name, title, bytes: file.bytes, digest: proof.digest, verified, checked });
+    await paintList();
+    say(rows, [verified
+      ? `Verified, and kept: “${title}” now stands in this appendix at ${cite}${
+        checked ? ', and the file beside the proof is the one it attests' : ''}.`
+      : `The chain could not be reached, so nothing here is checked — “${title}” is kept at ${cite} as the proof's own claim, and says so until someone asks.`,
+    verified ? 'good' : 'unsure'], href, `Read ${cite} →`);
+  }
+
+  $('proof-pick').addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', () => { const f = fileInput.files; takeProof(f).finally(() => { fileInput.value = ''; }); });
+  for (const type of ['dragenter', 'dragover']) {
+    dropZone.addEventListener(type, (e) => { e.preventDefault(); dropZone.classList.add('over'); });
+  }
+  for (const type of ['dragleave', 'drop']) {
+    dropZone.addEventListener(type, (e) => { e.preventDefault(); dropZone.classList.remove('over'); });
+  }
+  dropZone.addEventListener('drop', (e) => { if (e.dataTransfer?.files?.length) takeProof(e.dataTransfer.files); });
+}
+
 if (!prev) {
   chainTip().then((tip) => {
     if (tip == null) return;

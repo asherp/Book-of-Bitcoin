@@ -149,11 +149,29 @@ function normalizePart(raw, i) {
   const kind = String(raw.kind ?? '').trim();
   const title = String(raw.title ?? '').trim();
   if (!kind || !title) throw new Error(`btc-notables: appendix part ${i + 1} needs a kind and a title`);
-  if (!['mempool', 'entries', 'ledgers'].includes(kind)) {
+  if (!['mempool', 'entries', 'ledgers', 'proofs'].includes(kind)) {
     throw new Error(`btc-notables: appendix part "${title}" has an unknown kind: ${kind}`);
   }
   const part = { kind, title };
   if (raw.note) part.note = String(raw.note);
+  // A proofs entry names files, not places: an .ots proof shipped in proofs/,
+  // and the file it stamps where that file is small enough to ship beside it.
+  // Nothing is cited here -- the chapter, the section and the merkle root come
+  // out of the proof's own bytes when it is read (btc-proofs.js), so the index
+  // cannot claim a place the proof does not.
+  if (kind === 'proofs') {
+    if (!Array.isArray(raw.entries) || !raw.entries.length) {
+      throw new Error(`btc-notables: appendix part "${title}" lists no entries`);
+    }
+    part.entries = raw.entries.map((e) => {
+      const proof = String(e.proof ?? '').trim();
+      if (!proof) throw new Error(`btc-notables: a proof in "${title}" has no proof: file`);
+      const entry = { title: String(e.title ?? proof), proof };
+      if (e.subject) entry.subject = String(e.subject);
+      if (e.note) entry.note = String(e.note);
+      return withCommentary(entry, e);
+    });
+  }
   if (kind === 'entries') {
     if (!Array.isArray(raw.entries) || !raw.entries.length) {
       throw new Error(`btc-notables: appendix part "${title}" lists no entries`);

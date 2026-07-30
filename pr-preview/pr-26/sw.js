@@ -17,7 +17,7 @@
  * Everything here is scoped to the directory sw.js is served from, so it works
  * unchanged at the site root and under a per-PR preview subpath.
  */
-const CACHE = 'bitcoin-book-shell-v27';
+const CACHE = 'bitcoin-book-shell-v28';
 
 // App shell, relative to the SW scope. glossia.js / glossia_bg.wasm are
 // gitignored build artifacts — present after a build/deploy, possibly absent in
@@ -60,6 +60,7 @@ const SHELL = [
   './btc-index-data.js',
   './btc-store.js',
   './btc-ots.js',
+  './btc-proofs.js',
   './btc-fontscale.js',
   './bitcoin-book.webmanifest',
   './icons/beta-icon.svg',
@@ -88,7 +89,20 @@ async function shellUrls() {
     const res = await fetch('./notables.yaml', { cache: 'reload' });
     if (!res.ok) throw new Error(String(res.status));
     const files = [...(await res.text()).matchAll(/^\s*-?\s*file:\s*(\S+)\s*$/gm)].map((m) => m[1]);
-    return SHELL.concat([...new Set(files)].map((f) => `./commentary/${f}`));
+    const commentary = [...new Set(files)].map((f) => `./commentary/${f}`);
+    // Appendix IV's bundled proofs ride along the same way, off appendix.yaml:
+    // a `proof:` is the .ots itself and a `subject:` the file it stamps, both
+    // wanted offline, since an appendix that cannot read its own proofs lists
+    // nothing at all.
+    let proofs = [];
+    try {
+      const back = await fetch('./appendix.yaml', { cache: 'reload' });
+      if (back.ok) {
+        const named = [...(await back.text()).matchAll(/^\s*-?\s*(?:proof|subject):\s*(\S+)\s*$/gm)].map((m) => m[1]);
+        proofs = [...new Set(named)].map((f) => `./proofs/${f}`);
+      }
+    } catch (_) { /* no appendix: the bundled proofs cache as they are read */ }
+    return SHELL.concat(commentary, proofs);
   } catch (_) {
     return SHELL;   // no index: the shell alone, and commentary caches as it is read
   }

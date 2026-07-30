@@ -2,7 +2,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>The βook of βitcoin — Search</title>
-<meta name="description" content="Look up any chapter of the Glossia Bitcoin Book: a block height, a block hash, a transaction id, the book's own citation form, or an OpenTimestamps proof.">
+<meta name="description" content="Look up any chapter of the Glossia Bitcoin Book: a block height, a block hash, a transaction id, or the book's own citation form.">
 <link rel="icon" type="image/png" sizes="32x32" href="./icons/beta-icon-32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="./icons/beta-icon-16.png">
 <link rel="icon" href="./icons/beta-icon.svg" type="image/svg+xml">
@@ -59,43 +59,6 @@ button {
 }
 button:hover { background: var(--accent-2); }
 
-/* The proof card: a lookup whose query arrives as a file. It sits under the
-   typed one because it answers the same question in another notation -- where
-   in the manuscript is this? -- and it is the only lookup here that can be
-   wrong, so it keeps room for a verdict beneath it. */
-.proof-card { margin-top: 18px; }
-.proof-drop {
-  border: 1px dashed var(--input-bd); border-radius: 4px; background: var(--input-bg);
-  padding: 16px 16px 14px; text-align: center; transition: border-color .15s ease, background .15s ease;
-}
-.proof-drop.over { border-color: var(--accent); background: #191712; }
-.proof-say { display:block; font:400 13.5px/1.5 'Newsreader',serif; color:var(--dim); margin-bottom:11px; }
-.ghost {
-  background: none; color: var(--accent); border: 1px solid var(--input-bd);
-  padding: 8px 16px; font-size: 11.5px;
-}
-.ghost:hover { background: none; border-color: var(--accent); color: var(--accent-2); }
-
-.proof-result { margin-top: 16px; font:400 13.5px/1.6 'Public Sans',sans-serif; color:var(--ink-soft); }
-.proof-line { display:flex; gap:14px; padding:5px 2px; border-bottom:1px solid var(--hair); }
-.proof-key { flex:none; width:96px; font:500 10.5px/1.9 'IBM Plex Mono',monospace; letter-spacing:.06em; text-transform:uppercase; color:var(--meta); }
-.proof-val { flex:1; min-width:0; overflow-wrap:anywhere; font:400 12.5px/1.7 'IBM Plex Mono',monospace; color:var(--ink-soft); }
-
-/* The book's own marks, on the book's own terms: the identity mark (⌘), the
-   data mark (h) and the merkle mark (⋔) bold gold, each with its count riding
-   after it as a superscript, and the hash itself set as prose in the reading
-   face -- the same dress the chapter hash and the frontispiece wear, so a
-   figure means the same thing here as it does on the page it points to. */
-.dt, .merkle-mark { color: var(--accent); font-weight: 700; font-style: normal; }
-.op-count { color: var(--meta); font-size: .85em; }
-.proof-figure { font: italic 400 14px/1.55 'Newsreader',serif; color: var(--dim); }
-.proof-figure.waiting { color: var(--meta); }
-.proof-verdict { margin-top:14px; font:400 14px/1.5 'Newsreader',serif; }
-.proof-verdict.good { color:var(--ink); }
-.proof-verdict.bad { color:#e08b7a; }
-.proof-verdict.unsure { color:var(--dim); }
-.proof-open { display:inline-block; margin-top:14px; font:500 13px/1 'IBM Plex Mono',monospace; }
-.hidden { display: none; }
 
 /* Worked examples beneath the card: each opens the page it cites, so the
    citation forms are learned by using them rather than by reading a legend. */
@@ -126,18 +89,6 @@ button:hover { background: var(--accent-2); }
     </div>
   </div>
 
-  <div class="card proof-card">
-    <label for="proof-file">OpenTimestamps proof</label>
-    <div class="proof-drop" id="proof-drop">
-      <span class="proof-say">A proof is a citation in another hand: it names the chapter a file was stamped
-        into, and its merkle path spells the §section. Drop a <span class="mono">.ots</span> here —
-        together with the file it stamps, to check that too.</span>
-      <button type="button" class="ghost" id="proof-pick">Choose a file</button>
-      <input type="file" id="proof-file" multiple hidden>
-    </div>
-    <div class="proof-result hidden" id="proof-result"></div>
-  </div>
-
   <div class="examples">
     <div class="examples-title">For example</div>
     <a class="example" href="./bitcoin-book.html?block=0"><span class="example-what">the Genesis block, by height</span><span class="example-form">0</span></a>
@@ -147,6 +98,7 @@ button:hover { background: var(--accent-2); }
     <a class="example" href="./bitcoin-book.html?txid=a1075db55d416d3ca199f55b6084e2115b9345e16c5cf302fc80e9d5fbf5d48d"><span class="example-what">the pizza transaction's own section, by its id</span><span class="example-form">a1075db5…f5d48d</span></a>
     <a class="example" href="./bitcoin-book.html?ref=v1b29c596"><span class="example-what">the same chapter, by its reference alone — as a βoβ quote carries it</span><span class="example-form">v1b29c596</span></a>
     <a class="example" href="./bitcoin-ledger.html?address=1Ross5Np5doy4ajF9iGXzgKaC2Q3Pwwxv"><span class="example-what">an address's ledger — every chapter it appears in, with amounts</span><span class="example-form">1Ross5Np…Pwwxv</span></a>
+    <a class="example" href="./bitcoin-appendix.html?part=proofs"><span class="example-what">a file's own chapter — an OpenTimestamps proof names the passage it was stamped into, and Appendix IV keeps it</span><span class="example-form">.ots</span></a>
   </div>
 </div>
 
@@ -186,199 +138,6 @@ const go = () => {
 document.getElementById('block-btn').addEventListener('click', go);
 input.addEventListener('keydown', (e) => { if (e.key === 'Enter') go(); });
 
-// --- A proof as a query -------------------------------------------------
-//
-// An OpenTimestamps proof answers the same question the box above does, in
-// another notation: it names a block by height, and its merkle path names the
-// transaction's position in that block -- so it resolves to a reference by
-// arithmetic alone, with nothing asked of the chain. What the chain is asked
-// for is the one thing that makes a timestamp true rather than merely stated:
-// the block's merkle root, which the proof's operations must reduce to. Until
-// that comparison is made a proof is an assertion, and the verdict below says
-// so in as many words.
-import { parseOtsProof, isOtsProof, digestOf, earliestBitcoin } from './btc-ots.js';
-import { blockAt } from './btc-index.js';
-import { reference, latinRefOf } from './btc-citation.js';
-import { toSuperscript } from './btc-sigla.js';
-
-const drop = document.getElementById('proof-drop');
-const result = document.getElementById('proof-result');
-const fileInput = document.getElementById('proof-file');
-const stamp = (ts) => new Date(ts * 1000).toISOString().slice(0, 16).replace('T', ' ');
-const reverseHex = (hex) => (hex.match(/../g) || []).reverse().join('');
-const BEST_OF = 5;                                     // the book's cover-word quality
-
-// The engine, fetched only once a proof arrives. A page that answers typed
-// lookups should not carry a megabyte of WASM to do it, and a checkout without
-// the build artifact must still search -- so the import is dynamic, and prose
-// is an upgrade over the hex rather than a condition for showing it.
-let engine = null;
-const glossia = () => (engine ||= import('./glossia-msg.js').then(async (m) => { await m.init(); return m; }));
-
-// A hash, as the book sets one: its mark, the byte count riding after it as a
-// superscript, then the figure itself in words. `reverse` turns a hash
-// displayed in the chain's backwards order into the bytes it actually is,
-// which is what the prose must carry -- a txid and a merkle root are written
-// that way, a file's digest is not.
-//
-// The words are the figure; there is no hex fallback, because hex is the one
-// notation this book does not write in. A hash with no prose yet reads as an
-// ellipsis, and a hash the engine never arrives to say stays unsaid -- the
-// mark still names what it is, and the mark's title still carries the hex for
-// a reader checking against an explorer, which is where the book keeps hex
-// too (behind the copy menu, never on the page).
-const figure = (hex, mark, markClass, sup, title, reverse) => ({ hex, mark, markClass, sup, title, reverse });
-// A file's digest: a single SHA-256, not the chain's double, so it takes the
-// generic data mark and counts bytes like every other push.
-const hash = (hex, title) => figure(hex, 'h', 'dt', hex.length / 2, title, false);
-// A txid: the same double-SHA256 a block hash is, with no proof-of-work zeros
-// to state -- so it wears ⌘ with the full bit count, exactly as the section
-// frontage does in the book.
-const identity = (hex, title) => figure(hex, '⌘', 'dt', 256, title, true);
-const merkle = (hex, title) => figure(hex, '⋔', 'merkle-mark', hex.length / 2, title, true);
-
-// Every figure on the page, waiting to be read out as prose once the engine
-// lands. The hex is what a reader can check against an explorer, so it stays
-// in the figure's title after the words replace it.
-const prosed = new Map();     // encoded bytes -> their prose; the result is redrawn as the chain answers
-const UNSAID = 'the engine that puts a hash into words did not load';
-const unsay = (el) => { el.textContent = 'unsaid'; el.title = UNSAID; el.classList.add('waiting'); };
-function setProse(cells) {
-  if (!cells.length) return;
-  glossia().then((m) => {
-    for (const { el, hex, reverse } of cells) {
-      try {
-        const bytes = reverse ? reverseHex(hex) : hex;
-        if (!prosed.has(bytes)) prosed.set(bytes, m.encodeSeedPhrase(bytes, 'english', BEST_OF).prose);
-        el.textContent = prosed.get(bytes);
-        el.classList.remove('waiting');
-      } catch { unsay(el); }
-    }
-  }).catch(() => { for (const { el } of cells) unsay(el); });
-}
-
-const say = (rows, verdict = null, href = null, label = '') => {
-  result.innerHTML = '';
-  const cells = [];
-  for (const [key, val] of rows) {
-    const line = document.createElement('div'); line.className = 'proof-line';
-    const k = document.createElement('div'); k.className = 'proof-key'; k.textContent = key;
-    const v = document.createElement('div'); v.className = 'proof-val';
-    if (typeof val === 'string') {
-      v.textContent = val;
-    } else {
-      const m = document.createElement('span');
-      m.className = val.markClass; m.textContent = val.mark;
-      m.title = `${val.title}\n${val.hex}`;      // the mark carries the hex, as the book's copy menu does
-      const sup = document.createElement('span');
-      sup.className = 'op-count'; sup.textContent = toSuperscript(val.sup);
-      sup.title = val.mark === '⌘' ? `${val.sup} bits — ⌘'s superscript counts bits` : `${val.sup} bytes`;
-      const fig = document.createElement('span');
-      fig.className = 'proof-figure waiting'; fig.textContent = '…';
-      v.append(m, sup, ' ', fig);
-      cells.push({ el: fig, hex: val.hex, reverse: val.reverse });
-    }
-    line.append(k, v); result.append(line);
-  }
-  setProse(cells);
-  if (verdict) {
-    const p = document.createElement('div');
-    p.className = `proof-verdict ${verdict[1]}`; p.textContent = verdict[0];
-    result.append(p);
-  }
-  if (href) {
-    const a = document.createElement('a');
-    a.className = 'proof-open'; a.href = href; a.textContent = label;
-    result.append(a);
-  }
-  result.classList.remove('hidden');
-};
-
-async function readProof(fileList) {
-  const files = [...fileList];
-  if (!files.length) return;
-  say([['reading', files.map((f) => f.name).join(', ')]]);
-  const read = await Promise.all(files.map(async (f) => ({ name: f.name, bytes: new Uint8Array(await f.arrayBuffer()) })));
-  // The proof is recognized by its magic, not its name: a proof saved as
-  // anything at all is still a proof, and the file beside it is the subject.
-  const proof = read.find((f) => isOtsProof(f.bytes));
-  if (!proof) {
-    say([['dropped', read.map((f) => f.name).join(', ')]],
-      ['No OpenTimestamps proof here — a .ots file opens with its own magic, and none of these do.', 'bad']);
-    return;
-  }
-  let parsed;
-  try { parsed = await parseOtsProof(proof.bytes); }
-  catch (e) { say([['proof', proof.name]], [`This proof will not read: ${e.message}.`, 'bad']); return; }
-
-  // The digest is the proof's subject, and it is not a chain hash: it is
-  // written in the order it was computed, so it is encoded in that order.
-  const rows = [['proof', proof.name],
-    [parsed.hash, hash(parsed.digest, `${parsed.hash} digest — the bytes this proof commits to`)]];
-
-  // A proof commits to a digest, not to a file. With the subject in hand too,
-  // the reader can see for themselves which file this proof is about.
-  const subject = read.find((f) => f !== proof);
-  if (subject) {
-    const digest = await digestOf(subject.bytes, parsed.hash);
-    rows.push([subject.name, digest === parsed.digest ? 'matches the proof' : 'does NOT match the proof']);
-  }
-
-  const att = earliestBitcoin(parsed.attestations);
-  if (!att) {
-    const pending = parsed.attestations.filter((a) => a.kind === 'pending').map((a) => a.uri);
-    const other = parsed.attestations.filter((a) => a.kind !== 'pending').map((a) => a.kind);
-    for (const uri of pending) rows.push(['pending', uri]);
-    for (const kind of other) rows.push(['attested', `${kind} — a chain this book does not read`]);
-    say(rows, [pending.length
-      ? 'Not in a block yet. The calendars above are holding this digest for the next transaction they publish; come back and upgrade the proof once it confirms.'
-      : 'This proof reaches no Bitcoin block, so it names no chapter here.', 'unsure']);
-    return;
-  }
-
-  const section = att.index === null ? null : att.index + 1;
-  const cite = reference(att.height) + (section ? ` §${section}` : '');
-  // The book's own spelling of the reference, built by the module that owns it
-  // -- so a proof lands through the same door a βoβ quote or a ledger row does.
-  const href = section
-    ? `./bitcoin-book.html?ref=${latinRefOf(att.height, section)}`
-    : `./bitcoin-book.html?block=${att.height}`;
-  rows.push(['stamped into', `block ${att.height} — ${cite}`]);
-  if (att.txid) rows.push(['transaction', identity(att.txid, 'the transaction carrying the commitment — its txid')]);
-  rows.push(['merkle root', merkle(att.merkleRoot, 'the merkle root the proof reduces to — what the block header must commit to')]);
-  say(rows, ['Asking the chain for that block…', 'unsure']);
-
-  // The verification, entire: the operations reduce to 32 bytes, and those
-  // bytes either are the merkle root the block's header commits to or they
-  // are not. Nothing else about the proof matters, and no calendar is
-  // consulted -- an upgraded proof needs nobody's word for anything.
-  const block = await blockAt(att.height);
-  if (!block) {
-    say(rows, ['The chain could not be reached, so nothing here is verified — the reference below is what the proof claims, not what has been checked.', 'unsure'],
-      href, `Read ${cite} →`);
-    return;
-  }
-  if (block.merkleRoot !== att.merkleRoot) {
-    rows.push(['chain says', merkle(block.merkleRoot, "the merkle root that block's header actually commits to")]);
-    say(rows, ['The roots differ. This proof does not commit to that block, whatever it says.', 'bad']);
-    return;
-  }
-  rows.push(['mined', `${stamp(block.timestamp)} UTC`]);
-  say(rows, [`Verified. The digest above existed by the time this chapter was mined${
-    subject ? ', and the file beside the proof is the one it attests' : ''}.`, 'good'],
-  href, `Read ${cite} →`);
-}
-
-document.getElementById('proof-pick').addEventListener('click', () => fileInput.click());
-// Cleared after each read so that choosing the same proof twice still asks.
-fileInput.addEventListener('change', () => { const f = fileInput.files; readProof(f).finally(() => { fileInput.value = ''; }); });
-for (const type of ['dragenter', 'dragover']) {
-  drop.addEventListener(type, (e) => { e.preventDefault(); drop.classList.add('over'); });
-}
-for (const type of ['dragleave', 'drop']) {
-  drop.addEventListener(type, (e) => { e.preventDefault(); drop.classList.remove('over'); });
-}
-drop.addEventListener('drop', (e) => { if (e.dataTransfer?.files?.length) readProof(e.dataTransfer.files); });
 </script>
 </body>
 </html>
