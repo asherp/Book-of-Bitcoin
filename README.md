@@ -102,7 +102,8 @@ compiled to WASM) is consumed as a published
   carries a **Commentary** key beside the notation one, and only where the
   passage has a reading — a chapter's leaf, a book's leaf, or a section that a
   curated entry names; opened, it raises the same kind of sheet the notation key
-  does, over the passage rather than into it, with its terms stated at the foot.
+  does, over the passage rather than into it — a reading kept apart from the
+  record it reads, which is the argument the preface makes at length.
   The split follows what each surface needs: the index says *whether* a passage
   has a reading and *whose*, which is enough for the key on the page and the
   credit in the contents, so only opening the sheet fetches a word of prose.
@@ -113,8 +114,7 @@ compiled to WASM) is consumed as a published
   precisely the kind of claim this book insists on setting apart and signing
 - `web/commentary.css` — a reading set as a reading, styled once for both places
   it is met: the sheet the reading page raises over a passage, and the toggle the
-  Ledger opens in a leaf. Shared so the terms at its foot can never be dropped
-  from one of them
+  Ledger opens in a leaf
 - `web/btc-yaml.js`, `web/btc-markdown.js` — the two small readers the authored
   files need: a deliberately narrow YAML subset (documented in the module, and
   it throws rather than guesses — a silent misread of editorial data is worse

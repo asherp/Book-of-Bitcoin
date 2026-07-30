@@ -13,9 +13,9 @@
 // and it is why commentary opens as a sheet OVER the passage rather than a
 // paragraph inside it: the prose on the page is the chain's own speech, no
 // author, verifiable against the bytes; the sheet is somebody's account of why
-// it is worth reading, with a name on it and its terms stated at the foot. A
-// reader can always tell which they are looking at, because they are never
-// looking at both at once.
+// it is worth reading, with a name on it. A reader can always tell which they
+// are looking at, because they are never looking at both at once -- and the
+// preface, which is where the book makes this argument at length, says the rest.
 //
 // The work splits along what each surface needs (see btc-notables.js): the
 // index says WHETHER a passage has a reading and WHOSE it is, and that is
@@ -133,8 +133,9 @@ const sourceOf = (r) => (r.note !== undefined ? r.note : r.source);
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => (
   { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
-// The book's own note carries no byline: publishing it is the signature, and the
-// sheet's foot says whose editorial layer this is. A contributed reading wears
+// The book's own note carries no byline: publishing it is the signature, and a
+// reader on the book's own page is already reading the book. A contributed
+// reading wears
 // its author's name, linked where they gave a link -- the name is the point, not
 // decoration: it is what lets a reader weigh the claim and argue with the person
 // who made it.
@@ -154,21 +155,12 @@ function readingHtml(r) {
       : '');
 }
 
-// Stated at the foot of every sheet, because a sheet can be read in isolation
-// and a claim of authority is exactly what commentary must not borrow from the
-// record it sits over.
-const TERMS_HTML = `
-            <p class="commentary-terms">Commentary — a reading of the record, not the record.
-              The record it annotates is the chain's own speech, verifiable byte for byte and in
-              the public domain; this is somebody's account of why it is worth reading, and no
-              more authoritative than the argument behind it.
-              <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a>,
-              credited to whoever wrote it.</p>`;
-
 // The sheet's markup for a set of resolved readings: one titled group per
-// curated entry (a height can carry several), then the terms. Everything sits
-// inside one measure, so the readings and the terms beneath them share a left
-// edge whatever size each is set at.
+// curated entry (a height can carry several), inside one measure. No terms at
+// the foot -- the book states them where a reader meets them once rather than
+// at the bottom of every sheet: the preface says what a reading is and whose,
+// and the sheet itself says it by standing apart from the passage and carrying
+// its author's name.
 export function commentaryHtml(items) {
   if (!items.length) return '';
   const groups = items.map((it) => `
@@ -177,7 +169,7 @@ export function commentaryHtml(items) {
               ${it.readings.map(readingHtml).join('')}
             </section>`).join('');
   return `
-          <div class="commentary-measure">${groups}${TERMS_HTML}
+          <div class="commentary-measure">${groups}
           </div>`;
 }
 

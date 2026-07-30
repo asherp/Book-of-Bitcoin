@@ -4,23 +4,21 @@
  * book offers one: the sheet the reading page raises over a passage
  * (bitcoin-book.html, from its nav bar's Commentary key) and the leaf-borne
  * toggle the Ledger opens over a ledger or an address (bitcoin-ledger.html).
- * Shared so a reading looks the same wherever it is met — and so the terms at
- * its foot are never quietly dropped from one of them. The markup both render
+ * Shared so a reading looks the same wherever it is met. The markup both render
  * is btc-commentary.js.
  *
  * Set as reading matter, at the body's size: commentary is prose to be read,
  * not a table to be consulted, so it follows --scale-body wherever the reader
  * has set one (btc-fontscale.js; 1 on a page that never loads it). One measure
- * holds the whole sheet — readings and terms alike, so they share a left edge
- * though each is set at its own size — and it carries the prose's own font,
- * since ch resolves per element.
+ * holds the sheet, carrying the prose's own font, since ch resolves per
+ * element.
  */
 .commentary-measure {
   max-width: 46ch; margin: 0 auto;
   font: 400 calc(15.5px * var(--scale-body, 1))/1.6 'Newsreader',serif;
 }
 .commentary-entry { margin: 0 0 26px; }
-.commentary-entry:last-of-type { margin-bottom: 18px; }
+.commentary-entry:last-of-type { margin-bottom: 0; }
 /* The reading's subject, in the monospace eyebrow the book keeps for a curated
    name — a heading, deliberately not the passage's own title type: this names
    what is being commented on, it does not retitle the page. */
@@ -46,16 +44,6 @@
 .commentary-by { font-style: italic; color: var(--dim); }
 .commentary-by a { color: var(--accent); text-decoration: none; border-bottom: 1px solid var(--rule); }
 .commentary-by a:hover { border-bottom-color: var(--accent); }
-/* The terms, at the foot of every sheet: a sheet can be read on its own, and a
-   claim of authority is exactly what commentary must not borrow from the record
-   it sits over. Ruled off, one tier down from the prose above it. */
-.commentary-terms {
-  margin: 0; padding-top: 12px; border-top: 1px solid var(--rule);
-  font: 400 calc(11.5px * var(--scale-body, 1))/1.55 'Public Sans',sans-serif; color: var(--meta);
-}
-.commentary-terms a { color: var(--meta); }
-.commentary-terms a:hover { color: var(--accent); }
-
 /* ── A reading at rest, in a leaf ──────────────────────────────────────────
    Where the reading page floats its sheet above a sticky bar, the Ledger opens
    one in place, beneath the leaf's own matter: a ledger's title leaf and an
