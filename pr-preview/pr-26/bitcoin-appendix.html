@@ -349,7 +349,7 @@ if (next) turnLink(hrefFor(next), `${label(next)} ›`, false);
 // its own bytes name, and kept -- after which it stands in the contents beside
 // the bundled ones, under the ribbon a bookmark flies.
 if (kind === 'proofs') {
-  const { allProofs, readProof, attests, keepProof, dropProof, citeOf, hrefOf } = await import('./btc-proofs.js');
+  const { allProofs, readProof, attests, keepProof, dropProof, citeOf, hrefOf, leafOf } = await import('./btc-proofs.js');
   const { isOtsProof } = await import('./btc-ots.js');
   const { blockAt } = await import('./btc-index.js');
   const { toSuperscript } = await import('./btc-sigla.js');
@@ -372,7 +372,7 @@ if (kind === 'proofs') {
       const row = document.createElement('div');
       row.className = 'proof-row';
       const a = document.createElement('a');
-      a.href = hrefOf(proof.place);
+      a.href = leafOf(proof);       // the file's own leaf: its proof, rung by rung
       if (proof.kept) {
         const bm = document.createElement('span');
         bm.className = 'proof-bm'; bm.setAttribute('aria-label', 'your proof');
@@ -401,7 +401,7 @@ if (kind === 'proofs') {
     }
     listEl.classList.toggle('hidden', !listed.length);
     if (listed.length) {
-      firstChapter = hrefOf(listed[0].place);
+      firstChapter = leafOf(listed[0]);
       $('appx-down').classList.remove('hidden');
     }
   }

@@ -159,7 +159,7 @@ a:hover { text-decoration: underline; }
 
 <script type="module">
 import { loadNotables, places, placeTitle, appendix, isBlockId, isRelativeBlockId, entryHref } from './btc-contents.js';
-import { allProofs, citeOf, hrefOf } from './btc-proofs.js';
+import { allProofs, citeOf, leafOf } from './btc-proofs.js';
 import { creditLine, commentaryForAddresses } from './btc-commentary.js';
 import { readQueue, buildQueue } from './btc-mempool.js';
 import { INDEXED, keptLedgers, sameAddresses } from './btc-index.js';
@@ -459,7 +459,9 @@ function proofsEl(part, proofs) {
 function proofEl(proof) {
   const row = document.createElement('a');
   row.className = 'toc-entry under-book' + (proof.kept ? ' is-bookmark' : '');
-  row.href = hrefOf(proof.place);
+  // The row opens the file's own leaf rather than the chapter: what this
+  // appendix has to show is the proof, and the chapter is one step past it.
+  row.href = leafOf(proof);
   const t = document.createElement('span');
   t.className = 'toc-title';
   if (proof.kept) {
