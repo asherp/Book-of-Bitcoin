@@ -42,10 +42,27 @@ The two do not divide evenly, and I have let the seam show. A halving era is
 not a whole number of difficulty windows — 210,000 blocks comes to about 104
 and a sixth of them — so the last book of every volume is a short one, 336
 blocks where the others run 2,016, and book numbering begins again at 1 with
-each new era rather than running on. A tidier scheme would have papered over
-that. This one leaves it visible, because the ragged last book is a real fact
-about Bitcoin: supply and difficulty are two different clocks, and they do not
-keep step.
+each new era rather than running on.
+
+That restart costs something, and it is worth saying plainly, because it is the
+one place in this scheme where a name stops being exactly true. In Volume I a
+book is a difficulty window and nothing else: β1 opens at the genesis block,
+every book after it opens on a retarget, and only the last is cut off — by the
+halving, a sixth of the way into its window. From Volume II on the two come
+apart. An era begins where the subsidy says, which is 336 blocks into a window
+already running; the next era begins 672 blocks in, the one after that 1,008, a
+further sixth of a book late each time. So a book after Volume I is still 2,016
+blocks, but it is not *the* 2,016 blocks the network weighed: it carries the
+tail of one window and the head of the next, with a retarget somewhere inside
+it. β goes on marking difficulty, and after Volume I it marks the measure
+rather than the window.
+
+The drift does come back around. Six eras are 1,260,000 blocks, which is
+exactly 625 windows, so Volume VII opens on a retarget with the two in step
+again, and they part from there on the same schedule. A tidier scheme would
+have papered over all of it. This one leaves it visible, because the ragged
+last book and the wandering seam are real facts about Bitcoin: supply and
+difficulty are two different clocks, and they agree only once every six eras.
 
 Nothing in that scheme is my invention except the marks themselves. The
 divisions were already in the chain; I have only given them the names a book
