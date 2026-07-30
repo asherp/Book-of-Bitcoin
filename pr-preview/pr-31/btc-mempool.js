@@ -130,10 +130,14 @@ function projEntryEl({ height, text, ref, refTitle }) {
 // Greek, and it runs far past any queue depth a mirror will ever hand back;
 // anything deeper falls back to the bare ordinal rather than an invented
 // letter.
+//
+// Exported, because the book page names the same chapter when a reader opens
+// one -- the row in the contents and the head of the draft it opens should
+// call it the same thing.
 const GREEK = ['alpha', 'beta', 'gamma', 'delta', 'epsilon', 'zeta', 'eta', 'theta',
   'iota', 'kappa', 'lambda', 'mu', 'nu', 'xi', 'omicron', 'pi', 'rho', 'sigma',
   'tau', 'upsilon', 'phi', 'chi', 'psi', 'omega'];
-const queueLabel = (k) => String(GREEK[k - 1] || k);
+export const queueLabel = (k) => String(GREEK[k - 1] || k);
 
 // And what closes them: not a figure, not a count of what is left, just the
 // mark that a list has been cut short.
