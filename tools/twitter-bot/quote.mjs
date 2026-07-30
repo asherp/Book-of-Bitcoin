@@ -122,8 +122,17 @@ const shortId = (txid) => `${txid.slice(0, 8)}…`;
 // plain text with the sigla intact, in wire order.
 //
 //   rows:      [{ label, text }]           — the manuscript page's margin layout
-//   footnotes: ['…']                       — witness data, numbered per input
+//   footnotes: [null | '…']                — one per input, positionally
 //   flat:      'version 1\ninput: …'       — the rows as flowing text, for a tweet
+//
+// A witness belongs to an input, one each: BIP144 serializes a witness for
+// every input of a segwit transaction, an unspending one carrying an empty
+// stack (a bare 00 item count) rather than being omitted. So the footnotes
+// run with the inputs and a footnote's letter IS its input's position —
+// input 2's witness is always b, whether or not input 1's stack was empty.
+// `footnotes` is therefore dense and positional, null where an input has no
+// witness at all (a wholly non-segwit transaction, which has no witness
+// section to serialize).
 export function sectionParts(fields, witnessHtml = () => null) {
   const rows = [];
   const footnotes = [];
@@ -135,8 +144,8 @@ export function sectionParts(fields, witnessHtml = () => null) {
     const script = htmlToText(inp.script).trim();
     const seq = htmlToText(inp.sequence).trim();
     const wit = witnessHtml(inp, i);
-    if (wit != null) footnotes.push(htmlToText(wit).trim());
-    const foot = wit != null ? ` ⁽${footnoteMark(footnotes.length)}⁾` : '';
+    footnotes.push(wit == null ? null : htmlToText(wit).trim());
+    const foot = wit == null ? '' : ` ⁽${footnoteMark(i + 1)}⁾`;
     rows.push({ label, text: `${src}${script ? ` — ${script}` : ''}${seq ? ` · ${seq}` : ''}${foot}` });
   });
   fields.outputs.forEach((o, i) => {
@@ -293,13 +302,13 @@ export function txFlowHtml(fields, footnotesHtml = [], citations = []) {
     pendingMargin.push(`<div class="tx-in-cite tx-version">v${escapeHtml(fields.version)}</div>`);
   }
 
-  let footnoteNum = 0;
   fields.inputs.forEach((inp, i) => {
     const ref = inp.isNullPrevout
       ? '∅'
       : escapeHtml(citations[i] || shortRef(inp.prevTxid, inp.prevVout));
-    const hasWitness = footnotesHtml[footnoteNum] !== undefined && inp.witnessItems.length;
-    const witRef = hasWitness ? `<sup class="tx-witness-ref">${footnoteMark(++footnoteNum)}</sup>` : '';
+    // A footnote's letter is its input's position — see sectionParts.
+    const hasWitness = footnotesHtml[i] != null;
+    const witRef = hasWitness ? `<sup class="tx-witness-ref">${footnoteMark(i + 1)}</sup>` : '';
     const seqClass = `tx-seq tx-seq-${inp.sequenceKind}`;
     const seq = inp.sequenceRbf && inp.sequence
       ? `<span class="${seqClass}"><span class="tx-seq-rbf">†</span> ${inp.sequence}</span>`
@@ -329,8 +338,9 @@ export function txFlowHtml(fields, footnotesHtml = [], citations = []) {
     );
   });
 
-  const notes = footnotesHtml.length
-    ? `<div class="footnotes">${footnotesHtml.map((f, i) => {
+  const written = footnotesHtml.map((f, i) => ({ f, i })).filter(({ f }) => f != null);
+  const notes = written.length
+    ? `<div class="footnotes">${written.map(({ f, i }) => {
         const cut = f.length > FOOTNOTE_MAX_CHARS ? `${f.slice(0, FOOTNOTE_MAX_CHARS)} ⋯` : f;
         return `<p class="footnote"><sup>${footnoteMark(i + 1)}</sup> ${cut}</p>`;
       }).join('')}</div>`

@@ -410,3 +410,46 @@ test('a tweet with the hashtag but no citation is passed over', async () => {
   const r = await replyFor('gm #bookofbitcoin', { esplora: stubEsplora({}), proseOf: () => ({}) });
   assert.equal(r.skip, 'no citation found');
 });
+
+test('a footnote\'s letter is its input\'s position, empty witnesses included', () => {
+  // BIP144 serializes one witness per input of a segwit transaction — an
+  // input that needs none carries an empty stack, not nothing. So input 2's
+  // witness is b whether or not input 1's stack was empty. Counting over
+  // only the non-empty ones (as this once did) would call it a.
+  const fields = stubFields({
+    inputs: [
+      { ...stubFields().inputs[0], witnessHex: '00', witnessItems: [], witnessZero: true },
+      { ...stubFields().inputs[0], witnessHex: '0247', witnessItems: ['aa', 'bb'], witnessZero: false },
+    ],
+  });
+  const witnessOf = (inp) => (inp.witnessHex ? (inp.witnessZero ? '∅' : 'φ sig ρ key') : null);
+  const s = sectionParts(fields, witnessOf);
+
+  assert.deepEqual(s.footnotes, ['∅', 'φ sig ρ key'], 'dense: one entry per input');
+  assert.match(s.rows[1].text, /⁽a⁾$/, 'input 1 carries a — its empty witness is still a witness');
+  assert.match(s.rows[2].text, /⁽b⁾$/, 'input 2 carries b, not a');
+
+  // The manuscript grid agrees, and marks both.
+  const html = passageHtml({
+    cite: 'I β1 ■1 §1', sectionNum: 1, txidProse: 'p', site: SITE,
+    section: { fields, footnotesHtml: fields.inputs.map(witnessOf) },
+  });
+  assert.ok(html.includes('<sup class="tx-witness-ref">a</sup>'));
+  assert.ok(html.includes('<sup class="tx-witness-ref">b</sup>'));
+  assert.ok(html.includes('<sup>b</sup> φ sig ρ key'), 'and the note under b is input 2\'s');
+});
+
+test('a legacy transaction has no witnesses at all, and no footnotes', () => {
+  const fields = stubFields();                      // witnessHex: '' — not segwit
+  const witnessOf = (inp) => (inp.witnessHex ? '∅' : null);
+  const s = sectionParts(fields, witnessOf);
+  assert.deepEqual(s.footnotes, [null]);
+  assert.ok(!s.rows[1].text.includes('⁽'), 'no mark where there is no witness');
+  const html = passageHtml({
+    cite: 'I β1 ■1 §1', sectionNum: 1, txidProse: 'p', site: SITE,
+    section: { fields, footnotesHtml: fields.inputs.map(witnessOf) },
+  });
+  // The element, not the class name — the stylesheet always defines the rule.
+  assert.ok(!html.includes('<sup class=\"tx-witness-ref\">'));
+  assert.ok(!html.includes('class="footnotes"'));
+});

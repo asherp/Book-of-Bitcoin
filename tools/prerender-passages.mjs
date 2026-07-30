@@ -185,16 +185,15 @@ export function sectionMd({ txid, fields, sectionNum, eventTitle }) {
   out.push('');
   out.push(`Transaction id, as prose: ⌘${toSuperscript(256)} *${proseOf(reverseHex(txid))}*`);
   out.push('');
-  // Footnotes are lettered (a, b, c …) and counted over the witness-bearing
-  // inputs in input order — the same run bitcoin-book.html builds, so a
-  // reference here names the same footnote the live page does. Numbering by
-  // input index instead (as this once did) drifts the moment a transaction
-  // mixes witness and legacy inputs: with witnesses on inputs 1 and 3, the
-  // page's a and b would read here as 1 and 3.
+  // Footnotes are lettered (a, b, c …) by their input's position: BIP144
+  // gives every input of a segwit transaction a witness, an empty stack
+  // included, so the footnotes run with the inputs one for one. That is the
+  // same run bitcoin-book.html builds, so a reference here names the footnote
+  // the live page does.
   const witnessed = fields.inputs
     .map((inp, i) => ({ inp, i }))
-    .filter(({ inp }) => inp.witnessItems.length);
-  const markOfInput = new Map(witnessed.map(({ i }, n) => [i, footnoteMark(n + 1)]));
+    .filter(({ inp }) => inp.witnessHex);
+  const markOfInput = new Map(witnessed.map(({ i }) => [i, footnoteMark(i + 1)]));
 
   out.push(`- **version:** ${fields.version}`);
   fields.inputs.forEach((inp, i) => {
@@ -205,7 +204,7 @@ export function sectionMd({ txid, fields, sectionNum, eventTitle }) {
     const script = htmlToText(inp.script).trim();
     if (script) out.push(`  - script: ${script}`);
     out.push(`  - sequence: ${htmlToText(inp.sequence)} — ${htmlToText(inp.sequenceTitle)}`);
-    if (inp.witnessItems.length) {
+    if (markOfInput.has(i)) {
       out.push(`  - witness: see footnote ${markOfInput.get(i)}`);
     }
   });
@@ -381,12 +380,15 @@ async function renderEntry(entry, seed) {
 
   // The section in the shape the page and the card set it: composed fields
   // plus rendered witness HTML, exactly as the reply bot builds it.
+  // One witness per input, as BIP144 serializes them -- see the same rule in
+  // tools/twitter-bot/bot.mjs. Dense, so a footnote's letter is its input's
+  // position rather than its place in a filtered run.
   const witnessOf = (inp) =>
-    (inp.witnessItems.length ? (inp.witnessZero ? '∅' : renderWitness(inp.witnessItems, encodeCapped)) : null);
+    (inp.witnessHex ? (inp.witnessZero ? '∅' : renderWitness(inp.witnessItems, encodeCapped)) : null);
   const section = {
     ...sectionParts(fields, witnessOf),
     fields,
-    footnotesHtml: fields.inputs.map(witnessOf).filter((w) => w !== null),
+    footnotesHtml: fields.inputs.map(witnessOf),
   };
 
   // The chapter head: the block hash as prose in its ⓪ⁿ⌘ᵐ notation, and the
@@ -601,19 +603,24 @@ async function main() {
     // …and one per witness, addressed by its footnote letter. There are as
     // many as the section has witness-bearing inputs, which is bounded by its
     // input count; the same cap applies.
-    const notes = r.isChapter ? [] : (r.section?.footnotesHtml ?? []);
+    // A witness page per input that has one, addressed by that input's
+    // letter -- so §1.b is always input 2's witness.
+    const dense = r.isChapter ? [] : (r.section?.footnotesHtml ?? []);
+    const notes = dense.map((f, i) => ({ f, i })).filter(({ f }) => f != null);
     const notePages = Math.min(notes.length, MAX_OUTPUT_PAGES);
     if (notes.length > notePages) {
       console.log(`  (${r.slug}: ${notes.length - notePages} of ${notes.length} witnesses left without pages, past the cap of ${MAX_OUTPUT_PAGES})`);
     }
-    for (let w = 0; w < notePages; w++) {
-      const mark = witnessSegment(w + 1);
+    for (let k = 0; k < notePages; k++) {
+      const { f: note, i: inputIndex } = notes[k];
+      const w = inputIndex;
+      const mark = witnessSegment(inputIndex + 1);
       let witCardUrl = null;
       if (renderer) {
         try {
           const { png } = await renderer.render({
             cite: citationOf(r.height, sectionNum, mark), title: r.title,
-            sectionNum, witnessMark: mark, witnessHtml: notes[w], txidProse: r.txidProse,
+            sectionNum, witnessMark: mark, witnessHtml: note, txidProse: r.txidProse,
           }, { site: SITE, width: CARD_WIDTH, height: CARD_HEIGHT });
           await writeFile(new URL(cardPath(r.height, sectionNum, mark).replace(/^\/cards\//, ''), CARDS_DIR), png);
           witCardUrl = SITE + cardPath(r.height, sectionNum, mark);
@@ -625,8 +632,8 @@ async function main() {
       const witDir = new URL(`.${passagePath(r.height, sectionNum, mark)}`, WEB_DIR);
       await mkdir(witDir, { recursive: true });
       await writeFile(new URL('index.html', witDir), witnessPageHtml({
-        site: SITE, height: r.height, sectionNum, footnoteIndex: w + 1, title: r.title,
-        witnessHtml: notes[w], txid: r.txid, cardUrl: witCardUrl, slug: r.slug,
+        site: SITE, height: r.height, sectionNum, footnoteIndex: inputIndex + 1, title: r.title,
+        witnessHtml: note, txid: r.txid, cardUrl: witCardUrl, slug: r.slug,
       }));
       outputPaths.push(passagePath(r.height, sectionNum, mark));
     }

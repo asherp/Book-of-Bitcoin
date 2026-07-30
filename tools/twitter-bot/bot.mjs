@@ -167,9 +167,18 @@ export async function ensureEngine() {
     // the alt text quote).
     sectionOf: (hex) => {
       const fields = composeTransactionFields(parseTransaction(hex), BEST_OF, proseWithCap, encodeCapped);
+      // An input has a witness exactly when the transaction is segwit --
+      // BIP144 serializes one per input, an empty stack included, so
+      // witnessHex is set (at least the bare 00 item count) for every input
+      // of such a transaction and unset for every input of a legacy one.
+      // Keying on the item count instead would drop the empty stacks and
+      // shift every later footnote's letter off its input. This is the same
+      // test bitcoin-book.html applies.
       const witnessOf = (inp) =>
-        (inp.witnessItems.length ? (inp.witnessZero ? '∅' : renderWitness(inp.witnessItems, proseWithCap)) : null);
-      const footnotesHtml = fields.inputs.map(witnessOf).filter((w) => w !== null);
+        (inp.witnessHex ? (inp.witnessZero ? '∅' : renderWitness(inp.witnessItems, proseWithCap)) : null);
+      // Dense and positional: one entry per input, null where there is no
+      // witness, so a footnote's letter is its input's place.
+      const footnotesHtml = fields.inputs.map(witnessOf);
       return { ...sectionParts(fields, witnessOf), fields, footnotesHtml };
     },
   };
