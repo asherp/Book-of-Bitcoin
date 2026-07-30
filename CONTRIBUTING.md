@@ -69,9 +69,31 @@ tip-relative height (`-1`), a 64-hex transaction id, or the book's own citation
 in either spelling and to any depth (`III β2 ■5`, `I β29 ■596 §85`,
 `v1b29c596s85`, and `III β2` for a book's leaf). A reference is resolved to a
 height when the file is read, so nothing downstream sees a new shape, and the
-checker prints what each one resolved to. Addresses are the one thing rejected
-outright: an address is not a place but a name, and names are the ledgers'
-index (`web/btc-index-data.js`).
+checker prints what each one resolved to.
+
+An `id` may also be an **address**, which is how a reading is attached to a
+ledger rather than to a passage:
+
+```yaml
+- title: WikiLeaks
+  id: 1HB5XMLmzFVj8ALj6mfBsbifRoD4miY36v
+  commentary:
+    - file: wikileaks-ledger.md
+```
+
+An address is a name rather than a place, so it opens no chapter: the row reads
+in the Ledger, and the reading opens on that ledger's title leaf and on the
+address's own leaf. Which ledgers the book shelves, and what each is called, is
+still `web/btc-index-data.js`; an entry in `notables.yaml` is about a reading,
+not a shelving, and a reading kept on an unshelved address still opens when
+somebody looks that address up (the checker says so, as a note rather than an
+error).
+
+A reading of a name deserves more care than a reading of a passage, not less.
+That coins at an address are some party's is an inference — usually a good one
+when the party published the address themselves, which is the standard the
+shelf is kept to, and still an inference. Say who is claiming it and on what
+evidence; the Ledger will keep it beside the record rather than inside it.
 
 The YAML is read by a small subset parser (`web/btc-yaml.js`, which documents
 exactly what it understands and throws rather than guesses): keep comments on

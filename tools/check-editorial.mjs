@@ -20,6 +20,8 @@ import { readdir, readFile } from 'node:fs/promises';
 import { parseNotables } from '../web/btc-notables.js';
 import { parseYamlSequence } from '../web/btc-yaml.js';
 import { parseReference } from '../web/btc-citation.js';
+import { looksLikeAddress } from '../web/btc-lookup.js';
+import { INDEXED } from '../web/btc-index-data.js';
 import { readingsOf } from '../web/btc-commentary.js';
 import { markdownParagraphs } from '../web/btc-markdown.js';
 
@@ -50,7 +52,16 @@ for (const e of entries) {
   const key = `${e.id}#${e.index ?? ''}`;
   if (seen.has(key)) problems.push(`duplicate entry: "${e.title}" repeats the id of "${seen.get(key)}"`);
   seen.set(key, e.title);
-  if (!/^-?[0-9]+$/.test(e.id) && !/^[0-9a-f]{64}$/.test(e.id)) {
+  if (e.address) {
+    // An address entry names a ledger, not a place. It needs no shelving here
+    // (the Ledger opens any address, curated or not), but a reading kept on an
+    // address nobody has shelved will only be met by a reader who goes looking
+    // for that address — worth saying, never an error.
+    if (!looksLikeAddress(e.address)) problems.push(`"${e.title}": id "${e.address}" does not look like an address`);
+    else if (!INDEXED.some((l) => l.addresses.includes(e.address))) {
+      notes.push(`"${e.title}": ${e.address} is not shelved in btc-index-data.js — its reading shows only on an ad-hoc ledger`);
+    }
+  } else if (!/^-?[0-9]+$/.test(e.id) && !/^[0-9a-f]{64}$/.test(e.id)) {
     problems.push(`"${e.title}": id "${e.id}" is neither a block height nor a 64-hex id`);
   }
   if (e.page !== undefined && e.page !== 'book' && e.page !== 'volume') {

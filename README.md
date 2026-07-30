@@ -107,7 +107,14 @@ compiled to WASM) is consumed as a published
   has a reading and *whose*, which is enough for the key on the page and the
   credit in the contents, so only opening the sheet fetches a word of prose.
   Absence is information: most entries carry no reading, and the key does not
-  appear when there is nothing to open
+  appear when there is nothing to open. The Ledger offers the same sheet over a
+  *name*: a curated entry may be an address, and its readings open on that
+  ledger's title leaf and on the address's own — a reading of a name being
+  precisely the kind of claim this book insists on setting apart and signing
+- `web/commentary.css` — a reading set as a reading, styled once for both places
+  it is met: the sheet the reading page raises over a passage, and the toggle the
+  Ledger opens in a leaf. Shared so the terms at its foot can never be dropped
+  from one of them
 - `web/btc-yaml.js`, `web/btc-markdown.js` — the two small readers the authored
   files need: a deliberately narrow YAML subset (documented in the module, and
   it throws rather than guesses — a silent misread of editorial data is worse
@@ -170,8 +177,9 @@ compiled to WASM) is consumed as a published
   they are called, and one Markdown file per reading, referenced by the entry it
   belongs to (`by:` naming whoever wrote it, absent for the book's own voice).
   An entry's `id:` is written in any form the search box takes — a height, a
-  64-hex id, or a citation to whatever depth is meant (`I β29 ■596 §85`), which
-  is resolved by arithmetic when the file is read.
+  64-hex id, a citation to whatever depth is meant (`I β29 ■596 §85`, resolved by
+  arithmetic when the file is read), or an address, which names a ledger rather
+  than a place and so reads in the Ledger instead of opening a chapter.
   YAML and Markdown rather than JavaScript because this is the part of the
   repository written by people who are writing rather than programming — and
   nothing is generated from them: the browser reads these files as they stand,
