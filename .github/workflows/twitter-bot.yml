@@ -1,0 +1,125 @@
+name: Twitter Bot
+
+# Watch the hashtag on a schedule and answer citations with chapter and
+# verse (tools/twitter-bot/). Each run is one pass: search since the last
+# watermark, reply to what parses, save state. The Glossia engine is
+# fetched from the deployed site at runtime, so this job needs Node and
+# nothing else — no Rust toolchain, no WASM build.
+#
+# Runs only when the X credentials are configured as repository secrets:
+#   X_BEARER_TOKEN                                  (app-only, for search)
+#   X_API_KEY / X_API_SECRET / X_ACCESS_TOKEN / X_ACCESS_SECRET
+#                                                   (OAuth 1.0a, for posting)
+# Mind your API tier: recent search is not available on the free tier, and
+# the schedule below assumes a plan that allows polling. Widen the cron or
+# disable the workflow to match your limits.
+
+on:
+  schedule:
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Search and render, but post nothing'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+# One pass at a time; a scheduled run arriving while another is mid-pass
+# would race it on the state watermark.
+concurrency:
+  group: twitter-bot
+  cancel-in-progress: false
+
+jobs:
+  reply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Check credentials
+        id: creds
+        env:
+          BEARER: ${{ secrets.X_BEARER_TOKEN }}
+        run: |
+          if [ -n "$BEARER" ]; then
+            echo "have=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "have=false" >> "$GITHUB_OUTPUT"
+            echo "X secrets not configured; skipping the pass." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      # Playwright renders a verse too long for a tweet as a passage image
+      # (tools/twitter-bot/image.mjs). It is optional at runtime — a missing
+      # or broken renderer costs the images, never the pass — but install it
+      # here so the images ride. Chromium is cached between runs.
+      - name: Install the image renderer
+        if: steps.creds.outputs.have == 'true'
+        working-directory: tools/twitter-bot
+        run: npm install --no-audit --no-fund
+
+      - name: Cache Chromium
+        if: steps.creds.outputs.have == 'true'
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ hashFiles('tools/twitter-bot/package.json') }}
+
+      - name: Install Chromium
+        if: steps.creds.outputs.have == 'true'
+        working-directory: tools/twitter-bot
+        run: npx playwright install --with-deps chromium
+
+      # The bot's watermark and replied-to ledger, carried between runs in
+      # the Actions cache: restore the newest prior state, save this run's
+      # under a fresh key (cache entries are immutable, so state moves
+      # forward by writing a new one each pass).
+      #
+      # The cache is the weak link in this deployment: GitHub evicts entries
+      # after about a week without a hit, and the ledger lives in the same
+      # file as the watermark, so an eviction looks exactly like a first
+      # run. That is what the bot's cold-start rule is for — a pass with no
+      # state takes the watermark and answers nothing, so a lost cache
+      # costs a few unanswered tweets instead of replaying a week of them.
+      # Passes run every 30 minutes, well inside the eviction window, so
+      # this should only ever bite after a long pause.
+      - name: Restore state
+        if: steps.creds.outputs.have == 'true'
+        uses: actions/cache/restore@v4
+        with:
+          path: tools/twitter-bot/state.json
+          key: twitter-bot-state-${{ github.run_id }}
+          restore-keys: |
+            twitter-bot-state-
+
+      - name: Run a pass
+        if: steps.creds.outputs.have == 'true'
+        env:
+          X_BEARER_TOKEN: ${{ secrets.X_BEARER_TOKEN }}
+          X_API_KEY: ${{ secrets.X_API_KEY }}
+          X_API_SECRET: ${{ secrets.X_API_SECRET }}
+          X_ACCESS_TOKEN: ${{ secrets.X_ACCESS_TOKEN }}
+          X_ACCESS_SECRET: ${{ secrets.X_ACCESS_SECRET }}
+          BOT_HASHTAG: ${{ vars.BOT_HASHTAG }}
+          BOT_HANDLE: ${{ vars.BOT_HANDLE }}
+          BOT_MAX_REPLIES: ${{ vars.BOT_MAX_REPLIES }}
+          BOT_SITE: ${{ vars.BOT_SITE }}
+        # bash (rather than the default sh) for pipefail: the pass's exit
+        # code is the run's verdict, and must not be masked by tee's.
+        shell: bash
+        run: |
+          node tools/twitter-bot/bot.mjs ${{ inputs.dry_run && '--dry-run' || '' }} \
+            | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Save state
+        if: always() && steps.creds.outputs.have == 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: tools/twitter-bot/state.json
+          key: twitter-bot-state-${{ github.run_id }}

@@ -70,13 +70,34 @@ jobs:
       - name: Build WASM
         run: ./build_web.sh
 
+      # Headless Chromium, for the passage cards: each curated passage's page
+      # carries its own og:image, rendered by the same renderer the reply bot
+      # uses (tools/twitter-bot/image.mjs). Optional at runtime — without it
+      # the pages still ship and fall back to the site's standing card — so
+      # this step must never fail the deploy.
+      - name: Cache Chromium
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ hashFiles('tools/twitter-bot/package.json') }}
+
+      - name: Install the card renderer
+        continue-on-error: true
+        working-directory: tools/twitter-bot
+        run: |
+          npm install --no-audit --no-fund
+          npx playwright install --with-deps chromium
+
       # Pre-render the curated passages as static markdown (web/passages/) and
       # generate sitemap.xml — the text AI crawlers and no-JS readers actually
       # get, since the live pages compose their prose in the browser. Runs the
       # same parse/compose/encode pipeline in Node against the WASM artifact
-      # just built. Best-effort: the script skips entries whose explorer data
-      # can't be fetched and always exits 0, so an explorer outage never blocks
-      # a deploy (the sitemap still ships, covering whatever rendered).
+      # just built. Also writes each passage's page at its citation path
+      # (web/III/2/5/1/) with its own card under web/cards/, so a shared link
+      # previews as that passage rather than as the site (tools/passage-page.mjs).
+      # Best-effort: the script skips entries whose explorer data can't be
+      # fetched and always exits 0, so an explorer outage never blocks a deploy
+      # (the sitemap still ships, covering whatever rendered).
       - name: Pre-render curated passages
         run: node tools/prerender-passages.mjs
 

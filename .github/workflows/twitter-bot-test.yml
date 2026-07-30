@@ -1,0 +1,108 @@
+name: Twitter Bot Tests
+
+# The bot's own checks, on every change that could break it — its sources,
+# and the book modules it composes passages through (a change to
+# btc-prose.js or btc-tx.js reaches the bot's output directly).
+#
+# Two jobs, deliberately: the suite runs on a bare checkout, where the WASM
+# engine and Playwright are both absent and the deeper tests skip
+# themselves, which is the state a contributor clones into. The rehearsal
+# runs with both present, and drives a whole pass — search, resolve,
+# render, upload, reply, record — against local stand-ins for the chain and
+# for X. Neither job needs a credential, and neither can reach either real
+# service.
+
+on:
+  push:
+    paths:
+      - 'tools/twitter-bot/**'
+      - 'web/btc-prose.js'
+      - 'web/btc-tx.js'
+      - 'web/btc-citation.js'
+      - 'web/btc-contents-data.js'
+      - 'web/glossia-msg.js'
+      - 'tools/passage-page.mjs'
+      - 'tools/prerender-passages.mjs'
+      - '.github/workflows/twitter-bot-test.yml'
+  pull_request:
+    paths:
+      - 'tools/twitter-bot/**'
+      - 'web/btc-prose.js'
+      - 'web/btc-tx.js'
+      - 'web/btc-citation.js'
+      - 'web/btc-contents-data.js'
+      - 'web/glossia-msg.js'
+      - 'tools/passage-page.mjs'
+      - 'tools/prerender-passages.mjs'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  # The suite as a bare checkout sees it: no engine, no browser, the two
+  # deep tests skipping. This is what a contributor gets from `git clone &&
+  # node --test`, so it has to stay green in exactly that state.
+  suite:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Run the suite (bare checkout)
+        run: node --test tools/twitter-bot/test.mjs tools/passage-page.test.mjs
+
+  # The same suite with everything present, plus the full-pass rehearsal.
+  rehearsal:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # The same sequence deploy-web.yml builds the engine with — including
+      # its warning about a system wasm-opt, which applies here too.
+      - name: Fetch glossia engine crate
+        run: |
+          ./build_web.sh --fetch-only
+          echo "GLOSSIA_VERSION=$(sed -n 's/.*GLOSSIA_VERSION:-\([0-9][0-9.]*\).*/\1/p' build_web.sh)" >> "$GITHUB_ENV"
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo build
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: .glossia-build/glossia-${{ env.GLOSSIA_VERSION }}
+
+      - name: Install wasm-pack
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+
+      - name: Build WASM
+        run: ./build_web.sh
+
+      - name: Install the image renderer
+        working-directory: tools/twitter-bot
+        run: npm install --no-audit --no-fund
+
+      - name: Cache Chromium
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ hashFiles('tools/twitter-bot/package.json') }}
+
+      - name: Install Chromium
+        working-directory: tools/twitter-bot
+        run: npx playwright install --with-deps chromium
+
+      # With the engine and the browser present, the two tests that skip on
+      # a bare checkout now run: one renders a real verse and asserts it
+      # decodes back to the genesis txid, the other renders a real PNG and
+      # asserts the fit.
+      - name: Run the suite (engine + renderer)
+        run: node --test tools/twitter-bot/test.mjs tools/passage-page.test.mjs
+
+      - name: Rehearse a full pass
+        run: node tools/twitter-bot/rehearse.mjs
