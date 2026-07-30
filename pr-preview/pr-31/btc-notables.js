@@ -160,7 +160,11 @@ function normalizePart(raw, i) {
     }
     part.entries = raw.entries.map((e) => {
       const place = normalizePlace(e, String(e.title ?? title));
-      return { ...place, title: String(e.title ?? ''), note: e.note ? String(e.note) : undefined };
+      const entry = { ...place, title: String(e.title ?? ''), note: e.note ? String(e.note) : undefined };
+      // A future chapter is a place like any other, so it may carry a reading
+      // like any other -- what this height will mean for the transactions that
+      // follow it. The book shows it where the chapter itself would be.
+      return withCommentary(entry, e);
     });
   }
   return part;

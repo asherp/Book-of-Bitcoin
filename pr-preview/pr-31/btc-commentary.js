@@ -22,7 +22,7 @@
 // enough to show a key on the page and a credit in the contents. Only opening
 // the sheet needs the prose, so only opening it fetches anything.
 
-import { notables, loadCommentaryFile } from './btc-notables.js';
+import { notables, appendix, loadCommentaryFile } from './btc-notables.js';
 import { renderMarkdown, markdownParagraphs } from './btc-markdown.js';
 
 // Every reading an entry carries, in the order they should be read: the book's
@@ -86,7 +86,16 @@ export function commentaryFor({ height = null, index = null, txid = null } = {})
     if (i !== null && i >= 0) return p.id === id || (p.id === h && p.index === i);
     return false;
   };
-  return itemsOf(notables().filter((e) => e.places.some(here)));
+  const kept = notables().filter((e) => e.places.some(here));
+  // A future chapter is curated too -- the appendix keeps heights consensus has
+  // fixed and no block has reached (appendix.yaml) -- and it is a page a reader
+  // can open, so a reading kept on one is met there like any other. Its entry
+  // holds one place, itself.
+  const ahead = appendix()
+    .filter((p) => p.kind === 'entries')
+    .flatMap((p) => p.entries)
+    .filter((e) => here(e));
+  return itemsOf([...kept, ...ahead.map((e) => ({ title: e.title, places: [e], commentary: e.commentary }))]);
 }
 
 // The readings kept for one or more addresses -- what a ledger is: a titled set
