@@ -161,7 +161,9 @@ test('the extranonce reads as a number, and stops leaning on the tag', { skip: s
   const fields = composeTransactionFields(parseTransaction(coinbaseTxHex(scriptSig)), 1, null, markEncoder);
   const script = fields.inputs[0].script;
 
-  assert.match(script, new RegExp(`η${EXTRANONCE_VALUE}`), 'the counter reads as its own integer');
+  // η carries its value as a subscript, the one form the mark takes in either era.
+  const subscript = EXTRANONCE_VALUE.replace(/\d/g, (d) => '₀₁₂₃₄₅₆₇₈₉'[+d]);
+  assert.match(script, new RegExp(`η${subscript}`), 'the counter reads as its own number, subscript');
   // Its printable tail (~kj) was joining the quotation as the counter rolled.
   // Consumed under η, it can't reach the text scan at all.
   const quoted = [...script.matchAll(/“([^”]*)”/g)].map((m) => m[1]).join('');

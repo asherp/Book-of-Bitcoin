@@ -544,14 +544,12 @@ const blockHeightMark = (height) => `<span class="op op-blockmark" title="BIP34 
 // renders is what the tail holds. A pool tag reads as the sentence the pool
 // wrote, pipes and spaces included, instead of arriving pre-cut by a tokenizer
 // that mistook its punctuation for instructions.
-// The extranonce mark, carrying its value inline rather than as a subscript.
-// The chapter head sets the precedent: the header's nonce is a bold-gold η
-// with the integer beside it, because that is what a nonce is. A BIP34-era
-// counter runs to eight bytes, and twenty digits at subscript size would be a
-// smudge -- so the value reads at the mark's own size, as the height above it
-// does. (The pre-BIP34 preamble keeps η's subscript: those extranonces are
-// single digits, and there they still read.)
-const extranonceMark = (n) => markToken(`η${n}`, `extranonce ${n} — the counter the miner rolled once the header's 32-bit nonce (η) was exhausted. A tally, not text: it is read as the number it is, so its bytes never pass for writing`);
+// The extranonce mark: η with its value subscript, in both eras. One field
+// gets one form -- an early block's η₄ and a modern η₁₇₈₅₄₂₉₇₅₅ are the same
+// counter under the same rule, and a mark that changed shape with the size of
+// its number would be two marks wearing one glyph. Both call sites come here
+// so they cannot drift apart again.
+const extranonceMark = (n) => markToken(`η${toSubscript(n)}`, `extranonce ${n} — the counter the miner rolled once the header's 32-bit nonce (η) was exhausted. A tally, not text: it is read as the number it is, so its bytes never pass for writing`);
 
 function renderMinerMargin(hex, collect) {
   if (!hex) return '';
@@ -687,7 +685,7 @@ export function renderScript(hex, collect, { eligible = false, nested = false, p
         pre = 'done';
         const n = extranonceFromPush(t.push);
         if (n !== null) {
-          parts.push(markToken(`η${toSubscript(n)}`, `extranonce ${n} — the counter the miner rolled once the header's 32-bit nonce (η) was exhausted`));
+          parts.push(extranonceMark(n));
           breakAfter = parts.length - 1;
           return;
         }
