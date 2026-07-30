@@ -440,6 +440,13 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 /* A contributed reading's byline. The name is the point of the whole layer --
    it is what lets a reader weigh the claim -- so it sits in the accent, quiet
    but not hidden. */
+/* While a reading is being read off disk, and where one could not be: an
+   annotation's failure is worth stating (the record on the page is unaffected),
+   never worth a blank sheet. */
+.commentary-loading, .commentary-missing {
+  margin: 0; font: italic 400 calc(14px * var(--scale-body, 1))/1.6 'Newsreader',serif; color: var(--meta);
+}
+.commentary-missing code { font: 400 calc(12px * var(--scale-body, 1))/1.5 'IBM Plex Mono',monospace; color: var(--dim); }
 .commentary-by { font-style: italic; color: var(--dim); }
 .commentary-by a { color: var(--accent); text-decoration: none; border-bottom: 1px solid var(--rule); }
 .commentary-by a:hover { border-bottom-color: var(--accent); }
@@ -803,9 +810,15 @@ import { init, encodeSeedPhrase } from './glossia-msg.js';
 import { parseTransaction, computeTxid, parseBlockHeader, computeBlockHash } from './btc-tx.js';
 import { composeTransactionFields, composeBlockHeaderFields, groupDigits, formatBtc, renderWitness, toSuperscript, timestampInfo } from './btc-prose.js';
 import { volumeBookChapter, heightOf, toRoman, reference } from './btc-citation.js';
-import { NOTABLE, blocksEta } from './btc-contents.js';
+import { loadNotables, notables, blocksEta } from './btc-contents.js';
 import { NOTATION_HTML } from './btc-notation.js';
-import { commentaryFor, commentaryHtml } from './btc-commentary.js';
+import { commentaryFor, commentaryHtml, resolveCommentary } from './btc-commentary.js';
+
+// The curated index -- which blocks and transactions are notable, what they are
+// called, and which readings they carry -- is read from notables.yaml rather
+// than baked into a script, so it arrives asynchronously. Started here, awaited
+// once before the first lookup at the foot of this module.
+loadNotables();
 
 // The notation key's markup is shared with the front matter's sigla leaf, so
 // the toggle here and the key at rest there can never explain a mark
@@ -815,13 +828,15 @@ document.querySelector('.notation-body').innerHTML = NOTATION_HTML;
 // The nav bar carries two keys into the same slot above it -- the notation key
 // and, where the passage has one, its commentary. Opening either closes the
 // other: one sheet is over the page at a time, so a reader is never reading a
-// reading and a mark at once.
+// reading and a mark at once. Opening the commentary key is also what fetches
+// its prose -- the index says a reading exists, the file says what it says.
 for (const sheet of document.querySelectorAll('.section-nav .nav-sheet')) {
   sheet.addEventListener('toggle', () => {
     if (!sheet.open) return;
     for (const other of document.querySelectorAll('.section-nav .nav-sheet')) {
       if (other !== sheet) other.open = false;
     }
+    if (sheet.id === 'commentary') fillCommentary();
   });
 }
 import { storeGet, storePut } from './btc-store.js';
@@ -2530,7 +2545,7 @@ function renderChapterHead(onTitlePage) {
   // case here, which kept it out of the table of contents.
   // A page: 'book' entry shares the height namespace (its id is its book's
   // first block) but names the book's leaf, not this chapter -- excluded here.
-  const eventTitles = NOTABLE.filter((e) => e.id === String(state.height) && e.page !== 'book').map((e) => e.title);
+  const eventTitles = notables().filter((e) => e.id === String(state.height) && e.page !== 'book').map((e) => e.title);
   const eventTitle = eventTitles[0];
   $('ch-title').textContent = `Chapter ${chapterName(chapter)}`;
   const subtitle = $('ch-subtitle');
@@ -2767,7 +2782,7 @@ function renderBookLeaf() {
   detachHashCopy(title);
   // A curated book (a soft fork's signaling epoch) wears its name as the
   // leaf's subtitle, the same dress a notable chapter wears.
-  const bookEvent = NOTABLE.find((e) => e.page === 'book' && e.id === String(state.height));
+  const bookEvent = notables().find((e) => e.page === 'book' && e.id === String(state.height));
   const subtitle = $('ch-subtitle');
   subtitle.textContent = bookEvent ? bookEvent.title : '';
   subtitle.classList.toggle('hidden', !bookEvent);
@@ -2963,7 +2978,7 @@ function renderChapter(para) {
   // effective fee rate the ordering ran on. Where that rate departs from the
   // transaction's own fee ÷ vsize, the difference is family money -- a
   // child-pays-for-parent package moving together -- and the line says so.
-  let sectionEvent = NOTABLE.find((e) => e.id === para.txid
+  let sectionEvent = notables().find((e) => e.id === para.txid
     || (e.id === String(state.height) && e.index === state.index))?.title;
   if (!sectionEvent && para.ghost) sectionEvent = '† replaced by fee';
   if (!sectionEvent && state.projected && state.manifest) {
@@ -3391,25 +3406,47 @@ function currentTxid() {
 // opened onto nothing would blur the difference between an unannotated passage
 // and an unremarkable one.
 //
-// Nothing here is fetched: the readings ship with the entries (CC BY 4.0, in
-// btc-contents-data.js), so a chapter that reads offline is annotated offline.
+// Only the index is consulted here, so the key appears with the page and
+// nothing is fetched to decide it. The prose lives in commentary/*.md and
+// arrives when the sheet is opened (fillCommentary) -- the reader who never
+// opens it never pays for it, and the sheet's own state says which page it
+// belongs to.
+let commentaryItems = [];      // the readings matched to the page on screen
+let commentaryFilled = false;  // whether the sheet is holding their prose
+
 function syncCommentary() {
   const box = $('commentary');
   // A projected chapter is not yet a place -- nothing curated can be about a
   // block no miner has written. A ghost's own draft is nobody's curated entry.
-  const items = (!state || state.projected || state.ghost) ? [] : commentaryFor({
+  commentaryItems = (!state || state.projected || state.ghost) ? [] : commentaryFor({
     height: state.height,
     index: state.index,
     txid: currentTxid(),
   });
-  box.classList.toggle('hidden', !items.length);
-  if (!items.length) {
+  commentaryFilled = false;
+  $('commentary-body').innerHTML = '';
+  box.classList.toggle('hidden', !commentaryItems.length);
+  if (!commentaryItems.length) {
     box.open = false;                 // never reopen onto an empty sheet after a page turn
-    $('commentary-body').innerHTML = '';
     return;
   }
-  // Built from data, so the markup is escaped at the source (btc-commentary.js).
-  $('commentary-body').innerHTML = commentaryHtml(items);
+  // Turned the page with the sheet already open: the reader is reading
+  // commentary, so bring this page's.
+  if (box.open) fillCommentary();
+}
+
+// Fetch this page's readings and set them. Called on the sheet's first opening
+// (and on a page turn while it is open); each file is read once per session.
+async function fillCommentary() {
+  if (commentaryFilled || !commentaryItems.length) return;
+  const mine = commentaryItems;                       // the page this fill belongs to
+  const body = $('commentary-body');
+  body.innerHTML = '<div class="commentary-measure"><p class="commentary-loading">reading…</p></div>';
+  await resolveCommentary(mine);
+  if (commentaryItems !== mine) return;               // page turned mid-read: that page's fill won
+  commentaryFilled = true;
+  // Built from authored Markdown, escaped at the source (btc-markdown.js).
+  body.innerHTML = commentaryHtml(mine);
 }
 
 // Encode every witness-bearing input's witness into a numbered footnote and
@@ -4590,8 +4627,8 @@ let bookmarks = readBookmarks();
 const isBookmarked = (hex) => bookmarks.some((b) => b.hex === hex);
 const saveBookmarks = () => { try { localStorage.setItem(BOOKMARKS_KEY, JSON.stringify(bookmarks)); } catch {} };
 
-// The curated entries (NOTABLE) live in btc-contents.js, shared with the
-// table-of-contents page; they lead the Bookmarks list here.
+// The curated entries live in notables.yaml, loaded through btc-contents.js and
+// shared with the table-of-contents page; they lead the Bookmarks list here.
 
 // The reference a bookmarkable hash points at, taken from the section on screen:
 // a txid is a section within this block; the block hash is this whole chapter.
@@ -4798,6 +4835,13 @@ const idxRaw = parseInt(params.get('index'), 10);
 const pageParam = params.get('page');
 const indexParam = Number.isFinite(idxRaw) ? idxRaw
   : pageParam === 'volume' ? -3 : pageParam === 'book' ? -2 : -1;
+// The curated index before the first lookup: a chapter must not paint once
+// without its curated name and again with it. A local file (precached by the
+// service worker), so this costs a read rather than a round trip -- and a read
+// that fails resolves empty, leaving the book to render the chain uncurated
+// rather than not at all.
+await loadNotables();
+
 if (pParam) {
   const pHeight = heightOf(+pParam[1], +pParam[2], +pParam[3]);
   const pIndex = pParam[4] != null ? +pParam[4] - 1 : -1;   // §1 is index 0

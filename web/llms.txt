@@ -30,7 +30,8 @@ engine.
 - [Source repository](https://github.com/asherp/Book-of-Bitcoin): the entire
   site, including the prose-composition rules (`web/btc-prose.js`), the
   citation scheme (`web/btc-citation.js`), and the curated table of contents
-  with editorial notes (`web/btc-contents-data.js`).
+  with its commentary (`web/notables.yaml` and `web/commentary/*.md`, both
+  readable as plain text).
 
 ## Structure and citations
 

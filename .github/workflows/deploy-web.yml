@@ -30,6 +30,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # The curated contents and its commentary are hand-authored files that
+      # nothing is generated from (web/notables.yaml, web/commentary/*.md), so
+      # this is the check that stands in for a build step: it reads them the way
+      # the browser will and fails on anything that would reach a reader as a
+      # missing reading or an empty contents. Cheap, and ahead of everything
+      # expensive.
+      - name: Check the editorial layer
+        run: node tools/check-editorial.mjs
+
       # Every production deploy is a release, versioned by calendar:
       # vYYYY.0M.0D.HH — the UTC date and hour the deploy started. A second
       # release in the same hour appends the minute (vYYYY.0M.0D.HH.MM) to

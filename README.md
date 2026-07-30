@@ -96,17 +96,23 @@ compiled to WASM) is consumed as a published
   styles, shared by the two places it is read: the book page's notation toggle
   (opened over a chapter) and the front matter's sigla leaf (the whole key at
   rest). One copy, so a mark explained in one is explained in the other
-- `web/btc-commentary.js` — the annotation layer's machinery: which curated
-  reading applies to the page in front of the reader, and the markup that sets
-  it. The book page carries a **Commentary** key beside the notation one, and
-  only where the passage has a reading — a chapter's leaf, a book's leaf, or a
-  section that a curated entry names; opened, it raises the same kind of sheet
-  the notation key does, over the passage rather than into it, with its terms
-  stated at the foot. The readings themselves are editorial and live with the
-  entries they annotate in `web/btc-contents-data.js` (CC BY 4.0), so the
-  licence boundary stays a file boundary; nothing is fetched, so a chapter that
-  reads offline is annotated offline. Absence is information: most entries carry
-  no reading, and the key does not appear when there is nothing to open
+- `web/btc-commentary.js`, `web/btc-notables.js` — the annotation layer's
+  machinery: the loader for the editorial files, which curated reading applies
+  to the page in front of the reader, and the markup that sets it. The book page
+  carries a **Commentary** key beside the notation one, and only where the
+  passage has a reading — a chapter's leaf, a book's leaf, or a section that a
+  curated entry names; opened, it raises the same kind of sheet the notation key
+  does, over the passage rather than into it, with its terms stated at the foot.
+  The split follows what each surface needs: the index says *whether* a passage
+  has a reading and *whose*, which is enough for the key on the page and the
+  credit in the contents, so only opening the sheet fetches a word of prose.
+  Absence is information: most entries carry no reading, and the key does not
+  appear when there is nothing to open
+- `web/btc-yaml.js`, `web/btc-markdown.js` — the two small readers the authored
+  files need: a deliberately narrow YAML subset (documented in the module, and
+  it throws rather than guesses — a silent misread of editorial data is worse
+  than a loud failure) and the Markdown subset the book's prose is written in,
+  shared by the preface leaf and the commentary sheet
 - `web/btc-sigla.js` — the opcode alphabet: a mark for every opcode and the
   canonical `OP_*` name behind it, plus the groups the key reads in. Split out
   of `btc-prose.js` so the sigla leaf can render the real table without
@@ -152,14 +158,18 @@ compiled to WASM) is consumed as a published
   never re-asks. The two BIP30-grandfathered coinbases were each confirmed
   twice, and pages count positions, not distinct txids — so each owns two
   pages, all four cited in the table of contents
-- `web/btc-contents-data.js`, `web/btc-index-data.js` — the curated entries
-  themselves: which blocks and addresses the book keeps, what they are
-  called, the criteria they are kept on, and the notes explaining why —
-  including the commentary the book page offers as a sheet and the static
-  passages print after the record (`note:` for the book's own reading,
-  `commentary:` for credited readings by others). The editorial layer, kept in
-  its own files because it is licensed apart from the machinery that renders it
-  (see [License](#license))
+- `web/notables.yaml`, `web/commentary/*.md` — the curated entries themselves,
+  and the readings of them: which blocks and transactions the book keeps, what
+  they are called, and one Markdown file per reading, referenced by the entry it
+  belongs to (`by:` naming whoever wrote it, absent for the book's own voice).
+  YAML and Markdown rather than JavaScript because this is the part of the
+  repository written by people who are writing rather than programming — and
+  nothing is generated from them: the browser reads these files as they stand,
+  the same files a contributor edits and the pre-renderer reads off disk
+- `web/btc-index-data.js` — the same editorial layer for the ledgers: which
+  addresses the book keeps, what they are called, and the story that earned each
+  one its place. The editorial layer is kept in its own files because it is
+  licensed apart from the machinery that renders it (see [License](#license))
 - **The sigla** — the marks the manuscript is written in, and where each
   lives:
   - the opcode alphabet (`OPCODE_SYMBOLS` in `web/btc-sigla.js`): a glyph per
@@ -208,9 +218,10 @@ repo's builds can succeed.
 
 ## Deployment
 
-- `.github/workflows/deploy-web.yml` — on every push to `main`, builds the
-  WASM from the pinned glossia crate and deploys `web/` to the `gh-pages`
-  branch (GitHub Pages).
+- `.github/workflows/deploy-web.yml` — on every push to `main`, checks the
+  editorial layer (`tools/check-editorial.mjs`, below), builds the WASM from the
+  pinned glossia crate and deploys `web/` to the `gh-pages` branch (GitHub
+  Pages).
 - `.github/workflows/pr-preview.yml` — deploys a live preview of every pull
   request under `pr-preview/pr-<N>/` and comments the URL on the PR.
 
@@ -247,6 +258,14 @@ them. For those readers the deploy also publishes a static layer:
   parse → compose → encode pipeline in Node against the freshly built WASM.
 - `/robots.txt` + `/sitemap.xml` — crawlers welcome, and pointed at all of
   the above.
+
+Since the editorial layer is authored by hand with nothing generated from it,
+`tools/check-editorial.mjs` stands in for a build step: it reads
+`web/notables.yaml` and `web/commentary/*.md` exactly as the browser does and
+fails on anything a reader would meet as a missing reading or an empty contents
+— a mangled line, a renamed file, a duplicate id. Run it before opening a pull
+request; the deploy and the PR preview both run it first, ahead of the WASM
+build.
 
 ## License
 
@@ -354,10 +373,12 @@ nothing here tries to claim otherwise. What CC BY covers is the body of
 editorial work — the selection, the arrangement, and the writing.)
 
 The boundary is a file boundary, so a machine can see it too. The editorial
-data lives in `web/btc-contents-data.js` and `web/btc-index-data.js`, each
-carrying `SPDX-License-Identifier: CC-BY-4.0`; every other source file carries
-`MIT OR Apache-2.0`. The modules that render them re-export the data, so the
-split costs importers nothing.
+matter lives in `web/notables.yaml`, `web/commentary/*.md` and
+`web/btc-index-data.js`, each carrying `SPDX-License-Identifier: CC-BY-4.0` (in
+a Markdown file, as an HTML comment — Markdown has no header of its own); every
+other source file carries `MIT OR Apache-2.0`. Nothing is compiled from the one
+into the other: the machinery reads the authored files at runtime, so a reader
+can always see which words came from whom.
 
 ### Commentary by others
 

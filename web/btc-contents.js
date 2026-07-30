@@ -6,13 +6,18 @@
 // bitcoin-contents.html (the table-of-contents page).
 //
 // The curated entries themselves -- which blocks and transactions are notable
-// and what they are called -- are editorial work and live in
-// btc-contents-data.js under CC BY 4.0; they are re-exported here so importers
-// see one module. See the README's License section.
+// and what they are called -- are editorial work and live in notables.yaml,
+// with their commentary in commentary/*.md, under CC BY 4.0; the loader for
+// them is btc-notables.js and is re-exported here so importers see one module.
+// See the README's License section.
+//
+// The entries arrive asynchronously, being read from a file rather than baked
+// into a script: a page awaits loadNotables() once before its first render, and
+// reads notables() synchronously from then on.
 
 import { reference } from './btc-citation.js';
 
-export { NOTABLE } from './btc-contents-data.js';
+export { loadNotables, notables } from './btc-notables.js';
 
 // A bare non-negative integer is an absolute block height. A negative integer is
 // a height relative to the chain tip (-1 = latest block), resolved online.

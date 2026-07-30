@@ -201,7 +201,7 @@ a:hover { text-decoration: underline; }
 </div>
 
 <script type="module">
-import { NOTABLE, isBlockId, isRelativeBlockId, entryHref, blocksEta } from './btc-contents.js';
+import { loadNotables, notables, isBlockId, isRelativeBlockId, entryHref, blocksEta } from './btc-contents.js';
 import { creditLine } from './btc-commentary.js';
 import { volumeBookChapter, toRoman } from './btc-citation.js';
 import { storeGet, storePut } from './btc-store.js';
@@ -399,6 +399,16 @@ function frontEl({ title, leaf }) {
 
 function render() {
   toc.replaceChildren();
+  // The curation is a file this page reads (notables.yaml); if it could not be
+  // read, the page says so rather than presenting an empty contents as though
+  // the book kept nothing. The reader's own bookmarks still list below.
+  if (loadNotables.error) {
+    const warn = document.createElement('div');
+    warn.className = 'toc-proj-note';
+    warn.textContent = 'The curated contents could not be read (web/notables.yaml). '
+      + 'Any bookmarks of your own are listed below; reload to try again.';
+    toc.append(warn);
+  }
   toc.append(head('toc-vol', 'Front matter'));
   for (const f of FRONT) toc.append(frontEl(f));
   const entries = placed();
@@ -440,19 +450,24 @@ function render() {
 // stream in as each resolves, slotting into their volume and book in order. An
 // entry whose lookup fails (placement null) drops to an "Unresolved" tail
 // rather than printing its raw id.
-const placements = new Map();          // NOTABLE id -> place | null (once attempted)
+// The curated index is read from notables.yaml, so it arrives asynchronously;
+// everything below builds on it, and a failed read leaves a contents of the
+// reader's own bookmarks plus a line saying what could not be read.
+await loadNotables();
+
+const placements = new Map();          // curated id -> place | null (once attempted)
 const bmPlacements = new Map();        // bookmark hex -> place | null (once attempted)
 
 // A reader's bookmarks join the curated set in one list. A bookmark that is
 // already a curated entry is dropped (the curated title wins) so it isn't listed
 // twice.
-const NOTABLE_IDS = new Set(NOTABLE.map((e) => e.id));
+const NOTABLE_IDS = new Set(notables().map((e) => e.id));
 const bookmarks = readBookmarks().filter((b) => !NOTABLE_IDS.has(b.hex));
 
 // Every entry -- curated or bookmarked -- carrying whatever placement has
 // resolved so far. A bookmark reuses its stored title and flies the book's ribbon.
 const entries = () => [
-  ...NOTABLE.map((e) => ({ ...e, place: placements.get(e.id), tried: placements.has(e.id) })),
+  ...notables().map((e) => ({ ...e, place: placements.get(e.id), tried: placements.has(e.id) })),
   ...bookmarks.map((b) => ({
     id: b.hex, index: b.pos ?? undefined, title: b.title || b.prose || shortHex(b.hex),
     bookmark: true, place: bmPlacements.get(b.hex), tried: bmPlacements.has(b.hex),
@@ -654,7 +669,7 @@ async function loadProjected() {
 
 // Block placements (curated, and bookmarks that stored their reference) are
 // offline, so render at once; everything else streams in as its lookup resolves.
-for (const e of NOTABLE) if (isBlockId(e.id)) placements.set(e.id, placeOf(Number(e.id), e.index ?? null, e.page));
+for (const e of notables()) if (isBlockId(e.id)) placements.set(e.id, placeOf(Number(e.id), e.index ?? null, e.page));
 for (const b of bookmarks) if (Number.isInteger(b.height)) bmPlacements.set(b.hex, placeOf(b.height, b.pos ?? null));
 render();
 // The projected section loads alongside the citation lookups, and the queue
@@ -663,7 +678,7 @@ render();
 loadProjected();
 setInterval(() => { if (!document.hidden) loadProjected(); }, 60_000);
 await Promise.all([
-  ...NOTABLE.filter((e) => !placements.has(e.id)).map(async (e) => {
+  ...notables().filter((e) => !placements.has(e.id)).map(async (e) => {
     placements.set(e.id, await resolvePlacement(e));
     render();
   }),

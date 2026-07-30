@@ -41,24 +41,39 @@ yours, and it travels with your name on it.
 If you would rather contribute commentary under different terms, say so in the
 pull request and it can be discussed before merge.
 
-Where it goes: commentary on a curated passage is a `commentary:` entry beside
-the passage it reads, in `web/btc-contents-data.js` —
+Where it goes: two files, both meant to be written by hand. Put the reading
+itself in `web/commentary/` as Markdown, named for the passage —
+`web/commentary/bitcoin-pizza-day-your-name.md`:
 
-```js
-{
-  title: 'Bitcoin Pizza Day', id: '57043',
-  commentary: [
-    { note: 'What you have to say about it.', by: 'Your Name', href: 'https://…' },
-  ],
-}
+```markdown
+<!-- SPDX-License-Identifier: CC-BY-4.0 -->
+
+What you have to say about it. Ordinary paragraphs, blank line between them;
+`**strong**`, `*em*` and `` `code` `` if you want them.
 ```
 
-— one paragraph per string (`note` takes an array for several), `by` as you
-want to be credited, `href` optional. The book page then offers it on that
-passage as a Commentary sheet beside the notation key, and the static passage
-under `/passages/` prints it after the record, both with your name on it. The
-book's own readings are the unsigned `note:` field on an entry; a contributed
-one is never merged into that voice.
+Then point the entry at it in `web/notables.yaml`:
+
+```yaml
+- title: Bitcoin Pizza Day
+  id: 57043
+  commentary:
+    - file: bitcoin-pizza-day.md
+    - file: bitcoin-pizza-day-your-name.md
+      by: Your Name
+      href: https://your-site.example        # optional
+```
+
+The YAML is read by a small subset parser (`web/btc-yaml.js`, which documents
+exactly what it understands and throws rather than guesses): keep comments on
+their own line, and quote a value that opens with a quote or reads as a bare
+number where you meant text. Nothing is generated from either file — the browser
+reads them as they stand.
+The book page then offers your reading on that passage as a Commentary sheet
+beside the notation key, the table of contents credits it on the passage's row
+("commentary by Your Name"), and the static passage under `/passages/` prints it
+after the record. All three carry your name. The book's own readings are the
+files with no `by:`; a contributed one is never merged into that voice.
 
 Two things a note has to do, whoever writes it: say what the record actually
 says, and mark plainly where it stops saying it. "Ten thousand coins moved to a
@@ -109,6 +124,10 @@ fluency every time.
 
 - Build with `./build_web.sh` and serve over HTTP (`python3 -m http.server -d
   web 8080`); see the README for details.
+- Editing the contents or its commentary? Run `node tools/check-editorial.mjs`.
+  It reads `web/notables.yaml` and `web/commentary/*.md` the way the browser
+  will and reports anything that would reach a reader as a missing reading or an
+  empty contents. The deploy and every PR preview run it too.
 - Pull requests get a live preview deployed automatically.
 - For substantial commentary or a new curated entry, opening an issue first is
   a good way to check it fits before writing it.

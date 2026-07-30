@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //
 // tools/prerender-passages.mjs — pre-render the curated passages (the table
-// of contents in web/btc-contents-data.js) as static markdown under
+// of contents in web/notables.yaml) as static markdown under
 // web/passages/, plus a sitemap.xml for the whole site, plus an archive seed
 // (web/passages/seed.json) of the chain data behind those passages, which the
 // reading pages import into IndexedDB on a first visit (web/btc-seed.js).
@@ -34,8 +34,16 @@ import { init, encodeSeedPhrase } from '../web/glossia-msg.js';
 import { parseTransaction, parseBlockHeader } from '../web/btc-tx.js';
 import { composeTransactionFields, composeBlockHeaderFields, renderWitness, toSuperscript } from '../web/btc-prose.js';
 import { volumeBookChapter, toRoman, reference } from '../web/btc-citation.js';
-import { NOTABLE } from '../web/btc-contents-data.js';
-import { readingsOf, commentaryLines } from '../web/btc-commentary.js';
+import { parseNotables, setNotables } from '../web/btc-notables.js';
+import { readingsOf, commentaryLines, resolveCommentary } from '../web/btc-commentary.js';
+
+// The editorial layer is authored as files -- notables.yaml and commentary/*.md
+// -- and the browser reads them over HTTP. Here they are read off disk with the
+// same parser and the same normalizer, so the static passages and the live page
+// can never disagree about what the curation says.
+const EDITORIAL = new URL('../web/', import.meta.url);
+const readEditorial = (path) => readFile(new URL(path, EDITORIAL), 'utf8');
+const NOTABLE = setNotables(parseNotables(await readEditorial('notables.yaml')));
 
 export const SITE = 'https://bookofbitcoin.io';
 const OUT_DIR = new URL('../web/passages/', import.meta.url);
@@ -196,14 +204,16 @@ export function sectionMd({ txid, fields, sectionNum, eventTitle }) {
   return out.join('\n');
 }
 
-// The curated entry's commentary, where it has any: the annotation layer as
-// plain markdown, behind its own heading and its own terms. The live book
+// The curated entry's commentary, where it has any: the authored Markdown
+// files themselves, read off disk, behind their own heading and their own terms. The live book
 // floats the same words as a sheet over the passage; here they sit after it,
 // ruled off — a reader without JavaScript has to be able to tell the reading
 // from the record just as plainly, and a crawler that flattens the page must
 // not be able to quote one as the other.
-export function commentaryMd(entry) {
-  const lines = commentaryLines([{ title: entry.title, readings: readingsOf(entry) }]);
+export async function commentaryMd(entry) {
+  const items = [{ title: entry.title, readings: readingsOf(entry) }];
+  await resolveCommentary(items, { read: readEditorial });
+  const lines = commentaryLines(items);
   if (!lines.length) return [];
   return [
     '## Commentary',
@@ -217,7 +227,7 @@ export function commentaryMd(entry) {
   ];
 }
 
-export function passageMd({ title, entry, height, blockHash, header, txCount, txid, index, fields }) {
+export async function passageMd({ title, entry, height, blockHash, header, txCount, txid, index, fields }) {
   const { volume, book, chapter } = volumeBookChapter(height);
   const cite = `${reference(height)} §${index + 1}`;
   const liveUrl = `${SITE}/bitcoin-book.html?txid=${txid}`;
@@ -252,7 +262,7 @@ export function passageMd({ title, entry, height, blockHash, header, txCount, tx
   // The annotation layer, where this passage has one. A static passage is
   // generated from exactly one curated entry, so it prints that entry's
   // readings -- no matching to do.
-  md.push(...commentaryMd(entry || { title }));
+  md.push(...await commentaryMd(entry || { title }));
   md.push('---');
   md.push('');
   md.push(`*Reading the notation:* italic prose passages are Glossia encodings of the raw`);
@@ -373,7 +383,7 @@ async function renderEntry(entry, seed) {
     height,
     index,
     txid,
-    md: passageMd({ title: entry.title, entry, height, index, txid, fields, ...ctx }),
+    md: await passageMd({ title: entry.title, entry, height, index, txid, fields, ...ctx }),
   };
 }
 
