@@ -102,7 +102,7 @@ function projRange(from, to, tipVolume) {
 
 // One projected row, set like every other row in the contents: a name on the
 // left, its reference on the right. A projected chapter's name is its place
-// in the queue -- block alpha, then the ones behind it -- because that is
+// in the queue -- alpha, then the ones behind it -- because that is
 // the only thing about it that is settled. Nothing hangs beneath the name on
 // hover either: a figure whispered is still a figure printed. The reference
 // keeps its note, which says only that the number is provisional. The whole
@@ -122,17 +122,18 @@ function projEntryEl({ height, text, ref, refTitle }) {
   return row;
 }
 
-// What to call the k-th chapter ahead of the tip. Lettered, not numbered:
-// a number beside a projected block reads as a quantity, and there is no
-// quantity here to be had -- these are places in a line, and the line is
-// lettered the way a proof letters its cases. The Greek alphabet, since the
-// book's own sigla are Greek, and it runs far past any queue depth a mirror
-// will ever hand back; anything deeper than the alphabet falls back to the
-// bare ordinal rather than inventing a letter.
+// What to call the k-th chapter ahead of the tip. A letter, and only a
+// letter: a number there reads as a quantity, and there is no quantity here
+// to be had -- these are places in a line, lettered the way a proof letters
+// its cases. Nor "block alpha": every row under this heading is a block, and
+// the heading has said so. The Greek alphabet, since the book's own sigla are
+// Greek, and it runs far past any queue depth a mirror will ever hand back;
+// anything deeper falls back to the bare ordinal rather than an invented
+// letter.
 const GREEK = ['alpha', 'beta', 'gamma', 'delta', 'epsilon', 'zeta', 'eta', 'theta',
   'iota', 'kappa', 'lambda', 'mu', 'nu', 'xi', 'omicron', 'pi', 'rho', 'sigma',
   'tau', 'upsilon', 'phi', 'chi', 'psi', 'omega'];
-const queueLabel = (k) => `block ${GREEK[k - 1] || k}`;
+const queueLabel = (k) => String(GREEK[k - 1] || k);
 
 // And what closes them: not a figure, not a count of what is left, just the
 // mark that a list has been cut short.
