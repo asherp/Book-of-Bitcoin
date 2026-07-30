@@ -195,8 +195,8 @@ export const NOTATION_HTML = `
             <h4>Chapter head — the block header</h4>
             <div class="glyph-grid">
               <div class="glyph-row"><span class="g">v<i>n</i></span><span class="m">block <b>version</b></span></div>
-              <div class="glyph-row"><span class="g">⓪<sup><i>n</i></sup></span><span class="m">a block hash's <i>n</i> leading <b>proof-of-work zero bits</b></span></div>
-              <div class="glyph-row"><span class="g">⌘<sup><i>m</i></sup></span><span class="m">the hash's remaining <i>m</i> <b>bits</b>, Glossia-encoded — ⌘'s superscript counts bits (<i>n</i>+<i>m</i> = 256)</span></div>
+              <div class="glyph-row"><span class="g">⓪<sup><i>n</i></sup></span><span class="m">a block hash's <i>n</i> <b>proof-of-work zero bits</b> — closing the line, after the prose. They lead the hash as it is displayed, but the prose encodes internal order, where they trail: decode it, append them, reverse. The mark sits where the bytes do</span></div>
+              <div class="glyph-row"><span class="g">⌘<sup><i>m</i></sup></span><span class="m">the hash's remaining <i>m</i> <b>bits</b>, Glossia-encoded — ⌘'s superscript counts bits (<i>n</i>+<i>m</i> = 256). It opens the line, and the prose it names runs from it to the ⓪ⁿ that closes</span></div>
               <div class="glyph-row"><span class="g">⓪<sup>256</sup></span><span class="m">no previous block — the genesis chapter</span></div>
               <div class="glyph-row"><span class="g">&lt;</span><span class="m">the <b>proof of work</b> — on β's line, binding the chapter hash above to the target after the sign</span></div>
               <div class="glyph-row"><span class="g">β<i>n</i></span><span class="m">the <b>difficulty target</b>, as in the preamble</span></div>
@@ -286,7 +286,7 @@ export const NOTATION_HTML = `
               <div class="glyph-row"><span class="g"><b>⋔</b></span><span class="m"><b>merkle proof</b> — the revealed leaf's path in the taptree</span></div>
               <div class="glyph-row"><span class="g"><b>a</b></span><span class="m"><b>annex</b> (reserved Taproot spend data)</span></div>
             </div>
-            <p class="notation-note">A push of known length carries its byte count as a superscript on the mark — <b>h</b>²⁰, <b>p</b>⁶⁵; a bare, untyped push keeps its count leading (²⁰). One mark is the exception: ⌘'s superscript counts <i>bits</i> — the chapter head's block hashes read ⓪ⁿ ⌘ᵐ, the proof-of-work zeros in the mining trade's own unit. <b>Bold</b> where the datum is on chain — a lock, or what a spend writes; <b>plain</b> where a spend introduces it at validation.</p>
+            <p class="notation-note">A push of known length carries its byte count as a superscript on the mark — <b>h</b>²⁰, <b>p</b>⁶⁵; a bare, untyped push keeps its count leading (²⁰). One mark is the exception: ⌘'s superscript counts <i>bits</i> — the chapter head's block hashes read ⌘ᵐ … ⓪ⁿ, the proof-of-work zeros in the mining trade's own unit, standing after the prose as they stand after its bytes. <b>Bold</b> where the datum is on chain — a lock, or what a spend writes; <b>plain</b> where a spend introduces it at validation.</p>
           </div>
 
           <div class="notation-group">

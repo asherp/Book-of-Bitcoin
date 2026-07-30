@@ -300,7 +300,7 @@ const OUTPUT_CSS = `
 // ─── a chapter: the block's own page ────────────────────────────────────
 //
 // A chapter's head, as bitcoin-book.html sets it: the title, the block hash
-// as prose in the ⓪ⁿ⌘ᵐ notation, and the frontispiece — the header's six
+// as prose in the ⌘ᵐ … ⓪ⁿ notation, and the frontispiece — the header's six
 // fields in wire order, each a .cfx row with its mark. The rows arrive
 // already composed (the prerenderer has composeBlockHeaderFields and the
 // hash notation), so this only sets them.
