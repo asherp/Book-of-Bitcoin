@@ -2767,28 +2767,36 @@ function renderVolumeLeaf() {
 // a chapter's frontispiece uses: the gold mark, the exact m×256ᵉ ceiling
 // beside it, and the same copy menu (compact hex, or the mark with its
 // expression). `governs` names the chapters mined under it, for the tooltip.
+// The marks go straight into `parent` and carry no furniture of their own --
+// a book with one target puts them on the line exactly as this leaf always
+// has, and only a book with two wraps each in a group of its own.
 function appendBookTarget(parent, bits, governs) {
   const info = bitsInfo(bits);
   const title = info.expr
     ? `the proof of work — ${governs}, read as a 256-bit number, is below this target. ${info.title}`
     : info.title;
-  // A target is one unit of reading: where two of them share the line, the
-  // break belongs at the arrow between, never inside β < m×256ᵉ.
-  const group = document.createElement('span');
-  group.className = 'book-target';
   const beta = document.createElement('span');
   beta.className = 'cfx-gold';
   beta.textContent = info.sym;
   beta.title = title;
   attachHashCopy(beta, (bits >>> 0).toString(16).padStart(8, '0'), 'difficulty target',
     info.expr ? `${info.sym} ${info.expr}` : info.sym);
-  group.append(beta);
+  parent.append(beta);
   if (info.expr) {
     const expr = document.createElement('span');
     expr.textContent = ' < ' + info.expr;
     expr.title = title;
-    group.append(expr);
+    parent.append(expr);
   }
+}
+
+// A target that shares its line with another: the same marks, held together
+// so a narrow screen breaks the line at the arrow between the two rather than
+// inside a β < m×256ᵉ.
+function appendGroupedTarget(parent, bits, governs) {
+  const group = document.createElement('span');
+  group.className = 'book-target';
+  appendBookTarget(group, bits, governs);
   parent.append(group);
 }
 
@@ -2834,28 +2842,35 @@ function renderBookLeaf() {
   // As on the volume leaf: an open book's range runs to the tip, its current
   // last recorded chapter, with the em dash marking it still being written.
   const tipIn = !finished && tipHeight !== null && tipHeight >= state.height ? tipHeight : null;
-  // Right beneath the title: the ceilings this book was mined under. In
-  // Volume I that is one target, the book being a whole difficulty window;
-  // from Volume II on a book straddles a retarget and states both, opening
-  // target → closing target, with what the retarget did to the difficulty on
-  // the line beneath. Two is the ceiling on ceilings -- see retargetInside.
+  // Right beneath the title: the ceilings this book was mined under. A book
+  // that is a whole difficulty window has one, and prints it as this leaf
+  // always has -- all of Volume I, and every volume's truncated last book. A
+  // book that straddles a retarget has two, and prints both, opening target →
+  // closing target, with what the retarget did to the difficulty on the line
+  // beneath. Two is the ceiling on ceilings -- see retargetInside.
   const line = $('ch-hash-short');
   line.classList.remove('hidden');
   line.classList.add('plain');   // a target mark, not hash prose -- upright
   line.textContent = '';
-  const targets = document.createElement('div');
-  line.append(targets);
   const cut = retargetInside(state.height, chapterCount);
   const cutChapter = cut === null ? null : cut - state.height + 1;
-  // The < on this leaf speaks for a run of chapters rather than one hash, so
-  // each target names the run it governed: the whole book where there is one
-  // target, up to and from the retarget where there are two.
-  appendBookTarget(targets, state.header.bits, cut === null
-    ? 'every chapter hash in this book'
-    : `every chapter hash from ■1 to ■${(cutChapter - 1).toLocaleString()}`);
-  // A retarget the book has not reached yet has no target to state: an
-  // unfinished book shows what it was mined under so far and nothing more.
-  if (cut !== null && (tipHeight === null || tipHeight >= cut)) {
+  // A retarget the book has not reached yet has no target to state, so an
+  // unfinished book stands on the one it has been mined under so far.
+  const straddles = cut !== null && (tipHeight === null || tipHeight >= cut);
+  if (!straddles) {
+    // One target, and the leaf it has always made: the mark and its ceiling
+    // on the line, nothing around them. The < speaks for a run of chapters
+    // rather than one hash, so it names the run -- the whole book where the
+    // book is a whole window, and only what is settled where a retarget is
+    // still to come.
+    appendBookTarget(line, state.header.bits, cut === null
+      ? 'every chapter hash in this book'
+      : `every chapter hash from ■1 to ■${(cutChapter - 1).toLocaleString()}`);
+  } else {
+    const targets = document.createElement('div');
+    line.append(targets);
+    appendGroupedTarget(targets, state.header.bits,
+      `every chapter hash from ■1 to ■${(cutChapter - 1).toLocaleString()}`);
     const tail = document.createElement('span');
     tail.textContent = ' → …';
     targets.append(tail);
@@ -2865,7 +2880,7 @@ function renderBookLeaf() {
     loadBlockInfoByHeight(cut).then((info) => {
       if (gen !== renderGen) return;
       tail.textContent = ' → ';
-      appendBookTarget(tail, info.bits,
+      appendGroupedTarget(tail, info.bits,
         `every chapter hash from ■${cutChapter.toLocaleString()} to ■${chapterCount.toLocaleString()}`);
       const before = bitsToDifficulty(state.header.bits), after = bitsToDifficulty(info.bits);
       move.textContent = difficultyMove(state.header.bits, info.bits, before, after);
