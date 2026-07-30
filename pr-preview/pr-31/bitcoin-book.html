@@ -985,12 +985,12 @@ function trimTrailingZeroBytes(hex) {
   return hex.slice(0, end);
 }
 
-// The block-hash notation ⓪ⁿ⌘ᵐ. The proof-of-work zeros are written out
+// The block-hash notation ⌘ᵐ … ⓪ⁿ. The proof-of-work zeros are written out
 // rather than silently elided: the push-zero mark (⓪) carries the hash's
 // exact leading-zero-bit count -- the mining industry's own vernacular for
 // difficulty -- and the identity-hash mark (⌘, OP_HASH256: the double-SHA256
 // that produced this hash) carries the remaining m = 256 - n bits, which are
-// what the prose beside it encodes. ⌘'s superscript is DEFINED to count bits
+// what the prose between them encodes. ⌘'s superscript is DEFINED to count bits
 // -- it never carried one before, so no byte-count reading exists to clash
 // with -- which is what buys the exact n: the trim underneath is byte-granular
 // (Glossia encodes whole bytes; ⌊n/8⌋ zero bytes dropped, ⌈m/8⌉ bytes
@@ -998,6 +998,17 @@ function trimTrailingZeroBytes(hex) {
 // notation states the true bit counts, not the byte-rounded ones. The two
 // superscripts always sum to 256, so the full hash reconstructs exactly:
 // decode the prose to ⌈m/8⌉ bytes, append zero bytes to 32, reverse.
+//
+// The zeros sit AFTER the prose because that is where they sit in the bytes.
+// A block hash is displayed big-endian, where its zeros lead and make the
+// proof of work visible at a glance -- but the prose does not encode the
+// displayed form. It encodes internal order, zeros trimmed off the END
+// (trimTrailingZeroBytes below), and the reconstruction appends them back.
+// So the line is read the way it is rebuilt: the mark, the bytes it stands
+// for, then the run of zeros that follows them. Written the other way the
+// notation mirrored the picture of a hash while contradicting the operation
+// underneath it.
+//
 // Takes display-order hex; returns the internal-order trimmed hex to encode
 // plus the two bit counts.
 function leadingZeroBits(displayHex) {
@@ -1016,13 +1027,17 @@ function blockHashParts(displayHex) {
 }
 const zeroBitsTitle = (n) => `${n} leading zero bits — the proof-of-work; the ${Math.floor(n / 8)} whole zero bytes are dropped before encoding`;
 const remainBitsTitle = (m) => `the hash's remaining ${m} bits, Glossia-encoded as ${Math.ceil(m / 8)} bytes (⌘ — double-SHA256, the identity hash)`;
+// Both forms take the prose they wrap, rather than returning a prefix for a
+// caller to concatenate: the marks now sit on either side of it, so the order
+// lives in exactly one place and a caller cannot assemble it wrongly.
 // The notation as plain text (for the copy menu and any text-only surface).
-const hashNotationText = ({ zeroBits, remainBits }) =>
-  `⓪${toSuperscript(zeroBits)} ⌘${toSuperscript(remainBits)}`;
+const hashNotationText = ({ zeroBits, remainBits }, prose) =>
+  `⌘${toSuperscript(remainBits)} ${prose} ⓪${toSuperscript(zeroBits)}`;
 // The notation as markup: gold marks, dim push-count superscripts.
-const hashNotationHtml = ({ zeroBits, remainBits }) =>
-  `<span class="cfx-gold" title="${zeroBitsTitle(zeroBits)}">⓪</span><span class="op op-push">${toSuperscript(zeroBits)}</span> ` +
-  `<span class="cfx-gold" title="${remainBitsTitle(remainBits)}">⌘</span><span class="op op-push">${toSuperscript(remainBits)}</span>`;
+const hashNotationHtml = ({ zeroBits, remainBits }, prose) =>
+  `<span class="cfx-gold" title="${remainBitsTitle(remainBits)}">⌘</span><span class="op op-push">${toSuperscript(remainBits)}</span> ` +
+  `${prose} ` +
+  `<span class="cfx-gold" title="${zeroBitsTitle(zeroBits)}">⓪</span><span class="op op-push">${toSuperscript(zeroBits)}</span>`;
 
 // Encode-on-scroll for script/witness prose. A data push is capped at 520 bytes
 // (MAX_SCRIPT_ELEMENT_SIZE), so any large payload -- an inscription's tapscript,
@@ -2285,28 +2300,21 @@ function detachHashCopy(el) {
 // Render a Glossia-encoded hash into `el` as its bold-gold data mark (⌘ for a
 // block hash, ⋔ for the merkle root) followed by the plain prose. The mark is
 // the clickable handle for the copy/bookmark menu; the prose is never interactive.
-// `zeros` ({ sup, title }), for a block hash, leads the mark with the ⓪
-// push-zero glyph carrying the dropped proof-of-work zero-bit count.
+// `zeros` ({ sup, title }), for a block hash, closes the line with the ⓪
+// push-zero glyph carrying the dropped proof-of-work zero-bit count -- after
+// the prose, where those zeros sit in the bytes it encodes (see the notation
+// comment above blockHashParts).
 function fillMarkedHash(el, mark, markClass, hex, label, prose, sup, supTitle, zeros) {
   el.textContent = '';
-  if (zeros) {
-    const z = document.createElement('span');
-    z.className = markClass;
-    z.textContent = '⓪';
-    z.title = zeros.title;
-    el.append(z);
-    const zs = document.createElement('span');
-    zs.className = 'op op-push';
-    zs.textContent = toSuperscript(zeros.sup);
-    zs.title = zeros.title;
-    el.append(zs, ' ');
-  }
   const m = document.createElement('span');
   m.className = markClass;
   m.textContent = mark;
-  // A block hash's copy-text carries its full ⓪ⁿ⌘ᵐ notation, so the text form
-  // states the proof-of-work zeros just as the page does.
-  attachHashCopy(m, hex, label, (zeros ? `⓪${toSuperscript(zeros.sup)} ${mark}${toSuperscript(sup)} ` : '') + prose);
+  // A block hash's copy-text carries its full ⌘ᵐ … ⓪ⁿ notation, so the text
+  // form states the proof-of-work zeros just as the page does. A hash with no
+  // zeros to state (the merkle root) copies as bare prose, as it always has.
+  attachHashCopy(m, hex, label, zeros
+    ? `${mark}${toSuperscript(sup)} ${prose} ⓪${toSuperscript(zeros.sup)}`
+    : prose);
   el.append(m);
   // The mark can carry a count as a superscript riding after it, the way a
   // typed script push reads (p⁶⁵) -- a header field isn't a push, but the
@@ -2320,6 +2328,17 @@ function fillMarkedHash(el, mark, markClass, hex, label, prose, sup, supTitle, z
     el.append(s);
   }
   el.append(' ' + prose);
+  if (zeros) {
+    const z = document.createElement('span');
+    z.className = markClass;
+    z.textContent = '⓪';
+    z.title = zeros.title;
+    const zs = document.createElement('span');
+    zs.className = 'op op-push';
+    zs.textContent = toSuperscript(zeros.sup);
+    zs.title = zeros.title;
+    el.append(' ', z, zs);
+  }
 }
 
 // The block header itself, in wire order, as a small mono line under the
@@ -2530,12 +2549,12 @@ function renderChapterHead(onTitlePage) {
   if (onTitlePage) {
     const parts = blockHashParts(state.hash);
     const { prose: hashProse } = encodeSeedPhrase(parts.hex, 'english', BEST_OF);
-    // The hash prose leads with its ⓪ⁿ⌘ᵐ marks -- the proof-of-work zeros
-    // and the encoded remainder made explicit; the chapter title above it is
-    // the clickable handle for its copy/bookmark menu.
+    // The hash prose sits between its marks -- ⌘ᵐ opening, the encoded
+    // remainder, then the ⓪ⁿ proof-of-work zeros that follow those bytes; the
+    // chapter title above it is the clickable handle for its copy/bookmark menu.
     $('ch-hash-short').classList.remove('plain');   // hash prose: italic voice
-    $('ch-hash-short').innerHTML = `${hashNotationHtml(parts)} ${hashProse}`;   // marks + Glossia prose -- safe as innerHTML
-    attachHashCopy($('ch-title'), state.hash, 'block hash', `${hashNotationText(parts)} ${hashProse}`);
+    $('ch-hash-short').innerHTML = hashNotationHtml(parts, hashProse);   // marks + Glossia prose -- safe as innerHTML
+    attachHashCopy($('ch-title'), state.hash, 'block hash', hashNotationText(parts, hashProse));
     renderFrontispiece(state.header);
   }
   return { volume, book, chapter };
@@ -3050,6 +3069,11 @@ function renderChapter(para) {
   // first digit would be blown up into a giant numeral, tearing the mark
   // apart. In that case the cap is forfeited for the transaction, not
   // deferred to a later line (an illuminated initial belongs at the top).
+  //
+  // A coinbase's BIP34 height (■960281) is the opposite case and keeps the
+  // cap: what ::first-letter takes is the ■ itself, a symbol, so the height
+  // is left whole and at one size. The mark isn't torn -- it's illuminated,
+  // the block's own sigil opening the block's own first page.
   const addLine = (container, html) => {
     if (!html) return null;
     const p = document.createElement('p');
