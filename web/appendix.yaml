@@ -7,7 +7,7 @@
 # CONTENTS is what belongs to the book but not to its reading order — reading
 # order being the order blocks were mined.
 #
-# Three parts, numbered like volumes and rendered in this order:
+# Four parts, numbered like volumes and rendered in this order:
 #
 #   I   The Mempool — the chapters the queue is already forming, which is why
 #       it comes first: it opens where the volumes close, so the turn from the
@@ -34,12 +34,26 @@
 #       leaves, which is why this part lists ledgers here and explains itself
 #       there. The contents and the index are inverses; this is where the
 #       contents points at the other one.
+#   IV  Timestamped Files — files whose existence this chain attests: an
+#       OpenTimestamps proof reduces a file's digest to the merkle root of one
+#       block, so it cites a chapter and a §section the way any passage is
+#       cited. Listed apart because the file is not in the book — what is in
+#       the book is the transaction its proof lands on, and the file is the
+#       thing outside the chain that the chain is being asked about. The
+#       entries below ship with the app; a reader's own proofs, dropped on the
+#       appendix's leaf, are kept beside them the way bookmarks are.
 #
 # A part's `kind` says who fills it: `entries` is listed here, `mempool` and
-# `ledgers` are gathered by the page. An entry takes the same shape as a
-# curated entry in notables.yaml — its `id` is handed to the same lookup, in
-# any form the search box takes — with a `note` carrying the caveat the row
-# shows on hover. Editorial, like the titles: what is promised is a citation,
+# `ledgers` are gathered by the page, and `proofs` is listed here too but names
+# files rather than places — each entry a `proof:` (an .ots file in proofs/) and
+# the `subject:` it stamps, if the file itself is small enough to ship. Nothing
+# else is written down for a proof, and nothing else should be: the citation, the
+# transaction and the merkle root all come out of the proof's own bytes when it
+# is read, so an entry here cannot claim a chapter the proof does not.
+#
+# An `entries` entry takes the same shape as a curated entry in notables.yaml —
+# its `id` is handed to the same lookup, in any form the search box takes — with
+# a `note` carrying the caveat the row shows on hover. Editorial, like the titles: what is promised is a citation,
 # not a prophecy. This file and notables.yaml are read by the same machinery
 # (btc-notables.js) and licensed the same way; see the README's License section.
 
@@ -88,3 +102,12 @@
 - kind: ledgers
   title: Ledgers of Note
   note: A ledger gathers what one keeper spends from — a single address, a set rotated over the years, or in time every leaf of one extended key — and reads each of its scripts as a passage, with the chapters that passage appears in listed beneath it. Nothing here carries a reference: the chain never writes an address, only the script one stands for, so a ledger is not cited but discovered, and its run of chapters stays open-ended.
+
+- kind: proofs
+  title: Timestamped Files
+  note: Files whose existence the chain attests. An OpenTimestamps proof reduces a file's digest, through a merkle path, to the root one block header commits to — so a file that has never touched the chain is nonetheless cited by it, at the chapter and section its proof lands in. Drop a proof at the foot of this appendix and it is kept here beside these.
+  entries:
+    - title: Hello World!
+      proof: hello-world.txt.ots
+      subject: hello-world.txt
+      note: The OpenTimestamps client's own example proof, and the oldest anyone can still replay — May 2015, a year before the calendar servers, its commitment sitting where a public key's hash belongs.

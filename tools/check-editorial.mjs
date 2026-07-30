@@ -25,6 +25,7 @@ import { looksLikeAddress } from '../web/btc-lookup.js';
 import { INDEXED } from '../web/btc-index-data.js';
 import { readingsOf } from '../web/btc-commentary.js';
 import { markdownParagraphs } from '../web/btc-markdown.js';
+import { readProof, attests, citeOf } from '../web/btc-proofs.js';
 
 const WEB = new URL('../web/', import.meta.url);
 const problems = [];
@@ -133,6 +134,39 @@ for (const part of parts) {
       problems.push(`appendix "${part.title}": "${e.title}" has an id that is neither a block height nor a 64-hex id`);
     }
     if (!e.note) notes.push(`appendix "${part.title}": "${e.title}" carries no note — the row will have nothing to say on hover`);
+  }
+}
+
+// Appendix IV's proofs are checked by replaying them, which is the only way a
+// proof can be checked at all: the file must be there, it must parse, it must
+// reach a Bitcoin block (a pending proof cites no chapter), and where the
+// stamped file ships beside it the digest must match — otherwise the appendix
+// would list a file under a proof that is about some other file. What is NOT
+// checked here is the merkle root against the chain: this runs offline, ahead
+// of everything expensive, and the page does that check when a reader opens it.
+for (const part of parts) {
+  if (part.kind !== 'proofs') continue;
+  for (const e of part.entries) {
+    let bytes;
+    try { bytes = new Uint8Array(await readFile(new URL(`proofs/${e.proof}`, WEB))); }
+    catch { problems.push(`appendix "${part.title}": "${e.title}" names proofs/${e.proof}, which is not there`); continue; }
+    let read;
+    try { read = await readProof(bytes); }
+    catch (err) { problems.push(`appendix "${part.title}": proofs/${e.proof} will not read — ${err.message}`); continue; }
+    if (!read.place) {
+      problems.push(`appendix "${part.title}": proofs/${e.proof} reaches no Bitcoin block${
+        read.pending.length ? ` (still pending at ${read.pending.join(', ')})` : ''} — it cites no chapter`);
+      continue;
+    }
+    if (e.subject) {
+      try {
+        const subject = new Uint8Array(await readFile(new URL(`proofs/${e.subject}`, WEB)));
+        if (!(await attests(read, subject))) {
+          problems.push(`appendix "${part.title}": proofs/${e.proof} does not attest proofs/${e.subject} — the digests differ`);
+        }
+      } catch { problems.push(`appendix "${part.title}": "${e.title}" names proofs/${e.subject}, which is not there`); }
+    }
+    notes.push(`appendix "${part.title}": "${e.title}" is stamped into ${citeOf(read.place)}`);
   }
 }
 

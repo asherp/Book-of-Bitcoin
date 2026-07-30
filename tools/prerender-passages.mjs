@@ -506,6 +506,7 @@ export function sitemapXml(rendered, outputPaths = []) {
   const pages = [
     '', 'bitcoin-book.html', 'bitcoin-contents.html', 'bitcoin-front.html',
     'bitcoin-appendix.html?part=mempool', 'bitcoin-appendix.html?part=future',
+    'bitcoin-appendix.html?part=proofs',
     'bitcoin-search.html', 'bitcoin-ledger.html', 'bitcoin-ledgers.html',
     'preface.md', 'llms.txt', 'passages/index.md',
     ...rendered.map((r) => `passages/${r.slug}.md`),

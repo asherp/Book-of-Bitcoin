@@ -209,7 +209,18 @@ compiled to WASM) is consumed as a published
   nVersion
 - `web/bitcoin-ledgers.html` — the old Ledgers shelf, now a redirect to
   the compendium (kept for bookmarks and cached mastheads)
-- `web/btc-ots.js` — an OpenTimestamps proof reader, read by the search page:
+- `web/btc-proofs.js`, `web/proofs/` — Appendix IV, *Timestamped Files*: the
+  files whose existence the chain attests. A file is not a passage and is not
+  on the chain at all — what is on the chain is the commitment its proof
+  reduces to — so an entry here is a file's name and the citation its proof
+  lands on, which the proof states by itself, offline. Two sources listed as
+  one: the proofs bundled with the app (named in `web/appendix.yaml`, so the
+  appendix reads as an appendix on a first visit) and the reader's own, dropped
+  on the appendix's leaf and kept in `localStorage` the way a bookmark is,
+  flying the same ribbon in the contents. What is stored is the proof itself,
+  base64'd — a few hundred bytes, and the whole evidence: keeping only "block
+  358391 §1352" would keep the conclusion and throw away the argument
+- `web/btc-ots.js` — an OpenTimestamps proof reader, read by Appendix IV:
   a `.ots` file is a citation written in someone else's notation, and this
   turns it back into one of the book's. Replaying a proof's commitment
   operations — append, prepend, sha256, ripemd160 (implemented here; no
@@ -219,7 +230,7 @@ compiled to WASM) is consumed as a published
   §section too: each step appends the sibling on the right or prepends the one
   on the left, so the directions read from the bottom of the tree up spell the
   transaction's position in binary. The module claims nothing — it reports
-  what the proof asserts, and the search page checks that root against the
+  what the proof asserts, and the appendix checks that root against the
   chapter's own header, which is the entirety of OpenTimestamps verification.
   The three hashes a proof turns on — the stamped file's digest, the
   transaction carrying the commitment, and the merkle root the operations
@@ -229,7 +240,8 @@ compiled to WASM) is consumed as a published
   single SHA-256 rather than the chain's double and so takes the generic hash
   mark. Then the figure itself as Glossia prose — the chain's two written in
   the byte order they actually are, the digest in the order it was computed. The engine is
-  imported only when a proof arrives, so a typed lookup carries no WASM; until
+  imported only when a proof arrives, so an appendix opened to read carries no
+  WASM; until
   it lands a figure reads as an ellipsis, and if it never lands the hash stays
   unsaid rather than falling back to hex — hex is the one notation this book
   does not write in, and it lives where the book keeps it, behind the mark
