@@ -8,26 +8,28 @@
 //
 // The queue is ordered the way a miner would take it (highest package fee
 // rate first), so it reads as provisional chapters at heights tip+1, tip+2,
-// … with an expected arrival instead of a recorded date. Three sources, each
-// optional, degrading gracefully:
-//   /mempool                    (any Esplora) -- totals + fee histogram: how
-//                               far the contents extend (vsize ÷ 1 MvB) and
-//                               where the eviction floor sits;
+// … Two sources, each optional, degrading gracefully:
+//   /mempool                    (any Esplora) -- totals: how far the contents
+//                               extend (vsize ÷ 1 MvB);
 //   /v1/fees/mempool-blocks     (mempool.space backend only) -- the queue cut
 //                               into template-sized projected blocks, CPFP-
-//                               aware, each with tx count and fee figures;
-//   /v1/fees/recommended        (mempool.space backend only) -- minimumFee,
-//                               the purge floor.
+//                               aware, which is how many rows there are.
 // Only the first projected chapter is a real forecast; each one deeper is
 // more a statement about the queue now than about any future block -- so
-// everything past the detailed entries collapses into one backlog row, and
-// each row's hover title carries its caveats.
+// everything past the detailed entries collapses into one backlog row.
+//
+// What a row says is its place in the queue and nothing else. The counts,
+// vsizes, fee ranges and etas the sources also carry are true of one node at
+// one moment and of no block that will ever exist; a contents that printed
+// them -- on the page or under the cursor -- would be lending the queue the
+// authority of the record it sits beneath. The chapters this is about to
+// become are worth listing. Their contents are not yet anything.
 //
 // The rows are dressed in the contents' own classes (.toc-entry.projected and
 // friends): both pages carry that stylesheet, and a projected chapter should
 // look the same wherever it is read.
 
-import { blocksEta, entryHref } from './btc-contents.js';
+import { entryHref } from './btc-contents.js';
 import { volumeBookChapter, toRoman, expectedReference } from './btc-citation.js';
 
 export const MVB = 1_000_000;   // one block's worth of virtual bytes
@@ -58,17 +60,17 @@ export async function chainTip(mirrors = MEMPOOL_MIRRORS) {
 
 // One reading of the queue, or null when nowhere could answer -- in which
 // case the contents simply end at the tip, and the appendix's page says so.
-// Each answer is checked for the figures it is read for, not merely for
-// having arrived: a mirror that serves something else at these paths (a
-// proxy's error page, an unrelated API) would otherwise be set as a queue
-// of undefined transactions. A source that does not hold up is dropped, and
-// a reading with nothing left in it is no reading at all.
+// Each answer is checked for the whole shape of a mempool reading, not merely
+// for having arrived: a mirror that serves something else at these paths (a
+// proxy's error page, an unrelated API) would otherwise be set as a queue of
+// undefined chapters. Only the vsizes are read from here, but a payload
+// missing the rest is not a mempool answer, and is dropped whole. A reading
+// with nothing left in it is no reading at all.
 export async function readQueue(tip, mirrors = MEMPOOL_MIRRORS) {
   if (tip == null) return null;
-  const [sum, blocks, rec] = await Promise.all([
+  const [sum, blocks] = await Promise.all([
     anyMirror(mirrors, '/mempool'),
     anyMirror(mirrors, '/v1/fees/mempool-blocks'),
-    anyMirror(mirrors, '/v1/fees/recommended'),
   ]);
   const num = (v) => typeof v === 'number' && Number.isFinite(v);
   const summary = sum && num(sum.data?.count) && num(sum.data?.vsize) ? sum.data : null;
@@ -76,16 +78,8 @@ export async function readQueue(tip, mirrors = MEMPOOL_MIRRORS) {
     && blocks.data.every((b) => num(b?.blockVSize) && num(b?.nTx) && num(b?.medianFee))
     ? blocks.data : null;
   if (!summary && !queued) return null;
-  return {
-    tip,
-    summary,
-    blocks: queued,
-    minFee: rec && num(rec.data?.minimumFee) ? rec.data.minimumFee : null,
-  };
+  return { tip, summary, blocks: queued };
 }
-
-// Fee rates arrive as floats; one decimal under 10 sat/vB, whole above.
-const fmtFee = (f) => f >= 10 ? String(Math.round(f)) : String(Math.round(f * 10) / 10);
 
 // The provisional reference for a not-yet-mined height: the expected-chapter
 // mark □ where a mined chapter's reference wears ■ -- the number holds only
@@ -109,18 +103,17 @@ function projRange(from, to, tipVolume) {
 // One projected row, set like every other row in the contents: a name on the
 // left, its reference on the right. A projected chapter's name is its place
 // in the queue -- the next block, then the ones behind it -- because that is
-// the only thing about it that is settled; its contents, its wait and its
-// fees are all statements about the queue at the moment of reading, so they
-// hang on the row as its hover rather than as figures on the page. The whole
+// the only thing about it that is settled. Nothing hangs beneath the name on
+// hover either: a figure whispered is still a figure printed. The reference
+// keeps its note, which says only that the number is provisional. The whole
 // row opens the book at that height.
-function projEntryEl({ height, text, textTitle, ref, refTitle }) {
+function projEntryEl({ height, text, ref, refTitle }) {
   const row = document.createElement('a');
   row.className = 'toc-entry under-book projected';
   row.href = entryHref(String(height));
   const t = document.createElement('span');
   t.className = 'toc-title';
   t.textContent = text;
-  if (textTitle) t.title = textTitle;
   const r = document.createElement('span');
   r.className = 'toc-ref';
   r.textContent = ref;
@@ -136,9 +129,10 @@ const queueLabel = (k) => (k === 1 ? 'next block' : `mempool block ${k}`);
 // The whole section from one reading: whatever the caller leads with (the
 // contents hands in its appendix heading; the page's own header has already
 // named it), the detailed projected chapters, and the backlog row that closes
-// them. Nothing else -- the figures are the queue's, not the book's, and they
-// are read off a row rather than printed beneath the list.
-export function buildQueue({ tip, summary, blocks, minFee }, lead = null) {
+// them. Nothing else. The figures the sources carry are read for two things
+// only -- how many rows there are, and how far the last one reaches -- and
+// then set aside.
+export function buildQueue({ tip, summary, blocks }, lead = null) {
   const tipVolume = volumeBookChapter(tip).volume;
   const wrap = document.createElement('div');
   if (lead) wrap.append(lead);
@@ -148,27 +142,6 @@ export function buildQueue({ tip, summary, blocks, minFee }, lead = null) {
   const projVsize = blocks ? blocks.reduce((s, b) => s + b.blockVSize, 0) : 0;
   const chapters = Math.max(1, Math.ceil((summary ? summary.vsize : projVsize) / MVB));
 
-  const etaTitleFor = (k) => {
-    const spread = Math.round(10 * Math.sqrt(k));
-    return `eta about ${k * 10} min, give or take ${spread} — block arrivals average one per ten minutes`;
-  };
-
-  // What the backlog row says on hover: the whole queue's depth, and the floor
-  // beneath which a full pool sheds from the bottom. These used to close the
-  // list as a line of figures; they belong to the row they describe.
-  const backlogFigures = () => {
-    if (!summary) return '';
-    let s = `${(summary.vsize / MVB).toFixed(1)} MvB waiting in all · ${summary.count.toLocaleString()} transactions · ≈ ${chapters} chapters at ~10 min each`;
-    if (minFee != null && minFee > 1) {
-      // The histogram is (feerate, vsize) bins, highest first; what sits at
-      // or below the purge floor is the first to be forgotten.
-      const atRisk = (summary.fee_histogram || []).reduce((s2, [r, v]) => r <= minFee ? s2 + v : s2, 0);
-      s += ` · eviction floor ≈ ${fmtFee(minFee)} sat/vB`;
-      if (atRisk > MVB / 20) s += `, the ${(atRisk / MVB).toFixed(1)} MvB at it first to be forgotten`;
-    }
-    return `${s}. Everything here expires if unmined for two weeks`;
-  };
-
   if (blocks && blocks.length) {
     // A real projected block never exceeds 1 MvB of vsize; a bigger final
     // entry is the backend's own aggregate of everything deeper.
@@ -176,24 +149,19 @@ export function buildQueue({ tip, summary, blocks, minFee }, lead = null) {
       const height = tip + 1 + i;
       const isAggregate = i === blocks.length - 1 && b.blockVSize > 1.05 * MVB;
       if (!isAggregate) {
-        const lo = fmtFee(b.feeRange[0] ?? b.medianFee), hi = fmtFee(b.feeRange[b.feeRange.length - 1] ?? b.medianFee);
         wrap.append(projEntryEl({
           height,
           text: queueLabel(i + 1),
-          textTitle: `${b.nTx.toLocaleString()} transactions, ${(b.blockVSize / MVB).toFixed(2)} MvB — median ~${fmtFee(b.medianFee)} sat/vB, fees ${lo}–${hi} sat/vB, ${(b.totalFees / 1e8).toFixed(3)} BTC in total. ${etaTitleFor(i + 1)}`,
           ref: projRef(height, tipVolume),
           refTitle: `provisional — block ${height.toLocaleString()} (${expectedReference(height)}) if the queue holds; every block mined ahead of it renumbers the rest`,
         }));
       } else {
         // The backlog: everything past the detailed entries, one fading row.
         const span = Math.max(1, Math.round(b.blockVSize / MVB));
-        const last = height + span - 1;
         wrap.append(projEntryEl({
           height,
           text: 'backlog',
-          textTitle: `${b.nTx.toLocaleString()} transactions across ≈ ${span} more chapters, ${(b.blockVSize / MVB).toFixed(1)} MvB below ~${fmtFee(b.medianFee)} sat/vB`
-            + `, clearing ${blocksEta(i + span)} from now at current throughput if nothing better-paying arrives first. ${backlogFigures()}`,
-          ref: projRange(height, last, tipVolume),
+          ref: projRange(height, height + span - 1, tipVolume),
           refTitle: 'the deep queue has no reliable ordering — these chapters are a guess about the queue today, not about any future block',
         }));
       }
@@ -205,7 +173,6 @@ export function buildQueue({ tip, summary, blocks, minFee }, lead = null) {
     wrap.append(projEntryEl({
       height: tip + 1,
       text: 'backlog',
-      textTitle: `${backlogFigures()}. This mirror serves only mempool totals — a mempool.space-backed source cuts the queue into projected blocks`,
       ref: projRange(tip + 1, tip + chapters, tipVolume),
       refTitle: 'provisional — the chapters the current queue would fill',
     }));
