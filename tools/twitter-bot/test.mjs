@@ -17,7 +17,7 @@ import { access } from 'node:fs/promises';
 import { fromRoman, parseCitation } from './citation.mjs';
 import {
   weighText, composeReply, composeUnwritten, composeNoSection,
-  resolveCitation, titleFor, sectionParts, passageHtml, passageAltText,
+  resolveCitation, titleFor, sectionParts, passageHtml, passageCss, passageAltText,
   TWEET_WEIGHT_BUDGET, FONT_MIN,
 } from './quote.mjs';
 import { loadRenderer } from './image.mjs';
@@ -213,7 +213,15 @@ test('the page carries the requested geometry and root size', () => {
     cite: 'I β1 ■1 §1', sectionNum: 1, txidProse: 'p', section: null, site: SITE,
     fontSize: 12.5, width: 900, height: 1600,
   });
-  assert.match(html, /width: 900px; height: 1600px; font-size: 12\.5px/);
+  assert.match(html, /width: 900px; height: 1600px;/);
+  assert.match(html, /font-size: 12\.5px;/);
+  assert.match(html, /overflow: hidden;/, 'a fixed card clips a passage that overruns it');
+
+  // The same stylesheet, unpinned: a responsive page grows instead.
+  const page = passageCss({ fontSize: 19, fixed: false });
+  assert.ok(!page.includes('height: 1500px'), 'a responsive page takes no fixed height');
+  assert.match(page, /max-width: 54rem/);
+  assert.ok(page.includes('.tx-flow'), 'and still sets the manuscript grid identically');
 });
 
 test('alt text carries the passage within X\'s cap', () => {

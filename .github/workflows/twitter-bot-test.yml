@@ -21,6 +21,8 @@ on:
       - 'web/btc-citation.js'
       - 'web/btc-contents-data.js'
       - 'web/glossia-msg.js'
+      - 'tools/passage-page.mjs'
+      - 'tools/prerender-passages.mjs'
       - '.github/workflows/twitter-bot-test.yml'
   pull_request:
     paths:
@@ -30,6 +32,8 @@ on:
       - 'web/btc-citation.js'
       - 'web/btc-contents-data.js'
       - 'web/glossia-msg.js'
+      - 'tools/passage-page.mjs'
+      - 'tools/prerender-passages.mjs'
   workflow_dispatch:
 
 permissions:
@@ -47,7 +51,7 @@ jobs:
         with:
           node-version: 22
       - name: Run the suite (bare checkout)
-        run: node --test tools/twitter-bot/test.mjs
+        run: node --test tools/twitter-bot/test.mjs tools/passage-page.test.mjs
 
   # The same suite with everything present, plus the full-pass rehearsal.
   rehearsal:
@@ -98,7 +102,7 @@ jobs:
       # decodes back to the genesis txid, the other renders a real PNG and
       # asserts the fit.
       - name: Run the suite (engine + renderer)
-        run: node --test tools/twitter-bot/test.mjs
+        run: node --test tools/twitter-bot/test.mjs tools/passage-page.test.mjs
 
       - name: Rehearse a full pass
         run: node tools/twitter-bot/rehearse.mjs

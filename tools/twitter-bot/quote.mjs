@@ -337,22 +337,14 @@ export function txFlowHtml(fields, footnotesHtml = [], citations = []) {
 </div>${notes}`;
 }
 
-// The whole page. `fontSize` is the root size the renderer has settled on;
-// `width` / `height` fix the image. A section may be absent (its bytes
-// couldn't be fetched), in which case the txid prose stands alone.
-export function passageHtml({
-  cite, title, sectionNum, txidProse, section, site,
-  fontSize = 19, width = PAGE_WIDTH, height = PAGE_HEIGHT, clipped = false,
-}) {
-  const host = String(site).replace(/^https?:\/\//, '');
-  const flow = section
-    ? txFlowHtml(section.fields, section.footnotesHtml || [], section.citations || [])
-    : '';
-
-  return `<!doctype html>
-<meta charset="utf-8">
-<style>
-  /* The book's own palette (bitcoin-book.html). */
+// The passage stylesheet: the book's rules, transposed from
+// bitcoin-book.html into em units off one root size. `fixed` pins the page
+// to a card of exactly width x height and clips a passage that overruns it
+// (what image.mjs screenshots); without it the page is responsive and grows
+// to whatever the passage needs (what a shareable web page wants). Every
+// other measure is identical either way, so a card and a page set the same.
+export function passageCss({ fontSize = 19, width = PAGE_WIDTH, height = PAGE_HEIGHT, fixed = true } = {}) {
+  return `
   :root {
     --page:#08080a; --ink:#e8e4da; --ink-soft:#cfcabf; --dim:#8f8a7e;
     --meta:#6f6a60; --rule:#232228; --accent:#c9a25f; --accent-2:#dcb877;
@@ -363,16 +355,18 @@ export function passageHtml({
   /* One root size drives the whole page: every measure below is in em, so
      the renderer fits a passage by scaling this single number. */
   .page {
-    width: ${width}px; height: ${height}px; font-size: ${fontSize}px;
+    ${fixed ? `width: ${width}px; height: ${height}px;` : 'width: 100%; max-width: 54rem; margin: 0 auto;'}
+    font-size: ${fontSize}px;
     background: var(--page); color: var(--ink-soft);
     font-family: 'Newsreader', Georgia, 'Liberation Serif', 'Times New Roman', serif;
     font-variant-numeric: oldstyle-nums;
     display: flex; flex-direction: column;
     padding: 2.2em 2.6em 1.4em;
   }
-  /* A passage longer than the page keeps its opening and is clipped here —
-     the top of the page, with the colophon still pinned beneath it. */
-  .content { flex: 1 1 auto; min-height: 0; overflow: hidden; }
+  /* In a fixed-size card, a passage longer than the page keeps its opening
+     and is clipped here — the top of the page, with the colophon still
+     pinned beneath it. A web page has no such limit and simply grows. */
+  .content { flex: 1 1 auto; min-height: 0; ${fixed ? 'overflow: hidden;' : ''} }
 
   /* ── the section heading ── */
   .section-title {
@@ -477,6 +471,25 @@ export function passageHtml({
     letter-spacing: .06em;
   }
   .colophon .cite { color: var(--accent); }
+`;
+}
+
+// The whole page. `fontSize` is the root size the renderer has settled on;
+// `width` / `height` fix the image. A section may be absent (its bytes
+// couldn't be fetched), in which case the txid prose stands alone.
+export function passageHtml({
+  cite, title, sectionNum, txidProse, section, site,
+  fontSize = 19, width = PAGE_WIDTH, height = PAGE_HEIGHT, clipped = false,
+}) {
+  const host = String(site).replace(/^https?:\/\//, '');
+  const flow = section
+    ? txFlowHtml(section.fields, section.footnotesHtml || [], section.citations || [])
+    : '';
+
+
+  return `<!doctype html>
+<meta charset="utf-8">
+<style>${passageCss({ fontSize, width, height, fixed: true })}
 </style>
 <body>
 <div class="page" id="page">

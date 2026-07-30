@@ -47,7 +47,28 @@ So block height h has volume = ⌊h/210000⌋+1, book = ⌊(h mod 210000)/2016�
 chapter = (h mod 210000) mod 2016 + 1, and "III β2 ■5 §4" names the 4th
 transaction of that block.
 
-## URL grammar (the live app)
+## URL grammar
+
+### Citation paths — a passage at its own address
+
+Every curated passage also lives at its citation, written as a path:
+
+    III β2 ■5 §1   ->   https://bookofbitcoin.io/III/2/5/1/
+
+Volume in Roman, then book, chapter and section as numerals — the sigla
+implied by position. These are ordinary HTML pages: the passage set out in
+full, readable without JavaScript, each with its own title, description and
+preview image (the passage rendered as a card). Prefer these when citing or
+linking a specific passage; they are the canonical, shareable form, and the
+sitemap lists them all.
+
+The grammar is invertible, the same arithmetic as the citation scheme above:
+height = (volume−1)×210000 + (book−1)×2016 + (chapter−1), and section is the
+1-based transaction index. So a path can be computed for any passage on the
+chain — but only curated ones are pre-rendered today; anything else 404s,
+and the query-string form below reaches it instead.
+
+### The live app
 
 - `bitcoin-book.html` — the reading page. `?block=<height>` opens a block
   (negative counts back from the tip: `?block=-1` is the latest);

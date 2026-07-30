@@ -35,11 +35,20 @@ import { parseTransaction, parseBlockHeader } from '../web/btc-tx.js';
 import { composeTransactionFields, composeBlockHeaderFields, renderWitness, toSuperscript } from '../web/btc-prose.js';
 import { volumeBookChapter, toRoman, reference } from '../web/btc-citation.js';
 import { NOTABLE } from '../web/btc-contents-data.js';
+import { sectionParts } from './twitter-bot/quote.mjs';
+import { loadRenderer } from './twitter-bot/image.mjs';
+import {
+  passagePath, cardPath, passagePageHtml, passagesByPath, CARD_WIDTH, CARD_HEIGHT,
+} from './passage-page.mjs';
 
 export const SITE = 'https://bookofbitcoin.io';
 const OUT_DIR = new URL('../web/passages/', import.meta.url);
 const SITEMAP = new URL('../web/sitemap.xml', import.meta.url);
 const SEED_OUT = new URL('../web/passages/seed.json', import.meta.url);
+// Each passage also gets a page at its citation's own path (web/III/2/5/1/)
+// and a card under web/cards/ -- see tools/passage-page.mjs for why.
+const WEB_DIR = new URL('../web/', import.meta.url);
+const CARDS_DIR = new URL('../web/cards/', import.meta.url);
 
 // Match the book's rendering choices exactly (bitcoin-book.html).
 const BEST_OF = 5;
@@ -50,7 +59,14 @@ const BEST_OF = 5;
 // file. Body scripts are never this large in the curated set.
 const MAX_ENCODE_BYTES = 8192;
 
-const ESPLORA_MIRRORS = ['https://blockstream.info/api', 'https://mempool.space/api'];
+// The public mirrors, or whatever PRERENDER_ESPLORA points at (comma-separated
+// Esplora-compatible endpoints) — a local node, or a stand-in when testing the
+// deploy pipeline offline. Same knob the reply bot takes as BOT_ESPLORA.
+const ESPLORA_MIRRORS = (process.env.PRERENDER_ESPLORA || '')
+  .split(',').map((s) => s.trim().replace(/\/$/, '')).filter(Boolean);
+if (!ESPLORA_MIRRORS.length) {
+  ESPLORA_MIRRORS.push('https://blockstream.info/api', 'https://mempool.space/api');
+}
 
 // ─── fetch, with mirror fallback ────────────────────────────────────────
 
@@ -308,7 +324,8 @@ async function renderEntry(entry, seed) {
   if (entry.page === 'book' || entry.id === '-1') return null;   // a leaf / the moving tip — no static passage
 
   let height, index, txid;
-  if (isTxid(entry.id)) {
+  const fromTxid = isTxid(entry.id);
+  if (fromTxid) {
     txid = entry.id.toLowerCase();
     const proof = await esplora(`/tx/${txid}/merkle-proof`, 'json');
     if (!proof) return null;
@@ -341,12 +358,27 @@ async function renderEntry(entry, seed) {
     headerHex: ctx.headerHex, txid, pos: index, txHex: hex, txids, outputs,
   });
 
+  // The section in the shape the page and the card set it: composed fields
+  // plus rendered witness HTML, exactly as the reply bot builds it.
+  const witnessOf = (inp) =>
+    (inp.witnessItems.length ? (inp.witnessZero ? '∅' : renderWitness(inp.witnessItems, encodeCapped)) : null);
+  const section = {
+    ...sectionParts(fields, witnessOf),
+    fields,
+    footnotesHtml: fields.inputs.map(witnessOf).filter((w) => w !== null),
+  };
+
   return {
     slug: slugify(entry.title),
     title: entry.title,
+    fromTxid,
     height,
     index,
     txid,
+    blockHash: ctx.blockHash,
+    txCount: ctx.txCount,
+    section,
+    txidProse: proseOf(reverseHex(txid)),
     md: passageMd({ title: entry.title, height, index, txid, fields, ...ctx }),
   };
 }
@@ -366,7 +398,8 @@ export function indexMd(rendered) {
   md.push('scheme, and how to read passages beyond this curated set.');
   md.push('');
   for (const r of rendered) {
-    md.push(`- [${r.title}](./${r.slug}.md) — ${reference(r.height)} §${r.index + 1}`);
+    md.push(`- [${r.title}](./${r.slug}.md) — ${reference(r.height)} §${r.index + 1} ` +
+      `([as a page](${SITE}${passagePath(r.height, r.index + 1)}))`);
   }
   md.push('');
   return md.join('\n');
@@ -378,6 +411,10 @@ export function sitemapXml(rendered) {
     'bitcoin-search.html', 'bitcoin-ledger.html', 'bitcoin-ledgers.html',
     'preface.md', 'llms.txt', 'passages/index.md',
     ...rendered.map((r) => `passages/${r.slug}.md`),
+    // The citation paths: a passage's canonical, shareable address, each
+    // carrying its own card (see tools/passage-page.mjs). Listed without the
+    // leading slash passagePath returns, since SITE supplies it.
+    ...passagesByPath(rendered).map((r) => passagePath(r.height, r.index + 1).slice(1)),
   ];
   const urls = pages.map((p) => `  <url><loc>${SITE}/${p}</loc></url>`).join('\n');
   return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`;
@@ -410,7 +447,53 @@ async function main() {
     }
   }
 
+  // ─── the citation pages, and their cards ──────────────────────────────
+  //
+  // Each passage gets a page at its own citation path, carrying its own
+  // og:image. The card is rendered by the reply bot's renderer (headless
+  // Chromium), which is optional here exactly as it is there: without it the
+  // pages still ship and fall back to the site's standing card, so a deploy
+  // never turns on a browser being installable.
   await writeFile(new URL('index.md', OUT_DIR), indexMd(rendered));
+
+  let renderer = null;
+  try { renderer = await loadRenderer(); } catch { /* pages without cards */ }
+  if (!renderer && rendered.length) {
+    console.warn('  no image renderer — citation pages will ship with the standing card');
+  }
+  let cards = 0;
+  for (const r of passagesByPath(rendered)) {
+    const sectionNum = r.index + 1;
+    let cardUrl = null;
+    if (renderer) {
+      try {
+        const passage = {
+          cite: `${reference(r.height)} §${sectionNum}`,
+          title: r.title, sectionNum,
+          txidProse: r.txidProse, section: r.section,
+        };
+        const { png } = await renderer.render(passage,
+          { site: SITE, width: CARD_WIDTH, height: CARD_HEIGHT });
+        await mkdir(CARDS_DIR, { recursive: true });
+        const rel = cardPath(r.height, sectionNum).replace(/^\/cards\//, '');
+        await writeFile(new URL(rel, CARDS_DIR), png);
+        cardUrl = SITE + cardPath(r.height, sectionNum);
+        cards++;
+      } catch (e) {
+        console.warn(`  card SKIP ${r.slug}: ${e.message}`);
+      }
+    }
+    const dir = new URL(`.${passagePath(r.height, sectionNum)}`, WEB_DIR);
+    await mkdir(dir, { recursive: true });
+    await writeFile(new URL('index.html', dir), passagePageHtml({
+      site: SITE, height: r.height, sectionNum, title: r.title,
+      txidProse: r.txidProse, section: r.section, txCount: r.txCount,
+      blockHash: r.blockHash, txid: r.txid, cardUrl, slug: r.slug,
+    }));
+    console.log(`  page ${passagePath(r.height, sectionNum)}${cardUrl ? '  + card' : ''}`);
+  }
+  if (renderer) await renderer.close();
+
   await writeFile(SITEMAP, sitemapXml(rendered));
   // The archive seed rides with the passages -- but only when something
   // rendered: an explorer outage must not ship an empty seed, whose stamp
@@ -422,7 +505,8 @@ async function main() {
       `${Object.keys(seed.tx).length} transactions, ${Object.keys(seed.txids).length} txid lists, ` +
       `${Object.keys(seed.citations).length} citations (${Math.round(json.length / 1024)} KB)`);
   }
-  console.log(`\n${rendered.length} passages rendered, ${skipped} skipped.`);
+  console.log(`\n${rendered.length} passages rendered, ${skipped} skipped; ` +
+    `${passagesByPath(rendered).length} citation pages, ${cards} cards.`);
   if (!rendered.length) {
     // Still exit 0: an explorer outage must not block the site deploy. The
     // shell, llms.txt and sitemap still ship; passages return next deploy.
