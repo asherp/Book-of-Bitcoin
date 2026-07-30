@@ -14,10 +14,10 @@
 
 ## Chapter frontispiece — block 210,000
 
-Block hash, as prose: ⓪⁵³ ⌘²⁰³ *Comfort phone its half damage. Timber may get fossil. Top decide cushion to blouse. Some sunset always walk nurse. Gravity hurt our cruel proof to scissors.*
+Block hash, as prose: ⌘²⁰³ *Comfort phone its half damage. Timber may get fossil. Top decide cushion to blouse. Some sunset always walk nurse. Gravity hurt our cruel proof to scissors.* ⓪⁵³
 
 - **version:** v2 — block version 2 (0x00000002) — pre-BIP9 integer form
-- **previous block:** ⓪⁵⁶ ⌘²⁰⁰ Aid may thrive dig under ozone. Blanket inject a sound quote. Clown loud see an initial wine. Ritual get our raw rabbit. An eternal milk muscle auto to scale.
+- **previous block:** ⌘²⁰⁰ Aid may thrive dig under ozone. Blanket inject a sound quote. Clown loud see an initial wine. Ritual get our raw rabbit. An eternal milk muscle auto to scale. ⓪⁵⁶
   - hex: `00000000000000f3819164645360294b5dee7f2e846001ac9f41a70b7a9a3de1`
 - **merkle root:** ⋔ Aid may submit a busy market. Pulp tag air to glide. Elbow reflect our spot per spread. Tone is harsh to either bulk. Tea may thrive honey. Purchase is unable to ecology. Media far call an insane length.
   - hex: `3cdd40a60823b1c7356d0987078e9426724c5b3ab439c2d80ad2bdd620e603d8`
@@ -43,8 +43,9 @@ Transaction id, as prose: ⌘²⁵⁶ *Tap truly tongue our menu. The cow undo k
 bytes (decodable with the [glossia](https://crates.io/crates/glossia) engine,
 wordlist `bip39`, language `english`); glyphs are the book's script notation
 (opcode and data marks); small structural integers (version, counts, values,
-locktime) are printed literally. A block hash reads ⓪ⁿ ⌘ᵐ — n leading
-proof-of-work zero bits, then the remaining m = 256 − n bits of the
-double-SHA256 (⌘, OP_HASH256), Glossia-encoded as ⌈m/8⌉ bytes. See
+locktime) are printed literally. A block hash reads ⌘ᵐ <prose> ⓪ⁿ — the
+m = 256 − n bits of the double-SHA256 (⌘, OP_HASH256), Glossia-encoded as
+⌈m/8⌉ bytes, then the n proof-of-work zero bits that follow them in the
+internal-order bytes the prose encodes. See
 [/llms.txt](https://bookofbitcoin.io/llms.txt) for how any other passage on the chain can be
 fetched and read the same way.

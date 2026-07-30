@@ -14,10 +14,10 @@
 
 ## Chapter frontispiece — block 685,440
 
-Block hash, as prose: ⓪⁷⁹ ⌘¹⁷⁷ *Snow pair roof to wrist. Access may set salmon. Addict is alone to sign via artwork. Guy learn to reflect per crazy. Its slim cow avoid mistake to absurd.*
+Block hash, as prose: ⌘¹⁷⁷ *Snow pair roof to wrist. Access may set salmon. Addict is alone to sign via artwork. Guy learn to reflect per crazy. Its slim cow avoid mistake to absurd.* ⓪⁷⁹
 
 - **version:** vmuffliato say 100 — block version 0x2fffe004 — BIP9 version-bits form; version-rolling bits 0x7fff (BIP320 scratch entropy) as muffliato say; signaling bit 2 — Taproot (BIP341)
-- **previous block:** ⓪⁷⁷ ⌘¹⁷⁹ Buddy rail its exact blouse. Sin over sell hybrid. Dish may ignore amateur. A pan is eternal. Shiver is immune to our dentist. Peasant is loyal via alcohol.
+- **previous block:** ⌘¹⁷⁹ Buddy rail its exact blouse. Sin over sell hybrid. Dish may ignore amateur. A pan is eternal. Shiver is immune to our dentist. Peasant is loyal via alcohol. ⓪⁷⁷
   - hex: `00000000000000000006248c28751a176336f5c070f901dc86df190c391d761d`
 - **merkle root:** ⋔ Its cattle phone culture to market. Energy purchase smoke per junk. Timber may set tiger to tuna. A next name focus category. Umbrella pluck an awful flower. The bright one answer deer to gas.
   - hex: `534e13aa090e6615a2a6610f49b42ca9caa93f3ce2ca33735ca11444d6705424`
@@ -31,7 +31,7 @@ Transaction id, as prose: ⌘²⁵⁶ *Glance spice its canvas blanket. Dolphin 
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
-  - script: 685440 ⁴⁴ “I]ϩ<1” ⁸ “/F2Pool/” ¹⁸ “Mined by manasi20s” ⓪ ⓪ ⓪ ⓪ ⓪ ⓪ ⓪ ⓪ ⓪ ⓪ ⓪ ⓪ ⓪ ⓪ ⓪ ⓪ ⓪ ⁵ Abstract is hundred above abandon.
+  - script: ■685440Its coconut due sting an opera. Cop surround a digital creek. Our chronic melody print pottery. Our whip may alarm a quote. “I]ϩ<1” Its title may get latin. Its true iron ought warm a trigger. The pan is large. A brisk female may dwarf dune. Abandon ought abandon joke to layer. Son become an amount. “/F2Pool/” Its bamboo may get pay. “Mined by manasi20s” Abandon may abandon abandon to abandon. Abandon abandon abandon via abandon. Abandon abandon to abandon. Abandon is able out lesson. Resource see leopard to abandon.
   - sequence: ■0 — replaceable; relative locktime 0 blocks after the input's confirmation
   - witness: see footnote a
 - **output 1:** 6.92922309 ₿
@@ -56,8 +56,9 @@ a. ∅
 bytes (decodable with the [glossia](https://crates.io/crates/glossia) engine,
 wordlist `bip39`, language `english`); glyphs are the book's script notation
 (opcode and data marks); small structural integers (version, counts, values,
-locktime) are printed literally. A block hash reads ⓪ⁿ ⌘ᵐ — n leading
-proof-of-work zero bits, then the remaining m = 256 − n bits of the
-double-SHA256 (⌘, OP_HASH256), Glossia-encoded as ⌈m/8⌉ bytes. See
+locktime) are printed literally. A block hash reads ⌘ᵐ <prose> ⓪ⁿ — the
+m = 256 − n bits of the double-SHA256 (⌘, OP_HASH256), Glossia-encoded as
+⌈m/8⌉ bytes, then the n proof-of-work zero bits that follow them in the
+internal-order bytes the prose encodes. See
 [/llms.txt](https://bookofbitcoin.io/llms.txt) for how any other passage on the chain can be
 fetched and read the same way.

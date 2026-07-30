@@ -14,10 +14,10 @@
 
 ## Chapter frontispiece — block 91,880
 
-Block hash, as prose: ⓪⁴⁵ ⌘²¹¹ *Canyon room its crazy object. Logic may crush bargain. Lens note to identify. Diet may dry club. Our faculty ought tail to ranch. Cow pave maple for our express asthma.*
+Block hash, as prose: ⌘²¹¹ *Canyon room its crazy object. Logic may crush bargain. Lens note to identify. Diet may dry club. Our faculty ought tail to ranch. Cow pave maple for our express asthma.* ⓪⁴⁵
 
 - **version:** v1 — block version 1 (0x00000001) — pre-BIP9 integer form
-- **previous block:** ⓪⁴⁵ ⌘²¹¹ View may offer fuel to verb. Sting is entire for joy. Aim where see its fantasy. Slot pulp climb to plunge. The yes is happy. The true rub satisfy regret. A liquid may amount dig to our tie.
+- **previous block:** ⌘²¹¹ View may offer fuel to verb. Sting is entire for joy. Aim where see its fantasy. Slot pulp climb to plunge. The yes is happy. The true rub satisfy regret. A liquid may amount dig to our tie. ⓪⁴⁵
   - hex: `000000000004099656bf4a3fda4db1b25630634afa2a201e975e4df9772df3f3`
 - **merkle root:** ⋔ Its trouble may knife candy. Pop submit to cap. Its unhappy best text stamp. Flock drum bunker to side. Ivory may cage swim per car. Lot may extend a still. Our awkward cop disagree catch. Pop wide protect theme.
   - hex: `2f6bf541621f43b8fa5012f976406ef7e379704859a3eeb72ad40e6c85740fe9`
@@ -43,8 +43,9 @@ Transaction id, as prose: ⌘²⁵⁶ *Its hamster pepper stomach to hollow. Exc
 bytes (decodable with the [glossia](https://crates.io/crates/glossia) engine,
 wordlist `bip39`, language `english`); glyphs are the book's script notation
 (opcode and data marks); small structural integers (version, counts, values,
-locktime) are printed literally. A block hash reads ⓪ⁿ ⌘ᵐ — n leading
-proof-of-work zero bits, then the remaining m = 256 − n bits of the
-double-SHA256 (⌘, OP_HASH256), Glossia-encoded as ⌈m/8⌉ bytes. See
+locktime) are printed literally. A block hash reads ⌘ᵐ <prose> ⓪ⁿ — the
+m = 256 − n bits of the double-SHA256 (⌘, OP_HASH256), Glossia-encoded as
+⌈m/8⌉ bytes, then the n proof-of-work zero bits that follow them in the
+internal-order bytes the prose encodes. See
 [/llms.txt](https://bookofbitcoin.io/llms.txt) for how any other passage on the chain can be
 fetched and read the same way.

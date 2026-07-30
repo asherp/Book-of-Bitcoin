@@ -14,10 +14,10 @@
 
 ## Chapter frontispiece — block 478,558
 
-Block hash, as prose: ⓪⁷¹ ⌘¹⁸⁵ *Drip have dove to loop. Sand is elegant via reunion out a move. Our turkey may vapor to bean. Its chronic cop say bachelor. The cow allow to uncover. Blossom amount to sit.*
+Block hash, as prose: ⌘¹⁸⁵ *Drip have dove to loop. Sand is elegant via reunion out a move. Our turkey may vapor to bean. Its chronic cop say bachelor. The cow allow to uncover. Blossom amount to sit.* ⓪⁷¹
 
 - **version:** vaccio abandon 10 — block version 0x20000002 — BIP9 version-bits form; accio abandon — no version rolling; signaling bit 1 — SegWit (BIP141)
-- **previous block:** ⓪⁷² ⌘¹⁸⁴ Tomorrow may equal art to black. Citizen garage sun via exercise. Its voice rescue initial. Sheriff see oak to priority. Train set cricket via twelve.
+- **previous block:** ⌘¹⁸⁴ Tomorrow may equal art to black. Citizen garage sun via exercise. Its voice rescue initial. Sheriff see oak to priority. Train set cricket via twelve. ⓪⁷²
   - hex: `000000000000000000eb9bc1f9557dc9e2cfe576f57a52f6be94720b338029e4`
 - **merkle root:** ⋔ Lie enhance divorce to flag. Album edit to defy. A habit truly size pop. Our cop connect antenna to episode. Sir rotate tribe out radar. Box process a tie. Our pretty pop used cotton. Our female mechanic is nice to gas.
   - hex: `5b65144f6518bf4795abd428acd0c3fb2527e4e5c94b0f5a7366f4826001884a`
@@ -31,7 +31,7 @@ Transaction id, as prose: ⌘²⁵⁶ *Its ill yes little get penalty. Our legal
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
-  - script: “Y/BTC.COM/NYA/”
+  - script: ■478558 η₁₅₀₁₅₉₃₃₇₁“/BTC.COM/NYA/” A wide war is vibrant. Its sir forget to unfold. Tap dry a liquid. Sky only drift eye. Leaf may get stable to estate. Motion twice see each logic. Duck may allow an atom. The rare record uncover spray. Yes ensure a lamp. Reunion far police an able abandon. Abandon abandon abandon to abandon. An adult copper ignore fame. Mosquito may see ecology. Some abandon abandon to abandon.
   - sequence: ● — final — disables the transaction locktime for this input
 - **output 1:** 12.61890202 ₿
   - script: ⌖ h²⁰ A they. Jet may brave bird. Sir cancel language to aunt per police to case out marble. Friend pioneer still to critic. Shallow may equal tea. =
@@ -45,8 +45,9 @@ Transaction id, as prose: ⌘²⁵⁶ *Its ill yes little get penalty. Our legal
 bytes (decodable with the [glossia](https://crates.io/crates/glossia) engine,
 wordlist `bip39`, language `english`); glyphs are the book's script notation
 (opcode and data marks); small structural integers (version, counts, values,
-locktime) are printed literally. A block hash reads ⓪ⁿ ⌘ᵐ — n leading
-proof-of-work zero bits, then the remaining m = 256 − n bits of the
-double-SHA256 (⌘, OP_HASH256), Glossia-encoded as ⌈m/8⌉ bytes. See
+locktime) are printed literally. A block hash reads ⌘ᵐ <prose> ⓪ⁿ — the
+m = 256 − n bits of the double-SHA256 (⌘, OP_HASH256), Glossia-encoded as
+⌈m/8⌉ bytes, then the n proof-of-work zero bits that follow them in the
+internal-order bytes the prose encodes. See
 [/llms.txt](https://bookofbitcoin.io/llms.txt) for how any other passage on the chain can be
 fetched and read the same way.

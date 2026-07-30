@@ -14,10 +14,10 @@
 
 ## Chapter frontispiece — block 655,200
 
-Block hash, as prose: ⓪⁷⁶ ⌘¹⁸⁰ *Its dynamic midnight inhale session. Supply may top cow. Its simple tiger orbit force. Our marble hospital smooth client. Extra may see lamp to arch.*
+Block hash, as prose: ⌘¹⁸⁰ *Its dynamic midnight inhale session. Supply may top cow. Its simple tiger orbit force. Our marble hospital smooth client. Extra may see lamp to arch.* ⓪⁷⁶
 
 - **version:** vmuffliato that — block version 0x37ffe000 — BIP9 version-bits form; version-rolling bits 0xbfff (BIP320 scratch entropy) as muffliato that; no soft-fork signals
-- **previous block:** ⓪⁷⁷ ⌘¹⁷⁹ The entire visa behave dutch. Its toy sir retire our far foil to a strong gas. Sir allow to erase. Hello field to vanish. Assist label to agree.
+- **previous block:** ⌘¹⁷⁹ The entire visa behave dutch. Its toy sir retire our far foil to a strong gas. Sir allow to erase. Hello field to vanish. Assist label to agree. ⓪⁷⁷
   - hex: `00000000000000000005e17383e25f65b531d50060b99ed66f673ea251949e4b`
 - **merkle root:** ⋔ Year get its broccoli to pull. Runway control same out measure. Gaze purse trust to the sunset. Ladder team charge via old. The famous brain may set supreme. Gesture weather the happy tunnel. Knife may abandon jet.
   - hex: `e81ed58f56fc853dfb1a9582264dea3d3e66379dae057be27df7b25eb58ee3fe`
@@ -31,7 +31,7 @@ Transaction id, as prose: ⌘²⁵⁶ *Demand get soda to height. Our hunt are e
 
 - **version:** 2
 - **input 1:** coinbase (∅ — no previous output; new coin)
-  - script: 655200 1604392099 ⧉? ⥀ ⁴⁷ “BTC.com/” ⓪ ¹² Phrase output scare to tag. The goat flower its fresh theme via abandon. ⓪ ⓪ ⓪
+  - script: ■655200 η₁₆₀₄₃₉₂₀₉₉“sz/BTC.com/” Its wide tax is vibrant. Pop forget other due. Its cap may argue anxiety. An own pulp lock outside. A vacant lot is okay. Guy enter a lazy repair to dilemma via slight. Tooth drip its awake jar. Tap modify liquid to canoe for the science. Pepper get scene to abandon per abandon to alien. Monster invest accident via input. The mother great may inflict length. Our abandon would abandon abandon.
   - sequence: ● — final — disables the transaction locktime for this input
   - witness: see footnote a
 - **output 1:** 8.33134574 ₿
@@ -54,8 +54,9 @@ a. ∅
 bytes (decodable with the [glossia](https://crates.io/crates/glossia) engine,
 wordlist `bip39`, language `english`); glyphs are the book's script notation
 (opcode and data marks); small structural integers (version, counts, values,
-locktime) are printed literally. A block hash reads ⓪ⁿ ⌘ᵐ — n leading
-proof-of-work zero bits, then the remaining m = 256 − n bits of the
-double-SHA256 (⌘, OP_HASH256), Glossia-encoded as ⌈m/8⌉ bytes. See
+locktime) are printed literally. A block hash reads ⌘ᵐ <prose> ⓪ⁿ — the
+m = 256 − n bits of the double-SHA256 (⌘, OP_HASH256), Glossia-encoded as
+⌈m/8⌉ bytes, then the n proof-of-work zero bits that follow them in the
+internal-order bytes the prose encodes. See
 [/llms.txt](https://bookofbitcoin.io/llms.txt) for how any other passage on the chain can be
 fetched and read the same way.

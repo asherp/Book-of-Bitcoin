@@ -14,10 +14,10 @@
 
 ## Chapter frontispiece — block 552,384
 
-Block hash, as prose: ⓪⁷⁵ ⌘¹⁸¹ *Other shed high get globe. School may see cow. A myself. Yes afford to assume. Our woman not see our dynamic. Sky may prefer an ecology. Our jealous fence get timber. Document may bench sir.*
+Block hash, as prose: ⌘¹⁸¹ *Other shed high get globe. School may see cow. A myself. Yes afford to assume. Our woman not see our dynamic. Sky may prefer an ecology. Our jealous fence get timber. Document may bench sir.* ⓪⁷⁵
 
 - **version:** vaccio abandon — block version 0x20000000 — BIP9 version-bits form; accio abandon — no version rolling; no soft-fork signals
-- **previous block:** ⓪⁷⁵ ⌘¹⁸¹ Tap see its tired grain. What cow develop the tone. Buddy split a south squeeze. Auction yes prepare pluck. Title may get effort to sky. Our keen cop divert bench.
+- **previous block:** ⌘¹⁸¹ Tap see its tired grain. What cow develop the tone. Buddy split a south squeeze. Auction yes prepare pluck. Title may get effort to sky. Our keen cop divert bench. ⓪⁷⁵
   - hex: `00000000000000000015fe695e8d2e5ed3a7de81d3818ef43a444e1ee7b3ace2`
 - **merkle root:** ⋔ Its left fine mass to oppose. Enough low tag is raw. A host is awful. Luggage too set hybrid. Edge coach puzzle since what swallow. Leisure host the youth device. Crash may rival its scale.
   - hex: `aeee64cab37fb8f50fdbce4ff25dcb2223c099b01070a36cbaafc44d22da2a7f`
@@ -31,7 +31,7 @@ Transaction id, as prose: ⌘²⁵⁶ *Garden may nest to verify. Return see its
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
-  - script: “a,/BTC.TOP/”
+  - script: ■552384Dove may retreat our cut faculty. Cow evolve act to cry. Lot also see red. Sky then get effort. Each copy is rid. “a,/BTC.TOP/” Aid wide see its vibrant fork. Buddy are great to ginger. Eagle far see chest. Soup may crawl yes. Its rapid fade glue cap. A bitter pottery used fat to our crush. The dutch woman flame the boring sir. Its just kid strike to involve. Cactus abandon abandon for abandon per abandon out abandon. Scissors always set a wisdom. Its abandon is actual. Yes thrive the live next. Its pool may owe.
   - sequence: ● — final — disables the transaction locktime for this input
   - witness: see footnote a
 - **output 1:** 12.76129339 ₿
@@ -50,8 +50,9 @@ a. ∅
 bytes (decodable with the [glossia](https://crates.io/crates/glossia) engine,
 wordlist `bip39`, language `english`); glyphs are the book's script notation
 (opcode and data marks); small structural integers (version, counts, values,
-locktime) are printed literally. A block hash reads ⓪ⁿ ⌘ᵐ — n leading
-proof-of-work zero bits, then the remaining m = 256 − n bits of the
-double-SHA256 (⌘, OP_HASH256), Glossia-encoded as ⌈m/8⌉ bytes. See
+locktime) are printed literally. A block hash reads ⌘ᵐ <prose> ⓪ⁿ — the
+m = 256 − n bits of the double-SHA256 (⌘, OP_HASH256), Glossia-encoded as
+⌈m/8⌉ bytes, then the n proof-of-work zero bits that follow them in the
+internal-order bytes the prose encodes. See
 [/llms.txt](https://bookofbitcoin.io/llms.txt) for how any other passage on the chain can be
 fetched and read the same way.

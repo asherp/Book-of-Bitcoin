@@ -14,10 +14,10 @@
 
 ## Chapter frontispiece — block 246,816
 
-Block hash, as prose: ⓪⁶⁰ ⌘¹⁹⁶ *Half may trip our gospel primary. Its start may enforce device. Cop wrestle the sudden fade. Ladder recall to truck. Bulb hard fruit beach. Cop embark to tap out a rid length.*
+Block hash, as prose: ⌘¹⁹⁶ *Half may trip our gospel primary. Its start may enforce device. Cop wrestle the sudden fade. Ladder recall to truck. Bulb hard fruit beach. Cop embark to tap out a rid length.* ⓪⁶⁰
 
 - **version:** v2 — block version 2 (0x00000002) — pre-BIP9 integer form
-- **previous block:** ⓪⁵⁶ ⌘²⁰⁰ Grace see elevator to crowd. Finish embody to source. A sunny tunnel is cheap. Trend bicycle artefact to kiwi. Sir surround giant out rough. A cheese set device. A pop scale may get fyi.
+- **previous block:** ⌘²⁰⁰ Grace see elevator to crowd. Finish embody to source. A sunny tunnel is cheap. Trend bicycle artefact to kiwi. Sir surround giant out rough. A cheese set device. A pop scale may get fyi. ⓪⁵⁶
   - hex: `00000000000000972727e26d18b5b777865700fd26545f36a087842bd1fc6865`
 - **merkle root:** ⋔ Its river due chair a nation. A civil fiber submit lift. Pistol permit to assume per artefact. Run see shrimp to fabric out scare. Penalty hold to prosper via an aspect. Fame rule skull to its lens. Abandon see the pay.
   - hex: `08a095d33ba93590956c1415f0a272acde33bc21a32b5d20b05bc5144dbac4ba`
@@ -31,7 +31,7 @@ Transaction id, as prose: ⌘²⁵⁶ *Cop tell ring to strategy. Our smoke are 
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
-  - script: 246816 ⁴⁴ “mmyHxb” ⁶ “/P2SH/” ¹¹ “[P2PCOINv0]” ⁵ “(kjj)”
+  - script: ■246816Its coconut may sting length. “mmyHxb” Pair engage its rival priority. Wealth provide to exist. Cinnamon ago get ceiling. A mechanic flash topple hero. Such property jazz cinnamon to bonus. Economy share theme out length. Abandon abandon abandon to abandon for account. “/P2SH/” Its arch may get pay. “[P2PCOINv0]” Its tax may agree cow. “(kjj)”
   - sequence: ● — final — disables the transaction locktime for this input
 - **output 1:** 0.00059126 ₿
   - script: ⧉ ⌖ h²⁰ Menu is huge to an airport. Ear replace bit among duck. Sir omit the eternal hit about out. Pop evoke point to opera via wagon. The high object may set a sky. ≡ ∇
@@ -617,8 +617,9 @@ Transaction id, as prose: ⌘²⁵⁶ *Cop tell ring to strategy. Our smoke are 
 bytes (decodable with the [glossia](https://crates.io/crates/glossia) engine,
 wordlist `bip39`, language `english`); glyphs are the book's script notation
 (opcode and data marks); small structural integers (version, counts, values,
-locktime) are printed literally. A block hash reads ⓪ⁿ ⌘ᵐ — n leading
-proof-of-work zero bits, then the remaining m = 256 − n bits of the
-double-SHA256 (⌘, OP_HASH256), Glossia-encoded as ⌈m/8⌉ bytes. See
+locktime) are printed literally. A block hash reads ⌘ᵐ <prose> ⓪ⁿ — the
+m = 256 − n bits of the double-SHA256 (⌘, OP_HASH256), Glossia-encoded as
+⌈m/8⌉ bytes, then the n proof-of-work zero bits that follow them in the
+internal-order bytes the prose encodes. See
 [/llms.txt](https://bookofbitcoin.io/llms.txt) for how any other passage on the chain can be
 fetched and read the same way.

@@ -14,10 +14,10 @@
 
 ## Chapter frontispiece — block 774,628
 
-Block hash, as prose: ⓪⁷⁷ ⌘¹⁷⁹ *Lie may differ each legend. Our outdoor fence kit cut. Pie situate to start per portion. Its index carry shell to movie. Some bed may depend goat. Pop argue to dress. Due may agree son.*
+Block hash, as prose: ⌘¹⁷⁹ *Lie may differ each legend. Our outdoor fence kit cut. Pie situate to start per portion. Its index carry shell to movie. Some bed may depend goat. Pop argue to dress. Due may agree son.* ⓪⁷⁷
 
 - **version:** vulnera pelican — block version 0x28960000 — BIP9 version-bits form; version-rolling bits 0x44b0 (BIP320 scratch entropy) as vulnera pelican; no soft-fork signals
-- **previous block:** ⓪⁷⁷ ⌘¹⁷⁹ A boss garlic may view plastic. The valid gauge is polar. Our brave town direct its pop. Our vibrant lamp may spice gain. A cruel slot would agree.
+- **previous block:** ⌘¹⁷⁹ A boss garlic may view plastic. The valid gauge is polar. Our brave town direct its pop. Our vibrant lamp may spice gain. A cruel slot would agree. ⓪⁷⁷
   - hex: `0000000000000000000560268dbd186dbecdd347e6dad829c10c0fd3cffb2b1a`
 - **merkle root:** ⋔ A fragile aisle may account gauge. The thought donor get citizen. Arrest far set company. Man couple to rebuild via bronze. Turn inform cupboard to curve. Basket caught lawsuit over access. Cement may set cactus.
   - hex: `498902de19bf91644236aee19cd5cba1d9c4d8902e63508a820e4e3006b4605c`
@@ -31,7 +31,7 @@ Transaction id, as prose: ⌘²⁵⁶ *Limb is ancient to soap. Vintage include 
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
-  - script: 774628 ⁴⁹ “\ Powered by Luxor Tech \”
+  - script: ■774628“1\ Powered by Luxor Tech \” Abandon abandon abandon to arctic. Our son convince couch. Doctor game current to abandon for globe. Chunk set mosquito to abandon via abandon to abandon. Abandon may abandon its map.
   - sequence: ● — final — disables the transaction locktime for this input
   - witness: see footnote a
 - **output 1:** 6.25875047 ₿
@@ -50,8 +50,9 @@ a. ∅
 bytes (decodable with the [glossia](https://crates.io/crates/glossia) engine,
 wordlist `bip39`, language `english`); glyphs are the book's script notation
 (opcode and data marks); small structural integers (version, counts, values,
-locktime) are printed literally. A block hash reads ⓪ⁿ ⌘ᵐ — n leading
-proof-of-work zero bits, then the remaining m = 256 − n bits of the
-double-SHA256 (⌘, OP_HASH256), Glossia-encoded as ⌈m/8⌉ bytes. See
+locktime) are printed literally. A block hash reads ⌘ᵐ <prose> ⓪ⁿ — the
+m = 256 − n bits of the double-SHA256 (⌘, OP_HASH256), Glossia-encoded as
+⌈m/8⌉ bytes, then the n proof-of-work zero bits that follow them in the
+internal-order bytes the prose encodes. See
 [/llms.txt](https://bookofbitcoin.io/llms.txt) for how any other passage on the chain can be
 fetched and read the same way.

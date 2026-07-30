@@ -14,10 +14,10 @@
 
 ## Chapter frontispiece — block 776,549
 
-Block hash, as prose: ⓪⁷⁷ ⌘¹⁷⁹ *Hobby spirit its copy to state. Coin see tomato for torch. Sin also pull gain. Exit either hammer scan. Sheriff too box alcohol.*
+Block hash, as prose: ⌘¹⁷⁹ *Hobby spirit its copy to state. Coin see tomato for torch. Sin also pull gain. Exit either hammer scan. Sheriff too box alcohol.* ⓪⁷⁷
 
 - **version:** vdiffindo length — block version 0x2000e000 — BIP9 version-bits form; version-rolling bits 0x0007 (BIP320 scratch entropy) as diffindo length; no soft-fork signals
-- **previous block:** ⓪⁷⁷ ⌘¹⁷⁹ Lie may suffer each recall. Tie again chase our lot. Each pan may lend the original. Its hurt cop may inherit ecology. Car pioneer to sell. Museum endorse chest via blouse out advice.
+- **previous block:** ⌘¹⁷⁹ Lie may suffer each recall. Tie again chase our lot. Each pan may lend the original. Its hurt cop may inherit ecology. Car pioneer to sell. Museum endorse chest via blouse out advice. ⓪⁷⁷
   - hex: `00000000000000000004c1e089931ab9e1944a04469ef35b39ff5793126cb6d8`
 - **merkle root:** ⋔ The sir attract to accuse. Issue phone to predict. Cap off see favorite. Sadness is noble to an one auto. Quote pretty budget nod. The jealous loop may see seminar. Cop deny shaft to jungle. Celery loan a noble cactus.
   - hex: `6925065182bc135787c31fe41d3ba20a583e54b395ef0595329bcad1da35c00e`
@@ -47,8 +47,9 @@ a. s Stand set fame to chief. Blade may set violin. Our correct oval could field
 bytes (decodable with the [glossia](https://crates.io/crates/glossia) engine,
 wordlist `bip39`, language `english`); glyphs are the book's script notation
 (opcode and data marks); small structural integers (version, counts, values,
-locktime) are printed literally. A block hash reads ⓪ⁿ ⌘ᵐ — n leading
-proof-of-work zero bits, then the remaining m = 256 − n bits of the
-double-SHA256 (⌘, OP_HASH256), Glossia-encoded as ⌈m/8⌉ bytes. See
+locktime) are printed literally. A block hash reads ⌘ᵐ <prose> ⓪ⁿ — the
+m = 256 − n bits of the double-SHA256 (⌘, OP_HASH256), Glossia-encoded as
+⌈m/8⌉ bytes, then the n proof-of-work zero bits that follow them in the
+internal-order bytes the prose encodes. See
 [/llms.txt](https://bookofbitcoin.io/llms.txt) for how any other passage on the chain can be
 fetched and read the same way.

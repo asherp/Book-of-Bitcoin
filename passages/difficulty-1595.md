@@ -14,10 +14,10 @@
 
 ## Chapter frontispiece — block 622,944
 
-Block hash, as prose: ⓪⁷⁶ ⌘¹⁸⁰ *Its fluid decade due canoe airport. Addict spirit our false rug. The mother may donate the brother. Our sir arrive to gather per young. Exhibit also set animal.*
+Block hash, as prose: ⌘¹⁸⁰ *Its fluid decade due canoe airport. Addict spirit our false rug. The mother may donate the brother. Our sir arrive to gather per young. Exhibit also set animal.* ⓪⁷⁶
 
 - **version:** vaccio link — block version 0x20800000 — BIP9 version-bits form; version-rolling bits 0x0400 (BIP320 scratch entropy) as accio link; no soft-fork signals
-- **previous block:** ⓪⁷⁶ ⌘¹⁸⁰ Its tax around portion relief. Still announce the soft nod. A cop is gentle. Hill release daughter to season. Latin may deliver project per capital. Boat yes arch its dig.
+- **previous block:** ⌘¹⁸⁰ Its tax around portion relief. Still announce the soft nod. A cop is gentle. Hill release daughter to season. Latin may deliver project per capital. Boat yes arch its dig. ⓪⁷⁶
   - hex: `0000000000000000000bc6800858a1b3be08fb26b55d4b989c95e06ad50a350c`
 - **merkle root:** ⋔ Input due address its six april. The viable lounge get math. The sky resemble science. Genre depart favorite to our jewel. Travel may inherit its luxury section. Neither evidence may flee gadget. Each fade could ribbon abandon.
   - hex: `40aea3ea652c3785b2c22af41ccf7f072aeb20ecc0ba45a208357f05276fa074`
@@ -31,7 +31,7 @@ Transaction id, as prose: ⌘²⁵⁶ *A summer may sketch to author. Our awake 
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
-  - script: 622944 ²⁶ “/ViaBTC/Mined by sanpaolo/” ⁴⁴ A wide tap is vibrant. Pop forget to wrestle. A wise melody get a physical. Each cop are outdoor. Its term are adult. Moment may see siren. Doctor get a peace. Aim floor table to dove. Shell fish to involve out the power kiwi. Its tie once set its ability. Immune due see series. Abandon abandon abandon to abandon out abandon. ¹⁶ Cop inject nation during absurd. Wasp may crush vendor. Senior ago get syrup. Hill set length to abandon.
+  - script: ■622944Its tax may borrow fyi. “/ViaBTC/Mined by sanpaolo/,” Its wide tax is vibrant. Pop forget to wrestle. Its wise melody is physical. Our outdoor term set adult. Moment may see siren to doctor. Peace aim floor for table per dove. Shell may fish to involve. A power kiwi once set ability. The immune series may abandon abandon to abandon. An abandon may abandon row per tax via ban. Cop away party a guy. The olympic canal are angry. Son rotate pottery to mushroom out build. Tornado frown abandon to abandon.
   - sequence: ● — final — disables the transaction locktime for this input
   - witness: see footnote a
 - **output 1:** 12.72123454 ₿
@@ -52,8 +52,9 @@ a. ∅
 bytes (decodable with the [glossia](https://crates.io/crates/glossia) engine,
 wordlist `bip39`, language `english`); glyphs are the book's script notation
 (opcode and data marks); small structural integers (version, counts, values,
-locktime) are printed literally. A block hash reads ⓪ⁿ ⌘ᵐ — n leading
-proof-of-work zero bits, then the remaining m = 256 − n bits of the
-double-SHA256 (⌘, OP_HASH256), Glossia-encoded as ⌈m/8⌉ bytes. See
+locktime) are printed literally. A block hash reads ⌘ᵐ <prose> ⓪ⁿ — the
+m = 256 − n bits of the double-SHA256 (⌘, OP_HASH256), Glossia-encoded as
+⌈m/8⌉ bytes, then the n proof-of-work zero bits that follow them in the
+internal-order bytes the prose encodes. See
 [/llms.txt](https://bookofbitcoin.io/llms.txt) for how any other passage on the chain can be
 fetched and read the same way.

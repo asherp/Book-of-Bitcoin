@@ -14,10 +14,10 @@
 
 ## Chapter frontispiece — block 840,000
 
-Block hash, as prose: ⓪⁷⁸ ⌘¹⁷⁸ *Its pitch may burst mandate. Pop lend to claim. Cow reflect cap since cable. Guy inflict scissors to sail. Orient list light per trim. The advice due adapt lap.*
+Block hash, as prose: ⌘¹⁷⁸ *Its pitch may burst mandate. Pop lend to claim. Cow reflect cap since cable. Guy inflict scissors to sail. Orient list light per trim. The advice due adapt lap.* ⓪⁷⁸
 
 - **version:** vmuffliato practice — block version 0x2a5fe000 — BIP9 version-bits form; version-rolling bits 0x52ff (BIP320 scratch entropy) as muffliato practice; no soft-fork signals
-- **previous block:** ⓪⁷⁹ ⌘¹⁷⁷ Process picnic cattle to athlete. Chaos may get stove. Fee see health to spawn. Help noise member via hand. Sport may clown a comic absurd.
+- **previous block:** ⌘¹⁷⁷ Process picnic cattle to athlete. Chaos may get stove. Fee see health to spawn. Help noise member via hand. Sport may clown a comic absurd. ⓪⁷⁹
   - hex: `0000000000000000000172014ba58d66455762add0512355ad651207918494ab`
 - **merkle root:** ⋔ Exhibit essay rub into jeans. Essence is far during wish. Its reason cable dolphin. Caution off see world. Anchor is antique to tumble. Street page energy out corn. Pond calm hire to gas.
   - hex: `031b417c3a1828ddf3d6527fc210daafcc9218e81f98257f88d4d43bd7a5894f`
@@ -31,7 +31,7 @@ Transaction id, as prose: ⌘²⁵⁶ *Its sorry noodle plate tax. The vacant fr
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
-  - script: 840000 ²⁵ “/ViaBTC/Mined by buzz120/” ⁴⁴ Its wide tax is vibrant. Pop forget to chuckle. Its relief off attend switch. Pattern are main to great. Pop choose metal out cruise. Jump drop urge to tumble for arm. Physical little target our maximum. The base is wood to the same advice. Abandon may abandon abandon to abandon per abandon. ¹⁶ Flavor set chaos to divorce. Our book demand middle. Its chat image lot. A they. Banner yes divorce abandon. ⓪ ⓪ ⓪ ⓪
+  - script: ■840000Its boil may get pay. “/ViaBTC/Mined by buzz120/,” Aid wide see its vibrant jet. Cow forget each chuckle. Relief off attend switch. Pattern is main to great. Son may choose a metal cruise for jump. Drop urge tumble to arm via a physical. A little target set maximum. Base see the wood. A same advice may abandon abandon. Abandon abandon abandon to our aware share to crane. Abandon slow spice a giraffe. Cushion may see memory. An advice ought get tea. A myself. Abandon abandon abandon to abandon. Abandon may get bed.
   - sequence: ● — final — disables the transaction locktime for this input
   - witness: see footnote a
 - **output 1:** 40.75061499 ₿
@@ -52,8 +52,9 @@ a. ∅
 bytes (decodable with the [glossia](https://crates.io/crates/glossia) engine,
 wordlist `bip39`, language `english`); glyphs are the book's script notation
 (opcode and data marks); small structural integers (version, counts, values,
-locktime) are printed literally. A block hash reads ⓪ⁿ ⌘ᵐ — n leading
-proof-of-work zero bits, then the remaining m = 256 − n bits of the
-double-SHA256 (⌘, OP_HASH256), Glossia-encoded as ⌈m/8⌉ bytes. See
+locktime) are printed literally. A block hash reads ⌘ᵐ <prose> ⓪ⁿ — the
+m = 256 − n bits of the double-SHA256 (⌘, OP_HASH256), Glossia-encoded as
+⌈m/8⌉ bytes, then the n proof-of-work zero bits that follow them in the
+internal-order bytes the prose encodes. See
 [/llms.txt](https://bookofbitcoin.io/llms.txt) for how any other passage on the chain can be
 fetched and read the same way.

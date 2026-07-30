@@ -14,10 +14,10 @@
 
 ## Chapter frontispiece — block 420,000
 
-Block hash, as prose: ⓪⁷⁰ ⌘¹⁸⁶ *Peanut wing bracket to fold. Our clog bounce combine. Its pulp maze assault. Check see an erosion. Security yes field cow. A bed is able. Some tackle slot to avoid.*
+Block hash, as prose: ⌘¹⁸⁶ *Peanut wing bracket to fold. Our clog bounce combine. Its pulp maze assault. Check see an erosion. Security yes field cow. A bed is able. Some tackle slot to avoid.* ⓪⁷⁰
 
 - **version:** vaccio abandon — block version 0x20000000 — BIP9 version-bits form; accio abandon — no version rolling; no soft-fork signals
-- **previous block:** ⓪⁷⁰ ⌘¹⁸⁶ Its sorry alien grunt payment. Beef may scheme fiber. Its pumpkin rebel cop. Our brisk lap may open. Our guy endorse to unfold. Mass grow its hidden son. Our low pie adapt blossom.
+- **previous block:** ⌘¹⁸⁶ Its sorry alien grunt payment. Beef may scheme fiber. Its pumpkin rebel cop. Our brisk lap may open. Our guy endorse to unfold. Mass grow its hidden son. Our low pie adapt blossom. ⓪⁷⁰
   - hex: `000000000000000003035bc31911d3eea46c8a23b36d6d558141d1d09cc960cf`
 - **merkle root:** ⋔ The wheel too see language. Son may predict main. A son oppose soap. Reform get turtle to our hidden lip. The over bulk may cave layer. Rebel around fruit map. Our inner mother see history to floor. Ski may mushroom the army via its divorce.
   - hex: `028323a5bcacb0057274ee0a4366e5671278bc736b57176d9bb929c3a69e0ffa`
@@ -31,7 +31,7 @@ Transaction id, as prose: ⌘²⁵⁶ *Stairs fringe dolphin to island. Soda see
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
-  - script: 420000 ¹⁵ “七彩神仙鱼” ³² “Chandler Guo loves YangYang Jin.” ⁴ “🐟” ¹⁵ “Mined by zzhhzz” ⓪ ⓪ ⓪ ⓪ ⓪ ⓪ ⓪ ⓪ ⓪ ⓪ ⓪ ⓪ ⓪ ⓪ ⓪ ⓪ ⓪ ⓪ ⓪ ⓪ ⓪ ⓪ ⓪ ⓪ ⓪ ⓪
+  - script: ■420000Its audit may get pay. “七彩神仙鱼 Chandler Guo loves YangYang Jin.” Agent lumber tomorrow to dignity. Our sin is useless. “Mined by zzhhzz” Abandon may abandon abandon to abandon. Abandon abandon abandon via abandon. Abandon abandon to abandon. Abandon abandon abandon per abandon. Abandon may abandon abandon to abandon.
   - sequence: ■40089 — replaceable; relative locktime 40089 blocks after the input's confirmation
 - **output 1:** 13.07569681 ₿
   - script: ⧉ ⌖ h²⁰ Sight code kite to torch. Habit mail to avoid. Clump around spawn round. Crawl air throw to project. ≡ ∇
@@ -43,8 +43,9 @@ Transaction id, as prose: ⌘²⁵⁶ *Stairs fringe dolphin to island. Soda see
 bytes (decodable with the [glossia](https://crates.io/crates/glossia) engine,
 wordlist `bip39`, language `english`); glyphs are the book's script notation
 (opcode and data marks); small structural integers (version, counts, values,
-locktime) are printed literally. A block hash reads ⓪ⁿ ⌘ᵐ — n leading
-proof-of-work zero bits, then the remaining m = 256 − n bits of the
-double-SHA256 (⌘, OP_HASH256), Glossia-encoded as ⌈m/8⌉ bytes. See
+locktime) are printed literally. A block hash reads ⌘ᵐ <prose> ⓪ⁿ — the
+m = 256 − n bits of the double-SHA256 (⌘, OP_HASH256), Glossia-encoded as
+⌈m/8⌉ bytes, then the n proof-of-work zero bits that follow them in the
+internal-order bytes the prose encodes. See
 [/llms.txt](https://bookofbitcoin.io/llms.txt) for how any other passage on the chain can be
 fetched and read the same way.

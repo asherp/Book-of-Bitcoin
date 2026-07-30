@@ -14,10 +14,10 @@
 
 ## Chapter frontispiece — block 477,120
 
-Block hash, as prose: ⓪⁷¹ ⌘¹⁸⁵ *A domain may govern to approve. Due erupt town for diet. Merit predict rain to pulse. Crawl set buddy via exhaust. One connect drama to favorite per amount.*
+Block hash, as prose: ⌘¹⁸⁵ *A domain may govern to approve. Due erupt town for diet. Merit predict rain to pulse. Crawl set buddy via exhaust. One connect drama to favorite per amount.* ⓪⁷¹
 
 - **version:** vaccio abandon 10010 — block version 0x20000012 — BIP9 version-bits form; accio abandon — no version rolling; signaling bit 1 — SegWit (BIP141), bit 4
-- **previous block:** ⓪⁷⁴ ⌘¹⁸² Its infant decade zone acid. Upper may get grocery. Its leisure robot see february. Wool set era to sun. Our slush see its yard. A low aid emerge to melt per our capital.
+- **previous block:** ⌘¹⁸² Its infant decade zone acid. Upper may get grocery. Its leisure robot see february. Wool set era to sun. Our slush see its yard. A low aid emerge to melt per our capital. ⓪⁷⁴
   - hex: `00000000000000000022552c92fdc5ac6c31a95f54d9ed9fcdf0fe00ff134773`
 - **merkle root:** ⋔ Mistake set our dutch razor. The son is lunar. Jacket collect a benefit. Ankle yes get autumn. Clay point our dial. Tank may find the winter audit. Path may squeeze series. Stool convince to spice. The cow evolve to divorce.
   - hex: `8a13a3f9326b1073faa078007fadda8d1e9d46a50f4948055b7087c2ca8ee88d`
@@ -31,7 +31,7 @@ Transaction id, as prose: ⌘²⁵⁶ *A lab due case its flame. Ear define our 
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
-  - script: “(*tY/BATPOOL/NYA/”
+  - script: ■477120 η₁₅₀₀₇₈₅₁₉₂“/BATPOOL/NYA/” Due wide get its vibrant red. Cop forget juice to brain. An elder tortoise too set crisp. Word get video to elite. A crazy color alter the sunny guy. A raw pioneer why neglect choice. Maid may clump sphere to runway. Stereo see fame via style. Its cap are able. Abandon abandon to abandon. Abandon abandon the acoustic father for poverty. Crawl quote the length. Our abandon abandon to abandon.
   - sequence: ● — final — disables the transaction locktime for this input
 - **output 1:** 12.55159445 ₿
   - script: ⧉ ⌖ h²⁰ Day box more keen post. Casino rain some sock to run. Leisure crouch to derive. Symbol may tone some way. ≡ ∇
@@ -45,8 +45,9 @@ Transaction id, as prose: ⌘²⁵⁶ *A lab due case its flame. Ear define our 
 bytes (decodable with the [glossia](https://crates.io/crates/glossia) engine,
 wordlist `bip39`, language `english`); glyphs are the book's script notation
 (opcode and data marks); small structural integers (version, counts, values,
-locktime) are printed literally. A block hash reads ⓪ⁿ ⌘ᵐ — n leading
-proof-of-work zero bits, then the remaining m = 256 − n bits of the
-double-SHA256 (⌘, OP_HASH256), Glossia-encoded as ⌈m/8⌉ bytes. See
+locktime) are printed literally. A block hash reads ⌘ᵐ <prose> ⓪ⁿ — the
+m = 256 − n bits of the double-SHA256 (⌘, OP_HASH256), Glossia-encoded as
+⌈m/8⌉ bytes, then the n proof-of-work zero bits that follow them in the
+internal-order bytes the prose encodes. See
 [/llms.txt](https://bookofbitcoin.io/llms.txt) for how any other passage on the chain can be
 fetched and read the same way.

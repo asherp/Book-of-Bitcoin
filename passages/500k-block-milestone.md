@@ -14,10 +14,10 @@
 
 ## Chapter frontispiece — block 500,000
 
-Block hash, as prose: ⓪⁷⁴ ⌘¹⁸² *Affair may uncover a chronic major. Crystal is giant to stool. Object eye to hover. A bar wild brief plastic. Sugar are youth to catch.*
+Block hash, as prose: ⌘¹⁸² *Affair may uncover a chronic major. Crystal is giant to stool. Object eye to hover. A bar wild brief plastic. Sugar are youth to catch.* ⓪⁷⁴
 
 - **version:** vaccio abandon — block version 0x20000000 — BIP9 version-bits form; accio abandon — no version rolling; no soft-fork signals
-- **previous block:** ⓪⁷³ ⌘¹⁸³ Bomb exercise throw to belt. Son is low during aid. Yes direct baby to the boring hero to metal. Its season alone filter grit. Pot reduce slush to jungle.
+- **previous block:** ⌘¹⁸³ Bomb exercise throw to belt. Son is low during aid. Yes direct baby to the boring hero to metal. Its season alone filter grit. Pot reduce slush to jungle. ⓪⁷³
   - hex: `0000000000000000007962066dcd6675830883516bcf40047d42740a85eb2919`
 - **merkle root:** ⋔ Buyer bag its kitten to knock. Our ear already people bit. Sir submit work to clay via snow. Sir reduce daughter to seed. Vacuum dawn husband per fabric. A frog set century. Behind charge mixture to feel per cactus.
   - hex: `31951c69428a95a46b517ffb0de12fec1bd0b2392aec07b64573e03ded31621f`
@@ -31,7 +31,7 @@ Transaction id, as prose: ⌘²⁵⁶ *The stock unveil to adjust. Chaos may fin
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
-  - script: “o8Zc/BTC.COM/”
+  - script: ■500000 η₁₅₁₃₆₂₂₁₂₇“c/BTC.COM/” Due wide get its vibrant fork. Knife auction drop to track. The dance thank luxury. Man may see junior. Suspect shall egg dragon to light. West panic uncle for a rare strategy. A pop estate is jealous. A son far crumble our lot. A they. Ripple may get leopard. Abandon would abandon abandon. Each abandon abandon abuse to draft. Our heavy drill cage abandon per abandon. Abandon may abandon yes.
   - sequence: ● — final — disables the transaction locktime for this input
   - witness: see footnote a
 - **output 1:** 15.89351625 ₿
@@ -50,8 +50,9 @@ a. ∅
 bytes (decodable with the [glossia](https://crates.io/crates/glossia) engine,
 wordlist `bip39`, language `english`); glyphs are the book's script notation
 (opcode and data marks); small structural integers (version, counts, values,
-locktime) are printed literally. A block hash reads ⓪ⁿ ⌘ᵐ — n leading
-proof-of-work zero bits, then the remaining m = 256 − n bits of the
-double-SHA256 (⌘, OP_HASH256), Glossia-encoded as ⌈m/8⌉ bytes. See
+locktime) are printed literally. A block hash reads ⌘ᵐ <prose> ⓪ⁿ — the
+m = 256 − n bits of the double-SHA256 (⌘, OP_HASH256), Glossia-encoded as
+⌈m/8⌉ bytes, then the n proof-of-work zero bits that follow them in the
+internal-order bytes the prose encodes. See
 [/llms.txt](https://bookofbitcoin.io/llms.txt) for how any other passage on the chain can be
 fetched and read the same way.

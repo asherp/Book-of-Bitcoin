@@ -14,10 +14,10 @@
 
 ## Chapter frontispiece — block 938,903
 
-Block hash, as prose: ⓪⁷⁹ ⌘¹⁷⁷ *February may cram a humble paper. Assist juice the busy parent. Its retreat direct issue. Safe provide tool to item. The lot slow set absurd.*
+Block hash, as prose: ⌘¹⁷⁷ *February may cram a humble paper. Assist juice the busy parent. Its retreat direct issue. Safe provide tool to item. The lot slow set absurd.* ⓪⁷⁹
 
 - **version:** vevanesca acid 10000 — block version 0x20792010 — BIP9 version-bits form; version-rolling bits 0x03c9 (BIP320 scratch entropy) as evanesca acid; signaling bit 4
-- **previous block:** ⓪⁷⁹ ⌘¹⁷⁷ Warfare require to bring for width. Our action near cram magnet. Recipe may bring swarm to raise. Million swap the exhibit. Our seat may set an absurd.
+- **previous block:** ⌘¹⁷⁷ Warfare require to bring for width. Our action near cram magnet. Recipe may bring swarm to raise. Million swap the exhibit. Our seat may set an absurd. ⓪⁷⁹
   - hex: `0000000000000000000112e693b6cb98d86d87a3b32f8c0c272960fd70e016f7`
 - **merkle root:** ⋔ Sort empty face to organ. Chief may get eyebrow. Its indoor catalog lounge chicken. Throw limit embrace to buffalo. Our album not pluck our gravity. Lot vanish tube to dress. Our curious recipe get the immune theme per ban.
   - hex: `6f5c675f5321a82b1e66357d413b88f44085f744841fc19ca27c324e462589cf`
@@ -31,7 +31,7 @@ Transaction id, as prose: ⌘²⁵⁶ *Riot repair pride to apology. Business ma
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
-  - script: 938903 ³⁰ “< OCEAN.XYZ >” “Barefoot Mining” ⁷ Bar scale bargain to rule. Alarm may abandon cut. ¹⁴ Noise is diesel to drip. Theme avoid to abandon. Abandon abandon its abandon. Abandon may abandon tax.
+  - script: ■938903Its bulk may get pay. “< OCEAN.XYZ >” Its audit may get pay. “Barefoot Mining” The abandon too see decade. Son may own above. Pupil else ice sport. A sibling may mask despair. A bed is acoustic. Abandon abandon abandon to abandon. Abandon may abandon cap.
   - sequence: ● — final — disables the transaction locktime for this input
   - witness: see footnote a
 - **output 1:** 0 ₿
@@ -114,8 +114,9 @@ a. ∅
 bytes (decodable with the [glossia](https://crates.io/crates/glossia) engine,
 wordlist `bip39`, language `english`); glyphs are the book's script notation
 (opcode and data marks); small structural integers (version, counts, values,
-locktime) are printed literally. A block hash reads ⓪ⁿ ⌘ᵐ — n leading
-proof-of-work zero bits, then the remaining m = 256 − n bits of the
-double-SHA256 (⌘, OP_HASH256), Glossia-encoded as ⌈m/8⌉ bytes. See
+locktime) are printed literally. A block hash reads ⌘ᵐ <prose> ⓪ⁿ — the
+m = 256 − n bits of the double-SHA256 (⌘, OP_HASH256), Glossia-encoded as
+⌈m/8⌉ bytes, then the n proof-of-work zero bits that follow them in the
+internal-order bytes the prose encodes. See
 [/llms.txt](https://bookofbitcoin.io/llms.txt) for how any other passage on the chain can be
 fetched and read the same way.

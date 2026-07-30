@@ -14,10 +14,10 @@
 
 ## Chapter frontispiece — block 173,805
 
-Block hash, as prose: ⓪⁵⁶ ⌘²⁰⁰ *Start love its strike to sniff. Offer see skull for cousin. Combine will set adult. Twin may see problem. A cut tap below set other flock. Winter pole all length.*
+Block hash, as prose: ⌘²⁰⁰ *Start love its strike to sniff. Offer see skull for cousin. Combine will set adult. Twin may see problem. A cut tap below set other flock. Winter pole all length.* ⓪⁵⁶
 
 - **version:** v1 — block version 1 (0x00000001) — pre-BIP9 integer form
-- **previous block:** ⓪⁵³ ⌘²⁰³ Its bulb together imitate tea. The naive scrap close firm. Pigeon may teach aid. A they. A steel churn alter gravity. Our home industry baby major. Light yes get its tea.
+- **previous block:** ⌘²⁰³ Its bulb together imitate tea. The naive scrap close firm. Pigeon may teach aid. A they. A steel churn alter gravity. Our home industry baby major. Light yes get its tea. ⓪⁵³
   - hex: `00000000000006ce101199431bcc76609454139cde25d55557165cc9c575fc1d`
 - **merkle root:** ⋔ Gold may allow a hip autumn. Recipe retreat the ugly velvet. Trial very get setup. Gravity reform olive to game. River culture wire via medal. Its stuff may joke hawk. Cop sell to divorce out a rid due.
   - hex: `dab0d384c76b29869f35d6cd5734450b33125f3ee890073b703bdb87afd54064`
@@ -43,8 +43,9 @@ Transaction id, as prose: ⌘²⁵⁶ *An iron nominee manage review. The mass f
 bytes (decodable with the [glossia](https://crates.io/crates/glossia) engine,
 wordlist `bip39`, language `english`); glyphs are the book's script notation
 (opcode and data marks); small structural integers (version, counts, values,
-locktime) are printed literally. A block hash reads ⓪ⁿ ⌘ᵐ — n leading
-proof-of-work zero bits, then the remaining m = 256 − n bits of the
-double-SHA256 (⌘, OP_HASH256), Glossia-encoded as ⌈m/8⌉ bytes. See
+locktime) are printed literally. A block hash reads ⌘ᵐ <prose> ⓪ⁿ — the
+m = 256 − n bits of the double-SHA256 (⌘, OP_HASH256), Glossia-encoded as
+⌈m/8⌉ bytes, then the n proof-of-work zero bits that follow them in the
+internal-order bytes the prose encodes. See
 [/llms.txt](https://bookofbitcoin.io/llms.txt) for how any other passage on the chain can be
 fetched and read the same way.

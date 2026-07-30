@@ -14,10 +14,10 @@
 
 ## Chapter frontispiece — block 91,842
 
-Block hash, as prose: ⓪⁴⁴ ⌘²¹² *A jet under finish our ability. Its shy mixture may set an icon. The exact hockey gate body. Each solution is ugly. Detail are rapid among umbrella. License sign nation to beef.*
+Block hash, as prose: ⌘²¹² *A jet under finish our ability. Its shy mixture may set an icon. The exact hockey gate body. Each solution is ugly. Detail are rapid among umbrella. License sign nation to beef.* ⓪⁴⁴
 
 - **version:** v1 — block version 1 (0x00000001) — pre-BIP9 integer form
-- **previous block:** ⓪⁴⁴ ⌘²¹² Cactus medal wife to fantasy. Gain may set garbage. Essence dawn gap to height for census. Camera switch grab to fatigue via response to royal. Goose get maple per beef.
+- **previous block:** ⌘²¹² Cactus medal wife to fantasy. Gain may set garbage. Essence dawn gap to height for census. Camera switch grab to fatigue via response to royal. Goose get maple per beef. ⓪⁴⁴
   - hex: `00000000000a1e92acbcbdf594cac25d1095544d5fbf5113bfec85a9eb4b1120`
 - **merkle root:** ⋔ Its office conduct apart prefer axis. Much soldier see bachelor. Alarm get toilet to spoil. Buddy dust credit out craft. Our twenty tobacco may change wave. Element is chronic to row. The rude pot may ensure our parade.
   - hex: `d5d27987d2a3dfc724e359870c6644b40e497bdc0589a033220fe15429d88599`
@@ -43,8 +43,9 @@ Transaction id, as prose: ⌘²⁵⁶ *Its office conduct apart prefer axis. Muc
 bytes (decodable with the [glossia](https://crates.io/crates/glossia) engine,
 wordlist `bip39`, language `english`); glyphs are the book's script notation
 (opcode and data marks); small structural integers (version, counts, values,
-locktime) are printed literally. A block hash reads ⓪ⁿ ⌘ᵐ — n leading
-proof-of-work zero bits, then the remaining m = 256 − n bits of the
-double-SHA256 (⌘, OP_HASH256), Glossia-encoded as ⌈m/8⌉ bytes. See
+locktime) are printed literally. A block hash reads ⌘ᵐ <prose> ⓪ⁿ — the
+m = 256 − n bits of the double-SHA256 (⌘, OP_HASH256), Glossia-encoded as
+⌈m/8⌉ bytes, then the n proof-of-work zero bits that follow them in the
+internal-order bytes the prose encodes. See
 [/llms.txt](https://bookofbitcoin.io/llms.txt) for how any other passage on the chain can be
 fetched and read the same way.

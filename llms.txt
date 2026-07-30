@@ -128,11 +128,12 @@ transaction the way the book does:
    language, wordlist, byte_count)` reverses it.
 3. The book encodes only genuinely opaque bytes (prevout txids, scripts,
    witness pushes, hashes — hashes byte-reversed to internal order). A block
-   hash is written ⓪ⁿ ⌘ᵐ: ⓪'s superscript is the hash's exact count of
-   leading proof-of-work zero bits (the mining vernacular), and ⌘ — the
-   OP_HASH256 mark, naming the double-SHA256 that produced the hash —
-   carries the remaining m = 256 − n bits, which are what the prose
-   encodes. ⌘'s superscript counts bits (uniquely — every other mark's
+   hash is written ⌘ᵐ <prose> ⓪ⁿ: ⌘ — the OP_HASH256 mark, naming the
+   double-SHA256 that produced the hash — carries m = 256 − n bits, which
+   are what the prose encodes, and ⓪'s superscript closes the line with the
+   hash's exact count of proof-of-work zero bits (the mining vernacular).
+   The zeros trail the prose because the prose is internal order, where
+   they trail; displayed big-endian they would lead. ⌘'s superscript counts bits (uniquely — every other mark's
    superscript counts bytes); the two always sum to 256, so the hash
    reconstructs exactly: decode the prose to ⌈m/8⌉ bytes, append zero
    bytes to 32, byte-reverse to display order. Small structural

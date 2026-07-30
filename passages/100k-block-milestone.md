@@ -14,10 +14,10 @@
 
 ## Chapter frontispiece — block 100,000
 
-Block hash, as prose: ⓪⁴⁶ ⌘²¹⁰ *An alone tap is civil. Young cup to position. A broken language is unique. Crouch mother club to pilot. The minute fever race lift. Camera may eye update to alcohol.*
+Block hash, as prose: ⌘²¹⁰ *An alone tap is civil. Young cup to position. A broken language is unique. Crouch mother club to pilot. The minute fever race lift. Camera may eye update to alcohol.* ⓪⁴⁶
 
 - **version:** v1 — block version 1 (0x00000001) — pre-BIP9 integer form
-- **previous block:** ⓪⁴⁶ ⌘²¹⁰ An exotic mosquito may edge comic. Plastic would link to make. Such absurd update our slow recipe. The vacant swallow get success. Success may slot wedding to a cross advice.
+- **previous block:** ⌘²¹⁰ An exotic mosquito may edge comic. Plastic would link to make. Such absurd update our slow recipe. The vacant swallow get success. Success may slot wedding to a cross advice. ⓪⁴⁶
   - hex: `000000000002d01c1fccc21636b607dfd930d31d01c3a62104612a1719011250`
 - **merkle root:** ⋔ Green may run to enable. Pop fetch to snap. Theory ski license for notice. Gun torch dust to method. Lobster may see vessel per immune. Embrace may control to uniform. Guy enable service for catalog via pond for gas.
   - hex: `f3e94742aca4b5ef85488dc37c06c3282295ffec960994b2c0d5ac2a25a95766`
@@ -43,8 +43,9 @@ Transaction id, as prose: ⌘²⁵⁶ *Its manual hub set cigar. Son teach penal
 bytes (decodable with the [glossia](https://crates.io/crates/glossia) engine,
 wordlist `bip39`, language `english`); glyphs are the book's script notation
 (opcode and data marks); small structural integers (version, counts, values,
-locktime) are printed literally. A block hash reads ⓪ⁿ ⌘ᵐ — n leading
-proof-of-work zero bits, then the remaining m = 256 − n bits of the
-double-SHA256 (⌘, OP_HASH256), Glossia-encoded as ⌈m/8⌉ bytes. See
+locktime) are printed literally. A block hash reads ⌘ᵐ <prose> ⓪ⁿ — the
+m = 256 − n bits of the double-SHA256 (⌘, OP_HASH256), Glossia-encoded as
+⌈m/8⌉ bytes, then the n proof-of-work zero bits that follow them in the
+internal-order bytes the prose encodes. See
 [/llms.txt](https://bookofbitcoin.io/llms.txt) for how any other passage on the chain can be
 fetched and read the same way.

@@ -14,7 +14,7 @@
 
 ## Chapter frontispiece — block 0
 
-Block hash, as prose: ⓪⁴³ ⌘²¹³ *Husband behave actor to hospital. Brass ride alley via our stairs for effort. Our indoor worry get palace. Cradle double to nurse per clip. Our ancient today too culture craft.*
+Block hash, as prose: ⌘²¹³ *Husband behave actor to hospital. Brass ride alley via our stairs for effort. Our indoor worry get palace. Cradle double to nurse per clip. Our ancient today too culture craft.* ⓪⁴³
 
 - **version:** v1 — block version 1 (0x00000001) — pre-BIP9 integer form
 - **previous block:** ⓪²⁵⁶ (no earlier block — this is the genesis block; all 256 bits zero)
@@ -42,8 +42,9 @@ Transaction id, as prose: ⌘²⁵⁶ *Its desert buyer leg visual. Raise may fl
 bytes (decodable with the [glossia](https://crates.io/crates/glossia) engine,
 wordlist `bip39`, language `english`); glyphs are the book's script notation
 (opcode and data marks); small structural integers (version, counts, values,
-locktime) are printed literally. A block hash reads ⓪ⁿ ⌘ᵐ — n leading
-proof-of-work zero bits, then the remaining m = 256 − n bits of the
-double-SHA256 (⌘, OP_HASH256), Glossia-encoded as ⌈m/8⌉ bytes. See
+locktime) are printed literally. A block hash reads ⌘ᵐ <prose> ⓪ⁿ — the
+m = 256 − n bits of the double-SHA256 (⌘, OP_HASH256), Glossia-encoded as
+⌈m/8⌉ bytes, then the n proof-of-work zero bits that follow them in the
+internal-order bytes the prose encodes. See
 [/llms.txt](https://bookofbitcoin.io/llms.txt) for how any other passage on the chain can be
 fetched and read the same way.

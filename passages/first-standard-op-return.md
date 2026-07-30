@@ -14,10 +14,10 @@
 
 ## Chapter frontispiece — block 308,570
 
-Block hash, as prose: ⓪⁶⁹ ⌘¹⁸⁷ *Era may set some poverty. Our polar ecology get tomato. Pink is odd until a park. Winner may ready to remember. Tiger answer rail out fruit. A second seek cactus.*
+Block hash, as prose: ⌘¹⁸⁷ *Era may set some poverty. Our polar ecology get tomato. Pink is odd until a park. Winner may ready to remember. Tiger answer rail out fruit. A second seek cactus.* ⓪⁶⁹
 
 - **version:** v2 — block version 2 (0x00000002) — pre-BIP9 integer form
-- **previous block:** ⓪⁶⁶ ⌘¹⁹⁰ Palace thunder to thrive for hedgehog. Our awesome dust worry now. Print may fog middle to wire. Abstract embark the salt. Our lucky blouse may pool fyi.
+- **previous block:** ⌘¹⁹⁰ Palace thunder to thrive for hedgehog. Our awesome dust worry now. Print may fog middle to wire. Abstract embark the salt. Our lucky blouse may pool fyi. ⓪⁶⁶
   - hex: `0000000000000000351825acaf900e107e314acbaab974bf880841b584333c9f`
 - **merkle root:** ⋔ Kick get horn to harbor. Clay see its width. Our fancy atom get ketchup. Flag set body to judge. Still see our ill desert. Setup may foster a stereo. The wide scare rough blur. Weapon get timber to theme.
   - hex: `8fb8f087215e01579fd5e02271770ee7eae21d2358cf93c3a5ac1f15a4b12d7a`
@@ -45,8 +45,9 @@ Transaction id, as prose: ⌘²⁵⁶ *Lounge reason its fun human. Spoon may ge
 bytes (decodable with the [glossia](https://crates.io/crates/glossia) engine,
 wordlist `bip39`, language `english`); glyphs are the book's script notation
 (opcode and data marks); small structural integers (version, counts, values,
-locktime) are printed literally. A block hash reads ⓪ⁿ ⌘ᵐ — n leading
-proof-of-work zero bits, then the remaining m = 256 − n bits of the
-double-SHA256 (⌘, OP_HASH256), Glossia-encoded as ⌈m/8⌉ bytes. See
+locktime) are printed literally. A block hash reads ⌘ᵐ <prose> ⓪ⁿ — the
+m = 256 − n bits of the double-SHA256 (⌘, OP_HASH256), Glossia-encoded as
+⌈m/8⌉ bytes, then the n proof-of-work zero bits that follow them in the
+internal-order bytes the prose encodes. See
 [/llms.txt](https://bookofbitcoin.io/llms.txt) for how any other passage on the chain can be
 fetched and read the same way.

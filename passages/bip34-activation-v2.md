@@ -14,10 +14,10 @@
 
 ## Chapter frontispiece — block 227,931
 
-Block hash, as prose: ⓪⁵⁴ ⌘²⁰² *Retreat doctor check to turn. Punch set member via our egg out demand. Knife focus to confirm for elevator. Its unique cop is useless. Its salad are luxury. Region may engage scene.*
+Block hash, as prose: ⌘²⁰² *Retreat doctor check to turn. Punch set member via our egg out demand. Knife focus to confirm for elevator. Its unique cop is useless. Its salad are luxury. Region may engage scene.* ⓪⁵⁴
 
 - **version:** v2 — block version 2 (0x00000002) — pre-BIP9 integer form
-- **previous block:** ⓪⁵⁴ ⌘²⁰² Its stomach may get ethics. Cow remain our foster laptop to erosion. Fyi long set day. Need see that popular vintage. Raccoon evolve hotel to praise. A lonely son once dog a dig.
+- **previous block:** ⌘²⁰² Its stomach may get ethics. Cow remain our foster laptop to erosion. Fyi long set day. Need see that popular vintage. Raccoon evolve hotel to praise. A lonely son once dog a dig. ⓪⁵⁴
   - hex: `0000000000000251b3834c8d5b9c041bfaa0fedb93c0f16099d0072ed6b629d6`
 - **merkle root:** ⋔ River sentence its busy plate. Sin may develop scorpion. Tide ago topple gloom. Pan may suggest wonder. Sketch ought term a polar minor. Our lot about write a century. Tag holiday lecture to analyst for member to parade.
   - hex: `b5a210f067b674af84fe0348e34ef71d65f41f7b6329777882c913d37c7cd8ba`
@@ -31,7 +31,7 @@ Transaction id, as prose: ⌘²⁵⁶ *Fat may set more cupboard. The eternal ci
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
-  - script: 227931 ¹⁴ “CoinLab./P2SH/” ⁴ Its foster abandon abandon tea. ⁸ The stomach too see ethics. Son remain to foster. Our laptop may erode.
+  - script: ■227931Its asthma may get pay. “CoinLab./P2SH/” Affair theme abandon to abandon. Miracle below swap shift. Its amazing luggage divorce a aid.
   - sequence: ● — final — disables the transaction locktime for this input
 - **output 1:** 25.28700000 ₿
   - script: ⧉ ⌖ h²⁰ Focus set our olympic test. Son before carry copy. Banana may set tray. Uniform teach act to range behind jeans. Our hire get red. ≡ ∇
@@ -43,8 +43,9 @@ Transaction id, as prose: ⌘²⁵⁶ *Fat may set more cupboard. The eternal ci
 bytes (decodable with the [glossia](https://crates.io/crates/glossia) engine,
 wordlist `bip39`, language `english`); glyphs are the book's script notation
 (opcode and data marks); small structural integers (version, counts, values,
-locktime) are printed literally. A block hash reads ⓪ⁿ ⌘ᵐ — n leading
-proof-of-work zero bits, then the remaining m = 256 − n bits of the
-double-SHA256 (⌘, OP_HASH256), Glossia-encoded as ⌈m/8⌉ bytes. See
+locktime) are printed literally. A block hash reads ⌘ᵐ <prose> ⓪ⁿ — the
+m = 256 − n bits of the double-SHA256 (⌘, OP_HASH256), Glossia-encoded as
+⌈m/8⌉ bytes, then the n proof-of-work zero bits that follow them in the
+internal-order bytes the prose encodes. See
 [/llms.txt](https://bookofbitcoin.io/llms.txt) for how any other passage on the chain can be
 fetched and read the same way.

@@ -14,10 +14,10 @@
 
 ## Chapter frontispiece — block 419,328
 
-Block hash, as prose: ⓪⁶⁹ ⌘¹⁸⁷ *Pop remember post to magnet. Color busy to behave. Device consider lecture per rubber. Field knock to trim out grant. Its math nose our patient cactus.*
+Block hash, as prose: ⌘¹⁸⁷ *Pop remember post to magnet. Color busy to behave. Device consider lecture per rubber. Field knock to trim out grant. Its math nose our patient cactus.* ⓪⁶⁹
 
 - **version:** vaccio abandon — block version 0x20000000 — BIP9 version-bits form; accio abandon — no version rolling; no soft-fork signals
-- **previous block:** ⓪⁶⁹ ⌘¹⁸⁷ Drama may invite our cut tray. Cow embark a genius garden. Animal far dry sauce. Cover sting matrix to lunch. Hope approve letter via blossom. The chimney is red.
+- **previous block:** ⌘¹⁸⁷ Drama may invite our cut tray. Cow embark a genius garden. Animal far dry sauce. Cover sting matrix to lunch. Hope approve letter via blossom. The chimney is red. ⓪⁶⁹
   - hex: `0000000000000000051804b4c2da5298c4573386bf1d4242bf0e26a49ec32e42`
 - **merkle root:** ⋔ What visual surround town to marriage. Bus thank our crucial inch per cigar for a genuine oil. Cop loud mistake a polar rubber. Mail too man find. Die not confirm damage. Device found to scale.
   - hex: `0e57797073975ad93086e6dde91b43e84c851d4572a3f1f73d8428736a9fdef9`
@@ -31,7 +31,7 @@ Transaction id, as prose: ⌘²⁵⁶ *Input display ecology to matrix. State ma
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
-  - script: “ckpool/Kano /BEBOP/”
+  - script: ■419328Abandon may camp knee to visa. Icon essay ramp via pig. Its arrow burst save. Puppy see sport to abandon. Abandon abandon abandon via abandon. “ckpool/Kano /BEBOP/”
   - sequence: ● — final — disables the transaction locktime for this input
 - **output 1:** 25.32669802 ₿
   - script: ⧉ ⌖ h²⁰ Its bus worry lesson to screen. Grape regret bean per rebel. The common tag may exercise fault. Scan is actual to chimney. ≡ ∇
@@ -45,8 +45,9 @@ Transaction id, as prose: ⌘²⁵⁶ *Input display ecology to matrix. State ma
 bytes (decodable with the [glossia](https://crates.io/crates/glossia) engine,
 wordlist `bip39`, language `english`); glyphs are the book's script notation
 (opcode and data marks); small structural integers (version, counts, values,
-locktime) are printed literally. A block hash reads ⓪ⁿ ⌘ᵐ — n leading
-proof-of-work zero bits, then the remaining m = 256 − n bits of the
-double-SHA256 (⌘, OP_HASH256), Glossia-encoded as ⌈m/8⌉ bytes. See
+locktime) are printed literally. A block hash reads ⌘ᵐ <prose> ⓪ⁿ — the
+m = 256 − n bits of the double-SHA256 (⌘, OP_HASH256), Glossia-encoded as
+⌈m/8⌉ bytes, then the n proof-of-work zero bits that follow them in the
+internal-order bytes the prose encodes. See
 [/llms.txt](https://bookofbitcoin.io/llms.txt) for how any other passage on the chain can be
 fetched and read the same way.

@@ -14,10 +14,10 @@
 
 ## Chapter frontispiece — block 689,472
 
-Block hash, as prose: ⓪⁷⁵ ⌘¹⁸¹ *Aid may prevent quality to acid. Game get rice for corn. Ginger spirit shuffle to nothing. File set the diesel diet. Bit alter tackle to trick for bamboo.*
+Block hash, as prose: ⌘¹⁸¹ *Aid may prevent quality to acid. Game get rice for corn. Ginger spirit shuffle to nothing. File set the diesel diet. Bit alter tackle to trick for bamboo.* ⓪⁷⁵
 
 - **version:** vevanesca point 100 — block version 0x29d12004 — BIP9 version-bits form; version-rolling bits 0x4e89 (BIP320 scratch entropy) as evanesca point; signaling bit 2 — Taproot (BIP341)
-- **previous block:** ⓪⁷⁶ ⌘¹⁸⁰ Ladder coil genre to flag. Blade before see security. Its text exist belt. A burden are broken. Crack is stereo to forest. Bonus is red per animal.
+- **previous block:** ⌘¹⁸⁰ Ladder coil genre to flag. Blade before see security. Its text exist belt. A burden are broken. Crack is stereo to forest. Bonus is red per animal. ⓪⁷⁶
   - hex: `00000000000000000009cbc816ab1d430e7a9cc24ffdb6702870112c84a9657c`
 - **merkle root:** ⋔ Code box the olympic smile. A draw see gospel to flip via some olive to song. A row are tragic. Its journey next scout humor. The useless map is tragic. Radio below sock spike. Ramp far see chest. Album abandon a tea.
   - hex: `78014f16eb68389bc2b037073cde14accae1dd3ccfd14496c92654666952032d`
@@ -31,7 +31,7 @@ Transaction id, as prose: ⌘²⁵⁶ *Hurdle may space some autumn. Our urban s
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
-  - script: “Mined by AntPool720”
+  - script: ■689472Its brand may get pay. “Mined by AntPool720” Object abandon domain to plug. Staff may set midnight. Turtle soap horse to its funny sauce. Yes renew exhaust to now via alcohol to pistol. Pact knock to swear. Monkey may inspire powder per mobile. Our current is notable. Stand learn to core via shaft. Our tap may bless. A myself. Music may get the acoustic abandon. Abandon may abandon abandon about spread to abandon. The able scale divorce abandon.
   - sequence: ● — final — disables the transaction locktime for this input
   - witness: see footnote a
 - **output 1:** 6.58657646 ₿
@@ -54,8 +54,9 @@ a. ∅
 bytes (decodable with the [glossia](https://crates.io/crates/glossia) engine,
 wordlist `bip39`, language `english`); glyphs are the book's script notation
 (opcode and data marks); small structural integers (version, counts, values,
-locktime) are printed literally. A block hash reads ⓪ⁿ ⌘ᵐ — n leading
-proof-of-work zero bits, then the remaining m = 256 − n bits of the
-double-SHA256 (⌘, OP_HASH256), Glossia-encoded as ⌈m/8⌉ bytes. See
+locktime) are printed literally. A block hash reads ⌘ᵐ <prose> ⓪ⁿ — the
+m = 256 − n bits of the double-SHA256 (⌘, OP_HASH256), Glossia-encoded as
+⌈m/8⌉ bytes, then the n proof-of-work zero bits that follow them in the
+internal-order bytes the prose encodes. See
 [/llms.txt](https://bookofbitcoin.io/llms.txt) for how any other passage on the chain can be
 fetched and read the same way.

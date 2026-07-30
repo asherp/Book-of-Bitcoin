@@ -14,10 +14,10 @@
 
 ## Chapter frontispiece — block 91,812
 
-Block hash, as prose: ⓪⁴⁴ ⌘²¹² *Control see kangaroo to dinosaur. Our public are digital. A odd sir found to iron. Its glad cop is urban. A yes unveil soap. Gain see horn to vehicle. Debris may see earth. Cop keep a pistol. A rose beef is pop.*
+Block hash, as prose: ⌘²¹² *Control see kangaroo to dinosaur. Our public are digital. A odd sir found to iron. Its glad cop is urban. A yes unveil soap. Gain see horn to vehicle. Debris may see earth. Cop keep a pistol. A rose beef is pop.* ⓪⁴⁴
 
 - **version:** v1 — block version 1 (0x00000001) — pre-BIP9 integer form
-- **previous block:** ⓪⁴⁶ ⌘²¹⁰ August rally its warfare to combine. Pop convince divorce for chalk. A sin is mixed. A wood net quote damage. Cupboard easily see an artwork. The cow may situate its pop circle. The pan soon see a cloth. Advice may get ear.
+- **previous block:** ⌘²¹⁰ August rally its warfare to combine. Pop convince divorce for chalk. A sin is mixed. A wood net quote damage. Cupboard easily see an artwork. The cow may situate its pop circle. The pan soon see a cloth. Advice may get ear. ⓪⁴⁶
   - hex: `000000000002afe839294d4e038b5c831bc09632fd717c0980f8f216dc2b360f`
 - **merkle root:** ⋔ A grant due get our cousin. Ear may slim sky. The cow is strong. Pie may awake its hidden pulp. The tape may set noble. Pot very rail whale. Tax when see dinosaur. Sign may cook upon garage. Its cap is vast. Lake set the danger. Sir attract gown to cactus.
   - hex: `49991d7653bec6efebee7d11f27ca2dffcc35ebe95ee5eebd602916b2f2fa665`
@@ -43,8 +43,9 @@ Transaction id, as prose: ⌘²⁵⁶ *Its office conduct apart prefer axis. Muc
 bytes (decodable with the [glossia](https://crates.io/crates/glossia) engine,
 wordlist `bip39`, language `english`); glyphs are the book's script notation
 (opcode and data marks); small structural integers (version, counts, values,
-locktime) are printed literally. A block hash reads ⓪ⁿ ⌘ᵐ — n leading
-proof-of-work zero bits, then the remaining m = 256 − n bits of the
-double-SHA256 (⌘, OP_HASH256), Glossia-encoded as ⌈m/8⌉ bytes. See
+locktime) are printed literally. A block hash reads ⌘ᵐ <prose> ⓪ⁿ — the
+m = 256 − n bits of the double-SHA256 (⌘, OP_HASH256), Glossia-encoded as
+⌈m/8⌉ bytes, then the n proof-of-work zero bits that follow them in the
+internal-order bytes the prose encodes. See
 [/llms.txt](https://bookofbitcoin.io/llms.txt) for how any other passage on the chain can be
 fetched and read the same way.

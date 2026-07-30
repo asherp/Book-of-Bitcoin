@@ -14,10 +14,10 @@
 
 ## Chapter frontispiece — block 91,722
 
-Block hash, as prose: ⓪⁴⁶ ⌘²¹⁰ *Mom list field to tourist. Son may devote today. Sir oppose a primary. Hawk yes get thing. News sentence our canoe. Season may work table to chat. Topic is ordinary out advice.*
+Block hash, as prose: ⌘²¹⁰ *Mom list field to tourist. Son may devote today. Sir oppose a primary. Hawk yes get thing. News sentence our canoe. Season may work table to chat. Topic is ordinary out advice.* ⓪⁴⁶
 
 - **version:** v1 — block version 1 (0x00000001) — pre-BIP9 integer form
-- **previous block:** ⓪⁴⁴ ⌘²¹² Dress set squirrel to media. Our main is false. Its zero vault off cram year. The basic survey remind capital to a drastic addict. Its nod twice join army. Beef set our map.
+- **previous block:** ⌘²¹² Dress set squirrel to media. Our main is false. Its zero vault off cram year. The basic survey remind capital to a drastic addict. Its nod twice join army. Beef set our map. ⓪⁴⁴
   - hex: `00000000000a30044feb1a9010445c5b6d4cdc3f32ca747cff2525c32976ba42`
 - **merkle root:** ⋔ Its hamster pepper stomach to hollow. Excess may point the tilt. Sky defy its guilt. List may see the arctic. Cow inject to lend. Click enter lawsuit via steel for section. Our mistake set giant to document. Paddle see zebra via gas.
   - hex: `e3bf3d07d4b0375638d5f1db5255fe07ba2c4cb067cd81b84ee974b6585fb468`
@@ -43,8 +43,9 @@ Transaction id, as prose: ⌘²⁵⁶ *Its hamster pepper stomach to hollow. Exc
 bytes (decodable with the [glossia](https://crates.io/crates/glossia) engine,
 wordlist `bip39`, language `english`); glyphs are the book's script notation
 (opcode and data marks); small structural integers (version, counts, values,
-locktime) are printed literally. A block hash reads ⓪ⁿ ⌘ᵐ — n leading
-proof-of-work zero bits, then the remaining m = 256 − n bits of the
-double-SHA256 (⌘, OP_HASH256), Glossia-encoded as ⌈m/8⌉ bytes. See
+locktime) are printed literally. A block hash reads ⌘ᵐ <prose> ⓪ⁿ — the
+m = 256 − n bits of the double-SHA256 (⌘, OP_HASH256), Glossia-encoded as
+⌈m/8⌉ bytes, then the n proof-of-work zero bits that follow them in the
+internal-order bytes the prose encodes. See
 [/llms.txt](https://bookofbitcoin.io/llms.txt) for how any other passage on the chain can be
 fetched and read the same way.

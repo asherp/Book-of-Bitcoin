@@ -14,10 +14,10 @@
 
 ## Chapter frontispiece — block 630,000
 
-Block hash, as prose: ⓪⁷⁸ ⌘¹⁷⁸ *Hospital may exchange our social era. Tube set this foster yes. Pot may achieve swallow. Bid nest bachelor to notable. Our useful glove may enact. Each son is acoustic.*
+Block hash, as prose: ⌘¹⁷⁸ *Hospital may exchange our social era. Tube set this foster yes. Pot may achieve swallow. Bid nest bachelor to notable. Our useful glove may enact. Each son is acoustic.* ⓪⁷⁸
 
 - **version:** vaccio abandon — block version 0x20000000 — BIP9 version-bits form; accio abandon — no version rolling; no soft-fork signals
-- **previous block:** ⓪⁷⁶ ⌘¹⁸⁰ Bullet frequent proof to donor. Son may inhale stone. Some screen is soft. A pop is keen. Trouble shoulder rescue to force. Echo see a mad hole. Our artist is pop.
+- **previous block:** ⌘¹⁸⁰ Bullet frequent proof to donor. Son may inhale stone. Some screen is soft. A pop is keen. Trouble shoulder rescue to force. Echo see a mad hole. Our artist is pop. ⓪⁷⁶
   - hex: `0000000000000000000d656be18bb095db1b23bd797266b0ac3ba720b1962b1e`
 - **merkle root:** ⋔ Its artwork may get liberty. Its genuine above like our humble midnight. The fyi is angry. A grant may doctor to scatter. Cow caught a soft glow via grace. Year get setup to anchor. The license indicate display for width. Egg may set cactus.
   - hex: `b191f5f973b9040e81c4f75f99c7e43c92010ba8654718e3dd1a4800851d300d`
@@ -31,7 +31,7 @@ Transaction id, as prose: ⌘²⁵⁶ *Gravity circle its pottery to soul. Echo 
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
-  - script: “Mined by AntPool119”
+  - script: ■630000Its brand may get pay. “Mined by AntPool119” Puppy too address our siege. Son may attend stone. Nerve see a turtle. Soap yes get honey. Few gown see boy. Arctic under set an elegant favorite. Link use to speak. Range supply bargain per exchange out theme. Sibling couch to total until skate. Filter set reunion to assist out advice to abandon. Abandon may abandon abandon about cook. Length may get lens to cart out layer to each anxiety.
   - sequence: ● — final — disables the transaction locktime for this input
   - witness: see footnote a
 - **output 1:** 7.15968084 ₿
@@ -52,8 +52,9 @@ a. ∅
 bytes (decodable with the [glossia](https://crates.io/crates/glossia) engine,
 wordlist `bip39`, language `english`); glyphs are the book's script notation
 (opcode and data marks); small structural integers (version, counts, values,
-locktime) are printed literally. A block hash reads ⓪ⁿ ⌘ᵐ — n leading
-proof-of-work zero bits, then the remaining m = 256 − n bits of the
-double-SHA256 (⌘, OP_HASH256), Glossia-encoded as ⌈m/8⌉ bytes. See
+locktime) are printed literally. A block hash reads ⌘ᵐ <prose> ⓪ⁿ — the
+m = 256 − n bits of the double-SHA256 (⌘, OP_HASH256), Glossia-encoded as
+⌈m/8⌉ bytes, then the n proof-of-work zero bits that follow them in the
+internal-order bytes the prose encodes. See
 [/llms.txt](https://bookofbitcoin.io/llms.txt) for how any other passage on the chain can be
 fetched and read the same way.
