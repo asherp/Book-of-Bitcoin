@@ -44,18 +44,12 @@
    chapters. Both continue the contents past the tip, so they dress like
    ordinary rows but in the manuscript's pencil rather than its ink: dim
    titles and meta-grey references (a provisional number, not a citation). */
-/* The mempool's heading carries a second line naming the node it was read
-   from. On a narrow screen that line drops beneath the heading whole rather
-   than breaking the appendix's name across two lines beside it. */
-.toc-proj-head { display:flex; align-items:baseline; gap:14px; flex-wrap:wrap; }
-.toc-proj-head .toc-proj-label { flex:none; }
-.toc-proj-src { font:400 10px/1.5 'IBM Plex Mono',monospace; letter-spacing:.08em; text-transform:none; color:var(--meta); }
 .toc-entry.projected .toc-title { color:var(--dim); font-style:italic; }
 .toc-entry.projected .toc-ref { color:var(--meta); font-weight:400; }
 .toc-entry.projected:hover .toc-title { color:var(--ink-soft); }
 .toc-entry.projected:hover .toc-ref { color:var(--dim); }
-.toc-proj-eta { font:500 11px/1.4 'IBM Plex Mono',monospace; letter-spacing:.04em; color:var(--meta); flex:none; min-width:74px; font-variant-numeric:tabular-nums; }
-/* The closing figures -- queue total, eviction floor -- are a note, not a row. */
+/* Something said about a list rather than in it -- that the curated contents
+   could not be read, say. A note, not a row. */
 .toc-proj-note { padding:10px 2px 2px 32px; font:400 12px/1.6 'Public Sans',sans-serif; color:var(--meta); }
 
 /* An appendix's heading in the contents is the door to its own leaf, where
