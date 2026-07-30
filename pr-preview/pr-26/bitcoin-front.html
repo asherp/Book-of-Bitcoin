@@ -94,7 +94,13 @@ body.at-title .title-leaf { min-height: 100vh; cursor: pointer; }
 
 /* ── The title leaf: set like a manuscript title page — the title in the
    upper third, the imprint line resting at the foot, open field between. ── */
-.title-leaf { min-height: 62vh; flex-direction: column; justify-content: center; text-align: center; position: relative; }
+/* The title sits above the leaf's midline: the centring is done against a
+   content box shortened at the foot, which lifts the block by half the
+   padding (to roughly the upper third) while leaving the leaf itself a full
+   viewport tall -- so the version line, positioned against the padding box,
+   keeps its place. */
+.title-leaf { min-height: 62vh; flex-direction: column; justify-content: center; text-align: center; position: relative;
+  padding-bottom: 24vh; }
 .title-leaf .work-title { margin: 0; font: 300 clamp(38px, 11vw, 68px)/1.08 'Newsreader', serif; color: var(--ink); letter-spacing: -.02em; }
 .title-leaf .work-title .beta { color: var(--accent); font-weight: 400; }
 /* The edition line: the release stamp (vYYYY.0M.0D.HH, the deploy time),
@@ -137,7 +143,7 @@ body.at-title .title-leaf { min-height: 100vh; cursor: pointer; }
 .ref-reading { margin-top: 1.6em; font: 400 15px/1.65 'Newsreader', serif; color: var(--dim); }
 
 /* The shared notation key, at rest: the book page floats the same markup as a
-   sheet above its nav bar (see .notation-body in notation.css); here it simply
+   sheet above its nav bar (see .nav-sheet-body in notation.css); here it simply
    sits in the leaf, so it takes room rather than positioning. */
 .notation-at-rest { margin: 1.5em 0 0; }
 
@@ -301,6 +307,7 @@ body.at-title .title-leaf { min-height: 100vh; cursor: pointer; }
 // virtual leaf: stepping onto it leaves this page for bitcoin-contents.html.
 import { OPCODE_SYMBOLS, OPCODE_NAMES, OPCODE_GROUPS } from './btc-sigla.js';
 import { NOTATION_HTML } from './btc-notation.js';
+import { renderMarkdown } from './btc-markdown.js';
 import './btc-fontscale.js';   // the reader's type size: the sigla leaf's key follows the book page's setting
 
 const CONTENTS = '__contents__';
@@ -419,33 +426,13 @@ document.addEventListener('touchend', (e) => {
 
 // The preface is prose, so it lives as prose: web/preface.md is the canonical
 // copy, linked from the README and rendered here. One document, two readers.
-// Only the subset the preface uses is supported -- ## headings, paragraphs,
-// **strong**, *em*, `code`, and a closing "-- line / name" signature.
-function renderMarkdown(src) {
-  const esc = (t) => t.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
-  const inline = (t) => esc(t)
-    .replace(/`([^`]+)`/g, '<code>$1</code>')
-    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-    .replace(/\*([^*]+)\*/g, '<em>$1</em>');
-  const blocks = src.split(/\n\s*\n/).map((b) => b.trim()).filter(Boolean);
-  let lead = true;
-  return blocks.map((b) => {
-    if (b.startsWith('# ')) return '';                       // the title is the leaf's own eyebrow
-    if (b.startsWith('## ')) { lead = false; return `<h3>${inline(b.slice(3))}</h3>`; }
-    if (b.startsWith('— ') || b.startsWith('-- ')) {
-      const [line, who] = b.replace(/^(—|--)\s*/, '').split(' / ');
-      return `<p class="sign">${inline(line)}<span class="who">${inline(who || '')}</span></p>`;
-    }
-    const cls = lead ? ' class="lead"' : '';
-    lead = false;
-    return `<p${cls}>${inline(b.replace(/\n/g, ' '))}</p>`;
-  }).join('\n');
-}
+// The renderer is shared with a passage's commentary (btc-markdown.js), the
+// book's other authored prose -- the same devices, wherever they are written.
 (async () => {
   try {
     const r = await fetch('./preface.md');
     if (!r.ok) throw new Error(r.status);
-    $('preface-body').innerHTML = renderMarkdown(await r.text());
+    $('preface-body').innerHTML = renderMarkdown(await r.text(), { lead: true });
   } catch (_) {
     $('preface-body').innerHTML = '<p>The preface could not be loaded. It is also in the repository, as <code>web/preface.md</code>.</p>';
   }
