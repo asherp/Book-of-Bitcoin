@@ -122,9 +122,12 @@ compiled to WASM) is consumed as a published
   sequence, and sets it out in full — the queue with its figures, refreshed
   each minute, or the future chapters with the editorial note behind each.
   Appendix III's leaf is the Ledger compendium's own title page, since a
-  shelf of ledgers is what that page already is. All three ascend to the
-  contents — a pull down at the top, or the ▴ crumb — and turn sideways
-  between one another in their numbered order
+  shelf of ledgers is what that page already is. The appendices sit at the
+  **volumes' own level**: the line runs Volume I … Volume V, Appendix I,
+  II, III, so the last volume's forward turn leaves the body for the
+  mempool and Appendix I's backward turn comes straight back to it. All
+  three ascend to the contents, as a volume does — a pull down at the top,
+  and the masthead's Contents
 - `web/btc-mempool.js`, `web/btc-toc.css` — the queue read as the chapters
   it is about to become, and how a list of chapters is set. Shared by the
   contents and the appendix leaves so a projected chapter reads the same in

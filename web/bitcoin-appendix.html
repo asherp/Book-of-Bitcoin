@@ -17,14 +17,18 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="βook of βitcoin">
 <script>
-  // An appendix is back matter: it sits below the contents, so arriving is a
-  // descent (the leaf rises from beneath the list) and leaving is an ascent
-  // (the leaf sinks, the contents drop back in from above). The flag is set
+  // An appendix is back matter, and it sits at the volumes' own level: the
+  // contents is above it (arriving from there is a descent, the leaf rising
+  // from beneath the list), and the volumes and the other appendices are
+  // beside it (arriving from those is a sideways turn, the leaf entering
+  // from the side the reader pushed). The flag carries which, and is set
   // just before the navigation and consumed on first paint.
   try {
-    if (sessionStorage.getItem('glossia-appendix-entrance')) {
+    const dir = sessionStorage.getItem('glossia-appendix-entrance');
+    if (dir) {
       sessionStorage.removeItem('glossia-appendix-entrance');
-      document.documentElement.classList.add('appx-entrance');
+      document.documentElement.classList.add(
+        dir === 'fwd' ? 'appx-entrance-fwd' : dir === 'back' ? 'appx-entrance-back' : 'appx-entrance');
     }
   } catch (_) {}
 
@@ -39,23 +43,27 @@
     // Filled by the module once it knows which appendix this is; a turn
     // before then simply has nowhere to go.
     window.__appxTurns = { prev: null, next: null };
-    const leave = (href, transform, flag) => {
-      try { sessionStorage.setItem(flag, '1'); } catch (_) {}
+    const leave = (href, transform, flag, value = '1') => {
+      try { sessionStorage.setItem(flag, value); } catch (_) {}
       const go = () => { location.href = href; };
       if (REDUCED) { go(); return; }
       document.body.style.transition = 'transform .2s linear';
       document.body.style.transform = transform;
       setTimeout(go, 180);
     };
-    window.__appxAscend = () => leave('./bitcoin-contents.html', 'translateY(100vh)', 'glossia-toc-entrance');
-    // One turn sideways, in either direction: the leaf slides off the way
-    // the reader pushed it, and the neighbour enters from the other side.
-    // Ledger-bound turns wake that page's own entrance instead.
+    window.__appxAscend = () => leave('./bitcoin-contents.html', 'translateY(100vh)', 'glossia-toc-entrance', '1');
+    // One turn sideways, in either direction: the leaf slides off the way the
+    // reader pushed it, and the neighbour enters from the other side. Each
+    // destination has its own entrance to wake -- the appendix leaves, the
+    // ledger compendium (Appendix III), and the book itself, whose last
+    // volume lies back of Appendix I.
     window.__appxTurn = (back) => {
       const to = back ? window.__appxTurns.prev : window.__appxTurns.next;
       if (!to) return;
-      const flag = to.includes('bitcoin-ledger') ? 'glossia-ledger-entrance' : 'glossia-appendix-entrance';
-      leave(to, `translateX(${back ? 100 : -100}vw)`, flag);
+      const flag = to.includes('bitcoin-ledger') ? 'glossia-ledger-entrance'
+        : to.includes('bitcoin-book') ? 'glossia-book-entrance'
+        : 'glossia-appendix-entrance';
+      leave(to, `translateX(${back ? 100 : -100}vw)`, flag, back ? 'back' : 'fwd');
     };
     document.addEventListener('touchstart', (e) => {
       sy = null;
@@ -106,6 +114,12 @@ body { min-height: 100vh; background: var(--page); color: var(--ink); font-famil
 @media (prefers-reduced-motion: no-preference) {
   .appx-entrance body { animation: appx-in .22s ease-out; }
   @keyframes appx-in { from { transform: translateY(100vh); } }
+  /* …and the entering half of a sideways turn along the volumes' line: the
+     leaf arrives from the side the reader turned toward. */
+  .appx-entrance-fwd body { animation: appx-in-fwd .22s ease-out; }
+  @keyframes appx-in-fwd { from { transform: translateX(100vw); } }
+  .appx-entrance-back body { animation: appx-in-back .22s ease-out; }
+  @keyframes appx-in-back { from { transform: translateX(-100vw); } }
 }
 .wrap { max-width: 720px; margin: 0 auto; padding: 48px 22px 100px; }
 a { color: var(--accent); text-decoration: none; }
@@ -162,7 +176,7 @@ a:hover { text-decoration: underline; }
 <script type="module">
 import { APPENDIX, entryHref } from './btc-contents.js';
 import { readQueue, buildQueue, sourceLine, chainTip } from './btc-mempool.js';
-import { toRoman, expectedReference } from './btc-citation.js';
+import { toRoman, expectedReference, volumeBookChapter, heightOf } from './btc-citation.js';
 
 // ── One appendix, given a leaf of its own ─────────────────────────────────
 // The contents lists what each appendix holds; this is where an appendix
@@ -190,24 +204,43 @@ $('appx-note').textContent = part.note || '';
 
 // The neighbours, in the appendices' numbered order -- named at the foot and
 // handed to the gesture layer, so a swipe and a tap turn to the same leaf.
+// The appendices sit at the volumes' own level, continuing that line, so
+// what lies back of the first of them is the body's last volume (below).
 const prev = APPENDIX[index - 1] || null;
 const next = APPENDIX[index + 1] || null;
 window.__appxTurns = { prev: prev && hrefFor(prev), next: next && hrefFor(next) };
 const turns = $('appx-turns');
-for (const [p, glyph] of [[prev, '‹ '], [next, '']]) {
-  if (!p) continue;
+function turnLink(href, text, back) {
   const a = document.createElement('a');
-  a.href = hrefFor(p);
-  a.textContent = `${glyph}${label(p)}${glyph ? '' : ' ›'}`;
-  if (p === next) a.style.marginLeft = 'auto';
+  a.href = href;
+  a.textContent = text;
+  if (!back) a.style.marginLeft = 'auto';
   // Tapping a neighbour plays the same sideways turn the swipe plays, so
   // the two agree about which way the leaves lie.
   a.addEventListener('click', (ev) => {
     if (ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey || ev.button !== 0) return;
     ev.preventDefault();
-    window.__appxTurn(p === prev);
+    window.__appxTurn(back);
   });
   turns.append(a);
+  return a;
+}
+if (prev) turnLink(hrefFor(prev), `‹ ${label(prev)}`, true);
+if (next) turnLink(hrefFor(next), `${label(next)} ›`, false);
+
+// Appendix I's backward turn leaves the appendices for the body: the last
+// volume's own leaf, which is the page this one continues from. Which volume
+// is last is a question for the chain, so the turn is wired once the tip
+// answers -- until then a backward swipe simply has nowhere to go.
+if (!prev) {
+  chainTip().then((tip) => {
+    if (tip == null) return;
+    const volume = volumeBookChapter(tip).volume;
+    const href = `./bitcoin-book.html?block=${heightOf(volume, 1, 1)}&page=volume`;
+    window.__appxTurns.prev = href;
+    const a = turnLink(href, `‹ Volume ${toRoman(volume)}`, true);
+    turns.prepend(a);   // back is the left-hand turn, whenever it arrives
+  }).catch(() => { /* no tip, no way back but the contents */ });
 }
 
 // ── Appendix I: the queue ─────────────────────────────────────────────────
