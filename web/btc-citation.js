@@ -47,6 +47,28 @@ export function volumeBookChapter(height) {
   };
 }
 
+// The start of the real difficulty window a height sits in -- the retarget
+// grid, which runs on from the genesis block and knows nothing about the
+// halvings the book grid restarts at.
+export const windowStartOf = (height) => height - (height % DIFFICULTY_BLOCKS);
+
+// The one retarget a book can contain: the height inside it where a second
+// difficulty target binds, or null where the book is a whole window and was
+// mined under one target throughout.
+//
+// Never more than one. A retarget falls every 2,016 blocks and a book is at
+// most 2,016 blocks, so at most one boundary can land strictly inside -- a
+// book states two targets or one, never three. It is null for the whole of
+// Volume I, whose books open on retargets, and for every volume's truncated
+// last book: those 336 blocks begin at most 1,680 into a window, so they stop
+// exactly at the next boundary at the latest, never past it.
+export function retargetInside(start, chapterCount) {
+  const offset = start % DIFFICULTY_BLOCKS;
+  if (offset === 0) return null;
+  const cut = start + (DIFFICULTY_BLOCKS - offset);
+  return cut <= start + chapterCount - 1 ? cut : null;
+}
+
 // A volume number as a Roman numeral (the book cites volumes in Roman).
 export function toRoman(n) {
   const map = [[1000, 'M'], [900, 'CM'], [500, 'D'], [400, 'CD'], [100, 'C'], [90, 'XC'], [50, 'L'], [40, 'XL'], [10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I']];
