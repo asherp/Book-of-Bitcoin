@@ -40,7 +40,11 @@ The book's three-tier numbering, from `web/btc-citation.js`:
 - **Volume** (Roman numeral) — a halving era: 210,000 blocks.
 - **Book** (β) — a difficulty-adjustment window within the era: 2016 blocks.
   Book numbering restarts with each volume, so every volume's last book is a
-  truncated 336-block one.
+  truncated 336-block one. That restart also means a book coincides with a real
+  retarget window only in Volume I: each later era opens 336 blocks further
+  into a live window (336, 672, 1008, 1344, 1680), so from Volume II on a book
+  straddles a retarget instead of naming one. The grids realign at Volume VII
+  (6 × 210,000 = 1,260,000 = 625 windows exactly).
 - **Chapter** (■) — one block, by its position within the book.
 - **Section** (§) — one transaction, by its 1-based position within the block.
 - **Page** (folio) — the chain-wide running transaction count: page N is the

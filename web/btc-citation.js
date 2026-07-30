@@ -11,6 +11,12 @@
 // difficulty periods -- the last book of every era is a shorter, truncated
 // one (336 blocks instead of 2016).
 //
+// So a book coincides with a real retarget window only in Volume I. Each era
+// after that opens 336 blocks further into a live window (336, 672, 1008,
+// 1344, 1680), and a book of 2016 blocks straddles a retarget rather than
+// naming one. The grids realign at Volume VII: 6 * 210000 = 1260000 = 625
+// windows exactly. See web/preface.md, "Why it is arranged this way".
+//
 // Used by bitcoin-book.html to place each block within the volume/book/chapter
 // scheme.
 
