@@ -492,6 +492,43 @@ export function bip34HeightPush(hex) {
   return { height, restHex: hex.slice(8) };
 }
 
+// The counters that follow the height -> their decimals, and what's left.
+//
+// A pool's coinb1 ends at the height push and the extranonce is appended
+// directly after it, so the counter sits where the pre-BIP34 preamble's η sat:
+// second, right behind the mark that opens the scriptSig. Same field, same
+// mark, one rule later -- the search space beyond the header's 32-bit nonce,
+// which the miner rolls when that one is exhausted.
+//
+// Reading it as the number it is matters twice over. It is a tally, so a
+// tally is what it should say. And a counter is entropy: at any moment ~37%
+// of its bytes are printable ASCII by pure chance, so left in the margin its
+// tail leans against whatever the miner wrote next and joins the quotation --
+// three characters one block, none the next, as the counter rolls. Taking it
+// under η removes that, not by guessing where a tag begins, but by consuming
+// the bytes that were never text before anything looks for text in them.
+//
+// Bounded by extranonceFromPush's own ceiling: a direct push of 1-8 bytes,
+// minimally encoded, so the decimal reconstructs the bytes exactly. A pool tag
+// can't be caught by it -- a tag opens with a printable byte (0x2f '/', 0x4d
+// 'M'), which reads as a push far longer than eight and fails the test.
+const EXTRANONCE_MAX_BYTES = 8;
+export function peelExtranonces(hex) {
+  const values = [];
+  let rest = hex;
+  for (;;) {
+    const op = parseInt(rest.slice(0, 2), 16);
+    if (!(op >= 1 && op <= EXTRANONCE_MAX_BYTES)) break;
+    const end = 2 + op * 2;
+    if (rest.length < end) break;
+    const n = extranonceFromPush(rest.slice(2, end));
+    if (n === null) break;
+    values.push(n);
+    rest = rest.slice(end);
+  }
+  return { values, restHex: rest };
+}
+
 // The height mark: ■ with the raw height, carrying the push's whole meaning.
 // Marked op-blockmark to name the span for what it is -- and this is the one
 // mark that WANTS the drop cap. ::first-letter takes the ■ and leaves the
@@ -507,6 +544,15 @@ const blockHeightMark = (height) => `<span class="op op-blockmark" title="BIP34 
 // renders is what the tail holds. A pool tag reads as the sentence the pool
 // wrote, pipes and spaces included, instead of arriving pre-cut by a tokenizer
 // that mistook its punctuation for instructions.
+// The extranonce mark, carrying its value inline rather than as a subscript.
+// The chapter head sets the precedent: the header's nonce is a bold-gold η
+// with the integer beside it, because that is what a nonce is. A BIP34-era
+// counter runs to eight bytes, and twenty digits at subscript size would be a
+// smudge -- so the value reads at the mark's own size, as the height above it
+// does. (The pre-BIP34 preamble keeps η's subscript: those extranonces are
+// single digits, and there they still read.)
+const extranonceMark = (n) => markToken(`η${n}`, `extranonce ${n} — the counter the miner rolled once the header's 32-bit nonce (η) was exhausted. A tally, not text: it is read as the number it is, so its bytes never pass for writing`);
+
 function renderMinerMargin(hex, collect) {
   if (!hex) return '';
   return splitReadableRuns(hex)
@@ -877,11 +923,15 @@ export function composeTransactionFields(parsed, bestOf = 1, lazyData = null, en
     if (isNullPrevout) {
       const bip34 = bip34HeightPush(v.scriptSig);
       if (bip34) {
-        // The rule's own boundary: the height under its mark, then a break, and
-        // the miner's margin below it -- the same shape the preamble takes, and
-        // for the same reason. What the miner wrote opens a line of its own.
-        const margin = renderMinerMargin(bip34.restHex, collect);
-        script = blockHeightMark(bip34.height) + (margin ? '<br>' + margin : '');
+        // The rule's own boundary, then the miner's bookkeeping, then a break:
+        // the height under ■, the counters after it under η, and the margin
+        // below -- the same shape the preamble takes (β η, break, the writing),
+        // and for the same reason. What the miner wrote opens a line of its own,
+        // with nothing mechanical left on it.
+        const { values, restHex } = peelExtranonces(bip34.restHex);
+        const preamble = [blockHeightMark(bip34.height), ...values.map(extranonceMark)].join(' ');
+        const margin = renderMinerMargin(restHex, collect);
+        script = preamble + (margin ? '<br>' + margin : '');
       } else if (isCleanScript(v.scriptSig)) {
         script = renderScript(v.scriptSig, collect, { eligible: true, preamble: true });
       } else {

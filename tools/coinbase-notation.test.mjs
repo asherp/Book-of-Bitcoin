@@ -17,6 +17,12 @@ import { access } from 'node:fs/promises';
 
 import { splitReadableRuns, findTextRuns } from '../web/btc-tx.js';
 
+// The counter as it sits on the chain in block 960,281: pushed, four bytes,
+// minimal little-endian -- and with three of those four bytes (7e 6b 6a) in
+// the printable range, which is what made it lean on the tag beside it.
+const EXTRANONCE_PUSH = '04fb7e6b6a';
+const EXTRANONCE_VALUE = '1785429755';
+
 const engineBuilt = await access(new URL('../web/glossia.js', import.meta.url)).then(() => true, () => false);
 const skipNoEngine = !engineBuilt && 'web/glossia.js not built';
 
@@ -145,6 +151,45 @@ test('a pre-BIP34 coinbase keeps the preamble reading', { skip: skipNoEngine }, 
   assert.match(script, /β/, 'the difficulty target still reads under β');
   assert.ok(script.includes('The Times 03/Jan/2009'), 'and the headline is still quoted');
   assert.ok(!script.includes('■'), 'no height mark — the rule had not been written yet');
+});
+
+test('the extranonce reads as a number, and stops leaning on the tag', { skip: skipNoEngine }, async () => {
+  const { composeTransactionFields } = await import('../web/btc-prose.js');
+  const { parseTransaction } = await import('../web/btc-tx.js');
+
+  const scriptSig = heightPush(960281) + EXTRANONCE_PUSH + MARA_TAIL;
+  const fields = composeTransactionFields(parseTransaction(coinbaseTxHex(scriptSig)), 1, null, markEncoder);
+  const script = fields.inputs[0].script;
+
+  assert.match(script, new RegExp(`η${EXTRANONCE_VALUE}`), 'the counter reads as its own integer');
+  // Its printable tail (~kj) was joining the quotation as the counter rolled.
+  // Consumed under η, it can't reach the text scan at all.
+  const quoted = [...script.matchAll(/“([^”]*)”/g)].map((m) => m[1]).join('');
+  assert.equal(quoted, MARA_TAG, 'the quotation is the tag the pool wrote, and nothing else');
+  assert.ok(!quoted.includes('~kj'), 'no counter bytes leaning on the tag');
+
+  // Still nothing dropped: height push + extranonce push + tag + binary = all of it.
+  assert.equal(
+    heightPush(960281) + EXTRANONCE_PUSH + utf8Hex(quoted) + encodedHex(script),
+    scriptSig,
+    'the marks and the margin reconstruct the whole scriptSig',
+  );
+});
+
+test('peelExtranonces takes counters and declines tags', { skip: skipNoEngine }, async () => {
+  const { peelExtranonces } = await import('../web/btc-prose.js');
+
+  assert.deepEqual(peelExtranonces(EXTRANONCE_PUSH).values, [EXTRANONCE_VALUE]);
+  assert.equal(peelExtranonces(EXTRANONCE_PUSH).restHex, '');
+  // Two counters in a row (extranonce1 then extranonce2) both come off.
+  assert.deepEqual(peelExtranonces('01' + '2a' + '0401020304').values, ['42', '67305985']);
+  // A tag opens with a printable byte, which reads as a push far too long.
+  assert.deepEqual(peelExtranonces(utf8Hex('/F2Pool/')).values, [], 'a / tag is not a counter');
+  assert.deepEqual(peelExtranonces(utf8Hex('MARA')).values, [], 'nor an M tag');
+  // A non-minimal push would not reconstruct from its decimal, so it stays bytes.
+  assert.deepEqual(peelExtranonces('04' + '01000000').values, [], 'trailing zero byte: not minimal');
+  assert.deepEqual(peelExtranonces('04' + '0102').values, [], 'a push claiming more bytes than remain');
+  assert.deepEqual(peelExtranonces('').values, []);
 });
 
 test('the height window excludes what it must', { skip: skipNoEngine }, async () => {
