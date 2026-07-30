@@ -146,6 +146,9 @@ a:hover { text-decoration: underline; }
 .anth-addr:empty { display:none; }
 .anth-prose { margin:22px 0 0; max-width:560px; font:400 16px/1.7 'Newsreader',serif; font-style:italic; color:var(--ink-soft); }
 .anth-prose:empty { display:none; }
+/* The appendix leaf says what the shelf is; that is plain prose, not a
+   passage's script read aloud, so it drops the italic the prose wears. */
+.anth-prose.explainer { font-style:normal; text-align:left; max-width:56ch; }
 /* The scriptPubKey's notation, as the book styles it: opcode glyphs in
    accent, push marks quiet, data-type marks bold -- the grammar punctuating
    the prose that carries the opaque bytes. */
@@ -512,22 +515,40 @@ import { INDEXED, isAddress, keptLedgers, saveKeptLedgers, sameAddresses, addres
          DEFAULT_ESPLORA, esploraCustom, esploraSelected, setEsploraSettings } from './btc-index.js';
 import { volumeBookChapter, heightOf, toRoman } from './btc-citation.js';
 import { BIP39, HP_SPELLS } from './btc-wordlists.js';
+import { APPENDIX } from './btc-contents.js';
 
 // The Ledger is a compendium now: every ledger in one document, read the way
-// the book is read, three levels deep.
+// the book is read, four levels deep.
 //
+//   The appendix leaf      the compendium's own title page: the shelf is the
+//                          contents' Appendix III, and this leaf carries that
+//                          name and the paragraph saying what a ledger is
+//                          and why it has no reference. Nothing is listed
+//                          here -- the contents lists the ledgers, and this
+//                          is where the reader arrives from that list.
+//                          Pulling down at the top ascends to the contents;
+//                          pushing up (or ▾) descends to the ledgers; a
+//                          swipe back turns to the appendix before this one,
+//                          on its own page.
 //   Ledger title leaves    one per ledger (curated first, then kept, then an
 //                          ad-hoc ?address= query) -- title, balance, span.
 //                          Horizontal swipes browse between ledgers; pushing
-//                          up (or ▾) descends into the ledger's addresses.
-//   Address leaves         one title page per address, its record scrolling
-//                          endlessly below (newest first, by reference), and
-//                          past the last address the merged entries leaf --
-//                          organized by time. Horizontal swipes at the hero
-//                          turn between them; pulling down at the top
-//                          ascends to the ledger's title leaf. A horizontal
-//                          swipe OVER the record pulls in the page of the
-//                          entry nearest the finger.
+//                          up (or ▾) descends into the ledger's passages,
+//                          pulling down at the top ascends to the appendix.
+//   Passage leaves         a ledger is a set of scripts, not one address:
+//                          organizations rotate addresses, and an xpub (when
+//                          the shelf takes them) gathers every leaf of one
+//                          key. So the level below a ledger is one leaf per
+//                          passage -- the script in the book's own prose,
+//                          the same words every chapter that pays it uses --
+//                          with its appearances listed beneath as references,
+//                          newest first. Past the last passage the merged
+//                          entries leaf gathers the ledger's appearances in
+//                          one timeline. Horizontal swipes at the hero turn
+//                          between them; pulling down at the top ascends to
+//                          the ledger's title leaf. A horizontal swipe OVER
+//                          the record pulls in the page of the entry nearest
+//                          the finger.
 //   Entry leaves           one transaction of the record, read as a page,
 //                          from the bank alone -- no fetch. Vertical swipes
 //                          walk the address's timeline (up = older, the
@@ -632,14 +653,27 @@ const LEDGERS = [
   ...kept.map((e) => ({ ...e, curated: false })),
 ].map((e) => ({ ...e, name: e.title || untitled(e) }));
 
+// The appendix this compendium is, taken from the contents' own list so the
+// leaf and the row cannot disagree about its number or its explanation. The
+// appendix before it is a leaf of bitcoin-appendix.html, one swipe back.
+const LEDGER_PART = APPENDIX.find((p) => p.kind === 'ledgers');
+const PART_INDEX = APPENDIX.indexOf(LEDGER_PART);
+const PART_LABEL = LEDGER_PART ? `Appendix ${toRoman(PART_INDEX + 1)} · ${LEDGER_PART.title}` : 'Ledgers';
+const PREV_PART = PART_INDEX > 0 ? APPENDIX[PART_INDEX - 1] : null;
+const PREV_PART_HREF = PREV_PART
+  ? `./bitcoin-appendix.html?part=${PREV_PART.kind === 'mempool' ? 'mempool' : 'future'}`
+  : null;
+
 // ── Where the reader stands ────────────────────────────────────────────────
+//   level 'appendix': the compendium's title page (Appendix III · Ledgers)
 //   level 'ledger'  : the title leaf of LEDGERS[li]
-//   level 'address' : leaf `at` of that ledger (addrs.length = entries leaf)
+//   level 'address' : passage leaf `at` of that ledger -- one script of it
+//                     (addrs.length = the merged entries leaf)
 //   level 'entry'   : one entry of entryAddr's record. The current entry is
 //                     named by KEY, not index: extending the record PREPENDS
 //                     older entries (the array is ascending), so an index
 //                     would silently drift mid-read.
-let level = 'ledger';
+let level = 'appendix';
 let li = 0;
 let at = 0;
 let entryAddr = null;
@@ -665,13 +699,14 @@ const findEntry = (line, key) =>
 // reload or a share names the ledger being read; the compendium's own top
 // level is the bare page.
 function syncUrl() {
+  const aboveTheShelf = level === 'appendix' || level === 'ledger';
   try {
-    const url = level === 'ledger' ? location.pathname
+    const url = aboveTheShelf ? location.pathname
       : `${location.pathname}?address=${cur().addresses.join(',')}`;
     history.replaceState(null, '', url);
   } catch (_) { /* unavailable */ }
-  document.title = level === 'ledger' && !qList.length
-    ? 'The βook of βitcoin — Ledger'
+  document.title = level === 'appendix' ? `The βook of βitcoin — ${PART_LABEL}`
+    : level === 'ledger' && !qList.length ? 'The βook of βitcoin — Ledger'
     : `The βook of βitcoin — Ledger · ${cur().name}`;
 }
 
@@ -1146,7 +1181,9 @@ const clearHero = () => {
   balanceEl.className = 'anth-balance';
   balanceEl.onclick = null;
   document.getElementById('anth-addr').textContent = '';
-  document.getElementById('anth-prose').replaceChildren();
+  const prose = document.getElementById('anth-prose');
+  prose.replaceChildren();
+  prose.classList.remove('explainer');   // only the appendix leaf sets prose that is not a script
   count.textContent = '';
   range.textContent = '';
   heldEl.replaceChildren();
@@ -1284,11 +1321,32 @@ const arrow = (glyph, label, off, act, word = false) => {
 // the compendium starts nobody's sync), how many addresses it spans, and
 // the Keep affordance for a ledger the reader brought. ▾ (or a push up)
 // descends into the addresses.
-const openLedgerLeaf = (alive) => {
-  // The eyebrow is the crumb up, as it is on an address leaf -- and above a
-  // ledger's title leaf is the contents, which lists this shelf as its
-  // Appendix III.
+// The appendix leaf: the compendium's title page. It names the appendix and
+// says what it gathers, and lists nothing -- the contents lists the ledgers,
+// and a reader arrives here from that list. Below it the shelf; above it the
+// contents; behind it the appendix before this one, on its own page.
+const openAppendixLeaf = () => {
   eyebrow.replaceChildren(arrowless('▴ Contents', () => toContents()));
+  document.getElementById('anth-title').textContent = PART_LABEL;
+  pager.replaceChildren(
+    arrow('‹', PREV_PART ? `Previous appendix — ${PREV_PART.title}` : 'Previous appendix', !PREV_PART, () => toPrevAppendix()),
+    Object.assign(document.createElement('span'), { textContent: `Appendix ${toRoman(PART_INDEX + 1)} of ${toRoman(APPENDIX.length)}` }),
+    arrow('›', 'Next appendix', true, () => {}),
+  );
+  const prose = document.getElementById('anth-prose');
+  prose.classList.add('explainer');
+  prose.textContent = LEDGER_PART ? LEDGER_PART.note : '';
+  downEl.setAttribute('href', '#');
+  downEl.onclick = (ev) => { ev.preventDefault(); descend(); };
+  downEl.setAttribute('aria-label', 'Down to the ledgers');
+  el.replaceChildren();
+  lineNote(el, `${n(LEDGERS.length, 'ledger', 'ledgers')} on the shelf — ▾ opens them`);
+};
+
+const openLedgerLeaf = (alive) => {
+  // The eyebrow is the crumb up, as it is on a passage leaf -- and above a
+  // ledger's title leaf is the appendix this shelf is.
+  eyebrow.replaceChildren(arrowless('▴ ' + PART_LABEL, () => ascend()));
   document.getElementById('anth-title').textContent = cur().name;
   pager.replaceChildren(
     arrow('‹', 'Previous ledger', li <= 0, () => turnLedger(-1)),
@@ -1297,14 +1355,16 @@ const openLedgerLeaf = (alive) => {
   );
   downEl.setAttribute('href', '#');
   downEl.onclick = (ev) => { ev.preventDefault(); descend(); };
-  downEl.setAttribute('aria-label', 'Down into the ledger’s addresses');
+  downEl.setAttribute('aria-label', 'Down into the ledger’s passages');
 
   showBookmark();
 
   // Something below the fold for the recovery check, and for the reader: the
   // leaf's own contents line.
   el.replaceChildren();
-  lineNote(el, `${n(cur().addresses.length, 'address', 'addresses')} — ▾ opens the record`);
+  // A ledger is a set of scripts; each is a passage, and each passage's
+  // appearances are the references beneath it.
+  lineNote(el, `${n(cur().addresses.length, 'passage', 'passages')} — ▾ opens the record`);
 
   // The balance, four ways (the shelf's discipline, one ledger at a time):
   // an answer under ten minutes old serves from memory in full ink; past
@@ -1827,6 +1887,7 @@ const openView = () => {
   hero.classList.toggle('hidden', onEntry);
   entryHero.classList.toggle('hidden', !onEntry);
   if (onEntry) { el.replaceChildren(); openEntryLeaf(alive); return; }
+  if (level === 'appendix') { openAppendixLeaf(); return; }
   if (level === 'ledger') { openLedgerLeaf(alive); return; }
   openAddressLeaf(alive);
 };
@@ -1897,24 +1958,33 @@ const canAddress = (dir) => level === 'address' && at + dir >= 0 && at + dir <= 
 function turnLedger(dir) { if (canLedger(dir)) turnTo(() => { li += dir; }, dir, 'x'); }
 function turnAddress(dir) { if (canAddress(dir)) turnTo(() => { at += dir; }, dir, 'x'); }
 function ascend() {
+  if (level === 'ledger') return turnTo(() => { level = 'appendix'; }, -1, 'y');
   if (level !== 'address') return;
   rememberedAt.set(li, at);
   turnTo(() => { level = 'ledger'; }, -1, 'y');
 }
-// Above the shelf is the table of contents, where the shelf is Appendix III:
-// the compendium's top level ascends there rather than rubber-banding, the
-// same one step the appendix leaves take. The turn is the inverse of the
-// descent that brought the reader here -- the compendium sinks, the contents
-// drop back in from above.
-function toContents() {
-  try { sessionStorage.setItem('glossia-toc-entrance', '1'); } catch (_) {}
-  const go = () => { location.href = './bitcoin-contents.html'; };
+// Above the appendix leaf is the table of contents, which lists this shelf
+// as its Appendix III. The turn is the inverse of the descent that brought
+// the reader here -- the compendium sinks, the contents drop back in from
+// above -- and it leaves the page, so it is played on the body rather than
+// on the slide.
+function leavePage(href, transform, flag) {
+  try { sessionStorage.setItem(flag, '1'); } catch (_) {}
+  const go = () => { location.href = href; };
   if (REDUCED_MOTION) { go(); return; }
   document.body.style.transition = 'transform .2s linear';
-  document.body.style.transform = 'translateY(100vh)';
+  document.body.style.transform = transform;
   setTimeout(go, 180);
 }
+const toContents = () => leavePage('./bitcoin-contents.html', 'translateY(100vh)', 'glossia-toc-entrance');
+// Sideways from the appendix leaf: the appendices turn between one another
+// in their numbered order, and the ones before this are leaves of their own
+// page. Nothing follows Appendix III, so only the backward turn exists.
+const toPrevAppendix = () => {
+  if (PREV_PART_HREF) leavePage(PREV_PART_HREF, 'translateX(100vw)', 'glossia-appendix-entrance');
+};
 function descend() {
+  if (level === 'appendix') return turnTo(() => { level = 'ledger'; }, 1, 'y');
   if (level !== 'ledger') return;
   turnTo(() => { level = 'address'; at = rememberedAt.get(li) ?? 0; }, 1, 'y');
 }
@@ -1989,6 +2059,7 @@ async function turnEntry(dir) {
   };
   const hDamp = (dx) => {
     const dir = dx < 0 ? 1 : -1;
+    if (level === 'appendix') return dx > 0 && PREV_PART_HREF ? 1 : 0.25;   // back to the appendix before this one
     if (level === 'ledger') return canLedger(dir) ? 1 : 0.25;
     if (level === 'address') {
       if (startRow) return dx < 0 ? 1 : 0.25;          // the dive pulls leftward only
@@ -2001,7 +2072,9 @@ async function turnEntry(dir) {
   // on a tall one -- pulling down at the top, pushing up at the bottom --
   // so a long passage scrolls as prose first and turns only at its edges.
   const vArmed = (dy) => {
-    if (level === 'ledger') return dy < 0 || topStart;  // up descends; down from the top ascends to the contents
+    // The two leaves above the record: up descends, down from the top rises
+    // -- to the appendix from a ledger, and out to the contents from there.
+    if (level === 'appendix' || level === 'ledger') return dy < 0 || topStart;
     if (level === 'entry') return shortStart || (topStart && dy > 0) || (botStart && dy < 0);
     return topStart && dy > 0;                         // address: pull down from the top ascends
   };
@@ -2010,7 +2083,7 @@ async function turnEntry(dir) {
   // only once its section has been pregenerated, so the finger feels the
   // same gate the commit enforces.
   const vDamp = (dy) => {
-    if (level === 'ledger') return dy < 0 || topStart ? 0.5 : 0.18;
+    if (level === 'appendix' || level === 'ledger') return dy < 0 || topStart ? 0.5 : 0.18;
     if (level === 'address') return 0.5;
     // Entry level: up is older, down is newer.
     if (dy < 0) return entryNav.older && entryNav.readyOlder ? 0.5 : 0.18;
@@ -2055,6 +2128,7 @@ async function turnEntry(dir) {
     const vCommit = axis === 'v' && dt <= 600 && Math.abs(dy) >= 70 && Math.abs(dx) <= Math.abs(dy) * 0.6;
     if (hCommit) {
       const dir = dx < 0 ? 1 : -1;   // swiping left travels forward
+      if (level === 'appendix') { if (dir < 0) return toPrevAppendix(); return snapBack(); }
       if (level === 'ledger' && canLedger(dir)) return turnLedger(dir);
       if (level === 'address') {
         if (row && dir > 0) return dive(row);
@@ -2064,9 +2138,9 @@ async function turnEntry(dir) {
       return snapBack();
     }
     if (vCommit && vArmed(dy)) {
-      if (level === 'ledger' && dy < 0) return descend();
-      if (level === 'ledger' && topStart && dy > 0) return toContents();
-      if (level === 'address' && topStart && dy > 0) return ascend();
+      if ((level === 'appendix' || level === 'ledger') && dy < 0) return descend();
+      if (level === 'appendix' && topStart && dy > 0) return toContents();
+      if ((level === 'ledger' || level === 'address') && topStart && dy > 0) return ascend();
       if (level === 'entry') return void turnEntry(dy < 0 ? 1 : -1).then(() => { if (!turning) snapBack(); });
       return snapBack();
     }
