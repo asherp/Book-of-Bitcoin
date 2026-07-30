@@ -196,18 +196,92 @@ export const NOTABLE = [
   // shows bit 4 set (…10000), the same bit BIP91 once flew.
   { title: 'First BIP110 signaling block', id: '938903' },
   { title: 'Latest block', id: '-1' },
-  // The one activation block that does not exist yet: BIP42 (April 1, 2014)
-  // capped the subsidy schedule where the 64th halving's undefined bit-shift
-  // would have resurrected the 50-BTC reward. Its rules first bind at height
-  // 13,440,000 -- LXV β1 ■1, the opening chapter of Volume 65, due around the
-  // year 2262. Cited now, mineable later; until then its lookup answers
-  // "Block not found. Come back in the year 2262."
-  { title: 'BIP42 activation (21M cap)', id: '13440000' },
 ];
 
 // A block entry may carry an `index`: the transaction's position within the
 // block (0-based), rendered as its §section and passed to the book as ?index=.
 // e.g. { title: '…', id: '100000', index: 1 } opens block 100000, §2.
+
+// ── The appendices ────────────────────────────────────────────────────────
+// A chain with no last block has no back, which is why the sigla sit in the
+// front matter (see the README). What can still be gathered at the end of
+// the CONTENTS is what belongs to the book but not to its reading order --
+// reading order being the order blocks were mined.
+//
+// Three, numbered like volumes and rendered in this order:
+//
+//   I   The Mempool -- the chapters the queue is already forming, which is
+//       why it comes first: it opens where the volumes close, so the turn
+//       from the chain tip to the next provisional chapter stays a single
+//       step down the page. Built live by the page from the queue itself
+//       (bitcoin-contents.html); nothing to list here but its heading.
+//   II  Future Chapters -- heights consensus has already fixed, too far out
+//       for any queue to reach: flag days, activations, the 21M cap. A
+//       height is a citation the moment consensus fixes it, whether or not
+//       a block has reached it -- the reference is exact and computable
+//       today and only the ■ is unearned, so these print the expected mark
+//       □, the same mark the mempool's projections wear, and their lookups
+//       answer with a date instead of a page. Listed apart rather than in
+//       reading order because a chapter cited before it exists cannot be
+//       read in sequence with chapters that do: dropped in among the
+//       volumes, BIP42 alone opened a Volume LXV two centuries wide.
+//   III Ledgers -- the shelf of curated ledgers (btc-index-data.js), and
+//       any the reader keeps. Keepers, not chapters, and so the only
+//       entries in the contents with no reference at all: the chain never
+//       writes an address, only the script one stands for, and a ledger's
+//       chapters are discovered by reading rather than cited in advance. A
+//       ledger holds as many scripts as its keeper uses -- one address, a
+//       rotated set, or every leaf of an extended key -- each read as a
+//       passage on the Ledger compendium's own leaves, which is why this
+//       part lists ledgers here and explains itself there. The contents and
+//       the index are inverses; this is where the contents points at the
+//       other one.
+//
+// A part's `kind` says who fills it: 'entries' is listed below, 'mempool'
+// and 'ledgers' are gathered by the page. Entries take the same shape as
+// NOTABLE's -- `id` is handed to the same lookup -- with a `note` carrying
+// the caveat the row shows on hover. Editorial, like the titles: what is
+// promised is a citation, not a prophecy.
+export const APPENDIX = [
+  {
+    kind: 'mempool',
+    title: 'The Mempool',
+    note: 'The chapters the queue is already forming, ordered as a miner would take them — provisional numbers that hold only while the queue does, and only the first is a real forecast.',
+  },
+  {
+    kind: 'entries',
+    title: 'Future Chapters',
+    note: 'Chapters whose citations are fixed but whose blocks are unmined: consensus has named the height, the chain has yet to reach it. Each reference carries □, the expected-chapter mark, until a block earns it the ■.',
+    entries: [
+      // BIP110 (reduced_data, the 2026 temporary data-limit attempt; bit 4,
+      // 55% of a signaling window): nothing has activated to cite -- ~0.5%
+      // signaling as of July 2026 -- but its BIP8-style heights are citable
+      // sight unseen, three real retarget boundaries one book apart, sharing
+      // a chapter number. Conditional in a way BIP42's height is not: the
+      // blocks will be mined either way, on schedule, and will carry these
+      // names only if the fork locks in. The signaling story's exemplar is
+      // already in the contents proper: the first bit-4 block, V β50 ■120.
+      { title: 'BIP110 mandatory signaling', id: '961632',
+        note: 'BIP8-style flag height — mandatory signaling from 961,632, should BIP110 lock in. ~0.5% of blocks signaling as of July 2026, against a 55% threshold.' },
+      { title: 'BIP110 lock-in', id: '963648',
+        note: 'Lock-in by 963,648, one book on, should the threshold be met.' },
+      { title: 'BIP110 activation', id: '965664',
+        note: 'Activation at 965,664, one book after lock-in — the height where the reduced data limit would first bind.' },
+      // The one activation block whose height is already consensus and still
+      // will not exist for two centuries: BIP42 (April 1, 2014) capped the
+      // subsidy schedule where the 64th halving's undefined bit-shift would
+      // have resurrected the 50-BTC reward. Cited now, mineable later; until
+      // then its lookup answers "Block not found. Come back in the year 2262."
+      { title: 'BIP42 activation (21M cap)', id: '13440000',
+        note: 'The book’s last chapter, and the only one whose date is already known: BIP42’s cap first binds at 13,440,000, the opening chapter of Volume LXV, due around the year 2262.' },
+    ],
+  },
+  {
+    kind: 'ledgers',
+    title: 'Ledgers of Note',
+    note: 'A ledger gathers what one keeper spends from — a single address, a set rotated over the years, or in time every leaf of one extended key — and reads each of its scripts as a passage, with the chapters that passage appears in listed beneath it. Nothing here carries a reference: the chain never writes an address, only the script one stands for, so a ledger is not cited but discovered, and its run of chapters stays open-ended.',
+  },
+];
 
 // More transaction-level entries still to confirm against the chain before
 // adding: the first P2TR output ever (a purse.io withdrawal of 5,431 sats,
@@ -218,11 +292,7 @@ export const NOTABLE = [
 // version-rolled (overt-AsicBoost, BIP320) block -- no canonical height
 // exists, so it needs a chain scan to identify a good exemplar whose
 // frontispiece breaks the accio.abandon idiom.
-
-// BIP110 (reduced_data, the 2026 temporary data-limit attempt; bit 4, 55% of
-// a signaling window): nothing activated to cite -- ~0.5% signaling as of
-// July 2026. Its BIP8-style heights are citable sight unseen should it ever
-// lock in: mandatory signaling from 961,632 (V β61 ■673), lock-in by 963,648
-// (V β62 ■673), activation at 965,664 (V β63 ■673) -- three real retarget
-// boundaries, one book apart, sharing a chapter number. The signaling story's
-// exemplar is already in the list: the first bit-4 block, V β50 ■120.
+//
+// These are candidates, not citations, so they stay comments: the appendix's
+// provisional part lists chapters whose references are already exact, not
+// chapters whose subjects are still being looked for.
