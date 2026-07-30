@@ -46,6 +46,7 @@ export async function readProof(bytes) {
   return {
     digest: parsed.digest,
     hash: parsed.hash,
+    attestation: att,
     pending: parsed.attestations.filter((a) => a.kind === 'pending').map((a) => a.uri),
     place: att && {
       height: att.height,
@@ -76,6 +77,77 @@ export const inReadingOrder = (a, b) =>
   (a.place.height - b.place.height) || ((a.place.section ?? 0) - (b.place.section ?? 0));
 export const volumeOf = (place) => volumeBookChapter(place.height);
 
+// ─── the ladder: a proof read one rung at a time ────────────────────────
+//
+// A proof is a straight line of operations, but it is not a featureless one.
+// Read it and it falls into three movements, which is how Appendix IV's leaf
+// sets it:
+//
+//   the commitment — what was done to the file's digest to put it in a
+//   transaction. For a modern proof that is nothing at all (the digest IS the
+//   OP_RETURN's payload, or one hash below it); for a proof older than the
+//   calendar servers it is a RIPEMD-160, because the commitment was hidden in
+//   a pay-to-pubkey-hash output.
+//
+//   the transaction — the raw bytes of the transaction wrapped around that
+//   commitment, prefix before and suffix after, hashed twice into its txid.
+//   This rung is the moment the file's digest stops being a digest and becomes
+//   a passage in the book.
+//
+//   the path — one rung per level of the block's merkle tree, each pairing the
+//   running hash with the sibling the proof carries, until the last pair
+//   hashes to the root the block header commits to.
+//
+// Everything here is derived from the steps btc-ots.js replayed; nothing is
+// re-hashed and nothing is trusted. A shape the reader does not recognise is
+// left as a plain run of operations rather than forced into the three
+// movements -- an honest "these steps happened" beats a tidy lie.
+export function ladderOf(attestation) {
+  const steps = attestation.steps || [];
+  const rungs = [];
+  let i = 0;
+  // The commitment: everything before the transaction is wrapped around it.
+  const wrapAt = steps.findIndex((s, n) => s.op === 'prepend' && steps[n + 1]?.op === 'append'
+    && steps[n + 2]?.op === 'sha256' && steps[n + 3]?.op === 'sha256');
+  for (; i < (wrapAt === -1 ? steps.length : wrapAt); i++) {
+    rungs.push({ kind: 'commit', op: steps[i].op, arg: steps[i].arg, result: steps[i].result });
+  }
+  if (wrapAt !== -1) {
+    rungs.push({
+      kind: 'transaction',
+      prefix: steps[wrapAt].arg,
+      suffix: steps[wrapAt + 1].arg,
+      // The txid, in the order the chain prints it -- this rung IS a passage,
+      // and a passage is cited by the txid a reader would look up.
+      result: steps[wrapAt + 3].result,
+      txid: attestation.txid,
+    });
+    i = wrapAt + 4;
+  }
+  // The path: [sibling, sha256, sha256] per level, bottom-up, the direction
+  // saying which child the running hash was and so which bit of the §section's
+  // number this level contributed.
+  let level = 0;
+  while (i + 2 < steps.length
+    && (steps[i].op === 'append' || steps[i].op === 'prepend')
+    && steps[i + 1].op === 'sha256' && steps[i + 2].op === 'sha256') {
+    rungs.push({
+      kind: 'level',
+      level,
+      side: steps[i].op === 'prepend' ? 'right' : 'left',   // where WE sat
+      sibling: steps[i].arg,
+      duplicate: steps[i].arg === steps[i - 1]?.result || steps[i].arg === rungs[rungs.length - 1]?.result,
+      result: steps[i + 2].result,
+      bit: steps[i].op === 'prepend' ? 1 : 0,
+    });
+    level += 1;
+    i += 3;
+  }
+  for (; i < steps.length; i++) rungs.push({ kind: 'step', op: steps[i].op, arg: steps[i].arg, result: steps[i].result });
+  if (rungs.length) rungs[rungs.length - 1].isRoot = true;
+  return rungs;
+}
+
 // ─── the bundled proofs ─────────────────────────────────────────────────
 
 // One entry of appendix.yaml's proofs part, read from the files beside it. The
@@ -91,7 +163,8 @@ export async function loadBundled(entry, base = PROOF_DIR) {
     const sub = await fetch(base + entry.subject);
     if (sub.ok) checked = await attests(proof, new Uint8Array(await sub.arrayBuffer()));
   }
-  return { ...proof, title: entry.title, file: entry.subject || entry.proof, note: entry.note, checked, bundled: true };
+  return { ...proof, title: entry.title, file: entry.subject || entry.proof, subject: entry.subject || null,
+    proofFile: entry.proof, note: entry.note, checked, bundled: true };
 }
 
 // Every bundled proof that reaches a block, in reading order. One that cannot be
@@ -156,6 +229,18 @@ export const isKept = (digest) => keptProofs().some((p) => p.digest === digest);
 
 // The whole appendix, bundled and kept together in reading order -- what the
 // contents lists under Appendix IV and what its leaf shows above the picker.
+// A proof's own page: Appendix IV's rows open the ladder rather than jumping
+// straight into the book, because the ladder is the thing this appendix has
+// to show. The chapter is one step further on, at the foot of it.
+export const leafOf = (proof) => `./bitcoin-proof.html?digest=${proof.digest}`;
+
+// One listed proof, by the digest that names it. Bundled and kept alike -- a
+// leaf should not need to know which sort it was handed.
+export async function proofByDigest(digest, part, base = PROOF_DIR) {
+  const listed = await allProofs(part, base);
+  return listed.find((p) => p.digest === digest) || null;
+}
+
 export async function allProofs(part, base = PROOF_DIR) {
   const [bundled, kept] = await Promise.all([bundledProofs(part, base), keptPlaces()]);
   const seen = new Set(bundled.map((p) => p.digest));

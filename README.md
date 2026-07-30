@@ -220,6 +220,19 @@ compiled to WASM) is consumed as a published
   flying the same ribbon in the contents. What is stored is the proof itself,
   base64'd — a few hundred bytes, and the whole evidence: keeping only "block
   358391 §1352" would keep the conclusion and throw away the argument
+- `web/bitcoin-proof.html` — one timestamped file's leaf, which every Appendix
+  IV row opens. A proof is a straight line of operations from a digest to a
+  merkle root, and every value along that line is 32 bytes of hash — which is
+  to say every value along it is a passage the book can set in words. So the
+  leaf lays the proof out as a ladder and sets each rung as prose: the digest,
+  the commitment, the transaction it was buried in, then one rung per merkle
+  level with its sibling beside it, ending on the root the chapter's own header
+  commits to — and that last rung is the one value the chain is asked about.
+  The file is titled but never shown: it was never on the chain, was never
+  uploaded, and is not the book's to hold. A button opens the reader's own copy
+  through the native file dialogue, hashes it in the browser and says whether
+  it is the file the proof attests — the same promise OpenTimestamps made when
+  the proof was taken
 - `web/btc-ots.js` — an OpenTimestamps proof reader, read by Appendix IV:
   a `.ots` file is a citation written in someone else's notation, and this
   turns it back into one of the book's. Replaying a proof's commitment

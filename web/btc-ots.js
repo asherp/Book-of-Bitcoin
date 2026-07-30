@@ -197,6 +197,18 @@ function readMerklePath(steps) {
   return { index, depth: directions.length, txid: txid && txid.length === 32 ? reversedHex(txid) : null };
 }
 
+// The operations themselves, in order, as hex -- the argument the proof makes,
+// step by step, for a caller that wants to show the work rather than only its
+// conclusion (Appendix IV's leaf sets each rung as prose). Names, not tag
+// bytes: the reading of a proof should not require the format's table.
+const OP_NAMES = { 0xf0: 'append', 0xf1: 'prepend', 0xf2: 'reverse', 0xf3: 'hexlify',
+  0x02: 'sha1', 0x03: 'ripemd160', 0x08: 'sha256' };
+const asSteps = (steps) => steps.map((s) => ({
+  op: OP_NAMES[s.op] || `op${s.op.toString(16)}`,
+  arg: s.arg.length ? bytesToHex(s.arg) : '',
+  result: bytesToHex(s.result),
+}));
+
 // One attestation, as the book reports it. `height`, `merkleRoot`, `txid` and
 // `index` are what the proof asserts; nothing here has been checked against a
 // block.
@@ -210,7 +222,7 @@ function attestation(tag, payload, msg, steps) {
   if (kind === 'bitcoin' || kind === 'litecoin') {
     const height = new Reader(payload).varuint();
     const path = kind === 'bitcoin' ? readMerklePath(steps) : { index: null, depth: 0, txid: null };
-    return { kind, height, merkleRoot: reversedHex(msg), ...path };
+    return { kind, height, merkleRoot: reversedHex(msg), ...path, steps: asSteps(steps) };
   }
   return { kind, tag, payload: bytesToHex(payload) };
 }
