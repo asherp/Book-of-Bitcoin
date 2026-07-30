@@ -112,9 +112,10 @@ compiled to WASM) is consumed as a published
   — heights consensus has already fixed but no queue can reach (BIP42's 21M
   cap at 13,440,000; BIP110's flag heights, should it lock in), cited in
   full but marked □ until a block earns them the ■. **III · Ledgers** — the
-  shelf of curated ledgers and any the reader keeps, named by address
-  because a ledger cites a run of chapters rather than one; the contents and
-  the index are inverses, and this is where the contents points at the other
+  shelf of curated ledgers and any the reader keeps, the only entries with
+  no reference at all, since the chain never writes an address, only the
+  script one stands for; the contents and the index are inverses, and this
+  is where the contents points at the other
 - `web/bitcoin-ledger.html` — the Ledger: a compendium of every ledger
   (curated donation addresses, any the reader keeps, and ad-hoc
   `?address=a,b,…` queries) in one document, read the way the book is
