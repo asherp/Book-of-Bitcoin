@@ -407,7 +407,11 @@ const shortAddr = (a) => `${a.slice(0, 6)}…${a.slice(-4)}`;
 function ledgerEl(ledger, isKept) {
   const row = document.createElement('a');
   row.className = 'toc-entry under-book';
-  row.href = `./bitcoin-ledger.html?address=${ledger.addresses.join(',')}`;
+  // A row here names a ledger, so it opens the ledger -- its title leaf,
+  // where the compendium's descent into the passages begins. (An address
+  // searched for is a passage, and the search page opens it as one, with
+  // the same query and no &page.)
+  row.href = `./bitcoin-ledger.html?address=${ledger.addresses.join(',')}&page=ledger`;
   const t = document.createElement('span');
   t.className = 'toc-title';
   if (isKept) {

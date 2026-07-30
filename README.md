@@ -132,7 +132,11 @@ compiled to WASM) is consumed as a published
 - `web/bitcoin-ledger.html` — the Ledger: a compendium of every ledger
   (curated donation addresses, any the reader keeps, and ad-hoc
   `?address=a,b,…` queries) in one document, read the way the book is
-  read, four levels deep. The appendix leaf at the top — the compendium is
+  read, four levels deep. A URL names the leaf it wants the way the book's
+  does: `?address=…` opens the passage that address is, `&page=ledger`
+  opens the ledger holding it at its title leaf (which is what a named
+  ledger in the contents links to), and a bare visit opens the appendix
+  leaf above them all. The appendix leaf at the top — the compendium is
   the contents' **Appendix III**, and this leaf carries that name and the
   paragraph saying what a ledger is; it lists nothing, because the contents
   already lists the ledgers, and a pull down at the top (or the ▴ crumb)

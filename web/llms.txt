@@ -61,7 +61,9 @@ transaction of that block.
   in full. Appendix III's leaf is `bitcoin-ledger.html`.
 - `bitcoin-front.html` — front matter (`?leaf=` selects a leaf).
 - `bitcoin-search.html` — lookup by height, hash, txid, or citation.
-- `bitcoin-ledger.html?address=<addr>` — an address's ledger.
+- `bitcoin-ledger.html?address=<addr>` — the passage that address is, in the
+  ledger holding it; `&page=ledger` opens that ledger's title leaf instead,
+  and a bare `bitcoin-ledger.html` opens Appendix III's own leaf above them.
 
 These render only in a JavaScript-capable browser; without one, use the
 static passages above or reconstruct the passage as described next.

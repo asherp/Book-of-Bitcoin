@@ -624,6 +624,12 @@ import { APPENDIX } from './btc-contents.js';
 const q = (new URLSearchParams(location.search).get('address') || '').trim();
 const norm = (s) => (isAddress(s) ? s : isAddress(s.toLowerCase()) ? s.toLowerCase() : null);
 const qList = q ? q.split(',').map((s) => norm(s.trim())).filter(Boolean) : [];
+// …and &page=ledger asks for the ledger those addresses belong to, at its
+// own title leaf, rather than the passage one of them names -- the book's
+// convention for the same choice (?block=…&page=volume|book). A named
+// ledger in the table of contents is a ledger, so its row opens the title
+// leaf; a searched address is a passage, so it opens the passage.
+const qPage = (new URLSearchParams(location.search).get('page') || '').trim();
 
 // A passage named in the URL: the citation itself, carried in Latin --
 // v4b1c3s85o4 for volume 4, book 1, chapter 3, §85, output .4 (section and
@@ -686,7 +692,7 @@ if (qList.length) {
   const i = LEDGERS.findIndex((e) => (qList.length === 1
     ? e.addresses.includes(qList[0]) : sameAddresses(e.addresses, qList)));
   li = Math.max(0, i);
-  level = 'address';
+  level = qPage === 'ledger' ? 'ledger' : 'address';
   at = Math.max(0, LEDGERS[li].addresses.indexOf(qList[0]));
 }
 
@@ -699,10 +705,12 @@ const findEntry = (line, key) =>
 // reload or a share names the ledger being read; the compendium's own top
 // level is the bare page.
 function syncUrl() {
-  const aboveTheShelf = level === 'appendix' || level === 'ledger';
+  // Only the appendix leaf is nobody's ledger; every leaf below it names the
+  // ledger it belongs to, and a title leaf says so with &page=ledger -- so a
+  // reload, or a link shared from here, comes back to the leaf it left.
   try {
-    const url = aboveTheShelf ? location.pathname
-      : `${location.pathname}?address=${cur().addresses.join(',')}`;
+    const url = level === 'appendix' ? location.pathname
+      : `${location.pathname}?address=${cur().addresses.join(',')}${level === 'ledger' ? '&page=ledger' : ''}`;
     history.replaceState(null, '', url);
   } catch (_) { /* unavailable */ }
   document.title = level === 'appendix' ? `The βook of βitcoin — ${PART_LABEL}`
