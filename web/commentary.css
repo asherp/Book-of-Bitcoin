@@ -7,15 +7,17 @@
  * Shared so a reading looks the same wherever it is met. The markup both render
  * is btc-commentary.js.
  *
- * Set as reading matter, at the body's size: commentary is prose to be read,
- * not a table to be consulted, so it follows --scale-body wherever the reader
- * has set one (btc-fontscale.js; 1 on a page that never loads it). One measure
- * holds the sheet, carrying the prose's own font, since ch resolves per
- * element.
+ * Set as reading matter, in its own type size: commentary is prose to be read,
+ * not a table to be consulted, so it takes --scale-commentary (btc-fontscale.js;
+ * 1 on a page that never loads it), which follows the body until a reader steps
+ * it away — a reading is somebody else's writing, and wanting it a size apart
+ * from the record is an ordinary thing to want. The settings panel has a row
+ * for it, and a pinch on the sheet sets the same number. One measure holds the
+ * sheet, carrying the prose's own font, since ch resolves per element.
  */
 .commentary-measure {
   max-width: 46ch; margin: 0 auto;
-  font: 400 calc(15.5px * var(--scale-body, 1))/1.6 'Newsreader',serif;
+  font: 400 calc(15.5px * var(--scale-commentary, 1))/1.6 'Newsreader',serif;
 }
 .commentary-entry { margin: 0 0 26px; }
 .commentary-entry:last-of-type { margin-bottom: 0; }
@@ -23,11 +25,11 @@
    name — a heading, deliberately not the passage's own title type: this names
    what is being commented on, it does not retitle the page. */
 .commentary-name {
-  margin: 0 0 10px; font: 600 calc(10px * var(--scale-body, 1))/1.5 'IBM Plex Mono',monospace;
+  margin: 0 0 10px; font: 600 calc(10px * var(--scale-commentary, 1))/1.5 'IBM Plex Mono',monospace;
   letter-spacing: .18em; text-transform: uppercase; color: var(--accent);
 }
 .commentary-entry p {
-  margin: 0 0 .8em; font: 400 calc(15.5px * var(--scale-body, 1))/1.6 'Newsreader',serif;
+  margin: 0 0 .8em; font: 400 calc(15.5px * var(--scale-commentary, 1))/1.6 'Newsreader',serif;
   color: var(--ink-soft); font-variant-numeric: oldstyle-nums;
 }
 .commentary-entry p:last-child { margin-bottom: 0; }
@@ -35,9 +37,9 @@
    annotation's failure is worth stating (the record on the page is unaffected),
    never worth a blank sheet. */
 .commentary-loading, .commentary-missing {
-  margin: 0; font: italic 400 calc(14px * var(--scale-body, 1))/1.6 'Newsreader',serif; color: var(--meta);
+  margin: 0; font: italic 400 calc(14px * var(--scale-commentary, 1))/1.6 'Newsreader',serif; color: var(--meta);
 }
-.commentary-missing code { font: 400 calc(12px * var(--scale-body, 1))/1.5 'IBM Plex Mono',monospace; color: var(--dim); }
+.commentary-missing code { font: 400 calc(12px * var(--scale-commentary, 1))/1.5 'IBM Plex Mono',monospace; color: var(--dim); }
 /* A contributed reading's byline. The name is the point of the whole layer —
    it is what lets a reader weigh the claim — so it sits in the accent, quiet
    but not hidden. */
