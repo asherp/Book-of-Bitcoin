@@ -1,0 +1,13 @@
+{
+  "name": "bookofbitcoin-twitter-bot",
+  "private": true,
+  "type": "module",
+  "description": "The βook of βitcoin's reply bot: chapter and verse for hashtag citations on X. Playwright is optional — it renders overflowing verses as passage images; without it the bot runs text-only.",
+  "license": "MIT OR Apache-2.0",
+  "scripts": {
+    "test": "node --test test.mjs"
+  },
+  "optionalDependencies": {
+    "playwright": "^1.49.0"
+  }
+}
