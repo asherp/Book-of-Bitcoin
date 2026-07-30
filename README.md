@@ -105,17 +105,30 @@ compiled to WASM) is consumed as a published
   book and the repository cannot drift apart
 - `web/bitcoin-contents.html` — table of contents / notable blocks, closing
   with three appendices: back matter for what reading order cannot carry,
-  reading order being the order blocks were mined. **I · The Mempool** —
-  the chapters the queue is already forming, first of the three because the
-  volumes close on the chain tip's row, so the turn from the tip to the next
-  provisional chapter stays one step down the page. **II · Future Chapters**
-  — heights consensus has already fixed but no queue can reach (BIP42's 21M
-  cap at 13,440,000; BIP110's flag heights, should it lock in), cited in
-  full but marked □ until a block earns them the ■. **III · Ledgers** — the
-  shelf of curated ledgers and any the reader keeps, the only entries with
-  no reference at all, since the chain never writes an address, only the
-  script one stands for; the contents and the index are inverses, and this
-  is where the contents points at the other
+  reading order being the order blocks were mined. Each is listed here and
+  explained on a leaf of its own, its heading the door down into it.
+  **I · The Mempool** — the chapters the queue is already forming, first of
+  the three because the volumes close on the chain tip's row, so the turn
+  from the tip to the next provisional chapter stays one step down the page.
+  **II · Future Chapters** — heights consensus has already fixed but no
+  queue can reach (BIP42's 21M cap at 13,440,000; BIP110's flag heights,
+  should it lock in), cited in full but marked □ until a block earns them
+  the ■. **III · Ledgers** — the shelf of curated ledgers and any the reader
+  keeps, the only entries with no reference at all, since the chain never
+  writes an address, only the script one stands for; the contents and the
+  index are inverses, and this is where the contents points at the other
+- `web/bitcoin-appendix.html` — the appendix leaves (`?part=mempool`,
+  `?part=future`): each says what it gathers and why that cannot be read in
+  sequence, and sets it out in full — the queue with its figures, refreshed
+  each minute, or the future chapters with the editorial note behind each.
+  Appendix III needs no leaf here: a shelf of ledgers is what the Ledger
+  compendium already is, so the contents points straight at it. All three
+  ascend to the contents — a pull down at the top, or the ▴ crumb — and turn
+  sideways between one another in their numbered order
+- `web/btc-mempool.js`, `web/btc-toc.css` — the queue read as the chapters
+  it is about to become, and how a list of chapters is set. Shared by the
+  contents and the appendix leaves so a projected chapter reads the same in
+  the list and on its own page
 - `web/bitcoin-ledger.html` — the Ledger: a compendium of every ledger
   (curated donation addresses, any the reader keeps, and ad-hoc
   `?address=a,b,…` queries) in one document, read the way the book is

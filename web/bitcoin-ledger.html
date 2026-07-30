@@ -20,6 +20,19 @@
      Update affordances on the title's line, one copy for every page. -->
 <script src="./btc-chrome.js"></script>
 <script>
+  // The shelf of ledgers is the contents' Appendix III, and so sits below
+  // the contents: arriving from it is a descent (the compendium rises from
+  // beneath the list), and the ascent back is the inverse -- the compendium
+  // sinks, the contents drop in from above. The flag is set just before the
+  // navigation and consumed on first paint.
+  try {
+    if (sessionStorage.getItem('glossia-ledger-entrance')) {
+      sessionStorage.removeItem('glossia-ledger-entrance');
+      document.documentElement.classList.add('ledger-entrance');
+    }
+  } catch (_) {}
+</script>
+<script>
   // The page is assembled from ES modules that both the HTTP cache (GitHub
   // Pages serves max-age=600) and the service worker refresh file by file, so
   // a redeploy can briefly leave them mixed: this page from one build, a
@@ -34,7 +47,7 @@
   // true network -- then reloading once onto the matched set. A second blank
   // load shows a note instead of looping.
   (function () {
-    const FILES = ['./bitcoin-ledger.html', './btc-index.js', './btc-index-data.js', './btc-citation.js', './btc-store.js'];
+    const FILES = ['./bitcoin-ledger.html', './btc-index.js', './btc-index-data.js', './btc-citation.js', './btc-store.js', './btc-wordlists.js'];
     const FLAG = 'glossia-anthology-reloaded';
     window.addEventListener('load', () => {
       setTimeout(() => {
@@ -75,6 +88,12 @@
 html { scroll-behavior: smooth; }
 html, body { margin: 0; overscroll-behavior-y: contain; }
 body { min-height: 100vh; background: var(--page); color: var(--ink); font-family: 'Public Sans', system-ui, sans-serif; line-height: 1.55; }
+/* The entering half of the contents' descent into Appendix III: the shelf
+   rises into place from below, matching the carousel's pace. */
+@media (prefers-reduced-motion: no-preference) {
+  .ledger-entrance body { animation: ledger-in .22s ease-out; }
+  @keyframes ledger-in { from { transform: translateY(100vh); } }
+}
 .wrap { max-width: 720px; margin: 0 auto; padding: 48px 22px 100px; }
 a { color: var(--accent); text-decoration: none; }
 a:hover { text-decoration: underline; }
@@ -1266,7 +1285,10 @@ const arrow = (glyph, label, off, act, word = false) => {
 // the Keep affordance for a ledger the reader brought. ▾ (or a push up)
 // descends into the addresses.
 const openLedgerLeaf = (alive) => {
-  eyebrow.textContent = 'Ledger';
+  // The eyebrow is the crumb up, as it is on an address leaf -- and above a
+  // ledger's title leaf is the contents, which lists this shelf as its
+  // Appendix III.
+  eyebrow.replaceChildren(arrowless('▴ Contents', () => toContents()));
   document.getElementById('anth-title').textContent = cur().name;
   pager.replaceChildren(
     arrow('‹', 'Previous ledger', li <= 0, () => turnLedger(-1)),
@@ -1879,6 +1901,19 @@ function ascend() {
   rememberedAt.set(li, at);
   turnTo(() => { level = 'ledger'; }, -1, 'y');
 }
+// Above the shelf is the table of contents, where the shelf is Appendix III:
+// the compendium's top level ascends there rather than rubber-banding, the
+// same one step the appendix leaves take. The turn is the inverse of the
+// descent that brought the reader here -- the compendium sinks, the contents
+// drop back in from above.
+function toContents() {
+  try { sessionStorage.setItem('glossia-toc-entrance', '1'); } catch (_) {}
+  const go = () => { location.href = './bitcoin-contents.html'; };
+  if (REDUCED_MOTION) { go(); return; }
+  document.body.style.transition = 'transform .2s linear';
+  document.body.style.transform = 'translateY(100vh)';
+  setTimeout(go, 180);
+}
 function descend() {
   if (level !== 'ledger') return;
   turnTo(() => { level = 'address'; at = rememberedAt.get(li) ?? 0; }, 1, 'y');
@@ -1966,7 +2001,7 @@ async function turnEntry(dir) {
   // on a tall one -- pulling down at the top, pushing up at the bottom --
   // so a long passage scrolls as prose first and turns only at its edges.
   const vArmed = (dy) => {
-    if (level === 'ledger') return true;               // up descends; down rubber-bands
+    if (level === 'ledger') return dy < 0 || topStart;  // up descends; down from the top ascends to the contents
     if (level === 'entry') return shortStart || (topStart && dy > 0) || (botStart && dy < 0);
     return topStart && dy > 0;                         // address: pull down from the top ascends
   };
@@ -1975,7 +2010,7 @@ async function turnEntry(dir) {
   // only once its section has been pregenerated, so the finger feels the
   // same gate the commit enforces.
   const vDamp = (dy) => {
-    if (level === 'ledger') return dy < 0 ? 0.5 : 0.18;
+    if (level === 'ledger') return dy < 0 || topStart ? 0.5 : 0.18;
     if (level === 'address') return 0.5;
     // Entry level: up is older, down is newer.
     if (dy < 0) return entryNav.older && entryNav.readyOlder ? 0.5 : 0.18;
@@ -2030,6 +2065,7 @@ async function turnEntry(dir) {
     }
     if (vCommit && vArmed(dy)) {
       if (level === 'ledger' && dy < 0) return descend();
+      if (level === 'ledger' && topStart && dy > 0) return toContents();
       if (level === 'address' && topStart && dy > 0) return ascend();
       if (level === 'entry') return void turnEntry(dy < 0 ? 1 : -1).then(() => { if (!turning) snapBack(); });
       return snapBack();

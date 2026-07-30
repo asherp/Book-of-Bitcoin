@@ -58,3 +58,12 @@ export function reference(height) {
   const { volume, book, chapter } = volumeBookChapter(height);
   return `${toRoman(volume)} β${book} ■${chapter}`;
 }
+
+// The same reference for a height no block has reached: the expected-chapter
+// mark □ where a mined chapter wears ■ (e.g. "LXV β1 □1"). The arithmetic is
+// identical -- a height's place is fixed by consensus, not by mining -- so
+// only the mark differs, and it differs to say the block is still owed. Read
+// by the mempool's projections and the contents' Appendix II.
+export function expectedReference(height) {
+  return reference(height).replace('■', '□');
+}
