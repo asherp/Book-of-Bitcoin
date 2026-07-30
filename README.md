@@ -96,6 +96,17 @@ compiled to WASM) is consumed as a published
   styles, shared by the two places it is read: the book page's notation toggle
   (opened over a chapter) and the front matter's sigla leaf (the whole key at
   rest). One copy, so a mark explained in one is explained in the other
+- `web/btc-commentary.js` — the annotation layer's machinery: which curated
+  reading applies to the page in front of the reader, and the markup that sets
+  it. The book page carries a **Commentary** key beside the notation one, and
+  only where the passage has a reading — a chapter's leaf, a book's leaf, or a
+  section that a curated entry names; opened, it raises the same kind of sheet
+  the notation key does, over the passage rather than into it, with its terms
+  stated at the foot. The readings themselves are editorial and live with the
+  entries they annotate in `web/btc-contents-data.js` (CC BY 4.0), so the
+  licence boundary stays a file boundary; nothing is fetched, so a chapter that
+  reads offline is annotated offline. Absence is information: most entries carry
+  no reading, and the key does not appear when there is nothing to open
 - `web/btc-sigla.js` — the opcode alphabet: a mark for every opcode and the
   canonical `OP_*` name behind it, plus the groups the key reads in. Split out
   of `btc-prose.js` so the sigla leaf can render the real table without
@@ -143,9 +154,12 @@ compiled to WASM) is consumed as a published
   pages, all four cited in the table of contents
 - `web/btc-contents-data.js`, `web/btc-index-data.js` — the curated entries
   themselves: which blocks and addresses the book keeps, what they are
-  called, the criteria they are kept on, and the notes explaining why. The
-  editorial layer, kept in its own files because it is licensed apart from the
-  machinery that renders it (see [License](#license))
+  called, the criteria they are kept on, and the notes explaining why —
+  including the commentary the book page offers as a sheet and the static
+  passages print after the record (`note:` for the book's own reading,
+  `commentary:` for credited readings by others). The editorial layer, kept in
+  its own files because it is licensed apart from the machinery that renders it
+  (see [License](#license))
 - **The sigla** — the marks the manuscript is written in, and where each
   lives:
   - the opcode alphabet (`OPCODE_SYMBOLS` in `web/btc-sigla.js`): a glyph per
@@ -226,9 +240,11 @@ them. For those readers the deploy also publishes a static layer:
   lives, the citation scheme, the app's URL grammar, and how any passage on
   the chain can be reconstructed from public data with the published engine.
 - `/passages/` — every curated table-of-contents entry pre-rendered as plain
-  markdown (prose, frontispiece, witness footnotes), generated at deploy
-  time by `tools/prerender-passages.mjs` running the same parse → compose →
-  encode pipeline in Node against the freshly built WASM.
+  markdown (prose, frontispiece, witness footnotes, and the entry's
+  commentary where it has any — last, behind its own heading and terms, so a
+  reader that flattens the page cannot quote the reading as the record),
+  generated at deploy time by `tools/prerender-passages.mjs` running the same
+  parse → compose → encode pipeline in Node against the freshly built WASM.
 - `/robots.txt` + `/sitemap.xml` — crawlers welcome, and pointed at all of
   the above.
 
@@ -353,6 +369,9 @@ them is between the user and the writer.
 Commentary contributed to this repository is licensed by its author under
 CC BY 4.0 — credited to them, on the same terms as the rest of the editorial
 layer — so that it can be published and quoted with the book. See
-[CONTRIBUTING.md](CONTRIBUTING.md). Commentary written by readers inside the
+[CONTRIBUTING.md](CONTRIBUTING.md). The data has a place for it: an entry's
+`commentary:` list holds readings by others, each carrying its author's name
+(and a link, if they give one) through to the sheet the book opens — the
+book's own `note:` is the unsigned one, because the book is its author. Commentary written by readers inside the
 app, should the book ever accept it, is governed by that app's terms rather
 than by this file.

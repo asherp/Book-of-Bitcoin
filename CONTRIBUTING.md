@@ -41,6 +41,30 @@ yours, and it travels with your name on it.
 If you would rather contribute commentary under different terms, say so in the
 pull request and it can be discussed before merge.
 
+Where it goes: commentary on a curated passage is a `commentary:` entry beside
+the passage it reads, in `web/btc-contents-data.js` —
+
+```js
+{
+  title: 'Bitcoin Pizza Day', id: '57043',
+  commentary: [
+    { note: 'What you have to say about it.', by: 'Your Name', href: 'https://…' },
+  ],
+}
+```
+
+— one paragraph per string (`note` takes an array for several), `by` as you
+want to be credited, `href` optional. The book page then offers it on that
+passage as a Commentary sheet beside the notation key, and the static passage
+under `/passages/` prints it after the record, both with your name on it. The
+book's own readings are the unsigned `note:` field on an entry; a contributed
+one is never merged into that voice.
+
+Two things a note has to do, whoever writes it: say what the record actually
+says, and mark plainly where it stops saying it. "Ten thousand coins moved to a
+script" is the record; "they bought two pizzas" is testimony from the people
+involved, and a reader is entitled to see which is which.
+
 ## The sigla
 
 A new or revised mark — a glyph for an opcode that lacks one, a better mark

@@ -35,6 +35,7 @@ import { parseTransaction, parseBlockHeader } from '../web/btc-tx.js';
 import { composeTransactionFields, composeBlockHeaderFields, renderWitness, toSuperscript } from '../web/btc-prose.js';
 import { volumeBookChapter, toRoman, reference } from '../web/btc-citation.js';
 import { NOTABLE } from '../web/btc-contents-data.js';
+import { readingsOf, commentaryLines } from '../web/btc-commentary.js';
 
 export const SITE = 'https://bookofbitcoin.io';
 const OUT_DIR = new URL('../web/passages/', import.meta.url);
@@ -195,7 +196,28 @@ export function sectionMd({ txid, fields, sectionNum, eventTitle }) {
   return out.join('\n');
 }
 
-export function passageMd({ title, height, blockHash, header, txCount, txid, index, fields }) {
+// The curated entry's commentary, where it has any: the annotation layer as
+// plain markdown, behind its own heading and its own terms. The live book
+// floats the same words as a sheet over the passage; here they sit after it,
+// ruled off — a reader without JavaScript has to be able to tell the reading
+// from the record just as plainly, and a crawler that flattens the page must
+// not be able to quote one as the other.
+export function commentaryMd(entry) {
+  const lines = commentaryLines([{ title: entry.title, readings: readingsOf(entry) }]);
+  if (!lines.length) return [];
+  return [
+    '## Commentary',
+    '',
+    '> A reading of the record, not the record. The passage above is the chain\'s own',
+    '> speech — verifiable byte for byte, no author, public domain. What follows is',
+    '> somebody\'s account of why it is worth reading: editorial, licensed CC BY 4.0,',
+    '> and no more authoritative than the argument behind it.',
+    '',
+    ...lines.flatMap((l) => [l, '']),
+  ];
+}
+
+export function passageMd({ title, entry, height, blockHash, header, txCount, txid, index, fields }) {
   const { volume, book, chapter } = volumeBookChapter(height);
   const cite = `${reference(height)} §${index + 1}`;
   const liveUrl = `${SITE}/bitcoin-book.html?txid=${txid}`;
@@ -227,6 +249,10 @@ export function passageMd({ title, height, blockHash, header, txCount, txid, ind
   md.push('');
   md.push(sectionMd({ txid, fields, sectionNum: index + 1, eventTitle: title }));
   md.push('');
+  // The annotation layer, where this passage has one. A static passage is
+  // generated from exactly one curated entry, so it prints that entry's
+  // readings -- no matching to do.
+  md.push(...commentaryMd(entry || { title }));
   md.push('---');
   md.push('');
   md.push(`*Reading the notation:* italic prose passages are Glossia encodings of the raw`);
@@ -347,7 +373,7 @@ async function renderEntry(entry, seed) {
     height,
     index,
     txid,
-    md: passageMd({ title: entry.title, height, index, txid, fields, ...ctx }),
+    md: passageMd({ title: entry.title, entry, height, index, txid, fields, ...ctx }),
   };
 }
 

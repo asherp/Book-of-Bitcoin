@@ -120,12 +120,13 @@ body {
    sets the type size (reflowing the text, the e-reader way) instead of
    optically magnifying the page, so touch-action here excludes pinch-zoom
    (see the pinch handler). Starting on the chrome around the frame, pinch
-   still zooms natively. The notation sheet claims its pinch the same way,
-   keeping both of its own scroll axes (the sheet's vertical, the pattern
-   table's horizontal). */
+   still zooms natively. The nav bar's sheets -- the notation key and the
+   commentary on this passage -- claim their pinch the same way, keeping both
+   of their own scroll axes (the sheet's vertical, the pattern table's
+   horizontal). */
 #page-frame { overflow: clip; touch-action: pan-x pan-y; }
 #page-frame.carousel-first { touch-action: pan-x; }
-.notation-body { touch-action: pan-x pan-y; }
+.nav-sheet-body { touch-action: pan-x pan-y; }
 /* The foot nav sits in the same place on every page: the bottom of the
    screen. The wrap stretches to the viewport, the chapter fills the wrap,
    and all slack lands inside the frame -- never the slide -- so a short
@@ -399,12 +400,58 @@ button:disabled { opacity: .4; cursor: not-allowed; }
   padding: 14px 0 max(14px, env(safe-area-inset-bottom));
   border-top: 1px solid var(--rule); background: var(--page);
 }
-/* Previous at the left edge, Next at the right, the notation toggle centred
+/* Previous at the left edge, Next at the right, the page's keys centred
    between them. Explicit tracks: a hidden stepper (display:none) leaves the
-   grid, and auto-placement would reflow the survivors off-centre. */
+   grid, and auto-placement would reflow the survivors off-centre.
+   Two keys ride that centre: Notation, which every page carries, and
+   Commentary, which appears only where the passage in front of the reader has
+   a curated reading (btc-commentary.js) -- so its absence is information too.
+   Both raise their sheet into the one slot above the bar, and opening either
+   closes the other. */
 #page-prev { grid-column: 1; justify-self: start; }
-.section-nav .notation { grid-column: 2; }
+.section-nav .nav-keys { grid-column: 2; display: flex; align-items: center; justify-content: center; gap: 20px; }
 #page-next { grid-column: 3; justify-self: end; }
+.commentary-body { padding-bottom: 16px; }
+/* Set as reading matter, at the body's own size: commentary is prose to be
+   read, not a table to be consulted, so it follows --scale-body (and a pinch
+   on the sheet sets that region, like a pinch on the page itself). One measure
+   holds the whole sheet -- readings and terms alike, so they share a left edge
+   though they are set at different sizes -- and it is centred, so the sheet
+   reads as a leaf laid over the page rather than a panel bolted to the chrome.
+   The measure carries the prose's own font, since ch resolves per element. */
+.commentary-measure {
+  max-width: 46ch; margin: 0 auto;
+  font: 400 calc(15.5px * var(--scale-body, 1))/1.6 'Newsreader',serif;
+}
+.commentary-entry { margin: 0 0 26px; }
+.commentary-entry:last-of-type { margin-bottom: 18px; }
+/* The reading's subject, in the same monospace eyebrow the section titles use
+   for a curated name -- a heading, deliberately not the passage's own title
+   type: this names what is being commented on, it does not retitle the page. */
+.commentary-name {
+  margin: 0 0 10px; font: 600 calc(10px * var(--scale-body, 1))/1.5 'IBM Plex Mono',monospace;
+  letter-spacing: .18em; text-transform: uppercase; color: var(--accent);
+}
+.commentary-entry p {
+  margin: 0 0 .8em; font: 400 calc(15.5px * var(--scale-body, 1))/1.6 'Newsreader',serif;
+  color: var(--ink-soft); font-variant-numeric: oldstyle-nums;
+}
+.commentary-entry p:last-child { margin-bottom: 0; }
+/* A contributed reading's byline. The name is the point of the whole layer --
+   it is what lets a reader weigh the claim -- so it sits in the accent, quiet
+   but not hidden. */
+.commentary-by { font-style: italic; color: var(--dim); }
+.commentary-by a { color: var(--accent); text-decoration: none; border-bottom: 1px solid var(--rule); }
+.commentary-by a:hover { border-bottom-color: var(--accent); }
+/* The terms, at the foot of every sheet: a sheet can be read on its own, and a
+   claim of authority is exactly what commentary must not borrow from the
+   record it sits over. Ruled off, one tier down from the prose above it. */
+.commentary-terms {
+  margin: 0; padding-top: 12px; border-top: 1px solid var(--rule);
+  font: 400 calc(11.5px * var(--scale-body, 1))/1.55 'Public Sans',sans-serif; color: var(--meta);
+}
+.commentary-terms a { color: var(--meta); }
+.commentary-terms a:hover { color: var(--accent); }
 /* Nothing to step to on either side (nothing precedes Genesis's opening leaf;
    nothing follows the tip's last section while both edges are hidden): drop
    the bar entirely rather than pin an empty rule to the screen bottom. */
@@ -714,14 +761,22 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 
     <!-- Section paging sits at the foot of the section, after its witness
          footnotes: read the transaction through, then step to the next. The
-         notation key rides between the two steppers; opened, its body rises
-         above the bar as a sheet. -->
+         page's keys ride between the two steppers; opened, either one's body
+         rises above the bar as a sheet. Commentary comes first because it is
+         about the page in hand, and it is present only when this passage has a
+         curated reading -- the notation key is the same on every page. -->
     <nav class="section-nav">
       <button type="button" id="page-prev" class="hidden" aria-label="Previous section" title="Previous section"></button>
-      <details class="notation">
-        <summary>Notation</summary>
-        <div class="notation-body"></div>
-      </details>
+      <div class="nav-keys">
+        <details class="nav-sheet commentary hidden" id="commentary">
+          <summary title="Commentary on this passage — a reading of the record, credited to whoever wrote it">Commentary</summary>
+          <div class="nav-sheet-body commentary-body" id="commentary-body"></div>
+        </details>
+        <details class="nav-sheet notation">
+          <summary>Notation</summary>
+          <div class="notation-body nav-sheet-body"></div>
+        </details>
+      </div>
       <button type="button" id="page-next" class="hidden" aria-label="Next section" title="Next section"></button>
     </nav>
   </article>
@@ -750,11 +805,25 @@ import { composeTransactionFields, composeBlockHeaderFields, groupDigits, format
 import { volumeBookChapter, heightOf, toRoman, reference } from './btc-citation.js';
 import { NOTABLE, blocksEta } from './btc-contents.js';
 import { NOTATION_HTML } from './btc-notation.js';
+import { commentaryFor, commentaryHtml } from './btc-commentary.js';
 
 // The notation key's markup is shared with the front matter's sigla leaf, so
 // the toggle here and the key at rest there can never explain a mark
 // differently. Filled once, on load.
 document.querySelector('.notation-body').innerHTML = NOTATION_HTML;
+
+// The nav bar carries two keys into the same slot above it -- the notation key
+// and, where the passage has one, its commentary. Opening either closes the
+// other: one sheet is over the page at a time, so a reader is never reading a
+// reading and a mark at once.
+for (const sheet of document.querySelectorAll('.section-nav .nav-sheet')) {
+  sheet.addEventListener('toggle', () => {
+    if (!sheet.open) return;
+    for (const other of document.querySelectorAll('.section-nav .nav-sheet')) {
+      if (other !== sheet) other.open = false;
+    }
+  });
+}
 import { storeGet, storePut } from './btc-store.js';
 import { seedArchive } from './btc-seed.js';
 // Applies the saved per-region type sizes on import; the settings rows and
@@ -3299,8 +3368,48 @@ function labelNav() {
     }
   }
 
+  // The commentary key belongs to the page, not to the steppers, but it lives
+  // in the same bar and every render path passes through here.
+  syncCommentary();
+
   // With the buttons decided, quietly ready both swipe directions' data.
   prefetchNeighbors();
+}
+
+// The txid the reader is looking at: from the loaded list when we have it, else
+// the single transaction opened by id before its block's list was ever
+// fetched. Null on a leaf, and on a ghost -- a fee-replaced draft holds no
+// curated seat, its successor does (see syncCommentary).
+function currentTxid() {
+  if (!state || state.index < 0 || state.ghost) return null;
+  return state.txids ? state.txids[state.index] : (state.txid || null);
+}
+
+// Fit the commentary key to the page in front of the reader: the curated
+// readings of this passage, or no key at all. Absence is information -- the
+// book keeps places it has not yet said anything about, and a toggle that
+// opened onto nothing would blur the difference between an unannotated passage
+// and an unremarkable one.
+//
+// Nothing here is fetched: the readings ship with the entries (CC BY 4.0, in
+// btc-contents-data.js), so a chapter that reads offline is annotated offline.
+function syncCommentary() {
+  const box = $('commentary');
+  // A projected chapter is not yet a place -- nothing curated can be about a
+  // block no miner has written. A ghost's own draft is nobody's curated entry.
+  const items = (!state || state.projected || state.ghost) ? [] : commentaryFor({
+    height: state.height,
+    index: state.index,
+    txid: currentTxid(),
+  });
+  box.classList.toggle('hidden', !items.length);
+  if (!items.length) {
+    box.open = false;                 // never reopen onto an empty sheet after a page turn
+    $('commentary-body').innerHTML = '';
+    return;
+  }
+  // Built from data, so the markup is escaped at the source (btc-commentary.js).
+  $('commentary-body').innerHTML = commentaryHtml(items);
 }
 
 // Encode every witness-bearing input's witness into a numbered footnote and
@@ -4230,8 +4339,10 @@ window.addEventListener('resize', updateGesturePrecedence);
 // already excludes native pinch-zoom -- so a pinch on the chrome around them
 // still zooms the browser natively.
 //
-// Region resolution: both fingers on the notation sheet -> notation; both in
-// the witness footnotes -> footnotes; both inside one of the manuscript
+// Region resolution: both fingers on the notation sheet -> notation; both on
+// the commentary sheet -> body, the region it is actually set in (commentary is
+// prose, sized with the prose, not a table sized with the key);
+// both in the witness footnotes -> footnotes; both inside one of the manuscript
 // grid's margin columns -> margins, but ONLY where that grid actually lays
 // the margins out as columns -- below 560px the layout collapses them inline
 // with the prose (see the .tx-flow media query), there is no strip of screen
@@ -4240,7 +4351,7 @@ window.addEventListener('resize', updateGesturePrecedence);
 // it tracks the layout exactly: a phone turned landscape regains its margin
 // columns and their pinch with them. Everything else -> body.
 (() => {
-  const SURFACES = '#page-frame, .notation-body';
+  const SURFACES = '#page-frame, .nav-sheet-body';
   const on = (t, sel) => !!(t && t.closest && t.closest(sel));
   const LABELS = { body: 'Text', margins: 'Margins', footnotes: 'Footnotes', notation: 'Notation' };
   let d0 = 0, s0 = 1, region = 'body', anchor = null, anchorTop = 0, hideTimer = null;
