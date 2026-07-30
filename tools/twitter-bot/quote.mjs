@@ -455,6 +455,21 @@ export function passageCss({ fontSize = 19, width = PAGE_WIDTH, height = PAGE_HE
   }
   .footnote sup { color: var(--accent); margin-right: .3em; }
 
+  /* ── a chapter card's head (bitcoin-book.html's chapter leaf) ── */
+  .chapter-head { text-align: center; justify-content: center; }
+  .chapter-title {
+    font: 500 1.95em/1.2 'Newsreader', Georgia, serif; color: var(--ink);
+    margin: 0 0 1.15em; letter-spacing: -.01em;
+  }
+  .chapter-hash {
+    font: italic 400 .79em/1.5 'Newsreader', Georgia, serif; color: var(--dim);
+    margin: 0 auto .85em; max-width: 46ch;
+  }
+  .chapter-hash .cfx-gold { color: var(--accent); font-weight: 700; font-style: normal; }
+  .chapter-head .cfx { display: block; font: 400 .76em/1.55 'Newsreader', Georgia, serif; color: var(--dim); }
+  .chapter-head .cfx + .cfx { margin-top: .45em; }
+  .fx-mark { color: var(--accent); font-weight: 700; font-style: normal; }
+
   /* A passage clipped at the page's foot says so in the book's own idiom —
      the ⋯ it uses wherever prose is elided — rather than stopping mid-word
      and letting the reader think that was the end of it. */
@@ -479,6 +494,9 @@ export function passageCss({ fontSize = 19, width = PAGE_WIDTH, height = PAGE_HE
 // couldn't be fetched), in which case the txid prose stands alone.
 export function passageHtml({
   cite, title, sectionNum, txidProse, section, site,
+  // A chapter card instead of a section card: the block's head, composed by
+  // the caller (tools/prerender-passages.mjs) the same way its page is.
+  chapter = false, blockProse = '', blockHashNotation = '', frontispieceRows = [],
   fontSize = 19, width = PAGE_WIDTH, height = PAGE_HEIGHT, clipped = false,
 }) {
   const host = String(site).replace(/^https?:\/\//, '');
@@ -486,6 +504,20 @@ export function passageHtml({
     ? txFlowHtml(section.fields, section.footnotesHtml || [], section.citations || [])
     : '';
 
+  // A chapter's card carries the block's own head — title, hash prose,
+  // frontispiece — rather than a transaction, so a shared chapter link
+  // previews as the chapter's title page. The frame, and the fit, are the
+  // same either way; only what fills .content differs.
+  const head = chapter ? [
+    `<h1 class="chapter-title">${escapeHtml(title || '')}</h1>`,
+    `<div class="chapter-hash">${blockHashNotation} ${escapeHtml(blockProse)}</div>`,
+    ...frontispieceRows.map(({ mark, text, gap }) => {
+      const lead = mark
+        ? `<span class="fx-mark">${escapeHtml(mark)}</span>${gap || !/^\d/.test(text) ? ' ' : ''}`
+        : '';
+      return `<span class="cfx">${lead}${text}</span>`;
+    }),
+  ].join('\n    ') : null;
 
   return `<!doctype html>
 <meta charset="utf-8">
@@ -493,14 +525,14 @@ export function passageHtml({
 </style>
 <body>
 <div class="page" id="page">
-  <div class="content" id="content">
-    <h2 class="section-title">
+  <div class="content${chapter ? ' chapter-head' : ''}" id="content">
+    ${head !== null ? head : `<h2 class="section-title">
       <span class="section-num">§ ${escapeHtml(String(sectionNum))}</span>
       ${title ? `<span class="section-event">${escapeHtml(title)}</span>` : ''}
     </h2>
     <div class="section-hash">${HASH_MARK}${escapeHtml(txidProse)}</div>
     <hr class="rule">
-    ${flow}
+    ${flow}`}
   </div>
   ${clipped ? '<div class="continues" title="the passage continues on the live page">⋯</div>' : ''}
   <div class="colophon">

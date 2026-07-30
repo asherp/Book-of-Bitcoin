@@ -168,8 +168,8 @@ compiled to WASM) is consumed as a published
 - `web/glossia.js`, `web/glossia_bg.wasm` — **build artifacts** (gitignored),
   produced by `build_web.sh` from the published glossia crate
 - `web/sw.js`, `web/bitcoin-book.webmanifest`, `web/icons/` — PWA shell
-- `tools/passage-page.mjs` — a passage as a page at its own citation path,
-  with its own Open Graph card. The reading pages take a passage as a query
+- `tools/passage-page.mjs` — a chapter or a section as a page at its own
+  citation path, with its own Open Graph card. The reading pages take a passage as a query
   string, and static hosting serves one `<head>` per file, so every passage
   would otherwise preview identically when shared. Called at deploy time by
   `tools/prerender-passages.mjs`, and it renders its cards with the reply
@@ -244,13 +244,17 @@ them. For those readers the deploy also publishes a static layer:
   markdown (prose, frontispiece, witness footnotes), generated at deploy
   time by `tools/prerender-passages.mjs` running the same parse → compose →
   encode pipeline in Node against the freshly built WASM.
-- `/III/2/5/1/` — the same passages as HTML pages at their citations,
-  written as paths (volume in Roman, then book, chapter, section). Each
-  carries its own Open Graph tags and a preview card rendered from the
-  passage itself (`web/cards/`), so a shared link previews as *that
-  passage* rather than as the site — the reading pages take a passage as a
-  query string, and static hosting gives every query the same `<head>`.
-  Built by `tools/passage-page.mjs`, using the reply bot's renderer.
+- `/III/2/5/` and `/III/2/5/1/` — the curated entries as HTML pages at
+  their citations, written as paths, at the level each citation names: a
+  chapter (a block) stops at three segments, a section (a transaction) adds
+  its §. A chapter page carries the block's title page — hash prose and the
+  header's frontispiece — and links to the curated sections inside it; a
+  section page carries the transaction. Each has its own Open Graph tags and
+  a preview card rendered from its own head (`web/cards/`), so a shared link
+  previews as *that* chapter or section rather than as the site — the
+  reading pages take a passage as a query string, and static hosting gives
+  every query the same `<head>`. Built by `tools/passage-page.mjs`, using
+  the reply bot's renderer.
 - `/robots.txt` + `/sitemap.xml` — crawlers welcome, and pointed at all of
   the above.
 
