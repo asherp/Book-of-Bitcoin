@@ -19,7 +19,7 @@
 // margin layout.
 
 import { encodeSeedPhrase } from './glossia-msg.js';
-import { findTextRuns, readableUtf8Text, tokenizeScript, bitsToTargetHex, bitsToDifficulty } from './btc-tx.js';
+import { findTextRuns, splitReadableRuns, readableUtf8Text, tokenizeScript, bitsToTargetHex, bitsToDifficulty } from './btc-tx.js';
 import { volumeBookChapter } from './btc-citation.js';
 import { BIP39, HP_SPELLS } from './btc-wordlists.js';
 
@@ -445,6 +445,73 @@ function extranonceFromPush(push) {
 // subscript, baked in by the caller, so the mark reads as one unit.
 const markToken = (glyph, title) => `<span class="op" title="${title}">${glyph}</span>`;
 
+// ─── the BIP34 height, and the miner's margin after it ─────────────────
+//
+// From BIP34 on, a coinbase scriptSig opens with a push of the block's own
+// height, minimally encoded -- the block stating its place, which is what
+// made every coinbase txid distinct and retired BIP30's duplicate check.
+// That push is the ONLY part of a coinbase scriptSig any rule constrains.
+// Everything after it is the miner's own margin: a pool tag, an extranonce,
+// a merged-mining commitment, arbitrary bytes in no format at all.
+//
+// So the height push is where the book stops parsing. Past it there are no
+// opcodes to find -- a coinbase scriptSig is never executed, and reading it
+// as script invents structure that isn't there. The evidence is on the page:
+// a pool writing "| MARA…" puts 0x7c and 0x20 on the chain, and a script
+// tokenizer reads them as OP_SWAP and a 32-byte push, swallowing the tag
+// behind an instruction nobody wrote. isCleanScript cannot tell a script
+// from bytes that merely tokenize without complaint; BIP34 can, because it
+// is a rule rather than a guess.
+//
+// The height is written raw, not as a chapter: ■ counts chapters everywhere
+// else in the book, but here the mark reports a number the miner actually
+// wrote into the bytes, and the chain's own units are what it wrote.
+
+const BIP34_HEIGHT = 227931;         // BIP34's 95% activation -- Bitcoin Core's BIP34Height
+const BIP34_MAX_3BYTE = 0x7fffff;    // 8,388,607: the last height a 3-byte CScriptNum holds
+
+// A coinbase scriptSig -> { height, restHex } when it opens with a BIP34
+// height push, else null.
+//
+// Deliberately narrow: a DIRECT push of exactly 3 bytes, decoding to a height
+// at or past activation. That window (227,931 – 8,388,607) is every block from
+// the day the rule bound until roughly the year 2168, and its edges do the
+// verifying that a caller-supplied height otherwise would. Three bytes can't
+// collide with the pre-BIP34 preamble's 4-byte nBits push -- which is why the
+// window is not widened to the 4-byte heights a distant future will need, since
+// those decode into exactly the range real nBits values occupy. The range also
+// forces minimality on its own: at or above 0x010000 the top byte is nonzero,
+// at or below 0x7fffff it never sets the sign bit, so no shorter or unpadded
+// encoding of the same number exists and the decimal reconstructs the bytes.
+export function bip34HeightPush(hex) {
+  if (hex.slice(0, 2) !== '03') return null;                  // OP_PUSHBYTES_3
+  const push = hex.slice(2, 8);
+  if (push.length !== 6) return null;
+  const height = parseInt(reverseHexStr(push), 16);
+  if (height < BIP34_HEIGHT || height > BIP34_MAX_3BYTE) return null;
+  return { height, restHex: hex.slice(8) };
+}
+
+// The height mark: ■ with the raw height, carrying the push's whole meaning.
+// Marked op-blockmark so the body line can decline the drop cap -- ::first-letter
+// would blow up the ■ alone and leave its digits at prose size, tearing the mark
+// in half exactly as a bare push count would (see bitcoin-book.html's addLine).
+const blockHeightMark = (height) => `<span class="op op-blockmark" title="BIP34 — the block writes its own height, ${groupDigits(String(height))}, into the coinbase: the push that makes every coinbase distinct. Everything after it is the miner's own margin, under no rule">■${height}</span>`;
+
+// The miner's margin -> its display: readable runs quoted, everything between
+// them as Glossia prose. No opcodes, no push counts -- there are no pushes --
+// and no gaps: splitReadableRuns accounts for every byte, so what the tail
+// renders is what the tail holds. A pool tag reads as the sentence the pool
+// wrote, pipes and spaces included, instead of arriving pre-cut by a tokenizer
+// that mistook its punctuation for instructions.
+function renderMinerMargin(hex, collect) {
+  if (!hex) return '';
+  return splitReadableRuns(hex)
+    .map((s) => (s.text !== undefined ? `“${quoteText(s.text)}”` : collect(s.hex)))
+    .filter(Boolean)
+    .join(' ');
+}
+
 // ─── data type marks ───────────────────────────────────────────────────
 //
 // A pushed datum whose kind is recognizable carries its type mark from the
@@ -793,17 +860,26 @@ export function composeTransactionFields(parsed, bestOf = 1, lazyData = null, en
   };
   const inputs = parsed.vin.map((v) => {
     const isNullPrevout = v.txid === '00'.repeat(32);
-    // A coinbase scriptSig is arbitrary miner data -- but the earliest blocks'
-    // are clean push-scripts, so render those in opcode notation, with the
-    // mining preamble (restated difficulty target + extranonce) decoded to
-    // marks and embedded text like the genesis headline quoted inline.
-    // Messier ones keep the plain treatment, where a mining-pool tag is
-    // surfaced as a quote block (`scriptAscii`). Every other scriptSig is
-    // genuine script (with a P2SH redeemScript revealed as opcodes via
-    // `nested`).
+    // A coinbase scriptSig is arbitrary miner data, and the chain gives it
+    // three readings, in this order. From BIP34 on it opens with the block's
+    // own height: the one part a rule constrains, taken under ■ with the rest
+    // left as the miner's margin. Before that rule, the earliest blocks' are
+    // clean push-scripts, so render those in opcode notation, with the mining
+    // preamble (restated difficulty target + extranonce) decoded to marks and
+    // embedded text like the genesis headline quoted inline. Messier ones keep
+    // the plain treatment, where a mining-pool tag is surfaced as a quote block
+    // (`scriptAscii`). Every other scriptSig is genuine script (with a P2SH
+    // redeemScript revealed as opcodes via `nested`).
     let script, scriptAscii = null;
     if (isNullPrevout) {
-      if (isCleanScript(v.scriptSig)) {
+      const bip34 = bip34HeightPush(v.scriptSig);
+      if (bip34) {
+        // The rule's own boundary: the height under its mark, then a break, and
+        // the miner's margin below it -- the same shape the preamble takes, and
+        // for the same reason. What the miner wrote opens a line of its own.
+        const margin = renderMinerMargin(bip34.restHex, collect);
+        script = blockHeightMark(bip34.height) + (margin ? '<br>' + margin : '');
+      } else if (isCleanScript(v.scriptSig)) {
         script = renderScript(v.scriptSig, collect, { eligible: true, preamble: true });
       } else {
         const found = findTextRuns(v.scriptSig);

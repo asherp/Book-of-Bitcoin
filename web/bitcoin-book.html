@@ -2999,14 +2999,17 @@ function renderChapter(para) {
   const fwdCells = [];
 
   // A body line; the first one across the whole transaction claims the drop
-  // cap -- unless it opens with a bare push count (⁶⁹ …), whose superscript's
-  // first digit would be blown up into a giant numeral, tearing the mark
-  // apart. In that case the cap is forfeited for the transaction, not
+  // cap -- unless it opens with a mark whose own first character would be the
+  // one blown up: a bare push count (⁶⁹ …), whose superscript's first digit
+  // would become a giant numeral, or a coinbase's BIP34 height (■960281),
+  // whose ■ would tower over digits left at prose size. Either way the mark is
+  // torn in half. In that case the cap is forfeited for the transaction, not
   // deferred to a later line (an illuminated initial belongs at the top).
+  const LEAD_EXEMPT = /^<span class="op op-(push|blockmark)"/;
   const addLine = (container, html) => {
     if (!html) return null;
     const p = document.createElement('p');
-    const lead = !leadUsed && !html.startsWith('<span class="op op-push"');
+    const lead = !leadUsed && !LEAD_EXEMPT.test(html);
     leadUsed = true;
     p.className = 'tx-line' + (lead ? ' tx-body-lead' : '');
     p.innerHTML = html;

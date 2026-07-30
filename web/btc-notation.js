@@ -181,12 +181,14 @@ export const NOTATION_HTML = `
           </div>
 
           <div class="notation-group">
-            <h4>Coinbase — the mining preamble</h4>
+            <h4>Coinbase — what opens the scriptSig</h4>
             <div class="glyph-grid">
-              <div class="glyph-row"><span class="g">β<i>n</i> <i>m</i>×256<sup><i>e</i></sup></span><span class="m">the <b>difficulty target</b> the miner restated in the coinbase, in the chapter head's own notation — a valid hash opens with n zero bits, and the target is exactly nBits' mantissa shifted up e whole zero bytes</span></div>
+              <div class="glyph-row"><span class="g">■<i>n</i></span><span class="m">the <b>block height</b>, written into the coinbase by the miner (BIP34) — the block stating its own place, which is what makes every coinbase distinct. Here alone <i>n</i> is a raw height rather than a count of chapters: the mark reports a number the miner actually put in the bytes, in the chain's units, not the book's. It is also the last thing any rule constrains — everything after it is the miner's own margin, arbitrary bytes in no format, so the book stops reading opcodes at this mark and renders the rest as what it is: quoted where it is legible, prose where it is not</span></div>
+              <div class="glyph-row"><span class="g">β<i>n</i> <i>m</i>×256<sup><i>e</i></sup></span><span class="m">the <b>difficulty target</b> the miner restated in the coinbase, in the chapter head's own notation — a valid hash opens with n zero bits, and the target is exactly nBits' mantissa shifted up e whole zero bytes. The preamble is the older custom: before BIP34 a coinbase opened with this pair instead of a height</span></div>
               <div class="glyph-row"><span class="g">η<sub><i>n</i></sub></span><span class="m"><b>extranonce</b> — search space beyond the header's η</span></div>
               <div class="glyph-row"><span class="g">⋔<sub>w</sub></span><span class="m">the <b>witness commitment</b> — in the coinbase, an OP_RETURN carrying ⌘(witness-tree root ‖ reserved value): the block's witnesses — its footnotes — bound to the chain through §1. The root is committed, never written; no wtxid appears on chain, only this testimony to all of them</span></div>
             </div>
+            <p class="notation-note">Nothing on chain marks where a miner's tag ends and his counter begins — the margin is one byte string, and the seam is not written down. So a counter byte that happens to be printable reads inside the quotation, and the quotation is the bytes, not the pool's intent. The book states what is there and declines to guess the seam: the older reading guessed, and turned a pool's own <span class="op">|</span> into an opcode.</p>
           </div>
 
           <div class="notation-group">
@@ -200,7 +202,7 @@ export const NOTATION_HTML = `
               <div class="glyph-row"><span class="g">β<i>n</i></span><span class="m">the <b>difficulty target</b>, as in the preamble</span></div>
               <div class="glyph-row"><span class="g"><i>m</i>×256<sup><i>e</i></sup></span><span class="m">the target written <b>exactly</b> — nBits' mantissa shifted up <i>e</i> whole zero bytes; its leading zeros are β's demand. The early coinbase preamble carries the same pair</span></div>
               <div class="glyph-row"><span class="g">η<sub><i>n</i></sub></span><span class="m">the <b>nonce</b> the miner landed on</span></div>
-              <div class="glyph-row"><span class="g">■<i>n</i></span><span class="m">the <b>chapter mark</b> — a mined block cited by its place within its book (n counts chapters, never a raw height); in a margin, the same glyph counts chapters of relative delay</span></div>
+              <div class="glyph-row"><span class="g">■<i>n</i></span><span class="m">the <b>chapter mark</b> — a mined block cited by its place within its book (n counts chapters, never a raw height); in a margin, the same glyph counts chapters of relative delay. The one place n is a raw height is the coinbase's BIP34 mark, above, where the miner wrote the number himself</span></div>
               <div class="glyph-row"><span class="g">□<i>n</i></span><span class="m">the <b>expected chapter mark</b> — a projected, not-yet-mined block cited by the place it would take; the number holds only while the queue does (a bare □ in a transaction's margin is the no-locktime mark)</span></div>
               <div class="glyph-row"><span class="g">—</span><span class="m"><b>unwritten</b> — a projected chapter's header slot, empty until a miner writes it</span></div>
               <div class="glyph-row"><span class="g">⋯</span><span class="m"><b>not yet knowable</b> — a value still resolving, or a projected chapter's predecessor, itself unwritten</span></div>
