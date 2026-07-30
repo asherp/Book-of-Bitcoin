@@ -656,6 +656,7 @@ button:disabled { opacity: .4; cursor: not-allowed; }
         <span class="fs-label">Margins</span><button type="button" class="ghost-btn" data-fs="margins" data-fs-d="-1" aria-label="Smaller margin text">A−</button><span class="fs-value" data-fs-v="margins">100%</span><button type="button" class="ghost-btn" data-fs="margins" data-fs-d="1" aria-label="Larger margin text">A+</button>
         <span class="fs-label">Footnotes</span><button type="button" class="ghost-btn" data-fs="footnotes" data-fs-d="-1" aria-label="Smaller footnote text">A−</button><span class="fs-value" data-fs-v="footnotes">100%</span><button type="button" class="ghost-btn" data-fs="footnotes" data-fs-d="1" aria-label="Larger footnote text">A+</button>
         <span class="fs-label">Notation</span><button type="button" class="ghost-btn" data-fs="notation" data-fs-d="-1" aria-label="Smaller notation text">A−</button><span class="fs-value" data-fs-v="notation">100%</span><button type="button" class="ghost-btn" data-fs="notation" data-fs-d="1" aria-label="Larger notation text">A+</button>
+        <span class="fs-label">Commentary</span><button type="button" class="ghost-btn" data-fs="commentary" data-fs-d="-1" aria-label="Smaller commentary text">A−</button><span class="fs-value" data-fs-v="commentary">100%</span><button type="button" class="ghost-btn" data-fs="commentary" data-fs-d="1" aria-label="Larger commentary text">A+</button>
       </div>
       <div class="fontscale-foot"><button type="button" id="fontscale-reset" class="ghost-btn">Reset</button></div>
       <div class="settings-title">Data source</div>
@@ -4315,9 +4316,8 @@ window.addEventListener('resize', updateGesturePrecedence);
 // still zooms the browser natively.
 //
 // Region resolution: both fingers on the notation sheet -> notation; both on
-// the commentary sheet -> body, the region it is actually set in (commentary is
-// prose, sized with the prose, not a table sized with the key);
-// both in the witness footnotes -> footnotes; both inside one of the manuscript
+// the commentary sheet -> commentary, each sheet setting the region it is
+// actually written in; both in the witness footnotes -> footnotes; both inside one of the manuscript
 // grid's margin columns -> margins, but ONLY where that grid actually lays
 // the margins out as columns -- below 560px the layout collapses them inline
 // with the prose (see the .tx-flow media query), there is no strip of screen
@@ -4328,7 +4328,7 @@ window.addEventListener('resize', updateGesturePrecedence);
 (() => {
   const SURFACES = '#page-frame, .nav-sheet-body';
   const on = (t, sel) => !!(t && t.closest && t.closest(sel));
-  const LABELS = { body: 'Text', margins: 'Margins', footnotes: 'Footnotes', notation: 'Notation' };
+  const LABELS = { body: 'Text', margins: 'Margins', footnotes: 'Footnotes', notation: 'Notation', commentary: 'Commentary' };
   let d0 = 0, s0 = 1, region = 'body', anchor = null, anchorTop = 0, hideTimer = null;
   const dist = (t) => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
   const toast = () => {
@@ -4355,6 +4355,7 @@ window.addEventListener('resize', updateGesturePrecedence);
   };
   const regionOf = (a, b) => {
     if (on(a.target, '.notation-body') && on(b.target, '.notation-body')) return 'notation';
+    if (on(a.target, '.commentary-body') && on(b.target, '.commentary-body')) return 'commentary';
     if (on(a.target, '.chapter-footnotes') && on(b.target, '.chapter-footnotes')) return 'footnotes';
     if (on(a.target, '#ch-paragraphs') && on(b.target, '#ch-paragraphs')) {
       const bands = marginBands();
@@ -4503,7 +4504,8 @@ renderEndpoints();
 // One settings row per region, stepping the same per-region scales the pinch
 // gesture writes (btc-fontscale.js): applied live, persisted, and read
 // wherever the book's reading matter is set -- including the notation key
-// here and at rest on the front matter's sigla leaf. A region that still
+// here and at rest on the front matter's sigla leaf, and a passage's
+// commentary here and on the Ledger's leaves. A region that still
 // follows the body shows its value dimmed; stepping it splits it off; Reset
 // rejoins everything at 100%.
 function reflectFontScale() {
