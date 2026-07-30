@@ -438,7 +438,8 @@ a:hover { text-decoration: underline; }
         <button type="button" class="anth-keep" id="anth-keep"></button>
         <!-- A ledger the reader brings is named before it is shelved: it
              becomes a row in their own contents, and a row is read by its
-             title. Opens under the button; the ledger is kept on save. -->
+             title. Opens under the button on a suggested name in the block
+             version's own notation; the ledger is kept on save. -->
         <div class="keep-title hidden" id="keep-title">
           <input type="text" id="keep-title-input" placeholder="Title for the contents" autocomplete="off" spellcheck="false" maxlength="80">
           <div class="keep-title-row">
@@ -491,6 +492,7 @@ import { INDEXED, isAddress, keptLedgers, saveKeptLedgers, sameAddresses, addres
          formatBalanceBtc, formatNetBtc, chainFailureText, citeHref, sectionOf, sectionOfFetched, citePlace, passageTxid, passageEntries, txHexOf, outspendsOf, prevoutValuesOf,
          DEFAULT_ESPLORA, esploraCustom, esploraSelected, setEsploraSettings } from './btc-index.js';
 import { volumeBookChapter, heightOf, toRoman } from './btc-citation.js';
+import { BIP39, HP_SPELLS } from './btc-wordlists.js';
 
 // The Ledger is a compendium now: every ledger in one document, read the way
 // the book is read, three levels deep.
@@ -1195,10 +1197,32 @@ const showBookmark = () => {
   reflect();
 };
 
-// The naming form under the Keep button. Save stays out of reach until
-// something is typed -- the whole point is that no ledger is shelved
-// nameless -- and Enter saves, Escape gives up, as the field's shape
-// suggests.
+// A name to start from, in the miner's own tongue: the notation a block
+// frontispiece wears for its version -- one HP spell and one BIP39 word,
+// spell first. Sixteen random bits stand in for BIP320's version-rolling
+// scratch entropy, which is what a miner puts there too; the 17th bit is
+// their parity, and the pair is the 17-bit codeword split six bits (the 64
+// spells) and eleven (the 2,048 BIP39 words). So a suggested name is a
+// well-formed version -- btc-prose.js's parseBlockVersion reads it back to
+// an nVersion -- and reads like one.
+//
+// The mapping is formatBlockVersion's, and that function remains its
+// authority; it is repeated here rather than imported because it lives
+// behind the prose renderers and their WASM glue, which naming a ledger has
+// no business waking. The lists are the same module either way, and their
+// indices are load-bearing and append-only, so the two cannot drift.
+function suggestedName() {
+  const rolling = Math.floor(Math.random() * 0x10000);
+  let parity = 0;
+  for (let b = 0; b < 16; b++) parity ^= (rolling >>> b) & 1;
+  const codeword = (parity << 16) | rolling;
+  return `${HP_SPELLS[codeword & 63]} ${BIP39[codeword >>> 6]}`;
+}
+
+// The naming form under the Keep button. It opens on a suggestion, selected
+// so a first keystroke replaces it; Save goes out of reach if the field is
+// emptied -- no ledger is shelved nameless -- and Enter saves, Escape gives
+// up, as the field's shape suggests.
 const keepTitleSave = document.getElementById('keep-title-save');
 const keepTitleCancel = document.getElementById('keep-title-cancel');
 function closeTitleForm() {
@@ -1208,9 +1232,12 @@ function closeTitleForm() {
 }
 function openTitleForm(onSave) {
   keepTitle.classList.remove('hidden');
-  keepTitleInput.value = '';
-  keepTitleSave.disabled = true;
+  // Opened on a suggestion, selected: Keep takes it as it stands, a first
+  // keystroke replaces it whole.
+  keepTitleInput.value = suggestedName();
+  keepTitleSave.disabled = false;
   keepTitleInput.focus();
+  keepTitleInput.select();
   const commit = () => { const t = keepTitleInput.value.trim(); if (t) onSave(t); };
   keepTitleSave.onclick = commit;
   keepTitleInput.oninput = () => { keepTitleSave.disabled = !keepTitleInput.value.trim(); };

@@ -131,7 +131,12 @@ compiled to WASM) is consumed as a published
   exploration is the sync — and every page found is banked for good, from
   the same Esplora-compatible endpoints the reading pages use; a ledger
   reconciles its entries against the chain's balance before its numbers
-  are trusted
+  are trusted. Keeping a ledger names it first — it becomes a row in the
+  reader's own contents (Appendix III), and the naming field opens on a
+  suggestion in the block version's own notation: one HP spell and one
+  BIP39 word, drawn from sixteen random bits where a miner puts BIP320's
+  version-rolling scratch entropy, so the name reads back as a well-formed
+  nVersion
 - `web/bitcoin-ledgers.html` — the old Ledgers shelf, now a redirect to
   the compendium (kept for bookmarks and cached mastheads)
 - `web/btc-tx.js`, `web/btc-prose.js`, `web/btc-citation.js`,
