@@ -111,11 +111,11 @@ export function rowShows(tokens, marks, templates = new Set()) {
 const setHidden = (el, hidden) => el.classList.toggle('key-cut', hidden);
 
 // Filter a rendered notation key in place. `marks` is what the page shows,
-// `templates` the script patterns it carries (btc-templates.js). With
-// `showAll`, every cut is undone -- the key at rest, on demand.
-export function applyKeyFilter(keyRoot, { marks = new Set(), templates = new Set(), showAll = false } = {}) {
+// `templates` the script patterns it carries (btc-templates.js). There is no
+// unfiltered mode here: the key at rest is the front matter's sigla leaf,
+// which never calls this at all, and the sheet links to it.
+export function applyKeyFilter(keyRoot, { marks = new Set(), templates = new Set() } = {}) {
   if (!keyRoot) return;
-  keyRoot.classList.toggle('key-filtered', !showAll);
 
   for (const row of keyRoot.querySelectorAll('.glyph-row')) {
     const g = row.querySelector('.g');
@@ -123,7 +123,7 @@ export function applyKeyFilter(keyRoot, { marks = new Set(), templates = new Set
     const tokens = marksOf(g.innerHTML, row.dataset.marks || null);
     // A row whose glyph cell is all placeholder (the bare page number) names
     // no mark to look for, and stays: the filter hides only what it can name.
-    setHidden(row, !showAll && tokens.length > 0 && !rowShows(tokens, marks, templates));
+    setHidden(row, tokens.length > 0 && !rowShows(tokens, marks, templates));
   }
 
   // Pattern rows are cells tagged with the template they draw; a table whose
@@ -131,17 +131,17 @@ export function applyKeyFilter(keyRoot, { marks = new Set(), templates = new Set
   for (const table of keyRoot.querySelectorAll('.pattern-table')) {
     let kept = 0;
     for (const cell of table.querySelectorAll('[data-row]')) {
-      const show = showAll || cell.dataset.row.split(/\s+/).some((id) => templates.has(id));
+      const show = cell.dataset.row.split(/\s+/).some((id) => templates.has(id));
       setHidden(cell, !show);
       if (show && cell.classList.contains('pname')) kept++;
     }
-    for (const head of table.querySelectorAll('.phead')) setHidden(head, !showAll && kept === 0);
+    for (const head of table.querySelectorAll('.phead')) setHidden(head, kept === 0);
   }
 
   // A group with nothing left in it is a heading over a gap.
   for (const group of keyRoot.querySelectorAll('.notation-group')) {
     const rows = group.querySelectorAll('.glyph-row, .pattern-table [data-row]');
     const any = [...rows].some((r) => !r.classList.contains('key-cut'));
-    setHidden(group, !showAll && rows.length > 0 && !any);
+    setHidden(group, rows.length > 0 && !any);
   }
 }
