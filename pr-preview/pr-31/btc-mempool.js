@@ -102,7 +102,7 @@ function projRange(from, to, tipVolume) {
 
 // One projected row, set like every other row in the contents: a name on the
 // left, its reference on the right. A projected chapter's name is its place
-// in the queue -- the next block, then the ones behind it -- because that is
+// in the queue -- block alpha, then the ones behind it -- because that is
 // the only thing about it that is settled. Nothing hangs beneath the name on
 // hover either: a figure whispered is still a figure printed. The reference
 // keeps its note, which says only that the number is provisional. The whole
@@ -122,9 +122,21 @@ function projEntryEl({ height, text, ref, refTitle }) {
   return row;
 }
 
-// What to call the k-th chapter ahead of the tip. The first is the one a
-// reader is actually waiting on, and it earns the plainer name.
-const queueLabel = (k) => (k === 1 ? 'next block' : `mempool block ${k}`);
+// What to call the k-th chapter ahead of the tip. Lettered, not numbered:
+// a number beside a projected block reads as a quantity, and there is no
+// quantity here to be had -- these are places in a line, and the line is
+// lettered the way a proof letters its cases. The Greek alphabet, since the
+// book's own sigla are Greek, and it runs far past any queue depth a mirror
+// will ever hand back; anything deeper than the alphabet falls back to the
+// bare ordinal rather than inventing a letter.
+const GREEK = ['alpha', 'beta', 'gamma', 'delta', 'epsilon', 'zeta', 'eta', 'theta',
+  'iota', 'kappa', 'lambda', 'mu', 'nu', 'xi', 'omicron', 'pi', 'rho', 'sigma',
+  'tau', 'upsilon', 'phi', 'chi', 'psi', 'omega'];
+const queueLabel = (k) => `block ${GREEK[k - 1] || k}`;
+
+// And what closes them: not a figure, not a count of what is left, just the
+// mark that a list has been cut short.
+const BACKLOG = 'etcetera';
 
 // The whole section from one reading: whatever the caller leads with (the
 // contents hands in its appendix heading; the page's own header has already
@@ -160,7 +172,7 @@ export function buildQueue({ tip, summary, blocks }, lead = null) {
         const span = Math.max(1, Math.round(b.blockVSize / MVB));
         wrap.append(projEntryEl({
           height,
-          text: 'backlog',
+          text: BACKLOG,
           ref: projRange(height, height + span - 1, tipVolume),
           refTitle: 'the deep queue has no reliable ordering — these chapters are a guess about the queue today, not about any future block',
         }));
@@ -172,7 +184,7 @@ export function buildQueue({ tip, summary, blocks }, lead = null) {
     // something can cut it into blocks.
     wrap.append(projEntryEl({
       height: tip + 1,
-      text: 'backlog',
+      text: BACKLOG,
       ref: projRange(tip + 1, tip + chapters, tipVolume),
       refTitle: 'provisional — the chapters the current queue would fill',
     }));
