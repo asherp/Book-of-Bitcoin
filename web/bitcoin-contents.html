@@ -166,6 +166,13 @@ import { volumeBookChapter, toRoman, expectedReference } from './btc-citation.js
 import { storeGet, storePut } from './btc-store.js';
 import { seedArchive } from './btc-seed.js';
 
+// The curated index and its appendix are read from notables.yaml and
+// appendix.yaml, so they arrive asynchronously -- and everything below builds
+// on them, the appendices' own names included, so the page waits here once. A
+// failed read leaves a contents of the reader's own bookmarks plus a line
+// saying what could not be read.
+await loadNotables();
+
 // A first visit provisions the archive with the curated passages' chain data
 // (idle-time, once ever; see btc-seed.js), so this page's entries -- and the
 // book pages behind them -- open like revisits.
@@ -559,12 +566,6 @@ function render() {
 // stream in as each resolves, slotting into their volume and book in order. An
 // entry whose lookup fails (placement null) drops to an "Unresolved" tail
 // rather than printing its raw id.
-// The curated index and its appendix are read from notables.yaml and
-// appendix.yaml, so they arrive asynchronously; everything below builds on
-// them, and a failed read leaves a contents of the reader's own bookmarks plus
-// a line saying what could not be read.
-await loadNotables();
-
 // A curated entry may be found in several places (the twice-confirmed coinbases
 // are one thing in four), and the contents lists PLACES: one row each, in
 // reading order, all carrying their entry's title and their own `as`. Keyed by
@@ -617,7 +618,11 @@ async function loadProjected() {
   const heading = head('toc-vol toc-proj-head', '');
   const label = document.createElement('span');
   label.className = 'toc-proj-label';
-  label.append(appendixLink(MEMPOOL_PART));
+  // The queue is readable even if the appendix file was not: name the part from
+  // what loaded, and fall back to the plain heading rather than losing the
+  // section that gathers the chapters already forming.
+  if (MEMPOOL_PART) label.append(appendixLink(MEMPOOL_PART));
+  else label.textContent = 'The Mempool';
   heading.append(label, sourceLine(queue.srcBase));
   projectedSection = buildQueue(queue, heading);
   render();
