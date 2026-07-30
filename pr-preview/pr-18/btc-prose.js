@@ -19,7 +19,7 @@
 // margin layout.
 
 import { encodeSeedPhrase } from './glossia-msg.js';
-import { findTextRuns, readableUtf8Text, tokenizeScript, bitsToTargetHex, bitsToDifficulty } from './btc-tx.js';
+import { findTextRuns, splitReadableRuns, readableUtf8Text, tokenizeScript, bitsToTargetHex, bitsToDifficulty } from './btc-tx.js';
 import { volumeBookChapter } from './btc-citation.js';
 import { BIP39, HP_SPELLS } from './btc-wordlists.js';
 
@@ -100,28 +100,40 @@ const toSubscript = (n) => String(n).split('').map((d) => SUBSCRIPT_DIGITS[+d]).
 const SUPERSCRIPT_DIGITS = '⁰¹²³⁴⁵⁶⁷⁸⁹';
 export const toSuperscript = (n) => String(n).split('').map((d) => SUPERSCRIPT_DIGITS[+d]).join('');
 
-// nBits (a compact difficulty target) -> { sym, title }. The target is
+// nBits (a compact difficulty target) -> { sym, expr, title }. The target is
 // rendered as the thing it is -- the ceiling a mined hash must dip under --
-// and β's subscript is that demand in its physical unit: the number of
-// leading zero BITS a valid hash must open with. Genesis (difficulty 1) is
-// β₃₂, and the subscript climbs as difficulty rises -- each +1 is a
-// doubling of the work. The mantissa is deliberately not shown: βₙ is a
-// summary mark, and the exact compact nBits, the full 256-bit target and
-// the difficulty ratio all ride in the hover title. A target looser than
-// the genesis baseline (never on mainnet) falls back to the raw compact
-// hex.
+// in two faces that together account for all 256 of its bits. β's subscript
+// is the demand in its physical unit: the number of leading zero BITS a
+// valid hash must open with (genesis, difficulty 1, is β₃₂; each +1 is a
+// doubling of the work). `expr` is the target written exactly, in nBits' own
+// floating-point structure: the mantissa as a plain integer times 256 raised
+// to the byte-shift exponent -- 65535×256²⁶ for genesis -- whose superscript
+// is literally the count of trailing zero bytes below the mantissa's
+// resolution. The subscript states the target's leading zero run, the
+// expression its significant bits and trailing run; leading zeros stay on β
+// because they are not legible from m×256ᵉ at a glance (they are
+// 256 − 8e − bitlen(m)). The exact compact nBits, the full 256-bit target
+// and the difficulty ratio all ride in the hover title. A target looser
+// than the genesis baseline (never on mainnet) falls back to the raw
+// compact hex, with no expression.
 function bitsInfo(bits) {
   const targetHex = bitsToTargetHex(bits);
   const difficulty = bitsToDifficulty(bits);
   const diffStr = difficulty.toLocaleString(undefined, { maximumFractionDigits: difficulty < 1000 ? 2 : 0 });
   const compact = bits.toString(16).padStart(8, '0');
   const zeros = targetHex.length - targetHex.replace(/^0+/, '').length;
-  const baseTitle = (extra) => `nBits ${compact} — a valid block hash must read below ${targetHex}${extra} — difficulty ${diffStr} (relative to the genesis block)`;
-  if (zeros < 8) return { sym: compact, title: baseTitle('') };
+  const tail = `difficulty ${diffStr} (relative to the genesis block)`;
+  if (zeros < 8) return { sym: compact, expr: '', title: `nBits ${compact} — a valid block hash must read below ${targetHex} — ${tail}` };
   // Zero bits inside the first significant hex digit: 1 -> 3, 2-3 -> 2, 4-7 -> 1, 8-f -> 0.
   const first = parseInt(targetHex[zeros], 16);
   const lz = zeros * 4 + (first >= 8 ? 0 : first >= 4 ? 1 : first >= 2 ? 2 : 3);
-  return { sym: `β${toSubscript(lz)}`, title: baseTitle(` (${lz} leading zero bits)`) };
+  const exponent = bits >>> 24;
+  const mantissa = bits & 0x007fffff;   // top mantissa bit is a sign flag, masked off
+  const expr = exponent >= 3 ? `${mantissa}×256${toSuperscript(exponent - 3)}` : '';
+  return {
+    sym: `β${toSubscript(lz)}`, expr,
+    title: `nBits ${compact} — mantissa ${mantissa} shifted up ${exponent - 3} bytes: the target ${targetHex}, which a valid block hash must read below (${lz} leading zero bits) — ${tail}`,
+  };
 }
 
 // ─── block version notation: <hp> <english> <signals> ──────────────────
@@ -238,7 +250,7 @@ export function composeBlockHeaderFields(header) {
     // BIP9 word-pair forms wear it), so the text here carries no prefix.
     version: ver.text.replace(/^v/, ''), versionTitle: ver.title,
     timestamp: time.mark, timestampTitle: time.title,
-    bits: bits.sym, bitsTitle: bits.title,
+    bits: bits.sym, bitsExpr: bits.expr, bitsTitle: bits.title,
     // The nonce is a plain integer; the renderer leads it with the bold-gold
     // η mark (like v for the version), the value itself unstyled.
     nonce: String(header.nonce),
@@ -313,14 +325,21 @@ function opToken(code) {
 // OP_PUSHDATA1/2/4, whose length rides in a separate prefix -- arrow weight
 // matching prefix width: ↧ⁿ (1-byte), ⇊ⁿ (2-byte), ⤋ⁿ (4-byte). The pushed data itself
 // follows the mark, as prose or an inline quote. (The coinbase preamble's
-// βₙ and ηn marks fold their push opcode in -- the mark alone determines
-// the exact bytes.)
+// βₙ m×256ᵉ and ηn marks fold their push opcode in -- what the mark writes
+// out determines the exact bytes, the push width included.)
 const PUSH_GLYPHS = { 0: '', 1: '↧', 2: '⇊', 4: '⤋' };
 function pushToken(form, byteLen) {
   const title = form
     ? `OP_PUSHDATA${form} — push ${byteLen} bytes, the length in a ${form}-byte prefix`
     : `OP_PUSHBYTES_${byteLen} — push the next ${byteLen} bytes`;
-  return `<span class="op op-push" title="${title}">${PUSH_GLYPHS[form] || ''}${toSuperscript(byteLen)}</span>`;
+  // A direct push carries no glyph: its mark IS the byte count, a superscript
+  // numeral saying how much of the prose after it the push holds -- data
+  // annotation rather than an operation. Marked op-count so it reads at the
+  // prose's own size (see bitcoin-book.html), which also keeps the count
+  // riding a data mark (p⁶⁵, h³²) matched to the letter it follows. The
+  // PUSHDATA arrows are opcode marks, and keep their count with them.
+  const glyph = PUSH_GLYPHS[form] || '';
+  return `<span class="op op-push${glyph ? '' : ' op-count'}" title="${title}">${glyph}${toSuperscript(byteLen)}</span>`;
 }
 
 // ─── DER signature compaction ──────────────────────────────────────────
@@ -383,10 +402,17 @@ function derToCompact(hex) {
 // restating the block's compact difficulty target (the header's nBits,
 // byte for byte), then a small-integer push -- the extranonce, the counter
 // a miner rolled once the header's 32-bit nonce was exhausted. Both are
-// numbers, not entropy, so they render as decoded marks (βₙ, ηn) rather
-// than payload words -- which also lets embedded text (the genesis
+// numbers, not entropy, so they render as decoded marks (βₙ m×256ᵉ, ηn)
+// rather than payload words -- which also lets embedded text (the genesis
 // headline) stand as the coinbase's first words instead of trailing runs
 // of bytes-as-prose.
+//
+// The target takes the frontispiece's full notation, mark and expression
+// both, not β alone: β's subscript is a leading-zero-BIT count, and many
+// distinct nBits share one count, so the mark by itself names the demand
+// without fixing the bytes that stated it. m×256ᵉ is nBits' own mantissa
+// and byte-shift, so the pair reconstructs the pushed word exactly -- the
+// same standard every other mark in the notation holds to.
 
 const reverseHexStr = (hex) => (hex.match(/../g) || []).reverse().join('');
 
@@ -418,6 +444,120 @@ function extranonceFromPush(push) {
 // summarizes (β's leading-zero count, η's nonce/extranonce) rides the glyph as a
 // subscript, baked in by the caller, so the mark reads as one unit.
 const markToken = (glyph, title) => `<span class="op" title="${title}">${glyph}</span>`;
+
+// ─── the BIP34 height, and the miner's margin after it ─────────────────
+//
+// From BIP34 on, a coinbase scriptSig opens with a push of the block's own
+// height, minimally encoded -- the block stating its place, which is what
+// made every coinbase txid distinct and retired BIP30's duplicate check.
+// That push is the ONLY part of a coinbase scriptSig any rule constrains.
+// Everything after it is the miner's own margin: a pool tag, an extranonce,
+// a merged-mining commitment, arbitrary bytes in no format at all.
+//
+// So the height push is where the book stops parsing. Past it there are no
+// opcodes to find -- a coinbase scriptSig is never executed, and reading it
+// as script invents structure that isn't there. The evidence is on the page:
+// a pool writing "| MARA…" puts 0x7c and 0x20 on the chain, and a script
+// tokenizer reads them as OP_SWAP and a 32-byte push, swallowing the tag
+// behind an instruction nobody wrote. isCleanScript cannot tell a script
+// from bytes that merely tokenize without complaint; BIP34 can, because it
+// is a rule rather than a guess.
+//
+// The height is written raw, not as a chapter: ■ counts chapters everywhere
+// else in the book, but here the mark reports a number the miner actually
+// wrote into the bytes, and the chain's own units are what it wrote.
+
+const BIP34_HEIGHT = 227931;         // BIP34's 95% activation -- Bitcoin Core's BIP34Height
+const BIP34_MAX_3BYTE = 0x7fffff;    // 8,388,607: the last height a 3-byte CScriptNum holds
+
+// A coinbase scriptSig -> { height, restHex } when it opens with a BIP34
+// height push, else null.
+//
+// Deliberately narrow: a DIRECT push of exactly 3 bytes, decoding to a height
+// at or past activation. That window (227,931 – 8,388,607) is every block from
+// the day the rule bound until roughly the year 2168, and its edges do the
+// verifying that a caller-supplied height otherwise would. Three bytes can't
+// collide with the pre-BIP34 preamble's 4-byte nBits push -- which is why the
+// window is not widened to the 4-byte heights a distant future will need, since
+// those decode into exactly the range real nBits values occupy. The range also
+// forces minimality on its own: at or above 0x010000 the top byte is nonzero,
+// at or below 0x7fffff it never sets the sign bit, so no shorter or unpadded
+// encoding of the same number exists and the decimal reconstructs the bytes.
+export function bip34HeightPush(hex) {
+  if (hex.slice(0, 2) !== '03') return null;                  // OP_PUSHBYTES_3
+  const push = hex.slice(2, 8);
+  if (push.length !== 6) return null;
+  const height = parseInt(reverseHexStr(push), 16);
+  if (height < BIP34_HEIGHT || height > BIP34_MAX_3BYTE) return null;
+  return { height, restHex: hex.slice(8) };
+}
+
+// The counters that follow the height -> their decimals, and what's left.
+//
+// A pool's coinb1 ends at the height push and the extranonce is appended
+// directly after it, so the counter sits where the pre-BIP34 preamble's η sat:
+// second, right behind the mark that opens the scriptSig. Same field, same
+// mark, one rule later -- the search space beyond the header's 32-bit nonce,
+// which the miner rolls when that one is exhausted.
+//
+// Reading it as the number it is matters twice over. It is a tally, so a
+// tally is what it should say. And a counter is entropy: at any moment ~37%
+// of its bytes are printable ASCII by pure chance, so left in the margin its
+// tail leans against whatever the miner wrote next and joins the quotation --
+// three characters one block, none the next, as the counter rolls. Taking it
+// under η removes that, not by guessing where a tag begins, but by consuming
+// the bytes that were never text before anything looks for text in them.
+//
+// Bounded by extranonceFromPush's own ceiling: a direct push of 1-8 bytes,
+// minimally encoded, so the decimal reconstructs the bytes exactly. A pool tag
+// can't be caught by it -- a tag opens with a printable byte (0x2f '/', 0x4d
+// 'M'), which reads as a push far longer than eight and fails the test.
+const EXTRANONCE_MAX_BYTES = 8;
+export function peelExtranonces(hex) {
+  const values = [];
+  let rest = hex;
+  for (;;) {
+    const op = parseInt(rest.slice(0, 2), 16);
+    if (!(op >= 1 && op <= EXTRANONCE_MAX_BYTES)) break;
+    const end = 2 + op * 2;
+    if (rest.length < end) break;
+    const n = extranonceFromPush(rest.slice(2, end));
+    if (n === null) break;
+    values.push(n);
+    rest = rest.slice(end);
+  }
+  return { values, restHex: rest };
+}
+
+// The height mark: ■ with the raw height, carrying the push's whole meaning.
+// Marked op-blockmark to name the span for what it is -- and this is the one
+// mark that WANTS the drop cap. ::first-letter takes the ■ and leaves the
+// height whole and at one size, so the block's own sigil is illuminated on the
+// block's own first page, with the number it states reading straight on from
+// it. (A bare push count can't do that: its cap would eat a digit and leave
+// the rest of the numeral behind. See bitcoin-book.html's addLine.)
+const blockHeightMark = (height) => `<span class="op op-blockmark" title="BIP34 — the block writes its own height, ${groupDigits(String(height))}, into the coinbase: the push that makes every coinbase distinct. Everything after it is the miner's own margin, under no rule">■${height}</span>`;
+
+// The miner's margin -> its display: readable runs quoted, everything between
+// them as Glossia prose. No opcodes, no push counts -- there are no pushes --
+// and no gaps: splitReadableRuns accounts for every byte, so what the tail
+// renders is what the tail holds. A pool tag reads as the sentence the pool
+// wrote, pipes and spaces included, instead of arriving pre-cut by a tokenizer
+// that mistook its punctuation for instructions.
+// The extranonce mark: η with its value subscript, in both eras. One field
+// gets one form -- an early block's η₄ and a modern η₁₇₈₅₄₂₉₇₅₅ are the same
+// counter under the same rule, and a mark that changed shape with the size of
+// its number would be two marks wearing one glyph. Both call sites come here
+// so they cannot drift apart again.
+const extranonceMark = (n) => markToken(`η${toSubscript(n)}`, `extranonce ${n} — the counter the miner rolled once the header's 32-bit nonce (η) was exhausted. A tally, not text: it is read as the number it is, so its bytes never pass for writing`);
+
+function renderMinerMargin(hex, collect) {
+  if (!hex) return '';
+  return splitReadableRuns(hex)
+    .map((s) => (s.text !== undefined ? `“${quoteText(s.text)}”` : collect(s.hex)))
+    .filter(Boolean)
+    .join(' ');
+}
 
 // ─── data type marks ───────────────────────────────────────────────────
 //
@@ -501,7 +641,7 @@ function csvMark(value) {
 // prose (safe) and quoted ASCII is escaped, so the result is safe to render
 // via innerHTML like before. Exported for the anthology title page, which
 // reads an address as its scriptPubKey in this same notation.
-export function renderScript(hex, collect, { eligible = false, nested = false, preamble = false } = {}) {
+export function renderScript(hex, collect, { eligible = false, nested = false, preamble = false, coinbase = false } = {}) {
   const toks = tokenizeScript(hex);
   // A P2SH scriptSig ends with its redeemScript, pushed as data; reveal that
   // final push as opcodes when it parses as a genuine script.
@@ -511,6 +651,12 @@ export function renderScript(hex, collect, { eligible = false, nested = false, p
   // the extranonce must directly follow it; anything else ends the hunt and
   // the push falls through to the ordinary treatment.
   let pre = preamble ? 'target' : 'done';
+  // The preamble sits on its own line: it is the miner's own bookkeeping,
+  // not the coinbase's message, so the break after its last mark lets what
+  // the miner actually wrote (the genesis headline, a tag) open a line of
+  // its own. Recorded as an index rather than pushed as a part, so a
+  // scriptSig that is preamble and nothing else ends without a stray break.
+  let breakAfter = -1;
   let prevOp = null;   // the opcode preceding a push -- context for its type mark
   toks.forEach((t, i) => {
     if (t.op !== undefined) {
@@ -523,7 +669,15 @@ export function renderScript(hex, collect, { eligible = false, nested = false, p
         const bits = compactBitsFromPush(t.push);
         if (bits !== null) {
           const info = bitsInfo(bits);
-          parts.push(markToken(info.sym, `the difficulty target this block was mined against — ${info.title}`));
+          // The same two faces the frontispiece gives the header's nBits: β's
+          // demand (the leading zero bits a valid hash must open with) and,
+          // beside it, the target written exactly as mantissa × 256ᵉ. No <
+          // between them -- the frontispiece's sign binds the chapter hash
+          // above it to the target, and no hash stands on this line; here the
+          // mark names the target and the expression writes it out.
+          parts.push(markToken(info.expr ? `${info.sym} ${info.expr}` : info.sym,
+            `the difficulty target this block was mined against — ${info.title}`));
+          breakAfter = parts.length - 1;
           pre = 'extranonce';
           return;
         }
@@ -531,12 +685,31 @@ export function renderScript(hex, collect, { eligible = false, nested = false, p
         pre = 'done';
         const n = extranonceFromPush(t.push);
         if (n !== null) {
-          parts.push(markToken(`η${toSubscript(n)}`, `extranonce ${n} — the counter the miner rolled once the header's 32-bit nonce (η) was exhausted`));
+          parts.push(extranonceMark(n));
+          breakAfter = parts.length - 1;
           return;
         }
       }
       const mark = pushToken(t.pushForm || 0, t.push.length / 2);
       if (!t.push) { parts.push(mark); return; }              // a zero-length extended push -- the mark alone
+      // The witness commitment (BIP141): in a coinbase, an OP_RETURN whose
+      // 36-byte push opens with the aa21a9ed marker carries
+      // ⌘(witness-tree root ‖ reserved value) -- the testimony binding
+      // every witness (every footnote) in this block to the chain, through
+      // this one output. The marker reads as its own ⋔𝑤 mark and the 32
+      // committed bytes as a gold on-chain datum; the root itself is the
+      // preimage -- committed here, never written anywhere.
+      if (coinbase && prevOp === 0x6a && t.push.length === 72 && t.push.slice(0, 8).toLowerCase() === 'aa21a9ed') {
+        parts.push(
+          markToken('⋔<sub>w</sub>', 'witness commitment (BIP141 marker aa21a9ed) — ⌘(witness-tree root ‖ reserved value), the identity hash: every witness in this block, bound to the chain through this coinbase. The root is the preimage — committed here, never written on chain'),
+          // The ⋔w mark alone names the tree; how the digest was made
+          // (⌘ over root ‖ reserved) lives in the titles and the Notation
+          // key rather than crowding the line.
+          dataMark('h', 'the 32 committed bytes — ⌘(witness-tree root ‖ reserved value); the root is the preimage, never written on chain') + pushToken(0, 32),
+          collect(t.push.slice(8)),
+        );
+        return;
+      }
       if (i === redeemIdx && looksLikeScript(t.push)) {
         // reveal the redeemScript, typed r
         parts.push(dataMark('r', 'redeem script — revealed as opcodes') + mark, renderScript(t.push, collect));
@@ -575,6 +748,9 @@ export function renderScript(hex, collect, { eligible = false, nested = false, p
       parts.push(collect(t.trunc));                           // malformed tail -- carry it as prose
     }
   });
+  // The break rides on the last preamble mark rather than standing as its own
+  // part, so a plain-text rendering (which drops the tag) keeps single spaces.
+  if (breakAfter >= 0 && breakAfter < parts.length - 1) parts[breakAfter] += '<br>';
   return parts.join(' ');
 }
 
@@ -731,17 +907,30 @@ export function composeTransactionFields(parsed, bestOf = 1, lazyData = null, en
   };
   const inputs = parsed.vin.map((v) => {
     const isNullPrevout = v.txid === '00'.repeat(32);
-    // A coinbase scriptSig is arbitrary miner data -- but the earliest blocks'
-    // are clean push-scripts, so render those in opcode notation, with the
-    // mining preamble (restated difficulty target + extranonce) decoded to
-    // marks and embedded text like the genesis headline quoted inline.
-    // Messier ones keep the plain treatment, where a mining-pool tag is
-    // surfaced as a quote block (`scriptAscii`). Every other scriptSig is
-    // genuine script (with a P2SH redeemScript revealed as opcodes via
-    // `nested`).
+    // A coinbase scriptSig is arbitrary miner data, and the chain gives it
+    // three readings, in this order. From BIP34 on it opens with the block's
+    // own height: the one part a rule constrains, taken under ■ with the rest
+    // left as the miner's margin. Before that rule, the earliest blocks' are
+    // clean push-scripts, so render those in opcode notation, with the mining
+    // preamble (restated difficulty target + extranonce) decoded to marks and
+    // embedded text like the genesis headline quoted inline. Messier ones keep
+    // the plain treatment, where a mining-pool tag is surfaced as a quote block
+    // (`scriptAscii`). Every other scriptSig is genuine script (with a P2SH
+    // redeemScript revealed as opcodes via `nested`).
     let script, scriptAscii = null;
     if (isNullPrevout) {
-      if (isCleanScript(v.scriptSig)) {
+      const bip34 = bip34HeightPush(v.scriptSig);
+      if (bip34) {
+        // The rule's own boundary, then the miner's bookkeeping, then a break:
+        // the height under ■, the counters after it under η, and the margin
+        // below -- the same shape the preamble takes (β η, break, the writing),
+        // and for the same reason. What the miner wrote opens a line of its own,
+        // with nothing mechanical left on it.
+        const { values, restHex } = peelExtranonces(bip34.restHex);
+        const preamble = [blockHeightMark(bip34.height), ...values.map(extranonceMark)].join(' ');
+        const margin = renderMinerMargin(restHex, collect);
+        script = preamble + (margin ? '<br>' + margin : '');
+      } else if (isCleanScript(v.scriptSig)) {
         script = renderScript(v.scriptSig, collect, { eligible: true, preamble: true });
       } else {
         const found = findTextRuns(v.scriptSig);
@@ -774,6 +963,10 @@ export function composeTransactionFields(parsed, bestOf = 1, lazyData = null, en
     };
   });
 
+  // A coinbase's outputs carry one script no other transaction may: the
+  // witness commitment -- recognized by renderScript only under this flag,
+  // so an OP_RETURN that merely mimics the marker elsewhere stays plain data.
+  const isCoinbaseTx = parsed.vin.length === 1 && parsed.vin[0].txid === '00'.repeat(32);
   const outputs = parsed.vout.map((o) => {
     // A scriptPubKey is always genuine script, rendered in opcode notation. An
     // OP_RETURN (¶) payload is `eligible` for inline ASCII quoting, so an
@@ -783,7 +976,7 @@ export function composeTransactionFields(parsed, bestOf = 1, lazyData = null, en
     // caller supplies `lazyData`; an ASCII payload is still quoted inline by
     // `eligible` before either encoder is reached, so only opaque bytes defer.
     const encodeData = (isOpReturn && lazyData) ? lazyData : collect;
-    return { script: renderScript(o.scriptPubKey, encodeData, { eligible: isOpReturn }), scriptAscii: null, value: formatBtc(o.value), valueTitle: `${groupDigits(String(o.value))} satoshis` };
+    return { script: renderScript(o.scriptPubKey, encodeData, { eligible: isOpReturn, coinbase: isCoinbaseTx }), scriptAscii: null, value: formatBtc(o.value), valueTitle: `${groupDigits(String(o.value))} satoshis` };
   });
 
   const lock = locktimeInfo(parsed.locktime);

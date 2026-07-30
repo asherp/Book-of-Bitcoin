@@ -53,6 +53,19 @@ gives its parts. That is the general principle here: the organization should be
 discovered rather than imposed, so that a reader who learns the citation form
 learns something about Bitcoin and not merely something about my filing.
 
+The same principle holds inside a passage, at the scale of fields. A section
+lays out its transaction in wire order — version, inputs, outputs, locktime,
+as the bytes run — and a chapter head lays out its block header the same way:
+version, previous block, merkle root, timestamp, target, nonce. I have
+permitted the page one deliberate exception. Witness data sits
+mid-serialization on the wire, but it is spending apparatus rather than
+speech, so it gathers at the foot of the page as footnotes, each marked from
+the input that carries it. The difficulty target keeps its wire slot but
+wears a plain < before its value, binding it to the chapter's hash at the
+head of the page, so that the proof of work reads as what it is: a number
+below a ceiling. Everywhere else, the order of the page is the order of the
+bytes; where it is not, the departure is on purpose and in the open.
+
 ## The record and the readings of it
 
 Two kinds of writing sit in this book and I have worked to keep them apart on
