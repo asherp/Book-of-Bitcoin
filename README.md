@@ -155,7 +155,10 @@ compiled to WASM) is consumed as a published
     sigla leaf of the front matter, and a compact one rides the book page
   - the citation sigla (`web/btc-citation.js`): Roman volumes, `β` the
     difficulty mark (a book is a difficulty window), `■` the block mark (a
-    chapter is a block), `§` the section (a transaction) — e.g. `III β2 ■5 §1`
+    chapter is a block), `§` the section (a transaction) — e.g. `III β2 ■5 §1`,
+    with an output appended as `§1.0` and a witness as its footnote letter,
+    `§1.a`. Footnotes are lettered a, b, c … skipping `q` (too near a `g` at
+    superscript size) and continuing in bijective base-25 — `aa` after `z`
   - the block-version notation (`web/btc-prose.js`): BIP9's fields rendered as
     what they are — a word pair carrying the 16 version-rolling bits, then the
     signaling bits in plain binary (`accio library 100`). Invertible: the
@@ -168,6 +171,21 @@ compiled to WASM) is consumed as a published
 - `web/glossia.js`, `web/glossia_bg.wasm` — **build artifacts** (gitignored),
   produced by `build_web.sh` from the published glossia crate
 - `web/sw.js`, `web/bitcoin-book.webmanifest`, `web/icons/` — PWA shell
+- `tools/passage-page.mjs` — a chapter, a section, or an output as a page at
+  its own citation path, with its own Open Graph card. The reading pages take a passage as a query
+  string, and static hosting serves one `<head>` per file, so every passage
+  would otherwise preview identically when shared. Called at deploy time by
+  `tools/prerender-passages.mjs`, and it renders its cards with the reply
+  bot's renderer — one renderer, two consumers, the same page either way
+- `tools/twitter-bot/` — the reply bot: watches a hashtag on X for citations
+  (`III β2 ■5 §1`, ascii and packed-hashtag forms, block heights, txids) and
+  answers each with chapter and verse — the canonical citation and the
+  section itself in the book's notation: scripts as opcode sigla, amounts in
+  ₿, witness footnotes, the txid as decodable Glossia prose, and a deep link
+  into the book. A section too long for the tweet is ellipsized in text and
+  rides whole as a rendered page of the book (image + alt text). See its
+  [README](tools/twitter-bot/README.md); deployed by
+  `.github/workflows/twitter-bot.yml`
 
 ## Building & running locally
 
@@ -229,6 +247,23 @@ them. For those readers the deploy also publishes a static layer:
   markdown (prose, frontispiece, witness footnotes), generated at deploy
   time by `tools/prerender-passages.mjs` running the same parse → compose →
   encode pipeline in Node against the freshly built WASM.
+- `/III/2/5/`, `/III/2/5/1/`, `/III/2/5/1/0/`, `/III/2/5/1/a/` — the curated
+  entries as HTML pages at their citations, written as paths, one address per
+  level: a chapter (a block), a section (a transaction), and then either an
+  output of it or one of its witnesses. Each path stops where the printed
+  reference stops, and the last segment says for itself what it names — a
+  numeral is an output (§1.0, the 0-based vout), a letter a witness footnote
+  (§1.a). A chapter page carries the block's title page (hash prose and the
+  header's frontispiece) and leads to its sections; a section page carries
+  the transaction and leads to its outputs and witnesses; an output page
+  carries the amount and the script locking it; a witness page carries that
+  input's stack. Each has its own Open Graph tags and a preview card rendered
+  from its own head (`web/cards/`) — and no description tag: the card is the
+  passage and the title is its address. A shared link therefore previews as
+  *that* address rather than as the site, which the reading pages cannot do,
+  since they take a passage as a query string and static hosting gives every
+  query the same `<head>`. Built by `tools/passage-page.mjs`, using the
+  reply bot's renderer.
 - `/robots.txt` + `/sitemap.xml` — crawlers welcome, and pointed at all of
   the above.
 

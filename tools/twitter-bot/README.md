@@ -1,0 +1,322 @@
+# The reply bot — chapter and verse, on demand
+
+A Node bot that watches a hashtag on X (Twitter) for citations of the
+βook of βitcoin and answers each with chapter and verse: the passage's
+canonical citation, its curated title when the table of contents names
+one, the section itself quoted in the book's notation — scripts as opcode
+sigla (⧉ ⌗ ∇ …), amounts in ₿, the sequence and locktime marks, witness
+data as footnotes, and the txid-as-prose line every passage opens with —
+and a deep link into the live book.
+
+The quote is always set whole, sigla and cover words alike — the cover is
+the grammar that makes the payload read as a sentence, and stripping
+either would quote the book in a voice it does not have. A section small
+enough for X's 280 rides in the tweet text. One that isn't — nearly all
+of them — is ellipsized in the text at a word boundary, and the full
+passage rides as an attached image, with the whole passage as alt text.
+
+## The passage image
+
+The image is the book's own page, set the way `bitcoin-book.html` sets
+it: the `§` heading and the section's event title, the txid as prose
+beneath it, a rule, then the transaction as a manuscript page — the
+three-column band grid with provenance in the left margin, the canonical
+prose in the body (the first line taking the illuminated initial),
+amounts in the right margin, the locktime centred as a colophon, and
+witness data as numbered footnotes. The markup, the class names and the
+CSS are transposed from the reading page; the app's running head and
+section nav are its furniture, not the page's, and are left out.
+
+**Fitting.** The whole page is set from one root font size, and every
+measure in it is an em off that number — so fitting a passage to the
+image is a search on a single variable. The renderer binary-searches the
+largest root size at which the passage still fits, then renders there: a
+short section comes out large and airy, a long one small and dense, and
+the book's proportions hold at either end. A passage too long even at the
+floor (9px) keeps the floor and shows its opening — the top of the page —
+with a `⋯` and the colophon still pinned beneath it, so it reads as a
+passage that continues rather than one that stopped mid-word.
+
+The default image is 1200×1500 (4:5, the tallest portrait X shows
+uncropped in a timeline), rendered at 2× for a crisp serif. Any geometry
+works — set `BOT_IMAGE_WIDTH` / `BOT_IMAGE_HEIGHT` and the fit follows.
+
+```
+tweet:   #bookofbitcoin I β1 ■1 §1
+
+reply:   I β1 ■1 §1 — The Times 03/Jan/2009 Chancellor on brink of…
+         “version 1 input ∅ coinbase — new coin — β₃₂ η₄ ⁶⁹ “The Times
+         03/Jan/2009 Chancellor on brink of second bailout for banks” · ●
+         output 50.00000000 ₿ — p⁶⁵ Cop afford detail to satoshi…”
+         + the full passage as an image
+         https://bookofbitcoin.io/bitcoin-book.html?block=0&index=0
+```
+
+## What it answers
+
+Any of the citation forms a phone keyboard can produce, found anywhere in
+the tweet's text:
+
+| Form | Example | Notes |
+|---|---|---|
+| sigla | `III β2 ■5 §1` | the book's own notation; `§` optional (defaults to §1, the coinbase) |
+| ascii | `III b2 c5 s1` | also `book` / `chapter` / `section` spelled out |
+| hashtag | `#IIIb2c5s1` | the ascii form packed — hashtags carry no spaces |
+| block | `block 170 §2` | a height directly; `s2` works too |
+| txid | 64 hex chars | resolved to its citation via merkle proof |
+
+Replies always cite the canonical `reference(height)` — an ascii or spilled
+citation is answered under its true address. A citation of a chapter the
+chain has not reached is answered gently ("…is not yet written — N blocks
+to go"); a section a chapter does not have, likewise. A tweet carrying the
+hashtag but no parsable citation is passed over in silence — the bot never
+lectures a busy tag.
+
+## Running it
+
+Requires Node ≥ 20. The Glossia engine (`web/glossia.js` +
+`web/glossia_bg.wasm`) is a build artifact; if it is missing the bot
+fetches it from the deployed site, so no Rust toolchain is needed.
+
+The one dependency, and it is optional, is Playwright — headless Chromium
+renders the passage images. Without it the bot runs text-only and
+overflowing verses stay ellipsized; with it they ride whole:
+
+```sh
+cd tools/twitter-bot && npm install     # optional: enables passage images
+```
+
+```sh
+# Try it with no credentials at all: parse + resolve + render to stdout
+# (writes passage.png beside it when the verse overflows)
+node tools/twitter-bot/bot.mjs --render "III β2 ■5 §1"
+
+# One real pass: search, reply, save state
+node tools/twitter-bot/bot.mjs
+
+# Search and render, post nothing (also records nothing)
+node tools/twitter-bot/bot.mjs --dry-run
+
+# The offline test suite (no network, no credentials)
+node --test tools/twitter-bot/test.mjs
+```
+
+Each invocation is one pass: search since the last seen tweet, reply to
+what parses (capped per pass), write `state.json`, exit. Run it from cron,
+or let `.github/workflows/twitter-bot.yml` do it on a schedule.
+
+## Testing it
+
+Four rungs, each one needing more than the last. Stop wherever you have
+the confidence you want — nothing below rung 3 can post anything.
+
+**1 — the suite.** No network, no credentials, no engine required:
+
+```sh
+node --test tools/twitter-bot/test.mjs
+```
+
+Covers citation parsing in every form, tweet weighing as X weighs it,
+reply composition, the manuscript page's bands and escaping, and the
+OAuth 1.0a signature against X's published vector. Two tests deepen when
+the optional pieces are present — one renders a real verse through the
+WASM engine (after `./build_web.sh`), one renders a real PNG (after
+`npm install`) — and skip cleanly when they aren't. Both states should
+pass, and it is worth running both.
+
+**2 — one passage, end to end.** Resolves against the chain and prints
+the reply the bot would post, writing `passage.png` beside it:
+
+```sh
+node tools/twitter-bot/bot.mjs --render "I β1 ■1 §1"
+node tools/twitter-bot/bot.mjs --render "block 57043"      # Pizza Day
+node tools/twitter-bot/bot.mjs --render "gm no citation"   # answers nothing
+```
+
+This is the rung that shows you the actual output — read the tweet text,
+open the image, check the citation. No X account needed.
+
+To exercise it with no outbound network at all, point `BOT_ESPLORA` at
+any Esplora-compatible endpoint: your own node, or a few canned routes
+(`/block-height/N`, `/block/<hash>`, `/block/<hash>/txids`,
+`/tx/<txid>/hex`) served locally.
+
+**3 — a real pass, posting nothing.** Needs `X_BEARER_TOKEN` only:
+
+```sh
+X_BEARER_TOKEN=… node tools/twitter-bot/bot.mjs --dry-run
+```
+
+Searches the live hashtag and prints the replies it *would* post, marking
+which would carry an image. Records nothing and advances no watermark, so
+the first real pass still answers everything it found. Tweet something
+with the tag from another account first, or point `BOT_HASHTAG` at a tag
+that already has traffic.
+
+**3½ — a whole pass, against stand-ins.** Drives search → resolve →
+render → upload → reply → record with no account and no network:
+
+```sh
+node tools/twitter-bot/rehearse.mjs
+```
+
+It asserts a cold pass posts nothing, a warm pass answers the two
+citations (with images) and passes over the bare tag, and a repeat pass
+answers nothing twice — exiting non-zero on the first mismatch, so it can
+gate a deploy. What it cannot prove is that the real X API accepts what
+the bot sends; only rung 4 does that.
+
+**4 — live.** All five credentials, and start deliberately: set
+`BOT_HASHTAG` to something private (`#bookofbitcointest`) and
+`BOT_MAX_REPLIES=1`, tweet a citation at it, and run one pass. Check the
+reply, then move the tag to the real one. The workflow can be driven by
+hand from the Actions tab (`workflow_dispatch`, with a **dry run**
+checkbox) before you let the schedule have it.
+
+Every failure path prints one line and exits non-zero — a missing
+credential, an unreachable explorer, a missing engine. `BOT_DEBUG=1` adds
+the stack.
+
+## Deploying it
+
+The bot is a single pass that exits — not a daemon — so deploying it means
+choosing what runs it on a schedule. Anything that can run `node` every so
+often will do.
+
+### On GitHub Actions (included)
+
+`.github/workflows/twitter-bot.yml` runs a pass every 30 minutes. It skips
+itself quietly until the credentials exist, so merging it changes nothing
+until you opt in:
+
+1. **Add the five secrets** — Settings → Secrets and variables → Actions →
+   *Secrets*: `X_BEARER_TOKEN`, `X_API_KEY`, `X_API_SECRET`,
+   `X_ACCESS_TOKEN`, `X_ACCESS_SECRET`.
+2. **Add the variables you want** — same page, *Variables* tab:
+   `BOT_HASHTAG`, `BOT_HANDLE` (the bot's own handle, so it never answers
+   itself), `BOT_MAX_REPLIES`, `BOT_SITE`. All optional; all have defaults.
+3. **Rehearse it first** — Actions → Twitter Bot → *Run workflow*, with the
+   **dry run** box ticked. It searches for real and posts nothing.
+4. **Let it run.** Untick the box, or wait for the schedule.
+
+Each pass appends its log to the run summary, so the Actions page reads as
+a history of what the bot said and why.
+
+Two things to know about this deployment:
+
+- **The schedule is approximate.** GitHub's cron is best-effort and often
+  runs late under load. A tweet may wait an hour for its answer. Also,
+  scheduled workflows are disabled automatically after 60 days without a
+  commit to the repository — if the book goes quiet, so does the bot, and
+  GitHub emails you when it happens.
+- **State lives in the Actions cache**, which is evicted after about a week
+  without a hit. The ledger is in the same file as the watermark, so an
+  eviction is indistinguishable from a first run — which is exactly why a
+  pass with no state answers nothing (see below). At 30-minute intervals
+  eviction should never happen; after a long pause, it costs you a few
+  unanswered tweets rather than a burst of late ones.
+
+### Anywhere else
+
+The bot needs Node ≥ 20 and, for images, Playwright's Chromium. On a small
+VM, a cron line is the whole deployment:
+
+```cron
+*/30 * * * * cd /srv/book-of-bitcoin && \
+  X_BEARER_TOKEN=… X_API_KEY=… X_API_SECRET=… \
+  X_ACCESS_TOKEN=… X_ACCESS_SECRET=… \
+  /usr/bin/node tools/twitter-bot/bot.mjs >> /var/log/bookbot.log 2>&1
+```
+
+`state.json` then lives on disk, which is more durable than the Actions
+cache — set `BOT_STATE` to put it somewhere that survives a redeploy. Point
+`BOT_ESPLORA` at your own node if you'd rather not lean on the public
+mirrors.
+
+The pass exits non-zero on failure with a one-line reason, so any
+supervisor that reads exit codes will tell you the truth about it.
+
+### Cold starts, and why the first pass is silent
+
+A pass that finds no state at all — a first deployment, a wiped cache, a
+fresh clone — takes the watermark and **replies to nothing**, then answers
+normally from the next pass on. Both situations look identical from inside
+the bot, and the dangerous one is the second: the replied-to ledger is in
+the file that vanished, so answering what the search returns could mean
+replying to a week of tweets at once. A bot that says nothing on its first
+run is a bug report; one that says fifty things at once is an incident.
+
+So expect the first pass to be quiet. That is correct. If you actually
+want the backlog answered, run it once with `BOT_COLD_START=reply`.
+
+### Keeping it honest
+
+`.github/workflows/twitter-bot-test.yml` runs on every change to the bot —
+or to the book modules it composes passages through, since a change to
+`btc-prose.js` reaches the bot's output directly. It runs the suite twice
+(bare checkout, then with the engine and browser present) and rehearses a
+full pass. No credentials, and it cannot reach X or the chain.
+
+## Credentials
+
+Create an app in the [X developer portal](https://developer.x.com/) with
+**read and write** user authentication, then supply:
+
+| Variable | What it is | Used for |
+|---|---|---|
+| `X_BEARER_TOKEN` | app-only bearer token | recent search |
+| `X_API_KEY` / `X_API_SECRET` | the app's consumer key pair | signing posts |
+| `X_ACCESS_TOKEN` / `X_ACCESS_SECRET` | the bot account's access pair | posting as the bot |
+
+Posting is signed with OAuth 1.0a (HMAC-SHA1, implemented here on
+`node:crypto`) — no token-refresh dance, the four credentials sign forever.
+
+**Mind your API tier.** Recent search is not available on X's free tier;
+polling a hashtag needs a plan that includes `GET /2/tweets/search/recent`.
+The workflow's schedule (every 30 minutes) assumes that; widen it to match
+your rate limits.
+
+## Tuning (environment, all optional)
+
+| Variable | Default | Meaning |
+|---|---|---|
+| `BOT_HASHTAG` | `#bookofbitcoin` | the tag watched |
+| `BOT_HANDLE` | — | the bot's own @handle, excluded from search |
+| `BOT_MAX_REPLIES` | `5` | replies per pass; the rest wait for the next one |
+| `BOT_REPLY_UNWRITTEN` | `1` | set `0` to skip future-chapter citations silently |
+| `BOT_ESPLORA` | the two public mirrors | chain source(s), comma-separated — your own node, or a local stand-in |
+| `BOT_X_API` | `https://api.x.com` | the X API base — point it at a stand-in to rehearse a pass |
+| `BOT_COLD_START` | — | set `reply` to answer the backlog on a stateless first pass |
+| `BOT_DEBUG` | — | set `1` to print a stack on failure, not just the message |
+| `BOT_IMAGE_WIDTH` | `1200` | passage image width, in CSS px (rendered at 2×) |
+| `BOT_IMAGE_HEIGHT` | `1500` | passage image height; the fit follows the geometry |
+| `BOT_SITE` | `https://bookofbitcoin.io` | the book's origin, for links and the engine |
+| `BOT_STATE` | `tools/twitter-bot/state.json` | where the watermark and ledger live |
+
+## How it keeps from double-replying
+
+`state.json` carries two things: `sinceId`, the search watermark, and
+`replied`, a ledger of tweet ids already answered or deliberately skipped.
+The watermark only advances past tweets this pass fully disposed of — a
+reply cap or rate limit leaves the rest for the next pass — and the ledger
+absorbs any overlap, so a rewound watermark (a fresh cache, a hand-edited
+file) still never answers a tweet twice. In the workflow the state rides
+the Actions cache between runs.
+
+## Layout
+
+- `bot.mjs` — the pass itself: engine bootstrap, search, reply, state
+- `citation.mjs` — tweet text → citation, in all the forms above
+- `quote.mjs` — citation → chain data → the reply, weighed as X weighs
+  it; also the passage page — the book's manuscript grid, its CSS in em
+  off one root size — and the image's alt text
+- `image.mjs` — passage page → PNG, via Playwright's Chromium: fits the
+  root size to the target geometry, then screenshots. Absent Playwright,
+  `loadRenderer()` returns null and nothing else degrades
+- `x-api.mjs` — the API calls (search, post, media upload, alt text),
+  with OAuth 1.0a signing on `node:crypto`
+- `rehearse.mjs` — a whole pass against local stand-ins for the chain
+  and for X: the posting path, exercised before it can reach anybody
+- `test.mjs` — the offline suite; the deeper tests render a real verse
+  through the WASM engine (when `./build_web.sh` has run) and a real PNG
+  (when Playwright is installed), and skip cleanly when not
