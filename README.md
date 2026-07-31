@@ -81,6 +81,16 @@ compiled to WASM) is consumed as a published
 - `web/bitcoin-book.html` — the book: fetches a block from a configurable
   esplora-style endpoint (Blockstream, mempool.space, or your own node) and
   renders it as prose
+- **Turning pages.** Every reading page is a carousel — the contents
+  included, since it is a run of leaves too: a horizontal swipe turns at the
+  level the reader is on, and a vertical one changes level — a pull down at
+  the top ascends, a push up at the foot descends. On a desk
+  the arrow keys carry the same four turns, ← and → sideways, ↑ up a level
+  and ↓ down — the reader's own directions, so ↓ descends where the finger
+  pushes up. The vertical pair defers to the scroll the way the swipe does:
+  a page long enough to scroll is read to its edge first, and only the next
+  press turns off it. The header steppers and the eyebrow crumbs go the same
+  places for hands that would rather click
 - `web/bitcoin-front.html` — the front matter, straddling the contents on the
   horizontal axis in the standard order: title leaf, terms (the copyright
   page, saying the reverse of one), **then the contents**, and after it the
@@ -89,9 +99,9 @@ compiled to WASM) is consumed as a published
   the whole notation key — the shared glossed groups the book's toggle opens,
   then the exhaustive opcode index generated from the same tables the book
   sets scripts with; it lives in the front matter because a chain with no last
-  block has no back for an appendix to sit in. It owns no vertical axis deliberately: the
-  contents remains the single leaf above the volumes, so an ascent from
-  Volume I lands there and nowhere else
+  block has no back for an appendix to sit in. It owns no vertical axis
+  deliberately: the contents is the storey above the volumes, so an ascent
+  from Volume I lands on Volume I's contents leaf and nowhere else
 - `web/btc-notation.js`, `web/notation.css` — the key to the sigla, markup and
   styles, shared by the two places it is read: the book page's notation toggle
   (opened over a chapter) and the front matter's sigla leaf (the whole key at
@@ -136,11 +146,24 @@ compiled to WASM) is consumed as a published
 - `web/preface.md` — the preface itself, in Markdown: the canonical copy,
   readable here in the repository and rendered into the leaf above, so the
   book and the repository cannot drift apart
-- `web/bitcoin-contents.html` — table of contents / notable blocks, closing
-  with three appendices: back matter for what reading order cannot carry,
-  reading order being the order blocks were mined. Each is listed here and
-  explained on a leaf of its own, its heading the door down into it.
-  **I · The Mempool** — the chapters the queue is already forming, first of
+- `web/bitcoin-contents.html` — table of contents / notable blocks, **one
+  leaf per volume and per appendix**, all at a single level: the contents
+  runs the same line the book runs below it (Volume I … Volume V, Appendix
+  I, II, III), a storey up and a leaf to each. `?volume=<n|roman>` opens a
+  volume's contents, `?part=mempool|future|ledgers` an appendix's, and a
+  bare visit opens the volume last being read. Two things follow, and they
+  are the point of the arrangement: an **ascent from Volume III's leaf lands
+  on Volume III's contents** and nowhere else — the vertical axis is a
+  correspondence, not a funnel — and the descent needs no memory of where
+  the reader came up from, since the leaf says which volume it is the
+  contents of. Sideways off either end are the front matter's own leaves,
+  the standard order this page sits inside (title, terms, CONTENTS, preface,
+  sigla). The front matter is not listed on any leaf: it has no volume to be
+  the contents of, and the preface and sigla are two turns away along this
+  very line. The three appendices are back matter for what reading order
+  cannot carry, reading order being the order blocks were mined; each has a
+  contents leaf here and a leaf of its own one level down, the ▾ being the
+  door. **I · The Mempool** — the chapters the queue is already forming, first of
   the three because the volumes close on the chain tip's row, so the turn
   from the tip to the next provisional chapter stays one step down the page.
   **II · Consensus** — the soft forks, grouped under their BIPs with their
@@ -205,8 +228,9 @@ compiled to WASM) is consumed as a published
   **volumes' own level**: the line runs Volume I … Volume V, Appendix I,
   II, III, so the last volume's forward turn leaves the body for the
   mempool and Appendix I's backward turn comes straight back to it. All
-  three ascend to the contents, as a volume does — a pull down at the top,
-  and the masthead's Contents
+  three ascend to the contents, as a volume does — onto their own contents
+  leaf, since the contents runs one per appendix as it does per volume: a
+  pull down at the top, and the masthead's Contents
 - `web/btc-mempool.js`, `web/btc-toc.css` — the queue read as the chapters
   it is about to become, and how a list of chapters is set. Shared by the
   contents and the appendix leaves so a projected chapter reads the same in

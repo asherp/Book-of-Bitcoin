@@ -17,7 +17,7 @@
  * Everything here is scoped to the directory sw.js is served from, so it works
  * unchanged at the site root and under a per-PR preview subpath.
  */
-const CACHE = 'bitcoin-book-shell-v32';
+const CACHE = 'bitcoin-book-shell-v33';
 
 // App shell, relative to the SW scope. glossia.js / glossia_bg.wasm are
 // gitignored build artifacts — present after a build/deploy, possibly absent in
@@ -216,7 +216,13 @@ self.addEventListener('fetch', (event) => {
 
     // Offline and uncached: fall back to a shell page for navigations.
     if (req.mode === 'navigate') {
-      return (await cache.match(req)) ||
+      // A page is addressed by query string here -- ?block= for a chapter,
+      // ?volume= / ?part= for a contents leaf -- and the shell is cached
+      // under the bare URL, so match the path and let the page read its own
+      // search. Without this, every deep link is an offline miss that lands
+      // the reader on the book's front page instead of the page they asked
+      // for, which the shell could have served.
+      return (await cache.match(req, { ignoreSearch: true })) ||
              (await cache.match('./bitcoin-book.html')) ||
              (await cache.match('./')) ||
              Response.error();

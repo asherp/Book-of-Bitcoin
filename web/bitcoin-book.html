@@ -344,12 +344,15 @@ button:disabled { opacity: .4; cursor: not-allowed; }
    (.chapter-hash carries the same mark on the book leaf, where the book's
    target sits right beneath its title.) */
 .chapter-frontispiece .cfx-gold, .chapter-hash .cfx-gold, .section-hash .cfx-gold { color: var(--accent); font-weight: 700; font-style: normal; }
-/* The book leaf's two targets, opening → closing, and beneath them what the
-   retarget between did to the difficulty. Each target holds together as one
-   unit so a narrow screen breaks the line at the arrow rather than inside an
-   expression; the move sits a breath under them, in the same dim voice --
-   it is a reading of the line above, not another field. */
+/* The book leaf's two targets, the opening ceiling and the closing one, a row
+   each, and beneath them what the retarget between did to the difficulty.
+   Nothing joins the rows: they are one field stated twice, and the line break
+   is the retarget. Each row holds together so a narrow screen never breaks
+   inside an expression; the rows sit closer to each other than the move sits
+   to them, which is what makes them read as a pair with a reading under it,
+   in the same dim voice -- not as three fields. */
 .chapter-hash .book-target { white-space: nowrap; }
+.chapter-hash .book-target + .book-target { margin-top: .15em; }
 .chapter-hash .book-move { margin-top: .4em; }
 /* The notation key, cut to the page: a row the page does not use leaves the
    flow entirely. The pattern tables are grids whose cells are direct children,
@@ -697,7 +700,7 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 <div class="wrap">
   <div class="masthead">
     <span class="title">The <span class="beta">β</span>ook of <span class="beta">β</span>itcoin</span>
-    <span class="home"><a href="./bitcoin-search.html">Search</a> · <a href="./bitcoin-contents.html">Contents</a> · <span class="settings-menu"><a href="#" id="settings-link" role="button" aria-haspopup="dialog" aria-expanded="false">Settings</a><div id="settings-panel" class="settings-panel hidden" role="dialog" aria-label="Settings">
+    <span class="home"><a href="./bitcoin-search.html">Search</a> · <a href="./bitcoin-contents.html" id="toc-link">Contents</a> · <span class="settings-menu"><a href="#" id="settings-link" role="button" aria-haspopup="dialog" aria-expanded="false">Settings</a><div id="settings-panel" class="settings-panel hidden" role="dialog" aria-label="Settings">
       <div class="settings-title">Text size</div>
       <!-- One row per region. Every region beyond the body follows it (value
            dimmed) until its own buttons split it off; Reset rejoins them all
@@ -2550,7 +2553,7 @@ function fillMarkedHash(el, mark, markClass, hex, label, prose, sup, supTitle, z
 // The block header itself, in wire order, as a small mono line under the
 // chapter hash: version, previous-block hash, merkle root, timestamp,
 // difficulty target, nonce. The target's line states the proof of work as
-// the inequality it is -- β₇₈ < 213529×256²⁰ -- the < binding the chapter
+// the inequality it is -- β₇₈ < 2¹⁶⁰·213529 -- the < binding the chapter
 // hash at the head of the page to the ceiling it reads below, without the
 // field leaving its wire slot. The two hashes are Glossia-encoded here
 // (like the chapter/section hash above); the rest come pre-decoded from
@@ -2588,19 +2591,22 @@ function renderFrontispiece(header) {
     { text: merkleProse, mark: '⋔', markClass: 'merkle-mark', sup: 32, supTitle: '32 bytes',
       copy: { hex: header.merkleRoot, label: 'merkle root' } },
     { text: hf.timestamp, title: hf.timestampTitle },
-    // The proof of work, stated as the inequality it is: β₇₈ < 213529×256²⁰,
+    // The proof of work, stated as the inequality it is: β₇₈ < 2¹⁶⁰·213529,
     // in nBits' own wire slot. The gold β mark's subscript is the target's
     // leading zero run (the demand, the mining vernacular); the < binds the
     // chapter hash at the head of the page to the exact target after it --
-    // mantissa × 256^byte-shift, the superscript counting the trailing zero
-    // bytes. β opens a copy menu: the compact 4-byte hex, or the display form.
+    // the 256-bit ceiling in primes, the power of two carrying its scale and
+    // the small factors what a retarget last moved. β opens a copy menu: the
+    // compact 4-byte hex, or the display form.
     hf.bitsExpr
       ? { text: `< ${hf.bitsExpr}`, mark: hf.bits, markClass: 'fx-mark', gap: true,
           title: `the proof of work — the chapter hash at the head of the page, read as a 256-bit number, is below this target. ${hf.bitsTitle}`,
           menu: { hex: (header.bits >>> 0).toString(16).padStart(8, '0'), label: 'difficulty target', prose: `${hf.bits} ${hf.bitsExpr}` } }
       : { text: hf.bits, title: hf.bitsTitle, gold: true,
           menu: { hex: (header.bits >>> 0).toString(16).padStart(8, '0'), label: 'difficulty target', prose: hf.bits } },
-    // The η mark alone is bold gold; the nonce integer beside it stays plain.
+    // The η mark alone is bold gold; the nonce beside it stays plain -- and is
+    // factored, as the target above it is, so the two products can be read
+    // against each other: structure on one line, none at all on the next.
     { text: hf.nonce, mark: 'η', markClass: 'fx-mark', title: hf.nonceTitle,
       menu: { hex: (header.nonce >>> 0).toString(16).padStart(8, '0'), label: 'nonce', prose: hf.nonce } },
   ];
@@ -2962,13 +2968,13 @@ function renderVolumeLeaf() {
   labelNav();
 }
 
-// One difficulty target on the book leaf, in the same β₇₈ < 213529×256²⁰ form
-// a chapter's frontispiece uses: the gold mark, the exact m×256ᵉ ceiling
+// One difficulty target on the book leaf, in the same β₇₈ < 2¹⁶⁰·213529 form
+// a chapter's frontispiece uses: the gold mark, the exact factored ceiling
 // beside it, and the same copy menu (compact hex, or the mark with its
 // expression). `governs` names the chapters mined under it, for the tooltip.
 // The marks go straight into `parent` and carry no furniture of their own --
 // a book with one target puts them on the line exactly as this leaf always
-// has, and only a book with two wraps each in a group of its own.
+// has, and a book with two gives each its own row to stand on.
 function appendBookTarget(parent, bits, governs) {
   const info = bitsInfo(bits);
   const title = info.expr
@@ -2992,14 +2998,15 @@ function appendBookTarget(parent, bits, governs) {
   }
 }
 
-// A target that shares its line with another: the same marks, held together
-// so a narrow screen breaks the line at the arrow between the two rather than
-// inside a β < m×256ᵉ.
-function appendGroupedTarget(parent, bits, governs) {
-  const group = document.createElement('span');
-  group.className = 'book-target';
-  appendBookTarget(group, bits, governs);
-  parent.append(group);
+// A target on a row of its own, for a book that was mined under two: the same
+// marks, on their own line, and held there -- a row breaks between the targets
+// because that is where the book changed, never inside a β < 2ᵏ·p….
+function targetRow(parent, bits, governs) {
+  const row = document.createElement('div');
+  row.className = 'book-target';
+  if (bits !== null) appendBookTarget(row, bits, governs);
+  parent.append(row);
+  return row;
 }
 
 // A difficulty, in the same shape bitsInfo's tooltip gives it.
@@ -3047,9 +3054,12 @@ function renderBookLeaf() {
   // Right beneath the title: the ceilings this book was mined under. A book
   // that is a whole difficulty window has one, and prints it as this leaf
   // always has -- all of Volume I, and every volume's truncated last book. A
-  // book that straddles a retarget has two, and prints both, opening target →
-  // closing target, with what the retarget did to the difficulty on the line
-  // beneath. Two is the ceiling on ceilings -- see retargetInside.
+  // book that straddles a retarget has two, and gives each a row of its own,
+  // opening above closing, with what the retarget did to the difficulty on the
+  // line beneath. Nothing is written between the two rows: they are the same
+  // field stated twice, and the change from one to the next is what the move
+  // underneath says in the unit the change is felt in. Two is the ceiling on
+  // ceilings -- see retargetInside.
   const line = $('ch-hash-short');
   line.classList.remove('hidden');
   line.classList.add('plain');   // a target mark, not hash prose -- upright
@@ -3069,26 +3079,26 @@ function renderBookLeaf() {
       ? 'every chapter hash in this book'
       : `every chapter hash from ■1 to ■${(cutChapter - 1).toLocaleString()}`);
   } else {
-    const targets = document.createElement('div');
-    line.append(targets);
-    appendGroupedTarget(targets, state.header.bits,
+    targetRow(line, state.header.bits,
       `every chapter hash from ■1 to ■${(cutChapter - 1).toLocaleString()}`);
-    const tail = document.createElement('span');
-    tail.textContent = ' → …';
-    targets.append(tail);
+    // The closing target comes from the retarget block, which is a fetch away:
+    // the row it will stand on is drawn straight away, holding an ellipsis, so
+    // the leaf does not jump when the answer lands.
+    const second = targetRow(line, null, null);
+    second.textContent = '…';
     const move = document.createElement('div');
     move.className = 'book-move';
     line.append(move);
     loadBlockInfoByHeight(cut).then((info) => {
       if (gen !== renderGen) return;
-      tail.textContent = ' → ';
-      appendGroupedTarget(tail, info.bits,
+      second.textContent = '';
+      appendBookTarget(second, info.bits,
         `every chapter hash from ■${cutChapter.toLocaleString()} to ■${chapterCount.toLocaleString()}`);
       const before = bitsToDifficulty(state.header.bits), after = bitsToDifficulty(info.bits);
       move.textContent = difficultyMove(state.header.bits, info.bits, before, after);
       move.title = `the retarget at ■${cutChapter.toLocaleString()} (block ${cut.toLocaleString()}), where this book crosses from one difficulty window into the next`
         + ` — difficulty ${formatDifficulty(before)} → ${formatDifficulty(after)}, relative to the genesis block`;
-    }).catch(() => { if (gen === renderGen) { tail.remove(); move.remove(); } });
+    }).catch(() => { if (gen === renderGen) { second.remove(); move.remove(); } });
   }
   // Then the chapters the book spans, under the block glyph (■, as references
   // write chapter numbers -- chapters restart at 1 each book, so a full book
@@ -3534,6 +3544,12 @@ function renderChapter(para) {
 function labelNav() {
   const cur = volumeBookChapter(state.height);
   const idx = state.index;
+  // The contents runs a leaf per volume, so the masthead's Contents link opens
+  // the one for the volume being read -- a reader asking for the contents wants
+  // theirs, not the head of the run. Noted in the session too, for the pages
+  // whose own Contents link carries no place (the search page, a bookmark).
+  $('toc-link').href = `./bitcoin-contents.html?volume=${cur.volume}`;
+  try { sessionStorage.setItem('glossia-toc-at', String(cur.volume)); } catch {}
   const atTip = !state.projected && tipHeight !== null && state.height >= tipHeight;
   const gen = renderGen;   // a slow previous-count fetch must not overwrite a later section's label
   // Standing at the tip, the next page is a question for the mempool: load
@@ -4300,7 +4316,11 @@ function rememberTrail() {
   if (state.index >= 0) descentMemory['-1'] = { height: state.height, idx: state.index };
   if (state.index >= -1) descentMemory['-2'] = { height: state.height, idx: -1 };
   if (state.index >= -2) descentMemory['-3'] = { height: bookStartOf(state.height), idx: -2 };
-  try { sessionStorage.setItem('glossia-toc-descend', String(volumeStartOf(state.height))); } catch {}
+  // Nothing is left here for the contents. Its descent used to need a note of
+  // which volume the reader had come up from, because one page stood above
+  // every volume; now each volume has a contents leaf of its own and the leaf
+  // itself is the answer. (labelNav still records the volume, but for where a
+  // bare Contents link should LAND, which is a different question.)
 }
 function rememberedChild() {
   if (!state) return null;
@@ -4385,8 +4405,12 @@ function swipeStepVertical(direction) {
   if (t.toc) {
     // The turn's exit has played (or reduced motion skipped it); the contents
     // page finishes the entrance itself, sliding in from the top on arrival.
+    // The contents runs a leaf per volume, so the ascent names the volume it
+    // is leaving and lands on THAT volume's contents -- the correspondence is
+    // the whole point of the level: up from Volume III is the contents of
+    // Volume III, not the head of a list that happens to include it.
     try { sessionStorage.setItem('glossia-toc-entrance', '1'); } catch {}
-    location.href = './bitcoin-contents.html';
+    location.href = `./bitcoin-contents.html?volume=${volumeBookChapter(state.height).volume}`;
     return;
   }
   if (t.appendix) { toAppendixLeaf(); return; }
@@ -4770,6 +4794,55 @@ window.addEventListener('resize', updateGesturePrecedence);
   }, { passive: true });
   document.addEventListener('touchcancel', () => { sx = null; if (!pendingSlide) snapBack(); }, { passive: true });
 })();
+
+// ── The same turns, from a keyboard ───────────────────────────────────────
+// A desk has no finger to swipe with, so the arrow keys carry the gestures'
+// four turns unchanged: left and right turn the page at the current level,
+// up ascends a level and down descends -- the reader's own directions, even
+// though the swipe that means "descend" is a push UP. Every rule the
+// gestures keep is kept here. The horizontal pair stops where the swipe
+// rubber-bands (no neighbour at this level); the vertical pair defers to the
+// scroll exactly as the vertical swipe does, turning only on a page short
+// enough not to scroll or from the boundary the turn moves away from -- so
+// arrowing down a long chapter reads it to the foot first and turns on the
+// next press.
+//
+// One deliberate difference: a swipe toward a neighbour whose data is still
+// prefetching only rubber-bands, and the finger tries again a moment later.
+// A key that did nothing would just read as broken, so it turns anyway by
+// the header steppers' route -- fetching on demand, without the carousel
+// slide the prefetch pays for.
+document.addEventListener('keydown', (e) => {
+  if (e.metaKey || e.ctrlKey || e.altKey || e.shiftKey || e.repeat) return;
+  const horizontal = e.key === 'ArrowLeft' || e.key === 'ArrowRight';
+  const vertical = e.key === 'ArrowUp' || e.key === 'ArrowDown';
+  if (!horizontal && !vertical) return;
+  if (!state || pendingSlide) return;
+  // Fields, scrolling regions and the popovers keep their own arrow keys --
+  // the same surfaces the swipe hands back to whatever is under the finger.
+  const t = e.target;
+  if (t && t.closest && t.closest('input, textarea, select, [contenteditable], .pattern-scroll, .hash-menu, .settings-panel, .nav-sheet-body')) return;
+  if (!settingsPanel.classList.contains('hidden')) return;
+  if (!$('hash-menu').classList.contains('hidden')) return;
+
+  if (horizontal) {
+    const dir = e.key === 'ArrowRight' ? 1 : -1;   // right turns forward, as a leftward swipe does
+    if (!navAvailable(dir) && !(dir < 0 && atFrontMatterEdge()) && !(dir > 0 && atAppendixEdge())) return;
+    e.preventDefault();
+    if (canStep(dir) && !REDUCED_MOTION) slideOutAndStep(dir);
+    else swipeStep(dir);
+    return;
+  }
+
+  const dir = e.key === 'ArrowDown' ? 1 : -1;      // down descends, up ascends
+  if (!levelTarget(dir)) return;
+  const atTop = window.scrollY <= 2;
+  const atBottom = window.scrollY >= document.documentElement.scrollHeight - window.innerHeight - 2;
+  if (!(gesture.carouselFirst || (dir < 0 && atTop) || (dir > 0 && atBottom))) return;
+  e.preventDefault();
+  if (canStepVertical(dir) && !REDUCED_MOTION) slideOutAndStep(dir, 'y');
+  else swipeStepVertical(dir);
+});
 
 // ── Pinch: the type sizes ─────────────────────────────────────────────────
 // Two fingers on the reading matter set the type size of the region under

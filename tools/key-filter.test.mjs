@@ -35,7 +35,7 @@ test('every row resolves to something the filter can look for', () => {
     // row that stays on every page by never being characterised.
     if (tokens.length === 0) { empty.push(row.glyph); continue; }
     for (const t of tokens) {
-      assert.ok(t.template !== undefined || t.text.length > 0,
+      assert.ok(t.template !== undefined || t.pattern !== undefined || t.text.length > 0,
         `empty token in ${row.glyph}`);
     }
   }
@@ -45,21 +45,41 @@ test('every row resolves to something the filter can look for', () => {
 test('a value-carrying mark is found behind its value', () => {
   // ■<i>n</i> is written on the page as ■840000, β<i>n</i> as β₇₈, and the
   // locktime as a whole citation.
-  const marks = new Set(['■840000', 'β₇₈', 'III β2 ■5', 'η₄₂', '⓪²⁵⁶']);
+  const marks = new Set(['■840000', 'β₇₈', 'III β2 ■5', 'η2·3·7', '⓪²⁵⁶']);
   const shows = (glyph, dm = null) => rowShows(marksOf(glyph, dm), marks);
   assert.ok(shows('■<i>n</i>'));
   assert.ok(shows('β<i>n</i>'));
-  assert.ok(shows('η<sub><i>n</i></sub>'));
+  // η's value is a product now, so the glyph carries an ellipsis and the row
+  // names the mark itself: the prefix is all that was ever being matched.
+  assert.ok(shows('η<i>p</i>·<i>q</i>…', 'η*'));
   assert.ok(shows('<i>v</i> β<i>b</i> ■<i>c</i>'));
   assert.ok(shows('⓪<sup>256</sup>', '⓪²⁵⁶'));
 });
 
 test('a bare operator is not caught by a number that contains it', () => {
-  // The chapter head prints its target as 213529×256²⁰ and the book leaf a
+  // The chapter head prints its target as 2¹⁶⁰·213529 and the book leaf a
   // difficulty move as −2.53%. Neither is Script arithmetic.
-  const marks = new Set(['β₇₈', '213529×256²⁰', 'difficulty −2.53%']);
+  const marks = new Set(['β₇₈', '2¹⁶⁰·213529', 'difficulty −2.53%']);
   assert.ok(!rowShows(marksOf('+ − × ÷ %'), marks), 'arithmetic should stay shut');
   assert.ok(!rowShows(marksOf('&lt; &gt; ≤ ≥'), marks), 'comparisons should stay shut');
+  // The target is a shape rather than a string -- the primes in 2¹⁶⁰·213529
+  // are whatever the retarget left -- so its row is found by the one part of
+  // the shape that never varies: the power of two it opens with, which the
+  // byte shift alone drives past a hundred.
+  const FACTORS = 're:[0-9][⁰¹²³⁴⁵⁶⁷⁸⁹]{2,}';
+  const target = (m) => rowShows(marksOf('2<sup><i>k</i></sup>·<i>p</i>…', FACTORS), m);
+  assert.ok(target(marks), 'the target should open its row');
+  assert.ok(target(new Set(['β₃₂ < 2²⁰⁸·3·5·17·257'])), 'genesis too, mark and all');
+  // And the raised digits a page prints elsewhere are not products: a push
+  // count, a hash's bit counts, the genesis chapter's empty predecessor.
+  assert.ok(!target(new Set(['β₇₈', '²⁰', '↧²⁰', '⌘²²⁴', '⓪²⁵⁶', '■840000'])),
+    'no factorization on the page, no row');
+  // The nonces are products in the same notation, so the row has to turn on
+  // the size of the power rather than on there being one: a counter's squares
+  // and cubes are small, and a post-BIP34 coinbase -- an extranonce and no
+  // target anywhere on the page -- must not open the target's row.
+  assert.ok(!target(new Set(['■840000', 'η2³·3²·7·3253631'])), 'a coinbase counter is not a target');
+  assert.ok(!target(new Set(['η19·97·1130351'])), 'nor a squarefree nonce');
   // But the same marks as Script opcodes do open those rows.
   const script = new Set(['×', '≤']);
   assert.ok(rowShows(marksOf('+ − × ÷ %'), script));
