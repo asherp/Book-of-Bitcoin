@@ -11,7 +11,7 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="The βook of βitcoin">
 <meta property="og:title" content="The βook of βitcoin — Appendices">
-<meta property="og:description" content="What the book gathers after the volumes: the mempool's coming chapters, heights consensus has fixed but no block has reached, the ledgers, and the works the chain has dated.">
+<meta property="og:description" content="What the book gathers after the volumes: the mempool's coming chapters, the consensus rules grouped by BIP — Taproot, SegWit, and the forks still signaling — the ledgers, and the works the chain has dated.">
 <meta property="og:url" content="https://bookofbitcoin.io/bitcoin-appendix.html">
 <meta property="og:image" content="https://bookofbitcoin.io/og-bookofbitcoin.png">
 <meta property="og:image:width" content="1200">
@@ -119,6 +119,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,400&family=IBM+Plex+Mono:wght@400;500;600&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="./btc-chrome.css">
+<link rel="stylesheet" href="./commentary.css">
 <style>
 :root {
   --page:#08080a; --card:#0d0d10; --card-bd:#232228; --ink:#e8e4da; --ink-soft:#cfcabf;
@@ -164,6 +165,16 @@ a:hover { text-decoration: underline; }
 .appx-down:hover { color:var(--accent); text-decoration:none; }
 .hidden { display:none !important; }
 .appx-note { max-width:56ch; margin:22px auto 30px; font:400 15px/1.7 'Newsreader',serif; color:var(--ink-soft); text-align:left; }
+/* The way up from a fork's leaf: the part that lists it, named above the
+   title the way the ledger leaves name their compendium. */
+.appx-up { display:inline-block; margin-bottom:12px; font:600 10px/1.5 'IBM Plex Mono',monospace; letter-spacing:.14em; text-transform:uppercase; color:var(--meta); }
+.appx-up:hover { color:var(--accent); text-decoration:none; }
+/* A fork's activation statistics: the same key/value dress the proof picker
+   reads results in -- these too are a record being read out. */
+.bip-stats { max-width:56ch; margin:0 auto 6px; font:400 13.5px/1.6 'Public Sans',sans-serif; color:var(--ink-soft); }
+/* A chapter no block has reached yet keeps the manuscript's pencil. */
+.proof-row.bip-expected .proof-name { color:var(--meta); font-style:italic; }
+.proof-row.bip-expected .proof-cite { color:var(--meta); font-weight:400; }
 
 /* The Citations register's foot: the picker. A leaf lists nothing, as a rule -- the
    contents lists, the leaf explains -- but this appendix is the one a reader
@@ -232,10 +243,22 @@ a:hover { text-decoration: underline; }
   </div>
 
   <header class="page-head">
+    <a class="appx-up hidden" id="appx-up" href="#"></a>
     <h1 class="appx-title" id="appx-title"></h1>
     <div class="appx-subtitle" id="appx-subtitle"></div>
   </header>
   <p class="appx-note" id="appx-note"></p>
+
+  <!-- A fork's own leaf (?part=consensus&bip=N): its activation statistics --
+       how the rule was counted in, editorial like every stat in the back
+       matter, plus a live count where a fork is still signaling -- and then
+       the chapters and sections it names, each a door into the book. -->
+  <div class="bip-stats hidden" id="bip-stats"></div>
+  <div class="proof-list hidden" id="bip-entries"></div>
+
+  <!-- The Consensus leaf itself lists its forks: one row per BIP, each the
+       door to that fork's own leaf. -->
+  <div class="proof-list hidden" id="bip-list"></div>
 
   <div class="proof-list hidden" id="proof-list"></div>
 
@@ -250,20 +273,27 @@ a:hover { text-decoration: underline; }
     <div class="proof-result hidden" id="proof-result"></div>
   </div>
 
+  <!-- A fork's reading, kept where every reading is kept: behind a toggle,
+       over the record rather than in it, signed by whoever wrote it. -->
+  <details class="leaf-commentary hidden" id="bip-commentary">
+    <summary title="A reading of this fork — editorial, and kept apart from the record above it">Commentary</summary>
+    <div class="commentary-body" id="bip-commentary-body"></div>
+  </details>
+
   <a class="appx-down" id="appx-down" href="#" aria-label="Down into the appendix">▾</a>
   <nav class="appx-turns" id="appx-turns"></nav>
 </div>
 
 <script type="module">
-import { loadNotables, appendix } from './btc-contents.js';
+import { loadNotables, appendix, entryHref, isBlockId } from './btc-contents.js';
 import { partLabel } from './btc-notables.js';
 
 // The appendix is read from appendix.yaml (btc-notables.js), so it arrives
 // asynchronously; this leaf IS one of its parts, so it waits for it.
 await loadNotables();
 const APPENDIX = appendix();
-import { chainTip } from './btc-mempool.js';
-import { toRoman, volumeBookChapter, heightOf } from './btc-citation.js';
+import { chainTip, MEMPOOL_MIRRORS } from './btc-mempool.js';
+import { toRoman, volumeBookChapter, heightOf, expectedReference } from './btc-citation.js';
 
 // ── One appendix, given a leaf of its own ─────────────────────────────────
 // The contents lists what each appendix holds; this is where an appendix
@@ -271,18 +301,27 @@ import { toRoman, volumeBookChapter, heightOf } from './btc-citation.js';
 // consensus has numbered ahead of the chain. The third appendix, the
 // ledgers, has a leaf already -- the Ledger compendium -- and the contents
 // points straight at it, so it is only ever a neighbour here.
-const PARTS = { mempool: 'mempool', future: 'entries', proofs: 'proofs' };
-const wanted = new URLSearchParams(location.search).get('part');
+// ?part=future is the name Appendix II answered to before its forks were
+// grouped by BIP; saved links keep working.
+const PARTS = { mempool: 'mempool', future: 'consensus', consensus: 'consensus', proofs: 'proofs' };
+const params = new URLSearchParams(location.search);
+const wanted = params.get('part');
 const kind = PARTS[wanted] || 'mempool';
 const part = APPENDIX.find((p) => p.kind === kind) || APPENDIX[0];
 const index = APPENDIX.indexOf(part);
+// One fork's own leaf, a level below the part's: ?bip= names it by number,
+// the way the contents' sub-heads link it.
+const bips = part.kind === 'consensus' ? (part.bips || []) : [];
+const bip = bips.find((b) => b.key === String(params.get('bip'))) || null;
+const bipAt = bip ? bips.indexOf(bip) : -1;
 
 const $ = (id) => document.getElementById(id);
 const label = (p) => partLabel(APPENDIX, p);
-const PART_QUERY = { mempool: 'mempool', entries: 'future', proofs: 'proofs' };
+const PART_QUERY = { mempool: 'mempool', consensus: 'consensus', proofs: 'proofs' };
 const hrefFor = (p) => (p.kind === 'ledgers'
   ? './bitcoin-ledger.html'
   : `./bitcoin-appendix.html?part=${PART_QUERY[p.kind]}`);
+const bipHref = (b) => `./bitcoin-appendix.html?part=consensus&bip=${b.key}`;
 
 // An appendix leaf lists nothing: what it gathers lies below it, and below
 // it is the first chapter of what it gathers, read in the book like any
@@ -296,22 +335,36 @@ const hrefFor = (p) => (p.kind === 'ledgers'
 // The head follows the part's family: an appendix wears its numeral over its
 // name; the Citations register is its title alone -- a works-cited list needs
 // no numeral, standing where it stands.
-if (part.family === 'appendix') {
+// A fork's leaf wears its BIP number as the title and its recognized name
+// beneath, with the part that lists it named above -- the way up.
+if (bip) {
+  $('appx-title').textContent = `BIP ${bip.bip}`;
+  $('appx-subtitle').textContent = bip.name;
+  const up = $('appx-up');
+  up.textContent = `▴ ${label(part)}`;
+  up.href = hrefFor(part);
+  up.classList.remove('hidden');
+} else if (part.family === 'appendix') {
   $('appx-title').textContent = `Appendix ${toRoman(APPENDIX.filter((p) => p.family === 'appendix').indexOf(part) + 1)}`;
   $('appx-subtitle').textContent = part.title;
 } else {
   $('appx-title').textContent = part.family === 'index' ? `Index of ${part.title}` : part.title;
   $('appx-subtitle').textContent = part.family === 'citations' ? 'Works the chain attests' : '';
 }
-$('appx-note').textContent = part.note || '';
-document.title = `The βook of βitcoin — ${label(part)}`;
+$('appx-note').textContent = (bip ? bip.note : part.note) || '';
+document.title = `The βook of βitcoin — ${bip ? bip.title : label(part)}`;
 
-// Where the descent lands. Appendix II's first chapter is known offline (a
-// height is a citation); Appendix I's waits on the tip, and the ▾ appears
-// with it -- an unknown queue has no first chapter to open.
-let firstChapter = (kind === 'mempool' || kind === 'proofs')
-  ? null                                  // the queue waits on the tip; the proofs wait on being read
-  : `./bitcoin-book.html?block=${part.entries[0].id}`;
+// Where the descent lands. A fork's leaf opens its first chapter (known
+// offline: a height is a citation, and even an unmined one has a page that
+// answers); the Consensus leaf opens its first fork's own leaf, a level down;
+// Appendix I's waits on the tip, and the ▾ appears with it -- an unknown
+// queue has no first chapter to open.
+let firstChapter = null;
+if (kind === 'consensus') {
+  firstChapter = bip
+    ? (bip.entries.length ? entryHref(bip.entries[0].id, bip.entries[0].index, bip.entries[0].page, bip.entries[0].out ?? null) : null)
+    : (bips.length ? bipHref(bips[0]) : null);
+}
 $('appx-down').classList.toggle('hidden', !firstChapter);
 if (kind === 'mempool') {
   chainTip().then((tip) => {
@@ -322,8 +375,10 @@ if (kind === 'mempool') {
 }
 function descend() {
   if (!firstChapter) return;
-  // A descent, so the chapter rises from below as this leaf slides up.
-  try { sessionStorage.setItem('glossia-book-entrance', '1'); } catch (_) {}
+  // A descent, so what lies below rises from beneath as this leaf slides up --
+  // a chapter of the book, or (from the Consensus leaf) a fork's own leaf.
+  const toAppendix = firstChapter.includes('bitcoin-appendix');
+  try { sessionStorage.setItem(toAppendix ? 'glossia-appendix-entrance' : 'glossia-book-entrance', toAppendix ? 'down' : '1'); } catch (_) {}
   const go = () => { location.href = firstChapter; };
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { go(); return; }
   document.body.style.transition = 'transform .2s linear';
@@ -333,13 +388,40 @@ function descend() {
 window.__appxDescend = () => descend();
 $('appx-down').addEventListener('click', (ev) => { ev.preventDefault(); descend(); });
 
+// A fork's leaf ascends to the part that lists it, not to the contents: the
+// Consensus leaf is the list this page is one row of.
+if (bip) {
+  window.__appxAscend = () => {
+    try { sessionStorage.setItem('glossia-appendix-entrance', 'drop'); } catch (_) {}
+    const go = () => { location.href = hrefFor(part); };
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { go(); return; }
+    document.body.style.transition = 'transform .2s linear';
+    document.body.style.transform = 'translateY(100vh)';
+    setTimeout(go, 180);
+  };
+  $('appx-up').addEventListener('click', (ev) => {
+    if (ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey || ev.button !== 0) return;
+    ev.preventDefault();
+    window.__appxAscend();
+  });
+}
+
 // The neighbours, in the appendices' numbered order -- named at the foot and
 // handed to the gesture layer, so a swipe and a tap turn to the same leaf.
 // The appendices sit at the volumes' own level, continuing that line, so
 // what lies back of the first of them is the body's last volume (below).
-const prev = APPENDIX[index - 1] || null;
-const next = APPENDIX[index + 1] || null;
-window.__appxTurns = { prev: prev && hrefFor(prev), next: next && hrefFor(next) };
+// A fork's leaf turns among the forks instead: back of the first lies the
+// Consensus leaf that lists them, and past the last the shelf simply ends --
+// the way up is the ascent.
+const prevTo = bip
+  ? (bipAt > 0
+    ? { href: bipHref(bips[bipAt - 1]), text: `BIP ${bips[bipAt - 1].bip}` }
+    : { href: hrefFor(part), text: label(part) })
+  : (APPENDIX[index - 1] ? { href: hrefFor(APPENDIX[index - 1]), text: label(APPENDIX[index - 1]) } : null);
+const nextTo = bip
+  ? (bipAt < bips.length - 1 ? { href: bipHref(bips[bipAt + 1]), text: `BIP ${bips[bipAt + 1].bip}` } : null)
+  : (APPENDIX[index + 1] ? { href: hrefFor(APPENDIX[index + 1]), text: label(APPENDIX[index + 1]) } : null);
+window.__appxTurns = { prev: prevTo && prevTo.href, next: nextTo && nextTo.href };
 const turns = $('appx-turns');
 function turnLink(href, text, back) {
   const a = document.createElement('a');
@@ -356,13 +438,178 @@ function turnLink(href, text, back) {
   turns.append(a);
   return a;
 }
-if (prev) turnLink(hrefFor(prev), `‹ ${label(prev)}`, true);
-if (next) turnLink(hrefFor(next), `${label(next)} ›`, false);
+if (prevTo) turnLink(prevTo.href, `‹ ${prevTo.text}`, true);
+if (nextTo) turnLink(nextTo.href, `${nextTo.text} ›`, false);
 
 // Appendix I's backward turn leaves the appendices for the body: the last
 // volume's own leaf, which is the page this one continues from. Which volume
 // is last is a question for the chain, so the turn is wired once the tip
 // answers -- until then a backward swipe simply has nowhere to go.
+// ── Consensus: the forks, each with a leaf of its own ─────────────────────
+//
+// The part's leaf lists its forks -- one row per BIP, each the door to that
+// fork's own leaf -- and the fork's leaf carries what the contents cannot: the
+// activation statistics (how the rule was counted in, editorial like every
+// stat in the back matter, plus a live count where a fork is still signaling),
+// then the chapters and sections the fork names, each a door into the book.
+if (kind === 'consensus' && !bip) {
+  const listEl = $('bip-list');
+  for (const b of bips) {
+    const row = document.createElement('div');
+    row.className = 'proof-row';
+    const a = document.createElement('a');
+    a.href = bipHref(b);
+    if (b.note) a.title = b.note;
+    const name = document.createElement('span');
+    name.className = 'proof-name';
+    name.textContent = `BIP ${b.bip} — ${b.name}`;
+    const st = document.createElement('span');
+    st.className = 'proof-cite';
+    st.textContent = b.status;
+    a.append(name, st);
+    row.append(a);
+    listEl.append(row);
+  }
+  listEl.classList.toggle('hidden', !bips.length);
+}
+
+if (bip) {
+  // A citation written whole -- volume and all, since no heading here has
+  // named any part of it -- with □ standing in for the ■ a block has yet to
+  // earn (expectedReference makes the same substitution from the height).
+  const wholeRef = (height, section = null, vout = null, page = null) => {
+    const { volume, book, chapter } = volumeBookChapter(height);
+    if (page === 'volume') return toRoman(volume);
+    if (page === 'book') return `${toRoman(volume)} β${book}`;
+    let s = `${toRoman(volume)} β${book} ■${chapter}`;
+    if (section != null) s += ` §${section}${vout == null ? '' : `.${vout}`}`;
+    return s;
+  };
+
+  // The statistics, as key/value rows: the status first, then what the file
+  // says about how the fork was counted.
+  const stats = $('bip-stats');
+  const statRow = (key, value) => {
+    const line = document.createElement('div'); line.className = 'proof-line';
+    const k = document.createElement('div'); k.className = 'proof-key'; k.textContent = key;
+    const v = document.createElement('div'); v.className = 'proof-val'; v.textContent = value;
+    line.append(k, v); stats.append(line);
+    return v;
+  };
+  statRow('status', bip.status);
+  for (const s of bip.stats || []) statRow(s.label, s.value);
+  stats.classList.remove('hidden');
+
+  // A fork still signaling is counted live: the last day of blocks, read off
+  // the same mirrors the queue is, each version's bit tallied in the browser.
+  // The window is a sample, not the fork's own -- the row says which blocks
+  // it counted -- and a chain that cannot be reached just says so.
+  if (bip.status === 'signaling' && Number.isFinite(bip.bit)) {
+    const el = statRow('signaling now', 'counting…');
+    (async () => {
+      const tip = await chainTip();
+      if (tip == null) { el.textContent = 'the chain could not be reached'; return; }
+      const SAMPLE = 144;
+      let counted = 0, set = 0, at = tip;
+      while (counted < SAMPLE && at >= 0) {
+        let blocks = null;
+        for (const base of MEMPOOL_MIRRORS) {
+          try {
+            const res = await fetch(`${base}/blocks/${at}`);
+            if (res.ok) { blocks = await res.json(); break; }
+          } catch { /* try the next mirror */ }
+        }
+        if (!blocks || !blocks.length) break;
+        for (const b of blocks) {
+          if (counted >= SAMPLE) break;
+          counted++;
+          if ((b.version >>> bip.bit) & 1) set++;
+          at = b.height - 1;
+        }
+        el.textContent = `counting… ${set} of ${counted}`;
+      }
+      el.textContent = counted
+        ? `${set} of the last ${counted} blocks (${(100 * set / counted).toFixed(1)}%) — against a ${bip.threshold}% threshold`
+        : 'the chain could not be reached';
+    })().catch(() => { el.textContent = 'the chain could not be reached'; });
+  }
+
+  // The chapters and sections the fork names. Heights cite offline; a
+  // transaction's citation resolves the way the reader's would -- a
+  // merkle-proof lookup, kept in the archive so it is asked once ever.
+  const listEl = $('bip-entries');
+  const pending = [];
+  for (const e of bip.entries) {
+    const row = document.createElement('div');
+    row.className = 'proof-row' + (e.expected ? ' bip-expected' : '');
+    const a = document.createElement('a');
+    a.href = entryHref(e.id, e.index, e.page, e.out ?? null);
+    const name = document.createElement('span');
+    name.className = 'proof-name'; name.textContent = e.title;
+    const cite = document.createElement('span');
+    cite.className = 'proof-cite';
+    if (e.expected) {
+      cite.textContent = expectedReference(Number(e.id));
+      a.title = `${e.note ? `${e.note}\n` : ''}expected — block ${Number(e.id).toLocaleString()} has not been mined`;
+    } else if (isBlockId(e.id)) {
+      cite.textContent = wholeRef(Number(e.id), e.index != null ? e.index + 1 : null, e.out ?? null, e.page);
+      if (e.note) a.title = e.note;
+    } else {
+      cite.textContent = '—';
+      if (e.note) a.title = e.note;
+      pending.push({ e, cite });
+    }
+    a.append(name, cite);
+    row.append(a);
+    listEl.append(row);
+  }
+  listEl.classList.toggle('hidden', !bip.entries.length);
+  if (pending.length) {
+    const { storeGet, storePut } = await import('./btc-store.js');
+    const placeTx = async (id) => {
+      const kept = await storeGet('placements', id);
+      if (kept) return kept;
+      for (const base of MEMPOOL_MIRRORS) {
+        try {
+          const res = await fetch(`${base}/tx/${id}/merkle-proof`);
+          if (!res.ok) continue;
+          const mp = await res.json();
+          const place = { height: mp.block_height, pos: mp.pos };
+          storePut('placements', id, place);
+          return place;
+        } catch { /* try the next mirror */ }
+      }
+      return null;
+    };
+    for (const { e, cite } of pending) {
+      placeTx(e.id).then((place) => {
+        if (place) cite.textContent = wholeRef(place.height, place.pos + 1, e.out ?? null);
+      }).catch(() => { /* the dash stands: the row still opens the section */ });
+    }
+  }
+
+  // The fork's reading, and the part's, raised the way the proof leaves raise
+  // theirs: specific before general, nothing fetched until the sheet opens.
+  const { readingsOf, resolveCommentary, commentaryHtml } = await import('./btc-commentary.js');
+  const items = [];
+  if (readingsOf(bip).length) items.push({ title: bip.title, readings: readingsOf(bip) });
+  if (readingsOf(part).length) items.push({ title: part.title, readings: readingsOf(part) });
+  if (items.length) {
+    const box = $('bip-commentary');
+    const body = $('bip-commentary-body');
+    box.classList.remove('hidden');
+    let filled = false;
+    box.addEventListener('toggle', async () => {
+      if (!box.open || filled) return;
+      filled = true;
+      body.innerHTML = '<div class="commentary-measure"><p class="commentary-loading">reading…</p></div>';
+      await resolveCommentary(items);
+      // Built from authored Markdown, escaped at the source (btc-markdown.js).
+      body.innerHTML = commentaryHtml(items);
+    });
+  }
+}
+
 // ── Citations: the works, and the door for adding one ─────────────────────
 //
 // The rule for a leaf is that it lists nothing -- the contents lists, the leaf
@@ -585,7 +832,7 @@ if (kind === 'proofs') {
   dropZone.addEventListener('drop', (e) => { if (e.dataTransfer?.files?.length) takeProof(e.dataTransfer.files); });
 }
 
-if (!prev) {
+if (!prevTo) {
   chainTip().then((tip) => {
     if (tip == null) return;
     const volume = volumeBookChapter(tip).volume;

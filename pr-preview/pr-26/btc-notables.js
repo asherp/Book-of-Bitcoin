@@ -141,16 +141,17 @@ function normalize(raw, i) {
 }
 
 // A part of the appendix -- what the contents gathers after the volumes
-// (appendix.yaml). `kind` says who fills it: 'entries' lists its own, which are
-// places like any other and resolve the same way, so a future chapter may be
-// written as the height consensus fixed or as the reference that height already
-// has (LXV β1 □1); 'mempool' and 'ledgers' are gathered by the page from the
-// queue and from the shelf, and carry only their heading and its note.
+// (appendix.yaml). `kind` says who fills it: 'consensus' lists its own -- forks
+// grouped by BIP, whose entries are places like any other and resolve the same
+// way, so an unmined chapter may be written as the height consensus fixed or as
+// the reference that height already has (LXV β1 □1); 'mempool' and 'ledgers'
+// are gathered by the page from the queue and from the shelf, and carry only
+// their heading and its note.
 function normalizePart(raw, i) {
   const kind = String(raw.kind ?? '').trim();
   const title = String(raw.title ?? '').trim();
   if (!kind || !title) throw new Error(`btc-notables: appendix part ${i + 1} needs a kind and a title`);
-  if (!['mempool', 'entries', 'ledgers', 'proofs'].includes(kind)) {
+  if (!['mempool', 'consensus', 'ledgers', 'proofs'].includes(kind)) {
     throw new Error(`btc-notables: appendix part "${title}" has an unknown kind: ${kind}`);
   }
   // Which family of back matter this part belongs to, which is what its
@@ -184,17 +185,53 @@ function normalizePart(raw, i) {
       return withCommentary(entry, e);
     });
   }
-  if (kind === 'entries') {
-    if (!Array.isArray(raw.entries) || !raw.entries.length) {
-      throw new Error(`btc-notables: appendix part "${title}" lists no entries`);
+  // The consensus part gathers the soft forks, one group per BIP: its number
+  // (as printed after "BIP" -- '341', or '68 · 112 · 113' for a trio deployed
+  // as one), its recognized name (Taproot), a status, the stats its title leaf
+  // prints, and the chapters and sections it names. `key` is the group's URL
+  // handle -- the first numeral of the number, so ?bip=341 finds Taproot. A
+  // group may carry readings like an entry: they are read on its title leaf.
+  if (kind === 'consensus') {
+    if (!Array.isArray(raw.bips) || !raw.bips.length) {
+      throw new Error(`btc-notables: appendix part "${title}" lists no bips`);
     }
-    part.entries = raw.entries.map((e) => {
-      const place = normalizePlace(e, String(e.title ?? title));
-      const entry = { ...place, title: String(e.title ?? ''), note: e.note ? String(e.note) : undefined };
-      // A future chapter is a place like any other, so it may carry a reading
-      // like any other -- what this height will mean for the transactions that
-      // follow it. The book shows it where the chapter itself would be.
-      return withCommentary(entry, e);
+    part.bips = raw.bips.map((b) => {
+      const number = String(b.bip ?? '').trim();
+      const name = String(b.name ?? '').trim();
+      if (!number || !name) throw new Error(`btc-notables: a bip in "${title}" needs a bip number and a name`);
+      const status = String(b.status ?? '').trim();
+      if (!['active', 'signaling', 'scheduled'].includes(status)) {
+        throw new Error(`btc-notables: BIP ${number} has a status that is not active, signaling, or scheduled: ${status || '(none)'}`);
+      }
+      const group = { bip: number, name, status, key: (number.match(/[0-9]+/) || [number])[0], title: `BIP ${number} · ${name}` };
+      if (b.note) group.note = String(b.note);
+      // A signaling fork names how it is counted, so its leaf can count live.
+      if (b.bit !== undefined) group.bit = Number(b.bit);
+      if (b.threshold !== undefined) group.threshold = Number(b.threshold);
+      if (b.stats) {
+        group.stats = b.stats.map((s) => {
+          const label = String(s.label ?? '').trim();
+          const value = String(s.value ?? '').trim();
+          if (!label || !value) throw new Error(`btc-notables: BIP ${number} has a stat with no label or no value`);
+          return { label, value };
+        });
+      }
+      withCommentary(group, b);
+      if (!Array.isArray(b.entries) || !b.entries.length) {
+        throw new Error(`btc-notables: BIP ${number} lists no entries`);
+      }
+      group.entries = b.entries.map((e) => {
+        const place = normalizePlace(e, String(e.title ?? group.title));
+        const entry = { ...place, title: String(e.title ?? ''), note: e.note ? String(e.note) : undefined };
+        // An unmined chapter says so, which is what earns its row the □: a
+        // height's citation is fixed by consensus, not by mining, so the mark
+        // is the one thing the file must still claim by hand.
+        if (e.expected) entry.expected = true;
+        // A fork's chapter is a place like any other, so it may carry a
+        // reading like any other. The book shows it where the chapter is.
+        return withCommentary(entry, e);
+      });
+      return group;
     });
   }
   return part;

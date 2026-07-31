@@ -54,6 +54,14 @@
    could not be read, say. A note, not a row. */
 .toc-proj-note { padding:10px 2px 2px 32px; font:400 12px/1.6 'Public Sans',sans-serif; color:var(--meta); }
 
+/* A BIP's sub-head in the Consensus appendix is the door to that fork's own
+   title leaf -- its name, its activation statistics, its reading. Dressed as
+   the Book sub-header it stands in for, with the same turn mark the appendix
+   headings wear. */
+a.toc-bip { display:block; text-decoration:none; }
+a.toc-bip::after { content:' ›'; }
+a.toc-bip:hover, a.toc-bip:focus-visible { color:var(--accent-2); text-decoration:underline; }
+
 /* An appendix's heading in the contents is the door to its own leaf, where
    what it holds is explained. It wears the heading's colour, so the link is
    marked by the turn it offers rather than by a second colour: an arrow, and

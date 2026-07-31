@@ -409,11 +409,11 @@ const appendixLabel = (part) => partLabel(appendix(), part);
 const MEMPOOL_PART = appendix().find((p) => p.kind === 'mempool');
 
 // Each appendix has a leaf of its own, and its heading here is the door to
-// it: the queue and the future chapters are leaves of the appendix page, and
+// it: the queue and the consensus part are leaves of the appendix page, and
 // the ledgers' leaf is the Ledger compendium, which is what a shelf of
 // ledgers is. What the appendix is and why it sits outside reading order is
 // said on that leaf, not here -- the contents lists, the leaf explains.
-const APPENDIX_PART = { mempool: 'mempool', entries: 'future', proofs: 'proofs' };
+const APPENDIX_PART = { mempool: 'mempool', consensus: 'consensus', proofs: 'proofs' };
 const appendixHref = (part) => (part.kind === 'ledgers'
   ? './bitcoin-ledger.html'
   : `./bitcoin-appendix.html?part=${APPENDIX_PART[part.kind]}`);
@@ -430,16 +430,63 @@ function partHead(part) {
   return heading;
 }
 
-// Future Chapters: chapters cited in full but marked □, the expected-chapter mark
-// the mempool's projections wear, since no block has earned them an ■. Every
-// row still links into the book, which answers an unmined height with the
-// date it is due instead of a page. Offline, like every reference computed
-// from a height.
-function chaptersEl(part) {
+// Consensus: the soft forks, one sub-group per BIP. The group's head is the
+// door to the BIP's own title leaf -- its recognized name, its activation
+// statistics, its reading -- and beneath it the chapters and sections the fork
+// names, in the fork's own order: signals, lock-in, activation, first uses. A
+// mined place cites in full (volume and all, since no Volume heading stands
+// over the appendix to have named it); an unmined one is cited in full too but
+// marked □, the expected-chapter mark the mempool's projections wear, and its
+// lookup answers with the date it is due instead of a page. Heights place
+// offline; a transaction's citation streams in as its lookup resolves, exactly
+// as the volumes' own rows do.
+function consensusEl(part) {
   const frag = document.createDocumentFragment();
   frag.append(partHead(part));
-  for (const e of part.entries) frag.append(provisionalEl(e));
+  for (const bip of part.bips) {
+    frag.append(bipHead(bip));
+    for (const e of bip.entries) frag.append(consensusRow(e));
+  }
   return frag;
+}
+function bipHead(bip) {
+  const a = document.createElement('a');
+  a.className = 'toc-book toc-bip';
+  a.href = `./bitcoin-appendix.html?part=consensus&bip=${bip.key}`;
+  a.textContent = `BIP ${bip.bip} — ${bip.name}`;
+  a.title = `${bip.title} — ${bip.status}. Its title leaf carries the activation statistics.`;
+  return a;
+}
+// A place's citation written whole, for the rows no Volume heading stands
+// over: the appendix cites from the volume down.
+function wholeRef({ volume, book, chapter, section, vout }) {
+  let s = toRoman(volume);
+  if (book != null) s += ` β${book}`;
+  if (chapter != null) s += ` ■${chapter}`;
+  if (section != null) s += ` §${section}${vout == null ? '' : `.${vout}`}`;
+  return s;
+}
+function consensusRow(entry) {
+  const row = document.createElement('a');
+  row.className = 'toc-entry under-book' + (entry.expected ? ' projected' : '');
+  row.href = entryHref(entry.id, entry.index, entry.page, entry.out ?? null);
+  const t = document.createElement('span');
+  t.className = 'toc-title';
+  t.textContent = entry.title;
+  if (entry.note) t.title = entry.note;
+  const r = document.createElement('span');
+  r.className = 'toc-ref';
+  if (entry.expected) {
+    const height = Number(entry.id);
+    r.textContent = expectedReference(height);
+    r.title = `expected — block ${height.toLocaleString()} has not been mined, so its chapter carries □ rather than ■`;
+  } else {
+    const place = placements.get(placeKey(entry));
+    if (place) r.textContent = wholeRef(place);
+    else { r.textContent = '—'; r.classList.add('none'); }
+  }
+  row.append(t, r);
+  return row;
 }
 
 // The Index of Ledgers: the curated ones, then any the reader
@@ -543,26 +590,6 @@ function ledgerEl(ledger, isKept) {
   return row;
 }
 
-// One provisional row, dressed like a projected chapter: the title, then the
-// whole expected reference -- volume and all, since no Volume heading stands
-// above the appendix to have named it already.
-function provisionalEl(entry) {
-  const height = Number(entry.id);
-  const row = document.createElement('a');
-  row.className = 'toc-entry under-book projected';
-  row.href = entryHref(entry.id);
-  const t = document.createElement('span');
-  t.className = 'toc-title';
-  t.textContent = entry.title;
-  if (entry.note) t.title = entry.note;
-  const r = document.createElement('span');
-  r.className = 'toc-ref';
-  r.textContent = expectedReference(height);
-  r.title = `expected — block ${height.toLocaleString()} has not been mined, so its chapter carries □ rather than ■`;
-  row.append(t, r);
-  return row;
-}
-
 // An appendix's heading turns the page down into its leaf, so it turns the
 // way the contents' other descents do: the list slides up and away, and the
 // leaf enters from below (the flag it consumes on first paint). A modified
@@ -620,7 +647,7 @@ function render() {
   // entirely when no queue can be read), so only what exists is appended.
   for (const part of appendix()) {
     if (part.kind === 'mempool') { if (projectedSection) toc.append(projectedSection); }
-    else if (part.kind === 'entries') toc.append(chaptersEl(part));
+    else if (part.kind === 'consensus') toc.append(consensusEl(part));
     else if (part.kind === 'ledgers') toc.append(ledgersEl(part));
     else if (part.kind === 'proofs') { if (proofSection) toc.append(proofSection); }
   }
@@ -707,9 +734,20 @@ async function loadProjected() {
   render();
 }
 
+// The Consensus part's places resolve through the same map the volumes' rows
+// read, keyed the same way -- so a fork's chapter shares its placement with the
+// curated entry citing the same page, and each lookup runs once for both.
+// Expected (unmined) heights are cited by arithmetic in their rows and need no
+// placement at all.
+const consensusPlaces = () => appendix()
+  .filter((p) => p.kind === 'consensus')
+  .flatMap((p) => p.bips)
+  .flatMap((b) => b.entries)
+  .filter((e) => !e.expected);
+
 // Block placements (curated, and bookmarks that stored their reference) are
 // offline, so render at once; everything else streams in as its lookup resolves.
-for (const p of places()) if (!p.address && isBlockId(p.id)) placements.set(placeKey(p), placeOf(Number(p.id), p.index ?? null, p.page, p.out ?? null));
+for (const p of [...places(), ...consensusPlaces()]) if (!p.address && isBlockId(p.id)) placements.set(placeKey(p), placeOf(Number(p.id), p.index ?? null, p.page, p.out ?? null));
 for (const b of bookmarks) {
   if (Number.isInteger(b.height)) bmPlacements.set(bmKey(b), placeOf(b.height, b.pos ?? null, undefined, b.vout ?? null));
 }
@@ -720,8 +758,13 @@ render();
 loadProofs();
 loadProjected();
 setInterval(() => { if (!document.hidden) loadProjected(); }, 60_000);
+// One lookup per key, however many registers cite the place.
+const unplaced = new Map();
+for (const p of [...places(), ...consensusPlaces()]) {
+  if (!p.address && !placements.has(placeKey(p)) && !unplaced.has(placeKey(p))) unplaced.set(placeKey(p), p);
+}
 await Promise.all([
-  ...places().filter((p) => !p.address && !placements.has(placeKey(p))).map(async (p) => {
+  ...[...unplaced.values()].map(async (p) => {
     placements.set(placeKey(p), await resolvePlacement(p));
     render();
   }),
