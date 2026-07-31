@@ -149,7 +149,7 @@ test('the page carries per-passage Open Graph tags', () => {
 
 test('a page without a rendered card falls back to the standing one', () => {
   const html = page({ cardUrl: null });
-  assert.match(html, /<meta property="og:image" content="https:\/\/bookofbitcoin\.io\/og-glossia\.png">/);
+  assert.match(html, /<meta property="og:image" content="https:\/\/bookofbitcoin\.io\/og-bookofbitcoin\.png">/);
   assert.ok(!html.includes('/cards/'), 'it never declares a card that was not written');
 });
 

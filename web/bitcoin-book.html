@@ -42,18 +42,18 @@
 
 <!-- Social / rich unfurl -->
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="Glossia">
+<meta property="og:site_name" content="The βook of βitcoin">
 <meta property="og:title" content="The βook of βitcoin — a block, read as a chapter">
-<meta property="og:description" content="Each transaction in a Bitcoin block, rendered as a paragraph of grammatically correct prose — witness data collected as footnotes.">
+<meta property="og:description" content="The illuminated timechain: each block a chapter, each transaction a paragraph of grammatically correct prose — witness data collected as footnotes. Every byte decodes back out exactly.">
 <meta property="og:url" content="https://bookofbitcoin.io/bitcoin-book.html">
-<meta property="og:image" content="https://bookofbitcoin.io/og-glossia.png">
+<meta property="og:image" content="https://bookofbitcoin.io/og-bookofbitcoin.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="Glossia — machine data, made human. A lossless linguistic codec.">
+<meta property="og:image:alt" content="The βook of βitcoin — the illuminated timechain. A gold β standing beside the book's title on a dark cover.">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="The βook of βitcoin — a block, read as a chapter">
-<meta name="twitter:description" content="Each transaction in a Bitcoin block, rendered as a paragraph of grammatically correct prose.">
-<meta name="twitter:image" content="https://bookofbitcoin.io/og-glossia.png">
+<meta name="twitter:description" content="The illuminated timechain: each block a chapter, each transaction a paragraph of grammatically correct prose.">
+<meta name="twitter:image" content="https://bookofbitcoin.io/og-bookofbitcoin.png">
 
 <!-- Machine readers: passages are composed in-browser by the WASM engine, so
      this document arrives with no passage text in it. /llms.txt says where
@@ -344,6 +344,17 @@ button:disabled { opacity: .4; cursor: not-allowed; }
    (.chapter-hash carries the same mark on the book leaf, where the book's
    target sits right beneath its title.) */
 .chapter-frontispiece .cfx-gold, .chapter-hash .cfx-gold, .section-hash .cfx-gold { color: var(--accent); font-weight: 700; font-style: normal; }
+/* The book leaf's two targets, opening → closing, and beneath them what the
+   retarget between did to the difficulty. Each target holds together as one
+   unit so a narrow screen breaks the line at the arrow rather than inside an
+   expression; the move sits a breath under them, in the same dim voice --
+   it is a reading of the line above, not another field. */
+.chapter-hash .book-target { white-space: nowrap; }
+.chapter-hash .book-move { margin-top: .4em; }
+/* The notation key, cut to the page: a row the page does not use leaves the
+   flow entirely. The pattern tables are grids whose cells are direct children,
+   so anything short of display:none would leave a hole in their columns. */
+.key-cut { display: none !important; }
 /* The merkle root's ⋔ mark: the clickable handle for its hash menu (copy hex /
    prose), bold and accented (like the h data mark) so it reads as the actionable
    element while the root's prose beside it stays plain. Upright, like every
@@ -547,9 +558,18 @@ button:disabled { opacity: .4; cursor: not-allowed; }
    the amounts are the right margin's text. nowrap: under fit-content sizing
    an amount must count as one piece, never wrap its ₿ onto a line of its own
    to satisfy a narrower column. */
-.tx-out-value  { grid-column: 2; text-align: right; font-size: calc(13.5px * var(--scale-margins, 1)); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.tx-out-value  { grid-column: 2; text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .tx-locktime { grid-column: left / -1; grid-row: 3; text-align: center; font-style: normal; }
 .tx-note { font: italic 400 calc(13.5px * var(--scale-body, 1))/1.4 'Newsreader',serif; color: var(--dim); }
+/* The amount's size, on both its classes. An amount is a .tx-note as well as
+   a .tx-out-value, and .tx-note sets the font shorthand -- font-size included
+   -- so at equal specificity the rule declared later would win and size the
+   right margin from the body's scale. Naming both classes settles it by
+   specificity instead of by source order. Only the size: the rest of the
+   voice (italic Newsreader, its line-height) is the note's, as it should be,
+   and layout stays on .tx-out-value alone so the narrow-screen override below
+   still reaches it. */
+.tx-note.tx-out-value { font-size: calc(13.5px * var(--scale-margins, 1)); }
 /* The input's sequence mark, leading the amount line beneath the reference:
    ●/○ final/respects-locktime, † replaceable (a shade warmer), ■n / Τn a
    relative block / time delay. */
@@ -677,7 +697,7 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 <div class="wrap">
   <div class="masthead">
     <span class="title">The <span class="beta">β</span>ook of <span class="beta">β</span>itcoin</span>
-    <span class="home"><a href="./bitcoin-search.html">Search</a> · <a href="./bitcoin-contents.html">Contents</a> · <a href="./bitcoin-ledger.html">Ledger</a> · <span class="settings-menu"><a href="#" id="settings-link" role="button" aria-haspopup="dialog" aria-expanded="false">Settings</a><div id="settings-panel" class="settings-panel hidden" role="dialog" aria-label="Settings">
+    <span class="home"><a href="./bitcoin-search.html">Search</a> · <a href="./bitcoin-contents.html">Contents</a> · <span class="settings-menu"><a href="#" id="settings-link" role="button" aria-haspopup="dialog" aria-expanded="false">Settings</a><div id="settings-panel" class="settings-panel hidden" role="dialog" aria-label="Settings">
       <div class="settings-title">Text size</div>
       <!-- One row per region. Every region beyond the body follows it (value
            dimmed) until its own buttons split it off; Reset rejoins them all
@@ -802,12 +822,14 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 
 <script type="module">
 import { init, encodeSeedPhrase } from './glossia-msg.js';
-import { parseTransaction, computeTxid, parseBlockHeader, computeBlockHash } from './btc-tx.js';
-import { composeTransactionFields, composeBlockHeaderFields, groupDigits, formatBtc, renderWitness, toSuperscript, timestampInfo } from './btc-prose.js';
-import { volumeBookChapter, heightOf, toRoman, reference, parseReference, footnoteMark } from './btc-citation.js';
+import { parseTransaction, computeTxid, parseBlockHeader, computeBlockHash, bitsToDifficulty } from './btc-tx.js';
+import { composeTransactionFields, composeBlockHeaderFields, bitsInfo, groupDigits, formatBtc, renderWitness, toSuperscript, timestampInfo } from './btc-prose.js';
+import { volumeBookChapter, heightOf, windowStartOf, retargetInside, toRoman, reference, parseReference, footnoteMark } from './btc-citation.js';
 import { loadNotables, places, placeTitle, blocksEta, appendix } from './btc-contents.js';
 import { queueLabel } from './btc-mempool.js';
 import { NOTATION_HTML } from './btc-notation.js';
+import { transactionTemplates } from './btc-templates.js';
+import { collectMarks, applyKeyFilter } from './btc-key-filter.js';
 import { commentaryFor, commentaryHtml, resolveCommentary } from './btc-commentary.js';
 
 // The curated index -- which blocks and transactions are notable, what they are
@@ -819,7 +841,35 @@ loadNotables();
 // The notation key's markup is shared with the front matter's sigla leaf, so
 // the toggle here and the key at rest there can never explain a mark
 // differently. Filled once, on load.
-document.querySelector('.notation-body').innerHTML = NOTATION_HTML;
+//
+// Where the two part is scope, not content. The leaf is the key at rest and
+// stays whole; here it is opened over a transaction, so it is cut to the marks
+// that transaction actually prints (btc-key-filter.js) and carries the control
+// that puts the rest back.
+// What the sheet is showing, and where the whole of it lives. The key at rest
+// is the front matter's sigla leaf -- the entire alphabet, with the opcode
+// index beside it -- so the sheet points there rather than carrying a second
+// copy of the same key behind a toggle.
+const KEY_SCOPE_HTML = `
+          <div class="key-scope">
+            <span class="key-scope-note">the marks on this page</span>
+            <a class="key-scope-link" href="./bitcoin-front.html?leaf=sigla">The sigla →</a>
+          </div>`;
+document.querySelector('.notation-body').innerHTML = KEY_SCOPE_HTML + NOTATION_HTML;
+
+// The script patterns the page in hand carries; empty on a leaf, which has no
+// transaction under it.
+let pageTemplates = new Set();
+
+// Cut the key to the page. Recomputed when the sheet opens and again whenever
+// the page beneath it changes, so a reader who turns pages with the key open
+// sees it follow. Nothing to do while it is shut.
+function refreshNotationKey() {
+  const sheet = document.querySelector('.section-nav .nav-sheet.notation');
+  const body = document.querySelector('.notation-body');
+  if (!sheet || !sheet.open || !body) return;
+  applyKeyFilter(body, { marks: collectMarks($('page-slide')), templates: pageTemplates });
+}
 
 // The nav bar carries two keys into the same slot above it -- the notation key
 // and, where the passage has one, its commentary. Opening either closes the
@@ -830,11 +880,107 @@ for (const sheet of document.querySelectorAll('.section-nav .nav-sheet')) {
   sheet.addEventListener('toggle', () => {
     if (!sheet.open) return;
     for (const other of document.querySelectorAll('.section-nav .nav-sheet')) {
-      if (other !== sheet) other.open = false;
+      if (other !== sheet) closeSheet(other);
     }
     if (sheet.id === 'commentary') fillCommentary();
+    else refreshNotationKey();
+  });
+  // Opening animates by itself -- the panel is display:none until the details
+  // opens, so appearing is enough. Closing has to be held back until the fall
+  // finishes, or the details would drop the panel mid-animation.
+  const summary = sheet.querySelector('summary');
+  if (summary) summary.addEventListener('click', (e) => {
+    if (!sheet.open) return;
+    e.preventDefault();
+    closeSheet(sheet);
   });
 }
+
+// Shut a sheet, letting it fall first. Idempotent, and it never leaves a sheet
+// stuck open: if the animation does not report back -- a hidden tab, a
+// browser that declines to run it -- a timer shuts it anyway.
+function closeSheet(sheet) {
+  if (!sheet || !sheet.open || sheet.classList.contains('closing')) return;
+  const body = sheet.querySelector('.nav-sheet-body');
+  const done = () => {
+    sheet.classList.remove('closing', 'dragging', 'springing');
+    if (body) body.style.transform = '';
+    sheet.open = false;
+  };
+  if (!body || REDUCED_MOTION) { done(); return; }   // the page's own motion setting, declared below
+  // The inline transform stays: a sheet dragged partway down falls from
+  // there, not from zero. done() clears it once the details is shut.
+  sheet.classList.remove('dragging', 'springing');
+  sheet.classList.add('closing');
+  body.addEventListener('animationend', done, { once: true });
+  setTimeout(() => { if (sheet.classList.contains('closing')) done(); }, 400);
+}
+
+// A sheet is a panel over the page, so a click on the page puts it down --
+// the same rule the settings panel keeps. The exemption is the nav bar the
+// sheet is anchored to: its steppers page the book, and a reader paging with
+// the key open is watching it follow the page (see refreshNotationKey), not
+// asking to be rid of it.
+document.addEventListener('click', (e) => {
+  if (e.target.closest && e.target.closest('.section-nav')) return;
+  for (const sheet of document.querySelectorAll('.section-nav .nav-sheet')) closeSheet(sheet);
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape') return;
+  for (const sheet of document.querySelectorAll('.section-nav .nav-sheet')) closeSheet(sheet);
+});
+
+// Swipe a sheet away: a drag downward that begins with the panel already
+// scrolled to its top puts it down. The sheet is a panel over the page, and
+// pushing it back down is the gesture its shape suggests; scrolled anywhere
+// below the top the same drag is a scroll, and stays one.
+(() => {
+  const DISMISS_PX = 64;      // far enough not to fire on a scroll that overshoots
+  const SLOPE = 1.2;          // and steep enough to be a drag down, not a drift sideways
+  let sheet = null, body = null, y0 = 0, x0 = 0, dy = 0, tracking = false;
+
+  const release = () => {
+    if (!sheet) return;
+    const s = sheet, b = body, dragged = tracking;
+    sheet = body = null; tracking = false;
+    // A tap that never became a drag moved nothing and has nothing to undo --
+    // the sigla link at the top of the sheet is the common case.
+    if (!dragged) return;
+    s.classList.remove('dragging');
+    if (dy >= DISMISS_PX) { closeSheet(s); return; }
+    // Short of the threshold: let it spring back to where it was.
+    s.classList.add('springing');
+    b.style.transform = '';
+    b.addEventListener('transitionend', () => s.classList.remove('springing'), { once: true });
+    setTimeout(() => s.classList.remove('springing'), 300);
+  };
+
+  document.addEventListener('touchstart', (e) => {
+    sheet = body = null; tracking = false; dy = 0;
+    if (e.touches.length !== 1) return;
+    const t = e.touches[0];
+    const b = t.target.closest && t.target.closest('.nav-sheet-body');
+    // Only from the top of the scroll: below it, the drag belongs to the scroll.
+    if (!b || b.scrollTop > 0) return;
+    body = b; sheet = b.closest('.nav-sheet'); y0 = t.clientY; x0 = t.clientX;
+  }, { passive: true });
+
+  document.addEventListener('touchmove', (e) => {
+    if (!sheet || e.touches.length !== 1) { if (sheet) release(); return; }
+    const t = e.touches[0];
+    dy = t.clientY - y0;
+    const dx = Math.abs(t.clientX - x0);
+    // Upward, or mostly sideways: not this gesture. Let go and leave the
+    // surface to the scroll it was already doing.
+    if (dy <= 0 || dx > Math.abs(dy) / SLOPE) { dy = 0; release(); return; }
+    if (!tracking) { tracking = true; sheet.classList.add('dragging'); }
+    // Resisted, so the sheet reads as heavy and the threshold as a decision.
+    body.style.transform = `translateY(${(dy * 0.55).toFixed(1)}px)`;
+  }, { passive: true });
+
+  document.addEventListener('touchend', release, { passive: true });
+  document.addEventListener('touchcancel', () => { dy = 0; release(); }, { passive: true });
+})();
 import { storeGet, storePut } from './btc-store.js';
 import { seedArchive } from './btc-seed.js';
 // Applies the saved per-region type sizes on import; the settings rows and
@@ -2226,7 +2372,13 @@ async function sectionFields(txid) {
   const hex = await loadTxHex(txid);
   const parsed = parseTransaction(hex);
   const verifiedTxid = await computeTxid(parsed.baseHex);
-  const entry = { fields: composeTransactionFields(parsed, BEST_OF, lazyEncode.placeholder), verified: verifiedTxid === txid };
+  const entry = {
+    fields: composeTransactionFields(parsed, BEST_OF, lazyEncode.placeholder),
+    verified: verifiedTxid === txid,
+    // Which of the notation key's script patterns this section puts on the
+    // page, for the key's filter. Classified once, beside the fields.
+    templates: transactionTemplates(parsed),
+  };
   fieldsCache.set(txid, entry);
   while (fieldsCache.size > FIELDS_CACHE_MAX) fieldsCache.delete(fieldsCache.keys().next().value);
   return entry;
@@ -2240,10 +2392,12 @@ async function showCurrentTx() {
     if (state.index === -3) renderVolumeLeaf();
     else if (state.index === -2) renderBookLeaf();
     else renderTitlePage();
+    pageTemplates = new Set();
     updateUrl();
     $('chapter').classList.remove('hidden');
     setStatus('');
     consumeSlide();
+    refreshNotationKey();
     liveProjection.sync();
     return;
   }
@@ -2267,10 +2421,12 @@ async function showCurrentTx() {
   } catch (e) {
     if (state.ghost === txid) {
       renderGhostTombstone(txid);
+      pageTemplates = new Set();
       updateUrl();
       $('chapter').classList.remove('hidden');
       setStatus('');
       consumeSlide();
+      refreshNotationKey();
       liveProjection.sync();
       return;
     }
@@ -2282,10 +2438,12 @@ async function showCurrentTx() {
   // lays out the footnotes as placeholders; their prose is encoded lazily, per
   // push, as the reader scrolls to it (see lazyEncode / renderFootnotes).
   renderChapter({ num: state.index + 1, txid, fields, verified, ghost: !!state.ghost });
+  pageTemplates = entry.templates ?? new Set();
   updateUrl();
   $('chapter').classList.remove('hidden');
   setStatus('');
   consumeSlide();
+  refreshNotationKey();
   liveProjection.sync();
 }
 
@@ -2609,10 +2767,11 @@ function renderChapterHead(onTitlePage) {
 // frontispiece shows the six header slots with most of them empty. Two are
 // already determined and fill in from the tip: the first projected
 // chapter's previous-block hash IS the tip's hash, and within the tip's own
-// difficulty window the target β is already law (a book is one difficulty
-// window). The hash line, having no hash to encode, carries the draft's
-// figures. Everything renders from state (REST figures) -- the manifest is
-// only needed once the reader pages into a section.
+// difficulty window the target β is already law (the window, not the book --
+// the two coincide only in Volume I). The hash line, having no hash to
+// encode, carries the draft's figures. Everything renders from state (REST
+// figures) -- the manifest is only needed once the reader pages into a
+// section.
 function renderProjectedHead(onTitlePage) {
   const gen = renderGen;
   const { volume, book, chapter } = volumeBookChapter(state.height);
@@ -2697,12 +2856,15 @@ function renderProjectedHead(onTitlePage) {
           : '32 bytes');
       prevSpan.title = 'already determined: whatever this chapter becomes, it follows the tip';
     }
-    if (bookStartOf(state.height) === bookStartOf(tipCore.height)) {
+    // The window, not the book: the two are the same 2,016 blocks only in
+    // Volume I, so what settles whether the tip's target is already law for
+    // this chapter is whether the two share a retarget window.
+    if (windowStartOf(state.height) === windowStartOf(tipCore.height)) {
       const hf = composeBlockHeaderFields(tipCore.header);
       betaSpan.textContent = hf.bits;
-      betaSpan.title = `${hf.bitsTitle} — already law for this chapter: a book is one difficulty window`;
+      betaSpan.title = `${hf.bitsTitle} — already law for this chapter: it falls in the tip's own difficulty window`;
     } else {
-      betaSpan.title = 'this chapter opens a new book, and a new book means a retarget — its difficulty target is not yet set';
+      betaSpan.title = 'this chapter opens a new difficulty window, and a new window means a retarget — its target is not yet set';
     }
   }).catch(() => { /* the tip's core is a nicety here -- the slots stay pending */ });
   return { volume, book, chapter };
@@ -2795,6 +2957,62 @@ function renderVolumeLeaf() {
   labelNav();
 }
 
+// One difficulty target on the book leaf, in the same β₇₈ < 213529×256²⁰ form
+// a chapter's frontispiece uses: the gold mark, the exact m×256ᵉ ceiling
+// beside it, and the same copy menu (compact hex, or the mark with its
+// expression). `governs` names the chapters mined under it, for the tooltip.
+// The marks go straight into `parent` and carry no furniture of their own --
+// a book with one target puts them on the line exactly as this leaf always
+// has, and only a book with two wraps each in a group of its own.
+function appendBookTarget(parent, bits, governs) {
+  const info = bitsInfo(bits);
+  const title = info.expr
+    ? `the proof of work — ${governs}, read as a 256-bit number, is below this target. ${info.title}`
+    : info.title;
+  const beta = document.createElement('span');
+  beta.className = 'cfx-gold';
+  beta.textContent = info.sym;
+  beta.title = title;
+  attachHashCopy(beta, (bits >>> 0).toString(16).padStart(8, '0'), 'difficulty target',
+    info.expr ? `${info.sym} ${info.expr}` : info.sym);
+  parent.append(beta);
+  if (info.expr) {
+    const expr = document.createElement('span');
+    // Marked mk: the < is a mark of the notation like any other, and the key's
+    // filter has to be able to see it here as it does in the frontispiece.
+    expr.className = 'mk';
+    expr.textContent = ' < ' + info.expr;
+    expr.title = title;
+    parent.append(expr);
+  }
+}
+
+// A target that shares its line with another: the same marks, held together
+// so a narrow screen breaks the line at the arrow between the two rather than
+// inside a β < m×256ᵉ.
+function appendGroupedTarget(parent, bits, governs) {
+  const group = document.createElement('span');
+  group.className = 'book-target';
+  appendBookTarget(group, bits, governs);
+  parent.append(group);
+}
+
+// A difficulty, in the same shape bitsInfo's tooltip gives it.
+const formatDifficulty = (d) => d.toLocaleString(undefined, { maximumFractionDigits: d < 1000 ? 2 : 0 });
+
+// What the retarget between a book's two targets did, stated as the move in
+// difficulty rather than in the targets printed above it. The two run
+// opposite ways -- a target is a ceiling, so a higher one is easier work --
+// and difficulty is the direction the book's own commentary speaks in
+// ("Difficulty +49%", "−10.8%"). Equal nBits is stated as unchanged rather
+// than as +0.00%: a retarget that recomputes to the same compact target left
+// the work alone, and saying so is truer than a rounded zero.
+function difficultyMove(bitsBefore, bitsAfter, before, after) {
+  if ((bitsBefore >>> 0) === (bitsAfter >>> 0)) return 'difficulty unchanged';
+  const pct = (after / before - 1) * 100;
+  return `difficulty ${pct > 0 ? '+' : '−'}${Math.abs(pct).toFixed(2)}%`;
+}
+
 // The book's own page: its number over the dates and times its first and last
 // blocks were recorded (the closing timestamp streams in; an unfinished
 // book's range ends at the chain tip so far).
@@ -2821,37 +3039,51 @@ function renderBookLeaf() {
   // As on the volume leaf: an open book's range runs to the tip, its current
   // last recorded chapter, with the em dash marking it still being written.
   const tipIn = !finished && tipHeight !== null && tipHeight >= state.height ? tipHeight : null;
-  // Right beneath the title: the book's difficulty target -- a book IS one
-  // difficulty window, so its first block's β mark names the target the whole
-  // book was mined against.
+  // Right beneath the title: the ceilings this book was mined under. A book
+  // that is a whole difficulty window has one, and prints it as this leaf
+  // always has -- all of Volume I, and every volume's truncated last book. A
+  // book that straddles a retarget has two, and prints both, opening target →
+  // closing target, with what the retarget did to the difficulty on the line
+  // beneath. Two is the ceiling on ceilings -- see retargetInside.
   const line = $('ch-hash-short');
   line.classList.remove('hidden');
   line.classList.add('plain');   // a target mark, not hash prose -- upright
   line.textContent = '';
-  const hf = composeBlockHeaderFields(state.header);
-  // On the book leaf the < speaks for the whole shelf beneath it: every
-  // chapter hash in this book reads below the target the window was mined
-  // against.
-  const bookBitsTitle = hf.bitsExpr
-    ? `the proof of work — every chapter hash in this book, read as a 256-bit number, is below this target. ${hf.bitsTitle}`
-    : hf.bitsTitle;
-  const beta = document.createElement('span');
-  beta.className = 'cfx-gold';
-  beta.textContent = hf.bits;
-  beta.title = bookBitsTitle;
-  // Same copy menu as the chapter frontispiece's β: compact hex or the mark
-  // with its exact m×256ᵉ target expression.
-  attachHashCopy(beta, (state.header.bits >>> 0).toString(16).padStart(8, '0'), 'difficulty target',
-    hf.bitsExpr ? `${hf.bits} ${hf.bitsExpr}` : hf.bits);
-  line.append(beta);
-  // The inequality beside the mark, plain against β's gold -- a book IS one
-  // difficulty window, so its leaf states the window's ceiling in full, in
-  // the same β₇₈ < 213529×256²⁰ form as a chapter's frontispiece.
-  if (hf.bitsExpr) {
-    const expr = document.createElement('span');
-    expr.textContent = ' < ' + hf.bitsExpr;
-    expr.title = bookBitsTitle;
-    line.append(expr);
+  const cut = retargetInside(state.height, chapterCount);
+  const cutChapter = cut === null ? null : cut - state.height + 1;
+  // A retarget the book has not reached yet has no target to state, so an
+  // unfinished book stands on the one it has been mined under so far.
+  const straddles = cut !== null && (tipHeight === null || tipHeight >= cut);
+  if (!straddles) {
+    // One target, and the leaf it has always made: the mark and its ceiling
+    // on the line, nothing around them. The < speaks for a run of chapters
+    // rather than one hash, so it names the run -- the whole book where the
+    // book is a whole window, and only what is settled where a retarget is
+    // still to come.
+    appendBookTarget(line, state.header.bits, cut === null
+      ? 'every chapter hash in this book'
+      : `every chapter hash from ■1 to ■${(cutChapter - 1).toLocaleString()}`);
+  } else {
+    const targets = document.createElement('div');
+    line.append(targets);
+    appendGroupedTarget(targets, state.header.bits,
+      `every chapter hash from ■1 to ■${(cutChapter - 1).toLocaleString()}`);
+    const tail = document.createElement('span');
+    tail.textContent = ' → …';
+    targets.append(tail);
+    const move = document.createElement('div');
+    move.className = 'book-move';
+    line.append(move);
+    loadBlockInfoByHeight(cut).then((info) => {
+      if (gen !== renderGen) return;
+      tail.textContent = ' → ';
+      appendGroupedTarget(tail, info.bits,
+        `every chapter hash from ■${cutChapter.toLocaleString()} to ■${chapterCount.toLocaleString()}`);
+      const before = bitsToDifficulty(state.header.bits), after = bitsToDifficulty(info.bits);
+      move.textContent = difficultyMove(state.header.bits, info.bits, before, after);
+      move.title = `the retarget at ■${cutChapter.toLocaleString()} (block ${cut.toLocaleString()}), where this book crosses from one difficulty window into the next`
+        + ` — difficulty ${formatDifficulty(before)} → ${formatDifficulty(after)}, relative to the genesis block`;
+    }).catch(() => { if (gen === renderGen) { tail.remove(); move.remove(); } });
   }
   // Then the chapters the book spans, under the block glyph (■, as references
   // write chapter numbers -- chapters restart at 1 each book, so a full book
@@ -4046,7 +4278,9 @@ function swipeStep(direction) {
 // descends into the span's first child (a leaf's linear next page). Away
 // from the scroll boundaries a vertical drag is just scrolling.
 let upReady = false;    // the ascend target's data is loaded (see prefetchNeighbors)
-let downReady = false;  // a chapter page's §1 is warmed (leaf descents are same-block, always ready)
+let downReady = false;  // the descend target is warmed: a chapter page's §1, or a
+                        // volume leaf's book leaf, whose closing difficulty target
+                        // is another block's (a book leaf's own descent is same-block)
 
 // Descend memory: every ascent (vertical swipe or crumb) records the full
 // trail below the page it leaves for, keyed by the parent leaf's index, so
@@ -4126,7 +4360,13 @@ function canStepVertical(direction) {
   // section was visited moments ago -- its data is cached). A ghost's hex
   // lives in the ledger, so its rungs are always ready.
   if (t.ghost || t.unghost) return true;
-  if (direction > 0) return state.index === -1 ? (downReady || !!rememberedChild()) : true;
+  // A volume leaf's descent is the exception to "stays within the loaded
+  // block": the book leaf it lands on states a closing difficulty target that
+  // belongs to the retarget block, not to this one.
+  if (direction > 0) {
+    if (state.index === -1) return downReady || !!rememberedChild();
+    return state.index === -3 ? downReady : true;
+  }
   // The contents and the appendix leaves are precached by the service worker,
   // so an ascent onto either is a page turn with nothing to wait for.
   return !!t.free || !!t.toc || !!t.appendix || upReady;
@@ -4186,6 +4426,26 @@ function warmLeafEncodes(core) {
     encodeSeedPhrase(reverseHex(core.header.merkleRoot), 'english', BEST_OF);
   } catch { /* warming is best-effort */ }
 }
+// Warm what a book leaf needs beyond its own first block. Where the book
+// straddles a retarget it states two difficulty targets, and the second is
+// the retarget block's -- another block, another fetch. Warmed here so a turn
+// onto a book leaf lands with both in hand and the closing target does not
+// arrive after the page has already settled.
+//
+// Resolves immediately for a book that is one whole difficulty window (all of
+// Volume I, every volume's short last book) and for one whose retarget the
+// chain has not reached, since neither has a second target to wait for.
+// The retarget block a book leaf's closing target is read from, or null where
+// the leaf states a single target and nothing has to be fetched for it.
+function bookTargetCut(height) {
+  const cut = retargetInside(height, volumeBookChapter(height).chapterCount);
+  return cut === null || (tipHeight !== null && tipHeight < cut) ? null : cut;
+}
+function warmBookTargets(height) {
+  const cut = bookTargetCut(height);
+  return cut === null ? Promise.resolve() : loadBlockInfoByHeight(cut);
+}
+
 // Warm a section fully: fields composed and cached, § txid prose encoded.
 async function warmSection(txid) {
   if (!ready) { await loadTxHex(txid); return; }   // at least the network half
@@ -4217,6 +4477,11 @@ async function prefetchNeighbor(st, direction) {
     else target = st.height + direction;
     if (target < 0) return;
     warmLeafEncodes(await loadBlockByHeight(target, { withTxids: false }));
+    // Stepping between book leaves, the page landed on states two targets
+    // where its book straddles a retarget. Swallowed on failure: the leaf
+    // renders either way, and a second target that cannot be fetched is no
+    // reason to hold the turn -- the gate is for the ordinary case.
+    if (st.index === -2) await warmBookTargets(target).catch(() => {});
   } else if (direction > 0) {
     if (st.index < st.txCount - 1) {
       const txids = await ensureTxids(st);
@@ -4242,7 +4507,10 @@ function prefetchNeighbors() {
   const gen = ++prefetchGen;
   neighborReady = { '-1': false, '1': false };
   upReady = state !== null && state.index >= 0;   // a section's parent page is this block, already loaded
-  downReady = false;
+  // A volume leaf descends onto a book leaf in the same block. Where that leaf
+  // states one target there is nothing to fetch and the descent is ready at
+  // once -- waiting on the prefetch timer would gate a turn on nothing.
+  downReady = state !== null && state.index === -3 && bookTargetCut(state.height) === null;
   if (!state) return;
   const st = state;
   // Deferred past the turn's entry animation: the warming encodes are main-
@@ -4261,6 +4529,9 @@ function prefetchNeighbors() {
                    : st.index === -2 ? volumeStartOf(st.height) : null;
     if (upHeight !== null) {
       loadBlockByHeight(upHeight, { withTxids: false })
+        // A chapter ascends onto its book leaf, which may state two targets;
+        // a book leaf ascends onto a volume leaf, which states none.
+        .then(() => (st.index === -1 ? warmBookTargets(upHeight).catch(() => {}) : null))
         .then(() => { if (gen === prefetchGen) upReady = true; })
         .catch(() => {});
     }
@@ -4270,6 +4541,13 @@ function prefetchNeighbors() {
         .then((txids) => warmSection(txids[0]))
         .then(() => { if (gen === prefetchGen) downReady = true; })
         .catch(() => {});
+    } else if (st.index === -3) {
+      // A volume leaf descends onto this height's book leaf: the same block,
+      // so nothing to load for the leaf itself, but its closing target is
+      // another block's. Ready either way once the attempt is over.
+      warmBookTargets(st.height)
+        .catch(() => {})
+        .then(() => { if (gen === prefetchGen) downReady = true; });
     }
   }, 350);
 }
