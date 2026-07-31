@@ -145,16 +145,19 @@ for (const part of parts) {
     if (bip.status === 'signaling' && (!Number.isFinite(bip.bit) || !Number.isFinite(bip.threshold))) {
       problems.push(`appendix "${part.title}": ${bip.title} is signaling but names no bit/threshold to count by`);
     }
-    // The ballot table needs a coherent reading of a yes: a bit or a minimum
-    // version (not both), a window, and -- for a closed ballot -- an anchor
-    // whose window closes on a period boundary, since the boundaries are
-    // consensus arithmetic and a misplaced anchor would tally the wrong blocks.
-    if (bip.bit != null && bip.version != null) {
-      problems.push(`appendix "${part.title}": ${bip.title} names both a bit and a version — a yes is read one way or the other`);
+    // The ballot table needs a coherent reading of a yes: a bit, a minimum
+    // version, or coinbase text (one of them, not two), a window, and -- for
+    // a closed ballot -- an anchor whose window closes on a period boundary
+    // where the fork HAD periods, since those boundaries are consensus
+    // arithmetic and a misplaced anchor would tally the wrong blocks. A
+    // coinbase ballot had no periods at all; its window is an editorial
+    // frame, and its anchor stands wherever the story closed.
+    if ([bip.bit, bip.version, bip.coinbase].filter((x) => x != null).length > 1) {
+      problems.push(`appendix "${part.title}": ${bip.title} names more than one way to read a yes — a bit, a version, or coinbase text, not several`);
     }
     if (bip.ballot != null) {
-      if (bip.bit == null && bip.version == null) {
-        problems.push(`appendix "${part.title}": ${bip.title} names a ballot but no bit or version to read it by`);
+      if (bip.bit == null && bip.version == null && bip.coinbase == null) {
+        problems.push(`appendix "${part.title}": ${bip.title} names a ballot but no bit, version, or coinbase text to read it by`);
       }
       if (!Number.isFinite(bip.window)) {
         problems.push(`appendix "${part.title}": ${bip.title} names a ballot but no window`);

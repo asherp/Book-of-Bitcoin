@@ -193,6 +193,9 @@ a.bb-ref:hover { color:var(--accent-2); }
 .bb-status { flex:none; min-width:48px; text-align:right; font:500 10.5px/1.6 'IBM Plex Mono',monospace; letter-spacing:.06em; }
 .bb-status.yes { color:var(--accent); }
 .bb-status.no { color:var(--meta); }
+/* A coinbase ballot's middle column: the miner's own line, kept to one --
+   the full text rides the hover. */
+.bb-say { font-style:normal; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:12px; }
 /* The clock at the row's head: the replay is chronological, and the dates
    make its pace legible. */
 .bb-time { flex:none; font:400 10px/1.7 'IBM Plex Mono',monospace; color:var(--meta); white-space:nowrap; font-variant-numeric:tabular-nums; }
@@ -401,6 +404,42 @@ const wholeRef = (height, section = null, vout = null, page = null) => {
   if (section != null) s += ` §${section}${vout == null ? '' : `.${vout}`}`;
   return s;
 };
+// A path tried across the public mirrors; null when none answers.
+const overMirrors = async (path, kind = 'json') => {
+  for (const base of MEMPOOL_MIRRORS) {
+    try {
+      const res = await fetch(base + path);
+      if (res.ok) return kind === 'json' ? await res.json() : (await res.text()).trim();
+    } catch { /* try the next mirror */ }
+  }
+  return null;
+};
+// The printable runs of a coinbase scriptSig -- the miner's own line at the
+// head of the chapter, as the ballot Bitcoin Unlimited wrote was read: runs
+// of three or more legible characters, the structural bytes between them
+// dropped.
+const coinbaseSay = (scriptsigHex) => {
+  const bytes = (String(scriptsigHex || '').match(/../g) || []).map((x) => parseInt(x, 16));
+  const runs = [];
+  let run = '';
+  for (const c of bytes) {
+    if (c >= 0x20 && c <= 0x7e) { run += String.fromCharCode(c); continue; }
+    if (run.length >= 3) runs.push(run);
+    run = '';
+  }
+  if (run.length >= 3) runs.push(run);
+  return runs.join(' ');
+};
+// A block's coinbase text, two small calls: the chapter's first txid, then
+// the transaction itself. Null when the chain will not say.
+const coinbaseOf = async (blockHash) => {
+  const txid = await overMirrors(`/block/${blockHash}/txid/0`, 'text');
+  if (!txid || !/^[0-9a-f]{64}$/.test(txid)) return null;
+  const tx = await overMirrors(`/tx/${txid}`);
+  if (!tx || !Array.isArray(tx.vin) || !tx.vin[0]) return null;
+  return coinbaseSay(tx.vin[0].scriptsig);
+};
+
 // A vertical move within the appendix -- down a level, or along a ballot's
 // window -- played the way every leaf turn is played: this page slides off
 // the way the reader pushed, and the destination enters from the other side.
@@ -620,10 +659,17 @@ if (bip && blockLeaf == null) {
   // comes into reach, banked a page ahead, the way the Ledger draws a record
   // -- and the running tally holds in a sticky bar at the screen's foot, so
   // the count stands beside the ballot at every moment of the scroll.
-  if (bip.bit != null || bip.version != null) {
-    const yes = (v) => (bip.bit != null ? ((v >>> bip.bit) & 1) === 1 : (v >>> 0) >= bip.version);
-    const yesSays = bip.bit != null ? `bit ${bip.bit} set` : `version ${bip.version} or above`;
-    const noSays = bip.bit != null ? `bit ${bip.bit} not set` : `below version ${bip.version}`;
+  if (bip.bit != null || bip.version != null || bip.coinbase != null) {
+    // Three ways a yes is read: a version bit set, a minimum version, or --
+    // for the one ballot written outside the version word -- text the
+    // coinbase must carry. A first line the chain would not give up reads as
+    // no vote, and says so.
+    const COIN = typeof bip.coinbase === 'string' && bip.coinbase ? bip.coinbase : null;
+    const yes = (b) => (COIN ? (b.say != null && b.say.includes(COIN))
+      : bip.bit != null ? ((b.version >>> bip.bit) & 1) === 1
+      : (b.version >>> 0) >= bip.version);
+    const yesSays = COIN ? `${COIN}…/ written in the coinbase` : bip.bit != null ? `bit ${bip.bit} set` : `version ${bip.version} or above`;
+    const noSays = COIN ? `no ${COIN}…/ in the coinbase` : bip.bit != null ? `bit ${bip.bit} not set` : `below version ${bip.version}`;
     const WINDOW = Number.isFinite(bip.window) ? bip.window : 2016;
 
     const blocksEl = $('bip-blocks');
@@ -632,7 +678,8 @@ if (bip && blockLeaf == null) {
     for (const [cls, text, why] of [
       ['bb-time', 'mined', 'when the block was mined — UTC'],
       ['bb-ref', 'chapter', ''],
-      ['bb-ver', 'version', "as the chapter's frontispiece writes it"],
+      COIN ? ['bb-ver', 'coinbase', "the chapter's first line — the printable runs of the coinbase scriptSig"]
+           : ['bb-ver', 'version', "as the chapter's frontispiece writes it"],
       ['bb-status', 'signal', `a yes is ${yesSays}`],
       ['bb-sum', 'Σ', 'the yeses so far — the count as it stood with this block written'],
       ['bb-pct', '%', 'the rate so far — the yeses over the blocks written to this point'],
@@ -688,18 +735,24 @@ if (bip && blockLeaf == null) {
         ev.preventDefault();
         navTo(a.getAttribute('href'), 'down');
       });
-      const ver = formatBlockVersion(b.version);
       const v = document.createElement('span');
-      v.className = 'bb-ver';
-      const mark = document.createElement('span');
-      mark.className = 'dt'; mark.textContent = 'v';
-      // The frontispiece's own spacing: tight against a numeral (v1), a
-      // space before a word form (v accio library 100).
-      const text = ver.text.replace(/^v/, '');
-      v.append(mark, document.createTextNode((/^\d/.test(text) ? '' : ' ') + text));
-      v.title = ver.title;
+      if (COIN) {
+        v.className = 'bb-ver bb-say';
+        v.textContent = b.say == null ? 'unread' : (b.say || '—');
+        v.title = b.say == null ? 'the coinbase could not be read — counted as no vote' : `the coinbase text\n${b.say}`;
+      } else {
+        const ver = formatBlockVersion(b.version);
+        v.className = 'bb-ver';
+        const mark = document.createElement('span');
+        mark.className = 'dt'; mark.textContent = 'v';
+        // The frontispiece's own spacing: tight against a numeral (v1), a
+        // space before a word form (v accio library 100).
+        const text = ver.text.replace(/^v/, '');
+        v.append(mark, document.createTextNode((/^\d/.test(text) ? '' : ' ') + text));
+        v.title = ver.title;
+      }
       const st = document.createElement('span');
-      const aye = yes(b.version);
+      const aye = yes(b);
       st.className = 'bb-status ' + (aye ? 'yes' : 'no');
       st.textContent = aye ? 'signals' : '—';
       st.title = aye ? yesSays : noSays;
@@ -750,13 +803,26 @@ if (bip && blockLeaf == null) {
           at = Math.min(floor + 9, anchor);
         }
         let blocks = null;
-        for (const base of MEMPOOL_MIRRORS) {
-          try {
-            const res = await fetch(`${base}/blocks/${at}`);
-            if (res.ok) { blocks = await res.json(); break; }
-          } catch { /* try the next mirror */ }
+        if (COIN) {
+          // The fast path for a coinbase ballot: mempool.space's v1 block
+          // pages bundle each block's coinbase scriptSig
+          // (extras.coinbaseRaw), fifteen blocks a call -- a whole page of
+          // first lines in one request. A mirror without v1 just misses
+          // (vanilla esplora answers 404), and any block the page did not
+          // carry a coinbase for falls back to two small calls of its own.
+          const v1 = await overMirrors(`/v1/blocks/${at}`);
+          if (Array.isArray(v1) && v1.length) {
+            for (const b of v1) {
+              if (b && b.extras && b.extras.coinbaseRaw != null) b.say = coinbaseSay(b.extras.coinbaseRaw);
+            }
+            blocks = v1;
+          }
         }
-        if (!blocks || !blocks.length) { done = true; return; }
+        if (!blocks) blocks = await overMirrors(`/blocks/${at}`);
+        if (!Array.isArray(blocks) || !blocks.length) { done = true; return; }
+        if (COIN) {
+          await Promise.all(blocks.map(async (b) => { if (b.say === undefined) b.say = await coinbaseOf(b.id); }));
+        }
         // Oldest first, each block carrying the count as it stood with that
         // block written: the yeses so far, over the blocks so far.
         for (const b of blocks.reverse()) {
@@ -765,12 +831,12 @@ if (bip && blockLeaf == null) {
           // before it; a height already banked is not counted twice.
           if (bank.length && b.height <= bank[bank.length - 1].height) continue;
           tallied++;
-          if (yes(b.version)) ayes++;
-          bank.push({ height: b.height, version: b.version, timestamp: b.timestamp, sum: ayes, n: tallied });
+          if (yes(b)) ayes++;
+          bank.push({ height: b.height, version: b.version, say: b.say ?? null, timestamp: b.timestamp, sum: ayes, n: tallied });
         }
         const reached = bank.length ? bank[bank.length - 1].height : floor - 1;
         if (reached >= anchor) { done = true; return; }
-        at = Math.min(reached + 10, anchor);
+        at = Math.min(reached + Math.max(blocks.length, 1), anchor);
       })().finally(() => { fetching = null; });
       return fetching;
     };
@@ -1101,7 +1167,8 @@ if (blockLeaf != null) {
     vv.title = ver.title;
 
     // The verdict, beside the field it is read off: a ballot is what brought
-    // the reader here.
+    // the reader here. A coinbase ballot's verdict reads off the chapter's
+    // first line instead, fetched and quoted in its own row.
     if (bip.bit != null || bip.version != null) {
       const aye = bip.bit != null ? ((data.version >>> bip.bit) & 1) === 1 : (data.version >>> 0) >= bip.version;
       const sv = line('signal');
@@ -1109,6 +1176,19 @@ if (blockLeaf != null) {
         ? `signals — ${bip.bit != null ? `bit ${bip.bit} set` : `version ${bip.version} or above`}`
         : `— ${bip.bit != null ? `bit ${bip.bit} not set` : `below version ${bip.version}`}`;
       sv.style.color = aye ? 'var(--accent)' : 'var(--meta)';
+    } else if (bip.coinbase) {
+      const sayV = line('coinbase');
+      sayV.textContent = '…';
+      const sigV = line('signal');
+      sigV.textContent = '…';
+      coinbaseOf(data.id).then((say) => {
+        if (say == null) { sayV.textContent = 'the chain could not be reached'; sigV.textContent = '—'; return; }
+        sayV.textContent = say || '(nothing legible)';
+        sayV.title = "the chapter's first line — the printable runs of the coinbase scriptSig";
+        const aye = say.includes(bip.coinbase);
+        sigV.textContent = aye ? `signals — ${bip.coinbase}…/ in the coinbase` : `— no ${bip.coinbase}…/ in the coinbase`;
+        sigV.style.color = aye ? 'var(--accent)' : 'var(--meta)';
+      }).catch(() => { sayV.textContent = 'the chain could not be reached'; sigV.textContent = '—'; });
     }
 
     if (data.previousblockhash) {
