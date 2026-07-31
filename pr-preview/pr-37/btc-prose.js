@@ -21,6 +21,7 @@
 import { encodeSeedPhrase } from './glossia-msg.js';
 import { findTextRuns, splitReadableRuns, readableUtf8Text, tokenizeScript, bitsToTargetHex, bitsToDifficulty, bitsToPrimeFactors, primeFactors } from './btc-tx.js';
 import { volumeBookChapter } from './btc-citation.js';
+import { plausibleBlockTime, utcMinute } from './btc-chaintime.js';
 import { BIP39, HP_SPELLS } from './btc-wordlists.js';
 
 const ROMAN = [[1000, 'M'], [900, 'CM'], [500, 'D'], [400, 'CD'], [100, 'C'], [90, 'XC'], [50, 'L'], [40, 'XL'], [10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I']];
@@ -536,13 +537,63 @@ export function bip34HeightPush(hex) {
   return { height, restHex: hex.slice(8) };
 }
 
-// The counters that follow the height -> their decimals, and what's left.
+// ─── the clock some pools write next, and the counters after it ────────
 //
-// A pool's coinb1 ends at the height push and the extranonce is appended
-// directly after it, so the counter sits where the pre-BIP34 preamble's η sat:
-// second, right behind the mark that opens the scriptSig. Same field, same
-// mark, one rule later -- the search space beyond the header's 32-bit nonce,
-// which the miner rolls when that one is exhausted.
+// The slot behind the height does not hold one field. Under Stratum a pool
+// sends its coinbase in two halves and the miner fills the gap between them
+// (coinb1 ‖ extranonce1 ‖ extranonce2 ‖ coinb2), and where a pool leaves that
+// gap is house style, not rule. Two customs share the chain:
+//
+//   gap second   the counters land directly behind the height, and the pool's
+//                writing comes after them (ckpool, and the solo miners and
+//                small pools built on it)
+//   gap fourth   the pool writes the moment it assembled the template, then
+//                its tag, then leaves the gap (btccom's server, which pushes
+//                CScriptNum(time(nullptr)) as the second field, and the pools
+//                descended from it)
+//
+// So a number in that slot is a clock about as often as it is a counter, and
+// the book called all of them counters until block 960,281's ostensible
+// extranonce 1,785,429,755 was read as what it is: 2026-07-30 16:42 UTC, the
+// day the block itself was mined. See tools/coinbase-formats.md.
+//
+// Nothing in the bytes distinguishes the two. What distinguishes them is the
+// height already standing beside them: a clock agrees with it, a counter has
+// no reason to (see btc-chaintime.js, and PLAUSIBLE_WINDOW for what agreement
+// is worth here). The evidence and the claim are then in the same hundred
+// bytes, which is the standard every other mark on the page is held to.
+
+// The template timestamp -> its value, and what's left. A direct push of four
+// bytes, or of five where CScriptNum's sign padding will widen it after 2038,
+// whose value dates to the block's own era.
+export function templateTimePush(hex, height) {
+  const op = parseInt(hex.slice(0, 2), 16);
+  if (op !== 4 && op !== 5) return null;
+  const end = 2 + op * 2;
+  if (hex.length < end) return null;
+  const push = hex.slice(2, end);
+  if (op === 5 && push.slice(8) !== '00') return null;      // five bytes only to clear the sign bit
+  const unix = parseInt(reverseHexStr(push.slice(0, 8)), 16);
+  if (!plausibleBlockTime(unix, height)) return null;
+  return { unix, hex: hex.slice(0, end), restHex: hex.slice(end) };
+}
+
+// The timestamp mark: the UTC date and minute, as the chapter head prints the
+// block's own nTime. No glyph of its own -- Τ is the timelock grammar's, and
+// this constrains nothing; it is a miner's clock reading, the same kind of
+// thing the header states, so it reads the same way and a reader can set the
+// two side by side.
+// Marked op-tpltime so the notation key can find it: the mark is a date, which
+// is different in every block that carries one, so no literal in the key could
+// name it (see collectMarks in btc-key-filter.js).
+const templateTimeMark = (unix) => `<span class="op op-tpltime" title="the moment this block's template was assembled, as the pool's software wrote it into the coinbase (unix ${unix}) — a clock reading, not a counter: the pools built on btccom's server push it directly behind the height. It is here because it agrees with the height beside it; nothing in the bytes declares it">${utcMinute(unix)}</span>`;
+
+// The counters that follow -> their decimals, and what's left.
+//
+// Where the gap is second the counter sits right behind the height, exactly
+// where the pre-BIP34 preamble's η sat: same field, same mark, one rule later
+// -- the search space beyond the header's 32-bit nonce, which the miner rolls
+// when that one is exhausted.
 //
 // Reading it as the number it is matters twice over. It is a tally, so a
 // tally is what it should say. And a counter is entropy: at any moment ~37%
@@ -589,7 +640,7 @@ const blockHeightMark = (height) => `<span class="op op-blockmark" title="BIP34 
 // wrote, pipes and spaces included, instead of arriving pre-cut by a tokenizer
 // that mistook its punctuation for instructions.
 // The extranonce mark: η and its value, in both eras. One field gets one form
-// -- an early block's η2² and a modern η5·839·425609 are the same counter
+// -- an early block's η2² and a modern eight-byte counter are the same counter
 // under the same rule, and a mark that changed shape with the size of its
 // number would be two marks wearing one glyph. Both call sites come here so
 // they cannot drift apart again.
@@ -600,6 +651,14 @@ const blockHeightMark = (height) => `<span class="op op-blockmark" title="BIP34 
 // better served reading at the size of the numbers it is made of than sitting
 // small beside its glyph. The decimal keeps the title, which is where a
 // counter is legible as a count.
+//
+// What this mark must NOT wear is a clock. It said "counter" over block
+// 960,281's template timestamp for as long as the timestamp went unrecognized,
+// which is the failure a mark this confident is capable of: the glyph asserts
+// a meaning the bytes never stated -- and factoring the number does not make
+// the claim any truer, only more elaborate (that block's 5·839·425609 is a
+// date). templateTimePush takes such a number first, and this stays what its
+// name says.
 const extranonceMark = (n) => markToken(`η${productProse(n)}`, `extranonce ${n} — the counter the miner rolled once the header's 32-bit nonce (η) was exhausted. A tally, not text: it is read as the number it is, so its bytes never pass for writing`);
 
 function renderMinerMargin(hex, collect) {
@@ -973,12 +1032,17 @@ export function composeTransactionFields(parsed, bestOf = 1, lazyData = null, en
       const bip34 = bip34HeightPush(v.scriptSig);
       if (bip34) {
         // The rule's own boundary, then the miner's bookkeeping, then a break:
-        // the height under ■, the counters after it under η, and the margin
-        // below -- the same shape the preamble takes (β η, break, the writing),
-        // and for the same reason. What the miner wrote opens a line of its own,
-        // with nothing mechanical left on it.
-        const { values, restHex } = peelExtranonces(bip34.restHex);
-        const preamble = [blockHeightMark(bip34.height), ...values.map(extranonceMark)].join(' ');
+        // the height under ■, the template's clock and the counters after it,
+        // and the margin below -- the same shape the preamble takes (β η, break,
+        // the writing), and for the same reason. What the miner wrote opens a
+        // line of its own, with nothing mechanical left on it.
+        const stamp = templateTimePush(bip34.restHex, bip34.height);
+        const { values, restHex } = peelExtranonces(stamp ? stamp.restHex : bip34.restHex);
+        const preamble = [
+          blockHeightMark(bip34.height),
+          ...(stamp ? [templateTimeMark(stamp.unix)] : []),
+          ...values.map(extranonceMark),
+        ].join(' ');
         const margin = renderMinerMargin(restHex, collect);
         script = preamble + (margin ? '<br>' + margin : '');
       } else if (isCleanScript(v.scriptSig)) {
