@@ -311,6 +311,16 @@ compiled to WASM) is consumed as a published
   rides whole as a rendered page of the book (image + alt text). See its
   [README](tools/twitter-bot/README.md); deployed by
   `.github/workflows/twitter-bot.yml`
+- `tools/coinbase-fields.mjs`, `tools/coinbase-survey.mjs` — the miner's margin,
+  surveyed. Past BIP34's height push a coinbase carries no format at all, only
+  house styles: where a pool's template builder left the Stratum gap, what it
+  wrote around it, and which foreign chain's commitment it is carrying. The
+  reader decomposes a `scriptSig` into those fields byte-exactly; the survey
+  samples blocks off any Esplora mirror and reports what each pool is doing
+  now. Findings and their sources in
+  [`tools/coinbase-formats.md`](tools/coinbase-formats.md). Kept out of the
+  book's own rendering on purpose: what a pool tag *means* is commentary, and
+  the passage stops where the rules do
 
 ## Building & running locally
 
