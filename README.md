@@ -170,8 +170,11 @@ compiled to WASM) is consumed as a published
   writes it, and whether it reads as a yes, drawn a page at a time as the
   foot comes into reach the way the Ledger draws a record, with the running
   tally held in a sticky bar at the screen's foot (a fork still signaling
-  has no closed window, so its ballot opens at the chain tip and counts
-  live) — then the activation statistics as the file states them, the
+  has no closed window, so its ballot opens at the chain tip; where the
+  file names a `monitor:` — a public endpoint publishing the period's whole
+  count — the bar states the period's total signaling rate, credited to
+  its source, rather than only what the table has drawn) — then the
+  activation statistics as the file states them, the
   fork's chapters, its reading behind the same toggle every leaf keeps its
   commentary behind, and sideways turns walking the forks; the book answers
   an unmined chapter with the date it is due. A ballot row opens the

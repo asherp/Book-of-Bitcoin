@@ -214,6 +214,11 @@ function normalizePart(raw, i) {
       if (b.threshold !== undefined) group.threshold = Number(b.threshold);
       if (b.ballot !== undefined) group.ballot = Number(b.ballot);
       if (b.window !== undefined) group.window = Number(b.window);
+      // A public endpoint publishing the current period's whole count, for a
+      // fork still signaling: the tally can state the period's total, not
+      // just the sample the table has drawn -- credited, since the count is
+      // the monitor's claim rather than the chain's.
+      if (b.monitor !== undefined) group.monitor = String(b.monitor);
       if (b.stats) {
         group.stats = b.stats.map((s) => {
           const label = String(s.label ?? '').trim();

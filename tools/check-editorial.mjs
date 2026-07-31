@@ -165,6 +165,17 @@ for (const part of parts) {
     if (bip.status === 'signaling' && bip.ballot != null) {
       problems.push(`appendix "${part.title}": ${bip.title} is still signaling — its ballot has not closed, so it names none and its leaf counts from the tip`);
     }
+    // A monitor is an external claim the leaf will fetch and credit: it must
+    // be an https URL, and only a fork still signaling has a period to ask
+    // about -- a closed window's count is the chain's, not a site's.
+    if (bip.monitor !== undefined) {
+      if (!/^https:\/\//.test(bip.monitor)) {
+        problems.push(`appendix "${part.title}": ${bip.title}'s monitor "${bip.monitor}" is not an https URL`);
+      }
+      if (bip.status !== 'signaling') {
+        problems.push(`appendix "${part.title}": ${bip.title} names a monitor but is not signaling — a closed window's count is the chain's own`);
+      }
+    }
     for (const e of bip.entries) {
       if (!/^-?[0-9]+$/.test(e.id) && !/^[0-9a-f]{64}$/.test(e.id)) {
         problems.push(`appendix "${part.title}": "${e.title}" has an id that is neither a block height nor a 64-hex id`);
