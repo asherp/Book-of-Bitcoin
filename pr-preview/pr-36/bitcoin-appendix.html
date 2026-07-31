@@ -1,0 +1,289 @@
+<!-- SPDX-License-Identifier: MIT OR Apache-2.0 -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The βook of βitcoin — Appendix</title>
+<meta name="description" content="The appendices of the Glossia Bitcoin Book: the mempool read as the chapters it is about to become, and the chapters consensus has already numbered but no block has reached.">
+<link rel="icon" type="image/png" sizes="32x32" href="./icons/beta-icon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="./icons/beta-icon-16.png">
+<link rel="icon" href="./icons/beta-icon.svg" type="image/svg+xml">
+
+<!-- PWA: installable, offline-capable app shell. Shares the Bitcoin book's
+     gold-β manifest so every page installs as one "Bitcoin Book" app. -->
+<link rel="manifest" href="./bitcoin-book.webmanifest">
+<meta name="theme-color" content="#08080a">
+<link rel="apple-touch-icon" href="./icons/beta-icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="βook of βitcoin">
+<script>
+  // An appendix is back matter, and it sits at the volumes' own level: the
+  // contents is above it (arriving from there is a descent, the leaf rising
+  // from beneath the list), and the volumes and the other appendices are
+  // beside it (arriving from those is a sideways turn, the leaf entering
+  // from the side the reader pushed). The flag carries which, and is set
+  // just before the navigation and consumed on first paint.
+  try {
+    const dir = sessionStorage.getItem('glossia-appendix-entrance');
+    if (dir) {
+      sessionStorage.removeItem('glossia-appendix-entrance');
+      document.documentElement.classList.add(
+        dir === 'fwd' ? 'appx-entrance-fwd' : dir === 'back' ? 'appx-entrance-back'
+        : dir === 'drop' ? 'appx-entrance-drop' : 'appx-entrance');
+    }
+  } catch (_) {}
+
+  // The ascent: a pull DOWN starting at the page's top rises from the
+  // appendix back to the contents -- the inverse of the heading's descent.
+  // Sideways turns walk the appendices in their numbered order, the way the
+  // front matter's leaves turn: back to the appendix before this one,
+  // forward to the one after.
+  (function () {
+    const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let sy = null, sx = 0, st = 0, atTop = false, atBottom = false;
+    // Filled by the module once it knows which appendix this is; a turn
+    // before then simply has nowhere to go.
+    window.__appxTurns = { prev: null, next: null };
+    const leave = (href, transform, flag, value = '1') => {
+      try { sessionStorage.setItem(flag, value); } catch (_) {}
+      const go = () => { location.href = href; };
+      if (REDUCED) { go(); return; }
+      document.body.style.transition = 'transform .2s linear';
+      document.body.style.transform = transform;
+      setTimeout(go, 180);
+    };
+    window.__appxAscend = () => leave('./bitcoin-contents.html', 'translateY(100vh)', 'glossia-toc-entrance', '1');
+    // One turn sideways, in either direction: the leaf slides off the way the
+    // reader pushed it, and the neighbour enters from the other side. Each
+    // destination has its own entrance to wake -- the appendix leaves, the
+    // ledger compendium (Appendix III), and the book itself, whose last
+    // volume lies back of Appendix I.
+    window.__appxTurn = (back) => {
+      const to = back ? window.__appxTurns.prev : window.__appxTurns.next;
+      if (!to) return;
+      const flag = to.includes('bitcoin-ledger') ? 'glossia-ledger-entrance'
+        : to.includes('bitcoin-book') ? 'glossia-book-entrance'
+        : 'glossia-appendix-entrance';
+      leave(to, `translateX(${back ? 100 : -100}vw)`, flag, back ? 'back' : 'fwd');
+    };
+    document.addEventListener('touchstart', (e) => {
+      sy = null;
+      if (e.touches.length !== 1) return;
+      sy = e.touches[0].clientY; sx = e.touches[0].clientX; st = performance.now();
+      atTop = window.scrollY <= 2;
+      atBottom = window.scrollY >= document.documentElement.scrollHeight - window.innerHeight - 2;
+    }, { passive: true });
+    document.addEventListener('touchend', (e) => {
+      if (sy === null || e.changedTouches.length !== 1) return;
+      const dy = e.changedTouches[0].clientY - sy;
+      const dx = e.changedTouches[0].clientX - sx;
+      const dt = performance.now() - st;
+      sy = null;
+      // A committed horizontal turn: quick, far enough, and mostly sideways.
+      // Nothing that way and the edge simply holds.
+      if (dt <= 600 && Math.abs(dx) >= 60 && Math.abs(dy) <= Math.abs(dx) * 0.6) {
+        window.__appxTurn(dx > 0);                 // swiping right turns back
+        return;
+      }
+      // A push UP from the foot descends into the appendix's first chapter,
+      // as a push up descends from the contents into the book…
+      if (atBottom && dt <= 600 && dy <= -70 && Math.abs(dx) <= Math.abs(dy) * 0.6) {
+        window.__appxDescend();
+        return;
+      }
+      // …and a pull DOWN from the top rises to the contents, which lists it.
+      if (atTop && dt <= 600 && dy >= 70 && Math.abs(dx) <= dy * 0.6) window.__appxAscend();
+    }, { passive: true });
+  })();
+</script>
+<!-- The shared masthead chrome: service worker registration and the Install /
+     Update affordances on the title's line, one copy for every page. -->
+<script src="./btc-chrome.js"></script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,400&family=IBM+Plex+Mono:wght@400;500;600&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./btc-chrome.css">
+<style>
+:root {
+  --page:#08080a; --card:#0d0d10; --card-bd:#232228; --ink:#e8e4da; --ink-soft:#cfcabf;
+  --accent:#c9a25f; --accent-2:#dcb877; --dim:#9c99a6; --meta:#7e7b88; --rule:#24232a; --hair:#2a2930;
+  --input-bg:#151519; --input-bd:#2a2930;
+}
+* { box-sizing: border-box; }
+/* overscroll-behavior keeps the browser's pull-to-refresh from swallowing
+   the pull-down-at-top ascent back to the contents. */
+html, body { margin: 0; overscroll-behavior-y: none; }
+body { min-height: 100vh; background: var(--page); color: var(--ink); font-family: 'Public Sans', system-ui, sans-serif; line-height: 1.55; }
+/* The entering half of the contents' descent into an appendix: the leaf
+   rises into place from below, matching the carousel's pace. */
+@media (prefers-reduced-motion: no-preference) {
+  .appx-entrance body { animation: appx-in .22s ease-out; }
+  @keyframes appx-in { from { transform: translateY(100vh); } }
+  /* …and the entering half of a sideways turn along the volumes' line: the
+     leaf arrives from the side the reader turned toward. */
+  .appx-entrance-fwd body { animation: appx-in-fwd .22s ease-out; }
+  @keyframes appx-in-fwd { from { transform: translateX(100vw); } }
+  .appx-entrance-back body { animation: appx-in-back .22s ease-out; }
+  @keyframes appx-in-back { from { transform: translateX(-100vw); } }
+  /* …and the entering half of an ascent out of a draft chapter: the appendix
+     drops back into place from above as the chapter sinks. */
+  .appx-entrance-drop body { animation: appx-in-drop .22s ease-out; }
+  @keyframes appx-in-drop { from { transform: translateY(-100vh); } }
+}
+.wrap { max-width: 720px; margin: 0 auto; padding: 48px 22px 100px; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* The leaf's head: the appendix's number as its title, its name beneath,
+   and then the paragraph saying what is gathered here and why it could not
+   be gathered in reading order. Nothing stands above the title -- the ways
+   out are the masthead's Contents, the pull down at the top, and the turns
+   at the foot. */
+.page-head { text-align:center; padding:8px 0 26px; margin-bottom:14px; border-bottom:1px solid var(--rule); }
+.appx-title { margin:0; font:300 clamp(28px,7vw,40px)/1.15 'Newsreader',serif; color:var(--ink); letter-spacing:-.01em; }
+.appx-subtitle { margin-top:10px; font:400 19px/1.35 'Newsreader',serif; color:var(--dim); }
+/* The descent, as the book's leaves wear it: one mark, centred, at the foot
+   of the title page. */
+.appx-down { display:block; margin:34px auto 0; width:2em; text-align:center; font-size:20px; line-height:1; color:var(--dim); }
+.appx-down:hover { color:var(--accent); text-decoration:none; }
+.hidden { display:none !important; }
+.appx-note { max-width:56ch; margin:22px auto 30px; font:400 15px/1.7 'Newsreader',serif; color:var(--ink-soft); text-align:left; }
+
+/* The other appendices, at the foot: the leaf's own turns, spelled out for
+   hands that are not swiping. */
+.appx-turns { display:flex; flex-wrap:wrap; gap:10px 26px; margin-top:44px; padding-top:18px; border-top:1px solid var(--rule);
+  font:600 10px/1.5 'IBM Plex Mono',monospace; letter-spacing:.14em; text-transform:uppercase; }
+.appx-turns a { color:var(--meta); }
+.appx-turns a:hover { color:var(--accent); }
+</style>
+<body>
+<div class="wrap">
+  <div class="masthead">
+    <span class="title">The <span class="beta">β</span>ook of <span class="beta">β</span>itcoin</span>
+    <span class="home"><a href="./bitcoin-contents.html">Contents</a> · <a href="./bitcoin-book.html">Read</a> · <a href="./bitcoin-search.html">Search</a></span>
+  </div>
+
+  <header class="page-head">
+    <h1 class="appx-title" id="appx-title"></h1>
+    <div class="appx-subtitle" id="appx-subtitle"></div>
+  </header>
+  <p class="appx-note" id="appx-note"></p>
+
+  <a class="appx-down" id="appx-down" href="#" aria-label="Down into the appendix">▾</a>
+  <nav class="appx-turns" id="appx-turns"></nav>
+</div>
+
+<script type="module">
+import { loadNotables, appendix } from './btc-contents.js';
+
+// The appendix is read from appendix.yaml (btc-notables.js), so it arrives
+// asynchronously; this leaf IS one of its parts, so it waits for it.
+await loadNotables();
+const APPENDIX = appendix();
+import { chainTip } from './btc-mempool.js';
+import { toRoman, volumeBookChapter, heightOf } from './btc-citation.js';
+
+// ── One appendix, given a leaf of its own ─────────────────────────────────
+// The contents lists what each appendix holds; this is where an appendix
+// says what it is. Which one is named by ?part=: the queue, or the chapters
+// consensus has numbered ahead of the chain. The third appendix, the
+// ledgers, has a leaf already -- the Ledger compendium -- and the contents
+// points straight at it, so it is only ever a neighbour here.
+const PARTS = { mempool: 'mempool', future: 'entries' };
+const wanted = new URLSearchParams(location.search).get('part');
+const kind = PARTS[wanted] || 'mempool';
+const part = APPENDIX.find((p) => p.kind === kind) || APPENDIX[0];
+const index = APPENDIX.indexOf(part);
+
+const $ = (id) => document.getElementById(id);
+const numeral = (i) => toRoman(i + 1);
+const label = (p) => `Appendix ${numeral(APPENDIX.indexOf(p))} · ${p.title}`;
+const hrefFor = (p) => p.kind === 'ledgers'
+  ? './bitcoin-ledger.html'
+  : `./bitcoin-appendix.html?part=${p.kind === 'mempool' ? 'mempool' : 'future'}`;
+
+// An appendix leaf lists nothing: what it gathers lies below it, and below
+// it is the first chapter of what it gathers, read in the book like any
+// other. For Appendix I that is the queue's first chapter -- the very block
+// a reader reaches by swiping forward off the chain tip -- and the queue is
+// walked from there, chapter by chapter, the ascent from any of them landing
+// back on this leaf. For Appendix II it is the first height consensus has
+// already fixed; the book answers an unmined chapter with the date it is
+// due. (The level between, the queue's own equivalent of a book, is still to
+// be written.) The whole list of either is the contents' business.
+$('appx-title').textContent = `Appendix ${numeral(index)}`;
+$('appx-subtitle').textContent = part.title;
+$('appx-note').textContent = part.note || '';
+document.title = `The βook of βitcoin — ${label(part)}`;
+
+// Where the descent lands. Appendix II's first chapter is known offline (a
+// height is a citation); Appendix I's waits on the tip, and the ▾ appears
+// with it -- an unknown queue has no first chapter to open.
+let firstChapter = kind === 'mempool' ? null : `./bitcoin-book.html?block=${part.entries[0].id}`;
+$('appx-down').classList.toggle('hidden', !firstChapter);
+if (kind === 'mempool') {
+  chainTip().then((tip) => {
+    if (tip == null) return;
+    firstChapter = `./bitcoin-book.html?block=${tip + 1}`;
+    $('appx-down').classList.remove('hidden');
+  }).catch(() => { /* no tip: nothing below to open */ });
+}
+function descend() {
+  if (!firstChapter) return;
+  // A descent, so the chapter rises from below as this leaf slides up.
+  try { sessionStorage.setItem('glossia-book-entrance', '1'); } catch (_) {}
+  const go = () => { location.href = firstChapter; };
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { go(); return; }
+  document.body.style.transition = 'transform .2s linear';
+  document.body.style.transform = 'translateY(-100vh)';
+  setTimeout(go, 180);
+}
+window.__appxDescend = () => descend();
+$('appx-down').addEventListener('click', (ev) => { ev.preventDefault(); descend(); });
+
+// The neighbours, in the appendices' numbered order -- named at the foot and
+// handed to the gesture layer, so a swipe and a tap turn to the same leaf.
+// The appendices sit at the volumes' own level, continuing that line, so
+// what lies back of the first of them is the body's last volume (below).
+const prev = APPENDIX[index - 1] || null;
+const next = APPENDIX[index + 1] || null;
+window.__appxTurns = { prev: prev && hrefFor(prev), next: next && hrefFor(next) };
+const turns = $('appx-turns');
+function turnLink(href, text, back) {
+  const a = document.createElement('a');
+  a.href = href;
+  a.textContent = text;
+  if (!back) a.style.marginLeft = 'auto';
+  // Tapping a neighbour plays the same sideways turn the swipe plays, so
+  // the two agree about which way the leaves lie.
+  a.addEventListener('click', (ev) => {
+    if (ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey || ev.button !== 0) return;
+    ev.preventDefault();
+    window.__appxTurn(back);
+  });
+  turns.append(a);
+  return a;
+}
+if (prev) turnLink(hrefFor(prev), `‹ ${label(prev)}`, true);
+if (next) turnLink(hrefFor(next), `${label(next)} ›`, false);
+
+// Appendix I's backward turn leaves the appendices for the body: the last
+// volume's own leaf, which is the page this one continues from. Which volume
+// is last is a question for the chain, so the turn is wired once the tip
+// answers -- until then a backward swipe simply has nowhere to go.
+if (!prev) {
+  chainTip().then((tip) => {
+    if (tip == null) return;
+    const volume = volumeBookChapter(tip).volume;
+    const href = `./bitcoin-book.html?block=${heightOf(volume, 1, 1)}&page=volume`;
+    window.__appxTurns.prev = href;
+    const a = turnLink(href, `‹ Volume ${toRoman(volume)}`, true);
+    turns.prepend(a);   // back is the left-hand turn, whenever it arrives
+  }).catch(() => { /* no tip, no way back but the contents */ });
+}
+
+
+</script>
+</body>
+</html>
