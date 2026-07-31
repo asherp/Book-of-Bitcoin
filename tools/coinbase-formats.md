@@ -19,10 +19,11 @@ Every claim below carries where it came from:
 - **[unverified]** — plausible and not yet checked here. Say so out loud.
 
 The survey has not been run against live blocks from the environment these
-notes were written in (outbound access to the chain APIs was blocked), so
-nothing below is marked **[observed]** yet. Everything marked **[rule]**,
-**[spec]** and **[source]** stands on its own citation; the per-pool byte
-layouts of the closed builders are the part still owed a sample.
+notes were written in (outbound access to the chain APIs was blocked). What is
+marked **[observed]** below was read off the book's own rendered pages for
+blocks 960,463–960,469 — real chain data, but at one remove: the marks and
+quotations the page printed rather than the raw hex behind them. A survey run
+would firm all of it up and is still owed.
 
 ## The shape of the problem
 
@@ -128,6 +129,32 @@ the gap. Two structural hints to look for when running it:
 
 - A plausible unix timestamp in the second push is btcpool ancestry.
 - A tag *before* the counters is gap-late; a tag *after* them is gap-early.
+
+Seven consecutive blocks, read off the page: **[observed]**
+
+| height | pool | second field | then |
+|---|---|---|---|
+| 960,463 | Foundry USA | a 4-byte push, 146,504,335 | `/Foundry USA Pool #dropgold/`, binary |
+| 960,464 | AntPool | *not push-shaped* | binary, `Mined by AntPool…` |
+| 960,465 | AntPool | *not push-shaped* | binary, `Mined by AntPool ` |
+| 960,466 | SECPOOL | *not push-shaped* | ` Mined by Secpool v…` |
+| 960,467 | F2Pool | *not push-shaped* | binary, `🐟 /F2Pool/f` |
+| 960,468 | Foundry USA | a 4-byte push, 317,032,499 | `/Foundry USA Pool #dropgold/`, binary |
+| 960,469 | F2Pool | *not push-shaped* | binary, `🐟 /F2Pool/g` |
+
+What that settles, for these pools and this window:
+
+- **Not one of them writes a clock in the second slot.** The template timestamp
+  is MARA's house style (block 960,281), not the majority's, and the correction
+  below changes nothing on any of these pages.
+- **Foundry is gap-early**: a counter directly behind the height, its tag after
+  — ckpool's column, not btccom's. Its two counters read as 1974 and 1980 if
+  taken for clocks, which is exactly the case a rule of "four bytes in the
+  second slot is a timestamp" would have gotten wrong and the height-anchored
+  window turns away.
+- **AntPool, F2Pool and SECPOOL write no push-shaped field there at all**:
+  their counters are raw bytes, so nothing is peeled and the whole tail is
+  margin. Which is what surfaced the quotation problem below.
 
 ViaBTC's tag is worth a note of its own: it embeds an account name
 (`/ViaBTC/Mined by <user>/`), so the text field varies block to block while the
@@ -245,6 +272,40 @@ on the block's header, not on the network — which is why the survey, the book
 page and a prerendered passage cannot disagree about what a number in that slot
 is, and why re-reading a saved sample a year from now gives the same answer.
 
+## The second correction: what may be quoted
+
+The seven blocks above turned up a second error, and it is the same one a layer
+down. Block 960,467's page carried this, in quotation marks:
+
+> “KXG&\`WY”
+
+Nobody wrote it. Those are seven bytes of F2Pool's counter that happened to
+land in the printable range, and the margin's text scan took them for writing.
+Block 960,468 shows the milder form: a stray backtick riding inside
+`“/Foundry USA Pool #dropgold/\`”`, one byte of the counter pulled in against
+the tag's own closing slash. **[observed]**
+
+A quotation is the strongest claim the book makes about the margin — it says a
+person wrote these bytes as text. Printable is not evidence for that: better
+than a third of any counter's bytes are printable by chance, and over a
+twenty-odd-byte tail a five-character run turns up about one block in seven.
+
+So a run must now hold a **word** before it may be quoted: four letters
+together, or three where the run is long enough to be unlikely on its own terms
+(`looksLikeWriting` in `web/btc-tx.js`). Measured over random tails, that takes
+a false quotation from one block in seven to one in thirty-seven. Every pool
+tag the chain is known to carry survives it — `/F2Pool/`, `/slush/`,
+`OCEAN.XYZ`, `/BTC.COM/`, `Mined by AntPool`, MARA's emoji and all, F2Pool's
+`七彩神仙鱼` — and a tag with no word in it at all (Foundry's alternate
+`/2cDw/`) now reads as prose instead. Nothing is lost by that: the bytes still
+print, in the register the book keeps for bytes nobody can read.
+
+What it does not fix is the backtick. That byte sits inside a run that *is*
+writing, and telling it from the tag's own final slash would take a table of
+pool signatures — attribution, not reading, and the book does not keep one.
+A quotation may still carry a character or two of counter at its edge; it can
+no longer be conjured out of counter alone.
+
 ### What changed
 
 - `web/btc-chaintime.js` — new: the halving-anchored estimate and the window.
@@ -259,6 +320,11 @@ is, and why re-reading a saved sample a year from now gives the same answer.
   `time:template`, as a bare push answers to `push:count`.
 - `tools/coinbase-fields.mjs` reads the same slot by the same rule, imported
   from the same module.
+- `web/btc-tx.js` — `looksLikeWriting`, and the word test in
+  `splitReadableRuns` / `findTextRuns` (`requireWord: false` opts out, for a
+  caller asking what is merely legible rather than what was written).
+- `web/btc-notation.js` — the ■ row said the margin is "quoted where it is
+  legible", which was the whole mistake in four words.
 
 The rest of what the survey can find belongs where it is. The book stops reading
 opcodes at the height mark deliberately, and none of the above is a reason to

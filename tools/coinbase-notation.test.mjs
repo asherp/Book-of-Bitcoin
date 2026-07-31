@@ -15,7 +15,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { access } from 'node:fs/promises';
 
-import { splitReadableRuns, findTextRuns, bitsToPrimeFactors, bitsToTargetHex, primeFactors } from '../web/btc-tx.js';
+import { splitReadableRuns, findTextRuns, looksLikeWriting, bitsToPrimeFactors, bitsToTargetHex, primeFactors } from '../web/btc-tx.js';
 
 // The number as it sits on the chain in block 960,281: pushed, four bytes,
 // minimal little-endian -- and with three of those four bytes (7e 6b 6a) in
@@ -87,6 +87,61 @@ test('a run shorter than the floor stays in the binary span, not dropped', () =>
 test('findTextRuns still answers what text is in here', () => {
   // The lossy reading is unchanged: the runs, and only the runs.
   assert.deepEqual(findTextRuns(utf8Hex('/slush/') + 'ff'.repeat(8), { segment: false }), ['/slush/']);
+});
+
+// ─── what may be quoted ────────────────────────────────────────────────
+//
+// A quotation is the book saying someone wrote this. Printable is not enough
+// for that -- a counter's bytes are printable better than a third of the time
+// -- so a run has to hold a word before it may be quoted.
+
+test('a run of printable entropy is not writing, and is not quoted', () => {
+  // Block 960,467, F2Pool: seven printable bytes out of the counter, which the
+  // page set in quotation marks as though the pool had written them.
+  const junk = 'KXG&`WY';
+  assert.ok(!looksLikeWriting(junk), 'no word in it');
+  const hex = 'ff' + utf8Hex(junk) + 'ff';
+  const segs = splitReadableRuns(hex);
+  assert.deepEqual(segs, [{ hex }], 'it stays in the binary span, whole');
+  assert.equal(joinSegments(segs), hex, 'and every byte still reaches the page');
+  assert.deepEqual(findTextRuns(utf8Hex(junk), { segment: false }), [], 'nor is it text to be found');
+});
+
+test('the tags pools actually write are writing', () => {
+  // Every tag here is one the chain carries. Four letters together is the bar;
+  // three where the run is long enough to be unlikely on its own terms, which
+  // is what keeps the all-capital tags.
+  for (const tag of ['/Foundry USA Pool #dropgold/', 'Mined by AntPool', ' Mined by Secpool v',
+    '/F2Pool/', '/slush/', '/ckpool/', 'OCEAN.XYZ', '/BTC.COM/', '/SBICrypto.com Pool/',
+    'viabtc.com deploy', '七彩神仙鱼', MARA_TAG]) {
+    assert.ok(looksLikeWriting(tag), `${tag} should read as writing`);
+  }
+  // And what the rule costs: a tag with no word in it at all reads as prose
+  // instead. Nothing is lost but the quotation marks -- the bytes still print.
+  assert.ok(!looksLikeWriting('/2cDw/'), 'a wordless tag is not quotable, and says so');
+});
+
+test('the word test is worth what it claims', () => {
+  // The comment in btc-tx.js puts a number on this: about one random tail in
+  // seven is quoted on the floor alone, about one in thirty-seven with the word
+  // test. Cheap to check rather than assert, so it is checked -- loosely, since
+  // it is a sample. Deterministic across runs: the bytes come from a counter,
+  // not from Math.random.
+  let seed = 0x9e3779b9;
+  const byte = () => {
+    seed = (Math.imul(seed ^ (seed >>> 15), 0x85ebca6b) + 0xc0ffee) >>> 0;
+    return (seed >>> 24) & 0xff;
+  };
+  const TAILS = 4000, TAIL_BYTES = 25;
+  let floorOnly = 0, withWord = 0;
+  for (let i = 0; i < TAILS; i++) {
+    let hex = '';
+    for (let b = 0; b < TAIL_BYTES; b++) hex += byte().toString(16).padStart(2, '0');
+    if (splitReadableRuns(hex, { requireWord: false }).some((s) => s.text !== undefined)) floorOnly++;
+    if (splitReadableRuns(hex).some((s) => s.text !== undefined)) withWord++;
+  }
+  assert.ok(floorOnly > TAILS * 0.08, `floor alone quoted only ${floorOnly}/${TAILS}`);
+  assert.ok(withWord * 3 < floorOnly, `the word test should cut it several-fold, got ${withWord}/${floorOnly}`);
 });
 
 // ─── the products the page writes: the target, and the nonces ──────────
