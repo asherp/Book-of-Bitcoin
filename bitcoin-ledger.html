@@ -459,7 +459,7 @@ a:hover { text-decoration: underline; }
 <div class="wrap">
   <div class="masthead">
     <span class="title">The <span class="beta">β</span>ook of <span class="beta">β</span>itcoin</span>
-    <span class="home"><a href="./bitcoin-book.html">Read</a> · <a href="./bitcoin-contents.html">Contents</a> · <a href="./bitcoin-search.html">Search</a> · <span class="settings-menu"><a href="#" id="settings-link" role="button" aria-haspopup="dialog" aria-expanded="false">Settings</a><div id="settings-panel" class="settings-panel hidden" role="dialog" aria-label="Ledger settings">
+    <span class="home"><a href="./bitcoin-book.html">Read</a> · <a href="./bitcoin-contents.html?part=ledgers">Contents</a> · <a href="./bitcoin-search.html">Search</a> · <span class="settings-menu"><a href="#" id="settings-link" role="button" aria-haspopup="dialog" aria-expanded="false">Settings</a><div id="settings-panel" class="settings-panel hidden" role="dialog" aria-label="Ledger settings">
       <div class="settings-title">Data source</div>
       <div class="endpoint-row">
         <select id="bb-select" class="bb-select" aria-label="Esplora endpoint"></select>
@@ -2085,7 +2085,9 @@ function leavePage(href, transform, flag, value = '1') {
   document.body.style.transform = transform;
   setTimeout(go, 180);
 }
-const toContents = () => leavePage('./bitcoin-contents.html', 'translateY(100vh)', 'glossia-toc-entrance');
+// Appendix III's own contents leaf: the contents runs a leaf per volume and
+// per appendix, and this shelf IS Appendix III, so the ascent lands there.
+const toContents = () => leavePage('./bitcoin-contents.html?part=ledgers', 'translateY(100vh)', 'glossia-toc-entrance');
 // Sideways from the appendix leaf: the appendices turn between one another
 // in their numbered order, and the ones before this are leaves of their own
 // page. Nothing follows Appendix III, so only the backward turn exists.
@@ -2257,6 +2259,58 @@ async function turnEntry(dir) {
   }, { passive: true });
   document.addEventListener('touchcancel', () => { sx = null; startRow = null; if (!turning) snapBack(); }, { passive: true });
 })();
+
+// ── The same turns, from a keyboard ───────────────────────────────────────
+// The arrow keys carry the gestures for hands on a keyboard, level for
+// level: left and right turn the carousel (and, at entry level, left is
+// the one door back to the record), up ascends and down descends -- the
+// reader's own directions, though the swipe that means "descend" is a push
+// UP. The vertical pair defers to the scroll: it turns on a leaf short
+// enough not to scroll, or from the boundary the turn moves away from, so a
+// long record is read to its foot before the next press walks the timeline.
+// (A descending swipe from a title leaf commits from anywhere on it -- a
+// finger has the scroll to itself. A key does not: the arrows ARE the
+// scroll, and a leaf a little taller than the window would keep its foot
+// unreachable. So every vertical key waits for the boundary.)
+//
+// The dive keeps no key of its own: it is aimed -- the swipe takes the entry
+// nearest the finger, the click the row under the pointer -- and a keyboard
+// has nothing to aim with. The row's own link, and the entry's reference,
+// are its doors here.
+document.addEventListener('keydown', (e) => {
+  if (e.metaKey || e.ctrlKey || e.altKey || e.shiftKey || e.repeat) return;
+  const horizontal = e.key === 'ArrowLeft' || e.key === 'ArrowRight';
+  const vertical = e.key === 'ArrowUp' || e.key === 'ArrowDown';
+  if ((!horizontal && !vertical) || turning) return;
+  const t = e.target;
+  if (t && t.closest && t.closest('input, textarea, select, [contenteditable], .settings-panel')) return;
+
+  if (horizontal) {
+    const dir = e.key === 'ArrowRight' ? 1 : -1;   // right travels forward, as a leftward swipe does
+    if (level === 'appendix') { if (dir < 0 && PREV_PART_HREF) { e.preventDefault(); toPrevAppendix(); } return; }
+    if (level === 'ledger' && canLedger(dir)) { e.preventDefault(); turnLedger(dir); return; }
+    if (level === 'address' && canAddress(dir)) { e.preventDefault(); turnAddress(dir); return; }
+    if (level === 'entry' && dir < 0) { e.preventDefault(); returnToRecord(); }
+    return;
+  }
+
+  const dir = e.key === 'ArrowDown' ? 1 : -1;      // down descends, up ascends
+  const atTop = window.scrollY <= 2;
+  const atBottom = window.scrollY >= document.documentElement.scrollHeight - window.innerHeight - 2;
+  const short = document.documentElement.scrollHeight <= window.innerHeight + 24;
+  if (!(short || (dir < 0 && atTop) || (dir > 0 && atBottom))) return;
+  if (level === 'appendix' || level === 'ledger') {
+    e.preventDefault();
+    if (dir > 0) descend();
+    else if (level === 'appendix') toContents();
+    else ascend();
+    return;
+  }
+  if (level === 'address') { if (dir < 0) { e.preventDefault(); ascend(); } return; }
+  // Entry level: the timeline itself -- down is older, up newer.
+  e.preventDefault();
+  void turnEntry(dir);
+});
 
 openView();
 

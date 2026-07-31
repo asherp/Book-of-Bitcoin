@@ -685,7 +685,7 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 <div class="wrap">
   <div class="masthead">
     <span class="title">The <span class="beta">β</span>ook of <span class="beta">β</span>itcoin</span>
-    <span class="home"><a href="./bitcoin-search.html">Search</a> · <a href="./bitcoin-contents.html">Contents</a> · <span class="settings-menu"><a href="#" id="settings-link" role="button" aria-haspopup="dialog" aria-expanded="false">Settings</a><div id="settings-panel" class="settings-panel hidden" role="dialog" aria-label="Settings">
+    <span class="home"><a href="./bitcoin-search.html">Search</a> · <a href="./bitcoin-contents.html" id="toc-link">Contents</a> · <span class="settings-menu"><a href="#" id="settings-link" role="button" aria-haspopup="dialog" aria-expanded="false">Settings</a><div id="settings-panel" class="settings-panel hidden" role="dialog" aria-label="Settings">
       <div class="settings-title">Text size</div>
       <!-- One row per region. Every region beyond the body follows it (value
            dimmed) until its own buttons split it off; Reset rejoins them all
@@ -3477,6 +3477,12 @@ function renderChapter(para) {
 function labelNav() {
   const cur = volumeBookChapter(state.height);
   const idx = state.index;
+  // The contents runs a leaf per volume, so the masthead's Contents link opens
+  // the one for the volume being read -- a reader asking for the contents wants
+  // theirs, not the head of the run. Noted in the session too, for the pages
+  // whose own Contents link carries no place (the search page, a bookmark).
+  $('toc-link').href = `./bitcoin-contents.html?volume=${cur.volume}`;
+  try { sessionStorage.setItem('glossia-toc-at', String(cur.volume)); } catch {}
   const atTip = !state.projected && tipHeight !== null && state.height >= tipHeight;
   const gen = renderGen;   // a slow previous-count fetch must not overwrite a later section's label
   // Standing at the tip, the next page is a question for the mempool: load
@@ -4243,7 +4249,11 @@ function rememberTrail() {
   if (state.index >= 0) descentMemory['-1'] = { height: state.height, idx: state.index };
   if (state.index >= -1) descentMemory['-2'] = { height: state.height, idx: -1 };
   if (state.index >= -2) descentMemory['-3'] = { height: bookStartOf(state.height), idx: -2 };
-  try { sessionStorage.setItem('glossia-toc-descend', String(volumeStartOf(state.height))); } catch {}
+  // Nothing is left here for the contents. Its descent used to need a note of
+  // which volume the reader had come up from, because one page stood above
+  // every volume; now each volume has a contents leaf of its own and the leaf
+  // itself is the answer. (labelNav still records the volume, but for where a
+  // bare Contents link should LAND, which is a different question.)
 }
 function rememberedChild() {
   if (!state) return null;
@@ -4328,8 +4338,12 @@ function swipeStepVertical(direction) {
   if (t.toc) {
     // The turn's exit has played (or reduced motion skipped it); the contents
     // page finishes the entrance itself, sliding in from the top on arrival.
+    // The contents runs a leaf per volume, so the ascent names the volume it
+    // is leaving and lands on THAT volume's contents -- the correspondence is
+    // the whole point of the level: up from Volume III is the contents of
+    // Volume III, not the head of a list that happens to include it.
     try { sessionStorage.setItem('glossia-toc-entrance', '1'); } catch {}
-    location.href = './bitcoin-contents.html';
+    location.href = `./bitcoin-contents.html?volume=${volumeBookChapter(state.height).volume}`;
     return;
   }
   if (t.appendix) { toAppendixLeaf(); return; }
@@ -4713,6 +4727,55 @@ window.addEventListener('resize', updateGesturePrecedence);
   }, { passive: true });
   document.addEventListener('touchcancel', () => { sx = null; if (!pendingSlide) snapBack(); }, { passive: true });
 })();
+
+// ── The same turns, from a keyboard ───────────────────────────────────────
+// A desk has no finger to swipe with, so the arrow keys carry the gestures'
+// four turns unchanged: left and right turn the page at the current level,
+// up ascends a level and down descends -- the reader's own directions, even
+// though the swipe that means "descend" is a push UP. Every rule the
+// gestures keep is kept here. The horizontal pair stops where the swipe
+// rubber-bands (no neighbour at this level); the vertical pair defers to the
+// scroll exactly as the vertical swipe does, turning only on a page short
+// enough not to scroll or from the boundary the turn moves away from -- so
+// arrowing down a long chapter reads it to the foot first and turns on the
+// next press.
+//
+// One deliberate difference: a swipe toward a neighbour whose data is still
+// prefetching only rubber-bands, and the finger tries again a moment later.
+// A key that did nothing would just read as broken, so it turns anyway by
+// the header steppers' route -- fetching on demand, without the carousel
+// slide the prefetch pays for.
+document.addEventListener('keydown', (e) => {
+  if (e.metaKey || e.ctrlKey || e.altKey || e.shiftKey || e.repeat) return;
+  const horizontal = e.key === 'ArrowLeft' || e.key === 'ArrowRight';
+  const vertical = e.key === 'ArrowUp' || e.key === 'ArrowDown';
+  if (!horizontal && !vertical) return;
+  if (!state || pendingSlide) return;
+  // Fields, scrolling regions and the popovers keep their own arrow keys --
+  // the same surfaces the swipe hands back to whatever is under the finger.
+  const t = e.target;
+  if (t && t.closest && t.closest('input, textarea, select, [contenteditable], .pattern-scroll, .hash-menu, .settings-panel, .nav-sheet-body')) return;
+  if (!settingsPanel.classList.contains('hidden')) return;
+  if (!$('hash-menu').classList.contains('hidden')) return;
+
+  if (horizontal) {
+    const dir = e.key === 'ArrowRight' ? 1 : -1;   // right turns forward, as a leftward swipe does
+    if (!navAvailable(dir) && !(dir < 0 && atFrontMatterEdge()) && !(dir > 0 && atAppendixEdge())) return;
+    e.preventDefault();
+    if (canStep(dir) && !REDUCED_MOTION) slideOutAndStep(dir);
+    else swipeStep(dir);
+    return;
+  }
+
+  const dir = e.key === 'ArrowDown' ? 1 : -1;      // down descends, up ascends
+  if (!levelTarget(dir)) return;
+  const atTop = window.scrollY <= 2;
+  const atBottom = window.scrollY >= document.documentElement.scrollHeight - window.innerHeight - 2;
+  if (!(gesture.carouselFirst || (dir < 0 && atTop) || (dir > 0 && atBottom))) return;
+  e.preventDefault();
+  if (canStepVertical(dir) && !REDUCED_MOTION) slideOutAndStep(dir, 'y');
+  else swipeStepVertical(dir);
+});
 
 // ── Pinch: the type sizes ─────────────────────────────────────────────────
 // Two fingers on the reading matter set the type size of the region under
