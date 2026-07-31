@@ -159,6 +159,108 @@ export async function computeBlockHash(headerHex) {
   return bytesToHex(reverseBytes(await hash256(hexToBytes(headerHex))));
 }
 
+// ─── prime factorization (what the book writes products out of) ─────────
+//
+// Two of a header's fields are written as products rather than as figures:
+// the difficulty target and the nonce. Both come through here, and both may
+// exceed a double -- a target is 256 bits, an extranonce 64 -- so the whole
+// of this section is BigInt.
+//
+// The numbers involved are small enough for textbook methods and big enough
+// to need the good ones: a target's odd part is under 2²³ and falls to trial
+// division, but an extranonce can be a 64-bit semiprime whose factors are
+// both around 2³², where trial division would take billions of steps and
+// Pollard's rho takes tens of thousands. So: trial-divide the small primes,
+// then rho what's left, with Miller-Rabin deciding when to stop. Deterministic
+// throughout -- the bases below settle primality outright for anything under
+// 3.3×10²⁴, which is far above any field the chain carries -- so the same
+// number always factors to the same product, on every reader's machine.
+//
+// Cost, since this runs while a page is drawing: everything the chain
+// ordinarily carries returns in under a millisecond, and the hardest value it
+// could carry -- an 8-byte extranonce that happens to be the product of two
+// 32-bit primes -- takes under a tenth of a second, once, for one mark.
+
+const RHO_BASES = [2n, 3n, 5n, 7n, 11n, 13n, 17n, 19n, 23n, 29n, 31n, 37n];
+
+function modPow(base, exp, mod) {
+  let out = 1n;
+  for (let b = base % mod, e = exp; e > 0n; e >>= 1n, b = b * b % mod) if (e & 1n) out = out * b % mod;
+  return out;
+}
+
+const gcd = (a, b) => { while (b) { [a, b] = [b, a % b]; } return a; };
+
+// Miller-Rabin over the twelve bases above: a proof, not a probability, for
+// every value this file can be handed.
+function isPrime(n) {
+  if (n < 2n) return false;
+  for (const p of RHO_BASES) {
+    if (n === p) return true;
+    if (n % p === 0n) return false;
+  }
+  let d = n - 1n, r = 0n;
+  for (; (d & 1n) === 0n; d >>= 1n) r++;
+  for (const a of RHO_BASES) {
+    let x = modPow(a, d, n);
+    if (x === 1n || x === n - 1n) continue;
+    let composite = true;
+    for (let i = 1n; i < r; i++) {
+      x = x * x % n;
+      if (x === n - 1n) { composite = false; break; }
+    }
+    if (composite) return false;
+  }
+  return true;
+}
+
+// Pollard's rho: a divisor of a composite n, not necessarily prime, found by
+// waiting for the cycle x, f(x), f(f(x))… to collide modulo one of n's
+// factors. A polynomial that fails to split n is simply exchanged for the
+// next one, which is why the search cannot stall on a bad constant.
+function pollardRho(n) {
+  if ((n & 1n) === 0n) return 2n;
+  for (let c = 1n; ; c++) {
+    let x = 2n, y = 2n, d = 1n;
+    while (d === 1n) {
+      x = (x * x + c) % n;
+      y = (y * y + c) % n;
+      y = (y * y + c) % n;
+      d = gcd(x > y ? x - y : y - x, n);
+    }
+    if (d !== n) return d;
+  }
+}
+
+// n (BigInt, > 1) -> its prime factors, with multiplicity, in no order.
+function primesOf(n, out) {
+  if (n === 1n) return out;
+  if (isPrime(n)) { out.push(n); return out; }
+  const d = pollardRho(n);
+  primesOf(d, out);
+  return primesOf(n / d, out);
+}
+
+// Any integer -> its prime factorization, as [prime, power] pairs with the
+// primes ascending. 0 and 1 have no factorization and answer with none, which
+// is a caller's cue to write the number plainly instead.
+export function primeFactors(value) {
+  let n = BigInt(value);
+  if (n < 2n) return [];
+  const factors = [];
+  for (let p = 2n; p < 1000n && p * p <= n; p += (p === 2n ? 1n : 2n)) {
+    let power = 0;
+    for (; n % p === 0n; n /= p) power++;
+    if (power > 0) factors.push([p, power]);
+  }
+  if (n > 1n) {
+    const counted = new Map();
+    for (const p of primesOf(n, [])) counted.set(p, (counted.get(p) ?? 0) + 1);
+    for (const [p, power] of [...counted].sort(([a], [b]) => (a < b ? -1 : 1))) factors.push([p, power]);
+  }
+  return factors;
+}
+
 // ─── compact difficulty target (nBits) ──────────────────────────────────
 //
 // nBits packs a 256-bit target into 4 bytes: the top byte is a byte-length
@@ -176,28 +278,23 @@ export function bitsToTargetHex(bits) {
   return target.toString(16).padStart(64, '0');
 }
 
-// nBits -> the target's prime factorization, as [prime, power] pairs with the
-// primes ascending. A compact target is a mantissa times a whole number of
-// 256s, so the factoring is never hard work: the byte shift contributes 2⁸ᵉ,
-// the mantissa contributes whatever twos it carries and an odd part under 2²³,
-// and trial division to √(2²³) settles the rest. The pairs multiply back to
-// the target exactly -- this is the same number bitsToTargetHex writes out,
-// said in primes rather than in hex.
+// nBits -> the target's prime factorization, in the same [prime, power] pairs.
+// A compact target is a mantissa times a whole number of 256s, so the byte
+// shift is 2⁸ᵉ before anything is factored at all and only the mantissa --
+// under 2²³ -- has to be worked out. The pairs multiply back to the target
+// exactly: this is the number bitsToTargetHex writes out, said in primes
+// rather than in hex.
 export function bitsToPrimeFactors(bits) {
   const shift = (bits >>> 24) - 3;
   let n = bits & 0x007fffff;             // top bit of the 3-byte mantissa is a sign flag, masked off
   if (shift < 0) n >>>= -8 * shift;      // an exponent under 3 shifts mantissa bits off the bottom
   if (n === 0) return [];                // no target at all: nothing to factor
-  let twos = shift > 0 ? 8 * shift : 0;
-  for (; n % 2 === 0; n /= 2) twos++;
-  const factors = twos > 0 ? [[2, twos]] : [];
-  for (let p = 3; p * p <= n; p += 2) {
-    let power = 0;
-    for (; n % p === 0; n /= p) power++;
-    if (power > 0) factors.push([p, power]);
-  }
-  if (n > 1) factors.push([n, 1]);       // what survives the sieve is prime
-  return factors;
+  const factors = primeFactors(n);
+  if (shift <= 0) return factors;
+  // The shift's twos join the mantissa's own, which keeps the leading factor
+  // one power of two rather than two of them multiplied together.
+  const twos = 8 * shift + (factors[0]?.[0] === 2n ? factors[0][1] : 0);
+  return [[2n, twos], ...factors.filter(([p]) => p !== 2n)];
 }
 
 // nBits -> difficulty relative to the genesis block's target (defined as

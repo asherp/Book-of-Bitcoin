@@ -19,7 +19,7 @@
 // margin layout.
 
 import { encodeSeedPhrase } from './glossia-msg.js';
-import { findTextRuns, splitReadableRuns, readableUtf8Text, tokenizeScript, bitsToTargetHex, bitsToDifficulty, bitsToPrimeFactors } from './btc-tx.js';
+import { findTextRuns, splitReadableRuns, readableUtf8Text, tokenizeScript, bitsToTargetHex, bitsToDifficulty, bitsToPrimeFactors, primeFactors } from './btc-tx.js';
 import { volumeBookChapter } from './btc-citation.js';
 import { BIP39, HP_SPELLS } from './btc-wordlists.js';
 
@@ -105,9 +105,21 @@ export const toSuperscript = (n) => String(n).split('').map((d) => SUPERSCRIPT_D
 // is written rather than left implied, which is what lets the sign between
 // the factors go: a raised digit closes a prime and a plain one opens the
 // next, so the product needs no × to be read back a factor at a time.
-const factorProse = (factors) => factors
-  .map(([p, power]) => `${p}${toSuperscript(power)}`)
+//
+// `digits` is the register the primes are written in -- plain where the number
+// stands on its own line (a target, the header's nonce), lowered where it
+// rides its glyph as a value (the extranonce's η₅¹₈₃₉¹₄₂₅₆₀₉¹). The powers
+// stay raised either way: it is the change of register, not the choice of
+// register, that separates one factor from the next.
+const factorProse = (factors, digits = String) => factors
+  .map(([p, power]) => `${digits(p)}${toSuperscript(power)}`)
   .join('');
+
+// Any number the book states as a product: its factorization, or the figure
+// itself where there is no factorization to write. 0 and 1 are the whole of
+// that exception -- neither is a product of primes, and an early miner's
+// first extranonce is exactly η₁.
+const productProse = (value, digits = String) => factorProse(primeFactors(value), digits) || digits(value);
 
 // nBits (a compact difficulty target) -> { sym, expr, title }. The target is
 // rendered as the thing it is -- the ceiling a mined hash must dip under --
@@ -256,10 +268,14 @@ export function timestampInfo(timestamp) {
 // entropy -- so they're rendered literally/decoded rather than
 // Glossia-encoded, mirroring how composeTransactionFields treats a
 // transaction's version and locktime. The block version is the one field
-// that mixes entropy with structure, so it gets the ver notation above. The nonce in particular gets no
-// further decoding: it's already exactly what it looks like, the number a
-// miner incremented in the search for a hash below the bits target. The
-// previous-block hash and merkle root are genuinely opaque 32-byte hashes --
+// that mixes entropy with structure, so it gets the ver notation above. The
+// nonce is decoded no further than the target beside it: both are written as
+// the primes they are made of, which is the number itself and not a reading
+// of it. Set against the target's colossal power of two, the nonce's two or
+// three arbitrary primes are the plainest statement the page can make that a
+// nonce carries no structure at all -- it is a number a miner arrived at by
+// counting, and it factors like one.
+// The previous-block hash and merkle root are genuinely opaque 32-byte hashes --
 // callers Glossia-encode those themselves (as bitcoin-book.html already does
 // for the block/txid hashes), not here.
 export function composeBlockHeaderFields(header) {
@@ -272,9 +288,11 @@ export function composeBlockHeaderFields(header) {
     version: ver.text.replace(/^v/, ''), versionTitle: ver.title,
     timestamp: time.mark, timestampTitle: time.title,
     bits: bits.sym, bitsExpr: bits.expr, bitsTitle: bits.title,
-    // The nonce is a plain integer; the renderer leads it with the bold-gold
-    // η mark (like v for the version), the value itself unstyled.
-    nonce: String(header.nonce),
+    // The renderer leads the nonce with the bold-gold η mark (like v for the
+    // version), the product itself unstyled. Its decimal stays in the title,
+    // where the target's compact nBits is: the figure a miner would recognise
+    // is never further away than the hover.
+    nonce: productProse(header.nonce),
     nonceTitle: `nonce ${header.nonce} — the value the miner incremented while searching for a hash below the difficulty target`,
   };
 }
@@ -568,11 +586,16 @@ const blockHeightMark = (height) => `<span class="op op-blockmark" title="BIP34 
 // wrote, pipes and spaces included, instead of arriving pre-cut by a tokenizer
 // that mistook its punctuation for instructions.
 // The extranonce mark: η with its value subscript, in both eras. One field
-// gets one form -- an early block's η₄ and a modern η₁₇₈₅₄₂₉₇₅₅ are the same
-// counter under the same rule, and a mark that changed shape with the size of
-// its number would be two marks wearing one glyph. Both call sites come here
-// so they cannot drift apart again.
-const extranonceMark = (n) => markToken(`η${toSubscript(n)}`, `extranonce ${n} — the counter the miner rolled once the header's 32-bit nonce (η) was exhausted. A tally, not text: it is read as the number it is, so its bytes never pass for writing`);
+// gets one form -- an early block's η₂² and a modern η₅¹₈₃₉¹₄₂₅₆₀₉¹ are the
+// same counter under the same rule, and a mark that changed shape with the
+// size of its number would be two marks wearing one glyph. Both call sites
+// come here so they cannot drift apart again.
+//
+// The value is a product, as the header's own nonce is, written in the
+// subscript register the glyph carries its values in: lowered primes, raised
+// powers, the alternation dividing them. The decimal keeps the title, which
+// is where a counter is legible as a count.
+const extranonceMark = (n) => markToken(`η${productProse(n, toSubscript)}`, `extranonce ${n} — the counter the miner rolled once the header's 32-bit nonce (η) was exhausted. A tally, not text: it is read as the number it is, so its bytes never pass for writing`);
 
 function renderMinerMargin(hex, collect) {
   if (!hex) return '';
