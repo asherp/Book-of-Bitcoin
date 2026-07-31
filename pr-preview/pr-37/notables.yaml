@@ -1,0 +1,433 @@
+# SPDX-License-Identifier: CC-BY-4.0
+#
+# notables.yaml — the curated table of contents for the Bitcoin Book: which
+# blocks and transactions are worth a reader's attention, what to call them,
+# and where the reading of each one lives.
+#
+# This file and the commentary/ directory beside it are the editorial layer — a
+# reading of the record, not the record itself — and are licensed CC BY 4.0,
+# separately from the machinery that loads and renders them (btc-notables.js,
+# btc-commentary.js, MIT OR Apache-2.0) and from the book's prose (CC0, the
+# chain's own speech). See the README's License section. The split is the book's
+# argument applied to its own source tree: what the chain says belongs to no
+# one; what someone decided is worth naming carries their name.
+#
+# YAML and Markdown rather than JavaScript because this is the part of the
+# repository written by hand, by people who are writing rather than programming.
+# Nothing is generated from it: the browser reads this file and those Markdown
+# files as they stand (btc-yaml.js reads the small subset used here, and fails
+# loudly rather than guessing).
+#
+# An `id` is written in any form the search box takes (the grammar is
+# btc-lookup.js, one parser for the whole book, so a form that works in one
+# place works in every place):
+#
+#   57043                a block height
+#   -1                   counted back from the chain tip: -1 is the latest block
+#   4a5e1e…33b           a 64-hex transaction id (or a block hash)
+#   III β2 ■5            the book's own citation — sigils optional ("III 2 5")
+#   I β29 ■596 §85       …to whatever depth is meant: a section here
+#   I β29 ■596 §85.4     …an output within that section
+#   v1b29c596s85         the same citation in the spelling a link carries
+#   1HB5XMLmzFVj8AL…     an address — a name rather than a place, so it opens
+#                        no chapter: the entry reads in the Ledger, and its
+#                        readings are readings of that name
+#
+# A reference is resolved by arithmetic when the file is read, into exactly the
+# height and index an entry would otherwise carry by hand — and its depth says
+# which page it means, so `III β2` is a book's leaf and `III` a volume's. Write
+# whichever form reads better where you are working; `node
+# tools/check-editorial.mjs` prints what each one resolved to.
+#
+# Every entry is cited by its reference, never its raw id: a block's is known
+# offline (volume·book·chapter from its height); a transaction's is resolved the
+# same way the reader resolves a citation — a /tx/<txid>/merkle-proof lookup
+# gives its block height and index, yielding volume·book·chapter·§section.
+# Ordered chronologically (reading order).
+#
+# An entry may be found in more than one place. Write `ids:` instead of `id:`,
+# each item a place of its own (with its own index / page / out where it needs
+# them), and `as:` naming what that place is within the entry — the contents
+# prints it after the title, so rows sharing a name still say which is which.
+# The readings below belong to the entry, so one reading serves every place: the
+# four printings of the two twice-confirmed coinbases are one story, told once.
+#
+#   - title: The twice-confirmed coinbases
+#     ids:
+#       - id: '91722'
+#         index: 0
+#         as: e3bf…468, first printing
+#       - id: '91880'
+#         index: 0
+#         as: e3bf…468, second printing
+#     commentary:
+#       - file: bip30-duplicate-coinbases.md
+#
+# The fields, all optional but `title` and `id` (or `ids`):
+#
+#   index: 2          the transaction's position within the block (0-based),
+#                     rendered as its §section — how the twice-confirmed BIP30
+#                     coinbases are cited, their txid alone being ambiguous.
+#                     A §section reference sets this instead, and a reference
+#                     that disagrees with it is an error rather than a ranking
+#   page: book        the id is then the first block of a book (a difficulty
+#                     window) and the entry opens that book's own leaf rather
+#                     than a chapter; `page: volume` likewise for a volume's.
+#                     A book- or volume-deep reference sets this too
+#   out: 4            an output within the section, as a §85.4 reference names —
+#                     the page opens at that output
+#   commentary:       the readings of this passage, in reading order, each one a
+#     - file: x.md    Markdown file in commentary/. A file with no `by` is the
+#     - file: y.md    book's own reading, unsigned, because the book is its
+#       by: Name      author; a `by` is somebody else's, published under CC BY
+#       href: https://…   4.0 with their name on it (see CONTRIBUTING.md) and
+#                     credited in the table of contents as well as on the page
+#
+# An entry with no commentary is the normal case, not an oversight: a passage
+# can be worth keeping before anyone has finished saying why. Where a story is
+# not yet checked against the chain it stays a comment here rather than becoming
+# a file — commentary is published matter, and publishing it is the assertion.
+#
+# The soft forks that activated by miner signaling — the 95% supermajority forks
+# (BIP34/66/65) and the version-bits forks (CSV, SegWit, Taproot) — each mark
+# the book their activation closed with `page: book`, since for them the
+# difficulty window is the ballot box; flag-day and release-based forks get no
+# book. BIP91 signaled over its own 336-block epochs, which no book aligns
+# with — but its whole drama still fits one book: III β29 opens, locks it in at
+# ■321, and activates it at ■673.
+
+# Block 0 itself. Its coinbase follows as the next entry — the chapter
+# precedes its own §1 in reading order.
+- title: The Genesis Block
+  id: '0'
+  commentary:
+    - file: the-genesis-block.md
+- title: The Times 03/Jan/2009 Chancellor on brink of second bailout for banks
+  id: 4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b
+  commentary:
+    - file: times-headline.md
+- title: Hal Finney transaction
+  id: f4184fc596403b9d638783cf57adfe4c75c605f6356fbc91338530e9831e9e16
+  commentary:
+    - file: hal-finney-transaction.md
+- title: First P2PKH payment
+  id: 6f7cf9580f1c2dfb3c4d5d043cdbb128c640e3f20161245aa7372e9666168516
+  commentary:
+    - file: first-p2pkh-payment.md
+- title: First difficulty adjustment
+  id: '30240'
+  page: book
+  commentary:
+    - file: first-difficulty-adjustment.md
+# The difficulty series, each entry citing the BOOK whose pace earned the
+# adjustment rather than the chapter where the new target first bound: a
+# retarget is computed from the 2,016 blocks behind it, and a book is exactly
+# those blocks. Titled only by the percentage moved — the story behind each
+# swing is its note. Figures from the canonical difficulty history. The five
+# largest climbs are all from 2010; the deep cuts cluster later. The up-clamp
+# (×4) was hit once; the deepest cut ever is −27.94%, against a −75% floor.
+#
+# Only Volume I can be cited this way. Book numbering restarts at each halving
+# and 210,000 is not a multiple of 2016, so from Volume II on a real retarget
+# window straddles two books — offset 672 blocks in Volume III, 1,008 in
+# Volume IV — and no book names it. Those later entries stay on their retarget
+# chapter, below.
+- title: Difficulty +49%
+  id: '40320'
+  page: book
+  commentary:
+    - file: difficulty-49.md
+- title: Difficulty +51%
+  id: '50400'
+  page: book
+  commentary:
+    - file: difficulty-51.md
+- title: First difficulty decrease (−10.8%)
+  id: '54432'
+  page: book
+  commentary:
+    - file: first-difficulty-decrease-108.md
+- title: Difficulty +45%
+  id: '56448'
+  page: book
+  commentary:
+    - file: difficulty-45.md
+- title: Bitcoin Pizza Day
+  id: '57043'
+  commentary:
+    - file: bitcoin-pizza-day.md
+# The July 2010 spike, in two consecutive books: Bitcoin v0.3's announcement
+# hit Slashdot on July 11, 2010, and the newcomers — among them the first GPU
+# miners on what had been a CPU chain — doubled the network inside I β33, then
+# quadrupled it inside I β34.
+- title: Difficulty +93%
+  id: '64512'
+  page: book
+  commentary:
+    - file: difficulty-93.md
+- title: Difficulty +300%
+  id: '66528'
+  page: book
+  commentary:
+    - file: difficulty-300.md
+# The supply-cap incident: the ~184.4B-BTC overflow the corrective fork went on
+# to excise. Written as the citation it is usually given by — which resolves to
+# block 74,421, section 3 (see tools/check-editorial.mjs, which prints what each
+# reference resolved to). No published reading until the section is re-checked
+# against the chain the book reads from — the story is well known, this passage's
+# exact place in it less so.
+- title: Supply cap bug fix
+  id: I β37 ■1846 §3
+- title: Script opcode purge
+  id: '74638'
+  commentary:
+    - file: script-opcode-purge.md
+- title: 1 MB size limit activation
+  id: '79400'
+  commentary:
+    - file: 1-mb-size-limit-activation.md
+# BIP30's origin story, and the clearest case for `ids:` — one thing the book
+# keeps, found in four places. The coinbases of 91,722 and 91,812 were repeated
+# verbatim by 91,880 and 91,842, overwriting them in the UTXO set — the only two
+# txids ever confirmed twice:
+#   e3bf3d07d4b0375638d5f1db5255fe07ba2c4cb067cd81b84ee974b6585fb468 (91,722 -> 91,880)
+#   d5d27987d2a3dfc724e359870c6644b40e497bdc0589a033220fe15429d88599 (91,812 -> 91,842)
+# All four printings are cited by height (§1 of their blocks) — a txid lookup can
+# only ever land on one of a duplicate's two sections — and each owns its own
+# page number: pages count positions, not distinct txids, so the chain's page
+# count runs exactly two past its distinct-txid count, and these are the two (see
+# btc-pages.js). `as` is what tells the four rows apart in the contents; the
+# reading beneath them is written once.
+- title: The twice-confirmed coinbases
+  ids:
+    - id: '91722'
+      index: 0
+      as: e3bf…468, first printing
+    - id: '91812'
+      index: 0
+      as: d5d2…599, first printing
+    - id: '91842'
+      index: 0
+      as: d5d2…599, second printing
+    - id: '91880'
+      index: 0
+      as: e3bf…468, second printing
+  commentary:
+    - file: bip30-duplicate-coinbases.md
+- title: 100K block milestone
+  id: '100000'
+  commentary:
+    - file: 100k-block-milestone.md
+- title: Eligius
+  id: '139690'
+- title: Difficulty −18.03%
+  id: '149184'
+  page: book
+  commentary:
+    - file: difficulty-1803.md
+- title: First multisig (1-of-2)
+  id: 60a20bd93aa49ab4b28d514ec10b06e1829ce6818ec06cd3aabd013ebcdc4bb1
+  commentary:
+    - file: first-multisig-1-of-2.md
+- title: First P2SH spend
+  id: e5779b9e78f9650debc2893fd9636d827b26b4ddfa6a8172fe8708c924f5c39d
+  commentary:
+    - file: first-p2sh-spend.md
+- title: BIP16 activation (P2SH)
+  id: '173805'
+  commentary:
+    - file: bip16-activation-p2sh.md
+- title: The First Halving
+  id: '210000'
+  commentary:
+    - file: the-first-halving.md
+# The block-version story, told through the chapters where each version era
+# begins (heights are Bitcoin Core chainparams consensus constants). Their
+# frontispieces walk the whole notation: v1 (genesis) -> v2/v3/v4 (the
+# integer-bump era, BIP34/66/65) -> word-pair form once BIP9 version bits
+# arrive (CSV is the first version-bits fork; SegWit and Taproot follow).
+- title: BIP34
+  id: '226128'
+  page: book
+  commentary:
+    - file: bip34.md
+- title: BIP34 activation (v2)
+  id: '227931'
+  commentary:
+    - file: bip34-activation-v2.md
+- title: First coinbase OP_RETURN
+  id: '246816'
+- title: First standard OP_RETURN
+  id: 8bae12b5f4c088d940733dcd1455efc6a3a69cf9340e17a981286d3778615684
+  commentary:
+    - file: first-standard-op-return.md
+- title: BIP66
+  id: '363216'
+  page: book
+  commentary:
+    - file: bip66.md
+- title: BIP66 activation (v3)
+  id: '363725'
+  commentary:
+    - file: bip66-activation-v3.md
+- title: BIP65
+  id: '387408'
+  page: book
+  commentary:
+    - file: bip65.md
+- title: BIP65 activation (v4)
+  id: '388381'
+  commentary:
+    - file: bip65-activation-v4.md
+- title: CSV
+  id: '417648'
+  page: book
+  commentary:
+    - file: csv.md
+- title: CSV activation (version bits)
+  id: '419328'
+  commentary:
+    - file: csv-activation-version-bits.md
+- title: The Second Halving
+  id: '420000'
+  commentary:
+    - file: the-second-halving.md
+- title: BIP91
+  id: '476448'
+  page: book
+  commentary:
+    - file: bip91.md
+- title: BIP91 activation (SegWit mandate)
+  id: '477120'
+  commentary:
+    - file: bip91-activation-segwit-mandate.md
+- title: Bitcoin Cash fork
+  id: '478558'
+  commentary:
+    - file: bitcoin-cash-fork.md
+- title: SegWit
+  id: '480480'
+  page: book
+  commentary:
+    - file: segwit.md
+- title: SegWit activation
+  id: '481824'
+  commentary:
+    - file: segwit-activation.md
+- title: First SegWit spend
+  id: 8f907925d2ebe48765103e6845c06f1f2bb77c6adc1cc002865865eb5cfd5c1c
+  commentary:
+    - file: first-segwit-spend.md
+- title: First native SegWit outputs
+  id: dfcec48bb8491856c353306ab5febeb7e99e4d783eedf3de98f3ee0812b92bad
+  commentary:
+    - file: first-native-segwit-outputs.md
+- title: First P2WSH reveal (2-of-3)
+  id: b38a88b073743bcc84170071cff4b68dec6fb5dc0bc8ffcb3d4ca632c2c78255
+  commentary:
+    - file: first-p2wsh-reveal-2-of-3.md
+- title: 500K block milestone
+  id: '500000'
+  commentary:
+    - file: 500k-block-milestone.md
+# These windows straddle two books apiece (see the note at the head of the
+# series), so each cut below is cited by the chapter where its new target
+# first bound.
+- title: Difficulty −15.13%
+  id: '552384'
+  commentary:
+    - file: difficulty-1513.md
+- title: Difficulty −15.95%
+  id: '622944'
+  commentary:
+    - file: difficulty-1595.md
+- title: The Third Halving
+  id: '630000'
+  commentary:
+    - file: the-third-halving.md
+- title: Difficulty −16.05%
+  id: '655200'
+  commentary:
+    - file: difficulty-1605.md
+- title: Difficulty −15.97%
+  id: '685440'
+  commentary:
+    - file: difficulty-1597.md
+- title: Taproot lock-in
+  id: '687285'
+  commentary:
+    - file: taproot-lock-in.md
+- title: Difficulty −27.94%
+  id: '689472'
+  commentary:
+    - file: difficulty-2794.md
+- title: Romans 12:21
+  id: 057954bb28527ff9c7701c6fd2b7f770163718ded09745da56cc95e7606afe99
+- title: Taproot
+  id: '708624'
+  page: book
+  commentary:
+    - file: taproot.md
+- title: Taproot activation
+  id: 777c998695de4b7ecec54c058c73b2cab71184cf1655840935cd9388923dc288
+  commentary:
+    - file: taproot-activation.md
+- title: First Ordinals inscription
+  id: 6fb976ab49dcec017f1e201e84395983204ae1a7c2abf7ced0a85d692e442799
+  commentary:
+    - file: first-ordinals-inscription.md
+- title: Largest block (at the time)
+  id: '774628'
+  commentary:
+    - file: largest-block-at-the-time.md
+- title: The Fourth Halving
+  id: '840000'
+  commentary:
+    - file: the-fourth-halving.md
+- title: Sermon on the Mount
+  id: e53ac3be05bbeb8ea3bbfb7854a4d47eea556daea25f45ad3fe953f375ff7fd8
+- title: First BIP110 signaling block
+  id: '938903'
+  commentary:
+    - file: first-bip110-signaling-block.md
+# ── The ledgers ───────────────────────────────────────────────────────────
+# A curated entry may name an ADDRESS instead of a place in the chain. An
+# address is a name rather than a place, so it opens no chapter: the row reads
+# in the Ledger (bitcoin-ledger.html), which is where a name's record is kept —
+# and the readings below it are readings of a name, which is the kind of claim
+# this book is most insistent about crediting. That these coins are that party's
+# is somebody's assertion, however well evidenced; the Ledger sets it apart from
+# the record exactly as the reading page sets a passage's commentary apart.
+#
+# Which ledgers the book shelves, and what each is called, is still
+# btc-index-data.js; an entry here is about a reading, not a shelving.
+- title: WikiLeaks
+  id: 1HB5XMLmzFVj8ALj6mfBsbifRoD4miY36v
+  commentary:
+    - file: wikileaks-ledger.md
+
+- title: Latest block
+  id: '-1'
+  commentary:
+    - file: latest-block.md
+
+# More transaction-level entries still to confirm against the chain before
+# adding: the first P2TR output ever (a purse.io withdrawal of 5,431 sats,
+# Dec 17, 2019, pre-activation — txid still to confirm) and the first P2TR
+# key-path and script-path spends; a Lightning force-close revealing an HTLC
+# (the famous first LN payment, Dec 28, 2017, was off-chain, so it needs an
+# on-chain artifact). For the version story, still to confirm: the first
+# version-rolled (overt-AsicBoost, BIP320) block — no canonical height exists,
+# so it needs a chain scan to identify a good exemplar whose frontispiece
+# breaks the accio.abandon idiom.
+#
+# Entries kept without a reading, waiting on a note rather than on a citation:
+# Eligius, the first coinbase OP_RETURN, Romans 12:21, the Sermon on the Mount,
+# and the supply-cap section above. Each is worth reading; none has a published
+# reading yet, and an annotation layer that guesses is worse than one with gaps.
+#
+# Heights consensus has fixed but no block has reached — BIP110's flag heights,
+# BIP42's cap — are not entries here: a chapter cited before it exists cannot be
+# read in sequence with chapters that do (dropped in among the volumes, BIP42
+# alone opened a Volume LXV two centuries wide). They are gathered in
+# appendix.yaml, as Appendix II: Future Chapters.
