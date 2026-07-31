@@ -63,10 +63,14 @@
 # is read, so an entry here cannot claim a chapter the proof does not.
 #
 # The `consensus` part lists `bips:` — one group per fork, each with the BIP's
-# number (`bip`), its recognized `name` (Taproot), a `status` (active,
-# signaling, or scheduled), the `stats:` its title leaf prints (label/value
-# rows — editorial statements of how the fork was counted), and its `entries:`,
-# the chapters and sections it names. An entry takes the same shape as a
+# number (`bip` — or, for a fork that was never a BIP, a handle worn verbatim:
+# BU was a client, its proposals its own), its recognized `name` (Taproot), a
+# `status` (active,
+# signaling, scheduled — or failed, for a fork the chain declined), the
+# `stats:` its title leaf prints (label/value rows — editorial statements of
+# how the fork was counted), and its `entries:`, the chapters and sections it
+# names. A failed fork may name none: consensus never formed, no window ever
+# opened, and the empty record is the record. An entry takes the same shape as a
 # curated entry in notables.yaml — its `id` is handed to the same lookup, in
 # any form the search box takes — with a `note` carrying the caveat the row
 # shows on hover, and `expected: true` on a height no block has reached, which
@@ -101,7 +105,7 @@
 
 - kind: consensus
   title: Consensus
-  note: The rules the chapters are written under, and where each was settled. A soft fork names chapters the way nothing else in the book does — the window that counted its signals, the height its rule first bound, the first passages written under it — so each fork is gathered here under its BIP, out of reading order, with a title leaf carrying its activation statistics. Some of its chapters are still unmined — consensus can fix a height before any block reaches it — and those rows carry □, the expected-chapter mark, until a block earns them the ■.
+  note: The rules the chapters are written under, and where each was settled. A soft fork names chapters the way nothing else in the book does — the window that counted its signals, the height its rule first bound, the first passages written under it — so each fork is gathered here under its BIP, out of reading order, with a title leaf carrying its activation statistics. Some of its chapters are still unmined — consensus can fix a height before any block reaches it — and those rows carry □, the expected-chapter mark, until a block earns them the ■. The forks the chain declined are kept here too, with their outcomes: a proposal is not a rule until the book writes it, and some were never written.
   bips:
     - bip: '16'
       name: Pay to Script Hash
@@ -211,6 +215,20 @@
           note: From here an output can say not before.
           commentary:
             - file: bip65-activation-v4.md
+    # The forks the chain declined are part of the rules' story too: each is
+    # kept with its outcome, and a fork that left no chapter has none to cite
+    # -- the empty record is the record.
+    - bip: '101'
+      name: Bigger Blocks
+      status: failed
+      note: The first serious attempt to move the block size by miner vote — eight-megabyte blocks, doubling on a schedule — carried by Bitcoin XT, a whole competing client, because the change could not get into Bitcoin Core. The vote never came near its threshold, the client faded, and the question it asked was finally settled elsewhere, years later and the other way. No chapter carries its name; the chain declined to write one.
+      stats:
+        - label: mechanism
+          value: 750 of the last 1,000 blocks, by block version — carried by the Bitcoin XT client
+        - label: proposed
+          value: June 2015, by Gavin Andresen
+        - label: outcome
+          value: withdrawn — signaling never came near the threshold, and the client faded
     - bip: '68 · 112 · 113'
       name: Relative Timelocks
       status: active
@@ -241,6 +259,23 @@
           note: From here a lock can say how long after, not just when.
           commentary:
             - file: csv-activation-version-bits.md
+    - bip: 'BU'
+      name: Bitcoin Unlimited
+      status: failed
+      note: Not a BIP but a client, and the big-block banner after XT faded — under "emergent consensus," a miner advertised the block size it would accept rather than voting on a fixed rule. Its ballot is legible in the book, but not in the version word this appendix counts — it was written into the coinbase text, /EB…/AD…/ at the head of each chapter that flew it — so this leaf lays out no table. At its spring-2017 peak more than a third of new blocks carried the banner; nothing ever activated, and that August the big-block constituency left to write its own book.
+      stats:
+        - label: mechanism
+          value: emergent consensus — /EB…/AD…/ written into the coinbase, no threshold and no flag day
+        - label: signaled
+          value: in the coinbase text, not the version word — the one ballot this appendix cannot lay out as a table
+        - label: peak
+          value: spring 2017 — by most counts more than a third of new blocks flew the banner
+        - label: outcome
+          value: nothing activated — the big-block constituency left as Bitcoin Cash that August
+      entries:
+        - title: The parting
+          id: '478558'
+          note: The last chapter both books share — Bitcoin Cash begins at the next height, and the block-size argument leaves this chain with it.
     - bip: '91'
       name: SegWit Signal Mandate
       status: active
@@ -319,6 +354,21 @@
           note: The first native witness script revealed — a 2-of-3 multisig.
           commentary:
             - file: first-p2wsh-reveal-2-of-3.md
+    - bip: '149'
+      name: SegWit, the Second Try
+      status: failed
+      note: The deployment that stood ready if the first SegWit deployment expired unused — BIP8 rather than BIP9, activating with the miners if they came and without them if they did not. It was never needed. BIP91's mandate pushed the original deployment over its threshold in the summer of 2017, and BIP149 was withdrawn with nothing left to do. Its one chapter is the block that made it moot.
+      stats:
+        - label: mechanism
+          value: BIP8 — with the miners if they signaled, without them by July 2018
+        - label: proposed
+          value: spring 2017, against the deadlock
+        - label: outcome
+          value: withdrawn unused — BIP91's mandate carried BIP141 first
+      entries:
+        - title: Made moot
+          id: '479808'
+          note: SegWit locks in — the deployment this one stood ready to replace crossed its threshold first, and nothing was left for BIP149 to do.
     - bip: '341'
       name: Taproot
       status: active
@@ -359,6 +409,17 @@
           note: Mined the moment the rules went live — the citation resolves into the activation chapter at its own §section.
           commentary:
             - file: taproot-activation.md
+    - bip: '119'
+      name: CheckTemplateVerify
+      status: failed
+      note: A covenant — an output that constrains the shape of the transaction that spends it. The first covenant opcode to reach the threshold of a release, an attempted Speedy Trial in the spring of 2022, called off amid an argument less about the opcode than about how consensus for one should ever be measured. No activation parameters ever shipped, no window ever opened, and the chain says nothing about it — which is the record: a proposal is not a rule until the book writes it.
+      stats:
+        - label: mechanism
+          value: none ever deployed — a Speedy Trial release was called off, April 2022
+        - label: proposed
+          value: January 2020, by Jeremy Rubin
+        - label: outcome
+          value: no consensus — the opcode waits, and no chapter carries its name
     # BIP110 (reduced_data, the 2026 temporary data-limit attempt): nothing has
     # activated to cite — ~0.5% signaling as of July 2026 — but its BIP8-style
     # heights are citable sight unseen, three real retarget boundaries one book
