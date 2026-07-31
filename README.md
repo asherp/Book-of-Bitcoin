@@ -165,22 +165,23 @@ compiled to WASM) is consumed as a published
   belongs to no volume or book of the body (the queue's own equivalent of a
   book is still to be written). Appendix II lists its forks and descends
   into the first fork's own leaf (`?part=consensus&bip=341` names Taproot's):
-  BIP number over recognized name, then the ballot itself — every block of
-  the counted window, its version exactly as the chapter's frontispiece
-  writes it, and whether it reads as a yes, drawn a page at a time as the
-  foot comes into reach the way the Ledger draws a record. The fork's own
-  curated chapters cut across the table as labeled rules — the line where
-  the signaling began, the line where the count crossed — and a fork still
-  signaling runs its record back past the sample to where its story begins.
-  The leaf's sticky foot holds the summary line (the fork still signaling
+  BIP number over recognized name, then the ballot itself, oldest block
+  first — every block of the counted window, its version exactly as the
+  chapter's frontispiece writes it, whether it reads as a yes, and the
+  accumulated count and rate as they stood at that block — drawn a page at
+  a time as the foot comes into reach the way the Ledger draws a record, so
+  scrolling down replays the activation in the order it occurred and the
+  ending is discovered, not stated. The fork's own curated chapters cut
+  across the table as labeled rules — the line where the signaling began,
+  the line where the count crossed — and a fork still signaling opens its
+  record where its story begins. The leaf's sticky foot holds the summary
+  line (the count as far as the reading has gone; a fork still signaling
   states the period's whole rate off the `monitor:` the file names,
-  credited; a closed window states its recorded `signals:` count; otherwise
-  the drawn count stands, and says so) and, beneath it, the commentary —
-  where the fork's description itself now reads, the book's own voice
-  leading whatever else is written of it — so the count and the reading are
-  at hand at every moment of the scroll. Then the activation statistics as
-  the file states them, the fork's chapters, and sideways turns walking the
-  forks; the book answers an unmined chapter with the date it is due. A ballot row opens the
+  credited) and, beneath it, the commentary — where the fork's description
+  itself now reads, the book's own voice leading whatever else is written
+  of it. Then the activation statistics as the file states them, the fork's
+  chapters, and sideways turns walking the forks; the book answers an
+  unmined chapter with the date it is due. A ballot row opens the
   block's own leaf (`&block=<height>`), one level further down: the
   chapter's title page reprinted — its hash as prose between the ⌘ and ⓪
   marks, every header field as the frontispiece writes it, the signal
@@ -477,16 +478,6 @@ fails on anything a reader would meet as a missing reading or an empty contents
 request; the deploy and the PR preview both run it first, ahead of the WASM
 build.
 
-One editorial entry is a number rather than a name, and it gets its own check:
-a closed signaling window's whole count (`signals:` on a fork's group in
-`web/appendix.yaml`, stated by its leaf's tally). That count is a plain fact
-of the chain that no public API serves in aggregate, so it is counted once
-and written down — `node tools/count-ballots.mjs` fetches every block of each
-closed window off the public mirrors, counts the yeses by the same rule the
-leaf's table applies, prints the paste-ready line for a fork that lacks one,
-and exits non-zero if a recorded count disagrees with the chain. Anyone can
-run it; the leaf's tally says so, and the window laid out beneath it is the
-same count made readable.
 
 ## License
 
