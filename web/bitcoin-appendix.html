@@ -193,6 +193,9 @@ a.bb-ref:hover { color:var(--accent-2); }
 .bb-status { flex:none; min-width:48px; text-align:right; font:500 10.5px/1.6 'IBM Plex Mono',monospace; letter-spacing:.06em; }
 .bb-status.yes { color:var(--accent); }
 .bb-status.no { color:var(--meta); }
+/* The clock at the row's head: the replay is chronological, and the dates
+   make its pace legible. */
+.bb-time { flex:none; font:400 10px/1.7 'IBM Plex Mono',monospace; color:var(--meta); white-space:nowrap; font-variant-numeric:tabular-nums; }
 /* The accumulation: the count and the rate as they stood at each block, so
    the activation replays down the page. */
 .bb-sum { flex:none; min-width:44px; text-align:right; font:500 11px/1.6 'IBM Plex Mono',monospace; color:var(--ink-soft); font-variant-numeric:tabular-nums; }
@@ -449,7 +452,7 @@ if (blockLeaf != null) {
   up.title = 'up to the ballot, at this block\'s row';
   up.classList.remove('hidden');
 } else if (bip) {
-  $('appx-title').textContent = `BIP ${bip.bip}`;
+  $('appx-title').textContent = bip.label;
   $('appx-subtitle').textContent = bip.name;
   const up = $('appx-up');
   up.textContent = `▴ ${label(part)}`;
@@ -533,11 +536,11 @@ if (bip) {
 // window, and up to the ballot -- so the foot carries no neighbours.
 const prevTo = blockLeaf != null ? null : bip
   ? (bipAt > 0
-    ? { href: bipHref(bips[bipAt - 1]), text: `BIP ${bips[bipAt - 1].bip}` }
+    ? { href: bipHref(bips[bipAt - 1]), text: bips[bipAt - 1].label }
     : { href: hrefFor(part), text: label(part) })
   : (APPENDIX[index - 1] ? { href: hrefFor(APPENDIX[index - 1]), text: label(APPENDIX[index - 1]) } : null);
 const nextTo = blockLeaf != null ? null : bip
-  ? (bipAt < bips.length - 1 ? { href: bipHref(bips[bipAt + 1]), text: `BIP ${bips[bipAt + 1].bip}` } : null)
+  ? (bipAt < bips.length - 1 ? { href: bipHref(bips[bipAt + 1]), text: bips[bipAt + 1].label } : null)
   : (APPENDIX[index + 1] ? { href: hrefFor(APPENDIX[index + 1]), text: label(APPENDIX[index + 1]) } : null);
 window.__appxTurns = { prev: prevTo && prevTo.href, next: nextTo && nextTo.href };
 const turns = $('appx-turns');
@@ -580,7 +583,7 @@ if (kind === 'consensus' && !bip) {
     if (b.note) a.title = b.note;
     const name = document.createElement('span');
     name.className = 'proof-name';
-    name.textContent = `BIP ${b.bip} — ${b.name}`;
+    name.textContent = `${b.label} — ${b.name}`;
     const st = document.createElement('span');
     st.className = 'proof-cite';
     st.textContent = b.status;
@@ -627,6 +630,7 @@ if (bip && blockLeaf == null) {
     const heads = document.createElement('div');
     heads.className = 'bb-heads';
     for (const [cls, text, why] of [
+      ['bb-time', 'mined', 'when the block was mined — UTC'],
       ['bb-ref', 'chapter', ''],
       ['bb-ver', 'version', "as the chapter's frontispiece writes it"],
       ['bb-status', 'signal', `a yes is ${yesSays}`],
@@ -664,6 +668,13 @@ if (bip && blockLeaf == null) {
       const row = document.createElement('div');
       row.className = 'bb-row';
       row.dataset.height = b.height;
+      // The clock first: the replay is chronological, and the dates are what
+      // make its pace legible -- a window is weeks, a stall is visible.
+      const when = document.createElement('span');
+      when.className = 'bb-time';
+      when.textContent = new Date(b.timestamp * 1000).toISOString().slice(0, 16).replace('T', ' ');
+      when.title = `mined ${new Date(b.timestamp * 1000).toISOString().slice(0, 19).replace('T', ' ')} UTC — unix ${b.timestamp}`;
+      row.append(when);
       // A row opens the block's own leaf, one level down -- the reprint the
       // vertical turns walk -- not the book itself; the leaf carries the one
       // door into the book, as a Ledger entry's citation does.
@@ -755,7 +766,7 @@ if (bip && blockLeaf == null) {
           if (bank.length && b.height <= bank[bank.length - 1].height) continue;
           tallied++;
           if (yes(b.version)) ayes++;
-          bank.push({ height: b.height, version: b.version, sum: ayes, n: tallied });
+          bank.push({ height: b.height, version: b.version, timestamp: b.timestamp, sum: ayes, n: tallied });
         }
         const reached = bank.length ? bank[bank.length - 1].height : floor - 1;
         if (reached >= anchor) { done = true; return; }

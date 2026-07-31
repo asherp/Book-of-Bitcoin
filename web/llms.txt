@@ -107,7 +107,8 @@ reaches it instead.
   chapters) and Appendix II (Consensus — the soft forks grouped under their
   BIPs with their recognized names, each naming the chapters of its
   signaling, lock-in, activation and first spends, the unmined ones marked
-  □); the Index of Ledgers (pointing into the text, many chapters per
+  □, and the forks the chain declined kept among them as failed — BIP101,
+  Bitcoin Unlimited, BIP149, BIP119 — some with no chapter to name at all); the Index of Ledgers (pointing into the text, many chapters per
   name); and Citations, standing last — works cited outside the text, dated
   into a chapter by their OpenTimestamps proofs. A cited passage carries the
   back-reference in its margin as the ‡ mark, the work's number in the

@@ -453,7 +453,7 @@ function bipHead(bip) {
   const a = document.createElement('a');
   a.className = 'toc-book toc-bip';
   a.href = `./bitcoin-appendix.html?part=consensus&bip=${bip.key}`;
-  a.textContent = `BIP ${bip.bip} — ${bip.name}`;
+  a.textContent = `${bip.label} — ${bip.name}`;
   a.title = `${bip.title} — ${bip.status}. Its title leaf carries the activation statistics.`;
   return a;
 }

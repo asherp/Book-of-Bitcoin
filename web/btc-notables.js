@@ -200,10 +200,14 @@ function normalizePart(raw, i) {
       const name = String(b.name ?? '').trim();
       if (!number || !name) throw new Error(`btc-notables: a bip in "${title}" needs a bip number and a name`);
       const status = String(b.status ?? '').trim();
-      if (!['active', 'signaling', 'scheduled'].includes(status)) {
-        throw new Error(`btc-notables: BIP ${number} has a status that is not active, signaling, or scheduled: ${status || '(none)'}`);
+      if (!['active', 'signaling', 'scheduled', 'failed'].includes(status)) {
+        throw new Error(`btc-notables: BIP ${number} has a status that is not active, signaling, scheduled, or failed: ${status || '(none)'}`);
       }
-      const group = { bip: number, name, status, key: (number.match(/[0-9]+/) || [number])[0], title: `BIP ${number} · ${name}` };
+      // Most groups are BIPs and wear the number after the word; a fork that
+      // was never a BIP (Bitcoin Unlimited was a client, its proposals its
+      // own) wears its handle verbatim.
+      const label = /^[0-9]/.test(number) ? `BIP ${number}` : number;
+      const group = { bip: number, name, status, label, key: (number.match(/[0-9]+/) || [number])[0], title: `${label} · ${name}` };
       if (b.note) group.note = String(b.note);
       // How a yes is read off a block's version -- a bit set, or a minimum
       // version -- and where the ballot closed: the last block of the winning
@@ -228,8 +232,12 @@ function normalizePart(raw, i) {
         });
       }
       withCommentary(group, b);
+      // A fork the chain declined may name no chapters at all: consensus
+      // never formed, no window ever opened, and the empty record is the
+      // record. Every other status must point somewhere.
       if (!Array.isArray(b.entries) || !b.entries.length) {
-        throw new Error(`btc-notables: BIP ${number} lists no entries`);
+        if (status !== 'failed') throw new Error(`btc-notables: BIP ${number} lists no entries`);
+        b.entries = [];
       }
       group.entries = b.entries.map((e) => {
         const place = normalizePlace(e, String(e.title ?? group.title));
