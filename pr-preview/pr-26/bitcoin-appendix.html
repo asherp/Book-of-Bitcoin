@@ -194,14 +194,25 @@ a.bb-ref:hover { color:var(--accent-2); }
 .bb-status.yes { color:var(--accent); }
 .bb-status.no { color:var(--meta); }
 .bb-foot { display:block; padding:9px 2px; text-align:center; font:400 12px/1.6 'Public Sans',sans-serif; color:var(--meta); }
-/* The running tally, seated the way the Ledger's totals bar sits: sticky at
-   the screen bottom, the rule its top edge, summing the ballot at every
-   moment of the scroll rather than only at its end. */
-.bip-tally { position:sticky; bottom:0; z-index:40;
-  display:flex; gap:10px; align-items:baseline;
-  padding:12px 2px max(12px, env(safe-area-inset-bottom)) 14px;
-  border-top:1px solid var(--rule); background:var(--page);
-  max-width:56ch; margin:0 auto; }
+/* A labeled rule across the ballot, above the block it names -- where the
+   signaling began, where the count crossed: the fork's own curated chapters,
+   drawn as lines in the record they punctuate. */
+.bb-mark { display:flex; align-items:center; gap:10px; padding:12px 2px 4px;
+  font:600 9.5px/1 'IBM Plex Mono',monospace; letter-spacing:.14em; text-transform:uppercase; color:var(--accent); }
+.bb-mark::before, .bb-mark::after { content:''; flex:1; border-top:1px solid var(--accent); opacity:.45; }
+/* The fork leaf's foot, seated the way the Ledger's totals bar sits: sticky
+   at the screen bottom, the rule its top edge, holding the running tally and
+   -- beneath the summary line -- the fork's commentary, so the reading is at
+   hand at every moment of the scroll. An opened sheet rises from the foot,
+   capped so the ballot stays in view behind it. */
+.bip-foot { position:sticky; bottom:0; z-index:40;
+  max-width:56ch; margin:0 auto;
+  padding-bottom:max(6px, env(safe-area-inset-bottom));
+  border-top:1px solid var(--rule); background:var(--page); }
+.bip-tally { display:flex; gap:10px; align-items:baseline;
+  padding:12px 2px 10px 14px; }
+.bip-foot .leaf-commentary { margin:0; max-width:none; border-top:1px solid var(--hair); padding:0 2px; }
+.bip-foot .commentary-body { max-height:45vh; overflow:auto; }
 .bip-tally .t-label { font:600 9.5px/1 'IBM Plex Mono',monospace; letter-spacing:.14em; text-transform:uppercase; color:var(--meta); margin-right:6px; }
 .bip-tally .t-fig { font:600 13px/1.4 'IBM Plex Mono',monospace; color:var(--accent); font-variant-numeric:tabular-nums; }
 .bip-tally .t-note { flex:1; min-width:0; text-align:right; font:400 11.5px/1.5 'Public Sans',sans-serif; color:var(--meta);
@@ -298,7 +309,6 @@ a.bb-ref:hover { color:var(--accent-2); }
        and the chapters and sections the fork names, each a door into the
        book. -->
   <div class="bip-blocks hidden" id="bip-blocks"></div>
-  <div class="bip-tally hidden" id="bip-tally"></div>
   <div class="bip-stats hidden" id="bip-stats"></div>
   <div class="proof-list hidden" id="bip-entries"></div>
 
@@ -319,15 +329,21 @@ a.bb-ref:hover { color:var(--accent-2); }
     <div class="proof-result hidden" id="proof-result"></div>
   </div>
 
-  <!-- A fork's reading, kept where every reading is kept: behind a toggle,
-       over the record rather than in it, signed by whoever wrote it. -->
-  <details class="leaf-commentary hidden" id="bip-commentary">
-    <summary title="A reading of this fork — editorial, and kept apart from the record above it">Commentary</summary>
-    <div class="commentary-body" id="bip-commentary-body"></div>
-  </details>
-
   <a class="appx-down" id="appx-down" href="#" aria-label="Down into the appendix">▾</a>
   <nav class="appx-turns" id="appx-turns"></nav>
+
+  <!-- The fork leaf's sticky foot: the summary line, and beneath it the
+       fork's reading -- what the fork is, and what somebody makes of it --
+       kept where every reading is kept: behind a toggle, over the record
+       rather than in it. Last in the flow, so it holds the screen's foot
+       for the whole of the scroll. -->
+  <div class="bip-foot hidden" id="bip-foot">
+    <div class="bip-tally hidden" id="bip-tally"></div>
+    <details class="leaf-commentary hidden" id="bip-commentary">
+      <summary title="What this fork is, and readings of it — editorial, and kept apart from the record above">Commentary</summary>
+      <div class="commentary-body" id="bip-commentary-body"></div>
+    </details>
+  </div>
 </div>
 
 <script type="module">
@@ -442,7 +458,10 @@ if (blockLeaf != null) {
   $('appx-title').textContent = part.family === 'index' ? `Index of ${part.title}` : part.title;
   $('appx-subtitle').textContent = part.family === 'citations' ? 'Works the chain attests' : '';
 }
-$('appx-note').textContent = blockLeaf != null ? '' : (bip ? bip.note : part.note) || '';
+// A fork's description is a reading of the fork, so it reads where readings
+// read: in the commentary sheet at the leaf's foot, not as front matter. The
+// head keeps only the name; the part leaf keeps its note.
+$('appx-note').textContent = bip ? '' : part.note || '';
 document.title = `The βook of βitcoin — ${blockLeaf != null ? `${bip.title} · ${wholeRef(blockLeaf)}` : bip ? bip.title : label(part)}`;
 
 // Where the descent lands. A fork's leaf opens its first chapter (known
@@ -616,6 +635,21 @@ if (bip && blockLeaf == null) {
     blocksEl.classList.remove('hidden');
     const tallyEl = $('bip-tally');
 
+    // The fork's curated chapters, drawn as labeled rules across the ballot
+    // where their blocks fall -- the line where the signaling began, the
+    // line where the count crossed. The label is the entry's own title; the
+    // rule stands above the block it names.
+    const marks = new Map(bip.entries
+      .filter((e) => !e.expected && !e.page && isBlockId(e.id))
+      .map((e) => [Number(e.id), e]));
+    const markEl = (e) => {
+      const d = document.createElement('div');
+      d.className = 'bb-mark';
+      d.textContent = e.title;
+      if (e.note) d.title = e.note;
+      return d;
+    };
+
     const rowEl = (b) => {
       const row = document.createElement('div');
       row.className = 'bb-row';
@@ -669,7 +703,15 @@ if (bip && blockLeaf == null) {
           if (tip == null) { done = true; return; }
           anchor = tip;
         }
-        if (floor == null) { floor = Math.max(0, anchor - WINDOW + 1); at = anchor; }
+        if (floor == null) {
+          floor = Math.max(0, anchor - WINDOW + 1);
+          // A live ballot's record runs back past the sample to where its
+          // story begins: the earliest chapter the fork names (the first
+          // signaling block), so the ⟂ line marking it is reachable by
+          // reading, not just named.
+          if (bip.ballot == null && marks.size) floor = Math.min(floor, Math.min(...marks.keys()));
+          at = anchor;
+        }
         if (at < floor) { done = true; return; }
         let blocks = null;
         for (const base of MEMPOOL_MIRRORS) {
@@ -706,6 +748,7 @@ if (bip && blockLeaf == null) {
       tallyEl.append(fig, note);
       if (title) tallyEl.title = title;
       tallyEl.classList.remove('hidden');
+      $('bip-foot').classList.remove('hidden');
     };
     const against = Number.isFinite(bip.threshold) ? `against ${bip.threshold}% — ` : '';
     // The bar prefers the period's WHOLE count over the table's sample: a
@@ -773,12 +816,17 @@ if (bip && blockLeaf == null) {
       busy = true;
       while (bank.length - rendered < PAGE && !done) await fetchMore();
       const take = Math.min(bank.length - rendered, PAGE);
-      for (const b of bank.slice(rendered, rendered + take)) rowsEl.append(rowEl(b));
+      for (const b of bank.slice(rendered, rendered + take)) {
+        if (marks.has(b.height)) rowsEl.append(markEl(marks.get(b.height)));
+        rowsEl.append(rowEl(b));
+      }
       rendered += take;
       tally();
       foot.textContent = done && rendered >= bank.length
         ? (bank.length
-          ? (bip.ballot != null ? `— the window's opening, block ${floor.toLocaleString('en-US')}` : '— one window back from the tip')
+          ? (bip.ballot != null ? `— the window's opening, block ${floor.toLocaleString('en-US')}`
+            : marks.has(floor) ? '— back to where the signaling began'
+            : '— one window back from the tip')
           : 'the chain could not be reached')
         : '…';
       // The fetch ahead: keep a page banked beyond what's drawn.
@@ -855,12 +903,19 @@ if (bip && blockLeaf == null) {
   // theirs: specific before general, nothing fetched until the sheet opens.
   const { readingsOf, resolveCommentary, commentaryHtml } = await import('./btc-commentary.js');
   const items = [];
-  if (readingsOf(bip).length) items.push({ title: bip.title, readings: readingsOf(bip) });
+  // The fork's description leads its sheet -- what the fork is, in the
+  // book's own voice, moved off the front of the leaf and into the reading
+  // it always was -- then whatever else is written of it, then the part's.
+  const own = [];
+  if (bip.note) own.push({ note: bip.note });
+  own.push(...readingsOf(bip));
+  if (own.length) items.push({ title: bip.title, readings: own });
   if (readingsOf(part).length) items.push({ title: part.title, readings: readingsOf(part) });
   if (items.length) {
     const box = $('bip-commentary');
     const body = $('bip-commentary-body');
     box.classList.remove('hidden');
+    $('bip-foot').classList.remove('hidden');
     let filled = false;
     box.addEventListener('toggle', async () => {
       if (!box.open || filled) return;
@@ -1038,8 +1093,16 @@ if (blockLeaf != null) {
     try { sessionStorage.setItem('glossia-ballot-land', String(blockLeaf)); } catch (_) { /* unavailable */ }
     navTo(bipHref(bip), 'drop');
   };
+  // A live ballot's record runs back to where its story begins (the earliest
+  // chapter the fork names), and the vertical walk reaches as far as the
+  // table does.
+  const markedFloor = bip.ballot == null
+    ? bip.entries.filter((e) => !e.expected && !e.page && isBlockId(e.id)).map((e) => Number(e.id))
+      .reduce((a, b) => Math.min(a, b), Infinity)
+    : Infinity;
   const wire = () => {
-    const oldest = newest != null ? Math.max(0, newest - WINDOW + 1) : null;
+    let oldest = newest != null ? Math.max(0, newest - WINDOW + 1) : null;
+    if (oldest != null && Number.isFinite(markedFloor)) oldest = Math.min(oldest, markedFloor);
     const newerUp = newest == null || blockLeaf < newest;
     upEl.title = newerUp ? 'the next newer block of the window' : 'up to the ballot';
     upEl.href = newerUp ? blockHref(blockLeaf + 1) : bipHref(bip);

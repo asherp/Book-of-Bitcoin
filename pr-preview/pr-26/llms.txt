@@ -122,7 +122,10 @@ reaches it instead.
   instead, and `?part=consensus&bip=<n>` opens one fork's own leaf — BIP
   number and recognized name, then the fork's ballot: every block of the
   counted window with its version as the frontispiece writes it and whether
-  it reads as a yes, lazily drawn with a running tally pinned at the foot.
+  it reads as a yes, lazily drawn, the fork's curated chapters cutting
+  across the table as labeled rules (where signaling began, where the count
+  crossed), with the summary line and the fork's commentary — its
+  description reads there — pinned together at the screen's foot.
   A fork still signaling counts from the chain tip, and where appendix.yaml
   names a monitor for it the tally states the current period's whole
   signaling rate as that site publishes it, credited. A closed window's
