@@ -100,25 +100,27 @@ const toSubscript = (n) => String(n).split('').map((d) => SUBSCRIPT_DIGITS[+d]).
 const SUPERSCRIPT_DIGITS = '⁰¹²³⁴⁵⁶⁷⁸⁹';
 export const toSuperscript = (n) => String(n).split('').map((d) => SUPERSCRIPT_DIGITS[+d]).join('');
 
-// A factorization as the notation writes it: primes ascending, every one of
-// them under its own power -- 2²⁰⁸3¹5¹17¹257¹, 2¹⁷²3²5¹7¹19². A power of one
-// is written rather than left implied, which is what lets the sign between
-// the factors go: a raised digit closes a prime and a plain one opens the
-// next, so the product needs no × to be read back a factor at a time.
+// A factorization as the notation writes it: primes ascending, a centred dot
+// between them, a power only where a prime repeats -- 2²⁰⁸·3·5·17·257,
+// 2¹⁷²·3²·5·7·19². The dot is the mathematician's own multiplication sign and
+// the quietest one available: it separates the factors without reading as an
+// instruction the way × would, and × is already a Script opcode in this book.
+// (The dot also groups the digits of a satoshi amount, but only ever inside a
+// hover title -- no printed mark carries both senses.)
 //
 // `digits` is the register the primes are written in -- plain where the number
 // stands on its own line (a target, the header's nonce), lowered where it
-// rides its glyph as a value (the extranonce's η₅¹₈₃₉¹₄₂₅₆₀₉¹). The powers
-// stay raised either way: it is the change of register, not the choice of
-// register, that separates one factor from the next.
+// rides its glyph as a value (the extranonce's η₅·₈₃₉·₄₂₅₆₀₉). Powers are
+// raised in either register.
 const factorProse = (factors, digits = String) => factors
-  .map(([p, power]) => `${digits(p)}${toSuperscript(power)}`)
-  .join('');
+  .map(([p, power]) => (power === 1 ? digits(p) : `${digits(p)}${toSuperscript(power)}`))
+  .join('·');
 
 // Any number the book states as a product: its factorization, or the figure
 // itself where there is no factorization to write. 0 and 1 are the whole of
 // that exception -- neither is a product of primes, and an early miner's
-// first extranonce is exactly η₁.
+// first extranonce is exactly η₁. A prime stands alone, no dot and no power:
+// a nonce of 2147483647 is written η2147483647, which is the truth about it.
 const productProse = (value, digits = String) => factorProse(primeFactors(value), digits) || digits(value);
 
 // nBits (a compact difficulty target) -> { sym, expr, title }. The target is
@@ -128,14 +130,14 @@ const productProse = (value, digits = String) => factorProse(primeFactors(value)
 // valid hash must open with (genesis, difficulty 1, is β₃₂; each +1 is a
 // doubling of the work). `expr` is the target written exactly, in the terms
 // a 256-bit integer is finally made of: its prime factorization --
-// 2²⁰⁸3¹5¹17¹257¹ for genesis. nBits packs m×256ᵉ, so every target factors to
+// 2²⁰⁸·3·5·17·257 for genesis. nBits packs m×256ᵉ, so every target factors to
 // the same shape, a colossal power of two beside a very small odd number. The
 // power of two is the target's scale, roughly 8e of it and the rest whatever
 // twos the mantissa brought; the primes after it are the mantissa's odd part,
 // under 2²³ and rarely more than three or four of them -- the whole of what a
 // retarget can express, since a window's work is chosen from those digits and
 // nothing else. Genesis says it plainest: 65535 is 2¹⁶−1, so its odd part is
-// 3¹5¹17¹257¹, the Fermat primes.
+// 3·5·17·257, the Fermat primes.
 //
 // The subscript states the target's leading zero run, the expression the
 // number in full; leading zeros stay on β because they are not legible from a
@@ -364,7 +366,7 @@ function opToken(code) {
 // OP_PUSHDATA1/2/4, whose length rides in a separate prefix -- arrow weight
 // matching prefix width: ↧ⁿ (1-byte), ⇊ⁿ (2-byte), ⤋ⁿ (4-byte). The pushed data itself
 // follows the mark, as prose or an inline quote. (The coinbase preamble's
-// βₙ 2ᵏpˡ… and ηn marks fold their push opcode in -- what the mark writes
+// βₙ 2ᵏ·p… and ηn marks fold their push opcode in -- what the mark writes
 // out determines the exact bytes, the push width included.)
 const PUSH_GLYPHS = { 0: '', 1: '↧', 2: '⇊', 4: '⤋' };
 function pushToken(form, byteLen) {
@@ -441,7 +443,7 @@ function derToCompact(hex) {
 // restating the block's compact difficulty target (the header's nBits,
 // byte for byte), then a small-integer push -- the extranonce, the counter
 // a miner rolled once the header's 32-bit nonce was exhausted. Both are
-// numbers, not entropy, so they render as decoded marks (βₙ 2ᵏpˡ…, ηn)
+// numbers, not entropy, so they render as decoded marks (βₙ 2ᵏ·p…, ηn)
 // rather than payload words -- which also lets embedded text (the genesis
 // headline) stand as the coinbase's first words instead of trailing runs
 // of bytes-as-prose.
@@ -586,7 +588,7 @@ const blockHeightMark = (height) => `<span class="op op-blockmark" title="BIP34 
 // wrote, pipes and spaces included, instead of arriving pre-cut by a tokenizer
 // that mistook its punctuation for instructions.
 // The extranonce mark: η with its value subscript, in both eras. One field
-// gets one form -- an early block's η₂² and a modern η₅¹₈₃₉¹₄₂₅₆₀₉¹ are the
+// gets one form -- an early block's η₂² and a modern η₅·₈₃₉·₄₂₅₆₀₉ are the
 // same counter under the same rule, and a mark that changed shape with the
 // size of its number would be two marks wearing one glyph. Both call sites
 // come here so they cannot drift apart again.
