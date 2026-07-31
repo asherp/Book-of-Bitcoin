@@ -181,8 +181,9 @@ a:hover { text-decoration: underline; }
 .bip-blocks { max-width:56ch; margin:0 auto; }
 .bb-heads { display:flex; gap:14px; padding:0 2px 6px; border-bottom:1px solid var(--rule); }
 /* The heads borrow the rows' column classes for their widths alone; the
-   dress is the ruling register's, not the row's. */
-.bb-heads > span { color:var(--meta); font:600 10px/1 'IBM Plex Mono',monospace; letter-spacing:.14em; text-transform:uppercase; text-align:left; }
+   dress is the ruling register's, not the row's -- and a head never breaks
+   its word, however narrow the column beneath it runs. */
+.bb-heads > span { color:var(--meta); font:600 10px/1 'IBM Plex Mono',monospace; letter-spacing:.14em; text-transform:uppercase; text-align:left; white-space:nowrap; }
 .bb-heads > .bb-status { text-align:right; }
 .bb-row { display:flex; gap:14px; align-items:baseline; padding:6px 2px; border-bottom:1px solid var(--hair); }
 .bb-ref { flex:none; min-width:118px; font:600 12px/1.5 'IBM Plex Mono',monospace; letter-spacing:.04em;
@@ -203,6 +204,22 @@ a.bb-ref:hover { color:var(--accent-2); }
    the activation replays down the page. */
 .bb-sum { flex:none; min-width:44px; text-align:right; font:500 11px/1.6 'IBM Plex Mono',monospace; color:var(--ink-soft); font-variant-numeric:tabular-nums; }
 .bb-pct { flex:none; min-width:40px; text-align:right; font:600 11px/1.6 'IBM Plex Mono',monospace; color:var(--accent); font-variant-numeric:tabular-nums; }
+/* Portrait: the row folds to two lines -- the clock, the chapter and the
+   count keep the first; the version or coinbase text takes a full-width
+   second of its own, so no column is ever squeezed to a letter a line and
+   nothing bleeds past the page's edge. Its head retires with it: a column
+   on its own line needs no ruling. */
+@media (max-width: 620px) {
+  .bb-heads { gap:8px; }
+  .bb-heads > .bb-ver { display:none; }
+  .bb-row { flex-wrap:wrap; gap:2px 8px; }
+  .bb-time { font-size:9.5px; }
+  .bb-ref { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; }
+  .bb-status { min-width:40px; }
+  .bb-sum { min-width:34px; }
+  .bb-pct { min-width:34px; }
+  .bb-row .bb-ver { order:9; flex:1 0 100%; min-width:100%; padding-left:2px; }
+}
 .bb-foot { display:block; padding:9px 2px; text-align:center; font:400 12px/1.6 'Public Sans',sans-serif; color:var(--meta); }
 /* A labeled rule across the ballot, above the block it names -- where the
    signaling began, where the count crossed: the fork's own curated chapters,
