@@ -63,10 +63,10 @@ fall straight out of it:
 - **Gap late** — the pool writes its tag (and any commitment) first, and the
   counters land at the end.
 
-`web/btc-prose.js` currently assumes gap-early: `peelExtranonces` reads the
-pushes immediately after the height as counters. That is right for the ckpool
-family and wrong for the btcpool family, which puts something else there —
-see the finding at the end.
+`web/btc-prose.js` assumed gap-early throughout: `peelExtranonces` read every
+push immediately after the height as a counter. That is right for the ckpool
+family and wrong for the btcpool family, which puts a clock there — the
+correction at the end of these notes, and the reason they were written.
 
 ## House styles, by template builder
 
@@ -208,30 +208,59 @@ are many and are not the pool's own.
   Structural, not textual: a coinbase with dozens of outputs is a pool that
   pays its miners on chain. **[unverified]**
 
-## What this means for the book
+## What this meant for the book, and what was done about it
 
-One finding is worth acting on, and it is a correction rather than an addition.
+One finding was worth acting on, and it was a correction rather than an
+addition. It has been made.
 
 **The push after the height is often a timestamp, not an extranonce.**
-`web/btc-prose.js` peels the pushes after the BIP34 height as counters and
-marks them `η`, titled "the counter the miner rolled once the header's 32-bit
+`web/btc-prose.js` peeled the pushes after the BIP34 height as counters and
+marked them `η`, titled "the counter the miner rolled once the header's 32-bit
 nonce was exhausted". For every pool on btcpool's lineage that second field is
 `time(nullptr)` — the moment the template was built. **[source]**
 
-The book's own recorded example says so too. `tools/coinbase-notation.test.mjs`
-carries the push `04 fb7e6b6a` from block 960,281, read there as extranonce
-1,785,429,755. That number is `2026-07-30T16:42:35Z` — within a day of the
-block that contains it. A counter landing inside the right day by chance is
-about a two-in-a-hundred-thousand shot; a clock lands there every time.
+The book's own recorded example said so too. `tools/coinbase-notation.test.mjs`
+carried the push `04 fb7e6b6a` from block 960,281, read there as extranonce
+1,785,429,755. That number is `2026-07-30 16:42 UTC` — the day the block itself
+was mined. A counter landing inside the right day by chance is about a
+two-in-a-hundred-thousand shot; a clock lands there every time.
 
-`tools/coinbase-fields.mjs` reads that slot as a timestamp when the value falls
-in the plausible window, and only in that slot — the same four bytes further
-along stay what they are. Whether the book should follow, and under which mark,
-is an editorial decision and not a parsing one: `η` on a template clock says
-something false in the notation key's own voice, and the fix touches
-`web/btc-notation.js` as well as the prose. Flagged here, not taken.
+### How the two are told apart
 
-Everything else the survey can find belongs where it is. The book stops reading
+Nothing in the bytes distinguishes a clock from a counter. What distinguishes
+them is the height already standing beside it, which BIP34 put there: a clock
+agrees with it, a counter has no reason to. So `web/btc-chaintime.js` dates a
+height from the halvings — exact at the anchors, within days between them — and
+a four-byte push in the second slot is read as a clock when it falls within
+`PLAUSIBLE_WINDOW` (90 days) of that estimate.
+
+The window is set an order of magnitude past the estimate's own error, so a
+real timestamp is never turned away; the price is that a random counter landing
+inside it is read as a clock about four times in a thousand. The asymmetry is
+deliberate — both readings write the same bytes back, and only the hover text
+differs, so the cheaper mistake is the one that admits a stray counter.
+
+The test depends on the bytes and on nothing else — not on the current time, not
+on the block's header, not on the network — which is why the survey, the book
+page and a prerendered passage cannot disagree about what a number in that slot
+is, and why re-reading a saved sample a year from now gives the same answer.
+
+### What changed
+
+- `web/btc-chaintime.js` — new: the halving-anchored estimate and the window.
+- `web/btc-prose.js` — `templateTimePush` takes the clock before
+  `peelExtranonces` sees it; the date prints in the chapter head's own form
+  (`2026-07-30 16:42`), with no glyph of its own, because it is the same kind of
+  thing the header states. `η` keeps its meaning and now only ever wears it.
+- `web/btc-notation.js` — the key gains a row for the timestamp and the `η` row
+  stops claiming the slot outright.
+- `web/btc-key-filter.js` — the date differs in every block that carries one, so
+  no literal in the key could name it: the mark answers to a synthetic
+  `time:template`, as a bare push answers to `push:count`.
+- `tools/coinbase-fields.mjs` reads the same slot by the same rule, imported
+  from the same module.
+
+The rest of what the survey can find belongs where it is. The book stops reading
 opcodes at the height mark deliberately, and none of the above is a reason to
 start again: a pool tag is already quoted as the writing it is, and a
 commitment recognized by its magic would be a *reading* of the margin — worth

@@ -44,9 +44,11 @@ export function isHidden(el, root) {
 // The marks a rendered page is actually showing, as the exact strings their
 // spans carry -- '⧉', '■840000', 'β₇₈', 'III β2 ■5'.
 //
-// A bare push is the one mark with no glyph of its own: it is written as the
-// byte count alone (²⁰, ³³), so no literal finds it and it answers to the
-// synthetic 'push:count' instead.
+// Two marks have no glyph of their own and answer to a synthetic token
+// instead. A bare push is written as the byte count alone (²⁰, ³³), so no
+// literal finds it: 'push:count'. A coinbase's template timestamp is written
+// as a date, which differs in every block that carries one and could only be
+// matched by a prefix loose enough to catch anything: 'time:template'.
 export function collectMarks(root) {
   const marks = new Set();
   if (!root) return marks;
@@ -55,6 +57,7 @@ export function collectMarks(root) {
     const text = el.textContent.trim();
     if (text) marks.add(text);
     if (el.classList.contains('op-count')) marks.add('push:count');
+    if (el.classList.contains('op-tpltime')) marks.add('time:template');
   }
   return marks;
 }

@@ -17,11 +17,23 @@ import { access } from 'node:fs/promises';
 
 import { splitReadableRuns, findTextRuns } from '../web/btc-tx.js';
 
-// The counter as it sits on the chain in block 960,281: pushed, four bytes,
+// The number as it sits on the chain in block 960,281: pushed, four bytes,
 // minimal little-endian -- and with three of those four bytes (7e 6b 6a) in
 // the printable range, which is what made it lean on the tag beside it.
-const EXTRANONCE_PUSH = '04fb7e6b6a';
-const EXTRANONCE_VALUE = '1785429755';
+//
+// The book read it as an extranonce, 1,785,429,755, until the pool template
+// builders were read: btccom's server pushes the moment it assembled the
+// template directly behind the height, and that number is 2026-07-30 16:42
+// UTC -- the day block 960,281 was mined. A counter has no reason to agree
+// with the height standing next to it. See tools/coinbase-formats.md.
+const TEMPLATE_TIME_PUSH = '04fb7e6b6a';
+const TEMPLATE_TIME_VALUE = 1785429755;
+const TEMPLATE_TIME_MARK = '2026-07-30 16:42';
+
+// A counter that is plainly a counter: four bytes whose value dates to 1972,
+// which no block's clock can be.
+const COUNTER_PUSH = '0401020304';
+const COUNTER_VALUE = '67305985';
 
 const engineBuilt = await access(new URL('../web/glossia.js', import.meta.url)).then(() => true, () => false);
 const skipNoEngine = !engineBuilt && 'web/glossia.js not built';
@@ -153,36 +165,73 @@ test('a pre-BIP34 coinbase keeps the preamble reading', { skip: skipNoEngine }, 
   assert.ok(!script.includes('■'), 'no height mark — the rule had not been written yet');
 });
 
-test('the extranonce reads as a number, and stops leaning on the tag', { skip: skipNoEngine }, async () => {
+test('the template\'s clock reads as the date it is, not as a counter', { skip: skipNoEngine }, async () => {
   const { composeTransactionFields } = await import('../web/btc-prose.js');
   const { parseTransaction } = await import('../web/btc-tx.js');
 
-  const scriptSig = heightPush(960281) + EXTRANONCE_PUSH + MARA_TAIL;
+  const scriptSig = heightPush(960281) + TEMPLATE_TIME_PUSH + MARA_TAIL;
   const fields = composeTransactionFields(parseTransaction(coinbaseTxHex(scriptSig)), 1, null, markEncoder);
   const script = fields.inputs[0].script;
 
-  // η carries its value as a subscript, the one form the mark takes in either era.
-  const subscript = EXTRANONCE_VALUE.replace(/\d/g, (d) => '₀₁₂₃₄₅₆₇₈₉'[+d]);
-  assert.match(script, new RegExp(`η${subscript}`), 'the counter reads as its own number, subscript');
-  // Its printable tail (~kj) was joining the quotation as the counter rolled.
-  // Consumed under η, it can't reach the text scan at all.
+  // The date, in the chapter head's own form -- one kind of thing, one form.
+  assert.ok(script.includes(TEMPLATE_TIME_MARK), 'the clock reads as a UTC date and minute');
+  assert.ok(script.includes('op-tpltime'), 'and carries the class the notation key finds it by');
+  // And nowhere does it claim to be the counter it is not.
+  const subscript = String(TEMPLATE_TIME_VALUE).replace(/\d/g, (d) => '₀₁₂₃₄₅₆₇₈₉'[+d]);
+  assert.ok(!script.includes(`η${subscript}`), 'the clock does not wear the extranonce mark');
+
+  // Its printable tail (~kj) was joining the quotation as the number rolled.
+  // Consumed under the mark, it can't reach the text scan at all.
   const quoted = [...script.matchAll(/“([^”]*)”/g)].map((m) => m[1]).join('');
   assert.equal(quoted, MARA_TAG, 'the quotation is the tag the pool wrote, and nothing else');
-  assert.ok(!quoted.includes('~kj'), 'no counter bytes leaning on the tag');
+  assert.ok(!quoted.includes('~kj'), 'no clock bytes leaning on the tag');
 
-  // Still nothing dropped: height push + extranonce push + tag + binary = all of it.
+  // Still nothing dropped: height push + time push + tag + binary = all of it.
   assert.equal(
-    heightPush(960281) + EXTRANONCE_PUSH + utf8Hex(quoted) + encodedHex(script),
+    heightPush(960281) + TEMPLATE_TIME_PUSH + utf8Hex(quoted) + encodedHex(script),
     scriptSig,
     'the marks and the margin reconstruct the whole scriptSig',
   );
 });
 
+test('a counter still reads under η, before the clock and after it', { skip: skipNoEngine }, async () => {
+  const { composeTransactionFields } = await import('../web/btc-prose.js');
+  const { parseTransaction } = await import('../web/btc-tx.js');
+  const sub = (n) => String(n).replace(/\d/g, (d) => '₀₁₂₃₄₅₆₇₈₉'[+d]);
+
+  // Where a pool leaves the gap second, the counter lands there and there is
+  // no clock at all: the reading is what it always was.
+  const counterFirst = heightPush(960281) + COUNTER_PUSH + MARA_TAIL;
+  const a = composeTransactionFields(parseTransaction(coinbaseTxHex(counterFirst)), 1, null, markEncoder).inputs[0].script;
+  assert.match(a, new RegExp(`η${sub(COUNTER_VALUE)}`), 'a counter behind the height reads under η');
+  assert.ok(!a.includes('op-tpltime'), 'and nothing here is a clock');
+
+  // Where the clock comes first, the counter follows it and both marks stand.
+  const both = heightPush(960281) + TEMPLATE_TIME_PUSH + COUNTER_PUSH + MARA_TAIL;
+  const b = composeTransactionFields(parseTransaction(coinbaseTxHex(both)), 1, null, markEncoder).inputs[0].script;
+  assert.ok(b.includes(TEMPLATE_TIME_MARK), 'the clock reads first');
+  assert.match(b, new RegExp(`η${sub(COUNTER_VALUE)}`), 'the counter reads after it');
+  assert.ok(b.indexOf(TEMPLATE_TIME_MARK) < b.indexOf('η'), 'in the order the bytes carry them');
+});
+
+test('a number that disagrees with the height beside it is no clock', { skip: skipNoEngine }, async () => {
+  const { templateTimePush } = await import('../web/btc-prose.js');
+
+  assert.equal(templateTimePush(TEMPLATE_TIME_PUSH, 960281).unix, TEMPLATE_TIME_VALUE);
+  assert.equal(templateTimePush(TEMPLATE_TIME_PUSH, 960281).restHex, '', 'and the rest is what follows it');
+  // The same four bytes under a block from 2013: a 2026 template cannot have
+  // built it, so the number goes back to being a counter.
+  assert.equal(templateTimePush(TEMPLATE_TIME_PUSH, 250000), null, 'a clock from the wrong era is not this block\'s');
+  assert.equal(templateTimePush(COUNTER_PUSH, 960281), null, 'nor is a counter a clock');
+  assert.equal(templateTimePush(utf8Hex('/F2Pool/'), 960281), null, 'nor is a tag');
+  assert.equal(templateTimePush('04fb7e6b', 960281), null, 'a push claiming more bytes than remain');
+});
+
 test('peelExtranonces takes counters and declines tags', { skip: skipNoEngine }, async () => {
   const { peelExtranonces } = await import('../web/btc-prose.js');
 
-  assert.deepEqual(peelExtranonces(EXTRANONCE_PUSH).values, [EXTRANONCE_VALUE]);
-  assert.equal(peelExtranonces(EXTRANONCE_PUSH).restHex, '');
+  assert.deepEqual(peelExtranonces(COUNTER_PUSH).values, [COUNTER_VALUE]);
+  assert.equal(peelExtranonces(COUNTER_PUSH).restHex, '');
   // Two counters in a row (extranonce1 then extranonce2) both come off.
   assert.deepEqual(peelExtranonces('01' + '2a' + '0401020304').values, ['42', '67305985']);
   // A tag opens with a printable byte, which reads as a push far too long.

@@ -52,7 +52,7 @@ test('the fields reproduce the bytes they read', () => {
     '00',
   ];
   for (const hex of cases) {
-    const d = decodeCoinbaseScriptSig(hex, { now: TIME_VALUE });
+    const d = decodeCoinbaseScriptSig(hex);
     assert.equal(d.fields.map((f) => f.hex).join(''), hex, `round trip: ${hex}`);
     assert.ok(d.exact, `exact: ${hex}`);
     let off = 0;
@@ -72,23 +72,41 @@ test('the height is read as BIP34 writes it, and checked when the height is know
 });
 
 test('a plausible unix time is a template timestamp only in second position', () => {
-  const second = decodeCoinbaseScriptSig(HEIGHT_PUSH + TIME_PUSH + utf8Hex('/BTC.com/'), { now: TIME_VALUE });
+  const second = decodeCoinbaseScriptSig(HEIGHT_PUSH + TIME_PUSH + utf8Hex('/BTC.com/'));
   assert.deepEqual(second.fields.map((f) => f.kind), ['height', 'time', 'text']);
   assert.equal(second.fields[1].unix, TIME_VALUE);
 
   // The same four bytes further along are a counter that happens to fall in the
   // window -- entropy, not a clock, and nothing here may say otherwise.
-  const later = decodeCoinbaseScriptSig(HEIGHT_PUSH + utf8Hex('/slush/') + TIME_PUSH, { now: TIME_VALUE });
+  const later = decodeCoinbaseScriptSig(HEIGHT_PUSH + utf8Hex('/slush/') + TIME_PUSH);
   assert.ok(!later.fields.some((f) => f.kind === 'time'), 'no timestamp outside the slot that means one');
 
   // And a counter in the slot whose value predates the genesis block is not a
   // timestamp either.
-  const small = decodeCoinbaseScriptSig(HEIGHT_PUSH + push(le(12345, 4)), { now: TIME_VALUE });
+  const small = decodeCoinbaseScriptSig(HEIGHT_PUSH + push(le(12345, 4)));
   assert.ok(!small.fields.some((f) => f.kind === 'time'));
 });
 
+test('the timestamp window is anchored on the height beside it, not on the clock now', () => {
+  // The same four bytes under a height from 2014: a template assembled in 2026
+  // cannot belong to a block mined twelve years earlier, so the number stays a
+  // counter. This is what makes a reading of a saved sample reproducible — it
+  // depends on the bytes and on nothing else.
+  const mismatched = decodeCoinbaseScriptSig(push(le(300000, 3)) + TIME_PUSH);
+  assert.equal(mismatched.fields[0].height, 300000);
+  assert.ok(!mismatched.fields.some((f) => f.kind === 'time'), 'a clock that disagrees with the height is not a clock');
+
+  // Once nTime's top bit sets in 2038, CScriptNum pads the push to five bytes.
+  // The clock reads the same; only its encoding widened.
+  const far = 2_200_000_000;                         // 2039-09, and the height due about then
+  const farHeight = 1_650_000;
+  const padded = decodeCoinbaseScriptSig(push(le(farHeight, 3)) + push(le(far, 4) + '00'));
+  assert.equal(padded.fields[1].kind, 'time');
+  assert.equal(padded.fields[1].unix, far);
+});
+
 test('a commitment is read only where it announces itself in full', () => {
-  const d = decodeCoinbaseScriptSig(HEIGHT_PUSH + AUXPOW + RSK + HATHOR, { now: TIME_VALUE });
+  const d = decodeCoinbaseScriptSig(HEIGHT_PUSH + AUXPOW + RSK + HATHOR);
   const kinds = d.fields.map((f) => f.kind);
   assert.deepEqual(kinds, ['height', 'auxpow', 'rsk', 'hathor']);
 
@@ -103,13 +121,13 @@ test('a commitment is read only where it announces itself in full', () => {
   // the pool wrote 44 bytes or it did not.
   const truncated = HEIGHT_PUSH + 'fabe6d6d' + 'ab'.repeat(20);
   assert.equal(findCommitments(truncated).length, 0);
-  const t = decodeCoinbaseScriptSig(truncated, { now: TIME_VALUE });
+  const t = decodeCoinbaseScriptSig(truncated);
   assert.ok(!t.fields.some((f) => f.kind === 'auxpow'));
 
   // 'Hath' is four printable bytes, so it turns up inside ordinary writing.
   // Only dense bytes after it make it Hathor's commitment.
   const prose = HEIGHT_PUSH + utf8Hex('Hathor is a word and so is everything else here!!');
-  assert.ok(!decodeCoinbaseScriptSig(prose, { now: TIME_VALUE }).fields.some((f) => f.kind === 'hathor'));
+  assert.ok(!decodeCoinbaseScriptSig(prose).fields.some((f) => f.kind === 'hathor'));
 });
 
 test('a misaligned magic is not a magic', () => {
@@ -120,43 +138,43 @@ test('a misaligned magic is not a magic', () => {
 
 test('a pool is identified by what it wrote, not by bytes that spell it', () => {
   const pools = [{ name: 'ViaBTC', tags: ['/ViaBTC/'] }, { name: 'F2Pool', tags: ['/F2Pool/'] }];
-  const tagged = decodeCoinbaseScriptSig(HEIGHT_PUSH + utf8Hex('/ViaBTC/Mined by someone/'), { now: TIME_VALUE });
+  const tagged = decodeCoinbaseScriptSig(HEIGHT_PUSH + utf8Hex('/ViaBTC/Mined by someone/'));
   assert.equal(identifyPool(tagged, pools).name, 'ViaBTC');
 
   // The same characters buried in a run too short to be text stay bytes, and a
   // pool is not named by them.
-  const buried = decodeCoinbaseScriptSig(HEIGHT_PUSH + '00' + utf8Hex('/Via') + '00', { now: TIME_VALUE });
+  const buried = decodeCoinbaseScriptSig(HEIGHT_PUSH + '00' + utf8Hex('/Via') + '00');
   assert.equal(identifyPool(buried, pools), null);
-  assert.equal(identifyPool(decodeCoinbaseScriptSig(HEIGHT_PUSH, { now: TIME_VALUE }), pools), null);
+  assert.equal(identifyPool(decodeCoinbaseScriptSig(HEIGHT_PUSH), pools), null);
 });
 
 test('the reading reports the bounds it was read under', () => {
-  const ok = decodeCoinbaseScriptSig(KITCHEN_SINK, { now: TIME_VALUE });
+  const ok = decodeCoinbaseScriptSig(KITCHEN_SINK);
   assert.ok(ok.withinConsensusBounds, 'the sink fits the hundred bytes consensus allows');
   assert.ok(ok.bip34);
 
-  const overlong = decodeCoinbaseScriptSig(HEIGHT_PUSH + 'ab'.repeat(CB_SCRIPTSIG_MAX), { now: TIME_VALUE });
+  const overlong = decodeCoinbaseScriptSig(HEIGHT_PUSH + 'ab'.repeat(CB_SCRIPTSIG_MAX));
   assert.ok(!overlong.withinConsensusBounds, 'past 100 bytes it says so rather than reading on');
 
   // A pre-BIP34 coinbase has no height to find, and the reading says that too
   // instead of taking the first push for one.
-  const early = decodeCoinbaseScriptSig('04ffff001d' + '0102', { now: TIME_VALUE });
+  const early = decodeCoinbaseScriptSig('04ffff001d' + '0102');
   assert.ok(!early.bip34);
   assert.ok(early.exact);
 });
 
 test('shape groups blocks by house style, not by what the tag says', () => {
-  const a = decodeCoinbaseScriptSig(HEIGHT_PUSH + TIME_PUSH + utf8Hex('/ViaBTC/Mined by aaa/') + '01020304', { now: TIME_VALUE });
-  const b = decodeCoinbaseScriptSig(HEIGHT_PUSH + TIME_PUSH + utf8Hex('/ViaBTC/Mined by bbb/') + 'aabbccdd', { now: TIME_VALUE });
+  const a = decodeCoinbaseScriptSig(HEIGHT_PUSH + TIME_PUSH + utf8Hex('/ViaBTC/Mined by aaa/') + '01020304');
+  const b = decodeCoinbaseScriptSig(HEIGHT_PUSH + TIME_PUSH + utf8Hex('/ViaBTC/Mined by bbb/') + 'aabbccdd');
   assert.equal(shapeOf(a), shapeOf(b), 'one builder, one shape, whoever the worker was');
 
-  const other = decodeCoinbaseScriptSig(HEIGHT_PUSH + '08' + 'ff'.repeat(8) + utf8Hex('/ckpool/'), { now: TIME_VALUE });
+  const other = decodeCoinbaseScriptSig(HEIGHT_PUSH + '08' + 'ff'.repeat(8) + utf8Hex('/ckpool/'));
   assert.notEqual(shapeOf(a), shapeOf(other), 'tag after the counter is a different house style');
 });
 
 test('MARA\'s tag survives the reading whole, punctuation and emoji included', () => {
   const hex = HEIGHT_PUSH + TIME_PUSH + utf8Hex(MARA_TAG) + 'a31f6367870000000000ffffffff';
-  const d = decodeCoinbaseScriptSig(hex, { height: HEIGHT, now: TIME_VALUE });
+  const d = decodeCoinbaseScriptSig(hex, { height: HEIGHT });
   const text = d.fields.filter((f) => f.kind === 'text').map((f) => f.text).join('');
   assert.ok(text.includes('MARA Made in USA'), 'the pool tag reads as the pool wrote it');
   assert.equal(d.fields[0].height, HEIGHT);

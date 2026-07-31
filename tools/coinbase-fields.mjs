@@ -25,6 +25,7 @@
 // decision, not a parsing one.
 
 import { splitReadableRuns } from '../web/btc-tx.js';
+import { plausibleBlockTime } from '../web/btc-chaintime.js';
 
 const hexToBytes = (hex) => Uint8Array.from(hex.match(/../g) || [], (b) => parseInt(b, 16));
 
@@ -43,8 +44,6 @@ export const CB_SCRIPTSIG_MAX = 100;
 
 export const BIP34_ACTIVATION = 227931;      // Bitcoin Core's BIP34Height
 const MAX_PLAUSIBLE_HEIGHT = 10_000_000;     // ~year 2200, well past any sampled block
-const GENESIS_TIME = 1231006505;             // block 0's nTime -- no template predates it
-const FUTURE_SLACK = 31_536_000;             // a year, so a clock-skewed template still reads
 
 // ─── the one field a rule constrains ───────────────────────────────────
 
@@ -182,12 +181,12 @@ export function findCommitments(hex) {
 // back false and the caller knows which era it is holding.
 //
 // `height` verifies BIP34's push against the height the block was fetched at;
-// `now` bounds the timestamp window (pass a fixed value for a reproducible
-// reading of an old sample); `minRun` is the floor on a readable run, the
-// book's own (see TEXT_MIN_RUN in web/btc-tx.js).
-export function decodeCoinbaseScriptSig(hex, { height = null, now = null, minRun = 5 } = {}) {
+// `minRun` is the floor on a readable run, the book's own (see TEXT_MIN_RUN in
+// web/btc-tx.js). A reading depends on nothing outside the bytes -- not even
+// the current time -- so the same sample reads the same way whenever it is
+// re-run.
+export function decodeCoinbaseScriptSig(hex, { height = null, minRun = 5 } = {}) {
   const clean = String(hex || '').toLowerCase().replace(/[^0-9a-f]/g, '');
-  const nowSec = now === null ? Math.floor(Date.now() / 1000) : now;
   const fields = [];
   let offset = 0;
   const add = (f) => { fields.push({ ...f, offset }); offset += f.hex.length / 2; };
@@ -198,15 +197,14 @@ export function decodeCoinbaseScriptSig(hex, { height = null, now = null, minRun
 
   // The template timestamp, and only here. btcpool writes the height and then
   // the moment the template was built (src/bitcoin/StratumBitcoin.cc pushes
-  // time(nullptr) as the second field), so a plausible unix time in exactly
-  // that slot is a timestamp; the same four bytes anywhere else are a counter
-  // that happens to fall in the window. Reading it in place matters because a
-  // timestamp is not entropy: it is the same number in every block of a run,
-  // it advances with the clock, and it dates the template rather than counting
-  // anything.
+  // time(nullptr) as the second field), so a unix time in exactly that slot,
+  // dating to the era the height beside it names, is a timestamp; the same
+  // four bytes anywhere else are a counter that happens to fall in the window.
+  // Same rule the book reads by -- web/btc-chaintime.js, shared so the survey
+  // and the page can never disagree about what a number in this slot is.
   if (h) {
     const t = readNumberPush(rest);
-    if (t && (t.bytes === 4 || t.bytes === 5) && t.value >= GENESIS_TIME && t.value <= nowSec + FUTURE_SLACK) {
+    if (t && (t.bytes === 4 || t.bytes === 5) && plausibleBlockTime(t.value, h.height)) {
       add({ kind: 'time', hex: t.hex, unix: t.value });
       rest = t.restHex;
     }

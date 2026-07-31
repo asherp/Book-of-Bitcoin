@@ -236,6 +236,12 @@ compiled to WASM) is consumed as a published
   transaction parsing, prose composition, citations, contents data,
   anthology data, and the archive (immutable chain data kept in IndexedDB,
   so revisited chapters and resolved citations read offline)
+- `web/btc-chaintime.js` — roughly when a height was mined, anchored on the
+  halvings. One reading needs it: a coinbase's second field is a template
+  timestamp in some pools' house style and a counter in others, and nothing
+  in the bytes says which. The height already written beside it does — a
+  clock agrees with it, a counter has no reason to — so the mark is decided
+  out of the same hundred bytes it is printed on
 - `web/btc-pages.js` — page numbers: one transaction is one page, numbered
   by the chain's running transaction count since genesis. Each section shows
   its folio — a bare, unpunctuated number — at the right end of the running
@@ -318,9 +324,12 @@ compiled to WASM) is consumed as a published
   reader decomposes a `scriptSig` into those fields byte-exactly; the survey
   samples blocks off any Esplora mirror and reports what each pool is doing
   now. Findings and their sources in
-  [`tools/coinbase-formats.md`](tools/coinbase-formats.md). Kept out of the
-  book's own rendering on purpose: what a pool tag *means* is commentary, and
-  the passage stops where the rules do
+  [`tools/coinbase-formats.md`](tools/coinbase-formats.md). What it turned up
+  about pool tags and merged-mining commitments stays out of the book's own
+  rendering on purpose — what a pool tag *means* is commentary, and the
+  passage stops where the rules do. What it turned up about the *second field*
+  did land on the page: that number is a template timestamp as often as a
+  counter, and the book had been marking every one of them η
 
 ## Building & running locally
 

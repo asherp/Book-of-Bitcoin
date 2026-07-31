@@ -74,6 +74,18 @@ test('a bare push answers to its count, since it has no glyph', () => {
   assert.ok(rowShows(marksOf('↧<i>n</i> ⇊<i>n</i> ⤋<i>n</i>'), new Set(['↧²⁰'])));
 });
 
+test('a coinbase\'s template clock answers to a synthetic mark, since every one differs', () => {
+  // The mark is a date, so the page prints a different string in every block
+  // that carries one and no literal in the key could name it. collectMarks
+  // adds 'time:template' beside the date when it sees the span's class.
+  const marks = new Set(['■960281', '2026-07-30 16:42', 'time:template']);
+  assert.ok(rowShows(marksOf('<i>date</i>', 'time:template'), marks));
+  // A page with no coinbase on it prints dates of other kinds -- a locktime,
+  // a chapter head -- and none of them opens this row.
+  assert.ok(!rowShows(marksOf('<i>date</i>', 'time:template'),
+    new Set(['Τ2026-07-30 16:42', '2026-07-30 16:42 UTC'])));
+});
+
 test('the off-chain apparatus follows its table, not the page', () => {
   const ln = new Set(['lightning']);
   assert.ok(rowShows(marksOf('<b>k</b>', 'tpl:lightning'), new Set(), ln));
