@@ -2502,7 +2502,7 @@ function fillMarkedHash(el, mark, markClass, hex, label, prose, sup, supTitle, z
 // The block header itself, in wire order, as a small mono line under the
 // chapter hash: version, previous-block hash, merkle root, timestamp,
 // difficulty target, nonce. The target's line states the proof of work as
-// the inequality it is -- β₇₈ < 2¹⁶⁰213529¹ -- the < binding the chapter
+// the inequality it is -- β₇₈ < 2¹⁶⁰·213529 -- the < binding the chapter
 // hash at the head of the page to the ceiling it reads below, without the
 // field leaving its wire slot. The two hashes are Glossia-encoded here
 // (like the chapter/section hash above); the rest come pre-decoded from
@@ -2540,7 +2540,7 @@ function renderFrontispiece(header) {
     { text: merkleProse, mark: '⋔', markClass: 'merkle-mark', sup: 32, supTitle: '32 bytes',
       copy: { hex: header.merkleRoot, label: 'merkle root' } },
     { text: hf.timestamp, title: hf.timestampTitle },
-    // The proof of work, stated as the inequality it is: β₇₈ < 2¹⁶⁰213529¹,
+    // The proof of work, stated as the inequality it is: β₇₈ < 2¹⁶⁰·213529,
     // in nBits' own wire slot. The gold β mark's subscript is the target's
     // leading zero run (the demand, the mining vernacular); the < binds the
     // chapter hash at the head of the page to the exact target after it --
@@ -2917,7 +2917,7 @@ function renderVolumeLeaf() {
   labelNav();
 }
 
-// One difficulty target on the book leaf, in the same β₇₈ < 2¹⁶⁰213529¹ form
+// One difficulty target on the book leaf, in the same β₇₈ < 2¹⁶⁰·213529 form
 // a chapter's frontispiece uses: the gold mark, the exact factored ceiling
 // beside it, and the same copy menu (compact hex, or the mark with its
 // expression). `governs` names the chapters mined under it, for the tooltip.
@@ -2949,7 +2949,7 @@ function appendBookTarget(parent, bits, governs) {
 
 // A target that shares its line with another: the same marks, held together
 // so a narrow screen breaks the line at the arrow between the two rather than
-// inside a β < 2ᵏpˡ….
+// inside a β < 2ᵏ·p….
 function appendGroupedTarget(parent, bits, governs) {
   const group = document.createElement('span');
   group.className = 'book-target';

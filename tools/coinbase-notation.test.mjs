@@ -210,7 +210,7 @@ test('a pre-BIP34 coinbase keeps the preamble reading', { skip: skipNoEngine }, 
   const script = fields.inputs[0].script;
 
   assert.match(script, /β/, 'the difficulty target still reads under β');
-  assert.ok(script.includes('2²⁰⁸3¹5¹17¹257¹'), 'restated as the target it is, in primes');
+  assert.ok(script.includes('2²⁰⁸·3·5·17·257'), 'restated as the target it is, in primes');
   assert.ok(script.includes('The Times 03/Jan/2009'), 'and the headline is still quoted');
   assert.ok(!script.includes('■'), 'no height mark — the rule had not been written yet');
 });
@@ -225,10 +225,12 @@ test('the extranonce reads as a number, and stops leaning on the tag', { skip: s
 
   // η carries its value as a subscript, the one form the mark takes in either
   // era -- and the value is the product the rest of the book states numbers in:
-  // 1785429755 = 5 × 839 × 425609, primes lowered and powers raised.
+  // 1785429755 = 5 · 839 · 425609, the primes lowered with the value they
+  // belong to, the dots between them left where they are.
   const subscript = (s) => String(s).replace(/\d/g, (d) => '₀₁₂₃₄₅₆₇₈₉'[+d]);
   const superscript = (s) => String(s).replace(/\d/g, (d) => '⁰¹²³⁴⁵⁶⁷⁸⁹'[+d]);
-  const factored = primeFactors(EXTRANONCE_VALUE).map(([p, k]) => subscript(p) + superscript(k)).join('');
+  const factored = primeFactors(EXTRANONCE_VALUE)
+    .map(([p, k]) => subscript(p) + (k === 1 ? '' : superscript(k))).join('·');
   assert.match(script, new RegExp(`η${factored}`), 'the counter reads as its own number, subscript');
   assert.ok(!script.includes(`η${subscript(EXTRANONCE_VALUE)}`), 'the decimal itself belongs to the title');
   // Its printable tail (~kj) was joining the quotation as the counter rolled.

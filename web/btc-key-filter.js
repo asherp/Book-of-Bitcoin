@@ -73,18 +73,20 @@ export function collectMarks(root) {
 // the same prefix match, and tpl:<id> ties a row to a pattern table instead.
 //
 // One mark in the book is a shape and not a string at all: the difficulty
-// target, printed as its prime factorization (2¹⁶⁰213529¹), whose every
-// character is a digit the last retarget chose. Nothing in it is fixed enough
-// to look for -- so that row names re:<pattern> instead, and is shown where the
-// page prints something of that form. The pattern wanted here is what only a
-// factorization does: a plain digit carrying a raised one.
+// target, printed as its prime factorization (2¹⁶⁰·213529), whose primes are
+// whatever the last retarget left. Nothing in it is fixed enough to look for
+// -- so that row names re:<pattern> instead, and is shown where the page
+// prints something of that form. What never varies is the power of two every
+// target opens with, so the pattern asks for that: a plain digit under a
+// raised one, which only a factorization writes.
 //
-// The header's nonce is factored too, and matches the same shape -- correctly,
-// as it happens: the two fields share a line, and no page in the book prints a
-// nonce without the target it was mined against. The extranonce carries its
-// product in the lowered register (η₅¹₈₃₉¹₄₂₅₆₀₉¹), which is not this shape,
-// so a post-BIP34 coinbase -- an extranonce and no target anywhere near it --
-// leaves the row shut.
+// The nonce beside it is factored too, but its powers are usually all one and
+// dropped, so it seldom carries a raised digit at all. Where it does, it opens
+// the target's row -- correctly, as it happens: the two fields share a line,
+// and no page in the book prints a nonce without the target it was mined
+// against. An extranonce carries its product in the lowered register
+// (η₅·₈₃₉·₄₂₅₆₀₉), which is not this shape either way, so a post-BIP34
+// coinbase -- a counter and no target anywhere near it -- leaves the row shut.
 // Pure string work, so it is testable without a DOM.
 
 // Stands in for a placeholder while tokenizing; never appears in real markup.

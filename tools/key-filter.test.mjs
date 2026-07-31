@@ -45,39 +45,43 @@ test('every row resolves to something the filter can look for', () => {
 test('a value-carrying mark is found behind its value', () => {
   // ■<i>n</i> is written on the page as ■840000, β<i>n</i> as β₇₈, and the
   // locktime as a whole citation.
-  const marks = new Set(['■840000', 'β₇₈', 'III β2 ■5', 'η₂¹₃¹₇¹', '⓪²⁵⁶']);
+  const marks = new Set(['■840000', 'β₇₈', 'III β2 ■5', 'η₂·₃·₇', '⓪²⁵⁶']);
   const shows = (glyph, dm = null) => rowShows(marksOf(glyph, dm), marks);
   assert.ok(shows('■<i>n</i>'));
   assert.ok(shows('β<i>n</i>'));
   // η's value is a product now, so the glyph carries an ellipsis and the row
   // names the mark itself: the prefix is all that was ever being matched.
-  assert.ok(shows('η<sub><i>p</i></sub><sup><i>k</i></sup>…', 'η*'));
+  assert.ok(shows('η<sub><i>p</i></sub>·<sub><i>q</i></sub>…', 'η*'));
   assert.ok(shows('<i>v</i> β<i>b</i> ■<i>c</i>'));
   assert.ok(shows('⓪<sup>256</sup>', '⓪²⁵⁶'));
 });
 
 test('a bare operator is not caught by a number that contains it', () => {
-  // The chapter head prints its target as 2¹⁶⁰213529¹ and the book leaf a
+  // The chapter head prints its target as 2¹⁶⁰·213529 and the book leaf a
   // difficulty move as −2.53%. Neither is Script arithmetic.
-  const marks = new Set(['β₇₈', '2¹⁶⁰213529¹', 'difficulty −2.53%']);
+  const marks = new Set(['β₇₈', '2¹⁶⁰·213529', 'difficulty −2.53%']);
   assert.ok(!rowShows(marksOf('+ − × ÷ %'), marks), 'arithmetic should stay shut');
   assert.ok(!rowShows(marksOf('&lt; &gt; ≤ ≥'), marks), 'comparisons should stay shut');
-  // The target is a shape rather than a string -- every character of
-  // 2¹⁶⁰213529¹ is a digit the retarget chose -- so its row is found by the
-  // pattern only a factorization makes: a plain digit carrying a raised one.
+  // The target is a shape rather than a string -- the primes in 2¹⁶⁰·213529
+  // are whatever the retarget left -- so its row is found by the one part of
+  // the shape that never varies: the power of two, a plain digit under a
+  // raised one. Only a factorization writes that.
   const FACTORS = 're:[0-9][⁰¹²³⁴⁵⁶⁷⁸⁹]';
-  const target = (m) => rowShows(marksOf('2<sup><i>k</i></sup><i>p</i><sup><i>l</i></sup>…', FACTORS), m);
+  const target = (m) => rowShows(marksOf('2<sup><i>k</i></sup>·<i>p</i>…', FACTORS), m);
   assert.ok(target(marks), 'the target should open its row');
-  assert.ok(target(new Set(['β₃₂ < 2²⁰⁸3¹5¹17¹257¹'])), 'genesis too, mark and all');
+  assert.ok(target(new Set(['β₃₂ < 2²⁰⁸·3·5·17·257'])), 'genesis too, mark and all');
   // And the raised digits a page prints elsewhere are not products: a push
   // count, a hash's bit counts, the genesis chapter's empty predecessor -- nor
   // is an extranonce, whose product is written in the lowered register, so a
   // post-BIP34 coinbase page (a counter, and no target on it) stays shut.
-  assert.ok(!target(new Set(['β₇₈', '²⁰', '↧²⁰', '⌘²²⁴', '⓪²⁵⁶', '■840000', 'η₅¹₈₃₉¹₄₂₅₆₀₉¹'])),
+  assert.ok(!target(new Set(['β₇₈', '²⁰', '↧²⁰', '⌘²²⁴', '⓪²⁵⁶', '■840000', 'η₅·₈₃₉·₄₂₅₆₀₉'])),
     'no factorization on the page, no row');
-  // The header's nonce does match, and should: it is a product in the same
-  // register, and it never appears on a page without the target beside it.
-  assert.ok(target(new Set(['η19¹97¹1130351¹', 'β₃₂ < 2²⁰⁸3¹5¹17¹257¹'])), 'a chapter head, both fields');
+  // A nonce is a product too, but with its powers dropped it usually carries
+  // no raised digit at all and does not answer for the target's row. Where it
+  // does -- a nonce with a repeated prime -- the target is on the line beside
+  // it regardless, so the row it opens is a row the page has earned.
+  assert.ok(!target(new Set(['η19·97·1130351'])), 'a squarefree nonce is not a target');
+  assert.ok(target(new Set(['η2³·3²·7·3253631'])), 'and one with a power does no harm');
   // But the same marks as Script opcodes do open those rows.
   const script = new Set(['×', '≤']);
   assert.ok(rowShows(marksOf('+ − × ÷ %'), script));
