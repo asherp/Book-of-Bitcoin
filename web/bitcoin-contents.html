@@ -347,25 +347,43 @@ let projectedSection = null;
 // needs no memory of where the reader came up from: the leaf says which
 // volume it is the contents of, so it descends there.
 //
-// The front matter is not listed. It has no volume to be the contents of,
-// and its leaves -- the preface, the sigla -- sit on this very horizontal
-// line, two turns away on either side; a list of them here would point at
-// what the turn already reaches.
+// One leaf opens the run and is about the run: the top-level contents,
+// which lists the parts rather than the passages -- every volume, every
+// appendix, and the front matter to either side. A carousel says what is
+// beside you and nothing about how far the line runs, so a reader arriving
+// cold had no way to see the shape of the book before turning through it;
+// this leaf is that one page, and each of its rows is the turn to the leaf
+// it names.
+//
+// It is the only leaf that lists the front matter. A volume's contents has
+// no business naming the preface -- the preface is no part of that volume --
+// but a contents OF THE WHOLE BOOK does, in the standard order, since the
+// front matter is the one part of the book that reading order cannot reach:
+// it lies before Volume I, not inside it. Those rows leave this page (the
+// front matter keeps its own), which is why they carry no reference: they
+// name leaves, not places in the chain.
 const ERA = heightOf(2, 1, 1);          // 210,000 -- one halving era, one volume
 let lastVolume = 1;                     // grows with the curated entries, then with the tip
 const leaves = () => [
+  { kind: 'overview' },
   ...Array.from({ length: lastVolume }, (_, i) => ({ kind: 'volume', volume: i + 1 })),
   ...appendix().map((part) => ({ kind: 'appendix', part })),
 ];
-const leafTitle = (leaf) => leaf.kind === 'volume'
-  ? `Volume ${toRoman(leaf.volume)}`
-  : `Appendix ${toRoman(appendix().indexOf(leaf.part) + 1)} · ${leaf.part.title}`;
+const leafTitle = (leaf) => leaf.kind === 'overview'
+  ? 'The Whole Book'
+  : leaf.kind === 'volume'
+    ? `Volume ${toRoman(leaf.volume)}`
+    : `Appendix ${toRoman(appendix().indexOf(leaf.part) + 1)} · ${leaf.part.title}`;
 // One line under the leaf's name, saying what it spans and how much of it
 // there is. Not what the part IS and why it sits outside reading order --
 // that paragraph is written on the appendix's own leaf, one turn down. The
 // contents lists; the leaf explains.
 const count = (n, one, many) => `${n === 0 ? 'nothing' : n} ${n === 1 ? one : many}`;
 function leafSub(leaf) {
+  if (leaf.kind === 'overview') {
+    const vols = lastVolume === 1 ? 'Volume I' : `Volumes I–${toRoman(lastVolume)}`;
+    return `${vols} · ${count(appendix().length, 'appendix', 'appendices')} · the front matter to either side`;
+  }
   if (leaf.kind === 'volume') {
     const from = heightOf(leaf.volume, 1, 1);
     const n = placedIn(leaf.volume).length;
@@ -384,7 +402,14 @@ function leafSub(leaf) {
 // ledgers is the Ledger compendium, since a shelf of ledgers is what that
 // page already is. Each destination wakes its own entrance, so the leaf
 // rises from below as this one slides up and away.
+//
+// The top-level leaf is the contents of the whole book, so it descends into
+// the whole book -- at its beginning, Volume I's own leaf, which is where
+// the front matter's last forward turn opens it too.
 function descent(leaf) {
+  if (leaf.kind === 'overview') {
+    return { href: './bitcoin-book.html?block=0&page=volume', flag: 'glossia-book-entrance', value: '1' };
+  }
   if (leaf.kind === 'volume') {
     return { href: `./bitcoin-book.html?block=${heightOf(leaf.volume, 1, 1)}&page=volume`, flag: 'glossia-book-entrance', value: '1' };
   }
@@ -398,18 +423,21 @@ function descent(leaf) {
 // ── Which leaf a visit opens ──────────────────────────────────────────────
 // ?volume=<n|roman> names a volume's contents, ?part=<mempool|future|ledgers>
 // an appendix's -- the same words those pages take for themselves, so the
-// ascent from any leaf of the book can name its own contents leaf. ?at=last
-// is the front matter's backward turn, which lands on whatever leaf closes
-// the run without needing to know what the appendix file holds.
+// ascent from any leaf of the book can name its own contents leaf. ?at=top
+// names the top-level leaf and ?at=last whatever leaf closes the run: the
+// front matter's two turns into the contents, neither of which needs to know
+// how far the volumes reach or what the appendix file holds.
 //
 // A bare visit -- the masthead's Contents link from a page that carries no
 // place, a bookmark, a cold load -- opens the volume the reader was last
-// reading (the book notes it as it renders), and the head of the run when
-// there is nothing to go on.
+// reading (the book notes it as it renders), and the top-level leaf when
+// there is nothing to go on, that being the leaf which says what the book
+// is made of.
 const PART_ALIAS = { mempool: 'mempool', future: 'entries', entries: 'entries', ledgers: 'ledgers' };
 const params = new URLSearchParams(location.search);
 function openingIndex(list) {
   if (params.get('at') === 'last') return list.length - 1;
+  if (params.get('at') === 'top') return 0;
   const part = params.get('part');
   if (part && PART_ALIAS[part]) {
     const i = list.findIndex((l) => l.kind === 'appendix' && l.part.kind === PART_ALIAS[part]);
@@ -420,7 +448,10 @@ function openingIndex(list) {
   if (!want) return 0;
   const v = /^[0-9]+$/.test(want) ? Number(want) : fromRoman(want.toUpperCase());
   if (!v || v < 1) return 0;
-  return Math.min(v, lastVolume) - 1;
+  // By position in the run, not by arithmetic on the volume number: the
+  // top-level leaf sits ahead of Volume I, so the two no longer coincide.
+  const i = list.findIndex((l) => l.kind === 'volume' && l.volume === Math.min(v, lastVolume));
+  return i >= 0 ? i : 0;
 }
 let at = 0;
 // The URL keeps its say until the reader turns for themselves: the run of
@@ -429,7 +460,83 @@ let at = 0;
 // when it arrives, not on the leaf it was clamped to meanwhile.
 let settled = false;
 
+// The query that names a leaf: what the URL is rewritten to as the reader
+// turns, and what a row on the top-level leaf links to. One spelling for
+// both, so a link copied off a row opens the leaf that row turns to.
+function leafQuery(leaf) {
+  if (leaf.kind === 'overview') return 'at=top';
+  if (leaf.kind === 'volume') return `volume=${leaf.volume}`;
+  return `part=${leaf.part.kind === 'entries' ? 'future' : leaf.part.kind}`;
+}
+
 // ── The leaves themselves ─────────────────────────────────────────────────
+// The top-level leaf: the parts of the book, each as one row -- the front
+// matter, then the volumes, then the appendices, which is the order they
+// are bound in. A row carries the name of the leaf it stands for and, under
+// it, that leaf's own sub-line: what it spans, and how much of it there is.
+// The reference column holds a volume's numeral, that being the whole of a
+// volume's citation; the rest carry the dash the contents already uses for
+// what the chain gives no reference to.
+//
+// A row for a volume or an appendix is a turn along this run, not a
+// departure: clicking it slides to that leaf exactly as a swipe would. It
+// is still a real link underneath, so it copies, opens in a new tab, and
+// survives a middle click like any other row here.
+//
+// The title leaf is not listed. It is the cover, which the contents lies
+// under rather than inside; a pull down from the top is already the way to
+// it, and every leaf here offers that.
+const FRONT = [
+  { leaf: 'terms', name: 'Terms', says: 'The copyright page, saying the reverse of one' },
+  { leaf: 'preface', name: 'Preface', says: 'What the book is, and why it is arranged this way' },
+  { leaf: 'sigla', name: 'Sigla', says: 'The key to the marks, and the form every citation takes' },
+];
+
+// The shared shape of a row on this leaf: a name, a line about it, and a
+// reference column that is a citation or the dash standing for none.
+function partRow(href, name, says, ref) {
+  const row = document.createElement('a');
+  row.className = 'toc-entry toc-part';
+  row.href = href;
+  const t = document.createElement('span');
+  t.className = 'toc-title';
+  t.textContent = name;
+  const s = document.createElement('span');
+  s.className = 'toc-span';
+  s.textContent = says;
+  t.append(s);
+  const r = document.createElement('span');
+  r.className = 'toc-ref' + (ref ? '' : ' none');
+  r.textContent = ref || '—';
+  row.append(t, r);
+  return row;
+}
+
+function leafRowEl(leaf, index) {
+  const row = partRow(`${location.pathname}?${leafQuery(leaf)}`, leafTitle(leaf), leafSub(leaf),
+    leaf.kind === 'volume' ? toRoman(leaf.volume) : '');
+  row.addEventListener('click', (ev) => {
+    if (ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey || ev.button !== 0) return;
+    ev.preventDefault();
+    jumpTo(index);
+  });
+  return row;
+}
+
+function renderOverview() {
+  const list = leaves();
+  toc.append(head('toc-vol', 'Front Matter'));
+  for (const f of FRONT) {
+    toc.append(partRow(`./bitcoin-front.html?leaf=${f.leaf}`, f.name, f.says, ''));
+  }
+  toc.append(head('toc-vol', 'The Volumes'));
+  list.forEach((l, i) => { if (l.kind === 'volume') toc.append(leafRowEl(l, i)); });
+  if (list.some((l) => l.kind === 'appendix')) {
+    toc.append(head('toc-vol', 'The Appendices'));
+    list.forEach((l, i) => { if (l.kind === 'appendix') toc.append(leafRowEl(l, i)); });
+  }
+}
+
 // A volume's leaf: its entries, in reading order, with a Book sub-heading
 // wherever two or more consecutive rows share one -- so each row need only
 // cite the portion of its reference the leaf's head and that sub-heading
@@ -550,9 +657,7 @@ function render() {
   // read. The opening query was copied at load, so rewriting it can't
   // disturb which leaf a still-growing run is aiming for.
   try {
-    const q = leaf.kind === 'volume' ? `volume=${leaf.volume}`
-      : `part=${leaf.part.kind === 'entries' ? 'future' : leaf.part.kind}`;
-    history.replaceState(null, '', `${location.pathname}?${q}`);
+    history.replaceState(null, '', `${location.pathname}?${leafQuery(leaf)}`);
   } catch (_) { /* unavailable */ }
   toc.replaceChildren();
   // The curation is a file this page reads (notables.yaml); if it could not be
@@ -565,7 +670,8 @@ function render() {
       + 'Any bookmarks of your own are listed below; reload to try again.';
     toc.append(warn);
   }
-  if (leaf.kind === 'volume') renderVolume(leaf.volume);
+  if (leaf.kind === 'overview') renderOverview();
+  else if (leaf.kind === 'volume') renderVolume(leaf.volume);
   else renderAppendix(leaf.part);
   // Entries whose citation could not be resolved have no volume to be listed
   // under, so they fall past even the appendices, onto the last leaf of the
@@ -687,6 +793,14 @@ function turn(dir) {
   if (next < 0) return leavePage('./bitcoin-front.html?leaf=terms', 'translateX(100vw)', 'glossia-front-entrance', 'back');
   if (next >= list.length) return leavePage('./bitcoin-front.html?leaf=preface', 'translateX(-100vw)', 'glossia-front-entrance', 'fwd');
   turnTo(() => { at = next; }, dir, 'x');
+}
+// Straight to a named leaf, which is what a row on the top-level leaf does:
+// the same slide as a turn, in the direction the leaf lies, however many
+// leaves away it is.
+function jumpTo(i) {
+  if (turning || i === at) return;
+  settled = true;
+  turnTo(() => { at = i; }, i > at ? 1 : -1, 'x');
 }
 // Up is the cover, which the contents lie under; down is whatever this leaf
 // is the contents of.
