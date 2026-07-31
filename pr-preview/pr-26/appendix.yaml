@@ -76,7 +76,10 @@
 # shows on hover, and `expected: true` on a height no block has reached, which
 # is what earns the row its □. A fork counted in block versions also names how
 # a yes is read — `bit: n` (a version bit set) or `version: n` (a supermajority
-# fork's minimum version) — and where its ballot closed: `ballot:` is the last
+# fork's minimum version); the one ballot written outside the version word
+# names `coinbase:` instead, text the chapter's first line must carry (BU's
+# /EB advertisement), and its table reads coinbase text where the others read
+# versions — and where its ballot closed: `ballot:` is the last
 # block of the winning window and `window:` the window's span, so the fork's
 # leaf can lay the whole ballot out, block by block, and tally it as it goes.
 # The boundaries are consensus arithmetic, not lore: a supermajority fork's
@@ -262,16 +265,19 @@
     - bip: 'BU'
       name: Bitcoin Unlimited
       status: failed
-      note: Not a BIP but a client, and the big-block banner after XT faded — under "emergent consensus," a miner advertised the block size it would accept rather than voting on a fixed rule. Its ballot is legible in the book, but not in the version word this appendix counts — it was written into the coinbase text, /EB…/AD…/ at the head of each chapter that flew it — so this leaf lays out no table. At its spring-2017 peak more than a third of new blocks carried the banner; nothing ever activated, and that August the big-block constituency left to write its own book.
+      coinbase: /EB
+      ballot: '478558'
+      window: 2016
+      note: Not a BIP but a client, and the big-block banner after XT faded — under "emergent consensus," a miner advertised the block size it would accept rather than voting on a fixed rule. Its ballot was written into the coinbase text, /EB…/AD…/ at the head of each chapter that flew it, not into the version word — so this leaf reads first lines rather than versions, laying out the final window of chapters before the parting with each miner's own text in the row. At its spring-2017 peak more than a third of new blocks carried the banner; nothing ever activated, and that August the big-block constituency left to write its own book.
       stats:
         - label: mechanism
           value: emergent consensus — /EB…/AD…/ written into the coinbase, no threshold and no flag day
         - label: signaled
-          value: in the coinbase text, not the version word — the one ballot this appendix cannot lay out as a table
+          value: in the coinbase text, not the version word — the table below reads the chapters' first lines
         - label: peak
           value: spring 2017 — by most counts more than a third of new blocks flew the banner
         - label: outcome
-          value: nothing activated — the big-block constituency left as Bitcoin Cash that August
+          value: nothing activated — the big-block constituency left as Bitcoin Cash that August; the window below is the ballot as it stood when the argument left
       entries:
         - title: The parting
           id: '478558'

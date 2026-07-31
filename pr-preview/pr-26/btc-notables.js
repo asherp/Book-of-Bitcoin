@@ -218,6 +218,10 @@ function normalizePart(raw, i) {
       if (b.threshold !== undefined) group.threshold = Number(b.threshold);
       if (b.ballot !== undefined) group.ballot = Number(b.ballot);
       if (b.window !== undefined) group.window = Number(b.window);
+      // A third way to read a yes, for the one ballot written outside the
+      // version word: text the coinbase must carry (Bitcoin Unlimited's
+      // /EB…/ advertisement). The fork's table then reads first lines.
+      if (b.coinbase !== undefined) group.coinbase = String(b.coinbase);
       // A public endpoint publishing the current period's whole count, for a
       // fork still signaling: the tally can state the period's total, not
       // just the sample the table has drawn -- credited, since the count is
