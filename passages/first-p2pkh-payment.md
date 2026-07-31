@@ -22,8 +22,8 @@ Block hash, as prose: ⌘²²⁴ *Kit is hip to its ranch. Our endless pop may s
 - **merkle root:** ⋔ Its giant slight fog satoshi. Bamboo may get grief. Dove see laptop to year. Our tap add to expect. Pop empower balance outside saddle. Marble set gadget to desk. Airport web novel out hill per a wise theme.
   - hex: `1f7fd770697c167ca75e3d742f3b1b81244165e0fee87310cd20b15f6975b961`
 - **timestamp:** 2009-01-16 19:18 UTC
-- **difficulty target:** β₃₂ < 65535×256²⁶ — the block hash above reads below this target — nBits 1d00ffff — mantissa 65535 shifted up 26 bytes: the target 00000000ffff0000000000000000000000000000000000000000000000000000, which a valid block hash must read below (32 leading zero bits) — difficulty 1 (relative to the genesis block)
-- **nonce:** η 95106676
+- **difficulty target:** β₃₂ < 2²⁰⁸·3·5·17·257 — the block hash above reads below this target — nBits 1d00ffff — mantissa 65535 shifted up 26 bytes: the target 00000000ffff0000000000000000000000000000000000000000000000000000, which a valid block hash must read below (32 leading zero bits) — difficulty 1 (relative to the genesis block)
+- **nonce:** η 2²·7·113·30059
 
 ## § 2 — First P2PKH payment
 

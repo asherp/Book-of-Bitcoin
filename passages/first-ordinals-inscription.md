@@ -22,8 +22,8 @@ Block hash, as prose: ⌘¹⁷⁸ *A vital canyon may plate die. Cop barely dest
 - **merkle root:** ⋔ Giggle solve its awesome ban. Lot live to trap. Snack angle its huge kangaroo. A desert hospital mandate desk. Cash may stay an electric plastic. Apology may phone glow to slam. Son situate a napkin. Divorce may see ban.
   - hex: `ba6493b1ec318e4e01a63b3ab546be83c3b77587797533029a755e4142dcf961`
 - **timestamp:** 2022-12-14 20:32 UTC
-- **difficulty target:** β₇₆ < 538672×256²⁰ — the block hash above reads below this target — nBits 17083830 — mantissa 538672 shifted up 20 bytes: the target 0000000000000000000838300000000000000000000000000000000000000000, which a valid block hash must read below (76 leading zero bits) — difficulty 34,244,331,613,176 (relative to the genesis block)
-- **nonce:** η 758036153
+- **difficulty target:** β₇₆ < 2¹⁶⁴·131·257 — the block hash above reads below this target — nBits 17083830 — mantissa 538672 shifted up 20 bytes: the target 0000000000000000000838300000000000000000000000000000000000000000, which a valid block hash must read below (76 leading zero bits) — difficulty 34,244,331,613,176 (relative to the genesis block)
+- **nonce:** η 7·108290879
 
 ## § 2323 — First Ordinals inscription
 

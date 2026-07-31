@@ -22,8 +22,8 @@ Block hash, as prose: ⌘¹⁷⁷ *Snow pair roof to wrist. Access may set salmo
 - **merkle root:** ⋔ Its cattle phone culture to market. Energy purchase smoke per junk. Timber may set tiger to tuna. A next name focus category. Umbrella pluck an awful flower. The bright one answer deer to gas.
   - hex: `534e13aa090e6615a2a6610f49b42ca9caa93f3ce2ca33735ca11444d6705424`
 - **timestamp:** 2021-05-30 01:18 UTC
-- **difficulty target:** β₇₆ < 876411×256²⁰ — the block hash above reads below this target — nBits 170d5f7b — mantissa 876411 shifted up 20 bytes: the target 0000000000000000000d5f7b0000000000000000000000000000000000000000, which a valid block hash must read below (76 leading zero bits) — difficulty 21,047,730,572,452 (relative to the genesis block)
-- **nonce:** η 1876340370
+- **difficulty target:** β₇₆ < 2¹⁶⁰·3²·97379 — the block hash above reads below this target — nBits 170d5f7b — mantissa 876411 shifted up 20 bytes: the target 0000000000000000000d5f7b0000000000000000000000000000000000000000, which a valid block hash must read below (76 leading zero bits) — difficulty 21,047,730,572,452 (relative to the genesis block)
+- **nonce:** η 2·3·5·62544679
 
 ## § 1 — Difficulty −15.97%
 

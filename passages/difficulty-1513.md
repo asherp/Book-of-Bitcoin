@@ -22,8 +22,8 @@ Block hash, as prose: ⌘¹⁸¹ *Other shed high get globe. School may see cow.
 - **merkle root:** ⋔ Its left fine mass to oppose. Enough low tag is raw. A host is awful. Luggage too set hybrid. Edge coach puzzle since what swallow. Leisure host the youth device. Crash may rival its scale.
   - hex: `aeee64cab37fb8f50fdbce4ff25dcb2223c099b01070a36cbaafc44d22da2a7f`
 - **timestamp:** 2018-12-03 11:59 UTC
-- **difficulty target:** β₇₄ < 3266940×256²⁰ — the block hash above reads below this target — nBits 1731d97c — mantissa 3266940 shifted up 20 bytes: the target 00000000000000000031d97c0000000000000000000000000000000000000000, which a valid block hash must read below (74 leading zero bits) — difficulty 5,646,403,851,535 (relative to the genesis block)
-- **nonce:** η 512160369
+- **difficulty target:** β₇₄ < 2¹⁶²·3·5·54449 — the block hash above reads below this target — nBits 1731d97c — mantissa 3266940 shifted up 20 bytes: the target 00000000000000000031d97c0000000000000000000000000000000000000000, which a valid block hash must read below (74 leading zero bits) — difficulty 5,646,403,851,535 (relative to the genesis block)
+- **nonce:** η 3·7·24388589
 
 ## § 1 — Difficulty −15.13%
 

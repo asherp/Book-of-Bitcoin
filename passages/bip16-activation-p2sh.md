@@ -22,8 +22,8 @@ Block hash, as prose: ⌘²⁰⁰ *Start love its strike to sniff. Offer see sku
 - **merkle root:** ⋔ Gold may allow a hip autumn. Recipe retreat the ugly velvet. Trial very get setup. Gravity reform olive to game. River culture wire via medal. Its stuff may joke hawk. Cop sell to divorce out a rid due.
   - hex: `dab0d384c76b29869f35d6cd5734450b33125f3ee890073b703bdb87afd54064`
 - **timestamp:** 2012-04-01 00:43 UTC
-- **difficulty target:** β₅₂ < 675966×256²³ — the block hash above reads below this target — nBits 1a0a507e — mantissa 675966 shifted up 23 bytes: the target 0000000000000a507e0000000000000000000000000000000000000000000000, which a valid block hash must read below (52 leading zero bits) — difficulty 1,626,553 (relative to the genesis block)
-- **nonce:** η 3963693786
+- **difficulty target:** β₅₂ < 2¹⁸⁵·3·113·997 — the block hash above reads below this target — nBits 1a0a507e — mantissa 675966 shifted up 23 bytes: the target 0000000000000a507e0000000000000000000000000000000000000000000000, which a valid block hash must read below (52 leading zero bits) — difficulty 1,626,553 (relative to the genesis block)
+- **nonce:** η 2·3·13·17·2989211
 
 ## § 1 — BIP16 activation (P2SH)
 

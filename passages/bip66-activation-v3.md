@@ -22,8 +22,8 @@ Block hash, as prose: ⌘¹⁸⁶ *Its country ethics get our giraffe. Choice ma
 - **merkle root:** ⋔ A vague drum may vote army. Finger market the live curtain. Its sir rebuild narrow. Its december need journey. Furnace set student to galaxy. Tea soft crunch width. Guy renew a fluid avocado to rack out abandon.
   - hex: `20ec1f9a155beb9f46cef7dab5bc86e7c9e26052b3b1a960106f0586d773a8f0`
 - **timestamp:** 2015-07-04 01:54 UTC
-- **difficulty target:** β₆₇ < 1458574×256²¹ — the block hash above reads below this target — nBits 1816418e — mantissa 1458574 shifted up 21 bytes: the target 000000000000000016418e000000000000000000000000000000000000000000, which a valid block hash must read below (67 leading zero bits) — difficulty 49,402,014,931 (relative to the genesis block)
-- **nonce:** η 9834938
+- **difficulty target:** β₆₇ < 2¹⁶⁹·13·56099 — the block hash above reads below this target — nBits 1816418e — mantissa 1458574 shifted up 21 bytes: the target 000000000000000016418e000000000000000000000000000000000000000000, which a valid block hash must read below (67 leading zero bits) — difficulty 49,402,014,931 (relative to the genesis block)
+- **nonce:** η 2·23·47·4549
 
 ## § 1 — BIP66 activation (v3)
 

@@ -22,8 +22,8 @@ Block hash, as prose: ⌘¹⁷⁸ *Its pitch may burst mandate. Pop lend to clai
 - **merkle root:** ⋔ Exhibit essay rub into jeans. Essence is far during wish. Its reason cable dolphin. Caution off see world. Anchor is antique to tumble. Street page energy out corn. Pond calm hire to gas.
   - hex: `031b417c3a1828ddf3d6527fc210daafcc9218e81f98257f88d4d43bd7a5894f`
 - **timestamp:** 2024-04-20 00:09 UTC
-- **difficulty target:** β₇₈ < 213529×256²⁰ — the block hash above reads below this target — nBits 17034219 — mantissa 213529 shifted up 20 bytes: the target 0000000000000000000342190000000000000000000000000000000000000000, which a valid block hash must read below (78 leading zero bits) — difficulty 86,388,558,925,171 (relative to the genesis block)
-- **nonce:** η 3932395645
+- **difficulty target:** β₇₈ < 2¹⁶⁰·67·3187 — the block hash above reads below this target — nBits 17034219 — mantissa 213529 shifted up 20 bytes: the target 0000000000000000000342190000000000000000000000000000000000000000, which a valid block hash must read below (78 leading zero bits) — difficulty 86,388,558,925,171 (relative to the genesis block)
+- **nonce:** η 5·19211·40939
 
 ## § 1 — The Fourth Halving
 

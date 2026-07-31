@@ -22,8 +22,8 @@ Block hash, as prose: ⌘¹⁸⁰ *Pistol see gloom to can. Style mother to cond
 - **merkle root:** ⋔ Guilt is spatial to a talent. Pop allow essence for celery. The domain set story. Inquiry how see a rare tissue. Garlic explain shove to offer. The cow may observe an ugly winner. A son is afraid. Pan when cook the hedgehog. Ban exist its abandon.
   - hex: `f013d5fa127d127c1fecc35c268e09e52f8b43d674b43e104ad454837513ba67`
 - **timestamp:** 2021-06-12 12:18 UTC
-- **difficulty target:** β₇₆ < 876411×256²⁰ — the block hash above reads below this target — nBits 170d5f7b — mantissa 876411 shifted up 20 bytes: the target 0000000000000000000d5f7b0000000000000000000000000000000000000000, which a valid block hash must read below (76 leading zero bits) — difficulty 21,047,730,572,452 (relative to the genesis block)
-- **nonce:** η 2091155766
+- **difficulty target:** β₇₆ < 2¹⁶⁰·3²·97379 — the block hash above reads below this target — nBits 170d5f7b — mantissa 876411 shifted up 20 bytes: the target 0000000000000000000d5f7b0000000000000000000000000000000000000000, which a valid block hash must read below (76 leading zero bits) — difficulty 21,047,730,572,452 (relative to the genesis block)
+- **nonce:** η 2·3·7·49789423
 
 ## § 1 — Taproot lock-in
 

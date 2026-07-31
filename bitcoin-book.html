@@ -344,12 +344,15 @@ button:disabled { opacity: .4; cursor: not-allowed; }
    (.chapter-hash carries the same mark on the book leaf, where the book's
    target sits right beneath its title.) */
 .chapter-frontispiece .cfx-gold, .chapter-hash .cfx-gold, .section-hash .cfx-gold { color: var(--accent); font-weight: 700; font-style: normal; }
-/* The book leaf's two targets, opening → closing, and beneath them what the
-   retarget between did to the difficulty. Each target holds together as one
-   unit so a narrow screen breaks the line at the arrow rather than inside an
-   expression; the move sits a breath under them, in the same dim voice --
-   it is a reading of the line above, not another field. */
+/* The book leaf's two targets, the opening ceiling and the closing one, a row
+   each, and beneath them what the retarget between did to the difficulty.
+   Nothing joins the rows: they are one field stated twice, and the line break
+   is the retarget. Each row holds together so a narrow screen never breaks
+   inside an expression; the rows sit closer to each other than the move sits
+   to them, which is what makes them read as a pair with a reading under it,
+   in the same dim voice -- not as three fields. */
 .chapter-hash .book-target { white-space: nowrap; }
+.chapter-hash .book-target + .book-target { margin-top: .15em; }
 .chapter-hash .book-move { margin-top: .4em; }
 /* The notation key, cut to the page: a row the page does not use leaves the
    flow entirely. The pattern tables are grids whose cells are direct children,
@@ -2502,7 +2505,7 @@ function fillMarkedHash(el, mark, markClass, hex, label, prose, sup, supTitle, z
 // The block header itself, in wire order, as a small mono line under the
 // chapter hash: version, previous-block hash, merkle root, timestamp,
 // difficulty target, nonce. The target's line states the proof of work as
-// the inequality it is -- β₇₈ < 213529×256²⁰ -- the < binding the chapter
+// the inequality it is -- β₇₈ < 2¹⁶⁰·213529 -- the < binding the chapter
 // hash at the head of the page to the ceiling it reads below, without the
 // field leaving its wire slot. The two hashes are Glossia-encoded here
 // (like the chapter/section hash above); the rest come pre-decoded from
@@ -2540,19 +2543,22 @@ function renderFrontispiece(header) {
     { text: merkleProse, mark: '⋔', markClass: 'merkle-mark', sup: 32, supTitle: '32 bytes',
       copy: { hex: header.merkleRoot, label: 'merkle root' } },
     { text: hf.timestamp, title: hf.timestampTitle },
-    // The proof of work, stated as the inequality it is: β₇₈ < 213529×256²⁰,
+    // The proof of work, stated as the inequality it is: β₇₈ < 2¹⁶⁰·213529,
     // in nBits' own wire slot. The gold β mark's subscript is the target's
     // leading zero run (the demand, the mining vernacular); the < binds the
     // chapter hash at the head of the page to the exact target after it --
-    // mantissa × 256^byte-shift, the superscript counting the trailing zero
-    // bytes. β opens a copy menu: the compact 4-byte hex, or the display form.
+    // the 256-bit ceiling in primes, the power of two carrying its scale and
+    // the small factors what a retarget last moved. β opens a copy menu: the
+    // compact 4-byte hex, or the display form.
     hf.bitsExpr
       ? { text: `< ${hf.bitsExpr}`, mark: hf.bits, markClass: 'fx-mark', gap: true,
           title: `the proof of work — the chapter hash at the head of the page, read as a 256-bit number, is below this target. ${hf.bitsTitle}`,
           menu: { hex: (header.bits >>> 0).toString(16).padStart(8, '0'), label: 'difficulty target', prose: `${hf.bits} ${hf.bitsExpr}` } }
       : { text: hf.bits, title: hf.bitsTitle, gold: true,
           menu: { hex: (header.bits >>> 0).toString(16).padStart(8, '0'), label: 'difficulty target', prose: hf.bits } },
-    // The η mark alone is bold gold; the nonce integer beside it stays plain.
+    // The η mark alone is bold gold; the nonce beside it stays plain -- and is
+    // factored, as the target above it is, so the two products can be read
+    // against each other: structure on one line, none at all on the next.
     { text: hf.nonce, mark: 'η', markClass: 'fx-mark', title: hf.nonceTitle,
       menu: { hex: (header.nonce >>> 0).toString(16).padStart(8, '0'), label: 'nonce', prose: hf.nonce } },
   ];
@@ -2914,13 +2920,13 @@ function renderVolumeLeaf() {
   labelNav();
 }
 
-// One difficulty target on the book leaf, in the same β₇₈ < 213529×256²⁰ form
-// a chapter's frontispiece uses: the gold mark, the exact m×256ᵉ ceiling
+// One difficulty target on the book leaf, in the same β₇₈ < 2¹⁶⁰·213529 form
+// a chapter's frontispiece uses: the gold mark, the exact factored ceiling
 // beside it, and the same copy menu (compact hex, or the mark with its
 // expression). `governs` names the chapters mined under it, for the tooltip.
 // The marks go straight into `parent` and carry no furniture of their own --
 // a book with one target puts them on the line exactly as this leaf always
-// has, and only a book with two wraps each in a group of its own.
+// has, and a book with two gives each its own row to stand on.
 function appendBookTarget(parent, bits, governs) {
   const info = bitsInfo(bits);
   const title = info.expr
@@ -2944,14 +2950,15 @@ function appendBookTarget(parent, bits, governs) {
   }
 }
 
-// A target that shares its line with another: the same marks, held together
-// so a narrow screen breaks the line at the arrow between the two rather than
-// inside a β < m×256ᵉ.
-function appendGroupedTarget(parent, bits, governs) {
-  const group = document.createElement('span');
-  group.className = 'book-target';
-  appendBookTarget(group, bits, governs);
-  parent.append(group);
+// A target on a row of its own, for a book that was mined under two: the same
+// marks, on their own line, and held there -- a row breaks between the targets
+// because that is where the book changed, never inside a β < 2ᵏ·p….
+function targetRow(parent, bits, governs) {
+  const row = document.createElement('div');
+  row.className = 'book-target';
+  if (bits !== null) appendBookTarget(row, bits, governs);
+  parent.append(row);
+  return row;
 }
 
 // A difficulty, in the same shape bitsInfo's tooltip gives it.
@@ -2999,9 +3006,12 @@ function renderBookLeaf() {
   // Right beneath the title: the ceilings this book was mined under. A book
   // that is a whole difficulty window has one, and prints it as this leaf
   // always has -- all of Volume I, and every volume's truncated last book. A
-  // book that straddles a retarget has two, and prints both, opening target →
-  // closing target, with what the retarget did to the difficulty on the line
-  // beneath. Two is the ceiling on ceilings -- see retargetInside.
+  // book that straddles a retarget has two, and gives each a row of its own,
+  // opening above closing, with what the retarget did to the difficulty on the
+  // line beneath. Nothing is written between the two rows: they are the same
+  // field stated twice, and the change from one to the next is what the move
+  // underneath says in the unit the change is felt in. Two is the ceiling on
+  // ceilings -- see retargetInside.
   const line = $('ch-hash-short');
   line.classList.remove('hidden');
   line.classList.add('plain');   // a target mark, not hash prose -- upright
@@ -3021,26 +3031,26 @@ function renderBookLeaf() {
       ? 'every chapter hash in this book'
       : `every chapter hash from ■1 to ■${(cutChapter - 1).toLocaleString()}`);
   } else {
-    const targets = document.createElement('div');
-    line.append(targets);
-    appendGroupedTarget(targets, state.header.bits,
+    targetRow(line, state.header.bits,
       `every chapter hash from ■1 to ■${(cutChapter - 1).toLocaleString()}`);
-    const tail = document.createElement('span');
-    tail.textContent = ' → …';
-    targets.append(tail);
+    // The closing target comes from the retarget block, which is a fetch away:
+    // the row it will stand on is drawn straight away, holding an ellipsis, so
+    // the leaf does not jump when the answer lands.
+    const second = targetRow(line, null, null);
+    second.textContent = '…';
     const move = document.createElement('div');
     move.className = 'book-move';
     line.append(move);
     loadBlockInfoByHeight(cut).then((info) => {
       if (gen !== renderGen) return;
-      tail.textContent = ' → ';
-      appendGroupedTarget(tail, info.bits,
+      second.textContent = '';
+      appendBookTarget(second, info.bits,
         `every chapter hash from ■${cutChapter.toLocaleString()} to ■${chapterCount.toLocaleString()}`);
       const before = bitsToDifficulty(state.header.bits), after = bitsToDifficulty(info.bits);
       move.textContent = difficultyMove(state.header.bits, info.bits, before, after);
       move.title = `the retarget at ■${cutChapter.toLocaleString()} (block ${cut.toLocaleString()}), where this book crosses from one difficulty window into the next`
         + ` — difficulty ${formatDifficulty(before)} → ${formatDifficulty(after)}, relative to the genesis block`;
-    }).catch(() => { if (gen === renderGen) { tail.remove(); move.remove(); } });
+    }).catch(() => { if (gen === renderGen) { second.remove(); move.remove(); } });
   }
   // Then the chapters the book spans, under the block glyph (■, as references
   // write chapter numbers -- chapters restart at 1 each book, so a full book

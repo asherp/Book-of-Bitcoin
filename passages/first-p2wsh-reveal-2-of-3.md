@@ -22,8 +22,8 @@ Block hash, as prose: ⌘¹⁷⁸ *Hospital may exchange our social era. Tube se
 - **merkle root:** ⋔ Its artwork may get liberty. Its genuine above like our humble midnight. The fyi is angry. A grant may doctor to scatter. Cow caught a soft glow via grace. Year get setup to anchor. The license indicate display for width. Egg may set cactus.
   - hex: `b191f5f973b9040e81c4f75f99c7e43c92010ba8654718e3dd1a4800851d300d`
 - **timestamp:** 2020-05-11 19:23 UTC
-- **difficulty target:** β₇₅ < 1145401×256²⁰ — the block hash above reads below this target — nBits 17117a39 — mantissa 1145401 shifted up 20 bytes: the target 000000000000000000117a390000000000000000000000000000000000000000, which a valid block hash must read below (75 leading zero bits) — difficulty 16,104,807,485,529 (relative to the genesis block)
-- **nonce:** η 2302182970
+- **difficulty target:** β₇₅ < 2¹⁶⁰·163·7027 — the block hash above reads below this target — nBits 17117a39 — mantissa 1145401 shifted up 20 bytes: the target 000000000000000000117a390000000000000000000000000000000000000000, which a valid block hash must read below (75 leading zero bits) — difficulty 16,104,807,485,529 (relative to the genesis block)
+- **nonce:** η 2·5·230218297
 
 ## § 411 — First P2WSH reveal (2-of-3)
 

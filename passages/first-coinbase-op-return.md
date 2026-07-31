@@ -22,8 +22,8 @@ Block hash, as prose: ⌘¹⁹⁶ *Half may trip our gospel primary. Its start m
 - **merkle root:** ⋔ Its river due chair a nation. A civil fiber submit lift. Pistol permit to assume per artefact. Run see shrimp to fabric out scare. Penalty hold to prosper via an aspect. Fame rule skull to its lens. Abandon see the pay.
   - hex: `08a095d33ba93590956c1415f0a272acde33bc21a32b5d20b05bc5144dbac4ba`
 - **timestamp:** 2013-07-16 06:04 UTC
-- **difficulty target:** β₅₆ < 42025×256²³ — the block hash above reads below this target — nBits 1a00a429 — mantissa 42025 shifted up 23 bytes: the target 00000000000000a4290000000000000000000000000000000000000000000000, which a valid block hash must read below (56 leading zero bits) — difficulty 26,162,876 (relative to the genesis block)
-- **nonce:** η 1947896645
+- **difficulty target:** β₅₆ < 2¹⁸⁴·5²·41² — the block hash above reads below this target — nBits 1a00a429 — mantissa 42025 shifted up 23 bytes: the target 00000000000000a4290000000000000000000000000000000000000000000000, which a valid block hash must read below (56 leading zero bits) — difficulty 26,162,876 (relative to the genesis block)
+- **nonce:** η 5·157·347·7151
 
 ## § 1 — First coinbase OP_RETURN
 

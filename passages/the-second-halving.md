@@ -22,8 +22,8 @@ Block hash, as prose: ⌘¹⁸⁶ *Peanut wing bracket to fold. Our clog bounce 
 - **merkle root:** ⋔ The wheel too see language. Son may predict main. A son oppose soap. Reform get turtle to our hidden lip. The over bulk may cave layer. Rebel around fruit map. Our inner mother see history to floor. Ski may mushroom the army via its divorce.
   - hex: `028323a5bcacb0057274ee0a4366e5671278bc736b57176d9bb929c3a69e0ffa`
 - **timestamp:** 2016-07-09 16:46 UTC
-- **difficulty target:** β₆₉ < 337661×256²¹ — the block hash above reads below this target — nBits 180526fd — mantissa 337661 shifted up 21 bytes: the target 00000000000000000526fd000000000000000000000000000000000000000000, which a valid block hash must read below (69 leading zero bits) — difficulty 213,398,925,331 (relative to the genesis block)
-- **nonce:** η 2193437364
+- **difficulty target:** β₆₉ < 2¹⁶⁸·337661 — the block hash above reads below this target — nBits 180526fd — mantissa 337661 shifted up 21 bytes: the target 00000000000000000526fd000000000000000000000000000000000000000000, which a valid block hash must read below (69 leading zero bits) — difficulty 213,398,925,331 (relative to the genesis block)
+- **nonce:** η 2²·3·31·71·83047
 
 ## § 1 — The Second Halving
 

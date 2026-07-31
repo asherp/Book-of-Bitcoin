@@ -22,8 +22,8 @@ Block hash, as prose: ⌘²⁰² *Retreat doctor check to turn. Punch set member
 - **merkle root:** ⋔ River sentence its busy plate. Sin may develop scorpion. Tide ago topple gloom. Pan may suggest wonder. Sketch ought term a polar minor. Our lot about write a century. Tag holiday lecture to analyst for member to parade.
   - hex: `b5a210f067b674af84fe0348e34ef71d65f41f7b6329777882c913d37c7cd8ba`
 - **timestamp:** 2013-03-25 07:30 UTC
-- **difficulty target:** β₅₄ < 164206×256²³ — the block hash above reads below this target — nBits 1a02816e — mantissa 164206 shifted up 23 bytes: the target 00000000000002816e0000000000000000000000000000000000000000000000, which a valid block hash must read below (54 leading zero bits) — difficulty 6,695,826 (relative to the genesis block)
-- **nonce:** η 2483358230
+- **difficulty target:** β₅₄ < 2¹⁸⁵·7·37·317 — the block hash above reads below this target — nBits 1a02816e — mantissa 164206 shifted up 23 bytes: the target 00000000000002816e0000000000000000000000000000000000000000000000, which a valid block hash must read below (54 leading zero bits) — difficulty 6,695,826 (relative to the genesis block)
+- **nonce:** η 2·5·31·37·216509
 
 ## § 1 — BIP34 activation (v2)
 

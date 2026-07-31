@@ -22,8 +22,8 @@ Block hash, as prose: ⌘¹⁷⁹ *Lie may differ each legend. Our outdoor fence
 - **merkle root:** ⋔ A fragile aisle may account gauge. The thought donor get citizen. Arrest far set company. Man couple to rebuild via bronze. Turn inform cupboard to curve. Basket caught lawsuit over access. Cement may set cactus.
   - hex: `498902de19bf91644236aee19cd5cba1d9c4d8902e63508a820e4e3006b4605c`
 - **timestamp:** 2023-02-01 20:38 UTC
-- **difficulty target:** β₇₇ < 468768×256²⁰ — the block hash above reads below this target — nBits 17072720 — mantissa 468768 shifted up 20 bytes: the target 0000000000000000000727200000000000000000000000000000000000000000, which a valid block hash must read below (77 leading zero bits) — difficulty 39,350,942,467,773 (relative to the genesis block)
-- **nonce:** η 3494801492
+- **difficulty target:** β₇₇ < 2¹⁶⁵·3·19·257 — the block hash above reads below this target — nBits 17072720 — mantissa 468768 shifted up 20 bytes: the target 0000000000000000000727200000000000000000000000000000000000000000, which a valid block hash must read below (77 leading zero bits) — difficulty 39,350,942,467,773 (relative to the genesis block)
+- **nonce:** η 2²·7·13·31·309713
 
 ## § 1 — Largest block (at the time)
 

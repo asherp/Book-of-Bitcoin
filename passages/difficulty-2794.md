@@ -22,8 +22,8 @@ Block hash, as prose: ⌘¹⁸¹ *Aid may prevent quality to acid. Game get rice
 - **merkle root:** ⋔ Code box the olympic smile. A draw see gospel to flip via some olive to song. A row are tragic. Its journey next scout humor. The useless map is tragic. Radio below sock spike. Ramp far see chest. Album abandon a tea.
   - hex: `78014f16eb68389bc2b037073cde14accae1dd3ccfd14496c92654666952032d`
 - **timestamp:** 2021-07-03 06:34 UTC
-- **difficulty target:** β₇₅ < 1284302×256²⁰ — the block hash above reads below this target — nBits 171398ce — mantissa 1284302 shifted up 20 bytes: the target 0000000000000000001398ce0000000000000000000000000000000000000000, which a valid block hash must read below (75 leading zero bits) — difficulty 14,363,025,673,660 (relative to the genesis block)
-- **nonce:** η 2552446767
+- **difficulty target:** β₇₅ < 2¹⁶¹·642151 — the block hash above reads below this target — nBits 171398ce — mantissa 1284302 shifted up 20 bytes: the target 0000000000000000001398ce0000000000000000000000000000000000000000, which a valid block hash must read below (75 leading zero bits) — difficulty 14,363,025,673,660 (relative to the genesis block)
+- **nonce:** η 3·13·65447353
 
 ## § 1 — Difficulty −27.94%
 

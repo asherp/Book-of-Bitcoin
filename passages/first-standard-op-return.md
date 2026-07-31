@@ -22,8 +22,8 @@ Block hash, as prose: ⌘¹⁸⁷ *Era may set some poverty. Our polar ecology g
 - **merkle root:** ⋔ Kick get horn to harbor. Clay see its width. Our fancy atom get ketchup. Flag set body to judge. Still see our ill desert. Setup may foster a stereo. The wide scare rough blur. Weapon get timber to theme.
   - hex: `8fb8f087215e01579fd5e02271770ee7eae21d2358cf93c3a5ac1f15a4b12d7a`
 - **timestamp:** 2014-06-30 05:45 UTC
-- **difficulty target:** β₆₅ < 4284369×256²¹ — the block hash above reads below this target — nBits 18415fd1 — mantissa 4284369 shifted up 21 bytes: the target 0000000000000000415fd1000000000000000000000000000000000000000000, which a valid block hash must read below (65 leading zero bits) — difficulty 16,818,461,371 (relative to the genesis block)
-- **nonce:** η 1936185103
+- **difficulty target:** β₆₅ < 2¹⁶⁸·3²·476041 — the block hash above reads below this target — nBits 18415fd1 — mantissa 4284369 shifted up 21 bytes: the target 0000000000000000415fd1000000000000000000000000000000000000000000, which a valid block hash must read below (65 leading zero bits) — difficulty 16,818,461,371 (relative to the genesis block)
+- **nonce:** η 23·443·190027
 
 ## § 109 — First standard OP_RETURN
 

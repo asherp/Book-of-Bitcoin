@@ -22,8 +22,8 @@ Block hash, as prose: ⌘¹⁷⁷ *February may cram a humble paper. Assist juic
 - **merkle root:** ⋔ Sort empty face to organ. Chief may get eyebrow. Its indoor catalog lounge chicken. Throw limit embrace to buffalo. Our album not pluck our gravity. Lot vanish tube to dress. Our curious recipe get the immune theme per ban.
   - hex: `6f5c675f5321a82b1e66357d413b88f44085f744841fc19ca27c324e462589cf`
 - **timestamp:** 2026-03-01 18:41 UTC
-- **difficulty target:** β₇₉ < 127747×256²⁰ — the block hash above reads below this target — nBits 1701f303 — mantissa 127747 shifted up 20 bytes: the target 00000000000000000001f3030000000000000000000000000000000000000000, which a valid block hash must read below (79 leading zero bits) — difficulty 144,398,401,518,101 (relative to the genesis block)
-- **nonce:** η 2599598768
+- **difficulty target:** β₇₉ < 2¹⁶⁰·127747 — the block hash above reads below this target — nBits 1701f303 — mantissa 127747 shifted up 20 bytes: the target 00000000000000000001f3030000000000000000000000000000000000000000, which a valid block hash must read below (79 leading zero bits) — difficulty 144,398,401,518,101 (relative to the genesis block)
+- **nonce:** η 2⁴·13·41·304831
 
 ## § 1 — First BIP110 signaling block
 
