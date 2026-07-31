@@ -280,6 +280,16 @@ a.bb-ref:hover { color:var(--accent-2); }
   </header>
   <p class="appx-note" id="appx-note"></p>
 
+  <!-- One block of a ballot (?part=consensus&bip=N&block=H), reprinted as a
+       leaf of its own: the chapter's title page -- its hash as prose between
+       the ⌘ and ⓪ marks, and every header field as the frontispiece writes
+       it -- so the ballot is read the way the Ledger's record is read: the
+       table names, the leaf reprints, and the vertical turns walk the window
+       block by block. The ascent lands back on the table at the row left
+       off. -->
+  <a class="appx-down hidden" id="block-up" href="#" aria-label="The next newer block">▴</a>
+  <div class="bip-stats hidden" id="block-card"></div>
+
   <!-- A fork's own leaf (?part=consensus&bip=N). Below the description, the
        ballot: every block of the counted window, its version as the
        frontispiece writes it, and whether it says yes -- drawn a page at a
@@ -330,6 +340,8 @@ await loadNotables();
 const APPENDIX = appendix();
 import { chainTip, MEMPOOL_MIRRORS } from './btc-mempool.js';
 import { toRoman, volumeBookChapter, heightOf, expectedReference } from './btc-citation.js';
+import { formatBlockVersion, composeBlockHeaderFields } from './btc-prose.js';
+import { toSuperscript } from './btc-sigla.js';
 
 // ── One appendix, given a leaf of its own ─────────────────────────────────
 // The contents lists what each appendix holds; this is where an appendix
@@ -350,8 +362,36 @@ const index = APPENDIX.indexOf(part);
 const bips = part.kind === 'consensus' ? (part.bips || []) : [];
 const bip = bips.find((b) => b.key === String(params.get('bip'))) || null;
 const bipAt = bip ? bips.indexOf(bip) : -1;
+// One block of a fork's ballot, a level below the fork's own leaf: ?block=
+// names it by height, the way a ballot row links it.
+const blockLeaf = bip && /^[0-9]+$/.test(params.get('block') || '') ? Number(params.get('block')) : null;
 
 const $ = (id) => document.getElementById(id);
+// A citation written whole -- volume and all, since no heading here has named
+// any part of it -- with □ standing in for the ■ a block has yet to earn
+// (expectedReference makes the same substitution from the height).
+const wholeRef = (height, section = null, vout = null, page = null) => {
+  const { volume, book, chapter } = volumeBookChapter(height);
+  if (page === 'volume') return toRoman(volume);
+  if (page === 'book') return `${toRoman(volume)} β${book}`;
+  let s = `${toRoman(volume)} β${book} ■${chapter}`;
+  if (section != null) s += ` §${section}${vout == null ? '' : `.${vout}`}`;
+  return s;
+};
+// A vertical move within the appendix -- down a level, or along a ballot's
+// window -- played the way every leaf turn is played: this page slides off
+// the way the reader pushed, and the destination enters from the other side.
+// dir 'drop' rises toward what lies above (the newcomer drops in from the
+// top); 'down' descends toward what lies below (the newcomer rises from the
+// foot).
+const navTo = (href, dir) => {
+  try { sessionStorage.setItem('glossia-appendix-entrance', dir); } catch (_) { /* unavailable */ }
+  const go = () => { location.href = href; };
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { go(); return; }
+  document.body.style.transition = 'transform .2s linear';
+  document.body.style.transform = dir === 'drop' ? 'translateY(100vh)' : 'translateY(-100vh)';
+  setTimeout(go, 180);
+};
 const label = (p) => partLabel(APPENDIX, p);
 const PART_QUERY = { mempool: 'mempool', consensus: 'consensus', proofs: 'proofs' };
 const hrefFor = (p) => (p.kind === 'ledgers'
@@ -372,8 +412,23 @@ const bipHref = (b) => `./bitcoin-appendix.html?part=consensus&bip=${b.key}`;
 // name; the Citations register is its title alone -- a works-cited list needs
 // no numeral, standing where it stands.
 // A fork's leaf wears its BIP number as the title and its recognized name
-// beneath, with the part that lists it named above -- the way up.
-if (bip) {
+// beneath, with the part that lists it named above -- the way up. A block of
+// its ballot wears its citation instead, the fork above it, and its subtitle
+// is the one door into the book -- the leaf reprints, the book reads.
+if (blockLeaf != null) {
+  $('appx-title').textContent = wholeRef(blockLeaf);
+  const sub = $('appx-subtitle');
+  const door = document.createElement('a');
+  door.href = `./bitcoin-book.html?block=${blockLeaf}`;
+  door.textContent = `block ${blockLeaf.toLocaleString('en-US')}`;
+  door.title = 'read this chapter in the book';
+  sub.replaceChildren(door);
+  const up = $('appx-up');
+  up.textContent = `▴ ${bip.title}`;
+  up.href = bipHref(bip);
+  up.title = 'up to the ballot, at this block\'s row';
+  up.classList.remove('hidden');
+} else if (bip) {
   $('appx-title').textContent = `BIP ${bip.bip}`;
   $('appx-subtitle').textContent = bip.name;
   const up = $('appx-up');
@@ -387,8 +442,8 @@ if (bip) {
   $('appx-title').textContent = part.family === 'index' ? `Index of ${part.title}` : part.title;
   $('appx-subtitle').textContent = part.family === 'citations' ? 'Works the chain attests' : '';
 }
-$('appx-note').textContent = (bip ? bip.note : part.note) || '';
-document.title = `The βook of βitcoin — ${bip ? bip.title : label(part)}`;
+$('appx-note').textContent = blockLeaf != null ? '' : (bip ? bip.note : part.note) || '';
+document.title = `The βook of βitcoin — ${blockLeaf != null ? `${bip.title} · ${wholeRef(blockLeaf)}` : bip ? bip.title : label(part)}`;
 
 // Where the descent lands. A fork's leaf opens its first chapter (known
 // offline: a height is a citation, and even an unmined one has a page that
@@ -396,7 +451,7 @@ document.title = `The βook of βitcoin — ${bip ? bip.title : label(part)}`;
 // Appendix I's waits on the tip, and the ▾ appears with it -- an unknown
 // queue has no first chapter to open.
 let firstChapter = null;
-if (kind === 'consensus') {
+if (kind === 'consensus' && blockLeaf == null) {
   firstChapter = bip
     ? (bip.entries.length ? entryHref(bip.entries[0].id, bip.entries[0].index, bip.entries[0].page, bip.entries[0].out ?? null) : null)
     : (bips.length ? bipHref(bips[0]) : null);
@@ -425,20 +480,22 @@ window.__appxDescend = () => descend();
 $('appx-down').addEventListener('click', (ev) => { ev.preventDefault(); descend(); });
 
 // A fork's leaf ascends to the part that lists it, not to the contents: the
-// Consensus leaf is the list this page is one row of.
+// Consensus leaf is the list this page is one row of. (A block leaf's own
+// vertical moves are wired below, where the ballot's bounds are known -- its
+// crumb still climbs a level, back to the ballot at this block's row.)
+if (bip && blockLeaf == null) {
+  window.__appxAscend = () => navTo(hrefFor(part), 'drop');
+}
 if (bip) {
-  window.__appxAscend = () => {
-    try { sessionStorage.setItem('glossia-appendix-entrance', 'drop'); } catch (_) {}
-    const go = () => { location.href = hrefFor(part); };
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { go(); return; }
-    document.body.style.transition = 'transform .2s linear';
-    document.body.style.transform = 'translateY(100vh)';
-    setTimeout(go, 180);
-  };
   $('appx-up').addEventListener('click', (ev) => {
     if (ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey || ev.button !== 0) return;
     ev.preventDefault();
-    window.__appxAscend();
+    if (blockLeaf != null) {
+      try { sessionStorage.setItem('glossia-ballot-land', String(blockLeaf)); } catch (_) { /* unavailable */ }
+      navTo(bipHref(bip), 'drop');
+    } else {
+      window.__appxAscend();
+    }
   });
 }
 
@@ -449,12 +506,14 @@ if (bip) {
 // A fork's leaf turns among the forks instead: back of the first lies the
 // Consensus leaf that lists them, and past the last the shelf simply ends --
 // the way up is the ascent.
-const prevTo = bip
+// A block leaf turns nowhere sideways: its moves are vertical -- along the
+// window, and up to the ballot -- so the foot carries no neighbours.
+const prevTo = blockLeaf != null ? null : bip
   ? (bipAt > 0
     ? { href: bipHref(bips[bipAt - 1]), text: `BIP ${bips[bipAt - 1].bip}` }
     : { href: hrefFor(part), text: label(part) })
   : (APPENDIX[index - 1] ? { href: hrefFor(APPENDIX[index - 1]), text: label(APPENDIX[index - 1]) } : null);
-const nextTo = bip
+const nextTo = blockLeaf != null ? null : bip
   ? (bipAt < bips.length - 1 ? { href: bipHref(bips[bipAt + 1]), text: `BIP ${bips[bipAt + 1].bip}` } : null)
   : (APPENDIX[index + 1] ? { href: hrefFor(APPENDIX[index + 1]), text: label(APPENDIX[index + 1]) } : null);
 window.__appxTurns = { prev: prevTo && prevTo.href, next: nextTo && nextTo.href };
@@ -509,19 +568,7 @@ if (kind === 'consensus' && !bip) {
   listEl.classList.toggle('hidden', !bips.length);
 }
 
-if (bip) {
-  // A citation written whole -- volume and all, since no heading here has
-  // named any part of it -- with □ standing in for the ■ a block has yet to
-  // earn (expectedReference makes the same substitution from the height).
-  const wholeRef = (height, section = null, vout = null, page = null) => {
-    const { volume, book, chapter } = volumeBookChapter(height);
-    if (page === 'volume') return toRoman(volume);
-    if (page === 'book') return `${toRoman(volume)} β${book}`;
-    let s = `${toRoman(volume)} β${book} ■${chapter}`;
-    if (section != null) s += ` §${section}${vout == null ? '' : `.${vout}`}`;
-    return s;
-  };
-
+if (bip && blockLeaf == null) {
   // The statistics, as key/value rows: the status first, then what the file
   // says about how the fork was counted.
   const stats = $('bip-stats');
@@ -548,7 +595,6 @@ if (bip) {
   // -- and the running tally holds in a sticky bar at the screen's foot, so
   // the count stands beside the ballot at every moment of the scroll.
   if (bip.bit != null || bip.version != null) {
-    const { formatBlockVersion } = await import('./btc-prose.js');
     const yes = (v) => (bip.bit != null ? ((v >>> bip.bit) & 1) === 1 : (v >>> 0) >= bip.version);
     const yesSays = bip.bit != null ? `bit ${bip.bit} set` : `version ${bip.version} or above`;
     const noSays = bip.bit != null ? `bit ${bip.bit} not set` : `below version ${bip.version}`;
@@ -573,11 +619,20 @@ if (bip) {
     const rowEl = (b) => {
       const row = document.createElement('div');
       row.className = 'bb-row';
+      row.dataset.height = b.height;
+      // A row opens the block's own leaf, one level down -- the reprint the
+      // vertical turns walk -- not the book itself; the leaf carries the one
+      // door into the book, as a Ledger entry's citation does.
       const a = document.createElement('a');
       a.className = 'bb-ref';
-      a.href = `./bitcoin-book.html?block=${b.height}`;
+      a.href = `./bitcoin-appendix.html?part=consensus&bip=${bip.key}&block=${b.height}`;
       a.textContent = wholeRef(b.height);
-      a.title = `block ${b.height.toLocaleString()}`;
+      a.title = `block ${b.height.toLocaleString()} — read this block's leaf`;
+      a.addEventListener('click', (ev) => {
+        if (ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey || ev.button !== 0) return;
+        ev.preventDefault();
+        navTo(a.getAttribute('href'), 'down');
+      });
       const ver = formatBlockVersion(b.version);
       const v = document.createElement('span');
       v.className = 'bb-ver';
@@ -655,6 +710,24 @@ if (bip) {
     };
 
     const PAGE = 30;
+    // The landing: an ascent from a block's leaf wants the ballot scrolled to
+    // the row left off at, so the scroll keeps drawing until that height is
+    // on the page, then centers it -- the Ledger's own dive-and-return. A
+    // landing outside the window is simply dropped.
+    let land = null;
+    try {
+      land = sessionStorage.getItem('glossia-ballot-land');
+      sessionStorage.removeItem('glossia-ballot-land');
+    } catch (_) { /* unavailable */ }
+    const tryLand = () => {
+      if (land == null) return false;
+      if (floor != null && (Number(land) < floor || Number(land) > anchor)) { land = null; return false; }
+      const row = rowsEl.querySelector(`[data-height="${land}"]`);
+      if (!row) return true;   // keep drawing
+      land = null;
+      requestAnimationFrame(() => row.scrollIntoView({ block: 'center', behavior: 'instant' }));
+      return false;
+    };
     let rendered = 0, busy = false, io = null;
     const scroll = async () => {
       if (busy) return;
@@ -672,6 +745,9 @@ if (bip) {
       // The fetch ahead: keep a page banked beyond what's drawn.
       if (!done && bank.length - rendered < PAGE) fetchMore();
       busy = false;
+      // The landing keeps drawing until its row exists (within the window,
+      // so bounded).
+      if (tryLand() && (rendered < bank.length || !done)) { queueMicrotask(scroll); return; }
       // Re-arm: appending moved the sentinel; observe it afresh so a foot
       // still within reach fires again.
       if (io) { io.unobserve(foot); io.observe(foot); }
@@ -756,6 +832,206 @@ if (bip) {
       body.innerHTML = commentaryHtml(items);
     });
   }
+}
+
+// ── One block of a ballot, reprinted as its own leaf ──────────────────────
+//
+// The ballot names; this leaf reprints. What is reprinted is the chapter's
+// title page as the book prints one: the block's hash as prose between the
+// ⌘ and ⓪ marks (the proof-of-work zeros written after the prose, where
+// they sit in the bytes), and every header field as the frontispiece writes
+// it -- the version with its verdict beside it, since a ballot is what
+// brought the reader here. The vertical turns walk the window: newer above,
+// older below, the ballot itself above the newest -- and the crumb climbs
+// back to the table, landing on this block's row.
+if (blockLeaf != null) {
+  const card = $('block-card');
+  card.classList.remove('hidden');
+  const line = (key) => {
+    const l = document.createElement('div'); l.className = 'proof-line';
+    const k = document.createElement('div'); k.className = 'proof-key'; k.textContent = key;
+    const v = document.createElement('div'); v.className = 'proof-val';
+    l.append(k, v); card.append(l);
+    return v;
+  };
+
+  // The block-hash notation ⌘ᵐ … ⓪ⁿ, as bitcoin-book.html defines it: the
+  // prose encodes internal order with the proof-of-work zeros trimmed off
+  // the end (byte-granular), and the two superscripts state the true bit
+  // counts, summing to 256.
+  const reverseHex = (hex) => (hex.match(/../g) || []).reverse().join('');
+  const trimTrailingZeroBytes = (hex) => {
+    let end = hex.length;
+    while (end >= 2 && hex.slice(end - 2, end) === '00') end -= 2;
+    return hex.slice(0, end);
+  };
+  const leadingZeroBits = (displayHex) => {
+    const stripped = displayHex.replace(/^0+/, '');
+    let bits = (displayHex.length - stripped.length) * 4;
+    if (stripped) {
+      const d = parseInt(stripped[0], 16);
+      bits += d >= 8 ? 0 : d >= 4 ? 1 : d >= 2 ? 2 : 3;
+    }
+    return bits;
+  };
+  const blockHashParts = (displayHex) => ({
+    hex: trimTrailingZeroBytes(reverseHex(displayHex)),
+    zeroBits: leadingZeroBits(displayHex),
+    remainBits: 256 - leadingZeroBits(displayHex),
+  });
+
+  // Prose, the way the picker says it: the engine arrives lazily, a figure
+  // it never reaches stays unsaid, and the hex rides the mark for a reader
+  // checking an explorer -- never the page.
+  let engineP = null;
+  const glossia = () => (engineP ||= import('./glossia-msg.js').then(async (m) => { await m.init(); return m; }));
+  const cells = [];
+  const UNSAID = 'the engine that puts a hash into words did not load';
+  const mark = (glyph, cls, title) => {
+    const m = document.createElement('span');
+    m.className = cls; m.textContent = glyph; m.title = title;
+    return m;
+  };
+  const sup = (n, title) => {
+    const s = document.createElement('span');
+    s.className = 'op-count'; s.textContent = toSuperscript(n); s.title = title;
+    return s;
+  };
+  const fig = (hexToEncode) => {
+    const s = document.createElement('span');
+    s.className = 'proof-figure waiting'; s.textContent = '…';
+    cells.push({ el: s, hex: hexToEncode });
+    return s;
+  };
+  const sayProse = () => {
+    if (!cells.length) return;
+    glossia().then((m) => {
+      for (const { el, hex } of cells) {
+        try {
+          el.textContent = m.encodeSeedPhrase(hex, 'english', 5).prose;
+          el.classList.remove('waiting');
+        } catch { el.textContent = 'unsaid'; el.title = UNSAID; }
+      }
+    }).catch(() => {
+      for (const { el } of cells) { el.textContent = 'unsaid'; el.title = UNSAID; }
+    });
+  };
+  // A hash with proof-of-work zeros: ⌘ᵐ prose ⓪ⁿ.
+  const powFigure = (v, displayHex, what) => {
+    const parts = blockHashParts(displayHex);
+    v.append(
+      mark('⌘', 'dt', `${what}\n${displayHex}`),
+      sup(parts.remainBits, `the hash's remaining ${parts.remainBits} bits, Glossia-encoded as ${Math.ceil(parts.remainBits / 8)} bytes (⌘ — double-SHA256, the identity hash)`),
+      ' ', fig(parts.hex), ' ',
+      mark('⓪', 'dt', `${parts.zeroBits} leading zero bits — the proof of work`),
+      sup(parts.zeroBits, `${parts.zeroBits} leading zero bits — the proof-of-work; the ${Math.floor(parts.zeroBits / 8)} whole zero bytes are dropped before encoding`),
+    );
+  };
+
+  (async () => {
+    // The block, off the same mirrors everything here reads: its hash by
+    // height, then the header's fields by hash.
+    let data = null;
+    for (const base of MEMPOOL_MIRRORS) {
+      try {
+        const hRes = await fetch(`${base}/block-height/${blockLeaf}`);
+        if (!hRes.ok) continue;
+        const hash = (await hRes.text()).trim();
+        const bRes = await fetch(`${base}/block/${hash}`);
+        if (!bRes.ok) continue;
+        data = await bRes.json();
+        if (!data.id) data.id = hash;
+        break;
+      } catch { /* try the next mirror */ }
+    }
+    if (!data) {
+      line('this block').textContent = 'the chain could not be reached';
+      return;
+    }
+
+    const hf = composeBlockHeaderFields(data);
+    powFigure(line('chapter hash'), data.id, 'the block hash — the chapter\'s own name');
+
+    const ver = formatBlockVersion(data.version);
+    const vv = line('version');
+    const text = ver.text.replace(/^v/, '');
+    vv.append(mark('v', 'dt', ver.title), document.createTextNode((/^\d/.test(text) ? '' : ' ') + text));
+    vv.title = ver.title;
+
+    // The verdict, beside the field it is read off: a ballot is what brought
+    // the reader here.
+    if (bip.bit != null || bip.version != null) {
+      const aye = bip.bit != null ? ((data.version >>> bip.bit) & 1) === 1 : (data.version >>> 0) >= bip.version;
+      const sv = line('signal');
+      sv.textContent = aye
+        ? `signals — ${bip.bit != null ? `bit ${bip.bit} set` : `version ${bip.version} or above`}`
+        : `— ${bip.bit != null ? `bit ${bip.bit} not set` : `below version ${bip.version}`}`;
+      sv.style.color = aye ? 'var(--accent)' : 'var(--meta)';
+    }
+
+    if (data.previousblockhash) {
+      powFigure(line('previous'), data.previousblockhash, 'the previous chapter\'s hash — what this header commits to behind it');
+    }
+    const mr = line('merkle root');
+    mr.append(
+      mark('⋔', 'merkle-mark', `the merkle root — every section of the chapter, committed\n${data.merkle_root}`),
+      sup(32, '32 bytes'),
+      ' ', fig(reverseHex(data.merkle_root)),
+    );
+    line('mined').textContent = hf.timestamp;
+    const tv = line('target');
+    tv.textContent = hf.bitsExpr ? `${hf.bits} < ${hf.bitsExpr}` : hf.bits;
+    tv.title = hf.bitsTitle;
+    const nv = line('nonce');
+    nv.append(mark('η', 'dt', hf.nonceTitle ?? 'the nonce'), document.createTextNode(hf.nonce));
+    sayProse();
+  })();
+
+  // The window's bounds, for the vertical turns: a closed ballot's are the
+  // file's own arithmetic; a live one's wait on the tip. Above the newest
+  // block lies the ballot itself.
+  const WINDOW = Number.isFinite(bip.window) ? bip.window : 2016;
+  let newest = Number.isFinite(bip.ballot) ? bip.ballot : null;
+  const blockHref = (h) => `./bitcoin-appendix.html?part=consensus&bip=${bip.key}&block=${h}`;
+  const upEl = $('block-up');
+  const downEl = $('appx-down');
+  const toBallot = () => {
+    try { sessionStorage.setItem('glossia-ballot-land', String(blockLeaf)); } catch (_) { /* unavailable */ }
+    navTo(bipHref(bip), 'drop');
+  };
+  const wire = () => {
+    const oldest = newest != null ? Math.max(0, newest - WINDOW + 1) : null;
+    const newerUp = newest == null || blockLeaf < newest;
+    upEl.title = newerUp ? 'the next newer block of the window' : 'up to the ballot';
+    upEl.href = newerUp ? blockHref(blockLeaf + 1) : bipHref(bip);
+    upEl.classList.remove('hidden');
+    window.__appxAscend = () => (newerUp ? navTo(blockHref(blockLeaf + 1), 'drop') : toBallot());
+    const older = (oldest == null || blockLeaf > oldest) && blockLeaf > 0;
+    downEl.classList.toggle('hidden', !older);
+    if (older) {
+      downEl.setAttribute('aria-label', 'The next older block of the window');
+      downEl.title = 'the next older block of the window';
+      firstChapter = null;   // the ▾ is this leaf's own turn, not a descent into the book
+      window.__appxDescend = () => navTo(blockHref(blockLeaf - 1), 'down');
+    } else {
+      window.__appxDescend = () => { /* the window's opening: nothing below */ };
+    }
+  };
+  wire();
+  if (newest == null) {
+    chainTip().then((tip) => {
+      if (tip != null) { newest = tip; wire(); }
+    }).catch(() => { /* the blind bounds stand */ });
+  }
+  upEl.addEventListener('click', (ev) => {
+    if (ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey || ev.button !== 0) return;
+    ev.preventDefault();
+    window.__appxAscend();
+  });
+  downEl.addEventListener('click', (ev) => {
+    ev.preventDefault();
+    window.__appxDescend();
+  }, { capture: true });
 }
 
 // ── Citations: the works, and the door for adding one ─────────────────────
@@ -980,7 +1256,7 @@ if (kind === 'proofs') {
   dropZone.addEventListener('drop', (e) => { if (e.dataTransfer?.files?.length) takeProof(e.dataTransfer.files); });
 }
 
-if (!prevTo) {
+if (!prevTo && !bip) {
   chainTip().then((tip) => {
     if (tip == null) return;
     const volume = volumeBookChapter(tip).volume;

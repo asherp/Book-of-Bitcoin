@@ -125,7 +125,11 @@ reaches it instead.
   it reads as a yes, lazily drawn with a running tally pinned at the foot
   (a fork still signaling counts from the chain tip instead), then the
   activation statistics, the chapters and sections it names, and its
-  commentary. The Index of Ledgers' leaves are `bitcoin-ledger.html`'s. The
+  commentary. A ballot row opens `&block=<height>`, the block's own leaf:
+  the chapter's title page reprinted — hash and header fields as the book
+  writes them, the signal verdict beside the version — with vertical turns
+  walking the window block by block and the ascent returning to the ballot
+  at the row left off; the citation links into the book itself. The Index of Ledgers' leaves are `bitcoin-ledger.html`'s. The
   Citations leaf also carries the proof picker: a `.ots` dropped there is
   replayed, checked against its block's own header, and kept in the reader's
   own browser — the citation it resolves to (chapter and §section, both
