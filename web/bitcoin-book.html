@@ -410,10 +410,12 @@ button:disabled { opacity: .4; cursor: not-allowed; }
    full gold once set.
 
    The button is larger than the glyph it holds (a corner is a poor target for
-   a finger otherwise); the glyph inside sits exactly where the ribbon has
-   always sat. */
+   a finger otherwise), and hangs INSIDE its place's right edge rather than
+   over it: #chapter clips its own overflow-x, so a ribbon that overhung the
+   column was cut in half wherever the column reached the screen edge -- which
+   is every narrow screen. Flush right, and the glyph is always whole. */
 .hash-bookmark {
-  position: absolute; top: -6px; right: -6px; width: 18px; height: 18px; padding: 0;
+  position: absolute; top: -6px; right: 0; width: 18px; height: 18px; padding: 0;
   display: flex; align-items: center; justify-content: center;
   background: none; border: 0; color: var(--accent); line-height: 0; cursor: pointer;
   opacity: .42;   /* the mark it would become, faded to an offer */
@@ -585,9 +587,10 @@ button:disabled { opacity: .4; cursor: not-allowed; }
    to satisfy a narrower column. */
 /* padding-right is the ribbon's own room: an output is a keepable place, so
    its amount carries a bookmark at the corner where the amount ends, and a
-   ribbon must never sit over the ₿ it is offered beside. The amounts all
-   reserve it, so the column still aligns on the point. */
-.tx-out-value  { grid-column: 2; text-align: right; padding-right: 15px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+   ribbon must never sit over the ₿ it is offered beside. The ribbon's glyph
+   reaches 14px in from the cell's edge, so the amounts stop clear of it --
+   all of them, so the column still aligns on the point. */
+.tx-out-value  { grid-column: 2; text-align: right; padding-right: 20px; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .tx-locktime { grid-column: left / -1; grid-row: 3; text-align: center; font-style: normal; }
 .tx-note { font: italic 400 calc(13.5px * var(--scale-body, 1))/1.4 'Newsreader',serif; color: var(--dim); }
 /* The amount's size, on both its classes. An amount is a .tx-note as well as
