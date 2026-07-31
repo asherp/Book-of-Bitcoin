@@ -223,16 +223,14 @@ test('the extranonce reads as a number, and stops leaning on the tag', { skip: s
   const fields = composeTransactionFields(parseTransaction(coinbaseTxHex(scriptSig)), 1, null, markEncoder);
   const script = fields.inputs[0].script;
 
-  // η carries its value as a subscript, the one form the mark takes in either
-  // era -- and the value is the product the rest of the book states numbers in:
-  // 1785429755 = 5 · 839 · 425609, the primes lowered with the value they
-  // belong to, the dots between them left where they are.
-  const subscript = (s) => String(s).replace(/\d/g, (d) => '₀₁₂₃₄₅₆₇₈₉'[+d]);
+  // η carries its value at full size, the one form the mark takes in either
+  // era -- and the value is the product the rest of the book states numbers
+  // in: 1785429755 = 5 · 839 · 425609.
   const superscript = (s) => String(s).replace(/\d/g, (d) => '⁰¹²³⁴⁵⁶⁷⁸⁹'[+d]);
   const factored = primeFactors(EXTRANONCE_VALUE)
-    .map(([p, k]) => subscript(p) + (k === 1 ? '' : superscript(k))).join('·');
-  assert.match(script, new RegExp(`η${factored}`), 'the counter reads as its own number, subscript');
-  assert.ok(!script.includes(`η${subscript(EXTRANONCE_VALUE)}`), 'the decimal itself belongs to the title');
+    .map(([p, k]) => String(p) + (k === 1 ? '' : superscript(k))).join('·');
+  assert.match(script, new RegExp(`η${factored}`), 'the counter reads as its own number');
+  assert.ok(!script.includes(`η${EXTRANONCE_VALUE}`), 'the decimal itself belongs to the title');
   // Its printable tail (~kj) was joining the quotation as the counter rolled.
   // Consumed under η, it can't reach the text scan at all.
   const quoted = [...script.matchAll(/“([^”]*)”/g)].map((m) => m[1]).join('');
