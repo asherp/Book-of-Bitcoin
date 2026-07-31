@@ -35,7 +35,7 @@ test('every row resolves to something the filter can look for', () => {
     // row that stays on every page by never being characterised.
     if (tokens.length === 0) { empty.push(row.glyph); continue; }
     for (const t of tokens) {
-      assert.ok(t.template !== undefined || t.text.length > 0,
+      assert.ok(t.template !== undefined || t.pattern !== undefined || t.text.length > 0,
         `empty token in ${row.glyph}`);
     }
   }
@@ -55,16 +55,22 @@ test('a value-carrying mark is found behind its value', () => {
 });
 
 test('a bare operator is not caught by a number that contains it', () => {
-  // The chapter head prints its target as 2¹⁶⁰×213529 and the book leaf a
+  // The chapter head prints its target as 2¹⁶⁰213529¹ and the book leaf a
   // difficulty move as −2.53%. Neither is Script arithmetic.
-  const marks = new Set(['β₇₈', '2¹⁶⁰×213529', 'difficulty −2.53%']);
+  const marks = new Set(['β₇₈', '2¹⁶⁰213529¹', 'difficulty −2.53%']);
   assert.ok(!rowShows(marksOf('+ − × ÷ %'), marks), 'arithmetic should stay shut');
   assert.ok(!rowShows(marksOf('&lt; &gt; ≤ ≥'), marks), 'comparisons should stay shut');
-  // The target's own row wants the opposite of the arithmetic row's exactness:
-  // a factorization carries no fixed literal, so it answers to a loose ×.
-  assert.ok(rowShows(marksOf('2<sup><i>k</i></sup>×<i>p</i>…', '×*'), marks), 'the target should open its row');
-  assert.ok(!rowShows(marksOf('2<sup><i>k</i></sup>×<i>p</i>…', '×*'), new Set(['β₇₈', '⧉'])),
-    'and stay shut where no product prints');
+  // The target is a shape rather than a string -- every character of
+  // 2¹⁶⁰213529¹ is a digit the retarget chose -- so its row is found by the
+  // pattern only a factorization makes: a plain digit carrying a raised one.
+  const FACTORS = 're:[0-9][⁰¹²³⁴⁵⁶⁷⁸⁹]';
+  const target = (m) => rowShows(marksOf('2<sup><i>k</i></sup><i>p</i><sup><i>l</i></sup>…', FACTORS), m);
+  assert.ok(target(marks), 'the target should open its row');
+  assert.ok(target(new Set(['β₃₂ < 2²⁰⁸3¹5¹17¹257¹'])), 'genesis too, mark and all');
+  // And the raised digits a page prints elsewhere are not products: a push
+  // count, a hash's bit counts, the genesis chapter's empty predecessor.
+  assert.ok(!target(new Set(['β₇₈', '²⁰', '↧²⁰', '⌘²²⁴', '⓪²⁵⁶', '■840000', 'η₄₂'])),
+    'no factorization on the page, no row');
   // But the same marks as Script opcodes do open those rows.
   const script = new Set(['×', '≤']);
   assert.ok(rowShows(marksOf('+ − × ÷ %'), script));

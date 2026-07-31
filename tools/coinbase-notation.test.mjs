@@ -175,7 +175,7 @@ test('a pre-BIP34 coinbase keeps the preamble reading', { skip: skipNoEngine }, 
   const script = fields.inputs[0].script;
 
   assert.match(script, /β/, 'the difficulty target still reads under β');
-  assert.ok(script.includes('2²⁰⁸×3×5×17×257'), 'restated as the target it is, in primes');
+  assert.ok(script.includes('2²⁰⁸3¹5¹17¹257¹'), 'restated as the target it is, in primes');
   assert.ok(script.includes('The Times 03/Jan/2009'), 'and the headline is still quoted');
   assert.ok(!script.includes('■'), 'no height mark — the rule had not been written yet');
 });

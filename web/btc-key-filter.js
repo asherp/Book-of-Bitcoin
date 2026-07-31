@@ -61,20 +61,23 @@ export function collectMarks(root) {
 
 // What a key row teaches, read off the row's own glyph cell.
 //
-// A mark written bare -- × in "+ − × ÷ %" -- must be matched exactly: the
-// chapter head prints 2¹⁶⁰×213529, and a loose × would drag the arithmetic
-// group onto every chapter page. The target's own row asks for the opposite
-// (data-marks="×*"): a prime factorization has no literal in it to look for --
-// its primes are whatever the last retarget left -- so × is the one mark of
-// the form that always prints, and matching it loosely finds the product
-// wherever it stands. A mark written with a placeholder after it --
-// ■<i>n</i>, β<i>n</i>, η<sub><i>n</i></sub> -- carries a value on the page and
-// is matched as a prefix instead, so ■ finds ■840000 and β finds both β₇₈ and
-// the locktime's III β2 ■5.
+// A mark written bare -- × in "+ − × ÷ %" -- must be matched exactly, so that
+// a number containing one (a difficulty move of −2.53%) cannot drag the
+// arithmetic group onto a page that holds no arithmetic. A mark written with a
+// placeholder after it -- ■<i>n</i>, β<i>n</i>, η<sub><i>n</i></sub> -- carries
+// a value on the page and is matched as a prefix instead, so ■ finds ■840000
+// and β finds both β₇₈ and the locktime's III β2 ■5.
 //
 // Rows whose glyph cell is an example rather than a literal (²⁰ standing for
 // any push, ①–⑯ for a run) say so with data-marks, where a trailing * asks for
 // the same prefix match, and tpl:<id> ties a row to a pattern table instead.
+//
+// One mark in the book is a shape and not a string at all: the difficulty
+// target, printed as its prime factorization (2¹⁶⁰213529¹), whose every
+// character is a digit the last retarget chose. Nothing in it is fixed enough
+// to look for -- so that row names re:<pattern> instead, and is shown where the
+// page prints something of that form. The pattern wanted here is the one thing
+// only a factorization does: a plain digit carrying a raised one.
 // Pure string work, so it is testable without a DOM.
 
 // Stands in for a placeholder while tokenizing; never appears in real markup.
@@ -83,6 +86,7 @@ export function marksOf(glyphHtml, dataMarks = null) {
   if (dataMarks) {
     return dataMarks.split(/\s+/).filter(Boolean).map((t) => {
       if (t.startsWith('tpl:')) return { template: t.slice(4) };
+      if (t.startsWith('re:')) return { pattern: new RegExp(t.slice(3)) };
       return t.endsWith('*') ? { text: t.slice(0, -1), loose: true } : { text: t, loose: false };
     });
   }
@@ -97,12 +101,13 @@ export function marksOf(glyphHtml, dataMarks = null) {
   }).filter(Boolean);
 }
 
-// Does the page show any mark this row teaches -- or, for the off-chain
-// apparatus no page ever prints (k, G, a channel's state-scoped keys), does it
-// carry the template that row belongs to?
+// Does the page show any mark this row teaches -- in its own form, or, for the
+// off-chain apparatus no page ever prints (k, G, a channel's state-scoped
+// keys), by carrying the template that row belongs to?
 export function rowShows(tokens, marks, templates = new Set()) {
-  return tokens.some(({ text, loose, template }) => {
+  return tokens.some(({ text, loose, template, pattern }) => {
     if (template !== undefined) return templates.has(template);
+    if (pattern !== undefined) return [...marks].some((m) => pattern.test(m));
     return loose ? [...marks].some((m) => m.includes(text)) : marks.has(text);
   });
 }

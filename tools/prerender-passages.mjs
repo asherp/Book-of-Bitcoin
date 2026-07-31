@@ -178,7 +178,7 @@ export function frontispieceMd(header) {
     ? `⓪${toSuperscript(256)} (no earlier block — this is the genesis block; all 256 bits zero)`
     : hashNotation(prevParts, proseOf(prevParts.hex));
   // Wire order throughout, as on the live page. The difficulty row states
-  // the proof of work as the inequality it is -- β₇₈ < 2¹⁶⁰×213529 -- the
+  // the proof of work as the inequality it is -- β₇₈ < 2¹⁶⁰213529¹ -- the
   // < binding the block hash printed above the frontispiece to the exact
   // target, without the field leaving its wire slot.
   const lines = [
