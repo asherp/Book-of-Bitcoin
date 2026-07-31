@@ -108,20 +108,21 @@ export const toSuperscript = (n) => String(n).split('').map((d) => SUPERSCRIPT_D
 // (The dot also groups the digits of a satoshi amount, but only ever inside a
 // hover title -- no printed mark carries both senses.)
 //
-// `digits` is the register the primes are written in -- plain where the number
-// stands on its own line (a target, the header's nonce), lowered where it
-// rides its glyph as a value (the extranonce's η₅·₈₃₉·₄₂₅₆₀₉). Powers are
-// raised in either register.
-const factorProse = (factors, digits = String) => factors
-  .map(([p, power]) => (power === 1 ? digits(p) : `${digits(p)}${toSuperscript(power)}`))
+// One register, everywhere: primes on the line, powers raised above it. A
+// product is the same object wherever the book states one, and the marks that
+// carry values as subscripts (η's counter) drop the subscript rather than
+// lower a whole factorization into it -- a product written small enough to
+// ride a glyph is a product nobody can read.
+const factorProse = (factors) => factors
+  .map(([p, power]) => (power === 1 ? String(p) : `${p}${toSuperscript(power)}`))
   .join('·');
 
 // Any number the book states as a product: its factorization, or the figure
 // itself where there is no factorization to write. 0 and 1 are the whole of
 // that exception -- neither is a product of primes, and an early miner's
-// first extranonce is exactly η₁. A prime stands alone, no dot and no power:
+// first extranonce is exactly η1. A prime stands alone, no dot and no power:
 // a nonce of 2147483647 is written η2147483647, which is the truth about it.
-const productProse = (value, digits = String) => factorProse(primeFactors(value), digits) || digits(value);
+const productProse = (value) => factorProse(primeFactors(value)) || String(value);
 
 // nBits (a compact difficulty target) -> { sym, expr, title }. The target is
 // rendered as the thing it is -- the ceiling a mined hash must dip under --
@@ -587,17 +588,19 @@ const blockHeightMark = (height) => `<span class="op op-blockmark" title="BIP34 
 // renders is what the tail holds. A pool tag reads as the sentence the pool
 // wrote, pipes and spaces included, instead of arriving pre-cut by a tokenizer
 // that mistook its punctuation for instructions.
-// The extranonce mark: η with its value subscript, in both eras. One field
-// gets one form -- an early block's η₂² and a modern η₅·₈₃₉·₄₂₅₆₀₉ are the
-// same counter under the same rule, and a mark that changed shape with the
-// size of its number would be two marks wearing one glyph. Both call sites
-// come here so they cannot drift apart again.
+// The extranonce mark: η and its value, in both eras. One field gets one form
+// -- an early block's η2² and a modern η5·839·425609 are the same counter
+// under the same rule, and a mark that changed shape with the size of its
+// number would be two marks wearing one glyph. Both call sites come here so
+// they cannot drift apart again.
 //
-// The value is a product, as the header's own nonce is, written in the
-// subscript register the glyph carries its values in: lowered primes, raised
-// powers, the alternation dividing them. The decimal keeps the title, which
-// is where a counter is legible as a count.
-const extranonceMark = (n) => markToken(`η${productProse(n, toSubscript)}`, `extranonce ${n} — the counter the miner rolled once the header's 32-bit nonce (η) was exhausted. A tally, not text: it is read as the number it is, so its bytes never pass for writing`);
+// The value is a product, as the header's own nonce is, and written the same
+// way: primes on the line, powers raised. It rode as a subscript while it was
+// a single figure; a factorization is too much to lower, and the counter is
+// better served reading at the size of the numbers it is made of than sitting
+// small beside its glyph. The decimal keeps the title, which is where a
+// counter is legible as a count.
+const extranonceMark = (n) => markToken(`η${productProse(n)}`, `extranonce ${n} — the counter the miner rolled once the header's 32-bit nonce (η) was exhausted. A tally, not text: it is read as the number it is, so its bytes never pass for writing`);
 
 function renderMinerMargin(hex, collect) {
   if (!hex) return '';

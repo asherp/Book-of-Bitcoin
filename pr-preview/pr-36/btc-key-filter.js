@@ -76,17 +76,16 @@ export function collectMarks(root) {
 // target, printed as its prime factorization (2¹⁶⁰·213529), whose primes are
 // whatever the last retarget left. Nothing in it is fixed enough to look for
 // -- so that row names re:<pattern> instead, and is shown where the page
-// prints something of that form. What never varies is the power of two every
-// target opens with, so the pattern asks for that: a plain digit under a
-// raised one, which only a factorization writes.
+// prints something of that form.
 //
-// The nonce beside it is factored too, but its powers are usually all one and
-// dropped, so it seldom carries a raised digit at all. Where it does, it opens
-// the target's row -- correctly, as it happens: the two fields share a line,
-// and no page in the book prints a nonce without the target it was mined
-// against. An extranonce carries its product in the lowered register
-// (η₅·₈₃₉·₄₂₅₆₀₉), which is not this shape either way, so a post-BIP34
-// coinbase -- a counter and no target anywhere near it -- leaves the row shut.
+// What never varies is the scale of the power of two a target opens with: the
+// byte shift alone puts it past 2¹⁰⁰, so the pattern asks for a digit under a
+// power of two or more figures. The nonces are products in the same notation
+// and would otherwise answer for the target's row -- but a counter divisible
+// by a tenth power is a rarity (about one in a thousand, nearly always 2¹⁰),
+// so a post-BIP34 coinbase, which prints an extranonce and no target at all,
+// keeps the row shut. When one does slip through, the filter has erred toward
+// showing, which is the direction it is built to err in.
 // Pure string work, so it is testable without a DOM.
 
 // Stands in for a placeholder while tokenizing; never appears in real markup.
