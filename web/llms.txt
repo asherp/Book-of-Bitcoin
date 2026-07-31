@@ -103,23 +103,71 @@ reaches it instead.
   transaction's section, `&out=<n>` to one of its outputs;
   `?page=volume|book` opens the block's volume or book leaf.
 - `bitcoin-contents.html` — the curated table of contents, one leaf per
-  volume and per appendix, all at a single level (the same line the book runs
-  below: Volume I … Volume V, Appendix I, II, III). `?volume=<n|roman>` opens
-  a volume's contents leaf, `?part=mempool|future|ledgers` an appendix's; a
-  bare visit opens the volume last read. An ascent from a volume's leaf in
-  the book lands on that volume's contents leaf. The appendices are I the
-  mempool's projected chapters, II heights consensus has fixed but no block
-  has reached, III the shelf of ledgers.
-- `bitcoin-appendix.html?part=mempool|future` — an appendix's title leaf: its
-  name and what it gathers. Below each is its first chapter, in the book
-  itself: `?block=<tip+1>` for the queue (and the ascent from any projected
-  chapter returns to that leaf), the first fixed height for Appendix II.
-  Appendix III's leaves are `bitcoin-ledger.html`'s.
+  volume and per back-matter part, all at a single level (the same line the
+  book runs below). `?volume=<n|roman>` opens a volume's contents leaf,
+  `?part=mempool|consensus|ledgers|proofs` a part's (`future` aliases
+  Consensus); a bare visit opens the volume last read, and an ascent from a
+  volume's leaf in the book lands on that volume's contents leaf. The back
+  matter runs in three families: Appendix I (the mempool's projected
+  chapters) and Appendix II (Consensus — the soft forks grouped under their
+  BIPs with their recognized names, each naming the chapters of its
+  signaling, lock-in, activation and first spends, the unmined ones marked
+  □, and the forks the chain declined kept among them as failed — BIP101,
+  Bitcoin Unlimited (whose ballot table reads each chapter's coinbase text
+  rather than its version word, /EB…/ counted as the yes), BIP149, BIP119
+  — some with no chapter to name at all); the Index of Ledgers (pointing into the text, many chapters per
+  name); and Citations, standing last — works cited outside the text, dated
+  into a chapter by their OpenTimestamps proofs. A cited passage carries the
+  back-reference in its margin as the ‡ mark, the work's number in the
+  register as its subscript (‡₁); a reader's own kept proof wears the bare
+  ‡, an addendum outside the edition's numbering.
+- `bitcoin-appendix.html?part=mempool|consensus|proofs` — a back-matter
+  part's title leaf: its name and what it gathers (`?part=future` is kept as
+  an alias for Consensus). Below each is its first chapter,
+  in the book itself: `?block=<tip+1>` for the queue (and the ascent from any
+  projected chapter returns to that leaf), the earliest chapter any listed
+  work is stamped into for Citations. The Consensus leaf lists its forks
+  instead, and `?part=consensus&bip=<n>` opens one fork's own leaf — BIP
+  number and recognized name, then the fork's ballot, oldest block first:
+  every block of the counted window with its version as the frontispiece
+  writes it, whether it reads as a yes, and the accumulated count and rate
+  as they stood at that block — so scrolling down replays the activation in
+  the order it occurred, and the ending is discovered rather than stated.
+  The fork's curated chapters cut across the table as labeled rules (where
+  signaling began, where the count crossed), and the summary line and the
+  fork's commentary — its description reads there — pin together at the
+  screen's foot, the bar holding the count only as far as the reading has
+  gone. A fork still signaling opens where its story begins, and where
+  appendix.yaml names a monitor for it the tally states the current
+  period's whole signaling rate as that site publishes it, credited. Then the
+  activation statistics, the chapters and sections it names, and its
+  commentary. A ballot row opens `&block=<height>`, the block's own leaf:
+  the chapter's title page reprinted — hash and header fields as the book
+  writes them, the signal verdict beside the version — with vertical turns
+  walking the window block by block and the ascent returning to the ballot
+  at the row left off; the citation links into the book itself. The Index of Ledgers' leaves are `bitcoin-ledger.html`'s. The
+  Citations leaf also carries the proof picker: a `.ots` dropped there is
+  replayed, checked against its block's own header, and kept in the reader's
+  own browser — the citation it resolves to (chapter and §section, both
+  stated by the proof itself) then stands in the contents beside the bundled
+  ones. Nothing is uploaded; the bundled proofs are `web/proofs/*.ots`,
+  listed in `web/appendix.yaml`.
+- `bitcoin-proof.html?digest=<sha256>` — one cited work's own leaf,
+  which every Citations row opens. Front matter: the file's name, and its
+  digest as prose — the whole of what the chain was told about it. Then the
+  proof written out paragraph by paragraph, each paragraph one value the last
+  hashes into: the commitment, the transaction, then each merkle level's
+  sibling and result in turn, ending on the root. The margin carries a
+  citation only where the paragraph beside it is on chain — the transaction,
+  cited down to the output holding the commitment (`§section.out`), and the
+  root, cited to the chapter whose header commits to it. The file itself is
+  never shown or held: a button opens the reader's own copy to hash in the
+  browser and compare against the digest.
 - `bitcoin-front.html` — front matter (`?leaf=` selects a leaf).
 - `bitcoin-search.html` — lookup by height, hash, txid, or citation.
 - `bitcoin-ledger.html?address=<addr>` — the passage that address is, in the
   ledger holding it; `&page=ledger` opens that ledger's title leaf instead,
-  and a bare `bitcoin-ledger.html` opens Appendix III's own leaf above them.
+  and a bare `bitcoin-ledger.html` opens the Index of Ledgers' own leaf above them.
 
 These render only in a JavaScript-capable browser; without one, use the
 static passages above or reconstruct the passage as described next.

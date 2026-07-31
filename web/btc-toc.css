@@ -38,6 +38,8 @@
 /* A reader's own bookmark, sitting inline in reading order, wears the same
    ribbon it flies in the book. */
 .toc-bm { display:inline-block; width:9px; height:12px; margin-right:8px; color:var(--accent); vertical-align:baseline; }
+/* The citation mark on a cited work's row: gold, like the reference it is. */
+.toc-cite-mark { color:var(--accent); font-weight:600; }
 .toc-bm svg { display:block; width:100%; height:100%; }
 
 /* Unmined chapters -- the mempool's projections, and the appendix's future
@@ -54,6 +56,10 @@
 
 /* An appendix used to wear its heading inside a longer list, and that heading
    was the door to its own leaf. It has a contents leaf of its own now -- the
-   contents runs a leaf per volume and per appendix -- so the heading is the
-   leaf's head, and the door is the leaf's ▾. Nothing here sets a heading that
-   is also a link any more. */
+   contents runs a leaf per volume and per appendix -- so a part's heading is
+   the leaf's head, and the door is the leaf's ▾. One sub-head within a leaf
+   is still a door: a BIP's, on the Consensus leaf, opening that fork's own
+   title leaf -- dressed as the Book sub-header it stands in for. */
+a.toc-bip { display:block; text-decoration:none; }
+a.toc-bip::after { content:' ›'; }
+a.toc-bip:hover, a.toc-bip:focus-visible { color:var(--accent-2); text-decoration:underline; }

@@ -523,6 +523,18 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 /* The amount of the output this input spends, under its reference. Right-aligned
    to the body gutter, like the reference above it and the output amounts opposite. */
 .cite-amount { margin-top: .1em; text-align: right; font: italic 400 calc(12px * var(--scale-margins, 1))/1.3 'Newsreader',serif; color: var(--meta); font-variant-numeric: tabular-nums; white-space: nowrap; }
+/* An output that dated something outside the book: the ‡ citation mark, under
+   the amount and under any forward citation, its subscript the work's number
+   in the Citations register (a reader's own addendum wears the bare ‡). The
+   book's own references point inward, at chapters it contains; this is the one
+   mark that points out of the text entirely, at a document the chain dated and
+   the book does not hold -- gold, like the other marks that point somewhere. */
+.appx-cite {
+  margin-top: .15em; text-align: right; white-space: nowrap;
+  font: 600 calc(13px * var(--scale-margins, 1))/1.4 'IBM Plex Mono',monospace;
+}
+.appx-cite a { color: var(--accent); text-decoration: none; }
+.appx-cite a:hover { color: var(--accent-2); }
 /* An output's forward citation -- the section that later spent it -- under its
    amount in the right margin, mirroring the left margin's provenance cites.
    Empty for an unspent output. */
@@ -816,8 +828,9 @@ import { init, encodeSeedPhrase } from './glossia-msg.js';
 import { parseTransaction, computeTxid, parseBlockHeader, computeBlockHash, bitsToDifficulty } from './btc-tx.js';
 import { composeTransactionFields, composeBlockHeaderFields, bitsInfo, groupDigits, formatBtc, renderWitness, toSuperscript, timestampInfo } from './btc-prose.js';
 import { volumeBookChapter, heightOf, windowStartOf, retargetInside, toRoman, reference, parseReference, footnoteMark } from './btc-citation.js';
-import { loadNotables, places, placeTitle, blocksEta } from './btc-contents.js';
+import { loadNotables, places, placeTitle, blocksEta, appendix } from './btc-contents.js';
 import { queueLabel } from './btc-mempool.js';
+import { toSubscript } from './btc-sigla.js';
 import { NOTATION_HTML } from './btc-notation.js';
 import { transactionTemplates } from './btc-templates.js';
 import { collectMarks, applyKeyFilter } from './btc-key-filter.js';
@@ -1360,6 +1373,41 @@ function loadOutspends(txid) {
 // through the same memoized citation lookup as a prevout. An unspent (or
 // unconfirmed-spend) output leaves its cell empty, and any failure stays
 // silent -- a missing forward reference is absence, not an error.
+// The works this section dated, if any: the Citations register read backwards. The list is
+// read once per page load -- it is small, and it is the same list for every
+// section -- and each output that carries a listed commitment prints its row's
+// number under the amount. A reader's own kept proofs are in it too, so a
+// passage can carry a reference to something only that reader has.
+let citedWorks = null;
+const listedWorks = () => (citedWorks ||= (async () => {
+  const part = appendix().find((p) => p.kind === 'proofs');
+  if (!part) return { part: null, listed: [] };
+  const { allProofs } = await import('./btc-proofs.js');
+  return { part, listed: await allProofs(part).catch(() => []) };
+})());
+async function resolveCitedWorks(sectionNum, cells, gen) {
+  if (!cells.length || state.projected) return;
+  const { part, listed } = await listedWorks().catch(() => ({ part: null, listed: [] }));
+  if (!part || !listed.length || gen !== renderGen) return;
+  const { citedAt, leafOf } = await import('./btc-proofs.js');
+  if (gen !== renderGen) return;
+  for (const { el, out } of cells) {
+    for (const { proof, n } of citedAt(listed, { height: state.height, section: sectionNum, out })) {
+      // The citation mark: ‡ with the edition's number for a bundled work, the
+      // bare ‡ for the reader's own addendum. The one mark on the page that
+      // points OUT of the book rather than deeper into it.
+      const a = document.createElement('a');
+      a.href = leafOf(proof);
+      a.textContent = n ? `‡${toSubscript(n)}` : '‡';
+      a.title = n
+        ? `${proof.title} — a work outside this text, dated by this output; Citations, ${n}`
+        : `${proof.title} — your addendum: a work outside this text, dated by this output and kept in this browser`;
+      if (el.childNodes.length) el.append(' ');
+      el.append(a);
+    }
+  }
+}
+
 async function resolveForwardCitations(txid, cells, gen) {
   try {
     const spends = await loadOutspends(txid);
@@ -3305,6 +3353,7 @@ function renderChapter(para) {
   let leadUsed = false;
   const pendingCites = [];
   const fwdCells = [];
+  const citedCells = [];
 
   // A body line; the first one across the whole transaction claims the drop
   // cap -- unless it opens with a bare push count (⁶⁹ …), whose superscript's
@@ -3458,6 +3507,13 @@ function renderChapter(para) {
     fwd.className = 'fwd-cite';
     valueCell.append(fwd);
     fwdCells.push(fwd);
+    // …and under it, whatever this output was used to date: the Citations
+    // register is the book's one set of outward references, and the output
+    // that carries a commitment is where they attach.
+    const cited = document.createElement('div');
+    cited.className = 'appx-cite';
+    valueCell.append(cited);
+    citedCells.push({ el: cited, out: i });
     outputsEl.append(scriptCell, valueCell);
   });
   const lock = document.createElement('div');
@@ -3471,6 +3527,7 @@ function renderChapter(para) {
   lazyEncode.observe(body);   // encode any deferred OP_RETURN payload as it scrolls into view
   resolveCitations(pendingCites, gen);
   resolveForwardCitations(para.txid, fwdCells, gen);
+  resolveCitedWorks(para.num, citedCells, gen);
 
   // Footnotes are reset, then expanded automatically once the transaction is on
   // screen (renderFootnotes runs async so the prose paints first).
@@ -3871,7 +3928,7 @@ async function openLookup(input, index = -1) {
 
 // A chapter consensus has numbered and no miner has written: the book answers
 // with the date it is due, and -- where the appendix keeps a reading for that
-// height (Appendix II, Future Chapters) -- with what the rule binding there
+// height (Appendix II, Consensus) -- with what the rule binding there
 // will mean for the transactions that follow it. The reading IS the page: there
 // is no passage yet to set it beside, so it opens in place rather than as a
 // sheet over anything.

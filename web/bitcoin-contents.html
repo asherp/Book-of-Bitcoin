@@ -144,6 +144,9 @@ a:hover { text-decoration: underline; }
 
 <script type="module">
 import { loadNotables, places, placeTitle, appendix, isBlockId, isRelativeBlockId, entryHref } from './btc-contents.js';
+import { partLabel } from './btc-notables.js';
+import { toSubscript } from './btc-sigla.js';
+import { allProofs, citeOf, leafOf } from './btc-proofs.js';
 import { creditLine, commentaryForAddresses } from './btc-commentary.js';
 import { readQueue, buildQueue } from './btc-mempool.js';
 import { INDEXED, keptLedgers, sameAddresses } from './btc-index.js';
@@ -334,6 +337,12 @@ const toc = $('toc');
 // The projected section (Appendix I, the mempool), rebuilt by loadProjected
 // and appended whenever that leaf is the one on screen.
 let projectedSection = null;
+// The Citations leaf's rows, built once the proofs have been read: each is
+// fetched (the bundled ones) or unpacked from storage (the reader's) and
+// replayed, all of it offline but none of it synchronous, so the section
+// arrives after the first paint the way the queue's does.
+let proofSection = null;
+let proofsCount = null;
 
 // ── The contents' own line ────────────────────────────────────────────────
 // The book below runs Volume I … Volume V, Appendix I, II, III, every one of
@@ -359,7 +368,7 @@ const leaves = () => [
 ];
 const leafTitle = (leaf) => leaf.kind === 'volume'
   ? `Volume ${toRoman(leaf.volume)}`
-  : `Appendix ${toRoman(appendix().indexOf(leaf.part) + 1)} · ${leaf.part.title}`;
+  : partLabel(appendix(), leaf.part);
 // One line under the leaf's name, saying what it spans and how much of it
 // there is. Not what the part IS and why it sits outside reading order --
 // that paragraph is written on the appendix's own leaf, one turn down. The
@@ -374,7 +383,8 @@ function leafSub(leaf) {
   }
   const part = leaf.part;
   if (part.kind === 'mempool') return 'Ahead of the chain tip · the queue, as far as it reaches';
-  if (part.kind === 'entries') return `Heights consensus has fixed · ${count(part.entries.length, 'chapter', 'chapters')}`;
+  if (part.kind === 'consensus') return `The rules the chapters are written under · ${count(part.bips.length, 'fork', 'forks')}`;
+  if (part.kind === 'proofs') return `Works the chain attests · ${count(proofsCount ?? part.entries.length, 'work cited', 'works cited')}`;
   const kept = keptLedgers().filter((k) => !INDEXED.some((e) => sameAddresses(e.addresses, k.addresses)));
   return `Keepers, not chapters · ${count(INDEXED.length + kept.length, 'ledger', 'ledgers')}`;
 }
@@ -390,7 +400,7 @@ function descent(leaf) {
   }
   if (leaf.part.kind === 'ledgers') return { href: './bitcoin-ledger.html', flag: 'glossia-ledger-entrance', value: 'down' };
   return {
-    href: `./bitcoin-appendix.html?part=${leaf.part.kind === 'mempool' ? 'mempool' : 'future'}`,
+    href: `./bitcoin-appendix.html?part=${leaf.part.kind}`,
     flag: 'glossia-appendix-entrance', value: 'down',
   };
 }
@@ -406,7 +416,7 @@ function descent(leaf) {
 // place, a bookmark, a cold load -- opens the volume the reader was last
 // reading (the book notes it as it renders), and the head of the run when
 // there is nothing to go on.
-const PART_ALIAS = { mempool: 'mempool', future: 'entries', entries: 'entries', ledgers: 'ledgers' };
+const PART_ALIAS = { mempool: 'mempool', future: 'consensus', entries: 'consensus', consensus: 'consensus', ledgers: 'ledgers', proofs: 'proofs' };
 const params = new URLSearchParams(location.search);
 function openingIndex(list) {
   if (params.get('at') === 'last') return list.length - 1;
@@ -463,8 +473,16 @@ function renderAppendix(part) {
     else toc.append(saying('The queue could not be read just now — no mirror answered. The contents simply end at the chain tip until one does.'));
     return;
   }
-  if (part.kind === 'entries') {
-    for (const e of part.entries) toc.append(provisionalEl(e));
+  if (part.kind === 'consensus') {
+    for (const bip of part.bips) {
+      toc.append(bipHead(bip));
+      for (const e of bip.entries) toc.append(consensusRow(e));
+    }
+    return;
+  }
+  if (part.kind === 'proofs') {
+    if (proofSection) toc.append(proofSection);
+    else toc.append(saying('The proofs are still being read — or could not be. The register itself is one turn down, and a proof of your own can be dropped there either way.'));
     return;
   }
   const kept = keptLedgers().filter((k) => !INDEXED.some((e) => sameAddresses(e.addresses, k.addresses)));
@@ -517,22 +535,91 @@ function ledgerEl(ledger, isKept) {
   return row;
 }
 
-// One provisional row, dressed like a projected chapter: the title, then the
-// whole expected reference -- volume and all, since the leaf's head names an
-// appendix rather than a volume and has nothing to have named already.
-function provisionalEl(entry) {
-  const height = Number(entry.id);
+// The Consensus leaf's rows: one sub-head per fork -- the door to that
+// fork's own title leaf, its ballot and its statistics -- then the chapters
+// and sections the fork names, in the fork's own order. A mined place cites
+// in full (volume and all, since the leaf's head names an appendix, not a
+// volume); an unmined one is cited in full too but marked □, the
+// expected-chapter mark, its lookup answering with the date it is due.
+function bipHead(bip) {
+  const a = document.createElement('a');
+  a.className = 'toc-book toc-bip';
+  a.href = `./bitcoin-appendix.html?part=consensus&bip=${bip.key}`;
+  a.textContent = `${bip.label} — ${bip.name}`;
+  a.title = `${bip.title} — ${bip.status}. Its title leaf carries the activation statistics.`;
+  return a;
+}
+// A place's citation written whole, for the rows no volume head stands over:
+// the appendix cites from the volume down.
+function wholeRef({ volume, book, chapter, section, vout }) {
+  let s = toRoman(volume);
+  if (book != null) s += ` β${book}`;
+  if (chapter != null) s += ` ■${chapter}`;
+  if (section != null) s += ` §${section}${vout == null ? '' : `.${vout}`}`;
+  return s;
+}
+function consensusRow(entry) {
   const row = document.createElement('a');
-  row.className = 'toc-entry under-book projected';
-  row.href = entryHref(entry.id);
+  row.className = 'toc-entry under-book' + (entry.expected ? ' projected' : '');
+  row.href = entryHref(entry.id, entry.index, entry.page, entry.out ?? null);
   const t = document.createElement('span');
   t.className = 'toc-title';
   t.textContent = entry.title;
   if (entry.note) t.title = entry.note;
   const r = document.createElement('span');
   r.className = 'toc-ref';
-  r.textContent = expectedReference(height);
-  r.title = `expected — block ${height.toLocaleString()} has not been mined, so its chapter carries □ rather than ■`;
+  if (entry.expected) {
+    const height = Number(entry.id);
+    r.textContent = expectedReference(height);
+    r.title = `expected — block ${height.toLocaleString()} has not been mined, so its chapter carries □ rather than ■`;
+  } else {
+    const place = placements.get(placeKey(entry));
+    if (place) r.textContent = wholeRef(place);
+    else { r.textContent = '—'; r.classList.add('none'); }
+  }
+  row.append(t, r);
+  return row;
+}
+
+// The Citations leaf's rows: a work the chain attests. A row's title is a
+// file's name -- the one thing here that is not the chain's -- and its
+// reference is the chapter and §section the file's proof lands in, read out
+// of the proof itself with nothing asked of the chain. The bundled works come
+// first by reading order; a reader's own fly the ribbon a bookmark flies. A
+// wrapper element rather than a fragment, like the queue's section: built
+// once, appended on every render, and a fragment empties on first append.
+function proofsEl(proofs) {
+  const wrap = document.createElement('div');
+  for (const p of proofs) wrap.append(proofEl(p));
+  return wrap;
+}
+function proofEl(proof) {
+  const row = document.createElement('a');
+  row.className = 'toc-entry under-book' + (proof.kept ? ' is-bookmark' : '');
+  // The row opens the file's own leaf rather than the chapter: what this
+  // register has to show is the proof, and the chapter is one step past it.
+  row.href = leafOf(proof);
+  const t = document.createElement('span');
+  t.className = 'toc-title';
+  if (proof.kept) {
+    const bm = document.createElement('span'); bm.className = 'toc-bm'; bm.setAttribute('aria-label', 'your proof');
+    bm.innerHTML = '<svg viewBox="0 0 12 16"><path fill="currentColor" d="M0 0h12v16l-6-4-6 4z"/></svg>';
+    t.append(bm);
+  }
+  // The work's citation mark: ‡ with the edition's number for a bundled work,
+  // the bare ‡ for a reader's addendum -- their copy's addition, outside the
+  // edition's numbering the way an addendum is.
+  const mark = document.createElement('span');
+  mark.className = 'toc-cite-mark';
+  mark.textContent = proof.n ? `‡${toSubscript(proof.n)} ` : '‡ ';
+  mark.title = proof.n ? `cited work ${proof.n}` : "your addendum — kept in this browser, outside the edition's numbering";
+  t.append(mark, document.createTextNode(proof.title));
+  // What the row is really claiming, said in full on hover: this file's digest,
+  // and the chapter its proof reduces to.
+  row.title = `${proof.file} — ${proof.hash} ${proof.digest}, stamped into ${citeOf(proof.place)}`;
+  const r = document.createElement('span');
+  r.className = 'toc-ref';
+  r.textContent = citeOf(proof.place);
   row.append(t, r);
   return row;
 }
@@ -551,7 +638,7 @@ function render() {
   // disturb which leaf a still-growing run is aiming for.
   try {
     const q = leaf.kind === 'volume' ? `volume=${leaf.volume}`
-      : `part=${leaf.part.kind === 'entries' ? 'future' : leaf.part.kind}`;
+      : `part=${leaf.part.kind}`;
     history.replaceState(null, '', `${location.pathname}?${q}`);
   } catch (_) { /* unavailable */ }
   toc.replaceChildren();
@@ -840,6 +927,19 @@ function growVolumes(to) {
 }
 const volumesFromEntries = () => placed().reduce((m, e) => Math.max(m, e.place.volume), 1);
 
+// ── The Citations register, read and placed by its own proofs ─────────────
+// Bundled and kept alike; a failure costs the leaf its list and nothing
+// else -- the register's own page still takes a proof.
+async function loadProofs() {
+  const part = appendix().find((p) => p.kind === 'proofs');
+  if (!part) return;
+  let listed = [];
+  try { listed = await allProofs(part); } catch { /* nothing readable: the leaf says so */ }
+  proofsCount = listed.length;
+  proofSection = proofsEl(listed);
+  render();
+}
+
 // ── Appendix I: the mempool, read as far as it extends ────────────────────
 // The queue itself is read and set by btc-mempool.js, shared with the
 // appendix's own page. Its heading is this leaf's own head, so it is built
@@ -852,10 +952,21 @@ async function loadProjected() {
   render();
 }
 
+// The Consensus part's places resolve through the same map the volumes' rows
+// read, keyed the same way -- so a fork's chapter shares its placement with
+// the curated entry citing the same page, and each lookup runs once for both.
+// Expected (unmined) heights are cited by arithmetic in their rows and need
+// no placement at all.
+const consensusPlaces = () => appendix()
+  .filter((p) => p.kind === 'consensus')
+  .flatMap((p) => p.bips)
+  .flatMap((b) => b.entries)
+  .filter((e) => !e.expected);
+
 // Block placements (curated, and bookmarks that stored their reference) are
 // offline, so place them at once; everything else streams in as its lookup
 // resolves.
-for (const p of places()) if (!p.address && isBlockId(p.id)) placements.set(placeKey(p), placeOf(Number(p.id), p.index ?? null, p.page, p.out ?? null));
+for (const p of [...places(), ...consensusPlaces()]) if (!p.address && isBlockId(p.id)) placements.set(placeKey(p), placeOf(Number(p.id), p.index ?? null, p.page, p.out ?? null));
 for (const b of bookmarks) {
   if (Number.isInteger(b.height)) bmPlacements.set(bmKey(b), placeOf(b.height, b.pos ?? null, undefined, b.vout ?? null));
 }
@@ -865,10 +976,16 @@ render();
 // The projected section loads alongside the citation lookups, and the queue
 // keeps moving -- blocks land, replacements arrive -- so it refreshes itself
 // each minute while the page is on screen.
+loadProofs();
 loadProjected();
 setInterval(() => { if (!document.hidden) loadProjected(); }, 60_000);
+// One lookup per key, however many registers cite the place.
+const unplaced = new Map();
+for (const p of [...places(), ...consensusPlaces()]) {
+  if (!p.address && !placements.has(placeKey(p)) && !unplaced.has(placeKey(p))) unplaced.set(placeKey(p), p);
+}
 await Promise.all([
-  ...places().filter((p) => !p.address && !placements.has(placeKey(p))).map(async (p) => {
+  ...[...unplaced.values()].map(async (p) => {
     placements.set(placeKey(p), await resolvePlacement(p));
     growVolumes(volumesFromEntries());
     render();

@@ -261,6 +261,10 @@
   id: 8bae12b5f4c088d940733dcd1455efc6a3a69cf9340e17a981286d3778615684
   commentary:
     - file: first-standard-op-return.md
+- title: The Hello World timestamp
+  id: 7e9f0f7d9daa2d9e51b2e22f4abe814c3f90539afa778a9bef88dc64627cb2ec
+  commentary:
+    - file: the-hello-world-timestamp.md
 - title: BIP66
   id: '363216'
   page: book
@@ -430,4 +434,5 @@
 # BIP42's cap — are not entries here: a chapter cited before it exists cannot be
 # read in sequence with chapters that do (dropped in among the volumes, BIP42
 # alone opened a Volume LXV two centuries wide). They are gathered in
-# appendix.yaml, as Appendix II: Future Chapters.
+# appendix.yaml, as Appendix II: Consensus, grouped under their BIPs beside the
+# forks already active.
