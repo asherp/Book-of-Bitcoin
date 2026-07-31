@@ -174,6 +174,8 @@ a:hover { text-decoration: underline; }
 
 <script type="module">
 import { loadNotables, places, placeTitle, appendix, isBlockId, isRelativeBlockId, entryHref } from './btc-contents.js';
+import { partLabel } from './btc-notables.js';
+import { toSubscript } from './btc-sigla.js';
 import { allProofs, citeOf, leafOf } from './btc-proofs.js';
 import { creditLine, commentaryForAddresses } from './btc-commentary.js';
 import { readQueue, buildQueue } from './btc-mempool.js';
@@ -366,7 +368,7 @@ const toc = document.getElementById('toc');
 // appended as Appendix I on every render -- directly after the volumes, whose
 // last row is the chain tip's.
 let projectedSection = null;
-// Appendix IV's section, built once the proofs have been read: each is fetched
+// The Citations section, built once the proofs have been read: each is fetched
 // (the bundled ones) or unpacked from storage (the reader's) and replayed, all
 // of it offline but none of it synchronous, so the section arrives after the
 // first paint the way the queue's does.
@@ -395,14 +397,15 @@ function frontEl({ title, leaf }) {
   return row;
 }
 
-// ── The appendices: the contents' back matter ─────────────────────────────
+// ── The back matter ───────────────────────────────────────────────────────
 // What belongs to the book but not to its reading order -- reading order
-// being the order blocks were mined. Three of them, in the order
-// appendix.yaml sets: the mempool (built live, below), the future
-// chapters, and the ledgers. They are numbered by their position in that
-// list, not by what actually renders, so a part that cannot be built -- an
-// unreachable mempool -- never renumbers the ones after it.
-const appendixLabel = (part) => `Appendix ${toRoman(appendix().indexOf(part) + 1)} · ${part.title}`;
+// being the order blocks were mined -- in three families, headed by what each
+// is: the appendices (the queue, the fixed heights -- the book's own matter,
+// numbered among themselves), the indexes (pointing into the text, "Index
+// of …"), and the Citations register (pointing out of it, standing last).
+// The heading comes from the loader (btc-notables.js), one copy for every
+// page that names a part.
+const appendixLabel = (part) => partLabel(appendix(), part);
 const MEMPOOL_PART = appendix().find((p) => p.kind === 'mempool');
 
 // Each appendix has a leaf of its own, and its heading here is the door to
@@ -427,7 +430,7 @@ function partHead(part) {
   return heading;
 }
 
-// Appendix II: chapters cited in full but marked □, the expected-chapter mark
+// Future Chapters: chapters cited in full but marked □, the expected-chapter mark
 // the mempool's projections wear, since no block has earned them an ■. Every
 // row still links into the book, which answers an unmined height with the
 // date it is due instead of a page. Offline, like every reference computed
@@ -439,7 +442,7 @@ function chaptersEl(part) {
   return frag;
 }
 
-// Appendix III: the shelf of ledgers -- the curated ones, then any the reader
+// The Index of Ledgers: the curated ones, then any the reader
 // keeps, which fly the same ribbon a reader's bookmark flies in the contents
 // above. These rows take the dash the front matter takes, and for a plainer
 // reason than an unresolved lookup: a ledger has no reference because the
@@ -456,7 +459,7 @@ function ledgersEl(part) {
   for (const l of kept) frag.append(ledgerEl(l, true));
   return frag;
 }
-// Appendix IV: the files the chain attests. A row's title is a file's name --
+// Citations: the works the chain attests. A row's title is a file's name --
 // the one thing here that is not the chain's -- and its reference is the
 // chapter and §section the file's proof lands in, read out of the proof itself
 // with nothing asked of the chain. The bundled proofs come first by reading
@@ -484,7 +487,14 @@ function proofEl(proof) {
     bm.innerHTML = '<svg viewBox="0 0 12 16"><path fill="currentColor" d="M0 0h12v16l-6-4-6 4z"/></svg>';
     t.append(bm);
   }
-  t.append(document.createTextNode(proof.title));
+  // The work's citation mark: ‡ with the edition's number for a bundled work,
+  // the bare ‡ for a reader's addendum -- their copy's addition, outside the
+  // edition's numbering the way an addendum is.
+  const mark = document.createElement('span');
+  mark.className = 'toc-cite-mark';
+  mark.textContent = proof.n ? `‡${toSubscript(proof.n)} ` : '‡ ';
+  mark.title = proof.n ? `cited work ${proof.n}` : 'your addendum — kept in this browser, outside the edition\'s numbering';
+  t.append(mark, document.createTextNode(proof.title));
   // What the row is really claiming, said in full on hover: this file's digest,
   // and the chapter its proof reduces to.
   row.title = `${proof.file} — ${proof.hash} ${proof.digest}, stamped into ${citeOf(proof.place)}`;

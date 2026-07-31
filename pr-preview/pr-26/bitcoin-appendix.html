@@ -165,7 +165,7 @@ a:hover { text-decoration: underline; }
 .hidden { display:none !important; }
 .appx-note { max-width:56ch; margin:22px auto 30px; font:400 15px/1.7 'Newsreader',serif; color:var(--ink-soft); text-align:left; }
 
-/* Appendix IV's foot: the picker. A leaf lists nothing, as a rule -- the
+/* The Citations register's foot: the picker. A leaf lists nothing, as a rule -- the
    contents lists, the leaf explains -- but this appendix is the one a reader
    can add to, and the adding has to happen somewhere. It sits at the END,
    after the note and after what is already kept, so the page still reads as a
@@ -213,6 +213,7 @@ a:hover { text-decoration: underline; }
 .proof-name { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font:500 15px/1.35 'Newsreader',serif; }
 .proof-cite { flex:none; font:500 12.5px/1.6 'IBM Plex Mono',monospace; color:var(--accent); }
 .proof-bm { flex:none; width:8px; color:var(--accent); }
+.proof-cite-mark { flex:none; color:var(--accent); font-weight:600; font-size:14px; }
 .proof-drop-btn { flex:none; background:none; border:none; color:var(--meta); cursor:pointer; font-size:13px; line-height:1; padding:2px 4px; }
 .proof-drop-btn:hover { color:#e08b7a; }
 
@@ -255,6 +256,7 @@ a:hover { text-decoration: underline; }
 
 <script type="module">
 import { loadNotables, appendix } from './btc-contents.js';
+import { partLabel } from './btc-notables.js';
 
 // The appendix is read from appendix.yaml (btc-notables.js), so it arrives
 // asynchronously; this leaf IS one of its parts, so it waits for it.
@@ -276,8 +278,7 @@ const part = APPENDIX.find((p) => p.kind === kind) || APPENDIX[0];
 const index = APPENDIX.indexOf(part);
 
 const $ = (id) => document.getElementById(id);
-const numeral = (i) => toRoman(i + 1);
-const label = (p) => `Appendix ${numeral(APPENDIX.indexOf(p))} · ${p.title}`;
+const label = (p) => partLabel(APPENDIX, p);
 const PART_QUERY = { mempool: 'mempool', entries: 'future', proofs: 'proofs' };
 const hrefFor = (p) => (p.kind === 'ledgers'
   ? './bitcoin-ledger.html'
@@ -292,8 +293,16 @@ const hrefFor = (p) => (p.kind === 'ledgers'
 // already fixed; the book answers an unmined chapter with the date it is
 // due. (The level between, the queue's own equivalent of a book, is still to
 // be written.) The whole list of either is the contents' business.
-$('appx-title').textContent = `Appendix ${numeral(index)}`;
-$('appx-subtitle').textContent = part.title;
+// The head follows the part's family: an appendix wears its numeral over its
+// name; the Citations register is its title alone -- a works-cited list needs
+// no numeral, standing where it stands.
+if (part.family === 'appendix') {
+  $('appx-title').textContent = `Appendix ${toRoman(APPENDIX.filter((p) => p.family === 'appendix').indexOf(part) + 1)}`;
+  $('appx-subtitle').textContent = part.title;
+} else {
+  $('appx-title').textContent = part.family === 'index' ? `Index of ${part.title}` : part.title;
+  $('appx-subtitle').textContent = part.family === 'citations' ? 'Works the chain attests' : '';
+}
 $('appx-note').textContent = part.note || '';
 document.title = `The βook of βitcoin — ${label(part)}`;
 
@@ -354,7 +363,7 @@ if (next) turnLink(hrefFor(next), `${label(next)} ›`, false);
 // volume's own leaf, which is the page this one continues from. Which volume
 // is last is a question for the chain, so the turn is wired once the tip
 // answers -- until then a backward swipe simply has nowhere to go.
-// ── Appendix IV: the files, and the door for adding one ───────────────────
+// ── Citations: the works, and the door for adding one ─────────────────────
 //
 // The rule for a leaf is that it lists nothing -- the contents lists, the leaf
 // explains. This appendix bends it, for the reason it exists: it is the one a
@@ -367,7 +376,7 @@ if (kind === 'proofs') {
   const { allProofs, readProof, attests, keepProof, dropProof, citeOf, hrefOf, leafOf } = await import('./btc-proofs.js');
   const { isOtsProof } = await import('./btc-ots.js');
   const { blockAt } = await import('./btc-index.js');
-  const { toSuperscript } = await import('./btc-sigla.js');
+  const { toSuperscript, toSubscript } = await import('./btc-sigla.js');
 
   const listEl = $('proof-list');
   const card = $('proof-card');
@@ -394,11 +403,15 @@ if (kind === 'proofs') {
         bm.innerHTML = '<svg viewBox="0 0 12 16" width="8"><path fill="currentColor" d="M0 0h12v16l-6-4-6 4z"/></svg>';
         a.append(bm);
       }
+      const mark = document.createElement('span');
+      mark.className = 'proof-cite-mark';
+      mark.textContent = proof.n ? `‡${toSubscript(proof.n)} ` : '‡ ';
+      mark.title = proof.n ? `cited work ${proof.n}` : "your addendum — kept in this browser, outside the edition's numbering";
       const name = document.createElement('span');
       name.className = 'proof-name'; name.textContent = proof.title;
       const cite = document.createElement('span');
       cite.className = 'proof-cite'; cite.textContent = citeOf(proof.place);
-      a.append(name, cite);
+      a.append(mark, name, cite);
       // What the row claims, in full, on hover -- including whether anyone has
       // yet asked the chain about it.
       a.title = `${proof.file} — ${proof.hash} ${proof.digest}\nstamped into ${citeOf(proof.place)}`

@@ -1,13 +1,19 @@
 # SPDX-License-Identifier: CC-BY-4.0
 #
-# appendix.yaml — what the contents gathers after the volumes.
+# appendix.yaml — the back matter: what the contents gathers after the volumes.
 #
 # A chain with no last block has no back, which is why the sigla sit in the
 # front matter (see the README). What can still be gathered at the end of the
 # CONTENTS is what belongs to the book but not to its reading order — reading
 # order being the order blocks were mined.
 #
-# Four parts, numbered like volumes and rendered in this order:
+# Four parts, in three families, rendered in this order. The family sets the
+# heading: an APPENDIX holds the book's own matter out of reading order, and is
+# numbered among appendices; an INDEX points into the text, many places per
+# entry, and is titled "Index of …"; CITATIONS points out of the text, at works
+# the book does not contain, and stands last unnumbered -- a reference list is
+# where a book ends. The family follows from the kind (btc-notables.js), so a
+# part is filed by what it is rather than by where it sits:
 #
 #   I   The Mempool — the chapters the queue is already forming, which is why
 #       it comes first: it opens where the volumes close, so the turn from the
@@ -24,7 +30,7 @@
 #       chapter cited before it exists cannot be read in sequence with chapters
 #       that do: dropped in among the volumes, BIP42 alone opened a Volume LXV
 #       two centuries wide.
-#   III Ledgers — the shelf of curated ledgers (btc-index-data.js), and any the
+#   Index of Ledgers — the shelf of curated ledgers (btc-index-data.js), and any the
 #       reader keeps. Keepers, not chapters, and so the only entries in the
 #       contents with no reference at all: the chain never writes an address,
 #       only the script one stands for, and a ledger's chapters are discovered
@@ -34,14 +40,15 @@
 #       leaves, which is why this part lists ledgers here and explains itself
 #       there. The contents and the index are inverses; this is where the
 #       contents points at the other one.
-#   IV  Citations — works cited: documents outside this text whose existence
+#   Citations — works cited: documents outside this text whose existence
 #       the chain attests. Every other reference in this book points inward,
 #       at a chapter the book contains; these point the other way, at something
 #       the book does not contain and never will. What the chain supplies is a
 #       date — an OpenTimestamps proof reduces a document's digest to the
 #       merkle root of one block — so each entry is cited BY a passage rather
 #       than being one, at the chapter and §section its proof lands in, and the
-#       cited passage carries the back-reference in its margin (Appendix IV.n).
+#       cited passage carries the back-reference in its margin: the ‡ mark,
+#       with the work's number in the register as its subscript (‡₁).
 #       The entries below ship with the app; a reader's own proofs, dropped on
 #       the appendix's leaf, are kept beside them the way bookmarks are.
 #
@@ -102,7 +109,7 @@
         - file: bip42-activation-21m-cap.md
 
 - kind: ledgers
-  title: Ledgers of Note
+  title: Ledgers
   note: A ledger gathers what one keeper spends from — a single address, a set rotated over the years, or in time every leaf of one extended key — and reads each of its scripts as a passage, with the chapters that passage appears in listed beneath it. Nothing here carries a reference: the chain never writes an address, only the script one stands for, so a ledger is not cited but discovered, and its run of chapters stays open-ended.
 
 - kind: proofs

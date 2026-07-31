@@ -38,6 +38,8 @@
 /* A reader's own bookmark, sitting inline in reading order, wears the same
    ribbon it flies in the book. */
 .toc-bm { display:inline-block; width:9px; height:12px; margin-right:8px; color:var(--accent); vertical-align:baseline; }
+/* The citation mark on a cited work's row: gold, like the reference it is. */
+.toc-cite-mark { color:var(--accent); font-weight:600; }
 .toc-bm svg { display:block; width:100%; height:100%; }
 
 /* Unmined chapters -- the mempool's projections, and the appendix's future

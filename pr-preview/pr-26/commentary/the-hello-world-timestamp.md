@@ -4,4 +4,4 @@ The oldest OpenTimestamps proof anyone can still replay. The client ships it as 
 
 It predates the calendar servers by a year and wears the older dress. There is no OP_RETURN in it: the commitment sits where a public key's hash belongs, in an ordinary pay-to-pubkey-hash output of 100,000 satoshis. So the passage reads as a payment — to someone who has never existed, and can never sign. The coins are still there, and always will be. What looks like the most ordinary line in the section is the part that was never about money.
 
-Drop the `.ots` at the foot of Appendix IV and the book resolves it, checks it against this block's own header, and keeps it there.
+Drop the `.ots` at the foot of the Citations register and the book resolves it, checks it against this block's own header, and keeps it there.

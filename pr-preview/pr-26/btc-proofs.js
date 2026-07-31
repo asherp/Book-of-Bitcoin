@@ -267,7 +267,7 @@ export const isKept = (digest) => keptProofs().some((p) => p.digest === digest);
 // and mean a row a reader can go and find.
 export function citedAt(listed, { height, section, out }) {
   return listed
-    .map((proof, i) => ({ proof, n: i + 1 }))
+    .map((proof) => ({ proof, n: proof.n ?? null }))
     .filter(({ proof }) => proof.place.height === height
       && proof.place.section === section
       && proof.place.out === out);
@@ -288,5 +288,12 @@ export async function proofByDigest(digest, part, base = PROOF_DIR) {
 export async function allProofs(part, base = PROOF_DIR) {
   const [bundled, kept] = await Promise.all([bundledProofs(part, base), keptPlaces()]);
   const seen = new Set(bundled.map((p) => p.digest));
-  return [...bundled, ...kept.filter((p) => !seen.has(p.digest))].sort(inReadingOrder);
+  const listed = [...bundled, ...kept.filter((p) => !seen.has(p.digest))].sort(inReadingOrder);
+  // The edition's numbering: ‡₁, ‡₂ … over the BUNDLED works alone, in the
+  // order the register lists them. A reader's kept proofs are addenda -- their
+  // copy's additions, outside the edition's numbering -- so they carry no n
+  // and removing or adding one never renumbers a citation already quoted.
+  let n = 0;
+  for (const p of listed) if (p.bundled) p.n = ++n;
+  return listed;
 }

@@ -24,6 +24,7 @@
 // normalizer, one set of rules about what an entry means.
 
 import { parseYamlSequence } from './btc-yaml.js';
+import { toRoman } from './btc-citation.js';
 import { parseLookup, looksLikeAddress } from './btc-lookup.js';
 
 export const NOTABLES_FILE = 'notables.yaml';
@@ -152,7 +153,14 @@ function normalizePart(raw, i) {
   if (!['mempool', 'entries', 'ledgers', 'proofs'].includes(kind)) {
     throw new Error(`btc-notables: appendix part "${title}" has an unknown kind: ${kind}`);
   }
-  const part = { kind, title };
+  // Which family of back matter this part belongs to, which is what its
+  // heading says: an APPENDIX holds the book's own matter out of reading order
+  // and is numbered; an INDEX points into the text, many places per entry, and
+  // is titled "Index of …"; the CITATIONS register points out of the text at
+  // works the book does not contain, stands last, and needs no numeral -- a
+  // reference list is where a book ends.
+  const family = kind === 'ledgers' ? 'index' : kind === 'proofs' ? 'citations' : 'appendix';
+  const part = { kind, title, family };
   if (raw.note) part.note = String(raw.note);
   // A part may carry readings like an entry: not of one passage but of what the
   // whole part gathers -- what a queue is, what a timestamp proves. Appendix
@@ -194,6 +202,20 @@ function normalizePart(raw, i) {
 
 export function parseAppendix(yamlText) {
   return parseYamlSequence(yamlText).map(normalizePart);
+}
+
+// A part's heading, styled by its family and computed in one place, so a
+// retitle in appendix.yaml reaches every page that points at the back matter.
+// Appendices number among THEMSELVES ("Appendix II"), so an index between two
+// of them never shifts a numeral; an index is "Index of <title>"; the
+// citations register is its title alone, standing at the back the way a
+// works-cited list does.
+export function partLabel(parts, part) {
+  if (!part) return 'the back matter';
+  if (part.family === 'index') return `Index of ${part.title}`;
+  if (part.family === 'citations') return part.title;
+  const n = parts.filter((p) => p.family === 'appendix').indexOf(part) + 1;
+  return `Appendix ${toRoman(n)} · ${part.title}`;
 }
 
 // The readings an entry carries, whatever its places name: a chapter, a section,
