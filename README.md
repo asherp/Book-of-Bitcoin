@@ -91,6 +91,20 @@ compiled to WASM) is consumed as a published
   a page long enough to scroll is read to its edge first, and only the next
   press turns off it. The header steppers and the eyebrow crumbs go the same
   places for hands that would rather click
+- **Keeping a place.** Everything the citation scheme addresses — a volume, a
+  book, a chapter, a §section, an output — is a place the search box answers
+  to, and so a place a reader can keep. Each carries a **bookmark ribbon at
+  its corner**: hollow while the place is unkept, gold once it is, and
+  clickable in either state, so the offer is visible in the very position the
+  kept mark will occupy rather than hidden behind a menu. Keeping asks for a
+  name, because the bookmark becomes a row in the table of contents, where a
+  row is read by its title. The ribbon rides the chapter's title, the
+  §section's, an output's amount, and the volume's and book's own leaves; a
+  draft chapter has none, having no settled reference to cite yet. Bookmarks
+  live in `localStorage` and list in the contents in reading order, at the
+  level each one names — a kept volume above the passages kept from it. An
+  address is kept the same way, by the Ledger's own ribbon, since an address
+  is a name rather than a place (see `bitcoin-ledger.html` below)
 - `web/bitcoin-front.html` — the front matter, straddling the contents on the
   horizontal axis in the standard order: title leaf, terms (the copyright
   page, saying the reverse of one), **then the contents**, and after it the

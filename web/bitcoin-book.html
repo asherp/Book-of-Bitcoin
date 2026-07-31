@@ -373,6 +373,10 @@ button:disabled { opacity: .4; cursor: not-allowed; }
    it encodes or bookmark it. The raw hex itself is never shown -- copying it is
    more reliable than selecting a string this long by hand on a touch device. */
 .hash-copy { position: relative; cursor: pointer; }
+/* Anything carrying a bookmark ribbon: the ribbon hangs off the corner, so the
+   corner has to be the element's own. Every .hash-copy is already positioned;
+   a leaf's title, which carries a ribbon and no hash menu, gets it here. */
+.bm-host { position: relative; }
 
 /* Context menu raised by clicking a hash / txid: copy the hex, or bookmark it. */
 .hash-menu {
@@ -392,10 +396,40 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 }
 .hash-menu .hash-menu-item:hover, .hash-menu .hash-menu-item:focus-visible { background: var(--input-bg); color: var(--ink); outline: none; }
 
-/* A bookmark ribbon pinned to the top-right corner of a bookmarked hash's
-   prose. pointer-events:none so it never intercepts the hash's own click. */
-.hash-bookmark { position: absolute; top: -4px; right: -2px; width: 10px; height: 14px; color: var(--accent); line-height: 0; pointer-events: none; }
-.hash-bookmark svg { display: block; width: 100%; height: 100%; }
+/* The bookmark ribbon, pinned to the top-right corner of a place that can be
+   kept: a chapter's title, a §section's, an output's amount, a volume's or a
+   book's leaf. It is the affordance and the flag at once -- it stands there
+   hollow while the place is unkept and fills when it is kept, so a reader can
+   SEE where a bookmark would go before making one, and sees it in the very
+   position the kept mark will occupy.
+
+   Hollow is the same gold, faded: the offer is the mark it would become, and
+   nothing else. Faded, because a section carries a ribbon per output as well
+   as its own, and an offer should not press itself on the page as hard as a
+   mark the reader has actually made. It brightens under the pointer, and to
+   full gold once set.
+
+   The button is larger than the glyph it holds (a corner is a poor target for
+   a finger otherwise); the glyph inside sits exactly where the ribbon has
+   always sat. */
+.hash-bookmark {
+  position: absolute; top: -6px; right: -6px; width: 18px; height: 18px; padding: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: none; border: 0; color: var(--accent); line-height: 0; cursor: pointer;
+  opacity: .42;   /* the mark it would become, faded to an offer */
+}
+.hash-bookmark svg { display: block; width: 10px; height: 14px; }
+.hash-bookmark .rib-fill { display: none; }
+.hash-bookmark:hover, .hash-bookmark:focus-visible { opacity: .8; outline: none; }
+/* Kept: the same ribbon the contents and the Ledger fly, in the same gold. */
+.hash-bookmark.set { opacity: 1; }
+.hash-bookmark.set:hover, .hash-bookmark.set:focus-visible { color: var(--accent-2); }
+.hash-bookmark.set .rib-fill { display: block; }
+.hash-bookmark.set .rib-hollow { display: none; }
+/* On an amount the ribbon sits ON its line rather than above it: the outputs
+   stack close together, and a mark hanging above a row reads as belonging to
+   the row before it. (A title has room above it, and keeps the corner.) */
+.tx-out-value > .hash-bookmark { top: 0; }
 
 /* The title-entry form the menu swaps to when bookmarking: the title becomes a
    table-of-contents entry. */
@@ -549,7 +583,11 @@ button:disabled { opacity: .4; cursor: not-allowed; }
    the amounts are the right margin's text. nowrap: under fit-content sizing
    an amount must count as one piece, never wrap its ₿ onto a line of its own
    to satisfy a narrower column. */
-.tx-out-value  { grid-column: 2; text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+/* padding-right is the ribbon's own room: an output is a keepable place, so
+   its amount carries a bookmark at the corner where the amount ends, and a
+   ribbon must never sit over the ₿ it is offered beside. The amounts all
+   reserve it, so the column still aligns on the point. */
+.tx-out-value  { grid-column: 2; text-align: right; padding-right: 15px; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .tx-locktime { grid-column: left / -1; grid-row: 3; text-align: center; font-style: normal; }
 .tx-note { font: italic 400 calc(13.5px * var(--scale-body, 1))/1.4 'Newsreader',serif; color: var(--dim); }
 /* The amount's size, on both its classes. An amount is a .tx-note as well as
@@ -2407,6 +2445,18 @@ async function showCurrentTx() {
   liveProjection.sync();
 }
 
+// What each keepable place is called, in the ribbon that offers to keep it.
+// The reader keeps a chapter, a section, an output — not a hash, a txid, or a
+// value; those are what the copy menu beside the ribbon is about. The two
+// leaves name themselves the same way (attachLeafBookmark).
+const KEEPS = {
+  'block hash': 'this chapter',
+  'transaction id': 'this section',
+  output: 'this output',
+  volume: 'this volume',
+  book: 'this book',
+};
+
 // Attach a click menu to an element already showing a Glossia-encoded hash as
 // prose: `hex` is the exact raw value that prose encodes. Clicking (or
 // Enter/Space) opens the hash menu -- copy the hex, or bookmark it; the raw hex
@@ -2427,13 +2477,22 @@ function attachHashCopy(el, hex, label, prose = el.textContent, vout = null) {
   el.classList.add('hash-copy');
   el.tabIndex = 0;
   el.setAttribute('aria-label', `${label}${vout == null ? '' : ` ${vout}`}: ${hex} — click for menu`);
-  el.__bmKey = nav ? bookmarkKey(hex, vout) : null;   // only navigable places are bookmarkable, so only they get a flag
-  el.__hex = el.__bmKey;                              // kept for syncHashFlags' sake
-  if (nav) setHashFlag(el, isBookmarked(hex, vout));  // show the bookmark glyph if this place is already saved
   // A persistent element (a title) is re-attached with fresh hash data on every
   // section render: the menu params live on the element and are re-read at open
   // time, while the listeners are wired exactly once.
-  el.__hashMenu = { hex, label, prose, nav, vout };
+  const entry = { hex, label, prose, nav, vout, what: KEEPS[label] };
+  el.__hashMenu = entry;
+  // The ribbon is offered only where the place can actually be kept: a merkle
+  // root leads nowhere, and a draft chapter has no settled reference yet, so
+  // a bookmark of either could never take a row in the contents.
+  if (nav && entryPlacement(entry)) {
+    el.__bmEntry = entry;
+    el.__bmKey = bookmarkKey(hex, vout);
+    setBookmarkRibbon(el, isBookmarked(hex, vout));
+  } else {
+    clearBookmarkRibbon(el);
+    el.__bmKey = null;
+  }
   if (el.__hashWired) return;
   el.__hashWired = true;
   const open = (e) => { if (el.__hashMenu) openHashMenu(e, el.__hashMenu, el); };
@@ -2453,9 +2512,28 @@ function detachHashCopy(el) {
   el.removeAttribute('aria-label');
   el.tabIndex = -1;
   el.__hashMenu = null;
-  el.__hex = null;
   el.__bmKey = null;
-  setHashFlag(el, false);
+  clearBookmarkRibbon(el);
+}
+
+// A leaf's own bookmark: a volume or a book is a place the citation scheme
+// names (III, III β2) and the search box answers to, so it is a place a reader
+// can keep -- and the leaf's title carries the ribbon exactly as a chapter's
+// does. There is no hash menu here: a span has no hex of its own, only the
+// hash of the block it opens, which is that chapter's to copy and not the
+// span's. So the ribbon stands alone, the whole of what this title offers.
+function attachLeafBookmark(el, page) {
+  const { volume, book } = volumeBookChapter(state.height);
+  const entry = {
+    hex: state.hash, label: page, page, what: KEEPS[page],
+    // The citation to the depth this leaf stands at -- the whole of what
+    // there is to say about where a span sits.
+    prose: page === 'volume' ? toRoman(volume) : `${toRoman(volume)} β${book}`,
+  };
+  if (!state.hash || !entryPlacement(entry)) { clearBookmarkRibbon(el); el.__bmKey = null; return; }
+  el.__bmEntry = entry;
+  el.__bmKey = bookmarkKey(entry.hex, null, page);
+  setBookmarkRibbon(el, isBookmarked(entry.hex, null, page));
 }
 
 // Render a Glossia-encoded hash into `el` as its bold-gold data mark (⌘ for a
@@ -2887,6 +2965,7 @@ function renderVolumeLeaf() {
   title.textContent = `Volume ${toRoman(volume)}`;
   title.classList.remove('hidden');
   detachHashCopy(title);
+  attachLeafBookmark(title, 'volume');
   const volEnd = heightOf(volume + 1, 1, 1) - 1;
   const finished = tipHeight !== null && tipHeight >= volEnd;
   // An unfinished volume's range runs to the chain tip -- its current last
@@ -2991,6 +3070,7 @@ function renderBookLeaf() {
   title.textContent = `Book ${book.toLocaleString()}`;
   title.classList.remove('hidden');
   detachHashCopy(title);
+  attachLeafBookmark(title, 'book');
   // A curated book (a soft fork's signaling epoch) wears its name as the
   // leaf's subtitle, the same dress a notable chapter wears.
   const bookEvent = places().find((p) => p.page === 'book' && p.id === String(state.height));
@@ -5051,11 +5131,15 @@ let bookmarks = readBookmarks();
 // A bookmark is keyed by what it names. A hash names itself; an output names
 // a hash and one of its vouts, so the two coordinates make the key -- and a
 // txid bookmark and a bookmark of that transaction's output 0 stay distinct.
-// Legacy bookmarks carry no vout and key as before, so nothing saved before
-// this reads differently now.
-const bookmarkKey = (hex, vout = null) => (vout == null ? hex : `${hex}:${vout}`);
-const keyOf = (b) => bookmarkKey(b.hex, b.vout ?? null);
-const isBookmarked = (hex, vout = null) => bookmarks.some((b) => keyOf(b) === bookmarkKey(hex, vout));
+// A leaf -- a volume's or a book's -- names a span, not a hash: it is keyed by
+// the hash of the block its span opens, marked with which span it is, so that
+// keeping Volume III and keeping the chapter that opens it stay two bookmarks
+// rather than one. Legacy bookmarks carry neither vout nor page and key as
+// before, so nothing saved before this reads differently now.
+const bookmarkKey = (hex, vout = null, page = null) =>
+  (page ? `${page}@${hex}` : vout == null ? hex : `${hex}:${vout}`);
+const keyOf = (b) => bookmarkKey(b.hex, b.vout ?? null, b.page ?? null);
+const isBookmarked = (hex, vout = null, page = null) => bookmarks.some((b) => keyOf(b) === bookmarkKey(hex, vout, page));
 const saveBookmarks = () => { try { localStorage.setItem(BOOKMARKS_KEY, JSON.stringify(bookmarks)); } catch {} };
 
 // The curated entries live in notables.yaml, loaded through btc-contents.js and
@@ -5068,6 +5152,9 @@ const saveBookmarks = () => { try { localStorage.setItem(BOOKMARKS_KEY, JSON.str
 function entryPlacement(entry) {
   if (!state || !Number.isInteger(state.height)) return null;
   if (state.projected) return null;   // a projected page has no settled reference to bookmark yet
+  // A leaf's height is already its span's first block (openLeafAt), so the
+  // span is placed by that height and the name of the level it stands at.
+  if (entry.page) return { height: state.height, pos: null, page: entry.page };
   if (entry.label === 'output') return { height: state.height, pos: state.index, vout: entry.vout };
   if (entry.label === 'transaction id') return { height: state.height, pos: state.index };
   return { height: state.height, pos: null };   // a block hash -- this chapter
@@ -5078,7 +5165,7 @@ function entryPlacement(entry) {
 // table of contents can slot it into reading order; returns false (saving
 // nothing) when the reference can't be resolved.
 function addBookmark(entry, title) {
-  const key = bookmarkKey(entry.hex, entry.vout ?? null);
+  const key = bookmarkKey(entry.hex, entry.vout ?? null, entry.page ?? null);
   const existing = bookmarks.find((b) => keyOf(b) === key);
   if (existing) {
     existing.title = title;
@@ -5091,10 +5178,13 @@ function addBookmark(entry, title) {
       // An output carries the vout it names, so the contents can cite it as
       // §section.vout and open the book at that output.
       ...(place.vout == null ? {} : { vout: place.vout }),
+      // A leaf carries the level it stands at, so the contents can cite it as
+      // a volume or a book and open that leaf rather than a chapter.
+      ...(place.page ? { page: place.page } : {}),
     }); // newest first
   }
   saveBookmarks();
-  syncHashFlags();
+  syncBookmarkRibbons();
   return true;
 }
 function removeBookmark(key) {
@@ -5102,28 +5192,67 @@ function removeBookmark(key) {
   if (i < 0) return;
   bookmarks.splice(i, 1);
   saveBookmarks();
-  syncHashFlags();
+  syncBookmarkRibbons();
 }
 
-// Show/hide a bookmark ribbon at the top-right corner of a hash's prose to
-// match its saved state.
-function setHashFlag(el, on) {
-  let mark = el.querySelector(':scope > .hash-bookmark');
-  if (on && !mark) {
-    mark = document.createElement('span');
-    mark.className = 'hash-bookmark';
-    mark.title = 'bookmarked';
-    mark.setAttribute('aria-hidden', 'true');
-    mark.innerHTML = '<svg viewBox="0 0 12 16"><path fill="currentColor" d="M0 0h12v16l-6-4-6 4z"/></svg>';
-    el.appendChild(mark);
-  } else if (!on && mark) {
-    mark.remove();
-  }
+// The ribbon itself: hollow while the place is unkept, filled once it is, and
+// clickable in both states -- the affordance for keeping a place, standing
+// where the kept mark will stand. Keeping asks for a name (the title becomes
+// the row in the contents), so the hollow ribbon opens the same title form the
+// menu's Bookmark item opens; a filled one gives the place back.
+const RIBBON_SVG = '<svg viewBox="0 0 12 16" aria-hidden="true">'
+  + '<path class="rib-hollow" d="M.9.9h10.2v14.2l-5.1-3.4-5.1 3.4z" fill="none" stroke="currentColor" stroke-width="1.7"/>'
+  + '<path class="rib-fill" d="M0 0h12v16l-6-4-6 4z" fill="currentColor"/></svg>';
+function ribbonOf(el) {
+  let rib = el.querySelector(':scope > .hash-bookmark');
+  if (rib) return rib;
+  el.classList.add('bm-host');
+  rib = document.createElement('button');
+  rib.type = 'button';
+  rib.className = 'hash-bookmark';
+  rib.innerHTML = RIBBON_SVG;
+  // The ribbon sits inside the place's own click handle (a title, an amount),
+  // which opens the copy menu; a press on the ribbon is about the bookmark and
+  // nothing else, so it stops there -- by keyboard too, where the handle takes
+  // Enter and Space for the same menu.
+  rib.addEventListener('mousedown', (e) => e.stopPropagation());
+  rib.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') e.stopPropagation(); });
+  rib.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const entry = el.__bmEntry;
+    if (!entry) return;
+    const key = bookmarkKey(entry.hex, entry.vout ?? null, entry.page ?? null);
+    if (isBookmarked(entry.hex, entry.vout ?? null, entry.page ?? null)) { removeBookmark(key); closeHashMenu(); return; }
+    startBookmark(e, entry, rib);
+  });
+  el.appendChild(rib);
+  return rib;
 }
-// Re-sync every on-page hash's flag after the bookmark set changes.
-function syncHashFlags() {
-  for (const el of document.querySelectorAll('.hash-copy')) {
-    if (el.__bmKey) setHashFlag(el, bookmarks.some((b) => keyOf(b) === el.__bmKey));
+
+// Dress `el`'s ribbon to match what the reader has kept. `on` is whether this
+// place is bookmarked; the wording follows the Ledger's own keep button, which
+// says in words what the ribbon says in gold.
+function setBookmarkRibbon(el, on) {
+  const rib = ribbonOf(el);
+  rib.classList.toggle('set', on);
+  const what = el.__bmEntry?.what || 'this place';
+  rib.title = on ? 'bookmarked — remove' : `bookmark ${what}`;
+  rib.setAttribute('aria-label', on ? `Remove the bookmark on ${what}` : `Bookmark ${what}`);
+  rib.setAttribute('aria-pressed', on ? 'true' : 'false');
+}
+// A place that can't be kept (a merkle root, which leads nowhere; a draft
+// chapter, which has no settled reference yet) is offered nothing.
+function clearBookmarkRibbon(el) {
+  el.querySelector(':scope > .hash-bookmark')?.remove();
+  el.classList.remove('bm-host');
+  el.__bmEntry = null;
+}
+// Re-dress every ribbon on the page after the bookmark set changes.
+function syncBookmarkRibbons() {
+  for (const rib of document.querySelectorAll('.hash-bookmark')) {
+    const host = rib.parentElement;
+    if (host && host.__bmKey) setBookmarkRibbon(host, bookmarks.some((b) => keyOf(b) === host.__bmKey));
   }
 }
 
@@ -5137,6 +5266,10 @@ function suggestTitle(entry) {
   if (!place) return '';
   const { volume, book, chapter } = volumeBookChapter(place.height);
   const genesis = volume === 1 && book === 1 && chapter === 1;
+  // A leaf suggests the name it wears at its own head, which is what a reader
+  // scanning the contents for it will be looking for.
+  if (place.page === 'volume') return `Volume ${toRoman(volume)}`;
+  if (place.page === 'book') return `Book ${book.toLocaleString()}`;
   if (place.pos != null) return `${toRoman(volume)} β${book} ■${chapter} §${place.pos + 1}`;
   return genesis ? 'The Genesis Block' : `Chapter ${chapterName(chapter)}`;
 }
@@ -5175,11 +5308,15 @@ function openHashMenu(ev, entry, anchorEl) {
   ev.preventDefault();
   ev.stopPropagation();
   menuEntry = entry;
+  fromRibbon = false;
   $('hash-menu-head').textContent = entry.label;
   menuCopyBtn.textContent = 'Copy hex';
   menuCopyTextBtn.textContent = 'Copy text';
   menuBmBtn.classList.toggle('hidden', !entry.nav);
-  if (entry.nav) menuBmBtn.textContent = isBookmarked(entry.hex) ? 'Remove bookmark' : 'Bookmark';
+  // Keyed by the whole place, output and all: a transaction's own bookmark and
+  // one of its outputs' are two different keeps, and the item must say which
+  // of them it is about.
+  if (entry.nav) menuBmBtn.textContent = isBookmarked(entry.hex, entry.vout ?? null) ? 'Remove bookmark' : 'Bookmark';
   hashMenu.classList.remove('hidden');
   setMenuMode('actions');
   // Anchor at the click; for a keyboard open, sit under the element.
@@ -5194,7 +5331,14 @@ function openHashMenu(ev, entry, anchorEl) {
   menuSettleUntil = performance.now() + 400;
 }
 
-function closeHashMenu() { hashMenu.classList.add('hidden'); menuEntry = null; }
+// Whether the form on screen was raised by a ribbon rather than by the menu.
+// A ribbon opens straight into the title form, so cancelling it has no actions
+// list to fall back to -- and must not invent one: a leaf's title offers a
+// bookmark and nothing else, having no hash of its own to copy.
+let fromRibbon = false;
+const cancelTitle = () => { if (fromRibbon) closeHashMenu(); else setMenuMode('actions'); };
+
+function closeHashMenu() { hashMenu.classList.add('hidden'); menuEntry = null; fromRibbon = false; }
 
 menuCopyBtn.addEventListener('click', () => {
   if (!menuEntry) return;
@@ -5211,16 +5355,36 @@ menuCopyTextBtn.addEventListener('click', () => {
     setTimeout(closeHashMenu, 650);
   }).catch(closeHashMenu);
 });
-menuBmBtn.addEventListener('click', () => {
-  if (!menuEntry) return;
-  const key = bookmarkKey(menuEntry.hex, menuEntry.vout ?? null);
-  if (isBookmarked(menuEntry.hex, menuEntry.vout ?? null)) { removeBookmark(key); closeHashMenu(); return; }
-  // Not yet saved: swap to the title form so the reader can name this entry.
+// Keeping a place asks for a name first: the title is the row it will take in
+// the table of contents, and a row is read by its title. Reached from the
+// menu's Bookmark item and from a hollow ribbon alike.
+function promptForTitle() {
   titleInput.value = suggestTitle(menuEntry);
   setMenuMode('title');
   titleInput.focus({ preventScroll: true });
   titleInput.select();
+}
+menuBmBtn.addEventListener('click', () => {
+  if (!menuEntry) return;
+  const key = bookmarkKey(menuEntry.hex, menuEntry.vout ?? null, menuEntry.page ?? null);
+  if (isBookmarked(menuEntry.hex, menuEntry.vout ?? null, menuEntry.page ?? null)) { removeBookmark(key); closeHashMenu(); return; }
+  promptForTitle();   // not yet saved: name it
 });
+
+// The hollow ribbon's own path to the same form: no menu was open, so this
+// raises one straight into its title mode, anchored under the ribbon pressed.
+function startBookmark(ev, entry, anchorEl) {
+  ev.preventDefault();
+  menuEntry = entry;
+  fromRibbon = true;
+  $('hash-menu-head').textContent = entry.label;
+  menuBmBtn.classList.remove('hidden');
+  hashMenu.classList.remove('hidden');
+  const a = anchorEl.getBoundingClientRect();
+  menuPoint = { x: a.left, y: a.bottom + 4 };
+  promptForTitle();   // positions the menu as it switches mode
+  menuSettleUntil = performance.now() + 400;
+}
 
 function saveTitle() {
   if (!menuEntry) return;
@@ -5231,10 +5395,10 @@ function saveTitle() {
   setStatus('Could not resolve this reference — bookmark not saved.', 'err');
 }
 hashMenu.querySelector('[data-act="title-save"]').addEventListener('click', saveTitle);
-hashMenu.querySelector('[data-act="title-cancel"]').addEventListener('click', () => setMenuMode('actions'));
+hashMenu.querySelector('[data-act="title-cancel"]').addEventListener('click', cancelTitle);
 titleInput.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') { e.preventDefault(); saveTitle(); }
-  else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); setMenuMode('actions'); }
+  else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); cancelTitle(); }
 });
 
 // Dismiss on an outside press, Escape, scroll, or resize. mousedown (not click)

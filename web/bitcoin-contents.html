@@ -242,6 +242,9 @@ async function resolvePlacement({ id, index, page, out = null }) {
 // which may be a block hash or a txid -- try a block lookup first (its height is
 // the chapter), then a txid's merkle proof (height + section), like the book.
 async function resolveBookmark(b) {
+  // A leaf's bookmark places at the level it names: its height is already its
+  // span's first block, so the volume or book alone is what it cites.
+  if (b.page) return Number.isInteger(b.height) ? placeOf(b.height, null, b.page) : null;
   if (Number.isInteger(b.height)) return placeOf(b.height, b.pos ?? null);
   // A legacy bookmark's hex resolves once; the archive keeps the answer
   // (whether it proved a block hash or a txid) like any other placement.
@@ -915,18 +918,22 @@ const bmPlacements = new Map();        // bookmark hex -> place | null (once att
 // twice.
 const NOTABLE_IDS = new Set(places().map((p) => p.id));
 // A bookmark is keyed by what it names: a hash by itself, an output by its
-// hash and vout (the same key bitcoin-book.html writes). A bookmarked output
-// is never a curated entry, so only hash bookmarks are dropped as duplicates.
-const bmKey = (b) => (b.vout == null ? b.hex : `${b.hex}:${b.vout}`);
-const bookmarks = readBookmarks().filter((b) => b.vout != null || !NOTABLE_IDS.has(b.hex));
+// hash and vout, a leaf by the hash of the block its span opens and which span
+// it is (the same keys bitcoin-book.html writes). Only a plain hash bookmark
+// can duplicate a curated entry, so only those are dropped.
+const bmKey = (b) => (b.page ? `${b.page}@${b.hex}` : b.vout == null ? b.hex : `${b.hex}:${b.vout}`);
+const bookmarks = readBookmarks().filter((b) => b.vout != null || b.page || !NOTABLE_IDS.has(b.hex));
 
 // Every entry -- curated or bookmarked -- carrying whatever placement has
 // resolved so far. A bookmark reuses its stored title and flies the book's ribbon.
+// A leaf's bookmark is opened by its height and the level it stands at, not by
+// its hash: `?block=<h>&page=volume` is the leaf, where the bare hash would be
+// the chapter that opens it -- a different page, and a different keep.
 const entries = () => [
   ...places().filter((p) => !p.address).map((p) => ({ ...p, title: placeTitle(p), commentary: p.entry.commentary,
     place: placements.get(placeKey(p)), tried: placements.has(placeKey(p)) })),
   ...bookmarks.map((b) => ({
-    id: b.hex, index: b.pos ?? undefined, vout: b.vout ?? undefined,
+    id: b.page ? String(b.height) : b.hex, index: b.pos ?? undefined, vout: b.vout ?? undefined, page: b.page,
     title: b.title || b.prose || shortHex(b.hex),
     bookmark: true, place: bmPlacements.get(bmKey(b)), tried: bmPlacements.has(bmKey(b)),
   })),
@@ -971,7 +978,7 @@ async function loadProjected() {
 // resolves.
 for (const p of places()) if (!p.address && isBlockId(p.id)) placements.set(placeKey(p), placeOf(Number(p.id), p.index ?? null, p.page, p.out ?? null));
 for (const b of bookmarks) {
-  if (Number.isInteger(b.height)) bmPlacements.set(bmKey(b), placeOf(b.height, b.pos ?? null, undefined, b.vout ?? null));
+  if (Number.isInteger(b.height)) bmPlacements.set(bmKey(b), placeOf(b.height, b.pos ?? null, b.page, b.vout ?? null));
 }
 lastVolume = volumesFromEntries();
 at = openingIndex(leaves());

@@ -789,8 +789,13 @@ const readBookmarks = () => {
 };
 const shortHex = (hex) => `${hex.slice(0, 10)}…${hex.slice(-6)}`;
 const shortAddr = (a) => (a.length > 17 ? `${a.slice(0, 8)}…${a.slice(-6)}` : a);
+// The reader's bookmarked passages, which the ledger hangs in its quarters
+// beside the entries they fall among. A bookmark of a volume or a book (b.page)
+// is a span, not a passage: it has a height, but hanging it on that block's
+// quarter would cite a whole volume as though it were the chapter that opens
+// it. Those live in the table of contents, at the level they name.
 const bookmarks = readBookmarks()
-  .filter((b) => Number.isInteger(b.height))
+  .filter((b) => Number.isInteger(b.height) && !b.page)
   .map((b) => ({ hex: b.hex, height: b.height, pos: b.pos ?? null, title: b.title || b.prose || shortHex(b.hex) }));
 
 const n = (v, one, many) => `${v.toLocaleString('en-US')} ${v === 1 ? one : many}`;
