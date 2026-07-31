@@ -19,7 +19,7 @@
 // margin layout.
 
 import { encodeSeedPhrase } from './glossia-msg.js';
-import { findTextRuns, splitReadableRuns, readableUtf8Text, tokenizeScript, bitsToTargetHex, bitsToDifficulty } from './btc-tx.js';
+import { findTextRuns, splitReadableRuns, readableUtf8Text, tokenizeScript, bitsToTargetHex, bitsToDifficulty, bitsToPrimeFactors } from './btc-tx.js';
 import { volumeBookChapter } from './btc-citation.js';
 import { BIP39, HP_SPELLS } from './btc-wordlists.js';
 
@@ -100,22 +100,36 @@ const toSubscript = (n) => String(n).split('').map((d) => SUBSCRIPT_DIGITS[+d]).
 const SUPERSCRIPT_DIGITS = '⁰¹²³⁴⁵⁶⁷⁸⁹';
 export const toSuperscript = (n) => String(n).split('').map((d) => SUPERSCRIPT_DIGITS[+d]).join('');
 
+// A factorization as the notation writes it: primes ascending, × between,
+// a power only where there is one to state (2²⁰⁸×3×5×17×257, 2¹⁷²×3²×5×7×19²).
+const factorProse = (factors) => factors
+  .map(([p, power]) => (power === 1 ? String(p) : `${p}${toSuperscript(power)}`))
+  .join('×');
+
 // nBits (a compact difficulty target) -> { sym, expr, title }. The target is
 // rendered as the thing it is -- the ceiling a mined hash must dip under --
 // in two faces that together account for all 256 of its bits. β's subscript
 // is the demand in its physical unit: the number of leading zero BITS a
 // valid hash must open with (genesis, difficulty 1, is β₃₂; each +1 is a
-// doubling of the work). `expr` is the target written exactly, in nBits' own
-// floating-point structure: the mantissa as a plain integer times 256 raised
-// to the byte-shift exponent -- 65535×256²⁶ for genesis -- whose superscript
-// is literally the count of trailing zero bytes below the mantissa's
-// resolution. The subscript states the target's leading zero run, the
-// expression its significant bits and trailing run; leading zeros stay on β
-// because they are not legible from m×256ᵉ at a glance (they are
-// 256 − 8e − bitlen(m)). The exact compact nBits, the full 256-bit target
-// and the difficulty ratio all ride in the hover title. A target looser
-// than the genesis baseline (never on mainnet) falls back to the raw
-// compact hex, with no expression.
+// doubling of the work). `expr` is the target written exactly, in the terms
+// a 256-bit integer is finally made of: its prime factorization --
+// 2²⁰⁸×3×5×17×257 for genesis. nBits packs m×256ᵉ, so every target factors to
+// the same shape, a colossal power of two beside a very small odd number. The
+// power of two is the target's scale, roughly 8e of it and the rest whatever
+// twos the mantissa brought; the primes after it are the mantissa's odd part,
+// under 2²³ and rarely more than three or four of them -- the whole of what a
+// retarget can express, since a window's work is chosen from those digits and
+// nothing else. Genesis says it plainest: 65535 is 2¹⁶−1, so its odd part is
+// 3×5×17×257, the Fermat primes.
+//
+// The subscript states the target's leading zero run, the expression the
+// number in full; leading zeros stay on β because they are not legible from a
+// product at a glance (they are 256 − bitlen). Nothing of the wire word is
+// lost in the reading: the product is the target's exact value, of which nBits
+// is the compact form -- and the compact nBits, the mantissa and byte shift it
+// packs, the full 256-bit target and the difficulty ratio all ride in the
+// hover title besides. A target looser than the genesis baseline (never on
+// mainnet) falls back to the raw compact hex, with no expression.
 // Exported because a book leaf renders targets that are not its own block's:
 // a book from Volume II on straddles a retarget and states both of them, and
 // the second comes from the retarget block's nBits alone, with no header of
@@ -133,7 +147,7 @@ export function bitsInfo(bits) {
   const lz = zeros * 4 + (first >= 8 ? 0 : first >= 4 ? 1 : first >= 2 ? 2 : 3);
   const exponent = bits >>> 24;
   const mantissa = bits & 0x007fffff;   // top mantissa bit is a sign flag, masked off
-  const expr = exponent >= 3 ? `${mantissa}×256${toSuperscript(exponent - 3)}` : '';
+  const expr = factorProse(bitsToPrimeFactors(bits));
   return {
     sym: `β${toSubscript(lz)}`, expr,
     title: `nBits ${compact} — mantissa ${mantissa} shifted up ${exponent - 3} bytes: the target ${targetHex}, which a valid block hash must read below (${lz} leading zero bits) — ${tail}`,
@@ -329,7 +343,7 @@ function opToken(code) {
 // OP_PUSHDATA1/2/4, whose length rides in a separate prefix -- arrow weight
 // matching prefix width: ↧ⁿ (1-byte), ⇊ⁿ (2-byte), ⤋ⁿ (4-byte). The pushed data itself
 // follows the mark, as prose or an inline quote. (The coinbase preamble's
-// βₙ m×256ᵉ and ηn marks fold their push opcode in -- what the mark writes
+// βₙ 2ᵏ×… and ηn marks fold their push opcode in -- what the mark writes
 // out determines the exact bytes, the push width included.)
 const PUSH_GLYPHS = { 0: '', 1: '↧', 2: '⇊', 4: '⤋' };
 function pushToken(form, byteLen) {
@@ -406,7 +420,7 @@ function derToCompact(hex) {
 // restating the block's compact difficulty target (the header's nBits,
 // byte for byte), then a small-integer push -- the extranonce, the counter
 // a miner rolled once the header's 32-bit nonce was exhausted. Both are
-// numbers, not entropy, so they render as decoded marks (βₙ m×256ᵉ, ηn)
+// numbers, not entropy, so they render as decoded marks (βₙ 2ᵏ×…, ηn)
 // rather than payload words -- which also lets embedded text (the genesis
 // headline) stand as the coinbase's first words instead of trailing runs
 // of bytes-as-prose.
@@ -414,9 +428,11 @@ function derToCompact(hex) {
 // The target takes the frontispiece's full notation, mark and expression
 // both, not β alone: β's subscript is a leading-zero-BIT count, and many
 // distinct nBits share one count, so the mark by itself names the demand
-// without fixing the bytes that stated it. m×256ᵉ is nBits' own mantissa
-// and byte-shift, so the pair reconstructs the pushed word exactly -- the
-// same standard every other mark in the notation holds to.
+// without fixing the bytes that stated it. The product is the target's exact
+// value, whose compact form is the pushed word, so the pair reconstructs the
+// push -- the same standard every other mark in the notation holds to. (The
+// literal 4 bytes are in the mark's title either way, as they are on the
+// chapter head.)
 
 const reverseHexStr = (hex) => (hex.match(/../g) || []).reverse().join('');
 
@@ -675,7 +691,7 @@ export function renderScript(hex, collect, { eligible = false, nested = false, p
           const info = bitsInfo(bits);
           // The same two faces the frontispiece gives the header's nBits: β's
           // demand (the leading zero bits a valid hash must open with) and,
-          // beside it, the target written exactly as mantissa × 256ᵉ. No <
+          // beside it, the target written exactly as its primes. No <
           // between them -- the frontispiece's sign binds the chapter hash
           // above it to the target, and no hash stands on this line; here the
           // mark names the target and the expression writes it out.

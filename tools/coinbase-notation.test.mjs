@@ -15,7 +15,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { access } from 'node:fs/promises';
 
-import { splitReadableRuns, findTextRuns } from '../web/btc-tx.js';
+import { splitReadableRuns, findTextRuns, bitsToPrimeFactors, bitsToTargetHex } from '../web/btc-tx.js';
 
 // The counter as it sits on the chain in block 960,281: pushed, four bytes,
 // minimal little-endian -- and with three of those four bytes (7e 6b 6a) in
@@ -70,6 +70,32 @@ test('a run shorter than the floor stays in the binary span, not dropped', () =>
 test('findTextRuns still answers what text is in here', () => {
   // The lossy reading is unchanged: the runs, and only the runs.
   assert.deepEqual(findTextRuns(utf8Hex('/slush/') + 'ff'.repeat(8), { segment: false }), ['/slush/']);
+});
+
+// ─── the target the preamble restates ──────────────────────────────────
+
+// nBits the chain has actually mined under: genesis, the first adjustment,
+// and a spread of later windows down to a recent one.
+const REAL_NBITS = [0x1d00ffff, 0x1d00d86a, 0x1c654657, 0x1b04864c, 0x1a05db8b,
+  0x181bc330, 0x190fcc72, 0x1715a35c, 0x170355f0, 0x17028c61];
+
+test('a target factors into primes that multiply back to it', () => {
+  // The notation writes the target as a product, so the product has to BE the
+  // target -- to the last of its 256 bits, not to a rounded scale.
+  for (const bits of REAL_NBITS) {
+    const factors = bitsToPrimeFactors(bits);
+    const product = factors.reduce((acc, [p, k]) => acc * BigInt(p) ** BigInt(k), 1n);
+    assert.equal(product, BigInt('0x' + bitsToTargetHex(bits)), bits.toString(16));
+    // Ascending, and each factor prime: the reader is owed a canonical form.
+    for (let i = 1; i < factors.length; i++) assert.ok(factors[i][0] > factors[i - 1][0], 'primes ascend');
+    for (const [p] of factors) {
+      for (let d = 2; d * d <= p; d++) assert.notEqual(p % d, 0, `${p} is not prime`);
+    }
+  }
+  // Genesis states the shape plainest: 2²⁰⁸ × (2¹⁶−1), the Fermat primes.
+  assert.deepEqual(bitsToPrimeFactors(0x1d00ffff), [[2, 208], [3, 1], [5, 1], [17, 1], [257, 1]]);
+  // And the first adjustment moves the odd part entire, 3×5×17×257 → 27701.
+  assert.deepEqual(bitsToPrimeFactors(0x1d00d86a), [[2, 209], [27701, 1]]);
 });
 
 // ─── composition ───────────────────────────────────────────────────────
@@ -149,6 +175,7 @@ test('a pre-BIP34 coinbase keeps the preamble reading', { skip: skipNoEngine }, 
   const script = fields.inputs[0].script;
 
   assert.match(script, /β/, 'the difficulty target still reads under β');
+  assert.ok(script.includes('2²⁰⁸×3×5×17×257'), 'restated as the target it is, in primes');
   assert.ok(script.includes('The Times 03/Jan/2009'), 'and the headline is still quoted');
   assert.ok(!script.includes('■'), 'no height mark — the rule had not been written yet');
 });

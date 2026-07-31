@@ -163,10 +163,10 @@ export async function computeBlockHash(headerHex) {
 //
 // nBits packs a 256-bit target into 4 bytes: the top byte is a byte-length
 // exponent, the low 3 bytes a mantissa -- arith_uint256::SetCompact in
-// Bitcoin Core. Unpacked two ways: the full 32-byte target (so its leading
+// Bitcoin Core. Unpacked three ways: the full 32-byte target (so its leading
 // zero bytes -- literally the proof-of-work requirement -- are visible in
-// full, unlike a mined hash's they're never dropped here) and a difficulty
-// ratio against the genesis block's target.
+// full, unlike a mined hash's they're never dropped here), that same target
+// in primes, and a difficulty ratio against the genesis block's target.
 
 // nBits -> the 256-bit target, as 64 hex chars (32 bytes, display order).
 export function bitsToTargetHex(bits) {
@@ -174,6 +174,30 @@ export function bitsToTargetHex(bits) {
   const mantissa = BigInt(bits & 0x007fffff);   // top bit of the 3-byte mantissa is a sign flag, masked off
   const target = exponent <= 3 ? mantissa >> BigInt(8 * (3 - exponent)) : mantissa << BigInt(8 * (exponent - 3));
   return target.toString(16).padStart(64, '0');
+}
+
+// nBits -> the target's prime factorization, as [prime, power] pairs with the
+// primes ascending. A compact target is a mantissa times a whole number of
+// 256s, so the factoring is never hard work: the byte shift contributes 2⁸ᵉ,
+// the mantissa contributes whatever twos it carries and an odd part under 2²³,
+// and trial division to √(2²³) settles the rest. The pairs multiply back to
+// the target exactly -- this is the same number bitsToTargetHex writes out,
+// said in primes rather than in hex.
+export function bitsToPrimeFactors(bits) {
+  const shift = (bits >>> 24) - 3;
+  let n = bits & 0x007fffff;             // top bit of the 3-byte mantissa is a sign flag, masked off
+  if (shift < 0) n >>>= -8 * shift;      // an exponent under 3 shifts mantissa bits off the bottom
+  if (n === 0) return [];                // no target at all: nothing to factor
+  let twos = shift > 0 ? 8 * shift : 0;
+  for (; n % 2 === 0; n /= 2) twos++;
+  const factors = twos > 0 ? [[2, twos]] : [];
+  for (let p = 3; p * p <= n; p += 2) {
+    let power = 0;
+    for (; n % p === 0; n /= p) power++;
+    if (power > 0) factors.push([p, power]);
+  }
+  if (n > 1) factors.push([n, 1]);       // what survives the sieve is prime
+  return factors;
 }
 
 // nBits -> difficulty relative to the genesis block's target (defined as

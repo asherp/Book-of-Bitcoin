@@ -55,11 +55,16 @@ test('a value-carrying mark is found behind its value', () => {
 });
 
 test('a bare operator is not caught by a number that contains it', () => {
-  // The chapter head prints its target as 213529×256²⁰ and the book leaf a
+  // The chapter head prints its target as 2¹⁶⁰×213529 and the book leaf a
   // difficulty move as −2.53%. Neither is Script arithmetic.
-  const marks = new Set(['β₇₈', '213529×256²⁰', 'difficulty −2.53%']);
+  const marks = new Set(['β₇₈', '2¹⁶⁰×213529', 'difficulty −2.53%']);
   assert.ok(!rowShows(marksOf('+ − × ÷ %'), marks), 'arithmetic should stay shut');
   assert.ok(!rowShows(marksOf('&lt; &gt; ≤ ≥'), marks), 'comparisons should stay shut');
+  // The target's own row wants the opposite of the arithmetic row's exactness:
+  // a factorization carries no fixed literal, so it answers to a loose ×.
+  assert.ok(rowShows(marksOf('2<sup><i>k</i></sup>×<i>p</i>…', '×*'), marks), 'the target should open its row');
+  assert.ok(!rowShows(marksOf('2<sup><i>k</i></sup>×<i>p</i>…', '×*'), new Set(['β₇₈', '⧉'])),
+    'and stay shut where no product prints');
   // But the same marks as Script opcodes do open those rows.
   const script = new Set(['×', '≤']);
   assert.ok(rowShows(marksOf('+ − × ÷ %'), script));

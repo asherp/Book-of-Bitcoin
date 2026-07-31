@@ -62,8 +62,12 @@ export function collectMarks(root) {
 // What a key row teaches, read off the row's own glyph cell.
 //
 // A mark written bare -- × in "+ − × ÷ %" -- must be matched exactly: the
-// chapter head prints 213529×256²⁰, and a loose × would drag the arithmetic
-// group onto every chapter page. A mark written with a placeholder after it --
+// chapter head prints 2¹⁶⁰×213529, and a loose × would drag the arithmetic
+// group onto every chapter page. The target's own row asks for the opposite
+// (data-marks="×*"): a prime factorization has no literal in it to look for --
+// its primes are whatever the last retarget left -- so × is the one mark of
+// the form that always prints, and matching it loosely finds the product
+// wherever it stands. A mark written with a placeholder after it --
 // ■<i>n</i>, β<i>n</i>, η<sub><i>n</i></sub> -- carries a value on the page and
 // is matched as a prefix instead, so ■ finds ■840000 and β finds both β₇₈ and
 // the locktime's III β2 ■5.
