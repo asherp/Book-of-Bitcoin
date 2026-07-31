@@ -78,6 +78,15 @@
 # The boundaries are consensus arithmetic, not lore: a supermajority fork's
 # window is the 1,000 blocks before its activation; a version-bits window
 # aligns to its period from genesis, one period back of the lock-in boundary.
+# A closed window may also carry `signals:` — how many of its blocks said yes,
+# the whole count. That number is a plain fact of the chain, but no public API
+# serves it in aggregate, so it is counted once and written here: run
+# `node tools/count-ballots.mjs` to produce the line for a fork that lacks it,
+# or to re-check every recorded one against the chain — the script reads this
+# file with the same parser the site does and exits loudly on a mismatch. The
+# fork's leaf states the recorded count as the window's rate, says where it
+# came from, and lays the window out beneath it, block by block, so the claim
+# is checkable by reading.
 # A `signaling` fork names its `bit` and `threshold` (a percentage) but no
 # ballot — its window has not closed, so its leaf counts the newest blocks
 # instead, live. It may also name a `monitor:` — a public JSON endpoint

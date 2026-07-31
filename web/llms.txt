@@ -125,8 +125,11 @@ reaches it instead.
   it reads as a yes, lazily drawn with a running tally pinned at the foot.
   A fork still signaling counts from the chain tip, and where appendix.yaml
   names a monitor for it the tally states the current period's whole
-  signaling rate as that site publishes it, credited — otherwise the bar
-  counts what the table has drawn, and says so. Then the
+  signaling rate as that site publishes it, credited. A closed window's
+  whole count is recorded in appendix.yaml (`signals:`, counted from the
+  chain by `tools/count-ballots.mjs`, which anyone can re-run to verify)
+  and the tally states it as the window's rate — otherwise the bar counts
+  what the table has drawn, and says so. Then the
   activation statistics, the chapters and sections it names, and its
   commentary. A ballot row opens `&block=<height>`, the block's own leaf:
   the chapter's title page reprinted — hash and header fields as the book

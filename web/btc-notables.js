@@ -214,6 +214,11 @@ function normalizePart(raw, i) {
       if (b.threshold !== undefined) group.threshold = Number(b.threshold);
       if (b.ballot !== undefined) group.ballot = Number(b.ballot);
       if (b.window !== undefined) group.window = Number(b.window);
+      // A closed window's counted total of yes-blocks: a plain fact of the
+      // chain that nobody serves in aggregate, so the file carries it --
+      // produced and re-checked by tools/count-ballots.mjs, which anyone can
+      // run. The fork's leaf states it as the window's whole rate.
+      if (b.signals !== undefined) group.signals = Number(b.signals);
       // A public endpoint publishing the current period's whole count, for a
       // fork still signaling: the tally can state the period's total, not
       // just the sample the table has drawn -- credited, since the count is

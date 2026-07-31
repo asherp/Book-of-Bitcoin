@@ -474,6 +474,17 @@ fails on anything a reader would meet as a missing reading or an empty contents
 request; the deploy and the PR preview both run it first, ahead of the WASM
 build.
 
+One editorial entry is a number rather than a name, and it gets its own check:
+a closed signaling window's whole count (`signals:` on a fork's group in
+`web/appendix.yaml`, stated by its leaf's tally). That count is a plain fact
+of the chain that no public API serves in aggregate, so it is counted once
+and written down — `node tools/count-ballots.mjs` fetches every block of each
+closed window off the public mirrors, counts the yeses by the same rule the
+leaf's table applies, prints the paste-ready line for a fork that lacks one,
+and exits non-zero if a recorded count disagrees with the chain. Anyone can
+run it; the leaf's tally says so, and the window laid out beneath it is the
+same count made readable.
+
 ## License
 
 Five kinds of material live here, and the terms follow the distinction the

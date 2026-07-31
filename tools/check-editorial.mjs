@@ -165,6 +165,19 @@ for (const part of parts) {
     if (bip.status === 'signaling' && bip.ballot != null) {
       problems.push(`appendix "${part.title}": ${bip.title} is still signaling — its ballot has not closed, so it names none and its leaf counts from the tip`);
     }
+    // A recorded count (`signals:`) belongs to a closed window and must be a
+    // count: a whole number of that window's blocks. What is NOT checked here
+    // is the number against the chain -- this runs offline; that check is
+    // tools/count-ballots.mjs, run by hands.
+    if (bip.signals !== undefined) {
+      if (bip.ballot == null) {
+        problems.push(`appendix "${part.title}": ${bip.title} records signals but names no ballot — only a closed window has a whole count`);
+      }
+      if (!Number.isInteger(bip.signals) || bip.signals < 0 || (Number.isFinite(bip.window) && bip.signals > bip.window)) {
+        problems.push(`appendix "${part.title}": ${bip.title}'s signals must be a whole number within its ${bip.window}-block window, got ${bip.signals}`);
+      }
+      notes.push(`appendix "${part.title}": ${bip.title} records ${bip.signals} of ${bip.window} signaling — checkable with tools/count-ballots.mjs`);
+    }
     // A monitor is an external claim the leaf will fetch and credit: it must
     // be an https URL, and only a fork still signaling has a period to ask
     // about -- a closed window's count is the chain's, not a site's.
