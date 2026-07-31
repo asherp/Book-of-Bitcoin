@@ -174,7 +174,14 @@ compiled to WASM) is consumed as a published
   live) — then the activation statistics as the file states them, the
   fork's chapters, its reading behind the same toggle every leaf keeps its
   commentary behind, and sideways turns walking the forks; the book answers
-  an unmined chapter with the date it is due.
+  an unmined chapter with the date it is due. A ballot row opens the
+  block's own leaf (`&block=<height>`), one level further down: the
+  chapter's title page reprinted — its hash as prose between the ⌘ and ⓪
+  marks, every header field as the frontispiece writes it, the signal
+  verdict beside the version — with vertical turns walking the window
+  (newer above, older below, the ballot itself above the newest), the
+  citation the one door into the book, and the ascent landing back on the
+  table at the row left off, the Ledger's own dive-and-return.
   Appendix III's leaf is the Ledger compendium's own title page, since a
   shelf of ledgers is what that page already is. The appendices sit at the
   **volumes' own level**: the line runs Volume I … Volume V, Appendix I,
