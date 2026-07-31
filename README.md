@@ -81,6 +81,15 @@ compiled to WASM) is consumed as a published
 - `web/bitcoin-book.html` — the book: fetches a block from a configurable
   esplora-style endpoint (Blockstream, mempool.space, or your own node) and
   renders it as prose
+- **Turning pages.** Every reading page is a carousel: a horizontal swipe
+  turns at the level the reader is on, and a vertical one changes level —
+  a pull down at the top ascends, a push up at the foot descends. On a desk
+  the arrow keys carry the same four turns, ← and → sideways, ↑ up a level
+  and ↓ down — the reader's own directions, so ↓ descends where the finger
+  pushes up. The vertical pair defers to the scroll the way the swipe does:
+  a page long enough to scroll is read to its edge first, and only the next
+  press turns off it. The header steppers and the eyebrow crumbs go the same
+  places for hands that would rather click
 - `web/bitcoin-front.html` — the front matter, straddling the contents on the
   horizontal axis in the standard order: title leaf, terms (the copyright
   page, saying the reverse of one), **then the contents**, and after it the

@@ -79,6 +79,32 @@
       try { sessionStorage.setItem('glossia-front-entrance', dir); } catch (_) {}
       location.href = './bitcoin-front.html?leaf=' + leaf;
     };
+    // The three turns, named once so the finger and the arrow keys below
+    // play exactly the same ones.
+    const turnFront = (back) => {
+      const leaf = back ? 'terms' : 'preface';
+      const dir = back ? 'back' : 'fwd';
+      if (REDUCED) { goFront(leaf, dir); return; }
+      document.body.style.transition = 'transform .2s linear';
+      document.body.style.transform = `translateX(${back ? 100 : -100}vw)`;
+      setTimeout(() => goFront(leaf, dir), 180);
+    };
+    // Rising to the cover -- the inverse of the cover's lift-away: the
+    // contents sink, and the cover drops back into place from above.
+    const toCover = () => {
+      try { sessionStorage.setItem('glossia-front-entrance', 'drop'); } catch (_) {}
+      const goCover = () => { location.href = './bitcoin-front.html'; };
+      if (REDUCED) { goCover(); return; }
+      document.body.style.transition = 'transform .2s linear';
+      document.body.style.transform = 'translateY(100vh)';
+      setTimeout(goCover, 180);
+    };
+    const descend = () => {
+      if (REDUCED) { go(); return; }
+      document.body.style.transition = 'transform .2s linear';
+      document.body.style.transform = 'translateY(-100vh)';
+      setTimeout(go, 180);
+    };
     document.addEventListener('touchend', (e) => {
       if (sy === null || e.changedTouches.length !== 1) return;
       const dy = e.changedTouches[0].clientY - sy;
@@ -87,33 +113,36 @@
       sy = null;
       // A committed horizontal turn: quick, far enough, and mostly sideways.
       if (dt <= 600 && Math.abs(dx) >= 60 && Math.abs(dy) <= Math.abs(dx) * 0.6) {
-        const back = dx > 0;                       // swiping right turns back
-        const leaf = back ? 'terms' : 'preface';
-        const dir = back ? 'back' : 'fwd';
-        if (REDUCED) { goFront(leaf, dir); return; }
-        document.body.style.transition = 'transform .2s linear';
-        document.body.style.transform = `translateX(${back ? 100 : -100}vw)`;
-        setTimeout(() => goFront(leaf, dir), 180);
+        turnFront(dx > 0);                         // swiping right turns back
         return;
       }
       // A pull DOWN starting at the page's top rises from the contents back
-      // to the cover -- the inverse of the cover's lift-away: the contents
-      // sink, and the cover drops back into place from above.
-      if (atTop && dt <= 600 && dy >= 70 && Math.abs(dx) <= dy * 0.6) {
-        try { sessionStorage.setItem('glossia-front-entrance', 'drop'); } catch (_) {}
-        const goCover = () => { location.href = './bitcoin-front.html'; };
-        if (REDUCED) { goCover(); return; }
-        document.body.style.transition = 'transform .2s linear';
-        document.body.style.transform = 'translateY(100vh)';
-        setTimeout(goCover, 180);
+      // to the cover.
+      if (atTop && dt <= 600 && dy >= 70 && Math.abs(dx) <= dy * 0.6) { toCover(); return; }
+      if (!atBottom || dt > 600 || dy > -70 || Math.abs(dx) > Math.abs(dy) * 0.6) return;
+      descend();
+    }, { passive: true });
+
+    // The same three turns from a keyboard: left and right along the front
+    // matter, up to the cover and down into the volumes. The vertical pair
+    // defers to the scroll as the swipes do -- the contents is a long list,
+    // so it is read to its end before the next press turns off it.
+    document.addEventListener('keydown', (e) => {
+      if (e.metaKey || e.ctrlKey || e.altKey || e.shiftKey || e.repeat) return;
+      const t = e.target;
+      if (t && t.closest && t.closest('input, textarea, select, [contenteditable]')) return;
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+        e.preventDefault();
+        turnFront(e.key === 'ArrowLeft');
         return;
       }
-      if (!atBottom || dt > 600 || dy > -70 || Math.abs(dx) > Math.abs(dy) * 0.6) return;
-      if (REDUCED) { go(); return; }
-      document.body.style.transition = 'transform .2s linear';
-      document.body.style.transform = 'translateY(-100vh)';
-      setTimeout(go, 180);
-    }, { passive: true });
+      if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
+      const top = window.scrollY <= 2;
+      const bottom = window.scrollY >= document.documentElement.scrollHeight - window.innerHeight - 2;
+      const short = document.documentElement.scrollHeight <= window.innerHeight + 24;
+      if (e.key === 'ArrowUp') { if (short || top) { e.preventDefault(); toCover(); } return; }
+      if (short || bottom) { e.preventDefault(); descend(); }
+    });
   })();
 
 </script>

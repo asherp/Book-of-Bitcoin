@@ -4714,6 +4714,55 @@ window.addEventListener('resize', updateGesturePrecedence);
   document.addEventListener('touchcancel', () => { sx = null; if (!pendingSlide) snapBack(); }, { passive: true });
 })();
 
+// ── The same turns, from a keyboard ───────────────────────────────────────
+// A desk has no finger to swipe with, so the arrow keys carry the gestures'
+// four turns unchanged: left and right turn the page at the current level,
+// up ascends a level and down descends -- the reader's own directions, even
+// though the swipe that means "descend" is a push UP. Every rule the
+// gestures keep is kept here. The horizontal pair stops where the swipe
+// rubber-bands (no neighbour at this level); the vertical pair defers to the
+// scroll exactly as the vertical swipe does, turning only on a page short
+// enough not to scroll or from the boundary the turn moves away from -- so
+// arrowing down a long chapter reads it to the foot first and turns on the
+// next press.
+//
+// One deliberate difference: a swipe toward a neighbour whose data is still
+// prefetching only rubber-bands, and the finger tries again a moment later.
+// A key that did nothing would just read as broken, so it turns anyway by
+// the header steppers' route -- fetching on demand, without the carousel
+// slide the prefetch pays for.
+document.addEventListener('keydown', (e) => {
+  if (e.metaKey || e.ctrlKey || e.altKey || e.shiftKey || e.repeat) return;
+  const horizontal = e.key === 'ArrowLeft' || e.key === 'ArrowRight';
+  const vertical = e.key === 'ArrowUp' || e.key === 'ArrowDown';
+  if (!horizontal && !vertical) return;
+  if (!state || pendingSlide) return;
+  // Fields, scrolling regions and the popovers keep their own arrow keys --
+  // the same surfaces the swipe hands back to whatever is under the finger.
+  const t = e.target;
+  if (t && t.closest && t.closest('input, textarea, select, [contenteditable], .pattern-scroll, .hash-menu, .settings-panel, .nav-sheet-body')) return;
+  if (!settingsPanel.classList.contains('hidden')) return;
+  if (!$('hash-menu').classList.contains('hidden')) return;
+
+  if (horizontal) {
+    const dir = e.key === 'ArrowRight' ? 1 : -1;   // right turns forward, as a leftward swipe does
+    if (!navAvailable(dir) && !(dir < 0 && atFrontMatterEdge()) && !(dir > 0 && atAppendixEdge())) return;
+    e.preventDefault();
+    if (canStep(dir) && !REDUCED_MOTION) slideOutAndStep(dir);
+    else swipeStep(dir);
+    return;
+  }
+
+  const dir = e.key === 'ArrowDown' ? 1 : -1;      // down descends, up ascends
+  if (!levelTarget(dir)) return;
+  const atTop = window.scrollY <= 2;
+  const atBottom = window.scrollY >= document.documentElement.scrollHeight - window.innerHeight - 2;
+  if (!(gesture.carouselFirst || (dir < 0 && atTop) || (dir > 0 && atBottom))) return;
+  e.preventDefault();
+  if (canStepVertical(dir) && !REDUCED_MOTION) slideOutAndStep(dir, 'y');
+  else swipeStepVertical(dir);
+});
+
 // ── Pinch: the type sizes ─────────────────────────────────────────────────
 // Two fingers on the reading matter set the type size of the region under
 // them, the e-reader way: the text reflows at the new size instead of the
