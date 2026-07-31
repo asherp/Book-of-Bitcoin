@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<!-- SPDX-License-Identifier: MIT OR Apache-2.0 -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>The βook of βitcoin — Front Matter</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="The front matter of the Book of Bitcoin: title, terms, the author's preface, and the key to the sigla.">
+<link rel="icon" href="./icons/beta-icon.svg" type="image/svg+xml">
+
+<!-- Social / rich unfurl -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="The βook of βitcoin">
+<meta property="og:title" content="The βook of βitcoin — Front Matter">
+<meta property="og:description" content="Title, terms, the author's preface, and the key to the sigla.">
+<meta property="og:url" content="https://bookofbitcoin.io/bitcoin-front.html">
+<meta property="og:image" content="https://bookofbitcoin.io/og-bookofbitcoin.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="The βook of βitcoin — the illuminated timechain. A gold β standing beside the book's title on a dark cover.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="The βook of βitcoin — Front Matter">
+<meta name="twitter:description" content="Title, terms, the author's preface, and the key to the sigla.">
+<meta name="twitter:image" content="https://bookofbitcoin.io/og-bookofbitcoin.png">
+<link rel="manifest" href="./bitcoin-book.webmanifest">
+<meta name="theme-color" content="#08080a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="βook of βitcoin">
+<script>
+  // The front matter straddles the table of contents on the book's horizontal
+  // axis, in the standard order: title, terms, CONTENTS, preface, sigla.
+  // It owns no vertical axis of its own -- the contents remains the single
+  // leaf above the volumes, so an ascent from Volume I still lands there and
+  // nowhere else. Arriving from the contents finishes that turn here, entering
+  // from whichever side the reader turned.
+  try {
+    const dir = sessionStorage.getItem('glossia-front-entrance');
+    if (dir) {
+      sessionStorage.removeItem('glossia-front-entrance');
+      // 'drop' is the contents' pull-down-at-top: the cover falls back into
+      // place from above. The other values finish a horizontal turn.
+      document.documentElement.classList.add(
+        dir === 'drop' ? 'front-entrance-drop' :
+        dir === 'fwd' ? 'front-entrance-fwd' : 'front-entrance');
+    }
+  } catch (_) {}
+
+</script>
+<!-- The shared masthead chrome: service worker registration and the Install /
+     Update affordances on the title's line, one copy for every page. -->
+<script src="./btc-chrome.js"></script>
+
+<link rel="stylesheet" href="./notation.css">
+<link rel="stylesheet" href="./btc-chrome.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,400&family=IBM+Plex+Mono:wght@400;500;600&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --page:#08080a; --card:#0d0d10; --card-bd:#232228; --ink:#e8e4da; --ink-soft:#cfcabf;
+  --accent:#c9a25f; --accent-2:#dcb877; --dim:#9c99a6; --meta:#7e7b88; --rule:#24232a; --hair:#2a2930;
+  --input-bg:#151519; --input-bd:#2a2930;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { min-height: 100vh; background: var(--page); color: var(--ink); font-family: 'Public Sans', system-ui, sans-serif; line-height: 1.55; }
+
+/* The entering half of a turn back from the contents: this leaf slides in
+   from the left, matching the carousel's pace on the book page. */
+@media (prefers-reduced-motion: no-preference) {
+  .front-entrance body { animation: front-in .22s ease-out; }
+  @keyframes front-in { from { transform: translateX(-100vw); } }
+  .front-entrance-fwd body { animation: front-in-fwd .22s ease-out; }
+  @keyframes front-in-fwd { from { transform: translateX(100vw); } }
+  /* The entering half of the contents' pull-down turn: the cover drops back
+     into place from above as the contents sink away below. */
+  .front-entrance-drop body { animation: front-in-drop .22s ease-out; }
+  @keyframes front-in-drop { from { transform: translateY(-100vh); } }
+}
+
+.wrap { max-width: 720px; margin: 0 auto; padding: 48px 22px 100px; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+
+.page-head { text-align:center; padding-bottom:30px; margin-bottom:36px; border-bottom:1px solid var(--rule); }
+.page-eyebrow { font:600 11px/1 'IBM Plex Mono',monospace; letter-spacing:.3em; text-transform:uppercase; color:var(--accent); }
+
+/* One leaf at a time, the others parked. The slide element carries the turn's
+   transform so the leaf can be exited and entered like a book page. */
+#leaf-slide { will-change: transform; }
+.leaf { display: none; }
+.leaf.current { display: block; }
+/* The title leaf lays out as a column; it must still obey .current, so the
+   flex display is bound to it -- an unqualified .title-leaf rule would sit at
+   equal specificity with .leaf and win by order, showing the title on every
+   leaf. */
+.leaf.current.title-leaf { display: flex; }
+
+/* On the title leaf the title is the whole page: the masthead and the leaf
+   navigation are withdrawn, and the leaf fills the viewport. Turning is by
+   swipe, arrow key, or a tap anywhere -- the leaf itself is the control, so
+   nothing has to be drawn to make it work. */
+body.at-title .masthead, body.at-title .leaf-nav { display: none; }
+body.at-title .wrap { padding-top: 0; padding-bottom: 0; }
+body.at-title .title-leaf { min-height: 100vh; cursor: pointer; }
+
+/* ── The title leaf: set like a manuscript title page — the title in the
+   upper third, the imprint line resting at the foot, open field between. ── */
+/* The title sits above the leaf's midline: the centring is done against a
+   content box shortened at the foot, which lifts the block by half the
+   padding (to roughly the upper third) while leaving the leaf itself a full
+   viewport tall -- so the version line, positioned against the padding box,
+   keeps its place. */
+.title-leaf { min-height: 62vh; flex-direction: column; justify-content: center; text-align: center; position: relative;
+  padding-bottom: 24vh; }
+.title-leaf .work-title { margin: 0; font: 300 clamp(38px, 11vw, 68px)/1.08 'Newsreader', serif; color: var(--ink); letter-spacing: -.02em; }
+.title-leaf .work-title .beta { color: var(--accent); font-weight: 400; }
+/* The edition line: the release stamp (vYYYY.0M.0D.HH, the deploy time),
+   set quietly at the leaf's bottom third like an imprint's edition notice.
+   Filled by btc-chrome.js from version.json; empty (invisible) in a bare
+   checkout that has no stamp. */
+.title-leaf .work-version { position: absolute; top: 68%; left: 0; right: 0; text-align: center;
+  font: 500 11px/1 'IBM Plex Mono', monospace; letter-spacing: .18em; color: var(--meta); }
+
+/* Body prose across the terms and preface leaves. */
+.leaf-body { font: 400 17.5px/1.72 'Newsreader', serif; color: var(--ink-soft); }
+.leaf-body p { margin: 0 0 1.15em; }
+.leaf-body p.lead::first-letter { float: left; font-size: 3.1em; line-height: .82; padding: .06em .09em 0 0; color: var(--accent); font-weight: 400; }
+.leaf-body h3 { margin: 2.2em 0 .7em; font: 600 11px/1 'IBM Plex Mono', monospace; letter-spacing: .22em; text-transform: uppercase; color: var(--accent); }
+.leaf-body em { font-style: italic; }
+.leaf-body strong { font-weight: 600; color: var(--ink); }
+.leaf-body code, .leaf-body .siglum { font-family: 'IBM Plex Mono', monospace; font-size: .88em; color: var(--accent-2); }
+.leaf-body .sign { margin-top: 2.4em; font: italic 400 16px/1.6 'Newsreader', serif; color: var(--dim); text-align: right; }
+.leaf-body .sign .who { display: block; font-style: normal; font-family: 'IBM Plex Mono', monospace; font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--meta); margin-top: .5em; }
+
+/* The terms leaf keeps the register of a copyright page — small, plain,
+   itemized — and says the opposite of one. */
+.terms-list { margin: 1.6em 0 0; padding: 0; list-style: none; border-top: 1px solid var(--rule); }
+.terms-list li { display: flex; gap: 18px; align-items: baseline; padding: 11px 2px; border-bottom: 1px solid var(--hair); font: 400 15px/1.5 'Newsreader', serif; color: var(--ink-soft); }
+.terms-list .what { flex: 1; min-width: 0; }
+.terms-list .term { flex: none; min-width: 120px; text-align: right; font: 600 12px/1.5 'IBM Plex Mono', monospace; letter-spacing: .06em; color: var(--accent); }
+.terms-note { margin-top: 1.5em; font: 400 14px/1.65 'Newsreader', serif; color: var(--meta); }
+
+/* ── The sigla leaf ───────────────────────────────────────────────────
+   The reference diagram sets the citation large and hangs each part's name
+   beneath it on a rule, the way a figure annotates a formula. It scrolls
+   inside itself on a narrow screen rather than forcing the page sideways. */
+.ref-figure { margin: 1.8em 0 0; overflow-x: auto; }
+.ref-parts { display: grid; grid-auto-flow: column; justify-content: start; gap: 26px; min-width: min-content; padding-bottom: 4px; }
+.ref-part { text-align: center; }
+.ref-token { font: 500 30px/1.1 'IBM Plex Mono', monospace; color: var(--accent-2); white-space: nowrap; }
+.ref-stem { height: 20px; border-left: 1px solid var(--rule); width: 0; margin: 6px auto 6px; }
+.ref-name { font: 600 10px/1.3 'IBM Plex Mono', monospace; letter-spacing: .18em; text-transform: uppercase; color: var(--ink-soft); white-space: nowrap; }
+.ref-gloss { margin-top: 5px; font: 400 13px/1.4 'Newsreader', serif; color: var(--meta); max-width: 15ch; margin-left: auto; margin-right: auto; }
+.ref-reading { margin-top: 1.6em; font: 400 15px/1.65 'Newsreader', serif; color: var(--dim); }
+
+/* The shared notation key, at rest: the book page floats the same markup as a
+   sheet above its nav bar (see .nav-sheet-body in notation.css); here it simply
+   sits in the leaf, so it takes room rather than positioning. */
+.notation-at-rest { margin: 1.5em 0 0; }
+
+/* The opcode index: one group at a time, each mark beside the name it stands
+   for. Rendered from the same tables the book renders scripts from. Sigla
+   content like the shared key above it, so it follows the reader's notation
+   type size (--scale-notation, set on <html> by btc-fontscale.js; 1 wherever
+   it isn't) exactly as the key does in notation.css. */
+.sig-group { margin: 2em 0 0; }
+.sig-group > h4 { margin: 0 0 .5em; font: 600 calc(10px * var(--scale-notation, 1))/1 'IBM Plex Mono', monospace; letter-spacing: .2em; text-transform: uppercase; color: var(--meta); }
+.sig-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); gap: 1px 14px; }
+.sig-row { display: flex; align-items: baseline; gap: 10px; padding: 5px 2px; border-bottom: 1px solid var(--hair); min-width: 0; }
+.sig-mark { flex: none; min-width: 2.1em; text-align: center; font: 500 calc(17px * var(--scale-notation, 1))/1.3 'IBM Plex Mono', monospace; color: var(--accent-2); }
+.sig-name { flex: 1; min-width: 0; font: 400 calc(12px * var(--scale-notation, 1))/1.35 'IBM Plex Mono', monospace; color: var(--dim); overflow-wrap: anywhere; }
+.sig-count { margin-top: 1.6em; font: 400 calc(13.5px * var(--scale-notation, 1))/1.6 'Newsreader', serif; color: var(--meta); }
+
+/* Leaf navigation, in the section-nav idiom of the book page: previous at the
+   left edge, next at the right, the leaf's own name centred between them. */
+.leaf-nav {
+  position: sticky; bottom: 0; z-index: 5; margin-top: 40px;
+  display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 10px;
+  padding: 12px 0 calc(12px + env(safe-area-inset-bottom, 0px));
+  background: linear-gradient(to top, var(--page) 72%, transparent);
+}
+.leaf-nav button {
+  background: transparent; color: var(--dim); border: none; border-radius: 0;
+  padding: 6px 2px; cursor: pointer; font: 500 11px/1 'IBM Plex Mono', monospace;
+  letter-spacing: .08em; text-transform: uppercase; transition: color .15s ease;
+}
+.leaf-nav button:hover:not(:disabled) { color: var(--ink); text-decoration: underline; }
+.leaf-nav button:disabled { opacity: 0; cursor: default; pointer-events: none; }
+.leaf-nav .prev { justify-self: start; }
+.leaf-nav .next { justify-self: end; }
+.leaf-nav .where { font: 600 10.5px/1 'IBM Plex Mono', monospace; letter-spacing: .2em; text-transform: uppercase; color: var(--meta); }
+</style>
+<body>
+<div class="wrap">
+  <div class="masthead">
+    <span class="title">The <span class="beta">β</span>ook of <span class="beta">β</span>itcoin</span>
+    <span class="home"><a href="./bitcoin-book.html">Read</a> · <a href="./bitcoin-contents.html">Contents</a> · <a href="./bitcoin-search.html">Search</a></span>
+  </div>
+
+  <div id="leaf-slide">
+
+    <!-- ── Title leaf: the title, and nothing else yet ─────────────────── -->
+    <section class="leaf title-leaf" id="leaf-title" data-name="Title">
+      <h1 class="work-title">The <span class="beta">β</span>ook<br>of <span class="beta">β</span>itcoin</h1>
+      <div class="work-version" data-app-version></div>
+    </section>
+
+    <!-- ── Terms leaf: the copyright page, saying the opposite ────────── -->
+    <section class="leaf" id="leaf-terms" data-name="Terms">
+      <header class="page-head"><div class="page-eyebrow">Terms</div></header>
+      <div class="leaf-body">
+        <p class="lead">No rights reserved over the text of this book. What
+          follows is where a copyright page would sit, and it is here to say
+          the reverse of what one usually says.</p>
+        <p>The record is not mine to hold. The readings of it are mine only in
+          the sense that my name belongs on them, so that you can weigh them
+          and disagree.</p>
+        <ul class="terms-list">
+          <li><span class="what">The prose — the chain's own speech, in every language</span><span class="term">Public domain</span></li>
+          <li><span class="what">The sigla — the alphabet that prose is written in</span><span class="term">Public domain</span></li>
+          <li><span class="what">Annotations, names, curation, this preface</span><span class="term">CC BY 4.0</span></li>
+          <li><span class="what">Commentary by others</span><span class="term">Theirs</span></li>
+          <li><span class="what">The software that renders it</span><span class="term">MIT / Apache-2.0</span></li>
+        </ul>
+        <p class="terms-note">Quote any passage freely, at any length, in any
+          medium, with or without credit. Full terms, and the reasoning behind
+          each of them, are in the repository's README.</p>
+      </div>
+    </section>
+
+    <!-- ── Preface: prose rendered from web/preface.md, the canonical copy,
+         so the book and the repository never drift apart. ────────────── -->
+    <section class="leaf" id="leaf-preface" data-name="Preface">
+      <header class="page-head"><div class="page-eyebrow">Preface</div></header>
+      <div class="leaf-body" id="preface-body"><p>…</p></div>
+    </section>
+
+
+    <!-- ── Sigla: the key to the marks, and the citation form ──────────── -->
+    <section class="leaf" id="leaf-sigla" data-name="Sigla">
+      <header class="page-head"><div class="page-eyebrow">Sigla</div></header>
+      <div class="leaf-body">
+        <p class="lead">Every passage in this book cites itself, and every
+          script in it is set in marks. Both are read here.</p>
+
+        <h3>The reference</h3>
+        <p>A citation names a place in the chain, one level at a time. Each
+          level carries the sign of what it is:</p>
+        <div class="ref-figure">
+          <div class="ref-parts">
+            <div class="ref-part">
+              <div class="ref-token">III</div><div class="ref-stem"></div>
+              <div class="ref-name">Volume</div>
+              <div class="ref-gloss">an era of supply, opened by a halving</div>
+            </div>
+            <div class="ref-part">
+              <div class="ref-token">β2</div><div class="ref-stem"></div>
+              <div class="ref-name">Book</div>
+              <div class="ref-gloss">a difficulty window, β its mark</div>
+            </div>
+            <div class="ref-part">
+              <div class="ref-token">■5</div><div class="ref-stem"></div>
+              <div class="ref-name">Chapter</div>
+              <div class="ref-gloss">a block, ■ its mark</div>
+            </div>
+            <div class="ref-part">
+              <div class="ref-token">§1</div><div class="ref-stem"></div>
+              <div class="ref-name">Section</div>
+              <div class="ref-gloss">a transaction within the block</div>
+            </div>
+          </div>
+        </div>
+        <p class="ref-reading">Read aloud: the fifth block of the second
+          difficulty window of the third halving era, first transaction. The
+          volume is set in Roman numerals, as a book's volumes are. A citation
+          may stop early — <code>III β2</code> names the whole book, and
+          <code>III β2 ■5</code> the whole chapter.</p>
+
+        <h3>The marks</h3>
+        <p>What the marks mean, group by group — the same key the book opens
+          over a chapter, here at rest and whole.</p>
+        <div id="notation-key" class="notation-at-rest"></div>
+
+        <h3>Every opcode</h3>
+        <p>The key above glosses the marks worth explaining; this is the index
+          behind it — one line per opcode, families sharing a base glyph and
+          separating by subscript.</p>
+        <div id="sigla-key"></div>
+        <p class="sig-count" id="sigla-count"></p>
+      </div>
+    </section>
+
+  </div>
+
+  <nav class="leaf-nav" aria-label="Front matter">
+    <button type="button" class="prev" id="leaf-prev">← Previous</button>
+    <span class="where" id="leaf-where">Title</span>
+    <button type="button" class="next" id="leaf-next">Next →</button>
+  </nav>
+</div>
+
+<script type="module">
+// SPDX-License-Identifier: MIT OR Apache-2.0
+//
+// The front matter's horizontal axis, in the standard order a book puts it:
+// title, terms, THEN the table of contents, then the preface and the sigla
+// -- front matter that orients the reader (title, rights, contents) precedes
+// front matter that argues. The contents keeps its own page, so this one holds
+// leaves on both sides of it and steps through it as a virtual leaf.
+//
+// This page owns almost no vertical axis. The contents remains the one leaf
+// above the volumes, so an ascent from Volume I lands there and nowhere else;
+// the front matter is reachable only along the horizontal. The one vertical
+// gesture is the cover's: swiping up on the title leaf lifts the cover away
+// to the contents (leaveUp below).
+// Standard front-matter order, with the contents in its traditional place --
+// after the title and terms, and BEFORE the preface. CONTENTS is a
+// virtual leaf: stepping onto it leaves this page for bitcoin-contents.html.
+import { OPCODE_SYMBOLS, OPCODE_NAMES, OPCODE_GROUPS } from './btc-sigla.js';
+import { NOTATION_HTML } from './btc-notation.js';
+import { renderMarkdown } from './btc-markdown.js';
+import './btc-fontscale.js';   // the reader's type size: the sigla leaf's key follows the book page's setting
+
+const CONTENTS = '__contents__';
+const LEAVES = ['leaf-title', 'leaf-terms', CONTENTS, 'leaf-preface', 'leaf-sigla'];
+const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const $ = (id) => document.getElementById(id);
+
+// ?leaf=preface (or any leaf's short name) opens directly on that leaf; the
+// contents page uses it to land its turn-back on the preface, the leaf that
+// adjoins it.
+const wanted = new URLSearchParams(location.search).get('leaf');
+let at = Math.max(0, LEAVES.findIndex((id) => id === 'leaf-' + (wanted || 'title')));
+
+const label = (i) => LEAVES[i] === CONTENTS ? 'Contents' : $(LEAVES[i]).dataset.name;
+
+function show(i) {
+  at = i;
+  LEAVES.forEach((id, n) => { if (id !== CONTENTS) $(id).classList.toggle('current', n === i); });
+  document.body.classList.toggle('at-title', LEAVES[i] === 'leaf-title');
+  $('leaf-where').textContent = label(i);
+  $('leaf-prev').disabled = i === 0;
+  $('leaf-prev').textContent = '← ' + (i > 0 ? label(i - 1) : 'Previous');
+  $('leaf-next').textContent = (i < LEAVES.length - 1 ? label(i + 1) : 'Read') + ' →';
+  window.scrollTo(0, 0);
+}
+
+// Stepping onto the contents leaves this page for its own; the contents
+// finishes the entrance. Turning forward past the preface -- the last leaf of
+// the front matter -- opens the book itself at Volume I.
+function leave(href, dir, flag) {
+  try { if (flag) sessionStorage.setItem(flag, '1'); } catch (_) {}
+  const go = () => { location.href = href; };
+  if (REDUCED) { go(); return; }
+  document.body.style.transition = 'transform .2s linear';
+  document.body.style.transform = `translateX(${dir > 0 ? -100 : 100}vw)`;
+  setTimeout(go, 180);
+}
+
+// Swiping up on the cover lifts it away to the table of contents — the one
+// vertical gesture the front matter allows, and only on the title leaf: the
+// cover rises the way a cover is lifted, and the contents follow from below.
+// The horizontal order (title, terms, CONTENTS, …) is untouched, and the
+// contents remains the one leaf above the volumes on the book's own axis.
+function leaveUp() {
+  try { sessionStorage.setItem('glossia-toc-entrance', 'up'); } catch (_) {}
+  const go = () => { location.href = './bitcoin-contents.html'; };
+  if (REDUCED) { go(); return; }
+  document.body.style.transition = 'transform .2s linear';
+  document.body.style.transform = 'translateY(-100vh)';
+  setTimeout(go, 180);
+}
+
+const step = (dir) => {
+  const next = at + dir;
+  if (next < 0) return;
+  if (next >= LEAVES.length) {
+    leave('./bitcoin-book.html?block=0&page=volume', 1, 'glossia-book-entrance');
+    return;
+  }
+  if (LEAVES[next] === CONTENTS) {
+    leave('./bitcoin-contents.html', dir, 'glossia-toc-entrance');
+    return;
+  }
+  if (REDUCED) { show(next); return; }
+  const slide = $('leaf-slide');
+  slide.style.transition = 'transform .12s ease-in, opacity .12s ease-in';
+  slide.style.transform = `translateX(${dir > 0 ? -40 : 40}px)`;
+  slide.style.opacity = '0';
+  setTimeout(() => {
+    show(next);
+    slide.style.transition = 'none';
+    slide.style.transform = `translateX(${dir > 0 ? 40 : -40}px)`;
+    requestAnimationFrame(() => {
+      slide.style.transition = 'transform .16s ease-out, opacity .16s ease-out';
+      slide.style.transform = 'translateX(0)';
+      slide.style.opacity = '1';
+    });
+  }, 110);
+};
+
+// The title leaf carries no visible control, so the leaf is one: a tap or
+// click anywhere on it turns forward.
+$('leaf-title').addEventListener('click', () => step(1));
+
+$('leaf-prev').addEventListener('click', () => step(-1));
+$('leaf-next').addEventListener('click', () => step(1));
+// The arrow keys carry the swipes for hands on a keyboard: right and left
+// turn the leaves, and on the title leaf alone -- where the swipe up lifts
+// the cover away -- down descends to the contents, the direction the reader
+// is travelling even though the finger pushes the cover the other way.
+document.addEventListener('keydown', (e) => {
+  if (e.metaKey || e.ctrlKey || e.altKey || e.shiftKey || e.repeat) return;
+  const t = e.target;
+  if (t && t.closest && t.closest('input, textarea, select, [contenteditable]')) return;
+  if (e.key === 'ArrowRight') { e.preventDefault(); step(1); }
+  else if (e.key === 'ArrowLeft') { e.preventDefault(); step(-1); }
+  else if (e.key === 'ArrowDown' && LEAVES[at] === 'leaf-title') { e.preventDefault(); leaveUp(); }
+});
+
+// Horizontal swipes turn the leaves, in the book page's gesture idiom: a
+// committed turn is a quick, mostly-horizontal drag of some distance.
+let sx = null, sy = 0, st = 0;
+document.addEventListener('touchstart', (e) => {
+  sx = null;
+  if (e.touches.length !== 1) return;
+  sx = e.touches[0].clientX; sy = e.touches[0].clientY; st = performance.now();
+}, { passive: true });
+document.addEventListener('touchend', (e) => {
+  if (sx === null || e.changedTouches.length !== 1) return;
+  const dx = e.changedTouches[0].clientX - sx;
+  const dy = e.changedTouches[0].clientY - sy;
+  const dt = performance.now() - st;
+  sx = null;
+  // On the title leaf only: a committed upward swipe lifts the cover away
+  // to the contents (see leaveUp above).
+  if (LEAVES[at] === 'leaf-title' && dt <= 600 && dy <= -70 && Math.abs(dx) <= Math.abs(dy) * 0.6) {
+    leaveUp();
+    return;
+  }
+  if (dt > 600 || Math.abs(dx) < 60 || Math.abs(dy) > Math.abs(dx) * 0.6) return;
+  step(dx < 0 ? 1 : -1);
+}, { passive: true });
+
+// The preface is prose, so it lives as prose: web/preface.md is the canonical
+// copy, linked from the README and rendered here. One document, two readers.
+// The renderer is shared with a passage's commentary (btc-markdown.js), the
+// book's other authored prose -- the same devices, wherever they are written.
+(async () => {
+  try {
+    const r = await fetch('./preface.md');
+    if (!r.ok) throw new Error(r.status);
+    $('preface-body').innerHTML = renderMarkdown(await r.text(), { lead: true });
+  } catch (_) {
+    $('preface-body').innerHTML = '<p>The preface could not be loaded. It is also in the repository, as <code>web/preface.md</code>.</p>';
+  }
+})();
+
+// The shared notation key -- the same markup the book page's toggle opens.
+$('notation-key').innerHTML = NOTATION_HTML;
+
+// The opcode index, straight from the tables the book renders scripts from.
+(function renderSigla() {
+  const esc = (t) => t.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+  const seen = new Set();
+  $('sigla-key').innerHTML = OPCODE_GROUPS.map((g) => {
+    const rows = g.bytes.map((b) => {
+      seen.add(b);
+      return `<div class="sig-row"><span class="sig-mark">${esc(OPCODE_SYMBOLS[b] || '')}</span>` +
+             `<span class="sig-name">${esc((OPCODE_NAMES[b] || 'OP_UNKNOWN').replace(/^OP_/, ''))}</span></div>`;
+    }).join('');
+    return `<div class="sig-group"><h4>${esc(g.title)}</h4><div class="sig-grid">${rows}</div></div>`;
+  }).join('');
+  // If an opcode is ever added to the tables without being placed in a group,
+  // say so here rather than let the key quietly under-report itself.
+  const all = Object.keys(OPCODE_NAMES).map(Number);
+  const missed = all.filter((b) => !seen.has(b));
+  const n = all.length;
+  $('sigla-count').textContent = missed.length
+    ? `${n} opcodes defined; ${missed.length} not yet placed in the key above.`
+    : `${n} opcodes are defined as of this writing, and all ${n} have a mark of their own.`;
+})();
+
+show(at);
+</script>
+</body>
+</html>
