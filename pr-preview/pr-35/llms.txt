@@ -102,9 +102,14 @@ reaches it instead.
   `&index=<n>` opens its section n+1 (0-based); `?txid=<txid>` jumps to a
   transaction's section, `&out=<n>` to one of its outputs;
   `?page=volume|book` opens the block's volume or book leaf.
-- `bitcoin-contents.html` — the curated table of contents, closing with three
-  appendices: I the mempool's projected chapters, II heights consensus has
-  fixed but no block has reached, III the shelf of ledgers.
+- `bitcoin-contents.html` — the curated table of contents, one leaf per
+  volume and per appendix, all at a single level (the same line the book runs
+  below: Volume I … Volume V, Appendix I, II, III). `?volume=<n|roman>` opens
+  a volume's contents leaf, `?part=mempool|future|ledgers` an appendix's; a
+  bare visit opens the volume last read. An ascent from a volume's leaf in
+  the book lands on that volume's contents leaf. The appendices are I the
+  mempool's projected chapters, II heights consensus has fixed but no block
+  has reached, III the shelf of ledgers.
 - `bitcoin-appendix.html?part=mempool|future` — an appendix's title leaf: its
   name and what it gathers. Below each is its first chapter, in the book
   itself: `?block=<tip+1>` for the queue (and the ascent from any projected

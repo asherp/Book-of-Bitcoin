@@ -32,119 +32,24 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="βook of βitcoin">
 <script>
-  // Arriving by the book page's pull-down-above-the-volume gesture: finish
-  // that carousel turn here, sliding the contents in from the top. The flag
-  // is set just before the navigation and consumed on first paint.
+  // The entering half of whatever turn brought the reader here, played on
+  // first paint -- so it has to be decided before the module below loads.
   // The flag's value carries the turn's direction: 'up' is the cover being
   // lifted away beneath us (the front page's swipe-up), so the contents
-  // enter from below; anything else is the classic ascent, entering from
-  // the top.
+  // enter from below; 'fwd' / 'back' are the sideways turns off the front
+  // matter's own leaves; anything else is the classic ascent out of the
+  // book, entering from the top.
   try {
     const entrance = sessionStorage.getItem('glossia-toc-entrance');
     if (entrance) {
       sessionStorage.removeItem('glossia-toc-entrance');
-      document.documentElement.classList.add(entrance === 'up' ? 'toc-entrance-up' : 'toc-entrance');
+      document.documentElement.classList.add(
+        entrance === 'up' ? 'toc-entrance-up'
+        : entrance === 'fwd' ? 'toc-entrance-fwd'
+        : entrance === 'back' ? 'toc-entrance-back'
+        : 'toc-entrance');
     }
   } catch (_) {}
-
-  // The descend gesture: a push UP starting at the page's bottom drops from
-  // the contents into Volume I's leaf -- the inverse of the book page's
-  // pull-down-above-the-volume. The contents slide up and away; the book
-  // page finishes the turn, entering from below (glossia-book-entrance).
-  (function () {
-    const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    let sy = null, sx = 0, st = 0, atBottom = false, atTop = false;
-    const go = () => {
-      // Descend into the volume the reader last ascended from (recorded by
-      // the book page's trail memory); a fresh visit opens Volume I.
-      let block = '0';
-      try { block = sessionStorage.getItem('glossia-toc-descend') || '0'; } catch (_) {}
-      try { sessionStorage.setItem('glossia-book-entrance', '1'); } catch (_) {}
-      location.href = './bitcoin-book.html?block=' + encodeURIComponent(block) + '&page=volume';
-    };
-    document.addEventListener('touchstart', (e) => {
-      sy = null;
-      if (e.touches.length !== 1) return;
-      sy = e.touches[0].clientY; sx = e.touches[0].clientX; st = performance.now();
-      atBottom = window.scrollY >= document.documentElement.scrollHeight - window.innerHeight - 2;
-      atTop = window.scrollY <= 2;
-    }, { passive: true });
-    // The contents sits inside the front matter on the horizontal axis, in the
-    // standard order: title, terms, CONTENTS, preface, sigla. So both
-    // sideways turns lead to a front-matter leaf -- back to the terms,
-    // forward to the preface (the sigla follow it on that page). Purely horizontal: the vertical axis below is
-    // untouched, and the contents remains the one leaf above the volumes, so
-    // an ascent from Volume I still lands here.
-    const goFront = (leaf, dir) => {
-      try { sessionStorage.setItem('glossia-front-entrance', dir); } catch (_) {}
-      location.href = './bitcoin-front.html?leaf=' + leaf;
-    };
-    // The three turns, named once so the finger and the arrow keys below
-    // play exactly the same ones.
-    const turnFront = (back) => {
-      const leaf = back ? 'terms' : 'preface';
-      const dir = back ? 'back' : 'fwd';
-      if (REDUCED) { goFront(leaf, dir); return; }
-      document.body.style.transition = 'transform .2s linear';
-      document.body.style.transform = `translateX(${back ? 100 : -100}vw)`;
-      setTimeout(() => goFront(leaf, dir), 180);
-    };
-    // Rising to the cover -- the inverse of the cover's lift-away: the
-    // contents sink, and the cover drops back into place from above.
-    const toCover = () => {
-      try { sessionStorage.setItem('glossia-front-entrance', 'drop'); } catch (_) {}
-      const goCover = () => { location.href = './bitcoin-front.html'; };
-      if (REDUCED) { goCover(); return; }
-      document.body.style.transition = 'transform .2s linear';
-      document.body.style.transform = 'translateY(100vh)';
-      setTimeout(goCover, 180);
-    };
-    const descend = () => {
-      if (REDUCED) { go(); return; }
-      document.body.style.transition = 'transform .2s linear';
-      document.body.style.transform = 'translateY(-100vh)';
-      setTimeout(go, 180);
-    };
-    document.addEventListener('touchend', (e) => {
-      if (sy === null || e.changedTouches.length !== 1) return;
-      const dy = e.changedTouches[0].clientY - sy;
-      const dx = e.changedTouches[0].clientX - sx;
-      const dt = performance.now() - st;
-      sy = null;
-      // A committed horizontal turn: quick, far enough, and mostly sideways.
-      if (dt <= 600 && Math.abs(dx) >= 60 && Math.abs(dy) <= Math.abs(dx) * 0.6) {
-        turnFront(dx > 0);                         // swiping right turns back
-        return;
-      }
-      // A pull DOWN starting at the page's top rises from the contents back
-      // to the cover.
-      if (atTop && dt <= 600 && dy >= 70 && Math.abs(dx) <= dy * 0.6) { toCover(); return; }
-      if (!atBottom || dt > 600 || dy > -70 || Math.abs(dx) > Math.abs(dy) * 0.6) return;
-      descend();
-    }, { passive: true });
-
-    // The same three turns from a keyboard: left and right along the front
-    // matter, up to the cover and down into the volumes. The vertical pair
-    // defers to the scroll as the swipes do -- the contents is a long list,
-    // so it is read to its end before the next press turns off it.
-    document.addEventListener('keydown', (e) => {
-      if (e.metaKey || e.ctrlKey || e.altKey || e.shiftKey || e.repeat) return;
-      const t = e.target;
-      if (t && t.closest && t.closest('input, textarea, select, [contenteditable]')) return;
-      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
-        e.preventDefault();
-        turnFront(e.key === 'ArrowLeft');
-        return;
-      }
-      if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
-      const top = window.scrollY <= 2;
-      const bottom = window.scrollY >= document.documentElement.scrollHeight - window.innerHeight - 2;
-      const short = document.documentElement.scrollHeight <= window.innerHeight + 24;
-      if (e.key === 'ArrowUp') { if (short || top) { e.preventDefault(); toCover(); } return; }
-      if (short || bottom) { e.preventDefault(); descend(); }
-    });
-  })();
-
 </script>
 <!-- The shared masthead chrome: service worker registration and the Install /
      Update affordances on the title's line, one copy for every page. -->
@@ -178,14 +83,44 @@ body { min-height: 100vh; background: var(--page); color: var(--ink); font-famil
      place from below as the cover slides up and off. */
   .toc-entrance-up body { animation: toc-in-up .22s ease-out; }
   @keyframes toc-in-up { from { transform: translateY(100vh); } }
+  /* …and of a sideways turn off one of the front matter's own leaves: the
+     contents arrive from the side the reader turned toward. */
+  .toc-entrance-fwd body { animation: toc-in-fwd .22s ease-out; }
+  @keyframes toc-in-fwd { from { transform: translateX(100vw); } }
+  .toc-entrance-back body { animation: toc-in-back .22s ease-out; }
+  @keyframes toc-in-back { from { transform: translateX(-100vw); } }
 }
 .wrap { max-width: 720px; margin: 0 auto; padding: 48px 22px 100px; }
 a { color: var(--accent); text-decoration: none; }
 a:hover { text-decoration: underline; }
 
-.page-head { text-align:center; padding-bottom:30px; margin-bottom:36px; border-bottom:1px solid var(--rule); }
-.page-eyebrow { font:600 11px/1 'IBM Plex Mono',monospace; letter-spacing:.3em; text-transform:uppercase; color:var(--accent); }
+.page-eyebrow { text-align:center; padding-bottom:26px; font:600 11px/1 'IBM Plex Mono',monospace; letter-spacing:.3em; text-transform:uppercase; color:var(--accent); }
 
+/* A leaf's own head: which part of the book this is the contents of, and a
+   line saying what that part spans. Set like the appendix leaves' heads,
+   since a contents leaf and an appendix leaf are the same kind of page --
+   one that names a span and stands above it. */
+.leaf-head { text-align:center; padding-bottom:26px; margin-bottom:8px; border-bottom:1px solid var(--rule); }
+.leaf-title { margin:0; font:400 34px/1.15 'Newsreader',serif; letter-spacing:.01em; color:var(--ink); }
+.leaf-sub { margin-top:10px; font:400 13px/1.5 'IBM Plex Mono',monospace; letter-spacing:.06em; color:var(--meta); }
+
+/* The door down: from a volume's contents into the volume itself, from an
+   appendix's contents into the appendix's own leaf. The same mark, and the
+   same seat, the appendix leaves give their descent. */
+.toc-down { display:block; margin:34px auto 0; width:2em; text-align:center; font-size:20px; line-height:1; color:var(--dim); }
+.toc-down:hover { color:var(--accent); text-decoration:none; }
+.toc-down.hidden { display:none; }
+
+/* The turns to either side, named at the foot -- the swipe and the arrow
+   keys go the same places, and this says so for hands that use neither. */
+.toc-turns { display:flex; flex-wrap:wrap; gap:10px 26px; margin-top:44px; padding-top:18px; border-top:1px solid var(--rule);
+  font:600 10px/1.5 'IBM Plex Mono',monospace; letter-spacing:.14em; text-transform:uppercase; }
+.toc-turns a { color:var(--meta); }
+.toc-turns a:hover { color:var(--accent); }
+
+/* Said about a leaf rather than in it: a volume nothing has been kept from
+   yet, or a queue that could not be read. */
+.toc-empty { padding:26px 2px; text-align:center; font:400 14px/1.7 'Newsreader',serif; color:var(--meta); }
 </style>
 <body>
 <div class="wrap">
@@ -194,11 +129,17 @@ a:hover { text-decoration: underline; }
     <span class="home"><a href="./bitcoin-front.html?leaf=preface">Preface</a> · <a href="./bitcoin-book.html">Read</a> · <a href="./bitcoin-search.html">Search</a></span>
   </div>
 
-  <header class="page-head">
-    <div class="page-eyebrow">Table of Contents</div>
-  </header>
+  <div class="page-eyebrow">Table of Contents</div>
 
-  <div id="toc"></div>
+  <div id="toc-slide">
+    <header class="leaf-head">
+      <h1 class="leaf-title" id="toc-title"></h1>
+      <div class="leaf-sub" id="toc-sub"></div>
+    </header>
+    <div id="toc"></div>
+    <a class="toc-down" id="toc-down" href="#" aria-label="Down into this part of the book">▾</a>
+    <nav class="toc-turns" id="toc-turns"></nav>
+  </div>
 </div>
 
 <script type="module">
@@ -206,7 +147,7 @@ import { loadNotables, places, placeTitle, appendix, isBlockId, isRelativeBlockI
 import { creditLine, commentaryForAddresses } from './btc-commentary.js';
 import { readQueue, buildQueue } from './btc-mempool.js';
 import { INDEXED, keptLedgers, sameAddresses } from './btc-index.js';
-import { volumeBookChapter, toRoman, expectedReference } from './btc-citation.js';
+import { volumeBookChapter, toRoman, fromRoman, heightOf, expectedReference } from './btc-citation.js';
 import { storeGet, storePut } from './btc-store.js';
 import { seedArchive } from './btc-seed.js';
 
@@ -221,6 +162,9 @@ await loadNotables();
 // (idle-time, once ever; see btc-seed.js), so this page's entries -- and the
 // book pages behind them -- open like revisits.
 seedArchive();
+
+const $ = (id) => document.getElementById(id);
+const REDUCED_MOTION = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 const BOOKMARKS_KEY = 'glossia-btc-bookmarks';
 const readBookmarks = () => {
@@ -327,14 +271,15 @@ async function resolveBookmark(b) {
 }
 
 // The tail of an entry's citation -- the part its heading hasn't already named.
-// Under a Book heading only the ■chapter (and a transaction's §section) remains;
-// directly under a Volume, the β-marked book leads it. Spaced like the book's
-// own citations (e.g. "β29 ■596", "■1 §1").
+// The leaf's own head has named the volume, so under a Book heading only the
+// ■chapter (and a transaction's §section) remains, and directly on the leaf the
+// β-marked book leads it. Spaced like the book's own citations ("β29 ■596",
+// "■1 §1").
 function tailRef({ book, chapter, section, vout }, underBook) {
-  // A volume's own leaf: the Volume heading above the row has already named it.
+  // A volume's own leaf: the leaf's head above the row has already named it.
   if (book == null) return '';
-  // A book's own leaf: under its Book heading nothing remains to cite; under
-  // a bare Volume, the β mark alone names it.
+  // A book's own leaf: under its Book heading nothing remains to cite; on the
+  // bare leaf, the β mark alone names it.
   if (chapter == null) return underBook ? '' : `β${book}`;
   let s = (underBook ? [`■${chapter}`] : [`β${book}`, `■${chapter}`]).join(' ');
   if (section != null) s += ` §${section}${vout == null ? '' : `.${vout}`}`;
@@ -369,6 +314,7 @@ function entryEl(entry, underBook) {
   return row;
 }
 function head(cls, label) { const d = document.createElement('div'); d.className = cls; d.textContent = label; return d; }
+function saying(text) { const d = document.createElement('div'); d.className = 'toc-empty'; d.textContent = text; return d; }
 
 // The credit a row wears when its subject carries a reading somebody signed
 // (btc-commentary.js decides; the book's own readings take no line, or nearly
@@ -384,100 +330,155 @@ function addCredit(titleEl, credit) {
   titleEl.append(c);
 }
 
-// Render the placed entries as a nested contents: a Volume part header, then a
-// Book sub-header wherever two or more consecutive entries share one, so each
-// row need only cite the portion of its reference its headings haven't named.
-// Entries arrive in reading order (ascending height), so anything sharing a
-// volume or book is already contiguous.
-const toc = document.getElementById('toc');
-// The projected section (the mempool, see below), rebuilt by loadProjected and
-// appended as Appendix I on every render -- directly after the volumes, whose
-// last row is the chain tip's.
+const toc = $('toc');
+// The projected section (Appendix I, the mempool), rebuilt by loadProjected
+// and appended whenever that leaf is the one on screen.
 let projectedSection = null;
 
-// The front matter that argues or informs -- the preface and the sigla -- is
-// listed here as a book's contents lists them. The title and the terms are
-// not: a table of contents omits the title and copyright pages, and both of
-// those sit before the contents in reading order anyway. Neither entry has a
-// chain reference, so both take the dash the stylesheet already styles.
-const FRONT = [
-  { title: 'Preface', leaf: 'preface' },
-  { title: 'Sigla — the marks, and the citation form', leaf: 'sigla' },
+// ── The contents' own line ────────────────────────────────────────────────
+// The book below runs Volume I … Volume V, Appendix I, II, III, every one of
+// them at a single level. The contents now runs that same line one storey
+// up, a leaf to each: this page is a carousel of contents leaves, not one
+// list of everything.
+//
+// Two things follow, and they are the point of the arrangement. An ascent
+// from Volume III's leaf lands on Volume III's contents and nowhere else --
+// the vertical axis is a correspondence now, not a funnel. And the descent
+// needs no memory of where the reader came up from: the leaf says which
+// volume it is the contents of, so it descends there.
+//
+// The front matter is not listed. It has no volume to be the contents of,
+// and its leaves -- the preface, the sigla -- sit on this very horizontal
+// line, two turns away on either side; a list of them here would point at
+// what the turn already reaches.
+const ERA = heightOf(2, 1, 1);          // 210,000 -- one halving era, one volume
+let lastVolume = 1;                     // grows with the curated entries, then with the tip
+const leaves = () => [
+  ...Array.from({ length: lastVolume }, (_, i) => ({ kind: 'volume', volume: i + 1 })),
+  ...appendix().map((part) => ({ kind: 'appendix', part })),
 ];
-function frontEl({ title, leaf }) {
-  const row = document.createElement('a');
-  row.className = 'toc-entry';
-  row.href = `./bitcoin-front.html?leaf=${leaf}`;
-  const t = document.createElement('span');
-  t.className = 'toc-title';
-  t.textContent = title;
-  const r = document.createElement('span');
-  r.className = 'toc-ref none';
-  r.textContent = '—';
-  row.append(t, r);
-  return row;
+const leafTitle = (leaf) => leaf.kind === 'volume'
+  ? `Volume ${toRoman(leaf.volume)}`
+  : `Appendix ${toRoman(appendix().indexOf(leaf.part) + 1)} · ${leaf.part.title}`;
+// One line under the leaf's name, saying what it spans and how much of it
+// there is. Not what the part IS and why it sits outside reading order --
+// that paragraph is written on the appendix's own leaf, one turn down. The
+// contents lists; the leaf explains.
+const count = (n, one, many) => `${n === 0 ? 'nothing' : n} ${n === 1 ? one : many}`;
+function leafSub(leaf) {
+  if (leaf.kind === 'volume') {
+    const from = heightOf(leaf.volume, 1, 1);
+    const n = placedIn(leaf.volume).length;
+    return `Blocks ${from.toLocaleString()}–${(from + ERA - 1).toLocaleString()} · `
+      + (n === 0 ? 'nothing kept yet' : count(n, 'entry', 'entries'));
+  }
+  const part = leaf.part;
+  if (part.kind === 'mempool') return 'Ahead of the chain tip · the queue, as far as it reaches';
+  if (part.kind === 'entries') return `Heights consensus has fixed · ${count(part.entries.length, 'chapter', 'chapters')}`;
+  const kept = keptLedgers().filter((k) => !INDEXED.some((e) => sameAddresses(e.addresses, k.addresses)));
+  return `Keepers, not chapters · ${count(INDEXED.length + kept.length, 'ledger', 'ledgers')}`;
 }
 
-// ── The appendices: the contents' back matter ─────────────────────────────
-// What belongs to the book but not to its reading order -- reading order
-// being the order blocks were mined. Three of them, in the order
-// appendix.yaml sets: the mempool (built live, below), the future
-// chapters, and the ledgers. They are numbered by their position in that
-// list, not by what actually renders, so a part that cannot be built -- an
-// unreachable mempool -- never renumbers the ones after it.
-const appendixLabel = (part) => `Appendix ${toRoman(appendix().indexOf(part) + 1)} · ${part.title}`;
-const MEMPOOL_PART = appendix().find((p) => p.kind === 'mempool');
-
-// Each appendix has a leaf of its own, and its heading here is the door to
-// it: the queue and the future chapters are leaves of the appendix page, and
-// the ledgers' leaf is the Ledger compendium, which is what a shelf of
-// ledgers is. What the appendix is and why it sits outside reading order is
-// said on that leaf, not here -- the contents lists, the leaf explains.
-const appendixHref = (part) => part.kind === 'ledgers'
-  ? './bitcoin-ledger.html'
-  : `./bitcoin-appendix.html?part=${part.kind === 'mempool' ? 'mempool' : 'future'}`;
-function appendixLink(part) {
-  const a = document.createElement('a');
-  a.className = 'appx-link';
-  a.href = appendixHref(part);
-  a.textContent = appendixLabel(part);
-  return a;
-}
-function partHead(part) {
-  const heading = head('toc-vol', '');
-  heading.append(appendixLink(part));
-  return heading;
+// Where a leaf's ▾ goes: a volume's contents descends onto the volume's own
+// leaf in the book; an appendix's onto the appendix's leaf -- which for the
+// ledgers is the Ledger compendium, since a shelf of ledgers is what that
+// page already is. Each destination wakes its own entrance, so the leaf
+// rises from below as this one slides up and away.
+function descent(leaf) {
+  if (leaf.kind === 'volume') {
+    return { href: `./bitcoin-book.html?block=${heightOf(leaf.volume, 1, 1)}&page=volume`, flag: 'glossia-book-entrance', value: '1' };
+  }
+  if (leaf.part.kind === 'ledgers') return { href: './bitcoin-ledger.html', flag: 'glossia-ledger-entrance', value: 'down' };
+  return {
+    href: `./bitcoin-appendix.html?part=${leaf.part.kind === 'mempool' ? 'mempool' : 'future'}`,
+    flag: 'glossia-appendix-entrance', value: 'down',
+  };
 }
 
-// Appendix II: chapters cited in full but marked □, the expected-chapter mark
-// the mempool's projections wear, since no block has earned them an ■. Every
-// row still links into the book, which answers an unmined height with the
-// date it is due instead of a page. Offline, like every reference computed
-// from a height.
-function chaptersEl(part) {
-  const frag = document.createDocumentFragment();
-  frag.append(partHead(part));
-  for (const e of part.entries) frag.append(provisionalEl(e));
-  return frag;
+// ── Which leaf a visit opens ──────────────────────────────────────────────
+// ?volume=<n|roman> names a volume's contents, ?part=<mempool|future|ledgers>
+// an appendix's -- the same words those pages take for themselves, so the
+// ascent from any leaf of the book can name its own contents leaf. ?at=last
+// is the front matter's backward turn, which lands on whatever leaf closes
+// the run without needing to know what the appendix file holds.
+//
+// A bare visit -- the masthead's Contents link from a page that carries no
+// place, a bookmark, a cold load -- opens the volume the reader was last
+// reading (the book notes it as it renders), and the head of the run when
+// there is nothing to go on.
+const PART_ALIAS = { mempool: 'mempool', future: 'entries', entries: 'entries', ledgers: 'ledgers' };
+const params = new URLSearchParams(location.search);
+function openingIndex(list) {
+  if (params.get('at') === 'last') return list.length - 1;
+  const part = params.get('part');
+  if (part && PART_ALIAS[part]) {
+    const i = list.findIndex((l) => l.kind === 'appendix' && l.part.kind === PART_ALIAS[part]);
+    if (i >= 0) return i;
+  }
+  let want = params.get('volume');
+  if (!want) { try { want = sessionStorage.getItem('glossia-toc-at'); } catch (_) { want = null; } }
+  if (!want) return 0;
+  const v = /^[0-9]+$/.test(want) ? Number(want) : fromRoman(want.toUpperCase());
+  if (!v || v < 1) return 0;
+  return Math.min(v, lastVolume) - 1;
+}
+let at = 0;
+// The URL keeps its say until the reader turns for themselves: the run of
+// volumes only reaches its full length once the tip answers, so ?volume=V
+// asked of a page that still believes the book ends at IV must land on V
+// when it arrives, not on the leaf it was clamped to meanwhile.
+let settled = false;
+
+// ── The leaves themselves ─────────────────────────────────────────────────
+// A volume's leaf: its entries, in reading order, with a Book sub-heading
+// wherever two or more consecutive rows share one -- so each row need only
+// cite the portion of its reference the leaf's head and that sub-heading
+// have not already named.
+function renderVolume(volume) {
+  const entries = placedIn(volume);
+  if (!entries.length) {
+    toc.append(saying('Nothing is kept from this volume yet. The volume itself is one turn down, and reads chapter by chapter from its own leaf.'));
+    return;
+  }
+  for (let k = 0; k < entries.length;) {
+    const bk = entries[k].place.book;
+    let jb = k + 1; while (jb < entries.length && entries[jb].place.book === bk) jb++;
+    if (jb - k >= 2) {
+      toc.append(head('toc-book', `Book ${bk}`));   // spelled out, no β; the β sigil rides only the compact tail references
+      for (let m = k; m < jb; m++) toc.append(entryEl(entries[m], true));
+    } else {
+      toc.append(entryEl(entries[k], false));
+    }
+    k = jb;
+  }
 }
 
-// Appendix III: the shelf of ledgers -- the curated ones, then any the reader
-// keeps, which fly the same ribbon a reader's bookmark flies in the contents
-// above. These rows take the dash the front matter takes, and for a plainer
-// reason than an unresolved lookup: a ledger has no reference because the
+// Appendix I: the mempool, built live from the queue (below). Appendix II:
+// chapters cited in full but marked □, the expected-chapter mark, since no
+// block has earned them an ■. Appendix III: the shelf of ledgers. Each part's
+// heading is the leaf's own head now, so nothing here prints one.
+function renderAppendix(part) {
+  if (part.kind === 'mempool') {
+    if (projectedSection) toc.append(projectedSection);
+    else toc.append(saying('The queue could not be read just now — no mirror answered. The contents simply end at the chain tip until one does.'));
+    return;
+  }
+  if (part.kind === 'entries') {
+    for (const e of part.entries) toc.append(provisionalEl(e));
+    return;
+  }
+  const kept = keptLedgers().filter((k) => !INDEXED.some((e) => sameAddresses(e.addresses, k.addresses)));
+  for (const l of INDEXED) toc.append(ledgerEl(l, false));
+  for (const l of kept) toc.append(ledgerEl(l, true));
+}
+
+// A ledger row. These take the dash the unresolved rows take, and for a
+// plainer reason than a failed lookup: a ledger has no reference because the
 // chain never writes an address. It writes the script an address stands for,
 // and the ledger's chapters are discovered from that as it is read -- so
 // there is nothing to cite here, only somewhere to go. The rows open the
 // Ledger compendium at that ledger, the way a contents row opens the book at
 // its chapter.
-function ledgersEl(part) {
-  const frag = document.createDocumentFragment();
-  frag.append(partHead(part));
-  const kept = keptLedgers().filter((k) => !INDEXED.some((e) => sameAddresses(e.addresses, k.addresses)));
-  for (const l of INDEXED) frag.append(ledgerEl(l, false));
-  for (const l of kept) frag.append(ledgerEl(l, true));
-  return frag;
-}
 const shortAddr = (a) => `${a.slice(0, 6)}…${a.slice(-4)}`;
 function ledgerEl(ledger, isKept) {
   const row = document.createElement('a');
@@ -517,8 +518,8 @@ function ledgerEl(ledger, isKept) {
 }
 
 // One provisional row, dressed like a projected chapter: the title, then the
-// whole expected reference -- volume and all, since no Volume heading stands
-// above the appendix to have named it already.
+// whole expected reference -- volume and all, since the leaf's head names an
+// appendix rather than a volume and has nothing to have named already.
 function provisionalEl(entry) {
   const height = Number(entry.id);
   const row = document.createElement('a');
@@ -536,24 +537,23 @@ function provisionalEl(entry) {
   return row;
 }
 
-// An appendix's heading turns the page down into its leaf, so it turns the
-// way the contents' other descents do: the list slides up and away, and the
-// leaf enters from below (the flag it consumes on first paint). A modified
-// click, or a reader who has asked for less motion, just follows the link.
-document.addEventListener('click', (ev) => {
-  const link = ev.target.closest && ev.target.closest('.appx-link');
-  if (!link || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey || ev.button !== 0) return;
-  ev.preventDefault();
-  const flag = link.getAttribute('href').includes('bitcoin-ledger') ? 'glossia-ledger-entrance' : 'glossia-appendix-entrance';
-  try { sessionStorage.setItem(flag, 'down'); } catch (_) {}   // a descent: the leaf rises from below
-  const go = () => { location.href = link.getAttribute('href'); };
-  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { go(); return; }
-  document.body.style.transition = 'transform .2s linear';
-  document.body.style.transform = 'translateY(-100vh)';
-  setTimeout(go, 180);
-});
-
+// ── Rendering the leaf on screen ──────────────────────────────────────────
 function render() {
+  const list = leaves();
+  at = Math.min(Math.max(at, 0), list.length - 1);
+  const leaf = list[at];
+  $('toc-title').textContent = leafTitle(leaf);
+  $('toc-sub').textContent = leafSub(leaf);
+  document.title = `The βook of βitcoin — ${leafTitle(leaf)}`;
+  // The URL follows the reader (replaceState -- turning leaves is not
+  // history), so a reload, or a link shared from here, names the leaf being
+  // read. The opening query was copied at load, so rewriting it can't
+  // disturb which leaf a still-growing run is aiming for.
+  try {
+    const q = leaf.kind === 'volume' ? `volume=${leaf.volume}`
+      : `part=${leaf.part.kind === 'entries' ? 'future' : leaf.part.kind}`;
+    history.replaceState(null, '', `${location.pathname}?${q}`);
+  } catch (_) { /* unavailable */ }
   toc.replaceChildren();
   // The curation is a file this page reads (notables.yaml); if it could not be
   // read, the page says so rather than presenting an empty contents as though
@@ -565,47 +565,225 @@ function render() {
       + 'Any bookmarks of your own are listed below; reload to try again.';
     toc.append(warn);
   }
-  toc.append(head('toc-vol', 'Front matter'));
-  for (const f of FRONT) toc.append(frontEl(f));
-  const entries = placed();
-  for (let i = 0; i < entries.length;) {
-    const vol = entries[i].place.volume;
-    let jv = i + 1; while (jv < entries.length && entries[jv].place.volume === vol) jv++;
-    toc.append(head('toc-vol', `Volume ${toRoman(vol)}`));
-    for (let k = i; k < jv;) {
-      const bk = entries[k].place.book;
-      let jb = k + 1; while (jb < jv && entries[jb].place.book === bk) jb++;
-      if (jb - k >= 2) {
-        toc.append(head('toc-book', `Book ${bk}`));   // spelled out, no β; the β sigil rides only the compact tail references
-        for (let m = k; m < jb; m++) toc.append(entryEl(entries[m], true));
-      } else {
-        toc.append(entryEl(entries[k], false));
-      }
-      k = jb;
+  if (leaf.kind === 'volume') renderVolume(leaf.volume);
+  else renderAppendix(leaf.part);
+  // Entries whose citation could not be resolved have no volume to be listed
+  // under, so they fall past even the appendices, onto the last leaf of the
+  // run -- still linked, so the book can resolve and open them on the next
+  // attempt.
+  if (at === list.length - 1) {
+    const stranded = unresolved();
+    if (stranded.length) {
+      toc.append(head('toc-vol', 'Unresolved'));
+      for (const e of stranded) toc.append(entryEl(e, false));
     }
-    i = jv;
   }
-  // The appendices, in the order the data sets them. Appendix I is the
-  // mempool, and it comes first for the reason it exists: the volumes close
-  // on the chain tip's row, so the queue's chapters begin on the very next
-  // line and the turn from the tip to the next provisional chapter stays one
-  // step down the page. Its section is built asynchronously (and skipped
-  // entirely when no queue can be read), so only what exists is appended.
-  for (const part of appendix()) {
-    if (part.kind === 'mempool') { if (projectedSection) toc.append(projectedSection); }
-    else if (part.kind === 'entries') toc.append(chaptersEl(part));
-    else if (part.kind === 'ledgers') toc.append(ledgersEl(part));
-  }
-  // Entries whose citation could not be resolved fall past even the
-  // appendices, under a dash -- still linked, so the book can resolve and
-  // open them on the next attempt.
-  const stranded = unresolved();
-  if (stranded.length) {
-    toc.append(head('toc-vol', 'Unresolved'));
-    for (const e of stranded) toc.append(entryEl(e, false));
-  }
+  renderTurns(list);
 }
 
+// The foot's named turns, and the ▾ that is the leaf's door down. Either end
+// of the run turns onto the front matter, which the contents sits inside on
+// this axis in the standard order: title, terms, CONTENTS, preface, sigla.
+function renderTurns(list) {
+  const turns = $('toc-turns');
+  turns.replaceChildren();
+  const link = (text, go, alignRight) => {
+    const a = document.createElement('a');
+    a.href = '#';
+    a.textContent = text;
+    if (alignRight) a.style.marginLeft = 'auto';
+    a.addEventListener('click', (ev) => {
+      if (ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey || ev.button !== 0) return;
+      ev.preventDefault();
+      go();
+    });
+    turns.append(a);
+    return a;
+  };
+  link(at > 0 ? `‹ ${leafTitle(list[at - 1])}` : '‹ Terms', () => turn(-1), false);
+  link(at < list.length - 1 ? `${leafTitle(list[at + 1])} ›` : 'Preface ›', () => turn(1), true);
+  $('toc-down').setAttribute('aria-label', `Down into ${leafTitle(list[at])}`);
+}
+$('toc-down').addEventListener('click', (ev) => { ev.preventDefault(); descend(); });
+
+// ── The turns ─────────────────────────────────────────────────────────────
+// A committed turn snapshots the outgoing leaf as a fixed ghost that keeps
+// sliding off in the travel direction WHILE the real slide -- hidden --
+// renders the destination and glides in from the opposite edge. The two
+// halves overlap, so the turn reads as one continuous strip, exactly as it
+// does in the book and on the Ledger's own leaves. `axis` picks the
+// direction of travel: 'x' along the run, 'y' for the turns that change
+// level (and those leave the page, so they are played on the body instead).
+const slide = $('toc-slide');
+let turning = false;
+function turnTo(step, dir, axis = 'x') {
+  if (turning) return;
+  if (REDUCED_MOTION) {
+    slide.style.transform = '';
+    step();
+    render();
+    window.scrollTo({ top: 0, behavior: 'instant' });
+    return;
+  }
+  turning = true;
+  const rect = slide.getBoundingClientRect();   // includes any drag offset
+  const win = document.createElement('div');
+  win.setAttribute('aria-hidden', 'true');
+  Object.assign(win.style, {
+    position: 'fixed', top: '0', left: '0', width: '100%', height: '100%',
+    overflow: 'clip', pointerEvents: 'none', zIndex: '30',
+  });
+  const ghost = slide.cloneNode(true);
+  ghost.removeAttribute('id');
+  Object.assign(ghost.style, {
+    position: 'absolute', top: rect.top + 'px', left: rect.left + 'px',
+    width: rect.width + 'px', margin: '0', transition: 'none', transform: 'none',
+  });
+  win.appendChild(ghost);
+  document.body.appendChild(win);
+  slide.style.transition = 'none';
+  slide.style.transform = '';
+  slide.style.visibility = 'hidden';
+  void ghost.offsetWidth;
+  const span = axis === 'x' ? window.innerWidth : window.innerHeight;
+  const move = (v) => (axis === 'x' ? `translateX(${v}px)` : `translateY(${v}px)`);
+  // Linear, so the exit reads as the drag's momentum carrying on.
+  ghost.style.transition = 'transform .2s linear';
+  ghost.style.transform = move(dir > 0 ? -span : span);
+  setTimeout(() => win.remove(), 320);
+  // Two frames for the compositor to start the ghost's slide BEFORE the
+  // destination's render work blocks the main thread.
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    step();
+    render();
+    window.scrollTo({ top: 0, behavior: 'instant' });   // a new leaf opens at its head, unseen while hidden
+    slide.style.transform = move(dir > 0 ? span : -span);
+    slide.style.visibility = '';
+    void slide.offsetWidth;
+    slide.style.transition = 'transform .22s ease-out';
+    slide.style.transform = '';
+    setTimeout(() => { slide.style.transition = ''; turning = false; }, 260);
+  }));
+}
+
+// A turn that leaves the page carries its whole body with it, and the
+// destination finishes the entrance on arrival.
+function leavePage(href, transform, flag, value = '1') {
+  try { sessionStorage.setItem(flag, value); } catch (_) {}
+  const go = () => { location.href = href; };
+  if (REDUCED_MOTION) { go(); return; }
+  document.body.style.transition = 'transform .2s linear';
+  document.body.style.transform = transform;
+  setTimeout(go, 180);
+}
+
+// Sideways along the run; off either end, onto the front-matter leaf the
+// standard order puts there.
+function turn(dir) {
+  if (turning) return;
+  settled = true;              // the reader has chosen; the URL stops choosing
+  const list = leaves();
+  const next = at + dir;
+  if (next < 0) return leavePage('./bitcoin-front.html?leaf=terms', 'translateX(100vw)', 'glossia-front-entrance', 'back');
+  if (next >= list.length) return leavePage('./bitcoin-front.html?leaf=preface', 'translateX(-100vw)', 'glossia-front-entrance', 'fwd');
+  turnTo(() => { at = next; }, dir, 'x');
+}
+// Up is the cover, which the contents lie under; down is whatever this leaf
+// is the contents of.
+function ascend() {
+  leavePage('./bitcoin-front.html', 'translateY(100vh)', 'glossia-front-entrance', 'drop');
+}
+function descend() {
+  const d = descent(leaves()[at]);
+  leavePage(d.href, 'translateY(-100vh)', d.flag, d.value);
+}
+
+// ── The gestures ──────────────────────────────────────────────────────────
+// The book's idiom, kept: a quick, mostly-horizontal drag turns the leaf
+// sideways and follows the finger while it lasts; a pull DOWN from the top
+// rises to the cover and a push UP from the foot descends. A contents leaf
+// can be a long list, so the vertical pair engages only from the scroll
+// boundary it moves away from (or on a leaf too short to scroll at all) --
+// below that, a vertical drag is the scroll it looks like.
+(() => {
+  let sx = null, sy = 0, st = 0, axis = null, topStart = false, botStart = false, shortStart = false;
+  const snapBack = () => {
+    if (!slide.style.transform) return;
+    slide.style.transition = 'transform .15s ease';
+    slide.style.transform = '';
+  };
+  const vArmed = (dy) => shortStart || (topStart && dy > 0) || (botStart && dy < 0);
+  document.addEventListener('touchstart', (e) => {
+    sx = null; axis = null;
+    if (e.touches.length !== 1 || turning) return;
+    const t = e.target;
+    if (t.closest && t.closest('input, textarea, select')) return;
+    topStart = window.scrollY <= 2;
+    botStart = window.scrollY >= document.documentElement.scrollHeight - window.innerHeight - 2;
+    shortStart = document.documentElement.scrollHeight <= window.innerHeight + 24;
+    sx = e.touches[0].clientX; sy = e.touches[0].clientY; st = performance.now();
+  }, { passive: true });
+  document.addEventListener('touchmove', (e) => {
+    if (sx === null || REDUCED_MOTION || turning) return;
+    const dx = e.touches[0].clientX - sx;
+    const dy = e.touches[0].clientY - sy;
+    if (!axis) {
+      if (Math.abs(dx) < 12 && Math.abs(dy) < 12) return;
+      axis = Math.abs(dx) > Math.abs(dy) ? 'h' : 'v';
+    }
+    if (axis === 'h') {
+      slide.style.transition = 'none';
+      slide.style.transform = `translateX(${dx}px)`;
+    } else if (vArmed(dy)) {
+      slide.style.transition = 'none';
+      slide.style.transform = `translateY(${dy * 0.5}px)`;
+    }
+  }, { passive: true });
+  document.addEventListener('touchend', (e) => {
+    if (sx === null || e.changedTouches.length !== 1) return;
+    const dx = e.changedTouches[0].clientX - sx;
+    const dy = e.changedTouches[0].clientY - sy;
+    const dt = performance.now() - st;
+    sx = null;
+    if (turning) return;
+    if (axis === 'h' && dt <= 600 && Math.abs(dx) >= 60 && Math.abs(dy) <= Math.abs(dx) * 0.6) {
+      turn(dx < 0 ? 1 : -1);                     // swiping left turns forward
+      return;
+    }
+    if (axis === 'v' && vArmed(dy) && dt <= 600 && Math.abs(dy) >= 70 && Math.abs(dx) <= Math.abs(dy) * 0.6) {
+      if (dy > 0) ascend(); else descend();
+      return;
+    }
+    snapBack();
+  }, { passive: true });
+  document.addEventListener('touchcancel', () => { sx = null; if (!turning) snapBack(); }, { passive: true });
+})();
+
+// ── The same turns, from a keyboard ───────────────────────────────────────
+// Left and right along the run, up to the cover and down into whatever this
+// leaf is the contents of -- the reader's own directions, though the swipe
+// that means "descend" is a push UP. The vertical pair waits for the scroll
+// boundary, as the swipes do and for a sharper reason: on a keyboard the
+// arrows ARE the scroll, so a leaf taller than the window would otherwise
+// keep its foot unreachable.
+document.addEventListener('keydown', (e) => {
+  if (e.metaKey || e.ctrlKey || e.altKey || e.shiftKey || e.repeat || turning) return;
+  const t = e.target;
+  if (t && t.closest && t.closest('input, textarea, select, [contenteditable]')) return;
+  if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+    e.preventDefault();
+    turn(e.key === 'ArrowRight' ? 1 : -1);
+    return;
+  }
+  if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
+  const top = window.scrollY <= 2;
+  const bottom = window.scrollY >= document.documentElement.scrollHeight - window.innerHeight - 2;
+  const short = document.documentElement.scrollHeight <= window.innerHeight + 24;
+  if (e.key === 'ArrowUp') { if (short || top) { e.preventDefault(); ascend(); } return; }
+  if (short || bottom) { e.preventDefault(); descend(); }
+});
+
+// ── The entries, and where each one falls ─────────────────────────────────
 // Block placements are offline, so render them at once; transaction citations
 // stream in as each resolves, slotting into their volume and book in order. An
 // entry whose lookup fails (placement null) drops to an "Unresolved" tail
@@ -648,31 +826,41 @@ const placed = () => entries()
   .filter((e) => e.place)
   .sort((a, b) => a.place.volume - b.place.volume || a.place.book - b.place.book
     || a.place.chapter - b.place.chapter || (a.place.section ?? 0) - (b.place.section ?? 0));
+const placedIn = (volume) => placed().filter((e) => e.place.volume === volume);
 const unresolved = () => entries().filter((e) => e.tried && !e.place);
+
+// How far the run of volumes reaches. Every curated entry places at or below
+// the tip, so what has resolved so far is a floor; the tip itself, once it
+// answers, is the truth -- a volume the chain has entered has a leaf here
+// whether or not anything has been kept from it yet.
+function growVolumes(to) {
+  if (!(to > lastVolume)) return;
+  lastVolume = to;
+  if (!settled) at = openingIndex(leaves());
+}
+const volumesFromEntries = () => placed().reduce((m, e) => Math.max(m, e.place.volume), 1);
 
 // ── Appendix I: the mempool, read as far as it extends ────────────────────
 // The queue itself is read and set by btc-mempool.js, shared with the
-// appendix's own page. Here it needs only its heading -- the appendix's
-// name, and a link to that page, where what a mempool is gets said at
-// length.
+// appendix's own page. Its heading is this leaf's own head, so it is built
+// with no lead of its own.
 async function loadProjected() {
   const tip = await tipHeight();
+  if (tip != null) growVolumes(volumeBookChapter(tip).volume);
   const queue = await readQueue(tip, ESPLORA_MIRRORS);
-  if (!queue) return;   // nowhere to read a queue from -- the contents simply end at the tip
-  // The queue is readable even if the appendix file was not: name the part from
-  // what loaded, and fall back to the plain heading rather than losing the
-  // section that gathers the chapters already forming.
-  const heading = MEMPOOL_PART ? partHead(MEMPOOL_PART) : head('toc-vol', 'The Mempool');
-  projectedSection = buildQueue(queue, heading);
+  if (queue) projectedSection = buildQueue(queue);   // else the leaf says it could not be read
   render();
 }
 
 // Block placements (curated, and bookmarks that stored their reference) are
-// offline, so render at once; everything else streams in as its lookup resolves.
+// offline, so place them at once; everything else streams in as its lookup
+// resolves.
 for (const p of places()) if (!p.address && isBlockId(p.id)) placements.set(placeKey(p), placeOf(Number(p.id), p.index ?? null, p.page, p.out ?? null));
 for (const b of bookmarks) {
   if (Number.isInteger(b.height)) bmPlacements.set(bmKey(b), placeOf(b.height, b.pos ?? null, undefined, b.vout ?? null));
 }
+lastVolume = volumesFromEntries();
+at = openingIndex(leaves());
 render();
 // The projected section loads alongside the citation lookups, and the queue
 // keeps moving -- blocks land, replacements arrive -- so it refreshes itself
@@ -682,12 +870,14 @@ setInterval(() => { if (!document.hidden) loadProjected(); }, 60_000);
 await Promise.all([
   ...places().filter((p) => !p.address && !placements.has(placeKey(p))).map(async (p) => {
     placements.set(placeKey(p), await resolvePlacement(p));
+    growVolumes(volumesFromEntries());
     render();
   }),
   ...bookmarks.filter((b) => !bmPlacements.has(bmKey(b))).map(async (b) => {
     // An output bookmark resolves through its transaction, then takes its vout.
     const place = await resolveBookmark(b);
     bmPlacements.set(bmKey(b), place && b.vout != null ? { ...place, vout: b.vout } : place);
+    growVolumes(volumesFromEntries());
     render();
   }),
 ]);

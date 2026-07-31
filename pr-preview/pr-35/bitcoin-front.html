@@ -31,10 +31,11 @@
 <script>
   // The front matter straddles the table of contents on the book's horizontal
   // axis, in the standard order: title, terms, CONTENTS, preface, sigla.
-  // It owns no vertical axis of its own -- the contents remains the single
-  // leaf above the volumes, so an ascent from Volume I still lands there and
-  // nowhere else. Arriving from the contents finishes that turn here, entering
-  // from whichever side the reader turned.
+  // It owns no vertical axis of its own -- the contents is the storey above
+  // the volumes, a leaf of it to each, so an ascent from Volume I still lands
+  // on Volume I's own contents leaf and nowhere else. Arriving from the
+  // contents finishes that turn here, entering from whichever side the reader
+  // turned.
   try {
     const dir = sessionStorage.getItem('glossia-front-entrance');
     if (dir) {
@@ -313,7 +314,8 @@ body.at-title .title-leaf { min-height: 100vh; cursor: pointer; }
 // leaves on both sides of it and steps through it as a virtual leaf.
 //
 // This page owns almost no vertical axis. The contents remains the one leaf
-// above the volumes, so an ascent from Volume I lands there and nowhere else;
+// above the volumes -- a leaf of it to each volume, so an ascent from Volume I
+// lands on Volume I's contents leaf and nowhere else;
 // the front matter is reachable only along the horizontal. The one vertical
 // gesture is the cover's: swiping up on the title leaf lifts the cover away
 // to the contents (leaveUp below).
@@ -352,8 +354,8 @@ function show(i) {
 // Stepping onto the contents leaves this page for its own; the contents
 // finishes the entrance. Turning forward past the preface -- the last leaf of
 // the front matter -- opens the book itself at Volume I.
-function leave(href, dir, flag) {
-  try { if (flag) sessionStorage.setItem(flag, '1'); } catch (_) {}
+function leave(href, dir, flag, value = '1') {
+  try { if (flag) sessionStorage.setItem(flag, value); } catch (_) {}
   const go = () => { location.href = href; };
   if (REDUCED) { go(); return; }
   document.body.style.transition = 'transform .2s linear';
@@ -365,7 +367,7 @@ function leave(href, dir, flag) {
 // vertical gesture the front matter allows, and only on the title leaf: the
 // cover rises the way a cover is lifted, and the contents follow from below.
 // The horizontal order (title, terms, CONTENTS, …) is untouched, and the
-// contents remains the one leaf above the volumes on the book's own axis.
+// contents remains the storey above the volumes on the book's own axis.
 function leaveUp() {
   try { sessionStorage.setItem('glossia-toc-entrance', 'up'); } catch (_) {}
   const go = () => { location.href = './bitcoin-contents.html'; };
@@ -383,7 +385,12 @@ const step = (dir) => {
     return;
   }
   if (LEAVES[next] === CONTENTS) {
-    leave('./bitcoin-contents.html', dir, 'glossia-toc-entrance');
+    // The contents is a run of leaves now -- one per volume, one per appendix
+    // -- so stepping onto it lands at the end the reader is arriving from:
+    // forward off the terms onto Volume I's, backward off the preface onto
+    // whichever leaf closes the run (the contents knows; this page needn't).
+    leave(dir > 0 ? './bitcoin-contents.html?volume=1' : './bitcoin-contents.html?at=last',
+          dir, 'glossia-toc-entrance', dir > 0 ? 'fwd' : 'back');
     return;
   }
   if (REDUCED) { show(next); return; }
