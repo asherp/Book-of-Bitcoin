@@ -2553,7 +2553,9 @@ function renderFrontispiece(header) {
           menu: { hex: (header.bits >>> 0).toString(16).padStart(8, '0'), label: 'difficulty target', prose: `${hf.bits} ${hf.bitsExpr}` } }
       : { text: hf.bits, title: hf.bitsTitle, gold: true,
           menu: { hex: (header.bits >>> 0).toString(16).padStart(8, '0'), label: 'difficulty target', prose: hf.bits } },
-    // The η mark alone is bold gold; the nonce integer beside it stays plain.
+    // The η mark alone is bold gold; the nonce beside it stays plain -- and is
+    // factored, as the target above it is, so the two products can be read
+    // against each other: structure on one line, none at all on the next.
     { text: hf.nonce, mark: 'η', markClass: 'fx-mark', title: hf.nonceTitle,
       menu: { hex: (header.nonce >>> 0).toString(16).padStart(8, '0'), label: 'nonce', prose: hf.nonce } },
   ];
