@@ -459,7 +459,7 @@ a:hover { text-decoration: underline; }
 <div class="wrap">
   <div class="masthead">
     <span class="title">The <span class="beta">β</span>ook of <span class="beta">β</span>itcoin</span>
-    <span class="home"><a href="./bitcoin-book.html">Read</a> · <a href="./bitcoin-contents.html">Contents</a> · <a href="./bitcoin-search.html">Search</a> · <span class="settings-menu"><a href="#" id="settings-link" role="button" aria-haspopup="dialog" aria-expanded="false">Settings</a><div id="settings-panel" class="settings-panel hidden" role="dialog" aria-label="Ledger settings">
+    <span class="home"><a href="./bitcoin-book.html">Read</a> · <a href="./bitcoin-contents.html?part=ledgers">Contents</a> · <a href="./bitcoin-search.html">Search</a> · <span class="settings-menu"><a href="#" id="settings-link" role="button" aria-haspopup="dialog" aria-expanded="false">Settings</a><div id="settings-panel" class="settings-panel hidden" role="dialog" aria-label="Ledger settings">
       <div class="settings-title">Data source</div>
       <div class="endpoint-row">
         <select id="bb-select" class="bb-select" aria-label="Esplora endpoint"></select>
@@ -2085,7 +2085,9 @@ function leavePage(href, transform, flag, value = '1') {
   document.body.style.transform = transform;
   setTimeout(go, 180);
 }
-const toContents = () => leavePage('./bitcoin-contents.html', 'translateY(100vh)', 'glossia-toc-entrance');
+// Appendix III's own contents leaf: the contents runs a leaf per volume and
+// per appendix, and this shelf IS Appendix III, so the ascent lands there.
+const toContents = () => leavePage('./bitcoin-contents.html?part=ledgers', 'translateY(100vh)', 'glossia-toc-entrance');
 // Sideways from the appendix leaf: the appendices turn between one another
 // in their numbered order, and the ones before this are leaves of their own
 // page. Nothing follows Appendix III, so only the backward turn exists.

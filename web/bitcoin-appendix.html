@@ -52,7 +52,11 @@
       document.body.style.transform = transform;
       setTimeout(go, 180);
     };
-    window.__appxAscend = () => leave('./bitcoin-contents.html', 'translateY(100vh)', 'glossia-toc-entrance', '1');
+    // The contents runs a leaf per volume and per appendix, so the ascent
+    // names this appendix and lands on its own contents leaf -- as an ascent
+    // from Volume III lands on Volume III's.
+    const PART = new URLSearchParams(location.search).get('part') === 'future' ? 'future' : 'mempool';
+    window.__appxAscend = () => leave(`./bitcoin-contents.html?part=${PART}`, 'translateY(100vh)', 'glossia-toc-entrance', '1');
     // One turn sideways, in either direction: the leaf slides off the way the
     // reader pushed it, and the neighbour enters from the other side. Each
     // destination has its own entrance to wake -- the appendix leaves, the
@@ -187,7 +191,7 @@ a:hover { text-decoration: underline; }
 <div class="wrap">
   <div class="masthead">
     <span class="title">The <span class="beta">β</span>ook of <span class="beta">β</span>itcoin</span>
-    <span class="home"><a href="./bitcoin-contents.html">Contents</a> · <a href="./bitcoin-book.html">Read</a> · <a href="./bitcoin-search.html">Search</a></span>
+    <span class="home"><a href="./bitcoin-contents.html" id="toc-link">Contents</a> · <a href="./bitcoin-book.html">Read</a> · <a href="./bitcoin-search.html">Search</a></span>
   </div>
 
   <header class="page-head">
@@ -223,6 +227,9 @@ const part = APPENDIX.find((p) => p.kind === kind) || APPENDIX[0];
 const index = APPENDIX.indexOf(part);
 
 const $ = (id) => document.getElementById(id);
+// The contents runs a leaf per volume and per appendix; the masthead's link
+// opens this appendix's own, as the ascent does.
+$('toc-link').href = `./bitcoin-contents.html?part=${kind === 'entries' ? 'future' : 'mempool'}`;
 const numeral = (i) => toRoman(i + 1);
 const label = (p) => `Appendix ${numeral(APPENDIX.indexOf(p))} · ${p.title}`;
 const hrefFor = (p) => p.kind === 'ledgers'
