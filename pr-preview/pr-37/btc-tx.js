@@ -436,6 +436,46 @@ export async function withAddresses(tx) {
 // characters keeps that noise out.
 const TEXT_MIN_RUN = 5;
 
+// ...and the floor alone does not keep enough of it out. A coinbase's tail is
+// twenty-odd bytes of counter, and 0.37⁵ over that many starting positions
+// comes to a false run in about one block in seven -- which is what the chain
+// shows: block 960,467 rendered “KXG&`WY” inside quotation marks, as writing,
+// and nobody wrote it. That is the same error as a mark asserting a meaning
+// the bytes never stated, one layer down, and worse for being in quotes: a
+// quotation is the book saying someone said this.
+//
+// So a run has to be writing, not merely printable. What writing has that
+// entropy does not is a word: letters standing together. Four of them is the
+// bar, or three where the run is long enough to be unlikely on its own terms.
+// \p{L} rather than [A-Za-z], so 七彩神仙鱼 is a word like any other.
+//
+// The costs, both ways. Real tags with no word in them at all -- Foundry's
+// "/2cDw/" -- now read as prose rather than as a quotation. Nothing is lost by
+// that: every byte still reaches the page, in the register the book uses for
+// bytes nobody can read, which is what those are. And the gain is fivefold:
+// over a random twenty-five-byte tail, a false quotation drops from one block
+// in seven to one in thirty-seven (measured, not reasoned -- see the Monte
+// Carlo in coinbase-notation.test.mjs). It does not reach zero, and cannot:
+// five printable bytes can spell a word by chance, and no test on five
+// characters can know they did not.
+//
+// What this does NOT reach is a byte that leans on a real tag from the inside
+// -- the stray ` closing “/Foundry USA Pool #dropgold/`” in block 960,468. It
+// is inside a run that IS writing, and telling it from the tag's own final /
+// would take knowing where that pool's tag ends, which is a table of pool
+// signatures: attribution, not reading. The book does not keep one.
+const WORD = /\p{L}{4}/u;              // a word: four letters together
+const SHORT_WORD = /\p{L}{3}/u;        // three, where the run is long enough to earn it
+const LONG_RUN = 8;
+
+// Does this run read as writing? Exported because it is a claim about the
+// record -- that a human wrote these bytes as text -- and a claim the book
+// makes in quotation marks deserves to be testable on its own.
+export function looksLikeWriting(text) {
+  if (WORD.test(text)) return true;
+  return [...text].length >= LONG_RUN && SHORT_WORD.test(text);
+}
+
 // A code point we'll surface as text: any printable character, plus tab, newline
 // and carriage return. Excludes the other C0 controls, DEL, and the C1 controls
 // (0x80-0x9F) -- all common in binary, rare in genuine text.
@@ -496,9 +536,11 @@ function scriptPushes(bytes) {
 // A byte string split into its readable text runs and the binary spans around
 // them, in order, with EVERY byte accounted for exactly once: the segments
 // concatenate back to the input. A text segment is { text }, a binary one
-// { hex }. A run shorter than `minRun` isn't text -- it stays inside the binary
-// span surrounding it, so the floor never costs a byte (see TEXT_MIN_RUN for
-// why there is a floor at all).
+// { hex }. A run shorter than `minRun`, or with no word in it (see
+// looksLikeWriting), isn't text -- it stays inside the binary span surrounding
+// it, so neither test ever costs a byte. `requireWord: false` takes the word
+// test off for a caller asking what is merely legible rather than what was
+// written.
 //
 // This is the whole-blob reading, and it exists because the alternative loses
 // bytes. A caller that wants only the legible parts of a payload can take the
@@ -506,18 +548,18 @@ function scriptPushes(bytes) {
 // reproduce -- a coinbase's tail past the BIP34 height, which is arbitrary
 // miner data under no rule at all -- renders the binary segments too, as prose,
 // and keeps the round trip.
-export function splitReadableRuns(hex, { minRun = TEXT_MIN_RUN } = {}) {
+export function splitReadableRuns(hex, { minRun = TEXT_MIN_RUN, requireWord = true } = {}) {
   const bytes = hexToBytes(hex);
   const out = [];
   let binStart = 0;                 // first byte of the binary span still open
   let runStart = -1, runChars = 0, runText = '';
   const flushBinary = (end) => { if (end > binStart) out.push({ hex: bytesToHex(bytes.subarray(binStart, end)) }); };
   // Close the run open at runStart, ending at `end`. Long enough to count as
-  // text: emit the binary span before it, then the run, and reopen the binary
-  // span after it. Too short: drop the run and leave its bytes in the open
-  // binary span, which simply grows past them.
+  // text, and reading as writing: emit the binary span before it, then the run,
+  // and reopen the binary span after it. Short of either test: drop the run and
+  // leave its bytes in the open binary span, which simply grows past them.
   const closeRun = (end) => {
-    if (runChars >= minRun) { flushBinary(runStart); out.push({ text: runText }); binStart = end; }
+    if (runChars >= minRun && (!requireWord || looksLikeWriting(runText))) { flushBinary(runStart); out.push({ text: runText }); binStart = end; }
     runStart = -1; runChars = 0; runText = '';
   };
   let i = 0;
@@ -550,13 +592,13 @@ export function splitReadableRuns(hex, { minRun = TEXT_MIN_RUN } = {}) {
 // Lossy by design: this answers "what text is in here", so the bytes between
 // the runs are dropped. Anything that must reproduce its input wants
 // splitReadableRuns instead.
-export function findTextRuns(hex, { minRun = TEXT_MIN_RUN, segment = true } = {}) {
+export function findTextRuns(hex, { minRun = TEXT_MIN_RUN, segment = true, requireWord = true } = {}) {
   const bytes = hexToBytes(hex);
   const pushes = segment ? scriptPushes(bytes) : null;
   // Scan each script push, or the raw blob when segmentation is off, the bytes
   // aren't clean script (null), or a push-less blob yields no segments.
   const segments = pushes && pushes.length ? pushes : [bytes];
-  return segments.flatMap((seg) => splitReadableRuns(bytesToHex(seg), { minRun })
+  return segments.flatMap((seg) => splitReadableRuns(bytesToHex(seg), { minRun, requireWord })
     .filter((s) => s.text !== undefined)
     .map((s) => s.text));
 }
