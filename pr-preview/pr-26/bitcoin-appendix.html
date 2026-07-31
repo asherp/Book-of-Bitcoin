@@ -691,23 +691,53 @@ if (bip && blockLeaf == null) {
       return fetching;
     };
 
-    const tally = () => {
-      if (!tallied) { tallyEl.classList.add('hidden'); return; }
+    const setTally = (says, of, noteText, title = '') => {
       tallyEl.replaceChildren();
       const fig = document.createElement('span');
       const label = document.createElement('span');
       label.className = 't-label'; label.textContent = 'Σ';
       const num = document.createElement('span');
       num.className = 't-fig';
-      num.textContent = `${ayes.toLocaleString('en-US')} of ${tallied.toLocaleString('en-US')} · ${(100 * ayes / tallied).toFixed(1)}%`;
+      num.textContent = `${says.toLocaleString('en-US')} of ${of.toLocaleString('en-US')} · ${(100 * says / of).toFixed(1)}%`;
       fig.append(label, num);
       const note = document.createElement('span');
       note.className = 't-note';
-      note.textContent = (Number.isFinite(bip.threshold) ? `against ${bip.threshold}% — ` : '')
-        + (bip.ballot != null ? 'the window, as far as drawn' : `the newest ${WINDOW.toLocaleString('en-US')} blocks, as far as drawn`);
+      note.textContent = noteText;
       tallyEl.append(fig, note);
+      if (title) tallyEl.title = title;
       tallyEl.classList.remove('hidden');
     };
+    const against = Number.isFinite(bip.threshold) ? `against ${bip.threshold}% — ` : '';
+    // The bar prefers the period's WHOLE count over the table's sample: a
+    // fork still signaling can name a monitor (appendix.yaml) that publishes
+    // the current period's total, which is the statistic the threshold is
+    // about. The figure is that site's claim, not the chain's, so the bar
+    // names its source; until it answers -- and whenever it cannot -- the
+    // drawn count stands, and says that it is only the drawn count.
+    let pinned = false;
+    const tally = () => {
+      if (pinned) return;
+      if (!tallied) { tallyEl.classList.add('hidden'); return; }
+      setTally(ayes, tallied, against
+        + (bip.ballot != null ? 'the window, as far as drawn' : `the newest ${WINDOW.toLocaleString('en-US')} blocks, as far as drawn`));
+    };
+    if (bip.monitor) {
+      (async () => {
+        const res = await fetch(bip.monitor);
+        if (!res.ok) return;
+        const m = await res.json();
+        const says = Number(m.signalingCount);
+        const of = Number(m.totalBlocks);
+        if (!Number.isFinite(says) || !(of > 0)) return;
+        pinned = true;
+        const period = Number.isFinite(Number(m.periodStart)) && Number.isFinite(Number(m.periodEnd))
+          ? `, blocks ${Number(m.periodStart).toLocaleString('en-US')}–${Number(m.periodEnd).toLocaleString('en-US')}`
+          : '';
+        const host = new URL(bip.monitor).host;
+        setTally(says, of, `${against}this period${period} · ${host}`,
+          `the whole period's count, as ${host} publishes it${m.updatedAt ? ` (as of ${m.updatedAt})` : ''} — a claim of that site's, checkable block by block in the table`);
+      })().catch(() => { /* the drawn count stands */ });
+    }
 
     const PAGE = 30;
     // The landing: an ascent from a block's leaf wants the ballot scrolled to

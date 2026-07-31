@@ -80,7 +80,12 @@
 # aligns to its period from genesis, one period back of the lock-in boundary.
 # A `signaling` fork names its `bit` and `threshold` (a percentage) but no
 # ballot — its window has not closed, so its leaf counts the newest blocks
-# instead, live. Editorial, like the titles: what is promised is a citation,
+# instead, live. It may also name a `monitor:` — a public JSON endpoint
+# publishing the current period's whole count (signalingCount, totalBlocks,
+# periodStart, periodEnd) — and the leaf's tally then states the period's
+# total rather than only what the table has drawn, naming the source beside
+# the figure: the count is that site's claim, not the chain's, and the book
+# credits claims. Editorial, like the titles: what is promised is a citation,
 # not a prophecy. This file and notables.yaml are read by the same machinery
 # (btc-notables.js) and licensed the same way; see the README's License section.
 
@@ -357,6 +362,7 @@
       bit: 4
       threshold: 55
       window: 2016
+      monitor: https://bip110monitor.com/api
       note: A temporary cap on how much data a transaction may carry. BIP8-style, with fixed heights — whether its chapters ever carry these names is a question about the next few thousand blocks, not about arithmetic. The heights are fixed; the fork is not. This leaf counts the signals live.
       stats:
         - label: mechanism

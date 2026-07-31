@@ -122,8 +122,11 @@ reaches it instead.
   instead, and `?part=consensus&bip=<n>` opens one fork's own leaf — BIP
   number and recognized name, then the fork's ballot: every block of the
   counted window with its version as the frontispiece writes it and whether
-  it reads as a yes, lazily drawn with a running tally pinned at the foot
-  (a fork still signaling counts from the chain tip instead), then the
+  it reads as a yes, lazily drawn with a running tally pinned at the foot.
+  A fork still signaling counts from the chain tip, and where appendix.yaml
+  names a monitor for it the tally states the current period's whole
+  signaling rate as that site publishes it, credited — otherwise the bar
+  counts what the table has drawn, and says so. Then the
   activation statistics, the chapters and sections it names, and its
   commentary. A ballot row opens `&block=<height>`, the block's own leaf:
   the chapter's title page reprinted — hash and header fields as the book
