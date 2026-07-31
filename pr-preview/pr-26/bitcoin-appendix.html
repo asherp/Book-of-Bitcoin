@@ -190,9 +190,13 @@ a:hover { text-decoration: underline; }
 a.bb-ref:hover { color:var(--accent-2); }
 .bb-ver { flex:1; min-width:0; font:italic 400 14px/1.5 'Newsreader',serif; color:var(--dim); overflow-wrap:anywhere; }
 .bb-ver .dt { font-style:normal; }
-.bb-status { flex:none; min-width:52px; text-align:right; font:500 10.5px/1.6 'IBM Plex Mono',monospace; letter-spacing:.06em; }
+.bb-status { flex:none; min-width:48px; text-align:right; font:500 10.5px/1.6 'IBM Plex Mono',monospace; letter-spacing:.06em; }
 .bb-status.yes { color:var(--accent); }
 .bb-status.no { color:var(--meta); }
+/* The accumulation: the count and the rate as they stood at each block, so
+   the activation replays down the page. */
+.bb-sum { flex:none; min-width:44px; text-align:right; font:500 11px/1.6 'IBM Plex Mono',monospace; color:var(--ink-soft); font-variant-numeric:tabular-nums; }
+.bb-pct { flex:none; min-width:40px; text-align:right; font:600 11px/1.6 'IBM Plex Mono',monospace; color:var(--accent); font-variant-numeric:tabular-nums; }
 .bb-foot { display:block; padding:9px 2px; text-align:center; font:400 12px/1.6 'Public Sans',sans-serif; color:var(--meta); }
 /* A labeled rule across the ballot, above the block it names -- where the
    signaling began, where the count crossed: the fork's own curated chapters,
@@ -622,7 +626,13 @@ if (bip && blockLeaf == null) {
     const blocksEl = $('bip-blocks');
     const heads = document.createElement('div');
     heads.className = 'bb-heads';
-    for (const [cls, text, why] of [['bb-ref', 'chapter', ''], ['bb-ver', 'version', "as the chapter's frontispiece writes it"], ['bb-status', 'signal', `a yes is ${yesSays}`]]) {
+    for (const [cls, text, why] of [
+      ['bb-ref', 'chapter', ''],
+      ['bb-ver', 'version', "as the chapter's frontispiece writes it"],
+      ['bb-status', 'signal', `a yes is ${yesSays}`],
+      ['bb-sum', 'Σ', 'the yeses so far — the count as it stood with this block written'],
+      ['bb-pct', '%', 'the rate so far — the yeses over the blocks written to this point'],
+    ]) {
       const h = document.createElement('span');
       h.className = cls; h.textContent = text;
       if (why) h.title = why;
@@ -682,7 +692,17 @@ if (bip && blockLeaf == null) {
       st.className = 'bb-status ' + (aye ? 'yes' : 'no');
       st.textContent = aye ? 'signals' : '—';
       st.title = aye ? yesSays : noSays;
-      row.append(a, v, st);
+      // The accumulation, row by row: the count and the rate as they stood
+      // when this block was written -- scrolling down replays the activation.
+      const sum = document.createElement('span');
+      sum.className = 'bb-sum';
+      sum.textContent = b.sum.toLocaleString('en-US');
+      sum.title = `${b.sum.toLocaleString('en-US')} signaling of the ${b.n.toLocaleString('en-US')} blocks to this point`;
+      const pct = document.createElement('span');
+      pct.className = 'bb-pct';
+      pct.textContent = `${(100 * b.sum / b.n).toFixed(1)}`;
+      pct.title = sum.title;
+      row.append(a, v, st, sum, pct);
       return row;
     };
 
@@ -690,6 +710,13 @@ if (bip && blockLeaf == null) {
     // mirrors the queue reads, descending from the anchor to the window's
     // opening. `done` closes the record -- the floor reached, or a chain that
     // stopped answering; either way the foot says which.
+    // The bank runs OLDEST FIRST: the table begins at the window's opening
+    // and scrolling down replays the activation in the order it occurred,
+    // each row carrying the count and the rate as they stood at that block.
+    // The pages still arrive ten a call off the same mirrors (esplora pages
+    // descend from the height asked for, so each is asked for by its top and
+    // read reversed), climbing from the floor toward the ballot's close --
+    // or, for a fork still signaling, toward the chain tip.
     const bank = [];
     let anchor = Number.isFinite(bip.ballot) ? bip.ballot : null;
     let floor = null, at = null;
@@ -705,14 +732,12 @@ if (bip && blockLeaf == null) {
         }
         if (floor == null) {
           floor = Math.max(0, anchor - WINDOW + 1);
-          // A live ballot's record runs back past the sample to where its
-          // story begins: the earliest chapter the fork names (the first
-          // signaling block), so the ⟂ line marking it is reachable by
-          // reading, not just named.
+          // A live ballot's record opens where its story begins: the
+          // earliest chapter the fork names (the first signaling block), so
+          // the line marking it is read first, not just named.
           if (bip.ballot == null && marks.size) floor = Math.min(floor, Math.min(...marks.keys()));
-          at = anchor;
+          at = Math.min(floor + 9, anchor);
         }
-        if (at < floor) { done = true; return; }
         let blocks = null;
         for (const base of MEMPOOL_MIRRORS) {
           try {
@@ -721,14 +746,20 @@ if (bip && blockLeaf == null) {
           } catch { /* try the next mirror */ }
         }
         if (!blocks || !blocks.length) { done = true; return; }
-        for (const b of blocks) {
-          if (b.height < floor) break;
-          bank.push(b);
+        // Oldest first, each block carrying the count as it stood with that
+        // block written: the yeses so far, over the blocks so far.
+        for (const b of blocks.reverse()) {
+          if (b.height < floor || b.height > anchor) continue;
+          // The final page is clamped to the anchor and may overlap the one
+          // before it; a height already banked is not counted twice.
+          if (bank.length && b.height <= bank[bank.length - 1].height) continue;
           tallied++;
           if (yes(b.version)) ayes++;
+          bank.push({ height: b.height, version: b.version, sum: ayes, n: tallied });
         }
-        at = bank.length ? bank[bank.length - 1].height - 1 : at - blocks.length;
-        if (at < floor) done = true;
+        const reached = bank.length ? bank[bank.length - 1].height : floor - 1;
+        if (reached >= anchor) { done = true; return; }
+        at = Math.min(reached + 10, anchor);
       })().finally(() => { fetching = null; });
       return fetching;
     };
@@ -757,22 +788,19 @@ if (bip && blockLeaf == null) {
     // about. The figure is that site's claim, not the chain's, so the bar
     // names its source; until it answers -- and whenever it cannot -- the
     // drawn count stands, and says that it is only the drawn count.
+    // The bar states no ending the table has not reached: it holds the count
+    // as far as the reading has gone, and the reader who scrolls to the
+    // ballot's close discovers the total the way it was discovered the first
+    // time -- block by block.
     let pinned = false;
     const tally = () => {
       if (pinned) return;
-      if (!tallied) { tallyEl.classList.add('hidden'); return; }
-      setTally(ayes, tallied, against
-        + (bip.ballot != null ? 'the window, as far as drawn' : `the newest ${WINDOW.toLocaleString('en-US')} blocks, as far as drawn`));
+      // The last row read, not the last block fetched: the bank runs a page
+      // ahead of the reader, and the bar must not.
+      const last = rendered ? bank[rendered - 1] : null;
+      if (!last) { tallyEl.classList.add('hidden'); return; }
+      setTally(last.sum, last.n, `${against}the window, as far as read`);
     };
-    // A closed window whose whole count the file records (`signals:`, counted
-    // once from the chain by tools/count-ballots.mjs) states it outright: the
-    // window's rate, not the sample's. The bar says where the number came
-    // from, and the table beneath is the count laid out for checking.
-    if (bip.ballot != null && Number.isFinite(bip.signals)) {
-      pinned = true;
-      setTally(bip.signals, WINDOW, `${against}the whole window`,
-        'the window\'s whole count, recorded in appendix.yaml after being counted from the chain — check it yourself: node tools/count-ballots.mjs, or read the window below');
-    }
     if (bip.monitor) {
       (async () => {
         const res = await fetch(bip.monitor);
@@ -810,11 +838,22 @@ if (bip && blockLeaf == null) {
       requestAnimationFrame(() => row.scrollIntoView({ block: 'center', behavior: 'instant' }));
       return false;
     };
-    let rendered = 0, busy = false, io = null;
+    let rendered = 0, led = false, busy = false, io = null;
     const scroll = async () => {
       if (busy) return;
       busy = true;
       while (bank.length - rendered < PAGE && !done) await fetchMore();
+      // The table opens where the ballot opens, and says so -- unless a
+      // marked chapter (the first signaling block) already heads it.
+      if (!led && bank.length) {
+        led = true;
+        const lead = document.createElement('span');
+        lead.className = 'bb-foot';
+        lead.textContent = bip.ballot != null
+          ? `— the window's opening, block ${floor.toLocaleString('en-US')}`
+          : (marks.has(floor) ? '' : '— one window back from the tip');
+        if (lead.textContent) rowsEl.before(lead);
+      }
       const take = Math.min(bank.length - rendered, PAGE);
       for (const b of bank.slice(rendered, rendered + take)) {
         if (marks.has(b.height)) rowsEl.append(markEl(marks.get(b.height)));
@@ -824,9 +863,7 @@ if (bip && blockLeaf == null) {
       tally();
       foot.textContent = done && rendered >= bank.length
         ? (bank.length
-          ? (bip.ballot != null ? `— the window's opening, block ${floor.toLocaleString('en-US')}`
-            : marks.has(floor) ? '— back to where the signaling began'
-            : '— one window back from the tip')
+          ? (bip.ballot != null ? `— the ballot's close, block ${anchor.toLocaleString('en-US')}` : '— the chain tip, and counting')
           : 'the chain could not be reached')
         : '…';
       // The fetch ahead: keep a page banked beyond what's drawn.
@@ -1103,20 +1140,25 @@ if (blockLeaf != null) {
   const wire = () => {
     let oldest = newest != null ? Math.max(0, newest - WINDOW + 1) : null;
     if (oldest != null && Number.isFinite(markedFloor)) oldest = Math.min(oldest, markedFloor);
-    const newerUp = newest == null || blockLeaf < newest;
-    upEl.title = newerUp ? 'the next newer block of the window' : 'up to the ballot';
-    upEl.href = newerUp ? blockHref(blockLeaf + 1) : bipHref(bip);
+    // The table reads oldest first, so its leaves stack the same way: older
+    // above, newer below, the ballot itself above the window's opening --
+    // and the reader who keeps pushing up from any block surfaces where the
+    // replay starts.
+    const olderUp = blockLeaf > 0 && (oldest == null || blockLeaf > oldest);
+    upEl.title = olderUp ? 'the next older block of the window' : 'up to the ballot';
+    upEl.setAttribute('aria-label', olderUp ? 'The next older block of the window' : 'Up to the ballot');
+    upEl.href = olderUp ? blockHref(blockLeaf - 1) : bipHref(bip);
     upEl.classList.remove('hidden');
-    window.__appxAscend = () => (newerUp ? navTo(blockHref(blockLeaf + 1), 'drop') : toBallot());
-    const older = (oldest == null || blockLeaf > oldest) && blockLeaf > 0;
-    downEl.classList.toggle('hidden', !older);
-    if (older) {
-      downEl.setAttribute('aria-label', 'The next older block of the window');
-      downEl.title = 'the next older block of the window';
+    window.__appxAscend = () => (olderUp ? navTo(blockHref(blockLeaf - 1), 'drop') : toBallot());
+    const newer = newest == null || blockLeaf < newest;
+    downEl.classList.toggle('hidden', !newer);
+    if (newer) {
+      downEl.setAttribute('aria-label', 'The next newer block of the window');
+      downEl.title = 'the next newer block of the window';
       firstChapter = null;   // the ▾ is this leaf's own turn, not a descent into the book
-      window.__appxDescend = () => navTo(blockHref(blockLeaf - 1), 'down');
+      window.__appxDescend = () => navTo(blockHref(blockLeaf + 1), 'down');
     } else {
-      window.__appxDescend = () => { /* the window's opening: nothing below */ };
+      window.__appxDescend = () => { /* the ballot's close: nothing below */ };
     }
   };
   wire();

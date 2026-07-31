@@ -120,19 +120,18 @@ reaches it instead.
   projected chapter returns to that leaf), the earliest chapter any listed
   work is stamped into for Citations. The Consensus leaf lists its forks
   instead, and `?part=consensus&bip=<n>` opens one fork's own leaf — BIP
-  number and recognized name, then the fork's ballot: every block of the
-  counted window with its version as the frontispiece writes it and whether
-  it reads as a yes, lazily drawn, the fork's curated chapters cutting
-  across the table as labeled rules (where signaling began, where the count
-  crossed), with the summary line and the fork's commentary — its
-  description reads there — pinned together at the screen's foot.
-  A fork still signaling counts from the chain tip, and where appendix.yaml
-  names a monitor for it the tally states the current period's whole
-  signaling rate as that site publishes it, credited. A closed window's
-  whole count is recorded in appendix.yaml (`signals:`, counted from the
-  chain by `tools/count-ballots.mjs`, which anyone can re-run to verify)
-  and the tally states it as the window's rate — otherwise the bar counts
-  what the table has drawn, and says so. Then the
+  number and recognized name, then the fork's ballot, oldest block first:
+  every block of the counted window with its version as the frontispiece
+  writes it, whether it reads as a yes, and the accumulated count and rate
+  as they stood at that block — so scrolling down replays the activation in
+  the order it occurred, and the ending is discovered rather than stated.
+  The fork's curated chapters cut across the table as labeled rules (where
+  signaling began, where the count crossed), and the summary line and the
+  fork's commentary — its description reads there — pin together at the
+  screen's foot, the bar holding the count only as far as the reading has
+  gone. A fork still signaling opens where its story begins, and where
+  appendix.yaml names a monitor for it the tally states the current
+  period's whole signaling rate as that site publishes it, credited. Then the
   activation statistics, the chapters and sections it names, and its
   commentary. A ballot row opens `&block=<height>`, the block's own leaf:
   the chapter's title page reprinted — hash and header fields as the book
