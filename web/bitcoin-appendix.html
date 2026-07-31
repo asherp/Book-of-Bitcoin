@@ -175,6 +175,37 @@ a:hover { text-decoration: underline; }
 /* A chapter no block has reached yet keeps the manuscript's pencil. */
 .proof-row.bip-expected .proof-name { color:var(--meta); font-style:italic; }
 .proof-row.bip-expected .proof-cite { color:var(--meta); font-weight:400; }
+/* The ballot itself: one row per block of the counted window -- its chapter,
+   its version as the frontispiece writes it, and whether it says yes. Drawn a
+   page at a time as the foot comes into reach, the way a ledger's record is. */
+.bip-blocks { max-width:56ch; margin:0 auto; }
+.bb-heads { display:flex; gap:14px; padding:0 2px 6px; border-bottom:1px solid var(--rule); }
+/* The heads borrow the rows' column classes for their widths alone; the
+   dress is the ruling register's, not the row's. */
+.bb-heads > span { color:var(--meta); font:600 10px/1 'IBM Plex Mono',monospace; letter-spacing:.14em; text-transform:uppercase; text-align:left; }
+.bb-heads > .bb-status { text-align:right; }
+.bb-row { display:flex; gap:14px; align-items:baseline; padding:6px 2px; border-bottom:1px solid var(--hair); }
+.bb-ref { flex:none; min-width:118px; font:600 12px/1.5 'IBM Plex Mono',monospace; letter-spacing:.04em;
+  color:var(--accent); white-space:nowrap; font-variant-numeric:tabular-nums; }
+a.bb-ref:hover { color:var(--accent-2); }
+.bb-ver { flex:1; min-width:0; font:italic 400 14px/1.5 'Newsreader',serif; color:var(--dim); overflow-wrap:anywhere; }
+.bb-ver .dt { font-style:normal; }
+.bb-status { flex:none; min-width:52px; text-align:right; font:500 10.5px/1.6 'IBM Plex Mono',monospace; letter-spacing:.06em; }
+.bb-status.yes { color:var(--accent); }
+.bb-status.no { color:var(--meta); }
+.bb-foot { display:block; padding:9px 2px; text-align:center; font:400 12px/1.6 'Public Sans',sans-serif; color:var(--meta); }
+/* The running tally, seated the way the Ledger's totals bar sits: sticky at
+   the screen bottom, the rule its top edge, summing the ballot at every
+   moment of the scroll rather than only at its end. */
+.bip-tally { position:sticky; bottom:0; z-index:40;
+  display:flex; gap:10px; align-items:baseline;
+  padding:12px 2px max(12px, env(safe-area-inset-bottom)) 14px;
+  border-top:1px solid var(--rule); background:var(--page);
+  max-width:56ch; margin:0 auto; }
+.bip-tally .t-label { font:600 9.5px/1 'IBM Plex Mono',monospace; letter-spacing:.14em; text-transform:uppercase; color:var(--meta); margin-right:6px; }
+.bip-tally .t-fig { font:600 13px/1.4 'IBM Plex Mono',monospace; color:var(--accent); font-variant-numeric:tabular-nums; }
+.bip-tally .t-note { flex:1; min-width:0; text-align:right; font:400 11.5px/1.5 'Public Sans',sans-serif; color:var(--meta);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 
 /* The Citations register's foot: the picker. A leaf lists nothing, as a rule -- the
    contents lists, the leaf explains -- but this appendix is the one a reader
@@ -249,10 +280,15 @@ a:hover { text-decoration: underline; }
   </header>
   <p class="appx-note" id="appx-note"></p>
 
-  <!-- A fork's own leaf (?part=consensus&bip=N): its activation statistics --
-       how the rule was counted in, editorial like every stat in the back
-       matter, plus a live count where a fork is still signaling -- and then
-       the chapters and sections it names, each a door into the book. -->
+  <!-- A fork's own leaf (?part=consensus&bip=N). Below the description, the
+       ballot: every block of the counted window, its version as the
+       frontispiece writes it, and whether it says yes -- drawn a page at a
+       time as the reader scrolls, with the running tally held in a sticky
+       bar at the screen's foot. Then the statistics as the file states them,
+       and the chapters and sections the fork names, each a door into the
+       book. -->
+  <div class="bip-blocks hidden" id="bip-blocks"></div>
+  <div class="bip-tally hidden" id="bip-tally"></div>
   <div class="bip-stats hidden" id="bip-stats"></div>
   <div class="proof-list hidden" id="bip-entries"></div>
 
@@ -500,18 +536,86 @@ if (bip) {
   for (const s of bip.stats || []) statRow(s.label, s.value);
   stats.classList.remove('hidden');
 
-  // A fork still signaling is counted live: the last day of blocks, read off
-  // the same mirrors the queue is, each version's bit tallied in the browser.
-  // The window is a sample, not the fork's own -- the row says which blocks
-  // it counted -- and a chain that cannot be reached just says so.
-  if (bip.status === 'signaling' && Number.isFinite(bip.bit)) {
-    const el = statRow('signaling now', 'counting…');
-    (async () => {
-      const tip = await chainTip();
-      if (tip == null) { el.textContent = 'the chain could not be reached'; return; }
-      const SAMPLE = 144;
-      let counted = 0, set = 0, at = tip;
-      while (counted < SAMPLE && at >= 0) {
+  // ── The ballot, block by block ──
+  // A fork counted in block versions lays its whole window out: one row per
+  // block -- its chapter, its version exactly as the chapter's frontispiece
+  // writes it (formatBlockVersion: v1..v4 in the integer era, the word pair
+  // and its signaling bits under BIP9), and whether it reads as a yes. A
+  // closed ballot opens at its last block and runs back to the window's
+  // opening; a fork still signaling has no closed window, so it opens at the
+  // chain tip and runs one window deep. Drawn a page at a time as the foot
+  // comes into reach, banked a page ahead, the way the Ledger draws a record
+  // -- and the running tally holds in a sticky bar at the screen's foot, so
+  // the count stands beside the ballot at every moment of the scroll.
+  if (bip.bit != null || bip.version != null) {
+    const { formatBlockVersion } = await import('./btc-prose.js');
+    const yes = (v) => (bip.bit != null ? ((v >>> bip.bit) & 1) === 1 : (v >>> 0) >= bip.version);
+    const yesSays = bip.bit != null ? `bit ${bip.bit} set` : `version ${bip.version} or above`;
+    const noSays = bip.bit != null ? `bit ${bip.bit} not set` : `below version ${bip.version}`;
+    const WINDOW = Number.isFinite(bip.window) ? bip.window : 2016;
+
+    const blocksEl = $('bip-blocks');
+    const heads = document.createElement('div');
+    heads.className = 'bb-heads';
+    for (const [cls, text, why] of [['bb-ref', 'chapter', ''], ['bb-ver', 'version', "as the chapter's frontispiece writes it"], ['bb-status', 'signal', `a yes is ${yesSays}`]]) {
+      const h = document.createElement('span');
+      h.className = cls; h.textContent = text;
+      if (why) h.title = why;
+      heads.append(h);
+    }
+    const rowsEl = document.createElement('div');
+    const foot = document.createElement('span');
+    foot.className = 'bb-foot'; foot.textContent = '…';
+    blocksEl.append(heads, rowsEl, foot);
+    blocksEl.classList.remove('hidden');
+    const tallyEl = $('bip-tally');
+
+    const rowEl = (b) => {
+      const row = document.createElement('div');
+      row.className = 'bb-row';
+      const a = document.createElement('a');
+      a.className = 'bb-ref';
+      a.href = `./bitcoin-book.html?block=${b.height}`;
+      a.textContent = wholeRef(b.height);
+      a.title = `block ${b.height.toLocaleString()}`;
+      const ver = formatBlockVersion(b.version);
+      const v = document.createElement('span');
+      v.className = 'bb-ver';
+      const mark = document.createElement('span');
+      mark.className = 'dt'; mark.textContent = 'v';
+      // The frontispiece's own spacing: tight against a numeral (v1), a
+      // space before a word form (v accio library 100).
+      const text = ver.text.replace(/^v/, '');
+      v.append(mark, document.createTextNode((/^\d/.test(text) ? '' : ' ') + text));
+      v.title = ver.title;
+      const st = document.createElement('span');
+      const aye = yes(b.version);
+      st.className = 'bb-status ' + (aye ? 'yes' : 'no');
+      st.textContent = aye ? 'signals' : '—';
+      st.title = aye ? yesSays : noSays;
+      row.append(a, v, st);
+      return row;
+    };
+
+    // The bank: blocks fetched ahead of the draw, ten a call off the same
+    // mirrors the queue reads, descending from the anchor to the window's
+    // opening. `done` closes the record -- the floor reached, or a chain that
+    // stopped answering; either way the foot says which.
+    const bank = [];
+    let anchor = Number.isFinite(bip.ballot) ? bip.ballot : null;
+    let floor = null, at = null;
+    let done = false, tallied = 0, ayes = 0;
+    let fetching = null;
+    const fetchMore = () => {
+      if (done || fetching) return fetching || Promise.resolve();
+      fetching = (async () => {
+        if (anchor == null) {
+          const tip = await chainTip();
+          if (tip == null) { done = true; return; }
+          anchor = tip;
+        }
+        if (floor == null) { floor = Math.max(0, anchor - WINDOW + 1); at = anchor; }
+        if (at < floor) { done = true; return; }
         let blocks = null;
         for (const base of MEMPOOL_MIRRORS) {
           try {
@@ -519,19 +623,63 @@ if (bip) {
             if (res.ok) { blocks = await res.json(); break; }
           } catch { /* try the next mirror */ }
         }
-        if (!blocks || !blocks.length) break;
+        if (!blocks || !blocks.length) { done = true; return; }
         for (const b of blocks) {
-          if (counted >= SAMPLE) break;
-          counted++;
-          if ((b.version >>> bip.bit) & 1) set++;
-          at = b.height - 1;
+          if (b.height < floor) break;
+          bank.push(b);
+          tallied++;
+          if (yes(b.version)) ayes++;
         }
-        el.textContent = `counting… ${set} of ${counted}`;
-      }
-      el.textContent = counted
-        ? `${set} of the last ${counted} blocks (${(100 * set / counted).toFixed(1)}%) — against a ${bip.threshold}% threshold`
-        : 'the chain could not be reached';
-    })().catch(() => { el.textContent = 'the chain could not be reached'; });
+        at = bank.length ? bank[bank.length - 1].height - 1 : at - blocks.length;
+        if (at < floor) done = true;
+      })().finally(() => { fetching = null; });
+      return fetching;
+    };
+
+    const tally = () => {
+      if (!tallied) { tallyEl.classList.add('hidden'); return; }
+      tallyEl.replaceChildren();
+      const fig = document.createElement('span');
+      const label = document.createElement('span');
+      label.className = 't-label'; label.textContent = 'Σ';
+      const num = document.createElement('span');
+      num.className = 't-fig';
+      num.textContent = `${ayes.toLocaleString('en-US')} of ${tallied.toLocaleString('en-US')} · ${(100 * ayes / tallied).toFixed(1)}%`;
+      fig.append(label, num);
+      const note = document.createElement('span');
+      note.className = 't-note';
+      note.textContent = (Number.isFinite(bip.threshold) ? `against ${bip.threshold}% — ` : '')
+        + (bip.ballot != null ? 'the window, as far as drawn' : `the newest ${WINDOW.toLocaleString('en-US')} blocks, as far as drawn`);
+      tallyEl.append(fig, note);
+      tallyEl.classList.remove('hidden');
+    };
+
+    const PAGE = 30;
+    let rendered = 0, busy = false, io = null;
+    const scroll = async () => {
+      if (busy) return;
+      busy = true;
+      while (bank.length - rendered < PAGE && !done) await fetchMore();
+      const take = Math.min(bank.length - rendered, PAGE);
+      for (const b of bank.slice(rendered, rendered + take)) rowsEl.append(rowEl(b));
+      rendered += take;
+      tally();
+      foot.textContent = done && rendered >= bank.length
+        ? (bank.length
+          ? (bip.ballot != null ? `— the window's opening, block ${floor.toLocaleString('en-US')}` : '— one window back from the tip')
+          : 'the chain could not be reached')
+        : '…';
+      // The fetch ahead: keep a page banked beyond what's drawn.
+      if (!done && bank.length - rendered < PAGE) fetchMore();
+      busy = false;
+      // Re-arm: appending moved the sentinel; observe it afresh so a foot
+      // still within reach fires again.
+      if (io) { io.unobserve(foot); io.observe(foot); }
+    };
+    io = new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) scroll(); },
+                                  { rootMargin: '1600px 0px' });
+    io.observe(foot);
+    scroll();
   }
 
   // The chapters and sections the fork names. Heights cite offline; a

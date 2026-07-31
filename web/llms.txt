@@ -120,9 +120,12 @@ reaches it instead.
   projected chapter returns to that leaf), the earliest chapter any listed
   work is stamped into for Citations. The Consensus leaf lists its forks
   instead, and `?part=consensus&bip=<n>` opens one fork's own leaf — BIP
-  number and recognized name, its activation statistics (a live signal tally
-  where a fork is still signaling), the chapters and sections it names, and
-  its commentary. The Index of Ledgers' leaves are `bitcoin-ledger.html`'s. The
+  number and recognized name, then the fork's ballot: every block of the
+  counted window with its version as the frontispiece writes it and whether
+  it reads as a yes, lazily drawn with a running tally pinned at the foot
+  (a fork still signaling counts from the chain tip instead), then the
+  activation statistics, the chapters and sections it names, and its
+  commentary. The Index of Ledgers' leaves are `bitcoin-ledger.html`'s. The
   Citations leaf also carries the proof picker: a `.ots` dropped there is
   replayed, checked against its block's own header, and kept in the reader's
   own browser — the citation it resolves to (chapter and §section, both

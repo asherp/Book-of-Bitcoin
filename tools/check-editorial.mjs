@@ -145,6 +145,26 @@ for (const part of parts) {
     if (bip.status === 'signaling' && (!Number.isFinite(bip.bit) || !Number.isFinite(bip.threshold))) {
       problems.push(`appendix "${part.title}": ${bip.title} is signaling but names no bit/threshold to count by`);
     }
+    // The ballot table needs a coherent reading of a yes: a bit or a minimum
+    // version (not both), a window, and -- for a closed ballot -- an anchor
+    // whose window closes on a period boundary, since the boundaries are
+    // consensus arithmetic and a misplaced anchor would tally the wrong blocks.
+    if (bip.bit != null && bip.version != null) {
+      problems.push(`appendix "${part.title}": ${bip.title} names both a bit and a version — a yes is read one way or the other`);
+    }
+    if (bip.ballot != null) {
+      if (bip.bit == null && bip.version == null) {
+        problems.push(`appendix "${part.title}": ${bip.title} names a ballot but no bit or version to read it by`);
+      }
+      if (!Number.isFinite(bip.window)) {
+        problems.push(`appendix "${part.title}": ${bip.title} names a ballot but no window`);
+      } else if (bip.bit != null && (bip.ballot + 1) % bip.window !== 0) {
+        problems.push(`appendix "${part.title}": ${bip.title}'s ballot ${bip.ballot} does not close a ${bip.window}-block period (period boundaries align from genesis)`);
+      }
+    }
+    if (bip.status === 'signaling' && bip.ballot != null) {
+      problems.push(`appendix "${part.title}": ${bip.title} is still signaling — its ballot has not closed, so it names none and its leaf counts from the tip`);
+    }
     for (const e of bip.entries) {
       if (!/^-?[0-9]+$/.test(e.id) && !/^[0-9a-f]{64}$/.test(e.id)) {
         problems.push(`appendix "${part.title}": "${e.title}" has an id that is neither a block height nor a 64-hex id`);

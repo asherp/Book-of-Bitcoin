@@ -165,11 +165,16 @@ compiled to WASM) is consumed as a published
   belongs to no volume or book of the body (the queue's own equivalent of a
   book is still to be written). Appendix II lists its forks and descends
   into the first fork's own leaf (`?part=consensus&bip=341` names Taproot's):
-  BIP number over recognized name, the activation statistics as the file
-  states them — plus a live tally of the last day's signals for a fork
-  still signaling — the fork's chapters below, its reading behind the same
-  toggle every leaf keeps its commentary behind, and sideways turns walking
-  the forks; the book answers an unmined chapter with the date it is due.
+  BIP number over recognized name, then the ballot itself — every block of
+  the counted window, its version exactly as the chapter's frontispiece
+  writes it, and whether it reads as a yes, drawn a page at a time as the
+  foot comes into reach the way the Ledger draws a record, with the running
+  tally held in a sticky bar at the screen's foot (a fork still signaling
+  has no closed window, so its ballot opens at the chain tip and counts
+  live) — then the activation statistics as the file states them, the
+  fork's chapters, its reading behind the same toggle every leaf keeps its
+  commentary behind, and sideways turns walking the forks; the book answers
+  an unmined chapter with the date it is due.
   Appendix III's leaf is the Ledger compendium's own title page, since a
   shelf of ledgers is what that page already is. The appendices sit at the
   **volumes' own level**: the line runs Volume I … Volume V, Appendix I,

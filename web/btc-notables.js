@@ -205,9 +205,15 @@ function normalizePart(raw, i) {
       }
       const group = { bip: number, name, status, key: (number.match(/[0-9]+/) || [number])[0], title: `BIP ${number} · ${name}` };
       if (b.note) group.note = String(b.note);
-      // A signaling fork names how it is counted, so its leaf can count live.
+      // How a yes is read off a block's version -- a bit set, or a minimum
+      // version -- and where the ballot closed: the last block of the winning
+      // window, and the window's span. A fork still signaling names no
+      // ballot, and its leaf counts the newest blocks instead.
       if (b.bit !== undefined) group.bit = Number(b.bit);
+      if (b.version !== undefined) group.version = Number(b.version);
       if (b.threshold !== undefined) group.threshold = Number(b.threshold);
+      if (b.ballot !== undefined) group.ballot = Number(b.ballot);
+      if (b.window !== undefined) group.window = Number(b.window);
       if (b.stats) {
         group.stats = b.stats.map((s) => {
           const label = String(s.label ?? '').trim();

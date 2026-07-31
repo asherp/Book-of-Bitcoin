@@ -70,9 +70,17 @@
 # curated entry in notables.yaml — its `id` is handed to the same lookup, in
 # any form the search box takes — with a `note` carrying the caveat the row
 # shows on hover, and `expected: true` on a height no block has reached, which
-# is what earns the row its □. A group whose status is `signaling` also names
-# its version `bit` and `threshold` (a percentage), so its title leaf can count
-# the signals live. Editorial, like the titles: what is promised is a citation,
+# is what earns the row its □. A fork counted in block versions also names how
+# a yes is read — `bit: n` (a version bit set) or `version: n` (a supermajority
+# fork's minimum version) — and where its ballot closed: `ballot:` is the last
+# block of the winning window and `window:` the window's span, so the fork's
+# leaf can lay the whole ballot out, block by block, and tally it as it goes.
+# The boundaries are consensus arithmetic, not lore: a supermajority fork's
+# window is the 1,000 blocks before its activation; a version-bits window
+# aligns to its period from genesis, one period back of the lock-in boundary.
+# A `signaling` fork names its `bit` and `threshold` (a percentage) but no
+# ballot — its window has not closed, so its leaf counts the newest blocks
+# instead, live. Editorial, like the titles: what is promised is a citation,
 # not a prophecy. This file and notables.yaml are read by the same machinery
 # (btc-notables.js) and licensed the same way; see the README's License section.
 
@@ -109,6 +117,9 @@
     - bip: '34'
       name: Block Height in Coinbase
       status: active
+      version: 2
+      ballot: '227930'
+      window: 1000
       note: Every coinbase must open with the height of its own block, so no two coinbases can ever repeat — the rule the twice-confirmed printings made necessary. The first fork counted in block versions: miners bumped v1 to v2, and a rolling supermajority of recent versions decided when the rule bound.
       commentary:
         - file: bip34.md
@@ -136,6 +147,9 @@
     - bip: '66'
       name: Strict DER Signatures
       status: active
+      version: 3
+      ballot: '363724'
+      window: 1000
       note: Every signature must be spelled in exactly canonical DER — one encoding per signature, closing the door OpenSSL's tolerance had left open. The second supermajority fork, and the last quiet one; its activation was followed at once by a brief fork among miners who had signaled v3 without validating it.
       commentary:
         - file: bip66.md
@@ -161,6 +175,9 @@
     - bip: '65'
       name: CheckLockTimeVerify
       status: active
+      version: 4
+      ballot: '388380'
+      window: 1000
       note: An output can refuse to be spent before a stated time or height — τ in the book's notation, the first opcode to let a lock make a promise about the future rather than about a key. The third and last of the supermajority windows.
       commentary:
         - file: bip65.md
@@ -186,6 +203,9 @@
     - bip: '68 · 112 · 113'
       name: Relative Timelocks
       status: active
+      bit: 0
+      ballot: '417311'
+      window: 2016
       note: Not before so many blocks after the coin being spent was itself confirmed — Δ in the book's notation, the wait a payment channel needs. Three BIPs deployed as one — sequence numbers given meaning (68), CHECKSEQUENCEVERIFY (112), median-time-past (113) — and the first fork ever counted by version bits, nine independent questions in place of one integer to bump.
       commentary:
         - file: csv.md
@@ -213,6 +233,9 @@
     - bip: '91'
       name: SegWit Signal Mandate
       status: active
+      bit: 4
+      ballot: '476783'
+      window: 336
       note: The blocksize war's wedge — a transient rule that made not signaling for SegWit a way to lose blocks, squeezing BIP141 over its own 95% threshold. It signaled over its own 336-block epochs, which no book aligns with, but one book holds the story end to end.
       commentary:
         - file: bip91.md
@@ -240,6 +263,9 @@
     - bip: '141'
       name: Segregated Witness
       status: active
+      bit: 1
+      ballot: '479807'
+      window: 2016
       note: The witness — the signatures, and the scripts that satisfy a lock — is committed to the block through a tree of its own and left out of the name of the transaction it authorizes. It is why this book has footnotes, and why a payment channel can be built from transactions signed but not yet published. Deployed with 143 (its sighash) and 144 (its wire format).
       commentary:
         - file: segwit.md
@@ -282,6 +308,9 @@
     - bip: '341'
       name: Taproot
       status: active
+      bit: 2
+      ballot: '687455'
+      window: 2016
       note: An output can be a single thirty-two-byte key standing for either a signature or a whole tree of scripts, and a spend reveals only the route it took — the first upgrade whose main achievement is that most spends now say less. Deployed with 340 (Schnorr signatures) and 342 (its script), and activated under Speedy Trial, a signaling period with a deadline, so a failed vote fails quickly instead of hanging over the chain.
       commentary:
         - file: taproot.md
@@ -327,6 +356,7 @@
       status: signaling
       bit: 4
       threshold: 55
+      window: 2016
       note: A temporary cap on how much data a transaction may carry. BIP8-style, with fixed heights — whether its chapters ever carry these names is a question about the next few thousand blocks, not about arithmetic. The heights are fixed; the fork is not. This leaf counts the signals live.
       stats:
         - label: mechanism
