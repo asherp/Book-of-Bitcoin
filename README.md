@@ -168,16 +168,19 @@ compiled to WASM) is consumed as a published
   BIP number over recognized name, then the ballot itself — every block of
   the counted window, its version exactly as the chapter's frontispiece
   writes it, and whether it reads as a yes, drawn a page at a time as the
-  foot comes into reach the way the Ledger draws a record, with the running
-  tally held in a sticky bar at the screen's foot (a fork still signaling
-  has no closed window, so its ballot opens at the chain tip; where the
-  file names a `monitor:` — a public endpoint publishing the period's whole
-  count — the bar states the period's total signaling rate, credited to
-  its source, rather than only what the table has drawn) — then the
-  activation statistics as the file states them, the
-  fork's chapters, its reading behind the same toggle every leaf keeps its
-  commentary behind, and sideways turns walking the forks; the book answers
-  an unmined chapter with the date it is due. A ballot row opens the
+  foot comes into reach the way the Ledger draws a record. The fork's own
+  curated chapters cut across the table as labeled rules — the line where
+  the signaling began, the line where the count crossed — and a fork still
+  signaling runs its record back past the sample to where its story begins.
+  The leaf's sticky foot holds the summary line (the fork still signaling
+  states the period's whole rate off the `monitor:` the file names,
+  credited; a closed window states its recorded `signals:` count; otherwise
+  the drawn count stands, and says so) and, beneath it, the commentary —
+  where the fork's description itself now reads, the book's own voice
+  leading whatever else is written of it — so the count and the reading are
+  at hand at every moment of the scroll. Then the activation statistics as
+  the file states them, the fork's chapters, and sideways turns walking the
+  forks; the book answers an unmined chapter with the date it is due. A ballot row opens the
   block's own leaf (`&block=<height>`), one level further down: the
   chapter's title page reprinted — its hash as prose between the ⌘ and ⓪
   marks, every header field as the frontispiece writes it, the signal

@@ -269,6 +269,9 @@
           note: III β29 opens, BIP91 locks in at ■321, and it activates at ■673 — the whole drama inside one book.
           commentary:
             - file: bip91.md
+        - title: Lock-in
+          id: '476768'
+          note: ■321 — where the count crossed 80% of its 336-block epoch.
         - title: Activation
           id: '477120'
           note: From here, briefly, a block that did not signal for SegWit was rejected.
