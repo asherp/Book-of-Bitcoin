@@ -721,6 +721,15 @@ if (bip && blockLeaf == null) {
       setTally(ayes, tallied, against
         + (bip.ballot != null ? 'the window, as far as drawn' : `the newest ${WINDOW.toLocaleString('en-US')} blocks, as far as drawn`));
     };
+    // A closed window whose whole count the file records (`signals:`, counted
+    // once from the chain by tools/count-ballots.mjs) states it outright: the
+    // window's rate, not the sample's. The bar says where the number came
+    // from, and the table beneath is the count laid out for checking.
+    if (bip.ballot != null && Number.isFinite(bip.signals)) {
+      pinned = true;
+      setTally(bip.signals, WINDOW, `${against}the whole window`,
+        'the window\'s whole count, recorded in appendix.yaml after being counted from the chain — check it yourself: node tools/count-ballots.mjs, or read the window below');
+    }
     if (bip.monitor) {
       (async () => {
         const res = await fetch(bip.monitor);
