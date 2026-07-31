@@ -19,7 +19,8 @@
 // margin layout.
 
 import { encodeSeedPhrase } from './glossia-msg.js';
-import { findTextRuns, splitReadableRuns, readableUtf8Text, tokenizeScript, bitsToTargetHex, bitsToDifficulty, bitsToPrimeFactors, primeFactors } from './btc-tx.js';
+import { findTextRuns, splitReadableRuns, looksLikeWriting, readableUtf8Text, tokenizeScript, bitsToTargetHex, bitsToDifficulty, bitsToPrimeFactors, primeFactors } from './btc-tx.js';
+import { splitOnSignature, poolOf } from './btc-pools.js';
 import { volumeBookChapter } from './btc-citation.js';
 import { plausibleBlockTime, utcMinute } from './btc-chaintime.js';
 import { BIP39, HP_SPELLS } from './btc-wordlists.js';
@@ -661,10 +662,47 @@ const blockHeightMark = (height) => `<span class="op op-blockmark" title="BIP34 
 // name says.
 const extranonceMark = (n) => markToken(`η${productProse(n)}`, `extranonce ${n} — the counter the miner rolled once the header's 32-bit nonce (η) was exhausted. A tally, not text: it is read as the number it is, so its bytes never pass for writing`);
 
+// The signature mark: the pool's own name, quoted to its exact extent, with
+// who wrote it riding the mark rather than printed in the passage. The name is
+// a reading -- a tag is unauthenticated and copyable -- and the book keeps
+// readings off the record's own line. What the passage gains is the boundary:
+// the quotation closes where the pool's writing closes, not wherever the
+// counter's bytes stopped being printable.
+const signatureMark = (part) => `<span class="pool-sig" title="${escapeHtml(part.pool)} — the pool's own signature, matched against the book's table (web/btc-pools.js). That these bytes are in the coinbase is the record; that ${escapeHtml(part.pool)} mined the block is a reading of it, since a tag is unauthenticated and anyone may copy one">“${quoteText(part.text)}”</span>`;
+
+// The miner's margin -> its display. A run the scanner found is cut at the
+// signature inside it, if any: the pool's writing is quoted under its mark,
+// and whatever leaned against it either side is put back to the test every
+// other run faces -- writing gets its own quotation, bytes go to prose. Every
+// byte still reaches the page exactly once; the cuts only decide the register
+// it reaches it in.
 function renderMinerMargin(hex, collect) {
   if (!hex) return '';
-  return splitReadableRuns(hex)
-    .map((s) => (s.text !== undefined ? `“${quoteText(s.text)}”` : collect(s.hex)))
+  const utf8Hex = (s) => Array.from(new TextEncoder().encode(s), (b) => b.toString(16).padStart(2, '0')).join('');
+
+  // First decide what each stretch of the margin is, in order, without
+  // rendering any of it: the signature, the writing around it, the bytes.
+  const pieces = [];
+  for (const seg of splitReadableRuns(hex)) {
+    if (seg.text === undefined) { pieces.push({ hex: seg.hex }); continue; }
+    for (const part of splitOnSignature(seg.text)) {
+      if (part.pool) pieces.push(part);
+      else if (looksLikeWriting(part.text)) pieces.push({ text: part.text });
+      else pieces.push({ hex: utf8Hex(part.text) });   // the byte that leaned on a signature, put back
+    }
+  }
+  // Then join the bytes that ended up neighbours -- the tail of a counter and
+  // the character of it that leaned on the tag are one run of bytes, and read
+  // as one passage of prose rather than two. Only the register was ever in
+  // question; the order and the count of the bytes never were.
+  const merged = [];
+  for (const p of pieces) {
+    const last = merged[merged.length - 1];
+    if (p.hex !== undefined && last && last.hex !== undefined) last.hex += p.hex;
+    else merged.push({ ...p });
+  }
+  return merged
+    .map((p) => (p.hex !== undefined ? collect(p.hex) : p.pool ? signatureMark(p) : `“${quoteText(p.text)}”`))
     .filter(Boolean)
     .join(' ');
 }
@@ -1027,8 +1065,14 @@ export function composeTransactionFields(parsed, bestOf = 1, lazyData = null, en
     // the plain treatment, where a mining-pool tag is surfaced as a quote block
     // (`scriptAscii`). Every other scriptSig is genuine script (with a P2SH
     // redeemScript revealed as opcodes via `nested`).
-    let script, scriptAscii = null;
+    let script, scriptAscii = null, signature = null;
     if (isNullPrevout) {
+      // Who signed the margin, if the table knows the hand: carried beside the
+      // fields rather than set in the passage, because the passage is the
+      // transaction and this is a reading of it. The annotation layer, a
+      // running head, a reply from the bot -- whatever wants to say the name
+      // out loud takes it from here (see web/btc-pools.js).
+      signature = poolOf(findTextRuns(v.scriptSig, { segment: false }));
       const bip34 = bip34HeightPush(v.scriptSig);
       if (bip34) {
         // The rule's own boundary, then the miner's bookkeeping, then a break:
@@ -1069,6 +1113,9 @@ export function composeTransactionFields(parsed, bestOf = 1, lazyData = null, en
       prevTxid: isNullPrevout ? '' : v.txid,
       prevVout: v.vout,
       script, scriptAscii,
+      // The signature the margin carries, as { pool, link, text }, or null --
+      // a reading, kept out of the passage and available beside it.
+      signature,
       sequence: seq.mark, sequenceKind: seq.kind, sequenceTitle: seq.title, sequenceRbf: seq.rbf,
       witnessHex: v.witnessHex || '',
       witnessItems: v.witness || [],

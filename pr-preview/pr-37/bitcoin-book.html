@@ -622,6 +622,14 @@ button:disabled { opacity: .4; cursor: not-allowed; }
   border-left: 2px solid var(--accent); border-radius: 1px;
   font: italic 400 calc(17.5px * var(--scale-body, 1))/1.6 'Newsreader',serif; color: var(--ink-soft);
 }
+/* A quotation the book can name a hand for: a mining pool's signature, matched
+   against web/btc-pools.js. It reads as the quotation it already was -- the
+   pool's words, in the pool's voice, at the size of the prose around them --
+   and carries a dotted rule to say a reading is attached, which the hover
+   states. The name itself is not set on the page: that these bytes are here is
+   the record, and who mined the block is an inference from a string anyone
+   could copy, so it stays where a reader can weigh it. */
+.pool-sig { border-bottom: 1px dotted var(--dim); }
 /* A tab inside a quoted embedded message (see quoteText in btc-prose.js): a
    fixed-width gap, so column-aligned text keeps its spacing instead of
    collapsing to a single space. */

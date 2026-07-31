@@ -22,7 +22,7 @@
 // transaction's locktime, the § number, and .mk where a mark would otherwise
 // go unclassed.
 const MARK_SELECTOR = '.op, .dt, .cfx, .cfx-gold, .fx-mark, .merkle-mark, '
-  + '.tx-seq, .tx-locktime, .cite-amount, .tx-out-value, .section-num, .mk';
+  + '.tx-seq, .tx-locktime, .cite-amount, .tx-out-value, .section-num, .mk, .pool-sig';
 
 // Is this element inside something the page has folded away?
 //
@@ -44,11 +44,13 @@ export function isHidden(el, root) {
 // The marks a rendered page is actually showing, as the exact strings their
 // spans carry -- '⧉', '■840000', 'β₇₈', 'III β2 ■5'.
 //
-// Two marks have no glyph of their own and answer to a synthetic token
+// Three marks have no glyph of their own and answer to a synthetic token
 // instead. A bare push is written as the byte count alone (²⁰, ³³), so no
 // literal finds it: 'push:count'. A coinbase's template timestamp is written
 // as a date, which differs in every block that carries one and could only be
-// matched by a prefix loose enough to catch anything: 'time:template'.
+// matched by a prefix loose enough to catch anything: 'time:template'. And a
+// pool's signature is whatever that pool wrote -- the mark is the quotation
+// itself: 'sig:pool'.
 export function collectMarks(root) {
   const marks = new Set();
   if (!root) return marks;
@@ -58,6 +60,7 @@ export function collectMarks(root) {
     if (text) marks.add(text);
     if (el.classList.contains('op-count')) marks.add('push:count');
     if (el.classList.contains('op-tpltime')) marks.add('time:template');
+    if (el.classList.contains('pool-sig')) marks.add('sig:pool');
   }
   return marks;
 }
