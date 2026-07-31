@@ -227,9 +227,10 @@ a.bb-ref:hover { color:var(--accent-2); }
 /* A coinbase ballot's middle column: the miner's own line, kept to one --
    the full text rides the hover. */
 .bb-say { font-style:normal; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:12px; }
-/* The clock at the row's head: the replay is chronological, and the dates
-   make its pace legible. */
+/* The clock at the row's head: the replay is chronological, and the days
+   head their runs -- each row keeps only its minute. */
 .bb-time { flex:none; font:400 10px/1.7 'IBM Plex Mono',monospace; color:var(--meta); white-space:nowrap; font-variant-numeric:tabular-nums; }
+.bb-day { margin:14px 0 1px; padding:2px; font:600 10px/1 'IBM Plex Mono',monospace; letter-spacing:.16em; text-transform:uppercase; color:var(--meta); }
 /* The accumulation: the count and the rate as they stood at each block, so
    the activation replays down the page. */
 .bb-sum { flex:none; min-width:44px; text-align:right; font:500 11px/1.6 'IBM Plex Mono',monospace; color:var(--ink-soft); font-variant-numeric:tabular-nums; }
@@ -726,7 +727,7 @@ if (bip && blockLeaf == null) {
     const heads = document.createElement('div');
     heads.className = 'bb-heads';
     for (const [cls, text, why] of [
-      ['bb-time', 'mined', 'when the block was mined — UTC'],
+      ['bb-time', 'mined', 'the minute the block was mined, UTC — the days head their runs'],
       ['bb-ref', 'chapter', ''],
       COIN ? ['bb-ver', 'coinbase', "the chapter's first line — the printable runs of the coinbase scriptSig"]
            : ['bb-ver', 'version', "as the chapter's frontispiece writes it"],
@@ -769,7 +770,7 @@ if (bip && blockLeaf == null) {
       // make its pace legible -- a window is weeks, a stall is visible.
       const when = document.createElement('span');
       when.className = 'bb-time';
-      when.textContent = new Date(b.timestamp * 1000).toISOString().slice(0, 16).replace('T', ' ');
+      when.textContent = new Date(b.timestamp * 1000).toISOString().slice(11, 16);
       when.title = `mined ${new Date(b.timestamp * 1000).toISOString().slice(0, 19).replace('T', ' ')} UTC — unix ${b.timestamp}`;
       row.append(when);
       // A row opens the block's own leaf, one level down -- the reprint the
@@ -946,6 +947,19 @@ if (bip && blockLeaf == null) {
       })().catch(() => { /* the drawn count stands */ });
     }
 
+    // The rows group by day: a quiet head opens each day's run as the draw
+    // crosses midnight UTC, so the replay's pace reads at a glance -- a
+    // window is weeks, and a slow day is a long entry.
+    const DAY = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+    let lastDay = null;
+    const dayEl = (ts) => {
+      const d = document.createElement('div');
+      d.className = 'bb-day';
+      d.textContent = DAY.format(ts * 1000);
+      d.title = new Date(ts * 1000).toISOString().slice(0, 10);
+      return d;
+    };
+
     const PAGE = 30;
     // The landing: an ascent from a block's leaf wants the ballot scrolled to
     // the row left off at, so the scroll keeps drawing until that height is
@@ -983,6 +997,8 @@ if (bip && blockLeaf == null) {
       }
       const take = Math.min(bank.length - rendered, PAGE);
       for (const b of bank.slice(rendered, rendered + take)) {
+        const day = new Date(b.timestamp * 1000).toISOString().slice(0, 10);
+        if (day !== lastDay) { lastDay = day; rowsEl.append(dayEl(b.timestamp)); }
         if (marks.has(b.height)) rowsEl.append(markEl(marks.get(b.height)));
         rowsEl.append(rowEl(b));
       }
