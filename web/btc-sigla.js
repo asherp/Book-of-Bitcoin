@@ -18,6 +18,9 @@
 // the renderer that does.
 const SUPERSCRIPT_DIGITS = '⁰¹²³⁴⁵⁶⁷⁸⁹';
 export const toSuperscript = (n) => String(n).split('').map((d) => SUPERSCRIPT_DIGITS[+d]).join('');
+// …and the subscript, its counterpart on the other shoulder (β₇₈, ⧉₂, ‡₁).
+const SUBSCRIPT_DIGITS = '₀₁₂₃₄₅₆₇₈₉';
+export const toSubscript = (n) => String(n).split('').map((d) => SUBSCRIPT_DIGITS[+d]).join('');
 
 // Opcode byte -> Glossia glyph. Every defined opcode has one; families share
 // a base glyph, with the house subscript convention distinguishing variants

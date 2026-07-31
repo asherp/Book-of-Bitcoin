@@ -209,10 +209,16 @@ compiled to WASM) is consumed as a published
   nVersion
 - `web/bitcoin-ledgers.html` — the old Ledgers shelf, now a redirect to
   the compendium (kept for bookmarks and cached mastheads)
-- `web/btc-proofs.js`, `web/proofs/` — Appendix IV, *Citations*: works cited
+- `web/btc-proofs.js`, `web/proofs/` — *Citations*, the register closing the
+  back matter: works cited
   outside this text, whose existence the chain attests. Every other reference in
   the book points inward at a chapter it contains; these point outward, and the
-  passage that dates one carries the back-reference in its margin. A file is not a passage and is not
+  passage that dates one carries the ‡ citation mark in its margin — the work's
+  number in the register as its subscript, or the bare ‡ for a reader's own
+  kept proof, an addendum outside the edition's numbering. The back matter
+  reads in three families: the appendices proper (numbered among themselves),
+  the indexes ("Index of Ledgers" — pointing into the text), and Citations
+  standing last, the way a works-cited list closes a book. A file is not a passage and is not
   on the chain at all — what is on the chain is the commitment its proof
   reduces to — so an entry here is a file's name and the citation its proof
   lands on, which the proof states by itself, offline. Two sources listed as

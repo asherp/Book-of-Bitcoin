@@ -58,6 +58,8 @@ a:hover { text-decoration: underline; }
 .page-head { padding:8px 0 26px; margin-bottom:30px; border-bottom:1px solid var(--rule); text-align:center; }
 .leaf-title { margin:0; font:300 clamp(24px,6vw,36px)/1.2 'IBM Plex Mono',monospace; color:var(--ink); word-break:break-all; }
 .leaf-named { margin-top:10px; font:400 17px/1.35 'Newsreader',serif; color:var(--dim); }
+.leaf-citemark { margin-top:12px; font:600 15px/1 'IBM Plex Mono',monospace; }
+.leaf-citemark a { color:var(--accent); }
 .leaf-digest { max-width:56ch; margin:22px auto 0; text-align:left; }
 .leaf-open { margin-top:20px; }
 .ghost {
@@ -108,7 +110,7 @@ a:hover { text-decoration: underline; }
 <div class="wrap">
   <div class="masthead">
     <span class="title">The <span class="beta">β</span>ook of <span class="beta">β</span>itcoin</span>
-    <span class="home"><a href="./bitcoin-contents.html">Contents</a> · <a href="./bitcoin-book.html">Read</a> · <a href="./bitcoin-appendix.html?part=proofs">Appendix IV</a></span>
+    <span class="home"><a href="./bitcoin-contents.html">Contents</a> · <a href="./bitcoin-book.html">Read</a> · <a href="./bitcoin-appendix.html?part=proofs">Citations</a></span>
   </div>
 
   <header class="page-head">
@@ -151,12 +153,13 @@ a:hover { text-decoration: underline; }
 // and nowhere in the book, so its margin stays empty. That empty margin is the
 // page's argument: a proof is mostly arithmetic, and touches the chain twice.
 import { loadNotables, appendix } from './btc-contents.js';
+import { partLabel } from './btc-notables.js';
 await loadNotables();
 import { proofByDigest, ladderOf, citeOf, attests } from './btc-proofs.js';
 import { readingsOf, resolveCommentary, commentaryHtml } from './btc-commentary.js';
-import { reference, latinRefOf, toRoman } from './btc-citation.js';
+import { reference, latinRefOf } from './btc-citation.js';
 import { blockAt } from './btc-index.js';
-import { toSuperscript } from './btc-sigla.js';
+import { toSuperscript, toSubscript } from './btc-sigla.js';
 
 const $ = (id) => document.getElementById(id);
 const BEST_OF = 5;
@@ -165,13 +168,13 @@ let engine = null;
 const glossia = () => (engine ||= import('./glossia-msg.js').then(async (m) => { await m.init(); return m; }));
 
 const part = appendix().find((p) => p.kind === 'proofs');
-// The appendix's own number and name, so a rename in appendix.yaml reaches
-// every page that points back at it.
-const partLabel = part ? `Appendix ${toRoman(appendix().indexOf(part) + 1)} · ${part.title}` : 'the appendix';
+// The register's heading comes from the loader, so a retitle in appendix.yaml
+// reaches every page that points back at it.
+const backLabel = partLabel(appendix(), part);
 const proof = await proofByDigest(new URLSearchParams(location.search).get('digest') || '', part);
 if (!proof) {
   $('leaf-title').textContent = 'Not in this appendix';
-  turn('./bitcoin-appendix.html?part=proofs', `‹ ${partLabel}`);
+  turn('./bitcoin-appendix.html?part=proofs', `‹ ${backLabel}`);
 } else {
   render(proof);
 }
@@ -185,6 +188,18 @@ function render(proof) {
     named.textContent = proof.title;
     $('leaf-title').after(named);
   }
+
+  // The work's citation mark, worn where the register's rows and the cited
+  // output's margin wear it: the edition's ‡ₙ, or the bare ‡ of an addendum.
+  const cite = document.createElement('div');
+  cite.className = 'leaf-citemark';
+  const mark = document.createElement('a');
+  mark.href = './bitcoin-appendix.html?part=proofs';
+  mark.textContent = proof.n ? `‡${toSubscript(proof.n)}` : '‡';
+  mark.title = proof.n ? `cited work ${proof.n} in ${backLabel}`
+    : "your addendum — kept in this browser, outside the edition's numbering";
+  cite.append(mark);
+  $('leaf-title').parentElement.insertBefore(cite, $('leaf-digest'));
 
   const cells = [];
   $('leaf-digest').append(figure(proof.digest, 'h', 'dt', proof.digest.length / 2, false,
@@ -220,7 +235,7 @@ function render(proof) {
   setProse(cells);
 
   commentary(proof);
-  turn('./bitcoin-appendix.html?part=proofs', `‹ ${partLabel}`);
+  turn('./bitcoin-appendix.html?part=proofs', `‹ ${backLabel}`);
   turn(`./bitcoin-book.html?ref=${latinRefOf(proof.place.height, section)}`, `${citeOf(proof.place)} ›`, true);
 }
 

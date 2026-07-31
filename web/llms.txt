@@ -102,24 +102,29 @@ reaches it instead.
   `&index=<n>` opens its section n+1 (0-based); `?txid=<txid>` jumps to a
   transaction's section, `&out=<n>` to one of its outputs;
   `?page=volume|book` opens the block's volume or book leaf.
-- `bitcoin-contents.html` — the curated table of contents, closing with four
-  appendices: I the mempool's projected chapters, II heights consensus has
-  fixed but no block has reached, III the shelf of ledgers, IV citations —
-  works cited outside the text, dated into a chapter by their OpenTimestamps
-  proofs, with the cited passage carrying the back-reference in its margin.
-- `bitcoin-appendix.html?part=mempool|future|proofs` — an appendix's title
-  leaf: its name and what it gathers. Below each is its first chapter, in the
-  book itself: `?block=<tip+1>` for the queue (and the ascent from any
-  projected chapter returns to that leaf), the first fixed height for Appendix
-  II, the earliest chapter any listed work is stamped into for Appendix IV.
-  Appendix III's leaves are `bitcoin-ledger.html`'s. Appendix IV's leaf also
-  carries the proof picker: a `.ots` dropped there is replayed, checked against
-  its block's own header, and kept in the reader's own browser — the citation
-  it resolves to (chapter and §section, both stated by the proof itself) then
-  stands in the contents beside the bundled ones. Nothing is uploaded; the
-  bundled proofs are `web/proofs/*.ots`, listed in `web/appendix.yaml`.
+- `bitcoin-contents.html` — the curated table of contents, closing with the
+  back matter in three families: Appendix I (the mempool's projected
+  chapters) and Appendix II (heights consensus has fixed but no block has
+  reached); the Index of Ledgers (pointing into the text, many chapters per
+  name); and Citations, standing last — works cited outside the text, dated
+  into a chapter by their OpenTimestamps proofs. A cited passage carries the
+  back-reference in its margin as the ‡ mark, the work's number in the
+  register as its subscript (‡₁); a reader's own kept proof wears the bare
+  ‡, an addendum outside the edition's numbering.
+- `bitcoin-appendix.html?part=mempool|future|proofs` — a back-matter part's
+  title leaf: its name and what it gathers. Below each is its first chapter,
+  in the book itself: `?block=<tip+1>` for the queue (and the ascent from any
+  projected chapter returns to that leaf), the first fixed height for
+  Appendix II, the earliest chapter any listed work is stamped into for
+  Citations. The Index of Ledgers' leaves are `bitcoin-ledger.html`'s. The
+  Citations leaf also carries the proof picker: a `.ots` dropped there is
+  replayed, checked against its block's own header, and kept in the reader's
+  own browser — the citation it resolves to (chapter and §section, both
+  stated by the proof itself) then stands in the contents beside the bundled
+  ones. Nothing is uploaded; the bundled proofs are `web/proofs/*.ots`,
+  listed in `web/appendix.yaml`.
 - `bitcoin-proof.html?digest=<sha256>` — one cited work's own leaf,
-  which every Appendix IV row opens. Front matter: the file's name, and its
+  which every Citations row opens. Front matter: the file's name, and its
   digest as prose — the whole of what the chain was told about it. Then the
   proof written out paragraph by paragraph, each paragraph one value the last
   hashes into: the commitment, the transaction, then each merkle level's
@@ -133,7 +138,7 @@ reaches it instead.
 - `bitcoin-search.html` — lookup by height, hash, txid, or citation.
 - `bitcoin-ledger.html?address=<addr>` — the passage that address is, in the
   ledger holding it; `&page=ledger` opens that ledger's title leaf instead,
-  and a bare `bitcoin-ledger.html` opens Appendix III's own leaf above them.
+  and a bare `bitcoin-ledger.html` opens the Index of Ledgers' own leaf above them.
 
 These render only in a JavaScript-capable browser; without one, use the
 static passages above or reconstruct the passage as described next.
