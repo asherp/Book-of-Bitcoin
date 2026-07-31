@@ -15,7 +15,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { access } from 'node:fs/promises';
 
-import { splitReadableRuns, findTextRuns } from '../web/btc-tx.js';
+import { splitReadableRuns, findTextRuns, bitsToPrimeFactors, bitsToTargetHex, primeFactors } from '../web/btc-tx.js';
 
 // The counter as it sits on the chain in block 960,281: pushed, four bytes,
 // minimal little-endian -- and with three of those four bytes (7e 6b 6a) in
@@ -70,6 +70,67 @@ test('a run shorter than the floor stays in the binary span, not dropped', () =>
 test('findTextRuns still answers what text is in here', () => {
   // The lossy reading is unchanged: the runs, and only the runs.
   assert.deepEqual(findTextRuns(utf8Hex('/slush/') + 'ff'.repeat(8), { segment: false }), ['/slush/']);
+});
+
+// ─── the products the page writes: the target, and the nonces ──────────
+
+// nBits the chain has actually mined under: genesis, the first adjustment,
+// and a spread of later windows down to a recent one.
+const REAL_NBITS = [0x1d00ffff, 0x1d00d86a, 0x1c654657, 0x1b04864c, 0x1a05db8b,
+  0x181bc330, 0x190fcc72, 0x1715a35c, 0x170355f0, 0x17028c61];
+
+const product = (factors) => factors.reduce((acc, [p, k]) => acc * p ** BigInt(k), 1n);
+
+// A factorization the reader is owed: ascending, and no base hiding a factor
+// of its own. Trial division is only affordable up to the small primes, so
+// beyond them the exact factorizations below (each cross-checked against
+// coreutils' factor) are what pins primality.
+function assertCanonical(factors, what) {
+  for (let i = 1; i < factors.length; i++) assert.ok(factors[i][0] > factors[i - 1][0], `primes ascend in ${what}`);
+  for (const [p] of factors) {
+    for (let d = 2n; d < 1000n && d * d <= p; d++) assert.notEqual(p % d, 0n, `${p} is not prime (${what})`);
+  }
+}
+
+test('a target factors into primes that multiply back to it', () => {
+  // The notation writes the target as a product, so the product has to BE the
+  // target -- to the last of its 256 bits, not to a rounded scale.
+  for (const bits of REAL_NBITS) {
+    const factors = bitsToPrimeFactors(bits);
+    assert.equal(product(factors), BigInt('0x' + bitsToTargetHex(bits)), bits.toString(16));
+    assertCanonical(factors, bits.toString(16));
+  }
+  // Genesis states the shape plainest: 2²⁰⁸ × (2¹⁶−1), the Fermat primes.
+  assert.deepEqual(bitsToPrimeFactors(0x1d00ffff), [[2n, 208], [3n, 1], [5n, 1], [17n, 1], [257n, 1]]);
+  // And the first adjustment moves the odd part entire, 3×5×17×257 → 27701.
+  assert.deepEqual(bitsToPrimeFactors(0x1d00d86a), [[2n, 209], [27701n, 1]]);
+});
+
+test('a nonce factors too, at any size the chain can write', () => {
+  // Nonces off the chain, and the extranonces beside them -- the second kind
+  // runs to 8 bytes, past what a double holds, which is why the arithmetic is
+  // BigInt throughout. Every expectation here matches `factor(1)`.
+  const KNOWN = [
+    ['2083236893', [[19n, 1], [97n, 1], [1130351n, 1]]],            // the genesis nonce
+    ['2573394689', [[5171n, 1], [497659n, 1]]],                     // block 1
+    ['3932395645', [[5n, 1], [19211n, 1], [40939n, 1]]],
+    ['2147483647', [[2147483647n, 1]]],                             // a prime nonce stands alone
+    ['1785429755', [[5n, 1], [839n, 1], [425609n, 1]]],             // an extranonce from block 960,281
+    ['18446744073709551615', [[3n, 1], [5n, 1], [17n, 1], [257n, 1], [641n, 1], [65537n, 1], [6700417n, 1]]],
+    ['4', [[2n, 2]]],                                               // an early miner's counter
+  ];
+  for (const [value, expected] of KNOWN) {
+    assert.deepEqual(primeFactors(value), expected, value);
+    assert.equal(product(primeFactors(value)), BigInt(value), value);
+    assertCanonical(primeFactors(value), value);
+  }
+  // 0 and 1 are products of nothing, and say so: the mark falls back to the
+  // figure rather than printing an empty space where a number belongs.
+  assert.deepEqual(primeFactors(0), []);
+  assert.deepEqual(primeFactors(1), []);
+  // The worst an 8-byte extranonce can be -- two 32-bit primes, where trial
+  // division would still be running -- and it still comes back exact.
+  assert.deepEqual(primeFactors(4294967291n * 4294967279n), [[4294967279n, 1], [4294967291n, 1]]);
 });
 
 // ─── composition ───────────────────────────────────────────────────────
@@ -149,6 +210,7 @@ test('a pre-BIP34 coinbase keeps the preamble reading', { skip: skipNoEngine }, 
   const script = fields.inputs[0].script;
 
   assert.match(script, /β/, 'the difficulty target still reads under β');
+  assert.ok(script.includes('2²⁰⁸·3·5·17·257'), 'restated as the target it is, in primes');
   assert.ok(script.includes('The Times 03/Jan/2009'), 'and the headline is still quoted');
   assert.ok(!script.includes('■'), 'no height mark — the rule had not been written yet');
 });
@@ -161,9 +223,14 @@ test('the extranonce reads as a number, and stops leaning on the tag', { skip: s
   const fields = composeTransactionFields(parseTransaction(coinbaseTxHex(scriptSig)), 1, null, markEncoder);
   const script = fields.inputs[0].script;
 
-  // η carries its value as a subscript, the one form the mark takes in either era.
-  const subscript = EXTRANONCE_VALUE.replace(/\d/g, (d) => '₀₁₂₃₄₅₆₇₈₉'[+d]);
-  assert.match(script, new RegExp(`η${subscript}`), 'the counter reads as its own number, subscript');
+  // η carries its value at full size, the one form the mark takes in either
+  // era -- and the value is the product the rest of the book states numbers
+  // in: 1785429755 = 5 · 839 · 425609.
+  const superscript = (s) => String(s).replace(/\d/g, (d) => '⁰¹²³⁴⁵⁶⁷⁸⁹'[+d]);
+  const factored = primeFactors(EXTRANONCE_VALUE)
+    .map(([p, k]) => String(p) + (k === 1 ? '' : superscript(k))).join('·');
+  assert.match(script, new RegExp(`η${factored}`), 'the counter reads as its own number');
+  assert.ok(!script.includes(`η${EXTRANONCE_VALUE}`), 'the decimal itself belongs to the title');
   // Its printable tail (~kj) was joining the quotation as the counter rolled.
   // Consumed under η, it can't reach the text scan at all.
   const quoted = [...script.matchAll(/“([^”]*)”/g)].map((m) => m[1]).join('');
