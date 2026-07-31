@@ -324,12 +324,19 @@ compiled to WASM) is consumed as a published
   reader decomposes a `scriptSig` into those fields byte-exactly; the survey
   samples blocks off any Esplora mirror and reports what each pool is doing
   now. Findings and their sources in
-  [`tools/coinbase-formats.md`](tools/coinbase-formats.md). What it turned up
-  about pool tags and merged-mining commitments stays out of the book's own
-  rendering on purpose — what a pool tag *means* is commentary, and the
-  passage stops where the rules do. What it turned up about the *second field*
-  did land on the page: that number is a template timestamp as often as a
-  counter, and the book had been marking every one of them η
+  [`tools/coinbase-formats.md`](tools/coinbase-formats.md), which is also where
+  the corrections they turned up are written down: the second field is a
+  template timestamp as often as a counter, and the book had been marking every
+  one of them η
+- `web/btc-pools.js` — the table of pool signatures: what each pool's name
+  looks like in the bytes, and exactly where it ends. A coinbase's margin is
+  the one place on the chain where somebody signs their work, and the table
+  lets the book quote that signature to its own extent — so the counter byte
+  leaning on `/Foundry USA Pool #dropgold/` is no longer read as the pool's
+  punctuation. The two claims stay apart, as everywhere else in the book: the
+  signature is printed, because it is in the coinbase; the pool's name rides
+  the mark and the composed field, because a tag is unauthenticated and anyone
+  may copy one
 
 ## Building & running locally
 

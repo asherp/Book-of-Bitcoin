@@ -32,7 +32,7 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
 
-import { decodeCoinbaseScriptSig, shapeOf, identifyPool, FALLBACK_POOL_TAGS } from './coinbase-fields.mjs';
+import { decodeCoinbaseScriptSig, shapeOf, identifyPool, literalSignature, POOL_SIGNATURES } from './coinbase-fields.mjs';
 
 const ESPLORA_MIRRORS = (process.env.SURVEY_ESPLORA || '')
   .split(',').map((s) => s.trim().replace(/\/$/, '')).filter(Boolean);
@@ -41,7 +41,9 @@ if (!ESPLORA_MIRRORS.length) {
 }
 
 // mempool's pool list -- the same table the explorers identify blocks with,
-// fetched rather than vendored so a new pool needs no edit here.
+// fetched rather than vendored, and used to widen the book's own signatures
+// (web/btc-pools.js) rather than to replace them: the book's patterns know
+// where a tag ends, a substring only knows that one occurred.
 const POOLS_URL = 'https://raw.githubusercontent.com/mempool/mining-pools/master/pools-v2.json';
 
 async function esplora(path, kind = 'text') {
@@ -65,21 +67,19 @@ async function loadPools() {
     if (!res.ok) throw new Error(String(res.status));
     const raw = await res.json();
     const list = Array.isArray(raw) ? raw : (raw.pools || Object.values(raw));
-    const pools = list
-      .filter((p) => p && p.name)
-      .map((p) => ({ name: p.name, tags: p.tags || p.regexes || [] }));
-    if (!pools.length) return { pools: FALLBACK_POOL_TAGS, source: 'built-in' };
-    // The fetched table names the pools the explorers name; the fallback also
-    // names the template builders that sign a block without being a pool at
-    // all (ckpool signs for whoever runs it). Keep both, the fetched entry
-    // winning where the two share a name.
-    const named = new Set(pools.map((p) => p.name));
+    const fetched = list
+      .filter((p) => p && p.name && (p.tags || p.regexes || []).length)
+      .map((p) => literalSignature(p.name, p.tags || p.regexes, p.link || null));
+    if (!fetched.length) return { pools: POOL_SIGNATURES, source: "the book's own table" };
+    // The book's signatures first -- they are the ones that know where a tag
+    // ends -- then every pool the fetched list names that the book does not.
+    const known = new Set(POOL_SIGNATURES.map((p) => p.name.toLowerCase()));
     return {
-      pools: [...pools, ...FALLBACK_POOL_TAGS.filter((p) => !named.has(p.name))],
-      source: POOLS_URL,
+      pools: [...POOL_SIGNATURES, ...fetched.filter((p) => !known.has(p.name.toLowerCase()))],
+      source: `the book's own table + ${POOLS_URL}`,
     };
   } catch {
-    return { pools: FALLBACK_POOL_TAGS, source: 'built-in (pool list unreachable)' };
+    return { pools: POOL_SIGNATURES, source: "the book's own table (pool list unreachable)" };
   }
 }
 
@@ -125,15 +125,15 @@ async function sampleRange(heights, concurrency = 4, log = () => {}) {
 // The readings, grouped by the pool that signed them and then by shape. A pool
 // with one shape has one template builder; a pool with several is either
 // rolling a change or running more than one.
-export function analyse(samples, pools = FALLBACK_POOL_TAGS, { now = null } = {}) {
+export function analyse(samples, pools = POOL_SIGNATURES, { now = null } = {}) {
   const byPool = new Map();
   const readings = [];
   for (const s of samples) {
     const decoded = decodeCoinbaseScriptSig(s.scriptsig, { height: s.height, now });
     const who = identifyPool(decoded, pools);
-    const name = who ? who.name : 'unidentified';
+    const name = who ? who.pool : 'unidentified';
     const shape = shapeOf(decoded);
-    readings.push({ height: s.height, pool: name, tag: who ? who.tag : null, shape, decoded });
+    readings.push({ height: s.height, pool: name, tag: who ? who.text : null, shape, decoded });
 
     if (!byPool.has(name)) {
       byPool.set(name, {

@@ -26,6 +26,7 @@
 
 import { splitReadableRuns } from '../web/btc-tx.js';
 import { plausibleBlockTime } from '../web/btc-chaintime.js';
+import { POOL_SIGNATURES, poolOf } from '../web/btc-pools.js';
 
 const hexToBytes = (hex) => Uint8Array.from(hex.match(/../g) || [], (b) => parseInt(b, 16));
 
@@ -265,50 +266,25 @@ export function shapeOf(decoded) {
 
 // ─── who wrote it ──────────────────────────────────────────────────────
 //
-// A pool is identified by a string it chose to write, which is a claim and not
-// a fact: tags are unauthenticated, copyable, and occasionally borrowed. The
-// survey reports them as what they are -- what the coinbase says about itself.
-// The full list lives in mempool's pools-v2.json, fetched at run time; this is
-// the fallback, the pools that carried most of the hashrate when it was
-// written, so the tool still says something useful offline.
-export const FALLBACK_POOL_TAGS = [
-  { name: 'Foundry USA', tags: ['/Foundry USA Pool', 'Foundry USA Pool', '/2cDw/'] },
-  { name: 'AntPool', tags: ['/AntPool/', 'Mined by AntPool', 'Mined By AntPool'] },
-  { name: 'ViaBTC', tags: ['/ViaBTC/', 'viabtc.com deploy'] },
-  { name: 'F2Pool', tags: ['/F2Pool/', 'F2Pool', '七彩神仙鱼', '🐟'] },
-  { name: 'MARA Pool', tags: ['MARA Pool', 'MARA Made in USA'] },
-  { name: 'SpiderPool', tags: ['SpiderPool'] },
-  { name: 'Luxor', tags: ['/LUXOR/', 'Luxor Tech'] },
-  { name: 'SECPOOL', tags: ['SecPool'] },
-  { name: 'Binance Pool', tags: ['/Binance/', 'binance'] },
-  { name: 'Braiins Pool', tags: ['/slush/'] },
-  { name: 'OCEAN', tags: ['OCEAN.XYZ'] },
-  { name: 'SBI Crypto', tags: ['/SBICrypto.com Pool/', 'SBI Crypto', 'SBICrypto'] },
-  { name: 'ULTIMUSPOOL', tags: ['/ultimus/'] },
-  { name: 'WhitePool', tags: ['WhitePool'] },
-  { name: 'Poolin', tags: ['/poolin.com', '/poolin/'] },
-  { name: 'BTC.com', tags: ['/BTC.COM/', '/BTC.com/', 'btccom'] },
-  { name: 'KuCoinPool', tags: ['KuCoinPool'] },
-  { name: 'Titan', tags: ['Titan.io'] },
-  { name: 'Terra Pool', tags: ['terrapool.io', 'Validated with Clean Energy'] },
-  { name: 'ckpool', tags: ['/ckpool/', 'ckpool'] },
-];
+// The signatures are the book's own table (web/btc-pools.js), so the survey
+// and the page identify a hand the same way and cut a tag at the same byte.
+// What the table says is a claim and not a fact -- tags are unauthenticated,
+// copyable, and occasionally borrowed -- and the survey reports it as what it
+// is: what the coinbase says about itself.
+export { POOL_SIGNATURES } from '../web/btc-pools.js';
 
-// The pool a reading names, by its own tags, or null. Matching is against the
-// readable runs the decoder found rather than the raw hex, so a tag can never
-// be "found" inside a counter that happened to spell it.
-export function identifyPool(decoded, pools = FALLBACK_POOL_TAGS) {
-  const text = decoded.fields.filter((f) => f.kind === 'text').map((f) => f.text).join(' ');
-  if (!text) return null;
-  const hay = text.toLowerCase();
-  let best = null;
-  for (const p of pools) {
-    for (const tag of p.tags || []) {
-      if (!tag) continue;
-      if (hay.includes(String(tag).toLowerCase()) && (!best || tag.length > best.tag.length)) {
-        best = { name: p.name, tag };
-      }
-    }
-  }
-  return best;
+// A tag string from a source that has no patterns of its own (mempool's list)
+// -> the pattern that matches it literally, so a fetched table and the book's
+// own can be searched by one mechanism.
+export const literalSignature = (name, tags, link = null) => ({
+  name,
+  link,
+  patterns: tags.filter(Boolean).map((t) => new RegExp(String(t).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i')),
+});
+
+// The pool a reading names, or null: { pool, link, text, start, end }. Matched
+// against the readable runs the decoder found rather than the raw hex, so a
+// signature can never be "found" inside a counter that happened to spell it.
+export function identifyPool(decoded, table = POOL_SIGNATURES) {
+  return poolOf(decoded.fields.filter((f) => f.kind === 'text').map((f) => f.text), table);
 }

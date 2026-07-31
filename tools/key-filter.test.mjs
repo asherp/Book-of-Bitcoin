@@ -106,6 +106,17 @@ test('a coinbase\'s template clock answers to a synthetic mark, since every one 
     new Set(['Τ2026-07-30 16:42', '2026-07-30 16:42 UTC'])));
 });
 
+test('a pool\'s signature answers to a synthetic mark too', () => {
+  // The mark is the quotation itself, and what is inside it is whatever that
+  // pool wrote, so there is no literal to look for: collectMarks adds
+  // 'sig:pool' when it sees the span's class.
+  const marks = new Set(['■960468', '“/Foundry USA Pool #dropgold/”', 'sig:pool']);
+  assert.ok(rowShows(marksOf('“<i>tag</i>”', 'sig:pool'), marks));
+  // A page whose margin nobody signed keeps the row shut, quotations and all:
+  // an OP_RETURN message is a quotation and is not a signature.
+  assert.ok(!rowShows(marksOf('“<i>tag</i>”', 'sig:pool'), new Set(['■960470', '“hello world”'])));
+});
+
 test('the off-chain apparatus follows its table, not the page', () => {
   const ln = new Set(['lightning']);
   assert.ok(rowShows(marksOf('<b>k</b>', 'tpl:lightning'), new Set(), ln));

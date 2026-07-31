@@ -3,9 +3,17 @@
 # How each pool formats its coinbase
 
 Notes on the coinbase input's `scriptSig` — what is rule, what is house
-style, and what of it can honestly be parsed. Written to support
-`tools/coinbase-fields.mjs` (the reader) and `tools/coinbase-survey.mjs`
-(the instrument that samples the chain and checks these claims against it).
+style, and what of it can honestly be parsed. They exist to support three
+things:
+
+- **`web/btc-pools.js`** — the table of pool signatures: what each pool's name
+  looks like in the bytes and, more to the point, exactly where it ends. This
+  is what lets the book quote a pool's own words to their own extent, and name
+  a hand beside the passage without printing the claim inside it.
+- **`tools/coinbase-fields.mjs`** — the reader, which decomposes a `scriptSig`
+  into the fields the rules and the specifications name.
+- **`tools/coinbase-survey.mjs`** — the instrument that samples the chain and
+  checks all of it against what the pools are doing now.
 
 Every claim below carries where it came from:
 
@@ -203,20 +211,62 @@ The magic must be the end of `coinbase_tx_head` and must not appear earlier.
 Four printable bytes is a short magic, so a reader has to check that what
 follows is dense rather than more writing — the survey's reader does.
 
-## Who wrote it
+## The table of signatures
 
-Pool identification is by tag: mempool's
-[`pools-v2.json`](https://github.com/mempool/mining-pools) lists ~171 pools,
-each with the substrings its coinbases carry — `/AntPool/`, `/ViaBTC/`,
-`Foundry USA Pool`, `/F2Pool/`, `MARA Made in USA`, `/SBICrypto.com Pool/`,
-`/slush/`, `OCEAN.XYZ`, and so on. The survey fetches that list at run time and
-falls back to a built-in subset.
+`web/btc-pools.js`. Each entry is a pool, the patterns its signature takes
+(most specific first), and what is known about where that signature sits.
 
-Two cautions, both of which the book's own preface already insists on. A tag is
-**a claim, not a fact**: it is unauthenticated, trivially copyable, and pools
-have worn each other's. And identification by tag is commentary about the
-record, not the record — which is why none of this changes a passage, and why
-the survey reports what a coinbase *says about itself* rather than who mined it.
+| pool | signature | layout |
+|---|---|---|
+| Foundry USA | `/Foundry USA Pool #dropgold/` | height · counter · signature · bytes **[observed]** |
+| AntPool | `Mined by AntPool`, `/AntPool/` | height · bytes · signature · bytes **[observed]** |
+| F2Pool | `🐟…/F2Pool/`, `/F2Pool/`, `七彩神仙鱼` | height · bytes · signature · bytes **[observed]** |
+| SECPOOL | `Mined by Secpool` | height · bytes · signature · bytes **[observed]** |
+| MARA Pool | `\| MARA Made in USA …\|v05`, `MARA Pool` | height · **template timestamp** · signature · bytes **[observed]** |
+| ViaBTC | `/ViaBTC/Mined by <account>/`, `/ViaBTC/` | height · counter · signature · bytes |
+| Braiins Pool | `/slush/` | height · counter · signature (ckpool) **[source]** |
+| ckpool | `/ckpool/` | height · counter · signature **[source]** |
+| OCEAN | `OCEAN.XYZ` | height · signature · miner's own tag · counter (DATUM) **[source]** |
+| BTC.com | `/BTC.COM/` | height · timestamp · signature · … (btcpool) **[source]** |
+
+…plus SpiderPool, Luxor, Binance, SBI Crypto, Poolin, ULTIMUSPOOL, WhitePool,
+KuCoinPool, Titan, Terra Pool and Bitfury, whose signatures are recorded but
+whose layouts are still owed a sample.
+
+**A signature is a pattern, not a string**, because pools write around their
+own names: MARA appends a version, ViaBTC embeds the miner's account, F2Pool
+pads with spaces and follows the tag with a character that changes every block.
+The pattern's whole job is to cover what the pool wrote and stop there. Where
+the boundary is genuinely unknown — the digits after AntPool's name could be
+the pool's or the counter's — the pattern claims only the part that is certain.
+Under-claiming costs a few bytes their quotation marks; over-claiming puts
+words in a pool's mouth.
+
+### The two things the table buys, which are different in kind
+
+**A parse.** Where the signature ends is a fact about the bytes, and without it
+the book quotes whatever printable run it finds — so a counter byte leaning on
+a tag reads as the pool's punctuation. That is the backtick in block 960,468's
+`“/Foundry USA Pool #dropgold/\`”`, AntPool's `960x`, F2Pool's trailing `f`.
+With the table the quotation closes where the pool closed it and the leaning
+bytes rejoin the counter they came from. Nothing about that is a claim.
+
+**An identification.** That `/Foundry USA Pool #dropgold/` is in the coinbase
+is the record; that Foundry mined the block is an inference from an
+unauthenticated string anyone can copy. So the passage prints the signature and
+the name rides the mark — in the hover, and in `signature: { pool, link, text }`
+on the composed input field, where the annotation layer, a running head or the
+reply bot can say it out loud and a reader can weigh it. The record and the
+readings of it in different registers, which is the book's own argument applied
+to its own margin.
+
+Provenance: the tags as they sit on the chain (blocks 960,463–469 read
+directly), cross-checked against mempool's
+[`pools-v2.json`](https://github.com/mempool/mining-pools), which lists ~171
+pools. Hand-authored rather than vendored — a name a pool writes into a block
+is a fact off a public ledger, and which bytes belong to it is the book's own
+reading. The survey still fetches mempool's list at run time and uses it to
+widen identification to pools the table does not carry.
 
 The other axis explorers use is the coinbase payout address, which is why
 `pools-v2.json` carries addresses alongside tags. Under DATUM that axis breaks
@@ -300,11 +350,11 @@ tag the chain is known to carry survives it — `/F2Pool/`, `/slush/`,
 `/2cDw/`) now reads as prose instead. Nothing is lost by that: the bytes still
 print, in the register the book keeps for bytes nobody can read.
 
-What it does not fix is the backtick. That byte sits inside a run that *is*
-writing, and telling it from the tag's own final slash would take a table of
-pool signatures — attribution, not reading, and the book does not keep one.
-A quotation may still carry a character or two of counter at its edge; it can
-no longer be conjured out of counter alone.
+What the word test does not fix is the backtick: that byte sits inside a run
+that *is* writing, and telling it from the tag's own final slash takes knowing
+where Foundry's signature ends. Which is what the table above is for, and what
+it now does — the two corrections meet there. The word test decides whether a
+run may be quoted at all; the signature decides where the quotation closes.
 
 ### What changed
 
@@ -325,6 +375,12 @@ no longer be conjured out of counter alone.
   caller asking what is merely legible rather than what was written).
 - `web/btc-notation.js` — the ■ row said the margin is "quoted where it is
   legible", which was the whole mistake in four words.
+- `web/btc-pools.js` — the signature table, `findSignature`, `splitOnSignature`
+  and `poolOf`; `web/btc-prose.js` cuts each readable run at the signature
+  inside it and marks the quotation `.pool-sig`; the key gains a row for it and
+  the filter a `sig:pool` token; `tools/coinbase-fields.mjs` and the survey
+  identify by the same table, so the page and the instrument can never cut a
+  tag at different bytes.
 
 The rest of what the survey can find belongs where it is. The book stops reading
 opcodes at the height mark deliberately, and none of the above is a reason to

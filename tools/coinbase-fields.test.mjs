@@ -16,7 +16,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-  decodeCoinbaseScriptSig, readHeightPush, findCommitments, shapeOf, identifyPool,
+  decodeCoinbaseScriptSig, readHeightPush, findCommitments, shapeOf, identifyPool, literalSignature,
   CB_SCRIPTSIG_MAX,
 } from './coinbase-fields.mjs';
 
@@ -137,15 +137,24 @@ test('a misaligned magic is not a magic', () => {
 });
 
 test('a pool is identified by what it wrote, not by bytes that spell it', () => {
-  const pools = [{ name: 'ViaBTC', tags: ['/ViaBTC/'] }, { name: 'F2Pool', tags: ['/F2Pool/'] }];
+  // The book's own table, which is what the page reads by (web/btc-pools.js):
+  // one table, so the survey and the passage name the same hand and cut the
+  // signature at the same byte.
   const tagged = decodeCoinbaseScriptSig(HEIGHT_PUSH + utf8Hex('/ViaBTC/Mined by someone/'));
-  assert.equal(identifyPool(tagged, pools).name, 'ViaBTC');
+  const who = identifyPool(tagged);
+  assert.equal(who.pool, 'ViaBTC');
+  assert.equal(who.text, '/ViaBTC/Mined by someone/', 'the signature to its exact extent');
 
   // The same characters buried in a run too short to be text stay bytes, and a
   // pool is not named by them.
   const buried = decodeCoinbaseScriptSig(HEIGHT_PUSH + '00' + utf8Hex('/Via') + '00');
-  assert.equal(identifyPool(buried, pools), null);
-  assert.equal(identifyPool(decodeCoinbaseScriptSig(HEIGHT_PUSH), pools), null);
+  assert.equal(identifyPool(buried), null);
+  assert.equal(identifyPool(decodeCoinbaseScriptSig(HEIGHT_PUSH)), null);
+
+  // A table can be handed in -- mempool's list arrives as literal strings and
+  // is converted to patterns by the survey -- and it answers the same way.
+  const borrowed = [literalSignature('Someone Else', ['/ViaBTC/'])];
+  assert.equal(identifyPool(tagged, borrowed).pool, 'Someone Else');
 });
 
 test('the reading reports the bounds it was read under', () => {
