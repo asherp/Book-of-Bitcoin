@@ -64,16 +64,31 @@ export function collectMarks(root) {
 
 // What a key row teaches, read off the row's own glyph cell.
 //
-// A mark written bare -- × in "+ − × ÷ %" -- must be matched exactly: the
-// chapter head prints 213529×256²⁰, and a loose × would drag the arithmetic
-// group onto every chapter page. A mark written with a placeholder after it --
-// ■<i>n</i>, β<i>n</i>, η<sub><i>n</i></sub> -- carries a value on the page and
-// is matched as a prefix instead, so ■ finds ■840000 and β finds both β₇₈ and
-// the locktime's III β2 ■5.
+// A mark written bare -- × in "+ − × ÷ %" -- must be matched exactly, so that
+// a number containing one (a difficulty move of −2.53%) cannot drag the
+// arithmetic group onto a page that holds no arithmetic. A mark written with a
+// placeholder after it -- ■<i>n</i>, β<i>n</i>, η<sub><i>n</i></sub> -- carries
+// a value on the page and is matched as a prefix instead, so ■ finds ■840000
+// and β finds both β₇₈ and the locktime's III β2 ■5.
 //
 // Rows whose glyph cell is an example rather than a literal (²⁰ standing for
 // any push, ①–⑯ for a run) say so with data-marks, where a trailing * asks for
 // the same prefix match, and tpl:<id> ties a row to a pattern table instead.
+//
+// One mark in the book is a shape and not a string at all: the difficulty
+// target, printed as its prime factorization (2¹⁶⁰·213529), whose primes are
+// whatever the last retarget left. Nothing in it is fixed enough to look for
+// -- so that row names re:<pattern> instead, and is shown where the page
+// prints something of that form.
+//
+// What never varies is the scale of the power of two a target opens with: the
+// byte shift alone puts it past 2¹⁰⁰, so the pattern asks for a digit under a
+// power of two or more figures. The nonces are products in the same notation
+// and would otherwise answer for the target's row -- but a counter divisible
+// by a tenth power is a rarity (about one in a thousand, nearly always 2¹⁰),
+// so a post-BIP34 coinbase, which prints an extranonce and no target at all,
+// keeps the row shut. When one does slip through, the filter has erred toward
+// showing, which is the direction it is built to err in.
 // Pure string work, so it is testable without a DOM.
 
 // Stands in for a placeholder while tokenizing; never appears in real markup.
@@ -82,6 +97,7 @@ export function marksOf(glyphHtml, dataMarks = null) {
   if (dataMarks) {
     return dataMarks.split(/\s+/).filter(Boolean).map((t) => {
       if (t.startsWith('tpl:')) return { template: t.slice(4) };
+      if (t.startsWith('re:')) return { pattern: new RegExp(t.slice(3)) };
       return t.endsWith('*') ? { text: t.slice(0, -1), loose: true } : { text: t, loose: false };
     });
   }
@@ -96,12 +112,13 @@ export function marksOf(glyphHtml, dataMarks = null) {
   }).filter(Boolean);
 }
 
-// Does the page show any mark this row teaches -- or, for the off-chain
-// apparatus no page ever prints (k, G, a channel's state-scoped keys), does it
-// carry the template that row belongs to?
+// Does the page show any mark this row teaches -- in its own form, or, for the
+// off-chain apparatus no page ever prints (k, G, a channel's state-scoped
+// keys), by carrying the template that row belongs to?
 export function rowShows(tokens, marks, templates = new Set()) {
-  return tokens.some(({ text, loose, template }) => {
+  return tokens.some(({ text, loose, template, pattern }) => {
     if (template !== undefined) return templates.has(template);
+    if (pattern !== undefined) return [...marks].some((m) => pattern.test(m));
     return loose ? [...marks].some((m) => m.includes(text)) : marks.has(text);
   });
 }
