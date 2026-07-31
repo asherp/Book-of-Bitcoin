@@ -118,7 +118,11 @@ export { toSuperscript };
 // and the difficulty ratio all ride in the hover title. A target looser
 // than the genesis baseline (never on mainnet) falls back to the raw
 // compact hex, with no expression.
-function bitsInfo(bits) {
+// Exported because a book leaf renders targets that are not its own block's:
+// a book from Volume II on straddles a retarget and states both of them, and
+// the second comes from the retarget block's nBits alone, with no header of
+// its own parsed. composeBlockHeaderFields below is the header-shaped caller.
+export function bitsInfo(bits) {
   const targetHex = bitsToTargetHex(bits);
   const difficulty = bitsToDifficulty(bits);
   const diffStr = difficulty.toLocaleString(undefined, { maximumFractionDigits: difficulty < 1000 ? 2 : 0 });

@@ -11,6 +11,12 @@
 // difficulty periods -- the last book of every era is a shorter, truncated
 // one (336 blocks instead of 2016).
 //
+// So a book coincides with a real retarget window only in Volume I. Each era
+// after that opens 336 blocks further into a live window (336, 672, 1008,
+// 1344, 1680), and a book of 2016 blocks straddles a retarget rather than
+// naming one. The grids realign at Volume VII: 6 * 210000 = 1260000 = 625
+// windows exactly. See web/preface.md, "Why it is arranged this way".
+//
 // Used by bitcoin-book.html to place each block within the volume/book/chapter
 // scheme.
 
@@ -39,6 +45,28 @@ export function volumeBookChapter(height) {
     chapter: height - bookStart + 1,
     chapterCount: bookLength,
   };
+}
+
+// The start of the real difficulty window a height sits in -- the retarget
+// grid, which runs on from the genesis block and knows nothing about the
+// halvings the book grid restarts at.
+export const windowStartOf = (height) => height - (height % DIFFICULTY_BLOCKS);
+
+// The one retarget a book can contain: the height inside it where a second
+// difficulty target binds, or null where the book is a whole window and was
+// mined under one target throughout.
+//
+// Never more than one. A retarget falls every 2,016 blocks and a book is at
+// most 2,016 blocks, so at most one boundary can land strictly inside -- a
+// book states two targets or one, never three. It is null for the whole of
+// Volume I, whose books open on retargets, and for every volume's truncated
+// last book: those 336 blocks begin at most 1,680 into a window, so they stop
+// exactly at the next boundary at the latest, never past it.
+export function retargetInside(start, chapterCount) {
+  const offset = start % DIFFICULTY_BLOCKS;
+  if (offset === 0) return null;
+  const cut = start + (DIFFICULTY_BLOCKS - offset);
+  return cut <= start + chapterCount - 1 ? cut : null;
 }
 
 // A volume number as a Roman numeral (the book cites volumes in Roman).

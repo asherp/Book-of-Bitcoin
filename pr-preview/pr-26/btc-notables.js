@@ -154,6 +154,10 @@ function normalizePart(raw, i) {
   }
   const part = { kind, title };
   if (raw.note) part.note = String(raw.note);
+  // A part may carry readings like an entry: not of one passage but of what the
+  // whole part gathers -- what a queue is, what a timestamp proves. Appendix
+  // IV's leaves raise them beside each file's own.
+  withCommentary(part, raw);
   // A proofs entry names files, not places: an .ots proof shipped in proofs/,
   // and the file it stamps where that file is small enough to ship beside it.
   // Nothing is cited here -- the chapter, the section and the merkle root come

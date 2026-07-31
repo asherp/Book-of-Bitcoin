@@ -2,10 +2,25 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>The βook of βitcoin — A timestamped file</title>
-<meta name="description" content="One file's OpenTimestamps proof, read a rung at a time: the digest, the transaction it was committed in, and every level of the merkle path, each set as Glossia prose, ending at the root a block header commits to.">
+<meta name="description" content="One file's OpenTimestamps proof, written out as prose: the file's digest, then every value the proof passes through, ending on the merkle root a block header commits to. The parts that are on chain carry their citation in the margin.">
 <link rel="icon" type="image/png" sizes="32x32" href="./icons/beta-icon-32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="./icons/beta-icon-16.png">
 <link rel="icon" href="./icons/beta-icon.svg" type="image/svg+xml">
+
+<!-- Social / rich unfurl -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="The βook of βitcoin">
+<meta property="og:title" content="The βook of βitcoin — A cited work">
+<meta property="og:description" content="One document's OpenTimestamps proof, written out as prose: its digest, then every value the proof passes through, ending on the merkle root a block header commits to.">
+<meta property="og:url" content="https://bookofbitcoin.io/bitcoin-proof.html">
+<meta property="og:image" content="https://bookofbitcoin.io/og-bookofbitcoin.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="The βook of βitcoin — the illuminated timechain. A gold β standing beside the book's title on a dark cover.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="The βook of βitcoin — A cited work">
+<meta name="twitter:description" content="A document's timestamp proof, written out as prose — ending on the merkle root a block header commits to.">
+<meta name="twitter:image" content="https://bookofbitcoin.io/og-bookofbitcoin.png">
 
 <!-- PWA: installable, offline-capable app shell. Shares the Bitcoin book's
      gold-β manifest so every page installs as one "Bitcoin Book" app. -->
@@ -22,6 +37,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,400&family=IBM+Plex+Mono:wght@400;500;600&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="./btc-chrome.css">
+<link rel="stylesheet" href="./commentary.css">
 <style>
 :root {
   --page:#08080a; --card:#0d0d10; --card-bd:#232228; --ink:#e8e4da; --ink-soft:#cfcabf;
@@ -31,67 +47,58 @@
 * { box-sizing: border-box; }
 html, body { margin: 0; }
 body { min-height: 100vh; background: var(--page); color: var(--ink); font-family: 'Public Sans', system-ui, sans-serif; line-height: 1.55; }
-.wrap { max-width: 720px; margin: 0 auto; padding: 48px 22px 100px; }
+.wrap { max-width: 760px; margin: 0 auto; padding: 48px 22px 100px; }
 a { color: var(--accent); text-decoration: none; }
 a:hover { text-decoration: underline; }
-.mono { font-family: 'IBM Plex Mono', monospace; }
 .hidden { display: none !important; }
 
-/* The head: the file's own name as the title, because the file is what this
-   leaf is about -- the one thing on the page that is not the chain's. Beneath
-   it the citation its proof lands on, which is a door into the book. */
-.page-head { text-align:center; padding:8px 0 26px; margin-bottom:22px; border-bottom:1px solid var(--rule); }
+/* The front matter: the file's name, the name the appendix gave it, and the
+   file's digest set as prose -- which is the whole of what the chain was ever
+   told about it, and the value every paragraph below descends from. */
+.page-head { padding:8px 0 26px; margin-bottom:30px; border-bottom:1px solid var(--rule); text-align:center; }
 .leaf-title { margin:0; font:300 clamp(24px,6vw,36px)/1.2 'IBM Plex Mono',monospace; color:var(--ink); word-break:break-all; }
-.leaf-cite { margin-top:12px; font:500 13px/1.5 'IBM Plex Mono',monospace; letter-spacing:.04em; }
-.leaf-note { max-width:56ch; margin:20px auto 0; font:400 15px/1.7 'Newsreader',serif; color:var(--ink-soft); }
-
-h2.movement {
-  margin:38px 0 6px; font:600 10px/1.6 'IBM Plex Mono',monospace; letter-spacing:.16em;
-  text-transform:uppercase; color:var(--meta);
-}
-.movement-note { margin:0 0 16px; font:400 13.5px/1.6 'Newsreader',serif; color:var(--dim); }
-
-/* The file is NOT here. It is not on the chain, it is not in this book, and
-   nothing on this page is a copy of it -- which is the whole point of
-   timestamping this way. So the leaf shows its name and offers to open the
-   reader's own copy, in their own file dialogue, and check it: the bytes never
-   leave the machine, exactly as they never left it when the proof was made. */
-.subject-line { display:flex; flex-wrap:wrap; align-items:center; gap:14px; padding:12px 16px;
-  border-left:2px solid var(--card-bd); background:var(--card); }
-.subject-name { flex:1; min-width:0; font:400 14.5px/1.5 'Newsreader',serif; color:var(--ink-soft); }
 .leaf-named { margin-top:10px; font:400 17px/1.35 'Newsreader',serif; color:var(--dim); }
+.leaf-digest { max-width:56ch; margin:22px auto 0; text-align:left; }
+.leaf-open { margin-top:20px; }
 .ghost {
   background:none; color:var(--accent); border:1px solid var(--input-bd); border-radius:4px;
-  padding:8px 14px; font:600 11px/1 'IBM Plex Mono',monospace; letter-spacing:.04em;
-  text-transform:uppercase; cursor:pointer; white-space:nowrap;
+  padding:7px 14px; font:600 10.5px/1 'IBM Plex Mono',monospace; letter-spacing:.05em;
+  text-transform:uppercase; cursor:pointer;
 }
 .ghost:hover { border-color:var(--accent); color:var(--accent-2); }
-.subject-meta { margin:10px 2px 0; font:400 13.5px/1.6 'Newsreader',serif; color:var(--dim); }
-.subject-meta.good { color:var(--ink); }
-.subject-meta.bad { color:#e08b7a; }
+.leaf-check { margin-top:12px; font:500 12px/1.5 'IBM Plex Mono',monospace; color:var(--meta); }
+.leaf-check.good { color:var(--accent); }
+.leaf-check.bad { color:#e08b7a; }
 
-/* One rung. The mark and its count lead, the prose follows, and every rung
-   that is a merkle level says which child it was -- which is the bit of the
-   §section's number this level contributed. */
-.rung { padding:14px 2px; border-bottom:1px solid var(--hair); }
-.rung.is-root { border-bottom:none; }
-.rung-head { display:flex; align-items:baseline; gap:12px; font:500 10.5px/1.7 'IBM Plex Mono',monospace;
-  letter-spacing:.06em; text-transform:uppercase; color:var(--meta); }
-.rung-head .side { color:var(--dim); text-transform:none; letter-spacing:0; font-size:11px; }
-.rung-figure { margin-top:6px; }
+/* One paragraph of the proof, with the book's own margin beside it: a
+   left-hand column for the citation, right-aligned to the gutter, and the
+   prose in the body. Only the paragraphs that are ON CHAIN carry one -- the
+   transaction the commitment sits in, down to the output holding it, and the
+   root the block header commits to. The rest are values that exist only while
+   the proof is being replayed, and nothing in the book can cite them. */
+.para { display:grid; grid-template-columns: fit-content(13ch) minmax(0,1fr); column-gap:1.3em;
+  align-items:baseline; padding:11px 0; }
+.para + .para { border-top:1px solid var(--hair); }
+.marg { grid-column:1; text-align:right; font:500 11.5px/1.5 'IBM Plex Mono',monospace;
+  color:var(--accent); white-space:nowrap; }
+.marg a { color:var(--accent); }
+.marg .mark { display:block; font-size:11px; color:var(--meta); }
+.marg .mark.bad { color:#e08b7a; }
+.body { grid-column:2; min-width:0; }
 .dt, .merkle-mark { color:var(--accent); font-weight:700; font-style:normal; }
 .op-count { color:var(--meta); font-size:.85em; }
 .prose { font:italic 400 15px/1.6 'Newsreader',serif; color:var(--ink-soft); }
 .prose.waiting { color:var(--meta); font-style:normal; font-family:'IBM Plex Mono',monospace; font-size:13px; }
-.sibling { margin-top:10px; }
-.sibling .prose { color:var(--dim); font-size:14px; }
-.sibling-label { font:500 10.5px/1.7 'IBM Plex Mono',monospace; letter-spacing:.06em; text-transform:uppercase; color:var(--meta); }
-.rung.is-root .prose { color:var(--ink); }
+/* A sibling is another passage's hash, carried by the proof and belonging to
+   no one here: set a shade back, so a column of paragraphs reads as the
+   alternation it is. */
+.para.sibling .prose { color:var(--dim); font-size:14px; }
+@media (max-width: 560px) {
+  .para { grid-template-columns: 1fr; }
+  .marg { grid-column:1; text-align:left; margin-bottom:4px; }
+  .body { grid-column:1; }
+}
 
-.verdict { margin-top:26px; padding-top:18px; border-top:1px solid var(--rule); font:400 15px/1.6 'Newsreader',serif; }
-.verdict.good { color:var(--ink); }
-.verdict.bad { color:#e08b7a; }
-.verdict.unsure { color:var(--dim); }
 .leaf-turns { display:flex; flex-wrap:wrap; gap:10px 26px; margin-top:44px; padding-top:18px; border-top:1px solid var(--rule);
   font:600 10px/1.5 'IBM Plex Mono',monospace; letter-spacing:.14em; text-transform:uppercase; }
 .leaf-turns a { color:var(--meta); }
@@ -106,86 +113,70 @@ h2.movement {
 
   <header class="page-head">
     <h1 class="leaf-title" id="leaf-title">…</h1>
-    <div class="leaf-cite" id="leaf-cite"></div>
-  </header>
-
-  <p class="leaf-note" id="leaf-note"></p>
-
-  <section id="subject-part">
-    <h2 class="movement">The file</h2>
-    <p class="movement-note" id="subject-note"></p>
-    <div class="subject-line">
-      <span class="subject-name" id="subject-name"></span>
-      <button type="button" class="ghost" id="subject-open">Open…</button>
+    <div class="leaf-digest" id="leaf-digest"></div>
+    <div class="leaf-open hidden" id="leaf-open">
+      <button type="button" class="ghost" id="subject-open">Check a copy…</button>
       <input type="file" id="subject-file" hidden>
     </div>
-    <div class="subject-meta" id="subject-meta"></div>
-  </section>
+    <div class="leaf-check" id="leaf-check"></div>
+  </header>
 
-  <section id="ladder-part">
-    <h2 class="movement">The proof</h2>
-    <p class="movement-note" id="ladder-note"></p>
-    <div id="ladder"></div>
-  </section>
+  <div id="proof"></div>
 
-  <div class="verdict unsure" id="verdict"></div>
+  <!-- The reading of this page, kept where every other reading is kept: behind
+       a toggle, over the record rather than in it, signed by whoever wrote it.
+       The leaf itself says nothing about what a proof is -- that is a reading,
+       and readings carry names. -->
+  <details class="leaf-commentary hidden" id="commentary">
+    <summary title="A reading of this proof — editorial, and kept apart from the record above it">Commentary</summary>
+    <div class="commentary-body" id="commentary-body"></div>
+  </details>
+
   <nav class="leaf-turns" id="leaf-turns"></nav>
 </div>
 
 <script type="module">
-// ── One timestamped file, and the argument its proof makes ────────────────
+// ── One timestamped file, written out ─────────────────────────────────────
 //
-// Appendix IV lists files; this is where one of them is read. A proof is a
-// straight line of operations from a file's digest to the merkle root of a
-// block, and every value along that line is 32 bytes of hash -- which is to
-// say every value along it is a passage the book can set in words. So the
-// proof is laid out as a ladder and each rung is Glossia prose: the digest,
-// the commitment, the transaction it was buried in, then one rung per level of
-// the tree, the sibling beside each, until the last rung is the root the
-// chapter's own header commits to.
+// The front matter is the file: its name, and its digest as prose -- the whole
+// of what the chain was ever told about it. Below that the proof itself,
+// paragraph by paragraph, each one a value the last one hashes into, ending on
+// the merkle root.
 //
-// The file itself is not shown, and is not here to show: it never touched the
-// chain and never entered this book. Only its name is known. What the leaf
-// offers instead is a door -- open your own copy, in your own file dialogue,
-// and the digest is taken in the browser and compared to the one the proof
-// commits to. Nothing is uploaded, which is the same promise OpenTimestamps
-// made when the proof was created: the chain was told a digest, and nothing
-// else. The name comes first all the same, because that is the order the
-// argument runs in: this file, therefore this digest, therefore this
-// transaction, therefore this root, therefore this chapter.
+// The margin carries a citation wherever the paragraph beside it is ON CHAIN,
+// and only there: the transaction the commitment was buried in, cited down to
+// the output holding it (§section.out, the finest address the scheme reaches),
+// and the root, cited to the chapter whose header commits to it. Everything
+// between them exists only while the proof is being replayed -- real, checkable,
+// and nowhere in the book, so its margin stays empty. That empty margin is the
+// page's argument: a proof is mostly arithmetic, and touches the chain twice.
 import { loadNotables, appendix } from './btc-contents.js';
 await loadNotables();
-import { proofByDigest, ladderOf, citeOf, hrefOf, attests } from './btc-proofs.js';
+import { proofByDigest, ladderOf, citeOf, attests } from './btc-proofs.js';
+import { readingsOf, resolveCommentary, commentaryHtml } from './btc-commentary.js';
+import { reference, latinRefOf, toRoman } from './btc-citation.js';
 import { blockAt } from './btc-index.js';
 import { toSuperscript } from './btc-sigla.js';
 
 const $ = (id) => document.getElementById(id);
-const params = new URLSearchParams(location.search);
-const part = appendix().find((p) => p.kind === 'proofs');
 const BEST_OF = 5;
 const reverseHex = (hex) => (hex.match(/../g) || []).reverse().join('');
-
-// The engine is fetched once there is prose to set -- this leaf is nothing but
-// prose, so it is fetched at once rather than lazily, but still dynamically:
-// a checkout without the artifact should show the ladder in marks and counts
-// rather than fail to load at all.
 let engine = null;
 const glossia = () => (engine ||= import('./glossia-msg.js').then(async (m) => { await m.init(); return m; }));
 
-const proof = await proofByDigest(params.get('digest') || '', part);
+const part = appendix().find((p) => p.kind === 'proofs');
+// The appendix's own number and name, so a rename in appendix.yaml reaches
+// every page that points back at it.
+const partLabel = part ? `Appendix ${toRoman(appendix().indexOf(part) + 1)} · ${part.title}` : 'the appendix';
+const proof = await proofByDigest(new URLSearchParams(location.search).get('digest') || '', part);
 if (!proof) {
   $('leaf-title').textContent = 'Not in this appendix';
-  $('leaf-note').textContent = 'No timestamped file here answers to that digest. Appendix IV lists the ones the book ships with and the ones you have kept; a proof dropped at the foot of its leaf joins them.';
-  $('ladder-part').classList.add('hidden');
+  turn('./bitcoin-appendix.html?part=proofs', `‹ ${partLabel}`);
 } else {
   render(proof);
 }
 
-async function render(proof) {
-  // The title is the file's name -- not the proof's, not the citation's, and
-  // not the name the appendix gave it. The file is what this leaf is about,
-  // and its name is the only thing about it the book actually holds. An
-  // editorial name, where the appendix gave one, rides beneath as a subtitle.
+function render(proof) {
   document.title = `The βook of βitcoin — ${proof.file}`;
   $('leaf-title').textContent = proof.file;
   if (proof.title && proof.title !== proof.file) {
@@ -194,123 +185,71 @@ async function render(proof) {
     named.textContent = proof.title;
     $('leaf-title').after(named);
   }
-  const cite = citeOf(proof.place);
-  const link = document.createElement('a');
-  link.href = hrefOf(proof.place);
-  link.textContent = cite;
-  $('leaf-cite').append(document.createTextNode('stamped into '), link);
-  $('leaf-note').textContent = proof.note
-    || `This file has never been on the chain, and never will be. What is on the chain is the end of the argument below: a ${proof.hash} digest of it, carried up a merkle tree into the root that ${cite}'s header commits to. Read down, each rung is what the rung above it hashes to.`;
 
-  // The file, where the book holds it. A bundled proof ships beside the file
-  // it stamps; a proof a reader dropped does not -- OpenTimestamps never asks
-  // for the file, only its digest, and this book keeps no more than it was
-  // given. That absence is worth saying out loud rather than leaving as a gap.
-  showSubject(proof);
-
-  const rungs = ladderOf(proof.attestation);
-  $('ladder-note').textContent = `${rungs.length + 1} rungs: the file's digest, what was done to commit it, the transaction it was committed in, and ${
-    rungs.filter((r) => r.kind === 'level').length} levels of merkle path — each one pairing what came before with the sibling the proof carries, until the pair hashes to the root.`;
   const cells = [];
-  const ladder = $('ladder');
-  ladder.append(rungEl({ label: `${proof.hash} digest`, note: 'the file named above, hashed — the only thing about it the chain was ever told',
-    hex: proof.digest, mark: 'h', markClass: 'dt', sup: proof.digest.length / 2, reverse: false }, cells));
-  for (const rung of rungs) ladder.append(...rungEls(rung, cells));
+  $('leaf-digest').append(figure(proof.digest, 'h', 'dt', proof.digest.length / 2, false,
+    `${proof.hash} digest of ${proof.file}`, cells));
+  openable(proof);
+
+  const rungs = ladderOf(proof.attestation, proof.digest);
+  const body = $('proof');
+  const section = proof.place.section;
+  for (const rung of rungs) {
+    if (rung.kind === 'level') {
+      body.append(para(figure(rung.sibling, '⋔', 'merkle-mark', 32, true,
+        rung.duplicate ? 'this level had no sibling, so Bitcoin pairs the node with itself'
+          : 'a sibling the proof carries', cells), null, 'sibling'));
+    }
+    const isRoot = !!rung.isRoot;
+    const onChain = rung.kind === 'transaction'
+      ? { href: `./bitcoin-book.html?ref=${latinRefOf(proof.place.height, section, rung.out)}`,
+          text: `${reference(proof.place.height)} §${section}${rung.out == null ? '' : `.${rung.out}`}`,
+          title: rung.out == null ? 'the transaction this commitment was buried in'
+            : `output ${rung.out} of this transaction — the script the commitment sits in` }
+      : isRoot
+        ? { href: `./bitcoin-book.html?ref=${latinRefOf(proof.place.height)}`,
+            text: reference(proof.place.height),
+            title: "the chapter whose header commits to this root" }
+        : null;
+    const mark = isRoot ? '⋔' : rung.kind === 'transaction' ? '⌘' : rung.result.length === 40 ? 'h' : '⌘';
+    const sup = mark === '⌘' ? 256 : rung.result.length / 2;
+    const hex = rung.kind === 'transaction' ? (rung.txid || reverseHex(rung.result)) : rung.result;
+    body.append(para(figure(hex, mark, mark === '⋔' ? 'merkle-mark' : 'dt', sup, true, hex, cells), onChain));
+    if (isRoot) checkRoot(proof, body.lastElementChild);
+  }
   setProse(cells);
 
-  // The last rung is the merkle root, and the root is the one value here the
-  // chain can be asked about. Everything above it is arithmetic anyone can
-  // replay; this is the single question that needs an answer from outside.
-  const block = await blockAt(proof.place.height).catch(() => null);
-  const verdict = $('verdict');
-  if (!block) {
-    verdict.textContent = `The chain could not be reached, so the root at the foot of this ladder is still only what the proof claims. Every rung above it is arithmetic you can replay here; the last one needs ${cite}'s own header to confirm.`;
-  } else if (block.merkleRoot !== proof.place.merkleRoot) {
-    verdict.className = 'verdict bad';
-    verdict.textContent = `The roots differ. ${cite}'s header commits to ${block.merkleRoot}, which is not where this ladder ends — whatever the proof says, it does not commit to that block.`;
-  } else {
-    verdict.className = 'verdict good';
-    const when = new Date(block.timestamp * 1000).toISOString().slice(0, 16).replace('T', ' ');
-    verdict.textContent = `Verified. ${cite}'s header commits to exactly the root this ladder ends on, so these bytes existed by ${when} UTC, when that chapter was mined.`;
-  }
-
-  const turns = $('leaf-turns');
-  const back = document.createElement('a');
-  back.href = './bitcoin-appendix.html?part=proofs';
-  back.textContent = '‹ Appendix IV · Timestamped Files';
-  const on = document.createElement('a');
-  on.href = hrefOf(proof.place);
-  on.textContent = `${cite} ›`;
-  on.style.marginLeft = 'auto';
-  turns.append(back, on);
+  commentary(proof);
+  turn('./bitcoin-appendix.html?part=proofs', `‹ ${partLabel}`);
+  turn(`./bitcoin-book.html?ref=${latinRefOf(proof.place.height, section)}`, `${citeOf(proof.place)} ›`, true);
 }
 
-// The file's own line: its name, and the door to the reader's copy of it. The
-// check is the only thing this leaf can honestly say about a file it does not
-// have -- and it is also the only thing worth saying, since a proof that
-// attests some OTHER file is a proof about nothing you hold.
-function showSubject(proof) {
-  // The name is the page's title; the line beneath it says what opening the
-  // file would settle, so the button has a reason beside it rather than a
-  // repeat of the heading.
-  $('subject-name').textContent = 'Have a copy? Check it against this proof.';
-  $('subject-note').textContent = 'This book does not have this file, and neither does the chain. A timestamp is taken of a digest, never of the bytes — so the file stayed wherever its owner kept it, and still does. If you hold a copy, open it: it is read in this browser, hashed here, and compared to the digest below. Nothing is uploaded.';
-  const input = $('subject-file');
-  const meta = $('subject-meta');
-  $('subject-open').addEventListener('click', () => input.click());
-  input.addEventListener('change', async () => {
-    const file = input.files[0];
-    if (!file) return;
-    meta.className = 'subject-meta';
-    meta.textContent = `Reading ${file.name}…`;
-    try {
-      const bytes = new Uint8Array(await file.arrayBuffer());
-      const matches = await attests(proof, bytes);
-      meta.className = `subject-meta ${matches ? 'good' : 'bad'}`;
-      meta.textContent = matches
-        ? `${file.name} — ${bytes.length} byte${bytes.length === 1 ? '' : 's'}, and its ${proof.hash} digest is exactly the one this proof commits to. The ladder below is about the file you just opened.`
-        : `${file.name} — ${bytes.length} byte${bytes.length === 1 ? '' : 's'}, and its ${proof.hash} digest is NOT the one this proof commits to. Either this is a different file, or it has changed since it was stamped; a single byte is enough.`;
-    } catch {
-      meta.className = 'subject-meta bad';
-      meta.textContent = 'That file could not be read here.';
-    }
-    input.value = '';
-  });
-}
-
-// A rung, as the book sets a hash: its mark, its count, then the figure in
-// words. `cells` collects the figures so the prose can arrive after the shape
-// of the ladder is already on the page -- the levels fill in one at a time,
-// top to bottom, which is the order they were computed in.
-function rungEl({ label, note, side, hex, mark, markClass, sup, reverse, isRoot, sibling }, cells) {
+// One paragraph: the margin, then the body. A paragraph with nothing on chain
+// beside it gets an empty margin cell rather than none, so the column holds.
+function para(fig, onChain, cls = '') {
   const el = document.createElement('div');
-  el.className = 'rung' + (isRoot ? ' is-root' : '');
-  const head = document.createElement('div');
-  head.className = 'rung-head';
-  const l = document.createElement('span'); l.textContent = label;
-  head.append(l);
-  if (side) { const s = document.createElement('span'); s.className = 'side'; s.textContent = side; head.append(s); }
-  el.append(head);
-  if (note) { const n = document.createElement('div'); n.className = 'movement-note'; n.style.margin = '4px 0 0'; n.textContent = note; el.append(n); }
-  if (sibling) {
-    const sib = document.createElement('div');
-    sib.className = 'sibling';
-    const sl = document.createElement('span'); sl.className = 'sibling-label'; sl.textContent = 'paired with';
-    sib.append(sl, document.createElement('br'), figureEl(sibling, cells));
-    el.append(sib);
+  el.className = 'para' + (cls ? ` ${cls}` : '');
+  const marg = document.createElement('div');
+  marg.className = 'marg';
+  if (onChain) {
+    const a = document.createElement('a');
+    a.href = onChain.href; a.textContent = onChain.text; a.title = onChain.title;
+    marg.append(a);
   }
-  const fig = document.createElement('div');
-  fig.className = 'rung-figure';
-  fig.append(figureEl({ hex, mark, markClass, sup, reverse }, cells));
-  el.append(fig);
+  const body = document.createElement('div');
+  body.className = 'body';
+  body.append(fig);
+  el.append(marg, body);
   return el;
 }
 
-function figureEl({ hex, mark, markClass, sup, reverse, title }, cells) {
+// A figure, as the book sets a hash: the mark, its count, then the value in
+// words. The hex rides on the mark, where the book keeps hex.
+function figure(hex, mark, markClass, sup, reverse, title, cells) {
   const wrap = document.createElement('span');
   const m = document.createElement('span');
   m.className = markClass; m.textContent = mark;
-  m.title = `${title || ''}${title ? '\n' : ''}${hex}`;
+  m.title = `${title}\n${hex}`;
   const s = document.createElement('span');
   s.className = 'op-count'; s.textContent = toSuperscript(sup);
   s.title = mark === '⌘' ? `${sup} bits — ⌘'s superscript counts bits` : `${sup} bytes`;
@@ -321,62 +260,100 @@ function figureEl({ hex, mark, markClass, sup, reverse, title }, cells) {
   return wrap;
 }
 
-// One rung of the ladder -> its elements. A merkle level is one rung carrying
-// two figures: the sibling it was paired with, and what the pair hashed to.
-function rungEls(rung, cells) {
-  if (rung.kind === 'commit' || rung.kind === 'step') {
-    return [rungEl({
-      label: rung.op,
-      note: rung.op === 'ripemd160'
-        ? 'the commitment as the older timestamps made it: a hash160, which is where a public key’s hash belongs — so the transaction below reads as an ordinary payment'
-        : 'applied to the rung above',
-      hex: rung.result, mark: 'h', markClass: 'dt', sup: rung.result.length / 2, reverse: false,
-    }, cells)];
-  }
-  if (rung.kind === 'transaction') {
-    return [rungEl({
-      label: 'the transaction',
-      note: `the raw transaction wrapped around that commitment — ${rung.prefix.length / 2} bytes before it and ${rung.suffix.length / 2} after — hashed twice into its txid. This rung is where the file stops being a digest and becomes a passage in the book.`,
-      hex: rung.txid || reverseHex(rung.result), mark: '⌘', markClass: 'dt', sup: 256, reverse: true,
-    }, cells)];
-  }
-  if (rung.kind === 'level') {
-    return [rungEl({
-      label: `merkle level ${rung.level + 1}`,
-      side: rung.duplicate
-        ? 'paired with itself — an odd node at this level, so Bitcoin doubles it'
-        : `the ${rung.side} child, so this level's bit is ${rung.bit}`,
-      sibling: { hex: rung.sibling, mark: '⋔', markClass: 'merkle-mark', sup: 32, reverse: true,
-        title: 'the sibling this proof carries — another passage, or a whole subtree of them' },
-      hex: rung.isRoot ? rung.result : rung.result,
-      mark: rung.isRoot ? '⋔' : '⌘', markClass: rung.isRoot ? 'merkle-mark' : 'dt',
-      sup: rung.isRoot ? 32 : 256, reverse: true,
-      isRoot: rung.isRoot,
-      note: rung.isRoot ? 'and this is the merkle root: the value the chapter’s own header commits to.' : null,
-    }, cells)];
-  }
-  return [];
+// The root is the one value here the chain can be asked about, so the mark
+// under its citation says whether it was: a tick once the header agrees, a
+// cross if it does not, nothing at all while no answer has come back.
+async function checkRoot(proof, paraEl) {
+  const marg = paraEl.querySelector('.marg');
+  const block = await blockAt(proof.place.height).catch(() => null);
+  if (!block) return;
+  const mark = document.createElement('span');
+  const agrees = block.merkleRoot === proof.place.merkleRoot;
+  mark.className = `mark${agrees ? '' : ' bad'}`;
+  mark.textContent = agrees ? '✓' : '✗';
+  mark.title = agrees
+    ? `this chapter's header commits to exactly this root — mined ${new Date(block.timestamp * 1000).toISOString().slice(0, 16).replace('T', ' ')} UTC`
+    : `this chapter's header commits to ${block.merkleRoot}, which is not this root`;
+  marg.append(mark);
 }
 
-// The prose, set one figure at a time in the order the ladder runs -- the
-// levels arriving top to bottom, which is the order they were hashed in. A
-// hash the engine never arrives to say stays unsaid: hex is the one notation
-// this book does not write in, and the mark still names what the value is.
+// The file is not here and never was; the button opens the reader's own copy,
+// hashes it in the browser and answers in one line.
+function openable(proof) {
+  const input = $('subject-file');
+  const out = $('leaf-check');
+  $('leaf-open').classList.remove('hidden');
+  $('subject-open').addEventListener('click', () => input.click());
+  input.addEventListener('change', async () => {
+    const file = input.files[0];
+    if (!file) return;
+    out.className = 'leaf-check';
+    out.textContent = '…';
+    try {
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      const matches = await attests(proof, bytes);
+      out.className = `leaf-check ${matches ? 'good' : 'bad'}`;
+      out.textContent = `${file.name} ${matches ? '✓' : '✗'}`;
+      out.title = matches
+        ? `${bytes.length} bytes, and its ${proof.hash} digest is the one above`
+        : `${bytes.length} bytes, and its ${proof.hash} digest is not the one above`;
+    } catch {
+      out.className = 'leaf-check bad';
+      out.textContent = `${file.name} ✗`;
+      out.title = 'that file could not be read here';
+    }
+    input.value = '';
+  });
+}
+
+// The readings this leaf can raise: the file's own, where the appendix gave it
+// one, and the part's -- a reading of what a timestamp proves, which belongs to
+// every file listed here and so is written once. Specific before general, the
+// order a reader wants them in. Nothing is fetched until the sheet is opened;
+// the index knows only that there is something to open.
+function commentary(proof) {
+  const items = [];
+  if (proof.entry && readingsOf(proof.entry).length) {
+    items.push({ title: proof.title, readings: readingsOf(proof.entry) });
+  }
+  if (readingsOf(part).length) items.push({ title: part.title, readings: readingsOf(part) });
+  if (!items.length) return;
+  const box = $('commentary');
+  const body = $('commentary-body');
+  box.classList.remove('hidden');
+  let filled = false;
+  box.addEventListener('toggle', async () => {
+    if (!box.open || filled) return;
+    filled = true;
+    body.innerHTML = '<div class="commentary-measure"><p class="commentary-loading">reading…</p></div>';
+    await resolveCommentary(items);
+    // Built from authored Markdown, escaped at the source (btc-markdown.js).
+    body.innerHTML = commentaryHtml(items);
+  });
+}
+
+function turn(href, text, right = false) {
+  const a = document.createElement('a');
+  a.href = href; a.textContent = text;
+  if (right) a.style.marginLeft = 'auto';
+  $('leaf-turns').append(a);
+}
+
+// The prose, set one paragraph at a time, top to bottom -- the order the values
+// were computed in. A value the engine never arrives to say stays unsaid: hex
+// is the one notation this book does not write in, and it is on the mark.
 async function setProse(cells) {
   let m;
   try { m = await glossia(); } catch {
-    for (const { el } of cells) { el.textContent = 'unsaid'; el.title = 'the engine that puts a hash into words did not load'; }
+    for (const { el } of cells) el.textContent = 'unsaid';
     return;
   }
   for (const { el, hex, reverse } of cells) {
     try {
       el.textContent = m.encodeSeedPhrase(reverse ? reverseHex(hex) : hex, 'english', BEST_OF).prose;
       el.classList.remove('waiting');
-    } catch {
-      el.textContent = 'unsaid';
-      el.title = 'these bytes could not be set as prose';
-    }
-    await new Promise((r) => setTimeout(r, 0));   // one rung at a time; the page stays answerable
+    } catch { el.textContent = 'unsaid'; }
+    await new Promise((r) => setTimeout(r, 0));
   }
 }
 </script>

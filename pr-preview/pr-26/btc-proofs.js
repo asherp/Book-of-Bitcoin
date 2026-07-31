@@ -28,6 +28,7 @@
 // argument, which is the one thing this book will not do.
 
 import { parseOtsProof, earliestBitcoin, digestOf } from './btc-ots.js';
+import { parseTransaction } from './btc-tx.js';
 import { volumeBookChapter, reference, latinRefOf } from './btc-citation.js';
 
 const KEPT_KEY = 'glossia-btc-proofs';
@@ -43,6 +44,10 @@ const fromBase64 = (text) => Uint8Array.from(atob(text), (c) => c.charCodeAt(0))
 export async function readProof(bytes) {
   const parsed = await parseOtsProof(bytes);
   const att = earliestBitcoin(parsed.attestations);
+  // Which output the commitment sits in -- read off the ladder, since the proof
+  // carries the transaction's own bytes either side of it. It completes the
+  // citation (§section.out) and lets the cited passage find its way back here.
+  const tx = att && ladderOf(att, parsed.digest).find((r) => r.kind === 'transaction');
   return {
     digest: parsed.digest,
     hash: parsed.hash,
@@ -54,6 +59,7 @@ export async function readProof(bytes) {
       section: att.index === null ? null : att.index + 1,
       txid: att.txid,
       merkleRoot: att.merkleRoot,
+      out: tx?.out ?? null,
     },
   };
 }
@@ -66,9 +72,10 @@ export const attests = async (proof, subjectBytes) =>
 // The citation a place reads as, and the link that opens it. A proof always
 // names a chapter; whether it names a §section depends on its merkle path being
 // readable (btc-ots.js says so by leaving `index` null), so both forms are here.
-export const citeOf = (place) => reference(place.height) + (place.section ? ` §${place.section}` : '');
+export const citeOf = (place) => reference(place.height) + (place.section ? ` §${place.section}` : '')
+  + (place.section && place.out != null ? `.${place.out}` : '');
 export const hrefOf = (place) => (place.section
-  ? `./bitcoin-book.html?ref=${latinRefOf(place.height, place.section)}`
+  ? `./bitcoin-book.html?ref=${latinRefOf(place.height, place.section, place.out ?? undefined)}`
   : `./bitcoin-book.html?block=${place.height}`);
 // Reading order, the same order the book itself is in: by chapter, then by
 // section within it. A file's own date has nothing to do with it — where a
@@ -102,7 +109,7 @@ export const volumeOf = (place) => volumeBookChapter(place.height);
 // re-hashed and nothing is trusted. A shape the reader does not recognise is
 // left as a plain run of operations rather than forced into the three
 // movements -- an honest "these steps happened" beats a tidy lie.
-export function ladderOf(attestation) {
+export function ladderOf(attestation, digest = '') {
   const steps = attestation.steps || [];
   const rungs = [];
   let i = 0;
@@ -113,10 +120,20 @@ export function ladderOf(attestation) {
     rungs.push({ kind: 'commit', op: steps[i].op, arg: steps[i].arg, result: steps[i].result });
   }
   if (wrapAt !== -1) {
+    // What the transaction was wrapped around: the rung above, or the file's
+    // own digest where nothing was done to it first.
+    const committed = rungs.length ? rungs[rungs.length - 1].result : digest;
     rungs.push({
       kind: 'transaction',
       prefix: steps[wrapAt].arg,
       suffix: steps[wrapAt + 1].arg,
+      committed,
+      // Which output holds it. This is the finest address the citation scheme
+      // reaches, and the proof knows it exactly: rebuild the transaction from
+      // the bytes the proof carries and find the script the commitment sits
+      // in. A modern proof puts it in an OP_RETURN; an old one buried it where
+      // a public key's hash belongs.
+      out: outputHolding(steps[wrapAt].arg + committed + steps[wrapAt + 1].arg, committed),
       // The txid, in the order the chain prints it -- this rung IS a passage,
       // and a passage is cited by the txid a reader would look up.
       result: steps[wrapAt + 3].result,
@@ -148,6 +165,19 @@ export function ladderOf(attestation) {
   return rungs;
 }
 
+// The output whose script carries the commitment, or null if the transaction
+// will not parse or no single output holds it. Nothing is guessed: the bytes
+// are the proof's own, and the answer is either there or it is not.
+function outputHolding(txHex, committed) {
+  if (!committed) return null;
+  try {
+    const holders = parseTransaction(txHex).vout
+      .map((o, n) => (o.scriptPubKey.includes(committed) ? n : -1))
+      .filter((n) => n >= 0);
+    return holders.length === 1 ? holders[0] : null;
+  } catch { return null; }
+}
+
 // ─── the bundled proofs ─────────────────────────────────────────────────
 
 // One entry of appendix.yaml's proofs part, read from the files beside it. The
@@ -164,7 +194,8 @@ export async function loadBundled(entry, base = PROOF_DIR) {
     if (sub.ok) checked = await attests(proof, new Uint8Array(await sub.arrayBuffer()));
   }
   return { ...proof, title: entry.title, file: entry.subject || entry.proof, subject: entry.subject || null,
-    proofFile: entry.proof, note: entry.note, checked, bundled: true };
+    proofFile: entry.proof, note: entry.note, checked, bundled: true,
+    entry };   // kept so the file's leaf can raise the reading the index gave it
 }
 
 // Every bundled proof that reaches a block, in reading order. One that cannot be
@@ -229,6 +260,19 @@ export const isKept = (digest) => keptProofs().some((p) => p.digest === digest);
 
 // The whole appendix, bundled and kept together in reading order -- what the
 // contents lists under Appendix IV and what its leaf shows above the picker.
+// The other direction. A passage cannot say what it dated -- the chain writes
+// commitments, not their meanings -- so this answers it from the appendix: the
+// listed works whose commitment sits in THIS output of THIS section, numbered
+// by their place in the list, so a passage's margin can print "Appendix IV.1"
+// and mean a row a reader can go and find.
+export function citedAt(listed, { height, section, out }) {
+  return listed
+    .map((proof, i) => ({ proof, n: i + 1 }))
+    .filter(({ proof }) => proof.place.height === height
+      && proof.place.section === section
+      && proof.place.out === out);
+}
+
 // A proof's own page: Appendix IV's rows open the ladder rather than jumping
 // straight into the book, because the ladder is the thing this appendix has
 // to show. The chapter is one step further on, at the foot of it.
