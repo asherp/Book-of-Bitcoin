@@ -143,25 +143,33 @@ compiled to WASM) is consumed as a published
   **I · The Mempool** — the chapters the queue is already forming, first of
   the three because the volumes close on the chain tip's row, so the turn
   from the tip to the next provisional chapter stays one step down the page.
-  **II · Future Chapters** — heights consensus has already fixed but no
-  queue can reach (BIP42's 21M cap at 13,440,000; BIP110's flag heights,
-  should it lock in), cited in full but marked □ until a block earns them
-  the ■. **III · Ledgers** — the shelf of curated ledgers and any the reader
+  **II · Consensus** — the soft forks, grouped under their BIPs with their
+  recognized names (Taproot, Segregated Witness…): each fork's sub-head is
+  the door to a title leaf of its own carrying its activation statistics —
+  counted live for a fork still signaling — and beneath it the chapters and
+  sections the fork names, from the signaling window to the first spends.
+  Mined places cite in full; heights no block has reached (BIP42's 21M cap
+  at 13,440,000; BIP110's flag heights, should it lock in) are marked □
+  until a block earns them the ■. **III · Ledgers** — the shelf of curated ledgers and any the reader
   keeps, the only entries with no reference at all, since the chain never
   writes an address, only the script one stands for; the contents and the
   index are inverses, and this is where the contents points at the other
 - `web/bitcoin-appendix.html` — the appendix leaves (`?part=mempool`,
-  `?part=future`): a title leaf saying what the appendix gathers and why
+  `?part=consensus`, with `?part=future` kept as an alias for saved links):
+  a title leaf saying what the appendix gathers and why
   that cannot be read in sequence, with what it gathers one level below.
   Appendix I descends into the queue's **first chapter itself** — the block
   a reader reaches by swiping forward off the chain tip — read in the book
   like any other, marked □, and walked chapter by chapter from there; the
   ascent from any of them lands back on this leaf, since a draft chapter
   belongs to no volume or book of the body (the queue's own equivalent of a
-  book is still to be written). Appendix II descends the same way, into the
-  first height consensus has already fixed — the book answers an unmined
-  chapter with the date it is due. Neither leaf lists what it gathers: the
-  listing is the contents' business.
+  book is still to be written). Appendix II lists its forks and descends
+  into the first fork's own leaf (`?part=consensus&bip=341` names Taproot's):
+  BIP number over recognized name, the activation statistics as the file
+  states them — plus a live tally of the last day's signals for a fork
+  still signaling — the fork's chapters below, its reading behind the same
+  toggle every leaf keeps its commentary behind, and sideways turns walking
+  the forks; the book answers an unmined chapter with the date it is due.
   Appendix III's leaf is the Ledger compendium's own title page, since a
   shelf of ledgers is what that page already is. The appendices sit at the
   **volumes' own level**: the line runs Volume I … Volume V, Appendix I,
@@ -293,8 +301,8 @@ compiled to WASM) is consumed as a published
   pages, all four cited in the table of contents
 - `web/notables.yaml`, `web/appendix.yaml`, `web/commentary/*.md` — the curated
   entries themselves, what the contents gathers after the volumes (the
-  appendices: the mempool, the future chapters whose citations consensus has
-  already fixed, and the ledgers), and the readings of them: which blocks and transactions the book keeps, what
+  appendices: the mempool, the consensus rules grouped by BIP — activation
+  statistics, chapters mined and owed — and the ledgers), and the readings of them: which blocks and transactions the book keeps, what
   they are called, and one Markdown file per reading, referenced by the entry it
   belongs to (`by:` naming whoever wrote it, absent for the book's own voice).
   An entry's `id:` is written in any form the search box takes — a height, a

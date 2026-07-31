@@ -434,4 +434,5 @@
 # BIP42's cap — are not entries here: a chapter cited before it exists cannot be
 # read in sequence with chapters that do (dropped in among the volumes, BIP42
 # alone opened a Volume LXV two centuries wide). They are gathered in
-# appendix.yaml, as Appendix II: Future Chapters.
+# appendix.yaml, as Appendix II: Consensus, grouped under their BIPs beside the
+# forks already active.

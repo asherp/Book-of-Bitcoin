@@ -104,19 +104,25 @@ reaches it instead.
   `?page=volume|book` opens the block's volume or book leaf.
 - `bitcoin-contents.html` — the curated table of contents, closing with the
   back matter in three families: Appendix I (the mempool's projected
-  chapters) and Appendix II (heights consensus has fixed but no block has
-  reached); the Index of Ledgers (pointing into the text, many chapters per
+  chapters) and Appendix II (Consensus — the soft forks grouped under their
+  BIPs with their recognized names, each naming the chapters of its
+  signaling, lock-in, activation and first spends, the unmined ones marked
+  □); the Index of Ledgers (pointing into the text, many chapters per
   name); and Citations, standing last — works cited outside the text, dated
   into a chapter by their OpenTimestamps proofs. A cited passage carries the
   back-reference in its margin as the ‡ mark, the work's number in the
   register as its subscript (‡₁); a reader's own kept proof wears the bare
   ‡, an addendum outside the edition's numbering.
-- `bitcoin-appendix.html?part=mempool|future|proofs` — a back-matter part's
-  title leaf: its name and what it gathers. Below each is its first chapter,
+- `bitcoin-appendix.html?part=mempool|consensus|proofs` — a back-matter
+  part's title leaf: its name and what it gathers (`?part=future` is kept as
+  an alias for Consensus). Below each is its first chapter,
   in the book itself: `?block=<tip+1>` for the queue (and the ascent from any
-  projected chapter returns to that leaf), the first fixed height for
-  Appendix II, the earliest chapter any listed work is stamped into for
-  Citations. The Index of Ledgers' leaves are `bitcoin-ledger.html`'s. The
+  projected chapter returns to that leaf), the earliest chapter any listed
+  work is stamped into for Citations. The Consensus leaf lists its forks
+  instead, and `?part=consensus&bip=<n>` opens one fork's own leaf — BIP
+  number and recognized name, its activation statistics (a live signal tally
+  where a fork is still signaling), the chapters and sections it names, and
+  its commentary. The Index of Ledgers' leaves are `bitcoin-ledger.html`'s. The
   Citations leaf also carries the proof picker: a `.ots` dropped there is
   replayed, checked against its block's own header, and kept in the reader's
   own browser — the citation it resolves to (chapter and §section, both

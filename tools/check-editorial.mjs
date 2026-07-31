@@ -97,6 +97,10 @@ const readingBearers = [
   ...entries,
   ...parts,                                       // a part may carry a reading of what it gathers
   ...parts.filter((p) => p.entries).flatMap((p) => p.entries),
+  // The Consensus part's forks carry readings on their title leaves, and each
+  // fork's chapters carry their own, like any curated entry.
+  ...parts.filter((p) => p.bips).flatMap((p) => p.bips),
+  ...parts.filter((p) => p.bips).flatMap((p) => p.bips).flatMap((b) => b.entries),
 ];
 const referenced = new Set();
 for (const e of readingBearers) {
@@ -127,14 +131,30 @@ const onDisk = (await readdir(new URL('commentary/', WEB))).filter((f) => f.ends
 for (const f of onDisk) if (!referenced.has(f)) notes.push(`commentary/${f} is not referenced by any entry — nothing will show it`);
 
 // The appendix's own places: each must resolve to a height like any other, and
-// a part that lists none but says it will is a part that renders empty.
+// a part that lists none but says it will is a part that renders empty. The
+// Consensus part's places live a level down, under their BIPs; a bip's URL
+// handle must be unique (it is how ?bip= finds the leaf), an expected row must
+// be a height (□ is arithmetic on a height; a transaction cannot be expected),
+// and a signaling fork must say how it is counted.
 for (const part of parts) {
-  if (part.kind !== 'entries') continue;
-  for (const e of part.entries) {
-    if (!/^-?[0-9]+$/.test(e.id) && !/^[0-9a-f]{64}$/.test(e.id)) {
-      problems.push(`appendix "${part.title}": "${e.title}" has an id that is neither a block height nor a 64-hex id`);
+  if (part.kind !== 'consensus') continue;
+  const handles = new Set();
+  for (const bip of part.bips) {
+    if (handles.has(bip.key)) problems.push(`appendix "${part.title}": two bips share the URL handle "${bip.key}"`);
+    handles.add(bip.key);
+    if (bip.status === 'signaling' && (!Number.isFinite(bip.bit) || !Number.isFinite(bip.threshold))) {
+      problems.push(`appendix "${part.title}": ${bip.title} is signaling but names no bit/threshold to count by`);
     }
-    if (!e.note) notes.push(`appendix "${part.title}": "${e.title}" carries no note — the row will have nothing to say on hover`);
+    for (const e of bip.entries) {
+      if (!/^-?[0-9]+$/.test(e.id) && !/^[0-9a-f]{64}$/.test(e.id)) {
+        problems.push(`appendix "${part.title}": "${e.title}" has an id that is neither a block height nor a 64-hex id`);
+      }
+      if (e.expected && !/^[0-9]+$/.test(e.id)) {
+        problems.push(`appendix "${part.title}": "${e.title}" is expected but its id is not a height — only an unmined height can be expected`);
+      }
+      if (!e.note) notes.push(`appendix "${part.title}": "${e.title}" (${bip.title}) carries no note — the row will have nothing to say on hover`);
+    }
+    notes.push(`appendix "${part.title}": ${bip.title} — ${bip.status}, ${bip.entries.length} places`);
   }
 }
 

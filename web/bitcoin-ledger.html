@@ -715,7 +715,7 @@ const PART_INDEX = APPENDIX.indexOf(LEDGER_PART);
 const PART_LABEL = partLabel(APPENDIX, LEDGER_PART);
 const PREV_PART = PART_INDEX > 0 ? APPENDIX[PART_INDEX - 1] : null;
 const PREV_PART_HREF = PREV_PART
-  ? `./bitcoin-appendix.html?part=${PREV_PART.kind === 'mempool' ? 'mempool' : 'future'}`
+  ? `./bitcoin-appendix.html?part=${PREV_PART.kind === 'mempool' ? 'mempool' : 'consensus'}`
   : null;
 
 // ── Where the reader stands ────────────────────────────────────────────────
