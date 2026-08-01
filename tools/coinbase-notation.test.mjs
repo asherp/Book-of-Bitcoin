@@ -15,7 +15,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { access } from 'node:fs/promises';
 
-import { splitReadableRuns, findTextRuns, looksLikeWriting, bitsToPrimeFactors, bitsToTargetHex, primeFactors } from '../web/btc-tx.js';
+import { splitReadableRuns, findTextRuns, looksLikeWriting, bitsToMantissaFactors, bitsToTargetHex, primeFactors } from '../web/btc-tx.js';
 
 // The number as it sits on the chain in block 960,281: pushed, four bytes,
 // minimal little-endian -- and with three of those four bytes (7e 6b 6a) in
@@ -164,18 +164,22 @@ function assertCanonical(factors, what) {
   }
 }
 
-test('a target factors into primes that multiply back to it', () => {
-  // The notation writes the target as a product, so the product has to BE the
-  // target -- to the last of its 256 bits, not to a rounded scale.
+test('a target is its mantissa in primes, on the shift the header states', () => {
+  // The notation writes the target as mantissa × 256ᵉ, so the pair has to BE
+  // the target -- to the last of its 256 bits, not to a rounded scale.
   for (const bits of REAL_NBITS) {
-    const factors = bitsToPrimeFactors(bits);
-    assert.equal(product(factors), BigInt('0x' + bitsToTargetHex(bits)), bits.toString(16));
+    const { factors, shift } = bitsToMantissaFactors(bits);
+    assert.equal(product(factors) * 256n ** BigInt(shift), BigInt('0x' + bitsToTargetHex(bits)), bits.toString(16));
     assertCanonical(factors, bits.toString(16));
+    // The shift is the header's own byte count, not something derived from the
+    // value: nBits' exponent less the three bytes the mantissa occupies.
+    assert.equal(shift, (bits >>> 24) - 3, `${bits.toString(16)} shift`);
   }
-  // Genesis states the shape plainest: 2²⁰⁸ × (2¹⁶−1), the Fermat primes.
-  assert.deepEqual(bitsToPrimeFactors(0x1d00ffff), [[2n, 208], [3n, 1], [5n, 1], [17n, 1], [257n, 1]]);
-  // And the first adjustment moves the odd part entire, 3×5×17×257 → 27701.
-  assert.deepEqual(bitsToPrimeFactors(0x1d00d86a), [[2n, 209], [27701n, 1]]);
+  // Genesis states the shape plainest: 65535 is 2¹⁶−1, so its mantissa is the
+  // Fermat primes, riding twenty-six whole bytes of shift.
+  assert.deepEqual(bitsToMantissaFactors(0x1d00ffff), { factors: [[3n, 1], [5n, 1], [17n, 1], [257n, 1]], shift: 26 });
+  // And the first adjustment moves the mantissa entire, 65535 → 55402.
+  assert.deepEqual(bitsToMantissaFactors(0x1d00d86a), { factors: [[2n, 1], [27701n, 1]], shift: 26 });
 });
 
 test('a nonce factors too, at any size the chain can write', () => {
@@ -320,7 +324,7 @@ test('a pre-BIP34 coinbase keeps the preamble reading', { skip: skipNoEngine }, 
   const script = fields.inputs[0].script;
 
   assert.match(script, /β/, 'the difficulty target still reads under β');
-  assert.ok(script.includes('2²⁰⁸·3·5·17·257'), 'restated as the target it is, in primes');
+  assert.ok(script.includes('3·5·17·257×256²⁶'), 'restated as the target it is: mantissa in primes, on its byte shift');
   assert.ok(script.includes('The Times 03/Jan/2009'), 'and the headline is still quoted');
   assert.ok(!script.includes('■'), 'no height mark — the rule had not been written yet');
 });

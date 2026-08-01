@@ -285,16 +285,34 @@ export function bitsToTargetHex(bits) {
 // exactly: this is the number bitsToTargetHex writes out, said in primes
 // rather than in hex.
 export function bitsToPrimeFactors(bits) {
-  const shift = (bits >>> 24) - 3;
-  let n = bits & 0x007fffff;             // top bit of the 3-byte mantissa is a sign flag, masked off
-  if (shift < 0) n >>>= -8 * shift;      // an exponent under 3 shifts mantissa bits off the bottom
-  if (n === 0) return [];                // no target at all: nothing to factor
-  const factors = primeFactors(n);
+  const { factors, shift } = bitsToMantissaFactors(bits);
   if (shift <= 0) return factors;
   // The shift's twos join the mantissa's own, which keeps the leading factor
   // one power of two rather than two of them multiplied together.
   const twos = 8 * shift + (factors[0]?.[0] === 2n ? factors[0][1] : 0);
   return [[2n, twos], ...factors.filter(([p]) => p !== 2n)];
+}
+
+// nBits -> { factors, shift }: the MANTISSA in primes, and the whole-byte
+// shift it rides on, kept apart.
+//
+// Which is how the header states it. nBits is a mantissa and a byte count, and
+// those two are what a retargeting node computes and writes; 256ᵉ is the
+// second of them, written as itself. Folding it into the primes (above) gives
+// a true product and loses the shape: 2²⁰⁸·3·5·17·257 is the genesis target
+// exactly, and nothing in it says that 208 is 26 bytes of shift while the odd
+// part is the 65535 the wire word carries.
+//
+// So the page keeps the pair. What is gained by factoring at all is the
+// mantissa's own structure -- 65535 is 2¹⁶−1, whose odd part is the Fermat
+// primes 3·5·17·257 -- and that structure is exactly the part a retarget can
+// move. The byte shift moves in whole bytes and is legible as itself.
+export function bitsToMantissaFactors(bits) {
+  const shift = (bits >>> 24) - 3;
+  let n = bits & 0x007fffff;             // top bit of the 3-byte mantissa is a sign flag, masked off
+  if (shift < 0) n >>>= -8 * shift;      // an exponent under 3 shifts mantissa bits off the bottom
+  if (n === 0) return { factors: [], shift: 0 };   // no target at all: nothing to factor
+  return { factors: primeFactors(n), shift: Math.max(0, shift) };
 }
 
 // nBits -> difficulty relative to the genesis block's target (defined as

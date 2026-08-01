@@ -19,7 +19,7 @@
 // margin layout.
 
 import { encodeSeedPhrase } from './glossia-msg.js';
-import { findTextRuns, splitReadableRuns, looksLikeWriting, readableUtf8Text, tokenizeScript, bitsToTargetHex, bitsToDifficulty, bitsToPrimeFactors, primeFactors } from './btc-tx.js';
+import { findTextRuns, splitReadableRuns, looksLikeWriting, readableUtf8Text, tokenizeScript, bitsToTargetHex, bitsToDifficulty, bitsToMantissaFactors, primeFactors } from './btc-tx.js';
 import { splitOnSignature, poolOf } from './btc-pools.js';
 import { volumeBookChapter } from './btc-citation.js';
 import { plausibleBlockTime, utcMinute } from './btc-chaintime.js';
@@ -131,24 +131,28 @@ const productProse = (value) => factorProse(primeFactors(value)) || String(value
 // in two faces that together account for all 256 of its bits. β's subscript
 // is the demand in its physical unit: the number of leading zero BITS a
 // valid hash must open with (genesis, difficulty 1, is β₃₂; each +1 is a
-// doubling of the work). `expr` is the target written exactly, in the terms
-// a 256-bit integer is finally made of: its prime factorization --
-// 2²⁰⁸·3·5·17·257 for genesis. nBits packs m×256ᵉ, so every target factors to
-// the same shape, a colossal power of two beside a very small odd number. The
-// power of two is the target's scale, roughly 8e of it and the rest whatever
-// twos the mantissa brought; the primes after it are the mantissa's odd part,
-// under 2²³ and rarely more than three or four of them -- the whole of what a
-// retarget can express, since a window's work is chosen from those digits and
-// nothing else. Genesis says it plainest: 65535 is 2¹⁶−1, so its odd part is
-// 3·5·17·257, the Fermat primes.
+// doubling of the work). `expr` is the target written exactly, in the two
+// parts the wire word is actually made of: the mantissa, factored into primes,
+// times the whole-byte shift it rides on -- 3·5·17·257×256²⁶ for genesis.
+//
+// The pair rather than one product, because nBits IS a pair. A retargeting
+// node computes a mantissa and a byte count and writes both; 256ᵉ is the
+// second of them and reads as itself, a scale in the units the header keeps
+// it in. Folded together the target factors to 2²⁰⁸·3·5·17·257, which is the
+// same number and a worse reading of it: nothing in that says 208 is 26 bytes
+// of shift while the odd part is the 65535 the wire word carries.
+//
+// What factoring the mantissa buys is the part a retarget can actually move.
+// A window's work is chosen from those twenty-odd bits and nothing else, and
+// genesis says it plainest: 65535 is 2¹⁶−1, so it is 3·5·17·257, the Fermat
+// primes.
 //
 // The subscript states the target's leading zero run, the expression the
 // number in full; leading zeros stay on β because they are not legible from a
 // product at a glance (they are 256 − bitlen). Nothing of the wire word is
-// lost in the reading: the product is the target's exact value, of which nBits
-// is the compact form -- and the compact nBits, the mantissa and byte shift it
-// packs, the full 256-bit target and the difficulty ratio all ride in the
-// hover title besides. A target looser than the genesis baseline (never on
+// lost in the reading: mantissa and shift are what nBits packs, and the
+// expression states both -- with the compact nBits, the full 256-bit target
+// and the difficulty ratio in the hover title besides. A target looser than the genesis baseline (never on
 // mainnet) falls back to the raw compact hex, with no expression.
 // Exported because a book leaf renders targets that are not its own block's:
 // a book from Volume II on straddles a retarget and states both of them, and
@@ -167,7 +171,8 @@ export function bitsInfo(bits) {
   const lz = zeros * 4 + (first >= 8 ? 0 : first >= 4 ? 1 : first >= 2 ? 2 : 3);
   const exponent = bits >>> 24;
   const mantissa = bits & 0x007fffff;   // top mantissa bit is a sign flag, masked off
-  const expr = factorProse(bitsToPrimeFactors(bits));
+  const { factors, shift } = bitsToMantissaFactors(bits);
+  const expr = shift > 0 ? `${factorProse(factors)}×256${toSuperscript(shift)}` : factorProse(factors);
   return {
     sym: `β${toSubscript(lz)}`, expr,
     title: `nBits ${compact} — mantissa ${mantissa} shifted up ${exponent - 3} bytes: the target ${targetHex}, which a valid block hash must read below (${lz} leading zero bits) — ${tail}`,
