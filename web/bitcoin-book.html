@@ -2927,10 +2927,23 @@ function renderChapterHead(onTitlePage) {
     .map(placeTitle);
   const eventTitle = eventTitles[0];
   $('ch-title').textContent = `Chapter ${chapterName(chapter)}`;
+  // The chapter's name line: the reader's keep of this chapter (a block-hash
+  // bookmark) overrides the curated event names while it stands, and the
+  // names return the moment the keep is removed -- syncBookmarkTitles
+  // repaints this span live and manages the subtitle's visibility with it
+  // (which is why the render-time hidden toggle that used to sit below the
+  // crumb block is gone). The text lives in a child span so the tip clock,
+  // appended beside it, survives a rename.
   const subtitle = $('ch-subtitle');
-  subtitle.textContent = eventTitles.join(' · ');
+  subtitle.textContent = '';
+  const evSpan = document.createElement('span');
+  evSpan.dataset.bmSubtitle = state.hash;
+  evSpan.dataset.fallback = eventTitles.join(' · ');
+  evSpan.dataset.bmChapter = onTitlePage ? 'title' : 'head';
+  subtitle.append(evSpan);
   // The chain tip, and only on its own page, carries the running clock.
   if (onTitlePage && atTipPage()) tipClock.show(subtitle, state.block.timestamp);
+  syncBookmarkTitles();
   // On a section page the running head's chapter is a crumb back to the
   // chapter's own page -- no fetch needed, the block is already in state.
   const inline = $('ch-chapter-inline');
@@ -2946,7 +2959,6 @@ function renderChapterHead(onTitlePage) {
     inline.append(crumb);
   }
   $('ch-title').classList.toggle('hidden', !onTitlePage);
-  subtitle.classList.toggle('hidden', !onTitlePage || !subtitle.textContent);
   $('ch-hash-short').classList.toggle('hidden', !onTitlePage);
   $('ch-frontispiece').classList.toggle('hidden', !onTitlePage);
   if (onTitlePage) {
@@ -3080,6 +3092,10 @@ function renderLeafShell() {
   ++renderGen;
   lazyEncode.reset();
   tipClock.stop();
+  // Cleared, not just hidden: the chapter subtitle's live span (see
+  // renderChapterHead / syncBookmarkTitles) must not survive onto a leaf,
+  // where a later bookmark change would re-show it with stale text.
+  $('ch-subtitle').textContent = '';
   $('ch-subtitle').classList.add('hidden');
   // A leaf has no folio -- pages belong to sections -- and its grid cell goes
   // back to the chapter-next stepper.
@@ -5537,10 +5553,20 @@ function syncBookmarkRibbons() {
 // removal renames the page live.
 function syncBookmarkTitles() {
   for (const el of document.querySelectorAll('[data-bm-subtitle]')) {
-    // The section's own keep only: an output's or a witness's bookmark
-    // shares the txid but names a finer place, not the section.
+    // The place's own keep only: an output's or a witness's bookmark shares
+    // the txid but names a finer place, not the section -- and the chapter
+    // subtitle's span is keyed by the block hash, so a section keep can't
+    // reach it either.
     const b = bookmarks.find((x) => !x.page && x.vout == null && x.vin == null && x.hex === el.dataset.bmSubtitle);
     el.textContent = (b && b.title) || el.dataset.fallback || '';
+    // The chapter subtitle owns its visibility here rather than at render
+    // time, so a keep added to an unnamed chapter shows it and a removed
+    // one hides it again -- shown only on the chapter's own page, and only
+    // with something to say (the tip clock beside the span counts).
+    if (el.dataset.bmChapter) {
+      const host = el.parentElement;
+      if (host) host.classList.toggle('hidden', el.dataset.bmChapter !== 'title' || !host.textContent.trim());
+    }
   }
   for (const el of document.querySelectorAll('[data-bm-out]')) {
     const at = el.dataset.bmOut.lastIndexOf(':');
