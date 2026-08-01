@@ -328,6 +328,12 @@ compiled to WASM) is consumed as a published
   the corrections they turned up are written down: the second field is a
   template timestamp as often as a counter, and the book had been marking every
   one of them η
+- `tools/stratum-job.mjs` — the same question asked of the pool rather than of
+  its blocks. Stratum hands out a coinbase in two halves with a gap for the
+  miner to fill (`coinb1 ‖ extranonce1 ‖ extranonce2 ‖ coinb2`), so where the
+  gap sits, how wide it is and which bytes the pool wrote either side of it are
+  stated rather than inferred. Subscribes, reads one job, hangs up; it never
+  submits a share
 - `web/btc-pools.js` — the table of pool signatures: what each pool's name
   looks like in the bytes, and exactly where it ends. A coinbase's margin is
   the one place on the chain where somebody signs their work, and the table

@@ -19,12 +19,18 @@ import assert from 'node:assert/strict';
 import { access } from 'node:fs/promises';
 
 import { POOL_SIGNATURES, findSignature, splitOnSignature, poolOf } from '../web/btc-pools.js';
+import { primeFactors } from '../web/btc-tx.js';
 
 const engineBuilt = await access(new URL('../web/glossia.js', import.meta.url)).then(() => true, () => false);
 const skipNoEngine = !engineBuilt && 'web/glossia.js not built';
 
 const utf8Hex = (s) => Buffer.from(s, 'utf8').toString('hex');
 const heightPush = (h) => '03' + Buffer.from([h & 0xff, (h >> 8) & 0xff, (h >> 16) & 0xff]).toString('hex');
+
+// A number as the page writes it beside η: primes on the line, powers raised.
+const superscript = (s) => String(s).replace(/\d/g, (d) => '⁰¹²³⁴⁵⁶⁷⁸⁹'[+d]);
+const factorProse = (n) => primeFactors(n)
+  .map(([p, k]) => String(p) + (k === 1 ? '' : superscript(k))).join('·');
 
 // The margins as the chain wrote them, and as the book's own pages showed them
 // (blocks 960,463–469 read directly; 960,281 from coinbase-notation.test.mjs).
@@ -130,12 +136,16 @@ test('the margin quotes the signature and puts the leaning byte back', { skip: s
   assert.ok(script.includes('Foundry USA —'), 'whose hand rides the mark, not the page');
 
   // The backtick is back among the bytes, and joined to the counter it came
-  // from rather than stranded in a passage of its own.
-  assert.ok(script.includes('‹60d90f1a00›'), 'the leaning byte reads as the byte it is');
+  // from rather than stranded on its own: five bytes, read as the number they
+  // are (0x60 then the counter's own d9 0f 1a 00, little-endian).
+  const counter = BigInt('0x' + '00' + '1a' + '0f' + 'd9' + '60');
+  assert.ok(script.includes(`η⁵ ${factorProse(counter)}`), 'the leaning byte reads as part of the number it came from');
+  assert.ok(!/“[^”]*`/.test(script), 'and no longer inside the quotation');
 
-  // Still nothing added and nothing lost.
+  // Still nothing added and nothing lost: the signature's own text, plus the
+  // bytes every mark stands for, is the scriptSig.
   assert.equal(
-    heightPush(960468) + '04338b34c2' + utf8Hex(quoted.join('')) + [...script.matchAll(/‹([0-9a-f]*)›/g)].map((m) => m[1]).join(''),
+    heightPush(960468) + '04338b34c2' + utf8Hex(quoted.join('')) + '60d90f1a00',
     scriptSig,
     'the marks, the signature and the margin reconstruct the whole scriptSig',
   );
@@ -158,5 +168,7 @@ test('a margin nobody signed reads exactly as it did before', { skip: skipNoEngi
   const input = composeTransactionFields(parseTransaction(tx), 1, null, mark).inputs[0];
   assert.equal(input.signature, null, 'no hand claimed');
   assert.ok(!input.script.includes('pool-sig'));
-  assert.ok(input.script.includes("‹aabbccddeeff90a1b2c3d4e5f6871f80›"), "the margin is one passage of prose");
+  // Sixteen bytes is past what a counter can be, so the margin stays one
+  // passage of prose rather than becoming a forty-digit figure.
+  assert.ok(input.script.includes('‹aabbccddeeff90a1b2c3d4e5f6871f80›'), 'the margin is one passage of prose');
 });

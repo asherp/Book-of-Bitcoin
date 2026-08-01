@@ -233,13 +233,24 @@ const encodedHex = (html) => [...html.matchAll(/‹([0-9a-f]*)›/g)].map((m) =>
 // is the hex it was handed. This is the book's promise performed on its own
 // output -- whatever register a byte reached the page in, it comes back.
 const fromSuperscript = (s) => Number([...s].map((c) => '⁰¹²³⁴⁵⁶⁷⁸⁹'.indexOf(c)).join(''));
+// A product back to its number, and a number back to n little-endian bytes:
+// what η<sup>n</sup> promises is that the pair restores exactly what was
+// written, so the test performs the promise rather than trusting it.
+const fromProduct = (s) => s.split('·').reduce((acc, term) => {
+  const [base, power] = term.split(/(?=[⁰¹²³⁴⁵⁶⁷⁸⁹])/);
+  const k = power ? fromSuperscript(power) : 1;
+  return acc * BigInt(base) ** BigInt(k);
+}, 1n);
+const leBytes = (value, n) => Array.from({ length: n }, (_, i) =>
+  Number((value >> BigInt(8 * i)) & 0xffn).toString(16).padStart(2, '0')).join('');
 function marginBytes(html) {
   const out = [];
-  const token = /“([^”]*)”|⓪([⁰¹²³⁴⁵⁶⁷⁸⁹]+)|‹([0-9a-f]*)›/g;
+  const token = /“([^”]*)”|⓪([⁰¹²³⁴⁵⁶⁷⁸⁹]+)|η([⁰¹²³⁴⁵⁶⁷⁸⁹]+) ([0-9·⁰¹²³⁴⁵⁶⁷⁸⁹]+)|‹([0-9a-f]*)›/g;
   for (let m; (m = token.exec(html));) {
     if (m[1] !== undefined) out.push(utf8Hex(m[1]));
     else if (m[2] !== undefined) out.push('00'.repeat(fromSuperscript(m[2])));
-    else out.push(m[3]);
+    else if (m[3] !== undefined) out.push(leBytes(fromProduct(m[4]), fromSuperscript(m[3])));
+    else out.push(m[5]);
   }
   return out.join('');
 }
@@ -357,6 +368,35 @@ test('a counter still reads under η, before the clock and after it', { skip: sk
   assert.ok(b.includes(TEMPLATE_TIME_MARK), 'the clock reads first');
   assert.ok(b.includes(`η${factorProse(COUNTER_VALUE)}`), 'the counter reads after it');
   assert.ok(b.indexOf(TEMPLATE_TIME_MARK) < b.indexOf('η'), 'in the order the bytes carry them');
+});
+
+test('a counter nobody pushed still reads as the number it is', { skip: skipNoEngine }, async () => {
+  const { composeTransactionFields } = await import('../web/btc-prose.js');
+  const { parseTransaction } = await import('../web/btc-tx.js');
+
+  // F2Pool's shape: raw counter, tag, then a second raw counter. Neither is
+  // pushed, so neither was ever peeled -- both read as prose until now.
+  const counter = 'aa4b5847266057';                      // 7 bytes
+  const tail = '070a0102';                               // 4 bytes
+  const scriptSig = heightPush(960473) + counter + utf8Hex('\u{1F41F} /F2Pool/') + tail;
+  const script = composeTransactionFields(parseTransaction(coinbaseTxHex(scriptSig)), 1, null, markEncoder).inputs[0].script;
+
+  // η with its byte count, then the value as a product -- the same form the
+  // header's nonce and the pushed counters take.
+  const le = (hex) => BigInt('0x' + (hex.match(/../g).reverse().join('')));
+  assert.ok(script.includes(`η⁷ ${factorProse(le(counter))}`), 'the seven-byte counter reads as its number');
+  assert.ok(script.includes(`η⁴ ${factorProse(le(tail))}`), 'and so does the four-byte one');
+  assert.ok(!script.includes('‹' + counter), 'neither reaches the encoder as payload');
+  assert.equal(heightPush(960473) + marginBytes(script), scriptSig, 'and the bytes come back');
+
+  // Past eight bytes a run is a commitment or a datum, not a counter, and is
+  // left to the prose rather than flattened into a hundred-digit figure.
+  const aux = 'fabe6d6d' + 'ab'.repeat(32) + '0400000007000000';
+  const withAux = heightPush(960480) + aux + utf8Hex('/F2Pool/') + '1f2e3d4c';
+  const auxScript = composeTransactionFields(parseTransaction(coinbaseTxHex(withAux)), 1, null, markEncoder).inputs[0].script;
+  assert.ok(auxScript.includes(`‹${aux}›`), 'forty-four bytes stay prose');
+  assert.ok(auxScript.includes('η⁴'), 'the counter after it does not');
+  assert.equal(heightPush(960480) + marginBytes(auxScript), withAux);
 });
 
 test('a run of zeros reads as its count, not as a paragraph of nothing', { skip: skipNoEngine }, async () => {

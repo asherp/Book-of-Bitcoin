@@ -356,6 +356,66 @@ where Foundry's signature ends. Which is what the table above is for, and what
 it now does — the two corrections meet there. The word test decides whether a
 run may be quoted at all; the signature decides where the quotation closes.
 
+## The fourth correction: the counter nobody pushed
+
+`η` read a counter that arrived as a push — which is how the pools on ckpool's
+and btccom's lineage write theirs. The push states its own width, so the number
+alone restores the bytes.
+
+Most pools do not push it. F2Pool, AntPool and SECPOOL write the counter as raw
+bytes in the margin **[observed]**, where the book rendered it as payload prose:
+a dozen words of wordlist standing for a number nobody meant as language. Same
+field, same rule, and it should read the same way.
+
+What raw bytes lack is the push's width — `00 12 34` and `12 34` are different
+bytes and one number — so the mark carries the byte count as a superscript,
+exactly as every other byte count in the script register does (`p⁶⁵`, `h³²`, a
+bare push's `²⁰`):
+
+```
+■960473  η⁷ 2·5·7·19·509·36329586977  “🐟   /F2Pool/”  η¹ 2⁵  ⓪³⁰  η⁴ 5·6724507
+```
+
+`η⁴ 5·6724507` is four bytes, little-endian as the chain writes its numbers,
+and reconstructs to one string of bytes and no other.
+
+Bounded at eight bytes, the ceiling the pushed counters already take: past that
+a run in the margin is not a counter but a commitment or a datum — a
+merged-mining root, a pool's own structure — and it stays prose rather than
+being flattened into a hundred-digit figure that says nothing about what it
+holds. A 44-byte `fabe6d6d` block, for instance, still reads as prose; whether
+it should read as a commitment mark is the next question, not this one.
+
+## Asking the pool directly
+
+Everything above works backwards, from blocks that were found. Stratum states
+the template outright: a pool sends its coinbase in two halves and leaves the
+gap for the miner, so `coinb1 ‖ extranonce1 ‖ extranonce2 ‖ coinb2` gives the
+gap's offset and width rather than leaving them to be inferred.
+
+`tools/stratum-job.mjs` subscribes, authorizes, reads one `mining.notify` and
+hangs up. It never submits a share.
+
+```sh
+node tools/stratum-job.mjs stratum+tcp://btc.f2pool.com:1314 --user <account>
+node tools/stratum-job.mjs stratum+ssl://btcssl.f2pool.com:1300 --user <account> --save job.json
+node tools/stratum-job.mjs --job job.json          # re-read, offline
+```
+
+It reports the gap's position in the scriptSig's own coordinates, which is what
+settles gap-early against gap-late; which fields the pool wrote and which are
+the miner's; whether the number behind the height is a clock (in `coinb1`, the
+same in every job of a template) or the gap itself; and whether a run of zeros
+is padding the pool wrote or space still to be filled. It also counts the
+template's outputs, which is how a pool paying its miners on chain shows up.
+
+**Not run from here.** This environment's egress policy denies f2pool.com: a
+CONNECT to port 443 is refused outright (`403 Forbidden`), and one to 1314 or
+1300 is accepted and then reset before Stratum can speak. That is an
+organization policy denial, not a fact about the pool, and the tool's own error
+message says which hop refused. Run it from an unrestricted machine and the
+`[unverified]` rows above become `[observed]`.
+
 ## The third correction: the zeros
 
 A pool lays its coinbase out at a fixed size and leaves room in it — for the
