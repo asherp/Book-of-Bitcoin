@@ -4107,8 +4107,25 @@ async function renderFootnotes(gen) {
   lazyEncode.observe(el);   // stream each push's prose in as the reader scrolls to it
 }
 
-// A witness reference: make sure the footnotes are rendered, then scroll to this one.
+// The foot region's loading stand-in, for a navigation that targets a
+// witness the engine hasn't laid out yet: the section opens at once with
+// the book's loading mark in place of the data and the page scrolls there
+// immediately -- renderFootnotes wipes the stub when the real entries take
+// its place. A no-op once the footnotes are loaded (or there are none).
+function footnoteStub() {
+  if (footnotesLoaded || !currentFootnotes.length) return;
+  const stub = document.createElement('p');
+  stub.className = 'footnote-entry footnote-stub';
+  stub.innerHTML = SPINNER_HTML + ' encoding the witness…';
+  $('ch-footnotes').append(stub);
+  $('ch-footnotes-section').classList.remove('hidden');
+  stub.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// A witness reference: land on the loading mark at once if the footnotes
+// aren't laid out yet, then scroll exactly to this one when they are.
 async function loadFootnotes(targetN) {
+  footnoteStub();
   await renderFootnotes(renderGen);
   const target = $(`fn-${footnoteMark(targetN)}`);
   if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -5836,6 +5853,10 @@ await loadNotables();
 // element id, with the input's citation anchor as the digit form's fallback.
 async function landOnWitness(raw) {
   if (raw == null || raw === '') return;
+  // Land first, render after: the foot region opens at once with the
+  // loading mark standing in (footnoteStub), and a second, exact scroll
+  // lands on the named entry once the real footnotes take its place.
+  footnoteStub();
   await renderFootnotes(renderGen);
   let el = null;
   if (/^\d+$/.test(raw)) {
