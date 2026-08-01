@@ -629,6 +629,24 @@ button:disabled { opacity: .4; cursor: not-allowed; }
    Filled by syncBookmarkTitles, live with the bookmark set. */
 .tx-out-title { grid-column: 1 / -1; text-align: center; font: italic 500 calc(13.5px * var(--scale-body, 1))/1.4 'Newsreader',serif; color: var(--accent); margin: .4em 0 .15em; }
 .tx-out-title:empty { display: none; }
+/* The locking script's keep line, centered above its paragraph: unkept, the
+   hollow ribbon alone -- the offer, faded like every unmade mark; kept, the
+   ledger's name with the filled ribbon beside it, linking to the reader's
+   shelf (see syncScriptKeeps). Empty (no standard address) it takes no
+   room. */
+.tx-out-keep { grid-column: 1 / -1; text-align: center; margin: .1em 0 .15em; font: italic 500 calc(13.5px * var(--scale-body, 1))/1.4 'Newsreader',serif; color: var(--ink-soft); }
+.tx-out-keep:empty { display: none; }
+.tx-out-keep .keep-rib { display: inline-block; line-height: 0; color: var(--accent); vertical-align: -2px; }
+.tx-out-keep .keep-rib svg { display: inline-block; width: 10px; height: 14px; }
+.tx-out-keep button.keep-rib { background: none; border: 0; padding: 2px 5px; cursor: pointer; opacity: .42; }
+.tx-out-keep button.keep-rib:hover, .tx-out-keep button.keep-rib:focus-visible { opacity: .8; outline: none; }
+.tx-out-keep a.keep-rib { margin-left: .45em; text-decoration: none; }
+.tx-out-keep a.keep-rib:hover, .tx-out-keep a.keep-rib:focus-visible { color: var(--accent-2); }
+/* The one ribbon glyph, dressed by state: hollow as an offer, filled once
+   kept -- same switch the corner ribbons use, scoped to this line. */
+.tx-out-keep .keep-rib .rib-fill { display: none; }
+.tx-out-keep .keep-rib.kept .rib-fill { display: block; }
+.tx-out-keep .keep-rib.kept .rib-hollow { display: none; }
 .section-event:empty { display: none; }
 .tx-note { font: italic 400 calc(13.5px * var(--scale-body, 1))/1.4 'Newsreader',serif; color: var(--dim); }
 /* The amount's size, on both its classes. An amount is a .tx-note as well as
@@ -969,7 +987,11 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 
 <script type="module">
 import { init, encodeSeedPhrase } from './glossia-msg.js';
-import { parseTransaction, computeTxid, parseBlockHeader, computeBlockHash, bitsToDifficulty } from './btc-tx.js';
+import { parseTransaction, computeTxid, parseBlockHeader, computeBlockHash, bitsToDifficulty, scriptToAddress } from './btc-tx.js';
+// The reader's ledger shelf (Appendix III): a locking script kept from a
+// section joins it as a titled one-address ledger, the same registry the
+// Ledger page's own keep button writes.
+import { keptLedgers, saveKeptLedgers } from './btc-index.js';
 import { composeTransactionFields, composeBlockHeaderFields, bitsInfo, groupDigits, formatBtc, renderWitness, toSuperscript, timestampInfo } from './btc-prose.js';
 import { volumeBookChapter, heightOf, windowStartOf, retargetInside, toRoman, reference, parseReference, footnoteMark } from './btc-citation.js';
 import { loadNotables, places, placeTitle, blocksEta, appendix } from './btc-contents.js';
@@ -2635,6 +2657,7 @@ const KEEPS = {
   'transaction id': 'this section',
   output: 'this output',
   witness: 'this witness',
+  'locking script': 'this locking script',
   volume: 'this volume',
   book: 'this book',
 };
@@ -3757,6 +3780,22 @@ function renderChapter(para) {
       && (p.id === para.txid || (p.id === String(state.height) && p.index === state.index)));
     outTitle.dataset.fallback = outPlace ? placeTitle(outPlace) : '';
     outputsEl.append(outTitle);
+    // The locking script's own keep, centered above its paragraph: a hollow
+    // ribbon offers to shelve this script's address among the reader's
+    // ledgers (Appendix III, the same registry the Ledger page's keep button
+    // writes); kept, the line reads the ledger's name with the filled ribbon
+    // beside it linking to that ledger. The address derives asynchronously
+    // from the script, and only a script with a standard address form is
+    // offered -- an OP_RETURN has no ledger to keep. syncScriptKeeps paints
+    // both states and keeps them live.
+    const outKeep = document.createElement('div');
+    outKeep.className = 'tx-out-keep';
+    outputsEl.append(outKeep);
+    scriptToAddress(out.spkHex).then((r) => {
+      if (gen !== renderGen || !r || !r.address) return;
+      outKeep.dataset.address = r.address;
+      syncScriptKeeps();
+    }).catch(() => {});
     const scriptCell = document.createElement('div');
     scriptCell.className = 'tx-out-script';
     scriptCell.id = `out-${i}`;   // a referencing input scrolls here so this output leads the page
@@ -5642,6 +5681,46 @@ function syncBookmarkTitles() {
   }
 }
 
+// The locking-script keep lines, painted from the reader's ledger shelf: an
+// address not yet shelved offers the hollow ribbon alone, centered above its
+// paragraph -- press it and the title form opens, and the save shelves the
+// address as a titled one-address ledger. A shelved one reads the ledger's
+// name (the address itself when it was kept unnamed) with the filled ribbon
+// beside it, linking to that ledger. Removal is the Ledger page's own keep
+// button, where the shelf is curated.
+function syncScriptKeeps() {
+  for (const el of document.querySelectorAll('.tx-out-keep')) {
+    const address = el.dataset.address;
+    el.textContent = '';
+    if (!address) continue;
+    const kept = keptLedgers().find((k) => k.addresses.includes(address));
+    if (kept) {
+      const name = document.createElement('span');
+      name.className = 'out-keep-name';
+      name.textContent = kept.title || address;
+      const rib = document.createElement('a');
+      rib.className = 'keep-rib kept';
+      rib.href = `./bitcoin-ledger.html?address=${encodeURIComponent(address)}`;
+      rib.innerHTML = RIBBON_SVG;
+      rib.title = `${kept.title || address} — read this ledger`;
+      rib.setAttribute('aria-label', `Open the ledger ${kept.title || address}`);
+      el.append(name, rib);
+    } else {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'keep-rib';
+      btn.innerHTML = RIBBON_SVG;
+      btn.title = 'bookmark this locking script — its address joins your ledgers';
+      btn.setAttribute('aria-label', 'Bookmark this locking script: keep its address as a ledger');
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        startBookmark(e, { label: 'locking script', ledger: address, prose: address, what: KEEPS['locking script'] }, btn);
+      });
+      el.append(btn);
+    }
+  }
+}
+
 // The curated contents' name for a bookmarkable place, when the table of
 // contents already lists it: matched by hash, or by the resolved height plus
 // whichever coordinates narrow it (section index, output, leaf level) -- the
@@ -5667,6 +5746,9 @@ function curatedTitleFor(entry, place) {
 // bookmarkable hash on the page belongs to the chapter on screen). The reader
 // can accept or edit it.
 function suggestTitle(entry) {
+  // A locking-script keep names a ledger, and a ledger's name is the
+  // reader's to give -- nothing on the page suggests one.
+  if (entry.ledger) return '';
   const b = bookmarks.find((x) => keyOf(x) === bookmarkKey(entry.hex, bmSubOf(entry)));
   if (b && b.title) return b.title;               // keep an existing title when retitling
   const place = entryPlacement(entry);
@@ -5807,6 +5889,17 @@ function startBookmark(ev, entry, anchorEl) {
 
 function saveTitle() {
   if (!menuEntry) return;
+  // A locking-script keep goes to the ledger shelf, not the bookmark store:
+  // the address becomes a titled one-address ledger (untitled, it reads by
+  // its address there), exactly what the Ledger page's keep button writes.
+  if (menuEntry.ledger) {
+    if (!keptLedgers().some((k) => k.addresses.includes(menuEntry.ledger))) {
+      saveKeptLedgers([...keptLedgers(), { title: titleInput.value.trim(), addresses: [menuEntry.ledger] }]);
+    }
+    syncScriptKeeps();
+    closeHashMenu();
+    return;
+  }
   if (addBookmark(menuEntry, titleInput.value.trim())) { closeHashMenu(); return; }
   // The reference couldn't be resolved, so nothing was saved -- say so instead
   // of silently closing on a bookmark that wouldn't appear in the contents.
