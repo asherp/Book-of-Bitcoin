@@ -425,7 +425,8 @@ a:hover { text-decoration: underline; }
   .entry-section .tx-inputs, .entry-section .tx-margin-cites, .entry-section .tx-outputs, .entry-section .tx-locktime { grid-column:1; grid-row:auto; display:block; }
   .entry-section .tx-in-cite, .entry-section .cite-amount { text-align:left; margin:0 0 .2em; }
   .entry-section .chapter-footnotes { display:block; }
-  .entry-section .tx-out-value { text-align:left; margin:0 0 .55em; }
+  /* Output amounts keep the ledger's right edge even collapsed (the book's rule). */
+  .entry-section .tx-out-value { margin:0 0 .55em; }
   .entry-section .tx-locktime { margin:0 0 .55em; }
   .entry-section .tx-line.tx-body-lead { padding-top:.8em; }
 }
