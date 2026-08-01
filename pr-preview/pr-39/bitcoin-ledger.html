@@ -372,10 +372,11 @@ a:hover { text-decoration: underline; }
   display:grid; grid-template-columns:minmax(0,1fr) 7em; grid-template-columns:subgrid; column-gap:1.3em; align-items:start; }
 .entry-section .tx-out-script { grid-column:1; min-width:0; }
 .entry-section .tx-out-value { grid-column:2; text-align:right; font-variant-numeric:tabular-nums; }
-/* The closing balance line, mirroring the book: Σ inputs left, − fee
-   between, Σ outputs right -- the geometry is the equation, and it is the
-   section's last line, below the locktime colophon. */
-.entry-section .tx-totals { grid-column:left / -1; grid-row:4; display:flex; justify-content:space-between; align-items:baseline; gap:1em; margin-top:.35em; font:italic 400 13.5px/1.4 'Newsreader',serif; color:var(--dim); font-variant-numeric:tabular-nums; }
+/* The balance line, mirroring the book: Σ inputs left, − fee between,
+   Σ outputs right -- the geometry is the equation. Derived rather than on
+   the wire, it leads the foot region below the section's one rule (a
+   full-width row of the footnotes grid), apart from the record it totals. */
+.entry-section .tx-totals { grid-column:1 / -1; display:flex; justify-content:space-between; align-items:baseline; gap:1em; margin:0 0 1.6em; font:italic 400 13.5px/1.4 'Newsreader',serif; color:var(--dim); font-variant-numeric:tabular-nums; }
 .entry-section .tx-totals .t-fee { color:var(--meta); }
 .entry-section .tx-locktime { grid-column:left / -1; grid-row:3; text-align:center; font-style:normal; }
 .entry-section .tx-note { font:italic 400 13.5px/1.4 'Newsreader',serif; color:var(--dim); }
@@ -432,8 +433,8 @@ a:hover { text-decoration: underline; }
      their input, amounts following their output. */
   .entry-section .tx-flow { grid-template-columns:1fr; }
   .entry-section .tx-inputs, .entry-section .tx-margin-cites, .entry-section .tx-outputs, .entry-section .tx-locktime { grid-column:1; grid-row:auto; display:block; }
-  /* The balance line keeps its three stations even collapsed (the book's rule). */
-  .entry-section .tx-totals { grid-column:1; grid-row:auto; }
+  /* The balance line keeps its three stations even collapsed (the book's
+     rule); it lives in the foot region, which the collapse leaves flex. */
   .entry-section .tx-in-cite, .entry-section .cite-amount { text-align:left; margin:0 0 .2em; }
   /* The footnotes restack, the book's way: the citation leads its witness
      as a full-width block, and the index hangs in a fixed indent every
@@ -1912,18 +1913,22 @@ const openEntryLeaf = async (alive) => {
     lock.textContent = s.fields.locktime
       + (s.verified ? '' : ' · unverified — the bytes did not hash to this txid');
     lock.title = s.fields.locktimeTitle;
-    flow.append(inputsEl, marginEl, outputsEl, lock, ...(totals ? [totals] : []));
+    flow.append(inputsEl, marginEl, outputsEl, lock);
     wrap.append(flow);
     secEl.replaceChildren(wrap);
-    // The witness footnotes, at the section's foot as the book sets them.
-    // A modest stack's prose is already composed; a data-carrier-sized one
-    // streams in when its footnote scrolls near -- the book's own lazy
-    // treatment: the stack renders with a dim placeholder per data push,
-    // and each push's prose is encoded one macrotask at a time, so a
-    // kilobyte-scale inscription never blocks the leaf.
-    if (footnotes.length) {
+    // The foot region, as the book sets it: the balance line first --
+    // derived, not on the wire, so it reads below the section's rule, apart
+    // from the record -- then the witness footnotes. The region renders
+    // whenever it has either to carry. A modest witness stack's prose is
+    // already composed; a data-carrier-sized one streams in when its
+    // footnote scrolls near -- the book's own lazy treatment: the stack
+    // renders with a dim placeholder per data push, and each push's prose
+    // is encoded one macrotask at a time, so a kilobyte-scale inscription
+    // never blocks the leaf.
+    if (footnotes.length || totals) {
       const fnSec = document.createElement('div');
       fnSec.className = 'chapter-footnotes';
+      if (totals) fnSec.append(totals);
       const lazyFns = [];
       for (const fn of footnotes) {
         const p2 = document.createElement('p');
