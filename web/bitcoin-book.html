@@ -5769,8 +5769,16 @@ await loadNotables();
 
 if (pParam) {
   const pOut = pParam.out;
-  Promise.resolve(openLookup(String(pParam.height), pParam.index)).then(() => {
+  // A .a coordinate lands on the footnote itself: its mark is its element id,
+  // so the lazy footnotes are forced in (a no-op once loaded) and the entry
+  // brought to the top.
+  const pWit = pParam.wit;
+  Promise.resolve(openLookup(String(pParam.height), pParam.index)).then(async () => {
     if (pOut != null && pParam.index >= 0) $(`out-${pOut}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (pWit != null && pParam.index >= 0) {
+      await renderFootnotes(renderGen);
+      $(`fn-${footnoteMark(pWit)}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
   }).catch(() => { /* the lookup's own error handling has the page */ });
 } else if (txidParam) {
   const outRaw = parseInt(params.get('out'), 10);
