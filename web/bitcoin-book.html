@@ -504,6 +504,11 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 /* Dim like the chapter-hash above it -- both are the identifying hash prose of
    the thing being read, one tier under the body, not two. */
 .section-hash { margin: 13px auto 0; max-width: 46ch; font: italic 400 calc(14.5px * var(--scale-body, 1))/1.55 'Newsreader',serif; color: var(--dim); }
+/* The section's date and depth, under the txid prose: derived readings, not
+   bytes, so they stand upright like the frontispiece's fields -- one line
+   each, a shade smaller than the hash prose they follow. */
+.section-meta { margin: 8px auto 0; max-width: 46ch; font: 400 calc(13.5px * var(--scale-body, 1))/1.55 'Newsreader',serif; color: var(--dim); }
+.section-meta div { display: block; }
 /* The volume/book leaves borrow the chapter-hash slot for their range and
    target lines -- not hash prose, so they stand upright. */
 .chapter-hash.plain, .chapter-hash .cfx-gold { font-style: normal; }
@@ -936,6 +941,13 @@ button:disabled { opacity: .4; cursor: not-allowed; }
       <div class="chapter-frontispiece" id="ch-frontispiece"></div>
       <h2 class="section-title" id="section-title"></h2>
       <div class="section-hash" id="section-hash"></div>
+      <!-- The section's place in time, under its identity: the containing
+           block's header time, then how deep the chain has buried it. Two
+           derived lines -- readings of the record, not bytes of this
+           transaction -- so they stand upright and apart from the italic
+           hash prose above them. Hidden on leaves, ghosts, and projected
+           sections, which have no sealed block to date. -->
+      <div class="section-meta hidden" id="section-meta"></div>
     </header>
 
     <div class="chapter-body" id="ch-paragraphs"></div>
@@ -2202,6 +2214,7 @@ const liveProjection = (() => {
     const wasTip = atTipPage();
     tipHeight = block.height;
     projectedCache = null;   // every projected height re-seats
+    refreshSectionConfirmations();   // an open section deepens in place
     if (!state || !state.projected) {
       // The tip's page was on screen: turn it to the block that just took the
       // tip. The page it leaves keeps nothing of its lateness -- the clock is
@@ -3155,6 +3168,7 @@ function renderLeafShell() {
   $('page-folio').classList.add('hidden');
   $('section-title').classList.add('hidden');
   $('section-hash').classList.add('hidden');
+  $('section-meta').classList.add('hidden');
   $('ch-paragraphs').innerHTML = '';
   $('ch-footnotes').innerHTML = '';
   $('ch-totals').innerHTML = '';
@@ -3440,6 +3454,7 @@ function renderGhostTombstone(txid) {
   lazyEncode.reset();
   $('section-title').classList.remove('hidden');
   $('section-hash').classList.remove('hidden');
+  $('section-meta').classList.add('hidden');   // never mined: no date, no depth
   const { prose: txidProse } = encodeSeedPhrase(reverseHex(txid), 'english', BEST_OF);
   $('section-hash').textContent = txidProse;
   const sectionTitle = $('section-title');
@@ -3486,6 +3501,42 @@ function renderGhostTombstone(txid) {
   labelNav();
 }
 
+// The section's two derived lines beneath its txid prose (see #section-meta):
+// the containing block's header time, then its confirmation count -- how many
+// chapters stand from this one to the tip, both counted. Readings, not bytes:
+// the date is the header's nTime interpreted, the depth is arithmetic against
+// a tip this page never carries. A projected section has no sealed block to
+// date and a ghost was never mined at all, so both leave the lines hidden.
+function renderSectionMeta() {
+  const el = $('section-meta');
+  el.textContent = '';
+  const ts = state.projected || !state.block ? null : state.block.timestamp;
+  if (!Number.isFinite(ts)) { el.classList.add('hidden'); return; }
+  const t = timestampInfo(ts);
+  const when = document.createElement('div');
+  when.textContent = t.mark;
+  when.title = `${t.title} — the containing block's header time, the miner's own clock when the chapter was sealed`;
+  el.append(when);
+  const conf = document.createElement('div');
+  conf.id = 'section-confirmations';
+  el.append(conf);
+  refreshSectionConfirmations();
+  el.classList.remove('hidden');
+}
+
+// Fill (or re-say) the confirmation line from the current tip. Callable at
+// any time -- a no-op unless a mined section's meta lines are on screen and
+// the tip is known -- so the live tracker can deepen an open page in place
+// as new blocks land (see applyBlock), without re-rendering anything else.
+function refreshSectionConfirmations() {
+  const el = document.getElementById('section-confirmations');
+  if (!el || !state || state.projected || tipHeight === null) return;
+  const n = tipHeight - state.height + 1;
+  if (n < 1) return;   // a stale tip (reorg mid-read); keep the line as it stands
+  el.textContent = `${n.toLocaleString()} confirmation${n === 1 ? '' : 's'}`;
+  el.title = `blocks from this one to the chain tip, both counted — tip ${tipHeight.toLocaleString()} − height ${state.height.toLocaleString()} + 1`;
+}
+
 function renderChapter(para) {
   $('chapter').classList.remove('title-leaf');
   $('chapter').classList.remove('span-leaf');
@@ -3505,6 +3556,7 @@ function renderChapter(para) {
   const txidMarkTitle = 'transaction id — the double-SHA256 of this transaction&#39;s bytes, its identity; all 256 bits carried in the prose';
   $('section-hash').innerHTML =
     `<span class="cfx-gold" title="${txidMarkTitle}">⌘</span><span class="op op-push">${toSuperscript(256)}</span> ${txidProse}`;
+  renderSectionMeta();
 
   const body = $('ch-paragraphs');
   body.innerHTML = '';
