@@ -401,7 +401,11 @@ a:hover { text-decoration: underline; }
 .entry-section .chapter-footnotes { margin-top:48px; padding-top:24px; border-top:1px solid var(--rule);
   display:grid; grid-template-columns:[left] 6.5em [body] minmax(0,1fr); column-gap:1.3em; align-items:start; }
 .entry-section .chapter-footnotes .footnote-entry { grid-column:2; }
-.entry-section .chapter-footnotes .tx-in-cite { padding-top:0; }
+/* The reference and its amount stay right against the gutter at every width
+   (outranking the portrait collapse's left-align), flush to the witness they
+   cite -- the book's rule. */
+.entry-section .chapter-footnotes .tx-in-cite { padding-top:0; text-align:right; }
+.entry-section .chapter-footnotes .cite-amount { text-align:right; }
 /* 11px/1.3 vs the 19px/1.75 body is the BIP141 discount set in type: 4x the
    character density, a quarter of the space per letter -- see the book page's
    .footnote-entry comment for the arithmetic. */
@@ -424,7 +428,8 @@ a:hover { text-decoration: underline; }
   .entry-section .tx-flow { grid-template-columns:1fr; }
   .entry-section .tx-inputs, .entry-section .tx-margin-cites, .entry-section .tx-outputs, .entry-section .tx-locktime { grid-column:1; grid-row:auto; display:block; }
   .entry-section .tx-in-cite, .entry-section .cite-amount { text-align:left; margin:0 0 .2em; }
-  .entry-section .chapter-footnotes { display:block; }
+  /* The footnotes keep their two columns even here, references right against
+     the witness they cite (the book's rule; the scoped rules above hold). */
   /* Output amounts keep the ledger's right edge even collapsed (the book's rule). */
   .entry-section .tx-out-value { margin:0 0 .55em; }
   .entry-section .tx-locktime { margin:0 0 .55em; }
