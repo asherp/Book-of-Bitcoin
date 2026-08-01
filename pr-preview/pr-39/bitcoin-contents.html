@@ -299,7 +299,7 @@ function entryEl(entry, underBook) {
   const row = document.createElement('a');
   row.className = 'toc-entry' + (underBook ? ' under-book' : '') + (entry.bookmark ? ' is-bookmark' : '');
   row.dataset.entryId = entry.id;   // the projected section anchors after the tip's row
-  row.href = entryHref(entry.id, entry.index, entry.page, entry.vout ?? entry.out ?? null);
+  row.href = entryHref(entry.id, entry.index, entry.page, entry.vout ?? entry.out ?? null, entry.vin ?? null);
   const t = document.createElement('span'); t.className = 'toc-title';
   // A reader's own bookmark flies the same ribbon it wears in the book, so it's
   // distinguishable from a curated entry even though it sits in reading order.
@@ -1013,10 +1013,11 @@ const bmPlacements = new Map();        // bookmark hex -> place | null (once att
 // coordinates the yaml's ids resolve to (height + section index + output +
 // leaf level); a legacy bookmark without a stored reference still matches by
 // its hash.
-const bmKey = (b) => (b.page ? `${b.page}@${b.hex}` : b.vout == null ? b.hex : `${b.hex}:${b.vout}`);
+const bmKey = (b) => (b.page ? `${b.page}@${b.hex}` : b.vin != null ? `${b.hex}:w${b.vin}` : b.vout == null ? b.hex : `${b.hex}:${b.vout}`);
 const allBookmarks = readBookmarks();
 const bmForPlace = (p) => allBookmarks.find((b) => {
   if (p.address) return false;
+  if (b.vin != null) return false;   // the contents names no witness coordinate, so a witness keep is always its own row
   if (p.page || b.page) return (p.page ?? null) === (b.page ?? null) && p.id === String(b.height);
   if ((p.out ?? null) !== (b.vout ?? null)) return false;
   return p.id === b.hex || (p.id === String(b.height) && (p.index ?? null) === (b.pos ?? null));
@@ -1037,7 +1038,7 @@ const entries = () => [
       place: placements.get(placeKey(p)), tried: placements.has(placeKey(p)) };
   }),
   ...bookmarks.map((b) => ({
-    id: b.page ? String(b.height) : b.hex, index: b.pos ?? undefined, vout: b.vout ?? undefined, page: b.page,
+    id: b.page ? String(b.height) : b.hex, index: b.pos ?? undefined, vout: b.vout ?? undefined, vin: b.vin ?? undefined, page: b.page,
     title: b.title || b.prose || shortHex(b.hex),
     bookmark: true, place: bmPlacements.get(bmKey(b)), tried: bmPlacements.has(bmKey(b)),
   })),

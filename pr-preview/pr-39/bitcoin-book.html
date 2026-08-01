@@ -797,6 +797,14 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 .footnote-entry { margin: 0 0 1.1em; font: italic 400 calc(11px * var(--scale-body, 1))/1.3 'Newsreader',serif; color: var(--dim); }
 .footnote-entry:target { color: var(--ink-soft); }
 .footnote-mark { font: 500 calc(8px * var(--scale-body, 1))/1 'IBM Plex Mono',monospace; color: var(--accent); margin-right: .5em; font-style: normal; vertical-align: .35em; }
+/* A footnote's ribbon flies at its entry's right edge, the way an output's
+   flies on its amount. The mark is the menu's click target, but an 8px
+   letter is no place for an 18px button -- so the mark stays unpositioned
+   and the entry is the ribbon's positioned ancestor, with the ribbon's room
+   held clear at the entry's right edge (the outputs' own 20px). */
+.footnote-entry { position: relative; padding-right: 20px; }
+.footnote-mark.bm-host { position: static; }
+.footnote-entry .hash-bookmark { top: 0; }
 
 </style>
 </head>
@@ -2602,6 +2610,7 @@ const KEEPS = {
   'block hash': 'this chapter',
   'transaction id': 'this section',
   output: 'this output',
+  witness: 'this witness',
   volume: 'this volume',
   book: 'this book',
 };
@@ -2612,7 +2621,7 @@ const KEEPS = {
 // is never revealed on the page. A hash that's a lookup target (a block hash,
 // previous-block hash, or txid) can be bookmarked; a merkle root, which leads
 // nowhere, is copy-only.
-function attachHashCopy(el, hex, label, prose = el.textContent, vout = null) {
+function attachHashCopy(el, hex, label, prose = el.textContent, vout = null, vin = null) {
   // `prose` is the readable form the menu offers to copy. The hit target may be
   // a leading mark (⋔ for a merkle root) or a persistent heading (the chapter /
   // section title), so the prose is passed in explicitly rather than read off
@@ -2621,23 +2630,24 @@ function attachHashCopy(el, hex, label, prose = el.textContent, vout = null) {
   // target, nonce) is copy-only.
   // An output is bookmarkable too: it is not a hash, but it is a place in the
   // book -- the finest one the citation scheme names (§1.0) -- and the thing a
-  // reader most often wants to keep.
-  const nav = label === 'block hash' || label === 'transaction id' || label === 'output';
+  // reader most often wants to keep. So is an input's witness: a footnote is
+  // a place on the page, named by its section and the input that carries it.
+  const nav = label === 'block hash' || label === 'transaction id' || label === 'output' || label === 'witness';
   el.classList.add('hash-copy');
   el.tabIndex = 0;
-  el.setAttribute('aria-label', `${label}${vout == null ? '' : ` ${vout}`}: ${hex} — click for menu`);
+  el.setAttribute('aria-label', `${label}${vout == null ? '' : ` ${vout}`}${vin == null ? '' : ` of input ${vin + 1}`}: ${hex} — click for menu`);
   // A persistent element (a title) is re-attached with fresh hash data on every
   // section render: the menu params live on the element and are re-read at open
   // time, while the listeners are wired exactly once.
-  const entry = { hex, label, prose, nav, vout, what: KEEPS[label] };
+  const entry = { hex, label, prose, nav, vout, vin, what: KEEPS[label] };
   el.__hashMenu = entry;
   // The ribbon is offered only where the place can actually be kept: a merkle
   // root leads nowhere, and a draft chapter has no settled reference yet, so
   // a bookmark of either could never take a row in the contents.
   if (nav && entryPlacement(entry)) {
     el.__bmEntry = entry;
-    el.__bmKey = bookmarkKey(hex, vout);
-    setBookmarkRibbon(el, isBookmarked(hex, vout));
+    el.__bmKey = bookmarkKey(hex, bmSubOf(entry));
+    setBookmarkRibbon(el, isBookmarked(hex, bmSubOf(entry)));
   } else {
     clearBookmarkRibbon(el);
     el.__bmKey = null;
@@ -3643,7 +3653,11 @@ function renderChapter(para) {
     // The reference leads the citation, then -- for a witness-bearing input --
     // its footnote superscript (numbered in input order).
     cite.append(citeBody);
-    if (inp.witnessHex) { footnotes.push({ n: footnotes.length + 1, items: inp.witnessItems, zero: inp.witnessZero }); cite.append(witnessRef(footnotes.length)); }
+    // The witness record carries its section coordinates (txid, § number, and
+    // the input that bears it -- inputIndex already advanced past this input
+    // when the citation took its in-N id) so the footnote can offer its own
+    // copy/bookmark menu when it renders.
+    if (inp.witnessHex) { footnotes.push({ n: footnotes.length + 1, vin: inputIndex - 1, txid: para.txid, num: para.num, items: inp.witnessItems, zero: inp.witnessZero }); cite.append(witnessRef(footnotes.length)); }
     // A second line sits beneath the reference: the sequence mark leads it, then
     // the amount of the output this input spends (filled on resolve, into its own
     // span so the mark survives). A coinbase has no prevout, so its line carries
@@ -4034,6 +4048,14 @@ async function renderFootnotes(gen) {
     p.className = 'footnote-entry';
     p.id = `fn-${footnoteMark(fn.n)}`;
     p.innerHTML = `<span class="footnote-mark">${footnoteMark(fn.n)}</span>${prose}`;
+    // The footnote's mark is the witness's own handle: click for the
+    // copy/bookmark menu -- a witness is a place a reader can keep, named
+    // by its section and the input that carries it.
+    const markEl = p.querySelector('.footnote-mark');
+    if (markEl && fn.txid) {
+      attachHashCopy(markEl, fn.txid, 'witness',
+        `${reference(state.height)} §${fn.num} — witness ${footnoteMark(fn.n)}`, null, fn.vin);
+    }
     // A witness-only input's citation (carrying its in-N anchor, resolving
     // asynchronously wherever it sits) lands in the left cell of its own
     // footnote's row; entries for inputs that kept a body row have none.
@@ -5372,9 +5394,13 @@ let bookmarks = readBookmarks();
 // keeping Volume III and keeping the chapter that opens it stay two bookmarks
 // rather than one. Legacy bookmarks carry neither vout nor page and key as
 // before, so nothing saved before this reads differently now.
-const bookmarkKey = (hex, vout = null, page = null) =>
-  (page ? `${page}@${hex}` : vout == null ? hex : `${hex}:${vout}`);
-const keyOf = (b) => bookmarkKey(b.hex, b.vout ?? null, b.page ?? null);
+const bookmarkKey = (hex, sub = null, page = null) =>
+  (page ? `${page}@${hex}` : sub == null ? hex : `${hex}:${sub}`);
+// The sub-coordinate a bookmark or a menu entry names within its hash: an
+// output's vout (a number), or an input's witness as w<vin> -- distinct key
+// spaces, so keeping output 3 and keeping input 3's witness stay two keeps.
+const bmSubOf = (x) => (x.vin != null ? `w${x.vin}` : (x.vout ?? null));
+const keyOf = (b) => bookmarkKey(b.hex, bmSubOf(b), b.page ?? null);
 const isBookmarked = (hex, vout = null, page = null) => bookmarks.some((b) => keyOf(b) === bookmarkKey(hex, vout, page));
 const saveBookmarks = () => { try { localStorage.setItem(BOOKMARKS_KEY, JSON.stringify(bookmarks)); } catch {} };
 
@@ -5392,6 +5418,7 @@ function entryPlacement(entry) {
   // span is placed by that height and the name of the level it stands at.
   if (entry.page) return { height: state.height, pos: null, page: entry.page };
   if (entry.label === 'output') return { height: state.height, pos: state.index, vout: entry.vout };
+  if (entry.label === 'witness') return { height: state.height, pos: state.index, vin: entry.vin };
   if (entry.label === 'transaction id') return { height: state.height, pos: state.index };
   return { height: state.height, pos: null };   // a block hash -- this chapter
 }
@@ -5401,7 +5428,7 @@ function entryPlacement(entry) {
 // table of contents can slot it into reading order; returns false (saving
 // nothing) when the reference can't be resolved.
 function addBookmark(entry, title) {
-  const key = bookmarkKey(entry.hex, entry.vout ?? null, entry.page ?? null);
+  const key = bookmarkKey(entry.hex, bmSubOf(entry), entry.page ?? null);
   const existing = bookmarks.find((b) => keyOf(b) === key);
   if (existing) {
     existing.title = title;
@@ -5414,6 +5441,9 @@ function addBookmark(entry, title) {
       // An output carries the vout it names, so the contents can cite it as
       // §section.vout and open the book at that output.
       ...(place.vout == null ? {} : { vout: place.vout }),
+      // A witness carries the input that bears it, so the contents can open
+      // the section with that footnote brought to the top.
+      ...(place.vin == null ? {} : { vin: place.vin }),
       // A leaf carries the level it stands at, so the contents can cite it as
       // a volume or a book and open that leaf rather than a chapter.
       ...(place.page ? { page: place.page } : {}),
@@ -5460,8 +5490,8 @@ function ribbonOf(el) {
     e.stopPropagation();
     const entry = el.__bmEntry;
     if (!entry) return;
-    const key = bookmarkKey(entry.hex, entry.vout ?? null, entry.page ?? null);
-    if (isBookmarked(entry.hex, entry.vout ?? null, entry.page ?? null)) { removeBookmark(key); closeHashMenu(); return; }
+    const key = bookmarkKey(entry.hex, bmSubOf(entry), entry.page ?? null);
+    if (isBookmarked(entry.hex, bmSubOf(entry), entry.page ?? null)) { removeBookmark(key); closeHashMenu(); return; }
     startBookmark(e, entry, rib);
   });
   el.appendChild(rib);
@@ -5503,7 +5533,9 @@ function syncBookmarkRibbons() {
 // removal renames the page live.
 function syncBookmarkTitles() {
   for (const el of document.querySelectorAll('[data-bm-subtitle]')) {
-    const b = bookmarks.find((x) => !x.page && x.vout == null && x.hex === el.dataset.bmSubtitle);
+    // The section's own keep only: an output's or a witness's bookmark
+    // shares the txid but names a finer place, not the section.
+    const b = bookmarks.find((x) => !x.page && x.vout == null && x.vin == null && x.hex === el.dataset.bmSubtitle);
     el.textContent = (b && b.title) || el.dataset.fallback || '';
   }
   for (const el of document.querySelectorAll('[data-bm-out]')) {
@@ -5519,6 +5551,7 @@ function syncBookmarkTitles() {
 // whichever coordinates narrow it (section index, output, leaf level) -- the
 // same shapes the yaml's ids resolve to (btc-notables.js).
 function curatedTitleFor(entry, place) {
+  if (entry.vin != null) return null;   // the contents names no witness coordinate
   const p = places().find((p) => {
     if (p.address) return false;
     if (place.page || p.page) return (p.page ?? null) === (place.page ?? null) && p.id === String(place.height);
@@ -5532,7 +5565,7 @@ function curatedTitleFor(entry, place) {
 // bookmarkable hash on the page belongs to the chapter on screen). The reader
 // can accept or edit it.
 function suggestTitle(entry) {
-  const b = bookmarks.find((x) => keyOf(x) === bookmarkKey(entry.hex, entry.vout ?? null));
+  const b = bookmarks.find((x) => keyOf(x) === bookmarkKey(entry.hex, bmSubOf(entry)));
   if (b && b.title) return b.title;               // keep an existing title when retitling
   const place = entryPlacement(entry);
   if (!place) return '';
@@ -5547,6 +5580,7 @@ function suggestTitle(entry) {
   // scanning the contents for it will be looking for.
   if (place.page === 'volume') return `Volume ${toRoman(volume)}`;
   if (place.page === 'book') return `Book ${book.toLocaleString()}`;
+  if (place.vin != null) return `${toRoman(volume)} β${book} ■${chapter} §${place.pos + 1} — input ${place.vin + 1}'s witness`;
   if (place.pos != null) return `${toRoman(volume)} β${book} ■${chapter} §${place.pos + 1}`;
   return genesis ? 'The Genesis Block' : `Chapter ${chapterName(chapter)}`;
 }
@@ -5593,7 +5627,7 @@ function openHashMenu(ev, entry, anchorEl) {
   // Keyed by the whole place, output and all: a transaction's own bookmark and
   // one of its outputs' are two different keeps, and the item must say which
   // of them it is about.
-  if (entry.nav) menuBmBtn.textContent = isBookmarked(entry.hex, entry.vout ?? null) ? 'Remove bookmark' : 'Bookmark';
+  if (entry.nav) menuBmBtn.textContent = isBookmarked(entry.hex, bmSubOf(entry)) ? 'Remove bookmark' : 'Bookmark';
   hashMenu.classList.remove('hidden');
   setMenuMode('actions');
   // Anchor at the click; for a keyboard open, sit under the element.
@@ -5643,8 +5677,8 @@ function promptForTitle() {
 }
 menuBmBtn.addEventListener('click', () => {
   if (!menuEntry) return;
-  const key = bookmarkKey(menuEntry.hex, menuEntry.vout ?? null, menuEntry.page ?? null);
-  if (isBookmarked(menuEntry.hex, menuEntry.vout ?? null, menuEntry.page ?? null)) { removeBookmark(key); closeHashMenu(); return; }
+  const key = bookmarkKey(menuEntry.hex, bmSubOf(menuEntry), menuEntry.page ?? null);
+  if (isBookmarked(menuEntry.hex, bmSubOf(menuEntry), menuEntry.page ?? null)) { removeBookmark(key); closeHashMenu(); return; }
   promptForTitle();   // not yet saved: name it
 });
 
@@ -5730,8 +5764,19 @@ if (pParam) {
   }).catch(() => { /* the lookup's own error handling has the page */ });
 } else if (txidParam) {
   const outRaw = parseInt(params.get('out'), 10);
-  Promise.resolve(openLookup(txidParam)).then(() => {
+  // &wit=N brings input N's witness footnote to the top -- the landing a
+  // witness bookmark makes. The footnotes render lazily, so they are forced
+  // in first (a no-op once loaded), then the footnote itself is the target,
+  // falling back to the input's citation anchor if the entry isn't found.
+  const witRaw = parseInt(params.get('wit'), 10);
+  Promise.resolve(openLookup(txidParam)).then(async () => {
     if (Number.isFinite(outRaw)) $(`out-${outRaw}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (Number.isFinite(witRaw)) {
+      await renderFootnotes(renderGen);
+      const fn = currentFootnotes.find((f) => f.vin === witRaw);
+      const el = (fn && $(`fn-${footnoteMark(fn.n)}`)) || $(`in-${witRaw}`);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
   }).catch(() => { /* the lookup's own error handling has the page */ });
 } else if (blockParam) {
   // ?block= takes every form the search box does, references included -- a

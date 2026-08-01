@@ -66,7 +66,7 @@ export function refFromProof(height, pos) {
 // and an output -- a bookmarked one, or the one a §section.output reference
 // names -- lands on that output within the section rather than on the section
 // alone, exactly as a citation carrying one does.
-export function entryHref(id, index, page, vout = null) {
+export function entryHref(id, index, page, vout = null, vin = null) {
   // An address is a name, not a place: it has no chapter to open, and reads in
   // the Ledger -- the same hand-off the search box makes.
   if (looksLikeAddress(id)) return `bitcoin-ledger.html?address=${id}`;
@@ -75,5 +75,8 @@ export function entryHref(id, index, page, vout = null) {
   if (isBlock && (page === 'book' || page === 'volume')) return `bitcoin-book.html?${q}&page=${page}`;
   const idx = isBlock && index != null ? `&index=${index}` : '';
   const out = vout == null ? '' : `&out=${vout}`;
-  return `bitcoin-book.html?${q}${idx}${out}`;
+  // A witness bookmark lands on its footnote: &wit names the input whose
+  // witness leads the page.
+  const wit = vin == null ? '' : `&wit=${vin}`;
+  return `bitcoin-book.html?${q}${idx}${out}${wit}`;
 }
