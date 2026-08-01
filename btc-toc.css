@@ -35,6 +35,21 @@
 .toc-commentary { display:block; margin-top:.3em; font:400 10.5px/1.4 'IBM Plex Mono',monospace; letter-spacing:.08em; text-transform:uppercase; color:var(--meta); }
 .toc-entry:hover .toc-commentary { color:var(--dim); }
 
+/* A row that stands for a whole part of the book rather than a passage in it
+   — the top-level contents' volumes, appendices and front-matter leaves. It
+   is set a shade larger than a chapter's row, since it names a container of
+   them, and carries beneath its name the line that part's own leaf carries
+   at its head: what it spans, and how much of it there is. Prose register,
+   not the annotation register a credit takes — this is the row's own
+   description, not a note about it. */
+.toc-part .toc-title { font-size:19px; color:var(--ink); }
+.toc-span { display:block; margin-top:.25em; font:400 12.5px/1.5 'Public Sans',sans-serif; letter-spacing:.01em; color:var(--meta); }
+.toc-part:hover .toc-span { color:var(--dim); }
+/* The row that closes a group drops its own hairline: the next heading rules
+   off above itself, and two rules with a gap between them read as an empty
+   band rather than a division. */
+.toc-part:has(+ .toc-vol) { border-bottom:none; }
+
 /* A reader's own bookmark, sitting inline in reading order, wears the same
    ribbon it flies in the book. */
 .toc-bm { display:inline-block; width:9px; height:12px; margin-right:8px; color:var(--accent); vertical-align:baseline; }
