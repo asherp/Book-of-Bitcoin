@@ -150,7 +150,7 @@ import { allProofs, citeOf, leafOf } from './btc-proofs.js';
 import { creditLine, commentaryForAddresses } from './btc-commentary.js';
 import { readQueue, buildQueue } from './btc-mempool.js';
 import { INDEXED, keptLedgers, sameAddresses } from './btc-index.js';
-import { volumeBookChapter, toRoman, fromRoman, heightOf, expectedReference, footnoteSup } from './btc-citation.js';
+import { volumeBookChapter, toRoman, fromRoman, heightOf, expectedReference, footnoteMark } from './btc-citation.js';
 import { storeGet, storePut } from './btc-store.js';
 import { seedArchive } from './btc-seed.js';
 
@@ -194,8 +194,8 @@ const placeOf = (height, pos, page, vout = null, wn = null) => {
   if (page === 'book') return { volume: p.volume, book: p.book, chapter: null, section: null };
   // An output rides its section's citation with its vout appended -- §1.0,
   // as the book prints it (renderCitation in bitcoin-book.html) -- and a
-  // witness rides it as the footnote's alphabet index, superscripted (§1ᵃ),
-  // exactly as its mark reads on the page.
+  // witness rides it the same way, the footnote's alphabet index after the
+  // point (§1.a): letters name footnotes, digits name outputs.
   return { ...p, section: pos == null ? null : pos + 1, vout: pos == null ? null : vout, wit: pos == null ? null : wn };
 };
 
@@ -290,9 +290,10 @@ function tailRef({ book, chapter, section, vout, wit }, underBook) {
   // bare leaf, the β mark alone names it.
   if (chapter == null) return underBook ? '' : `β${book}`;
   let s = (underBook ? [`■${chapter}`] : [`β${book}`, `■${chapter}`]).join(' ');
-  // An output cites as §section.vout; a witness as §sectionᵃ -- the
-  // footnote's alphabet index riding the section, as the page prints it.
-  if (section != null) s += ` §${section}${vout == null ? '' : `.${vout}`}${wit == null ? '' : footnoteSup(wit)}`;
+  // An output cites as §section.vout; a witness as §section.a -- the
+  // footnote's alphabet index after the point, letters where an output
+  // would carry digits.
+  if (section != null) s += ` §${section}${vout == null ? '' : `.${vout}`}${wit == null ? '' : `.${footnoteMark(wit)}`}`;
   return s;
 }
 

@@ -966,7 +966,7 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 import { init, encodeSeedPhrase } from './glossia-msg.js';
 import { parseTransaction, computeTxid, parseBlockHeader, computeBlockHash, bitsToDifficulty } from './btc-tx.js';
 import { composeTransactionFields, composeBlockHeaderFields, bitsInfo, groupDigits, formatBtc, renderWitness, toSuperscript, timestampInfo } from './btc-prose.js';
-import { volumeBookChapter, heightOf, windowStartOf, retargetInside, toRoman, reference, parseReference, footnoteMark, footnoteSup } from './btc-citation.js';
+import { volumeBookChapter, heightOf, windowStartOf, retargetInside, toRoman, reference, parseReference, footnoteMark } from './btc-citation.js';
 import { loadNotables, places, placeTitle, blocksEta, appendix } from './btc-contents.js';
 import { queueLabel } from './btc-mempool.js';
 import { toSubscript } from './btc-sigla.js';
@@ -2640,7 +2640,7 @@ function attachHashCopy(el, hex, label, prose = el.textContent, vout = null, vin
   // section render: the menu params live on the element and are re-read at open
   // time, while the listeners are wired exactly once.
   // `wn` is a witness's 1-based footnote number -- its alphabet index on the
-  // page -- carried so the keep can be cited as the reader sees it (§17ᵃ).
+  // page -- carried so the keep can be cited by it (§17.a).
   const entry = { hex, label, prose, nav, vout, vin, wn, what: KEEPS[label] };
   el.__hashMenu = entry;
   // The ribbon is offered only where the place can actually be kept: a merkle
@@ -4056,7 +4056,7 @@ async function renderFootnotes(gen) {
     const markEl = p.querySelector('.footnote-mark');
     if (markEl && fn.txid) {
       attachHashCopy(markEl, fn.txid, 'witness',
-        `${reference(state.height)} §${fn.num}${footnoteSup(fn.n)}`, null, fn.vin, fn.n);
+        `${reference(state.height)} §${fn.num}.${footnoteMark(fn.n)}`, null, fn.vin, fn.n);
     }
     // A witness-only input's citation (carrying its in-N anchor, resolving
     // asynchronously wherever it sits) lands in the left cell of its own
@@ -5445,7 +5445,7 @@ function addBookmark(entry, title) {
       ...(place.vout == null ? {} : { vout: place.vout }),
       // A witness carries the input that bears it, so the contents can open
       // the section with that footnote brought to the top -- and its
-      // footnote number, so the contents can cite its alphabet index (§17ᵃ).
+      // footnote number, so the contents can cite its alphabet index (§17.a).
       ...(place.vin == null ? {} : { vin: place.vin }),
       ...(place.wn == null ? {} : { wn: place.wn }),
       // A leaf carries the level it stands at, so the contents can cite it as
@@ -5584,12 +5584,12 @@ function suggestTitle(entry) {
   // scanning the contents for it will be looking for.
   if (place.page === 'volume') return `Volume ${toRoman(volume)}`;
   if (place.page === 'book') return `Book ${book.toLocaleString()}`;
-  // A witness suggests the citation the reader sees on the page -- the
-  // section with the footnote's alphabet index riding it (§17ᵃ) -- falling
-  // back to naming its input when the footnote number isn't in hand.
+  // A witness suggests its citation: the section with the footnote's
+  // alphabet index after the point (§17.a, beside an output's §17.0) --
+  // falling back to naming its input when the footnote number isn't in hand.
   if (place.vin != null) {
     const base = `${toRoman(volume)} β${book} ■${chapter} §${place.pos + 1}`;
-    return place.wn != null ? `${base}${footnoteSup(place.wn)}` : `${base} — input ${place.vin + 1}'s witness`;
+    return place.wn != null ? `${base}.${footnoteMark(place.wn)}` : `${base} — input ${place.vin + 1}'s witness`;
   }
   if (place.pos != null) return `${toRoman(volume)} β${book} ■${chapter} §${place.pos + 1}`;
   return genesis ? 'The Genesis Block' : `Chapter ${chapterName(chapter)}`;
