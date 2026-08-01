@@ -580,7 +580,7 @@ import { INDEXED, isAddress, keptLedgers, saveKeptLedgers, sameAddresses, addres
          extendLine, renderLedger, renderRows, periods, lineNote, reconciled, ledgerSum, heldCoins, addressState, lastKnownState,
          formatBalanceBtc, formatNetBtc, chainFailureText, citeHref, sectionOf, sectionOfFetched, citePlace, passageTxid, passageEntries, txHexOf, outspendsOf, prevoutValuesOf,
          DEFAULT_ESPLORA, esploraCustom, esploraSelected, setEsploraSettings } from './btc-index.js';
-import { volumeBookChapter, heightOf, toRoman, parseReference, latinRefOf } from './btc-citation.js';
+import { volumeBookChapter, heightOf, toRoman, parseReference, latinRefOf, footnoteMark } from './btc-citation.js';
 import { BIP39, HP_SPELLS } from './btc-wordlists.js';
 import { appendix } from './btc-contents.js';
 import './btc-fontscale.js';   // the reader's type sizes: a ledger's readings are set at the size the book page's Commentary row chose
@@ -1984,11 +1984,20 @@ const openEntryLeaf = async (alive) => {
         const pl = await citePlace(sp.txid);
         if (!pl || !alive()) return;
         const p2 = volumeBookChapter(pl.height);
+        // The spending input's witness footnote letter (§17.a), when the
+        // shared citations archive knows the spender's witness layout --
+        // banked by the book page's resolver; a placement-only record
+        // cites the bare section rather than fetching more.
+        let witMark = '';
+        if (pl.wits && pl.wits[sp.vin]) {
+          const wn = pl.wits.slice(0, sp.vin + 1).reduce((a2, w) => a2 + (w ? 1 : 0), 0);
+          witMark = `.${footnoteMark(wn)}`;
+        }
         const a = document.createElement('a');
         a.className = 'cite-section-link';
         a.href = citeHref(sp.txid);
-        a.textContent = `${toRoman(p2.volume)} β${p2.book} ■${p2.chapter} §${pl.pos + 1}`;
-        a.title = `spent by input ${sp.vin + 1} of ${sp.txid}`;
+        a.textContent = `${toRoman(p2.volume)} β${p2.book} ■${p2.chapter} §${pl.pos + 1}${witMark}`;
+        a.title = `spent by input ${sp.vin + 1} of ${sp.txid}${witMark ? ` — its witness reads at footnote ${witMark.slice(1)}` : ''}`;
         cell.append(a);
       });
     })();

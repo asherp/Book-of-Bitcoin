@@ -1459,12 +1459,19 @@ function resolveCitation(txid) {
       ]);
       if (!mpRes.ok && mpRes.status !== 404) throw new Error(`Esplora returned ${mpRes.status}`);
       const tx = txRes.ok ? await txRes.json() : null;
+      // Which of the transaction's inputs carry a witness, as 1/0 flags in
+      // input order -- the /tx answer has them anyway, and a forward
+      // citation needs them to name the spending input's footnote letter
+      // (the nth witness-bearing input is footnote n). Entries banked
+      // before this was kept simply lack the flags, and the letter is
+      // omitted rather than guessed.
+      const wits = tx ? tx.vin.map((v) => (v.witness && v.witness.length ? 1 : 0)) : null;
       if (!mpRes.ok) {
         citationCache.delete(txid);
-        return { height: null, pos: null, outputs: tx ? tx.vout : null };
+        return { height: null, pos: null, outputs: tx ? tx.vout : null, wits };
       }
       const mp = await mpRes.json();
-      const entry = { height: mp.block_height, pos: mp.pos, outputs: tx ? tx.vout : null };
+      const entry = { height: mp.block_height, pos: mp.pos, outputs: tx ? tx.vout : null, wits };
       storePut('citations', txid, entry);
       return entry;
     })().catch((e) => { citationCache.delete(txid); throw e; }));
@@ -1559,14 +1566,25 @@ async function resolveForwardCitations(txid, cells, gen) {
       const sp = spends[i];
       if (!sp || !sp.spent || !sp.txid || !sp.status || !sp.status.confirmed) return;
       try {
-        const { height, pos } = await resolveCitation(sp.txid);
+        const { height, pos, wits } = await resolveCitation(sp.txid);
         if (gen !== renderGen || height === null) return;   // confirmed a moment ago, not yet provable: no cell rather than a wrong one
         const { volume, book, chapter } = volumeBookChapter(height);
+        // The spending input's witness footnote, cited the way the contents
+        // cites one: §17.a says the value went to §17 and the authorization
+        // that took it reads at footnote a. The letter is the input's rank
+        // among the spender's witness-bearing inputs; a legacy spend (no
+        // witness), or an archive entry banked before the flags were kept,
+        // cites the bare section.
+        let witMark = '';
+        if (wits && wits[sp.vin]) {
+          const n = wits.slice(0, sp.vin + 1).reduce((a, w) => a + (w ? 1 : 0), 0);
+          witMark = `.${footnoteMark(n)}`;
+        }
         const link = document.createElement('a');
         link.className = 'cite-section-link';
         link.href = `?block=${height}&index=${pos}`;
-        link.textContent = `${toRoman(volume)} β${book} ■${chapter} §${pos + 1}`;
-        link.title = `spent by input ${sp.vin + 1} of ${sp.txid}`;
+        link.textContent = `${toRoman(volume)} β${book} ■${chapter} §${pos + 1}${witMark}`;
+        link.title = `spent by input ${sp.vin + 1} of ${sp.txid}${witMark ? ` — its witness reads at footnote ${witMark.slice(1)}` : ''}`;
         link.addEventListener('click', (e) => { e.preventDefault(); goToSection(height, pos, `in-${sp.vin}`); });
         cell.append(link);
       } catch { /* unresolvable spender -- leave the cell empty */ }
@@ -1601,9 +1619,10 @@ async function goToSection(height, index, scrollId) {
   if (scrollId) {
     // A witness-only input's citation lives in the footnotes, which render
     // lazily after the section paints -- if the anchor isn't in the DOM yet,
-    // force the footnotes in (a no-op once loaded) and look again.
+    // land on the loading stub at once, force the footnotes in (a no-op
+    // once loaded), and look again.
     let el = $(scrollId);
-    if (!el) { await renderFootnotes(renderGen); el = $(scrollId); }
+    if (!el) { footnoteStub(); await renderFootnotes(renderGen); el = $(scrollId); }
     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 }
