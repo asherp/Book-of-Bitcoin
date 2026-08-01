@@ -386,6 +386,10 @@
   id: '774628'
   commentary:
     - file: largest-block-at-the-time.md
+- title: First BRC-20 inscription
+  # The ordi deploy -- the token scheme's opening entry, inscribed like the
+  # Ordinals before it: in the witness, so the entry cites the footnote.
+  id: IV β75 ■649 §408.a
 - title: The Fourth Halving
   id: '840000'
   commentary:
