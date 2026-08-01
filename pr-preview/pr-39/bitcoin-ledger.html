@@ -373,10 +373,11 @@ a:hover { text-decoration: underline; }
 .entry-section .tx-out-script { grid-column:1; min-width:0; }
 .entry-section .tx-out-value { grid-column:2; text-align:right; font-variant-numeric:tabular-nums; }
 /* The closing balance line, mirroring the book: Σ inputs left, − fee
-   between, Σ outputs right -- the geometry is the equation. */
-.entry-section .tx-totals { grid-column:left / -1; grid-row:3; display:flex; justify-content:space-between; align-items:baseline; gap:1em; margin-top:.35em; font:italic 400 13.5px/1.4 'Newsreader',serif; color:var(--dim); font-variant-numeric:tabular-nums; }
+   between, Σ outputs right -- the geometry is the equation, and it is the
+   section's last line, below the locktime colophon. */
+.entry-section .tx-totals { grid-column:left / -1; grid-row:4; display:flex; justify-content:space-between; align-items:baseline; gap:1em; margin-top:.35em; font:italic 400 13.5px/1.4 'Newsreader',serif; color:var(--dim); font-variant-numeric:tabular-nums; }
 .entry-section .tx-totals .t-fee { color:var(--meta); }
-.entry-section .tx-locktime { grid-column:left / -1; grid-row:4; text-align:center; font-style:normal; }
+.entry-section .tx-locktime { grid-column:left / -1; grid-row:3; text-align:center; font-style:normal; }
 .entry-section .tx-note { font:italic 400 13.5px/1.4 'Newsreader',serif; color:var(--dim); }
 .entry-section .tx-seq { font-style:normal; color:var(--meta); }
 .entry-section .tx-seq-rbf { color:var(--accent-2); }
@@ -1911,7 +1912,7 @@ const openEntryLeaf = async (alive) => {
     lock.textContent = s.fields.locktime
       + (s.verified ? '' : ' · unverified — the bytes did not hash to this txid');
     lock.title = s.fields.locktimeTitle;
-    flow.append(inputsEl, marginEl, outputsEl, ...(totals ? [totals] : []), lock);
+    flow.append(inputsEl, marginEl, outputsEl, lock, ...(totals ? [totals] : []));
     wrap.append(flow);
     secEl.replaceChildren(wrap);
     // The witness footnotes, at the section's foot as the book sets them.

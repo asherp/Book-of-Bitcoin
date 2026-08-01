@@ -606,19 +606,27 @@ button:disabled { opacity: .4; cursor: not-allowed; }
    reaches 14px in from the cell's edge, so the amounts stop clear of it --
    all of them, so the column still aligns on the point. */
 .tx-out-value  { grid-column: 2; text-align: right; padding-right: 20px; font-variant-numeric: tabular-nums; white-space: nowrap; }
-/* The columns close on the transaction's own arithmetic: what the inputs
-   bring at the left, what the outputs carry at the right -- each sum under
-   the column it totals, the outputs' on the amounts' own edge -- and
+/* The section's last line is the transaction's own arithmetic: what the
+   inputs bring at the left, what the outputs carry at the right -- each sum
+   under the column it totals, the outputs' on the amounts' own edge -- and
    between them, signed negative, the difference the miner keeps: the fee.
-   No labels; the geometry is the equation, inputs − fee = outputs. The
-   inputs' sum waits on the margin citations resolving, and an input the
-   book cannot price leaves the sum and the fee unsaid (⋯). A coinbase has
-   no such line: its input brings no prior output, and the block's fees
-   arrive in its outputs, with the subsidy. */
-.tx-totals { grid-column: left / -1; grid-row: 3; display: flex; justify-content: space-between; align-items: baseline; gap: 1em; margin-top: .35em; font: italic 400 calc(13.5px * var(--scale-margins, 1))/1.4 'Newsreader',serif; color: var(--dim); font-variant-numeric: tabular-nums; }
+   No labels; the geometry is the equation, inputs − fee = outputs. It
+   closes below the locktime colophon, the final word before the witness
+   footnotes. The inputs' sum waits on the margin citations resolving, and
+   an input the book cannot price leaves the sum and the fee unsaid (⋯).
+   A coinbase has no such line: its input brings no prior output, and the
+   block's fees arrive in its outputs, with the subsidy. */
+.tx-totals { grid-column: left / -1; grid-row: 4; display: flex; justify-content: space-between; align-items: baseline; gap: 1em; margin-top: .35em; font: italic 400 calc(13.5px * var(--scale-margins, 1))/1.4 'Newsreader',serif; color: var(--dim); font-variant-numeric: tabular-nums; }
 .tx-totals .t-fee { color: var(--meta); }
 .tx-totals .t-out { padding-right: 20px; }   /* the amounts column's ribbon room, so the sum sits on their point */
-.tx-locktime { grid-column: left / -1; grid-row: 4; text-align: center; font-style: normal; }
+.tx-locktime { grid-column: left / -1; grid-row: 3; text-align: center; font-style: normal; }
+/* An output the reader has kept under a name (or the contents already
+   names): the title stands centered above the output's own rows, spanning
+   script and amount. Empty -- unkept and unnamed -- it takes no room.
+   Filled by syncBookmarkTitles, live with the bookmark set. */
+.tx-out-title { grid-column: 1 / -1; text-align: center; font: italic 500 calc(13.5px * var(--scale-body, 1))/1.4 'Newsreader',serif; color: var(--accent); margin: .4em 0 .15em; }
+.tx-out-title:empty { display: none; }
+.section-event:empty { display: none; }
 .tx-note { font: italic 400 calc(13.5px * var(--scale-body, 1))/1.4 'Newsreader',serif; color: var(--dim); }
 /* The amount's size, on both its classes. An amount is a .tx-note as well as
    a .tx-out-value, and .tx-note sets the font shorthand -- font-size included
@@ -3319,7 +3327,12 @@ function refreshProjectedSectionFurniture() {
   if (!state.ghost) {
     const m = state.manifest && state.manifest[state.index];
     const ev = document.querySelector('#section-title .section-event');
-    if (ev && m && Number.isFinite(m.rate)) ev.textContent = projectedRateLine(m);
+    if (ev && m && Number.isFinite(m.rate)) {
+      // Keep the stored fallback current too: syncBookmarkTitles repaints
+      // from it (a projected section can't be kept, so the line shows it).
+      ev.dataset.fallback = projectedRateLine(m);
+      ev.textContent = ev.dataset.fallback;
+    }
   }
   updateUrl();
   labelNav();
@@ -3443,10 +3456,16 @@ function renderChapter(para) {
     dag.title = 'replaced by fee — this draft was superseded; the section above holds the seat';
     secNum.append(dag);
   }
-  if (sectionEvent) {
+  // The section's name line, always in the DOM: the reader's bookmark title
+  // when this section is kept (defaulted from -- and overriding -- the
+  // curated name), else the curated/ghost/projected line, else empty (and
+  // hidden). Carrying the fallback in data lets syncBookmarkTitles rename
+  // it live as bookmarks are added, retitled, or removed.
+  {
     const secEv = document.createElement('span');
     secEv.className = 'section-event';
-    secEv.textContent = sectionEvent;
+    secEv.dataset.bmSubtitle = para.txid;
+    secEv.dataset.fallback = sectionEvent || '';
     sectionTitle.append(secEv);
   }
   // The rungs between a seat and its superseded drafts: from a ghost, up to
@@ -3658,6 +3677,17 @@ function renderChapter(para) {
   for (const p of pendingMargin) marginEl.append(p);
   currentFootnotes = footnotes;
   f.outputs.forEach((out, i) => {
+    // The output's name line, centered above its rows: the reader's bookmark
+    // title when this output is kept (defaulted from -- and overriding --
+    // the curated name), else the contents' own name for it, else empty and
+    // hidden. syncBookmarkTitles keeps it live with the bookmark set.
+    const outTitle = document.createElement('div');
+    outTitle.className = 'tx-out-title';
+    outTitle.dataset.bmOut = `${para.txid}:${i}`;
+    const outPlace = places().find((p) => !p.page && !p.address && (p.out ?? null) === i
+      && (p.id === para.txid || (p.id === String(state.height) && p.index === state.index)));
+    outTitle.dataset.fallback = outPlace ? placeTitle(outPlace) : '';
+    outputsEl.append(outTitle);
     const scriptCell = document.createElement('div');
     scriptCell.className = 'tx-out-script';
     scriptCell.id = `out-${i}`;   // a referencing input scrolls here so this output leads the page
@@ -3722,9 +3752,10 @@ function renderChapter(para) {
   lock.textContent = f.locktime;
   lock.title = f.locktimeTitle;
 
-  flow.append(inputsEl, marginEl, outputsEl, ...(totals ? [totals] : []), lock);
+  flow.append(inputsEl, marginEl, outputsEl, lock, ...(totals ? [totals] : []));
   wrap.append(flow);
   body.append(wrap);
+  syncBookmarkTitles();   // paint the section's and outputs' name lines from the bookmark set
   lazyEncode.observe(body);   // encode any deferred OP_RETURN payload as it scrolls into view
   resolveCitations(pendingCites, gen).then((values) => {
     if (gen === renderGen && fillTotals) fillTotals(values);
@@ -5370,6 +5401,7 @@ function addBookmark(entry, title) {
   }
   saveBookmarks();
   syncBookmarkRibbons();
+  syncBookmarkTitles();
   return true;
 }
 function removeBookmark(key) {
@@ -5378,6 +5410,7 @@ function removeBookmark(key) {
   bookmarks.splice(i, 1);
   saveBookmarks();
   syncBookmarkRibbons();
+  syncBookmarkTitles();
 }
 
 // The ribbon itself: hollow while the place is unkept, filled once it is, and
@@ -5441,6 +5474,40 @@ function syncBookmarkRibbons() {
   }
 }
 
+// The reader's titles, wherever the page prints them: the section's subtitle
+// ([data-bm-subtitle], keyed by txid) and each output's centered name line
+// ([data-bm-out], keyed txid:vout). A kept place shows its bookmark title; an
+// unkept one falls back to the line stored on the element (the curated name,
+// a ghost's dagger, a draft's fee rate) or stays empty and hidden. Called on
+// render and whenever the bookmark set changes, so a keep, a retitle, or a
+// removal renames the page live.
+function syncBookmarkTitles() {
+  for (const el of document.querySelectorAll('[data-bm-subtitle]')) {
+    const b = bookmarks.find((x) => !x.page && x.vout == null && x.hex === el.dataset.bmSubtitle);
+    el.textContent = (b && b.title) || el.dataset.fallback || '';
+  }
+  for (const el of document.querySelectorAll('[data-bm-out]')) {
+    const at = el.dataset.bmOut.lastIndexOf(':');
+    const hex = el.dataset.bmOut.slice(0, at), vout = Number(el.dataset.bmOut.slice(at + 1));
+    const b = bookmarks.find((x) => !x.page && x.hex === hex && x.vout === vout);
+    el.textContent = (b && b.title) || el.dataset.fallback || '';
+  }
+}
+
+// The curated contents' name for a bookmarkable place, when the table of
+// contents already lists it: matched by hash, or by the resolved height plus
+// whichever coordinates narrow it (section index, output, leaf level) -- the
+// same shapes the yaml's ids resolve to (btc-notables.js).
+function curatedTitleFor(entry, place) {
+  const p = places().find((p) => {
+    if (p.address) return false;
+    if (place.page || p.page) return (p.page ?? null) === (place.page ?? null) && p.id === String(place.height);
+    if ((p.out ?? null) !== (entry.vout ?? null)) return false;
+    return p.id === entry.hex || (p.id === String(place.height) && (p.index ?? null) === (place.pos ?? null));
+  });
+  return p ? placeTitle(p) : null;
+}
+
 // A first-guess title for the entry, drawn from the current section (every
 // bookmarkable hash on the page belongs to the chapter on screen). The reader
 // can accept or edit it.
@@ -5449,6 +5516,11 @@ function suggestTitle(entry) {
   if (b && b.title) return b.title;               // keep an existing title when retitling
   const place = entryPlacement(entry);
   if (!place) return '';
+  // A place the contents already names suggests that name: keeping it keeps
+  // the row as it stands; changing it renames the row -- the reader's title
+  // overrides the curated label, here and in the table of contents.
+  const curated = curatedTitleFor(entry, place);
+  if (curated) return curated;
   const { volume, book, chapter } = volumeBookChapter(place.height);
   const genesis = volume === 1 && book === 1 && chapter === 1;
   // A leaf suggests the name it wears at its own head, which is what a reader
