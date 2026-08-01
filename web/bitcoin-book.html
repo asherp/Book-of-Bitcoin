@@ -720,11 +720,15 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 .tx-witness-ref { font: 500 .62em/1 'IBM Plex Mono',monospace; color: var(--accent); vertical-align: super; text-decoration: none; margin-left: .12em; }
 .tx-witness-ref:hover { text-decoration: underline; }
 .chapter-footnotes { margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--rule); }
-/* Witness prose is on-chain content, not marginalia: dim, not meta, so the
-   footnotes stay readable at length. */
-.footnote-entry { margin: 0 0 1.1em; font: italic 400 calc(14.5px * var(--scale-footnotes, 1))/1.6 'Newsreader',serif; color: var(--dim); }
+/* Witness prose is on-chain content, not marginalia: dim, not meta. Its type
+   is set to the BIP141 discount -- a witness byte weighs 1/4 of a base byte,
+   and characters per unit of page area go as size x leading-in-px, so
+   11px/1.3 (11 x 14.3 = 157) packs exactly 4x the density of the 19px/1.75
+   body (19 x 33.25 = 632): a witness letter takes a quarter of the space a
+   body letter does, the same ratio its bytes take in the block. */
+.footnote-entry { margin: 0 0 1.1em; font: italic 400 calc(11px * var(--scale-footnotes, 1))/1.3 'Newsreader',serif; color: var(--dim); }
 .footnote-entry:target { color: var(--ink-soft); }
-.footnote-mark { font: 500 calc(10.5px * var(--scale-footnotes, 1))/1 'IBM Plex Mono',monospace; color: var(--accent); margin-right: .5em; font-style: normal; vertical-align: .35em; }
+.footnote-mark { font: 500 calc(8px * var(--scale-footnotes, 1))/1 'IBM Plex Mono',monospace; color: var(--accent); margin-right: .5em; font-style: normal; vertical-align: .35em; }
 
 </style>
 </head>
