@@ -217,6 +217,18 @@ export function footnoteMark(n) {
   return out;
 }
 
+// The same mark in Unicode superscript letters -- the way a witness index
+// reads off the page (§17ᵃ), for the plain-text surfaces that can't style a
+// span: the contents' reference column, copy prose, suggested titles. The
+// footnote alphabet omits q precisely because Unicode's superscript row has
+// every small letter but q.
+const SUPERSCRIPT_LETTERS = {
+  a: 'ᵃ', b: 'ᵇ', c: 'ᶜ', d: 'ᵈ', e: 'ᵉ', f: 'ᶠ', g: 'ᵍ', h: 'ʰ', i: 'ⁱ',
+  j: 'ʲ', k: 'ᵏ', l: 'ˡ', m: 'ᵐ', n: 'ⁿ', o: 'ᵒ', p: 'ᵖ', r: 'ʳ', s: 'ˢ',
+  t: 'ᵗ', u: 'ᵘ', v: 'ᵛ', w: 'ʷ', x: 'ˣ', y: 'ʸ', z: 'ᶻ',
+};
+export const footnoteSup = (n) => footnoteMark(n).split('').map((c) => SUPERSCRIPT_LETTERS[c] ?? c).join('');
+
 // The inverse: a mark -> its 1-based index, or null if it isn't one (an
 // unknown letter, a q, anything else). Lets a lettered address be read back
 // to the footnote it names.

@@ -966,7 +966,7 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 import { init, encodeSeedPhrase } from './glossia-msg.js';
 import { parseTransaction, computeTxid, parseBlockHeader, computeBlockHash, bitsToDifficulty } from './btc-tx.js';
 import { composeTransactionFields, composeBlockHeaderFields, bitsInfo, groupDigits, formatBtc, renderWitness, toSuperscript, timestampInfo } from './btc-prose.js';
-import { volumeBookChapter, heightOf, windowStartOf, retargetInside, toRoman, reference, parseReference, footnoteMark } from './btc-citation.js';
+import { volumeBookChapter, heightOf, windowStartOf, retargetInside, toRoman, reference, parseReference, footnoteMark, footnoteSup } from './btc-citation.js';
 import { loadNotables, places, placeTitle, blocksEta, appendix } from './btc-contents.js';
 import { queueLabel } from './btc-mempool.js';
 import { toSubscript } from './btc-sigla.js';
@@ -2621,7 +2621,7 @@ const KEEPS = {
 // is never revealed on the page. A hash that's a lookup target (a block hash,
 // previous-block hash, or txid) can be bookmarked; a merkle root, which leads
 // nowhere, is copy-only.
-function attachHashCopy(el, hex, label, prose = el.textContent, vout = null, vin = null) {
+function attachHashCopy(el, hex, label, prose = el.textContent, vout = null, vin = null, wn = null) {
   // `prose` is the readable form the menu offers to copy. The hit target may be
   // a leading mark (⋔ for a merkle root) or a persistent heading (the chapter /
   // section title), so the prose is passed in explicitly rather than read off
@@ -2639,7 +2639,9 @@ function attachHashCopy(el, hex, label, prose = el.textContent, vout = null, vin
   // A persistent element (a title) is re-attached with fresh hash data on every
   // section render: the menu params live on the element and are re-read at open
   // time, while the listeners are wired exactly once.
-  const entry = { hex, label, prose, nav, vout, vin, what: KEEPS[label] };
+  // `wn` is a witness's 1-based footnote number -- its alphabet index on the
+  // page -- carried so the keep can be cited as the reader sees it (§17ᵃ).
+  const entry = { hex, label, prose, nav, vout, vin, wn, what: KEEPS[label] };
   el.__hashMenu = entry;
   // The ribbon is offered only where the place can actually be kept: a merkle
   // root leads nowhere, and a draft chapter has no settled reference yet, so
@@ -4054,7 +4056,7 @@ async function renderFootnotes(gen) {
     const markEl = p.querySelector('.footnote-mark');
     if (markEl && fn.txid) {
       attachHashCopy(markEl, fn.txid, 'witness',
-        `${reference(state.height)} §${fn.num} — witness ${footnoteMark(fn.n)}`, null, fn.vin);
+        `${reference(state.height)} §${fn.num}${footnoteSup(fn.n)}`, null, fn.vin, fn.n);
     }
     // A witness-only input's citation (carrying its in-N anchor, resolving
     // asynchronously wherever it sits) lands in the left cell of its own
@@ -5418,7 +5420,7 @@ function entryPlacement(entry) {
   // span is placed by that height and the name of the level it stands at.
   if (entry.page) return { height: state.height, pos: null, page: entry.page };
   if (entry.label === 'output') return { height: state.height, pos: state.index, vout: entry.vout };
-  if (entry.label === 'witness') return { height: state.height, pos: state.index, vin: entry.vin };
+  if (entry.label === 'witness') return { height: state.height, pos: state.index, vin: entry.vin, wn: entry.wn };
   if (entry.label === 'transaction id') return { height: state.height, pos: state.index };
   return { height: state.height, pos: null };   // a block hash -- this chapter
 }
@@ -5442,8 +5444,10 @@ function addBookmark(entry, title) {
       // §section.vout and open the book at that output.
       ...(place.vout == null ? {} : { vout: place.vout }),
       // A witness carries the input that bears it, so the contents can open
-      // the section with that footnote brought to the top.
+      // the section with that footnote brought to the top -- and its
+      // footnote number, so the contents can cite its alphabet index (§17ᵃ).
       ...(place.vin == null ? {} : { vin: place.vin }),
+      ...(place.wn == null ? {} : { wn: place.wn }),
       // A leaf carries the level it stands at, so the contents can cite it as
       // a volume or a book and open that leaf rather than a chapter.
       ...(place.page ? { page: place.page } : {}),
@@ -5580,7 +5584,13 @@ function suggestTitle(entry) {
   // scanning the contents for it will be looking for.
   if (place.page === 'volume') return `Volume ${toRoman(volume)}`;
   if (place.page === 'book') return `Book ${book.toLocaleString()}`;
-  if (place.vin != null) return `${toRoman(volume)} β${book} ■${chapter} §${place.pos + 1} — input ${place.vin + 1}'s witness`;
+  // A witness suggests the citation the reader sees on the page -- the
+  // section with the footnote's alphabet index riding it (§17ᵃ) -- falling
+  // back to naming its input when the footnote number isn't in hand.
+  if (place.vin != null) {
+    const base = `${toRoman(volume)} β${book} ■${chapter} §${place.pos + 1}`;
+    return place.wn != null ? `${base}${footnoteSup(place.wn)}` : `${base} — input ${place.vin + 1}'s witness`;
+  }
   if (place.pos != null) return `${toRoman(volume)} β${book} ■${chapter} §${place.pos + 1}`;
   return genesis ? 'The Genesis Block' : `Chapter ${chapterName(chapter)}`;
 }
