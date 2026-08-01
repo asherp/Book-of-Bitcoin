@@ -891,6 +891,23 @@ export async function passageTxid(height, pos) {
   return null;
 }
 
+// A chapter's own particulars by height: the block hash, the merkle root its
+// header commits to, when it was mined, and how many sections it holds. Two
+// small requests, like passageTxid's -- hash by height, then the block. Read
+// by anything that has a claim about a block to check rather than a passage
+// to render: an OpenTimestamps proof's root is confirmed here.
+export async function blockAt(height) {
+  for (const mirror of esploraMirrors()) {
+    const hash = await esploraText(mirror, `/block-height/${height}`);
+    if (!hash || !/^[0-9a-f]{64}$/.test(hash)) continue;
+    const b = await esploraJson(mirror, `/block/${hash}`);
+    if (b && typeof b.merkle_root === 'string') {
+      return { hash, merkleRoot: b.merkle_root, timestamp: b.timestamp ?? null, txCount: b.tx_count ?? null };
+    }
+  }
+  return null;
+}
+
 // One transaction's touches on an address, shaped as ledger entries -- for
 // rendering a passage that the banked record hasn't reached yet. The bank
 // is untouched: a passage viewed this way banks nothing until the record's

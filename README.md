@@ -154,13 +154,15 @@ compiled to WASM) is consumed as a published
 - `web/btc-sigla.js` — the opcode alphabet: a mark for every opcode and the
   canonical `OP_*` name behind it, plus the groups the key reads in. Split out
   of `btc-prose.js` so the sigla leaf can render the real table without
-  pulling in the WASM engine through the prose composer
+  pulling in the WASM engine through the prose composer. The superscript byte
+  count that rides on a mark (`h³²`, `p⁶⁵`) lives here for the same reason —
+  it is notation, not prose, and the search page sets it without the engine
 - `web/preface.md` — the preface itself, in Markdown: the canonical copy,
   readable here in the repository and rendered into the leaf above, so the
   book and the repository cannot drift apart
 - `web/bitcoin-contents.html` — table of contents / notable blocks, **a
-  top-level leaf and then one leaf per volume and per appendix**, all at a
-  single level: the contents runs the same line the book runs below it
+  top-level leaf and then one leaf per volume and per back-matter part**,
+  all at a single level: the contents runs the same line the book runs below it
   (Volume I … Volume V, Appendix I, II, III), a storey up and a leaf to
   each, with one leaf opening the run that is about the run.
   `?at=top` opens that top-level leaf, `?volume=<n|roman>` a volume's
@@ -174,11 +176,11 @@ compiled to WASM) is consumed as a published
   either end are the front matter's own leaves, the standard order this page
   sits inside (title, terms, CONTENTS, preface, sigla).
   **The top-level leaf** — *The Whole Book* — is the one page that shows the
-  shape of the whole thing: the volumes and the appendices as one row each,
-  every row carrying that leaf's own line (what it spans, how much of it
-  there is) and turning to it as a swipe would, and above them the front
-  matter, which no volume's contents can list because the preface is no part
-  of any volume. It descends into the book at Volume I, and its rows for the
+  shape of the whole thing: every volume and every part of the back matter
+  as one row each, each row carrying that leaf's own line (what it spans,
+  how much of it there is) and turning to it as a swipe would, and above
+  them the front matter, which no volume's contents can list because the
+  preface is no part of any volume. It descends into the book at Volume I, and its rows for the
   front matter leave for `bitcoin-front.html`, so they carry no reference:
   they name leaves, not places in the chain. The title leaf is not listed —
   it is the cover, which the contents lies under, and a pull down from the
@@ -188,25 +190,63 @@ compiled to WASM) is consumed as a published
   door. **I · The Mempool** — the chapters the queue is already forming, first of
   the three because the volumes close on the chain tip's row, so the turn
   from the tip to the next provisional chapter stays one step down the page.
-  **II · Future Chapters** — heights consensus has already fixed but no
-  queue can reach (BIP42's 21M cap at 13,440,000; BIP110's flag heights,
-  should it lock in), cited in full but marked □ until a block earns them
-  the ■. **III · Ledgers** — the shelf of curated ledgers and any the reader
+  **II · Consensus** — the soft forks, grouped under their BIPs with their
+  recognized names (Taproot, Segregated Witness…): each fork's sub-head is
+  the door to a title leaf of its own carrying its activation statistics —
+  counted live for a fork still signaling — and beneath it the chapters and
+  sections the fork names, from the signaling window to the first spends.
+  The forks the chain declined are kept among them with `status: failed` —
+  BIP101's block-size vote, Bitcoin Unlimited (never a BIP; its handle
+  stands verbatim, and its ballot was written in the coinbase text rather
+  than the version word, so its table reads each chapter's first line —
+  `/EB…/` counted as the yes, the final window before the parting laid out
+  with each miner's own words in the row), BIP149's second SegWit
+  deployment, BIP119's covenants — some naming the chapter of their
+  undoing, some naming none, the empty record being the record. Coinbase
+  ballots fetch fast off mempool.space's v1 block pages, which bundle each
+  block's coinbase (`extras.coinbaseRaw`, fifteen blocks a call), falling
+  back to per-block lookups on mirrors without them.
+  Mined places cite in full; heights no block has reached (BIP42's 21M cap
+  at 13,440,000; BIP110's flag heights, should it lock in) are marked □
+  until a block earns them the ■. **III · Ledgers** — the shelf of curated ledgers and any the reader
   keeps, the only entries with no reference at all, since the chain never
   writes an address, only the script one stands for; the contents and the
   index are inverses, and this is where the contents points at the other
 - `web/bitcoin-appendix.html` — the appendix leaves (`?part=mempool`,
-  `?part=future`): a title leaf saying what the appendix gathers and why
+  `?part=consensus`, with `?part=future` kept as an alias for saved links):
+  a title leaf saying what the appendix gathers and why
   that cannot be read in sequence, with what it gathers one level below.
   Appendix I descends into the queue's **first chapter itself** — the block
   a reader reaches by swiping forward off the chain tip — read in the book
   like any other, marked □, and walked chapter by chapter from there; the
   ascent from any of them lands back on this leaf, since a draft chapter
   belongs to no volume or book of the body (the queue's own equivalent of a
-  book is still to be written). Appendix II descends the same way, into the
-  first height consensus has already fixed — the book answers an unmined
-  chapter with the date it is due. Neither leaf lists what it gathers: the
-  listing is the contents' business.
+  book is still to be written). Appendix II lists its forks and descends
+  into the first fork's own leaf (`?part=consensus&bip=341` names Taproot's):
+  BIP number over recognized name, then the ballot itself, oldest block
+  first — every block of the counted window, its version exactly as the
+  chapter's frontispiece writes it, whether it reads as a yes, and the
+  accumulated count and rate as they stood at that block — drawn a page at
+  a time as the foot comes into reach the way the Ledger draws a record, so
+  scrolling down replays the activation in the order it occurred and the
+  ending is discovered, not stated. The fork's own curated chapters cut
+  across the table as labeled rules — the line where the signaling began,
+  the line where the count crossed — and a fork still signaling opens its
+  record where its story begins. The leaf's sticky foot holds the summary
+  line (the count as far as the reading has gone; a fork still signaling
+  states the period's whole rate off the `monitor:` the file names,
+  credited) and, beneath it, the commentary — where the fork's description
+  itself now reads, the book's own voice leading whatever else is written
+  of it. Then the activation statistics as the file states them, the fork's
+  chapters, and sideways turns walking the forks; the book answers an
+  unmined chapter with the date it is due. A ballot row opens the
+  block's own leaf (`&block=<height>`), one level further down: the
+  chapter's title page reprinted — its hash as prose between the ⌘ and ⓪
+  marks, every header field as the frontispiece writes it, the signal
+  verdict beside the version — with vertical turns walking the window
+  (newer above, older below, the ballot itself above the newest), the
+  citation the one door into the book, and the ascent landing back on the
+  table at the row left off, the Ledger's own dive-and-return.
   Appendix III's leaf is the Ledger compendium's own title page, since a
   shelf of ledgers is what that page already is. The appendices sit at the
   **volumes' own level**: the line runs Volume I … Volume V, Appendix I,
@@ -255,6 +295,69 @@ compiled to WASM) is consumed as a published
   nVersion
 - `web/bitcoin-ledgers.html` — the old Ledgers shelf, now a redirect to
   the compendium (kept for bookmarks and cached mastheads)
+- `web/btc-proofs.js`, `web/proofs/` — *Citations*, the register closing the
+  back matter: works cited
+  outside this text, whose existence the chain attests. Every other reference in
+  the book points inward at a chapter it contains; these point outward, and the
+  passage that dates one carries the ‡ citation mark in its margin — the work's
+  number in the register as its subscript, or the bare ‡ for a reader's own
+  kept proof, an addendum outside the edition's numbering. The back matter
+  reads in three families: the appendices proper (numbered among themselves),
+  the indexes ("Index of Ledgers" — pointing into the text), and Citations
+  standing last, the way a works-cited list closes a book. A file is not a passage and is not
+  on the chain at all — what is on the chain is the commitment its proof
+  reduces to — so an entry here is a file's name and the citation its proof
+  lands on, which the proof states by itself, offline. Two sources listed as
+  one: the proofs bundled with the app (named in `web/appendix.yaml`, so the
+  appendix reads as an appendix on a first visit) and the reader's own, dropped
+  on the appendix's leaf and kept in `localStorage` the way a bookmark is,
+  flying the same ribbon in the contents. What is stored is the proof itself,
+  base64'd — a few hundred bytes, and the whole evidence: keeping only "block
+  358391 §1352" would keep the conclusion and throw away the argument
+- `web/bitcoin-proof.html` — one timestamped file's leaf, which every Appendix
+  IV row opens. A proof is a straight line of operations from a digest to a
+  merkle root, and every value along that line is 32 bytes of hash — which is
+  to say every value along it is a passage the book can set in words. So the
+  front matter carries the file's name and its digest as prose, and the proof
+  is written out beneath it paragraph by paragraph, each paragraph a value the
+  one above hashes into, ending on the root. Nothing explains itself: the
+  marks say what each value is, and **the margin carries a citation exactly
+  where the paragraph beside it is on chain** — the transaction, cited down to
+  the output the commitment sits in (`§1352.1`, the finest address the scheme
+  reaches, found by rebuilding the transaction from the proof's own bytes), and
+  the root, cited to the chapter whose header commits to it, with a ✓ once that
+  header has been asked. Every other paragraph's margin is empty, which is the
+  page's argument: a proof is mostly arithmetic, and touches the chain twice.
+  The file is titled but never shown: it was never on the chain, was never
+  uploaded, and is not the book's to hold. A button opens the reader's own copy
+  through the native file dialogue, hashes it in the browser and says whether
+  it is the file the proof attests — the same promise OpenTimestamps made when
+  the proof was taken
+- `web/btc-ots.js` — an OpenTimestamps proof reader, read by Appendix IV:
+  a `.ots` file is a citation written in someone else's notation, and this
+  turns it back into one of the book's. Replaying a proof's commitment
+  operations — append, prepend, sha256, ripemd160 (implemented here; no
+  browser offers it, and proofs older than the calendar servers need it) —
+  yields the merkle root of a Bitcoin block, and the attestation the
+  operations end in names that block's height. The merkle path gives the
+  §section too: each step appends the sibling on the right or prepends the one
+  on the left, so the directions read from the bottom of the tree up spell the
+  transaction's position in binary. The module claims nothing — it reports
+  what the proof asserts, and the appendix checks that root against the
+  chapter's own header, which is the entirety of OpenTimestamps verification.
+  The three hashes a proof turns on — the stamped file's digest, the
+  transaction carrying the commitment, and the merkle root the operations
+  reduce to — are set the way the book sets each of them: `⌘²⁵⁶` for the txid
+  (the same identity mark, and the same bit count, the section frontage
+  wears), `⋔³²` for the merkle root, and `h³²` for the digest, which is a
+  single SHA-256 rather than the chain's double and so takes the generic hash
+  mark. Then the figure itself as Glossia prose — the chain's two written in
+  the byte order they actually are, the digest in the order it was computed. The engine is
+  imported only when a proof arrives, so an appendix opened to read carries no
+  WASM; until
+  it lands a figure reads as an ellipsis, and if it never lands the hash stays
+  unsaid rather than falling back to hex — hex is the one notation this book
+  does not write in, and it lives where the book keeps it, behind the mark
 - `web/btc-tx.js`, `web/btc-prose.js`, `web/btc-citation.js`,
   `web/btc-contents.js`, `web/btc-index.js`, `web/btc-store.js` —
   transaction parsing, prose composition, citations, contents data,
@@ -276,8 +379,8 @@ compiled to WASM) is consumed as a published
   pages, all four cited in the table of contents
 - `web/notables.yaml`, `web/appendix.yaml`, `web/commentary/*.md` — the curated
   entries themselves, what the contents gathers after the volumes (the
-  appendices: the mempool, the future chapters whose citations consensus has
-  already fixed, and the ledgers), and the readings of them: which blocks and transactions the book keeps, what
+  appendices: the mempool, the consensus rules grouped by BIP — activation
+  statistics, chapters mined and owed — and the ledgers), and the readings of them: which blocks and transactions the book keeps, what
   they are called, and one Markdown file per reading, referenced by the entry it
   belongs to (`by:` naming whoever wrote it, absent for the book's own voice).
   An entry's `id:` is written in any form the search box takes — a height, a
@@ -302,6 +405,13 @@ compiled to WASM) is consumed as a published
     their variants — `⧉` DUP, `⧉₂` 2DUP, `∇` CHECKSIG, `∇₊` CHECKSIGADD,
     `°₄` NOP4. All 110 defined opcodes have one; the reader's key is the
     sigla leaf of the front matter, and a compact one rides the book page
+  - the block-hash notation (`web/bitcoin-book.html`): `⌘ᵐ …prose… ⓪ⁿ`. `⌘`
+    is OP_HASH256, naming the double-SHA256 that produced the hash, and its
+    superscript counts *bits* — uniquely; every other mark's counts bytes —
+    so it pairs with `⓪`, the proof-of-work zeros, and the two always sum to
+    256. The zeros close the line rather than opening it because that is
+    where they are: a hash is printed leading-zeros-first and hashed the
+    other way round, and the prose is written in the order it was hashed
   - the citation sigla (`web/btc-citation.js`): Roman volumes, `β` the
     difficulty mark (a book is a difficulty window), `■` the block mark (a
     chapter is a block), `§` the section (a transaction) — e.g. `III β2 ■5 §1`,
@@ -426,6 +536,7 @@ fails on anything a reader would meet as a missing reading or an empty contents
 — a mangled line, a renamed file, a duplicate id. Run it before opening a pull
 request; the deploy and the PR preview both run it first, ahead of the WASM
 build.
+
 
 ## License
 

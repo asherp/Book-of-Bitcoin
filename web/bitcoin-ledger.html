@@ -552,7 +552,7 @@ import { volumeBookChapter, heightOf, toRoman, parseReference, latinRefOf } from
 import { BIP39, HP_SPELLS } from './btc-wordlists.js';
 import { appendix } from './btc-contents.js';
 import './btc-fontscale.js';   // the reader's type sizes: a ledger's readings are set at the size the book page's Commentary row chose
-import { loadNotables } from './btc-notables.js';
+import { loadNotables, partLabel } from './btc-notables.js';
 import { commentaryForAddresses, commentaryHtml, resolveCommentary } from './btc-commentary.js';
 
 // The curated index, started at import and never waited on: a ledger's record
@@ -712,10 +712,10 @@ await notablesReady;
 const APPENDIX = appendix();
 const LEDGER_PART = APPENDIX.find((p) => p.kind === 'ledgers');
 const PART_INDEX = APPENDIX.indexOf(LEDGER_PART);
-const PART_LABEL = LEDGER_PART ? `Appendix ${toRoman(PART_INDEX + 1)} · ${LEDGER_PART.title}` : 'Ledgers';
+const PART_LABEL = partLabel(APPENDIX, LEDGER_PART);
 const PREV_PART = PART_INDEX > 0 ? APPENDIX[PART_INDEX - 1] : null;
 const PREV_PART_HREF = PREV_PART
-  ? `./bitcoin-appendix.html?part=${PREV_PART.kind === 'mempool' ? 'mempool' : 'future'}`
+  ? `./bitcoin-appendix.html?part=${PREV_PART.kind === 'mempool' ? 'mempool' : 'consensus'}`
   : null;
 
 // ── Where the reader stands ────────────────────────────────────────────────
@@ -1432,8 +1432,8 @@ const openAppendixLeaf = () => {
   // book's leaves always have -- the pull down at the top, the swipe back,
   // and the masthead's own Contents.
   eyebrow.replaceChildren();
-  document.getElementById('anth-title').textContent = `Appendix ${toRoman(PART_INDEX + 1)}`;
-  document.getElementById('anth-subtitle').textContent = LEDGER_PART ? LEDGER_PART.title : 'Ledgers';
+  document.getElementById('anth-title').textContent = PART_LABEL;
+  document.getElementById('anth-subtitle').textContent = '';
   pager.replaceChildren();
   const prose = document.getElementById('anth-prose');
   prose.classList.add('explainer');
@@ -1448,7 +1448,7 @@ const openAppendixLeaf = () => {
 const openLedgerLeaf = (alive) => {
   // The eyebrow is the crumb up, as it is on a passage leaf -- and above a
   // ledger's title leaf is the appendix this shelf is.
-  eyebrow.replaceChildren(arrowless(`▴ Appendix ${toRoman(PART_INDEX + 1)}`, () => ascend()));
+  eyebrow.replaceChildren(arrowless(`▴ ${PART_LABEL}`, () => ascend()));
   document.getElementById('anth-title').textContent = cur().name;
   pager.replaceChildren(
     arrow('‹', 'Previous ledger', li <= 0, () => turnLedger(-1)),

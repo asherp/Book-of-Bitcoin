@@ -87,14 +87,17 @@ export function commentaryFor({ height = null, index = null, txid = null } = {})
     return false;
   };
   const kept = notables().filter((e) => e.places.some(here));
-  // A future chapter is curated too -- the appendix keeps heights consensus has
-  // fixed and no block has reached (appendix.yaml) -- and it is a page a reader
-  // can open, so a reading kept on one is met there like any other. Its entry
-  // holds one place, itself.
+  // A fork's chapters are curated too -- the appendix's Consensus part gathers
+  // them by BIP (appendix.yaml), including heights consensus has fixed and no
+  // block has reached -- and each is a page a reader can open, so a reading
+  // kept on one is met there like any other. Its entry holds one place,
+  // itself. A place the contents already keeps is skipped: one reading, met
+  // once, however many registers cite the page.
   const ahead = appendix()
-    .filter((p) => p.kind === 'entries')
-    .flatMap((p) => p.entries)
-    .filter((e) => here(e));
+    .filter((p) => p.kind === 'consensus')
+    .flatMap((p) => p.bips)
+    .flatMap((b) => b.entries)
+    .filter((e) => here(e) && !kept.some((k) => k.places.some((kp) => kp.id === e.id && kp.index === e.index)));
   return itemsOf([...kept, ...ahead.map((e) => ({ title: e.title, places: [e], commentary: e.commentary }))]);
 }
 

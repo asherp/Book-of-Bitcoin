@@ -25,6 +25,7 @@ import { looksLikeAddress } from '../web/btc-lookup.js';
 import { INDEXED } from '../web/btc-index-data.js';
 import { readingsOf } from '../web/btc-commentary.js';
 import { markdownParagraphs } from '../web/btc-markdown.js';
+import { readProof, attests, citeOf } from '../web/btc-proofs.js';
 
 const WEB = new URL('../web/', import.meta.url);
 const problems = [];
@@ -94,7 +95,12 @@ for (const e of allPlaces) {
 // the same way a written one does.
 const readingBearers = [
   ...entries,
-  ...parts.filter((p) => p.kind === 'entries').flatMap((p) => p.entries),
+  ...parts,                                       // a part may carry a reading of what it gathers
+  ...parts.filter((p) => p.entries).flatMap((p) => p.entries),
+  // The Consensus part's forks carry readings on their title leaves, and each
+  // fork's chapters carry their own, like any curated entry.
+  ...parts.filter((p) => p.bips).flatMap((p) => p.bips),
+  ...parts.filter((p) => p.bips).flatMap((p) => p.bips).flatMap((b) => b.entries),
 ];
 const referenced = new Set();
 for (const e of readingBearers) {
@@ -125,14 +131,97 @@ const onDisk = (await readdir(new URL('commentary/', WEB))).filter((f) => f.ends
 for (const f of onDisk) if (!referenced.has(f)) notes.push(`commentary/${f} is not referenced by any entry — nothing will show it`);
 
 // The appendix's own places: each must resolve to a height like any other, and
-// a part that lists none but says it will is a part that renders empty.
+// a part that lists none but says it will is a part that renders empty. The
+// Consensus part's places live a level down, under their BIPs; a bip's URL
+// handle must be unique (it is how ?bip= finds the leaf), an expected row must
+// be a height (□ is arithmetic on a height; a transaction cannot be expected),
+// and a signaling fork must say how it is counted.
 for (const part of parts) {
-  if (part.kind !== 'entries') continue;
-  for (const e of part.entries) {
-    if (!/^-?[0-9]+$/.test(e.id) && !/^[0-9a-f]{64}$/.test(e.id)) {
-      problems.push(`appendix "${part.title}": "${e.title}" has an id that is neither a block height nor a 64-hex id`);
+  if (part.kind !== 'consensus') continue;
+  const handles = new Set();
+  for (const bip of part.bips) {
+    if (handles.has(bip.key)) problems.push(`appendix "${part.title}": two bips share the URL handle "${bip.key}"`);
+    handles.add(bip.key);
+    if (bip.status === 'signaling' && (!Number.isFinite(bip.bit) || !Number.isFinite(bip.threshold))) {
+      problems.push(`appendix "${part.title}": ${bip.title} is signaling but names no bit/threshold to count by`);
     }
-    if (!e.note) notes.push(`appendix "${part.title}": "${e.title}" carries no note — the row will have nothing to say on hover`);
+    // The ballot table needs a coherent reading of a yes: a bit, a minimum
+    // version, or coinbase text (one of them, not two), a window, and -- for
+    // a closed ballot -- an anchor whose window closes on a period boundary
+    // where the fork HAD periods, since those boundaries are consensus
+    // arithmetic and a misplaced anchor would tally the wrong blocks. A
+    // coinbase ballot had no periods at all; its window is an editorial
+    // frame, and its anchor stands wherever the story closed.
+    if ([bip.bit, bip.version, bip.coinbase].filter((x) => x != null).length > 1) {
+      problems.push(`appendix "${part.title}": ${bip.title} names more than one way to read a yes — a bit, a version, or coinbase text, not several`);
+    }
+    if (bip.ballot != null) {
+      if (bip.bit == null && bip.version == null && bip.coinbase == null) {
+        problems.push(`appendix "${part.title}": ${bip.title} names a ballot but no bit, version, or coinbase text to read it by`);
+      }
+      if (!Number.isFinite(bip.window)) {
+        problems.push(`appendix "${part.title}": ${bip.title} names a ballot but no window`);
+      } else if (bip.bit != null && (bip.ballot + 1) % bip.window !== 0) {
+        problems.push(`appendix "${part.title}": ${bip.title}'s ballot ${bip.ballot} does not close a ${bip.window}-block period (period boundaries align from genesis)`);
+      }
+    }
+    if (bip.status === 'signaling' && bip.ballot != null) {
+      problems.push(`appendix "${part.title}": ${bip.title} is still signaling — its ballot has not closed, so it names none and its leaf counts from the tip`);
+    }
+    // A monitor is an external claim the leaf will fetch and credit: it must
+    // be an https URL, and only a fork still signaling has a period to ask
+    // about -- a closed window's count is the chain's, not a site's.
+    if (bip.monitor !== undefined) {
+      if (!/^https:\/\//.test(bip.monitor)) {
+        problems.push(`appendix "${part.title}": ${bip.title}'s monitor "${bip.monitor}" is not an https URL`);
+      }
+      if (bip.status !== 'signaling') {
+        problems.push(`appendix "${part.title}": ${bip.title} names a monitor but is not signaling — a closed window's count is the chain's own`);
+      }
+    }
+    for (const e of bip.entries) {
+      if (!/^-?[0-9]+$/.test(e.id) && !/^[0-9a-f]{64}$/.test(e.id)) {
+        problems.push(`appendix "${part.title}": "${e.title}" has an id that is neither a block height nor a 64-hex id`);
+      }
+      if (e.expected && !/^[0-9]+$/.test(e.id)) {
+        problems.push(`appendix "${part.title}": "${e.title}" is expected but its id is not a height — only an unmined height can be expected`);
+      }
+      if (!e.note) notes.push(`appendix "${part.title}": "${e.title}" (${bip.title}) carries no note — the row will have nothing to say on hover`);
+    }
+    notes.push(`appendix "${part.title}": ${bip.title} — ${bip.status}, ${bip.entries.length} places`);
+  }
+}
+
+// Appendix IV's proofs are checked by replaying them, which is the only way a
+// proof can be checked at all: the file must be there, it must parse, it must
+// reach a Bitcoin block (a pending proof cites no chapter), and where the
+// stamped file ships beside it the digest must match — otherwise the appendix
+// would list a file under a proof that is about some other file. What is NOT
+// checked here is the merkle root against the chain: this runs offline, ahead
+// of everything expensive, and the page does that check when a reader opens it.
+for (const part of parts) {
+  if (part.kind !== 'proofs') continue;
+  for (const e of part.entries) {
+    let bytes;
+    try { bytes = new Uint8Array(await readFile(new URL(`proofs/${e.proof}`, WEB))); }
+    catch { problems.push(`appendix "${part.title}": "${e.title}" names proofs/${e.proof}, which is not there`); continue; }
+    let read;
+    try { read = await readProof(bytes); }
+    catch (err) { problems.push(`appendix "${part.title}": proofs/${e.proof} will not read — ${err.message}`); continue; }
+    if (!read.place) {
+      problems.push(`appendix "${part.title}": proofs/${e.proof} reaches no Bitcoin block${
+        read.pending.length ? ` (still pending at ${read.pending.join(', ')})` : ''} — it cites no chapter`);
+      continue;
+    }
+    if (e.subject) {
+      try {
+        const subject = new Uint8Array(await readFile(new URL(`proofs/${e.subject}`, WEB)));
+        if (!(await attests(read, subject))) {
+          problems.push(`appendix "${part.title}": proofs/${e.proof} does not attest proofs/${e.subject} — the digests differ`);
+        }
+      } catch { problems.push(`appendix "${part.title}": "${e.title}" names proofs/${e.subject}, which is not there`); }
+    }
+    notes.push(`appendix "${part.title}": "${e.title}" is stamped into ${citeOf(read.place)}`);
   }
 }
 
