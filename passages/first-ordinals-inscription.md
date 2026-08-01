@@ -7,7 +7,7 @@
 > connective grammar is the translator's, the content is the chain's.
 
 - **Citation:** IV β69 ■343 §2323 (Volume IV, Book 69, Chapter 343, section 2323)
-- **Block:** 767,430
+- **Block:** 767,430 — First Ordinals inscription
 - **Block hash:** `000000000000000000029730547464f056f8b6e2e0a02eaf69c24389983a04f5`
 - **Transaction id:** `6fb976ab49dcec017f1e201e84395983204ae1a7c2abf7ced0a85d692e442799`
 - **Read live:** https://bookofbitcoin.io/bitcoin-book.html?txid=6fb976ab49dcec017f1e201e84395983204ae1a7c2abf7ced0a85d692e442799

@@ -117,23 +117,30 @@ export function fromRoman(s) {
 //   the URL form, as a citation travels in a link -- "v3b2c5", "v1b29c596s85",
 //   "v1b50c1807s85o4"
 //
+// After the point, digits and letters name two different coordinates: §85.4
+// is the section's output 4, and §85.a its witness footnote a -- the alphabet
+// index the page prints on the footnote's mark. The URL form spells the two
+// apart, o4 against wa.
+//
 // Every level below the volume may be omitted, and the depth is the point: the
 // finest level named is the page meant. Returns
 //
-//   { volume, book, chapter, section, out, height, index }
+//   { volume, book, chapter, section, out, wit, height, index }
 //
-// with section/out null when unnamed, `height` the first block of the finest
+// with section/out/wit null when unnamed (`wit` the 1-based footnote number a
+// letter mark resolves to), `height` the first block of the finest
 // named span, and `index` the book's own page convention -- 0-based section, or
 // -1 a chapter's own page, -2 a book's leaf, -3 a volume's leaf. Null when the
 // input is not a reference at all, which is how callers tell a citation from a
-// height or a hash.
+// height or a hash -- and null too for a lettered mark that isn't one (a q):
+// the reference fails whole rather than resolving to a guess.
 // Both spellings carry depth the same way: a level left unwritten is a level
 // not named, so "III" and "v3" are a volume's leaf, "III β2" and "v3b2" a
 // book's. (Every ?ref= link the pages generate is chapter-deep or finer, so
 // nothing that already exists reads differently for the shorter forms being
 // admitted here.)
-const QUOTED_REF = /^(?:βoβ\s+)?([ivxlcdm]+)(?:[\s]+β?\s*(\d+))?(?:[\s]+[■□]?\s*(\d+))?(?:[\s]+§?\s*(\d+)(?:\.(\d+))?)?$/i;
-const URL_REF = /^v(\d+)(?:b(\d+))?(?:c(\d+))?(?:s(\d+))?(?:o(\d+))?$/i;
+const QUOTED_REF = /^(?:βoβ\s+)?([ivxlcdm]+)(?:[\s]+β?\s*(\d+))?(?:[\s]+[■□]?\s*(\d+))?(?:[\s]+§?\s*(\d+)(?:\.(\d+|[a-z]+))?)?$/i;
+const URL_REF = /^v(\d+)(?:b(\d+))?(?:c(\d+))?(?:s(\d+))?(?:o(\d+)|w([a-z]+))?$/i;
 
 export function parseReference(input) {
   const s = String(input ?? '').trim().replace(/\s+/g, ' ');
@@ -145,11 +152,23 @@ export function parseReference(input) {
   const book = m[2] ? parseInt(m[2], 10) : null;
   const chapter = m[3] ? parseInt(m[3], 10) : null;
   const section = m[4] ? parseInt(m[4], 10) : null;
-  const out = m[5] ? parseInt(m[5], 10) : null;
+  // The coordinate after the point: the URL form spells output and witness
+  // apart (o4 / wa, groups 5 and 6); the quoted form's one group is told
+  // apart by what it's made of -- digits are an output, letters a footnote
+  // mark, read back to its number (null for a non-mark, failing the whole
+  // reference).
+  let out = null, wit = null;
+  if (url) {
+    out = m[5] ? parseInt(m[5], 10) : null;
+    if (m[6] != null) { wit = footnoteIndexOf(m[6]); if (wit == null) return null; }
+  } else if (m[5] != null) {
+    if (/^\d+$/.test(m[5])) out = parseInt(m[5], 10);
+    else { wit = footnoteIndexOf(m[5]); if (wit == null) return null; }
+  }
   if ((book !== null && book < 1) || (chapter !== null && chapter < 1)
     || (section !== null && section < 1) || (out !== null && out < 0)) return null;
   return {
-    volume, book, chapter, section, out,
+    volume, book, chapter, section, out, wit,
     height: heightOf(volume, book ?? 1, chapter ?? 1),
     index: section !== null ? section - 1 : chapter !== null ? -1 : book !== null ? -2 : -3,
   };
@@ -165,17 +184,19 @@ export function latinReference(input) {
     + (r.book !== null ? `b${r.book}` : '')
     + (r.chapter !== null ? `c${r.chapter}` : '')
     + (r.section !== null ? `s${r.section}` : '')
-    + (r.out !== null ? `o${r.out}` : '');
+    + (r.out !== null ? `o${r.out}` : '')
+    + (r.wit != null ? `w${footnoteMark(r.wit)}` : '');
 }
 
 // The URL spelling built from a height (which always names a chapter), plus the
 // section and output where they are known -- what a ledger row's citation links
 // to, and the inverse of parseReference's `height`.
-export function latinRefOf(height, section = null, out = null) {
+export function latinRefOf(height, section = null, out = null, wit = null) {
   const { volume, book, chapter } = volumeBookChapter(height);
   return `v${volume}b${book}c${chapter}`
     + (section != null ? `s${section}` : '')
-    + (out != null ? `o${out}` : '');
+    + (out != null ? `o${out}` : '')
+    + (wit != null ? `w${footnoteMark(wit)}` : '');
 }
 
 // The same reference for a height no block has reached: the expected-chapter

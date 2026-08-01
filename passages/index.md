@@ -52,6 +52,7 @@ scheme, and how to read passages beyond this curated set.
 - [Taproot activation](./taproot-activation.md) — IV β40 ■1009 §2 ([as a page](https://bookofbitcoin.io/IV/40/1009/2/))
 - [First Ordinals inscription](./first-ordinals-inscription.md) — IV β69 ■343 §2323 ([as a page](https://bookofbitcoin.io/IV/69/343/2323/))
 - [Largest block (at the time)](./largest-block-at-the-time.md) — IV β72 ■1493 §1 ([as a page](https://bookofbitcoin.io/IV/72/1493/))
+- [First BRC-20 inscription](./first-brc-20-inscription.md) — IV β75 ■649 §408 ([as a page](https://bookofbitcoin.io/IV/75/649/408/))
 - [The Fourth Halving](./the-fourth-halving.md) — V β1 ■1 §1 ([as a page](https://bookofbitcoin.io/V/1/1/))
 - [Sermon on the Mount](./sermon-on-the-mount.md) — IV β73 ■1398 §732 ([as a page](https://bookofbitcoin.io/IV/73/1398/732/))
 - [First BIP110 signaling block](./first-bip110-signaling-block.md) — V β50 ■120 §1 ([as a page](https://bookofbitcoin.io/V/50/120/))

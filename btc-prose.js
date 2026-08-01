@@ -1314,7 +1314,11 @@ export function composeTransactionFields(parsed, bestOf = 1, lazyData = null, en
     // caller supplies `lazyData`; an ASCII payload is still quoted inline by
     // `eligible` before either encoder is reached, so only opaque bytes defer.
     const encodeData = (isOpReturn && lazyData) ? lazyData : collect;
-    return { script: renderScript(o.scriptPubKey, encodeData, { eligible: isOpReturn, coinbase: isCoinbaseTx }), scriptAscii: null, value: formatBtc(o.value), valueTitle: `${groupDigits(String(o.value))} satoshis` };
+    // sats rides along raw so the renderer can total the outputs (the
+    // closing balance line) without unformatting the display value; spkHex
+    // is the locking script verbatim, so the renderer can derive the
+    // script's address (its keep on the ledger shelf) without re-parsing.
+    return { script: renderScript(o.scriptPubKey, encodeData, { eligible: isOpReturn, coinbase: isCoinbaseTx }), scriptAscii: null, value: formatBtc(o.value), valueTitle: `${groupDigits(String(o.value))} satoshis`, sats: o.value, spkHex: o.scriptPubKey };
   });
 
   const lock = locktimeInfo(parsed.locktime);

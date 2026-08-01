@@ -1,0 +1,55 @@
+# First BRC-20 inscription
+
+> A passage of **The βook of βitcoin** — the Bitcoin chain read as a book. This is
+> block 779,832 read as a chapter, and its transaction 408
+> (of 1,860) read as a section of Glossia prose. Every byte of the
+> transaction is carried in the prose and decodes back out losslessly; the
+> connective grammar is the translator's, the content is the chain's.
+
+- **Citation:** IV β75 ■649 §408 (Volume IV, Book 75, Chapter 649, section 408)
+- **Block:** 779,832 — First BRC-20 inscription
+- **Block hash:** `000000000000000000015712838394aeb93f5d45d0e5bec197382c08b375016e`
+- **Transaction id:** `b61b0172d95e266c18aea0c624db987e971a5d6d4ebc2aaed85da4642d635735`
+- **Read live:** https://bookofbitcoin.io/bitcoin-book.html?txid=b61b0172d95e266c18aea0c624db987e971a5d6d4ebc2aaed85da4642d635735
+
+## Chapter frontispiece — block 779,832
+
+Block hash, as prose: ⌘¹⁷⁷ *A host due arm its holiday. The aware seminar get episode. Sin alone see syrup. Space set cliff to exit. Infant are true out dove. Cow arrange enough absurd sky.* ⓪⁷⁹
+
+- **version:** vtotalus pulp — block version 0x2b5d8000 — BIP9 version-bits form; version-rolling bits 0x5aec (BIP320 scratch entropy) as totalus pulp; no soft-fork signals
+- **previous block:** ⌘¹⁷⁸ Cop announce much march to knee. Spin is chief for donor. Pan later marble its mushroom. Yes arrive will to object. The yes is outer. The capable dignity adapt rub. ⓪⁷⁸
+  - hex: `00000000000000000003f079883a81997d3238b287ea53904f1ecd3d1f225209`
+- **merkle root:** ⋔ Aid may achieve crew to dune. Elevator get blood for type. Device may say to sign. Pop undo hold via damage. Exchange may rescue system. Planet enable lake to assist. A code may link its due hospital for its unusual abandon.
+  - hex: `90fbdb20881637944f492f35776eeb841bb29d5dc8ff2d8fd77ff1231069c601`
+- **timestamp:** 2023-03-08 04:16 UTC
+- **difficulty target:** β₇₇ < 428451×256²⁰ — the block hash above reads below this target — nBits 170689a3 — mantissa 428451 (3·17·31·271) shifted up 20 bytes: the target 0000000000000000000689a30000000000000000000000000000000000000000, which a valid block hash must read below (77 leading zero bits) — difficulty 43,053,844,193,928 (relative to the genesis block)
+- **nonce:** η 2·5²·73·380797
+
+## § 408 — First BRC-20 inscription
+
+Transaction id, as prose: ⌘²⁵⁶ *Its crystal roast is slender. Pop sing to cap. Its easy pay is unable. Reward are fiscal to example. Our helmet yes get effort. Cop confirm trumpet to horn per a narrow staff. Puppy sell another sad now above its human. Scale may get each lap.*
+
+- **version:** 1
+- **input 1:** spends output 0 of `a321c61c83563a377f82ef59301f2527079f6bda7c2d04f9f5954c873f42e8ac`
+  - sequence:  — replaceable — signals opt-in RBF
+  - witness: see footnote a
+- **output 1:** 0.00010000 ₿
+  - script: ① p³² Danger diagram praise to front. Relief may vote aid. The pay is vital. Machine may fatigue century to faculty. Hope invest to carry via glance. Butter may set our original to tap. Ban occur peanut via payment. Venue easily set apology. Divorce get its tea.
+- **locktime:** □ — no locktime — final with respect to time
+
+### Witness footnotes
+
+a. s Its hire also set cop. A someone. Aid due omit garment. Hub too noise any creek. Surprise claw demand to pelican per spider. Tuna set our future math. Wedding wild express paddle. Turkey proof loan to attitude via law. Its health set any stomach. Tap may mean clap. End only prefer a base message. A far cop ahead report a odd offer. Lie may bless citizen. Each head once set hobby. The base daring get cactus. · t p³² Owner set our drastic hour. Son may begin cry. Region left see oval. Stamp decorate fire to balcony. Uncle not essay injury. The rigid pop educate to inflict. Its hit may devote voice. Its nod unfold pen. Fringe scale a cut. ∇ ⓪ ⟨ ³ “ord” 1 ²⁴ “text/plain;charset=utf-8” ⓪ ↧⁹⁴ “{   "p": "brc-20",  "op": "deploy",  "tick": "ordi",  "max": "21000000",  "lim": "1000"}” ⟩ · c v96₁ p Owner set our drastic hour. Son may begin cry. Region left see oval. Stamp decorate fire to balcony. Uncle not essay injury. The rigid pop educate to inflict. Its hit may devote voice. Its nod unfold pen. Fringe scale a cut.
+
+---
+
+*Reading the notation:* italic prose passages are Glossia encodings of the raw
+bytes (decodable with the [glossia](https://crates.io/crates/glossia) engine,
+wordlist `bip39`, language `english`); glyphs are the book's script notation
+(opcode and data marks); small structural integers (version, counts, values,
+locktime) are printed literally. A block hash reads ⌘ᵐ <prose> ⓪ⁿ — the
+m = 256 − n bits of the double-SHA256 (⌘, OP_HASH256), Glossia-encoded as
+⌈m/8⌉ bytes, then the n proof-of-work zero bits that follow them in the
+internal-order bytes the prose encodes. See
+[/llms.txt](https://bookofbitcoin.io/llms.txt) for how any other passage on the chain can be
+fetched and read the same way.

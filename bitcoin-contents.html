@@ -150,7 +150,7 @@ import { allProofs, citeOf, leafOf } from './btc-proofs.js';
 import { creditLine, commentaryForAddresses } from './btc-commentary.js';
 import { readQueue, buildQueue } from './btc-mempool.js';
 import { INDEXED, keptLedgers, sameAddresses } from './btc-index.js';
-import { volumeBookChapter, toRoman, fromRoman, heightOf, expectedReference } from './btc-citation.js';
+import { volumeBookChapter, toRoman, fromRoman, heightOf, expectedReference, footnoteMark } from './btc-citation.js';
 import { storeGet, storePut } from './btc-store.js';
 import { seedArchive } from './btc-seed.js';
 
@@ -188,13 +188,15 @@ const GENESIS_COINBASE = '4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b
 const ESPLORA_MIRRORS = ['https://blockstream.info/api', 'https://mempool.space/api'];
 // A book-page entry (page: 'book') places at its book with no chapter -- the
 // leaf precedes every chapter of its book in reading order.
-const placeOf = (height, pos, page, vout = null) => {
+const placeOf = (height, pos, page, vout = null, wn = null) => {
   const p = volumeBookChapter(height);
   if (page === 'volume') return { volume: p.volume, book: null, chapter: null, section: null };
   if (page === 'book') return { volume: p.volume, book: p.book, chapter: null, section: null };
   // An output rides its section's citation with its vout appended -- §1.0,
-  // as the book prints it (renderCitation in bitcoin-book.html).
-  return { ...p, section: pos == null ? null : pos + 1, vout: pos == null ? null : vout };
+  // as the book prints it (renderCitation in bitcoin-book.html) -- and a
+  // witness rides it the same way, the footnote's alphabet index after the
+  // point (§1.a): letters name footnotes, digits name outputs.
+  return { ...p, section: pos == null ? null : pos + 1, vout: pos == null ? null : vout, wit: pos == null ? null : wn };
 };
 
 // The chain tip height, fetched once and reused across relative entries.
@@ -281,14 +283,17 @@ async function resolveBookmark(b) {
 // ■chapter (and a transaction's §section) remains, and directly on the leaf the
 // β-marked book leads it. Spaced like the book's own citations ("β29 ■596",
 // "■1 §1").
-function tailRef({ book, chapter, section, vout }, underBook) {
+function tailRef({ book, chapter, section, vout, wit }, underBook) {
   // A volume's own leaf: the leaf's head above the row has already named it.
   if (book == null) return '';
   // A book's own leaf: under its Book heading nothing remains to cite; on the
   // bare leaf, the β mark alone names it.
   if (chapter == null) return underBook ? '' : `β${book}`;
   let s = (underBook ? [`■${chapter}`] : [`β${book}`, `■${chapter}`]).join(' ');
-  if (section != null) s += ` §${section}${vout == null ? '' : `.${vout}`}`;
+  // An output cites as §section.vout; a witness as §section.a -- the
+  // footnote's alphabet index after the point, letters where an output
+  // would carry digits.
+  if (section != null) s += ` §${section}${vout == null ? '' : `.${vout}`}${wit == null ? '' : `.${footnoteMark(wit)}`}`;
   return s;
 }
 
@@ -299,7 +304,11 @@ function entryEl(entry, underBook) {
   const row = document.createElement('a');
   row.className = 'toc-entry' + (underBook ? ' under-book' : '') + (entry.bookmark ? ' is-bookmark' : '');
   row.dataset.entryId = entry.id;   // the projected section anchors after the tip's row
-  row.href = entryHref(entry.id, entry.index, entry.page, entry.vout ?? entry.out ?? null);
+  // The witness coordinate travels two ways: a curated place carries its
+  // footnote number (linked as the letter mark, the citation's own .a), a
+  // bookmark its input index -- the book's &wit= landing reads both.
+  row.href = entryHref(entry.id, entry.index, entry.page, entry.vout ?? entry.out ?? null,
+    entry.wit != null ? footnoteMark(entry.wit) : entry.vin ?? null);
   const t = document.createElement('span'); t.className = 'toc-title';
   // A reader's own bookmark flies the same ribbon it wears in the book, so it's
   // distinguishable from a curated entry even though it sits in reading order.
@@ -1005,16 +1014,31 @@ const placeKey = (p) => `${p.id}#${p.index ?? ''}`;
 const placements = new Map();          // place key -> citation | null (once attempted)
 const bmPlacements = new Map();        // bookmark hex -> place | null (once attempted)
 
-// A reader's bookmarks join the curated set in one list. A bookmark that is
-// already a curated entry is dropped (the curated title wins) so it isn't listed
-// twice.
-const NOTABLE_IDS = new Set(places().map((p) => p.id));
-// A bookmark is keyed by what it names: a hash by itself, an output by its
-// hash and vout, a leaf by the hash of the block its span opens and which span
-// it is (the same keys bitcoin-book.html writes). Only a plain hash bookmark
-// can duplicate a curated entry, so only those are dropped.
-const bmKey = (b) => (b.page ? `${b.page}@${b.hex}` : b.vout == null ? b.hex : `${b.hex}:${b.vout}`);
-const bookmarks = readBookmarks().filter((b) => b.vout != null || b.page || !NOTABLE_IDS.has(b.hex));
+// A reader's bookmarks join the curated set in one list. A bookmark that
+// names a place the curation already lists gets no second row -- it renames
+// the curated row instead: the reader's title (which the book's bookmark
+// form defaults to the curated name) overrides the label, and the row flies
+// the ribbon. Matched by hash, or by the stored reference against the
+// coordinates the yaml's ids resolve to (height + section index + output +
+// leaf level); a legacy bookmark without a stored reference still matches by
+// its hash.
+const bmKey = (b) => (b.page ? `${b.page}@${b.hex}` : b.vin != null ? `${b.hex}:w${b.vin}` : b.vout == null ? b.hex : `${b.hex}:${b.vout}`);
+const allBookmarks = readBookmarks();
+const bmForPlace = (p) => allBookmarks.find((b) => {
+  if (p.address) return false;
+  if (p.page || b.page) return (p.page ?? null) === (b.page ?? null) && p.id === String(b.height);
+  // A witness place matches only a witness keep of the same footnote (by
+  // its stored number; an old keep without one stays its own row) -- and a
+  // witness keep matches nothing else.
+  if (p.wit != null || b.vin != null) {
+    return p.wit != null && b.wn != null && b.wn === p.wit
+      && p.id === String(b.height) && (p.index ?? null) === (b.pos ?? null);
+  }
+  if ((p.out ?? null) !== (b.vout ?? null)) return false;
+  return p.id === b.hex || (p.id === String(b.height) && (p.index ?? null) === (b.pos ?? null));
+});
+const overridingKeys = new Set(places().filter((p) => !p.address).map((p) => bmForPlace(p)).filter(Boolean).map(bmKey));
+const bookmarks = allBookmarks.filter((b) => !overridingKeys.has(bmKey(b)));
 
 // Every entry -- curated or bookmarked -- carrying whatever placement has
 // resolved so far. A bookmark reuses its stored title and flies the book's ribbon.
@@ -1022,10 +1046,14 @@ const bookmarks = readBookmarks().filter((b) => b.vout != null || b.page || !NOT
 // its hash: `?block=<h>&page=volume` is the leaf, where the bare hash would be
 // the chapter that opens it -- a different page, and a different keep.
 const entries = () => [
-  ...places().filter((p) => !p.address).map((p) => ({ ...p, title: placeTitle(p), commentary: p.entry.commentary,
-    place: placements.get(placeKey(p)), tried: placements.has(placeKey(p)) })),
+  ...places().filter((p) => !p.address).map((p) => {
+    const bm = bmForPlace(p);
+    return { ...p, title: (bm && bm.title) || placeTitle(p), bookmark: bm ? true : undefined,
+      commentary: p.entry.commentary,
+      place: placements.get(placeKey(p)), tried: placements.has(placeKey(p)) };
+  }),
   ...bookmarks.map((b) => ({
-    id: b.page ? String(b.height) : b.hex, index: b.pos ?? undefined, vout: b.vout ?? undefined, page: b.page,
+    id: b.page ? String(b.height) : b.hex, index: b.pos ?? undefined, vout: b.vout ?? undefined, vin: b.vin ?? undefined, page: b.page,
     title: b.title || b.prose || shortHex(b.hex),
     bookmark: true, place: bmPlacements.get(bmKey(b)), tried: bmPlacements.has(bmKey(b)),
   })),
@@ -1092,9 +1120,9 @@ const consensusPlaces = () => appendix()
 // Block placements (curated, and bookmarks that stored their reference) are
 // offline, so place them at once; everything else streams in as its lookup
 // resolves.
-for (const p of [...places(), ...consensusPlaces()]) if (!p.address && isBlockId(p.id)) placements.set(placeKey(p), placeOf(Number(p.id), p.index ?? null, p.page, p.out ?? null));
+for (const p of [...places(), ...consensusPlaces()]) if (!p.address && isBlockId(p.id)) placements.set(placeKey(p), placeOf(Number(p.id), p.index ?? null, p.page, p.out ?? null, p.wit ?? null));
 for (const b of bookmarks) {
-  if (Number.isInteger(b.height)) bmPlacements.set(bmKey(b), placeOf(b.height, b.pos ?? null, b.page, b.vout ?? null));
+  if (Number.isInteger(b.height)) bmPlacements.set(bmKey(b), placeOf(b.height, b.pos ?? null, b.page, b.vout ?? null, b.wn ?? null));
 }
 lastVolume = volumesFromEntries();
 at = openingIndex(leaves());
@@ -1117,9 +1145,12 @@ await Promise.all([
     render();
   }),
   ...bookmarks.filter((b) => !bmPlacements.has(bmKey(b))).map(async (b) => {
-    // An output bookmark resolves through its transaction, then takes its vout.
+    // An output bookmark resolves through its transaction, then takes its
+    // vout; a witness keep takes its footnote number the same way.
     const place = await resolveBookmark(b);
-    bmPlacements.set(bmKey(b), place && b.vout != null ? { ...place, vout: b.vout } : place);
+    bmPlacements.set(bmKey(b), place && (b.vout != null || b.wn != null)
+      ? { ...place, ...(b.vout != null ? { vout: b.vout } : {}), ...(b.wn != null ? { wit: b.wn } : {}) }
+      : place);
     growVolumes(volumesFromEntries());
     render();
   }),
