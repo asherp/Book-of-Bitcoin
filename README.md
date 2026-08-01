@@ -383,6 +383,12 @@ compiled to WASM) is consumed as a published
   transaction parsing, prose composition, citations, contents data,
   anthology data, and the archive (immutable chain data kept in IndexedDB,
   so revisited chapters and resolved citations read offline)
+- `web/btc-chaintime.js` — roughly when a height was mined, anchored on the
+  halvings. One reading needs it: a coinbase's second field is a template
+  timestamp in some pools' house style and a counter in others, and nothing
+  in the bytes says which. The height already written beside it does — a
+  clock agrees with it, a counter has no reason to — so the mark is decided
+  out of the same hundred bytes it is printed on
 - `web/btc-pages.js` — page numbers: one transaction is one page, numbered
   by the chain's running transaction count since genesis. Each section shows
   its folio — a bare, unpunctuated number — at the right end of the running
@@ -466,6 +472,32 @@ compiled to WASM) is consumed as a published
   rides whole as a rendered page of the book (image + alt text). See its
   [README](tools/twitter-bot/README.md); deployed by
   `.github/workflows/twitter-bot.yml`
+- `tools/coinbase-fields.mjs`, `tools/coinbase-survey.mjs` — the miner's margin,
+  surveyed. Past BIP34's height push a coinbase carries no format at all, only
+  house styles: where a pool's template builder left the Stratum gap, what it
+  wrote around it, and which foreign chain's commitment it is carrying. The
+  reader decomposes a `scriptSig` into those fields byte-exactly; the survey
+  samples blocks off any Esplora mirror and reports what each pool is doing
+  now. Findings and their sources in
+  [`tools/coinbase-formats.md`](tools/coinbase-formats.md), which is also where
+  the corrections they turned up are written down: the second field is a
+  template timestamp as often as a counter, and the book had been marking every
+  one of them η
+- `tools/stratum-job.mjs` — the same question asked of the pool rather than of
+  its blocks. Stratum hands out a coinbase in two halves with a gap for the
+  miner to fill (`coinb1 ‖ extranonce1 ‖ extranonce2 ‖ coinb2`), so where the
+  gap sits, how wide it is and which bytes the pool wrote either side of it are
+  stated rather than inferred. Subscribes, reads one job, hangs up; it never
+  submits a share
+- `web/btc-pools.js` — the table of pool signatures: what each pool's name
+  looks like in the bytes, and exactly where it ends. A coinbase's margin is
+  the one place on the chain where somebody signs their work, and the table
+  lets the book quote that signature to its own extent — so the counter byte
+  leaning on `/Foundry USA Pool #dropgold/` is no longer read as the pool's
+  punctuation. The two claims stay apart, as everywhere else in the book: the
+  signature is printed, because it is in the coinbase; the pool's name rides
+  the mark and the composed field, because a tag is unauthenticated and anyone
+  may copy one
 
 ## Building & running locally
 

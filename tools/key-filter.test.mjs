@@ -57,29 +57,29 @@ test('a value-carrying mark is found behind its value', () => {
 });
 
 test('a bare operator is not caught by a number that contains it', () => {
-  // The chapter head prints its target as 2¹⁶⁰·213529 and the book leaf a
+  // The chapter head prints its target as 167009×256²⁰ and the book leaf a
   // difficulty move as −2.53%. Neither is Script arithmetic.
-  const marks = new Set(['β₇₈', '2¹⁶⁰·213529', 'difficulty −2.53%']);
+  const marks = new Set(['β₇₈', '167009×256²⁰', 'difficulty −2.53%']);
   assert.ok(!rowShows(marksOf('+ − × ÷ %'), marks), 'arithmetic should stay shut');
   assert.ok(!rowShows(marksOf('&lt; &gt; ≤ ≥'), marks), 'comparisons should stay shut');
-  // The target is a shape rather than a string -- the primes in 2¹⁶⁰·213529
-  // are whatever the retarget left -- so its row is found by the one part of
-  // the shape that never varies: the power of two it opens with, which the
-  // byte shift alone drives past a hundred.
-  const FACTORS = 're:[0-9][⁰¹²³⁴⁵⁶⁷⁸⁹]{2,}';
-  const target = (m) => rowShows(marksOf('2<sup><i>k</i></sup>·<i>p</i>…', FACTORS), m);
+  // The target is a shape rather than a string -- the mantissa in 167009×256²⁰
+  // is whatever the retarget left -- so its row is found by the one part of
+  // the shape that never varies: the whole-byte shift it rides on, which no
+  // other number in the book is written on.
+  const FACTORS = 're:256[⁰¹²³⁴⁵⁶⁷⁸⁹]';
+  const target = (m) => rowShows(marksOf('<i>m</i>×256<sup><i>e</i></sup>', FACTORS), m);
   assert.ok(target(marks), 'the target should open its row');
-  assert.ok(target(new Set(['β₃₂ < 2²⁰⁸·3·5·17·257'])), 'genesis too, mark and all');
-  // And the raised digits a page prints elsewhere are not products: a push
+  assert.ok(target(new Set(['β₃₂ < 65535×256²⁶'])), 'genesis too, mark and all');
+  // And the raised digits a page prints elsewhere are not targets: a push
   // count, a hash's bit counts, the genesis chapter's empty predecessor.
   assert.ok(!target(new Set(['β₇₈', '²⁰', '↧²⁰', '⌘²²⁴', '⓪²⁵⁶', '■840000'])),
-    'no factorization on the page, no row');
-  // The nonces are products in the same notation, so the row has to turn on
-  // the size of the power rather than on there being one: a counter's squares
-  // and cubes are small, and a post-BIP34 coinbase -- an extranonce and no
-  // target anywhere on the page -- must not open the target's row.
+    'no target on the page, no row');
+  // The nonces are products in the same notation and used to answer for this
+  // row on a power-of-two pattern. Against 256ᵉ they cannot: a counter is a
+  // product of its own primes and never states a byte shift.
   assert.ok(!target(new Set(['■840000', 'η2³·3²·7·3253631'])), 'a coinbase counter is not a target');
   assert.ok(!target(new Set(['η19·97·1130351'])), 'nor a squarefree nonce');
+  assert.ok(!target(new Set(['η2·5·7·19·509·36329586977', '⓪³⁰'])), 'nor a margin full of counters');
   // But the same marks as Script opcodes do open those rows.
   const script = new Set(['×', '≤']);
   assert.ok(rowShows(marksOf('+ − × ÷ %'), script));
@@ -92,6 +92,29 @@ test('a bare push answers to its count, since it has no glyph', () => {
   assert.ok(!rowShows(marksOf('²⁰', 'push:count'), new Set(['⧉'])));
   // The extended pushes keep their arrow, so they are found behind the count.
   assert.ok(rowShows(marksOf('↧<i>n</i> ⇊<i>n</i> ⤋<i>n</i>'), new Set(['↧²⁰'])));
+});
+
+test('a coinbase\'s template clock answers to a synthetic mark, since every one differs', () => {
+  // The mark is a date, so the page prints a different string in every block
+  // that carries one and no literal in the key could name it. collectMarks
+  // adds 'time:template' beside the date when it sees the span's class.
+  const marks = new Set(['■960281', '2026-07-30 16:42', 'time:template']);
+  assert.ok(rowShows(marksOf('<i>date</i>', 'time:template'), marks));
+  // A page with no coinbase on it prints dates of other kinds -- a locktime,
+  // a chapter head -- and none of them opens this row.
+  assert.ok(!rowShows(marksOf('<i>date</i>', 'time:template'),
+    new Set(['Τ2026-07-30 16:42', '2026-07-30 16:42 UTC'])));
+});
+
+test('a pool\'s signature answers to a synthetic mark too', () => {
+  // The mark is the quotation itself, and what is inside it is whatever that
+  // pool wrote, so there is no literal to look for: collectMarks adds
+  // 'sig:pool' when it sees the span's class.
+  const marks = new Set(['■960468', '“/Foundry USA Pool #dropgold/”', 'sig:pool']);
+  assert.ok(rowShows(marksOf('“<i>tag</i>”', 'sig:pool'), marks));
+  // A page whose margin nobody signed keeps the row shut, quotations and all:
+  // an OP_RETURN message is a quotation and is not a signature.
+  assert.ok(!rowShows(marksOf('“<i>tag</i>”', 'sig:pool'), new Set(['■960470', '“hello world”'])));
 });
 
 test('the off-chain apparatus follows its table, not the page', () => {

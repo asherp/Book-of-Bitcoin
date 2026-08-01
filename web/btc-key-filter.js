@@ -22,7 +22,7 @@
 // transaction's locktime, the § number, and .mk where a mark would otherwise
 // go unclassed.
 const MARK_SELECTOR = '.op, .dt, .cfx, .cfx-gold, .fx-mark, .merkle-mark, '
-  + '.tx-seq, .tx-locktime, .cite-amount, .tx-out-value, .section-num, .mk';
+  + '.tx-seq, .tx-locktime, .cite-amount, .tx-out-value, .section-num, .mk, .pool-sig';
 
 // Is this element inside something the page has folded away?
 //
@@ -44,9 +44,15 @@ export function isHidden(el, root) {
 // The marks a rendered page is actually showing, as the exact strings their
 // spans carry -- '⧉', '■840000', 'β₇₈', 'III β2 ■5'.
 //
-// A bare push is the one mark with no glyph of its own: it is written as the
-// byte count alone (²⁰, ³³), so no literal finds it and it answers to the
-// synthetic 'push:count' instead.
+// Three marks have no glyph of their own and answer to a synthetic token
+// instead. A bare push is written as the byte count alone (²⁰, ³³), so no
+// literal finds it: 'push:count'. A coinbase's template timestamp is written
+// as a date, which differs in every block that carries one and could only be
+// matched by a prefix loose enough to catch anything: 'time:template'. And a
+// pool's signature is whatever that pool wrote -- the mark is the quotation
+// itself: 'sig:pool'. A margin's run of zeros writes ⓪ with a byte count,
+// which the chapter head's ⓪ⁿ (zero BITS of the block hash) would answer for
+// on a prefix match, so it takes 'zero:run' and opens its own row.
 export function collectMarks(root) {
   const marks = new Set();
   if (!root) return marks;
@@ -55,6 +61,9 @@ export function collectMarks(root) {
     const text = el.textContent.trim();
     if (text) marks.add(text);
     if (el.classList.contains('op-count')) marks.add('push:count');
+    if (el.classList.contains('op-tpltime')) marks.add('time:template');
+    if (el.classList.contains('pool-sig')) marks.add('sig:pool');
+    if (el.classList.contains('op-zeros')) marks.add('zero:run');
   }
   return marks;
 }
@@ -73,19 +82,17 @@ export function collectMarks(root) {
 // the same prefix match, and tpl:<id> ties a row to a pattern table instead.
 //
 // One mark in the book is a shape and not a string at all: the difficulty
-// target, printed as its prime factorization (2¹⁶⁰·213529), whose primes are
-// whatever the last retarget left. Nothing in it is fixed enough to look for
-// -- so that row names re:<pattern> instead, and is shown where the page
-// prints something of that form.
+// target, printed as its mantissa in primes times a whole-byte shift
+// (167009×256²⁰), whose primes are whatever the last retarget left. Nothing in
+// the primes is fixed enough to look for -- so that row names re:<pattern>
+// instead, and is shown where the page prints something of that form.
 //
-// What never varies is the scale of the power of two a target opens with: the
-// byte shift alone puts it past 2¹⁰⁰, so the pattern asks for a digit under a
-// power of two or more figures. The nonces are products in the same notation
-// and would otherwise answer for the target's row -- but a counter divisible
-// by a tenth power is a rarity (about one in a thousand, nearly always 2¹⁰),
-// so a post-BIP34 coinbase, which prints an extranonce and no target at all,
-// keeps the row shut. When one does slip through, the filter has erred toward
-// showing, which is the direction it is built to err in.
+// The shift is the fixed part: every target on this chain ends in 256 with a
+// raised digit after it, and nothing else in the book is written that way. The
+// nonces are products in the same notation and used to answer for the target's
+// row on a power-of-two pattern; against 256ᵉ they cannot, so the rule is now
+// exact rather than a probability argument about how often a counter divides
+// by a tenth power.
 // Pure string work, so it is testable without a DOM.
 
 // Stands in for a placeholder while tokenizing; never appears in real markup.

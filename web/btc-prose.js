@@ -19,8 +19,10 @@
 // margin layout.
 
 import { encodeSeedPhrase } from './glossia-msg.js';
-import { findTextRuns, splitReadableRuns, readableUtf8Text, tokenizeScript, bitsToTargetHex, bitsToDifficulty, bitsToPrimeFactors, primeFactors } from './btc-tx.js';
+import { findTextRuns, splitReadableRuns, looksLikeWriting, readableUtf8Text, tokenizeScript, bitsToTargetHex, bitsToDifficulty, bitsToMantissaFactors, primeFactors } from './btc-tx.js';
+import { splitOnSignature, poolOf } from './btc-pools.js';
 import { volumeBookChapter } from './btc-citation.js';
+import { plausibleBlockTime, utcMinute } from './btc-chaintime.js';
 import { BIP39, HP_SPELLS } from './btc-wordlists.js';
 
 const ROMAN = [[1000, 'M'], [900, 'CM'], [500, 'D'], [400, 'CD'], [100, 'C'], [90, 'XC'], [50, 'L'], [40, 'XL'], [10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I']];
@@ -117,6 +119,59 @@ const factorProse = (factors) => factors
   .map(([p, power]) => (power === 1 ? String(p) : `${p}${toSuperscript(power)}`))
   .join('·');
 
+// ─── the mantissa, written as short as it goes ─────────────────────────
+//
+// A factorization is worth printing when it says something the figure does
+// not, and costs the reader nothing. On a target's mantissa it often says
+// less: 3·5·17·257 is ten characters where 65535 is five, and both are the
+// same twenty-three bits of the wire word. So the mantissa is minimized
+// before it is printed, by a rule that decides each part on its own length.
+//
+//   1. Factor it.
+//   2. Every term goes to whichever is shorter, its power or its decimal --
+//      the decimal on a tie, since a figure a reader can read at sight beats
+//      one they have to raise to a power. 2⁵ and 32 are both two characters,
+//      so 32; 2¹⁰ is three against 1024's four, so 2¹⁰ stands.
+//   3. Then adjacent terms merge, left to right, wherever the product writes
+//      in no more characters than the pair did. Repeat until nothing more
+//      merges.
+//
+// A decimal product is never longer than its factors' decimals, so this
+// collapses most mantissas to the plain figure -- which is the honest result:
+// for a number of six or seven digits the factorization was never buying the
+// reader anything. What survives it is a term whose power genuinely earns its
+// place, and the whole factorization stays in the hover for the reader who
+// wants it (genesis' 65535 is 2¹⁶−1, and its primes are the Fermat ones --
+// worth knowing, and not worth five extra characters on every chapter head).
+//
+// Only the mantissa is written this way. A nonce and a counter keep their full
+// factorization: there the shapelessness of the product IS the reading -- a
+// place in the search, arrived at by counting -- and shortening it to a figure
+// would take that away.
+const termProse = (p, power) => {
+  const decimal = String(p ** BigInt(power));
+  if (power === 1) return decimal;
+  const raised = `${p}${toSuperscript(power)}`;
+  return [...raised].length >= [...decimal].length ? decimal : raised;
+};
+
+export function mantissaProse(factors) {
+  const terms = factors.map(([p, power]) => ({ value: p ** BigInt(power), text: termProse(p, power) }));
+  for (let merging = true; merging && terms.length > 1;) {
+    merging = false;
+    for (let i = 0; i + 1 < terms.length; i++) {
+      const value = terms[i].value * terms[i + 1].value;
+      const text = String(value);
+      if ([...text].length <= [...terms[i].text].length + [...terms[i + 1].text].length) {
+        terms.splice(i, 2, { value, text });
+        merging = true;                 // a merged term may merge again
+        break;
+      }
+    }
+  }
+  return terms.map((t) => t.text).join('·');
+}
+
 // Any number the book states as a product: its factorization, or the figure
 // itself where there is no factorization to write. 0 and 1 are the whole of
 // that exception -- neither is a product of primes, and an early miner's
@@ -129,24 +184,28 @@ const productProse = (value) => factorProse(primeFactors(value)) || String(value
 // in two faces that together account for all 256 of its bits. β's subscript
 // is the demand in its physical unit: the number of leading zero BITS a
 // valid hash must open with (genesis, difficulty 1, is β₃₂; each +1 is a
-// doubling of the work). `expr` is the target written exactly, in the terms
-// a 256-bit integer is finally made of: its prime factorization --
-// 2²⁰⁸·3·5·17·257 for genesis. nBits packs m×256ᵉ, so every target factors to
-// the same shape, a colossal power of two beside a very small odd number. The
-// power of two is the target's scale, roughly 8e of it and the rest whatever
-// twos the mantissa brought; the primes after it are the mantissa's odd part,
-// under 2²³ and rarely more than three or four of them -- the whole of what a
-// retarget can express, since a window's work is chosen from those digits and
-// nothing else. Genesis says it plainest: 65535 is 2¹⁶−1, so its odd part is
-// 3·5·17·257, the Fermat primes.
+// doubling of the work). `expr` is the target written exactly, in the two
+// parts the wire word is actually made of: the mantissa, factored into primes,
+// times the whole-byte shift it rides on -- 3·5·17·257×256²⁶ for genesis.
+//
+// The pair rather than one product, because nBits IS a pair. A retargeting
+// node computes a mantissa and a byte count and writes both; 256ᵉ is the
+// second of them and reads as itself, a scale in the units the header keeps
+// it in. Folded together the target factors to 2²⁰⁸·3·5·17·257, which is the
+// same number and a worse reading of it: nothing in that says 208 is 26 bytes
+// of shift while the odd part is the 65535 the wire word carries.
+//
+// What factoring the mantissa buys is the part a retarget can actually move.
+// A window's work is chosen from those twenty-odd bits and nothing else, and
+// genesis says it plainest: 65535 is 2¹⁶−1, so it is 3·5·17·257, the Fermat
+// primes.
 //
 // The subscript states the target's leading zero run, the expression the
 // number in full; leading zeros stay on β because they are not legible from a
 // product at a glance (they are 256 − bitlen). Nothing of the wire word is
-// lost in the reading: the product is the target's exact value, of which nBits
-// is the compact form -- and the compact nBits, the mantissa and byte shift it
-// packs, the full 256-bit target and the difficulty ratio all ride in the
-// hover title besides. A target looser than the genesis baseline (never on
+// lost in the reading: mantissa and shift are what nBits packs, and the
+// expression states both -- with the compact nBits, the full 256-bit target
+// and the difficulty ratio in the hover title besides. A target looser than the genesis baseline (never on
 // mainnet) falls back to the raw compact hex, with no expression.
 // Exported because a book leaf renders targets that are not its own block's:
 // a book from Volume II on straddles a retarget and states both of them, and
@@ -165,10 +224,12 @@ export function bitsInfo(bits) {
   const lz = zeros * 4 + (first >= 8 ? 0 : first >= 4 ? 1 : first >= 2 ? 2 : 3);
   const exponent = bits >>> 24;
   const mantissa = bits & 0x007fffff;   // top mantissa bit is a sign flag, masked off
-  const expr = factorProse(bitsToPrimeFactors(bits));
+  const { factors, shift } = bitsToMantissaFactors(bits);
+  const written = mantissaProse(factors);
+  const expr = shift > 0 ? `${written}×256${toSuperscript(shift)}` : written;
   return {
     sym: `β${toSubscript(lz)}`, expr,
-    title: `nBits ${compact} — mantissa ${mantissa} shifted up ${exponent - 3} bytes: the target ${targetHex}, which a valid block hash must read below (${lz} leading zero bits) — ${tail}`,
+    title: `nBits ${compact} — mantissa ${mantissa}${factorProse(factors) === String(mantissa) ? '' : ` (${factorProse(factors)})`} shifted up ${exponent - 3} bytes: the target ${targetHex}, which a valid block hash must read below (${lz} leading zero bits) — ${tail}`,
   };
 }
 
@@ -536,13 +597,63 @@ export function bip34HeightPush(hex) {
   return { height, restHex: hex.slice(8) };
 }
 
-// The counters that follow the height -> their decimals, and what's left.
+// ─── the clock some pools write next, and the counters after it ────────
 //
-// A pool's coinb1 ends at the height push and the extranonce is appended
-// directly after it, so the counter sits where the pre-BIP34 preamble's η sat:
-// second, right behind the mark that opens the scriptSig. Same field, same
-// mark, one rule later -- the search space beyond the header's 32-bit nonce,
-// which the miner rolls when that one is exhausted.
+// The slot behind the height does not hold one field. Under Stratum a pool
+// sends its coinbase in two halves and the miner fills the gap between them
+// (coinb1 ‖ extranonce1 ‖ extranonce2 ‖ coinb2), and where a pool leaves that
+// gap is house style, not rule. Two customs share the chain:
+//
+//   gap second   the counters land directly behind the height, and the pool's
+//                writing comes after them (ckpool, and the solo miners and
+//                small pools built on it)
+//   gap fourth   the pool writes the moment it assembled the template, then
+//                its tag, then leaves the gap (btccom's server, which pushes
+//                CScriptNum(time(nullptr)) as the second field, and the pools
+//                descended from it)
+//
+// So a number in that slot is a clock about as often as it is a counter, and
+// the book called all of them counters until block 960,281's ostensible
+// extranonce 1,785,429,755 was read as what it is: 2026-07-30 16:42 UTC, the
+// day the block itself was mined. See tools/coinbase-formats.md.
+//
+// Nothing in the bytes distinguishes the two. What distinguishes them is the
+// height already standing beside them: a clock agrees with it, a counter has
+// no reason to (see btc-chaintime.js, and PLAUSIBLE_WINDOW for what agreement
+// is worth here). The evidence and the claim are then in the same hundred
+// bytes, which is the standard every other mark on the page is held to.
+
+// The template timestamp -> its value, and what's left. A direct push of four
+// bytes, or of five where CScriptNum's sign padding will widen it after 2038,
+// whose value dates to the block's own era.
+export function templateTimePush(hex, height) {
+  const op = parseInt(hex.slice(0, 2), 16);
+  if (op !== 4 && op !== 5) return null;
+  const end = 2 + op * 2;
+  if (hex.length < end) return null;
+  const push = hex.slice(2, end);
+  if (op === 5 && push.slice(8) !== '00') return null;      // five bytes only to clear the sign bit
+  const unix = parseInt(reverseHexStr(push.slice(0, 8)), 16);
+  if (!plausibleBlockTime(unix, height)) return null;
+  return { unix, hex: hex.slice(0, end), restHex: hex.slice(end) };
+}
+
+// The timestamp mark: the UTC date and minute, as the chapter head prints the
+// block's own nTime. No glyph of its own -- Τ is the timelock grammar's, and
+// this constrains nothing; it is a miner's clock reading, the same kind of
+// thing the header states, so it reads the same way and a reader can set the
+// two side by side.
+// Marked op-tpltime so the notation key can find it: the mark is a date, which
+// is different in every block that carries one, so no literal in the key could
+// name it (see collectMarks in btc-key-filter.js).
+const templateTimeMark = (unix) => `<span class="op op-tpltime" title="the moment this block's template was assembled, as the pool's software wrote it into the coinbase (unix ${unix}) — a clock reading, not a counter: the pools built on btccom's server push it directly behind the height. It is here because it agrees with the height beside it; nothing in the bytes declares it">${utcMinute(unix)}</span>`;
+
+// The counters that follow -> their decimals, and what's left.
+//
+// Where the gap is second the counter sits right behind the height, exactly
+// where the pre-BIP34 preamble's η sat: same field, same mark, one rule later
+// -- the search space beyond the header's 32-bit nonce, which the miner rolls
+// when that one is exhausted.
 //
 // Reading it as the number it is matters twice over. It is a tally, so a
 // tally is what it should say. And a counter is entropy: at any moment ~37%
@@ -589,7 +700,7 @@ const blockHeightMark = (height) => `<span class="op op-blockmark" title="BIP34 
 // wrote, pipes and spaces included, instead of arriving pre-cut by a tokenizer
 // that mistook its punctuation for instructions.
 // The extranonce mark: η and its value, in both eras. One field gets one form
-// -- an early block's η2² and a modern η5·839·425609 are the same counter
+// -- an early block's η2² and a modern eight-byte counter are the same counter
 // under the same rule, and a mark that changed shape with the size of its
 // number would be two marks wearing one glyph. Both call sites come here so
 // they cannot drift apart again.
@@ -600,12 +711,174 @@ const blockHeightMark = (height) => `<span class="op op-blockmark" title="BIP34 
 // better served reading at the size of the numbers it is made of than sitting
 // small beside its glyph. The decimal keeps the title, which is where a
 // counter is legible as a count.
+//
+// What this mark must NOT wear is a clock. It said "counter" over block
+// 960,281's template timestamp for as long as the timestamp went unrecognized,
+// which is the failure a mark this confident is capable of: the glyph asserts
+// a meaning the bytes never stated -- and factoring the number does not make
+// the claim any truer, only more elaborate (that block's 5·839·425609 is a
+// date). templateTimePush takes such a number first, and this stays what its
+// name says.
 const extranonceMark = (n) => markToken(`η${productProse(n)}`, `extranonce ${n} — the counter the miner rolled once the header's 32-bit nonce (η) was exhausted. A tally, not text: it is read as the number it is, so its bytes never pass for writing`);
 
+// ─── the counter nobody pushed ─────────────────────────────────────────
+//
+// η reads a counter that arrived as a push, which is how the pools built on
+// ckpool and btccom write theirs -- the push states its own width, so the
+// number alone restores the bytes and the mark needs nothing else.
+//
+// Most pools do not push it. F2Pool, AntPool and SECPOOL write the counter as
+// raw bytes in the margin, where the book rendered it as payload prose: a
+// dozen words of wordlist standing for a number nobody meant as language. It
+// is the same field under the same rule as the pushed one, and it should read
+// the same way.
+//
+// One field, one mark, and no superscript on either: the counter reads as its
+// number wherever it was written, exactly as the header's own nonce does.
+//
+// What a push gave for free was the width. Little-endian, a run's LOW bytes
+// are its least significant, so 00 12 34 and its number are the same thing --
+// the leading zero is in the figure. What is lost is a zero at the far end,
+// where the number's most significant byte would be: d9 0f 1a 00 and d9 0f 1a
+// are one number and different bytes.
+//
+// So those come off as what they are. A zero byte closing a counter is a byte
+// the pool left empty, which is what ⓪ says, and once it is out the number is
+// minimally encoded and restores its own bytes without help. It costs a second
+// mark where the chain happens to write one -- about one counter in 256 -- and
+// it keeps every counter reading as a counter and every byte on the page.
+//
+// Bounded at eight bytes, the same ceiling the pushed counters take: past that
+// a run in the margin is not a counter but a commitment or a datum -- a
+// merged-mining root, a pool's own structure -- and it stays prose rather than
+// being flattened into a hundred-digit figure that says nothing about what it
+// holds. Such a run keeps its trailing zeros too: prose is exact whatever the
+// bytes are, so there is nothing there to peel them for.
+const RAW_COUNTER_MAX_BYTES = 8;
+
+const rawCounterMark = (hex) => {
+  const bytes = hex.length / 2;
+  const value = BigInt('0x' + ((hex.match(/../g) || []).reverse().join('') || '0'));
+  return markToken(`η${productProse(value)}`,
+    `${value} — ${bytes} bytes of the miner's margin, read as the number they are, little-endian as the chain writes its numbers. In this position that is the extranonce, the counter rolled once the header's 32-bit nonce (η) was exhausted, which is what a pool leaves room for here; a pool may also write a small number of its own (a version, a separator), and the bytes do not distinguish them. Minimally encoded, so the figure restores these bytes and no others`);
+};
+
+// A run of bytes -> the pieces it renders as. A counter closing on zero bytes
+// gives them up to ⓪ so the figure that remains is minimal; anything too long
+// to be a counter is left exactly as it is, for the prose to carry whole.
+function counterPieces(hex) {
+  let end = hex.length;
+  while (end >= 2 && hex.slice(end - 2, end) === '00') end -= 2;
+  const head = hex.slice(0, end);
+  const zeros = (hex.length - end) / 2;
+  if (!head || head.length / 2 > RAW_COUNTER_MAX_BYTES) return [{ hex }];
+  return zeros ? [{ counter: head }, { zeros }] : [{ counter: head }];
+}
+
+// ─── the zeros ─────────────────────────────────────────────────────────
+//
+// A pool lays out its coinbase at a fixed size and leaves room in it -- for
+// the counter the miner rolls, for a commitment it is not carrying today --
+// and what sits in that room is nothing: a run of 0x00. Rendered as payload
+// the run is a word repeated, because zero is the first word of the wordlist,
+// so a padded coinbase spends two thirds of its paragraph saying "abandon".
+// Which is true, invertible, and no way to read a book.
+//
+// So a run of zeros takes the mark it already has. ⓪ is OP_0 in the sigla
+// (0x00, the byte itself), and a superscript counts bytes everywhere in the
+// script register -- p⁶⁵, h³², a bare push's ²⁰ -- so ⓪²⁰ says twenty zero
+// bytes in notation the reader already holds. Nothing is claimed by it that
+// the bytes do not state, and the count restores them exactly: this is the
+// same trade as ∅ for an all-zero witness, one register down.
+//
+// (In the chapter head ⓪ⁿ counts zero BITS, of the block hash. Same glyph,
+// different unit, and the units are the registers': a hash is measured in
+// bits because its leading zeros are the proof of work, and a margin is
+// measured in bytes because bytes are what the miner left. The key says so
+// on both rows.)
+//
+// The floor is four bytes. Below it a zero is just a small number inside a
+// counter, and interrupting the prose to mark one would cost more than it
+// saves; at four the run is the pool's layout showing through, and the prose
+// would otherwise be three words of nothing.
+const ZERO_MIN_RUN = 4;
+
+// A byte string -> its runs of zeros and the spans between them, in order,
+// every byte in exactly one part: { zeros: n } or { hex }. Byte-aligned by
+// construction -- a hex string can spell 0000 across a byte boundary, and a
+// regular expression over it would find zeros nobody wrote.
+export function splitZeroRuns(hex, min = ZERO_MIN_RUN) {
+  const parts = [];
+  const bytes = hex.length / 2;
+  const at = (k) => hex.slice(k * 2, k * 2 + 2);
+  let i = 0, spanStart = 0;
+  while (i < bytes) {
+    if (at(i) !== '00') { i++; continue; }
+    let j = i;
+    while (j < bytes && at(j) === '00') j++;
+    if (j - i >= min) {
+      if (i > spanStart) parts.push({ hex: hex.slice(spanStart * 2, i * 2) });
+      parts.push({ zeros: j - i });
+      spanStart = j;
+    }
+    i = j;
+  }
+  if (spanStart < bytes) parts.push({ hex: hex.slice(spanStart * 2) });
+  return parts;
+}
+
+const zeroRunMark = (n) => `<span class="op op-zeros" title="${n} zero bytes — the space the pool's template left and nothing filled: room for a counter, or for a commitment this block is not carrying. Written as the zero opcode with its byte count, because ${n} words saying nothing is not a reading of it. The count restores the bytes exactly">⓪${toSuperscript(n)}</span>`;
+
+// The signature mark: the pool's own name, quoted to its exact extent, with
+// who wrote it riding the mark rather than printed in the passage. The name is
+// a reading -- a tag is unauthenticated and copyable -- and the book keeps
+// readings off the record's own line. What the passage gains is the boundary:
+// the quotation closes where the pool's writing closes, not wherever the
+// counter's bytes stopped being printable.
+const signatureMark = (part) => `<span class="pool-sig" title="${escapeHtml(part.pool)} — the pool's own signature, matched against the book's table (web/btc-pools.js). That these bytes are in the coinbase is the record; that ${escapeHtml(part.pool)} mined the block is a reading of it, since a tag is unauthenticated and anyone may copy one">“${quoteText(part.text)}”</span>`;
+
+// The miner's margin -> its display. A run the scanner found is cut at the
+// signature inside it, if any: the pool's writing is quoted under its mark,
+// and whatever leaned against it either side is put back to the test every
+// other run faces -- writing gets its own quotation, bytes go to prose. Every
+// byte still reaches the page exactly once; the cuts only decide the register
+// it reaches it in.
 function renderMinerMargin(hex, collect) {
   if (!hex) return '';
-  return splitReadableRuns(hex)
-    .map((s) => (s.text !== undefined ? `“${quoteText(s.text)}”` : collect(s.hex)))
+  const utf8Hex = (s) => Array.from(new TextEncoder().encode(s), (b) => b.toString(16).padStart(2, '0')).join('');
+
+  // First decide what each stretch of the margin is, in order, without
+  // rendering any of it: the signature, the writing around it, the bytes.
+  const pieces = [];
+  for (const seg of splitReadableRuns(hex)) {
+    if (seg.text === undefined) { pieces.push({ hex: seg.hex }); continue; }
+    for (const part of splitOnSignature(seg.text)) {
+      if (part.pool) pieces.push(part);
+      else if (looksLikeWriting(part.text)) pieces.push({ text: part.text });
+      else pieces.push({ hex: utf8Hex(part.text) });   // the byte that leaned on a signature, put back
+    }
+  }
+  // Then join the bytes that ended up neighbours -- the tail of a counter and
+  // the character of it that leaned on the tag are one run of bytes, and read
+  // as one passage of prose rather than two. Only the register was ever in
+  // question; the order and the count of the bytes never were.
+  const merged = [];
+  for (const p of pieces) {
+    const last = merged[merged.length - 1];
+    if (p.hex !== undefined && last && last.hex !== undefined) last.hex += p.hex;
+    else merged.push({ ...p });
+  }
+  // Bytes last, and by then there are only three things left they can be: a
+  // run the pool left empty, which takes ⓪ and its count; a counter short
+  // enough to be one, which reads as the number it is; and everything longer,
+  // which is a commitment or a datum and stays prose.
+  return merged
+    .flatMap((p) => (p.hex === undefined ? [p] : splitZeroRuns(p.hex)))
+    .flatMap((p) => (p.hex === undefined ? [p] : counterPieces(p.hex)))
+    .map((p) => (p.zeros !== undefined ? zeroRunMark(p.zeros)
+      : p.counter !== undefined ? rawCounterMark(p.counter)
+        : p.hex !== undefined ? collect(p.hex)
+          : p.pool ? signatureMark(p) : `“${quoteText(p.text)}”`))
     .filter(Boolean)
     .join(' ');
 }
@@ -968,17 +1241,28 @@ export function composeTransactionFields(parsed, bestOf = 1, lazyData = null, en
     // the plain treatment, where a mining-pool tag is surfaced as a quote block
     // (`scriptAscii`). Every other scriptSig is genuine script (with a P2SH
     // redeemScript revealed as opcodes via `nested`).
-    let script, scriptAscii = null;
+    let script, scriptAscii = null, signature = null;
     if (isNullPrevout) {
+      // Who signed the margin, if the table knows the hand: carried beside the
+      // fields rather than set in the passage, because the passage is the
+      // transaction and this is a reading of it. The annotation layer, a
+      // running head, a reply from the bot -- whatever wants to say the name
+      // out loud takes it from here (see web/btc-pools.js).
+      signature = poolOf(findTextRuns(v.scriptSig, { segment: false }));
       const bip34 = bip34HeightPush(v.scriptSig);
       if (bip34) {
         // The rule's own boundary, then the miner's bookkeeping, then a break:
-        // the height under ■, the counters after it under η, and the margin
-        // below -- the same shape the preamble takes (β η, break, the writing),
-        // and for the same reason. What the miner wrote opens a line of its own,
-        // with nothing mechanical left on it.
-        const { values, restHex } = peelExtranonces(bip34.restHex);
-        const preamble = [blockHeightMark(bip34.height), ...values.map(extranonceMark)].join(' ');
+        // the height under ■, the template's clock and the counters after it,
+        // and the margin below -- the same shape the preamble takes (β η, break,
+        // the writing), and for the same reason. What the miner wrote opens a
+        // line of its own, with nothing mechanical left on it.
+        const stamp = templateTimePush(bip34.restHex, bip34.height);
+        const { values, restHex } = peelExtranonces(stamp ? stamp.restHex : bip34.restHex);
+        const preamble = [
+          blockHeightMark(bip34.height),
+          ...(stamp ? [templateTimeMark(stamp.unix)] : []),
+          ...values.map(extranonceMark),
+        ].join(' ');
         const margin = renderMinerMargin(restHex, collect);
         script = preamble + (margin ? '<br>' + margin : '');
       } else if (isCleanScript(v.scriptSig)) {
@@ -1005,6 +1289,9 @@ export function composeTransactionFields(parsed, bestOf = 1, lazyData = null, en
       prevTxid: isNullPrevout ? '' : v.txid,
       prevVout: v.vout,
       script, scriptAscii,
+      // The signature the margin carries, as { pool, link, text }, or null --
+      // a reading, kept out of the passage and available beside it.
+      signature,
       sequence: seq.mark, sequenceKind: seq.kind, sequenceTitle: seq.title, sequenceRbf: seq.rbf,
       witnessHex: v.witnessHex || '',
       witnessItems: v.witness || [],
