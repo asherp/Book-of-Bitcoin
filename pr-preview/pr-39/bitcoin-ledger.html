@@ -372,7 +372,11 @@ a:hover { text-decoration: underline; }
   display:grid; grid-template-columns:minmax(0,1fr) 7em; grid-template-columns:subgrid; column-gap:1.3em; align-items:start; }
 .entry-section .tx-out-script { grid-column:1; min-width:0; }
 .entry-section .tx-out-value { grid-column:2; text-align:right; font-variant-numeric:tabular-nums; }
-.entry-section .tx-locktime { grid-column:left / -1; grid-row:3; text-align:center; font-style:normal; }
+/* The closing balance line, mirroring the book: Σ inputs left, − fee
+   between, Σ outputs right -- the geometry is the equation. */
+.entry-section .tx-totals { grid-column:left / -1; grid-row:3; display:flex; justify-content:space-between; align-items:baseline; gap:1em; margin-top:.35em; font:italic 400 13.5px/1.4 'Newsreader',serif; color:var(--dim); font-variant-numeric:tabular-nums; }
+.entry-section .tx-totals .t-fee { color:var(--meta); }
+.entry-section .tx-locktime { grid-column:left / -1; grid-row:4; text-align:center; font-style:normal; }
 .entry-section .tx-note { font:italic 400 13.5px/1.4 'Newsreader',serif; color:var(--dim); }
 .entry-section .tx-seq { font-style:normal; color:var(--meta); }
 .entry-section .tx-seq-rbf { color:var(--accent-2); }
@@ -427,6 +431,8 @@ a:hover { text-decoration: underline; }
      their input, amounts following their output. */
   .entry-section .tx-flow { grid-template-columns:1fr; }
   .entry-section .tx-inputs, .entry-section .tx-margin-cites, .entry-section .tx-outputs, .entry-section .tx-locktime { grid-column:1; grid-row:auto; display:block; }
+  /* The balance line keeps its three stations even collapsed (the book's rule). */
+  .entry-section .tx-totals { grid-column:1; grid-row:auto; }
   .entry-section .tx-in-cite, .entry-section .cite-amount { text-align:left; margin:0 0 .2em; }
   /* The footnotes restack, the book's way: the citation leads its witness
      as a full-width block, and the index hangs in a fixed indent every
@@ -1775,6 +1781,9 @@ const openEntryLeaf = async (alive) => {
       vc.textContent = `v${s.fields.version}`;
       pendingMargin.push(vc);
     }
+    // Per non-coinbase input, the resolved spent value (satoshis; null where
+    // unpriceable) -- summed for the closing balance line once all answer.
+    const spentP = [];
     s.fields.inputs.forEach((v, i) => {
       const cite = document.createElement('div'); cite.className = 'tx-in-cite';
       const citeBody = document.createElement('span');
@@ -1784,15 +1793,15 @@ const openEntryLeaf = async (alive) => {
       else {
         citeBody.textContent = '⋯';   // placeholder until the reference resolves
         cite.classList.add('resolving');
-        (async () => {
+        spentP.push((async () => {
           const pl = await citePlace(v.prevTxid);
-          if (!alive()) return;
+          if (!alive()) return null;
           if (!pl) {
             citeBody.textContent = `${v.prevTxid.slice(0, 8)}… .${v.prevVout}`;
             cite.classList.remove('resolving');
             cite.classList.add('cite-unresolved');
             cite.title = `${v.prevTxid}:${v.prevVout} — reference could not be resolved`;
-            return;
+            return null;
           }
           const p2 = volumeBookChapter(pl.height);
           const a = document.createElement('a');
@@ -1810,7 +1819,7 @@ const openEntryLeaf = async (alive) => {
           let spent = pl.outputs?.[v.prevVout]?.value;
           if (spent == null) {
             spent = (await prevouts())?.[i] ?? null;
-            if (!alive()) return;
+            if (!alive()) return null;
           }
           if (spent != null) {
             const amt2 = document.createElement('span');
@@ -1818,7 +1827,8 @@ const openEntryLeaf = async (alive) => {
             amt2.title = `the amount this input spends: ${spent.toLocaleString('en-US')} satoshis`;
             amtLine.append(amt2);
           }
-        })();
+          return spent;
+        })());
       }
       cite.append(citeBody);
       if (v.witnessHex) { footnotes.push({ n: footnotes.length + 1, html: s.witHtml[i], items: v.witnessItems }); cite.append(witnessRef(footnotes.length)); }
@@ -1863,6 +1873,37 @@ const openEntryLeaf = async (alive) => {
       fwdCells.push(fwd);
       outputsEl.append(scriptCell, valueCell);
     });
+    // The closing balance line, the book's rule: Σ inputs left, − fee
+    // between, Σ outputs right. The outputs' sum is the transaction's own;
+    // the inputs' and the fee fill once every input has priced, and stay ⋯
+    // if any could not be. A coinbase closes without one.
+    let totals = null;
+    if (s.fields.inputs.length && !s.fields.inputs.some((v) => v.isNullPrevout)) {
+      const sumOut = s.fields.outputs.reduce((a2, o) => a2 + o.sats, 0);
+      totals = document.createElement('div');
+      totals.className = 'tx-totals';
+      const tIn = document.createElement('span');
+      tIn.textContent = '⋯';
+      tIn.title = 'the sum of the inputs — waiting on the margin citations';
+      const tFee = document.createElement('span');
+      tFee.className = 't-fee';
+      tFee.textContent = '⋯';
+      const tOut = document.createElement('span');
+      tOut.className = 't-out';
+      tOut.textContent = formatBalanceBtc(sumOut);
+      tOut.title = `the outputs carry ${sumOut.toLocaleString('en-US')} satoshis`;
+      totals.append(tIn, tFee, tOut);
+      Promise.all(spentP).then((values) => {
+        if (!alive()) return;
+        if (values.length !== s.fields.inputs.length || values.some((sv) => sv == null)) return;
+        const sumIn = values.reduce((a2, sv) => a2 + sv, 0);
+        tIn.textContent = formatBalanceBtc(sumIn);
+        tIn.title = `the inputs bring ${sumIn.toLocaleString('en-US')} satoshis`;
+        const fee = sumIn - sumOut;
+        tFee.textContent = `− ${formatBalanceBtc(fee)}`;
+        tFee.title = `the fee: ${fee.toLocaleString('en-US')} satoshis — the difference, claimed by the block's miner`;
+      });
+    }
     // The closing colophon: the locktime, centred -- and the self-check's
     // verdict only when it failed (a verified section says nothing; the
     // version note stands in the margin, as the book sets it).
@@ -1870,7 +1911,7 @@ const openEntryLeaf = async (alive) => {
     lock.textContent = s.fields.locktime
       + (s.verified ? '' : ' · unverified — the bytes did not hash to this txid');
     lock.title = s.fields.locktimeTitle;
-    flow.append(inputsEl, marginEl, outputsEl, lock);
+    flow.append(inputsEl, marginEl, outputsEl, ...(totals ? [totals] : []), lock);
     wrap.append(flow);
     secEl.replaceChildren(wrap);
     // The witness footnotes, at the section's foot as the book sets them.
