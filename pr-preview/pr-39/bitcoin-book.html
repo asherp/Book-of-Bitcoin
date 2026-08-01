@@ -797,6 +797,11 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 .footnote-entry { margin: 0 0 1.1em; font: italic 400 calc(11px * var(--scale-body, 1))/1.3 'Newsreader',serif; color: var(--dim); }
 .footnote-entry:target { color: var(--ink-soft); }
 .footnote-mark { font: 500 calc(8px * var(--scale-body, 1))/1 'IBM Plex Mono',monospace; color: var(--accent); margin-right: .5em; font-style: normal; vertical-align: .35em; }
+/* A witness the reader (or the contents) has named: the title stands
+   centered above its footnote, spanning citation and prose -- the same
+   dress an output's name wears above its rows. Empty, it takes no room. */
+.footnote-title { grid-column: 1 / -1; text-align: center; font: italic 500 calc(13.5px * var(--scale-body, 1))/1.4 'Newsreader',serif; color: var(--accent); margin: .4em 0 .3em; }
+.footnote-title:empty { display: none; }
 /* A footnote's ribbon flies at its entry's right edge, the way an output's
    flies on its amount. The mark is the menu's click target, but an 8px
    letter is no place for an 18px button -- so the mark stays unpositioned
@@ -3470,7 +3475,11 @@ function renderChapter(para) {
   // effective fee rate the ordering ran on. Where that rate departs from the
   // transaction's own fee ÷ vsize, the difference is family money -- a
   // child-pays-for-parent package moving together -- and the line says so.
-  const sectionPlace = places().find((p) => !p.page && !p.address
+  // An entry citing a finer coordinate names that coordinate, not the
+  // section: an output's title centers above its rows (tx-out-title), a
+  // witness's above its footnote (footnote-title) -- so both are excluded
+  // from the section's own name line.
+  const sectionPlace = places().find((p) => !p.page && !p.address && p.out == null && p.wit == null
     && (p.id === para.txid || (p.id === String(state.height) && p.index === state.index)));
   let sectionEvent = sectionPlace && placeTitle(sectionPlace);
   if (!sectionEvent && para.ghost) sectionEvent = '† replaced by fee';
@@ -4074,12 +4083,25 @@ async function renderFootnotes(gen) {
       attachHashCopy(markEl, fn.txid, 'witness',
         `${reference(state.height)} §${fn.num}.${footnoteMark(fn.n)}`, null, fn.vin, fn.n);
     }
+    // The witness's name line, centered above its footnote and spanning the
+    // grid: the reader's bookmark title when this witness is kept (defaulted
+    // from -- and overriding -- the curated name), else the contents' own
+    // name for it (a curated §n.a place), else empty and hidden.
+    // syncBookmarkTitles keeps it live with the bookmark set.
+    const witTitle = document.createElement('div');
+    witTitle.className = 'footnote-title';
+    witTitle.dataset.bmWit = `${fn.txid}:${fn.vin}`;
+    const witPlace = places().find((pl) => !pl.page && !pl.address && pl.wit === fn.n
+      && pl.id === String(state.height) && (pl.index ?? null) === state.index);
+    witTitle.dataset.fallback = witPlace ? placeTitle(witPlace) : '';
+    el.append(witTitle);
     // A witness-only input's citation (carrying its in-N anchor, resolving
     // asynchronously wherever it sits) lands in the left cell of its own
     // footnote's row; entries for inputs that kept a body row have none.
     if (fn.cite) el.append(fn.cite);
     el.append(p);
   }
+  syncBookmarkTitles();   // paint the witness name lines just laid out
   $('ch-footnotes-section').classList.remove('hidden');
   footnotesLoaded = true;
   lazyEncode.observe(el);   // stream each push's prose in as the reader scrolls to it
@@ -5572,6 +5594,14 @@ function syncBookmarkTitles() {
     const at = el.dataset.bmOut.lastIndexOf(':');
     const hex = el.dataset.bmOut.slice(0, at), vout = Number(el.dataset.bmOut.slice(at + 1));
     const b = bookmarks.find((x) => !x.page && x.hex === hex && x.vout === vout);
+    el.textContent = (b && b.title) || el.dataset.fallback || '';
+  }
+  // The witness name lines, keyed txid:vin -- a witness keep stores the
+  // input that bears it (its wn only helps the contents cite the letter).
+  for (const el of document.querySelectorAll('[data-bm-wit]')) {
+    const at = el.dataset.bmWit.lastIndexOf(':');
+    const hex = el.dataset.bmWit.slice(0, at), vin = Number(el.dataset.bmWit.slice(at + 1));
+    const b = bookmarks.find((x) => !x.page && x.hex === hex && x.vin === vin);
     el.textContent = (b && b.title) || el.dataset.fallback || '';
   }
 }
