@@ -367,17 +367,22 @@ bytes in the margin **[observed]**, where the book rendered it as payload prose:
 a dozen words of wordlist standing for a number nobody meant as language. Same
 field, same rule, and it should read the same way.
 
-What raw bytes lack is the push's width — `00 12 34` and `12 34` are different
-bytes and one number — so the mark carries the byte count as a superscript,
-exactly as every other byte count in the script register does (`p⁶⁵`, `h³²`, a
-bare push's `²⁰`):
+One field, one mark, and no width riding it: the counter reads as its number
+wherever it was written, exactly as the header's own nonce does.
 
 ```
-■960473  η⁷ 2·5·7·19·509·36329586977  “🐟   /F2Pool/”  η¹ 2⁵  ⓪³⁰  η⁴ 5·6724507
+■960473  η2·5·7·19·509·36329586977  “🐟   /F2Pool/”  η2⁵  ⓪³⁰  η5·6724507
 ```
 
-`η⁴ 5·6724507` is four bytes, little-endian as the chain writes its numbers,
-and reconstructs to one string of bytes and no other.
+What a push gave for free was the width. Little-endian, a run's low bytes are
+its least significant, so `00 12 34` and its number are the same thing — the
+leading zero is in the figure. What is lost is a zero at the far end, where the
+most significant byte would be: `d9 0f 1a 00` and `d9 0f 1a` are one number and
+different bytes. So those come off as what they are — a byte the pool left
+empty is what `⓪` says — and once it is out the figure is minimally encoded and
+restores its own bytes without help. It costs a second mark about one counter
+in 256, and it keeps every counter reading as a counter and every byte on the
+page.
 
 Bounded at eight bytes, the ceiling the pushed counters already take: past that
 a run in the margin is not a counter but a commitment or a datum — a

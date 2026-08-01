@@ -241,16 +241,22 @@ const fromProduct = (s) => s.split('·').reduce((acc, term) => {
   const k = power ? fromSuperscript(power) : 1;
   return acc * BigInt(base) ** BigInt(k);
 }, 1n);
-const leBytes = (value, n) => Array.from({ length: n }, (_, i) =>
-  Number((value >> BigInt(8 * i)) & 0xffn).toString(16).padStart(2, '0')).join('');
+// A number back to its bytes: little-endian, minimally encoded, which is what
+// makes the figure alone enough. A zero byte closing the run is not in the
+// figure -- it left under ⓪ -- so nothing here has to guess a width.
+const leBytes = (value) => {
+  const out = [];
+  for (let v = value; v > 0n; v >>= 8n) out.push(Number(v & 0xffn).toString(16).padStart(2, '0'));
+  return out.join('');
+};
 function marginBytes(html) {
   const out = [];
-  const token = /“([^”]*)”|⓪([⁰¹²³⁴⁵⁶⁷⁸⁹]+)|η([⁰¹²³⁴⁵⁶⁷⁸⁹]+) ([0-9·⁰¹²³⁴⁵⁶⁷⁸⁹]+)|‹([0-9a-f]*)›/g;
+  const token = /“([^”]*)”|⓪([⁰¹²³⁴⁵⁶⁷⁸⁹]+)|η([0-9][0-9·⁰¹²³⁴⁵⁶⁷⁸⁹]*)|‹([0-9a-f]*)›/g;
   for (let m; (m = token.exec(html));) {
     if (m[1] !== undefined) out.push(utf8Hex(m[1]));
     else if (m[2] !== undefined) out.push('00'.repeat(fromSuperscript(m[2])));
-    else if (m[3] !== undefined) out.push(leBytes(fromProduct(m[4]), fromSuperscript(m[3])));
-    else out.push(m[5]);
+    else if (m[3] !== undefined) out.push(leBytes(fromProduct(m[3])));
+    else out.push(m[4]);
   }
   return out.join('');
 }
@@ -384,8 +390,9 @@ test('a counter nobody pushed still reads as the number it is', { skip: skipNoEn
   // η with its byte count, then the value as a product -- the same form the
   // header's nonce and the pushed counters take.
   const le = (hex) => BigInt('0x' + (hex.match(/../g).reverse().join('')));
-  assert.ok(script.includes(`η⁷ ${factorProse(le(counter))}`), 'the seven-byte counter reads as its number');
-  assert.ok(script.includes(`η⁴ ${factorProse(le(tail))}`), 'and so does the four-byte one');
+  assert.ok(script.includes(`η${factorProse(le(counter))}`), 'the seven-byte counter reads as its number');
+  assert.ok(script.includes(`η${factorProse(le(tail))}`), 'and so does the four-byte one');
+  assert.ok(!/η[⁰¹²³⁴⁵⁶⁷⁸⁹]/.test(script), 'one mark for the field, and no width riding it');
   assert.ok(!script.includes('‹' + counter), 'neither reaches the encoder as payload');
   assert.equal(heightPush(960473) + marginBytes(script), scriptSig, 'and the bytes come back');
 
@@ -395,7 +402,8 @@ test('a counter nobody pushed still reads as the number it is', { skip: skipNoEn
   const withAux = heightPush(960480) + aux + utf8Hex('/F2Pool/') + '1f2e3d4c';
   const auxScript = composeTransactionFields(parseTransaction(coinbaseTxHex(withAux)), 1, null, markEncoder).inputs[0].script;
   assert.ok(auxScript.includes(`‹${aux}›`), 'forty-four bytes stay prose');
-  assert.ok(auxScript.includes('η⁴'), 'the counter after it does not');
+  assert.ok(auxScript.includes('η7²·757·34483'), 'the counter after it does not');
+  assert.ok(auxScript.includes('0400000007000000'), 'and the commitment keeps its own zero bytes');
   assert.equal(heightPush(960480) + marginBytes(auxScript), withAux);
 });
 

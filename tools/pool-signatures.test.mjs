@@ -136,10 +136,12 @@ test('the margin quotes the signature and puts the leaning byte back', { skip: s
   assert.ok(script.includes('Foundry USA —'), 'whose hand rides the mark, not the page');
 
   // The backtick is back among the bytes, and joined to the counter it came
-  // from rather than stranded on its own: five bytes, read as the number they
-  // are (0x60 then the counter's own d9 0f 1a 00, little-endian).
-  const counter = BigInt('0x' + '00' + '1a' + '0f' + 'd9' + '60');
-  assert.ok(script.includes(`η⁵ ${factorProse(counter)}`), 'the leaning byte reads as part of the number it came from');
+  // from rather than stranded on its own: 60 d9 0f 1a, read little-endian as
+  // the number they are, with the counter's closing zero byte under ⓪ where it
+  // belongs -- which is what lets the figure stand without a width beside it.
+  const counter = BigInt('0x' + '1a' + '0f' + 'd9' + '60');
+  assert.ok(script.includes(`η${factorProse(counter)}`), 'the leaning byte reads as part of the number it came from');
+  assert.ok(script.includes('⓪¹'), 'and the zero byte closing it reads as the empty byte it is');
   assert.ok(!/“[^”]*`/.test(script), 'and no longer inside the quotation');
 
   // Still nothing added and nothing lost: the signature's own text, plus the
