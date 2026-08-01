@@ -97,10 +97,10 @@ function sequenceInfo(seq) {
   return { rbf: true, mark: '', kind: 'rbf', title: 'replaceable — signals opt-in RBF' };
 }
 
-const SUBSCRIPT_DIGITS = '₀₁₂₃₄₅₆₇₈₉';
-const toSubscript = (n) => String(n).split('').map((d) => SUBSCRIPT_DIGITS[+d]).join('');
-const SUPERSCRIPT_DIGITS = '⁰¹²³⁴⁵⁶⁷⁸⁹';
-export const toSuperscript = (n) => String(n).split('').map((d) => SUPERSCRIPT_DIGITS[+d]).join('');
+// The sub- and superscript digits live with the sigla, where a page that wants
+// the notation without the engine can reach them; toSuperscript is re-exported
+// so importers of the composer still find it here.
+export { toSuperscript };
 
 // A factorization as the notation writes it: primes ascending, a centred dot
 // between them, a power only where a prime repeats -- 2²⁰⁸·3·5·17·257,
@@ -350,7 +350,7 @@ const quoteText = (s) => escapeHtml(s)
 // legible ASCII) -- exactly what carried the whole script before opcodes had
 // their own marks.
 
-import { OPCODE_SYMBOLS, OPCODE_NAMES } from './btc-sigla.js';
+import { OPCODE_SYMBOLS, OPCODE_NAMES, toSuperscript, toSubscript } from './btc-sigla.js';
 
 // One opcode -> its HTML: the glyph (accent-styled, canonical OP_* name as
 // its hover title), or the bare OP_* name for a byte with no glyph. The
@@ -662,6 +662,60 @@ const blockHeightMark = (height) => `<span class="op op-blockmark" title="BIP34 
 // name says.
 const extranonceMark = (n) => markToken(`η${productProse(n)}`, `extranonce ${n} — the counter the miner rolled once the header's 32-bit nonce (η) was exhausted. A tally, not text: it is read as the number it is, so its bytes never pass for writing`);
 
+// ─── the zeros ─────────────────────────────────────────────────────────
+//
+// A pool lays out its coinbase at a fixed size and leaves room in it -- for
+// the counter the miner rolls, for a commitment it is not carrying today --
+// and what sits in that room is nothing: a run of 0x00. Rendered as payload
+// the run is a word repeated, because zero is the first word of the wordlist,
+// so a padded coinbase spends two thirds of its paragraph saying "abandon".
+// Which is true, invertible, and no way to read a book.
+//
+// So a run of zeros takes the mark it already has. ⓪ is OP_0 in the sigla
+// (0x00, the byte itself), and a superscript counts bytes everywhere in the
+// script register -- p⁶⁵, h³², a bare push's ²⁰ -- so ⓪²⁰ says twenty zero
+// bytes in notation the reader already holds. Nothing is claimed by it that
+// the bytes do not state, and the count restores them exactly: this is the
+// same trade as ∅ for an all-zero witness, one register down.
+//
+// (In the chapter head ⓪ⁿ counts zero BITS, of the block hash. Same glyph,
+// different unit, and the units are the registers': a hash is measured in
+// bits because its leading zeros are the proof of work, and a margin is
+// measured in bytes because bytes are what the miner left. The key says so
+// on both rows.)
+//
+// The floor is four bytes. Below it a zero is just a small number inside a
+// counter, and interrupting the prose to mark one would cost more than it
+// saves; at four the run is the pool's layout showing through, and the prose
+// would otherwise be three words of nothing.
+const ZERO_MIN_RUN = 4;
+
+// A byte string -> its runs of zeros and the spans between them, in order,
+// every byte in exactly one part: { zeros: n } or { hex }. Byte-aligned by
+// construction -- a hex string can spell 0000 across a byte boundary, and a
+// regular expression over it would find zeros nobody wrote.
+export function splitZeroRuns(hex, min = ZERO_MIN_RUN) {
+  const parts = [];
+  const bytes = hex.length / 2;
+  const at = (k) => hex.slice(k * 2, k * 2 + 2);
+  let i = 0, spanStart = 0;
+  while (i < bytes) {
+    if (at(i) !== '00') { i++; continue; }
+    let j = i;
+    while (j < bytes && at(j) === '00') j++;
+    if (j - i >= min) {
+      if (i > spanStart) parts.push({ hex: hex.slice(spanStart * 2, i * 2) });
+      parts.push({ zeros: j - i });
+      spanStart = j;
+    }
+    i = j;
+  }
+  if (spanStart < bytes) parts.push({ hex: hex.slice(spanStart * 2) });
+  return parts;
+}
+
+const zeroRunMark = (n) => `<span class="op op-zeros" title="${n} zero bytes — the space the pool's template left and nothing filled: room for a counter, or for a commitment this block is not carrying. Written as the zero opcode with its byte count, because ${n} words saying nothing is not a reading of it. The count restores the bytes exactly">⓪${toSuperscript(n)}</span>`;
+
 // The signature mark: the pool's own name, quoted to its exact extent, with
 // who wrote it riding the mark rather than printed in the passage. The name is
 // a reading -- a tag is unauthenticated and copyable -- and the book keeps
@@ -701,8 +755,13 @@ function renderMinerMargin(hex, collect) {
     if (p.hex !== undefined && last && last.hex !== undefined) last.hex += p.hex;
     else merged.push({ ...p });
   }
+  // Bytes last: a span of them is prose, except where the pool left a run of
+  // zeros, which takes ⓪ and its count instead of a sentence of nothing.
   return merged
-    .map((p) => (p.hex !== undefined ? collect(p.hex) : p.pool ? signatureMark(p) : `“${quoteText(p.text)}”`))
+    .flatMap((p) => (p.hex === undefined ? [p] : splitZeroRuns(p.hex)))
+    .map((p) => (p.zeros !== undefined ? zeroRunMark(p.zeros)
+      : p.hex !== undefined ? collect(p.hex)
+        : p.pool ? signatureMark(p) : `“${quoteText(p.text)}”`))
     .filter(Boolean)
     .join(' ');
 }
