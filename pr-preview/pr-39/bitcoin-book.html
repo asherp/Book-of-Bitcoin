@@ -509,13 +509,16 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 .chapter-hash.plain, .chapter-hash .cfx-gold { font-style: normal; }
 
 /* The reading matter follows the reader's chosen type sizes, one per region:
-   --scale-body / --scale-margins / --scale-footnotes / --scale-notation (set
+   --scale-body / --scale-margins / --scale-notation (set
    on <html> by btc-fontscale.js -- the settings rows and the pinch gesture
    both write them; 1 when unset). The module writes effective values, so
    every region follows the body until the reader splits it off. The prose
    column's em-based inline marks and drop cap ride the body; the sizes set
-   in px below opt into their region one by one. The page's chrome -- titles,
-   nav, eyebrow, folio, settings -- deliberately holds still. */
+   in px below opt into their region one by one. The witness footnotes are
+   no region: their ratio to the body is the weight discount (see
+   .footnote-entry), so they ride --scale-body and cannot be split off. The
+   page's chrome -- titles, nav, eyebrow, folio, settings -- deliberately
+   holds still. */
 .chapter-body { font-family: 'Newsreader', serif; font-size: calc(19px * var(--scale-body, 1)); line-height: 1.75; color: var(--ink-soft); font-variant-numeric: oldstyle-nums; }
 
 /* Each transaction is a manuscript page: a left margin for provenance (what
@@ -741,10 +744,12 @@ button:disabled { opacity: .4; cursor: not-allowed; }
    and characters per unit of page area go as size x leading-in-px, so
    11px/1.3 (11 x 14.3 = 157) packs exactly 4x the density of the 19px/1.75
    body (19 x 33.25 = 632): a witness letter takes a quarter of the space a
-   body letter does, the same ratio its bytes take in the block. */
-.footnote-entry { margin: 0 0 1.1em; font: italic 400 calc(11px * var(--scale-footnotes, 1))/1.3 'Newsreader',serif; color: var(--dim); }
+   body letter does, the same ratio its bytes take in the block. Because the
+   ratio is notation, the footnotes size from --scale-body -- not a scale of
+   their own -- so the relation holds at every size the reader reads at. */
+.footnote-entry { margin: 0 0 1.1em; font: italic 400 calc(11px * var(--scale-body, 1))/1.3 'Newsreader',serif; color: var(--dim); }
 .footnote-entry:target { color: var(--ink-soft); }
-.footnote-mark { font: 500 calc(8px * var(--scale-footnotes, 1))/1 'IBM Plex Mono',monospace; color: var(--accent); margin-right: .5em; font-style: normal; vertical-align: .35em; }
+.footnote-mark { font: 500 calc(8px * var(--scale-body, 1))/1 'IBM Plex Mono',monospace; color: var(--accent); margin-right: .5em; font-style: normal; vertical-align: .35em; }
 
 </style>
 </head>
@@ -779,12 +784,14 @@ button:disabled { opacity: .4; cursor: not-allowed; }
            dimmed) until its own buttons split it off; Reset rejoins them all
            at 100%. Pinching on a region does the same as its buttons — except
            the sigla, which sit inline in the prose where no pinch could
-           single them out: theirs is a settings-only row. -->
+           single them out: theirs is a settings-only row. The witness
+           footnotes have no row at all: their ratio to the body is the
+           weight discount — notation, not preference — so they follow the
+           body always. -->
       <div class="fontscale-grid">
         <span class="fs-label">Body</span><button type="button" class="ghost-btn" data-fs="body" data-fs-d="-1" aria-label="Smaller body text">A−</button><span class="fs-value" data-fs-v="body" aria-live="polite">100%</span><button type="button" class="ghost-btn" data-fs="body" data-fs-d="1" aria-label="Larger body text">A+</button>
         <span class="fs-label">Sigla</span><button type="button" class="ghost-btn" data-fs="sigla" data-fs-d="-1" aria-label="Smaller sigla marks">A−</button><span class="fs-value" data-fs-v="sigla">100%</span><button type="button" class="ghost-btn" data-fs="sigla" data-fs-d="1" aria-label="Larger sigla marks">A+</button>
         <span class="fs-label">Margins</span><button type="button" class="ghost-btn" data-fs="margins" data-fs-d="-1" aria-label="Smaller margin text">A−</button><span class="fs-value" data-fs-v="margins">100%</span><button type="button" class="ghost-btn" data-fs="margins" data-fs-d="1" aria-label="Larger margin text">A+</button>
-        <span class="fs-label">Footnotes</span><button type="button" class="ghost-btn" data-fs="footnotes" data-fs-d="-1" aria-label="Smaller footnote text">A−</button><span class="fs-value" data-fs-v="footnotes">100%</span><button type="button" class="ghost-btn" data-fs="footnotes" data-fs-d="1" aria-label="Larger footnote text">A+</button>
         <span class="fs-label">Notation</span><button type="button" class="ghost-btn" data-fs="notation" data-fs-d="-1" aria-label="Smaller notation text">A−</button><span class="fs-value" data-fs-v="notation">100%</span><button type="button" class="ghost-btn" data-fs="notation" data-fs-d="1" aria-label="Larger notation text">A+</button>
         <span class="fs-label">Commentary</span><button type="button" class="ghost-btn" data-fs="commentary" data-fs-d="-1" aria-label="Smaller commentary text">A−</button><span class="fs-value" data-fs-v="commentary">100%</span><button type="button" class="ghost-btn" data-fs="commentary" data-fs-d="1" aria-label="Larger commentary text">A+</button>
       </div>
@@ -4985,7 +4992,9 @@ document.addEventListener('keydown', (e) => {
 //
 // Region resolution: both fingers on the notation sheet -> notation; both on
 // the commentary sheet -> commentary, each sheet setting the region it is
-// actually written in; both in the witness footnotes -> footnotes; both inside one of the manuscript
+// actually written in; both in the witness footnotes -> body (the footnotes'
+// ratio to the body is the weight discount, held fixed, so a pinch there
+// scales the page whole); both inside one of the manuscript
 // grid's margin columns -> margins, but ONLY where that grid actually lays
 // the margins out as columns -- below 560px the layout collapses them inline
 // with the prose (see the .tx-flow media query), there is no strip of screen
@@ -4996,7 +5005,7 @@ document.addEventListener('keydown', (e) => {
 (() => {
   const SURFACES = '#page-frame, .nav-sheet-body';
   const on = (t, sel) => !!(t && t.closest && t.closest(sel));
-  const LABELS = { body: 'Text', margins: 'Margins', footnotes: 'Footnotes', notation: 'Notation', commentary: 'Commentary' };
+  const LABELS = { body: 'Text', margins: 'Margins', notation: 'Notation', commentary: 'Commentary' };
   let d0 = 0, s0 = 1, region = 'body', anchor = null, anchorTop = 0, hideTimer = null;
   const dist = (t) => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
   const toast = () => {
@@ -5024,7 +5033,6 @@ document.addEventListener('keydown', (e) => {
   const regionOf = (a, b) => {
     if (on(a.target, '.notation-body') && on(b.target, '.notation-body')) return 'notation';
     if (on(a.target, '.commentary-body') && on(b.target, '.commentary-body')) return 'commentary';
-    if (on(a.target, '.chapter-footnotes') && on(b.target, '.chapter-footnotes')) return 'footnotes';
     if (on(a.target, '#ch-paragraphs') && on(b.target, '#ch-paragraphs')) {
       const bands = marginBands();
       const inBand = (x, band) => x >= band[0] && x <= band[1];

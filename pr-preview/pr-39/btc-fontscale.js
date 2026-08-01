@@ -6,15 +6,21 @@
 // scales), the sigla (the opcode glyphs and push marks set inline in that
 // prose -- not the data-type letters, which name what the prose carries and
 // so stay at its size), the margins (citations, amounts, forward cites),
-// the witness footnotes, the notation key, and the commentary a passage or a
+// the notation key, and the commentary a passage or a
 // ledger carries -- authored prose, read at whatever size suits reading it,
 // which is not always the size that suits the record. Each region beyond the body
 // FOLLOWS the body until the reader deliberately diverges it -- a page reads
 // coherently by default, and only splits where a preference was actually
 // expressed.
 //
+// The witness footnotes are deliberately NOT a region. Their size against
+// the body is the BIP141 weight discount set in type (a quarter of the
+// page-room per letter -- see the book page's .footnote-entry rule), so it
+// is notation, not preference: they size from --scale-body and hold the
+// ratio at every scale the reader chooses.
+//
 // The scales live in --scale-body / --scale-sigla / --scale-margins /
-// --scale-footnotes / --scale-notation / --scale-commentary on <html>, always written as
+// --scale-notation / --scale-commentary on <html>, always written as
 // effective values (a region that follows the body carries the body's
 // number), so stylesheets opt sizes in with a plain
 // calc(Npx * var(--scale-<region>, 1)) and a page that never loads this
@@ -27,7 +33,7 @@
 // Importing the module applies the saved scales before first paint; the
 // choices persist in localStorage alongside the reader's other preferences.
 
-export const REGIONS = ['body', 'sigla', 'margins', 'footnotes', 'notation', 'commentary'];
+export const REGIONS = ['body', 'sigla', 'margins', 'notation', 'commentary'];
 export const FONT_SCALE_MIN = 0.7;    // 19px prose reads at ~13px
 export const FONT_SCALE_MAX = 1.6;    // ...and at ~30px
 export const FONT_SCALE_STEP = 0.1;   // the settings buttons' stride
@@ -45,7 +51,7 @@ const normalize = (v) => {
 
 // body always holds a number; the other regions hold a number when diverged,
 // null while they follow the body.
-const scales = { body: 1, sigla: null, margins: null, footnotes: null, notation: null, commentary: null };
+const scales = { body: 1, sigla: null, margins: null, notation: null, commentary: null };
 
 (() => {
   try {
