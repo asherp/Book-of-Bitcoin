@@ -102,12 +102,15 @@ reaches it instead.
   `&index=<n>` opens its section n+1 (0-based); `?txid=<txid>` jumps to a
   transaction's section, `&out=<n>` to one of its outputs;
   `?page=volume|book` opens the block's volume or book leaf.
-- `bitcoin-contents.html` — the curated table of contents, one leaf per
-  volume and per back-matter part, all at a single level (the same line the
-  book runs below). `?volume=<n|roman>` opens a volume's contents leaf,
+- `bitcoin-contents.html` — the curated table of contents: a top-level leaf,
+  then one leaf per volume and per back-matter part, all at a single level
+  (the same line the book runs below). `?at=top` opens the top-level leaf —
+  every volume and back-matter part as one row each, with the front matter
+  above them; `?volume=<n|roman>` opens a volume's contents leaf,
   `?part=mempool|consensus|ledgers|proofs` a part's (`future` aliases
-  Consensus); a bare visit opens the volume last read, and an ascent from a
-  volume's leaf in the book lands on that volume's contents leaf. The back
+  Consensus); a bare visit opens the volume last read, and the top-level leaf
+  when there is nothing to go on. An ascent from a volume's leaf in the book
+  lands on that volume's contents leaf. The back
   matter runs in three families: Appendix I (the mempool's projected
   chapters) and Appendix II (Consensus — the soft forks grouped under their
   BIPs with their recognized names, each naming the chapters of its

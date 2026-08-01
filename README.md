@@ -91,6 +91,20 @@ compiled to WASM) is consumed as a published
   a page long enough to scroll is read to its edge first, and only the next
   press turns off it. The header steppers and the eyebrow crumbs go the same
   places for hands that would rather click
+- **Keeping a place.** Everything the citation scheme addresses — a volume, a
+  book, a chapter, a §section, an output — is a place the search box answers
+  to, and so a place a reader can keep. Each carries a **bookmark ribbon at
+  its corner**: hollow while the place is unkept, gold once it is, and
+  clickable in either state, so the offer is visible in the very position the
+  kept mark will occupy rather than hidden behind a menu. Keeping asks for a
+  name, because the bookmark becomes a row in the table of contents, where a
+  row is read by its title. The ribbon rides the chapter's title, the
+  §section's, an output's amount, and the volume's and book's own leaves; a
+  draft chapter has none, having no settled reference to cite yet. Bookmarks
+  live in `localStorage` and list in the contents in reading order, at the
+  level each one names — a kept volume above the passages kept from it. An
+  address is kept the same way, by the Ledger's own ribbon, since an address
+  is a name rather than a place (see `bitcoin-ledger.html` below)
 - `web/bitcoin-front.html` — the front matter, straddling the contents on the
   horizontal axis in the standard order: title leaf, terms (the copyright
   page, saying the reverse of one), **then the contents**, and after it the
@@ -146,27 +160,46 @@ compiled to WASM) is consumed as a published
 - `web/preface.md` — the preface itself, in Markdown: the canonical copy,
   readable here in the repository and rendered into the leaf above, so the
   book and the repository cannot drift apart
-- `web/bitcoin-contents.html` — table of contents / notable blocks, **one
-  leaf per volume and per appendix**, all at a single level: the contents
-  runs the same line the book runs below it (Volume I … Volume V, Appendix
-  I, II, III), a storey up and a leaf to each. `?volume=<n|roman>` opens a
-  volume's contents, `?part=mempool|future|ledgers` an appendix's, and a
-  bare visit opens the volume last being read. Two things follow, and they
-  are the point of the arrangement: an **ascent from Volume III's leaf lands
-  on Volume III's contents** and nowhere else — the vertical axis is a
-  correspondence, not a funnel — and the descent needs no memory of where
-  the reader came up from, since the leaf says which volume it is the
-  contents of. Sideways off either end are the front matter's own leaves,
-  the standard order this page sits inside (title, terms, CONTENTS, preface,
-  sigla). The front matter is not listed on any leaf: it has no volume to be
-  the contents of, and the preface and sigla are two turns away along this
-  very line. The three appendices are back matter for what reading order
-  cannot carry, reading order being the order blocks were mined; each has a
-  contents leaf here and a leaf of its own one level down, the ▾ being the
-  door. **I · The Mempool** — the chapters the queue is already forming, first of
-  the three because the volumes close on the chain tip's row, so the turn
+- `web/bitcoin-contents.html` — table of contents / notable blocks, **a
+  top-level leaf and then one leaf per volume and per back-matter part**,
+  all at a single level: the contents runs the same line the book runs below it
+  (Volume I … Volume V, Appendix I, Appendix II, the Index of Ledgers,
+  Citations), a storey up and a leaf to each, with one leaf opening the run
+  that is about the run.
+  `?at=top` opens that top-level leaf, `?volume=<n|roman>` a volume's
+  contents, `?part=mempool|consensus|ledgers|proofs` a back-matter part's
+  (`future` still names Consensus, for links saved before it had that name);
+  a bare visit opens the volume last being read, and the top-level leaf when
+  there is nothing to go on. Two things follow from the per-volume arrangement, and they are
+  the point of it: an **ascent from Volume III's leaf lands on Volume III's
+  contents** and nowhere else — the vertical axis is a correspondence, not a
+  funnel — and the descent needs no memory of where the reader came up from,
+  since the leaf says which volume it is the contents of. Sideways off
+  either end are the front matter's own leaves, the standard order this page
+  sits inside (title, terms, CONTENTS, preface, sigla).
+  **The top-level leaf** — *The Whole Book* — is the one page that shows the
+  shape of the whole thing: every volume and every part of the back matter
+  as one row each, each row carrying that leaf's own line (what it spans,
+  how much of it there is) and turning to it as a swipe would, and above
+  them the front matter, which no volume's contents can list because the
+  preface is no part of any volume. It descends into the book at Volume I, and its rows for the
+  front matter leave for `bitcoin-front.html`, so they carry no reference:
+  they name leaves, not places in the chain. The title leaf is not listed —
+  it is the cover, which the contents lies under, and a pull down from the
+  top is already the way to it. The back matter holds what reading order
+  cannot carry, reading order being the order blocks were mined; each part has
+  a contents leaf here and a leaf of its own one level down, the ▾ being the
+  door. It runs in **three families**, and only the first is numbered: the
+  appendices proper (Appendix I, Appendix II), the indexes (the Index of
+  Ledgers, which points into the text), and Citations, which points outside it
+  and stands last the way a works-cited list closes a book. One helper names
+  them all — `partLabel` in `web/btc-notables.js` — so a part is called the
+  same thing on every leaf that mentions it, and a family added to
+  `appendix.yaml` is numbered, or not, in one place.
+  **Appendix I · The Mempool** — the chapters the queue is already forming,
+  first of them because the volumes close on the chain tip's row, so the turn
   from the tip to the next provisional chapter stays one step down the page.
-  **II · Consensus** — the soft forks, grouped under their BIPs with their
+  **Appendix II · Consensus** — the soft forks, grouped under their BIPs with their
   recognized names (Taproot, Segregated Witness…): each fork's sub-head is
   the door to a title leaf of its own carrying its activation statistics —
   counted live for a fork still signaling — and beneath it the chapters and
@@ -184,13 +217,17 @@ compiled to WASM) is consumed as a published
   back to per-block lookups on mirrors without them.
   Mined places cite in full; heights no block has reached (BIP42's 21M cap
   at 13,440,000; BIP110's flag heights, should it lock in) are marked □
-  until a block earns them the ■. **III · Ledgers** — the shelf of curated ledgers and any the reader
+  until a block earns them the ■. **Index of Ledgers** — the shelf of curated
+  ledgers and any the reader
   keeps, the only entries with no reference at all, since the chain never
   writes an address, only the script one stands for; the contents and the
-  index are inverses, and this is where the contents points at the other
-- `web/bitcoin-appendix.html` — the appendix leaves (`?part=mempool`,
-  `?part=consensus`, with `?part=future` kept as an alias for saved links):
-  a title leaf saying what the appendix gathers and why
+  index are inverses, and this is where the contents points at the other.
+  **Citations** — works cited outside this text, each dated into a chapter by
+  its own OpenTimestamps proof; the one part of the book that points outward
+  (`web/btc-proofs.js` below)
+- `web/bitcoin-appendix.html` — the back matter's title leaves (`?part=mempool`,
+  `?part=consensus`, `?part=proofs`, with `?part=future` kept as an alias for
+  saved links): a title leaf saying what the part gathers and why
   that cannot be read in sequence, with what it gathers one level below.
   Appendix I descends into the queue's **first chapter itself** — the block
   a reader reaches by swiping forward off the chain tip — read in the book
@@ -223,27 +260,34 @@ compiled to WASM) is consumed as a published
   (newer above, older below, the ballot itself above the newest), the
   citation the one door into the book, and the ascent landing back on the
   table at the row left off, the Ledger's own dive-and-return.
-  Appendix III's leaf is the Ledger compendium's own title page, since a
-  shelf of ledgers is what that page already is. The appendices sit at the
-  **volumes' own level**: the line runs Volume I … Volume V, Appendix I,
-  II, III, so the last volume's forward turn leaves the body for the
-  mempool and Appendix I's backward turn comes straight back to it. All
-  three ascend to the contents, as a volume does — onto their own contents
-  leaf, since the contents runs one per appendix as it does per volume: a
+  The Index of Ledgers' leaf is the Ledger compendium's own title page, since
+  a shelf of ledgers is what that page already is; Citations' is this page's
+  `?part=proofs` — the register, and the picker a reader drops a proof on. The
+  back matter sits at the **volumes' own level**: the line runs Volume I …
+  Volume V, Appendix I, Appendix II, the Index of Ledgers, Citations, so the
+  last volume's forward turn leaves the body for the
+  mempool and Appendix I's backward turn comes straight back to it. Every one
+  of them ascends to the contents, as a volume does — onto its own contents
+  leaf, since the contents runs one per part as it does per volume: a
   pull down at the top, and the masthead's Contents
 - `web/btc-mempool.js`, `web/btc-toc.css` — the queue read as the chapters
-  it is about to become, and how a list of chapters is set. Shared by the
-  contents and the appendix leaves so a projected chapter reads the same in
-  the list and on its own page
+  it is about to become, and how a list of chapters is set. Appendix I's
+  contents leaf lists the queue **the way a volume's contents lists its own
+  chapters**: a Book heading over the rows that share one, each row citing
+  only what that heading has not already named (□2,016, then □1 under the
+  next book) — a projected chapter falls in a book by the same arithmetic a
+  mined one does, so it is listed by the same rules, in the pencil the ■ it
+  has not earned is owed in. The stylesheet is shared with the appendix
+  leaves so a chapter reads the same wherever it is set
 - `web/bitcoin-ledger.html` — the Ledger: a compendium of every ledger
   (curated donation addresses, any the reader keeps, and ad-hoc
   `?address=a,b,…` queries) in one document, read the way the book is
   read, four levels deep. A URL names the leaf it wants the way the book's
   does: `?address=…` opens the passage that address is, `&page=ledger`
   opens the ledger holding it at its title leaf (which is what a named
-  ledger in the contents links to), and a bare visit opens the appendix
-  leaf above them all. The appendix leaf at the top — the compendium is
-  the contents' **Appendix III**, and this leaf carries that name and the
+  ledger in the contents links to), and a bare visit opens the part's own
+  leaf above them all. The leaf at the top — the compendium is
+  the contents' **Index of Ledgers**, and this leaf carries that name and the
   paragraph saying what a ledger is; it lists nothing, because the contents
   already lists the ledgers, and a pull down at the top (or the ▴ crumb)
   ascends there. Ledger title leaves beneath it (title, balance, span —
@@ -264,7 +308,7 @@ compiled to WASM) is consumed as a published
   the same Esplora-compatible endpoints the reading pages use; a ledger
   reconciles its entries against the chain's balance before its numbers
   are trusted. Keeping a ledger names it first — it becomes a row in the
-  reader's own contents (Appendix III), and the naming field opens on a
+  reader's own contents (the Index of Ledgers), and the naming field opens on a
   suggestion in the block version's own notation: one HP spell and one
   BIP39 word, drawn from sixteen random bits where a miner puts BIP320's
   version-rolling scratch entropy, so the name reads back as a well-formed
@@ -285,13 +329,13 @@ compiled to WASM) is consumed as a published
   reduces to — so an entry here is a file's name and the citation its proof
   lands on, which the proof states by itself, offline. Two sources listed as
   one: the proofs bundled with the app (named in `web/appendix.yaml`, so the
-  appendix reads as an appendix on a first visit) and the reader's own, dropped
-  on the appendix's leaf and kept in `localStorage` the way a bookmark is,
+  register reads as a register on a first visit) and the reader's own, dropped
+  on the Citations leaf and kept in `localStorage` the way a bookmark is,
   flying the same ribbon in the contents. What is stored is the proof itself,
   base64'd — a few hundred bytes, and the whole evidence: keeping only "block
   358391 §1352" would keep the conclusion and throw away the argument
-- `web/bitcoin-proof.html` — one timestamped file's leaf, which every Appendix
-  IV row opens. A proof is a straight line of operations from a digest to a
+- `web/bitcoin-proof.html` — one timestamped file's leaf, which every Citations
+  row opens. A proof is a straight line of operations from a digest to a
   merkle root, and every value along that line is 32 bytes of hash — which is
   to say every value along it is a passage the book can set in words. So the
   front matter carries the file's name and its digest as prose, and the proof
@@ -309,7 +353,7 @@ compiled to WASM) is consumed as a published
   through the native file dialogue, hashes it in the browser and says whether
   it is the file the proof attests — the same promise OpenTimestamps made when
   the proof was taken
-- `web/btc-ots.js` — an OpenTimestamps proof reader, read by Appendix IV:
+- `web/btc-ots.js` — an OpenTimestamps proof reader, read by Citations:
   a `.ots` file is a citation written in someone else's notation, and this
   turns it back into one of the book's. Replaying a proof's commitment
   operations — append, prepend, sha256, ripemd160 (implemented here; no
@@ -319,7 +363,7 @@ compiled to WASM) is consumed as a published
   §section too: each step appends the sibling on the right or prepends the one
   on the left, so the directions read from the bottom of the tree up spell the
   transaction's position in binary. The module claims nothing — it reports
-  what the proof asserts, and the appendix checks that root against the
+  what the proof asserts, and the Citations leaf checks that root against the
   chapter's own header, which is the entirety of OpenTimestamps verification.
   The three hashes a proof turns on — the stamped file's digest, the
   transaction carrying the commitment, and the merkle root the operations
@@ -329,7 +373,7 @@ compiled to WASM) is consumed as a published
   single SHA-256 rather than the chain's double and so takes the generic hash
   mark. Then the figure itself as Glossia prose — the chain's two written in
   the byte order they actually are, the digest in the order it was computed. The engine is
-  imported only when a proof arrives, so an appendix opened to read carries no
+  imported only when a proof arrives, so a leaf opened to read carries no
   WASM; until
   it lands a figure reads as an ellipsis, and if it never lands the hash stays
   unsaid rather than falling back to hex — hex is the one notation this book
@@ -354,9 +398,10 @@ compiled to WASM) is consumed as a published
   twice, and pages count positions, not distinct txids — so each owns two
   pages, all four cited in the table of contents
 - `web/notables.yaml`, `web/appendix.yaml`, `web/commentary/*.md` — the curated
-  entries themselves, what the contents gathers after the volumes (the
-  appendices: the mempool, the consensus rules grouped by BIP — activation
-  statistics, chapters mined and owed — and the ledgers), and the readings of them: which blocks and transactions the book keeps, what
+  entries themselves, what the contents gathers after the volumes (the back
+  matter: the mempool, the consensus rules grouped by BIP — activation
+  statistics, chapters mined and owed — the ledgers, and the works cited), and
+  the readings of them: which blocks and transactions the book keeps, what
   they are called, and one Markdown file per reading, referenced by the entry it
   belongs to (`by:` naming whoever wrote it, absent for the book's own voice).
   An entry's `id:` is written in any form the search box takes — a height, a
