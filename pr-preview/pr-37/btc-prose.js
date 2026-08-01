@@ -662,6 +662,39 @@ const blockHeightMark = (height) => `<span class="op op-blockmark" title="BIP34 
 // name says.
 const extranonceMark = (n) => markToken(`η${productProse(n)}`, `extranonce ${n} — the counter the miner rolled once the header's 32-bit nonce (η) was exhausted. A tally, not text: it is read as the number it is, so its bytes never pass for writing`);
 
+// ─── the counter nobody pushed ─────────────────────────────────────────
+//
+// η reads a counter that arrived as a push, which is how the pools built on
+// ckpool and btccom write theirs -- the push states its own width, so the
+// number alone restores the bytes and the mark needs nothing else.
+//
+// Most pools do not push it. F2Pool, AntPool and SECPOOL write the counter as
+// raw bytes in the margin, where the book rendered it as payload prose: a
+// dozen words of wordlist standing for a number nobody meant as language. It
+// is the same field under the same rule as the pushed one, and it should read
+// the same way.
+//
+// What raw bytes lack is the push's width. 00 12 34 and 12 34 are different
+// bytes and one number, so a bare figure cannot restore them -- the mark
+// carries the byte count as a superscript, exactly as every other byte count
+// in the script register does (p⁶⁵, h³², a bare push's ²⁰). η⁴ 5·839·425609 is
+// four bytes, little-endian as the chain writes its numbers, and reconstructs
+// to one string of bytes and no other.
+//
+// Bounded at eight bytes, the same ceiling the pushed counters take: past that
+// a run in the margin is not a counter but a commitment or a datum -- a
+// merged-mining root, a pool's own structure -- and it stays prose rather than
+// being flattened into a hundred-digit figure that says nothing about what it
+// holds.
+const RAW_COUNTER_MAX_BYTES = 8;
+
+const rawCounterMark = (hex) => {
+  const bytes = hex.length / 2;
+  const value = BigInt('0x' + ((hex.match(/../g) || []).reverse().join('') || '0'));
+  return markToken(`η${toSuperscript(bytes)} ${productProse(value)}`,
+    `${bytes} bytes of the miner's margin, read as the number they are: ${value}, little-endian as the chain writes its numbers. In this position that is the extranonce — the counter rolled once the header's 32-bit nonce (η) was exhausted — which is what a pool leaves room for here; a pool may also write a small number of its own (a version, a separator), and the bytes do not distinguish them. The superscript is the byte count: with no push to state the width, it is what restores these bytes exactly, leading zeros included`);
+};
+
 // ─── the zeros ─────────────────────────────────────────────────────────
 //
 // A pool lays out its coinbase at a fixed size and leaves room in it -- for
@@ -755,12 +788,14 @@ function renderMinerMargin(hex, collect) {
     if (p.hex !== undefined && last && last.hex !== undefined) last.hex += p.hex;
     else merged.push({ ...p });
   }
-  // Bytes last: a span of them is prose, except where the pool left a run of
-  // zeros, which takes ⓪ and its count instead of a sentence of nothing.
+  // Bytes last, and by then there are only three things left they can be: a
+  // run the pool left empty, which takes ⓪ and its count; a counter short
+  // enough to be one, which reads as the number it is; and everything longer,
+  // which is a commitment or a datum and stays prose.
   return merged
     .flatMap((p) => (p.hex === undefined ? [p] : splitZeroRuns(p.hex)))
     .map((p) => (p.zeros !== undefined ? zeroRunMark(p.zeros)
-      : p.hex !== undefined ? collect(p.hex)
+      : p.hex !== undefined ? (p.hex.length / 2 <= RAW_COUNTER_MAX_BYTES ? rawCounterMark(p.hex) : collect(p.hex))
         : p.pool ? signatureMark(p) : `“${quoteText(p.text)}”`))
     .filter(Boolean)
     .join(' ');
