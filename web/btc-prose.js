@@ -119,6 +119,59 @@ const factorProse = (factors) => factors
   .map(([p, power]) => (power === 1 ? String(p) : `${p}${toSuperscript(power)}`))
   .join('·');
 
+// ─── the mantissa, written as short as it goes ─────────────────────────
+//
+// A factorization is worth printing when it says something the figure does
+// not, and costs the reader nothing. On a target's mantissa it often says
+// less: 3·5·17·257 is ten characters where 65535 is five, and both are the
+// same twenty-three bits of the wire word. So the mantissa is minimized
+// before it is printed, by a rule that decides each part on its own length.
+//
+//   1. Factor it.
+//   2. Every term goes to whichever is shorter, its power or its decimal --
+//      the decimal on a tie, since a figure a reader can read at sight beats
+//      one they have to raise to a power. 2⁵ and 32 are both two characters,
+//      so 32; 2¹⁰ is three against 1024's four, so 2¹⁰ stands.
+//   3. Then adjacent terms merge, left to right, wherever the product writes
+//      in no more characters than the pair did. Repeat until nothing more
+//      merges.
+//
+// A decimal product is never longer than its factors' decimals, so this
+// collapses most mantissas to the plain figure -- which is the honest result:
+// for a number of six or seven digits the factorization was never buying the
+// reader anything. What survives it is a term whose power genuinely earns its
+// place, and the whole factorization stays in the hover for the reader who
+// wants it (genesis' 65535 is 2¹⁶−1, and its primes are the Fermat ones --
+// worth knowing, and not worth five extra characters on every chapter head).
+//
+// Only the mantissa is written this way. A nonce and a counter keep their full
+// factorization: there the shapelessness of the product IS the reading -- a
+// place in the search, arrived at by counting -- and shortening it to a figure
+// would take that away.
+const termProse = (p, power) => {
+  const decimal = String(p ** BigInt(power));
+  if (power === 1) return decimal;
+  const raised = `${p}${toSuperscript(power)}`;
+  return [...raised].length >= [...decimal].length ? decimal : raised;
+};
+
+export function mantissaProse(factors) {
+  const terms = factors.map(([p, power]) => ({ value: p ** BigInt(power), text: termProse(p, power) }));
+  for (let merging = true; merging && terms.length > 1;) {
+    merging = false;
+    for (let i = 0; i + 1 < terms.length; i++) {
+      const value = terms[i].value * terms[i + 1].value;
+      const text = String(value);
+      if ([...text].length <= [...terms[i].text].length + [...terms[i + 1].text].length) {
+        terms.splice(i, 2, { value, text });
+        merging = true;                 // a merged term may merge again
+        break;
+      }
+    }
+  }
+  return terms.map((t) => t.text).join('·');
+}
+
 // Any number the book states as a product: its factorization, or the figure
 // itself where there is no factorization to write. 0 and 1 are the whole of
 // that exception -- neither is a product of primes, and an early miner's
@@ -172,10 +225,11 @@ export function bitsInfo(bits) {
   const exponent = bits >>> 24;
   const mantissa = bits & 0x007fffff;   // top mantissa bit is a sign flag, masked off
   const { factors, shift } = bitsToMantissaFactors(bits);
-  const expr = shift > 0 ? `${factorProse(factors)}×256${toSuperscript(shift)}` : factorProse(factors);
+  const written = mantissaProse(factors);
+  const expr = shift > 0 ? `${written}×256${toSuperscript(shift)}` : written;
   return {
     sym: `β${toSubscript(lz)}`, expr,
-    title: `nBits ${compact} — mantissa ${mantissa} shifted up ${exponent - 3} bytes: the target ${targetHex}, which a valid block hash must read below (${lz} leading zero bits) — ${tail}`,
+    title: `nBits ${compact} — mantissa ${mantissa}${factorProse(factors) === String(mantissa) ? '' : ` (${factorProse(factors)})`} shifted up ${exponent - 3} bytes: the target ${targetHex}, which a valid block hash must read below (${lz} leading zero bits) — ${tail}`,
   };
 }
 

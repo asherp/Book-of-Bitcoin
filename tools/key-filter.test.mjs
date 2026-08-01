@@ -62,14 +62,14 @@ test('a bare operator is not caught by a number that contains it', () => {
   const marks = new Set(['β₇₈', '167009×256²⁰', 'difficulty −2.53%']);
   assert.ok(!rowShows(marksOf('+ − × ÷ %'), marks), 'arithmetic should stay shut');
   assert.ok(!rowShows(marksOf('&lt; &gt; ≤ ≥'), marks), 'comparisons should stay shut');
-  // The target is a shape rather than a string -- the primes in 167009×256²⁰
-  // are whatever the retarget left -- so its row is found by the one part of
+  // The target is a shape rather than a string -- the mantissa in 167009×256²⁰
+  // is whatever the retarget left -- so its row is found by the one part of
   // the shape that never varies: the whole-byte shift it rides on, which no
   // other number in the book is written on.
   const FACTORS = 're:256[⁰¹²³⁴⁵⁶⁷⁸⁹]';
-  const target = (m) => rowShows(marksOf('<i>p</i>·<i>q</i>…×256<sup><i>e</i></sup>', FACTORS), m);
+  const target = (m) => rowShows(marksOf('<i>m</i>×256<sup><i>e</i></sup>', FACTORS), m);
   assert.ok(target(marks), 'the target should open its row');
-  assert.ok(target(new Set(['β₃₂ < 3·5·17·257×256²⁶'])), 'genesis too, mark and all');
+  assert.ok(target(new Set(['β₃₂ < 65535×256²⁶'])), 'genesis too, mark and all');
   // And the raised digits a page prints elsewhere are not targets: a push
   // count, a hash's bit counts, the genesis chapter's empty predecessor.
   assert.ok(!target(new Set(['β₇₈', '²⁰', '↧²⁰', '⌘²²⁴', '⓪²⁵⁶', '■840000'])),

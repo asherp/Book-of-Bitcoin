@@ -182,6 +182,41 @@ test('a target is its mantissa in primes, on the shift the header states', () =>
   assert.deepEqual(bitsToMantissaFactors(0x1d00d86a), { factors: [[2n, 1], [27701n, 1]], shift: 26 });
 });
 
+test('the mantissa is written as short as it goes', { skip: skipNoEngine }, async () => {
+  const { mantissaProse } = await import('../web/btc-prose.js');
+
+  // A term goes to whichever is shorter, and to the figure on a tie: 2⁵ and 32
+  // are both two characters, so 32; 2¹⁰ is three against 1024's four, so it
+  // stands.
+  assert.equal(mantissaProse([[2n, 5]]), '32');
+  assert.equal(mantissaProse([[3n, 2]]), '9');
+  assert.equal(mantissaProse([[2n, 10]]), '2¹⁰');
+  assert.equal(mantissaProse([[2n, 22]]), '2²²');
+
+  // Then neighbours merge wherever the product is no longer than the pair. A
+  // decimal product never is, so a factorization of plain figures collapses
+  // entirely -- genesis' Fermat primes included.
+  assert.equal(mantissaProse([[3n, 1], [5n, 1], [17n, 1], [257n, 1]]), '65535');
+  assert.equal(mantissaProse([[2n, 1], [27701n, 1]]), '55402');
+  assert.equal(mantissaProse([[2n, 4], [3n, 2], [5n, 1], [7n, 1], [19n, 2]]), '1819440');
+
+  // What survives is a power that earns its place: 2²²·3 is four characters
+  // against 12582912's eight, so the pair stays a pair.
+  assert.equal(mantissaProse([[2n, 22], [3n, 1]]), '2²²·3');
+
+  // And whatever it writes, it is the same number.
+  for (const bits of REAL_NBITS) {
+    const { factors } = bitsToMantissaFactors(bits);
+    const written = mantissaProse(factors);
+    const value = written.split('·').reduce((acc, term) => {
+      const [base, power] = term.split(/(?=[⁰¹²³⁴⁵⁶⁷⁸⁹])/);
+      const k = power ? Number([...power].map((c) => '⁰¹²³⁴⁵⁶⁷⁸⁹'.indexOf(c)).join('')) : 1;
+      return acc * BigInt(base) ** BigInt(k);
+    }, 1n);
+    assert.equal(value, product(factors), `${bits.toString(16)} writes its own mantissa`);
+  }
+});
+
 test('a nonce factors too, at any size the chain can write', () => {
   // Nonces off the chain, and the extranonces beside them -- the second kind
   // runs to 8 bytes, past what a double holds, which is why the arithmetic is
@@ -324,7 +359,7 @@ test('a pre-BIP34 coinbase keeps the preamble reading', { skip: skipNoEngine }, 
   const script = fields.inputs[0].script;
 
   assert.match(script, /β/, 'the difficulty target still reads under β');
-  assert.ok(script.includes('3·5·17·257×256²⁶'), 'restated as the target it is: mantissa in primes, on its byte shift');
+  assert.ok(script.includes('65535×256²⁶'), 'restated as the target it is: the mantissa, on its byte shift');
   assert.ok(script.includes('The Times 03/Jan/2009'), 'and the headline is still quoted');
   assert.ok(!script.includes('■'), 'no height mark — the rule had not been written yet');
 });
