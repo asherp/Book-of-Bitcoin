@@ -356,6 +356,46 @@ where Foundry's signature ends. Which is what the table above is for, and what
 it now does — the two corrections meet there. The word test decides whether a
 run may be quoted at all; the signature decides where the quotation closes.
 
+## The third correction: the zeros
+
+A pool lays its coinbase out at a fixed size and leaves room in it — for the
+counter the miner rolls, for a commitment it is not carrying today. What sits
+in that room is nothing: a run of `00`. Block 960,473 (F2Pool) carries about
+thirty such bytes. **[observed]**
+
+Rendered as payload, a zero run is one word repeated: `abandon` is index 0 of
+the BIP39 wordlist the prose draws from, and at 2048 words the encoding carries
+11 bits per word, so thirty zero bytes come out as roughly two dozen
+`abandon`s — two thirds of that block's paragraph. True, invertible, and no way
+to read a book.
+
+So a run of zeros takes the mark it already had: `⓪` is OP_0 in the sigla —
+`0x00`, the byte itself — and a superscript counts bytes everywhere else in the
+script register (`p⁶⁵`, `h³²`, a bare push's `²⁰`). Thirty zero bytes read
+`⓪³⁰`. The count restores them exactly, so nothing is lost but the repetition,
+and it is the same trade the book already makes with `∅` for an all-zero
+witness, one register down.
+
+The floor is four bytes: below that a zero is a small number inside a counter,
+and interrupting the prose to mark it would cost more than it saves. In the
+chapter head `⓪ⁿ` counts zero *bits* of a block hash — same glyph, and each
+register measures in the unit its own thing is measured in, which both key rows
+now say.
+
+Block 960,473's margin, before and after:
+
+```
+before   ‹…› “🐟   /F2Pool/” Goat abandon abandon to abandon. Abandon may
+         abandon abandon. … Abandon access an abstract pulse for wagon via
+         abandon.
+after    ‹aa4b5847266057› “🐟   /F2Pool/” ‹20› ⓪³⁰ ‹070a0102›
+```
+
+Why F2Pool leaves thirty bytes empty is not something the bytes state. Reserved
+extranonce room and unused merged-mining slots are the likely reasons, and a
+survey run would tell: padding is the same length in every block from a pool,
+an unfilled field moves. **[unverified]**
+
 ### What changed
 
 - `web/btc-chaintime.js` — new: the halving-anchored estimate and the window.
@@ -381,6 +421,11 @@ run may be quoted at all; the signature decides where the quotation closes.
   the filter a `sig:pool` token; `tools/coinbase-fields.mjs` and the survey
   identify by the same table, so the page and the instrument can never cut a
   tag at different bytes.
+- `web/btc-prose.js` — `splitZeroRuns` and the `⓪ⁿ` mark for a run of four or
+  more zero bytes in the margin, with its own key row and a `zero:run` token
+  for the filter. Applied to the miner's margin only: an OP_RETURN payload or a
+  witness item with zeros in it still reads as prose, and whether the same mark
+  belongs there is a separate question from this one.
 
 The rest of what the survey can find belongs where it is. The book stops reading
 opcodes at the height mark deliberately, and none of the above is a reason to

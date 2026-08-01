@@ -228,6 +228,22 @@ function coinbaseTxHex(scriptSigHex) {
 const markEncoder = (hex) => ({ prose: `‹${hex}›`, payloadWords: [] });
 const encodedHex = (html) => [...html.matchAll(/‹([0-9a-f]*)›/g)].map((m) => m[1]).join('');
 
+// The margin's bytes, read back off what was rendered, in the order it renders
+// them: a quoted run is its own UTF-8, a ⓪ⁿ mark is n zero bytes, a prose span
+// is the hex it was handed. This is the book's promise performed on its own
+// output -- whatever register a byte reached the page in, it comes back.
+const fromSuperscript = (s) => Number([...s].map((c) => '⁰¹²³⁴⁵⁶⁷⁸⁹'.indexOf(c)).join(''));
+function marginBytes(html) {
+  const out = [];
+  const token = /“([^”]*)”|⓪([⁰¹²³⁴⁵⁶⁷⁸⁹]+)|‹([0-9a-f]*)›/g;
+  for (let m; (m = token.exec(html));) {
+    if (m[1] !== undefined) out.push(utf8Hex(m[1]));
+    else if (m[2] !== undefined) out.push('00'.repeat(fromSuperscript(m[2])));
+    else out.push(m[3]);
+  }
+  return out.join('');
+}
+
 // The height push as BIP34 writes it: OP_PUSHBYTES_3 then the height, LE.
 const heightPush = (h) => '03' + Buffer.from([h & 0xff, (h >> 8) & 0xff, (h >> 16) & 0xff]).toString('hex');
 
@@ -247,11 +263,16 @@ test('a post-BIP34 coinbase opens with ■height and reads no opcodes after it',
   assert.ok(script.includes('|v05'), 'including the punctuation the pool wrote');
 
   // The bytes the old reading turned into instructions: OP_SWAP for the pipe,
-  // a 32-byte push for the space, OP_IF / OP_ELSE / OP_EQUAL for extranonce.
-  for (const glyph of ['⇄', '⟨', '│', '☒', '⓪']) {
+  // a 32-byte push for the space, OP_IF / OP_ELSE for extranonce.
+  for (const glyph of ['⇄', '⟨', '│', '☒']) {
     assert.ok(!script.includes(glyph), `no ${glyph} — the margin holds no opcodes`);
   }
   assert.ok(!/op-push/.test(script), 'and no push counts — there are no pushes');
+  // ⓪ is the one glyph the margin may carry, and only as the zero-run mark:
+  // a count of bytes the pool left empty, never an opcode read out of the tail.
+  for (const at of [...script.matchAll(/⓪/g)].map((m) => m.index)) {
+    assert.match(script.slice(0, at), /op-zeros[^>]*>$/, 'a ⓪ in the margin is the zero-run mark');
+  }
 });
 
 test('every byte of the miner\'s margin reaches the page', { skip: skipNoEngine }, async () => {
@@ -268,7 +289,7 @@ test('every byte of the miner\'s margin reaches the page', { skip: skipNoEngine 
   // run, and let the rest of that push fall off the page.
   const quoted = [...script.matchAll(/“([^”]*)”/g)].map((m) => m[1]).join('');
   assert.equal(quoted, MARA_TAG, 'the quoted run is the tag, whole');
-  assert.equal(utf8Hex(quoted) + encodedHex(script), MARA_TAIL, 'quoted bytes + encoded bytes = the tail');
+  assert.equal(marginBytes(script), MARA_TAIL, 'quotation, zero marks and prose = the tail');
 });
 
 test('a pre-BIP34 coinbase keeps the preamble reading', { skip: skipNoEngine }, async () => {
@@ -310,9 +331,10 @@ test('the template\'s clock reads as the date it is, not as a counter', { skip: 
   assert.equal(quoted, MARA_TAG, 'the quotation is the tag the pool wrote, and nothing else');
   assert.ok(!quoted.includes('~kj'), 'no clock bytes leaning on the tag');
 
-  // Still nothing dropped: height push + time push + tag + binary = all of it.
+  // Still nothing dropped: height push + time push + everything the margin
+  // rendered, in whatever register it rendered it, = all of it.
   assert.equal(
-    heightPush(960281) + TEMPLATE_TIME_PUSH + utf8Hex(quoted) + encodedHex(script),
+    heightPush(960281) + TEMPLATE_TIME_PUSH + marginBytes(script),
     scriptSig,
     'the marks and the margin reconstruct the whole scriptSig',
   );
@@ -335,6 +357,40 @@ test('a counter still reads under η, before the clock and after it', { skip: sk
   assert.ok(b.includes(TEMPLATE_TIME_MARK), 'the clock reads first');
   assert.ok(b.includes(`η${factorProse(COUNTER_VALUE)}`), 'the counter reads after it');
   assert.ok(b.indexOf(TEMPLATE_TIME_MARK) < b.indexOf('η'), 'in the order the bytes carry them');
+});
+
+test('a run of zeros reads as its count, not as a paragraph of nothing', { skip: skipNoEngine }, async () => {
+  const { composeTransactionFields, splitZeroRuns } = await import('../web/btc-prose.js');
+  const { parseTransaction } = await import('../web/btc-tx.js');
+
+  // Byte-aligned by construction: a hex string spells 0000 across the boundary
+  // of a0 and 0b, and a run found there would be zeros nobody wrote.
+  assert.deepEqual(splitZeroRuns('a0000b'), [{ hex: 'a0000b' }], 'nibbles are not bytes');
+  assert.deepEqual(splitZeroRuns('ff' + '00'.repeat(4) + 'ee'),
+    [{ hex: 'ff' }, { zeros: 4 }, { hex: 'ee' }]);
+  // Under the floor a zero is just a small number inside a counter.
+  assert.deepEqual(splitZeroRuns('ff' + '00'.repeat(3) + 'ee'), [{ hex: 'ff000000ee' }]);
+  // And the parts put the bytes back, whatever the shape.
+  for (const hex of ['', '00'.repeat(8), 'ff' + '00'.repeat(9), '00'.repeat(5) + 'aa' + '00'.repeat(6), 'aabbcc']) {
+    assert.equal(splitZeroRuns(hex).map((p) => (p.zeros ? '00'.repeat(p.zeros) : p.hex)).join(''), hex);
+  }
+
+  // Block 960,473's shape: F2Pool's tag, a live byte, then the padding that had
+  // been reading as two dozen repetitions of the wordlist's first word.
+  const scriptSig = heightPush(960473) + 'aa4b5847266057'
+    + utf8Hex('\u{1F41F}       /F2Pool/') + '20' + '00'.repeat(30) + '070a0102';
+  const script = composeTransactionFields(parseTransaction(coinbaseTxHex(scriptSig)), 1, null, markEncoder).inputs[0].script;
+
+  assert.ok(script.includes('⓪³⁰'), 'thirty zero bytes, under the zero opcode with its count');
+  assert.ok(script.includes('op-zeros'), 'and classed so the notation key can find it');
+  assert.ok(!script.includes('‹' + '00'.repeat(30)), 'the run never reaches the encoder');
+  // Every byte still accounted for: the marks say how many zeros, the quoted
+  // signature says its own text, and the prose says the rest.
+  assert.equal(
+    heightPush(960473) + marginBytes(script),
+    scriptSig,
+    'marks, signature and prose reconstruct the whole scriptSig',
+  );
 });
 
 test('a number that disagrees with the height beside it is no clock', { skip: skipNoEngine }, async () => {
