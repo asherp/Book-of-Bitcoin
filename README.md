@@ -271,9 +271,14 @@ compiled to WASM) is consumed as a published
   leaf, since the contents runs one per part as it does per volume: a
   pull down at the top, and the masthead's Contents
 - `web/btc-mempool.js`, `web/btc-toc.css` — the queue read as the chapters
-  it is about to become, and how a list of chapters is set. Shared by the
-  contents and the appendix leaves so a projected chapter reads the same in
-  the list and on its own page
+  it is about to become, and how a list of chapters is set. Appendix I's
+  contents leaf lists the queue **the way a volume's contents lists its own
+  chapters**: a Book heading over the rows that share one, each row citing
+  only what that heading has not already named (□2,016, then □1 under the
+  next book) — a projected chapter falls in a book by the same arithmetic a
+  mined one does, so it is listed by the same rules, in the pencil the ■ it
+  has not earned is owed in. The stylesheet is shared with the appendix
+  leaves so a chapter reads the same wherever it is set
 - `web/bitcoin-ledger.html` — the Ledger: a compendium of every ledger
   (curated donation addresses, any the reader keeps, and ad-hoc
   `?address=a,b,…` queries) in one document, read the way the book is

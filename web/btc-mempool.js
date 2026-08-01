@@ -1,10 +1,17 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //
 // btc-mempool.js — the queue of transactions no block has yet recorded, read
-// as the chapters it is about to become. Shared by the two places that set
-// it: the table of contents, where it is Appendix I's rows continuing the
-// list past the chain tip, and the appendix's own page, where it is the
-// whole leaf.
+// as the chapters it is about to become. Where it is set is Appendix I's
+// contents leaf, continuing the list past the chain tip; the appendix's own
+// page names the part and descends into the first draft chapter rather than
+// listing them, listing being the contents' business.
+//
+// And it is listed the way a volume's contents lists the chapters kept from
+// it: a Book heading over the rows that share one, each row citing only what
+// the heading has not already named. A projected chapter belongs to a book
+// the same way a mined one does — the arithmetic knows nothing about mining —
+// so the queue's rows are set by the same rules, in the □ the expected
+// chapter wears instead of the ■ it has not earned.
 //
 // The queue is ordered the way a miner would take it (highest package fee
 // rate first), so it reads as provisional chapters at heights tip+1, tip+2,
@@ -26,8 +33,8 @@
 // become are worth listing. Their contents are not yet anything.
 //
 // The rows are dressed in the contents' own classes (.toc-entry.projected and
-// friends): both pages carry that stylesheet, and a projected chapter should
-// look the same wherever it is read.
+// friends, from btc-toc.css): a projected chapter should look like the mined
+// ones it is queued behind, in the pencil rather than the ink.
 
 import { entryHref } from './btc-contents.js';
 import { volumeBookChapter, toRoman, expectedReference } from './btc-citation.js';
@@ -83,10 +90,14 @@ export async function readQueue(tip, mirrors = MEMPOOL_MIRRORS) {
 
 // The provisional reference for a not-yet-mined height: the expected-chapter
 // mark □ where a mined chapter's reference wears ■ -- the number holds only
-// if the queue does. The volume is left off while it is the tip's own, as a
-// row under a Volume heading leaves it off.
-function projRef(height, tipVolume) {
+// if the queue does. Each level a heading above the row has already named is
+// left off, as it is on a volume's leaf; the volume goes unwritten while it
+// is the tip's own, no head here having named one.
+function projRef(height, tipVolume, underBook = false) {
   const p = volumeBookChapter(height);
+  // Under a Book heading only the chapter is left to cite, exactly as in a
+  // volume's contents.
+  if (underBook) return `□${p.chapter}`;
   const vol = p.volume === tipVolume ? '' : `${toRoman(p.volume)} `;
   return `${vol}β${p.book} □${p.chapter}`;
 }
@@ -94,10 +105,24 @@ function projRef(height, tipVolume) {
 // book is named once and the marks run on, the book's own idiom for a range
 // (a volume leaf reads ■1 – ■2,016); across a book boundary each end is
 // cited in full, since the second names a book the first did not.
-function projRange(from, to, tipVolume) {
+function projRange(from, to, tipVolume, underBook = false) {
   const a = volumeBookChapter(from), b = volumeBookChapter(to);
   const sameBook = a.volume === b.volume && a.book === b.book;
-  return `${projRef(from, tipVolume)} – ${sameBook ? `□${b.chapter}` : projRef(to, tipVolume)}`;
+  // A range reaching past the heading's own book still cites its far end in
+  // full: the heading did not name that book.
+  return `${projRef(from, tipVolume, underBook)} – ${sameBook ? `□${b.chapter}` : projRef(to, tipVolume)}`;
+}
+
+// The heading a run of projected chapters sits under, set as a volume's
+// contents sets one: the book spelled out, no β -- that sigil rides the
+// compact tail references alone. The volume joins it only where the queue has
+// crossed out of the tip's own, since no head above these rows names one.
+function bookHead(height, tipVolume) {
+  const p = volumeBookChapter(height);
+  const d = document.createElement('div');
+  d.className = 'toc-book';
+  d.textContent = p.volume === tipVolume ? `Book ${p.book}` : `Volume ${toRoman(p.volume)} · Book ${p.book}`;
+  return d;
 }
 
 // One projected row, set like every other row in the contents: a name on the
@@ -107,9 +132,9 @@ function projRange(from, to, tipVolume) {
 // hover either: a figure whispered is still a figure printed. The reference
 // keeps its note, which says only that the number is provisional. The whole
 // row opens the book at that height.
-function projEntryEl({ height, text, ref, refTitle }) {
+function projEntryEl({ height, text, ref, refTitle, underBook }) {
   const row = document.createElement('a');
-  row.className = 'toc-entry under-book projected';
+  row.className = 'toc-entry projected' + (underBook ? ' under-book' : '');
   row.href = entryHref(String(height));
   const t = document.createElement('span');
   t.className = 'toc-title';
@@ -159,6 +184,10 @@ export function buildQueue({ tip, summary, blocks }, lead = null) {
   const projVsize = blocks ? blocks.reduce((s, b) => s + b.blockVSize, 0) : 0;
   const chapters = Math.max(1, Math.ceil((summary ? summary.vsize : projVsize) / MVB));
 
+  // What the rows are, before deciding how they are grouped: a row is a
+  // height, the name it carries, and how far it reaches (`to`, for the
+  // backlog's span).
+  const rows = [];
   if (blocks && blocks.length) {
     // A real projected block never exceeds 1 MvB of vsize; a bigger final
     // entry is the backend's own aggregate of everything deeper.
@@ -166,33 +195,60 @@ export function buildQueue({ tip, summary, blocks }, lead = null) {
       const height = tip + 1 + i;
       const isAggregate = i === blocks.length - 1 && b.blockVSize > 1.05 * MVB;
       if (!isAggregate) {
-        wrap.append(projEntryEl({
+        rows.push({
           height,
           text: queueLabel(i + 1),
-          ref: projRef(height, tipVolume),
           refTitle: `provisional — block ${height.toLocaleString()} (${expectedReference(height)}) if the queue holds; every block mined ahead of it renumbers the rest`,
-        }));
+        });
       } else {
         // The backlog: everything past the detailed entries, one fading row.
         const span = Math.max(1, Math.round(b.blockVSize / MVB));
-        wrap.append(projEntryEl({
+        rows.push({
           height,
+          to: height + span - 1,
           text: BACKLOG,
-          ref: projRange(height, height + span - 1, tipVolume),
           refTitle: 'the deep queue has no reliable ordering — these chapters are a guess about the queue today, not about any future block',
-        }));
+        });
       }
     });
   } else if (summary) {
     // No mempool.space backend reachable: the depth alone, from any Esplora.
     // One row for the whole queue, and the whole queue is a backlog until
     // something can cut it into blocks.
-    wrap.append(projEntryEl({
+    rows.push({
       height: tip + 1,
+      to: tip + chapters,
       text: BACKLOG,
-      ref: projRange(tip + 1, tip + chapters, tipVolume),
       refTitle: 'provisional — the chapters the current queue would fill',
-    }));
+    });
+  }
+
+  // And how they are grouped: by the book they fall in, which is how a
+  // volume's contents groups the chapters kept from it -- a Book heading
+  // wherever two or more consecutive rows share one, and then each row cites
+  // only what that heading has not already said. The queue is a run of
+  // consecutive heights, so a book's rows are contiguous by construction, and
+  // the heading changes exactly where the queue crosses a retarget. One row
+  // alone keeps its book in its own reference rather than earning a heading
+  // for itself, the same rule and for the same reason: a heading over a
+  // single row says nothing the row does not.
+  const bookOf = (h) => { const p = volumeBookChapter(h); return `${p.volume}.${p.book}`; };
+  for (let i = 0; i < rows.length;) {
+    let j = i + 1;
+    while (j < rows.length && bookOf(rows[j].height) === bookOf(rows[i].height)) j++;
+    const underBook = j - i >= 2;
+    if (underBook) wrap.append(bookHead(rows[i].height, tipVolume));
+    for (let k = i; k < j; k++) {
+      const row = rows[k];
+      wrap.append(projEntryEl({
+        ...row,
+        underBook,
+        ref: row.to == null
+          ? projRef(row.height, tipVolume, underBook)
+          : projRange(row.height, row.to, tipVolume, underBook),
+      }));
+    }
+    i = j;
   }
   return wrap;
 }
