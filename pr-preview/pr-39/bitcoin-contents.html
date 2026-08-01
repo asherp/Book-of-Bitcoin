@@ -150,7 +150,7 @@ import { allProofs, citeOf, leafOf } from './btc-proofs.js';
 import { creditLine, commentaryForAddresses } from './btc-commentary.js';
 import { readQueue, buildQueue } from './btc-mempool.js';
 import { INDEXED, keptLedgers, sameAddresses } from './btc-index.js';
-import { volumeBookChapter, toRoman, fromRoman, heightOf, expectedReference } from './btc-citation.js';
+import { volumeBookChapter, toRoman, fromRoman, heightOf, expectedReference, footnoteSup } from './btc-citation.js';
 import { storeGet, storePut } from './btc-store.js';
 import { seedArchive } from './btc-seed.js';
 
@@ -188,13 +188,15 @@ const GENESIS_COINBASE = '4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b
 const ESPLORA_MIRRORS = ['https://blockstream.info/api', 'https://mempool.space/api'];
 // A book-page entry (page: 'book') places at its book with no chapter -- the
 // leaf precedes every chapter of its book in reading order.
-const placeOf = (height, pos, page, vout = null) => {
+const placeOf = (height, pos, page, vout = null, wn = null) => {
   const p = volumeBookChapter(height);
   if (page === 'volume') return { volume: p.volume, book: null, chapter: null, section: null };
   if (page === 'book') return { volume: p.volume, book: p.book, chapter: null, section: null };
   // An output rides its section's citation with its vout appended -- §1.0,
-  // as the book prints it (renderCitation in bitcoin-book.html).
-  return { ...p, section: pos == null ? null : pos + 1, vout: pos == null ? null : vout };
+  // as the book prints it (renderCitation in bitcoin-book.html) -- and a
+  // witness rides it as the footnote's alphabet index, superscripted (§1ᵃ),
+  // exactly as its mark reads on the page.
+  return { ...p, section: pos == null ? null : pos + 1, vout: pos == null ? null : vout, wit: pos == null ? null : wn };
 };
 
 // The chain tip height, fetched once and reused across relative entries.
@@ -281,14 +283,16 @@ async function resolveBookmark(b) {
 // ■chapter (and a transaction's §section) remains, and directly on the leaf the
 // β-marked book leads it. Spaced like the book's own citations ("β29 ■596",
 // "■1 §1").
-function tailRef({ book, chapter, section, vout }, underBook) {
+function tailRef({ book, chapter, section, vout, wit }, underBook) {
   // A volume's own leaf: the leaf's head above the row has already named it.
   if (book == null) return '';
   // A book's own leaf: under its Book heading nothing remains to cite; on the
   // bare leaf, the β mark alone names it.
   if (chapter == null) return underBook ? '' : `β${book}`;
   let s = (underBook ? [`■${chapter}`] : [`β${book}`, `■${chapter}`]).join(' ');
-  if (section != null) s += ` §${section}${vout == null ? '' : `.${vout}`}`;
+  // An output cites as §section.vout; a witness as §sectionᵃ -- the
+  // footnote's alphabet index riding the section, as the page prints it.
+  if (section != null) s += ` §${section}${vout == null ? '' : `.${vout}`}${wit == null ? '' : footnoteSup(wit)}`;
   return s;
 }
 
@@ -1107,7 +1111,7 @@ const consensusPlaces = () => appendix()
 // resolves.
 for (const p of [...places(), ...consensusPlaces()]) if (!p.address && isBlockId(p.id)) placements.set(placeKey(p), placeOf(Number(p.id), p.index ?? null, p.page, p.out ?? null));
 for (const b of bookmarks) {
-  if (Number.isInteger(b.height)) bmPlacements.set(bmKey(b), placeOf(b.height, b.pos ?? null, b.page, b.vout ?? null));
+  if (Number.isInteger(b.height)) bmPlacements.set(bmKey(b), placeOf(b.height, b.pos ?? null, b.page, b.vout ?? null, b.wn ?? null));
 }
 lastVolume = volumesFromEntries();
 at = openingIndex(leaves());
@@ -1130,9 +1134,12 @@ await Promise.all([
     render();
   }),
   ...bookmarks.filter((b) => !bmPlacements.has(bmKey(b))).map(async (b) => {
-    // An output bookmark resolves through its transaction, then takes its vout.
+    // An output bookmark resolves through its transaction, then takes its
+    // vout; a witness keep takes its footnote number the same way.
     const place = await resolveBookmark(b);
-    bmPlacements.set(bmKey(b), place && b.vout != null ? { ...place, vout: b.vout } : place);
+    bmPlacements.set(bmKey(b), place && (b.vout != null || b.wn != null)
+      ? { ...place, ...(b.vout != null ? { vout: b.vout } : {}), ...(b.wn != null ? { wit: b.wn } : {}) }
+      : place);
     growVolumes(volumesFromEntries());
     render();
   }),
