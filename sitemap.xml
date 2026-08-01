@@ -5,7 +5,8 @@
   <url><loc>https://bookofbitcoin.io/bitcoin-contents.html</loc></url>
   <url><loc>https://bookofbitcoin.io/bitcoin-front.html</loc></url>
   <url><loc>https://bookofbitcoin.io/bitcoin-appendix.html?part=mempool</loc></url>
-  <url><loc>https://bookofbitcoin.io/bitcoin-appendix.html?part=future</loc></url>
+  <url><loc>https://bookofbitcoin.io/bitcoin-appendix.html?part=consensus</loc></url>
+  <url><loc>https://bookofbitcoin.io/bitcoin-appendix.html?part=proofs</loc></url>
   <url><loc>https://bookofbitcoin.io/bitcoin-search.html</loc></url>
   <url><loc>https://bookofbitcoin.io/bitcoin-ledger.html</loc></url>
   <url><loc>https://bookofbitcoin.io/bitcoin-ledgers.html</loc></url>
@@ -33,6 +34,7 @@
   <url><loc>https://bookofbitcoin.io/passages/bip34-activation-v2.md</loc></url>
   <url><loc>https://bookofbitcoin.io/passages/first-coinbase-op-return.md</loc></url>
   <url><loc>https://bookofbitcoin.io/passages/first-standard-op-return.md</loc></url>
+  <url><loc>https://bookofbitcoin.io/passages/the-hello-world-timestamp.md</loc></url>
   <url><loc>https://bookofbitcoin.io/passages/bip66-activation-v3.md</loc></url>
   <url><loc>https://bookofbitcoin.io/passages/bip65-activation-v4.md</loc></url>
   <url><loc>https://bookofbitcoin.io/passages/csv-activation-version-bits.md</loc></url>
@@ -79,6 +81,7 @@
   <url><loc>https://bookofbitcoin.io/II/9/1804/</loc></url>
   <url><loc>https://bookofbitcoin.io/II/19/529/</loc></url>
   <url><loc>https://bookofbitcoin.io/II/49/1803/109/</loc></url>
+  <url><loc>https://bookofbitcoin.io/II/74/1224/1352/</loc></url>
   <url><loc>https://bookofbitcoin.io/II/77/510/</loc></url>
   <url><loc>https://bookofbitcoin.io/II/89/974/</loc></url>
   <url><loc>https://bookofbitcoin.io/II/104/1681/</loc></url>
@@ -120,6 +123,8 @@
   <url><loc>https://bookofbitcoin.io/I/87/1344/12/0/</loc></url>
   <url><loc>https://bookofbitcoin.io/II/49/1803/109/0/</loc></url>
   <url><loc>https://bookofbitcoin.io/II/49/1803/109/1/</loc></url>
+  <url><loc>https://bookofbitcoin.io/II/74/1224/1352/0/</loc></url>
+  <url><loc>https://bookofbitcoin.io/II/74/1224/1352/1/</loc></url>
   <url><loc>https://bookofbitcoin.io/III/31/1345/13/0/</loc></url>
   <url><loc>https://bookofbitcoin.io/III/31/1345/13/1/</loc></url>
   <url><loc>https://bookofbitcoin.io/III/31/1345/13/a/</loc></url>

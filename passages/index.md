@@ -29,6 +29,7 @@ scheme, and how to read passages beyond this curated set.
 - [BIP34 activation (v2)](./bip34-activation-v2.md) — II β9 ■1804 §1 ([as a page](https://bookofbitcoin.io/II/9/1804/))
 - [First coinbase OP_RETURN](./first-coinbase-op-return.md) — II β19 ■529 §1 ([as a page](https://bookofbitcoin.io/II/19/529/))
 - [First standard OP_RETURN](./first-standard-op-return.md) — II β49 ■1803 §109 ([as a page](https://bookofbitcoin.io/II/49/1803/109/))
+- [The Hello World timestamp](./the-hello-world-timestamp.md) — II β74 ■1224 §1352 ([as a page](https://bookofbitcoin.io/II/74/1224/1352/))
 - [BIP66 activation (v3)](./bip66-activation-v3.md) — II β77 ■510 §1 ([as a page](https://bookofbitcoin.io/II/77/510/))
 - [BIP65 activation (v4)](./bip65-activation-v4.md) — II β89 ■974 §1 ([as a page](https://bookofbitcoin.io/II/89/974/))
 - [CSV activation (version bits)](./csv-activation-version-bits.md) — II β104 ■1681 §1 ([as a page](https://bookofbitcoin.io/II/104/1681/))
