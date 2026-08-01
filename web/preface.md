@@ -77,8 +77,12 @@ version, previous block, merkle root, timestamp, target, nonce. I have
 permitted the page one deliberate exception. Witness data sits
 mid-serialization on the wire, but it is spending apparatus rather than
 speech, so it gathers at the foot of the page as footnotes, each marked from
-the input that carries it. Even their size is the chain's rule rather than
-mine: consensus weighs a witness byte at a quarter of any other, and the
+the input that carries it. Most spending since segwit authorizes this way and
+no other, which leaves such an input nothing to say in the body at all; rather
+than let its citation stand in the margin beside a blank line, the citation
+goes down with the witness, and the input reads whole at the foot of the page
+— where it came from, what it spent, and what unlocked it, together. Even
+their size is the chain's rule rather than mine: consensus weighs a witness byte at a quarter of any other, and the
 footnotes are set to that same discount — a quarter of the page-room per
 letter, four witness characters in the space the body gives one — so the type
 says what the protocol says, that this data is carried cheap. The difficulty target keeps its wire slot but
