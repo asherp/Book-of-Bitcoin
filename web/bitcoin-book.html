@@ -606,7 +606,19 @@ button:disabled { opacity: .4; cursor: not-allowed; }
    reaches 14px in from the cell's edge, so the amounts stop clear of it --
    all of them, so the column still aligns on the point. */
 .tx-out-value  { grid-column: 2; text-align: right; padding-right: 20px; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.tx-locktime { grid-column: left / -1; grid-row: 3; text-align: center; font-style: normal; }
+/* The columns close on the transaction's own arithmetic: what the inputs
+   bring at the left, what the outputs carry at the right -- each sum under
+   the column it totals, the outputs' on the amounts' own edge -- and
+   between them, signed negative, the difference the miner keeps: the fee.
+   No labels; the geometry is the equation, inputs − fee = outputs. The
+   inputs' sum waits on the margin citations resolving, and an input the
+   book cannot price leaves the sum and the fee unsaid (⋯). A coinbase has
+   no such line: its input brings no prior output, and the block's fees
+   arrive in its outputs, with the subsidy. */
+.tx-totals { grid-column: left / -1; grid-row: 3; display: flex; justify-content: space-between; align-items: baseline; gap: 1em; margin-top: .35em; font: italic 400 calc(13.5px * var(--scale-margins, 1))/1.4 'Newsreader',serif; color: var(--dim); font-variant-numeric: tabular-nums; }
+.tx-totals .t-fee { color: var(--meta); }
+.tx-totals .t-out { padding-right: 20px; }   /* the amounts column's ribbon room, so the sum sits on their point */
+.tx-locktime { grid-column: left / -1; grid-row: 4; text-align: center; font-style: normal; }
 .tx-note { font: italic 400 calc(13.5px * var(--scale-body, 1))/1.4 'Newsreader',serif; color: var(--dim); }
 /* The amount's size, on both its classes. An amount is a .tx-note as well as
    a .tx-out-value, and .tx-note sets the font shorthand -- font-size included
@@ -700,6 +712,9 @@ button:disabled { opacity: .4; cursor: not-allowed; }
      amounts follow their output -- position alone carries the sense. */
   .tx-flow { grid-template-columns: 1fr; }
   .tx-inputs, .tx-margin-cites, .tx-outputs, .tx-locktime { grid-column: 1; grid-row: auto; display: block; }
+  /* The balance line keeps its three stations even collapsed -- it fits,
+     and the geometry IS the equation. */
+  .tx-totals { grid-column: 1; grid-row: auto; }
   /* The footnotes restack too -- their portrait rules live in their own
      media block beside the footnote styles further down, where source
      order lets them override the base grid. */
@@ -1589,17 +1604,19 @@ async function projectedCitation(txid) {
 
 // Fill each pending citation cell once its reference resolves; skip if the
 // reader has since paged to another section (gen no longer current).
+// Resolves to each input's spent value in pending order (satoshis; null
+// where the book could not price it) -- the closing balance line sums them.
 async function resolveCitations(pending, gen) {
-  await Promise.all(pending.map(async ({ citeBody, cite, amtVal, txid, vout }) => {
+  return Promise.all(pending.map(async ({ citeBody, cite, amtVal, txid, vout }) => {
     try {
       const { height, pos, outputs } = await resolveCitation(txid);
-      if (gen !== renderGen) return;
+      if (gen !== renderGen) return null;
       // Mined: the settled section. Unmined: wherever the queue currently
       // drafts it, cited with the expected mark. Neither one prints a txid --
       // a hash is not a reference, and the page keeps every hash where the
       // rest of them live, in the hover label.
       const place = height !== null ? { height, pos } : await projectedCitation(txid);
-      if (gen !== renderGen) return;
+      if (gen !== renderGen) return null;
       cite.classList.remove('resolving');
       if (place) {
         renderCitation(citeBody, place.height, place.pos, vout);
@@ -1620,12 +1637,14 @@ async function resolveCitations(pending, gen) {
         amtVal.textContent = `(${formatBtc(outputs[vout].value)})`;
         amtVal.title = `the amount this input spends: ${groupDigits(String(outputs[vout].value))} satoshis`;
       }
+      return outputs && outputs[vout] ? outputs[vout].value : null;
     } catch (e) {
-      if (gen !== renderGen) return;
+      if (gen !== renderGen) return null;
       citeBody.textContent = `§… .${vout}`;
       cite.classList.remove('resolving');
       cite.classList.add('cite-unresolved');
       cite.title = `${txid}:${vout} — reference could not be resolved`;
+      return null;
     }
   }));
 }
@@ -3667,16 +3686,49 @@ function renderChapter(para) {
     citedCells.push({ el: cited, out: i });
     outputsEl.append(scriptCell, valueCell);
   });
+  // The closing balance line -- Σ inputs at the left, − fee between, Σ outputs
+  // at the right (see the .tx-totals CSS comment). The outputs' sum is the
+  // transaction's own; the inputs' and the fee fill in once every margin
+  // citation has resolved a value, and stay ⋯ if any could not be priced.
+  // A coinbase closes without one.
+  let totals = null, fillTotals = null;
+  if (f.inputs.length && !f.inputs.some((i) => i.isNullPrevout)) {
+    const sumOut = f.outputs.reduce((a, o) => a + o.sats, 0);
+    totals = document.createElement('div');
+    totals.className = 'tx-totals';
+    const tIn = document.createElement('span');
+    tIn.textContent = '⋯';
+    tIn.title = 'the sum of the inputs — waiting on the margin citations';
+    const tFee = document.createElement('span');
+    tFee.className = 't-fee';
+    tFee.textContent = '⋯';
+    const tOut = document.createElement('span');
+    tOut.className = 't-out';
+    tOut.textContent = formatBtc(sumOut);
+    tOut.title = `the outputs carry ${groupDigits(String(sumOut))} satoshis`;
+    totals.append(tIn, tFee, tOut);
+    fillTotals = (values) => {
+      if (!values || values.length !== f.inputs.length || values.some((v) => v == null)) return;
+      const sumIn = values.reduce((a, v) => a + v, 0);
+      tIn.textContent = formatBtc(sumIn);
+      tIn.title = `the inputs bring ${groupDigits(String(sumIn))} satoshis`;
+      const fee = sumIn - sumOut;
+      tFee.textContent = `− ${formatBtc(fee)}`;
+      tFee.title = `the fee: ${groupDigits(String(fee))} satoshis — the difference, claimed by the chapter's miner`;
+    };
+  }
   const lock = document.createElement('div');
   lock.className = 'tx-note tx-locktime';
   lock.textContent = f.locktime;
   lock.title = f.locktimeTitle;
 
-  flow.append(inputsEl, marginEl, outputsEl, lock);
+  flow.append(inputsEl, marginEl, outputsEl, ...(totals ? [totals] : []), lock);
   wrap.append(flow);
   body.append(wrap);
   lazyEncode.observe(body);   // encode any deferred OP_RETURN payload as it scrolls into view
-  resolveCitations(pendingCites, gen);
+  resolveCitations(pendingCites, gen).then((values) => {
+    if (gen === renderGen && fillTotals) fillTotals(values);
+  });
   resolveForwardCitations(para.txid, fwdCells, gen);
   resolveCitedWorks(para.num, citedCells, gen);
 
