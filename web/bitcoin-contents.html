@@ -1005,16 +1005,24 @@ const placeKey = (p) => `${p.id}#${p.index ?? ''}`;
 const placements = new Map();          // place key -> citation | null (once attempted)
 const bmPlacements = new Map();        // bookmark hex -> place | null (once attempted)
 
-// A reader's bookmarks join the curated set in one list. A bookmark that is
-// already a curated entry is dropped (the curated title wins) so it isn't listed
-// twice.
-const NOTABLE_IDS = new Set(places().map((p) => p.id));
-// A bookmark is keyed by what it names: a hash by itself, an output by its
-// hash and vout, a leaf by the hash of the block its span opens and which span
-// it is (the same keys bitcoin-book.html writes). Only a plain hash bookmark
-// can duplicate a curated entry, so only those are dropped.
+// A reader's bookmarks join the curated set in one list. A bookmark that
+// names a place the curation already lists gets no second row -- it renames
+// the curated row instead: the reader's title (which the book's bookmark
+// form defaults to the curated name) overrides the label, and the row flies
+// the ribbon. Matched by hash, or by the stored reference against the
+// coordinates the yaml's ids resolve to (height + section index + output +
+// leaf level); a legacy bookmark without a stored reference still matches by
+// its hash.
 const bmKey = (b) => (b.page ? `${b.page}@${b.hex}` : b.vout == null ? b.hex : `${b.hex}:${b.vout}`);
-const bookmarks = readBookmarks().filter((b) => b.vout != null || b.page || !NOTABLE_IDS.has(b.hex));
+const allBookmarks = readBookmarks();
+const bmForPlace = (p) => allBookmarks.find((b) => {
+  if (p.address) return false;
+  if (p.page || b.page) return (p.page ?? null) === (b.page ?? null) && p.id === String(b.height);
+  if ((p.out ?? null) !== (b.vout ?? null)) return false;
+  return p.id === b.hex || (p.id === String(b.height) && (p.index ?? null) === (b.pos ?? null));
+});
+const overridingKeys = new Set(places().filter((p) => !p.address).map((p) => bmForPlace(p)).filter(Boolean).map(bmKey));
+const bookmarks = allBookmarks.filter((b) => !overridingKeys.has(bmKey(b)));
 
 // Every entry -- curated or bookmarked -- carrying whatever placement has
 // resolved so far. A bookmark reuses its stored title and flies the book's ribbon.
@@ -1022,8 +1030,12 @@ const bookmarks = readBookmarks().filter((b) => b.vout != null || b.page || !NOT
 // its hash: `?block=<h>&page=volume` is the leaf, where the bare hash would be
 // the chapter that opens it -- a different page, and a different keep.
 const entries = () => [
-  ...places().filter((p) => !p.address).map((p) => ({ ...p, title: placeTitle(p), commentary: p.entry.commentary,
-    place: placements.get(placeKey(p)), tried: placements.has(placeKey(p)) })),
+  ...places().filter((p) => !p.address).map((p) => {
+    const bm = bmForPlace(p);
+    return { ...p, title: (bm && bm.title) || placeTitle(p), bookmark: bm ? true : undefined,
+      commentary: p.entry.commentary,
+      place: placements.get(placeKey(p)), tried: placements.has(placeKey(p)) };
+  }),
   ...bookmarks.map((b) => ({
     id: b.page ? String(b.height) : b.hex, index: b.pos ?? undefined, vout: b.vout ?? undefined, page: b.page,
     title: b.title || b.prose || shortHex(b.hex),
