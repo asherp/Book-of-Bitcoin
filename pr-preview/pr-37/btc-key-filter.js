@@ -82,19 +82,17 @@ export function collectMarks(root) {
 // the same prefix match, and tpl:<id> ties a row to a pattern table instead.
 //
 // One mark in the book is a shape and not a string at all: the difficulty
-// target, printed as its prime factorization (2¹⁶⁰·213529), whose primes are
-// whatever the last retarget left. Nothing in it is fixed enough to look for
-// -- so that row names re:<pattern> instead, and is shown where the page
-// prints something of that form.
+// target, printed as its mantissa in primes times a whole-byte shift
+// (167009×256²⁰), whose primes are whatever the last retarget left. Nothing in
+// the primes is fixed enough to look for -- so that row names re:<pattern>
+// instead, and is shown where the page prints something of that form.
 //
-// What never varies is the scale of the power of two a target opens with: the
-// byte shift alone puts it past 2¹⁰⁰, so the pattern asks for a digit under a
-// power of two or more figures. The nonces are products in the same notation
-// and would otherwise answer for the target's row -- but a counter divisible
-// by a tenth power is a rarity (about one in a thousand, nearly always 2¹⁰),
-// so a post-BIP34 coinbase, which prints an extranonce and no target at all,
-// keeps the row shut. When one does slip through, the filter has erred toward
-// showing, which is the direction it is built to err in.
+// The shift is the fixed part: every target on this chain ends in 256 with a
+// raised digit after it, and nothing else in the book is written that way. The
+// nonces are products in the same notation and used to answer for the target's
+// row on a power-of-two pattern; against 256ᵉ they cannot, so the rule is now
+// exact rather than a probability argument about how often a counter divides
+// by a tenth power.
 // Pure string work, so it is testable without a DOM.
 
 // Stands in for a placeholder while tokenizing; never appears in real markup.
