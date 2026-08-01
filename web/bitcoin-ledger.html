@@ -343,9 +343,10 @@ a:hover { text-decoration: underline; }
 .entry-amt.credit { color:var(--accent); }
 /* The section, whole, in the reader's own manuscript layout -- the book
    page's classes, metrics and grid verbatim (chapter-body type, the
-   [left margin | body | right margin] tx-flow grid, margin cites for
-   witness-only inputs and the version note, sequence marks, witness
-   footnotes, forward citations, the drop cap), scoped under this leaf --
+   [left margin | body | right margin] tx-flow grid, the version note in
+   the margin, sequence marks, witness footnotes with each witness-only
+   input's citation beside its entry, forward citations, the drop cap),
+   scoped under this leaf --
    so a passage here renders exactly as its § does in the reader. The one
    addition beyond the title's txid prose: the referenced txo carries the
    accent rule (.hit), so the quoted line reads in context. */
@@ -371,6 +372,12 @@ a:hover { text-decoration: underline; }
   display:grid; grid-template-columns:minmax(0,1fr) 7em; grid-template-columns:subgrid; column-gap:1.3em; align-items:start; }
 .entry-section .tx-out-script { grid-column:1; min-width:0; }
 .entry-section .tx-out-value { grid-column:2; text-align:right; font-variant-numeric:tabular-nums; }
+/* The balance line, mirroring the book: Σ inputs left, − fee between,
+   Σ outputs right -- the geometry is the equation. Derived rather than on
+   the wire, it leads the foot region below the section's one rule (a
+   full-width row of the footnotes grid), apart from the record it totals. */
+.entry-section .tx-totals { grid-column:1 / -1; display:flex; justify-content:space-between; align-items:baseline; gap:1em; margin:0 0 1.6em; font:italic 400 13.5px/1.4 'Newsreader',serif; color:var(--dim); font-variant-numeric:tabular-nums; }
+.entry-section .tx-totals .t-fee { color:var(--meta); }
 .entry-section .tx-locktime { grid-column:left / -1; grid-row:3; text-align:center; font-style:normal; }
 .entry-section .tx-note { font:italic 400 13.5px/1.4 'Newsreader',serif; color:var(--dim); }
 .entry-section .tx-seq { font-style:normal; color:var(--meta); }
@@ -393,10 +400,24 @@ a:hover { text-decoration: underline; }
 .entry-section .tab { display:inline-block; width:4ch; }
 .entry-section .tx-witness-ref { font:500 .62em/1 'IBM Plex Mono',monospace; color:var(--accent); vertical-align:super; text-decoration:none; margin-left:.12em; }
 .entry-section .tx-witness-ref:hover { text-decoration:underline; }
-.entry-section .chapter-footnotes { margin-top:48px; padding-top:24px; border-top:1px solid var(--rule); }
-.entry-section .footnote-entry { margin:0 0 1.1em; font:italic 400 14.5px/1.6 'Newsreader',serif; color:var(--dim); }
+/* Mirrors the book's #ch-footnotes grid: a witness-only input's citation
+   follows its witness down and takes the left cell of its footnote's row,
+   paired by sparse auto-placement; entries for inputs that kept a body row
+   leave the cell empty. */
+.entry-section .chapter-footnotes { margin-top:48px; padding-top:24px; border-top:1px solid var(--rule);
+  display:grid; grid-template-columns:[left] 6.5em [body] minmax(0,1fr); column-gap:1.3em; align-items:start; }
+.entry-section .chapter-footnotes .footnote-entry { grid-column:2; }
+/* The reference and its amount set right against the gutter, flush to the
+   witness they cite -- the book's rule; the portrait collapse restacks them
+   (see the media block below). */
+.entry-section .chapter-footnotes .tx-in-cite { padding-top:0; text-align:right; }
+.entry-section .chapter-footnotes .cite-amount { text-align:right; }
+/* 11px/1.3 vs the 19px/1.75 body is the BIP141 discount set in type: 4x the
+   character density, a quarter of the space per letter -- see the book page's
+   .footnote-entry comment for the arithmetic. */
+.entry-section .footnote-entry { margin:0 0 1.1em; font:italic 400 11px/1.3 'Newsreader',serif; color:var(--dim); }
 .entry-section .footnote-entry:target { color:var(--ink-soft); }
-.entry-section .footnote-mark { font:500 10.5px/1 'IBM Plex Mono',monospace; color:var(--accent); margin-right:.5em; font-style:normal; vertical-align:.35em; }
+.entry-section .footnote-mark { font:500 8px/1 'IBM Plex Mono',monospace; color:var(--accent); margin-right:.5em; font-style:normal; vertical-align:.35em; }
 /* The one mark the reader doesn't draw: the txo this entry references --
    the accent rule beside it, and its prose set bold: the pushed bytes of
    this scriptPubKey are the address itself in the book's tongue, so the
@@ -412,8 +433,19 @@ a:hover { text-decoration: underline; }
      their input, amounts following their output. */
   .entry-section .tx-flow { grid-template-columns:1fr; }
   .entry-section .tx-inputs, .entry-section .tx-margin-cites, .entry-section .tx-outputs, .entry-section .tx-locktime { grid-column:1; grid-row:auto; display:block; }
+  /* The balance line keeps its three stations even collapsed (the book's
+     rule); it lives in the foot region, which the collapse leaves flex. */
   .entry-section .tx-in-cite, .entry-section .cite-amount { text-align:left; margin:0 0 .2em; }
-  .entry-section .tx-out-value { text-align:left; margin:0 0 .55em; }
+  /* The footnotes restack, the book's way: the citation leads its witness
+     as a full-width block, and the index hangs in a fixed indent every
+     wrapped line clears. */
+  .entry-section .chapter-footnotes { display:block; }
+  .entry-section .chapter-footnotes .tx-in-cite { text-align:left; margin:0 0 .2em; }
+  .entry-section .chapter-footnotes .cite-amount { text-align:left; }
+  .entry-section .chapter-footnotes .footnote-entry { padding-left:16px; text-indent:-16px; }
+  .entry-section .chapter-footnotes .footnote-mark { display:inline-block; width:16px; margin-right:0; text-indent:0; }
+  /* Output amounts keep the ledger's right edge even collapsed (the book's rule). */
+  .entry-section .tx-out-value { margin:0 0 .55em; }
   .entry-section .tx-locktime { margin:0 0 .55em; }
   .entry-section .tx-line.tx-body-lead { padding-top:.8em; }
 }
@@ -548,7 +580,7 @@ import { INDEXED, isAddress, keptLedgers, saveKeptLedgers, sameAddresses, addres
          extendLine, renderLedger, renderRows, periods, lineNote, reconciled, ledgerSum, heldCoins, addressState, lastKnownState,
          formatBalanceBtc, formatNetBtc, chainFailureText, citeHref, sectionOf, sectionOfFetched, citePlace, passageTxid, passageEntries, txHexOf, outspendsOf, prevoutValuesOf,
          DEFAULT_ESPLORA, esploraCustom, esploraSelected, setEsploraSettings } from './btc-index.js';
-import { volumeBookChapter, heightOf, toRoman, parseReference, latinRefOf } from './btc-citation.js';
+import { volumeBookChapter, heightOf, toRoman, parseReference, latinRefOf, footnoteMark } from './btc-citation.js';
 import { BIP39, HP_SPELLS } from './btc-wordlists.js';
 import { appendix } from './btc-contents.js';
 import './btc-fontscale.js';   // the reader's type sizes: a ledger's readings are set at the size the book page's Commentary row chose
@@ -1739,9 +1771,11 @@ const openEntryLeaf = async (alive) => {
     // down just to price a margin line.
     let prevoutsP = null;
     const prevouts = () => (prevoutsP ??= prevoutValuesOf(e.txid));
-    // Citations with no scriptSig body to sit beside -- witness-spend inputs,
-    // and the version note -- stack above the next scriptSig input's own
-    // citation, or beside the outputs when none follows (the book's rule).
+    // Citations with no scriptSig body to sit beside. A witness-spend input's
+    // citation follows its witness to the footnotes (the book's rule); what
+    // stacks here -- above the next scriptSig input's citation, or beside the
+    // outputs when none follows -- is the version note and the rare input
+    // with neither scriptSig nor witness.
     const pendingMargin = [];
     if (s.fields.version !== '1') {
       const vc = document.createElement('div');
@@ -1749,6 +1783,9 @@ const openEntryLeaf = async (alive) => {
       vc.textContent = `v${s.fields.version}`;
       pendingMargin.push(vc);
     }
+    // Per non-coinbase input, the resolved spent value (satoshis; null where
+    // unpriceable) -- summed for the closing balance line once all answer.
+    const spentP = [];
     s.fields.inputs.forEach((v, i) => {
       const cite = document.createElement('div'); cite.className = 'tx-in-cite';
       const citeBody = document.createElement('span');
@@ -1758,15 +1795,15 @@ const openEntryLeaf = async (alive) => {
       else {
         citeBody.textContent = '⋯';   // placeholder until the reference resolves
         cite.classList.add('resolving');
-        (async () => {
+        spentP.push((async () => {
           const pl = await citePlace(v.prevTxid);
-          if (!alive()) return;
+          if (!alive()) return null;
           if (!pl) {
             citeBody.textContent = `${v.prevTxid.slice(0, 8)}… .${v.prevVout}`;
             cite.classList.remove('resolving');
             cite.classList.add('cite-unresolved');
             cite.title = `${v.prevTxid}:${v.prevVout} — reference could not be resolved`;
-            return;
+            return null;
           }
           const p2 = volumeBookChapter(pl.height);
           const a = document.createElement('a');
@@ -1784,7 +1821,7 @@ const openEntryLeaf = async (alive) => {
           let spent = pl.outputs?.[v.prevVout]?.value;
           if (spent == null) {
             spent = (await prevouts())?.[i] ?? null;
-            if (!alive()) return;
+            if (!alive()) return null;
           }
           if (spent != null) {
             const amt2 = document.createElement('span');
@@ -1792,7 +1829,8 @@ const openEntryLeaf = async (alive) => {
             amt2.title = `the amount this input spends: ${spent.toLocaleString('en-US')} satoshis`;
             amtLine.append(amt2);
           }
-        })();
+          return spent;
+        })());
       }
       cite.append(citeBody);
       if (v.witnessHex) { footnotes.push({ n: footnotes.length + 1, html: s.witHtml[i], items: v.witnessItems }); cite.append(witnessRef(footnotes.length)); }
@@ -1800,7 +1838,7 @@ const openEntryLeaf = async (alive) => {
       cite.append(amtLine);
       // An input that renders a scriptSig holds an aligned row, any pending
       // margin citations stacked above its own; a witness-only input (empty
-      // scriptSig) just joins the pending list, so the outputs slide up.
+      // scriptSig) sends its citation down to its footnote's left cell.
       if (v.scriptAscii || v.script) {
         const citeCell = document.createElement('div');
         citeCell.className = 'tx-in-cite-group';
@@ -1812,6 +1850,8 @@ const openEntryLeaf = async (alive) => {
         if (v.scriptAscii) addQuote(scriptCell, v.scriptAscii);
         else addLine(scriptCell, v.script);
         inputsEl.append(citeCell, scriptCell);
+      } else if (v.witnessHex) {
+        footnotes[footnotes.length - 1].cite = cite;
       } else {
         pendingMargin.push(cite);
       }
@@ -1835,6 +1875,37 @@ const openEntryLeaf = async (alive) => {
       fwdCells.push(fwd);
       outputsEl.append(scriptCell, valueCell);
     });
+    // The closing balance line, the book's rule: Σ inputs left, − fee
+    // between, Σ outputs right. The outputs' sum is the transaction's own;
+    // the inputs' and the fee fill once every input has priced, and stay ⋯
+    // if any could not be. A coinbase closes without one.
+    let totals = null;
+    if (s.fields.inputs.length && !s.fields.inputs.some((v) => v.isNullPrevout)) {
+      const sumOut = s.fields.outputs.reduce((a2, o) => a2 + o.sats, 0);
+      totals = document.createElement('div');
+      totals.className = 'tx-totals';
+      const tIn = document.createElement('span');
+      tIn.textContent = '⋯';
+      tIn.title = 'the sum of the inputs — waiting on the margin citations';
+      const tFee = document.createElement('span');
+      tFee.className = 't-fee';
+      tFee.textContent = '⋯';
+      const tOut = document.createElement('span');
+      tOut.className = 't-out';
+      tOut.textContent = formatBalanceBtc(sumOut);
+      tOut.title = `the outputs carry ${sumOut.toLocaleString('en-US')} satoshis`;
+      totals.append(tIn, tFee, tOut);
+      Promise.all(spentP).then((values) => {
+        if (!alive()) return;
+        if (values.length !== s.fields.inputs.length || values.some((sv) => sv == null)) return;
+        const sumIn = values.reduce((a2, sv) => a2 + sv, 0);
+        tIn.textContent = formatBalanceBtc(sumIn);
+        tIn.title = `the inputs bring ${sumIn.toLocaleString('en-US')} satoshis`;
+        const fee = sumIn - sumOut;
+        tFee.textContent = `− ${formatBalanceBtc(fee)}`;
+        tFee.title = `the fee: ${fee.toLocaleString('en-US')} satoshis — the difference, claimed by the block's miner`;
+      });
+    }
     // The closing colophon: the locktime, centred -- and the self-check's
     // verdict only when it failed (a verified section says nothing; the
     // version note stands in the margin, as the book sets it).
@@ -1845,15 +1916,19 @@ const openEntryLeaf = async (alive) => {
     flow.append(inputsEl, marginEl, outputsEl, lock);
     wrap.append(flow);
     secEl.replaceChildren(wrap);
-    // The witness footnotes, at the section's foot as the book sets them.
-    // A modest stack's prose is already composed; a data-carrier-sized one
-    // streams in when its footnote scrolls near -- the book's own lazy
-    // treatment: the stack renders with a dim placeholder per data push,
-    // and each push's prose is encoded one macrotask at a time, so a
-    // kilobyte-scale inscription never blocks the leaf.
-    if (footnotes.length) {
+    // The foot region, as the book sets it: the balance line first --
+    // derived, not on the wire, so it reads below the section's rule, apart
+    // from the record -- then the witness footnotes. The region renders
+    // whenever it has either to carry. A modest witness stack's prose is
+    // already composed; a data-carrier-sized one streams in when its
+    // footnote scrolls near -- the book's own lazy treatment: the stack
+    // renders with a dim placeholder per data push, and each push's prose
+    // is encoded one macrotask at a time, so a kilobyte-scale inscription
+    // never blocks the leaf.
+    if (footnotes.length || totals) {
       const fnSec = document.createElement('div');
       fnSec.className = 'chapter-footnotes';
+      if (totals) fnSec.append(totals);
       const lazyFns = [];
       for (const fn of footnotes) {
         const p2 = document.createElement('p');
@@ -1866,6 +1941,7 @@ const openEntryLeaf = async (alive) => {
         } else {
           p2.innerHTML = mark + (fn.html ?? '∅');
         }
+        if (fn.cite) fnSec.append(fn.cite);
         fnSec.append(p2);
       }
       secEl.append(fnSec);
@@ -1908,11 +1984,20 @@ const openEntryLeaf = async (alive) => {
         const pl = await citePlace(sp.txid);
         if (!pl || !alive()) return;
         const p2 = volumeBookChapter(pl.height);
+        // The spending input's witness footnote letter (§17.a), when the
+        // shared citations archive knows the spender's witness layout --
+        // banked by the book page's resolver; a placement-only record
+        // cites the bare section rather than fetching more.
+        let witMark = '';
+        if (pl.wits && pl.wits[sp.vin]) {
+          const wn = pl.wits.slice(0, sp.vin + 1).reduce((a2, w) => a2 + (w ? 1 : 0), 0);
+          witMark = `.${footnoteMark(wn)}`;
+        }
         const a = document.createElement('a');
         a.className = 'cite-section-link';
         a.href = citeHref(sp.txid);
-        a.textContent = `${toRoman(p2.volume)} β${p2.book} ■${p2.chapter} §${pl.pos + 1}`;
-        a.title = `spent by input ${sp.vin + 1} of ${sp.txid}`;
+        a.textContent = `${toRoman(p2.volume)} β${p2.book} ■${p2.chapter} §${pl.pos + 1}${witMark}`;
+        a.title = `spent by input ${sp.vin + 1} of ${sp.txid}${witMark ? ` — its witness reads at footnote ${witMark.slice(1)}` : ''}`;
         cell.append(a);
       });
     })();
