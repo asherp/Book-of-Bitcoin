@@ -704,7 +704,10 @@ button:disabled { opacity: .4; cursor: not-allowed; }
      block leading the witness it belongs to. */
   #ch-footnotes { display: block; }
   .tx-in-cite, .cite-amount { text-align: left; margin: 0 0 .2em; }
-  .tx-out-value { text-align: left; margin: 0 0 .55em; }
+  /* Output amounts keep the ledger's right edge even collapsed: a column of
+     figures justifies right so the values still read as a column, and the
+     bookmark ribbon's padding-right keeps holding its corner. */
+  .tx-out-value { margin: 0 0 .55em; }
   .tx-locktime { margin: 0 0 .55em; }   /* stays centred: it closes the page, not a ledger line */
   /* Stacked into one column, the drop-cap's first body line now sits directly
      below its input's citation/amount rather than beside it. The floated
