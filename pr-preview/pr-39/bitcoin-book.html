@@ -629,22 +629,26 @@ button:disabled { opacity: .4; cursor: not-allowed; }
    Filled by syncBookmarkTitles, live with the bookmark set. */
 .tx-out-title { grid-column: 1 / -1; text-align: center; font: italic 500 calc(13.5px * var(--scale-body, 1))/1.4 'Newsreader',serif; color: var(--accent); margin: .4em 0 .15em; }
 .tx-out-title:empty { display: none; }
-/* The locking script's keep line, centered above its paragraph: unkept, the
-   hollow ribbon alone -- the offer, faded like every unmade mark; kept, the
-   ledger's name with the filled ribbon beside it, linking to the reader's
-   shelf (see syncScriptKeeps). Empty (no standard address) it takes no
-   room. */
+/* The locking script's keep line, centered above its paragraph: unkept and
+   uncurated, the hollow ribbon alone -- the offer, faded like every unmade
+   mark; named (the reader's keep, or the curated shelf's default it reverts
+   to), the name with the ribbon beside it. The ribbon toggles the reader's
+   keep; the name opens the copy menu (see syncScriptKeeps). Empty (no
+   standard address) it takes no room. */
 .tx-out-keep { grid-column: 1 / -1; text-align: center; margin: .1em 0 .15em; font: italic 500 calc(13.5px * var(--scale-body, 1))/1.4 'Newsreader',serif; color: var(--ink-soft); }
 .tx-out-keep:empty { display: none; }
-.tx-out-keep .keep-rib { display: inline-block; line-height: 0; color: var(--accent); vertical-align: -2px; }
+.tx-out-keep .out-keep-name { cursor: pointer; }
+.tx-out-keep .out-keep-name:hover, .tx-out-keep .out-keep-name:focus-visible { color: var(--accent-2); outline: none; }
+.tx-out-keep .keep-rib { display: inline-block; line-height: 0; color: var(--accent); vertical-align: -2px; background: none; border: 0; padding: 2px 5px; cursor: pointer; opacity: .42; }
 .tx-out-keep .keep-rib svg { display: inline-block; width: 10px; height: 14px; }
-.tx-out-keep button.keep-rib { background: none; border: 0; padding: 2px 5px; cursor: pointer; opacity: .42; }
-.tx-out-keep button.keep-rib:hover, .tx-out-keep button.keep-rib:focus-visible { opacity: .8; outline: none; }
-.tx-out-keep a.keep-rib { margin-left: .45em; text-decoration: none; }
-.tx-out-keep a.keep-rib:hover, .tx-out-keep a.keep-rib:focus-visible { color: var(--accent-2); }
+.tx-out-keep .keep-rib:hover, .tx-out-keep .keep-rib:focus-visible { opacity: .8; outline: none; }
+.tx-out-keep .out-keep-name + .keep-rib { margin-left: .25em; }
 /* The one ribbon glyph, dressed by state: hollow as an offer, filled once
-   kept -- same switch the corner ribbons use, scoped to this line. */
+   kept (full gold, like every made mark) -- same switch the corner ribbons
+   use, scoped to this line. */
 .tx-out-keep .keep-rib .rib-fill { display: none; }
+.tx-out-keep .keep-rib.kept { opacity: 1; }
+.tx-out-keep .keep-rib.kept:hover, .tx-out-keep .keep-rib.kept:focus-visible { color: var(--accent-2); }
 .tx-out-keep .keep-rib.kept .rib-fill { display: block; }
 .tx-out-keep .keep-rib.kept .rib-hollow { display: none; }
 .section-event:empty { display: none; }
@@ -973,6 +977,7 @@ button:disabled { opacity: .4; cursor: not-allowed; }
     <div id="hash-menu-actions">
       <button type="button" class="hash-menu-item" data-act="copy" role="menuitem">Copy hex</button>
       <button type="button" class="hash-menu-item" data-act="copy-text" role="menuitem">Copy text</button>
+      <button type="button" class="hash-menu-item hidden" data-act="ledger" role="menuitem">Ledger entry</button>
       <button type="button" class="hash-menu-item" data-act="bookmark" role="menuitem">Bookmark</button>
     </div>
     <div id="hash-menu-title" class="hash-menu-title hidden">
@@ -990,10 +995,11 @@ import { init, encodeSeedPhrase } from './glossia-msg.js';
 import { parseTransaction, computeTxid, parseBlockHeader, computeBlockHash, bitsToDifficulty, scriptToAddress } from './btc-tx.js';
 // The reader's ledger shelf (Appendix III): a locking script kept from a
 // section joins it as a titled one-address ledger, the same registry the
-// Ledger page's own keep button writes.
-import { keptLedgers, saveKeptLedgers } from './btc-index.js';
+// Ledger page's own keep button writes. INDEXED is the curated shelf, whose
+// titles are the keep line's defaults.
+import { keptLedgers, saveKeptLedgers, INDEXED } from './btc-index.js';
 import { composeTransactionFields, composeBlockHeaderFields, bitsInfo, groupDigits, formatBtc, renderWitness, toSuperscript, timestampInfo } from './btc-prose.js';
-import { volumeBookChapter, heightOf, windowStartOf, retargetInside, toRoman, reference, parseReference, footnoteMark } from './btc-citation.js';
+import { volumeBookChapter, heightOf, windowStartOf, retargetInside, toRoman, reference, parseReference, footnoteMark, latinRefOf } from './btc-citation.js';
 import { loadNotables, places, placeTitle, blocksEta, appendix } from './btc-contents.js';
 import { queueLabel } from './btc-mempool.js';
 import { toSubscript } from './btc-sigla.js';
@@ -3790,6 +3796,11 @@ function renderChapter(para) {
     // both states and keeps them live.
     const outKeep = document.createElement('div');
     outKeep.className = 'tx-out-keep';
+    // The menu behind the name needs the script verbatim (Copy hex) and this
+    // output's own citation, which names the entry this section wrote in the
+    // address's ledger. A draft has no settled citation to name.
+    outKeep.dataset.spk = out.spkHex;
+    if (!state.projected) outKeep.dataset.ref = latinRefOf(state.height, para.num, i);
     outputsEl.append(outKeep);
     scriptToAddress(out.spkHex).then((r) => {
       if (gen !== renderGen || !r || !r.address) return;
@@ -5681,43 +5692,67 @@ function syncBookmarkTitles() {
   }
 }
 
-// The locking-script keep lines, painted from the reader's ledger shelf: an
-// address not yet shelved offers the hollow ribbon alone, centered above its
-// paragraph -- press it and the title form opens, and the save shelves the
-// address as a titled one-address ledger. A shelved one reads the ledger's
-// name (the address itself when it was kept unnamed) with the filled ribbon
-// beside it, linking to that ledger. Removal is the Ledger page's own keep
-// button, where the shelf is curated.
+// The locking-script keep lines, painted from the ledger shelves: the
+// reader's keep names the line first, the curated shelf's title is the
+// default it reverts to, and an address on neither offers the hollow ribbon
+// alone. The ribbon is a toggle on the reader's own keep, like every other
+// ribbon -- hollow while unkept (curated or not), filled once kept, removal
+// reverting the name to the curated default or to the bare offer. Clicking
+// the name opens the copy menu: the script's hex, its address (the script's
+// own text in the book's tongue), and the road to the ledger entry this
+// very section wrote. A keep living inside a multi-address ledger is
+// managed on the Ledger page, so its ribbon leads there instead of
+// toggling a whole shelf row away.
 function syncScriptKeeps() {
   for (const el of document.querySelectorAll('.tx-out-keep')) {
     const address = el.dataset.address;
     el.textContent = '';
     if (!address) continue;
-    const kept = keptLedgers().find((k) => k.addresses.includes(address));
-    if (kept) {
-      const name = document.createElement('span');
-      name.className = 'out-keep-name';
-      name.textContent = kept.title || address;
-      const rib = document.createElement('a');
-      rib.className = 'keep-rib kept';
-      rib.href = `./bitcoin-ledger.html?address=${encodeURIComponent(address)}`;
-      rib.innerHTML = RIBBON_SVG;
-      rib.title = `${kept.title || address} — read this ledger`;
-      rib.setAttribute('aria-label', `Open the ledger ${kept.title || address}`);
-      el.append(name, rib);
-    } else {
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'keep-rib';
-      btn.innerHTML = RIBBON_SVG;
-      btn.title = 'bookmark this locking script — its address joins your ledgers';
-      btn.setAttribute('aria-label', 'Bookmark this locking script: keep its address as a ledger');
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        startBookmark(e, { label: 'locking script', ledger: address, prose: address, what: KEEPS['locking script'] }, btn);
-      });
-      el.append(btn);
+    const reader = keptLedgers().find((k) => k.addresses.includes(address));
+    const curated = INDEXED.find((k) => k.addresses.includes(address));
+    const ledgerHref = `./bitcoin-ledger.html?address=${encodeURIComponent(address)}`
+      + (el.dataset.ref ? `&ref=${el.dataset.ref}` : '');
+    const name = reader ? (reader.title || address) : (curated ? curated.title : null);
+    if (name) {
+      const span = document.createElement('span');
+      span.className = 'out-keep-name hash-copy';
+      span.tabIndex = 0;
+      span.textContent = name;
+      span.title = `${address} — click for menu`;
+      span.setAttribute('aria-label', `locking script ${address} — click for menu`);
+      const entry = { hex: el.dataset.spk, prose: address, label: 'locking script', nav: false, ledgerHref };
+      span.addEventListener('mousedown', (e) => e.preventDefault());
+      span.addEventListener('click', (e) => openHashMenu(e, entry, span));
+      span.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openHashMenu(e, entry, span); } });
+      el.append(span);
     }
+    const rib = document.createElement('button');
+    rib.type = 'button';
+    rib.className = 'keep-rib' + (reader ? ' kept' : '');
+    rib.innerHTML = RIBBON_SVG;
+    if (!reader) {
+      rib.title = curated
+        ? `bookmark this locking script — your name for it overrides “${curated.title}” until removed`
+        : 'bookmark this locking script — its address joins your ledgers';
+      rib.setAttribute('aria-label', 'Bookmark this locking script: keep its address as a ledger');
+      rib.addEventListener('click', (e) => {
+        e.stopPropagation();
+        startBookmark(e, { label: 'locking script', ledger: address, prose: address, what: KEEPS['locking script'] }, rib);
+      });
+    } else if (reader.addresses.length === 1) {
+      rib.title = 'bookmarked — remove';
+      rib.setAttribute('aria-label', 'Remove the bookmark on this locking script');
+      rib.addEventListener('click', (e) => {
+        e.stopPropagation();
+        saveKeptLedgers(keptLedgers().filter((k) => !(k.addresses.length === 1 && k.addresses[0] === address)));
+        syncScriptKeeps();
+      });
+    } else {
+      rib.title = `kept in “${reader.title || reader.addresses[0]}” — manage that ledger on its own page`;
+      rib.setAttribute('aria-label', `Open the ledger ${reader.title || reader.addresses[0]}`);
+      rib.addEventListener('click', (e) => { e.stopPropagation(); location.href = ledgerHref; });
+    }
+    el.append(rib);
   }
 }
 
@@ -5746,9 +5781,14 @@ function curatedTitleFor(entry, place) {
 // bookmarkable hash on the page belongs to the chapter on screen). The reader
 // can accept or edit it.
 function suggestTitle(entry) {
-  // A locking-script keep names a ledger, and a ledger's name is the
-  // reader's to give -- nothing on the page suggests one.
-  if (entry.ledger) return '';
+  // A locking-script keep names a ledger. The curated shelf's title is the
+  // default when the address is already there -- keep it and the name
+  // stands, change it and yours overrides until the keep is removed --
+  // otherwise the name is the reader's to give.
+  if (entry.ledger) {
+    const cur = INDEXED.find((k) => k.addresses.includes(entry.ledger));
+    return cur ? cur.title : '';
+  }
   const b = bookmarks.find((x) => keyOf(x) === bookmarkKey(entry.hex, bmSubOf(entry)));
   if (b && b.title) return b.title;               // keep an existing title when retitling
   const place = entryPlacement(entry);
@@ -5779,6 +5819,7 @@ const hashMenu = $('hash-menu');
 const menuCopyBtn = hashMenu.querySelector('[data-act="copy"]');
 const menuCopyTextBtn = hashMenu.querySelector('[data-act="copy-text"]');
 const menuBmBtn = hashMenu.querySelector('[data-act="bookmark"]');
+const menuLedgerBtn = hashMenu.querySelector('[data-act="ledger"]');
 const titleInput = $('hash-title-input');
 let menuEntry = null;
 let menuPoint = { x: 0, y: 0 };
@@ -5813,6 +5854,9 @@ function openHashMenu(ev, entry, anchorEl) {
   $('hash-menu-head').textContent = entry.label;
   menuCopyBtn.textContent = 'Copy hex';
   menuCopyTextBtn.textContent = 'Copy text';
+  // A locking script's menu carries the road to its ledger: the entry this
+  // very section wrote in that address's record (?address + ?ref).
+  menuLedgerBtn.classList.toggle('hidden', !entry.ledgerHref);
   menuBmBtn.classList.toggle('hidden', !entry.nav);
   // Keyed by the whole place, output and all: a transaction's own bookmark and
   // one of its outputs' are two different keeps, and the item must say which
@@ -5855,6 +5899,12 @@ menuCopyTextBtn.addEventListener('click', () => {
     menuCopyTextBtn.textContent = 'Copied ✓';
     setTimeout(closeHashMenu, 650);
   }).catch(closeHashMenu);
+});
+// The road out of the passage and into the record: the address's ledger,
+// opened at the entry this very section wrote in it.
+menuLedgerBtn.addEventListener('click', () => {
+  if (!menuEntry || !menuEntry.ledgerHref) return;
+  location.href = menuEntry.ledgerHref;
 });
 // Keeping a place asks for a name first: the title is the row it will take in
 // the table of contents, and a row is read by its title. Reached from the
