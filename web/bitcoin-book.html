@@ -5555,9 +5555,15 @@ function syncBookmarkTitles() {
 // whichever coordinates narrow it (section index, output, leaf level) -- the
 // same shapes the yaml's ids resolve to (btc-notables.js).
 function curatedTitleFor(entry, place) {
-  if (entry.vin != null) return null;   // the contents names no witness coordinate
+  // A witness keep matches a curated witness place (cited §n.a) by the
+  // footnote number its mark resolves to; witness places match nothing else.
+  if (entry.vin != null) {
+    const p = places().find((p) => !p.page && !p.address && p.wit != null && p.wit === entry.wn
+      && p.id === String(place.height) && (p.index ?? null) === (place.pos ?? null));
+    return p ? placeTitle(p) : null;
+  }
   const p = places().find((p) => {
-    if (p.address) return false;
+    if (p.address || p.wit != null) return false;
     if (place.page || p.page) return (p.page ?? null) === (place.page ?? null) && p.id === String(place.height);
     if ((p.out ?? null) !== (entry.vout ?? null)) return false;
     return p.id === entry.hex || (p.id === String(place.height) && (p.index ?? null) === (place.pos ?? null));
@@ -5767,39 +5773,51 @@ const indexParam = Number.isFinite(idxRaw) ? idxRaw
 // rather than not at all.
 await loadNotables();
 
+// The &wit= landing, read both ways a witness travels: digits are an input
+// index (a bookmark's stored coordinate), letters a footnote mark (the
+// citation's own .a). Either way the lazy footnotes are forced in (a no-op
+// once loaded) and the entry brought to the top -- by its mark, which is its
+// element id, with the input's citation anchor as the digit form's fallback.
+async function landOnWitness(raw) {
+  if (raw == null || raw === '') return;
+  await renderFootnotes(renderGen);
+  let el = null;
+  if (/^\d+$/.test(raw)) {
+    const fn = currentFootnotes.find((f) => f.vin === Number(raw));
+    el = (fn && $(`fn-${footnoteMark(fn.n)}`)) || $(`in-${raw}`);
+  } else if (/^[a-z]+$/i.test(raw)) {
+    el = $(`fn-${raw.toLowerCase()}`);
+  }
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
 if (pParam) {
   const pOut = pParam.out;
-  // A .a coordinate lands on the footnote itself: its mark is its element id,
-  // so the lazy footnotes are forced in (a no-op once loaded) and the entry
-  // brought to the top.
-  const pWit = pParam.wit;
+  const pWit = pParam.wit;   // a footnote number, parsed off the reference's .a
   Promise.resolve(openLookup(String(pParam.height), pParam.index)).then(async () => {
-    if (pOut != null && pParam.index >= 0) $(`out-${pOut}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    if (pWit != null && pParam.index >= 0) {
-      await renderFootnotes(renderGen);
-      $(`fn-${footnoteMark(pWit)}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (pParam.index >= 0) {
+      if (pOut != null) $(`out-${pOut}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      if (pWit != null) await landOnWitness(footnoteMark(pWit));
     }
   }).catch(() => { /* the lookup's own error handling has the page */ });
 } else if (txidParam) {
   const outRaw = parseInt(params.get('out'), 10);
-  // &wit=N brings input N's witness footnote to the top -- the landing a
-  // witness bookmark makes. The footnotes render lazily, so they are forced
-  // in first (a no-op once loaded), then the footnote itself is the target,
-  // falling back to the input's citation anchor if the entry isn't found.
-  const witRaw = parseInt(params.get('wit'), 10);
   Promise.resolve(openLookup(txidParam)).then(async () => {
     if (Number.isFinite(outRaw)) $(`out-${outRaw}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    if (Number.isFinite(witRaw)) {
-      await renderFootnotes(renderGen);
-      const fn = currentFootnotes.find((f) => f.vin === witRaw);
-      const el = (fn && $(`fn-${footnoteMark(fn.n)}`)) || $(`in-${witRaw}`);
-      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
+    await landOnWitness(params.get('wit'));
   }).catch(() => { /* the lookup's own error handling has the page */ });
 } else if (blockParam) {
   // ?block= takes every form the search box does, references included -- a
-  // reference carries its own depth, which openLookup reads off it.
-  openLookup(blockParam, indexParam);
+  // reference carries its own depth, which openLookup reads off it. An added
+  // &out / &wit brings that coordinate to the top once the section is open
+  // (the landing a curated row's link makes).
+  const outRaw = parseInt(params.get('out'), 10);
+  Promise.resolve(openLookup(blockParam, indexParam)).then(async () => {
+    if (indexParam >= 0) {
+      if (Number.isFinite(outRaw)) $(`out-${outRaw}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      await landOnWitness(params.get('wit'));
+    }
+  }).catch(() => { /* the lookup's own error handling has the page */ });
 } else {
   openLookup('-1', indexParam);
 }

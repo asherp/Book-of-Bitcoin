@@ -304,7 +304,11 @@ function entryEl(entry, underBook) {
   const row = document.createElement('a');
   row.className = 'toc-entry' + (underBook ? ' under-book' : '') + (entry.bookmark ? ' is-bookmark' : '');
   row.dataset.entryId = entry.id;   // the projected section anchors after the tip's row
-  row.href = entryHref(entry.id, entry.index, entry.page, entry.vout ?? entry.out ?? null, entry.vin ?? null);
+  // The witness coordinate travels two ways: a curated place carries its
+  // footnote number (linked as the letter mark, the citation's own .a), a
+  // bookmark its input index -- the book's &wit= landing reads both.
+  row.href = entryHref(entry.id, entry.index, entry.page, entry.vout ?? entry.out ?? null,
+    entry.wit != null ? footnoteMark(entry.wit) : entry.vin ?? null);
   const t = document.createElement('span'); t.className = 'toc-title';
   // A reader's own bookmark flies the same ribbon it wears in the book, so it's
   // distinguishable from a curated entry even though it sits in reading order.
@@ -1022,8 +1026,14 @@ const bmKey = (b) => (b.page ? `${b.page}@${b.hex}` : b.vin != null ? `${b.hex}:
 const allBookmarks = readBookmarks();
 const bmForPlace = (p) => allBookmarks.find((b) => {
   if (p.address) return false;
-  if (b.vin != null) return false;   // the contents names no witness coordinate, so a witness keep is always its own row
   if (p.page || b.page) return (p.page ?? null) === (b.page ?? null) && p.id === String(b.height);
+  // A witness place matches only a witness keep of the same footnote (by
+  // its stored number; an old keep without one stays its own row) -- and a
+  // witness keep matches nothing else.
+  if (p.wit != null || b.vin != null) {
+    return p.wit != null && b.wn != null && b.wn === p.wit
+      && p.id === String(b.height) && (p.index ?? null) === (b.pos ?? null);
+  }
   if ((p.out ?? null) !== (b.vout ?? null)) return false;
   return p.id === b.hex || (p.id === String(b.height) && (p.index ?? null) === (b.pos ?? null));
 });
@@ -1110,7 +1120,7 @@ const consensusPlaces = () => appendix()
 // Block placements (curated, and bookmarks that stored their reference) are
 // offline, so place them at once; everything else streams in as its lookup
 // resolves.
-for (const p of [...places(), ...consensusPlaces()]) if (!p.address && isBlockId(p.id)) placements.set(placeKey(p), placeOf(Number(p.id), p.index ?? null, p.page, p.out ?? null));
+for (const p of [...places(), ...consensusPlaces()]) if (!p.address && isBlockId(p.id)) placements.set(placeKey(p), placeOf(Number(p.id), p.index ?? null, p.page, p.out ?? null, p.wit ?? null));
 for (const b of bookmarks) {
   if (Number.isInteger(b.height)) bmPlacements.set(bmKey(b), placeOf(b.height, b.pos ?? null, b.page, b.vout ?? null, b.wn ?? null));
 }

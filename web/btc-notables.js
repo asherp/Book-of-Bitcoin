@@ -119,12 +119,10 @@ function normalizePlace(raw, title) {
     if (ref.index === -1 && (place.index !== undefined || place.page !== undefined)) {
       throw new Error(`btc-notables: "${title}" carries an index or page beside a chapter reference (${written}) — name the section in the reference instead`);
     }
-    // The grammar reads a witness coordinate (§85.a), but the curated
-    // pipeline doesn't list one yet -- fail loudly rather than silently
-    // curating the section instead.
-    if (ref.wit != null) {
-      throw new Error(`btc-notables: "${title}" cites a witness footnote (${written}) — the contents cannot list a witness coordinate yet; cite the section`);
-    }
+    // A witness coordinate (§85.a) rides the place as its 1-based footnote
+    // number, the way an output's vout does -- the contents cites it back
+    // as the letter (.a) and opens the book at that footnote.
+    if (ref.wit != null) place.wit = ref.wit;
     if (ref.out !== null) place.out = ref.out;
   }
   if (raw.out !== undefined) place.out = Number(raw.out);
