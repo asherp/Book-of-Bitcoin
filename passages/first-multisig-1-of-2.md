@@ -22,7 +22,7 @@ Block hash, as prose: ⌘²⁰⁴ *The fragile security bicycle leader. Fly are 
 - **merkle root:** ⋔ Tap keep battle to winner. Our flag is twenty. Excess may armor salmon to era. Test yes purpose pumpkin. Dream may get body to timber. Dentist see a public stem. Clap may get metal. Float drive to taste via theme.
   - hex: `8fb786920546a7a81aadd489f83128d4d6b9f25b4cf3fd029db21eacef6bc279`
 - **timestamp:** 2012-01-30 01:58 UTC
-- **difficulty target:** β₅₂ < 2¹⁸⁴·840767 — the block hash above reads below this target — nBits 1a0cd43f — mantissa 840767 shifted up 23 bytes: the target 0000000000000cd43f0000000000000000000000000000000000000000000000, which a valid block hash must read below (52 leading zero bits) — difficulty 1,307,728 (relative to the genesis block)
+- **difficulty target:** β₅₂ < 840767×256²³ — the block hash above reads below this target — nBits 1a0cd43f — mantissa 840767 shifted up 23 bytes: the target 0000000000000cd43f0000000000000000000000000000000000000000000000, which a valid block hash must read below (52 leading zero bits) — difficulty 1,307,728 (relative to the genesis block)
 - **nonce:** η 2²·3⁴·11²·37·1669
 
 ## § 15 — First multisig (1-of-2)

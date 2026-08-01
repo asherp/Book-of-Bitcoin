@@ -22,7 +22,7 @@ Block hash, as prose: ⌘²¹² *Control see kangaroo to dinosaur. Our public ar
 - **merkle root:** ⋔ A grant due get our cousin. Ear may slim sky. The cow is strong. Pie may awake its hidden pulp. The tape may set noble. Pot very rail whale. Tax when see dinosaur. Sign may cook upon garage. Its cap is vast. Lake set the danger. Sir attract gown to cactus.
   - hex: `49991d7653bec6efebee7d11f27ca2dffcc35ebe95ee5eebd602916b2f2fa665`
 - **timestamp:** 2010-11-14 17:59 UTC
-- **difficulty target:** β₄₄ < 2¹⁹³·43·101·109 — the block hash above reads below this target — nBits 1b0e7256 — mantissa 946774 shifted up 24 bytes: the target 00000000000e7256000000000000000000000000000000000000000000000000, which a valid block hash must read below (44 leading zero bits) — difficulty 4,536 (relative to the genesis block)
+- **difficulty target:** β₄₄ < 946774×256²⁴ — the block hash above reads below this target — nBits 1b0e7256 — mantissa 946774 (2·43·101·109) shifted up 24 bytes: the target 00000000000e7256000000000000000000000000000000000000000000000000, which a valid block hash must read below (44 leading zero bits) — difficulty 4,536 (relative to the genesis block)
 - **nonce:** η 2²·3³·1913·5647
 
 ## § 1 — The twice-confirmed coinbases — d5d2…599, first printing
@@ -31,7 +31,7 @@ Transaction id, as prose: ⌘²⁵⁶ *Its office conduct apart prefer axis. Muc
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
-  - script: β₄₄ 2¹⁹³·43·101·109 ⓪
+  - script: β₄₄ 946774×256²⁴ ⓪
   - sequence: ● — final — disables the transaction locktime for this input
 - **output 1:** 50.00000000 ₿
   - script: p⁶⁵ Yes afford dwarf to robot. Weasel endorse to found. A fix is raw. Our twin wheel exist creek to team. Soap yes get defense. A bed is raw. Key pause panda to moral. Combine alarm to afford. Impact see cake via dose out whisper. February work tuna to burst via a clerk. Potato father to observe for pattern. Arena wrestle to gather. Sail may see vintage. Kingdom set an intact north. Hen is unfair to kidney. Its length is big per guy. ∇

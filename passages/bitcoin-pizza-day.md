@@ -22,7 +22,7 @@ Block hash, as prose: ⌘²²¹ *Pop submit word to click. Genre decrease to spo
 - **merkle root:** ⋔ Foam swear to modify for snow. Our elegant ear live program. An alpha plunge faith to cycle. Sir teach to provide. Impact see lady via shell. Virus segment cricket to cradle. Extra much install length.
   - hex: `5c1d2211f598cd6498f42b269fe3ce4a6fdb40eaa638f86a0579c4e63a721b5a`
 - **timestamp:** 2010-05-22 18:16 UTC
-- **difficulty target:** β₃₅ < 2²⁰²·3·11·10729 — the block hash above reads below this target — nBits 1c159c24 — mantissa 1416228 shifted up 25 bytes: the target 00000000159c2400000000000000000000000000000000000000000000000000, which a valid block hash must read below (35 leading zero bits) — difficulty 11.85 (relative to the genesis block)
+- **difficulty target:** β₃₅ < 1416228×256²⁵ — the block hash above reads below this target — nBits 1c159c24 — mantissa 1416228 (2²·3·11·10729) shifted up 25 bytes: the target 00000000159c2400000000000000000000000000000000000000000000000000, which a valid block hash must read below (35 leading zero bits) — difficulty 11.85 (relative to the genesis block)
 - **nonce:** η 5·7·19·282907
 
 ## § 1 — Bitcoin Pizza Day
@@ -31,7 +31,7 @@ Transaction id, as prose: ⌘²⁵⁶ *Its tortoise get the latin bunker. Cry bl
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
-  - script: β₃₅ 2²⁰²·3·11·10729 η2·59
+  - script: β₃₅ 1416228×256²⁵ η2·59
   - sequence: ● — final — disables the transaction locktime for this input
 - **output 1:** 50.99000000 ₿
   - script: p⁶⁵ Agent ask the solid comfort. A velvet bind brief ripple to frown out a hollow solution. Move retreat to frown via section. Plug see a summer to theme. Sense license our muscle. Hurry may work tiger to help. Picnic get ability out zoo. Nose renew search to call. Museum set our ordinary buddy. Yes tell bean to seminar out a minimum. Ban may engage slight to bonus. Ethics may get still via an okay son. An actual notable parade lie. ∇

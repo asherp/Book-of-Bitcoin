@@ -22,7 +22,7 @@ Block hash, as prose: ⌘¹⁸⁷ *Its usual yes pretty swamp volume. A rigid re
 - **merkle root:** ⋔ Its excess may climb to drink. Due soon culture a pop. Sir consider to enjoy out skull. Our potato appear a shoot. Yes gather an oxygen. Web set fantasy to raise. Bracket devote our rigid cereal via its curious math per anchor. Our theme is ago.
   - hex: `1f02125fc392e79ac71a89c594f1e539301a53c1a856ae925e58a3670c61854e`
 - **timestamp:** 2015-12-14 17:24 UTC
-- **difficulty target:** β₆₈ < 2¹⁶⁸·97·9391 — the block hash above reads below this target — nBits 180de64f — mantissa 910927 shifted up 21 bytes: the target 00000000000000000de64f000000000000000000000000000000000000000000, which a valid block hash must read below (68 leading zero bits) — difficulty 79,102,380,900 (relative to the genesis block)
+- **difficulty target:** β₆₈ < 910927×256²¹ — the block hash above reads below this target — nBits 180de64f — mantissa 910927 (97·9391) shifted up 21 bytes: the target 00000000000000000de64f000000000000000000000000000000000000000000, which a valid block hash must read below (68 leading zero bits) — difficulty 79,102,380,900 (relative to the genesis block)
 - **nonce:** η 2³·5·79226183
 
 ## § 1 — BIP65 activation (v4)

@@ -22,7 +22,7 @@ Block hash, as prose: ⌘²¹⁰ *Mom list field to tourist. Son may devote toda
 - **merkle root:** ⋔ Its hamster pepper stomach to hollow. Excess may point the tilt. Sky defy its guilt. List may see the arctic. Cow inject to lend. Click enter lawsuit via steel for section. Our mistake set giant to document. Paddle see zebra via gas.
   - hex: `e3bf3d07d4b0375638d5f1db5255fe07ba2c4cb067cd81b84ee974b6585fb468`
 - **timestamp:** 2010-11-14 08:37 UTC
-- **difficulty target:** β₄₄ < 2¹⁹³·43·101·109 — the block hash above reads below this target — nBits 1b0e7256 — mantissa 946774 shifted up 24 bytes: the target 00000000000e7256000000000000000000000000000000000000000000000000, which a valid block hash must read below (44 leading zero bits) — difficulty 4,536 (relative to the genesis block)
+- **difficulty target:** β₄₄ < 946774×256²⁴ — the block hash above reads below this target — nBits 1b0e7256 — mantissa 946774 (2·43·101·109) shifted up 24 bytes: the target 00000000000e7256000000000000000000000000000000000000000000000000, which a valid block hash must read below (44 leading zero bits) — difficulty 4,536 (relative to the genesis block)
 - **nonce:** η 2·39119·51133
 
 ## § 1 — The twice-confirmed coinbases — e3bf…468, first printing
@@ -31,7 +31,7 @@ Transaction id, as prose: ⌘²⁵⁶ *Its hamster pepper stomach to hollow. Exc
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
-  - script: β₄₄ 2¹⁹³·43·101·109 ⓪
+  - script: β₄₄ 946774×256²⁴ ⓪
   - sequence: ● — final — disables the transaction locktime for this input
 - **output 1:** 50.00000000 ₿
   - script: p⁶⁵ An advice why set yes. A myself. Sign see our gadget. A door coast the clean flower. Our uncle get dune to gold. Any red may keep tortoise. A next set boy. An immense son may cancel leopard. A myself. An immense bean get zebra to bundle. A bleak start pipe barrel. A due may say some skill to cushion. Yes describe smoke via its vivid pan. Each red is vibrant. Dash neither set that clay. Wool goose tornado to cereal. Habit set a bonus. Snack see soul to cactus. ∇

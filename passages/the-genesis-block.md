@@ -21,7 +21,7 @@ Block hash, as prose: ⌘²¹³ *Husband behave actor to hospital. Brass ride al
 - **merkle root:** ⋔ Its desert buyer leg visual. Raise may float twelve. Tortoise ago get dinosaur. A desert phrase seed wish. Lot may assume athlete to bacon. Eye mushroom pony for image per pigeon. Monkey is junior to divorce.
   - hex: `4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b`
 - **timestamp:** 2009-01-03 18:15 UTC
-- **difficulty target:** β₃₂ < 2²⁰⁸·3·5·17·257 — the block hash above reads below this target — nBits 1d00ffff — mantissa 65535 shifted up 26 bytes: the target 00000000ffff0000000000000000000000000000000000000000000000000000, which a valid block hash must read below (32 leading zero bits) — difficulty 1 (relative to the genesis block)
+- **difficulty target:** β₃₂ < 65535×256²⁶ — the block hash above reads below this target — nBits 1d00ffff — mantissa 65535 (3·5·17·257) shifted up 26 bytes: the target 00000000ffff0000000000000000000000000000000000000000000000000000, which a valid block hash must read below (32 leading zero bits) — difficulty 1 (relative to the genesis block)
 - **nonce:** η 19·97·1130351
 
 ## § 1 — The Genesis Block
@@ -30,7 +30,7 @@ Transaction id, as prose: ⌘²⁵⁶ *Its desert buyer leg visual. Raise may fl
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
-  - script: β₃₂ 2²⁰⁸·3·5·17·257 η2² ⁶⁹ “The Times 03/Jan/2009 Chancellor on brink of second bailout for banks”
+  - script: β₃₂ 65535×256²⁶ η2² ⁶⁹ “The Times 03/Jan/2009 Chancellor on brink of second bailout for banks”
   - sequence: ● — final — disables the transaction locktime for this input
 - **output 1:** 50.00000000 ₿
   - script: p⁶⁵ Cop afford detail to satoshi. Giggle torch our piano. Organ ago get coconut. A vast crime equip hotel. Alarm may see hero to pass. A bright cop decorate essay via oxygen. Shift get attitude to autumn. Manual set its strategy for enemy. Ban remove average to oil. Our vicious cow give snap per party via topic. Voyage is dwarf to royal for seminar. The tax is cheap. The ten door are minute to rough. Its narrow theory repeat weasel. Some cop install to theme. ∇

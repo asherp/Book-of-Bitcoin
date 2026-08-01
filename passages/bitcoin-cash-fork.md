@@ -22,7 +22,7 @@ Block hash, as prose: ⌘¹⁸⁵ *Drip have dove to loop. Sand is elegant via r
 - **merkle root:** ⋔ Lie enhance divorce to flag. Album edit to defy. A habit truly size pop. Our cop connect antenna to episode. Sir rotate tribe out radar. Box process a tie. Our pretty pop used cotton. Our female mechanic is nice to gas.
   - hex: `5b65144f6518bf4795abd428acd0c3fb2527e4e5c94b0f5a7366f4826001884a`
 - **timestamp:** 2017-08-01 13:16 UTC
-- **difficulty target:** β₇₁ < 2¹⁶⁸·5·11·1523 — the block hash above reads below this target — nBits 18014735 — mantissa 83765 shifted up 21 bytes: the target 0000000000000000014735000000000000000000000000000000000000000000, which a valid block hash must read below (71 leading zero bits) — difficulty 860,221,984,436 (relative to the genesis block)
+- **difficulty target:** β₇₁ < 83765×256²¹ — the block hash above reads below this target — nBits 18014735 — mantissa 83765 (5·11·1523) shifted up 21 bytes: the target 0000000000000000014735000000000000000000000000000000000000000000, which a valid block hash must read below (71 leading zero bits) — difficulty 860,221,984,436 (relative to the genesis block)
 - **nonce:** η 2·3089·318683
 
 ## § 1 — Bitcoin Cash fork
@@ -31,7 +31,7 @@ Transaction id, as prose: ⌘²⁵⁶ *Its ill yes little get penalty. Our legal
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
-  - script: ■478558 η9883·151937“/BTC.COM/NYA/” A wide war is vibrant. Its sir forget to unfold. Tap dry a liquid. Sky only drift eye. Leaf may get stable to estate. Motion twice see each logic. Duck may allow an atom. The rare record uncover spray. Yes ensure a lamp. Reunion far police an able abandon. Abandon abandon abandon to abandon. An adult copper ignore fame. Mosquito may see ecology. Some abandon abandon to abandon.
+  - script: ■478558 2017-08-01 13:16“/BTC.COM/” An exact skate may get episode. Voice traffic repeat to surge. Manual again see a current machine. Its pelican word to pole. An online camera get stove for alpha. Maple ask bronze to some goddess out guilt. Our sunny place is notable to whale for an idle exercise. Its above may see our row to the cop. ⓪⁷ η49362083·204369941537 ⓪⁴
   - sequence: ● — final — disables the transaction locktime for this input
 - **output 1:** 12.61890202 ₿
   - script: ⌖ h²⁰ A they. Jet may brave bird. Sir cancel language to aunt per police to case out marble. Friend pioneer still to critic. Shallow may equal tea. =

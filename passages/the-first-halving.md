@@ -22,7 +22,7 @@ Block hash, as prose: ⌘²⁰³ *Comfort phone its half damage. Timber may get 
 - **merkle root:** ⋔ Aid may submit a busy market. Pulp tag air to glide. Elbow reflect our spot per spread. Tone is harsh to either bulk. Tea may thrive honey. Purchase is unable to ecology. Media far call an insane length.
   - hex: `3cdd40a60823b1c7356d0987078e9426724c5b3ab439c2d80ad2bdd620e603d8`
 - **timestamp:** 2012-11-28 15:24 UTC
-- **difficulty target:** β₅₃ < 2¹⁸⁵·3·13·4099 — the block hash above reads below this target — nBits 1a04e0ea — mantissa 319722 shifted up 23 bytes: the target 00000000000004e0ea0000000000000000000000000000000000000000000000, which a valid block hash must read below (53 leading zero bits) — difficulty 3,438,909 (relative to the genesis block)
+- **difficulty target:** β₅₃ < 319722×256²³ — the block hash above reads below this target — nBits 1a04e0ea — mantissa 319722 (2·3·13·4099) shifted up 23 bytes: the target 00000000000004e0ea0000000000000000000000000000000000000000000000, which a valid block hash must read below (53 leading zero bits) — difficulty 3,438,909 (relative to the genesis block)
 - **nonce:** η 2²·7·19·23·332611
 
 ## § 1 — The First Halving

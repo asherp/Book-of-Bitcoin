@@ -22,7 +22,7 @@ Block hash, as prose: ⌘¹⁸⁰ *Its dynamic midnight inhale session. Supply m
 - **merkle root:** ⋔ Year get its broccoli to pull. Runway control same out measure. Gaze purse trust to the sunset. Ladder team charge via old. The famous brain may set supreme. Gesture weather the happy tunnel. Knife may abandon jet.
   - hex: `e81ed58f56fc853dfb1a9582264dea3d3e66379dae057be27df7b25eb58ee3fe`
 - **timestamp:** 2020-11-03 08:28 UTC
-- **difficulty target:** β₇₅ < 2¹⁶⁰·1098803 — the block hash above reads below this target — nBits 1710c433 — mantissa 1098803 shifted up 20 bytes: the target 00000000000000000010c4330000000000000000000000000000000000000000, which a valid block hash must read below (75 leading zero bits) — difficulty 16,787,779,609,933 (relative to the genesis block)
+- **difficulty target:** β₇₅ < 1098803×256²⁰ — the block hash above reads below this target — nBits 1710c433 — mantissa 1098803 shifted up 20 bytes: the target 00000000000000000010c4330000000000000000000000000000000000000000, which a valid block hash must read below (75 leading zero bits) — difficulty 16,787,779,609,933 (relative to the genesis block)
 - **nonce:** η 3²·691·488503
 
 ## § 1 — Difficulty −16.05%
@@ -31,7 +31,7 @@ Transaction id, as prose: ⌘²⁵⁶ *Demand get soda to height. Our hunt are e
 
 - **version:** 2
 - **input 1:** coinbase (∅ — no previous output; new coin)
-  - script: ■655200 η233·1327·5189“sz/BTC.com/” Its wide tax is vibrant. Pop forget other due. Its cap may argue anxiety. An own pulp lock outside. A vacant lot is okay. Guy enter a lazy repair to dilemma via slight. Tooth drip its awake jar. Tap modify liquid to canoe for the science. Pepper get scene to abandon per abandon to alien. Monster invest accident via input. The mother great may inflict length. Our abandon would abandon abandon.
+  - script: ■655200 2020-11-03 08:28η3⁶·43 “/BTC.com/” Its wide tax is vibrant. Pop forget other due. Its cap may argue anxiety. An own pulp lock outside. A vacant lot is okay. Guy enter a lazy repair to dilemma via slight. Tooth drip its awake jar. Tap modify liquid to canoe for the science. Pepper get scene to abandon per abandon to alien. Monster invest accident via input. The mother great may inflict length. ⓪⁵
   - sequence: ● — final — disables the transaction locktime for this input
   - witness: see footnote a
 - **output 1:** 8.33134574 ₿

@@ -22,7 +22,7 @@ Block hash, as prose: ⌘²⁰¹ *Ban add eyebrow to space. Our cow are sunny. O
 - **merkle root:** ⋔ Shine may see industry to slush. An awkward vehicle strike series. A bid far build our moon. Cow pave to thrive. A big bit may scatter to train. Sky twice differ the analyst. Some purpose are old. Sense say drift to scale for scale.
   - hex: `06b085feeb6168ce5508eed13ace079c7086f2d11db00031ae1f6f083167eec5`
 - **timestamp:** 2011-08-05 08:42 UTC
-- **difficulty target:** β₅₂ < 2¹⁸⁴·3·29·6691 — the block hash above reads below this target — nBits 1a08e1e5 — mantissa 582117 shifted up 23 bytes: the target 00000000000008e1e50000000000000000000000000000000000000000000000, which a valid block hash must read below (52 leading zero bits) — difficulty 1,888,787 (relative to the genesis block)
+- **difficulty target:** β₅₂ < 582117×256²³ — the block hash above reads below this target — nBits 1a08e1e5 — mantissa 582117 (3·29·6691) shifted up 23 bytes: the target 00000000000008e1e50000000000000000000000000000000000000000000000, which a valid block hash must read below (52 leading zero bits) — difficulty 1,888,787 (relative to the genesis block)
 - **nonce:** η 5·79·149·40751
 
 ## § 1 — Eligius

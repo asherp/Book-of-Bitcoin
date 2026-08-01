@@ -22,7 +22,7 @@ Block hash, as prose: ⌘¹⁷⁷ *Snow pair roof to wrist. Access may set salmo
 - **merkle root:** ⋔ Its cattle phone culture to market. Energy purchase smoke per junk. Timber may set tiger to tuna. A next name focus category. Umbrella pluck an awful flower. The bright one answer deer to gas.
   - hex: `534e13aa090e6615a2a6610f49b42ca9caa93f3ce2ca33735ca11444d6705424`
 - **timestamp:** 2021-05-30 01:18 UTC
-- **difficulty target:** β₇₆ < 2¹⁶⁰·3²·97379 — the block hash above reads below this target — nBits 170d5f7b — mantissa 876411 shifted up 20 bytes: the target 0000000000000000000d5f7b0000000000000000000000000000000000000000, which a valid block hash must read below (76 leading zero bits) — difficulty 21,047,730,572,452 (relative to the genesis block)
+- **difficulty target:** β₇₆ < 876411×256²⁰ — the block hash above reads below this target — nBits 170d5f7b — mantissa 876411 (3²·97379) shifted up 20 bytes: the target 0000000000000000000d5f7b0000000000000000000000000000000000000000, which a valid block hash must read below (76 leading zero bits) — difficulty 21,047,730,572,452 (relative to the genesis block)
 - **nonce:** η 2·3·5·62544679
 
 ## § 1 — Difficulty −15.97%
@@ -31,7 +31,7 @@ Transaction id, as prose: ⌘²⁵⁶ *Glance spice its canvas blanket. Dolphin 
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
-  - script: ■685440Its coconut due sting an opera. Cop surround a digital creek. Our chronic melody print pottery. Our whip may alarm a quote. “I]ϩ<1” Its title may get latin. Its true iron ought warm a trigger. The pan is large. A brisk female may dwarf dune. Abandon ought abandon joke to layer. Son become an amount. “/F2Pool/” Its bamboo may get pay. “Mined by manasi20s” Abandon may abandon abandon to abandon. Abandon abandon abandon via abandon. Abandon abandon to abandon. Abandon is able out lesson. Resource see leopard to abandon.
+  - script: ■685440Coconut may sting our cut opera. Cow surround a digital creek. A lot is chronic. Melody print pottery to whip. Alarm may set region. Puzzle see dirt to chest out cradle to blast. The typical engine is real. A rigid dutch trouble time. Point may see census to cactus. Abandon about get second. Velvet pair to divorce. “/F2Pool/” η2·3² “Mined by manasi20s” ⓪¹⁷ η13·956205529 ⓪¹
   - sequence: ■0 — replaceable; relative locktime 0 blocks after the input's confirmation
   - witness: see footnote a
 - **output 1:** 6.92922309 ₿

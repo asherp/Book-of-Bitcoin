@@ -22,7 +22,7 @@ Block hash, as prose: ⌘¹⁷⁸ *Its pitch may burst mandate. Pop lend to clai
 - **merkle root:** ⋔ Exhibit essay rub into jeans. Essence is far during wish. Its reason cable dolphin. Caution off see world. Anchor is antique to tumble. Street page energy out corn. Pond calm hire to gas.
   - hex: `031b417c3a1828ddf3d6527fc210daafcc9218e81f98257f88d4d43bd7a5894f`
 - **timestamp:** 2024-04-20 00:09 UTC
-- **difficulty target:** β₇₈ < 2¹⁶⁰·67·3187 — the block hash above reads below this target — nBits 17034219 — mantissa 213529 shifted up 20 bytes: the target 0000000000000000000342190000000000000000000000000000000000000000, which a valid block hash must read below (78 leading zero bits) — difficulty 86,388,558,925,171 (relative to the genesis block)
+- **difficulty target:** β₇₈ < 213529×256²⁰ — the block hash above reads below this target — nBits 17034219 — mantissa 213529 (67·3187) shifted up 20 bytes: the target 0000000000000000000342190000000000000000000000000000000000000000, which a valid block hash must read below (78 leading zero bits) — difficulty 86,388,558,925,171 (relative to the genesis block)
 - **nonce:** η 5·19211·40939
 
 ## § 1 — The Fourth Halving
@@ -31,7 +31,7 @@ Transaction id, as prose: ⌘²⁵⁶ *Its sorry noodle plate tax. The vacant fr
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
-  - script: ■840000Its boil may get pay. “/ViaBTC/Mined by buzz120/,” Aid wide see its vibrant jet. Cow forget each chuckle. Relief off attend switch. Pattern is main to great. Son may choose a metal cruise for jump. Drop urge tumble to arm via a physical. A little target set maximum. Base see the wood. A same advice may abandon abandon. Abandon abandon abandon to our aware share to crane. Abandon slow spice a giraffe. Cushion may see memory. An advice ought get tea. A myself. Abandon abandon abandon to abandon. Abandon may get bed.
+  - script: ■840000η5² “/ViaBTC/Mined by buzz120/” Coconut may sting opera to surface. Dwarf pride skate via inquiry. Its ticket appear crash. Couple dream gasp to pistol. The shrug brief to know. The faith is frozen. Buzz below set the usage. Due enrich to obey. Trust set warfare out cactus. ⓪⁷ The aware share crane abandon. A slow spice see giraffe to cushion via memory to advice. A myself. ⓪⁶
   - sequence: ● — final — disables the transaction locktime for this input
   - witness: see footnote a
 - **output 1:** 40.75061499 ₿

@@ -22,7 +22,7 @@ Block hash, as prose: ⌘²¹⁵ *Frost see junior to essay. Alien club our chim
 - **merkle root:** ⋔ Can picnic unknown to melody. A slice is cut via ticket out humor. Son bless a brisk crop. Airport may get its giant project. Pupil set enemy to scrap. A yes unlock subject. An abstract glide replace device. File may see length.
   - hex: `8c55796c8bb103fc1aee0b7ed25bc1da30167c461cbdc05bc3b74cc5b787f420`
 - **timestamp:** 2010-08-14 23:05 UTC
-- **difficulty target:** β₄₀ < 2²⁰³·3·5·397 — the block hash above reads below this target — nBits 1c00ba18 — mantissa 47640 shifted up 25 bytes: the target 0000000000ba1800000000000000000000000000000000000000000000000000, which a valid block hash must read below (40 leading zero bits) — difficulty 352.16 (relative to the genesis block)
+- **difficulty target:** β₄₀ < 47640×256²⁵ — the block hash above reads below this target — nBits 1c00ba18 — mantissa 47640 (2³·3·5·397) shifted up 25 bytes: the target 0000000000ba1800000000000000000000000000000000000000000000000000, which a valid block hash must read below (40 leading zero bits) — difficulty 352.16 (relative to the genesis block)
 - **nonce:** η 47·716549
 
 ## § 3 — Supply cap bug fix

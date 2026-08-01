@@ -22,7 +22,7 @@ Block hash, as prose: ⌘²¹⁵ *Its option may get affair. Cow collect toilet 
 - **merkle root:** ⋔ Cop protect the sudden cop. Its hit are loyal. Ski how bike yard. A future autumn see sheriff. Finger get its brass member. Ocean edge our future turtle. Panther may dress cross. Resource prison clay to gesture via our theme.
   - hex: `5f5854b0ca5bd054c89f57a7978c8e69c56cdc8ac57da097fd6321651212bbac`
 - **timestamp:** 2010-08-15 23:53 UTC
-- **difficulty target:** β₄₀ < 2²⁰¹·37·443 — the block hash above reads below this target — nBits 1c00800e — mantissa 32782 shifted up 25 bytes: the target 0000000000800e00000000000000000000000000000000000000000000000000, which a valid block hash must read below (40 leading zero bits) — difficulty 511.77 (relative to the genesis block)
+- **difficulty target:** β₄₀ < 32782×256²⁵ — the block hash above reads below this target — nBits 1c00800e — mantissa 32782 (2·37·443) shifted up 25 bytes: the target 0000000000800e00000000000000000000000000000000000000000000000000, which a valid block hash must read below (40 leading zero bits) — difficulty 511.77 (relative to the genesis block)
 - **nonce:** η 2·3·11·50507789
 
 ## § 1 — Script opcode purge
@@ -31,7 +31,7 @@ Transaction id, as prose: ⌘²⁵⁶ *Its rural glass egg to harbor. Pop awake 
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
-  - script: β₄₀ 2²⁰¹·37·443 η2²·3²·43
+  - script: β₄₀ 32782×256²⁵ η2²·3²·43
   - sequence: ● — final — disables the transaction locktime for this input
 - **output 1:** 50.00000000 ₿
   - script: p⁶⁵ Aid again see its urban jet. Cow ask to enroll. Rich far fetch glue. Cattle get biology to satoshi. Another palm due clip its raw horror. A red limit are famous. An annual yes accuse egg. Skate bid to ignore. Dance see laptop for water out path. Our eternal surprise tape son. Its soft bit is alone. Pitch quick set sweet. Twin get a buffalo. Client see sibling to mango. Cow equip the random die. Aid thrive pudding to breeze. Rub far betray its illegal gas. ∇

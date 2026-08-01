@@ -22,7 +22,7 @@ Block hash, as prose: ⌘¹⁸¹ *Aid may prevent quality to acid. Game get rice
 - **merkle root:** ⋔ Code box the olympic smile. A draw see gospel to flip via some olive to song. A row are tragic. Its journey next scout humor. The useless map is tragic. Radio below sock spike. Ramp far see chest. Album abandon a tea.
   - hex: `78014f16eb68389bc2b037073cde14accae1dd3ccfd14496c92654666952032d`
 - **timestamp:** 2021-07-03 06:34 UTC
-- **difficulty target:** β₇₅ < 2¹⁶¹·642151 — the block hash above reads below this target — nBits 171398ce — mantissa 1284302 shifted up 20 bytes: the target 0000000000000000001398ce0000000000000000000000000000000000000000, which a valid block hash must read below (75 leading zero bits) — difficulty 14,363,025,673,660 (relative to the genesis block)
+- **difficulty target:** β₇₅ < 1284302×256²⁰ — the block hash above reads below this target — nBits 171398ce — mantissa 1284302 (2·642151) shifted up 20 bytes: the target 0000000000000000001398ce0000000000000000000000000000000000000000, which a valid block hash must read below (75 leading zero bits) — difficulty 14,363,025,673,660 (relative to the genesis block)
 - **nonce:** η 3·13·65447353
 
 ## § 1 — Difficulty −27.94%
@@ -31,7 +31,7 @@ Transaction id, as prose: ⌘²⁵⁶ *Hurdle may space some autumn. Our urban s
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
-  - script: ■689472Its brand may get pay. “Mined by AntPool720” Object abandon domain to plug. Staff may set midnight. Turtle soap horse to its funny sauce. Yes renew exhaust to now via alcohol to pistol. Pact knock to swear. Monkey may inspire powder per mobile. Our current is notable. Stand learn to core via shaft. Our tap may bless. A myself. Music may get the acoustic abandon. Abandon may abandon abandon about spread to abandon. The able scale divorce abandon.
+  - script: ■689472η3³ “Mined by AntPool” The damp muscle champion abandon. An awake trust relax our far cart to the wide pop. A vibrant fork nurse husband. Son collect its fatigue. Total not dose citizen. Tray may see galaxy to report. Cat front to prevent. Glory snow our certain cry via cabbage. Metal raise a shine. Goose piece its scene to jet. ⓪⁷ η2²·3·5·24624479987 ⓪²
   - sequence: ● — final — disables the transaction locktime for this input
   - witness: see footnote a
 - **output 1:** 6.58657646 ₿

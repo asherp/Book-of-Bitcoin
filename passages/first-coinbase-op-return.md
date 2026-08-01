@@ -22,7 +22,7 @@ Block hash, as prose: ⌘¹⁹⁶ *Half may trip our gospel primary. Its start m
 - **merkle root:** ⋔ Its river due chair a nation. A civil fiber submit lift. Pistol permit to assume per artefact. Run see shrimp to fabric out scare. Penalty hold to prosper via an aspect. Fame rule skull to its lens. Abandon see the pay.
   - hex: `08a095d33ba93590956c1415f0a272acde33bc21a32b5d20b05bc5144dbac4ba`
 - **timestamp:** 2013-07-16 06:04 UTC
-- **difficulty target:** β₅₆ < 2¹⁸⁴·5²·41² — the block hash above reads below this target — nBits 1a00a429 — mantissa 42025 shifted up 23 bytes: the target 00000000000000a4290000000000000000000000000000000000000000000000, which a valid block hash must read below (56 leading zero bits) — difficulty 26,162,876 (relative to the genesis block)
+- **difficulty target:** β₅₆ < 42025×256²³ — the block hash above reads below this target — nBits 1a00a429 — mantissa 42025 (5²·41²) shifted up 23 bytes: the target 00000000000000a4290000000000000000000000000000000000000000000000, which a valid block hash must read below (56 leading zero bits) — difficulty 26,162,876 (relative to the genesis block)
 - **nonce:** η 5·157·347·7151
 
 ## § 1 — First coinbase OP_RETURN
@@ -31,7 +31,7 @@ Transaction id, as prose: ⌘²⁵⁶ *Cop tell ring to strategy. Our smoke are 
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
-  - script: ■246816Its coconut may sting length. “mmyHxb” Pair engage its rival priority. Wealth provide to exist. Cinnamon ago get ceiling. A mechanic flash topple hero. Such property jazz cinnamon to bonus. Economy share theme out length. Abandon abandon abandon to abandon for account. “/P2SH/” Its arch may get pay. “[P2PCOINv0]” Its tax may agree cow. “(kjj)”
+  - script: ■246816η2²·311·10061 “mmyHxb” Pair engage its rival priority. Wealth provide to exist. Cinnamon ago get ceiling. A mechanic flash topple hero. Such property jazz cinnamon to bonus. Economy share theme out length. ⓪⁷ η2·3·37·3630371083271213 “[P2PCOINv0]” η3·5·29·300589·348259
   - sequence: ● — final — disables the transaction locktime for this input
 - **output 1:** 0.00059126 ₿
   - script: ⧉ ⌖ h²⁰ Menu is huge to an airport. Ear replace bit among duck. Sir omit the eternal hit about out. Pop evoke point to opera via wagon. The high object may set a sky. ≡ ∇

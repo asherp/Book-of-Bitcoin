@@ -22,7 +22,7 @@ Block hash, as prose: ⌘¹⁷⁸ *Hospital may exchange our social era. Tube se
 - **merkle root:** ⋔ Its artwork may get liberty. Its genuine above like our humble midnight. The fyi is angry. A grant may doctor to scatter. Cow caught a soft glow via grace. Year get setup to anchor. The license indicate display for width. Egg may set cactus.
   - hex: `b191f5f973b9040e81c4f75f99c7e43c92010ba8654718e3dd1a4800851d300d`
 - **timestamp:** 2020-05-11 19:23 UTC
-- **difficulty target:** β₇₅ < 2¹⁶⁰·163·7027 — the block hash above reads below this target — nBits 17117a39 — mantissa 1145401 shifted up 20 bytes: the target 000000000000000000117a390000000000000000000000000000000000000000, which a valid block hash must read below (75 leading zero bits) — difficulty 16,104,807,485,529 (relative to the genesis block)
+- **difficulty target:** β₇₅ < 1145401×256²⁰ — the block hash above reads below this target — nBits 17117a39 — mantissa 1145401 (163·7027) shifted up 20 bytes: the target 000000000000000000117a390000000000000000000000000000000000000000, which a valid block hash must read below (75 leading zero bits) — difficulty 16,104,807,485,529 (relative to the genesis block)
 - **nonce:** η 2·5·230218297
 
 ## § 1 — The Third Halving
@@ -31,7 +31,7 @@ Transaction id, as prose: ⌘²⁵⁶ *Gravity circle its pottery to soul. Echo 
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
-  - script: ■630000Its brand may get pay. “Mined by AntPool119” Puppy too address our siege. Son may attend stone. Nerve see a turtle. Soap yes get honey. Few gown see boy. Arctic under set an elegant favorite. Link use to speak. Range supply bargain per exchange out theme. Sibling couch to total until skate. Filter set reunion to assist out advice to abandon. Abandon may abandon abandon about cook. Length may get lens to cart out layer to each anxiety.
+  - script: ■630000η3³ “Mined by AntPool” Its couple may mean high. Pop absorb its velvet. Cow admit culture to pink. A wide tap is vibrant. Pop forget fever to bone. Effort drift kite for music per bench. The calm desk get injury. Property reopen the lucky father. Job cradle to equip. A west romance get the income. A better row may unlock lock to library. ⓪⁷ η3²·179·267214182982529
   - sequence: ● — final — disables the transaction locktime for this input
   - witness: see footnote a
 - **output 1:** 7.15968084 ₿
@@ -39,7 +39,7 @@ Transaction id, as prose: ⌘²⁵⁶ *Gravity circle its pottery to soul. Echo 
 - **output 2:** 0 ₿
   - script: ¶ ⋔w h³² Comic rough get our vicious flock. Hockey set furnace to estate. Our cheap infant far conduct denial. Arm sting a silent bulk. A loud zero set danger. Tea truly get strategy. The aerobic elbow plate length.
 - **output 3:** 0 ₿
-  - script: ¶ ³⁶ “0	XDp”
+  - script: ¶ ³⁶ Its rigid angle swap to gain. Canyon see satoshi for average. The mercy gain february. The cow is insane. A state penalty may please language. Dog set company to ridge. Its cow across rack either lot. Cow explain picture to season. Bullet may grab length.
 - **locktime:** □ — no locktime — final with respect to time
 
 ### Witness footnotes

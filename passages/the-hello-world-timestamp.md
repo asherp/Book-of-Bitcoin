@@ -22,7 +22,7 @@ Block hash, as prose: ⌘¹⁸⁶ *Bomb due bracket its rigid red. Ban may devel
 - **merkle root:** ⋔ Due about warm its set badge. Piece is public to the cotton. Rule egg to retreat. Hit enhance pie among file. Proof just set garbage. Visual define armor to injury. Number may learn credit. Our hotel divorce son.
   - hex: `8a1b66ecb7cbd07d8139a7e7d7f2c41aab1f5009b8364aaf61d03ad245e47e00`
 - **timestamp:** 2015-05-28 15:41 UTC
-- **difficulty target:** β₆₇ < 2¹⁶⁸·743·1987 — the block hash above reads below this target — nBits 181686f5 — mantissa 1476341 shifted up 21 bytes: the target 00000000000000001686f5000000000000000000000000000000000000000000, which a valid block hash must read below (67 leading zero bits) — difficulty 48,807,487,245 (relative to the genesis block)
+- **difficulty target:** β₆₇ < 1476341×256²¹ — the block hash above reads below this target — nBits 181686f5 — mantissa 1476341 (743·1987) shifted up 21 bytes: the target 00000000000000001686f5000000000000000000000000000000000000000000, which a valid block hash must read below (67 leading zero bits) — difficulty 48,807,487,245 (relative to the genesis block)
 - **nonce:** η 2·5·17·24363373
 
 ## § 1352 — The Hello World timestamp

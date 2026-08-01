@@ -22,7 +22,7 @@ Block hash, as prose: ⌘¹⁸⁵ *A domain may govern to approve. Due erupt tow
 - **merkle root:** ⋔ Mistake set our dutch razor. The son is lunar. Jacket collect a benefit. Ankle yes get autumn. Clay point our dial. Tank may find the winter audit. Path may squeeze series. Stool convince to spice. The cow evolve to divorce.
   - hex: `8a13a3f9326b1073faa078007fadda8d1e9d46a50f4948055b7087c2ca8ee88d`
 - **timestamp:** 2017-07-23 04:46 UTC
-- **difficulty target:** β₇₁ < 2¹⁷⁰·22391 — the block hash above reads below this target — nBits 18015ddc — mantissa 89564 shifted up 21 bytes: the target 0000000000000000015ddc000000000000000000000000000000000000000000, which a valid block hash must read below (71 leading zero bits) — difficulty 804,525,194,568 (relative to the genesis block)
+- **difficulty target:** β₇₁ < 89564×256²¹ — the block hash above reads below this target — nBits 18015ddc — mantissa 89564 (2²·22391) shifted up 21 bytes: the target 0000000000000000015ddc000000000000000000000000000000000000000000, which a valid block hash must read below (71 leading zero bits) — difficulty 804,525,194,568 (relative to the genesis block)
 - **nonce:** η 2·3²·7·13·37·30241
 
 ## § 1 — BIP91 activation (SegWit mandate)
@@ -31,7 +31,7 @@ Transaction id, as prose: ⌘²⁵⁶ *A lab due case its flame. Ear define our 
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
-  - script: ■477120 η2³·187598149“/BATPOOL/NYA/” Due wide get its vibrant red. Cop forget juice to brain. An elder tortoise too set crisp. Word get video to elite. A crazy color alter the sunny guy. A raw pioneer why neglect choice. Maid may clump sphere to runway. Stereo see fame via style. Its cap are able. Abandon abandon to abandon. Abandon abandon the acoustic father for poverty. Crawl quote the length. Our abandon abandon to abandon.
+  - script: ■477120 2017-07-23 04:46“/BATPOOL/NYA/” A wide war is vibrant. Cow forget juice to brain. Elder see a tortoise. Crisp yes word video. Our elite crazy color to alter. The map is sunny for hit. A raw pioneer neglect choice. Maid clump sphere to runway. A stereo fame too style the able pop. ⓪⁷ η2·3·12323·5161630937 ⓪⁵
   - sequence: ● — final — disables the transaction locktime for this input
 - **output 1:** 12.55159445 ₿
   - script: ⧉ ⌖ h²⁰ Day box more keen post. Casino rain some sock to run. Leisure crouch to derive. Symbol may tone some way. ≡ ∇

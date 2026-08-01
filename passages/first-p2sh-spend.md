@@ -22,7 +22,7 @@ Block hash, as prose: ⌘²⁰⁴ *The knock too see body. All dove uniform floa
 - **merkle root:** ⋔ Cop caught the actual private. Cross act piano to despair. Forward ago deal bulb. Yes inspire to melt. A path rather case our velvet. Its awkward slogan tail to smooth. Scheme see coconut for wood. Its gas is out.
   - hex: `4bff590a7c66757fd91090cf88640f5a45d5bd2338de020f4827009aac5e6024`
 - **timestamp:** 2012-04-08 00:54 UTC
-- **difficulty target:** β₅₂ < 2¹⁸⁵·3·113·997 — the block hash above reads below this target — nBits 1a0a507e — mantissa 675966 shifted up 23 bytes: the target 0000000000000a507e0000000000000000000000000000000000000000000000, which a valid block hash must read below (52 leading zero bits) — difficulty 1,626,553 (relative to the genesis block)
+- **difficulty target:** β₅₂ < 675966×256²³ — the block hash above reads below this target — nBits 1a0a507e — mantissa 675966 (2·3·113·997) shifted up 23 bytes: the target 0000000000000a507e0000000000000000000000000000000000000000000000, which a valid block hash must read below (52 leading zero bits) — difficulty 1,626,553 (relative to the genesis block)
 - **nonce:** η 5·23·97·265493
 
 ## § 12 — First P2SH spend

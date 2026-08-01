@@ -22,7 +22,7 @@ Block hash, as prose: ⌘²²⁴ *Upgrade birth cash to garbage. Our sin is unha
 - **merkle root:** ⋔ Yellow too list a crazy. Son may appear canvas. Frame wet a lecture. Sense indicate the arch. Frog may get sweet to orbit. Joy see uncle for recipe. Board is strong to actress. Grace bind the rapid parade.
   - hex: `7dac2c5666815c17a3b36427de37bb9d2e2c5ccec3f8633eb91a4205cb4c10ff`
 - **timestamp:** 2009-01-12 03:30 UTC
-- **difficulty target:** β₃₂ < 2²⁰⁸·3·5·17·257 — the block hash above reads below this target — nBits 1d00ffff — mantissa 65535 shifted up 26 bytes: the target 00000000ffff0000000000000000000000000000000000000000000000000000, which a valid block hash must read below (32 leading zero bits) — difficulty 1 (relative to the genesis block)
+- **difficulty target:** β₃₂ < 65535×256²⁶ — the block hash above reads below this target — nBits 1d00ffff — mantissa 65535 (3·5·17·257) shifted up 26 bytes: the target 00000000ffff0000000000000000000000000000000000000000000000000000, which a valid block hash must read below (32 leading zero bits) — difficulty 1 (relative to the genesis block)
 - **nonce:** η 2³·3·241·326663
 
 ## § 2 — Hal Finney transaction

@@ -22,7 +22,7 @@ Block hash, as prose: ⌘¹⁷⁹ *Hobby spirit its copy to state. Coin see toma
 - **merkle root:** ⋔ The sir attract to accuse. Issue phone to predict. Cap off see favorite. Sadness is noble to an one auto. Quote pretty budget nod. The jealous loop may see seminar. Cop deny shaft to jungle. Celery loan a noble cactus.
   - hex: `6925065182bc135787c31fe41d3ba20a583e54b395ef0595329bcad1da35c00e`
 - **timestamp:** 2023-02-14 20:02 UTC
-- **difficulty target:** β₇₇ < 2¹⁶⁰·11·113·379 — the block hash above reads below this target — nBits 17073039 — mantissa 471097 shifted up 20 bytes: the target 0000000000000000000730390000000000000000000000000000000000000000, which a valid block hash must read below (77 leading zero bits) — difficulty 39,156,400,059,293 (relative to the genesis block)
+- **difficulty target:** β₇₇ < 471097×256²⁰ — the block hash above reads below this target — nBits 17073039 — mantissa 471097 (11·113·379) shifted up 20 bytes: the target 0000000000000000000730390000000000000000000000000000000000000000, which a valid block hash must read below (77 leading zero bits) — difficulty 39,156,400,059,293 (relative to the genesis block)
 - **nonce:** η 2⁷·8106583
 
 ## § 732 — Sermon on the Mount

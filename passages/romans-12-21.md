@@ -22,7 +22,7 @@ Block hash, as prose: ⌘¹⁸⁰ *Milk away get our black lens. Van cave its ma
 - **merkle root:** ⋔ Hobby set our awful moment. Apology may set broom. Cube tunnel salmon to snack for coffee. Tap perfect firm to ritual via its home chef. Device giggle the vast caution. Bed too excite brown. Map not settle rookie. Our abandon is pop.
   - hex: `f0ee88d161a79234fe61e5d109daa8ab2b8ca605cdf3a5fa6acc31853b16426c`
 - **timestamp:** 2021-01-18 23:28 UTC
-- **difficulty target:** β₇₆ < 2¹⁶⁰·3·23·12973 — the block hash above reads below this target — nBits 170da8a1 — mantissa 895137 shifted up 20 bytes: the target 0000000000000000000da8a10000000000000000000000000000000000000000, which a valid block hash must read below (76 leading zero bits) — difficulty 20,607,418,304,386 (relative to the genesis block)
+- **difficulty target:** β₇₆ < 895137×256²⁰ — the block hash above reads below this target — nBits 170da8a1 — mantissa 895137 (3·23·12973) shifted up 20 bytes: the target 0000000000000000000da8a10000000000000000000000000000000000000000, which a valid block hash must read below (76 leading zero bits) — difficulty 20,607,418,304,386 (relative to the genesis block)
 - **nonce:** η 3·5·67·1787011
 
 ## § 3 — Romans 12:21

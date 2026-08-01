@@ -22,7 +22,7 @@ Block hash, as prose: ⌘¹⁷⁹ *Duty may bar a heavy letter. The due twice pl
 - **merkle root:** ⋔ The jewel too gaze balcony. Our huge wise divorce pluck. A hungry magnet twice give bed. A merry couple may set potato to such dial. Warfare not exclude old. Divorce may see library to bulb. Lip due have divorce.
   - hex: `6ada3b10082068de09f7e819b65113d3c58969fd857aab2980c65f374714ec77`
 - **timestamp:** 2021-11-14 05:15 UTC
-- **difficulty target:** β₇₆ < 2¹⁶¹·3²·45197 — the block hash above reads below this target — nBits 170c69ea — mantissa 813546 shifted up 20 bytes: the target 0000000000000000000c69ea0000000000000000000000000000000000000000, which a valid block hash must read below (76 leading zero bits) — difficulty 22,674,148,233,453 (relative to the genesis block)
+- **difficulty target:** β₇₆ < 813546×256²⁰ — the block hash above reads below this target — nBits 170c69ea — mantissa 813546 (2·3²·45197) shifted up 20 bytes: the target 0000000000000000000c69ea0000000000000000000000000000000000000000, which a valid block hash must read below (76 leading zero bits) — difficulty 22,674,148,233,453 (relative to the genesis block)
 - **nonce:** η 2·3·11·151·141511
 
 ## § 2 — Taproot activation

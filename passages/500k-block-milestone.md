@@ -22,7 +22,7 @@ Block hash, as prose: ⌘¹⁸² *Affair may uncover a chronic major. Crystal is
 - **merkle root:** ⋔ Buyer bag its kitten to knock. Our ear already people bit. Sir submit work to clay via snow. Sir reduce daughter to seed. Vacuum dawn husband per fabric. A frog set century. Behind charge mixture to feel per cactus.
   - hex: `31951c69428a95a46b517ffb0de12fec1bd0b2392aec07b64573e03ded31621f`
 - **timestamp:** 2017-12-18 18:35 UTC
-- **difficulty target:** β₇₂ < 2¹⁶⁸·3·12823 — the block hash above reads below this target — nBits 18009645 — mantissa 38469 shifted up 21 bytes: the target 0000000000000000009645000000000000000000000000000000000000000000, which a valid block hash must read below (72 leading zero bits) — difficulty 1,873,105,475,222 (relative to the genesis block)
+- **difficulty target:** β₇₂ < 38469×256²¹ — the block hash above reads below this target — nBits 18009645 — mantissa 38469 (3·12823) shifted up 21 bytes: the target 0000000000000000009645000000000000000000000000000000000000000000, which a valid block hash must read below (72 leading zero bits) — difficulty 1,873,105,475,222 (relative to the genesis block)
 - **nonce:** η 3·383·1357753
 
 ## § 1 — 500K block milestone
@@ -31,7 +31,7 @@ Transaction id, as prose: ⌘²⁵⁶ *The stock unveil to adjust. Chaos may fin
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
-  - script: ■500000 η3·504540709“c/BTC.COM/” Due wide get its vibrant fork. Knife auction drop to track. The dance thank luxury. Man may see junior. Suspect shall egg dragon to light. West panic uncle for a rare strategy. A pop estate is jealous. A son far crumble our lot. A they. Ripple may get leopard. Abandon would abandon abandon. Each abandon abandon abuse to draft. Our heavy drill cage abandon per abandon. Abandon may abandon yes.
+  - script: ■500000 2017-12-18 18:35η3²·11 “/BTC.COM/” A wide war is vibrant. Fork knife auction to drop. Track dance to thank via luxury. A man set junior to suspect. Egg get dragon per light. The west panic uncle. Our rare strategy get estate. Its jealous son crumble lot. A they. Its ripple yet see the leopard. ⓪⁷ η443·13933·111625567 ⓪⁵
   - sequence: ● — final — disables the transaction locktime for this input
   - witness: see footnote a
 - **output 1:** 15.89351625 ₿

@@ -22,7 +22,7 @@ Block hash, as prose: ⌘¹⁸⁷ *Pop remember post to magnet. Color busy to be
 - **merkle root:** ⋔ What visual surround town to marriage. Bus thank our crucial inch per cigar for a genuine oil. Cop loud mistake a polar rubber. Mail too man find. Die not confirm damage. Device found to scale.
   - hex: `0e57797073975ad93086e6dde91b43e84c851d4572a3f1f73d8428736a9fdef9`
 - **timestamp:** 2016-07-04 23:16 UTC
-- **difficulty target:** β₆₉ < 2¹⁶⁸·337661 — the block hash above reads below this target — nBits 180526fd — mantissa 337661 shifted up 21 bytes: the target 00000000000000000526fd000000000000000000000000000000000000000000, which a valid block hash must read below (69 leading zero bits) — difficulty 213,398,925,331 (relative to the genesis block)
+- **difficulty target:** β₆₉ < 337661×256²¹ — the block hash above reads below this target — nBits 180526fd — mantissa 337661 shifted up 21 bytes: the target 00000000000000000526fd000000000000000000000000000000000000000000, which a valid block hash must read below (69 leading zero bits) — difficulty 213,398,925,331 (relative to the genesis block)
 - **nonce:** η 2·5·135315091
 
 ## § 1 — CSV activation (version bits)
@@ -31,7 +31,7 @@ Transaction id, as prose: ⌘²⁵⁶ *Input display ecology to matrix. State ma
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
-  - script: ■419328Abandon may camp knee to visa. Icon essay ramp via pig. Its arrow burst save. Puppy see sport to abandon. Abandon abandon abandon via abandon. “ckpool/Kano /BEBOP/”
+  - script: ■419328Abandon may camp knee to visa. Icon essay ramp via pig. Its arrow burst save. Puppy see sport to abandon. ⓪⁶ η2·5 “ckpool” “/Kano /BEBOP/”
   - sequence: ● — final — disables the transaction locktime for this input
 - **output 1:** 25.32669802 ₿
   - script: ⧉ ⌖ h²⁰ Its bus worry lesson to screen. Grape regret bean per rebel. The common tag may exercise fault. Scan is actual to chimney. ≡ ∇
