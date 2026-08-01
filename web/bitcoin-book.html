@@ -700,9 +700,10 @@ button:disabled { opacity: .4; cursor: not-allowed; }
      amounts follow their output -- position alone carries the sense. */
   .tx-flow { grid-template-columns: 1fr; }
   .tx-inputs, .tx-margin-cites, .tx-outputs, .tx-locktime { grid-column: 1; grid-row: auto; display: block; }
-  /* The footnotes collapse the same way: a citation becomes a full-width
-     block leading the witness it belongs to. */
-  #ch-footnotes { display: block; }
+  /* The footnotes keep their two columns even here: the reference is short,
+     the witness prose is small, and the pairing reads best side by side --
+     the reference set right against the witness it cites (the id-scoped
+     rules above hold it there through this collapse). */
   .tx-in-cite, .cite-amount { text-align: left; margin: 0 0 .2em; }
   /* Output amounts keep the ledger's right edge even collapsed: a column of
      figures justifies right so the values still read as a column, and the
@@ -740,8 +741,13 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 #ch-footnotes { display: grid; grid-template-columns: fit-content(calc(6.5 * 19px * var(--scale-margins, 1))) minmax(0,1fr); column-gap: 1.3em; align-items: start; }
 #ch-footnotes .footnote-entry { grid-column: 2; }
 /* The body rows' .34em nudge aligns a citation with 19px prose; footnote
-   prose is smaller than the citation, so here the two just top-align. */
-#ch-footnotes .tx-in-cite { padding-top: 0; }
+   prose is smaller than the citation, so here the two just top-align. The
+   reference and its amount stay set right against the gutter at EVERY
+   width -- the id outranks the portrait collapse's left-align -- so the
+   citation reads flush against the witness it cites instead of leaving
+   the column's slack as a gap between the two. */
+#ch-footnotes .tx-in-cite { padding-top: 0; text-align: right; }
+#ch-footnotes .cite-amount { text-align: right; }
 /* Witness prose is on-chain content, not marginalia: dim, not meta. Its type
    is set to the BIP141 discount -- a witness byte weighs 1/4 of a base byte,
    and characters per unit of page area go as size x leading-in-px, so
