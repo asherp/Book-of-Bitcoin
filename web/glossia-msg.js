@@ -46,6 +46,26 @@ export const MSG_LANGS = [
 ];
 export function msgLangById(id) { return MSG_LANGS.find(l => l.id === id) || MSG_LANGS[0]; }
 
+// ─── the book's language ──────────────────────────────────────────────
+// Which of MSG_LANGS the book's prose is set in, chosen by the reader and
+// persisted across pages and visits. The bytes are the record and never
+// change; the language is typography -- any choice decodes back to the same
+// transaction (decodeSeedPhrase detects the language from the prose itself).
+// Kept here beside MSG_LANGS so every page that encodes reads one source of
+// truth. Guarded for non-browser callers (the node test suite imports this
+// module transitively): no localStorage, no persistence, english default.
+const BOOK_LANG_KEY = 'glossia-btc-lang';
+let bookLangId = (() => {
+  try { return msgLangById(localStorage.getItem(BOOK_LANG_KEY)).id; }
+  catch { return MSG_LANGS[0].id; }
+})();
+export function bookLang() { return bookLangId; }
+export function setBookLang(id) {
+  bookLangId = msgLangById(id).id;
+  try { localStorage.setItem(BOOK_LANG_KEY, bookLangId); } catch { /* private mode etc. -- the choice still holds for this page */ }
+  return bookLangId;
+}
+
 const TE = new TextEncoder();
 const TD = new TextDecoder();
 

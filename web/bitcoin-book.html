@@ -199,6 +199,20 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 .fs-value.fs-linked { color:var(--meta); }
 .fontscale-foot { display:flex; justify-content:flex-end; margin-top:10px; }
 
+/* ── language picker: which of the engine's languages the prose is set in ── */
+.lang-rows { display:grid; gap:2px; }
+.lang-row {
+  display:flex; align-items:center; justify-content:space-between; gap:16px;
+  background:transparent; border:0; border-radius:4px; padding:7px 8px; cursor:pointer;
+  font:400 14px/1.2 'Newsreader',serif; color:var(--ink-soft); text-align:left;
+  text-transform:none; letter-spacing:normal;   /* the global button rule shouts; language names don't */
+}
+.lang-row:hover, .lang-row:focus-visible { background:var(--input-bg); color:var(--ink); outline:none; }
+.lang-row .lang-mark { font:600 11px/1 'IBM Plex Mono',monospace; color:var(--accent); visibility:hidden; }
+.lang-row.current { color:var(--ink); }
+.lang-row.current .lang-mark { visibility:visible; }
+.lang-note { margin-top:10px; font:italic 400 12px/1.5 'Newsreader',serif; color:var(--dim); }
+
 /* ── data-source picker: choose the Esplora-compatible endpoint, add custom ── */
 .endpoint-row { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
 .endpoint-select {
@@ -865,7 +879,15 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 <div class="wrap">
   <div class="masthead">
     <span class="title">The <span class="beta">β</span>ook of <span class="beta">β</span>itcoin</span>
-    <span class="home"><a href="./bitcoin-search.html">Search</a> · <a href="./bitcoin-contents.html" id="toc-link">Contents</a> · <span class="settings-menu"><a href="#" id="settings-link" role="button" aria-haspopup="dialog" aria-expanded="false">Settings</a><div id="settings-panel" class="settings-panel hidden" role="dialog" aria-label="Settings">
+    <span class="home"><a href="./bitcoin-search.html">Search</a> · <a href="./bitcoin-contents.html" id="toc-link">Contents</a> · <span class="settings-menu"><a href="#" id="lang-link" role="button" aria-haspopup="dialog" aria-expanded="false">Language</a><div id="lang-panel" class="settings-panel hidden" role="dialog" aria-label="Language">
+      <div class="settings-title">Prose language</div>
+      <!-- One row per language the engine renders into (glossia-msg.js's
+           MSG_LANGS); filled by renderLangRows. The choice is typography,
+           not content: the payload words carry the same bytes in every
+           language, and the prose decodes back to the same transaction. -->
+      <div id="lang-rows" class="lang-rows"></div>
+      <div class="lang-note">The bytes are the record and do not change — prose in any of these languages decodes back to the same transaction.</div>
+    </div></span> · <span class="settings-menu"><a href="#" id="settings-link" role="button" aria-haspopup="dialog" aria-expanded="false">Settings</a><div id="settings-panel" class="settings-panel hidden" role="dialog" aria-label="Settings">
       <div class="settings-title">Text size</div>
       <!-- One row per region. Every region beyond the body follows it (value
            dimmed) until its own buttons split it off; Reset rejoins them all
@@ -1003,7 +1025,7 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 </div>
 
 <script type="module">
-import { init, encodeSeedPhrase } from './glossia-msg.js';
+import { init, encodeSeedPhrase, MSG_LANGS, bookLang, setBookLang } from './glossia-msg.js';
 import { parseTransaction, computeTxid, parseBlockHeader, computeBlockHash, bitsToDifficulty, scriptToAddress } from './btc-tx.js';
 // The reader's ledger shelf (Appendix III): a locking script kept from a
 // section joins it as a titled one-address ledger, the same registry the
@@ -1400,7 +1422,7 @@ const lazyEncode = (() => {
     if (hex === undefined) return;   // already filled
     delete el.dataset.hex;
     el.classList.remove('glossia-lazy');
-    el.innerHTML = encodeSeedPhrase(hex, 'english', BEST_OF).prose;   // Glossia prose -- safe as innerHTML
+    el.innerHTML = encodeSeedPhrase(hex, bookLang(), BEST_OF).prose;   // Glossia prose -- safe as innerHTML
   };
   // rootMargin pre-encodes a chunk before it enters view, so a scrolling reader
   // almost never sees the raw placeholder.
@@ -2593,7 +2615,11 @@ async function sectionFields(txid) {
   const parsed = parseTransaction(hex);
   const verifiedTxid = await computeTxid(parsed.baseHex);
   const entry = {
-    fields: composeTransactionFields(parsed, BEST_OF, lazyEncode.placeholder),
+    // The encoder pins the reader's chosen language (composeTransactionFields'
+    // own default is english); the cache is flushed when the choice changes,
+    // so an entry never outlives the language it was composed in.
+    fields: composeTransactionFields(parsed, BEST_OF, lazyEncode.placeholder,
+      (hex, lang, bestOf) => encodeSeedPhrase(hex, bookLang(), bestOf)),
     verified: verifiedTxid === txid,
     // Which of the notation key's script patterns this section puts on the
     // page, for the key's filter. Classified once, beside the fields.
@@ -2825,10 +2851,10 @@ function renderFrontispiece(header) {
   const prevParts = isGenesisPrev ? null : blockHashParts(header.prevBlockHash);
   const prevProse = isGenesisPrev
     ? '⓪' + toSuperscript(256)
-    : encodeSeedPhrase(prevParts.hex, 'english', BEST_OF).prose;
+    : encodeSeedPhrase(prevParts.hex, bookLang(), BEST_OF).prose;
   // The merkle root isn't proof-of-work-constrained, so unlike a block hash
   // it has no expected run of zero bytes worth trimming.
-  const merkleProse = encodeSeedPhrase(reverseHex(header.merkleRoot), 'english', BEST_OF).prose;
+  const merkleProse = encodeSeedPhrase(reverseHex(header.merkleRoot), bookLang(), BEST_OF).prose;
   // Each on-chain hash leads with a bold-gold mark (⌘ for a block hash, ⋔ for
   // the merkle root) that carries the copy menu; the prose beside it is not
   // itself clickable. The rest of the fields are plain decoded numbers.
@@ -3029,7 +3055,7 @@ function renderChapterHead(onTitlePage) {
   $('ch-frontispiece').classList.toggle('hidden', !onTitlePage);
   if (onTitlePage) {
     const parts = blockHashParts(state.hash);
-    const { prose: hashProse } = encodeSeedPhrase(parts.hex, 'english', BEST_OF);
+    const { prose: hashProse } = encodeSeedPhrase(parts.hex, bookLang(), BEST_OF);
     // The hash prose sits between its marks -- ⌘ᵐ opening, the encoded
     // remainder, then the ⓪ⁿ proof-of-work zeros that follow those bytes; the
     // chapter title above it is the clickable handle for its copy/bookmark menu.
@@ -3129,7 +3155,7 @@ function renderProjectedHead(onTitlePage) {
     if (k === 0) {
       const prevTrimmed = trimTrailingZeroBytes(reverseHex(tipCore.hash));
       const prevBytes = prevTrimmed.length / 2;
-      const prose = encodeSeedPhrase(prevTrimmed, 'english', BEST_OF).prose;
+      const prose = encodeSeedPhrase(prevTrimmed, bookLang(), BEST_OF).prose;
       fillMarkedHash(prevSpan, 'h', 'dt', tipCore.hash, 'previous block hash', prose, prevBytes,
         prevBytes < 32
           ? `${prevBytes} bytes encoded — the hash's ${32 - prevBytes} trailing zero bytes (required by proof-of-work) carry nothing and are dropped`
@@ -3455,7 +3481,7 @@ function renderGhostTombstone(txid) {
   $('section-title').classList.remove('hidden');
   $('section-hash').classList.remove('hidden');
   $('section-meta').classList.add('hidden');   // never mined: no date, no depth
-  const { prose: txidProse } = encodeSeedPhrase(reverseHex(txid), 'english', BEST_OF);
+  const { prose: txidProse } = encodeSeedPhrase(reverseHex(txid), bookLang(), BEST_OF);
   $('section-hash').textContent = txidProse;
   const sectionTitle = $('section-title');
   sectionTitle.textContent = '';
@@ -3548,7 +3574,7 @@ function renderChapter(para) {
   // This section's own txid, encoded as prose beneath the section title. Reversed
   // to internal byte order first (like the block hash) so it carries the txid's
   // actual bytes; every byte kept, since a txid has no droppable leading zeros.
-  const { prose: txidProse } = encodeSeedPhrase(reverseHex(para.txid), 'english', BEST_OF);
+  const { prose: txidProse } = encodeSeedPhrase(reverseHex(para.txid), bookLang(), BEST_OF);
   // The ⌘ identity mark leads, as on the chapter hash -- a txid is the same
   // double-SHA256, with no proof-of-work zeros to state: all 256 bits encoded,
   // and the superscript (bits, ⌘'s unit) says so. The section title carries
@@ -4906,11 +4932,11 @@ let prefetchGen = 0;
 function warmLeafEncodes(core) {
   if (!ready) return;
   try {
-    encodeSeedPhrase(blockHashParts(core.hash).hex, 'english', BEST_OF);
+    encodeSeedPhrase(blockHashParts(core.hash).hex, bookLang(), BEST_OF);
     if (core.header.prevBlockHash !== '00'.repeat(32)) {
-      encodeSeedPhrase(blockHashParts(core.header.prevBlockHash).hex, 'english', BEST_OF);
+      encodeSeedPhrase(blockHashParts(core.header.prevBlockHash).hex, bookLang(), BEST_OF);
     }
-    encodeSeedPhrase(reverseHex(core.header.merkleRoot), 'english', BEST_OF);
+    encodeSeedPhrase(reverseHex(core.header.merkleRoot), bookLang(), BEST_OF);
   } catch { /* warming is best-effort */ }
 }
 // Warm what a book leaf needs beyond its own first block. Where the book
@@ -4937,7 +4963,7 @@ function warmBookTargets(height) {
 async function warmSection(txid) {
   if (!ready) { await loadTxHex(txid); return; }   // at least the network half
   await sectionFields(txid);
-  encodeSeedPhrase(reverseHex(txid), 'english', BEST_OF);
+  encodeSeedPhrase(reverseHex(txid), bookLang(), BEST_OF);
 }
 async function prefetchNeighbor(st, direction) {
   // A neighbour past the tip is a projected chapter. Its chapter page needs
@@ -5542,6 +5568,7 @@ function closeSettings() {
 }
 settingsLink.addEventListener('click', (e) => {
   e.preventDefault();
+  closeLang();   // one masthead popover at a time
   const nowHidden = settingsPanel.classList.toggle('hidden');
   settingsLink.setAttribute('aria-expanded', nowHidden ? 'false' : 'true');
   if (nowHidden) closeAddForm();
@@ -5552,6 +5579,63 @@ document.addEventListener('click', (e) => {
   closeSettings();
 });
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !settingsPanel.classList.contains('hidden')) closeSettings(); });
+
+// ── Language popover ──────────────────────────────────────────────────────
+// The masthead "Language" link: which of the engine's languages the book's
+// prose is set in (glossia-msg.js's MSG_LANGS -- the same list the message
+// pipeline renders into and detects from). The choice is typography, not
+// content: the payload words carry the same bytes whatever the tongue, so
+// switching re-renders the page in hand and persists like the text sizes do.
+const langLink = $('lang-link');
+const langPanel = $('lang-panel');
+function closeLang() {
+  langPanel.classList.add('hidden');
+  langLink.setAttribute('aria-expanded', 'false');
+}
+function renderLangRows() {
+  const rows = $('lang-rows');
+  rows.innerHTML = '';
+  for (const l of MSG_LANGS) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'lang-row' + (l.id === bookLang() ? ' current' : '');
+    btn.setAttribute('aria-pressed', l.id === bookLang() ? 'true' : 'false');
+    const name = document.createElement('span');
+    name.textContent = l.label;
+    const mark = document.createElement('span');
+    mark.className = 'lang-mark';
+    mark.textContent = '●';
+    btn.append(name, mark);
+    btn.addEventListener('click', () => { applyBookLang(l.id); });
+    rows.append(btn);
+  }
+}
+async function applyBookLang(id) {
+  closeLang();
+  if (id === bookLang()) return;
+  setBookLang(id);
+  renderLangRows();
+  // Everything composed so far was composed in the old language: flush the
+  // section cache and re-render the page in hand. The prose memo inside
+  // encodeSeedPhrase is keyed by language, so it needs no clearing -- a
+  // switch back finds its earlier encodes still warm.
+  fieldsCache.clear();
+  neighborReady = { '-1': false, '1': false };   // neighbours re-warm in the new language
+  if (state) await showCurrentTx();
+}
+langLink.addEventListener('click', (e) => {
+  e.preventDefault();
+  closeSettings();   // one masthead popover at a time
+  const nowHidden = langPanel.classList.toggle('hidden');
+  langLink.setAttribute('aria-expanded', nowHidden ? 'false' : 'true');
+});
+document.addEventListener('click', (e) => {
+  if (langPanel.classList.contains('hidden')) return;
+  if (langPanel.contains(e.target) || langLink.contains(e.target)) return;
+  closeLang();
+});
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !langPanel.classList.contains('hidden')) closeLang(); });
+renderLangRows();
 
 // ── Hash menu + bookmarks ─────────────────────────────────────────────────
 // Clicking any Glossia-encoded hash opens a small menu (Copy hex / Bookmark).
