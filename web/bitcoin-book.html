@@ -606,17 +606,20 @@ button:disabled { opacity: .4; cursor: not-allowed; }
    reaches 14px in from the cell's edge, so the amounts stop clear of it --
    all of them, so the column still aligns on the point. */
 .tx-out-value  { grid-column: 2; text-align: right; padding-right: 20px; font-variant-numeric: tabular-nums; white-space: nowrap; }
-/* The section's last line is the transaction's own arithmetic: what the
-   inputs bring at the left, what the outputs carry at the right -- each sum
-   under the column it totals, the outputs' on the amounts' own edge -- and
-   between them, signed negative, the difference the miner keeps: the fee.
-   No labels; the geometry is the equation, inputs − fee = outputs. It
-   closes below the locktime colophon, the final word before the witness
-   footnotes. The inputs' sum waits on the margin citations resolving, and
-   an input the book cannot price leaves the sum and the fee unsaid (⋯).
-   A coinbase has no such line: its input brings no prior output, and the
-   block's fees arrive in its outputs, with the subsidy. */
-.tx-totals { grid-column: left / -1; grid-row: 4; display: flex; justify-content: space-between; align-items: baseline; gap: 1em; margin-top: .35em; font: italic 400 calc(13.5px * var(--scale-margins, 1))/1.4 'Newsreader',serif; color: var(--dim); font-variant-numeric: tabular-nums; }
+/* The balance line: what the inputs bring at the left, what the outputs
+   carry at the right -- each sum under the column it totals, the outputs'
+   on the amounts' own edge -- and between them, signed negative, the
+   difference the miner keeps: the fee. No labels; the geometry is the
+   equation, inputs − fee = outputs. The sums are DERIVED -- arithmetic over
+   the record, not bytes on the wire -- so they do not sit in the
+   transaction's own flow: they lead the foot region, below the section's
+   one rule (#ch-footnotes-section), apart from the record they total and
+   above the witness footnotes when there are any. The inputs' sum waits on
+   the margin citations resolving, and an input the book cannot price
+   leaves the sum and the fee unsaid (⋯). A coinbase has no such line: its
+   input brings no prior output, and the block's fees arrive in its
+   outputs, with the subsidy. */
+.tx-totals { display: flex; justify-content: space-between; align-items: baseline; gap: 1em; margin: 0 0 1.6em; font: italic 400 calc(13.5px * var(--scale-margins, 1))/1.4 'Newsreader',serif; color: var(--dim); font-variant-numeric: tabular-nums; }
 .tx-totals .t-fee { color: var(--meta); }
 .tx-totals .t-out { padding-right: 20px; }   /* the amounts column's ribbon room, so the sum sits on their point */
 .tx-locktime { grid-column: left / -1; grid-row: 3; text-align: center; font-style: normal; }
@@ -721,8 +724,8 @@ button:disabled { opacity: .4; cursor: not-allowed; }
   .tx-flow { grid-template-columns: 1fr; }
   .tx-inputs, .tx-margin-cites, .tx-outputs, .tx-locktime { grid-column: 1; grid-row: auto; display: block; }
   /* The balance line keeps its three stations even collapsed -- it fits,
-     and the geometry IS the equation. */
-  .tx-totals { grid-column: 1; grid-row: auto; }
+     and the geometry IS the equation. (It lives in the foot region, not
+     the flow, so the collapse above doesn't reach it.) */
   /* The footnotes restack too -- their portrait rules live in their own
      media block beside the footnote styles further down, where source
      order lets them override the base grid. */
@@ -903,6 +906,10 @@ button:disabled { opacity: .4; cursor: not-allowed; }
     <div class="chapter-body" id="ch-paragraphs"></div>
 
     <div class="chapter-footnotes hidden" id="ch-footnotes-section">
+      <!-- The balance line leads the foot region: the sums are derived, not
+           bytes on the wire, so they read below the rule, apart from the
+           record they total. -->
+      <div id="ch-totals"></div>
       <div id="ch-footnotes"></div>
     </div>
     </div>
@@ -3069,6 +3076,7 @@ function renderLeafShell() {
   $('section-hash').classList.add('hidden');
   $('ch-paragraphs').innerHTML = '';
   $('ch-footnotes').innerHTML = '';
+  $('ch-totals').innerHTML = '';
   $('ch-footnotes-section').classList.add('hidden');
   currentFootnotes = [];
   footnotesLoaded = false;
@@ -3390,6 +3398,7 @@ function renderGhostTombstone(txid) {
     + 'Its raw text is gone with the mempools that dropped it — only its place in the succession survives.';
   body.append(note);
   $('ch-footnotes').innerHTML = '';
+  $('ch-totals').innerHTML = '';
   $('ch-footnotes-section').classList.add('hidden');
   currentFootnotes = [];
   footnotesLoaded = false;
@@ -3716,11 +3725,13 @@ function renderChapter(para) {
     citedCells.push({ el: cited, out: i });
     outputsEl.append(scriptCell, valueCell);
   });
-  // The closing balance line -- Σ inputs at the left, − fee between, Σ outputs
-  // at the right (see the .tx-totals CSS comment). The outputs' sum is the
-  // transaction's own; the inputs' and the fee fill in once every margin
-  // citation has resolved a value, and stay ⋯ if any could not be priced.
-  // A coinbase closes without one.
+  // The balance line -- Σ inputs at the left, − fee between, Σ outputs at
+  // the right (see the .tx-totals CSS comment). Derived, not on the wire,
+  // so it renders in the foot region below the section's rule rather than
+  // in the flow (appended there with the footnotes reset, further down).
+  // The outputs' sum is the transaction's own; the inputs' and the fee fill
+  // in once every margin citation has resolved a value, and stay ⋯ if any
+  // could not be priced. A coinbase closes without one.
   let totals = null, fillTotals = null;
   if (f.inputs.length && !f.inputs.some((i) => i.isNullPrevout)) {
     const sumOut = f.outputs.reduce((a, o) => a + o.sats, 0);
@@ -3752,7 +3763,7 @@ function renderChapter(para) {
   lock.textContent = f.locktime;
   lock.title = f.locktimeTitle;
 
-  flow.append(inputsEl, marginEl, outputsEl, lock, ...(totals ? [totals] : []));
+  flow.append(inputsEl, marginEl, outputsEl, lock);
   wrap.append(flow);
   body.append(wrap);
   syncBookmarkTitles();   // paint the section's and outputs' name lines from the bookmark set
@@ -3763,11 +3774,20 @@ function renderChapter(para) {
   resolveForwardCitations(para.txid, fwdCells, gen);
   resolveCitedWorks(para.num, citedCells, gen);
 
-  // Footnotes are reset, then expanded automatically once the transaction is on
-  // screen (renderFootnotes runs async so the prose paints first).
+  // The foot region resets, then the balance line takes its head -- shown
+  // whenever there is a line to show, so a legacy section with no witness
+  // still gets its rule and its sums. The footnotes expand automatically
+  // once the transaction is on screen (renderFootnotes runs async so the
+  // prose paints first, and unhides the section itself for witness-bearing
+  // coinbases, whose foot carries footnotes but no balance line).
   $('ch-footnotes').innerHTML = '';
+  $('ch-totals').innerHTML = '';
   $('ch-footnotes-section').classList.add('hidden');
   footnotesLoaded = false;
+  if (totals) {
+    $('ch-totals').append(totals);
+    $('ch-footnotes-section').classList.remove('hidden');
+  }
   renderFootnotes(gen);
 
   labelNav();
