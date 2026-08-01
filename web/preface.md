@@ -77,7 +77,11 @@ version, previous block, merkle root, timestamp, target, nonce. I have
 permitted the page one deliberate exception. Witness data sits
 mid-serialization on the wire, but it is spending apparatus rather than
 speech, so it gathers at the foot of the page as footnotes, each marked from
-the input that carries it. The difficulty target keeps its wire slot but
+the input that carries it. Even their size is the chain's rule rather than
+mine: consensus weighs a witness byte at a quarter of any other, and the
+footnotes are set to that same discount — a quarter of the page-room per
+letter, four witness characters in the space the body gives one — so the type
+says what the protocol says, that this data is carried cheap. The difficulty target keeps its wire slot but
 wears a plain < before its value, binding it to the chapter's hash at the
 head of the page, so that the proof of work reads as what it is: a number
 below a ceiling. Everywhere else, the order of the page is the order of the
