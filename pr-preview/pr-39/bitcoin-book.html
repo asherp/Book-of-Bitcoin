@@ -579,10 +579,10 @@ button:disabled { opacity: .4; cursor: not-allowed; }
    column's cap instead of overflowing the page. */
 .fwd-cite { margin-top: .1em; font: 500 calc(12px * var(--scale-margins, 1))/1.3 'IBM Plex Mono',monospace; color: var(--dim); white-space: normal; }
 .tx-in-script { grid-column: 2; min-width: 0; }
-/* Citations for inputs with no scriptSig (witness spends) + the version note.
-   They share the outputs' row in the left column, so the outputs slide up beside
-   them instead of being pushed below an input band full of empty body cells. The
-   stacked citations top-align with the first output. */
+/* The version note, and the rare citation with nowhere else to go (an input
+   with neither scriptSig nor witness). Witness-only inputs no longer stack
+   here -- their citations follow their witnesses to the footnotes -- so this
+   band is normally just the version note beside the first output. */
 .tx-margin-cites { grid-column: left; grid-row: 2; align-self: start; }
 .tx-outputs {
   grid-column: body / -1; grid-row: 2;
@@ -697,6 +697,9 @@ button:disabled { opacity: .4; cursor: not-allowed; }
      amounts follow their output -- position alone carries the sense. */
   .tx-flow { grid-template-columns: 1fr; }
   .tx-inputs, .tx-margin-cites, .tx-outputs, .tx-locktime { grid-column: 1; grid-row: auto; display: block; }
+  /* The footnotes collapse the same way: a citation becomes a full-width
+     block leading the witness it belongs to. */
+  #ch-footnotes { display: block; }
   .tx-in-cite, .cite-amount { text-align: left; margin: 0 0 .2em; }
   .tx-out-value { text-align: left; margin: 0 0 .55em; }
   .tx-locktime { margin: 0 0 .55em; }   /* stays centred: it closes the page, not a ledger line */
@@ -720,6 +723,19 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 .tx-witness-ref { font: 500 .62em/1 'IBM Plex Mono',monospace; color: var(--accent); vertical-align: super; text-decoration: none; margin-left: .12em; }
 .tx-witness-ref:hover { text-decoration: underline; }
 .chapter-footnotes { margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--rule); }
+/* A witness-only input leaves no scriptSig row in the body, so its margin
+   citation follows its witness down (see renderFootnotes): the footnote list
+   mirrors the flow's [left | body] columns, and such a footnote reads as the
+   input entire -- provenance, amount and sequence beside the apparatus that
+   spent it. Entries whose input kept a body row (legacy, wrapped segwit)
+   have no citation here and leave their left cell empty. Sparse grid
+   auto-placement does the pairing: a citation takes column 1, its entry the
+   body column of the same row. */
+#ch-footnotes { display: grid; grid-template-columns: fit-content(calc(6.5 * 19px * var(--scale-margins, 1))) minmax(0,1fr); column-gap: 1.3em; align-items: start; }
+#ch-footnotes .footnote-entry { grid-column: 2; }
+/* The body rows' .34em nudge aligns a citation with 19px prose; footnote
+   prose is smaller than the citation, so here the two just top-align. */
+#ch-footnotes .tx-in-cite { padding-top: 0; }
 /* Witness prose is on-chain content, not marginalia: dim, not meta. Its type
    is set to the BIP141 discount -- a witness byte weighs 1/4 of a base byte,
    and characters per unit of page area go as size x leading-in-px, so
@@ -1512,7 +1528,11 @@ function renderCitation(citeBody, height, pos, vout) {
 async function goToSection(height, index, scrollId) {
   await openLookup(String(height), index);
   if (scrollId) {
-    const el = $(scrollId);
+    // A witness-only input's citation lives in the footnotes, which render
+    // lazily after the section paints -- if the anchor isn't in the DOM yet,
+    // force the footnotes in (a no-op once loaded) and look again.
+    let el = $(scrollId);
+    if (!el) { await renderFootnotes(renderGen); el = $(scrollId); }
     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 }
@@ -3518,14 +3538,13 @@ function renderChapter(para) {
 
   const f = para.fields;
   const footnotes = [];
-  // Citations with no scriptSig body to sit beside -- witness-spend inputs, and
-  // the version note -- accumulate here in input order and flush into the next
-  // scriptSig row's left column (stacked above that input's own citation), so
-  // they keep their place in the input sequence without holding a row open.
-  // Whatever is still pending after the last scriptSig (trailing witness inputs,
-  // or every input when the whole transaction is segwit) goes to the margin band
-  // beside the outputs. This preserves input order even when witness and legacy
-  // inputs alternate -- the two kinds are not assumed to be contiguous.
+  // Citations with no scriptSig body to sit beside. A witness-spend input's
+  // citation follows its witness to the footnotes (renderFootnotes sets it in
+  // the footnote's left cell), keeping the shared numbering as the tie back
+  // to input order. What accumulates here is only the version note and the
+  // rare input with neither scriptSig nor witness; it flushes into the next
+  // scriptSig row's left column (stacked above that input's own citation),
+  // or into the margin band beside the outputs when none follows.
   const pendingMargin = [];
   if (f.version !== '1') {
     const cite = document.createElement('div');
@@ -3563,11 +3582,13 @@ function renderChapter(para) {
       pendingCites.push({ citeBody, cite, amtVal, txid: inp.prevTxid, vout: inp.prevVout });
     }
     cite.append(amtLine);
-    // A witness spend has an empty scriptSig (no body content). An input that
-    // renders a scriptSig gets an aligned row: its left cell carries any pending
-    // witness-input citations that preceded it (in order) stacked above its own,
-    // and its scriptSig fills the body. An empty input just joins the pending
-    // list, so the outputs can slide up past it.
+    // An input that renders a scriptSig gets an aligned row: its left cell
+    // carries any pending citations that preceded it (in order) stacked above
+    // its own, and its scriptSig fills the body. A witness spend has an empty
+    // scriptSig -- nothing in the body for the citation to sit beside -- so
+    // its citation travels with its witness and renders at the footnote
+    // instead (renderFootnotes), where the input then reads whole: provenance
+    // and amount beside the apparatus that spent it.
     if (inp.scriptAscii || inp.script) {
       const citeCell = document.createElement('div');
       citeCell.className = 'tx-in-cite-group';
@@ -3579,11 +3600,14 @@ function renderChapter(para) {
       if (inp.scriptAscii) addQuote(scriptCell, inp.scriptAscii);
       else addLine(scriptCell, inp.script);
       inputsEl.append(citeCell, scriptCell);
+    } else if (inp.witnessHex) {
+      footnotes[footnotes.length - 1].cite = cite;
     } else {
       pendingMargin.push(cite);
     }
   }
-  // Trailing citations with no scriptSig left to attach to sit beside the outputs.
+  // Whatever is still pending (the version note; an input with neither
+  // scriptSig nor witness) sits beside the outputs.
   for (const p of pendingMargin) marginEl.append(p);
   currentFootnotes = footnotes;
   f.outputs.forEach((out, i) => {
@@ -3879,6 +3903,10 @@ async function renderFootnotes(gen) {
     p.className = 'footnote-entry';
     p.id = `fn-${footnoteMark(fn.n)}`;
     p.innerHTML = `<span class="footnote-mark">${footnoteMark(fn.n)}</span>${prose}`;
+    // A witness-only input's citation (carrying its in-N anchor, resolving
+    // asynchronously wherever it sits) lands in the left cell of its own
+    // footnote's row; entries for inputs that kept a body row have none.
+    if (fn.cite) el.append(fn.cite);
     el.append(p);
   }
   $('ch-footnotes-section').classList.remove('hidden');

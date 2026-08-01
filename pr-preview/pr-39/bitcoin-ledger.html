@@ -343,9 +343,10 @@ a:hover { text-decoration: underline; }
 .entry-amt.credit { color:var(--accent); }
 /* The section, whole, in the reader's own manuscript layout -- the book
    page's classes, metrics and grid verbatim (chapter-body type, the
-   [left margin | body | right margin] tx-flow grid, margin cites for
-   witness-only inputs and the version note, sequence marks, witness
-   footnotes, forward citations, the drop cap), scoped under this leaf --
+   [left margin | body | right margin] tx-flow grid, the version note in
+   the margin, sequence marks, witness footnotes with each witness-only
+   input's citation beside its entry, forward citations, the drop cap),
+   scoped under this leaf --
    so a passage here renders exactly as its § does in the reader. The one
    addition beyond the title's txid prose: the referenced txo carries the
    accent rule (.hit), so the quoted line reads in context. */
@@ -393,7 +394,14 @@ a:hover { text-decoration: underline; }
 .entry-section .tab { display:inline-block; width:4ch; }
 .entry-section .tx-witness-ref { font:500 .62em/1 'IBM Plex Mono',monospace; color:var(--accent); vertical-align:super; text-decoration:none; margin-left:.12em; }
 .entry-section .tx-witness-ref:hover { text-decoration:underline; }
-.entry-section .chapter-footnotes { margin-top:48px; padding-top:24px; border-top:1px solid var(--rule); }
+/* Mirrors the book's #ch-footnotes grid: a witness-only input's citation
+   follows its witness down and takes the left cell of its footnote's row,
+   paired by sparse auto-placement; entries for inputs that kept a body row
+   leave the cell empty. */
+.entry-section .chapter-footnotes { margin-top:48px; padding-top:24px; border-top:1px solid var(--rule);
+  display:grid; grid-template-columns:[left] 6.5em [body] minmax(0,1fr); column-gap:1.3em; align-items:start; }
+.entry-section .chapter-footnotes .footnote-entry { grid-column:2; }
+.entry-section .chapter-footnotes .tx-in-cite { padding-top:0; }
 /* 11px/1.3 vs the 19px/1.75 body is the BIP141 discount set in type: 4x the
    character density, a quarter of the space per letter -- see the book page's
    .footnote-entry comment for the arithmetic. */
@@ -416,6 +424,7 @@ a:hover { text-decoration: underline; }
   .entry-section .tx-flow { grid-template-columns:1fr; }
   .entry-section .tx-inputs, .entry-section .tx-margin-cites, .entry-section .tx-outputs, .entry-section .tx-locktime { grid-column:1; grid-row:auto; display:block; }
   .entry-section .tx-in-cite, .entry-section .cite-amount { text-align:left; margin:0 0 .2em; }
+  .entry-section .chapter-footnotes { display:block; }
   .entry-section .tx-out-value { text-align:left; margin:0 0 .55em; }
   .entry-section .tx-locktime { margin:0 0 .55em; }
   .entry-section .tx-line.tx-body-lead { padding-top:.8em; }
@@ -1742,9 +1751,11 @@ const openEntryLeaf = async (alive) => {
     // down just to price a margin line.
     let prevoutsP = null;
     const prevouts = () => (prevoutsP ??= prevoutValuesOf(e.txid));
-    // Citations with no scriptSig body to sit beside -- witness-spend inputs,
-    // and the version note -- stack above the next scriptSig input's own
-    // citation, or beside the outputs when none follows (the book's rule).
+    // Citations with no scriptSig body to sit beside. A witness-spend input's
+    // citation follows its witness to the footnotes (the book's rule); what
+    // stacks here -- above the next scriptSig input's citation, or beside the
+    // outputs when none follows -- is the version note and the rare input
+    // with neither scriptSig nor witness.
     const pendingMargin = [];
     if (s.fields.version !== '1') {
       const vc = document.createElement('div');
@@ -1803,7 +1814,7 @@ const openEntryLeaf = async (alive) => {
       cite.append(amtLine);
       // An input that renders a scriptSig holds an aligned row, any pending
       // margin citations stacked above its own; a witness-only input (empty
-      // scriptSig) just joins the pending list, so the outputs slide up.
+      // scriptSig) sends its citation down to its footnote's left cell.
       if (v.scriptAscii || v.script) {
         const citeCell = document.createElement('div');
         citeCell.className = 'tx-in-cite-group';
@@ -1815,6 +1826,8 @@ const openEntryLeaf = async (alive) => {
         if (v.scriptAscii) addQuote(scriptCell, v.scriptAscii);
         else addLine(scriptCell, v.script);
         inputsEl.append(citeCell, scriptCell);
+      } else if (v.witnessHex) {
+        footnotes[footnotes.length - 1].cite = cite;
       } else {
         pendingMargin.push(cite);
       }
@@ -1869,6 +1882,7 @@ const openEntryLeaf = async (alive) => {
         } else {
           p2.innerHTML = mark + (fn.html ?? '∅');
         }
+        if (fn.cite) fnSec.append(fn.cite);
         fnSec.append(p2);
       }
       secEl.append(fnSec);
