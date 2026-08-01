@@ -674,26 +674,47 @@ const extranonceMark = (n) => markToken(`η${productProse(n)}`, `extranonce ${n}
 // is the same field under the same rule as the pushed one, and it should read
 // the same way.
 //
-// What raw bytes lack is the push's width. 00 12 34 and 12 34 are different
-// bytes and one number, so a bare figure cannot restore them -- the mark
-// carries the byte count as a superscript, exactly as every other byte count
-// in the script register does (p⁶⁵, h³², a bare push's ²⁰). η⁴ 5·839·425609 is
-// four bytes, little-endian as the chain writes its numbers, and reconstructs
-// to one string of bytes and no other.
+// One field, one mark, and no superscript on either: the counter reads as its
+// number wherever it was written, exactly as the header's own nonce does.
+//
+// What a push gave for free was the width. Little-endian, a run's LOW bytes
+// are its least significant, so 00 12 34 and its number are the same thing --
+// the leading zero is in the figure. What is lost is a zero at the far end,
+// where the number's most significant byte would be: d9 0f 1a 00 and d9 0f 1a
+// are one number and different bytes.
+//
+// So those come off as what they are. A zero byte closing a counter is a byte
+// the pool left empty, which is what ⓪ says, and once it is out the number is
+// minimally encoded and restores its own bytes without help. It costs a second
+// mark where the chain happens to write one -- about one counter in 256 -- and
+// it keeps every counter reading as a counter and every byte on the page.
 //
 // Bounded at eight bytes, the same ceiling the pushed counters take: past that
 // a run in the margin is not a counter but a commitment or a datum -- a
 // merged-mining root, a pool's own structure -- and it stays prose rather than
 // being flattened into a hundred-digit figure that says nothing about what it
-// holds.
+// holds. Such a run keeps its trailing zeros too: prose is exact whatever the
+// bytes are, so there is nothing there to peel them for.
 const RAW_COUNTER_MAX_BYTES = 8;
 
 const rawCounterMark = (hex) => {
   const bytes = hex.length / 2;
   const value = BigInt('0x' + ((hex.match(/../g) || []).reverse().join('') || '0'));
-  return markToken(`η${toSuperscript(bytes)} ${productProse(value)}`,
-    `${bytes} bytes of the miner's margin, read as the number they are: ${value}, little-endian as the chain writes its numbers. In this position that is the extranonce — the counter rolled once the header's 32-bit nonce (η) was exhausted — which is what a pool leaves room for here; a pool may also write a small number of its own (a version, a separator), and the bytes do not distinguish them. The superscript is the byte count: with no push to state the width, it is what restores these bytes exactly, leading zeros included`);
+  return markToken(`η${productProse(value)}`,
+    `${value} — ${bytes} bytes of the miner's margin, read as the number they are, little-endian as the chain writes its numbers. In this position that is the extranonce, the counter rolled once the header's 32-bit nonce (η) was exhausted, which is what a pool leaves room for here; a pool may also write a small number of its own (a version, a separator), and the bytes do not distinguish them. Minimally encoded, so the figure restores these bytes and no others`);
 };
+
+// A run of bytes -> the pieces it renders as. A counter closing on zero bytes
+// gives them up to ⓪ so the figure that remains is minimal; anything too long
+// to be a counter is left exactly as it is, for the prose to carry whole.
+function counterPieces(hex) {
+  let end = hex.length;
+  while (end >= 2 && hex.slice(end - 2, end) === '00') end -= 2;
+  const head = hex.slice(0, end);
+  const zeros = (hex.length - end) / 2;
+  if (!head || head.length / 2 > RAW_COUNTER_MAX_BYTES) return [{ hex }];
+  return zeros ? [{ counter: head }, { zeros }] : [{ counter: head }];
+}
 
 // ─── the zeros ─────────────────────────────────────────────────────────
 //
@@ -794,9 +815,11 @@ function renderMinerMargin(hex, collect) {
   // which is a commitment or a datum and stays prose.
   return merged
     .flatMap((p) => (p.hex === undefined ? [p] : splitZeroRuns(p.hex)))
+    .flatMap((p) => (p.hex === undefined ? [p] : counterPieces(p.hex)))
     .map((p) => (p.zeros !== undefined ? zeroRunMark(p.zeros)
-      : p.hex !== undefined ? (p.hex.length / 2 <= RAW_COUNTER_MAX_BYTES ? rawCounterMark(p.hex) : collect(p.hex))
-        : p.pool ? signatureMark(p) : `“${quoteText(p.text)}”`))
+      : p.counter !== undefined ? rawCounterMark(p.counter)
+        : p.hex !== undefined ? collect(p.hex)
+          : p.pool ? signatureMark(p) : `“${quoteText(p.text)}”`))
     .filter(Boolean)
     .join(' ');
 }
