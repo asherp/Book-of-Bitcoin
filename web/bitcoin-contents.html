@@ -90,7 +90,14 @@ body { min-height: 100vh; background: var(--page); color: var(--ink); font-famil
   .toc-entrance-back body { animation: toc-in-back .22s ease-out; }
   @keyframes toc-in-back { from { transform: translateX(-100vw); } }
 }
-.wrap { max-width: 720px; margin: 0 auto; padding: 48px 22px 100px; }
+/* The volume turns at the foot ride the bottom of the screen (sticky, below):
+   the wrap stretches to the viewport and the list takes all slack, so a short
+   leaf's turns rest exactly where a tall leaf's sticky bar rides -- the same
+   arrangement the reader's own foot nav keeps. No bottom padding: the bar is
+   the page's own floor. */
+.wrap { max-width: 720px; margin: 0 auto; padding: 48px 22px 0;
+  display: flex; flex-direction: column; min-height: 100vh; min-height: 100dvh; }
+#toc { flex: 1 0 auto; }
 a { color: var(--accent); text-decoration: none; }
 a:hover { text-decoration: underline; }
 
@@ -112,8 +119,13 @@ a:hover { text-decoration: underline; }
 .toc-down.hidden { display:none; }
 
 /* The turns to either side, named at the foot -- the swipe and the arrow
-   keys go the same places, and this says so for hands that use neither. */
-.toc-turns { display:flex; flex-wrap:wrap; gap:10px 26px; margin-top:44px; padding-top:18px; border-top:1px solid var(--rule);
+   keys go the same places, and this says so for hands that use neither.
+   Sticky at the bottom of the screen, like the reader's foot nav: a long
+   leaf's turns are always in reach, and the page's own background keeps the
+   rows scrolling beneath from showing through. */
+.toc-turns { position:sticky; bottom:0; z-index:40; background:var(--page);
+  display:flex; flex-wrap:wrap; gap:10px 26px; margin-top:44px;
+  padding:18px 0 max(18px, env(safe-area-inset-bottom)); border-top:1px solid var(--rule);
   font:600 10px/1.5 'IBM Plex Mono',monospace; letter-spacing:.14em; text-transform:uppercase; }
 .toc-turns a { color:var(--meta); }
 .toc-turns a:hover { color:var(--accent); }
