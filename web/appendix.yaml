@@ -232,6 +232,19 @@
           value: June 2015, by Gavin Andresen
         - label: outcome
           value: withdrawn — signaling never came near the threshold, and the client faded
+    - bip: '109'
+      name: Two-Megabyte Blocks
+      status: failed
+      note: The second attempt to move the block size by miner vote, and the moderated one — two megabytes flat, where XT had asked for eight and doubling — carried by Bitcoin Classic, a client raised for the purpose within weeks of XT's fade. Its yes was a true version bit, 0x10000000 laid over the version word so a signaling chapter opened 0x30000000, and it needed three-quarters of a thousand blocks. For a few weeks in the spring of 2016 Classic's node count passed Core's, but nodes are not blocks: the signaling stalled in the single digits, the client itself dropped the fixed limit the next January for Bitcoin Unlimited's emergent-consensus banner, and the project closed in November 2017 commending its readers to Bitcoin Cash. No chapter carries its name; the chain declined to write one.
+      stats:
+        - label: mechanism
+          value: 750 of the last 1,000 blocks with bit 28 set (version 0x30000000), then a 28-day grace — carried by the Bitcoin Classic client
+        - label: proposed
+          value: January 2016, by Gavin Andresen — released that February, weeks after XT faded
+        - label: peak
+          value: spring 2016 — node counts briefly passed Core's, but the blocks never followed; signaling stalled in the single digits against a 75% threshold
+        - label: outcome
+          value: withdrawn — Classic dropped the fixed limit in January 2017 for an emergent-consensus size, and shut down that November, pointing at Bitcoin Cash
     - bip: '68 · 112 · 113'
       name: Relative Timelocks
       status: active
@@ -268,7 +281,7 @@
       coinbase: /EB
       ballot: '478558'
       window: 2016
-      note: Not a BIP but a client, and the big-block banner after XT faded — under "emergent consensus," a miner advertised the block size it would accept rather than voting on a fixed rule. Its ballot was written into the coinbase text, /EB…/AD…/ at the head of each chapter that flew it, not into the version word — so this leaf reads first lines rather than versions, laying out the final window of chapters before the parting with each miner's own text in the row. At its spring-2017 peak more than a third of new blocks carried the banner; nothing ever activated, and that August the big-block constituency left to write its own book.
+      note: Not a BIP but a client, and the third to carry the big-block banner, after XT and Classic — under "emergent consensus," a miner advertised the block size it would accept rather than voting on a fixed rule. Its ballot was written into the coinbase text, /EB…/AD…/ at the head of each chapter that flew it, not into the version word — so this leaf reads first lines rather than versions, laying out the final window of chapters before the parting with each miner's own text in the row. At its spring-2017 peak more than a third of new blocks carried the banner; nothing ever activated, and that August the big-block constituency left to write its own book.
       stats:
         - label: mechanism
           value: emergent consensus — /EB…/AD…/ written into the coinbase, no threshold and no flag day
