@@ -494,12 +494,13 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 #page-prev, #page-next { display: flex; align-items: baseline; min-width: 0; max-width: 100%; }
 #page-prev .step-text, #page-next .step-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* On a phone the keys leave the names a few letters each, so the bar takes
-   two rows: the walk's two names above, the page's keys beneath them. */
+   two rows: the page's keys above -- nearest the sheets they raise -- and
+   the walk's two names on the bottom line. */
 @media (max-width: 560px) {
   .section-nav { grid-template-columns: 1fr 1fr; gap: 8px 16px; }
-  #page-prev { grid-column: 1; grid-row: 1; }
-  #page-next { grid-column: 2; grid-row: 1; }
-  .section-nav .nav-keys { grid-column: 1 / -1; grid-row: 2; }
+  .section-nav .nav-keys { grid-column: 1 / -1; grid-row: 1; }
+  #page-prev { grid-column: 1; grid-row: 2; }
+  #page-next { grid-column: 2; grid-row: 2; }
 }
 .commentary-body { padding-bottom: 16px; }
 /* The sheet's own typography — the measure, the readings, the byline, the terms
