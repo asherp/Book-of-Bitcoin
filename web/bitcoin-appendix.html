@@ -563,6 +563,39 @@ if (blockLeaf != null) {
 $('appx-note').textContent = bip ? '' : part.note || '';
 document.title = `The βook of βitcoin — ${blockLeaf != null ? `${bip.title} · ${wholeRef(blockLeaf)}` : bip ? bip.title : label(part)}`;
 
+// A part may carry a reading of what it gathers (appendix.yaml), and the
+// part's own leaf is where it is met -- raised the way every reading is
+// raised: behind a toggle, over the leaf rather than in it, credited, and
+// fetching no prose until it is opened. The Citations register keeps its
+// leaf silent by design (its reading raises beneath each proof's own leaf,
+// bitcoin-proof.html), and a fork's leaf raises the Consensus part's reading
+// with its own, in the sticky foot below.
+if (!bip && blockLeaf == null && part.kind !== 'proofs') {
+  const { readingsOf, resolveCommentary, commentaryHtml } = await import('./btc-commentary.js');
+  const readings = readingsOf(part);
+  if (readings.length) {
+    const items = [{ title: part.title, readings }];
+    const named = [...new Set(readings.filter((r) => r.by).map((r) => r.by))];
+    const details = document.createElement('details');
+    details.className = 'leaf-commentary';
+    const summary = document.createElement('summary');
+    summary.textContent = named.length ? `Commentary by ${named.join(' · ')}` : 'Commentary';
+    summary.title = 'a reading of what this appendix gathers — editorial, and no more authoritative than its argument';
+    const body = document.createElement('div');
+    let filled = false;
+    details.addEventListener('toggle', async () => {
+      if (!details.open || filled) return;
+      filled = true;
+      body.innerHTML = '<div class="commentary-measure"><p class="commentary-loading">reading…</p></div>';
+      await resolveCommentary(items);
+      // Built from authored Markdown, escaped at the source (btc-markdown.js).
+      body.innerHTML = commentaryHtml(items);
+    });
+    details.append(summary, body);
+    $('appx-note').after(details);
+  }
+}
+
 // Where the descent lands. A fork's leaf opens its first chapter (known
 // offline: a height is a citation, and even an unmined one has a page that
 // answers); the Consensus leaf opens its first fork's own leaf, a level down;

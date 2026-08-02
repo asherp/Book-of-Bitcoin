@@ -19,7 +19,8 @@
 #       it comes first: it opens where the volumes close, so the turn from the
 #       chain tip to the next provisional chapter stays a single step down the
 #       page. Built live by the page from the queue itself
-#       (bitcoin-contents.html); nothing to list here but its heading.
+#       (bitcoin-contents.html); nothing to list here but its heading and the
+#       part's own reading, raised on its leaf.
 #   II  Consensus — the rules the chapters are written under, grouped by the
 #       BIP that settled each. A soft fork names chapters the way nothing else
 #       does — the window that counted its signals, the height its rule first
@@ -105,6 +106,13 @@
 - kind: mempool
   title: The Mempool
   note: The chapters the queue is already forming, ordered as a miner would take them — provisional numbers that hold only while the queue does, and only the first is a real forecast.
+  # The part's reading is not of any one draft chapter but of the question the
+  # queue's ordering begs: who the miners are, and how anyone honestly counts
+  # their shares of the hashrate when the chain states blocks won and nothing
+  # else — window choice, smoothing, and the error bars the dashboards omit.
+  commentary:
+    - file: measuring-pool-hashrate.md
+      by: Claude Fable 5
 
 - kind: consensus
   title: Consensus
