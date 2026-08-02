@@ -56,11 +56,13 @@
 #
 # A part's `kind` says who fills it: `consensus` is listed here, `mempool` and
 # `ledgers` are gathered by the page, and `proofs` is listed here too but names
-# files rather than places — each entry a `proof:` (an .ots file in proofs/) and
-# the `subject:` it stamps, if the file itself is small enough to ship. Nothing
-# else is written down for a proof, and nothing else should be: the citation, the
-# transaction and the merkle root all come out of the proof's own bytes when it
-# is read, so an entry here cannot claim a chapter the proof does not.
+# files rather than places — each entry a `proof:` (an .ots file in proofs/), the
+# `subject:` it stamps, if the file itself is small enough to ship, and a
+# `source:` — where the work is published outside the book, the one link its
+# footnote carries. Nothing else CITED is written down for a proof, and nothing
+# else should be: the citation, the transaction and the merkle root all come out
+# of the proof's own bytes when it is read, so an entry here cannot claim a
+# chapter the proof does not.
 #
 # The `consensus` part lists `bips:` — one group per fork, each with the BIP's
 # number (`bip` — or, for a fork that was never a BIP, a handle worn verbatim:
@@ -176,7 +178,7 @@
       note: Every signature must be spelled in exactly canonical DER — one encoding per signature, closing the door OpenSSL's tolerance had left open. The second supermajority fork, and the last quiet one; its activation was followed at once by a brief fork among miners who had signaled v3 without validating it.
       commentary:
         - file: bip66.md
-          by: Claude Opus 5
+          by: Claude Fable 5
       stats:
         - label: mechanism
           value: rolling supermajority of block versions, v3
@@ -191,13 +193,13 @@
           note: The window that closed the strict-DER fork.
           commentary:
             - file: bip66.md
-              by: Claude Opus 5
+              by: Claude Fable 5
         - title: Activation (v3)
           id: '363725'
           note: From here a signature has one spelling — and the chapters just past this one were briefly contested by miners who signaled without validating.
           commentary:
             - file: bip66-activation-v3.md
-              by: Claude Opus 5
+              by: Claude Fable 5
     - bip: '65'
       name: CheckLockTimeVerify
       status: active
@@ -207,7 +209,7 @@
       note: An output can refuse to be spent before a stated time or height — τ in the book's notation, the first opcode to let a lock make a promise about the future rather than about a key. The third and last of the supermajority windows.
       commentary:
         - file: bip65.md
-          by: Claude Opus 5
+          by: Claude Fable 5
       stats:
         - label: mechanism
           value: rolling supermajority of block versions, v4
@@ -222,13 +224,13 @@
           note: The third and last supermajority window, closing the fork that gave scripts a clock.
           commentary:
             - file: bip65.md
-              by: Claude Opus 5
+              by: Claude Fable 5
         - title: Activation (v4)
           id: '388381'
           note: From here an output can say not before.
           commentary:
             - file: bip65-activation-v4.md
-              by: Claude Opus 5
+              by: Claude Fable 5
     # The forks the chain declined are part of the rules' story too: each is
     # kept with its outcome, and a fork that left no chapter has none to cite
     # -- the empty record is the record.
@@ -305,7 +307,7 @@
       note: The blocksize war's wedge — a transient rule that made not signaling for SegWit a way to lose blocks, squeezing BIP141 over its own 95% threshold. It signaled over its own 336-block epochs, which no book aligns with, but one book holds the story end to end.
       commentary:
         - file: bip91.md
-          by: Claude Opus 5
+          by: Claude Fable 5
       stats:
         - label: mechanism
           value: version bits, over its own 336-block epochs
@@ -322,7 +324,7 @@
           note: III β29 opens, BIP91 locks in at ■321, and it activates at ■673 — the whole drama inside one book.
           commentary:
             - file: bip91.md
-              by: Claude Opus 5
+              by: Claude Fable 5
         - title: Lock-in
           id: '476768'
           note: ■321 — where the count crossed 80% of its 336-block epoch.
@@ -494,7 +496,7 @@
           note: Lock-in by 963,648, one book on, should the threshold be met.
           commentary:
             - file: bip110-lock-in.md
-              by: Claude Opus 5
+              by: Claude Fable 5
         - title: Activation
           id: '965664'
           expected: true
@@ -513,7 +515,7 @@
       note: The original subsidy arithmetic shifted a 64-bit value by the halving count, and at the 64th halving that shift is undefined — on most machines it wraps, and the reward that should have fallen to zero would have come back as fifty coins a block. BIP42 (1 April 2014) caps the schedule instead. No ballot and no signals — a flag day by height, two centuries out.
       commentary:
         - file: bip42-activation-21m-cap.md
-          by: Claude Opus 5
+          by: Claude Fable 5
       stats:
         - label: mechanism
           value: flag day, by height — the one activation with no ballot at all
@@ -526,7 +528,7 @@
           note: The book's last chapter, and the only one whose date is already known: BIP42's cap first binds at 13,440,000, the opening chapter of Volume LXV, due around the year 2262.
           commentary:
             - file: bip42-activation-21m-cap.md
-              by: Claude Opus 5
+              by: Claude Fable 5
 
 - kind: ledgers
   title: Ledgers
@@ -542,15 +544,16 @@
   # kept apart from the record.
   commentary:
     - file: citations.md
-      by: Claude Opus 5
+      by: Claude Fable 5
   entries:
     - title: Hello World!
       proof: hello-world.txt.ots
       subject: hello-world.txt
+      source: https://github.com/opentimestamps/opentimestamps-client/blob/master/examples/hello-world.txt
       note: The OpenTimestamps client's own example proof, and the oldest anyone can still replay — May 2015, a year before the calendar servers, its commitment sitting where a public key's hash belongs.
       commentary:
         - file: the-hello-world-timestamp.md
-          by: Claude Opus 5
+          by: Claude Fable 5
     # The client's own releases. Since 22.0, bitcoincore.org has stamped each
     # release's checksum file into the chain the day the binaries went up, so a
     # release date is a thing this register can cite rather than repeat: the
@@ -563,101 +566,133 @@
     - title: Bitcoin Core 22.0
       proof: bitcoin-core-22.0-SHA256SUMS.ots
       subject: bitcoin-core-22.0-SHA256SUMS
+      source: https://bitcoincore.org/bin/bitcoin-core-22.0/
       note: The first release bitcoincore.org stamped into the chain — September 2021, the first release of the Taproot era, and every one since carries its own proof.
       commentary:
         - file: bitcoin-core-releases.md
     - title: Bitcoin Core 22.1
       proof: bitcoin-core-22.1-SHA256SUMS.ots
       subject: bitcoin-core-22.1-SHA256SUMS
+      source: https://bitcoincore.org/bin/bitcoin-core-22.1/
     - title: Bitcoin Core 23.0
       proof: bitcoin-core-23.0-SHA256SUMS.ots
       subject: bitcoin-core-23.0-SHA256SUMS
+      source: https://bitcoincore.org/bin/bitcoin-core-23.0/
     - title: Bitcoin Core 23.1
       proof: bitcoin-core-23.1-SHA256SUMS.ots
       subject: bitcoin-core-23.1-SHA256SUMS
+      source: https://bitcoincore.org/bin/bitcoin-core-23.1/
     - title: Bitcoin Core 23.2
       proof: bitcoin-core-23.2-SHA256SUMS.ots
       subject: bitcoin-core-23.2-SHA256SUMS
+      source: https://bitcoincore.org/bin/bitcoin-core-23.2/
       note: Stamped into the same chapter and section as 24.1 — the two shipped the same day, and the calendar folded both checksum files into one aggregating transaction.
     - title: Bitcoin Core 24.0
       proof: bitcoin-core-24.0-SHA256SUMS.ots
       subject: bitcoin-core-24.0-SHA256SUMS
+      source: https://bitcoincore.org/bin/bitcoin-core-24.0/
     - title: Bitcoin Core 24.0.1
       proof: bitcoin-core-24.0.1-SHA256SUMS.ots
       subject: bitcoin-core-24.0.1-SHA256SUMS
+      source: https://bitcoincore.org/bin/bitcoin-core-24.0.1/
     - title: Bitcoin Core 24.1
       proof: bitcoin-core-24.1-SHA256SUMS.ots
       subject: bitcoin-core-24.1-SHA256SUMS
+      source: https://bitcoincore.org/bin/bitcoin-core-24.1/
       note: Stamped into the same chapter and section as 23.2 — the two shipped the same day, and the calendar folded both checksum files into one aggregating transaction.
     - title: Bitcoin Core 24.2
       proof: bitcoin-core-24.2-SHA256SUMS.ots
       subject: bitcoin-core-24.2-SHA256SUMS
+      source: https://bitcoincore.org/bin/bitcoin-core-24.2/
     - title: Bitcoin Core 25.0
       proof: bitcoin-core-25.0-SHA256SUMS.ots
       subject: bitcoin-core-25.0-SHA256SUMS
+      source: https://bitcoincore.org/bin/bitcoin-core-25.0/
     - title: Bitcoin Core 25.1
       proof: bitcoin-core-25.1-SHA256SUMS.ots
       subject: bitcoin-core-25.1-SHA256SUMS
+      source: https://bitcoincore.org/bin/bitcoin-core-25.1/
     - title: Bitcoin Core 25.2
       proof: bitcoin-core-25.2-SHA256SUMS.ots
       subject: bitcoin-core-25.2-SHA256SUMS
+      source: https://bitcoincore.org/bin/bitcoin-core-25.2/
     - title: Bitcoin Core 26.0
       proof: bitcoin-core-26.0-SHA256SUMS.ots
       subject: bitcoin-core-26.0-SHA256SUMS
+      source: https://bitcoincore.org/bin/bitcoin-core-26.0/
     - title: Bitcoin Core 26.1
       proof: bitcoin-core-26.1-SHA256SUMS.ots
       subject: bitcoin-core-26.1-SHA256SUMS
+      source: https://bitcoincore.org/bin/bitcoin-core-26.1/
     - title: Bitcoin Core 26.2
       proof: bitcoin-core-26.2-SHA256SUMS.ots
       subject: bitcoin-core-26.2-SHA256SUMS
+      source: https://bitcoincore.org/bin/bitcoin-core-26.2/
     - title: Bitcoin Core 27.0
       proof: bitcoin-core-27.0-SHA256SUMS.ots
       subject: bitcoin-core-27.0-SHA256SUMS
+      source: https://bitcoincore.org/bin/bitcoin-core-27.0/
     - title: Bitcoin Core 27.1
       proof: bitcoin-core-27.1-SHA256SUMS.ots
       subject: bitcoin-core-27.1-SHA256SUMS
+      source: https://bitcoincore.org/bin/bitcoin-core-27.1/
     - title: Bitcoin Core 27.2
       proof: bitcoin-core-27.2-SHA256SUMS.ots
       subject: bitcoin-core-27.2-SHA256SUMS
+      source: https://bitcoincore.org/bin/bitcoin-core-27.2/
     - title: Bitcoin Core 28.0
       proof: bitcoin-core-28.0-SHA256SUMS.ots
       subject: bitcoin-core-28.0-SHA256SUMS
+      source: https://bitcoincore.org/bin/bitcoin-core-28.0/
     - title: Bitcoin Core 28.1
       proof: bitcoin-core-28.1-SHA256SUMS.ots
       subject: bitcoin-core-28.1-SHA256SUMS
+      source: https://bitcoincore.org/bin/bitcoin-core-28.1/
     - title: Bitcoin Core 28.2
       proof: bitcoin-core-28.2-SHA256SUMS.ots
       subject: bitcoin-core-28.2-SHA256SUMS
+      source: https://bitcoincore.org/bin/bitcoin-core-28.2/
     - title: Bitcoin Core 28.3
       proof: bitcoin-core-28.3-SHA256SUMS.ots
       subject: bitcoin-core-28.3-SHA256SUMS
+      source: https://bitcoincore.org/bin/bitcoin-core-28.3/
     - title: Bitcoin Core 28.4
       proof: bitcoin-core-28.4-SHA256SUMS.ots
       subject: bitcoin-core-28.4-SHA256SUMS
+      source: https://bitcoincore.org/bin/bitcoin-core-28.4/
     - title: Bitcoin Core 29.0
       proof: bitcoin-core-29.0-SHA256SUMS.ots
       subject: bitcoin-core-29.0-SHA256SUMS
+      source: https://bitcoincore.org/bin/bitcoin-core-29.0/
     - title: Bitcoin Core 29.1
       proof: bitcoin-core-29.1-SHA256SUMS.ots
       subject: bitcoin-core-29.1-SHA256SUMS
+      source: https://bitcoincore.org/bin/bitcoin-core-29.1/
     - title: Bitcoin Core 29.2
       proof: bitcoin-core-29.2-SHA256SUMS.ots
       subject: bitcoin-core-29.2-SHA256SUMS
+      source: https://bitcoincore.org/bin/bitcoin-core-29.2/
     - title: Bitcoin Core 29.3
       proof: bitcoin-core-29.3-SHA256SUMS.ots
       subject: bitcoin-core-29.3-SHA256SUMS
+      source: https://bitcoincore.org/bin/bitcoin-core-29.3/
     - title: Bitcoin Core 29.4
       proof: bitcoin-core-29.4-SHA256SUMS.ots
       subject: bitcoin-core-29.4-SHA256SUMS
+      source: https://bitcoincore.org/bin/bitcoin-core-29.4/
     - title: Bitcoin Core 30.2
       proof: bitcoin-core-30.2-SHA256SUMS.ots
       subject: bitcoin-core-30.2-SHA256SUMS
+      source: https://bitcoincore.org/bin/bitcoin-core-30.2/
     - title: Bitcoin Core 30.3
       proof: bitcoin-core-30.3-SHA256SUMS.ots
       subject: bitcoin-core-30.3-SHA256SUMS
+      source: https://bitcoincore.org/bin/bitcoin-core-30.3/
     - title: Bitcoin Core 31.0
       proof: bitcoin-core-31.0-SHA256SUMS.ots
       subject: bitcoin-core-31.0-SHA256SUMS
+      source: https://bitcoincore.org/bin/bitcoin-core-31.0/
     - title: Bitcoin Core 31.1
       proof: bitcoin-core-31.1-SHA256SUMS.ots
       subject: bitcoin-core-31.1-SHA256SUMS
+      source: https://bitcoincore.org/bin/bitcoin-core-31.1/

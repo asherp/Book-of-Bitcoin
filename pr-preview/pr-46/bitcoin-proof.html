@@ -58,19 +58,46 @@ a:hover { text-decoration: underline; }
 .page-head { padding:8px 0 26px; margin-bottom:30px; border-bottom:1px solid var(--rule); text-align:center; }
 .leaf-title { margin:0; font:300 clamp(24px,6vw,36px)/1.2 'IBM Plex Mono',monospace; color:var(--ink); word-break:break-all; }
 .leaf-named { margin-top:10px; font:400 17px/1.35 'Newsreader',serif; color:var(--dim); }
-.leaf-citemark { margin-top:12px; font:600 15px/1 'IBM Plex Mono',monospace; }
-.leaf-citemark a { color:var(--accent); }
 .leaf-digest { max-width:56ch; margin:22px auto 0; text-align:left; }
-.leaf-open { margin-top:20px; }
-.ghost {
-  background:none; color:var(--accent); border:1px solid var(--input-bd); border-radius:4px;
-  padding:7px 14px; font:600 10.5px/1 'IBM Plex Mono',monospace; letter-spacing:.05em;
-  text-transform:uppercase; cursor:pointer;
+/* The header paragraph is a copy handle: clicking it opens the menu below. */
+.hash-copy { cursor:pointer; }
+/* The work's citation mark, worn as a footnote's superscript at the end of
+   the header paragraph -- the leaf's one footnote is at its foot. */
+.leaf-cite-sup { margin-left:2px; line-height:0; }
+.leaf-cite-sup a { font:600 12px/1 'IBM Plex Mono',monospace; color:var(--accent); }
+
+/* The copy menu, the book's own idiom (bitcoin-book.html) cut to this leaf's
+   one hash: the hex, or the prose that encodes it. */
+.hash-menu {
+  position: fixed; z-index: 40; min-width: 172px; padding: 6px;
+  background: var(--card); border: 1px solid var(--card-bd); border-radius: 7px;
+  box-shadow: 0 18px 44px -18px rgba(0,0,0,.8);
 }
-.ghost:hover { border-color:var(--accent); color:var(--accent-2); }
-.leaf-check { margin-top:12px; font:500 12px/1.5 'IBM Plex Mono',monospace; color:var(--meta); }
-.leaf-check.good { color:var(--accent); }
-.leaf-check.bad { color:#e08b7a; }
+.hash-menu-head {
+  padding: 6px 8px 8px; color: var(--dim); font: 600 10.5px/1 'IBM Plex Mono',monospace;
+  letter-spacing: .1em; text-transform: uppercase; border-bottom: 1px solid var(--rule); margin-bottom: 5px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 260px;
+}
+.hash-menu .hash-menu-item {
+  display: block; width: 100%; text-align: left; background: transparent; color: var(--ink-soft);
+  border: none; border-radius: 4px; padding: 8px 9px; cursor: pointer;
+  font: 500 12.5px/1.2 'IBM Plex Mono',monospace; letter-spacing: .02em; text-transform: none;
+}
+.hash-menu .hash-menu-item:hover, .hash-menu .hash-menu-item:focus-visible { background: var(--input-bg); color: var(--ink); outline: none; }
+
+/* The leaf's one footnote, seated the way the fork leaves seat their foot
+   (bitcoin-appendix.html): sticky at the screen bottom, the rule its top
+   edge, so where the file comes from is at hand at every point of the
+   ladder. It settles into ordinary flow at the end of the page, which is
+   where a footnote belongs. */
+.leaf-footnote { position:sticky; bottom:0; z-index:30; margin-top:44px;
+  padding:11px 2px max(11px, env(safe-area-inset-bottom));
+  border-top:1px solid var(--rule); background:var(--page);
+  display:flex; gap:10px; align-items:baseline;
+  font:500 12px/1.6 'IBM Plex Mono',monospace; color:var(--meta); }
+.leaf-footnote .fn-mark { flex:none; font-weight:600; color:var(--accent); }
+.leaf-footnote .fn-text { min-width:0; overflow-wrap:anywhere; }
+.leaf-footnote a { color:var(--accent); }
 
 /* One paragraph of the proof, with the book's own margin beside it: a
    left-hand column for the citation, right-aligned to the gutter, and the
@@ -126,11 +153,6 @@ a:hover { text-decoration: underline; }
   <header class="page-head">
     <h1 class="leaf-title" id="leaf-title">…</h1>
     <div class="leaf-digest" id="leaf-digest"></div>
-    <div class="leaf-open hidden" id="leaf-open">
-      <button type="button" class="ghost" id="subject-open">Check a copy…</button>
-      <input type="file" id="subject-file" hidden>
-    </div>
-    <div class="leaf-check" id="leaf-check"></div>
   </header>
 
   <div id="proof"></div>
@@ -152,6 +174,17 @@ a:hover { text-decoration: underline; }
   </details>
 
   <nav class="leaf-turns" id="leaf-turns"></nav>
+
+  <!-- The leaf's one footnote: the citation mark, and where the file comes
+       from -- the one link on this page that leaves the book entirely. -->
+  <aside class="leaf-footnote hidden" id="leaf-footnote"></aside>
+</div>
+
+<!-- The copy menu, raised by clicking the header paragraph. -->
+<div class="hash-menu hidden" id="copy-menu" role="menu">
+  <div class="hash-menu-head" id="copy-menu-head"></div>
+  <button type="button" class="hash-menu-item" id="copy-hex">Copy hex</button>
+  <button type="button" class="hash-menu-item" id="copy-text">Copy text</button>
 </div>
 
 <script type="module">
@@ -209,22 +242,24 @@ function render(proof) {
     $('leaf-title').after(named);
   }
 
-  // The work's citation mark, worn where the register's rows and the cited
-  // output's margin wear it: the edition's ‡ₙ, or the bare ‡ of an addendum.
-  const cite = document.createElement('div');
-  cite.className = 'leaf-citemark';
-  const mark = document.createElement('a');
-  mark.href = './bitcoin-appendix.html?part=proofs';
-  mark.textContent = proof.n ? `‡${toSubscript(proof.n)}` : '‡';
-  mark.title = proof.n ? `cited work ${proof.n} in ${backLabel}`
-    : "your addendum — kept in this browser, outside the edition's numbering";
-  cite.append(mark);
-  $('leaf-title').parentElement.insertBefore(cite, $('leaf-digest'));
-
   const cells = [];
-  $('leaf-digest').append(figure(proof.digest, 'h', 'dt', proof.digest.length / 2, false,
-    `${proof.hash} digest of ${proof.file}`, cells));
-  openable(proof);
+  const digestFig = figure(proof.digest, 'h', 'dt', proof.digest.length / 2, false,
+    `${proof.hash} digest of ${proof.file}`, cells);
+  // The work's citation mark, worn as a footnote marker: a superscript
+  // closing the header paragraph, pointing at the leaf's one footnote --
+  // which is where the register's ‡ₙ and the file's source both live.
+  const sup = document.createElement('sup');
+  sup.className = 'leaf-cite-sup';
+  const supA = document.createElement('a');
+  supA.href = '#leaf-footnote';
+  supA.textContent = proof.n ? `‡${toSubscript(proof.n)}` : '‡';
+  supA.title = proof.n ? `cited work ${proof.n} in ${backLabel} — its footnote says where the file comes from`
+    : "your addendum — kept in this browser, outside the edition's numbering";
+  sup.append(supA);
+  $('leaf-digest').append(digestFig, sup);
+  attachCopyMenu($('leaf-digest'), `${proof.hash} digest`, proof.digest,
+    () => digestFig.querySelector('.prose')?.textContent ?? '');
+  footnote(proof);
 
   const rungs = ladderOf(proof.attestation, proof.digest);
   const body = $('proof');
@@ -366,34 +401,94 @@ async function subjectInline(proof) {
   } catch { /* the leaf stands without it */ }
 }
 
-// The file is not here for every work -- a private one never was and never
-// need be; the button opens the reader's own copy, hashes it in the browser
-// and answers in one line.
-function openable(proof) {
-  const input = $('subject-file');
-  const out = $('leaf-check');
-  $('leaf-open').classList.remove('hidden');
-  $('subject-open').addEventListener('click', () => input.click());
-  input.addEventListener('change', async () => {
-    const file = input.files[0];
-    if (!file) return;
-    out.className = 'leaf-check';
-    out.textContent = '…';
-    try {
-      const bytes = new Uint8Array(await file.arrayBuffer());
-      const matches = await attests(proof, bytes);
-      out.className = `leaf-check ${matches ? 'good' : 'bad'}`;
-      out.textContent = `${file.name} ${matches ? '✓' : '✗'}`;
-      out.title = matches
-        ? `${bytes.length} bytes, and its ${proof.hash} digest is the one above`
-        : `${bytes.length} bytes, and its ${proof.hash} digest is not the one above`;
-    } catch {
-      out.className = 'leaf-check bad';
-      out.textContent = `${file.name} ✗`;
-      out.title = 'that file could not be read here';
-    }
-    input.value = '';
+// ── The copy menu ─────────────────────────────────────────────────────────
+// The book's idiom (bitcoin-book.html), cut to this leaf's one hash. The
+// header paragraph is the digest -- how this work is asked about anywhere
+// else -- so clicking it offers the two spellings the book keeps: the hex,
+// and the prose that encodes it. Hex is never shown on the page; the menu
+// is where the book hands it over.
+let menuFor = null;
+const copyMenu = $('copy-menu');
+function attachCopyMenu(el, label, hex, proseOf) {
+  el.classList.add('hash-copy');
+  el.tabIndex = 0;
+  el.setAttribute('aria-label', `${label}: ${hex} — click for menu`);
+  const open = (ev) => {
+    // The footnote marker at the paragraph's end keeps its own meaning.
+    if (ev.target.closest && ev.target.closest('a')) return;
+    ev.preventDefault();
+    ev.stopPropagation();
+    menuFor = { hex, prose: proseOf() };
+    $('copy-menu-head').textContent = label;
+    $('copy-hex').textContent = 'Copy hex';
+    $('copy-text').textContent = 'Copy text';
+    copyMenu.classList.remove('hidden');
+    // Anchor at the click; for a keyboard open, sit under the paragraph.
+    const at = ev.type === 'keydown'
+      ? (() => { const r = el.getBoundingClientRect(); return { x: r.left, y: r.bottom + 4 }; })()
+      : { x: ev.clientX, y: ev.clientY };
+    const r = copyMenu.getBoundingClientRect();
+    copyMenu.style.left = `${Math.max(8, Math.min(at.x, innerWidth - r.width - 8))}px`;
+    copyMenu.style.top = `${Math.max(8, Math.min(at.y, innerHeight - r.height - 8))}px`;
+    if (ev.type === 'keydown') $('copy-hex').focus({ preventScroll: true });
+  };
+  // A mouse click on this focusable element would otherwise scroll it into
+  // view; that scroll would trip the dismiss below and close the menu the
+  // instant it opened.
+  el.addEventListener('mousedown', (e) => e.preventDefault());
+  el.addEventListener('click', open);
+  el.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') open(e); });
+}
+const closeCopyMenu = () => { copyMenu.classList.add('hidden'); menuFor = null; };
+function copyItem(id, of) {
+  $(id).addEventListener('click', () => {
+    if (!menuFor) return;
+    navigator.clipboard.writeText(of()).then(() => {
+      $(id).textContent = 'Copied ✓';
+      setTimeout(closeCopyMenu, 650);
+    }).catch(closeCopyMenu);
   });
+}
+copyItem('copy-hex', () => menuFor.hex);
+copyItem('copy-text', () => menuFor.prose);
+document.addEventListener('click', (e) => {
+  if (!copyMenu.classList.contains('hidden') && !copyMenu.contains(e.target)) closeCopyMenu();
+});
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeCopyMenu(); });
+window.addEventListener('scroll', closeCopyMenu, { passive: true });
+
+// ── The footnote ──────────────────────────────────────────────────────────
+// The one place this leaf points out of the book entirely: where the file
+// comes from. The mark restates the register's ‡ₙ and opens the register;
+// the link is the publisher's own copy of the work. A reader's addendum has
+// no source to cite -- the whole point of a private timestamp -- and its
+// footnote says so instead.
+function footnote(proof) {
+  const foot = $('leaf-footnote');
+  const mark = document.createElement('a');
+  mark.className = 'fn-mark';
+  mark.href = './bitcoin-appendix.html?part=proofs';
+  mark.textContent = proof.n ? `‡${toSubscript(proof.n)}` : '‡';
+  mark.title = proof.n ? `cited work ${proof.n} in ${backLabel}`
+    : "your addendum — kept in this browser, outside the edition's numbering";
+  const text = document.createElement('span');
+  text.className = 'fn-text';
+  const source = proof.entry?.source;
+  if (source) {
+    text.append(`${proof.file} — published at `);
+    const a = document.createElement('a');
+    a.href = source;
+    a.rel = 'noopener';
+    try { const u = new URL(source); a.textContent = u.host + decodeURI(u.pathname); } catch { a.textContent = source; }
+    a.title = "the source of the file — outside the book, on its publisher's own server";
+    text.append(a);
+  } else if (proof.kept) {
+    text.append(`${proof.file} — your own copy; the book holds its proof, and the file never left your hands`);
+  } else {
+    text.append(proof.file);
+  }
+  foot.append(mark, text);
+  foot.classList.remove('hidden');
 }
 
 // The readings this leaf can raise: the file's own, where the appendix gave it
