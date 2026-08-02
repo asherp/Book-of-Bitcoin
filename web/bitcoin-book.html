@@ -488,6 +488,11 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 #page-prev { grid-column: 1; justify-self: start; }
 .section-nav .nav-keys { grid-column: 2; display: flex; align-items: center; justify-content: center; gap: 20px; }
 #page-next { grid-column: 3; justify-self: end; }
+/* The foot steppers wear entry NAMES from the contents walk, not the
+   eyebrow's terse chapter numbers, so at the shared 14px they crowd the bar.
+   A step down keeps both names on one line more often and lets the foot bar
+   sit lighter than the head; the keys beside them stay at their 11px. */
+.section-nav button { font-size: 12px; }
 /* The foot steppers wear entry NAMES (the contents walk), which can run long:
    the name ellipsizes inside its span while the chevron -- the button's own
    ::before / ::after, a flex item beside it -- always survives the cut. */
