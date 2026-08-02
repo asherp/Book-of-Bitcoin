@@ -282,3 +282,122 @@ export function numberName(n) {
 export function localizeHome() {
   for (const a of document.querySelectorAll('.masthead .home a')) localizeText(a);
 }
+
+// ─── the Language menu ────────────────────────────────────────────────
+// The masthead's Language item, one implementation for every page. The book
+// page grew this first and keeps its own wiring (a switch there re-renders
+// the open chapter in place); every other page mounts this one, which writes
+// the same two keys and reloads -- a page's normal load path is already the
+// correct renderer for a new language, and a reload is the one route that
+// cannot miss a string.
+//
+// The roster mirrors glossia-msg.js's MSG_LANGS by id and label, kept here so
+// a light page need not load the engine's module just to name the choices --
+// the same shared-by-convention standing the storage keys have. Adding a
+// language touches both lists (and, for the chrome, a STRINGS table above).
+export const LANGS = [
+  { id: 'english', label: 'English' },
+  { id: 'latin', label: 'Latina' },
+  { id: 'czech', label: 'Čeština' },
+  { id: 'german', label: 'Deutsch' },
+];
+const langNow = () => {
+  try { const l = localStorage.getItem(BOOK_LANG_KEY); return LANGS.some((x) => x.id === l) ? l : 'english'; }
+  catch { return 'english'; }
+};
+// The same writes glossia-msg's setBookLang makes, restated for pages with no
+// engine loaded: the prose key always, the UI key only for a modern tongue --
+// Latin prose is a real choice, a Latin chrome would be an affectation.
+export function setLang(id) {
+  if (!LANGS.some((l) => l.id === id)) return;
+  try {
+    localStorage.setItem(BOOK_LANG_KEY, id);
+    if (id !== 'latin') localStorage.setItem(UI_LANG_KEY, id);
+  } catch { /* private mode: nothing persists, and a reload forgets the choice */ }
+}
+
+// The menu carries its own dress, so a page needs no styles of its own to
+// mount it. Set to the book page's settings-panel pattern, on the shared
+// colour variables every page's root declares.
+const LANGM_CSS = `
+.langm { position:relative; }
+.langm-panel { display:none; position:absolute; right:0; top:calc(100% + 10px); z-index:60; min-width:11em;
+  padding:12px 14px 13px; background:var(--card); border:1px solid var(--card-bd); border-radius:8px;
+  box-shadow:0 18px 44px -18px rgba(0,0,0,.8); text-align:left; }
+.langm-panel.open { display:block; }
+.langm-title { margin-bottom:8px; font:600 10px/1 'IBM Plex Mono',monospace; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--meta); }
+.langm-rows { display:grid; gap:1px; }
+.langm-row { display:flex; justify-content:space-between; align-items:baseline; gap:14px; width:100%;
+  background:none; border:none; border-radius:4px; padding:7px 8px; cursor:pointer; text-align:left;
+  font:500 12.5px/1.2 'IBM Plex Mono',monospace; color:var(--ink-soft); }
+.langm-row:hover, .langm-row:focus-visible { background:var(--input-bg); color:var(--ink); outline:none; }
+.langm-row .langm-mark { font:600 11px/1 'IBM Plex Mono',monospace; color:var(--accent); visibility:hidden; }
+.langm-row.current { color:var(--ink); }
+.langm-row.current .langm-mark { visibility:visible; }
+`;
+
+// Mount the Language item at the end of the masthead's home row. `onPick`
+// replaces the default reload for a page that can re-render in place.
+export function mountLangMenu(onPick = null) {
+  const home = document.querySelector('.masthead .home');
+  if (!home || home.querySelector('.langm')) return;
+  if (!document.getElementById('langm-style')) {
+    const st = document.createElement('style');
+    st.id = 'langm-style';
+    st.textContent = LANGM_CSS;
+    document.head.append(st);
+  }
+  const wrap = document.createElement('span');
+  wrap.className = 'langm';
+  const link = document.createElement('a');
+  link.href = '#';
+  link.textContent = t('Language');
+  link.setAttribute('role', 'button');
+  link.setAttribute('aria-haspopup', 'dialog');
+  link.setAttribute('aria-expanded', 'false');
+  const panel = document.createElement('div');
+  panel.className = 'langm-panel';
+  panel.setAttribute('role', 'dialog');
+  panel.setAttribute('aria-label', t('Language'));
+  const title = document.createElement('div');
+  title.className = 'langm-title';
+  title.textContent = t('Language');
+  const rows = document.createElement('div');
+  rows.className = 'langm-rows';
+  const close = () => { panel.classList.remove('open'); link.setAttribute('aria-expanded', 'false'); };
+  for (const l of LANGS) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'langm-row' + (l.id === langNow() ? ' current' : '');
+    btn.setAttribute('aria-pressed', l.id === langNow() ? 'true' : 'false');
+    const name = document.createElement('span');
+    name.textContent = l.label;
+    const mark = document.createElement('span');
+    mark.className = 'langm-mark';
+    mark.textContent = '●';
+    btn.append(name, mark);
+    btn.addEventListener('click', () => {
+      close();
+      if (l.id === langNow()) return;
+      setLang(l.id);
+      if (onPick) onPick(l.id);
+      else location.reload();
+    });
+    rows.append(btn);
+  }
+  panel.append(title, rows);
+  wrap.append(link, panel);
+  home.append(document.createTextNode(' · '), wrap);
+  link.addEventListener('click', (e) => {
+    e.preventDefault();
+    const open = panel.classList.toggle('open');
+    link.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
+  document.addEventListener('click', (e) => {
+    if (!panel.classList.contains('open')) return;
+    if (panel.contains(e.target) || link.contains(e.target)) return;
+    close();
+  });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
+}
