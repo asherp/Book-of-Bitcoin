@@ -211,7 +211,6 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 .lang-row .lang-mark { font:600 11px/1 'IBM Plex Mono',monospace; color:var(--accent); visibility:hidden; }
 .lang-row.current { color:var(--ink); }
 .lang-row.current .lang-mark { visibility:visible; }
-.lang-note { margin-top:10px; font:italic 400 12px/1.5 'Newsreader',serif; color:var(--dim); }
 
 /* ── data-source picker: choose the Esplora-compatible endpoint, add custom ── */
 .endpoint-row { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
@@ -886,7 +885,6 @@ button:disabled { opacity: .4; cursor: not-allowed; }
            not content: the payload words carry the same bytes in every
            language, and the prose decodes back to the same transaction. -->
       <div id="lang-rows" class="lang-rows"></div>
-      <div class="lang-note">The bytes are the record and do not change — prose in any of these languages decodes back to the same transaction.</div>
     </div></span> · <span class="settings-menu"><a href="#" id="settings-link" role="button" aria-haspopup="dialog" aria-expanded="false">Settings</a><div id="settings-panel" class="settings-panel hidden" role="dialog" aria-label="Settings">
       <div class="settings-title">Text size</div>
       <!-- One row per region. Every region beyond the body follows it (value
