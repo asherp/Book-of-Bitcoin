@@ -224,7 +224,7 @@
   id: '79400'
   commentary:
     - file: 1-mb-size-limit-activation.md
-      by: Claude Opus 5
+      by: Claude Fable 5
 # BIP30's origin story, and the clearest case for `ids:` — one thing the book
 # keeps, found in four places. The coinbases of 91,722 and 91,812 were repeated
 # verbatim by 91,880 and 91,842, overwriting them in the UTXO set — the only two
@@ -404,7 +404,7 @@
   index: 0
   commentary:
     - file: 500k-block-milestone.md
-      by: Claude Opus 5
+      by: Claude Fable 5
 # These windows straddle two books apiece (see the note at the head of the
 # series), so each cut below is cited by the chapter where its new target
 # first bound.
