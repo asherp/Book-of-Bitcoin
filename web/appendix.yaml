@@ -232,19 +232,36 @@
           value: June 2015, by Gavin Andresen
         - label: outcome
           value: withdrawn — signaling never came near the threshold, and the client faded
+    # Classic's bit, 28, sits at the top of the range version rolling later
+    # claimed for nonce entropy (BIP320, bits 13-28) -- so its ballot must
+    # anchor in 2016, when the bit still spoke: a closed window, never a live
+    # count at the tip, where rolled bits would read as signals. The anchor is
+    # the era's high-water mark, found by reading the era's versions whole:
+    # first 0x30000000 at 398,364, best 1,000-block window closing at 404,843
+    # with 70 signals, and no later stretch came near it.
     - bip: '109'
       name: Two-Megabyte Blocks
       status: failed
-      note: The second attempt to move the block size by miner vote, and the moderated one — two megabytes flat, where XT had asked for eight and doubling — carried by Bitcoin Classic, a client raised for the purpose within weeks of XT's fade. Its yes was a true version bit, 0x10000000 laid over the version word so a signaling chapter opened 0x30000000, and it needed three-quarters of a thousand blocks. For a few weeks in the spring of 2016 Classic's node count passed Core's, but nodes are not blocks: the signaling stalled in the single digits, the client itself dropped the fixed limit the next January for Bitcoin Unlimited's emergent-consensus banner, and the project closed in November 2017 commending its readers to Bitcoin Cash. No chapter carries its name; the chain declined to write one.
+      bit: 28
+      ballot: '404843'
+      window: 1000
+      note: The second attempt to move the block size by miner vote, and the moderated one — two megabytes flat, where XT had asked for eight and doubling — carried by Bitcoin Classic, a client raised for the purpose within weeks of XT's fade. Its yes was a true version bit, 0x10000000 laid over the version word so a signaling chapter opened 0x30000000, needing 750 of a rolling 1,000. For a few weeks in the spring of 2016 Classic's node count passed Core's, but nodes are not blocks: the window below is the ballot at its high-water mark — seventy signals of the thousand, 29 March 2016 — and the count never rose again. The client dropped the fixed limit the next January for Bitcoin Unlimited's emergent-consensus banner, and the project closed in November 2017 commending its readers to Bitcoin Cash.
       stats:
         - label: mechanism
           value: 750 of the last 1,000 blocks with bit 28 set (version 0x30000000), then a 28-day grace — carried by the Bitcoin Classic client
         - label: proposed
           value: January 2016, by Gavin Andresen — released that February, weeks after XT faded
         - label: peak
-          value: spring 2016 — node counts briefly passed Core's, but the blocks never followed; signaling stalled in the single digits against a 75% threshold
+          value: 70 of the 1,000 blocks to 404,843 — 7%, on 29 March 2016, against a 75% threshold; the window below is the ballot at its high-water mark
         - label: outcome
           value: withdrawn — Classic dropped the fixed limit in January 2017 for an emergent-consensus size, and shut down that November, pointing at Bitcoin Cash
+      entries:
+        - title: First signaling block
+          id: '398364'
+          note: The first block to open 0x30000000 — 14 February 2016; a ballot cast is part of the record whatever the count turns out to be.
+        - title: High-water mark
+          id: '404843'
+          note: The close of the era's best window — 70 of its 1,000 chapters signaled, 29 March 2016, against the 750 the rule needed. The count never rose again.
     - bip: '68 · 112 · 113'
       name: Relative Timelocks
       status: active
