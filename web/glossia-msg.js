@@ -321,17 +321,17 @@ export function detectLang(prose) {
   return 'english';
 }
 
-// ─── seed-phrase paragraph: a raw key ⇆ readable Glossia prose ────────
-// A "seed phrase" is a raw key rendered as natural-language prose whose payload
-// words carry the key's bytes — the project's core idea applied to a private
-// key. Since glossia 0.3.0 this is the CANONICAL encoding: the payload rides
-// with a version byte, and the cover prose is seeded from a checksum of the
-// bytes, so one payload has exactly one prose form, the wording itself is
-// checkable, and an artifact keeps verifying under future engine versions
-// (decode dispatches on the version byte, not the current rules). Decoding
-// still just filters the prose against the wordlist, so bytes round-trip
-// exactly. Callers append a checksum to the key before encoding (see
-// glossia-nostr.js) so a mistyped word is caught on load.
+// ─── canonical prose: raw bytes ⇆ readable Glossia prose ──────────────
+// Any hex value — a txid, a merkle root, a hash160, a private key — rendered
+// as natural-language prose whose payload words carry the bytes. This is
+// glossia's CANONICAL encoding (0.3.0+): the payload rides with a version
+// byte, and the cover prose is seeded from a checksum of the bytes, so one
+// payload has exactly one prose form, the wording itself is checkable, and an
+// artifact keeps verifying under future engine versions (decode dispatches on
+// the version byte, not the current rules). Decoding still just filters the
+// prose against the wordlist, so bytes round-trip exactly. Key-bearing
+// callers append their own checksum before encoding (see glossia-nostr.js) so
+// a mistyped word is caught on load.
 
 // hex string (any byte length) -> { prose, payloadWords, langId, version }.
 // `bestOf` is kept for caller compatibility but no longer does anything: the
@@ -340,15 +340,15 @@ export function detectLang(prose) {
 // Deterministic for a given (hex, language), so results are memoized (LRU): a
 // caller can warm an encode ahead of time (the Bitcoin book prefetches its
 // swipe neighbours) and the eventual render is a lookup instead of a WASM pass.
-const seedPhraseMemo = new Map();
-const SEED_MEMO_MAX = 400;
-export function encodeSeedPhrase(hex, langId = 'english', _bestOf = 1) {
+const canonicalMemo = new Map();
+const CANONICAL_MEMO_MAX = 400;
+export function encodeCanonical(hex, langId = 'english', _bestOf = 1) {
   const lang = msgLangById(langId);
   const key = `${lang.id}|${hex}`;
-  const hit = seedPhraseMemo.get(key);
+  const hit = canonicalMemo.get(key);
   if (hit) {
-    seedPhraseMemo.delete(key);   // move to the most-recently-used end
-    seedPhraseMemo.set(key, hit);
+    canonicalMemo.delete(key);   // move to the most-recently-used end
+    canonicalMemo.set(key, hit);
     return hit;
   }
   const r = JSON.parse(wasmCanonicalEncodeTraced(hex, lang.language, lang.wordlist));
@@ -359,8 +359,8 @@ export function encodeSeedPhrase(hex, langId = 'english', _bestOf = 1) {
     langId: lang.id,
     version: r.version,
   };
-  seedPhraseMemo.set(key, result);
-  while (seedPhraseMemo.size > SEED_MEMO_MAX) seedPhraseMemo.delete(seedPhraseMemo.keys().next().value);
+  canonicalMemo.set(key, result);
+  while (canonicalMemo.size > CANONICAL_MEMO_MAX) canonicalMemo.delete(canonicalMemo.keys().next().value);
   return result;
 }
 
@@ -371,9 +371,9 @@ export function encodeSeedPhrase(hex, langId = 'english', _bestOf = 1) {
 // re-render, i.e. the prose really is that payload's one form. Pre-0.3.0
 // artifacts have no version byte, so anything that fails the canonical shape
 // falls through to the legacy fixed-seed decode.
-export function decodeSeedPhrase(prose, byteCount, langId) {
+export function decodeCanonical(prose, byteCount, langId) {
   const text = (prose || '').trim();
-  if (!text) throw new Error('empty seed phrase');
+  if (!text) throw new Error('empty prose');
   const lang = msgLangById(langId || detectLang(text));
   const c = JSON.parse(wasmCanonicalDecode(text, lang.language, lang.wordlist));
   if (!c.error && (!byteCount || c.payload_hex.length === byteCount * 2)) {

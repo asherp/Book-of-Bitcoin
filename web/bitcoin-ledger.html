@@ -891,7 +891,7 @@ function txoProse(addr) {
         await gl.init();
         // renderScript's HTML is safe by its own contract: opcode glyphs and
         // marks are the only markup, pushed data arrives as Glossia prose.
-        return p.renderScript(hex, (h) => gl.encodeSeedPhrase(h).prose);
+        return p.renderScript(hex, (h) => gl.encodeCanonical(h).prose);
       } catch { return null; }
     })());
   }
@@ -940,7 +940,7 @@ function sectionFor(txid) {
               await new Promise((r2) => setTimeout(r2, 0));
               slice = performance.now();
             }
-            proseMemo.set(h, gl.encodeSeedPhrase(h, 'english', 5));
+            proseMemo.set(h, gl.encodeCanonical(h, 'english', 5));
           }
         };
         const record = [];
@@ -955,7 +955,7 @@ function sectionFor(txid) {
         }
         record.push(reverseHex(txid));
         await chunkEncode(record);
-        const memoEnc = (h, lang, n) => proseMemo.get(h) ?? gl.encodeSeedPhrase(h, lang ?? 'english', n ?? 5);
+        const memoEnc = (h, lang, n) => proseMemo.get(h) ?? gl.encodeCanonical(h, lang ?? 'english', n ?? 5);
         const enc = (h) => memoEnc(h).prose;
         const fields = p.composeTransactionFields(parsed, 5, null, memoEnc);
         const titleProse = enc(reverseHex(txid));
@@ -1961,7 +1961,7 @@ const openEntryLeaf = async (alive) => {
               for (const spanEl of [...job.el.querySelectorAll('[data-wchunk]')]) {
                 await new Promise((r2) => setTimeout(r2, 0));
                 if (!alive()) return;
-                spanEl.outerHTML = gl.encodeSeedPhrase(chunks[+spanEl.dataset.wchunk], 'english', 5).prose;
+                spanEl.outerHTML = gl.encodeCanonical(chunks[+spanEl.dataset.wchunk], 'english', 5).prose;
               }
             })();
           }
