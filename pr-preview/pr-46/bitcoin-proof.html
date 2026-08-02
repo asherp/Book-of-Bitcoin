@@ -122,6 +122,15 @@ a:hover { text-decoration: underline; }
    no one here: set a shade back, so a column of paragraphs reads as the
    alternation it is. */
 .para.sibling .prose { color:var(--dim); font-size:14px; }
+/* Wire order, drawn. A merkle parent is SHA256d(left ‖ right) -- two child
+   hashes concatenated, left first on the wire -- and the proof spells the
+   concatenation as an operation: prepend puts the sibling before the running
+   value (the left half), append puts it after (the right). So a sibling's
+   paragraph sits on the side its bytes occupy in the preimage: flush left as
+   the left half, pushed right as the right. The result beneath each pairing
+   runs the full measure, as a parent holds both halves. */
+.para.sibling .body { max-width:76%; }
+.para.sibling.sib-right .body { margin-left:auto; text-align:right; }
 @media (max-width: 560px) {
   .para { grid-template-columns: 1fr; }
   .marg { grid-column:1; text-align:left; margin-bottom:4px; }
@@ -266,9 +275,15 @@ function render(proof) {
   const section = proof.place.section;
   for (const rung of rungs) {
     if (rung.kind === 'level') {
+      // `rung.side` is where the running value sat in the pairing, so the
+      // sibling took the other half -- and its paragraph sits on that side
+      // of the page, drawing the preimage's wire order (left half ‖ right).
+      const sibSide = rung.side === 'right' ? 'left' : 'right';
       body.append(para(figure(rung.sibling, '⋔', 'merkle-mark', 32, true,
-        rung.duplicate ? 'this level had no sibling, so Bitcoin pairs the node with itself'
-          : 'a sibling the proof carries', cells), null, 'sibling'));
+        (rung.duplicate ? 'this level had no sibling, so Bitcoin pairs the node with itself'
+          : 'a sibling the proof carries')
+        + ` — the ${sibSide} half of this pairing, in the order the bytes are hashed`,
+        cells), null, `sibling sib-${sibSide}`));
     }
     const isRoot = !!rung.isRoot;
     const onChain = rung.kind === 'transaction'
@@ -535,7 +550,7 @@ async function setProse(cells) {
   }
   for (const { el, hex, reverse } of cells) {
     try {
-      el.textContent = m.encodeSeedPhrase(reverse ? reverseHex(hex) : hex, m.bookLang(), BEST_OF).prose;
+      el.textContent = m.encodeCanonical(reverse ? reverseHex(hex) : hex, m.bookLang(), BEST_OF).prose;
       el.classList.remove('waiting');
     } catch { el.textContent = 'unsaid'; }
     await new Promise((r) => setTimeout(r, 0));
