@@ -58,10 +58,30 @@ const STRINGS = {
     // the notation key's scope line
     'the marks on this page': 'značky na této stránce',
     'The sigla →': 'Sigla →',
-    // eyebrow crumbs
+    // eyebrow crumbs + leaf and chapter titles
     'Volume': 'Svazek',
     'Book': 'Kniha',
+    'Chapter': 'Kapitola',
     'Appendix I': 'Dodatek I',
+    'Appendix': 'Dodatek',
+    'The Genesis Block': 'Blok genesis',
+    // page-turn hover labels (the visible text is notation — §, β, ■, Roman)
+    'Chapter page': 'Stránka kapitoly',
+    'Projected chapter page': 'Stránka očekávané kapitoly',
+    'Book page': 'Stránka knihy',
+    'Volume page': 'Stránka svazku',
+    'First section': 'První oddíl',
+    'Next chapter — projected': 'Další kapitola — očekávaná',
+    'Previous book': 'Předchozí kniha',
+    'Next book': 'Další kniha',
+    'Previous volume': 'Předchozí svazek',
+    'Next volume': 'Další svazek',
+    'Previous section (end of {ref})': 'Předchozí oddíl (konec {ref})',
+    'Its successor — the current holder of §{n}': 'Jeho nástupce — současný držitel §{n}',
+    "Open this chapter's own page ({ref})": 'Otevřít stránku této kapitoly ({ref})',
+    "Open this projected chapter's own page ({ref})": 'Otevřít stránku této očekávané kapitoly ({ref})',
+    'Back to the front matter (the sigla)': 'Zpět k úvodním listům (sigla)',
+    'On to the appendices (I — the mempool)': 'Dál k dodatkům (I — mempool)',
     // status lines
     'fetching latest block…': 'načítání nejnovějšího bloku…',
     'fetching block…': 'načítání bloku…',
@@ -114,10 +134,30 @@ const STRINGS = {
     // the notation key's scope line
     'the marks on this page': 'die Zeichen auf dieser Seite',
     'The sigla →': 'Die Sigla →',
-    // eyebrow crumbs
+    // eyebrow crumbs + leaf and chapter titles
     'Volume': 'Band',
     'Book': 'Buch',
+    'Chapter': 'Kapitel',
     'Appendix I': 'Anhang I',
+    'Appendix': 'Anhang',
+    'The Genesis Block': 'Der Genesis-Block',
+    // page-turn hover labels (the visible text is notation — §, β, ■, Roman)
+    'Chapter page': 'Kapitelseite',
+    'Projected chapter page': 'Seite des erwarteten Kapitels',
+    'Book page': 'Buchseite',
+    'Volume page': 'Bandseite',
+    'First section': 'Erster Abschnitt',
+    'Next chapter — projected': 'Nächstes Kapitel — erwartet',
+    'Previous book': 'Voriges Buch',
+    'Next book': 'Nächstes Buch',
+    'Previous volume': 'Voriger Band',
+    'Next volume': 'Nächster Band',
+    'Previous section (end of {ref})': 'Voriger Abschnitt (Ende von {ref})',
+    'Its successor — the current holder of §{n}': 'Sein Nachfolger — der jetzige Inhaber von §{n}',
+    "Open this chapter's own page ({ref})": 'Die Seite dieses Kapitels öffnen ({ref})',
+    "Open this projected chapter's own page ({ref})": 'Die Seite dieses erwarteten Kapitels öffnen ({ref})',
+    'Back to the front matter (the sigla)': 'Zurück zur Titelei (die Sigla)',
+    'On to the appendices (I — the mempool)': 'Weiter zu den Anhängen (I — der Mempool)',
     // status lines
     'fetching latest block…': 'neuester Block wird geladen…',
     'fetching block…': 'Block wird geladen…',
@@ -180,6 +220,53 @@ export function localizeAttr(el, attr) {
   if (!m) { m = {}; EN_ATTRS.set(el, m); }
   if (m[attr] === undefined) m[attr] = el.getAttribute(attr) || '';
   if (m[attr]) el.setAttribute(attr, t(m[attr]));
+}
+
+// ─── spelled chapter numbers ──────────────────────────────────────────
+// "Chapter One" through "Chapter One Hundred", in the UI language. English is
+// the reader's original spelling (the arrays that lived in bitcoin-book.html,
+// verbatim); German compounds with und; Czech counts the way chapters are
+// read aloud (kapitola dvacet jedna), lowercase as Czech titles are. Numbers
+// past 100 are the caller's affair — null says "use the numeral".
+const NUM_WORDS = {
+  english: {
+    ones: ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight',
+      'Nine', 'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen',
+      'Seventeen', 'Eighteen', 'Nineteen'],
+    tens: ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'],
+    hundred: 'One Hundred',
+    compose: (tens, one) => one ? `${tens}-${one}` : tens,
+  },
+  czech: {
+    ones: ['', 'jedna', 'dva', 'tři', 'čtyři', 'pět', 'šest', 'sedm', 'osm',
+      'devět', 'deset', 'jedenáct', 'dvanáct', 'třináct', 'čtrnáct', 'patnáct', 'šestnáct',
+      'sedmnáct', 'osmnáct', 'devatenáct'],
+    tens: ['', '', 'dvacet', 'třicet', 'čtyřicet', 'padesát', 'šedesát', 'sedmdesát', 'osmdesát', 'devadesát'],
+    hundred: 'sto',
+    compose: (tens, one) => one ? `${tens} ${one}` : tens,
+  },
+  german: {
+    ones: ['', 'Eins', 'Zwei', 'Drei', 'Vier', 'Fünf', 'Sechs', 'Sieben', 'Acht',
+      'Neun', 'Zehn', 'Elf', 'Zwölf', 'Dreizehn', 'Vierzehn', 'Fünfzehn', 'Sechzehn',
+      'Siebzehn', 'Achtzehn', 'Neunzehn'],
+    tens: ['', '', 'zwanzig', 'dreißig', 'vierzig', 'fünfzig', 'sechzig', 'siebzig', 'achtzig', 'neunzig'],
+    hundred: 'Hundert',
+    // einundzwanzig — the unit leads (as "ein", never "eins"), und binds, and
+    // the compound is capitalized whole since it stands as a title.
+    compose: (tens, one) => {
+      if (!one) return tens[0].toUpperCase() + tens.slice(1);
+      const unit = one === 'Eins' ? 'ein' : one.toLowerCase();
+      const word = `${unit}und${tens}`;
+      return word[0].toUpperCase() + word.slice(1);
+    },
+  },
+};
+export function numberName(n) {
+  if (!Number.isInteger(n) || n < 1 || n > 100) return null;
+  const w = NUM_WORDS[uiLang()] || NUM_WORDS.english;
+  if (n === 100) return w.hundred;
+  if (n < 20) return w.ones[n];
+  return w.compose(w.tens[Math.floor(n / 10)], w.ones[n % 10]);
 }
 
 // The masthead's home row, for every page that carries one: each link's text
