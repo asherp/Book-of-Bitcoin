@@ -161,8 +161,9 @@ a:hover { text-decoration: underline; }
 </div>
 
 <script type="module">
-import { localizeHome, t as tr } from './btc-strings.js';
-localizeHome();   // the masthead in the reader's UI language (chosen on the book page)
+import { localizeHome, mountLangMenu, t as tr } from './btc-strings.js';
+localizeHome();   // the masthead in the reader's UI language
+mountLangMenu();  // …with the Language item, which any page can now set
 import { loadNotables, notables, places, placeTitle, appendix, isBlockId, isRelativeBlockId, entryHref } from './btc-contents.js';
 import { partLabel } from './btc-notables.js';
 import { toSubscript } from './btc-sigla.js';

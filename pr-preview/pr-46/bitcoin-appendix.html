@@ -406,8 +406,9 @@ a.bb-ref:hover { color:var(--accent-2); }
 </div>
 
 <script type="module">
-import { localizeHome } from './btc-strings.js';
-localizeHome();   // the masthead in the reader's UI language (chosen on the book page)
+import { localizeHome, mountLangMenu } from './btc-strings.js';
+localizeHome();   // the masthead in the reader's UI language
+mountLangMenu();  // …with the Language item, which any page can now set
 import { loadNotables, appendix, entryHref, isBlockId } from './btc-contents.js';
 import { partLabel } from './btc-notables.js';
 

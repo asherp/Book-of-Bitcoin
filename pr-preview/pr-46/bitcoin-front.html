@@ -305,8 +305,9 @@ body.at-title .title-leaf { min-height: 100vh; cursor: pointer; }
 </div>
 
 <script type="module">
-import { localizeHome } from './btc-strings.js';
-localizeHome();   // the masthead in the reader's UI language (chosen on the book page)
+import { localizeHome, mountLangMenu } from './btc-strings.js';
+localizeHome();   // the masthead in the reader's UI language
+mountLangMenu();  // …with the Language item, which any page can now set
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //
 // The front matter's horizontal axis, in the standard order a book puts it:

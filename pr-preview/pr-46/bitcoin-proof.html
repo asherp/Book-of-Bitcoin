@@ -200,8 +200,9 @@ a:hover { text-decoration: underline; }
 </div>
 
 <script type="module">
-import { localizeHome } from './btc-strings.js';
-localizeHome();   // the masthead in the reader's UI language (chosen on the book page)
+import { localizeHome, mountLangMenu } from './btc-strings.js';
+localizeHome();   // the masthead in the reader's UI language
+mountLangMenu();  // …with the Language item, which any page can now set
 // ── One timestamped file, written out ─────────────────────────────────────
 //
 // The front matter is the file: its name, and its digest as prose -- the whole
