@@ -199,11 +199,15 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 .fs-value.fs-linked { color:var(--meta); }
 .fontscale-foot { display:flex; justify-content:flex-end; margin-top:10px; }
 
-/* ── language picker: which of the engine's languages the prose is set in ── */
-.lang-rows { display:grid; gap:2px; }
+/* ── language picker: which of the engine's languages the prose is set in ──
+      Four short names, so unlike the settings popover the panel is sized to
+      its content rather than to the endpoint form's 340px. */
+#lang-panel { width:auto; min-width:12em; padding:12px 14px 13px; }
+#lang-panel .settings-title { margin-bottom:8px; }
+.lang-rows { display:grid; gap:1px; }
 .lang-row {
-  display:flex; align-items:center; justify-content:space-between; gap:16px;
-  background:transparent; border:0; border-radius:4px; padding:7px 8px; cursor:pointer;
+  display:flex; align-items:center; justify-content:space-between; gap:14px;
+  background:transparent; border:0; border-radius:4px; padding:5px 8px; cursor:pointer;
   font:400 14px/1.2 'Newsreader',serif; color:var(--ink-soft); text-align:left;
   text-transform:none; letter-spacing:normal;   /* the global button rule shouts; language names don't */
 }
