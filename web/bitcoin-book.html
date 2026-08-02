@@ -488,6 +488,19 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 #page-prev { grid-column: 1; justify-self: start; }
 .section-nav .nav-keys { grid-column: 2; display: flex; align-items: center; justify-content: center; gap: 20px; }
 #page-next { grid-column: 3; justify-self: end; }
+/* The foot steppers wear entry NAMES (the contents walk), which can run long:
+   the name ellipsizes inside its span while the chevron -- the button's own
+   ::before / ::after, a flex item beside it -- always survives the cut. */
+#page-prev, #page-next { display: flex; align-items: baseline; min-width: 0; max-width: 100%; }
+#page-prev .step-text, #page-next .step-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* On a phone the keys leave the names a few letters each, so the bar takes
+   two rows: the walk's two names above, the page's keys beneath them. */
+@media (max-width: 560px) {
+  .section-nav { grid-template-columns: 1fr 1fr; gap: 8px 16px; }
+  #page-prev { grid-column: 1; grid-row: 1; }
+  #page-next { grid-column: 2; grid-row: 1; }
+  .section-nav .nav-keys { grid-column: 1 / -1; grid-row: 2; }
+}
 .commentary-body { padding-bottom: 16px; }
 /* The sheet's own typography — the measure, the readings, the byline, the terms
    — is commentary.css, shared with the Ledger's leaf-borne readings, so a
@@ -4068,19 +4081,12 @@ function navTargets() {
   return items;
 }
 
-// A stop's face on the button: notation, like everything else on the bar --
-// the leaf's numeral, the chapter's ■, a section's ■ §, an output's .n or a
-// witness's .a after it. The name and the full reference ride in the hover.
+// A stop's face on the button: the entry's NAME, as the contents' rows print
+// it (localized, with its `as` where an entry keeps several places) -- the
+// notation and the full reference ride in the hover instead. Long names are
+// ellipsized by the bar's CSS, never wrapped.
 function navText(i) {
-  const c = volumeBookChapter(i.height);
-  const p = i.place;
-  if (p && p.page === 'volume') return toRoman(c.volume);
-  if (p && p.page === 'book') return `β${c.book}`;
-  if (i.rank < 0) return `${chapterMark(i.height)}${c.chapter}`;
-  let t = `${chapterMark(i.height)}${c.chapter} §${i.rank + 1}`;
-  if (p && p.out != null) t += `.${p.out}`;
-  else if (p && p.wit != null) t += `.${footnoteMark(p.wit)}`;
-  return t;
+  return i.place ? placeTitle(i.place) : tr('the latest block');
 }
 function navLabel(i) {
   const ref = i.rank >= 0 ? `${referenceOf(i.height)} §${i.rank + 1}` : referenceOf(i.height);
@@ -4136,7 +4142,14 @@ function labelNav() {
 
   const setBtn = (id, text, label) => {
     const b = $(id);
-    b.textContent = text;
+    // The text rides in a child span so the foot buttons can ellipsize a long
+    // entry name without clipping the chevron the button wears as ::before /
+    // ::after (pseudo-elements flank the span as flex items).
+    b.textContent = '';
+    const s = document.createElement('span');
+    s.className = 'step-text';
+    s.textContent = text;
+    b.append(s);
     b.title = label;
     b.setAttribute('aria-label', label);
   };
