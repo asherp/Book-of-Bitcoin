@@ -1027,7 +1027,7 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 </div>
 
 <script type="module">
-import { init, encodeSeedPhrase, MSG_LANGS, bookLang, setBookLang } from './glossia-msg.js';
+import { init, encodeCanonical, MSG_LANGS, bookLang, setBookLang } from './glossia-msg.js';
 import { t as tr, localizeText, localizeAttr, numberName } from './btc-strings.js';
 import { parseTransaction, computeTxid, parseBlockHeader, computeBlockHash, bitsToDifficulty, scriptToAddress } from './btc-tx.js';
 // The reader's ledger shelf (Appendix III): a locking script kept from a
@@ -1425,7 +1425,7 @@ const lazyEncode = (() => {
     if (hex === undefined) return;   // already filled
     delete el.dataset.hex;
     el.classList.remove('glossia-lazy');
-    el.innerHTML = encodeSeedPhrase(hex, bookLang(), BEST_OF).prose;   // Glossia prose -- safe as innerHTML
+    el.innerHTML = encodeCanonical(hex, bookLang(), BEST_OF).prose;   // Glossia prose -- safe as innerHTML
   };
   // rootMargin pre-encodes a chunk before it enters view, so a scrolling reader
   // almost never sees the raw placeholder.
@@ -2622,7 +2622,7 @@ async function sectionFields(txid) {
     // own default is english); the cache is flushed when the choice changes,
     // so an entry never outlives the language it was composed in.
     fields: composeTransactionFields(parsed, BEST_OF, lazyEncode.placeholder,
-      (hex, lang, bestOf) => encodeSeedPhrase(hex, bookLang(), bestOf)),
+      (hex, lang, bestOf) => encodeCanonical(hex, bookLang(), bestOf)),
     verified: verifiedTxid === txid,
     // Which of the notation key's script patterns this section puts on the
     // page, for the key's filter. Classified once, beside the fields.
@@ -2854,10 +2854,10 @@ function renderFrontispiece(header) {
   const prevParts = isGenesisPrev ? null : blockHashParts(header.prevBlockHash);
   const prevProse = isGenesisPrev
     ? '⓪' + toSuperscript(256)
-    : encodeSeedPhrase(prevParts.hex, bookLang(), BEST_OF).prose;
+    : encodeCanonical(prevParts.hex, bookLang(), BEST_OF).prose;
   // The merkle root isn't proof-of-work-constrained, so unlike a block hash
   // it has no expected run of zero bytes worth trimming.
-  const merkleProse = encodeSeedPhrase(reverseHex(header.merkleRoot), bookLang(), BEST_OF).prose;
+  const merkleProse = encodeCanonical(reverseHex(header.merkleRoot), bookLang(), BEST_OF).prose;
   // Each on-chain hash leads with a bold-gold mark (⌘ for a block hash, ⋔ for
   // the merkle root) that carries the copy menu; the prose beside it is not
   // itself clickable. The rest of the fields are plain decoded numbers.
@@ -3054,7 +3054,7 @@ function renderChapterHead(onTitlePage) {
   $('ch-frontispiece').classList.toggle('hidden', !onTitlePage);
   if (onTitlePage) {
     const parts = blockHashParts(state.hash);
-    const { prose: hashProse } = encodeSeedPhrase(parts.hex, bookLang(), BEST_OF);
+    const { prose: hashProse } = encodeCanonical(parts.hex, bookLang(), BEST_OF);
     // The hash prose sits between its marks -- ⌘ᵐ opening, the encoded
     // remainder, then the ⓪ⁿ proof-of-work zeros that follow those bytes; the
     // chapter title above it is the clickable handle for its copy/bookmark menu.
@@ -3154,7 +3154,7 @@ function renderProjectedHead(onTitlePage) {
     if (k === 0) {
       const prevTrimmed = trimTrailingZeroBytes(reverseHex(tipCore.hash));
       const prevBytes = prevTrimmed.length / 2;
-      const prose = encodeSeedPhrase(prevTrimmed, bookLang(), BEST_OF).prose;
+      const prose = encodeCanonical(prevTrimmed, bookLang(), BEST_OF).prose;
       fillMarkedHash(prevSpan, 'h', 'dt', tipCore.hash, 'previous block hash', prose, prevBytes,
         prevBytes < 32
           ? `${prevBytes} bytes encoded — the hash's ${32 - prevBytes} trailing zero bytes (required by proof-of-work) carry nothing and are dropped`
@@ -3480,7 +3480,7 @@ function renderGhostTombstone(txid) {
   $('section-title').classList.remove('hidden');
   $('section-hash').classList.remove('hidden');
   $('section-meta').classList.add('hidden');   // never mined: no date, no depth
-  const { prose: txidProse } = encodeSeedPhrase(reverseHex(txid), bookLang(), BEST_OF);
+  const { prose: txidProse } = encodeCanonical(reverseHex(txid), bookLang(), BEST_OF);
   $('section-hash').textContent = txidProse;
   const sectionTitle = $('section-title');
   sectionTitle.textContent = '';
@@ -3574,7 +3574,7 @@ function renderChapter(para) {
   // This section's own txid, encoded as prose beneath the section title. Reversed
   // to internal byte order first (like the block hash) so it carries the txid's
   // actual bytes; every byte kept, since a txid has no droppable leading zeros.
-  const { prose: txidProse } = encodeSeedPhrase(reverseHex(para.txid), bookLang(), BEST_OF);
+  const { prose: txidProse } = encodeCanonical(reverseHex(para.txid), bookLang(), BEST_OF);
   // The ⌘ identity mark leads, as on the chapter hash -- a txid is the same
   // double-SHA256, with no proof-of-work zeros to state: all 256 bits encoded,
   // and the superscript (bits, ⌘'s unit) says so. The section title carries
@@ -4926,17 +4926,17 @@ function stepNow(direction) {
 let neighborReady = { '-1': false, '1': false };
 let prefetchGen = 0;
 
-// Warm the WASM encodes a chapter page will render (encodeSeedPhrase
+// Warm the WASM encodes a chapter page will render (encodeCanonical
 // memoizes, so the eventual render is a lookup). Best-effort, and skipped
 // until the engine is ready -- the render path initializes it anyway.
 function warmLeafEncodes(core) {
   if (!ready) return;
   try {
-    encodeSeedPhrase(blockHashParts(core.hash).hex, bookLang(), BEST_OF);
+    encodeCanonical(blockHashParts(core.hash).hex, bookLang(), BEST_OF);
     if (core.header.prevBlockHash !== '00'.repeat(32)) {
-      encodeSeedPhrase(blockHashParts(core.header.prevBlockHash).hex, bookLang(), BEST_OF);
+      encodeCanonical(blockHashParts(core.header.prevBlockHash).hex, bookLang(), BEST_OF);
     }
-    encodeSeedPhrase(reverseHex(core.header.merkleRoot), bookLang(), BEST_OF);
+    encodeCanonical(reverseHex(core.header.merkleRoot), bookLang(), BEST_OF);
   } catch { /* warming is best-effort */ }
 }
 // Warm what a book leaf needs beyond its own first block. Where the book
@@ -4963,7 +4963,7 @@ function warmBookTargets(height) {
 async function warmSection(txid) {
   if (!ready) { await loadTxHex(txid); return; }   // at least the network half
   await sectionFields(txid);
-  encodeSeedPhrase(reverseHex(txid), bookLang(), BEST_OF);
+  encodeCanonical(reverseHex(txid), bookLang(), BEST_OF);
 }
 async function prefetchNeighbor(st, direction) {
   // A neighbour past the tip is a projected chapter. Its chapter page needs
@@ -5618,7 +5618,7 @@ async function applyBookLang(id) {
   localizeChrome();   // the chrome follows, except into Latin (see setBookLang)
   // Everything composed so far was composed in the old language: flush the
   // section cache and re-render the page in hand. The prose memo inside
-  // encodeSeedPhrase is keyed by language, so it needs no clearing -- a
+  // encodeCanonical is keyed by language, so it needs no clearing -- a
   // switch back finds its earlier encodes still warm.
   fieldsCache.clear();
   neighborReady = { '-1': false, '1': false };   // neighbours re-warm in the new language
