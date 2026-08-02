@@ -307,7 +307,7 @@ function render(proof) {
       // sibling took the other half -- and its paragraph sits on that side
       // of the page, drawing the preimage's wire order (left half ‖ right).
       const sibSide = rung.side === 'right' ? 'left' : 'right';
-      body.append(para(figure(rung.sibling, '⋔', 'merkle-mark', 32, true,
+      body.append(para(figure(reverseHex(rung.sibling), '⋔', 'merkle-mark', 32, true,
         (rung.duplicate ? 'this level had no sibling, so Bitcoin pairs the node with itself'
           : 'a sibling the proof carries')
         + ` — the ${sibSide} half of this pairing, in the order the bytes are hashed`,
@@ -326,7 +326,14 @@ function render(proof) {
         : null;
     const mark = isRoot ? '⋔' : rung.kind === 'transaction' ? '⌘' : rung.result.length === 40 ? 'h' : '⌘';
     const sup = mark === '⌘' ? 256 : rung.result.length / 2;
-    const hex = rung.kind === 'transaction' ? (rung.txid || reverseHex(rung.result)) : rung.result;
+    // The ladder computes in internal byte order; the book's convention splits
+    // the two spellings by register. The mark carries display order (the
+    // spelling an explorer, and the chapter's own copy menu, would hand over),
+    // and the prose encodes internal order -- the bytes as hashed -- exactly
+    // as the frontispiece encodes the same values. That match is the point: a
+    // reader holding this root's paragraph beside the chapter's ⋔ line reads
+    // the same words, or the two pages are not talking about the same block.
+    const hex = rung.kind === 'transaction' ? (rung.txid || reverseHex(rung.result)) : reverseHex(rung.result);
     body.append(para(figure(hex, mark, mark === '⋔' ? 'merkle-mark' : 'dt', sup, true, hex, cells), onChain));
     if (isRoot) checkRoot(proof, body.lastElementChild);
   }
