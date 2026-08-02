@@ -30,7 +30,7 @@ import { readFile, mkdir, writeFile } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
 import { createHash } from 'node:crypto';
 
-import { init, encodeSeedPhrase } from '../web/glossia-msg.js';
+import { init, encodeCanonical } from '../web/glossia-msg.js';
 import { parseTransaction, parseBlockHeader } from '../web/btc-tx.js';
 import { composeTransactionFields, composeBlockHeaderFields, renderWitness, toSuperscript } from '../web/btc-prose.js';
 import { volumeBookChapter, toRoman, reference, footnoteMark } from '../web/btc-citation.js';
@@ -145,7 +145,7 @@ const blockHashParts = (displayHex) => {
 // lives in one place and no caller can assemble it wrongly.
 const hashNotation = ({ zeroBits, remainBits }, prose) => `⌘${toSuperscript(remainBits)} ${prose} ⓪${toSuperscript(zeroBits)}`;
 
-const proseOf = (hex) => encodeSeedPhrase(hex, 'english', BEST_OF).prose;
+const proseOf = (hex) => encodeCanonical(hex, 'english', BEST_OF).prose;
 
 // The capped encoder handed to the composer for OP_RETURN payloads and used
 // for witness pushes: real prose for reasonable sizes, an honest placeholder
