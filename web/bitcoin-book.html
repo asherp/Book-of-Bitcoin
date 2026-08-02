@@ -199,6 +199,23 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 .fs-value.fs-linked { color:var(--meta); }
 .fontscale-foot { display:flex; justify-content:flex-end; margin-top:10px; }
 
+/* ── language picker: which of the engine's languages the prose is set in ──
+      Four short names, so unlike the settings popover the panel is sized to
+      its content rather than to the endpoint form's 340px. */
+#lang-panel { width:auto; min-width:12em; padding:12px 14px 13px; }
+#lang-panel .settings-title { margin-bottom:8px; }
+.lang-rows { display:grid; gap:1px; }
+.lang-row {
+  display:flex; align-items:center; justify-content:space-between; gap:14px;
+  background:transparent; border:0; border-radius:4px; padding:5px 8px; cursor:pointer;
+  font:400 14px/1.2 'Newsreader',serif; color:var(--ink-soft); text-align:left;
+  text-transform:none; letter-spacing:normal;   /* the global button rule shouts; language names don't */
+}
+.lang-row:hover, .lang-row:focus-visible { background:var(--input-bg); color:var(--ink); outline:none; }
+.lang-row .lang-mark { font:600 11px/1 'IBM Plex Mono',monospace; color:var(--accent); visibility:hidden; }
+.lang-row.current { color:var(--ink); }
+.lang-row.current .lang-mark { visibility:visible; }
+
 /* ── data-source picker: choose the Esplora-compatible endpoint, add custom ── */
 .endpoint-row { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
 .endpoint-select {
@@ -504,6 +521,11 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 /* Dim like the chapter-hash above it -- both are the identifying hash prose of
    the thing being read, one tier under the body, not two. */
 .section-hash { margin: 13px auto 0; max-width: 46ch; font: italic 400 calc(14.5px * var(--scale-body, 1))/1.55 'Newsreader',serif; color: var(--dim); }
+/* The section's date and depth, under the txid prose: derived readings, not
+   bytes, so they stand upright like the frontispiece's fields -- one line
+   each, a shade smaller than the hash prose they follow. */
+.section-meta { margin: 8px auto 0; max-width: 46ch; font: 400 calc(13.5px * var(--scale-body, 1))/1.55 'Newsreader',serif; color: var(--dim); }
+.section-meta div { display: block; }
 /* The volume/book leaves borrow the chapter-hash slot for their range and
    target lines -- not hash prose, so they stand upright. */
 .chapter-hash.plain, .chapter-hash .cfx-gold { font-style: normal; }
@@ -860,7 +882,14 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 <div class="wrap">
   <div class="masthead">
     <span class="title">The <span class="beta">β</span>ook of <span class="beta">β</span>itcoin</span>
-    <span class="home"><a href="./bitcoin-search.html">Search</a> · <a href="./bitcoin-contents.html" id="toc-link">Contents</a> · <span class="settings-menu"><a href="#" id="settings-link" role="button" aria-haspopup="dialog" aria-expanded="false">Settings</a><div id="settings-panel" class="settings-panel hidden" role="dialog" aria-label="Settings">
+    <span class="home"><a href="./bitcoin-search.html">Search</a> · <a href="./bitcoin-contents.html" id="toc-link">Contents</a> · <span class="settings-menu"><a href="#" id="lang-link" role="button" aria-haspopup="dialog" aria-expanded="false">Language</a><div id="lang-panel" class="settings-panel hidden" role="dialog" aria-label="Language">
+      <div class="settings-title">Prose language</div>
+      <!-- One row per language the engine renders into (glossia-msg.js's
+           MSG_LANGS); filled by renderLangRows. The choice is typography,
+           not content: the payload words carry the same bytes in every
+           language, and the prose decodes back to the same transaction. -->
+      <div id="lang-rows" class="lang-rows"></div>
+    </div></span> · <span class="settings-menu"><a href="#" id="settings-link" role="button" aria-haspopup="dialog" aria-expanded="false">Settings</a><div id="settings-panel" class="settings-panel hidden" role="dialog" aria-label="Settings">
       <div class="settings-title">Text size</div>
       <!-- One row per region. Every region beyond the body follows it (value
            dimmed) until its own buttons split it off; Reset rejoins them all
@@ -936,6 +965,13 @@ button:disabled { opacity: .4; cursor: not-allowed; }
       <div class="chapter-frontispiece" id="ch-frontispiece"></div>
       <h2 class="section-title" id="section-title"></h2>
       <div class="section-hash" id="section-hash"></div>
+      <!-- The section's place in time, under its identity: the containing
+           block's header time, then how deep the chain has buried it. Two
+           derived lines -- readings of the record, not bytes of this
+           transaction -- so they stand upright and apart from the italic
+           hash prose above them. Hidden on leaves, ghosts, and projected
+           sections, which have no sealed block to date. -->
+      <div class="section-meta hidden" id="section-meta"></div>
     </header>
 
     <div class="chapter-body" id="ch-paragraphs"></div>
@@ -991,7 +1027,8 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 </div>
 
 <script type="module">
-import { init, encodeSeedPhrase } from './glossia-msg.js';
+import { init, encodeSeedPhrase, MSG_LANGS, bookLang, setBookLang } from './glossia-msg.js';
+import { t as tr, localizeText, localizeAttr, numberName } from './btc-strings.js';
 import { parseTransaction, computeTxid, parseBlockHeader, computeBlockHash, bitsToDifficulty, scriptToAddress } from './btc-tx.js';
 // The reader's ledger shelf (Appendix III): a locking script kept from a
 // section joins it as a titled one-address ledger, the same registry the
@@ -1388,7 +1425,7 @@ const lazyEncode = (() => {
     if (hex === undefined) return;   // already filled
     delete el.dataset.hex;
     el.classList.remove('glossia-lazy');
-    el.innerHTML = encodeSeedPhrase(hex, 'english', BEST_OF).prose;   // Glossia prose -- safe as innerHTML
+    el.innerHTML = encodeSeedPhrase(hex, bookLang(), BEST_OF).prose;   // Glossia prose -- safe as innerHTML
   };
   // rootMargin pre-encodes a chunk before it enters view, so a scrolling reader
   // almost never sees the raw placeholder.
@@ -2202,6 +2239,7 @@ const liveProjection = (() => {
     const wasTip = atTipPage();
     tipHeight = block.height;
     projectedCache = null;   // every projected height re-seats
+    refreshSectionConfirmations();   // an open section deepens in place
     if (!state || !state.projected) {
       // The tip's page was on screen: turn it to the block that just took the
       // tip. The page it leaves keeps nothing of its lateness -- the clock is
@@ -2580,7 +2618,11 @@ async function sectionFields(txid) {
   const parsed = parseTransaction(hex);
   const verifiedTxid = await computeTxid(parsed.baseHex);
   const entry = {
-    fields: composeTransactionFields(parsed, BEST_OF, lazyEncode.placeholder),
+    // The encoder pins the reader's chosen language (composeTransactionFields'
+    // own default is english); the cache is flushed when the choice changes,
+    // so an entry never outlives the language it was composed in.
+    fields: composeTransactionFields(parsed, BEST_OF, lazyEncode.placeholder,
+      (hex, lang, bestOf) => encodeSeedPhrase(hex, bookLang(), bestOf)),
     verified: verifiedTxid === txid,
     // Which of the notation key's script patterns this section puts on the
     // page, for the key's filter. Classified once, beside the fields.
@@ -2608,7 +2650,7 @@ async function showCurrentTx() {
     liveProjection.sync();
     return;
   }
-  setStatus(SPINNER_HTML + 'fetching transaction…');
+  setStatus(SPINNER_HTML + tr('fetching transaction…'));
   // The current txid: from the loaded list when we have it, else the single
   // transaction we opened by id (before its block's list is ever fetched).
   // A ghost -- a fee-replaced draft seated beneath its successor -- renders
@@ -2812,10 +2854,10 @@ function renderFrontispiece(header) {
   const prevParts = isGenesisPrev ? null : blockHashParts(header.prevBlockHash);
   const prevProse = isGenesisPrev
     ? '⓪' + toSuperscript(256)
-    : encodeSeedPhrase(prevParts.hex, 'english', BEST_OF).prose;
+    : encodeSeedPhrase(prevParts.hex, bookLang(), BEST_OF).prose;
   // The merkle root isn't proof-of-work-constrained, so unlike a block hash
   // it has no expected run of zero bytes worth trimming.
-  const merkleProse = encodeSeedPhrase(reverseHex(header.merkleRoot), 'english', BEST_OF).prose;
+  const merkleProse = encodeSeedPhrase(reverseHex(header.merkleRoot), bookLang(), BEST_OF).prose;
   // Each on-chain hash leads with a bold-gold mark (⌘ for a block hash, ⋔ for
   // the merkle root) that carries the copy menu; the prose beside it is not
   // itself clickable. The rest of the fields are plain decoded numbers.
@@ -2947,15 +2989,11 @@ const tipClock = (() => {
 // "Chapter One" through "Chapter One Hundred" -- and fall back to numerals
 // past SPELLED_CHAPTER_MAX ("Chapter 101"), where spelled forms grow unwieldy.
 const SPELLED_CHAPTER_MAX = 100;
-const SPELLED_ONES = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight',
-  'Nine', 'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen',
-  'Seventeen', 'Eighteen', 'Nineteen'];
-const SPELLED_TENS = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+// The words themselves live with the rest of the chrome's vocabulary
+// (btc-strings.js, numberName), spelled in the UI language.
 function chapterName(n) {
   if (n > SPELLED_CHAPTER_MAX) return n.toLocaleString();
-  if (n === 100) return 'One Hundred';
-  if (n < 20) return SPELLED_ONES[n];
-  return SPELLED_TENS[Math.floor(n / 10)] + (n % 10 ? '-' + SPELLED_ONES[n % 10] : '');
+  return numberName(n) ?? n.toLocaleString();
 }
 
 function renderChapterHead(onTitlePage) {
@@ -2979,7 +3017,7 @@ function renderChapterHead(onTitlePage) {
     .filter((p) => p.id === String(state.height) && !p.page && !p.address)
     .map(placeTitle);
   const eventTitle = eventTitles[0];
-  $('ch-title').textContent = `Chapter ${chapterName(chapter)}`;
+  $('ch-title').textContent = `${tr('Chapter')} ${chapterName(chapter)}`;
   // The chapter's name line: the reader's keep of this chapter (a block-hash
   // bookmark) overrides the curated event names while it stands, and the
   // names return the moment the keep is removed -- syncBookmarkTitles
@@ -3005,9 +3043,9 @@ function renderChapterHead(onTitlePage) {
     const crumb = document.createElement('button');
     crumb.type = 'button';
     crumb.className = 'crumb';
-    crumb.textContent = eventTitle || `Chapter ${chapterName(chapter)}`;
-    crumb.title = `Chapter page (${reference(state.height)})`;
-    crumb.setAttribute('aria-label', `Open this chapter's own page (${reference(state.height)})`);
+    crumb.textContent = eventTitle || `${tr('Chapter')} ${chapterName(chapter)}`;
+    crumb.title = `${tr('Chapter page')} (${reference(state.height)})`;
+    crumb.setAttribute('aria-label', tr("Open this chapter's own page ({ref})", { ref: reference(state.height) }));
     crumb.addEventListener('click', () => { rememberTrail(); state.ghost = null; state.index = -1; showCurrentTx(); });
     inline.append(crumb);
   }
@@ -3016,7 +3054,7 @@ function renderChapterHead(onTitlePage) {
   $('ch-frontispiece').classList.toggle('hidden', !onTitlePage);
   if (onTitlePage) {
     const parts = blockHashParts(state.hash);
-    const { prose: hashProse } = encodeSeedPhrase(parts.hex, 'english', BEST_OF);
+    const { prose: hashProse } = encodeSeedPhrase(parts.hex, bookLang(), BEST_OF);
     // The hash prose sits between its marks -- ⌘ᵐ opening, the encoded
     // remainder, then the ⓪ⁿ proof-of-work zeros that follow those bytes; the
     // chapter title above it is the clickable handle for its copy/bookmark menu.
@@ -3050,7 +3088,7 @@ function renderProjectedHead(onTitlePage) {
   showEyebrowCrumbs(false, false, onTitlePage);
   $('ch-volume').textContent = volume.toLocaleString();
   $('ch-book').textContent = book.toLocaleString();
-  $('ch-title').textContent = `Chapter ${chapterName(chapter)}`;
+  $('ch-title').textContent = `${tr('Chapter')} ${chapterName(chapter)}`;
   const subtitle = $('ch-subtitle');
   // Named the way Appendix I names it -- alpha for the draft at the head of
   // the queue, then the ones behind it. A mined chapter's subtitle carries
@@ -3065,9 +3103,9 @@ function renderProjectedHead(onTitlePage) {
     const crumb = document.createElement('button');
     crumb.type = 'button';
     crumb.className = 'crumb';
-    crumb.textContent = `Chapter ${chapterName(chapter)}`;
-    crumb.title = `Projected chapter page (${referenceOf(state.height)})`;
-    crumb.setAttribute('aria-label', `Open this projected chapter's own page (${referenceOf(state.height)})`);
+    crumb.textContent = `${tr('Chapter')} ${chapterName(chapter)}`;
+    crumb.title = `${tr('Projected chapter page')} (${referenceOf(state.height)})`;
+    crumb.setAttribute('aria-label', tr("Open this projected chapter's own page ({ref})", { ref: referenceOf(state.height) }));
     crumb.addEventListener('click', () => { rememberTrail(); state.ghost = null; state.index = -1; showCurrentTx(); });
     inline.append(crumb);
   }
@@ -3116,7 +3154,7 @@ function renderProjectedHead(onTitlePage) {
     if (k === 0) {
       const prevTrimmed = trimTrailingZeroBytes(reverseHex(tipCore.hash));
       const prevBytes = prevTrimmed.length / 2;
-      const prose = encodeSeedPhrase(prevTrimmed, 'english', BEST_OF).prose;
+      const prose = encodeSeedPhrase(prevTrimmed, bookLang(), BEST_OF).prose;
       fillMarkedHash(prevSpan, 'h', 'dt', tipCore.hash, 'previous block hash', prose, prevBytes,
         prevBytes < 32
           ? `${prevBytes} bytes encoded — the hash's ${32 - prevBytes} trailing zero bytes (required by proof-of-work) carry nothing and are dropped`
@@ -3155,6 +3193,7 @@ function renderLeafShell() {
   $('page-folio').classList.add('hidden');
   $('section-title').classList.add('hidden');
   $('section-hash').classList.add('hidden');
+  $('section-meta').classList.add('hidden');
   $('ch-paragraphs').innerHTML = '';
   $('ch-footnotes').innerHTML = '';
   $('ch-totals').innerHTML = '';
@@ -3193,7 +3232,7 @@ function renderVolumeLeaf() {
   showEyebrowCrumbs(false, false);
   $('ch-chapter-inline').textContent = '';
   const title = $('ch-title');
-  title.textContent = `Volume ${toRoman(volume)}`;
+  title.textContent = `${tr('Volume')} ${toRoman(volume)}`;
   title.classList.remove('hidden');
   detachHashCopy(title);
   attachLeafBookmark(title, 'volume');
@@ -3298,7 +3337,7 @@ function renderBookLeaf() {
   $('ch-volume').textContent = volume.toLocaleString();
   $('ch-chapter-inline').textContent = '';
   const title = $('ch-title');
-  title.textContent = `Book ${book.toLocaleString()}`;
+  title.textContent = `${tr('Book')} ${book.toLocaleString()}`;
   title.classList.remove('hidden');
   detachHashCopy(title);
   attachLeafBookmark(title, 'book');
@@ -3440,7 +3479,8 @@ function renderGhostTombstone(txid) {
   lazyEncode.reset();
   $('section-title').classList.remove('hidden');
   $('section-hash').classList.remove('hidden');
-  const { prose: txidProse } = encodeSeedPhrase(reverseHex(txid), 'english', BEST_OF);
+  $('section-meta').classList.add('hidden');   // never mined: no date, no depth
+  const { prose: txidProse } = encodeSeedPhrase(reverseHex(txid), bookLang(), BEST_OF);
   $('section-hash').textContent = txidProse;
   const sectionTitle = $('section-title');
   sectionTitle.textContent = '';
@@ -3486,6 +3526,43 @@ function renderGhostTombstone(txid) {
   labelNav();
 }
 
+// The section's two derived lines beneath its txid prose (see #section-meta):
+// the containing block's header time, then its confirmation count -- how many
+// chapters stand from this one to the tip, both counted. Readings, not bytes:
+// the date is the header's nTime interpreted, the depth is arithmetic against
+// a tip this page never carries. A projected section has no sealed block to
+// date and a ghost was never mined at all, so both leave the lines hidden.
+function renderSectionMeta() {
+  const el = $('section-meta');
+  el.textContent = '';
+  const ts = state.projected || !state.block ? null : state.block.timestamp;
+  if (!Number.isFinite(ts)) { el.classList.add('hidden'); return; }
+  const stamp = timestampInfo(ts);
+  const when = document.createElement('div');
+  when.textContent = stamp.mark;
+  when.title = `${stamp.title} — ${tr("the containing block's header time, the miner's own clock when the chapter was sealed")}`;
+  el.append(when);
+  const conf = document.createElement('div');
+  conf.id = 'section-confirmations';
+  el.append(conf);
+  refreshSectionConfirmations();
+  el.classList.remove('hidden');
+}
+
+// Fill (or re-say) the confirmation line from the current tip. Callable at
+// any time -- a no-op unless a mined section's meta lines are on screen and
+// the tip is known -- so the live tracker can deepen an open page in place
+// as new blocks land (see applyBlock), without re-rendering anything else.
+function refreshSectionConfirmations() {
+  const el = document.getElementById('section-confirmations');
+  if (!el || !state || state.projected || tipHeight === null) return;
+  const n = tipHeight - state.height + 1;
+  if (n < 1) return;   // a stale tip (reorg mid-read); keep the line as it stands
+  el.textContent = `${n.toLocaleString()} ${n === 1 ? tr('confirmation') : tr('confirmations')}`;
+  el.title = tr('blocks from this one to the chain tip, both counted — tip {tip} − height {h} + 1',
+    { tip: tipHeight.toLocaleString(), h: state.height.toLocaleString() });
+}
+
 function renderChapter(para) {
   $('chapter').classList.remove('title-leaf');
   $('chapter').classList.remove('span-leaf');
@@ -3497,7 +3574,7 @@ function renderChapter(para) {
   // This section's own txid, encoded as prose beneath the section title. Reversed
   // to internal byte order first (like the block hash) so it carries the txid's
   // actual bytes; every byte kept, since a txid has no droppable leading zeros.
-  const { prose: txidProse } = encodeSeedPhrase(reverseHex(para.txid), 'english', BEST_OF);
+  const { prose: txidProse } = encodeSeedPhrase(reverseHex(para.txid), bookLang(), BEST_OF);
   // The ⌘ identity mark leads, as on the chapter hash -- a txid is the same
   // double-SHA256, with no proof-of-work zeros to state: all 256 bits encoded,
   // and the superscript (bits, ⌘'s unit) says so. The section title carries
@@ -3505,6 +3582,7 @@ function renderChapter(para) {
   const txidMarkTitle = 'transaction id — the double-SHA256 of this transaction&#39;s bytes, its identity; all 256 bits carried in the prose';
   $('section-hash').innerHTML =
     `<span class="cfx-gold" title="${txidMarkTitle}">⌘</span><span class="op op-push">${toSuperscript(256)}</span> ${txidProse}`;
+  renderSectionMeta();
 
   const body = $('ch-paragraphs');
   body.innerHTML = '';
@@ -3953,41 +4031,41 @@ function labelNav() {
   let stepPrev = null, stepNext = null;   // { text, label } or null (hidden)
   if (idx === -3) {
     if (cur.volume > 1) {
-      stepPrev = { text: toRoman(cur.volume - 1), label: `Previous volume (${toRoman(cur.volume - 1)})` };
+      stepPrev = { text: toRoman(cur.volume - 1), label: `${tr('Previous volume')} (${toRoman(cur.volume - 1)})` };
     } else {
       // Before Volume I lies the front matter, whose last leaf is the sigla.
-      stepPrev = { text: 'Sigla', label: 'Back to the front matter (the sigla)' };
+      stepPrev = { text: 'Sigla', label: tr('Back to the front matter (the sigla)') };
     }
     if (tipHeight === null || heightOf(cur.volume + 1, 1, 1) <= tipHeight) {
-      stepNext = { text: toRoman(cur.volume + 1), label: `Next volume (${toRoman(cur.volume + 1)})` };
+      stepNext = { text: toRoman(cur.volume + 1), label: `${tr('Next volume')} (${toRoman(cur.volume + 1)})` };
     } else {
       // Past the last volume the appendices carry on at the volumes' own
       // level -- the mempool first, since its chapters are the ones the
       // chain is about to write.
-      stepNext = { text: 'Appendix', label: 'On to the appendices (I — the mempool)' };
+      stepNext = { text: tr('Appendix'), label: tr('On to the appendices (I — the mempool)') };
     }
   } else if (idx === -2) {
     if (state.height > 0) {
       const p = volumeBookChapter(bookStartOf(state.height - 1));
-      stepPrev = { text: `β${p.book}`, label: `Previous book (${toRoman(p.volume)} β${p.book})` };
+      stepPrev = { text: `β${p.book}`, label: `${tr('Previous book')} (${toRoman(p.volume)} β${p.book})` };
     }
     const nextStart = state.height + cur.chapterCount;
     if (tipHeight === null || nextStart <= tipHeight) {
       const n = volumeBookChapter(nextStart);
-      stepNext = { text: `β${n.book}`, label: `Next book (${toRoman(n.volume)} β${n.book})` };
+      stepNext = { text: `β${n.book}`, label: `${tr('Next book')} (${toRoman(n.volume)} β${n.book})` };
     }
   } else if (idx === -1) {
     if (state.height > 0) {
-      stepPrev = { text: `${chapterMark(state.height - 1)}${volumeBookChapter(state.height - 1).chapter}`, label: `Previous chapter (${referenceOf(state.height - 1)})` };
+      stepPrev = { text: `${chapterMark(state.height - 1)}${volumeBookChapter(state.height - 1).chapter}`, label: `${tr('Previous chapter')} (${referenceOf(state.height - 1)})` };
     }
     // Forward: a mined chapter below the tip steps normally; at the tip (or
     // among projected chapters) the next chapter exists only as far as the
     // projection reaches -- and wears the expected-chapter mark □, since its
     // number holds only while the queue does.
     if (!atTip && !state.projected) {
-      stepNext = { text: `■${volumeBookChapter(state.height + 1).chapter}`, label: `Next chapter (${reference(state.height + 1)})` };
+      stepNext = { text: `■${volumeBookChapter(state.height + 1).chapter}`, label: `${tr('Next chapter')} (${reference(state.height + 1)})` };
     } else if (!lineEnds) {
-      stepNext = { text: `□${volumeBookChapter(state.height + 1).chapter}`, label: `Next chapter — projected (${referenceOf(state.height + 1)})` };
+      stepNext = { text: `□${volumeBookChapter(state.height + 1).chapter}`, label: `${tr('Next chapter — projected')} (${referenceOf(state.height + 1)})` };
     }
   }
   showBtn('chapter-prev', !!stepPrev);
@@ -4004,23 +4082,23 @@ function labelNav() {
   // … previous block's last § → volume leaf → book leaf → chapter page → §1 …
   if (hasPrevSection) {
     if (idx > 0) {
-      setBtn('page-prev', `§${idx}`, `Previous section (${referenceOf(state.height)} §${idx})`);   // same chapter, target section = current 1-based index minus one
+      setBtn('page-prev', `§${idx}`, `${tr('Previous section')} (${referenceOf(state.height)} §${idx})`);   // same chapter, target section = current 1-based index minus one
     } else if (idx === 0) {
       // §1 pages back to this chapter's own page -- the chapter-level reference.
-      setBtn('page-prev', `${chapterMark(state.height)}${cur.chapter}`, `Chapter page (${referenceOf(state.height)})`);
+      setBtn('page-prev', `${chapterMark(state.height)}${cur.chapter}`, `${tr('Chapter page')} (${referenceOf(state.height)})`);
     } else if (idx - 1 >= floor) {
       // Up the leaf stack within this block: chapter page → book leaf → volume leaf.
-      if (idx === -1) setBtn('page-prev', `β${cur.book}`, `Book page (${toRoman(cur.volume)} β${cur.book})`);
-      else setBtn('page-prev', toRoman(cur.volume), `Volume page (${toRoman(cur.volume)})`);
+      if (idx === -1) setBtn('page-prev', `β${cur.book}`, `${tr('Book page')} (${toRoman(cur.volume)} β${cur.book})`);
+      else setBtn('page-prev', toRoman(cur.volume), `${tr('Volume page')} (${toRoman(cur.volume)})`);
     } else {
       // Off the block's first page, back into the prior block's final section;
       // its §number is that block's tx count, unknown until it loads -- shown
       // as § once resolved.
-      setBtn('page-prev', '§…', `Previous section (end of ${referenceOf(state.height - 1)})`);
+      setBtn('page-prev', '§…', tr('Previous section (end of {ref})', { ref: referenceOf(state.height - 1) }));
       const h = state.height;
       loadBlockTxCount(h - 1)
         .then((n) => {
-          if (gen === renderGen) setBtn('page-prev', `§${n}`, `Previous section (${referenceOf(h - 1)} §${n})`);
+          if (gen === renderGen) setBtn('page-prev', `§${n}`, `${tr('Previous section')} (${referenceOf(h - 1)} §${n})`);
           // The moment the prior block's tx count is known, its page anchor is
           // arithmetic off this block's (when that one is already in hand) --
           // banked so stepping back across the boundary never asks the census.
@@ -4033,15 +4111,15 @@ function labelNav() {
   if (hasNextSection) {
     if (state.ghost && idx >= 0) {
       // A ghost's only forward step is up: the transaction that replaced it.
-      setBtn('page-next', `§${idx + 1}`, `Its successor — the current holder of §${idx + 1}`);
+      setBtn('page-next', `§${idx + 1}`, tr('Its successor — the current holder of §{n}', { n: idx + 1 }));
     } else if (idx === -3) {
-      setBtn('page-next', `β${cur.book}`, `Book page (${toRoman(cur.volume)} β${cur.book})`);
+      setBtn('page-next', `β${cur.book}`, `${tr('Book page')} (${toRoman(cur.volume)} β${cur.book})`);
     } else if (idx === -2) {
-      setBtn('page-next', `■${cur.chapter}`, `Chapter page (${reference(state.height)})`);
+      setBtn('page-next', `■${cur.chapter}`, `${tr('Chapter page')} (${reference(state.height)})`);
     } else if (idx === -1) {
-      setBtn('page-next', '§1', `First section (${referenceOf(state.height)} §1)`);   // the chapter page opens onto §1
+      setBtn('page-next', '§1', `${tr('First section')} (${referenceOf(state.height)} §1)`);   // the chapter page opens onto §1
     } else if (idx < state.txCount - 1) {
-      setBtn('page-next', `§${idx + 2}`, `Next section (${referenceOf(state.height)} §${idx + 2})`);   // same chapter, target section = current 1-based index plus one
+      setBtn('page-next', `§${idx + 2}`, `${tr('Next section')} (${referenceOf(state.height)} §${idx + 2})`);   // same chapter, target section = current 1-based index plus one
     } else {
       // Crosses onto the next block's first page -- its volume or book leaf
       // when it opens one, else its chapter page. A projected next chapter
@@ -4050,9 +4128,9 @@ function labelNav() {
       const projNext = tipHeight !== null && nh > tipHeight;
       const nFloor = projNext ? -1 : minIndexOf(nh);
       const t = volumeBookChapter(nh);
-      if (nFloor === -3) setBtn('page-next', toRoman(t.volume), `Volume page (${toRoman(t.volume)})`);
-      else if (nFloor === -2) setBtn('page-next', `β${t.book}`, `Book page (${toRoman(t.volume)} β${t.book})`);
-      else setBtn('page-next', `${projNext ? '□' : '■'}${t.chapter}`, `Next chapter${projNext ? ' — projected' : ''} (${referenceOf(nh)})`);
+      if (nFloor === -3) setBtn('page-next', toRoman(t.volume), `${tr('Volume page')} (${toRoman(t.volume)})`);
+      else if (nFloor === -2) setBtn('page-next', `β${t.book}`, `${tr('Book page')} (${toRoman(t.volume)} β${t.book})`);
+      else setBtn('page-next', `${projNext ? '□' : '■'}${t.chapter}`, `${tr(projNext ? 'Next chapter — projected' : 'Next chapter')} (${referenceOf(nh)})`);
     }
   }
 
@@ -4185,7 +4263,7 @@ function footnoteStub() {
   if (footnotesLoaded || !currentFootnotes.length) return;
   const stub = document.createElement('p');
   stub.className = 'footnote-entry footnote-stub';
-  stub.innerHTML = SPINNER_HTML + ' encoding the witness…';
+  stub.innerHTML = SPINNER_HTML + ' ' + tr('encoding the witness…');
   $('ch-footnotes').append(stub);
   $('ch-footnotes-section').classList.remove('hidden');
   stub.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -4290,13 +4368,13 @@ async function openLookup(input, index = -1) {
       // A negative height counts back from the chain tip: -1 is the latest
       // block, -2 the one before it, and so on.
       if (input.startsWith('-')) {
-        setStatus(SPINNER_HTML + 'fetching latest block…');
+        setStatus(SPINNER_HTML + tr('fetching latest block…'));
         const tip = await tipP;   // the shared tip fetch (already recorded in tipHeight on success)
         if (tip === null) throw new Error('Could not reach the chain tip to resolve a relative height.');
         height = String(tip + Number(input) + 1);
         if (Number(height) < 0) throw new Error(`Only ${tip + 1} blocks exist; ${input} reaches before Genesis.`);
       }
-      setStatus(SPINNER_HTML + 'fetching block…');
+      setStatus(SPINNER_HTML + tr('fetching block…'));
       // A chapter-page landing (no section index) skips the heavy txid list;
       // paging into a section fetches it on demand (ensureTxids). A height
       // past the tip but within the mempool's projection opens as a
@@ -4306,19 +4384,19 @@ async function openLookup(input, index = -1) {
       state = { ...r.meta, index: clampIndex(index, r.meta) };
     } else if (/^[0-9a-f]{64}$/i.test(input)) {
       const hex = input.toLowerCase();
-      setStatus(SPINNER_HTML + 'fetching block…');
+      setStatus(SPINNER_HTML + tr('fetching block…'));
       const meta = await loadBlockMeta(hex, { withTxids: index >= 0 }).catch(() => null);
       if (meta) {
         state = { ...meta, index: clampIndex(index, meta) };
       } else {
-        setStatus(SPINNER_HTML + 'locating transaction…');
+        setStatus(SPINNER_HTML + tr('locating transaction…'));
         const loc = await loadBlockByTxid(hex);
         state = { ...loc.meta, index: loc.index, txid: loc.txid };
       }
     } else {
       const ref = parseReference(input);
       if (!ref) throw new Error('Enter a block height, hash, transaction id, or reference (e.g. III 2 5).');
-      setStatus(SPINNER_HTML + 'fetching block…');
+      setStatus(SPINNER_HTML + tr('fetching block…'));
       const r = await loadHeightOrProjected(Number(ref.height), ref.index, tipP);
       if (r.done) return;   // opened projected -- already rendered
       state = { ...r.meta, index: clampIndex(ref.index, r.meta) };
@@ -4396,7 +4474,7 @@ async function stepTx(direction) {
   // onto the nearer one's last section. Past the projection's reach the
   // step dead-ends with the queue's answer.
   if (tipHeight !== null && newHeight > tipHeight) {
-    setStatus(SPINNER_HTML + 'reading the mempool…');
+    setStatus(SPINNER_HTML + tr('reading the mempool…'));
     try {
       if (await stepProjected(newHeight, direction > 0 ? -1 : 'last')) return;
       setStatus(projectedReach() > 0
@@ -4409,7 +4487,7 @@ async function stepTx(direction) {
     return;
   }
 
-  setStatus(SPINNER_HTML + `loading ${direction > 0 ? 'next' : 'previous'} block…`);
+  setStatus(SPINNER_HTML + tr(direction > 0 ? 'loading next block…' : 'loading previous block…'));
   try {
     // Forward lands on the next block's first page (its volume/book leaf when
     // it opens one, else its chapter page) -- no txid list needed until the
@@ -4441,7 +4519,7 @@ async function stepSectionAcross(direction) {
   // Section-level crossing past the tip lands on a projected chapter's
   // nearest section: forward onto its §1, backward onto its last.
   if (tipHeight !== null && newHeight > tipHeight) {
-    setStatus(SPINNER_HTML + 'reading the mempool…');
+    setStatus(SPINNER_HTML + tr('reading the mempool…'));
     try {
       if (!(await stepProjected(newHeight, direction > 0 ? 0 : 'last'))) {
         setStatus(projectedReach() > 0
@@ -4457,7 +4535,7 @@ async function stepSectionAcross(direction) {
     }
     return;
   }
-  setStatus(SPINNER_HTML + `loading ${direction > 0 ? 'next' : 'previous'} block…`);
+  setStatus(SPINNER_HTML + tr(direction > 0 ? 'loading next block…' : 'loading previous block…'));
   try {
     const next = await loadBlockByHeight(newHeight, { withTxids: true });
     state = { ...next, index: direction > 0 ? 0 : next.txCount - 1 };
@@ -4854,11 +4932,11 @@ let prefetchGen = 0;
 function warmLeafEncodes(core) {
   if (!ready) return;
   try {
-    encodeSeedPhrase(blockHashParts(core.hash).hex, 'english', BEST_OF);
+    encodeSeedPhrase(blockHashParts(core.hash).hex, bookLang(), BEST_OF);
     if (core.header.prevBlockHash !== '00'.repeat(32)) {
-      encodeSeedPhrase(blockHashParts(core.header.prevBlockHash).hex, 'english', BEST_OF);
+      encodeSeedPhrase(blockHashParts(core.header.prevBlockHash).hex, bookLang(), BEST_OF);
     }
-    encodeSeedPhrase(reverseHex(core.header.merkleRoot), 'english', BEST_OF);
+    encodeSeedPhrase(reverseHex(core.header.merkleRoot), bookLang(), BEST_OF);
   } catch { /* warming is best-effort */ }
 }
 // Warm what a book leaf needs beyond its own first block. Where the book
@@ -4885,7 +4963,7 @@ function warmBookTargets(height) {
 async function warmSection(txid) {
   if (!ready) { await loadTxHex(txid); return; }   // at least the network half
   await sectionFields(txid);
-  encodeSeedPhrase(reverseHex(txid), 'english', BEST_OF);
+  encodeSeedPhrase(reverseHex(txid), bookLang(), BEST_OF);
 }
 async function prefetchNeighbor(st, direction) {
   // A neighbour past the tip is a projected chapter. Its chapter page needs
@@ -5490,6 +5568,7 @@ function closeSettings() {
 }
 settingsLink.addEventListener('click', (e) => {
   e.preventDefault();
+  closeLang();   // one masthead popover at a time
   const nowHidden = settingsPanel.classList.toggle('hidden');
   settingsLink.setAttribute('aria-expanded', nowHidden ? 'false' : 'true');
   if (nowHidden) closeAddForm();
@@ -5500,6 +5579,95 @@ document.addEventListener('click', (e) => {
   closeSettings();
 });
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !settingsPanel.classList.contains('hidden')) closeSettings(); });
+
+// ── Language popover ──────────────────────────────────────────────────────
+// The masthead "Language" link: which of the engine's languages the book's
+// prose is set in (glossia-msg.js's MSG_LANGS -- the same list the message
+// pipeline renders into and detects from). The choice is typography, not
+// content: the payload words carry the same bytes whatever the tongue, so
+// switching re-renders the page in hand and persists like the text sizes do.
+const langLink = $('lang-link');
+const langPanel = $('lang-panel');
+function closeLang() {
+  langPanel.classList.add('hidden');
+  langLink.setAttribute('aria-expanded', 'false');
+}
+function renderLangRows() {
+  const rows = $('lang-rows');
+  rows.innerHTML = '';
+  for (const l of MSG_LANGS) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'lang-row' + (l.id === bookLang() ? ' current' : '');
+    btn.setAttribute('aria-pressed', l.id === bookLang() ? 'true' : 'false');
+    const name = document.createElement('span');
+    name.textContent = l.label;
+    const mark = document.createElement('span');
+    mark.className = 'lang-mark';
+    mark.textContent = '●';
+    btn.append(name, mark);
+    btn.addEventListener('click', () => { applyBookLang(l.id); });
+    rows.append(btn);
+  }
+}
+async function applyBookLang(id) {
+  closeLang();
+  if (id === bookLang()) return;
+  setBookLang(id);
+  renderLangRows();
+  localizeChrome();   // the chrome follows, except into Latin (see setBookLang)
+  // Everything composed so far was composed in the old language: flush the
+  // section cache and re-render the page in hand. The prose memo inside
+  // encodeSeedPhrase is keyed by language, so it needs no clearing -- a
+  // switch back finds its earlier encodes still warm.
+  fieldsCache.clear();
+  neighborReady = { '-1': false, '1': false };   // neighbours re-warm in the new language
+  if (state) await showCurrentTx();
+}
+langLink.addEventListener('click', (e) => {
+  e.preventDefault();
+  closeSettings();   // one masthead popover at a time
+  const nowHidden = langPanel.classList.toggle('hidden');
+  langLink.setAttribute('aria-expanded', nowHidden ? 'false' : 'true');
+});
+document.addEventListener('click', (e) => {
+  if (langPanel.classList.contains('hidden')) return;
+  if (langPanel.contains(e.target) || langLink.contains(e.target)) return;
+  closeLang();
+});
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !langPanel.classList.contains('hidden')) closeLang(); });
+renderLangRows();
+
+// ── The chrome's words ────────────────────────────────────────────────────
+// Re-say the static chrome in the UI language (btc-strings.js): nav items,
+// panel furniture, the hash menu, the notation key's scope line, the crumb
+// words. Idempotent — each element remembers its English on first pass — so
+// it runs once at load and again on every language switch. Dynamic strings
+// (status lines, the section's meta lines) go through tr() where they are
+// built instead. Choosing Latina changes none of this: the chrome keeps the
+// last modern tongue (see setBookLang).
+function localizeChrome() {
+  for (const el of [
+    ...document.querySelectorAll('.masthead .home a'),
+    ...document.querySelectorAll('#settings-panel .settings-title, #lang-panel .settings-title'),
+    ...document.querySelectorAll('.fs-label'),
+    $('fontscale-reset'), $('endpoint-add'), $('endpoint-remove'), $('endpoint-save'), $('endpoint-cancel'),
+    ...document.querySelectorAll('#hash-menu .hash-menu-item, #hash-menu-title .hash-title-row button'),
+    ...document.querySelectorAll('.section-nav summary'),
+    document.querySelector('.key-scope-note'),
+    document.querySelector('.key-scope-link'),
+    $('ch-appendix-link'),
+  ]) localizeText(el);
+  // The crumb words ride as leading text nodes before their number spans.
+  for (const [id, en] of [['ch-volume-link', 'Volume'], ['ch-book-link', 'Book']]) {
+    const node = $(id) && $(id).firstChild;
+    if (node && node.nodeType === Node.TEXT_NODE) node.nodeValue = `${tr(en)} `;
+  }
+  localizeAttr($('endpoint-label'), 'placeholder');
+  localizeAttr($('hash-title-input'), 'placeholder');
+  localizeAttr(document.querySelector('.section-nav .commentary summary'), 'title');
+}
+localizeChrome();
 
 // ── Hash menu + bookmarks ─────────────────────────────────────────────────
 // Clicking any Glossia-encoded hash opens a small menu (Copy hex / Bookmark).
@@ -5802,8 +5970,8 @@ function suggestTitle(entry) {
   const genesis = volume === 1 && book === 1 && chapter === 1;
   // A leaf suggests the name it wears at its own head, which is what a reader
   // scanning the contents for it will be looking for.
-  if (place.page === 'volume') return `Volume ${toRoman(volume)}`;
-  if (place.page === 'book') return `Book ${book.toLocaleString()}`;
+  if (place.page === 'volume') return `${tr('Volume')} ${toRoman(volume)}`;
+  if (place.page === 'book') return `${tr('Book')} ${book.toLocaleString()}`;
   // A witness suggests its citation: the section with the footnote's
   // alphabet index after the point (§17.a, beside an output's §17.0) --
   // falling back to naming its input when the footnote number isn't in hand.
@@ -5812,7 +5980,7 @@ function suggestTitle(entry) {
     return place.wn != null ? `${base}.${footnoteMark(place.wn)}` : `${base} — input ${place.vin + 1}'s witness`;
   }
   if (place.pos != null) return `${toRoman(volume)} β${book} ■${chapter} §${place.pos + 1}`;
-  return genesis ? 'The Genesis Block' : `Chapter ${chapterName(chapter)}`;
+  return genesis ? tr('The Genesis Block') : `${tr('Chapter')} ${chapterName(chapter)}`;
 }
 
 const hashMenu = $('hash-menu');

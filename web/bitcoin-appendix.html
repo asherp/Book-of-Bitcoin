@@ -406,6 +406,8 @@ a.bb-ref:hover { color:var(--accent-2); }
 </div>
 
 <script type="module">
+import { localizeHome } from './btc-strings.js';
+localizeHome();   // the masthead in the reader's UI language (chosen on the book page)
 import { loadNotables, appendix, entryHref, isBlockId } from './btc-contents.js';
 import { partLabel } from './btc-notables.js';
 
@@ -1183,7 +1185,7 @@ if (blockLeaf != null) {
     glossia().then((m) => {
       for (const { el, hex } of cells) {
         try {
-          el.textContent = m.encodeSeedPhrase(hex, 'english', 5).prose;
+          el.textContent = m.encodeSeedPhrase(hex, m.bookLang(), 5).prose;
           el.classList.remove('waiting');
         } catch { el.textContent = 'unsaid'; el.title = UNSAID; }
       }
@@ -1446,7 +1448,7 @@ if (kind === 'proofs') {
       for (const { el, hex, reverse } of cells) {
         try {
           const bytes = reverse ? reverseHex(hex) : hex;
-          if (!prosed.has(bytes)) prosed.set(bytes, m.encodeSeedPhrase(bytes, 'english', BEST_OF).prose);
+          if (!prosed.has(bytes)) prosed.set(bytes, m.encodeSeedPhrase(bytes, m.bookLang(), BEST_OF).prose);
           el.textContent = prosed.get(bytes);
           el.classList.remove('waiting');
         } catch { unsay(el); }
