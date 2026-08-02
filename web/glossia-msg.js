@@ -64,7 +64,14 @@ let bookLangId = (() => {
 export function bookLang() { return bookLangId; }
 export function setBookLang(id) {
   bookLangId = msgLangById(id).id;
-  try { localStorage.setItem(BOOK_LANG_KEY, bookLangId); } catch { /* private mode etc. -- the choice still holds for this page */ }
+  try {
+    localStorage.setItem(BOOK_LANG_KEY, bookLangId);
+    // The chrome follows the prose except into Latin: Latin prose is a real
+    // choice, a Latin chrome would be an affectation, so the UI keeps the
+    // last modern tongue chosen (btc-strings.js reads this key). Latin
+    // simply doesn't write it.
+    if (bookLangId !== 'latin') localStorage.setItem('glossia-btc-ui-lang', bookLangId);
+  } catch { /* private mode etc. -- the choice still holds for this page */ }
   return bookLangId;
 }
 
