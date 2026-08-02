@@ -101,6 +101,8 @@ const STRINGS = {
     'Commentary on this passage — a reading of the record, credited to whoever wrote it':
       'Komentář k této pasáži — čtení záznamu, připsané tomu, kdo je napsal',
     'translation: {name}': 'překlad: {name}',
+    'commentary by {names}': 'komentář od {names}',
+    'the latest block': 'nejnovější blok',
   },
   german: {
     // masthead + nav
@@ -178,6 +180,8 @@ const STRINGS = {
     'Commentary on this passage — a reading of the record, credited to whoever wrote it':
       'Kommentar zu dieser Passage — eine Lesart der Aufzeichnung, dem zugeschrieben, der sie verfasst hat',
     'translation: {name}': 'Übersetzung: {name}',
+    'commentary by {names}': 'Kommentar von {names}',
+    'the latest block': 'der neueste Block',
   },
 };
 

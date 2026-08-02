@@ -90,7 +90,14 @@ body { min-height: 100vh; background: var(--page); color: var(--ink); font-famil
   .toc-entrance-back body { animation: toc-in-back .22s ease-out; }
   @keyframes toc-in-back { from { transform: translateX(-100vw); } }
 }
-.wrap { max-width: 720px; margin: 0 auto; padding: 48px 22px 100px; }
+/* The volume turns at the foot ride the bottom of the screen (sticky, below):
+   the wrap stretches to the viewport and the list takes all slack, so a short
+   leaf's turns rest exactly where a tall leaf's sticky bar rides -- the same
+   arrangement the reader's own foot nav keeps. No bottom padding: the bar is
+   the page's own floor. */
+.wrap { max-width: 720px; margin: 0 auto; padding: 48px 22px 0;
+  display: flex; flex-direction: column; min-height: 100vh; min-height: 100dvh; }
+#toc { flex: 1 0 auto; }
 a { color: var(--accent); text-decoration: none; }
 a:hover { text-decoration: underline; }
 
@@ -112,8 +119,13 @@ a:hover { text-decoration: underline; }
 .toc-down.hidden { display:none; }
 
 /* The turns to either side, named at the foot -- the swipe and the arrow
-   keys go the same places, and this says so for hands that use neither. */
-.toc-turns { display:flex; flex-wrap:wrap; gap:10px 26px; margin-top:44px; padding-top:18px; border-top:1px solid var(--rule);
+   keys go the same places, and this says so for hands that use neither.
+   Sticky at the bottom of the screen, like the reader's foot nav: a long
+   leaf's turns are always in reach, and the page's own background keeps the
+   rows scrolling beneath from showing through. */
+.toc-turns { position:sticky; bottom:0; z-index:40; background:var(--page);
+  display:flex; flex-wrap:wrap; gap:10px 26px; margin-top:44px;
+  padding:18px 0 max(18px, env(safe-area-inset-bottom)); border-top:1px solid var(--rule);
   font:600 10px/1.5 'IBM Plex Mono',monospace; letter-spacing:.14em; text-transform:uppercase; }
 .toc-turns a { color:var(--meta); }
 .toc-turns a:hover { color:var(--accent); }
@@ -138,18 +150,24 @@ a:hover { text-decoration: underline; }
     </header>
     <div id="toc"></div>
     <a class="toc-down" id="toc-down" href="#" aria-label="Down into this part of the book">▾</a>
+    <!-- The contents' one credit, a footnote rather than a line per row:
+         who wrote the readings behind the rows above. With a single author
+         so far, a per-row credit tagged nearly every row and distinguished
+         nothing; the foot says it once, and grows into a list as authors
+         join. Filled by the colophon block in the script below. -->
+    <div class="toc-colophon hidden" id="toc-colophon"></div>
     <nav class="toc-turns" id="toc-turns"></nav>
   </div>
 </div>
 
 <script type="module">
-import { localizeHome } from './btc-strings.js';
+import { localizeHome, t as tr } from './btc-strings.js';
 localizeHome();   // the masthead in the reader's UI language (chosen on the book page)
-import { loadNotables, places, placeTitle, appendix, isBlockId, isRelativeBlockId, entryHref } from './btc-contents.js';
+import { loadNotables, notables, places, placeTitle, appendix, isBlockId, isRelativeBlockId, entryHref } from './btc-contents.js';
 import { partLabel } from './btc-notables.js';
 import { toSubscript } from './btc-sigla.js';
 import { allProofs, citeOf, leafOf, estimatedDate, minedDate } from './btc-proofs.js';
-import { creditLine, commentaryForAddresses } from './btc-commentary.js';
+import { readingsOf } from './btc-commentary.js';
 import { readQueue, buildQueue } from './btc-mempool.js';
 import { INDEXED, keptLedgers, sameAddresses } from './btc-index.js';
 import { volumeBookChapter, toRoman, fromRoman, heightOf, expectedReference, footnoteMark } from './btc-citation.js';
@@ -169,6 +187,27 @@ await loadNotables();
 seedArchive();
 
 const $ = (id) => document.getElementById(id);
+
+// The contents' one credit, at its foot: whose readings stand behind the rows.
+// Gathered from every reading-bearer the index and appendix keep -- entries,
+// parts, forks and their chapters -- in file order, each name once. Empty (and
+// hidden) if nothing is credited; a footnote rather than a line per row, so a
+// name stays news when a second author joins rather than wallpaper when one
+// wrote everything.
+(() => {
+  const bearers = [
+    ...notables(),
+    ...appendix(),
+    ...appendix().filter((p) => p.bips).flatMap((p) => p.bips),
+    ...appendix().filter((p) => p.bips).flatMap((p) => p.bips).flatMap((b) => b.entries),
+  ];
+  const named = [...new Set(bearers.flatMap((e) => readingsOf(e).filter((r) => r.by).map((r) => r.by)))];
+  if (!named.length) return;
+  const el = $('toc-colophon');
+  el.textContent = tr('commentary by {names}', { names: named.join(' · ') });
+  el.title = `${named.length > 1 ? 'readings' : 'the readings'} by ${named.join(', ')} — editorial, offered beside the passages and no more authoritative than their argument; opened from the Commentary key on each page`;
+  el.classList.remove('hidden');
+})();
 const REDUCED_MOTION = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 const BOOKMARKS_KEY = 'glossia-btc-bookmarks';
@@ -320,10 +359,6 @@ function entryEl(entry, underBook) {
     t.append(bm);
   }
   t.append(document.createTextNode(entry.title));
-  // An entry that carries a credited reading says so, and says whose: the
-  // contents is where a reader decides what to open, and "commentary by
-  // so-and-so" is the kind of thing that decides it.
-  addCredit(t, creditLine(entry));
   const r = document.createElement('span'); r.className = 'toc-ref';
   if (entry.place) r.textContent = tailRef(entry.place, underBook);
   else { r.textContent = '—'; r.classList.add('none'); }
@@ -332,20 +367,6 @@ function entryEl(entry, underBook) {
 }
 function head(cls, label) { const d = document.createElement('div'); d.className = cls; d.textContent = label; return d; }
 function saying(text) { const d = document.createElement('div'); d.className = 'toc-empty'; d.textContent = text; return d; }
-
-// The credit a row wears when its subject carries a reading somebody signed
-// (btc-commentary.js decides; the book's own readings take no line, or nearly
-// every row would wear one and none would stand out). Set in the annotation
-// register, beneath the title, so a row's name and a reading of it stay
-// distinguishable at a glance.
-function addCredit(titleEl, credit) {
-  if (!credit) return;
-  const c = document.createElement('span');
-  c.className = 'toc-commentary';
-  c.textContent = credit.label;
-  c.title = credit.title;
-  titleEl.append(c);
-}
 
 const toc = $('toc');
 // The projected section (Appendix I, the mempool), rebuilt by loadProjected
@@ -644,16 +665,6 @@ function ledgerEl(ledger, isKept) {
   // to their first address, the same stand-in name the Ledger page gives
   // them -- a name in the title column, never a citation in the reference's.
   t.append(document.createTextNode(ledger.title || shortAddr(ledger.addresses[0])));
-  // A ledger whose addresses carry a credited reading says so here, as a
-  // chapter's row does: the readings themselves open on the Ledger's leaves.
-  const named = [...new Set(commentaryForAddresses(ledger.addresses)
-    .flatMap((it) => it.readings.filter((rd) => rd.by).map((rd) => rd.by)))];
-  if (named.length) {
-    addCredit(t, {
-      label: `commentary by ${named.join(' · ')}`,
-      title: `${named.length > 1 ? 'readings' : 'a reading'} by ${named.join(', ')} — editorial, opened on this ledger's own leaves`,
-    });
-  }
   const r = document.createElement('span');
   r.className = 'toc-ref none';
   r.textContent = '—';
