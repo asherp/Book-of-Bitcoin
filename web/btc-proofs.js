@@ -346,6 +346,24 @@ export async function minedDate(height) {
     : new Date(t * 1000).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', ...UTC });
 }
 
+// ─── reading a checksum file ────────────────────────────────────────────
+//
+// Some cited works are themselves lists of digests -- a release's SHA256SUMS
+// is one SHA-256 per binary it shipped as, in sha256sum's own grammar: the
+// digest, whitespace (a leading * marks binary mode), the file it claims.
+// Recognized by that grammar and nothing else, and only whole: every
+// non-empty line must parse, or the text is not read as a checksum file.
+// What comes back is what the file SAYS -- claims the proof dates, about
+// binaries the book has never seen.
+export function checksumLines(text) {
+  const lines = text.split('\n').map((l) => l.trim()).filter(Boolean);
+  const read = lines.map((l) => {
+    const m = /^([0-9a-f]{64})[ \t]+\*?(\S.*)$/.exec(l);
+    return m && { digest: m[1], file: m[2] };
+  });
+  return read.length && read.every(Boolean) ? read : null;
+}
+
 // A proof's own page: Appendix IV's rows open the ladder rather than jumping
 // straight into the book, because the ladder is the thing this appendix has
 // to show. The chapter is one step further on, at the foot of it.

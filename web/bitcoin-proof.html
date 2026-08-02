@@ -101,6 +101,16 @@ a:hover { text-decoration: underline; }
   .body { grid-column:1; }
 }
 
+/* The work itself, set below the proof that dates it: a lead line saying what
+   is being shown, then the content -- writing as writing, a checksum file as
+   one Σ-figure per line under the binary it names. */
+.subject { margin-top:34px; padding-top:16px; border-top:1px solid var(--rule); }
+.subject-lead { font:600 10.5px/1.6 'IBM Plex Mono',monospace; letter-spacing:.1em; text-transform:uppercase; color:var(--meta); }
+.subject-text { margin:16px 0 4px; font:italic 400 17px/1.7 'Newsreader',serif; color:var(--ink-soft); white-space:pre-wrap; text-align:center; overflow-wrap:break-word; }
+.sum-line { padding:9px 0; }
+.sum-line + .sum-line { border-top:1px solid var(--hair); }
+.sum-file { display:block; margin-bottom:2px; font:500 11.5px/1.5 'IBM Plex Mono',monospace; color:var(--meta); word-break:break-all; }
+
 .leaf-turns { display:flex; flex-wrap:wrap; gap:10px 26px; margin-top:44px; padding-top:18px; border-top:1px solid var(--rule);
   font:600 10px/1.5 'IBM Plex Mono',monospace; letter-spacing:.14em; text-transform:uppercase; }
 .leaf-turns a { color:var(--meta); }
@@ -124,6 +134,13 @@ a:hover { text-decoration: underline; }
   </header>
 
   <div id="proof"></div>
+
+  <!-- The work itself, where it ships beside its proof. A private work keeps
+       its bytes to itself and loses nothing -- that is the design -- but a
+       published one can be shown whole: plain writing quoted as it stands, a
+       checksum file set in the book's own notation. Filled only after the
+       bytes in hand have matched the digest the proof descends from. -->
+  <section class="subject hidden" id="subject"></section>
 
   <!-- The reading of this page, kept where every other reading is kept: behind
        a toggle, over the record rather than in it, signed by whoever wrote it.
@@ -155,7 +172,8 @@ a:hover { text-decoration: underline; }
 import { loadNotables, appendix } from './btc-contents.js';
 import { partLabel } from './btc-notables.js';
 await loadNotables();
-import { proofByDigest, ladderOf, citeOf, attests } from './btc-proofs.js';
+import { proofByDigest, ladderOf, citeOf, attests, checksumLines, PROOF_DIR } from './btc-proofs.js';
+import { readableUtf8Text } from './btc-tx.js';
 import { readingsOf, resolveCommentary, commentaryHtml } from './btc-commentary.js';
 import { reference, latinRefOf } from './btc-citation.js';
 import { blockAt } from './btc-index.js';
@@ -234,6 +252,7 @@ function render(proof) {
   }
   setProse(cells);
 
+  subjectInline(proof);
   commentary(proof);
   turn('./bitcoin-appendix.html?part=proofs', `‹ ${backLabel}`);
   turn(`./bitcoin-book.html?ref=${latinRefOf(proof.place.height, section)}`, `${citeOf(proof.place)} ›`, true);
@@ -292,8 +311,62 @@ async function checkRoot(proof, paraEl) {
   marg.append(mark);
 }
 
-// The file is not here and never was; the button opens the reader's own copy,
-// hashes it in the browser and answers in one line.
+// ── The work itself, where it ships beside its proof ─────────────────────
+// Nothing here is believed: the bytes are fetched, hashed, and shown only if
+// their digest is the one the proof descends from -- the same test the
+// "check a copy" button runs on the reader's own file. What then shows
+// depends on what the bytes are. Writing is quoted as it stands. A checksum
+// file is set in notation instead: each of its lines is a single SHA-256 of
+// a named binary, which is Σ's own meaning (OP_SHA256), so each line prints
+// as Σ³² <prose> beneath the file it claims -- the work's statements, dated
+// by the proof above, about binaries the book has never seen. Bytes that are
+// neither (a binary work) stay unshown, and their digest already said
+// everything the chain was told.
+async function subjectInline(proof) {
+  if (!proof.subject) return;
+  try {
+    const res = await fetch(PROOF_DIR + proof.subject);
+    if (!res.ok) return;
+    const bytes = new Uint8Array(await res.arrayBuffer());
+    if (bytes.length > 65536 || !(await attests(proof, bytes))) return;
+    const text = readableUtf8Text(Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join(''));
+    if (text === null) return;
+    const box = $('subject');
+    const lead = document.createElement('div');
+    lead.className = 'subject-lead';
+    const sums = checksumLines(text);
+    if (sums) {
+      lead.textContent = `what the file says — one Σ per binary it names, ${sums.length} in all`;
+      lead.title = 'the checksum file, line by line: each line claims a single SHA-256 (Σ) of a named binary. '
+        + 'The proof above dates these claims; the book has not seen the binaries they speak of.';
+      box.append(lead);
+      const cells = [];
+      for (const { digest, file } of sums) {
+        const line = document.createElement('div');
+        line.className = 'sum-line';
+        const name = document.createElement('span');
+        name.className = 'sum-file';
+        name.textContent = file;
+        line.append(name, figure(digest, 'Σ', 'dt', 32, false,
+          `sha256 of ${file}, as the file prints it — its claim, not the book's`, cells));
+        box.append(line);
+      }
+      setProse(cells);
+    } else {
+      lead.textContent = `the file itself — ${bytes.length} bytes, quoted whole`;
+      lead.title = 'the stamped work, byte for byte; its digest is the one the proof descends from';
+      const quote = document.createElement('div');
+      quote.className = 'subject-text';
+      quote.textContent = text;
+      box.append(lead, quote);
+    }
+    box.classList.remove('hidden');
+  } catch { /* the leaf stands without it */ }
+}
+
+// The file is not here for every work -- a private one never was and never
+// need be; the button opens the reader's own copy, hashes it in the browser
+// and answers in one line.
 function openable(proof) {
   const input = $('subject-file');
   const out = $('leaf-check');

@@ -13,6 +13,7 @@ import assert from 'node:assert/strict';
 import { readFile, readdir } from 'node:fs/promises';
 
 import { parseOtsProof, digestOf, earliestBitcoin } from '../web/btc-ots.js';
+import { checksumLines } from '../web/btc-proofs.js';
 
 const PROOFS = new URL('../web/proofs/', import.meta.url);
 const releases = (await readdir(PROOFS)).filter((f) => /^bitcoin-core-.*\.ots$/.test(f)).sort();
@@ -40,6 +41,22 @@ test('the first stamped release lands where it shipped', async () => {
   const bytes = new Uint8Array(await readFile(new URL('bitcoin-core-22.0-SHA256SUMS.ots', PROOFS)));
   const att = earliestBitcoin((await parseOtsProof(bytes)).attestations);
   assert.equal(att.height, 700347);
+});
+
+test('a checksum file reads by its own grammar, and only whole', async () => {
+  // Every vendored SHA256SUMS parses -- one digest and one name per line --
+  // which is what lets the file's leaf set it in Σ notation.
+  const text = new TextDecoder().decode(await readFile(new URL('bitcoin-core-22.0-SHA256SUMS', PROOFS)));
+  const lines = checksumLines(text);
+  assert.ok(lines && lines.length >= 10, 'the checksum file did not read');
+  for (const { digest, file } of lines) {
+    assert.match(digest, /^[0-9a-f]{64}$/);
+    assert.match(file, /^bitcoin-22\.0/);
+  }
+  // Prose is not a checksum file, and neither is a file only one of whose
+  // lines parses: the grammar is asked of the whole, or the reading is off.
+  assert.equal(checksumLines('Hello World!\n'), null);
+  assert.equal(checksumLines(`${'a'.repeat(64)}  real.tar.gz\nnot a checksum line\n`), null);
 });
 
 test('a pending attestation carries the question an upgrade asks', async () => {
