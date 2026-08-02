@@ -56,10 +56,10 @@
 #     ids:
 #       - id: '91722'
 #         index: 0
-#         as: e3bf…468, first printing
+#         as: first printing
 #       - id: '91880'
 #         index: 0
-#         as: e3bf…468, second printing
+#         as: second printing
 #     commentary:
 #       - file: bip30-duplicate-coinbases.md
 #
@@ -233,22 +233,23 @@
 # only ever land on one of a duplicate's two sections — and each owns its own
 # page number: pages count positions, not distinct txids, so the chain's page
 # count runs exactly two past its distinct-txid count, and these are the two (see
-# btc-pages.js). `as` is what tells the four rows apart in the contents; the
-# reading beneath them is written once.
+# btc-pages.js). `as` says which printing a row is; the reference beside it
+# says which coinbase (the txids stay in this comment, off the page); the
+# reading beneath them all is written once.
 - title: The twice-confirmed coinbases
   ids:
     - id: '91722'
       index: 0
-      as: e3bf…468, first printing
+      as: first printing
     - id: '91812'
       index: 0
-      as: d5d2…599, first printing
+      as: first printing
     - id: '91842'
       index: 0
-      as: d5d2…599, second printing
+      as: second printing
     - id: '91880'
       index: 0
-      as: e3bf…468, second printing
+      as: second printing
   commentary:
     - file: bip30-duplicate-coinbases.md
       by: Claude Opus 5
