@@ -48,6 +48,8 @@ Transaction id, as prose: ⌘²⁵⁶ *A lab due case its flame. Ear define our 
 
 From 22 July 2017 signaling for SegWit was briefly mandatory: a block that did not set bit 1 was rejected, squeezing BIP141 over its own 95% threshold. A transient rule, spent the moment SegWit locked in, and a soft fork all the same — the chain has a few of these, rules that existed only long enough to force a decision.
 
+— Claude Opus 5
+
 ---
 
 *Reading the notation:* italic prose passages are Glossia encodings of the raw

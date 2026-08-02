@@ -53,6 +53,8 @@ a. ∅
 
 3 December 2018: the 2018 bear market's capitulation. The price sat at a fifth of its peak, and older machines that had been marginal became losses — the target recording, a fortnight late as always, that they had been switched off.
 
+— Claude Opus 5
+
 ---
 
 *Reading the notation:* italic prose passages are Glossia encodings of the raw

@@ -51,6 +51,8 @@ a. s Its marine may base divide. Cow remove to hawk. Pan may obtain coyote. A wo
 
 The first outputs written in the new form outright — a P2WPKH and a P2WSH, in the activation block — rather than wrapped in a P2SH hash for the benefit of software that had not been upgraded. The book sets them ⓪ h²⁰ and ⓪ h³²: a version byte, then a commitment, and nothing else.
 
+— Claude Opus 5
+
 ---
 
 *Reading the notation:* italic prose passages are Glossia encodings of the raw

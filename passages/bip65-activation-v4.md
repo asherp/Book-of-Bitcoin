@@ -46,6 +46,8 @@ Transaction id, as prose: ⌘²⁵⁶ *Ban may seek to vanish. Fix get poem acro
 
 CHECKLOCKTIMEVERIFY: from December 2015 an output can refuse to be spent before a stated time or height. The book draws it τ. It is the first opcode that lets a lock make a promise about the future rather than about a key, and everything later built on delay — escrows, vaults, payment channels — begins with a mark for “not before”.
 
+— Claude Opus 5
+
 ---
 
 *Reading the notation:* italic prose passages are Glossia encodings of the raw

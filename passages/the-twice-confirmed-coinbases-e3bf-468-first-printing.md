@@ -50,6 +50,8 @@ BIP30's ban on duplicate transaction ids switched on by timestamp (15 March 2012
 
 Each printing owns its own page here. Pages count positions in the chain, not distinct transaction ids, so the book's page count runs exactly two past the chain's count of distinct transactions — and these are the two.
 
+— Claude Opus 5
+
 ---
 
 *Reading the notation:* italic prose passages are Glossia encodings of the raw

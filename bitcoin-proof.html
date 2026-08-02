@@ -138,6 +138,8 @@ a:hover { text-decoration: underline; }
 </div>
 
 <script type="module">
+import { localizeHome } from './btc-strings.js';
+localizeHome();   // the masthead in the reader's UI language (chosen on the book page)
 // ── One timestamped file, written out ─────────────────────────────────────
 //
 // The front matter is the file: its name, and its digest as prose -- the whole
@@ -365,7 +367,7 @@ async function setProse(cells) {
   }
   for (const { el, hex, reverse } of cells) {
     try {
-      el.textContent = m.encodeSeedPhrase(reverse ? reverseHex(hex) : hex, 'english', BEST_OF).prose;
+      el.textContent = m.encodeSeedPhrase(reverse ? reverseHex(hex) : hex, m.bookLang(), BEST_OF).prose;
       el.classList.remove('waiting');
     } catch { el.textContent = 'unsaid'; }
     await new Promise((r) => setTimeout(r, 0));

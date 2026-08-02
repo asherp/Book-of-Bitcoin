@@ -48,6 +48,8 @@ Strict DER encoding: a signature must from here be written one way only. The rul
 
 Its activation also produced the chain's most instructive accident: miners building on a block they had not themselves validated extended an invalid chain for several blocks, and the split was resolved by hash power and phone calls rather than by rules. A soft fork is only as strong as the validation standing behind the signals.
 
+— Claude Opus 5
+
 ---
 
 *Reading the notation:* italic prose passages are Glossia encodings of the raw

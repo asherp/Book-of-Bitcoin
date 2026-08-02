@@ -46,6 +46,8 @@ Transaction id, as prose: ⌘²⁵⁶ *Stairs fringe dolphin to island. Soda see
 
 Twelve and a half coins from here (9 July 2016), and the first chapter of Volume III. The first halving happened to a few thousand people; this one had an audience, a countdown, and a price chart — none of which the schedule consults.
 
+— Claude Opus 5
+
 ---
 
 *Reading the notation:* italic prose passages are Glossia encodings of the raw

@@ -143,6 +143,8 @@ a:hover { text-decoration: underline; }
 </div>
 
 <script type="module">
+import { localizeHome } from './btc-strings.js';
+localizeHome();   // the masthead in the reader's UI language (chosen on the book page)
 import { loadNotables, places, placeTitle, appendix, isBlockId, isRelativeBlockId, entryHref } from './btc-contents.js';
 import { partLabel } from './btc-notables.js';
 import { toSubscript } from './btc-sigla.js';

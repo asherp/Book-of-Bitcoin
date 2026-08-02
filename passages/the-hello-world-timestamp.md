@@ -52,6 +52,8 @@ It predates the calendar servers by a year and wears the older dress. There is n
 
 Drop the `.ots` at the foot of the Citations register and the book resolves it, checks it against this block's own header, and keeps it there.
 
+— Claude Opus 5
+
 ---
 
 *Reading the notation:* italic prose passages are Glossia encodings of the raw

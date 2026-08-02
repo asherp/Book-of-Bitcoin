@@ -49,6 +49,8 @@ Its target is the one every later difficulty is measured against, and factored o
 
 It is also the only chapter nobody had to fetch: the genesis block ships inside the software, hardcoded into every node that has ever validated anything, so no reader takes it on anyone's authority. Its fifty coins have never moved, and by a quirk of the original code the reward was never entered into the set of spendable outputs at all. The book opens with a page of speech that cannot be answered and a coin that cannot be spent.
 
+— Claude Opus 5
+
 ---
 
 *Reading the notation:* italic prose passages are Glossia encodings of the raw

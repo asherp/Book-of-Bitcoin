@@ -59,6 +59,8 @@ a. ∅
 
 30 May 2021: China's first regulatory squeeze on mining, five weeks before the ban proper. The cut that reads, in hindsight, like the tremor before the entry three below.
 
+— Claude Opus 5
+
 ---
 
 *Reading the notation:* italic prose passages are Glossia encodings of the raw

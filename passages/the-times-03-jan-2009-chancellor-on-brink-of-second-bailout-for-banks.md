@@ -47,6 +47,8 @@ A coinbase input spends nothing, so its script is a slot a miner may write anyth
 
 It does two things at once. It is a date stamp — a block cannot have been made before the newspaper it quotes, which is how anyone reading later can see the chain was not backdated. And it is an argument: the rescue of the banks, named in the opening sentence of a system built so that nobody has to be rescued. It is the closest thing to an editorial line anywhere in this book, and the chain itself wrote it.
 
+— Claude Opus 5
+
 ---
 
 *Reading the notation:* italic prose passages are Glossia encodings of the raw
