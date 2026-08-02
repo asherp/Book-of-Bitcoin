@@ -395,8 +395,11 @@
   commentary:
     - file: first-p2wsh-reveal-2-of-3.md
       by: Claude Opus 5
+# Cited at its coinbase rather than the chapter: since BIP34 a coinbase opens
+# with its own height, so §1 is where the page itself says 500,000.
 - title: 500K block milestone
   id: '500000'
+  index: 0
   commentary:
     - file: 500k-block-milestone.md
       by: Claude Opus 5
