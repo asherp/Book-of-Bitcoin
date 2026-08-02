@@ -37,12 +37,14 @@ export { init };
 
 const SEED = 42n;               // fixed seed -> deterministic prose
 
-// Languages this pipeline can render into / detect from.
+// Languages this pipeline can render into / detect from. Labels are
+// endonyms -- each language names itself, so a reader finds their own
+// tongue without first reading English.
 export const MSG_LANGS = [
-  { id: 'english', label: 'English', language: 'english', wordlist: 'bip39',   dialect: 'body' },
-  { id: 'latin',   label: 'Latin',   language: 'latin',   wordlist: 'default', dialect: 'body' },
-  { id: 'czech',   label: 'Czech',   language: 'czech',   wordlist: 'default', dialect: 'body' },
-  { id: 'german',  label: 'German',  language: 'german',  wordlist: 'default', dialect: 'body' },
+  { id: 'english', label: 'English',  language: 'english', wordlist: 'bip39',   dialect: 'body' },
+  { id: 'latin',   label: 'Latina',   language: 'latin',   wordlist: 'default', dialect: 'body' },
+  { id: 'czech',   label: 'Čeština',  language: 'czech',   wordlist: 'default', dialect: 'body' },
+  { id: 'german',  label: 'Deutsch',  language: 'german',  wordlist: 'default', dialect: 'body' },
 ];
 export function msgLangById(id) { return MSG_LANGS.find(l => l.id === id) || MSG_LANGS[0]; }
 
@@ -351,13 +353,15 @@ export function detectLang(prose) {
 // (default 1) samples that many cover realizations and keeps the densest /
 // most coherent, same as renderArtifact -- it only changes cover words, never
 // the payload, so decoding is unaffected.
+// The language defaults to the reader's saved book language (bookLang above),
+// so every page that omits it follows the one choice; pass a langId to pin.
 // Deterministic for a given (hex, language, bestOf) -- SEED is fixed -- so
-// results are memoized (LRU): a caller can warm an encode ahead of time (the
-// Bitcoin book prefetches its swipe neighbours) and the eventual render is a
-// lookup instead of a WASM pass.
+// results are memoized (LRU, keyed by language too): a caller can warm an
+// encode ahead of time (the Bitcoin book prefetches its swipe neighbours) and
+// the eventual render is a lookup instead of a WASM pass.
 const seedPhraseMemo = new Map();
 const SEED_MEMO_MAX = 400;
-export function encodeSeedPhrase(hex, langId = 'english', bestOf = 1) {
+export function encodeSeedPhrase(hex, langId = bookLang(), bestOf = 1) {
   const lang = msgLangById(langId);
   const n = Math.max(1, Math.floor(bestOf));
   const key = `${lang.id}|${n}|${hex}`;
