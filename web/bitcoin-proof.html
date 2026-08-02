@@ -128,7 +128,10 @@ a:hover { text-decoration: underline; }
    value (the left half), append puts it after (the right). So a sibling's
    paragraph sits on the side its bytes occupy in the preimage: flush left as
    the left half, pushed right as the right. The result beneath each pairing
-   runs the full measure, as a parent holds both halves. */
+   runs the full measure, as a parent holds both halves. The calendar's
+   aggregation above the transaction draws the same way -- each joined piece
+   on its side, each Σ the single hash of the pair -- one grammar for the
+   whole ladder, whichever tree a pairing belongs to. */
 .para.sibling .body { max-width:76%; }
 .para.sibling.sib-right .body { margin-left:auto; text-align:right; }
 @media (max-width: 560px) {
@@ -273,7 +276,31 @@ function render(proof) {
   const rungs = ladderOf(proof.attestation, proof.digest);
   const body = $('proof');
   const section = proof.place.section;
+  // The single-hash operations the aggregation is built from, by the book's
+  // own sigils: Σ is OP_SHA256's mark, ρ RIPEMD-160's, σ SHA-1's. The path's
+  // levels stay ⌘ -- a block's tree hashes twice, and ⌘ is the double hash.
+  const HASH_MARKS = { sha256: ['Σ', 'SHA-256'], ripemd160: ['ρ', 'RIPEMD-160'], sha1: ['σ', 'SHA-1'] };
   for (const rung of rungs) {
+    // The rungs before the transaction (and any the shape-reader left plain)
+    // are the calendar's aggregation: joins and single hashes. A join shows
+    // the piece that was glued on, seated on the side its bytes occupy in
+    // the preimage -- the same drawing the block's merkle path gets below --
+    // and a hash shows what the pairing reduced to, at full measure.
+    if ((rung.kind === 'commit' || rung.kind === 'step') && !rung.isRoot) {
+      if (rung.op === 'append' || rung.op === 'prepend') {
+        const side = rung.op === 'prepend' ? 'left' : 'right';
+        body.append(para(figure(rung.arg, 'h', 'dt', rung.arg.length / 2, false,
+          `bytes joined beside the running value — the ${side} half of this pairing, in the order the bytes are hashed`,
+          cells), null, `sibling sib-${side}`));
+        continue;
+      }
+      if (HASH_MARKS[rung.op]) {
+        const [mk, name] = HASH_MARKS[rung.op];
+        body.append(para(figure(rung.result, mk, 'dt', rung.result.length / 2, false,
+          `a single ${name} of the pairing above`, cells)));
+        continue;
+      }
+    }
     if (rung.kind === 'level') {
       // `rung.side` is where the running value sat in the pairing, so the
       // sibling took the other half -- and its paragraph sits on that side
