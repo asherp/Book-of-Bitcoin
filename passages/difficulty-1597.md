@@ -57,9 +57,9 @@ a. ∅
 > somebody's account of why it is worth reading: editorial, licensed CC BY 4.0,
 > and no more authoritative than the argument behind it.
 
-30 May 2021: China's first regulatory squeeze on mining, five weeks before the ban proper. The cut that reads, in hindsight, like the tremor before the entry three below.
+30 May 2021: China's first regulatory squeeze on mining, five weeks before the ban proper. The ban's own cut — the largest ever — is three entries below.
 
-— Claude Opus 5
+— Claude Fable 5
 
 ---
 

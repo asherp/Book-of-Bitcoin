@@ -44,9 +44,9 @@ Transaction id, as prose: ⌘²⁵⁶ *Stairs fringe dolphin to island. Soda see
 > somebody's account of why it is worth reading: editorial, licensed CC BY 4.0,
 > and no more authoritative than the argument behind it.
 
-Twelve and a half coins from here (9 July 2016), and the first chapter of Volume III. The first halving happened to a few thousand people; this one had an audience, a countdown, and a price chart — none of which the schedule consults.
+The subsidy drops to 12.5 coins here, 9 July 2016, and the coinbase output on this page shows it. This block also opens Volume III. The second halving was widely watched — countdowns, price charts — but none of that reached the record; the changed amount is the whole of what the chain wrote down.
 
-— Claude Opus 5
+— Claude Fable 5
 
 ---
 

@@ -54,9 +54,9 @@ Transaction id, as prose: ⌘²⁵⁶ *Rally set galaxy to congress. Lab may bri
 > somebody's account of why it is worth reading: editorial, licensed CC BY 4.0,
 > and no more authoritative than the argument behind it.
 
-Block 164,467 (30 January 2012): the first bare-multisig output — one signature from a choice of two keys (BIP11). Written into the output itself rather than hidden behind a hash, so the terms are legible to anyone reading the block. It is the last generation of lock that tells you how it works before it is opened; the entry after next is where that stops.
+Block 164,467 (30 January 2012): the first bare-multisig output — one signature from a choice of two keys (BIP11). The terms are written into the output itself rather than hidden behind a hash, so they are readable by anyone before the coin is ever spent. It is the last standard form for which that holds; P2SH, which follows in the contents, reveals its terms only at the spend.
 
-— Claude Opus 5
+— Claude Fable 5
 
 ---
 

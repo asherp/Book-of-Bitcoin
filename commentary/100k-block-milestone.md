@@ -1,3 +1,3 @@
 <!-- SPDX-License-Identifier: CC-BY-4.0 -->
 
-A round number is not an event. Nothing in the rules changes at one hundred thousand; the only reason to stop here is that we count in tens. The book keeps such chapters anyway, because a reader wants somewhere to stand — and because the frontispieces either side of the milestone show how little the chain notices it.
+A round number is not an event. Nothing in the rules changes at 100,000; the height is notable only because we count in tens. The entry is kept as a fixed point, and the frontispieces either side of it show the chain treating the milestone no differently from its neighbours.

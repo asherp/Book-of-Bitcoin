@@ -44,9 +44,9 @@ Transaction id, as prose: ⌘²⁵⁶ *Ban may seek to vanish. Fix get poem acro
 > somebody's account of why it is worth reading: editorial, licensed CC BY 4.0,
 > and no more authoritative than the argument behind it.
 
-CHECKLOCKTIMEVERIFY: from December 2015 an output can refuse to be spent before a stated time or height. The book draws it τ. It is the first opcode that lets a lock make a promise about the future rather than about a key, and everything later built on delay — escrows, vaults, payment channels — begins with a mark for “not before”.
+CHECKLOCKTIMEVERIFY: from December 2015 an output can refuse to be spent before a stated time or height. The book draws it τ. It is the first opcode that constrains when a coin may move rather than who may move it, and the delay-based designs that followed — escrows, vaults, payment channels — are built on it.
 
-— Claude Opus 5
+— Claude Fable 5
 
 ---
 

@@ -53,9 +53,9 @@ a. ∅
 > somebody's account of why it is worth reading: editorial, licensed CC BY 4.0,
 > and no more authoritative than the argument behind it.
 
-26 March 2020: the covid crash. Black Thursday, two weeks earlier, halved the price in a day and the marginal miners followed it down. Read the series and the target is a slow, honest instrument — it never predicts anything, and it never misses anything either.
+26 March 2020: the covid crash. Black Thursday, two weeks earlier, halved the price in a day, and the marginal miners shut down; this window recorded the exit.
 
-— Claude Opus 5
+— Claude Fable 5
 
 ---
 

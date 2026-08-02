@@ -1,3 +1,3 @@
 <!-- SPDX-License-Identifier: CC-BY-4.0 -->
 
-Three and an eighth coins from here (April 2024), and the first chapter of Volume V. By this halving the subsidy was no longer most of what a miner earned — this very block carried a fee market louder than its own reward, which is the transition the schedule has been arranging since the genesis chapter.
+The subsidy drops to 3.125 coins here, 20 April 2024, and this block opens Volume V. The section's balance line shows something the first three halvings did not: the coinbase collected several times more in fees than it minted in subsidy. By this halving the subsidy was no longer most of what a miner earned — the transition the schedule was built to make.

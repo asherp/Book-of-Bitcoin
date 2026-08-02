@@ -488,6 +488,20 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 #page-prev { grid-column: 1; justify-self: start; }
 .section-nav .nav-keys { grid-column: 2; display: flex; align-items: center; justify-content: center; gap: 20px; }
 #page-next { grid-column: 3; justify-self: end; }
+/* The foot steppers wear entry NAMES (the contents walk), which can run long:
+   the name ellipsizes inside its span while the chevron -- the button's own
+   ::before / ::after, a flex item beside it -- always survives the cut. */
+#page-prev, #page-next { display: flex; align-items: baseline; min-width: 0; max-width: 100%; }
+#page-prev .step-text, #page-next .step-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* On a phone the keys leave the names a few letters each, so the bar takes
+   two rows: the page's keys above -- nearest the sheets they raise -- and
+   the walk's two names on the bottom line. */
+@media (max-width: 560px) {
+  .section-nav { grid-template-columns: 1fr 1fr; gap: 8px 16px; }
+  .section-nav .nav-keys { grid-column: 1 / -1; grid-row: 1; }
+  #page-prev { grid-column: 1; grid-row: 2; }
+  #page-next { grid-column: 2; grid-row: 2; }
+}
 .commentary-body { padding-bottom: 16px; }
 /* The sheet's own typography — the measure, the readings, the byline, the terms
    — is commentary.css, shared with the Ledger's leaf-borne readings, so a
@@ -993,7 +1007,7 @@ button:disabled { opacity: .4; cursor: not-allowed; }
          about the page in hand, and it is present only when this passage has a
          curated reading -- the notation key is the same on every page. -->
     <nav class="section-nav">
-      <button type="button" id="page-prev" class="hidden" aria-label="Previous section" title="Previous section"></button>
+      <button type="button" id="page-prev" class="hidden" aria-label="Previous contents entry" title="Previous contents entry"></button>
       <div class="nav-keys">
         <details class="nav-sheet commentary hidden" id="commentary">
           <summary title="Commentary on this passage — a reading of the record, credited to whoever wrote it">Commentary</summary>
@@ -1004,7 +1018,7 @@ button:disabled { opacity: .4; cursor: not-allowed; }
           <div class="notation-body nav-sheet-body"></div>
         </details>
       </div>
-      <button type="button" id="page-next" class="hidden" aria-label="Next section" title="Next section"></button>
+      <button type="button" id="page-next" class="hidden" aria-label="Next contents entry" title="Next contents entry"></button>
     </nav>
   </article>
 
@@ -1486,6 +1500,13 @@ let state = null;   // { hash, height, block, txids, index }
 // fetch the next block and having it 404 -- so it's cached once learned
 // rather than reprobed on every step off the same last block.
 let tipHeight = null;
+
+// Whether a linear FORWARD neighbour exists -- the swipe and arrow-key guard
+// (navAvailable), set by labelNav. The foot buttons used to carry this
+// through their visibility; they walk the table of contents now, so the
+// gestures keep their own flag. (Backward needs none: navAvailable judges it
+// from the position directly.)
+let sectionNextExists = false;
 
 // The on-screen transaction's per-input witnesses ({ n, hex }), stashed so they
 // can be encoded lazily -- as numbered footnotes -- when the reader clicks an
@@ -3983,6 +4004,121 @@ function renderChapter(para) {
 
 // Label the chapter/section nav buttons, and hide any that lead nowhere (Genesis
 // has no earlier chapter/section; the chain tip's last section none later).
+// ── The foot nav's contents walk ──────────────────────────────────────────
+// The foot bar's left and right steppers hop between the table of contents'
+// entries -- the same curated places its rows keep, in the same reading
+// order -- rather than paging section by section (the swipe and the arrow
+// keys still page; see navAvailable). The walk closes into a ring through
+// the chain's two ends: past the last curated place lies the latest block,
+// and past the latest block the walk wraps to Genesis -- so on the tip's
+// page the right stepper offers ■1, and on Genesis's page the left offers
+// the tip.
+//
+// A curated place cited by txid holds its (height, §) only once its
+// merkle proof answers -- the same lookup, and the same banked 'placements'
+// archive, the contents page uses -- so those places join the walk as they
+// resolve, offline and for free on every visit after the first.
+const GENESIS_COINBASE = '4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b';
+const txPlacements = new Map();   // txid -> { height, pos }
+let txPlacementsKicked = false;
+function kickTxPlacements() {
+  if (txPlacementsKicked) return;
+  txPlacementsKicked = true;
+  const hexes = [...new Set(places().filter((p) => !p.address && /^[0-9a-f]{64}$/i.test(p.id)).map((p) => p.id.toLowerCase()))];
+  Promise.all(hexes.map(async (id) => {
+    if (id === GENESIS_COINBASE) { txPlacements.set(id, { height: 0, pos: 0 }); return; }
+    try {
+      const kept = await storeGet('placements', id);
+      if (kept) { txPlacements.set(id, kept); return; }
+      const res = await esploraFetch(`${ESPLORA}/tx/${id}/merkle-proof`);
+      if (!res.ok) return;
+      const mp = await res.json();
+      txPlacements.set(id, { height: mp.block_height, pos: mp.pos });
+      storePut('placements', id, { height: mp.block_height, pos: mp.pos });
+    } catch { /* unresolved: the walk skips this place until a later visit */ }
+  })).then(() => { if (state) labelNav(); });   // re-label with the walk complete
+}
+
+// Every stop on the walk, sorted into reading order. rank is the page's seat
+// within its height, on the same scale state.index speaks: volume leaf -3,
+// book leaf -2, the chapter page -1, sections 0…; sub orders places that
+// share a section (an output, a witness) without ever being a stop apart.
+// The latest block closes the ring -- a virtual stop, unless the tip's own
+// chapter is already curated.
+function navTargets() {
+  kickTxPlacements();
+  const items = [];
+  for (const p of places()) {
+    if (p.address) continue;
+    let height, rank;
+    if (/^[0-9a-f]{64}$/i.test(p.id)) {
+      const mp = txPlacements.get(p.id.toLowerCase());
+      if (!mp) continue;
+      height = mp.height; rank = mp.pos;
+    } else {
+      height = Number(p.id);
+      // A relative id counts back from the tip -- the contents' own "Latest
+      // block" row is `id: '-1'` -- so it places only once the tip is known,
+      // and it IS the ring's closing stop (its stored height follows the
+      // chain: contentsStep re-resolves it through openLookup(-1)).
+      if (height < 0) {
+        if (tipHeight === null) continue;
+        height = tipHeight + height + 1;
+        if (height < 0) continue;
+      }
+      rank = p.page === 'volume' ? -3 : p.page === 'book' ? -2 : (p.index ?? -1);
+    }
+    // The ring ends at the latest block: a curated height consensus has fixed
+    // but no block has reached (a scheduled fork's chapters) stays off the
+    // walk, so forward from the tip wraps to Genesis rather than stepping
+    // into unwritten chapters. The contents page still lists them.
+    if (tipHeight !== null && height > tipHeight) continue;
+    items.push({ height, rank, sub: p.out ?? (p.wit != null ? 0x10000 + p.wit : -1), place: p, tip: p.id === '-1' || undefined });
+  }
+  items.sort((a, b) => a.height - b.height || a.rank - b.rank || a.sub - b.sub);
+  if (tipHeight !== null && !items.some((i) => i.height === tipHeight && i.rank === -1)) {
+    items.push({ height: tipHeight, rank: -1, sub: -1, tip: true });
+  }
+  return items;
+}
+
+// A stop's face on the button: the entry's NAME, as the contents' rows print
+// it (localized, with its `as` where an entry keeps several places) -- the
+// notation and the full reference ride in the hover instead. Long names are
+// ellipsized by the bar's CSS, never wrapped.
+function navText(i) {
+  return i.place ? placeTitle(i.place) : tr('the latest block');
+}
+function navLabel(i) {
+  const ref = i.rank >= 0 ? `${referenceOf(i.height)} §${i.rank + 1}` : referenceOf(i.height);
+  return `${i.place ? placeTitle(i.place) : tr('the latest block')} (${ref})`;
+}
+
+// Step to the nearest contents entry in that direction, wrapping through the
+// ends: forward off the tip lands on Genesis, back off Genesis on the tip.
+// The tip stop re-resolves rather than trusting its stored height, so the
+// walk follows the chain: openLookup(-1) asks where the tip is now.
+async function contentsStep(direction) {
+  if (!state) return;
+  const items = navTargets();
+  if (!items.length) return;
+  const diff = (i) => (i.height - state.height) || (i.rank - state.index);
+  const t = direction > 0
+    ? (items.find((i) => diff(i) > 0) ?? items[0])
+    : ([...items].reverse().find((i) => diff(i) < 0) ?? items[items.length - 1]);
+  if (!t || diff(t) === 0) return;
+  rememberTrail();
+  state.ghost = null;
+  try {
+    if (t.tip) { await openLookup('-1'); return; }
+    const p = t.place;
+    const index = p.page === 'volume' ? -3 : p.page === 'book' ? -2 : t.rank;
+    await openLookup(String(t.height), index);
+    if (p.out != null) $(`out-${p.out}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    else if (p.wit != null) await landOnWitness(footnoteMark(p.wit));
+  } catch (e) { setStatus(e.message || 'Failed to load.', 'err'); }
+}
+
 function labelNav() {
   const cur = volumeBookChapter(state.height);
   const idx = state.index;
@@ -4007,7 +4143,14 @@ function labelNav() {
 
   const setBtn = (id, text, label) => {
     const b = $(id);
-    b.textContent = text;
+    // The text rides in a child span so the foot buttons can ellipsize a long
+    // entry name without clipping the chevron the button wears as ::before /
+    // ::after (pseudo-elements flank the span as flex items).
+    b.textContent = '';
+    const s = document.createElement('span');
+    s.className = 'step-text';
+    s.textContent = text;
+    b.append(s);
     b.title = label;
     b.setAttribute('aria-label', label);
   };
@@ -4073,66 +4216,25 @@ function labelNav() {
   if (stepPrev) setBtn('chapter-prev', stepPrev.text, stepPrev.label);
   if (stepNext) setBtn('chapter-next', stepNext.text, stepNext.label);
 
-  const hasPrevSection = !(state.height === 0 && idx <= floor);
-  const hasNextSection = !(lineEnds && idx >= state.txCount - 1);
-  showBtn('page-prev', hasPrevSection);
-  showBtn('page-next', hasNextSection);
+  // The linear section walk survives for the gestures: a swipe or an arrow
+  // key still pages one leaf or section at a time, and this flag is their
+  // forward guard (navAvailable) now that the foot buttons no longer stand
+  // for it.
+  sectionNextExists = !(lineEnds && idx >= state.txCount - 1);
 
-  // Page navigation -- one leaf or section at a time along the linear order:
-  // … previous block's last § → volume leaf → book leaf → chapter page → §1 …
-  if (hasPrevSection) {
-    if (idx > 0) {
-      setBtn('page-prev', `§${idx}`, `${tr('Previous section')} (${referenceOf(state.height)} §${idx})`);   // same chapter, target section = current 1-based index minus one
-    } else if (idx === 0) {
-      // §1 pages back to this chapter's own page -- the chapter-level reference.
-      setBtn('page-prev', `${chapterMark(state.height)}${cur.chapter}`, `${tr('Chapter page')} (${referenceOf(state.height)})`);
-    } else if (idx - 1 >= floor) {
-      // Up the leaf stack within this block: chapter page → book leaf → volume leaf.
-      if (idx === -1) setBtn('page-prev', `β${cur.book}`, `${tr('Book page')} (${toRoman(cur.volume)} β${cur.book})`);
-      else setBtn('page-prev', toRoman(cur.volume), `${tr('Volume page')} (${toRoman(cur.volume)})`);
-    } else {
-      // Off the block's first page, back into the prior block's final section;
-      // its §number is that block's tx count, unknown until it loads -- shown
-      // as § once resolved.
-      setBtn('page-prev', '§…', tr('Previous section (end of {ref})', { ref: referenceOf(state.height - 1) }));
-      const h = state.height;
-      loadBlockTxCount(h - 1)
-        .then((n) => {
-          if (gen === renderGen) setBtn('page-prev', `§${n}`, `${tr('Previous section')} (${referenceOf(h - 1)} §${n})`);
-          // The moment the prior block's tx count is known, its page anchor is
-          // arithmetic off this block's (when that one is already in hand) --
-          // banked so stepping back across the boundary never asks the census.
-          const a = peekAnchor(h);
-          if (a !== null) bankAnchor(h - 1, a - n, anchorFinalAt(h - 1));
-        })
-        .catch(() => {});
-    }
-  }
-  if (hasNextSection) {
-    if (state.ghost && idx >= 0) {
-      // A ghost's only forward step is up: the transaction that replaced it.
-      setBtn('page-next', `§${idx + 1}`, tr('Its successor — the current holder of §{n}', { n: idx + 1 }));
-    } else if (idx === -3) {
-      setBtn('page-next', `β${cur.book}`, `${tr('Book page')} (${toRoman(cur.volume)} β${cur.book})`);
-    } else if (idx === -2) {
-      setBtn('page-next', `■${cur.chapter}`, `${tr('Chapter page')} (${reference(state.height)})`);
-    } else if (idx === -1) {
-      setBtn('page-next', '§1', `${tr('First section')} (${referenceOf(state.height)} §1)`);   // the chapter page opens onto §1
-    } else if (idx < state.txCount - 1) {
-      setBtn('page-next', `§${idx + 2}`, `${tr('Next section')} (${referenceOf(state.height)} §${idx + 2})`);   // same chapter, target section = current 1-based index plus one
-    } else {
-      // Crosses onto the next block's first page -- its volume or book leaf
-      // when it opens one, else its chapter page. A projected next chapter
-      // carries no leaves, whatever its height would open.
-      const nh = state.height + 1;
-      const projNext = tipHeight !== null && nh > tipHeight;
-      const nFloor = projNext ? -1 : minIndexOf(nh);
-      const t = volumeBookChapter(nh);
-      if (nFloor === -3) setBtn('page-next', toRoman(t.volume), `${tr('Volume page')} (${toRoman(t.volume)})`);
-      else if (nFloor === -2) setBtn('page-next', `β${t.book}`, `${tr('Book page')} (${toRoman(t.volume)} β${t.book})`);
-      else setBtn('page-next', `${projNext ? '□' : '■'}${t.chapter}`, `${tr(projNext ? 'Next chapter — projected' : 'Next chapter')} (${referenceOf(nh)})`);
-    }
-  }
+  // The foot bar's own steppers walk the TABLE OF CONTENTS instead: the
+  // nearest curated place to either side, in reading order, wrapping through
+  // the chain's two ends (see navTargets / contentsStep).
+  const labelContentsNav = () => {
+    const items = navTargets();
+    const diff = (i) => (i.height - state.height) || (i.rank - idx);
+    const next = items.find((i) => diff(i) > 0) ?? items[0];
+    const prev = [...items].reverse().find((i) => diff(i) < 0) ?? items[items.length - 1];
+    const label = (b, t) => { setBtn(b, navText(t), navLabel(t)); showBtn(b, true); };
+    if (next && diff(next) !== 0) label('page-next', next); else showBtn('page-next', false);
+    if (prev && diff(prev) !== 0) label('page-prev', prev); else showBtn('page-prev', false);
+  };
+  labelContentsNav();
 
   // The commentary key belongs to the page, not to the steppers, but it lives
   // in the same bar and every render path passes through here.
@@ -4708,8 +4810,8 @@ async function runPendingSteps() {
   }
 }
 
-$('page-prev').addEventListener('click', () => requestStep(-1));
-$('page-next').addEventListener('click', () => requestStep(1));
+$('page-prev').addEventListener('click', () => contentsStep(-1));
+$('page-next').addEventListener('click', () => contentsStep(1));
 $('chapter-prev').addEventListener('click', () => goToLevel(-1));
 $('chapter-next').addEventListener('click', () => goToLevel(1));
 // The eyebrow crumbs: each opens the page of the span it names. Same block →
@@ -4750,7 +4852,7 @@ let slideWatchdog = null;
 function navAvailable(direction) {
   if (!state) return false;
   if (state.index < 0) return !$(direction > 0 ? 'chapter-next' : 'chapter-prev').classList.contains('hidden');
-  if (direction > 0) return !$('page-next').classList.contains('hidden');
+  if (direction > 0) return sectionNextExists;   // the foot button no longer stands for the linear walk
   return state.index > 0 || state.height > 0;
 }
 // A swipe additionally waits for that neighbour's data to finish prefetching

@@ -44,9 +44,9 @@ Transaction id, as prose: ⌘²⁵⁶ *Tap truly tongue our menu. The cow undo k
 > somebody's account of why it is worth reading: editorial, licensed CC BY 4.0,
 > and no more authoritative than the argument behind it.
 
-This chapter opens Volume II. Every 210,000 blocks the subsidy halves — fifty coins to twenty-five, 28 November 2012 — which is why this book's volumes are halving eras rather than a shelf's convenience: they are the unit of the chain's own arithmetic. The whole monetary policy is one line of that arithmetic, checked by every node against a block it did not make.
+This coinbase creates 25 coins where every block before it created 50. The subsidy halves every 210,000 blocks — this is the first halving, 28 November 2012 — and the new amount is on this page, in the output's value. Nothing else marks the event: no flag, no signal, just the number. The book's volumes follow these eras, so this block also opens Volume II. Every node checks the amount against the schedule; a coinbase claiming the old 50 would make the whole block invalid.
 
-— Claude Opus 5
+— Claude Fable 5
 
 ---
 

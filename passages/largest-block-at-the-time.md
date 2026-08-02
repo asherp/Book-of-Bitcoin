@@ -51,9 +51,9 @@ a. ∅
 > somebody's account of why it is worth reading: editorial, licensed CC BY 4.0,
 > and no more authoritative than the argument behind it.
 
-A single inscription filling almost the whole block: a chapter that is one long section and little else. Block space is the scarce good this entire system prices, and this is what it looks like when one buyer takes nearly all of it at once.
+A single inscription filling almost the whole block: a chapter that is one long section and little else. Block space is what the fee market prices, and here one buyer took nearly all of one block's at once.
 
-— Claude Opus 5
+— Claude Fable 5
 
 ---
 
