@@ -576,6 +576,8 @@ a:hover { text-decoration: underline; }
 </div>
 
 <script type="module">
+import { localizeHome } from './btc-strings.js';
+localizeHome();   // the masthead in the reader's UI language (chosen on the book page)
 import { INDEXED, isAddress, keptLedgers, saveKeptLedgers, sameAddresses, addressScriptHex, cachedLine, resolveLine,
          extendLine, renderLedger, renderRows, periods, lineNote, reconciled, ledgerSum, heldCoins, addressState, lastKnownState,
          formatBalanceBtc, formatNetBtc, chainFailureText, citeHref, sectionOf, sectionOfFetched, citePlace, passageTxid, passageEntries, txHexOf, outspendsOf, prevoutValuesOf,
