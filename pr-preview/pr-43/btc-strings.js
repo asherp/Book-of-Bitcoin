@@ -100,6 +100,7 @@ const STRINGS = {
       'bloky od tohoto po vrchol řetězce, oba započítány — vrchol {tip} − výška {h} + 1',
     'Commentary on this passage — a reading of the record, credited to whoever wrote it':
       'Komentář k této pasáži — čtení záznamu, připsané tomu, kdo je napsal',
+    'translation: {name}': 'překlad: {name}',
   },
   german: {
     // masthead + nav
@@ -176,6 +177,7 @@ const STRINGS = {
       'Blöcke von diesem bis zur Spitze der Kette, beide mitgezählt — Spitze {tip} − Höhe {h} + 1',
     'Commentary on this passage — a reading of the record, credited to whoever wrote it':
       'Kommentar zu dieser Passage — eine Lesart der Aufzeichnung, dem zugeschrieben, der sie verfasst hat',
+    'translation: {name}': 'Übersetzung: {name}',
   },
 };
 
