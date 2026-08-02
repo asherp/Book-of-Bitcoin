@@ -516,3 +516,113 @@
       note: The OpenTimestamps client's own example proof, and the oldest anyone can still replay — May 2015, a year before the calendar servers, its commitment sitting where a public key's hash belongs.
       commentary:
         - file: the-hello-world-timestamp.md
+    # The client's own releases. Since 22.0, bitcoincore.org has stamped each
+    # release's checksum file into the chain the day the binaries went up, so a
+    # release date is a thing this register can cite rather than repeat: the
+    # subject is the SHA256SUMS naming every binary the release shipped as, and
+    # the proof lands in the chapter mined as it shipped. The server publishes
+    # the proofs still pending; tools/fetch-release-proofs.mjs completes them
+    # against the calendars each names and vendors both files, and a run after
+    # a new release fetches that release and nothing else. Releases the server
+    # no longer lists (30.0, 30.1) cannot be cited, and are not.
+    - title: Bitcoin Core 22.0
+      proof: bitcoin-core-22.0-SHA256SUMS.ots
+      subject: bitcoin-core-22.0-SHA256SUMS
+      note: The first release bitcoincore.org stamped into the chain — September 2021, the first release of the Taproot era, and every one since carries its own proof.
+      commentary:
+        - file: bitcoin-core-releases.md
+    - title: Bitcoin Core 22.1
+      proof: bitcoin-core-22.1-SHA256SUMS.ots
+      subject: bitcoin-core-22.1-SHA256SUMS
+    - title: Bitcoin Core 23.0
+      proof: bitcoin-core-23.0-SHA256SUMS.ots
+      subject: bitcoin-core-23.0-SHA256SUMS
+    - title: Bitcoin Core 23.1
+      proof: bitcoin-core-23.1-SHA256SUMS.ots
+      subject: bitcoin-core-23.1-SHA256SUMS
+    - title: Bitcoin Core 23.2
+      proof: bitcoin-core-23.2-SHA256SUMS.ots
+      subject: bitcoin-core-23.2-SHA256SUMS
+      note: Stamped into the same chapter and section as 24.1 — the two shipped the same day, and the calendar folded both checksum files into one aggregating transaction.
+    - title: Bitcoin Core 24.0
+      proof: bitcoin-core-24.0-SHA256SUMS.ots
+      subject: bitcoin-core-24.0-SHA256SUMS
+    - title: Bitcoin Core 24.0.1
+      proof: bitcoin-core-24.0.1-SHA256SUMS.ots
+      subject: bitcoin-core-24.0.1-SHA256SUMS
+    - title: Bitcoin Core 24.1
+      proof: bitcoin-core-24.1-SHA256SUMS.ots
+      subject: bitcoin-core-24.1-SHA256SUMS
+      note: Stamped into the same chapter and section as 23.2 — the two shipped the same day, and the calendar folded both checksum files into one aggregating transaction.
+    - title: Bitcoin Core 24.2
+      proof: bitcoin-core-24.2-SHA256SUMS.ots
+      subject: bitcoin-core-24.2-SHA256SUMS
+    - title: Bitcoin Core 25.0
+      proof: bitcoin-core-25.0-SHA256SUMS.ots
+      subject: bitcoin-core-25.0-SHA256SUMS
+    - title: Bitcoin Core 25.1
+      proof: bitcoin-core-25.1-SHA256SUMS.ots
+      subject: bitcoin-core-25.1-SHA256SUMS
+    - title: Bitcoin Core 25.2
+      proof: bitcoin-core-25.2-SHA256SUMS.ots
+      subject: bitcoin-core-25.2-SHA256SUMS
+    - title: Bitcoin Core 26.0
+      proof: bitcoin-core-26.0-SHA256SUMS.ots
+      subject: bitcoin-core-26.0-SHA256SUMS
+    - title: Bitcoin Core 26.1
+      proof: bitcoin-core-26.1-SHA256SUMS.ots
+      subject: bitcoin-core-26.1-SHA256SUMS
+    - title: Bitcoin Core 26.2
+      proof: bitcoin-core-26.2-SHA256SUMS.ots
+      subject: bitcoin-core-26.2-SHA256SUMS
+    - title: Bitcoin Core 27.0
+      proof: bitcoin-core-27.0-SHA256SUMS.ots
+      subject: bitcoin-core-27.0-SHA256SUMS
+    - title: Bitcoin Core 27.1
+      proof: bitcoin-core-27.1-SHA256SUMS.ots
+      subject: bitcoin-core-27.1-SHA256SUMS
+    - title: Bitcoin Core 27.2
+      proof: bitcoin-core-27.2-SHA256SUMS.ots
+      subject: bitcoin-core-27.2-SHA256SUMS
+    - title: Bitcoin Core 28.0
+      proof: bitcoin-core-28.0-SHA256SUMS.ots
+      subject: bitcoin-core-28.0-SHA256SUMS
+    - title: Bitcoin Core 28.1
+      proof: bitcoin-core-28.1-SHA256SUMS.ots
+      subject: bitcoin-core-28.1-SHA256SUMS
+    - title: Bitcoin Core 28.2
+      proof: bitcoin-core-28.2-SHA256SUMS.ots
+      subject: bitcoin-core-28.2-SHA256SUMS
+    - title: Bitcoin Core 28.3
+      proof: bitcoin-core-28.3-SHA256SUMS.ots
+      subject: bitcoin-core-28.3-SHA256SUMS
+    - title: Bitcoin Core 28.4
+      proof: bitcoin-core-28.4-SHA256SUMS.ots
+      subject: bitcoin-core-28.4-SHA256SUMS
+    - title: Bitcoin Core 29.0
+      proof: bitcoin-core-29.0-SHA256SUMS.ots
+      subject: bitcoin-core-29.0-SHA256SUMS
+    - title: Bitcoin Core 29.1
+      proof: bitcoin-core-29.1-SHA256SUMS.ots
+      subject: bitcoin-core-29.1-SHA256SUMS
+    - title: Bitcoin Core 29.2
+      proof: bitcoin-core-29.2-SHA256SUMS.ots
+      subject: bitcoin-core-29.2-SHA256SUMS
+    - title: Bitcoin Core 29.3
+      proof: bitcoin-core-29.3-SHA256SUMS.ots
+      subject: bitcoin-core-29.3-SHA256SUMS
+    - title: Bitcoin Core 29.4
+      proof: bitcoin-core-29.4-SHA256SUMS.ots
+      subject: bitcoin-core-29.4-SHA256SUMS
+    - title: Bitcoin Core 30.2
+      proof: bitcoin-core-30.2-SHA256SUMS.ots
+      subject: bitcoin-core-30.2-SHA256SUMS
+    - title: Bitcoin Core 30.3
+      proof: bitcoin-core-30.3-SHA256SUMS.ots
+      subject: bitcoin-core-30.3-SHA256SUMS
+    - title: Bitcoin Core 31.0
+      proof: bitcoin-core-31.0-SHA256SUMS.ots
+      subject: bitcoin-core-31.0-SHA256SUMS
+    - title: Bitcoin Core 31.1
+      proof: bitcoin-core-31.1-SHA256SUMS.ots
+      subject: bitcoin-core-31.1-SHA256SUMS

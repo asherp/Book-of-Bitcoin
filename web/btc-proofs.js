@@ -30,6 +30,8 @@
 import { parseOtsProof, earliestBitcoin, digestOf } from './btc-ots.js';
 import { parseTransaction } from './btc-tx.js';
 import { volumeBookChapter, reference, latinRefOf } from './btc-citation.js';
+import { expectedBlockTime } from './btc-chaintime.js';
+import { storeGet, storePut } from './btc-store.js';
 
 const KEPT_KEY = 'glossia-btc-proofs';
 export const PROOF_DIR = './proofs/';
@@ -271,6 +273,77 @@ export function citedAt(listed, { height, section, out }) {
     .filter(({ proof }) => proof.place.height === height
       && proof.place.section === section
       && proof.place.out === out);
+}
+
+// ─── when a proof's chapter was mined ───────────────────────────────────
+//
+// What this register exists to say is a date, so its rows print one -- and a
+// proof states a height, not a time, so the time is looked up. The archive
+// answers first (exact, offline); failing that the public mirrors are asked
+// once, and what they answer is kept in the same records the book page
+// writes (heights: height -> hash; blocks: hash -> { block, headerHex }), so
+// the date fills the archive with precisely the ingredients the cited
+// chapter will want when the reader turns to it. Failing both, the height
+// dates itself by arithmetic (btc-chaintime.js) -- days off at worst, and
+// said with the hedge that admits it.
+const DATE_MIRRORS = ['https://blockstream.info/api', 'https://mempool.space/api'];
+// Written to the archive only when settled: the archive keeps finals, and a
+// day's depth is far past any reorg (the book's own rule is six blocks).
+const SETTLED = 86400;
+
+// A mirror that hangs must cost a row its upgrade, never its date -- the
+// estimate is already on screen -- so every request here carries a deadline.
+const deadline = () => { try { return AbortSignal.timeout(5000); } catch { return undefined; } };
+
+const minedTimes = new Map();        // height -> Promise<unix seconds | null>
+function minedTime(height) {
+  if (!minedTimes.has(height)) minedTimes.set(height, (async () => {
+    let hash = await storeGet('heights', height).catch(() => null);
+    if (hash) {
+      const kept = await storeGet('blocks', hash).catch(() => null);
+      if (kept?.block?.timestamp) return kept.block.timestamp;
+    }
+    for (const base of DATE_MIRRORS) {
+      try {
+        if (!hash) {
+          const r = await fetch(`${base}/block-height/${height}`, { signal: deadline() });
+          if (!r.ok) continue;
+          hash = (await r.text()).trim();
+        }
+        // The block and its raw header together, because that pair is the
+        // record the book page keeps -- an archive entry missing its header
+        // would be a shape of this module's own invention.
+        const [blockRes, headerRes] = await Promise.all([
+          fetch(`${base}/block/${hash}`, { signal: deadline() }),
+          fetch(`${base}/block/${hash}/header`, { signal: deadline() }),
+        ]);
+        if (!blockRes.ok || !headerRes.ok) continue;
+        const block = await blockRes.json();
+        const headerHex = (await headerRes.text()).trim();
+        if (Date.now() / 1000 - block.timestamp > SETTLED) {
+          storePut('heights', height, hash);
+          storePut('blocks', hash, { block, headerHex });
+        }
+        return block.timestamp ?? null;
+      } catch { /* try the next mirror */ }
+    }
+    return null;
+  })());
+  return minedTimes.get(height);
+}
+
+// The two dates a row can print. The estimate is arithmetic on the height --
+// instant, offline, days off at worst -- so it is written to the month and
+// hedged: a false month is rare, where a false day would be routine. The
+// mined date is the block's own clock, written to the day, and worth waiting
+// for; a row prints the estimate at once and lets this replace it.
+const UTC = { timeZone: 'UTC' };
+export const estimatedDate = (height) =>
+  `c. ${new Date(expectedBlockTime(height) * 1000).toLocaleDateString('en-GB', { month: 'long', year: 'numeric', ...UTC })}`;
+export async function minedDate(height) {
+  const t = await minedTime(height);
+  return t == null ? null
+    : new Date(t * 1000).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', ...UTC });
 }
 
 // A proof's own page: Appendix IV's rows open the ladder rather than jumping
