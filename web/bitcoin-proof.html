@@ -365,7 +365,7 @@ async function setProse(cells) {
   }
   for (const { el, hex, reverse } of cells) {
     try {
-      el.textContent = m.encodeSeedPhrase(reverse ? reverseHex(hex) : hex, 'english', BEST_OF).prose;
+      el.textContent = m.encodeSeedPhrase(reverse ? reverseHex(hex) : hex, m.bookLang(), BEST_OF).prose;
       el.classList.remove('waiting');
     } catch { el.textContent = 'unsaid'; }
     await new Promise((r) => setTimeout(r, 0));
