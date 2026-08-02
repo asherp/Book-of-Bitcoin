@@ -39,14 +39,43 @@ export { init };
 
 const SEED = 42n;               // fixed seed -> deterministic prose
 
-// Languages this pipeline can render into / detect from.
+// Languages this pipeline can render into / detect from. Labels are
+// endonyms -- each language names itself, so a reader finds their own
+// tongue without first reading English.
 export const MSG_LANGS = [
-  { id: 'english', label: 'English', language: 'english', wordlist: 'bip39',   dialect: 'body' },
-  { id: 'latin',   label: 'Latin',   language: 'latin',   wordlist: 'default', dialect: 'body' },
-  { id: 'czech',   label: 'Czech',   language: 'czech',   wordlist: 'default', dialect: 'body' },
-  { id: 'german',  label: 'German',  language: 'german',  wordlist: 'default', dialect: 'body' },
+  { id: 'english', label: 'English',  language: 'english', wordlist: 'bip39',   dialect: 'body' },
+  { id: 'latin',   label: 'Latina',   language: 'latin',   wordlist: 'default', dialect: 'body' },
+  { id: 'czech',   label: 'Čeština',  language: 'czech',   wordlist: 'default', dialect: 'body' },
+  { id: 'german',  label: 'Deutsch',  language: 'german',  wordlist: 'default', dialect: 'body' },
 ];
 export function msgLangById(id) { return MSG_LANGS.find(l => l.id === id) || MSG_LANGS[0]; }
+
+// ─── the book's language ──────────────────────────────────────────────
+// Which of MSG_LANGS the book's prose is set in, chosen by the reader and
+// persisted across pages and visits. The bytes are the record and never
+// change; the language is typography -- any choice decodes back to the same
+// transaction (decodeCanonical detects the language from the prose itself).
+// Kept here beside MSG_LANGS so every page that encodes reads one source of
+// truth. Guarded for non-browser callers (the node test suite imports this
+// module transitively): no localStorage, no persistence, english default.
+const BOOK_LANG_KEY = 'glossia-btc-lang';
+let bookLangId = (() => {
+  try { return msgLangById(localStorage.getItem(BOOK_LANG_KEY)).id; }
+  catch { return MSG_LANGS[0].id; }
+})();
+export function bookLang() { return bookLangId; }
+export function setBookLang(id) {
+  bookLangId = msgLangById(id).id;
+  try {
+    localStorage.setItem(BOOK_LANG_KEY, bookLangId);
+    // The chrome follows the prose except into Latin: Latin prose is a real
+    // choice, a Latin chrome would be an affectation, so the UI keeps the
+    // last modern tongue chosen (btc-strings.js reads this key). Latin
+    // simply doesn't write it.
+    if (bookLangId !== 'latin') localStorage.setItem('glossia-btc-ui-lang', bookLangId);
+  } catch { /* private mode etc. -- the choice still holds for this page */ }
+  return bookLangId;
+}
 
 const TE = new TextEncoder();
 const TD = new TextDecoder();
@@ -334,15 +363,18 @@ export function detectLang(prose) {
 // a mistyped word is caught on load.
 
 // hex string (any byte length) -> { prose, payloadWords, langId, version }.
+// The language defaults to the reader's saved book language (bookLang above),
+// so every page that omits it follows the one choice; pass a langId to pin.
 // `bestOf` is kept for caller compatibility but no longer does anything: the
 // canonical version's frozen rules pin the fluency budget (v1 is best-of-4),
 // which is what makes the rendering reproducible by a verifier.
-// Deterministic for a given (hex, language), so results are memoized (LRU): a
-// caller can warm an encode ahead of time (the Bitcoin book prefetches its
-// swipe neighbours) and the eventual render is a lookup instead of a WASM pass.
+// Deterministic for a given (hex, language), so results are memoized (LRU,
+// keyed by language too): a caller can warm an encode ahead of time (the
+// Bitcoin book prefetches its swipe neighbours) and the eventual render is a
+// lookup instead of a WASM pass.
 const canonicalMemo = new Map();
 const CANONICAL_MEMO_MAX = 400;
-export function encodeCanonical(hex, langId = 'english', _bestOf = 1) {
+export function encodeCanonical(hex, langId = bookLang(), _bestOf = 1) {
   const lang = msgLangById(langId);
   const key = `${lang.id}|${hex}`;
   const hit = canonicalMemo.get(key);

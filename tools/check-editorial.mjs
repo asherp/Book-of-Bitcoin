@@ -105,18 +105,23 @@ const readingBearers = [
 const referenced = new Set();
 for (const e of readingBearers) {
   for (const r of readingsOf(e)) {
-    if (!r.file) continue;                        // an inline note: nothing on disk to check
-    referenced.add(r.file);
-    let src;
-    try {
-      src = await readFile(new URL(`commentary/${r.file}`, WEB), 'utf8');
-    } catch {
-      problems.push(`"${e.title}" references commentary/${r.file}, which does not exist`);
-      continue;
-    }
-    if (!markdownParagraphs(src).length) problems.push(`commentary/${r.file} has no prose in it`);
-    if (!src.includes('SPDX-License-Identifier: CC-BY-4.0')) {
-      problems.push(`commentary/${r.file} is missing its SPDX line (<!-- SPDX-License-Identifier: CC-BY-4.0 -->)`);
+    // A reading's translations (file-cs, file-de → r.files) are files like the
+    // original: each must exist, carry prose, and wear the CC-BY SPDX line.
+    const wanted = [r.file, ...Object.values(r.files ?? {})].filter(Boolean);
+    if (!wanted.length) continue;                 // an inline note: nothing on disk to check
+    for (const file of wanted) {
+      referenced.add(file);
+      let src;
+      try {
+        src = await readFile(new URL(`commentary/${file}`, WEB), 'utf8');
+      } catch {
+        problems.push(`"${e.title}" references commentary/${file}, which does not exist`);
+        continue;
+      }
+      if (!markdownParagraphs(src).length) problems.push(`commentary/${file} has no prose in it`);
+      if (!src.includes('SPDX-License-Identifier: CC-BY-4.0')) {
+        problems.push(`commentary/${file} is missing its SPDX line (<!-- SPDX-License-Identifier: CC-BY-4.0 -->)`);
+      }
     }
     // A credited reading is only credited if the name reaches the page.
     if (r.href && !/^https?:\/\//.test(r.href)) {

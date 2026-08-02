@@ -18,7 +18,7 @@
 // Consumed by bitcoin-book.html, which renders each field into its manuscript
 // margin layout.
 
-import { encodeCanonical } from './glossia-msg.js';
+import { encodeCanonical, bookLang } from './glossia-msg.js';
 import { findTextRuns, splitReadableRuns, looksLikeWriting, readableUtf8Text, tokenizeScript, bitsToTargetHex, bitsToDifficulty, bitsToMantissaFactors, primeFactors } from './btc-tx.js';
 import { splitOnSignature, poolOf } from './btc-pools.js';
 import { volumeBookChapter } from './btc-citation.js';
@@ -1228,7 +1228,7 @@ export function composeTransactionFields(parsed, bestOf = 1, lazyData = null, en
   const enc = encoder || encodeCanonical;
   const collect = (hex) => {
     if (!hex) return '';
-    const r = enc(hex, 'english', bestOf);
+    const r = enc(hex, bookLang(), bestOf);   // the reader's saved book language
     payloadWords.push(...r.payloadWords);
     return r.prose;
   };
