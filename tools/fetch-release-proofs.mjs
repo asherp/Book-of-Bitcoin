@@ -142,5 +142,6 @@ if (!added.length) {
     console.log(`    - title: Bitcoin Core ${v}`);
     console.log(`      proof: ${subject}.ots`);
     console.log(`      subject: ${subject}`);
+    console.log(`      source: ${BIN}bitcoin-core-${v}/`);
   }
 }
