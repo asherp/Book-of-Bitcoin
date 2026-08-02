@@ -110,6 +110,8 @@
 # can be worth keeping before anyone has finished saying why. Where a story is
 # not yet checked against the chain it stays a comment here rather than becoming
 # a file — commentary is published matter, and publishing it is the assertion.
+# A reading speaks to what is VISIBLE in the passage, read with hindsight —
+# what it set in motion, the precedent it became (see CONTRIBUTING.md).
 #
 # The soft forks that activated by miner signaling — the 95% supermajority forks
 # (BIP34/66/65) and the version-bits forks (CSV, SegWit, Taproot) — each mark

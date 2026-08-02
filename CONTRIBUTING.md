@@ -41,6 +41,14 @@ yours, and it travels with your name on it.
 If you would rather contribute commentary under different terms, say so in the
 pull request and it can be discussed before merge.
 
+**What a reading attends to.** A reading annotates a passage the reader has in
+front of them, so it should speak to what is visible there — what the rendered
+prose itself shows — and read it with the hindsight the reader has and the
+passage's own moment lacked: what it set in motion, the precedent it became,
+what later chapters made of it. Background a reader cannot see on the page is
+the weakest ground for a reading; the page is the evidence, and hindsight is
+what commentary can add that the record cannot.
+
 Where it goes: two files, both meant to be written by hand. Put the reading
 itself in `web/commentary/` as Markdown, named for the passage —
 `web/commentary/bitcoin-pizza-day-your-name.md`:
