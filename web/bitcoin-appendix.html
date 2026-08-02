@@ -258,6 +258,13 @@ a.bb-ref:hover { color:var(--accent-2); }
 .bb-mark { display:flex; align-items:center; gap:10px; padding:12px 2px 4px;
   font:600 9.5px/1 'IBM Plex Mono',monospace; letter-spacing:.14em; text-transform:uppercase; color:var(--accent); }
 .bb-mark::before, .bb-mark::after { content:''; flex:1; border-top:1px solid var(--accent); opacity:.45; }
+/* A block notable beyond the fork -- a chapter the contents curates, or one
+   the reader bookmarked -- keeps its label in the record too, a quieter rule
+   in the contents' own words. A reader's own flies the bookmark's ribbon. */
+.bb-mark.bb-toc { color:var(--meta); }
+.bb-mark.bb-toc::before, .bb-mark.bb-toc::after { border-top-color:var(--rule); opacity:1; }
+.bb-bm-rib { display:inline-block; flex:none; width:8px; height:11px; margin-right:-2px; color:var(--accent); }
+.bb-bm-rib svg { display:block; width:100%; height:100%; }
 /* The fork leaf's foot, seated the way the Ledger's totals bar sits: sticky
    at the screen bottom, the rule its top edge, holding the running tally and
    -- beneath the summary line -- the fork's commentary, so the reading is at
@@ -405,7 +412,7 @@ a.bb-ref:hover { color:var(--accent-2); }
 </div>
 
 <script type="module">
-import { loadNotables, appendix, entryHref, isBlockId } from './btc-contents.js';
+import { loadNotables, appendix, entryHref, isBlockId, places, placeTitle } from './btc-contents.js';
 import { partLabel } from './btc-notables.js';
 
 // The appendix is read from appendix.yaml (btc-notables.js), so it arrives
@@ -762,6 +769,46 @@ if (bip && blockLeaf == null) {
       return d;
     };
 
+    // A ballot's blocks can be notable beyond the fork: a chapter the
+    // contents curates, or one the reader bookmarked. Those labels join the
+    // record where their blocks fall -- quieter rules, in the contents' own
+    // words -- so a window read here says what the contents would say about
+    // the same blocks. The fork's own entries keep precedence over the
+    // curated set (a height they already name is not ruled twice), but a
+    // reader's bookmark always flies: it is theirs, under the ribbon it
+    // wears everywhere else. Leaf-level places (page: book or volume) name
+    // spans rather than chapters, so they stay out of a table of blocks.
+    const extraMarks = new Map();   // height -> [{title, bm}]
+    const addExtra = (h, m) => { (extraMarks.get(h) ?? extraMarks.set(h, []).get(h)).push(m); };
+    for (const p of places()) {
+      if (p.page || p.address || !isBlockId(p.id)) continue;
+      const h = Number(p.id);
+      if (!marks.has(h)) addExtra(h, { title: placeTitle(p) });
+    }
+    try {
+      const kept = JSON.parse(localStorage.getItem('glossia-btc-bookmarks'));
+      for (const b of Array.isArray(kept) ? kept : []) {
+        if (!Number.isInteger(b.height) || b.page) continue;
+        addExtra(b.height, { title: String(b.title ?? '').trim() || 'bookmark', bm: true });
+      }
+    } catch (_) { /* unavailable */ }
+    const extraMarkEl = (m) => {
+      const d = document.createElement('div');
+      d.className = 'bb-mark bb-toc';
+      if (m.bm) {
+        const rib = document.createElement('span');
+        rib.className = 'bb-bm-rib';
+        rib.setAttribute('aria-label', 'your bookmark');
+        rib.innerHTML = '<svg viewBox="0 0 12 16"><path fill="currentColor" d="M0 0h12v16l-6-4-6 4z"/></svg>';
+        d.append(rib);
+        d.title = 'your bookmark';
+      } else {
+        d.title = 'a curated chapter — as the table of contents names it';
+      }
+      d.append(document.createTextNode(m.title));
+      return d;
+    };
+
     const rowEl = (b) => {
       const row = document.createElement('div');
       row.className = 'bb-row';
@@ -1000,6 +1047,7 @@ if (bip && blockLeaf == null) {
         const day = new Date(b.timestamp * 1000).toISOString().slice(0, 10);
         if (day !== lastDay) { lastDay = day; rowsEl.append(dayEl(b.timestamp)); }
         if (marks.has(b.height)) rowsEl.append(markEl(marks.get(b.height)));
+        for (const m of extraMarks.get(b.height) ?? []) rowsEl.append(extraMarkEl(m));
         rowsEl.append(rowEl(b));
       }
       rendered += take;
