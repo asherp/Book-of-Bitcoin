@@ -1211,7 +1211,10 @@ export function renderWitness(items, encode) {
 // breakdown of every field's rendered text, in wire order, plus the payload
 // words consumed. bitcoin-book.html's margin layout is built from this, each
 // field Glossia-encoded exactly once.
-// `bestOf` forwards to encodeSeedPhrase for cover-word quality (default 1).
+// `bestOf` forwards to encodeSeedPhrase, which since glossia 0.3.0 renders the
+// canonical encoding and ignores it — the canonical version pins the fluency
+// budget. The parameter stays so custom `encoder` implementations (which share
+// encodeSeedPhrase's signature) keep working.
 // `lazyData`, when supplied, is an alternative encoder (hex -> HTML) used for an
 // OP_RETURN payload only: OP_RETURN is the one body field that can carry a bulky
 // data-carrier blob, so the caller can pass a placeholder emitter to defer its

@@ -31,6 +31,8 @@ import init, {
   encode_raw_base_n_best_of as wasmEncodeRawBaseNBestOf,
   decode_raw_base_n as wasmDecodeRawBaseN,
   detect_dialect_from_text as wasmDetectDialect,
+  canonical_encode_traced as wasmCanonicalEncodeTraced,
+  canonical_decode as wasmCanonicalDecode,
 } from './glossia.js';
 
 export { init };
@@ -322,48 +324,61 @@ export function detectLang(prose) {
 // ─── seed-phrase paragraph: a raw key ⇆ readable Glossia prose ────────
 // A "seed phrase" is a raw key rendered as natural-language prose whose payload
 // words carry the key's bytes — the project's core idea applied to a private
-// key. It uses the same word-preserving base-n codec as the demo's BIP39 panel,
-// so the bytes round-trip exactly (decoding filters the prose back against the
-// wordlist). Callers append a checksum to the key before encoding (see
+// key. Since glossia 0.3.0 this is the CANONICAL encoding: the payload rides
+// with a version byte, and the cover prose is seeded from a checksum of the
+// bytes, so one payload has exactly one prose form, the wording itself is
+// checkable, and an artifact keeps verifying under future engine versions
+// (decode dispatches on the version byte, not the current rules). Decoding
+// still just filters the prose against the wordlist, so bytes round-trip
+// exactly. Callers append a checksum to the key before encoding (see
 // glossia-nostr.js) so a mistyped word is caught on load.
 
-// hex string (any byte length) -> { prose, payloadWords, langId }. `bestOf`
-// (default 1) samples that many cover realizations and keeps the densest /
-// most coherent, same as renderArtifact -- it only changes cover words, never
-// the payload, so decoding is unaffected.
-// Deterministic for a given (hex, language, bestOf) -- SEED is fixed -- so
-// results are memoized (LRU): a caller can warm an encode ahead of time (the
-// Bitcoin book prefetches its swipe neighbours) and the eventual render is a
-// lookup instead of a WASM pass.
+// hex string (any byte length) -> { prose, payloadWords, langId, version }.
+// `bestOf` is kept for caller compatibility but no longer does anything: the
+// canonical version's frozen rules pin the fluency budget (v1 is best-of-4),
+// which is what makes the rendering reproducible by a verifier.
+// Deterministic for a given (hex, language), so results are memoized (LRU): a
+// caller can warm an encode ahead of time (the Bitcoin book prefetches its
+// swipe neighbours) and the eventual render is a lookup instead of a WASM pass.
 const seedPhraseMemo = new Map();
 const SEED_MEMO_MAX = 400;
-export function encodeSeedPhrase(hex, langId = 'english', bestOf = 1) {
+export function encodeSeedPhrase(hex, langId = 'english', _bestOf = 1) {
   const lang = msgLangById(langId);
-  const n = Math.max(1, Math.floor(bestOf));
-  const key = `${lang.id}|${n}|${hex}`;
+  const key = `${lang.id}|${hex}`;
   const hit = seedPhraseMemo.get(key);
   if (hit) {
     seedPhraseMemo.delete(key);   // move to the most-recently-used end
     seedPhraseMemo.set(key, hit);
     return hit;
   }
-  const r = JSON.parse(
-    n > 1
-      ? wasmEncodeRawBaseNBestOf(hex, lang.language, lang.wordlist, lang.dialect, SEED, n)
-      : wasmEncodeRawBaseN(hex, lang.language, lang.wordlist, lang.dialect, SEED));
+  const r = JSON.parse(wasmCanonicalEncodeTraced(hex, lang.language, lang.wordlist));
   if (r.error) throw new Error(r.error);
-  const result = { prose: (r.encoded_text || '').trim(), payloadWords: r.payload_words || [], langId: lang.id };
+  const result = {
+    prose: (r.encoded_text || '').trim(),
+    payloadWords: (r.placements || []).map((p) => p.word),
+    langId: lang.id,
+    version: r.version,
+  };
   seedPhraseMemo.set(key, result);
   while (seedPhraseMemo.size > SEED_MEMO_MAX) seedPhraseMemo.delete(seedPhraseMemo.keys().next().value);
   return result;
 }
 
-// prose paragraph + known byte length -> { hex, payloadWords, langId }. Decodes
-// in the given language, or the one auto-detected from the prose.
+// prose paragraph + known byte length -> { hex, payloadWords, langId, and for
+// canonical artifacts verified + version }. Decodes in the given language, or
+// the one auto-detected from the prose. Canonical artifacts (0.3.0+) are tried
+// first — `verified` reports whether the wording matches the canonical
+// re-render, i.e. the prose really is that payload's one form. Pre-0.3.0
+// artifacts have no version byte, so anything that fails the canonical shape
+// falls through to the legacy fixed-seed decode.
 export function decodeSeedPhrase(prose, byteCount, langId) {
   const text = (prose || '').trim();
   if (!text) throw new Error('empty seed phrase');
   const lang = msgLangById(langId || detectLang(text));
+  const c = JSON.parse(wasmCanonicalDecode(text, lang.language, lang.wordlist));
+  if (!c.error && (!byteCount || c.payload_hex.length === byteCount * 2)) {
+    return { hex: c.payload_hex, payloadWords: [], langId: lang.id, verified: c.verified, version: c.version };
+  }
   const r = JSON.parse(wasmDecodeRawBaseN(text, lang.language, lang.wordlist, byteCount));
   if (r.error) throw new Error(r.error);
   return { hex: r.decoded_hex || '', payloadWords: r.payload_words || [], langId: lang.id };
