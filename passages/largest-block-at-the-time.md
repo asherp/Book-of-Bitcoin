@@ -14,12 +14,12 @@
 
 ## Chapter frontispiece — block 774,628
 
-Block hash, as prose: ⌘¹⁷⁹ *Lie may differ each legend. Our outdoor fence kit cut. Pie situate to start per portion. Its index carry shell to movie. Some bed may depend goat. Pop argue to dress. Due may agree son.* ⓪⁷⁷
+Block hash, as prose: ⌘¹⁷⁹ *Guy absorb an abuse. Cow unveil to wish. Our true position style evidence. Pizza may draw normal. Blind clog mango to student per cactus. Fox bench to sue out chimney.* ⓪⁷⁷
 
 - **version:** vulnera pelican — block version 0x28960000 — BIP9 version-bits form; version-rolling bits 0x44b0 (BIP320 scratch entropy) as vulnera pelican; no soft-fork signals
-- **previous block:** ⌘¹⁷⁹ A boss garlic may view plastic. The valid gauge is polar. Our brave town direct its pop. Our vibrant lamp may spice gain. A cruel slot would agree. ⓪⁷⁷
+- **previous block:** ⌘¹⁷⁹ Our guy absorb absurd. Rub spend year to panic via couch to major. Lip again deposit each pan. Map sustain to cram out visual. Opinion traffic to middle. Wage pill gas via chimney. ⓪⁷⁷
   - hex: `0000000000000000000560268dbd186dbecdd347e6dad829c10c0fd3cffb2b1a`
-- **merkle root:** ⋔ A fragile aisle may account gauge. The thought donor get citizen. Arrest far set company. Man couple to rebuild via bronze. Turn inform cupboard to curve. Basket caught lawsuit over access. Cement may set cactus.
+- **merkle root:** ⋔ Abandon access its toast to code via arrest. Agent also see any energy. Glimpse set our innocent curtain. Meadow may set old. Tourist filter to order. Purchase may see its rare odor. Our casino are various. Upper may see any circle.
   - hex: `498902de19bf91644236aee19cd5cba1d9c4d8902e63508a820e4e3006b4605c`
 - **timestamp:** 2023-02-01 20:38 UTC
 - **difficulty target:** β₇₇ < 468768×256²⁰ — the block hash above reads below this target — nBits 17072720 — mantissa 468768 (2⁵·3·19·257) shifted up 20 bytes: the target 0000000000000000000727200000000000000000000000000000000000000000, which a valid block hash must read below (77 leading zero bits) — difficulty 39,350,942,467,773 (relative to the genesis block)
@@ -27,17 +27,17 @@ Block hash, as prose: ⌘¹⁷⁹ *Lie may differ each legend. Our outdoor fence
 
 ## § 1 — Largest block (at the time)
 
-Transaction id, as prose: ⌘²⁵⁶ *Limb is ancient to soap. Vintage include our universe. Brother ago margin drama. Egg yet sell ship. Tribe not see our lawn. Its ugly timber forget million. Print holiday scene to slush for a vast gas.*
+Transaction id, as prose: ⌘²⁵⁶ *Abandon account asthma to dynamic. Hospital pause the negative host. Travel dismiss bacon to cycle. Bridge couch our draw via valley. Its genius bacon surround grant. Filter set grocery to age. A glass miracle may see a sir.*
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
-  - script: ■774628“1\ Powered by ” “Luxor Tech” η2⁵·11·67 ⓪⁴ Airport get its oak to blur. Parent convince an only abandon. A coyote may begin each siege. ⓪⁷
+  - script: ■774628“1\ Powered by ” “Luxor Tech” η2⁵·11·67 ⓪⁴ Abuse is absurd to clutch. Each safe is senior. Abuse may set the lady. Pot may submit ability. Minimum people to divorce. ⓪⁷
   - sequence: ● — final — disables the transaction locktime for this input
   - witness: see footnote a
 - **output 1:** 6.25875047 ₿
-  - script: ⧉ ⌖ h²⁰ Toe host pigeon to release. Box may orient sausage. Its ocean double warrior. An artist are bleak. Check get soccer to blossom. ≡ ∇
+  - script: ⧉ ⌖ h²⁰ Our absurd acid see broccoli. Its yes idle our certain poverty. Stand may tool its work to a shrug. Sir assume ring via gym. Cop rotate to decide per host to scale. ≡ ∇
 - **output 2:** 0 ₿
-  - script: ¶ ⋔w h³² A cute pelican set tennis. A retreat get dolphin to camera via slot to twin. Action recycle jar per rule. Its unfair pop ago carry base. Copy forward to remind out warfare to addict for seed. Nod often thumb theme.
+  - script: ¶ ⋔w h³² Abandon abuse to remember. Barrel see whale via scare. Alert alarm genius to force. Sir believe panda per rival. Try get habit to blade via now to leopard. A team puzzle retreat out the bracket. Our bleak social may armor sky.
 - **locktime:** □ — no locktime — final with respect to time
 
 ### Witness footnotes

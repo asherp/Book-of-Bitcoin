@@ -14,12 +14,12 @@
 
 ## Chapter frontispiece — block 363,725
 
-Block hash, as prose: ⌘¹⁸⁶ *Its country ethics get our giraffe. Choice may blush female. Shove get enough height to impulse. Mercy too topple rhythm. Guard not isolate diary. A jungle blossom row.* ⓪⁷⁰
+Block hash, as prose: ⌘¹⁸⁶ *Abuse abuse marriage to hope. Bachelor far donate session. Pond debate a first fever. Muscle foot a claim. Shoe may set a denial. Cow reflect tuna to siege. Our far scale is rid.* ⓪⁷⁰
 
 - **version:** v3 — block version 3 (0x00000003) — pre-BIP9 integer form
-- **previous block:** ⌘¹⁸⁸ Ocean too scare our flag. The cow rotate mix. Chef often get the inner tie. Our empty plug get extra. Its river before cry lens. The place may reason job. ⓪⁶⁸
+- **previous block:** ⌘¹⁸⁸ Abuse account its sick yes across script. Thunder may ice dentist to sniff. Person set our endless curve. Master may stock patrol. A praise too accuse concert. A pop bit may observe the scale. ⓪⁶⁸
   - hex: `00000000000000000fb32e0d606a42615d44d93449a36ba64ee018de6009f898`
-- **merkle root:** ⋔ A vague drum may vote army. Finger market the live curtain. Its sir rebuild narrow. Its december need journey. Furnace set student to galaxy. Tea soft crunch width. Guy renew a fluid avocado to rack out abandon.
+- **merkle root:** ⋔ Abandon get an acid luxury. Brother see pyramid to gate. Resource may dose the benefit. Out is random to tax. The bet once oblige sheriff. Oyster select version to our robust water. Impulse pony its stove. The rally due snack the leisure lottery.
   - hex: `20ec1f9a155beb9f46cef7dab5bc86e7c9e26052b3b1a960106f0586d773a8f0`
 - **timestamp:** 2015-07-04 01:54 UTC
 - **difficulty target:** β₆₇ < 1458574×256²¹ — the block hash above reads below this target — nBits 1816418e — mantissa 1458574 (2·13·56099) shifted up 21 bytes: the target 000000000000000016418e000000000000000000000000000000000000000000, which a valid block hash must read below (67 leading zero bits) — difficulty 49,402,014,931 (relative to the genesis block)
@@ -27,14 +27,14 @@ Block hash, as prose: ⌘¹⁸⁶ *Its country ethics get our giraffe. Choice ma
 
 ## § 1 — BIP66 activation (v3)
 
-Transaction id, as prose: ⌘²⁵⁶ *A vague drum may vote army. Finger market the live curtain. Its sir rebuild narrow. Its december need journey. Furnace set student to galaxy. Tea soft crunch width. Guy renew a fluid avocado to rack out abandon.*
+Transaction id, as prose: ⌘²⁵⁶ *Abandon get an acid luxury. Brother see pyramid to gate. Resource may dose the benefit. Out is random to tax. The bet once oblige sheriff. Oyster select version to our robust water. Impulse pony its stove. The rally due snack the leisure lottery.*
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
-  - script: ■363725η29 “Mined by AntPool” Call battle its minute to copy. Our vintage laptop get life. Sin real devote shuffle. Skull may abandon army. Its code abandon an abandon.
+  - script: ■363725η29 “Mined by AntPool” Abandon abuse to adapt. The sky once see our health. Liberty pause its trigger. Apple now traffic design. Figure abandon gasp to gym. Abandon may set a cap.
   - sequence: ● — final — disables the transaction locktime for this input
 - **output 1:** 25.00000000 ₿
-  - script: ⧉ ⌖ h²⁰ News captain action to repeat. Error set our female via balance out tattoo. Jelly boss a solar square. Our faith may section to reduce. ≡ ∇
+  - script: ⧉ ⌖ h²⁰ An absurd account powder baby. Hit may believe relief. A green poem miss venue to safe. Spike may inherit opera via move between parade. ≡ ∇
 - **locktime:** □ — no locktime — final with respect to time
 
 ## Commentary

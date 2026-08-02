@@ -14,12 +14,12 @@
 
 ## Chapter frontispiece — block 91,880
 
-Block hash, as prose: ⌘²¹¹ *Canyon room its crazy object. Logic may crush bargain. Lens note to identify. Diet may dry club. Our faculty ought tail to ranch. Cow pave maple for our express asthma.* ⓪⁴⁵
+Block hash, as prose: ⌘²¹¹ *Abstract not abuse attitude. Tennis may see notable to scene. Guy bring pool per night. Account rely its loud war. An unhappy brush is genuine. Miss set turkey to million. Tie may arrive detail per maid via hybrid.* ⓪⁴⁵
 
 - **version:** v1 — block version 1 (0x00000001) — pre-BIP9 integer form
-- **previous block:** ⌘²¹¹ View may offer fuel to verb. Sting is entire for joy. Aim where see its fantasy. Slot pulp climb to plunge. The yes is happy. The true rub satisfy regret. A liquid may amount dig to our tie. ⓪⁴⁵
+- **previous block:** ⌘²¹¹ Our abstract see the acid panel to its slender guy. Our useful network far see quantum. A fragile series set cliff. Spoil occur gaze to hen. Flavor may see danger. Elevator enjoy the ear. Its wide pitch may set its bamboo to divorce via cow. ⓪⁴⁵
   - hex: `000000000004099656bf4a3fda4db1b25630634afa2a201e975e4df9772df3f3`
-- **merkle root:** ⋔ Its trouble may knife candy. Pop submit to cap. Its unhappy best text stamp. Flock drum bunker to side. Ivory may cage swim per car. Lot may extend a still. Our awkward cop disagree catch. Pop wide protect theme.
+- **merkle root:** ⋔ Its abandon get an acid. Our nod embody to tag. Die may approve science. Head print to worry. Person ski a bright video via disorder. Rescue achieve tennis to banner. March see puppy out mail. Our wage can stick a grass.
   - hex: `2f6bf541621f43b8fa5012f976406ef7e379704859a3eeb72ad40e6c85740fe9`
 - **timestamp:** 2010-11-15 00:36 UTC
 - **difficulty target:** β₄₄ < 946774×256²⁴ — the block hash above reads below this target — nBits 1b0e7256 — mantissa 946774 (2·43·101·109) shifted up 24 bytes: the target 00000000000e7256000000000000000000000000000000000000000000000000, which a valid block hash must read below (44 leading zero bits) — difficulty 4,536 (relative to the genesis block)
@@ -27,14 +27,14 @@ Block hash, as prose: ⌘²¹¹ *Canyon room its crazy object. Logic may crush b
 
 ## § 1 — The twice-confirmed coinbases — second printing
 
-Transaction id, as prose: ⌘²⁵⁶ *Its hamster pepper stomach to hollow. Excess may point the tilt. Sky defy its guilt. List may see the arctic. Cow inject to lend. Click enter lawsuit via steel for section. Our mistake set giant to document. Paddle see zebra via gas.*
+Transaction id, as prose: ⌘²⁵⁶ *Abandon see accident to east for blind. Ramp guard the input. Cut may depend an awake sniff to diesel. Our basic floor parrot pop. A you. Son fetch fork to vault. The pay may prefer the better hunt. Its son ask to adjust. Some want may see the wise.*
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
   - script: β₄₄ 946774×256²⁴ ⓪
   - sequence: ● — final — disables the transaction locktime for this input
 - **output 1:** 50.00000000 ₿
-  - script: p⁶⁵ An advice why set yes. A myself. Sign see our gadget. A door coast the clean flower. Our uncle get dune to gold. Any red may keep tortoise. A next set boy. An immense son may cancel leopard. A myself. An immense bean get zebra to bundle. A bleak start pipe barrel. A due may say some skill to cushion. Yes describe smoke via its vivid pan. Each red is vibrant. Dash neither set that clay. Wool goose tornado to cereal. Habit set a bonus. Snack see soul to cactus. ∇
+  - script: p⁶⁵ Abandon is absurd to calm. Its name is drastic via vocal. Our arctic set great. The false sky may smooth gold to call for capital. Fabric solve clutch to present. Step get each method. Another action see mystery. The metal ostrich winter velvet to rubber. Pizza may claw note out zone. Farm rebel a system. The set group prepare to open. Our rural peace is red. A you. Faint may see tuna to ceiling for clinic. Cluster donate to slim per hand. Jet is large to a far red. ∇
 - **locktime:** □ — no locktime — final with respect to time
 
 ## Commentary

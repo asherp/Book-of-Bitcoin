@@ -1,6 +1,162 @@
 /* @ts-self-types="./glossia.d.ts" */
 
 /**
+ * Decode canonical prose and verify it by re-rendering under the rules of the
+ * version byte the artifact carries — not the current version, so artifacts
+ * from older canonical versions keep verifying. `canonical_text` is the
+ * reference rendering the verification compared against, so a checker can
+ * diff wording without generating again.
+ *
+ * Returns JSON `{ version, payload_hex, verified, canonical_text }` or
+ * `{ error }`.
+ * @param {string} text
+ * @param {string} language
+ * @param {string} wordlist
+ * @returns {string}
+ */
+export function canonical_decode(text, language, wordlist) {
+    let deferred4_0;
+    let deferred4_1;
+    try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        const ptr0 = passStringToWasm0(text, wasm.__wbindgen_export, wasm.__wbindgen_export2);
+        const len0 = WASM_VECTOR_LEN;
+        const ptr1 = passStringToWasm0(language, wasm.__wbindgen_export, wasm.__wbindgen_export2);
+        const len1 = WASM_VECTOR_LEN;
+        const ptr2 = passStringToWasm0(wordlist, wasm.__wbindgen_export, wasm.__wbindgen_export2);
+        const len2 = WASM_VECTOR_LEN;
+        wasm.canonical_decode(retptr, ptr0, len0, ptr1, len1, ptr2, len2);
+        var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
+        var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
+        deferred4_0 = r0;
+        deferred4_1 = r1;
+        return getStringFromWasm0(r0, r1);
+    } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_export3(deferred4_0, deferred4_1, 1);
+    }
+}
+
+/**
+ * The decode half alone: payload words → version + payload, no verification
+ * re-render. For repair searches that decode many candidates and render each
+ * through their own (memoized) `canonical_encode` call.
+ *
+ * Returns JSON `{ version, payload_hex }` or `{ error }`.
+ * @param {string} text
+ * @param {string} language
+ * @param {string} wordlist
+ * @returns {string}
+ */
+export function canonical_decode_raw(text, language, wordlist) {
+    let deferred4_0;
+    let deferred4_1;
+    try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        const ptr0 = passStringToWasm0(text, wasm.__wbindgen_export, wasm.__wbindgen_export2);
+        const len0 = WASM_VECTOR_LEN;
+        const ptr1 = passStringToWasm0(language, wasm.__wbindgen_export, wasm.__wbindgen_export2);
+        const len1 = WASM_VECTOR_LEN;
+        const ptr2 = passStringToWasm0(wordlist, wasm.__wbindgen_export, wasm.__wbindgen_export2);
+        const len2 = WASM_VECTOR_LEN;
+        wasm.canonical_decode_raw(retptr, ptr0, len0, ptr1, len1, ptr2, len2);
+        var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
+        var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
+        deferred4_0 = r0;
+        deferred4_1 = r1;
+        return getStringFromWasm0(r0, r1);
+    } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_export3(deferred4_0, deferred4_1, 1);
+    }
+}
+
+/**
+ * Canonical, versioned encode: exactly one prose form per payload, rendered
+ * under the frozen rules of the current canonical version (see
+ * `src/canonical.rs`). `payload_hex` is the payload bytes as hex.
+ *
+ * Returns JSON `{ encoded_text, version }` or `{ error }`.
+ * @param {string} payload_hex
+ * @param {string} language
+ * @param {string} wordlist
+ * @returns {string}
+ */
+export function canonical_encode(payload_hex, language, wordlist) {
+    let deferred4_0;
+    let deferred4_1;
+    try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        const ptr0 = passStringToWasm0(payload_hex, wasm.__wbindgen_export, wasm.__wbindgen_export2);
+        const len0 = WASM_VECTOR_LEN;
+        const ptr1 = passStringToWasm0(language, wasm.__wbindgen_export, wasm.__wbindgen_export2);
+        const len1 = WASM_VECTOR_LEN;
+        const ptr2 = passStringToWasm0(wordlist, wasm.__wbindgen_export, wasm.__wbindgen_export2);
+        const len2 = WASM_VECTOR_LEN;
+        wasm.canonical_encode(retptr, ptr0, len0, ptr1, len1, ptr2, len2);
+        var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
+        var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
+        deferred4_0 = r0;
+        deferred4_1 = r1;
+        return getStringFromWasm0(r0, r1);
+    } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_export3(deferred4_0, deferred4_1, 1);
+    }
+}
+
+/**
+ * Canonical encode with placements — the same text as `canonical_encode`, plus
+ * where each payload word landed, for UIs that annotate the prose.
+ *
+ * Returns JSON `{ encoded_text, version, placements: [{ word, payload_index,
+ * pos, token_index, sentence, role }] }` or `{ error }`.
+ * @param {string} payload_hex
+ * @param {string} language
+ * @param {string} wordlist
+ * @returns {string}
+ */
+export function canonical_encode_traced(payload_hex, language, wordlist) {
+    let deferred4_0;
+    let deferred4_1;
+    try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        const ptr0 = passStringToWasm0(payload_hex, wasm.__wbindgen_export, wasm.__wbindgen_export2);
+        const len0 = WASM_VECTOR_LEN;
+        const ptr1 = passStringToWasm0(language, wasm.__wbindgen_export, wasm.__wbindgen_export2);
+        const len1 = WASM_VECTOR_LEN;
+        const ptr2 = passStringToWasm0(wordlist, wasm.__wbindgen_export, wasm.__wbindgen_export2);
+        const len2 = WASM_VECTOR_LEN;
+        wasm.canonical_encode_traced(retptr, ptr0, len0, ptr1, len1, ptr2, len2);
+        var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
+        var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
+        deferred4_0 = r0;
+        deferred4_1 = r1;
+        return getStringFromWasm0(r0, r1);
+    } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_export3(deferred4_0, deferred4_1, 1);
+    }
+}
+
+/**
+ * Derive a cover seed from a payload checksum, so the choice of prose carries the
+ * checksum. `hex` is the exact byte string the checksum covers.
+ *
+ * Exposed so browsers and the Rust core agree bit-for-bit rather than
+ * reimplementing CRC-32 and splitmix64 in JavaScript.
+ * @param {string} hex
+ * @param {bigint} counter
+ * @returns {bigint}
+ */
+export function checksum_seed_for(hex, counter) {
+    const ptr0 = passStringToWasm0(hex, wasm.__wbindgen_export, wasm.__wbindgen_export2);
+    const len0 = WASM_VECTOR_LEN;
+    const ret = wasm.checksum_seed_for(ptr0, len0, counter);
+    return BigInt.asUintN(64, ret);
+}
+
+/**
  * Decode encoded text back to original input.
  *
  * Returns JSON: `{ "payload_words": [...], "decoded_text": "..." }`
@@ -357,8 +513,6 @@ export function encode_random_words(count, language, wordlist, grammar_dialect, 
 }
 
 /**
- * Encode raw bytes (hex or base64 input) into base-N payload words.
- *
  * If `dialect` is empty, returns space-joined bare payload words.
  * If `dialect` is provided (e.g., "body"), wraps the payload words in prose.
  *
@@ -422,6 +576,50 @@ export function encode_raw_base_n_best_of(input, language, wordlist, dialect, se
         const ptr3 = passStringToWasm0(dialect, wasm.__wbindgen_export, wasm.__wbindgen_export2);
         const len3 = WASM_VECTOR_LEN;
         wasm.encode_raw_base_n_best_of(retptr, ptr0, len0, ptr1, len1, ptr2, len2, ptr3, len3, seed, best_of);
+        var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
+        var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
+        deferred5_0 = r0;
+        deferred5_1 = r1;
+        return getStringFromWasm0(r0, r1);
+    } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_export3(deferred5_0, deferred5_1, 1);
+    }
+}
+
+/**
+ * Wrap caller-supplied payload words in cover prose, reporting where each landed.
+ *
+ * For formats that pack their own bits — a fixed-length address that carries a
+ * header in the bit-packing slack, say — where the byte-oriented entries cannot
+ * express the packing. `words_json` is a JSON array of payload words, embedded in
+ * the order given.
+ *
+ * Returns JSON `{ encoded_text, counter, placements: [{ word, payload_index, pos,
+ * token_index, sentence, role }] }`, or `{ error }` if any word is not in the
+ * payload wordlist (which would otherwise be silently dropped).
+ * @param {string} words_json
+ * @param {string} language
+ * @param {string} wordlist
+ * @param {string} dialect
+ * @param {bigint} seed
+ * @param {number} best_of
+ * @returns {string}
+ */
+export function encode_words(words_json, language, wordlist, dialect, seed, best_of) {
+    let deferred5_0;
+    let deferred5_1;
+    try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        const ptr0 = passStringToWasm0(words_json, wasm.__wbindgen_export, wasm.__wbindgen_export2);
+        const len0 = WASM_VECTOR_LEN;
+        const ptr1 = passStringToWasm0(language, wasm.__wbindgen_export, wasm.__wbindgen_export2);
+        const len1 = WASM_VECTOR_LEN;
+        const ptr2 = passStringToWasm0(wordlist, wasm.__wbindgen_export, wasm.__wbindgen_export2);
+        const len2 = WASM_VECTOR_LEN;
+        const ptr3 = passStringToWasm0(dialect, wasm.__wbindgen_export, wasm.__wbindgen_export2);
+        const len3 = WASM_VECTOR_LEN;
+        wasm.encode_words(retptr, ptr0, len0, ptr1, len1, ptr2, len2, ptr3, len3, seed, best_of);
         var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
         var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
         deferred5_0 = r0;
@@ -514,6 +712,40 @@ export function get_bits_per_word(language, wordlist) {
 }
 
 /**
+ * The cover vocabulary for a language/dialect, as a flat JSON array.
+ *
+ * The complement of `get_payload_words`, and what a verifier needs to tell a
+ * misspelling from a word that was never payload. Locating a damaged payload
+ * word means searching tokens that are not in the payload wordlist — but the
+ * connective prose is not in it either, so without this list every cover word
+ * is a candidate site and the search does an order of magnitude more work than
+ * the question requires.
+ * @param {string} language
+ * @param {string} wordlist
+ * @returns {string}
+ */
+export function get_cover_words(language, wordlist) {
+    let deferred3_0;
+    let deferred3_1;
+    try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        const ptr0 = passStringToWasm0(language, wasm.__wbindgen_export, wasm.__wbindgen_export2);
+        const len0 = WASM_VECTOR_LEN;
+        const ptr1 = passStringToWasm0(wordlist, wasm.__wbindgen_export, wasm.__wbindgen_export2);
+        const len1 = WASM_VECTOR_LEN;
+        wasm.get_cover_words(retptr, ptr0, len0, ptr1, len1);
+        var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
+        var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
+        deferred3_0 = r0;
+        deferred3_1 = r1;
+        return getStringFromWasm0(r0, r1);
+    } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_export3(deferred3_0, deferred3_1, 1);
+    }
+}
+
+/**
  * Return the default wordlist profile name for a language.
  *
  * Uses the grammar-declared `default_wordlist` if present, otherwise
@@ -558,6 +790,39 @@ export function get_languages() {
     } finally {
         wasm.__wbindgen_add_to_stack_pointer(16);
         wasm.__wbindgen_export3(deferred1_0, deferred1_1, 1);
+    }
+}
+
+/**
+ * Encode raw bytes (hex or base64 input) into base-N payload words.
+ *
+ * The payload wordlist itself, as a JSON array in index order.
+ *
+ * Needed by callers that pack their own bits: the index of a word IS its value,
+ * so a format doing its own bit-packing needs the mapping. Returns `{ error }` on
+ * an unknown language/wordlist.
+ * @param {string} language
+ * @param {string} wordlist
+ * @returns {string}
+ */
+export function get_payload_words(language, wordlist) {
+    let deferred3_0;
+    let deferred3_1;
+    try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        const ptr0 = passStringToWasm0(language, wasm.__wbindgen_export, wasm.__wbindgen_export2);
+        const len0 = WASM_VECTOR_LEN;
+        const ptr1 = passStringToWasm0(wordlist, wasm.__wbindgen_export, wasm.__wbindgen_export2);
+        const len1 = WASM_VECTOR_LEN;
+        wasm.get_payload_words(retptr, ptr0, len0, ptr1, len1);
+        var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
+        var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
+        deferred3_0 = r0;
+        deferred3_1 = r1;
+        return getStringFromWasm0(r0, r1);
+    } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_export3(deferred3_0, deferred3_1, 1);
     }
 }
 
@@ -612,6 +877,18 @@ export function get_wordlists(language) {
         wasm.__wbindgen_add_to_stack_pointer(16);
         wasm.__wbindgen_export3(deferred2_0, deferred2_1, 1);
     }
+}
+
+/**
+ * CRC-32 of a hex byte string, for display alongside an artifact.
+ * @param {string} hex
+ * @returns {number}
+ */
+export function payload_crc32(hex) {
+    const ptr0 = passStringToWasm0(hex, wasm.__wbindgen_export, wasm.__wbindgen_export2);
+    const len0 = WASM_VECTOR_LEN;
+    const ret = wasm.payload_crc32(ptr0, len0);
+    return ret >>> 0;
 }
 
 /**

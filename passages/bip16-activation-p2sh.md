@@ -14,12 +14,12 @@
 
 ## Chapter frontispiece — block 173,805
 
-Block hash, as prose: ⌘²⁰⁰ *Start love its strike to sniff. Offer see skull for cousin. Combine will set adult. Twin may see problem. A cut tap below set other flock. Winter pole all length.* ⓪⁵⁶
+Block hash, as prose: ⌘²⁰⁰ *Ability yes achieve pitch. Cat may see rhythm. High slim file to menu. Its husband suit bus for forum. Force pledge a tribe to slab. Each thing despair crime.* ⓪⁵⁶
 
 - **version:** v1 — block version 1 (0x00000001) — pre-BIP9 integer form
-- **previous block:** ⌘²⁰³ Its bulb together imitate tea. The naive scrap close firm. Pigeon may teach aid. A they. A steel churn alter gravity. Our home industry baby major. Light yes get its tea. ⓪⁵³
+- **previous block:** ⌘²⁰³ An above absurd set our useful buddy. Merit may noise arctic. Front rival chair to visual. Age may powder ecology. Sir derive a corn. The half october may mass crime to army. ⓪⁵³
   - hex: `00000000000006ce101199431bcc76609454139cde25d55557165cc9c575fc1d`
-- **merkle root:** ⋔ Gold may allow a hip autumn. Recipe retreat the ugly velvet. Trial very get setup. Gravity reform olive to game. River culture wire via medal. Its stuff may joke hawk. Cop sell to divorce out a rid due.
+- **merkle root:** ⋔ Abandon set accident to a capital cube. Gallery see laundry to its oval. Science see our genius movie. Draft may see oak. Son caught to cost. Penalty may spend whale. Stomach provide thunder to fan for round. Second excite to brave.
   - hex: `dab0d384c76b29869f35d6cd5734450b33125f3ee890073b703bdb87afd54064`
 - **timestamp:** 2012-04-01 00:43 UTC
 - **difficulty target:** β₅₂ < 675966×256²³ — the block hash above reads below this target — nBits 1a0a507e — mantissa 675966 (2·3·113·997) shifted up 23 bytes: the target 0000000000000a507e0000000000000000000000000000000000000000000000, which a valid block hash must read below (52 leading zero bits) — difficulty 1,626,553 (relative to the genesis block)
@@ -27,14 +27,14 @@ Block hash, as prose: ⌘²⁰⁰ *Start love its strike to sniff. Offer see sku
 
 ## § 1 — BIP16 activation (P2SH)
 
-Transaction id, as prose: ⌘²⁵⁶ *An iron nominee manage review. The mass farm rubber to move via float. Rub quit pay under wise to delay out decade. Claw bar its maid to mirror. Agent set disease for output. An unfair jeans are big to our scale.*
+Transaction id, as prose: ⌘²⁵⁶ *Each abandon yet get accident. Our raw question dash setup. Dust often track a main yes. The die situate to leave. Group get tobacco for song. Service is exotic near guy. Tax may correct hire. Cheese might weasel pay. A typical half saddle pan.*
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
   - script: “BTC Guild /P2SH/”
   - sequence: ● — final — disables the transaction locktime for this input
 - **output 1:** 50.13670000 ₿
-  - script: ⧉ ⌖ h²⁰ The powder too pepper cereal. That repair may share meat. A festival combine pill to monkey. Domain is afraid via a hungry piano. ≡ ∇
+  - script: ⧉ ⌖ h²⁰ Each absurd accuse an endless blame. Coast are zero to regular. A civil yes expect powder. Hurry charge a junk alpha. Pop caught kingdom to cactus. ≡ ∇
 - **locktime:** □ — no locktime — final with respect to time
 
 ## Commentary

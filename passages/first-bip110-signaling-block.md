@@ -14,12 +14,12 @@
 
 ## Chapter frontispiece — block 938,903
 
-Block hash, as prose: ⌘¹⁷⁷ *February may cram a humble paper. Assist juice the busy parent. Its retreat direct issue. Safe provide tool to item. The lot slow set absurd.* ⓪⁷⁹
+Block hash, as prose: ⌘¹⁷⁷ *Our guy absorb an access to peasant. Cow multiply the jealous yellow. Row may hover ship. Whale too accuse some scan. Its virtual guy remember the vague gun. Century may replace genre to amount.* ⓪⁷⁹
 
 - **version:** vevanesca acid 10000 — block version 0x20792010 — BIP9 version-bits form; version-rolling bits 0x03c9 (BIP320 scratch entropy) as evanesca acid; signaling bit 4
-- **previous block:** ⌘¹⁷⁷ Warfare require to bring for width. Our action near cram magnet. Recipe may bring swarm to raise. Million swap the exhibit. Our seat may set an absurd. ⓪⁷⁹
+- **previous block:** ⌘¹⁷⁷ Pop absorb acid to reward. Retreat see tiger per stock. Behind may order muscle. Cook see other tide to sweet. Maze get grape out surge per lamp. Bamboo may amount tie. ⓪⁷⁹
   - hex: `0000000000000000000112e693b6cb98d86d87a3b32f8c0c272960fd70e016f7`
-- **merkle root:** ⋔ Sort empty face to organ. Chief may get eyebrow. Its indoor catalog lounge chicken. Throw limit embrace to buffalo. Our album not pluck our gravity. Lot vanish tube to dress. Our curious recipe get the immune theme per ban.
+- **merkle root:** ⋔ An abandon may achieve labor. Pan enable its milk. Our tobacco set dinner to the media per each tax. Son oblige buzz to captain. The bet is digital. Pop appear its aunt to dune. Our unfair cook cube couch. Memory expect to benefit. Die is quick for our output via the mistake out nod.
   - hex: `6f5c675f5321a82b1e66357d413b88f44085f744841fc19ca27c324e462589cf`
 - **timestamp:** 2026-03-01 18:41 UTC
 - **difficulty target:** β₇₉ < 127747×256²⁰ — the block hash above reads below this target — nBits 1701f303 — mantissa 127747 shifted up 20 bytes: the target 00000000000000000001f3030000000000000000000000000000000000000000, which a valid block hash must read below (79 leading zero bits) — difficulty 144,398,401,518,101 (relative to the genesis block)
@@ -27,81 +27,81 @@ Block hash, as prose: ⌘¹⁷⁷ *February may cram a humble paper. Assist juic
 
 ## § 1 — First BIP110 signaling block
 
-Transaction id, as prose: ⌘²⁵⁶ *Riot repair pride to apology. Business may picture cut. Its mixed winner matter sock. Program text eyebrow to camera. Cabbage may word our young out. Its entire cop govern element. Gain butter gauge to divorce.*
+Transaction id, as prose: ⌘²⁵⁶ *Abandon may accuse spider to regret. A favorite see fantasy. Weather card to impose. Test due enlist an idle garlic. Its wool mechanic yet agree a worth. Sky is typical to fyi. The tie where get tap. A fragile cow choose diary. Voyage why whip affair.*
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
-  - script: ■938903η2·1056271 “OCEAN.XYZ” η2⁵·19·31·53 “Barefoot Mining” The abandon too see decade. Son may own above. Pupil else ice sport. A sibling may mask despair. A bed is acoustic. ⓪⁸
+  - script: ■938903η2·1056271 “OCEAN.XYZ” η2⁵·19·31·53 “Barefoot Mining” Abstract set absurd to ability. Setup are useless for a rid cow. Hit again set our hungry door. Limb noise each diesel. Our drip may theme to avoid. ⓪⁸
   - sequence: ● — final — disables the transaction locktime for this input
   - witness: see footnote a
 - **output 1:** 0 ₿
-  - script: ¶ h²⁰ Its exercise borrow our middle pause. The sudden trend is ugly. Abandon above journey abandon. The abstract upset may erupt to blossom.
+  - script: ¶ h²⁰ Absurd access key to our spatial glance. The armed shaft see a domain to gas per abandon. Yes afford to seek. Its abandon is bad among junk. The pot grow to scale.
 - **output 2:** 0.77796915 ₿
-  - script: ⓪ h²⁰ Base set our solar celery. Color may skirt december. A jacket is solar. Pop reflect the marine symbol to model. A pop is funny. The notable may job nod.
+  - script: ⓪ h²⁰ Its absurd absurd why set oak. Industry may get choice to horse. A festival far shell a rhythm. Pop inhale to pave per some dolphin. Each toe may get inmate. Our various refuse scale fyi.
 - **output 3:** 0.27933939 ₿
-  - script: ⓪ h²⁰ Venue holiday silver to reform. Lady eye to discover. Its pop confirm north. Payment is red to glare for ladder. The map may merge seed. Lip might reduce pot.
+  - script: ⓪ h²⁰ Absurd get its acid nature. Grocery may see effort. Pen tone a matrix. Due warm the jealous razor to aspect. Our biology toe forward. The guy bless to parade.
 - **output 4:** 0.25806724 ₿
-  - script: ⓪ h²⁰ Warfare set our crazy jewel. The neutral is usual. Metal may edge a video spawn. Zone yes limb kidney. Our vibrant lip barely slot aid.
+  - script: ⓪ h²⁰ An absurd acid return nose. Sauce pony its light gate. Our cream paddle out see the magnet. Cop write attack to stadium. Fyi only network some gas.
 - **output 5:** 0.25143225 ₿
-  - script: ⧉ ⌖ h²⁰ Mistake may ice to thrive. Engine see this dog. An air is rigid. Sir cram sleep to disease. Maze may charge venture per object. ≡ ∇
+  - script: ⧉ ⌖ h²⁰ An absurd account hunt to limit. Yes announce fault via alien. Advice close song to mushroom. Float weasel to equip. Its crunch may set myth per scale. ≡ ∇
 - **output 6:** 0.18872448 ₿
-  - script: ⓪ h²⁰ Its rich desk cycle lie. Its awkward usage web segment. Its number may see nasty. Yes afford our choice october to few window. Slot how see the lot.
+  - script: ⓪ h²⁰ Absurd may accuse sketch. Tennis render to manage per language to short. Book romance october via case. Dose sign to provide. Swift far gas cop.
 - **output 7:** 0.16881044 ₿
-  - script: ⓪ h³² April is innocent to curtain. A will is final. Cop modify its blue potato. Twenty see fiber to peasant. Quarter bundle calm per wave. Novel embark tonight to model. Spread brief grunt out our surprise for a parade.
+  - script: ⓪ h³² Its abandon are absurd. First may picnic cut. The rapid sun set region. Insect section eight to flock via pumpkin. Balance get kitchen to vendor. Agent may set sauce. Reunion drill cause to inquiry. Object term degree for squirrel.
 - **output 8:** 0.14221576 ₿
-  - script: ⓪ h³² Sponsor behave to collect per fault. Figure is electric to bachelor via flame. Crane group to govern. Napkin wire element via alley. Trip due alert the cup. Guy else dog a present. The ribbon may see slogan to theme.
+  - script: ⓪ h³² Abandon achieve a narrow permit. Hobby palm raccoon to deposit. Matter may season mystery. Danger chuckle to obey. Throw may dial crunch for ecology via couple. A pull may set a hot donor. Lie again expose its silver garment.
 - **output 9:** 0.12729906 ₿
-  - script: ⓪ h²⁰ Apology seed alpha to biology. Our goddess is crystal. Its mass human alert to curtain. Son assume its narrow. Biology not account chimney.
+  - script: ⓪ h²⁰ Absurd may get absurd. Fatigue see blade to day. Recall ago cancel pride. Dutch invite couple to rain. Hurdle object reason around divorce.
 - **output 10:** 0.11590770 ₿
-  - script: ⓪ h²⁰ Its legal yes earn blanket. The scare not get cloth. Cow exclude hello to surprise. Guy inherit the very bird. An anchor may see an old. Guy detect a gym.
+  - script: ⓪ h²⁰ Its absurd accident win claw to the river. Bet far acquire furnace. Our jazz fine square page. Novel may reduce drum to its south toddler. Divorce is bad to a lot.
 - **output 11:** 0.10764557 ₿
-  - script: ⓪ h²⁰ Upper set estate to grape. Spell may set column. Our afraid danger is youth to parent. Cake yes shed genre. Country may get entry to slot.
+  - script: ⓪ h²⁰ Our absurd acid joke its hidden conduct. Matrix may host category. Room wing abuse to actress per clerk. An amused marriage fruit a gas.
 - **output 12:** 0.09257236 ₿
-  - script: ⓪ h²⁰ Nose discover faculty to wine. Grab may get tooth. Its slim barrel see mule. Guy believe issue to option. Nod is vicious beyond slot.
+  - script: ⓪ h²⁰ Absurd may account rebel. Warrior mistake symbol to cliff. Chat is fun per notable. Meat pistol to remain out some target. Orchard put to gas via cop to cut.
 - **output 13:** 0.08739469 ₿
-  - script: ⓪ h²⁰ The better iron bench glide. Flash are vivid to debate out scissors to an annual steel. Tap cool to vanish. Daughter school the pool.
+  - script: ⓪ h²⁰ The absurd may set absurd to a property. The rare position are blue. Sentence powder the security to amount. Envelope powder to leave. Mechanic salute to allow out divorce.
 - **output 14:** 0.06265038 ₿
-  - script: ⓪ h²⁰ Tap erupt visual to eye. Glance may exclude coral. Its scissors uniform thought. Iron horse to lend. Legend yes uphold village.
+  - script: ⓪ h²⁰ Absurd access gun to point. Maximum best set jaguar. Some limb see an angry hip. A cap alter raven. The out hover youth. Woman see our ivory parade.
 - **output 15:** 0.03934531 ₿
-  - script: ⓪ h²⁰ Owner see device to shuffle. Paddle measure to monkey. Fortune set fabric per relief. Its asset enact slight to system. Food trend each dig.
+  - script: ⓪ h²⁰ Absurd account van to our total. Son describe walk per exhibit. Its junk sword see a merry present. Hood set envelope to fruit. Town may get street per divorce.
 - **output 16:** 0.03874604 ₿
-  - script: ⓪ h³² Its caution may get volume. A possible map could follow its twist. Pan resist an auto double. A minute may title a pencil. An because. Snap see a vehicle. File cook to know. Yes agree to decide for desk. Velvet attract athlete to length.
+  - script: ⓪ h³² An abandon abuse chalk to push. Dust sting to frequent. Roast due labor assault. Helmet bless bench to paddle for helmet. Monster raise latin to tenant per choice. Shiver may see that mosquito to invite via our immense lie.
 - **output 17:** 0.03758200 ₿
-  - script: ⓪ h²⁰ Its fall may review lift. Cow occur to render. Arm may place scan. A like today see cannon. Flavor survey pizza to favorite.
+  - script: ⓪ h²⁰ Absurd access museum to setup. Pop argue shop for quote. Its frozen conduct account to assume. The boss area far shift stick. Coil too parade lot.
 - **output 18:** 0.03397413 ₿
-  - script: ⓪ h²⁰ Ankle due lunch its out member. Our awkward pill raven island. The glow visit son. Its hit hard avoid some output. Our cow reflect to tank out cactus.
+  - script: ⓪ h²⁰ An absurd is absurd to end. A civil figure may set mammal via chase. Nature recall to bus. Pop please empower letter. Its two peace unfold abandon.
 - **output 19:** 0.03384073 ₿
-  - script: ⓪ h³² Ship fetch nerve to lounge. Our runway is silly. A cop is entire. Shift see cupboard to account. Our true soldier record blade. The great ecology sniff wasp. Advice may net kangaroo. Scare see another parade.
+  - script: ⓪ h³² Abandon achieve to core. Pride phone cargo out type. Yes earn its fresh comfort to puppy. Our artefact may enlist input. Son own reveal to course. Cotton far set hip. Its rose calm pistol smoke. Its acoustic erosion not get jet.
 - **output 20:** 0.03157072 ₿
-  - script: ⓪ h²⁰ Our rebel distance indicate rub. Our small guess cushion essay. Egg survey camera to trial. Kidney view to noodle per scale.
+  - script: ⓪ h²⁰ Absurd accuse odor to word via oak. A gloom may see depth. Jet might rebuild its harsh cycle. A steel album set door to stadium. Panel may radio abandon.
 - **output 21:** 0.03149378 ₿
-  - script: ⓪ h²⁰ Media may see grocery to aisle. Spot have time out seed. Our trap alter its baby month. A legal scene farm clown.
+  - script: ⓪ h²⁰ Absurd may account fat. Current shall get column. Some nose set evil to barrel. Blood deliver deposit out mass. Kiwi wink affair to odor. Gas set a cut.
 - **output 22:** 0.03136014 ₿
-  - script: ⓪ h³² A future trial is absurd. Palace joy to tax. Our pay are fresh. Pot dry crane above range. State due set life. The patient may damage the win. Our common gas just slot key. Estate see hero to town out gas.
+  - script: ⓪ h³² Our abandon may access some visual. Son donate the ancient west. Session too set town. Brush must get bet. Lie again see our mom. Pledge get apple to an amused rib. Surface may inflict about cow. Our slim yes gather space. Our cop is hidden. Foot may crash our yes.
 - **output 23:** 0.02771916 ₿
-  - script: ⧉ ⌖ h²⁰ Its style may get runway. Its just map is chronic to tattoo. Some tap also breeze canal. A rude nod may rebuild spice. Cop unfold energy to agent via fix. ≡ ∇
+  - script: ⧉ ⌖ h²⁰ Our absurd achieve salt. Twin sleep duck to velvet. Bed may deliver switch. Anger set tray to an onion. Each mind is harsh. Cap may set an exotic chef to scale. ≡ ∇
 - **output 24:** 0.02692982 ₿
-  - script: ⓪ h²⁰ Bundle focus its ugly daughter. Pop inherit to open. This title get north. Cover edit to promote. Our hub may stick to fix.
+  - script: ⓪ h²⁰ Its absurd absurd venture spin. Gasp get salmon to ozone. Supreme alone set map. A fyi are bleak. Rate middle its crisp gesture. The inquiry pull scale.
 - **output 25:** 0.02640482 ₿
-  - script: ⓪ h²⁰ Its wall only ski divide. Affair wage to behave. A sniff is urban. Pan are red into pay. Our vicious extra see security. Party yes winter its jet.
+  - script: ⓪ h²⁰ The absurd acid remain sugar. Our fall yellow to carry. Rain phrase hip for kidney. Puzzle is ordinary to match. Birth may get agent. Our theme is set.
 - **output 26:** 0.02573953 ₿
-  - script: ⓪ h²⁰ Its addict connect giggle to notable. Club is abstract around skate. The gadget exile runway. Sin may warm culture. Its deputy quote a cow.
+  - script: ⓪ h²⁰ Absurd is absurd to boss. Our just auto reflect genre. An alpha gift expect vocal to laundry. Our typical rice promote survey. Length may set jet.
 - **output 27:** 0.02512806 ₿
-  - script: ⓪ h²⁰ Its fit artist is absurd. Barrel see its inmate. Whip get honey to decline. Season profit our arctic gold. The bus may retire to blossom.
+  - script: ⓪ h²⁰ Absurd access a safe gym to amount out nose. Pepper square its hard jet. A sick balance see a fun. Floor is capital to the waste sample to each scale.
 - **output 28:** 0.02477544 ₿
-  - script: ⓪ h²⁰ A smart bread expect six. Burst knee oil to its trick via sunset. The patient mountain case scheme to raccoon for project.
+  - script: ⓪ h²⁰ Absurd achieve goat to swap out a lizard. Cop evoke wait to symptom. Bed may solve duck via smile. An ancient die is loud. Border set aisle to its live gas.
 - **output 29:** 0.02332740 ₿
-  - script: ⓪ h²⁰ Misery field athlete to bargain. The solar lot apart pen a set tourist. General earn our matrix. Another cut flight note to foster.
+  - script: ⓪ h²⁰ Absurd account hood to pyramid. Our cut are illegal. Our noise get the indoor tax. A famous cut become control. Alien are clever to red. Rub may empower era out map. A shy relief may theme tie.
 - **output 30:** 0.02252586 ₿
-  - script: ⓪ h²⁰ Recipe may behave our cut drum. A solar valve get matrix. Split truck to better. Iron get plastic via laptop. Cow flee dig off metal.
+  - script: ⓪ h²⁰ Absurd accuse other person. Each broom may see initial to mass. Sky may endorse music. Lap yes empower property. A razor set corn. Tribe shoot to skin via gas.
 - **output 31:** 0.00629268 ₿
-  - script: ⓪ h²⁰ Enemy get its lizard to grocery. Lawn get pot toward soda. Gown orphan wolf to the popular rent. Each blue may build nature. A guy inject tax to the sin.
+  - script: ⓪ h²⁰ An absurd access exhibit biology. Cushion see valley to cotton. Its cow may imitate its civil tie. A tragic trade double our rare search. Update get opinion to parade.
 - **output 32:** 0.00070617 ₿
-  - script: ⓪ h²⁰ Satoshi wrong get our half image. Its barrel may tail dilemma. Our true bomb cradle music. Map may settle chest to furnace. Each job is rid.
+  - script: ⓪ h²⁰ Absurd may accuse winner. Voice could drop meat to nothing via tuition. Vehicle get an energy since moon. More case detail venue to scale.
 - **output 33:** 0.00008965 ₿
-  - script: ⌖ h²⁰ Donkey suspect to document per wish. Tortoise get mixture to fence via armor. Its stairs cup hire. Aisle pistol pupil to scale. =
+  - script: ⌖ h²⁰ Absurd access antenna to a stone advance to top. Clutch may inch pool via garlic. Peasant pulp gas to color. Lot close hurt abandon. =
 - **output 34:** 0 ₿
-  - script: ¶ ⋔w h³² Example may frown our cut hospital. A hidden ranch get peace. A lot is famous. Ripple may place to quiz. Yes long a current. A desk may multiply panda. A live poet yes seed die. A rapid cop disagree palace. Force may cradle to parade.
+  - script: ¶ ⋔w h³² Abandon may access infant. The unaware hunt see forum to million. Atom get noble out sport. Concert see legend to bullet. Rabbit may test merit via its wine between degree. Cow bless monkey to walk for welcome. Its subway is moral to a lap.
 - **locktime:** □ — no locktime — final with respect to time
 
 ### Witness footnotes

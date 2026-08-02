@@ -14,12 +14,12 @@
 
 ## Chapter frontispiece — block 840,000
 
-Block hash, as prose: ⌘¹⁷⁸ *Its pitch may burst mandate. Pop lend to claim. Cow reflect cap since cable. Guy inflict scissors to sail. Orient list light per trim. The advice due adapt lap.* ⓪⁷⁸
+Block hash, as prose: ⌘¹⁷⁸ *Sir absorb to accuse. Clown may walk debris. A you. Ethics yes set peace. Die ago empower youth. Orange anger the various tonight. Bean see artefact to eagle for cactus. A blossom set its yes.* ⓪⁷⁸
 
 - **version:** vmuffliato practice — block version 0x2a5fe000 — BIP9 version-bits form; version-rolling bits 0x52ff (BIP320 scratch entropy) as muffliato practice; no soft-fork signals
-- **previous block:** ⌘¹⁷⁷ Process picnic cattle to athlete. Chaos may get stove. Fee see health to spawn. Help noise member via hand. Sport may clown a comic absurd. ⓪⁷⁹
+- **previous block:** ⌘¹⁷⁷ Its cop absorb to accuse. Pop frequent to cancel. A capital illness is crazy. Relief piece fade to lyrics per flat. Purse filter egg to news. A gasp improve amount. ⓪⁷⁹
   - hex: `0000000000000000000172014ba58d66455762add0512355ad651207918494ab`
-- **merkle root:** ⋔ Exhibit essay rub into jeans. Essence is far during wish. Its reason cable dolphin. Caution off see world. Anchor is antique to tumble. Street page energy out corn. Pond calm hire to gas.
+- **merkle root:** ⋔ Abandon access our labor to harvest per purpose. Our run set its heart. Some pan is capable. Tool object young to alert. Cereal slab an unfair drink. Exit may fan resource. Warrior yet expand lie. The ban are lonely. The dilemma may afford to gather.
   - hex: `031b417c3a1828ddf3d6527fc210daafcc9218e81f98257f88d4d43bd7a5894f`
 - **timestamp:** 2024-04-20 00:09 UTC
 - **difficulty target:** β₇₈ < 213529×256²⁰ — the block hash above reads below this target — nBits 17034219 — mantissa 213529 (67·3187) shifted up 20 bytes: the target 0000000000000000000342190000000000000000000000000000000000000000, which a valid block hash must read below (78 leading zero bits) — difficulty 86,388,558,925,171 (relative to the genesis block)
@@ -27,19 +27,19 @@ Block hash, as prose: ⌘¹⁷⁸ *Its pitch may burst mandate. Pop lend to clai
 
 ## § 1 — The Fourth Halving
 
-Transaction id, as prose: ⌘²⁵⁶ *Its sorry noodle plate tax. The vacant front see faculty. Cherry ago rally torch. Lizard may set moment. Fiber husband to mother per purchase. Quantum suffer tent to nothing. Praise trust an apology. The hub may abandon pan.*
+Transaction id, as prose: ⌘²⁵⁶ *Abandon achieve knee to radar. Cradle get local per tumble via minor. Desert get our memory. Its clever bird jar pulp to legend like its immune kiss. A shift may whisper repeat. Sir could erupt escape. A fat fyi may inject map.*
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
-  - script: ■840000η5² “/ViaBTC/Mined by buzz120/” Coconut may sting opera to surface. Dwarf pride skate via inquiry. Its ticket appear crash. Couple dream gasp to pistol. The shrug brief to know. The faith is frozen. Buzz below set the usage. Due enrich to obey. Trust set warfare out cactus. ⓪⁷ The aware share crane abandon. A slow spice see giraffe to cushion via memory to advice. A myself. ⓪⁶
+  - script: ■840000η5² “/ViaBTC/Mined by buzz120/” Abstract abuse guitar to question. Suspect spend the certain feel. Red expire plunge to artist. A feature may get nasty for matter. Yes behave to accuse. Cloth may deliver term. Tent ago motion war. An unfair winter may plunge labor. Some flat say evil. Return abandon a tea. ⓪⁷ Above set absurd to lizard. Circle must absorb gift for midnight. Bachelor receive finish to calm. Cow must see dig. ⓪⁶
   - sequence: ● — final — disables the transaction locktime for this input
   - witness: see footnote a
 - **output 1:** 40.75061499 ₿
-  - script: ⧉ ⌖ h²⁰ Its fat lemon play to empty. Bench is eight for chimney. Hedgehog topple kangaroo to pottery. Exercise guide spoon via trend. ≡ ∇
+  - script: ⧉ ⌖ h²⁰ Absurd may access opinion to wrong. Crane empower portion for its damp. Document set the female. City may smile our elder kidney. Sir yes devote its neutral divorce. ≡ ∇
 - **output 2:** 0 ₿
   - script: ¶ ⁴¹ “RSKBLOCK:R”
 - **output 3:** 0 ₿
-  - script: ¶ ⋔w h³² Mask is abstract to its exercise. Due always smooth a pot. Out may absent zebra to draw. Our brisk gorilla may hawk. Each son is false. Tomorrow are rich to general. Cinnamon tower its erosion per sir. The cop put rough. Task may include our electric abandon.
+  - script: ¶ ⋔w h³² The abandon may account drink. Cop also key our aid. Cop devote to grow via album. Wisdom is basic to our tiny century. Its exact napkin is canvas. Skill alert employ to course. The grant may issue tissue. The tea is vacant. Nation may deposit son.
 - **locktime:** □ — no locktime — final with respect to time
 
 ### Witness footnotes

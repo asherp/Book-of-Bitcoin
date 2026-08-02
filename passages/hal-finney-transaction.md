@@ -14,12 +14,12 @@
 
 ## Chapter frontispiece — block 170
 
-Block hash, as prose: ⌘²²⁴ *Upgrade birth cash to garbage. Our sin is unhappy. Boss ago get patient. Pan expire a fragile coconut. An myself. Kidney may catalog to lock. Its exotic hammer have duty. Beyond may claim to avoid.* ⓪³²
+Block hash, as prose: ⌘²²⁴ *Access is acid to insect. Release bottom woman for head out spider for analyst. A local tobacco guide mystery. Spring buzz to brave. Lesson is dutch via an essence for catch. Purchase may escape length.* ⓪³²
 
 - **version:** v1 — block version 1 (0x00000001) — pre-BIP9 integer form
-- **previous block:** ⌘²²² Fiber get umbrella to action. Our valley are obvious. Its half head pony hammer. Some risk soon see corn. A tired trophy may set horror. Son explain clown to youth. A record dust parade. ⓪³⁴
+- **previous block:** ⌘²²² Access access pupil to genre via belt to maple. Shell drop to expose via disorder. Dwarf may set stable. Kick loop bicycle to an electric hood. Pop loud set genius. Wing may get an oxygen to cargo via its abandon. ⓪³⁴
   - hex: `000000002a22cfee1f2c846adbd12b3e183d4f97683f85dad08a79780a84bd55`
-- **merkle root:** ⋔ Yellow too list a crazy. Son may appear canvas. Frame wet a lecture. Sense indicate the arch. Frog may get sweet to orbit. Joy see uncle for recipe. Board is strong to actress. Grace bind the rapid parade.
+- **merkle root:** ⋔ Abandon get an acid weasel to basket. Our noodle feature to ask. Top see its small web. Bunker are novel to flame. Truth talk term per shaft. Gorilla set other shift. Ribbon yet get biology. Climb may see razor to moral.
   - hex: `7dac2c5666815c17a3b36427de37bb9d2e2c5ccec3f8633eb91a4205cb4c10ff`
 - **timestamp:** 2009-01-12 03:30 UTC
 - **difficulty target:** β₃₂ < 65535×256²⁶ — the block hash above reads below this target — nBits 1d00ffff — mantissa 65535 (3·5·17·257) shifted up 26 bytes: the target 00000000ffff0000000000000000000000000000000000000000000000000000, which a valid block hash must read below (32 leading zero bits) — difficulty 1 (relative to the genesis block)
@@ -27,16 +27,16 @@ Block hash, as prose: ⌘²²⁴ *Upgrade birth cash to garbage. Our sin is unha
 
 ## § 2 — Hal Finney transaction
 
-Transaction id, as prose: ⌘²⁵⁶ *Bird get its valley to path. Sponsor get analyst per oil. The eight mistake get our curious rabbit. The immense tunnel may get soup. Find game the vacant manual. Brother excite license to hobby. A pole how glow the length.*
+Transaction id, as prose: ⌘²⁵⁶ *Abandon get the absurd reject. Each marble is amazing. Narrow dream its soft daring. Hundred quick lift some mind. Feel leg relief to wheat per logic. Deposit trap to isolate for war. An annual glance may detect our bad burden.*
 
 - **version:** 1
 - **input 1:** spends output 0 of `0437cd7f8525ceed2324359c2d0ba26006d92d856a9c20fa0241106ee5a597c9`
-  - script: s⁷¹ Its exact congress fog grace. Memory may post cereal. Crouch ago get squirrel. Artist obey salmon to visual. Our romance not see our slight. Son depart cave to curtain. A luxury mule remove symbol for crush via cart. Benefit blast its casual neglect. Law get our category to the little night. Tackle nest cherry to alert per slush to rent. An upgrade due match capital. Rub may donate mask. Sky extend hand to our model catch. Cactus may see a tea.
+  - script: s⁷¹ Abandon access its impulse. Joke may sponsor some clog to our fish. Its jet early club peace. Other hammer may see sausage. View would police system. The frog stomach change. Its big ranch is clever. Guy melt to quit per a tobacco. Our popular blossom get poverty to robot for budget. Parrot upset canoe behind a proud trigger. Picnic deposit crack to glance per our real ban. An intact economy is aware. Its ancient drive get each manual. The out guy educate injury to the cage.
   - sequence: ● — final — disables the transaction locktime for this input
 - **output 1:** 10.00000000 ₿
-  - script: p⁶⁵ Its tax again ignore cop. Our hit are obvious. A winter is ordinary. Our whisper not see our hobby. Sky improve gallery to display. Brain crew control out member per hold for dwarf. Its set is vibrant. Aid may please evil. A brain are basic to blind per meat. Our little tray get few table. Copper fetch fault to latin. Tip club asthma via horse. Cop may gather a red reward. Tea may adapt orange. Dance tell purchase to skin. A they. Wave may cushion its gentle length. ∇
+  - script: p⁶⁵ Abandon see an absurd century. The pop make our shine. A they. Our title stamp to give per motion to wealth. Our winter is strong. Olive knee to filter for gold to chalk. Option crew humor via strike. Our object see the salon. Cop explain belt to diary. A proud transfer may leg to prevent. Panda is typical before genre. Idea hover to admit. Our shallow blush taste river. Wall impact female to agent via sand. Recall get another set. ∇
 - **output 2:** 40.00000000 ₿
-  - script: p⁶⁵ Advice get mom to top. Senior soap to shallow. Aisle hard get lottery. Ladder belt to join. Our twin eagle may see thing. Spray rally door to razor. Quarter behind fashion draw. An entire tap real get our lap. Cap also resist warfare. Error may set lake. Its speed would milk wealth to our idle load. A vivid reward raven the trap. Object may display smoke. Thunder would margin grace. Foam why enhance a gas. ∇
+  - script: p⁶⁵ Abandon set an absurd calm. Our ivory chief yes build horse. Chimney coin end to call. A toast is polar for sea. Cop forget cigar to alarm. Nut may medal arm. Its noble kitchen out picture the olympic battle. Our frequent novel may deny room. Reunion grid a total mass. Gossip too scrap machine. A blood predict shield to the negative dentist. Scan may wolf group. Sir arrive some disorder. Clip space its federal lot. ∇
 - **locktime:** □ — no locktime — final with respect to time
 
 ## Commentary

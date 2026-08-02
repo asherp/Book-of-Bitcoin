@@ -14,12 +14,12 @@
 
 ## Chapter frontispiece — block 481,824
 
-Block hash, as prose: ⌘¹⁸¹ *Its tax near sentence sheriff. The aerobic net is lazy. A mirror is huge. A velvet penalty set lady. Friend may dry tourist to good. Cow avoid its bright hit via aid.* ⓪⁷⁵
+Block hash, as prose: ⌘¹⁸¹ *Guy absorb to account for orphan. Cabin clown canoe to pistol. A vicious hockey may invest mouse. Guy behave to tone. Trap may get bulb. Control would cart length. Each theme due get tie.* ⓪⁷⁵
 
 - **version:** vaccio abandon 10 — block version 0x20000002 — BIP9 version-bits form; accio abandon — no version rolling; signaling bit 1 — SegWit (BIP141)
-- **previous block:** ⌘¹⁸⁴ Length swing flavor to chapter. Episode may elbow type. Runway ago wine usage. Check may crack buzz. Border ought style bulb to slam. ⓪⁷²
+- **previous block:** ⌘¹⁸⁴ The sir absorb our account to its hit. Map may absorb theory. Share might crew gap. The delay get gadget. The typical table label deal to mix out winter to solution. The safe son used to fix. ⓪⁷²
   - hex: `000000000000000000cbeff0b533f8e1189cf09dfbebf57a8ebe349362811b80`
-- **merkle root:** ⋔ Dolphin get its mixture to limb. Zone get wrist per world. The total timber rival alcohol to body. Sun oppose item per faculty. Cupboard yes abuse dynamic. A red may approve matter. Cow speak the rub. Some pan barely thunder length.
+- **merkle root:** ⋔ The abandon access alley. Income auction year to view. Unknown confirm balance out steak. Copy is sick to skin. Our symbol rent minor per puppy. Sir announce its champion to final. Our son enlist maid. The neutral arrive its low lot.
   - hex: `6438250cad442b982801ae6994edb8a9ec63c0a0ba117779fbe7ef7f07cad140`
 - **timestamp:** 2017-08-24 01:57 UTC
 - **difficulty target:** β₇₁ < 81129×256²¹ — the block hash above reads below this target — nBits 18013ce9 — mantissa 81129 (3·27043) shifted up 21 bytes: the target 0000000000000000013ce9000000000000000000000000000000000000000000, which a valid block hash must read below (71 leading zero bits) — difficulty 888,171,856,257 (relative to the genesis block)
@@ -27,22 +27,22 @@ Block hash, as prose: ⌘¹⁸¹ *Its tax near sentence sheriff. The aerobic net
 
 ## § 13 — First SegWit spend
 
-Transaction id, as prose: ⌘²⁵⁶ *Its brisk tree fire strategy. Few drink is arch. Aid due adjust symbol. Fault see column to file. A want then see our pie. Lot between get a tie. Its amazing son away club a weird. Stumble set car to rubber. Drama may theme pot.*
+Transaction id, as prose: ⌘²⁵⁶ *Abandon may set our absurd to its title. Pop dismiss to right. Rent proof blossom out fix. Broom today get palace. Our hour is rapid. Cow retire our absurd public to dignity. Lobster giggle six per rule. A bargain may see town to the big ball to tax.*
 
 - **version:** 1
 - **input 1:** spends output 0 of `38c8c6473f149aa698c9868f266102def0e370ddfd4c5adb5916417940963658`
-  - script: ²² Abandon pigeon badge to sphere. Liquid may web magnet. Profit ago get animal. Ski bench rice to alien. A park may fork a home.
+  - script: ²² Son about set its absurd. The absent celery may mesh merit to base. Shoot cook fun for emotion. Its faith post our simple crawl. Yes across swarm gym.
   - sequence: ● — final — disables the transaction locktime for this input
   - witness: see footnote a
 - **output 1:** 0.00311000 ₿
-  - script: ⌖ h²⁰ Carpet is armed to its light. A cow carry to reduce. Chunk see salmon for age. Leopard divorce abandon to hello. Company may bounce catch. =
+  - script: ⌖ h²⁰ An absurd abuse not bid future. Hit around bless parent. East set vessel to charge. Guy are low across abandon about file. Bit may inject spring to cactus. =
 - **output 2:** 0 ₿
   - script: ¶ ⁷⁵ “BIP141 \o/ Hello SegWit :-) keep it strong! LLAP Bitcoin twitter.com/khs9ne”
 - **locktime:** □ — no locktime — final with respect to time
 
 ### Witness footnotes
 
-a. s Its primary beef job its season. Ring see food to menu. The pass garage sand. Film may mix output. Angle reform edit to train. A fyi enrich to topple. Uncle get zoo per our arena. A strategy exist column to the ago gossip. Its hit is rude. Son enhance seat to castle per fury. Cube okay reason figure. Month may set canvas. Its lap vanish onion. Orchard may choose silver. Sir dismiss to let. Lip again floor pop. A due is tired. Source may see cactus. · p The acoustic voyage see blue. Our layer is brisk. Aid may inject illness to gravity. Its aerobic damp is just. Plastic whip cigar to spare. Spring see a nasty balcony. Report may soldier swim. A big copy shall vault the panda.
+a. s Abandon may accuse fence. Parrot due school balance. Space set story to fluid. An aim may wing our welcome. The row are raw. Bed why identify twelve. Effort get pelican to crop via debate to flight. Cow clarify gossip for yellow. Forward not rent lawsuit. The lie hover chicken. Trap feel a banana to a brisk veteran to process. Soul may obscure rack. A kite assume melody. The ago story then drift economy. Its wheel set census to slogan beyond a lens. · p Guy about set our absurd axis. Quote is second to velvet. A tiny parrot is maximum per copy. Cop cancel ride to slight. Couch spring the elephant via its long office. An october modify result. Inquiry set tennis to liberty. Model may see a wild.
 
 ## Commentary
 

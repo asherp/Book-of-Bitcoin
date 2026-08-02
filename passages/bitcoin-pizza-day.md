@@ -14,12 +14,12 @@
 
 ## Chapter frontispiece — block 57,043
 
-Block hash, as prose: ⌘²²¹ *Pop submit word to click. Genre decrease to spot. Rub may receive some red. A they. Fall pretty get warfare. Label mass the select divorce. Its human car may bind mosquito. Our economy is exotic.* ⓪³⁵
+Block hash, as prose: ⌘²²¹ *The access achieve science to twenty out a ago fever. The amused six note ostrich to affair via museum. Faint may reveal thunder. Our dynamic is bottom. Fyi about involve bamboo. Its ban are raw. Leopard get course to the length.* ⓪³⁵
 
 - **version:** v1 — block version 1 (0x00000001) — pre-BIP9 integer form
-- **previous block:** ⌘²²¹ Letter is possible to orange. Ball see its danger. Cow suffer artist to canoe. Sense conduct more kid fire. Our notable ahead see a low rice. The sure section kick soda. Copy may set our bed to map. ⓪³⁵
+- **previous block:** ⌘²²¹ A new access may account ban. Cow again get the duty. Task monkey a rookie shallow. Habit set our art. Bullet isolate a lazy spoil. Ridge reduce claim to six. Pop speak to betray for spike. An illness may set the length. ⓪³⁵
   - hex: `0000000013e7e85518dac94d012d73253d3fdac5c30c4143b177f3086f129580`
-- **merkle root:** ⋔ Foam swear to modify for snow. Our elegant ear live program. An alpha plunge faith to cycle. Sir teach to provide. Impact see lady via shell. Virus segment cricket to cradle. Extra much install length.
+- **merkle root:** ⋔ Abandon access to speak. Symptom is low into hobby. Sir develop pan between gallery to december. Dance mother to replace. Visa guess a mobile tooth per cloud. Pill bomb its open monster. Mass may mask process.
   - hex: `5c1d2211f598cd6498f42b269fe3ce4a6fdb40eaa638f86a0579c4e63a721b5a`
 - **timestamp:** 2010-05-22 18:16 UTC
 - **difficulty target:** β₃₅ < 1416228×256²⁵ — the block hash above reads below this target — nBits 1c159c24 — mantissa 1416228 (2²·3·11·10729) shifted up 25 bytes: the target 00000000159c2400000000000000000000000000000000000000000000000000, which a valid block hash must read below (35 leading zero bits) — difficulty 11.85 (relative to the genesis block)
@@ -27,14 +27,14 @@ Block hash, as prose: ⌘²²¹ *Pop submit word to click. Genre decrease to spo
 
 ## § 1 — Bitcoin Pizza Day
 
-Transaction id, as prose: ⌘²⁵⁶ *Its tortoise get the latin bunker. Cry blossom drop to lamp. Cake between set panther. Delay shiver to erupt. Manual devote a just feed. Love tumble slam to uniform. River is pop for drill out parade.*
+Transaction id, as prose: ⌘²⁵⁶ *Abandon may see our acid cluster. Twelve are veteran to poverty for the scare. Bread may tower lap. Our acoustic pulse wreck sound. Course may guide depth to toy. The slender pitch catalog fan out flight per hill. Its stone may bless each yes.*
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
   - script: β₃₅ 1416228×256²⁵ η2·59
   - sequence: ● — final — disables the transaction locktime for this input
 - **output 1:** 50.99000000 ₿
-  - script: p⁶⁵ Agent ask the solid comfort. A velvet bind brief ripple to frown out a hollow solution. Move retreat to frown via section. Plug see a summer to theme. Sense license our muscle. Hurry may work tiger to help. Picnic get ability out zoo. Nose renew search to call. Museum set our ordinary buddy. Yes tell bean to seminar out a minimum. Ban may engage slight to bonus. Ethics may get still via an okay son. An actual notable parade lie. ∇
+  - script: p⁶⁵ Abandon is absurd to its check. Hello inside impose mosquito. A rare text spoil hit. An unaware guitar isolate mammal. Scare may get pan under jet between cycle. Size absorb burden to another midnight. Law undo author via flavor. Canal is acid to zebra. Recipe range to awake. Jet adjust mirror out tilt. Type voyage to orphan for a broken hair. A fan fringe its slender horse. Our low purse yet set die. A someone. Its guy are bleak to regret. ∇
 - **locktime:** □ — no locktime — final with respect to time
 
 ## Commentary

@@ -18,7 +18,7 @@
 // Consumed by bitcoin-book.html, which renders each field into its manuscript
 // margin layout.
 
-import { encodeSeedPhrase, bookLang } from './glossia-msg.js';
+import { encodeCanonical, bookLang } from './glossia-msg.js';
 import { findTextRuns, splitReadableRuns, looksLikeWriting, readableUtf8Text, tokenizeScript, bitsToTargetHex, bitsToDifficulty, bitsToMantissaFactors, primeFactors } from './btc-tx.js';
 import { splitOnSignature, poolOf } from './btc-pools.js';
 import { volumeBookChapter } from './btc-citation.js';
@@ -1211,18 +1211,21 @@ export function renderWitness(items, encode) {
 // breakdown of every field's rendered text, in wire order, plus the payload
 // words consumed. bitcoin-book.html's margin layout is built from this, each
 // field Glossia-encoded exactly once.
-// `bestOf` forwards to encodeSeedPhrase for cover-word quality (default 1).
+// `bestOf` forwards to encodeCanonical, which since glossia 0.3.0 renders the
+// canonical encoding and ignores it — the canonical version pins the fluency
+// budget. The parameter stays so custom `encoder` implementations (which share
+// encodeCanonical's signature) keep working.
 // `lazyData`, when supplied, is an alternative encoder (hex -> HTML) used for an
 // OP_RETURN payload only: OP_RETURN is the one body field that can carry a bulky
 // data-carrier blob, so the caller can pass a placeholder emitter to defer its
 // encoding until it scrolls into view, exactly as witness pushes are deferred.
-// `encoder`, when supplied, stands in for encodeSeedPhrase itself (same
+// `encoder`, when supplied, stands in for encodeCanonical itself (same
 // signature and result shape) -- a caller can record the exact pushes a
 // section will encode (a dry run) or serve them from its own store, so a
 // giant section can be encoded in yielded chunks rather than one long pass.
 export function composeTransactionFields(parsed, bestOf = 1, lazyData = null, encoder = null) {
   const payloadWords = [];
-  const enc = encoder || encodeSeedPhrase;
+  const enc = encoder || encodeCanonical;
   const collect = (hex) => {
     if (!hex) return '';
     const r = enc(hex, bookLang(), bestOf);   // the reader's saved book language

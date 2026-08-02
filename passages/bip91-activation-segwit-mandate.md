@@ -14,12 +14,12 @@
 
 ## Chapter frontispiece — block 477,120
 
-Block hash, as prose: ⌘¹⁸⁵ *A domain may govern to approve. Due erupt town for diet. Merit predict rain to pulse. Crawl set buddy via exhaust. One connect drama to favorite per amount.* ⓪⁷¹
+Block hash, as prose: ⌘¹⁸⁵ *Abuse access to alter via chimney to film. Gun cram an unique sky out its frequent ethics for master. The history never set jet. Tax twice knee steel. Our junk bacon may parade its divorce.* ⓪⁷¹
 
 - **version:** vaccio abandon 10010 — block version 0x20000012 — BIP9 version-bits form; accio abandon — no version rolling; signaling bit 1 — SegWit (BIP141), bit 4
-- **previous block:** ⌘¹⁸² Its infant decade zone acid. Upper may get grocery. Its leisure robot see february. Wool set era to sun. Our slush see its yard. A low aid emerge to melt per our capital. ⓪⁷⁴
+- **previous block:** ⌘¹⁸² Bed may absorb accident to olive. A shaft wrap avocado. Journey cushion our world sun. Pepper tumble each glare. Skull may set glass. Wagon easily see festival. A pay may avoid a hit. ⓪⁷⁴
   - hex: `00000000000000000022552c92fdc5ac6c31a95f54d9ed9fcdf0fe00ff134773`
-- **merkle root:** ⋔ Mistake set our dutch razor. The son is lunar. Jacket collect a benefit. Ankle yes get autumn. Clay point our dial. Tank may find the winter audit. Path may squeeze series. Stool convince to spice. The cow evolve to divorce.
+- **merkle root:** ⋔ Abandon yes account its hungry lip. The jet is casual. Each night is chronic. Its bad return hire poverty. Cap may empower our large faculty. A demand may trip an unhappy yes. Each sir remove theme to judge. An amazing orphan camp rebel. Lamp may middle each image.
   - hex: `8a13a3f9326b1073faa078007fadda8d1e9d46a50f4948055b7087c2ca8ee88d`
 - **timestamp:** 2017-07-23 04:46 UTC
 - **difficulty target:** β₇₁ < 89564×256²¹ — the block hash above reads below this target — nBits 18015ddc — mantissa 89564 (2²·22391) shifted up 21 bytes: the target 0000000000000000015ddc000000000000000000000000000000000000000000, which a valid block hash must read below (71 leading zero bits) — difficulty 804,525,194,568 (relative to the genesis block)
@@ -27,16 +27,16 @@ Block hash, as prose: ⌘¹⁸⁵ *A domain may govern to approve. Due erupt tow
 
 ## § 1 — BIP91 activation (SegWit mandate)
 
-Transaction id, as prose: ⌘²⁵⁶ *A lab due case its flame. Ear define our bright method. Usage may mesh its breeze to bracket. Our die twice group the pony. Sugar is cruel to wedding via marble. Red may clarify lawn. Orchard lounge roof to tag for gas.*
+Transaction id, as prose: ⌘²⁵⁶ *Abandon ago get its red accident. Tie then bone our season. Slot may set a guy. An they. Giggle set lady to fun. Swing get street via foil. Dash divert shiver to pilot. The shy diamond may exhaust vacuum. A they. Cargo is pop to the tape for a due tea. Bet truly see set.*
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
-  - script: ■477120 2017-07-23 04:46“/BATPOOL/NYA/” A wide war is vibrant. Cow forget juice to brain. Elder see a tortoise. Crisp yes word video. Our elite crazy color to alter. The map is sunny for hit. A raw pioneer neglect choice. Maid clump sphere to runway. A stereo fame too style the able pop. ⓪⁷ η2·3·12323·5161630937 ⓪⁵
+  - script: ■477120 2017-07-23 04:46“/BATPOOL/NYA/” An above acid may sting opera. Surprise might ship struggle. Set depend club over the tie. Our typical oxygen is dizzy. Normal home design slight. The net is civil. Parent far dose coral. Glare set its merry type. Proof out need safe. The acoustic guy may row. ⓪⁷ η2·3·12323·5161630937 ⓪⁵
   - sequence: ● — final — disables the transaction locktime for this input
 - **output 1:** 12.55159445 ₿
-  - script: ⧉ ⌖ h²⁰ Day box more keen post. Casino rain some sock to run. Leisure crouch to derive. Symbol may tone some way. ≡ ∇
+  - script: ⧉ ⌖ h²⁰ The absurd abuse scale stand. Our lazy soap early brick our match. Sky may idle tuna. Wood patrol swift to token. Pie yet carry scale. ≡ ∇
 - **output 2:** 0 ₿
-  - script: ¶ ⋔w h³² Start get peanut to arrest. Power valve to enact. Bridge ago bundle exit. Robot may table wasp. Power point to cable per place. Month set violin to wool. Hero drill a valley. The slide may theme pan.
+  - script: ¶ ⋔w h³² Abandon out achieve pizza. Audit get glove to enough marriage. Sir may enrich task out venture. Leisure may supply tree. Royal enjoy to deliver for a zero. Company know pepper to tuna per fog. Our blood march friend.
 - **locktime:** □ — no locktime — final with respect to time
 
 ## Commentary

@@ -14,12 +14,12 @@
 
 ## Chapter frontispiece — block 74,421
 
-Block hash, as prose: ⌘²¹⁵ *Frost see junior to essay. Alien club our chimney. Son write rib to quote. Our aerobic spoil program to teach. Each wheel get muffin. Raccoon set enemy to sun. The nod are illegal via a sure cop.* ⓪⁴¹
+Block hash, as prose: ⌘²¹⁵ *Its abstract access twin to sing. Harbor may cram our gentle domain. Visa see sibling to length. Our canyon is naive for a garlic per visual. Our pie is spatial. Meadow is liquid to tax. Due may exist a skill out match via source.* ⓪⁴¹
 
 - **version:** v1 — block version 1 (0x00000001) — pre-BIP9 integer form
-- **previous block:** ⌘²¹⁵ Its comic gold sock to relax. Idea set whale out leisure. Sound not travel its boring aunt. A rebel question reduce enemy. Chapter are cute to cut. A robust guy attract tube. ⓪⁴¹
+- **previous block:** ⌘²¹⁵ Abstract abuse to include. Carpet idle to position. Loop may sniff our worry. Pot may leave despair. A someone. Kingdom often see its lake. Park may execute to creek. Each pan yes remember a sure ivory. An exotic pay may set a lip. ⓪⁴¹
   - hex: `0000000000753b68b73633791268f99a593d3c83e77eee5ff307875a388b4c2e`
-- **merkle root:** ⋔ Can picnic unknown to melody. A slice is cut via ticket out humor. Son bless a brisk crop. Airport may get its giant project. Pupil set enemy to scrap. A yes unlock subject. An abstract glide replace device. File may see length.
+- **merkle root:** ⋔ Abandon may abuse an amateur. A capable hurdle feel the fossil aspect. Job may get rug. Timber could pair cluster to asset. Each gaze set its hungry pay. Cap may exist an armor. Son ignore to sample. Ear may alter board. Bit shall renew torch. Our ranch is pop.
   - hex: `8c55796c8bb103fc1aee0b7ed25bc1da30167c461cbdc05bc3b74cc5b787f420`
 - **timestamp:** 2010-08-14 23:05 UTC
 - **difficulty target:** β₄₀ < 47640×256²⁵ — the block hash above reads below this target — nBits 1c00ba18 — mantissa 47640 (2³·3·5·397) shifted up 25 bytes: the target 0000000000ba1800000000000000000000000000000000000000000000000000, which a valid block hash must read below (40 leading zero bits) — difficulty 352.16 (relative to the genesis block)
@@ -27,16 +27,16 @@ Block hash, as prose: ⌘²¹⁵ *Frost see junior to essay. Alien club our chim
 
 ## § 3 — Supply cap bug fix
 
-Transaction id, as prose: ⌘²⁵⁶ *Deer twist bird to hope. Banana gas to include. A cop is large. Legend see globe to green. Object desert shallow below creek. Advice see mobile to pact. Monitor are viable for injury via wish for gas.*
+Transaction id, as prose: ⌘²⁵⁶ *Abandon abuse slab to our foster refuse to help. Bet may multiply due about nature. Guy truly get the wise bounce. Crater scan tape to chimney out plate. October may calm to inform. Void jump to omit. Peanut may tongue our ear.*
 
 - **version:** 1
 - **input 1:** spends output 0 of `c3b36337753b0cbbf7ec44967f0fe30e2e47b79e5400bb57c1fe5dd660f4e885`
-  - script: s⁷³ Its tax okay gas piano. The dwarf elder orient bounce. Lemon resemble to hover. The sir acquire check. Guy bless our metal desk to crater. Pair may shift gain via daughter. Our news may cart fitness to crop. Enough crime evolve cycle per mosquito for breeze. Video shove sheriff to tourist via our report. A lazy brick border to tax. The tap is nuclear. A harsh produce omit ban. Rub may differ double. Son have foil to catch out cactus. p⁶⁵ An afraid laugh may rebuild initial. Cannon man basket to dinosaur. Yellow far see our royal fyi. A typical volume dress robot. Air may set logic. A rude labor manage our wedding hockey to grant. Our human latin letter height via rabbit for path via staff. Skull may speed turtle. Maple would set miracle to pony. Romance may raise bit. A cute buddy get city to banana. A castle forward border pencil. Autumn get pyramid to abandon.
+  - script: s⁷³ Abandon account a sorry out. The absent cake set census. Dentist see tomato to square. Wrong risk its indoor bachelor per day. Our jet is rural. Gasp set its tennis. Nest may web comic. Wage shall get salon. Powder may see blue. Sand would palm fire to its ordinary illness. Repair may get length. Table paddle to decide out coconut. Cook may resist vessel to tackle. Soldier may risk to enjoy. Frown spring its unusual aspect. Essence is spring to cage. p⁶⁵ Abandon may set its absurd. Sir caught to uncover. Lot may omit our palace. Nod may argue the current odor to view. Weather get a tourist. Garment set purity between suit. Clog yes bronze trash. Tip dawn shuffle to gloom via coin. Island twist to afford for fiber. Sir like a pay. An amazing patch fine material to a fiscal son. Yes develop hill to distance. Syrup is out via matrix for die. Map may relax to sit per twenty. Its pie may enrich muffin. Our brisk task set solid. Bench see laundry to job.
   - sequence: ● — final — disables the transaction locktime for this input
 - **output 1:** 0.50000000 ₿
-  - script: ⧉ ⌖ h²⁰ Egg may brick broom to earth. Capital learn tonight via rice. Lens journey to pioneer. Deal wrong our fresh goat. ≡ ∇
+  - script: ⧉ ⌖ h²⁰ Its absurd access current. The tackle see town. A clinic away want caution. Sister set accident to senior out circle to sea. Vocal may toy cactus. ≡ ∇
 - **output 2:** 235.00000000 ₿
-  - script: ⧉ ⌖ h²⁰ Chunk gesture to retire for will. Pride weekend swim to clinic. The urge set coyote. An alone special never see half. Parade lie to sit per the cap. ≡ ∇
+  - script: ⧉ ⌖ h²⁰ Absurd abuse earth to arm. Cop say super per our female silver. Tennis fly kite to minimum via daughter to maple. A position may dry our abandon. ≡ ∇
 - **locktime:** □ — no locktime — final with respect to time
 
 ---

@@ -14,12 +14,12 @@
 
 ## Chapter frontispiece — block 630,000
 
-Block hash, as prose: ⌘¹⁷⁸ *Hospital may exchange our social era. Tube set this foster yes. Pot may achieve swallow. Bid nest bachelor to notable. Our useful glove may enact. Each son is acoustic.* ⓪⁷⁸
+Block hash, as prose: ⌘¹⁷⁸ *Our sir absorb accident. Our ban are hungry. Tax get lip into the hungry glass. Jet may extend alien. Theme attract to submit via rack. Piano may maze our reject. Its legal bubble enrich nod. The dig may avoid.* ⓪⁷⁸
 
 - **version:** vaccio abandon — block version 0x20000000 — BIP9 version-bits form; accio abandon — no version rolling; no soft-fork signals
-- **previous block:** ⌘¹⁸⁰ Bullet frequent proof to donor. Son may inhale stone. Some screen is soft. A pop is keen. Trouble shoulder rescue to force. Echo see a mad hole. Our artist is pop. ⓪⁷⁶
+- **previous block:** ⌘¹⁸⁰ Cow absorb its absurd. Nod vanish toss to girl. The cut apology see an oven. A ready art include a social emotion to dash. Our rich success may convince a coin. Son govern the gym. ⓪⁷⁶
   - hex: `0000000000000000000d656be18bb095db1b23bd797266b0ac3ba720b1962b1e`
-- **merkle root:** ⋔ Its artwork may get liberty. Its genuine above like our humble midnight. The fyi is angry. A grant may doctor to scatter. Cow caught a soft glow via grace. Year get setup to anchor. The license indicate display for width. Egg may set cactus.
+- **merkle root:** ⋔ An abandon are absurd. Hat far alter anxiety. Our afraid aspect are jealous. Our glide are electric to coil. Our actress may add a cat for our lie. Yes include bunker to cloud. Water catch drum for an annual now for woman. A stone curtain is low.
   - hex: `b191f5f973b9040e81c4f75f99c7e43c92010ba8654718e3dd1a4800851d300d`
 - **timestamp:** 2020-05-11 19:23 UTC
 - **difficulty target:** β₇₅ < 1145401×256²⁰ — the block hash above reads below this target — nBits 17117a39 — mantissa 1145401 (163·7027) shifted up 20 bytes: the target 000000000000000000117a390000000000000000000000000000000000000000, which a valid block hash must read below (75 leading zero bits) — difficulty 16,104,807,485,529 (relative to the genesis block)
@@ -27,19 +27,19 @@ Block hash, as prose: ⌘¹⁷⁸ *Hospital may exchange our social era. Tube se
 
 ## § 1 — The Third Halving
 
-Transaction id, as prose: ⌘²⁵⁶ *Gravity circle its pottery to soul. Echo see grain for sweet. The whisper refuse law. Liquid how knock style. Our capital icon may park hospital. Hope rack the antique student. Its exotic rebel get length.*
+Transaction id, as prose: ⌘²⁵⁶ *Abandon may set accident to coral. Its endless elephant later control a pop coast. Target start its pet usage. The new bar may tell sail. A nod away live the act. Its hunt set hill. Lottery exist our robust level. Office tax to lay.*
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
-  - script: ■630000η3³ “Mined by AntPool” Its couple may mean high. Pop absorb its velvet. Cow admit culture to pink. A wide tap is vibrant. Pop forget fever to bone. Effort drift kite for music per bench. The calm desk get injury. Property reopen the lucky father. Job cradle to equip. A west romance get the income. A better row may unlock lock to library. ⓪⁷ η3²·179·267214182982529
+  - script: ■630000η3³ “Mined by AntPool” Our above abuse maze example. The foster rub alone see mosquito. Brush may protect cigar. Sting ought set opera to surge. Prison ski a crystal biology per sunset. Monitor is popular to the aerobic term. Payment out get a glove. Each guy receive census. Output yet scan its monster giggle. Our slight symbol may neglect to provide. Cow identify to breeze per amount. ⓪⁷ η3²·179·267214182982529
   - sequence: ● — final — disables the transaction locktime for this input
   - witness: see footnote a
 - **output 1:** 7.15968084 ₿
-  - script: ⧉ ⌖ h²⁰ Balcony set tennis to case. Miracle may gesture woman. Its boy remove lot. Our eternal wall may laugh to enter. Broccoli may toss its goat. ≡ ∇
+  - script: ⧉ ⌖ h²⁰ Absurd set our absurd mom to a weird book. Some bed is hidden. Armor train stick to quantum. The hollow rely an unable force. Token coin cactus to due. ≡ ∇
 - **output 2:** 0 ₿
-  - script: ¶ ⋔w h³² Comic rough get our vicious flock. Hockey set furnace to estate. Our cheap infant far conduct denial. Arm sting a silent bulk. A loud zero set danger. Tea truly get strategy. The aerobic elbow plate length.
+  - script: ¶ ⋔w h³² Abandon may abuse increase to title for an ordinary skill. Globe venture hen to danger. Olive involve spread via fruit for a ear. Out may quit drink. Vacuum are capable to wood via the room. Envelope render some candy. Yes defy cover to set.
 - **output 3:** 0 ₿
-  - script: ¶ ³⁶ Its rigid angle swap to gain. Canyon see satoshi for average. The mercy gain february. The cow is insane. A state penalty may please language. Dog set company to ridge. Its cow across rack either lot. Cow explain picture to season. Bullet may grab length.
+  - script: ¶ ³⁶ Ability accuse to pay. A someone. Egg surge some wage to attitude. A wild leader fog wagon via pen out pond. Pluck may believe a cricket to trap. Its aerobic input slot a bargain. Lounge far debate a lucky carpet. Baby vapor the clever lie.
 - **locktime:** □ — no locktime — final with respect to time
 
 ### Witness footnotes

@@ -14,12 +14,12 @@
 
 ## Chapter frontispiece — block 622,944
 
-Block hash, as prose: ⌘¹⁸⁰ *Its fluid decade due canoe airport. Addict spirit our false rug. The mother may donate the brother. Our sir arrive to gather per young. Exhibit also set animal.* ⓪⁷⁶
+Block hash, as prose: ⌘¹⁸⁰ *Cow absorb access to snake. Service get our army. Clown may bracket motion. Its naive trigger ought get life. Amount may train good. Its advance where set lab. Guy deliver elite to lap for cop.* ⓪⁷⁶
 
 - **version:** vaccio link — block version 0x20800000 — BIP9 version-bits form; version-rolling bits 0x0400 (BIP320 scratch entropy) as accio link; no soft-fork signals
-- **previous block:** ⌘¹⁸⁰ Its tax around portion relief. Still announce the soft nod. A cop is gentle. Hill release daughter to season. Latin may deliver project per capital. Boat yes arch its dig. ⓪⁷⁶
+- **previous block:** ⌘¹⁸⁰ Row may absorb absurd. Giant dress a print to puppy. Lip may enlist to include. The sky are annual out cap. A frozen powder salute badge. Twenty may spawn to gasp. Jet may avoid ship. Fix yes get cut. ⓪⁷⁶
   - hex: `0000000000000000000bc6800858a1b3be08fb26b55d4b989c95e06ad50a350c`
-- **merkle root:** ⋔ Input due address its six april. The viable lounge get math. The sky resemble science. Genre depart favorite to our jewel. Travel may inherit its luxury section. Neither evidence may flee gadget. Each fade could ribbon abandon.
+- **merkle root:** ⋔ Abandon set some accident. Its pink bridge evoke fitness. A tie once card yes. Our bet may emerge river. Cap alter to set. Its lie is amused. Stone parrot to say. A sir detect ozone. Client better pattern hour. Shock see vocal to map. Die due modify each siege.
   - hex: `40aea3ea652c3785b2c22af41ccf7f072aeb20ecc0ba45a208357f05276fa074`
 - **timestamp:** 2020-03-26 02:51 UTC
 - **difficulty target:** β₇₅ < 1325889×256²⁰ — the block hash above reads below this target — nBits 17143b41 — mantissa 1325889 (3⁴·16369) shifted up 20 bytes: the target 000000000000000000143b410000000000000000000000000000000000000000, which a valid block hash must read below (75 leading zero bits) — difficulty 13,912,524,048,946 (relative to the genesis block)
@@ -27,19 +27,19 @@ Block hash, as prose: ⌘¹⁸⁰ *Its fluid decade due canoe airport. Addict sp
 
 ## § 1 — Difficulty −15.95%
 
-Transaction id, as prose: ⌘²⁵⁶ *A summer may sketch to author. Our awake ear isolate hole. Exile betray average to the end. Sir isolate short per clip. Thought scan to empower. Army mandate laugh via melody for night. A rent how vanish the cactus.*
+Transaction id, as prose: ⌘²⁵⁶ *Abandon achieve six to extra. Kitchen lift refuse out grab. Laptop why prison our layer. Ear erase regular to curtain. Foot see the amazing access. Our elite gauge may get our debris to uncle per fee. Due may protect our real mechanic.*
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
-  - script: ■622944η2·13 “/ViaBTC/Mined by sanpaolo/” The coconut too sting opera. Pie sustain our very toe. A feed buzz truth to wild. Burden jelly to ensure via our actor. Asthma clean to slim. Trap attract clip out runway. A random engine swear staff. Accident may miss cactus. ⓪⁷ Aid away party our olympic canal. Its angry sir rotate pottery. Mushroom may build tornado to frown. The abandon abandon its cut.
+  - script: ■622944η2·13 “/ViaBTC/Mined by sanpaolo/” Abstract abuse guitar to question out suspect. Subject obey a brisk pink. Woman exclude to submit. Our virtual salad foam bench. The ice fan galaxy. Son deliver to involve. Guy follow the two minute. Fatigue may get system to parade. Yes argue hotel per the abandon. ⓪⁷ Its access get absurd. A lonely jet is afraid. Split amount element to ticket. The elegant mix are ago. Hit get sky upon clip. The ugly abandon may abandon bed.
   - sequence: ● — final — disables the transaction locktime for this input
   - witness: see footnote a
 - **output 1:** 12.72123454 ₿
-  - script: ⧉ ⌖ h²⁰ Its fat lemon play to empty. Bench is eight for chimney. Hedgehog topple kangaroo to pottery. Exercise guide spoon via trend. ≡ ∇
+  - script: ⧉ ⌖ h²⁰ Absurd may access opinion to wrong. Crane empower portion for its damp. Document set the female. City may smile our elder kidney. Sir yes devote its neutral divorce. ≡ ∇
 - **output 2:** 0 ₿
   - script: ¶ ⁴¹ “RSKBLOCK:'”
 - **output 3:** 0 ₿
-  - script: ¶ ⋔w h³² Its frequent blanket panel to despair. Length may shell the cheese. A myself. Fox ensure giant to barrel. Our awful brass may roast cream. Guy rebuild suit to oil. Concert click disorder for its benefit. Parade see the pay.
+  - script: ¶ ⋔w h³² Abandon access topic to a ritual wire. An they. Our lap may absorb our clinic. Each lot ago define the map. A myself. Time foil artist to noodle. A lunar super get subway per nut for onion. Silk may get soda inside festival to wild. Its cow predict a hit.
 - **locktime:** □ — no locktime — final with respect to time
 
 ### Witness footnotes

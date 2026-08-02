@@ -14,12 +14,12 @@
 
 ## Chapter frontispiece — block 685,440
 
-Block hash, as prose: ⌘¹⁷⁷ *Snow pair roof to wrist. Access may set salmon. Addict is alone to sign via artwork. Guy learn to reflect per crazy. Its slim cow avoid mistake to absurd.* ⓪⁷⁹
+Block hash, as prose: ⌘¹⁷⁷ *Pop absorb to achieve out its hold. Weather target vessel to apple. Vessel may borrow daughter. Dragon harvest wall to patrol out nothing. Fun letter humor to amount.* ⓪⁷⁹
 
 - **version:** vmuffliato say 100 — block version 0x2fffe004 — BIP9 version-bits form; version-rolling bits 0x7fff (BIP320 scratch entropy) as muffliato say; signaling bit 2 — Taproot (BIP341)
-- **previous block:** ⌘¹⁷⁹ Buddy rail its exact blouse. Sin over sell hybrid. Dish may ignore amateur. A pan is eternal. Shiver is immune to our dentist. Peasant is loyal via alcohol. ⓪⁷⁷
+- **previous block:** ⌘¹⁷⁹ Cop absorb the absurd two. Mansion ago improve a screen. Our used bread set lens. West far get maid. Diary may holiday cousin to minor. Start may bag catch. The copy is hot. ⓪⁷⁷
   - hex: `00000000000000000006248c28751a176336f5c070f901dc86df190c391d761d`
-- **merkle root:** ⋔ Its cattle phone culture to market. Energy purchase smoke per junk. Timber may set tiger to tuna. A next name focus category. Umbrella pluck an awful flower. The bright one answer deer to gas.
+- **merkle root:** ⋔ Abandon may abuse cargo. Ear would bring to prosper. Donor expose impact per grid out slab for ball out avocado. Some bet is fatal. The pride north spell a capable giant. Crush may see luxury to slot. A they. Steak may essay skill.
   - hex: `534e13aa090e6615a2a6610f49b42ca9caa93f3ce2ca33735ca11444d6705424`
 - **timestamp:** 2021-05-30 01:18 UTC
 - **difficulty target:** β₇₆ < 876411×256²⁰ — the block hash above reads below this target — nBits 170d5f7b — mantissa 876411 (3²·97379) shifted up 20 bytes: the target 0000000000000000000d5f7b0000000000000000000000000000000000000000, which a valid block hash must read below (76 leading zero bits) — difficulty 21,047,730,572,452 (relative to the genesis block)
@@ -27,23 +27,23 @@ Block hash, as prose: ⌘¹⁷⁷ *Snow pair roof to wrist. Access may set salmo
 
 ## § 1 — Difficulty −15.97%
 
-Transaction id, as prose: ⌘²⁵⁶ *Glance spice its canvas blanket. Dolphin may option major. A cop is cute. Our salmon source the matter. Our valid border punch guilt. Hello foam mango to cattle. Shaft see a child. Apology may roast abandon.*
+Transaction id, as prose: ⌘²⁵⁶ *Abandon may set accident. Our beyond get method. Artist may ripple alley to talk. Creek remember the video letter. Enough maid see solid. Red may hover dice to film. Our spatial decrease may carpet cheese. Disease father to submit.*
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
-  - script: ■685440Coconut may sting our cut opera. Cow surround a digital creek. A lot is chronic. Melody print pottery to whip. Alarm may set region. Puzzle see dirt to chest out cradle to blast. The typical engine is real. A rigid dutch trouble time. Point may see census to cactus. Abandon about get second. Velvet pair to divorce. “/F2Pool/” η2·3² “Mined by manasi20s” ⓪¹⁷ η13·956205529 ⓪¹
+  - script: ■685440Abuse abuse guitar to question. Our suspect stage upset each odor. Drum feed some find. Elevator spread concert to pigeon. Its jaguar far see our vivid jet. Pop may destroy monitor to room. Our pop gap father nut. Its red soon catalog employ. Bargain demand clay to abandon. Abandon may see its adult tap. Son become mountain to weapon. Abandon tax to set. “/F2Pool/” η2·3² “Mined by manasi20s” ⓪¹⁷ η13·956205529 ⓪¹
   - sequence: ■0 — replaceable; relative locktime 0 blocks after the input's confirmation
   - witness: see footnote a
 - **output 1:** 6.92922309 ₿
-  - script: ⧉ ⌖ h²⁰ Sight code kite to torch. Habit mail to avoid. Clump around spawn round. Crawl air throw to project. ≡ ∇
+  - script: ⧉ ⌖ h²⁰ Absurd may achieve donkey. Half are supreme to clerk for dose to country. Its lens is ginger. Gift may set a mad tobacco. Cut never cloud apple. Gas how get a due cap. ≡ ∇
 - **output 2:** 0 ₿
-  - script: ¶ ⋔w h³² Its aware super soon equal wire. Mixture drum to enrich. Its child subject to say. Snow may see the public. A fyi may inform our wall. Rub may develop trouble to the steel. A rude tower is huge. Cap may absorb average to length.
+  - script: ¶ ⋔w h³² Abandon see the absurd lizard. Soccer may kid genius. Thunder inch the brisk flag. Cow divert sausage to zone per hole to its half ostrich. The red release may top emotion. Cow predict its tree. Cousin not see insect. Alcohol may get its leader.
 - **output 3:** 0 ₿
-  - script: ¶ ⁵² Its tax may embody arm. Pop borrow its coyote. Cop unfold island to pill. Tent pepper our humble release. Deal rocket to maze per flock. The outdoor group time embrace. Stand may set our giant to tap. Its rub adjust our sleep. Aid why bring medal. Its federal tie may agree to learn per pencil. Ban always cancel the jealous guy. Our mixed yes provide blush. Cop how satisfy a travel. Lip yet explain the pop.
+  - script: ¶ ⁵² The absent access drink fringe. The south mistake may harvest recipe to chat. Its wide blast may get jeans. Powder script to swear per era. Its set skin truly dawn a banner dynamic. Piece get artist to broom. Flip may thunder lie. Our false fyi is perfect. A chronic wall bench due. Son destroy an annual route. Immune grow its seven wife. The detail may get lottery.
 - **output 4:** 0 ₿
   - script: ¶ ↧⁴¹ “RSKBLOCK:”
 - **output 5:** 0 ₿
-  - script: ¶ ³⁶ A rigid angle may swap mesh. The due shall defy horn. Pop provide to please out area. Leg see ability to escape. Whisper get a faith. A tax attend our space. Dig replace to noise. Its canvas trust an usage. Guy exact the chronic present. Donor get fabric to scale.
+  - script: ¶ ³⁶ Ability may accuse due. A someone. Egg surround our funny sniff to hole per guilt. Credit may foil wheel to access. A happy stairs set mosquito. Inquiry may live to repair via a purchase to rub. Map may assume evil out labor. Impulse dry to expect. Its due ear apart mesh a yes.
 - **locktime:** Τ2002-08-07 10:26 — locktime: not before 2002-08-07 10:26 UTC (unix 1028715968)
 
 ### Witness footnotes

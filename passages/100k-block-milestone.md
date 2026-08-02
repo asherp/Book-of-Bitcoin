@@ -14,12 +14,12 @@
 
 ## Chapter frontispiece — block 100,000
 
-Block hash, as prose: ⌘²¹⁰ *An alone tap is civil. Young cup to position. A broken language is unique. Crouch mother club to pilot. The minute fever race lift. Camera may eye update to alcohol.* ⓪⁴⁶
+Block hash, as prose: ⌘²¹⁰ *Our abstract absurd damp to erupt via row. Yes when see pumpkin. Drink may tongue tree to the history. Cop pave license for giant per chest. Heart produce logic to arctic. The aim measure to inject per copy.* ⓪⁴⁶
 
 - **version:** v1 — block version 1 (0x00000001) — pre-BIP9 integer form
-- **previous block:** ⌘²¹⁰ An exotic mosquito may edge comic. Plastic would link to make. Such absurd update our slow recipe. The vacant swallow get success. Success may slot wedding to a cross advice. ⓪⁴⁶
+- **previous block:** ⌘²¹⁰ Abstract access the letter. Leopard cram increase to its correct guy. The tie is awesome. Its cop crumble to seek out tax. An angry inquiry is giant over a long sugar. Security get security to genius. Shrimp may parade a cactus. ⓪⁴⁶
   - hex: `000000000002d01c1fccc21636b607dfd930d31d01c3a62104612a1719011250`
-- **merkle root:** ⋔ Green may run to enable. Pop fetch to snap. Theory ski license for notice. Gun torch dust to method. Lobster may see vessel per immune. Embrace may control to uniform. Guy enable service for catalog via pond for gas.
+- **merkle root:** ⋔ Abandon may see accident. A crawl tumble to engage. Print see helmet per actress via family. Another row may resist divide. Son clean to card. Ghost is boring via due. Tie may observe minute during cop. Guy know to die per hero. Yes enlist to cancel via cabbage to dinosaur.
   - hex: `f3e94742aca4b5ef85488dc37c06c3282295ffec960994b2c0d5ac2a25a95766`
 - **timestamp:** 2010-12-29 11:57 UTC
 - **difficulty target:** β₄₅ < 296524×256²⁴ — the block hash above reads below this target — nBits 1b04864c — mantissa 296524 (2²·74131) shifted up 24 bytes: the target 000000000004864c000000000000000000000000000000000000000000000000, which a valid block hash must read below (45 leading zero bits) — difficulty 14,484 (relative to the genesis block)
@@ -27,14 +27,14 @@ Block hash, as prose: ⌘²¹⁰ *An alone tap is civil. Young cup to position. 
 
 ## § 1 — 100K block milestone
 
-Transaction id, as prose: ⌘²⁵⁶ *Its manual hub set cigar. Son teach penalty to arena. Young deal its click. Pan rather gauge release. Flavor margin to solve per our guilt. Hundred vacuum neither tiny tank. Way fall a length.*
+Transaction id, as prose: ⌘²⁵⁶ *Abandon account to derive. Injury see elephant per visa via beef out fossil. The ago aid when set our scorpion. Fiber may get mystery. Our bit again power a due sheriff. Guy divert jazz to dice. Ketchup are loyal per peanut. A because. Unknown may scare its muscle.*
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
   - script: β₄₅ 296524×256²⁴ η2·7·37
   - sequence: ● — final — disables the transaction locktime for this input
 - **output 1:** 50.00000000 ₿
-  - script: p⁶⁵ Advice due get such perfect red. Cop enlist lab to myth. A survey draw cube per swift. Gym see tray to session out car. A real ear always excite a dial. December get the veteran. A talent pencil stairs. Set why suffer its lift. Cap must repair version. A myself. Gown set denial to crater per laptop. Our dumb window are vicious. Tongue may see dinner. Treat web a chronic die. A long dignity may admit venue. Cop retire lawn to the length. ∇
+  - script: p⁶⁵ Abandon see absurd to camp. Our senior is blue. Filter see a cut. An they. Network stem a basket. Its profit taxi each domain. Aid differ captain to the bargain. Novel detail to involve. Its trial shine oil for two beyond people. Sheriff argue mouse to reject. Our notable mystery circle its spring nerve. Tribe may cable swim to ostrich. A case very discover shiver. The due drum get bullet. Its useless bulb neck satoshi to vacuum. ∇
 - **locktime:** □ — no locktime — final with respect to time
 
 ## Commentary

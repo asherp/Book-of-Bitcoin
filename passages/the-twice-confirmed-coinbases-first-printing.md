@@ -14,12 +14,12 @@
 
 ## Chapter frontispiece — block 91,812
 
-Block hash, as prose: ⌘²¹² *Control see kangaroo to dinosaur. Our public are digital. A odd sir found to iron. Its glad cop is urban. A yes unveil soap. Gain see horn to vehicle. Debris may see earth. Cop keep a pistol. A rose beef is pop.* ⓪⁴⁴
+Block hash, as prose: ⌘²¹² *Abstract far abuse kiwi. Cut slow see victory. Habit are urban to the thumb. Some raven belt its kit. Cow inherit hood to wait. Hollow may monkey its select clock per solid. Lap close theme parade.* ⓪⁴⁴
 
 - **version:** v1 — block version 1 (0x00000001) — pre-BIP9 integer form
-- **previous block:** ⌘²¹⁰ August rally its warfare to combine. Pop convince divorce for chalk. A sin is mixed. A wood net quote damage. Cupboard easily see an artwork. The cow may situate its pop circle. The pan soon see a cloth. Advice may get ear. ⓪⁴⁶
+- **previous block:** ⌘²¹⁰ The abstract absurd is keen. Memory return hundred to labor per the ability. Pop convince to impose for trumpet to pizza. Lens return purity per clown. Hawk essay to endorse via kick. Fun set its cactus. ⓪⁴⁶
   - hex: `000000000002afe839294d4e038b5c831bc09632fd717c0980f8f216dc2b360f`
-- **merkle root:** ⋔ A grant due get our cousin. Ear may slim sky. The cow is strong. Pie may awake its hidden pulp. The tape may set noble. Pot very rail whale. Tax when see dinosaur. Sign may cook upon garage. Its cap is vast. Lake set the danger. Sir attract gown to cactus.
+- **merkle root:** ⋔ Abandon may see accident to coffee. Mesh gain ribbon for lift out forum. Hint update pupil to nut. Margin is social out spell. A video see drama. Law jar winner to miracle. Cut may topple roast for island. Our ago circle is far.
   - hex: `49991d7653bec6efebee7d11f27ca2dffcc35ebe95ee5eebd602916b2f2fa665`
 - **timestamp:** 2010-11-14 17:59 UTC
 - **difficulty target:** β₄₄ < 946774×256²⁴ — the block hash above reads below this target — nBits 1b0e7256 — mantissa 946774 (2·43·101·109) shifted up 24 bytes: the target 00000000000e7256000000000000000000000000000000000000000000000000, which a valid block hash must read below (44 leading zero bits) — difficulty 4,536 (relative to the genesis block)
@@ -27,14 +27,14 @@ Block hash, as prose: ⌘²¹² *Control see kangaroo to dinosaur. Our public ar
 
 ## § 1 — The twice-confirmed coinbases — first printing
 
-Transaction id, as prose: ⌘²⁵⁶ *Its office conduct apart prefer axis. Much soldier see bachelor. Alarm get toilet to spoil. Buddy dust credit out craft. Our twenty tobacco may change wave. Element is chronic to row. The rude pot may ensure our parade.*
+Transaction id, as prose: ⌘²⁵⁶ *Abandon account to slow. A rid invite is famous. Its guy evoke maple. Some match ago inject the math. Its lip may confirm to burst. Some cap must rub. Fyi twice captain a hit. Yes oblige movie to fly per bomb. Cradle may satisfy diamond to the dry trap. Cap may follow a lot.*
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
   - script: β₄₄ 946774×256²⁴ ⓪
   - sequence: ● — final — disables the transaction locktime for this input
 - **output 1:** 50.00000000 ₿
-  - script: p⁶⁵ Yes afford dwarf to robot. Weasel endorse to found. A fix is raw. Our twin wheel exist creek to team. Soap yes get defense. A bed is raw. Key pause panda to moral. Combine alarm to afford. Impact see cake via dose out whisper. February work tuna to burst via a clerk. Potato father to observe for pattern. Arena wrestle to gather. Sail may see vintage. Kingdom set an intact north. Hen is unfair to kidney. Its length is big per guy. ∇
+  - script: p⁶⁵ Abandon far set absurd. A cash is certain. A supreme session exact throw. Scheme may set neutral to fossil. Space see lawsuit per oil. Volume see honey to slight. Nerve spawn to argue. Our wine is large. Humor come casino to our mixed pie across artefact. Stairs may pepper to undo. The fantasy wage father per edge outside its senior anxiety. The fossil venue may admit vehicle. Pause step to prosper. Raven fly its half squeeze per pan. ∇
 - **locktime:** □ — no locktime — final with respect to time
 
 ## Commentary

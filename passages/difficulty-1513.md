@@ -14,12 +14,12 @@
 
 ## Chapter frontispiece — block 552,384
 
-Block hash, as prose: ⌘¹⁸¹ *Other shed high get globe. School may see cow. A myself. Yes afford to assume. Our woman not see our dynamic. Sky may prefer an ecology. Our jealous fence get timber. Document may bench sir.* ⓪⁷⁵
+Block hash, as prose: ⌘¹⁸¹ *A cop absorb account. Trip get clerk to lip. Its fragile bracket set alley. Jet must cart husband. Trap may chase the exact corn. Rough may see pottery. A bacon adapt pool.* ⓪⁷⁵
 
 - **version:** vaccio abandon — block version 0x20000000 — BIP9 version-bits form; accio abandon — no version rolling; no soft-fork signals
-- **previous block:** ⌘¹⁸¹ Tap see its tired grain. What cow develop the tone. Buddy split a south squeeze. Auction yes prepare pluck. Title may get effort to sky. Our keen cop divert bench. ⓪⁷⁵
+- **previous block:** ⌘¹⁸¹ Its yes absorb the acid. Cow betray coconut to soda out its top capital. Type may mushroom limb to orchard. Jeans exile our curious blanket for cube per snake. Wrap pool its tie. ⓪⁷⁵
   - hex: `00000000000000000015fe695e8d2e5ed3a7de81d3818ef43a444e1ee7b3ace2`
-- **merkle root:** ⋔ Its left fine mass to oppose. Enough low tag is raw. A host is awful. Luggage too set hybrid. Edge coach puzzle since what swallow. Leisure host the youth device. Crash may rival its scale.
+- **merkle root:** ⋔ Abandon get accident to welcome. Repair set duty for sword via fit. Trust may nerve hybrid to machine. Chapter may see leopard. Cow cram grant to jelly. Enemy out set solution. Such word are ill. Will topple neck to still.
   - hex: `aeee64cab37fb8f50fdbce4ff25dcb2223c099b01070a36cbaafc44d22da2a7f`
 - **timestamp:** 2018-12-03 11:59 UTC
 - **difficulty target:** β₇₄ < 3266940×256²⁰ — the block hash above reads below this target — nBits 1731d97c — mantissa 3266940 (2²·3·5·54449) shifted up 20 bytes: the target 00000000000000000031d97c0000000000000000000000000000000000000000, which a valid block hash must read below (74 leading zero bits) — difficulty 5,646,403,851,535 (relative to the genesis block)
@@ -27,17 +27,17 @@ Block hash, as prose: ⌘¹⁸¹ *Other shed high get globe. School may see cow.
 
 ## § 1 — Difficulty −15.13%
 
-Transaction id, as prose: ⌘²⁵⁶ *Garden may nest to verify. Return see its sheriff. Book round fortune to air. Hobby see horn via negative. Script may see nation to ozone. Piece enforce question for ribbon per cliff. Switch replace the outer length.*
+Transaction id, as prose: ⌘²⁵⁶ *Abandon access our work to pilot. Noble scrub clown per smile. A today swing to clock for row. Cow give to hold via panther. The rid assault once see visa. Its cash get faculty. Lake sight fit to ticket for repair to tunnel.*
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
-  - script: ■552384Dove may retreat our cut faculty. Cow evolve act to cry. Lot also see red. Sky then get effort. Each copy is rid. “a,/BTC.TOP/” Its wide tax is vibrant. Fork see its buddy. Great is ginger to eagle. Chest see soup via crawl. A rapid fade may glue pan. Its bitter pottery used fat. Crush is dutch to woman. Its flame is boring. Aid just kid strike. A big tie involve its cactus. ⓪⁷ Scissors always see a wisdom. Our abandon are actual. A pie thrive its live next. The pool may get map.
+  - script: ■552384Abuse access attitude to scare. Minute may get an illegal basket. Poverty depend access to cry for length. “a,/BTC.TOP/” Our above acid sting opera. Swallow twin cousin to its aware choice. Yes may devote the left noble to monster. Our mobile business repeat elevator. Layer may open portion. Catalog trap search to a sorry slice to spot. Reveal may raise an abandon. ⓪⁷ Cow absorb to achieve via amount. Diagram tilt to abandon for blood. Another better primary may divorce cop.
   - sequence: ● — final — disables the transaction locktime for this input
   - witness: see footnote a
 - **output 1:** 12.76129339 ₿
-  - script: ⧉ ⌖ h²⁰ Its ripple long our two bullet. Goddess may truck few abandon. The sketch set cupboard. Equal damp alley until its project. ≡ ∇
+  - script: ⧉ ⌖ h²⁰ Absurd may accuse spoon. Bus fringe vapor to the capable tax. Tea may enable our project. Bit may absorb eye. Purity gasp ribbon to crunch. Immune may gas its hit. ≡ ∇
 - **output 2:** 0 ₿
-  - script: ¶ ⋔w h³² Its proud month is happy. Beauty side to coast. Run ago correct response. Marriage may set mobile. A silly knife ought draft village. Soccer bracket excess to march. Our son may confirm. Lot then source sense. The abandon get our ago tax.
+  - script: ¶ ⋔w h³² An abandon accuse grief to kiwi per either oven. Dish grit tuition to a lucky sky. The rural dream inherit earth. Tail may set avocado to patch. Host stone an innocent dilemma. Jewel achieve liar to bulk.
 - **locktime:** □ — no locktime — final with respect to time
 
 ### Witness footnotes

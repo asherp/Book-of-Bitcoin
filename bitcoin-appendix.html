@@ -1184,7 +1184,7 @@ if (blockLeaf != null) {
     glossia().then((m) => {
       for (const { el, hex } of cells) {
         try {
-          el.textContent = m.encodeSeedPhrase(hex, m.bookLang(), 5).prose;
+          el.textContent = m.encodeCanonical(hex, m.bookLang(), 5).prose;
           el.classList.remove('waiting');
         } catch { el.textContent = 'unsaid'; el.title = UNSAID; }
       }
@@ -1435,7 +1435,7 @@ if (kind === 'proofs') {
       for (const { el, hex, reverse } of cells) {
         try {
           const bytes = reverse ? reverseHex(hex) : hex;
-          if (!prosed.has(bytes)) prosed.set(bytes, m.encodeSeedPhrase(bytes, m.bookLang(), BEST_OF).prose);
+          if (!prosed.has(bytes)) prosed.set(bytes, m.encodeCanonical(bytes, m.bookLang(), BEST_OF).prose);
           el.textContent = prosed.get(bytes);
           el.classList.remove('waiting');
         } catch { unsay(el); }
