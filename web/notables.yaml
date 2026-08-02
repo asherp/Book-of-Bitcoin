@@ -83,6 +83,29 @@
 #       href: https://…   4.0 with their name on it (see CONTRIBUTING.md) and
 #                     credited in the table of contents as well as on the page
 #
+# Translations. A title or a reading may carry translations as suffixed keys
+# beside the English original, which is the source text and the fallback — a
+# language with no suffix reads the original, so translations arrive one at a
+# time. The suffixes are the reader's UI languages (-cs Czech, -de German;
+# Latin has none on purpose: a Latin reader gets the last modern tongue, the
+# rule the whole chrome keeps). A translated reading is a variant of the SAME
+# reading — one entry, its author's `by` unchanged — and the translation is
+# itself authored work, so `translator-cs:` names who made it and is credited
+# beside the author when that variant is shown:
+#
+#   - title: The Genesis Block
+#     title-cs: Blok genesis
+#     title-de: Der Genesis-Block
+#     id: '0'
+#     commentary:
+#       - file: the-genesis-block.md
+#         file-cs: the-genesis-block.cs.md
+#         translator-cs: Jméno Příjmení
+#
+# An inline `note:` translates the same way (`note-cs:`). `node
+# tools/check-editorial.mjs` verifies translated files exist and carry their
+# CC-BY SPDX line, exactly as it does the originals.
+#
 # An entry with no commentary is the normal case, not an oversight: a passage
 # can be worth keeping before anyone has finished saying why. Where a story is
 # not yet checked against the chain it stays a comment here rather than becoming
