@@ -127,11 +127,13 @@
           note: The first block mined under BIP16 rules — 1 April 2012, no joke.
           commentary:
             - file: bip16-activation-p2sh.md
+              by: Claude Opus 5
         - title: First P2SH spend
           id: e5779b9e78f9650debc2893fd9636d827b26b4ddfa6a8172fe8708c924f5c39d
           note: The first section to redeem a script by its hash.
           commentary:
             - file: first-p2sh-spend.md
+              by: Claude Opus 5
     - bip: '34'
       name: Block Height in Coinbase
       status: active
@@ -141,6 +143,7 @@
       note: Every coinbase must open with the height of its own block, so no two coinbases can ever repeat — the rule the twice-confirmed printings made necessary. The first fork counted in block versions: miners bumped v1 to v2, and a rolling supermajority of recent versions decided when the rule bound.
       commentary:
         - file: bip34.md
+          by: Claude Opus 5
       stats:
         - label: mechanism
           value: rolling supermajority of block versions (IsSuperMajority)
@@ -157,11 +160,13 @@
           note: The book whose signals closed the first supermajority fork — for a fork counted in versions, the difficulty window is the ballot box.
           commentary:
             - file: bip34.md
+              by: Claude Opus 5
         - title: Activation (v2)
           id: '227931'
           note: From here a v1 block is refused, and every coinbase names its own height.
           commentary:
             - file: bip34-activation-v2.md
+              by: Claude Opus 5
     - bip: '66'
       name: Strict DER Signatures
       status: active
@@ -171,6 +176,7 @@
       note: Every signature must be spelled in exactly canonical DER — one encoding per signature, closing the door OpenSSL's tolerance had left open. The second supermajority fork, and the last quiet one; its activation was followed at once by a brief fork among miners who had signaled v3 without validating it.
       commentary:
         - file: bip66.md
+          by: Claude Opus 5
       stats:
         - label: mechanism
           value: rolling supermajority of block versions, v3
@@ -185,11 +191,13 @@
           note: The window that closed the strict-DER fork.
           commentary:
             - file: bip66.md
+              by: Claude Opus 5
         - title: Activation (v3)
           id: '363725'
           note: From here a signature has one spelling — and the chapters just past this one were briefly contested by miners who signaled without validating.
           commentary:
             - file: bip66-activation-v3.md
+              by: Claude Opus 5
     - bip: '65'
       name: CheckLockTimeVerify
       status: active
@@ -199,6 +207,7 @@
       note: An output can refuse to be spent before a stated time or height — τ in the book's notation, the first opcode to let a lock make a promise about the future rather than about a key. The third and last of the supermajority windows.
       commentary:
         - file: bip65.md
+          by: Claude Opus 5
       stats:
         - label: mechanism
           value: rolling supermajority of block versions, v4
@@ -213,11 +222,13 @@
           note: The third and last supermajority window, closing the fork that gave scripts a clock.
           commentary:
             - file: bip65.md
+              by: Claude Opus 5
         - title: Activation (v4)
           id: '388381'
           note: From here an output can say not before.
           commentary:
             - file: bip65-activation-v4.md
+              by: Claude Opus 5
     # The forks the chain declined are part of the rules' story too: each is
     # kept with its outcome, and a fork that left no chapter has none to cite
     # -- the empty record is the record.
@@ -241,6 +252,7 @@
       note: Not before so many blocks after the coin being spent was itself confirmed — Δ in the book's notation, the wait a payment channel needs. Three BIPs deployed as one — sequence numbers given meaning (68), CHECKSEQUENCEVERIFY (112), median-time-past (113) — and the first fork ever counted by version bits, nine independent questions in place of one integer to bump.
       commentary:
         - file: csv.md
+          by: Claude Opus 5
       stats:
         - label: mechanism
           value: version bits (BIP9) — the first deployment ever counted this way
@@ -257,11 +269,13 @@
           note: The first window counted by version bits — every activation later in the book is counted the way this one was.
           commentary:
             - file: csv.md
+              by: Claude Opus 5
         - title: Activation
           id: '419328'
           note: From here a lock can say how long after, not just when.
           commentary:
             - file: csv-activation-version-bits.md
+              by: Claude Opus 5
     - bip: 'BU'
       name: Bitcoin Unlimited
       status: failed
@@ -291,6 +305,7 @@
       note: The blocksize war's wedge — a transient rule that made not signaling for SegWit a way to lose blocks, squeezing BIP141 over its own 95% threshold. It signaled over its own 336-block epochs, which no book aligns with, but one book holds the story end to end.
       commentary:
         - file: bip91.md
+          by: Claude Opus 5
       stats:
         - label: mechanism
           value: version bits, over its own 336-block epochs
@@ -307,6 +322,7 @@
           note: III β29 opens, BIP91 locks in at ■321, and it activates at ■673 — the whole drama inside one book.
           commentary:
             - file: bip91.md
+              by: Claude Opus 5
         - title: Lock-in
           id: '476768'
           note: ■321 — where the count crossed 80% of its 336-block epoch.
@@ -315,6 +331,7 @@
           note: From here, briefly, a block that did not signal for SegWit was rejected.
           commentary:
             - file: bip91-activation-segwit-mandate.md
+              by: Claude Opus 5
     - bip: '141'
       name: Segregated Witness
       status: active
@@ -324,6 +341,7 @@
       note: The witness — the signatures, and the scripts that satisfy a lock — is committed to the block through a tree of its own and left out of the name of the transaction it authorizes. It is why this book has footnotes, and why a payment channel can be built from transactions signed but not yet published. Deployed with 143 (its sighash) and 144 (its wire format).
       commentary:
         - file: segwit.md
+          by: Claude Opus 5
       stats:
         - label: mechanism
           value: version bits (BIP9)
@@ -340,26 +358,31 @@
           note: The window whose signaling finally carried BIP141, after the mandate a book earlier made not signaling a way to lose blocks.
           commentary:
             - file: segwit.md
+              by: Claude Opus 5
         - title: Activation
           id: '481824'
           note: From here the witness leaves the transaction's name — malleability ends, and the book gains its footnotes.
           commentary:
             - file: segwit-activation.md
+              by: Claude Opus 5
         - title: First SegWit spend
           id: 8f907925d2ebe48765103e6845c06f1f2bb77c6adc1cc002865865eb5cfd5c1c
           note: The first section whose authorization reads as a footnote.
           commentary:
             - file: first-segwit-spend.md
+              by: Claude Opus 5
         - title: First native SegWit outputs
           id: dfcec48bb8491856c353306ab5febeb7e99e4d783eedf3de98f3ee0812b92bad
           note: The first outputs locked to a witness program directly.
           commentary:
             - file: first-native-segwit-outputs.md
+              by: Claude Opus 5
         - title: First P2WSH reveal (2-of-3)
           id: b38a88b073743bcc84170071cff4b68dec6fb5dc0bc8ffcb3d4ca632c2c78255
           note: The first native witness script revealed — a 2-of-3 multisig.
           commentary:
             - file: first-p2wsh-reveal-2-of-3.md
+              by: Claude Opus 5
     - bip: '149'
       name: SegWit, the Second Try
       status: failed
@@ -384,6 +407,7 @@
       note: An output can be a single thirty-two-byte key standing for either a signature or a whole tree of scripts, and a spend reveals only the route it took — the first upgrade whose main achievement is that most spends now say less. Deployed with 340 (Schnorr signatures) and 342 (its script), and activated under Speedy Trial, a signaling period with a deadline, so a failed vote fails quickly instead of hanging over the chain.
       commentary:
         - file: taproot.md
+          by: Claude Opus 5
       stats:
         - label: mechanism
           value: version bits, Speedy Trial — a fixed three-month signaling period
@@ -401,12 +425,14 @@
           note: The Speedy Trial threshold moment — the page where the count crossed, its frontispiece still showing bit 2 set.
           commentary:
             - file: taproot-lock-in.md
+              by: Claude Opus 5
         - title: The closing window
           id: '708624'
           page: book
           note: The last window in the book so far to close a fork, and the first to do it under Speedy Trial.
           commentary:
             - file: taproot.md
+              by: Claude Opus 5
         - title: Activation
           id: '709632'
           note: The first block mined under Taproot rules, 14 November 2021.
@@ -415,6 +441,7 @@
           note: Mined the moment the rules went live — the citation resolves into the activation chapter at its own §section.
           commentary:
             - file: taproot-activation.md
+              by: Claude Opus 5
     - bip: '119'
       name: CheckTemplateVerify
       status: failed
@@ -453,24 +480,28 @@
           note: The first block to set bit 4 for BIP110 — a ballot cast is part of the record whatever the count turns out to be.
           commentary:
             - file: first-bip110-signaling-block.md
+              by: Claude Opus 5
         - title: Mandatory signaling
           id: '961632'
           expected: true
           note: BIP8-style flag height — mandatory signaling from 961,632, should BIP110 lock in. ~0.5% of blocks signaling as of July 2026, against a 55% threshold.
           commentary:
             - file: bip110-mandatory-signaling.md
+              by: Claude Opus 5
         - title: Lock-in
           id: '963648'
           expected: true
           note: Lock-in by 963,648, one book on, should the threshold be met.
           commentary:
             - file: bip110-lock-in.md
+              by: Claude Opus 5
         - title: Activation
           id: '965664'
           expected: true
           note: Activation at 965,664, one book after lock-in — the height where the reduced data limit would first bind.
           commentary:
             - file: bip110-activation.md
+              by: Claude Opus 5
     # The one activation block whose height is already consensus and still will
     # not exist for two centuries: BIP42 (April 1, 2014) capped the subsidy
     # schedule where the 64th halving's undefined bit-shift would have
@@ -482,6 +513,7 @@
       note: The original subsidy arithmetic shifted a 64-bit value by the halving count, and at the 64th halving that shift is undefined — on most machines it wraps, and the reward that should have fallen to zero would have come back as fifty coins a block. BIP42 (1 April 2014) caps the schedule instead. No ballot and no signals — a flag day by height, two centuries out.
       commentary:
         - file: bip42-activation-21m-cap.md
+          by: Claude Opus 5
       stats:
         - label: mechanism
           value: flag day, by height — the one activation with no ballot at all
@@ -494,6 +526,7 @@
           note: The book's last chapter, and the only one whose date is already known: BIP42's cap first binds at 13,440,000, the opening chapter of Volume LXV, due around the year 2262.
           commentary:
             - file: bip42-activation-21m-cap.md
+              by: Claude Opus 5
 
 - kind: ledgers
   title: Ledgers
@@ -509,6 +542,7 @@
   # kept apart from the record.
   commentary:
     - file: citations.md
+      by: Claude Opus 5
   entries:
     - title: Hello World!
       proof: hello-world.txt.ots
@@ -516,3 +550,4 @@
       note: The OpenTimestamps client's own example proof, and the oldest anyone can still replay — May 2015, a year before the calendar servers, its commitment sitting where a public key's hash belongs.
       commentary:
         - file: the-hello-world-timestamp.md
+          by: Claude Opus 5
