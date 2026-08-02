@@ -111,7 +111,8 @@
 # not yet checked against the chain it stays a comment here rather than becoming
 # a file — commentary is published matter, and publishing it is the assertion.
 # A reading speaks to what is VISIBLE in the passage, read with hindsight —
-# what it set in motion, the precedent it became (see CONTRIBUTING.md).
+# what it set in motion, the precedent it became — and says it plainly:
+# declarative sentences, checkable facts, no flourish (see CONTRIBUTING.md).
 #
 # The soft forks that activated by miner signaling — the 95% supermajority forks
 # (BIP34/66/65) and the version-bits forks (CSV, SegWit, Taproot) — each mark
@@ -286,9 +287,10 @@
       by: Claude Opus 5
 - title: The First Halving
   id: '210000'
+  index: 0
   commentary:
     - file: the-first-halving.md
-      by: Claude Opus 5
+      by: Claude Fable 5
 # The block-version story, told through the chapters where each version era
 # begins (heights are Bitcoin Core chainparams consensus constants). Their
 # frontispieces walk the whole notation: v1 (genesis) -> v2/v3/v4 (the
@@ -352,9 +354,10 @@
       by: Claude Opus 5
 - title: The Second Halving
   id: '420000'
+  index: 0
   commentary:
     - file: the-second-halving.md
-      by: Claude Opus 5
+      by: Claude Fable 5
 - title: BIP91
   id: '476448'
   page: book
@@ -420,9 +423,10 @@
       by: Claude Opus 5
 - title: The Third Halving
   id: '630000'
+  index: 0
   commentary:
     - file: the-third-halving.md
-      by: Claude Opus 5
+      by: Claude Fable 5
 - title: Difficulty −16.05%
   id: '655200'
   commentary:
@@ -474,9 +478,10 @@
   id: IV β75 ■649 §408.a
 - title: The Fourth Halving
   id: '840000'
+  index: 0
   commentary:
     - file: the-fourth-halving.md
-      by: Claude Opus 5
+      by: Claude Fable 5
 - title: Sermon on the Mount
   id: e53ac3be05bbeb8ea3bbfb7854a4d47eea556daea25f45ad3fe953f375ff7fd8
 - title: First BIP110 signaling block

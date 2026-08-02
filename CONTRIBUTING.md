@@ -49,6 +49,11 @@ what later chapters made of it. Background a reader cannot see on the page is
 the weakest ground for a reading; the page is the evidence, and hindsight is
 what commentary can add that the record cannot.
 
+And it should say so plainly. A reading states facts a reader can check
+against the page, in ordinary declarative sentences; the prose around it is
+stylized enough. Prefer the number to the image, the date to the mood — if a
+line reads as poetry, cut it.
+
 Where it goes: two files, both meant to be written by hand. Put the reading
 itself in `web/commentary/` as Markdown, named for the passage —
 `web/commentary/bitcoin-pizza-day-your-name.md`:
