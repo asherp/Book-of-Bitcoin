@@ -1,3 +1,3 @@
 <!-- SPDX-License-Identifier: CC-BY-4.0 -->
 
-Six and a quarter coins from here (11 May 2020), and the first chapter of Volume IV. Third time, same arithmetic: the block that pays half of what the block before it paid, because 630,000 divides three times and not because anyone decided anything in 2020.
+6.25 coins from this block on, 11 May 2020, shown in the coinbase's output value. The block opens Volume IV. Same arithmetic as the two halvings before it: 630,000 is the third multiple of 210,000, so the amount halved — no decision was taken in 2020 for a node to check.

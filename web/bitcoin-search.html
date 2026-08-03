@@ -118,6 +118,9 @@ button:hover { background: var(--accent-2); }
 </div>
 
 <script type="module">
+import { localizeHome, mountLangMenu } from './btc-strings.js';
+localizeHome();   // the masthead in the reader's UI language
+mountLangMenu();  // …with the Language item, which any page can now set
 // The book page resolves every input form itself (?block= accepts a height, a
 // negative tip-relative height, a 64-hex block hash or txid, and the citation
 // form alike), so searching is a hand-off: carry the query there and let the

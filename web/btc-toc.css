@@ -34,6 +34,10 @@
    separates the record's places from readings of them. */
 .toc-commentary { display:block; margin-top:.3em; font:400 10.5px/1.4 'IBM Plex Mono',monospace; letter-spacing:.08em; text-transform:uppercase; color:var(--meta); }
 .toc-entry:hover .toc-commentary { color:var(--dim); }
+/* The contents' one credit, a footnote at the leaf's foot (see
+   bitcoin-contents.html's colophon block): same annotation register as the
+   row credit above, set off by the same rule the volume heads use. */
+.toc-colophon { margin-top:34px; padding-top:14px; border-top:1px solid var(--rule); font:400 10.5px/1.6 'IBM Plex Mono',monospace; letter-spacing:.08em; text-transform:uppercase; color:var(--meta); }
 
 /* A row that stands for a whole part of the book rather than a passage in it
    — the top-level contents' volumes, appendices and front-matter leaves. It
@@ -44,7 +48,7 @@
    description, not a note about it. */
 .toc-part .toc-title { font-size:19px; color:var(--ink); }
 .toc-span { display:block; margin-top:.25em; font:400 12.5px/1.5 'Public Sans',sans-serif; letter-spacing:.01em; color:var(--meta); }
-.toc-part:hover .toc-span { color:var(--dim); }
+.toc-part:hover .toc-span, .toc-entry:hover .toc-span { color:var(--dim); }
 /* The row that closes a group drops its own hairline: the next heading rules
    off above itself, and two rules with a gap between them read as an empty
    band rather than a division. */

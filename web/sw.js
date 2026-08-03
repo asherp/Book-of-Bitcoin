@@ -17,7 +17,7 @@
  * Everything here is scoped to the directory sw.js is served from, so it works
  * unchanged at the site root and under a per-PR preview subpath.
  */
-const CACHE = 'bitcoin-book-shell-v33';
+const CACHE = 'bitcoin-book-shell-v36';
 
 // App shell, relative to the SW scope. glossia.js / glossia_bg.wasm are
 // gitignored build artifacts — present after a build/deploy, possibly absent in
@@ -25,6 +25,7 @@ const CACHE = 'bitcoin-book-shell-v33';
 const SHELL = [
   './',
   './index.html',
+  './latest/index.html',   // /latest — the stable address of the tip's chapter
   './bitcoin-book.html',
   './bitcoin-anthology.html',
   './bitcoin-contents.html',
@@ -53,6 +54,7 @@ const SHELL = [
   './commentary.css',
   './btc-chrome.js',
   './btc-chrome.css',
+  './btc-strings.js',
   './btc-wordlists.js',
   './btc-citation.js',
   './btc-contents.js',
@@ -91,7 +93,7 @@ async function shellUrls() {
   try {
     const res = await fetch('./notables.yaml', { cache: 'reload' });
     if (!res.ok) throw new Error(String(res.status));
-    const files = [...(await res.text()).matchAll(/^\s*-?\s*file:\s*(\S+)\s*$/gm)].map((m) => m[1]);
+    const files = [...(await res.text()).matchAll(/^\s*-?\s*file(?:-[a-z]{2})?:\s*(\S+)\s*$/gm)].map((m) => m[1]);
     const commentary = [...new Set(files)].map((f) => `./commentary/${f}`);
     // Appendix IV's bundled proofs ride along the same way, off appendix.yaml:
     // a `proof:` is the .ots itself and a `subject:` the file it stamps, both
@@ -106,7 +108,7 @@ async function shellUrls() {
         proofs = [...new Set(named)].map((f) => `./proofs/${f}`);
         // …and the readings the appendix itself references, which the index's
         // own sweep above never sees.
-        const backFiles = [...backText.matchAll(/^\s*-?\s*file:\s*(\S+)\s*$/gm)].map((m) => m[1]);
+        const backFiles = [...backText.matchAll(/^\s*-?\s*file(?:-[a-z]{2})?:\s*(\S+)\s*$/gm)].map((m) => m[1]);
         for (const f of new Set(backFiles)) if (!commentary.includes(`./commentary/${f}`)) commentary.push(`./commentary/${f}`);
       }
     } catch (_) { /* no appendix: the bundled proofs cache as they are read */ }

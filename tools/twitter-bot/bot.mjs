@@ -146,7 +146,7 @@ export async function ensureEngine() {
     await writeFile(dest, Buffer.from(await res.arrayBuffer()));
     console.log(`  fetched ${name} from ${SITE}`);
   }
-  const { init, encodeSeedPhrase } = await import('../../web/glossia-msg.js');
+  const { init, encodeCanonical } = await import('../../web/glossia-msg.js');
   const wasmBytes = await readFile(new URL('glossia_bg.wasm', WEB));
   try { await init({ module_or_path: wasmBytes }); }
   catch { await init(wasmBytes); }
@@ -162,12 +162,12 @@ export async function ensureEngine() {
       const note = `⟨${bytes.toLocaleString('en-US')} bytes of data — the live page renders it in full⟩`;
       return { prose: note, payloadWords: [] };
     }
-    return encodeSeedPhrase(hex, lang, bestOf);
+    return encodeCanonical(hex, lang, bestOf);
   };
   const proseWithCap = (hex) => encodeCapped(hex).prose;
 
   return {
-    proseOf: (hex) => encodeSeedPhrase(hex, 'english', BEST_OF),
+    proseOf: (hex) => encodeCanonical(hex, 'english', BEST_OF),
     // The section, in both registers the reply needs: the composed fields
     // and rendered witness HTML (which the passage image sets as a
     // manuscript page), and the flattened text forms (which the tweet and

@@ -330,6 +330,7 @@ a.bb-ref:hover { color:var(--accent-2); }
 .proof-row a:hover { color:var(--ink); }
 .proof-name { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font:500 15px/1.35 'Newsreader',serif; }
 .proof-cite { flex:none; font:500 12.5px/1.6 'IBM Plex Mono',monospace; color:var(--accent); }
+.proof-date { flex:none; font:400 12px/1.6 'Public Sans',sans-serif; color:var(--meta); }
 .proof-bm { flex:none; width:8px; color:var(--accent); }
 .proof-cite-mark { flex:none; color:var(--accent); font-weight:600; font-size:14px; }
 .proof-drop-btn { flex:none; background:none; border:none; color:var(--meta); cursor:pointer; font-size:13px; line-height:1; padding:2px 4px; }
@@ -412,6 +413,9 @@ a.bb-ref:hover { color:var(--accent-2); }
 </div>
 
 <script type="module">
+import { localizeHome, mountLangMenu } from './btc-strings.js';
+localizeHome();   // the masthead in the reader's UI language
+mountLangMenu();  // …with the Language item, which any page can now set
 import { loadNotables, appendix, entryHref, isBlockId, places, placeTitle } from './btc-contents.js';
 import { partLabel } from './btc-notables.js';
 
@@ -1230,7 +1234,7 @@ if (blockLeaf != null) {
     glossia().then((m) => {
       for (const { el, hex } of cells) {
         try {
-          el.textContent = m.encodeSeedPhrase(hex, 'english', 5).prose;
+          el.textContent = m.encodeCanonical(hex, m.bookLang(), 5).prose;
           el.classList.remove('waiting');
         } catch { el.textContent = 'unsaid'; el.title = UNSAID; }
       }
@@ -1393,7 +1397,7 @@ if (blockLeaf != null) {
 // its own bytes name, and kept -- after which it stands in the contents beside
 // the bundled ones, under the ribbon a bookmark flies.
 if (kind === 'proofs') {
-  const { allProofs, readProof, attests, keepProof, dropProof, citeOf, hrefOf, leafOf } = await import('./btc-proofs.js');
+  const { allProofs, readProof, attests, keepProof, dropProof, citeOf, hrefOf, leafOf, estimatedDate, minedDate } = await import('./btc-proofs.js');
   const { isOtsProof } = await import('./btc-ots.js');
   const { blockAt } = await import('./btc-index.js');
   const { toSuperscript, toSubscript } = await import('./btc-sigla.js');
@@ -1429,9 +1433,21 @@ if (kind === 'proofs') {
       mark.title = proof.n ? `cited work ${proof.n}` : "your addendum — kept in this browser, outside the edition's numbering";
       const name = document.createElement('span');
       name.className = 'proof-name'; name.textContent = proof.title;
+      // The date the citation amounts to: the height's own estimate at once,
+      // hedged; the clock of the block the proof lands in, replacing it when
+      // the archive or a mirror answers.
+      const when = document.createElement('span');
+      when.className = 'proof-date';
+      when.textContent = estimatedDate(proof.place.height);
+      when.title = 'about when the chapter its proof lands in was mined — estimated from the height alone, offline';
+      minedDate(proof.place.height).then((exact) => {
+        if (!exact) return;
+        when.textContent = exact;
+        when.title = 'the clock of the block its proof lands in — the chain\'s own date for this file';
+      });
       const cite = document.createElement('span');
       cite.className = 'proof-cite'; cite.textContent = citeOf(proof.place);
-      a.append(mark, name, cite);
+      a.append(mark, name, when, cite);
       // What the row claims, in full, on hover -- including whether anyone has
       // yet asked the chain about it.
       a.title = `${proof.file} — ${proof.hash} ${proof.digest}\nstamped into ${citeOf(proof.place)}`
@@ -1481,7 +1497,7 @@ if (kind === 'proofs') {
       for (const { el, hex, reverse } of cells) {
         try {
           const bytes = reverse ? reverseHex(hex) : hex;
-          if (!prosed.has(bytes)) prosed.set(bytes, m.encodeSeedPhrase(bytes, 'english', BEST_OF).prose);
+          if (!prosed.has(bytes)) prosed.set(bytes, m.encodeCanonical(bytes, m.bookLang(), BEST_OF).prose);
           el.textContent = prosed.get(bytes);
           el.classList.remove('waiting');
         } catch { unsay(el); }
