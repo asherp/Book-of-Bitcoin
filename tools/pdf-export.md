@@ -1,0 +1,238 @@
+<!-- SPDX-License-Identifier: MIT OR Apache-2.0 -->
+
+# Exporting the book as PDF
+
+Notes toward a PDF of the book — what such a thing can honestly be, what the
+repository already has that gets it most of the way there, and what a printed
+leaf forces that a screen never asks. They exist to support three things,
+none of which ships with this file:
+
+- **`tools/export-pdf.mjs`** (future) — the exporter: the curated passages
+  bound as one document and printed to PDF by the same headless Chromium the
+  card renderer already drives.
+- **A deploy step** — the edition rebuilt on every release, stamped with the
+  release's own CalVer version, optional in exactly the way the cards are.
+- **The editorial decisions** a printed page forces — paper or dark, page
+  size, whether commentary rides in the edition — gathered at the end so
+  they are decided once, out loud, rather than defaulted silently by
+  whoever writes the exporter.
+
+Every claim below carries where it came from:
+
+- **[ran]** — verified by running it, 2026-08-03, in this repository:
+  Chromium 1194 (the Playwright build) driven by `playwright-core`, over the
+  passage renderer's own HTML. True of that run and of nothing newer.
+- **[read]** — read out of this repository's source. True at the commit this
+  file was written against.
+- **[doc]** — documented Chromium or CSS behavior, not exercised here. Say
+  so out loud.
+- **[open]** — a decision this file does not make.
+
+## What "the book as PDF" can mean
+
+The book has no last page. The chain grows by a chapter every ten minutes,
+a modern chapter runs to several thousand sections, and a single inscription
+can run to megabytes of prose — so "export the book" is a category error,
+the same one the back matter's design already answers: reading order cannot
+carry what has no end. Any PDF is a selection, and the repository already
+maintains exactly one selection worth binding: the curated table of
+contents, the passages `tools/prerender-passages.mjs` renders as static
+markdown and citation pages on every deploy. **[read]**
+
+Three honest deliverables, in the order they are worth building:
+
+1. **The curated edition.** Front matter (title leaf, terms), the contents,
+   then every curated passage in contents order with its commentary ruled
+   off behind its own heading — the same document `web/passages/` already is,
+   typeset the way the cards are instead of flattened to markdown. Rebuilt
+   each deploy, stamped with the release version.
+2. **One passage as PDF**, on demand — the same renderer, one passage per
+   call. Cheap once the edition exists, since the edition is the loop and
+   this is one turn of it.
+3. **The reader's own print** — `@media print` on the reading page. A
+   nicety, not the foundation; see "paths not taken."
+
+## What already exists
+
+The distance from here to a PDF is one function call. Everything else is
+already in the house:
+
+- **The pipeline runs in Node.** `tools/prerender-passages.mjs` runs the
+  full parse → compose → encode pipeline (btc-tx.js → btc-prose.js → the
+  Glossia WASM engine) at deploy time, off the browser, and its
+  `renderEntry` already returns every passage as composed fields plus
+  rendered witness HTML — the exact shape the page renderer takes. **[read]**
+- **The page exists as HTML off one root size.**
+  `tools/twitter-bot/quote.mjs` sets a passage as the book's own manuscript
+  page (`passageHtml` / `passageCss`), every measure an em off a single
+  root, and `passageCss({ fixed: false })` is already the unpinned mode: no
+  fixed height, no clipping, the page grows to what the passage needs —
+  which is precisely what a paginated document wants to flow into leaves.
+  **[read]**
+- **Headless Chromium is already in the deploy.** The cards step installs
+  Playwright Chromium (`continue-on-error`, cached), and
+  `tools/twitter-bot/image.mjs` launches and drives it. **[read]**
+- **Chromium emits PDF.** `page.pdf()` where the cards call
+  `screenshot()` — same browser, same page, same CSS. **[ran]**
+
+The README states the renderer principle this file leans on: *one renderer,
+two consumers, the same page either way*. A PDF is the third consumer, not a
+second typesetting system.
+
+## The proof run here
+
+A proof of concept was run in this repository's environment: the test
+suite's fixture fields (`stubFields` in `tools/twitter-bot/test.mjs`, so no
+engine and no network), set as three sections of increasing length through
+`txFlowHtml`, styled by `passageCss({ fixed: false })` with a print overlay
+laid on top, and printed by `page.pdf({ format: 'A5', printBackground:
+true, preferCSSPageSize: true })`. **[ran]**
+
+The overlay, in full — this is the entire distance between the card
+stylesheet and a printable one:
+
+```css
+@page { size: A5; margin: 14mm 12mm 16mm; }
+:root {  /* the paper palette, over the dark one */
+  --page:#faf7f1; --ink:#1c1a16; --ink-soft:#2e2b25; --dim:#6b6558;
+  --meta:#8a8375; --rule:#d8d2c4; --accent:#8a6a2f; --accent-2:#7a5c22;
+}
+.page { padding: 0; }
+.passage { break-after: page; }
+.tx-inputs > div, .tx-outputs > div, .footnote { break-inside: avoid; }
+```
+
+What the run showed:
+
+- **A valid PDF, paginated.** Five A5 pages from three passages — each
+  passage opening a fresh leaf (`break-after: page` honored), the longer
+  ones flowing across pages, the manuscript grid fragmenting across the
+  page boundary without losing its columns. ~70 KB. **[ran]**
+- **The palette is a swap.** The whole page inverted to paper by
+  overriding the one `:root` block — the stylesheet is custom properties
+  throughout, so paper-vs-dark is an editorial decision, not an
+  engineering one. **[ran]**
+- **Fonts subset and embed themselves.** The PDF carried every glyph it
+  used, subsetted (`BaseFont` names prefixed `AAAAAA+` etc.) — nothing to
+  build. **[ran]**
+- **And the font list is the finding.** The embedded fonts were
+  LiberationSerif (the serif's last fallback — no Newsreader anywhere in
+  the render environment), DejaVu Sans, DejaVu Sans Mono, FreeSerif, and
+  WenQuanYi Zen Hei: the body text fell back past Georgia, and the sigla
+  (⧉ ∇ ⌗ ● □ ₿ …) scattered across four system fonts, whichever happened
+  to cover each glyph. **[ran]**
+
+That last point is the one real gap, and it is not new: `passageHtml` ships
+no `@font-face` and no font link — the live app fetches Newsreader, IBM
+Plex Mono and Public Sans from Google Fonts (`web/bitcoin-book.html`), but
+the card renderer renders whatever the CI image has installed, and always
+has. **[read]** A card wears this quietly; a PDF does not — it is a
+document people zoom, keep, and print, and it embeds its fallbacks
+permanently. Fixing it fixes the cards too, which is why it is the first
+step below.
+
+## What a printed leaf forces
+
+1. **Bundle the fonts; stop depending on the machine.** Newsreader and IBM
+   Plex Mono are both under the SIL Open Font License and can be vendored
+   as woff2 with an `@font-face` block in `passageCss` — one block, and the
+   card and the PDF set the same on every machine. The sigla need a
+   deliberate coverage audit against the chosen stack: the page's glyphs
+   run well past Latin (⌘ ⓪ ⋔ β ■ □ § ‡ ₿ ⧉ ∇ ° ∅ ● † ‖ ⋯, the
+   superscripts and subscripts), and today each falls to whatever covers
+   it. Either the stack is chosen to cover them, or a known fallback (DejaVu
+   is a reasonable one) is vendored explicitly so the fallback is at least
+   the *same* fallback everywhere. **[read]**, coverage gap **[ran]**
+2. **Choose the leaf's palette.** The dark page is the screen's
+   (`--page:#08080a`); toner argues for paper. The swap is one `:root`
+   block **[ran]**, so shipping both — a screen PDF and a print PDF — costs
+   nearly nothing but doubles the artifacts. **[open]**
+3. **Pagination is break rules, not new layout.** The unpinned page flows;
+   `@page` sets the leaf, `break-after` opens each passage on a fresh one,
+   `break-inside: avoid` keeps a margin-cite with its script and a footnote
+   whole. The PoC's grids fragmented cleanly **[ran]**, but real sections
+   are longer and stranger than the fixture — a section with eighty inputs,
+   a blockquoted inscription — and CSS fragmentation inside grid is the
+   part of the engine to distrust first; test with the real curated set
+   before trusting it. **[doc]**
+4. **Running furniture.** Chromium does not implement the `@page` margin
+   boxes (`@top-center` etc.); running heads and PDF page numbers go
+   through `page.pdf()`'s `headerTemplate` / `footerTemplate`. **[doc]**
+   Two numbering schemes will coexist and must not be confused: the book's
+   folios (`web/btc-pages.js` — the chain's running transaction count, a
+   property of the passage) and the PDF's own leaf numbers (a property of
+   the artifact). Both can be printed; the colophon already carries the
+   citation per passage, and the footer should carry the leaf number and
+   nothing borrowed. **[read]**
+5. **The size caps apply as they do to every static rendering.**
+   `MAX_ENCODE_BYTES` (8 KB) in the pre-renderer and `FOOTNOTE_MAX_CHARS`
+   (2,000) in the page renderer exist because an inscription can run to
+   megabytes of prose; the edition inherits them, and the elision is
+   stated in the book's own idiom (⋯, "the live page renders it in full")
+   rather than performed silently. **[read]**
+6. **The terms leaf rides in front.** An edition binds three licenses into
+   one file: the prose and sigla (CC0), the curation and the book's own
+   notes (CC BY 4.0, credited), and commentary by others (theirs, named).
+   The front matter already says all of this (`web/bitcoin-front.html`'s
+   terms leaf); the edition opens with the title leaf and the terms the
+   way the front matter orders them, and every commentary block keeps its
+   `by:` credit exactly as the markdown passages already do. **[read]**
+7. **Versioning is already solved.** Every deploy is a release
+   (`vYYYY.0M.0D.HH`); the deploy computes the version before the passages
+   render, so the exporter stamps it on the title leaf and into the
+   filename or `/version.json`'s sibling. The step must be
+   `continue-on-error` exactly as the cards are: a PDF must never block
+   the site. **[read]**
+
+## The paths not taken
+
+- **Pandoc / LaTeX over `web/passages/*.md`.** The markdown exists, but it
+  is deliberately the flattened text (`htmlToText` strips the marks'
+  markup, the grid, the illuminated initial) — a second typesetting system
+  would re-set the book from its plainest rendering, need its own sigla
+  font work in TeX, and drift from the page the moment either moved.
+  Rejected: the book already owns a typesetter.
+- **`@media print` on the live reading page.** The reading page is a
+  carousel with fixed chrome, and its prose is lazily encoded — an
+  `IntersectionObserver` renders `glossia-lazy` spans as they scroll into
+  view (`web/bitcoin-book.html`), so printing a freshly opened chapter
+  would print ⋯ placeholders. **[read]** A print stylesheet plus a
+  force-render pass is a fine later nicety for one chapter in a reader's
+  hands, but it cannot produce the edition and is not the foundation.
+- **wkhtmltopdf and kin.** Unmaintained engines with none of the CSS the
+  page already relies on, solving a problem the house Chromium has already
+  solved. Rejected without ceremony.
+
+## The recommendation
+
+Three small steps, each shippable alone:
+
+1. **Vendor the fonts.** Newsreader + IBM Plex Mono as woff2 (plus the
+   chosen sigla-coverage fallback), an `@font-face` block in `passageCss`,
+   fonts loaded from the repository rather than any network. This
+   improves today's cards and og-images on its own, before any PDF exists.
+2. **`tools/export-pdf.mjs`.** The third consumer of the one renderer:
+   takes what `renderEntry` already returns, composes the edition (title
+   leaf, terms, contents rows, passages in contents order, commentary
+   ruled off), applies the print overlay, and calls `page.pdf()`. The
+   overlay is pure CSS over `quote.mjs`, so it tests offline on the
+   fixture fields exactly as the renderer test does, skipping when
+   Playwright is absent.
+3. **The deploy step.** After the pre-render, optional, stamped:
+   `web/book-of-bitcoin-vYYYY.0M.0D.HH.pdf` shipped beside the passages it
+   binds. Per-passage PDFs at the citation paths
+   (`/III/2/5/1/passage.pdf`) can follow if anyone wants them. **[open]**
+
+## Open questions for the editor
+
+- **Paper, dark, or both?** The palette is one variable block either way.
+- **The leaf.** A5 was the proof's arbitrary choice; a US trade 6×9in is
+  the other obvious candidate. The CSS does not care.
+- **Does commentary ride in the edition?** Including it makes the PDF the
+  full curated book and obliges the CC BY credits (already carried);
+  excluding it makes a record-only edition, purely CC0. The passages
+  markdown includes it, ruled off — the edition following suit is the
+  consistent default.
+- **Is the PDF a release asset or a site file?** The deploy tags a release
+  after shipping; the PDF could ride gh-pages beside `version.json`, or be
+  attached to the tag, or both.
