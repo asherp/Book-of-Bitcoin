@@ -17,8 +17,7 @@
 
 import { volumeBookChapter, toRoman } from './btc-citation.js';
 import { storeGet, storePut } from './btc-store.js';
-
-export { INDEXED } from './btc-index-data.js';
+import { INDEXED as CURATED } from './btc-index-data.js';
 
 // A loose shape test for the address forms the chain has used: base58 P2PKH
 // ('1…') and P2SH ('3…'), and bech32/bech32m ('bc1…', matched lowercase --
@@ -27,6 +26,29 @@ export { INDEXED } from './btc-index-data.js';
 // is the real validator.
 export const isAddress = (s) =>
   /^([13][1-9A-HJ-NP-Za-km-z]{25,34}|bc1[02-9ac-hj-np-z]{11,87})$/.test(s);
+
+// A ledger member is a NAME for a set of outputs, and two spellings of one
+// exist: an address (the common case), and a raw scriptPubKey as lowercase
+// hex -- the name of an output no address can write, like the malformed
+// Mt. Gox withdrawal script. Esplora serves the same record for both; a
+// script member is asked for by its scripthash (below). Members stay plain
+// strings everywhere -- the store's keys, a kept ledger's list, the URL --
+// and the two spellings are told apart only where the chain is asked or the
+// passage is rendered. isAddress is consulted first wherever both could
+// match: an address never reads as hex (base58 spells no '0'; bech32 wears
+// its 'bc1'), but a rare hex string can shape-match an address, and a name
+// that decodes as one is one.
+export const isScriptHex = (s) => /^(?:[0-9a-f]{2})+$/.test(s) && !isAddress(s);
+export const isMember = (s) => isAddress(s) || isScriptHex(s);
+
+// The curated shelf, with each entry's `scripts:` -- members written as raw
+// scriptPubKey hex -- folded into its member list. One list downstream, so
+// every consumer (URL joins, set matching, the store) handles one shape; a
+// member's spelling is re-told where it matters (isAddress / isScriptHex).
+export const INDEXED = CURATED.map((e) => ({
+  ...e,
+  addresses: [...(e.addresses ?? []), ...(e.scripts ?? [])],
+}));
 
 // ── The kept-ledger registry ──────────────────────────────────────────────
 // The reader's own shelf: ledgers kept from their pages, each a titled set
@@ -40,7 +62,7 @@ export function keptLedgers() {
     return v
       .map((k) => ({
         title: typeof k?.title === 'string' ? k.title : '',
-        addresses: (Array.isArray(k?.addresses) ? k.addresses : [k?.address]).filter(isAddress),
+        addresses: (Array.isArray(k?.addresses) ? k.addresses : [k?.address]).filter(isMember),
       }))
       .filter((k) => k.addresses.length);
   } catch { return []; }
@@ -138,6 +160,35 @@ export function addressScriptHex(address) {
   if (p.version === 0x00) return '76a914' + toHex(p.hash) + '88ac';   // P2PKH
   if (p.version === 0x05) return 'a914' + toHex(p.hash) + '87';       // P2SH
   return null;
+}
+
+// A member's scriptPubKey, whichever spelling the member is written in: an
+// address decodes to its script; a script member IS its script. This is the
+// hex the ledger's passage leaf Glossia-encodes, and the bytes every entry
+// of the member quotes.
+export const memberScriptHex = (member) =>
+  isAddress(member) ? addressScriptHex(member) : isScriptHex(member) ? member : null;
+
+// Where Esplora is asked about a member. An address has its own endpoint
+// family; a script is asked for by its scripthash -- the SHA-256 of the raw
+// scriptPubKey, hex, unreversed -- under /scripthash/, an exact alias of
+// /address/ across the endpoints this module uses (stats, /txs/chain,
+// /utxo). The digest is computed once per member and remembered.
+const scripthashMemo = new Map();
+function scripthashOf(hex) {
+  if (!scripthashMemo.has(hex)) {
+    scripthashMemo.set(hex, (async () => {
+      const bytes = new Uint8Array((hex.match(/../g) || []).map((b) => parseInt(b, 16)));
+      const digest = await crypto.subtle.digest('SHA-256', bytes);
+      return toHex([...new Uint8Array(digest)]);
+    })().catch(() => { scripthashMemo.delete(hex); return null; }));
+  }
+  return scripthashMemo.get(hex);
+}
+async function memberPath(member) {
+  if (isAddress(member)) return `/address/${member}`;
+  const h = await scripthashOf(member);
+  return h ? `/scripthash/${h}` : null;
 }
 
 // A net satoshi amount in the book's own money notation (formatBtc in
@@ -261,37 +312,45 @@ async function esploraJson(mirror, path) {
 // closed history that no new arrival can shift (and one that means the same
 // thing on every mirror, so a resumed walk is free to switch).
 const ESPLORA_PAGE = 25;
-const chainPage = (address, lastSeen) =>
-  `/address/${address}/txs/chain${lastSeen ? `/${lastSeen}` : ''}`;
+const chainPage = async (member, lastSeen) => {
+  const base = await memberPath(member);
+  return base ? `${base}/txs/chain${lastSeen ? `/${lastSeen}` : ''}` : null;
+};
 
-// An esplora transaction's touches on the address: what its outputs paid
+// An esplora transaction's touches on the member: what its outputs paid
 // in (credit) and its inputs drew out (debit), kept apart -- a ledger does
 // not net within a transaction, let alone within a block. One record per
 // transaction; the entries derive from it. Unconfirmed transactions are
-// left out -- the map holds mined history only.
-function esploraTouches(txs, address) {
+// left out -- the map holds mined history only. An address matches by the
+// name esplora prints beside a standard output; a script member matches the
+// scriptPubKey bytes themselves, which every output carries.
+function esploraTouches(txs, member) {
+  const byScript = !isAddress(member);
+  const paysMember = (o) => (byScript ? o?.scriptpubkey === member : o?.scriptpubkey_address === member);
   const recs = [];
   for (const t of txs || []) {
     if (!t.status?.confirmed || !(t.status.block_height > 0)) continue;
     let credit = 0, debit = 0, out = null;
     (t.vout || []).forEach((o, i) => {
-      if (o.scriptpubkey_address === address) {
+      if (paysMember(o)) {
         credit += Number(o.value || 0);
         if (out === null) out = i;   // the first paying output: the citation's .index
       }
     });
-    for (const i of t.vin || []) if (i.prevout?.scriptpubkey_address === address) debit += Number(i.value || 0);
+    for (const i of t.vin || []) if (paysMember(i.prevout)) debit += Number(i.value || 0);
     recs.push({ height: t.status.block_height, txid: t.txid, time: t.status.block_time || null, credit, debit, out });
   }
   return recs;
 }
 
-// The address's chain state -- confirmed balance and transaction count --
-// straight from /address/:addr, no memory: the mapper reconciles against
-// the chain's now, not a remembered figure.
-async function chainState(address) {
+// The member's chain state -- confirmed balance and transaction count --
+// straight from its stats endpoint, no memory: the mapper reconciles
+// against the chain's now, not a remembered figure.
+async function chainState(member) {
+  const path = await memberPath(member);
+  if (!path) return null;
   for (const mirror of esploraMirrors()) {
-    const j = await esploraJson(mirror, `/address/${address}`);
+    const j = await esploraJson(mirror, path);
     const c = j?.chain_stats;
     if (c && typeof c.tx_count === 'number') {
       return { balance: Number(c.funded_txo_sum) - Number(c.spent_txo_sum), txCount: c.tx_count };
@@ -413,8 +472,10 @@ async function saveLine(address, data) {
 // writing.
 async function topUp(address, cached, onProgress) {
   const frontier = (cached.entries[cached.entries.length - 1]?.height ?? 0) + 1;
+  const statsPath = await memberPath(address);
+  if (!statsPath) return cached;
   outer: for (const mirror of esploraMirrors()) {
-    const j = await esploraJson(mirror, `/address/${address}`);
+    const j = await esploraJson(mirror, statsPath);
     const cs = j?.chain_stats;
     if (!cs || typeof cs.tx_count !== 'number') continue;
     const txCount = cs.tx_count;
@@ -423,7 +484,7 @@ async function topUp(address, cached, onProgress) {
     let cursor = null;
     const fresh = [];
     for (;;) {
-      const page = await esploraJson(mirror, chainPage(address, cursor));
+      const page = await esploraJson(mirror, await chainPage(address, cursor));
       if (!Array.isArray(page)) continue outer;
       const recs = esploraTouches(page, address);
       fresh.push(...recs.filter((r) => r.height >= frontier));
@@ -452,7 +513,7 @@ async function extendOnce(address) {
   const cached = await cachedLine(address);
   if (!cached || cached.complete || cached.lastSeen == null) return cached;
   for (const mirror of esploraMirrors()) {
-    const page = await esploraJson(mirror, chainPage(address, cached.lastSeen));
+    const page = await esploraJson(mirror, await chainPage(address, cached.lastSeen));
     if (!Array.isArray(page)) continue;
     const recs = esploraTouches(page, address);
     const walked = cached.walked + recs.length;
@@ -491,11 +552,13 @@ export function extendLine(address) {
 export async function resolveLine(address, onProgress) {
   const cached = await cachedLine(address);
   if (cached) return topUp(address, cached, onProgress);
+  const statsPath = await memberPath(address);
+  if (!statsPath) return null;
   for (const mirror of esploraMirrors()) {
-    const j = await esploraJson(mirror, `/address/${address}`);
+    const j = await esploraJson(mirror, statsPath);
     const cs = j?.chain_stats;
     if (!cs || typeof cs.tx_count !== 'number') continue;
-    const page = await esploraJson(mirror, chainPage(address, null));
+    const page = await esploraJson(mirror, await chainPage(address, null));
     if (!Array.isArray(page)) continue;
     const recs = esploraTouches(page, address);
     // Short page or every known transaction walked: the record is whole.
@@ -570,8 +633,10 @@ export async function addressState(address) {
 // identity (Σ held = balance = Σ entries); callers display the held view
 // only when it agrees, the same discipline the gate keeps.
 export async function heldCoins(address) {
+  const base = await memberPath(address);
+  if (!base) return null;
   for (const mirror of esploraMirrors()) {
-    const utxos = await esploraJson(mirror, `/address/${address}/utxo`);
+    const utxos = await esploraJson(mirror, `${base}/utxo`);
     if (!Array.isArray(utxos)) continue;
     const byTxid = new Map();
     let sum = 0, count = 0;

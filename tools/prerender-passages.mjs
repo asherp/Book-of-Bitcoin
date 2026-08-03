@@ -272,7 +272,7 @@ export async function passageMd({ title, entry, height, blockHash, header, txCou
   const cite = `${reference(height)} §${index + 1}`;
   const liveUrl = `${SITE}/bitcoin-book.html?txid=${txid}`;
   const chapterEvents = PLACES
-    .filter((p) => p.id === String(height) && !p.page && !p.address)
+    .filter((p) => p.id === String(height) && !p.page && !p.address && !p.script)
     .map(placeTitle);
 
   const md = [];
@@ -383,7 +383,7 @@ async function blockContext(height) {
 
 async function renderEntry(place, seed) {
   // A leaf, a name, or the moving tip: no static passage to render.
-  if (place.page || place.address || place.id === '-1') return null;
+  if (place.page || place.address || place.script || place.id === '-1') return null;
   const entry = place.entry;
   const title = placeTitle(place);
 

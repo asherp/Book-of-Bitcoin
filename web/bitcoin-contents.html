@@ -1053,7 +1053,7 @@ const bmPlacements = new Map();        // bookmark hex -> place | null (once att
 const bmKey = (b) => (b.page ? `${b.page}@${b.hex}` : b.vin != null ? `${b.hex}:w${b.vin}` : b.vout == null ? b.hex : `${b.hex}:${b.vout}`);
 const allBookmarks = readBookmarks();
 const bmForPlace = (p) => allBookmarks.find((b) => {
-  if (p.address) return false;
+  if (p.address || p.script) return false;
   if (p.page || b.page) return (p.page ?? null) === (b.page ?? null) && p.id === String(b.height);
   // A witness place matches only a witness keep of the same footnote (by
   // its stored number; an old keep without one stays its own row) -- and a
@@ -1065,7 +1065,7 @@ const bmForPlace = (p) => allBookmarks.find((b) => {
   if ((p.out ?? null) !== (b.vout ?? null)) return false;
   return p.id === b.hex || (p.id === String(b.height) && (p.index ?? null) === (b.pos ?? null));
 });
-const overridingKeys = new Set(places().filter((p) => !p.address).map((p) => bmForPlace(p)).filter(Boolean).map(bmKey));
+const overridingKeys = new Set(places().filter((p) => !p.address && !p.script).map((p) => bmForPlace(p)).filter(Boolean).map(bmKey));
 const bookmarks = allBookmarks.filter((b) => !overridingKeys.has(bmKey(b)));
 
 // Every entry -- curated or bookmarked -- carrying whatever placement has
@@ -1074,7 +1074,7 @@ const bookmarks = allBookmarks.filter((b) => !overridingKeys.has(bmKey(b)));
 // its hash: `?block=<h>&page=volume` is the leaf, where the bare hash would be
 // the chapter that opens it -- a different page, and a different keep.
 const entries = () => [
-  ...places().filter((p) => !p.address).map((p) => {
+  ...places().filter((p) => !p.address && !p.script).map((p) => {
     const bm = bmForPlace(p);
     return { ...p, title: (bm && bm.title) || placeTitle(p), bookmark: bm ? true : undefined,
       commentary: p.entry.commentary,
@@ -1148,7 +1148,7 @@ const consensusPlaces = () => appendix()
 // Block placements (curated, and bookmarks that stored their reference) are
 // offline, so place them at once; everything else streams in as its lookup
 // resolves.
-for (const p of [...places(), ...consensusPlaces()]) if (!p.address && isBlockId(p.id)) placements.set(placeKey(p), placeOf(Number(p.id), p.index ?? null, p.page, p.out ?? null, p.wit ?? null));
+for (const p of [...places(), ...consensusPlaces()]) if (!p.address && !p.script && isBlockId(p.id)) placements.set(placeKey(p), placeOf(Number(p.id), p.index ?? null, p.page, p.out ?? null, p.wit ?? null));
 for (const b of bookmarks) {
   if (Number.isInteger(b.height)) bmPlacements.set(bmKey(b), placeOf(b.height, b.pos ?? null, b.page, b.vout ?? null, b.wn ?? null));
 }
@@ -1164,7 +1164,7 @@ setInterval(() => { if (!document.hidden) loadProjected(); }, 60_000);
 // One lookup per key, however many registers cite the place.
 const unplaced = new Map();
 for (const p of [...places(), ...consensusPlaces()]) {
-  if (!p.address && !placements.has(placeKey(p)) && !unplaced.has(placeKey(p))) unplaced.set(placeKey(p), p);
+  if (!p.address && !p.script && !placements.has(placeKey(p)) && !unplaced.has(placeKey(p))) unplaced.set(placeKey(p), p);
 }
 await Promise.all([
   ...[...unplaced.values()].map(async (p) => {

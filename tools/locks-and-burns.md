@@ -156,12 +156,16 @@ batch: **2,609.36304319 BTC**. Mark Karpelès admitted the error on
 Bitcointalk after user genjix's October 29, 2011 thread ("someone fucked up
 and lost a lot of money"). **[reported]**
 
-One printing verified here: `81f59158…30fd` in block 150,951 (October 28,
+One printing verified singly: `81f59158…30fd` in block 150,951 (October 28,
 2011), position 22 — citation **I β75 ■1768 §23** — whose output 1 pays
-**100 BTC exactly** to `76a90088ac`. **[verified]** A fuller sweep for the
-sibling transactions (the rest of the 2,609) needs a script-index query no
-Esplora endpoint offers; owed before any commentary states the total as
-chain fact rather than reported figure.
+**100 BTC exactly** to `76a90088ac`. **[verified]** And the whole batch is
+now verified too, by Esplora's scripthash lookup (`/scripthash/<sha256 of
+the scriptPubKey>`, which the Ledger now speaks — see below): the script
+`76a90088ac` has received **2,609.36304319 BTC across 23 outputs, none
+spent** — the reported total confirmed against the chain to the satoshi —
+and **all 23 sit in that same block, 150,951**: one queue of withdrawals,
+mined together. The largest printing is 497 ₿, nine are 100 ₿ even, the
+smallest 21 ₿. **[verified]**
 
 ### The pool that paid "script" — block 170,029
 
@@ -248,11 +252,14 @@ before April 30, 2042. A lock whose evidence is itself timelocked.
 Far-future CLTV outputs are legible on chain (the lock value sits in the
 redeem script or witness script, revealed at spend or inspectable when the
 script is known), but finding *unspent, unrevealed* ones wants an index of
-script templates over the whole chain — same tooling gap as the Mt. Gox
-sweep above. A worthwhile future instrument: walk revealed CLTV scripts,
-bucket the lock values by decade, and surface everything locked past 2100 —
-the deliberate century-locks and the unit slips will sort themselves by
-whether anyone ever came back for the coins.
+script templates over the whole chain. The narrower gap — reading one known
+script's whole record — is closed: the Ledger speaks Esplora's scripthash
+endpoints now, so any exact scriptPubKey, standard or not, reads as a
+ledger (the Mt. Gox sweep above was its first result). What remains open is
+the template-shaped question: walk revealed CLTV scripts, bucket the lock
+values by decade, and surface everything locked past 2100 — the deliberate
+century-locks and the unit slips will sort themselves by whether anyone
+ever came back for the coins.
 
 ## Negative findings
 
@@ -291,8 +298,10 @@ citation resolving to the heights verified here):
 - **The endianness lock of 2042** — II β90 ■936 §545.0
 - **The coinbase that claimed nothing** — `501726` §1
 - **The half-claimed subsidy** — `526591` §1
-- **The 107 BTC burn** — V β56 ■83, one entry in five places (§2216,
-  §2221, §2223, §2224, §2225), each `as:` naming what it carries
+- **The 107 BTC burn** — the chapter, `950962`, carries the event's name
+  and reading; each burn is its own entry titled by what it carries, citing
+  the burn output itself (V β56 ■83 §2216.0, §2221.0, §2223.0, §2224.0,
+  §2225.0 — all five are single-output transactions)
 
 The burn-address material went the other way, as names rather than places:
 the Bitcoin Eater, the Counterparty burn, and the zero address are now
