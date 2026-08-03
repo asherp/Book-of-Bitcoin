@@ -13,8 +13,8 @@
 //   'btc'   1.23456789 ₿      bitcoin, the ₿ sign trailing (formatBtc)
 //   'sats'  123·456·789 sats  satoshis, the book's middle-dot grouping
 //   'raw'   123456789         the bare satoshi integer — no marker, no separator
-//   'usd'   ≈ 123,456.79 USD  the day's market price, per a source the reader chose
-//   'own'   ≈ 123,456.79 USD  the reader's own unit, at a rate the reader set
+//   'usd'   123,456.79 USD    the day's market price, per a source the reader chose
+//   'own'   123,456.79 USD    the reader's own unit, at a rate the reader set
 // The first three are renderings of the record: one integer, dressed three
 // ways, each recoverable from the others. The last two are not, and the
 // record offers no help drawing the line — the chain knows no dollars, and
@@ -26,8 +26,9 @@
 // the page sets that rate here (setDayPrice) before it prints, and where the
 // source's record has nothing the figure falls back to the record's ₿.
 // 'own' is a unit the reader names and prices themself. Either way the
-// figure wears ≈, and the hover keeps the on-chain amount and the rate's
-// author — a market's valuation or the reader's, never the book's.
+// figure is set in the annotation's dress, and the hover keeps the on-chain
+// amount and the rate's author — a market's valuation or the reader's,
+// never the book's.
 // Each choice persists in localStorage under its own key and is read at
 // format time, so a page re-render is all a switch needs. 'btc' is the
 // default and is stored as an absent key, so a reader who never chose
@@ -104,19 +105,20 @@ let DAY_PRICE = null;
 export function setDayPrice(p) { DAY_PRICE = p; }
 export function dayPrice() { return DAY_PRICE; }
 
-// A satoshi amount at a rate: { label, perBtc }. ≈ because the figure is
-// rounded, and more to the point because it is a valuation. Two decimals in
-// the money manner, stretched only as far as keeps a small amount from
-// rounding to nothing — a dust output should never print as ≈ 0.00. Zero
-// alone drops the ≈: nothing is exact at any rate. Number arithmetic is
-// fine here — the record stays exact wherever the caller keeps it (a hover,
-// a neighbouring column); this figure is a reading, read at rate precision.
+// A satoshi amount at a rate: { label, perBtc }. Two decimals in the money
+// manner, stretched only as far as keeps a small amount from rounding to
+// nothing — a dust output should never print as 0.00. What marks the figure
+// as a valuation is where its callers set it (the annotation's dress) and
+// what its hovers disclose, not a prefix on the figure itself. Number
+// arithmetic is fine here — the record stays exact wherever the caller
+// keeps it (a hover, a neighbouring column); this figure is a reading,
+// read at rate precision.
 export function formatValuation(sats, { label, perBtc }) {
   const v = Number(sats) * perBtc / 1e8;
   if (v === 0) return `0 ${label}`;
   const digits = v < 0.01 ? Math.min(10, 1 - Math.floor(Math.log10(v))) : 2;
   const figure = v.toLocaleString('en-US', { minimumFractionDigits: Math.min(digits, 2), maximumFractionDigits: digits });
-  return `≈ ${figure} ${label}`;
+  return `${figure} ${label}`;
 }
 
 // The same, signed, for a ledger's net movements (btc-index.js's
@@ -125,7 +127,7 @@ export function formatValuation(sats, { label, perBtc }) {
 export function formatNetValuation(sats, unit) {
   const n = Number(sats);
   if (!n) return formatValuation(0, unit);
-  return formatValuation(Math.abs(n), unit).replace('≈ ', n < 0 ? '≈ −' : '≈ +');
+  return `${n < 0 ? '−' : '+'}${formatValuation(Math.abs(n), unit)}`;
 }
 
 // A satoshi amount in a named notation — the settings rows print one sample

@@ -975,7 +975,7 @@ button:disabled { opacity: .4; cursor: not-allowed; }
            satoshi integer — each row labelled by the same sample amount, so
            the choice shows itself; filled by renderAmountRows. Notation,
            not content: every form carries the same satoshis — except the
-           valuations, which wear ≈ because a rate is authored, not recorded:
+           valuations, set apart because a rate is authored, not recorded:
            the day's USD price at the day of the block being read, per a
            market source selected below, and the reader's own unit, named
            and priced by the reader themself. -->
@@ -5925,7 +5925,7 @@ renderLangRows();
 // fields carry every amount raw, so re-showing the section in hand reprints
 // the page with nothing re-composed.
 //
-// Below the record's three rows sit the valuations, each wearing ≈. The
+// Below the record's three rows sit the valuations. The
 // 'usd' row is always offered: the day's market price at the day of the
 // block being read, per the source selected in the foot -- the book takes no
 // position on what a satoshi is worth, so the rate is always somebody
@@ -5949,7 +5949,7 @@ function renderAmountRows() {
       // The sample reads at the day price of the page in hand, where one is
       // settled; until then the row names what it would ask rather than
       // guessing a figure.
-      name.textContent = day ? formatOwnAmount(AMOUNT_SAMPLE, { label: 'USD', perBtc: day.perBtc }) : '≈ ⋯ USD';
+      name.textContent = day ? formatOwnAmount(AMOUNT_SAMPLE, { label: 'USD', perBtc: day.perBtc }) : '⋯ USD';
       btn.title = day
         ? `at ${day.perBtc.toLocaleString('en-US')} USD per ₿ on ${day.date}, per ${day.source} — the day of the block being read; a market's valuation, not the record`
         : `the day's USD price at the day of the block being read, per ${priceSource().label} — a market's valuation, not the record`;
@@ -5972,7 +5972,7 @@ async function applyAmountUnit(u, force = false) {
   setAmountUnit(u);
   renderAmountRows();
   if (state) await showCurrentTx();
-  renderAmountRows();   // the ≈ USD row's sample can now read the settled day price
+  renderAmountRows();   // the USD row's sample can now read the settled day price
 }
 renderAmountRows();
 

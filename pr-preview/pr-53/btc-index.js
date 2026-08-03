@@ -905,7 +905,7 @@ function ledgerRow(c, place, balance, lastVol, lastBook, held) {
   let val = null;
   if (u === 'usd' && c.time) {
     val = document.createElement('span'); val.className = 'idx-val';
-    val.textContent = '≈ ⋯';
+    val.textContent = '⋯';
     val.dataset.time = String(c.time);
     val.dataset.sats = String(c.sats);
     observeValuation(val);
