@@ -587,9 +587,10 @@
   commentary:
     - file: taproot-activation.md
       by: Claude Opus 5
-# The largest single passage of the Bitfinex seizure — 562 inputs, one
-# output, 15,000 ₿ even, 1 February 2022: the state spending the thief's
-# coins with the thief's own keys. The whole 23-transaction operation
+# The largest single passage of the Bitfinex seizure — 562 inputs,
+# 15,000 ₿ even to custody with 5.88 ₿ of staging change beside it,
+# 1 February 2022: the state spending the thief's coins with the thief's
+# own keys. The whole 23-transaction operation
 # (94,643.29837084 ₿ in 133 minutes) reads in the Ledger as The Bitfinex
 # custody. Research in tools/thefts-and-seizures.md.
 - title: The FBI's 15,000 ₿ sweep
