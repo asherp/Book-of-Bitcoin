@@ -161,12 +161,13 @@ a:hover { text-decoration: underline; }
 </div>
 
 <script type="module">
-import { localizeHome, t as tr } from './btc-strings.js';
-localizeHome();   // the masthead in the reader's UI language (chosen on the book page)
+import { localizeHome, mountLangMenu, t as tr } from './btc-strings.js';
+localizeHome();   // the masthead in the reader's UI language
+mountLangMenu();  // …with the Language item, which any page can now set
 import { loadNotables, notables, places, placeTitle, appendix, isBlockId, isRelativeBlockId, entryHref } from './btc-contents.js';
 import { partLabel } from './btc-notables.js';
 import { toSubscript } from './btc-sigla.js';
-import { allProofs, citeOf, leafOf } from './btc-proofs.js';
+import { allProofs, citeOf, leafOf, estimatedDate, minedDate } from './btc-proofs.js';
 import { readingsOf } from './btc-commentary.js';
 import { readQueue, buildQueue } from './btc-mempool.js';
 import { INDEXED, keptLedgers, sameAddresses } from './btc-index.js';
@@ -751,6 +752,20 @@ function proofEl(proof) {
   mark.textContent = proof.n ? `‡${toSubscript(proof.n)} ` : '‡ ';
   mark.title = proof.n ? `cited work ${proof.n}` : "your addendum — kept in this browser, outside the edition's numbering";
   t.append(mark, document.createTextNode(proof.title));
+  // The date, which is what a citation here IS: the chain attests existence
+  // by a block, and the block has a clock. The height's own estimate prints
+  // at once, hedged; the block's clock replaces it when the archive or a
+  // mirror answers for the chapter.
+  const when = document.createElement('span');
+  when.className = 'toc-span';
+  when.textContent = estimatedDate(proof.place.height);
+  when.title = 'about when the chapter its proof lands in was mined — estimated from the height alone, offline';
+  minedDate(proof.place.height).then((exact) => {
+    if (!exact) return;
+    when.textContent = exact;
+    when.title = "the clock of the block its proof lands in — the chain's own date for this file";
+  });
+  t.append(when);
   // What the row is really claiming, said in full on hover: this file's digest,
   // and the chapter its proof reduces to.
   row.title = `${proof.file} — ${proof.hash} ${proof.digest}, stamped into ${citeOf(proof.place)}`;
