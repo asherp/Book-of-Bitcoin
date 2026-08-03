@@ -215,6 +215,10 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 .lang-row .lang-mark { font:600 11px/1 'IBM Plex Mono',monospace; color:var(--accent); visibility:hidden; }
 .lang-row.current { color:var(--ink); }
 .lang-row.current .lang-mark { visibility:visible; }
+/* ── amount notation picker: the language rows' dress, worn by figures --
+      tabular, so the three samples read as the column their amounts will
+      form on the page. ── */
+#amount-rows .lang-row { font-variant-numeric: tabular-nums; }
 
 /* ── data-source picker: choose the Esplora-compatible endpoint, add custom ── */
 .endpoint-row { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
@@ -638,9 +642,10 @@ button:disabled { opacity: .4; cursor: not-allowed; }
   column-gap: 1.3em; align-items: start;
 }
 .tx-out-script { grid-column: 1; min-width: 0; }
-/* Amounts right-align to the page edge, like a ledger column; they read in
-   bitcoin (₿) with a fixed eight decimals and tabular figures, so the column
-   aligns on the point (see formatBtc in btc-prose.js). */
+/* Amounts right-align to the page edge, like a ledger column, in tabular
+   figures so the column aligns on the point -- read in bitcoin (₿, a fixed
+   eight decimals) or in either satoshi notation, as the settings panel's
+   Amounts rows choose (see formatAmount in btc-prose.js). */
 /* Sized like the .tx-note it also is (13.5px), but from the margins' scale --
    the amounts are the right margin's text. nowrap: under fit-content sizing
    an amount must count as one piece, never wrap its ₿ onto a line of its own
@@ -657,16 +662,36 @@ button:disabled { opacity: .4; cursor: not-allowed; }
    difference the miner keeps: the fee. No labels; the geometry is the
    equation, inputs − fee = outputs. The sums are DERIVED -- arithmetic over
    the record, not bytes on the wire -- so they do not sit in the
-   transaction's own flow: they lead the foot region, below the section's
-   one rule (#ch-footnotes-section), apart from the record they total and
-   above the witness footnotes when there are any. The inputs' sum waits on
-   the margin citations resolving, and an input the book cannot price
-   leaves the sum and the fee unsaid (⋯). A coinbase has no such line: its
-   input brings no prior output, and the block's fees arrive in its
-   outputs, with the subsidy. */
-.tx-totals { display: flex; justify-content: space-between; align-items: baseline; gap: 1em; margin: 0 0 1.6em; font: italic 400 calc(13.5px * var(--scale-margins, 1))/1.4 'Newsreader',serif; color: var(--dim); font-variant-numeric: tabular-nums; }
+   transaction's own flow: they ride in their own band (#ch-totals, below),
+   apart from the record they total and above the witness footnotes when
+   there are any. The inputs' sum waits on the margin citations resolving,
+   and an input the book cannot price leaves the sum and the fee unsaid (⋯).
+   A coinbase's line inverts the middle sign: its input brings no prior
+   output, so the subsidy the schedule mints at this height stands at the
+   left and the chapter's gathered fees between, + fee -- the miner's take
+   arriving where every other section's leaves. */
+.tx-totals { display: flex; justify-content: space-between; align-items: baseline; gap: 1em; margin: 0; font: italic 400 calc(13.5px * var(--scale-margins, 1))/1.4 'Newsreader',serif; color: var(--dim); font-variant-numeric: tabular-nums; }
 .tx-totals .t-fee { color: var(--meta); }
 .tx-totals .t-out { padding-right: 20px; }   /* the amounts column's ribbon room, so the sum sits on their point */
+/* The balance line's seat: sticky at the screen bottom while the record
+   scrolls -- the rule its top edge, prose scrolling behind its page-colour
+   backing, the Ledger's totals-bar manner -- so the books stay in sight for
+   the whole read, and it settles into its natural place at the section's
+   foot once the reader scrolls past it, revealing the witness footnotes
+   below. It rides above the foot nav, whose height is whatever the walk's
+   names and the safe-area make it -- measured, not assumed: --footnav-h is
+   kept current by a ResizeObserver on the bar (see the script), and the
+   safe-area inset stands in where the nav is hidden entirely. Below the
+   nav's z-index: the nav is chrome, this is still the page. */
+#ch-totals { position: sticky; bottom: max(var(--footnav-h, 0px), env(safe-area-inset-bottom)); z-index: 30;
+  margin-top: 48px; padding: 10px 0 12px; border-top: 1px solid var(--rule); background: var(--page); }
+#ch-totals:empty { display: none; }
+/* With the balance line carrying the section's rule, the footnotes region
+   that follows drops its own -- one rule, as before, now on the band. A
+   foot with footnotes but no balance line keeps the rule where it always
+   was (every section prices one now, the coinbase from the schedule, so
+   this is the fallback rather than a standing case). */
+#ch-totals:not(:empty) + .chapter-footnotes { margin-top: 0; border-top: none; padding-top: 12px; }
 .tx-locktime { grid-column: left / -1; grid-row: 3; text-align: center; font-style: normal; }
 /* An output the reader has kept under a name (or the contents already
    names): the title stands centered above the output's own rows, spanning
@@ -930,6 +955,13 @@ button:disabled { opacity: .4; cursor: not-allowed; }
         <span class="fs-label">Commentary</span><button type="button" class="ghost-btn" data-fs="commentary" data-fs-d="-1" aria-label="Smaller commentary text">A−</button><span class="fs-value" data-fs-v="commentary">100%</span><button type="button" class="ghost-btn" data-fs="commentary" data-fs-d="1" aria-label="Larger commentary text">A+</button>
       </div>
       <div class="fontscale-foot"><button type="button" id="fontscale-reset" class="ghost-btn">Reset</button></div>
+      <div class="settings-title">Amounts</div>
+      <!-- One row per notation the page prints value in — bitcoin with the
+           ₿ sign, satoshis with the book's middle-dot grouping, or the bare
+           satoshi integer — each row labelled by the same sample amount, so
+           the choice shows itself; filled by renderAmountRows. Notation,
+           not content: every form carries the same satoshis. -->
+      <div id="amount-rows" class="lang-rows"></div>
       <div class="settings-title">Data source</div>
       <div class="endpoint-row">
         <select id="endpoint-select" class="endpoint-select" aria-label="Data source endpoint"></select>
@@ -999,11 +1031,14 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 
     <div class="chapter-body" id="ch-paragraphs"></div>
 
+    <!-- The balance line leads the foot region: the sums are derived, not
+         bytes on the wire, so they read apart from the record they total --
+         in a band of their own, sticky at the screen bottom above the foot
+         nav while the record scrolls, settling into its natural place once
+         the reader scrolls past it to reveal the witness footnotes below
+         (see the #ch-totals CSS). -->
+    <div id="ch-totals"></div>
     <div class="chapter-footnotes hidden" id="ch-footnotes-section">
-      <!-- The balance line leads the foot region: the sums are derived, not
-           bytes on the wire, so they read below the rule, apart from the
-           record they total. -->
-      <div id="ch-totals"></div>
       <div id="ch-footnotes"></div>
     </div>
     </div>
@@ -1058,8 +1093,8 @@ import { parseTransaction, computeTxid, parseBlockHeader, computeBlockHash, bits
 // Ledger page's own keep button writes. INDEXED is the curated shelf, whose
 // titles are the keep line's defaults.
 import { keptLedgers, saveKeptLedgers, INDEXED } from './btc-index.js';
-import { composeTransactionFields, composeBlockHeaderFields, bitsInfo, groupDigits, formatBtc, renderWitness, toSuperscript, timestampInfo } from './btc-prose.js';
-import { volumeBookChapter, heightOf, windowStartOf, retargetInside, toRoman, reference, parseReference, footnoteMark, latinRefOf } from './btc-citation.js';
+import { composeTransactionFields, composeBlockHeaderFields, bitsInfo, groupDigits, formatBtc, formatAmount, formatAmountAs, amountUnit, setAmountUnit, renderWitness, toSuperscript, timestampInfo } from './btc-prose.js';
+import { volumeBookChapter, heightOf, windowStartOf, retargetInside, subsidyAt, toRoman, reference, parseReference, footnoteMark, latinRefOf } from './btc-citation.js';
 import { loadNotables, places, placeTitle, blocksEta, appendix } from './btc-contents.js';
 import { queueLabel } from './btc-mempool.js';
 import { toSubscript } from './btc-sigla.js';
@@ -1744,6 +1779,14 @@ async function projectedCitation(txid) {
   return null;
 }
 
+// An amount's hover: whatever the chosen notation leaves unsaid. Reading in
+// bitcoin, the hover carries the grouped satoshi count, as it always has;
+// reading in either satoshi notation, it carries the ₿ form instead — the
+// figure a reader would recognise is never further away than the hover.
+const amountTitle = (sats) => (amountUnit() === 'btc'
+  ? `${groupDigits(String(sats))} satoshis`
+  : formatBtc(sats));
+
 // Fill each pending citation cell once its reference resolves; skip if the
 // reader has since paged to another section (gen no longer current).
 // Resolves to each input's spent value in pending order (satoshis; null
@@ -1772,12 +1815,12 @@ async function resolveCitations(pending, gen) {
         cite.title = `${txid}:${vout} — unmined, and in no drafted chapter: it has no reference yet`;
       }
       // The amount of the referenced output -- what this input spends -- sits on
-      // the line beneath the reference, after the sequence mark, in parentheses:
-      // the mark for value flowing IN, where an output's amount (value flowing
-      // out) stands bare. A draft's outputs read the same as a mined one's.
+      // the line beneath the reference, after the sequence mark, bare like the
+      // output amounts opposite: the margin it stands in already says which way
+      // the value flows. A draft's outputs read the same as a mined one's.
       if (amtVal && outputs && outputs[vout]) {
-        amtVal.textContent = `(${formatBtc(outputs[vout].value)})`;
-        amtVal.title = `the amount this input spends: ${groupDigits(String(outputs[vout].value))} satoshis`;
+        amtVal.textContent = formatAmount(outputs[vout].value);
+        amtVal.title = `the amount this input spends: ${amountTitle(outputs[vout].value)}`;
       }
       return outputs && outputs[vout] ? outputs[vout].value : null;
     } catch (e) {
@@ -3564,7 +3607,7 @@ function renderGhostTombstone(txid) {
   const m = ghostMeta.get(txid);
   const fmtR = (f) => f >= 10 ? String(Math.round(f)) : String(Math.round(f * 10) / 10);
   note.textContent = (m
-    ? `${(m.fee ?? 0).toLocaleString()} sat over ${(m.vsize ?? 0).toLocaleString()} vB (~${fmtR(m.rate ?? (m.vsize ? m.fee / m.vsize : 0))} sat/vB), moving ${formatBtc(m.value ?? 0)}${m.time ? ` — replaced ${timestampInfo(m.time).mark}` : ''}. `
+    ? `${(m.fee ?? 0).toLocaleString()} sat over ${(m.vsize ?? 0).toLocaleString()} vB (~${fmtR(m.rate ?? (m.vsize ? m.fee / m.vsize : 0))} sat/vB), moving ${formatAmount(m.value ?? 0)}${m.time ? ` — replaced ${timestampInfo(m.time).mark}` : ''}. `
     : '')
     + 'Its raw text is gone with the mempools that dropped it — only its place in the succession survives.';
   body.append(note);
@@ -3941,12 +3984,15 @@ function renderChapter(para) {
     if (out.scriptAscii) addQuote(scriptCell, out.scriptAscii); else addLine(scriptCell, out.script);
     const valueCell = document.createElement('div');
     valueCell.className = 'tx-note tx-out-value';
-    valueCell.textContent = out.value;
-    valueCell.title = out.valueTitle;
+    // The composed fields carry the amount raw (out.sats) beside the ₿ string;
+    // printing from the raw figure at paint time is what lets the Amounts
+    // setting reprint a section without re-composing it.
+    valueCell.textContent = formatAmount(out.sats);
+    valueCell.title = amountTitle(out.sats);
     // The amount is this output's handle: click it to copy or bookmark the
     // output itself -- §section.vout, the finest place the book cites.
     attachHashCopy(valueCell, para.txid, 'output',
-      `${reference(state.height)} §${para.num}.${i} — ${out.value}`, i);
+      `${reference(state.height)} §${para.num}.${i} — ${formatAmount(out.sats)}`, i);
     // Forward citation placeholder: filled with the section that later spent
     // this output, once the outspends resolve. An unspent output keeps it
     // empty -- still-live value has no forward reference.
@@ -3969,7 +4015,13 @@ function renderChapter(para) {
   // in the flow (appended there with the footnotes reset, further down).
   // The outputs' sum is the transaction's own; the inputs' and the fee fill
   // in once every margin citation has resolved a value, and stay ⋯ if any
-  // could not be priced. A coinbase closes without one.
+  // could not be priced. A coinbase's line inverts the middle sign: its
+  // left station is the subsidy the coinage schedule mints at this height
+  // (btc-citation's subsidyAt -- arithmetic on the height, nothing to
+  // resolve), and the fees the chapter's sections paid stand between it
+  // and the outputs' sum as + fee, the miner's take arriving where every
+  // other section's leaves. A miner that claimed less than the schedule
+  // allows shows the shortfall signed −: value forfeited to no one.
   let totals = null, fillTotals = null;
   if (f.inputs.length && !f.inputs.some((i) => i.isNullPrevout)) {
     const sumOut = f.outputs.reduce((a, o) => a + o.sats, 0);
@@ -3983,18 +4035,38 @@ function renderChapter(para) {
     tFee.textContent = '⋯';
     const tOut = document.createElement('span');
     tOut.className = 't-out';
-    tOut.textContent = formatBtc(sumOut);
-    tOut.title = `the outputs carry ${groupDigits(String(sumOut))} satoshis`;
+    tOut.textContent = formatAmount(sumOut);
+    tOut.title = `the outputs carry ${amountTitle(sumOut)}`;
     totals.append(tIn, tFee, tOut);
     fillTotals = (values) => {
       if (!values || values.length !== f.inputs.length || values.some((v) => v == null)) return;
       const sumIn = values.reduce((a, v) => a + v, 0);
-      tIn.textContent = formatBtc(sumIn);
-      tIn.title = `the inputs bring ${groupDigits(String(sumIn))} satoshis`;
+      tIn.textContent = formatAmount(sumIn);
+      tIn.title = `the inputs bring ${amountTitle(sumIn)}`;
       const fee = sumIn - sumOut;
-      tFee.textContent = `− ${formatBtc(fee)}`;
-      tFee.title = `the fee: ${groupDigits(String(fee))} satoshis — the difference, claimed by the chapter's miner`;
+      tFee.textContent = `− ${formatAmount(fee)}`;
+      tFee.title = `the fee: ${amountTitle(fee)} — the difference, claimed by the chapter's miner`;
     };
+  } else if (f.inputs.length) {
+    const sumOut = f.outputs.reduce((a, o) => a + o.sats, 0);
+    const subsidy = subsidyAt(state.height);
+    const fee = sumOut - subsidy;
+    totals = document.createElement('div');
+    totals.className = 'tx-totals';
+    const tIn = document.createElement('span');
+    tIn.textContent = formatAmount(subsidy);
+    tIn.title = `the subsidy: ${amountTitle(subsidy)} — what the coinage schedule mints at this height`;
+    const tFee = document.createElement('span');
+    tFee.className = 't-fee';
+    tFee.textContent = `${fee < 0 ? '−' : '+'} ${formatAmount(Math.abs(fee))}`;
+    tFee.title = fee < 0
+      ? `${amountTitle(-fee)} short of the schedule — value the miner left unclaimed, forfeited to no one`
+      : `the fees: ${amountTitle(fee)} — what the chapter's sections paid, gathered here`;
+    const tOut = document.createElement('span');
+    tOut.className = 't-out';
+    tOut.textContent = formatAmount(sumOut);
+    tOut.title = `the outputs carry ${amountTitle(sumOut)}`;
+    totals.append(tIn, tFee, tOut);
   }
   const lock = document.createElement('div');
   lock.className = 'tx-note tx-locktime';
@@ -4012,20 +4084,18 @@ function renderChapter(para) {
   resolveForwardCitations(para.txid, fwdCells, gen);
   resolveCitedWorks(para.num, citedCells, gen);
 
-  // The foot region resets, then the balance line takes its head -- shown
-  // whenever there is a line to show, so a legacy section with no witness
-  // still gets its rule and its sums. The footnotes expand automatically
-  // once the transaction is on screen (renderFootnotes runs async so the
-  // prose paints first, and unhides the section itself for witness-bearing
-  // coinbases, whose foot carries footnotes but no balance line).
+  // The foot region resets, then the balance line takes its band -- the
+  // sticky bar above the foot nav (see #ch-totals), which its own :empty
+  // rule shows and hides, so a legacy section with no witness still gets
+  // its rule and its sums. The footnotes expand automatically once the
+  // transaction is on screen (renderFootnotes runs async so the prose
+  // paints first, and unhides the footnotes region for every section that
+  // has witnesses -- a coinbase's foot carries them with no balance line).
   $('ch-footnotes').innerHTML = '';
   $('ch-totals').innerHTML = '';
   $('ch-footnotes-section').classList.add('hidden');
   footnotesLoaded = false;
-  if (totals) {
-    $('ch-totals').append(totals);
-    $('ch-footnotes-section').classList.remove('hidden');
-  }
+  if (totals) $('ch-totals').append(totals);
   renderFootnotes(gen);
 
   labelNav();
@@ -5687,6 +5757,21 @@ for (const btn of document.querySelectorAll('[data-fs]')) {
 $('fontscale-reset').addEventListener('click', () => { resetFontScales(); reflectFontScale(); });
 reflectFontScale();
 
+// ── The foot nav's measured height ────────────────────────────────────────
+// The balance band (#ch-totals) sticks to the screen bottom just above the
+// foot nav, whose height is nothing to assume: the walk's names wrap it to
+// one row or two, the safe-area inset pads it, and on a page with nowhere
+// to step it is display:none entirely (height 0 -- the band then falls back
+// to the safe-area inset on its own). A ResizeObserver keeps the measure
+// current through all of it.
+{
+  const footNav = document.querySelector('.section-nav');
+  const syncFootNavH = () =>
+    document.documentElement.style.setProperty('--footnav-h', `${footNav.offsetHeight}px`);
+  new ResizeObserver(syncFootNavH).observe(footNav);
+  syncFootNavH();
+}
+
 // ── Settings popover ──────────────────────────────────────────────────────
 // The masthead "Settings" link toggles a small popover holding the data-source
 // picker; it dismisses on an outside click or Escape.
@@ -5768,6 +5853,41 @@ document.addEventListener('click', (e) => {
 });
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !langPanel.classList.contains('hidden')) closeLang(); });
 renderLangRows();
+
+// ── Amount notation ───────────────────────────────────────────────────────
+// The Amounts rows in the settings panel: bitcoin (₿), satoshis with the
+// book's middle dot, or the bare integer -- one row per notation, each
+// labelled by the same sample amount, in the language rows' manner. The
+// choice persists (btc-prose.js) and applies at paint time: the composed
+// fields carry every amount raw, so re-showing the section in hand reprints
+// the page with nothing re-composed.
+const AMOUNT_UNITS = ['btc', 'sats', 'raw'];
+const AMOUNT_SAMPLE = 123456789;
+function renderAmountRows() {
+  const rows = $('amount-rows');
+  rows.innerHTML = '';
+  for (const u of AMOUNT_UNITS) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'lang-row' + (u === amountUnit() ? ' current' : '');
+    btn.setAttribute('aria-pressed', u === amountUnit() ? 'true' : 'false');
+    const name = document.createElement('span');
+    name.textContent = formatAmountAs(AMOUNT_SAMPLE, u);
+    const mark = document.createElement('span');
+    mark.className = 'lang-mark';
+    mark.textContent = '●';
+    btn.append(name, mark);
+    btn.addEventListener('click', () => { applyAmountUnit(u); });
+    rows.append(btn);
+  }
+}
+async function applyAmountUnit(u) {
+  if (u === amountUnit()) return;
+  setAmountUnit(u);
+  renderAmountRows();
+  if (state) await showCurrentTx();
+}
+renderAmountRows();
 
 // ── The chrome's words ────────────────────────────────────────────────────
 // Re-say the static chrome in the UI language (btc-strings.js): nav items,

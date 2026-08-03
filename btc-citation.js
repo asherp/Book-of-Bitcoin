@@ -47,6 +47,16 @@ export function volumeBookChapter(height) {
   };
 }
 
+// The coinage schedule: the subsidy a coinbase at this height may claim, in
+// satoshis -- 50 ₿ through Volume I, halved at each volume boundary (a
+// volume IS a halving era). The right-shift floors where an era's figure
+// falls below the satoshi's grain (the tenth halving onward), exactly as
+// consensus does, and from the 64th halving on the schedule mints nothing.
+export function subsidyAt(height) {
+  const halvings = Math.floor(height / ERA_BLOCKS);
+  return halvings >= 64 ? 0 : Number(5000000000n >> BigInt(halvings));
+}
+
 // The start of the real difficulty window a height sits in -- the retarget
 // grid, which runs on from the genesis block and knows nothing about the
 // halvings the book grid restarts at.
