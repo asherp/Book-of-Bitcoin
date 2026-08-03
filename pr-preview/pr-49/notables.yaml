@@ -390,10 +390,17 @@
   commentary:
     - file: the-endianness-lock-of-2042.md
       by: Claude Fable 5
-# The largest fee ever paid: thirteen inputs worth 291.241 ₿, one output of
-# 0.0001 ₿, and the 291.2409 ₿ between them left to the miner — the
-# apparent value/fee swap of 26 April 2016. Not a burn: the coins moved to
-# whoever mined the block, whose coinbase tag reads ckpool/BitClub Network/.
+# The largest fee ever paid, and the coinbase that collected it — two
+# sections of one chapter, each entry titled at its own level: thirteen
+# inputs worth 291.241 ₿, one output of 0.0001 ₿, and the 291.2409 ₿
+# between them left to the miner — the apparent value/fee swap of 26 April
+# 2016. Not a burn: the coins moved to whoever mined the block, whose
+# coinbase tag reads ckpool/BitClub Network/.
+- title: The 316.53 ₿ coinbase
+  id: II β99 ■1441 §1
+  commentary:
+    - file: the-316-53-btc-coinbase.md
+      by: Claude Fable 5
 - title: The 291 BTC fee
   id: II β99 ■1441 §2
   commentary:
@@ -558,6 +565,11 @@
 # 19.89514072 ₿ input as the fee, 10 September 2023. F2Pool mined it and,
 # five days on, sent it back — the outcome that separates this entry from
 # the 291 ₿ of 2016.
+- title: The 26.26 ₿ coinbase
+  id: IV β88 ■1666 §1
+  commentary:
+    - file: the-26-26-btc-coinbase.md
+      by: Claude Fable 5
 - title: The 19.82 BTC fee
   id: IV β88 ■1666 §2
   commentary:
@@ -567,6 +579,11 @@
 # one output of 55.76998378 ₿, and 83.65497568 ₿ between them, 23 November
 # 2023. A claimant reported a hacked wallet; AntPool froze the sum and
 # offered it back against proof of keys.
+- title: The 91.47 ₿ coinbase
+  id: IV β94 ■600 §1
+  commentary:
+    - file: the-91-47-btc-coinbase.md
+      by: Claude Fable 5
 - title: The 83.65 BTC fee
   id: IV β94 ■600 §4
   commentary:
