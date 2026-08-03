@@ -18,6 +18,7 @@
 import { volumeBookChapter, toRoman } from './btc-citation.js';
 import { storeGet, storePut } from './btc-store.js';
 import { INDEXED as CURATED } from './btc-index-data.js';
+import { usdChosen, usdOn, formatNetValuation } from './btc-price.js';
 
 // A loose shape test for the address forms the chain has used: base58 P2PKH
 // ('1…') and P2SH ('3…'), and bech32/bech32m ('bc1…', matched lowercase --
@@ -884,8 +885,54 @@ function ledgerRow(c, place, balance, lastVol, lastBook, held) {
   const rb = document.createElement('span'); rb.className = 'idx-bal';
   rb.textContent = formatBalanceBtc(balance);
   rb.title = 'balance after this chapter';
-  row.append(when, r, amt, rb);
+  // The valuation column, when the reader reads in USD (the book's amount
+  // notation, followed here): the entry's net at its OWN day's price. The
+  // ledger is the one surface where a price belongs to each entry rather
+  // than to the page -- its rows each carry their date, and its sums were
+  // never the record's identity, so dated valuations owe no balance line
+  // anything. Filled lazily as rows scroll into view (observeValuation),
+  // so a giant ledger asks its source only for the days actually read.
+  if (usdChosen() && c.time) {
+    const val = document.createElement('span'); val.className = 'idx-val';
+    val.textContent = '≈ ⋯';
+    val.dataset.time = String(c.time);
+    val.dataset.sats = String(c.sats);
+    observeValuation(val);
+    row.append(when, r, amt, val, rb);
+  } else {
+    row.append(when, r, amt, rb);
+  }
   return row;
+}
+
+// The valuation cells' lazy filler: one IntersectionObserver over every
+// pending cell, asking btc-price.js (cached by source and day) only as a
+// row approaches the viewport. A day with no answer -- before the source's
+// record begins, or the source unreachable -- reads as a dash, never a
+// guessed figure.
+let valObserver = null;
+function observeValuation(cell) {
+  if (!valObserver) {
+    if (typeof IntersectionObserver === 'undefined') return;
+    valObserver = new IntersectionObserver((hits) => {
+      for (const h of hits) {
+        if (!h.isIntersecting) continue;
+        valObserver.unobserve(h.target);
+        fillValuation(h.target);
+      }
+    }, { rootMargin: '300px' });
+  }
+  valObserver.observe(cell);
+}
+async function fillValuation(cell) {
+  const p = await usdOn(Number(cell.dataset.time));
+  if (!p) {
+    cell.textContent = '—';
+    cell.title = 'no day price: before the source’s record begins, or the source unreachable';
+    return;
+  }
+  cell.textContent = formatNetValuation(Number(cell.dataset.sats), { label: 'USD', perBtc: p.perBtc });
+  cell.title = `at ${p.perBtc.toLocaleString('en-US')} USD per ₿ on ${p.date}, per ${p.source} — the day of this entry; a market's valuation, not the record`;
 }
 
 // The section of a transaction within its chapter -- the § of a full

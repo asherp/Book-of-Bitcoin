@@ -281,6 +281,13 @@ a:hover { text-decoration: underline; }
 .idx-bal { flex:none; min-width:104px; text-align:right; font:400 12px/1.4 'IBM Plex Mono',monospace; color:var(--dim); white-space:nowrap; font-variant-numeric:tabular-nums; }
 .idx-row.entry:hover .idx-bal { color:var(--ink-soft); }
 @media (max-width: 560px) { .idx-bal { display:none; } }
+/* The valuation column (btc-index.js, when the reader reads in ≈ USD): the
+   entry's net at its own day's price. Italic serif against the columns'
+   mono -- a valuation is an annotation on the record, and dresses as one.
+   Steps aside with the balance on narrow leaves. */
+.idx-val { flex:none; min-width:96px; text-align:right; font:italic 400 12px/1.4 'Newsreader',serif; color:var(--meta); white-space:nowrap; font-variant-numeric:tabular-nums; }
+.idx-row.entry:hover .idx-val { color:var(--dim); }
+@media (max-width: 560px) { .idx-val { display:none; } }
 
 /* The chain's own bookmarks: an entry (or a whole quarter) whose value has
    all moved on reads dimmed; where value still rests, full ink. */
@@ -341,6 +348,11 @@ a:hover { text-decoration: underline; }
 .entry-title { margin:14px 0 0; max-width:560px; font:italic 400 17px/1.65 'Newsreader',serif; font-weight:400; color:var(--ink-soft); }
 .entry-amt { margin-top:16px; font:500 20px/1.25 'IBM Plex Mono',monospace; color:var(--ink); white-space:nowrap; font-variant-numeric:tabular-nums; }
 .entry-amt.credit { color:var(--accent); }
+/* The entry's valuation at its own day, under the amount it values: dated,
+   sourced, ≈-marked, in the annotation's italic serif. Empty -- no USD
+   notation chosen, no day, or no answer -- it takes no room. */
+.entry-val { margin-top:6px; font:italic 400 13px/1.4 'Newsreader',serif; color:var(--meta); white-space:nowrap; }
+.entry-val:empty { display:none; }
 /* The section, whole, in the reader's own manuscript layout -- the book
    page's classes, metrics and grid verbatim (chapter-body type, the
    [left margin | body | right margin] tx-flow grid, the version note in
@@ -551,6 +563,7 @@ a:hover { text-decoration: underline; }
         <a class="entry-cite" id="entry-cite"></a>
         <h1 class="entry-title" id="entry-title"></h1>
         <div class="entry-amt" id="entry-amt"></div>
+        <div class="entry-val" id="entry-val"></div>
         <div class="entry-section" id="entry-section"></div>
         <p class="anth-prose" id="entry-prose"></p>
         <div class="entry-card" id="entry-card"></div>
@@ -584,6 +597,7 @@ import { INDEXED, isAddress, isScriptHex, keptLedgers, saveKeptLedgers, sameAddr
          formatBalanceBtc, formatNetBtc, chainFailureText, citeHref, sectionOf, sectionOfFetched, citePlace, passageTxid, passageEntries, txHexOf, outspendsOf, prevoutValuesOf,
          DEFAULT_ESPLORA, esploraCustom, esploraSelected, setEsploraSettings } from './btc-index.js';
 import { volumeBookChapter, heightOf, subsidyAt, toRoman, parseReference, latinRefOf, footnoteMark } from './btc-citation.js';
+import { usdChosen, usdOn, formatNetValuation } from './btc-price.js';
 import { BIP39, HP_SPELLS } from './btc-wordlists.js';
 import { appendix } from './btc-contents.js';
 import './btc-fontscale.js';   // the reader's type sizes: a ledger's readings are set at the size the book page's Commentary row chose
@@ -2041,6 +2055,20 @@ const openEntryLeaf = async (alive) => {
   const amt = document.getElementById('entry-amt');
   amt.textContent = formatNetBtc(e.sats);
   amt.classList.toggle('credit', e.sats > 0);
+  // The entry's valuation at its own day -- the ledger's price register:
+  // dated, sourced, ≈-marked -- when the reader reads in USD (the book's
+  // amount notation, followed here). Async after the paint; an entry with
+  // no day, or a day the source cannot answer, simply shows nothing.
+  const val = document.getElementById('entry-val');
+  val.textContent = '';
+  val.removeAttribute('title');
+  if (usdChosen() && e.time) {
+    usdOn(e.time).then((p) => {
+      if (!p || !alive()) return;
+      val.textContent = `${formatNetValuation(e.sats, { label: 'USD', perBtc: p.perBtc })} — ${p.date}, per ${p.source}`;
+      val.title = `at ${p.perBtc.toLocaleString('en-US')} USD per ₿ on ${p.date} — a market's valuation, not the record`;
+    });
+  }
 
   const card = document.getElementById('entry-card');
   card.replaceChildren();

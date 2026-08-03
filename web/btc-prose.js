@@ -455,20 +455,12 @@ let DAY_PRICE = null;
 export function setDayPrice(p) { DAY_PRICE = p; }
 export function dayPrice() { return DAY_PRICE; }
 
-// A satoshi amount in the reader's own unit. ≈ because the figure is rounded,
-// and more to the point because it is a valuation. Two decimals in the money
-// manner, stretched only as far as keeps a small amount from rounding to
-// nothing — a dust output should never print as ≈ 0.00. Zero alone drops the
-// ≈: nothing is exact at any rate. Number arithmetic is fine here — the
-// record stays exact in the hover; this figure is a reading, read at rate
-// precision.
-export function formatOwnAmount(sats, { label, perBtc }) {
-  const v = Number(sats) * perBtc / 1e8;
-  if (v === 0) return `0 ${label}`;
-  const digits = v < 0.01 ? Math.min(10, 1 - Math.floor(Math.log10(v))) : 2;
-  const figure = v.toLocaleString('en-US', { minimumFractionDigits: Math.min(digits, 2), maximumFractionDigits: digits });
-  return `≈ ${figure} ${label}`;
-}
+// A satoshi amount at a rate — the valuations' shared dress. The formatter
+// itself lives in btc-price.js so the ledger surfaces can wear it without
+// the WASM engine this module rides on; re-exported here under the book's
+// own name for it.
+import { formatValuation } from './btc-price.js';
+export const formatOwnAmount = formatValuation;
 
 // A satoshi amount in a named notation — the settings rows print one sample
 // amount in each, so the choice shows itself. 'usd' with no day price and

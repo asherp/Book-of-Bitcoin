@@ -25,6 +25,43 @@
 // that drift is the valuation's problem, not ours to correct.)
 export const utcDateOf = (ts) => new Date(ts * 1000).toISOString().slice(0, 10);
 
+// ─── the figures ───────────────────────────────────────────────────────
+// A satoshi amount at a rate: { label, perBtc }. ≈ because the figure is
+// rounded, and more to the point because it is a valuation. Two decimals in
+// the money manner, stretched only as far as keeps a small amount from
+// rounding to nothing — a dust output should never print as ≈ 0.00. Zero
+// alone drops the ≈: nothing is exact at any rate. Number arithmetic is
+// fine here — the record stays exact wherever the caller keeps it (a hover,
+// a neighbouring column); this figure is a reading, read at rate precision.
+// Lives here rather than btc-prose.js so the ledger surfaces can dress a
+// valuation without dragging in the WASM engine the prose module rides on;
+// btc-prose re-exports it (as formatOwnAmount) for the book.
+export function formatValuation(sats, { label, perBtc }) {
+  const v = Number(sats) * perBtc / 1e8;
+  if (v === 0) return `0 ${label}`;
+  const digits = v < 0.01 ? Math.min(10, 1 - Math.floor(Math.log10(v))) : 2;
+  const figure = v.toLocaleString('en-US', { minimumFractionDigits: Math.min(digits, 2), maximumFractionDigits: digits });
+  return `≈ ${figure} ${label}`;
+}
+
+// The same, signed, for a ledger's net movements (btc-index.js's
+// formatNetBtc manner): what a chapter paid an address (+) or spent from
+// it (−), valued at a day's rate.
+export function formatNetValuation(sats, unit) {
+  const n = Number(sats);
+  if (!n) return formatValuation(0, unit);
+  return formatValuation(Math.abs(n), unit).replace('≈ ', n < 0 ? '≈ −' : '≈ +');
+}
+
+// Whether the reader reads amounts in USD — btc-prose.js's amount-notation
+// choice, mirrored here by its bare key so a ledger page can follow the
+// book's setting without importing the prose module. The key and its
+// values are btc-prose.js's to define; this is a read-only mirror of one
+// of them.
+export function usdChosen() {
+  try { return localStorage.getItem('glossia-btc-amount-unit') === 'usd'; } catch { return false; }
+}
+
 // ─── the sources ───────────────────────────────────────────────────────
 // Each parses its own wire shape into { perBtc, date } or null. The parsers
 // are pure and exported for the test suite; the fetchers around them are not.
@@ -116,18 +153,28 @@ function writeCache(cache) {
 // source: { perBtc, date, source, href } — date being the day the source's
 // answer is actually of — or null where its record has nothing. Throws
 // nothing: an unreachable source is also null, just not remembered as one.
-export async function usdOn(ts) {
+// Single-flight per source and day (btc-index.js's citePlaceInflight
+// discipline): a screenful of ledger rows sharing a day must share one
+// question, not race duplicates before the answer banks.
+const usdInflight = new Map();
+export function usdOn(ts) {
   const src = priceSource();
   const key = `${src.id}:${utcDateOf(ts)}`;
   const cache = readCache();
   if (key in cache) {
     const hit = cache[key];
-    return hit ? { ...hit, source: src.label, href: src.href } : null;
+    return Promise.resolve(hit ? { ...hit, source: src.label, href: src.href } : null);
   }
-  let answer;
-  try { answer = await src.fetchDay(ts); }
-  catch { return null; }                      // unreachable: null, uncached
-  cache[key] = answer || 0;
-  writeCache(cache);
-  return answer ? { ...answer, source: src.label, href: src.href } : null;
+  if (!usdInflight.has(key)) {
+    usdInflight.set(key, (async () => {
+      let answer;
+      try { answer = await src.fetchDay(ts); }
+      catch { return null; }                  // unreachable: null, uncached
+      const fresh = readCache();              // re-read: another day may have banked meanwhile
+      fresh[key] = answer || 0;
+      writeCache(fresh);
+      return answer ? { ...answer, source: src.label, href: src.href } : null;
+    })().finally(() => usdInflight.delete(key)));
+  }
+  return usdInflight.get(key);
 }
