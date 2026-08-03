@@ -388,28 +388,83 @@ export function formatBtc(sats) {
 //   'btc'   1.23456789 ₿      bitcoin, the ₿ sign trailing (formatBtc above)
 //   'sats'  123·456·789 sats  satoshis, the book's middle-dot grouping
 //   'raw'   123456789         the bare satoshi integer — no marker, no separator
-// The choice persists in localStorage under its own key and is read at
+//   'own'   ≈ 123,456.79 USD  the reader's own unit, at a rate the reader set
+// The first three are renderings of the record: one integer, dressed three
+// ways, each recoverable from the others. The fourth is not, and the record
+// offers no help drawing the line — the chain knows no dollars, and strictly
+// no bitcoins either: the field is an integer, ₿'s decimal point a
+// convention, and even "one sat is one sat" is a reading (freshly minted
+// coins have traded at a premium, ordinal sats at a fancy). So the book
+// supplies no rate: the reader names the unit and prices it, the figure
+// wears ≈, and the hover keeps the on-chain amount. Their unit, their rate,
+// their reading.
+// Each choice persists in localStorage under its own key and is read at
 // format time, so a page re-render is all a switch needs. 'btc' is the
 // default and is stored as an absent key, so a reader who never chose
 // reads the book as it has always been set.
 const AMOUNT_UNIT_KEY = 'glossia-btc-amount-unit';
+const OWN_UNIT_KEY = 'glossia-btc-own-unit';
+
+// The reader's own unit, where one is set: { label, perBtc } — the unit's
+// name as the reader spelled it, and their price of one ₿ in it. Null until
+// the reader defines one, and null again on anything malformed, so callers
+// can trust what they get.
+export function ownUnit() {
+  try {
+    const o = JSON.parse(localStorage.getItem(OWN_UNIT_KEY));
+    if (o && typeof o.label === 'string' && o.label.trim()
+        && Number.isFinite(o.perBtc) && o.perBtc > 0) {
+      return { label: o.label.trim(), perBtc: o.perBtc };
+    }
+  } catch { /* unset, malformed, or storage unavailable */ }
+  return null;
+}
+export function setOwnUnit(u) {
+  try {
+    if (u) localStorage.setItem(OWN_UNIT_KEY, JSON.stringify({ label: u.label, perBtc: u.perBtc }));
+    else localStorage.removeItem(OWN_UNIT_KEY);
+  } catch { /* storage unavailable: the unit just doesn't persist */ }
+}
+
 export function amountUnit() {
   try {
     const v = localStorage.getItem(AMOUNT_UNIT_KEY);
+    if (v === 'own') return ownUnit() ? 'own' : 'btc';
     return v === 'sats' || v === 'raw' ? v : 'btc';
   } catch { return 'btc'; }
 }
 export function setAmountUnit(u) {
   try {
-    if (u === 'sats' || u === 'raw') localStorage.setItem(AMOUNT_UNIT_KEY, u);
+    if (u === 'sats' || u === 'raw' || u === 'own') localStorage.setItem(AMOUNT_UNIT_KEY, u);
     else localStorage.removeItem(AMOUNT_UNIT_KEY);
   } catch { /* storage unavailable: the choice just doesn't persist */ }
 }
+
+// A satoshi amount in the reader's own unit. ≈ because the figure is rounded,
+// and more to the point because it is a valuation. Two decimals in the money
+// manner, stretched only as far as keeps a small amount from rounding to
+// nothing — a dust output should never print as ≈ 0.00. Zero alone drops the
+// ≈: nothing is exact at any rate. Number arithmetic is fine here — the
+// record stays exact in the hover; this figure is a reading, read at rate
+// precision.
+export function formatOwnAmount(sats, { label, perBtc }) {
+  const v = Number(sats) * perBtc / 1e8;
+  if (v === 0) return `0 ${label}`;
+  const digits = v < 0.01 ? Math.min(10, 1 - Math.floor(Math.log10(v))) : 2;
+  const figure = v.toLocaleString('en-US', { minimumFractionDigits: Math.min(digits, 2), maximumFractionDigits: digits });
+  return `≈ ${figure} ${label}`;
+}
+
 // A satoshi amount in a named notation — the settings rows print one sample
-// amount in each, so the choice shows itself.
+// amount in each, so the choice shows itself. 'own' without a stored unit
+// falls back to the record's ₿, like everything else unrecognised.
 export function formatAmountAs(sats, unit) {
   if (unit === 'sats') return `${groupDigits(BigInt(sats).toString())} sats`;
   if (unit === 'raw') return BigInt(sats).toString();
+  if (unit === 'own') {
+    const o = ownUnit();
+    if (o) return formatOwnAmount(sats, o);
+  }
   return formatBtc(sats);
 }
 // …and in the notation currently chosen: the one call every amount the

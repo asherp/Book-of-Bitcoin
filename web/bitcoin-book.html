@@ -241,6 +241,10 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 }
 .endpoint-add-row input:focus { outline:none; border-color:var(--accent); }
 .endpoint-add-row #endpoint-label { flex:0 0 32%; }
+/* The own-unit foot under the Amounts rows, and its edit row: the data
+   source rows' dress, worn by the one notation the reader authors. */
+#own-unit-foot { margin-top:10px; }
+.endpoint-add-row #own-unit-label { flex:0 0 32%; }
 .endpoint-msg { margin-top:10px; font:500 12px/1.4 'IBM Plex Mono',monospace; color:var(--meta); }
 .endpoint-msg.err { color:var(--error); }
 
@@ -960,8 +964,21 @@ button:disabled { opacity: .4; cursor: not-allowed; }
            ₿ sign, satoshis with the book's middle-dot grouping, or the bare
            satoshi integer — each row labelled by the same sample amount, so
            the choice shows itself; filled by renderAmountRows. Notation,
-           not content: every form carries the same satoshis. -->
+           not content: every form carries the same satoshis. The one
+           exception is the reader's own unit, when they have named one and
+           priced it below: that row's figure wears ≈, because a rate is a
+           valuation the reader authors, not a form of the record. -->
       <div id="amount-rows" class="lang-rows"></div>
+      <div id="own-unit-foot" class="endpoint-row">
+        <button type="button" id="own-unit-add" class="ghost-btn">+ Your unit</button>
+        <button type="button" id="own-unit-remove" class="ghost-btn hidden">Remove</button>
+      </div>
+      <div id="own-unit-row" class="endpoint-add-row hidden">
+        <input type="text" id="own-unit-label" class="mono" placeholder="Unit (e.g. USD)" autocomplete="off" spellcheck="false">
+        <input type="text" id="own-unit-rate" class="mono" placeholder="Your rate per ₿" autocomplete="off" spellcheck="false" inputmode="decimal">
+        <button type="button" id="own-unit-save">Save</button>
+        <button type="button" id="own-unit-cancel" class="ghost-btn">Cancel</button>
+      </div>
       <div class="settings-title">Data source</div>
       <div class="endpoint-row">
         <select id="endpoint-select" class="endpoint-select" aria-label="Data source endpoint"></select>
@@ -1093,7 +1110,7 @@ import { parseTransaction, computeTxid, parseBlockHeader, computeBlockHash, bits
 // Ledger page's own keep button writes. INDEXED is the curated shelf, whose
 // titles are the keep line's defaults.
 import { keptLedgers, saveKeptLedgers, INDEXED } from './btc-index.js';
-import { composeTransactionFields, composeBlockHeaderFields, bitsInfo, groupDigits, formatBtc, formatAmount, formatAmountAs, amountUnit, setAmountUnit, renderWitness, toSuperscript, timestampInfo } from './btc-prose.js';
+import { composeTransactionFields, composeBlockHeaderFields, bitsInfo, groupDigits, formatBtc, formatAmount, formatAmountAs, amountUnit, setAmountUnit, ownUnit, setOwnUnit, renderWitness, toSuperscript, timestampInfo } from './btc-prose.js';
 import { volumeBookChapter, heightOf, windowStartOf, retargetInside, subsidyAt, toRoman, reference, parseReference, footnoteMark, latinRefOf } from './btc-citation.js';
 import { loadNotables, places, placeTitle, blocksEta, appendix } from './btc-contents.js';
 import { queueLabel } from './btc-mempool.js';
@@ -1783,9 +1800,17 @@ async function projectedCitation(txid) {
 // bitcoin, the hover carries the grouped satoshi count, as it always has;
 // reading in either satoshi notation, it carries the ₿ form instead — the
 // figure a reader would recognise is never further away than the hover.
-const amountTitle = (sats) => (amountUnit() === 'btc'
-  ? `${groupDigits(String(sats))} satoshis`
-  : formatBtc(sats));
+// Reading in the reader's own unit, the hover carries the record the figure
+// no longer states — the on-chain amount — and the rate the reader set, so
+// the valuation is never further from its author than the hover.
+const amountTitle = (sats) => {
+  const u = amountUnit();
+  if (u === 'own') {
+    const o = ownUnit();
+    return `${formatBtc(sats)} — at your rate of ${o.perBtc.toLocaleString('en-US')} ${o.label} per ₿: your valuation, not the record`;
+  }
+  return u === 'btc' ? `${groupDigits(String(sats))} satoshis` : formatBtc(sats);
+};
 
 // Fill each pending citation cell once its reference resolves; skip if the
 // reader has since paged to another section (gen no longer current).
@@ -5838,6 +5863,7 @@ async function applyBookLang(id) {
   setBookLang(id);
   renderLangRows();
   localizeChrome();   // the chrome follows, except into Latin (see setBookLang)
+  renderAmountRows(); // …and the own-unit foot's label, which is set by state, not localizeChrome
   // Everything composed so far was composed in the old language: flush the
   // section cache and re-render the page in hand. The prose memo inside
   // encodeCanonical is keyed by language, so it needs no clearing -- a
@@ -5867,16 +5893,24 @@ renderLangRows();
 // choice persists (btc-prose.js) and applies at paint time: the composed
 // fields carry every amount raw, so re-showing the section in hand reprints
 // the page with nothing re-composed.
+//
+// A fourth row appears once the reader has named a unit of their own and
+// priced it (the foot below the rows): the same sample amount at their rate,
+// wearing ≈. The book takes no position on what a satoshi is worth -- in
+// dollars or in other satoshis -- so the row exists only where a reader has
+// authored it, and removing the unit removes the row.
 const AMOUNT_UNITS = ['btc', 'sats', 'raw'];
 const AMOUNT_SAMPLE = 123456789;
 function renderAmountRows() {
   const rows = $('amount-rows');
   rows.innerHTML = '';
-  for (const u of AMOUNT_UNITS) {
+  const own = ownUnit();
+  for (const u of own ? [...AMOUNT_UNITS, 'own'] : AMOUNT_UNITS) {
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'lang-row' + (u === amountUnit() ? ' current' : '');
     btn.setAttribute('aria-pressed', u === amountUnit() ? 'true' : 'false');
+    if (u === 'own') btn.title = `at your rate of ${own.perBtc.toLocaleString('en-US')} ${own.label} per ₿ — your valuation, not the record`;
     const name = document.createElement('span');
     name.textContent = formatAmountAs(AMOUNT_SAMPLE, u);
     const mark = document.createElement('span');
@@ -5886,14 +5920,55 @@ function renderAmountRows() {
     btn.addEventListener('click', () => { applyAmountUnit(u); });
     rows.append(btn);
   }
+  $('own-unit-add').textContent = own ? tr('Edit your unit') : tr('+ Your unit');
+  $('own-unit-remove').classList.toggle('hidden', !own);
 }
-async function applyAmountUnit(u) {
-  if (u === amountUnit()) return;
+async function applyAmountUnit(u, force = false) {
+  if (u === amountUnit() && !force) return;
   setAmountUnit(u);
   renderAmountRows();
   if (state) await showCurrentTx();
 }
 renderAmountRows();
+
+// The own-unit editor, in the custom endpoint's manner: a label and a rate,
+// saved together or not at all. Saving selects the unit -- defining it and
+// then reading in it is the one gesture -- and re-prints even when it was
+// already selected, since the rate may be what changed.
+function closeOwnUnitForm() {
+  $('own-unit-row').classList.add('hidden');
+  $('own-unit-label').value = '';
+  $('own-unit-rate').value = '';
+}
+async function saveOwnUnit() {
+  const label = $('own-unit-label').value.trim();
+  const rate = Number($('own-unit-rate').value.trim().replace(/[,\s·']/g, ''));
+  if (!label || !Number.isFinite(rate) || rate <= 0) return;
+  setOwnUnit({ label, perBtc: rate });
+  closeOwnUnitForm();
+  await applyAmountUnit('own', true);
+}
+$('own-unit-add').addEventListener('click', () => {
+  const row = $('own-unit-row');
+  row.classList.toggle('hidden');
+  if (!row.classList.contains('hidden')) {
+    const o = ownUnit();
+    if (o) { $('own-unit-label').value = o.label; $('own-unit-rate').value = String(o.perBtc); }
+    $('own-unit-label').focus();
+  }
+});
+$('own-unit-cancel').addEventListener('click', closeOwnUnitForm);
+$('own-unit-save').addEventListener('click', saveOwnUnit);
+$('own-unit-label').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('own-unit-rate').focus(); });
+$('own-unit-rate').addEventListener('keydown', (e) => { if (e.key === 'Enter') saveOwnUnit(); });
+$('own-unit-remove').addEventListener('click', async () => {
+  const wasOwn = amountUnit() === 'own';
+  setOwnUnit(null);
+  if (wasOwn) setAmountUnit('btc');
+  closeOwnUnitForm();
+  renderAmountRows();
+  if (wasOwn && state) await showCurrentTx();
+});
 
 // ── The chrome's words ────────────────────────────────────────────────────
 // Re-say the static chrome in the UI language (btc-strings.js): nav items,
@@ -5909,6 +5984,7 @@ function localizeChrome() {
     ...document.querySelectorAll('#settings-panel .settings-title, #lang-panel .settings-title'),
     ...document.querySelectorAll('.fs-label'),
     $('fontscale-reset'), $('endpoint-add'), $('endpoint-remove'), $('endpoint-save'), $('endpoint-cancel'),
+    $('own-unit-remove'), $('own-unit-save'), $('own-unit-cancel'),
     ...document.querySelectorAll('#hash-menu .hash-menu-item, #hash-menu-title .hash-title-row button'),
     ...document.querySelectorAll('.section-nav summary'),
     document.querySelector('.key-scope-note'),
@@ -5921,6 +5997,8 @@ function localizeChrome() {
     if (node && node.nodeType === Node.TEXT_NODE) node.nodeValue = `${tr(en)} `;
   }
   localizeAttr($('endpoint-label'), 'placeholder');
+  localizeAttr($('own-unit-label'), 'placeholder');
+  localizeAttr($('own-unit-rate'), 'placeholder');
   localizeAttr($('hash-title-input'), 'placeholder');
   localizeAttr(document.querySelector('.section-nav .commentary summary'), 'title');
 }
