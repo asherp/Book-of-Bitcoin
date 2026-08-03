@@ -1273,27 +1273,180 @@ const pooled = async (items, width, run) => {
 };
 const runEntries = async (alive) => {
   const addrs = cur().addresses;
-  const heldP = pooled(addrs, 4, heldFresh);
+  const lines = new Map();      // member -> the best line known here
+  const helds = new Map();      // member -> held snapshot, fetched with its turn
   const cachedAll = await Promise.all(addrs.map((a) => cachedLine(a)));
   if (!alive()) return;
-  const cached = mergeLines(cachedAll, addrs);
-  if (cached) view(cached, null);
-  else { el.replaceChildren(); lineNote(el, '…'); }
-  // Every member's sync ticks reach this leaf's one note, summed.
-  const latest = new Map(addrs.map((a, i) => [a, { g: cachedAll[i]?.walked ?? 0, t: cachedAll[i]?.txCount ?? 0 }]));
-  const tickNote = () => {
+  addrs.forEach((a, i) => { if (cachedAll[i]) lines.set(a, cachedAll[i]); });
+  const merged = () => mergeLines(addrs.map((a) => lines.get(a) ?? null), addrs);
+
+  // A record already gathered whole opens whole: the banked table paints
+  // at once, and the chain is then re-asked at walking pace so new
+  // arrivals and the held marks catch up.
+  const whole = merged();
+  if (whole && whole.complete) {
+    view(whole, null);
+    const [ls, hs] = await Promise.all([pooled(addrs, 4, lineOnce), pooled(addrs, 4, heldFresh)]);
     if (!alive()) return;
-    const gathered = [...latest.values()].reduce((n2, v) => n2 + v.g, 0);
-    const total = [...latest.values()].reduce((n2, v) => n2 + v.t, 0);
-    const note = el.querySelector('.idx-note');
-    if (note) note.textContent = `still syncing — ${gathered.toLocaleString('en-US')} of ${total.toLocaleString('en-US')} transactions gathered`;
+    const data = mergeLines(ls.map((l, i) => l ?? cachedAll[i]), addrs);
+    if (data) view(data, mergeHeld(hs));
+    else unreachable(alive, () => runEntries(alive));
+    return;
+  }
+
+  // Not yet whole: the gathering is the scroll's to drive. Nothing is
+  // asked of the chain until the reader reads toward it -- the passage
+  // leaf's own discipline, at the ledger's scale. Each pull at the foot
+  // serves the cheapest work first: another page of what is already
+  // banked and merged; else the next few members' first word (line and
+  // held snapshot together, a small pool wide); else one page deeper into
+  // members whose banked history ran out. A ledger the reader never
+  // scrolls costs the chain nothing.
+  const BATCH = 8;
+  const queue = addrs.slice();           // members not yet asked, shelf order
+  let rendered = 0;
+  let busy = false;
+  let io = null;
+  el.replaceChildren();
+  const note = document.createElement('span');
+  note.className = 'idx-note sync-note';
+  note.id = 'anth-contents';
+  const heads = document.createElement('div');
+  heads.className = 'acct-heads';
+  const hRef = document.createElement('span'); hRef.className = 'h-ref';
+  hRef.textContent = 'reference';
+  heads.append(hRef);
+  for (const [cls, label] of [['col-deb', 'debit'], ['col-cred', 'credit'], ['col-status', 'status']]) {
+    const h = document.createElement('span'); h.className = cls; h.textContent = label;
+    heads.append(h);
+  }
+  const rowsEl = document.createElement('div');
+  const foot = document.createElement('span');
+  foot.className = 'idx-note sync-note';
+  foot.textContent = '…';
+  el.append(note, heads, rowsEl, foot);
+  const paintMeta = () => {
+    const m = merged();
+    const gathered = addrs.length - queue.length;
+    note.textContent = queue.length
+      ? `${gathered.toLocaleString('en-US')} of ${n(addrs.length, 'passage', 'passages')} gathered — scrolling gathers the rest`
+      : m && m.complete ? stateText(m)
+      : m ? `the latest ${m.walked.toLocaleString('en-US')} of ${m.txCount.toLocaleString('en-US')} transactions gathered — scrolling reaches deeper`
+      : '…';
+    heads.style.display = m && m.entries.length ? '' : 'none';
+    showCount(m);
+    showRange(m);
+    // The totals rule whatever is gathered (the note above them says how
+    // much that is); with any member's balance unknown no remainder can
+    // post, so the bar waits rather than misstate the books.
+    if (m && m.balance != null) showTotals(m); else totalsBar.classList.add('hidden');
+    foot.textContent = !queue.length && m && m.complete ? '— the beginning of the record' : '…';
   };
-  for (const a of addrs) progress.set(a, (gathered, total) => { latest.set(a, { g: gathered, t: total }); tickNote(); });
-  const [lines, helds] = await Promise.all([pooled(addrs, 4, lineOnce), heldP]);
-  if (!alive()) return;
-  const data = mergeLines(lines.map((l, i) => l ?? cachedAll[i]), addrs);
-  if (data) view(data, mergeHeld(helds));
-  else unreachable(alive, () => runEntries(alive));
+  // Appending draws the next page of the banked, merged record.
+  const draw = () => {
+    const m = merged();
+    if (!m) return false;
+    const len = m.entries.length;
+    const take = Math.min(len - rendered, PAGE);
+    if (take <= 0) return false;
+    renderRows(rowsEl, m.entries.slice(len - rendered - take, len - rendered));
+    rendered += take;
+    return true;
+  };
+  // A gathered batch interleaves entries anywhere in time, so the drawn
+  // window redraws whole -- anchored on the row nearest the top of the
+  // viewport, so the reader's place holds still while history fills in
+  // around it. The window grows by what arrived, so nothing already read
+  // slides out of reach.
+  const anchor = () => {
+    for (const r of rowsEl.querySelectorAll('.idx-row[data-txid]')) {
+      const top = r.getBoundingClientRect().top;
+      if (top >= 0) return { txid: r.dataset.txid, sats: r.dataset.sats, addr: r.dataset.addr, top };
+    }
+    return null;
+  };
+  const restore = (a2) => {
+    if (!a2) return;
+    const sel = `.idx-row[data-txid="${a2.txid}"][data-sats="${a2.sats}"]${a2.addr ? `[data-addr="${a2.addr}"]` : ''}`;
+    const r = rowsEl.querySelector(sel);
+    if (r) window.scrollBy(0, r.getBoundingClientRect().top - a2.top);
+  };
+  const redraw = (grewBy) => {
+    const m = merged();
+    if (!m) return;
+    const a2 = anchor();
+    rendered = Math.min(m.entries.length, rendered + Math.max(0, grewBy));
+    rowsEl.replaceChildren();
+    renderRows(rowsEl, m.entries.slice(m.entries.length - rendered));
+    restore(a2);
+  };
+  // The landing: a dive returns to the entry it left off at; draw until
+  // its row exists (a dive only reaches banked entries, so it will).
+  const tryLand = () => {
+    if (!landAt) return false;
+    const row = rowsEl.querySelector(`[data-txid="${landAt.txid}"][data-sats="${landAt.sats}"]`);
+    if (!row) return true;
+    landAt = null;
+    requestAnimationFrame(() => row.scrollIntoView({ block: 'center', behavior: 'instant' }));
+    return false;
+  };
+  // A batch the chain answered nothing of goes back on the queue, and the
+  // foot becomes the retry -- pulled by hand, not hammered by the observer.
+  const failFoot = () => {
+    foot.replaceChildren(`— the chain could not be reached (${chainFailureText()}) · `);
+    const a2 = document.createElement('a');
+    a2.href = '#';
+    a2.textContent = 'retry';
+    a2.addEventListener('click', (ev) => { ev.preventDefault(); if (alive()) scroll(); });
+    foot.append(a2);
+  };
+  const scroll = async () => {
+    if (busy || !alive()) return;
+    busy = true;
+    if (!draw()) {
+      if (queue.length) {
+        const batch = queue.splice(0, BATCH);
+        const before = merged()?.entries.length ?? 0;
+        let answered = 0;
+        await pooled(batch, 4, async (a) => {
+          const [l, h] = await Promise.all([
+            lineOnce(a).catch(() => null), heldFresh(a).catch(() => null)]);
+          if (l) { lines.set(a, l); answered += 1; }
+          if (h) helds.set(a, h);
+        });
+        if (!alive()) { busy = false; return; }
+        if (!answered) {
+          queue.unshift(...batch);
+          failFoot();
+          busy = false;
+          return;
+        }
+        redraw((merged()?.entries.length ?? 0) - before);
+      } else {
+        const behind = addrs.filter((a) => lines.get(a) && !lines.get(a).complete);
+        if (behind.length) {
+          const before = merged()?.entries.length ?? 0;
+          await pooled(behind.slice(0, 4), 4, async (a) => {
+            const l = await extendLine(a).catch(() => null);
+            if (l) lines.set(a, l);
+          });
+          if (!alive()) { busy = false; return; }
+          redraw((merged()?.entries.length ?? 0) - before);
+        } else {
+          io?.disconnect();   // gathered whole; the next visit opens the table
+        }
+      }
+    }
+    paintMeta();
+    busy = false;
+    if (tryLand() && rendered < (merged()?.entries.length ?? 0)) { queueMicrotask(scroll); return; }
+    if (io) { io.unobserve(foot); io.observe(foot); }
+  };
+  io = new IntersectionObserver((es) => { if (es.some((e2) => e2.isIntersecting)) scroll(); },
+                                { rootMargin: '1600px 0px' });
+  io.observe(foot);
+  paintMeta();
+  scroll();
 };
 
 // ── The three leaves ───────────────────────────────────────────────────────
