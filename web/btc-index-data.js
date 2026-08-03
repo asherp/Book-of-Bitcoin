@@ -78,6 +78,17 @@ export const INDEXED = [
   // unlicensed money-transmitting business. An open appeal, so its index
   // line is still being written.
   { title: 'Free Samourai — Keonne Rodriguez', addresses: ['bc1qtjjcvn98wh7dfd55m8kxhjcfexanttwt8gtan8'] },
+  // ── The hoard ─────────────────────────────────────────────────────────
+  // A family of one, and public in the criterion's exchange-breach sense:
+  // entered into the record by the parties themselves. The address the
+  // 79,956 BTC swept from Mt. Gox on 1 March 2011 have sat in ever since —
+  // claimed by the Mt. Gox estate (Karpelès, 2023) and, until the courts
+  // ended it, by Tulip Trading's 2021 suit; charged to no one. Unlike the
+  // incinerators below it presumably has a key, which is the whole
+  // difference: unspent is a fact, unspendable only ever a claim. Its story
+  // is a published reading (notables.yaml + commentary/); research and
+  // chain verification in tools/mtgox-era-thefts.md.
+  { title: 'The 1Feex hoard', addresses: ['1FeexV6bAHb8ybZjqQMjJrcCrHGW9sb6uF'] },
   // ── The incinerators ──────────────────────────────────────────────────
   // Three ledgers of a different family: names whose entire record is coins
   // arriving and never leaving. Each is public in the strongest sense the

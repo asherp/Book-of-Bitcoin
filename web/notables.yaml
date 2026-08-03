@@ -261,6 +261,18 @@
   commentary:
     - file: 100k-block-milestone.md
       by: Claude Fable 5
+# The era's great theft with a passage: twenty-seven inputs worth 79,956.55 ₿
+# swept into one output of 79,956 ₿ even, 1 March 2011 — the week Mt. Gox
+# changed hands. The passage is a perfectly formed withdrawal; the theft is
+# the operator's own claim (Karpelès, 2023: moved "without authorization",
+# 79,956.55 ₿ — matching the inputs to the satoshi). The coins have never
+# moved; the receiving address reads in the Ledger as The 1Feex hoard.
+# Research and chain verification in tools/mtgox-era-thefts.md.
+- title: The 79,956 ₿ theft
+  id: I β56 ■315 §2
+  commentary:
+    - file: the-79956-btc-theft.md
+      by: Claude Fable 5
 # The chain's smallest deliberate burn. This coinbase claims 49.99999999 ₿ —
 # one satoshi under the 50 ₿ subsidy, with the block's 0.01 ₿ of fees forgone
 # besides: 1,000,001 satoshis destroyed, on purpose. A coinbase may claim UP TO
@@ -273,6 +285,18 @@
   index: 0
   commentary:
     - file: the-satoshi-left-on-the-table.md
+      by: Claude Fable 5
+# Mt. Gox's answer to the June 2011 crash, three days after an attacker's
+# database coins printed $0.01 without touching the chain: nine inputs
+# totaling 442,000 ₿ even, one output of the announced joke amount
+# 424,242.42424242 ₿, and change of 17,757.57575758 ₿ — the subtraction
+# forcing a second repeating decimal. Control proved; solvency not, with
+# the March theft already sitting in 1Feex and the September drain eleven
+# weeks off. Research in tools/mtgox-era-thefts.md.
+- title: The 424,242 ₿ proof
+  id: I β66 ■1710 §2
+  commentary:
+    - file: the-424242-btc-proof.md
       by: Claude Fable 5
 - title: Eligius, by Luke Dashjr
   id: '139690'
@@ -650,6 +674,17 @@
   id: 1HB5XMLmzFVj8ALj6mfBsbifRoD4miY36v
   commentary:
     - file: wikileaks-ledger.md
+      by: Claude Fable 5
+# The stolen hoard — a name whose record runs one way like the burn
+# ledgers below, but for the opposite reason: it presumably has a key.
+# 690 arrivals, 79,957.26866953 ₿, none ever spent — the first of them the
+# 79,956 ₿ swept from Mt. Gox on 1 March 2011 (The 79,956 ₿ theft), the
+# rest fifteen years of the world's dust. Shelved in btc-index-data.js;
+# research in tools/mtgox-era-thefts.md.
+- title: The 1Feex hoard
+  id: 1FeexV6bAHb8ybZjqQMjJrcCrHGW9sb6uF
+  commentary:
+    - file: mt-gox-1feex-ledger.md
       by: Claude Fable 5
 # The burn ledgers — names whose entire record is coins arriving and never
 # leaving, keyless by construction. Shelved in btc-index-data.js as "the
