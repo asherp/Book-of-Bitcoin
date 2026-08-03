@@ -48,7 +48,7 @@
    description, not a note about it. */
 .toc-part .toc-title { font-size:19px; color:var(--ink); }
 .toc-span { display:block; margin-top:.25em; font:400 12.5px/1.5 'Public Sans',sans-serif; letter-spacing:.01em; color:var(--meta); }
-.toc-part:hover .toc-span { color:var(--dim); }
+.toc-part:hover .toc-span, .toc-entry:hover .toc-span { color:var(--dim); }
 /* The row that closes a group drops its own hairline: the next heading rules
    off above itself, and two rules with a gap between them read as an empty
    band rather than a division. */

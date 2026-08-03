@@ -223,6 +223,11 @@ function normalizePart(raw, i) {
       if (!proof) throw new Error(`btc-notables: a proof in "${title}" has no proof: file`);
       const entry = { title: String(e.title ?? proof), proof };
       if (e.subject) entry.subject = String(e.subject);
+      // Where the work is published, outside the book -- the one link the
+      // file's footnote carries. A claim about the world, not the chain, so
+      // it is editorial like the title, and as optional: a work with no
+      // living source is still a work the chain dates.
+      if (e.source) entry.source = String(e.source);
       if (e.note) entry.note = String(e.note);
       return withCommentary(entry, e);
     });

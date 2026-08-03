@@ -361,6 +361,10 @@ button:disabled { opacity: .4; cursor: not-allowed; }
    (.chapter-hash carries the same mark on the book leaf, where the book's
    target sits right beneath its title.) */
 .chapter-frontispiece .cfx-gold, .chapter-hash .cfx-gold, .section-hash .cfx-gold { color: var(--accent); font-weight: 700; font-style: normal; }
+/* The line a citing page pointed at (?hl=merkle — a proof leaf's root
+   citation): the record's own ink and a bold hand, against the
+   frontispiece's dim voice. */
+.chapter-frontispiece .cfx.cite-hit { color: var(--ink); font-weight: 600; }
 /* The book leaf's two targets, the opening ceiling and the closing one, a row
    each, and beneath them what the retarget between did to the difficulty.
    Nothing joins the rows: they are one field stated twice, and the line break
@@ -2901,7 +2905,7 @@ function renderFrontispiece(header) {
           zeros: prevParts.zeroBits ? { sup: prevParts.zeroBits, title: zeroBitsTitle(prevParts.zeroBits) } : null,
           copy: { hex: header.prevBlockHash, label: 'previous block hash' } },
     { text: merkleProse, mark: '⋔', markClass: 'merkle-mark', sup: 32, supTitle: '32 bytes',
-      copy: { hex: header.merkleRoot, label: 'merkle root' } },
+      key: 'merkle', copy: { hex: header.merkleRoot, label: 'merkle root' } },
     { text: hf.timestamp, title: hf.timestampTitle },
     // The proof of work, stated as the inequality it is: β₇₈ < 2¹⁶⁰·213529,
     // in nBits' own wire slot. The gold β mark's subscript is the target's
@@ -2922,9 +2926,11 @@ function renderFrontispiece(header) {
     { text: hf.nonce, mark: 'η', markClass: 'fx-mark', title: hf.nonceTitle,
       menu: { hex: (header.nonce >>> 0).toString(16).padStart(8, '0'), label: 'nonce', prose: hf.nonce } },
   ];
-  for (const { text, title, copy, mark, markClass, gold, sup, supTitle, zeros, gap, menu } of items) {
+  const claimable = [];   // the lines a citing page can make a claim about
+  for (const { text, title, copy, mark, markClass, gold, sup, supTitle, zeros, gap, menu, key } of items) {
     const span = document.createElement('span');
     span.className = gold ? 'cfx cfx-gold' : 'cfx';
+    if (key) { span.dataset.fx = key; claimable.push({ key, hex: copy?.hex, span }); }
     if (mark && copy) {
       fillMarkedHash(span, mark, markClass, copy.hex, copy.label, text, sup, supTitle, zeros);
     } else if (mark) {
@@ -2945,6 +2951,24 @@ function renderFrontispiece(header) {
       if (menu) attachHashCopy(span, menu.hex, menu.label, menu.prose);   // β: the whole mark is the handle
     }
     el.append(span);
+  }
+  // A citation arriving from a cited work's leaf carries a claim about one of
+  // these lines (?hl=merkle:<hex>, the root its proof's ladder ends on), and
+  // the boldface is a verdict, not an arrow: the claimed bytes are compared
+  // against this page's own value -- parsed from the raw header, not taken
+  // from the link -- and the line is set in the record's ink and a bold hand
+  // ONLY where they are equal. A claim the header does not carry bolds
+  // nothing: the page stays plain, and the absence is the answer. One-shot:
+  // consumed on first render, never rewritten forward.
+  if (highlightClaim) {
+    const { key, hex } = highlightClaim;
+    highlightClaim = null;
+    const hit = claimable.find((c) => c.key === key && c.hex === hex);
+    if (hit) {
+      hit.span.classList.add('cite-hit');
+      hit.span.title = 'the citing proof ends on exactly these 32 bytes — the bold is the match, re-checked on this page';
+      setTimeout(() => hit.span.scrollIntoView({ behavior: 'smooth', block: 'center' }), 150);
+    }
   }
 }
 
@@ -6267,6 +6291,13 @@ window.addEventListener('scroll', dismissOnViewportChange, true);
 // chain tip, so ?block=-1 is the latest block; otherwise the book opens at
 // the chain tip (-1), the latest chapter rather than Genesis.
 const params = new URLSearchParams(location.search);
+// A citing page's claim about a frontispiece line (?hl=merkle:<hex>, from a
+// proof leaf's root citation): which line, and the exact bytes the citing
+// page says it holds. Consumed by the first render, never rewritten forward.
+let highlightClaim = (() => {
+  const [key, hex] = (params.get('hl') || '').split(':');
+  return key && /^[0-9a-f]+$/.test(hex || '') ? { key, hex } : null;
+})();
 const pParam = parseReference(params.get('ref') || '');
 const txidParam = params.get('txid');
 const blockParam = params.get('block');
