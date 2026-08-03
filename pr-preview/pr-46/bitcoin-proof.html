@@ -320,9 +320,11 @@ function render(proof) {
           title: rung.out == null ? 'the transaction this commitment was buried in'
             : `output ${rung.out} of this transaction — the script the commitment sits in` }
       : isRoot
-        ? { href: `./bitcoin-book.html?ref=${latinRefOf(proof.place.height)}`,
+        // &hl=merkle: the chapter opens with its own ⋔ line set bold -- the
+        // same words as this paragraph, which is the match the turn is for.
+        ? { href: `./bitcoin-book.html?ref=${latinRefOf(proof.place.height)}&hl=merkle`,
             text: reference(proof.place.height),
-            title: "the chapter whose header commits to this root" }
+            title: "the chapter whose header commits to this root — it opens with that line set bold" }
         : null;
     const mark = isRoot ? '⋔' : rung.kind === 'transaction' ? '⌘' : rung.result.length === 40 ? 'h' : '⌘';
     const sup = mark === '⌘' ? 256 : rung.result.length / 2;
