@@ -273,48 +273,33 @@ Checked and rejected — recorded so the next reader needn't re-walk them:
   keys are gone — an attribution, not a script fact. Ledger material, with
   the claim set apart as the Ledger sets every claim about a name.
 
-## Candidate entries
+## The entries
 
-Drafted in `notables.yaml`'s grammar; references resolved by the same
-arithmetic the file's own comments use (volume from halving era, β from
-2,016-block runs since the volume's start, ■ and § one-based) and checked
-against `tools/check-editorial.mjs`'s published resolutions for neighboring
-entries. Entries carry no `commentary:` — per the house rule, a reading is
-published only once its story is fully checked; the two [reported] totals
-above (Mt. Gox's 2,609, Counterparty's window) should be re-verified or
-attributed as reported figures in any note that states them.
+The place-shaped findings above are now rows in the contents
+(`web/notables.yaml`), each carrying its verified story as a comment beside
+the entry, none yet carrying published commentary — per the house rule, a
+reading is published only once its story is fully checked, and the two
+[reported] totals above (Mt. Gox's 2,609, Counterparty's window) should be
+re-verified or attributed as reported figures in any note that states them.
+References checked against `tools/check-editorial.mjs` ("the editorial
+layer reads", with every citation resolving to the heights verified here):
 
-```yaml
-- title: The satoshi left on the table
-  id: I β62 ■1749 §1
-- title: Mt. Gox pays the void
-  id: I β75 ■1768 §23.1
-- title: The pool that paid "script"
-  id: I β85 ■686 §1.0
-- title: The coinbase that claimed nothing
-  id: III β41 ■1087 §1
-- title: The half-claimed subsidy
-  id: III β53 ■1760 §1
-- title: The endianness lock of 2042
-  id: II β90 ■936 §545.0
-- title: The 107 BTC burn
-  ids:
-    - id: V β56 ■83 §2216
-      as: 20.03 ₿
-    - id: V β56 ■83 §2221
-      as: 28.89 ₿
-    - id: V β56 ■83 §2223
-      as: 36.79 ₿
-    - id: V β56 ■83 §2224
-      as: 1.42 ₿
-    - id: V β56 ■83 §2225
-      as: 20.01 ₿
-```
+- **The satoshi left on the table** — `124724` §1
+- **Mt. Gox pays the void** — I β75 ■1768 §23.1
+- **The pool that paid "script"** — I β85 ■686 §1.0
+- **The endianness lock of 2042** — II β90 ■936 §545.0
+- **The coinbase that claimed nothing** — `501726` §1
+- **The half-claimed subsidy** — `526591` §1
+- **The 107 BTC burn** — V β56 ■83, one entry in five places (§2216,
+  §2221, §2223, §2224, §2225), each `as:` naming what it carries
 
-Ledger candidates (for `btc-index-data.js`): the Counterparty burn address,
-the Bitcoin Eater, and the all-zeros address — each a name whose entire
-record is coins arriving and never leaving, which the Ledger's
-reconcile-against-the-chain machinery states better than any note could.
+Kept out of the contents deliberately: the proof-of-burn and burn-address
+material (the Counterparty burn, the Bitcoin Eater, the all-zeros address).
+Those are names rather than places — each a ledger whose entire record is
+coins arriving and never leaving — and belong to `btc-index-data.js` and
+the Ledger, should the shelf ever take them, where the
+reconcile-against-the-chain machinery states their totals better than any
+note could.
 
 ## Sources
 

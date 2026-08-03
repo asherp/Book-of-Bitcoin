@@ -261,6 +261,16 @@
   commentary:
     - file: 100k-block-milestone.md
       by: Claude Fable 5
+# The chain's smallest deliberate burn. This coinbase claims 49.99999999 ₿ —
+# one satoshi under the 50 ₿ subsidy, with the block's 0.01 ₿ of fees forgone
+# besides: 1,000,001 satoshis destroyed, on purpose. A coinbase may claim UP TO
+# subsidy plus fees; claiming less creates nothing and no one can ever claim
+# the difference. The miner, the developer known as midnightmagic, called it a
+# tribute to Satoshi, who had withdrawn from the project weeks before —
+# that attribution is a story told off the chain; the shortfall is on it.
+- title: The satoshi left on the table
+  id: '124724'
+  index: 0
 - title: Eligius, by Luke Dashjr
   id: '139690'
   index: 0
@@ -270,11 +280,27 @@
   commentary:
     - file: difficulty-1803.md
       by: Claude Opus 5
+# One printing of the costliest malformed script in the chain's history. In
+# late October 2011 Mt. Gox's withdrawal code built P2PKH outputs with an
+# empty push where the twenty-byte key-hash belongs (76a90088ac) — no hash of
+# anything is zero bytes long, so nothing can ever satisfy it. This output
+# pays 100 ₿ exactly into that void; the whole faulty batch is reported at
+# 2,609.36304319 ₿, admitted by Mark Karpelès on Bitcointalk two days on.
+# The batch total is a reported figure; this passage's 100 ₿ is the record.
+- title: Mt. Gox pays the void
+  id: I β75 ■1768 §23.1
 - title: First multisig (1-of-2)
   id: 60a20bd93aa49ab4b28d514ec10b06e1829ce6818ec06cd3aabd013ebcdc4bb1
   commentary:
     - file: first-multisig-1-of-2.md
       by: Claude Fable 5
+# The same class of loss in miniature, in a coinbase. P2Pool pays every miner
+# of its share-chain straight from the block reward; here output 0 of the
+# 219-output coinbase pays 18,553 satoshis to the raw bytes 736372697074 —
+# the ASCII word "script", a placeholder committed where a script belonged.
+# The burn is the literal word "script", locking 0.00018553 ₿ forever.
+- title: The pool that paid "script"
+  id: I β85 ■686 §1.0
 - title: First P2SH spend
   id: e5779b9e78f9650debc2893fd9636d827b26b4ddfa6a8172fe8708c924f5c39d
   commentary:
@@ -341,6 +367,17 @@
   commentary:
     - file: bip65-activation-v4.md
       by: Claude Fable 5
+# CLTV's first famous accident, twelve days after BIP65 activated. weex,
+# testing the new opcode, sent 0.0003 ₿ to a P2SH address intending a lock
+# that expired the same evening — timestamp 1451166600, Dec 26 2015 21:50
+# UTC. Written into the script with its four bytes reversed it reads
+# 2282454870: April 30 2042, 07:14:30 UTC. Diagnosed in the coinb.in issue
+# thread by dabura667 ("this is why we have testnet"); untouched since. The
+# redeem script, being P2SH, stays off the chain until a spend that cannot
+# come before 2042 — the evidence for the lock is itself timelocked, which is
+# why the reading stays a comment here rather than a published note.
+- title: The endianness lock of 2042
+  id: II β90 ■936 §545.0
 - title: CSV
   id: '417648'
   page: book
@@ -408,6 +445,19 @@
   commentary:
     - file: 500k-block-milestone.md
       by: Claude Fable 5
+# The largest single-block subsidy destruction: a chapter of one section
+# whose coinbase output carries 0 satoshis — the entire 12.5 ₿ subsidy simply
+# never created. The block being otherwise empty, no fees died with it.
+# Attributed to a misconfigured mining template; the zero is the record.
+- title: The coinbase that claimed nothing
+  id: '501726'
+  index: 0
+# Six months on, the same mistake by half: this lone coinbase output claims
+# 6.25 ₿ of the 12.5 it was owed. Together with the chapter above, the two
+# largest subsidy destructions of the 12.5 ₿ era.
+- title: The half-claimed subsidy
+  id: '526591'
+  index: 0
 # These windows straddle two books apiece (see the note at the head of the
 # series), so each cut below is cited by the chapter where its new target
 # first bound.
@@ -489,6 +539,25 @@
   commentary:
     - file: first-bip110-signaling-block.md
       by: Claude Opus 5
+# The largest burn ever sent to the all-zeros address — the P2PKH whose
+# hash160 is twenty zero bytes, transparently keyless. Five sections of one
+# chapter, 107.13021951 ₿ between them, May 25 2026; flagged the next day by
+# the analyst Sani (Timechainindex). Motive unknown — protest, compromise,
+# and error have all been argued, none with evidence. One entry in five
+# places, as: naming each section by what it carries.
+- title: The 107 BTC burn
+  ids:
+    - id: V β56 ■83 §2216
+      as: 20.03 ₿
+    - id: V β56 ■83 §2221
+      as: 28.89 ₿
+    - id: V β56 ■83 §2223
+      as: 36.79 ₿
+    - id: V β56 ■83 §2224
+      as: 1.42 ₿
+    - id: V β56 ■83 §2225
+      as: 20.01 ₿
+
 # ── The ledgers ───────────────────────────────────────────────────────────
 # A curated entry may name an ADDRESS instead of a place in the chain. An
 # address is a name rather than a place, so it opens no chapter: the row reads
