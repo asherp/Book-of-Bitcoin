@@ -261,6 +261,19 @@
   commentary:
     - file: 100k-block-milestone.md
       by: Claude Fable 5
+# The chain's smallest deliberate burn. This coinbase claims 49.99999999 ₿ —
+# one satoshi under the 50 ₿ subsidy, with the block's 0.01 ₿ of fees forgone
+# besides: 1,000,001 satoshis destroyed, on purpose. A coinbase may claim UP TO
+# subsidy plus fees; claiming less creates nothing and no one can ever claim
+# the difference. The miner, the developer known as midnightmagic, called it a
+# tribute to Satoshi, who had withdrawn from the project weeks before —
+# that attribution is a story told off the chain; the shortfall is on it.
+- title: The satoshi left on the table
+  id: '124724'
+  index: 0
+  commentary:
+    - file: the-satoshi-left-on-the-table.md
+      by: Claude Fable 5
 - title: Eligius, by Luke Dashjr
   id: '139690'
   index: 0
@@ -270,10 +283,32 @@
   commentary:
     - file: difficulty-1803.md
       by: Claude Opus 5
+# One printing of the costliest malformed script in the chain's history. In
+# late October 2011 Mt. Gox's withdrawal code built P2PKH outputs with an
+# empty push where the twenty-byte key-hash belongs (76a90088ac) — no hash of
+# anything is zero bytes long, so nothing can ever satisfy it. This output
+# pays 100 ₿ exactly into that void; the whole faulty batch is reported at
+# 2,609.36304319 ₿, admitted by Mark Karpelès on Bitcointalk two days on.
+# The batch total is a reported figure; this passage's 100 ₿ is the record.
+- title: Mt. Gox pays the void
+  id: I β75 ■1768 §23.1
+  commentary:
+    - file: mt-gox-pays-the-void.md
+      by: Claude Fable 5
 - title: First multisig (1-of-2)
   id: 60a20bd93aa49ab4b28d514ec10b06e1829ce6818ec06cd3aabd013ebcdc4bb1
   commentary:
     - file: first-multisig-1-of-2.md
+      by: Claude Fable 5
+# The same class of loss in miniature, in a coinbase. P2Pool pays every miner
+# of its share-chain straight from the block reward; here output 0 of the
+# 219-output coinbase pays 18,553 satoshis to the raw bytes 736372697074 —
+# the ASCII word "script", a placeholder committed where a script belonged.
+# The burn is the literal word "script", locking 0.00018553 ₿ forever.
+- title: The pool that paid "script"
+  id: I β85 ■686 §1.0
+  commentary:
+    - file: the-pool-that-paid-script.md
       by: Claude Fable 5
 - title: First P2SH spend
   id: e5779b9e78f9650debc2893fd9636d827b26b4ddfa6a8172fe8708c924f5c39d
@@ -332,6 +367,8 @@
       by: Claude Fable 5
 - title: Bitcoin XT first signal
   id: '370434'
+- title: Bitcoin XT high-water mark
+  id: '372315'
 - title: BIP65
   id: '387408'
   page: book
@@ -343,10 +380,40 @@
   commentary:
     - file: bip65-activation-v4.md
       by: Claude Fable 5
+# CLTV's first famous accident, twelve days after BIP65 activated. weex,
+# testing the new opcode, sent 0.0003 ₿ to a P2SH address intending a lock
+# that expired the same evening — timestamp 1451166600, Dec 26 2015 21:50
+# UTC. Written into the script with its four bytes reversed it reads
+# 2282454870: April 30 2042, 07:14:30 UTC. Diagnosed in the coinb.in issue
+# thread by dabura667 ("this is why we have testnet"); untouched since. The
+# redeem script, being P2SH, stays off the chain until a spend that cannot
+# come before 2042 — the evidence for the lock is itself timelocked, a caveat
+# the reading states in so many words.
+- title: The endianness lock of 2042
+  id: II β90 ■936 §545.0
+  commentary:
+    - file: the-endianness-lock-of-2042.md
+      by: Claude Fable 5
 - title: Bitcoin Classic first signal
   id: '398364'
 - title: Bitcoin Classic high-water mark
   id: '404843'
+# The largest fee ever paid, and the coinbase that collected it — two
+# sections of one chapter, each entry titled at its own level: thirteen
+# inputs worth 291.241 ₿, one output of 0.0001 ₿, and the 291.2409 ₿
+# between them left to the miner — the apparent value/fee swap of 26 April
+# 2016. Not a burn: the coins moved to whoever mined the block, whose
+# coinbase tag reads ckpool/BitClub Network/.
+- title: The 316.53 ₿ coinbase
+  id: II β99 ■1441 §1
+  commentary:
+    - file: the-316-53-btc-coinbase.md
+      by: Claude Fable 5
+- title: The 291 BTC fee
+  id: II β99 ■1441 §2
+  commentary:
+    - file: the-291-btc-fee.md
+      by: Claude Fable 5
 - title: CSV
   id: '417648'
   page: book
@@ -413,6 +480,25 @@
   index: 0
   commentary:
     - file: 500k-block-milestone.md
+      by: Claude Fable 5
+# The largest single-block subsidy destruction: a chapter of one section
+# whose coinbase output carries 0 satoshis — the entire 12.5 ₿ subsidy simply
+# never created. The block being otherwise empty, no fees died with it.
+# Attributed to a misconfigured mining template; the zero is the record.
+- title: The coinbase that claimed nothing
+  id: '501726'
+  index: 0
+  commentary:
+    - file: the-coinbase-that-claimed-nothing.md
+      by: Claude Fable 5
+# Six months on, the same mistake by half: this lone coinbase output claims
+# 6.25 ₿ of the 12.5 it was owed. Together with the chapter above, the two
+# largest subsidy destructions of the 12.5 ₿ era.
+- title: The half-claimed subsidy
+  id: '526591'
+  index: 0
+  commentary:
+    - file: the-half-claimed-subsidy.md
       by: Claude Fable 5
 # These windows straddle two books apiece (see the note at the head of the
 # series), so each cut below is cited by the chapter where its new target
@@ -482,6 +568,35 @@
   # The ordi deploy -- the token scheme's opening entry, inscribed like the
   # Ordinals before it: in the witness, so the entry cites the footnote.
   id: IV β75 ■649 §408.a
+# The second-largest fee mistake in coins and the first one returned: Paxos
+# sent 0.07405440 ₿ across five outputs and left 19.82108632 ₿ of a
+# 19.89514072 ₿ input as the fee, 10 September 2023. F2Pool mined it and,
+# five days on, sent it back — the outcome that separates this entry from
+# the 291 ₿ of 2016.
+- title: The 26.26 ₿ coinbase
+  id: IV β88 ■1666 §1
+  commentary:
+    - file: the-26-26-btc-coinbase.md
+      by: Claude Fable 5
+- title: The 19.82 BTC fee
+  id: IV β88 ■1666 §2
+  commentary:
+    - file: the-19-82-btc-fee.md
+      by: Claude Fable 5
+# The largest fee ever in dollar terms (~$3.1M): one input of 139.42495946 ₿,
+# one output of 55.76998378 ₿, and 83.65497568 ₿ between them, 23 November
+# 2023. A claimant reported a hacked wallet; AntPool froze the sum and
+# offered it back against proof of keys.
+- title: The 91.47 ₿ coinbase
+  id: IV β94 ■600 §1
+  commentary:
+    - file: the-91-47-btc-coinbase.md
+      by: Claude Fable 5
+- title: The 83.65 BTC fee
+  id: IV β94 ■600 §4
+  commentary:
+    - file: the-83-65-btc-fee.md
+      by: Claude Fable 5
 - title: The Fourth Halving
   id: '840000'
   index: 0
@@ -495,6 +610,31 @@
   commentary:
     - file: first-bip110-signaling-block.md
       by: Claude Opus 5
+# The largest burn ever sent to the all-zeros address — the P2PKH whose
+# hash160 is twenty zero bytes, transparently keyless. Five sections of one
+# chapter, 107.13021951 ₿ between them, May 25 2026; flagged the next day by
+# the analyst Sani (Timechainindex). Motive unknown — protest, compromise,
+# and error have all been argued, none with evidence. The chapter carries
+# the event's name and its reading; each burn is then its own entry at its
+# own level, titled by what it carries — a title names the level it cites
+# and never bleeds up, so these cite the sections (each transaction is its
+# single burn output anyway).
+- title: The 107 BTC burn
+  id: '950962'
+  commentary:
+    - file: the-107-btc-burn.md
+      by: Claude Fable 5
+- title: 20.03 ₿ to the zero address
+  id: V β56 ■83 §2216
+- title: 28.89 ₿ to the zero address
+  id: V β56 ■83 §2221
+- title: 36.79 ₿ to the zero address
+  id: V β56 ■83 §2223
+- title: 1.42 ₿ to the zero address
+  id: V β56 ■83 §2224
+- title: 20.01 ₿ to the zero address
+  id: V β56 ■83 §2225
+
 # ── The ledgers ───────────────────────────────────────────────────────────
 # A curated entry may name an ADDRESS instead of a place in the chain. An
 # address is a name rather than a place, so it opens no chapter: the row reads
@@ -510,6 +650,35 @@
   id: 1HB5XMLmzFVj8ALj6mfBsbifRoD4miY36v
   commentary:
     - file: wikileaks-ledger.md
+      by: Claude Fable 5
+# The burn ledgers — names whose entire record is coins arriving and never
+# leaving, keyless by construction. Shelved in btc-index-data.js as "the
+# incinerators"; chain verification in tools/locks-and-burns.md. Ordered by
+# each name's famous moment: the Eater's Bitcointalk convention (2011), the
+# Counterparty window (January 2014), the zero address's 107 ₿ (May 2026).
+- title: The Bitcoin Eater
+  id: 1BitcoinEaterAddressDontSendf59kuE
+  commentary:
+    - file: bitcoin-eater-ledger.md
+      by: Claude Fable 5
+# A ledger named by its script, because no address can write it: the id's
+# `script:` prefix is the search grammar's, and the bare hex is the member
+# the shelf carries. The whole batch reads in the Ledger by scripthash
+# lookup -- 23 outputs, 2,609.36304319 ₿, none spendable.
+- title: The Mt. Gox void
+  id: script:76a90088ac
+  commentary:
+    - file: mt-gox-void-ledger.md
+      by: Claude Fable 5
+- title: The Counterparty burn
+  id: 1CounterpartyXXXXXXXXXXXXXXXUWLpVr
+  commentary:
+    - file: counterparty-burn-ledger.md
+      by: Claude Fable 5
+- title: The zero address
+  id: '1111111111111111111114oLvT2'
+  commentary:
+    - file: zero-address-ledger.md
       by: Claude Fable 5
 
 - title: Latest block

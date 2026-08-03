@@ -46,6 +46,12 @@
 .commentary-by { font-style: italic; color: var(--dim); }
 .commentary-by a { color: var(--accent); text-decoration: none; border-bottom: 1px solid var(--rule); }
 .commentary-by a:hover { border-bottom-color: var(--accent); }
+/* An inline citation in a reading — btc-markdown's autolink: write the
+   reference in the sigil spelling and it is the link. Set in the mono the
+   book keeps for references, quiet until hovered, never wrapped. */
+.commentary-entry a.md-cite { font: 600 calc(13px * var(--scale-commentary, 1))/1.4 'IBM Plex Mono',monospace;
+  color: var(--accent); text-decoration: none; border-bottom: 1px solid var(--rule); white-space: nowrap; }
+.commentary-entry a.md-cite:hover { border-bottom-color: var(--accent); }
 /* ── A reading at rest, in a leaf ──────────────────────────────────────────
    Where the reading page floats its sheet above a sticky bar, the Ledger opens
    one in place, beneath the leaf's own matter: a ledger's title leaf and an

@@ -3106,8 +3106,14 @@ function renderChapterHead(onTitlePage) {
   // case here, which kept it out of the table of contents.
   // A page: 'book' entry shares the height namespace (its id is its book's
   // first block) but names the book's leaf, not this chapter -- excluded here.
+  // Every level owns its own name and no name bleeds up: only a
+  // chapter-deep entry (no index -- the entry IS this block) names the
+  // chapter, exactly as an entry citing a finer coordinate names that
+  // coordinate and not its section. A chapter whose famous thing is a
+  // section (the halvings, cited at their coinbase) wears no subtitle
+  // unless the contents also names the chapter itself.
   const eventTitles = places()
-    .filter((p) => p.id === String(state.height) && !p.page && !p.address)
+    .filter((p) => p.id === String(state.height) && p.index == null && !p.page && !p.address && !p.script)
     .map(placeTitle);
   const eventTitle = eventTitles[0];
   $('ch-title').textContent = `${tr('Chapter')} ${chapterName(chapter)}`;
@@ -4035,7 +4041,7 @@ function renderChapter(para) {
     tFee.textContent = '⋯';
     const tOut = document.createElement('span');
     tOut.className = 't-out';
-    tOut.textContent = formatAmount(sumOut);
+    tOut.textContent = `= ${formatAmount(sumOut)}`;
     tOut.title = `the outputs carry ${amountTitle(sumOut)}`;
     totals.append(tIn, tFee, tOut);
     fillTotals = (values) => {
@@ -4064,7 +4070,7 @@ function renderChapter(para) {
       : `the fees: ${amountTitle(fee)} — what the chapter's sections paid, gathered here`;
     const tOut = document.createElement('span');
     tOut.className = 't-out';
-    tOut.textContent = formatAmount(sumOut);
+    tOut.textContent = `= ${formatAmount(sumOut)}`;
     tOut.title = `the outputs carry ${amountTitle(sumOut)}`;
     totals.append(tIn, tFee, tOut);
   }
@@ -4123,7 +4129,7 @@ let txPlacementsKicked = false;
 function kickTxPlacements() {
   if (txPlacementsKicked) return;
   txPlacementsKicked = true;
-  const hexes = [...new Set(places().filter((p) => !p.address && /^[0-9a-f]{64}$/i.test(p.id)).map((p) => p.id.toLowerCase()))];
+  const hexes = [...new Set(places().filter((p) => !p.address && !p.script && /^[0-9a-f]{64}$/i.test(p.id)).map((p) => p.id.toLowerCase()))];
   Promise.all(hexes.map(async (id) => {
     if (id === GENESIS_COINBASE) { txPlacements.set(id, { height: 0, pos: 0 }); return; }
     try {
@@ -4148,7 +4154,7 @@ function navTargets() {
   kickTxPlacements();
   const items = [];
   for (const p of places()) {
-    if (p.address) continue;
+    if (p.address || p.script) continue;
     let height, rank;
     if (/^[0-9a-f]{64}$/i.test(p.id)) {
       const mp = txPlacements.get(p.id.toLowerCase());

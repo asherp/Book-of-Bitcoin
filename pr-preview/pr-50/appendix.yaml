@@ -234,10 +234,22 @@
     # The forks the chain declined are part of the rules' story too: each is
     # kept with its outcome, and a fork that left no chapter has none to cite
     # -- the empty record is the record.
+    # XT's yes is read as a minimum version rather than a bit: no single bit
+    # separates 0x20000007 from the ordinary versions of its era (v3 carries
+    # bits 0-1, v4 carries bit 2), and within a window closed in 2015 nothing
+    # but an XT block clears the minimum. The anchor is the era's fullest
+    # thousand blocks, found by reading every version from 361,000 (mid-June
+    # 2015, before BIP101 existed) through the era's fade in February 2016:
+    # thirty-nine casts in all, first at 370,434, densest at eight in the
+    # window closing 372,315 -- an autumn window matched that, and nothing
+    # ever beat it.
     - bip: '101'
       name: Bigger Blocks
       status: failed
-      note: The first serious attempt to move the block size by miner vote — eight-megabyte blocks, doubling on a schedule — carried by Bitcoin XT, a whole competing client, because the change could not get into Bitcoin Core. Its yes was version 0x20000007, bits 0, 1 and 2 over the version-bits base, needing 750 of the 1,000 preceding. The vote never came near it — on the order of one block in a thousand ever signaled, XT's surge being nodes rather than blocks — the client faded, and the question it asked was finally settled elsewhere, years later and the other way. The chain holds a scattering of ballots cast and nothing more; no window is worth laying out, and the near-empty record is the record.
+      version: '0x20000007'
+      ballot: '372315'
+      window: 1000
+      note: The first serious attempt to move the block size by miner vote — eight-megabyte blocks, doubling on a schedule — carried by Bitcoin XT, a whole competing client, because the change could not get into Bitcoin Core. Its yes was version 0x20000007, bits 0, 1 and 2 over the version-bits base, needing 750 of the 1,000 preceding. The vote never came near it — thirty-nine ballots were ever cast, XT's famous surge being nodes rather than blocks — and the window below is the fullest thousand blocks the chain ever held, eight signals two weeks after the client shipped. The near-empty table is the record, and the stats are read off it, not the other way round; the question the fork asked was finally settled elsewhere, years later and the other way.
       stats:
         - label: mechanism
           value: 750 of the last 1,000 blocks, by block version — carried by the Bitcoin XT client
@@ -245,12 +257,17 @@
           value: version 0x20000007 — bits 0, 1 and 2 set over the version-bits base
         - label: proposed
           value: June 2015, by Gavin Andresen
+        - label: peak
+          value: 8 of the 1,000 blocks to 372,315 — 31 August 2015, two weeks after the client shipped; an autumn window matched it, and nothing ever beat it
         - label: outcome
           value: withdrawn — signaling never came near the threshold, and the client faded
       entries:
         - title: First signaling block
           id: '370434'
           note: The first block to fly 0x20000007 — 18 August 2015, three days after Bitcoin XT shipped. The first ballot cast in the size war, and nearly the whole of XT's record on the chain.
+        - title: High-water mark
+          id: '372315'
+          note: The close of the era's fullest window — 8 of its 1,000 chapters signaled, 31 August 2015, against the 750 the rule needed. An autumn window matched it; nothing ever beat it.
     # Classic's bit, 28, sits at the top of the range version rolling later
     # claimed for nonce entropy (BIP320, bits 13-28) -- so its ballot must
     # anchor in 2016, when the bit still spoke: a closed window, never a live

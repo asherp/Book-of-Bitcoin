@@ -579,7 +579,7 @@ a:hover { text-decoration: underline; }
 import { localizeHome, mountLangMenu } from './btc-strings.js';
 localizeHome();   // the masthead in the reader's UI language
 mountLangMenu();  // …with the Language item, which any page can now set
-import { INDEXED, isAddress, keptLedgers, saveKeptLedgers, sameAddresses, addressScriptHex, cachedLine, resolveLine,
+import { INDEXED, isAddress, isScriptHex, keptLedgers, saveKeptLedgers, sameAddresses, memberScriptHex, cachedLine, resolveLine,
          extendLine, renderLedger, renderRows, periods, lineNote, reconciled, ledgerSum, heldCoins, addressState, lastKnownState,
          formatBalanceBtc, formatNetBtc, chainFailureText, citeHref, sectionOf, sectionOfFetched, citePlace, passageTxid, passageEntries, txHexOf, outspendsOf, prevoutValuesOf,
          DEFAULT_ESPLORA, esploraCustom, esploraSelected, setEsploraSettings } from './btc-index.js';
@@ -701,8 +701,18 @@ const notablesReady = loadNotables();
 // ?address=<addr>[,<addr>…] query that matches none of them prepends a
 // temporary ledger of exactly those addresses. A query that names a member
 // of a shelved ledger opens that whole ledger, positioned on the address.
+// A member may also be a raw scriptPubKey as hex -- the name of an output no
+// address can write (a malformed or nonstandard script), served by the same
+// endpoints through its scripthash; the param keeps its name, an address
+// being the common spelling of a member. The search box's `script:` prefix
+// is shed before it lands here: in this list, hex is already unambiguous.
 const q = (new URLSearchParams(location.search).get('address') || '').trim();
-const norm = (s) => (isAddress(s) ? s : isAddress(s.toLowerCase()) ? s.toLowerCase() : null);
+const norm = (s) => {
+  const bare = s.replace(/^script:/i, '');
+  return isAddress(bare) ? bare
+    : isAddress(bare.toLowerCase()) ? bare.toLowerCase()
+    : isScriptHex(bare.toLowerCase()) ? bare.toLowerCase() : null;
+};
 const qList = q ? q.split(',').map((s) => norm(s.trim())).filter(Boolean) : [];
 // …and &page=ledger asks for the ledger those addresses belong to, at its
 // own title leaf, rather than the passage one of them names -- the book's
@@ -879,16 +889,16 @@ const heldView = (data, held) => {
 };
 
 // The referenced txo's prose, rendered once per address: a txo paying an
-// address carries exactly addressScriptHex(address), so every entry of the
+// address carries exactly memberScriptHex(address), so every entry of the
 // address quotes the same script -- render it once, reuse it across the
 // timeline's pages. Null when the engine (the WASM build) can't be had;
 // the leaf simply carries no prose then, as the hero carries the mono form.
-const txoProseMemo = new Map();   // address -> Promise<html|null>
+const txoProseMemo = new Map();   // member -> Promise<html|null>
 function txoProse(addr) {
   if (!txoProseMemo.has(addr)) {
     txoProseMemo.set(addr, (async () => {
       try {
-        const hex = addressScriptHex(addr);
+        const hex = memberScriptHex(addr);
         if (!hex) return null;
         const [gl, p] = await Promise.all([import('./glossia-msg.js'), import('./btc-prose.js')]);
         await gl.init();
@@ -1898,7 +1908,7 @@ const openEntryLeaf = async (alive) => {
       tFee.textContent = '⋯';
       const tOut = document.createElement('span');
       tOut.className = 't-out';
-      tOut.textContent = formatBalanceBtc(sumOut);
+      tOut.textContent = `= ${formatBalanceBtc(sumOut)}`;
       tOut.title = `the outputs carry ${sumOut.toLocaleString('en-US')} satoshis`;
       totals.append(tIn, tFee, tOut);
       Promise.all(spentP).then((values) => {
@@ -1928,7 +1938,7 @@ const openEntryLeaf = async (alive) => {
         : `the fees: ${fee.toLocaleString('en-US')} satoshis — what the block's transactions paid, gathered here`;
       const tOut = document.createElement('span');
       tOut.className = 't-out';
-      tOut.textContent = formatBalanceBtc(sumOut);
+      tOut.textContent = `= ${formatBalanceBtc(sumOut)}`;
       tOut.title = `the outputs carry ${sumOut.toLocaleString('en-US')} satoshis`;
       totals.append(tIn, tFee, tOut);
     }
