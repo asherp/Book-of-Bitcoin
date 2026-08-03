@@ -299,9 +299,9 @@ citation resolving to the heights verified here):
 - **The coinbase that claimed nothing** — `501726` §1
 - **The half-claimed subsidy** — `526591` §1
 - **The 107 BTC burn** — the chapter, `950962`, carries the event's name
-  and reading; each burn is its own entry titled by what it carries, citing
-  the burn output itself (V β56 ■83 §2216.0, §2221.0, §2223.0, §2224.0,
-  §2225.0 — all five are single-output transactions)
+  and reading; each burn is its own section entry titled by what it carries
+  (V β56 ■83 §2216, §2221, §2223, §2224, §2225 — all five single-output
+  transactions). A title names the level it cites and never bleeds up
 
 The burn-address material went the other way, as names rather than places:
 the Bitcoin Eater, the Counterparty burn, and the zero address are now

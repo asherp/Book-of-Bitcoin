@@ -271,13 +271,11 @@ export async function passageMd({ title, entry, height, blockHash, header, txCou
   const { volume, book, chapter } = volumeBookChapter(height);
   const cite = `${reference(height)} §${index + 1}`;
   const liveUrl = `${SITE}/bitcoin-book.html?txid=${txid}`;
-  // Depth decides whose name the block line carries, as on the chapter head
-  // itself: a chapter-deep entry owns it; sections' names stand in only
-  // where no entry names the chapter (the halvings, cited at their §1).
-  const chapterEventPlaces = PLACES
-    .filter((p) => p.id === String(height) && !p.page && !p.address && !p.script);
-  const chapterDeepEvents = chapterEventPlaces.filter((p) => p.index == null);
-  const chapterEvents = (chapterDeepEvents.length ? chapterDeepEvents : chapterEventPlaces).map(placeTitle);
+  // Only a chapter-deep entry names the block line, as on the chapter head
+  // itself: every level owns its own name, and no section's bleeds up.
+  const chapterEvents = PLACES
+    .filter((p) => p.id === String(height) && p.index == null && !p.page && !p.address && !p.script)
+    .map(placeTitle);
 
   const md = [];
   md.push(`# ${title}`);
