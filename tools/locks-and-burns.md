@@ -261,6 +261,19 @@ values by decade, and surface everything locked past 2100 — the deliberate
 century-locks and the unit slips will sort themselves by whether anyone
 ever came back for the coins.
 
+## The adjacent category: fee mistakes
+
+A mistaken fee is the burn's near-twin and the distinction is worth a row of
+its own: a malformed script destroys coins, a mistaken fee only moves them —
+to whoever mines the block. The record's largest is now in the contents as
+**The 291 BTC fee** (II β99 ■1441 §2): `cc455ae8…570d`, 26 April 2016,
+thirteen inputs worth 291.241 BTC, one output of 0.0001 BTC, fee
+**291.2409 BTC** — the apparent value/fee swap, collected by block 409,008's
+coinbase (316.53275103 BTC total, tag `ckpool/BitClub Network/`).
+**[verified]** The later great fee mistakes — F2Pool's returned 19.8 BTC
+(Paxos, 2023) and AntPool's 83.65 BTC offered back against proof of keys
+(2023) — are smaller and stayed reported figures here. **[reported]**
+
 ## Negative findings
 
 Checked and rejected — recorded so the next reader needn't re-walk them:
