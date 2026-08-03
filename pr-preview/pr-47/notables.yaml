@@ -1,0 +1,1315 @@
+# SPDX-License-Identifier: CC-BY-4.0
+#
+# notables.yaml — the curated table of contents for the Bitcoin Book: which
+# blocks and transactions are worth a reader's attention, what to call them,
+# and where the reading of each one lives.
+#
+# This file and the commentary/ directory beside it are the editorial layer — a
+# reading of the record, not the record itself — and are licensed CC BY 4.0,
+# separately from the machinery that loads and renders them (btc-notables.js,
+# btc-commentary.js, MIT OR Apache-2.0) and from the book's prose (CC0, the
+# chain's own speech). See the README's License section. The split is the book's
+# argument applied to its own source tree: what the chain says belongs to no
+# one; what someone decided is worth naming carries their name.
+#
+# YAML and Markdown rather than JavaScript because this is the part of the
+# repository written by hand, by people who are writing rather than programming.
+# Nothing is generated from it: the browser reads this file and those Markdown
+# files as they stand (btc-yaml.js reads the small subset used here, and fails
+# loudly rather than guessing).
+#
+# An `id` is written in any form the search box takes (the grammar is
+# btc-lookup.js, one parser for the whole book, so a form that works in one
+# place works in every place):
+#
+#   57043                a block height
+#   -1                   counted back from the chain tip: -1 is the latest block
+#   4a5e1e…33b           a 64-hex transaction id (or a block hash)
+#   III β2 ■5            the book's own citation — sigils optional ("III 2 5")
+#   I β29 ■596 §85       …to whatever depth is meant: a section here
+#   I β29 ■596 §85.4     …an output within that section
+#   v1b29c596s85         the same citation in the spelling a link carries
+#   1HB5XMLmzFVj8AL…     an address — a name rather than a place, so it opens
+#                        no chapter: the entry reads in the Ledger, and its
+#                        readings are readings of that name
+#
+# A reference is resolved by arithmetic when the file is read, into exactly the
+# height and index an entry would otherwise carry by hand — and its depth says
+# which page it means, so `III β2` is a book's leaf and `III` a volume's. Write
+# whichever form reads better where you are working; `node
+# tools/check-editorial.mjs` prints what each one resolved to.
+#
+# Every entry is cited by its reference, never its raw id: a block's is known
+# offline (volume·book·chapter from its height); a transaction's is resolved the
+# same way the reader resolves a citation — a /tx/<txid>/merkle-proof lookup
+# gives its block height and index, yielding volume·book·chapter·§section.
+# Ordered chronologically (reading order).
+#
+# An entry may be found in more than one place. Write `ids:` instead of `id:`,
+# each item a place of its own (with its own index / page / out where it needs
+# them), and `as:` naming what that place is within the entry — the contents
+# prints it after the title, so rows sharing a name still say which is which.
+# The readings below belong to the entry, so one reading serves every place: the
+# four printings of the two twice-confirmed coinbases are one story, told once.
+#
+#   - title: The twice-confirmed coinbases
+#     ids:
+#       - id: '91722'
+#         index: 0
+#         as: first printing
+#       - id: '91880'
+#         index: 0
+#         as: second printing
+#     commentary:
+#       - file: bip30-duplicate-coinbases.md
+#
+# The fields, all optional but `title` and `id` (or `ids`):
+#
+#   index: 2          the transaction's position within the block (0-based),
+#                     rendered as its §section — how the twice-confirmed BIP30
+#                     coinbases are cited, their txid alone being ambiguous.
+#                     A §section reference sets this instead, and a reference
+#                     that disagrees with it is an error rather than a ranking
+#   page: book        the id is then the first block of a book (a difficulty
+#                     window) and the entry opens that book's own leaf rather
+#                     than a chapter; `page: volume` likewise for a volume's.
+#                     A book- or volume-deep reference sets this too
+#   out: 4            an output within the section, as a §85.4 reference names —
+#                     the page opens at that output
+#   commentary:       the readings of this passage, in reading order, each one a
+#     - file: x.md    Markdown file in commentary/. A file with no `by` is the
+#     - file: y.md    book's own reading, unsigned, because the book is its
+#       by: Name      author; a `by` is somebody else's, published under CC BY
+#       href: https://…   4.0 with their name on it (see CONTRIBUTING.md) and
+#                     credited in the table of contents as well as on the page
+#
+# Translations. A title or a reading may carry translations as suffixed keys
+# beside the English original, which is the source text and the fallback — a
+# language with no suffix reads the original, so translations arrive one at a
+# time. The suffixes are the reader's UI languages (-cs Czech, -de German;
+# Latin has none on purpose: a Latin reader gets the last modern tongue, the
+# rule the whole chrome keeps). A translated reading is a variant of the SAME
+# reading — one entry, its author's `by` unchanged — and the translation is
+# itself authored work, so `translator-cs:` names who made it and is credited
+# beside the author when that variant is shown:
+#
+#   - title: The Genesis Block
+#     title-cs: Blok genesis
+#     title-de: Der Genesis-Block
+#     id: '0'
+#     commentary:
+#       - file: the-genesis-block.md
+#         file-cs: the-genesis-block.cs.md
+#         translator-cs: Jméno Příjmení
+#
+# An inline `note:` translates the same way (`note-cs:`). `node
+# tools/check-editorial.mjs` verifies translated files exist and carry their
+# CC-BY SPDX line, exactly as it does the originals.
+#
+# An entry with no commentary is the normal case, not an oversight: a passage
+# can be worth keeping before anyone has finished saying why. Where a story is
+# not yet checked against the chain it stays a comment here rather than becoming
+# a file — commentary is published matter, and publishing it is the assertion.
+# A reading speaks to what is VISIBLE in the passage, read with hindsight —
+# what it set in motion, the precedent it became — and says it plainly:
+# declarative sentences, checkable facts, no flourish (see CONTRIBUTING.md).
+#
+# The soft forks that activated by miner signaling — the 95% supermajority forks
+# (BIP34/66/65) and the version-bits forks (CSV, SegWit, Taproot) — each mark
+# the book their activation closed with `page: book`, since for them the
+# difficulty window is the ballot box; flag-day and release-based forks get no
+# book. BIP91 signaled over its own 336-block epochs, which no book aligns
+# with — but its whole drama still fits one book: III β29 opens, locks it in at
+# ■321, and activates it at ■673.
+
+# Block 0 itself. Its coinbase follows as the next entry — the chapter
+# precedes its own §1 in reading order.
+- title: The Genesis Block
+  id: '0'
+  commentary:
+    - file: the-genesis-block.md
+      by: Claude Fable 5
+- title: The Times 03/Jan/2009 Chancellor on brink of second bailout for banks
+  id: 4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b
+  commentary:
+    - file: times-headline.md
+      by: Claude Fable 5
+- title: Hal Finney transaction
+  id: f4184fc596403b9d638783cf57adfe4c75c605f6356fbc91338530e9831e9e16
+  commentary:
+    - file: hal-finney-transaction.md
+      by: Claude Opus 5
+- title: First P2PKH payment
+  id: 6f7cf9580f1c2dfb3c4d5d043cdbb128c640e3f20161245aa7372e9666168516
+  commentary:
+    - file: first-p2pkh-payment.md
+      by: Claude Opus 5
+- title: First difficulty adjustment
+  id: '30240'
+  page: book
+  commentary:
+    - file: first-difficulty-adjustment.md
+      by: Claude Opus 5
+# The difficulty series, each entry citing the BOOK whose pace earned the
+# adjustment rather than the chapter where the new target first bound: a
+# retarget is computed from the 2,016 blocks behind it, and a book is exactly
+# those blocks. Titled only by the percentage moved — the story behind each
+# swing is its note. Figures from the canonical difficulty history. The five
+# largest climbs are all from 2010; the deep cuts cluster later. The up-clamp
+# (×4) was hit once; the deepest cut ever is −27.94%, against a −75% floor.
+#
+# Only Volume I can be cited this way. Book numbering restarts at each halving
+# and 210,000 is not a multiple of 2016, so from Volume II on a real retarget
+# window straddles two books — offset 672 blocks in Volume III, 1,008 in
+# Volume IV — and no book names it. Those later entries stay on their retarget
+# chapter, below.
+- title: Difficulty +49%
+  id: '40320'
+  page: book
+  commentary:
+    - file: difficulty-49.md
+      by: Claude Fable 5
+- title: Difficulty +51%
+  id: '50400'
+  page: book
+  commentary:
+    - file: difficulty-51.md
+      by: Claude Opus 5
+- title: First difficulty decrease (−10.8%)
+  id: '54432'
+  page: book
+  commentary:
+    - file: first-difficulty-decrease-108.md
+      by: Claude Fable 5
+- title: Difficulty +45%
+  id: '56448'
+  page: book
+  commentary:
+    - file: difficulty-45.md
+      by: Claude Fable 5
+- title: Bitcoin Pizza Day
+  id: '57043'
+  commentary:
+    - file: bitcoin-pizza-day.md
+      by: Claude Fable 5
+# The July 2010 spike, in two consecutive books: Bitcoin v0.3's announcement
+# hit Slashdot on July 11, 2010, and the newcomers — among them the first GPU
+# miners on what had been a CPU chain — doubled the network inside I β33, then
+# quadrupled it inside I β34.
+- title: Difficulty +93%
+  id: '64512'
+  page: book
+  commentary:
+    - file: difficulty-93.md
+      by: Claude Opus 5
+- title: Difficulty +300%
+  id: '66528'
+  page: book
+  commentary:
+    - file: difficulty-300.md
+      by: Claude Opus 5
+# The supply-cap incident: the ~184.4B-BTC overflow the corrective fork went on
+# to excise. Written as the citation it is usually given by — which resolves to
+# block 74,421, section 3 (see tools/check-editorial.mjs, which prints what each
+# reference resolved to). No published reading until the section is re-checked
+# against the chain the book reads from — the story is well known, this passage's
+# exact place in it less so.
+- title: Supply cap bug fix
+  id: I β37 ■1846 §3
+- title: Script opcode purge
+  id: '74638'
+  commentary:
+    - file: script-opcode-purge.md
+      by: Claude Opus 5
+- title: 1 MB size limit activation
+  id: '79400'
+  commentary:
+    - file: 1-mb-size-limit-activation.md
+      by: Claude Fable 5
+# BIP30's origin story, and the clearest case for `ids:` — one thing the book
+# keeps, found in four places. The coinbases of 91,722 and 91,812 were repeated
+# verbatim by 91,880 and 91,842, overwriting them in the UTXO set — the only two
+# txids ever confirmed twice:
+#   e3bf3d07d4b0375638d5f1db5255fe07ba2c4cb067cd81b84ee974b6585fb468 (91,722 -> 91,880)
+#   d5d27987d2a3dfc724e359870c6644b40e497bdc0589a033220fe15429d88599 (91,812 -> 91,842)
+# All four printings are cited by height (§1 of their blocks) — a txid lookup can
+# only ever land on one of a duplicate's two sections — and each owns its own
+# page number: pages count positions, not distinct txids, so the chain's page
+# count runs exactly two past its distinct-txid count, and these are the two (see
+# btc-pages.js). `as` says which printing a row is; the reference beside it
+# says which coinbase (the txids stay in this comment, off the page); the
+# reading beneath them all is written once.
+- title: The twice-confirmed coinbases
+  ids:
+    - id: '91722'
+      index: 0
+      as: first printing
+    - id: '91812'
+      index: 0
+      as: first printing
+    - id: '91842'
+      index: 0
+      as: second printing
+    - id: '91880'
+      index: 0
+      as: second printing
+  commentary:
+    - file: bip30-duplicate-coinbases.md
+      by: Claude Opus 5
+- title: 100K block milestone
+  id: '100000'
+  commentary:
+    - file: 100k-block-milestone.md
+      by: Claude Fable 5
+# The chain's smallest deliberate burn. This coinbase claims 49.99999999 ₿ —
+# one satoshi under the 50 ₿ subsidy, with the block's 0.01 ₿ of fees forgone
+# besides: 1,000,001 satoshis destroyed, on purpose. A coinbase may claim UP TO
+# subsidy plus fees; claiming less creates nothing and no one can ever claim
+# the difference. The miner, the developer known as midnightmagic, called it a
+# tribute to Satoshi, who had withdrawn from the project weeks before —
+# that attribution is a story told off the chain; the shortfall is on it.
+- title: The satoshi left on the table
+  id: '124724'
+  index: 0
+  commentary:
+    - file: the-satoshi-left-on-the-table.md
+      by: Claude Fable 5
+- title: Eligius, by Luke Dashjr
+  id: '139690'
+  index: 0
+- title: Difficulty −18.03%
+  id: '149184'
+  page: book
+  commentary:
+    - file: difficulty-1803.md
+      by: Claude Opus 5
+# One printing of the costliest malformed script in the chain's history. In
+# late October 2011 Mt. Gox's withdrawal code built P2PKH outputs with an
+# empty push where the twenty-byte key-hash belongs (76a90088ac) — no hash of
+# anything is zero bytes long, so nothing can ever satisfy it. This output
+# pays 100 ₿ exactly into that void; the whole faulty batch is reported at
+# 2,609.36304319 ₿, admitted by Mark Karpelès on Bitcointalk two days on.
+# The batch total is a reported figure; this passage's 100 ₿ is the record.
+- title: Mt. Gox pays the void
+  id: I β75 ■1768 §23.1
+  commentary:
+    - file: mt-gox-pays-the-void.md
+      by: Claude Fable 5
+- title: First multisig (1-of-2)
+  id: 60a20bd93aa49ab4b28d514ec10b06e1829ce6818ec06cd3aabd013ebcdc4bb1
+  commentary:
+    - file: first-multisig-1-of-2.md
+      by: Claude Fable 5
+# The same class of loss in miniature, in a coinbase. P2Pool pays every miner
+# of its share-chain straight from the block reward; here output 0 of the
+# 219-output coinbase pays 18,553 satoshis to the raw bytes 736372697074 —
+# the ASCII word "script", a placeholder committed where a script belonged.
+# The burn is the literal word "script", locking 0.00018553 ₿ forever.
+- title: The pool that paid "script"
+  id: I β85 ■686 §1.0
+  commentary:
+    - file: the-pool-that-paid-script.md
+      by: Claude Fable 5
+- title: First P2SH spend
+  id: e5779b9e78f9650debc2893fd9636d827b26b4ddfa6a8172fe8708c924f5c39d
+  commentary:
+    - file: first-p2sh-spend.md
+      by: Claude Opus 5
+- title: BIP16 activation (P2SH)
+  id: '173805'
+  commentary:
+    - file: bip16-activation-p2sh.md
+      by: Claude Opus 5
+- title: The First Halving
+  id: '210000'
+  index: 0
+  commentary:
+    - file: the-first-halving.md
+      by: Claude Fable 5
+# The block-version story, told through the chapters where each version era
+# begins (heights are Bitcoin Core chainparams consensus constants). Their
+# frontispieces walk the whole notation: v1 (genesis) -> v2/v3/v4 (the
+# integer-bump era, BIP34/66/65) -> word-pair form once BIP9 version bits
+# arrive (CSV is the first version-bits fork; SegWit and Taproot follow).
+- title: BIP34
+  id: '226128'
+  page: book
+  commentary:
+    - file: bip34.md
+      by: Claude Opus 5
+- title: BIP34 activation (v2)
+  id: '227931'
+  commentary:
+    - file: bip34-activation-v2.md
+      by: Claude Opus 5
+- title: First coinbase OP_RETURN
+  id: '246816'
+- title: First standard OP_RETURN
+  id: 8bae12b5f4c088d940733dcd1455efc6a3a69cf9340e17a981286d3778615684
+  commentary:
+    - file: first-standard-op-return.md
+      by: Claude Fable 5
+- title: The Hello World timestamp
+  id: 7e9f0f7d9daa2d9e51b2e22f4abe814c3f90539afa778a9bef88dc64627cb2ec
+  commentary:
+    - file: the-hello-world-timestamp.md
+      by: Claude Fable 5
+- title: BIP66
+  id: '363216'
+  page: book
+  commentary:
+    - file: bip66.md
+      by: Claude Fable 5
+- title: BIP66 activation (v3)
+  id: '363725'
+  commentary:
+    - file: bip66-activation-v3.md
+      by: Claude Fable 5
+- title: BIP65
+  id: '387408'
+  page: book
+  commentary:
+    - file: bip65.md
+      by: Claude Fable 5
+- title: BIP65 activation (v4)
+  id: '388381'
+  commentary:
+    - file: bip65-activation-v4.md
+      by: Claude Fable 5
+# CLTV's first famous accident, twelve days after BIP65 activated. weex,
+# testing the new opcode, sent 0.0003 ₿ to a P2SH address intending a lock
+# that expired the same evening — timestamp 1451166600, Dec 26 2015 21:50
+# UTC. Written into the script with its four bytes reversed it reads
+# 2282454870: April 30 2042, 07:14:30 UTC. Diagnosed in the coinb.in issue
+# thread by dabura667 ("this is why we have testnet"); untouched since. The
+# redeem script, being P2SH, stays off the chain until a spend that cannot
+# come before 2042 — the evidence for the lock is itself timelocked, a caveat
+# the reading states in so many words.
+- title: The endianness lock of 2042
+  id: II β90 ■936 §545.0
+  commentary:
+    - file: the-endianness-lock-of-2042.md
+      by: Claude Fable 5
+# The largest fee ever paid, and the coinbase that collected it — two
+# sections of one chapter, each entry titled at its own level: thirteen
+# inputs worth 291.241 ₿, one output of 0.0001 ₿, and the 291.2409 ₿
+# between them left to the miner — the apparent value/fee swap of 26 April
+# 2016. Not a burn: the coins moved to whoever mined the block, whose
+# coinbase tag reads ckpool/BitClub Network/.
+- title: The 316.53 ₿ coinbase
+  id: II β99 ■1441 §1
+  commentary:
+    - file: the-316-53-btc-coinbase.md
+      by: Claude Fable 5
+- title: The 291 BTC fee
+  id: II β99 ■1441 §2
+  commentary:
+    - file: the-291-btc-fee.md
+      by: Claude Fable 5
+- title: CSV
+  id: '417648'
+  page: book
+  commentary:
+    - file: csv.md
+      by: Claude Opus 5
+- title: CSV activation (version bits)
+  id: '419328'
+  commentary:
+    - file: csv-activation-version-bits.md
+      by: Claude Opus 5
+- title: The Second Halving
+  id: '420000'
+  index: 0
+  commentary:
+    - file: the-second-halving.md
+      by: Claude Fable 5
+- title: BIP91
+  id: '476448'
+  page: book
+  commentary:
+    - file: bip91.md
+      by: Claude Fable 5
+- title: BIP91 activation (SegWit mandate)
+  id: '477120'
+  commentary:
+    - file: bip91-activation-segwit-mandate.md
+      by: Claude Opus 5
+- title: Bitcoin Cash fork
+  id: '478558'
+  commentary:
+    - file: bitcoin-cash-fork.md
+      by: Claude Opus 5
+- title: SegWit
+  id: '480480'
+  page: book
+  commentary:
+    - file: segwit.md
+      by: Claude Opus 5
+- title: SegWit activation
+  id: '481824'
+  commentary:
+    - file: segwit-activation.md
+      by: Claude Opus 5
+- title: First SegWit spend
+  id: 8f907925d2ebe48765103e6845c06f1f2bb77c6adc1cc002865865eb5cfd5c1c
+  commentary:
+    - file: first-segwit-spend.md
+      by: Claude Opus 5
+- title: First native SegWit outputs
+  id: dfcec48bb8491856c353306ab5febeb7e99e4d783eedf3de98f3ee0812b92bad
+  commentary:
+    - file: first-native-segwit-outputs.md
+      by: Claude Opus 5
+- title: First P2WSH reveal (2-of-3)
+  id: b38a88b073743bcc84170071cff4b68dec6fb5dc0bc8ffcb3d4ca632c2c78255
+  commentary:
+    - file: first-p2wsh-reveal-2-of-3.md
+      by: Claude Opus 5
+# Cited at its coinbase rather than the chapter: since BIP34 a coinbase opens
+# with its own height, so §1 is where the page itself says 500,000.
+- title: 500K block milestone
+  id: '500000'
+  index: 0
+  commentary:
+    - file: 500k-block-milestone.md
+      by: Claude Fable 5
+# The largest single-block subsidy destruction: a chapter of one section
+# whose coinbase output carries 0 satoshis — the entire 12.5 ₿ subsidy simply
+# never created. The block being otherwise empty, no fees died with it.
+# Attributed to a misconfigured mining template; the zero is the record.
+- title: The coinbase that claimed nothing
+  id: '501726'
+  index: 0
+  commentary:
+    - file: the-coinbase-that-claimed-nothing.md
+      by: Claude Fable 5
+# Six months on, the same mistake by half: this lone coinbase output claims
+# 6.25 ₿ of the 12.5 it was owed. Together with the chapter above, the two
+# largest subsidy destructions of the 12.5 ₿ era.
+- title: The half-claimed subsidy
+  id: '526591'
+  index: 0
+  commentary:
+    - file: the-half-claimed-subsidy.md
+      by: Claude Fable 5
+# These windows straddle two books apiece (see the note at the head of the
+# series), so each cut below is cited by the chapter where its new target
+# first bound.
+- title: Difficulty −15.13%
+  id: '552384'
+  commentary:
+    - file: difficulty-1513.md
+      by: Claude Opus 5
+- title: Difficulty −15.95%
+  id: '622944'
+  commentary:
+    - file: difficulty-1595.md
+      by: Claude Fable 5
+- title: The Third Halving
+  id: '630000'
+  index: 0
+  commentary:
+    - file: the-third-halving.md
+      by: Claude Fable 5
+- title: Difficulty −16.05%
+  id: '655200'
+  commentary:
+    - file: difficulty-1605.md
+      by: Claude Fable 5
+- title: Difficulty −15.97%
+  id: '685440'
+  commentary:
+    - file: difficulty-1597.md
+      by: Claude Fable 5
+- title: Taproot lock-in
+  id: '687285'
+  commentary:
+    - file: taproot-lock-in.md
+      by: Claude Opus 5
+- title: Difficulty −27.94%
+  id: '689472'
+  commentary:
+    - file: difficulty-2794.md
+      by: Claude Opus 5
+- title: Romans 12:21
+  id: 057954bb28527ff9c7701c6fd2b7f770163718ded09745da56cc95e7606afe99
+- title: Taproot
+  id: '708624'
+  page: book
+  commentary:
+    - file: taproot.md
+      by: Claude Opus 5
+- title: Taproot activation
+  id: 777c998695de4b7ecec54c058c73b2cab71184cf1655840935cd9388923dc288
+  commentary:
+    - file: taproot-activation.md
+      by: Claude Opus 5
+- title: First Ordinals inscription
+  # The inscription lives in the witness, so the entry cites the footnote
+  # itself: section 2323's witness a, where the envelope's bytes read.
+  id: IV β69 ■343 §2323.a
+  commentary:
+    - file: first-ordinals-inscription.md
+      by: Claude Opus 5
+- title: Largest block (at the time)
+  id: '774628'
+  commentary:
+    - file: largest-block-at-the-time.md
+      by: Claude Fable 5
+- title: First BRC-20 inscription
+  # The ordi deploy -- the token scheme's opening entry, inscribed like the
+  # Ordinals before it: in the witness, so the entry cites the footnote.
+  id: IV β75 ■649 §408.a
+# The second-largest fee mistake in coins and the first one returned: Paxos
+# sent 0.07405440 ₿ across five outputs and left 19.82108632 ₿ of a
+# 19.89514072 ₿ input as the fee, 10 September 2023. F2Pool mined it and,
+# five days on, sent it back — the outcome that separates this entry from
+# the 291 ₿ of 2016.
+- title: The 26.26 ₿ coinbase
+  id: IV β88 ■1666 §1
+  commentary:
+    - file: the-26-26-btc-coinbase.md
+      by: Claude Fable 5
+- title: The 19.82 BTC fee
+  id: IV β88 ■1666 §2
+  commentary:
+    - file: the-19-82-btc-fee.md
+      by: Claude Fable 5
+# The largest fee ever in dollar terms (~$3.1M): one input of 139.42495946 ₿,
+# one output of 55.76998378 ₿, and 83.65497568 ₿ between them, 23 November
+# 2023. A claimant reported a hacked wallet; AntPool froze the sum and
+# offered it back against proof of keys.
+- title: The 91.47 ₿ coinbase
+  id: IV β94 ■600 §1
+  commentary:
+    - file: the-91-47-btc-coinbase.md
+      by: Claude Fable 5
+- title: The 83.65 BTC fee
+  id: IV β94 ■600 §4
+  commentary:
+    - file: the-83-65-btc-fee.md
+      by: Claude Fable 5
+- title: The Fourth Halving
+  id: '840000'
+  index: 0
+  commentary:
+    - file: the-fourth-halving.md
+      by: Claude Fable 5
+- title: Sermon on the Mount
+  id: e53ac3be05bbeb8ea3bbfb7854a4d47eea556daea25f45ad3fe953f375ff7fd8
+- title: First BIP110 signaling block
+  id: '938903'
+  commentary:
+    - file: first-bip110-signaling-block.md
+      by: Claude Opus 5
+# The largest burn ever sent to the all-zeros address — the P2PKH whose
+# hash160 is twenty zero bytes, transparently keyless. Five sections of one
+# chapter, 107.13021951 ₿ between them, May 25 2026; flagged the next day by
+# the analyst Sani (Timechainindex). Motive unknown — protest, compromise,
+# and error have all been argued, none with evidence. The chapter carries
+# the event's name and its reading; each burn is then its own entry at its
+# own level, titled by what it carries — a title names the level it cites
+# and never bleeds up, so these cite the sections (each transaction is its
+# single burn output anyway).
+- title: The 107 BTC burn
+  id: '950962'
+  commentary:
+    - file: the-107-btc-burn.md
+      by: Claude Fable 5
+- title: 20.03 ₿ to the zero address
+  id: V β56 ■83 §2216
+- title: 28.89 ₿ to the zero address
+  id: V β56 ■83 §2221
+- title: 36.79 ₿ to the zero address
+  id: V β56 ■83 §2223
+- title: 1.42 ₿ to the zero address
+  id: V β56 ■83 §2224
+- title: 20.01 ₿ to the zero address
+  id: V β56 ■83 §2225
+# ── The Coldcard attack ───────────────────────────────────────────────────
+# The July 2026 theft from Coldcard-generated wallets (the 'Coldcard hack'
+# ledger keeps the attacker's vault addresses; these entries keep its places
+# in the chain). Three waves, and for each the transactions listed are the
+# ones that carried the stolen coins into the vaults — the attack's terminal
+# settlement, which is where the chain tells the story in a citable number
+# of places. Wave 1's sweeps proper (some 1,195 one-input-one-output
+# drainings, blocks 960,183-960,191) converged on collectors first; listing
+# every sweep would be a concordance, not a contents. Amounts in each `as`
+# are what reached the vault in that transaction, net of fees, so the wave
+# totals here read slightly under the published sweep totals. Wave 1: two
+# blocks, three mass consolidations (491, 204 and 341 inputs) and 49 direct
+# single-input sweeps into a fourth vault. Wave 2: 27 transactions across
+# blocks 960,352-960,455, the largest pulling 1,212 inputs. Wave 3: 214
+# transactions in blocks 960,519-960,522, one per fresh P2WSH vault, the
+# shared-destination fingerprint deliberately absent. Txids fetched from the
+# chain itself (vault funding histories, blockstream.info and mempool.space
+# agreeing), windowed to each wave's blocks so later dust sent to the famous
+# vaults by onlookers is not mistaken for the attack. No published reading
+# yet -- the entries are kept, per the note above, before anyone has
+# finished saying why.
+- title: Coldcard attack, wave 1
+  ids:
+    - id: 14edd9ee8445793c320e92e3b50365a0e18b8b25f424044bce337463f007fdd2
+      as: 398.47573857 BTC, 491 inputs
+    - id: 4b50d61a3d6e54c62ee0be13d7e9a8b69bffe7fc2b2cab4e14da56e4e20440d2
+      as: 89.6232789 BTC, 204 inputs
+    - id: 0c6bf853a645b699a3b2cd6d8e3c44cf1a02a16f538df08212a44753f75d9d01
+      as: 562.01962301 BTC, 341 inputs
+    - id: 41450b691a014c48c4a650adaaa2267172b57911cfea747c54cfe9ec247dd1f8
+      as: 0.25286518 BTC, 1 input
+    - id: 21eea93cd575ff449213ac92776a9adaed73dcd82485e1b279fb32e0d45645ce
+      as: 0.25277562 BTC, 1 input
+    - id: 2a8a7869f1b856f1716e64f2d99cad98242c189998758c2a1cabb011c341bdf2
+      as: 0.25068544 BTC, 1 input
+    - id: 52da9113c0402dc0444f06939e9a23576f471819bf45735cf1b69bff8f65dacb
+      as: 0.249967 BTC, 1 input
+    - id: bba969fc4cbc47cfbebdd3744c2c3f26bb7ec6aec09d142eb05442fe250e0fb6
+      as: 0.249967 BTC, 1 input
+    - id: e5ea1b34e0475a717441aef7b6e770f621ecc1dbb6c31069f65dd01b3e3eaef4
+      as: 0.249963 BTC, 1 input
+    - id: cae4d70c3d82edf64b6676bdd11bcc9056016f7527bbee75b1972487c1219cef
+      as: 0.24995725 BTC, 1 input
+    - id: 3d9afbff12798144fb2bbcef5193b47d1f210761df545cb397e125141a3ba6c6
+      as: 0.24990245 BTC, 1 input
+    - id: a227d651c8ad6899caf42c225a98b9564b7df1a7142a64b4889e34ae208fdbd0
+      as: 0.240087 BTC, 1 input
+    - id: 26346d275ccc2f0779803ab9676b224355b1a6c697215d5b5a2751678d0e19b8
+      as: 0.239967 BTC, 1 input
+    - id: 48e4c8a920a07922817b1d5edcf012590469d63fa37454b960357ca94d0ad0b7
+      as: 0.239967 BTC, 1 input
+    - id: 5a531414cb95cb15a8215f3183d120fa60c121b939940cd48bf1e066f32ac5c3
+      as: 0.239967 BTC, 1 input
+    - id: a5abe9033155e69e9b714421e6a45dc6c88692c08738154c0d177921aa34fcf7
+      as: 0.22809771 BTC, 1 input
+    - id: 41662b662608effb61bd40bec5d269fd9f9a7411fc4f8b789c1ad1fbbe10cebd
+      as: 0.22227197 BTC, 1 input
+    - id: d888b23b2e529e4498100384d45d29c752e525a7ed57555c7dc1f9336c2cc7f3
+      as: 0.2179639 BTC, 1 input
+    - id: 77dd072ac8652182095da52da22b2ad66b5e1606a4489730f12eb280e9550ce0
+      as: 0.21673933 BTC, 1 input
+    - id: a9227691fdcbcaa1ab084f426222cc822e7f780672893573951bbbdab2c77ae4
+      as: 0.21661436 BTC, 1 input
+    - id: df757ed79a21df0101a51189db65840e739fafc5d38a377f4241204e561ee3de
+      as: 0.21547162 BTC, 1 input
+    - id: f6fa4e867271d2e91ad99f6c14ad941e64518149a8752b9cfb613419057d6ce4
+      as: 0.21545827 BTC, 1 input
+    - id: 0710e5128085e613316210c706cc371b749c7193a065cd987f5196780cad6de0
+      as: 0.21536131 BTC, 1 input
+    - id: 7d99b3289df4ebfa074b5d6f78ae37f8b166433a49c90ae75507f54b1d15d9f1
+      as: 0.21532228 BTC, 1 input
+    - id: 63bca7b9a1f50c8487f18f56e7c5e71bbb4bd008a81fa0bea0cee59ac545abfa
+      as: 0.21530009 BTC, 1 input
+    - id: dfc15e5795c4ae1f7e85c150d02f30e806e5a54626e26275d56793322b1650c2
+      as: 0.21526893 BTC, 1 input
+    - id: 2130b2e5ab8f403d7e1b0f4e3cd81f6ee1168ad417adbb356b6b3aff896574da
+      as: 0.214467 BTC, 1 input
+    - id: f650607b241beea80773da579023a938c5b94925d746c4dd7fdcdeac50a8e7e7
+      as: 0.21042946 BTC, 1 input
+    - id: 97b26f4981a702fadb91736d27b119686379082658152b23d98b8f1a6803d4d6
+      as: 0.21021502 BTC, 1 input
+    - id: da50d8ec42cd479e36ef60d6e55bd43cfe6b7e984502dbb438037f17dad5c0ee
+      as: 0.20996426 BTC, 1 input
+    - id: 603ecd05063b6051c402952e562e4d4e462d284925fc7828c2f7602717ef57e5
+      as: 0.20759824 BTC, 1 input
+    - id: 3129527c97dd5647a2c756d1e64b33218e6f7ed3b9484ed1995f6e9e908126b8
+      as: 0.206722 BTC, 1 input
+    - id: 1ccb0d45eb0679820eb9f5c417342b3f806c93dccc2b5b4ab77bb2fc5004e6fc
+      as: 0.206661 BTC, 1 input
+    - id: 3180b058de97ecc41aea0d7a72ad31a4b1275c377d462aac90ae4ab8ba054dc3
+      as: 0.20589377 BTC, 1 input
+    - id: d473f5ccae596a13478afc51ea020229565e46c4130b284325c8b93dfb4c58f3
+      as: 0.2003561 BTC, 1 input
+    - id: 480f59eebf5831da1477f07620e9d32546f4f6fb4de240ebb4a9715c59fa92e3
+      as: 0.199967 BTC, 1 input
+    - id: e4d18815f5dfb03354b47cad778c02156e60f3d7527846455a26152e351dcbfb
+      as: 0.199967 BTC, 1 input
+    - id: ef3653c25a5e1ec58812c05c1dc37445b30472f1bf96a4e2599ecd6aa4db3fca
+      as: 0.199947 BTC, 1 input
+    - id: 99051fce72e64328ffa352494b6cfc6c0e5e4e286f9ccb518f4c84b536ba89e4
+      as: 0.19355886 BTC, 1 input
+    - id: 7d51cdd813c74670ebd0594f4c0be5af6f3fb937a51cd9cdadc78f1b743b7bfa
+      as: 0.187177 BTC, 1 input
+    - id: 28d7849b65d6b7a0e57eec45b8d8443f26940e29b6b7d4353b6127b29e4c62ef
+      as: 0.181967 BTC, 1 input
+    - id: 0d85d6908c793ffec2f0567bd07a2adeebaab22cafdd3c04a447605c3d4973f2
+      as: 0.17850576 BTC, 1 input
+    - id: 2fd98705f7e08b829b1c52de5a1791fbb7817c38e6ebc67179c201669cac52c1
+      as: 0.174977 BTC, 1 input
+    - id: 024005d32584455c7cd0eb92b3d60e004beb40ede905adb4188faa4d093952d0
+      as: 0.17032219 BTC, 1 input
+    - id: 892837af3cf78af221b93e1b5e3cd80773a9cbbcae68b2a691bfce979c356db3
+      as: 0.1607477 BTC, 1 input
+    - id: ae4e87a9a99605cc5c287047e30753d8a5b93349e9607d83d30764ae88dc44b9
+      as: 0.15496219 BTC, 1 input
+    - id: 9336bf83bf88d43f5cdb4312fbce00f21517375606584ba57ba02b6286c5c9c7
+      as: 0.15419285 BTC, 1 input
+    - id: 1e5cbb2029a789c4d4e8150d2a0c59d92b22bcb89947e9f4bd96afe28795e3e1
+      as: 0.1526038 BTC, 1 input
+    - id: e1dd7943c3d3c75401e544817d1bce5c54b4c748973d5bbcc1a260db931dfbbc
+      as: 0.15057292 BTC, 1 input
+    - id: 69e67b8b9749caccc70cbb82c051b9d333bd454f7ba54a35ddab9c16aee008fe
+      as: 0.15055596 BTC, 1 input
+    - id: aafc68c558bb9e8a46ffc4f948546441694b05d848518b91aeeb3bc48ae530bb
+      as: 0.149967 BTC, 1 input
+    - id: b538cc65c0a689a38c3fc055b5c94e173fde328b446f514bf64249fbb8dca6c2
+      as: 0.149967 BTC, 1 input
+- title: Coldcard attack, wave 2
+  ids:
+    - id: be0a120150d5e2bb246047d709e61e300617b7f288a8943f3bdfc04d3462eafc
+      as: 0.11470954 BTC, 1 input
+    - id: e79d69dee4cd055e36fc0e32ae3c154f0d521d24633ea04cb972a7d4211aa5fc
+      as: 0.00877133 BTC, 1 input
+    - id: f4e91e2f06029e7db6829efe0d69984e79d0dea76619b49cd37d0a95fdc8b2fd
+      as: 0.00770259 BTC, 1 input
+    - id: fe4f1eae4d4c89e7f2032ef0c59bc8dea2bec3874fb355abd2332414bbc0d1a1
+      as: 0.00007217 BTC, 4 inputs
+    - id: f1bcde8ccd3e394827945d23def97b8b4953e530c619c4a62ebd62c8e7bf4899
+      as: 16.98447095 BTC, 11 inputs
+    - id: e8808c89bd79cf08802d78122b3c88c20506039fc24b3dd01b786c921a0bab31
+      as: 0.48211359 BTC, 14 inputs
+    - id: ec41ead6d21a52cc039a53c52a247181cdd152526f1118ece7ceaf0058c48a8e
+      as: 0.26651149 BTC, 9 inputs
+    - id: 50f2cbeb10f1cb6ac689faf2fd405229388e5b9edc3289365854ef67d9781ada
+      as: 0.23799497 BTC, 8 inputs
+    - id: 0789313ae208d540aae23d567a3aa4eed4590b9afd33479e30a5f7d46c73c255
+      as: 0.19887513 BTC, 2 inputs
+    - id: 3c5d997fcb3d9b4935d4bb514849c4da10b462a226bb10497876939877a357a8
+      as: 0.15566942 BTC, 20 inputs
+    - id: 858dada4bf77c5eaf5fbd7e350788396d8ce6f77bfa38fccebc590353dd5f0e0
+      as: 0.14308867 BTC, 4 inputs
+    - id: 5887744c9b53554d4ad7cf04df5a13a42074446b8e71ba59a364f54768180719
+      as: 0.13734143 BTC, 3 inputs
+    - id: 3f2650ae39372054819f897b9cd4e411ac97fc144b1182b5012027e0c5e9f498
+      as: 0.10981536 BTC, 1 input
+    - id: 05e8c06e3f6cafcd18c8ab4423a9b3c2c85e949944727829021d807e6ad87df5
+      as: 0.10426475 BTC, 12 inputs
+    - id: f0cd718eab63bfb49a3bfd33a345d2712ba594fca1147f437ec394903a18807d
+      as: 0.09505595 BTC, 1 input
+    - id: 2a6e7b289e8fed11a521e9c4565f626fdde02970a1dfcdc4aae7d1e2b109fc36
+      as: 0.07726551 BTC, 3 inputs
+    - id: b80f5508c466e95173f2cdf5a10f5bc8962251906ff18b753416f312dfdde87e
+      as: 0.01676153 BTC, 1 input
+    - id: 3c43c717950b79f0db756fce7674464f54192d2294d282d463d0c308feccdb69
+      as: 0.00889902 BTC, 3 inputs
+    - id: 97734dc3e48a410263e270bef0f692854f35983d3ffc7f88759cdd9c2692243c
+      as: 0.001544 BTC, 1 input
+    - id: 9d7c5164e361ec4bfdafe4a7ddff9902926ce427f31f3df7721d47691a901664
+      as: 0.00103259 BTC, 3 inputs
+    - id: 3b2ca8cdf2cb5a5c0111d4229a9b4db2e2f5d7c91c08aa251d3f0de14f5fb1fc
+      as: 0.00092132 BTC, 1 input
+    - id: b24e820dc913fa7e62870222e2a59f44f547559b045b38922a6302683984f3c8
+      as: 0.00075394 BTC, 1 input
+    - id: 139927b0469046ddedcded0bc0da2f4cd72cdfb69e1fd23669602690bb6d04b8
+      as: 0.000478 BTC, 1 input
+    - id: 169c230b3c801e5a1158b5839fdca0acdad85e1cc8859d6179298883345aad5d
+      as: 0.00021731 BTC, 1 input
+    - id: 5648959fc5504aef4fd5ce34c8b89e62ffe1b3efc5eda16212243022fc57d3b1
+      as: 0.00011714 BTC, 1 input
+    - id: ba119968ec4b82c28f557dfc6cbb2c1834d55145e5a352872c533296d19d3082
+      as: 45.90251994 BTC, 1212 inputs
+    - id: 3229e5a2892fa2bd78430fae3076cce0afb045ae5524c96c59f5e1b29c9237da
+      as: 0.19153809 BTC, 11 inputs
+- title: Coldcard attack, wave 3
+  ids:
+    - id: 871d99f1ff2f1213a9677cbeca323a8d93c8041906db67e6d1265fe52a58ecb9
+      as: 0.0023298 BTC, 1 input
+    - id: 97d9f9485de99a16677de688d98d9f0198f7739d928557a35c0a6a2af908e062
+      as: 20.49703196 BTC, 1 input
+    - id: 2a354d4beec583e5a438a0c43a533ea2e145f3a09a89591f00ea56bb10b1c857
+      as: 15.47824995 BTC, 1 input
+    - id: 30da5ade506d0edfee1ae29e5cb942161282f5accf02480840cd09e60178b04c
+      as: 12.26829462 BTC, 1 input
+    - id: ad645f3bdc4dde0905148ad9d6d0c256e20895ce6ff1fcca2a31e1e13829229a
+      as: 9.74151747 BTC, 1 input
+    - id: 6e476631ccd5f84d9c155870663d82dc731d2a55cc9c77611196ecedd86ba374
+      as: 6.88509195 BTC, 1 input
+    - id: d4c4f8fb721eb71d659cc34ed0fd998641bfb1ad28f23dde483281edec87fd34
+      as: 5.39098601 BTC, 1 input
+    - id: f3db8c9eafee9862aa87993d18f5f3d474d05bede8ae3faa8e52ef5404ae15d9
+      as: 4.53878769 BTC, 1 input
+    - id: 51f59b98abee80e7e7104a4a3193c311802721f3225cf2db8293f646f87057ac
+      as: 4.14175791 BTC, 1 input
+    - id: 02198f23597d54dc2abea568ec7317965decdace9de8525b62c44479757a2e34
+      as: 4.01383972 BTC, 1 input
+    - id: c92cc441c4af12b0cd28b1bb93a1adaad635644d3dbc7ffef6247d7ab355698c
+      as: 3.98704957 BTC, 1 input
+    - id: c47dd09973d6bb1f00f3ab900672f8bce99a968ba44d6566ff33042f3eefb749
+      as: 3.80969146 BTC, 1 input
+    - id: cfeb9d9448b7ea2b3749f3c7cdcb5588a515f4aec6964f4d6c4249c481f6db7d
+      as: 3.63032005 BTC, 1 input
+    - id: f495a028ebd5266a77ee79d3574a87266d40b31e03b9fd26d9218a2e2b6a11dc
+      as: 3.39235311 BTC, 1 input
+    - id: 8003aead5c5519e9087b04c6ab921c91a2cc4a4a74035e28aa33956baeb19a11
+      as: 3.31668005 BTC, 1 input
+    - id: 4d88a8b652327380fcd716c9c2bd078e06c6c2ca837a1d9f31cfdfc7f593b3e6
+      as: 3.2672638 BTC, 1 input
+    - id: 1d0592128e79a3c57cea6502d9053fdc5843b6871b91a649d8eafd1856599235
+      as: 3.00585628 BTC, 1 input
+    - id: ae2ba9a081321df927007d3d7ab5567ac70a4ebd19c3311b83726c33a0c23786
+      as: 2.99922036 BTC, 1 input
+    - id: d1f095d7904afe6b7445d76b0102068f5ccda645a4321bb40de64504a7227250
+      as: 2.92126799 BTC, 1 input
+    - id: adecbf3218c599f227d0f327dfcb9681be9bdf9ac29b2d8a2419d777251f45c5
+      as: 2.8116249 BTC, 1 input
+    - id: 5ea8965d04fd7ed545dc38e9fd0d78b02f1b6bb82245d24a9af15c586177e1af
+      as: 2.73894035 BTC, 1 input
+    - id: 991407c02776c4734854384385a3a662757376d32060b6d0f1c22602a9618b39
+      as: 2.72482097 BTC, 1 input
+    - id: 3337953a14c061b956dae146f0dc024fba775c19e7910c06978e732ff9199bdb
+      as: 2.6494159 BTC, 1 input
+    - id: 04bbbcd6abdf3d4738f4388ceb8a395f7adc6f3a61afc8d681ce9536063aacea
+      as: 2.52064635 BTC, 1 input
+    - id: 0ccebba3664af52d2824745baccc61f5e71237b70ea34c8677e6c6fac231e570
+      as: 2.50784278 BTC, 1 input
+    - id: 18cd4e746475f5b5b118d3908b96f3cc7bb2507609474e2a8255556ec2735a79
+      as: 2.20411992 BTC, 1 input
+    - id: 5cf8ee1bf905021a8d2d12a104b48bdd1a628d35e9cb58ea5454aa20d6e54ac0
+      as: 2.08421608 BTC, 1 input
+    - id: c4ce6cf55dff3fb18acc47c37371b9e4eb466f5df9febe57982fdab46b2cddf0
+      as: 2.05746782 BTC, 1 input
+    - id: 72a4a4b9fe886657f0d9cf9092f40a6c7de9c6d74cf1707e9b0ca72018719c53
+      as: 2.02848692 BTC, 1 input
+    - id: be702cd1e4358e9a2efa9b4d379152d04927ddf63bb55904a9795ebcbe9b559d
+      as: 1.73373065 BTC, 1 input
+    - id: ae396a0b974c7bbff5910c5e4f841b4dd7363743bb9566dbd8dd0f2140f78a50
+      as: 1.69188357 BTC, 1 input
+    - id: 5cc4936d26bf644c6d61fbc2d6c454b42dc94d9686cab6b5480e72bf7a12473b
+      as: 1.68228991 BTC, 2 inputs
+    - id: 5d87de8863fd043d9fcf878a6a55168aca226de3bf7dd857d3db105156c6af0d
+      as: 1.58669331 BTC, 1 input
+    - id: 9d42a30f0a2129b8100d1fc1b1650be3a1d60a82a203873596fd6ec04344639f
+      as: 1.51069414 BTC, 1 input
+    - id: a638a65452eeef461d617d58f633fcb9a400f81b3c78aeadccca225f4c8d338e
+      as: 1.42355164 BTC, 1 input
+    - id: 588f10326dfb3989b7496cc05465ba9fcbea9a8f9e8aa888ac82fb6b4330faf1
+      as: 1.2984018 BTC, 1 input
+    - id: b793a875934a709d37bae78031833acef71e6fedc0727f08bb177d7bc6183cbc
+      as: 1.24272696 BTC, 1 input
+    - id: ca05f161560babaceb8368987bee056d0ce7380eb0c41cc4be945a7b553de6ed
+      as: 1.14238463 BTC, 1 input
+    - id: 7dfadcfa31c8244abcb13acbe56b1c7e06d006cf7a278196ca6f70bb42aadbf6
+      as: 1.10389012 BTC, 1 input
+    - id: c780f124969d118ca185cecd94eef06f25c56c618607c3db3927446330d6c1e4
+      as: 1.05327357 BTC, 1 input
+    - id: 4cd13a31f3523ae1d0840dc3cfbc2a8b601165be6a3c4a3c1cd2a279df531b44
+      as: 1.0430298 BTC, 1 input
+    - id: 426c883c41222a6a13e2970ea35ab7a5627c7288581fd0c15a9616129b75d8f1
+      as: 1.01976357 BTC, 1 input
+    - id: 42b62cf3bfeccb10492bb7301cc033968d40f790d37df7785a93097e26c22e3f
+      as: 1.01857988 BTC, 1 input
+    - id: 7feb7cb381ef4607e5aa2fe82c7bff85411e29e6c70742e34411aaebfbffb9d1
+      as: 1.01266757 BTC, 1 input
+    - id: a1c6e5fad6b686d1758458253995d6c5c1c257347652ebcbc38fface03d117aa
+      as: 1.0069355 BTC, 1 input
+    - id: 32e856b2a10c847db308e577b6db7ab79682582f56edaf0eefb1fb167d934fed
+      as: 1.00093255 BTC, 1 input
+    - id: 3f8ccc0d94357578223ceffa81c04a444ab99a75bd7c08016f1c2e3a1e95c4cc
+      as: 1.00040325 BTC, 1 input
+    - id: 0bf39776a1845e4c1f67c08c37e16c9c307b52388d9b2d321a197aba1764bad3
+      as: 1.0001318 BTC, 1 input
+    - id: c5ced32d992004e96c2765f969ca8e4101f6a929fea0181106bb531f5e1b4282
+      as: 0.9949898 BTC, 1 input
+    - id: 2ae4829f002050803f34140ebc29a0410f41ad618fdfbec5e1eb30a2cfcc89aa
+      as: 0.9934878 BTC, 1 input
+    - id: d81aadd096c5c0f454d8c17f50b269033fc58ded15a7a8b07697875c741d8dbd
+      as: 0.85192202 BTC, 1 input
+    - id: f4f394b404c2e90ecf11fcd6029502e2a0f713b4cfe1cdf6158acbc40ca9c4d7
+      as: 0.85074447 BTC, 1 input
+    - id: 37e861e253f45567ed33168e9cdecc21cadb279d067b13b3b6b597d0219b7cdb
+      as: 0.83717676 BTC, 1 input
+    - id: 106e28b474a71501aaebc48e59e80dcd41cfe732c587a756a92bb021f2d862d2
+      as: 0.8353508 BTC, 1 input
+    - id: cfa3fc9e75eb0c44ffd5c6a3e148622d1e68f8d28f1b7910ea8e08b3d6ef9a54
+      as: 0.81458411 BTC, 1 input
+    - id: df7bfd39990f18413bc13a85cfec532d3a7a749d7521ab2ed4fff70c3ac03966
+      as: 0.80094372 BTC, 1 input
+    - id: 1a29531477f62f2b7f53285a61e763ac20c1ec082d5fcb4e3041b30bee1d577f
+      as: 0.77812263 BTC, 1 input
+    - id: 5076f5fb1c439bb604170a7f769f17ff929d98f0104b7fab4a634564b3d9833a
+      as: 0.77291101 BTC, 1 input
+    - id: 5759772b9f446c311ecf55507a4e70da5d226145574738f1ea712625d808fbfa
+      as: 0.7596758 BTC, 1 input
+    - id: 75fd60e7ae3a37bc3b9151edd843dc4fcd8dd1455896fe32a1ea899c7c2543d9
+      as: 0.75536701 BTC, 1 input
+    - id: 83be3942fad4b944cf2da41bc87e1adbbf2617821633fe8b9a831ef8aa5b4209
+      as: 0.70431447 BTC, 1 input
+    - id: b050e47b9c615adb74995d5a3ad42b90956aba99c420e525df0a530fc27b1c28
+      as: 0.69906337 BTC, 1 input
+    - id: 1725d12622e87c843ce03f67102ac491c9aa66b673d0acf5b102e782c2a95330
+      as: 0.67899409 BTC, 1 input
+    - id: 5a415231d566492d5633420a8fc13a63f6aeecf197b77cedd220b072451d9f98
+      as: 0.66510239 BTC, 1 input
+    - id: 2383002d78ee2815e3a047486799cf0b580f416e3ff8f446d3c40c4bf9771dd7
+      as: 0.64598208 BTC, 1 input
+    - id: 3e73446b7df5e55e309454e6d6fc6357a2f4a3fdd5fcdd9ae17081b0aefc46fc
+      as: 0.61847292 BTC, 1 input
+    - id: 92dc0b76590a1709d8650787f29d3515eb9c9ef3bce596cade7a7506cf8a45a6
+      as: 0.5941699 BTC, 1 input
+    - id: e91ce1a37d848bd7bf3117db015f515a5519a7956a6762c3d714d706119e95a3
+      as: 0.58741437 BTC, 1 input
+    - id: ab07aa4d294f571e016d42daa9ad3914e57805f74a050312a592ae2c941ec5f6
+      as: 0.58633145 BTC, 1 input
+    - id: f2a08208c78fd1d624ff76d1125006eda8c952c1efaeb3aee2560fe6e7d33bb7
+      as: 0.5808048 BTC, 1 input
+    - id: a2b921ac76ba0796e9d5857ee72b49b3f32289f84009234833266c6e0f59a4a7
+      as: 0.54963327 BTC, 1 input
+    - id: c4013a80e8b5e98a016217615e5d13050b85eb4ff97b97b6d8525fdf54a3c82f
+      as: 0.54569989 BTC, 1 input
+    - id: 119ae1ae2b0753053c8dd0956ef2beb55f26aae959e6e33fceed041f42a635c3
+      as: 0.54132885 BTC, 1 input
+    - id: 133c29704fbe65a74c94c07d1ea0ac6bf0ceefb2634ac6cbe932a7502b528d92
+      as: 0.5069498 BTC, 1 input
+    - id: 9d7e2a0f060a86f7eb48defce55705fc13449f96e497fbcae7405ce9148544fb
+      as: 0.50163823 BTC, 1 input
+    - id: df6466e55328c5f9fbe9267a069e11f3cac944b474593de2881f9a8ccdd6a73d
+      as: 0.4992642 BTC, 1 input
+    - id: d50c08453c78322f356c9bc5b7b9d5fd2355d4a8dd8458a1d76bbb5740cf3bd2
+      as: 0.48945961 BTC, 1 input
+    - id: cbb9818fc15fd44895da265b59391fffebd3aae9e1e7ceff39d461d8d0e02ac6
+      as: 0.48493299 BTC, 1 input
+    - id: 012331f9f2fff65c3066b723abefad88ff8cb840decdb87411839fdab260cd23
+      as: 0.45768821 BTC, 1 input
+    - id: 7fe9490acade2a34d94bab223b79ba7a597558230114cc5373fef722969642ab
+      as: 0.45593126 BTC, 1 input
+    - id: b8068cefc3ae7415f6dadf62cd09731893764adb969f404910a1deb41ee41a14
+      as: 0.42213138 BTC, 1 input
+    - id: d3043dd5d29af7cb3efe4f2870d074cd1d748c437c82cdbee0a3a7c3d29dbe44
+      as: 0.4157288 BTC, 1 input
+    - id: e411322652ff28b432c3219d3fb57a3b710d65612f0fe766a585c39eea32c1b0
+      as: 0.4138718 BTC, 1 input
+    - id: 322254d107d9ee233ba24470fe31530160747a188bd2e0353c39ad0e8e2a88f4
+      as: 0.39997467 BTC, 1 input
+    - id: 76ace06f564b32aad14c758e85a05c5a29e12df35f8decaab5c5dc83b88d9034
+      as: 0.39492486 BTC, 1 input
+    - id: dd5fa21ca13468904bbb7856958aea39a04f9055cef5bfcf982da6c251746def
+      as: 0.37768772 BTC, 1 input
+    - id: 2e0233b459a8d84c126aa53a5ea599b72a61cd5c4f25b898502b05d871e477d3
+      as: 0.3773678 BTC, 1 input
+    - id: e6af72a15b6a8fd1528b19e9de2562718ff42c179a25b81cd3184726adf04969
+      as: 0.37668657 BTC, 1 input
+    - id: 09fa907a365c2971059560c5463cf20011872fe73521f8c737a09e71e6fb0d6a
+      as: 0.35046599 BTC, 1 input
+    - id: 0975289177be7711f3b7bba6a1b4d48b70572ed358567bdfebfa5c7d5dd6851f
+      as: 0.3457658 BTC, 1 input
+    - id: 2d94fac76141fd1312c6f6ed309e55fb65ae3708337ef6e327d8bea688641616
+      as: 0.34040498 BTC, 1 input
+    - id: 10ac95d22aba66ab490f8033317569e25796f23839309f0afb29e5c8780cbc2d
+      as: 0.33672299 BTC, 1 input
+    - id: b9635e21aa539b9d7dcf3bb71e482600a9149807aea76f25c09f2a7ecaf00e38
+      as: 0.33483405 BTC, 1 input
+    - id: f5f4b03b16a6e8e6afc39313537e40de3b7f5266dcf3543fd6d4f4c802dc4cc8
+      as: 0.33463041 BTC, 1 input
+    - id: 9773ab53f4e08e3810a3900c2039af2f9c55becd229eed2f1d0e28da1350569f
+      as: 0.33348987 BTC, 1 input
+    - id: 7a1b04adf36acab5a12827076dee886dd8150f0a3be07013f533158ae74245a8
+      as: 0.3321912 BTC, 1 input
+    - id: f7c1fd512ee3a3bd596c8d03e22818d7e8016a2494cf466a5a6011f8b88310ee
+      as: 0.32664138 BTC, 1 input
+    - id: 8d0687545d8b4d3bb1cf6d9877dd1a06fc0a690bce855302b76735b60177f8b4
+      as: 0.32208629 BTC, 1 input
+    - id: c4aa456183b0f7b45c4824ec0e516765eb5aa05f66305264bafe5b92672ff16e
+      as: 0.31341339 BTC, 1 input
+    - id: e2928a9c6cc1dafe3bb85991cdcbd9ba547cc5b1ab20fdfb3070d0d16abdf7c2
+      as: 0.30929503 BTC, 1 input
+    - id: 48e2c488960c742a6f39e2d7617ab2b65625188ed9c1e18444a411237073d825
+      as: 0.30606469 BTC, 1 input
+    - id: 0273a37c87c448a0944bf4634d697d14d6a44e3a3ee523b8fa72058301eafc99
+      as: 0.3006318 BTC, 1 input
+    - id: f77843f01163f68fba7fb82651690a134b2afe827670b5db21dc60bcee50d84b
+      as: 0.29774544 BTC, 1 input
+    - id: fffff87b22b6b1035312419414f2e5990ea427015ba68e8c09063f92c7e03f6a
+      as: 0.28525508 BTC, 1 input
+    - id: 2f8204123a00e4878b1f54259399993befaeaced4471cd45b4b5ceb9b64dc721
+      as: 0.26962117 BTC, 1 input
+    - id: bde2c796f62a50c0ac7b0bfad5411ead76558dd2cd218cf0095264009975f0d6
+      as: 0.262589 BTC, 1 input
+    - id: 0db382e1ab2711d57e7a72e969f6f57528d3eb8207ead6aeb388c376214b7d25
+      as: 0.2615388 BTC, 1 input
+    - id: ac71381c344d4f27a384286096a0859936060a3c83a317ccca49a43e0cd9cd9a
+      as: 0.25169499 BTC, 1 input
+    - id: 148ebae40ff9f78662ecccdf782dfc678d028a0195670cd1eb10bba0c97d3a12
+      as: 0.24656373 BTC, 1 input
+    - id: de80116e5f71613af48b8c64fee75faea599f892936d0e29d3e6081deb9049a7
+      as: 0.23981457 BTC, 1 input
+    - id: 8cf9607ee35ddca9b9dfdc48b3aac87fcc2f07ccd5fb1d483f5e829f90115c20
+      as: 0.2359538 BTC, 1 input
+    - id: ed8433001f6bfed00232e7b160a7d4b7a8312a278d9c7dbf90290c27d09eac6e
+      as: 0.2357021 BTC, 1 input
+    - id: 9232d3e35e44c3ab61c74edd982ce7e49f16de7a2311a1d2f19e252a47cd4bd0
+      as: 0.22820581 BTC, 1 input
+    - id: 78b6926ad30e2af115a78b5a400e1c4893c1b298e722071f2a9b5248564a6b8a
+      as: 0.22722561 BTC, 1 input
+    - id: 950e301d2bef35a654d2dcddf643cb89f395e7c56ec6db7815afb34ec9c78be0
+      as: 0.21931343 BTC, 1 input
+    - id: 69d82e1c11840ef976c3e53002f43a2d0966167cdaec18c0be8f715cfa1feb13
+      as: 0.21789169 BTC, 1 input
+    - id: d9fd3f6cedf59c1ec3bb814e313bb255a9719f74d61de39f2446b640382664ee
+      as: 0.21300193 BTC, 1 input
+    - id: 13bbc0b8071e4941313dfe04beb15eaecfaf7d7a43dbf0a4a8eb1aeb94acf7c3
+      as: 0.21004234 BTC, 1 input
+    - id: 2ca988ce8102c73565888d97c0accff7d579330084928cdb7c2a0505d7ae6ffc
+      as: 0.20250125 BTC, 1 input
+    - id: 0db388dda1eeb41ffac8511d62d9f314b4e42b280070abd0ab95ac154ae0d764
+      as: 0.20052544 BTC, 1 input
+    - id: c36cd7fe3fdae0a341873908a46373d101be1e186a66709dc132cc080dc69fae
+      as: 0.19971171 BTC, 1 input
+    - id: 5a2f39bafa19445d101d4a85c6d046e0079b51009b9d19a5a1235bcdf89f76b1
+      as: 0.19939541 BTC, 1 input
+    - id: 3eef65a9d1c23ec3d1ec01d765a454abb1c7a232fca42fa4d806ad09eb3588cb
+      as: 0.19547911 BTC, 1 input
+    - id: 34fb0cafeb1ae4cfeed44d3a48f63da3132bb4008f94b078d1431d4b72902811
+      as: 0.19343429 BTC, 1 input
+    - id: 6027be4168695dd7876b688b02c6654046a118306f6a5b188faeb1653f37ae74
+      as: 0.1928358 BTC, 1 input
+    - id: 71b77ede680df857ddbf5d4302fb69599a13db5256f6d5b1e15b15076419c7ed
+      as: 0.17831005 BTC, 1 input
+    - id: de8661ef8beb2907edd0ea192cd8fcc2eb6f422117bdee113f8b867eff506280
+      as: 0.17092148 BTC, 1 input
+    - id: 1fa27cb092937d8afc97e7b1d87e5765dac3a433d1fd8df97a6b2c9348b7a521
+      as: 0.1696318 BTC, 1 input
+    - id: 65f44f5523c23537450496148ccf1f482637974a674d21f98ac440e5bdc0256b
+      as: 0.16825952 BTC, 1 input
+    - id: b36cb19dfd44daad787ed9a73ca3b29d359358ad921be1f70a8c23f2ba75bb8b
+      as: 0.15207015 BTC, 1 input
+    - id: 0486683de04a4dae6a478de12e4d81d472f75bb5f793b465f8206389e2faaefe
+      as: 0.13137773 BTC, 1 input
+    - id: 956fe890209bafd618dcc5f595c8144f775204cef364a97504f6ff3eee15a8c8
+      as: 0.12416239 BTC, 1 input
+    - id: 9f06da60655228c341efb253cf23a712f6b92623ddac618aeb49d4b8ddf727a4
+      as: 0.11674686 BTC, 1 input
+    - id: 4a3e54080120ca4ae6f8b71689c9d74311911439d80eb782d0ee18457154952c
+      as: 0.11106556 BTC, 1 input
+    - id: f000559b56348898114bb30dfcdb147b3ddbf8147be54144271e567b0d20282d
+      as: 0.10483982 BTC, 1 input
+    - id: 8a4d517a8f86d3be8e92e7cea8097cdd2eb89b3cb23349a4090c84bb5f8a9d0d
+      as: 0.10451152 BTC, 1 input
+    - id: 57f8a91fd21702d8252deaf23a41043a7972c8ac0762d2a5d6b378b9311d27b2
+      as: 0.09982394 BTC, 1 input
+    - id: 90e9eb462b306a3c3c5e1f58ab294760c1e5f8cb16e7021b3641f49031454ae9
+      as: 0.0992242 BTC, 1 input
+    - id: 1efd3ec633464213fbd5dcc1ea1c306c1c9860dcfcf807e5e6573f76c4e3c668
+      as: 0.0963818 BTC, 1 input
+    - id: 45cad369ebb3190cf9576b088f631649abcb486ca77ee4fb70fb3a961bc5b715
+      as: 0.09471637 BTC, 1 input
+    - id: df83b0adaec27102444cf196cf2b6701bcbaa3cf804a13521524bb9fd46405eb
+      as: 0.09213673 BTC, 1 input
+    - id: 7b5f201bc6edd77923dee866c7cf24d7480c724366944d87dd896011126417e2
+      as: 0.09150778 BTC, 1 input
+    - id: 5d3099f6d1d2fa1f3d886351d4d820132ba6b24df027a328db6eb4ea72fbfe3b
+      as: 0.08345491 BTC, 1 input
+    - id: 52495b7b74d7d5475b7820bea322c7a51d89ab72746260d131867e12c880a1c3
+      as: 0.07887331 BTC, 1 input
+    - id: df155d030888e55ebc714d20e84ed3b91fdb96aea5d70119f26f5816ec0eeb66
+      as: 0.07697767 BTC, 1 input
+    - id: 6c7d04874053c3676192ff69bcc231424b0d568c42321666de5c7da11598802a
+      as: 0.07481261 BTC, 1 input
+    - id: a8974089c9888d80f03fad1feabfbc49f623485221751ff6c4aea15948e92060
+      as: 0.07341378 BTC, 1 input
+    - id: 0efab6d468107b66051447682eecbabacfe88ad24be104a5fa78f8db87a85a79
+      as: 0.06749657 BTC, 1 input
+    - id: 1e21b76ebf7937093dd8ce8e16fffb80a0d82e05435ef16db3eab75af47317b7
+      as: 0.0650774 BTC, 1 input
+    - id: 2051906265cad8d909fc73a15d41cb54ea60303055bcda50af90fba4b20d89aa
+      as: 0.06505319 BTC, 1 input
+    - id: dc641a7d04e20338dc52acca2e3ee8e11eda0c57a19ce8f26a929bd8ad6ce441
+      as: 0.06276802 BTC, 1 input
+    - id: bf44522ff9a590365e06d5a0d12de97666cf98005a3bb73c53d629e48c67cee2
+      as: 0.05977104 BTC, 1 input
+    - id: e3ed1babd44bd9b80fc460a4ba886a291f0741afee20ede7afb9509a2801e8e1
+      as: 0.05759026 BTC, 1 input
+    - id: 8554b941fb9b17c3985ad56ab6def789cf57d1623c42b32399fb44a94deda691
+      as: 0.05569251 BTC, 1 input
+    - id: 0c10a849126cb677cf8ec9146138fbda731250e8c0ba24ca7fca005bbdc412a0
+      as: 0.05083943 BTC, 1 input
+    - id: 126127c17eb4c3f0ac85b9a57abb27a661e1fd09e76ebf47386da4e61b5e59cb
+      as: 0.05014211 BTC, 1 input
+    - id: 899f0dd4ab6f84c34297d8b24cbf9699ff11e710b06d8732d0e9451f142da0f1
+      as: 0.04976264 BTC, 1 input
+    - id: 1ceefc689ea817a280e0885012d2384848ca28a9a9895bc32a6be33a6e923c6c
+      as: 0.04967989 BTC, 1 input
+    - id: cc22f21e225f6048d0517bfdc53dd590f0440c88c88196509d78f241f7a85bbe
+      as: 0.04682682 BTC, 1 input
+    - id: 05ec3894730975fe553718a6e66befb69a852a683bb3168b3d4f4b08a1226e00
+      as: 0.0467388 BTC, 1 input
+    - id: b0c90edb39fdddbc0a4b706ae6ea02913d13260998db01f65551ed4dd4714699
+      as: 0.04653963 BTC, 1 input
+    - id: 05bca46dbc0716aefa775300cc0d38a937038177a1fc9b8e3d268a8ed5098c81
+      as: 0.04362179 BTC, 1 input
+    - id: 7f1c68228a5828644b4a3b7985aff8e6b7d4086a6563d00141890331dc0aa307
+      as: 0.04164841 BTC, 1 input
+    - id: 760825003cd984ae90406a367c02dce7ccd631f5a3c4cdfc40f9cd752766152a
+      as: 0.04056362 BTC, 1 input
+    - id: e797a58eb02c1cbf47f0c78391f58039b2c23d798a492789597db756144b0e25
+      as: 0.03742162 BTC, 1 input
+    - id: 8d7253a021fd52ae39b09eab4019c38542993fb5d7f98f2705063ff1513756ed
+      as: 0.0373018 BTC, 1 input
+    - id: d179b9d163d15930f26d20f9349d126972589e1e7bbeaaf46884fc57b1f136ed
+      as: 0.03547324 BTC, 1 input
+    - id: dd405dada864e09a01f034b17f9fdbf9121031983516d36b6c97923c7d3bcbc7
+      as: 0.03448213 BTC, 1 input
+    - id: 94854784f7ec90087fe6848c3c97a5380d04cb0875ef0305dacd60f4b861de2d
+      as: 0.03357803 BTC, 1 input
+    - id: 4a9380446259baa255e9bb8b4430b5c51dd1f5feefe2d5480910e113b8419d34
+      as: 0.03327956 BTC, 1 input
+    - id: 453d568cb5e69e88030bfefa53253eed4dc07e2e3cef0c0d55437b382e5a2b6f
+      as: 0.0320178 BTC, 1 input
+    - id: 909de93eb8f5279d68b2c8cfb1187d1427c8def47b6c33e3d58e2d09458267ca
+      as: 0.03159839 BTC, 1 input
+    - id: 349bdd6e494794049ea58ae6ed36733e0e0de907700b02ac3c22c902e75ab237
+      as: 0.03090333 BTC, 1 input
+    - id: b8433b8865283175efe0b42a1c1574ca75373a19da9ee86c28db68ab9ba359eb
+      as: 0.0297678 BTC, 1 input
+    - id: 8bdb92d7682f39dc7ea6c52b6264421ae53f2ee9b91b647ebf49685b3381dcd3
+      as: 0.02517175 BTC, 1 input
+    - id: cfb914e596894ead5b58086a235802edf10834468ee8264c091d9c2cf59fdbe2
+      as: 0.02451273 BTC, 1 input
+    - id: f0603516a96dc9b75de282f23cacceb37c5de6701f71033d9fd3ed3837ad56f8
+      as: 0.02339418 BTC, 1 input
+    - id: b55fd05c29ab552dea89bcafb8362938d210245accf899abf918077145cdebdb
+      as: 0.02202174 BTC, 1 input
+    - id: 01d5ed63d292478cc7a46254e359df29f0f77855d2a7171d48ced88b4a2fa648
+      as: 0.02062095 BTC, 1 input
+    - id: 5b726afc6f1e49c0a0c4a281d4c98bb9b1388a65de2f83f55d6a70e03a834bcc
+      as: 0.02055783 BTC, 1 input
+    - id: d6fecab1b7448179654f4b06f390dd581bb681e9fe0fa8dc7c4498d353ed823a
+      as: 0.0199498 BTC, 1 input
+    - id: 7d57bc501cc1557a1805be5233ff514502895b19f0abe76a756aea1a713798b9
+      as: 0.0194807 BTC, 1 input
+    - id: 9e0d6296989c63859c69f409e6825b069b5d06823eee88d904b6702c232b8a8b
+      as: 0.0192128 BTC, 1 input
+    - id: f3debc39592dc0501d54e58f1695768c7a03ab46a14b6bec44091f09f923b4cd
+      as: 0.0187478 BTC, 1 input
+    - id: b33f3b438a0634dd543b216ed6c292a15b26706a6d4a395e0d57ec6f08af1aa8
+      as: 0.01628702 BTC, 1 input
+    - id: a30c36e839646e6d2168956f1eea8dcb10d83e712ad9acd54bac548ad87278e4
+      as: 0.01475934 BTC, 1 input
+    - id: 6f3076ba052eadd4c7bfd69d132217bfcb74fafb9a816fab4b7a1a0c0276ff37
+      as: 0.01438078 BTC, 1 input
+    - id: c90f26f955bbc3a0dd643be71cfe27b9a558798da61e9b4a6edf208a33c412ed
+      as: 0.01409784 BTC, 1 input
+    - id: 4c89bc53ccc0cbd09fd9cdd318a52a19f03be0c7f1c7992ffcc26022c2afddcf
+      as: 0.01238588 BTC, 1 input
+    - id: d24b3b26ae89a4ac6d37e58a974b0de611d2bc2c13091304e182251e4a82ef51
+      as: 0.01015953 BTC, 1 input
+    - id: 48647b8680e4d2ece3f434605840f4d9f2388e0e6bb354f64b766dde8e5036f0
+      as: 0.01003015 BTC, 1 input
+    - id: 0eeebc9082ad0661a871f9d86db44236fab586d43e2fcc31118e2c25551219ce
+      as: 0.00982208 BTC, 1 input
+    - id: 0d766c75d14037328488ddbecf5713f8d3d462a9a69ae12c15eef541685f7fcf
+      as: 0.0097678 BTC, 1 input
+    - id: 0da2339f1b929522341cd97784be30686af572e45365c6943c944d677de9a89f
+      as: 0.0097678 BTC, 1 input
+    - id: df8b4a57826e19e124e6e3204918dfc3d01fe6c566b18b0c223352bdd955193d
+      as: 0.0097678 BTC, 1 input
+    - id: 84d0e5c47dd740d529e3811befee0725c0e56fa8ee9f0f1a623c9caeb77f46fe
+      as: 0.00966129 BTC, 1 input
+    - id: f92c4a9459953c2f4f9a5552b5868fc5918b5740984094d744682d606844c252
+      as: 0.00898723 BTC, 1 input
+    - id: 627587be40f594288dc5f7f84e1293554191089d14f35d881e9db22312d96fc2
+      as: 0.00863017 BTC, 1 input
+    - id: cb9bd1fb824a1cff44eb4719a5e56dd0c20b81c9a8203d641383205e4e4b2334
+      as: 0.0057678 BTC, 1 input
+    - id: 78ecb63f915f5be8ef1ec8502111c01ceb6bffcd73cbb2c8d735df18c2aed9c7
+      as: 0.0048457 BTC, 1 input
+    - id: c5a8ee801491610cb92976483b236d9a338a0b8eaf3174d0bdfa9b4c7168953c
+      as: 0.0047678 BTC, 1 input
+    - id: 5bdd2c22ae219e3791415b20cfa702f17502e40906126bc1d9569ac8ac7fb5b8
+      as: 0.0046617 BTC, 1 input
+    - id: 2113cf8e0133f7dd1446435e56d302958ddd5dfe88128c3ba9e550448b53d781
+      as: 0.004301 BTC, 1 input
+    - id: 35d1067089c36149f286916c2693eb4d4a13149a085c62b7223b6d61a913bd51
+      as: 0.00426357 BTC, 1 input
+    - id: 8b305e036d379b6317882b1e744977cbe8f86f7e6d20cd77ced98d62fb1cb2ea
+      as: 0.00389163 BTC, 1 input
+    - id: f0062c00a6afffa0a30e352e2923000dbb0b5e8c8d8ac1ec2307f0aa54652fc1
+      as: 0.0031878 BTC, 1 input
+    - id: fccf9a4bfc5b14473cd5157602e1157ae15a3562b7f018b0272b18970a68d170
+      as: 0.00313402 BTC, 1 input
+    - id: dddb853b59ff22326b03abb1a2c61a898d17534e0f90eb39b68febee4074f38c
+      as: 0.00275064 BTC, 1 input
+    - id: b39a17d37a84b81d531b48204600f0e1d02f2fe6d3e4450c1f20209a9b5ae759
+      as: 0.00265261 BTC, 1 input
+    - id: 88b408284a1359dd571962986ff361431e1df38c7da2e55e92795f7f70302afe
+      as: 0.00260276 BTC, 1 input
+    - id: 9191d50ae4150c9ab04eb5bb6069a75ef1979e6c4615cd6d10d06788f62ffeb7
+      as: 0.0022678 BTC, 1 input
+    - id: 292efa0c7cc474d12ea0a5c431c273fb866f3956e0d587ab20dd9b927e22dcb2
+      as: 0.30575377 BTC, 1 input
+    - id: f016370b7eeca63bcbcf96135e7c178129f0a406cc69a3e37b16e0fd5c90777a
+      as: 0.11580619 BTC, 1 input
+    - id: c0cc99707f25a48f1e54e524483bef3cbb6e78843f55795d4da122c48ca7a531
+      as: 0.08654776 BTC, 1 input
+
+# ── The ledgers ───────────────────────────────────────────────────────────
+# A curated entry may name an ADDRESS instead of a place in the chain. An
+# address is a name rather than a place, so it opens no chapter: the row reads
+# in the Ledger (bitcoin-ledger.html), which is where a name's record is kept —
+# and the readings below it are readings of a name, which is the kind of claim
+# this book is most insistent about crediting. That these coins are that party's
+# is somebody's assertion, however well evidenced; the Ledger sets it apart from
+# the record exactly as the reading page sets a passage's commentary apart.
+#
+# Which ledgers the book shelves, and what each is called, is still
+# btc-index-data.js; an entry here is about a reading, not a shelving.
+- title: WikiLeaks
+  id: 1HB5XMLmzFVj8ALj6mfBsbifRoD4miY36v
+  commentary:
+    - file: wikileaks-ledger.md
+      by: Claude Fable 5
+# The burn ledgers — names whose entire record is coins arriving and never
+# leaving, keyless by construction. Shelved in btc-index-data.js as "the
+# incinerators"; chain verification in tools/locks-and-burns.md. Ordered by
+# each name's famous moment: the Eater's Bitcointalk convention (2011), the
+# Counterparty window (January 2014), the zero address's 107 ₿ (May 2026).
+- title: The Bitcoin Eater
+  id: 1BitcoinEaterAddressDontSendf59kuE
+  commentary:
+    - file: bitcoin-eater-ledger.md
+      by: Claude Fable 5
+# A ledger named by its script, because no address can write it: the id's
+# `script:` prefix is the search grammar's, and the bare hex is the member
+# the shelf carries. The whole batch reads in the Ledger by scripthash
+# lookup -- 23 outputs, 2,609.36304319 ₿, none spendable.
+- title: The Mt. Gox void
+  id: script:76a90088ac
+  commentary:
+    - file: mt-gox-void-ledger.md
+      by: Claude Fable 5
+- title: The Counterparty burn
+  id: 1CounterpartyXXXXXXXXXXXXXXXUWLpVr
+  commentary:
+    - file: counterparty-burn-ledger.md
+      by: Claude Fable 5
+- title: The zero address
+  id: '1111111111111111111114oLvT2'
+  commentary:
+    - file: zero-address-ledger.md
+      by: Claude Fable 5
+
+- title: Latest block
+  id: '-1'
+  commentary:
+    - file: latest-block.md
+      by: Claude Opus 5
+
+# More transaction-level entries still to confirm against the chain before
+# adding: the first P2TR output ever (a purse.io withdrawal of 5,431 sats,
+# Dec 17, 2019, pre-activation — txid still to confirm) and the first P2TR
+# key-path and script-path spends; a Lightning force-close revealing an HTLC
+# (the famous first LN payment, Dec 28, 2017, was off-chain, so it needs an
+# on-chain artifact). For the version story, still to confirm: the first
+# version-rolled (overt-AsicBoost, BIP320) block — no canonical height exists,
+# so it needs a chain scan to identify a good exemplar whose frontispiece
+# breaks the accio.abandon idiom.
+#
+# Entries kept without a reading, waiting on a note rather than on a citation:
+# Eligius, the first coinbase OP_RETURN, Romans 12:21, the Sermon on the Mount,
+# and the supply-cap section above. Each is worth reading; none has a published
+# reading yet, and an annotation layer that guesses is worse than one with gaps.
+#
+# Heights consensus has fixed but no block has reached — BIP110's flag heights,
+# BIP42's cap — are not entries here: a chapter cited before it exists cannot be
+# read in sequence with chapters that do (dropped in among the volumes, BIP42
+# alone opened a Volume LXV two centuries wide). They are gathered in
+# appendix.yaml, as Appendix II: Consensus, grouped under their BIPs beside the
+# forks already active.
