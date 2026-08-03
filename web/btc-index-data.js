@@ -78,6 +78,33 @@ export const INDEXED = [
   // unlicensed money-transmitting business. An open appeal, so its index
   // line is still being written.
   { title: 'Free Samourai — Keonne Rodriguez', addresses: ['bc1qtjjcvn98wh7dfd55m8kxhjcfexanttwt8gtan8'] },
+  // ── The incinerators ──────────────────────────────────────────────────
+  // Three ledgers of a different family: names whose entire record is coins
+  // arriving and never leaving. Each is public in the strongest sense the
+  // shelf knows -- keyless by construction, so publishing the address costs
+  // its holder nothing because it has no holder. Their stories are published
+  // readings (notables.yaml + commentary/), like WikiLeaks' above; research
+  // and chain verification in tools/locks-and-burns.md.
+  //
+  // The generic burn address, its name its own warning label: the base58
+  // text was chosen first ("BitcoinEaterAddressDontSend"), so no key stands
+  // behind the hash. A Bitcointalk convention since 2011.
+  { title: 'The Bitcoin Eater', addresses: ['1BitcoinEaterAddressDontSendf59kuE'] },
+  // The one ledger on this shelf with no address at all, because no address
+  // can write it: Mt. Gox's malformed October 2011 withdrawal script -- OP_DUP
+  // OP_HASH160 <empty> OP_EQUALVERIFY OP_CHECKSIG, an empty push where twenty
+  // bytes of key-hash belong. A `scripts:` member is the scriptPubKey itself,
+  // as hex, looked up by its scripthash; 23 outputs, 2,609.36304319 BTC, none
+  // spendable. Research in tools/locks-and-burns.md.
+  { title: 'The Mt. Gox void', scripts: ['76a90088ac'] },
+  // Counterparty's January 2014 proof-of-burn: XCP was issued only to those
+  // who destroyed BTC here during blocks 278,310-283,810 -- the largest
+  // deliberate burn on the chain, and the canonical proof-of-burn.
+  { title: 'The Counterparty burn', addresses: ['1CounterpartyXXXXXXXXXXXXXXXUWLpVr'] },
+  // The address whose hash160 is twenty zero bytes: the chain's default
+  // incinerator, sink for bugs and burns alike -- Blockstack's protocol
+  // burns, and the 107 BTC of May 2026, its largest single arrival.
+  { title: 'The zero address', addresses: ['1111111111111111111114oLvT2'] },
 ];
 
 // Further entries join the same way each of these did: the address confirmed
