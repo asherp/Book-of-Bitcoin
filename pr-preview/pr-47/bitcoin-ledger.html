@@ -786,7 +786,11 @@ if (qList.length) {
     ? e.addresses.includes(qList[0]) : sameAddresses(e.addresses, qList)));
   li = Math.max(0, i);
   level = qPage === 'ledger' ? 'ledger' : 'address';
-  at = Math.max(0, LEDGERS[li].addresses.indexOf(qList[0]));
+  // &page=entries names the merged entries leaf -- the ledger read whole --
+  // which no single member address can, so a reload or a share of that
+  // leaf comes back to it rather than to the passage the address names.
+  at = qPage === 'entries' ? LEDGERS[li].addresses.length
+    : Math.max(0, LEDGERS[li].addresses.indexOf(qList[0]));
 }
 
 const cur = () => LEDGERS[li];
@@ -813,7 +817,8 @@ function syncUrl() {
   // reload, or a link shared from here, comes back to the leaf it left.
   try {
     const url = level === 'appendix' ? location.pathname
-      : `${location.pathname}?address=${urlAddress()}${level === 'ledger' ? '&page=ledger' : ''}`;
+      : `${location.pathname}?address=${urlAddress()}${level === 'ledger' ? '&page=ledger'
+        : level === 'address' && at >= cur().addresses.length ? '&page=entries' : ''}`;
     history.replaceState(null, '', url);
   } catch (_) { /* unavailable */ }
   document.title = level === 'appendix' ? `The βook of βitcoin — ${PART_LABEL}`
@@ -1252,9 +1257,23 @@ const mergeHeld = (helds) => {
   }
   return { sum, count: count2, byTxid };
 };
+// A few members at a time: the merged leaf asks the chain about every
+// member, and a ledger the size of the Coldcard hack's (221 vaults) asked
+// all at once is a stampede the public mirrors answer with refusals. A
+// small pool keeps the whole sync moving and every request answerable;
+// order is preserved so results still line up with their addresses.
+const pooled = async (items, width, run) => {
+  const out = new Array(items.length);
+  let next = 0;
+  const worker = async () => {
+    while (next < items.length) { const k = next++; out[k] = await run(items[k]); }
+  };
+  await Promise.all(Array.from({ length: Math.min(width, items.length) }, worker));
+  return out;
+};
 const runEntries = async (alive) => {
   const addrs = cur().addresses;
-  const heldP = Promise.all(addrs.map((a) => heldFresh(a)));
+  const heldP = pooled(addrs, 4, heldFresh);
   const cachedAll = await Promise.all(addrs.map((a) => cachedLine(a)));
   if (!alive()) return;
   const cached = mergeLines(cachedAll, addrs);
@@ -1270,7 +1289,7 @@ const runEntries = async (alive) => {
     if (note) note.textContent = `still syncing — ${gathered.toLocaleString('en-US')} of ${total.toLocaleString('en-US')} transactions gathered`;
   };
   for (const a of addrs) progress.set(a, (gathered, total) => { latest.set(a, { g: gathered, t: total }); tickNote(); });
-  const [lines, helds] = await Promise.all([Promise.all(addrs.map(lineOnce)), heldP]);
+  const [lines, helds] = await Promise.all([pooled(addrs, 4, lineOnce), heldP]);
   if (!alive()) return;
   const data = mergeLines(lines.map((l, i) => l ?? cachedAll[i]), addrs);
   if (data) view(data, mergeHeld(helds));
@@ -1522,7 +1541,7 @@ const openLedgerLeaf = (alive) => {
   el.replaceChildren();
   // A ledger is a set of scripts; each is a passage, and each passage's
   // appearances are the references beneath it.
-  lineNote(el, `${n(cur().addresses.length, 'passage', 'passages')} — ▾ opens the record`);
+  lineNote(el, `${n(cur().addresses.length, 'passage', 'passages')} — ▾ opens the record${cur().addresses.length > 1 ? ', read whole' : ''}`);
 
   // The balance, four ways (the shelf's discipline, one ledger at a time):
   // an answer under ten minutes old serves from memory in full ink; past
@@ -2233,7 +2252,14 @@ const toPrevAppendix = () => {
 function descend() {
   if (level === 'appendix') return turnTo(() => { level = 'ledger'; }, 1, 'y');
   if (level !== 'ledger') return;
-  turnTo(() => { level = 'address'; at = rememberedAt.get(li) ?? 0; }, 1, 'y');
+  // The record a title leaf opens: with one passage the record IS that
+  // passage; with many, the descent lands on the entries leaf -- the ledger
+  // read whole, every passage's transactions in one table, the total ruling
+  // all of them -- and the individual passages are the ‹ turns behind it.
+  turnTo(() => {
+    level = 'address';
+    at = rememberedAt.get(li) ?? (cur().addresses.length > 1 ? cur().addresses.length : 0);
+  }, 1, 'y');
 }
 // The dive: a swipe over the record -- or, for hands on a mouse, a plain
 // click on a row -- pulls in the page of the entry under the pointer. The
