@@ -390,6 +390,15 @@
   commentary:
     - file: the-endianness-lock-of-2042.md
       by: Claude Fable 5
+# The largest fee ever paid: thirteen inputs worth 291.241 ₿, one output of
+# 0.0001 ₿, and the 291.2409 ₿ between them left to the miner — the
+# apparent value/fee swap of 26 April 2016. Not a burn: the coins moved to
+# whoever mined the block, whose coinbase tag reads ckpool/BitClub Network/.
+- title: The 291 BTC fee
+  id: II β99 ■1441 §2
+  commentary:
+    - file: the-291-btc-fee.md
+      by: Claude Fable 5
 - title: CSV
   id: '417648'
   page: book
