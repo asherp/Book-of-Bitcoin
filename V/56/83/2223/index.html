@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>V β56 ■83 §2223 — 36.79 ₿ to the zero address · The βook of βitcoin</title>
+<link rel="canonical" href="https://bookofbitcoin.io/V/56/83/2223/">
+
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="The βook of βitcoin">
+<meta property="og:title" content="V β56 ■83 §2223 — 36.79 ₿ to the zero address">
+<meta property="og:url" content="https://bookofbitcoin.io/V/56/83/2223/">
+<meta property="og:image" content="https://bookofbitcoin.io/cards/V-56-83-2223.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="V β56 ■83 §2223 — the passage, set as a page of the book">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="V β56 ■83 §2223 — 36.79 ₿ to the zero address">
+<meta name="twitter:image" content="https://bookofbitcoin.io/cards/V-56-83-2223.png">
+<style>
+  :root {
+    --page:#08080a; --ink:#e8e4da; --ink-soft:#cfcabf; --dim:#8f8a7e;
+    --meta:#6f6a60; --rule:#232228; --accent:#c9a25f; --accent-2:#dcb877;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--page); }
+
+  /* One root size drives the whole page: every measure below is in em, so
+     the renderer fits a passage by scaling this single number. */
+  .page {
+    width: 100%; max-width: 54rem; margin: 0 auto;
+    font-size: 19px;
+    background: var(--page); color: var(--ink-soft);
+    font-family: 'Newsreader', Georgia, 'Liberation Serif', 'Times New Roman', serif;
+    font-variant-numeric: oldstyle-nums;
+    display: flex; flex-direction: column;
+    padding: 2.2em 2.6em 1.4em;
+  }
+  /* In a fixed-size card, a passage longer than the page keeps its opening
+     and is clipped here — the top of the page, with the colophon still
+     pinned beneath it. A web page has no such limit and simply grows. */
+  .content { flex: 1 1 auto; min-height: 0;  }
+
+  /* ── the section heading ── */
+  .section-title {
+    text-align: center; margin: 0; font: 600 .68em/1 'IBM Plex Mono', ui-monospace, monospace;
+    letter-spacing: .28em; text-transform: uppercase; color: var(--accent);
+  }
+  /* A footnote letter is part of an address; the heading's uppercase
+     transform must not raise it, or §1.a would read as §1.A. */
+  .fn-mark { text-transform: none; }
+  .section-event {
+    display: block; margin-top: .8em; font: 500 1.15em/1.3 'Newsreader', Georgia, serif;
+    letter-spacing: 0; text-transform: none; color: var(--ink-soft);
+  }
+  .section-hash {
+    margin: .9em auto 0; max-width: 46ch; text-align: center;
+    font: italic 400 .76em/1.55 'Newsreader', Georgia, serif; color: var(--dim);
+  }
+  .section-hash .cfx-gold { color: var(--accent); font-weight: 700; font-style: normal; }
+  .rule { border: 0; border-top: 1px solid var(--rule); margin: 1.6em 0; }
+
+  /* ── the transaction as a manuscript page ── */
+  .tx-flow {
+    display: grid;
+    grid-template-columns: [left] 6.5em [body] minmax(0,1fr) [right] 7em;
+    column-gap: 1.3em; align-items: start;
+    line-height: 1.75;
+  }
+  .tx-inputs {
+    grid-column: left / right; grid-row: 1;
+    display: grid; grid-template-columns: subgrid; column-gap: 1.3em; align-items: start;
+  }
+  .tx-in-cite {
+    grid-column: 1; text-align: right; padding-top: .34em;
+    font: 500 .63em/1.5 'IBM Plex Mono', ui-monospace, monospace;
+    color: var(--dim); word-break: break-word;
+  }
+  .tx-in-cite-group { grid-column: 1; }
+  .tx-in-cite-group > .tx-in-cite + .tx-in-cite { margin-top: .5em; }
+  .tx-in-cite.tx-version { color: var(--meta); letter-spacing: .03em; }
+  .tx-witness-ref { color: var(--accent); font-size: .8em; vertical-align: .4em; margin-left: .2em; }
+  .cite-amount {
+    margin-top: .1em; text-align: right;
+    font: italic 400 1em/1.3 'Newsreader', Georgia, serif; color: var(--meta);
+    font-variant-numeric: tabular-nums;
+  }
+  .tx-in-script { grid-column: 2; min-width: 0; }
+  .tx-margin-cites { grid-column: left; grid-row: 2; align-self: start; }
+  .tx-outputs {
+    grid-column: body / -1; grid-row: 2;
+    display: grid; grid-template-columns: subgrid; column-gap: 1.3em; align-items: start;
+  }
+  .tx-out-script { grid-column: 1; min-width: 0; }
+  .tx-out-value { grid-column: 2; text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .tx-locktime { grid-column: left / -1; grid-row: 3; text-align: center; font-style: normal; }
+  .tx-note { font: italic 400 .71em/1.4 'Newsreader', Georgia, serif; color: var(--dim); }
+  .tx-seq { font-style: normal; color: var(--meta); }
+  .tx-seq-rbf { color: var(--accent-2); }
+  .tx-seq-block, .tx-seq-time { color: var(--dim); font-variant-numeric: normal; }
+  .tx-line { margin: 0 0 .55em; }
+
+  /* Opcodes and marks inside a script — the grammar that punctuates the
+     prose data pushes. */
+  .op { color: var(--accent); font-style: normal; }
+  .op-name {
+    font: 600 .62em/1 'IBM Plex Mono', ui-monospace, monospace; letter-spacing: .04em;
+    color: var(--dim); font-style: normal; vertical-align: .14em; white-space: nowrap;
+  }
+  .op-push { color: var(--meta); }
+  .dt { color: var(--accent); font-style: normal; font-weight: 700; }
+  .wit-sep, .wit-empty { color: var(--meta); font-style: normal; }
+  .glossia-lazy { color: var(--dim); }
+  .tx-ascii {
+    margin: 0 0 .55em; padding: .12em 0 .12em 1.05em;
+    border-left: 2px solid var(--accent); border-radius: 1px;
+    font: italic 400 .92em/1.6 'Newsreader', Georgia, serif; color: var(--ink-soft);
+  }
+  .tab { display: inline-block; width: 4ch; }
+  /* The illuminated initial opening the transaction's prose. */
+  .tx-line.tx-body-lead::first-letter {
+    font-size: 3.4em; float: left; line-height: .82; padding: .04em .07em 0 0;
+    font-weight: 500; color: var(--accent);
+  }
+
+  /* ── witness footnotes ── */
+  .footnotes { margin-top: 1.6em; padding-top: 1.2em; border-top: 1px solid var(--rule); }
+  .footnote {
+    margin: 0 0 .6em; font: 400 .8em/1.6 'Newsreader', Georgia, serif; color: var(--dim);
+    overflow-wrap: anywhere;
+  }
+  .footnote sup { color: var(--accent); margin-right: .3em; }
+
+  /* ── a chapter card's head (bitcoin-book.html's chapter leaf) ── */
+  .chapter-head { text-align: center; justify-content: center; }
+  .chapter-title {
+    font: 500 1.95em/1.2 'Newsreader', Georgia, serif; color: var(--ink);
+    margin: 0 0 1.15em; letter-spacing: -.01em;
+  }
+  .chapter-hash {
+    font: italic 400 .79em/1.5 'Newsreader', Georgia, serif; color: var(--dim);
+    margin: 0 auto .85em; max-width: 46ch;
+  }
+  .chapter-hash .cfx-gold { color: var(--accent); font-weight: 700; font-style: normal; }
+  .chapter-head .cfx { display: block; font: 400 .76em/1.55 'Newsreader', Georgia, serif; color: var(--dim); }
+  .chapter-head .cfx + .cfx { margin-top: .45em; }
+  .fx-mark { color: var(--accent); font-weight: 700; font-style: normal; }
+
+  /* ── an output card: the amount over the script it locks ── */
+  .out-one { max-width: 46ch; margin: 0 auto; }
+  .out-value { text-align: center; margin-bottom: 1.1em; font-size: .95em; }
+  .out-script { min-width: 0; }
+
+  /* ── a witness card: the footnote alone, under its letter ── */
+  .wit-one { max-width: 46ch; margin: 0 auto; }
+  .wit-one .footnote { font-size: .9em; }
+  .wit-one .footnote sup { color: var(--accent); margin-right: .4em; }
+
+  /* A passage clipped at the page's foot says so in the book's own idiom —
+     the ⋯ it uses wherever prose is elided — rather than stopping mid-word
+     and letting the reader think that was the end of it. */
+  .continues {
+    flex: 0 0 auto; text-align: center; margin-top: .5em;
+    font-size: 1.1em; line-height: 1; color: var(--meta);
+  }
+
+  /* ── the colophon (the app's running head and nav belong to the app) ── */
+  .colophon {
+    flex: 0 0 auto; margin-top: 1.2em; padding-top: .9em; border-top: 1px solid var(--rule);
+    display: flex; justify-content: space-between; align-items: baseline;
+    font: 400 .66em/1 'IBM Plex Mono', ui-monospace, monospace; color: var(--meta);
+    letter-spacing: .06em;
+  }
+  .colophon .cite { color: var(--accent); }
+
+  body { padding: 2rem 1rem 3rem; }
+  .nav {
+    max-width: 54rem; margin: 0 auto 1.5rem; display: flex; gap: 1.2em; flex-wrap: wrap;
+    font: 400 13px/1.5 'IBM Plex Mono', ui-monospace, monospace; letter-spacing: .04em;
+  }
+  .nav a { color: #c9a25f; text-decoration: none; }
+  .nav a:hover { text-decoration: underline; }
+  .also {
+    max-width: 54rem; margin: 1.6rem auto 0; padding-top: 1.2rem; border-top: 1px solid #232228;
+    font: 400 14px/1.7 'Newsreader', Georgia, serif; color: #8f8a7e;
+  }
+  .also a { color: #c9a25f; text-decoration: none; }
+  .also a:hover { text-decoration: underline; }
+  .also code { font: 400 12.5px/1.5 'IBM Plex Mono', ui-monospace, monospace; overflow-wrap: anywhere; }
+  /* The page is read, not screenshotted, so its type may scale with the
+     viewport the way the reading pages' does. */
+  @media (max-width: 640px) { .page { font-size: 16px; padding: 1.4em 1.2em; } }
+</style>
+</head>
+<body>
+<nav class="nav">
+  <a href="https://bookofbitcoin.io/">The βook of βitcoin</a>
+  <a href="https://bookofbitcoin.io/bitcoin-contents.html">Contents</a>
+  <a href="https://bookofbitcoin.io/bitcoin-book.html?block=950962&amp;index=2222">Read this in the book →</a>
+</nav>
+<div class="page">
+  <div class="content">
+    <h1 class="section-title">
+      <span class="section-num">§ 2223</span>
+      <span class="section-event">36.79 ₿ to the zero address</span>
+    </h1>
+    <div class="section-hash"><span class="cfx-gold">⌘</span><span class="op op-push">²⁵⁶</span> The abandon may set the acid. Its ill blue is large to ice. System finger a rare advance. Skull see strategy to offer. Gym bless its cheap sir. Nod are vast to a virtual gate to eagle. Advance romance to open out debris for fiction.</div>
+    <hr class="rule">
+    <div class="tx-flow">
+  <div class="tx-inputs"><div class="tx-in-cite-group"><div class="tx-in-cite tx-version">v2</div><div class="tx-in-cite"><span class="cite-body">1ac776…:4</span><div class="cite-amount"><span class="tx-seq tx-seq-rbf">†</span></div></div></div><div class="tx-in-script"><p class="tx-line"><span class="dt" title="signature">s</span><span class="op op-push op-count" title="OP_PUSHBYTES_71 — push the next 71 bytes">⁷¹</span> Abandon out access blouse. The dumb pop agree forward. A funny royal set goat. Lot often stuff trash. Jump may see timber to board. Catch get our ugly spice via our latin mandate. A various syrup see guitar. Drift rack to caught via nod. Yes destroy fiber to burger per ramp to copper into number. The unable skirt may get actress. Its usual kiwi parent access. Volume may get the easy author to cargo. Copper may mistake stock. Our rice would scan its yes. <span class="dt" title="public key">p</span><span class="op op-push op-count" title="OP_PUSHBYTES_33 — push the next 33 bytes">³³</span> Hit set cop about an absurd bulk. Our cute toe get dinosaur. Regular balance beauty to claw. The nuclear sort venture move. Sin are wide under art. Pole may set the inquiry. Guy please tenant our skate. Cow carry decade to road. Its ago lawn may see map.</p></div><div class="tx-in-cite-group"><div class="tx-in-cite"><span class="cite-body">4fbea6…:123</span><div class="cite-amount"><span class="tx-seq tx-seq-rbf">†</span></div></div></div><div class="tx-in-script"><p class="tx-line"><span class="dt" title="signature">s</span><span class="op op-push op-count" title="OP_PUSHBYTES_71 — push the next 71 bytes">⁷¹</span> Abandon may set accident to base. City set recipe via staff out front. A because. A switch see demise. Reveal dismiss to swear. Its split rescue rice. A buyer close set maximum. Its boring tie may choose recall. Its sir often get a tortoise. Nod about see asset. Script fruit visa to life. Hospital may get road via fury out room. Cop enroll service to magnet. Kick see century via our town per sport. The bracket regret message. Each call scout whisper to usage. Tap then get the big sky. <span class="dt" title="public key">p</span><span class="op op-push op-count" title="OP_PUSHBYTES_33 — push the next 33 bytes">³³</span> Hit set cop about an absurd bulk. Our cute toe get dinosaur. Regular balance beauty to claw. The nuclear sort venture move. Sin are wide under art. Pole may set the inquiry. Guy please tenant our skate. Cow carry decade to road. Its ago lawn may see map.</p></div><div class="tx-in-cite-group"><div class="tx-in-cite"><span class="cite-body">665163…:0</span><div class="cite-amount"><span class="tx-seq tx-seq-rbf">†</span></div></div></div><div class="tx-in-script"><p class="tx-line"><span class="dt" title="signature">s</span><span class="op op-push op-count" title="OP_PUSHBYTES_71 — push the next 71 bytes">⁷¹</span> An abandon access cap. The tea is aware. A mutual ocean spirit author. Our easy issue set our cannon. Rate cluster its advance patrol to impact. Our direct action is brass. Category may get lobster. Dice crew rally to the clean raise. Its general set problem to ivory. A giraffe set a dolphin. The drastic curtain impose to decline. The pet gospel ripple tube. Age is luxury to vessel for web. The awful save bounce rough to mushroom. A ship may parent its rub. <span class="dt" title="public key">p</span><span class="op op-push op-count" title="OP_PUSHBYTES_33 — push the next 33 bytes">³³</span> Hit set cop about an absurd bulk. Our cute toe get dinosaur. Regular balance beauty to claw. The nuclear sort venture move. Sin are wide under art. Pole may set the inquiry. Guy please tenant our skate. Cow carry decade to road. Its ago lawn may see map.</p></div><div class="tx-in-cite-group"><div class="tx-in-cite"><span class="cite-body">d0955c…:234</span><div class="cite-amount"><span class="tx-seq tx-seq-rbf">†</span></div></div></div><div class="tx-in-script"><p class="tx-line"><span class="dt" title="signature">s</span><span class="op op-push op-count" title="OP_PUSHBYTES_71 — push the next 71 bytes">⁷¹</span> Abandon abuse our lock. Its rude calm also see concert. Its tooth set our unable soldier. Woman see its asthma to asthma. Warrior see victory under bet. Yes may describe joke to our luggage out invite to gift. Sky ago collect our fresh potato. Rub is like to rub. Tap always get our art. Its series why brown its one. A broken cable ghost a harbor to shaft. The maximum pulp balance daughter per regret. Person may impact girl. Its immense war would long firm. Cow enact to warm via cage. <span class="dt" title="public key">p</span><span class="op op-push op-count" title="OP_PUSHBYTES_33 — push the next 33 bytes">³³</span> Hit set cop about an absurd bulk. Our cute toe get dinosaur. Regular balance beauty to claw. The nuclear sort venture move. Sin are wide under art. Pole may set the inquiry. Guy please tenant our skate. Cow carry decade to road. Its ago lawn may see map.</p></div><div class="tx-in-cite-group"><div class="tx-in-cite"><span class="cite-body">dd511a…:1</span><div class="cite-amount"><span class="tx-seq tx-seq-rbf">†</span></div></div></div><div class="tx-in-script"><p class="tx-line"><span class="dt" title="signature">s</span><span class="op op-push op-count" title="OP_PUSHBYTES_71 — push the next 71 bytes">⁷¹</span> Abandon too get an absurd grab. The nice order labor war. Map may earn our pear. The bright dig are hard. Tea keep version to coil. An alley get an useful hill via program. Basket is vital to shift. Fit set fantasy per umbrella. A hollow dirt cruise the exhibit to churn. Our rhythm today set its huge rescue. An unfair nod become float. Climb question the bracket. A fluid flash middle to idle. The gesture make to disagree for parent. Snap set hair to ability. <span class="dt" title="public key">p</span><span class="op op-push op-count" title="OP_PUSHBYTES_33 — push the next 33 bytes">³³</span> Hit set cop about an absurd bulk. Our cute toe get dinosaur. Regular balance beauty to claw. The nuclear sort venture move. Sin are wide under art. Pole may set the inquiry. Guy please tenant our skate. Cow carry decade to road. Its ago lawn may see map.</p></div><div class="tx-in-cite-group"><div class="tx-in-cite"><span class="cite-body">ea52a0…:1</span><div class="cite-amount"><span class="tx-seq tx-seq-rbf">†</span></div></div></div><div class="tx-in-script"><p class="tx-line"><span class="dt" title="signature">s</span><span class="op op-push op-count" title="OP_PUSHBYTES_71 — push the next 71 bytes">⁷¹</span> Abandon abuse a certain crowd. Print cube the shoulder. An eager pitch is still. Lunch ago found clown. Science may see utility. Its scale busy spray. Our arctic drink set its universe to laundry via a sister. Guy decorate update to blame. Broccoli sketch luggage per turkey. Galaxy set an old fat. Its dance win sin. Nod rather trip eyebrow. A club see music to script. Warfare may churn ladder. Dentist are hidden to bronze. A new bar then see a red set. <span class="dt" title="public key">p</span><span class="op op-push op-count" title="OP_PUSHBYTES_33 — push the next 33 bytes">³³</span> Hit set cop about an absurd bulk. Our cute toe get dinosaur. Regular balance beauty to claw. The nuclear sort venture move. Sin are wide under art. Pole may set the inquiry. Guy please tenant our skate. Cow carry decade to road. Its ago lawn may see map.</p></div><div class="tx-in-cite-group"><div class="tx-in-cite"><span class="cite-body">ffeff5…:101</span><div class="cite-amount"><span class="tx-seq tx-seq-rbf">†</span></div></div></div><div class="tx-in-script"><p class="tx-line"><span class="dt" title="signature">s</span><span class="op op-push op-count" title="OP_PUSHBYTES_71 — push the next 71 bytes">⁷¹</span> Abandon may see absurd to system. The law is rigid. Laundry verify an universe to hollow. Injury occur pencil per length via ring. Quantum mail to grow. Flight style to undo out primary. Season evoke parade to kick. Airport get a scorpion via divorce for flash. A spatial bet add to sing. A wide cabin crumble seat. A busy gift see glass to opera for radar to season. Our lie is true. Toddler get furnace to float. Pop always get news. Cage may set pie. <span class="dt" title="public key">p</span><span class="op op-push op-count" title="OP_PUSHBYTES_33 — push the next 33 bytes">³³</span> Hit set cop about an absurd bulk. Our cute toe get dinosaur. Regular balance beauty to claw. The nuclear sort venture move. Sin are wide under art. Pole may set the inquiry. Guy please tenant our skate. Cow carry decade to road. Its ago lawn may see map.</p></div></div>
+  <div class="tx-margin-cites"></div>
+  <div class="tx-outputs"><div class="tx-out-script"><p class="tx-line"><span class="op" title="OP_DUP">⧉</span> <span class="op" title="OP_HASH160">⌖</span> <span class="dt" title="hash">h</span><span class="op op-push op-count" title="OP_PUSHBYTES_20 — push the next 20 bytes">²⁰</span> Our absurd absurd abandon abandon. Abandon may abandon abandon. Abandon abandon to abandon. Abandon abandon abandon for abandon. Abandon abandon to abandon. <span class="op" title="OP_EQUALVERIFY">≡</span> <span class="op" title="OP_CHECKSIG">∇</span></p></div><div class="tx-note tx-out-value">36.78748282 ₿</div></div>
+  <div class="tx-note tx-locktime">V β56 ■79</div>
+</div>
+  </div>
+  <div class="colophon">
+    <span>bookofbitcoin.io</span>
+    <span class="cite">V β56 ■83 §2223</span>
+  </div>
+</div>
+<div class="also">
+  <p>This passage is block 950,962 read as a chapter, and its
+  transaction 2223 read as a section. The prose is a lossless encoding of the
+  transaction's bytes: filter it against the BIP39 English wordlist and the transaction
+  returns, byte for byte. The connective grammar is the translator's; the content is the
+  chain's.</p>
+  <p>Block hash <code>00000000000000000000e37d3f9e65f307c1d62f91a7364031f59760fc9048cc</code><br>
+  Transaction <code>ae1a4e36b9fb0114096cf48dbf492f80b64c5b5bf90390bd95b903973e611cee</code></p>
+  <p>Outputs: <a href="https://bookofbitcoin.io/V/56/83/2223/0/">§2223.0</a></p>
+  <p>Witnesses: <a href="https://bookofbitcoin.io/V/56/83/2223/a/">§2223.a</a> · <a href="https://bookofbitcoin.io/V/56/83/2223/b/">§2223.b</a> · <a href="https://bookofbitcoin.io/V/56/83/2223/c/">§2223.c</a> · <a href="https://bookofbitcoin.io/V/56/83/2223/d/">§2223.d</a> · <a href="https://bookofbitcoin.io/V/56/83/2223/e/">§2223.e</a> · <a href="https://bookofbitcoin.io/V/56/83/2223/f/">§2223.f</a> · <a href="https://bookofbitcoin.io/V/56/83/2223/g/">§2223.g</a></p>
+  <p><a href="https://bookofbitcoin.io/bitcoin-book.html?block=950962&amp;index=2222">Read it in the book</a> · <a href="https://bookofbitcoin.io/passages/3679-to-the-zero-address.md">as plain markdown</a> · <a href="https://bookofbitcoin.io/llms.txt">how to reconstruct any passage yourself</a></p>
+</div>
+</body>
+</html>

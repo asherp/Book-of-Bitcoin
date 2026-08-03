@@ -7,7 +7,7 @@
 > connective grammar is the translator's, the content is the chain's.
 
 - **Citation:** I β70 ■587 §1 (Volume I, Book 70, Chapter 587, section 1)
-- **Block:** 139,690 — Eligius, by Luke Dashjr
+- **Block:** 139,690
 - **Block hash:** `0000000000000187fe9ed54d5d7f14effa808e6710cf978353cdb96c412b2a03`
 - **Transaction id:** `cbbaa0a64924fe1d6ace3352f23242aa0028d4e0ff6ae8ed615244d66079cfb1`
 - **Read live:** https://bookofbitcoin.io/bitcoin-book.html?txid=cbbaa0a64924fe1d6ace3352f23242aa0028d4e0ff6ae8ed615244d66079cfb1

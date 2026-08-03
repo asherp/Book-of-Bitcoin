@@ -7,7 +7,7 @@
 > connective grammar is the translator's, the content is the chain's.
 
 - **Citation:** I β46 ■1093 §1 (Volume I, Book 46, Chapter 1093, section 1)
-- **Block:** 91,812 — The twice-confirmed coinbases — first printing
+- **Block:** 91,812
 - **Block hash:** `00000000000af0aed4792b1acee3d966af36cf5def14935db8de83d6f9306f2f`
 - **Transaction id:** `d5d27987d2a3dfc724e359870c6644b40e497bdc0589a033220fe15429d88599`
 - **Read live:** https://bookofbitcoin.io/bitcoin-book.html?txid=d5d27987d2a3dfc724e359870c6644b40e497bdc0589a033220fe15429d88599

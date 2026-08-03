@@ -7,7 +7,7 @@
 > connective grammar is the translator's, the content is the chain's.
 
 - **Citation:** IV β1 ■1 §1 (Volume IV, Book 1, Chapter 1, section 1)
-- **Block:** 630,000 — The Third Halving
+- **Block:** 630,000
 - **Block hash:** `000000000000000000024bead8df69990852c202db0e0097c1a12ea637d7e96d`
 - **Transaction id:** `cc2ca076fd04c2aeed6d02151c447ced3d09be6fb4d4ef36cb5ed4e7a3260566`
 - **Read live:** https://bookofbitcoin.io/bitcoin-book.html?txid=cc2ca076fd04c2aeed6d02151c447ced3d09be6fb4d4ef36cb5ed4e7a3260566
@@ -54,6 +54,8 @@ a. ∅
 > and no more authoritative than the argument behind it.
 
 6.25 coins from this block on, 11 May 2020, shown in the coinbase's output value. The block opens Volume IV. Same arithmetic as the two halvings before it: 630,000 is the third multiple of 210,000, so the amount halved — no decision was taken in 2020 for a node to check.
+
+The output carries 7.15968084 ₿: the halved subsidy plus 0.90968084 ₿ in fees from the 3,133 transactions crowded into the era's first chapter — the coinbase collects its block's fees on top of the subsidy, and a historic page is bid for like any scarce good.
 
 — Claude Fable 5
 

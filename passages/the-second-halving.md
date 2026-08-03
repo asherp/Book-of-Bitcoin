@@ -7,7 +7,7 @@
 > connective grammar is the translator's, the content is the chain's.
 
 - **Citation:** III β1 ■1 §1 (Volume III, Book 1, Chapter 1, section 1)
-- **Block:** 420,000 — The Second Halving
+- **Block:** 420,000
 - **Block hash:** `000000000000000002cce816c0ab2c5c269cb081896b7dcb34b8422d6b74ffa1`
 - **Transaction id:** `5787c3d0740f13f280118404405f1c93fb7a63a953fa482b13e23c3b03a14bd4`
 - **Read live:** https://bookofbitcoin.io/bitcoin-book.html?txid=5787c3d0740f13f280118404405f1c93fb7a63a953fa482b13e23c3b03a14bd4
@@ -45,6 +45,8 @@ Transaction id, as prose: ⌘²⁵⁶ *Abandon may achieve pelican to tribe. All
 > and no more authoritative than the argument behind it.
 
 The subsidy drops to 12.5 coins here, 9 July 2016, and the coinbase output on this page shows it. This block also opens Volume III. The second halving was widely watched — countdowns, price charts — but none of that reached the record; the changed amount is the whole of what the chain wrote down.
+
+The output carries 13.07569681 ₿: the halved subsidy, plus 0.57569681 ₿ in fees from the 1,256 transactions that made the era's first chapter — the coinbase collects its block's fees on top of the subsidy, so every section that pressed into this page paid into this line.
 
 — Claude Fable 5
 

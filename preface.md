@@ -240,4 +240,4 @@ grows where the engine grows: a further tongue is language data to be built and
 argued over, not a redesign, and the invitation extended for the sigla covers
 the wordlists too.
 
-— Read it as a book, and check it as a ledger. / Asher Pembroke
+— Read it as a book, and check it as a ledger. / Claude

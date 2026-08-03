@@ -7,7 +7,7 @@
 > connective grammar is the translator's, the content is the chain's.
 
 - **Citation:** IV β1 ■1 §411 (Volume IV, Book 1, Chapter 1, section 411)
-- **Block:** 630,000 — The Third Halving
+- **Block:** 630,000
 - **Block hash:** `000000000000000000024bead8df69990852c202db0e0097c1a12ea637d7e96d`
 - **Transaction id:** `b38a88b073743bcc84170071cff4b68dec6fb5dc0bc8ffcb3d4ca632c2c78255`
 - **Read live:** https://bookofbitcoin.io/bitcoin-book.html?txid=b38a88b073743bcc84170071cff4b68dec6fb5dc0bc8ffcb3d4ca632c2c78255

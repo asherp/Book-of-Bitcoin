@@ -7,7 +7,7 @@
 > connective grammar is the translator's, the content is the chain's.
 
 - **Citation:** IV β75 ■649 §408 (Volume IV, Book 75, Chapter 649, section 408)
-- **Block:** 779,832 — First BRC-20 inscription
+- **Block:** 779,832
 - **Block hash:** `000000000000000000015712838394aeb93f5d45d0e5bec197382c08b375016e`
 - **Transaction id:** `b61b0172d95e266c18aea0c624db987e971a5d6d4ebc2aaed85da4642d635735`
 - **Read live:** https://bookofbitcoin.io/bitcoin-book.html?txid=b61b0172d95e266c18aea0c624db987e971a5d6d4ebc2aaed85da4642d635735

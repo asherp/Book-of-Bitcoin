@@ -21,6 +21,11 @@
    whole row navigates into the book, the manuscript's own citation form. */
 .toc-entry { display:flex; align-items:baseline; gap:16px; padding:9px 2px 9px 16px; border-bottom:1px solid var(--hair); text-decoration:none; }
 .toc-entry.under-book { padding-left:32px; }
+/* A row nested under its parent entry -- a section listed beneath the chapter
+   row that names its block -- steps in once more from wherever the parent
+   stands, and its reference cites only what the parent's hasn't already. */
+.toc-entry.under-parent { padding-left:32px; }
+.toc-entry.under-book.under-parent { padding-left:48px; }
 .toc-title { flex:1; min-width:0; font:500 17px/1.35 'Newsreader',serif; color:var(--ink-soft); }
 .toc-ref { flex:none; min-width:84px; text-align:right; font:600 13px/1.4 'IBM Plex Mono',monospace; letter-spacing:.06em; color:var(--accent); white-space:nowrap; font-variant-numeric:tabular-nums; }
 .toc-ref.none { color:var(--meta); font-weight:400; }

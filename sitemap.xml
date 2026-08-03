@@ -26,8 +26,11 @@
   <url><loc>https://bookofbitcoin.io/passages/the-twice-confirmed-coinbases-second-printing.md</loc></url>
   <url><loc>https://bookofbitcoin.io/passages/the-twice-confirmed-coinbases-second-printing.md</loc></url>
   <url><loc>https://bookofbitcoin.io/passages/100k-block-milestone.md</loc></url>
+  <url><loc>https://bookofbitcoin.io/passages/the-satoshi-left-on-the-table.md</loc></url>
   <url><loc>https://bookofbitcoin.io/passages/eligius-by-luke-dashjr.md</loc></url>
+  <url><loc>https://bookofbitcoin.io/passages/mt-gox-pays-the-void.md</loc></url>
   <url><loc>https://bookofbitcoin.io/passages/first-multisig-1-of-2.md</loc></url>
+  <url><loc>https://bookofbitcoin.io/passages/the-pool-that-paid-script.md</loc></url>
   <url><loc>https://bookofbitcoin.io/passages/first-p2sh-spend.md</loc></url>
   <url><loc>https://bookofbitcoin.io/passages/bip16-activation-p2sh.md</loc></url>
   <url><loc>https://bookofbitcoin.io/passages/the-first-halving.md</loc></url>
@@ -37,6 +40,9 @@
   <url><loc>https://bookofbitcoin.io/passages/the-hello-world-timestamp.md</loc></url>
   <url><loc>https://bookofbitcoin.io/passages/bip66-activation-v3.md</loc></url>
   <url><loc>https://bookofbitcoin.io/passages/bip65-activation-v4.md</loc></url>
+  <url><loc>https://bookofbitcoin.io/passages/the-endianness-lock-of-2042.md</loc></url>
+  <url><loc>https://bookofbitcoin.io/passages/the-31653-coinbase.md</loc></url>
+  <url><loc>https://bookofbitcoin.io/passages/the-291-btc-fee.md</loc></url>
   <url><loc>https://bookofbitcoin.io/passages/csv-activation-version-bits.md</loc></url>
   <url><loc>https://bookofbitcoin.io/passages/the-second-halving.md</loc></url>
   <url><loc>https://bookofbitcoin.io/passages/bip91-activation-segwit-mandate.md</loc></url>
@@ -46,6 +52,8 @@
   <url><loc>https://bookofbitcoin.io/passages/first-native-segwit-outputs.md</loc></url>
   <url><loc>https://bookofbitcoin.io/passages/first-p2wsh-reveal-2-of-3.md</loc></url>
   <url><loc>https://bookofbitcoin.io/passages/500k-block-milestone.md</loc></url>
+  <url><loc>https://bookofbitcoin.io/passages/the-coinbase-that-claimed-nothing.md</loc></url>
+  <url><loc>https://bookofbitcoin.io/passages/the-half-claimed-subsidy.md</loc></url>
   <url><loc>https://bookofbitcoin.io/passages/difficulty-1513.md</loc></url>
   <url><loc>https://bookofbitcoin.io/passages/difficulty-1595.md</loc></url>
   <url><loc>https://bookofbitcoin.io/passages/the-third-halving.md</loc></url>
@@ -58,9 +66,19 @@
   <url><loc>https://bookofbitcoin.io/passages/first-ordinals-inscription.md</loc></url>
   <url><loc>https://bookofbitcoin.io/passages/largest-block-at-the-time.md</loc></url>
   <url><loc>https://bookofbitcoin.io/passages/first-brc-20-inscription.md</loc></url>
+  <url><loc>https://bookofbitcoin.io/passages/the-2626-coinbase.md</loc></url>
+  <url><loc>https://bookofbitcoin.io/passages/the-1982-btc-fee.md</loc></url>
+  <url><loc>https://bookofbitcoin.io/passages/the-9147-coinbase.md</loc></url>
+  <url><loc>https://bookofbitcoin.io/passages/the-8365-btc-fee.md</loc></url>
   <url><loc>https://bookofbitcoin.io/passages/the-fourth-halving.md</loc></url>
   <url><loc>https://bookofbitcoin.io/passages/sermon-on-the-mount.md</loc></url>
   <url><loc>https://bookofbitcoin.io/passages/first-bip110-signaling-block.md</loc></url>
+  <url><loc>https://bookofbitcoin.io/passages/the-107-btc-burn.md</loc></url>
+  <url><loc>https://bookofbitcoin.io/passages/2003-to-the-zero-address.md</loc></url>
+  <url><loc>https://bookofbitcoin.io/passages/2889-to-the-zero-address.md</loc></url>
+  <url><loc>https://bookofbitcoin.io/passages/3679-to-the-zero-address.md</loc></url>
+  <url><loc>https://bookofbitcoin.io/passages/142-to-the-zero-address.md</loc></url>
+  <url><loc>https://bookofbitcoin.io/passages/2001-to-the-zero-address.md</loc></url>
   <url><loc>https://bookofbitcoin.io/I/1/1/</loc></url>
   <url><loc>https://bookofbitcoin.io/I/1/1/1/</loc></url>
   <url><loc>https://bookofbitcoin.io/I/1/171/2/</loc></url>
@@ -74,8 +92,11 @@
   <url><loc>https://bookofbitcoin.io/I/46/1123/1/</loc></url>
   <url><loc>https://bookofbitcoin.io/I/46/1161/1/</loc></url>
   <url><loc>https://bookofbitcoin.io/I/50/1217/</loc></url>
+  <url><loc>https://bookofbitcoin.io/I/62/1749/1/</loc></url>
   <url><loc>https://bookofbitcoin.io/I/70/587/1/</loc></url>
+  <url><loc>https://bookofbitcoin.io/I/75/1768/23/</loc></url>
   <url><loc>https://bookofbitcoin.io/I/82/1172/15/</loc></url>
+  <url><loc>https://bookofbitcoin.io/I/85/686/1/</loc></url>
   <url><loc>https://bookofbitcoin.io/I/87/1344/12/</loc></url>
   <url><loc>https://bookofbitcoin.io/I/87/430/</loc></url>
   <url><loc>https://bookofbitcoin.io/II/1/1/1/</loc></url>
@@ -85,6 +106,9 @@
   <url><loc>https://bookofbitcoin.io/II/74/1224/1352/</loc></url>
   <url><loc>https://bookofbitcoin.io/II/77/510/</loc></url>
   <url><loc>https://bookofbitcoin.io/II/89/974/</loc></url>
+  <url><loc>https://bookofbitcoin.io/II/90/936/545/</loc></url>
+  <url><loc>https://bookofbitcoin.io/II/99/1441/1/</loc></url>
+  <url><loc>https://bookofbitcoin.io/II/99/1441/2/</loc></url>
   <url><loc>https://bookofbitcoin.io/II/104/1681/</loc></url>
   <url><loc>https://bookofbitcoin.io/III/1/1/1/</loc></url>
   <url><loc>https://bookofbitcoin.io/III/29/673/</loc></url>
@@ -94,6 +118,8 @@
   <url><loc>https://bookofbitcoin.io/III/31/1345/533/</loc></url>
   <url><loc>https://bookofbitcoin.io/IV/1/1/411/</loc></url>
   <url><loc>https://bookofbitcoin.io/III/40/1377/1/</loc></url>
+  <url><loc>https://bookofbitcoin.io/III/41/1087/1/</loc></url>
+  <url><loc>https://bookofbitcoin.io/III/53/1760/1/</loc></url>
   <url><loc>https://bookofbitcoin.io/III/66/1345/</loc></url>
   <url><loc>https://bookofbitcoin.io/III/101/1345/</loc></url>
   <url><loc>https://bookofbitcoin.io/IV/1/1/1/</loc></url>
@@ -106,9 +132,19 @@
   <url><loc>https://bookofbitcoin.io/IV/69/343/2323/</loc></url>
   <url><loc>https://bookofbitcoin.io/IV/72/1493/</loc></url>
   <url><loc>https://bookofbitcoin.io/IV/75/649/408/</loc></url>
+  <url><loc>https://bookofbitcoin.io/IV/88/1666/1/</loc></url>
+  <url><loc>https://bookofbitcoin.io/IV/88/1666/2/</loc></url>
+  <url><loc>https://bookofbitcoin.io/IV/94/600/1/</loc></url>
+  <url><loc>https://bookofbitcoin.io/IV/94/600/4/</loc></url>
   <url><loc>https://bookofbitcoin.io/V/1/1/1/</loc></url>
   <url><loc>https://bookofbitcoin.io/IV/73/1398/732/</loc></url>
   <url><loc>https://bookofbitcoin.io/V/50/120/</loc></url>
+  <url><loc>https://bookofbitcoin.io/V/56/83/</loc></url>
+  <url><loc>https://bookofbitcoin.io/V/56/83/2216/</loc></url>
+  <url><loc>https://bookofbitcoin.io/V/56/83/2221/</loc></url>
+  <url><loc>https://bookofbitcoin.io/V/56/83/2223/</loc></url>
+  <url><loc>https://bookofbitcoin.io/V/56/83/2224/</loc></url>
+  <url><loc>https://bookofbitcoin.io/V/56/83/2225/</loc></url>
   <url><loc>https://bookofbitcoin.io/I/1/1/1/0/</loc></url>
   <url><loc>https://bookofbitcoin.io/I/1/171/2/0/</loc></url>
   <url><loc>https://bookofbitcoin.io/I/1/171/2/1/</loc></url>
@@ -119,6 +155,7 @@
   <url><loc>https://bookofbitcoin.io/I/46/1093/1/0/</loc></url>
   <url><loc>https://bookofbitcoin.io/I/46/1123/1/0/</loc></url>
   <url><loc>https://bookofbitcoin.io/I/46/1161/1/0/</loc></url>
+  <url><loc>https://bookofbitcoin.io/I/62/1749/1/0/</loc></url>
   <url><loc>https://bookofbitcoin.io/I/70/587/1/0/</loc></url>
   <url><loc>https://bookofbitcoin.io/I/70/587/1/1/</loc></url>
   <url><loc>https://bookofbitcoin.io/I/70/587/1/2/</loc></url>
@@ -139,15 +176,41 @@
   <url><loc>https://bookofbitcoin.io/I/70/587/1/17/</loc></url>
   <url><loc>https://bookofbitcoin.io/I/70/587/1/18/</loc></url>
   <url><loc>https://bookofbitcoin.io/I/70/587/1/19/</loc></url>
+  <url><loc>https://bookofbitcoin.io/I/75/1768/23/0/</loc></url>
+  <url><loc>https://bookofbitcoin.io/I/75/1768/23/1/</loc></url>
   <url><loc>https://bookofbitcoin.io/I/82/1172/15/0/</loc></url>
   <url><loc>https://bookofbitcoin.io/I/82/1172/15/1/</loc></url>
   <url><loc>https://bookofbitcoin.io/I/82/1172/15/2/</loc></url>
+  <url><loc>https://bookofbitcoin.io/I/85/686/1/0/</loc></url>
+  <url><loc>https://bookofbitcoin.io/I/85/686/1/1/</loc></url>
+  <url><loc>https://bookofbitcoin.io/I/85/686/1/2/</loc></url>
+  <url><loc>https://bookofbitcoin.io/I/85/686/1/3/</loc></url>
+  <url><loc>https://bookofbitcoin.io/I/85/686/1/4/</loc></url>
+  <url><loc>https://bookofbitcoin.io/I/85/686/1/5/</loc></url>
+  <url><loc>https://bookofbitcoin.io/I/85/686/1/6/</loc></url>
+  <url><loc>https://bookofbitcoin.io/I/85/686/1/7/</loc></url>
+  <url><loc>https://bookofbitcoin.io/I/85/686/1/8/</loc></url>
+  <url><loc>https://bookofbitcoin.io/I/85/686/1/9/</loc></url>
+  <url><loc>https://bookofbitcoin.io/I/85/686/1/10/</loc></url>
+  <url><loc>https://bookofbitcoin.io/I/85/686/1/11/</loc></url>
+  <url><loc>https://bookofbitcoin.io/I/85/686/1/12/</loc></url>
+  <url><loc>https://bookofbitcoin.io/I/85/686/1/13/</loc></url>
+  <url><loc>https://bookofbitcoin.io/I/85/686/1/14/</loc></url>
+  <url><loc>https://bookofbitcoin.io/I/85/686/1/15/</loc></url>
+  <url><loc>https://bookofbitcoin.io/I/85/686/1/16/</loc></url>
+  <url><loc>https://bookofbitcoin.io/I/85/686/1/17/</loc></url>
+  <url><loc>https://bookofbitcoin.io/I/85/686/1/18/</loc></url>
+  <url><loc>https://bookofbitcoin.io/I/85/686/1/19/</loc></url>
   <url><loc>https://bookofbitcoin.io/I/87/1344/12/0/</loc></url>
   <url><loc>https://bookofbitcoin.io/II/1/1/1/0/</loc></url>
   <url><loc>https://bookofbitcoin.io/II/49/1803/109/0/</loc></url>
   <url><loc>https://bookofbitcoin.io/II/49/1803/109/1/</loc></url>
   <url><loc>https://bookofbitcoin.io/II/74/1224/1352/0/</loc></url>
   <url><loc>https://bookofbitcoin.io/II/74/1224/1352/1/</loc></url>
+  <url><loc>https://bookofbitcoin.io/II/90/936/545/0/</loc></url>
+  <url><loc>https://bookofbitcoin.io/II/90/936/545/1/</loc></url>
+  <url><loc>https://bookofbitcoin.io/II/99/1441/1/0/</loc></url>
+  <url><loc>https://bookofbitcoin.io/II/99/1441/2/0/</loc></url>
   <url><loc>https://bookofbitcoin.io/III/1/1/1/0/</loc></url>
   <url><loc>https://bookofbitcoin.io/III/31/1345/13/0/</loc></url>
   <url><loc>https://bookofbitcoin.io/III/31/1345/13/1/</loc></url>
@@ -160,6 +223,8 @@
   <url><loc>https://bookofbitcoin.io/III/40/1377/1/0/</loc></url>
   <url><loc>https://bookofbitcoin.io/III/40/1377/1/1/</loc></url>
   <url><loc>https://bookofbitcoin.io/III/40/1377/1/a/</loc></url>
+  <url><loc>https://bookofbitcoin.io/III/41/1087/1/0/</loc></url>
+  <url><loc>https://bookofbitcoin.io/III/53/1760/1/0/</loc></url>
   <url><loc>https://bookofbitcoin.io/IV/1/1/1/0/</loc></url>
   <url><loc>https://bookofbitcoin.io/IV/1/1/1/1/</loc></url>
   <url><loc>https://bookofbitcoin.io/IV/1/1/1/2/</loc></url>
@@ -175,10 +240,35 @@
   <url><loc>https://bookofbitcoin.io/IV/69/343/2323/a/</loc></url>
   <url><loc>https://bookofbitcoin.io/IV/75/649/408/0/</loc></url>
   <url><loc>https://bookofbitcoin.io/IV/75/649/408/a/</loc></url>
+  <url><loc>https://bookofbitcoin.io/IV/88/1666/1/0/</loc></url>
+  <url><loc>https://bookofbitcoin.io/IV/88/1666/1/1/</loc></url>
+  <url><loc>https://bookofbitcoin.io/IV/88/1666/1/2/</loc></url>
+  <url><loc>https://bookofbitcoin.io/IV/88/1666/1/3/</loc></url>
+  <url><loc>https://bookofbitcoin.io/IV/88/1666/1/4/</loc></url>
+  <url><loc>https://bookofbitcoin.io/IV/88/1666/1/5/</loc></url>
+  <url><loc>https://bookofbitcoin.io/IV/88/1666/1/a/</loc></url>
+  <url><loc>https://bookofbitcoin.io/IV/88/1666/2/0/</loc></url>
+  <url><loc>https://bookofbitcoin.io/IV/88/1666/2/1/</loc></url>
+  <url><loc>https://bookofbitcoin.io/IV/88/1666/2/2/</loc></url>
+  <url><loc>https://bookofbitcoin.io/IV/88/1666/2/3/</loc></url>
+  <url><loc>https://bookofbitcoin.io/IV/88/1666/2/4/</loc></url>
+  <url><loc>https://bookofbitcoin.io/IV/88/1666/2/a/</loc></url>
+  <url><loc>https://bookofbitcoin.io/IV/94/600/1/0/</loc></url>
+  <url><loc>https://bookofbitcoin.io/IV/94/600/1/1/</loc></url>
+  <url><loc>https://bookofbitcoin.io/IV/94/600/1/2/</loc></url>
+  <url><loc>https://bookofbitcoin.io/IV/94/600/1/3/</loc></url>
+  <url><loc>https://bookofbitcoin.io/IV/94/600/1/a/</loc></url>
+  <url><loc>https://bookofbitcoin.io/IV/94/600/4/0/</loc></url>
+  <url><loc>https://bookofbitcoin.io/IV/94/600/4/a/</loc></url>
   <url><loc>https://bookofbitcoin.io/V/1/1/1/0/</loc></url>
   <url><loc>https://bookofbitcoin.io/V/1/1/1/1/</loc></url>
   <url><loc>https://bookofbitcoin.io/V/1/1/1/2/</loc></url>
   <url><loc>https://bookofbitcoin.io/V/1/1/1/a/</loc></url>
   <url><loc>https://bookofbitcoin.io/IV/73/1398/732/0/</loc></url>
   <url><loc>https://bookofbitcoin.io/IV/73/1398/732/a/</loc></url>
+  <url><loc>https://bookofbitcoin.io/V/56/83/2216/0/</loc></url>
+  <url><loc>https://bookofbitcoin.io/V/56/83/2221/0/</loc></url>
+  <url><loc>https://bookofbitcoin.io/V/56/83/2223/0/</loc></url>
+  <url><loc>https://bookofbitcoin.io/V/56/83/2224/0/</loc></url>
+  <url><loc>https://bookofbitcoin.io/V/56/83/2225/0/</loc></url>
 </urlset>
