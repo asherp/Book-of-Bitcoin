@@ -324,27 +324,35 @@ async function resolveBookmark(b) {
 // The leaf's own head has named the volume, so under a Book heading only the
 // ■chapter (and a transaction's §section) remains, and directly on the leaf the
 // β-marked book leads it. Spaced like the book's own citations ("β29 ■596",
-// "■1 §1").
-function tailRef({ book, chapter, section, vout, wit }, underBook) {
+// "■1 §1"). A row nested under its parent entry (a section listed under the
+// chapter row that names its block) cites only what differs from the parent:
+// the parent row has already printed the ■chapter, so the child carries the
+// §section alone.
+function tailRef({ book, chapter, section, vout, wit }, underBook, parent) {
+  // An output cites as §section.vout; a witness as §section.a -- the
+  // footnote's alphabet index after the point, letters where an output
+  // would carry digits.
+  const sec = section == null ? ''
+    : `§${section}${vout == null ? '' : `.${vout}`}${wit == null ? '' : `.${footnoteMark(wit)}`}`;
+  if (parent && parent.book === book && parent.chapter === chapter) return sec;
   // A volume's own leaf: the leaf's head above the row has already named it.
   if (book == null) return '';
   // A book's own leaf: under its Book heading nothing remains to cite; on the
   // bare leaf, the β mark alone names it.
   if (chapter == null) return underBook ? '' : `β${book}`;
   let s = (underBook ? [`■${chapter}`] : [`β${book}`, `■${chapter}`]).join(' ');
-  // An output cites as §section.vout; a witness as §section.a -- the
-  // footnote's alphabet index after the point, letters where an output
-  // would carry digits.
-  if (section != null) s += ` §${section}${vout == null ? '' : `.${vout}`}${wit == null ? '' : `.${footnoteMark(wit)}`}`;
+  if (sec) s += ` ${sec}`;
   return s;
 }
 
 // One contents row: the title on the left, its remaining reference on the right;
 // the whole row is a link that navigates into the book. An entry whose citation
-// never resolved carries a dash in place of a reference.
-function entryEl(entry, underBook) {
+// never resolved carries a dash in place of a reference. `parent` marks a row
+// nested under its parent entry's row rather than directly under a heading:
+// one more step of indent, and a reference compressed against the parent's.
+function entryEl(entry, underBook, parent) {
   const row = document.createElement('a');
-  row.className = 'toc-entry' + (underBook ? ' under-book' : '') + (entry.bookmark ? ' is-bookmark' : '');
+  row.className = 'toc-entry' + (underBook ? ' under-book' : '') + (parent ? ' under-parent' : '') + (entry.bookmark ? ' is-bookmark' : '');
   row.dataset.entryId = entry.id;   // the projected section anchors after the tip's row
   // The witness coordinate travels two ways: a curated place carries its
   // footnote number (linked as the letter mark, the citation's own .a), a
@@ -361,7 +369,7 @@ function entryEl(entry, underBook) {
   }
   t.append(document.createTextNode(entry.title));
   const r = document.createElement('span'); r.className = 'toc-ref';
-  if (entry.place) r.textContent = tailRef(entry.place, underBook);
+  if (entry.place) r.textContent = tailRef(entry.place, underBook, parent);
   else { r.textContent = '—'; r.classList.add('none'); }
   row.append(t, r);
   return row;
@@ -598,14 +606,31 @@ function renderVolume(volume) {
     toc.append(saying('Nothing is kept from this volume yet. The volume itself is one turn down, and reads chapter by chapter from its own leaf.'));
     return;
   }
-  for (let k = 0; k < entries.length;) {
-    const bk = entries[k].place.book;
-    let jb = k + 1; while (jb < entries.length && entries[jb].place.book === bk) jb++;
-    if (jb - k >= 2) {
-      toc.append(head('toc-book', `Book ${bk}`));   // spelled out, no β; the β sigil rides only the compact tail references
-      for (let m = k; m < jb; m++) toc.append(entryEl(entries[m], true));
-    } else {
-      toc.append(entryEl(entries[k], false));
+  // Children group under parents, not under books: an entry citing a section
+  // (or deeper) of a chapter that the preceding entry names outright is that
+  // entry's child -- listed under the parent's row, one more indent in, its
+  // reference compressed against the parent's. Titles never bleed up a
+  // level, but a listing may nest down one: the five burns of one chapter
+  // read beneath the chapter's own row, each cited by its § alone.
+  const isChildOf = (p, c) => p.place.chapter != null && p.place.section == null && !p.page
+    && c.place.book === p.place.book && c.place.chapter === p.place.chapter && c.place.section != null;
+  const nodes = [];
+  for (const e of entries) {
+    const last = nodes[nodes.length - 1];
+    if (last && isChildOf(last.entry, e)) last.children.push(e);
+    else nodes.push({ entry: e, children: [] });
+  }
+  // The Book sub-heading earns its place only over two or more rows at the
+  // top level: a lone parent with its children is already its own group,
+  // and its row carries the full β-marked reference the heading would.
+  for (let k = 0; k < nodes.length;) {
+    const bk = nodes[k].entry.place.book;
+    let jb = k + 1; while (jb < nodes.length && nodes[jb].entry.place.book === bk) jb++;
+    const underBook = jb - k >= 2;
+    if (underBook) toc.append(head('toc-book', `Book ${bk}`));   // spelled out, no β; the β sigil rides only the compact tail references
+    for (let m = k; m < jb; m++) {
+      toc.append(entryEl(nodes[m].entry, underBook));
+      for (const c of nodes[m].children) toc.append(entryEl(c, underBook, nodes[m].entry.place));
     }
     k = jb;
   }
