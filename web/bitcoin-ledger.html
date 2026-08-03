@@ -580,7 +580,7 @@ import { localizeHome, mountLangMenu } from './btc-strings.js';
 localizeHome();   // the masthead in the reader's UI language
 mountLangMenu();  // …with the Language item, which any page can now set
 import { INDEXED, isAddress, isScriptHex, keptLedgers, saveKeptLedgers, sameAddresses, memberScriptHex, cachedLine, resolveLine,
-         extendLine, renderLedger, renderRows, periods, lineNote, reconciled, ledgerSum, heldCoins, addressState, lastKnownState,
+         extendLine, renderLedger, renderRows, periods, lineNote, reconciled, ledgerSum, heldCoins, lastKnownState,
          formatBalanceBtc, formatNetBtc, chainFailureText, citeHref, sectionOf, sectionOfFetched, citePlace, passageTxid, passageEntries, txHexOf, outspendsOf, prevoutValuesOf,
          DEFAULT_ESPLORA, esploraCustom, esploraSelected, setEsploraSettings } from './btc-index.js';
 import { volumeBookChapter, heightOf, subsidyAt, toRoman, parseReference, latinRefOf, footnoteMark } from './btc-citation.js';
@@ -1696,45 +1696,29 @@ const openLedgerLeaf = (alive) => {
   // appearances are the references beneath it.
   lineNote(el, `${n(cur().addresses.length, 'passage', 'passages')} — ▾ opens the record${cur().addresses.length > 1 ? ', read whole' : ''}`);
 
-  // The balance, four ways (the shelf's discipline, one ledger at a time):
-  // an answer under ten minutes old serves from memory in full ink; past
-  // that a live probe refreshes it; a probe that fails everywhere falls to
-  // the last-known figure (the quiet pending style); with nothing ever
-  // known, "unreachable" retrying in place when tapped. A sum shows only
-  // when every member answered -- a partial sum would read as the whole.
-  const stateOf = async (ask) => {
-    const states = [];
-    for (const a of cur().addresses) {
-      const s = ask ? await addressState(a) : lastKnownState(a);
-      if (!s) return null;
-      states.push(s);
-    }
-    return { balance: states.reduce((s2, st) => s2 + st.balance, 0),
-             stale: states.some((st) => st.stale) || undefined };
-  };
+  // The balance, from the bank alone: the title leaf asks the chain for
+  // nothing. It used to probe every member, and a many-vault ledger probed
+  // one by one is a throttling the mirrors answer with refusals -- while
+  // the figure a probe would fetch lives one leaf down anyway, where the
+  // record gathers and reconciles at the scroll's pace. So the title shows
+  // the last figure this copy of the book has proved: the members'
+  // last-known chain states, or failing that their banked lines, in the
+  // quiet last-known style. A sum shows only when every member is known --
+  // a partial sum would read as the whole -- and a ledger never yet
+  // gathered simply shows none until the descent gathers it.
   const probe = async () => {
-    balanceEl.textContent = '…';
+    balanceEl.textContent = '';
     balanceEl.className = 'anth-balance pending';
     balanceEl.onclick = null;
+    const states = cur().addresses.map((a) => lastKnownState(a));
+    const known = states.every(Boolean)
+      ? states.reduce((s2, st) => s2 + st.balance, 0) : null;
+    if (known != null) { balanceEl.textContent = formatBalanceBtc(known); return; }
     const lines = await Promise.all(cur().addresses.map((a) => cachedLine(a)));
     if (!alive()) return;
     const banked = lines.every((c) => c?.balance != null)
       ? lines.reduce((s2, c) => s2 + c.balance, 0) : null;
     if (banked != null) balanceEl.textContent = formatBalanceBtc(banked);
-    const state = await stateOf(true);
-    if (!alive()) return;
-    if (state && !state.stale) {
-      balanceEl.textContent = formatBalanceBtc(state.balance);
-      balanceEl.className = 'anth-balance';
-    } else if (state) {
-      balanceEl.textContent = formatBalanceBtc(state.balance);   // last known
-    } else if (banked != null) {
-      balanceEl.textContent = formatBalanceBtc(banked);          // as of its last sync
-    } else {
-      balanceEl.textContent = `${chainFailureText()} — retry`;
-      balanceEl.classList.add('retry');
-      balanceEl.onclick = () => { if (alive()) probe(); };
-    }
   };
   probe();
 };
