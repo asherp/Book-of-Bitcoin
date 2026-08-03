@@ -662,8 +662,10 @@ button:disabled { opacity: .4; cursor: not-allowed; }
    apart from the record they total and above the witness footnotes when
    there are any. The inputs' sum waits on the margin citations resolving,
    and an input the book cannot price leaves the sum and the fee unsaid (⋯).
-   A coinbase has no such line: its input brings no prior output, and the
-   block's fees arrive in its outputs, with the subsidy. */
+   A coinbase's line inverts the middle sign: its input brings no prior
+   output, so the subsidy the schedule mints at this height stands at the
+   left and the chapter's gathered fees between, + fee -- the miner's take
+   arriving where every other section's leaves. */
 .tx-totals { display: flex; justify-content: space-between; align-items: baseline; gap: 1em; margin: 0; font: italic 400 calc(13.5px * var(--scale-margins, 1))/1.4 'Newsreader',serif; color: var(--dim); font-variant-numeric: tabular-nums; }
 .tx-totals .t-fee { color: var(--meta); }
 .tx-totals .t-out { padding-right: 20px; }   /* the amounts column's ribbon room, so the sum sits on their point */
@@ -682,8 +684,9 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 #ch-totals:empty { display: none; }
 /* With the balance line carrying the section's rule, the footnotes region
    that follows drops its own -- one rule, as before, now on the band. A
-   foot with footnotes but no balance line (a witness-bearing coinbase)
-   keeps the rule where it always was. */
+   foot with footnotes but no balance line keeps the rule where it always
+   was (every section prices one now, the coinbase from the schedule, so
+   this is the fallback rather than a standing case). */
 #ch-totals:not(:empty) + .chapter-footnotes { margin-top: 0; border-top: none; padding-top: 12px; }
 .tx-locktime { grid-column: left / -1; grid-row: 3; text-align: center; font-style: normal; }
 /* An output the reader has kept under a name (or the contents already
@@ -1087,7 +1090,7 @@ import { parseTransaction, computeTxid, parseBlockHeader, computeBlockHash, bits
 // titles are the keep line's defaults.
 import { keptLedgers, saveKeptLedgers, INDEXED } from './btc-index.js';
 import { composeTransactionFields, composeBlockHeaderFields, bitsInfo, groupDigits, formatBtc, formatAmount, formatAmountAs, amountUnit, setAmountUnit, renderWitness, toSuperscript, timestampInfo } from './btc-prose.js';
-import { volumeBookChapter, heightOf, windowStartOf, retargetInside, toRoman, reference, parseReference, footnoteMark, latinRefOf } from './btc-citation.js';
+import { volumeBookChapter, heightOf, windowStartOf, retargetInside, subsidyAt, toRoman, reference, parseReference, footnoteMark, latinRefOf } from './btc-citation.js';
 import { loadNotables, places, placeTitle, blocksEta, appendix } from './btc-contents.js';
 import { queueLabel } from './btc-mempool.js';
 import { toSubscript } from './btc-sigla.js';
@@ -3988,7 +3991,13 @@ function renderChapter(para) {
   // in the flow (appended there with the footnotes reset, further down).
   // The outputs' sum is the transaction's own; the inputs' and the fee fill
   // in once every margin citation has resolved a value, and stay ⋯ if any
-  // could not be priced. A coinbase closes without one.
+  // could not be priced. A coinbase's line inverts the middle sign: its
+  // left station is the subsidy the coinage schedule mints at this height
+  // (btc-citation's subsidyAt -- arithmetic on the height, nothing to
+  // resolve), and the fees the chapter's sections paid stand between it
+  // and the outputs' sum as + fee, the miner's take arriving where every
+  // other section's leaves. A miner that claimed less than the schedule
+  // allows shows the shortfall signed −: value forfeited to no one.
   let totals = null, fillTotals = null;
   if (f.inputs.length && !f.inputs.some((i) => i.isNullPrevout)) {
     const sumOut = f.outputs.reduce((a, o) => a + o.sats, 0);
@@ -4014,6 +4023,26 @@ function renderChapter(para) {
       tFee.textContent = `− ${formatAmount(fee)}`;
       tFee.title = `the fee: ${amountTitle(fee)} — the difference, claimed by the chapter's miner`;
     };
+  } else if (f.inputs.length) {
+    const sumOut = f.outputs.reduce((a, o) => a + o.sats, 0);
+    const subsidy = subsidyAt(state.height);
+    const fee = sumOut - subsidy;
+    totals = document.createElement('div');
+    totals.className = 'tx-totals';
+    const tIn = document.createElement('span');
+    tIn.textContent = formatAmount(subsidy);
+    tIn.title = `the subsidy: ${amountTitle(subsidy)} — what the coinage schedule mints at this height`;
+    const tFee = document.createElement('span');
+    tFee.className = 't-fee';
+    tFee.textContent = `${fee < 0 ? '−' : '+'} ${formatAmount(Math.abs(fee))}`;
+    tFee.title = fee < 0
+      ? `${amountTitle(-fee)} short of the schedule — value the miner left unclaimed, forfeited to no one`
+      : `the fees: ${amountTitle(fee)} — what the chapter's sections paid, gathered here`;
+    const tOut = document.createElement('span');
+    tOut.className = 't-out';
+    tOut.textContent = formatAmount(sumOut);
+    tOut.title = `the outputs carry ${amountTitle(sumOut)}`;
+    totals.append(tIn, tFee, tOut);
   }
   const lock = document.createElement('div');
   lock.className = 'tx-note tx-locktime';
