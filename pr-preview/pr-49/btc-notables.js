@@ -119,21 +119,25 @@ function normalizePlace(raw, title) {
   if (!written) throw new Error(`btc-notables: "${title}" has a place with no id`);
   const found = parseLookup(written, { isAddress: looksLikeAddress });
   if (!found.kind) {
-    throw new Error(`btc-notables: "${title}" has an id that is neither a height, a 64-hex id, a reference, nor an address: ${written}`);
+    throw new Error(`btc-notables: "${title}" has an id that is neither a height, a 64-hex id, a reference, an address, nor a script: ${written}`);
   }
   const place = {};
   if (raw.as !== undefined) place.as = String(raw.as);
   // An address is kept the way the search box treats one: not a place in the
   // chain but a name, so it reads in the Ledger rather than as a chapter. It is
   // still curated, and still carries readings -- which is how commentary comes
-  // to be attached to a particular ledger.
-  if (found.kind === 'address') {
+  // to be attached to a particular ledger. A script id (`script:76a90088ac` --
+  // the name of an output no address can write) is the same kind of thing: a
+  // name, read in the Ledger, its id the bare hex the ledger members carry.
+  if (found.kind === 'address' || found.kind === 'script') {
+    const name = found.kind === 'address' ? found.address : found.script;
     for (const field of ['index', 'page', 'out']) {
       if (raw[field] !== undefined) {
-        throw new Error(`btc-notables: "${title}" is an address, so it has no ${field} — that names a position within a chapter`);
+        throw new Error(`btc-notables: "${title}" is a ${found.kind}, so it has no ${field} — that names a position within a chapter`);
       }
     }
-    return Object.assign(place, { id: found.address, address: found.address });
+    return Object.assign(place, { id: name },
+      found.kind === 'address' ? { address: name } : { script: name });
   }
   const ref = found.kind === 'reference' ? found.reference : null;
   place.id = ref ? String(ref.height) : (found.kind === 'hex' ? found.hex : written);

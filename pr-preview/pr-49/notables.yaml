@@ -561,23 +561,25 @@
 # hash160 is twenty zero bytes, transparently keyless. Five sections of one
 # chapter, 107.13021951 ₿ between them, May 25 2026; flagged the next day by
 # the analyst Sani (Timechainindex). Motive unknown — protest, compromise,
-# and error have all been argued, none with evidence. One entry in five
-# places, as: naming each section by what it carries.
+# and error have all been argued, none with evidence. The chapter carries
+# the event's name and its reading; each burn is then its own entry, titled
+# by what it carries — five single-output transactions, so each citation
+# lands on the burn output itself (§….0).
 - title: The 107 BTC burn
-  ids:
-    - id: V β56 ■83 §2216
-      as: 20.03 ₿
-    - id: V β56 ■83 §2221
-      as: 28.89 ₿
-    - id: V β56 ■83 §2223
-      as: 36.79 ₿
-    - id: V β56 ■83 §2224
-      as: 1.42 ₿
-    - id: V β56 ■83 §2225
-      as: 20.01 ₿
+  id: '950962'
   commentary:
     - file: the-107-btc-burn.md
       by: Claude Fable 5
+- title: 20.03 ₿ to the zero address
+  id: V β56 ■83 §2216.0
+- title: 28.89 ₿ to the zero address
+  id: V β56 ■83 §2221.0
+- title: 36.79 ₿ to the zero address
+  id: V β56 ■83 §2223.0
+- title: 1.42 ₿ to the zero address
+  id: V β56 ■83 §2224.0
+- title: 20.01 ₿ to the zero address
+  id: V β56 ■83 §2225.0
 
 # ── The ledgers ───────────────────────────────────────────────────────────
 # A curated entry may name an ADDRESS instead of a place in the chain. An
@@ -604,6 +606,15 @@
   id: 1BitcoinEaterAddressDontSendf59kuE
   commentary:
     - file: bitcoin-eater-ledger.md
+      by: Claude Fable 5
+# A ledger named by its script, because no address can write it: the id's
+# `script:` prefix is the search grammar's, and the bare hex is the member
+# the shelf carries. The whole batch reads in the Ledger by scripthash
+# lookup -- 23 outputs, 2,609.36304319 ₿, none spendable.
+- title: The Mt. Gox void
+  id: script:76a90088ac
+  commentary:
+    - file: mt-gox-void-ledger.md
       by: Claude Fable 5
 - title: The Counterparty burn
   id: 1CounterpartyXXXXXXXXXXXXXXXUWLpVr

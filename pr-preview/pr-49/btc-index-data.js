@@ -90,6 +90,13 @@ export const INDEXED = [
   // text was chosen first ("BitcoinEaterAddressDontSend"), so no key stands
   // behind the hash. A Bitcointalk convention since 2011.
   { title: 'The Bitcoin Eater', addresses: ['1BitcoinEaterAddressDontSendf59kuE'] },
+  // The one ledger on this shelf with no address at all, because no address
+  // can write it: Mt. Gox's malformed October 2011 withdrawal script -- OP_DUP
+  // OP_HASH160 <empty> OP_EQUALVERIFY OP_CHECKSIG, an empty push where twenty
+  // bytes of key-hash belong. A `scripts:` member is the scriptPubKey itself,
+  // as hex, looked up by its scripthash; 23 outputs, 2,609.36304319 BTC, none
+  // spendable. Research in tools/locks-and-burns.md.
+  { title: 'The Mt. Gox void', scripts: ['76a90088ac'] },
   // Counterparty's January 2014 proof-of-burn: XCP was issued only to those
   // who destroyed BTC here during blocks 278,310-283,810 -- the largest
   // deliberate burn on the chain, and the canonical proof-of-burn.
