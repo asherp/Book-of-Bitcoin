@@ -4,4 +4,4 @@ This coinbase claims 49.99999999 ₿ — one satoshi under the 50 ₿ subsidy, w
 
 That it was deliberate is testimony. The miner, the developer known as midnightmagic, described the missing satoshi as a tribute to Satoshi Nakamoto, who had stepped away from the project that spring — an account given on Bitcointalk and carried since in the annotations explorers keep on this transaction ("Midnightmagic's Missing Satoshi," bitcoinexplorer.org). The page shows only the arithmetic; the tribute is a claim, and it travels with a name, as every reading here does.
 
-One satoshi is also the exact size of the argument: the 21 million ₿ ceiling is a limit, not a promise, and this page is among the first where the eventual supply was knowingly moved further from it.
+The 21 million ₿ ceiling is a limit, not a promise, and this page is among the first where the eventual supply was knowingly moved further from it.
