@@ -562,24 +562,25 @@
 # chapter, 107.13021951 ₿ between them, May 25 2026; flagged the next day by
 # the analyst Sani (Timechainindex). Motive unknown — protest, compromise,
 # and error have all been argued, none with evidence. The chapter carries
-# the event's name and its reading; each burn is then its own entry, titled
-# by what it carries — five single-output transactions, so each citation
-# lands on the burn output itself (§….0).
+# the event's name and its reading; each burn is then its own entry at its
+# own level, titled by what it carries — a title names the level it cites
+# and never bleeds up, so these cite the sections (each transaction is its
+# single burn output anyway).
 - title: The 107 BTC burn
   id: '950962'
   commentary:
     - file: the-107-btc-burn.md
       by: Claude Fable 5
 - title: 20.03 ₿ to the zero address
-  id: V β56 ■83 §2216.0
+  id: V β56 ■83 §2216
 - title: 28.89 ₿ to the zero address
-  id: V β56 ■83 §2221.0
+  id: V β56 ■83 §2221
 - title: 36.79 ₿ to the zero address
-  id: V β56 ■83 §2223.0
+  id: V β56 ■83 §2223
 - title: 1.42 ₿ to the zero address
-  id: V β56 ■83 §2224.0
+  id: V β56 ■83 §2224
 - title: 20.01 ₿ to the zero address
-  id: V β56 ■83 §2225.0
+  id: V β56 ■83 §2225
 
 # ── The ledgers ───────────────────────────────────────────────────────────
 # A curated entry may name an ADDRESS instead of a place in the chain. An
