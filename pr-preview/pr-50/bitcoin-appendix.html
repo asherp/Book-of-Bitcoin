@@ -482,6 +482,10 @@ const inSignalingPeriod = (h) => {
     .map((e) => Number(e.id));
   return casts.length ? h >= Math.min(...casts) : true;
 };
+// A minimum version, named the way its era wrote it: the integer forms read
+// as themselves (v3, v4), a version-bits form in hex -- XT's 0x20000007 is a
+// version word, and 536870919 is nobody's name for it.
+const versionName = (n) => ((n >>> 29) === 1 ? '0x' + (n >>> 0).toString(16) : String(n));
 // The binary word itself. A bit-read fork bolds its one counted bit (set --
 // an unset bit is a no, and a no is not a signal); a supermajority fork's
 // signal is the whole number clearing the minimum, so the whole number goes
@@ -786,8 +790,8 @@ if (bip && blockLeaf == null) {
     const yes = (b) => (COIN ? (b.say != null && b.say.includes(COIN))
       : bip.bit != null ? ((b.version >>> bip.bit) & 1) === 1
       : (b.version >>> 0) >= bip.version);
-    const yesSays = COIN ? `${COIN}…/ written in the coinbase` : bip.bit != null ? `bit ${bip.bit} set` : `version ${bip.version} or above`;
-    const noSays = COIN ? `no ${COIN}…/ in the coinbase` : bip.bit != null ? `bit ${bip.bit} not set` : `below version ${bip.version}`;
+    const yesSays = COIN ? `${COIN}…/ written in the coinbase` : bip.bit != null ? `bit ${bip.bit} set` : `version ${versionName(bip.version)} or above`;
+    const noSays = COIN ? `no ${COIN}…/ in the coinbase` : bip.bit != null ? `bit ${bip.bit} not set` : `below version ${versionName(bip.version)}`;
     const WINDOW = Number.isFinite(bip.window) ? bip.window : 2016;
 
     const blocksEl = $('bip-blocks');
@@ -1364,8 +1368,8 @@ if (blockLeaf != null) {
       const aye = bip.bit != null ? ((data.version >>> bip.bit) & 1) === 1 : (data.version >>> 0) >= bip.version;
       const sv = line('signal');
       sv.textContent = aye
-        ? `signals — ${bip.bit != null ? `bit ${bip.bit} set` : `version ${bip.version} or above`}`
-        : `— ${bip.bit != null ? `bit ${bip.bit} not set` : `below version ${bip.version}`}`;
+        ? `signals — ${bip.bit != null ? `bit ${bip.bit} set` : `version ${versionName(bip.version)} or above`}`
+        : `— ${bip.bit != null ? `bit ${bip.bit} not set` : `below version ${versionName(bip.version)}`}`;
       sv.style.color = aye ? 'var(--accent)' : 'var(--meta)';
     } else if (bip.coinbase) {
       const sayV = line('coinbase');

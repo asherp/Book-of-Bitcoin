@@ -583,7 +583,7 @@ import { INDEXED, isAddress, keptLedgers, saveKeptLedgers, sameAddresses, addres
          extendLine, renderLedger, renderRows, periods, lineNote, reconciled, ledgerSum, heldCoins, addressState, lastKnownState,
          formatBalanceBtc, formatNetBtc, chainFailureText, citeHref, sectionOf, sectionOfFetched, citePlace, passageTxid, passageEntries, txHexOf, outspendsOf, prevoutValuesOf,
          DEFAULT_ESPLORA, esploraCustom, esploraSelected, setEsploraSettings } from './btc-index.js';
-import { volumeBookChapter, heightOf, toRoman, parseReference, latinRefOf, footnoteMark } from './btc-citation.js';
+import { volumeBookChapter, heightOf, subsidyAt, toRoman, parseReference, latinRefOf, footnoteMark } from './btc-citation.js';
 import { BIP39, HP_SPELLS } from './btc-wordlists.js';
 import { appendix } from './btc-contents.js';
 import './btc-fontscale.js';   // the reader's type sizes: a ledger's readings are set at the size the book page's Commentary row chose
@@ -1828,7 +1828,7 @@ const openEntryLeaf = async (alive) => {
           }
           if (spent != null) {
             const amt2 = document.createElement('span');
-            amt2.textContent = ` (${formatBalanceBtc(spent)})`;
+            amt2.textContent = ` ${formatBalanceBtc(spent)}`;
             amt2.title = `the amount this input spends: ${spent.toLocaleString('en-US')} satoshis`;
             amtLine.append(amt2);
           }
@@ -1881,7 +1881,10 @@ const openEntryLeaf = async (alive) => {
     // The closing balance line, the book's rule: Σ inputs left, − fee
     // between, Σ outputs right. The outputs' sum is the transaction's own;
     // the inputs' and the fee fill once every input has priced, and stay ⋯
-    // if any could not be. A coinbase closes without one.
+    // if any could not be. A coinbase's line inverts the middle sign, as
+    // the reader's does: the subsidy the schedule mints at this height at
+    // the left, the block's gathered fees between as + fee (a shortfall
+    // against the schedule reads − : value forfeited), nothing to resolve.
     let totals = null;
     if (s.fields.inputs.length && !s.fields.inputs.some((v) => v.isNullPrevout)) {
       const sumOut = s.fields.outputs.reduce((a2, o) => a2 + o.sats, 0);
@@ -1908,6 +1911,26 @@ const openEntryLeaf = async (alive) => {
         tFee.textContent = `− ${formatBalanceBtc(fee)}`;
         tFee.title = `the fee: ${fee.toLocaleString('en-US')} satoshis — the difference, claimed by the block's miner`;
       });
+    } else if (s.fields.inputs.length) {
+      const sumOut = s.fields.outputs.reduce((a2, o) => a2 + o.sats, 0);
+      const subsidy = subsidyAt(e.height);
+      const fee = sumOut - subsidy;
+      totals = document.createElement('div');
+      totals.className = 'tx-totals';
+      const tIn = document.createElement('span');
+      tIn.textContent = formatBalanceBtc(subsidy);
+      tIn.title = `the subsidy: ${subsidy.toLocaleString('en-US')} satoshis — what the coinage schedule mints at this height`;
+      const tFee = document.createElement('span');
+      tFee.className = 't-fee';
+      tFee.textContent = `${fee < 0 ? '−' : '+'} ${formatBalanceBtc(Math.abs(fee))}`;
+      tFee.title = fee < 0
+        ? `${(-fee).toLocaleString('en-US')} satoshis short of the schedule — value the miner left unclaimed, forfeited to no one`
+        : `the fees: ${fee.toLocaleString('en-US')} satoshis — what the block's transactions paid, gathered here`;
+      const tOut = document.createElement('span');
+      tOut.className = 't-out';
+      tOut.textContent = formatBalanceBtc(sumOut);
+      tOut.title = `the outputs carry ${sumOut.toLocaleString('en-US')} satoshis`;
+      totals.append(tIn, tFee, tOut);
     }
     // The closing colophon: the locktime, centred -- and the self-check's
     // verdict only when it failed (a verified section says nothing; the
