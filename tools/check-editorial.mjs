@@ -70,8 +70,16 @@ for (const e of allPlaces) {
     // address nobody has shelved will only be met by a reader who goes looking
     // for that address — worth saying, never an error.
     if (!looksLikeAddress(e.address)) problems.push(`"${name}": id "${e.address}" does not look like an address`);
-    else if (!INDEXED.some((l) => l.addresses.includes(e.address))) {
+    else if (!INDEXED.some((l) => (l.addresses ?? []).includes(e.address))) {
       notes.push(`"${name}": ${e.address} is not shelved in btc-index-data.js — its reading shows only on an ad-hoc ledger`);
+    }
+  } else if (e.script) {
+    // A script entry names a ledger by the scriptPubKey itself -- the name of
+    // an output no address can write. Same standing as an address: a ledger,
+    // not a place, met in the Ledger by scripthash lookup.
+    if (!/^(?:[0-9a-f]{2})+$/.test(e.script)) problems.push(`"${name}": script "${e.script}" is not whole bytes of lowercase hex`);
+    else if (!INDEXED.some((l) => (l.scripts ?? []).includes(e.script))) {
+      notes.push(`"${name}": script ${e.script} is not shelved in btc-index-data.js — its reading shows only on an ad-hoc ledger`);
     }
   } else if (!/^-?[0-9]+$/.test(e.id) && !/^[0-9a-f]{64}$/.test(e.id)) {
     problems.push(`"${name}": id "${e.id}" is neither a block height nor a 64-hex id`);

@@ -124,8 +124,10 @@ export function commentaryFor({ height = null, index = null, txid = null } = {})
 export function commentaryForAddresses(addresses) {
   const wanted = (Array.isArray(addresses) ? addresses : [addresses]).filter(Boolean);
   if (!wanted.length) return [];
-  // In the order the ledger holds its addresses, not the order the index does.
-  return wanted.flatMap((a) => itemsOf(notables().filter((e) => e.places.some((p) => p.address === a))));
+  // In the order the ledger holds its members, not the order the index does.
+  // A member is an address or a raw script (its hex, as a script-id entry
+  // carries it); either spelling of a name meets its readings here.
+  return wanted.flatMap((a) => itemsOf(notables().filter((e) => e.places.some((p) => p.address === a || p.script === a))));
 }
 
 // An item keeps both the title and its variants: the sheet renders whichever
