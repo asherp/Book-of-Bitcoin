@@ -5,8 +5,8 @@
 // true of one venue at one moment, so the book never bundles or asserts one.
 // What it offers instead is the asking — the reader picks whose record of the
 // market to consult (the settings' price-source select), the answer is keyed
-// to the day of the block being read, and everything printed with it wears ≈
-// and names its source in the hover (see btc-amounts.js's amount notation).
+// to the day of the block being read, and everything printed with it names
+// its source in the hover (see btc-amounts.js's amount notation).
 //
 // Each source answers one question — what did a bitcoin trade at, in USD, on
 // this UTC day — and answers null where its record has nothing: days before

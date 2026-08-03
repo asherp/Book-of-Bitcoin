@@ -2,8 +2,8 @@
 //
 // tools/amount-notation.test.mjs — the amounts' dresses (btc-amounts.js):
 // the record's three lossless spellings of one integer, and the valuations
-// beside them. A valuation wears ≈, keeps a dust output from rounding to
-// nothing, and falls back to the record's ₿ wherever there is no rate to
+// beside them. A valuation keeps a dust output from rounding to nothing,
+// and falls back to the record's ₿ wherever there is no rate to
 // read it at — which is also what these tests see: node has no localStorage,
 // so the stored unit and the reader's own rate are absent by construction.
 //
@@ -21,21 +21,21 @@ import { access } from 'node:fs/promises';
 import { formatValuation, formatNetValuation, formatAmountAs, amountUnit, setDayPrice, dayPrice }
   from '../web/btc-amounts.js';
 
-test('a valuation wears ≈, money decimals, and never rounds dust to nothing', () => {
+test('a valuation: money decimals, and dust never rounds to nothing', () => {
   const usd = { label: 'USD', perBtc: 100000 };
-  // 1.23456789 ₿ at 100,000 per ₿ — two decimals, comma-grouped, ≈-marked.
-  assert.equal(formatValuation(123456789, usd), '≈ 123,456.79 USD');
-  assert.equal(formatValuation(546, usd), '≈ 0.55 USD');
-  assert.equal(formatValuation(1, usd), '≈ 0.001 USD');   // decimals stretch past ≈ 0.00
-  assert.equal(formatValuation(0, usd), '0 USD');         // zero alone drops the ≈
+  // 1.23456789 ₿ at 100,000 per ₿ — two decimals, comma-grouped.
+  assert.equal(formatValuation(123456789, usd), '123,456.79 USD');
+  assert.equal(formatValuation(546, usd), '0.55 USD');
+  assert.equal(formatValuation(1, usd), '0.001 USD');   // decimals stretch past 0.00
+  assert.equal(formatValuation(0, usd), '0 USD');
   // The label prints as the reader spelled it, whatever they named.
-  assert.equal(formatValuation(123456789, { label: 'slices', perBtc: 0.0002 }), '≈ 0.00025 slices');
+  assert.equal(formatValuation(123456789, { label: 'slices', perBtc: 0.0002 }), '0.00025 slices');
 });
 
 test("a ledger net's valuation is signed the way the net column is", () => {
   const day = { label: 'USD', perBtc: 1119.52 };
-  assert.equal(formatNetValuation(123456789, day), '≈ +1,382.12 USD');
-  assert.equal(formatNetValuation(-123456789, day), '≈ −1,382.12 USD');
+  assert.equal(formatNetValuation(123456789, day), '+1,382.12 USD');
+  assert.equal(formatNetValuation(-123456789, day), '−1,382.12 USD');
   assert.equal(formatNetValuation(0, day), '0 USD');
 });
 
@@ -43,7 +43,7 @@ test("'usd' reads at the day price the page set, and at ₿ where none is", () =
   // No day settled: the record's ₿, never a stale or guessed figure.
   assert.equal(formatAmountAs(123456789, 'usd'), '1.23456789 ₿');
   setDayPrice({ perBtc: 1119.52, date: '2013-11-30', source: 'Bitstamp' });
-  assert.equal(formatAmountAs(123456789, 'usd'), '≈ 1,382.12 USD');
+  assert.equal(formatAmountAs(123456789, 'usd'), '1,382.12 USD');
   setDayPrice(null);
   assert.equal(dayPrice(), null);
   assert.equal(formatAmountAs(123456789, 'usd'), '1.23456789 ₿');

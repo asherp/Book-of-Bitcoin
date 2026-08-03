@@ -306,7 +306,7 @@ a:hover { text-decoration: underline; }
 .idx-bal { flex:none; min-width:104px; text-align:right; font:400 12px/1.4 'IBM Plex Mono',monospace; color:var(--dim); white-space:nowrap; font-variant-numeric:tabular-nums; }
 .idx-row.entry:hover .idx-bal { color:var(--ink-soft); }
 @media (max-width: 560px) { .idx-bal { display:none; } }
-/* The valuation column (btc-index.js, when the reader reads in ≈ USD): the
+/* The valuation column (btc-index.js, when the reader reads in USD): the
    entry's net at its own day's price. Italic serif against the columns'
    mono -- a valuation is an annotation on the record, and dresses as one.
    Steps aside with the balance on narrow leaves. */
@@ -374,7 +374,7 @@ a:hover { text-decoration: underline; }
 .entry-amt { margin-top:16px; font:500 20px/1.25 'IBM Plex Mono',monospace; color:var(--ink); white-space:nowrap; font-variant-numeric:tabular-nums; }
 .entry-amt.credit { color:var(--accent); }
 /* The entry's valuation at its own day, under the amount it values: dated,
-   sourced, ≈-marked, in the annotation's italic serif. Empty -- no USD
+   sourced, in the annotation's italic serif. Empty -- no USD
    notation chosen, no day, or no answer -- it takes no room. */
 .entry-val { margin-top:6px; font:italic 400 13px/1.4 'Newsreader',serif; color:var(--meta); white-space:nowrap; }
 .entry-val:empty { display:none; }
@@ -531,9 +531,9 @@ a:hover { text-decoration: underline; }
     <span class="home"><a href="./bitcoin-book.html">Read</a> · <a href="./bitcoin-contents.html?part=ledgers">Contents</a> · <a href="./bitcoin-search.html">Search</a> · <span class="settings-menu"><a href="#" id="settings-link" role="button" aria-haspopup="dialog" aria-expanded="false">Settings</a><div id="settings-panel" class="settings-panel hidden" role="dialog" aria-label="Ledger settings">
       <div class="settings-title">Amounts</div>
       <!-- The book page's notation rows, same stored choice: the record's
-           three dresses, then the valuations wearing ≈ — the day's USD
-           price (each ledger entry at its own day) and the reader's own
-           unit where one is defined. Filled by renderAmountRows. -->
+           three dresses, then the valuations — the day's USD price (each
+           ledger entry at its own day) and the reader's own unit where one
+           is defined. Filled by renderAmountRows. -->
       <div id="amount-rows" class="lang-rows"></div>
       <div class="settings-title">Data source</div>
       <div class="endpoint-row">
@@ -717,7 +717,7 @@ const notablesReady = loadNotables();
   // The amount-notation rows: the book page's picker, same stored choice
   // (btc-amounts.js), so the figures' dress follows the reader between the
   // manuscript and its ledgers. The record's three notations show the same
-  // sample amount; the valuations wear ≈ — 'usd' names what it does here
+  // sample amount; the valuations follow — 'usd' names what it does here
   // (each entry at its own day) rather than faking one figure for rows
   // that will each carry their own, and the reader's own unit shows only
   // where one is defined (the book page's Amounts foot defines it).
@@ -735,7 +735,7 @@ const notablesReady = loadNotables();
       btn.setAttribute('aria-pressed', u === amountUnit() ? 'true' : 'false');
       const name = document.createElement('span');
       if (u === 'usd') {
-        name.textContent = '≈ ⋯ USD';
+        name.textContent = '⋯ USD';
         btn.title = 'each entry at its own day’s price, per the book’s price source — a market’s valuation, not the record';
       } else {
         name.textContent = formatAmountAs(AMOUNT_SAMPLE, u);
