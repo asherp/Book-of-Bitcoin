@@ -332,6 +332,8 @@
       by: Claude Fable 5
 - title: Bitcoin XT first signal
   id: '370434'
+- title: Bitcoin XT high-water mark
+  id: '372315'
 - title: BIP65
   id: '387408'
   page: book
