@@ -213,6 +213,11 @@ a:hover { text-decoration: underline; }
 .idx-vol:first-of-type { margin-top:10px; padding-top:0; border-top:none; }
 .idx-book { margin:12px 0 1px; padding-left:14px;
   font:600 10px/1 'IBM Plex Mono',monospace; letter-spacing:.16em; text-transform:uppercase; color:var(--meta); }
+/* The quarter's own filing, each level stepping in: month, then day. */
+.idx-month { margin:10px 0 1px; padding-left:22px;
+  font:600 10px/1 'IBM Plex Mono',monospace; letter-spacing:.14em; text-transform:uppercase; color:var(--meta); }
+.idx-day { margin:8px 0 1px; padding-left:28px;
+  font:500 10px/1 'IBM Plex Mono',monospace; letter-spacing:.12em; text-transform:uppercase; color:var(--dim); }
 .idx-row { display:flex; align-items:baseline; gap:16px; padding:8px 2px 8px 14px; border-bottom:1px solid var(--hair); text-decoration:none; }
 .idx-row.under-book { padding-left:28px; }
 .idx-row:last-child { border-bottom:none; }

@@ -671,11 +671,29 @@ export function periods(data) {
     const q = Math.floor(d.getUTCMonth() / 3) + 1;
     const key = year * 10 + q;
     let b = byKey.get(key);
-    if (!b) { b = { year, q, entries: [], sats: 0 }; byKey.set(key, b); }
+    if (!b) { b = { year, q, entries: [], sats: 0, months: new Map() }; byKey.set(key, b); }
     b.entries.push(c);
     b.sats += c.sats;
+    // The quarter's own filing: months, then days -- the grain a reading
+    // needs when a whole story lands inside one quarter (a theft's three
+    // days would otherwise file as one undifferentiated Q). Keyed buckets,
+    // for the same wobble-absorbing reason as the quarters above.
+    const m = d.getUTCMonth();
+    let mo = b.months.get(m);
+    if (!mo) { mo = { m, entries: [], sats: 0, days: new Map() }; b.months.set(m, mo); }
+    mo.entries.push(c);
+    mo.sats += c.sats;
+    const day = d.getUTCDate();
+    let dy = mo.days.get(day);
+    if (!dy) { dy = { d: day, entries: [], sats: 0 }; mo.days.set(day, dy); }
+    dy.entries.push(c);
+    dy.sats += c.sats;
   }
-  const quarters = [...byKey.values()].sort((a, b) => a.year - b.year || a.q - b.q);
+  const quarters = [...byKey.values()]
+    .map((qt) => ({ ...qt,
+      months: [...qt.months.values()].sort((a, b) => a.m - b.m)
+        .map((mo) => ({ ...mo, days: [...mo.days.values()].sort((a, b) => a.d - b.d) })) }))
+    .sort((a, b) => a.year - b.year || a.q - b.q);
   const years = [];
   for (const qt of quarters) {
     let y = years[years.length - 1];
@@ -752,6 +770,8 @@ export function renderLine(el, data, maxRows = Infinity) {
 // nothing from it remains outstanding.
 const BOOKMARK_RIBBON = '<svg viewBox="0 0 12 16"><path fill="currentColor" d="M0 0h12v16l-6-4-6 4z"/></svg>';
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const MONTHS_FULL = ['January', 'February', 'March', 'April', 'May', 'June',
+                     'July', 'August', 'September', 'October', 'November', 'December'];
 export function renderLedger(el, data, { bookmarks = [], held = null } = {}) {
   // Running balances post in entry order -- the ledger's true posting order
   // -- so the final balance is exactly the one the gate proved. Two entries
@@ -823,6 +843,9 @@ export function renderLedger(el, data, { bookmarks = [], held = null } = {}) {
   const entriesHead = lineHead('sp-eyebrow', 'Entries');
   entriesHead.id = 'anth-index';
   el.append(entriesHead);
+  // The entries file day by day inside month inside quarter -- the deeper
+  // heads carry the date, so each row's own cell is free to carry the
+  // clock, and a sweep that took minutes reads as the minutes it took.
   const nodes = [];
   for (const y of recent) {
     nodes.push(lineHead('idx-vol', String(y.year)));
@@ -831,10 +854,16 @@ export function renderLedger(el, data, { bookmarks = [], held = null } = {}) {
       h.id = anchor(qt.year, qt.q);
       nodes.push(h);
       let lastVol = 0, lastBook = 0;
-      for (const c of [...qt.entries].reverse()) {
-        const place = volumeBookChapter(c.height);
-        nodes.push(ledgerRow(c, place, c.bal, lastVol, lastBook, held));
-        lastVol = place.volume; lastBook = place.book;
+      for (const mo of [...qt.months].reverse()) {
+        nodes.push(lineHead('idx-month', MONTHS_FULL[mo.m]));
+        for (const dy of [...mo.days].reverse()) {
+          nodes.push(lineHead('idx-day', `${MONTHS[mo.m]} ${dy.d}`));
+          for (const c of [...dy.entries].reverse()) {
+            const place = volumeBookChapter(c.height);
+            nodes.push(ledgerRow(c, place, c.bal, lastVol, lastBook, held));
+            lastVol = place.volume; lastBook = place.book;
+          }
+        }
       }
     }
   }
@@ -870,9 +899,14 @@ function ledgerRow(c, place, balance, lastVol, lastBook, held) {
     if (resting > 0) row.title = `still held: ${formatBalanceBtc(resting)}`;
     else row.classList.add('spent');
   }
+  // The day head above carries the date, so the row's cell carries the
+  // clock -- and a sweep that emptied a thousand wallets in 41 minutes
+  // reads as exactly that.
   const when = document.createElement('span'); when.className = 'idx-when';
   const d = c.time ? new Date(c.time * 1000) : null;
-  when.textContent = d ? `${MONTHS[d.getUTCMonth()]} ${d.getUTCDate()}` : '—';
+  when.textContent = d
+    ? `${String(d.getUTCHours()).padStart(2, '0')}:${String(d.getUTCMinutes()).padStart(2, '0')}` : '—';
+  when.title = 'UTC';
   const r = document.createElement('span'); r.className = 'idx-ref';
   const parts = [];
   if (place.volume !== lastVol) parts.push(toRoman(place.volume));
