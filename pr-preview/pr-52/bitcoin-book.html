@@ -256,6 +256,14 @@ button:disabled { opacity: .4; cursor: not-allowed; }
   padding: 9px 14px; box-shadow: 0 12px 32px -12px rgba(0,0,0,.8);
   font: 500 13px/1.4 'IBM Plex Mono',monospace;
 }
+/* With no chapter under it (first load, or an error on an empty page) the
+   centred toast would float in a bare viewport -- so it docks in flow at
+   its own slot in the markup instead, right under the masthead. In-flow is
+   safe precisely because this state only exists while the page is bare:
+   there is nothing beneath it to shift. (Not absolute: .wrap is a column
+   flexbox, where an absolute child's static position is the container's
+   corner, over the masthead.) */
+.status-line.docked { position: static; transform: none; align-self: center; }
 .status-line.err { color: var(--error); }
 /* The loading mark is the book's own notation, not a borrowed ring: the four
    sigla of the pay-to-pubkey-hash template -- ⧉ ⌖ ≡ ∇ (OP_DUP, OP_HASH160,
@@ -1526,7 +1534,10 @@ const SPINNER_HTML = '<span class="spinner" aria-hidden="true">'
 
 function setStatus(msg, kind) {
   const el = $('block-status');
-  el.className = 'status-line' + (kind ? ' ' + kind : '');
+  // Docked under the masthead while the page is bare; floating over the
+  // carousel once a chapter is on screen (see .status-line.docked).
+  const docked = $('chapter').classList.contains('hidden');
+  el.className = 'status-line' + (kind ? ' ' + kind : '') + (docked ? ' docked' : '');
   el.innerHTML = msg;
   el.classList.toggle('hidden', !msg);
   // A failed navigation must never leave the page stranded off-screen
