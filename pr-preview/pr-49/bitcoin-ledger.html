@@ -1908,7 +1908,7 @@ const openEntryLeaf = async (alive) => {
       tFee.textContent = '⋯';
       const tOut = document.createElement('span');
       tOut.className = 't-out';
-      tOut.textContent = formatBalanceBtc(sumOut);
+      tOut.textContent = `= ${formatBalanceBtc(sumOut)}`;
       tOut.title = `the outputs carry ${sumOut.toLocaleString('en-US')} satoshis`;
       totals.append(tIn, tFee, tOut);
       Promise.all(spentP).then((values) => {
@@ -1938,7 +1938,7 @@ const openEntryLeaf = async (alive) => {
         : `the fees: ${fee.toLocaleString('en-US')} satoshis — what the block's transactions paid, gathered here`;
       const tOut = document.createElement('span');
       tOut.className = 't-out';
-      tOut.textContent = formatBalanceBtc(sumOut);
+      tOut.textContent = `= ${formatBalanceBtc(sumOut)}`;
       tOut.title = `the outputs carry ${sumOut.toLocaleString('en-US')} satoshis`;
       totals.append(tIn, tFee, tOut);
     }
