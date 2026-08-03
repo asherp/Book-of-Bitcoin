@@ -184,6 +184,16 @@ button:disabled { opacity: .4; cursor: not-allowed; }
   background:var(--card); border:1px solid var(--card-bd); border-radius:8px;
   box-shadow:0 16px 40px -10px rgba(0,0,0,.75);
 }
+/* On a narrow leaf the nav sits mid-screen, so a panel anchored to its
+   link's right edge can hang off the viewport. Anchor it to the masthead
+   instead: the menu span stops positioning, the masthead takes over as
+   containing block, and the panel spans the leaf just under the nav line.
+   (Covers the Language popover too — same class, same anchoring.) */
+@media (max-width: 600px) {
+  .masthead { position:relative; }
+  .settings-menu { position:static; }
+  .settings-panel { left:0; right:0; width:auto; top:calc(100% + 8px); }
+}
 .settings-title { font:600 11px/1 'IBM Plex Mono',monospace; letter-spacing:.1em; text-transform:uppercase; color:var(--dim); margin-bottom:11px; }
 .settings-panel .settings-title:not(:first-child) { margin-top:16px; }
 

@@ -132,6 +132,16 @@ a:hover { text-decoration: underline; }
   background:var(--card); border:1px solid var(--card-bd); border-radius:6px; padding:16px 18px 18px;
   box-shadow:0 24px 60px -32px rgba(0,0,0,.8); text-align:left; }
 .settings-panel.hidden { display:none; }
+/* On a narrow leaf the nav sits mid-screen, so a panel anchored to its
+   link's right edge hangs off the left of the viewport. Anchor it to the
+   masthead instead: the menu span stops positioning, the masthead takes
+   over as containing block, and the panel spans the leaf just under the
+   nav line. */
+@media (max-width: 600px) {
+  .masthead { position:relative; }
+  .settings-menu { position:static; }
+  .settings-panel { left:0; right:0; width:auto; top:calc(100% + 8px); }
+}
 .settings-title { font:600 10px/1 'IBM Plex Mono',monospace; letter-spacing:.16em; text-transform:uppercase; color:var(--dim); margin:14px 0 8px; }
 .settings-title:first-child { margin-top:0; }
 .endpoint-row { display:flex; gap:8px; }
