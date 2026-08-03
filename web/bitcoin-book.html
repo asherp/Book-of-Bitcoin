@@ -4041,7 +4041,7 @@ function renderChapter(para) {
     tFee.textContent = '⋯';
     const tOut = document.createElement('span');
     tOut.className = 't-out';
-    tOut.textContent = formatAmount(sumOut);
+    tOut.textContent = `= ${formatAmount(sumOut)}`;
     tOut.title = `the outputs carry ${amountTitle(sumOut)}`;
     totals.append(tIn, tFee, tOut);
     fillTotals = (values) => {
@@ -4070,7 +4070,7 @@ function renderChapter(para) {
       : `the fees: ${amountTitle(fee)} — what the chapter's sections paid, gathered here`;
     const tOut = document.createElement('span');
     tOut.className = 't-out';
-    tOut.textContent = formatAmount(sumOut);
+    tOut.textContent = `= ${formatAmount(sumOut)}`;
     tOut.title = `the outputs carry ${amountTitle(sumOut)}`;
     totals.append(tIn, tFee, tOut);
   }
