@@ -18,7 +18,8 @@
 import { volumeBookChapter, toRoman } from './btc-citation.js';
 import { storeGet, storePut } from './btc-store.js';
 import { INDEXED as CURATED } from './btc-index-data.js';
-import { usdChosen, usdOn, formatNetValuation } from './btc-price.js';
+import { usdOn } from './btc-price.js';
+import { amountUnit, ownUnit, groupDigits, formatNetValuation } from './btc-amounts.js';
 
 // A loose shape test for the address forms the chain has used: base58 P2PKH
 // ('1…') and P2SH ('3…'), and bech32/bech32m ('bc1…', matched lowercase --
@@ -192,16 +193,22 @@ async function memberPath(member) {
   return h ? `/scripthash/${h}` : null;
 }
 
-// A net satoshi amount in the book's own money notation (formatBtc in
-// btc-prose.js -- not imported, since the prose module drags in the WASM
-// engine): comma-grouped whole part, always the full eight decimal places so a
-// right-aligned column aligns on the point, the ₿ sign trailing, a bare 0 ₿
-// for nothing-net. Signed, since an index line reads as a ledger: what the
-// chapter paid the address (+) or spent from it (−).
+// A net satoshi amount in the reader's chosen record notation
+// (btc-amounts.js): ₿ with the full eight decimal places so a right-aligned
+// column aligns on the point, the middle-dot satoshi grouping, or the bare
+// integer. Signed, since an index line reads as a ledger: what the chapter
+// paid the address (+) or spent from it (−). The two valuation choices are
+// not record notations, so under them the record columns keep their ₿ and
+// the valuation stands in its own column beside (ledgerRow below) — a
+// dated figure never replaces the figure the chain wrote. Named for the
+// house notation it defaults to; it wears whichever record dress is chosen.
 export function formatNetBtc(sats) {
-  if (!sats) return '0 ₿';
+  const u = amountUnit();
   const sign = sats < 0 ? '−' : '+';
   const abs = Math.abs(sats);
+  if (u === 'sats') return sats ? `${sign}${groupDigits(String(abs))} sats` : '0 sats';
+  if (u === 'raw') return sats ? `${sign}${abs}` : '0';
+  if (!sats) return '0 ₿';
   const whole = Math.floor(abs / 1e8).toLocaleString('en-US');
   const frac = String(abs % 1e8).padStart(8, '0');
   return `${sign}${whole}.${frac} ₿`;
@@ -885,23 +892,32 @@ function ledgerRow(c, place, balance, lastVol, lastBook, held) {
   const rb = document.createElement('span'); rb.className = 'idx-bal';
   rb.textContent = formatBalanceBtc(balance);
   rb.title = 'balance after this chapter';
-  // The valuation column, when the reader reads in USD (the book's amount
-  // notation, followed here): the entry's net at its OWN day's price. The
+  // The valuation column, when the reader's notation is a valuation (the
+  // book's amount choice, followed here): the entry's net at its OWN day's
+  // price under 'usd', or at the reader's fixed rate under 'own'. The
   // ledger is the one surface where a price belongs to each entry rather
   // than to the page -- its rows each carry their date, and its sums were
   // never the record's identity, so dated valuations owe no balance line
-  // anything. Filled lazily as rows scroll into view (observeValuation),
-  // so a giant ledger asks its source only for the days actually read.
-  if (usdChosen() && c.time) {
-    const val = document.createElement('span'); val.className = 'idx-val';
+  // anything. Day prices fill lazily as rows scroll into view
+  // (observeValuation), so a giant ledger asks its source only for the
+  // days actually read; the reader's own rate needs no asking.
+  const u = amountUnit();
+  let val = null;
+  if (u === 'usd' && c.time) {
+    val = document.createElement('span'); val.className = 'idx-val';
     val.textContent = '≈ ⋯';
     val.dataset.time = String(c.time);
     val.dataset.sats = String(c.sats);
     observeValuation(val);
-    row.append(when, r, amt, val, rb);
-  } else {
-    row.append(when, r, amt, rb);
+  } else if (u === 'own') {
+    const o = ownUnit();
+    if (o) {
+      val = document.createElement('span'); val.className = 'idx-val';
+      val.textContent = formatNetValuation(c.sats, o);
+      val.title = `at your rate of ${o.perBtc.toLocaleString('en-US')} ${o.label} per ₿ — your valuation, not the record`;
+    }
   }
+  row.append(...(val ? [when, r, amt, val, rb] : [when, r, amt, rb]));
   return row;
 }
 
