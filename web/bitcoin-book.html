@@ -2921,10 +2921,11 @@ function renderFrontispiece(header) {
     { text: hf.nonce, mark: 'η', markClass: 'fx-mark', title: hf.nonceTitle,
       menu: { hex: (header.nonce >>> 0).toString(16).padStart(8, '0'), label: 'nonce', prose: hf.nonce } },
   ];
+  const claimable = [];   // the lines a citing page can make a claim about
   for (const { text, title, copy, mark, markClass, gold, sup, supTitle, zeros, gap, menu, key } of items) {
     const span = document.createElement('span');
     span.className = gold ? 'cfx cfx-gold' : 'cfx';
-    if (key) span.dataset.fx = key;   // a line a citing page can name (?hl=)
+    if (key) { span.dataset.fx = key; claimable.push({ key, hex: copy?.hex, span }); }
     if (mark && copy) {
       fillMarkedHash(span, mark, markClass, copy.hex, copy.label, text, sup, supTitle, zeros);
     } else if (mark) {
@@ -2946,20 +2947,22 @@ function renderFrontispiece(header) {
     }
     el.append(span);
   }
-  // A citation arriving from a cited work's leaf can name the very line it
-  // means (?hl=merkle, the root its proof's ladder ends on): that line is set
-  // in the record's own ink and a bold hand, so the passage the citation
-  // points at is the passage the eye lands on -- the reader sees the same
-  // words here as on the leaf they came from, which is the visible half of
-  // the proof's verification. One-shot: consumed on first render, and the
-  // page's own URL rewriting never carries the flag forward.
-  if (highlightField) {
-    const hit = el.querySelector(`[data-fx="${highlightField}"]`);
-    highlightField = null;
+  // A citation arriving from a cited work's leaf carries a claim about one of
+  // these lines (?hl=merkle:<hex>, the root its proof's ladder ends on), and
+  // the boldface is a verdict, not an arrow: the claimed bytes are compared
+  // against this page's own value -- parsed from the raw header, not taken
+  // from the link -- and the line is set in the record's ink and a bold hand
+  // ONLY where they are equal. A claim the header does not carry bolds
+  // nothing: the page stays plain, and the absence is the answer. One-shot:
+  // consumed on first render, never rewritten forward.
+  if (highlightClaim) {
+    const { key, hex } = highlightClaim;
+    highlightClaim = null;
+    const hit = claimable.find((c) => c.key === key && c.hex === hex);
     if (hit) {
-      hit.classList.add('cite-hit');
-      hit.title = "the line the citing page pointed at — the root its proof's ladder ends on";
-      setTimeout(() => hit.scrollIntoView({ behavior: 'smooth', block: 'center' }), 150);
+      hit.span.classList.add('cite-hit');
+      hit.span.title = 'the citing proof ends on exactly these 32 bytes — the bold is the match, re-checked on this page';
+      setTimeout(() => hit.span.scrollIntoView({ behavior: 'smooth', block: 'center' }), 150);
     }
   }
 }
@@ -6283,9 +6286,13 @@ window.addEventListener('scroll', dismissOnViewportChange, true);
 // chain tip, so ?block=-1 is the latest block; otherwise the book opens at
 // the chain tip (-1), the latest chapter rather than Genesis.
 const params = new URLSearchParams(location.search);
-// The frontispiece line a citing page named (?hl=merkle, from a proof leaf's
-// root citation) -- consumed by the first render, never rewritten forward.
-let highlightField = params.get('hl');
+// A citing page's claim about a frontispiece line (?hl=merkle:<hex>, from a
+// proof leaf's root citation): which line, and the exact bytes the citing
+// page says it holds. Consumed by the first render, never rewritten forward.
+let highlightClaim = (() => {
+  const [key, hex] = (params.get('hl') || '').split(':');
+  return key && /^[0-9a-f]+$/.test(hex || '') ? { key, hex } : null;
+})();
 const pParam = parseReference(params.get('ref') || '');
 const txidParam = params.get('txid');
 const blockParam = params.get('block');
