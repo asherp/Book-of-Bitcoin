@@ -365,6 +365,10 @@
   commentary:
     - file: bip66-activation-v3.md
       by: Claude Fable 5
+- title: Bitcoin XT first signal
+  id: '370434'
+- title: Bitcoin XT high-water mark
+  id: '372315'
 - title: BIP65
   id: '387408'
   page: book
@@ -390,6 +394,10 @@
   commentary:
     - file: the-endianness-lock-of-2042.md
       by: Claude Fable 5
+- title: Bitcoin Classic first signal
+  id: '398364'
+- title: Bitcoin Classic high-water mark
+  id: '404843'
 # The largest fee ever paid, and the coinbase that collected it — two
 # sections of one chapter, each entry titled at its own level: thirteen
 # inputs worth 291.241 ₿, one output of 0.0001 ₿, and the 291.2409 ₿
