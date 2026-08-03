@@ -375,8 +375,8 @@ test('a genesis citation quotes the section — sigla, headline, amount — and 
   // still decode back to the txid: the book's core promise, held in the
   // quote. (The decoder filters prose against the wordlist, so cover words
   // pass through.)
-  const { decodeSeedPhrase } = await import('../../web/glossia-msg.js');
-  const reversed = decodeSeedPhrase(txidProse, 32, 'english').hex;
+  const { decodeCanonical } = await import('../../web/glossia-msg.js');
+  const reversed = decodeCanonical(txidProse, 32, 'english').hex;
   const txid = (reversed.match(/../g) || []).reverse().join('');
   assert.equal(txid, GENESIS_TXID);
 });

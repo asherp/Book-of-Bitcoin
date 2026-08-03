@@ -90,7 +90,14 @@ body { min-height: 100vh; background: var(--page); color: var(--ink); font-famil
   .toc-entrance-back body { animation: toc-in-back .22s ease-out; }
   @keyframes toc-in-back { from { transform: translateX(-100vw); } }
 }
-.wrap { max-width: 720px; margin: 0 auto; padding: 48px 22px 100px; }
+/* The volume turns at the foot ride the bottom of the screen (sticky, below):
+   the wrap stretches to the viewport and the list takes all slack, so a short
+   leaf's turns rest exactly where a tall leaf's sticky bar rides -- the same
+   arrangement the reader's own foot nav keeps. No bottom padding: the bar is
+   the page's own floor. */
+.wrap { max-width: 720px; margin: 0 auto; padding: 48px 22px 0;
+  display: flex; flex-direction: column; min-height: 100vh; min-height: 100dvh; }
+#toc { flex: 1 0 auto; }
 a { color: var(--accent); text-decoration: none; }
 a:hover { text-decoration: underline; }
 
@@ -112,8 +119,13 @@ a:hover { text-decoration: underline; }
 .toc-down.hidden { display:none; }
 
 /* The turns to either side, named at the foot -- the swipe and the arrow
-   keys go the same places, and this says so for hands that use neither. */
-.toc-turns { display:flex; flex-wrap:wrap; gap:10px 26px; margin-top:44px; padding-top:18px; border-top:1px solid var(--rule);
+   keys go the same places, and this says so for hands that use neither.
+   Sticky at the bottom of the screen, like the reader's foot nav: a long
+   leaf's turns are always in reach, and the page's own background keeps the
+   rows scrolling beneath from showing through. */
+.toc-turns { position:sticky; bottom:0; z-index:40; background:var(--page);
+  display:flex; flex-wrap:wrap; gap:10px 26px; margin-top:44px;
+  padding:18px 0 max(18px, env(safe-area-inset-bottom)); border-top:1px solid var(--rule);
   font:600 10px/1.5 'IBM Plex Mono',monospace; letter-spacing:.14em; text-transform:uppercase; }
 .toc-turns a { color:var(--meta); }
 .toc-turns a:hover { color:var(--accent); }
@@ -138,18 +150,25 @@ a:hover { text-decoration: underline; }
     </header>
     <div id="toc"></div>
     <a class="toc-down" id="toc-down" href="#" aria-label="Down into this part of the book">▾</a>
+    <!-- The contents' one credit, a footnote rather than a line per row:
+         who wrote the readings behind the rows above. With a single author
+         so far, a per-row credit tagged nearly every row and distinguished
+         nothing; the foot says it once, and grows into a list as authors
+         join. Filled by the colophon block in the script below. -->
+    <div class="toc-colophon hidden" id="toc-colophon"></div>
     <nav class="toc-turns" id="toc-turns"></nav>
   </div>
 </div>
 
 <script type="module">
-import { localizeHome } from './btc-strings.js';
-localizeHome();   // the masthead in the reader's UI language (chosen on the book page)
-import { loadNotables, places, placeTitle, appendix, isBlockId, isRelativeBlockId, entryHref } from './btc-contents.js';
+import { localizeHome, mountLangMenu, t as tr } from './btc-strings.js';
+localizeHome();   // the masthead in the reader's UI language
+mountLangMenu();  // …with the Language item, which any page can now set
+import { loadNotables, notables, places, placeTitle, appendix, isBlockId, isRelativeBlockId, entryHref } from './btc-contents.js';
 import { partLabel } from './btc-notables.js';
 import { toSubscript } from './btc-sigla.js';
-import { allProofs, citeOf, leafOf } from './btc-proofs.js';
-import { creditLine, commentaryForAddresses } from './btc-commentary.js';
+import { allProofs, citeOf, leafOf, estimatedDate, minedDate } from './btc-proofs.js';
+import { readingsOf } from './btc-commentary.js';
 import { readQueue, buildQueue } from './btc-mempool.js';
 import { INDEXED, keptLedgers, sameAddresses } from './btc-index.js';
 import { volumeBookChapter, toRoman, fromRoman, heightOf, expectedReference, footnoteMark } from './btc-citation.js';
@@ -169,6 +188,27 @@ await loadNotables();
 seedArchive();
 
 const $ = (id) => document.getElementById(id);
+
+// The contents' one credit, at its foot: whose readings stand behind the rows.
+// Gathered from every reading-bearer the index and appendix keep -- entries,
+// parts, forks and their chapters -- in file order, each name once. Empty (and
+// hidden) if nothing is credited; a footnote rather than a line per row, so a
+// name stays news when a second author joins rather than wallpaper when one
+// wrote everything.
+(() => {
+  const bearers = [
+    ...notables(),
+    ...appendix(),
+    ...appendix().filter((p) => p.bips).flatMap((p) => p.bips),
+    ...appendix().filter((p) => p.bips).flatMap((p) => p.bips).flatMap((b) => b.entries),
+  ];
+  const named = [...new Set(bearers.flatMap((e) => readingsOf(e).filter((r) => r.by).map((r) => r.by)))];
+  if (!named.length) return;
+  const el = $('toc-colophon');
+  el.textContent = tr('commentary by {names}', { names: named.join(' · ') });
+  el.title = `${named.length > 1 ? 'readings' : 'the readings'} by ${named.join(', ')} — editorial, offered beside the passages and no more authoritative than their argument; opened from the Commentary key on each page`;
+  el.classList.remove('hidden');
+})();
 const REDUCED_MOTION = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 const BOOKMARKS_KEY = 'glossia-btc-bookmarks';
@@ -284,27 +324,35 @@ async function resolveBookmark(b) {
 // The leaf's own head has named the volume, so under a Book heading only the
 // ■chapter (and a transaction's §section) remains, and directly on the leaf the
 // β-marked book leads it. Spaced like the book's own citations ("β29 ■596",
-// "■1 §1").
-function tailRef({ book, chapter, section, vout, wit }, underBook) {
+// "■1 §1"). A row nested under its parent entry (a section listed under the
+// chapter row that names its block) cites only what differs from the parent:
+// the parent row has already printed the ■chapter, so the child carries the
+// §section alone.
+function tailRef({ book, chapter, section, vout, wit }, underBook, parent) {
+  // An output cites as §section.vout; a witness as §section.a -- the
+  // footnote's alphabet index after the point, letters where an output
+  // would carry digits.
+  const sec = section == null ? ''
+    : `§${section}${vout == null ? '' : `.${vout}`}${wit == null ? '' : `.${footnoteMark(wit)}`}`;
+  if (parent && parent.book === book && parent.chapter === chapter) return sec;
   // A volume's own leaf: the leaf's head above the row has already named it.
   if (book == null) return '';
   // A book's own leaf: under its Book heading nothing remains to cite; on the
   // bare leaf, the β mark alone names it.
   if (chapter == null) return underBook ? '' : `β${book}`;
   let s = (underBook ? [`■${chapter}`] : [`β${book}`, `■${chapter}`]).join(' ');
-  // An output cites as §section.vout; a witness as §section.a -- the
-  // footnote's alphabet index after the point, letters where an output
-  // would carry digits.
-  if (section != null) s += ` §${section}${vout == null ? '' : `.${vout}`}${wit == null ? '' : `.${footnoteMark(wit)}`}`;
+  if (sec) s += ` ${sec}`;
   return s;
 }
 
 // One contents row: the title on the left, its remaining reference on the right;
 // the whole row is a link that navigates into the book. An entry whose citation
-// never resolved carries a dash in place of a reference.
-function entryEl(entry, underBook) {
+// never resolved carries a dash in place of a reference. `parent` marks a row
+// nested under its parent entry's row rather than directly under a heading:
+// one more step of indent, and a reference compressed against the parent's.
+function entryEl(entry, underBook, parent) {
   const row = document.createElement('a');
-  row.className = 'toc-entry' + (underBook ? ' under-book' : '') + (entry.bookmark ? ' is-bookmark' : '');
+  row.className = 'toc-entry' + (underBook ? ' under-book' : '') + (parent ? ' under-parent' : '') + (entry.bookmark ? ' is-bookmark' : '');
   row.dataset.entryId = entry.id;   // the projected section anchors after the tip's row
   // The witness coordinate travels two ways: a curated place carries its
   // footnote number (linked as the letter mark, the citation's own .a), a
@@ -320,32 +368,14 @@ function entryEl(entry, underBook) {
     t.append(bm);
   }
   t.append(document.createTextNode(entry.title));
-  // An entry that carries a credited reading says so, and says whose: the
-  // contents is where a reader decides what to open, and "commentary by
-  // so-and-so" is the kind of thing that decides it.
-  addCredit(t, creditLine(entry));
   const r = document.createElement('span'); r.className = 'toc-ref';
-  if (entry.place) r.textContent = tailRef(entry.place, underBook);
+  if (entry.place) r.textContent = tailRef(entry.place, underBook, parent);
   else { r.textContent = '—'; r.classList.add('none'); }
   row.append(t, r);
   return row;
 }
 function head(cls, label) { const d = document.createElement('div'); d.className = cls; d.textContent = label; return d; }
 function saying(text) { const d = document.createElement('div'); d.className = 'toc-empty'; d.textContent = text; return d; }
-
-// The credit a row wears when its subject carries a reading somebody signed
-// (btc-commentary.js decides; the book's own readings take no line, or nearly
-// every row would wear one and none would stand out). Set in the annotation
-// register, beneath the title, so a row's name and a reading of it stay
-// distinguishable at a glance.
-function addCredit(titleEl, credit) {
-  if (!credit) return;
-  const c = document.createElement('span');
-  c.className = 'toc-commentary';
-  c.textContent = credit.label;
-  c.title = credit.title;
-  titleEl.append(c);
-}
 
 const toc = $('toc');
 // The projected section (Appendix I, the mempool), rebuilt by loadProjected
@@ -576,14 +606,31 @@ function renderVolume(volume) {
     toc.append(saying('Nothing is kept from this volume yet. The volume itself is one turn down, and reads chapter by chapter from its own leaf.'));
     return;
   }
-  for (let k = 0; k < entries.length;) {
-    const bk = entries[k].place.book;
-    let jb = k + 1; while (jb < entries.length && entries[jb].place.book === bk) jb++;
-    if (jb - k >= 2) {
-      toc.append(head('toc-book', `Book ${bk}`));   // spelled out, no β; the β sigil rides only the compact tail references
-      for (let m = k; m < jb; m++) toc.append(entryEl(entries[m], true));
-    } else {
-      toc.append(entryEl(entries[k], false));
+  // Children group under parents, not under books: an entry citing a section
+  // (or deeper) of a chapter that the preceding entry names outright is that
+  // entry's child -- listed under the parent's row, one more indent in, its
+  // reference compressed against the parent's. Titles never bleed up a
+  // level, but a listing may nest down one: the five burns of one chapter
+  // read beneath the chapter's own row, each cited by its § alone.
+  const isChildOf = (p, c) => p.place.chapter != null && p.place.section == null && !p.page
+    && c.place.book === p.place.book && c.place.chapter === p.place.chapter && c.place.section != null;
+  const nodes = [];
+  for (const e of entries) {
+    const last = nodes[nodes.length - 1];
+    if (last && isChildOf(last.entry, e)) last.children.push(e);
+    else nodes.push({ entry: e, children: [] });
+  }
+  // The Book sub-heading earns its place only over two or more rows at the
+  // top level: a lone parent with its children is already its own group,
+  // and its row carries the full β-marked reference the heading would.
+  for (let k = 0; k < nodes.length;) {
+    const bk = nodes[k].entry.place.book;
+    let jb = k + 1; while (jb < nodes.length && nodes[jb].entry.place.book === bk) jb++;
+    const underBook = jb - k >= 2;
+    if (underBook) toc.append(head('toc-book', `Book ${bk}`));   // spelled out, no β; the β sigil rides only the compact tail references
+    for (let m = k; m < jb; m++) {
+      toc.append(entryEl(nodes[m].entry, underBook));
+      for (const c of nodes[m].children) toc.append(entryEl(c, underBook, nodes[m].entry.place));
     }
     k = jb;
   }
@@ -644,16 +691,6 @@ function ledgerEl(ledger, isKept) {
   // to their first address, the same stand-in name the Ledger page gives
   // them -- a name in the title column, never a citation in the reference's.
   t.append(document.createTextNode(ledger.title || shortAddr(ledger.addresses[0])));
-  // A ledger whose addresses carry a credited reading says so here, as a
-  // chapter's row does: the readings themselves open on the Ledger's leaves.
-  const named = [...new Set(commentaryForAddresses(ledger.addresses)
-    .flatMap((it) => it.readings.filter((rd) => rd.by).map((rd) => rd.by)))];
-  if (named.length) {
-    addCredit(t, {
-      label: `commentary by ${named.join(' · ')}`,
-      title: `${named.length > 1 ? 'readings' : 'a reading'} by ${named.join(', ')} — editorial, opened on this ledger's own leaves`,
-    });
-  }
   const r = document.createElement('span');
   r.className = 'toc-ref none';
   r.textContent = '—';
@@ -740,6 +777,20 @@ function proofEl(proof) {
   mark.textContent = proof.n ? `‡${toSubscript(proof.n)} ` : '‡ ';
   mark.title = proof.n ? `cited work ${proof.n}` : "your addendum — kept in this browser, outside the edition's numbering";
   t.append(mark, document.createTextNode(proof.title));
+  // The date, which is what a citation here IS: the chain attests existence
+  // by a block, and the block has a clock. The height's own estimate prints
+  // at once, hedged; the block's clock replaces it when the archive or a
+  // mirror answers for the chapter.
+  const when = document.createElement('span');
+  when.className = 'toc-span';
+  when.textContent = estimatedDate(proof.place.height);
+  when.title = 'about when the chapter its proof lands in was mined — estimated from the height alone, offline';
+  minedDate(proof.place.height).then((exact) => {
+    if (!exact) return;
+    when.textContent = exact;
+    when.title = "the clock of the block its proof lands in — the chain's own date for this file";
+  });
+  t.append(when);
   // What the row is really claiming, said in full on hover: this file's digest,
   // and the chapter its proof reduces to.
   row.title = `${proof.file} — ${proof.hash} ${proof.digest}, stamped into ${citeOf(proof.place)}`;
@@ -1027,7 +1078,7 @@ const bmPlacements = new Map();        // bookmark hex -> place | null (once att
 const bmKey = (b) => (b.page ? `${b.page}@${b.hex}` : b.vin != null ? `${b.hex}:w${b.vin}` : b.vout == null ? b.hex : `${b.hex}:${b.vout}`);
 const allBookmarks = readBookmarks();
 const bmForPlace = (p) => allBookmarks.find((b) => {
-  if (p.address) return false;
+  if (p.address || p.script) return false;
   if (p.page || b.page) return (p.page ?? null) === (b.page ?? null) && p.id === String(b.height);
   // A witness place matches only a witness keep of the same footnote (by
   // its stored number; an old keep without one stays its own row) -- and a
@@ -1039,7 +1090,7 @@ const bmForPlace = (p) => allBookmarks.find((b) => {
   if ((p.out ?? null) !== (b.vout ?? null)) return false;
   return p.id === b.hex || (p.id === String(b.height) && (p.index ?? null) === (b.pos ?? null));
 });
-const overridingKeys = new Set(places().filter((p) => !p.address).map((p) => bmForPlace(p)).filter(Boolean).map(bmKey));
+const overridingKeys = new Set(places().filter((p) => !p.address && !p.script).map((p) => bmForPlace(p)).filter(Boolean).map(bmKey));
 const bookmarks = allBookmarks.filter((b) => !overridingKeys.has(bmKey(b)));
 
 // Every entry -- curated or bookmarked -- carrying whatever placement has
@@ -1048,7 +1099,7 @@ const bookmarks = allBookmarks.filter((b) => !overridingKeys.has(bmKey(b)));
 // its hash: `?block=<h>&page=volume` is the leaf, where the bare hash would be
 // the chapter that opens it -- a different page, and a different keep.
 const entries = () => [
-  ...places().filter((p) => !p.address).map((p) => {
+  ...places().filter((p) => !p.address && !p.script).map((p) => {
     const bm = bmForPlace(p);
     return { ...p, title: (bm && bm.title) || placeTitle(p), bookmark: bm ? true : undefined,
       commentary: p.entry.commentary,
@@ -1122,7 +1173,7 @@ const consensusPlaces = () => appendix()
 // Block placements (curated, and bookmarks that stored their reference) are
 // offline, so place them at once; everything else streams in as its lookup
 // resolves.
-for (const p of [...places(), ...consensusPlaces()]) if (!p.address && isBlockId(p.id)) placements.set(placeKey(p), placeOf(Number(p.id), p.index ?? null, p.page, p.out ?? null, p.wit ?? null));
+for (const p of [...places(), ...consensusPlaces()]) if (!p.address && !p.script && isBlockId(p.id)) placements.set(placeKey(p), placeOf(Number(p.id), p.index ?? null, p.page, p.out ?? null, p.wit ?? null));
 for (const b of bookmarks) {
   if (Number.isInteger(b.height)) bmPlacements.set(bmKey(b), placeOf(b.height, b.pos ?? null, b.page, b.vout ?? null, b.wn ?? null));
 }
@@ -1138,7 +1189,7 @@ setInterval(() => { if (!document.hidden) loadProjected(); }, 60_000);
 // One lookup per key, however many registers cite the place.
 const unplaced = new Map();
 for (const p of [...places(), ...consensusPlaces()]) {
-  if (!p.address && !placements.has(placeKey(p)) && !unplaced.has(placeKey(p))) unplaced.set(placeKey(p), p);
+  if (!p.address && !p.script && !placements.has(placeKey(p)) && !unplaced.has(placeKey(p))) unplaced.set(placeKey(p), p);
 }
 await Promise.all([
   ...[...unplaced.values()].map(async (p) => {

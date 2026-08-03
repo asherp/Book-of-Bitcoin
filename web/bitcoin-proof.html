@@ -58,19 +58,46 @@ a:hover { text-decoration: underline; }
 .page-head { padding:8px 0 26px; margin-bottom:30px; border-bottom:1px solid var(--rule); text-align:center; }
 .leaf-title { margin:0; font:300 clamp(24px,6vw,36px)/1.2 'IBM Plex Mono',monospace; color:var(--ink); word-break:break-all; }
 .leaf-named { margin-top:10px; font:400 17px/1.35 'Newsreader',serif; color:var(--dim); }
-.leaf-citemark { margin-top:12px; font:600 15px/1 'IBM Plex Mono',monospace; }
-.leaf-citemark a { color:var(--accent); }
 .leaf-digest { max-width:56ch; margin:22px auto 0; text-align:left; }
-.leaf-open { margin-top:20px; }
-.ghost {
-  background:none; color:var(--accent); border:1px solid var(--input-bd); border-radius:4px;
-  padding:7px 14px; font:600 10.5px/1 'IBM Plex Mono',monospace; letter-spacing:.05em;
-  text-transform:uppercase; cursor:pointer;
+/* The header paragraph is a copy handle: clicking it opens the menu below. */
+.hash-copy { cursor:pointer; }
+/* The work's citation mark, worn as a footnote's superscript at the end of
+   the header paragraph -- the leaf's one footnote is at its foot. */
+.leaf-cite-sup { margin-left:2px; line-height:0; }
+.leaf-cite-sup a { font:600 12px/1 'IBM Plex Mono',monospace; color:var(--accent); }
+
+/* The copy menu, the book's own idiom (bitcoin-book.html) cut to this leaf's
+   one hash: the hex, or the prose that encodes it. */
+.hash-menu {
+  position: fixed; z-index: 40; min-width: 172px; padding: 6px;
+  background: var(--card); border: 1px solid var(--card-bd); border-radius: 7px;
+  box-shadow: 0 18px 44px -18px rgba(0,0,0,.8);
 }
-.ghost:hover { border-color:var(--accent); color:var(--accent-2); }
-.leaf-check { margin-top:12px; font:500 12px/1.5 'IBM Plex Mono',monospace; color:var(--meta); }
-.leaf-check.good { color:var(--accent); }
-.leaf-check.bad { color:#e08b7a; }
+.hash-menu-head {
+  padding: 6px 8px 8px; color: var(--dim); font: 600 10.5px/1 'IBM Plex Mono',monospace;
+  letter-spacing: .1em; text-transform: uppercase; border-bottom: 1px solid var(--rule); margin-bottom: 5px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 260px;
+}
+.hash-menu .hash-menu-item {
+  display: block; width: 100%; text-align: left; background: transparent; color: var(--ink-soft);
+  border: none; border-radius: 4px; padding: 8px 9px; cursor: pointer;
+  font: 500 12.5px/1.2 'IBM Plex Mono',monospace; letter-spacing: .02em; text-transform: none;
+}
+.hash-menu .hash-menu-item:hover, .hash-menu .hash-menu-item:focus-visible { background: var(--input-bg); color: var(--ink); outline: none; }
+
+/* The leaf's one footnote, seated the way the fork leaves seat their foot
+   (bitcoin-appendix.html): sticky at the screen bottom, the rule its top
+   edge, so where the file comes from is at hand at every point of the
+   ladder. It settles into ordinary flow at the end of the page, which is
+   where a footnote belongs. */
+.leaf-footnote { position:sticky; bottom:0; z-index:30; margin-top:44px;
+  padding:11px 2px max(11px, env(safe-area-inset-bottom));
+  border-top:1px solid var(--rule); background:var(--page);
+  display:flex; gap:10px; align-items:baseline;
+  font:500 12px/1.6 'IBM Plex Mono',monospace; color:var(--meta); }
+.leaf-footnote .fn-mark { flex:none; font-weight:600; color:var(--accent); }
+.leaf-footnote .fn-text { min-width:0; overflow-wrap:anywhere; }
+.leaf-footnote a { color:var(--accent); }
 
 /* One paragraph of the proof, with the book's own margin beside it: a
    left-hand column for the citation, right-aligned to the gutter, and the
@@ -95,11 +122,33 @@ a:hover { text-decoration: underline; }
    no one here: set a shade back, so a column of paragraphs reads as the
    alternation it is. */
 .para.sibling .prose { color:var(--dim); font-size:14px; }
+/* Wire order, drawn. A merkle parent is SHA256d(left ‖ right) -- two child
+   hashes concatenated, left first on the wire -- and the proof spells the
+   concatenation as an operation: prepend puts the sibling before the running
+   value (the left half), append puts it after (the right). So a sibling's
+   paragraph sits on the side its bytes occupy in the preimage: flush left as
+   the left half, pushed right as the right. The result beneath each pairing
+   runs the full measure, as a parent holds both halves. The calendar's
+   aggregation above the transaction draws the same way -- each joined piece
+   on its side, each Σ the single hash of the pair -- one grammar for the
+   whole ladder, whichever tree a pairing belongs to. */
+.para.sibling .body { max-width:76%; }
+.para.sibling.sib-right .body { margin-left:auto; text-align:right; }
 @media (max-width: 560px) {
   .para { grid-template-columns: 1fr; }
   .marg { grid-column:1; text-align:left; margin-bottom:4px; }
   .body { grid-column:1; }
 }
+
+/* The work itself, set below the proof that dates it: a lead line saying what
+   is being shown, then the content -- writing as writing, a checksum file as
+   one Σ-figure per line under the binary it names. */
+.subject { margin-top:34px; padding-top:16px; border-top:1px solid var(--rule); }
+.subject-lead { font:600 10.5px/1.6 'IBM Plex Mono',monospace; letter-spacing:.1em; text-transform:uppercase; color:var(--meta); }
+.subject-text { margin:16px 0 4px; font:italic 400 17px/1.7 'Newsreader',serif; color:var(--ink-soft); white-space:pre-wrap; text-align:center; overflow-wrap:break-word; }
+.sum-line { padding:9px 0; }
+.sum-line + .sum-line { border-top:1px solid var(--hair); }
+.sum-file { display:block; margin-bottom:2px; font:500 11.5px/1.5 'IBM Plex Mono',monospace; color:var(--meta); word-break:break-all; }
 
 .leaf-turns { display:flex; flex-wrap:wrap; gap:10px 26px; margin-top:44px; padding-top:18px; border-top:1px solid var(--rule);
   font:600 10px/1.5 'IBM Plex Mono',monospace; letter-spacing:.14em; text-transform:uppercase; }
@@ -116,14 +165,16 @@ a:hover { text-decoration: underline; }
   <header class="page-head">
     <h1 class="leaf-title" id="leaf-title">…</h1>
     <div class="leaf-digest" id="leaf-digest"></div>
-    <div class="leaf-open hidden" id="leaf-open">
-      <button type="button" class="ghost" id="subject-open">Check a copy…</button>
-      <input type="file" id="subject-file" hidden>
-    </div>
-    <div class="leaf-check" id="leaf-check"></div>
   </header>
 
   <div id="proof"></div>
+
+  <!-- The work itself, where it ships beside its proof. A private work keeps
+       its bytes to itself and loses nothing -- that is the design -- but a
+       published one can be shown whole: plain writing quoted as it stands, a
+       checksum file set in the book's own notation. Filled only after the
+       bytes in hand have matched the digest the proof descends from. -->
+  <section class="subject hidden" id="subject"></section>
 
   <!-- The reading of this page, kept where every other reading is kept: behind
        a toggle, over the record rather than in it, signed by whoever wrote it.
@@ -135,11 +186,23 @@ a:hover { text-decoration: underline; }
   </details>
 
   <nav class="leaf-turns" id="leaf-turns"></nav>
+
+  <!-- The leaf's one footnote: the citation mark, and where the file comes
+       from -- the one link on this page that leaves the book entirely. -->
+  <aside class="leaf-footnote hidden" id="leaf-footnote"></aside>
+</div>
+
+<!-- The copy menu, raised by clicking the header paragraph. -->
+<div class="hash-menu hidden" id="copy-menu" role="menu">
+  <div class="hash-menu-head" id="copy-menu-head"></div>
+  <button type="button" class="hash-menu-item" id="copy-hex">Copy hex</button>
+  <button type="button" class="hash-menu-item" id="copy-text">Copy text</button>
 </div>
 
 <script type="module">
-import { localizeHome } from './btc-strings.js';
-localizeHome();   // the masthead in the reader's UI language (chosen on the book page)
+import { localizeHome, mountLangMenu } from './btc-strings.js';
+localizeHome();   // the masthead in the reader's UI language
+mountLangMenu();  // …with the Language item, which any page can now set
 // ── One timestamped file, written out ─────────────────────────────────────
 //
 // The front matter is the file: its name, and its digest as prose -- the whole
@@ -157,7 +220,8 @@ localizeHome();   // the masthead in the reader's UI language (chosen on the boo
 import { loadNotables, appendix } from './btc-contents.js';
 import { partLabel } from './btc-notables.js';
 await loadNotables();
-import { proofByDigest, ladderOf, citeOf, attests } from './btc-proofs.js';
+import { proofByDigest, ladderOf, citeOf, attests, checksumLines, PROOF_DIR } from './btc-proofs.js';
+import { readableUtf8Text } from './btc-tx.js';
 import { readingsOf, resolveCommentary, commentaryHtml } from './btc-commentary.js';
 import { reference, latinRefOf } from './btc-citation.js';
 import { blockAt } from './btc-index.js';
@@ -191,31 +255,63 @@ function render(proof) {
     $('leaf-title').after(named);
   }
 
-  // The work's citation mark, worn where the register's rows and the cited
-  // output's margin wear it: the edition's ‡ₙ, or the bare ‡ of an addendum.
-  const cite = document.createElement('div');
-  cite.className = 'leaf-citemark';
-  const mark = document.createElement('a');
-  mark.href = './bitcoin-appendix.html?part=proofs';
-  mark.textContent = proof.n ? `‡${toSubscript(proof.n)}` : '‡';
-  mark.title = proof.n ? `cited work ${proof.n} in ${backLabel}`
-    : "your addendum — kept in this browser, outside the edition's numbering";
-  cite.append(mark);
-  $('leaf-title').parentElement.insertBefore(cite, $('leaf-digest'));
-
   const cells = [];
-  $('leaf-digest').append(figure(proof.digest, 'h', 'dt', proof.digest.length / 2, false,
-    `${proof.hash} digest of ${proof.file}`, cells));
-  openable(proof);
+  const digestFig = figure(proof.digest, 'h', 'dt', proof.digest.length / 2, false,
+    `${proof.hash} digest of ${proof.file}`, cells);
+  // The work's citation mark, worn as a footnote marker: a superscript
+  // closing the header paragraph, pointing at the leaf's one footnote --
+  // which is where the register's ‡ₙ and the file's source both live.
+  const sup = document.createElement('sup');
+  sup.className = 'leaf-cite-sup';
+  const supA = document.createElement('a');
+  supA.href = '#leaf-footnote';
+  supA.textContent = proof.n ? `‡${toSubscript(proof.n)}` : '‡';
+  supA.title = proof.n ? `cited work ${proof.n} in ${backLabel} — its footnote says where the file comes from`
+    : "your addendum — kept in this browser, outside the edition's numbering";
+  sup.append(supA);
+  $('leaf-digest').append(digestFig, sup);
+  attachCopyMenu($('leaf-digest'), `${proof.hash} digest`, proof.digest,
+    () => digestFig.querySelector('.prose')?.textContent ?? '');
+  footnote(proof);
 
   const rungs = ladderOf(proof.attestation, proof.digest);
   const body = $('proof');
   const section = proof.place.section;
+  // The single-hash operations the aggregation is built from, by the book's
+  // own sigils: Σ is OP_SHA256's mark, ρ RIPEMD-160's, σ SHA-1's. The path's
+  // levels stay ⌘ -- a block's tree hashes twice, and ⌘ is the double hash.
+  const HASH_MARKS = { sha256: ['Σ', 'SHA-256'], ripemd160: ['ρ', 'RIPEMD-160'], sha1: ['σ', 'SHA-1'] };
   for (const rung of rungs) {
+    // The rungs before the transaction (and any the shape-reader left plain)
+    // are the calendar's aggregation: joins and single hashes. A join shows
+    // the piece that was glued on, seated on the side its bytes occupy in
+    // the preimage -- the same drawing the block's merkle path gets below --
+    // and a hash shows what the pairing reduced to, at full measure.
+    if ((rung.kind === 'commit' || rung.kind === 'step') && !rung.isRoot) {
+      if (rung.op === 'append' || rung.op === 'prepend') {
+        const side = rung.op === 'prepend' ? 'left' : 'right';
+        body.append(para(figure(rung.arg, 'h', 'dt', rung.arg.length / 2, false,
+          `bytes joined beside the running value — the ${side} half of this pairing, in the order the bytes are hashed`,
+          cells), null, `sibling sib-${side}`));
+        continue;
+      }
+      if (HASH_MARKS[rung.op]) {
+        const [mk, name] = HASH_MARKS[rung.op];
+        body.append(para(figure(rung.result, mk, 'dt', rung.result.length / 2, false,
+          `a single ${name} of the pairing above`, cells)));
+        continue;
+      }
+    }
     if (rung.kind === 'level') {
-      body.append(para(figure(rung.sibling, '⋔', 'merkle-mark', 32, true,
-        rung.duplicate ? 'this level had no sibling, so Bitcoin pairs the node with itself'
-          : 'a sibling the proof carries', cells), null, 'sibling'));
+      // `rung.side` is where the running value sat in the pairing, so the
+      // sibling took the other half -- and its paragraph sits on that side
+      // of the page, drawing the preimage's wire order (left half ‖ right).
+      const sibSide = rung.side === 'right' ? 'left' : 'right';
+      body.append(para(figure(reverseHex(rung.sibling), '⋔', 'merkle-mark', 32, true,
+        (rung.duplicate ? 'this level had no sibling, so Bitcoin pairs the node with itself'
+          : 'a sibling the proof carries')
+        + ` — the ${sibSide} half of this pairing, in the order the bytes are hashed`,
+        cells), null, `sibling sib-${sibSide}`));
     }
     const isRoot = !!rung.isRoot;
     const onChain = rung.kind === 'transaction'
@@ -224,18 +320,30 @@ function render(proof) {
           title: rung.out == null ? 'the transaction this commitment was buried in'
             : `output ${rung.out} of this transaction — the script the commitment sits in` }
       : isRoot
-        ? { href: `./bitcoin-book.html?ref=${latinRefOf(proof.place.height)}`,
+        // The citation carries this proof's claim -- the root itself -- and
+        // the chapter compares it against its own parsed header before
+        // bolding its ⋔ line: the boldface over there is the match being
+        // confirmed, not this link being followed.
+        ? { href: `./bitcoin-book.html?ref=${latinRefOf(proof.place.height)}&hl=merkle:${proof.place.merkleRoot}`,
             text: reference(proof.place.height),
-            title: "the chapter whose header commits to this root" }
+            title: 'the chapter whose header commits to this root — its ⋔ line comes up bold only if the header carries exactly these bytes' }
         : null;
     const mark = isRoot ? '⋔' : rung.kind === 'transaction' ? '⌘' : rung.result.length === 40 ? 'h' : '⌘';
     const sup = mark === '⌘' ? 256 : rung.result.length / 2;
-    const hex = rung.kind === 'transaction' ? (rung.txid || reverseHex(rung.result)) : rung.result;
+    // The ladder computes in internal byte order; the book's convention splits
+    // the two spellings by register. The mark carries display order (the
+    // spelling an explorer, and the chapter's own copy menu, would hand over),
+    // and the prose encodes internal order -- the bytes as hashed -- exactly
+    // as the frontispiece encodes the same values. That match is the point: a
+    // reader holding this root's paragraph beside the chapter's ⋔ line reads
+    // the same words, or the two pages are not talking about the same block.
+    const hex = rung.kind === 'transaction' ? (rung.txid || reverseHex(rung.result)) : reverseHex(rung.result);
     body.append(para(figure(hex, mark, mark === '⋔' ? 'merkle-mark' : 'dt', sup, true, hex, cells), onChain));
     if (isRoot) checkRoot(proof, body.lastElementChild);
   }
   setProse(cells);
 
+  subjectInline(proof);
   commentary(proof);
   turn('./bitcoin-appendix.html?part=proofs', `‹ ${backLabel}`);
   turn(`./bitcoin-book.html?ref=${latinRefOf(proof.place.height, section)}`, `${citeOf(proof.place)} ›`, true);
@@ -294,33 +402,147 @@ async function checkRoot(proof, paraEl) {
   marg.append(mark);
 }
 
-// The file is not here and never was; the button opens the reader's own copy,
-// hashes it in the browser and answers in one line.
-function openable(proof) {
-  const input = $('subject-file');
-  const out = $('leaf-check');
-  $('leaf-open').classList.remove('hidden');
-  $('subject-open').addEventListener('click', () => input.click());
-  input.addEventListener('change', async () => {
-    const file = input.files[0];
-    if (!file) return;
-    out.className = 'leaf-check';
-    out.textContent = '…';
-    try {
-      const bytes = new Uint8Array(await file.arrayBuffer());
-      const matches = await attests(proof, bytes);
-      out.className = `leaf-check ${matches ? 'good' : 'bad'}`;
-      out.textContent = `${file.name} ${matches ? '✓' : '✗'}`;
-      out.title = matches
-        ? `${bytes.length} bytes, and its ${proof.hash} digest is the one above`
-        : `${bytes.length} bytes, and its ${proof.hash} digest is not the one above`;
-    } catch {
-      out.className = 'leaf-check bad';
-      out.textContent = `${file.name} ✗`;
-      out.title = 'that file could not be read here';
+// ── The work itself, where it ships beside its proof ─────────────────────
+// Nothing here is believed: the bytes are fetched, hashed, and shown only if
+// their digest is the one the proof descends from -- the same test the
+// "check a copy" button runs on the reader's own file. What then shows
+// depends on what the bytes are. Writing is quoted as it stands. A checksum
+// file is set in notation instead: each of its lines is a single SHA-256 of
+// a named binary, which is Σ's own meaning (OP_SHA256), so each line prints
+// as Σ³² <prose> beneath the file it claims -- the work's statements, dated
+// by the proof above, about binaries the book has never seen. Bytes that are
+// neither (a binary work) stay unshown, and their digest already said
+// everything the chain was told.
+async function subjectInline(proof) {
+  if (!proof.subject) return;
+  try {
+    const res = await fetch(PROOF_DIR + proof.subject);
+    if (!res.ok) return;
+    const bytes = new Uint8Array(await res.arrayBuffer());
+    if (bytes.length > 65536 || !(await attests(proof, bytes))) return;
+    const text = readableUtf8Text(Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join(''));
+    if (text === null) return;
+    const box = $('subject');
+    const lead = document.createElement('div');
+    lead.className = 'subject-lead';
+    const sums = checksumLines(text);
+    if (sums) {
+      lead.textContent = `what the file says — one Σ per binary it names, ${sums.length} in all`;
+      lead.title = 'the checksum file, line by line: each line claims a single SHA-256 (Σ) of a named binary. '
+        + 'The proof above dates these claims; the book has not seen the binaries they speak of.';
+      box.append(lead);
+      const cells = [];
+      for (const { digest, file } of sums) {
+        const line = document.createElement('div');
+        line.className = 'sum-line';
+        const name = document.createElement('span');
+        name.className = 'sum-file';
+        name.textContent = file;
+        line.append(name, figure(digest, 'Σ', 'dt', 32, false,
+          `sha256 of ${file}, as the file prints it — its claim, not the book's`, cells));
+        box.append(line);
+      }
+      setProse(cells);
+    } else {
+      lead.textContent = `the file itself — ${bytes.length} bytes, quoted whole`;
+      lead.title = 'the stamped work, byte for byte; its digest is the one the proof descends from';
+      const quote = document.createElement('div');
+      quote.className = 'subject-text';
+      quote.textContent = text;
+      box.append(lead, quote);
     }
-    input.value = '';
+    box.classList.remove('hidden');
+  } catch { /* the leaf stands without it */ }
+}
+
+// ── The copy menu ─────────────────────────────────────────────────────────
+// The book's idiom (bitcoin-book.html), cut to this leaf's one hash. The
+// header paragraph is the digest -- how this work is asked about anywhere
+// else -- so clicking it offers the two spellings the book keeps: the hex,
+// and the prose that encodes it. Hex is never shown on the page; the menu
+// is where the book hands it over.
+let menuFor = null;
+const copyMenu = $('copy-menu');
+function attachCopyMenu(el, label, hex, proseOf) {
+  el.classList.add('hash-copy');
+  el.tabIndex = 0;
+  el.setAttribute('aria-label', `${label}: ${hex} — click for menu`);
+  const open = (ev) => {
+    // The footnote marker at the paragraph's end keeps its own meaning.
+    if (ev.target.closest && ev.target.closest('a')) return;
+    ev.preventDefault();
+    ev.stopPropagation();
+    menuFor = { hex, prose: proseOf() };
+    $('copy-menu-head').textContent = label;
+    $('copy-hex').textContent = 'Copy hex';
+    $('copy-text').textContent = 'Copy text';
+    copyMenu.classList.remove('hidden');
+    // Anchor at the click; for a keyboard open, sit under the paragraph.
+    const at = ev.type === 'keydown'
+      ? (() => { const r = el.getBoundingClientRect(); return { x: r.left, y: r.bottom + 4 }; })()
+      : { x: ev.clientX, y: ev.clientY };
+    const r = copyMenu.getBoundingClientRect();
+    copyMenu.style.left = `${Math.max(8, Math.min(at.x, innerWidth - r.width - 8))}px`;
+    copyMenu.style.top = `${Math.max(8, Math.min(at.y, innerHeight - r.height - 8))}px`;
+    if (ev.type === 'keydown') $('copy-hex').focus({ preventScroll: true });
+  };
+  // A mouse click on this focusable element would otherwise scroll it into
+  // view; that scroll would trip the dismiss below and close the menu the
+  // instant it opened.
+  el.addEventListener('mousedown', (e) => e.preventDefault());
+  el.addEventListener('click', open);
+  el.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') open(e); });
+}
+const closeCopyMenu = () => { copyMenu.classList.add('hidden'); menuFor = null; };
+function copyItem(id, of) {
+  $(id).addEventListener('click', () => {
+    if (!menuFor) return;
+    navigator.clipboard.writeText(of()).then(() => {
+      $(id).textContent = 'Copied ✓';
+      setTimeout(closeCopyMenu, 650);
+    }).catch(closeCopyMenu);
   });
+}
+copyItem('copy-hex', () => menuFor.hex);
+copyItem('copy-text', () => menuFor.prose);
+document.addEventListener('click', (e) => {
+  if (!copyMenu.classList.contains('hidden') && !copyMenu.contains(e.target)) closeCopyMenu();
+});
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeCopyMenu(); });
+window.addEventListener('scroll', closeCopyMenu, { passive: true });
+
+// ── The footnote ──────────────────────────────────────────────────────────
+// The one place this leaf points out of the book entirely: where the file
+// comes from. The mark restates the register's ‡ₙ and opens the register;
+// the link is the publisher's own copy of the work. A reader's addendum has
+// no source to cite -- the whole point of a private timestamp -- and its
+// footnote says so instead.
+function footnote(proof) {
+  const foot = $('leaf-footnote');
+  const mark = document.createElement('a');
+  mark.className = 'fn-mark';
+  mark.href = './bitcoin-appendix.html?part=proofs';
+  mark.textContent = proof.n ? `‡${toSubscript(proof.n)}` : '‡';
+  mark.title = proof.n ? `cited work ${proof.n} in ${backLabel}`
+    : "your addendum — kept in this browser, outside the edition's numbering";
+  const text = document.createElement('span');
+  text.className = 'fn-text';
+  const source = proof.entry?.source;
+  if (source) {
+    text.append(`${proof.file} — published at `);
+    const a = document.createElement('a');
+    a.href = source;
+    a.rel = 'noopener';
+    try { const u = new URL(source); a.textContent = u.host + decodeURI(u.pathname); } catch { a.textContent = source; }
+    a.title = "the source of the file — outside the book, on its publisher's own server";
+    text.append(a);
+  } else if (proof.kept) {
+    text.append(`${proof.file} — your own copy; the book holds its proof, and the file never left your hands`);
+  } else {
+    text.append(proof.file);
+  }
+  foot.append(mark, text);
+  foot.classList.remove('hidden');
 }
 
 // The readings this leaf can raise: the file's own, where the appendix gave it
@@ -367,7 +589,7 @@ async function setProse(cells) {
   }
   for (const { el, hex, reverse } of cells) {
     try {
-      el.textContent = m.encodeSeedPhrase(reverse ? reverseHex(hex) : hex, m.bookLang(), BEST_OF).prose;
+      el.textContent = m.encodeCanonical(reverse ? reverseHex(hex) : hex, m.bookLang(), BEST_OF).prose;
       el.classList.remove('waiting');
     } catch { el.textContent = 'unsaid'; }
     await new Promise((r) => setTimeout(r, 0));

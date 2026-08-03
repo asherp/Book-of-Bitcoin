@@ -297,7 +297,11 @@ compiled to WASM) is consumed as a published
   (when the shelf takes them) will gather every leaf of one key — so each
   script gets a leaf titled by the passage itself — the script in the book's
   own prose, and not also in base58 or bech32 beneath it: an address is the
-  machine's rendering of the same script, and the book prints its own — with
+  machine's rendering of the same script, and the book prints its own. A
+  member may even be a script no address can write — a raw scriptPubKey as
+  hex, `script:76a90088ac` in the search grammar, read off the same Esplora
+  endpoints by its scripthash — which is how the shelf holds the Mt. Gox
+  void, a ledger whose name only the bytes can spell — with
   the chapters that passage appears in listed below, newest first by
   reference; past the last passage the ledger's whole table of entries,
   organized by time. And entry leaves underneath (one

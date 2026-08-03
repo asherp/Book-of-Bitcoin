@@ -95,7 +95,7 @@ export async function resolveCitation(cit, esplora) {
 // start-up -- loadEditorial() in tools/editorial.mjs. Unloaded, this simply
 // finds nothing, and a reply carries its citation without a curated name.
 export function titleFor(height, index, txid) {
-  const passages = places().filter((p) => !p.page && !p.address);
+  const passages = places().filter((p) => !p.page && !p.address && !p.script);
   const hit = passages.find((p) => p.id === txid)
     || passages.find((p) => p.id === String(height) && (p.index ?? 0) === index);
   return hit ? placeTitle(hit) : null;

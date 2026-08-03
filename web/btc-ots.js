@@ -232,12 +232,22 @@ function attestation(tag, payload, msg, steps) {
 // -- the usual reason being a pending calendar alongside a block that has
 // already confirmed -- so a file can hold several attestations at once, and
 // they are all worth reporting.
+//
+// A pending attestation is a question with an address on it: the calendar it
+// names will answer /timestamp/<commitment> with the rest of the proof, once
+// a block has confirmed it. So a pending record carries here the two things
+// that answer needs -- `commitment`, the digest as it stood when the branch
+// broke off, and `span`, where in the file the record's own bytes sit, which
+// is exactly the stretch an upgrade replaces with the calendar's reply.
 async function walk(r, msg, steps, found, depth) {
   if (depth > 256) throw new Error('proof nested too deeply');
   for (;;) {
     const tag = r.u8();
     if (tag === 0x00) {                                    // an attestation ends this branch
-      found.push(attestation(bytesToHex(r.raw(8)), r.varbytes(), msg, steps));
+      const start = r.pos - 1;
+      const att = attestation(bytesToHex(r.raw(8)), r.varbytes(), msg, steps);
+      if (att.kind === 'pending') { att.commitment = bytesToHex(msg); att.span = [start, r.pos]; }
+      found.push(att);
       return;
     }
     if (tag === 0xff) {                                    // a fork: one branch here, then carry on

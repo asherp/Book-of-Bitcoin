@@ -215,6 +215,10 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 .lang-row .lang-mark { font:600 11px/1 'IBM Plex Mono',monospace; color:var(--accent); visibility:hidden; }
 .lang-row.current { color:var(--ink); }
 .lang-row.current .lang-mark { visibility:visible; }
+/* ── amount notation picker: the language rows' dress, worn by figures --
+      tabular, so the three samples read as the column their amounts will
+      form on the page. ── */
+#amount-rows .lang-row { font-variant-numeric: tabular-nums; }
 
 /* ── data-source picker: choose the Esplora-compatible endpoint, add custom ── */
 .endpoint-row { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
@@ -361,6 +365,10 @@ button:disabled { opacity: .4; cursor: not-allowed; }
    (.chapter-hash carries the same mark on the book leaf, where the book's
    target sits right beneath its title.) */
 .chapter-frontispiece .cfx-gold, .chapter-hash .cfx-gold, .section-hash .cfx-gold { color: var(--accent); font-weight: 700; font-style: normal; }
+/* The line a citing page pointed at (?hl=merkle — a proof leaf's root
+   citation): the record's own ink and a bold hand, against the
+   frontispiece's dim voice. */
+.chapter-frontispiece .cfx.cite-hit { color: var(--ink); font-weight: 600; }
 /* The book leaf's two targets, the opening ceiling and the closing one, a row
    each, and beneath them what the retarget between did to the difficulty.
    Nothing joins the rows: they are one field stated twice, and the line break
@@ -488,6 +496,25 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 #page-prev { grid-column: 1; justify-self: start; }
 .section-nav .nav-keys { grid-column: 2; display: flex; align-items: center; justify-content: center; gap: 20px; }
 #page-next { grid-column: 3; justify-self: end; }
+/* The foot steppers wear entry NAMES from the contents walk, not the
+   eyebrow's terse chapter numbers, so at the shared 14px they crowd the bar.
+   A step down keeps both names on one line more often and lets the foot bar
+   sit lighter than the head; the keys beside them stay at their 11px. */
+.section-nav button { font-size: 12px; }
+/* The foot steppers wear entry NAMES (the contents walk), which can run long:
+   the name ellipsizes inside its span while the chevron -- the button's own
+   ::before / ::after, a flex item beside it -- always survives the cut. */
+#page-prev, #page-next { display: flex; align-items: baseline; min-width: 0; max-width: 100%; }
+#page-prev .step-text, #page-next .step-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* On a phone the keys leave the names a few letters each, so the bar takes
+   two rows: the page's keys above -- nearest the sheets they raise -- and
+   the walk's two names on the bottom line. */
+@media (max-width: 560px) {
+  .section-nav { grid-template-columns: 1fr 1fr; gap: 8px 16px; }
+  .section-nav .nav-keys { grid-column: 1 / -1; grid-row: 1; }
+  #page-prev { grid-column: 1; grid-row: 2; }
+  #page-next { grid-column: 2; grid-row: 2; }
+}
 .commentary-body { padding-bottom: 16px; }
 /* The sheet's own typography — the measure, the readings, the byline, the terms
    — is commentary.css, shared with the Ledger's leaf-borne readings, so a
@@ -615,9 +642,10 @@ button:disabled { opacity: .4; cursor: not-allowed; }
   column-gap: 1.3em; align-items: start;
 }
 .tx-out-script { grid-column: 1; min-width: 0; }
-/* Amounts right-align to the page edge, like a ledger column; they read in
-   bitcoin (₿) with a fixed eight decimals and tabular figures, so the column
-   aligns on the point (see formatBtc in btc-prose.js). */
+/* Amounts right-align to the page edge, like a ledger column, in tabular
+   figures so the column aligns on the point -- read in bitcoin (₿, a fixed
+   eight decimals) or in either satoshi notation, as the settings panel's
+   Amounts rows choose (see formatAmount in btc-prose.js). */
 /* Sized like the .tx-note it also is (13.5px), but from the margins' scale --
    the amounts are the right margin's text. nowrap: under fit-content sizing
    an amount must count as one piece, never wrap its ₿ onto a line of its own
@@ -634,16 +662,36 @@ button:disabled { opacity: .4; cursor: not-allowed; }
    difference the miner keeps: the fee. No labels; the geometry is the
    equation, inputs − fee = outputs. The sums are DERIVED -- arithmetic over
    the record, not bytes on the wire -- so they do not sit in the
-   transaction's own flow: they lead the foot region, below the section's
-   one rule (#ch-footnotes-section), apart from the record they total and
-   above the witness footnotes when there are any. The inputs' sum waits on
-   the margin citations resolving, and an input the book cannot price
-   leaves the sum and the fee unsaid (⋯). A coinbase has no such line: its
-   input brings no prior output, and the block's fees arrive in its
-   outputs, with the subsidy. */
-.tx-totals { display: flex; justify-content: space-between; align-items: baseline; gap: 1em; margin: 0 0 1.6em; font: italic 400 calc(13.5px * var(--scale-margins, 1))/1.4 'Newsreader',serif; color: var(--dim); font-variant-numeric: tabular-nums; }
+   transaction's own flow: they ride in their own band (#ch-totals, below),
+   apart from the record they total and above the witness footnotes when
+   there are any. The inputs' sum waits on the margin citations resolving,
+   and an input the book cannot price leaves the sum and the fee unsaid (⋯).
+   A coinbase's line inverts the middle sign: its input brings no prior
+   output, so the subsidy the schedule mints at this height stands at the
+   left and the chapter's gathered fees between, + fee -- the miner's take
+   arriving where every other section's leaves. */
+.tx-totals { display: flex; justify-content: space-between; align-items: baseline; gap: 1em; margin: 0; font: italic 400 calc(13.5px * var(--scale-margins, 1))/1.4 'Newsreader',serif; color: var(--dim); font-variant-numeric: tabular-nums; }
 .tx-totals .t-fee { color: var(--meta); }
 .tx-totals .t-out { padding-right: 20px; }   /* the amounts column's ribbon room, so the sum sits on their point */
+/* The balance line's seat: sticky at the screen bottom while the record
+   scrolls -- the rule its top edge, prose scrolling behind its page-colour
+   backing, the Ledger's totals-bar manner -- so the books stay in sight for
+   the whole read, and it settles into its natural place at the section's
+   foot once the reader scrolls past it, revealing the witness footnotes
+   below. It rides above the foot nav, whose height is whatever the walk's
+   names and the safe-area make it -- measured, not assumed: --footnav-h is
+   kept current by a ResizeObserver on the bar (see the script), and the
+   safe-area inset stands in where the nav is hidden entirely. Below the
+   nav's z-index: the nav is chrome, this is still the page. */
+#ch-totals { position: sticky; bottom: max(var(--footnav-h, 0px), env(safe-area-inset-bottom)); z-index: 30;
+  margin-top: 48px; padding: 10px 0 12px; border-top: 1px solid var(--rule); background: var(--page); }
+#ch-totals:empty { display: none; }
+/* With the balance line carrying the section's rule, the footnotes region
+   that follows drops its own -- one rule, as before, now on the band. A
+   foot with footnotes but no balance line keeps the rule where it always
+   was (every section prices one now, the coinbase from the schedule, so
+   this is the fallback rather than a standing case). */
+#ch-totals:not(:empty) + .chapter-footnotes { margin-top: 0; border-top: none; padding-top: 12px; }
 .tx-locktime { grid-column: left / -1; grid-row: 3; text-align: center; font-style: normal; }
 /* An output the reader has kept under a name (or the contents already
    names): the title stands centered above the output's own rows, spanning
@@ -907,6 +955,13 @@ button:disabled { opacity: .4; cursor: not-allowed; }
         <span class="fs-label">Commentary</span><button type="button" class="ghost-btn" data-fs="commentary" data-fs-d="-1" aria-label="Smaller commentary text">A−</button><span class="fs-value" data-fs-v="commentary">100%</span><button type="button" class="ghost-btn" data-fs="commentary" data-fs-d="1" aria-label="Larger commentary text">A+</button>
       </div>
       <div class="fontscale-foot"><button type="button" id="fontscale-reset" class="ghost-btn">Reset</button></div>
+      <div class="settings-title">Amounts</div>
+      <!-- One row per notation the page prints value in — bitcoin with the
+           ₿ sign, satoshis with the book's middle-dot grouping, or the bare
+           satoshi integer — each row labelled by the same sample amount, so
+           the choice shows itself; filled by renderAmountRows. Notation,
+           not content: every form carries the same satoshis. -->
+      <div id="amount-rows" class="lang-rows"></div>
       <div class="settings-title">Data source</div>
       <div class="endpoint-row">
         <select id="endpoint-select" class="endpoint-select" aria-label="Data source endpoint"></select>
@@ -976,11 +1031,14 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 
     <div class="chapter-body" id="ch-paragraphs"></div>
 
+    <!-- The balance line leads the foot region: the sums are derived, not
+         bytes on the wire, so they read apart from the record they total --
+         in a band of their own, sticky at the screen bottom above the foot
+         nav while the record scrolls, settling into its natural place once
+         the reader scrolls past it to reveal the witness footnotes below
+         (see the #ch-totals CSS). -->
+    <div id="ch-totals"></div>
     <div class="chapter-footnotes hidden" id="ch-footnotes-section">
-      <!-- The balance line leads the foot region: the sums are derived, not
-           bytes on the wire, so they read below the rule, apart from the
-           record they total. -->
-      <div id="ch-totals"></div>
       <div id="ch-footnotes"></div>
     </div>
     </div>
@@ -993,7 +1051,7 @@ button:disabled { opacity: .4; cursor: not-allowed; }
          about the page in hand, and it is present only when this passage has a
          curated reading -- the notation key is the same on every page. -->
     <nav class="section-nav">
-      <button type="button" id="page-prev" class="hidden" aria-label="Previous section" title="Previous section"></button>
+      <button type="button" id="page-prev" class="hidden" aria-label="Previous contents entry" title="Previous contents entry"></button>
       <div class="nav-keys">
         <details class="nav-sheet commentary hidden" id="commentary">
           <summary title="Commentary on this passage — a reading of the record, credited to whoever wrote it">Commentary</summary>
@@ -1004,7 +1062,7 @@ button:disabled { opacity: .4; cursor: not-allowed; }
           <div class="notation-body nav-sheet-body"></div>
         </details>
       </div>
-      <button type="button" id="page-next" class="hidden" aria-label="Next section" title="Next section"></button>
+      <button type="button" id="page-next" class="hidden" aria-label="Next contents entry" title="Next contents entry"></button>
     </nav>
   </article>
 
@@ -1027,7 +1085,7 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 </div>
 
 <script type="module">
-import { init, encodeSeedPhrase, MSG_LANGS, bookLang, setBookLang } from './glossia-msg.js';
+import { init, encodeCanonical, MSG_LANGS, bookLang, setBookLang } from './glossia-msg.js';
 import { t as tr, localizeText, localizeAttr, numberName } from './btc-strings.js';
 import { parseTransaction, computeTxid, parseBlockHeader, computeBlockHash, bitsToDifficulty, scriptToAddress } from './btc-tx.js';
 // The reader's ledger shelf (Appendix III): a locking script kept from a
@@ -1035,8 +1093,8 @@ import { parseTransaction, computeTxid, parseBlockHeader, computeBlockHash, bits
 // Ledger page's own keep button writes. INDEXED is the curated shelf, whose
 // titles are the keep line's defaults.
 import { keptLedgers, saveKeptLedgers, INDEXED } from './btc-index.js';
-import { composeTransactionFields, composeBlockHeaderFields, bitsInfo, groupDigits, formatBtc, renderWitness, toSuperscript, timestampInfo } from './btc-prose.js';
-import { volumeBookChapter, heightOf, windowStartOf, retargetInside, toRoman, reference, parseReference, footnoteMark, latinRefOf } from './btc-citation.js';
+import { composeTransactionFields, composeBlockHeaderFields, bitsInfo, groupDigits, formatBtc, formatAmount, formatAmountAs, amountUnit, setAmountUnit, renderWitness, toSuperscript, timestampInfo } from './btc-prose.js';
+import { volumeBookChapter, heightOf, windowStartOf, retargetInside, subsidyAt, toRoman, reference, parseReference, footnoteMark, latinRefOf } from './btc-citation.js';
 import { loadNotables, places, placeTitle, blocksEta, appendix } from './btc-contents.js';
 import { queueLabel } from './btc-mempool.js';
 import { toSubscript } from './btc-sigla.js';
@@ -1425,7 +1483,7 @@ const lazyEncode = (() => {
     if (hex === undefined) return;   // already filled
     delete el.dataset.hex;
     el.classList.remove('glossia-lazy');
-    el.innerHTML = encodeSeedPhrase(hex, bookLang(), BEST_OF).prose;   // Glossia prose -- safe as innerHTML
+    el.innerHTML = encodeCanonical(hex, bookLang(), BEST_OF).prose;   // Glossia prose -- safe as innerHTML
   };
   // rootMargin pre-encodes a chunk before it enters view, so a scrolling reader
   // almost never sees the raw placeholder.
@@ -1486,6 +1544,13 @@ let state = null;   // { hash, height, block, txids, index }
 // fetch the next block and having it 404 -- so it's cached once learned
 // rather than reprobed on every step off the same last block.
 let tipHeight = null;
+
+// Whether a linear FORWARD neighbour exists -- the swipe and arrow-key guard
+// (navAvailable), set by labelNav. The foot buttons used to carry this
+// through their visibility; they walk the table of contents now, so the
+// gestures keep their own flag. (Backward needs none: navAvailable judges it
+// from the position directly.)
+let sectionNextExists = false;
 
 // The on-screen transaction's per-input witnesses ({ n, hex }), stashed so they
 // can be encoded lazily -- as numbered footnotes -- when the reader clicks an
@@ -1714,6 +1779,14 @@ async function projectedCitation(txid) {
   return null;
 }
 
+// An amount's hover: whatever the chosen notation leaves unsaid. Reading in
+// bitcoin, the hover carries the grouped satoshi count, as it always has;
+// reading in either satoshi notation, it carries the ₿ form instead — the
+// figure a reader would recognise is never further away than the hover.
+const amountTitle = (sats) => (amountUnit() === 'btc'
+  ? `${groupDigits(String(sats))} satoshis`
+  : formatBtc(sats));
+
 // Fill each pending citation cell once its reference resolves; skip if the
 // reader has since paged to another section (gen no longer current).
 // Resolves to each input's spent value in pending order (satoshis; null
@@ -1742,12 +1815,12 @@ async function resolveCitations(pending, gen) {
         cite.title = `${txid}:${vout} — unmined, and in no drafted chapter: it has no reference yet`;
       }
       // The amount of the referenced output -- what this input spends -- sits on
-      // the line beneath the reference, after the sequence mark, in parentheses:
-      // the mark for value flowing IN, where an output's amount (value flowing
-      // out) stands bare. A draft's outputs read the same as a mined one's.
+      // the line beneath the reference, after the sequence mark, bare like the
+      // output amounts opposite: the margin it stands in already says which way
+      // the value flows. A draft's outputs read the same as a mined one's.
       if (amtVal && outputs && outputs[vout]) {
-        amtVal.textContent = `(${formatBtc(outputs[vout].value)})`;
-        amtVal.title = `the amount this input spends: ${groupDigits(String(outputs[vout].value))} satoshis`;
+        amtVal.textContent = formatAmount(outputs[vout].value);
+        amtVal.title = `the amount this input spends: ${amountTitle(outputs[vout].value)}`;
       }
       return outputs && outputs[vout] ? outputs[vout].value : null;
     } catch (e) {
@@ -2622,7 +2695,7 @@ async function sectionFields(txid) {
     // own default is english); the cache is flushed when the choice changes,
     // so an entry never outlives the language it was composed in.
     fields: composeTransactionFields(parsed, BEST_OF, lazyEncode.placeholder,
-      (hex, lang, bestOf) => encodeSeedPhrase(hex, bookLang(), bestOf)),
+      (hex, lang, bestOf) => encodeCanonical(hex, bookLang(), bestOf)),
     verified: verifiedTxid === txid,
     // Which of the notation key's script patterns this section puts on the
     // page, for the key's filter. Classified once, beside the fields.
@@ -2854,10 +2927,10 @@ function renderFrontispiece(header) {
   const prevParts = isGenesisPrev ? null : blockHashParts(header.prevBlockHash);
   const prevProse = isGenesisPrev
     ? '⓪' + toSuperscript(256)
-    : encodeSeedPhrase(prevParts.hex, bookLang(), BEST_OF).prose;
+    : encodeCanonical(prevParts.hex, bookLang(), BEST_OF).prose;
   // The merkle root isn't proof-of-work-constrained, so unlike a block hash
   // it has no expected run of zero bytes worth trimming.
-  const merkleProse = encodeSeedPhrase(reverseHex(header.merkleRoot), bookLang(), BEST_OF).prose;
+  const merkleProse = encodeCanonical(reverseHex(header.merkleRoot), bookLang(), BEST_OF).prose;
   // Each on-chain hash leads with a bold-gold mark (⌘ for a block hash, ⋔ for
   // the merkle root) that carries the copy menu; the prose beside it is not
   // itself clickable. The rest of the fields are plain decoded numbers.
@@ -2875,7 +2948,7 @@ function renderFrontispiece(header) {
           zeros: prevParts.zeroBits ? { sup: prevParts.zeroBits, title: zeroBitsTitle(prevParts.zeroBits) } : null,
           copy: { hex: header.prevBlockHash, label: 'previous block hash' } },
     { text: merkleProse, mark: '⋔', markClass: 'merkle-mark', sup: 32, supTitle: '32 bytes',
-      copy: { hex: header.merkleRoot, label: 'merkle root' } },
+      key: 'merkle', copy: { hex: header.merkleRoot, label: 'merkle root' } },
     { text: hf.timestamp, title: hf.timestampTitle },
     // The proof of work, stated as the inequality it is: β₇₈ < 2¹⁶⁰·213529,
     // in nBits' own wire slot. The gold β mark's subscript is the target's
@@ -2896,9 +2969,11 @@ function renderFrontispiece(header) {
     { text: hf.nonce, mark: 'η', markClass: 'fx-mark', title: hf.nonceTitle,
       menu: { hex: (header.nonce >>> 0).toString(16).padStart(8, '0'), label: 'nonce', prose: hf.nonce } },
   ];
-  for (const { text, title, copy, mark, markClass, gold, sup, supTitle, zeros, gap, menu } of items) {
+  const claimable = [];   // the lines a citing page can make a claim about
+  for (const { text, title, copy, mark, markClass, gold, sup, supTitle, zeros, gap, menu, key } of items) {
     const span = document.createElement('span');
     span.className = gold ? 'cfx cfx-gold' : 'cfx';
+    if (key) { span.dataset.fx = key; claimable.push({ key, hex: copy?.hex, span }); }
     if (mark && copy) {
       fillMarkedHash(span, mark, markClass, copy.hex, copy.label, text, sup, supTitle, zeros);
     } else if (mark) {
@@ -2919,6 +2994,24 @@ function renderFrontispiece(header) {
       if (menu) attachHashCopy(span, menu.hex, menu.label, menu.prose);   // β: the whole mark is the handle
     }
     el.append(span);
+  }
+  // A citation arriving from a cited work's leaf carries a claim about one of
+  // these lines (?hl=merkle:<hex>, the root its proof's ladder ends on), and
+  // the boldface is a verdict, not an arrow: the claimed bytes are compared
+  // against this page's own value -- parsed from the raw header, not taken
+  // from the link -- and the line is set in the record's ink and a bold hand
+  // ONLY where they are equal. A claim the header does not carry bolds
+  // nothing: the page stays plain, and the absence is the answer. One-shot:
+  // consumed on first render, never rewritten forward.
+  if (highlightClaim) {
+    const { key, hex } = highlightClaim;
+    highlightClaim = null;
+    const hit = claimable.find((c) => c.key === key && c.hex === hex);
+    if (hit) {
+      hit.span.classList.add('cite-hit');
+      hit.span.title = 'the citing proof ends on exactly these 32 bytes — the bold is the match, re-checked on this page';
+      setTimeout(() => hit.span.scrollIntoView({ behavior: 'smooth', block: 'center' }), 150);
+    }
   }
 }
 
@@ -3013,8 +3106,14 @@ function renderChapterHead(onTitlePage) {
   // case here, which kept it out of the table of contents.
   // A page: 'book' entry shares the height namespace (its id is its book's
   // first block) but names the book's leaf, not this chapter -- excluded here.
+  // Every level owns its own name and no name bleeds up: only a
+  // chapter-deep entry (no index -- the entry IS this block) names the
+  // chapter, exactly as an entry citing a finer coordinate names that
+  // coordinate and not its section. A chapter whose famous thing is a
+  // section (the halvings, cited at their coinbase) wears no subtitle
+  // unless the contents also names the chapter itself.
   const eventTitles = places()
-    .filter((p) => p.id === String(state.height) && !p.page && !p.address)
+    .filter((p) => p.id === String(state.height) && p.index == null && !p.page && !p.address && !p.script)
     .map(placeTitle);
   const eventTitle = eventTitles[0];
   $('ch-title').textContent = `${tr('Chapter')} ${chapterName(chapter)}`;
@@ -3054,7 +3153,7 @@ function renderChapterHead(onTitlePage) {
   $('ch-frontispiece').classList.toggle('hidden', !onTitlePage);
   if (onTitlePage) {
     const parts = blockHashParts(state.hash);
-    const { prose: hashProse } = encodeSeedPhrase(parts.hex, bookLang(), BEST_OF);
+    const { prose: hashProse } = encodeCanonical(parts.hex, bookLang(), BEST_OF);
     // The hash prose sits between its marks -- ⌘ᵐ opening, the encoded
     // remainder, then the ⓪ⁿ proof-of-work zeros that follow those bytes; the
     // chapter title above it is the clickable handle for its copy/bookmark menu.
@@ -3154,7 +3253,7 @@ function renderProjectedHead(onTitlePage) {
     if (k === 0) {
       const prevTrimmed = trimTrailingZeroBytes(reverseHex(tipCore.hash));
       const prevBytes = prevTrimmed.length / 2;
-      const prose = encodeSeedPhrase(prevTrimmed, bookLang(), BEST_OF).prose;
+      const prose = encodeCanonical(prevTrimmed, bookLang(), BEST_OF).prose;
       fillMarkedHash(prevSpan, 'h', 'dt', tipCore.hash, 'previous block hash', prose, prevBytes,
         prevBytes < 32
           ? `${prevBytes} bytes encoded — the hash's ${32 - prevBytes} trailing zero bytes (required by proof-of-work) carry nothing and are dropped`
@@ -3480,7 +3579,7 @@ function renderGhostTombstone(txid) {
   $('section-title').classList.remove('hidden');
   $('section-hash').classList.remove('hidden');
   $('section-meta').classList.add('hidden');   // never mined: no date, no depth
-  const { prose: txidProse } = encodeSeedPhrase(reverseHex(txid), bookLang(), BEST_OF);
+  const { prose: txidProse } = encodeCanonical(reverseHex(txid), bookLang(), BEST_OF);
   $('section-hash').textContent = txidProse;
   const sectionTitle = $('section-title');
   sectionTitle.textContent = '';
@@ -3514,7 +3613,7 @@ function renderGhostTombstone(txid) {
   const m = ghostMeta.get(txid);
   const fmtR = (f) => f >= 10 ? String(Math.round(f)) : String(Math.round(f * 10) / 10);
   note.textContent = (m
-    ? `${(m.fee ?? 0).toLocaleString()} sat over ${(m.vsize ?? 0).toLocaleString()} vB (~${fmtR(m.rate ?? (m.vsize ? m.fee / m.vsize : 0))} sat/vB), moving ${formatBtc(m.value ?? 0)}${m.time ? ` — replaced ${timestampInfo(m.time).mark}` : ''}. `
+    ? `${(m.fee ?? 0).toLocaleString()} sat over ${(m.vsize ?? 0).toLocaleString()} vB (~${fmtR(m.rate ?? (m.vsize ? m.fee / m.vsize : 0))} sat/vB), moving ${formatAmount(m.value ?? 0)}${m.time ? ` — replaced ${timestampInfo(m.time).mark}` : ''}. `
     : '')
     + 'Its raw text is gone with the mempools that dropped it — only its place in the succession survives.';
   body.append(note);
@@ -3574,7 +3673,7 @@ function renderChapter(para) {
   // This section's own txid, encoded as prose beneath the section title. Reversed
   // to internal byte order first (like the block hash) so it carries the txid's
   // actual bytes; every byte kept, since a txid has no droppable leading zeros.
-  const { prose: txidProse } = encodeSeedPhrase(reverseHex(para.txid), bookLang(), BEST_OF);
+  const { prose: txidProse } = encodeCanonical(reverseHex(para.txid), bookLang(), BEST_OF);
   // The ⌘ identity mark leads, as on the chapter hash -- a txid is the same
   // double-SHA256, with no proof-of-work zeros to state: all 256 bits encoded,
   // and the superscript (bits, ⌘'s unit) says so. The section title carries
@@ -3891,12 +3990,15 @@ function renderChapter(para) {
     if (out.scriptAscii) addQuote(scriptCell, out.scriptAscii); else addLine(scriptCell, out.script);
     const valueCell = document.createElement('div');
     valueCell.className = 'tx-note tx-out-value';
-    valueCell.textContent = out.value;
-    valueCell.title = out.valueTitle;
+    // The composed fields carry the amount raw (out.sats) beside the ₿ string;
+    // printing from the raw figure at paint time is what lets the Amounts
+    // setting reprint a section without re-composing it.
+    valueCell.textContent = formatAmount(out.sats);
+    valueCell.title = amountTitle(out.sats);
     // The amount is this output's handle: click it to copy or bookmark the
     // output itself -- §section.vout, the finest place the book cites.
     attachHashCopy(valueCell, para.txid, 'output',
-      `${reference(state.height)} §${para.num}.${i} — ${out.value}`, i);
+      `${reference(state.height)} §${para.num}.${i} — ${formatAmount(out.sats)}`, i);
     // Forward citation placeholder: filled with the section that later spent
     // this output, once the outspends resolve. An unspent output keeps it
     // empty -- still-live value has no forward reference.
@@ -3919,7 +4021,13 @@ function renderChapter(para) {
   // in the flow (appended there with the footnotes reset, further down).
   // The outputs' sum is the transaction's own; the inputs' and the fee fill
   // in once every margin citation has resolved a value, and stay ⋯ if any
-  // could not be priced. A coinbase closes without one.
+  // could not be priced. A coinbase's line inverts the middle sign: its
+  // left station is the subsidy the coinage schedule mints at this height
+  // (btc-citation's subsidyAt -- arithmetic on the height, nothing to
+  // resolve), and the fees the chapter's sections paid stand between it
+  // and the outputs' sum as + fee, the miner's take arriving where every
+  // other section's leaves. A miner that claimed less than the schedule
+  // allows shows the shortfall signed −: value forfeited to no one.
   let totals = null, fillTotals = null;
   if (f.inputs.length && !f.inputs.some((i) => i.isNullPrevout)) {
     const sumOut = f.outputs.reduce((a, o) => a + o.sats, 0);
@@ -3933,18 +4041,38 @@ function renderChapter(para) {
     tFee.textContent = '⋯';
     const tOut = document.createElement('span');
     tOut.className = 't-out';
-    tOut.textContent = formatBtc(sumOut);
-    tOut.title = `the outputs carry ${groupDigits(String(sumOut))} satoshis`;
+    tOut.textContent = `= ${formatAmount(sumOut)}`;
+    tOut.title = `the outputs carry ${amountTitle(sumOut)}`;
     totals.append(tIn, tFee, tOut);
     fillTotals = (values) => {
       if (!values || values.length !== f.inputs.length || values.some((v) => v == null)) return;
       const sumIn = values.reduce((a, v) => a + v, 0);
-      tIn.textContent = formatBtc(sumIn);
-      tIn.title = `the inputs bring ${groupDigits(String(sumIn))} satoshis`;
+      tIn.textContent = formatAmount(sumIn);
+      tIn.title = `the inputs bring ${amountTitle(sumIn)}`;
       const fee = sumIn - sumOut;
-      tFee.textContent = `− ${formatBtc(fee)}`;
-      tFee.title = `the fee: ${groupDigits(String(fee))} satoshis — the difference, claimed by the chapter's miner`;
+      tFee.textContent = `− ${formatAmount(fee)}`;
+      tFee.title = `the fee: ${amountTitle(fee)} — the difference, claimed by the chapter's miner`;
     };
+  } else if (f.inputs.length) {
+    const sumOut = f.outputs.reduce((a, o) => a + o.sats, 0);
+    const subsidy = subsidyAt(state.height);
+    const fee = sumOut - subsidy;
+    totals = document.createElement('div');
+    totals.className = 'tx-totals';
+    const tIn = document.createElement('span');
+    tIn.textContent = formatAmount(subsidy);
+    tIn.title = `the subsidy: ${amountTitle(subsidy)} — what the coinage schedule mints at this height`;
+    const tFee = document.createElement('span');
+    tFee.className = 't-fee';
+    tFee.textContent = `${fee < 0 ? '−' : '+'} ${formatAmount(Math.abs(fee))}`;
+    tFee.title = fee < 0
+      ? `${amountTitle(-fee)} short of the schedule — value the miner left unclaimed, forfeited to no one`
+      : `the fees: ${amountTitle(fee)} — what the chapter's sections paid, gathered here`;
+    const tOut = document.createElement('span');
+    tOut.className = 't-out';
+    tOut.textContent = `= ${formatAmount(sumOut)}`;
+    tOut.title = `the outputs carry ${amountTitle(sumOut)}`;
+    totals.append(tIn, tFee, tOut);
   }
   const lock = document.createElement('div');
   lock.className = 'tx-note tx-locktime';
@@ -3962,20 +4090,18 @@ function renderChapter(para) {
   resolveForwardCitations(para.txid, fwdCells, gen);
   resolveCitedWorks(para.num, citedCells, gen);
 
-  // The foot region resets, then the balance line takes its head -- shown
-  // whenever there is a line to show, so a legacy section with no witness
-  // still gets its rule and its sums. The footnotes expand automatically
-  // once the transaction is on screen (renderFootnotes runs async so the
-  // prose paints first, and unhides the section itself for witness-bearing
-  // coinbases, whose foot carries footnotes but no balance line).
+  // The foot region resets, then the balance line takes its band -- the
+  // sticky bar above the foot nav (see #ch-totals), which its own :empty
+  // rule shows and hides, so a legacy section with no witness still gets
+  // its rule and its sums. The footnotes expand automatically once the
+  // transaction is on screen (renderFootnotes runs async so the prose
+  // paints first, and unhides the footnotes region for every section that
+  // has witnesses -- a coinbase's foot carries them with no balance line).
   $('ch-footnotes').innerHTML = '';
   $('ch-totals').innerHTML = '';
   $('ch-footnotes-section').classList.add('hidden');
   footnotesLoaded = false;
-  if (totals) {
-    $('ch-totals').append(totals);
-    $('ch-footnotes-section').classList.remove('hidden');
-  }
+  if (totals) $('ch-totals').append(totals);
   renderFootnotes(gen);
 
   labelNav();
@@ -3983,6 +4109,121 @@ function renderChapter(para) {
 
 // Label the chapter/section nav buttons, and hide any that lead nowhere (Genesis
 // has no earlier chapter/section; the chain tip's last section none later).
+// ── The foot nav's contents walk ──────────────────────────────────────────
+// The foot bar's left and right steppers hop between the table of contents'
+// entries -- the same curated places its rows keep, in the same reading
+// order -- rather than paging section by section (the swipe and the arrow
+// keys still page; see navAvailable). The walk closes into a ring through
+// the chain's two ends: past the last curated place lies the latest block,
+// and past the latest block the walk wraps to Genesis -- so on the tip's
+// page the right stepper offers ■1, and on Genesis's page the left offers
+// the tip.
+//
+// A curated place cited by txid holds its (height, §) only once its
+// merkle proof answers -- the same lookup, and the same banked 'placements'
+// archive, the contents page uses -- so those places join the walk as they
+// resolve, offline and for free on every visit after the first.
+const GENESIS_COINBASE = '4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b';
+const txPlacements = new Map();   // txid -> { height, pos }
+let txPlacementsKicked = false;
+function kickTxPlacements() {
+  if (txPlacementsKicked) return;
+  txPlacementsKicked = true;
+  const hexes = [...new Set(places().filter((p) => !p.address && !p.script && /^[0-9a-f]{64}$/i.test(p.id)).map((p) => p.id.toLowerCase()))];
+  Promise.all(hexes.map(async (id) => {
+    if (id === GENESIS_COINBASE) { txPlacements.set(id, { height: 0, pos: 0 }); return; }
+    try {
+      const kept = await storeGet('placements', id);
+      if (kept) { txPlacements.set(id, kept); return; }
+      const res = await esploraFetch(`${ESPLORA}/tx/${id}/merkle-proof`);
+      if (!res.ok) return;
+      const mp = await res.json();
+      txPlacements.set(id, { height: mp.block_height, pos: mp.pos });
+      storePut('placements', id, { height: mp.block_height, pos: mp.pos });
+    } catch { /* unresolved: the walk skips this place until a later visit */ }
+  })).then(() => { if (state) labelNav(); });   // re-label with the walk complete
+}
+
+// Every stop on the walk, sorted into reading order. rank is the page's seat
+// within its height, on the same scale state.index speaks: volume leaf -3,
+// book leaf -2, the chapter page -1, sections 0…; sub orders places that
+// share a section (an output, a witness) without ever being a stop apart.
+// The latest block closes the ring -- a virtual stop, unless the tip's own
+// chapter is already curated.
+function navTargets() {
+  kickTxPlacements();
+  const items = [];
+  for (const p of places()) {
+    if (p.address || p.script) continue;
+    let height, rank;
+    if (/^[0-9a-f]{64}$/i.test(p.id)) {
+      const mp = txPlacements.get(p.id.toLowerCase());
+      if (!mp) continue;
+      height = mp.height; rank = mp.pos;
+    } else {
+      height = Number(p.id);
+      // A relative id counts back from the tip -- the contents' own "Latest
+      // block" row is `id: '-1'` -- so it places only once the tip is known,
+      // and it IS the ring's closing stop (its stored height follows the
+      // chain: contentsStep re-resolves it through openLookup(-1)).
+      if (height < 0) {
+        if (tipHeight === null) continue;
+        height = tipHeight + height + 1;
+        if (height < 0) continue;
+      }
+      rank = p.page === 'volume' ? -3 : p.page === 'book' ? -2 : (p.index ?? -1);
+    }
+    // The ring ends at the latest block: a curated height consensus has fixed
+    // but no block has reached (a scheduled fork's chapters) stays off the
+    // walk, so forward from the tip wraps to Genesis rather than stepping
+    // into unwritten chapters. The contents page still lists them.
+    if (tipHeight !== null && height > tipHeight) continue;
+    items.push({ height, rank, sub: p.out ?? (p.wit != null ? 0x10000 + p.wit : -1), place: p, tip: p.id === '-1' || undefined });
+  }
+  items.sort((a, b) => a.height - b.height || a.rank - b.rank || a.sub - b.sub);
+  if (tipHeight !== null && !items.some((i) => i.height === tipHeight && i.rank === -1)) {
+    items.push({ height: tipHeight, rank: -1, sub: -1, tip: true });
+  }
+  return items;
+}
+
+// A stop's face on the button: the entry's NAME, as the contents' rows print
+// it (localized, with its `as` where an entry keeps several places) -- the
+// notation and the full reference ride in the hover instead. Long names are
+// ellipsized by the bar's CSS, never wrapped.
+function navText(i) {
+  return i.place ? placeTitle(i.place) : tr('the latest block');
+}
+function navLabel(i) {
+  const ref = i.rank >= 0 ? `${referenceOf(i.height)} §${i.rank + 1}` : referenceOf(i.height);
+  return `${i.place ? placeTitle(i.place) : tr('the latest block')} (${ref})`;
+}
+
+// Step to the nearest contents entry in that direction, wrapping through the
+// ends: forward off the tip lands on Genesis, back off Genesis on the tip.
+// The tip stop re-resolves rather than trusting its stored height, so the
+// walk follows the chain: openLookup(-1) asks where the tip is now.
+async function contentsStep(direction) {
+  if (!state) return;
+  const items = navTargets();
+  if (!items.length) return;
+  const diff = (i) => (i.height - state.height) || (i.rank - state.index);
+  const t = direction > 0
+    ? (items.find((i) => diff(i) > 0) ?? items[0])
+    : ([...items].reverse().find((i) => diff(i) < 0) ?? items[items.length - 1]);
+  if (!t || diff(t) === 0) return;
+  rememberTrail();
+  state.ghost = null;
+  try {
+    if (t.tip) { await openLookup('-1'); return; }
+    const p = t.place;
+    const index = p.page === 'volume' ? -3 : p.page === 'book' ? -2 : t.rank;
+    await openLookup(String(t.height), index);
+    if (p.out != null) $(`out-${p.out}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    else if (p.wit != null) await landOnWitness(footnoteMark(p.wit));
+  } catch (e) { setStatus(e.message || 'Failed to load.', 'err'); }
+}
+
 function labelNav() {
   const cur = volumeBookChapter(state.height);
   const idx = state.index;
@@ -4007,7 +4248,14 @@ function labelNav() {
 
   const setBtn = (id, text, label) => {
     const b = $(id);
-    b.textContent = text;
+    // The text rides in a child span so the foot buttons can ellipsize a long
+    // entry name without clipping the chevron the button wears as ::before /
+    // ::after (pseudo-elements flank the span as flex items).
+    b.textContent = '';
+    const s = document.createElement('span');
+    s.className = 'step-text';
+    s.textContent = text;
+    b.append(s);
     b.title = label;
     b.setAttribute('aria-label', label);
   };
@@ -4073,66 +4321,25 @@ function labelNav() {
   if (stepPrev) setBtn('chapter-prev', stepPrev.text, stepPrev.label);
   if (stepNext) setBtn('chapter-next', stepNext.text, stepNext.label);
 
-  const hasPrevSection = !(state.height === 0 && idx <= floor);
-  const hasNextSection = !(lineEnds && idx >= state.txCount - 1);
-  showBtn('page-prev', hasPrevSection);
-  showBtn('page-next', hasNextSection);
+  // The linear section walk survives for the gestures: a swipe or an arrow
+  // key still pages one leaf or section at a time, and this flag is their
+  // forward guard (navAvailable) now that the foot buttons no longer stand
+  // for it.
+  sectionNextExists = !(lineEnds && idx >= state.txCount - 1);
 
-  // Page navigation -- one leaf or section at a time along the linear order:
-  // … previous block's last § → volume leaf → book leaf → chapter page → §1 …
-  if (hasPrevSection) {
-    if (idx > 0) {
-      setBtn('page-prev', `§${idx}`, `${tr('Previous section')} (${referenceOf(state.height)} §${idx})`);   // same chapter, target section = current 1-based index minus one
-    } else if (idx === 0) {
-      // §1 pages back to this chapter's own page -- the chapter-level reference.
-      setBtn('page-prev', `${chapterMark(state.height)}${cur.chapter}`, `${tr('Chapter page')} (${referenceOf(state.height)})`);
-    } else if (idx - 1 >= floor) {
-      // Up the leaf stack within this block: chapter page → book leaf → volume leaf.
-      if (idx === -1) setBtn('page-prev', `β${cur.book}`, `${tr('Book page')} (${toRoman(cur.volume)} β${cur.book})`);
-      else setBtn('page-prev', toRoman(cur.volume), `${tr('Volume page')} (${toRoman(cur.volume)})`);
-    } else {
-      // Off the block's first page, back into the prior block's final section;
-      // its §number is that block's tx count, unknown until it loads -- shown
-      // as § once resolved.
-      setBtn('page-prev', '§…', tr('Previous section (end of {ref})', { ref: referenceOf(state.height - 1) }));
-      const h = state.height;
-      loadBlockTxCount(h - 1)
-        .then((n) => {
-          if (gen === renderGen) setBtn('page-prev', `§${n}`, `${tr('Previous section')} (${referenceOf(h - 1)} §${n})`);
-          // The moment the prior block's tx count is known, its page anchor is
-          // arithmetic off this block's (when that one is already in hand) --
-          // banked so stepping back across the boundary never asks the census.
-          const a = peekAnchor(h);
-          if (a !== null) bankAnchor(h - 1, a - n, anchorFinalAt(h - 1));
-        })
-        .catch(() => {});
-    }
-  }
-  if (hasNextSection) {
-    if (state.ghost && idx >= 0) {
-      // A ghost's only forward step is up: the transaction that replaced it.
-      setBtn('page-next', `§${idx + 1}`, tr('Its successor — the current holder of §{n}', { n: idx + 1 }));
-    } else if (idx === -3) {
-      setBtn('page-next', `β${cur.book}`, `${tr('Book page')} (${toRoman(cur.volume)} β${cur.book})`);
-    } else if (idx === -2) {
-      setBtn('page-next', `■${cur.chapter}`, `${tr('Chapter page')} (${reference(state.height)})`);
-    } else if (idx === -1) {
-      setBtn('page-next', '§1', `${tr('First section')} (${referenceOf(state.height)} §1)`);   // the chapter page opens onto §1
-    } else if (idx < state.txCount - 1) {
-      setBtn('page-next', `§${idx + 2}`, `${tr('Next section')} (${referenceOf(state.height)} §${idx + 2})`);   // same chapter, target section = current 1-based index plus one
-    } else {
-      // Crosses onto the next block's first page -- its volume or book leaf
-      // when it opens one, else its chapter page. A projected next chapter
-      // carries no leaves, whatever its height would open.
-      const nh = state.height + 1;
-      const projNext = tipHeight !== null && nh > tipHeight;
-      const nFloor = projNext ? -1 : minIndexOf(nh);
-      const t = volumeBookChapter(nh);
-      if (nFloor === -3) setBtn('page-next', toRoman(t.volume), `${tr('Volume page')} (${toRoman(t.volume)})`);
-      else if (nFloor === -2) setBtn('page-next', `β${t.book}`, `${tr('Book page')} (${toRoman(t.volume)} β${t.book})`);
-      else setBtn('page-next', `${projNext ? '□' : '■'}${t.chapter}`, `${tr(projNext ? 'Next chapter — projected' : 'Next chapter')} (${referenceOf(nh)})`);
-    }
-  }
+  // The foot bar's own steppers walk the TABLE OF CONTENTS instead: the
+  // nearest curated place to either side, in reading order, wrapping through
+  // the chain's two ends (see navTargets / contentsStep).
+  const labelContentsNav = () => {
+    const items = navTargets();
+    const diff = (i) => (i.height - state.height) || (i.rank - idx);
+    const next = items.find((i) => diff(i) > 0) ?? items[0];
+    const prev = [...items].reverse().find((i) => diff(i) < 0) ?? items[items.length - 1];
+    const label = (b, t) => { setBtn(b, navText(t), navLabel(t)); showBtn(b, true); };
+    if (next && diff(next) !== 0) label('page-next', next); else showBtn('page-next', false);
+    if (prev && diff(prev) !== 0) label('page-prev', prev); else showBtn('page-prev', false);
+  };
+  labelContentsNav();
 
   // The commentary key belongs to the page, not to the steppers, but it lives
   // in the same bar and every render path passes through here.
@@ -4708,8 +4915,8 @@ async function runPendingSteps() {
   }
 }
 
-$('page-prev').addEventListener('click', () => requestStep(-1));
-$('page-next').addEventListener('click', () => requestStep(1));
+$('page-prev').addEventListener('click', () => contentsStep(-1));
+$('page-next').addEventListener('click', () => contentsStep(1));
 $('chapter-prev').addEventListener('click', () => goToLevel(-1));
 $('chapter-next').addEventListener('click', () => goToLevel(1));
 // The eyebrow crumbs: each opens the page of the span it names. Same block →
@@ -4750,7 +4957,7 @@ let slideWatchdog = null;
 function navAvailable(direction) {
   if (!state) return false;
   if (state.index < 0) return !$(direction > 0 ? 'chapter-next' : 'chapter-prev').classList.contains('hidden');
-  if (direction > 0) return !$('page-next').classList.contains('hidden');
+  if (direction > 0) return sectionNextExists;   // the foot button no longer stands for the linear walk
   return state.index > 0 || state.height > 0;
 }
 // A swipe additionally waits for that neighbour's data to finish prefetching
@@ -4926,17 +5133,17 @@ function stepNow(direction) {
 let neighborReady = { '-1': false, '1': false };
 let prefetchGen = 0;
 
-// Warm the WASM encodes a chapter page will render (encodeSeedPhrase
+// Warm the WASM encodes a chapter page will render (encodeCanonical
 // memoizes, so the eventual render is a lookup). Best-effort, and skipped
 // until the engine is ready -- the render path initializes it anyway.
 function warmLeafEncodes(core) {
   if (!ready) return;
   try {
-    encodeSeedPhrase(blockHashParts(core.hash).hex, bookLang(), BEST_OF);
+    encodeCanonical(blockHashParts(core.hash).hex, bookLang(), BEST_OF);
     if (core.header.prevBlockHash !== '00'.repeat(32)) {
-      encodeSeedPhrase(blockHashParts(core.header.prevBlockHash).hex, bookLang(), BEST_OF);
+      encodeCanonical(blockHashParts(core.header.prevBlockHash).hex, bookLang(), BEST_OF);
     }
-    encodeSeedPhrase(reverseHex(core.header.merkleRoot), bookLang(), BEST_OF);
+    encodeCanonical(reverseHex(core.header.merkleRoot), bookLang(), BEST_OF);
   } catch { /* warming is best-effort */ }
 }
 // Warm what a book leaf needs beyond its own first block. Where the book
@@ -4963,7 +5170,7 @@ function warmBookTargets(height) {
 async function warmSection(txid) {
   if (!ready) { await loadTxHex(txid); return; }   // at least the network half
   await sectionFields(txid);
-  encodeSeedPhrase(reverseHex(txid), bookLang(), BEST_OF);
+  encodeCanonical(reverseHex(txid), bookLang(), BEST_OF);
 }
 async function prefetchNeighbor(st, direction) {
   // A neighbour past the tip is a projected chapter. Its chapter page needs
@@ -5556,6 +5763,21 @@ for (const btn of document.querySelectorAll('[data-fs]')) {
 $('fontscale-reset').addEventListener('click', () => { resetFontScales(); reflectFontScale(); });
 reflectFontScale();
 
+// ── The foot nav's measured height ────────────────────────────────────────
+// The balance band (#ch-totals) sticks to the screen bottom just above the
+// foot nav, whose height is nothing to assume: the walk's names wrap it to
+// one row or two, the safe-area inset pads it, and on a page with nowhere
+// to step it is display:none entirely (height 0 -- the band then falls back
+// to the safe-area inset on its own). A ResizeObserver keeps the measure
+// current through all of it.
+{
+  const footNav = document.querySelector('.section-nav');
+  const syncFootNavH = () =>
+    document.documentElement.style.setProperty('--footnav-h', `${footNav.offsetHeight}px`);
+  new ResizeObserver(syncFootNavH).observe(footNav);
+  syncFootNavH();
+}
+
 // ── Settings popover ──────────────────────────────────────────────────────
 // The masthead "Settings" link toggles a small popover holding the data-source
 // picker; it dismisses on an outside click or Escape.
@@ -5618,7 +5840,7 @@ async function applyBookLang(id) {
   localizeChrome();   // the chrome follows, except into Latin (see setBookLang)
   // Everything composed so far was composed in the old language: flush the
   // section cache and re-render the page in hand. The prose memo inside
-  // encodeSeedPhrase is keyed by language, so it needs no clearing -- a
+  // encodeCanonical is keyed by language, so it needs no clearing -- a
   // switch back finds its earlier encodes still warm.
   fieldsCache.clear();
   neighborReady = { '-1': false, '1': false };   // neighbours re-warm in the new language
@@ -5637,6 +5859,41 @@ document.addEventListener('click', (e) => {
 });
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !langPanel.classList.contains('hidden')) closeLang(); });
 renderLangRows();
+
+// ── Amount notation ───────────────────────────────────────────────────────
+// The Amounts rows in the settings panel: bitcoin (₿), satoshis with the
+// book's middle dot, or the bare integer -- one row per notation, each
+// labelled by the same sample amount, in the language rows' manner. The
+// choice persists (btc-prose.js) and applies at paint time: the composed
+// fields carry every amount raw, so re-showing the section in hand reprints
+// the page with nothing re-composed.
+const AMOUNT_UNITS = ['btc', 'sats', 'raw'];
+const AMOUNT_SAMPLE = 123456789;
+function renderAmountRows() {
+  const rows = $('amount-rows');
+  rows.innerHTML = '';
+  for (const u of AMOUNT_UNITS) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'lang-row' + (u === amountUnit() ? ' current' : '');
+    btn.setAttribute('aria-pressed', u === amountUnit() ? 'true' : 'false');
+    const name = document.createElement('span');
+    name.textContent = formatAmountAs(AMOUNT_SAMPLE, u);
+    const mark = document.createElement('span');
+    mark.className = 'lang-mark';
+    mark.textContent = '●';
+    btn.append(name, mark);
+    btn.addEventListener('click', () => { applyAmountUnit(u); });
+    rows.append(btn);
+  }
+}
+async function applyAmountUnit(u) {
+  if (u === amountUnit()) return;
+  setAmountUnit(u);
+  renderAmountRows();
+  if (state) await showCurrentTx();
+}
+renderAmountRows();
 
 // ── The chrome's words ────────────────────────────────────────────────────
 // Re-say the static chrome in the UI language (btc-strings.js): nav items,
@@ -6160,6 +6417,13 @@ window.addEventListener('scroll', dismissOnViewportChange, true);
 // chain tip, so ?block=-1 is the latest block; otherwise the book opens at
 // the chain tip (-1), the latest chapter rather than Genesis.
 const params = new URLSearchParams(location.search);
+// A citing page's claim about a frontispiece line (?hl=merkle:<hex>, from a
+// proof leaf's root citation): which line, and the exact bytes the citing
+// page says it holds. Consumed by the first render, never rewritten forward.
+let highlightClaim = (() => {
+  const [key, hex] = (params.get('hl') || '').split(':');
+  return key && /^[0-9a-f]+$/.test(hex || '') ? { key, hex } : null;
+})();
 const pParam = parseReference(params.get('ref') || '');
 const txidParam = params.get('txid');
 const blockParam = params.get('block');

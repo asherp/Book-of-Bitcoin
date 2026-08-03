@@ -18,7 +18,7 @@
 // Consumed by bitcoin-book.html, which renders each field into its manuscript
 // margin layout.
 
-import { encodeSeedPhrase, bookLang } from './glossia-msg.js';
+import { encodeCanonical, bookLang } from './glossia-msg.js';
 import { findTextRuns, splitReadableRuns, looksLikeWriting, readableUtf8Text, tokenizeScript, bitsToTargetHex, bitsToDifficulty, bitsToMantissaFactors, primeFactors } from './btc-tx.js';
 import { splitOnSignature, poolOf } from './btc-pools.js';
 import { volumeBookChapter } from './btc-citation.js';
@@ -382,6 +382,39 @@ export function formatBtc(sats) {
   const frac = (s % 100000000n).toString().padStart(8, '0');
   return `${whole}.${frac} ₿`;
 }
+
+// ─── amount notation ───────────────────────────────────────────────────
+// How the reader prints an amount is a choice, like the prose language:
+//   'btc'   1.23456789 ₿      bitcoin, the ₿ sign trailing (formatBtc above)
+//   'sats'  123·456·789 sats  satoshis, the book's middle-dot grouping
+//   'raw'   123456789         the bare satoshi integer — no marker, no separator
+// The choice persists in localStorage under its own key and is read at
+// format time, so a page re-render is all a switch needs. 'btc' is the
+// default and is stored as an absent key, so a reader who never chose
+// reads the book as it has always been set.
+const AMOUNT_UNIT_KEY = 'glossia-btc-amount-unit';
+export function amountUnit() {
+  try {
+    const v = localStorage.getItem(AMOUNT_UNIT_KEY);
+    return v === 'sats' || v === 'raw' ? v : 'btc';
+  } catch { return 'btc'; }
+}
+export function setAmountUnit(u) {
+  try {
+    if (u === 'sats' || u === 'raw') localStorage.setItem(AMOUNT_UNIT_KEY, u);
+    else localStorage.removeItem(AMOUNT_UNIT_KEY);
+  } catch { /* storage unavailable: the choice just doesn't persist */ }
+}
+// A satoshi amount in a named notation — the settings rows print one sample
+// amount in each, so the choice shows itself.
+export function formatAmountAs(sats, unit) {
+  if (unit === 'sats') return `${groupDigits(BigInt(sats).toString())} sats`;
+  if (unit === 'raw') return BigInt(sats).toString();
+  return formatBtc(sats);
+}
+// …and in the notation currently chosen: the one call every amount the
+// reader page prints goes through.
+export const formatAmount = (sats) => formatAmountAs(sats, amountUnit());
 
 // Quoted script text comes directly from raw blockchain data -- a miner's
 // coinbase tag, an OP_RETURN message -- not our own wordlist, so unlike the
@@ -1211,18 +1244,21 @@ export function renderWitness(items, encode) {
 // breakdown of every field's rendered text, in wire order, plus the payload
 // words consumed. bitcoin-book.html's margin layout is built from this, each
 // field Glossia-encoded exactly once.
-// `bestOf` forwards to encodeSeedPhrase for cover-word quality (default 1).
+// `bestOf` forwards to encodeCanonical, which since glossia 0.3.0 renders the
+// canonical encoding and ignores it — the canonical version pins the fluency
+// budget. The parameter stays so custom `encoder` implementations (which share
+// encodeCanonical's signature) keep working.
 // `lazyData`, when supplied, is an alternative encoder (hex -> HTML) used for an
 // OP_RETURN payload only: OP_RETURN is the one body field that can carry a bulky
 // data-carrier blob, so the caller can pass a placeholder emitter to defer its
 // encoding until it scrolls into view, exactly as witness pushes are deferred.
-// `encoder`, when supplied, stands in for encodeSeedPhrase itself (same
+// `encoder`, when supplied, stands in for encodeCanonical itself (same
 // signature and result shape) -- a caller can record the exact pushes a
 // section will encode (a dry run) or serve them from its own store, so a
 // giant section can be encoded in yielded chunks rather than one long pass.
 export function composeTransactionFields(parsed, bestOf = 1, lazyData = null, encoder = null) {
   const payloadWords = [];
-  const enc = encoder || encodeSeedPhrase;
+  const enc = encoder || encodeCanonical;
   const collect = (hex) => {
     if (!hex) return '';
     const r = enc(hex, bookLang(), bestOf);   // the reader's saved book language

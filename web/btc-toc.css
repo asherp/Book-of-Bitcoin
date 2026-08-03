@@ -21,6 +21,11 @@
    whole row navigates into the book, the manuscript's own citation form. */
 .toc-entry { display:flex; align-items:baseline; gap:16px; padding:9px 2px 9px 16px; border-bottom:1px solid var(--hair); text-decoration:none; }
 .toc-entry.under-book { padding-left:32px; }
+/* A row nested under its parent entry -- a section listed beneath the chapter
+   row that names its block -- steps in once more from wherever the parent
+   stands, and its reference cites only what the parent's hasn't already. */
+.toc-entry.under-parent { padding-left:32px; }
+.toc-entry.under-book.under-parent { padding-left:48px; }
 .toc-title { flex:1; min-width:0; font:500 17px/1.35 'Newsreader',serif; color:var(--ink-soft); }
 .toc-ref { flex:none; min-width:84px; text-align:right; font:600 13px/1.4 'IBM Plex Mono',monospace; letter-spacing:.06em; color:var(--accent); white-space:nowrap; font-variant-numeric:tabular-nums; }
 .toc-ref.none { color:var(--meta); font-weight:400; }
@@ -34,6 +39,10 @@
    separates the record's places from readings of them. */
 .toc-commentary { display:block; margin-top:.3em; font:400 10.5px/1.4 'IBM Plex Mono',monospace; letter-spacing:.08em; text-transform:uppercase; color:var(--meta); }
 .toc-entry:hover .toc-commentary { color:var(--dim); }
+/* The contents' one credit, a footnote at the leaf's foot (see
+   bitcoin-contents.html's colophon block): same annotation register as the
+   row credit above, set off by the same rule the volume heads use. */
+.toc-colophon { margin-top:34px; padding-top:14px; border-top:1px solid var(--rule); font:400 10.5px/1.6 'IBM Plex Mono',monospace; letter-spacing:.08em; text-transform:uppercase; color:var(--meta); }
 
 /* A row that stands for a whole part of the book rather than a passage in it
    — the top-level contents' volumes, appendices and front-matter leaves. It
@@ -44,7 +53,7 @@
    description, not a note about it. */
 .toc-part .toc-title { font-size:19px; color:var(--ink); }
 .toc-span { display:block; margin-top:.25em; font:400 12.5px/1.5 'Public Sans',sans-serif; letter-spacing:.01em; color:var(--meta); }
-.toc-part:hover .toc-span { color:var(--dim); }
+.toc-part:hover .toc-span, .toc-entry:hover .toc-span { color:var(--dim); }
 /* The row that closes a group drops its own hairline: the next heading rules
    off above itself, and two rules with a gap between them read as an empty
    band rather than a division. */
