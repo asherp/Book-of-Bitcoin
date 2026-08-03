@@ -294,13 +294,12 @@ citation resolving to the heights verified here):
 - **The 107 BTC burn** — V β56 ■83, one entry in five places (§2216,
   §2221, §2223, §2224, §2225), each `as:` naming what it carries
 
-Kept out of the contents deliberately: the proof-of-burn and burn-address
-material (the Counterparty burn, the Bitcoin Eater, the all-zeros address).
-Those are names rather than places — each a ledger whose entire record is
-coins arriving and never leaving — and belong to `btc-index-data.js` and
-the Ledger, should the shelf ever take them, where the
-reconcile-against-the-chain machinery states their totals better than any
-note could.
+The burn-address material went the other way, as names rather than places:
+the Bitcoin Eater, the Counterparty burn, and the zero address are now
+shelved in `btc-index-data.js` (grouped as "the incinerators"), each with a
+notables entry and a published reading of its own — ledgers whose entire
+record is coins arriving and never leaving, which the Ledger's
+reconcile-against-the-chain machinery states alongside the readings.
 
 ## Sources
 

@@ -595,6 +595,26 @@
   commentary:
     - file: wikileaks-ledger.md
       by: Claude Fable 5
+# The burn ledgers — names whose entire record is coins arriving and never
+# leaving, keyless by construction. Shelved in btc-index-data.js as "the
+# incinerators"; chain verification in tools/locks-and-burns.md. Ordered by
+# each name's famous moment: the Eater's Bitcointalk convention (2011), the
+# Counterparty window (January 2014), the zero address's 107 ₿ (May 2026).
+- title: The Bitcoin Eater
+  id: 1BitcoinEaterAddressDontSendf59kuE
+  commentary:
+    - file: bitcoin-eater-ledger.md
+      by: Claude Fable 5
+- title: The Counterparty burn
+  id: 1CounterpartyXXXXXXXXXXXXXXXUWLpVr
+  commentary:
+    - file: counterparty-burn-ledger.md
+      by: Claude Fable 5
+- title: The zero address
+  id: '1111111111111111111114oLvT2'
+  commentary:
+    - file: zero-address-ledger.md
+      by: Claude Fable 5
 
 - title: Latest block
   id: '-1'
