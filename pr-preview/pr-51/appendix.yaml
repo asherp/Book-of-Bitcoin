@@ -1,0 +1,698 @@
+# SPDX-License-Identifier: CC-BY-4.0
+#
+# appendix.yaml — the back matter: what the contents gathers after the volumes.
+#
+# A chain with no last block has no back, which is why the sigla sit in the
+# front matter (see the README). What can still be gathered at the end of the
+# CONTENTS is what belongs to the book but not to its reading order — reading
+# order being the order blocks were mined.
+#
+# Four parts, in three families, rendered in this order. The family sets the
+# heading: an APPENDIX holds the book's own matter out of reading order, and is
+# numbered among appendices; an INDEX points into the text, many places per
+# entry, and is titled "Index of …"; CITATIONS points out of the text, at works
+# the book does not contain, and stands last unnumbered -- a reference list is
+# where a book ends. The family follows from the kind (btc-notables.js), so a
+# part is filed by what it is rather than by where it sits:
+#
+#   I   The Mempool — the chapters the queue is already forming, which is why
+#       it comes first: it opens where the volumes close, so the turn from the
+#       chain tip to the next provisional chapter stays a single step down the
+#       page. Built live by the page from the queue itself
+#       (bitcoin-contents.html); nothing to list here but its heading.
+#   II  Consensus — the rules the chapters are written under, grouped by the
+#       BIP that settled each. A soft fork names chapters the way nothing else
+#       does — the window that counted its signals, the height its rule first
+#       bound, the first passages written under it — and some of its chapters
+#       are still unmined: a height is a citation the moment consensus fixes
+#       it, whether or not a block has reached it, so those rows carry
+#       `expected: true` and print the □ the mempool's projections wear, their
+#       lookups answering with a date instead of a page. Listed apart rather
+#       than in reading order because a fork's chapters span the whole book
+#       (dropped in among the volumes, BIP42 alone opened a Volume LXV two
+#       centuries wide) — and because grouped by BIP, each fork gets a title
+#       leaf of its own, carrying its activation statistics and its reading.
+#   Index of Ledgers — the shelf of curated ledgers (btc-index-data.js), and any the
+#       reader keeps. Keepers, not chapters, and so the only entries in the
+#       contents with no reference at all: the chain never writes an address,
+#       only the script one stands for, and a ledger's chapters are discovered
+#       by reading rather than cited in advance. A ledger holds as many scripts
+#       as its keeper uses — one address, a rotated set, or every leaf of one
+#       extended key — each read as a passage on the Ledger compendium's own
+#       leaves, which is why this part lists ledgers here and explains itself
+#       there. The contents and the index are inverses; this is where the
+#       contents points at the other one.
+#   Citations — works cited: documents outside this text whose existence
+#       the chain attests. Every other reference in this book points inward,
+#       at a chapter the book contains; these point the other way, at something
+#       the book does not contain and never will. What the chain supplies is a
+#       date — an OpenTimestamps proof reduces a document's digest to the
+#       merkle root of one block — so each entry is cited BY a passage rather
+#       than being one, at the chapter and §section its proof lands in, and the
+#       cited passage carries the back-reference in its margin: the ‡ mark,
+#       with the work's number in the register as its subscript (‡₁).
+#       The entries below ship with the app; a reader's own proofs, dropped on
+#       the appendix's leaf, are kept beside them the way bookmarks are.
+#
+# A part's `kind` says who fills it: `consensus` is listed here, `mempool` and
+# `ledgers` are gathered by the page, and `proofs` is listed here too but names
+# files rather than places — each entry a `proof:` (an .ots file in proofs/), the
+# `subject:` it stamps, if the file itself is small enough to ship, and a
+# `source:` — where the work is published outside the book, the one link its
+# footnote carries. Nothing else CITED is written down for a proof, and nothing
+# else should be: the citation, the transaction and the merkle root all come out
+# of the proof's own bytes when it is read, so an entry here cannot claim a
+# chapter the proof does not.
+#
+# The `consensus` part lists `bips:` — one group per fork, each with the BIP's
+# number (`bip` — or, for a fork that was never a BIP, a handle worn verbatim:
+# BU was a client, its proposals its own), its recognized `name` (Taproot), a
+# `status` (active,
+# signaling, scheduled — or failed, for a fork the chain declined), the
+# `stats:` its title leaf prints (label/value rows — editorial statements of
+# how the fork was counted), and its `entries:`, the chapters and sections it
+# names. A failed fork may name none: consensus never formed, no window ever
+# opened, and the empty record is the record. An entry takes the same shape as a
+# curated entry in notables.yaml — its `id` is handed to the same lookup, in
+# any form the search box takes — with a `note` carrying the caveat the row
+# shows on hover, and `expected: true` on a height no block has reached, which
+# is what earns the row its □. A fork counted in block versions also names how
+# a yes is read — `bit: n` (a version bit set) or `version: n` (a supermajority
+# fork's minimum version); the one ballot written outside the version word
+# names `coinbase:` instead, text the chapter's first line must carry (BU's
+# /EB advertisement), and its table reads coinbase text where the others read
+# versions — and where its ballot closed: `ballot:` is the last
+# block of the winning window and `window:` the window's span, so the fork's
+# leaf can lay the whole ballot out, block by block, and tally it as it goes.
+# The boundaries are consensus arithmetic, not lore: a supermajority fork's
+# window is the 1,000 blocks before its activation; a version-bits window
+# aligns to its period from genesis, one period back of the lock-in boundary.
+# The window's total is deliberately NOT written down: the fork's leaf lays
+# the ballot out oldest first, each row carrying the count and the rate as
+# they stood at that block, so a reader scrolling down replays the activation
+# in the order it occurred and discovers the ending the way it was discovered
+# the first time. A file that stated the total would spoil the book's own
+# table.
+# A `signaling` fork names its `bit` and `threshold` (a percentage) but no
+# ballot — its window has not closed, so its leaf counts the newest blocks
+# instead, live. It may also name a `monitor:` — a public JSON endpoint
+# publishing the current period's whole count (signalingCount, totalBlocks,
+# periodStart, periodEnd) — and the leaf's tally then states the period's
+# total rather than only what the table has drawn, naming the source beside
+# the figure: the count is that site's claim, not the chain's, and the book
+# credits claims. Editorial, like the titles: what is promised is a citation,
+# not a prophecy. This file and notables.yaml are read by the same machinery
+# (btc-notables.js) and licensed the same way; see the README's License section.
+
+- kind: mempool
+  title: The Mempool
+  note: The chapters the queue is already forming, ordered as a miner would take them — provisional numbers that hold only while the queue does, and only the first is a real forecast.
+
+- kind: consensus
+  title: Consensus
+  note: The rules the chapters are written under, and where each was settled. A soft fork names chapters the way nothing else in the book does — the window that counted its signals, the height its rule first bound, the first passages written under it — so each fork is gathered here under its BIP, out of reading order, with a title leaf carrying its activation statistics. Some of its chapters are still unmined — consensus can fix a height before any block reaches it — and those rows carry □, the expected-chapter mark, until a block earns them the ■. The forks the chain declined are kept here too, with their outcomes: a proposal is not a rule until the book writes it, and some were never written.
+  bips:
+    - bip: '16'
+      name: Pay to Script Hash
+      status: active
+      note: An output may commit to the hash of its terms rather than the terms themselves — the redeeming section supplies the script, and the reader learns the terms only when someone spends the coin. The oldest activation in the book, settled by a straw poll years before there was machinery for polling.
+      stats:
+        - label: ballot
+          value: /P2SH/ written into the coinbase — a straw poll, four years before version bits
+        - label: threshold
+          value: 55% of recent blocks, counted ahead of a flag day
+        - label: activated
+          value: 1 April 2012, from block 173,805
+      entries:
+        - title: Activation
+          id: '173805'
+          note: The first block mined under BIP16 rules — 1 April 2012, no joke.
+          commentary:
+            - file: bip16-activation-p2sh.md
+              by: Claude Opus 5
+        - title: First P2SH spend
+          id: e5779b9e78f9650debc2893fd9636d827b26b4ddfa6a8172fe8708c924f5c39d
+          note: The first section to redeem a script by its hash.
+          commentary:
+            - file: first-p2sh-spend.md
+              by: Claude Opus 5
+    - bip: '34'
+      name: Block Height in Coinbase
+      status: active
+      version: 2
+      ballot: '227930'
+      window: 1000
+      note: Every coinbase must open with the height of its own block, so no two coinbases can ever repeat — the rule the twice-confirmed printings made necessary. The first fork counted in block versions: miners bumped v1 to v2, and a rolling supermajority of recent versions decided when the rule bound.
+      commentary:
+        - file: bip34.md
+          by: Claude Opus 5
+      stats:
+        - label: mechanism
+          value: rolling supermajority of block versions (IsSuperMajority)
+        - label: enforce
+          value: 750 of the last 1,000 blocks at v2 — the rule binds for v2 blocks
+        - label: reject
+          value: 950 of the last 1,000 — v1 blocks refused outright
+        - label: activated
+          value: March 2013, from block 227,931
+      entries:
+        - title: The signaling window
+          id: '226128'
+          page: book
+          note: The book whose signals closed the first supermajority fork — for a fork counted in versions, the difficulty window is the ballot box.
+          commentary:
+            - file: bip34.md
+              by: Claude Opus 5
+        - title: Activation (v2)
+          id: '227931'
+          note: From here a v1 block is refused, and every coinbase names its own height.
+          commentary:
+            - file: bip34-activation-v2.md
+              by: Claude Opus 5
+    - bip: '66'
+      name: Strict DER Signatures
+      status: active
+      version: 3
+      ballot: '363724'
+      window: 1000
+      note: Every signature must be spelled in exactly canonical DER — one encoding per signature, closing the door OpenSSL's tolerance had left open. The second supermajority fork, and the last quiet one; its activation was followed at once by a brief fork among miners who had signaled v3 without validating it.
+      commentary:
+        - file: bip66.md
+          by: Claude Fable 5
+      stats:
+        - label: mechanism
+          value: rolling supermajority of block versions, v3
+        - label: threshold
+          value: 950 of the last 1,000 blocks
+        - label: activated
+          value: 4 July 2015, from block 363,725
+      entries:
+        - title: The signaling window
+          id: '363216'
+          page: book
+          note: The window that closed the strict-DER fork.
+          commentary:
+            - file: bip66.md
+              by: Claude Fable 5
+        - title: Activation (v3)
+          id: '363725'
+          note: From here a signature has one spelling — and the chapters just past this one were briefly contested by miners who signaled without validating.
+          commentary:
+            - file: bip66-activation-v3.md
+              by: Claude Fable 5
+    - bip: '65'
+      name: CheckLockTimeVerify
+      status: active
+      version: 4
+      ballot: '388380'
+      window: 1000
+      note: An output can refuse to be spent before a stated time or height — τ in the book's notation, the first opcode to let a lock make a promise about the future rather than about a key. The third and last of the supermajority windows.
+      commentary:
+        - file: bip65.md
+          by: Claude Fable 5
+      stats:
+        - label: mechanism
+          value: rolling supermajority of block versions, v4
+        - label: threshold
+          value: 950 of the last 1,000 blocks
+        - label: activated
+          value: December 2015, from block 388,381
+      entries:
+        - title: The signaling window
+          id: '387408'
+          page: book
+          note: The third and last supermajority window, closing the fork that gave scripts a clock.
+          commentary:
+            - file: bip65.md
+              by: Claude Fable 5
+        - title: Activation (v4)
+          id: '388381'
+          note: From here an output can say not before.
+          commentary:
+            - file: bip65-activation-v4.md
+              by: Claude Fable 5
+    # The forks the chain declined are part of the rules' story too: each is
+    # kept with its outcome, and a fork that left no chapter has none to cite
+    # -- the empty record is the record.
+    - bip: '101'
+      name: Bigger Blocks
+      status: failed
+      note: The first serious attempt to move the block size by miner vote — eight-megabyte blocks, doubling on a schedule — carried by Bitcoin XT, a whole competing client, because the change could not get into Bitcoin Core. The vote never came near its threshold, the client faded, and the question it asked was finally settled elsewhere, years later and the other way. No chapter carries its name; the chain declined to write one.
+      stats:
+        - label: mechanism
+          value: 750 of the last 1,000 blocks, by block version — carried by the Bitcoin XT client
+        - label: proposed
+          value: June 2015, by Gavin Andresen
+        - label: outcome
+          value: withdrawn — signaling never came near the threshold, and the client faded
+    - bip: '68 · 112 · 113'
+      name: Relative Timelocks
+      status: active
+      bit: 0
+      ballot: '417311'
+      window: 2016
+      note: Not before so many blocks after the coin being spent was itself confirmed — Δ in the book's notation, the wait a payment channel needs. Three BIPs deployed as one — sequence numbers given meaning (68), CHECKSEQUENCEVERIFY (112), median-time-past (113) — and the first fork ever counted by version bits, nine independent questions in place of one integer to bump.
+      commentary:
+        - file: csv.md
+          by: Claude Opus 5
+      stats:
+        - label: mechanism
+          value: version bits (BIP9) — the first deployment ever counted this way
+        - label: signal
+          value: bit 0
+        - label: threshold
+          value: 1,916 of a 2,016-block window (95%)
+        - label: activated
+          value: 4 July 2016, from block 419,328
+      entries:
+        - title: The signaling window
+          id: '417648'
+          page: book
+          note: The first window counted by version bits — every activation later in the book is counted the way this one was.
+          commentary:
+            - file: csv.md
+              by: Claude Opus 5
+        - title: Activation
+          id: '419328'
+          note: From here a lock can say how long after, not just when.
+          commentary:
+            - file: csv-activation-version-bits.md
+              by: Claude Opus 5
+    - bip: 'BU'
+      name: Bitcoin Unlimited
+      status: failed
+      coinbase: /EB
+      ballot: '478558'
+      window: 2016
+      note: Not a BIP but a client, and the big-block banner after XT faded — under "emergent consensus," a miner advertised the block size it would accept rather than voting on a fixed rule. Its ballot was written into the coinbase text, /EB…/AD…/ at the head of each chapter that flew it, not into the version word — so this leaf reads first lines rather than versions, laying out the final window of chapters before the parting with each miner's own text in the row. At its spring-2017 peak more than a third of new blocks carried the banner; nothing ever activated, and that August the big-block constituency left to write its own book.
+      stats:
+        - label: mechanism
+          value: emergent consensus — /EB…/AD…/ written into the coinbase, no threshold and no flag day
+        - label: signaled
+          value: in the coinbase text, not the version word — the table below reads the chapters' first lines
+        - label: peak
+          value: spring 2017 — by most counts more than a third of new blocks flew the banner
+        - label: outcome
+          value: nothing activated — the big-block constituency left as Bitcoin Cash that August; the window below is the ballot as it stood when the argument left
+      entries:
+        - title: The parting
+          id: '478558'
+          note: The last chapter both books share — Bitcoin Cash begins at the next height, and the block-size argument leaves this chain with it.
+    - bip: '91'
+      name: SegWit Signal Mandate
+      status: active
+      bit: 4
+      ballot: '476783'
+      window: 336
+      note: The blocksize war's wedge — a transient rule that made not signaling for SegWit a way to lose blocks, squeezing BIP141 over its own 95% threshold. It signaled over its own 336-block epochs, which no book aligns with, but one book holds the story end to end.
+      commentary:
+        - file: bip91.md
+          by: Claude Fable 5
+      stats:
+        - label: mechanism
+          value: version bits, over its own 336-block epochs
+        - label: signal
+          value: bit 4
+        - label: threshold
+          value: 269 of 336 (80%)
+        - label: activated
+          value: 22 July 2017, from block 477,120 — spent the moment SegWit locked in
+      entries:
+        - title: The book that holds it
+          id: '476448'
+          page: book
+          note: III β29 opens, BIP91 locks in at ■321, and it activates at ■673 — the whole drama inside one book.
+          commentary:
+            - file: bip91.md
+              by: Claude Fable 5
+        - title: Lock-in
+          id: '476768'
+          note: ■321 — where the count crossed 80% of its 336-block epoch.
+        - title: Activation
+          id: '477120'
+          note: From here, briefly, a block that did not signal for SegWit was rejected.
+          commentary:
+            - file: bip91-activation-segwit-mandate.md
+              by: Claude Opus 5
+    - bip: '141'
+      name: Segregated Witness
+      status: active
+      bit: 1
+      ballot: '479807'
+      window: 2016
+      note: The witness — the signatures, and the scripts that satisfy a lock — is committed to the block through a tree of its own and left out of the name of the transaction it authorizes. It is why this book has footnotes, and why a payment channel can be built from transactions signed but not yet published. Deployed with 143 (its sighash) and 144 (its wire format).
+      commentary:
+        - file: segwit.md
+          by: Claude Opus 5
+      stats:
+        - label: mechanism
+          value: version bits (BIP9)
+        - label: signal
+          value: bit 1
+        - label: threshold
+          value: 1,916 of a 2,016-block window (95%) — reached under BIP91's mandate
+        - label: activated
+          value: 24 August 2017, from block 481,824
+      entries:
+        - title: The closing window
+          id: '480480'
+          page: book
+          note: The window whose signaling finally carried BIP141, after the mandate a book earlier made not signaling a way to lose blocks.
+          commentary:
+            - file: segwit.md
+              by: Claude Opus 5
+        - title: Activation
+          id: '481824'
+          note: From here the witness leaves the transaction's name — malleability ends, and the book gains its footnotes.
+          commentary:
+            - file: segwit-activation.md
+              by: Claude Opus 5
+        - title: First SegWit spend
+          id: 8f907925d2ebe48765103e6845c06f1f2bb77c6adc1cc002865865eb5cfd5c1c
+          note: The first section whose authorization reads as a footnote.
+          commentary:
+            - file: first-segwit-spend.md
+              by: Claude Opus 5
+        - title: First native SegWit outputs
+          id: dfcec48bb8491856c353306ab5febeb7e99e4d783eedf3de98f3ee0812b92bad
+          note: The first outputs locked to a witness program directly.
+          commentary:
+            - file: first-native-segwit-outputs.md
+              by: Claude Opus 5
+        - title: First P2WSH reveal (2-of-3)
+          id: b38a88b073743bcc84170071cff4b68dec6fb5dc0bc8ffcb3d4ca632c2c78255
+          note: The first native witness script revealed — a 2-of-3 multisig.
+          commentary:
+            - file: first-p2wsh-reveal-2-of-3.md
+              by: Claude Opus 5
+    - bip: '149'
+      name: SegWit, the Second Try
+      status: failed
+      note: The deployment that stood ready if the first SegWit deployment expired unused — BIP8 rather than BIP9, activating with the miners if they came and without them if they did not. It was never needed. BIP91's mandate pushed the original deployment over its threshold in the summer of 2017, and BIP149 was withdrawn with nothing left to do. Its one chapter is the block that made it moot.
+      stats:
+        - label: mechanism
+          value: BIP8 — with the miners if they signaled, without them by July 2018
+        - label: proposed
+          value: spring 2017, against the deadlock
+        - label: outcome
+          value: withdrawn unused — BIP91's mandate carried BIP141 first
+      entries:
+        - title: Made moot
+          id: '479808'
+          note: SegWit locks in — the deployment this one stood ready to replace crossed its threshold first, and nothing was left for BIP149 to do.
+    - bip: '341'
+      name: Taproot
+      status: active
+      bit: 2
+      ballot: '687455'
+      window: 2016
+      note: An output can be a single thirty-two-byte key standing for either a signature or a whole tree of scripts, and a spend reveals only the route it took — the first upgrade whose main achievement is that most spends now say less. Deployed with 340 (Schnorr signatures) and 342 (its script), and activated under Speedy Trial, a signaling period with a deadline, so a failed vote fails quickly instead of hanging over the chain.
+      commentary:
+        - file: taproot.md
+          by: Claude Opus 5
+      stats:
+        - label: mechanism
+          value: version bits, Speedy Trial — a fixed three-month signaling period
+        - label: signal
+          value: bit 2
+        - label: threshold
+          value: 1,815 of a 2,016-block window (90%)
+        - label: locked in
+          value: 12 June 2021, at block 687,285 — five months ahead of the rule
+        - label: activated
+          value: 14 November 2021, from block 709,632
+      entries:
+        - title: Lock-in
+          id: '687285'
+          note: The Speedy Trial threshold moment — the page where the count crossed, its frontispiece still showing bit 2 set.
+          commentary:
+            - file: taproot-lock-in.md
+              by: Claude Opus 5
+        - title: The closing window
+          id: '708624'
+          page: book
+          note: The last window in the book so far to close a fork, and the first to do it under Speedy Trial.
+          commentary:
+            - file: taproot.md
+              by: Claude Opus 5
+        - title: Activation
+          id: '709632'
+          note: The first block mined under Taproot rules, 14 November 2021.
+        - title: An early Taproot payment
+          id: 777c998695de4b7ecec54c058c73b2cab71184cf1655840935cd9388923dc288
+          note: Mined the moment the rules went live — the citation resolves into the activation chapter at its own §section.
+          commentary:
+            - file: taproot-activation.md
+              by: Claude Opus 5
+    - bip: '119'
+      name: CheckTemplateVerify
+      status: failed
+      note: A covenant — an output that constrains the shape of the transaction that spends it. The first covenant opcode to reach the threshold of a release, an attempted Speedy Trial in the spring of 2022, called off amid an argument less about the opcode than about how consensus for one should ever be measured. No activation parameters ever shipped, no window ever opened, and the chain says nothing about it — which is the record: a proposal is not a rule until the book writes it.
+      stats:
+        - label: mechanism
+          value: none ever deployed — a Speedy Trial release was called off, April 2022
+        - label: proposed
+          value: January 2020, by Jeremy Rubin
+        - label: outcome
+          value: no consensus — the opcode waits, and no chapter carries its name
+    # BIP110 (reduced_data, the 2026 temporary data-limit attempt): nothing has
+    # activated to cite — ~0.5% signaling as of July 2026 — but its BIP8-style
+    # heights are citable sight unseen, three real retarget boundaries one book
+    # apart, sharing a chapter number. Conditional in a way BIP42's height is
+    # not: the blocks will be mined either way, on schedule, and will carry
+    # these names only if the fork locks in.
+    - bip: '110'
+      name: Reduced Data
+      status: signaling
+      bit: 4
+      threshold: 55
+      window: 2016
+      monitor: https://bip110monitor.com/api
+      note: A temporary cap on how much data a transaction may carry. BIP8-style, with fixed heights — whether its chapters ever carry these names is a question about the next few thousand blocks, not about arithmetic. The heights are fixed; the fork is not. This leaf counts the signals live.
+      stats:
+        - label: mechanism
+          value: BIP8-style fixed heights — mandatory signaling, lock-in, activation, one book apart
+        - label: signal
+          value: bit 4 — the bit BIP91 once flew
+        - label: threshold
+          value: 55% of a signaling window
+      entries:
+        - title: First signaling block
+          id: '938903'
+          note: The first block to set bit 4 for BIP110 — a ballot cast is part of the record whatever the count turns out to be.
+          commentary:
+            - file: first-bip110-signaling-block.md
+              by: Claude Opus 5
+        - title: Mandatory signaling
+          id: '961632'
+          expected: true
+          note: BIP8-style flag height — mandatory signaling from 961,632, should BIP110 lock in. ~0.5% of blocks signaling as of July 2026, against a 55% threshold.
+          commentary:
+            - file: bip110-mandatory-signaling.md
+              by: Claude Opus 5
+        - title: Lock-in
+          id: '963648'
+          expected: true
+          note: Lock-in by 963,648, one book on, should the threshold be met.
+          commentary:
+            - file: bip110-lock-in.md
+              by: Claude Fable 5
+        - title: Activation
+          id: '965664'
+          expected: true
+          note: Activation at 965,664, one book after lock-in — the height where the reduced data limit would first bind.
+          commentary:
+            - file: bip110-activation.md
+              by: Claude Opus 5
+    # The one activation block whose height is already consensus and still will
+    # not exist for two centuries: BIP42 (April 1, 2014) capped the subsidy
+    # schedule where the 64th halving's undefined bit-shift would have
+    # resurrected the 50-BTC reward. Cited now, mineable later; until then its
+    # lookup answers "Block not found. Come back in the year 2262."
+    - bip: '42'
+      name: A Finite Monetary Supply
+      status: scheduled
+      note: The original subsidy arithmetic shifted a 64-bit value by the halving count, and at the 64th halving that shift is undefined — on most machines it wraps, and the reward that should have fallen to zero would have come back as fifty coins a block. BIP42 (1 April 2014) caps the schedule instead. No ballot and no signals — a flag day by height, two centuries out.
+      commentary:
+        - file: bip42-activation-21m-cap.md
+          by: Claude Fable 5
+      stats:
+        - label: mechanism
+          value: flag day, by height — the one activation with no ballot at all
+        - label: activates
+          value: block 13,440,000, the opening chapter of Volume LXV, due around the year 2262
+      entries:
+        - title: Activation (21M cap)
+          id: LXV β1 □1
+          expected: true
+          note: The book's last chapter, and the only one whose date is already known: BIP42's cap first binds at 13,440,000, the opening chapter of Volume LXV, due around the year 2262.
+          commentary:
+            - file: bip42-activation-21m-cap.md
+              by: Claude Fable 5
+
+- kind: ledgers
+  title: Ledgers
+  note: A ledger gathers what one keeper spends from — a single address, a set rotated over the years, or in time every leaf of one extended key — and reads each of its scripts as a passage, with the chapters that passage appears in listed beneath it. Nothing here carries a reference: the chain never writes an address, only the script one stands for, so a ledger is not cited but discovered, and its run of chapters stays open-ended.
+
+- kind: proofs
+  title: Citations
+  note: Works cited — documents outside this text whose existence the chain attests. Every other reference in the book points inward at a chapter it contains; these point outward at something it does not. An OpenTimestamps proof reduces a document's digest, through a merkle path, to the root one block header commits to, so each is dated by the chain at the chapter and section its proof lands in, and that passage carries the back-reference in its own margin. Drop a proof at the foot of this appendix and it is kept here beside these.
+  # A reading of what this part gathers, rather than of any one file in it: the
+  # leaves raise it beneath each file's own, which is where the page explains
+  # itself. The leaf itself explains nothing — it sets the proof and gets out of
+  # the way; saying what a proof IS is a reading, and readings are signed and
+  # kept apart from the record.
+  commentary:
+    - file: citations.md
+      by: Claude Fable 5
+  entries:
+    - title: Hello World!
+      proof: hello-world.txt.ots
+      subject: hello-world.txt
+      source: https://github.com/opentimestamps/opentimestamps-client/blob/master/examples/hello-world.txt
+      note: The OpenTimestamps client's own example proof, and the oldest anyone can still replay — May 2015, a year before the calendar servers, its commitment sitting where a public key's hash belongs.
+      commentary:
+        - file: the-hello-world-timestamp.md
+          by: Claude Fable 5
+    # The client's own releases. Since 22.0, bitcoincore.org has stamped each
+    # release's checksum file into the chain the day the binaries went up, so a
+    # release date is a thing this register can cite rather than repeat: the
+    # subject is the SHA256SUMS naming every binary the release shipped as, and
+    # the proof lands in the chapter mined as it shipped. The server publishes
+    # the proofs still pending; tools/fetch-release-proofs.mjs completes them
+    # against the calendars each names and vendors both files, and a run after
+    # a new release fetches that release and nothing else. Releases the server
+    # no longer lists (30.0, 30.1) cannot be cited, and are not.
+    - title: Bitcoin Core 22.0
+      proof: bitcoin-core-22.0-SHA256SUMS.ots
+      subject: bitcoin-core-22.0-SHA256SUMS
+      source: https://bitcoincore.org/bin/bitcoin-core-22.0/
+      note: The first release bitcoincore.org stamped into the chain — September 2021, the first release of the Taproot era, and every one since carries its own proof.
+      commentary:
+        - file: bitcoin-core-releases.md
+    - title: Bitcoin Core 22.1
+      proof: bitcoin-core-22.1-SHA256SUMS.ots
+      subject: bitcoin-core-22.1-SHA256SUMS
+      source: https://bitcoincore.org/bin/bitcoin-core-22.1/
+    - title: Bitcoin Core 23.0
+      proof: bitcoin-core-23.0-SHA256SUMS.ots
+      subject: bitcoin-core-23.0-SHA256SUMS
+      source: https://bitcoincore.org/bin/bitcoin-core-23.0/
+    - title: Bitcoin Core 23.1
+      proof: bitcoin-core-23.1-SHA256SUMS.ots
+      subject: bitcoin-core-23.1-SHA256SUMS
+      source: https://bitcoincore.org/bin/bitcoin-core-23.1/
+    - title: Bitcoin Core 23.2
+      proof: bitcoin-core-23.2-SHA256SUMS.ots
+      subject: bitcoin-core-23.2-SHA256SUMS
+      source: https://bitcoincore.org/bin/bitcoin-core-23.2/
+      note: Stamped into the same chapter and section as 24.1 — the two shipped the same day, and the calendar folded both checksum files into one aggregating transaction.
+    - title: Bitcoin Core 24.0
+      proof: bitcoin-core-24.0-SHA256SUMS.ots
+      subject: bitcoin-core-24.0-SHA256SUMS
+      source: https://bitcoincore.org/bin/bitcoin-core-24.0/
+    - title: Bitcoin Core 24.0.1
+      proof: bitcoin-core-24.0.1-SHA256SUMS.ots
+      subject: bitcoin-core-24.0.1-SHA256SUMS
+      source: https://bitcoincore.org/bin/bitcoin-core-24.0.1/
+    - title: Bitcoin Core 24.1
+      proof: bitcoin-core-24.1-SHA256SUMS.ots
+      subject: bitcoin-core-24.1-SHA256SUMS
+      source: https://bitcoincore.org/bin/bitcoin-core-24.1/
+      note: Stamped into the same chapter and section as 23.2 — the two shipped the same day, and the calendar folded both checksum files into one aggregating transaction.
+    - title: Bitcoin Core 24.2
+      proof: bitcoin-core-24.2-SHA256SUMS.ots
+      subject: bitcoin-core-24.2-SHA256SUMS
+      source: https://bitcoincore.org/bin/bitcoin-core-24.2/
+    - title: Bitcoin Core 25.0
+      proof: bitcoin-core-25.0-SHA256SUMS.ots
+      subject: bitcoin-core-25.0-SHA256SUMS
+      source: https://bitcoincore.org/bin/bitcoin-core-25.0/
+    - title: Bitcoin Core 25.1
+      proof: bitcoin-core-25.1-SHA256SUMS.ots
+      subject: bitcoin-core-25.1-SHA256SUMS
+      source: https://bitcoincore.org/bin/bitcoin-core-25.1/
+    - title: Bitcoin Core 25.2
+      proof: bitcoin-core-25.2-SHA256SUMS.ots
+      subject: bitcoin-core-25.2-SHA256SUMS
+      source: https://bitcoincore.org/bin/bitcoin-core-25.2/
+    - title: Bitcoin Core 26.0
+      proof: bitcoin-core-26.0-SHA256SUMS.ots
+      subject: bitcoin-core-26.0-SHA256SUMS
+      source: https://bitcoincore.org/bin/bitcoin-core-26.0/
+    - title: Bitcoin Core 26.1
+      proof: bitcoin-core-26.1-SHA256SUMS.ots
+      subject: bitcoin-core-26.1-SHA256SUMS
+      source: https://bitcoincore.org/bin/bitcoin-core-26.1/
+    - title: Bitcoin Core 26.2
+      proof: bitcoin-core-26.2-SHA256SUMS.ots
+      subject: bitcoin-core-26.2-SHA256SUMS
+      source: https://bitcoincore.org/bin/bitcoin-core-26.2/
+    - title: Bitcoin Core 27.0
+      proof: bitcoin-core-27.0-SHA256SUMS.ots
+      subject: bitcoin-core-27.0-SHA256SUMS
+      source: https://bitcoincore.org/bin/bitcoin-core-27.0/
+    - title: Bitcoin Core 27.1
+      proof: bitcoin-core-27.1-SHA256SUMS.ots
+      subject: bitcoin-core-27.1-SHA256SUMS
+      source: https://bitcoincore.org/bin/bitcoin-core-27.1/
+    - title: Bitcoin Core 27.2
+      proof: bitcoin-core-27.2-SHA256SUMS.ots
+      subject: bitcoin-core-27.2-SHA256SUMS
+      source: https://bitcoincore.org/bin/bitcoin-core-27.2/
+    - title: Bitcoin Core 28.0
+      proof: bitcoin-core-28.0-SHA256SUMS.ots
+      subject: bitcoin-core-28.0-SHA256SUMS
+      source: https://bitcoincore.org/bin/bitcoin-core-28.0/
+    - title: Bitcoin Core 28.1
+      proof: bitcoin-core-28.1-SHA256SUMS.ots
+      subject: bitcoin-core-28.1-SHA256SUMS
+      source: https://bitcoincore.org/bin/bitcoin-core-28.1/
+    - title: Bitcoin Core 28.2
+      proof: bitcoin-core-28.2-SHA256SUMS.ots
+      subject: bitcoin-core-28.2-SHA256SUMS
+      source: https://bitcoincore.org/bin/bitcoin-core-28.2/
+    - title: Bitcoin Core 28.3
+      proof: bitcoin-core-28.3-SHA256SUMS.ots
+      subject: bitcoin-core-28.3-SHA256SUMS
+      source: https://bitcoincore.org/bin/bitcoin-core-28.3/
+    - title: Bitcoin Core 28.4
+      proof: bitcoin-core-28.4-SHA256SUMS.ots
+      subject: bitcoin-core-28.4-SHA256SUMS
+      source: https://bitcoincore.org/bin/bitcoin-core-28.4/
+    - title: Bitcoin Core 29.0
+      proof: bitcoin-core-29.0-SHA256SUMS.ots
+      subject: bitcoin-core-29.0-SHA256SUMS
+      source: https://bitcoincore.org/bin/bitcoin-core-29.0/
+    - title: Bitcoin Core 29.1
+      proof: bitcoin-core-29.1-SHA256SUMS.ots
+      subject: bitcoin-core-29.1-SHA256SUMS
+      source: https://bitcoincore.org/bin/bitcoin-core-29.1/
+    - title: Bitcoin Core 29.2
+      proof: bitcoin-core-29.2-SHA256SUMS.ots
+      subject: bitcoin-core-29.2-SHA256SUMS
+      source: https://bitcoincore.org/bin/bitcoin-core-29.2/
+    - title: Bitcoin Core 29.3
+      proof: bitcoin-core-29.3-SHA256SUMS.ots
+      subject: bitcoin-core-29.3-SHA256SUMS
+      source: https://bitcoincore.org/bin/bitcoin-core-29.3/
+    - title: Bitcoin Core 29.4
+      proof: bitcoin-core-29.4-SHA256SUMS.ots
+      subject: bitcoin-core-29.4-SHA256SUMS
+      source: https://bitcoincore.org/bin/bitcoin-core-29.4/
+    - title: Bitcoin Core 30.2
+      proof: bitcoin-core-30.2-SHA256SUMS.ots
+      subject: bitcoin-core-30.2-SHA256SUMS
+      source: https://bitcoincore.org/bin/bitcoin-core-30.2/
+    - title: Bitcoin Core 30.3
+      proof: bitcoin-core-30.3-SHA256SUMS.ots
+      subject: bitcoin-core-30.3-SHA256SUMS
+      source: https://bitcoincore.org/bin/bitcoin-core-30.3/
+    - title: Bitcoin Core 31.0
+      proof: bitcoin-core-31.0-SHA256SUMS.ots
+      subject: bitcoin-core-31.0-SHA256SUMS
+      source: https://bitcoincore.org/bin/bitcoin-core-31.0/
+    - title: Bitcoin Core 31.1
+      proof: bitcoin-core-31.1-SHA256SUMS.ots
+      subject: bitcoin-core-31.1-SHA256SUMS
+      source: https://bitcoincore.org/bin/bitcoin-core-31.1/
