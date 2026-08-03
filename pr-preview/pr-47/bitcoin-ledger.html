@@ -223,6 +223,20 @@ a:hover { text-decoration: underline; }
 .idx-note { display:block; margin-top:12px; padding-left:14px; font:400 12px/1.5 'IBM Plex Mono',monospace; color:var(--meta); }
 /* The sync state, heading whatever data this level has to show. */
 .idx-note.sync-note { text-align:center; padding-left:0; margin:22px 0 0; color:var(--dim); }
+/* The loading mark, the book's own (bitcoin-book.html): the four sigla of
+   the pay-to-pubkey-hash template -- ⧉ ⌖ ≡ ∇ -- read out one at a time on a
+   shared clock, revealed at the record's foot while a scroll's pull is out
+   gathering. Under reduced motion the cycle stops on ⧉ and stands still. */
+.spinner { position:relative; display:inline-block; width:1.3em; height:1.2em; vertical-align:-3px; margin-right:5px; color:var(--accent); }
+.spinner span { position:absolute; inset:0; text-align:center; line-height:1.2; opacity:0; animation: sigla-read 2s linear infinite; }
+.spinner span:nth-child(2) { animation-delay:.5s; }
+.spinner span:nth-child(3) { animation-delay:1s; }
+.spinner span:nth-child(4) { animation-delay:1.5s; }
+@keyframes sigla-read { 0% { opacity:0; } 8%, 25% { opacity:1; } 33%, 100% { opacity:0; } }
+@media (prefers-reduced-motion: reduce) {
+  .spinner span { animation:none; }
+  .spinner span:first-child { opacity:1; }
+}
 
 .sp-eyebrow { margin:30px 0 0; font:600 10px/1 'IBM Plex Mono',monospace; letter-spacing:.3em; text-transform:uppercase; color:var(--dim); text-align:center; scroll-margin-top:26px; }
 .sp-toc { margin-bottom:8px; }
@@ -860,6 +874,14 @@ const bookmarks = readBookmarks()
 
 const n = (v, one, many) => `${v.toLocaleString('en-US')} ${v === 1 ? one : many}`;
 
+// The loading mark, as the book prints it (SPINNER_HTML in bitcoin-book.html):
+// the P2PKH sigla read out in turn. Decorative -- the words after it say
+// what's happening -- so the whole mark is hidden from the reader's ear.
+const SPINNER_HTML = '<span class="spinner" aria-hidden="true">'
+  + [['⧉', 'OP_DUP'], ['⌖', 'OP_HASH160'], ['≡', 'OP_EQUALVERIFY'], ['∇', 'OP_CHECKSIG']]
+    .map(([glyph, name]) => `<span title="${name}">${glyph}</span>`).join('')
+  + '</span>';
+
 const showCount = (data) => {
   if (!data || !data.entries.length) { count.textContent = ''; return; }
   const parts = [n(data.entries.length, 'entry', 'entries')];
@@ -1150,7 +1172,10 @@ const runResolve = async (addr, alive) => {
     busy = true;
     let line = await cachedLine(addr);
     if (!alive() || !line) { busy = false; return; }
-    if (line.entries.length <= rendered && !line.complete) line = await extendLine(addr) ?? line;
+    if (line.entries.length <= rendered && !line.complete) {
+      foot.innerHTML = `${SPINNER_HTML}reaching deeper…`;   // settled below either way
+      line = await extendLine(addr) ?? line;
+    }
     if (!alive()) { busy = false; return; }
     const len = line.entries.length;
     const take = Math.min(len - rendered, PAGE);
@@ -1406,6 +1431,9 @@ const runEntries = async (alive) => {
     if (!draw()) {
       if (queue.length) {
         const batch = queue.splice(0, BATCH);
+        // The pull is out: the book's loading mark reads at the foot until
+        // the batch lands (paintMeta below settles the foot either way).
+        foot.innerHTML = `${SPINNER_HTML}gathering ${n(batch.length, 'passage', 'passages')}…`;
         const before = merged()?.entries.length ?? 0;
         let answered = 0;
         await pooled(batch, 4, async (a) => {
@@ -1425,6 +1453,7 @@ const runEntries = async (alive) => {
       } else {
         const behind = addrs.filter((a) => lines.get(a) && !lines.get(a).complete);
         if (behind.length) {
+          foot.innerHTML = `${SPINNER_HTML}reaching deeper…`;
           const before = merged()?.entries.length ?? 0;
           await pooled(behind.slice(0, 4), 4, async (a) => {
             const l = await extendLine(a).catch(() => null);
