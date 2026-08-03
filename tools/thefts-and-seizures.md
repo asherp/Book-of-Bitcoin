@@ -72,8 +72,11 @@ and another 10,000 in block 721,287, four more 10,000s in block 721,292
 (the largest by input count drawing on 592 addresses), the mid-size and
 small lots, and last a 510-input dust sweep of exactly **0.29837084 ₿**.
 The largest single passage: `c49ff6bd…c17a`, block 721,287, 04:57 UTC,
-position 675 — citation **IV β46 ■568 §676** — **562 inputs, one output,
-15,000 ₿ even.** **[verified]**
+position 675 — citation **IV β46 ■568 §676** — **562 inputs, 15,000 ₿
+even to custody**, with 5.88594500 ₿ of change to a staging address
+beside it and a 0.01057374 ₿ fee (each big sweep pairs its round custody
+output with such a change line — the first sweep's 13.79062700 ₿ went to
+`1MiWBbyne…`, below). **[verified]**
 
 The connection the chain writes by itself: `1MiWBbyne…` — the address the
 2016 withdrawal above paid — is an *input* to these sweeps, and even took

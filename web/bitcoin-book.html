@@ -672,8 +672,9 @@ button:disabled { opacity: .4; cursor: not-allowed; }
    the record, not bytes on the wire -- so they do not sit in the
    transaction's own flow: they ride in their own band (#ch-totals, below),
    apart from the record they total and above the witness footnotes when
-   there are any. The inputs' sum waits on the margin citations resolving,
-   and an input the book cannot price leaves the sum and the fee unsaid (⋯).
+   there are any. The inputs' sum prices from the section's own prevouts
+   (one request, however many inputs -- see prevoutValues), and an input
+   the book cannot price leaves the sum and the fee unsaid (⋯).
    A coinbase's line inverts the middle sign: its input brings no prior
    output, so the subsidy the schedule mints at this height stands at the
    left and the chapter's gathered fees between, + fee -- the miner's take
@@ -1845,6 +1846,64 @@ async function resolveCitations(pending, gen) {
   }));
 }
 
+// Every input's spent amount in one request sized by the section itself:
+// Esplora has no endpoint for a single referenced output's value, but a
+// transaction's own JSON (/tx/:txid) lists each input's prevout -- value
+// included -- so a section's margin amounts and its balance line never
+// require fetching the referenced transactions, however enormous (an
+// exchange batch withdrawal, a 562-input seizure sweep) those are. The
+// ledger reads its reproduced sections this way already (prevoutValuesOf,
+// issue #13); this is the reader adopting it. Confirmed prevouts are
+// immutable; memoized for the session, and seeded for free when a section
+// is opened by txid (loadBlockByTxid already fetched exactly this JSON).
+const prevoutsCache = new Map();   // txid -> Promise<(number|null)[] | null>
+const prevoutsOfTxJson = (tx) => tx.vin.map((v) => (v.prevout && v.prevout.value != null ? Number(v.prevout.value) : null));
+function prevoutValues(txid) {
+  if (!prevoutsCache.has(txid)) {
+    prevoutsCache.set(txid, (async () => {
+      const res = await esploraFetch(`${ESPLORA}/tx/${txid}`);
+      if (!res.ok) return null;
+      const tx = await res.json();
+      if (!tx || tx.txid !== txid || !Array.isArray(tx.vin)) return null;
+      return prevoutsOfTxJson(tx);
+    })().catch(() => { prevoutsCache.delete(txid); return null; }));
+  }
+  return prevoutsCache.get(txid);
+}
+
+// The margin references, resolved as each scrolls near -- the same deferral
+// lazyEncode gives a bulky push. Resolving a reference costs a lookup per
+// referenced transaction, and eager resolution of hundreds at once is what
+// made an exchange-batch section take minutes to open (issue #13). The
+// amounts no longer wait on these (prevoutValues prices every margin line
+// in one request); only the reference text defers, and references the
+// reader never scrolls to are never fetched at all. Falls back to resolving
+// everything at once where the browser has no IntersectionObserver.
+const lazyCites = (() => {
+  const pendingByEl = new Map();   // cite element -> { entry, gen }
+  const io = ('IntersectionObserver' in window)
+    ? new IntersectionObserver((entries, obs) => {
+        for (const e of entries) {
+          if (!e.isIntersecting) continue;
+          obs.unobserve(e.target);
+          const pc = pendingByEl.get(e.target);
+          if (pc) { pendingByEl.delete(e.target); resolveCitations([pc.entry], pc.gen); }
+        }
+      }, { rootMargin: '600px 0px' })
+    : null;
+  return {
+    // Drop watches from a previous section (their nodes are already detached).
+    reset: () => { if (io) io.disconnect(); pendingByEl.clear(); },
+    observe: (entries, gen) => {
+      if (!io) { resolveCitations(entries, gen); return; }
+      // A witness-only input's citation attaches later, with its footnote --
+      // the observer delivers once the node is connected and near, so
+      // watching it now is right either way.
+      for (const entry of entries) { pendingByEl.set(entry.cite, { entry, gen }); io.observe(entry.cite); }
+    },
+  };
+})();
+
 // A block's ordered txid list, memoized by block hash. It's the heaviest part
 // of a block's metadata -- every transaction hash -- so it's fetched on its own
 // and only when needed: opening one transaction by id doesn't need it (its section
@@ -2564,6 +2623,9 @@ async function loadBlockByTxid(txid) {
   ]);
   if (!txRes.ok) throw new Error(txRes.status === 404 ? `No transaction ${txid.slice(0, 8)}…` : `Esplora returned ${txRes.status}.`);
   const tx = await txRes.json();
+  // This JSON is exactly what prevoutValues would fetch -- bank the margin
+  // amounts now, so opening a section by txid never asks for it twice.
+  if (Array.isArray(tx.vin) && !prevoutsCache.has(txid)) prevoutsCache.set(txid, Promise.resolve(prevoutsOfTxJson(tx)));
   if (!tx.status || !tx.status.confirmed) throw new Error('That transaction is unconfirmed — it has no section yet. If it pays its way, it sits in one of the projected chapters past the tip.');
   const hash = tx.status.block_hash;
   if (mpRes.ok) {
@@ -2689,32 +2751,69 @@ function loadRbfHistory(txid) {
 // inside the animation. A bulky OP_RETURN data carrier is still deferred like
 // a witness push -- its prose streams in on scroll (see lazyEncode); every
 // other body field is encoded here.
-const fieldsCache = new Map();   // txid -> { fields, verified }, LRU order
+const fieldsCache = new Map();   // txid -> Promise<{ fields, verified, templates }>, LRU order
 const FIELDS_CACHE_MAX = 12;
-async function sectionFields(txid) {
+const EAGER_ENCODE_BUDGET_MS = 1500;   // eager prose per section; the rest streams in on scroll
+function sectionFields(txid) {
   const cached = fieldsCache.get(txid);
   if (cached) {
     fieldsCache.delete(txid);
     fieldsCache.set(txid, cached);   // move to the most-recently-used end
     return cached;
   }
-  const hex = await loadTxHex(txid);
-  const parsed = parseTransaction(hex);
-  const verifiedTxid = await computeTxid(parsed.baseHex);
-  const entry = {
-    // The encoder pins the reader's chosen language (composeTransactionFields'
-    // own default is english); the cache is flushed when the choice changes,
-    // so an entry never outlives the language it was composed in.
-    fields: composeTransactionFields(parsed, BEST_OF, lazyEncode.placeholder,
-      (hex, lang, bestOf) => encodeCanonical(hex, bookLang(), bestOf)),
-    verified: verifiedTxid === txid,
-    // Which of the notation key's script patterns this section puts on the
-    // page, for the key's filter. Classified once, beside the fields.
-    templates: transactionTemplates(parsed),
-  };
-  fieldsCache.set(txid, entry);
+  const p = (async () => {
+    const hex = await loadTxHex(txid);
+    const parsed = parseTransaction(hex);
+    const verifiedTxid = await computeTxid(parsed.baseHex);
+    // The encodes, in yielded chunks -- the ledger's own two-pass discipline
+    // (issue #13): a giant section (an exchange batch runs to hundreds of
+    // inputs) composed in one synchronous pass freezes the page for its
+    // whole duration, gestures and the carousel with it. So the compose is
+    // dry-run first with a recording encoder to list the exact pushes it
+    // will encode (compaction and nested reveals included; the bulky data
+    // carriers still defer to lazyEncode in both passes), each is encoded
+    // with the event loop yielded to every ~24 ms, and the real compose
+    // then reads the results back as lookups. The cache holds the promise,
+    // so a prefetch and a page turn racing to the same section share one
+    // compose instead of doubling it.
+    const proseMemo = new Map();
+    const record = [];
+    composeTransactionFields(parsed, BEST_OF, lazyEncode.placeholder,
+      (h) => { record.push(h); return { prose: '', payloadWords: [] }; });
+    // A time budget bounds the eager pass: a normal section encodes whole
+    // well inside it, and a giant one -- 562 P2PKH inputs is over a
+    // thousand pushes, minutes of encoding -- defers the remainder to the
+    // same scroll-driven fill a bulky data push already uses, so the page
+    // opens in seconds and prose the reader never scrolls to is never
+    // encoded at all. Deterministic compose means the second pass asks for
+    // exactly the recorded pushes: a memo miss IS the budget's cut.
+    const t0 = performance.now();
+    let slice = t0;
+    for (const h of record) {
+      if (!h || proseMemo.has(h)) continue;
+      if (performance.now() - t0 > EAGER_ENCODE_BUDGET_MS) break;
+      if (performance.now() - slice > 24) {
+        await new Promise((r) => setTimeout(r, 0));
+        slice = performance.now();
+      }
+      proseMemo.set(h, encodeCanonical(h, bookLang(), BEST_OF));
+    }
+    return {
+      // The encoder pins the reader's chosen language (composeTransactionFields'
+      // own default is english); the cache is flushed when the choice changes,
+      // so an entry never outlives the language it was composed in.
+      fields: composeTransactionFields(parsed, BEST_OF, lazyEncode.placeholder,
+        (h, lang, bestOf) => proseMemo.get(h)
+          ?? { prose: lazyEncode.placeholder(h), payloadWords: [] }),
+      verified: verifiedTxid === txid,
+      // Which of the notation key's script patterns this section puts on the
+      // page, for the key's filter. Classified once, beside the fields.
+      templates: transactionTemplates(parsed),
+    };
+  })().catch((e) => { fieldsCache.delete(txid); throw e; });
+  fieldsCache.set(txid, p);
   while (fieldsCache.size > FIELDS_CACHE_MAX) fieldsCache.delete(fieldsCache.keys().next().value);
-  return entry;
+  return p;
 }
 
 async function showCurrentTx() {
@@ -3777,6 +3876,7 @@ function renderChapter(para) {
   // [scriptPubKey | amount] subgrid; the locktime closes on the right.
   const gen = ++renderGen;
   lazyEncode.reset();   // drop chunks still pending from the previous section (body + footnotes)
+  lazyCites.reset();    // and the previous section's unresolved margin references
 
   // Successions are looked up for EVERY section, mined or projected: the
   // reader's own ledger answers at once; the backend's RBF archive
@@ -3931,7 +4031,7 @@ function renderChapter(para) {
     if (!inp.isNullPrevout) {
       const amtVal = document.createElement('span');   // the spent output's amount, filled on resolve
       amtLine.append(' ', amtVal);
-      pendingCites.push({ citeBody, cite, amtVal, txid: inp.prevTxid, vout: inp.prevVout });
+      pendingCites.push({ citeBody, cite, amtVal, txid: inp.prevTxid, vout: inp.prevVout, vin: inputIndex - 1 });
     }
     cite.append(amtLine);
     // An input that renders a scriptSig gets an aligned row: its left cell
@@ -4031,8 +4131,9 @@ function renderChapter(para) {
   // so it renders in the foot region below the section's rule rather than
   // in the flow (appended there with the footnotes reset, further down).
   // The outputs' sum is the transaction's own; the inputs' and the fee fill
-  // in once every margin citation has resolved a value, and stay ⋯ if any
-  // could not be priced. A coinbase's line inverts the middle sign: its
+  // in once the section's prevouts answer (or, failing that, once every
+  // margin citation has resolved a value), and stay ⋯ if any input could
+  // not be priced. A coinbase's line inverts the middle sign: its
   // left station is the subsidy the coinage schedule mints at this height
   // (btc-citation's subsidyAt -- arithmetic on the height, nothing to
   // resolve), and the fees the chapter's sections paid stand between it
@@ -4046,7 +4147,7 @@ function renderChapter(para) {
     totals.className = 'tx-totals';
     const tIn = document.createElement('span');
     tIn.textContent = '⋯';
-    tIn.title = 'the sum of the inputs — waiting on the margin citations';
+    tIn.title = 'the sum of the inputs — waiting on the section’s prevouts';
     const tFee = document.createElement('span');
     tFee.className = 't-fee';
     tFee.textContent = '⋯';
@@ -4095,9 +4196,30 @@ function renderChapter(para) {
   body.append(wrap);
   syncBookmarkTitles();   // paint the section's and outputs' name lines from the bookmark set
   lazyEncode.observe(body);   // encode any deferred OP_RETURN payload as it scrolls into view
-  resolveCitations(pendingCites, gen).then((values) => {
-    if (gen === renderGen && fillTotals) fillTotals(values);
-  });
+  // The margin amounts and the balance line price from the section's own
+  // prevouts -- one request however many inputs there are -- and the
+  // references then resolve one by one as the reader scrolls to them
+  // (lazyCites). Only if no mirror answers with prevouts does the old road
+  // run: every reference resolved eagerly, the amounts riding along.
+  if (pendingCites.length) {
+    prevoutValues(para.txid).then((vals) => {
+      if (gen !== renderGen) return;
+      if (vals) {
+        for (const pc of pendingCites) {
+          const v = vals[pc.vin];
+          if (v == null) continue;
+          pc.amtVal.textContent = formatAmount(v);
+          pc.amtVal.title = `the amount this input spends: ${amountTitle(v)}`;
+        }
+        if (fillTotals) fillTotals(pendingCites.map((pc) => vals[pc.vin]));
+        lazyCites.observe(pendingCites, gen);
+      } else {
+        resolveCitations(pendingCites, gen).then((values) => {
+          if (gen === renderGen && fillTotals) fillTotals(values);
+        });
+      }
+    });
+  }
   resolveForwardCitations(para.txid, fwdCells, gen);
   resolveCitedWorks(para.num, citedCells, gen);
 
