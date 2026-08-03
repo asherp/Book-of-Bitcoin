@@ -237,10 +237,12 @@
     - bip: '101'
       name: Bigger Blocks
       status: failed
-      note: The first serious attempt to move the block size by miner vote — eight-megabyte blocks, doubling on a schedule — carried by Bitcoin XT, a whole competing client, because the change could not get into Bitcoin Core. The vote never came near its threshold, the client faded, and the question it asked was finally settled elsewhere, years later and the other way. No chapter carries its name; the chain declined to write one.
+      note: The first serious attempt to move the block size by miner vote — eight-megabyte blocks, doubling on a schedule — carried by Bitcoin XT, a whole competing client, because the change could not get into Bitcoin Core. Its yes was version 0x20000007, bits 0, 1 and 2 over the version-bits base, needing 750 of the 1,000 preceding. The vote never came near it — on the order of one block in a thousand ever signaled, XT's surge being nodes rather than blocks — the client faded, and the question it asked was finally settled elsewhere, years later and the other way. The chain holds a scattering of ballots cast and nothing more; no window is worth laying out, and the near-empty record is the record.
       stats:
         - label: mechanism
           value: 750 of the last 1,000 blocks, by block version — carried by the Bitcoin XT client
+        - label: signal
+          value: version 0x20000007 — bits 0, 1 and 2 set over the version-bits base
         - label: proposed
           value: June 2015, by Gavin Andresen
         - label: outcome
