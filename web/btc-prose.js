@@ -383,6 +383,39 @@ export function formatBtc(sats) {
   return `${whole}.${frac} ₿`;
 }
 
+// ─── amount notation ───────────────────────────────────────────────────
+// How the reader prints an amount is a choice, like the prose language:
+//   'btc'   1.23456789 ₿      bitcoin, the ₿ sign trailing (formatBtc above)
+//   'sats'  123·456·789 sats  satoshis, the book's middle-dot grouping
+//   'raw'   123456789         the bare satoshi integer — no marker, no separator
+// The choice persists in localStorage under its own key and is read at
+// format time, so a page re-render is all a switch needs. 'btc' is the
+// default and is stored as an absent key, so a reader who never chose
+// reads the book as it has always been set.
+const AMOUNT_UNIT_KEY = 'glossia-btc-amount-unit';
+export function amountUnit() {
+  try {
+    const v = localStorage.getItem(AMOUNT_UNIT_KEY);
+    return v === 'sats' || v === 'raw' ? v : 'btc';
+  } catch { return 'btc'; }
+}
+export function setAmountUnit(u) {
+  try {
+    if (u === 'sats' || u === 'raw') localStorage.setItem(AMOUNT_UNIT_KEY, u);
+    else localStorage.removeItem(AMOUNT_UNIT_KEY);
+  } catch { /* storage unavailable: the choice just doesn't persist */ }
+}
+// A satoshi amount in a named notation — the settings rows print one sample
+// amount in each, so the choice shows itself.
+export function formatAmountAs(sats, unit) {
+  if (unit === 'sats') return `${groupDigits(BigInt(sats).toString())} sats`;
+  if (unit === 'raw') return BigInt(sats).toString();
+  return formatBtc(sats);
+}
+// …and in the notation currently chosen: the one call every amount the
+// reader page prints goes through.
+export const formatAmount = (sats) => formatAmountAs(sats, amountUnit());
+
 // Quoted script text comes directly from raw blockchain data -- a miner's
 // coinbase tag, an OP_RETURN message -- not our own wordlist, so unlike the
 // Glossia-generated prose it's untrusted content and must be escaped before

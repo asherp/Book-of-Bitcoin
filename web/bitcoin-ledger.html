@@ -1827,7 +1827,7 @@ const openEntryLeaf = async (alive) => {
           }
           if (spent != null) {
             const amt2 = document.createElement('span');
-            amt2.textContent = ` (${formatBalanceBtc(spent)})`;
+            amt2.textContent = ` ${formatBalanceBtc(spent)}`;
             amt2.title = `the amount this input spends: ${spent.toLocaleString('en-US')} satoshis`;
             amtLine.append(amt2);
           }

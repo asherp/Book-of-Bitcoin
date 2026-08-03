@@ -37,6 +37,7 @@ const STRINGS = {
     // panels
     'Prose language': 'Jazyk prózy',
     'Text size': 'Velikost písma',
+    'Amounts': 'Částky',
     'Data source': 'Zdroj dat',
     'Body': 'Text',
     'Sigla': 'Sigla',
@@ -116,6 +117,7 @@ const STRINGS = {
     // panels
     'Prose language': 'Prosasprache',
     'Text size': 'Textgröße',
+    'Amounts': 'Beträge',
     'Data source': 'Datenquelle',
     'Body': 'Fließtext',
     'Sigla': 'Sigla',
