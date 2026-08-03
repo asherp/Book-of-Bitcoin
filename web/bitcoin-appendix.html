@@ -227,6 +227,14 @@ a.bb-ref:hover { color:var(--accent-2); }
 /* A coinbase ballot's middle column: the miner's own line, kept to one --
    the full text rides the hover. */
 .bb-say { font-style:normal; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:12px; }
+/* Inside a signaling period the version writes raw: the number in binary,
+   the counted bit in bold accent -- the ballot is read off this word, so
+   the record shows the word rather than the frontispiece's encoding of it
+   (which packs bits 13-28 into a word pair and would swallow the signal).
+   The prose reading still rides the hover. */
+.bb-bits { font:400 10.5px/1.6 'IBM Plex Mono',monospace; font-style:normal; letter-spacing:.05em;
+  color:var(--meta); font-variant-numeric:tabular-nums; overflow-wrap:anywhere; }
+.bb-bits .bb-bit { font-weight:700; font-style:normal; color:var(--accent); }
 /* The clock at the row's head: the replay is chronological, and the days
    head their runs -- each row keeps only its minute. */
 .bb-time { flex:none; font:400 10px/1.7 'IBM Plex Mono',monospace; color:var(--meta); white-space:nowrap; font-variant-numeric:tabular-nums; }
@@ -450,6 +458,54 @@ const bipAt = bip ? bips.indexOf(bip) : -1;
 // One block of a fork's ballot, a level below the fork's own leaf: ?block=
 // names it by height, the way a ballot row links it.
 const blockLeaf = bip && /^[0-9]+$/.test(params.get('block') || '') ? Number(params.get('block')) : null;
+
+// ── The version word, as a consensus view writes it ───────────────────────
+// Inside an active signaling period the version IS the ballot, so these
+// leaves write it raw: the number in binary, the bit the fork counts in
+// boldface. The frontispiece's encoding stays for every block outside a
+// period -- it packs the rolling range (bits 13-28) into its word pair, and
+// would swallow the very bit a ballot is reading (Classic's 28 sits in it).
+// The prose form still speaks on hover, title-deep, wherever binary stands.
+//
+// A period: a closed ballot's window is one by definition; a live fork's
+// runs from its first cast (the earliest chapter its entries name) -- ahead
+// of that first cast nothing was signaling, and the frontispiece's own
+// notation stands.
+const inSignalingPeriod = (h) => {
+  if (!bip) return false;
+  if (bip.ballot != null) {
+    const floor = bip.ballot - (Number.isFinite(bip.window) ? bip.window : 2016) + 1;
+    return h >= floor && h <= bip.ballot;
+  }
+  const casts = (bip.entries || [])
+    .filter((e) => !e.expected && !e.page && isBlockId(e.id))
+    .map((e) => Number(e.id));
+  return casts.length ? h >= Math.min(...casts) : true;
+};
+// The binary word itself. A bit-read fork bolds its one counted bit (set --
+// an unset bit is a no, and a no is not a signal); a supermajority fork's
+// signal is the whole number clearing the minimum, so the whole number goes
+// bold when it does.
+const versionBitsEl = (version, bit, aye) => {
+  const bin = (version >>> 0).toString(2);
+  const el = document.createElement('span');
+  const bold = (text) => {
+    const b = document.createElement('b');
+    b.className = 'bb-bit';
+    b.textContent = text;
+    return b;
+  };
+  if (bit == null) {
+    el.append(aye ? bold(bin) : document.createTextNode(bin));
+    return el;
+  }
+  const at = (bin.length - 1) - bit;   // the counted bit's character
+  if (at < 0 || bin[at] !== '1') { el.append(document.createTextNode(bin)); return el; }
+  if (at > 0) el.append(document.createTextNode(bin.slice(0, at)));
+  el.append(bold('1'));
+  if (at < bin.length - 1) el.append(document.createTextNode(bin.slice(at + 1)));
+  return el;
+};
 
 const $ = (id) => document.getElementById(id);
 // A citation written whole -- volume and all, since no heading here has named
@@ -741,7 +797,7 @@ if (bip && blockLeaf == null) {
       ['bb-time', 'mined', 'the minute the block was mined, UTC — the days head their runs'],
       ['bb-ref', 'chapter', ''],
       COIN ? ['bb-ver', 'coinbase', "the chapter's first line — the printable runs of the coinbase scriptSig"]
-           : ['bb-ver', 'version', "as the chapter's frontispiece writes it"],
+           : ['bb-ver', 'version', 'in binary while the period runs, the counted bit in bold — the frontispiece\'s own form outside it, and always on hover'],
       ['bb-status', 'signal', `a yes is ${yesSays}`],
       ['bb-sum', 'Σ', 'the yeses so far — the count as it stood with this block written'],
       ['bb-pct', '%', 'the rate so far — the yeses over the blocks written to this point'],
@@ -837,11 +893,21 @@ if (bip && blockLeaf == null) {
         ev.preventDefault();
         navTo(a.getAttribute('href'), 'down');
       });
+      const aye = yes(b);
       const v = document.createElement('span');
       if (COIN) {
         v.className = 'bb-ver bb-say';
         v.textContent = b.say == null ? 'unread' : (b.say || '—');
         v.title = b.say == null ? 'the coinbase could not be read — counted as no vote' : `the coinbase text\n${b.say}`;
+      } else if (inSignalingPeriod(b.height)) {
+        // In the period the version is the ballot: binary, the counted bit
+        // bold. The frontispiece's reading rides the hover.
+        const ver = formatBlockVersion(b.version);
+        v.className = 'bb-ver bb-bits';
+        const mark = document.createElement('span');
+        mark.className = 'dt'; mark.textContent = 'v';
+        v.append(mark, versionBitsEl(b.version, bip.bit ?? null, aye));
+        v.title = ver.title;
       } else {
         const ver = formatBlockVersion(b.version);
         v.className = 'bb-ver';
@@ -854,7 +920,6 @@ if (bip && blockLeaf == null) {
         v.title = ver.title;
       }
       const st = document.createElement('span');
-      const aye = yes(b);
       st.className = 'bb-status ' + (aye ? 'yes' : 'no');
       st.textContent = aye ? 'signals' : '—';
       st.title = aye ? yesSays : noSays;
@@ -1280,8 +1345,16 @@ if (blockLeaf != null) {
 
     const ver = formatBlockVersion(data.version);
     const vv = line('version');
-    const text = ver.text.replace(/^v/, '');
-    vv.append(mark('v', 'dt', ver.title), document.createTextNode((/^\d/.test(text) ? '' : ' ') + text));
+    if ((bip.bit != null || bip.version != null) && inSignalingPeriod(blockLeaf)) {
+      // The reprint keeps the ballot's own reading of the word: binary,
+      // the counted bit bold, the frontispiece's form on hover.
+      const aye = bip.bit != null ? ((data.version >>> bip.bit) & 1) === 1 : (data.version >>> 0) >= bip.version;
+      vv.classList.add('bb-bits');
+      vv.append(mark('v', 'dt', ver.title), versionBitsEl(data.version, bip.bit ?? null, aye));
+    } else {
+      const text = ver.text.replace(/^v/, '');
+      vv.append(mark('v', 'dt', ver.title), document.createTextNode((/^\d/.test(text) ? '' : ' ') + text));
+    }
     vv.title = ver.title;
 
     // The verdict, beside the field it is read off: a ballot is what brought
