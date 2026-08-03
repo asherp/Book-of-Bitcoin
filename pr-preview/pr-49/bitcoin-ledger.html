@@ -1927,9 +1927,10 @@ const openEntryLeaf = async (alive) => {
       const fee = sumOut - subsidy;
       totals = document.createElement('div');
       totals.className = 'tx-totals';
+      // A coinbase brings nothing in -- the left station stays empty, no
+      // input figure; the fee keeps its centre seat, priced off the
+      // schedule's subsidy without printing it.
       const tIn = document.createElement('span');
-      tIn.textContent = formatBalanceBtc(subsidy);
-      tIn.title = `the subsidy: ${subsidy.toLocaleString('en-US')} satoshis — what the coinage schedule mints at this height`;
       const tFee = document.createElement('span');
       tFee.className = 't-fee';
       tFee.textContent = `${fee < 0 ? '−' : '+'} ${formatBalanceBtc(Math.abs(fee))}`;
