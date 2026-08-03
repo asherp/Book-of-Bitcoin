@@ -576,11 +576,14 @@ a:hover { text-decoration: underline; }
 </div>
 
 <script type="module">
-import { INDEXED, isAddress, keptLedgers, saveKeptLedgers, sameAddresses, addressScriptHex, cachedLine, resolveLine,
+import { localizeHome, mountLangMenu } from './btc-strings.js';
+localizeHome();   // the masthead in the reader's UI language
+mountLangMenu();  // …with the Language item, which any page can now set
+import { INDEXED, isAddress, isScriptHex, keptLedgers, saveKeptLedgers, sameAddresses, memberScriptHex, cachedLine, resolveLine,
          extendLine, renderLedger, renderRows, periods, lineNote, reconciled, ledgerSum, heldCoins, addressState, lastKnownState,
          formatBalanceBtc, formatNetBtc, chainFailureText, citeHref, sectionOf, sectionOfFetched, citePlace, passageTxid, passageEntries, txHexOf, outspendsOf, prevoutValuesOf,
          DEFAULT_ESPLORA, esploraCustom, esploraSelected, setEsploraSettings } from './btc-index.js';
-import { volumeBookChapter, heightOf, toRoman, parseReference, latinRefOf, footnoteMark } from './btc-citation.js';
+import { volumeBookChapter, heightOf, subsidyAt, toRoman, parseReference, latinRefOf, footnoteMark } from './btc-citation.js';
 import { BIP39, HP_SPELLS } from './btc-wordlists.js';
 import { appendix } from './btc-contents.js';
 import './btc-fontscale.js';   // the reader's type sizes: a ledger's readings are set at the size the book page's Commentary row chose
@@ -698,8 +701,18 @@ const notablesReady = loadNotables();
 // ?address=<addr>[,<addr>…] query that matches none of them prepends a
 // temporary ledger of exactly those addresses. A query that names a member
 // of a shelved ledger opens that whole ledger, positioned on the address.
+// A member may also be a raw scriptPubKey as hex -- the name of an output no
+// address can write (a malformed or nonstandard script), served by the same
+// endpoints through its scripthash; the param keeps its name, an address
+// being the common spelling of a member. The search box's `script:` prefix
+// is shed before it lands here: in this list, hex is already unambiguous.
 const q = (new URLSearchParams(location.search).get('address') || '').trim();
-const norm = (s) => (isAddress(s) ? s : isAddress(s.toLowerCase()) ? s.toLowerCase() : null);
+const norm = (s) => {
+  const bare = s.replace(/^script:/i, '');
+  return isAddress(bare) ? bare
+    : isAddress(bare.toLowerCase()) ? bare.toLowerCase()
+    : isScriptHex(bare.toLowerCase()) ? bare.toLowerCase() : null;
+};
 const qList = q ? q.split(',').map((s) => norm(s.trim())).filter(Boolean) : [];
 // …and &page=ledger asks for the ledger those addresses belong to, at its
 // own title leaf, rather than the passage one of them names -- the book's
@@ -876,22 +889,22 @@ const heldView = (data, held) => {
 };
 
 // The referenced txo's prose, rendered once per address: a txo paying an
-// address carries exactly addressScriptHex(address), so every entry of the
+// address carries exactly memberScriptHex(address), so every entry of the
 // address quotes the same script -- render it once, reuse it across the
 // timeline's pages. Null when the engine (the WASM build) can't be had;
 // the leaf simply carries no prose then, as the hero carries the mono form.
-const txoProseMemo = new Map();   // address -> Promise<html|null>
+const txoProseMemo = new Map();   // member -> Promise<html|null>
 function txoProse(addr) {
   if (!txoProseMemo.has(addr)) {
     txoProseMemo.set(addr, (async () => {
       try {
-        const hex = addressScriptHex(addr);
+        const hex = memberScriptHex(addr);
         if (!hex) return null;
         const [gl, p] = await Promise.all([import('./glossia-msg.js'), import('./btc-prose.js')]);
         await gl.init();
         // renderScript's HTML is safe by its own contract: opcode glyphs and
         // marks are the only markup, pushed data arrives as Glossia prose.
-        return p.renderScript(hex, (h) => gl.encodeSeedPhrase(h).prose);
+        return p.renderScript(hex, (h) => gl.encodeCanonical(h).prose);
       } catch { return null; }
     })());
   }
@@ -940,7 +953,7 @@ function sectionFor(txid) {
               await new Promise((r2) => setTimeout(r2, 0));
               slice = performance.now();
             }
-            proseMemo.set(h, gl.encodeSeedPhrase(h, 'english', 5));
+            proseMemo.set(h, gl.encodeCanonical(h, gl.bookLang(), 5));
           }
         };
         const record = [];
@@ -955,7 +968,7 @@ function sectionFor(txid) {
         }
         record.push(reverseHex(txid));
         await chunkEncode(record);
-        const memoEnc = (h, lang, n) => proseMemo.get(h) ?? gl.encodeSeedPhrase(h, lang ?? 'english', n ?? 5);
+        const memoEnc = (h, lang, n) => proseMemo.get(h) ?? gl.encodeCanonical(h, lang ?? gl.bookLang(), n ?? 5);
         const enc = (h) => memoEnc(h).prose;
         const fields = p.composeTransactionFields(parsed, 5, null, memoEnc);
         const titleProse = enc(reverseHex(txid));
@@ -1825,7 +1838,7 @@ const openEntryLeaf = async (alive) => {
           }
           if (spent != null) {
             const amt2 = document.createElement('span');
-            amt2.textContent = ` (${formatBalanceBtc(spent)})`;
+            amt2.textContent = ` ${formatBalanceBtc(spent)}`;
             amt2.title = `the amount this input spends: ${spent.toLocaleString('en-US')} satoshis`;
             amtLine.append(amt2);
           }
@@ -1878,7 +1891,10 @@ const openEntryLeaf = async (alive) => {
     // The closing balance line, the book's rule: Σ inputs left, − fee
     // between, Σ outputs right. The outputs' sum is the transaction's own;
     // the inputs' and the fee fill once every input has priced, and stay ⋯
-    // if any could not be. A coinbase closes without one.
+    // if any could not be. A coinbase's line inverts the middle sign, as
+    // the reader's does: the subsidy the schedule mints at this height at
+    // the left, the block's gathered fees between as + fee (a shortfall
+    // against the schedule reads − : value forfeited), nothing to resolve.
     let totals = null;
     if (s.fields.inputs.length && !s.fields.inputs.some((v) => v.isNullPrevout)) {
       const sumOut = s.fields.outputs.reduce((a2, o) => a2 + o.sats, 0);
@@ -1892,7 +1908,7 @@ const openEntryLeaf = async (alive) => {
       tFee.textContent = '⋯';
       const tOut = document.createElement('span');
       tOut.className = 't-out';
-      tOut.textContent = formatBalanceBtc(sumOut);
+      tOut.textContent = `= ${formatBalanceBtc(sumOut)}`;
       tOut.title = `the outputs carry ${sumOut.toLocaleString('en-US')} satoshis`;
       totals.append(tIn, tFee, tOut);
       Promise.all(spentP).then((values) => {
@@ -1905,6 +1921,26 @@ const openEntryLeaf = async (alive) => {
         tFee.textContent = `− ${formatBalanceBtc(fee)}`;
         tFee.title = `the fee: ${fee.toLocaleString('en-US')} satoshis — the difference, claimed by the block's miner`;
       });
+    } else if (s.fields.inputs.length) {
+      const sumOut = s.fields.outputs.reduce((a2, o) => a2 + o.sats, 0);
+      const subsidy = subsidyAt(e.height);
+      const fee = sumOut - subsidy;
+      totals = document.createElement('div');
+      totals.className = 'tx-totals';
+      const tIn = document.createElement('span');
+      tIn.textContent = formatBalanceBtc(subsidy);
+      tIn.title = `the subsidy: ${subsidy.toLocaleString('en-US')} satoshis — what the coinage schedule mints at this height`;
+      const tFee = document.createElement('span');
+      tFee.className = 't-fee';
+      tFee.textContent = `${fee < 0 ? '−' : '+'} ${formatBalanceBtc(Math.abs(fee))}`;
+      tFee.title = fee < 0
+        ? `${(-fee).toLocaleString('en-US')} satoshis short of the schedule — value the miner left unclaimed, forfeited to no one`
+        : `the fees: ${fee.toLocaleString('en-US')} satoshis — what the block's transactions paid, gathered here`;
+      const tOut = document.createElement('span');
+      tOut.className = 't-out';
+      tOut.textContent = `= ${formatBalanceBtc(sumOut)}`;
+      tOut.title = `the outputs carry ${sumOut.toLocaleString('en-US')} satoshis`;
+      totals.append(tIn, tFee, tOut);
     }
     // The closing colophon: the locktime, centred -- and the self-check's
     // verdict only when it failed (a verified section says nothing; the
@@ -1961,7 +1997,7 @@ const openEntryLeaf = async (alive) => {
               for (const spanEl of [...job.el.querySelectorAll('[data-wchunk]')]) {
                 await new Promise((r2) => setTimeout(r2, 0));
                 if (!alive()) return;
-                spanEl.outerHTML = gl.encodeSeedPhrase(chunks[+spanEl.dataset.wchunk], 'english', 5).prose;
+                spanEl.outerHTML = gl.encodeCanonical(chunks[+spanEl.dataset.wchunk], gl.bookLang(), 5).prose;
               }
             })();
           }

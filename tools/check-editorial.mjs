@@ -70,8 +70,16 @@ for (const e of allPlaces) {
     // address nobody has shelved will only be met by a reader who goes looking
     // for that address — worth saying, never an error.
     if (!looksLikeAddress(e.address)) problems.push(`"${name}": id "${e.address}" does not look like an address`);
-    else if (!INDEXED.some((l) => l.addresses.includes(e.address))) {
+    else if (!INDEXED.some((l) => (l.addresses ?? []).includes(e.address))) {
       notes.push(`"${name}": ${e.address} is not shelved in btc-index-data.js — its reading shows only on an ad-hoc ledger`);
+    }
+  } else if (e.script) {
+    // A script entry names a ledger by the scriptPubKey itself -- the name of
+    // an output no address can write. Same standing as an address: a ledger,
+    // not a place, met in the Ledger by scripthash lookup.
+    if (!/^(?:[0-9a-f]{2})+$/.test(e.script)) problems.push(`"${name}": script "${e.script}" is not whole bytes of lowercase hex`);
+    else if (!INDEXED.some((l) => (l.scripts ?? []).includes(e.script))) {
+      notes.push(`"${name}": script ${e.script} is not shelved in btc-index-data.js — its reading shows only on an ad-hoc ledger`);
     }
   } else if (!/^-?[0-9]+$/.test(e.id) && !/^[0-9a-f]{64}$/.test(e.id)) {
     problems.push(`"${name}": id "${e.id}" is neither a block height nor a 64-hex id`);
@@ -105,18 +113,23 @@ const readingBearers = [
 const referenced = new Set();
 for (const e of readingBearers) {
   for (const r of readingsOf(e)) {
-    if (!r.file) continue;                        // an inline note: nothing on disk to check
-    referenced.add(r.file);
-    let src;
-    try {
-      src = await readFile(new URL(`commentary/${r.file}`, WEB), 'utf8');
-    } catch {
-      problems.push(`"${e.title}" references commentary/${r.file}, which does not exist`);
-      continue;
-    }
-    if (!markdownParagraphs(src).length) problems.push(`commentary/${r.file} has no prose in it`);
-    if (!src.includes('SPDX-License-Identifier: CC-BY-4.0')) {
-      problems.push(`commentary/${r.file} is missing its SPDX line (<!-- SPDX-License-Identifier: CC-BY-4.0 -->)`);
+    // A reading's translations (file-cs, file-de → r.files) are files like the
+    // original: each must exist, carry prose, and wear the CC-BY SPDX line.
+    const wanted = [r.file, ...Object.values(r.files ?? {})].filter(Boolean);
+    if (!wanted.length) continue;                 // an inline note: nothing on disk to check
+    for (const file of wanted) {
+      referenced.add(file);
+      let src;
+      try {
+        src = await readFile(new URL(`commentary/${file}`, WEB), 'utf8');
+      } catch {
+        problems.push(`"${e.title}" references commentary/${file}, which does not exist`);
+        continue;
+      }
+      if (!markdownParagraphs(src).length) problems.push(`commentary/${file} has no prose in it`);
+      if (!src.includes('SPDX-License-Identifier: CC-BY-4.0')) {
+        problems.push(`commentary/${file} is missing its SPDX line (<!-- SPDX-License-Identifier: CC-BY-4.0 -->)`);
+      }
     }
     // A credited reading is only credited if the name reaches the page.
     if (r.href && !/^https?:\/\//.test(r.href)) {

@@ -210,11 +210,34 @@ would be read. The corpus is only everyone's at once.
 Which addresses earn a place remains my judgment rather than the chain's, and
 it is filed accordingly.
 
-## A note on languages
+## On languages
 
-The book reads in English today. The engine speaks other languages, and the
-intent is that a reader chooses their own. That changes nothing above. A
-passage in another language is the same transaction under different grammar and
-decodes to the identical bytes — the words differ, the book does not.
+The sigla were chosen to belong to no language in particular because this book
+intends to be read in more than one. That intent is now a control rather than a
+promise: under **Language** in the masthead, the prose can be set in English,
+Latina, Čeština, or Deutsch, and the choice follows the reader through the
+whole book — the passages, the ledgers, the appendix, the proofs. Each language
+is named in itself, so finding yours does not require first reading mine.
 
-— Read it as a book, and check it as a ledger. / Asher Pembroke
+Choosing one changes nothing claimed above. Each language carries its own
+payload wordlist — English's is BIP39, the same two thousand forty-eight words
+seed phrases are made of — but the bytes those words carry are the same bytes
+in the same order, and the test in "Check it yourself" passes unchanged in
+every tongue: keep the payload words, drop the grammar, and the identical
+transaction comes back out. A passage even declares its own language, since the
+decoder recognizes the tongue from the words themselves; a paragraph quoted
+away from this book still says how to read it. No edition is the original and
+none is a copy. English holds no privilege here beyond having come first.
+
+One thing is never translated, and it is the record-and-readings line again.
+Text that sits in the chain itself — the genesis headline, a miner's tag in a
+coinbase — is quoted, not rendered: it appears in whatever language its author
+wrote it, however the prose around it is set. The grammar belongs to the
+translator; what was written into the record stays as written.
+
+The languages are the engine's vocabulary rather than the book's, so the list
+grows where the engine grows: a further tongue is language data to be built and
+argued over, not a redesign, and the invitation extended for the sigla covers
+the wordlists too.
+
+— Read it as a book, and check it as a ledger. / Claude

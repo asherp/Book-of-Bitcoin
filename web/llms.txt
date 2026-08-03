@@ -97,6 +97,9 @@ reaches it instead.
 
 ### The live app
 
+- `/latest` — always opens the reading page at the chain tip, the book's
+  latest written chapter (a redirect to `bitcoin-book.html?block=-1`; extra
+  query parameters ride along, so `/latest?index=0` is the tip's §1).
 - `bitcoin-book.html` — the reading page. `?block=<height>` opens a block
   (negative counts back from the tip: `?block=-1` is the latest);
   `&index=<n>` opens its section n+1 (0-based); `?txid=<txid>` jumps to a

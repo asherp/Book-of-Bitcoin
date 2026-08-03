@@ -11,13 +11,34 @@
 // has no header of its own). A `# title` block is dropped too: in both places
 // the title is already on the page around the prose.
 //
+// One more device, and it is the book's own rather than Markdown's: a full
+// citation written in the sigil spelling — `II β99 ■1441 §2`, to any depth
+// from a volume down to an output or witness — links to the passage it
+// names, through the same `?ref=` lookup every page answers. No syntax to
+// learn: write the reference and it is the link. Only the sigil spelling
+// links (the marks make it unmistakable in prose; "III 2 5" would claim
+// every roman numeral near a number), and only if it actually parses —
+// btc-citation.js is the judge, the same parser the search box uses. There
+// are deliberately no free-form links: a reading may point into the book,
+// and the book only.
+//
 // Everything is escaped before any markup is inserted, so an authored file can
 // never introduce elements — the prose here is authored matter, but it is still
 // data, and it is read by a page that also renders the chain.
 
+import { parseReference } from './btc-citation.js';
+
 const esc = (t) => t.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
 
-const inline = (t) => esc(t)
+// The citation autolink. Runs on the escaped text, before the styling marks:
+// a citation contains no markup characters and its href introduces none, so
+// the escapes-first contract holds. Candidates are shaped by the sigils and
+// admitted by the parser; anything that fails to parse stays plain text.
+const CITE = /[IVXLCDM]+ β\d+(?: ■\d+(?: §\d+(?:\.[0-9a-z]+)?)?)?/g;
+const citeLinks = (t) => t.replace(CITE, (m) =>
+  parseReference(m) ? `<a class="md-cite" href="./bitcoin-book.html?ref=${encodeURIComponent(m)}">${m}</a>` : m);
+
+const inline = (t) => citeLinks(esc(t))
   .replace(/`([^`]+)`/g, '<code>$1</code>')
   .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
   .replace(/\*([^*]+)\*/g, '<em>$1</em>');

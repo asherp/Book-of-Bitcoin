@@ -26,6 +26,42 @@
 import { parseYamlSequence } from './btc-yaml.js';
 import { toRoman } from './btc-citation.js';
 import { parseLookup, looksLikeAddress } from './btc-lookup.js';
+import { uiLang } from './btc-strings.js';
+
+// ─── translations of the editorial layer ─────────────────────────────
+// A curated title or a reading may carry translations, written as suffixed
+// keys beside the English original: `title-cs:`, and within a reading
+// `file-cs:` / `note-cs:` (the translated matter) and `translator-cs:` (who
+// made the translation — a translation is authored work and carries a name,
+// exactly as CONTRIBUTING says of the reading itself). English is the source
+// text and the fallback: a language with no suffix simply reads the original,
+// so translations can arrive one at a time. The suffixes are the UI languages'
+// — Latin deliberately has none (the chrome never speaks it; see
+// btc-strings.js), so a Latin reader gets the last modern tongue here too.
+const LANG_SUFFIXES = { cs: 'czech', de: 'german' };
+
+// The `${base}-${suffix}` keys of a raw mapping, gathered into { czech: … },
+// or null where no translation is written. A translation of a field that is
+// not itself written is an error — there is nothing it could fall back from —
+// except where the field only exists suffixed (`translator-cs` has no English
+// original: the original is not a translation).
+function readLocalized(raw, base, title, { requireBase = true } = {}) {
+  let out = null;
+  for (const [suffix, lang] of Object.entries(LANG_SUFFIXES)) {
+    const v = raw[`${base}-${suffix}`];
+    if (v === undefined) continue;
+    if (requireBase && raw[base] === undefined) {
+      throw new Error(`btc-notables: "${title}" writes ${base}-${suffix} with no ${base} beside it — the English original is the fallback and must exist`);
+    }
+    (out ||= {})[lang] = String(v);
+  }
+  return out;
+}
+
+// The variant for the reader's UI language, else the original. The pages and
+// btc-commentary.js read every localized field through this one gate.
+export const pickLocalized = (variants, original) =>
+  (variants && variants[uiLang()]) ?? original;
 
 export const NOTABLES_FILE = 'notables.yaml';
 export const APPENDIX_FILE = 'appendix.yaml';
@@ -83,21 +119,25 @@ function normalizePlace(raw, title) {
   if (!written) throw new Error(`btc-notables: "${title}" has a place with no id`);
   const found = parseLookup(written, { isAddress: looksLikeAddress });
   if (!found.kind) {
-    throw new Error(`btc-notables: "${title}" has an id that is neither a height, a 64-hex id, a reference, nor an address: ${written}`);
+    throw new Error(`btc-notables: "${title}" has an id that is neither a height, a 64-hex id, a reference, an address, nor a script: ${written}`);
   }
   const place = {};
   if (raw.as !== undefined) place.as = String(raw.as);
   // An address is kept the way the search box treats one: not a place in the
   // chain but a name, so it reads in the Ledger rather than as a chapter. It is
   // still curated, and still carries readings -- which is how commentary comes
-  // to be attached to a particular ledger.
-  if (found.kind === 'address') {
+  // to be attached to a particular ledger. A script id (`script:76a90088ac` --
+  // the name of an output no address can write) is the same kind of thing: a
+  // name, read in the Ledger, its id the bare hex the ledger members carry.
+  if (found.kind === 'address' || found.kind === 'script') {
+    const name = found.kind === 'address' ? found.address : found.script;
     for (const field of ['index', 'page', 'out']) {
       if (raw[field] !== undefined) {
-        throw new Error(`btc-notables: "${title}" is an address, so it has no ${field} — that names a position within a chapter`);
+        throw new Error(`btc-notables: "${title}" is a ${found.kind}, so it has no ${field} — that names a position within a chapter`);
       }
     }
-    return Object.assign(place, { id: found.address, address: found.address });
+    return Object.assign(place, { id: name },
+      found.kind === 'address' ? { address: name } : { script: name });
   }
   const ref = found.kind === 'reference' ? found.reference : null;
   place.id = ref ? String(ref.height) : (found.kind === 'hex' ? found.hex : written);
@@ -141,6 +181,8 @@ function normalize(raw, i) {
     throw new Error(`btc-notables: "${title}" has an ids that is not a list of places`);
   }
   const entry = { title, places: written.map((p) => normalizePlace(p, title)) };
+  const titles = readLocalized(raw, 'title', title);
+  if (titles) entry.titles = titles;
   return withCommentary(entry, raw);
 }
 
@@ -185,6 +227,11 @@ function normalizePart(raw, i) {
       if (!proof) throw new Error(`btc-notables: a proof in "${title}" has no proof: file`);
       const entry = { title: String(e.title ?? proof), proof };
       if (e.subject) entry.subject = String(e.subject);
+      // Where the work is published, outside the book -- the one link the
+      // file's footnote carries. A claim about the world, not the chain, so
+      // it is editorial like the title, and as optional: a work with no
+      // living source is still a work the chain dates.
+      if (e.source) entry.source = String(e.source);
       if (e.note) entry.note = String(e.note);
       return withCommentary(entry, e);
     });
@@ -296,6 +343,21 @@ function withCommentary(entry, raw) {
       if (c.note) r.note = String(c.note);            // a one-line reading, inline in the index
       if (c.by) r.by = String(c.by);
       if (c.href) r.href = String(c.href);
+      // Translations of this reading, and their translators' names -- variants
+      // of the matter above, never readings of their own (see the header note).
+      const files = readLocalized(c, 'file', entry.title);
+      const notes = readLocalized(c, 'note', entry.title);
+      const translators = readLocalized(c, 'translator', entry.title, { requireBase: false });
+      if (files) r.files = files;
+      if (notes) r.notes = notes;
+      if (translators) {
+        for (const lang of Object.keys(translators)) {
+          if (!(files && files[lang]) && !(notes && notes[lang])) {
+            throw new Error(`btc-notables: a reading of "${entry.title}" credits a ${lang} translator but carries no ${lang} translation`);
+          }
+        }
+        r.translators = translators;
+      }
       return r;
     });
   }
@@ -347,11 +409,15 @@ export const notables = () => entries;
 // readings are read off the entries themselves, because a reading belongs to the
 // thing, not to each of its places.
 export const places = () => entries.flatMap((entry) =>
-  entry.places.map((place) => ({ ...place, title: entry.title, entry })));
+  entry.places.map((place) => ({ ...place, title: entry.title, titles: entry.titles, entry })));
 
-// A place's own name: the entry's title, and what this place is within it.
+// A place's own name: the entry's title — in the reader's language where a
+// translation is written — and what this place is within it.
 // "The twice-confirmed coinbases — e3bf…468, first printing".
-export const placeTitle = (place) => (place.as ? `${place.title} — ${place.as}` : place.title);
+export const placeTitle = (place) => {
+  const title = pickLocalized(place.titles, place.title);
+  return place.as ? `${title} — ${place.as}` : title;
+};
 
 // The appendix's parts, synchronously, like notables(): what the contents
 // gathers after the volumes. Empty until loadNotables() resolves -- and empty

@@ -20,6 +20,14 @@
 //   address       1Ross5Np5doy4…      not a place but a name, and so not a
 //                                     chapter: the search box hands these to
 //                                     the Ledger instead
+//   script        script:76a90088ac   a raw scriptPubKey, by its own bytes --
+//                                     the name of an output no address can
+//                                     write (a malformed or nonstandard
+//                                     script), and a ledger like an address
+//                                     is. The prefix is the grammar's, not
+//                                     the chain's: bare hex would be
+//                                     ambiguous with heights and txids, and
+//                                     this book does not guess
 //
 // Address recognition is injected rather than imported: the real test decodes
 // base58 and bech32 (isAddress in btc-index.js, the ledger's own machinery),
@@ -32,6 +40,12 @@ import { parseReference } from './btc-citation.js';
 export const isHeight = (s) => /^[0-9]+$/.test(s);
 export const isRelativeHeight = (s) => /^-[0-9]+$/.test(s);
 export const isHex64 = (s) => /^[0-9a-fA-F]{64}$/.test(s);
+
+// The written form of a script name: the `script:` prefix and whole bytes of
+// hex. The prefix disambiguates -- bare hex can spell a height ("5121") or a
+// txid -- and parses to the bytes alone, lowercased: downstream, a script
+// member IS its hex, compared and stored as such.
+export const isScriptQuery = (s) => /^script:(?:[0-9a-fA-F]{2})+$/.test(s);
 
 // Shape alone -- enough to say "this is an address, and addresses are ledger
 // entries", never enough to accept one as valid. base58 (1…, 3…) and bech32
@@ -50,6 +64,7 @@ export function parseLookup(query, { isAddress = looksLikeAddress } = {}) {
   // keeps its case, which is significant).
   if (isAddress(q)) return { kind: 'address', query: q, address: q };
   if (isAddress(q.toLowerCase())) return { kind: 'address', query: q, address: q.toLowerCase() };
+  if (isScriptQuery(q)) return { kind: 'script', query: q, script: q.slice(7).toLowerCase() };
   if (isHeight(q)) return { kind: 'height', query: q, height: Number(q) };
   if (isRelativeHeight(q)) return { kind: 'relative', query: q, offset: Number(q) };
   if (isHex64(q)) return { kind: 'hex', query: q, hex: q.toLowerCase() };

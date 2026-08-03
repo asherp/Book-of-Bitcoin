@@ -22,8 +22,21 @@
 // enough to show a key on the page and a credit in the contents. Only opening
 // the sheet needs the prose, so only opening it fetches anything.
 
-import { notables, appendix, loadCommentaryFile } from './btc-notables.js';
+import { notables, appendix, loadCommentaryFile, pickLocalized } from './btc-notables.js';
 import { renderMarkdown, markdownParagraphs } from './btc-markdown.js';
+import { t as tr } from './btc-strings.js';
+
+// A reading's matter, in the reader's language where a translation is written
+// (file-cs / note-cs in notables.yaml), else the English original. The variant
+// is a translation of the SAME reading -- one author, one credit -- never a
+// reading of its own.
+const fileOf = (r) => pickLocalized(r.files, r.file);
+const noteOf = (r) => pickLocalized(r.notes, r.note);
+// Whether what is being shown is a translation, and by whom (null where the
+// translator is unnamed or the original is showing).
+const translatorOf = (r) =>
+  ((r.files && fileOf(r) !== r.file) || (r.notes && noteOf(r) !== r.note))
+    ? pickLocalized(r.translators, null) : null;
 
 // Every reading an entry carries, in the order they should be read: the book's
 // own first (the house voice, unsigned -- the book is its author), then the
@@ -98,7 +111,7 @@ export function commentaryFor({ height = null, index = null, txid = null } = {})
     .flatMap((p) => p.bips)
     .flatMap((b) => b.entries)
     .filter((e) => here(e) && !kept.some((k) => k.places.some((kp) => kp.id === e.id && kp.index === e.index)));
-  return itemsOf([...kept, ...ahead.map((e) => ({ title: e.title, places: [e], commentary: e.commentary }))]);
+  return itemsOf([...kept, ...ahead.map((e) => ({ title: e.title, titles: e.titles, places: [e], commentary: e.commentary }))]);
 }
 
 // The readings kept for one or more addresses -- what a ledger is: a titled set
@@ -111,12 +124,17 @@ export function commentaryFor({ height = null, index = null, txid = null } = {})
 export function commentaryForAddresses(addresses) {
   const wanted = (Array.isArray(addresses) ? addresses : [addresses]).filter(Boolean);
   if (!wanted.length) return [];
-  // In the order the ledger holds its addresses, not the order the index does.
-  return wanted.flatMap((a) => itemsOf(notables().filter((e) => e.places.some((p) => p.address === a))));
+  // In the order the ledger holds its members, not the order the index does.
+  // A member is an address or a raw script (its hex, as a script-id entry
+  // carries it); either spelling of a name meets its readings here.
+  return wanted.flatMap((a) => itemsOf(notables().filter((e) => e.places.some((p) => p.address === a || p.script === a))));
 }
 
+// An item keeps both the title and its variants: the sheet renders whichever
+// the UI language asks for AT RENDER TIME, so items built before a language
+// switch still title themselves in the new tongue.
 const itemsOf = (entries) => entries
-  .map((e) => ({ title: e.title, readings: readingsOf(e) }))
+  .map((e) => ({ title: e.title, titles: e.titles, readings: readingsOf(e) }))
   .filter((it) => it.readings.length);
 
 // Fetch the prose for a set of matched entries and hand back items whose
@@ -128,9 +146,16 @@ const itemsOf = (entries) => entries
 // files off disk); the browser needs nothing.
 export async function resolveCommentary(items, { read } = {}) {
   await Promise.all(items.flatMap((it) => it.readings.map(async (r) => {
-    if (r.source !== undefined || !r.file) return;
+    const want = fileOf(r);
+    if (!want) return;
+    // Which file the kept source came from rides beside it, so a language
+    // switch between opens re-resolves to the right variant (the per-file
+    // memo in btc-notables makes the re-read a lookup, not a refetch).
+    if (r.source !== undefined && r.sourceFile === want) return;
     try {
-      r.source = await loadCommentaryFile(r.file, read ? { read } : undefined);
+      r.source = await loadCommentaryFile(want, read ? { read } : undefined);
+      r.sourceFile = want;
+      delete r.error;
     } catch (e) {
       r.error = e.message || String(e);
     }
@@ -139,8 +164,12 @@ export async function resolveCommentary(items, { read } = {}) {
 }
 
 // The Markdown behind one reading: an inline note is its own source; a file's
-// is whatever resolveCommentary fetched.
-const sourceOf = (r) => (r.note !== undefined ? r.note : r.source);
+// is whatever resolveCommentary fetched. Both in the reader's language where
+// a translation is written.
+const sourceOf = (r) => {
+  const note = noteOf(r);
+  return note !== undefined ? note : r.source;
+};
 
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => (
   { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -157,13 +186,19 @@ function readingHtml(r) {
   // record on the page beneath is unaffected -- which is worth a reader knowing.
   if (src === undefined) {
     return `<p class="commentary-missing">This reading could not be loaded. It is in the repository, as
-      <code>web/commentary/${esc(r.file || '')}</code>.</p>`;
+      <code>web/commentary/${esc(fileOf(r) || r.file || '')}</code>.</p>`;
   }
+  // A shown translation credits its translator beside the author: two names,
+  // two kinds of work, both owed their line (see CONTRIBUTING on authorship).
+  const translator = translatorOf(r);
   return renderMarkdown(src)
     + (r.by
       ? `<p class="commentary-by">— ${r.href
           ? `<a href="${esc(r.href)}" target="_blank" rel="noopener noreferrer">${esc(r.by)}</a>`
           : esc(r.by)}</p>`
+      : '')
+    + (translator
+      ? `<p class="commentary-by commentary-translator">${esc(tr('translation: {name}', { name: translator }))}</p>`
       : '');
 }
 
@@ -177,7 +212,7 @@ export function commentaryHtml(items) {
   if (!items.length) return '';
   const groups = items.map((it) => `
             <section class="commentary-entry">
-              <h4 class="commentary-name">${esc(it.title)}</h4>
+              <h4 class="commentary-name">${esc(pickLocalized(it.titles, it.title))}</h4>
               ${it.readings.map(readingHtml).join('')}
             </section>`).join('');
   return `
@@ -197,6 +232,8 @@ export function commentaryLines(items) {
       if (src === undefined) continue;               // unreadable file: omitted, never guessed at
       out.push(...markdownParagraphs(src));
       if (r.by) out.push(`— ${r.by}${r.href ? ` (${r.href})` : ''}`);
+      const translator = translatorOf(r);
+      if (translator) out.push(tr('translation: {name}', { name: translator }));
     }
   }
   return out;
