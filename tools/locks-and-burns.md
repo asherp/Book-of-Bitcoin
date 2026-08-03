@@ -213,19 +213,35 @@ height belonged. A height-locked script whose author meant "tomorrow" in
 seconds is locked for thousands of years; a timestamp miscomputed by one
 field is locked for decades.
 
-### The coinb.in 2042 lock — December 2015
+### The endianness lock of 2042 — block 390,359
 
-The documented specimen. On December 28, 2015 — CLTV had activated on the
-network two weeks earlier — a user of the coinb.in web wallet built a CLTV
-address intending a lock that expired the previous day, and instead produced
-one locked until **April 30, 2042**: twenty-six years, not minus one day.
-Reported in the coinb.in issue tracker (OutCast3k/coinbin issue #35,
-comment of Dec 28, 2015) and retold since as the standard cautionary tale.
-**[reported]** The txid and redeem script are not stated in the secondary
-tellings; pinning the actual output — and whether it still waits — needs the
-primary comment thread and a chain check, owed before this becomes an entry.
-Until then it stays here: a story this famous with a citation this thin is
-exactly what the book's comment-not-commentary rule is for.
+The documented specimen, now pinned to its passage. On December 26, 2015 —
+CLTV had activated on the network twelve days earlier (BIP65 activation,
+block 388,381, already a chapter in the book) — the developer weex,
+testing the brand-new opcode, sent **0.0003 BTC** to the P2SH address
+`36eagf2eUELSCy7i93hZhGJXgZ3hHdeKUJ`, intending a lock that expired the
+same day. Funding transaction `de4b2c88…e865`, block 390,359 (Dec 26, 2015,
+23:57 UTC), position 544 — citation **II β90 ■936 §545.0**. The output has
+never been spent: one funded output, zero spent, ten years on. **[verified]**
+
+The mistake is a single byte-order reversal, and the arithmetic closes
+exactly. The intended lock value was **1451166600** — Dec 26, 2015,
+21:50:00 UTC. Written into the script with its four bytes reversed it reads
+**2282454870** — `0x880b7f56` — which is **April 30, 2042, 07:14:30 UTC**,
+matching to the second the date dabura667 read out of weex's raw spending
+attempt in the coinb.in issue thread ("When endianness is reversed, the
+date is yesterday, so I'm assuming you didn't mean to lock them for 26
+years. This is why we have testnet"). **[verified arithmetic; script
+reading reported]** OutCast3k/coinbin issue #35, comments of Dec 27–29,
+2015 (weex, chris-belcher, dabura667).
+
+One honest caveat, which is also the entry's best line: the redeem script
+itself is not on the chain. P2SH reveals its script only when spent, weex's
+raw-hex pastebin has expired, and the spending attempt that would have
+printed it was the very transaction the network rejected. So the record
+shows a hash, a date of arrival, and a decade of silence — and the proof of
+the 2042 story arrives only if someone spends it, which cannot happen
+before April 30, 2042. A lock whose evidence is itself timelocked.
 
 ### What a scan would find
 
@@ -279,6 +295,8 @@ attributed as reported figures in any note that states them.
   id: III β41 ■1087 §1
 - title: The half-claimed subsidy
   id: III β53 ■1760 §1
+- title: The endianness lock of 2042
+  id: II β90 ■936 §545.0
 - title: The 107 BTC burn
   ids:
     - id: V β56 ■83 §2216
@@ -305,9 +323,10 @@ reconcile-against-the-chain machinery states better than any note could.
   "script" output.
 - Bitcoin.com News, "Bitcoin History Part 17: That Time Mt. Gox Destroyed
   2,609 BTC" — the genjix thread and Karpelès's admission.
-- OutCast3k/coinbin issue #35 (GitHub), comment of Dec 28, 2015 — the 2042
-  lock; secondary telling in Alistair Mann, "Bitcoin Timelocks and $5
-  Wrenches" (Medium).
+- OutCast3k/coinbin issue #35 (GitHub), comments of Dec 27–29, 2015 (weex,
+  chris-belcher, dabura667) — the 2042 lock, its address, and the
+  endianness diagnosis; secondary telling in Alistair Mann, "Bitcoin
+  Timelocks and $5 Wrenches" (Medium).
 - BIP65 (OP_CHECKLOCKTIMEVERIFY), BIP68 (relative lock-time) — the
   500,000,000 threshold, type-mismatch failure, 65,535-block cap.
 - Counterparty documentation and contemporary coverage — the January 2014
