@@ -161,13 +161,13 @@ in April 2023 to a year and a day. **[reported]**
 
 References checked against `tools/check-editorial.mjs`:
 
-- **One of the 2,072** — III β2 ■1284 §719 (`web/notables.yaml`,
+- **One of Lichtenstein's 2,072** — III β2 ■1284 §719 (`web/notables.yaml`,
   commentary `one-of-the-2072.md`): a hack withdrawal whose afterlife the
   chain wrote itself.
-- **The 15,000 ₿ sweep** — IV β46 ■568 §676 (`web/notables.yaml`,
+- **The FBI's 15,000 ₿ sweep** — IV β46 ■568 §676 (`web/notables.yaml`,
   commentary `the-15000-btc-sweep.md`): the largest single passage of the
   Bitfinex seizure; the whole 23-transaction set reads in the ledger.
-- **The 40,000 ₿ seizure** — IV β50 ■194 §336 (`web/notables.yaml`,
+- **The IRS's 40,000 ₿ seizure** — IV β50 ■194 §336 (`web/notables.yaml`,
   commentary `the-40000-btc-seizure.md`): the 2012 hoard surviving intact
   into custody.
 - **The Bitfinex custody** — `bc1qazcm763858nkj2dj986etajv6wquslv8uxwczt`

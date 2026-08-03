@@ -245,11 +245,11 @@ are the exchange's real balance sheet, whatever its database says.
 What the findings above became, in the grammar of the files they join —
 references checked against `tools/check-editorial.mjs`:
 
-- **The 79,956 ₿ theft** — I β56 ■315 §2 (`web/notables.yaml`, commentary
+- **Mt. Gox robbed of 79,956 ₿** — I β56 ■315 §2 (`web/notables.yaml`, commentary
   `the-79956-btc-theft.md`): the passage is a withdrawal; the theft is the
   operator's own claim, matched to the satoshi; the coins have never
   moved.
-- **The 424,242 ₿ proof** — I β66 ■1710 §2 (`web/notables.yaml`,
+- **Karpelès's 424,242 ₿ proof** — I β66 ■1710 §2 (`web/notables.yaml`,
   commentary `the-424242-btc-proof.md`): the exchange speaking in the one
   sentence the chain can verify.
 - **The 1Feex hoard** — `1FeexV6bAHb8ybZjqQMjJrcCrHGW9sb6uF`
