@@ -330,6 +330,8 @@
   commentary:
     - file: bip66-activation-v3.md
       by: Claude Fable 5
+- title: Bitcoin XT first signal
+  id: '370434'
 - title: BIP65
   id: '387408'
   page: book

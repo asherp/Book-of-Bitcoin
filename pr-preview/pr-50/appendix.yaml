@@ -247,6 +247,10 @@
           value: June 2015, by Gavin Andresen
         - label: outcome
           value: withdrawn — signaling never came near the threshold, and the client faded
+      entries:
+        - title: First signaling block
+          id: '370434'
+          note: The first block to fly 0x20000007 — 18 August 2015, three days after Bitcoin XT shipped. The first ballot cast in the size war, and nearly the whole of XT's record on the chain.
     # Classic's bit, 28, sits at the top of the range version rolling later
     # claimed for nonce entropy (BIP320, bits 13-28) -- so its ballot must
     # anchor in 2016, when the bit still spoke: a closed window, never a live
