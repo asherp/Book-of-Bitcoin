@@ -3063,9 +3063,16 @@ function renderChapterHead(onTitlePage) {
   // case here, which kept it out of the table of contents.
   // A page: 'book' entry shares the height namespace (its id is its book's
   // first block) but names the book's leaf, not this chapter -- excluded here.
-  const eventTitles = places()
-    .filter((p) => p.id === String(state.height) && !p.page && !p.address)
-    .map(placeTitle);
+  // Depth decides whose name the chapter wears: a chapter-deep entry (no
+  // index -- the entry IS this block) owns the head, and section-deep
+  // entries then name only their own sections below. Only when no entry
+  // names the chapter itself do its sections' names stand in -- the
+  // halvings and the duplicate coinbases are cited at their coinbase (§1),
+  // and their chapters keep those subtitles as they always have.
+  const eventPlaces = places()
+    .filter((p) => p.id === String(state.height) && !p.page && !p.address && !p.script);
+  const chapterDeep = eventPlaces.filter((p) => p.index == null);
+  const eventTitles = (chapterDeep.length ? chapterDeep : eventPlaces).map(placeTitle);
   const eventTitle = eventTitles[0];
   $('ch-title').textContent = `${tr('Chapter')} ${chapterName(chapter)}`;
   // The chapter's name line: the reader's keep of this chapter (a block-hash
