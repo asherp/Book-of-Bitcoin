@@ -276,13 +276,14 @@ Checked and rejected — recorded so the next reader needn't re-walk them:
 ## The entries
 
 The place-shaped findings above are now rows in the contents
-(`web/notables.yaml`), each carrying its verified story as a comment beside
-the entry, none yet carrying published commentary — per the house rule, a
-reading is published only once its story is fully checked, and the two
-[reported] totals above (Mt. Gox's 2,609, Counterparty's window) should be
-re-verified or attributed as reported figures in any note that states them.
-References checked against `tools/check-editorial.mjs` ("the editorial
-layer reads", with every citation resolving to the heights verified here):
+(`web/notables.yaml`), each carrying a published reading in
+`web/commentary/` with its sources named in the prose — the chain-verified
+facts stated as record, the [reported] figures (Mt. Gox's 2,609 batch
+total, the midnightmagic attribution, the template-misconfiguration
+inferences) attributed in-text to where they come from, per the house rule
+that a reading says whose claim each claim is. References checked against
+`tools/check-editorial.mjs` ("the editorial layer reads", with every
+citation resolving to the heights verified here):
 
 - **The satoshi left on the table** — `124724` §1
 - **Mt. Gox pays the void** — I β75 ■1768 §23.1

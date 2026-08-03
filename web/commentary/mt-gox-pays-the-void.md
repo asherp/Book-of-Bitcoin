@@ -1,0 +1,7 @@
+<!-- SPDX-License-Identifier: CC-BY-4.0 -->
+
+Output 1 of this section pays 100 ₿ to a script one push short of a payment: duplicate, hash — and then an empty push where twenty bytes of key-hash belong, before the equality check and the signature check (`76a90088ac`). No hash of anything is zero bytes long, so the equality can never hold and the coins can never move. 28 October 2011.
+
+With hindsight the page is one printing of the costliest malformed script in the chain's history. Mt. Gox — then the dominant exchange — had shipped withdrawal code that built outputs like this one; the faulty batch is reported at 2,609.36304319 ₿ in all. The community learned of it from user genjix's Bitcointalk thread of 29 October 2011 ("someone fucked up and lost a lot of money"), in which Mark Karpelès, the exchange's operator, admitted the error; the missing byte was traced publicly in Ken Shirriff's March 2014 analysis (righto.com), which this reading follows. The 100 ₿ on this page is the record; the batch total is a reported figure, checked here no further than the reporting.
+
+The lesson outlived the exchange: an output script is checked by no one until someone tries to spend it, so a sender's bug becomes visible only when it is already unfixable. Two and a half years later Mt. Gox collapsed owing customers hundreds of thousands of coins — losses argued about to this day, precisely because they, unlike this one, left no passage that proves them.
