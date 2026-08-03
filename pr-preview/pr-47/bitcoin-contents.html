@@ -677,8 +677,12 @@ function ledgerEl(ledger, isKept) {
   // A row here names a ledger, so it opens the ledger -- its title leaf,
   // where the compendium's descent into the passages begins. (An address
   // searched for is a passage, and the search page opens it as one, with
-  // the same query and no &page.)
-  row.href = `./bitcoin-ledger.html?address=${ledger.addresses.join(',')}&page=ledger`;
+  // the same query and no &page.) A curated ledger is named by its first
+  // member alone -- one member opens the whole shelved ledger, and a list
+  // the size of the Coldcard hack's joined whole outgrows what a server
+  // will take for a URI. A kept ledger resolves only from this reader's
+  // own shelf, so its list rides whole and the link still carries the set.
+  row.href = `./bitcoin-ledger.html?address=${isKept ? ledger.addresses.join(',') : ledger.addresses[0]}&page=ledger`;
   const t = document.createElement('span');
   t.className = 'toc-title';
   if (isKept) {

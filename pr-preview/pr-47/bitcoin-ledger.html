@@ -797,13 +797,23 @@ const findEntry = (line, key) =>
 // The URL follows the reader (replaceState -- browsing is not history), so a
 // reload or a share names the ledger being read; the compendium's own top
 // level is the bare page.
+//
+// A curated ledger is named by ONE member (ledgerFor's rule: a query naming
+// a member opens the whole shelved ledger, positioned on it), because its
+// list can be long enough that joined whole it outgrows what a server will
+// take for a URI -- the Coldcard hack spans 221 vaults. A ledger the reader
+// brought has no name any other copy of the book would resolve, so its list
+// still rides whole; readers' own ledgers stay hand-sized.
+const urlAddress = () => (cur().curated
+  ? cur().addresses[Math.max(0, Math.min(at, cur().addresses.length - 1))]
+  : cur().addresses.join(','));
 function syncUrl() {
   // Only the appendix leaf is nobody's ledger; every leaf below it names the
   // ledger it belongs to, and a title leaf says so with &page=ledger -- so a
   // reload, or a link shared from here, comes back to the leaf it left.
   try {
     const url = level === 'appendix' ? location.pathname
-      : `${location.pathname}?address=${cur().addresses.join(',')}${level === 'ledger' ? '&page=ledger' : ''}`;
+      : `${location.pathname}?address=${urlAddress()}${level === 'ledger' ? '&page=ledger' : ''}`;
     history.replaceState(null, '', url);
   } catch (_) { /* unavailable */ }
   document.title = level === 'appendix' ? `The βook of βitcoin — ${PART_LABEL}`
@@ -1680,7 +1690,7 @@ const openEntryLeaf = async (alive) => {
   const stampUrl = (s) => {
     try {
       history.replaceState(null, '',
-        `${location.pathname}?address=${cur().addresses.join(',')}&ref=${latinRef(e.height, s, e.out ?? null)}`);
+        `${location.pathname}?address=${urlAddress()}&ref=${latinRef(e.height, s, e.out ?? null)}`);
     } catch (_) { /* unavailable */ }
   };
   stampUrl(null);
