@@ -16,8 +16,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { parseMempoolPrice, parseBitstampDay, utcDateOf, PRICE_SOURCES,
-         formatValuation, formatNetValuation, usdChosen } from '../web/btc-price.js';
+import { parseMempoolPrice, parseBitstampDay, utcDateOf, PRICE_SOURCES } from '../web/btc-price.js';
 
 test('a unix time keys the UTC day a daily series answers by', () => {
   assert.equal(utcDateOf(1385769600), '2013-11-30');       // midnight exactly
@@ -53,25 +52,6 @@ test("Bitstamp: asked before their record, the earliest candle comes back — no
   assert.equal(parseBitstampDay({ data: { ohlc: [] } }, 1385769600), null);
   assert.equal(parseBitstampDay({}, 1385769600), null);
   assert.equal(parseBitstampDay({ data: { ohlc: [{ timestamp: '1385769600', close: '0' }] } }, 1385769600), null);
-});
-
-test('a valuation wears ≈, money decimals, and never rounds dust to nothing', () => {
-  const usd = { label: 'USD', perBtc: 100000 };
-  assert.equal(formatValuation(123456789, usd), '≈ 123,456.79 USD');
-  assert.equal(formatValuation(546, usd), '≈ 0.55 USD');
-  assert.equal(formatValuation(1, usd), '≈ 0.001 USD');       // decimals stretch past ≈ 0.00
-  assert.equal(formatValuation(0, usd), '0 USD');             // zero alone drops the ≈
-});
-
-test("a ledger net's valuation is signed the way the net column is", () => {
-  const day = { label: 'USD', perBtc: 1119.52 };
-  assert.equal(formatNetValuation(123456789, day), '≈ +1,382.12 USD');
-  assert.equal(formatNetValuation(-123456789, day), '≈ −1,382.12 USD');
-  assert.equal(formatNetValuation(0, day), '0 USD');
-});
-
-test('without a browser (no localStorage), USD is simply not chosen', () => {
-  assert.equal(usdChosen(), false);
 });
 
 test('every source carries what the hover and the select need', () => {

@@ -148,6 +148,21 @@ a:hover { text-decoration: underline; }
   color:var(--ink); font:400 12px/1.4 'IBM Plex Mono',monospace; padding:8px 8px; }
 .endpoint-add-row input:focus { outline:none; border-color:var(--accent); }
 .settings-note { margin-top:12px; font:400 10.5px/1.6 'IBM Plex Mono',monospace; color:var(--meta); }
+/* The amount-notation rows: the book page's picker, worn here so a ledger
+   reader can change the figures' dress without leaving the shelf. Same
+   classes, same stored choice (btc-amounts.js). */
+.lang-rows { display:grid; gap:1px; }
+.lang-row {
+  display:flex; align-items:center; justify-content:space-between; gap:14px;
+  background:transparent; border:0; border-radius:4px; padding:5px 8px; cursor:pointer;
+  font:400 14px/1.2 'Newsreader',serif; color:var(--ink-soft); text-align:left;
+  text-transform:none; letter-spacing:normal;
+}
+.lang-row:hover, .lang-row:focus-visible { background:var(--input-bg); color:var(--ink); outline:none; }
+.lang-row .lang-mark { font:600 11px/1 'IBM Plex Mono',monospace; color:var(--accent); visibility:hidden; }
+.lang-row.current { color:var(--ink); }
+.lang-row.current .lang-mark { visibility:visible; }
+#amount-rows .lang-row { font-variant-numeric: tabular-nums; }
 
 /* The anthology's title page: a full leaf. The eyebrow names the form, the
    serif names the anthology, and the address appears once, in the book's own
@@ -504,6 +519,12 @@ a:hover { text-decoration: underline; }
   <div class="masthead">
     <span class="title">The <span class="beta">β</span>ook of <span class="beta">β</span>itcoin</span>
     <span class="home"><a href="./bitcoin-book.html">Read</a> · <a href="./bitcoin-contents.html?part=ledgers">Contents</a> · <a href="./bitcoin-search.html">Search</a> · <span class="settings-menu"><a href="#" id="settings-link" role="button" aria-haspopup="dialog" aria-expanded="false">Settings</a><div id="settings-panel" class="settings-panel hidden" role="dialog" aria-label="Ledger settings">
+      <div class="settings-title">Amounts</div>
+      <!-- The book page's notation rows, same stored choice: the record's
+           three dresses, then the valuations wearing ≈ — the day's USD
+           price (each ledger entry at its own day) and the reader's own
+           unit where one is defined. Filled by renderAmountRows. -->
+      <div id="amount-rows" class="lang-rows"></div>
       <div class="settings-title">Data source</div>
       <div class="endpoint-row">
         <select id="bb-select" class="bb-select" aria-label="Esplora endpoint"></select>
@@ -514,7 +535,6 @@ a:hover { text-decoration: underline; }
         <input type="text" id="bb-url" placeholder="https://your-esplora/api" autocomplete="off" spellcheck="false">
         <button type="button" id="bb-save" class="save-btn">Save</button>
       </div>
-      <div class="settings-note">Where the ledgers ask — Esplora-compatible endpoints, the chosen one tried first; the book's reading pages share this choice. Applies from the next fetch; banked history is never refetched.</div>
     </div></span></span>
   </div>
 
@@ -597,7 +617,8 @@ import { INDEXED, isAddress, isScriptHex, keptLedgers, saveKeptLedgers, sameAddr
          formatBalanceBtc, formatNetBtc, chainFailureText, citeHref, sectionOf, sectionOfFetched, citePlace, passageTxid, passageEntries, txHexOf, outspendsOf, prevoutValuesOf,
          DEFAULT_ESPLORA, esploraCustom, esploraSelected, setEsploraSettings } from './btc-index.js';
 import { volumeBookChapter, heightOf, subsidyAt, toRoman, parseReference, latinRefOf, footnoteMark } from './btc-citation.js';
-import { usdChosen, usdOn, formatNetValuation } from './btc-price.js';
+import { usdOn } from './btc-price.js';
+import { amountUnit, setAmountUnit, ownUnit, formatAmountAs, formatNetValuation } from './btc-amounts.js';
 import { BIP39, HP_SPELLS } from './btc-wordlists.js';
 import { appendix } from './btc-contents.js';
 import './btc-fontscale.js';   // the reader's type sizes: a ledger's readings are set at the size the book page's Commentary row chose
@@ -680,8 +701,50 @@ const notablesReady = loadNotables();
     ev.preventDefault();
     const open = panel.classList.toggle('hidden');
     link.setAttribute('aria-expanded', String(!open));
-    if (!open) rebuild();
+    if (!open) { rebuild(); renderAmountRows(); }
   });
+
+  // The amount-notation rows: the book page's picker, same stored choice
+  // (btc-amounts.js), so the figures' dress follows the reader between the
+  // manuscript and its ledgers. The record's three notations show the same
+  // sample amount; the valuations wear ≈ — 'usd' names what it does here
+  // (each entry at its own day) rather than faking one figure for rows
+  // that will each carry their own, and the reader's own unit shows only
+  // where one is defined (the book page's Amounts foot defines it).
+  // Switching re-opens the leaf in hand: every column reads in the new
+  // dress at once.
+  const AMOUNT_SAMPLE = 123456789;
+  const renderAmountRows = () => {
+    const rows = document.getElementById('amount-rows');
+    rows.replaceChildren();
+    const own = ownUnit();
+    for (const u of own ? ['btc', 'sats', 'raw', 'usd', 'own'] : ['btc', 'sats', 'raw', 'usd']) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'lang-row' + (u === amountUnit() ? ' current' : '');
+      btn.setAttribute('aria-pressed', u === amountUnit() ? 'true' : 'false');
+      const name = document.createElement('span');
+      if (u === 'usd') {
+        name.textContent = '≈ ⋯ USD';
+        btn.title = 'each entry at its own day’s price, per the book’s price source — a market’s valuation, not the record';
+      } else {
+        name.textContent = formatAmountAs(AMOUNT_SAMPLE, u);
+        if (u === 'own') btn.title = `at your rate of ${own.perBtc.toLocaleString('en-US')} ${own.label} per ₿ — your valuation, not the record`;
+      }
+      const mark = document.createElement('span');
+      mark.className = 'lang-mark';
+      mark.textContent = '●';
+      btn.append(name, mark);
+      btn.addEventListener('click', () => {
+        if (u === amountUnit()) return;
+        setAmountUnit(u);
+        renderAmountRows();
+        openView();   // the leaf in hand, reprinted in the new dress
+      });
+      rows.append(btn);
+    }
+  };
+  renderAmountRows();
   select.addEventListener('change', () => {
     setEsploraSettings({ selected: DEFAULT_ESPLORA[0] === select.value ? null : select.value });
     rebuild();
@@ -2055,19 +2118,27 @@ const openEntryLeaf = async (alive) => {
   const amt = document.getElementById('entry-amt');
   amt.textContent = formatNetBtc(e.sats);
   amt.classList.toggle('credit', e.sats > 0);
-  // The entry's valuation at its own day -- the ledger's price register:
-  // dated, sourced, ≈-marked -- when the reader reads in USD (the book's
-  // amount notation, followed here). Async after the paint; an entry with
-  // no day, or a day the source cannot answer, simply shows nothing.
+  // The entry's valuation under the amount it values -- the ledger's price
+  // register, when the reader's notation is a valuation: at the entry's own
+  // day under 'usd' (dated, sourced, async after the paint; an entry with
+  // no day, or a day the source cannot answer, simply shows nothing), or at
+  // the reader's fixed rate under 'own'.
   const val = document.getElementById('entry-val');
   val.textContent = '';
   val.removeAttribute('title');
-  if (usdChosen() && e.time) {
+  const unit = amountUnit();
+  if (unit === 'usd' && e.time) {
     usdOn(e.time).then((p) => {
       if (!p || !alive()) return;
       val.textContent = `${formatNetValuation(e.sats, { label: 'USD', perBtc: p.perBtc })} — ${p.date}, per ${p.source}`;
       val.title = `at ${p.perBtc.toLocaleString('en-US')} USD per ₿ on ${p.date} — a market's valuation, not the record`;
     });
+  } else if (unit === 'own') {
+    const o = ownUnit();
+    if (o) {
+      val.textContent = `${formatNetValuation(e.sats, o)} — at your rate`;
+      val.title = `at your rate of ${o.perBtc.toLocaleString('en-US')} ${o.label} per ₿ — your valuation, not the record`;
+    }
   }
 
   const card = document.getElementById('entry-card');

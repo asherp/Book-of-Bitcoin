@@ -1,54 +1,45 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //
-// tools/amount-notation.test.mjs — the amounts' dresses, and in particular
-// the one the reader authors: a unit of their own naming, at a rate of their
-// own setting. The record's three notations are lossless spellings of one
-// integer; the own-unit figure is a valuation, so it wears ≈, keeps a dust
-// output from rounding to nothing, and falls back to the record's ₿ whenever
-// no unit is stored (which is also what these tests see: node has no
-// localStorage, so ownUnit() is null here by construction).
+// tools/amount-notation.test.mjs — the amounts' dresses (btc-amounts.js):
+// the record's three lossless spellings of one integer, and the valuations
+// beside them. A valuation wears ≈, keeps a dust output from rounding to
+// nothing, and falls back to the record's ₿ wherever there is no rate to
+// read it at — which is also what these tests see: node has no localStorage,
+// so the stored unit and the reader's own rate are absent by construction.
 //
 //   node --test tools/
 //
-// Imports btc-prose.js, which pulls in the Glossia WASM bundle, so the suite
-// skips until web/glossia.js is built (same convention as the coinbase
-// notation suite).
+// btc-amounts.js is dependency-free, so most of this runs on a bare
+// checkout. The last test touches btc-prose.js — the book page's facade over
+// the same machinery — which pulls in the Glossia WASM bundle, so it skips
+// until web/glossia.js is built (same convention as the coinbase suite).
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { access } from 'node:fs/promises';
 
-const engineBuilt = await access(new URL('../web/glossia.js', import.meta.url)).then(() => true, () => false);
-const skip = engineBuilt ? false : 'web/glossia.js not built (see build_web.sh)';
+import { formatValuation, formatNetValuation, formatAmountAs, amountUnit, setDayPrice, dayPrice }
+  from '../web/btc-amounts.js';
 
-test('an own-unit figure is a valuation: ≈, money decimals, the unit as spelled', { skip }, async () => {
-  const { formatOwnAmount } = await import('../web/btc-prose.js');
+test('a valuation wears ≈, money decimals, and never rounds dust to nothing', () => {
   const usd = { label: 'USD', perBtc: 100000 };
   // 1.23456789 ₿ at 100,000 per ₿ — two decimals, comma-grouped, ≈-marked.
-  assert.equal(formatOwnAmount(123456789, usd), '≈ 123,456.79 USD');
+  assert.equal(formatValuation(123456789, usd), '≈ 123,456.79 USD');
+  assert.equal(formatValuation(546, usd), '≈ 0.55 USD');
+  assert.equal(formatValuation(1, usd), '≈ 0.001 USD');   // decimals stretch past ≈ 0.00
+  assert.equal(formatValuation(0, usd), '0 USD');         // zero alone drops the ≈
   // The label prints as the reader spelled it, whatever they named.
-  assert.equal(formatOwnAmount(123456789, { label: 'slices', perBtc: 0.0002 }), '≈ 0.00025 slices');
+  assert.equal(formatValuation(123456789, { label: 'slices', perBtc: 0.0002 }), '≈ 0.00025 slices');
 });
 
-test('small amounts survive the rounding: dust never prints as ≈ 0.00', { skip }, async () => {
-  const { formatOwnAmount } = await import('../web/btc-prose.js');
-  const usd = { label: 'USD', perBtc: 100000 };
-  // One satoshi at 100,000 per ₿ is a thousandth — the decimals stretch to say so.
-  assert.equal(formatOwnAmount(1, usd), '≈ 0.001 USD');
-  assert.equal(formatOwnAmount(546, usd), '≈ 0.55 USD');
-  // Exactly zero is exact at any rate, so it alone drops the ≈.
-  assert.equal(formatOwnAmount(0, usd), '0 USD');
+test("a ledger net's valuation is signed the way the net column is", () => {
+  const day = { label: 'USD', perBtc: 1119.52 };
+  assert.equal(formatNetValuation(123456789, day), '≈ +1,382.12 USD');
+  assert.equal(formatNetValuation(-123456789, day), '≈ −1,382.12 USD');
+  assert.equal(formatNetValuation(0, day), '0 USD');
 });
 
-test("without a stored unit, 'own' falls back to the record's ₿", { skip }, async () => {
-  const { formatAmountAs, amountUnit } = await import('../web/btc-prose.js');
-  assert.equal(formatAmountAs(123456789, 'own'), '1.23456789 ₿');
-  // …and the chosen unit can never read 'own' with nothing behind it.
-  assert.notEqual(amountUnit(), 'own');
-});
-
-test("'usd' reads at the day price the page set, and at ₿ where none is", { skip }, async () => {
-  const { formatAmountAs, setDayPrice, dayPrice } = await import('../web/btc-prose.js');
+test("'usd' reads at the day price the page set, and at ₿ where none is", () => {
   // No day settled: the record's ₿, never a stale or guessed figure.
   assert.equal(formatAmountAs(123456789, 'usd'), '1.23456789 ₿');
   setDayPrice({ perBtc: 1119.52, date: '2013-11-30', source: 'Bitstamp' });
@@ -56,4 +47,25 @@ test("'usd' reads at the day price the page set, and at ₿ where none is", { sk
   setDayPrice(null);
   assert.equal(dayPrice(), null);
   assert.equal(formatAmountAs(123456789, 'usd'), '1.23456789 ₿');
+});
+
+test("without a stored unit, 'own' falls back to the record's ₿ — and the choice can never read as a unit with nothing behind it", () => {
+  assert.equal(formatAmountAs(123456789, 'own'), '1.23456789 ₿');
+  assert.equal(amountUnit(), 'btc');   // no localStorage: the default, not 'usd' or 'own'
+});
+
+test('the record notations are the same integer, dressed', () => {
+  assert.equal(formatAmountAs(123456789, 'btc'), '1.23456789 ₿');
+  assert.equal(formatAmountAs(123456789, 'sats'), '123·456·789 sats');
+  assert.equal(formatAmountAs(123456789, 'raw'), '123456789');
+  assert.equal(formatAmountAs(0, 'btc'), '0 ₿');
+});
+
+const engineBuilt = await access(new URL('../web/glossia.js', import.meta.url)).then(() => true, () => false);
+test("btc-prose re-exports the same machinery for the book page", { skip: engineBuilt ? false : 'web/glossia.js not built (see build_web.sh)' }, async () => {
+  const prose = await import('../web/btc-prose.js');
+  const amounts = await import('../web/btc-amounts.js');
+  assert.equal(prose.formatOwnAmount, amounts.formatValuation);
+  assert.equal(prose.formatAmount, amounts.formatAmount);
+  assert.equal(prose.setDayPrice, amounts.setDayPrice);
 });
