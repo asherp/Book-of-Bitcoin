@@ -4021,14 +4021,13 @@ function renderChapter(para) {
   // in the flow (appended there with the footnotes reset, further down).
   // The outputs' sum is the transaction's own; the inputs' and the fee fill
   // in once every margin citation has resolved a value, and stay ⋯ if any
-  // could not be priced. A coinbase's line inverts the middle sign and
-  // leaves its left station EMPTY: a coinbase brings nothing in -- it
-  // creates -- so no input figure is printed, and the fees the chapter's
-  // sections paid stand as + fee, the miner's take arriving where every
-  // other section's leaves (btc-citation's subsidyAt prices them --
-  // arithmetic on the height, nothing to resolve). A miner that claimed
-  // less than the schedule allows shows the shortfall signed −: value
-  // forfeited to no one.
+  // could not be priced. A coinbase's line inverts the middle sign: its
+  // left station is the subsidy the coinage schedule mints at this height
+  // (btc-citation's subsidyAt -- arithmetic on the height, nothing to
+  // resolve), and the fees the chapter's sections paid stand between it
+  // and the outputs' sum as + fee, the miner's take arriving where every
+  // other section's leaves. A miner that claimed less than the schedule
+  // allows shows the shortfall signed −: value forfeited to no one.
   let totals = null, fillTotals = null;
   if (f.inputs.length && !f.inputs.some((i) => i.isNullPrevout)) {
     const sumOut = f.outputs.reduce((a, o) => a + o.sats, 0);
@@ -4060,7 +4059,9 @@ function renderChapter(para) {
     const fee = sumOut - subsidy;
     totals = document.createElement('div');
     totals.className = 'tx-totals';
-    const tIn = document.createElement('span');   // empty: keeps the fee centred where every other line puts it
+    const tIn = document.createElement('span');
+    tIn.textContent = formatAmount(subsidy);
+    tIn.title = `the subsidy: ${amountTitle(subsidy)} — what the coinage schedule mints at this height`;
     const tFee = document.createElement('span');
     tFee.className = 't-fee';
     tFee.textContent = `${fee < 0 ? '−' : '+'} ${formatAmount(Math.abs(fee))}`;
