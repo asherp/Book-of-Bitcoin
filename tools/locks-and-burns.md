@@ -270,9 +270,14 @@ to whoever mines the block. The record's largest is now in the contents as
 thirteen inputs worth 291.241 BTC, one output of 0.0001 BTC, fee
 **291.2409 BTC** — the apparent value/fee swap, collected by block 409,008's
 coinbase (316.53275103 BTC total, tag `ckpool/BitClub Network/`).
-**[verified]** The later great fee mistakes — F2Pool's returned 19.8 BTC
-(Paxos, 2023) and AntPool's 83.65 BTC offered back against proof of keys
-(2023) — are smaller and stayed reported figures here. **[reported]**
+**[verified]** The later great fee mistakes have entries of their own, both
+chain-verified: **The 19.82 BTC fee** (IV β88 ■1666 §2, `d5392d47…70fd`,
+Sept 10, 2023 — Paxos's change-output bug, 19.82108632 BTC of a 19.89514072
+input left as fee, returned by F2Pool five days later) and **The 83.65 BTC
+fee** (IV β94 ■600 §4, `b5a2af58…f9aa`, Nov 23, 2023 — 83.65497568 BTC on a
+55.76998378 output, the dollar-terms record, frozen by AntPool and offered
+back against proof of keys; the hack claim rests on a signature Mononaut
+verified). **[verified amounts; outcomes reported]**
 
 ## Negative findings
 

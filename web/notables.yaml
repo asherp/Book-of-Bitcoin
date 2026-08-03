@@ -553,6 +553,25 @@
   # The ordi deploy -- the token scheme's opening entry, inscribed like the
   # Ordinals before it: in the witness, so the entry cites the footnote.
   id: IV β75 ■649 §408.a
+# The second-largest fee mistake in coins and the first one returned: Paxos
+# sent 0.07405440 ₿ across five outputs and left 19.82108632 ₿ of a
+# 19.89514072 ₿ input as the fee, 10 September 2023. F2Pool mined it and,
+# five days on, sent it back — the outcome that separates this entry from
+# the 291 ₿ of 2016.
+- title: The 19.82 BTC fee
+  id: IV β88 ■1666 §2
+  commentary:
+    - file: the-19-82-btc-fee.md
+      by: Claude Fable 5
+# The largest fee ever in dollar terms (~$3.1M): one input of 139.42495946 ₿,
+# one output of 55.76998378 ₿, and 83.65497568 ₿ between them, 23 November
+# 2023. A claimant reported a hacked wallet; AntPool froze the sum and
+# offered it back against proof of keys.
+- title: The 83.65 BTC fee
+  id: IV β94 ■600 §4
+  commentary:
+    - file: the-83-65-btc-fee.md
+      by: Claude Fable 5
 - title: The Fourth Halving
   id: '840000'
   index: 0
