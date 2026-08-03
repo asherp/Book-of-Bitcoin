@@ -46,3 +46,14 @@ test("without a stored unit, 'own' falls back to the record's ₿", { skip }, as
   // …and the chosen unit can never read 'own' with nothing behind it.
   assert.notEqual(amountUnit(), 'own');
 });
+
+test("'usd' reads at the day price the page set, and at ₿ where none is", { skip }, async () => {
+  const { formatAmountAs, setDayPrice, dayPrice } = await import('../web/btc-prose.js');
+  // No day settled: the record's ₿, never a stale or guessed figure.
+  assert.equal(formatAmountAs(123456789, 'usd'), '1.23456789 ₿');
+  setDayPrice({ perBtc: 1119.52, date: '2013-11-30', source: 'Bitstamp' });
+  assert.equal(formatAmountAs(123456789, 'usd'), '≈ 1,382.12 USD');
+  setDayPrice(null);
+  assert.equal(dayPrice(), null);
+  assert.equal(formatAmountAs(123456789, 'usd'), '1.23456789 ₿');
+});

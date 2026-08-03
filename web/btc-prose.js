@@ -388,16 +388,21 @@ export function formatBtc(sats) {
 //   'btc'   1.23456789 ₿      bitcoin, the ₿ sign trailing (formatBtc above)
 //   'sats'  123·456·789 sats  satoshis, the book's middle-dot grouping
 //   'raw'   123456789         the bare satoshi integer — no marker, no separator
+//   'usd'   ≈ 123,456.79 USD  the day's market price, per a source the reader chose
 //   'own'   ≈ 123,456.79 USD  the reader's own unit, at a rate the reader set
 // The first three are renderings of the record: one integer, dressed three
-// ways, each recoverable from the others. The fourth is not, and the record
-// offers no help drawing the line — the chain knows no dollars, and strictly
-// no bitcoins either: the field is an integer, ₿'s decimal point a
+// ways, each recoverable from the others. The last two are not, and the
+// record offers no help drawing the line — the chain knows no dollars, and
+// strictly no bitcoins either: the field is an integer, ₿'s decimal point a
 // convention, and even "one sat is one sat" is a reading (freshly minted
 // coins have traded at a premium, ordinal sats at a fancy). So the book
-// supplies no rate: the reader names the unit and prices it, the figure
-// wears ≈, and the hover keeps the on-chain amount. Their unit, their rate,
-// their reading.
+// supplies no rate of its own. 'usd' asks a market's record, from a source
+// the reader selected (btc-price.js), at the day of the block being read —
+// the page sets that rate here (setDayPrice) before it prints, and where the
+// source's record has nothing the figure falls back to the record's ₿.
+// 'own' is a unit the reader names and prices themself. Either way the
+// figure wears ≈, and the hover keeps the on-chain amount and the rate's
+// author — a market's valuation or the reader's, never the book's.
 // Each choice persists in localStorage under its own key and is read at
 // format time, so a page re-render is all a switch needs. 'btc' is the
 // default and is stored as an absent key, so a reader who never chose
@@ -430,15 +435,25 @@ export function amountUnit() {
   try {
     const v = localStorage.getItem(AMOUNT_UNIT_KEY);
     if (v === 'own') return ownUnit() ? 'own' : 'btc';
-    return v === 'sats' || v === 'raw' ? v : 'btc';
+    return v === 'sats' || v === 'raw' || v === 'usd' ? v : 'btc';
   } catch { return 'btc'; }
 }
 export function setAmountUnit(u) {
   try {
-    if (u === 'sats' || u === 'raw' || u === 'own') localStorage.setItem(AMOUNT_UNIT_KEY, u);
+    if (u === 'sats' || u === 'raw' || u === 'usd' || u === 'own') localStorage.setItem(AMOUNT_UNIT_KEY, u);
     else localStorage.removeItem(AMOUNT_UNIT_KEY);
   } catch { /* storage unavailable: the choice just doesn't persist */ }
 }
+
+// The day's price for the page in hand: { perBtc, date, source, href } from
+// btc-price.js's usdOn, or null where no source answered. The page sets it
+// for the block being read before printing and clears it after; holding it
+// here keeps formatAmount a one-argument call at every site while the rate
+// stays one page-wide fact with one owner. Null prints as ₿ — the record —
+// never as a stale or guessed figure.
+let DAY_PRICE = null;
+export function setDayPrice(p) { DAY_PRICE = p; }
+export function dayPrice() { return DAY_PRICE; }
 
 // A satoshi amount in the reader's own unit. ≈ because the figure is rounded,
 // and more to the point because it is a valuation. Two decimals in the money
@@ -456,11 +471,13 @@ export function formatOwnAmount(sats, { label, perBtc }) {
 }
 
 // A satoshi amount in a named notation — the settings rows print one sample
-// amount in each, so the choice shows itself. 'own' without a stored unit
-// falls back to the record's ₿, like everything else unrecognised.
+// amount in each, so the choice shows itself. 'usd' with no day price and
+// 'own' without a stored unit both fall back to the record's ₿, like
+// everything else unrecognised.
 export function formatAmountAs(sats, unit) {
   if (unit === 'sats') return `${groupDigits(BigInt(sats).toString())} sats`;
   if (unit === 'raw') return BigInt(sats).toString();
+  if (unit === 'usd' && DAY_PRICE) return formatOwnAmount(sats, { label: 'USD', perBtc: DAY_PRICE.perBtc });
   if (unit === 'own') {
     const o = ownUnit();
     if (o) return formatOwnAmount(sats, o);

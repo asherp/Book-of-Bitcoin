@@ -964,12 +964,14 @@ button:disabled { opacity: .4; cursor: not-allowed; }
            ₿ sign, satoshis with the book's middle-dot grouping, or the bare
            satoshi integer — each row labelled by the same sample amount, so
            the choice shows itself; filled by renderAmountRows. Notation,
-           not content: every form carries the same satoshis. The one
-           exception is the reader's own unit, when they have named one and
-           priced it below: that row's figure wears ≈, because a rate is a
-           valuation the reader authors, not a form of the record. -->
+           not content: every form carries the same satoshis — except the
+           valuations, which wear ≈ because a rate is authored, not recorded:
+           the day's USD price at the day of the block being read, per a
+           market source selected below, and the reader's own unit, named
+           and priced by the reader themself. -->
       <div id="amount-rows" class="lang-rows"></div>
       <div id="own-unit-foot" class="endpoint-row">
+        <select id="price-source-select" class="endpoint-select" aria-label="USD price source"></select>
         <button type="button" id="own-unit-add" class="ghost-btn">+ Your unit</button>
         <button type="button" id="own-unit-remove" class="ghost-btn hidden">Remove</button>
       </div>
@@ -1110,7 +1112,8 @@ import { parseTransaction, computeTxid, parseBlockHeader, computeBlockHash, bits
 // Ledger page's own keep button writes. INDEXED is the curated shelf, whose
 // titles are the keep line's defaults.
 import { keptLedgers, saveKeptLedgers, INDEXED } from './btc-index.js';
-import { composeTransactionFields, composeBlockHeaderFields, bitsInfo, groupDigits, formatBtc, formatAmount, formatAmountAs, amountUnit, setAmountUnit, ownUnit, setOwnUnit, renderWitness, toSuperscript, timestampInfo } from './btc-prose.js';
+import { composeTransactionFields, composeBlockHeaderFields, bitsInfo, groupDigits, formatBtc, formatAmount, formatAmountAs, formatOwnAmount, amountUnit, setAmountUnit, ownUnit, setOwnUnit, dayPrice, setDayPrice, renderWitness, toSuperscript, timestampInfo } from './btc-prose.js';
+import { usdOn, PRICE_SOURCES, priceSource, setPriceSource } from './btc-price.js';
 import { volumeBookChapter, heightOf, windowStartOf, retargetInside, subsidyAt, toRoman, reference, parseReference, footnoteMark, latinRefOf } from './btc-citation.js';
 import { loadNotables, places, placeTitle, blocksEta, appendix } from './btc-contents.js';
 import { queueLabel } from './btc-mempool.js';
@@ -1805,6 +1808,12 @@ async function projectedCitation(txid) {
 // the valuation is never further from its author than the hover.
 const amountTitle = (sats) => {
   const u = amountUnit();
+  if (u === 'usd') {
+    const p = dayPrice();
+    return p
+      ? `${formatBtc(sats)} — at ${p.perBtc.toLocaleString('en-US')} USD per ₿ on ${p.date}, per ${p.source}: a market's valuation, not the record`
+      : `${formatBtc(sats)} — no day's price: before ${priceSource().label}'s record begins, or the source unreachable`;
+  }
   if (u === 'own') {
     const o = ownUnit();
     return `${formatBtc(sats)} — at your rate of ${o.perBtc.toLocaleString('en-US')} ${o.label} per ₿: your valuation, not the record`;
@@ -2731,7 +2740,19 @@ async function sectionFields(txid) {
   return entry;
 }
 
+// The day's price for the page in hand, settled before anything prints, so
+// every amount on the page reads at one rate of one date. Only the 'usd'
+// notation asks anything of anyone (btc-price.js, cached by day); every
+// other notation clears the context, so a stale rate cannot outlive the
+// choice. A draft chapter has no day yet, so it reads at the present one.
+async function refreshDayPrice() {
+  if (amountUnit() !== 'usd' || !state) { setDayPrice(null); return; }
+  const ts = !state.projected && state.block ? state.block.timestamp : Math.floor(Date.now() / 1000);
+  setDayPrice(await usdOn(ts));
+}
+
 async function showCurrentTx() {
+  await refreshDayPrice();
   // A leaf (index < 0): no transaction to fetch -- the volume (-3), book (-2),
   // or chapter (-1) page renders straight from the metadata already in state.
   if (state.index < 0) {
@@ -5894,25 +5915,38 @@ renderLangRows();
 // fields carry every amount raw, so re-showing the section in hand reprints
 // the page with nothing re-composed.
 //
-// A fourth row appears once the reader has named a unit of their own and
-// priced it (the foot below the rows): the same sample amount at their rate,
-// wearing ≈. The book takes no position on what a satoshi is worth -- in
-// dollars or in other satoshis -- so the row exists only where a reader has
-// authored it, and removing the unit removes the row.
-const AMOUNT_UNITS = ['btc', 'sats', 'raw'];
+// Below the record's three rows sit the valuations, each wearing ≈. The
+// 'usd' row is always offered: the day's market price at the day of the
+// block being read, per the source selected in the foot -- the book takes no
+// position on what a satoshi is worth, so the rate is always somebody
+// else's, fetched and named, never bundled. A further row appears once the
+// reader has named a unit of their own and priced it: removing the unit
+// removes the row.
+const AMOUNT_UNITS = ['btc', 'sats', 'raw', 'usd'];
 const AMOUNT_SAMPLE = 123456789;
 function renderAmountRows() {
   const rows = $('amount-rows');
   rows.innerHTML = '';
   const own = ownUnit();
+  const day = dayPrice();
   for (const u of own ? [...AMOUNT_UNITS, 'own'] : AMOUNT_UNITS) {
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'lang-row' + (u === amountUnit() ? ' current' : '');
     btn.setAttribute('aria-pressed', u === amountUnit() ? 'true' : 'false');
-    if (u === 'own') btn.title = `at your rate of ${own.perBtc.toLocaleString('en-US')} ${own.label} per ₿ — your valuation, not the record`;
     const name = document.createElement('span');
-    name.textContent = formatAmountAs(AMOUNT_SAMPLE, u);
+    if (u === 'usd') {
+      // The sample reads at the day price of the page in hand, where one is
+      // settled; until then the row names what it would ask rather than
+      // guessing a figure.
+      name.textContent = day ? formatOwnAmount(AMOUNT_SAMPLE, { label: 'USD', perBtc: day.perBtc }) : '≈ ⋯ USD';
+      btn.title = day
+        ? `at ${day.perBtc.toLocaleString('en-US')} USD per ₿ on ${day.date}, per ${day.source} — the day of the block being read; a market's valuation, not the record`
+        : `the day's USD price at the day of the block being read, per ${priceSource().label} — a market's valuation, not the record`;
+    } else {
+      name.textContent = formatAmountAs(AMOUNT_SAMPLE, u);
+      if (u === 'own') btn.title = `at your rate of ${own.perBtc.toLocaleString('en-US')} ${own.label} per ₿ — your valuation, not the record`;
+    }
     const mark = document.createElement('span');
     mark.className = 'lang-mark';
     mark.textContent = '●';
@@ -5928,8 +5962,24 @@ async function applyAmountUnit(u, force = false) {
   setAmountUnit(u);
   renderAmountRows();
   if (state) await showCurrentTx();
+  renderAmountRows();   // the ≈ USD row's sample can now read the settled day price
 }
 renderAmountRows();
+
+// The price-source select in the foot: whose record of the market the 'usd'
+// row consults. Switching sources re-asks the day and reprints, so a figure
+// on the page is never a blend of two sources' answers.
+{
+  const sel = $('price-source-select');
+  for (const s of PRICE_SOURCES) sel.append(new Option(`USD — ${s.label}`, s.id));
+  sel.value = priceSource().id;
+  sel.addEventListener('change', async () => {
+    setPriceSource(sel.value);
+    sel.value = priceSource().id;   // reflect what actually stuck
+    if (amountUnit() === 'usd' && state) await showCurrentTx();
+    renderAmountRows();
+  });
+}
 
 // The own-unit editor, in the custom endpoint's manner: a label and a rate,
 // saved together or not at all. Saving selects the unit -- defining it and
