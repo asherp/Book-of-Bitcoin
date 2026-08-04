@@ -6,10 +6,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>The βitcoin βook</title>
 <meta name="description" content="The Bitcoin block chain, read as a book: each block a chapter, each transaction a paragraph of grammatically correct prose — every byte decodes back out exactly.">
-<!-- The book lives at bitcoin-book.html (a stable URL shared with the PWA
-     manifest and service worker); the site root just forwards there. -->
-<meta http-equiv="refresh" content="0; url=./bitcoin-book.html">
-<link rel="canonical" href="./bitcoin-book.html">
+<!-- The root opens the book at its title page (bitcoin-front.html's first
+     leaf, set as a manuscript title page and turned by swiping up), not at
+     the chain tip. A book is opened at its cover; arriving instead in the
+     middle of the latest chapter asks the reader to work out where they are
+     before it has said what it is. The tip keeps its own standing address at
+     /latest for anyone who wants it, and the reading page keeps its stable
+     URL at bitcoin-book.html, which the PWA manifest and service worker
+     share. -->
+<meta http-equiv="refresh" content="0; url=./bitcoin-front.html">
+<link rel="canonical" href="./bitcoin-front.html">
 <link rel="icon" type="image/svg+xml" href="./icons/beta-icon.svg">
 
 <!-- Social / rich unfurl: the root is the URL people actually paste, and
@@ -30,11 +36,12 @@
 <meta name="twitter:image" content="https://bookofbitcoin.io/og-bookofbitcoin.png">
 </head>
 <body>
-<p><a href="./bitcoin-book.html">Open The βitcoin βook</a></p>
+<p><a href="./bitcoin-front.html">Open The βitcoin βook</a> at its title page,
+or go straight to <a href="./latest/">the latest chapter</a>.</p>
 <p>Reading without JavaScript (crawlers, AI assistants): the
 <a href="./passages/index.md">curated passages as plain markdown</a>, the
 <a href="./preface.md">preface</a>, and <a href="./llms.txt">llms.txt</a> for
 how to read the rest of the chain the same way.</p>
-<script>location.replace('./bitcoin-book.html' + location.hash);</script>
+<script>location.replace('./bitcoin-front.html' + location.hash);</script>
 </body>
 </html>
