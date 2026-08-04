@@ -89,10 +89,15 @@ const PIZZA_TXID = 'a1075db55d416d3ca199f55b6084e2115b9345e16c5cf302fc80e9d5fbf5
 
 test('a fitting verse rides whole in text, with no passage image', () => {
   const proseOf = () => ({ prose: 'A short verse of prose.' });
-  const { text, passage } = composeReply({ height: 57043, index: 0, txid: 'ab'.repeat(32), site: SITE, proseOf });
-  assert.match(text, /^I β29 ■596 §1 — Bitcoin Pizza Day\n/);
+  // The pizza payment itself — §2 of ■596, cited by its own id. (This read
+  // §1 with a dummy txid while the contents entry named the block: a bare
+  // height matches as index 0 here, so the reply titled the block's COINBASE
+  // "Bitcoin Pizza Day". The entry cites the transaction now, and the title
+  // lands on the transaction.)
+  const { text, passage } = composeReply({ height: 57043, index: 1, txid: PIZZA_TXID, site: SITE, proseOf });
+  assert.match(text, /^I β29 ■596 §2 — Bitcoin Pizza Day\n/);
   assert.match(text, /“A short verse of prose\.”/);
-  assert.ok(text.endsWith(`${SITE}/bitcoin-book.html?block=57043&index=0`));
+  assert.ok(text.endsWith(`${SITE}/bitcoin-book.html?block=57043&index=1`));
   assert.ok(weighText(text) <= TWEET_WEIGHT_BUDGET);
   assert.equal(passage, null);
 });
@@ -242,7 +247,11 @@ test('alt text carries the passage within X\'s cap', () => {
 });
 
 test('titles resolve txid-first, then height, never book leaves', () => {
-  assert.equal(titleFor(57043, 0, PIZZA_TXID), 'Bitcoin Pizza Day');
+  // Pizza Day is the payment, so the name follows the transaction wherever
+  // it is met -- and, the point of citing it by id, follows it ONLY there.
+  assert.equal(titleFor(57043, 1, PIZZA_TXID), 'Bitcoin Pizza Day');
+  assert.equal(titleFor(57043, 0, 'ab'.repeat(32)), null,
+    'the block that carries it is not itself Pizza Day, and neither is its coinbase');
   assert.equal(
     titleFor(0, 0, '4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b'),
     'The Times 03/Jan/2009 Chancellor on brink of second bailout for banks');
