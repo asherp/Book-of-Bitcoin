@@ -23,9 +23,9 @@ Like any translation, the phrasing belongs to the language: the connective
 words that make a transaction into a sentence are the translator's grammar,
 not the author's words, and the same transaction can be rendered in more than
 one way. What survives every rendering is the content — losslessly, and
-provably so. The book reads in English today, and the engine speaks other
-languages; as the reader's own language becomes selectable, none of this
-changes. The words differ, the book does not.
+provably so. The book is set in Latin, and a reader who would rather have
+English, Čeština or Deutsch may say so; none of this changes. The words
+differ, the book does not.
 
 Which is the argument the book exists to make: **a transaction is a form of
 speech.** It can be set down in prose, read aloud, quoted, transcribed by
