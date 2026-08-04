@@ -334,6 +334,23 @@ button:disabled { opacity: .4; cursor: not-allowed; }
    it fills in a beat after the section renders; absent when no census
    answers. */
 #page-folio { grid-column: 3; justify-self: end; font:500 11px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.14em; color:var(--dim); white-space:nowrap; font-variant-numeric:tabular-nums; }
+/* The export control, opposite the folio and in the folio's own voice -- an
+   annotation on the running head, not a crumb into the book. Quiet until
+   hovered, the way the crumbs are: the reader came to read, and the offer to
+   print should not compete with the passage for the eye. */
+#page-export {
+  grid-column: 1; justify-self: start;
+  background: transparent; border: none; border-radius: 0; padding: 0; cursor: pointer;
+  font:500 11px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.14em;
+  text-transform: uppercase; color: var(--dim); white-space: nowrap;
+}
+#page-export:hover:not(:disabled), #page-export:focus-visible {
+  background: transparent; color: var(--accent-2); text-decoration: underline; outline: none;
+}
+/* Working: the encode pass ahead of the print dialogue (see exportPassage).
+   A long witness can take a beat, and a button that looks idle invites a
+   second click that would start the whole pass again. */
+#page-export:disabled { cursor: progress; color: var(--meta); text-decoration: none; }
 .chapter-num { font:600 11.5px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.3em; text-transform:uppercase; color: var(--accent); min-width: 0; text-align: center; }
 /* The eyebrow's Volume / Book / Chapter crumbs inherit its voice exactly;
    hover marks them navigable. (Overrides the global gold button styling.) */
@@ -920,6 +937,79 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 .footnote-mark.bm-host { position: static; }
 .footnote-entry .hash-bookmark { top: 0; }
 
+/* The colophon exists in the DOM at all times so the print stylesheet has
+   something to fill; it is only ever seen on paper. */
+#print-colophon { display: none; }
+
+/* ── the passage on paper ────────────────────────────────────────────────
+   What the Export button in the running head produces, and what a reader
+   who simply hits Print gets: the passage alone, on paper, in the book's
+   own dress. Nothing here is a second typesetting -- the manuscript grid,
+   the sigla, the illuminated initial and the footnotes are the screen's
+   own rules, carried over. What changes is only what a leaf of paper
+   forces: the app's furniture goes, the palette turns to ink on paper,
+   and the page is told where it may break.
+
+   The fonts are the book's own and come from web/fonts/, so a printed
+   passage sets in Newsreader with every siglum in Book Sigla -- offline,
+   and on a machine that has never heard of either. */
+@media print {
+  /* The palette, inverted: the screen's near-black page would empty a
+     cartridge to say nothing. The accent darkens to hold its own as ink,
+     and the two annotation tiers stay distinguishable in grey. Set on
+     :root so every rule below inherits it -- the stylesheet is custom
+     properties throughout, which is what makes paper a swap and not a
+     rewrite. */
+  :root {
+    --page:#fff; --card:#fff; --card-bd:#ccc; --ink:#000; --ink-soft:#1a1a1a;
+    --dim:#4a4a4a; --meta:#666; --rule:#bbb; --accent:#6b5010; --accent-2:#4a3708;
+  }
+  @page { margin: 18mm 16mm 16mm; }
+  html, body { background: #fff; }
+  /* The app's furniture, all of it: mastheads and toasts, the two nav bars,
+     the menus and sheets, and the export control itself -- a button is not
+     part of the passage it prints. */
+  .masthead, .chapter-nav, .section-nav, .hash-menu, #block-status,
+  #fontscale-toast, #future-commentary, .hash-bookmark, .noscript,
+  #page-export, .bm-ribbon, .keep-rib { display: none !important; }
+  /* The carousel's clip would cut the passage off at one screen, and the
+     viewport minimums would pad it with blank leaves. Print has no
+     viewport and no carousel: let the content set its own length. */
+  .wrap { display: block; min-height: 0; }
+  #chapter { display: block; }
+  #page-frame { overflow: visible; flex: none; min-height: 0; }
+  #page-slide { transform: none !important; }
+  /* Sticky is a screen idea. On paper the balance line simply follows the
+     record it totals, where it was always going to settle. */
+  #ch-totals { position: static; }
+  /* Break control: the manuscript grid may flow across leaves, but a
+     citation must not be orphaned from the script it annotates, nor a
+     footnote split from its letter. */
+  .tx-inputs > div, .tx-outputs > div, .footnote-entry,
+  .tx-in-cite-group, #ch-totals { break-inside: avoid; }
+  .chapter-head, .footnote-title, .tx-out-title { break-after: avoid; }
+  .chapter-footnotes { break-before: auto; }
+  /* Prose that ran off-screen is prose on paper: any lazily-encoded push
+     the reader never scrolled to is encoded before the dialogue opens
+     (exportPassage), so nothing prints as the ⋯ that stands for unencoded
+     prose. This is the belt to that braces: were one to survive, it would
+     print as the mark rather than as a blank the reader would read as
+     emptiness. */
+  .glossia-lazy { color: var(--meta); }
+  /* The colophon: a leaf of paper leaves the book, so it says what it is
+     and where it came from. Screen-hidden, print-only -- filled by
+     exportPassage from the passage in hand. */
+  #print-colophon {
+    display: block; margin-top: 14mm; padding-top: 4mm; border-top: 1px solid var(--rule);
+    font: 400 8pt/1.5 'IBM Plex Mono','Book Sigla',monospace; color: var(--meta);
+  }
+  #print-colophon .cite { color: var(--accent); letter-spacing: .06em; }
+  #print-colophon .txid { word-break: break-all; }
+  #print-colophon p { margin: 0 0 1mm; }
+  /* Links print as their text: a URL in parentheses after every crumb would
+     be noise, and the colophon already carries the one address that matters. */
+  a { text-decoration: none; color: inherit; }
+}
 </style>
 </head>
 <body>
@@ -1015,6 +1105,13 @@ button:disabled { opacity: .4; cursor: not-allowed; }
          page content slides through a carousel turn. -->
     <nav class="chapter-nav">
       <button type="button" id="chapter-prev" class="chapter-step hidden" aria-label="Previous chapter" title="Previous chapter"></button>
+      <!-- Export: the passage as a leaf of paper. Rides the left end of the
+           running head on section pages, in the cell the chapter stepper
+           vacates there -- and so sits opposite the folio, the two bracketing
+           the crumb as a printed running head brackets its title. A leaf has
+           no button, as it has no folio: what is exported is a transaction,
+           and a leaf is not one. -->
+      <button type="button" id="page-export" class="hidden" aria-label="Export this passage as a PDF" title="Export this passage as a PDF — the whole transaction, set as a page of the book">Export</button>
       <div class="chapter-num"><button type="button" id="ch-volume-link" class="crumb" title="This volume's page">Volume <span id="ch-volume"></span></button><span id="ch-sep-1"> · </span><button type="button" id="ch-book-link" class="crumb" title="This book's page">Book <span id="ch-book"></span></button><button type="button" id="ch-appendix-link" class="crumb hidden" title="The appendix this draft chapter belongs to">Appendix I</button><span id="ch-chapter-inline"></span></div>
       <button type="button" id="chapter-next" class="chapter-step hidden" aria-label="Next chapter" title="Next chapter"></button>
       <!-- The folio: a section's page number in the chain's running count of
@@ -1058,6 +1155,10 @@ button:disabled { opacity: .4; cursor: not-allowed; }
     <div class="chapter-footnotes hidden" id="ch-footnotes-section">
       <div id="ch-footnotes"></div>
     </div>
+    <!-- Print only: a leaf that leaves the book says what it is. Filled by
+         exportPassage from the passage in hand, and never shown on screen --
+         where the running head, the folio and the URL already say all of it. -->
+    <footer id="print-colophon" aria-hidden="true"></footer>
     </div>
     </div>
 
@@ -1525,6 +1626,18 @@ const lazyEncode = (() => {
       const pending = root.querySelectorAll('.glossia-lazy');
       if (io) pending.forEach((el) => io.observe(el));
       else pending.forEach(fill);
+    },
+    // Encode every outstanding placeholder under `root`, now. Scrolling is
+    // what normally earns a chunk its prose, and print does not scroll: a
+    // passage sent to paper straight off a fresh open would set its unread
+    // pushes as the ⋯ that stands for prose not yet encoded. Whatever is
+    // going to be printed is encoded first, however far down the witness it
+    // sits. Returns how many it had to do, so a caller can tell a passage
+    // that was ready from one that was not.
+    fillAll: (root) => {
+      const pending = [...root.querySelectorAll('.glossia-lazy')];
+      pending.forEach(fill);
+      return pending.length;
     },
   };
 })();
@@ -2089,6 +2202,96 @@ async function fillFolio(el, gen) {
   // carries the readable form and the explanation.
   el.textContent = String(page);
   el.title = `page ${formatPage(page)} — transaction ${formatPage(page)} of the chain: pages count every transaction since genesis, in block order`;
+}
+
+// ── The passage, exported ─────────────────────────────────────────────────
+//
+// The Export control at the left end of the running head writes the passage
+// in front of the reader to a PDF: the whole transaction, footnotes and all,
+// set as a page of the book.
+//
+// The PDF is the browser's own. Nothing here draws one: the page already
+// knows how to typeset a transaction, the fonts it needs are served from
+// this origin (web/fonts/), and `@media print` above says what a leaf of
+// paper changes. Handing that to the print pipeline yields a PDF that is
+// the book's actual typography -- the manuscript grid, the sigla, the
+// illuminated initial -- where a PDF library in the page would mean a
+// second implementation of the layout, the fonts embedded a second time,
+// and a megabyte of dependency to keep in step with the first. The
+// reader's Save-as-PDF is one dialogue away and every browser has it.
+//
+// Two things have to happen before the dialogue opens, and they are the
+// whole reason this is a function rather than an onclick="print()":
+//
+//   1. The prose has to exist. Script and witness pushes are encoded on
+//      scroll (lazyEncode), so a passage opened and immediately exported
+//      would print ⋯ for every push the reader never reached. fillAll
+//      encodes the lot first.
+//   2. The file has to have a name. Browsers take the PDF's default
+//      filename from document.title, so the title becomes the citation for
+//      the duration of the dialogue and is put back afterwards -- a reader
+//      who exports three passages gets three named files rather than three
+//      copies of the site's own title.
+async function exportPassage() {
+  const btn = $('page-export');
+  if (btn.disabled) return;                 // a pass is already running
+  const gen = renderGen;                    // the passage as it stands now
+  const cite = `${referenceOf(state.height)} §${state.index + 1}`;
+  const restoreTitle = document.title;
+  const restoreLabel = btn.textContent;
+
+  btn.disabled = true;
+  try {
+    // (1) Every deferred push, encoded. A long witness can take a beat, so
+    // the button says what it is doing; yielding a frame first lets that
+    // label actually paint before the encode blocks the main thread.
+    btn.textContent = tr('Setting…');
+    await new Promise((r) => requestAnimationFrame(() => r()));
+    const filled = lazyEncode.fillAll($('page-slide'));
+    // The reader can turn the page while the encode runs. A print dialogue
+    // for a passage that is no longer on screen would be a surprise, and
+    // the colophon would name the wrong one -- so a turn cancels the export.
+    if (gen !== renderGen) return;
+    if (filled) await new Promise((r) => requestAnimationFrame(() => r()));
+
+    // (2) The colophon: what this leaf is, and where it came from. Built
+    // from the passage in hand, not from the URL, so it says the same thing
+    // whether the reader arrived by citation, by search or by swiping.
+    const txid = state.txid || (state.txids && state.txids[state.index]) || '';
+    const url = `${location.origin}${location.pathname}?block=${state.height}&index=${state.index}`;
+    // The section's curated name, where the contents gives it one. It is a
+    // class inside the section title, not an element of its own.
+    const title = (document.querySelector('#section-title .section-event')?.textContent || '').trim();
+    // Built as nodes rather than as markup: a curated title is authored text
+    // and a colophon is no place to start interpreting it as HTML. The page
+    // sets untrusted text with textContent everywhere else for the same
+    // reason, and this needs no escape helper because it never makes a string.
+    const colophon = $('print-colophon');
+    colophon.textContent = '';
+    const line = (...kids) => {
+      const p = document.createElement('p');
+      p.append(...kids);
+      colophon.append(p);
+      return p;
+    };
+    const citeEl = document.createElement('span');
+    citeEl.className = 'cite';
+    citeEl.textContent = cite;
+    line(citeEl, title ? ` — ${title}` : '');
+    if (txid) line(`${tr('Transaction')} ${txid}`).className = 'txid';
+    line(`${tr('The βook of βitcoin')} · ${url}`);
+    line(tr('The prose is a translation of this transaction’s bytes and decodes back to them; ' +
+      'it is dedicated to the public domain. Any commentary is its author’s.'));
+
+    document.title = title ? `${cite} — ${title}` : cite;
+    // print() is synchronous while the dialogue is open in every engine that
+    // shows one, so the restore below lands after the reader dismisses it.
+    window.print();
+  } finally {
+    document.title = restoreTitle;
+    btn.textContent = restoreLabel;
+    btn.disabled = false;
+  }
 }
 
 // The chain tip height, as plain text from Esplora. Opens the book at the most
@@ -3406,8 +3609,10 @@ function renderLeafShell() {
   $('ch-subtitle').textContent = '';
   $('ch-subtitle').classList.add('hidden');
   // A leaf has no folio -- pages belong to sections -- and its grid cell goes
-  // back to the chapter-next stepper.
+  // back to the chapter-next stepper. Nor an export: what the button writes
+  // to paper is a transaction, and a leaf is not one.
   $('page-folio').classList.add('hidden');
+  $('page-export').classList.add('hidden');
   $('section-title').classList.add('hidden');
   $('section-hash').classList.add('hidden');
   $('section-meta').classList.add('hidden');
@@ -3724,6 +3929,9 @@ function renderGhostTombstone(txid) {
   sectionTitle.title = `txid ${txid} — replaced by fee; its raw form was never recorded here`;
   attachHashCopy(sectionTitle, txid, 'transaction id', txidProse);
   $('page-folio').classList.add('hidden');   // a superseded draft holds no page of its own
+  // ...and no export: the tombstone carries what the succession remembers,
+  // not the transaction's bytes, so there is no passage to set on paper.
+  $('page-export').classList.add('hidden');
   const body = $('ch-paragraphs');
   body.innerHTML = '';
   const note = document.createElement('p');
@@ -3913,6 +4121,8 @@ function renderChapter(para) {
   folio.title = '';
   folio.classList.remove('hidden');
   fillFolio(folio, gen);
+  // The passage is a transaction now, so it can be written to paper.
+  $('page-export').classList.remove('hidden');
   const flow = document.createElement('div');
   flow.className = 'tx-flow';
   const inputsEl = document.createElement('div');
@@ -5060,6 +5270,17 @@ $('page-prev').addEventListener('click', () => contentsStep(-1));
 $('page-next').addEventListener('click', () => contentsStep(1));
 $('chapter-prev').addEventListener('click', () => goToLevel(-1));
 $('chapter-next').addEventListener('click', () => goToLevel(1));
+$('page-export').addEventListener('click', exportPassage);
+// A reader who prints without touching the button gets the same leaf: the
+// deferred prose is encoded and the colophon filled on the way into the
+// dialogue, however the reader opened it (⌘P, the browser's own menu).
+// beforeprint cannot be awaited -- the dialogue does not wait for a promise
+// -- but fillAll is synchronous, which is exactly what this needs.
+window.addEventListener('beforeprint', () => {
+  if (!state || $('page-export').classList.contains('hidden')) return;
+  if ($('page-export').disabled) return;   // exportPassage is already doing it
+  lazyEncode.fillAll($('page-slide'));
+});
 // The eyebrow crumbs: each opens the page of the span it names. Same block →
 // just re-render at the leaf; otherwise load the span's first block.
 const openCrumb = (height, idx) => {
@@ -6055,6 +6276,7 @@ function localizeChrome() {
     document.querySelector('.key-scope-note'),
     document.querySelector('.key-scope-link'),
     $('ch-appendix-link'),
+    $('page-export'),
   ]) localizeText(el);
   // The crumb words ride as leading text nodes before their number spans.
   for (const [id, en] of [['ch-volume-link', 'Volume'], ['ch-book-link', 'Book']]) {
@@ -6064,6 +6286,8 @@ function localizeChrome() {
   localizeAttr($('endpoint-label'), 'placeholder');
   localizeAttr($('hash-title-input'), 'placeholder');
   localizeAttr(document.querySelector('.section-nav .commentary summary'), 'title');
+  localizeAttr($('page-export'), 'title');
+  localizeAttr($('page-export'), 'aria-label');
 }
 localizeChrome();
 
