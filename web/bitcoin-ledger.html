@@ -617,7 +617,7 @@ import { localizeHome, mountLangMenu } from './btc-strings.js';
 localizeHome();   // the masthead in the reader's UI language
 mountLangMenu();  // …with the Language item, which any page can now set
 import { INDEXED, isAddress, isScriptHex, keptLedgers, saveKeptLedgers, sameAddresses, memberScriptHex, cachedLine, resolveLine,
-         extendLine, renderRows, periods, lineNote, reconciled, ledgerSum, heldCoins, addressState, lastKnownState,
+         extendLine, renderRows, groupState, periods, lineNote, reconciled, ledgerSum, heldCoins, addressState, lastKnownState,
          formatBalanceBtc, formatNetBtc, chainFailureText, citeHref, sectionOf, sectionOfFetched, citePlace, passageTxid, passageEntries, txHexOf, outspendsOf, prevoutValuesOf,
          DEFAULT_ESPLORA, esploraCustom, esploraSelected, setEsploraSettings } from './btc-index.js';
 import { volumeBookChapter, heightOf, subsidyAt, toRoman, parseReference, latinRefOf, footnoteMark } from './btc-citation.js';
@@ -1216,7 +1216,7 @@ const runRecord = async (alive) => {
   const cached = await mergedCached(addrs);
   if (!alive()) return;
   let byTxid = null;     // held marks, once the snapshot agrees
-  let rowsEl, foot, note, unsyn, rendered, io;
+  let rowsEl, foot, note, unsyn, rendered, io, group;
   let busy = false;      // one draw at a time; the re-arm retriggers
   // The unsynced entry: an unreferenced line heading the record for the
   // transactions not yet gathered -- their count standing where the
@@ -1262,7 +1262,14 @@ const runRecord = async (alive) => {
     const len = line.entries.length;
     const take = Math.min(len - rendered, PAGE);
     if (take > 0) {
-      renderRows(rowsEl, line.entries.slice(len - rendered - take, len - rendered), byTxid);
+      // The reader's bookmarks that fall inside the span the record
+      // covers, newest first -- the order the rows themselves are drawn
+      // in. Recomputed as the reach grows, which only ever APPENDS older
+      // marks to the tail, so the count already consumed stays true.
+      const lo = line.entries[0].height, hi = line.entries[line.entries.length - 1].height;
+      const marks = bookmarks.filter((b) => b.height >= lo && b.height <= hi).sort((a, z) => z.height - a.height);
+      renderRows(rowsEl, line.entries.slice(len - rendered - take, len - rendered), byTxid,
+                 { state: group, bookmarks: marks });
       rendered += take;
     }
     note.textContent = stateText(line);   // the reach grows as the reader reads
@@ -1317,6 +1324,7 @@ const runRecord = async (alive) => {
     el.append(unsyn, rowsEl, foot);
     setUnsynced(data);
     rendered = 0;
+    group = groupState();   // headings and marks start afresh with the paint
     io = new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) scroll(); },
                                   { rootMargin: '1600px 0px' });
     io.observe(foot);
