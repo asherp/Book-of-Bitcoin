@@ -362,6 +362,31 @@ a.bb-ref:hover { color:var(--accent-2); }
   border:1px solid var(--card-bd); border-radius:4px; padding:14px 16px; margin:0; }
 .ins-caption { margin-top:10px; font:400 12.5px/1.6 'Public Sans',sans-serif; color:var(--meta); }
 
+/* A collection, read as what it names. One member to a block: its txid said
+   in the book's own prose -- the poem the chain writes for that witness --
+   and the witness's own image beneath it, the way a plate sits under its
+   line. Nothing else: the manifest's editorial matter is the inscriber's
+   claim, and this leaf shows the members, not the claims about them. */
+.ins-collection { max-width:56ch; margin:26px auto 0; }
+.ins-member { margin:0 0 44px; text-align:center; }
+.ins-member:last-of-type { margin-bottom:8px; }
+/* The poem reads as the book's prose reads -- the reading face, the gold ⌘
+   leading it -- and is the door into the chapter that witness sits in. */
+.ins-poem { display:block; font:italic 400 15px/1.6 'Newsreader',serif; color:var(--ink-soft);
+  overflow-wrap:anywhere; text-wrap:pretty; }
+a.ins-poem:hover { color:var(--ink); text-decoration:none; }
+.ins-poem.waiting { color:var(--meta); }
+/* The plate's place is held before the plate arrives: a member whose witness
+   is still being fetched stands its own height, so the page does not jump as
+   photographs land -- and so the draw below, which fills until the foot is
+   nearly in reach, is not fooled by a run of zero-height members into
+   fetching the whole collection at once. */
+.ins-member-body { display:flex; align-items:center; justify-content:center; margin-top:12px; min-height:220px; }
+.ins-member-body img { max-width:100%; border:1px solid var(--card-bd); border-radius:4px; background:var(--card); }
+/* A member whose witness will not answer, or carries something no plate can
+   show, keeps its poem and says so quietly where the image would stand. */
+.ins-member-say { font:400 12px/1.6 'Public Sans',sans-serif; color:var(--meta); }
+
 /* The other appendices, at the foot: the leaf's own turns, spelled out for
    hands that are not swiping. */
 .appx-turns { display:flex; flex-wrap:wrap; gap:10px 26px; margin-top:44px; padding-top:18px; border-top:1px solid var(--rule);
@@ -416,6 +441,13 @@ a.bb-ref:hover { color:var(--accent-2); }
        bytes do not say. -->
   <div class="bip-stats hidden" id="ins-card"></div>
   <figure class="ins-content hidden" id="ins-content"></figure>
+
+  <!-- A manifest names further reveals rather than carrying content of its
+       own, so its leaf shows what it names: one member to a leaf-block, the
+       txid said in the book's own prose and the witness's image beneath it.
+       Drawn a page at a time as the foot comes into reach, the way the
+       ballot and the Ledger's record are drawn. -->
+  <div class="ins-collection hidden" id="ins-collection"></div>
 
   <div class="proof-list hidden" id="proof-list"></div>
 
@@ -859,34 +891,57 @@ if (kind === 'inscriptions' && !ins) {
 // market's collections all live in commentary, credited, behind the sheet.
 if (ins) {
   const card = $('ins-card');
-  card.classList.remove('hidden');
   const line = (key) => {
     const l = document.createElement('div'); l.className = 'proof-line';
     const k = document.createElement('div'); k.className = 'proof-key'; k.textContent = key;
     const v = document.createElement('div'); v.className = 'proof-val';
     l.append(k, v); card.append(l);
+    card.classList.remove('hidden');
     return v;
   };
-  const typeV = line('content type');
-  typeV.textContent = '…';
-  const lenV = line('length');
-  lenV.textContent = '…';
+  // The engine that says a hash, wanted only where a poem is (a collection's
+  // members) -- so it arrives lazily, and a figure it never reaches stays
+  // unsaid rather than empty.
+  let engineP = null;
+  const glossia = () => (engineP ||= import('./glossia-msg.js').then(async (m) => { await m.init(); return m; }));
+  const reverseHex = (hex) => (hex.match(/../g) || []).reverse().join('');
+  // The leaf says what it is doing until the witness answers; the status
+  // gives way to whatever the envelope turns out to hold.
+  const fig = $('ins-content');
+  const status = document.createElement('figcaption');
+  status.className = 'ins-caption';
+  status.textContent = 'reading the witness…';
+  fig.append(status);
+  fig.classList.remove('hidden');
 
   (async () => {
     const tx = await overMirrors(`/tx/${ins.reveal}`);
-    if (!tx) {
-      typeV.textContent = 'the chain could not be reached';
-      lenV.textContent = '—';
-      return;
-    }
-    const { inscriptionInTx } = await import('./btc-inscriptions.js');
+    if (!tx) { status.textContent = 'the chain could not be reached'; return; }
+    const { inscriptionInTx, parseCollection } = await import('./btc-inscriptions.js');
     const found = inscriptionInTx(tx);
     if (!found) {
       // The transaction stands; the reading does not. Say which is which.
-      typeV.textContent = 'no envelope — this witness does not read as an inscription';
-      lenV.textContent = '—';
+      status.textContent = 'no envelope — this witness does not read as an inscription';
       return;
     }
+
+    // A manifest carries no content of its own: it names further reveals, and
+    // what it names is the collection. So the leaf spends the JSON rather
+    // than showing it -- the ids become the members below, and the manifest's
+    // own editorial matter (the names, the artists, the cities) is left where
+    // it was written, being the inscriber's claim about those members rather
+    // than anything the chain holds.
+    const collection = found.contentEncoding ? null : parseCollection(found.body);
+    if (collection) {
+      status.remove();
+      fig.classList.add('hidden');
+      renderCollection(collection.members);
+      return;
+    }
+
+    status.remove();
+    const typeV = line('content type');
+    const lenV = line('length');
     typeV.textContent = found.contentType || '(none declared)';
     typeV.title = 'the envelope\'s own declaration (tag 1) — a claim about the bytes, made by whoever inscribed them';
     lenV.textContent = `${found.body.length.toLocaleString('en-US')} bytes`;
@@ -909,8 +964,6 @@ if (ins) {
     // asserts nothing beyond the bytes. An image renders inert (a figure
     // executes nothing); text and JSON read as text, JSON re-spaced for the
     // eye; a compressed or other-typed body is named and left whole.
-    const fig = $('ins-content');
-    fig.classList.remove('hidden');
     const caption = document.createElement('figcaption');
     caption.className = 'ins-caption';
     caption.textContent = `the envelope's body, read out of input ${found.vin + 1}'s witness — the bytes are the chain's; that they are ${found.contentType ? `“${found.contentType}”` : 'anything at all'} is the inscriber's claim`;
@@ -937,6 +990,98 @@ if (ins) {
       fig.append(caption);
     }
   })();
+
+  // ── A collection, shown as what it names ──
+  // One member to a block: the txid said in the book's own prose -- the same
+  // encoding a section's title wears, over the same reversed bytes -- and
+  // beneath it the image that member's own witness carries, fetched and read
+  // by the same reader. The poem is the door into the chapter the member
+  // sits in; the book resolves a bare txid to its section.
+  //
+  // Drawn a page at a time as the foot comes into reach: a hundred members
+  // are a hundred reveals, and a leaf that fetched them all at once would
+  // ask the mirrors for megabytes nobody had scrolled to yet.
+  function renderCollection(members) {
+    const wrap = $('ins-collection');
+    wrap.classList.remove('hidden');
+    const rowsEl = document.createElement('div');
+    const foot = document.createElement('span');
+    foot.className = 'bb-foot';
+    foot.textContent = '…';
+    wrap.append(rowsEl, foot);
+
+    const memberEl = (m) => {
+      const figure = document.createElement('figure');
+      figure.className = 'ins-member';
+      // The poem, in the reading face, leading with the ⌘ the book gives an
+      // identity hash. Said as soon as the engine lands; unsaid if it never
+      // does, the way every other figure on these leaves is.
+      const poem = document.createElement('a');
+      poem.className = 'ins-poem waiting';
+      poem.href = `./bitcoin-book.html?txid=${m.txid}`;
+      poem.title = 'read this witness in the book';
+      poem.textContent = '…';
+      const body = document.createElement('div');
+      body.className = 'ins-member-body';
+      figure.append(poem, body);
+      glossia().then((g) => {
+        const mark = document.createElement('span');
+        mark.className = 'dt';
+        mark.textContent = '⌘';
+        const sup = document.createElement('span');
+        sup.className = 'op-count';
+        sup.textContent = toSuperscript(256);
+        poem.replaceChildren(mark, sup, document.createTextNode(' '
+          + g.encodeCanonical(reverseHex(m.txid), g.bookLang(), 5).prose));
+        poem.classList.remove('waiting');
+      }).catch(() => { poem.textContent = 'unsaid'; poem.title = 'the engine that puts a hash into words did not load'; });
+      // The member's own witness, read exactly as this leaf's was.
+      (async () => {
+        const mtx = await overMirrors(`/tx/${m.txid}`);
+        const say = (text) => { const s = document.createElement('div'); s.className = 'ins-member-say'; s.textContent = text; body.replaceChildren(s); };
+        if (!mtx) { say('the chain could not be reached for this member'); return; }
+        const { inscriptionInTx } = await import('./btc-inscriptions.js');
+        const e = inscriptionInTx(mtx);
+        if (!e) { say('no envelope in this witness'); return; }
+        const ct = String(e.contentType || '').toLowerCase();
+        if (e.contentEncoding || !ct.startsWith('image/')) {
+          say(`${e.body.length.toLocaleString('en-US')} bytes of ${e.contentType || 'an undeclared kind'}`);
+          return;
+        }
+        const img = document.createElement('img');
+        img.src = URL.createObjectURL(new Blob([e.body], { type: e.contentType }));
+        img.alt = '';
+        img.loading = 'lazy';
+        body.replaceChildren(img);
+      })().catch(() => { /* the poem stands: a member's plate is not its name */ });
+      return figure;
+    };
+
+    // A page of members is a page of REVEALS -- each one a transaction of a
+    // hundred-odd kilobytes, since the image rides in its witness. So the
+    // page is small and the reach short: the ballot can bank a screenful
+    // ahead because a row there is a number, but here a row drawn early is a
+    // photograph fetched for nobody.
+    const PAGE = 4;
+    let drawn = 0, busy = false, io = null;
+    const draw = () => {
+      if (busy) return;
+      busy = true;
+      for (const m of members.slice(drawn, drawn + PAGE)) rowsEl.append(memberEl(m));
+      drawn = Math.min(drawn + PAGE, members.length);
+      foot.textContent = drawn >= members.length
+        ? `— ${members.length.toLocaleString('en-US')} members, as the manifest names them`
+        : '…';
+      busy = false;
+      // Appending moved the sentinel; observe it afresh so a foot still
+      // within reach draws the next page too.
+      if (io && drawn < members.length) { io.unobserve(foot); io.observe(foot); }
+    };
+    io = new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) draw(); },
+                                  { rootMargin: '300px 0px' });
+    io.observe(foot);
+    draw();
+  }
 
   // The entry's reading, raised the way a fork's is: the note leads the
   // sheet, then whatever else is written of it, then the part's own.
