@@ -19,7 +19,7 @@ import { volumeBookChapter, toRoman } from './btc-citation.js';
 import { storeGet, storePut } from './btc-store.js';
 import { INDEXED as CURATED } from './btc-index-data.js';
 import { usdOn } from './btc-price.js';
-import { amountUnit, ownUnit, groupDigits, formatNetValuation } from './btc-amounts.js';
+import { amountUnit, ownUnit, groupDigits, formatValuation, formatNetValuation } from './btc-amounts.js';
 
 // A loose shape test for the address forms the chain has used: base58 P2PKH
 // ('1…') and P2SH ('3…'), and bech32/bech32m ('bc1…', matched lowercase --
@@ -947,7 +947,12 @@ async function fillValuation(cell) {
     cell.title = 'no day price: before the source’s record begins, or the source unreachable';
     return;
   }
-  cell.textContent = formatNetValuation(Number(cell.dataset.sats), { label: 'USD', perBtc: p.perBtc });
+  const unit = { label: 'USD', perBtc: p.perBtc };
+  const sats = Number(cell.dataset.sats);
+  // Signed in the entries listing, where the net column beside it is
+  // signed; unsigned under a debit or credit figure, where the column the
+  // cell sits in is the sign (dataset.abs, set by lineRow).
+  cell.textContent = cell.dataset.abs ? formatValuation(Math.abs(sats), unit) : formatNetValuation(sats, unit);
   cell.title = `at ${p.perBtc.toLocaleString('en-US')} USD per ₿ on ${p.date}, per ${p.source} — the day of this entry; a market's valuation, not the record`;
 }
 
@@ -1121,7 +1126,7 @@ export function outspendsOf(txid) {
 // hasn't agreed with the chain -- the verdict waits, never guesses.
 // (`pending` is reserved for mempool transactions, which the map doesn't
 // carry yet.) A zero-value touch carries no coin to have a status.
-function lineRow({ txid, sats, place, out, addr }, held) {
+function lineRow({ txid, sats, place, out, addr, time }, held) {
   const row = document.createElement('a');
   row.className = 'idx-row acct';
   row.href = citeHref(txid, out);   // a credit lands the book on its output
@@ -1152,6 +1157,34 @@ function lineRow({ txid, sats, place, out, addr }, held) {
   if (held && sats !== 0) {
     if (resting > 0) { st.textContent = 'unspent'; st.classList.add('unspent'); }
     else st.textContent = 'spent';
+  }
+  // The valuation, when the reader's notation is one (the book's amount
+  // choice, followed here as in ledgerRow): set UNDER the figure it
+  // values, inside the debit or credit cell — the flat rows have no room
+  // for a column of their own, least of all on the narrow leaves this
+  // listing serves. Unsigned, like the columns themselves: which side of
+  // the account the cell sits in is the sign. Day prices fill lazily as
+  // rows scroll into view; the reader's own rate needs no asking.
+  const unit = amountUnit();
+  const valCell = sats < 0 ? deb : sats > 0 ? cred : null;
+  if (valCell) {
+    let v = null;
+    if (unit === 'usd' && time) {
+      v = document.createElement('span'); v.className = 'idx-val under';
+      v.textContent = '⋯';
+      v.dataset.time = String(time);
+      v.dataset.sats = String(sats);
+      v.dataset.abs = '1';
+      observeValuation(v);
+    } else if (unit === 'own') {
+      const o = ownUnit();
+      if (o) {
+        v = document.createElement('span'); v.className = 'idx-val under';
+        v.textContent = formatValuation(Math.abs(sats), o);
+        v.title = `at your rate of ${o.perBtc.toLocaleString('en-US')} ${o.label} per ₿ — your valuation, not the record`;
+      }
+    }
+    if (v) valCell.append(v);
   }
   row.append(r, deb, cred, st);
   return row;
