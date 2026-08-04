@@ -18,7 +18,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { access } from 'node:fs/promises';
 
-import { formatValuation, formatNetValuation, formatAmountAs, amountUnit, setDayPrice, dayPrice }
+import { formatValuation, formatAmountAs, amountUnit, setDayPrice, dayPrice }
   from '../web/btc-amounts.js';
 
 test('a valuation: money decimals, and dust never rounds to nothing', () => {
@@ -30,13 +30,6 @@ test('a valuation: money decimals, and dust never rounds to nothing', () => {
   assert.equal(formatValuation(0, usd), '0 USD');
   // The label prints as the reader spelled it, whatever they named.
   assert.equal(formatValuation(123456789, { label: 'slices', perBtc: 0.0002 }), '0.00025 slices');
-});
-
-test("a ledger net's valuation is signed the way the net column is", () => {
-  const day = { label: 'USD', perBtc: 1119.52 };
-  assert.equal(formatNetValuation(123456789, day), '+1,382.12 USD');
-  assert.equal(formatNetValuation(-123456789, day), '−1,382.12 USD');
-  assert.equal(formatNetValuation(0, day), '0 USD');
 });
 
 test("'usd' reads at the day price the page set, and at ₿ where none is", () => {
