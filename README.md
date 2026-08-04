@@ -457,6 +457,17 @@ compiled to WASM) is consumed as a published
   - the reader's key to all of it: the sigla leaf in `web/bitcoin-front.html`
     (the whole table, plus the reference-format diagram), and the notation
     toggle in `web/bitcoin-book.html`'s section-nav bar while reading
+- `web/fonts/` — the passage renderer's faces, vendored: Newsreader and IBM
+  Plex Mono (both OFL) as the Google Fonts API serves them, and **Book
+  Sigla** — five subset faces that together own every siglum the manuscript
+  writes, so a card, a static citation page, or a PDF sets identically on
+  every machine instead of scattering the sigla across whatever fonts the
+  renderer's host happens to have. The `@font-face` table lives in
+  `tools/twitter-bot/quote.mjs` (one table, every consumer: the card
+  renderer inlines the files, the static pages address `/fonts/`); the
+  test suite fails if a new siglum enters the alphabet that no vendored
+  face declares. Provenance, licenses, and regeneration:
+  [`web/fonts/README.md`](web/fonts/README.md)
 - `web/glossia-msg.js` — the encoding pipeline over the Glossia WASM engine
 - `web/glossia.js`, `web/glossia_bg.wasm` — **build artifacts** (gitignored),
   produced by `build_web.sh` from the published glossia crate

@@ -211,6 +211,12 @@ Three small steps, each shippable alone:
    chosen sigla-coverage fallback), an `@font-face` block in `passageCss`,
    fonts loaded from the repository rather than any network. This
    improves today's cards and og-images on its own, before any PDF exists.
+   *Done — `web/fonts/`, with the sigla fallback built as five subset
+   faces under one family (`Book Sigla`) covering the renderer's whole
+   glyph inventory; see `web/fonts/README.md`. Re-verified here: the
+   proof-of-concept PDF re-run against the vendored block embeds
+   Newsreader, IBM Plex Mono, and the Book Sigla subsets exclusively —
+   no system fonts.* **[ran]**
 2. **`tools/export-pdf.mjs`.** The third consumer of the one renderer:
    takes what `renderEntry` already returns, composes the edition (title
    leaf, terms, contents rows, passages in contents order, commentary

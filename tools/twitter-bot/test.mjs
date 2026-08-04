@@ -12,12 +12,13 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { access } from 'node:fs/promises';
+import { access, readFile } from 'node:fs/promises';
 
 import { fromRoman, parseCitation } from './citation.mjs';
 import {
   weighText, composeReply, composeUnwritten, composeNoSection,
   resolveCitation, titleFor, sectionParts, passageHtml, passageCss, passageAltText,
+  fontFacesCss, FONT_FACES,
   TWEET_WEIGHT_BUDGET, FONT_MIN,
 } from './quote.mjs';
 import { loadRenderer } from './image.mjs';
@@ -379,6 +380,75 @@ test('a genesis citation quotes the section — sigla, headline, amount — and 
   const reversed = decodeCanonical(txidProse, 32, 'english').hex;
   const txid = (reversed.match(/../g) || []).reverse().join('');
   assert.equal(txid, GENESIS_TXID);
+});
+
+// ─── the vendored fonts ─────────────────────────────────────────────────
+
+test('every font file the faces declare is vendored in web/fonts', async () => {
+  for (const { file } of FONT_FACES) {
+    await access(new URL(`../../web/fonts/${file}`, import.meta.url));
+  }
+});
+
+test('the declared font ranges cover the whole glyph inventory of the sources', async () => {
+  // The inventory rule the vendoring followed (web/fonts/README.md): every
+  // non-ASCII codepoint in a string literal of the modules whose strings
+  // reach a rendered page. A new siglum added to the alphabet lands here
+  // first — and this test fails until the fonts are re-vendored to carry it.
+  //
+  // A declared unicode-range is the tripwire, not the proof: a range gates
+  // which face is tried, and only the vendoring pipeline verified that each
+  // face's cmap actually holds what its range claims. Good enough to catch
+  // the one drift that actually happens — a glyph nobody vendored.
+  const SOURCES = [
+    '../../web/btc-sigla.js', '../../web/btc-prose.js', '../../web/btc-citation.js',
+    '../../web/btc-pools.js', './quote.mjs', '../passage-page.mjs',
+  ];
+  const LIT = /'(?:[^'\\\n]|\\.)*'|"(?:[^"\\\n]|\\.)*"|`(?:[^`\\]|\\.)*`/gs;
+  const inventory = new Set();
+  for (const src of SOURCES) {
+    let text = await readFile(new URL(src, import.meta.url), 'utf8');
+    text = text.replace(/\/\*[\s\S]*?\*\//g, '')
+      .replace(/^\s*\/\/.*$/gm, '')
+      .replace(/(?<=[;{}(,=+\s])\/\/[^\n]*/g, '');
+    for (const lit of text.match(LIT) || []) {
+      for (const ch of lit) {
+        const cp = ch.codePointAt(0);
+        if (cp > 0x7f) inventory.add(cp);
+      }
+    }
+  }
+  assert.ok(inventory.size > 100, `inventory implausibly small: ${inventory.size}`);
+
+  const covered = new Set();
+  for (const { range } of FONT_FACES) {
+    for (const part of range.split(',')) {
+      const [a, b] = part.trim().slice(2).split('-');
+      const lo = parseInt(a, 16), hi = b ? parseInt(b, 16) : lo;
+      for (let cp = lo; cp <= hi; cp++) covered.add(cp);
+    }
+  }
+  const missing = [...inventory].filter((cp) => !covered.has(cp))
+    .map((cp) => `U+${cp.toString(16).toUpperCase().padStart(4, '0')} ${String.fromCodePoint(cp)}`);
+  assert.deepEqual(missing, [], 'glyphs no vendored face declares — re-vendor the fonts');
+});
+
+test('the page sets the @font-face block it is handed, and the sigla ride every stack', () => {
+  const css = fontFacesCss((f) => `X/${f}`);
+  assert.equal((css.match(/@font-face/g) || []).length, FONT_FACES.length);
+  assert.ok(css.includes('url(X/sigla-dejavu.woff2)'), 'the src mapping addresses the files');
+
+  const html = passageHtml({
+    cite: 'I β1 ■1 §1', sectionNum: 1, txidProse: 'p', section: null, site: SITE,
+    fontsCss: css,
+  });
+  assert.ok(html.includes('@font-face'), 'the block rides in the page');
+  const bare = passageHtml({ cite: 'I β1 ■1 §1', sectionNum: 1, txidProse: 'p', section: null, site: SITE });
+  assert.ok(!bare.includes('@font-face'), 'absent by default, exactly as before');
+
+  const page = passageCss({ fontSize: 19 });
+  assert.match(page, /'Newsreader', 'Book Sigla', Georgia/);
+  assert.match(page, /'IBM Plex Mono', 'Book Sigla', ui-monospace/);
 });
 
 // ─── the passage image, when Playwright is installed ────────────────────
