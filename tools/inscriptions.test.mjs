@@ -1,0 +1,143 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+//
+// tools/inscriptions.test.mjs — the envelope reader (web/btc-inscriptions.js):
+// an ord inscription read out of a witness's tapscript, and nothing invented
+// where the branch breaks its own grammar.
+//
+//   node --test tools/
+//
+// Pure byte-work — no WASM, no network: every witness here is composed in the
+// test, byte by byte, the way ord composes one.
+
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { parseEnvelopes, tapscriptOf, inscriptionInTx } from '../web/btc-inscriptions.js';
+
+const hex = (bytes) => bytes.map((b) => b.toString(16).padStart(2, '0')).join('');
+const ascii = (s) => [...s].map((c) => c.charCodeAt(0));
+const push = (data) => {
+  if (data.length === 0) return [0x00];
+  if (data.length <= 0x4b) return [data.length, ...data];
+  if (data.length <= 0xff) return [0x4c, data.length, ...data];
+  return [0x4d, data.length & 0xff, data.length >> 8, ...data];
+};
+
+// The usual reveal script: a key, OP_CHECKSIG, then the envelope riding the
+// unexecuted branch behind it.
+const KEY = Array.from({ length: 32 }, (_, i) => i);
+const scriptWith = (...envelope) => hex([...push(KEY), 0xac, ...envelope.flat()]);
+const envelope = ({ fields = [], body = null } = {}) => [
+  0x00, 0x63, ...push(ascii('ord')),
+  ...fields.flatMap(([tag, value]) => [...push([tag]), ...push(value)]),
+  ...(body === null ? [] : [0x00, ...body.flatMap((chunk) => push(chunk))]),
+  0x68,
+];
+const bytes = (hexStr) => Uint8Array.from(hexStr.match(/../g).map((x) => parseInt(x, 16)));
+
+test('a plain envelope reads back: content type, body, in one piece', () => {
+  const script = scriptWith(envelope({
+    fields: [[1, ascii('text/plain;charset=utf-8')]],
+    body: [ascii('Hello, world!')],
+  }));
+  const envs = parseEnvelopes(bytes(script));
+  assert.equal(envs.length, 1);
+  assert.equal(envs[0].contentType, 'text/plain;charset=utf-8');
+  assert.equal(new TextDecoder().decode(envs[0].body), 'Hello, world!');
+});
+
+test('a body of many chunks concatenates in order — a push carries at most 520 bytes, so any real body is many', () => {
+  const a = Array.from({ length: 520 }, () => 0x61);
+  const b = Array.from({ length: 300 }, () => 0x62);
+  const script = scriptWith(envelope({ fields: [[1, ascii('application/octet-stream')]], body: [a, b, ascii('!')] }));
+  const [env] = parseEnvelopes(bytes(script));
+  assert.equal(env.body.length, 821);
+  assert.equal(env.body[0], 0x61);
+  assert.equal(env.body[520], 0x62);
+  assert.equal(env.body[820], 0x21);
+});
+
+test('OP_PUSHDATA1 and OP_PUSHDATA2 spellings read the same as direct pushes', () => {
+  // The same 5-byte body pushed three ways; ord writes whichever fits, and
+  // the reader must not care.
+  const body = ascii('bytes');
+  const spellings = [
+    [body.length, ...body],
+    [0x4c, body.length, ...body],
+    [0x4d, body.length, 0x00, ...body],
+  ];
+  for (const spelled of spellings) {
+    const script = hex([...push(KEY), 0xac, 0x00, 0x63, ...push(ascii('ord')),
+      ...push([1]), ...push(ascii('text/plain')), 0x00, ...spelled, 0x68]);
+    const [env] = parseEnvelopes(bytes(script));
+    assert.equal(new TextDecoder().decode(env.body), 'bytes');
+  }
+});
+
+test('no content type is null, not an empty pretence of one', () => {
+  const script = scriptWith(envelope({ body: [ascii('bare')] }));
+  const [env] = parseEnvelopes(bytes(script));
+  assert.equal(env.contentType, null);
+  assert.equal(new TextDecoder().decode(env.body), 'bare');
+});
+
+test('a content-encoding field rides tag 9', () => {
+  const script = scriptWith(envelope({
+    fields: [[1, ascii('text/plain')], [9, ascii('br')]],
+    body: [ascii('compressed')],
+  }));
+  const [env] = parseEnvelopes(bytes(script));
+  assert.equal(env.contentEncoding, 'br');
+});
+
+test('a script with no envelope reads as nothing — an ordinary spend is not half an inscription', () => {
+  assert.equal(parseEnvelopes(bytes(hex([...push(KEY), 0xac]))).length, 0);
+  // OP_FALSE OP_IF around something that is not "ord" is somebody else's branch.
+  assert.equal(parseEnvelopes(bytes(scriptWith([0x00, 0x63, ...push(ascii('cbrc')), 0x68]))).length, 0);
+});
+
+test('a branch that breaks the grammar reads as nothing rather than as half of something', () => {
+  // A non-push opcode where a push must stand (OP_DUP amid the body)…
+  const broken = hex([0x00, 0x63, ...push(ascii('ord')), ...push([1]), ...push(ascii('text/plain')), 0x00, 0x76, 0x68]);
+  assert.equal(parseEnvelopes(bytes(broken)).length, 0);
+  // …and an envelope no OP_ENDIF ever closes.
+  const unclosed = hex([0x00, 0x63, ...push(ascii('ord')), 0x00, ...push(ascii('body'))]);
+  assert.equal(parseEnvelopes(bytes(unclosed)).length, 0);
+});
+
+test('two envelopes in one script both read, in script order', () => {
+  const script = scriptWith(
+    envelope({ fields: [[1, ascii('text/plain')]], body: [ascii('first')] }),
+    envelope({ fields: [[1, ascii('text/plain')]], body: [ascii('second')] }),
+  );
+  const envs = parseEnvelopes(bytes(script));
+  assert.equal(envs.length, 2);
+  assert.equal(new TextDecoder().decode(envs[0].body), 'first');
+  assert.equal(new TextDecoder().decode(envs[1].body), 'second');
+});
+
+test('the tapscript is the item before the control block, and the annex is set aside first', () => {
+  const script = scriptWith(envelope({ fields: [[1, ascii('text/plain')]], body: [ascii('hi')] }));
+  const control = 'c0' + '11'.repeat(32);
+  const annex = '50ff';
+  assert.equal(hex([...tapscriptOf(['aa'.repeat(64), script, control])]), script);
+  assert.equal(hex([...tapscriptOf(['aa'.repeat(64), script, control, annex])]), script);
+  // A key-path spend (one item, the signature) carries no script at all.
+  assert.equal(tapscriptOf(['aa'.repeat(64)]), null);
+  assert.equal(tapscriptOf([]), null);
+});
+
+test('inscriptionInTx walks the inputs and answers with the first envelope and its input', () => {
+  const script = scriptWith(envelope({ fields: [[1, ascii('image/png')]], body: [[0x89, 0x50]] }));
+  const control = 'c0' + '11'.repeat(32);
+  const tx = {
+    vin: [
+      { witness: ['aa'.repeat(64)] },                    // key path: nothing to read
+      { witness: ['aa'.repeat(64), script, control] },   // the reveal
+    ],
+  };
+  const found = inscriptionInTx(tx);
+  assert.equal(found.vin, 1);
+  assert.equal(found.contentType, 'image/png');
+  assert.equal(found.body.length, 2);
+  assert.equal(inscriptionInTx({ vin: [{ witness: ['aa'.repeat(64)] }] }), null);
+});

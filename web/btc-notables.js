@@ -197,7 +197,7 @@ function normalizePart(raw, i) {
   const kind = String(raw.kind ?? '').trim();
   const title = String(raw.title ?? '').trim();
   if (!kind || !title) throw new Error(`btc-notables: appendix part ${i + 1} needs a kind and a title`);
-  if (!['mempool', 'consensus', 'ledgers', 'proofs'].includes(kind)) {
+  if (!['mempool', 'consensus', 'ledgers', 'proofs', 'inscriptions'].includes(kind)) {
     throw new Error(`btc-notables: appendix part "${title}" has an unknown kind: ${kind}`);
   }
   // Which family of back matter this part belongs to, which is what its
@@ -232,6 +232,30 @@ function normalizePart(raw, i) {
       // it is editorial like the title, and as optional: a work with no
       // living source is still a work the chain dates.
       if (e.source) entry.source = String(e.source);
+      if (e.note) entry.note = String(e.note);
+      return withCommentary(entry, e);
+    });
+  }
+  // An inscriptions entry is a place like any other -- the witness footnote
+  // its envelope reads at, cited §n.a -- plus the one coordinate the place's
+  // arithmetic cannot supply: `reveal:`, the transaction whose witness
+  // carries the envelope, which is what the appendix leaf fetches and parses
+  // (btc-inscriptions.js). The reveal is chain fact; everything the leaf
+  // renders is read out of its bytes, so an entry here cannot claim a
+  // content the witness does not carry.
+  if (kind === 'inscriptions') {
+    if (!Array.isArray(raw.entries) || !raw.entries.length) {
+      throw new Error(`btc-notables: appendix part "${title}" lists no entries`);
+    }
+    part.entries = raw.entries.map((e) => {
+      const entryTitle = String(e.title ?? '').trim();
+      if (!entryTitle) throw new Error(`btc-notables: an inscription in "${title}" needs a title`);
+      const reveal = String(e.reveal ?? '').trim().toLowerCase();
+      if (!/^[0-9a-f]{64}$/.test(reveal)) {
+        throw new Error(`btc-notables: "${entryTitle}" needs a reveal: — the 64-hex transaction whose witness carries the envelope`);
+      }
+      const place = normalizePlace(e, entryTitle);
+      const entry = { ...place, title: entryTitle, reveal };
       if (e.note) entry.note = String(e.note);
       return withCommentary(entry, e);
     });

@@ -69,8 +69,9 @@
     };
     // The contents runs a leaf per volume and per appendix, so the ascent
     // names this appendix and lands on its own contents leaf -- as an ascent
-    // from Volume III lands on Volume III's.
-    const PART = new URLSearchParams(location.search).get('part') === 'future' ? 'future' : 'mempool';
+    // from Volume III lands on Volume III's. The name passes through as
+    // given; the contents' own aliases resolve it (bitcoin-contents.html).
+    const PART = new URLSearchParams(location.search).get('part') || 'mempool';
     window.__appxAscend = () => leave(`./bitcoin-contents.html?part=${PART}`, 'translateY(100vh)', 'glossia-toc-entrance', '1');
     // One turn sideways, in either direction: the leaf slides off the way the
     // reader pushed it, and the neighbour enters from the other side. Each
@@ -282,6 +283,11 @@ a.bb-ref:hover { color:var(--accent-2); }
   max-width:56ch; margin:0 auto;
   padding-bottom:max(6px, env(safe-area-inset-bottom));
   border-top:1px solid var(--rule); background:var(--page); }
+/* A leaf with no long record to scroll past -- an inscription's, whose body
+   scrolls inside its own box -- has nothing for the foot to follow, so the
+   foot rests where it falls. Sticky there earns nothing and costs something:
+   on a leaf that nearly fits the screen it pins the sheet over the turns. */
+.bip-foot.at-rest { position:static; }
 .bip-tally { display:flex; gap:10px; align-items:baseline;
   padding:12px 2px 10px 14px; }
 .bip-foot .leaf-commentary { margin:0; max-width:none; border-top:1px solid var(--hair); padding:0 2px; }
@@ -344,6 +350,18 @@ a.bb-ref:hover { color:var(--accent-2); }
 .proof-drop-btn { flex:none; background:none; border:none; color:var(--meta); cursor:pointer; font-size:13px; line-height:1; padding:2px 4px; }
 .proof-drop-btn:hover { color:#e08b7a; }
 
+/* An inscription's content, as the witness carries it: an image stands as
+   the leaf's figure (pixelated, since the early inscriptions are pixel art
+   and scaling must not invent detail the bytes do not hold); text and JSON
+   read in the record's mono, scrolling in place rather than bleeding down
+   the page. The caption under either says where the bytes were read from. */
+.ins-content { margin:26px auto 0; max-width:56ch; text-align:center; }
+.ins-content img { max-width:100%; image-rendering:pixelated; border:1px solid var(--card-bd); border-radius:4px; background:var(--card); }
+.ins-text { max-height:60vh; overflow:auto; text-align:left; white-space:pre-wrap; overflow-wrap:anywhere;
+  font:400 12px/1.6 'IBM Plex Mono',monospace; color:var(--ink-soft); background:var(--card);
+  border:1px solid var(--card-bd); border-radius:4px; padding:14px 16px; margin:0; }
+.ins-caption { margin-top:10px; font:400 12.5px/1.6 'Public Sans',sans-serif; color:var(--meta); }
+
 /* The other appendices, at the foot: the leaf's own turns, spelled out for
    hands that are not swiping. */
 .appx-turns { display:flex; flex-wrap:wrap; gap:10px 26px; margin-top:44px; padding-top:18px; border-top:1px solid var(--rule);
@@ -387,8 +405,17 @@ a.bb-ref:hover { color:var(--accent-2); }
   <div class="proof-list hidden" id="bip-entries"></div>
 
   <!-- The Consensus leaf itself lists its forks: one row per BIP, each the
-       door to that fork's own leaf. -->
+       door to that fork's own leaf. The Inscriptions leaf borrows the same
+       shelf for its entries. -->
   <div class="proof-list hidden" id="bip-list"></div>
+
+  <!-- One inscription's own leaf (?part=inscriptions&ins=<reveal>): the
+       record first -- what the witness carries, read out of the reveal's own
+       bytes (btc-inscriptions.js) -- and then the content itself, rendered
+       where its declared type can be rendered without believing anything the
+       bytes do not say. -->
+  <div class="bip-stats hidden" id="ins-card"></div>
+  <figure class="ins-content hidden" id="ins-content"></figure>
 
   <div class="proof-list hidden" id="proof-list"></div>
 
@@ -432,7 +459,7 @@ import { partLabel } from './btc-notables.js';
 await loadNotables();
 const APPENDIX = appendix();
 import { chainTip, MEMPOOL_MIRRORS } from './btc-mempool.js';
-import { toRoman, volumeBookChapter, heightOf, expectedReference } from './btc-citation.js';
+import { toRoman, volumeBookChapter, heightOf, expectedReference, footnoteMark } from './btc-citation.js';
 import { formatBlockVersion, composeBlockHeaderFields } from './btc-prose.js';
 import { toSuperscript } from './btc-sigla.js';
 
@@ -444,7 +471,7 @@ import { toSuperscript } from './btc-sigla.js';
 // points straight at it, so it is only ever a neighbour here.
 // ?part=future is the name Appendix II answered to before its forks were
 // grouped by BIP; saved links keep working.
-const PARTS = { mempool: 'mempool', future: 'consensus', consensus: 'consensus', proofs: 'proofs' };
+const PARTS = { mempool: 'mempool', future: 'consensus', consensus: 'consensus', proofs: 'proofs', inscriptions: 'inscriptions' };
 const params = new URLSearchParams(location.search);
 const wanted = params.get('part');
 const kind = PARTS[wanted] || 'mempool';
@@ -455,6 +482,11 @@ const index = APPENDIX.indexOf(part);
 const bips = part.kind === 'consensus' ? (part.bips || []) : [];
 const bip = bips.find((b) => b.key === String(params.get('bip'))) || null;
 const bipAt = bip ? bips.indexOf(bip) : -1;
+// One inscription's own leaf, the same level down: ?ins= names it by its
+// reveal transaction, the way the part's rows link it.
+const insEntries = part.kind === 'inscriptions' ? (part.entries || []) : [];
+const ins = insEntries.find((e) => e.reveal === String(params.get('ins') || '').toLowerCase()) || null;
+const insAt = ins ? insEntries.indexOf(ins) : -1;
 // One block of a fork's ballot, a level below the fork's own leaf: ?block=
 // names it by height, the way a ballot row links it.
 const blockLeaf = bip && /^[0-9]+$/.test(params.get('block') || '') ? Number(params.get('block')) : null;
@@ -577,11 +609,18 @@ const label = (p) => partLabel(APPENDIX, p);
 // The contents runs a leaf per volume and per appendix; the masthead's link
 // opens this appendix's own, as the ascent does.
 $('toc-link').href = `./bitcoin-contents.html?part=${kind}`;
-const PART_QUERY = { mempool: 'mempool', consensus: 'consensus', proofs: 'proofs' };
+const PART_QUERY = { mempool: 'mempool', consensus: 'consensus', proofs: 'proofs', inscriptions: 'inscriptions' };
 const hrefFor = (p) => (p.kind === 'ledgers'
   ? './bitcoin-ledger.html'
   : `./bitcoin-appendix.html?part=${PART_QUERY[p.kind]}`);
 const bipHref = (b) => `./bitcoin-appendix.html?part=consensus&bip=${b.key}`;
+// An inscription entry's three addresses: its own leaf here, its citation
+// written whole (§n with the footnote's letter after the point — the place
+// the envelope reads at), and the door into the book at that very footnote
+// (&wit takes the letter, and the book brings the note to the top).
+const insHref = (e) => `./bitcoin-appendix.html?part=inscriptions&ins=${e.reveal}`;
+const insRef = (e) => `${wholeRef(Number(e.id), e.index + 1)}.${footnoteMark(e.wit)}`;
+const insDoor = (e) => `./bitcoin-book.html?block=${e.id}&index=${e.index}&wit=${footnoteMark(e.wit)}`;
 
 // An appendix leaf lists nothing: what it gathers lies below it, and below
 // it is the first chapter of what it gathers, read in the book like any
@@ -619,6 +658,21 @@ if (blockLeaf != null) {
   up.textContent = `▴ ${label(part)}`;
   up.href = hrefFor(part);
   up.classList.remove('hidden');
+} else if (ins) {
+  // An inscription's leaf wears its title, and its subtitle is the one door
+  // into the book: the footnote the envelope reads at -- the leaf renders,
+  // the book reads.
+  $('appx-title').textContent = ins.title;
+  const sub = $('appx-subtitle');
+  const door = document.createElement('a');
+  door.href = insDoor(ins);
+  door.textContent = insRef(ins);
+  door.title = 'read this witness in the book — the footnote the envelope reads at';
+  sub.replaceChildren(door);
+  const up = $('appx-up');
+  up.textContent = `▴ ${label(part)}`;
+  up.href = hrefFor(part);
+  up.classList.remove('hidden');
 } else if (part.family === 'appendix') {
   $('appx-title').textContent = `Appendix ${toRoman(APPENDIX.filter((p) => p.family === 'appendix').indexOf(part) + 1)}`;
   $('appx-subtitle').textContent = part.title;
@@ -629,8 +683,8 @@ if (blockLeaf != null) {
 // A fork's description is a reading of the fork, so it reads where readings
 // read: in the commentary sheet at the leaf's foot, not as front matter. The
 // head keeps only the name; the part leaf keeps its note.
-$('appx-note').textContent = bip ? '' : part.note || '';
-document.title = `The βook of βitcoin — ${blockLeaf != null ? `${bip.title} · ${wholeRef(blockLeaf)}` : bip ? bip.title : label(part)}`;
+$('appx-note').textContent = (bip || ins) ? '' : part.note || '';
+document.title = `The βook of βitcoin — ${blockLeaf != null ? `${bip.title} · ${wholeRef(blockLeaf)}` : bip ? bip.title : ins ? ins.title : label(part)}`;
 
 // Where the descent lands. A fork's leaf opens its first chapter (known
 // offline: a height is a citation, and even an unmined one has a page that
@@ -642,6 +696,12 @@ if (kind === 'consensus' && blockLeaf == null) {
   firstChapter = bip
     ? (bip.entries.length ? entryHref(bip.entries[0].id, bip.entries[0].index, bip.entries[0].page, bip.entries[0].out ?? null) : null)
     : (bips.length ? bipHref(bips[0]) : null);
+}
+// The Inscriptions leaf descends onto its first entry's own leaf, a level
+// down; an inscription's leaf descends into the book, at the footnote its
+// envelope reads at.
+if (kind === 'inscriptions') {
+  firstChapter = ins ? insDoor(ins) : (insEntries.length ? insHref(insEntries[0]) : null);
 }
 $('appx-down').classList.toggle('hidden', !firstChapter);
 if (kind === 'mempool') {
@@ -670,10 +730,10 @@ $('appx-down').addEventListener('click', (ev) => { ev.preventDefault(); descend(
 // Consensus leaf is the list this page is one row of. (A block leaf's own
 // vertical moves are wired below, where the ballot's bounds are known -- its
 // crumb still climbs a level, back to the ballot at this block's row.)
-if (bip && blockLeaf == null) {
+if ((bip && blockLeaf == null) || ins) {
   window.__appxAscend = () => navTo(hrefFor(part), 'drop');
 }
-if (bip) {
+if (bip || ins) {
   $('appx-up').addEventListener('click', (ev) => {
     if (ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey || ev.button !== 0) return;
     ev.preventDefault();
@@ -699,9 +759,15 @@ const prevTo = blockLeaf != null ? null : bip
   ? (bipAt > 0
     ? { href: bipHref(bips[bipAt - 1]), text: bips[bipAt - 1].label }
     : { href: hrefFor(part), text: label(part) })
+  : ins
+  ? (insAt > 0
+    ? { href: insHref(insEntries[insAt - 1]), text: insEntries[insAt - 1].title }
+    : { href: hrefFor(part), text: label(part) })
   : (APPENDIX[index - 1] ? { href: hrefFor(APPENDIX[index - 1]), text: label(APPENDIX[index - 1]) } : null);
 const nextTo = blockLeaf != null ? null : bip
   ? (bipAt < bips.length - 1 ? { href: bipHref(bips[bipAt + 1]), text: bips[bipAt + 1].label } : null)
+  : ins
+  ? (insAt < insEntries.length - 1 ? { href: insHref(insEntries[insAt + 1]), text: insEntries[insAt + 1].title } : null)
   : (APPENDIX[index + 1] ? { href: hrefFor(APPENDIX[index + 1]), text: label(APPENDIX[index + 1]) } : null);
 window.__appxTurns = { prev: prevTo && prevTo.href, next: nextTo && nextTo.href };
 const turns = $('appx-turns');
@@ -753,6 +819,151 @@ if (kind === 'consensus' && !bip) {
     listEl.append(row);
   }
   listEl.classList.toggle('hidden', !bips.length);
+}
+
+// ── Inscriptions: the shelf, each with a leaf of its own ──────────────────
+// The part's leaf lists its entries the way the Consensus leaf lists its
+// forks: one row each, the door to that inscription's own leaf, cited at
+// the footnote its envelope reads at -- offline arithmetic, like every
+// height-and-letter citation in the back matter.
+if (kind === 'inscriptions' && !ins) {
+  const listEl = $('bip-list');
+  for (const e of insEntries) {
+    const row = document.createElement('div');
+    row.className = 'proof-row';
+    const a = document.createElement('a');
+    a.href = insHref(e);
+    if (e.note) a.title = e.note;
+    const name = document.createElement('span');
+    name.className = 'proof-name';
+    name.textContent = e.title;
+    const cite = document.createElement('span');
+    cite.className = 'proof-cite';
+    cite.textContent = insRef(e);
+    a.append(name, cite);
+    row.append(a);
+    listEl.append(row);
+  }
+  listEl.classList.toggle('hidden', !insEntries.length);
+}
+
+// ── One inscription, read out of its own witness ──────────────────────────
+//
+// The shelf names; this leaf reads. The reveal transaction is fetched off
+// the same mirrors everything here reads, its input's tapscript is scanned
+// for the envelope (btc-inscriptions.js), and what the leaf then shows is
+// checkable against the witness bytes alone: the declared type, the body's
+// length, and the body itself -- an image standing as the figure, text and
+// JSON reading in place, and any other kind named rather than pretended.
+// Nothing past the bytes is stated as record: the numbering, the sat, the
+// market's collections all live in commentary, credited, behind the sheet.
+if (ins) {
+  const card = $('ins-card');
+  card.classList.remove('hidden');
+  const line = (key) => {
+    const l = document.createElement('div'); l.className = 'proof-line';
+    const k = document.createElement('div'); k.className = 'proof-key'; k.textContent = key;
+    const v = document.createElement('div'); v.className = 'proof-val';
+    l.append(k, v); card.append(l);
+    return v;
+  };
+  const typeV = line('content type');
+  typeV.textContent = '…';
+  const lenV = line('length');
+  lenV.textContent = '…';
+
+  (async () => {
+    const tx = await overMirrors(`/tx/${ins.reveal}`);
+    if (!tx) {
+      typeV.textContent = 'the chain could not be reached';
+      lenV.textContent = '—';
+      return;
+    }
+    const { inscriptionInTx } = await import('./btc-inscriptions.js');
+    const found = inscriptionInTx(tx);
+    if (!found) {
+      // The transaction stands; the reading does not. Say which is which.
+      typeV.textContent = 'no envelope — this witness does not read as an inscription';
+      lenV.textContent = '—';
+      return;
+    }
+    typeV.textContent = found.contentType || '(none declared)';
+    typeV.title = 'the envelope\'s own declaration (tag 1) — a claim about the bytes, made by whoever inscribed them';
+    lenV.textContent = `${found.body.length.toLocaleString('en-US')} bytes`;
+    lenV.title = 'the envelope\'s body — the pushes between the field list and OP_ENDIF, concatenated';
+    if (found.contentEncoding) {
+      const ev = line('encoding');
+      ev.textContent = found.contentEncoding;
+      ev.title = 'the body is compressed (tag 9); this leaf shows lengths, not guesses';
+    }
+    const inV = line('witness');
+    inV.textContent = `input ${found.vin + 1}, footnote ${footnoteMark(ins.wit)}`;
+    inV.title = 'where the envelope rides: the input whose tapscript carries the unexecuted branch';
+    if (tx.status && tx.status.block_time) {
+      const rv = line('revealed');
+      rv.textContent = `${new Date(tx.status.block_time * 1000).toISOString().slice(0, 16).replace('T', ' ')} UTC`;
+      rv.title = 'the containing block\'s header time, the miner\'s own clock when the chapter was sealed';
+    }
+
+    // The content itself, by its declared type -- and only where showing it
+    // asserts nothing beyond the bytes. An image renders inert (a figure
+    // executes nothing); text and JSON read as text, JSON re-spaced for the
+    // eye; a compressed or other-typed body is named and left whole.
+    const fig = $('ins-content');
+    fig.classList.remove('hidden');
+    const caption = document.createElement('figcaption');
+    caption.className = 'ins-caption';
+    caption.textContent = `the envelope's body, read out of input ${found.vin + 1}'s witness — the bytes are the chain's; that they are ${found.contentType ? `“${found.contentType}”` : 'anything at all'} is the inscriber's claim`;
+    const ct = String(found.contentType || '').toLowerCase();
+    if (found.contentEncoding) {
+      caption.textContent = `the body is ${found.contentEncoding}-compressed — ${found.body.length.toLocaleString('en-US')} bytes as the witness carries them, not unpacked here`;
+      fig.append(caption);
+    } else if (ct.startsWith('image/')) {
+      const img = document.createElement('img');
+      img.src = URL.createObjectURL(new Blob([found.body], { type: found.contentType }));
+      img.alt = ins.title;
+      fig.append(img, caption);
+    } else if (ct.startsWith('text/') || ct.includes('json')) {
+      const pre = document.createElement('pre');
+      pre.className = 'ins-text';
+      let text = new TextDecoder().decode(found.body);
+      if (ct.includes('json')) {
+        try { text = JSON.stringify(JSON.parse(text), null, 2); } catch { /* not quite JSON: the bytes stand as written */ }
+      }
+      pre.textContent = text;
+      fig.append(pre, caption);
+    } else {
+      caption.textContent = `${found.body.length.toLocaleString('en-US')} bytes of ${found.contentType || 'an undeclared kind'} — a kind this leaf does not render; the witness holds it all the same`;
+      fig.append(caption);
+    }
+  })();
+
+  // The entry's reading, raised the way a fork's is: the note leads the
+  // sheet, then whatever else is written of it, then the part's own.
+  const { readingsOf, resolveCommentary, commentaryHtml } = await import('./btc-commentary.js');
+  const items = [];
+  const own = [];
+  if (ins.note) own.push({ note: ins.note });
+  own.push(...readingsOf(ins));
+  if (own.length) items.push({ title: ins.title, readings: own });
+  if (readingsOf(part).length) items.push({ title: part.title, readings: readingsOf(part) });
+  if (items.length) {
+    const box = $('bip-commentary');
+    const body = $('bip-commentary-body');
+    box.classList.remove('hidden');
+    const foot = $('bip-foot');
+    foot.classList.remove('hidden');
+    foot.classList.add('at-rest');   // no ballot to scroll past: the foot sits where it falls
+    let filled = false;
+    box.addEventListener('toggle', async () => {
+      if (!box.open || filled) return;
+      filled = true;
+      body.innerHTML = '<div class="commentary-measure"><p class="commentary-loading">reading…</p></div>';
+      await resolveCommentary(items);
+      // Built from authored Markdown, escaped at the source (btc-markdown.js).
+      body.innerHTML = commentaryHtml(items);
+    });
+  }
 }
 
 if (bip && blockLeaf == null) {

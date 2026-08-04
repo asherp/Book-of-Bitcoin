@@ -2,27 +2,30 @@
 
 # An appendix for Ordinals
 
-Research toward a future appendix part: the inscriptions — files written
+Research behind the Inscriptions part of the back matter: files written
 into witnesses and read back out by software that agrees where to look. The
 chain never says "inscription": it says which bytes a witness carried and
 which script they satisfied, and everything past that — the envelope, the
 numbering, the collections, the market — is a convention held by people,
-not a rule held by nodes. The book already knows this (see
-`web/commentary/first-ordinals-inscription.md`), and already cites two
-inscriptions as witness places; what this file prepares is the step from
-two curated footnotes to a gathered part of the back matter. What this
-file supports:
+not a rule held by nodes. The book already knew this (see
+`web/commentary/first-ordinals-inscription.md`) and already cited two
+inscriptions as witness places; this file walked the step from two curated
+footnotes to a gathered part, and the part now exists. What this file
+supports:
 
-- **`web/appendix.yaml`** — a candidate part, drafted at the end of this
-  file in the file's own grammar, ready to paste when the editor decides
-  the inscriptions have earned a heading of their own.
-- **`web/notables.yaml`** — candidate witness-place entries in the grammar
-  the file already speaks (`§n.a` — the citation scheme names a witness,
-  so an inscription is already a place), pasteable ahead of any appendix
-  work.
-- The code a new part would touch, named below so the next editor needn't
-  re-walk the machinery: a new `kind` is a change to `web/btc-notables.js`
-  and two pages, and this file states exactly which lines learn what.
+- **`web/appendix.yaml`** — the Inscriptions part (`kind: inscriptions`),
+  whose entries were drafted here first: each cites the witness footnote
+  its envelope reads at (`§n.a`) and names its `reveal:`, the transaction
+  the leaves fetch and parse.
+- **`web/btc-inscriptions.js`** — the envelope reader the leaves share:
+  the tapscript out of the witness, the `OP_FALSE OP_IF … OP_ENDIF`
+  branch out of the tapscript, the content type and body out of the
+  branch. Tested offline in `tools/inscriptions.test.mjs`, and validated
+  against all three reveals below.
+- **`web/bitcoin-appendix.html`** — the part's leaf (the shelf) and each
+  inscription's own leaf (`?part=inscriptions&ins=<reveal>`), which
+  renders what the witness carries: an image as the figure, text and JSON
+  in place, any other kind named rather than pretended.
 - The editorial rule this file obeys: a story not yet checked against the
   chain stays a note here rather than becoming published commentary.
   Publishing is the assertion.
@@ -95,15 +98,18 @@ consensus group already on the shelf:
 - **BIP 341 · Taproot** — Appendix II's group: the fork whose script
   freedoms the envelope rides.
 
-An appendix part would gather these threads under one heading rather than
-re-state them.
+The Inscriptions part gathers these threads under one heading rather than
+re-stating them: the first two are its first two entries, and the other
+two stay where they are — a block's weight belongs to that block's row,
+and a fork belongs to Appendix II.
 
 ## The worked example: a collection manifest
 
-The candidate entry this file was opened for — a collection index written
-whole into one witness. All chain facts [verified] 2026-08-04; all
-content readings [convention], via ord-aware indexers (ordinals.com,
-ordiscan.com), quoted with the bytes they read.
+The entry this file was opened for — a collection index written whole into
+one witness. All chain facts [verified] 2026-08-04, and every one of them
+re-read at page load by the leaf itself, off the reveal's own bytes; the
+content readings that go past those bytes are [convention], via ord-aware
+indexers (ordinals.com, ordiscan.com), quoted as their claims.
 
 **Transaction** `40e261fc856304d5c26c2cb1dd2e21bab6e15101de47f125a88d5a2398c19414`
 [verified]:
@@ -145,73 +151,65 @@ the "location" is ord's FIFO reading of them. An entry must not state a
 current location as chain fact, and the book's own grammar agrees: a
 notables row cites the reveal, which never moves.
 
-## What a part would take
+## What the part took
 
-The smallest honest version, in the machinery's own terms:
+The machinery, in the order it was built — recorded here so the next
+editor adding a kind of back matter can follow the same path:
 
 1. **A `kind`.** `web/btc-notables.js`, `normalizePart` — the whitelist
-   (`['mempool', 'consensus', 'ledgers', 'proofs']`) learns
-   `'inscriptions'`, family `appendix` (numbered among appendices: it
-   holds the book's own matter out of reading order). Entries are places,
-   so `normalizePlace` already parses them — the consensus part's
-   `entries:` handling is the model, minus the fork machinery (no bits,
-   ballots, or windows: nothing here was ever voted on, which is rather
-   the point).
-2. **The contents row.** `web/bitcoin-contents.html` — a `partMetaOf`
-   line for the new kind, and the part renders in the back matter the way
-   consensus does: a heading, a note, entry rows resolving through the
-   same lookup.
-3. **The leaf.** `web/bitcoin-appendix.html` — a title leaf for
-   `?part=inscriptions`, carrying the part's note and its readings, the
-   way the consensus groups carry theirs.
-4. **Nothing else.** The service worker revalidates in place (`web/sw.js`
-   is stale-while-revalidate; the shell list doesn't change), and the
-   witness places already render, cite, bookmark, and — since the copy
-   menu grew a link item — share.
+   learned `'inscriptions'`, family `appendix` (numbered among
+   appendices: it holds the book's own matter out of reading order).
+   Entries are places, so `normalizePlace` already parsed them; what the
+   kind adds is `reveal:`, the one coordinate the citation's arithmetic
+   cannot supply, validated as 64 hex. No fork machinery: no bits,
+   ballots, or windows, because nothing here was ever voted on — which is
+   rather the point.
+2. **The reader.** `web/btc-inscriptions.js` — the tapscript out of the
+   witness (BIP341's second-from-last item, the annex set aside first),
+   the `OP_FALSE OP_IF … OP_ENDIF` branch out of the tapscript, the
+   tagged fields and body out of the branch. A branch that breaks the
+   grammar reads as nothing rather than as half of something.
+   `tools/inscriptions.test.mjs` composes its witnesses byte by byte, so
+   the suite stays offline.
+3. **The leaves.** `web/bitcoin-appendix.html` — the part's shelf
+   (`?part=inscriptions`), and each inscription's own leaf
+   (`?part=inscriptions&ins=<reveal>`), which fetches the reveal off the
+   same mirrors everything there reads, parses the envelope, and prints
+   what the witness holds: the declared type, the body's length, the
+   input it rides, the block's clock. Then the body — an image as the
+   figure, text and JSON in place (JSON re-spaced for the eye), anything
+   else named rather than pretended.
+4. **The contents row.** `web/bitcoin-contents.html` — a sub-line for the
+   new kind and a row builder, placing through the same map the volumes'
+   rows read, so a lookup runs once for both registers. The rows open the
+   inscription's leaf, not the book: what this register has to show is
+   the witness read whole, and the leaf carries the one door onward.
+5. **The shell.** `web/sw.js` — the new module joins the precache list
+   and the cache bumps, as it does whenever the shell list changes.
 
-Until then, the candidate entries below ride the existing grammar and
-need no code at all.
+## The entries
 
-## The candidates
+What the findings above became, in the grammar of the file they joined —
+references checked against `tools/check-editorial.mjs`, which now also
+insists that an inscriptions row cite a witness footnote (a row citing a
+bare chapter would open the book somewhere the envelope is not):
 
-Drafted in the grammar of the files they would join; the references check
-against `tools/check-editorial.mjs` (IV β91 ■1189 §1245 resolves to block
-812628 §1245).
+- **First Ordinals inscription** — IV β69 ■343 §2323.a, reveal
+  `6fb976ab…2799`: 793 bytes of `image/png` in block 767430.
+- **First BRC-20 inscription** — IV β75 ■649 §408.a, reveal
+  `b61b0172…5735`: 94 bytes of `text/plain` in block 779832.
+- **A collection's manifest** — IV β91 ■1189 §1245.a, reveal
+  `40e261fc…9414`, commentary `a-collections-manifest.md`: the 41,353
+  bytes above.
 
-For `web/notables.yaml` — pasteable now:
+All three were parsed end to end for this file: the reader finds the
+envelope in each, and the declared types and body lengths match what the
+indexers report.
 
-```yaml
-- title: A collection's manifest
-  # The inscription lives in the witness, so the entry cites the footnote
-  # itself: section 1245's witness a, where the envelope's 41,353-byte
-  # JSON body reads — the table of contents of a hundred further
-  # inscriptions, written into the same kind of place its members occupy.
-  id: IV β91 ■1189 §1245.a
-```
-
-For `web/appendix.yaml` — after the `kind` exists (step 1 above), a part
-in the family of Appendix II:
-
-```yaml
-- kind: inscriptions
-  title: Inscriptions
-  note: Files written into witnesses and read back out by software that agrees where to look. The chain records the bytes; that they are images, tokens, or tables of contents is a convention held by people, not a rule held by nodes — so every row here cites a witness the chain holds, and credits every reading past the bytes to whoever reads it.
-  entries:
-    - title: First Ordinals inscription
-      id: IV β69 ■343 §2323.a
-      note: The reveal in block 767430 — the first of the numbered series, by the convention that numbers it.
-    - title: First BRC-20 inscription
-      id: IV β75 ■649 §408.a
-      note: The ordi deploy — a token scheme run entirely in readings of witness text.
-    - title: A collection's manifest
-      id: IV β91 ■1189 §1245.a
-      note: One hundred photographs' table of contents, inscribed like its members — the convention describing itself.
-```
-
-The part deliberately does not list an inscription's number, sat, or
-current location: those are ord's readings, and a row that stated them
-would claim more than the witness it cites. If the editor wants them,
-they belong in commentary, credited — the way the Ledger sets apart every
+The part deliberately lists no inscription's number, sat, or current
+location: those are ord's readings, and a row that stated them would
+claim more than the witness it cites. Where the editor wants them, they
+belong in commentary, credited — the way the Ledger sets apart every
 claim about a name.
 
 ## Sources

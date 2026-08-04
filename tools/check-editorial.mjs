@@ -20,7 +20,7 @@
 import { readdir, readFile } from 'node:fs/promises';
 import { parseNotables, parseAppendix, setNotables, places, placeTitle } from '../web/btc-notables.js';
 import { parseYamlSequence } from '../web/btc-yaml.js';
-import { parseReference } from '../web/btc-citation.js';
+import { parseReference, reference, footnoteMark } from '../web/btc-citation.js';
 import { looksLikeAddress } from '../web/btc-lookup.js';
 import { INDEXED } from '../web/btc-index-data.js';
 import { readingsOf } from '../web/btc-commentary.js';
@@ -207,6 +207,23 @@ for (const part of parts) {
       if (!e.note) notes.push(`appendix "${part.title}": "${e.title}" (${bip.title}) carries no note — the row will have nothing to say on hover`);
     }
     notes.push(`appendix "${part.title}": ${bip.title} — ${bip.status}, ${bip.entries.length} places`);
+  }
+}
+
+// The Inscriptions part: each entry cites the witness its envelope reads at
+// (§n.a — a height, a section, and a footnote, all offline arithmetic), and
+// names the reveal transaction the leaf will fetch and parse. The reveal's
+// 64-hex shape is enforced by the loader; what is checked here is that the
+// citation actually reaches a footnote — a row citing a bare chapter would
+// open the book somewhere the envelope is not.
+for (const part of parts) {
+  if (part.kind !== 'inscriptions') continue;
+  for (const e of part.entries) {
+    if (!/^[0-9]+$/.test(e.id) || e.index == null || e.wit == null) {
+      problems.push(`appendix "${part.title}": "${e.title}" must cite a witness footnote (§n.a) so its row can open the book at the envelope`);
+    }
+    if (!e.note) notes.push(`appendix "${part.title}": "${e.title}" carries no note — the row will have nothing to say on hover`);
+    else notes.push(`appendix "${part.title}": "${e.title}" — ${reference(Number(e.id))} §${e.index + 1}.${footnoteMark(e.wit)}, reveal ${e.reveal.slice(0, 8)}…`);
   }
 }
 
