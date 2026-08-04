@@ -54,8 +54,10 @@ const STRINGS = {
     // the hash menu
     'Copy hex': 'Kopírovat hex',
     'Copy text': 'Kopírovat text',
+    'Copy link': 'Kopírovat odkaz',
     'Ledger entry': 'Záznam v účetní knize',
     'Bookmark': 'Záložka',
+    'Remove bookmark': 'Odebrat záložku',
     // the notation key's scope line
     'the marks on this page': 'značky na této stránce',
     'The sigla →': 'Sigla →',
@@ -134,8 +136,10 @@ const STRINGS = {
     // the hash menu
     'Copy hex': 'Hex kopieren',
     'Copy text': 'Text kopieren',
+    'Copy link': 'Link kopieren',
     'Ledger entry': 'Hauptbucheintrag',
     'Bookmark': 'Lesezeichen',
+    'Remove bookmark': 'Lesezeichen entfernen',
     // the notation key's scope line
     'the marks on this page': 'die Zeichen auf dieser Seite',
     'The sigla →': 'Die Sigla →',

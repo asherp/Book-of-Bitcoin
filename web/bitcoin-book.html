@@ -1080,6 +1080,7 @@ button:disabled { opacity: .4; cursor: not-allowed; }
     <div id="hash-menu-actions">
       <button type="button" class="hash-menu-item" data-act="copy" role="menuitem">Copy hex</button>
       <button type="button" class="hash-menu-item" data-act="copy-text" role="menuitem">Copy text</button>
+      <button type="button" class="hash-menu-item" data-act="copy-link" role="menuitem">Copy link</button>
       <button type="button" class="hash-menu-item hidden" data-act="ledger" role="menuitem">Ledger entry</button>
       <button type="button" class="hash-menu-item" data-act="bookmark" role="menuitem">Bookmark</button>
     </div>
@@ -6060,7 +6061,8 @@ function localizeChrome() {
 localizeChrome();
 
 // ── Hash menu + bookmarks ─────────────────────────────────────────────────
-// Clicking any Glossia-encoded hash opens a small menu (Copy hex / Bookmark).
+// Clicking any Glossia-encoded hash opens a small menu (Copy hex / Copy link /
+// Bookmark).
 // Bookmarks -- navigable hashes the reader wants to return to (block hashes,
 // previous-block hashes, txids) -- persist in localStorage and list in the card.
 // Each carries a reader-supplied title, which a table of contents will draw on.
@@ -6376,6 +6378,7 @@ function suggestTitle(entry) {
 const hashMenu = $('hash-menu');
 const menuCopyBtn = hashMenu.querySelector('[data-act="copy"]');
 const menuCopyTextBtn = hashMenu.querySelector('[data-act="copy-text"]');
+const menuCopyLinkBtn = hashMenu.querySelector('[data-act="copy-link"]');
 const menuBmBtn = hashMenu.querySelector('[data-act="bookmark"]');
 const menuLedgerBtn = hashMenu.querySelector('[data-act="ledger"]');
 const titleInput = $('hash-title-input');
@@ -6410,8 +6413,12 @@ function openHashMenu(ev, entry, anchorEl) {
   menuEntry = entry;
   fromRibbon = false;
   $('hash-menu-head').textContent = entry.label;
-  menuCopyBtn.textContent = 'Copy hex';
-  menuCopyTextBtn.textContent = 'Copy text';
+  menuCopyBtn.textContent = tr('Copy hex');
+  menuCopyTextBtn.textContent = tr('Copy text');
+  menuCopyLinkBtn.textContent = tr('Copy link');
+  // The link item is offered only where a link exists to copy: a place the
+  // book's own URLs can cite, or a locking script's road to its ledger.
+  menuCopyLinkBtn.classList.toggle('hidden', !entryShareUrl(entry));
   // A locking script's menu carries the road to its ledger: the entry this
   // very section wrote in that address's record (?address + ?ref).
   menuLedgerBtn.classList.toggle('hidden', !entry.ledgerHref);
@@ -6419,7 +6426,7 @@ function openHashMenu(ev, entry, anchorEl) {
   // Keyed by the whole place, output and all: a transaction's own bookmark and
   // one of its outputs' are two different keeps, and the item must say which
   // of them it is about.
-  if (entry.nav) menuBmBtn.textContent = isBookmarked(entry.hex, bmSubOf(entry)) ? 'Remove bookmark' : 'Bookmark';
+  if (entry.nav) menuBmBtn.textContent = isBookmarked(entry.hex, bmSubOf(entry)) ? tr('Remove bookmark') : tr('Bookmark');
   hashMenu.classList.remove('hidden');
   setMenuMode('actions');
   // Anchor at the click; for a keyboard open, sit under the element.
@@ -6455,6 +6462,37 @@ menuCopyTextBtn.addEventListener('click', () => {
   if (!menuEntry) return;
   navigator.clipboard.writeText(menuEntry.prose).then(() => {
     menuCopyTextBtn.textContent = 'Copied ✓';
+    setTimeout(closeHashMenu, 650);
+  }).catch(closeHashMenu);
+});
+// The shareable address of the place the entry names: the citation carried
+// whole in the URL (?ref=, the spelling every other page cites into the book
+// with), landing exactly where the menu was opened -- the chapter, the
+// section, the output, the witness. A locking script's link is the road to
+// its ledger instead, the one page that reads it whole. Null where no link
+// exists -- a merkle root leads nowhere, a draft chapter has no settled
+// reference yet -- and the menu then offers no link to copy.
+function entryShareUrl(entry) {
+  if (entry.ledgerHref) return new URL(entry.ledgerHref, location.href).href;
+  if (!entry.nav) return null;
+  const place = entryPlacement(entry);
+  if (!place) return null;
+  const url = new URL(location.href);
+  url.hash = '';
+  // A leaf names a span rather than a chapter, which ?ref= cannot spell from
+  // a mid-span block, so its link rides the ?block=&page= pair the address
+  // bar itself writes (updateUrl).
+  url.search = place.page
+    ? `block=${place.height}&page=${place.page}`
+    : `ref=${latinRefOf(place.height, place.pos == null ? null : place.pos + 1, place.vout ?? null, place.wn ?? null)}`;
+  return url.href;
+}
+menuCopyLinkBtn.addEventListener('click', () => {
+  if (!menuEntry) return;
+  const url = entryShareUrl(menuEntry);
+  if (!url) { closeHashMenu(); return; }
+  navigator.clipboard.writeText(url).then(() => {
+    menuCopyLinkBtn.textContent = 'Copied ✓';
     setTimeout(closeHashMenu, 650);
   }).catch(closeHashMenu);
 });
