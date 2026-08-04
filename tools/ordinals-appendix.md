@@ -98,10 +98,10 @@ consensus group already on the shelf:
 - **BIP 341 · Taproot** — Appendix II's group: the fork whose script
   freedoms the envelope rides.
 
-The Inscriptions part gathers these threads under one heading rather than
-re-stating them: the first two are its first two entries, and the other
-two stay where they are — a block's weight belongs to that block's row,
-and a fork belongs to Appendix II.
+Appendix IV gathers these threads under one heading rather than re-stating
+them: the first two are its first two entries, and the other two stay where
+they are — a block's weight belongs to that block's row, and a fork belongs
+to Appendix II.
 
 ## The worked example: a collection manifest
 
@@ -157,13 +157,17 @@ The machinery, in the order it was built — recorded here so the next
 editor adding a kind of back matter can follow the same path:
 
 1. **A `kind`.** `web/btc-notables.js`, `normalizePart` — the whitelist
-   learned `'inscriptions'`, family `appendix` (numbered among
-   appendices: it holds the book's own matter out of reading order).
-   Entries are places, so `normalizePlace` already parsed them; what the
-   kind adds is `reveal:`, the one coordinate the citation's arithmetic
-   cannot supply, validated as 64 hex. No fork machinery: no bits,
-   ballots, or windows, because nothing here was ever voted on — which is
-   rather the point.
+   learned `'inscriptions'`, family `appendix` (it holds the book's own
+   matter out of reading order, so it wears a numeral). Entries are
+   places, so `normalizePlace` already parsed them; what the kind adds is
+   `reveal:`, the one coordinate the citation's arithmetic cannot supply,
+   validated as 64 hex. No fork machinery: no bits, ballots, or windows,
+   because nothing here was ever voted on — which is rather the point.
+   The part sits after the Ledgers index, so it is Appendix IV: a
+   numeral now counts a part's place among the whole back matter, an
+   index or the Citations register occupying a place without printing
+   one (`partNumber`, shared by `partLabel` and the appendix leaf, which
+   had been computing the same thing a second way).
 2. **The reader.** `web/btc-inscriptions.js` — the tapscript out of the
    witness (BIP341's second-from-last item, the annex set aside first),
    the `OP_FALSE OP_IF … OP_ENDIF` branch out of the tapscript, the

@@ -96,7 +96,7 @@ async function shellUrls() {
     if (!res.ok) throw new Error(String(res.status));
     const files = [...(await res.text()).matchAll(/^\s*-?\s*file(?:-[a-z]{2})?:\s*(\S+)\s*$/gm)].map((m) => m[1]);
     const commentary = [...new Set(files)].map((f) => `./commentary/${f}`);
-    // Appendix IV's bundled proofs ride along the same way, off appendix.yaml:
+    // The Citations register's bundled proofs ride along the same way, off appendix.yaml:
     // a `proof:` is the .ots itself and a `subject:` the file it stamps, both
     // wanted offline, since an appendix that cannot read its own proofs lists
     // nothing at all.

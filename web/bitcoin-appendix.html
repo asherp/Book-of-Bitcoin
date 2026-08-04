@@ -452,7 +452,7 @@ import { localizeHome, mountLangMenu } from './btc-strings.js';
 localizeHome();   // the masthead in the reader's UI language
 mountLangMenu();  // …with the Language item, which any page can now set
 import { loadNotables, appendix, entryHref, isBlockId, places, placeTitle } from './btc-contents.js';
-import { partLabel } from './btc-notables.js';
+import { partLabel, partNumber } from './btc-notables.js';
 
 // The appendix is read from appendix.yaml (btc-notables.js), so it arrives
 // asynchronously; this leaf IS one of its parts, so it waits for it.
@@ -674,7 +674,7 @@ if (blockLeaf != null) {
   up.href = hrefFor(part);
   up.classList.remove('hidden');
 } else if (part.family === 'appendix') {
-  $('appx-title').textContent = `Appendix ${toRoman(APPENDIX.filter((p) => p.family === 'appendix').indexOf(part) + 1)}`;
+  $('appx-title').textContent = `Appendix ${toRoman(partNumber(APPENDIX, part))}`;
   $('appx-subtitle').textContent = part.title;
 } else {
   $('appx-title').textContent = part.family === 'index' ? `Index of ${part.title}` : part.title;

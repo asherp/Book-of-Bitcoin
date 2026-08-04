@@ -339,18 +339,24 @@ export function parseAppendix(yamlText) {
   return parseYamlSequence(yamlText).map(normalizePart);
 }
 
+// A part's number: its place in the back matter as bound, counting every
+// part and not only the numbered ones. An index or the citations register
+// occupies a place without printing a numeral -- the way an unnumbered plate
+// still takes a leaf -- so the numeral a reader sees says where the part
+// falls in the run, and the parts either side of it keep the numbers they
+// would have if every one were numbered. Only an `appendix` prints it.
+export const partNumber = (parts, part) => parts.indexOf(part) + 1;
+
 // A part's heading, styled by its family and computed in one place, so a
 // retitle in appendix.yaml reaches every page that points at the back matter.
-// Appendices number among THEMSELVES ("Appendix II"), so an index between two
-// of them never shifts a numeral; an index is "Index of <title>"; the
-// citations register is its title alone, standing at the back the way a
-// works-cited list does.
+// An index is "Index of <title>"; the citations register is its title alone,
+// standing at the back the way a works-cited list does; everything else
+// wears the numeral of its place (above).
 export function partLabel(parts, part) {
   if (!part) return 'the back matter';
   if (part.family === 'index') return `Index of ${part.title}`;
   if (part.family === 'citations') return part.title;
-  const n = parts.filter((p) => p.family === 'appendix').indexOf(part) + 1;
-  return `Appendix ${toRoman(n)} · ${part.title}`;
+  return `Appendix ${toRoman(partNumber(parts, part))} · ${part.title}`;
 }
 
 // The readings an entry carries, whatever its places name: a chapter, a section,

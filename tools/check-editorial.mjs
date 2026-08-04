@@ -227,7 +227,7 @@ for (const part of parts) {
   }
 }
 
-// Appendix IV's proofs are checked by replaying them, which is the only way a
+// The Citations register's proofs are checked by replaying them, the only way a
 // proof can be checked at all: the file must be there, it must parse, it must
 // reach a Bitcoin block (a pending proof cites no chapter), and where the
 // stamped file ships beside it the digest must match — otherwise the appendix
