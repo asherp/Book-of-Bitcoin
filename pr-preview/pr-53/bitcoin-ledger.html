@@ -313,6 +313,13 @@ a:hover { text-decoration: underline; }
 .idx-val { flex:none; min-width:96px; text-align:right; font:italic 400 12px/1.4 'Newsreader',serif; color:var(--meta); white-space:nowrap; font-variant-numeric:tabular-nums; }
 .idx-row.entry:hover .idx-val { color:var(--dim); }
 @media (max-width: 560px) { .idx-val { display:none; } }
+/* On the flat account rows the valuation sits UNDER the figure it values,
+   inside the debit or credit cell -- there is no room for a column of its
+   own, least of all on the narrow leaves this listing serves, so unlike
+   the entries' column it never steps aside. Unsigned: the column it sits
+   in is the sign. */
+.idx-val.under { display:block; min-width:0; margin-top:2px; }
+@media (max-width: 560px) { .idx-val.under { display:block; } }
 
 /* The chain's own bookmarks: an entry (or a whole quarter) whose value has
    all moved on reads dimmed; where value still rests, full ink. */
