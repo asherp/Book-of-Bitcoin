@@ -145,6 +145,14 @@ says, and mark plainly where it stops saying it. "Ten thousand coins moved to a
 script" is the record; "they bought two pizzas" is testimony from the people
 involved, and a reader is entitled to see which is which.
 
+There is a pull request template that asks for exactly this — the passage, the
+reading, the line between record and testimony, and the two files — so open
+your pull request with
+[`?template=commentary.md`](https://github.com/asherp/book-of-bitcoin/compare?template=commentary.md&expand=1)
+on the end of the URL and it will be filled in for you. It is
+[`.github/PULL_REQUEST_TEMPLATE/commentary.md`](.github/PULL_REQUEST_TEMPLATE/commentary.md)
+if you would rather copy it in by hand.
+
 ## The sigla
 
 A new or revised mark — a glyph for an opcode that lacks one, a better mark
@@ -195,5 +203,7 @@ fluency every time.
   would reach a reader as a missing reading or an empty contents. The deploy and
   every PR preview run it too.
 - Pull requests get a live preview deployed automatically.
+- Offering commentary? Open the pull request with the commentary template —
+  add `?template=commentary.md&expand=1` to the compare URL.
 - For substantial commentary or a new curated entry, opening an issue first is
   a good way to check it fits before writing it.
