@@ -91,6 +91,20 @@ compiled to WASM) is consumed as a published
   a page long enough to scroll is read to its edge first, and only the next
   press turns off it. The header steppers and the eyebrow crumbs go the same
   places for hands that would rather click
+- **Taking a leaf.** A section page carries an **Export** control at the left
+  end of the running head — the cell the chapter stepper leaves empty there,
+  opposite the folio — which writes that passage to a PDF: the whole
+  transaction and its footnotes, set as a page of the book. Nothing draws the
+  PDF; the page already typesets a transaction, its fonts are served from the
+  book's own origin, and an `@media print` block says what a leaf of paper
+  changes (the app's furniture goes, the palette turns to ink on paper), so
+  the browser's own print pipeline writes it. Prose deferred to the scroll is
+  encoded first, or a passage exported straight off a fresh open would print ⋯
+  where its pushes should be — the same holds for a plain ⌘P. A print-only
+  colophon closes the leaf with the citation, the transaction id, the address
+  it came from and the terms, since a page that leaves the book should say
+  what it is. A leaf has no button for the same reason it has no folio: what
+  goes on paper is a transaction
 - **Keeping a place.** Everything the citation scheme addresses — a volume, a
   book, a chapter, a §section, an output — is a place the search box answers
   to, and so a place a reader can keep. Each carries a **bookmark ribbon at

@@ -46,9 +46,10 @@ Three honest deliverables, in the order they are worth building:
    off behind its own heading — the same document `web/passages/` already is,
    typeset the way the cards are instead of flattened to markdown. Rebuilt
    each deploy, stamped with the release version.
-2. **One passage as PDF**, on demand — the same renderer, one passage per
-   call. Cheap once the edition exists, since the edition is the loop and
-   this is one turn of it.
+2. **One passage as PDF**, on demand. **Done, and not the way this line
+   first assumed** — see "The passage in the reader's hands" below. The
+   deliverable was a reader's button, and a reader's browser already owns a
+   PDF writer; the deploy-time renderer was never needed for it.
 3. **The reader's own print** — `@media print` on the reading page. A
    nicety, not the foundation; see "paths not taken."
 
@@ -192,16 +193,71 @@ step below.
   would re-set the book from its plainest rendering, need its own sigla
   font work in TeX, and drift from the page the moment either moved.
   Rejected: the book already owns a typesetter.
-- **`@media print` on the live reading page.** The reading page is a
-  carousel with fixed chrome, and its prose is lazily encoded — an
-  `IntersectionObserver` renders `glossia-lazy` spans as they scroll into
-  view (`web/bitcoin-book.html`), so printing a freshly opened chapter
-  would print ⋯ placeholders. **[read]** A print stylesheet plus a
-  force-render pass is a fine later nicety for one chapter in a reader's
-  hands, but it cannot produce the edition and is not the foundation.
+- **`@media print` on the live reading page** — *as the way to make the
+  edition.* It is not: the edition is a deploy-time artifact, bound in
+  contents order, and no reader's browser is going to assemble it. But as
+  the way to put **one passage** in a reader's hands it is exactly right,
+  and it now exists (see below) — the same conclusion this section reached,
+  read the other way round.
 - **wkhtmltopdf and kin.** Unmaintained engines with none of the CSS the
   page already relies on, solving a problem the house Chromium has already
   solved. Rejected without ceremony.
+
+## The passage in the reader's hands — built
+
+The Export control at the left end of the reading page's running head, on
+section pages only: it writes the passage in front of the reader to a PDF,
+the whole transaction with its footnotes, set as a page of the book.
+`web/bitcoin-book.html` — the button, the `@media print` block, and
+`exportPassage()`; guarded by `tools/export-passage.test.mjs`.
+
+**Nothing draws a PDF.** The page already typesets a transaction, the fonts
+are served from this origin, and `@media print` says what paper changes;
+handing that to the browser's own print pipeline gives a PDF that is the
+book's real typography. A PDF library in the page would have meant a second
+implementation of the manuscript grid, the fonts embedded a second time,
+and a megabyte of dependency to keep in step with the first — for a worse
+result. The reader's Save-as-PDF is one dialogue away.
+
+Where it sits is the argument for what it is. On a section page the
+chapter stepper's grid cell is empty (the steppers belong to leaves) and
+the folio holds the right end — so Export takes the left, and the two
+bracket the crumb the way a printed running head brackets its title. A
+leaf has no button for the same reason it has no folio: what goes on paper
+is a transaction, and a leaf is not one. **[read]**
+
+Two things had to happen before the dialogue opens, and they are why this
+is a function rather than an `onclick="print()"`:
+
+1. **The prose has to exist.** This was the real hazard, and the one the
+   note called out from the start: pushes are encoded on scroll, so a
+   passage opened and immediately exported would print ⋯ for everything
+   the reader never reached. `lazyEncode.fillAll` encodes the lot first.
+   Measured on the pizza transaction (§2 of ■596, 23 KB): **126 deferred
+   pushes before the click, 0 after.** A `beforeprint` listener does the
+   same for a reader who just hits ⌘P. **[ran]**
+2. **The file has to have a name.** Browsers take the PDF's filename from
+   `document.title`, so it becomes the citation for the duration of the
+   dialogue and is put back after: `I β29 ■596 §2 — Bitcoin Pizza Day`
+   rather than a third copy of the site's own title. **[ran]**
+
+A print-only colophon closes the leaf, because a page that leaves the book
+should say what it is: the citation, the transaction id, the URL it came
+from, and the terms — the prose is a translation of these bytes and is
+public domain; any commentary is its author's.
+
+Verified end to end against fixture chain data: all chrome gone (masthead,
+both nav bars, menus, bookmark and keep ribbons, the button itself), the
+manuscript grid and illuminated initial intact, the balance line settled
+out of its sticky seat, the carousel's `overflow: clip` released so the
+passage is not truncated at one screen, and the palette inverted to ink on
+paper by overriding the one `:root` block. **[ran]**
+
+One bug worth recording, because it fails silently and the test now pins
+it: `#print-colophon` is `display:none` for the screen and `display:block`
+inside `@media print`. Equal specificity — so with the base rule written
+*after* the media block it won there too, and the colophon simply never
+appeared on paper, with nothing anywhere reporting it.
 
 ## The recommendation
 
