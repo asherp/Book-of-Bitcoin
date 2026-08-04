@@ -33,6 +33,7 @@ import init, {
   detect_dialect_from_text as wasmDetectDialect,
   canonical_encode_fixed_traced as wasmCanonicalEncodeTraced,
   canonical_decode_fixed as wasmCanonicalDecode,
+  canonical_decode as wasmCanonicalDecodeSelf,
 } from './glossia.js';
 
 export { init };
@@ -423,26 +424,42 @@ export function encodeCanonical(hex, langId = bookLang(), _bestOf = 1) {
 // there is nothing to try but the legacy decode. Every caller in this book has
 // the count to hand — it is the field width the page is already printing.
 //
-// The fallback is guarded by the engine's error `kind`, because "this is not
+// Three decoders are tried, narrowest first:
+//
+//   1. the fixed canonical decode, which is what this book writes;
+//   2. the self-describing canonical decode, which reads the padding word out
+//      of the prose and so covers BOTH framings — including format version 1,
+//      the self-describing form glossia 0.3.0 wrote;
+//   3. the legacy fixed-seed raw decode, for prose older than the canonical
+//      encoding altogether.
+//
+// Step 2 is what makes a 0.3.0 artifact still readable here. It cannot be
+// merged into step 1: the fixed packing spends no word on the payload's length,
+// which is exactly why v1 — whose version byte leads — has no fixed form.
+//
+// The fallthrough is guarded by the engine's error `kind`, because "this is not
 // canonical prose" and "this is canonical prose and it is damaged" both fail
-// the canonical decode and must not be treated alike. A canonical artifact
-// carries five envelope bytes the legacy form does not, so legacy prose has a
-// different payload-word count and is refused on SHAPE (`decode`) — that falls
-// through. A canonical artifact with a word swapped has the right shape and
-// fails its checksum — falling through there would quietly hand back bytes
-// read under a different codec, which is a wrong answer wearing the manner of
-// a right one. So checksum_mismatch throws.
+// the canonical decode and must not be treated alike. Prose of another shape is
+// refused on shape (`decode`) and falls through; a canonical artifact with a
+// word swapped has the right shape and fails its checksum, and falling through
+// there would quietly hand back bytes read under a different codec — a wrong
+// answer wearing the manner of a right one. So checksum_mismatch throws.
 export function decodeCanonical(prose, byteCount, langId) {
   const text = (prose || '').trim();
   if (!text) throw new Error('empty prose');
   const lang = msgLangById(langId || detectLang(text));
+  const asCanonical = (c) =>
+    ({ hex: c.payload_hex, payloadWords: [], langId: lang.id, verified: c.verified, version: c.version });
+
   if (byteCount) {
     const c = JSON.parse(wasmCanonicalDecode(text, lang.language, lang.wordlist, byteCount));
-    if (!c.error) {
-      return { hex: c.payload_hex, payloadWords: [], langId: lang.id, verified: c.verified, version: c.version };
-    }
+    if (!c.error) return asCanonical(c);
     if (c.kind === 'checksum_mismatch') throw new Error(c.error);
   }
+  const s = JSON.parse(wasmCanonicalDecodeSelf(text, lang.language, lang.wordlist));
+  if (!s.error && (!byteCount || s.payload_hex.length === byteCount * 2)) return asCanonical(s);
+  if (s.kind === 'checksum_mismatch') throw new Error(s.error);
+
   const r = JSON.parse(wasmDecodeRawBaseN(text, lang.language, lang.wordlist, byteCount));
   if (r.error) throw new Error(r.error);
   return { hex: r.decoded_hex || '', payloadWords: r.payload_words || [], langId: lang.id };
