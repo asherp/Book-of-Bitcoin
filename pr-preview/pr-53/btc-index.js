@@ -699,43 +699,74 @@ export function periods(data) {
 // class names refer to; DOM-building lives here rather than in each page so
 // the index and the anthologies stay the same reading.
 
-// The flat line: the map as one nested run under canonical headers -- the
-// index's skim of an entry, and an incomplete anthology's honest rendering.
-// maxRows keeps the most recent rows (the map is ascending, so the cut is
-// the older head) with a leading note pointing at the anthology for the
-// whole; the trailing note names what an incomplete map never walked.
-// A run of entries, one line each, most recent first (the whole ledger
-// reads newest-down, the direction the record is explored): the fully
-// resolved reference leading (Roman volume, β book, ■ chapter -- the
-// citation names every level itself, so the run needs no headers of any
-// kind), then the bookkeeping columns -- debit, credit, status. APPENDED
-// to el, so an endless scroll just keeps appending. Grouping, temporal or
-// otherwise, lives on the ledger's entries leaf. `held` feeds the status
-// column from the chain's own bookmarks. The callers own any clearing and
-// any notes around the run.
-export function renderRows(el, entries, held = null) {
+// The account, drawn newest-down (the direction the record is explored)
+// in TIME's own grouping: a year's heading where the year turns, a
+// quarter's beneath it, and the entries under that -- the organization
+// accountants keep, in place of the manuscript's own volumes and books.
+// Every row still cites its canonical place itself, so the two can never
+// disagree: the period is the filing, the citation the folio. Buckets are
+// read off each row's own block time, so a straggler near a boundary
+// simply files where its timestamp says.
+//
+// Among them hang the reader's own bookmarks, each flying the ribbon it
+// flies in the contents: a passage kept, standing at its height between
+// the entries that bracket it. They are the reader's marks ON the record,
+// not entries OF it, so they carry a title and a reference and no money at
+// all -- and none of the account's arithmetic touches them.
+//
+// APPENDED to el, so an endless scroll just keeps appending -- which is
+// why the grouping is CARRIED in `state` (groupState) rather than
+// recomputed: a chunk knows which heading the chunk before it left open,
+// and the scroll never redraws what it has already set. `held` feeds the
+// status column from the chain's own bookmarks. The callers own any
+// clearing and any notes around the run.
+const BOOKMARK_RIBBON = '<svg viewBox="0 0 12 16"><path fill="currentColor" d="M0 0h12v16l-6-4-6 4z"/></svg>';
+export const groupState = () => ({ year: null, q: null, bm: 0 });
+export function renderRows(el, entries, held = null, { state = null, bookmarks = [] } = {}) {
   for (const c of [...entries].reverse()) {
+    if (state) {
+      // A mark strictly newer than this row closes out the period ABOVE
+      // it, so it goes in before the heading this row may open -- a
+      // bookmark belongs to the period it was made in, never to the one
+      // the next row begins.
+      while (state.bm < bookmarks.length && bookmarks[state.bm].height > c.height) {
+        el.append(bookmarkRow(bookmarks[state.bm++]));
+      }
+      const d = c.time ? new Date(c.time * 1000) : null;
+      if (d) {
+        const year = d.getUTCFullYear();
+        const q = Math.floor(d.getUTCMonth() / 3) + 1;
+        if (year !== state.year) { el.append(lineHead('idx-vol', String(year))); state.year = year; state.q = null; }
+        if (q !== state.q) { el.append(lineHead('idx-book', `Q${q} ${year}`)); state.q = q; }
+      }
+    }
     el.append(lineRow({ ...c, place: volumeBookChapter(c.height) }, held));
+    // A mark on this row's OWN block follows it: the entry first, then the
+    // reader's mark on the chapter it belongs to.
+    while (state && state.bm < bookmarks.length && bookmarks[state.bm].height === c.height) {
+      el.append(bookmarkRow(bookmarks[state.bm++]));
+    }
   }
 }
 
-export function renderLine(el, data, maxRows = Infinity) {
-  el.replaceChildren();
-  if (!data) { lineNote(el, '—'); return; }
-  let rows = data.entries;
-  if (!rows.length) { lineNote(el, 'no appearances yet'); return; }
-  const cut = rows.length - maxRows;
-  if (cut > 0) rows = rows.slice(cut);
-  renderRows(el, rows);
-  // Newest-first, so anything cut or never walked lies below the rows.
-  if (cut > 0) lineNote(el, `… ${cut.toLocaleString('en-US')} earlier entries, collected in the ledger`);
-  // An incomplete map names what it left behind; the count is of
-  // transactions, which is what the chain counts (several may share a
-  // chapter above).
-  if (data.walked < data.txCount) {
-    lineNote(el, `… the latest ${data.walked.toLocaleString('en-US')} of ${data.txCount.toLocaleString('en-US')} transactions`);
-  }
+// One of the reader's bookmarks, hung at its place in the record: the
+// ribbon, the title they kept it under, and the chapter it names.
+function bookmarkRow(bm) {
+  const row = document.createElement('a');
+  row.className = 'sp-bm';
+  row.href = citeHref(bm.hex);
+  row.title = `your bookmark — ${bm.title}`;
+  const t = document.createElement('span'); t.className = 'sp-bm-title';
+  const rib = document.createElement('span'); rib.className = 'toc-bm';
+  rib.setAttribute('aria-label', 'your bookmark');
+  rib.innerHTML = BOOKMARK_RIBBON;
+  t.append(rib, document.createTextNode(bm.title));
+  const ref = document.createElement('span'); ref.className = 'sp-bm-ref';
+  ref.textContent = `■${volumeBookChapter(bm.height).chapter}` + (bm.pos != null ? ` §${bm.pos + 1}` : '');
+  row.append(t, ref);
+  return row;
 }
+
 
 // One amount cell, in the reader's chosen notation and in that alone: a
 // record notation prints at once, the reader's own unit prints at once at
