@@ -121,15 +121,6 @@ export function formatValuation(sats, { label, perBtc }) {
   return `${figure} ${label}`;
 }
 
-// The same, signed, for a ledger's net movements (btc-index.js's
-// formatNetBtc manner): what a chapter paid an address (+) or spent from
-// it (−), valued at a day's rate.
-export function formatNetValuation(sats, unit) {
-  const n = Number(sats);
-  if (!n) return formatValuation(0, unit);
-  return `${n < 0 ? '−' : '+'}${formatValuation(Math.abs(n), unit)}`;
-}
-
 // A satoshi amount in a named notation — the settings rows print one sample
 // amount in each, so the choice shows itself. 'usd' with no day price and
 // 'own' without a stored unit both fall back to the record's ₿, like
