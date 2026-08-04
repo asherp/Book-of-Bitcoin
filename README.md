@@ -457,16 +457,24 @@ compiled to WASM) is consumed as a published
   - the reader's key to all of it: the sigla leaf in `web/bitcoin-front.html`
     (the whole table, plus the reference-format diagram), and the notation
     toggle in `web/bitcoin-book.html`'s section-nav bar while reading
-- `web/fonts/` — the passage renderer's faces, vendored: Newsreader and IBM
-  Plex Mono (both OFL) as the Google Fonts API serves them, and **Book
+- `web/fonts/`, `web/fonts/fonts.css` — the book's faces, vendored, and
+  **nothing fetched from a third party**: Newsreader, IBM Plex Mono and
+  Public Sans (all OFL) as the Google Fonts API serves them, and **Book
   Sigla** — five subset faces that together own every siglum the manuscript
-  writes, so a card, a static citation page, or a PDF sets identically on
-  every machine instead of scattering the sigla across whatever fonts the
-  renderer's host happens to have. The `@font-face` table lives in
-  `tools/twitter-bot/quote.mjs` (one table, every consumer: the card
-  renderer inlines the files, the static pages address `/fonts/`); the
-  test suite fails if a new siglum enters the alphabet that no vendored
-  face declares. Provenance, licenses, and regeneration:
+  writes (⧉ ∇ ⌖ ⓪ ₿ …), standing second in every font stack. A page of this
+  book therefore sets identically on every machine, and sets *offline*,
+  which a page that phones a font host cannot: the whole alphabet rides in
+  the PWA's precache. It is also the plainer reading of what the book
+  argues — a reader of a chain that asks no one's permission should not
+  have to announce the reading to a third party to see the letters. One
+  `@font-face` table in `tools/twitter-bot/quote.mjs` serves all three
+  consumers — the card renderer inlines the files, the static citation
+  pages address `/fonts/`, the app loads `fonts.css` generated from the
+  same table. `tools/fonts.test.mjs` fails if the table and the stylesheet
+  drift, if a face is missing from the service worker's shell, or if any
+  page reaches for a font host again; the renderer's own suite fails if a
+  new siglum enters the alphabet that no vendored face declares.
+  Provenance, licenses, and regeneration:
   [`web/fonts/README.md`](web/fonts/README.md)
 - `web/glossia-msg.js` — the encoding pipeline over the Glossia WASM engine
 - `web/glossia.js`, `web/glossia_bg.wasm` — **build artifacts** (gitignored),

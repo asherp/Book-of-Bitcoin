@@ -19,11 +19,15 @@ This license applies to the following font files in this directory:
   sigla-noto-math.woff2
     Copyright 2022 Google LLC. All Rights Reserved.
 
+  publicsans-latin.woff2, publicsans-latin-ext.woff2
+    Copyright 2015 The Public Sans Project Authors
+    (https://github.com/uswds/public-sans)
+
 The sigla-noto-*.woff2 files are glyph subsets, renamed internally to
 "Book Sigla" as the Reserved Font Name terms below require of a modified
 version; see README.md alongside this file for how they were produced.
-The Newsreader and IBM Plex Mono files are unmodified, as served by the
-Google Fonts API.
+The Newsreader, IBM Plex Mono and Public Sans files are unmodified, as
+served by the Google Fonts API.
 
 This Font Software is licensed under the SIL Open Font License, Version 1.1.
 This license is copied below, and is also available with a FAQ at:

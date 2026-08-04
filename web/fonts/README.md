@@ -9,12 +9,33 @@ instead of falling back to whatever that machine happens to have installed.
 (That fallback was real: before these files, the deploy's cards set their
 serif in Liberation Serif and scattered the sigla across four system fonts.)
 
-The `@font-face` table that serves them is `FONT_FACES` /
-`fontFacesCss(srcOf)` in `tools/twitter-bot/quote.mjs` — one table, every
-consumer: the card renderer inlines the files as `data:` URIs, the static
-citation pages address them at the site's `/fonts/`. The live reading pages
-still load their fonts from Google Fonts and are not touched by this
-directory.
+Nothing here is fetched from a third party. The book's pages named Google
+Fonts until these files landed, which meant every reader's browser
+announced itself to fonts.googleapis.com to read a page about a chain that
+asks no one's permission — and meant the app could not set its own text
+offline, PWA or not. The pages now name only this directory.
+
+## Who reads these files
+
+The `@font-face` table is `FONT_FACES` / `fontFacesCss(srcOf)` in
+`tools/twitter-bot/quote.mjs` — one table, and each consumer says where its
+copies live:
+
+- **The card renderer** (`tools/twitter-bot/image.mjs`) inlines the files as
+  `data:` URIs — a `setContent` page has no origin to resolve a URL
+  against — and waits on `document.fonts.ready` before measuring, so the
+  fit search sizes a passage in the faces it will actually be set in.
+- **The static citation pages** (`tools/passage-page.mjs`) address them at
+  the site's own `/fonts/`, the same way those pages address their cards.
+- **The app** (`web/bitcoin-*.html`) loads `fonts.css` from this directory.
+  That file is generated from the same `FONT_FACES` table — regenerate it
+  when the table changes; `tools/fonts.test.mjs` fails if the two disagree,
+  if a file it names is missing from the service worker's precache, or if
+  any page reaches for a third-party font host again.
+
+`fonts.css` carries one face the renderer's table does not: **Public Sans**,
+the app chrome's sans. No rendered passage uses it — a card sets no UI — so
+it belongs to the app's stylesheet rather than to the passage table.
 
 ## The text faces, verbatim
 
@@ -27,6 +48,7 @@ response. Both families are licensed under the SIL Open Font License 1.1
 |---|---|---|
 | `newsreader-latin.woff2`, `newsreader-latin-ext.woff2`, `newsreader-italic-latin.woff2`, `newsreader-italic-latin-ext.woff2` | Newsreader — variable (wght 200–800, opsz 6–72), roman + italic, latin + latin-ext subsets | fonts.gstatic.com `/s/newsreader/v26/` |
 | `plexmono-400-latin.woff2`, `plexmono-500-latin.woff2`, `plexmono-600-latin.woff2` | IBM Plex Mono — 400/500/600, latin subset | fonts.gstatic.com `/s/ibmplexmono/v20/` |
+| `publicsans-latin.woff2`, `publicsans-latin-ext.woff2` | Public Sans — variable (wght 100–900), latin + latin-ext subsets. The app's UI face; `fonts.css` only | fonts.gstatic.com `/s/publicsans/v21/` |
 
 ## Book Sigla — the sigla fallback
 

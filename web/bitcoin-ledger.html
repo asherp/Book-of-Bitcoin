@@ -92,9 +92,7 @@
   })();
 </script>
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,400&family=IBM+Plex+Mono:wght@400;500;600&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./fonts/fonts.css">
 <link rel="stylesheet" href="./btc-chrome.css">
 <link rel="stylesheet" href="./commentary.css">
 <style>
@@ -106,7 +104,7 @@
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
 html, body { margin: 0; overscroll-behavior-y: contain; }
-body { min-height: 100vh; background: var(--page); color: var(--ink); font-family: 'Public Sans', system-ui, sans-serif; line-height: 1.55; }
+body { min-height: 100vh; background: var(--page); color: var(--ink); font-family: 'Public Sans','Book Sigla', system-ui, sans-serif; line-height: 1.55; }
 /* The entering half of the contents' descent into Appendix III: the shelf
    rises into place from below, matching the carousel's pace. */
 @media (prefers-reduced-motion: no-preference) {
@@ -132,22 +130,22 @@ a:hover { text-decoration: underline; }
   background:var(--card); border:1px solid var(--card-bd); border-radius:6px; padding:16px 18px 18px;
   box-shadow:0 24px 60px -32px rgba(0,0,0,.8); text-align:left; }
 .settings-panel.hidden { display:none; }
-.settings-title { font:600 10px/1 'IBM Plex Mono',monospace; letter-spacing:.16em; text-transform:uppercase; color:var(--dim); margin:14px 0 8px; }
+.settings-title { font:600 10px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.16em; text-transform:uppercase; color:var(--dim); margin:14px 0 8px; }
 .settings-title:first-child { margin-top:0; }
 .endpoint-row { display:flex; gap:8px; }
 .bb-select { flex:1; min-width:0; background:var(--input-bg); border:1px solid var(--input-bd); border-radius:4px;
-  color:var(--ink); font:400 12px/1.4 'IBM Plex Mono',monospace; padding:8px 8px; }
+  color:var(--ink); font:400 12px/1.4 'IBM Plex Mono','Book Sigla',monospace; padding:8px 8px; }
 .bb-select:focus { outline:none; border-color:var(--accent); }
 .ghost-btn, .save-btn { background:transparent; border:1px solid var(--input-bd); color:var(--dim); border-radius:4px;
-  padding:0 10px; cursor:pointer; font:600 10.5px/1 'IBM Plex Mono',monospace; letter-spacing:.06em; text-transform:uppercase; }
+  padding:0 10px; cursor:pointer; font:600 10.5px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.06em; text-transform:uppercase; }
 .ghost-btn:hover:not(:disabled), .save-btn:hover { border-color:var(--accent); color:var(--accent); }
 .ghost-btn:disabled { opacity:.4; cursor:default; }
 .endpoint-add-row { display:flex; gap:8px; margin-top:8px; }
 .endpoint-add-row.hidden { display:none; }
 .endpoint-add-row input { flex:1; min-width:0; background:var(--input-bg); border:1px solid var(--input-bd); border-radius:4px;
-  color:var(--ink); font:400 12px/1.4 'IBM Plex Mono',monospace; padding:8px 8px; }
+  color:var(--ink); font:400 12px/1.4 'IBM Plex Mono','Book Sigla',monospace; padding:8px 8px; }
 .endpoint-add-row input:focus { outline:none; border-color:var(--accent); }
-.settings-note { margin-top:12px; font:400 10.5px/1.6 'IBM Plex Mono',monospace; color:var(--meta); }
+.settings-note { margin-top:12px; font:400 10.5px/1.6 'IBM Plex Mono','Book Sigla',monospace; color:var(--meta); }
 
 /* The anthology's title page: a full leaf. The eyebrow names the form, the
    serif names the anthology, and the address appears once, in the book's own
@@ -158,19 +156,19 @@ a:hover { text-decoration: underline; }
    volumes and the dates its chapters run. Navigation continues downward into
    the table of contents. */
 .anth-hero { min-height: calc(100vh - 130px); display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:20px 0 8px; }
-.page-eyebrow { font:600 11px/1 'IBM Plex Mono',monospace; letter-spacing:.3em; text-transform:uppercase; color:var(--accent); }
+.page-eyebrow { font:600 11px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.3em; text-transform:uppercase; color:var(--accent); }
 /* The eyebrow as a crumb: on an address leaf it points a level up, to the
    compendium's title leaf for this ledger. */
 .page-eyebrow a { color:inherit; }
-.anth-title { margin:16px 0 0; font:500 30px/1.25 'Newsreader',serif; color:var(--ink); }
+.anth-title { margin:16px 0 0; font:500 30px/1.25 'Newsreader','Book Sigla',serif; color:var(--ink); }
 /* A ledger has one title page. A passage leaf carries no name of its own --
    the passage is its title, set below -- so the empty heading takes no room. */
 .anth-title:empty { display:none; }
 /* What the title names, said plainly beneath it: the appendix leaf's title is
    its number, and this is the appendix. */
-.anth-subtitle { margin-top:10px; font:400 19px/1.35 'Newsreader',serif; color:var(--dim); }
+.anth-subtitle { margin-top:10px; font:400 19px/1.35 'Newsreader','Book Sigla',serif; color:var(--dim); }
 .anth-subtitle:empty { display:none; }
-.anth-prose { margin:22px 0 0; max-width:560px; font:400 16px/1.7 'Newsreader',serif; font-style:italic; color:var(--ink-soft); }
+.anth-prose { margin:22px 0 0; max-width:560px; font:400 16px/1.7 'Newsreader','Book Sigla',serif; font-style:italic; color:var(--ink-soft); }
 .anth-prose:empty { display:none; }
 /* On a passage leaf the script IS the leaf's title, so it is set at a
    title's size -- the same voice, only louder. */
@@ -182,14 +180,14 @@ a:hover { text-decoration: underline; }
    accent, push marks quiet, data-type marks bold -- the grammar punctuating
    the prose that carries the opaque bytes. */
 .anth-prose .op { color: var(--accent); font-style: normal; }
-.anth-prose .op-name { font: 600 .62em/1 'IBM Plex Mono',monospace; letter-spacing:.04em; color: var(--dim); font-style: normal; vertical-align: .14em; white-space: nowrap; }
+.anth-prose .op-name { font: 600 .62em/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.04em; color: var(--dim); font-style: normal; vertical-align: .14em; white-space: nowrap; }
 .anth-prose .op-push { color: var(--meta); }
 .anth-prose .dt { color: var(--accent); font-style: normal; font-weight: 700; }
-.anth-range { margin-top:22px; font:600 12px/1.6 'IBM Plex Mono',monospace; letter-spacing:.14em; text-transform:uppercase; color:var(--accent); }
+.anth-range { margin-top:22px; font:600 12px/1.6 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.14em; text-transform:uppercase; color:var(--accent); }
 .anth-range:empty { display:none; }
-.anth-count { margin-top:8px; font:500 11px/1 'IBM Plex Mono',monospace; letter-spacing:.12em; text-transform:uppercase; color:var(--dim); }
+.anth-count { margin-top:8px; font:500 11px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.12em; text-transform:uppercase; color:var(--dim); }
 .anth-count:empty { display:none; }
-.anth-held { margin-top:8px; font:500 11px/1.6 'IBM Plex Mono',monospace; letter-spacing:.12em; text-transform:uppercase; color:var(--dim); }
+.anth-held { margin-top:8px; font:500 11px/1.6 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.12em; text-transform:uppercase; color:var(--dim); }
 .anth-held:empty { display:none; }
 .anth-held .held-amt { color:var(--accent); }
 .anth-down { margin-top:auto; padding-top:34px; font-size:20px; color:var(--dim); text-decoration:none; }
@@ -198,7 +196,7 @@ a:hover { text-decoration: underline; }
 /* The ledger's balance, headlining its title leaf -- the shelf row's figure,
    with a whole leaf to breathe on. Quiet pending style while unsettled or
    last-known; tappable to retry when nothing was ever known. */
-.anth-balance { margin-top:26px; font:500 22px/1.3 'IBM Plex Mono',monospace; color:var(--accent); white-space:nowrap; font-variant-numeric:tabular-nums; }
+.anth-balance { margin-top:26px; font:500 22px/1.3 'IBM Plex Mono','Book Sigla',monospace; color:var(--accent); white-space:nowrap; font-variant-numeric:tabular-nums; }
 .anth-balance:empty { display:none; }
 .anth-balance.pending { color:var(--meta); font-weight:400; font-size:14px; }
 .anth-balance.retry { cursor:pointer; }
@@ -209,27 +207,27 @@ a:hover { text-decoration: underline; }
    and the chapter's net closing, full eight decimals so the column aligns on
    the point. */
 .idx-vol { margin:22px 0 2px; padding-top:14px; border-top:1px solid var(--hair);
-  font:600 11px/1 'IBM Plex Mono',monospace; letter-spacing:.22em; text-transform:uppercase; color:var(--accent); }
+  font:600 11px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.22em; text-transform:uppercase; color:var(--accent); }
 .idx-vol:first-of-type { margin-top:10px; padding-top:0; border-top:none; }
 .idx-book { margin:12px 0 1px; padding-left:14px;
-  font:600 10px/1 'IBM Plex Mono',monospace; letter-spacing:.16em; text-transform:uppercase; color:var(--meta); }
+  font:600 10px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.16em; text-transform:uppercase; color:var(--meta); }
 .idx-row { display:flex; align-items:baseline; gap:16px; padding:8px 2px 8px 14px; border-bottom:1px solid var(--hair); text-decoration:none; }
 .idx-row.under-book { padding-left:28px; }
 .idx-row:last-child { border-bottom:none; }
-.idx-ref { flex:none; font:600 13px/1.4 'IBM Plex Mono',monospace; letter-spacing:.06em; color:var(--accent); white-space:nowrap; font-variant-numeric:tabular-nums; }
-.idx-amt { flex:1; min-width:0; text-align:right; font:500 13px/1.4 'IBM Plex Mono',monospace; color:var(--ink-soft); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-variant-numeric:tabular-nums; }
+.idx-ref { flex:none; font:600 13px/1.4 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.06em; color:var(--accent); white-space:nowrap; font-variant-numeric:tabular-nums; }
+.idx-amt { flex:1; min-width:0; text-align:right; font:500 13px/1.4 'IBM Plex Mono','Book Sigla',monospace; color:var(--ink-soft); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-variant-numeric:tabular-nums; }
 .idx-row:hover .idx-ref { text-decoration:underline; color:var(--accent-2); }
 .idx-row:hover .idx-amt { color:var(--ink); }
-.idx-note { display:block; margin-top:12px; padding-left:14px; font:400 12px/1.5 'IBM Plex Mono',monospace; color:var(--meta); }
+.idx-note { display:block; margin-top:12px; padding-left:14px; font:400 12px/1.5 'IBM Plex Mono','Book Sigla',monospace; color:var(--meta); }
 /* The sync state, heading whatever data this level has to show. */
 .idx-note.sync-note { text-align:center; padding-left:0; margin:22px 0 0; color:var(--dim); }
 
-.sp-eyebrow { margin:30px 0 0; font:600 10px/1 'IBM Plex Mono',monospace; letter-spacing:.3em; text-transform:uppercase; color:var(--dim); text-align:center; scroll-margin-top:26px; }
+.sp-eyebrow { margin:30px 0 0; font:600 10px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.3em; text-transform:uppercase; color:var(--dim); text-align:center; scroll-margin-top:26px; }
 .sp-toc { margin-bottom:8px; }
 .sp-row { display:flex; align-items:baseline; gap:16px; padding:7px 2px 7px 14px; border-bottom:1px solid var(--hair); text-decoration:none; }
 .sp-row:last-child { border-bottom:none; }
-.sp-label { flex:none; font:600 13px/1.4 'IBM Plex Mono',monospace; letter-spacing:.06em; color:var(--accent); white-space:nowrap; font-variant-numeric:tabular-nums; }
-.sp-count { flex:1; min-width:0; text-align:right; font:400 12px/1.4 'IBM Plex Mono',monospace; color:var(--meta); white-space:nowrap; font-variant-numeric:tabular-nums; }
+.sp-label { flex:none; font:600 13px/1.4 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.06em; color:var(--accent); white-space:nowrap; font-variant-numeric:tabular-nums; }
+.sp-count { flex:1; min-width:0; text-align:right; font:400 12px/1.4 'IBM Plex Mono','Book Sigla',monospace; color:var(--meta); white-space:nowrap; font-variant-numeric:tabular-nums; }
 .sp-amt { flex:none; }
 .sp-row:hover { text-decoration:none; }
 .sp-row:hover .sp-label { text-decoration:underline; color:var(--accent-2); }
@@ -243,7 +241,7 @@ a:hover { text-decoration: underline; }
 .idx-row.acct .idx-ref { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; }
 .idx-row.acct .idx-amt { flex:none; font-size:12.5px; }
 .col-deb, .col-cred { flex:none; width:100px; text-align:right; }
-.col-status { flex:none; width:56px; text-align:right; font:600 9.5px/1.6 'IBM Plex Mono',monospace; letter-spacing:.08em; text-transform:uppercase; color:var(--meta); }
+.col-status { flex:none; width:56px; text-align:right; font:600 9.5px/1.6 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.08em; text-transform:uppercase; color:var(--meta); }
 .idx-status.unspent { color:var(--accent); }
 /* The unsynced entry: an unreferenced line heading the record -- the
    not-yet-gathered transaction count standing where its citations will,
@@ -251,7 +249,7 @@ a:hover { text-decoration: underline; }
 .idx-row.unsynced { cursor:default; }
 .idx-row.unsynced .idx-ref, .idx-row.unsynced:hover .idx-ref { color:var(--meta); text-decoration:none; }
 .acct-heads { display:flex; gap:10px; align-items:baseline; padding:10px 2px 2px 14px;
-  font:600 9.5px/1 'IBM Plex Mono',monospace; letter-spacing:.14em; text-transform:uppercase; color:var(--meta); }
+  font:600 9.5px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.14em; text-transform:uppercase; color:var(--meta); }
 .acct-heads .h-ref { flex:1; }
 /* The totals bar: the reader pages' foot-nav seat -- sticky at the screen
    bottom, the rule its top edge, prose scrolling behind its page-colour
@@ -262,8 +260,8 @@ a:hover { text-decoration: underline; }
   padding:12px 2px max(12px, env(safe-area-inset-bottom)) 14px;
   border-top:1px solid var(--rule); background:var(--page); }
 .acct-totals .t-bal { flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.acct-totals .t-label { font:600 9.5px/1 'IBM Plex Mono',monospace; letter-spacing:.14em; text-transform:uppercase; color:var(--meta); margin-right:6px; }
-.acct-totals .t-fig { font:600 13px/1.4 'IBM Plex Mono',monospace; color:var(--accent); font-variant-numeric:tabular-nums; }
+.acct-totals .t-label { font:600 9.5px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.14em; text-transform:uppercase; color:var(--meta); margin-right:6px; }
+.acct-totals .t-fig { font:600 13px/1.4 'IBM Plex Mono','Book Sigla',monospace; color:var(--accent); font-variant-numeric:tabular-nums; }
 .acct-totals .idx-amt { flex:none; font-size:12.5px; color:var(--ink-soft); }
 @media (max-width: 560px) {
   .acct-totals .idx-amt { font-size:11px; }
@@ -277,8 +275,8 @@ a:hover { text-decoration: underline; }
    manuscript, the entry's net, and the running balance ruling the row off.
    The balance column steps aside on narrow leaves. */
 .idx-row.entry { gap:12px; }
-.idx-when { flex:none; width:46px; font:400 11px/1.4 'IBM Plex Mono',monospace; color:var(--meta); white-space:nowrap; font-variant-numeric:tabular-nums; }
-.idx-bal { flex:none; min-width:104px; text-align:right; font:400 12px/1.4 'IBM Plex Mono',monospace; color:var(--dim); white-space:nowrap; font-variant-numeric:tabular-nums; }
+.idx-when { flex:none; width:46px; font:400 11px/1.4 'IBM Plex Mono','Book Sigla',monospace; color:var(--meta); white-space:nowrap; font-variant-numeric:tabular-nums; }
+.idx-bal { flex:none; min-width:104px; text-align:right; font:400 12px/1.4 'IBM Plex Mono','Book Sigla',monospace; color:var(--dim); white-space:nowrap; font-variant-numeric:tabular-nums; }
 .idx-row.entry:hover .idx-bal { color:var(--ink-soft); }
 @media (max-width: 560px) { .idx-bal { display:none; } }
 
@@ -296,7 +294,7 @@ a:hover { text-decoration: underline; }
    quiet outline manner. On the ledger's own title leaf -- curated ledgers
    (already shelved) carry no button. */
 .anth-keep { display:none; margin-top:22px; background:transparent; border:1px solid var(--input-bd); color:var(--dim);
-  border-radius:4px; padding:6px 14px; cursor:pointer; font:600 11px/1 'IBM Plex Mono',monospace; letter-spacing:.08em; text-transform:uppercase;
+  border-radius:4px; padding:6px 14px; cursor:pointer; font:600 11px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.08em; text-transform:uppercase;
   transition:border-color .15s ease, color .15s ease; }
 .anth-keep.show { display:inline-block; }
 .anth-keep:hover { border-color:var(--accent); color:var(--accent); }
@@ -309,7 +307,7 @@ a:hover { text-decoration: underline; }
 .keep-title { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; max-width:440px; }
 .keep-title.hidden { display:none; }
 .keep-title input { flex:1 1 200px; min-width:0; background:var(--input-bg); border:1px solid var(--input-bd); border-radius:4px;
-  color:var(--ink); font:400 12px/1.4 'IBM Plex Mono',monospace; padding:8px; }
+  color:var(--ink); font:400 12px/1.4 'IBM Plex Mono','Book Sigla',monospace; padding:8px; }
 .keep-title input:focus { outline:none; border-color:var(--accent); }
 /* In the settings panel these buttons stretch to the height of the field
    beside them; on their own row they have to stand their own height. */
@@ -332,14 +330,14 @@ a:hover { text-decoration: underline; }
    and the door back into the reader -- a tap opens the passage in the
    manuscript itself. No text-transform: uppercasing would turn the β
    sigils into capital Betas, which read as plain Bs. */
-.entry-cite { font:600 11px/1.6 'IBM Plex Mono',monospace; letter-spacing:.3em; text-transform:none;
+.entry-cite { font:600 11px/1.6 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.3em; text-transform:none;
   color:var(--accent); text-align:center; font-variant-numeric:tabular-nums; }
 .entry-cite:empty { display:none; }
 .entry-cite:hover { color:var(--accent-2); text-decoration:none; }
 /* The passage's title: the transaction's own name in the book's tongue --
    its txid as Glossia prose, the italic serif voice every hash speaks in. */
-.entry-title { margin:14px 0 0; max-width:560px; font:italic 400 17px/1.65 'Newsreader',serif; font-weight:400; color:var(--ink-soft); }
-.entry-amt { margin-top:16px; font:500 20px/1.25 'IBM Plex Mono',monospace; color:var(--ink); white-space:nowrap; font-variant-numeric:tabular-nums; }
+.entry-title { margin:14px 0 0; max-width:560px; font:italic 400 17px/1.65 'Newsreader','Book Sigla',serif; font-weight:400; color:var(--ink-soft); }
+.entry-amt { margin-top:16px; font:500 20px/1.25 'IBM Plex Mono','Book Sigla',monospace; color:var(--ink); white-space:nowrap; font-variant-numeric:tabular-nums; }
 .entry-amt.credit { color:var(--accent); }
 /* The section, whole, in the reader's own manuscript layout -- the book
    page's classes, metrics and grid verbatim (chapter-body type, the
@@ -351,12 +349,12 @@ a:hover { text-decoration: underline; }
    addition beyond the title's txid prose: the referenced txo carries the
    accent rule (.hit), so the quoted line reads in context. */
 .entry-section { margin-top:34px; width:100%; text-align:left;
-  font-family:'Newsreader',serif; font-size:19px; line-height:1.75; color:var(--ink-soft); font-variant-numeric:oldstyle-nums; }
+  font-family:'Newsreader','Book Sigla',serif; font-size:19px; line-height:1.75; color:var(--ink-soft); font-variant-numeric:oldstyle-nums; }
 .entry-section:empty { display:none; }
 .entry-section .tx-wrap { position:relative; margin:0 0 2em; }
 .entry-section .tx-flow { display:grid; grid-template-columns:[left] 6.5em [body] minmax(0,1fr) [right] 7em; column-gap:1.3em; align-items:start; }
 .entry-section .tx-inputs { grid-column:left / right; grid-row:1; display:grid; grid-template-columns:subgrid; column-gap:1.3em; align-items:start; }
-.entry-section .tx-in-cite { grid-column:1; text-align:right; padding-top:.34em; font:500 12px/1.5 'IBM Plex Mono',monospace; color:var(--dim); word-break:break-word; }
+.entry-section .tx-in-cite { grid-column:1; text-align:right; padding-top:.34em; font:500 12px/1.5 'IBM Plex Mono','Book Sigla',monospace; color:var(--dim); word-break:break-word; }
 .entry-section .tx-in-cite-group { grid-column:1; }
 .entry-section .tx-in-cite-group > .tx-in-cite + .tx-in-cite { margin-top:.5em; }
 .entry-section .tx-in-cite.resolving { color:var(--meta); }
@@ -364,8 +362,8 @@ a:hover { text-decoration: underline; }
 .entry-section .tx-in-cite.tx-version { color:var(--meta); letter-spacing:.03em; }
 .entry-section .cite-section-link { color:var(--accent); text-decoration:none; }
 .entry-section .cite-section-link:hover { color:var(--accent-2); text-decoration:underline; }
-.entry-section .cite-amount { margin-top:.1em; text-align:right; font:italic 400 12px/1.3 'Newsreader',serif; color:var(--meta); font-variant-numeric:tabular-nums; }
-.entry-section .fwd-cite { margin-top:.1em; font:500 12px/1.3 'IBM Plex Mono',monospace; color:var(--dim); }
+.entry-section .cite-amount { margin-top:.1em; text-align:right; font:italic 400 12px/1.3 'Newsreader','Book Sigla',serif; color:var(--meta); font-variant-numeric:tabular-nums; }
+.entry-section .fwd-cite { margin-top:.1em; font:500 12px/1.3 'IBM Plex Mono','Book Sigla',monospace; color:var(--dim); }
 .entry-section .tx-in-script { grid-column:2; min-width:0; }
 .entry-section .tx-margin-cites { grid-column:left; grid-row:2; align-self:start; }
 .entry-section .tx-outputs { grid-column:body / -1; grid-row:2;
@@ -376,10 +374,10 @@ a:hover { text-decoration: underline; }
    Σ outputs right -- the geometry is the equation. Derived rather than on
    the wire, it leads the foot region below the section's one rule (a
    full-width row of the footnotes grid), apart from the record it totals. */
-.entry-section .tx-totals { grid-column:1 / -1; display:flex; justify-content:space-between; align-items:baseline; gap:1em; margin:0 0 1.6em; font:italic 400 13.5px/1.4 'Newsreader',serif; color:var(--dim); font-variant-numeric:tabular-nums; }
+.entry-section .tx-totals { grid-column:1 / -1; display:flex; justify-content:space-between; align-items:baseline; gap:1em; margin:0 0 1.6em; font:italic 400 13.5px/1.4 'Newsreader','Book Sigla',serif; color:var(--dim); font-variant-numeric:tabular-nums; }
 .entry-section .tx-totals .t-fee { color:var(--meta); }
 .entry-section .tx-locktime { grid-column:left / -1; grid-row:3; text-align:center; font-style:normal; }
-.entry-section .tx-note { font:italic 400 13.5px/1.4 'Newsreader',serif; color:var(--dim); }
+.entry-section .tx-note { font:italic 400 13.5px/1.4 'Newsreader','Book Sigla',serif; color:var(--dim); }
 .entry-section .tx-seq { font-style:normal; color:var(--meta); }
 .entry-section .tx-seq-rbf { color:var(--accent-2); }
 .entry-section .tx-seq-block, .entry-section .tx-seq-time { color:var(--dim); font-variant-numeric:normal; }
@@ -389,16 +387,16 @@ a:hover { text-decoration: underline; }
   font-weight:500; color:var(--accent); }
 /* The book's script notation, wherever the ledger prints it. */
 .entry-section .op { color: var(--accent); font-style: normal; }
-.entry-section .op-name { font: 600 .62em/1 'IBM Plex Mono',monospace; letter-spacing:.04em; color: var(--dim); font-style: normal; vertical-align: .14em; white-space: nowrap; }
+.entry-section .op-name { font: 600 .62em/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.04em; color: var(--dim); font-style: normal; vertical-align: .14em; white-space: nowrap; }
 .entry-section .op-push { color: var(--meta); }
 .entry-section .dt { color: var(--accent); font-style: normal; font-weight: 700; }
 .entry-section .wit-sep, .entry-section .wit-empty { color:var(--meta); font-style:normal; }
 .entry-section .glossia-lazy { color:var(--dim); }
 .entry-section .tx-ascii { margin:0 0 .55em; padding:.12em 0 .12em 1.05em;
   border-left:2px solid var(--accent); border-radius:1px;
-  font:italic 400 17.5px/1.6 'Newsreader',serif; color:var(--ink-soft); }
+  font:italic 400 17.5px/1.6 'Newsreader','Book Sigla',serif; color:var(--ink-soft); }
 .entry-section .tab { display:inline-block; width:4ch; }
-.entry-section .tx-witness-ref { font:500 .62em/1 'IBM Plex Mono',monospace; color:var(--accent); vertical-align:super; text-decoration:none; margin-left:.12em; }
+.entry-section .tx-witness-ref { font:500 .62em/1 'IBM Plex Mono','Book Sigla',monospace; color:var(--accent); vertical-align:super; text-decoration:none; margin-left:.12em; }
 .entry-section .tx-witness-ref:hover { text-decoration:underline; }
 /* Mirrors the book's #ch-footnotes grid: a witness-only input's citation
    follows its witness down and takes the left cell of its footnote's row,
@@ -415,9 +413,9 @@ a:hover { text-decoration: underline; }
 /* 11px/1.3 vs the 19px/1.75 body is the BIP141 discount set in type: 4x the
    character density, a quarter of the space per letter -- see the book page's
    .footnote-entry comment for the arithmetic. */
-.entry-section .footnote-entry { margin:0 0 1.1em; font:italic 400 11px/1.3 'Newsreader',serif; color:var(--dim); }
+.entry-section .footnote-entry { margin:0 0 1.1em; font:italic 400 11px/1.3 'Newsreader','Book Sigla',serif; color:var(--dim); }
 .entry-section .footnote-entry:target { color:var(--ink-soft); }
-.entry-section .footnote-mark { font:500 8px/1 'IBM Plex Mono',monospace; color:var(--accent); margin-right:.5em; font-style:normal; vertical-align:.35em; }
+.entry-section .footnote-mark { font:500 8px/1 'IBM Plex Mono','Book Sigla',monospace; color:var(--accent); margin-right:.5em; font-style:normal; vertical-align:.35em; }
 /* The one mark the reader doesn't draw: the txo this entry references --
    the accent rule beside it, and its prose set bold: the pushed bytes of
    this scriptPubKey are the address itself in the book's tongue, so the
@@ -451,11 +449,11 @@ a:hover { text-decoration: underline; }
 }
 .entry-card { margin-top:34px; width:min(440px, 100%); text-align:left; border-top:1px solid var(--rule); }
 .entry-card .e-row { display:flex; align-items:baseline; justify-content:space-between; gap:16px; padding:10px 2px; border-bottom:1px solid var(--hair); }
-.entry-card .e-k { flex:none; font:600 10px/1.6 'IBM Plex Mono',monospace; letter-spacing:.14em; text-transform:uppercase; color:var(--meta); }
-.entry-card .e-v { flex:1; min-width:0; text-align:right; font:500 13px/1.5 'IBM Plex Mono',monospace; color:var(--ink-soft);
+.entry-card .e-k { flex:none; font:600 10px/1.6 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.14em; text-transform:uppercase; color:var(--meta); }
+.entry-card .e-v { flex:1; min-width:0; text-align:right; font:500 13px/1.5 'IBM Plex Mono','Book Sigla',monospace; color:var(--ink-soft);
   white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-variant-numeric:tabular-nums; }
 .entry-card .e-v.unspent { color:var(--accent); }
-.entry-note { margin-top:20px; font:400 11px/1.6 'IBM Plex Mono',monospace; color:var(--meta); }
+.entry-note { margin-top:20px; font:400 11px/1.6 'IBM Plex Mono','Book Sigla',monospace; color:var(--meta); }
 .entry-note:empty { display:none; }
 
 /* The carousel, as the book turns its pages: the slide carries the whole
@@ -466,7 +464,7 @@ a:hover { text-decoration: underline; }
 /* The pager under the title: this leaf's place among its level's siblings,
    with arrows for hands without a touchscreen. */
 .anth-pager { margin-top:14px; display:flex; gap:10px; align-items:baseline; justify-content:center;
-  font:600 11px/1 'IBM Plex Mono',monospace; letter-spacing:.14em; text-transform:uppercase; color:var(--dim); }
+  font:600 11px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.14em; text-transform:uppercase; color:var(--dim); }
 .anth-pager:empty { display:none; }
 .anth-pager a { color:var(--dim); font-size:15px; padding:0 8px; text-decoration:none; }
 .anth-pager a:hover { color:var(--accent); text-decoration:none; }
@@ -478,8 +476,8 @@ a:hover { text-decoration: underline; }
    the ribbon it flies in the book, its title in the book's serif, its
    remaining reference on the right. */
 .sp-bm { display:flex; align-items:baseline; gap:16px; padding:6px 2px 6px 30px; border-bottom:1px solid var(--hair); text-decoration:none; }
-.sp-bm-title { flex:1; min-width:0; font:500 14.5px/1.35 'Newsreader',serif; color:var(--ink-soft); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.sp-bm-ref { flex:none; font:600 12px/1.4 'IBM Plex Mono',monospace; letter-spacing:.06em; color:var(--accent); white-space:nowrap; font-variant-numeric:tabular-nums; }
+.sp-bm-title { flex:1; min-width:0; font:500 14.5px/1.35 'Newsreader','Book Sigla',serif; color:var(--ink-soft); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.sp-bm-ref { flex:none; font:600 12px/1.4 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.06em; color:var(--accent); white-space:nowrap; font-variant-numeric:tabular-nums; }
 .sp-bm:hover { text-decoration:none; }
 .sp-bm:hover .sp-bm-title { color:var(--ink); }
 .sp-bm:hover .sp-bm-ref { text-decoration:underline; color:var(--accent-2); }
