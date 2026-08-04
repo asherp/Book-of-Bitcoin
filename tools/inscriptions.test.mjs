@@ -137,14 +137,37 @@ test('a manifest reads out the members it names, in its own order', () => {
   assert.deepEqual(found.members, [{ txid: a, index: 0 }, { txid: b, index: 2 }]);
 });
 
-test("a manifest's editorial matter is not read — only the ids point at witnesses the chain holds", () => {
+test("the collection's own words come back apart from the ids it names", () => {
   const a = 'a'.repeat(64);
   const found = parseCollection(utf8(JSON.stringify({
-    meta: { name: 'A collection', description: 'a claim about the members' },
+    meta: { name: 'Museum Outdoor', supply: '100', description: 'a claim about the members' },
+    data: [{ id: `${a}i0` }],
+  })));
+  assert.deepEqual(found.meta, { name: 'Museum Outdoor', supply: '100', description: 'a claim about the members' });
+  assert.deepEqual(found.members, [{ txid: a, index: 0 }]);
+});
+
+test("a member's own editorial matter is not read — the photograph is one fetch away", () => {
+  const a = 'a'.repeat(64);
+  const found = parseCollection(utf8(JSON.stringify({
     data: [{ id: `${a}i0`, meta: { name: 'SAHK (114', attributes: { artist: 'MVR', location: 'Hong Kong' } } }],
   })));
-  assert.deepEqual(Object.keys(found), ['members']);
   assert.deepEqual(Object.keys(found.members[0]), ['txid', 'index']);
+});
+
+test('a manifest with no meta reads as one all the same, with nothing to say for itself', () => {
+  const a = 'a'.repeat(64);
+  assert.deepEqual(parseCollection(utf8(`{"data":[{"id":"${a}i0"}]}`)).meta, {});
+});
+
+test('nested meta fields are left to whoever wrote them', () => {
+  const a = 'a'.repeat(64);
+  const found = parseCollection(utf8(JSON.stringify({
+    meta: { name: 'A collection', supply: 100, extra: { nested: 'thing' }, list: [1, 2], nothing: null },
+    data: [{ id: `${a}i0` }],
+  })));
+  // Numbers read as written; objects, arrays and nulls are not flattened.
+  assert.deepEqual(found.meta, { name: 'A collection', supply: '100' });
 });
 
 test('a body that is not a manifest reads as none — plain JSON is its own content', () => {

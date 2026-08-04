@@ -86,9 +86,15 @@
         : 'glossia-appendix-entrance';
       leave(to, `translateX(${back ? 100 : -100}vw)`, flag, back ? 'back' : 'fwd');
     };
+    // An element that runs its own sideways gesture (a carousel of works)
+    // keeps it: a drag begun inside one scrolls that rack rather than turning
+    // the leaf out from under it. Marked in the DOM rather than named here,
+    // so this layer needs to know nothing about what is on the page.
+    let inRack = false;
     document.addEventListener('touchstart', (e) => {
       sy = null;
       if (e.touches.length !== 1) return;
+      inRack = !!(e.target && e.target.closest && e.target.closest('[data-hswipe]'));
       sy = e.touches[0].clientY; sx = e.touches[0].clientX; st = performance.now();
       atTop = window.scrollY <= 2;
       atBottom = window.scrollY >= document.documentElement.scrollHeight - window.innerHeight - 2;
@@ -102,7 +108,7 @@
       // A committed horizontal turn: quick, far enough, and mostly sideways.
       // Nothing that way and the edge simply holds.
       if (dt <= 600 && Math.abs(dx) >= 60 && Math.abs(dy) <= Math.abs(dx) * 0.6) {
-        window.__appxTurn(dx > 0);                 // swiping right turns back
+        if (!inRack) window.__appxTurn(dx > 0);    // swiping right turns back
         return;
       }
       // A push UP from the foot descends into the appendix's first chapter,
@@ -365,14 +371,33 @@ a.bb-ref:hover { color:var(--accent-2); }
    being read, and stays only when there is nothing a plate can show. */
 .ins-status { font:400 12.5px/1.6 'Public Sans',sans-serif; color:var(--meta); }
 
-/* A collection, read as what it names. One member to a block: its txid said
+/* What a collection says of itself, set as a form: the fields as written and
+   in the manifest's own order, the key in the ruling register and the value
+   in the reading face. Editorial to its last comma -- this is the collection
+   speaking, not the chain -- so it is set the way the book sets a claim it
+   is repeating rather than making. */
+.ins-form { max-width:56ch; margin:26px auto 0; }
+.ins-field { display:flex; gap:16px; padding:9px 2px; border-bottom:1px solid var(--hair); }
+.ins-field:first-child { border-top:1px solid var(--rule); }
+.ins-key { flex:none; width:104px; font:500 10px/1.9 'IBM Plex Mono',monospace; letter-spacing:.06em;
+  text-transform:uppercase; color:var(--meta); }
+.ins-val { flex:1; min-width:0; font:400 14px/1.6 'Newsreader',serif; color:var(--ink-soft); overflow-wrap:anywhere; }
+.ins-val a { color:var(--accent); }
+/* An id or a key is a handle, not a sentence: it reads in the mono the book
+   gives every raw string, so it is never mistaken for the prose beside it. */
+.ins-val.raw { font:400 11.5px/1.7 'IBM Plex Mono',monospace; color:var(--dim); }
+
+/* A collection, read as what it names. One member to a panel: its txid said
    in the book's own prose -- the poem the chain writes for that witness --
    and the witness's own image beneath it, the way a plate sits under its
-   line. Nothing else: the manifest's editorial matter is the inscriber's
-   claim, and this leaf shows the members, not the claims about them. */
-.ins-collection { max-width:56ch; margin:26px auto 0; }
+   line. Run sideways, because a collection is a rack of works and not a
+   list of them: the reader moves along it rather than down. */
+.ins-rack { display:flex; gap:26px; margin:26px 0 0; padding:0 4px 18px;
+  overflow-x:auto; overflow-y:hidden; scroll-snap-type:x mandatory;
+  overscroll-behavior-x:contain; scrollbar-width:thin; }
+.ins-rack:focus-visible { outline:1px solid var(--accent); outline-offset:6px; }
+.ins-rack .ins-member { flex:0 0 min(84%, 46ch); scroll-snap-align:center; margin:0; }
 .ins-member { margin:0 0 44px; text-align:center; }
-.ins-member:last-of-type { margin-bottom:8px; }
 /* The poem reads as the book's prose reads -- the reading face, the gold ⌘
    leading it -- and is the door into the chapter that witness sits in. */
 .ins-poem { display:block; font:italic 400 15px/1.6 'Newsreader',serif; color:var(--ink-soft);
@@ -445,11 +470,17 @@ a.ins-poem:hover { color:var(--ink); text-decoration:none; }
   <figure class="ins-content hidden" id="ins-content"></figure>
 
   <!-- A manifest names further reveals rather than carrying content of its
-       own, so its leaf shows what it names: one member to a leaf-block, the
-       txid said in the book's own prose and the witness's image beneath it.
-       Drawn a page at a time as the foot comes into reach, the way the
-       ballot and the Ledger's record are drawn. -->
-  <div class="ins-collection hidden" id="ins-collection"></div>
+       own, so its leaf is a title page: the name the collection gives
+       itself above, and beneath it the rest of what it says of itself, set
+       as a form -- the fields as written, in the manifest's own order. -->
+  <div class="ins-form hidden" id="ins-form"></div>
+
+  <!-- …and the works themselves stand one level below (&items): a rack run
+       sideways, one member to a panel, the txid said in the book's own prose
+       over the image its witness carries. Each panel's witness is fetched as
+       it comes into reach, since a panel is a whole reveal. -->
+  <div class="ins-rack hidden" id="ins-rack" data-hswipe tabindex="0"
+       role="group" aria-label="the works this collection names"></div>
 
   <div class="proof-list hidden" id="proof-list"></div>
 
@@ -521,6 +552,10 @@ const bipAt = bip ? bips.indexOf(bip) : -1;
 const insEntries = part.kind === 'inscriptions' ? (part.entries || []) : [];
 const ins = insEntries.find((e) => e.reveal === String(params.get('ins') || '').toLowerCase()) || null;
 const insAt = ins ? insEntries.indexOf(ins) : -1;
+// A collection has one more level beneath its title page: &items opens the
+// works themselves, laid side by side. The title page says what the
+// collection claims to be; the level below it is the collection.
+const itemsLeaf = ins != null && params.has('items');
 // One block of a fork's ballot, a level below the fork's own leaf: ?block=
 // names it by height, the way a ballot row links it.
 const blockLeaf = bip && /^[0-9]+$/.test(params.get('block') || '') ? Number(params.get('block')) : null;
@@ -653,6 +688,7 @@ const bipHref = (b) => `./bitcoin-appendix.html?part=consensus&bip=${b.key}`;
 // the envelope reads at), and the door into the book at that very footnote
 // (&wit takes the letter, and the book brings the note to the top).
 const insHref = (e) => `./bitcoin-appendix.html?part=inscriptions&ins=${e.reveal}`;
+const insItemsHref = (e) => `${insHref(e)}&items`;
 const insRef = (e) => `${wholeRef(Number(e.id), e.index + 1)}.${footnoteMark(e.wit)}`;
 const insDoor = (e) => `./bitcoin-book.html?block=${e.id}&index=${e.index}&wit=${footnoteMark(e.wit)}`;
 
@@ -695,7 +731,9 @@ if (blockLeaf != null) {
 } else if (ins) {
   // An inscription's leaf wears its title, and its subtitle is the one door
   // into the book: the footnote the envelope reads at -- the leaf renders,
-  // the book reads.
+  // the book reads. A collection renames its own head once the manifest is
+  // read (renameToCollection): the book's title for it is a placeholder for
+  // the name the collection gives itself.
   $('appx-title').textContent = ins.title;
   const sub = $('appx-subtitle');
   const door = document.createElement('a');
@@ -704,8 +742,10 @@ if (blockLeaf != null) {
   door.title = 'read this witness in the book — the footnote the envelope reads at';
   sub.replaceChildren(door);
   const up = $('appx-up');
-  up.textContent = `▴ ${label(part)}`;
-  up.href = hrefFor(part);
+  // The works stand one level below the title page, so their leaf climbs to
+  // that page rather than all the way out to the shelf.
+  up.textContent = itemsLeaf ? `▴ ${ins.title}` : `▴ ${label(part)}`;
+  up.href = itemsLeaf ? insHref(ins) : hrefFor(part);
   up.classList.remove('hidden');
 } else if (part.family === 'appendix') {
   $('appx-title').textContent = `Appendix ${toRoman(partNumber(APPENDIX, part))}`;
@@ -733,9 +773,15 @@ if (kind === 'consensus' && blockLeaf == null) {
 }
 // The Inscriptions leaf descends onto its first entry's own leaf, a level
 // down; an inscription's leaf descends into the book, at the footnote its
-// envelope reads at.
+// envelope reads at. A collection's title page descends into the collection
+// instead -- the works themselves, one level below the page that names them
+// -- but which inscriptions are collections is not known until each manifest
+// is read, so that redirection is made when the reading lands (below).
+// The works' own leaf is the bottom: nothing lies under the pictures.
 if (kind === 'inscriptions') {
-  firstChapter = ins ? insDoor(ins) : (insEntries.length ? insHref(insEntries[0]) : null);
+  firstChapter = itemsLeaf ? null
+    : ins ? insDoor(ins)
+    : (insEntries.length ? insHref(insEntries[0]) : null);
 }
 $('appx-down').classList.toggle('hidden', !firstChapter);
 if (kind === 'mempool') {
@@ -765,7 +811,9 @@ $('appx-down').addEventListener('click', (ev) => { ev.preventDefault(); descend(
 // vertical moves are wired below, where the ballot's bounds are known -- its
 // crumb still climbs a level, back to the ballot at this block's row.)
 if ((bip && blockLeaf == null) || ins) {
-  window.__appxAscend = () => navTo(hrefFor(part), 'drop');
+  // The works climb to the title page that names them; everything else at
+  // this level climbs to the part that lists it.
+  window.__appxAscend = () => navTo(itemsLeaf ? insHref(ins) : hrefFor(part), 'drop');
 }
 if (bip || ins) {
   $('appx-up').addEventListener('click', (ev) => {
@@ -793,6 +841,7 @@ const prevTo = blockLeaf != null ? null : bip
   ? (bipAt > 0
     ? { href: bipHref(bips[bipAt - 1]), text: bips[bipAt - 1].label }
     : { href: hrefFor(part), text: label(part) })
+  : itemsLeaf ? null
   : ins
   ? (insAt > 0
     ? { href: insHref(insEntries[insAt - 1]), text: insEntries[insAt - 1].title }
@@ -800,6 +849,7 @@ const prevTo = blockLeaf != null ? null : bip
   : (APPENDIX[index - 1] ? { href: hrefFor(APPENDIX[index - 1]), text: label(APPENDIX[index - 1]) } : null);
 const nextTo = blockLeaf != null ? null : bip
   ? (bipAt < bips.length - 1 ? { href: bipHref(bips[bipAt + 1]), text: bips[bipAt + 1].label } : null)
+  : itemsLeaf ? null
   : ins
   ? (insAt < insEntries.length - 1 ? { href: insHref(insEntries[insAt + 1]), text: insEntries[insAt + 1].title } : null)
   : (APPENDIX[index + 1] ? { href: hrefFor(APPENDIX[index + 1]), text: label(APPENDIX[index + 1]) } : null);
@@ -934,9 +984,12 @@ if (ins) {
     if (collection) {
       status.remove();
       fig.classList.add('hidden');
-      renderCollection(collection.members);
+      if (itemsLeaf) renderRack(collection);
+      else renderTitlePage(collection);
       return;
     }
+    // &items on something that names nothing has no level to open; the
+    // inscription's own content stands, which is what the bare leaf shows.
 
     // The body, and nothing about it. What the envelope declares, how long it
     // runs, which input carries it -- all of that is the witness's own, and
@@ -974,39 +1027,89 @@ if (ins) {
     status.textContent = `${found.body.length.toLocaleString('en-US')} bytes of ${found.contentType || 'an undeclared kind'}`;
   })();
 
-  // ── A collection, shown as what it names ──
-  // One member to a block: the txid said in the book's own prose -- the same
-  // encoding a section's title wears, over the same reversed bytes -- and
-  // beneath it the image that member's own witness carries, fetched and read
-  // by the same reader. The poem is the door into the chapter the member
-  // sits in; the book resolves a bare txid to its section.
-  //
-  // Drawn a page at a time as the foot comes into reach: a hundred members
-  // are a hundred reveals, and a leaf that fetched them all at once would
-  // ask the mirrors for megabytes nobody had scrolled to yet.
-  function renderCollection(members) {
-    const wrap = $('ins-collection');
-    wrap.classList.remove('hidden');
-    const rowsEl = document.createElement('div');
-    const foot = document.createElement('span');
-    foot.className = 'bb-foot';
-    foot.textContent = '…';
-    wrap.append(rowsEl, foot);
+  // ── A collection's title page ──
+  // The head takes the name the collection gives itself, and beneath it the
+  // rest of what the manifest says: the fields as written, in the manifest's
+  // own order, set as a form. Every line of it is the collection's own claim
+  // -- a name, a count, a description, a disclaimer about its own
+  // attributions -- so the leaf repeats it and does not vouch for it. What it
+  // NAMES stands one level below, where the works are.
+  function renderTitlePage(collection) {
+    const meta = collection.meta || {};
+    const name = (meta.name || '').trim();
+    if (name) {
+      // The book's own title for the entry was a placeholder for this.
+      $('appx-title').textContent = name;
+      document.title = `The βook of βitcoin — ${name}`;
+    }
+    const form = $('ins-form');
+    // The name is the head; a form that repeated it would say it twice.
+    const fields = Object.entries(meta).filter(([k, v]) => k !== 'name' && String(v).trim());
+    for (const [k, v] of fields) {
+      const row = document.createElement('div');
+      row.className = 'ins-field';
+      const key = document.createElement('div');
+      key.className = 'ins-key';
+      key.textContent = k.replace(/[_-]+/g, ' ');
+      const val = document.createElement('div');
+      val.className = 'ins-val';
+      // A link is followed, an id or a key is a handle and reads as one;
+      // everything else is prose the collection wrote about itself.
+      if (/^https?:\/\//.test(v)) {
+        const a = document.createElement('a');
+        a.href = v; a.textContent = v; a.rel = 'noopener nofollow'; a.target = '_blank';
+        val.append(a);
+      } else {
+        if (/^[0-9a-f]{64}i\d+$/i.test(v) || /^npub1[0-9a-z]+$/.test(v)) val.classList.add('raw');
+        val.textContent = v;
+      }
+      row.append(key, val);
+      form.append(row);
+    }
+    if (fields.length) form.classList.remove('hidden');
+    // The descent now opens the collection rather than the book: the works
+    // are what lies under the page that names them.
+    firstChapter = insItemsHref(ins);
+    const down = $('appx-down');
+    down.classList.remove('hidden');
+    down.title = `the works — ${collection.members.length.toLocaleString('en-US')} of them`;
+    down.setAttribute('aria-label', 'Down into the collection');
+  }
 
-    const memberEl = (m) => {
-      const figure = document.createElement('figure');
-      figure.className = 'ins-member';
-      // The poem, in the reading face, leading with the ⌘ the book gives an
-      // identity hash. Said as soon as the engine lands; unsaid if it never
-      // does, the way every other figure on these leaves is.
-      const poem = document.createElement('a');
-      poem.className = 'ins-poem waiting';
-      poem.href = `./bitcoin-book.html?txid=${m.txid}`;
-      poem.title = 'read this witness in the book';
-      poem.textContent = '…';
-      const body = document.createElement('div');
-      body.className = 'ins-member-body';
-      figure.append(poem, body);
+  // ── The works themselves, one level below ──
+  // A rack run sideways: one member to a panel, the txid said in the book's
+  // own prose -- the same encoding a section's title wears, over the same
+  // reversed bytes -- and beneath it the image that member's own witness
+  // carries. The poem is the door into the chapter the member sits in; the
+  // book resolves a bare txid to its section.
+  //
+  // Every panel is laid out at once (a panel is cheap) but nothing is
+  // FETCHED until it comes within reach of the rack's own edge: a member is a
+  // whole reveal, ~100 kB with the photograph in its witness, and a hundred
+  // of them fetched for a reader looking at the first three would be
+  // megabytes nobody asked for.
+  function renderRack(collection) {
+    const meta = collection.meta || {};
+    const name = (meta.name || '').trim();
+    const members = collection.members;
+    if (name) {
+      $('appx-title').textContent = name;
+      $('appx-up').textContent = `▴ ${name}`;
+      document.title = `The βook of βitcoin — ${name}`;
+    }
+    // The subtitle counts the works rather than citing the manifest: this
+    // level is the collection, and the citation belongs to the page above.
+    $('appx-subtitle').textContent = `${members.length.toLocaleString('en-US')} works`;
+
+    const rack = $('ins-rack');
+    rack.classList.remove('hidden');
+
+    const fill = (panel) => {
+      const m = panel.__member;
+      if (!m || panel.__filled) return;
+      panel.__filled = true;
+      const poem = panel.querySelector('.ins-poem');
+      const body = panel.querySelector('.ins-member-body');
       glossia().then((g) => {
         const mark = document.createElement('span');
         mark.className = 'dt';
@@ -1020,9 +1123,9 @@ if (ins) {
       }).catch(() => { poem.textContent = 'unsaid'; poem.title = 'the engine that puts a hash into words did not load'; });
       // The member's own witness, read exactly as this leaf's was.
       (async () => {
-        const mtx = await overMirrors(`/tx/${m.txid}`);
         const say = (text) => { const s = document.createElement('div'); s.className = 'ins-member-say'; s.textContent = text; body.replaceChildren(s); };
-        if (!mtx) { say('the chain could not be reached for this member'); return; }
+        const mtx = await overMirrors(`/tx/${m.txid}`);
+        if (!mtx) { say('the chain could not be reached for this work'); return; }
         const { inscriptionInTx } = await import('./btc-inscriptions.js');
         const e = inscriptionInTx(mtx);
         if (!e) { say('no envelope in this witness'); return; }
@@ -1034,36 +1137,41 @@ if (ins) {
         const img = document.createElement('img');
         img.src = URL.createObjectURL(new Blob([e.body], { type: e.contentType }));
         img.alt = '';
-        img.loading = 'lazy';
         body.replaceChildren(img);
-      })().catch(() => { /* the poem stands: a member's plate is not its name */ });
-      return figure;
+      })().catch(() => { /* the poem stands: a work's plate is not its name */ });
     };
 
-    // A page of members is a page of REVEALS -- each one a transaction of a
-    // hundred-odd kilobytes, since the image rides in its witness. So the
-    // page is small and the reach short: the ballot can bank a screenful
-    // ahead because a row there is a number, but here a row drawn early is a
-    // photograph fetched for nobody.
-    const PAGE = 4;
-    let drawn = 0, busy = false, io = null;
-    const draw = () => {
-      if (busy) return;
-      busy = true;
-      for (const m of members.slice(drawn, drawn + PAGE)) rowsEl.append(memberEl(m));
-      drawn = Math.min(drawn + PAGE, members.length);
-      foot.textContent = drawn >= members.length
-        ? `— ${members.length.toLocaleString('en-US')} members, as the manifest names them`
-        : '…';
-      busy = false;
-      // Appending moved the sentinel; observe it afresh so a foot still
-      // within reach draws the next page too.
-      if (io && drawn < members.length) { io.unobserve(foot); io.observe(foot); }
-    };
-    io = new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) draw(); },
-                                  { rootMargin: '300px 0px' });
-    io.observe(foot);
-    draw();
+    const io = new IntersectionObserver((es) => {
+      for (const e of es) if (e.isIntersecting) { fill(e.target); io.unobserve(e.target); }
+    }, { root: rack, rootMargin: '120% 0px' });
+
+    for (const m of members) {
+      const panel = document.createElement('figure');
+      panel.className = 'ins-member';
+      panel.__member = m;
+      const poem = document.createElement('a');
+      poem.className = 'ins-poem waiting';
+      poem.href = `./bitcoin-book.html?txid=${m.txid}`;
+      poem.title = 'read this witness in the book';
+      poem.textContent = '…';
+      const body = document.createElement('div');
+      body.className = 'ins-member-body';
+      panel.append(poem, body);
+      rack.append(panel);
+      io.observe(panel);
+    }
+
+    // The rack answers the arrow keys, which the leaf's own turns have left
+    // alone at this level (there is nothing sideways of the works but more
+    // works). One panel a press, the way the snap already moves.
+    rack.addEventListener('keydown', (ev) => {
+      if (ev.key !== 'ArrowLeft' && ev.key !== 'ArrowRight') return;
+      const panel = rack.querySelector('.ins-member');
+      if (!panel) return;
+      ev.preventDefault();
+      const step = panel.getBoundingClientRect().width + 26;   // the rack's gap
+      rack.scrollBy({ left: ev.key === 'ArrowRight' ? step : -step, behavior: 'smooth' });
+    });
   }
 
   // The entry's reading, raised the way a fork's is: the note leads the

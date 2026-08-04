@@ -137,12 +137,22 @@ export function tapscriptOf(witnessItems) {
 // rather than the naming, which is what this reads out: the members, in the
 // order the manifest lists them.
 //
-// Only the ids are taken. Everything else a manifest carries -- the
-// collection's name, its supply, the artists, the cities -- is the
-// inscriber's editorial claim about the members, held off-chain in the same
-// breath as the ids and checkable against nothing; the ids alone point at
-// further witnesses the chain does hold. Null for any body that is not a
-// manifest, a plain JSON inscription being its own content.
+// Two things come back, and they are of different kinds. The `members` are
+// ids: they point at further witnesses the chain does hold, and each resolves
+// to a passage the book can open. The `meta` is the collection speaking about
+// itself -- its name, how many it claims to hold, what it is, a disclaimer
+// about its own attributions -- written into the same breath as the ids and
+// checkable against nothing. Both are worth showing and they are not the same
+// register, so they are handed back apart and a surface that shows the meta
+// shows it as what it is: the collection's own statement, in its own words.
+//
+// The per-member editorial matter (an artist, a city, a date) is deliberately
+// NOT read. It is a claim about a particular photograph, and the photograph
+// itself is one fetch away -- so the book shows the work rather than the
+// caption somebody wrote for it.
+//
+// Null for any body that is not a manifest, a plain JSON inscription being
+// its own content.
 export function parseCollection(body) {
   let doc;
   try { doc = JSON.parse(new TextDecoder().decode(body)); }
@@ -153,7 +163,14 @@ export function parseCollection(body) {
     const m = /^([0-9a-f]{64})i(\d+)$/i.exec(String((row && row.id) || '').trim());
     if (m) members.push({ txid: m[1].toLowerCase(), index: Number(m[2]) });
   }
-  return members.length ? { members } : null;
+  if (!members.length) return null;
+  // Scalar fields only, and as written: a manifest is somebody's JSON, so
+  // anything nested is theirs to mean and not this reader's to flatten.
+  const meta = {};
+  for (const [k, v] of Object.entries((doc.meta && typeof doc.meta === 'object') ? doc.meta : {})) {
+    if (v !== null && typeof v !== 'object') meta[k] = String(v);
+  }
+  return { meta, members };
 }
 
 // The first inscription a transaction reveals, walking its inputs in order

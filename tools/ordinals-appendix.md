@@ -191,18 +191,30 @@ editor adding a kind of back matter can follow the same path:
    can show (a compressed body, an unrenderable kind, a witness that will
    not answer).
 4. **A manifest, shown as what it names.** A collection manifest is the
-   one body the leaf does not display: it carries no content, only ids,
-   so the leaf spends the JSON rather than printing it
-   (`parseCollection`) and shows the members instead — each one's txid
-   said in the book's own prose, over the same reversed bytes a section
-   title encodes, with the image that member's own witness carries
-   beneath it. The manifest's editorial matter (the names, the artists,
-   the cities) is read past: it is the inscriber's claim about the
-   members, checkable against nothing, while the ids point at further
-   witnesses the chain does hold. Members draw four at a time as the
-   foot comes into reach — a row here is a whole reveal, ~100 kB with
-   the photograph in its witness, so the reach is short and the plate's
-   height is reserved before it lands.
+   one body the leaf does not display: it carries no content, only ids
+   and whatever the collection says about itself. `parseCollection`
+   hands those back apart, because they are different registers — the
+   ids point at further witnesses the chain holds, the `meta` is the
+   collection speaking about itself into the same breath, checkable
+   against nothing. So the manifest gets **two levels**:
+   - **Its title page** (`?ins=<reveal>`) takes the name the collection
+     gives itself as the leaf's own title, and sets the rest of the
+     `meta` beneath it as a form — the fields as written, in the
+     manifest's own order, a link followed, an id or a key in the mono
+     the book gives every raw string. Repeated, not vouched for.
+   - **The works** (`&items`), one level below, where the ▾ leads: a
+     rack run sideways, one member to a panel, its txid said in the
+     book's own prose over the image its witness carries. A panel is
+     laid out at once but nothing is fetched until it comes within
+     reach of the rack's edge — a member is a whole reveal, ~100 kB
+     with the photograph in its witness. The rack owns its sideways
+     gesture (`data-hswipe`), so a drag along it scrolls the works
+     rather than turning the leaf out from under them, and the arrow
+     keys move it a panel at a time.
+
+   Per-member editorial matter (an artist, a city, a date) is still not
+   read: the photograph is one fetch away, so the book shows the work
+   rather than the caption somebody wrote for it.
 5. **The contents row.** `web/bitcoin-contents.html` — a sub-line for the
    new kind and a row builder, placing through the same map the volumes'
    rows read, so a lookup runs once for both registers. The rows open the
