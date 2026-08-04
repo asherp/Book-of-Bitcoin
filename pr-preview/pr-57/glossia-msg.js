@@ -49,7 +49,19 @@ export const MSG_LANGS = [
   { id: 'czech',   label: 'Čeština',  language: 'czech',   wordlist: 'default', dialect: 'body' },
   { id: 'german',  label: 'Deutsch',  language: 'german',  wordlist: 'default', dialect: 'body' },
 ];
-export function msgLangById(id) { return MSG_LANGS.find(l => l.id === id) || MSG_LANGS[0]; }
+// The tongue the book is set in for a reader who has not chosen one. Latin: the
+// book is a record first and a reading second, and Latin says so — it is nobody's
+// native tongue now, so its prose reads as what it is, a notation, rather than as
+// a claim about the bytes in a language someone might mistake for commentary.
+// (It is also the shortest: the Latin payload wordlist is 32768 words, 15 bits
+// to English's 11, so the same hash lands in about a quarter fewer words.)
+// Named rather than taken from MSG_LANGS[0], so the menu's display order and the
+// default are separate decisions.
+export const DEFAULT_LANG_ID = 'latin';
+export function msgLangById(id) {
+  return MSG_LANGS.find(l => l.id === id)
+    || MSG_LANGS.find(l => l.id === DEFAULT_LANG_ID);
+}
 
 // ─── the book's language ──────────────────────────────────────────────
 // Which of MSG_LANGS the book's prose is set in, chosen by the reader and
@@ -58,11 +70,11 @@ export function msgLangById(id) { return MSG_LANGS.find(l => l.id === id) || MSG
 // transaction (decodeCanonical detects the language from the prose itself).
 // Kept here beside MSG_LANGS so every page that encodes reads one source of
 // truth. Guarded for non-browser callers (the node test suite imports this
-// module transitively): no localStorage, no persistence, english default.
+// module transitively): no localStorage, no persistence, DEFAULT_LANG_ID.
 const BOOK_LANG_KEY = 'glossia-btc-lang';
 let bookLangId = (() => {
   try { return msgLangById(localStorage.getItem(BOOK_LANG_KEY)).id; }
-  catch { return MSG_LANGS[0].id; }
+  catch { return DEFAULT_LANG_ID; }
 })();
 export function bookLang() { return bookLangId; }
 export function setBookLang(id) {
@@ -339,16 +351,18 @@ export async function encodeMessage(message, cred, langId = 'english', opts = {}
   return renderArtifact(await sealMessage(message, cred), langId, opts);
 }
 
-// Detect the language of some prose, restricted to MSG_LANGS. Falls back to english.
+// Detect the language of some prose, restricted to MSG_LANGS. Prose the
+// detector cannot place falls back to DEFAULT_LANG_ID -- the tongue the book
+// writes in, and so the likeliest thing an unplaceable paragraph is.
 export function detectLang(prose) {
   try {
     const matches = JSON.parse(wasmDetectDialect(prose));
     if (Array.isArray(matches)) {
       const best = matches.find(m => MSG_LANGS.some(l => l.language === m.language));
-      if (best) return (MSG_LANGS.find(l => l.language === best.language) || {}).id || 'english';
+      if (best) return (MSG_LANGS.find(l => l.language === best.language) || {}).id || DEFAULT_LANG_ID;
     }
   } catch (e) { /* fall through */ }
-  return 'english';
+  return DEFAULT_LANG_ID;
 }
 
 // ─── canonical prose: raw bytes ⇆ readable Glossia prose ──────────────
