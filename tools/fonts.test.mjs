@@ -47,6 +47,34 @@ test('no page loads a font from a third party', async () => {
   }
 });
 
+test('every reading page preloads the four faces all of them set text in', async () => {
+  // Measured, not guessed: these are the files every page fetches on a cold
+  // visit (the rest are gated by unicode-range and asked for only where their
+  // glyphs appear — the sigla leaf pulls the whole alphabet, a chapter these
+  // four). Preloading them starts the fetch alongside fonts.css instead of
+  // after it, worth ~one round trip on a slow connection.
+  //
+  // `crossorigin` is the load-bearing attribute: a font is fetched
+  // CORS-anonymous even same-origin, so a preload without it matches no
+  // request and silently downloads the file a second time.
+  const UNIVERSAL = ['newsreader-latin.woff2', 'plexmono-500-latin.woff2',
+    'plexmono-600-latin.woff2', 'sigla-dejavu.woff2'];
+  const pages = (await readdir(WEB)).filter((f) => f.endsWith('.html'));
+  for (const name of pages) {
+    const html = await readFile(new URL(name, WEB), 'utf8');
+    if (!html.includes('./fonts/fonts.css')) continue;      // the redirect leaf sets no text
+    for (const f of UNIVERSAL) {
+      const tag = new RegExp(`<link rel="preload" as="font" type="font/woff2" href="\\./fonts/${f.replace('.', '\\.')}" crossorigin>`);
+      assert.match(html, tag, `${name} does not preload ${f} (with crossorigin)`);
+    }
+    // A preload the page never uses is wasted bytes, so the set stays exactly
+    // the universal four — the browser warns about the rest, and so does this.
+    const preloaded = [...html.matchAll(/rel="preload" as="font"[^>]*href="\.\/fonts\/([\w.-]+)"/g)].map((m) => m[1]);
+    assert.deepEqual(preloaded.sort(), [...UNIVERSAL].sort(),
+      `${name} preloads something outside the universal set`);
+  }
+});
+
 test('the sigla fallback stands behind every stack that names a vendored face', async () => {
   // A stack naming Newsreader, IBM Plex Mono, or Public Sans without
   // 'Book Sigla' immediately after would let that context's sigla fall to

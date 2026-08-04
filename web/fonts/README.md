@@ -37,6 +37,37 @@ copies live:
 the app chrome's sans. No rendered passage uses it — a card sets no UI — so
 it belongs to the app's stylesheet rather than to the passage table.
 
+## What a first visit actually costs
+
+Not the size of this directory. `unicode-range` means a browser asks for a
+face only where its glyphs appear, so a cold visit to a reading page fetches
+**four files, ~167 KB**: Newsreader latin, IBM Plex Mono 500 and 600, and
+`sigla-dejavu`. The other nine wait until something needs them — the sigla
+leaf, which prints the whole alphabet at rest, is the one page that pulls
+all thirteen, and that is the page whose job is to.
+
+For comparison, the Google Fonts stylesheet these files replaced declared
+six distinct files for the same latin text (~199 KB before a word of italic,
+~343 KB after), from two origins the browser had to resolve, connect and
+shake hands with before the first byte of a font moved. Same Newsreader
+bytes; two fewer origins on the critical path.
+
+Every page preloads those four (`<link rel="preload" as="font" …
+crossorigin>`), so their fetch begins alongside `fonts.css` rather than
+after the browser has parsed it. Measured on an emulated fast-3G profile
+(1.6 Mbps, 150 ms RTT), medians of nine cold loads of the reading page:
+the first font byte moves at 192 ms rather than 652 ms, and every font is
+in by 2,062 ms rather than 2,369 ms.
+
+**`crossorigin` is load-bearing.** A font is fetched CORS-anonymous even
+same-origin, so a preload without that attribute matches no request and
+downloads the file a second time. The test pins the attribute and the
+membership of the preload set both ways — a missing preload fails, and so
+does one for a face the pages do not universally use.
+
+All of it is precached by the service worker regardless (`web/sw.js`), so
+the *second* visit and every offline one pay nothing.
+
 ## The text faces, verbatim
 
 Unmodified woff2 files as served by the Google Fonts API (css2, a current

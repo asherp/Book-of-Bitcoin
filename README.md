@@ -470,11 +470,18 @@ compiled to WASM) is consumed as a published
   `@font-face` table in `tools/twitter-bot/quote.mjs` serves all three
   consumers — the card renderer inlines the files, the static citation
   pages address `/fonts/`, the app loads `fonts.css` generated from the
-  same table. `tools/fonts.test.mjs` fails if the table and the stylesheet
-  drift, if a face is missing from the service worker's shell, or if any
-  page reaches for a font host again; the renderer's own suite fails if a
-  new siglum enters the alphabet that no vendored face declares.
-  Provenance, licenses, and regeneration:
+  same table. A first visit is cheaper than the directory looks:
+  `unicode-range` asks for a face only where its glyphs appear, so a
+  chapter fetches four files (~167 KB, preloaded so they start alongside
+  the stylesheet rather than after it) where the Google Fonts stylesheet
+  they replaced pulled six from two other origins — and the sigla leaf,
+  which prints the alphabet at rest, is the one page that loads all of it.
+  `tools/fonts.test.mjs` fails if the table and the stylesheet drift, if a
+  face is missing from the service worker's shell, if a preload loses the
+  `crossorigin` that keeps it from double-fetching, or if any page reaches
+  for a font host again; the renderer's own suite fails if a new siglum
+  enters the alphabet that no vendored face declares. Provenance,
+  licenses, measurements, and regeneration:
   [`web/fonts/README.md`](web/fonts/README.md)
 - `web/glossia-msg.js` — the encoding pipeline over the Glossia WASM engine
 - `web/glossia.js`, `web/glossia_bg.wasm` — **build artifacts** (gitignored),
