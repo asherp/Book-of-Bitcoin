@@ -129,6 +129,33 @@ export function tapscriptOf(witnessItems) {
   return hexToBytes(items[items.length - 2]);
 }
 
+// ── A manifest, and what it names ─────────────────────────────────────────
+// A collection manifest is not content the way an image is: it is a table of
+// contents, and what it lists is elsewhere -- one further reveal per member,
+// each named `<txid>i<n>` (a transaction and the index of the inscription
+// within it). So a surface showing a manifest should show what it names
+// rather than the naming, which is what this reads out: the members, in the
+// order the manifest lists them.
+//
+// Only the ids are taken. Everything else a manifest carries -- the
+// collection's name, its supply, the artists, the cities -- is the
+// inscriber's editorial claim about the members, held off-chain in the same
+// breath as the ids and checkable against nothing; the ids alone point at
+// further witnesses the chain does hold. Null for any body that is not a
+// manifest, a plain JSON inscription being its own content.
+export function parseCollection(body) {
+  let doc;
+  try { doc = JSON.parse(new TextDecoder().decode(body)); }
+  catch { return null; }
+  if (!doc || !Array.isArray(doc.data)) return null;
+  const members = [];
+  for (const row of doc.data) {
+    const m = /^([0-9a-f]{64})i(\d+)$/i.exec(String((row && row.id) || '').trim());
+    if (m) members.push({ txid: m[1].toLowerCase(), index: Number(m[2]) });
+  }
+  return members.length ? { members } : null;
+}
+
 // The first inscription a transaction reveals, walking its inputs in order
 // (which is the order ord indexes them: i0 is the first envelope of the
 // first input that carries one). `tx` is an Esplora /tx answer — each vin's

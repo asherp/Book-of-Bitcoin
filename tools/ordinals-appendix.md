@@ -24,8 +24,9 @@ supports:
   against all three reveals below.
 - **`web/bitcoin-appendix.html`** — the part's leaf (the shelf) and each
   inscription's own leaf (`?part=inscriptions&ins=<reveal>`), which
-  renders what the witness carries: an image as the figure, text and JSON
-  in place, any other kind named rather than pretended.
+  renders what the witness carries: an image as the figure, text in
+  place, any other kind named rather than pretended — and, for a
+  manifest, the members it names rather than the naming itself.
 - The editorial rule this file obeys: a story not yet checked against the
   chain stays a note here rather than becoming published commentary.
   Publishing is the assertion.
@@ -181,14 +182,26 @@ editor adding a kind of back matter can follow the same path:
    same mirrors everything there reads, parses the envelope, and prints
    what the witness holds: the declared type, the body's length, the
    input it rides, the block's clock. Then the body — an image as the
-   figure, text and JSON in place (JSON re-spaced for the eye), anything
-   else named rather than pretended.
-4. **The contents row.** `web/bitcoin-contents.html` — a sub-line for the
+   figure, text in place, anything else named rather than pretended.
+4. **A manifest, shown as what it names.** A collection manifest is the
+   one body the leaf does not display: it carries no content, only ids,
+   so the leaf spends the JSON rather than printing it
+   (`parseCollection`) and shows the members instead — each one's txid
+   said in the book's own prose, over the same reversed bytes a section
+   title encodes, with the image that member's own witness carries
+   beneath it. The manifest's editorial matter (the names, the artists,
+   the cities) is read past: it is the inscriber's claim about the
+   members, checkable against nothing, while the ids point at further
+   witnesses the chain does hold. Members draw four at a time as the
+   foot comes into reach — a row here is a whole reveal, ~100 kB with
+   the photograph in its witness, so the reach is short and the plate's
+   height is reserved before it lands.
+5. **The contents row.** `web/bitcoin-contents.html` — a sub-line for the
    new kind and a row builder, placing through the same map the volumes'
    rows read, so a lookup runs once for both registers. The rows open the
    inscription's leaf, not the book: what this register has to show is
    the witness read whole, and the leaf carries the one door onward.
-5. **The shell.** `web/sw.js` — the new module joins the precache list
+6. **The shell.** `web/sw.js` — the new module joins the precache list
    and the cache bumps, as it does whenever the shell list changes.
 
 ## The entries

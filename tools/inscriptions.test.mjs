@@ -11,7 +11,7 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { parseEnvelopes, tapscriptOf, inscriptionInTx } from '../web/btc-inscriptions.js';
+import { parseEnvelopes, tapscriptOf, inscriptionInTx, parseCollection } from '../web/btc-inscriptions.js';
 
 const hex = (bytes) => bytes.map((b) => b.toString(16).padStart(2, '0')).join('');
 const ascii = (s) => [...s].map((c) => c.charCodeAt(0));
@@ -124,6 +124,46 @@ test('the tapscript is the item before the control block, and the annex is set a
   // A key-path spend (one item, the signature) carries no script at all.
   assert.equal(tapscriptOf(['aa'.repeat(64)]), null);
   assert.equal(tapscriptOf([]), null);
+});
+
+const utf8 = (s) => new TextEncoder().encode(s);
+
+test('a manifest reads out the members it names, in its own order', () => {
+  const a = 'a'.repeat(64), b = 'b'.repeat(64);
+  const found = parseCollection(utf8(JSON.stringify({
+    meta: { name: 'Museum Outdoor', supply: '100' },
+    data: [{ id: `${a}i0`, meta: { attributes: { artist: 'MVR' } } }, { id: `${b}i2` }],
+  })));
+  assert.deepEqual(found.members, [{ txid: a, index: 0 }, { txid: b, index: 2 }]);
+});
+
+test("a manifest's editorial matter is not read — only the ids point at witnesses the chain holds", () => {
+  const a = 'a'.repeat(64);
+  const found = parseCollection(utf8(JSON.stringify({
+    meta: { name: 'A collection', description: 'a claim about the members' },
+    data: [{ id: `${a}i0`, meta: { name: 'SAHK (114', attributes: { artist: 'MVR', location: 'Hong Kong' } } }],
+  })));
+  assert.deepEqual(Object.keys(found), ['members']);
+  assert.deepEqual(Object.keys(found.members[0]), ['txid', 'index']);
+});
+
+test('a body that is not a manifest reads as none — plain JSON is its own content', () => {
+  assert.equal(parseCollection(utf8('{"p":"brc-20","op":"deploy","tick":"ordi"}')), null);
+  assert.equal(parseCollection(utf8('not json at all')), null);
+  assert.equal(parseCollection(utf8('{"data":"not a list"}')), null);
+  assert.equal(parseCollection(utf8('{"data":[]}')), null);
+  // A data array naming nothing that looks like an inscription id is not one.
+  assert.equal(parseCollection(utf8('{"data":[{"id":"nope"},{"id":"beef"}]}')), null);
+  assert.equal(parseCollection(Uint8Array.from([0x89, 0x50, 0x4e, 0x47])), null);
+});
+
+test('a manifest keeps only the ids it can read, and drops the rest', () => {
+  const a = 'a'.repeat(64);
+  const found = parseCollection(utf8(JSON.stringify({
+    data: [{ id: `${a}i0` }, { id: 'malformed' }, { note: 'no id at all' }],
+  })));
+  assert.equal(found.members.length, 1);
+  assert.equal(found.members[0].txid, a);
 });
 
 test('inscriptionInTx walks the inputs and answers with the first envelope and its input', () => {
