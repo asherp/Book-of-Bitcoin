@@ -31,8 +31,8 @@ import init, {
   encode_raw_base_n_best_of as wasmEncodeRawBaseNBestOf,
   decode_raw_base_n as wasmDecodeRawBaseN,
   detect_dialect_from_text as wasmDetectDialect,
-  canonical_encode_traced as wasmCanonicalEncodeTraced,
-  canonical_decode as wasmCanonicalDecode,
+  canonical_encode_fixed_traced as wasmCanonicalEncodeTraced,
+  canonical_decode_fixed as wasmCanonicalDecode,
 } from './glossia.js';
 
 export { init };
@@ -353,20 +353,33 @@ export function detectLang(prose) {
 // ─── canonical prose: raw bytes ⇆ readable Glossia prose ──────────────
 // Any hex value — a txid, a merkle root, a hash160, a private key — rendered
 // as natural-language prose whose payload words carry the bytes. This is
-// glossia's CANONICAL encoding (0.3.0+): the payload rides with a version
-// byte, and the cover prose is seeded from a checksum of the bytes, so one
-// payload has exactly one prose form, the wording itself is checkable, and an
-// artifact keeps verifying under future engine versions (decode dispatches on
-// the version byte, not the current rules). Decoding still just filters the
-// prose against the wordlist, so bytes round-trip exactly. Key-bearing
-// callers append their own checksum before encoding (see glossia-nostr.js) so
-// a mistyped word is caught on load.
+// glossia's CANONICAL encoding (0.4.0+, format version 2): the payload is
+// followed by a version byte and a crc32, and the cover prose is seeded from a
+// checksum of the bytes, so one payload has exactly one prose form, the wording
+// itself is checkable, and an artifact keeps verifying under future engine
+// versions (decode dispatches on the version byte, not the current rules).
+// Decoding still just filters the prose against the wordlist, so bytes
+// round-trip exactly.
+//
+// The book uses the FIXED pair — canonical_encode_fixed / canonical_decode_fixed
+// — rather than the self-describing one. The self-describing packing spends a
+// word stating the payload's length, and this book never needs it told: every
+// value it encodes is a field whose width the notation already prints on the
+// page (⌘²²⁴ for a hash's remaining bits, h³² for a 32-byte push, p⁶⁵ for a
+// key). So the count is passed to the decoder instead of carried in the prose,
+// which is one word shorter and — because that word's index was the padding
+// count, a function of length alone — stops every 32-byte hash from opening on
+// the same word. Under 0.3.0 the whole book read "abandon" first.
+//
+// A caller that appends its own checksum to the bytes before encoding still
+// can: the envelope's crc32 covers payload and version, not whatever framing a
+// caller wrapped around them first.
 
 // hex string (any byte length) -> { prose, payloadWords, langId, version }.
 // The language defaults to the reader's saved book language (bookLang above),
 // so every page that omits it follows the one choice; pass a langId to pin.
 // `bestOf` is kept for caller compatibility but no longer does anything: the
-// canonical version's frozen rules pin the fluency budget (v1 is best-of-4),
+// canonical version's frozen rules pin the fluency budget (v2 is best-of-4),
 // which is what makes the rendering reproducible by a verifier.
 // Deterministic for a given (hex, language), so results are memoized (LRU,
 // keyed by language too): a caller can warm an encode ahead of time (the
@@ -398,18 +411,37 @@ export function encodeCanonical(hex, langId = bookLang(), _bestOf = 1) {
 
 // prose paragraph + known byte length -> { hex, payloadWords, langId, and for
 // canonical artifacts verified + version }. Decodes in the given language, or
-// the one auto-detected from the prose. Canonical artifacts (0.3.0+) are tried
+// the one auto-detected from the prose. Canonical artifacts (0.4.0+) are tried
 // first — `verified` reports whether the wording matches the canonical
-// re-render, i.e. the prose really is that payload's one form. Pre-0.3.0
-// artifacts have no version byte, so anything that fails the canonical shape
-// falls through to the legacy fixed-seed decode.
+// re-render, i.e. the prose really is that payload's one form. Anything that
+// fails the canonical shape falls through to the legacy fixed-seed decode,
+// which is what pre-0.3.0 prose needs and, since the envelope moved, what
+// 0.3.0's own version-1 prose gets too.
+//
+// `byteCount` is REQUIRED for the canonical path: the fixed packing does not
+// carry the payload's length, so the decoder has to be told it. Without one
+// there is nothing to try but the legacy decode. Every caller in this book has
+// the count to hand — it is the field width the page is already printing.
+//
+// The fallback is guarded by the engine's error `kind`, because "this is not
+// canonical prose" and "this is canonical prose and it is damaged" both fail
+// the canonical decode and must not be treated alike. A canonical artifact
+// carries five envelope bytes the legacy form does not, so legacy prose has a
+// different payload-word count and is refused on SHAPE (`decode`) — that falls
+// through. A canonical artifact with a word swapped has the right shape and
+// fails its checksum — falling through there would quietly hand back bytes
+// read under a different codec, which is a wrong answer wearing the manner of
+// a right one. So checksum_mismatch throws.
 export function decodeCanonical(prose, byteCount, langId) {
   const text = (prose || '').trim();
   if (!text) throw new Error('empty prose');
   const lang = msgLangById(langId || detectLang(text));
-  const c = JSON.parse(wasmCanonicalDecode(text, lang.language, lang.wordlist));
-  if (!c.error && (!byteCount || c.payload_hex.length === byteCount * 2)) {
-    return { hex: c.payload_hex, payloadWords: [], langId: lang.id, verified: c.verified, version: c.version };
+  if (byteCount) {
+    const c = JSON.parse(wasmCanonicalDecode(text, lang.language, lang.wordlist, byteCount));
+    if (!c.error) {
+      return { hex: c.payload_hex, payloadWords: [], langId: lang.id, verified: c.verified, version: c.version };
+    }
+    if (c.kind === 'checksum_mismatch') throw new Error(c.error);
   }
   const r = JSON.parse(wasmDecodeRawBaseN(text, lang.language, lang.wordlist, byteCount));
   if (r.error) throw new Error(r.error);
