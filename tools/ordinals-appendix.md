@@ -179,10 +179,17 @@ editor adding a kind of back matter can follow the same path:
 3. **The leaves.** `web/bitcoin-appendix.html` — the part's shelf
    (`?part=inscriptions`), and each inscription's own leaf
    (`?part=inscriptions&ins=<reveal>`), which fetches the reveal off the
-   same mirrors everything there reads, parses the envelope, and prints
-   what the witness holds: the declared type, the body's length, the
-   input it rides, the block's clock. Then the body — an image as the
-   figure, text in place, anything else named rather than pretended.
+   same mirrors everything there reads, parses the envelope, and shows
+   the body: an image as the plate, text as text. Nothing else — no card
+   of declarations above it, no gloss beneath. What the envelope says of
+   itself (its type, its length, the input it rides) is the witness's own
+   matter, and the witness is one turn away in the book, set out push by
+   push in the book's own notation; the leaf's subtitle is that door. A
+   leaf that reprinted those declarations would be describing the content
+   instead of showing it. The one line that survives is the status the
+   content replaces — and it stays only where there is nothing a plate
+   can show (a compressed body, an unrenderable kind, a witness that will
+   not answer).
 4. **A manifest, shown as what it names.** A collection manifest is the
    one body the leaf does not display: it carries no content, only ids,
    so the leaf spends the JSON rather than printing it

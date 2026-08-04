@@ -360,7 +360,10 @@ a.bb-ref:hover { color:var(--accent-2); }
 .ins-text { max-height:60vh; overflow:auto; text-align:left; white-space:pre-wrap; overflow-wrap:anywhere;
   font:400 12px/1.6 'IBM Plex Mono',monospace; color:var(--ink-soft); background:var(--card);
   border:1px solid var(--card-bd); border-radius:4px; padding:14px 16px; margin:0; }
-.ins-caption { margin-top:10px; font:400 12.5px/1.6 'Public Sans',sans-serif; color:var(--meta); }
+/* Not a caption: the leaf explains nothing about the content it shows. This
+   is the line that stands where the content would be while the witness is
+   being read, and stays only when there is nothing a plate can show. */
+.ins-status { font:400 12.5px/1.6 'Public Sans',sans-serif; color:var(--meta); }
 
 /* A collection, read as what it names. One member to a block: its txid said
    in the book's own prose -- the poem the chain writes for that witness --
@@ -439,7 +442,6 @@ a.ins-poem:hover { color:var(--ink); text-decoration:none; }
        bytes (btc-inscriptions.js) -- and then the content itself, rendered
        where its declared type can be rendered without believing anything the
        bytes do not say. -->
-  <div class="bip-stats hidden" id="ins-card"></div>
   <figure class="ins-content hidden" id="ins-content"></figure>
 
   <!-- A manifest names further reveals rather than carrying content of its
@@ -884,32 +886,29 @@ if (kind === 'inscriptions' && !ins) {
 // The shelf names; this leaf reads. The reveal transaction is fetched off
 // the same mirrors everything here reads, its input's tapscript is scanned
 // for the envelope (btc-inscriptions.js), and what the leaf then shows is
-// checkable against the witness bytes alone: the declared type, the body's
-// length, and the body itself -- an image standing as the figure, text and
-// JSON reading in place, and any other kind named rather than pretended.
-// Nothing past the bytes is stated as record: the numbering, the sat, the
-// market's collections all live in commentary, credited, behind the sheet.
+// the body and nothing else: an image standing as the plate, text standing
+// as text, a manifest standing as the members it names.
+//
+// No card of declarations above it, no gloss beneath it. What the envelope
+// says of itself -- its type, its length, the input it rides -- is the
+// witness's own matter, and the witness is one turn away in the book, set
+// there push by push in the book's own notation; the subtitle is that door.
+// A leaf that reprinted those declarations would be describing the content
+// instead of showing it. Nothing past the bytes is stated as record either:
+// the numbering, the sat, the market's collections all live in commentary,
+// credited, behind the sheet at the foot.
 if (ins) {
-  const card = $('ins-card');
-  const line = (key) => {
-    const l = document.createElement('div'); l.className = 'proof-line';
-    const k = document.createElement('div'); k.className = 'proof-key'; k.textContent = key;
-    const v = document.createElement('div'); v.className = 'proof-val';
-    l.append(k, v); card.append(l);
-    card.classList.remove('hidden');
-    return v;
-  };
   // The engine that says a hash, wanted only where a poem is (a collection's
   // members) -- so it arrives lazily, and a figure it never reaches stays
   // unsaid rather than empty.
   let engineP = null;
   const glossia = () => (engineP ||= import('./glossia-msg.js').then(async (m) => { await m.init(); return m; }));
   const reverseHex = (hex) => (hex.match(/../g) || []).reverse().join('');
-  // The leaf says what it is doing until the witness answers; the status
-  // gives way to whatever the envelope turns out to hold.
+  // The leaf says what it is doing until the witness answers, and then gets
+  // out of the way: the content takes the status line's place.
   const fig = $('ins-content');
   const status = document.createElement('figcaption');
-  status.className = 'ins-caption';
+  status.className = 'ins-status';
   status.textContent = 'reading the witness…';
   fig.append(status);
   fig.classList.remove('hidden');
@@ -939,44 +938,27 @@ if (ins) {
       return;
     }
 
-    status.remove();
-    const typeV = line('content type');
-    const lenV = line('length');
-    typeV.textContent = found.contentType || '(none declared)';
-    typeV.title = 'the envelope\'s own declaration (tag 1) — a claim about the bytes, made by whoever inscribed them';
-    lenV.textContent = `${found.body.length.toLocaleString('en-US')} bytes`;
-    lenV.title = 'the envelope\'s body — the pushes between the field list and OP_ENDIF, concatenated';
-    if (found.contentEncoding) {
-      const ev = line('encoding');
-      ev.textContent = found.contentEncoding;
-      ev.title = 'the body is compressed (tag 9); this leaf shows lengths, not guesses';
-    }
-    const inV = line('witness');
-    inV.textContent = `input ${found.vin + 1}, footnote ${footnoteMark(ins.wit)}`;
-    inV.title = 'where the envelope rides: the input whose tapscript carries the unexecuted branch';
-    if (tx.status && tx.status.block_time) {
-      const rv = line('revealed');
-      rv.textContent = `${new Date(tx.status.block_time * 1000).toISOString().slice(0, 16).replace('T', ' ')} UTC`;
-      rv.title = 'the containing block\'s header time, the miner\'s own clock when the chapter was sealed';
-    }
-
-    // The content itself, by its declared type -- and only where showing it
-    // asserts nothing beyond the bytes. An image renders inert (a figure
-    // executes nothing); text and JSON read as text, JSON re-spaced for the
-    // eye; a compressed or other-typed body is named and left whole.
-    const caption = document.createElement('figcaption');
-    caption.className = 'ins-caption';
-    caption.textContent = `the envelope's body, read out of input ${found.vin + 1}'s witness — the bytes are the chain's; that they are ${found.contentType ? `“${found.contentType}”` : 'anything at all'} is the inscriber's claim`;
+    // The body, and nothing about it. What the envelope declares, how long it
+    // runs, which input carries it -- all of that is the witness's own, and
+    // the witness is one turn away in the book, printed there push by push
+    // (the subtitle is the door). Here the leaf IS the content: an image
+    // stands as the plate, text stands as text, and the status line gives up
+    // its place to whichever it turns out to be.
     const ct = String(found.contentType || '').toLowerCase();
     if (found.contentEncoding) {
-      caption.textContent = `the body is ${found.contentEncoding}-compressed — ${found.body.length.toLocaleString('en-US')} bytes as the witness carries them, not unpacked here`;
-      fig.append(caption);
-    } else if (ct.startsWith('image/')) {
+      // Compressed: there is no content to show without unpacking it, and
+      // unpacking is a reading. Say the shape of what the witness holds.
+      status.textContent = `${found.body.length.toLocaleString('en-US')} bytes, ${found.contentEncoding}-compressed`;
+      return;
+    }
+    if (ct.startsWith('image/')) {
       const img = document.createElement('img');
       img.src = URL.createObjectURL(new Blob([found.body], { type: found.contentType }));
       img.alt = ins.title;
-      fig.append(img, caption);
-    } else if (ct.startsWith('text/') || ct.includes('json')) {
+      status.replaceWith(img);
+      return;
+    }
+    if (ct.startsWith('text/') || ct.includes('json')) {
       const pre = document.createElement('pre');
       pre.className = 'ins-text';
       let text = new TextDecoder().decode(found.body);
@@ -984,11 +966,12 @@ if (ins) {
         try { text = JSON.stringify(JSON.parse(text), null, 2); } catch { /* not quite JSON: the bytes stand as written */ }
       }
       pre.textContent = text;
-      fig.append(pre, caption);
-    } else {
-      caption.textContent = `${found.body.length.toLocaleString('en-US')} bytes of ${found.contentType || 'an undeclared kind'} — a kind this leaf does not render; the witness holds it all the same`;
-      fig.append(caption);
+      status.replaceWith(pre);
+      return;
     }
+    // A kind no plate can show. Naming it is not an explanation of the leaf;
+    // it is the only thing there is to say.
+    status.textContent = `${found.body.length.toLocaleString('en-US')} bytes of ${found.contentType || 'an undeclared kind'}`;
   })();
 
   // ── A collection, shown as what it names ──
