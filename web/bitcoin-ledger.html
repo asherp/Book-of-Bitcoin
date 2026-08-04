@@ -1217,6 +1217,22 @@ const runRecord = async (alive) => {
   if (!alive()) return;
   let byTxid = null;     // held marks, once the snapshot agrees
   let rowsEl, foot, note, unsyn, rendered, io, group;
+  // The reader's own marks that fall ON this account: a bookmark counts
+  // where the ledger actually has an entry in that chapter, and nowhere
+  // else. A passage kept somewhere else in the same years is not this
+  // ledger's business -- the account would be claiming a reading that has
+  // nothing to do with it. Newest first, the order the rows are drawn in;
+  // the height set is rebuilt only as the reach grows, and growth only
+  // ever APPENDS older marks to the tail, so the count already consumed
+  // stays true across chunks.
+  let markHeights = null, markLen = -1;
+  const marksOn = (line) => {
+    if (markLen !== line.entries.length) {
+      markHeights = new Set(line.entries.map((e) => e.height));
+      markLen = line.entries.length;
+    }
+    return bookmarks.filter((b) => markHeights.has(b.height)).sort((a, z) => z.height - a.height);
+  };
   let busy = false;      // one draw at a time; the re-arm retriggers
   // The unsynced entry: an unreferenced line heading the record for the
   // transactions not yet gathered -- their count standing where the
@@ -1262,14 +1278,8 @@ const runRecord = async (alive) => {
     const len = line.entries.length;
     const take = Math.min(len - rendered, PAGE);
     if (take > 0) {
-      // The reader's bookmarks that fall inside the span the record
-      // covers, newest first -- the order the rows themselves are drawn
-      // in. Recomputed as the reach grows, which only ever APPENDS older
-      // marks to the tail, so the count already consumed stays true.
-      const lo = line.entries[0].height, hi = line.entries[line.entries.length - 1].height;
-      const marks = bookmarks.filter((b) => b.height >= lo && b.height <= hi).sort((a, z) => z.height - a.height);
       renderRows(rowsEl, line.entries.slice(len - rendered - take, len - rendered), byTxid,
-                 { state: group, bookmarks: marks });
+                 { state: group, bookmarks: marksOn(line) });
       rendered += take;
     }
     note.textContent = stateText(line);   // the reach grows as the reader reads
