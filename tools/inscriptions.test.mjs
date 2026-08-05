@@ -320,25 +320,53 @@ test('a compressed body is not sniffed — unpacking it would be a reading', () 
   assert.equal(a.encoding, 'br');
 });
 
-test('a manifest is named by the name it gives itself, not by its format', () => {
-  const a = 'a'.repeat(64);
-  const manifest = JSON.stringify({ meta: { name: 'Museum Outdoor' }, data: [{ id: `${a}i0` }] });
+const jsonWitness = (obj) => {
+  const body = typeof obj === 'string' ? obj : JSON.stringify(obj);
   const script = scriptWith(envelope({
     fields: [[1, ascii('application/json')]],
-    body: [[...new TextEncoder().encode(manifest)]],
+    body: [[...new TextEncoder().encode(body)]],
   }));
-  const asset = witnessAsset(['aa'.repeat(64), script, 'c0' + '11'.repeat(32)]);
+  return ['aa'.repeat(64), script, 'c0' + '11'.repeat(32)];
+};
+
+test('JSON is called by the name it carries, wherever it carries it', () => {
+  const a = 'a'.repeat(64);
+  const asset = witnessAsset(jsonWitness({ meta: { name: 'Museum Outdoor' }, data: [{ id: `${a}i0` }] }));
   assert.equal(asset.label, 'Museum Outdoor');
-  assert.equal(asset.source, 'manifest');   // the collection's word, not the bytes'
+  assert.equal(asset.source, 'name');   // the content's own word, not the bytes'
   assert.equal(asset.mime, 'application/json');
+  // At the top, or buried — a name is a name.
+  assert.equal(witnessAsset(jsonWitness({ name: 'At the top' })).label, 'At the top');
+  assert.equal(witnessAsset(jsonWitness({ a: { b: { c: { name: 'Buried' } } } })).label, 'Buried');
+  assert.equal(witnessAsset(jsonWitness({ list: [{ name: 'In a list' }] })).label, 'In a list');
 });
 
-test('JSON that names nothing stays JSON', () => {
-  for (const body of ['{"p":"brc-20","op":"deploy"}', '{"data":[{"id":"nope"}]}', '{"meta":{"name":"  "},"data":[]}']) {
-    const script = scriptWith(envelope({
-      fields: [[1, ascii('application/json')]],
-      body: [[...new TextEncoder().encode(body)]],
-    }));
-    assert.equal(witnessAsset(['aa'.repeat(64), script, 'c0' + '11'.repeat(32)]).label, 'JSON', body);
+test("a document's own name beats one belonging to something it lists", () => {
+  // The manifest names itself AND every photograph in it; the shallower name
+  // is the document's, and breadth-first is what guarantees it wins.
+  const asset = witnessAsset(jsonWitness({
+    data: [{ meta: { name: 'the first photograph' } }],
+    meta: { name: 'the collection' },
+  }));
+  assert.equal(asset.label, 'the collection');
+});
+
+test('JSON that names nothing goes unnamed rather than being called JSON', () => {
+  for (const body of ['{"p":"brc-20","op":"deploy"}', '{"data":[{"id":"nope"}]}', '{"meta":{"name":"  "}}', '[1,2,3]']) {
+    const asset = witnessAsset(jsonWitness(body));
+    assert.equal(asset.label, null, body);        // nothing to call it…
+    assert.equal(asset.mime, 'application/json'); // …but still an asset, and still openable
   }
+  // A name field holding a paragraph is not a name.
+  assert.equal(witnessAsset(jsonWitness({ name: 'x'.repeat(201) })).label, null);
+  // A non-string name is not one either.
+  assert.equal(witnessAsset(jsonWitness({ name: 42 })).label, null);
+});
+
+test('only JSON is named this way — every other format is named by its bytes', () => {
+  const png = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
+  const script = scriptWith(envelope({ fields: [[1, ascii('image/png')]], body: [png] }));
+  const asset = witnessAsset(['aa'.repeat(64), script, 'c0' + '11'.repeat(32)]);
+  assert.equal(asset.label, 'PNG image');
+  assert.equal(asset.source, 'bytes');
 });

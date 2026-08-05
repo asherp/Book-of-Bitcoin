@@ -195,35 +195,65 @@ export function sniffAsset(bytes) {
   return { label: 'plain text', mime: 'text/plain' };
 }
 
+// `label` may be null: a JSON body that names itself is called by that name,
+// and one that does not is left unnamed rather than called "JSON". Callers
+// must treat a null label as "nothing to call this", not as "no asset here" --
+// the asset is still there, and still worth opening.
+//
 // The asset one input's witness carries, read as far as the bytes allow. An
 // ord envelope names its own body, so that body is the asset and the
 // envelope's declaration rides along beside it — `source` says which of the
 // two the label came from, since one is the chain's reading and the other is
 // somebody's word for it. A witness with no envelope is still read: a bare
 // data item that announces a format is an asset too, whatever put it there.
+// A name a JSON body gives itself: the first `name` it carries, searched
+// breadth-first so a document's own name beats one belonging to something it
+// merely lists — a collection manifest is called by its collection's name,
+// not by the name of the first photograph in it.
+//
+// Null when the body names nothing, which is a real answer: "JSON" is what a
+// thing is made of, not what it is, and a book that cannot say what something
+// is should say nothing rather than describe the container.
+export function nameInJson(body) {
+  let doc;
+  try { doc = JSON.parse(new TextDecoder().decode(body)); }
+  catch { return null; }
+  const queue = [doc];
+  while (queue.length) {
+    const node = queue.shift();
+    if (!node || typeof node !== 'object') continue;
+    if (!Array.isArray(node) && typeof node.name === 'string') {
+      const n = node.name.trim();
+      // A name is a name; a paragraph in the name field is somebody else's
+      // problem and no title for a leaf.
+      if (n && n.length <= 200) return n;
+    }
+    for (const v of (Array.isArray(node) ? node : Object.values(node))) {
+      if (v && typeof v === 'object') queue.push(v);
+    }
+  }
+  return null;
+}
+
 export function assetOfEnvelope(env) {
   const declared = env.contentType || null;
   // A compressed body announces nothing until it is unpacked, and unpacking
   // is a reading; the declaration is all there is to go on.
   const sniffed = env.contentEncoding ? null : sniffAsset(env.body);
-  // A manifest names itself, and its own name beats "JSON" for a body whose
-  // whole business is to be a collection. That name is the collection's word
-  // for itself rather than anything the bytes announce, so it is carried as
-  // a third kind of source and reported as one.
-  let named = null;
-  if (sniffed && sniffed.mime === 'application/json') {
-    const collection = parseCollection(env.body);
-    const n = collection && (collection.meta.name || '').trim();
-    if (n) named = n;
-  }
   if (!sniffed && !declared) return null;
+  // JSON is the one format that can say what it is. So a JSON body is called
+  // by the name it carries, and if it carries none it goes unnamed -- the
+  // label is null and the surfaces leave the thing untitled. Every other
+  // format is named by what its bytes announce, which is all they can say.
+  const isJson = sniffed && sniffed.mime === 'application/json';
+  const named = isJson ? nameInJson(env.body) : null;
   return {
-    label: named || (sniffed ? sniffed.label : declared),
+    label: isJson ? named : (sniffed ? sniffed.label : declared),
     mime: sniffed ? sniffed.mime : declared,
     bytes: env.body.length,
     declared,
     encoding: env.contentEncoding || null,
-    source: named ? 'manifest' : sniffed ? 'bytes' : 'declaration',
+    source: named ? 'name' : sniffed ? 'bytes' : 'declaration',
   };
 }
 
