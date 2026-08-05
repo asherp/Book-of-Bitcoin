@@ -15,7 +15,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { tallyMines, shareError, shareSay, UNATTRIBUTED, MINE_WINDOW } from '../web/btc-mines.js';
+import {
+  tallyMines, shareError, shareSay, largestMines,
+  UNATTRIBUTED, MINE_WINDOW, CONTENTS_FLOOR,
+} from '../web/btc-mines.js';
 
 // A window built to order: `spec` is slug -> how many blocks it won, laid
 // down newest-first from `tip` so the heights are real and contiguous.
@@ -90,6 +93,41 @@ test('a share is never printed without the uncertainty beside it', () => {
   const said = shareSay(mines.find((m) => m.slug === 'big'));
   assert.match(said, /^\d+\.\d% ± \d+\.\d$/);
   assert.ok(said.startsWith('30.0%'), said);
+});
+
+test('the contents names the largest mines and counts the rest, never hiding them', () => {
+  // 2,016 chapters: three mines well clear of the floor, three under it.
+  const read = tallyMines(windowOf({
+    big: 700, mid: 600, small: 656, tiny: 10, tinier: 10, [UNATTRIBUTED]: 40,
+  }));
+  const { mines, rest } = largestMines(read);
+  const named = mines.map((m) => m.slug);
+  assert.ok(named.includes('big') && named.includes('mid') && named.includes('small'));
+  assert.ok(!named.includes('tiny') && !named.includes('tinier'), 'a mine under the floor is left to the shelf');
+  assert.equal(rest, 2, 'and the ones left out are counted, so the cap is never silent');
+});
+
+test('the unattributed row survives the floor whatever its size', () => {
+  // Below one per cent, but it is the remainder rather than a mine competing
+  // for rank -- dropping it would quietly overstate everyone above it.
+  const read = tallyMines(windowOf({ big: 2000, [UNATTRIBUTED]: 16 }));
+  const { mines, rest } = largestMines(read);
+  assert.ok(16 / 2016 < CONTENTS_FLOOR);
+  assert.deepEqual(mines.map((m) => m.slug), ['big', UNATTRIBUTED]);
+  assert.equal(rest, 0);
+});
+
+test('the floor is a share, so it holds over a ranking counted on a different span', () => {
+  // The cold path counts about 1,060 blocks, not 2,016; the cut has to be a
+  // proportion or it would keep a different set of mines on each path.
+  const read = { counted: 1060, mines: [
+    { slug: 'a', name: 'A', named: true, won: 270 },
+    { slug: 'b', name: 'B', named: true, won: 11 },   // 1.04% — kept
+    { slug: 'c', name: 'C', named: true, won: 9 },    // 0.85% — left to the shelf
+  ] };
+  const { mines, rest } = largestMines(read);
+  assert.deepEqual(mines.map((m) => m.slug), ['a', 'b']);
+  assert.equal(rest, 1);
 });
 
 test('an empty window claims nothing rather than dividing by zero', () => {

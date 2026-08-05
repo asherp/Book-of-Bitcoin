@@ -30,9 +30,28 @@ const STORES = {
   mined: 4000,        // height -> who mempool says mined it, and the coinbase signature it read that from (six deep or more; btc-mines.js)
 };
 
+// How long the archive gets to open before the reader stops waiting on it.
+// Every caller treats a null database as "fetch it", so the cost of giving up
+// is one network trip; the cost of NOT giving up is a page that hangs, which
+// is worse than a page with no archive.
+const OPEN_PATIENCE = 3000;
+
 let dbPromise = null;
 function db() {
   if (!dbPromise) dbPromise = new Promise((resolve) => {
+    // Settle exactly once, however the attempt ends -- and always settle.
+    let done = false;
+    const settle = (v) => { if (!done) { done = true; resolve(v); } };
+    // A version change cannot complete while another tab still holds the old
+    // one open, and IndexedDB signals that with `blocked` and then simply
+    // waits. Without this the promise never resolves and EVERY archive call
+    // on the page awaits it forever -- not a slow archive but a stuck one,
+    // and every read that would have been served from disk hangs instead of
+    // falling back to the network. So a blocked upgrade degrades to no
+    // archive, and the timeout catches the case where not even `blocked`
+    // fires.
+    const timer = setTimeout(() => settle(null), OPEN_PATIENCE);
+    const finish = (v) => { clearTimeout(timer); settle(v); };
     try {
       const req = indexedDB.open(DB_NAME, 3);   // v2 added 'pages'; v3 'mined'
       req.onupgradeneeded = () => {
@@ -44,9 +63,16 @@ function db() {
           }
         }
       };
-      req.onsuccess = () => resolve(req.result);
-      req.onerror = () => resolve(null);
-    } catch { resolve(null); }
+      req.onsuccess = () => {
+        // An older tab may force this connection closed later to let ITS
+        // upgrade through; drop the memo so the next call reopens rather
+        // than handing out a dead handle.
+        req.result.onversionchange = () => { try { req.result.close(); } catch (_) {} dbPromise = null; };
+        finish(req.result);
+      };
+      req.onerror = () => finish(null);
+      req.onblocked = () => finish(null);
+    } catch { finish(null); }
   });
   return dbPromise;
 }
