@@ -103,14 +103,32 @@ What the chain holds, layer by layer, from rule to reading:
    subject — a table of contents written into a witness — and the worked
    example below is one.
 
-   This is why the book names a manifest by its `meta.name` but files
-   that name as the collection's own word for itself rather than as a
-   reading of the bytes: `witnessAsset` returns `source: 'manifest'`
-   there, distinct from the `'bytes'` a magic number earns.
+   This is why the book names a JSON body by the name it carries but
+   files that name as the content's own word for itself rather than as a
+   reading of the bytes: `witnessAsset` returns `source: 'name'` there,
+   distinct from the `'bytes'` a magic number earns.
+
+   **Is the rest of a collection identifiable without its manifest?** For
+   Museum Outdoor, no — and that is not a gap in the book's reading, it
+   is the shape of the thing. Read any one of its members and you have a
+   JPEG in a witness: nothing in the envelope, the transaction or the
+   output says which collection it belongs to, or that it belongs to one
+   at all. The only thread is the manifest, and it runs one way — the
+   manifest names the members; no member names the manifest. Lose the
+   manifest and you lose the collection.
+
+   That is a property of the marketplace convention, not of ordinals.
+   A collection built on ord's **provenance** (tag 3) is identifiable from
+   any member: the child carries its parent's inscription id, the parent
+   had to be spent in the same transaction for ord to honour it, and the
+   membership is therefore on-chain and checkable in either direction.
+   Reading provenance is a natural next step for this part, and unlike a
+   manifest it would let the book say "this belongs to that" as record
+   rather than as somebody's claim.
 
 ## Already in the book
 
-The subject is not arriving cold; it is arriving with three entries and a
+The subject is not arriving cold; it is arriving with entries and a
 consensus group already on the shelf:
 
 - **First Ordinals inscription** — IV β69 ■343 §2323.a (`web/notables.yaml`,
@@ -124,14 +142,21 @@ consensus group already on the shelf:
   freedoms the envelope rides.
 
 Appendix IV gathers these threads under one heading rather than re-stating
-them: the first two are its first two entries, and the other two stay where
-they are — a block's weight belongs to that block's row, and a fork belongs
-to Appendix II.
+them: the first two are its entries, and the other two stay where they are —
+a block's weight belongs to that block's row, and a fork belongs to
+Appendix II.
 
 ## The worked example: a collection manifest
 
-The entry this file was opened for — a collection index written whole into
-one witness. All chain facts [verified] 2026-08-04, and every one of them
+**Not a shipped entry.** Museum Outdoor is the collection this part was
+built against, and it earned its keep as an example: it exercised the
+manifest reader, the collection title page, the run of works, and the
+naming rule, and every one of those still stands. But the book has no
+business curating somebody's photo collection, so the row was removed
+(see "What a reader keeps", below). What follows is the example as it was
+read, kept because the findings are what the machinery was shaped by.
+
+A collection index written whole into one witness. All chain facts [verified] 2026-08-04, and every one of them
 re-read at page load by the leaf itself, off the reveal's own bytes; the
 content readings that go past those bytes are [convention], via ord-aware
 indexers (ordinals.com, ordiscan.com), quoted as their claims.
@@ -284,19 +309,42 @@ bare chapter would open the book somewhere the envelope is not):
   `6fb976ab…2799`: 793 bytes of `image/png` in block 767430.
 - **First BRC-20 inscription** — IV β75 ■649 §408.a, reveal
   `b61b0172…5735`: 94 bytes of `text/plain` in block 779832.
-- **A collection's manifest** — IV β91 ■1189 §1245.a, reveal
-  `40e261fc…9414`, commentary `a-collections-manifest.md`: the 41,353
-  bytes above.
-
-All three were parsed end to end for this file: the reader finds the
-envelope in each, and the declared types and body lengths match what the
-indexers report.
+Both were parsed end to end for this file: the reader finds the envelope
+in each, and the declared types and body lengths match what the indexers
+report. (A third, the Museum Outdoor manifest, was carried here for a
+while and then removed — see the worked example above.)
 
 The part deliberately lists no inscription's number, sat, or current
 location: those are ord's readings, and a row that stated them would
 claim more than the witness it cites. Where the editor wants them, they
 belong in commentary, credited — the way the Ledger sets apart every
 claim about a name.
+
+## What a reader keeps
+
+The Museum Outdoor row is gone, and nothing replaced it. The part curates
+the inscriptions the book has something to say about; a hundred street-art
+photographs are not that, and the machinery the collection exercised does
+not need a shipped example to stay reachable.
+
+What replaces curation is the reader's own keeping, and it already works
+end to end [verified in the browser, 2026-08-05]:
+
+1. A witness that carries an asset is named in the reader — by the name a
+   JSON body gives itself, or by what its bytes announce — and that name
+   line is a door to the inscription's leaf.
+2. The footnote's ribbon keeps the witness, asking for a title as it does
+   for every other kept place. The reader's name overrides whatever the
+   bytes were called, and persists.
+3. The name, theirs or the book's, opens `?ins=<reveal>` — which takes any
+   reveal, curated or not, and reads it off the chain. A manifest kept
+   that way opens as the collection it names, works and all.
+
+So a reader can keep Museum Outdoor themselves, under whatever name they
+give it, and the book neither ships it nor stands in the way. The one
+thing the leaf does NOT yet do is wear the reader's name for it — it
+titles itself from the content, and the bookmark's name lives in the
+reader. That is a small change if it is wanted.
 
 ## Sources
 
