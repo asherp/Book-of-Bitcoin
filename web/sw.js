@@ -8,6 +8,13 @@
  *     copy answers instantly (offline-capable) while a background fetch refreshes
  *     the cache for next time. This lets rebuilt JS/WASM propagate on the next
  *     visit without any manual cache-busting.
+ *   - A deploy is noticed two ways: a shellish revalidation returning a new
+ *     validator (below), and the check-shell message the chrome sends on
+ *     arrival and on returning to the foreground -- which compares the
+ *     network's version.json stamp against the cached one, since a page the
+ *     reader never leaves may otherwise revalidate nothing. Either way the
+ *     WHOLE shell refreshes before any page hears update-available, so an
+ *     update taken anywhere is taken everywhere.
  *   - Navigations fall back to the cached page, then to bitcoin-book.html, when
  *     offline.
  *   - Cross-origin requests (block explorers, fonts) are left untouched — the SW
@@ -39,6 +46,8 @@ const SHELL = [
   './bitcoin-search.html',
   './btc-tx.js',
   './btc-prose.js',
+  './btc-price.js',
+  './btc-amounts.js',
   './btc-sigla.js',
   './btc-notation.js',
   './btc-templates.js',
@@ -220,6 +229,36 @@ function refreshShell(cache) {
   }
   return shellRefresh;
 }
+
+// The deploy check, on demand: btc-chrome.js asks on arrival and on every
+// return to the foreground. Read the network's release stamp past every
+// cache and, where it differs from the cached shell's, run the same
+// whole-shell sweep and announcement a shellish revalidation would have.
+// Without this, detection waits for a shell file to happen to revalidate --
+// and on the book's single-navigation pages (a whole reading is one
+// navigation; chapters turn by pushState) that can be never: a deploy
+// stayed invisible until the reader wandered to another page, and a plain
+// reload showed the old build with no word that a newer one existed.
+// (Fetches made by the worker itself do not pass through its own fetch
+// handler, so cache:'reload' here really asks the network.)
+self.addEventListener('message', (event) => {
+  if (!event.data || event.data.type !== 'check-shell') return;
+  event.waitUntil((async () => {
+    let live = null;
+    try {
+      const res = await fetch(new Request(VERSION_URL, { cache: 'reload' }));
+      if (res && res.ok) live = (await res.json()).version || null;
+    } catch (_) { /* offline: nothing to learn */ }
+    if (!live) return;   // no stamp deployed (or unreachable): nothing to compare
+    const cache = await caches.open(CACHE);
+    const current = await cachedVersion(cache);
+    if (live === current) return;
+    await refreshShell(cache);
+    const latest = await cachedVersion(cache);
+    const pages = await self.clients.matchAll({ type: 'window' });
+    for (const page of pages) page.postMessage({ type: 'update-available', current, latest });
+  })());
+});
 
 self.addEventListener('fetch', (event) => {
   const req = event.request;

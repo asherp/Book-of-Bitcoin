@@ -89,11 +89,32 @@
   });
 
   if ('serviceWorker' in navigator) {
+    // The deploy check: ask the worker to compare the network's release
+    // stamp against the cached shell's (sw.js, check-shell). Detection no
+    // longer waits for a shell file to happen to revalidate -- on the
+    // book's single-navigation pages that could be never -- so a deploy
+    // announces itself within moments of arriving or returning to the
+    // page. Throttled: one check per minute is plenty for a poll whose
+    // answer changes at deploy speed.
+    var lastDeployCheck = 0;
+    const checkForDeploy = () => {
+      const ctl = navigator.serviceWorker.controller;
+      if (!ctl || Date.now() - lastDeployCheck < 60000) return;
+      lastDeployCheck = Date.now();
+      ctl.postMessage({ type: 'check-shell' });
+    };
+
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('./sw.js').then((reg) => {
         document.addEventListener('visibilitychange', () => {
-          if (document.visibilityState === 'visible') reg.update().catch(() => {});
+          if (document.visibilityState === 'visible') {
+            reg.update().catch(() => {});
+            checkForDeploy();
+          }
         });
+        // First check shortly after load: past the install rush, soon
+        // enough that a reload lands on a page that already knows.
+        setTimeout(checkForDeploy, 3000);
       }).catch((e) => console.warn('SW registration failed:', e));
     });
 
