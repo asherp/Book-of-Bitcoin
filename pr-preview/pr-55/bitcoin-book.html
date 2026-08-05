@@ -2207,6 +2207,63 @@ async function fillFolio(el, gen) {
   el.title = `page ${formatPage(page)} — transaction ${formatPage(page)} of the chain: pages count every transaction since genesis, in block order`;
 }
 
+// The name a printed leaf is filed under, and the one piece of this that
+// touches a filesystem.
+//
+// The address leads, in the spelling a link carries (v1b29c596s2), and the
+// passage's name follows it where it has one -- the reader's own if they have
+// kept and named this section, else the contents' curated title. A projected
+// section's line is a fee rate rather than a name and a ghost's says how it
+// lost its seat, so neither is filed as one (see `dataset.name`).
+//
+// A bookmark title is free text somebody typed, so it is treated as such: the
+// characters that are path separators or are illegal on Windows come out, and
+// so do control characters and newlines; runs of space collapse; the trailing
+// dots and spaces Windows silently strips go before it can. The result is
+// capped, because a filesystem's limit is in BYTES and a title in a
+// non-Latin script spends several per character -- a cap on characters alone
+// would still overrun it. Whatever survives is a courtesy: the address in
+// front of it already says exactly which passage this is.
+// The passage's name, if it has one: the reader's own where they have kept and
+// named this section, else the contents' curated title, else nothing.
+//
+// One element answers both, because the page already keeps it that way --
+// syncBookmarkTitles writes the bookmark's title over the curated fallback and
+// puts the fallback back when the keep is removed, so what is ON SCREEN is
+// always the name in force. Text that differs from the fallback is therefore
+// the reader's; text equal to it is a name only if the fallback was one.
+function printableName() {
+  const ev = document.querySelector('#section-title .section-event');
+  if (!ev) return '';
+  const shown = (ev.textContent || '').trim();
+  const fallback = (ev.dataset.fallback || '').trim();
+  if (!shown) return '';
+  if (shown !== fallback) return shown;          // the reader's own title, always a name
+  return ev.dataset.name === '1' ? shown : '';   // ...else only a curated one
+}
+
+const FILE_NAME_MAX_BYTES = 120;
+function fileNameFor(ref, name) {
+  const cleaned = String(name || '')
+    .replace(/[\/\\:*?"<>|]/g, ' ')       // path separators and the Windows-illegal set
+    .replace(/[\u0000-\u001f\u007f]/g, ' ')  // control characters, newlines included
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/[. ]+$/, '');                 // Windows strips these; do it deliberately
+  if (!cleaned) return ref;
+  // Cut to the byte budget, then back to a word boundary so the name does not
+  // end mid-word (nor mid-character: TextEncoder counts what the disk counts).
+  const enc = new TextEncoder();
+  let out = cleaned;
+  if (enc.encode(out).length > FILE_NAME_MAX_BYTES) {
+    while (out.length && enc.encode(out).length > FILE_NAME_MAX_BYTES) out = out.slice(0, -1);
+    const sp = out.lastIndexOf(' ');
+    if (sp > 12) out = out.slice(0, sp);
+    out = out.replace(/[. ]+$/, '') + '…';
+  }
+  return `${ref} — ${out}`;
+}
+
 // ── The passage, exported ─────────────────────────────────────────────────
 //
 // The Export control at the left end of the running head writes the passage
@@ -2299,7 +2356,7 @@ async function exportPassage() {
     // to ?ref=, and the passage comes back. The curated name is not lost by
     // leaving it off: the colophon inside the leaf carries it, which is the
     // book's own division anyway -- an address addresses, a name is a reading.
-    document.title = fileRef;
+    document.title = fileNameFor(fileRef, printableName());
     // print() is synchronous while the dialogue is open in every engine that
     // shows one, so the restore below lands after the reader dismisses it.
     window.print();
@@ -4078,6 +4135,13 @@ function renderChapter(para) {
     secEv.className = 'section-event';
     secEv.dataset.bmSubtitle = para.txid;
     secEv.dataset.fallback = sectionEvent || '';
+    // Whether that fallback is a NAME. Only a curated entry gives this line a
+    // name; a projected section's is its price of admission (a fee rate) and
+    // a ghost's says how it lost its seat. A bookmark title always overrides
+    // with a name, so the flag speaks only for the fallback beneath it.
+    // Read by exportPassage, which names a printed leaf and should not file
+    // one under a fee rate.
+    secEv.dataset.name = sectionPlace ? '1' : '';
     sectionTitle.append(secEv);
   }
   // The rungs between a seat and its superseded drafts: from a ghost, up to
