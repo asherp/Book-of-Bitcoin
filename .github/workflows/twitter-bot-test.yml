@@ -27,6 +27,10 @@ on:
       - 'tools/citation-windows.test.mjs'
       - 'tools/templates.test.mjs'
       - 'tools/key-filter.test.mjs'
+      - 'web/btc-contribute.js'
+      - 'tools/contribute.test.mjs'
+      - 'web/sw.js'
+      - 'tools/sw-cache.test.mjs'
       - '.github/workflows/twitter-bot-test.yml'
   pull_request:
     paths:
@@ -42,6 +46,10 @@ on:
       - 'tools/citation-windows.test.mjs'
       - 'tools/templates.test.mjs'
       - 'tools/key-filter.test.mjs'
+      - 'web/btc-contribute.js'
+      - 'tools/contribute.test.mjs'
+      - 'web/sw.js'
+      - 'tools/sw-cache.test.mjs'
   workflow_dispatch:
 
 permissions:
@@ -59,7 +67,7 @@ jobs:
         with:
           node-version: 22
       - name: Run the suite (bare checkout)
-        run: node --test tools/twitter-bot/test.mjs tools/passage-page.test.mjs tools/coinbase-notation.test.mjs tools/citation-windows.test.mjs tools/templates.test.mjs tools/key-filter.test.mjs tools/inscriptions.test.mjs
+        run: node --test tools/twitter-bot/test.mjs tools/passage-page.test.mjs tools/coinbase-notation.test.mjs tools/citation-windows.test.mjs tools/templates.test.mjs tools/key-filter.test.mjs tools/contribute.test.mjs tools/sw-cache.test.mjs tools/inscriptions.test.mjs
 
   # The same suite with everything present, plus the full-pass rehearsal.
   rehearsal:
@@ -111,7 +119,7 @@ jobs:
       # the coinbase suite's composition checks (which need btc-prose.js to
       # import, engine and all) come off the bench.
       - name: Run the suite (engine + renderer)
-        run: node --test tools/twitter-bot/test.mjs tools/passage-page.test.mjs tools/coinbase-notation.test.mjs tools/citation-windows.test.mjs tools/templates.test.mjs tools/key-filter.test.mjs tools/inscriptions.test.mjs
+        run: node --test tools/twitter-bot/test.mjs tools/passage-page.test.mjs tools/coinbase-notation.test.mjs tools/citation-windows.test.mjs tools/templates.test.mjs tools/key-filter.test.mjs tools/contribute.test.mjs tools/sw-cache.test.mjs tools/inscriptions.test.mjs
 
       - name: Rehearse a full pass
         run: node tools/twitter-bot/rehearse.mjs

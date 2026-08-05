@@ -22,8 +22,29 @@
 // crisply in X's timeline.
 
 import { existsSync } from 'node:fs';
+import { readFile } from 'node:fs/promises';
 
-import { passageHtml, PAGE_WIDTH, PAGE_HEIGHT, FONT_MIN, FONT_MAX } from './quote.mjs';
+import { passageHtml, fontFacesCss, FONT_FACES, PAGE_WIDTH, PAGE_HEIGHT, FONT_MIN, FONT_MAX } from './quote.mjs';
+
+// The vendored fonts (web/fonts/), inlined as data: URIs — a setContent
+// page is origin-less, so a relative or file:// URL has nothing sound to
+// resolve against, and inlining keeps the render byte-identical wherever
+// it runs. Best-effort like everything else here: a checkout without the
+// font files renders from system fonts, exactly as before they were
+// vendored.
+const FONTS_DIR = new URL('../../web/fonts/', import.meta.url);
+async function inlineFontsCss() {
+  try {
+    const uris = new Map();
+    for (const { file } of FONT_FACES) {
+      const buf = await readFile(new URL(file, FONTS_DIR));
+      uris.set(file, `data:font/woff2;base64,${buf.toString('base64')}`);
+    }
+    return fontFacesCss((file) => uris.get(file));
+  } catch {
+    return '';
+  }
+}
 
 // Chromium binaries that stand in when Playwright's own download isn't
 // present (a pinned system browser, a CI image): the CHROMIUM_PATH
@@ -69,6 +90,8 @@ export async function loadRenderer() {
   try { browser = await launch(pw); }
   catch { return null; }
 
+  const fontsCss = await inlineFontsCss();
+
   return {
     // `passage` is composeReply's passage object; `site` the book's origin.
     // Returns { png, fontSize, fitted }: the image sized exactly
@@ -80,8 +103,11 @@ export async function loadRenderer() {
       const page = await browser.newPage({ viewport: { width, height }, deviceScaleFactor: 2 });
       try {
         const setAt = async (size, clipped = false) => {
-          await page.setContent(passageHtml({ ...passage, site, fontSize: size, width, height, clipped }),
+          await page.setContent(passageHtml({ ...passage, site, fontSize: size, width, height, clipped, fontsCss }),
             { waitUntil: 'load' });
+          // The fit search measures text; measure only once the vendored
+          // faces are actually in use, or the answer is the fallback's.
+          await page.evaluate('document.fonts.ready.then(() => true)');
         };
 
         let size = fontSize;
