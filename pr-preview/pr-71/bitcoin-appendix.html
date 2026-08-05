@@ -251,6 +251,13 @@ a.bb-ref:hover { color:var(--accent-2); }
 /* The accumulation: the count and the rate as they stood at each block, so
    the activation replays down the page. */
 .bb-sum { flex:none; min-width:44px; text-align:right; font:500 11px/1.6 'IBM Plex Mono','Book Sigla',monospace; color:var(--ink-soft); font-variant-numeric:tabular-nums; }
+/* What a chapter paid its miner, on the right of the row it belongs to. The
+   full eight places, tabular, so a column of them aligns on the point the way
+   the ledger's own amounts do -- and 'Book Sigla' behind the mono face
+   because ₿ is one of the marks the vendored alphabet carries. */
+.bb-fees { flex:1; min-width:0; text-align:right; font:400 11.5px/1.6 'IBM Plex Mono','Book Sigla',monospace;
+  color:var(--dim); font-variant-numeric:tabular-nums; white-space:nowrap; }
+.bb-fees.unsaid { color:var(--meta); }
 .bb-pct { flex:none; min-width:40px; text-align:right; font:600 11px/1.6 'IBM Plex Mono','Book Sigla',monospace; color:var(--accent); font-variant-numeric:tabular-nums; }
 /* Portrait: the row folds to two lines -- the clock, the chapter and the
    count keep the first; the version or coinbase text takes a full-width
@@ -531,6 +538,9 @@ import {
 import { toRoman, volumeBookChapter, heightOf, expectedReference, footnoteMark } from './btc-citation.js';
 import { formatBlockVersion, composeBlockHeaderFields } from './btc-prose.js';
 import { toSuperscript } from './btc-sigla.js';
+// Amounts read in whatever notation the reader has chosen -- ₿, satoshis, or
+// their own unit -- through the one call every printed amount goes through.
+import { formatAmount, formatBtc } from './btc-amounts.js';
 
 // ── One appendix, given a leaf of its own ─────────────────────────────────
 // The contents lists what each appendix holds; this is where an appendix
@@ -1330,7 +1340,22 @@ if (kind === 'mining' && AT !== null && AT !== 'mempool') {
       a.title = `block ${b.height.toLocaleString('en-US')} — mined `
         + `${new Date(b.t * 1000).toISOString().slice(0, 19).replace('T', ' ')} UTC`
         + `${signatureOf(b.sig) ? `, signed ${signatureOf(b.sig)}` : ''}. Read this chapter in the book.`;
-      row.append(a);
+      // What the chapter paid its miner. The fees and not the reward: the
+      // subsidy is the same for whoever wins, so it says nothing about the
+      // mine, where the fees are what that chapter's own queue was worth.
+      // Set in the reader's chosen notation, through the one call every
+      // amount in the book goes through.
+      const fee = document.createElement('span');
+      fee.className = 'bb-fees';
+      if (b.f == null) {
+        fee.textContent = '—';
+        fee.classList.add('unsaid');
+        fee.title = 'the source did not state this chapter\'s fees — which is not the same as none';
+      } else {
+        fee.textContent = formatAmount(b.f);
+        fee.title = `${formatBtc(b.f)} in fees — what this chapter paid its miner, over and above the subsidy every winner gets`;
+      }
+      row.append(a, fee);
       blocksEl.append(row);
     }
     blocksEl.classList.remove('hidden');
