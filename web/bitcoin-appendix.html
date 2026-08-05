@@ -1250,11 +1250,15 @@ if (kind === 'mining' && AT !== null && AT !== 'mempool') {
     const drawShelf = (read, { complete }) => {
       const { mines, counted } = tallyMines(read);
       if (!counted) return 0;
+      // A partial shelf says so, and says how far it has got -- naming the
+      // span would claim a window it has not finished reading, so while it
+      // reads it counts instead. The shares are live: they move as chapters
+      // land, and settle when the last page does.
       say(complete
         ? `${mines.length} mines over ${spanOf(read, counted)}`
-        : `${mines.length} mines over ${spanOf(read, counted)} — still reading`,
+        : `${mines.length} mines · ${counted.toLocaleString('en-US')} of ${MINE_WINDOW.toLocaleString('en-US')} chapters read`,
       complete ? credit
-        : `${credit}. The chapters mined since this shelf was last read are still arriving; the shares will settle when they land.`);
+        : `${credit}. Still reading the window — every share here will move as the rest of the chapters land.`);
       const listEl = $('bip-list');
       listEl.replaceChildren();
       for (const m of mines) {
@@ -1295,11 +1299,26 @@ if (kind === 'mining' && AT !== null && AT !== 'mempool') {
     // while it read them would look broken rather than busy. On a revisit the
     // archive holds all but the newest chapters, so the shelf is drawn from
     // it at once and redrawn when those land.
+    // The shelf redraws as the window is read, but not on every one of a
+    // hundred and thirty-five pages: a table re-sorting itself faster than it
+    // can be read is noise, not information. A few times a second is enough
+    // to see it filling and settling.
+    const REDRAW_EVERY = 300;
+    let lastDraw = 0;
+    let drawn = false;
     const read = await minedWindow(tip, {
       onProgress: (got, want) => {
-        if (got < want) say(`counting the last ${want.toLocaleString('en-US')} chapters — ${got.toLocaleString('en-US')} so far`);
+        // Only until there is a shelf to look at; past that the shelf's own
+        // line says how far the reading has got, and two lines saying it
+        // would disagree with each other half the time.
+        if (!drawn && got < want) say(`counting the last ${want.toLocaleString('en-US')} chapters — ${got.toLocaleString('en-US')} so far`);
       },
-      onBanked: AT === 'mines' ? (banked) => drawShelf(banked, { complete: false }) : null,
+      onReading: AT !== 'mines' ? null : (soFar) => {
+        const now = performance.now();
+        if (drawn && now - lastDraw < REDRAW_EVERY) return;
+        lastDraw = now;
+        drawn = drawShelf(soFar, { complete: false }) > 0;
+      },
     });
     const { mines, counted } = tallyMines(read);
     if (!counted) {
