@@ -18,6 +18,8 @@
 import { volumeBookChapter, toRoman } from './btc-citation.js';
 import { storeGet, storePut } from './btc-store.js';
 import { INDEXED as CURATED } from './btc-index-data.js';
+import { usdOn } from './btc-price.js';
+import { amountUnit, ownUnit, groupDigits, formatValuation } from './btc-amounts.js';
 
 // A loose shape test for the address forms the chain has used: base58 P2PKH
 // ('1…') and P2SH ('3…'), and bech32/bech32m ('bc1…', matched lowercase --
@@ -191,16 +193,22 @@ async function memberPath(member) {
   return h ? `/scripthash/${h}` : null;
 }
 
-// A net satoshi amount in the book's own money notation (formatBtc in
-// btc-prose.js -- not imported, since the prose module drags in the WASM
-// engine): comma-grouped whole part, always the full eight decimal places so a
-// right-aligned column aligns on the point, the ₿ sign trailing, a bare 0 ₿
-// for nothing-net. Signed, since an index line reads as a ledger: what the
-// chapter paid the address (+) or spent from it (−).
+// A net satoshi amount in the reader's chosen record notation
+// (btc-amounts.js): ₿ with the full eight decimal places so a right-aligned
+// column aligns on the point, the middle-dot satoshi grouping, or the bare
+// integer. Signed, since an index line reads as a ledger: what the chapter
+// paid the address (+) or spent from it (−). A valuation choice cannot be
+// served here — it needs the row's own day, which arrives asynchronously
+// (fillAmountCell below) — so this is also the fallback a valuation falls
+// back TO: an entry with no day, or a day no source can price, reads in
+// the record's own ₿ rather than in nothing at all.
 export function formatNetBtc(sats) {
-  if (!sats) return '0 ₿';
+  const u = amountUnit();
   const sign = sats < 0 ? '−' : '+';
   const abs = Math.abs(sats);
+  if (u === 'sats') return sats ? `${sign}${groupDigits(String(abs))} sats` : '0 sats';
+  if (u === 'raw') return sats ? `${sign}${abs}` : '0';
+  if (!sats) return '0 ₿';
   const whole = Math.floor(abs / 1e8).toLocaleString('en-US');
   const frac = String(abs % 1e8).padStart(8, '0');
   return `${sign}${whole}.${frac} ₿`;
@@ -691,201 +699,131 @@ export function periods(data) {
 // class names refer to; DOM-building lives here rather than in each page so
 // the index and the anthologies stay the same reading.
 
-// The flat line: the map as one nested run under canonical headers -- the
-// index's skim of an entry, and an incomplete anthology's honest rendering.
-// maxRows keeps the most recent rows (the map is ascending, so the cut is
-// the older head) with a leading note pointing at the anthology for the
-// whole; the trailing note names what an incomplete map never walked.
-// A run of entries, one line each, most recent first (the whole ledger
-// reads newest-down, the direction the record is explored): the fully
-// resolved reference leading (Roman volume, β book, ■ chapter -- the
-// citation names every level itself, so the run needs no headers of any
-// kind), then the bookkeeping columns -- debit, credit, status. APPENDED
-// to el, so an endless scroll just keeps appending. Grouping, temporal or
-// otherwise, lives on the ledger's entries leaf. `held` feeds the status
-// column from the chain's own bookmarks. The callers own any clearing and
-// any notes around the run.
-export function renderRows(el, entries, held = null) {
-  for (const c of [...entries].reverse()) {
-    el.append(lineRow({ ...c, place: volumeBookChapter(c.height) }, held));
-  }
-}
-
-export function renderLine(el, data, maxRows = Infinity) {
-  el.replaceChildren();
-  if (!data) { lineNote(el, '—'); return; }
-  let rows = data.entries;
-  if (!rows.length) { lineNote(el, 'no appearances yet'); return; }
-  const cut = rows.length - maxRows;
-  if (cut > 0) rows = rows.slice(cut);
-  renderRows(el, rows);
-  // Newest-first, so anything cut or never walked lies below the rows.
-  if (cut > 0) lineNote(el, `… ${cut.toLocaleString('en-US')} earlier entries, collected in the ledger`);
-  // An incomplete map names what it left behind; the count is of
-  // transactions, which is what the chain counts (several may share a
-  // chapter above).
-  if (data.walked < data.txCount) {
-    lineNote(el, `… the latest ${data.walked.toLocaleString('en-US')} of ${data.txCount.toLocaleString('en-US')} transactions`);
-  }
-}
-
-// The ledger rendering: a summary leaf first -- years then quarters, the
-// most recent first (the whole ledger reads newest-down, the direction the
-// record is explored), one row per quarter with its entry count and net,
-// each an anchor into the entries below; the reader's bookmarked
-// references sit inline beneath the quarters that hold them, flying the
-// same ribbon they fly in the book; and the summary rules off on the
-// closing balance. Then the entries themselves, newest first: date, the
-// citation into the manuscript (the folio reference, compressed against
-// the previous entry's -- volume and book named only when they change),
-// the entry's net, and the running balance -- posted in height order over
-// a reconciled map, so the TOP row carries exactly the chain's current
-// balance and the record drains back toward its beginning. Every entry
-// opens bitcoin-book.html at its transaction; entry rows attach in
-// animation-frame chunks so a giant ledger doesn't jank its first paint.
-// Falls back to the flat line (and returns false) when the map is
-// incomplete and no periods may be drawn.
-// opts.held (heldCoins' byTxid map, verified against the balance by the
-// caller) marks the entries with the chain's own bookmarks: a credit whose
-// outputs have all moved on reads dimmed (debits, being departures, always
-// do); where value still rests, full ink -- and a quarter dims likewise when
-// nothing from it remains outstanding.
+// The account, drawn newest-down (the direction the record is explored)
+// in TIME's own grouping: a year's heading where the year turns, a
+// quarter's beneath it, and the entries under that -- the organization
+// accountants keep, in place of the manuscript's own volumes and books.
+// Every row still cites its canonical place itself, so the two can never
+// disagree: the period is the filing, the citation the folio. Buckets are
+// read off each row's own block time, so a straggler near a boundary
+// simply files where its timestamp says.
+//
+// Among them hang the reader's own bookmarks, each flying the ribbon it
+// flies in the contents: a passage kept, standing at its height between
+// the entries that bracket it. They are the reader's marks ON the record,
+// not entries OF it, so they carry a title and a reference and no money at
+// all -- and none of the account's arithmetic touches them.
+//
+// APPENDED to el, so an endless scroll just keeps appending -- which is
+// why the grouping is CARRIED in `state` (groupState) rather than
+// recomputed: a chunk knows which heading the chunk before it left open,
+// and the scroll never redraws what it has already set. `held` feeds the
+// status column from the chain's own bookmarks. The callers own any
+// clearing and any notes around the run.
 const BOOKMARK_RIBBON = '<svg viewBox="0 0 12 16"><path fill="currentColor" d="M0 0h12v16l-6-4-6 4z"/></svg>';
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-export function renderLedger(el, data, { bookmarks = [], held = null } = {}) {
-  // Running balances post in entry order -- the ledger's true posting order
-  // -- so the final balance is exactly the one the gate proved. Two entries
-  // can share a height and even a txid, so the balance rides on a copy of
-  // each entry rather than keying a map.
-  let bal = 0;
-  const posted = data.entries.map((c) => ({ ...c, bal: (bal += c.sats) }));
-  const years = periods({ ...data, entries: posted });
-  if (!years) { renderLine(el, data); return false; }
-  el.replaceChildren();
-  const anchor = (y, q) => `y${y}q${q}`;
-  // Balances post oldest-first (their true order); the reading runs
-  // newest-first, so every listing below iterates the periods reversed.
-  const recent = [...years].reverse().map((y) => ({ ...y, quarters: [...y.quarters].reverse() }));
-
-  const toc = document.createElement('div'); toc.className = 'sp-toc';
-  const summaryHead = lineHead('sp-eyebrow', 'Summary');
-  summaryHead.id = 'anth-contents';
-  toc.append(summaryHead);
-  for (const y of recent) {
-    toc.append(lineHead('idx-vol', String(y.year)));
-    for (const qt of y.quarters) {
-      const row = document.createElement('a');
-      row.className = 'sp-row';
-      if (held && !qt.entries.some((c) => c.sats > 0 && (held.get(c.txid) ?? 0) > 0)) row.classList.add('spent');
-      row.href = `#${anchor(qt.year, qt.q)}`;
-      const label = document.createElement('span'); label.className = 'sp-label';
-      label.textContent = `Q${qt.q}`;
-      const count = document.createElement('span'); count.className = 'sp-count';
-      count.textContent = `${qt.entries.length.toLocaleString('en-US')} §`;
-      const amt = document.createElement('span'); amt.className = 'idx-amt sp-amt';
-      amt.textContent = formatNetBtc(qt.sats);
-      row.append(label, count, amt);
-      toc.append(row);
-      // The reader's own bookmarks that fall in this quarter's blocks,
-      // newest first like everything else, each opening the book at its
-      // reference.
-      const heights = new Set(qt.entries.map((c) => c.height));
-      for (const bm of bookmarks.filter((m) => heights.has(m.height)).sort((a, z) => z.height - a.height)) {
-        const bmRow = document.createElement('a');
-        bmRow.className = 'sp-bm';
-        bmRow.href = citeHref(bm.hex);
-        const t = document.createElement('span'); t.className = 'sp-bm-title';
-        const rib = document.createElement('span'); rib.className = 'toc-bm';
-        rib.setAttribute('aria-label', 'your bookmark');
-        rib.innerHTML = BOOKMARK_RIBBON;
-        t.append(rib, document.createTextNode(bm.title));
-        const ref = document.createElement('span'); ref.className = 'sp-bm-ref';
-        ref.textContent = `■${volumeBookChapter(bm.height).chapter}` + (bm.pos != null ? ` §${bm.pos + 1}` : '');
-        bmRow.append(t, ref);
-        toc.append(bmRow);
+export const groupState = () => ({ year: null, q: null, bm: 0 });
+export function renderRows(el, entries, held = null, { state = null, bookmarks = [] } = {}) {
+  for (const c of [...entries].reverse()) {
+    if (state) {
+      // A mark strictly newer than this row closes out the period ABOVE
+      // it, so it goes in before the heading this row may open -- a
+      // bookmark belongs to the period it was made in, never to the one
+      // the next row begins.
+      while (state.bm < bookmarks.length && bookmarks[state.bm].height > c.height) {
+        el.append(bookmarkRow(bookmarks[state.bm++]));
+      }
+      const d = c.time ? new Date(c.time * 1000) : null;
+      if (d) {
+        const year = d.getUTCFullYear();
+        const q = Math.floor(d.getUTCMonth() / 3) + 1;
+        if (year !== state.year) { el.append(lineHead('idx-vol', String(year))); state.year = year; state.q = null; }
+        if (q !== state.q) { el.append(lineHead('idx-book', `Q${q} ${year}`)); state.q = q; }
       }
     }
-  }
-  // The summary rules off on the closing balance.
-  const closeRow = document.createElement('a');
-  closeRow.className = 'sp-row';
-  closeRow.href = '#anth-index';
-  const closeLabel = document.createElement('span'); closeLabel.className = 'sp-label';
-  closeLabel.textContent = 'Closing balance';
-  const closeCount = document.createElement('span'); closeCount.className = 'sp-count';
-  closeCount.textContent = `${data.entries.length.toLocaleString('en-US')} §`;
-  const closeAmt = document.createElement('span'); closeAmt.className = 'idx-amt sp-amt';
-  closeAmt.textContent = formatBalanceBtc(data.balance ?? bal);
-  closeRow.append(closeLabel, closeCount, closeAmt);
-  toc.append(closeRow);
-  el.append(toc);
-
-  const entriesHead = lineHead('sp-eyebrow', 'Entries');
-  entriesHead.id = 'anth-index';
-  el.append(entriesHead);
-  const nodes = [];
-  for (const y of recent) {
-    nodes.push(lineHead('idx-vol', String(y.year)));
-    for (const qt of y.quarters) {
-      const h = lineHead('idx-book', `Q${qt.q} ${qt.year}`);
-      h.id = anchor(qt.year, qt.q);
-      nodes.push(h);
-      let lastVol = 0, lastBook = 0;
-      for (const c of [...qt.entries].reverse()) {
-        const place = volumeBookChapter(c.height);
-        nodes.push(ledgerRow(c, place, c.bal, lastVol, lastBook, held));
-        lastVol = place.volume; lastBook = place.book;
-      }
+    el.append(lineRow({ ...c, place: volumeBookChapter(c.height) }, held));
+    // A mark on this row's OWN block follows it: the entry first, then the
+    // reader's mark on the chapter it belongs to.
+    while (state && state.bm < bookmarks.length && bookmarks[state.bm].height === c.height) {
+      el.append(bookmarkRow(bookmarks[state.bm++]));
     }
   }
-  const CHUNK = 800;
-  let i = 0;
-  (function attach() {
-    const frag = document.createDocumentFragment();
-    for (const end = Math.min(i + CHUNK, nodes.length); i < end; i++) frag.append(nodes[i]);
-    el.append(frag);
-    if (i < nodes.length) requestAnimationFrame(attach);
-  })();
-  return true;
 }
 
-// One ledger entry: date · citation · net · running balance. The citation
-// compresses against its predecessor -- Roman volume and β book named only
-// when they change -- the tail-reference idiom carried into a date-ordered
-// listing.
-function ledgerRow(c, place, balance, lastVol, lastBook, held) {
+// One of the reader's bookmarks, hung at its place in the record: the
+// ribbon, the title they kept it under, and the chapter it names.
+function bookmarkRow(bm) {
   const row = document.createElement('a');
-  row.className = 'idx-row entry';
-  row.href = citeHref(c.txid);
-  // The row names its entry (txid + sats name one side of one transaction)
-  // and, on a merged listing, its home address -- the ledger page's dive
-  // reads these to pull in the entry's own leaf.
-  row.dataset.txid = c.txid;
-  row.dataset.sats = String(c.sats);
-  if (c.addr) row.dataset.addr = c.addr;
-  if (held) {
-    // A UTXO belongs to a transaction's outputs, so only a credit entry can
-    // still be held; a debit is a departure by nature and reads dimmed.
-    const resting = c.sats > 0 ? held.get(c.txid) ?? 0 : 0;
-    if (resting > 0) row.title = `still held: ${formatBalanceBtc(resting)}`;
-    else row.classList.add('spent');
-  }
-  const when = document.createElement('span'); when.className = 'idx-when';
-  const d = c.time ? new Date(c.time * 1000) : null;
-  when.textContent = d ? `${MONTHS[d.getUTCMonth()]} ${d.getUTCDate()}` : '—';
-  const r = document.createElement('span'); r.className = 'idx-ref';
-  const parts = [];
-  if (place.volume !== lastVol) parts.push(toRoman(place.volume));
-  if (place.book !== lastBook || place.volume !== lastVol) parts.push(`β${place.book}`);
-  parts.push(`■${place.chapter}`);
-  r.textContent = parts.join(' ');
-  const amt = document.createElement('span'); amt.className = 'idx-amt';
-  amt.textContent = formatNetBtc(c.sats);
-  const rb = document.createElement('span'); rb.className = 'idx-bal';
-  rb.textContent = formatBalanceBtc(balance);
-  rb.title = 'balance after this chapter';
-  row.append(when, r, amt, rb);
+  row.className = 'sp-bm';
+  row.href = citeHref(bm.hex);
+  row.title = `your bookmark — ${bm.title}`;
+  const t = document.createElement('span'); t.className = 'sp-bm-title';
+  const rib = document.createElement('span'); rib.className = 'toc-bm';
+  rib.setAttribute('aria-label', 'your bookmark');
+  rib.innerHTML = BOOKMARK_RIBBON;
+  t.append(rib, document.createTextNode(bm.title));
+  const ref = document.createElement('span'); ref.className = 'sp-bm-ref';
+  ref.textContent = `■${volumeBookChapter(bm.height).chapter}` + (bm.pos != null ? ` §${bm.pos + 1}` : '');
+  row.append(t, ref);
   return row;
+}
+
+
+// One amount cell, in the reader's chosen notation and in that alone: a
+// record notation prints at once, the reader's own unit prints at once at
+// their rate, and a USD figure waits for its row's day price -- so a
+// column reads in one unit, never in two at a time. The cell keeps the
+// amount UNSIGNED: on the account rows the column it stands in (debit or
+// credit) is the sign. Where a valuation cannot be had -- an entry with no
+// day, or a source that has no price for it -- the cell falls back to the
+// record's own ₿, which is the one figure always true.
+export function fillAmountCell(cell, sats, time) {
+  const u = amountUnit();
+  if (u === 'own') {
+    const o = ownUnit();
+    if (o) {
+      cell.textContent = formatValuation(sats, o);
+      cell.title = `at your rate of ${o.perBtc.toLocaleString('en-US')} ${o.label} per ₿ — your valuation, not the record`;
+      return;
+    }
+  } else if (u === 'usd' && time) {
+    cell.textContent = '⋯';
+    cell.dataset.time = String(time);
+    cell.dataset.sats = String(sats);
+    observeValuation(cell);
+    return;
+  }
+  cell.textContent = formatBalanceBtc(sats);
+}
+
+// The valuation cells' lazy filler: one IntersectionObserver over every
+// pending cell, asking btc-price.js (cached by source and day) only as a
+// row approaches the viewport. A day with no answer -- before the source's
+// record begins, or the source unreachable -- falls back to the record's ₿,
+// never to a guessed figure.
+let valObserver = null;
+function observeValuation(cell) {
+  if (!valObserver) {
+    if (typeof IntersectionObserver === 'undefined') return;
+    valObserver = new IntersectionObserver((hits) => {
+      for (const h of hits) {
+        if (!h.isIntersecting) continue;
+        valObserver.unobserve(h.target);
+        fillValuation(h.target);
+      }
+    }, { rootMargin: '300px' });
+  }
+  valObserver.observe(cell);
+}
+async function fillValuation(cell) {
+  const sats = Number(cell.dataset.sats);
+  const p = await usdOn(Number(cell.dataset.time));
+  if (!p) {
+    cell.textContent = formatBalanceBtc(sats);
+    cell.title = 'no price for this day — before the source’s record begins, or the source unreachable; the record’s own figure stands instead';
+    return;
+  }
+  cell.textContent = formatValuation(sats, { label: 'USD', perBtc: p.perBtc });
+  cell.title = `at ${p.perBtc.toLocaleString('en-US')} USD per ₿ on ${p.date}, per ${p.source} — the day of this entry; a market's valuation, not the record`;
 }
 
 // The section of a transaction within its chapter -- the § of a full
@@ -1058,11 +996,13 @@ export function outspendsOf(txid) {
 // hasn't agreed with the chain -- the verdict waits, never guesses.
 // (`pending` is reserved for mempool transactions, which the map doesn't
 // carry yet.) A zero-value touch carries no coin to have a status.
-function lineRow({ txid, sats, place, out, addr }, held) {
+function lineRow({ txid, sats, place, out, addr, time }, held) {
   const row = document.createElement('a');
   row.className = 'idx-row acct';
   row.href = citeHref(txid, out);   // a credit lands the book on its output
-  // The row names its entry, for the ledger page's dive (see ledgerRow).
+  // The row names its entry (txid + sats name one side of one transaction)
+  // and its home address -- the ledger page's dive reads these to pull in
+  // the entry's own leaf.
   row.dataset.txid = txid;
   row.dataset.sats = String(sats);
   if (addr) row.dataset.addr = addr;
@@ -1081,10 +1021,16 @@ function lineRow({ txid, sats, place, out, addr }, held) {
   sectionOf(txid).then((pos) => {
     if (pos != null) sec.textContent = ` §${pos + 1}${out != null ? `.${out}` : ''}`;
   });
+  // The amount, in the reader's chosen notation and in that alone
+  // (fillAmountCell): a valuation replaces the record's figure rather than
+  // joining it, so a column never reads in two units at once. Unsigned --
+  // the column an amount stands in IS its sign -- and exactly one of the
+  // two carries ink.
   const deb = document.createElement('span'); deb.className = 'idx-amt col-deb';
-  deb.textContent = sats < 0 ? formatBalanceBtc(-sats) : '';
   const cred = document.createElement('span'); cred.className = 'idx-amt col-cred';
-  cred.textContent = sats > 0 ? formatBalanceBtc(sats) : sats === 0 ? '0 ₿' : '';
+  if (sats < 0) fillAmountCell(deb, -sats, time);
+  else if (sats > 0) fillAmountCell(cred, sats, time);
+  else cred.textContent = formatBalanceBtc(0);
   const st = document.createElement('span'); st.className = 'idx-status col-status';
   if (held && sats !== 0) {
     if (resting > 0) { st.textContent = 'unspent'; st.classList.add('unspent'); }
