@@ -390,12 +390,14 @@ a.bb-ref:hover { color:var(--accent-2); }
    caption for it follows, in the form above: the work first, then what its
    collection says about it. */
 .ins-member { margin:0; text-align:center; }
-/* The poem reads as the book's prose reads -- the reading face, the gold ⌘
-   leading it -- and is the door into the chapter that witness sits in. */
-.ins-poem { display:block; font:italic 400 15px/1.6 'Newsreader',serif; color:var(--ink-soft);
-  overflow-wrap:anywhere; text-wrap:pretty; }
-a.ins-poem:hover { color:var(--ink); text-decoration:none; }
-.ins-poem.waiting { color:var(--meta); }
+/* The citation leads the plate, in the register every citation in this book
+   wears: the chapter, the section and the footnote its envelope reads at.
+   It is the door into the chapter that witness sits in -- and the one line
+   on the leaf the chain answers for. */
+.ins-cite { display:block; font:600 13px/1.6 'IBM Plex Mono',monospace; letter-spacing:.04em;
+  color:var(--accent); font-variant-numeric:tabular-nums; }
+a.ins-cite:hover { color:var(--accent-2); text-decoration:none; }
+.ins-cite.waiting { color:var(--meta); }
 /* The plate's place is held before the plate arrives: a member whose witness
    is still being fetched stands its own height, so the page does not jump as
    photographs land -- and so the draw below, which fills until the foot is
@@ -670,6 +672,13 @@ const label = (p) => partLabel(APPENDIX, p);
 // The contents runs a leaf per volume and per appendix; the masthead's link
 // opens this appendix's own, as the ascent does.
 $('toc-link').href = `./bitcoin-contents.html?part=${kind}`;
+// At the level of one inscription and below, the site's row of links stands
+// down. What is shown here is a picture or a page of somebody's text, and it
+// should be met as that rather than framed by a chrome offering three other
+// places to be. Nothing is lost: the crumb above the title climbs, the ▴
+// and the pull-down ascend, and the masthead's own name still stands as the
+// running head, saying whose book this is.
+if (ins) document.querySelector('.masthead .home')?.classList.add('hidden');
 const PART_QUERY = { mempool: 'mempool', consensus: 'consensus', proofs: 'proofs', inscriptions: 'inscriptions' };
 const hrefFor = (p) => (p.kind === 'ledgers'
   ? './bitcoin-ledger.html'
@@ -948,12 +957,6 @@ if (kind === 'inscriptions' && !ins) {
 // the numbering, the sat, the market's collections all live in commentary,
 // credited, behind the sheet at the foot.
 if (ins) {
-  // The engine that says a hash, wanted only where a poem is (a collection's
-  // members) -- so it arrives lazily, and a figure it never reaches stays
-  // unsaid rather than empty.
-  let engineP = null;
-  const glossia = () => (engineP ||= import('./glossia-msg.js').then(async (m) => { await m.init(); return m; }));
-  const reverseHex = (hex) => (hex.match(/../g) || []).reverse().join('');
   // The leaf says what it is doing until the witness answers, and then gets
   // out of the way: the content takes the status line's place.
   const fig = $('ins-content');
@@ -1131,38 +1134,59 @@ if (ins) {
         : null,
     );
 
-    // The work itself: the poem, then the plate.
+    // The work itself: its citation, then the plate. The citation leads
+    // because it is the one line here the chain answers for -- where in the
+    // book this witness sits -- and everything under it (the picture, the
+    // caption) is what somebody put there.
     const plate = document.createElement('figure');
     plate.className = 'ins-member';
-    const poem = document.createElement('a');
-    poem.className = 'ins-poem waiting';
-    poem.href = `./bitcoin-book.html?txid=${m.txid}`;
-    poem.title = 'read this witness in the book';
-    poem.textContent = '…';
+    const cite = document.createElement('a');
+    cite.className = 'ins-cite waiting';
+    cite.href = `./bitcoin-book.html?txid=${m.txid}`;
+    cite.title = 'read this witness in the book';
+    cite.textContent = '…';
     const body = document.createElement('div');
     body.className = 'ins-member-body';
-    plate.append(poem, body);
+    plate.append(cite, body);
     fig.replaceChildren(plate);
     fig.classList.remove('hidden');
-
-    glossia().then((g) => {
-      const mark = document.createElement('span');
-      mark.className = 'dt';
-      mark.textContent = '⌘';
-      const sup = document.createElement('span');
-      sup.className = 'op-count';
-      sup.textContent = toSuperscript(256);
-      poem.replaceChildren(mark, sup, document.createTextNode(' '
-        + g.encodeCanonical(reverseHex(m.txid), g.bookLang(), 5).prose));
-      poem.classList.remove('waiting');
-    }).catch(() => { poem.textContent = 'unsaid'; poem.title = 'the engine that puts a hash into words did not load'; });
 
     (async () => {
       const say = (text) => { const s = document.createElement('div'); s.className = 'ins-member-say'; s.textContent = text; body.replaceChildren(s); };
       const mtx = await overMirrors(`/tx/${m.txid}`);
-      if (!mtx) { say('the chain could not be reached for this work'); return; }
+      if (!mtx) {
+        say('the chain could not be reached for this work');
+        cite.textContent = '—';
+        cite.classList.remove('waiting');
+        return;
+      }
       const { inscriptionInTx } = await import('./btc-inscriptions.js');
       const e = inscriptionInTx(mtx);
+
+      // The citation, in the book's own notation. The chapter and section
+      // come off the merkle proof (the height, and the position in the block
+      // that IS the §section); the footnote letter is the input's place among
+      // the witness-bearing inputs, which is how the book letters its notes.
+      (async () => {
+        const mp = await overMirrors(`/tx/${m.txid}/merkle-proof`);
+        if (!mp || !Number.isFinite(mp.block_height) || !Number.isFinite(mp.pos)) {
+          cite.textContent = '—';
+          cite.title = 'the chain would not say where this witness sits';
+          cite.classList.remove('waiting');
+          return;
+        }
+        let ref = wholeRef(mp.block_height, mp.pos + 1);
+        if (e) {
+          const wn = (mtx.vin || []).slice(0, e.vin + 1).filter((v) => (v.witness || []).length).length;
+          if (wn > 0) ref += `.${footnoteMark(wn)}`;
+          cite.href = `./bitcoin-book.html?block=${mp.block_height}&index=${mp.pos}&wit=${footnoteMark(wn)}`;
+        } else {
+          cite.href = `./bitcoin-book.html?block=${mp.block_height}&index=${mp.pos}`;
+        }
+        cite.textContent = ref;
+        cite.classList.remove('waiting');
+      })().catch(() => { cite.textContent = '—'; cite.classList.remove('waiting'); });
+
       if (!e) { say('no envelope in this witness'); return; }
       const ct = String(e.contentType || '').toLowerCase();
       if (e.contentEncoding || !ct.startsWith('image/')) {
@@ -1173,7 +1197,7 @@ if (ins) {
       img.src = URL.createObjectURL(new Blob([e.body], { type: e.contentType }));
       img.alt = (m.name || '').trim();
       body.replaceChildren(img);
-    })().catch(() => { /* the poem stands: a work's plate is not its name */ });
+    })().catch(() => { /* the citation stands: a work's plate is not its name */ });
 
     // The caption: the manifest's attributes for this work, as written and in
     // its own order. A quote is set as the quotation it is; everything else
