@@ -380,6 +380,9 @@ a.bb-ref:hover { color:var(--accent-2); }
 /* An id or a key is a handle, not a sentence: it reads in the mono the book
    gives every raw string, so it is never mistaken for the prose beside it. */
 .ins-val.raw { font:400 11.5px/1.7 'IBM Plex Mono',monospace; color:var(--dim); }
+/* An id that is also a door -- a parent inscription's own leaf -- reads as
+   the handle it is, and as the link it is. */
+.ins-val a.raw-link { font:400 11.5px/1.7 'IBM Plex Mono',monospace; overflow-wrap:anywhere; }
 /* A manifest that quotes a wall is quoting somebody; the line reads as the
    quotation it is, and keeps the breaks whoever wrote it put in. */
 .ins-val.quote { font-style:italic; color:var(--dim); white-space:pre-line; }
@@ -1054,6 +1057,7 @@ if (ins) {
     }
     // &items on something that names nothing has no level to open; the
     // inscription's own content stands, which is what the bare leaf shows.
+    showOrdFields(found);
 
     // The body, and nothing about it. What the envelope declares, how long it
     // runs, which input carries it -- all of that is the witness's own, and
@@ -1091,13 +1095,35 @@ if (ins) {
     status.textContent = `${found.body.length.toLocaleString('en-US')} bytes of ${found.contentType || 'an undeclared kind'}`;
   })();
 
+  // What ord's own fields say about this inscription, under whatever it
+  // shows. A manifest is somebody's JSON and reads as a claim; these are
+  // written into the envelope itself under numbered tags, which makes them
+  // the inscriber's statement in ord's own grammar rather than a
+  // marketplace's -- and provenance in particular is checkable, since ord
+  // honours a parent only when that parent is spent in the same transaction.
+  function showOrdFields(env) {
+    const rows = [];
+    for (const p of env.parents || []) {
+      rows.push(['parent', { href: `./bitcoin-appendix.html?part=inscriptions&ins=${p.slice(0, 64)}`, text: p }]);
+    }
+    if (env.metaprotocol) rows.push(['metaprotocol', env.metaprotocol]);
+    // Tag 5 is a document, so its own fields become the form's rows.
+    const meta = env.metadata;
+    if (meta && typeof meta === 'object' && !Array.isArray(meta)) {
+      for (const [k, v] of Object.entries(meta)) {
+        if (v !== null && typeof v !== 'object') rows.push([k, String(v)]);
+      }
+    }
+    if (rows.length) fillForm($('ins-form'), rows);
+  }
+
   // Somebody's words about something the chain holds, set as a form: the
   // fields as written and in the order they were written, the key in the
   // ruling register and the value in the reading face. Shared by the two
   // levels because it is the same kind of claim at both -- the collection
   // speaking about itself, and the collection speaking about one work.
   function fillForm(form, fields) {
-    const rows = fields.filter(([, v]) => String(v).trim());
+    const rows = fields.filter(([, v]) => (v && typeof v === 'object' && v.href) || String(v).trim());
     for (const [k, v] of rows) {
       const row = document.createElement('div');
       row.className = 'ins-field';
@@ -1106,6 +1132,16 @@ if (ins) {
       key.textContent = k.replace(/[_-]+/g, ' ');
       const val = document.createElement('div');
       val.className = 'ins-val';
+      // A value given as {href, text} is a place in the book -- a parent
+      // inscription's own leaf -- and reads as the door it is.
+      if (v && typeof v === 'object' && v.href) {
+        const a = document.createElement('a');
+        a.href = v.href; a.textContent = v.text; a.className = 'raw-link';
+        val.append(a);
+        row.append(key, val);
+        form.append(row);
+        continue;
+      }
       // A link is followed; an id or a key is a handle and reads as one; a
       // quotation is set as one, since a manifest that quotes a wall is
       // quoting somebody and the marks should say so. Everything else is

@@ -66,12 +66,96 @@ const isPush = (op) => op && op.data !== undefined;
 // so any real body is many). A branch that breaks the grammar — a non-push
 // where a push must stand, no OP_ENDIF to close — is not an envelope, and
 // reads as nothing rather than as half of something.
+// The tags ord defines, by the numbers it writes them under. Odd tags are the
+// ones ord will ignore if it does not know them and even ones it will not, so
+// the numbering itself is a forward-compatibility scheme; what matters here is
+// that a tag is a NAME for a field, and a reader that knows the names can say
+// more about a witness than one that only knows tag 1.
+const TAG = {
+  contentType: 1,
+  pointer: 2,
+  parent: 3,
+  metadata: 5,
+  metaprotocol: 7,
+  contentEncoding: 9,
+  delegate: 11,
+};
 const ORD = [0x6f, 0x72, 0x64];   // "ord"
 const utf8 = (bytes) => { try { return new TextDecoder().decode(bytes); } catch { return ''; } };
+
+// ── an inscription id, as ord writes one in a field ───────────────────────
+// Not the text form. A parent (or a delegate) is written as the reveal's
+// txid in internal byte order, followed by the inscription's index within
+// that reveal as a little-endian integer with its trailing zero bytes
+// dropped — so `<txid>i0` is the 32 bytes alone. Null for anything that is
+// not the right shape, since half an id is no id.
+export function inscriptionIdFrom(bytes) {
+  if (!bytes || bytes.length < 32 || bytes.length > 36) return null;
+  let txid = '';
+  for (let i = 31; i >= 0; i--) txid += bytes[i].toString(16).padStart(2, '0');
+  let index = 0;
+  for (let i = bytes.length - 1; i >= 32; i--) index = index * 256 + bytes[i];
+  return `${txid}i${index}`;
+}
+
+// ── CBOR, as far as ord's metadata needs it ───────────────────────────────
+// Tag 5 carries metadata as CBOR rather than JSON — bytes rather than text,
+// which is the whole reason to use it in a witness. This reads the subset a
+// metadata document can be made of: integers, strings, byte strings, arrays,
+// maps, booleans and null. Anything else (floats past doubles, indefinite
+// lengths, semantic tags) is stepped over rather than guessed at, and a
+// document that cannot be read whole reads as nothing.
+export function decodeCbor(bytes) {
+  let at = 0;
+  const u8 = () => bytes[at++];
+  const uint = (n) => {
+    let v = 0;
+    for (let i = 0; i < n; i++) v = v * 256 + bytes[at++];
+    return v;
+  };
+  const head = () => {
+    const b = u8();
+    const major = b >> 5;
+    const minor = b & 0x1f;
+    if (minor < 24) return [major, minor];
+    if (minor === 24) return [major, uint(1)];
+    if (minor === 25) return [major, uint(2)];
+    if (minor === 26) return [major, uint(4)];
+    if (minor === 27) return [major, uint(8)];
+    throw new Error('cbor: indefinite or reserved length');
+  };
+  const value = () => {
+    const [major, arg] = head();
+    switch (major) {
+      case 0: return arg;
+      case 1: return -1 - arg;
+      case 2: { const b = bytes.slice(at, at + arg); at += arg; return b; }
+      case 3: { const b = bytes.slice(at, at + arg); at += arg; return utf8(b); }
+      case 4: { const out = []; for (let i = 0; i < arg; i++) out.push(value()); return out; }
+      case 5: {
+        const out = {};
+        for (let i = 0; i < arg; i++) { const k = value(); out[typeof k === 'string' ? k : String(k)] = value(); }
+        return out;
+      }
+      case 6: return value();                     // a semantic tag: read what it wraps
+      case 7:
+        if (arg === 20) return false;
+        if (arg === 21) return true;
+        if (arg === 22 || arg === 23) return null;
+        throw new Error('cbor: unsupported simple value');
+      default: throw new Error('cbor: unknown major type');
+    }
+  };
+  try {
+    const v = value();
+    return at === bytes.length ? v : null;   // trailing bytes mean this was not it
+  } catch { return null; }
+}
 
 function readEnvelope(ops, at) {
   let j = at + 3;
   const fields = new Map();   // tag byte -> value bytes (first appearance wins, as ord reads)
+  const repeated = [];        // every (tag, value) in order, since a parent may be written more than once
   const chunks = [];
   let inBody = false;
   while (j < ops.length) {
@@ -84,6 +168,7 @@ function readEnvelope(ops, at) {
     if (!isPush(value)) return null;
     const tag = op.data[0];
     if (!fields.has(tag)) fields.set(tag, value.data);
+    repeated.push([tag, value.data]);
     j += 2;
   }
   if (j >= ops.length) return null;   // ran out before OP_ENDIF
@@ -91,10 +176,17 @@ function readEnvelope(ops, at) {
   for (const c of chunks) length += c.length;
   const body = new Uint8Array(length);
   for (let o = 0, k = 0; k < chunks.length; k++) { body.set(chunks[k], o); o += chunks[k].length; }
-  const ct = fields.get(1);
+  const ct = fields.get(TAG.contentType);
   return {
     contentType: ct ? utf8(ct) : null,
-    contentEncoding: fields.has(9) ? utf8(fields.get(9)) : null,
+    contentEncoding: fields.has(TAG.contentEncoding) ? utf8(fields.get(TAG.contentEncoding)) : null,
+    // Ord's own fields, read by name. A parent may be written more than
+    // once (an inscription can be a child of several), so every tag-3 is
+    // gathered; the rest are single.
+    parents: repeated.filter(([t]) => t === TAG.parent).map(([, v]) => inscriptionIdFrom(v)).filter(Boolean),
+    metadata: fields.has(TAG.metadata) ? decodeCbor(fields.get(TAG.metadata)) : null,
+    metaprotocol: fields.has(TAG.metaprotocol) ? utf8(fields.get(TAG.metaprotocol)) : null,
+    delegate: fields.has(TAG.delegate) ? inscriptionIdFrom(fields.get(TAG.delegate)) : null,
     body,
     fields,
     end: j,
@@ -218,6 +310,12 @@ export function nameInJson(body) {
   let doc;
   try { doc = JSON.parse(new TextDecoder().decode(body)); }
   catch { return null; }
+  return nameIn(doc);
+}
+
+// The same search over an already-decoded document — ord's tag-5 metadata
+// arrives as CBOR rather than text, and names itself the same way.
+export function nameIn(doc) {
   const queue = [doc];
   while (queue.length) {
     const node = queue.shift();
@@ -241,19 +339,27 @@ export function assetOfEnvelope(env) {
   // is a reading; the declaration is all there is to go on.
   const sniffed = env.contentEncoding ? null : sniffAsset(env.body);
   if (!sniffed && !declared) return null;
-  // JSON is the one format that can say what it is. So a JSON body is called
-  // by the name it carries, and if it carries none it goes unnamed -- the
-  // label is null and the surfaces leave the thing untitled. Every other
-  // format is named by what its bytes announce, which is all they can say.
+  // Two places a thing can name itself, and ord's own comes first: tag 5 is
+  // metadata ABOUT the inscription, written on purpose and on chain, so a
+  // name there outranks one found inside the content. Failing that, JSON is
+  // the one content format that can say what it is, and a JSON body carrying
+  // no name goes unnamed rather than being called by its container. Every
+  // other format is named by what its bytes announce, which is all they can
+  // say.
+  const fromMetadata = nameIn(env.metadata);
   const isJson = sniffed && sniffed.mime === 'application/json';
-  const named = isJson ? nameInJson(env.body) : null;
+  const fromContent = !fromMetadata && isJson ? nameInJson(env.body) : null;
+  const named = fromMetadata || fromContent;
   return {
-    label: isJson ? named : (sniffed ? sniffed.label : declared),
+    label: named || (isJson ? null : (sniffed ? sniffed.label : declared)),
     mime: sniffed ? sniffed.mime : declared,
     bytes: env.body.length,
     declared,
     encoding: env.contentEncoding || null,
-    source: named ? 'name' : sniffed ? 'bytes' : 'declaration',
+    parents: env.parents || [],
+    metadata: env.metadata ?? null,
+    metaprotocol: env.metaprotocol || null,
+    source: fromMetadata ? 'metadata' : fromContent ? 'name' : sniffed ? 'bytes' : 'declaration',
   };
 }
 

@@ -11,7 +11,8 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { parseEnvelopes, tapscriptOf, inscriptionInTx, parseCollection, sniffAsset, witnessAsset } from '../web/btc-inscriptions.js';
+import { parseEnvelopes, tapscriptOf, inscriptionInTx, parseCollection, sniffAsset, witnessAsset,
+  inscriptionIdFrom, decodeCbor } from '../web/btc-inscriptions.js';
 
 const hex = (bytes) => bytes.map((b) => b.toString(16).padStart(2, '0')).join('');
 const ascii = (s) => [...s].map((c) => c.charCodeAt(0));
@@ -369,4 +370,70 @@ test('only JSON is named this way — every other format is named by its bytes',
   const asset = witnessAsset(['aa'.repeat(64), script, 'c0' + '11'.repeat(32)]);
   assert.equal(asset.label, 'PNG image');
   assert.equal(asset.source, 'bytes');
+});
+
+// ── ord's own fields, beyond the content type ─────────────────────────────
+// These are composed here byte by byte: no live inscription carrying tag 3 or
+// tag 5 turned up in the blocks scanned for this file (95 envelopes in one
+// 2023 block, tag 1 alone), so the encodings are exercised against the
+// specification rather than against the chain. See tools/ordinals-appendix.md.
+
+test('an inscription id is a reversed txid and a little-endian index', () => {
+  const txid = Uint8Array.from(Array.from({ length: 32 }, (_, i) => i + 1));
+  const asText = [...txid].reverse().map((b) => b.toString(16).padStart(2, '0')).join('');
+  assert.equal(inscriptionIdFrom(txid), `${asText}i0`);                                  // no index bytes = i0
+  assert.equal(inscriptionIdFrom(Uint8Array.from([...txid, 1])), `${asText}i1`);
+  assert.equal(inscriptionIdFrom(Uint8Array.from([...txid, 0, 1])), `${asText}i256`);
+  // Half an id is no id.
+  assert.equal(inscriptionIdFrom(txid.slice(0, 31)), null);
+  assert.equal(inscriptionIdFrom(Uint8Array.from([...txid, 0, 0, 0, 0, 0])), null);
+  assert.equal(inscriptionIdFrom(null), null);
+});
+
+test('CBOR reads the shapes a metadata document is made of', () => {
+  const b = (...xs) => Uint8Array.from(xs);
+  assert.deepEqual(decodeCbor(b(0xa1, 0x64, 0x6e, 0x61, 0x6d, 0x65, 0x64, 0x57, 0x72, 0x65, 0x6e)), { name: 'Wren' });
+  assert.equal(decodeCbor(b(0x18, 0x2a)), 42);
+  assert.equal(decodeCbor(b(0x20)), -1);
+  assert.deepEqual(decodeCbor(b(0x82, 0x01, 0x02)), [1, 2]);
+  assert.equal(decodeCbor(b(0xf5)), true);
+  assert.equal(decodeCbor(b(0xf4)), false);
+  assert.equal(decodeCbor(b(0xf6)), null);
+  // Trailing bytes mean this was not a document; a half-read one is no answer.
+  assert.equal(decodeCbor(b(0x01, 0x02)), null);
+  assert.equal(decodeCbor(b(0xa1, 0x64)), null);
+});
+
+test("ord's fields are read by name off the envelope", () => {
+  const parent = Array.from({ length: 32 }, (_, i) => i + 1);
+  const asText = [...parent].reverse().map((x) => x.toString(16).padStart(2, '0')).join('');
+  const cbor = [0xa1, 0x64, 0x6e, 0x61, 0x6d, 0x65, 0x64, 0x57, 0x72, 0x65, 0x6e];   // {name:"Wren"}
+  const script = scriptWith(envelope({
+    fields: [[1, ascii('image/png')], [3, parent], [5, cbor], [7, ascii('brc-20')]],
+    body: [[0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]],
+  }));
+  const [env] = parseEnvelopes(bytes(script));
+  assert.deepEqual(env.parents, [`${asText}i0`]);
+  assert.deepEqual(env.metadata, { name: 'Wren' });
+  assert.equal(env.metaprotocol, 'brc-20');
+});
+
+test('a child of several parents keeps every one, in the order written', () => {
+  const p1 = Array.from({ length: 32 }, () => 0x11);
+  const p2 = Array.from({ length: 32 }, () => 0x22);
+  const script = scriptWith(envelope({ fields: [[1, ascii('text/plain')], [3, p1], [3, p2]], body: [ascii('hi')] }));
+  const [env] = parseEnvelopes(bytes(script));
+  assert.equal(env.parents.length, 2);
+  assert.equal(env.parents[0], '11'.repeat(32) + 'i0');
+  assert.equal(env.parents[1], '22'.repeat(32) + 'i0');
+});
+
+test("ord's own metadata outranks a name found inside the content", () => {
+  const cbor = [0xa1, 0x64, 0x6e, 0x61, 0x6d, 0x65, 0x64, 0x57, 0x72, 0x65, 0x6e];   // {name:"Wren"}
+  const body = [...new TextEncoder().encode(JSON.stringify({ name: 'from the content' }))];
+  const script = scriptWith(envelope({ fields: [[1, ascii('application/json')], [5, cbor]], body: [body] }));
+  const asset = witnessAsset(['aa'.repeat(64), script, 'c0' + '11'.repeat(32)]);
+  assert.equal(asset.label, 'Wren');        // tag 5 is about the inscription…
+  assert.equal(asset.source, 'metadata');   // …and says so
+  assert.deepEqual(asset.metadata, { name: 'Wren' });
 });

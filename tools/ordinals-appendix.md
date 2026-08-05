@@ -320,6 +320,45 @@ claim more than the witness it cites. Where the editor wants them, they
 belong in commentary, credited — the way the Ledger sets apart every
 claim about a name.
 
+## The formats this part reads
+
+More than one convention writes into an ord envelope, and the book reads
+several rather than assuming the one its example happened to use:
+
+| what | where | register |
+| --- | --- | --- |
+| content type | tag 1 | ord's own; the inscriber's claim about the bytes |
+| content encoding | tag 9 | ord's own; says the body is compressed |
+| **parent** | **tag 3** | **ord's own, and checkable** — provenance |
+| **metadata** | **tag 5** | **ord's own** — CBOR, a document about the inscription |
+| **metaprotocol** | **tag 7** | ord's own; names a scheme layered on top |
+| delegate | tag 11 | ord's own; the content is another inscription's |
+| collection manifest | the BODY, as JSON | a marketplace convention, not ord's |
+| the format itself | the body's first bytes | the chain's — a magic number |
+
+The two in bold are new, and they change what the book can say. A manifest
+is somebody's JSON and reads as a claim; tag 3 and tag 5 are written into
+the envelope under numbered tags, in ord's own grammar. **Provenance is the
+one membership claim that is checkable**: ord honours a parent only when
+that parent inscription is spent in the same transaction, so the link is
+made on chain and holds in both directions.
+
+Naming follows the same order of authority: a name in tag 5 outranks a name
+found inside a JSON body, because tag 5 is *about* the inscription while the
+content is merely the thing itself. `witnessAsset` reports which it used
+(`source: 'metadata' | 'name' | 'bytes' | 'declaration'`).
+
+**Verification status, stated plainly.** The manifest format and the
+magic-number sniffing were read off real inscriptions. Tags 3, 5 and 7 were
+**not** — no live instance turned up to test against. The blocks scanned
+for this file carried tag 1 and nothing else: 95 envelopes in the tail of
+block 812628 (October 2023), plus ~800 transactions of a 2025 block that
+held no envelopes at all. So the encodings here follow ord's specification
+and are exercised byte by byte in `tools/inscriptions.test.mjs` against
+composed envelopes, not against the chain. The id encoding in particular —
+a reversed txid, then the index as a little-endian integer with trailing
+zeroes dropped — deserves a real example before anything leans on it.
+
 ## What a reader keeps
 
 The Museum Outdoor row is gone, and nothing replaced it. The part curates
