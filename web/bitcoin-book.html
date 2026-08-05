@@ -4148,6 +4148,30 @@ function renderGhostTombstone(txid) {
   labelNav();
 }
 
+// Experimental (see issue #73): a procedural illumination layer over a
+// section's own .tx-wrap, grown from marks that already stand in real
+// whitespace -- the margin citations beside a script, the locktime line,
+// the bookmark ribbons -- rather than from opcode glyphs that sit flush
+// against the prose (see btc-illumination.js's homeRect handling for why
+// that distinction matters). Loaded lazily, exactly as the OpenTimestamps
+// reader in btc-ots.js is, so a chapter that never calls this carries no
+// extra module; guarded end to end so a failure here can never break the
+// page it decorates.
+let illumModule = null;
+async function illuminateSection(wrap, flow) {
+  try {
+    illumModule = illumModule || await import('./btc-illumination.js');
+    const seedEls = wrap.querySelectorAll('.tx-in-cite, .tx-locktime, .hash-bookmark');
+    const confirmations = (!state.projected && tipHeight !== null) ? tipHeight - state.height + 1 : 0;
+    illumModule.illuminate(wrap, {
+      proseEl: flow,
+      seedEls,
+      blockHash: state.projected ? null : state.hash,
+      confirmations,
+    });
+  } catch (e) { console.error('illumination skipped:', e); }
+}
+
 // The section's two derived lines beneath its txid prose (see #section-meta):
 // the containing block's header time, then its confirmation count -- how many
 // chapters stand from this one to the tip, both counted. Readings, not bytes:
@@ -4618,6 +4642,7 @@ function renderChapter(para) {
   flow.append(inputsEl, marginEl, outputsEl, lock);
   wrap.append(flow);
   body.append(wrap);
+  illuminateSection(wrap, flow);   // experimental -- see issue #73; guarded, never blocks rendering
   syncBookmarkTitles();   // paint the section's and outputs' name lines from the bookmark set
   lazyEncode.observe(body);   // encode any deferred OP_RETURN payload as it scrolls into view
   // The margin amounts and the balance line price from the section's own
