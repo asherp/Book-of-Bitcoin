@@ -160,16 +160,14 @@ compiled to WASM) is consumed as a published
 - `web/preface.md` — the preface itself, in Markdown: the canonical copy,
   readable here in the repository and rendered into the leaf above, so the
   book and the repository cannot drift apart
-- `web/bitcoin-contents.html` — table of contents / notable blocks, **a
-  top-level leaf and then one leaf per volume and per back-matter part**,
-  all at a single level: the contents runs the same line the book runs below it
+- `web/bitcoin-contents.html` — table of contents / notable blocks, **one
+  leaf per volume and per back-matter part**, all at a single level: the contents runs the same line the book runs below it
   (Volume I … Volume V, Appendix I, Appendix II, the Index of Ledgers,
-  Citations), a storey up and a leaf to each, with one leaf opening the run
-  that is about the run.
-  `?at=top` opens that top-level leaf, `?volume=<n|roman>` a volume's
+  Citations), a storey up and a leaf to each.
+  `?at=top` opens the leaf that starts the run, `?volume=<n|roman>` a volume's
   contents, `?part=mempool|consensus|ledgers|proofs` a back-matter part's
   (`future` still names Consensus, for links saved before it had that name);
-  a bare visit opens the volume last being read, and the top-level leaf when
+  a bare visit opens the volume last being read, and Volume I's leaf when
   there is nothing to go on. Two things follow from the per-volume arrangement, and they are
   the point of it: an **ascent from Volume III's leaf lands on Volume III's
   contents** and nowhere else — the vertical axis is a correspondence, not a
@@ -177,16 +175,7 @@ compiled to WASM) is consumed as a published
   since the leaf says which volume it is the contents of. Sideways off
   either end are the front matter's own leaves, the standard order this page
   sits inside (title, terms, CONTENTS, preface, sigla).
-  **The top-level leaf** — *The Whole Book* — is the one page that shows the
-  shape of the whole thing: every volume and every part of the back matter
-  as one row each, each row carrying that leaf's own line (what it spans,
-  how much of it there is) and turning to it as a swipe would, and above
-  them the front matter, which no volume's contents can list because the
-  preface is no part of any volume. It descends into the book at Volume I, and its rows for the
-  front matter leave for `bitcoin-front.html`, so they carry no reference:
-  they name leaves, not places in the chain. The title leaf is not listed —
-  it is the cover, which the contents lies under, and a pull down from the
-  top is already the way to it. The back matter holds what reading order
+  The back matter holds what reading order
   cannot carry, reading order being the order blocks were mined; each part has
   a contents leaf here and a leaf of its own one level down, the ▾ being the
   door. It runs in **three families**, and only the first is numbered: the
