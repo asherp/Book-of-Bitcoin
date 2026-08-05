@@ -146,10 +146,11 @@ export function tapscriptOf(witnessItems) {
 // register, so they are handed back apart and a surface that shows the meta
 // shows it as what it is: the collection's own statement, in its own words.
 //
-// The per-member editorial matter (an artist, a city, a date) is deliberately
-// NOT read. It is a claim about a particular photograph, and the photograph
-// itself is one fetch away -- so the book shows the work rather than the
-// caption somebody wrote for it.
+// A member carries the same two registers in miniature: its `txid` and
+// `index` are the id -- a witness the chain holds -- while its `name` and
+// `attributes` are the manifest's caption for that work, an artist credited,
+// a city, a date, sometimes a line quoted off the wall. Captions, not record:
+// they are shown beside the work as the manifest's own words about it.
 //
 // Null for any body that is not a manifest, a plain JSON inscription being
 // its own content.
@@ -158,19 +159,28 @@ export function parseCollection(body) {
   try { doc = JSON.parse(new TextDecoder().decode(body)); }
   catch { return null; }
   if (!doc || !Array.isArray(doc.data)) return null;
+  // Scalar fields only, and as written: a manifest is somebody's JSON, so
+  // anything nested is theirs to mean and not this reader's to flatten.
+  const scalars = (o) => {
+    const out = {};
+    for (const [k, v] of Object.entries((o && typeof o === 'object' && !Array.isArray(o)) ? o : {})) {
+      if (v !== null && typeof v !== 'object') out[k] = String(v);
+    }
+    return out;
+  };
   const members = [];
   for (const row of doc.data) {
     const m = /^([0-9a-f]{64})i(\d+)$/i.exec(String((row && row.id) || '').trim());
-    if (m) members.push({ txid: m[1].toLowerCase(), index: Number(m[2]) });
+    if (!m) continue;
+    const member = { txid: m[1].toLowerCase(), index: Number(m[2]) };
+    const rm = (row && row.meta && typeof row.meta === 'object') ? row.meta : {};
+    if (rm.name != null && typeof rm.name !== 'object') member.name = String(rm.name);
+    const attributes = scalars(rm.attributes);
+    if (Object.keys(attributes).length) member.attributes = attributes;
+    members.push(member);
   }
   if (!members.length) return null;
-  // Scalar fields only, and as written: a manifest is somebody's JSON, so
-  // anything nested is theirs to mean and not this reader's to flatten.
-  const meta = {};
-  for (const [k, v] of Object.entries((doc.meta && typeof doc.meta === 'object') ? doc.meta : {})) {
-    if (v !== null && typeof v !== 'object') meta[k] = String(v);
-  }
-  return { meta, members };
+  return { meta: scalars(doc.meta), members };
 }
 
 // The first inscription a transaction reveals, walking its inputs in order

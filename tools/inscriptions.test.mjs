@@ -134,7 +134,8 @@ test('a manifest reads out the members it names, in its own order', () => {
     meta: { name: 'Museum Outdoor', supply: '100' },
     data: [{ id: `${a}i0`, meta: { attributes: { artist: 'MVR' } } }, { id: `${b}i2` }],
   })));
-  assert.deepEqual(found.members, [{ txid: a, index: 0 }, { txid: b, index: 2 }]);
+  assert.deepEqual(found.members.map((m) => [m.txid, m.index]), [[a, 0], [b, 2]]);
+  assert.deepEqual(found.members[0].attributes, { artist: 'MVR' });
 });
 
 test("the collection's own words come back apart from the ids it names", () => {
@@ -147,12 +148,30 @@ test("the collection's own words come back apart from the ids it names", () => {
   assert.deepEqual(found.members, [{ txid: a, index: 0 }]);
 });
 
-test("a member's own editorial matter is not read — the photograph is one fetch away", () => {
+test("a member carries the manifest's caption for it — its name and its attributes", () => {
   const a = 'a'.repeat(64);
   const found = parseCollection(utf8(JSON.stringify({
-    data: [{ id: `${a}i0`, meta: { name: 'SAHK (114', attributes: { artist: 'MVR', location: 'Hong Kong' } } }],
+    data: [{ id: `${a}i0`, meta: { name: 'SAHK (114', attributes: { number: 172265, artist: 'MVR', location: 'Hong Kong' } } }],
   })));
-  assert.deepEqual(Object.keys(found.members[0]), ['txid', 'index']);
+  assert.deepEqual(found.members[0], {
+    txid: a, index: 0, name: 'SAHK (114',
+    attributes: { number: '172265', artist: 'MVR', location: 'Hong Kong' },
+  });
+});
+
+test('a member with no caption is still a member', () => {
+  const a = 'a'.repeat(64);
+  const found = parseCollection(utf8(`{"data":[{"id":"${a}i0"}]}`));
+  assert.deepEqual(found.members[0], { txid: a, index: 0 });
+});
+
+test("a member's nested attributes are left to whoever wrote them", () => {
+  const a = 'a'.repeat(64);
+  const found = parseCollection(utf8(JSON.stringify({
+    data: [{ id: `${a}i0`, meta: { name: { not: 'a string' }, attributes: { artist: 'ROA', tags: ['a', 'b'], deep: { x: 1 } } } }],
+  })));
+  assert.equal(found.members[0].name, undefined);
+  assert.deepEqual(found.members[0].attributes, { artist: 'ROA' });
 });
 
 test('a manifest with no meta reads as one all the same, with nothing to say for itself', () => {

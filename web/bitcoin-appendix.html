@@ -86,15 +86,9 @@
         : 'glossia-appendix-entrance';
       leave(to, `translateX(${back ? 100 : -100}vw)`, flag, back ? 'back' : 'fwd');
     };
-    // An element that runs its own sideways gesture (a carousel of works)
-    // keeps it: a drag begun inside one scrolls that rack rather than turning
-    // the leaf out from under it. Marked in the DOM rather than named here,
-    // so this layer needs to know nothing about what is on the page.
-    let inRack = false;
     document.addEventListener('touchstart', (e) => {
       sy = null;
       if (e.touches.length !== 1) return;
-      inRack = !!(e.target && e.target.closest && e.target.closest('[data-hswipe]'));
       sy = e.touches[0].clientY; sx = e.touches[0].clientX; st = performance.now();
       atTop = window.scrollY <= 2;
       atBottom = window.scrollY >= document.documentElement.scrollHeight - window.innerHeight - 2;
@@ -108,7 +102,7 @@
       // A committed horizontal turn: quick, far enough, and mostly sideways.
       // Nothing that way and the edge simply holds.
       if (dt <= 600 && Math.abs(dx) >= 60 && Math.abs(dy) <= Math.abs(dx) * 0.6) {
-        if (!inRack) window.__appxTurn(dx > 0);    // swiping right turns back
+        window.__appxTurn(dx > 0);                 // swiping right turns back
         return;
       }
       // A push UP from the foot descends into the appendix's first chapter,
@@ -386,18 +380,16 @@ a.bb-ref:hover { color:var(--accent-2); }
 /* An id or a key is a handle, not a sentence: it reads in the mono the book
    gives every raw string, so it is never mistaken for the prose beside it. */
 .ins-val.raw { font:400 11.5px/1.7 'IBM Plex Mono',monospace; color:var(--dim); }
+/* A manifest that quotes a wall is quoting somebody; the line reads as the
+   quotation it is, and keeps the breaks whoever wrote it put in. */
+.ins-val.quote { font-style:italic; color:var(--dim); white-space:pre-line; }
 
-/* A collection, read as what it names. One member to a panel: its txid said
-   in the book's own prose -- the poem the chain writes for that witness --
-   and the witness's own image beneath it, the way a plate sits under its
-   line. Run sideways, because a collection is a rack of works and not a
-   list of them: the reader moves along it rather than down. */
-.ins-rack { display:flex; gap:26px; margin:26px 0 0; padding:0 4px 18px;
-  overflow-x:auto; overflow-y:hidden; scroll-snap-type:x mandatory;
-  overscroll-behavior-x:contain; scrollbar-width:thin; }
-.ins-rack:focus-visible { outline:1px solid var(--accent); outline-offset:6px; }
-.ins-rack .ins-member { flex:0 0 min(84%, 46ch); scroll-snap-align:center; margin:0; }
-.ins-member { margin:0 0 44px; text-align:center; }
+/* A work of a collection, on its leaf: its txid said in the book's own prose
+   -- the poem the chain writes for that witness -- and the witness's own
+   image beneath it, the way a plate sits under its line. The manifest's
+   caption for it follows, in the form above: the work first, then what its
+   collection says about it. */
+.ins-member { margin:0; text-align:center; }
 /* The poem reads as the book's prose reads -- the reading face, the gold ⌘
    leading it -- and is the door into the chapter that witness sits in. */
 .ins-poem { display:block; font:italic 400 15px/1.6 'Newsreader',serif; color:var(--ink-soft);
@@ -475,12 +467,10 @@ a.ins-poem:hover { color:var(--ink); text-decoration:none; }
        as a form -- the fields as written, in the manifest's own order. -->
   <div class="ins-form hidden" id="ins-form"></div>
 
-  <!-- …and the works themselves stand one level below (&items): a rack run
-       sideways, one member to a panel, the txid said in the book's own prose
-       over the image its witness carries. Each panel's witness is fetched as
-       it comes into reach, since a panel is a whole reveal. -->
-  <div class="ins-rack hidden" id="ins-rack" data-hswipe tabindex="0"
-       role="group" aria-label="the works this collection names"></div>
+  <!-- …and the works themselves stand one level below (&item=n), one to a
+       leaf: the txid said in the book's own prose, the image its witness
+       carries, and the manifest's caption for it. Turned to sideways, the
+       way every run of leaves in this book is turned. -->
 
   <div class="proof-list hidden" id="proof-list"></div>
 
@@ -552,10 +542,12 @@ const bipAt = bip ? bips.indexOf(bip) : -1;
 const insEntries = part.kind === 'inscriptions' ? (part.entries || []) : [];
 const ins = insEntries.find((e) => e.reveal === String(params.get('ins') || '').toLowerCase()) || null;
 const insAt = ins ? insEntries.indexOf(ins) : -1;
-// A collection has one more level beneath its title page: &items opens the
-// works themselves, laid side by side. The title page says what the
-// collection claims to be; the level below it is the collection.
-const itemsLeaf = ins != null && params.has('items');
+// A collection has one more level beneath its title page: &item=n opens the
+// nth work, one to a leaf, turned to sideways the way every other run of
+// leaves in this book is turned. The title page says what the collection
+// claims to be; the leaves below it are the collection.
+const itemRaw = parseInt(params.get('item'), 10);
+const itemAt = ins != null && Number.isFinite(itemRaw) && itemRaw >= 1 ? itemRaw : null;
 // One block of a fork's ballot, a level below the fork's own leaf: ?block=
 // names it by height, the way a ballot row links it.
 const blockLeaf = bip && /^[0-9]+$/.test(params.get('block') || '') ? Number(params.get('block')) : null;
@@ -688,7 +680,7 @@ const bipHref = (b) => `./bitcoin-appendix.html?part=consensus&bip=${b.key}`;
 // the envelope reads at), and the door into the book at that very footnote
 // (&wit takes the letter, and the book brings the note to the top).
 const insHref = (e) => `./bitcoin-appendix.html?part=inscriptions&ins=${e.reveal}`;
-const insItemsHref = (e) => `${insHref(e)}&items`;
+const insItemHref = (e, n) => `${insHref(e)}&item=${n}`;
 const insRef = (e) => `${wholeRef(Number(e.id), e.index + 1)}.${footnoteMark(e.wit)}`;
 const insDoor = (e) => `./bitcoin-book.html?block=${e.id}&index=${e.index}&wit=${footnoteMark(e.wit)}`;
 
@@ -744,8 +736,8 @@ if (blockLeaf != null) {
   const up = $('appx-up');
   // The works stand one level below the title page, so their leaf climbs to
   // that page rather than all the way out to the shelf.
-  up.textContent = itemsLeaf ? `▴ ${ins.title}` : `▴ ${label(part)}`;
-  up.href = itemsLeaf ? insHref(ins) : hrefFor(part);
+  up.textContent = itemAt ? `▴ ${ins.title}` : `▴ ${label(part)}`;
+  up.href = itemAt ? insHref(ins) : hrefFor(part);
   up.classList.remove('hidden');
 } else if (part.family === 'appendix') {
   $('appx-title').textContent = `Appendix ${toRoman(partNumber(APPENDIX, part))}`;
@@ -779,7 +771,7 @@ if (kind === 'consensus' && blockLeaf == null) {
 // is read, so that redirection is made when the reading lands (below).
 // The works' own leaf is the bottom: nothing lies under the pictures.
 if (kind === 'inscriptions') {
-  firstChapter = itemsLeaf ? null
+  firstChapter = itemAt ? null
     : ins ? insDoor(ins)
     : (insEntries.length ? insHref(insEntries[0]) : null);
 }
@@ -813,7 +805,7 @@ $('appx-down').addEventListener('click', (ev) => { ev.preventDefault(); descend(
 if ((bip && blockLeaf == null) || ins) {
   // The works climb to the title page that names them; everything else at
   // this level climbs to the part that lists it.
-  window.__appxAscend = () => navTo(itemsLeaf ? insHref(ins) : hrefFor(part), 'drop');
+  window.__appxAscend = () => navTo(itemAt ? insHref(ins) : hrefFor(part), 'drop');
 }
 if (bip || ins) {
   $('appx-up').addEventListener('click', (ev) => {
@@ -841,7 +833,7 @@ const prevTo = blockLeaf != null ? null : bip
   ? (bipAt > 0
     ? { href: bipHref(bips[bipAt - 1]), text: bips[bipAt - 1].label }
     : { href: hrefFor(part), text: label(part) })
-  : itemsLeaf ? null
+  : itemAt ? null   // a work's neighbours wait on the manifest (setTurns, below)
   : ins
   ? (insAt > 0
     ? { href: insHref(insEntries[insAt - 1]), text: insEntries[insAt - 1].title }
@@ -849,7 +841,7 @@ const prevTo = blockLeaf != null ? null : bip
   : (APPENDIX[index - 1] ? { href: hrefFor(APPENDIX[index - 1]), text: label(APPENDIX[index - 1]) } : null);
 const nextTo = blockLeaf != null ? null : bip
   ? (bipAt < bips.length - 1 ? { href: bipHref(bips[bipAt + 1]), text: bips[bipAt + 1].label } : null)
-  : itemsLeaf ? null
+  : itemAt ? null
   : ins
   ? (insAt < insEntries.length - 1 ? { href: insHref(insEntries[insAt + 1]), text: insEntries[insAt + 1].title } : null)
   : (APPENDIX[index + 1] ? { href: hrefFor(APPENDIX[index + 1]), text: label(APPENDIX[index + 1]) } : null);
@@ -870,8 +862,16 @@ function turnLink(href, text, back) {
   turns.append(a);
   return a;
 }
-if (prevTo) turnLink(prevTo.href, `‹ ${prevTo.text}`, true);
-if (nextTo) turnLink(nextTo.href, `${nextTo.text} ›`, false);
+// Naming the neighbours: the same two acts every leaf performs, factored so a
+// leaf whose run is not known until something is fetched (a work of a
+// collection, which waits on the manifest) can perform them late and get the
+// swipe, the keys and the foot's links all agreeing, as they do everywhere.
+function setTurns(prev, next) {
+  window.__appxTurns = { prev: prev && prev.href, next: next && next.href };
+  if (prev) turnLink(prev.href, `‹ ${prev.text}`, true);
+  if (next) turnLink(next.href, `${next.text} ›`, false);
+}
+setTurns(prevTo, nextTo);
 
 // Appendix I's backward turn leaves the appendices for the body: the last
 // volume's own leaf, which is the page this one continues from. Which volume
@@ -984,7 +984,7 @@ if (ins) {
     if (collection) {
       status.remove();
       fig.classList.add('hidden');
-      if (itemsLeaf) renderRack(collection);
+      if (itemAt) renderWork(collection, itemAt);
       else renderTitlePage(collection);
       return;
     }
@@ -1027,6 +1027,42 @@ if (ins) {
     status.textContent = `${found.body.length.toLocaleString('en-US')} bytes of ${found.contentType || 'an undeclared kind'}`;
   })();
 
+  // Somebody's words about something the chain holds, set as a form: the
+  // fields as written and in the order they were written, the key in the
+  // ruling register and the value in the reading face. Shared by the two
+  // levels because it is the same kind of claim at both -- the collection
+  // speaking about itself, and the collection speaking about one work.
+  function fillForm(form, fields) {
+    const rows = fields.filter(([, v]) => String(v).trim());
+    for (const [k, v] of rows) {
+      const row = document.createElement('div');
+      row.className = 'ins-field';
+      const key = document.createElement('div');
+      key.className = 'ins-key';
+      key.textContent = k.replace(/[_-]+/g, ' ');
+      const val = document.createElement('div');
+      val.className = 'ins-val';
+      // A link is followed; an id or a key is a handle and reads as one; a
+      // quotation is set as one, since a manifest that quotes a wall is
+      // quoting somebody and the marks should say so. Everything else is
+      // plain matter, in the reading face.
+      if (/^https?:\/\//.test(v)) {
+        const a = document.createElement('a');
+        a.href = v; a.textContent = v; a.rel = 'noopener nofollow'; a.target = '_blank';
+        val.append(a);
+      } else if (/^\s*["“]/.test(v)) {
+        val.classList.add('quote');
+        val.textContent = v.trim();
+      } else {
+        if (/^[0-9a-f]{64}i\d+$/i.test(v) || /^npub1[0-9a-z]+$/.test(v)) val.classList.add('raw');
+        val.textContent = v;
+      }
+      row.append(key, val);
+      form.append(row);
+    }
+    form.classList.toggle('hidden', !rows.length);
+  }
+
   // ── A collection's title page ──
   // The head takes the name the collection gives itself, and beneath it the
   // rest of what the manifest says: the fields as written, in the manifest's
@@ -1042,136 +1078,107 @@ if (ins) {
       $('appx-title').textContent = name;
       document.title = `The βook of βitcoin — ${name}`;
     }
-    const form = $('ins-form');
     // The name is the head; a form that repeated it would say it twice.
-    const fields = Object.entries(meta).filter(([k, v]) => k !== 'name' && String(v).trim());
-    for (const [k, v] of fields) {
-      const row = document.createElement('div');
-      row.className = 'ins-field';
-      const key = document.createElement('div');
-      key.className = 'ins-key';
-      key.textContent = k.replace(/[_-]+/g, ' ');
-      const val = document.createElement('div');
-      val.className = 'ins-val';
-      // A link is followed, an id or a key is a handle and reads as one;
-      // everything else is prose the collection wrote about itself.
-      if (/^https?:\/\//.test(v)) {
-        const a = document.createElement('a');
-        a.href = v; a.textContent = v; a.rel = 'noopener nofollow'; a.target = '_blank';
-        val.append(a);
-      } else {
-        if (/^[0-9a-f]{64}i\d+$/i.test(v) || /^npub1[0-9a-z]+$/.test(v)) val.classList.add('raw');
-        val.textContent = v;
-      }
-      row.append(key, val);
-      form.append(row);
-    }
-    if (fields.length) form.classList.remove('hidden');
+    fillForm($('ins-form'), Object.entries(meta).filter(([k]) => k !== 'name'));
     // The descent now opens the collection rather than the book: the works
-    // are what lies under the page that names them.
-    firstChapter = insItemsHref(ins);
+    // are what lies under the page that names them, and the first of them is
+    // where a descent lands, as it does from every leaf that has a run below.
+    firstChapter = insItemHref(ins, 1);
     const down = $('appx-down');
     down.classList.remove('hidden');
     down.title = `the works — ${collection.members.length.toLocaleString('en-US')} of them`;
     down.setAttribute('aria-label', 'Down into the collection');
   }
 
-  // ── The works themselves, one level below ──
-  // A rack run sideways: one member to a panel, the txid said in the book's
-  // own prose -- the same encoding a section's title wears, over the same
-  // reversed bytes -- and beneath it the image that member's own witness
-  // carries. The poem is the door into the chapter the member sits in; the
-  // book resolves a bare txid to its section.
+  // ── One work of a collection, on its own leaf ──
+  // The txid said in the book's own prose -- the same encoding a section's
+  // title wears, over the same reversed bytes -- and beneath it the image
+  // that work's own witness carries. The poem is the door into the chapter
+  // the work sits in; the book resolves a bare txid to its section.
   //
-  // Every panel is laid out at once (a panel is cheap) but nothing is
-  // FETCHED until it comes within reach of the rack's own edge: a member is a
-  // whole reveal, ~100 kB with the photograph in its witness, and a hundred
-  // of them fetched for a reader looking at the first three would be
-  // megabytes nobody asked for.
-  function renderRack(collection) {
-    const meta = collection.meta || {};
-    const name = (meta.name || '').trim();
+  // Then the manifest's caption for it, in the same form the collection's
+  // own statement takes one level up: the work first, then what its
+  // collection says about the work. Same dress because it is the same kind
+  // of claim -- somebody's words, repeated here, about something the chain
+  // holds.
+  //
+  // The works are a run of leaves and turn like one: ‹ back and forward ›
+  // along the collection, up to the title page that names them. One leaf is
+  // one reveal fetched, which is the whole reason this is a run rather than
+  // a page -- a hundred photographs are megabytes, and a reader turns to
+  // them one at a time.
+  function renderWork(collection, n) {
     const members = collection.members;
-    if (name) {
-      $('appx-title').textContent = name;
-      $('appx-up').textContent = `▴ ${name}`;
-      document.title = `The βook of βitcoin — ${name}`;
-    }
-    // The subtitle counts the works rather than citing the manifest: this
-    // level is the collection, and the citation belongs to the page above.
-    $('appx-subtitle').textContent = `${members.length.toLocaleString('en-US')} works`;
+    const at = Math.min(Math.max(1, n), members.length);
+    const m = members[at - 1];
+    const collectionName = (collection.meta && collection.meta.name || '').trim() || ins.title;
 
-    const rack = $('ins-rack');
-    rack.classList.remove('hidden');
+    // The head: the manifest's name for this work, the collection above it,
+    // and the work's place in the run beneath -- a leaf says where it is.
+    $('appx-title').textContent = (m.name || '').trim() || `Work ${at.toLocaleString('en-US')}`;
+    $('appx-subtitle').textContent = `${collectionName} · ${at.toLocaleString('en-US')} of ${members.length.toLocaleString('en-US')}`;
+    $('appx-up').textContent = `▴ ${collectionName}`;
+    document.title = `The βook of βitcoin — ${(m.name || '').trim() || `Work ${at}`}`;
 
-    const fill = (panel) => {
-      const m = panel.__member;
-      if (!m || panel.__filled) return;
-      panel.__filled = true;
-      const poem = panel.querySelector('.ins-poem');
-      const body = panel.querySelector('.ins-member-body');
-      glossia().then((g) => {
-        const mark = document.createElement('span');
-        mark.className = 'dt';
-        mark.textContent = '⌘';
-        const sup = document.createElement('span');
-        sup.className = 'op-count';
-        sup.textContent = toSuperscript(256);
-        poem.replaceChildren(mark, sup, document.createTextNode(' '
-          + g.encodeCanonical(reverseHex(m.txid), g.bookLang(), 5).prose));
-        poem.classList.remove('waiting');
-      }).catch(() => { poem.textContent = 'unsaid'; poem.title = 'the engine that puts a hash into words did not load'; });
-      // The member's own witness, read exactly as this leaf's was.
-      (async () => {
-        const say = (text) => { const s = document.createElement('div'); s.className = 'ins-member-say'; s.textContent = text; body.replaceChildren(s); };
-        const mtx = await overMirrors(`/tx/${m.txid}`);
-        if (!mtx) { say('the chain could not be reached for this work'); return; }
-        const { inscriptionInTx } = await import('./btc-inscriptions.js');
-        const e = inscriptionInTx(mtx);
-        if (!e) { say('no envelope in this witness'); return; }
-        const ct = String(e.contentType || '').toLowerCase();
-        if (e.contentEncoding || !ct.startsWith('image/')) {
-          say(`${e.body.length.toLocaleString('en-US')} bytes of ${e.contentType || 'an undeclared kind'}`);
-          return;
-        }
-        const img = document.createElement('img');
-        img.src = URL.createObjectURL(new Blob([e.body], { type: e.contentType }));
-        img.alt = '';
-        body.replaceChildren(img);
-      })().catch(() => { /* the poem stands: a work's plate is not its name */ });
-    };
+    // The neighbours, known only now the manifest is read: another work
+    // either side, and back off the first is the title page that names them.
+    setTurns(
+      at > 1
+        ? { href: insItemHref(ins, at - 1), text: (members[at - 2].name || `Work ${at - 1}`).trim() }
+        : { href: insHref(ins), text: collectionName },
+      at < members.length
+        ? { href: insItemHref(ins, at + 1), text: (members[at].name || `Work ${at + 1}`).trim() }
+        : null,
+    );
 
-    const io = new IntersectionObserver((es) => {
-      for (const e of es) if (e.isIntersecting) { fill(e.target); io.unobserve(e.target); }
-    }, { root: rack, rootMargin: '120% 0px' });
+    // The work itself: the poem, then the plate.
+    const plate = document.createElement('figure');
+    plate.className = 'ins-member';
+    const poem = document.createElement('a');
+    poem.className = 'ins-poem waiting';
+    poem.href = `./bitcoin-book.html?txid=${m.txid}`;
+    poem.title = 'read this witness in the book';
+    poem.textContent = '…';
+    const body = document.createElement('div');
+    body.className = 'ins-member-body';
+    plate.append(poem, body);
+    fig.replaceChildren(plate);
+    fig.classList.remove('hidden');
 
-    for (const m of members) {
-      const panel = document.createElement('figure');
-      panel.className = 'ins-member';
-      panel.__member = m;
-      const poem = document.createElement('a');
-      poem.className = 'ins-poem waiting';
-      poem.href = `./bitcoin-book.html?txid=${m.txid}`;
-      poem.title = 'read this witness in the book';
-      poem.textContent = '…';
-      const body = document.createElement('div');
-      body.className = 'ins-member-body';
-      panel.append(poem, body);
-      rack.append(panel);
-      io.observe(panel);
-    }
+    glossia().then((g) => {
+      const mark = document.createElement('span');
+      mark.className = 'dt';
+      mark.textContent = '⌘';
+      const sup = document.createElement('span');
+      sup.className = 'op-count';
+      sup.textContent = toSuperscript(256);
+      poem.replaceChildren(mark, sup, document.createTextNode(' '
+        + g.encodeCanonical(reverseHex(m.txid), g.bookLang(), 5).prose));
+      poem.classList.remove('waiting');
+    }).catch(() => { poem.textContent = 'unsaid'; poem.title = 'the engine that puts a hash into words did not load'; });
 
-    // The rack answers the arrow keys, which the leaf's own turns have left
-    // alone at this level (there is nothing sideways of the works but more
-    // works). One panel a press, the way the snap already moves.
-    rack.addEventListener('keydown', (ev) => {
-      if (ev.key !== 'ArrowLeft' && ev.key !== 'ArrowRight') return;
-      const panel = rack.querySelector('.ins-member');
-      if (!panel) return;
-      ev.preventDefault();
-      const step = panel.getBoundingClientRect().width + 26;   // the rack's gap
-      rack.scrollBy({ left: ev.key === 'ArrowRight' ? step : -step, behavior: 'smooth' });
-    });
+    (async () => {
+      const say = (text) => { const s = document.createElement('div'); s.className = 'ins-member-say'; s.textContent = text; body.replaceChildren(s); };
+      const mtx = await overMirrors(`/tx/${m.txid}`);
+      if (!mtx) { say('the chain could not be reached for this work'); return; }
+      const { inscriptionInTx } = await import('./btc-inscriptions.js');
+      const e = inscriptionInTx(mtx);
+      if (!e) { say('no envelope in this witness'); return; }
+      const ct = String(e.contentType || '').toLowerCase();
+      if (e.contentEncoding || !ct.startsWith('image/')) {
+        say(`${e.body.length.toLocaleString('en-US')} bytes of ${e.contentType || 'an undeclared kind'}`);
+        return;
+      }
+      const img = document.createElement('img');
+      img.src = URL.createObjectURL(new Blob([e.body], { type: e.contentType }));
+      img.alt = (m.name || '').trim();
+      body.replaceChildren(img);
+    })().catch(() => { /* the poem stands: a work's plate is not its name */ });
+
+    // The caption: the manifest's attributes for this work, as written and in
+    // its own order. A quote is set as the quotation it is; everything else
+    // reads as the form's plain value.
+    fillForm($('ins-form'), Object.entries(m.attributes || {}));
   }
 
   // The entry's reading, raised the way a fork's is: the note leads the

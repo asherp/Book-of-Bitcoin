@@ -202,19 +202,24 @@ editor adding a kind of back matter can follow the same path:
      `meta` beneath it as a form — the fields as written, in the
      manifest's own order, a link followed, an id or a key in the mono
      the book gives every raw string. Repeated, not vouched for.
-   - **The works** (`&items`), one level below, where the ▾ leads: a
-     rack run sideways, one member to a panel, its txid said in the
-     book's own prose over the image its witness carries. A panel is
-     laid out at once but nothing is fetched until it comes within
-     reach of the rack's edge — a member is a whole reveal, ~100 kB
-     with the photograph in its witness. The rack owns its sideways
-     gesture (`data-hswipe`), so a drag along it scrolls the works
-     rather than turning the leaf out from under them, and the arrow
-     keys move it a panel at a time.
+   - **The works** (`&item=n`), one level below, where the ▾ leads:
+     one work to a leaf, turned to sideways the way every run in this
+     book is turned — ‹ back and forward › along the collection, and
+     back off the first is the title page that named them. The leaf
+     carries the work's txid said in the book's own prose, the image
+     its witness holds, and beneath that the manifest's caption for it
+     — the same form the collection's own statement takes one level up,
+     because it is the same kind of claim: somebody's words about
+     something the chain holds. A quotation is set as one and keeps its
+     line breaks; the first work of Museum Outdoor quotes the line
+     painted on the door it photographs.
 
-   Per-member editorial matter (an artist, a city, a date) is still not
-   read: the photograph is one fetch away, so the book shows the work
-   rather than the caption somebody wrote for it.
+   One leaf is one reveal fetched, which is the whole reason the works
+   are a run rather than a page: a member is ~100 kB with the
+   photograph in its witness, and a hundred of them at once is
+   megabytes nobody asked for. A leaf whose run is not known until
+   something is fetched wires its neighbours late (`setTurns`), so the
+   swipe, the arrow keys and the foot's links all still agree.
 5. **The contents row.** `web/bitcoin-contents.html` — a sub-line for the
    new kind and a row builder, placing through the same map the volumes'
    rows read, so a lookup runs once for both registers. The rows open the
