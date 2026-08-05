@@ -402,7 +402,13 @@ try { navigator.storage?.persist?.().catch(() => { /* denied: merely evictable *
 const DB_NAME = 'glossia-btc-index';
 const DB_STORE = 'lines';
 const REGISTRY_KEY = 'glossia-btc-index-registry';
-const STORE_MAX_ADDRESSES = 12;
+// The bank keeps the most recently read members and prunes the rest. Its
+// floor is the largest shelved ledger's membership, because a ledger is
+// read as ONE account: a cap below it could never let one be read whole --
+// gathering the 221st Coldcard vault would evict the first, and the merge
+// would shrink as the reader scrolled. Headroom above that for the
+// passages a reader visits either side of whatever they are reading.
+const STORE_MAX_ADDRESSES = Math.max(64, ...INDEXED.map((e) => e.addresses.length)) + 32;
 // The pre-anthology localStorage cache is superseded; clear it once.
 try { localStorage.removeItem('glossia-btc-index-cache'); } catch (_) { /* unavailable */ }
 
@@ -721,51 +727,69 @@ export function periods(data) {
 // status column from the chain's own bookmarks. The callers own any
 // clearing and any notes around the run.
 const BOOKMARK_RIBBON = '<svg viewBox="0 0 12 16"><path fill="currentColor" d="M0 0h12v16l-6-4-6 4z"/></svg>';
-export const groupState = () => ({ year: null, q: null, bm: 0 });
-export function renderRows(el, entries, held = null, { state = null, bookmarks = [] } = {}) {
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const MONTHS_FULL = ['January', 'February', 'March', 'April', 'May', 'June',
+                     'July', 'August', 'September', 'October', 'November', 'December'];
+export const groupState = () => ({ year: null, q: null, mo: null, day: null });
+export function renderRows(el, entries, held = null, { state = null, marks = null } = {}) {
   for (const c of [...entries].reverse()) {
     if (state) {
-      // A mark strictly newer than this row closes out the period ABOVE
-      // it, so it goes in before the heading this row may open -- a
-      // bookmark belongs to the period it was made in, never to the one
-      // the next row begins.
-      while (state.bm < bookmarks.length && bookmarks[state.bm].height > c.height) {
-        el.append(bookmarkRow(bookmarks[state.bm++]));
-      }
       const d = c.time ? new Date(c.time * 1000) : null;
       if (d) {
         const year = d.getUTCFullYear();
         const q = Math.floor(d.getUTCMonth() / 3) + 1;
-        if (year !== state.year) { el.append(lineHead('idx-vol', String(year))); state.year = year; state.q = null; }
-        if (q !== state.q) { el.append(lineHead('idx-book', `Q${q} ${year}`)); state.q = q; }
+        const mo = d.getUTCMonth();
+        const day = d.getUTCDate();
+        // Each level opens the ones beneath it afresh: turning a quarter
+        // turns its month and day too, so a heading can never be left
+        // standing over entries from the period before it.
+        if (year !== state.year) {
+          el.append(lineHead('idx-vol', String(year)));
+          state.year = year; state.q = null; state.mo = null; state.day = null;
+        }
+        if (q !== state.q) {
+          el.append(lineHead('idx-book', `Q${q} ${year}`));
+          state.q = q; state.mo = null; state.day = null;
+        }
+        // Inside the quarter, the grain a reading needs when a whole story
+        // lands in one of them -- a theft's three days would otherwise file
+        // as a single undifferentiated Q.
+        if (mo !== state.mo) {
+          el.append(lineHead('idx-month', MONTHS_FULL[mo]));
+          state.mo = mo; state.day = null;
+        }
+        if (day !== state.day) {
+          el.append(lineHead('idx-day', `${MONTHS[mo]} ${day}`));
+          state.day = day;
+        }
       }
     }
-    el.append(lineRow({ ...c, place: volumeBookChapter(c.height) }, held));
-    // A mark on this row's OWN block follows it: the entry first, then the
-    // reader's mark on the chapter it belongs to.
-    while (state && state.bm < bookmarks.length && bookmarks[state.bm].height === c.height) {
-      el.append(bookmarkRow(bookmarks[state.bm++]));
-    }
+    el.append(lineRow({ ...c, place: volumeBookChapter(c.height) }, held, marks));
   }
 }
 
-// One of the reader's bookmarks, hung at its place in the record: the
-// ribbon, the title they kept it under, and the chapter it names.
-function bookmarkRow(bm) {
-  const row = document.createElement('a');
-  row.className = 'sp-bm';
-  row.href = citeHref(bm.hex);
-  row.title = `your bookmark — ${bm.title}`;
-  const t = document.createElement('span'); t.className = 'sp-bm-title';
-  const rib = document.createElement('span'); rib.className = 'toc-bm';
-  rib.setAttribute('aria-label', 'your bookmark');
-  rib.innerHTML = BOOKMARK_RIBBON;
-  t.append(rib, document.createTextNode(bm.title));
-  const ref = document.createElement('span'); ref.className = 'sp-bm-ref';
-  ref.textContent = `■${volumeBookChapter(bm.height).chapter}` + (bm.pos != null ? ` §${bm.pos + 1}` : '');
-  row.append(t, ref);
-  return row;
+// The reader's marks, indexed for the account to wear. A ledger's table is
+// its OWN transactions and nothing else, so a mark never stands as a row of
+// its own here: it is a label the row it belongs to puts on, or it does not
+// appear. Two ways a mark names one of these transactions --
+//   by txid, when the mark was kept on a transaction id (its hex IS the
+//     txid), which is exact and known at once; and
+//   by place (height + section), which is how every other mark on a
+//     transaction is stored -- an output's, a witness's -- and which the
+//     row can only check once the archive knows its own section.
+// A mark on a CHAPTER (pos null, the block hash) names no transaction, so
+// it never labels a row: sharing a block with this ledger's entry is not
+// pertaining to it, which is the whole bug this replaces.
+export function markIndex(bookmarks) {
+  const byTxid = new Map(), byPlace = new Map();
+  for (const b of bookmarks) {
+    if (b.pos == null) continue;                       // a chapter, not a transaction
+    byPlace.set(`${b.height}:${b.pos}`, b);
+    if (/^[0-9a-f]{64}$/.test(b.hex ?? '')) byTxid.set(b.hex, b);
+  }
+  return { byTxid, byPlace };
 }
+
 
 
 // One amount cell, in the reader's chosen notation and in that alone: a
@@ -996,7 +1020,7 @@ export function outspendsOf(txid) {
 // hasn't agreed with the chain -- the verdict waits, never guesses.
 // (`pending` is reserved for mempool transactions, which the map doesn't
 // carry yet.) A zero-value touch carries no coin to have a status.
-function lineRow({ txid, sats, place, out, addr, time }, held) {
+function lineRow({ txid, sats, place, out, addr, time, height }, held, marks = null) {
   const row = document.createElement('a');
   row.className = 'idx-row acct';
   row.href = citeHref(txid, out);   // a credit lands the book on its output
@@ -1018,8 +1042,28 @@ function lineRow({ txid, sats, place, out, addr, time }, held) {
   // reader's marginalia print it); the rest wait to be read.
   const sec = document.createElement('span');
   r.append(sec);
+  // The reader's own mark, worn by the row it belongs to: the ribbon it
+  // flies in the contents and the name they kept it under. A mark named by
+  // txid is known at once; every other kind is placed by section, so it
+  // joins when the archive's answer does -- the same answer the citation
+  // above is waiting on, so no lookup is made for it.
+  const wear = (bm) => {
+    if (!bm || r.querySelector('.idx-bm')) return;
+    const tag = document.createElement('span');
+    tag.className = 'idx-bm';
+    tag.title = `your bookmark — ${bm.title}`;
+    const rib = document.createElement('span');
+    rib.className = 'toc-bm';
+    rib.setAttribute('aria-label', 'your bookmark');
+    rib.innerHTML = BOOKMARK_RIBBON;
+    tag.append(rib, document.createTextNode(bm.title));
+    r.append(tag);
+  };
+  wear(marks?.byTxid.get(txid));
   sectionOf(txid).then((pos) => {
-    if (pos != null) sec.textContent = ` §${pos + 1}${out != null ? `.${out}` : ''}`;
+    if (pos == null) return;
+    sec.textContent = ` §${pos + 1}${out != null ? `.${out}` : ''}`;
+    wear(marks?.byPlace.get(`${height}:${pos}`));
   });
   // The amount, in the reader's chosen notation and in that alone
   // (fillAmountCell): a valuation replaces the record's figure rather than

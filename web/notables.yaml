@@ -695,6 +695,34 @@
   id: V β56 ■83 §2224
 - title: 20.01 ₿ to the zero address
   id: V β56 ■83 §2225
+# ── The Coldcard attack ───────────────────────────────────────────────────
+# The July 2026 theft from Coldcard-generated wallets (the 'Coldcard hack'
+# ledger keeps the attacker's vault addresses; these entries keep its places
+# in the chain). Three waves, and for each the transactions listed are the
+# ones that carried the stolen coins into the vaults — the attack's terminal
+# settlement, which is where the chain tells the story in a citable number
+# of places. Each wave is cited by ONE place -- the opening settlement
+# transaction, first by block then by size -- because a contents names where
+# a story starts, and the story's remainder is a page-turn away: the rest of
+# each wave reads from the 'Coldcard hack' ledger, whose vaults' funding
+# histories ARE the full transaction lists. Wave 1 (blocks 960,190-960,191):
+# three mass consolidations (491, 204 and 341 inputs -- 398.48, 89.62 and
+# 562.02 BTC) and 49 direct single-input sweeps into a fourth vault; cited
+# by the 491-input consolidation. Wave 2 (blocks 960,352-960,455): 27
+# transactions, the largest pulling 1,212 inputs for 45.90 BTC. Wave 3
+# (blocks 960,519-960,522): 214 transactions, one per fresh P2WSH vault, the
+# shared-destination fingerprint deliberately absent. Txids fetched from the
+# chain itself (vault funding histories, blockstream.info and mempool.space
+# agreeing), windowed to each wave's blocks so later dust sent to the famous
+# vaults by onlookers is not mistaken for the attack. No published reading
+# yet -- the entries are kept, per the note above, before anyone has
+# finished saying why.
+- title: Coldcard attack, wave 1
+  id: 14edd9ee8445793c320e92e3b50365a0e18b8b25f424044bce337463f007fdd2
+- title: Coldcard attack, wave 2
+  id: be0a120150d5e2bb246047d709e61e300617b7f288a8943f3bdfc04d3462eafc
+- title: Coldcard attack, wave 3
+  id: 871d99f1ff2f1213a9677cbeca323a8d93c8041906db67e6d1265fe52a58ecb9
 
 # ── The ledgers ───────────────────────────────────────────────────────────
 # A curated entry may name an ADDRESS instead of a place in the chain. An
