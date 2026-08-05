@@ -187,8 +187,13 @@
   commentary:
     - file: difficulty-45.md
       by: Claude Fable 5
+# The transaction, not the block that carries it: what happened on 22 May 2010
+# was a payment, and block 57043 is only where it came to rest. The chapter has
+# no name of its own to earn — nothing else in it is remembered — so the entry
+# cites the section, and the reading below reads a passage rather than a
+# chapter.
 - title: Bitcoin Pizza Day
-  id: '57043'
+  id: a1075db55d416d3ca199f55b6084e2115b9345e16c5cf302fc80e9d5fbf5d48d
   commentary:
     - file: bitcoin-pizza-day.md
       by: Claude Fable 5
