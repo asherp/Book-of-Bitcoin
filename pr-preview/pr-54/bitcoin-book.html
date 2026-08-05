@@ -49,7 +49,7 @@
 <meta property="og:image" content="https://bookofbitcoin.io/og-bookofbitcoin.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="The βook of βitcoin — the illuminated timechain. A gold β standing beside the book's title on a dark cover.">
+<meta property="og:image:alt" content="The βook of βitcoin — Vires in Numeris. A gold β standing beside the book's title on a dark cover.">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="The βook of βitcoin — a block, read as a chapter">
 <meta name="twitter:description" content="The illuminated timechain: each block a chapter, each transaction a paragraph of grammatically correct prose.">
@@ -525,11 +525,11 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 /* Previous at the left edge, Next at the right, the page's keys centred
    between them. Explicit tracks: a hidden stepper (display:none) leaves the
    grid, and auto-placement would reflow the survivors off-centre.
-   Two keys ride that centre: Notation, which every page carries, and
-   Commentary, which appears only where the passage in front of the reader has
-   a curated reading (btc-commentary.js) -- so its absence is information too.
-   Both raise their sheet into the one slot above the bar, and opening either
-   closes the other. */
+   Two keys ride that centre, and every page carries both: Notation, which
+   reads the same everywhere, and Commentary, which is this passage's reading
+   where it has one (btc-commentary.js) and the offer to write the first where
+   it has none (btc-contribute.js). Both raise their sheet into the one slot
+   above the bar, and opening either closes the other. */
 #page-prev { grid-column: 1; justify-self: start; }
 .section-nav .nav-keys { grid-column: 2; display: flex; align-items: center; justify-content: center; gap: 20px; }
 #page-next { grid-column: 3; justify-self: end; }
@@ -818,17 +818,10 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 /* A witness footnote is a stack of items; a thin middot separates each, and an
    empty stack item shows as ∅. */
 .wit-sep, .wit-empty { color: var(--meta); font-style: normal; }
-/* A push whose prose has not been asked for (see lazyEncode): a dim ellipsis
-   standing where the words would be, and the handle that calls them up. It
-   reads as an offer rather than an omission -- brightening under the hand the
-   way every other door in the book does -- because the bytes it stands for
-   are somebody's file, not the chapter's sentence, and the reader decides
-   whether to have them read aloud. */
-.glossia-lazy { color: var(--dim); cursor: pointer; }
-.glossia-lazy:hover, .glossia-lazy:focus-visible { color: var(--accent); outline: none; }
-/* The other ⋯: prose the eager pass ran out of time for, which fills itself
-   as the reader scrolls to it. It offers nothing, so it invites nothing. */
-.glossia-pending { color: var(--dim); }
+/* A push chunk whose prose hasn't been encoded yet -- it streams in when it
+   scrolls near the viewport (see lazyEncode). Shown as a dim ellipsis until
+   then; each data push is its own chunk, so a large witness fills piecewise. */
+.glossia-lazy { color: var(--dim); }
 /* Verbatim human-readable text embedded in a script (a coinbase mining-pool
    tag, an OP_RETURN message) is a foreign voice quoted into the transaction,
    not part of its prose -- so it's set as a quote block (a marginal accent
@@ -1180,8 +1173,10 @@ a.footnote-title.is-asset:hover { color: var(--accent-2, #dcb877); text-decorati
          footnotes: read the transaction through, then step to the next. The
          page's keys ride between the two steppers; opened, either one's body
          rises above the bar as a sheet. Commentary comes first because it is
-         about the page in hand, and it is present only when this passage has a
-         curated reading -- the notation key is the same on every page. -->
+         about the page in hand, and like the notation key it is on every page:
+         where the passage has a curated reading the sheet holds it, and where
+         it has none the sheet offers the reader the writing of one
+         (btc-contribute.js). -->
     <nav class="section-nav">
       <button type="button" id="page-prev" class="hidden" aria-label="Previous contents entry" title="Previous contents entry"></button>
       <div class="nav-keys">
@@ -1238,6 +1233,7 @@ import { collectMarks, applyKeyFilter } from './btc-key-filter.js';
 // announces a format is named by it when nothing better has named it.
 import { witnessAsset } from './btc-inscriptions.js';
 import { commentaryFor, commentaryHtml, resolveCommentary } from './btc-commentary.js';
+import { contributeHtml } from './btc-contribute.js';
 
 // The curated index -- which blocks and transactions are notable, what they are
 // called, and which readings they carry -- is read from notables.yaml rather
@@ -1604,85 +1600,25 @@ const hashNotationHtml = ({ zeroBits, remainBits }, prose) =>
   `${prose} ` +
   `<span class="cfx-gold" title="${zeroBitsTitle(zeroBits)}">⓪</span><span class="op op-push">${toSuperscript(zeroBits)}</span>`;
 
-// Encode-on-ASK for bulk prose. A data push is capped at 520 bytes
+// Encode-on-scroll for script/witness prose. A data push is capped at 520 bytes
 // (MAX_SCRIPT_ELEMENT_SIZE), so any large payload -- an inscription's tapscript,
 // a bulky OP_RETURN -- already arrives pre-split into a run of bounded pushes.
-// renderScript/renderWitness emit each as a placeholder rather than encoding
-// it, and the prose is put into words only when the reader asks for it, by
-// clicking the ⋯ that stands in its place.
-//
-// It used to stream in on scroll, which meant a witness carrying a photograph
-// unrolled into thousands of words nobody had asked to read, on every page
-// that happened to hold one. The bytes of an inscription are not the book's
-// prose -- they are a file somebody stored in a witness -- and the ⋯ says so
-// honestly: here is a payload, of this many bytes, and here is what it says
-// if you want it said. Structure (type marks, push counts, opcode glyphs)
-// still renders eagerly, so the apparatus reads whole either way.
-//
-// One ⋯ speaks for its whole run: a witness split across eighty pushes is one
-// thing to read, not eighty, so a click fills every placeholder beside it.
-// The fill yields to the event loop as it goes -- forty kilobytes of prose is
-// seconds of encoding, and the page must stay alive while it arrives.
-//
-// Only the BULK pushes wait. "Bulk" is the push's own opcode form: an
-// extended push of two bytes or more (OP_PUSHDATA2/4 -- the ⇊ and ⤋ marks),
-// which is what a payload chopped into 520-byte chunks arrives as. Everything
-// shorter is the apparatus, not the payload -- a signature, a key, the "ord"
-// tag, a content type -- and the book says it outright, because that is the
-// chapter reading itself. Where the form is unknown (a witness stack item
-// carries a compact-size length, not a push opcode) the byte count says the
-// same thing: past 255 bytes nothing shorter could have encoded it.
-const isBulkPush = (hex, form) => (form >= 2) || (!!hex && hex.length / 2 > 255);
-// A second, different reason to defer: a section so large that encoding it
-// whole would freeze the page (see EAGER_ENCODE_BUDGET_MS). That prose is the
-// chapter's own and the reader means to read it, so it still streams in on
-// scroll as it always did. Deferred because the machine cannot, not because
-// the reader might not want it.
+// We exploit that: renderScript/renderWitness emit each push as a placeholder
+// rather than encoding it, and an IntersectionObserver Glossia-encodes each one
+// only as it scrolls near the viewport. So a kilobyte-scale witness never blocks
+// the main thread up front; its prose streams in chunk by chunk, and pushes the
+// reader never scrolls to are never encoded at all. Structure (type marks, push
+// counts, opcode glyphs) still renders eagerly, so the skeleton is instant.
 const lazyEncode = (() => {
   const fill = (el) => {
     const hex = el.dataset.hex;
     if (hex === undefined) return;   // already filled
     delete el.dataset.hex;
-    el.classList.remove('glossia-lazy', 'glossia-pending');
-    el.removeAttribute('role');
-    el.removeAttribute('tabindex');
-    el.removeAttribute('title');
+    el.classList.remove('glossia-lazy');
     el.innerHTML = encodeCanonical(hex, bookLang(), BEST_OF).prose;   // Glossia prose -- safe as innerHTML
   };
-
-  // ── the payload's own ⋯, which waits to be asked ──
-  // The run a placeholder belongs to: the footnote it sits in, else whatever
-  // element holds it. Every push of one witness shares that parent, which is
-  // what makes "read this out" a single act.
-  const runOf = (el) => el.closest('.footnote-entry') || el.parentElement || el;
-  let filling = false;
-  async function fillRun(el) {
-    if (filling) return;
-    filling = true;
-    try {
-      const run = runOf(el);
-      fill(el);                                  // the one asked for, first
-      let slice = performance.now();
-      for (const other of [...run.querySelectorAll('.glossia-lazy')]) {
-        if (performance.now() - slice > 24) {    // keep the page answering
-          await new Promise((r) => setTimeout(r, 0));
-          slice = performance.now();
-        }
-        fill(other);
-      }
-    } finally { filling = false; }
-  }
-  const ask = (e) => {
-    const el = e.target.closest?.('.glossia-lazy');
-    if (!el) return;
-    e.preventDefault();
-    e.stopPropagation();
-    fillRun(el);
-  };
-
-  // ── the budget's ⋯, which fills itself ──
-  // rootMargin pre-encodes a chunk before it enters view, so a scrolling
-  // reader almost never sees this one at all.
+  // rootMargin pre-encodes a chunk before it enters view, so a scrolling reader
+  // almost never sees the raw placeholder.
   const io = ('IntersectionObserver' in window)
     ? new IntersectionObserver((entries, obs) => {
         for (const e of entries) {
@@ -1692,30 +1628,16 @@ const lazyEncode = (() => {
         }
       }, { rootMargin: '600px 0px' })
     : null;
-
   return {
-    // A bulk push's prose, held back until asked for: the hex rides in a data
-    // attribute (hex is [0-9a-f], safe unquoted) and the ⋯ is the handle.
-    placeholder: (hex) => (hex
-      ? `<span class="glossia-lazy" data-hex="${hex}" role="button" tabindex="0"`
-        + ` title="${Math.ceil(hex.length / 2).toLocaleString()} bytes — click to put this into words">⋯</span>`
-      : ''),
-    // Prose the eager pass ran out of time for. Same mark, no handle: it is
-    // coming either way, as soon as the reader scrolls to it.
-    pending: (hex) => (hex ? `<span class="glossia-pending" data-hex="${hex}">⋯</span>` : ''),
-    // Drop pending chunks from a previous section (their nodes are already
-    // detached). The asked-for kind holds its own bytes and needs no reset.
+    // A push's prose, deferred: hex rides in a data attribute (hex is [0-9a-f],
+    // safe unquoted) and the ⋯ gives the span a layout box so the observer fires.
+    placeholder: (hex) => hex ? `<span class="glossia-lazy" data-hex="${hex}">⋯</span>` : '',
+    // Drop pending chunks from a previous section (their nodes are already detached).
     reset: () => { if (io) io.disconnect(); },
-    // Wire `root` for both: a press anywhere fills the bulk run it lands in
-    // (delegated, so footnotes laid out later need no rewiring), and every
-    // budget placeholder under it is watched for the scroll.
+    // Start watching every placeholder under `root`; encode all now if the
+    // browser has no IntersectionObserver.
     observe: (root) => {
-      if (!root.__lazyWired) {
-        root.__lazyWired = true;
-        root.addEventListener('click', ask);
-        root.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') ask(e); });
-      }
-      const pending = root.querySelectorAll('.glossia-pending');
+      const pending = root.querySelectorAll('.glossia-lazy');
       if (io) pending.forEach((el) => io.observe(el));
       else pending.forEach(fill);
     },
@@ -3209,7 +3131,7 @@ function sectionFields(txid) {
     const proseMemo = new Map();
     const record = [];
     composeTransactionFields(parsed, BEST_OF, lazyEncode.placeholder,
-      (h, _lang, _bestOf, form) => { if (!isBulkPush(h, form)) record.push(h); return { prose: '', payloadWords: [] }; });
+      (h) => { record.push(h); return { prose: '', payloadWords: [] }; });
     // A time budget bounds the eager pass: a normal section encodes whole
     // well inside it, and a giant one -- 562 P2PKH inputs is over a
     // thousand pushes, minutes of encoding -- defers the remainder to the
@@ -3233,12 +3155,8 @@ function sectionFields(txid) {
       // own default is english); the cache is flushed when the choice changes,
       // so an entry never outlives the language it was composed in.
       fields: composeTransactionFields(parsed, BEST_OF, lazyEncode.placeholder,
-        (h, lang, bestOf, form) => (isBulkPush(h, form)
-          // The payload: held until the reader asks for it.
-          ? { prose: lazyEncode.placeholder(h), payloadWords: [] }
-          // The chapter's own prose: said here, or -- past the budget --
-          // said on the scroll that reaches it.
-          : proseMemo.get(h) ?? { prose: lazyEncode.pending(h), payloadWords: [] })),
+        (h, lang, bestOf) => proseMemo.get(h)
+          ?? { prose: lazyEncode.placeholder(h), payloadWords: [] }),
       verified: verifiedTxid === txid,
       // Which of the notation key's script patterns this section puts on the
       // page, for the key's filter. Classified once, beside the fields.
@@ -4325,7 +4243,7 @@ function renderChapter(para) {
   // -- sits in the left margin, level with its scriptSig. The outputs are a
   // [scriptPubKey | amount] subgrid; the locktime closes on the right.
   const gen = ++renderGen;
-  lazyEncode.reset();   // nothing pends between sections now; kept as the seam
+  lazyEncode.reset();   // drop chunks still pending from the previous section (body + footnotes)
   lazyCites.reset();    // and the previous section's unresolved margin references
 
   // Successions are looked up for EVERY section, mined or projected: the
@@ -4645,7 +4563,7 @@ function renderChapter(para) {
   wrap.append(flow);
   body.append(wrap);
   syncBookmarkTitles();   // paint the section's and outputs' name lines from the bookmark set
-  lazyEncode.observe(body);   // a deferred OP_RETURN payload answers a press here
+  lazyEncode.observe(body);   // encode any deferred OP_RETURN payload as it scrolls into view
   // The margin amounts and the balance line price from the section's own
   // prevouts -- one request however many inputs there are -- and the
   // references then resolve one by one as the reader scrolls to them
@@ -4942,10 +4860,11 @@ function currentTxid() {
 }
 
 // Fit the commentary key to the page in front of the reader: the curated
-// readings of this passage, or no key at all. Absence is information -- the
-// book keeps places it has not yet said anything about, and a toggle that
-// opened onto nothing would blur the difference between an unannotated passage
-// and an unremarkable one.
+// readings of this passage where it has them, and where it has none the offer
+// to write the first (btc-contribute.js). So the key stands on every page
+// beside Notation, and an empty sheet says what it means -- that nothing has
+// been said about this passage yet, which is a thing worth a reader knowing
+// and a contributor acting on.
 //
 // Only the index is consulted here, so the key appears with the page and
 // nothing is fetched to decide it. The prose lives in commentary/*.md and
@@ -4958,17 +4877,19 @@ let commentaryFilled = false;  // whether the sheet is holding their prose
 function syncCommentary() {
   const box = $('commentary');
   // A projected chapter is not yet a place -- nothing curated can be about a
-  // block no miner has written. A ghost's own draft is nobody's curated entry.
-  commentaryItems = (!state || state.projected || state.ghost) ? [] : commentaryFor({
+  // block no miner has written, and neither can anything contributed. A ghost's
+  // own draft is nobody's curated entry either. Both keep no key at all.
+  const nowhere = !state || state.projected || state.ghost;
+  commentaryItems = nowhere ? [] : commentaryFor({
     height: state.height,
     index: state.index,
     txid: currentTxid(),
   });
   commentaryFilled = false;
   $('commentary-body').innerHTML = '';
-  box.classList.toggle('hidden', !commentaryItems.length);
-  if (!commentaryItems.length) {
-    box.open = false;                 // never reopen onto an empty sheet after a page turn
+  box.classList.toggle('hidden', nowhere);
+  if (nowhere) {
+    box.open = false;                 // never reopen onto a page with no reading to offer
     return;
   }
   // Turned the page with the sheet already open: the reader is reading
@@ -4976,18 +4897,53 @@ function syncCommentary() {
   if (box.open) fillCommentary();
 }
 
-// Fetch this page's readings and set them. Called on the sheet's first opening
-// (and on a page turn while it is open); each file is read once per session.
+// Fetch this page's readings and set them, with the invitation at their foot.
+// Called on the sheet's first opening (and on a page turn while it is open);
+// each file is read once per session.
+//
+// The citation is taken before the await, with the readings, so a page turn
+// mid-read cannot leave one page's invitation under another page's reading.
+// The curated name rides along where there is exactly one entry, so a
+// contributed reading of a named passage lands in commentary/ reading as prose
+// beside its siblings rather than as a citation -- in its English form,
+// deliberately: what a file is called should not depend on the language the
+// contributor happened to be reading in.
 async function fillCommentary() {
-  if (commentaryFilled || !commentaryItems.length) return;
+  // The key is hidden on a page with nothing to annotate, so this is a
+  // guard rather than a path: an invitation citing a chapter no miner has
+  // written would be an invitation to annotate nothing.
+  if (commentaryFilled || !state || state.projected || state.ghost) return;
   const mine = commentaryItems;                       // the page this fill belongs to
   const body = $('commentary-body');
+  const { citation, latin } = pageCitation();
+  const invitation = () => contributeHtml({
+    citation,
+    latin,
+    title: mine.length === 1 ? mine[0].title : null,
+    hasReading: mine.length > 0,
+  });
+  // Nothing to fetch on an unannotated passage: the sheet is the invitation.
+  if (!mine.length) { commentaryFilled = true; body.innerHTML = invitation(); return; }
   body.innerHTML = '<div class="commentary-measure"><p class="commentary-loading">reading…</p></div>';
   await resolveCommentary(mine);
   if (commentaryItems !== mine) return;               // page turned mid-read: that page's fill won
   commentaryFilled = true;
   // Built from authored Markdown, escaped at the source (btc-markdown.js).
-  body.innerHTML = commentaryHtml(mine);
+  body.innerHTML = commentaryHtml(mine) + invitation();
+}
+
+// The citation the page in front of the reader answers to, in both spellings:
+// the printed one, which the invitation names, and the latin one, which
+// becomes a file name. To the depth the page stands at, exactly as a leaf's
+// own bookmark cites itself (attachLeafBookmark) -- a volume leaf is III, not
+// III β1 ■1, because III is the place it is.
+function pageCitation() {
+  const { volume, book } = volumeBookChapter(state.height);
+  if (state.index === -3) return { citation: toRoman(volume), latin: `v${volume}` };
+  if (state.index === -2) return { citation: `${toRoman(volume)} β${book}`, latin: `v${volume}b${book}` };
+  if (state.index === -1) return { citation: reference(state.height), latin: latinRefOf(state.height) };
+  const num = state.index + 1;
+  return { citation: `${reference(state.height)} §${num}`, latin: latinRefOf(state.height, num) };
 }
 
 // Encode every witness-bearing input's witness into a numbered footnote and
@@ -5007,12 +4963,7 @@ async function renderFootnotes(gen) {
     // placeholder (renderWitness feeds each push through lazyEncode.placeholder)
     // and encoded when it scrolls into view -- building the DOM stays cheap even
     // for a kilobyte-scale inscription witness.
-    // A witness reads whole apart from its payload: the signature, the key,
-    // the control block and the envelope's own small pushes are said here,
-    // and only the bulk chunks wait behind their ⋯.
-    const prose = fn.zero ? '∅' : renderWitness(fn.items, (hex, form) => (isBulkPush(hex, form)
-      ? lazyEncode.placeholder(hex)
-      : (hex ? encodeCanonical(hex, bookLang(), BEST_OF).prose : '')));
+    const prose = fn.zero ? '∅' : renderWitness(fn.items, lazyEncode.placeholder);
     const p = document.createElement('p');
     p.className = 'footnote-entry';
     p.id = `fn-${footnoteMark(fn.n)}`;
@@ -5057,14 +5008,19 @@ async function renderFootnotes(gen) {
     const witPlace = places().find((pl) => !pl.page && !pl.address && pl.wit === fn.n
       && pl.id === String(state.height) && (pl.index ?? null) === state.index);
     const asset = witPlace ? null : witAsset;
-    witTitle.dataset.fallback = witPlace ? placeTitle(witPlace) : (asset ? asset.label : '');
+    // A label may be null -- a JSON body that names nothing goes unnamed --
+    // and then the line stays empty, as it does for a witness carrying no
+    // asset at all. The book would rather say nothing than say "JSON".
+    witTitle.dataset.fallback = witPlace ? placeTitle(witPlace) : ((asset && asset.label) || '');
     if (asset) {
       // What the line is claiming, and on whose authority: the bytes' own
       // announcement, or -- where they make none -- the envelope's word for
       // them, which is a different thing and says so.
       const size = `${asset.bytes.toLocaleString()} bytes`;
-      witTitle.title = asset.source === 'manifest'
-        ? `${size} of ${asset.mime} — a collection manifest; “${asset.label}” is the name it gives itself, not something the bytes announce`
+      witTitle.title = asset.source === 'name'
+        ? `${size} of ${asset.mime} — “${asset.label}” is the name this content gives itself, not something the bytes announce`
+        : !asset.label
+        ? `${size} of ${asset.mime}, which names nothing`
         : asset.source === 'bytes'
         ? `${size}, read as ${asset.mime} from the payload's own opening bytes`
           + (asset.declared && asset.declared !== asset.mime
@@ -5087,7 +5043,7 @@ async function renderFootnotes(gen) {
   syncBookmarkTitles();   // paint the witness name lines just laid out
   $('ch-footnotes-section').classList.remove('hidden');
   footnotesLoaded = true;
-  lazyEncode.observe(el);   // each witness push waits here for the reader to ask
+  lazyEncode.observe(el);   // stream each push's prose in as the reader scrolls to it
 }
 
 // The foot region's loading stand-in, for a navigation that targets a

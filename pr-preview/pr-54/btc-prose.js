@@ -1099,7 +1099,7 @@ export function renderScript(hex, collect, { eligible = false, nested = false, p
       // (p⁶⁵), so the datum's kind leads and its length rides after it; a bare
       // push keeps the superscript leading, before its prose.
       const dtMark = scriptDataMark(t.push, compact, prevOp, toks[i + 1]?.op);
-      parts.push(dtMark ? dtMark + mark : mark, collect(compact || t.push, t.pushForm || 0));
+      parts.push(dtMark ? dtMark + mark : mark, collect(compact || t.push));
     } else {
       pre = 'done';
       parts.push(collect(t.trunc));                           // malformed tail -- carry it as prose
@@ -1247,7 +1247,10 @@ export function renderWitness(items, encode) {
 // `bestOf` forwards to encodeCanonical, which since glossia 0.3.0 renders the
 // canonical encoding and ignores it — the canonical version pins the fluency
 // budget. The parameter stays so custom `encoder` implementations (which share
-// encodeCanonical's signature) keep working.
+// encodeCanonical's signature) keep working. Since 0.4.0 the encoding is the
+// fixed one, so a field's prose is a word shorter and no longer opens on a
+// constant the field's width fixed; nothing here needs to know that, because
+// every field already arrives with its byte count.
 // `lazyData`, when supplied, is an alternative encoder (hex -> HTML) used for an
 // OP_RETURN payload only: OP_RETURN is the one body field that can carry a bulky
 // data-carrier blob, so the caller can pass a placeholder emitter to defer its
@@ -1259,13 +1262,9 @@ export function renderWitness(items, encode) {
 export function composeTransactionFields(parsed, bestOf = 1, lazyData = null, encoder = null) {
   const payloadWords = [];
   const enc = encoder || encodeCanonical;
-  // `form` is the push's opcode form (0 direct, 1/2/4 for OP_PUSHDATA1/2/4),
-  // forwarded so an encoder can treat a bulk payload differently from the
-  // apparatus around it -- the book defers the extended pushes an inscription
-  // body arrives in, and says the rest outright.
-  const collect = (hex, form = 0) => {
+  const collect = (hex) => {
     if (!hex) return '';
-    const r = enc(hex, bookLang(), bestOf, form);   // the reader's saved book language
+    const r = enc(hex, bookLang(), bestOf);   // the reader's saved book language
     payloadWords.push(...r.payloadWords);
     return r.prose;
   };

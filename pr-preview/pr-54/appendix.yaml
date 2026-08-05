@@ -605,7 +605,7 @@
 
 - kind: inscriptions
   title: Inscriptions
-  note: Files written into witnesses and read back out by software that agrees where to look. The chain records the bytes — an unexecuted branch of a tapscript, carried by a spend and skipped by every validating node — and that they are an image, a token, or a table of contents is a convention held by people, not a rule held by nodes. So each leaf here fetches the reveal named beside its entry and reads the envelope out of the witness itself: what it shows is checkable against the bytes, and everything past the bytes — the numbering, where an inscription now sits — belongs to commentary, credited to whoever reads it that way. A manifest is the one body shown as something other than itself: it carries no content, only the names of further reveals and whatever the collection says about itself. So its leaf becomes a title page — the name the collection gives itself, and beneath it the rest of its own statement set as a form, repeated rather than vouched for — and the works it names stand one level below, one to a leaf and turned to like any other run in this book: the work's name, beneath it the citation of the witness that holds it — the chapter, the section and the footnote where those bytes sit, which is the one line on such a leaf the chain answers for, and the door back into the book at that very footnote — then the image, and beneath it the manifest's caption in the same form the collection's own statement takes. The run closes at both ends: a sideways turn walks the works and only the works, and the way out of a collection is the way in.
+  note: Files written into witnesses and read back out by software that agrees where to look. The chain records the bytes — an unexecuted branch of a tapscript, carried by a spend and skipped by every validating node — and that they are an image, a token, or a table of contents is a convention held by people, not a rule held by nodes. So each leaf here fetches the reveal named beside its entry and reads the envelope out of the witness itself: what it shows is checkable against the bytes, and everything past the bytes — the numbering, where an inscription now sits — belongs to commentary, credited to whoever reads it that way. The rows below are the ones the book curates; a reader who keeps a witness of their own gets a leaf here too, named by whatever they called it, and a manifest kept that way opens as the collection it names.
   entries:
     - title: First Ordinals inscription
       id: IV β69 ■343 §2323.a
@@ -618,13 +618,6 @@
       id: IV β75 ■649 §408.a
       reveal: b61b0172d95e266c18aea0c624db987e971a5d6d4ebc2aaed85da4642d635735
       note: The ordi deploy, March 2023 — 94 bytes of JSON declaring a token scheme run entirely in readings of witness text.
-    - title: A collection's manifest
-      id: IV β91 ■1189 §1245.a
-      reveal: 40e261fc856304d5c26c2cb1dd2e21bab6e15101de47f125a88d5a2398c19414
-      note: One hundred photographs' table of contents, October 2023 — 41,353 bytes of JSON naming a hundred further reveals, inscribed like its members.
-      commentary:
-        - file: a-collections-manifest.md
-          by: Claude Fable 5
 
 - kind: proofs
   title: Citations
