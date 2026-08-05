@@ -18,7 +18,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { growthStage, GROWTH_STAGES, generateSymbol, interpretFrom } from '../web/btc-illumination.js';
+import { growthStage, GROWTH_STAGES, generateSymbol, interpretFrom, sizeBoost } from '../web/btc-illumination.js';
 
 test('growthStage buckets confirmation count, not a continuous scale', () => {
   assert.equal(growthStage(0), 0, 'unconfirmed is stage 0 (bare)');
@@ -148,4 +148,50 @@ test('once clear of its home line, the SAME rect blocks it again -- escape is on
     p.x > homeLine.x + deepMargin && p.x < homeLine.x + homeLine.w - deepMargin
     && p.y > homeLine.y + deepMargin && p.y < homeLine.y + homeLine.h - deepMargin);
   assert.equal(deepInside.length, 0, 'the home line must resume blocking once the vine has left it, not stay punched through');
+});
+
+// ─── size-scaled growth: a big sigil earns more generations, not a re-roll ─
+test('sizeBoost is zero at or below the baseline -- most sigla are ordinary', () => {
+  assert.equal(sizeBoost(16, 16), 0);
+  assert.equal(sizeBoost(10, 16), 0);
+  assert.equal(sizeBoost(0, 16), 0);
+});
+
+test('sizeBoost grows monotonically with size and is capped', () => {
+  const small = sizeBoost(16, 16);
+  const medium = sizeBoost(32, 16);   // a 2x mark, e.g. a larger citation glyph
+  const large = sizeBoost(54, 16);    // ~3.4em against a 16px body -- the drop cap's own ratio
+  const huge = sizeBoost(100000, 16); // absurdly large, must still be capped
+  assert.ok(small < medium, 'a 2x mark should out-boost the baseline');
+  assert.ok(medium < large, 'the drop cap ratio should out-boost a merely-larger mark');
+  assert.ok(large <= huge && huge <= 6, 'boost must saturate rather than growing without bound');
+});
+
+test('repeated leaves at the same unmoved point collapse instead of stacking into a blob', () => {
+  // A heavily branched symbol forks far more attempts than a cramped spot
+  // has room for; most die on step one and would otherwise land a leaf
+  // right back at the exact same point every time (see the 'L' handling's
+  // comment). Simulate the worst case directly: fifty leaf-only branches,
+  // none of which ever move at all.
+  const symbol = '[L]'.repeat(50);
+  const anchor = { x: 0, y: 0, angle: 0 };
+  const segments = interpretFrom(symbol, anchor, [], null, noJitterRng);
+  const totalLeaves = segments.reduce((n, s) => n + s.leaves.length, 0);
+  assert.equal(totalLeaves, 1, 'fifty leaves at the identical point should collapse to one, not stack');
+});
+
+test('generateSymbol\'s boost extends the SAME per-block derivation, capped, and caches correctly', () => {
+  const hash = 'illuminated-initial-test'.padEnd(64, '0');
+  const base = generateSymbol(hash, 2, 0);
+  const boosted = generateSymbol(hash, 2, 4);
+  assert.notEqual(base, boosted, 'a boosted anchor should read further into the derivation, not stop at the same generation');
+  // Asking again for the unboosted generation must return exactly what it did
+  // before -- computing the boosted (later) generation must not retroactively
+  // change an earlier one that's already been read and cached.
+  assert.equal(generateSymbol(hash, 2, 0), base);
+  // An outlandish boost is clamped by MAX_GENERATION rather than growing the
+  // derivation without bound.
+  const capped1 = generateSymbol(hash, 4, 1000);
+  const capped2 = generateSymbol(hash, 4, 1000);
+  assert.equal(capped1, capped2, 'a capped boost must still be deterministic/cached, not recomputed differently');
 });
