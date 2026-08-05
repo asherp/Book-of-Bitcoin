@@ -179,21 +179,38 @@ function tangentAngles(px, py, rect) {
 // Exported (it's plain geometry, no DOM) so the wall-following behaviour can
 // be checked directly against synthetic rectangles -- see
 // tools/illumination.test.mjs -- rather than only eyeballed in a browser.
+//
+// The book's real sigla sit flush against the prose, not out in a margin --
+// an opcode mark opens directly against its script's first letter, a
+// citation mark closes directly against the last one, no gap either side.
+// So the anchor point itself is very often already INSIDE the padded
+// rectangle of the very line it marks. No amount of steering escapes an
+// obstacle you start inside of -- that is a geometric impossibility, not a
+// pathfinding failure -- so this carves one exception: whichever obstacle
+// contains the anchor (its "home" rect, if any) is ignored until the walk
+// has actually left it, exactly once, and is a normal obstacle again from
+// then on. Every other anchor (one that starts in the clear, as the
+// worked examples so far all did) sees no change at all -- homeRect is null
+// and the walk behaves exactly as before.
 export function interpretFrom(symbol, anchor, obstacles, bounds, rng) {
   let state = { x: anchor.x, y: anchor.y, angle: anchor.angle };
   const stack = [];
   const segments = [];
   let cur = { points: [{ x: state.x, y: state.y }], leaves: [] };
+  const homeRect = obstacles.find((r) => pointInRect(anchor.x, anchor.y, r)) || null;
+  let escaped = !homeRect;
+  const active = () => (escaped ? obstacles : obstacles.filter((r) => r !== homeRect));
 
   const finish = () => { if (cur.points.length > 1 || cur.leaves.length) segments.push(cur); };
 
   for (const ch of symbol) {
     if (ch === 'F') {
+      const obs = active();
       const jitter = (rng() - 0.5) * 2 * JITTER;
       const a = state.angle + jitter;
       const nx = state.x + Math.cos(a) * STEP;
       const ny = state.y + Math.sin(a) * STEP;
-      const hitRect = outOfBounds(nx, ny, bounds) ? null : firstBlockingRect(state.x, state.y, nx, ny, obstacles);
+      const hitRect = outOfBounds(nx, ny, bounds) ? null : firstBlockingRect(state.x, state.y, nx, ny, obs);
       if (hitRect || outOfBounds(nx, ny, bounds)) {
         let placed = false;
         // Wall-follow first: steer along whichever of the blocking box's two
@@ -206,7 +223,7 @@ export function interpretFrom(symbol, anchor, obstacles, bounds, rng) {
           for (const ta of tangents) {
             const tx = state.x + Math.cos(ta) * STEP;
             const ty = state.y + Math.sin(ta) * STEP;
-            if (!outOfBounds(tx, ty, bounds) && !firstBlockingRect(state.x, state.y, tx, ty, obstacles)) {
+            if (!outOfBounds(tx, ty, bounds) && !firstBlockingRect(state.x, state.y, tx, ty, obs)) {
               state = { x: tx, y: ty, angle: ta };
               cur.points.push({ x: tx, y: ty });
               placed = true;
@@ -223,7 +240,7 @@ export function interpretFrom(symbol, anchor, obstacles, bounds, rng) {
             const da = state.angle + sign * t * (TURN / 2);
             const dx = state.x + Math.cos(da) * STEP;
             const dy = state.y + Math.sin(da) * STEP;
-            if (!stepBlocked(state.x, state.y, dx, dy, obstacles, bounds)) {
+            if (!stepBlocked(state.x, state.y, dx, dy, obs, bounds)) {
               state = { x: dx, y: dy, angle: da };
               cur.points.push({ x: dx, y: dy });
               placed = true;
@@ -236,6 +253,7 @@ export function interpretFrom(symbol, anchor, obstacles, bounds, rng) {
         state = { x: nx, y: ny, angle: a };
         cur.points.push({ x: nx, y: ny });
       }
+      if (!escaped && !pointInRect(state.x, state.y, homeRect)) escaped = true;
     } else if (ch === 'L') {
       cur.leaves.push({ x: state.x, y: state.y, angle: state.angle });
     } else if (ch === '+') {
