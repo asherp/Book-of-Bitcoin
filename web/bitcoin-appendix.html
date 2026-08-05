@@ -539,8 +539,21 @@ const bipAt = bip ? bips.indexOf(bip) : -1;
 // One inscription's own leaf, the same level down: ?ins= names it by its
 // reveal transaction, the way the part's rows link it.
 const insEntries = part.kind === 'inscriptions' ? (part.entries || []) : [];
-const ins = insEntries.find((e) => e.reveal === String(params.get('ins') || '').toLowerCase()) || null;
-const insAt = ins ? insEntries.indexOf(ins) : -1;
+const insParam = String(params.get('ins') || '').toLowerCase();
+const insCurated = insEntries.find((e) => e.reveal === insParam) || null;
+// An inscription the book has not curated is still an inscription, and this
+// leaf can still read it: the reveal names a witness, the witness carries an
+// envelope, and everything the leaf shows comes out of those bytes anyway. So
+// ?ins= takes any reveal, and an uncurated one simply arrives without the
+// things curation supplies -- a title, a note, a place in the shelf's run --
+// which it discovers from the chain instead (renderUncuratedHead). This is
+// what the reader's witness footnotes link to: the book names a witness by
+// what its bytes say, and that name is a door to the thing itself.
+const ins = insCurated
+  || (part.kind === 'inscriptions' && /^[0-9a-f]{64}$/.test(insParam)
+    ? { reveal: insParam, title: 'Inscription', uncurated: true }
+    : null);
+const insAt = insCurated ? insEntries.indexOf(insCurated) : -1;
 // A collection has one more level beneath its title page: &item=n opens the
 // nth work, one to a leaf, turned to sideways the way every other run of
 // leaves in this book is turned. The title page says what the collection
@@ -735,8 +748,13 @@ if (blockLeaf != null) {
   $('appx-title').textContent = ins.title;
   const sub = $('appx-subtitle');
   const door = document.createElement('a');
-  door.href = insDoor(ins);
-  door.textContent = insRef(ins);
+  // A curated entry states where its envelope reads, so its citation is
+  // arithmetic and prints at once. An uncurated one is placed by the chain
+  // instead, so its door opens on the reveal and its citation waits for the
+  // merkle proof (filled by placeCite, below).
+  door.href = insCurated ? insDoor(ins) : `./bitcoin-book.html?txid=${ins.reveal}`;
+  door.textContent = insCurated ? insRef(ins) : '…';
+  if (!insCurated) door.className = 'work-ref waiting';
   door.title = 'read this witness in the book — the footnote the envelope reads at';
   sub.replaceChildren(door);
   const up = $('appx-up');
@@ -777,8 +795,11 @@ if (kind === 'consensus' && blockLeaf == null) {
 // is read, so that redirection is made when the reading lands (below).
 // The works' own leaf is the bottom: nothing lies under the pictures.
 if (kind === 'inscriptions') {
+  // An uncurated inscription has no stated footnote to descend to; its door
+  // is the reveal, which the book resolves to the section itself.
   firstChapter = itemAt ? null
-    : ins ? insDoor(ins)
+    : insCurated ? insDoor(ins)
+    : ins ? `./bitcoin-book.html?txid=${ins.reveal}`
     : (insEntries.length ? insHref(insEntries[0]) : null);
 }
 $('appx-down').classList.toggle('hidden', !firstChapter);
@@ -843,13 +864,16 @@ const prevTo = blockLeaf != null ? null : bip
   : ins
   ? (insAt > 0
     ? { href: insHref(insEntries[insAt - 1]), text: insEntries[insAt - 1].title }
+    // An uncurated inscription stands outside the shelf's run -- it has no
+    // neighbour there -- so its one sideways move is back to the shelf.
     : { href: hrefFor(part), text: label(part) })
   : (APPENDIX[index - 1] ? { href: hrefFor(APPENDIX[index - 1]), text: label(APPENDIX[index - 1]) } : null);
 const nextTo = blockLeaf != null ? null : bip
   ? (bipAt < bips.length - 1 ? { href: bipHref(bips[bipAt + 1]), text: bips[bipAt + 1].label } : null)
   : itemAt ? null
   : ins
-  ? (insAt < insEntries.length - 1 ? { href: insHref(insEntries[insAt + 1]), text: insEntries[insAt + 1].title } : null)
+  ? (insCurated && insAt < insEntries.length - 1
+    ? { href: insHref(insEntries[insAt + 1]), text: insEntries[insAt + 1].title } : null)
   : (APPENDIX[index + 1] ? { href: hrefFor(APPENDIX[index + 1]), text: label(APPENDIX[index + 1]) } : null);
 window.__appxTurns = { prev: prevTo && prevTo.href, next: nextTo && nextTo.href };
 const turns = $('appx-turns');
@@ -963,11 +987,47 @@ if (ins) {
   fig.append(status);
   fig.classList.remove('hidden');
 
+  // Where a witness sits, in the book's own notation. The chapter and the
+  // section come off the merkle proof -- the height, and the position in the
+  // block that IS the §section -- and the footnote letter off the input's
+  // place among the witness-bearing inputs, which is how the book letters its
+  // notes. Null when the chain will not place it; a dash is better than a
+  // citation nobody can follow.
+  async function citeOfWitness(txid, tx, env) {
+    const mp = await overMirrors(`/tx/${txid}/merkle-proof`);
+    if (!mp || !Number.isFinite(mp.block_height) || !Number.isFinite(mp.pos)) return null;
+    let ref = wholeRef(mp.block_height, mp.pos + 1);
+    let href = `./bitcoin-book.html?block=${mp.block_height}&index=${mp.pos}`;
+    if (env) {
+      const wn = (tx.vin || []).slice(0, env.vin + 1).filter((v) => (v.witness || []).length).length;
+      if (wn > 0) { ref += `.${footnoteMark(wn)}`; href += `&wit=${footnoteMark(wn)}`; }
+    }
+    return { ref, href };
+  }
+  // Fill an element that is standing in for a citation until the chain
+  // answers -- the head's door here, a work's reference on the leaf below.
+  const placeCite = (el, place) => {
+    el.textContent = place ? place.ref : '—';
+    if (place) el.href = place.href;
+    else el.title = 'the chain would not say where this witness sits';
+    el.classList.remove('waiting');
+  };
+
   (async () => {
     const tx = await overMirrors(`/tx/${ins.reveal}`);
     if (!tx) { status.textContent = 'the chain could not be reached'; return; }
-    const { inscriptionInTx, parseCollection } = await import('./btc-inscriptions.js');
+    const { inscriptionInTx, parseCollection, sniffAsset } = await import('./btc-inscriptions.js');
     const found = inscriptionInTx(tx);
+    // An uncurated leaf has no citation of its own to print and no name but
+    // the one its bytes earn it, so the chain supplies both.
+    if (!insCurated && !itemAt) {
+      citeOfWitness(ins.reveal, tx, found).then((p) => placeCite($('appx-subtitle').firstChild, p))
+        .catch(() => placeCite($('appx-subtitle').firstChild, null));
+      const named = found && !found.contentEncoding ? sniffAsset(found.body) : null;
+      const title = named ? named.label : (found && found.contentType) || 'Inscription';
+      $('appx-title').textContent = title;
+      document.title = `The βook of βitcoin — ${title}`;
+    }
     if (!found) {
       // The transaction stands; the reading does not. Say which is which.
       status.textContent = 'no envelope — this witness does not read as an inscription';
@@ -1169,29 +1229,9 @@ if (ins) {
       const { inscriptionInTx } = await import('./btc-inscriptions.js');
       const e = inscriptionInTx(mtx);
 
-      // The citation, in the book's own notation. The chapter and section
-      // come off the merkle proof (the height, and the position in the block
-      // that IS the §section); the footnote letter is the input's place among
-      // the witness-bearing inputs, which is how the book letters its notes.
-      (async () => {
-        const mp = await overMirrors(`/tx/${m.txid}/merkle-proof`);
-        if (!mp || !Number.isFinite(mp.block_height) || !Number.isFinite(mp.pos)) {
-          cite.textContent = '—';
-          cite.title = 'the chain would not say where this witness sits';
-          cite.classList.remove('waiting');
-          return;
-        }
-        let ref = wholeRef(mp.block_height, mp.pos + 1);
-        if (e) {
-          const wn = (mtx.vin || []).slice(0, e.vin + 1).filter((v) => (v.witness || []).length).length;
-          if (wn > 0) ref += `.${footnoteMark(wn)}`;
-          cite.href = `./bitcoin-book.html?block=${mp.block_height}&index=${mp.pos}&wit=${footnoteMark(wn)}`;
-        } else {
-          cite.href = `./bitcoin-book.html?block=${mp.block_height}&index=${mp.pos}`;
-        }
-        cite.textContent = ref;
-        cite.classList.remove('waiting');
-      })().catch(() => { cite.textContent = '—'; cite.classList.remove('waiting'); });
+      // The citation, read off the chain exactly as the head's is.
+      citeOfWitness(m.txid, mtx, e).then((p) => placeCite(cite, p))
+        .catch(() => placeCite(cite, null));
 
       if (!e) { say('no envelope in this witness'); return; }
       const ct = String(e.contentType || '').toLowerCase();
