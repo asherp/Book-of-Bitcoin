@@ -255,19 +255,27 @@ is a function rather than an `onclick="print()"`:
    characters, and a reference a filesystem has had to sanitize has stopped
    being the reference. This one is plain ascii and round-trips — paste it
    into the search box, or hand it to `?ref=`, and the passage comes back.
-   Nothing is lost by leaving the curated name off, either: the colophon
-   inside the leaf carries both it and the printed citation, which is the
-   book's own division anyway — an address addresses, a name is a reading.
-   **[ran]**
+   The passage's name follows the address where it has one: the reader's
+   own if they have kept and named this section, else the contents' curated
+   title — `v1b29c596s2 — Bitcoin Pizza Day`. A projected section's line is
+   a fee rate and a ghost's says how it lost its seat, so neither is filed
+   as a name (`dataset.name` marks which fallbacks are names). And a
+   bookmark title is free text somebody typed, so `fileNameFor` treats it
+   as such: path separators and the Windows-illegal set out, control
+   characters and newlines out, trailing dots and spaces cut before Windows
+   strips them silently, and a cap counted in **bytes** rather than
+   characters — a title in a non-Latin script spends several per character,
+   and a character cap would still overrun the limit. **[ran]**
 
 A print-only colophon closes the leaf, because a page that leaves the book
 should say what it is: the citation, the transaction id, the URL it came
 from, and the terms — the prose is a translation of these bytes and is
 public domain; any commentary is its author's.
 
-Verified end to end against fixture chain data: §1 files as `v1b29c596s1`
-and §2 as `v1b29c596s2`, both ascii-clean, and `?ref=v1b29c596s2` reopens
-the passage the file was made from. All chrome gone (masthead,
+Verified end to end against fixture chain data: the unnamed coinbase files
+as `v1b29c596s1`, the curated section as `v1b29c596s2 — Bitcoin Pizza
+Day`, and the same section kept under a reader's own hostile title
+(`my pizza / notes: *keep*`) as `v1b29c596s2 — my pizza notes keep`. All chrome gone (masthead,
 both nav bars, menus, bookmark and keep ribbons, the button itself), the
 manuscript grid and illuminated initial intact, the balance line settled
 out of its sticky seat, the carousel's `overflow: clip` released so the

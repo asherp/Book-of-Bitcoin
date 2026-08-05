@@ -106,9 +106,12 @@ compiled to WASM) is consumed as a published
   colophon closes the leaf with the citation, the transaction id, the address
   it came from and the terms, since a page that leaves the book should say
   what it is. The file is named by the passage's address in the spelling a
-  link carries — `v1b29c596s2` — rather than by the citation as the book
-  prints it: §, β and ■ are not filename characters, and this spelling is
-  plain ascii and hands straight back to `?ref=`. The mark is drawn rather than typed — no font the book carries
+  link carries, with the passage's name after it where it has one —
+  `v1b29c596s2 — Bitcoin Pizza Day`, the reader's own title if they have kept
+  this section, else the curated one. The address rather than the citation the
+  book prints, because §, β and ■ are not filename characters; and since a
+  bookmark title is free text somebody typed, it is sanitized to what a
+  filesystem will actually take. The mark is drawn rather than typed — no font the book carries
   has a printer glyph, and a typed one would fall back to whatever the
   reader's machine owns — so it is inline SVG on `currentColor`, built the way
   the ribbon beside it is and sharing its host, which is what keeps the two
