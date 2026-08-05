@@ -109,3 +109,43 @@ test('a vine with room to spare never touches a rectangle nowhere near its path'
   const points = interpretFrom(symbol, anchor, [farRect], null, noJitterRng).flatMap((s) => s.points);
   assert.equal(points.length, 11, 'an unobstructed trunk should just walk straight, one point per F plus the anchor');
 });
+
+// ─── the real case: an anchor flush against the prose it marks ────────────
+// The book's actual sigla open directly against a script's first letter and
+// close directly against its last, no gap either side (confirmed against a
+// live screenshot) -- so the anchor is very often already INSIDE the padded
+// rectangle of the line it sits on. No steering escapes an obstacle you
+// start inside of; interpretFrom carves one exception for exactly this
+// (see homeRect in the source) rather than dying on the first step.
+test('an anchor embedded in its own text line still escapes and grows', () => {
+  const symbol = 'F'.repeat(30);
+  const homeLine = { x: -50, y: -4, w: 400, h: 8 }; // the very line the mark sits on
+  const anchor = { x: 0, y: 0, angle: -Math.PI / 2 }; // heading straight up, out of the line
+  const points = interpretFrom(symbol, anchor, [homeLine], null, noJitterRng).flatMap((s) => s.points);
+
+  assert.ok(pointInRect(anchor.x, anchor.y, homeLine), 'test is only meaningful if the anchor truly starts inside its own line');
+  assert.ok(points.length > 10, 'an embedded anchor must still be able to grow once it clears its own line');
+});
+
+test('once clear of its home line, the SAME rect blocks it again -- escape is one-way, not a standing exemption', () => {
+  // Straight up and out, a clean 180 (7 * 24 degrees is just past 168, near
+  // enough to a U-turn for this check), then a long run aimed back down at
+  // the very line it started on.
+  const symbol = 'F'.repeat(3) + '-'.repeat(7) + 'F'.repeat(25);
+  const homeLine = { x: -50, y: -6, w: 400, h: 16 }; // a realistic line height, not a sliver
+  const anchor = { x: 0, y: 0, angle: -Math.PI / 2 };
+  const points = interpretFrom(symbol, anchor, [homeLine], null, noJitterRng).flatMap((s) => s.points);
+
+  // Touching the near edge while wall-following is expected and fine (that
+  // IS the intended behaviour); what "resumes blocking" actually rules out
+  // is coming back out the OTHER side, i.e. deep penetration clear through
+  // the rectangle it just escaped.
+  // Skip the very first point: it's the anchor itself, which starts deep
+  // inside its home line by construction (see the preceding test) -- that
+  // is expected and not what this test is checking.
+  const deepMargin = 4;
+  const deepInside = points.slice(1).filter((p) =>
+    p.x > homeLine.x + deepMargin && p.x < homeLine.x + homeLine.w - deepMargin
+    && p.y > homeLine.y + deepMargin && p.y < homeLine.y + homeLine.h - deepMargin);
+  assert.equal(deepInside.length, 0, 'the home line must resume blocking once the vine has left it, not stay punched through');
+});
