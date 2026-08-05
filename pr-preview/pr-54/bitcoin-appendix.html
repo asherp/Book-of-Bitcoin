@@ -1024,15 +1024,19 @@ if (ins) {
   (async () => {
     const tx = await overMirrors(`/tx/${ins.reveal}`);
     if (!tx) { status.textContent = 'the chain could not be reached'; return; }
-    const { inscriptionInTx, parseCollection, sniffAsset } = await import('./btc-inscriptions.js');
+    const { inscriptionInTx, parseCollection, assetOfEnvelope } = await import('./btc-inscriptions.js');
     const found = inscriptionInTx(tx);
     // An uncurated leaf has no citation of its own to print and no name but
     // the one its bytes earn it, so the chain supplies both.
     if (!insCurated && !itemAt) {
       citeOfWitness(ins.reveal, tx, found).then((p) => placeCite($('appx-subtitle').firstChild, p))
         .catch(() => placeCite($('appx-subtitle').firstChild, null));
-      const named = found && !found.contentEncoding ? sniffAsset(found.body) : null;
-      const title = named ? named.label : (found && found.contentType) || 'Inscription';
+      // The same name the book's own footnote gives this witness, so a
+      // reader arriving through that door finds the leaf already answering
+      // to it: a manifest by the name it gives itself, anything else by what
+      // its bytes announce, and failing both by what was declared of them.
+      const named = found ? assetOfEnvelope(found) : null;
+      const title = (named && named.label) || 'Inscription';
       $('appx-title').textContent = title;
       document.title = `The βook of βitcoin — ${title}`;
     }

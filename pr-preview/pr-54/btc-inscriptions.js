@@ -201,25 +201,37 @@ export function sniffAsset(bytes) {
 // two the label came from, since one is the chain's reading and the other is
 // somebody's word for it. A witness with no envelope is still read: a bare
 // data item that announces a format is an asset too, whatever put it there.
+export function assetOfEnvelope(env) {
+  const declared = env.contentType || null;
+  // A compressed body announces nothing until it is unpacked, and unpacking
+  // is a reading; the declaration is all there is to go on.
+  const sniffed = env.contentEncoding ? null : sniffAsset(env.body);
+  // A manifest names itself, and its own name beats "JSON" for a body whose
+  // whole business is to be a collection. That name is the collection's word
+  // for itself rather than anything the bytes announce, so it is carried as
+  // a third kind of source and reported as one.
+  let named = null;
+  if (sniffed && sniffed.mime === 'application/json') {
+    const collection = parseCollection(env.body);
+    const n = collection && (collection.meta.name || '').trim();
+    if (n) named = n;
+  }
+  if (!sniffed && !declared) return null;
+  return {
+    label: named || (sniffed ? sniffed.label : declared),
+    mime: sniffed ? sniffed.mime : declared,
+    bytes: env.body.length,
+    declared,
+    encoding: env.contentEncoding || null,
+    source: named ? 'manifest' : sniffed ? 'bytes' : 'declaration',
+  };
+}
+
 export function witnessAsset(witnessItems) {
   const script = tapscriptOf(witnessItems);
   if (script) {
     const [env] = parseEnvelopes(script);
-    if (env) {
-      const declared = env.contentType || null;
-      // A compressed body announces nothing until it is unpacked, and
-      // unpacking is a reading; the declaration is all there is to go on.
-      const sniffed = env.contentEncoding ? null : sniffAsset(env.body);
-      if (!sniffed && !declared) return null;
-      return {
-        label: sniffed ? sniffed.label : declared,
-        mime: sniffed ? sniffed.mime : declared,
-        bytes: env.body.length,
-        declared,
-        encoding: env.contentEncoding || null,
-        source: sniffed ? 'bytes' : 'declaration',
-      };
-    }
+    if (env) return assetOfEnvelope(env);
   }
   // No envelope: the largest item that announces a format, if any does.
   let best = null;
