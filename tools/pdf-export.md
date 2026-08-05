@@ -205,9 +205,15 @@ step below.
 
 ## The passage in the reader's hands — built
 
-The Export control at the left end of the reading page's running head, on
+A printer mark at the left end of the reading page's running head, on
 section pages only: it writes the passage in front of the reader to a PDF,
-the whole transaction with its footnotes, set as a page of the book.
+the whole transaction with its footnotes, set as a page of the book. The
+mark is inline SVG on `currentColor` — drawn, not typed, because no font
+the book carries has a printer glyph and a typed ⎙ would fall back to the
+reader's machine (or to a colour emoji); the bookmark ribbon in the same
+head is built the same way. Its name lives in `aria-label` and `title`,
+and the busy state dims the mark rather than relabelling it, since writing
+text into that button would delete the drawing.
 `web/bitcoin-book.html` — the button, the `@media print` block, and
 `exportPassage()`; guarded by `tools/export-passage.test.mjs`.
 
@@ -221,9 +227,9 @@ result. The reader's Save-as-PDF is one dialogue away.
 
 Where it sits is the argument for what it is. On a section page the
 chapter stepper's grid cell is empty (the steppers belong to leaves) and
-the folio holds the right end — so Export takes the left, and the two
+the folio holds the right end — so the printer takes the left, and the two
 bracket the crumb the way a printed running head brackets its title. A
-leaf has no button for the same reason it has no folio: what goes on paper
+leaf has no mark for the same reason it has no folio: what goes on paper
 is a transaction, and a leaf is not one. **[read]**
 
 Two things had to happen before the dialogue opens, and they are why this

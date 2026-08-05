@@ -32,6 +32,25 @@ test('the control is in the running head, and only sections show it', () => {
   assert.equal(hides.length, 2, 'the leaf and the tombstone both hide it');
 });
 
+test('the mark is drawn, and nothing writes text over it', () => {
+  // A printer, as inline SVG on currentColor. Not a typed glyph: no font the
+  // book carries has one (web/fonts/ covers the sigla and the text faces), so
+  // a ⎙ would fall to whatever the reader's machine owns — or to a colour
+  // emoji — which is the drift the vendored fonts exist to prevent.
+  const btn = page.slice(page.indexOf('<button type="button" id="page-export"'));
+  const tag = btn.slice(0, btn.indexOf('</button>'));
+  assert.ok(tag.includes('<svg'), 'the mark is drawn');
+  assert.ok(tag.includes('currentColor'), 'and inherits the colour, so hover and print need no special case');
+  assert.ok(tag.includes('aria-label='), 'a symbol carries its name in the label');
+  assert.ok(!/>\s*[A-Za-z⎙🖨]/.test(tag.slice(tag.indexOf('>'))), 'no typed label beside it');
+
+  // The busy state must not write into this button: textContent would delete
+  // the SVG and leave an empty box that never comes back. Dimming is CSS.
+  assert.ok(!/\$\('page-export'\)\.textContent\s*=/.test(page) && !/btn\.textContent\s*=/.test(page),
+    'nothing assigns text to the export button — that would destroy the mark');
+  assert.match(page, /#page-export:disabled \{[^}]*opacity/, 'the busy state is dimming, not relabelling');
+});
+
 test('deferred prose is encoded before anything reaches paper', () => {
   // The one that actually matters. Script and witness pushes are encoded on
   // scroll, so a passage opened and printed straight away would set every
