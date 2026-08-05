@@ -248,16 +248,26 @@ is a function rather than an `onclick="print()"`:
    pushes before the click, 0 after.** A `beforeprint` listener does the
    same for a reader who just hits ⌘P. **[ran]**
 2. **The file has to have a name.** Browsers take the PDF's filename from
-   `document.title`, so it becomes the citation for the duration of the
-   dialogue and is put back after: `I β29 ■596 §2 — Bitcoin Pizza Day`
-   rather than a third copy of the site's own title. **[ran]**
+   `document.title`, so it becomes the passage's address for the duration of
+   the dialogue and is put back after — `v1b29c596s2`, the spelling a link
+   carries (`latinRefOf`), rather than a third copy of the site's own title.
+   Not the citation as the book prints it: §, β and ■ are not filename
+   characters, and a reference a filesystem has had to sanitize has stopped
+   being the reference. This one is plain ascii and round-trips — paste it
+   into the search box, or hand it to `?ref=`, and the passage comes back.
+   Nothing is lost by leaving the curated name off, either: the colophon
+   inside the leaf carries both it and the printed citation, which is the
+   book's own division anyway — an address addresses, a name is a reading.
+   **[ran]**
 
 A print-only colophon closes the leaf, because a page that leaves the book
 should say what it is: the citation, the transaction id, the URL it came
 from, and the terms — the prose is a translation of these bytes and is
 public domain; any commentary is its author's.
 
-Verified end to end against fixture chain data: all chrome gone (masthead,
+Verified end to end against fixture chain data: §1 files as `v1b29c596s1`
+and §2 as `v1b29c596s2`, both ascii-clean, and `?ref=v1b29c596s2` reopens
+the passage the file was made from. All chrome gone (masthead,
 both nav bars, menus, bookmark and keep ribbons, the button itself), the
 manuscript grid and illuminated initial intact, the balance line settled
 out of its sticky seat, the carousel's `overflow: clip` released so the

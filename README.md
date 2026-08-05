@@ -105,7 +105,10 @@ compiled to WASM) is consumed as a published
   where its pushes should be — the same holds for a plain ⌘P. A print-only
   colophon closes the leaf with the citation, the transaction id, the address
   it came from and the terms, since a page that leaves the book should say
-  what it is. The mark is drawn rather than typed — no font the book carries
+  what it is. The file is named by the passage's address in the spelling a
+  link carries — `v1b29c596s2` — rather than by the citation as the book
+  prints it: §, β and ■ are not filename characters, and this spelling is
+  plain ascii and hands straight back to `?ref=`. The mark is drawn rather than typed — no font the book carries
   has a printer glyph, and a typed one would fall back to whatever the
   reader's machine owns — so it is inline SVG on `currentColor`, built the way
   the ribbon beside it is and sharing its host, which is what keeps the two

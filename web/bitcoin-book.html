@@ -2240,6 +2240,10 @@ async function exportPassage() {
   if (!btn || btn.disabled) return;         // no mark, or a pass already running
   const gen = renderGen;                    // the passage as it stands now
   const cite = `${referenceOf(state.height)} §${state.index + 1}`;
+  // The same address in the spelling a link carries (btc-citation.js) --
+  // v1b29c596s2 -- which is what the file is named. The printed citation
+  // above is the book's own, sigla and all, and stays on the page.
+  const fileRef = latinRefOf(state.height, state.index + 1);
   const restoreTitle = document.title;
 
   // Disabled is the whole busy state: the CSS dims the mark, and the mark
@@ -2287,7 +2291,15 @@ async function exportPassage() {
     line(tr('The prose is a translation of this transaction’s bytes and decodes back to them; ' +
       'it is dedicated to the public domain. Any commentary is its author’s.'));
 
-    document.title = title ? `${cite} — ${title}` : cite;
+    // Browsers name the PDF from document.title, so the file is named by the
+    // passage's address rather than by the citation as the book prints it:
+    // §, β and ■ are not filename characters, and a name a filesystem has to
+    // sanitize stops being the reference it was. This spelling is plain ascii
+    // and it round-trips -- paste v1b29c596s2 into the search box, or hand it
+    // to ?ref=, and the passage comes back. The curated name is not lost by
+    // leaving it off: the colophon inside the leaf carries it, which is the
+    // book's own division anyway -- an address addresses, a name is a reading.
+    document.title = fileRef;
     // print() is synchronous while the dialogue is open in every engine that
     // shows one, so the restore below lands after the reader dismisses it.
     window.print();

@@ -85,6 +85,23 @@ test('deferred prose is encoded before anything reaches paper', () => {
     'beforeprint encodes too, so ⌘P prints the same leaf the button does');
 });
 
+test('the file is named by the address, the page by the citation', () => {
+  // Browsers take a PDF's filename from document.title, and the book's own
+  // citation is not a filename: §, β and ■ get sanitized, and a reference a
+  // filesystem has rewritten is no longer the reference. The link spelling
+  // (latinRefOf — v1b29c596s2) is plain ascii and round-trips through ?ref=.
+  assert.match(page, /const fileRef = latinRefOf\(state\.height, state\.index \+ 1\)/,
+    'the name is the passage address in the spelling a link carries');
+  assert.match(page, /document\.title = fileRef;/, 'and that is what the file is named');
+  assert.ok(!/document\.title = .*cite/.test(page),
+    'the sigla citation never becomes a filename');
+
+  // …while the leaf itself still carries the citation as the book prints it.
+  const colophon = page.slice(page.indexOf('const colophon = $(\'print-colophon\')'),
+    page.indexOf('document.title = fileRef'));
+  assert.match(colophon, /citeEl\.textContent = cite/, 'the printed colophon keeps the book’s own form');
+});
+
 test('the print stylesheet hides the app and keeps the passage', () => {
   const block = page.slice(page.indexOf('@media print {'));
   assert.ok(block.startsWith('@media print {'), 'the page has a print stylesheet');
