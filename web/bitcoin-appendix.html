@@ -1238,27 +1238,25 @@ if (kind === 'mining' && AT !== null && AT !== 'mempool') {
     const tip = await chainTip();
     if (tip == null) { say('the chain would not say where it is'); return; }
 
-    // The window, drawn with its progress in the subtitle: on a cold archive
-    // this is a hundred and thirty-five pages, and a leaf that said nothing
-    // while it read them would look broken rather than busy.
-    const read = await minedWindow(tip, {
-      onProgress: (got, want) => {
-        if (got < want) say(`counting the last ${want.toLocaleString('en-US')} chapters — ${got.toLocaleString('en-US')} so far`);
-      },
-    });
-    const { mines, counted } = tallyMines(read);
-    if (!counted) {
-      say('the window could not be counted just now',
-        'no mirror served the block pages this count reads — nothing here is guessed at in their absence');
-      return;
-    }
-    const window = `${counted.toLocaleString('en-US')} chapters — ${wholeRef(read.from)} to ${wholeRef(read.tip)}`;
     const credit = 'who mined each chapter is mempool.space\'s attribution, from the coinbase tag — '
       + 'an unauthenticated string anyone may copy, so it is a reading and not the record';
+    const spanOf = (read, counted) =>
+      `${counted.toLocaleString('en-US')} chapters — ${wholeRef(read.from)} to ${wholeRef(read.tip)}`;
 
-    if (AT === 'mines') {
-      say(`${mines.length} mines over ${window}`, credit);
+    // The shelf, drawn from a reading of the window -- and drawn AGAIN when a
+    // fuller reading arrives, which is what a revisit is. Replacing the rows
+    // rather than adding to them, so the second drawing is the whole shelf
+    // and not the first one twice.
+    const drawShelf = (read, { complete }) => {
+      const { mines, counted } = tallyMines(read);
+      if (!counted) return 0;
+      say(complete
+        ? `${mines.length} mines over ${spanOf(read, counted)}`
+        : `${mines.length} mines over ${spanOf(read, counted)} — still reading`,
+      complete ? credit
+        : `${credit}. The chapters mined since this shelf was last read are still arriving; the shares will settle when they land.`);
       const listEl = $('bip-list');
+      listEl.replaceChildren();
       for (const m of mines) {
         const row = document.createElement('div');
         row.className = 'proof-row';
@@ -1285,11 +1283,36 @@ if (kind === 'mining' && AT !== null && AT !== 'mempool') {
         listEl.append(row);
       }
       listEl.classList.remove('hidden');
-      // The shelf descends onto its first mine, now that there is one.
       if (mines.length) {
         firstChapter = mineHref(mines[0].slug);
         $('appx-down').classList.remove('hidden');
       }
+      return mines.length;
+    };
+
+    // The window, drawn with its progress in the subtitle: on a cold archive
+    // this is a hundred and thirty-five pages, and a leaf that said nothing
+    // while it read them would look broken rather than busy. On a revisit the
+    // archive holds all but the newest chapters, so the shelf is drawn from
+    // it at once and redrawn when those land.
+    const read = await minedWindow(tip, {
+      onProgress: (got, want) => {
+        if (got < want) say(`counting the last ${want.toLocaleString('en-US')} chapters — ${got.toLocaleString('en-US')} so far`);
+      },
+      onBanked: AT === 'mines' ? (banked) => drawShelf(banked, { complete: false }) : null,
+    });
+    const { mines, counted } = tallyMines(read);
+    if (!counted) {
+      say('the window could not be counted just now',
+        'no mirror served the block pages this count reads — nothing here is guessed at in their absence');
+      return;
+    }
+    const window = spanOf(read, counted);
+
+    if (AT === 'mines') {
+      // The descent onto the shelf's first mine is set by the drawing, so it
+      // names whichever mine leads the finished count.
+      drawShelf(read, { complete: true });
       return;
     }
 

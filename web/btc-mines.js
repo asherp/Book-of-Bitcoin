@@ -146,7 +146,17 @@ async function page(top, mirrors) {
 //
 // `onProgress(counted, wanted)` is called as pages land, so a leaf can say
 // how far the reading has got rather than holding a blank page.
-export async function minedWindow(tip, { onProgress = null, mirrors = MINES_MIRRORS, window = MINE_WINDOW } = {}) {
+//
+// `onBanked(reading)` is called ONCE, with whatever the archive already held,
+// before a single page is asked for -- and it is what makes a revisit feel
+// like a revisit. A reader coming back to this leaf is missing only the
+// chapters mined since they last looked: a handful, against the two thousand
+// already on disk. Waiting on that handful before showing any of the two
+// thousand would hide a shelf that is all but complete behind a request for
+// the last half per cent of it. So the leaf draws what is banked at once and
+// redraws when the rest lands. Not called where the archive held nothing --
+// a first visit has nothing to draw, and says so instead.
+export async function minedWindow(tip, { onProgress = null, onBanked = null, mirrors = MINES_MIRRORS, window = MINE_WINDOW } = {}) {
   const from = Math.max(0, tip - window + 1);
   const found = new Map();
 
@@ -170,6 +180,10 @@ export async function minedWindow(tip, { onProgress = null, mirrors = MINES_MIRR
     found.set(h, rec);
   }
   onProgress?.(found.size, wanted);
+  // What the archive alone can say, handed over before anything is fetched.
+  // A copy of the map, so a caller that keeps it is not surprised when the
+  // pages that follow fill the original in underneath them.
+  if (found.size && onBanked) onBanked({ tip, from, blocks: new Map(found) });
 
   // The pages still to ask for: every 15-block page whose span holds a
   // height the archive did not have. Asked for by the top of the page, the
