@@ -71,7 +71,7 @@
     // names this appendix and lands on its own contents leaf -- as an ascent
     // from Volume III lands on Volume III's. The name passes through as
     // given; the contents' own aliases resolve it (bitcoin-contents.html).
-    const PART = new URLSearchParams(location.search).get('part') || 'mempool';
+    const PART = new URLSearchParams(location.search).get('part') || 'mining';
     window.__appxAscend = () => leave(`./bitcoin-contents.html?part=${PART}`, 'translateY(100vh)', 'glossia-toc-entrance', '1');
     // One turn sideways, in either direction: the leaf slides off the way the
     // reader pushed it, and the neighbour enters from the other side. Each
@@ -523,7 +523,11 @@ import { partLabel, partNumber } from './btc-notables.js';
 // asynchronously; this leaf IS one of its parts, so it waits for it.
 await loadNotables();
 const APPENDIX = appendix();
-import { chainTip, MEMPOOL_MIRRORS } from './btc-mempool.js';
+import { chainTip, MEMPOOL_MIRRORS, readQueue, MVB } from './btc-mempool.js';
+import {
+  minedWindow, tallyMines, shareSay, sharePct, MINE_WINDOW,
+  UNATTRIBUTED as MINES_UNATTRIBUTED,
+} from './btc-mines.js';
 import { toRoman, volumeBookChapter, heightOf, expectedReference, footnoteMark } from './btc-citation.js';
 import { formatBlockVersion, composeBlockHeaderFields } from './btc-prose.js';
 import { toSuperscript } from './btc-sigla.js';
@@ -536,12 +540,38 @@ import { toSuperscript } from './btc-sigla.js';
 // points straight at it, so it is only ever a neighbour here.
 // ?part=future is the name Appendix II answered to before its forks were
 // grouped by BIP; saved links keep working.
-const PARTS = { mempool: 'mempool', future: 'consensus', consensus: 'consensus', proofs: 'proofs', inscriptions: 'inscriptions' };
+// ?part=mempool is the name Appendix I answered to before it gathered the
+// mines beside the queue; a saved link keeps working, and lands on the leaf
+// it was saved from -- the queue's own -- rather than merely nearby.
+const PARTS = { mempool: 'mining', mining: 'mining', future: 'consensus', consensus: 'consensus', proofs: 'proofs', inscriptions: 'inscriptions' };
 const params = new URLSearchParams(location.search);
 const wanted = params.get('part');
-const kind = PARTS[wanted] || 'mempool';
+const kind = PARTS[wanted] || 'mining';
 const part = APPENDIX.find((p) => p.kind === kind) || APPENDIX[0];
 const index = APPENDIX.indexOf(part);
+// ── Appendix I's own levels ───────────────────────────────────────────────
+// The part gathers two leaves side by side -- the queue a block is taken
+// from, and the hands that take it -- and the mines run a shelf of their own
+// beneath, one leaf to a pool, with that pool's chapters below THAT:
+//
+//   ?part=mining                     the part's leaf
+//   ?part=mining&at=mempool          the queue
+//   ?part=mining&at=mines            the shelf of mines
+//   ?part=mining&mine=<slug>         one mine's title page
+//   ?part=mining&mine=<slug>&at=blocks   the chapters it mined
+//
+// `at` names which of the part's leaves is wanted; `mine` names one pool by
+// the slug the attribution uses. A saved ?part=mempool arrives with neither
+// and is read as the queue, which is what it used to mean.
+const atParam = String(params.get('at') || '').toLowerCase();
+const mineSlug = kind === 'mining' ? String(params.get('mine') || '').toLowerCase() : '';
+const AT = kind === 'mining'
+  ? (mineSlug ? (atParam === 'blocks' ? 'blocks' : 'mine')
+    : atParam === 'mines' ? 'mines'
+    : atParam === 'mempool' ? 'mempool'
+    : wanted === 'mempool' ? 'mempool'
+    : null)
+  : null;
 // One fork's own leaf, a level below the part's: ?bip= names it by number,
 // the way the contents' sub-heads link it.
 const bips = part.kind === 'consensus' ? (part.bips || []) : [];
@@ -700,11 +730,22 @@ $('toc-link').href = `./bitcoin-contents.html?part=${kind}`;
 // and the pull-down ascend, and the masthead's own name still stands as the
 // running head, saying whose book this is.
 if (ins) document.querySelector('.masthead .home')?.classList.add('hidden');
-const PART_QUERY = { mempool: 'mempool', consensus: 'consensus', proofs: 'proofs', inscriptions: 'inscriptions' };
+const PART_QUERY = { mining: 'mining', consensus: 'consensus', proofs: 'proofs', inscriptions: 'inscriptions' };
 const hrefFor = (p) => (p.kind === 'ledgers'
   ? './bitcoin-ledger.html'
   : `./bitcoin-appendix.html?part=${PART_QUERY[p.kind]}`);
 const bipHref = (b) => `./bitcoin-appendix.html?part=consensus&bip=${b.key}`;
+// Appendix I's own leaves, addressed the way every other leaf here is.
+const mempoolHref = () => './bitcoin-appendix.html?part=mining&at=mempool';
+const minesHref = () => './bitcoin-appendix.html?part=mining&at=mines';
+const mineHref = (slug) => `./bitcoin-appendix.html?part=mining&mine=${encodeURIComponent(slug)}`;
+const mineBlocksHref = (slug) => `${mineHref(slug)}&at=blocks`;
+// A mine's name before the count has landed. The slug is all the URL carries,
+// and a leaf opened cold has to be titled with something; the attribution's
+// own name replaces it the moment the window is read, so this is a
+// placeholder in the strict sense -- never what the page settles on.
+const mineTitle = (slug) => (slug === MINES_UNATTRIBUTED ? 'Unattributed'
+  : slug.replace(/[-_]+/g, ' ').replace(/\b[a-z]/g, (c) => c.toUpperCase()));
 // An inscription entry's three addresses: its own leaf here, its citation
 // written whole (§n with the footnote's letter after the point — the place
 // the envelope reads at), and the door into the book at that very footnote
@@ -774,6 +815,31 @@ if (blockLeaf != null) {
   up.textContent = itemAt ? `▴ ${ins.title}` : `▴ ${label(part)}`;
   up.href = itemAt ? insHref(ins) : hrefFor(part);
   up.classList.remove('hidden');
+} else if (AT) {
+  // One of Appendix I's own leaves. Each wears its name as the title and
+  // climbs to whatever holds it -- the two beneath the part climb to the
+  // part, a mine climbs to the shelf, and a mine's chapters climb to the
+  // mine. What the subtitle says is filled in when the reading lands; until
+  // then it says what is being waited for rather than standing empty.
+  const heads = {
+    mempool: { title: 'The Mempool', up: hrefFor(part), upText: label(part) },
+    mines: { title: 'The Mines', up: hrefFor(part), upText: label(part) },
+    mine: { title: mineTitle(mineSlug), up: minesHref(), upText: 'The Mines' },
+    blocks: { title: mineTitle(mineSlug), up: mineHref(mineSlug), upText: mineTitle(mineSlug) },
+  };
+  const head = heads[AT];
+  $('appx-title').textContent = head.title;
+  $('appx-subtitle').textContent = AT === 'blocks' ? 'the chapters it mined' : 'reading…';
+  const up = $('appx-up');
+  up.textContent = `▴ ${head.upText}`;
+  up.href = head.up;
+  up.classList.remove('hidden');
+  up.addEventListener('click', (ev) => {
+    if (ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey || ev.button !== 0) return;
+    ev.preventDefault();
+    navTo(head.up, 'drop');
+  });
+  window.__appxAscend = () => navTo(head.up, 'drop');
 } else if (part.family === 'appendix') {
   $('appx-title').textContent = `Appendix ${toRoman(partNumber(APPENDIX, part))}`;
   $('appx-subtitle').textContent = part.title;
@@ -784,7 +850,7 @@ if (blockLeaf != null) {
 // A fork's description is a reading of the fork, so it reads where readings
 // read: in the commentary sheet at the leaf's foot, not as front matter. The
 // head keeps only the name; the part leaf keeps its note.
-$('appx-note').textContent = (bip || ins) ? '' : part.note || '';
+$('appx-note').textContent = (bip || ins || AT) ? '' : part.note || '';
 document.title = `The βook of βitcoin — ${blockLeaf != null ? `${bip.title} · ${wholeRef(blockLeaf)}` : bip ? bip.title : ins ? ins.title : label(part)}`;
 
 // A part may carry a reading of what it gathers (appendix.yaml), and the
@@ -793,10 +859,11 @@ document.title = `The βook of βitcoin — ${blockLeaf != null ? `${bip.title} 
 // fetching no prose until it is opened. Only the PART's leaf: the leaves a
 // level down (a fork's, an inscription's, a ballot block's) raise the part's
 // reading with their own, in the sticky foot below, so the same words are
-// never offered twice on one leaf. The Citations register keeps its leaf
-// silent by design -- its reading raises beneath each proof's own
-// (bitcoin-proof.html).
-if (!bip && !ins && blockLeaf == null && part.kind !== 'proofs') {
+// never offered twice on one leaf -- and Appendix I's own pair (the queue,
+// the mines, and what hangs under them) are a level down like any other. The
+// Citations register keeps its leaf silent by design -- its reading raises
+// beneath each proof's own (bitcoin-proof.html).
+if (!bip && !ins && !AT && blockLeaf == null && part.kind !== 'proofs') {
   const { readingsOf, resolveCommentary, commentaryHtml } = await import('./btc-commentary.js');
   const readings = readingsOf(part);
   if (readings.length) {
@@ -848,8 +915,20 @@ if (kind === 'inscriptions') {
     : ins ? `./bitcoin-book.html?txid=${ins.reveal}`
     : (insEntries.length ? insHref(insEntries[0]) : null);
 }
+// Appendix I descends through its own two leaves before it reaches the book:
+// the part opens the queue (the first of the pair), the queue opens the first
+// draft chapter -- the very block a reader reaches by swiping forward off the
+// chain tip -- and the mines open the shelf's first pool, which opens that
+// pool's chapters. Only the queue's descent waits on the chain, and its ▾
+// appears with the tip; the rest are known without asking.
+if (kind === 'mining') {
+  firstChapter = AT === null ? mempoolHref()
+    : AT === 'mines' ? null              // the shelf's first mine, once counted
+    : AT === 'mine' ? mineBlocksHref(mineSlug)
+    : null;                              // 'mempool' waits on the tip; 'blocks' is the floor
+}
 $('appx-down').classList.toggle('hidden', !firstChapter);
-if (kind === 'mempool') {
+if (kind === 'mining' && AT === 'mempool') {
   chainTip().then((tip) => {
     if (tip == null) return;
     firstChapter = `./bitcoin-book.html?block=${tip + 1}`;
@@ -902,7 +981,16 @@ if (bip || ins) {
 // the way up is the ascent.
 // A block leaf turns nowhere sideways: its moves are vertical -- along the
 // window, and up to the ballot -- so the foot carries no neighbours.
-const prevTo = blockLeaf != null ? null : bip
+// Appendix I's pair turn into each other, and back of the first of them lies
+// the part that holds them. A mine's neighbours are the mines either side of
+// it in the shelf's order, which is not known until the window has been
+// counted, so those are named late (setTurns, below); a mine's chapters are
+// the floor and turn nowhere sideways.
+const prevTo = blockLeaf != null ? null : AT
+  ? (AT === 'mempool' ? { href: hrefFor(part), text: label(part) }
+    : AT === 'mines' ? { href: mempoolHref(), text: 'The Mempool' }
+    : null)
+  : bip
   ? (bipAt > 0
     ? { href: bipHref(bips[bipAt - 1]), text: bips[bipAt - 1].label }
     : { href: hrefFor(part), text: label(part) })
@@ -914,7 +1002,9 @@ const prevTo = blockLeaf != null ? null : bip
     // neighbour there -- so its one sideways move is back to the shelf.
     : { href: hrefFor(part), text: label(part) })
   : (APPENDIX[index - 1] ? { href: hrefFor(APPENDIX[index - 1]), text: label(APPENDIX[index - 1]) } : null);
-const nextTo = blockLeaf != null ? null : bip
+const nextTo = blockLeaf != null ? null : AT
+  ? (AT === 'mempool' ? { href: minesHref(), text: 'The Mines' } : null)
+  : bip
   ? (bipAt < bips.length - 1 ? { href: bipHref(bips[bipAt + 1]), text: bips[bipAt + 1].label } : null)
   : itemAt ? null
   : ins
@@ -1005,6 +1095,248 @@ if (kind === 'inscriptions' && !ins) {
     listEl.append(row);
   }
   listEl.classList.toggle('hidden', !insEntries.length);
+}
+
+// ── Appendix I: the queue, and the hands that take from it ────────────────
+//
+// The part's leaf lists its two leaves the way the Consensus leaf lists its
+// forks -- the queue a block is taken from, and the mines that take it.
+// Neither is written down anywhere: the queue is a fact about this minute,
+// and who mined a block is an inference from a tag anyone could copy. So both
+// are read when the leaf opens, and both name whose reading they are.
+if (kind === 'mining' && AT === null) {
+  const listEl = $('bip-list');
+  for (const [href, name, says] of [
+    [mempoolHref(), 'The Mempool', 'the queue a block is taken from'],
+    [minesHref(), 'The Mines', 'the hands that take it'],
+  ]) {
+    const row = document.createElement('div');
+    row.className = 'proof-row';
+    const a = document.createElement('a');
+    a.href = href;
+    const t = document.createElement('span');
+    t.className = 'proof-name';
+    t.textContent = name;
+    const s = document.createElement('span');
+    s.className = 'proof-cite';
+    s.textContent = says;
+    a.append(t, s);
+    a.addEventListener('click', (ev) => {
+      if (ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey || ev.button !== 0) return;
+      ev.preventDefault();
+      navTo(href, 'down');
+    });
+    row.append(a);
+    listEl.append(row);
+  }
+  listEl.classList.remove('hidden');
+}
+
+// The queue's own leaf. It lists nothing -- listing the queue is the
+// contents' business, and what lies below this leaf is the first draft
+// chapter itself -- but its subtitle says how deep the queue is right now,
+// which is the one thing about it that is worth stating and cannot be
+// stated in advance. The figure is mempool.space's, asked of mempool.space
+// alone so the credit is exact: a count of what one node is holding at one
+// moment is that node's claim, not the chain's, and the book credits claims.
+if (kind === 'mining' && AT === 'mempool') {
+  (async () => {
+    const sub = $('appx-subtitle');
+    const tip = await chainTip();
+    const queue = await readQueue(tip, ['https://mempool.space/api']);
+    if (!queue || !queue.summary) {
+      sub.textContent = 'the queue could not be read just now';
+      sub.title = 'no mirror answered — the appendix simply ends at the chain tip until one does';
+      return;
+    }
+    const txs = queue.summary.count.toLocaleString('en-US');
+    const deep = queue.blocks
+      ? queue.blocks.length
+      : Math.max(1, Math.ceil(queue.summary.vsize / MVB));
+    sub.textContent = `${txs} transactions waiting, ${deep} ${deep === 1 ? 'chapter' : 'chapters'} deep · mempool.space`;
+    sub.title = 'what mempool.space is holding at this moment — that node\'s claim about its own queue, '
+      + 'not a fact about any block that will ever exist';
+  })().catch(() => { /* the head simply keeps what it has */ });
+}
+
+// ── The mines ─────────────────────────────────────────────────────────────
+//
+// The shelf, and each mine on it, read from the same count: the last
+// difficulty window's blocks, attributed and tallied (btc-mines.js). One
+// reading serves all three leaves below the pair, so a reader walking from
+// the shelf into a mine and down to its chapters is reading one window
+// throughout rather than three that might disagree.
+if (kind === 'mining' && AT !== null && AT !== 'mempool') {
+  (async () => {
+    const sub = $('appx-subtitle');
+    const say = (t, title = '') => { sub.textContent = t; if (title) sub.title = title; };
+    const tip = await chainTip();
+    if (tip == null) { say('the chain would not say where it is'); return; }
+
+    // The window, drawn with its progress in the subtitle: on a cold archive
+    // this is a hundred and thirty-five pages, and a leaf that said nothing
+    // while it read them would look broken rather than busy.
+    const read = await minedWindow(tip, {
+      onProgress: (got, want) => {
+        if (got < want) say(`counting the last ${want.toLocaleString('en-US')} chapters — ${got.toLocaleString('en-US')} so far`);
+      },
+    });
+    const { mines, counted } = tallyMines(read);
+    if (!counted) {
+      say('the window could not be counted just now',
+        'no mirror served the block pages this count reads — nothing here is guessed at in their absence');
+      return;
+    }
+    const window = `${counted.toLocaleString('en-US')} chapters — ${wholeRef(read.from)} to ${wholeRef(read.tip)}`;
+    const credit = 'who mined each chapter is mempool.space\'s attribution, from the coinbase tag — '
+      + 'an unauthenticated string anyone may copy, so it is a reading and not the record';
+
+    if (AT === 'mines') {
+      say(`${mines.length} mines over ${window}`, credit);
+      const listEl = $('bip-list');
+      for (const m of mines) {
+        const row = document.createElement('div');
+        row.className = 'proof-row';
+        const a = document.createElement('a');
+        a.href = mineHref(m.slug);
+        a.title = m.named
+          ? `${m.name} won ${m.won.toLocaleString('en-US')} of ${counted.toLocaleString('en-US')} chapters — ${shareSay(m)} points, `
+            + 'the ± being the lottery rather than the pool'
+          : `${m.won.toLocaleString('en-US')} chapters carrying no tag mempool.space could name`;
+        const t = document.createElement('span');
+        t.className = 'proof-name';
+        t.textContent = m.name;
+        if (!m.named) t.style.fontStyle = 'italic';
+        const s = document.createElement('span');
+        s.className = 'proof-cite';
+        s.textContent = shareSay(m);
+        a.append(t, s);
+        a.addEventListener('click', (ev) => {
+          if (ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey || ev.button !== 0) return;
+          ev.preventDefault();
+          navTo(mineHref(m.slug), 'down');
+        });
+        row.append(a);
+        listEl.append(row);
+      }
+      listEl.classList.remove('hidden');
+      // The shelf descends onto its first mine, now that there is one.
+      if (mines.length) {
+        firstChapter = mineHref(mines[0].slug);
+        $('appx-down').classList.remove('hidden');
+      }
+      return;
+    }
+
+    // One mine: its title page, and -- a level below -- the chapters it won.
+    const at = mines.findIndex((m) => m.slug === mineSlug);
+    const mine = at >= 0 ? mines[at] : null;
+    if (!mine) {
+      say('no chapter in this window carries this mine\'s tag',
+        'a pool that won nothing in the last difficulty window has no share to state — which is itself the reading');
+      return;
+    }
+    $('appx-title').textContent = mine.name;
+    document.title = `The βook of βitcoin — ${mine.name}`;
+    // A mine's own leaf names its neighbours on the shelf, which could not be
+    // known until the window was counted -- the same late naming a work of a
+    // collection does, so the swipe, the keys and the foot all agree.
+    if (AT === 'mine') {
+      setTurns(
+        at > 0 ? { href: mineHref(mines[at - 1].slug), text: mines[at - 1].name } : { href: minesHref(), text: 'The Mines' },
+        at < mines.length - 1 ? { href: mineHref(mines[at + 1].slug), text: mines[at + 1].name } : null,
+      );
+    }
+
+    if (AT === 'mine') {
+      say(`${shareSay(mine)} of ${window}`, credit);
+      const stats = $('bip-stats');
+      const statRow = (key, value, title = '') => {
+        const line = document.createElement('div'); line.className = 'proof-line';
+        const k = document.createElement('div'); k.className = 'proof-key'; k.textContent = key;
+        const v = document.createElement('div'); v.className = 'proof-val'; v.textContent = value;
+        if (title) line.title = title;
+        line.append(k, v); stats.append(line);
+        return v;
+      };
+      statRow('rank', `${at + 1} of ${mines.length}`, 'by chapters won over this window, which is what the shelf is ordered by');
+      statRow('chapters', `${mine.won.toLocaleString('en-US')} of ${counted.toLocaleString('en-US')}`);
+      statRow('share', shareSay(mine),
+        'the ± is one standard error — √(p(1−p)/N), the lottery rather than the pool. A share published without it is a headline.');
+      statRow('window', `${window} · one difficulty epoch, about a fortnight`);
+      // The bytes the attribution is an inference FROM: the pool's own
+      // signature, as the most recent chapter it won carries it. Printed
+      // because it is the record, where the name above it is a reading.
+      const sig = mine.blocks.find((b) => b.sig)?.sig;
+      if (sig) statRow('signature', sig, 'the coinbase\'s own writing, as this mine\'s newest chapter carries it — the record the name is read off');
+      statRow('attribution', 'mempool.space', credit);
+      if (mine.link) {
+        const v = statRow('the mine says', mine.link);
+        v.replaceChildren(Object.assign(document.createElement('a'), {
+          href: mine.link, target: '_blank', rel: 'noopener noreferrer', textContent: mine.link,
+        }));
+      }
+      stats.classList.remove('hidden');
+      return;
+    }
+
+    // The chapters themselves: every block this mine won in the window,
+    // newest first, each row the door into the book. The ballot's own dress,
+    // because a run of chapters with a figure against each is exactly what
+    // that table already is.
+    say(`${mine.won.toLocaleString('en-US')} chapters of ${window}`, credit);
+    const blocksEl = $('bip-blocks');
+    const heads = document.createElement('div');
+    heads.className = 'bb-heads';
+    for (const [cls, text, why] of [
+      ['bb-time', 'mined', 'the minute the chapter was mined, UTC'],
+      ['bb-ref', 'chapter', ''],
+      ['bb-ver', 'coinbase', 'the chapter\'s first line — the writing this mine signed it with'],
+      ['bb-sum', 'txs', 'how many sections the chapter holds'],
+    ]) {
+      const h = document.createElement('span');
+      h.className = cls; h.textContent = text;
+      if (why) h.title = why;
+      heads.append(h);
+    }
+    blocksEl.append(heads);
+    const DAY = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+    let lastDay = null;
+    for (const b of mine.blocks) {
+      const day = DAY.format(b.t * 1000);
+      if (day !== lastDay) {
+        lastDay = day;
+        const d = document.createElement('div');
+        d.className = 'bb-day';
+        d.textContent = day;
+        blocksEl.append(d);
+      }
+      const row = document.createElement('div');
+      row.className = 'bb-row';
+      const when = document.createElement('span');
+      when.className = 'bb-time';
+      when.textContent = new Date(b.t * 1000).toISOString().slice(11, 16);
+      when.title = `mined ${new Date(b.t * 1000).toISOString().slice(0, 19).replace('T', ' ')} UTC`;
+      const a = document.createElement('a');
+      a.className = 'bb-ref';
+      a.href = `./bitcoin-book.html?block=${b.height}`;
+      a.textContent = wholeRef(b.height);
+      a.title = `block ${b.height.toLocaleString('en-US')} — read this chapter in the book`;
+      const v = document.createElement('span');
+      v.className = 'bb-ver bb-say';
+      v.textContent = b.sig || '—';
+      if (b.sig) v.title = b.sig;
+      const n = document.createElement('span');
+      n.className = 'bb-sum';
+      n.textContent = (b.tx ?? 0).toLocaleString('en-US');
+      row.append(when, a, v, n);
+      blocksEl.append(row);
+    }
+    blocksEl.classList.remove('hidden');
+  })().catch((e) => {
+    $('appx-subtitle').textContent = 'the mines could not be read just now';
+    console.warn('the mines could not be read —', e);
+  });
 }
 
 // ── One inscription, read out of its own witness ──────────────────────────
@@ -2305,7 +2637,12 @@ if (kind === 'proofs') {
   dropZone.addEventListener('drop', (e) => { if (e.dataTransfer?.files?.length) takeProof(e.dataTransfer.files); });
 }
 
-if (!prevTo && !bip) {
+// Only the FIRST appendix's own leaf turns back into the body -- a leaf
+// inside it (the queue, the mines, one mine, its chapters) turns among its
+// own siblings, and its lack of a backward neighbour means the run simply
+// starts there. Without that guard a mine would offer the last volume as its
+// left-hand turn, which is a turn out of two levels at once.
+if (!prevTo && !bip && !ins && AT === null) {
   chainTip().then((tip) => {
     if (tip == null) return;
     const volume = volumeBookChapter(tip).volume;

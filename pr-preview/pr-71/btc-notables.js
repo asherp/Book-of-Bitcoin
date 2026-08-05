@@ -190,14 +190,14 @@ function normalize(raw, i) {
 // (appendix.yaml). `kind` says who fills it: 'consensus' lists its own -- forks
 // grouped by BIP, whose entries are places like any other and resolve the same
 // way, so an unmined chapter may be written as the height consensus fixed or as
-// the reference that height already has (LXV β1 □1); 'mempool' and 'ledgers'
-// are gathered by the page from the queue and from the shelf, and carry only
-// their heading and its note.
+// the reference that height already has (LXV β1 □1); 'mining' and 'ledgers'
+// are gathered by the page -- from the queue and the last difficulty window's
+// blocks, and from the shelf -- and carry only their heading and its note.
 function normalizePart(raw, i) {
   const kind = String(raw.kind ?? '').trim();
   const title = String(raw.title ?? '').trim();
   if (!kind || !title) throw new Error(`btc-notables: appendix part ${i + 1} needs a kind and a title`);
-  if (!['mempool', 'consensus', 'ledgers', 'proofs', 'inscriptions'].includes(kind)) {
+  if (!['mining', 'consensus', 'ledgers', 'proofs', 'inscriptions'].includes(kind)) {
     throw new Error(`btc-notables: appendix part "${title}" has an unknown kind: ${kind}`);
   }
   // Which family of back matter this part belongs to, which is what its
