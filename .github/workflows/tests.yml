@@ -1,0 +1,46 @@
+name: Tests
+
+# The whole suite, on every change, on a bare checkout.
+#
+# Two properties are deliberate, and both are lessons from #70 — a font
+# stack shipped broken for a whole PR because the guard that had an opinion
+# about it was not among the files CI named.
+#
+# It runs the suite, not a list. `tools/**/*.test.mjs` is a glob, so a new
+# test file is covered the moment it lands; a hand-written list drifts
+# behind the directory it is supposed to describe, silently, and reports
+# green while doing it. (`tools/twitter-bot/test.mjs` is named alongside it
+# because the bot's own suite predates the `.test.mjs` convention.)
+#
+# It carries no `paths:` filter. Most of these tests read the pages and
+# stylesheets in web/ rather than any module, so gating them on a source
+# list means a CSS-only change starts no job at all — which is exactly how
+# the seven bare font stacks reached main. The suite needs no engine, no
+# browser and no credential, and finishes in a couple of seconds, so there
+# is nothing to buy by running it selectively.
+#
+# What needs the engine and the browser is the bot's rehearsal, which is
+# expensive and stays gated: see twitter-bot-test.yml.
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  # The suite as a bare checkout sees it: no WASM engine, no Playwright, the
+  # tests that need either skipping themselves. This is what a contributor
+  # gets from `git clone && node --test`, so it has to stay green in exactly
+  # that state.
+  suite:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Run the suite (bare checkout)
+        run: node --test 'tools/**/*.test.mjs' tools/twitter-bot/test.mjs

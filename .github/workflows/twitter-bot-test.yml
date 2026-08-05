@@ -4,37 +4,37 @@ name: Twitter Bot Tests
 # and the book modules it composes passages through (a change to
 # btc-prose.js or btc-tx.js reaches the bot's output directly).
 #
-# Two jobs, deliberately: the suite runs on a bare checkout, where the WASM
-# engine and Playwright are both absent and the deeper tests skip
-# themselves, which is the state a contributor clones into. The rehearsal
-# runs with both present, and drives a whole pass — search, resolve,
-# render, upload, reply, record — against local stand-ins for the chain and
-# for X. Neither job needs a credential, and neither can reach either real
-# service.
+# This is the expensive half of CI, and the only half that needs a `paths:`
+# filter: it builds the WASM engine from source and installs Chromium. With
+# both present the tests that skip on a bare checkout come off the bench —
+# one renders a real verse and asserts it decodes back to the genesis txid,
+# one renders a real PNG and asserts the fit — and the rehearsal drives a
+# whole pass (search, resolve, render, upload, reply, record) against local
+# stand-ins for the chain and for X. It needs no credential and cannot
+# reach either real service.
+#
+# The cheap half — the same suite on a bare checkout — runs unconditionally
+# on every change in tests.yml, which is where a page's font stacks and the
+# rest of the guards that read web/ actually get checked.
 
+# On pull_request only, and the list appears once because of it. A `push:`
+# trigger would need its own copy of the filter — GitHub's workflow parser
+# does not resolve YAML anchors — and would fire this job a second time on
+# every branch that has a PR open, which for a job that builds the engine
+# and installs Chromium is the one duplicate worth not paying twice. Work
+# lands here through pull requests, so the rehearsal still stands in front
+# of everything that reaches main. The bare suite is not gated at all: it
+# runs on push and pull_request alike, in tests.yml.
+#
+# The hand-listed test files this filter used to carry are gone: the run
+# below is a glob now, so naming individual suites here could only put the
+# two out of step again. `tools/*.test.mjs` covers every one of them at
+# once, including any that lands next.
 on:
-  push:
-    paths:
-      - 'tools/twitter-bot/**'
-      - 'web/btc-prose.js'
-      - 'web/btc-tx.js'
-      - 'web/btc-citation.js'
-      - 'web/notables.yaml'
-      - 'web/glossia-msg.js'
-      - 'tools/passage-page.mjs'
-      - 'tools/prerender-passages.mjs'
-      - 'tools/coinbase-notation.test.mjs'
-      - 'tools/citation-windows.test.mjs'
-      - 'tools/templates.test.mjs'
-      - 'tools/key-filter.test.mjs'
-      - 'web/btc-contribute.js'
-      - 'tools/contribute.test.mjs'
-      - 'web/sw.js'
-      - 'tools/sw-cache.test.mjs'
-      - '.github/workflows/twitter-bot-test.yml'
   pull_request:
     paths:
       - 'tools/twitter-bot/**'
+      - 'tools/*.test.mjs'
       - 'web/btc-prose.js'
       - 'web/btc-tx.js'
       - 'web/btc-citation.js'
@@ -42,34 +42,18 @@ on:
       - 'web/glossia-msg.js'
       - 'tools/passage-page.mjs'
       - 'tools/prerender-passages.mjs'
-      - 'tools/coinbase-notation.test.mjs'
-      - 'tools/citation-windows.test.mjs'
-      - 'tools/templates.test.mjs'
-      - 'tools/key-filter.test.mjs'
       - 'web/btc-contribute.js'
-      - 'tools/contribute.test.mjs'
       - 'web/sw.js'
-      - 'tools/sw-cache.test.mjs'
+      - 'build_web.sh'
+      - '.github/workflows/twitter-bot-test.yml'
   workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
-  # The suite as a bare checkout sees it: no engine, no browser, the two
-  # deep tests skipping. This is what a contributor gets from `git clone &&
-  # node --test`, so it has to stay green in exactly that state.
-  suite:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-      - name: Run the suite (bare checkout)
-        run: node --test tools/twitter-bot/test.mjs tools/passage-page.test.mjs tools/coinbase-notation.test.mjs tools/citation-windows.test.mjs tools/templates.test.mjs tools/key-filter.test.mjs tools/contribute.test.mjs tools/sw-cache.test.mjs tools/inscriptions.test.mjs
-
-  # The same suite with everything present, plus the full-pass rehearsal.
+  # The same suite tests.yml runs bare, with everything present — plus the
+  # full-pass rehearsal, which is the part that exists only here.
   rehearsal:
     runs-on: ubuntu-latest
     steps:
@@ -116,10 +100,12 @@ jobs:
       # With the engine and the browser present, the tests that skip on a bare
       # checkout now run: one renders a real verse and asserts it decodes back
       # to the genesis txid, one renders a real PNG and asserts the fit, and
-      # the coinbase suite's composition checks (which need btc-prose.js to
-      # import, engine and all) come off the bench.
+      # the composition checks across the notation suites (which need
+      # btc-prose.js to import, engine and all) come off the bench. The whole
+      # suite, by the same glob tests.yml uses — every one of those skips is
+      # gated on web/glossia.js, and this is the only job that has it.
       - name: Run the suite (engine + renderer)
-        run: node --test tools/twitter-bot/test.mjs tools/passage-page.test.mjs tools/coinbase-notation.test.mjs tools/citation-windows.test.mjs tools/templates.test.mjs tools/key-filter.test.mjs tools/contribute.test.mjs tools/sw-cache.test.mjs tools/inscriptions.test.mjs
+        run: node --test 'tools/**/*.test.mjs' tools/twitter-bot/test.mjs
 
       - name: Rehearse a full pass
         run: node tools/twitter-bot/rehearse.mjs
