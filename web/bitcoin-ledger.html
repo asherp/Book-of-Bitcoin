@@ -250,6 +250,14 @@ a:hover { text-decoration: underline; }
   font:600 10px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.14em; text-transform:uppercase; color:var(--meta); }
 .idx-day { margin:8px 0 1px; padding-left:28px;
   font:500 10px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.12em; text-transform:uppercase; color:var(--dim); }
+/* The reader's mark, worn by the row whose transaction they kept: the
+   ribbon it flies in the contents, then the name they gave it. It rides
+   with the citation, so the bookkeeping columns keep their own alignment. */
+.idx-bm { display:inline-flex; align-items:baseline; gap:5px; margin-left:10px;
+  font:400 11px/1.4 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.02em; color:var(--dim);
+  max-width:24ch; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; vertical-align:baseline; }
+.idx-bm .toc-bm { flex:none; width:8px; color:var(--accent); }
+.idx-bm .toc-bm svg { width:8px; height:11px; display:block; }
 .idx-row { display:flex; align-items:baseline; gap:16px; padding:8px 2px 8px 14px; border-bottom:1px solid var(--hair); text-decoration:none; }
 .idx-row.under-book { padding-left:28px; }
 .idx-row:last-child { border-bottom:none; }
@@ -643,7 +651,7 @@ import { localizeHome, mountLangMenu } from './btc-strings.js';
 localizeHome();   // the masthead in the reader's UI language
 mountLangMenu();  // …with the Language item, which any page can now set
 import { INDEXED, isAddress, isScriptHex, keptLedgers, saveKeptLedgers, sameAddresses, memberScriptHex, cachedLine, resolveLine,
-         extendLine, renderRows, groupState, periods, lineNote, reconciled, ledgerSum, heldCoins, lastKnownState,
+         extendLine, renderRows, groupState, markIndex, periods, lineNote, reconciled, ledgerSum, heldCoins, lastKnownState,
          formatBalanceBtc, formatNetBtc, chainFailureText, citeHref, sectionOf, sectionOfFetched, citePlace, passageTxid, passageEntries, txHexOf, outspendsOf, prevoutValuesOf,
          DEFAULT_ESPLORA, esploraCustom, esploraSelected, setEsploraSettings } from './btc-index.js';
 import { volumeBookChapter, heightOf, subsidyAt, toRoman, parseReference, latinRefOf, footnoteMark } from './btc-citation.js';
@@ -1291,22 +1299,15 @@ const runRecord = async (alive) => {
   if (!alive()) return;
   let byTxid = null;     // held marks, once the snapshot agrees
   let rowsEl, foot, note, unsyn, rendered, io, group;
-  // The reader's own marks that fall ON this account: a bookmark counts
-  // where the ledger actually has an entry in that chapter, and nowhere
-  // else. A passage kept somewhere else in the same years is not this
-  // ledger's business -- the account would be claiming a reading that has
-  // nothing to do with it. Newest first, the order the rows are drawn in;
-  // the height set is rebuilt only as the reach grows, and growth only
-  // ever APPENDS older marks to the tail, so the count already consumed
-  // stays true across chunks.
-  let markHeights = null, markLen = -1;
-  const marksOn = (line) => {
-    if (markLen !== line.entries.length) {
-      markHeights = new Set(line.entries.map((e) => e.height));
-      markLen = line.entries.length;
-    }
-    return bookmarks.filter((b) => markHeights.has(b.height)).sort((a, z) => z.height - a.height);
-  };
+  // The reader's own marks, indexed once for the rows to wear. A ledger's
+  // table is its own transactions and nothing else: a mark labels the row
+  // that IS the transaction it was kept on, and otherwise does not appear
+  // here at all. (It used to be enough for a mark to share a BLOCK with one
+  // of this ledger's entries -- but a block holds thousands of
+  // transactions, so that hung marks in the table that had nothing to do
+  // with the ledger.) The index is built from the reader's whole shelf and
+  // never from the account, so it does not change as the reach grows.
+  const marks = markIndex(bookmarks);
   let busy = false;      // one draw at a time; the re-arm retriggers
   // The unsynced entry: an unreferenced line heading the record for the
   // transactions not yet gathered -- their count standing where the
@@ -1359,7 +1360,7 @@ const runRecord = async (alive) => {
     rowsEl.replaceChildren();
     group = groupState();
     renderRows(rowsEl, line.entries.slice(line.entries.length - rendered), byTxid,
-               { state: group, bookmarks: marksOn(line) });
+               { state: group, marks });
     if (!hold) return;
     const back = rowsEl.querySelector(`[data-txid="${hold.txid}"][data-sats="${hold.sats}"]`);
     if (back) window.scrollBy(0, back.getBoundingClientRect().top - hold.top);
@@ -1413,7 +1414,7 @@ const runRecord = async (alive) => {
       const take = Math.min(len - rendered, PAGE);
       if (take > 0) {
         renderRows(rowsEl, line.entries.slice(len - rendered - take, len - rendered), byTxid,
-                   { state: group, bookmarks: marksOn(line) });
+                   { state: group, marks });
         rendered += take;
       }
     }
