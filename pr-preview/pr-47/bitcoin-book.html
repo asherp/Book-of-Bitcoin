@@ -946,6 +946,10 @@ button:disabled { opacity: .4; cursor: not-allowed; }
    dress an output's name wears above its rows. Empty, it takes no room. */
 .footnote-title { grid-column: 1 / -1; text-align: center; font: italic 500 calc(13.5px * var(--scale-body, 1))/1.4 'Newsreader','Book Sigla',serif; color: var(--accent); margin: .4em 0 .3em; }
 .footnote-title:empty { display: none; }
+/* A name line that opens something says so the way every other door in the
+   book does -- on hover, and never by shouting in the running text. */
+a.footnote-title.is-asset { text-decoration: none; }
+a.footnote-title.is-asset:hover { color: var(--accent-2, #dcb877); text-decoration: underline; }
 /* A footnote's ribbon flies at its entry's right edge, the way an output's
    flies on its amount. The mark is the menu's click target, but an 8px
    letter is no place for an 18px button -- so the mark stays unpositioned
@@ -1223,6 +1227,7 @@ button:disabled { opacity: .4; cursor: not-allowed; }
     <div id="hash-menu-actions">
       <button type="button" class="hash-menu-item" data-act="copy" role="menuitem">Copy hex</button>
       <button type="button" class="hash-menu-item" data-act="copy-text" role="menuitem">Copy text</button>
+      <button type="button" class="hash-menu-item" data-act="copy-link" role="menuitem">Copy link</button>
       <button type="button" class="hash-menu-item hidden" data-act="ledger" role="menuitem">Ledger entry</button>
       <button type="button" class="hash-menu-item" data-act="bookmark" role="menuitem">Bookmark</button>
     </div>
@@ -1254,6 +1259,9 @@ import { toSubscript } from './btc-sigla.js';
 import { NOTATION_HTML } from './btc-notation.js';
 import { transactionTemplates } from './btc-templates.js';
 import { collectMarks, applyKeyFilter } from './btc-key-filter.js';
+// What a witness carries, read off its own bytes: a footnote whose payload
+// announces a format is named by it when nothing better has named it.
+import { witnessAsset } from './btc-inscriptions.js';
 import { commentaryFor, commentaryHtml, resolveCommentary } from './btc-commentary.js';
 import { contributeHtml } from './btc-contribute.js';
 
@@ -5027,14 +5035,60 @@ async function renderFootnotes(gen) {
     // The witness's name line, centered above its footnote and spanning the
     // grid: the reader's bookmark title when this witness is kept (defaulted
     // from -- and overriding -- the curated name), else the contents' own
-    // name for it (a curated §n.a place), else empty and hidden.
-    // syncBookmarkTitles keeps it live with the bookmark set.
-    const witTitle = document.createElement('div');
+    // name for it (a curated §n.a place), else what the bytes say they are,
+    // else empty and hidden. syncBookmarkTitles keeps it live with the
+    // bookmark set.
+    //
+    // That third tier is read, not asserted: a format announces itself in
+    // its first bytes (a PNG opens \x89PNG whoever inscribed it), so a
+    // witness carrying one can be named without anybody deciding what it is.
+    // It sits BELOW the curated name because an editor who has named a
+    // passage has said something a magic number cannot; it sits above
+    // nothing at all because a footnote that is plainly a picture should not
+    // read as anonymous apparatus.
+    // A witness that carries an asset is a door: the name line opens the
+    // appendix's leaf for that inscription, where the bytes are shown as
+    // what they are rather than said as prose. So the line is an anchor
+    // wherever there is something to open, and a plain div where there is
+    // not -- syncBookmarkTitles writes into either, and a reader's own name
+    // for the place rides the same link, since renaming a thing does not
+    // make it a different thing.
+    const witAsset = witnessAsset(fn.items);
+    const witTitle = document.createElement(witAsset ? 'a' : 'div');
     witTitle.className = 'footnote-title';
+    if (witAsset) {
+      witTitle.href = `./bitcoin-appendix.html?part=inscriptions&ins=${fn.txid}`;
+      witTitle.classList.add('is-asset');
+    }
     witTitle.dataset.bmWit = `${fn.txid}:${fn.vin}`;
     const witPlace = places().find((pl) => !pl.page && !pl.address && pl.wit === fn.n
       && pl.id === String(state.height) && (pl.index ?? null) === state.index);
-    witTitle.dataset.fallback = witPlace ? placeTitle(witPlace) : '';
+    const asset = witPlace ? null : witAsset;
+    // A label may be null -- a JSON body that names nothing goes unnamed --
+    // and then the line stays empty, as it does for a witness carrying no
+    // asset at all. The book would rather say nothing than say "JSON".
+    witTitle.dataset.fallback = witPlace ? placeTitle(witPlace) : ((asset && asset.label) || '');
+    if (asset) {
+      // What the line is claiming, and on whose authority: the bytes' own
+      // announcement, or -- where they make none -- the envelope's word for
+      // them, which is a different thing and says so.
+      const size = `${asset.bytes.toLocaleString()} bytes`;
+      witTitle.title = asset.source === 'name'
+        ? `${size} of ${asset.mime} — “${asset.label}” is the name this content gives itself, not something the bytes announce`
+        : !asset.label
+        ? `${size} of ${asset.mime}, which names nothing`
+        : asset.source === 'bytes'
+        ? `${size}, read as ${asset.mime} from the payload's own opening bytes`
+          + (asset.declared && asset.declared !== asset.mime
+            ? ` — the envelope declares ${asset.declared}, which these bytes do not bear out`
+            : '')
+        : `${size}${asset.encoding ? `, ${asset.encoding}-compressed` : ''} — “${asset.declared}” is the inscriber's declaration; the bytes themselves announce nothing`;
+      witTitle.title += ' — open it';
+    } else if (witAsset) {
+      // Curated, so the name is an editor's rather than the bytes'; the line
+      // still opens the thing it names.
+      witTitle.title = `${witAsset.bytes.toLocaleString()} bytes of ${witAsset.mime} — open it`;
+    }
     el.append(witTitle);
     // A witness-only input's citation (carrying its in-N anchor, resolving
     // asynchronously wherever it sits) lands in the left cell of its own
@@ -6596,7 +6650,8 @@ function localizeChrome() {
 localizeChrome();
 
 // ── Hash menu + bookmarks ─────────────────────────────────────────────────
-// Clicking any Glossia-encoded hash opens a small menu (Copy hex / Bookmark).
+// Clicking any Glossia-encoded hash opens a small menu (Copy hex / Copy link /
+// Bookmark).
 // Bookmarks -- navigable hashes the reader wants to return to (block hashes,
 // previous-block hashes, txids) -- persist in localStorage and list in the card.
 // Each carries a reader-supplied title, which a table of contents will draw on.
@@ -6962,6 +7017,7 @@ function suggestTitle(entry) {
 const hashMenu = $('hash-menu');
 const menuCopyBtn = hashMenu.querySelector('[data-act="copy"]');
 const menuCopyTextBtn = hashMenu.querySelector('[data-act="copy-text"]');
+const menuCopyLinkBtn = hashMenu.querySelector('[data-act="copy-link"]');
 const menuBmBtn = hashMenu.querySelector('[data-act="bookmark"]');
 const menuLedgerBtn = hashMenu.querySelector('[data-act="ledger"]');
 const titleInput = $('hash-title-input');
@@ -6996,8 +7052,12 @@ function openHashMenu(ev, entry, anchorEl) {
   menuEntry = entry;
   fromRibbon = false;
   $('hash-menu-head').textContent = entry.label;
-  menuCopyBtn.textContent = 'Copy hex';
-  menuCopyTextBtn.textContent = 'Copy text';
+  menuCopyBtn.textContent = tr('Copy hex');
+  menuCopyTextBtn.textContent = tr('Copy text');
+  menuCopyLinkBtn.textContent = tr('Copy link');
+  // The link item is offered only where a link exists to copy: a place the
+  // book's own URLs can cite, or a locking script's road to its ledger.
+  menuCopyLinkBtn.classList.toggle('hidden', !entryShareUrl(entry));
   // A locking script's menu carries the road to its ledger: the entry this
   // very section wrote in that address's record (?address + ?ref).
   menuLedgerBtn.classList.toggle('hidden', !entry.ledgerHref);
@@ -7005,7 +7065,7 @@ function openHashMenu(ev, entry, anchorEl) {
   // Keyed by the whole place, output and all: a transaction's own bookmark and
   // one of its outputs' are two different keeps, and the item must say which
   // of them it is about.
-  if (entry.nav) menuBmBtn.textContent = isBookmarked(entry.hex, bmSubOf(entry)) ? 'Remove bookmark' : 'Bookmark';
+  if (entry.nav) menuBmBtn.textContent = isBookmarked(entry.hex, bmSubOf(entry)) ? tr('Remove bookmark') : tr('Bookmark');
   hashMenu.classList.remove('hidden');
   setMenuMode('actions');
   // Anchor at the click; for a keyboard open, sit under the element.
@@ -7041,6 +7101,37 @@ menuCopyTextBtn.addEventListener('click', () => {
   if (!menuEntry) return;
   navigator.clipboard.writeText(menuEntry.prose).then(() => {
     menuCopyTextBtn.textContent = 'Copied ✓';
+    setTimeout(closeHashMenu, 650);
+  }).catch(closeHashMenu);
+});
+// The shareable address of the place the entry names: the citation carried
+// whole in the URL (?ref=, the spelling every other page cites into the book
+// with), landing exactly where the menu was opened -- the chapter, the
+// section, the output, the witness. A locking script's link is the road to
+// its ledger instead, the one page that reads it whole. Null where no link
+// exists -- a merkle root leads nowhere, a draft chapter has no settled
+// reference yet -- and the menu then offers no link to copy.
+function entryShareUrl(entry) {
+  if (entry.ledgerHref) return new URL(entry.ledgerHref, location.href).href;
+  if (!entry.nav) return null;
+  const place = entryPlacement(entry);
+  if (!place) return null;
+  const url = new URL(location.href);
+  url.hash = '';
+  // A leaf names a span rather than a chapter, which ?ref= cannot spell from
+  // a mid-span block, so its link rides the ?block=&page= pair the address
+  // bar itself writes (updateUrl).
+  url.search = place.page
+    ? `block=${place.height}&page=${place.page}`
+    : `ref=${latinRefOf(place.height, place.pos == null ? null : place.pos + 1, place.vout ?? null, place.wn ?? null)}`;
+  return url.href;
+}
+menuCopyLinkBtn.addEventListener('click', () => {
+  if (!menuEntry) return;
+  const url = entryShareUrl(menuEntry);
+  if (!url) { closeHashMenu(); return; }
+  navigator.clipboard.writeText(url).then(() => {
+    menuCopyLinkBtn.textContent = 'Copied ✓';
     setTimeout(closeHashMenu, 650);
   }).catch(closeHashMenu);
 });

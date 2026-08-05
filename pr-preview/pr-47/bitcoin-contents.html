@@ -435,6 +435,7 @@ function leafSub(leaf) {
   const part = leaf.part;
   if (part.kind === 'mempool') return 'Ahead of the chain tip · the queue, as far as it reaches';
   if (part.kind === 'consensus') return `The rules the chapters are written under · ${count(part.bips.length, 'fork', 'forks')}`;
+  if (part.kind === 'inscriptions') return `Files in witnesses · ${count(part.entries.length, 'inscription', 'inscriptions')}`;
   if (part.kind === 'proofs') return `Works the chain attests · ${count(proofsCount ?? part.entries.length, 'work cited', 'works cited')}`;
   const kept = keptLedgers().filter((k) => !INDEXED.some((e) => sameAddresses(e.addresses, k.addresses)));
   return `Keepers, not chapters · ${count(INDEXED.length + kept.length, 'ledger', 'ledgers')}`;
@@ -470,7 +471,7 @@ function descent(leaf) {
 // place, a bookmark, a cold load -- opens the volume the reader was last
 // reading (the book notes it as it renders), and Volume I's leaf when there
 // is nothing to go on, that being where the book starts.
-const PART_ALIAS = { mempool: 'mempool', future: 'consensus', entries: 'consensus', consensus: 'consensus', ledgers: 'ledgers', proofs: 'proofs' };
+const PART_ALIAS = { mempool: 'mempool', future: 'consensus', entries: 'consensus', consensus: 'consensus', inscriptions: 'inscriptions', ledgers: 'ledgers', proofs: 'proofs' };
 const params = new URLSearchParams(location.search);
 function openingIndex(list) {
   if (params.get('at') === 'last') return list.length - 1;
@@ -559,6 +560,10 @@ function renderAppendix(part) {
       toc.append(bipHead(bip));
       for (const e of bip.entries) toc.append(consensusRow(e));
     }
+    return;
+  }
+  if (part.kind === 'inscriptions') {
+    for (const e of part.entries) toc.append(inscriptionRow(e));
     return;
   }
   if (part.kind === 'proofs') {
@@ -652,6 +657,29 @@ function consensusRow(entry) {
     if (place) r.textContent = wholeRef(place);
     else { r.textContent = '—'; r.classList.add('none'); }
   }
+  row.append(t, r);
+  return row;
+}
+
+// The Inscriptions leaf's rows: what this register has to show is the
+// witness read whole, so a row opens the inscription's own appendix leaf --
+// the renderer -- rather than the book; the leaf carries the one door into
+// the book, at the footnote the envelope reads at. The citation is offline
+// arithmetic: the height, the section, and the footnote's letter after the
+// point, as the volumes cite the same place.
+function inscriptionRow(entry) {
+  const row = document.createElement('a');
+  row.className = 'toc-entry under-book';
+  row.href = `./bitcoin-appendix.html?part=inscriptions&ins=${entry.reveal}`;
+  const t = document.createElement('span');
+  t.className = 'toc-title';
+  t.textContent = entry.title;
+  if (entry.note) t.title = entry.note;
+  const r = document.createElement('span');
+  r.className = 'toc-ref';
+  const place = placements.get(placeKey(entry));
+  if (place) r.textContent = `${wholeRef(place)}${place.wit == null ? '' : `.${footnoteMark(place.wit)}`}`;
+  else { r.textContent = '—'; r.classList.add('none'); }
   row.append(t, r);
   return row;
 }
@@ -1076,11 +1104,16 @@ const consensusPlaces = () => appendix()
   .flatMap((p) => p.bips)
   .flatMap((b) => b.entries)
   .filter((e) => !e.expected);
+// The Inscriptions part's places resolve the same way -- height ids, so in
+// practice they place offline, footnote letter and all.
+const inscriptionPlaces = () => appendix()
+  .filter((p) => p.kind === 'inscriptions')
+  .flatMap((p) => p.entries);
 
 // Block placements (curated, and bookmarks that stored their reference) are
 // offline, so place them at once; everything else streams in as its lookup
 // resolves.
-for (const p of [...places(), ...consensusPlaces()]) if (!p.address && !p.script && isBlockId(p.id)) placements.set(placeKey(p), placeOf(Number(p.id), p.index ?? null, p.page, p.out ?? null, p.wit ?? null));
+for (const p of [...places(), ...consensusPlaces(), ...inscriptionPlaces()]) if (!p.address && !p.script && isBlockId(p.id)) placements.set(placeKey(p), placeOf(Number(p.id), p.index ?? null, p.page, p.out ?? null, p.wit ?? null));
 for (const b of bookmarks) {
   if (Number.isInteger(b.height)) bmPlacements.set(bmKey(b), placeOf(b.height, b.pos ?? null, b.page, b.vout ?? null, b.wn ?? null));
 }
@@ -1095,7 +1128,7 @@ loadProjected();
 setInterval(() => { if (!document.hidden) loadProjected(); }, 60_000);
 // One lookup per key, however many registers cite the place.
 const unplaced = new Map();
-for (const p of [...places(), ...consensusPlaces()]) {
+for (const p of [...places(), ...consensusPlaces(), ...inscriptionPlaces()]) {
   if (!p.address && !p.script && !placements.has(placeKey(p)) && !unplaced.has(placeKey(p))) unplaced.set(placeKey(p), p);
 }
 await Promise.all([

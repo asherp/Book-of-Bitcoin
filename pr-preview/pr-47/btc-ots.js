@@ -199,7 +199,7 @@ function readMerklePath(steps) {
 
 // The operations themselves, in order, as hex -- the argument the proof makes,
 // step by step, for a caller that wants to show the work rather than only its
-// conclusion (Appendix IV's leaf sets each rung as prose). Names, not tag
+// conclusion (the Citations register's leaf sets each rung as prose). Names, not tag
 // bytes: the reading of a proof should not require the format's table.
 const OP_NAMES = { 0xf0: 'append', 0xf1: 'prepend', 0xf2: 'reverse', 0xf3: 'hexlify',
   0x02: 'sha1', 0x03: 'ripemd160', 0x08: 'sha256' };
