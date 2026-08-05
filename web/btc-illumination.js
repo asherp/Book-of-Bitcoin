@@ -141,16 +141,45 @@ function segmentHitsRect(x1, y1, x2, y2, r) {
   return segmentsCross(p1, p2, tl, tr) || segmentsCross(p1, p2, tr, br)
     || segmentsCross(p1, p2, br, bl) || segmentsCross(p1, p2, bl, tl);
 }
+function outOfBounds(x, y, bounds) {
+  return !!bounds && (x < bounds.x || x > bounds.x + bounds.w || y < bounds.y || y > bounds.y + bounds.h);
+}
+function firstBlockingRect(x1, y1, x2, y2, obstacles) {
+  for (const r of obstacles) if (segmentHitsRect(x1, y1, x2, y2, r)) return r;
+  return null;
+}
 function stepBlocked(x1, y1, x2, y2, obstacles, bounds) {
-  if (bounds && (x2 < bounds.x || x2 > bounds.x + bounds.w || y2 < bounds.y || y2 > bounds.y + bounds.h)) return true;
-  for (const r of obstacles) if (segmentHitsRect(x1, y1, x2, y2, r)) return true;
-  return false;
+  return outOfBounds(x2, y2, bounds) || !!firstBlockingRect(x1, y1, x2, y2, obstacles);
+}
+
+// The two directions a turtle can travel while staying parallel to a
+// rectangle's nearest edge -- i.e. tracing its silhouette rather than
+// bouncing off it. Whichever of the two the caller ends up choosing (see
+// angleDiff below) is what makes a blocked vine curl along a paragraph's
+// margin instead of deflecting away from it at a random angle.
+function angleDiff(a, b) {
+  let d = (a - b) % (2 * Math.PI);
+  if (d > Math.PI) d -= 2 * Math.PI;
+  if (d < -Math.PI) d += 2 * Math.PI;
+  return Math.abs(d);
+}
+function tangentAngles(px, py, rect) {
+  const distTop = Math.abs(py - rect.y);
+  const distBottom = Math.abs(py - (rect.y + rect.h));
+  const distLeft = Math.abs(px - rect.x);
+  const distRight = Math.abs(px - (rect.x + rect.w));
+  const horizontal = Math.min(distTop, distBottom) <= Math.min(distLeft, distRight);
+  const axis = horizontal ? 0 : Math.PI / 2;
+  return [axis, axis + Math.PI];
 }
 
 // One anchor -> a list of finished polylines ({points, leaves}) grown from it.
 // `obstacles` and `bounds` are already in the same coordinate space as the
 // anchor (host-relative pixels) — see measureObstacles/measureAnchors below.
-function interpretFrom(symbol, anchor, obstacles, bounds, rng) {
+// Exported (it's plain geometry, no DOM) so the wall-following behaviour can
+// be checked directly against synthetic rectangles -- see
+// tools/illumination.test.mjs -- rather than only eyeballed in a browser.
+export function interpretFrom(symbol, anchor, obstacles, bounds, rng) {
   let state = { x: anchor.x, y: anchor.y, angle: anchor.angle };
   const stack = [];
   const segments = [];
@@ -164,11 +193,31 @@ function interpretFrom(symbol, anchor, obstacles, bounds, rng) {
       const a = state.angle + jitter;
       const nx = state.x + Math.cos(a) * STEP;
       const ny = state.y + Math.sin(a) * STEP;
-      if (stepBlocked(state.x, state.y, nx, ny, obstacles, bounds)) {
-        // Dodge: try turning by increasing deflections either side before
-        // giving up on this branch entirely -- a vine curls around a line
-        // of prose rather than stopping dead at its edge.
+      const hitRect = outOfBounds(nx, ny, bounds) ? null : firstBlockingRect(state.x, state.y, nx, ny, obstacles);
+      if (hitRect || outOfBounds(nx, ny, bounds)) {
         let placed = false;
+        // Wall-follow first: steer along whichever of the blocking box's two
+        // tangent directions is closest to where the vine was already
+        // heading. This is what makes growth trace a paragraph's silhouette
+        // -- climbing along its edge and turning its corners -- instead of
+        // bouncing off it at a random angle.
+        if (hitRect) {
+          const tangents = tangentAngles(state.x, state.y, hitRect).sort((t1, t2) => angleDiff(a, t1) - angleDiff(a, t2));
+          for (const ta of tangents) {
+            const tx = state.x + Math.cos(ta) * STEP;
+            const ty = state.y + Math.sin(ta) * STEP;
+            if (!outOfBounds(tx, ty, bounds) && !firstBlockingRect(state.x, state.y, tx, ty, obstacles)) {
+              state = { x: tx, y: ty, angle: ta };
+              cur.points.push({ x: tx, y: ty });
+              placed = true;
+              break;
+            }
+          }
+        }
+        // Fallback: the corner case -- two obstacles meet, or an obstacle
+        // sits flush against the host bounds -- where neither tangent
+        // direction is free either. Widening, increasing deflections either
+        // side is a last resort rather than the first move.
         for (let t = 1; t <= MAX_DEFLECT_TRIES && !placed; t++) {
           for (const sign of [1, -1]) {
             const da = state.angle + sign * t * (TURN / 2);
@@ -274,8 +323,24 @@ function buildOverlaySvg(width, height) {
   });
 }
 
-function renderSegments(svg, segmentsByAnchor, { animate }) {
+// Debug aid, off by default: draws the obstacle rectangles a vine is
+// steering around, so the wall-following behaviour above -- climbing along
+// an edge, turning its corners -- can actually be seen rather than taken on
+// faith. Never intended for the reader-facing render.
+function renderObstacleDebug(svg, obstacles) {
+  const group = svgEl('g', { class: 'illum-debug-obstacles' });
+  for (const r of obstacles) {
+    group.appendChild(svgEl('rect', {
+      x: r.x.toFixed(1), y: r.y.toFixed(1), width: r.w.toFixed(1), height: r.h.toFixed(1),
+      fill: 'none', stroke: 'currentColor', 'stroke-width': '1', 'stroke-dasharray': '3,3', opacity: '0.35',
+    }));
+  }
+  svg.appendChild(group);
+}
+
+function renderSegments(svg, segmentsByAnchor, { animate, obstacles, debug }) {
   while (svg.firstChild) svg.removeChild(svg.firstChild);
+  if (debug && obstacles) renderObstacleDebug(svg, obstacles);
   const group = svgEl('g', { class: 'illum-vines', 'stroke-linecap': 'round' });
   svg.appendChild(group);
   for (const segments of segmentsByAnchor) {
@@ -371,7 +436,7 @@ export function illuminate(hostEl, opts = {}) {
       const rng = rngFromHex(`${opts.blockHash}:${stage}:${a.x.toFixed(0)},${a.y.toFixed(0)}`);
       return interpretFrom(symbol, a, obstacles, bounds, rng);
     });
-    renderSegments(svg, segmentsByAnchor, { animate: firstRender && !reducedMotion() });
+    renderSegments(svg, segmentsByAnchor, { animate: firstRender && !reducedMotion(), obstacles, debug: !!opts.debug });
     firstRender = false;
   }
 
