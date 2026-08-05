@@ -17,26 +17,20 @@ name: Twitter Bot Tests
 # on every change in tests.yml, which is where a page's font stacks and the
 # rest of the guards that read web/ actually get checked.
 
-# The hand-listed test files these filters used to carry are gone: the run
+# On pull_request only, and the list appears once because of it. A `push:`
+# trigger would need its own copy of the filter — GitHub's workflow parser
+# does not resolve YAML anchors — and would fire this job a second time on
+# every branch that has a PR open, which for a job that builds the engine
+# and installs Chromium is the one duplicate worth not paying twice. Work
+# lands here through pull requests, so the rehearsal still stands in front
+# of everything that reaches main. The bare suite is not gated at all: it
+# runs on push and pull_request alike, in tests.yml.
+#
+# The hand-listed test files this filter used to carry are gone: the run
 # below is a glob now, so naming individual suites here could only put the
 # two out of step again. `tools/*.test.mjs` covers every one of them at
 # once, including any that lands next.
 on:
-  push:
-    paths:
-      - 'tools/twitter-bot/**'
-      - 'tools/*.test.mjs'
-      - 'web/btc-prose.js'
-      - 'web/btc-tx.js'
-      - 'web/btc-citation.js'
-      - 'web/notables.yaml'
-      - 'web/glossia-msg.js'
-      - 'tools/passage-page.mjs'
-      - 'tools/prerender-passages.mjs'
-      - 'web/btc-contribute.js'
-      - 'web/sw.js'
-      - 'build_web.sh'
-      - '.github/workflows/twitter-bot-test.yml'
   pull_request:
     paths:
       - 'tools/twitter-bot/**'
