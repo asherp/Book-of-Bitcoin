@@ -9,8 +9,8 @@
       tools/og-card.html web/og-bookofbitcoin.png
 
   (Any Chrome will do; Playwright is just the easiest way to get an exact
-  1200x630 viewport. Give the Google Fonts a moment to load - if the render
-  comes out in fallback fonts, add --wait-for-timeout=3000.)
+  1200x630 viewport. The fonts load from ../web/fonts/, so run it from a
+  checkout - no network needed.)
 
   Platforms cache unfurls per-URL, so after deploying a new card, force a
   refresh with the target platform's card validator / sharing debugger.
@@ -18,16 +18,14 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../web/fonts/fonts.css">
 <style>
   html, body { margin: 0; padding: 0; }
   body {
     width: 1200px; height: 630px; overflow: hidden;
     background: #08080a;
     position: relative;
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: 'IBM Plex Mono','Book Sigla', monospace;
   }
   /* Faint radial glow behind the beta, like a reading lamp on the page */
   .glow {
@@ -44,7 +42,7 @@
   /* The big gold beta, standing in the right margin like an illuminated initial */
   .beta-big {
     position: absolute; right: 84px; top: 44%; transform: translateY(-50%);
-    font: 600 460px/1 'Newsreader', Georgia, serif;
+    font: 600 460px/1 'Newsreader','Book Sigla', Georgia, serif;
     background: linear-gradient(175deg, #dcb877 8%, #c9a25f 55%, #8a6d3c 100%);
     -webkit-background-clip: text; background-clip: text; color: transparent;
   }
@@ -52,37 +50,37 @@
     position: absolute; left: 92px; top: 118px; right: 480px;
   }
   .title {
-    font: 600 44px/1.28 'IBM Plex Mono', monospace;
+    font: 600 44px/1.28 'IBM Plex Mono','Book Sigla', monospace;
     letter-spacing: .20em; text-transform: uppercase; color: #e8e4da;
     margin: 0 0 22px;
     white-space: nowrap;
   }
   .title .beta {
     color: #c9a25f; text-transform: none;
-    font-family: 'Newsreader', Georgia, serif; font-weight: 600; font-size: 1.12em;
+    font-family: 'Newsreader','Book Sigla', Georgia, serif; font-weight: 600; font-size: 1.12em;
   }
   /* The strapline: the book's subtitle, in the gold of the illuminated
      initial standing beside it. */
   .strapline {
-    font: italic 400 33px/1.2 'Newsreader', Georgia, serif;
+    font: italic 400 33px/1.2 'Newsreader','Book Sigla', Georgia, serif;
     color: #dcb877; margin: 0 0 34px;
   }
   .tagline {
-    font: 400 27px/1.52 'Newsreader', Georgia, serif;
+    font: 400 27px/1.52 'Newsreader','Book Sigla', Georgia, serif;
     color: #cfcabf; margin: 0 0 38px; max-width: 640px;
   }
   .tagline em { color: #e8e4da; }
   .cite {
-    font: 500 20px/1 'IBM Plex Mono', monospace; color: #9c99a6;
+    font: 500 20px/1 'IBM Plex Mono','Book Sigla', monospace; color: #9c99a6;
     letter-spacing: .02em;
   }
   .cite .mark { color: #c9a25f; }
   .cite .arrow { color: #7e7b88; padding: 0 10px; }
-  .cite .prose { font: italic 400 22px/1 'Newsreader', Georgia, serif; color: #9c99a6; }
+  .cite .prose { font: italic 400 22px/1 'Newsreader','Book Sigla', Georgia, serif; color: #9c99a6; }
   .footer {
     position: absolute; left: 92px; right: 92px; bottom: 74px;
     display: flex; justify-content: space-between; align-items: baseline;
-    font: 400 19px/1 'IBM Plex Mono', monospace; color: #7e7b88;
+    font: 400 19px/1 'IBM Plex Mono','Book Sigla', monospace; color: #7e7b88;
   }
   .footer .site { color: #c9a25f; font-weight: 500; }
 </style>
