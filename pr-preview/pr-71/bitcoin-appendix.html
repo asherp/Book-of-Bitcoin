@@ -525,7 +525,7 @@ await loadNotables();
 const APPENDIX = appendix();
 import { chainTip, MEMPOOL_MIRRORS, readQueue, MVB } from './btc-mempool.js';
 import {
-  minedWindow, tallyMines, shareSay, sharePct, MINE_WINDOW,
+  minedWindow, tallyMines, shareSay, sharePct, MINE_WINDOW, signatureOf,
   UNATTRIBUTED as MINES_UNATTRIBUTED,
 } from './btc-mines.js';
 import { toRoman, volumeBookChapter, heightOf, expectedReference, footnoteMark } from './btc-citation.js';
@@ -1267,8 +1267,16 @@ if (kind === 'mining' && AT !== null && AT !== 'mempool') {
       // The bytes the attribution is an inference FROM: the pool's own
       // signature, as the most recent chapter it won carries it. Printed
       // because it is the record, where the name above it is a reading.
-      const sig = mine.blocks.find((b) => b.sig)?.sig;
-      if (sig) statRow('signature', sig, 'the coinbase\'s own writing, as this mine\'s newest chapter carries it — the record the name is read off');
+      // The bytes the attribution is an inference FROM: what this mine wrote
+      // into its newest chapter's coinbase, quoted to exactly the extent the
+      // book's own signature table can vouch for (btc-pools.js) and no
+      // further. A mine whose tag that table cannot name prints no line at
+      // all rather than a run of bytes nobody wrote.
+      const sig = mine.blocks.map((b) => signatureOf(b.sig)).find(Boolean);
+      if (sig) {
+        statRow('signature', sig, 'the pool\'s own writing in the coinbase, as its newest chapter in this window carries it, '
+          + 'cut to where the book\'s signature table says it ends — the record the name above is a reading of');
+      }
       statRow('attribution', 'mempool.space', credit);
       if (mine.link) {
         const v = statRow('the mine says', mine.link);
@@ -1321,7 +1329,7 @@ if (kind === 'mining' && AT !== null && AT !== 'mempool') {
       // without the page insisting on them.
       a.title = `block ${b.height.toLocaleString('en-US')} — mined `
         + `${new Date(b.t * 1000).toISOString().slice(0, 19).replace('T', ' ')} UTC`
-        + `${b.sig ? `, signed ${b.sig}` : ''}. Read this chapter in the book.`;
+        + `${signatureOf(b.sig) ? `, signed ${signatureOf(b.sig)}` : ''}. Read this chapter in the book.`;
       row.append(a);
       blocksEl.append(row);
     }
