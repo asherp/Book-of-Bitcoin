@@ -1114,10 +1114,12 @@ if (ins) {
     const collectionName = (collection.meta && collection.meta.name || '').trim() || ins.title;
 
     // The head: the manifest's name for this work, the collection above it,
-    // and beneath the name the citation -- above the rule, where every leaf
-    // in this book puts the reference for the thing it is showing -- with
-    // the work's place in the run after it. The citation is filled in when
-    // the chain places the witness (below); until then it is a mark.
+    // and beneath the name the citation alone -- above the rule, where every
+    // leaf in this book puts the reference for the thing it is showing. The
+    // citation is filled in when the chain places the witness (below); until
+    // then it is a mark. Nothing counts the run off beside it: a book does
+    // not number the plate against the total, and the turns at the foot
+    // already say what lies either side.
     $('appx-title').textContent = (m.name || '').trim() || `Work ${at.toLocaleString('en-US')}`;
     $('appx-up').textContent = `▴ ${collectionName}`;
     document.title = `The βook of βitcoin — ${(m.name || '').trim() || `Work ${at}`}`;
@@ -1126,8 +1128,7 @@ if (ins) {
     cite.href = `./bitcoin-book.html?txid=${m.txid}`;
     cite.title = 'read this witness in the book';
     cite.textContent = '…';
-    $('appx-subtitle').replaceChildren(cite,
-      document.createTextNode(` · ${at.toLocaleString('en-US')} of ${members.length.toLocaleString('en-US')}`));
+    $('appx-subtitle').replaceChildren(cite);
 
     // The neighbours: another work either side, and NOTHING either side of
     // the run's ends. A sideways turn walks the works and only the works --
