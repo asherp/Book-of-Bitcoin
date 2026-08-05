@@ -1,0 +1,2322 @@
+<!-- SPDX-License-Identifier: MIT OR Apache-2.0 -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The βook of βitcoin — Appendix</title>
+<meta name="description" content="The appendices of the Glossia Bitcoin Book: the mempool read as the chapters it is about to become, and the chapters consensus has already numbered but no block has reached.">
+<link rel="icon" type="image/png" sizes="32x32" href="./icons/beta-icon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="./icons/beta-icon-16.png">
+<link rel="icon" href="./icons/beta-icon.svg" type="image/svg+xml">
+
+<!-- Social / rich unfurl -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="The βook of βitcoin">
+<meta property="og:title" content="The βook of βitcoin — Appendices">
+<meta property="og:description" content="What the book gathers after the volumes: the mempool's coming chapters, the consensus rules grouped by BIP — Taproot, SegWit, and the forks still signaling — the ledgers, and the works the chain has dated.">
+<meta property="og:url" content="https://bookofbitcoin.io/bitcoin-appendix.html">
+<meta property="og:image" content="https://bookofbitcoin.io/og-bookofbitcoin.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="The βook of βitcoin — Vires in Numeris. A gold β standing beside the book's title on a dark cover.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="The βook of βitcoin — Appendices">
+<meta name="twitter:description" content="What the book gathers after the volumes — the queue, the fixed heights, the ledgers, and the works the chain has dated.">
+<meta name="twitter:image" content="https://bookofbitcoin.io/og-bookofbitcoin.png">
+
+<!-- PWA: installable, offline-capable app shell. Shares the Bitcoin book's
+     gold-β manifest so every page installs as one "Bitcoin Book" app. -->
+<link rel="manifest" href="./bitcoin-book.webmanifest">
+<meta name="theme-color" content="#08080a">
+<link rel="apple-touch-icon" href="./icons/beta-icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="βook of βitcoin">
+<script>
+  // An appendix is back matter, and it sits at the volumes' own level: the
+  // contents is above it (arriving from there is a descent, the leaf rising
+  // from beneath the list), and the volumes and the other appendices are
+  // beside it (arriving from those is a sideways turn, the leaf entering
+  // from the side the reader pushed). The flag carries which, and is set
+  // just before the navigation and consumed on first paint.
+  try {
+    const dir = sessionStorage.getItem('glossia-appendix-entrance');
+    if (dir) {
+      sessionStorage.removeItem('glossia-appendix-entrance');
+      document.documentElement.classList.add(
+        dir === 'fwd' ? 'appx-entrance-fwd' : dir === 'back' ? 'appx-entrance-back'
+        : dir === 'drop' ? 'appx-entrance-drop' : 'appx-entrance');
+    }
+  } catch (_) {}
+
+  // The ascent: a pull DOWN starting at the page's top rises from the
+  // appendix back to the contents -- the inverse of the heading's descent.
+  // Sideways turns walk the appendices in their numbered order, the way the
+  // front matter's leaves turn: back to the appendix before this one,
+  // forward to the one after.
+  (function () {
+    const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let sy = null, sx = 0, st = 0, atTop = false, atBottom = false;
+    // Filled by the module once it knows which appendix this is; a turn
+    // before then simply has nowhere to go.
+    window.__appxTurns = { prev: null, next: null };
+    const leave = (href, transform, flag, value = '1') => {
+      try { sessionStorage.setItem(flag, value); } catch (_) {}
+      const go = () => { location.href = href; };
+      if (REDUCED) { go(); return; }
+      document.body.style.transition = 'transform .2s linear';
+      document.body.style.transform = transform;
+      setTimeout(go, 180);
+    };
+    // The contents runs a leaf per volume and per appendix, so the ascent
+    // names this appendix and lands on its own contents leaf -- as an ascent
+    // from Volume III lands on Volume III's. The name passes through as
+    // given; the contents' own aliases resolve it (bitcoin-contents.html).
+    const PART = new URLSearchParams(location.search).get('part') || 'mempool';
+    window.__appxAscend = () => leave(`./bitcoin-contents.html?part=${PART}`, 'translateY(100vh)', 'glossia-toc-entrance', '1');
+    // One turn sideways, in either direction: the leaf slides off the way the
+    // reader pushed it, and the neighbour enters from the other side. Each
+    // destination has its own entrance to wake -- the appendix leaves, the
+    // ledger compendium (Appendix III), and the book itself, whose last
+    // volume lies back of Appendix I.
+    window.__appxTurn = (back) => {
+      const to = back ? window.__appxTurns.prev : window.__appxTurns.next;
+      if (!to) return;
+      const flag = to.includes('bitcoin-ledger') ? 'glossia-ledger-entrance'
+        : to.includes('bitcoin-book') ? 'glossia-book-entrance'
+        : 'glossia-appendix-entrance';
+      leave(to, `translateX(${back ? 100 : -100}vw)`, flag, back ? 'back' : 'fwd');
+    };
+    document.addEventListener('touchstart', (e) => {
+      sy = null;
+      if (e.touches.length !== 1) return;
+      sy = e.touches[0].clientY; sx = e.touches[0].clientX; st = performance.now();
+      atTop = window.scrollY <= 2;
+      atBottom = window.scrollY >= document.documentElement.scrollHeight - window.innerHeight - 2;
+    }, { passive: true });
+    document.addEventListener('touchend', (e) => {
+      if (sy === null || e.changedTouches.length !== 1) return;
+      const dy = e.changedTouches[0].clientY - sy;
+      const dx = e.changedTouches[0].clientX - sx;
+      const dt = performance.now() - st;
+      sy = null;
+      // A committed horizontal turn: quick, far enough, and mostly sideways.
+      // Nothing that way and the edge simply holds.
+      if (dt <= 600 && Math.abs(dx) >= 60 && Math.abs(dy) <= Math.abs(dx) * 0.6) {
+        window.__appxTurn(dx > 0);                 // swiping right turns back
+        return;
+      }
+      // A push UP from the foot descends into the appendix's first chapter,
+      // as a push up descends from the contents into the book…
+      if (atBottom && dt <= 600 && dy <= -70 && Math.abs(dx) <= Math.abs(dy) * 0.6) {
+        window.__appxDescend();
+        return;
+      }
+      // …and a pull DOWN from the top rises to the contents, which lists it.
+      if (atTop && dt <= 600 && dy >= 70 && Math.abs(dx) <= dy * 0.6) window.__appxAscend();
+    }, { passive: true });
+
+    // The same turns from a keyboard: left and right along the appendices'
+    // numbered line, up to the contents and down into the first chapter --
+    // the reader's own directions, though the swipe that means "descend" is
+    // a push UP. The vertical pair defers to the scroll as the swipes do,
+    // turning only from the boundary it moves away from (or on a leaf too
+    // short to scroll at all). A turn with nothing behind it keeps the key's
+    // ordinary meaning rather than swallowing it.
+    document.addEventListener('keydown', (e) => {
+      if (e.metaKey || e.ctrlKey || e.altKey || e.shiftKey || e.repeat) return;
+      const t = e.target;
+      if (t && t.closest && t.closest('input, textarea, select, [contenteditable], .settings-panel')) return;
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+        const back = e.key === 'ArrowLeft';
+        if (!(back ? window.__appxTurns.prev : window.__appxTurns.next)) return;
+        e.preventDefault();
+        window.__appxTurn(back);
+        return;
+      }
+      if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
+      const top = window.scrollY <= 2;
+      const bottom = window.scrollY >= document.documentElement.scrollHeight - window.innerHeight - 2;
+      const short = document.documentElement.scrollHeight <= window.innerHeight + 24;
+      if (e.key === 'ArrowUp') { if (short || top) { e.preventDefault(); window.__appxAscend(); } return; }
+      if (short || bottom) { e.preventDefault(); if (window.__appxDescend) window.__appxDescend(); }
+    });
+  })();
+</script>
+<!-- The shared masthead chrome: service worker registration and the Install /
+     Update affordances on the title's line, one copy for every page. -->
+<script src="./btc-chrome.js"></script>
+
+<!-- The faces every leaf sets text in, fetched alongside the stylesheet
+     that declares them rather than after it. crossorigin is required even
+     same-origin: a font request is CORS-anonymous, and a preload without it
+     matches nothing and downloads the file twice. The rest of web/fonts/ is
+     left to unicode-range, which asks for a face only where its glyphs
+     appear -- the sigla leaf pulls the whole alphabet, a chapter four files. -->
+<link rel="preload" as="font" type="font/woff2" href="./fonts/newsreader-latin.woff2" crossorigin>
+<link rel="preload" as="font" type="font/woff2" href="./fonts/plexmono-500-latin.woff2" crossorigin>
+<link rel="preload" as="font" type="font/woff2" href="./fonts/plexmono-600-latin.woff2" crossorigin>
+<link rel="preload" as="font" type="font/woff2" href="./fonts/sigla-dejavu.woff2" crossorigin>
+<link rel="stylesheet" href="./fonts/fonts.css">
+<link rel="stylesheet" href="./btc-chrome.css">
+<link rel="stylesheet" href="./commentary.css">
+<style>
+:root {
+  --page:#08080a; --card:#0d0d10; --card-bd:#232228; --ink:#e8e4da; --ink-soft:#cfcabf;
+  --accent:#c9a25f; --accent-2:#dcb877; --dim:#9c99a6; --meta:#7e7b88; --rule:#24232a; --hair:#2a2930;
+  --input-bg:#151519; --input-bd:#2a2930;
+}
+* { box-sizing: border-box; }
+/* overscroll-behavior keeps the browser's pull-to-refresh from swallowing
+   the pull-down-at-top ascent back to the contents. */
+html, body { margin: 0; overscroll-behavior-y: none; }
+body { min-height: 100vh; background: var(--page); color: var(--ink); font-family: 'Public Sans','Book Sigla', system-ui, sans-serif; line-height: 1.55; }
+/* The entering half of the contents' descent into an appendix: the leaf
+   rises into place from below, matching the carousel's pace. */
+@media (prefers-reduced-motion: no-preference) {
+  .appx-entrance body { animation: appx-in .22s ease-out; }
+  @keyframes appx-in { from { transform: translateY(100vh); } }
+  /* …and the entering half of a sideways turn along the volumes' line: the
+     leaf arrives from the side the reader turned toward. */
+  .appx-entrance-fwd body { animation: appx-in-fwd .22s ease-out; }
+  @keyframes appx-in-fwd { from { transform: translateX(100vw); } }
+  .appx-entrance-back body { animation: appx-in-back .22s ease-out; }
+  @keyframes appx-in-back { from { transform: translateX(-100vw); } }
+  /* …and the entering half of an ascent out of a draft chapter: the appendix
+     drops back into place from above as the chapter sinks. */
+  .appx-entrance-drop body { animation: appx-in-drop .22s ease-out; }
+  @keyframes appx-in-drop { from { transform: translateY(-100vh); } }
+}
+.wrap { max-width: 720px; margin: 0 auto; padding: 48px 22px 100px; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* The leaf's head: the appendix's number as its title, its name beneath,
+   and then the paragraph saying what is gathered here and why it could not
+   be gathered in reading order. Nothing stands above the title -- the ways
+   out are the masthead's Contents, the pull down at the top, and the turns
+   at the foot. */
+.page-head { text-align:center; padding:8px 0 26px; margin-bottom:14px; border-bottom:1px solid var(--rule); }
+.appx-title { margin:0; font:300 clamp(28px,7vw,40px)/1.15 'Newsreader','Book Sigla',serif; color:var(--ink); letter-spacing:-.01em; }
+.appx-subtitle { margin-top:10px; font:400 19px/1.35 'Newsreader','Book Sigla',serif; color:var(--dim); }
+/* The descent, as the book's leaves wear it: one mark, centred, at the foot
+   of the title page. */
+.appx-down { display:block; margin:34px auto 0; width:2em; text-align:center; font-size:20px; line-height:1; color:var(--dim); }
+.appx-down:hover { color:var(--accent); text-decoration:none; }
+.hidden { display:none !important; }
+.appx-note { max-width:56ch; margin:22px auto 30px; font:400 15px/1.7 'Newsreader','Book Sigla',serif; color:var(--ink-soft); text-align:left; }
+/* The way up from a fork's leaf: the part that lists it, named above the
+   title the way the ledger leaves name their compendium. */
+.appx-up { display:inline-block; margin-bottom:12px; font:600 10px/1.5 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.14em; text-transform:uppercase; color:var(--meta); }
+.appx-up:hover { color:var(--accent); text-decoration:none; }
+/* A fork's activation statistics: the same key/value dress the proof picker
+   reads results in -- these too are a record being read out. */
+.bip-stats { max-width:56ch; margin:0 auto 6px; font:400 13.5px/1.6 'Public Sans','Book Sigla',sans-serif; color:var(--ink-soft); }
+/* A chapter no block has reached yet keeps the manuscript's pencil. */
+.proof-row.bip-expected .proof-name { color:var(--meta); font-style:italic; }
+.proof-row.bip-expected .proof-cite { color:var(--meta); font-weight:400; }
+/* The ballot itself: one row per block of the counted window -- its chapter,
+   its version as the frontispiece writes it, and whether it says yes. Drawn a
+   page at a time as the foot comes into reach, the way a ledger's record is. */
+.bip-blocks { max-width:56ch; margin:0 auto; }
+.bb-heads { display:flex; gap:14px; padding:0 2px 6px; border-bottom:1px solid var(--rule); }
+/* The heads borrow the rows' column classes for their widths alone; the
+   dress is the ruling register's, not the row's -- and a head never breaks
+   its word, however narrow the column beneath it runs. */
+.bb-heads > span { color:var(--meta); font:600 10px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.14em; text-transform:uppercase; text-align:left; white-space:nowrap; }
+.bb-heads > .bb-status { text-align:right; }
+.bb-row { display:flex; gap:14px; align-items:baseline; padding:6px 2px; border-bottom:1px solid var(--hair); }
+.bb-ref { flex:none; min-width:118px; font:600 12px/1.5 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.04em;
+  color:var(--accent); white-space:nowrap; font-variant-numeric:tabular-nums; }
+a.bb-ref:hover { color:var(--accent-2); }
+.bb-ver { flex:1; min-width:0; font:italic 400 14px/1.5 'Newsreader','Book Sigla',serif; color:var(--dim); overflow-wrap:anywhere; }
+.bb-ver .dt { font-style:normal; }
+.bb-status { flex:none; min-width:48px; text-align:right; font:500 10.5px/1.6 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.06em; }
+.bb-status.yes { color:var(--accent); }
+.bb-status.no { color:var(--meta); }
+/* A coinbase ballot's middle column: the miner's own line, kept to one --
+   the full text rides the hover. */
+.bb-say { font-style:normal; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:12px; }
+/* Inside a signaling period the version writes raw: the number in binary,
+   the counted bit in bold accent -- the ballot is read off this word, so
+   the record shows the word rather than the frontispiece's encoding of it
+   (which packs bits 13-28 into a word pair and would swallow the signal).
+   The prose reading still rides the hover. */
+.bb-bits { font:400 10.5px/1.6 'IBM Plex Mono','Book Sigla',monospace; font-style:normal; letter-spacing:.05em;
+  color:var(--meta); font-variant-numeric:tabular-nums; overflow-wrap:anywhere; }
+.bb-bits .bb-bit { font-weight:700; font-style:normal; color:var(--accent); }
+/* The clock at the row's head: the replay is chronological, and the days
+   head their runs -- each row keeps only its minute. */
+.bb-time { flex:none; font:400 10px/1.7 'IBM Plex Mono','Book Sigla',monospace; color:var(--meta); white-space:nowrap; font-variant-numeric:tabular-nums; }
+.bb-day { margin:14px 0 1px; padding:2px; font:600 10px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.16em; text-transform:uppercase; color:var(--meta); }
+/* The accumulation: the count and the rate as they stood at each block, so
+   the activation replays down the page. */
+.bb-sum { flex:none; min-width:44px; text-align:right; font:500 11px/1.6 'IBM Plex Mono','Book Sigla',monospace; color:var(--ink-soft); font-variant-numeric:tabular-nums; }
+.bb-pct { flex:none; min-width:40px; text-align:right; font:600 11px/1.6 'IBM Plex Mono','Book Sigla',monospace; color:var(--accent); font-variant-numeric:tabular-nums; }
+/* Portrait: the row folds to two lines -- the clock, the chapter and the
+   count keep the first; the version or coinbase text takes a full-width
+   second of its own, so no column is ever squeezed to a letter a line and
+   nothing bleeds past the page's edge. Its head retires with it: a column
+   on its own line needs no ruling. */
+@media (max-width: 620px) {
+  .bb-heads { gap:8px; }
+  .bb-heads > .bb-ver { display:none; }
+  .bb-row { flex-wrap:wrap; gap:2px 8px; }
+  .bb-time { font-size:9.5px; }
+  .bb-ref { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; }
+  .bb-status { min-width:40px; }
+  .bb-sum { min-width:34px; }
+  .bb-pct { min-width:34px; }
+  .bb-row .bb-ver { order:9; flex:1 0 100%; min-width:100%; padding-left:2px; }
+}
+.bb-foot { display:block; padding:9px 2px; text-align:center; font:400 12px/1.6 'Public Sans','Book Sigla',sans-serif; color:var(--meta); }
+/* A labeled rule across the ballot, above the block it names -- where the
+   signaling began, where the count crossed: the fork's own curated chapters,
+   drawn as lines in the record they punctuate. */
+.bb-mark { display:flex; align-items:center; gap:10px; padding:12px 2px 4px;
+  font:600 9.5px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.14em; text-transform:uppercase; color:var(--accent); }
+.bb-mark::before, .bb-mark::after { content:''; flex:1; border-top:1px solid var(--accent); opacity:.45; }
+/* A block notable beyond the fork -- a chapter the contents curates, or one
+   the reader bookmarked -- keeps its label in the record too, a quieter rule
+   in the contents' own words. A reader's own flies the bookmark's ribbon. */
+.bb-mark.bb-toc { color:var(--meta); }
+.bb-mark.bb-toc::before, .bb-mark.bb-toc::after { border-top-color:var(--rule); opacity:1; }
+.bb-bm-rib { display:inline-block; flex:none; width:8px; height:11px; margin-right:-2px; color:var(--accent); }
+.bb-bm-rib svg { display:block; width:100%; height:100%; }
+/* The fork leaf's foot, seated the way the Ledger's totals bar sits: sticky
+   at the screen bottom, the rule its top edge, holding the running tally and
+   -- beneath the summary line -- the fork's commentary, so the reading is at
+   hand at every moment of the scroll. An opened sheet rises from the foot,
+   capped so the ballot stays in view behind it. */
+.bip-foot { position:sticky; bottom:0; z-index:40;
+  max-width:56ch; margin:0 auto;
+  padding-bottom:max(6px, env(safe-area-inset-bottom));
+  border-top:1px solid var(--rule); background:var(--page); }
+/* A leaf with no long record to scroll past -- an inscription's, whose body
+   scrolls inside its own box -- has nothing for the foot to follow, so the
+   foot rests where it falls. Sticky there earns nothing and costs something:
+   on a leaf that nearly fits the screen it pins the sheet over the turns. */
+.bip-foot.at-rest { position:static; }
+.bip-tally { display:flex; gap:10px; align-items:baseline;
+  padding:12px 2px 10px 14px; }
+.bip-foot .leaf-commentary { margin:0; max-width:none; border-top:1px solid var(--hair); padding:0 2px; }
+.bip-foot .commentary-body { max-height:45vh; overflow:auto; }
+.bip-tally .t-label { font:600 9.5px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.14em; text-transform:uppercase; color:var(--meta); margin-right:6px; }
+.bip-tally .t-fig { font:600 13px/1.4 'IBM Plex Mono','Book Sigla',monospace; color:var(--accent); font-variant-numeric:tabular-nums; }
+.bip-tally .t-note { flex:1; min-width:0; text-align:right; font:400 11.5px/1.5 'Public Sans','Book Sigla',sans-serif; color:var(--meta);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+/* The Citations register's foot: the picker. A leaf lists nothing, as a rule -- the
+   contents lists, the leaf explains -- but this appendix is the one a reader
+   can add to, and the adding has to happen somewhere. It sits at the END,
+   after the note and after what is already kept, so the page still reads as a
+   leaf and the invitation comes last, the way a subscription card sits at the
+   back of a book rather than the front. */
+.proof-card { margin:34px auto 0; max-width:56ch; }
+.proof-drop {
+  border:1px dashed var(--input-bd); border-radius:4px; background:var(--input-bg);
+  padding:16px 16px 14px; text-align:center; transition:border-color .15s ease, background .15s ease;
+}
+.proof-drop.over { border-color:var(--accent); background:#191712; }
+.proof-say { display:block; font:400 13.5px/1.5 'Newsreader','Book Sigla',serif; color:var(--dim); margin-bottom:11px; }
+.ghost {
+  background:none; color:var(--accent); border:1px solid var(--input-bd); border-radius:4px;
+  padding:8px 16px; font:600 11.5px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.04em;
+  text-transform:uppercase; cursor:pointer;
+}
+.ghost:hover { border-color:var(--accent); color:var(--accent-2); }
+.mono { font-family:'IBM Plex Mono','Book Sigla',monospace; }
+
+.proof-result { margin-top:16px; font:400 13.5px/1.6 'Public Sans','Book Sigla',sans-serif; color:var(--ink-soft); }
+.proof-line { display:flex; gap:14px; padding:5px 2px; border-bottom:1px solid var(--hair); }
+.proof-key { flex:none; width:96px; font:500 10.5px/1.9 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.06em; text-transform:uppercase; color:var(--meta); }
+.proof-val { flex:1; min-width:0; overflow-wrap:anywhere; }
+/* The book's own marks, on the book's own terms: ⌘ the identity hash, h a
+   hash, ⋔ the merkle root, each with its count riding after it, and the hash
+   itself set as prose in the reading face. */
+.dt, .merkle-mark { color:var(--accent); font-weight:700; font-style:normal; }
+.op-count { color:var(--meta); font-size:.85em; }
+.proof-figure { font:italic 400 14px/1.55 'Newsreader','Book Sigla',serif; color:var(--dim); }
+.proof-figure.waiting { color:var(--meta); }
+.proof-verdict { margin-top:14px; font:400 14px/1.5 'Newsreader','Book Sigla',serif; }
+.proof-verdict.good { color:var(--ink); }
+.proof-verdict.bad { color:#e08b7a; }
+.proof-verdict.unsure { color:var(--dim); }
+.proof-open { display:inline-block; margin-top:14px; font:500 13px/1 'IBM Plex Mono','Book Sigla',monospace; }
+
+/* What is already kept, listed above the picker: the appendix's own rows, in
+   reading order, each one a door into the book. A reader's own carry the
+   ribbon a bookmark carries, and the ✕ that takes it back out again. */
+.proof-list { max-width:56ch; margin:26px auto 0; }
+.proof-row { display:flex; align-items:baseline; gap:14px; padding:8px 2px; border-bottom:1px solid var(--hair); }
+.proof-row a { flex:1; min-width:0; display:flex; align-items:baseline; gap:10px; color:var(--ink-soft); }
+.proof-row a:hover { color:var(--ink); }
+.proof-name { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font:500 15px/1.35 'Newsreader','Book Sigla',serif; }
+.proof-cite { flex:none; font:500 12.5px/1.6 'IBM Plex Mono','Book Sigla',monospace; color:var(--accent); }
+.proof-date { flex:none; font:400 12px/1.6 'Public Sans','Book Sigla',sans-serif; color:var(--meta); }
+.proof-bm { flex:none; width:8px; color:var(--accent); }
+.proof-cite-mark { flex:none; color:var(--accent); font-weight:600; font-size:14px; }
+.proof-drop-btn { flex:none; background:none; border:none; color:var(--meta); cursor:pointer; font-size:13px; line-height:1; padding:2px 4px; }
+.proof-drop-btn:hover { color:#e08b7a; }
+
+/* An inscription's content, as the witness carries it: an image stands as
+   the leaf's figure (pixelated, since the early inscriptions are pixel art
+   and scaling must not invent detail the bytes do not hold); text and JSON
+   read in the record's mono, scrolling in place rather than bleeding down
+   the page. The caption under either says where the bytes were read from. */
+.ins-content { margin:26px auto 0; max-width:56ch; text-align:center; }
+.ins-content img { max-width:100%; image-rendering:pixelated; border:1px solid var(--card-bd); border-radius:4px; background:var(--card); }
+.ins-text { max-height:60vh; overflow:auto; text-align:left; white-space:pre-wrap; overflow-wrap:anywhere;
+  font:400 12px/1.6 'IBM Plex Mono',monospace; color:var(--ink-soft); background:var(--card);
+  border:1px solid var(--card-bd); border-radius:4px; padding:14px 16px; margin:0; }
+/* Not a caption: the leaf explains nothing about the content it shows. This
+   is the line that stands where the content would be while the witness is
+   being read, and stays only when there is nothing a plate can show. */
+.ins-status { font:400 12.5px/1.6 'Public Sans',sans-serif; color:var(--meta); }
+
+/* What a collection says of itself, set as a form: the fields as written and
+   in the manifest's own order, the key in the ruling register and the value
+   in the reading face. Editorial to its last comma -- this is the collection
+   speaking, not the chain -- so it is set the way the book sets a claim it
+   is repeating rather than making. */
+.ins-form { max-width:56ch; margin:26px auto 0; }
+.ins-field { display:flex; gap:16px; padding:9px 2px; border-bottom:1px solid var(--hair); }
+.ins-field:first-child { border-top:1px solid var(--rule); }
+.ins-key { flex:none; width:104px; font:500 10px/1.9 'IBM Plex Mono',monospace; letter-spacing:.06em;
+  text-transform:uppercase; color:var(--meta); }
+.ins-val { flex:1; min-width:0; font:400 14px/1.6 'Newsreader',serif; color:var(--ink-soft); overflow-wrap:anywhere; }
+.ins-val a { color:var(--accent); }
+/* An id or a key is a handle, not a sentence: it reads in the mono the book
+   gives every raw string, so it is never mistaken for the prose beside it. */
+.ins-val.raw { font:400 11.5px/1.7 'IBM Plex Mono',monospace; color:var(--dim); }
+/* An id that is also a door -- a parent inscription's own leaf -- reads as
+   the handle it is, and as the link it is. */
+.ins-val a.raw-link { font:400 11.5px/1.7 'IBM Plex Mono',monospace; overflow-wrap:anywhere; }
+/* A manifest that quotes a wall is quoting somebody; the line reads as the
+   quotation it is, and keeps the breaks whoever wrote it put in. */
+.ins-val.quote { font-style:italic; color:var(--dim); white-space:pre-line; }
+
+/* A work of a collection, on its leaf: its txid said in the book's own prose
+   -- the poem the chain writes for that witness -- and the witness's own
+   image beneath it, the way a plate sits under its line. The manifest's
+   caption for it follows, in the form above: the work first, then what its
+   collection says about it. */
+.ins-member { margin:0; text-align:center; }
+/* A work's reference, in its head beneath the name: the chapter, the section
+   and the footnote its envelope reads at, set as the leaf above it sets its
+   own citation -- the reading face, gold, the door into that chapter. It
+   waits as a mark until the chain places the witness. */
+.work-ref.waiting { color:var(--meta); }
+/* The plate's place is held before the plate arrives: a member whose witness
+   is still being fetched stands its own height, so the page does not jump as
+   photographs land -- and so the draw below, which fills until the foot is
+   nearly in reach, is not fooled by a run of zero-height members into
+   fetching the whole collection at once. */
+.ins-member-body { display:flex; align-items:center; justify-content:center; margin-top:12px; min-height:220px; }
+.ins-member-body img { max-width:100%; border:1px solid var(--card-bd); border-radius:4px; background:var(--card); }
+/* A member whose witness will not answer, or carries something no plate can
+   show, keeps its poem and says so quietly where the image would stand. */
+.ins-member-say { font:400 12px/1.6 'Public Sans',sans-serif; color:var(--meta); }
+
+/* The other appendices, at the foot: the leaf's own turns, spelled out for
+   hands that are not swiping. */
+.appx-turns { display:flex; flex-wrap:wrap; gap:10px 26px; margin-top:44px; padding-top:18px; border-top:1px solid var(--rule);
+  font:600 10px/1.5 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.14em; text-transform:uppercase; }
+.appx-turns a { color:var(--meta); }
+.appx-turns a:hover { color:var(--accent); }
+</style>
+<body>
+<div class="wrap">
+  <div class="masthead">
+    <span class="title">The <span class="beta">β</span>ook of <span class="beta">β</span>itcoin</span>
+    <span class="home"><a href="./bitcoin-contents.html" id="toc-link">Contents</a> · <a href="./bitcoin-book.html">Read</a> · <a href="./bitcoin-search.html">Search</a></span>
+  </div>
+
+  <header class="page-head">
+    <a class="appx-up hidden" id="appx-up" href="#"></a>
+    <h1 class="appx-title" id="appx-title"></h1>
+    <div class="appx-subtitle" id="appx-subtitle"></div>
+  </header>
+  <p class="appx-note" id="appx-note"></p>
+
+  <!-- One block of a ballot (?part=consensus&bip=N&block=H), reprinted as a
+       leaf of its own: the chapter's title page -- its hash as prose between
+       the ⌘ and ⓪ marks, and every header field as the frontispiece writes
+       it -- so the ballot is read the way the Ledger's record is read: the
+       table names, the leaf reprints, and the vertical turns walk the window
+       block by block. The ascent lands back on the table at the row left
+       off. -->
+  <a class="appx-down hidden" id="block-up" href="#" aria-label="The next newer block">▴</a>
+  <div class="bip-stats hidden" id="block-card"></div>
+
+  <!-- A fork's own leaf (?part=consensus&bip=N). Below the description, the
+       ballot: every block of the counted window, its version as the
+       frontispiece writes it, and whether it says yes -- drawn a page at a
+       time as the reader scrolls, with the running tally held in a sticky
+       bar at the screen's foot. Then the statistics as the file states them,
+       and the chapters and sections the fork names, each a door into the
+       book. -->
+  <div class="bip-blocks hidden" id="bip-blocks"></div>
+  <div class="bip-stats hidden" id="bip-stats"></div>
+  <div class="proof-list hidden" id="bip-entries"></div>
+
+  <!-- The Consensus leaf itself lists its forks: one row per BIP, each the
+       door to that fork's own leaf. The Inscriptions leaf borrows the same
+       shelf for its entries. -->
+  <div class="proof-list hidden" id="bip-list"></div>
+
+  <!-- One inscription's own leaf (?part=inscriptions&ins=<reveal>): the
+       record first -- what the witness carries, read out of the reveal's own
+       bytes (btc-inscriptions.js) -- and then the content itself, rendered
+       where its declared type can be rendered without believing anything the
+       bytes do not say. -->
+  <figure class="ins-content hidden" id="ins-content"></figure>
+
+  <!-- A manifest names further reveals rather than carrying content of its
+       own, so its leaf is a title page: the name the collection gives
+       itself above, and beneath it the rest of what it says of itself, set
+       as a form -- the fields as written, in the manifest's own order. -->
+  <div class="ins-form hidden" id="ins-form"></div>
+
+  <!-- …and the works themselves stand one level below (&item=n), one to a
+       leaf: the txid said in the book's own prose, the image its witness
+       carries, and the manifest's caption for it. Turned to sideways, the
+       way every run of leaves in this book is turned. -->
+
+  <div class="proof-list hidden" id="proof-list"></div>
+
+  <div class="proof-card hidden" id="proof-card">
+    <div class="proof-drop" id="proof-drop">
+      <span class="proof-say">Drop an OpenTimestamps proof here — with the file it stamps, to check that too —
+        and this appendix keeps it. A <span class="mono">.ots</span> names the chapter its file was
+        stamped into; the book checks that against the block's own header before it lists it.</span>
+      <button type="button" class="ghost" id="proof-pick">Choose a file</button>
+      <input type="file" id="proof-file" multiple hidden>
+    </div>
+    <div class="proof-result hidden" id="proof-result"></div>
+  </div>
+
+  <a class="appx-down" id="appx-down" href="#" aria-label="Down into the appendix">▾</a>
+  <nav class="appx-turns" id="appx-turns"></nav>
+
+  <!-- The fork leaf's sticky foot: the summary line, and beneath it the
+       fork's reading -- what the fork is, and what somebody makes of it --
+       kept where every reading is kept: behind a toggle, over the record
+       rather than in it. Last in the flow, so it holds the screen's foot
+       for the whole of the scroll. -->
+  <div class="bip-foot hidden" id="bip-foot">
+    <div class="bip-tally hidden" id="bip-tally"></div>
+    <details class="leaf-commentary hidden" id="bip-commentary">
+      <summary title="What this fork is, and readings of it — editorial, and kept apart from the record above">Commentary</summary>
+      <div class="commentary-body" id="bip-commentary-body"></div>
+    </details>
+  </div>
+</div>
+
+<script type="module">
+import { localizeHome, mountLangMenu } from './btc-strings.js';
+localizeHome();   // the masthead in the reader's UI language
+mountLangMenu();  // …with the Language item, which any page can now set
+import { loadNotables, appendix, entryHref, isBlockId, places, placeTitle } from './btc-contents.js';
+import { partLabel, partNumber } from './btc-notables.js';
+
+// The appendix is read from appendix.yaml (btc-notables.js), so it arrives
+// asynchronously; this leaf IS one of its parts, so it waits for it.
+await loadNotables();
+const APPENDIX = appendix();
+import { chainTip, MEMPOOL_MIRRORS } from './btc-mempool.js';
+import { toRoman, volumeBookChapter, heightOf, expectedReference, footnoteMark } from './btc-citation.js';
+import { formatBlockVersion, composeBlockHeaderFields } from './btc-prose.js';
+import { toSuperscript } from './btc-sigla.js';
+
+// ── One appendix, given a leaf of its own ─────────────────────────────────
+// The contents lists what each appendix holds; this is where an appendix
+// says what it is. Which one is named by ?part=: the queue, or the chapters
+// consensus has numbered ahead of the chain. The third appendix, the
+// ledgers, has a leaf already -- the Ledger compendium -- and the contents
+// points straight at it, so it is only ever a neighbour here.
+// ?part=future is the name Appendix II answered to before its forks were
+// grouped by BIP; saved links keep working.
+const PARTS = { mempool: 'mempool', future: 'consensus', consensus: 'consensus', proofs: 'proofs', inscriptions: 'inscriptions' };
+const params = new URLSearchParams(location.search);
+const wanted = params.get('part');
+const kind = PARTS[wanted] || 'mempool';
+const part = APPENDIX.find((p) => p.kind === kind) || APPENDIX[0];
+const index = APPENDIX.indexOf(part);
+// One fork's own leaf, a level below the part's: ?bip= names it by number,
+// the way the contents' sub-heads link it.
+const bips = part.kind === 'consensus' ? (part.bips || []) : [];
+const bip = bips.find((b) => b.key === String(params.get('bip'))) || null;
+const bipAt = bip ? bips.indexOf(bip) : -1;
+// One inscription's own leaf, the same level down: ?ins= names it by its
+// reveal transaction, the way the part's rows link it.
+const insEntries = part.kind === 'inscriptions' ? (part.entries || []) : [];
+const insParam = String(params.get('ins') || '').toLowerCase();
+const insCurated = insEntries.find((e) => e.reveal === insParam) || null;
+// An inscription the book has not curated is still an inscription, and this
+// leaf can still read it: the reveal names a witness, the witness carries an
+// envelope, and everything the leaf shows comes out of those bytes anyway. So
+// ?ins= takes any reveal, and an uncurated one simply arrives without the
+// things curation supplies -- a title, a note, a place in the shelf's run --
+// which it discovers from the chain instead (renderUncuratedHead). This is
+// what the reader's witness footnotes link to: the book names a witness by
+// what its bytes say, and that name is a door to the thing itself.
+const ins = insCurated
+  || (part.kind === 'inscriptions' && /^[0-9a-f]{64}$/.test(insParam)
+    ? { reveal: insParam, title: 'Inscription', uncurated: true }
+    : null);
+const insAt = insCurated ? insEntries.indexOf(insCurated) : -1;
+// A collection has one more level beneath its title page: &item=n opens the
+// nth work, one to a leaf, turned to sideways the way every other run of
+// leaves in this book is turned. The title page says what the collection
+// claims to be; the leaves below it are the collection.
+const itemRaw = parseInt(params.get('item'), 10);
+const itemAt = ins != null && Number.isFinite(itemRaw) && itemRaw >= 1 ? itemRaw : null;
+// One block of a fork's ballot, a level below the fork's own leaf: ?block=
+// names it by height, the way a ballot row links it.
+const blockLeaf = bip && /^[0-9]+$/.test(params.get('block') || '') ? Number(params.get('block')) : null;
+
+// ── The version word, as a consensus view writes it ───────────────────────
+// Inside an active signaling period the version IS the ballot, so these
+// leaves write it raw: the number in binary, the bit the fork counts in
+// boldface. The frontispiece's encoding stays for every block outside a
+// period -- it packs the rolling range (bits 13-28) into its word pair, and
+// would swallow the very bit a ballot is reading (Classic's 28 sits in it).
+// The prose form still speaks on hover, title-deep, wherever binary stands.
+//
+// A period: a closed ballot's window is one by definition; a live fork's
+// runs from its first cast (the earliest chapter its entries name) -- ahead
+// of that first cast nothing was signaling, and the frontispiece's own
+// notation stands.
+const inSignalingPeriod = (h) => {
+  if (!bip) return false;
+  if (bip.ballot != null) {
+    const floor = bip.ballot - (Number.isFinite(bip.window) ? bip.window : 2016) + 1;
+    return h >= floor && h <= bip.ballot;
+  }
+  const casts = (bip.entries || [])
+    .filter((e) => !e.expected && !e.page && isBlockId(e.id))
+    .map((e) => Number(e.id));
+  return casts.length ? h >= Math.min(...casts) : true;
+};
+// A minimum version, named the way its era wrote it: the integer forms read
+// as themselves (v3, v4), a version-bits form in hex -- XT's 0x20000007 is a
+// version word, and 536870919 is nobody's name for it.
+const versionName = (n) => ((n >>> 29) === 1 ? '0x' + (n >>> 0).toString(16) : String(n));
+// The binary word itself. A bit-read fork bolds its one counted bit (set --
+// an unset bit is a no, and a no is not a signal); a supermajority fork's
+// signal is the whole number clearing the minimum, so the whole number goes
+// bold when it does.
+const versionBitsEl = (version, bit, aye) => {
+  const bin = (version >>> 0).toString(2);
+  const el = document.createElement('span');
+  const bold = (text) => {
+    const b = document.createElement('b');
+    b.className = 'bb-bit';
+    b.textContent = text;
+    return b;
+  };
+  if (bit == null) {
+    el.append(aye ? bold(bin) : document.createTextNode(bin));
+    return el;
+  }
+  const at = (bin.length - 1) - bit;   // the counted bit's character
+  if (at < 0 || bin[at] !== '1') { el.append(document.createTextNode(bin)); return el; }
+  if (at > 0) el.append(document.createTextNode(bin.slice(0, at)));
+  el.append(bold('1'));
+  if (at < bin.length - 1) el.append(document.createTextNode(bin.slice(at + 1)));
+  return el;
+};
+
+const $ = (id) => document.getElementById(id);
+// A citation written whole -- volume and all, since no heading here has named
+// any part of it -- with □ standing in for the ■ a block has yet to earn
+// (expectedReference makes the same substitution from the height).
+const wholeRef = (height, section = null, vout = null, page = null) => {
+  const { volume, book, chapter } = volumeBookChapter(height);
+  if (page === 'volume') return toRoman(volume);
+  if (page === 'book') return `${toRoman(volume)} β${book}`;
+  let s = `${toRoman(volume)} β${book} ■${chapter}`;
+  if (section != null) s += ` §${section}${vout == null ? '' : `.${vout}`}`;
+  return s;
+};
+// A path tried across the public mirrors; null when none answers.
+const overMirrors = async (path, kind = 'json') => {
+  for (const base of MEMPOOL_MIRRORS) {
+    try {
+      const res = await fetch(base + path);
+      if (res.ok) return kind === 'json' ? await res.json() : (await res.text()).trim();
+    } catch { /* try the next mirror */ }
+  }
+  return null;
+};
+// The printable runs of a coinbase scriptSig -- the miner's own line at the
+// head of the chapter, as the ballot Bitcoin Unlimited wrote was read: runs
+// of three or more legible characters, the structural bytes between them
+// dropped.
+const coinbaseSay = (scriptsigHex) => {
+  const bytes = (String(scriptsigHex || '').match(/../g) || []).map((x) => parseInt(x, 16));
+  const runs = [];
+  let run = '';
+  for (const c of bytes) {
+    if (c >= 0x20 && c <= 0x7e) { run += String.fromCharCode(c); continue; }
+    if (run.length >= 3) runs.push(run);
+    run = '';
+  }
+  if (run.length >= 3) runs.push(run);
+  return runs.join(' ');
+};
+// A block's coinbase text, two small calls: the chapter's first txid, then
+// the transaction itself. Null when the chain will not say.
+const coinbaseOf = async (blockHash) => {
+  const txid = await overMirrors(`/block/${blockHash}/txid/0`, 'text');
+  if (!txid || !/^[0-9a-f]{64}$/.test(txid)) return null;
+  const tx = await overMirrors(`/tx/${txid}`);
+  if (!tx || !Array.isArray(tx.vin) || !tx.vin[0]) return null;
+  return coinbaseSay(tx.vin[0].scriptsig);
+};
+
+// A vertical move within the appendix -- down a level, or along a ballot's
+// window -- played the way every leaf turn is played: this page slides off
+// the way the reader pushed, and the destination enters from the other side.
+// dir 'drop' rises toward what lies above (the newcomer drops in from the
+// top); 'down' descends toward what lies below (the newcomer rises from the
+// foot).
+const navTo = (href, dir) => {
+  try { sessionStorage.setItem('glossia-appendix-entrance', dir); } catch (_) { /* unavailable */ }
+  const go = () => { location.href = href; };
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { go(); return; }
+  document.body.style.transition = 'transform .2s linear';
+  document.body.style.transform = dir === 'drop' ? 'translateY(100vh)' : 'translateY(-100vh)';
+  setTimeout(go, 180);
+};
+const label = (p) => partLabel(APPENDIX, p);
+// The contents runs a leaf per volume and per appendix; the masthead's link
+// opens this appendix's own, as the ascent does.
+$('toc-link').href = `./bitcoin-contents.html?part=${kind}`;
+// At the level of one inscription and below, the site's row of links stands
+// down. What is shown here is a picture or a page of somebody's text, and it
+// should be met as that rather than framed by a chrome offering three other
+// places to be. Nothing is lost: the crumb above the title climbs, the ▴
+// and the pull-down ascend, and the masthead's own name still stands as the
+// running head, saying whose book this is.
+if (ins) document.querySelector('.masthead .home')?.classList.add('hidden');
+const PART_QUERY = { mempool: 'mempool', consensus: 'consensus', proofs: 'proofs', inscriptions: 'inscriptions' };
+const hrefFor = (p) => (p.kind === 'ledgers'
+  ? './bitcoin-ledger.html'
+  : `./bitcoin-appendix.html?part=${PART_QUERY[p.kind]}`);
+const bipHref = (b) => `./bitcoin-appendix.html?part=consensus&bip=${b.key}`;
+// An inscription entry's three addresses: its own leaf here, its citation
+// written whole (§n with the footnote's letter after the point — the place
+// the envelope reads at), and the door into the book at that very footnote
+// (&wit takes the letter, and the book brings the note to the top).
+const insHref = (e) => `./bitcoin-appendix.html?part=inscriptions&ins=${e.reveal}`;
+const insItemHref = (e, n) => `${insHref(e)}&item=${n}`;
+const insRef = (e) => `${wholeRef(Number(e.id), e.index + 1)}.${footnoteMark(e.wit)}`;
+const insDoor = (e) => `./bitcoin-book.html?block=${e.id}&index=${e.index}&wit=${footnoteMark(e.wit)}`;
+
+// An appendix leaf lists nothing: what it gathers lies below it, and below
+// it is the first chapter of what it gathers, read in the book like any
+// other. For Appendix I that is the queue's first chapter -- the very block
+// a reader reaches by swiping forward off the chain tip -- and the queue is
+// walked from there, chapter by chapter, the ascent from any of them landing
+// back on this leaf. For Appendix II it is the first height consensus has
+// already fixed; the book answers an unmined chapter with the date it is
+// due. (The level between, the queue's own equivalent of a book, is still to
+// be written.) The whole list of either is the contents' business.
+// The head follows the part's family: an appendix wears its numeral over its
+// name; the Citations register is its title alone -- a works-cited list needs
+// no numeral, standing where it stands.
+// A fork's leaf wears its BIP number as the title and its recognized name
+// beneath, with the part that lists it named above -- the way up. A block of
+// its ballot wears its citation instead, the fork above it, and its subtitle
+// is the one door into the book -- the leaf reprints, the book reads.
+if (blockLeaf != null) {
+  $('appx-title').textContent = wholeRef(blockLeaf);
+  const sub = $('appx-subtitle');
+  const door = document.createElement('a');
+  door.href = `./bitcoin-book.html?block=${blockLeaf}`;
+  door.textContent = `block ${blockLeaf.toLocaleString('en-US')}`;
+  door.title = 'read this chapter in the book';
+  sub.replaceChildren(door);
+  const up = $('appx-up');
+  up.textContent = `▴ ${bip.title}`;
+  up.href = bipHref(bip);
+  up.title = 'up to the ballot, at this block\'s row';
+  up.classList.remove('hidden');
+} else if (bip) {
+  $('appx-title').textContent = bip.label;
+  $('appx-subtitle').textContent = bip.name;
+  const up = $('appx-up');
+  up.textContent = `▴ ${label(part)}`;
+  up.href = hrefFor(part);
+  up.classList.remove('hidden');
+} else if (ins) {
+  // An inscription's leaf wears its title, and its subtitle is the one door
+  // into the book: the footnote the envelope reads at -- the leaf renders,
+  // the book reads. A collection renames its own head once the manifest is
+  // read (renameToCollection): the book's title for it is a placeholder for
+  // the name the collection gives itself.
+  $('appx-title').textContent = ins.title;
+  const sub = $('appx-subtitle');
+  const door = document.createElement('a');
+  // A curated entry states where its envelope reads, so its citation is
+  // arithmetic and prints at once. An uncurated one is placed by the chain
+  // instead, so its door opens on the reveal and its citation waits for the
+  // merkle proof (filled by placeCite, below).
+  door.href = insCurated ? insDoor(ins) : `./bitcoin-book.html?txid=${ins.reveal}`;
+  door.textContent = insCurated ? insRef(ins) : '…';
+  if (!insCurated) door.className = 'work-ref waiting';
+  door.title = 'read this witness in the book — the footnote the envelope reads at';
+  sub.replaceChildren(door);
+  const up = $('appx-up');
+  // The works stand one level below the title page, so their leaf climbs to
+  // that page rather than all the way out to the shelf.
+  up.textContent = itemAt ? `▴ ${ins.title}` : `▴ ${label(part)}`;
+  up.href = itemAt ? insHref(ins) : hrefFor(part);
+  up.classList.remove('hidden');
+} else if (part.family === 'appendix') {
+  $('appx-title').textContent = `Appendix ${toRoman(partNumber(APPENDIX, part))}`;
+  $('appx-subtitle').textContent = part.title;
+} else {
+  $('appx-title').textContent = part.family === 'index' ? `Index of ${part.title}` : part.title;
+  $('appx-subtitle').textContent = part.family === 'citations' ? 'Works the chain attests' : '';
+}
+// A fork's description is a reading of the fork, so it reads where readings
+// read: in the commentary sheet at the leaf's foot, not as front matter. The
+// head keeps only the name; the part leaf keeps its note.
+$('appx-note').textContent = (bip || ins) ? '' : part.note || '';
+document.title = `The βook of βitcoin — ${blockLeaf != null ? `${bip.title} · ${wholeRef(blockLeaf)}` : bip ? bip.title : ins ? ins.title : label(part)}`;
+
+// A part may carry a reading of what it gathers (appendix.yaml), and the
+// part's own leaf is where it is met -- raised the way every reading is
+// raised: behind a toggle, over the leaf rather than in it, credited, and
+// fetching no prose until it is opened. Only the PART's leaf: the leaves a
+// level down (a fork's, an inscription's, a ballot block's) raise the part's
+// reading with their own, in the sticky foot below, so the same words are
+// never offered twice on one leaf. The Citations register keeps its leaf
+// silent by design -- its reading raises beneath each proof's own
+// (bitcoin-proof.html).
+if (!bip && !ins && blockLeaf == null && part.kind !== 'proofs') {
+  const { readingsOf, resolveCommentary, commentaryHtml } = await import('./btc-commentary.js');
+  const readings = readingsOf(part);
+  if (readings.length) {
+    const items = [{ title: part.title, readings }];
+    const named = [...new Set(readings.filter((r) => r.by).map((r) => r.by))];
+    const details = document.createElement('details');
+    details.className = 'leaf-commentary';
+    const summary = document.createElement('summary');
+    summary.textContent = named.length ? `Commentary by ${named.join(' · ')}` : 'Commentary';
+    summary.title = 'a reading of what this appendix gathers — editorial, and no more authoritative than its argument';
+    const body = document.createElement('div');
+    let filled = false;
+    details.addEventListener('toggle', async () => {
+      if (!details.open || filled) return;
+      filled = true;
+      body.innerHTML = '<div class="commentary-measure"><p class="commentary-loading">reading…</p></div>';
+      await resolveCommentary(items);
+      // Built from authored Markdown, escaped at the source (btc-markdown.js).
+      body.innerHTML = commentaryHtml(items);
+    });
+    details.append(summary, body);
+    $('appx-note').after(details);
+  }
+}
+
+// Where the descent lands. A fork's leaf opens its first chapter (known
+// offline: a height is a citation, and even an unmined one has a page that
+// answers); the Consensus leaf opens its first fork's own leaf, a level down;
+// Appendix I's waits on the tip, and the ▾ appears with it -- an unknown
+// queue has no first chapter to open.
+let firstChapter = null;
+if (kind === 'consensus' && blockLeaf == null) {
+  firstChapter = bip
+    ? (bip.entries.length ? entryHref(bip.entries[0].id, bip.entries[0].index, bip.entries[0].page, bip.entries[0].out ?? null) : null)
+    : (bips.length ? bipHref(bips[0]) : null);
+}
+// The Inscriptions leaf descends onto its first entry's own leaf, a level
+// down; an inscription's leaf descends into the book, at the footnote its
+// envelope reads at. A collection's title page descends into the collection
+// instead -- the works themselves, one level below the page that names them
+// -- but which inscriptions are collections is not known until each manifest
+// is read, so that redirection is made when the reading lands (below).
+// The works' own leaf is the bottom: nothing lies under the pictures.
+if (kind === 'inscriptions') {
+  // An uncurated inscription has no stated footnote to descend to; its door
+  // is the reveal, which the book resolves to the section itself.
+  firstChapter = itemAt ? null
+    : insCurated ? insDoor(ins)
+    : ins ? `./bitcoin-book.html?txid=${ins.reveal}`
+    : (insEntries.length ? insHref(insEntries[0]) : null);
+}
+$('appx-down').classList.toggle('hidden', !firstChapter);
+if (kind === 'mempool') {
+  chainTip().then((tip) => {
+    if (tip == null) return;
+    firstChapter = `./bitcoin-book.html?block=${tip + 1}`;
+    $('appx-down').classList.remove('hidden');
+  }).catch(() => { /* no tip: nothing below to open */ });
+}
+function descend() {
+  if (!firstChapter) return;
+  // A descent, so what lies below rises from beneath as this leaf slides up --
+  // a chapter of the book, or (from the Consensus leaf) a fork's own leaf.
+  const toAppendix = firstChapter.includes('bitcoin-appendix');
+  try { sessionStorage.setItem(toAppendix ? 'glossia-appendix-entrance' : 'glossia-book-entrance', toAppendix ? 'down' : '1'); } catch (_) {}
+  const go = () => { location.href = firstChapter; };
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { go(); return; }
+  document.body.style.transition = 'transform .2s linear';
+  document.body.style.transform = 'translateY(-100vh)';
+  setTimeout(go, 180);
+}
+window.__appxDescend = () => descend();
+$('appx-down').addEventListener('click', (ev) => { ev.preventDefault(); descend(); });
+
+// A fork's leaf ascends to the part that lists it, not to the contents: the
+// Consensus leaf is the list this page is one row of. (A block leaf's own
+// vertical moves are wired below, where the ballot's bounds are known -- its
+// crumb still climbs a level, back to the ballot at this block's row.)
+if ((bip && blockLeaf == null) || ins) {
+  // The works climb to the title page that names them; everything else at
+  // this level climbs to the part that lists it.
+  window.__appxAscend = () => navTo(itemAt ? insHref(ins) : hrefFor(part), 'drop');
+}
+if (bip || ins) {
+  $('appx-up').addEventListener('click', (ev) => {
+    if (ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey || ev.button !== 0) return;
+    ev.preventDefault();
+    if (blockLeaf != null) {
+      try { sessionStorage.setItem('glossia-ballot-land', String(blockLeaf)); } catch (_) { /* unavailable */ }
+      navTo(bipHref(bip), 'drop');
+    } else {
+      window.__appxAscend();
+    }
+  });
+}
+
+// The neighbours, in the appendices' numbered order -- named at the foot and
+// handed to the gesture layer, so a swipe and a tap turn to the same leaf.
+// The appendices sit at the volumes' own level, continuing that line, so
+// what lies back of the first of them is the body's last volume (below).
+// A fork's leaf turns among the forks instead: back of the first lies the
+// Consensus leaf that lists them, and past the last the shelf simply ends --
+// the way up is the ascent.
+// A block leaf turns nowhere sideways: its moves are vertical -- along the
+// window, and up to the ballot -- so the foot carries no neighbours.
+const prevTo = blockLeaf != null ? null : bip
+  ? (bipAt > 0
+    ? { href: bipHref(bips[bipAt - 1]), text: bips[bipAt - 1].label }
+    : { href: hrefFor(part), text: label(part) })
+  : itemAt ? null   // a work's neighbours wait on the manifest (setTurns, below)
+  : ins
+  ? (insAt > 0
+    ? { href: insHref(insEntries[insAt - 1]), text: insEntries[insAt - 1].title }
+    // An uncurated inscription stands outside the shelf's run -- it has no
+    // neighbour there -- so its one sideways move is back to the shelf.
+    : { href: hrefFor(part), text: label(part) })
+  : (APPENDIX[index - 1] ? { href: hrefFor(APPENDIX[index - 1]), text: label(APPENDIX[index - 1]) } : null);
+const nextTo = blockLeaf != null ? null : bip
+  ? (bipAt < bips.length - 1 ? { href: bipHref(bips[bipAt + 1]), text: bips[bipAt + 1].label } : null)
+  : itemAt ? null
+  : ins
+  ? (insCurated && insAt < insEntries.length - 1
+    ? { href: insHref(insEntries[insAt + 1]), text: insEntries[insAt + 1].title } : null)
+  : (APPENDIX[index + 1] ? { href: hrefFor(APPENDIX[index + 1]), text: label(APPENDIX[index + 1]) } : null);
+window.__appxTurns = { prev: prevTo && prevTo.href, next: nextTo && nextTo.href };
+const turns = $('appx-turns');
+function turnLink(href, text, back) {
+  const a = document.createElement('a');
+  a.href = href;
+  a.textContent = text;
+  if (!back) a.style.marginLeft = 'auto';
+  // Tapping a neighbour plays the same sideways turn the swipe plays, so
+  // the two agree about which way the leaves lie.
+  a.addEventListener('click', (ev) => {
+    if (ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey || ev.button !== 0) return;
+    ev.preventDefault();
+    window.__appxTurn(back);
+  });
+  turns.append(a);
+  return a;
+}
+// Naming the neighbours: the same two acts every leaf performs, factored so a
+// leaf whose run is not known until something is fetched (a work of a
+// collection, which waits on the manifest) can perform them late and get the
+// swipe, the keys and the foot's links all agreeing, as they do everywhere.
+function setTurns(prev, next) {
+  window.__appxTurns = { prev: prev && prev.href, next: next && next.href };
+  if (prev) turnLink(prev.href, `‹ ${prev.text}`, true);
+  if (next) turnLink(next.href, `${next.text} ›`, false);
+}
+setTurns(prevTo, nextTo);
+
+// Appendix I's backward turn leaves the appendices for the body: the last
+// volume's own leaf, which is the page this one continues from. Which volume
+// is last is a question for the chain, so the turn is wired once the tip
+// answers -- until then a backward swipe simply has nowhere to go.
+// ── Consensus: the forks, each with a leaf of its own ─────────────────────
+//
+// The part's leaf lists its forks -- one row per BIP, each the door to that
+// fork's own leaf -- and the fork's leaf carries what the contents cannot: the
+// activation statistics (how the rule was counted in, editorial like every
+// stat in the back matter, plus a live count where a fork is still signaling),
+// then the chapters and sections the fork names, each a door into the book.
+if (kind === 'consensus' && !bip) {
+  const listEl = $('bip-list');
+  for (const b of bips) {
+    const row = document.createElement('div');
+    row.className = 'proof-row';
+    const a = document.createElement('a');
+    a.href = bipHref(b);
+    if (b.note) a.title = b.note;
+    const name = document.createElement('span');
+    name.className = 'proof-name';
+    name.textContent = `${b.label} — ${b.name}`;
+    const st = document.createElement('span');
+    st.className = 'proof-cite';
+    st.textContent = b.status;
+    a.append(name, st);
+    row.append(a);
+    listEl.append(row);
+  }
+  listEl.classList.toggle('hidden', !bips.length);
+}
+
+// ── Inscriptions: the shelf, each with a leaf of its own ──────────────────
+// The part's leaf lists its entries the way the Consensus leaf lists its
+// forks: one row each, the door to that inscription's own leaf, cited at
+// the footnote its envelope reads at -- offline arithmetic, like every
+// height-and-letter citation in the back matter.
+if (kind === 'inscriptions' && !ins) {
+  const listEl = $('bip-list');
+  for (const e of insEntries) {
+    const row = document.createElement('div');
+    row.className = 'proof-row';
+    const a = document.createElement('a');
+    a.href = insHref(e);
+    if (e.note) a.title = e.note;
+    const name = document.createElement('span');
+    name.className = 'proof-name';
+    name.textContent = e.title;
+    const cite = document.createElement('span');
+    cite.className = 'proof-cite';
+    cite.textContent = insRef(e);
+    a.append(name, cite);
+    row.append(a);
+    listEl.append(row);
+  }
+  listEl.classList.toggle('hidden', !insEntries.length);
+}
+
+// ── One inscription, read out of its own witness ──────────────────────────
+//
+// The shelf names; this leaf reads. The reveal transaction is fetched off
+// the same mirrors everything here reads, its input's tapscript is scanned
+// for the envelope (btc-inscriptions.js), and what the leaf then shows is
+// the body and nothing else: an image standing as the plate, text standing
+// as text, a manifest standing as the members it names.
+//
+// No card of declarations above it, no gloss beneath it. What the envelope
+// says of itself -- its type, its length, the input it rides -- is the
+// witness's own matter, and the witness is one turn away in the book, set
+// there push by push in the book's own notation; the subtitle is that door.
+// A leaf that reprinted those declarations would be describing the content
+// instead of showing it. Nothing past the bytes is stated as record either:
+// the numbering, the sat, the market's collections all live in commentary,
+// credited, behind the sheet at the foot.
+if (ins) {
+  // The leaf says what it is doing until the witness answers, and then gets
+  // out of the way: the content takes the status line's place.
+  const fig = $('ins-content');
+  const status = document.createElement('figcaption');
+  status.className = 'ins-status';
+  status.textContent = 'reading the witness…';
+  fig.append(status);
+  fig.classList.remove('hidden');
+
+  // Where a witness sits, in the book's own notation. The chapter and the
+  // section come off the merkle proof -- the height, and the position in the
+  // block that IS the §section -- and the footnote letter off the input's
+  // place among the witness-bearing inputs, which is how the book letters its
+  // notes. Null when the chain will not place it; a dash is better than a
+  // citation nobody can follow.
+  async function citeOfWitness(txid, tx, env) {
+    const mp = await overMirrors(`/tx/${txid}/merkle-proof`);
+    if (!mp || !Number.isFinite(mp.block_height) || !Number.isFinite(mp.pos)) return null;
+    let ref = wholeRef(mp.block_height, mp.pos + 1);
+    let href = `./bitcoin-book.html?block=${mp.block_height}&index=${mp.pos}`;
+    if (env) {
+      const wn = (tx.vin || []).slice(0, env.vin + 1).filter((v) => (v.witness || []).length).length;
+      if (wn > 0) { ref += `.${footnoteMark(wn)}`; href += `&wit=${footnoteMark(wn)}`; }
+    }
+    return { ref, href };
+  }
+  // Fill an element that is standing in for a citation until the chain
+  // answers -- the head's door here, a work's reference on the leaf below.
+  const placeCite = (el, place) => {
+    el.textContent = place ? place.ref : '—';
+    if (place) el.href = place.href;
+    else el.title = 'the chain would not say where this witness sits';
+    el.classList.remove('waiting');
+  };
+
+  (async () => {
+    const tx = await overMirrors(`/tx/${ins.reveal}`);
+    if (!tx) { status.textContent = 'the chain could not be reached'; return; }
+    const { inscriptionInTx, parseCollection, assetOfEnvelope } = await import('./btc-inscriptions.js');
+    const found = inscriptionInTx(tx);
+    // An uncurated leaf has no citation of its own to print and no name but
+    // the one its bytes earn it, so the chain supplies both.
+    if (!insCurated && !itemAt) {
+      citeOfWitness(ins.reveal, tx, found).then((p) => placeCite($('appx-subtitle').firstChild, p))
+        .catch(() => placeCite($('appx-subtitle').firstChild, null));
+      // The same name the book's own footnote gives this witness, so a
+      // reader arriving through that door finds the leaf already answering
+      // to it: a manifest by the name it gives itself, anything else by what
+      // its bytes announce, and failing both by what was declared of them.
+      const named = found ? assetOfEnvelope(found) : null;
+      const title = (named && named.label) || 'Inscription';
+      $('appx-title').textContent = title;
+      document.title = `The βook of βitcoin — ${title}`;
+    }
+    if (!found) {
+      // The transaction stands; the reading does not. Say which is which.
+      status.textContent = 'no envelope — this witness does not read as an inscription';
+      return;
+    }
+
+    // A manifest carries no content of its own: it names further reveals, and
+    // what it names is the collection. So the leaf spends the JSON rather
+    // than showing it -- the ids become the members below, and the manifest's
+    // own editorial matter (the names, the artists, the cities) is left where
+    // it was written, being the inscriber's claim about those members rather
+    // than anything the chain holds.
+    const collection = found.contentEncoding ? null : parseCollection(found.body);
+    if (collection) {
+      status.remove();
+      fig.classList.add('hidden');
+      if (itemAt) renderWork(collection, itemAt);
+      else renderTitlePage(collection);
+      return;
+    }
+    // &items on something that names nothing has no level to open; the
+    // inscription's own content stands, which is what the bare leaf shows.
+    showOrdFields(found);
+
+    // The body, and nothing about it. What the envelope declares, how long it
+    // runs, which input carries it -- all of that is the witness's own, and
+    // the witness is one turn away in the book, printed there push by push
+    // (the subtitle is the door). Here the leaf IS the content: an image
+    // stands as the plate, text stands as text, and the status line gives up
+    // its place to whichever it turns out to be.
+    const ct = String(found.contentType || '').toLowerCase();
+    if (found.contentEncoding) {
+      // Compressed: there is no content to show without unpacking it, and
+      // unpacking is a reading. Say the shape of what the witness holds.
+      status.textContent = `${found.body.length.toLocaleString('en-US')} bytes, ${found.contentEncoding}-compressed`;
+      return;
+    }
+    if (ct.startsWith('image/')) {
+      const img = document.createElement('img');
+      img.src = URL.createObjectURL(new Blob([found.body], { type: found.contentType }));
+      img.alt = ins.title;
+      status.replaceWith(img);
+      return;
+    }
+    if (ct.startsWith('text/') || ct.includes('json')) {
+      const pre = document.createElement('pre');
+      pre.className = 'ins-text';
+      let text = new TextDecoder().decode(found.body);
+      if (ct.includes('json')) {
+        try { text = JSON.stringify(JSON.parse(text), null, 2); } catch { /* not quite JSON: the bytes stand as written */ }
+      }
+      pre.textContent = text;
+      status.replaceWith(pre);
+      return;
+    }
+    // A kind no plate can show. Naming it is not an explanation of the leaf;
+    // it is the only thing there is to say.
+    status.textContent = `${found.body.length.toLocaleString('en-US')} bytes of ${found.contentType || 'an undeclared kind'}`;
+  })();
+
+  // What ord's own fields say about this inscription, under whatever it
+  // shows. A manifest is somebody's JSON and reads as a claim; these are
+  // written into the envelope itself under numbered tags, which makes them
+  // the inscriber's statement in ord's own grammar rather than a
+  // marketplace's -- and provenance in particular is checkable, since ord
+  // honours a parent only when that parent is spent in the same transaction.
+  function showOrdFields(env) {
+    const rows = [];
+    for (const p of env.parents || []) {
+      rows.push(['parent', { href: `./bitcoin-appendix.html?part=inscriptions&ins=${p.slice(0, 64)}`, text: p }]);
+    }
+    if (env.metaprotocol) rows.push(['metaprotocol', env.metaprotocol]);
+    // Tag 5 is a document, so its own fields become the form's rows.
+    const meta = env.metadata;
+    if (meta && typeof meta === 'object' && !Array.isArray(meta)) {
+      for (const [k, v] of Object.entries(meta)) {
+        if (v !== null && typeof v !== 'object') rows.push([k, String(v)]);
+      }
+    }
+    if (rows.length) fillForm($('ins-form'), rows);
+  }
+
+  // Somebody's words about something the chain holds, set as a form: the
+  // fields as written and in the order they were written, the key in the
+  // ruling register and the value in the reading face. Shared by the two
+  // levels because it is the same kind of claim at both -- the collection
+  // speaking about itself, and the collection speaking about one work.
+  function fillForm(form, fields) {
+    const rows = fields.filter(([, v]) => (v && typeof v === 'object' && v.href) || String(v).trim());
+    for (const [k, v] of rows) {
+      const row = document.createElement('div');
+      row.className = 'ins-field';
+      const key = document.createElement('div');
+      key.className = 'ins-key';
+      key.textContent = k.replace(/[_-]+/g, ' ');
+      const val = document.createElement('div');
+      val.className = 'ins-val';
+      // A value given as {href, text} is a place in the book -- a parent
+      // inscription's own leaf -- and reads as the door it is.
+      if (v && typeof v === 'object' && v.href) {
+        const a = document.createElement('a');
+        a.href = v.href; a.textContent = v.text; a.className = 'raw-link';
+        val.append(a);
+        row.append(key, val);
+        form.append(row);
+        continue;
+      }
+      // A link is followed; an id or a key is a handle and reads as one; a
+      // quotation is set as one, since a manifest that quotes a wall is
+      // quoting somebody and the marks should say so. Everything else is
+      // plain matter, in the reading face.
+      if (/^https?:\/\//.test(v)) {
+        const a = document.createElement('a');
+        a.href = v; a.textContent = v; a.rel = 'noopener nofollow'; a.target = '_blank';
+        val.append(a);
+      } else if (/^\s*["“]/.test(v)) {
+        val.classList.add('quote');
+        val.textContent = v.trim();
+      } else {
+        if (/^[0-9a-f]{64}i\d+$/i.test(v) || /^npub1[0-9a-z]+$/.test(v)) val.classList.add('raw');
+        val.textContent = v;
+      }
+      row.append(key, val);
+      form.append(row);
+    }
+    form.classList.toggle('hidden', !rows.length);
+  }
+
+  // ── A collection's title page ──
+  // The head takes the name the collection gives itself, and beneath it the
+  // rest of what the manifest says: the fields as written, in the manifest's
+  // own order, set as a form. Every line of it is the collection's own claim
+  // -- a name, a count, a description, a disclaimer about its own
+  // attributions -- so the leaf repeats it and does not vouch for it. What it
+  // NAMES stands one level below, where the works are.
+  function renderTitlePage(collection) {
+    const meta = collection.meta || {};
+    const name = (meta.name || '').trim();
+    if (name) {
+      // The book's own title for the entry was a placeholder for this.
+      $('appx-title').textContent = name;
+      document.title = `The βook of βitcoin — ${name}`;
+    }
+    // The name is the head; a form that repeated it would say it twice.
+    fillForm($('ins-form'), Object.entries(meta).filter(([k]) => k !== 'name'));
+    // The descent now opens the collection rather than the book: the works
+    // are what lies under the page that names them, and the first of them is
+    // where a descent lands, as it does from every leaf that has a run below.
+    firstChapter = insItemHref(ins, 1);
+    const down = $('appx-down');
+    down.classList.remove('hidden');
+    down.title = `the works — ${collection.members.length.toLocaleString('en-US')} of them`;
+    down.setAttribute('aria-label', 'Down into the collection');
+  }
+
+  // ── One work of a collection, on its own leaf ──
+  // The txid said in the book's own prose -- the same encoding a section's
+  // title wears, over the same reversed bytes -- and beneath it the image
+  // that work's own witness carries. The poem is the door into the chapter
+  // the work sits in; the book resolves a bare txid to its section.
+  //
+  // Then the manifest's caption for it, in the same form the collection's
+  // own statement takes one level up: the work first, then what its
+  // collection says about the work. Same dress because it is the same kind
+  // of claim -- somebody's words, repeated here, about something the chain
+  // holds.
+  //
+  // The works are a run of leaves and turn like one: ‹ back and forward ›
+  // along the collection, up to the title page that names them. One leaf is
+  // one reveal fetched, which is the whole reason this is a run rather than
+  // a page -- a hundred photographs are megabytes, and a reader turns to
+  // them one at a time.
+  function renderWork(collection, n) {
+    const members = collection.members;
+    const at = Math.min(Math.max(1, n), members.length);
+    const m = members[at - 1];
+    const collectionName = (collection.meta && collection.meta.name || '').trim() || ins.title;
+
+    // The head: the manifest's name for this work, the collection above it,
+    // and beneath the name the citation alone -- above the rule, where every
+    // leaf in this book puts the reference for the thing it is showing. The
+    // citation is filled in when the chain places the witness (below); until
+    // then it is a mark. Nothing counts the run off beside it: a book does
+    // not number the plate against the total, and the turns at the foot
+    // already say what lies either side.
+    $('appx-title').textContent = (m.name || '').trim() || `Work ${at.toLocaleString('en-US')}`;
+    $('appx-up').textContent = `▴ ${collectionName}`;
+    document.title = `The βook of βitcoin — ${(m.name || '').trim() || `Work ${at}`}`;
+    const cite = document.createElement('a');
+    cite.className = 'work-ref waiting';
+    cite.href = `./bitcoin-book.html?txid=${m.txid}`;
+    cite.title = 'read this witness in the book';
+    cite.textContent = '…';
+    $('appx-subtitle').replaceChildren(cite);
+
+    // The neighbours: another work either side, and NOTHING either side of
+    // the run's ends. A sideways turn walks the works and only the works --
+    // the way out of a collection is the way in, the ▴ and the pull-down to
+    // the title page that names them. Turning left off the first work used
+    // to land on that page, which reads as a sideways move but is a level
+    // up: press on and the run leaks into the neighbouring inscriptions and
+    // then out of the appendix altogether. A run should close at both ends,
+    // as the ballot's block leaves do.
+    setTurns(
+      at > 1
+        ? { href: insItemHref(ins, at - 1), text: (members[at - 2].name || `Work ${at - 1}`).trim() }
+        : null,
+      at < members.length
+        ? { href: insItemHref(ins, at + 1), text: (members[at].name || `Work ${at + 1}`).trim() }
+        : null,
+    );
+
+    // The work itself: the plate, and nothing over it. Its reference stands
+    // in the head above the rule, where a leaf states what it is showing.
+    const plate = document.createElement('figure');
+    plate.className = 'ins-member';
+    const body = document.createElement('div');
+    body.className = 'ins-member-body';
+    plate.append(body);
+    fig.replaceChildren(plate);
+    fig.classList.remove('hidden');
+
+    (async () => {
+      const say = (text) => { const s = document.createElement('div'); s.className = 'ins-member-say'; s.textContent = text; body.replaceChildren(s); };
+      const mtx = await overMirrors(`/tx/${m.txid}`);
+      if (!mtx) {
+        say('the chain could not be reached for this work');
+        cite.textContent = '—';
+        cite.classList.remove('waiting');
+        return;
+      }
+      const { inscriptionInTx } = await import('./btc-inscriptions.js');
+      const e = inscriptionInTx(mtx);
+
+      // The citation, read off the chain exactly as the head's is.
+      citeOfWitness(m.txid, mtx, e).then((p) => placeCite(cite, p))
+        .catch(() => placeCite(cite, null));
+
+      if (!e) { say('no envelope in this witness'); return; }
+      const ct = String(e.contentType || '').toLowerCase();
+      if (e.contentEncoding || !ct.startsWith('image/')) {
+        say(`${e.body.length.toLocaleString('en-US')} bytes of ${e.contentType || 'an undeclared kind'}`);
+        return;
+      }
+      const img = document.createElement('img');
+      img.src = URL.createObjectURL(new Blob([e.body], { type: e.contentType }));
+      img.alt = (m.name || '').trim();
+      body.replaceChildren(img);
+    })().catch(() => { /* the citation stands: a work's plate is not its name */ });
+
+    // The caption: the manifest's attributes for this work, as written and in
+    // its own order. A quote is set as the quotation it is; everything else
+    // reads as the form's plain value.
+    fillForm($('ins-form'), Object.entries(m.attributes || {}));
+  }
+
+  // The entry's reading, raised the way a fork's is: the note leads the
+  // sheet, then whatever else is written of it, then the part's own.
+  const { readingsOf, resolveCommentary, commentaryHtml } = await import('./btc-commentary.js');
+  const items = [];
+  const own = [];
+  if (ins.note) own.push({ note: ins.note });
+  own.push(...readingsOf(ins));
+  if (own.length) items.push({ title: ins.title, readings: own });
+  if (readingsOf(part).length) items.push({ title: part.title, readings: readingsOf(part) });
+  if (items.length) {
+    const box = $('bip-commentary');
+    const body = $('bip-commentary-body');
+    box.classList.remove('hidden');
+    const foot = $('bip-foot');
+    foot.classList.remove('hidden');
+    foot.classList.add('at-rest');   // no ballot to scroll past: the foot sits where it falls
+    let filled = false;
+    box.addEventListener('toggle', async () => {
+      if (!box.open || filled) return;
+      filled = true;
+      body.innerHTML = '<div class="commentary-measure"><p class="commentary-loading">reading…</p></div>';
+      await resolveCommentary(items);
+      // Built from authored Markdown, escaped at the source (btc-markdown.js).
+      body.innerHTML = commentaryHtml(items);
+    });
+  }
+}
+
+if (bip && blockLeaf == null) {
+  // The statistics, as key/value rows: the status first, then what the file
+  // says about how the fork was counted.
+  const stats = $('bip-stats');
+  const statRow = (key, value) => {
+    const line = document.createElement('div'); line.className = 'proof-line';
+    const k = document.createElement('div'); k.className = 'proof-key'; k.textContent = key;
+    const v = document.createElement('div'); v.className = 'proof-val'; v.textContent = value;
+    line.append(k, v); stats.append(line);
+    return v;
+  };
+  statRow('status', bip.status);
+  for (const s of bip.stats || []) statRow(s.label, s.value);
+  stats.classList.remove('hidden');
+
+  // ── The ballot, block by block ──
+  // A fork counted in block versions lays its whole window out: one row per
+  // block -- its chapter, its version exactly as the chapter's frontispiece
+  // writes it (formatBlockVersion: v1..v4 in the integer era, the word pair
+  // and its signaling bits under BIP9), and whether it reads as a yes. A
+  // closed ballot opens at its last block and runs back to the window's
+  // opening; a fork still signaling has no closed window, so it opens at the
+  // chain tip and runs one window deep. Drawn a page at a time as the foot
+  // comes into reach, banked a page ahead, the way the Ledger draws a record
+  // -- and the running tally holds in a sticky bar at the screen's foot, so
+  // the count stands beside the ballot at every moment of the scroll.
+  if (bip.bit != null || bip.version != null || bip.coinbase != null) {
+    // Three ways a yes is read: a version bit set, a minimum version, or --
+    // for the one ballot written outside the version word -- text the
+    // coinbase must carry. A first line the chain would not give up reads as
+    // no vote, and says so.
+    const COIN = typeof bip.coinbase === 'string' && bip.coinbase ? bip.coinbase : null;
+    const yes = (b) => (COIN ? (b.say != null && b.say.includes(COIN))
+      : bip.bit != null ? ((b.version >>> bip.bit) & 1) === 1
+      : (b.version >>> 0) >= bip.version);
+    const yesSays = COIN ? `${COIN}…/ written in the coinbase` : bip.bit != null ? `bit ${bip.bit} set` : `version ${versionName(bip.version)} or above`;
+    const noSays = COIN ? `no ${COIN}…/ in the coinbase` : bip.bit != null ? `bit ${bip.bit} not set` : `below version ${versionName(bip.version)}`;
+    const WINDOW = Number.isFinite(bip.window) ? bip.window : 2016;
+
+    const blocksEl = $('bip-blocks');
+    const heads = document.createElement('div');
+    heads.className = 'bb-heads';
+    for (const [cls, text, why] of [
+      ['bb-time', 'mined', 'the minute the block was mined, UTC — the days head their runs'],
+      ['bb-ref', 'chapter', ''],
+      COIN ? ['bb-ver', 'coinbase', "the chapter's first line — the printable runs of the coinbase scriptSig"]
+           : ['bb-ver', 'version', 'in binary while the period runs, the counted bit in bold — the frontispiece\'s own form outside it, and always on hover'],
+      ['bb-status', 'signal', `a yes is ${yesSays}`],
+      ['bb-sum', 'Σ', 'the yeses so far — the count as it stood with this block written'],
+      ['bb-pct', '%', 'the rate so far — the yeses over the blocks written to this point'],
+    ]) {
+      const h = document.createElement('span');
+      h.className = cls; h.textContent = text;
+      if (why) h.title = why;
+      heads.append(h);
+    }
+    const rowsEl = document.createElement('div');
+    const foot = document.createElement('span');
+    foot.className = 'bb-foot'; foot.textContent = '…';
+    blocksEl.append(heads, rowsEl, foot);
+    blocksEl.classList.remove('hidden');
+    const tallyEl = $('bip-tally');
+
+    // The fork's curated chapters, drawn as labeled rules across the ballot
+    // where their blocks fall -- the line where the signaling began, the
+    // line where the count crossed. The label is the entry's own title; the
+    // rule stands above the block it names.
+    const marks = new Map(bip.entries
+      .filter((e) => !e.expected && !e.page && isBlockId(e.id))
+      .map((e) => [Number(e.id), e]));
+    const markEl = (e) => {
+      const d = document.createElement('div');
+      d.className = 'bb-mark';
+      d.textContent = e.title;
+      if (e.note) d.title = e.note;
+      return d;
+    };
+
+    // A ballot's blocks can be notable beyond the fork: a chapter the
+    // contents curates, or one the reader bookmarked. Those labels join the
+    // record where their blocks fall -- quieter rules, in the contents' own
+    // words -- so a window read here says what the contents would say about
+    // the same blocks. The fork's own entries keep precedence over the
+    // curated set (a height they already name is not ruled twice), but a
+    // reader's bookmark always flies: it is theirs, under the ribbon it
+    // wears everywhere else. Leaf-level places (page: book or volume) name
+    // spans rather than chapters, so they stay out of a table of blocks.
+    const extraMarks = new Map();   // height -> [{title, bm}]
+    const addExtra = (h, m) => { (extraMarks.get(h) ?? extraMarks.set(h, []).get(h)).push(m); };
+    for (const p of places()) {
+      if (p.page || p.address || !isBlockId(p.id)) continue;
+      const h = Number(p.id);
+      if (!marks.has(h)) addExtra(h, { title: placeTitle(p) });
+    }
+    try {
+      const kept = JSON.parse(localStorage.getItem('glossia-btc-bookmarks'));
+      for (const b of Array.isArray(kept) ? kept : []) {
+        if (!Number.isInteger(b.height) || b.page) continue;
+        addExtra(b.height, { title: String(b.title ?? '').trim() || 'bookmark', bm: true });
+      }
+    } catch (_) { /* unavailable */ }
+    const extraMarkEl = (m) => {
+      const d = document.createElement('div');
+      d.className = 'bb-mark bb-toc';
+      if (m.bm) {
+        const rib = document.createElement('span');
+        rib.className = 'bb-bm-rib';
+        rib.setAttribute('aria-label', 'your bookmark');
+        rib.innerHTML = '<svg viewBox="0 0 12 16"><path fill="currentColor" d="M0 0h12v16l-6-4-6 4z"/></svg>';
+        d.append(rib);
+        d.title = 'your bookmark';
+      } else {
+        d.title = 'a curated chapter — as the table of contents names it';
+      }
+      d.append(document.createTextNode(m.title));
+      return d;
+    };
+
+    const rowEl = (b) => {
+      const row = document.createElement('div');
+      row.className = 'bb-row';
+      row.dataset.height = b.height;
+      // The clock first: the replay is chronological, and the dates are what
+      // make its pace legible -- a window is weeks, a stall is visible.
+      const when = document.createElement('span');
+      when.className = 'bb-time';
+      when.textContent = new Date(b.timestamp * 1000).toISOString().slice(11, 16);
+      when.title = `mined ${new Date(b.timestamp * 1000).toISOString().slice(0, 19).replace('T', ' ')} UTC — unix ${b.timestamp}`;
+      row.append(when);
+      // A row opens the block's own leaf, one level down -- the reprint the
+      // vertical turns walk -- not the book itself; the leaf carries the one
+      // door into the book, as a Ledger entry's citation does.
+      const a = document.createElement('a');
+      a.className = 'bb-ref';
+      a.href = `./bitcoin-appendix.html?part=consensus&bip=${bip.key}&block=${b.height}`;
+      a.textContent = wholeRef(b.height);
+      a.title = `block ${b.height.toLocaleString()} — read this block's leaf`;
+      a.addEventListener('click', (ev) => {
+        if (ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey || ev.button !== 0) return;
+        ev.preventDefault();
+        navTo(a.getAttribute('href'), 'down');
+      });
+      const aye = yes(b);
+      const v = document.createElement('span');
+      if (COIN) {
+        v.className = 'bb-ver bb-say';
+        v.textContent = b.say == null ? 'unread' : (b.say || '—');
+        v.title = b.say == null ? 'the coinbase could not be read — counted as no vote' : `the coinbase text\n${b.say}`;
+      } else if (inSignalingPeriod(b.height)) {
+        // In the period the version is the ballot: binary, the counted bit
+        // bold. The frontispiece's reading rides the hover.
+        const ver = formatBlockVersion(b.version);
+        v.className = 'bb-ver bb-bits';
+        const mark = document.createElement('span');
+        mark.className = 'dt'; mark.textContent = 'v';
+        v.append(mark, versionBitsEl(b.version, bip.bit ?? null, aye));
+        v.title = ver.title;
+      } else {
+        const ver = formatBlockVersion(b.version);
+        v.className = 'bb-ver';
+        const mark = document.createElement('span');
+        mark.className = 'dt'; mark.textContent = 'v';
+        // The frontispiece's own spacing: tight against a numeral (v1), a
+        // space before a word form (v accio library 100).
+        const text = ver.text.replace(/^v/, '');
+        v.append(mark, document.createTextNode((/^\d/.test(text) ? '' : ' ') + text));
+        v.title = ver.title;
+      }
+      const st = document.createElement('span');
+      st.className = 'bb-status ' + (aye ? 'yes' : 'no');
+      st.textContent = aye ? 'signals' : '—';
+      st.title = aye ? yesSays : noSays;
+      // The accumulation, row by row: the count and the rate as they stood
+      // when this block was written -- scrolling down replays the activation.
+      const sum = document.createElement('span');
+      sum.className = 'bb-sum';
+      sum.textContent = b.sum.toLocaleString('en-US');
+      sum.title = `${b.sum.toLocaleString('en-US')} signaling of the ${b.n.toLocaleString('en-US')} blocks to this point`;
+      const pct = document.createElement('span');
+      pct.className = 'bb-pct';
+      pct.textContent = `${(100 * b.sum / b.n).toFixed(1)}`;
+      pct.title = sum.title;
+      row.append(a, v, st, sum, pct);
+      return row;
+    };
+
+    // The bank: blocks fetched ahead of the draw, ten a call off the same
+    // mirrors the queue reads, descending from the anchor to the window's
+    // opening. `done` closes the record -- the floor reached, or a chain that
+    // stopped answering; either way the foot says which.
+    // The bank runs OLDEST FIRST: the table begins at the window's opening
+    // and scrolling down replays the activation in the order it occurred,
+    // each row carrying the count and the rate as they stood at that block.
+    // The pages still arrive ten a call off the same mirrors (esplora pages
+    // descend from the height asked for, so each is asked for by its top and
+    // read reversed), climbing from the floor toward the ballot's close --
+    // or, for a fork still signaling, toward the chain tip.
+    const bank = [];
+    let anchor = Number.isFinite(bip.ballot) ? bip.ballot : null;
+    let floor = null, at = null;
+    let done = false, tallied = 0, ayes = 0;
+    let fetching = null;
+    const fetchMore = () => {
+      if (done || fetching) return fetching || Promise.resolve();
+      fetching = (async () => {
+        if (anchor == null) {
+          const tip = await chainTip();
+          if (tip == null) { done = true; return; }
+          anchor = tip;
+        }
+        if (floor == null) {
+          floor = Math.max(0, anchor - WINDOW + 1);
+          // A live ballot's record opens where its story begins: the
+          // earliest chapter the fork names (the first signaling block), so
+          // the line marking it is read first, not just named.
+          if (bip.ballot == null && marks.size) floor = Math.min(floor, Math.min(...marks.keys()));
+          at = Math.min(floor + 9, anchor);
+        }
+        let blocks = null;
+        if (COIN) {
+          // The fast path for a coinbase ballot: mempool.space's v1 block
+          // pages bundle each block's coinbase scriptSig
+          // (extras.coinbaseRaw), fifteen blocks a call -- a whole page of
+          // first lines in one request. A mirror without v1 just misses
+          // (vanilla esplora answers 404), and any block the page did not
+          // carry a coinbase for falls back to two small calls of its own.
+          const v1 = await overMirrors(`/v1/blocks/${at}`);
+          if (Array.isArray(v1) && v1.length) {
+            for (const b of v1) {
+              if (b && b.extras && b.extras.coinbaseRaw != null) b.say = coinbaseSay(b.extras.coinbaseRaw);
+            }
+            blocks = v1;
+          }
+        }
+        if (!blocks) blocks = await overMirrors(`/blocks/${at}`);
+        if (!Array.isArray(blocks) || !blocks.length) { done = true; return; }
+        if (COIN) {
+          await Promise.all(blocks.map(async (b) => { if (b.say === undefined) b.say = await coinbaseOf(b.id); }));
+        }
+        // Oldest first, each block carrying the count as it stood with that
+        // block written: the yeses so far, over the blocks so far.
+        for (const b of blocks.reverse()) {
+          if (b.height < floor || b.height > anchor) continue;
+          // The final page is clamped to the anchor and may overlap the one
+          // before it; a height already banked is not counted twice.
+          if (bank.length && b.height <= bank[bank.length - 1].height) continue;
+          tallied++;
+          if (yes(b)) ayes++;
+          bank.push({ height: b.height, version: b.version, say: b.say ?? null, timestamp: b.timestamp, sum: ayes, n: tallied });
+        }
+        const reached = bank.length ? bank[bank.length - 1].height : floor - 1;
+        if (reached >= anchor) { done = true; return; }
+        at = Math.min(reached + Math.max(blocks.length, 1), anchor);
+      })().finally(() => { fetching = null; });
+      return fetching;
+    };
+
+    const setTally = (says, of, noteText, title = '') => {
+      tallyEl.replaceChildren();
+      const fig = document.createElement('span');
+      const label = document.createElement('span');
+      label.className = 't-label'; label.textContent = 'Σ';
+      const num = document.createElement('span');
+      num.className = 't-fig';
+      num.textContent = `${says.toLocaleString('en-US')} of ${of.toLocaleString('en-US')} · ${(100 * says / of).toFixed(1)}%`;
+      fig.append(label, num);
+      const note = document.createElement('span');
+      note.className = 't-note';
+      note.textContent = noteText;
+      tallyEl.append(fig, note);
+      if (title) tallyEl.title = title;
+      tallyEl.classList.remove('hidden');
+      $('bip-foot').classList.remove('hidden');
+    };
+    const against = Number.isFinite(bip.threshold) ? `against ${bip.threshold}% — ` : '';
+    // The bar prefers the period's WHOLE count over the table's sample: a
+    // fork still signaling can name a monitor (appendix.yaml) that publishes
+    // the current period's total, which is the statistic the threshold is
+    // about. The figure is that site's claim, not the chain's, so the bar
+    // names its source; until it answers -- and whenever it cannot -- the
+    // drawn count stands, and says that it is only the drawn count.
+    // The bar states no ending the table has not reached: it holds the count
+    // as far as the reading has gone, and the reader who scrolls to the
+    // ballot's close discovers the total the way it was discovered the first
+    // time -- block by block.
+    let pinned = false;
+    const tally = () => {
+      if (pinned) return;
+      // The last row read, not the last block fetched: the bank runs a page
+      // ahead of the reader, and the bar must not.
+      const last = rendered ? bank[rendered - 1] : null;
+      if (!last) { tallyEl.classList.add('hidden'); return; }
+      setTally(last.sum, last.n, `${against}the window, as far as read`);
+    };
+    if (bip.monitor) {
+      (async () => {
+        const res = await fetch(bip.monitor);
+        if (!res.ok) return;
+        const m = await res.json();
+        const says = Number(m.signalingCount);
+        const of = Number(m.totalBlocks);
+        if (!Number.isFinite(says) || !(of > 0)) return;
+        pinned = true;
+        const period = Number.isFinite(Number(m.periodStart)) && Number.isFinite(Number(m.periodEnd))
+          ? `, blocks ${Number(m.periodStart).toLocaleString('en-US')}–${Number(m.periodEnd).toLocaleString('en-US')}`
+          : '';
+        const host = new URL(bip.monitor).host;
+        setTally(says, of, `${against}this period${period} · ${host}`,
+          `the whole period's count, as ${host} publishes it${m.updatedAt ? ` (as of ${m.updatedAt})` : ''} — a claim of that site's, checkable block by block in the table`);
+      })().catch(() => { /* the drawn count stands */ });
+    }
+
+    // The rows group by day: a quiet head opens each day's run as the draw
+    // crosses midnight UTC, so the replay's pace reads at a glance -- a
+    // window is weeks, and a slow day is a long entry.
+    const DAY = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+    let lastDay = null;
+    const dayEl = (ts) => {
+      const d = document.createElement('div');
+      d.className = 'bb-day';
+      d.textContent = DAY.format(ts * 1000);
+      d.title = new Date(ts * 1000).toISOString().slice(0, 10);
+      return d;
+    };
+
+    const PAGE = 30;
+    // The landing: an ascent from a block's leaf wants the ballot scrolled to
+    // the row left off at, so the scroll keeps drawing until that height is
+    // on the page, then centers it -- the Ledger's own dive-and-return. A
+    // landing outside the window is simply dropped.
+    let land = null;
+    try {
+      land = sessionStorage.getItem('glossia-ballot-land');
+      sessionStorage.removeItem('glossia-ballot-land');
+    } catch (_) { /* unavailable */ }
+    const tryLand = () => {
+      if (land == null) return false;
+      if (floor != null && (Number(land) < floor || Number(land) > anchor)) { land = null; return false; }
+      const row = rowsEl.querySelector(`[data-height="${land}"]`);
+      if (!row) return true;   // keep drawing
+      land = null;
+      requestAnimationFrame(() => row.scrollIntoView({ block: 'center', behavior: 'instant' }));
+      return false;
+    };
+    let rendered = 0, led = false, busy = false, io = null;
+    const scroll = async () => {
+      if (busy) return;
+      busy = true;
+      while (bank.length - rendered < PAGE && !done) await fetchMore();
+      // The table opens where the ballot opens, and says so -- unless a
+      // marked chapter (the first signaling block) already heads it.
+      if (!led && bank.length) {
+        led = true;
+        const lead = document.createElement('span');
+        lead.className = 'bb-foot';
+        lead.textContent = bip.ballot != null
+          ? `— the window's opening, block ${floor.toLocaleString('en-US')}`
+          : (marks.has(floor) ? '' : '— one window back from the tip');
+        if (lead.textContent) rowsEl.before(lead);
+      }
+      const take = Math.min(bank.length - rendered, PAGE);
+      for (const b of bank.slice(rendered, rendered + take)) {
+        const day = new Date(b.timestamp * 1000).toISOString().slice(0, 10);
+        if (day !== lastDay) { lastDay = day; rowsEl.append(dayEl(b.timestamp)); }
+        if (marks.has(b.height)) rowsEl.append(markEl(marks.get(b.height)));
+        for (const m of extraMarks.get(b.height) ?? []) rowsEl.append(extraMarkEl(m));
+        rowsEl.append(rowEl(b));
+      }
+      rendered += take;
+      tally();
+      foot.textContent = done && rendered >= bank.length
+        ? (bank.length
+          ? (bip.ballot != null ? `— the ballot's close, block ${anchor.toLocaleString('en-US')}` : '— the chain tip, and counting')
+          : 'the chain could not be reached')
+        : '…';
+      // The fetch ahead: keep a page banked beyond what's drawn.
+      if (!done && bank.length - rendered < PAGE) fetchMore();
+      busy = false;
+      // The landing keeps drawing until its row exists (within the window,
+      // so bounded).
+      if (tryLand() && (rendered < bank.length || !done)) { queueMicrotask(scroll); return; }
+      // Re-arm: appending moved the sentinel; observe it afresh so a foot
+      // still within reach fires again.
+      if (io) { io.unobserve(foot); io.observe(foot); }
+    };
+    io = new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) scroll(); },
+                                  { rootMargin: '1600px 0px' });
+    io.observe(foot);
+    scroll();
+  }
+
+  // The chapters and sections the fork names. Heights cite offline; a
+  // transaction's citation resolves the way the reader's would -- a
+  // merkle-proof lookup, kept in the archive so it is asked once ever.
+  const listEl = $('bip-entries');
+  const pending = [];
+  for (const e of bip.entries) {
+    const row = document.createElement('div');
+    row.className = 'proof-row' + (e.expected ? ' bip-expected' : '');
+    const a = document.createElement('a');
+    a.href = entryHref(e.id, e.index, e.page, e.out ?? null);
+    const name = document.createElement('span');
+    name.className = 'proof-name'; name.textContent = e.title;
+    const cite = document.createElement('span');
+    cite.className = 'proof-cite';
+    if (e.expected) {
+      cite.textContent = expectedReference(Number(e.id));
+      a.title = `${e.note ? `${e.note}\n` : ''}expected — block ${Number(e.id).toLocaleString()} has not been mined`;
+    } else if (isBlockId(e.id)) {
+      cite.textContent = wholeRef(Number(e.id), e.index != null ? e.index + 1 : null, e.out ?? null, e.page);
+      if (e.note) a.title = e.note;
+    } else {
+      cite.textContent = '—';
+      if (e.note) a.title = e.note;
+      pending.push({ e, cite });
+    }
+    a.append(name, cite);
+    row.append(a);
+    listEl.append(row);
+  }
+  listEl.classList.toggle('hidden', !bip.entries.length);
+  if (pending.length) {
+    const { storeGet, storePut } = await import('./btc-store.js');
+    const placeTx = async (id) => {
+      const kept = await storeGet('placements', id);
+      if (kept) return kept;
+      for (const base of MEMPOOL_MIRRORS) {
+        try {
+          const res = await fetch(`${base}/tx/${id}/merkle-proof`);
+          if (!res.ok) continue;
+          const mp = await res.json();
+          const place = { height: mp.block_height, pos: mp.pos };
+          storePut('placements', id, place);
+          return place;
+        } catch { /* try the next mirror */ }
+      }
+      return null;
+    };
+    for (const { e, cite } of pending) {
+      placeTx(e.id).then((place) => {
+        if (place) cite.textContent = wholeRef(place.height, place.pos + 1, e.out ?? null);
+      }).catch(() => { /* the dash stands: the row still opens the section */ });
+    }
+  }
+
+  // The fork's reading, and the part's, raised the way the proof leaves raise
+  // theirs: specific before general, nothing fetched until the sheet opens.
+  const { readingsOf, resolveCommentary, commentaryHtml } = await import('./btc-commentary.js');
+  const items = [];
+  // The fork's description leads its sheet -- what the fork is, in the
+  // book's own voice, moved off the front of the leaf and into the reading
+  // it always was -- then whatever else is written of it, then the part's.
+  const own = [];
+  if (bip.note) own.push({ note: bip.note });
+  own.push(...readingsOf(bip));
+  if (own.length) items.push({ title: bip.title, readings: own });
+  if (readingsOf(part).length) items.push({ title: part.title, readings: readingsOf(part) });
+  if (items.length) {
+    const box = $('bip-commentary');
+    const body = $('bip-commentary-body');
+    box.classList.remove('hidden');
+    $('bip-foot').classList.remove('hidden');
+    let filled = false;
+    box.addEventListener('toggle', async () => {
+      if (!box.open || filled) return;
+      filled = true;
+      body.innerHTML = '<div class="commentary-measure"><p class="commentary-loading">reading…</p></div>';
+      await resolveCommentary(items);
+      // Built from authored Markdown, escaped at the source (btc-markdown.js).
+      body.innerHTML = commentaryHtml(items);
+    });
+  }
+}
+
+// ── One block of a ballot, reprinted as its own leaf ──────────────────────
+//
+// The ballot names; this leaf reprints. What is reprinted is the chapter's
+// title page as the book prints one: the block's hash as prose between the
+// ⌘ and ⓪ marks (the proof-of-work zeros written after the prose, where
+// they sit in the bytes), and every header field as the frontispiece writes
+// it -- the version with its verdict beside it, since a ballot is what
+// brought the reader here. The vertical turns walk the window: newer above,
+// older below, the ballot itself above the newest -- and the crumb climbs
+// back to the table, landing on this block's row.
+if (blockLeaf != null) {
+  const card = $('block-card');
+  card.classList.remove('hidden');
+  const line = (key) => {
+    const l = document.createElement('div'); l.className = 'proof-line';
+    const k = document.createElement('div'); k.className = 'proof-key'; k.textContent = key;
+    const v = document.createElement('div'); v.className = 'proof-val';
+    l.append(k, v); card.append(l);
+    return v;
+  };
+
+  // The block-hash notation ⌘ᵐ … ⓪ⁿ, as bitcoin-book.html defines it: the
+  // prose encodes internal order with the proof-of-work zeros trimmed off
+  // the end (byte-granular), and the two superscripts state the true bit
+  // counts, summing to 256.
+  const reverseHex = (hex) => (hex.match(/../g) || []).reverse().join('');
+  const trimTrailingZeroBytes = (hex) => {
+    let end = hex.length;
+    while (end >= 2 && hex.slice(end - 2, end) === '00') end -= 2;
+    return hex.slice(0, end);
+  };
+  const leadingZeroBits = (displayHex) => {
+    const stripped = displayHex.replace(/^0+/, '');
+    let bits = (displayHex.length - stripped.length) * 4;
+    if (stripped) {
+      const d = parseInt(stripped[0], 16);
+      bits += d >= 8 ? 0 : d >= 4 ? 1 : d >= 2 ? 2 : 3;
+    }
+    return bits;
+  };
+  const blockHashParts = (displayHex) => ({
+    hex: trimTrailingZeroBytes(reverseHex(displayHex)),
+    zeroBits: leadingZeroBits(displayHex),
+    remainBits: 256 - leadingZeroBits(displayHex),
+  });
+
+  // Prose, the way the picker says it: the engine arrives lazily, a figure
+  // it never reaches stays unsaid, and the hex rides the mark for a reader
+  // checking an explorer -- never the page.
+  let engineP = null;
+  const glossia = () => (engineP ||= import('./glossia-msg.js').then(async (m) => { await m.init(); return m; }));
+  const cells = [];
+  const UNSAID = 'the engine that puts a hash into words did not load';
+  const mark = (glyph, cls, title) => {
+    const m = document.createElement('span');
+    m.className = cls; m.textContent = glyph; m.title = title;
+    return m;
+  };
+  const sup = (n, title) => {
+    const s = document.createElement('span');
+    s.className = 'op-count'; s.textContent = toSuperscript(n); s.title = title;
+    return s;
+  };
+  const fig = (hexToEncode) => {
+    const s = document.createElement('span');
+    s.className = 'proof-figure waiting'; s.textContent = '…';
+    cells.push({ el: s, hex: hexToEncode });
+    return s;
+  };
+  const sayProse = () => {
+    if (!cells.length) return;
+    glossia().then((m) => {
+      for (const { el, hex } of cells) {
+        try {
+          el.textContent = m.encodeCanonical(hex, m.bookLang(), 5).prose;
+          el.classList.remove('waiting');
+        } catch { el.textContent = 'unsaid'; el.title = UNSAID; }
+      }
+    }).catch(() => {
+      for (const { el } of cells) { el.textContent = 'unsaid'; el.title = UNSAID; }
+    });
+  };
+  // A hash with proof-of-work zeros: ⌘ᵐ prose ⓪ⁿ.
+  const powFigure = (v, displayHex, what) => {
+    const parts = blockHashParts(displayHex);
+    v.append(
+      mark('⌘', 'dt', `${what}\n${displayHex}`),
+      sup(parts.remainBits, `the hash's remaining ${parts.remainBits} bits, Glossia-encoded as ${Math.ceil(parts.remainBits / 8)} bytes (⌘ — double-SHA256, the identity hash)`),
+      ' ', fig(parts.hex), ' ',
+      mark('⓪', 'dt', `${parts.zeroBits} leading zero bits — the proof of work`),
+      sup(parts.zeroBits, `${parts.zeroBits} leading zero bits — the proof-of-work; the ${Math.floor(parts.zeroBits / 8)} whole zero bytes are dropped before encoding`),
+    );
+  };
+
+  (async () => {
+    // The block, off the same mirrors everything here reads: its hash by
+    // height, then the header's fields by hash.
+    let data = null;
+    for (const base of MEMPOOL_MIRRORS) {
+      try {
+        const hRes = await fetch(`${base}/block-height/${blockLeaf}`);
+        if (!hRes.ok) continue;
+        const hash = (await hRes.text()).trim();
+        const bRes = await fetch(`${base}/block/${hash}`);
+        if (!bRes.ok) continue;
+        data = await bRes.json();
+        if (!data.id) data.id = hash;
+        break;
+      } catch { /* try the next mirror */ }
+    }
+    if (!data) {
+      line('this block').textContent = 'the chain could not be reached';
+      return;
+    }
+
+    const hf = composeBlockHeaderFields(data);
+    powFigure(line('chapter hash'), data.id, 'the block hash — the chapter\'s own name');
+
+    const ver = formatBlockVersion(data.version);
+    const vv = line('version');
+    if ((bip.bit != null || bip.version != null) && inSignalingPeriod(blockLeaf)) {
+      // The reprint keeps the ballot's own reading of the word: binary,
+      // the counted bit bold, the frontispiece's form on hover.
+      const aye = bip.bit != null ? ((data.version >>> bip.bit) & 1) === 1 : (data.version >>> 0) >= bip.version;
+      vv.classList.add('bb-bits');
+      vv.append(mark('v', 'dt', ver.title), versionBitsEl(data.version, bip.bit ?? null, aye));
+    } else {
+      const text = ver.text.replace(/^v/, '');
+      vv.append(mark('v', 'dt', ver.title), document.createTextNode((/^\d/.test(text) ? '' : ' ') + text));
+    }
+    vv.title = ver.title;
+
+    // The verdict, beside the field it is read off: a ballot is what brought
+    // the reader here. A coinbase ballot's verdict reads off the chapter's
+    // first line instead, fetched and quoted in its own row.
+    if (bip.bit != null || bip.version != null) {
+      const aye = bip.bit != null ? ((data.version >>> bip.bit) & 1) === 1 : (data.version >>> 0) >= bip.version;
+      const sv = line('signal');
+      sv.textContent = aye
+        ? `signals — ${bip.bit != null ? `bit ${bip.bit} set` : `version ${versionName(bip.version)} or above`}`
+        : `— ${bip.bit != null ? `bit ${bip.bit} not set` : `below version ${versionName(bip.version)}`}`;
+      sv.style.color = aye ? 'var(--accent)' : 'var(--meta)';
+    } else if (bip.coinbase) {
+      const sayV = line('coinbase');
+      sayV.textContent = '…';
+      const sigV = line('signal');
+      sigV.textContent = '…';
+      coinbaseOf(data.id).then((say) => {
+        if (say == null) { sayV.textContent = 'the chain could not be reached'; sigV.textContent = '—'; return; }
+        sayV.textContent = say || '(nothing legible)';
+        sayV.title = "the chapter's first line — the printable runs of the coinbase scriptSig";
+        const aye = say.includes(bip.coinbase);
+        sigV.textContent = aye ? `signals — ${bip.coinbase}…/ in the coinbase` : `— no ${bip.coinbase}…/ in the coinbase`;
+        sigV.style.color = aye ? 'var(--accent)' : 'var(--meta)';
+      }).catch(() => { sayV.textContent = 'the chain could not be reached'; sigV.textContent = '—'; });
+    }
+
+    if (data.previousblockhash) {
+      powFigure(line('previous'), data.previousblockhash, 'the previous chapter\'s hash — what this header commits to behind it');
+    }
+    const mr = line('merkle root');
+    mr.append(
+      mark('⋔', 'merkle-mark', `the merkle root — every section of the chapter, committed\n${data.merkle_root}`),
+      sup(32, '32 bytes'),
+      ' ', fig(reverseHex(data.merkle_root)),
+    );
+    line('mined').textContent = hf.timestamp;
+    const tv = line('target');
+    tv.textContent = hf.bitsExpr ? `${hf.bits} < ${hf.bitsExpr}` : hf.bits;
+    tv.title = hf.bitsTitle;
+    const nv = line('nonce');
+    nv.append(mark('η', 'dt', hf.nonceTitle ?? 'the nonce'), document.createTextNode(hf.nonce));
+    sayProse();
+  })();
+
+  // The window's bounds, for the vertical turns: a closed ballot's are the
+  // file's own arithmetic; a live one's wait on the tip. Above the newest
+  // block lies the ballot itself.
+  const WINDOW = Number.isFinite(bip.window) ? bip.window : 2016;
+  let newest = Number.isFinite(bip.ballot) ? bip.ballot : null;
+  const blockHref = (h) => `./bitcoin-appendix.html?part=consensus&bip=${bip.key}&block=${h}`;
+  const upEl = $('block-up');
+  const downEl = $('appx-down');
+  const toBallot = () => {
+    try { sessionStorage.setItem('glossia-ballot-land', String(blockLeaf)); } catch (_) { /* unavailable */ }
+    navTo(bipHref(bip), 'drop');
+  };
+  // A live ballot's record runs back to where its story begins (the earliest
+  // chapter the fork names), and the vertical walk reaches as far as the
+  // table does.
+  const markedFloor = bip.ballot == null
+    ? bip.entries.filter((e) => !e.expected && !e.page && isBlockId(e.id)).map((e) => Number(e.id))
+      .reduce((a, b) => Math.min(a, b), Infinity)
+    : Infinity;
+  const wire = () => {
+    let oldest = newest != null ? Math.max(0, newest - WINDOW + 1) : null;
+    if (oldest != null && Number.isFinite(markedFloor)) oldest = Math.min(oldest, markedFloor);
+    // The table reads oldest first, so its leaves stack the same way: older
+    // above, newer below, the ballot itself above the window's opening --
+    // and the reader who keeps pushing up from any block surfaces where the
+    // replay starts.
+    const olderUp = blockLeaf > 0 && (oldest == null || blockLeaf > oldest);
+    upEl.title = olderUp ? 'the next older block of the window' : 'up to the ballot';
+    upEl.setAttribute('aria-label', olderUp ? 'The next older block of the window' : 'Up to the ballot');
+    upEl.href = olderUp ? blockHref(blockLeaf - 1) : bipHref(bip);
+    upEl.classList.remove('hidden');
+    window.__appxAscend = () => (olderUp ? navTo(blockHref(blockLeaf - 1), 'drop') : toBallot());
+    const newer = newest == null || blockLeaf < newest;
+    downEl.classList.toggle('hidden', !newer);
+    if (newer) {
+      downEl.setAttribute('aria-label', 'The next newer block of the window');
+      downEl.title = 'the next newer block of the window';
+      firstChapter = null;   // the ▾ is this leaf's own turn, not a descent into the book
+      window.__appxDescend = () => navTo(blockHref(blockLeaf + 1), 'down');
+    } else {
+      window.__appxDescend = () => { /* the ballot's close: nothing below */ };
+    }
+  };
+  wire();
+  if (newest == null) {
+    chainTip().then((tip) => {
+      if (tip != null) { newest = tip; wire(); }
+    }).catch(() => { /* the blind bounds stand */ });
+  }
+  upEl.addEventListener('click', (ev) => {
+    if (ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey || ev.button !== 0) return;
+    ev.preventDefault();
+    window.__appxAscend();
+  });
+  downEl.addEventListener('click', (ev) => {
+    ev.preventDefault();
+    window.__appxDescend();
+  }, { capture: true });
+}
+
+// ── Citations: the works, and the door for adding one ─────────────────────
+//
+// The rule for a leaf is that it lists nothing -- the contents lists, the leaf
+// explains. This appendix bends it, for the reason it exists: it is the one a
+// reader can add to, and what they add has to be shown back to them somewhere
+// they can also take it out again. So the leaf carries the list and, at its
+// foot, the picker: a proof dropped there is read, checked against the block
+// its own bytes name, and kept -- after which it stands in the contents beside
+// the bundled ones, under the ribbon a bookmark flies.
+if (kind === 'proofs') {
+  const { allProofs, readProof, attests, keepProof, dropProof, citeOf, hrefOf, leafOf, estimatedDate, minedDate } = await import('./btc-proofs.js');
+  const { isOtsProof } = await import('./btc-ots.js');
+  const { blockAt } = await import('./btc-index.js');
+  const { toSuperscript, toSubscript } = await import('./btc-sigla.js');
+
+  const listEl = $('proof-list');
+  const card = $('proof-card');
+  const result = $('proof-result');
+  const fileInput = $('proof-file');
+  const dropZone = $('proof-drop');
+  card.classList.remove('hidden');
+
+  // The list, rebuilt from storage and from the bundled index each time it
+  // changes. The first row is also where the ▾ descends to: an appendix opens
+  // at the first chapter of what it gathers, and here that is the earliest
+  // chapter any of these files was stamped into.
+  async function paintList() {
+    const listed = await allProofs(part).catch(() => []);
+    listEl.textContent = '';
+    for (const proof of listed) {
+      const row = document.createElement('div');
+      row.className = 'proof-row';
+      const a = document.createElement('a');
+      a.href = leafOf(proof);       // the file's own leaf: its proof, rung by rung
+      if (proof.kept) {
+        const bm = document.createElement('span');
+        bm.className = 'proof-bm'; bm.setAttribute('aria-label', 'your proof');
+        bm.innerHTML = '<svg viewBox="0 0 12 16" width="8"><path fill="currentColor" d="M0 0h12v16l-6-4-6 4z"/></svg>';
+        a.append(bm);
+      }
+      const mark = document.createElement('span');
+      mark.className = 'proof-cite-mark';
+      mark.textContent = proof.n ? `‡${toSubscript(proof.n)} ` : '‡ ';
+      mark.title = proof.n ? `cited work ${proof.n}` : "your addendum — kept in this browser, outside the edition's numbering";
+      const name = document.createElement('span');
+      name.className = 'proof-name'; name.textContent = proof.title;
+      // The date the citation amounts to: the height's own estimate at once,
+      // hedged; the clock of the block the proof lands in, replacing it when
+      // the archive or a mirror answers.
+      const when = document.createElement('span');
+      when.className = 'proof-date';
+      when.textContent = estimatedDate(proof.place.height);
+      when.title = 'about when the chapter its proof lands in was mined — estimated from the height alone, offline';
+      minedDate(proof.place.height).then((exact) => {
+        if (!exact) return;
+        when.textContent = exact;
+        when.title = 'the clock of the block its proof lands in — the chain\'s own date for this file';
+      });
+      const cite = document.createElement('span');
+      cite.className = 'proof-cite'; cite.textContent = citeOf(proof.place);
+      a.append(mark, name, when, cite);
+      // What the row claims, in full, on hover -- including whether anyone has
+      // yet asked the chain about it.
+      a.title = `${proof.file} — ${proof.hash} ${proof.digest}\nstamped into ${citeOf(proof.place)}`
+        + (proof.verified === false ? '\nnot yet checked against the chain' : '');
+      row.append(a);
+      if (proof.kept) {
+        const x = document.createElement('button');
+        x.type = 'button'; x.className = 'proof-drop-btn'; x.textContent = '✕';
+        x.title = `Take "${proof.title}" out of this appendix`;
+        x.setAttribute('aria-label', `Remove ${proof.title}`);
+        x.addEventListener('click', () => { dropProof(proof.digest); paintList(); });
+        row.append(x);
+      }
+      listEl.append(row);
+    }
+    listEl.classList.toggle('hidden', !listed.length);
+    if (listed.length) {
+      firstChapter = leafOf(listed[0]);
+      $('appx-down').classList.remove('hidden');
+    }
+  }
+  await paintList();
+
+  // The picker, moved here from the search page: a proof is a query, but it is
+  // also a thing a reader keeps, and keeping belongs where the kept things are.
+  const stamp = (ts) => new Date(ts * 1000).toISOString().slice(0, 16).replace('T', ' ');
+  const reverseHex = (hex) => (hex.match(/../g) || []).reverse().join('');
+  const BEST_OF = 5;
+  let engine = null;
+  const glossia = () => (engine ||= import('./glossia-msg.js').then(async (m) => { await m.init(); return m; }));
+
+  // A hash, as the book sets one: its mark, its count, then the figure itself
+  // in words. There is no hex fallback -- hex is the one notation this book
+  // does not write in -- so a figure the engine never arrives to say stays
+  // unsaid, with the hex on the mark for a reader checking an explorer.
+  const figure = (hex, mark, markClass, sup, title, reverse) => ({ hex, mark, markClass, sup, title, reverse });
+  const hashFig = (hex, title) => figure(hex, 'h', 'dt', hex.length / 2, title, false);
+  const identityFig = (hex, title) => figure(hex, '⌘', 'dt', 256, title, true);
+  const merkleFig = (hex, title) => figure(hex, '⋔', 'merkle-mark', hex.length / 2, title, true);
+
+  const prosed = new Map();
+  const UNSAID = 'the engine that puts a hash into words did not load';
+  const unsay = (el) => { el.textContent = 'unsaid'; el.title = UNSAID; el.classList.add('waiting'); };
+  function setProse(cells) {
+    if (!cells.length) return;
+    glossia().then((m) => {
+      for (const { el, hex, reverse } of cells) {
+        try {
+          const bytes = reverse ? reverseHex(hex) : hex;
+          if (!prosed.has(bytes)) prosed.set(bytes, m.encodeCanonical(bytes, m.bookLang(), BEST_OF).prose);
+          el.textContent = prosed.get(bytes);
+          el.classList.remove('waiting');
+        } catch { unsay(el); }
+      }
+    }).catch(() => { for (const { el } of cells) unsay(el); });
+  }
+
+  const say = (rows, verdict = null, href = null, label = '') => {
+    result.textContent = '';
+    const cells = [];
+    for (const [key, val] of rows) {
+      const line = document.createElement('div'); line.className = 'proof-line';
+      const k = document.createElement('div'); k.className = 'proof-key'; k.textContent = key;
+      const v = document.createElement('div'); v.className = 'proof-val';
+      if (typeof val === 'string') {
+        v.textContent = val;
+      } else {
+        const m = document.createElement('span');
+        m.className = val.markClass; m.textContent = val.mark;
+        m.title = `${val.title}\n${val.hex}`;      // the mark carries the hex, as the book's copy menu does
+        const sup = document.createElement('span');
+        sup.className = 'op-count'; sup.textContent = toSuperscript(val.sup);
+        sup.title = val.mark === '⌘' ? `${val.sup} bits — ⌘'s superscript counts bits` : `${val.sup} bytes`;
+        const fig = document.createElement('span');
+        fig.className = 'proof-figure waiting'; fig.textContent = '…';
+        v.append(m, sup, ' ', fig);
+        cells.push({ el: fig, hex: val.hex, reverse: val.reverse });
+      }
+      line.append(k, v); result.append(line);
+    }
+    setProse(cells);
+    if (verdict) {
+      const el = document.createElement('div');
+      el.className = `proof-verdict ${verdict[1]}`; el.textContent = verdict[0];
+      result.append(el);
+    }
+    if (href) {
+      const a = document.createElement('a');
+      a.className = 'proof-open'; a.href = href; a.textContent = label;
+      result.append(a);
+    }
+    result.classList.remove('hidden');
+  };
+
+  async function takeProof(fileList) {
+    const files = [...fileList];
+    if (!files.length) return;
+    say([['reading', files.map((f) => f.name).join(', ')]]);
+    const read = await Promise.all(files.map(async (f) => ({ name: f.name, bytes: new Uint8Array(await f.arrayBuffer()) })));
+    // The proof is recognized by its magic, not its name: a proof saved as
+    // anything at all is still a proof, and the file beside it is the subject.
+    const file = read.find((f) => isOtsProof(f.bytes));
+    if (!file) {
+      say([['dropped', read.map((f) => f.name).join(', ')]],
+        ['No OpenTimestamps proof here — a .ots file opens with its own magic, and none of these do.', 'bad']);
+      return;
+    }
+    let proof;
+    try { proof = await readProof(file.bytes); }
+    catch (e) { say([['proof', file.name]], [`This proof will not read: ${e.message}.`, 'bad']); return; }
+
+    const rows = [['proof', file.name],
+      [proof.hash, hashFig(proof.digest, `${proof.hash} digest — the bytes this proof commits to`)]];
+
+    // A proof commits to a digest, not to a file. With the subject in hand too,
+    // the reader can see for themselves which file this proof is about -- and
+    // the entry is named after that file rather than after the proof.
+    const subject = read.find((f) => f !== file);
+    let checked = null;
+    let title = file.name.replace(/\.ots$/i, '');
+    if (subject) {
+      checked = await attests(proof, subject.bytes);
+      rows.push([subject.name, checked ? 'matches the proof' : 'does NOT match the proof']);
+      if (checked) title = subject.name;
+    }
+
+    if (!proof.place) {
+      for (const uri of proof.pending) rows.push(['pending', uri]);
+      say(rows, [proof.pending.length
+        ? 'Not in a block yet, so there is no chapter to keep it under. The calendars above are holding this digest for the next transaction they publish; come back and upgrade the proof once it confirms.'
+        : 'This proof reaches no Bitcoin block, so it names no chapter here.', 'unsure']);
+      return;
+    }
+
+    const cite = citeOf(proof.place);
+    const href = hrefOf(proof.place);
+    rows.push(['stamped into', `block ${proof.place.height} — ${cite}`]);
+    if (proof.place.txid) rows.push(['transaction', identityFig(proof.place.txid, 'the transaction carrying the commitment — its txid')]);
+    rows.push(['merkle root', merkleFig(proof.place.merkleRoot, 'the merkle root the proof reduces to — what the block header must commit to')]);
+    say(rows, ['Asking the chain for that block…', 'unsure']);
+
+    // The verification, entire: the operations reduce to 32 bytes, and those
+    // bytes either are the merkle root the block's header commits to or they
+    // are not. Nothing else about the proof matters, and no calendar is
+    // consulted -- an upgraded proof needs nobody's word for anything.
+    const block = await blockAt(proof.place.height).catch(() => null);
+    if (block && block.merkleRoot !== proof.place.merkleRoot) {
+      rows.push(['chain says', merkleFig(block.merkleRoot, "the merkle root that block's header actually commits to")]);
+      say(rows, ['The roots differ. This proof does not commit to that block, whatever it says — nothing has been kept.', 'bad']);
+      return;
+    }
+    const verified = !!block;
+    if (verified) rows.push(['mined', `${stamp(block.timestamp)} UTC`]);
+    keepProof({ file: subject ? subject.name : file.name, title, bytes: file.bytes, digest: proof.digest, verified, checked });
+    await paintList();
+    say(rows, [verified
+      ? `Verified, and kept: “${title}” now stands in this appendix at ${cite}${
+        checked ? ', and the file beside the proof is the one it attests' : ''}.`
+      : `The chain could not be reached, so nothing here is checked — “${title}” is kept at ${cite} as the proof's own claim, and says so until someone asks.`,
+    verified ? 'good' : 'unsure'], href, `Read ${cite} →`);
+  }
+
+  $('proof-pick').addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', () => { const f = fileInput.files; takeProof(f).finally(() => { fileInput.value = ''; }); });
+  for (const type of ['dragenter', 'dragover']) {
+    dropZone.addEventListener(type, (e) => { e.preventDefault(); dropZone.classList.add('over'); });
+  }
+  for (const type of ['dragleave', 'drop']) {
+    dropZone.addEventListener(type, (e) => { e.preventDefault(); dropZone.classList.remove('over'); });
+  }
+  dropZone.addEventListener('drop', (e) => { if (e.dataTransfer?.files?.length) takeProof(e.dataTransfer.files); });
+}
+
+if (!prevTo && !bip) {
+  chainTip().then((tip) => {
+    if (tip == null) return;
+    const volume = volumeBookChapter(tip).volume;
+    const href = `./bitcoin-book.html?block=${heightOf(volume, 1, 1)}&page=volume`;
+    window.__appxTurns.prev = href;
+    const a = turnLink(href, `‹ Volume ${toRoman(volume)}`, true);
+    turns.prepend(a);   // back is the left-hand turn, whenever it arrives
+  }).catch(() => { /* no tip, no way back but the contents */ });
+}
+
+
+</script>
+</body>
+</html>
