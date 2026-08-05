@@ -1281,25 +1281,24 @@ if (kind === 'mining' && AT !== null && AT !== 'mempool') {
     }
 
     // The chapters themselves: every block this mine won in the window,
-    // newest first, each row the door into the book. The ballot's own dress,
-    // because a run of chapters with a figure against each is exactly what
-    // that table already is.
+    // newest first, each row the door into the book -- and each row NOTHING
+    // BUT its citation.
+    //
+    // The row carried the minute, the coinbase's writing and a count of
+    // sections before this. All three are true, and none of them is what
+    // this table is about: a chapter's contents belong to the chapter, and
+    // the book prints them where the chapter is read. What this table
+    // asserts is a list of places — these are the chapters this mine won —
+    // and a reference is exactly the book's way of naming a place. The rest
+    // was the ballot's dress worn by a table that is not a ballot: a ballot
+    // needs a column for the vote, because the vote is the claim; here the
+    // membership IS the claim, and it is made in full by the citation.
+    //
+    // The days still head their runs. A heading is not a field of a row, and
+    // without one a mine's fortnight is several hundred references with no
+    // sense of pace -- which day was busy, where the run went quiet.
     say(`${mine.won.toLocaleString('en-US')} chapters of ${window}`, credit);
     const blocksEl = $('bip-blocks');
-    const heads = document.createElement('div');
-    heads.className = 'bb-heads';
-    for (const [cls, text, why] of [
-      ['bb-time', 'mined', 'the minute the chapter was mined, UTC'],
-      ['bb-ref', 'chapter', ''],
-      ['bb-ver', 'coinbase', 'the chapter\'s first line — the writing this mine signed it with'],
-      ['bb-sum', 'txs', 'how many sections the chapter holds'],
-    ]) {
-      const h = document.createElement('span');
-      h.className = cls; h.textContent = text;
-      if (why) h.title = why;
-      heads.append(h);
-    }
-    blocksEl.append(heads);
     const DAY = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
     let lastDay = null;
     for (const b of mine.blocks) {
@@ -1313,23 +1312,17 @@ if (kind === 'mining' && AT !== null && AT !== 'mempool') {
       }
       const row = document.createElement('div');
       row.className = 'bb-row';
-      const when = document.createElement('span');
-      when.className = 'bb-time';
-      when.textContent = new Date(b.t * 1000).toISOString().slice(11, 16);
-      when.title = `mined ${new Date(b.t * 1000).toISOString().slice(0, 19).replace('T', ' ')} UTC`;
       const a = document.createElement('a');
       a.className = 'bb-ref';
       a.href = `./bitcoin-book.html?block=${b.height}`;
       a.textContent = wholeRef(b.height);
-      a.title = `block ${b.height.toLocaleString('en-US')} — read this chapter in the book`;
-      const v = document.createElement('span');
-      v.className = 'bb-ver bb-say';
-      v.textContent = b.sig || '—';
-      if (b.sig) v.title = b.sig;
-      const n = document.createElement('span');
-      n.className = 'bb-sum';
-      n.textContent = (b.tx ?? 0).toLocaleString('en-US');
-      row.append(when, a, v, n);
+      // What the row no longer prints, it still knows: the hover keeps the
+      // minute and the mine's own writing, for a reader who wants them
+      // without the page insisting on them.
+      a.title = `block ${b.height.toLocaleString('en-US')} — mined `
+        + `${new Date(b.t * 1000).toISOString().slice(0, 19).replace('T', ' ')} UTC`
+        + `${b.sig ? `, signed ${b.sig}` : ''}. Read this chapter in the book.`;
+      row.append(a);
       blocksEl.append(row);
     }
     blocksEl.classList.remove('hidden');
