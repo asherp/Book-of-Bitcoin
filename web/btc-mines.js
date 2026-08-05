@@ -49,7 +49,7 @@
 // more are banked, the depth the archive already treats as settled; the tip's
 // own neighbourhood is re-read every time, because it can still move.
 
-import { storeGet, storePutMany } from './btc-store.js';
+import { storeGet, storePutMany, storeEntries } from './btc-store.js';
 
 // One difficulty window: the book's own unit, and about a fortnight.
 export const MINE_WINDOW = 2016;
@@ -208,6 +208,81 @@ export function tallyMines({ blocks, tip, from }) {
 // The whole reading in one call, for a leaf that wants it that way.
 export async function readMines(tip, opts = {}) {
   return tallyMines(await minedWindow(tip, opts));
+}
+
+// ── Naming the mines without counting them ────────────────────────────────
+//
+// The contents lists what the book holds; it does not measure. So it needs
+// the mines' NAMES and their order, and never their shares -- and it should
+// pay as little as possible for them. Two sources, in this order:
+//
+//   1. The archive, for nothing. Whatever the appendix banked when it last
+//      counted is already on disk, so the contents tallies that and lists
+//      exactly the mines that have leaves. Nothing backfills on its own --
+//      exploration is the sync, as it is on the Ledger's own shelf.
+//   2. One call, when the archive has nothing yet: mempool.space's ranking
+//      over its 1w period, names and order only (~3.6 KB, 18 pools).
+//
+// The second is safe in the one direction that matters. Its period is about
+// 1,060 blocks where the appendix's window is 2,016, so it reaches back half
+// as far: every mine it names has certainly won a chapter inside the
+// appendix's window, while a mine that won only in the older half goes
+// unlisted. It can under-name the shelf and it cannot over-name it -- the
+// same asymmetry the signature table keeps, where under-claiming costs a few
+// bytes their quotation marks and over-claiming puts words in a mouth.
+
+// The mines the archive already knows about, tallied from banked blocks and
+// nothing else. Blocks outside the current window are ignored rather than
+// pruned: the store holds a little more than a window, and a name that fell
+// out of it is not a mine of this fortnight.
+export async function bankedMines(tip, window = MINE_WINDOW) {
+  const from = Math.max(0, tip - window + 1);
+  const blocks = new Map();
+  for (const [key, rec] of await storeEntries('mined')) {
+    const h = Number(key);
+    if (!Number.isFinite(h) || h < from || h > tip || !rec) continue;
+    blocks.set(h, rec);
+  }
+  return tallyMines({ blocks, tip, from });
+}
+
+// The names alone, in one call. Returns the same shape the shelf is drawn
+// from, with `won` carrying that ranking's own count -- which is over a
+// different span and so is never printed as a share.
+export async function rankedMines(mirrors = MINES_MIRRORS) {
+  for (const base of mirrors) {
+    try {
+      const res = await fetch(`${base}/v1/mining/pools/1w`);
+      if (!res.ok) continue;
+      const data = await res.json();
+      if (!Array.isArray(data?.pools) || !data.pools.length) continue;
+      const mines = data.pools
+        .filter((p) => p && p.slug)
+        .map((p) => ({
+          slug: p.slug,
+          name: p.slug === 'unknown' ? 'Unattributed' : String(p.name || p.slug),
+          link: p.link || null,
+          named: p.slug !== 'unknown',
+          won: Number(p.blockCount) || 0,
+        }))
+        .sort((a, b) => (a.named !== b.named ? (a.named ? -1 : 1)
+          : b.won - a.won || a.name.localeCompare(b.name)));
+      return { mines, counted: Number(data.blockCount) || 0, ranked: true };
+    } catch { /* try the next mirror */ }
+  }
+  return null;
+}
+
+// What the contents actually calls: the archive if it has anything, else the
+// one call, else nothing at all -- in which case the leaf says the mines are
+// counted when their own leaf is opened, which is the truth and costs a
+// reader nothing to be told.
+export async function minesForContents(tip) {
+  if (tip != null) {
+    const banked = await bankedMines(tip);
+    if (banked.mines.length) return { ...banked, ranked: false };
+  }
+  return await rankedMines();
 }
 
 // A share as the shelf prints it: the figure and its own uncertainty, because
