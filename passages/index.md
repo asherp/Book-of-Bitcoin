@@ -83,3 +83,6 @@ scheme, and how to read passages beyond this curated set.
 - [36.79 ₿ to the zero address](./3679-to-the-zero-address.md) — V β56 ■83 §2223 ([as a page](https://bookofbitcoin.io/V/56/83/2223/))
 - [1.42 ₿ to the zero address](./142-to-the-zero-address.md) — V β56 ■83 §2224 ([as a page](https://bookofbitcoin.io/V/56/83/2224/))
 - [20.01 ₿ to the zero address](./2001-to-the-zero-address.md) — V β56 ■83 §2225 ([as a page](https://bookofbitcoin.io/V/56/83/2225/))
+- [Coldcard attack, wave 1](./coldcard-attack-wave-1.md) — V β60 ■1247 §13 ([as a page](https://bookofbitcoin.io/V/60/1247/13/))
+- [Coldcard attack, wave 2](./coldcard-attack-wave-2.md) — V β60 ■1409 §148 ([as a page](https://bookofbitcoin.io/V/60/1409/148/))
+- [Coldcard attack, wave 3](./coldcard-attack-wave-3.md) — V β60 ■1576 §20 ([as a page](https://bookofbitcoin.io/V/60/1576/20/))

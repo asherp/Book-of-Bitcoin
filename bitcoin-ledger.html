@@ -245,6 +245,19 @@ a:hover { text-decoration: underline; }
 .idx-vol:first-of-type { margin-top:10px; padding-top:0; border-top:none; }
 .idx-book { margin:12px 0 1px; padding-left:14px;
   font:600 10px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.16em; text-transform:uppercase; color:var(--meta); }
+/* The quarter's own filing, each level stepping in: month, then day. */
+.idx-month { margin:10px 0 1px; padding-left:22px;
+  font:600 10px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.14em; text-transform:uppercase; color:var(--meta); }
+.idx-day { margin:8px 0 1px; padding-left:28px;
+  font:500 10px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.12em; text-transform:uppercase; color:var(--dim); }
+/* The reader's mark, worn by the row whose transaction they kept: the
+   ribbon it flies in the contents, then the name they gave it. It rides
+   with the citation, so the bookkeeping columns keep their own alignment. */
+.idx-bm { display:inline-flex; align-items:baseline; gap:5px; margin-left:10px;
+  font:400 11px/1.4 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.02em; color:var(--dim);
+  max-width:24ch; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; vertical-align:baseline; }
+.idx-bm .toc-bm { flex:none; width:8px; color:var(--accent); }
+.idx-bm .toc-bm svg { width:8px; height:11px; display:block; }
 .idx-row { display:flex; align-items:baseline; gap:16px; padding:8px 2px 8px 14px; border-bottom:1px solid var(--hair); text-decoration:none; }
 .idx-row.under-book { padding-left:28px; }
 .idx-row:last-child { border-bottom:none; }
@@ -255,6 +268,20 @@ a:hover { text-decoration: underline; }
 .idx-note { display:block; margin-top:12px; padding-left:14px; font:400 12px/1.5 'IBM Plex Mono','Book Sigla',monospace; color:var(--meta); }
 /* The sync state, heading whatever data this level has to show. */
 .idx-note.sync-note { text-align:center; padding-left:0; margin:22px 0 0; color:var(--dim); }
+/* The loading mark, the book's own (bitcoin-book.html): the four sigla of
+   the pay-to-pubkey-hash template -- ⧉ ⌖ ≡ ∇ -- read out one at a time on a
+   shared clock, revealed at the record's foot while a scroll's pull is out
+   gathering. Under reduced motion the cycle stops on ⧉ and stands still. */
+.spinner { position:relative; display:inline-block; width:1.3em; height:1.2em; vertical-align:-3px; margin-right:5px; color:var(--accent); }
+.spinner span { position:absolute; inset:0; text-align:center; line-height:1.2; opacity:0; animation: sigla-read 2s linear infinite; }
+.spinner span:nth-child(2) { animation-delay:.5s; }
+.spinner span:nth-child(3) { animation-delay:1s; }
+.spinner span:nth-child(4) { animation-delay:1.5s; }
+@keyframes sigla-read { 0% { opacity:0; } 8%, 25% { opacity:1; } 33%, 100% { opacity:0; } }
+@media (prefers-reduced-motion: reduce) {
+  .spinner span { animation:none; }
+  .spinner span:first-child { opacity:1; }
+}
 
 .sp-eyebrow { margin:30px 0 0; font:600 10px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.3em; text-transform:uppercase; color:var(--dim); text-align:center; scroll-margin-top:26px; }
 .sp-toc { margin-bottom:8px; }
@@ -624,7 +651,7 @@ import { localizeHome, mountLangMenu } from './btc-strings.js';
 localizeHome();   // the masthead in the reader's UI language
 mountLangMenu();  // …with the Language item, which any page can now set
 import { INDEXED, isAddress, isScriptHex, keptLedgers, saveKeptLedgers, sameAddresses, memberScriptHex, cachedLine, resolveLine,
-         extendLine, renderRows, groupState, periods, lineNote, reconciled, ledgerSum, heldCoins, addressState, lastKnownState,
+         extendLine, renderRows, groupState, markIndex, periods, lineNote, reconciled, ledgerSum, heldCoins, lastKnownState,
          formatBalanceBtc, formatNetBtc, chainFailureText, citeHref, sectionOf, sectionOfFetched, citePlace, passageTxid, passageEntries, txHexOf, outspendsOf, prevoutValuesOf,
          DEFAULT_ESPLORA, esploraCustom, esploraSelected, setEsploraSettings } from './btc-index.js';
 import { volumeBookChapter, heightOf, subsidyAt, toRoman, parseReference, latinRefOf, footnoteMark } from './btc-citation.js';
@@ -886,13 +913,23 @@ const findEntry = (line, key) =>
 // The URL follows the reader (replaceState -- browsing is not history), so a
 // reload or a share names the ledger being read; the compendium's own top
 // level is the bare page.
+//
+// A curated ledger is named by ONE member (ledgerFor's rule: a query naming
+// a member opens the whole shelved ledger, positioned on it), because its
+// list can be long enough that joined whole it outgrows what a server will
+// take for a URI -- the Coldcard hack spans 221 vaults. A ledger the reader
+// brought has no name any other copy of the book would resolve, so its list
+// still rides whole; readers' own ledgers stay hand-sized.
+const urlAddress = () => (cur().curated
+  ? cur().addresses[Math.max(0, Math.min(at, cur().addresses.length - 1))]
+  : cur().addresses.join(','));
 function syncUrl() {
   // Only the appendix leaf is nobody's ledger; every leaf below it names the
   // ledger it belongs to, and a title leaf says so with &page=ledger -- so a
   // reload, or a link shared from here, comes back to the leaf it left.
   try {
     const url = level === 'appendix' ? location.pathname
-      : `${location.pathname}?address=${cur().addresses.join(',')}${level === 'ledger' ? '&page=ledger' : ''}`;
+      : `${location.pathname}?address=${urlAddress()}${level === 'ledger' ? '&page=ledger' : ''}`;
     history.replaceState(null, '', url);
   } catch (_) { /* unavailable */ }
   document.title = level === 'appendix' ? `The βook of βitcoin — ${PART_LABEL}`
@@ -934,6 +971,13 @@ const bookmarks = readBookmarks()
 
 const n = (v, one, many) => `${v.toLocaleString('en-US')} ${v === 1 ? one : many}`;
 
+// The loading mark, as the book prints it (SPINNER_HTML in bitcoin-book.html):
+// the P2PKH sigla read out in turn. Decorative -- the words after it say
+// what's happening -- so the whole mark is hidden from the reader's ear.
+const SPINNER_HTML = '<span class="spinner" aria-hidden="true">'
+  + [['⧉', 'OP_DUP'], ['⌖', 'OP_HASH160'], ['≡', 'OP_EQUALVERIFY'], ['∇', 'OP_CHECKSIG']]
+    .map(([glyph, name]) => `<span title="${name}">${glyph}</span>`).join('')
+  + '</span>';
 // ── What a sum is worth ──────────────────────────────────────────────────
 // The rows of a ledger each carry their own day, and a valuation of one is
 // read at that day's price. The AGGREGATES -- the totals bar, the balance,
@@ -1178,6 +1222,10 @@ const lineOnce = (addr) => {
 // every landing: a result belonging to a leaf already turned away from
 // paints nothing.
 const PAGE = 25;
+// …and how many of a ledger's members one pull gathers. Small enough that
+// a pull answers quickly, large enough that a shelf-sized ledger is whole
+// in a scroll or two.
+const GATHER = 8;
 // The totals bar rules the record off at every moment: Σ debit, Σ credit
 // (the unsynced remainder posted into its column, so the books add up
 // mid-scroll, not just at completion), the transaction count, and the
@@ -1201,6 +1249,20 @@ const stateText = (d) => !d.complete
   ? `the latest ${d.walked.toLocaleString('en-US')} of ${d.txCount.toLocaleString('en-US')} transactions gathered`
   : reconciled(d) ? 'the whole record gathered · reconciled with the chain'
   : 'unreconciled — this map disagrees with the chain balance';
+// A few members at a time: the merged leaf asks the chain about every
+// member, and a ledger the size of the Coldcard hack's (221 vaults) asked
+// all at once is a stampede the public mirrors answer with refusals. A
+// small pool keeps the whole sync moving and every request answerable;
+// order is preserved so results still line up with their addresses.
+const pooled = async (items, width, run) => {
+  const out = new Array(items.length);
+  let next = 0;
+  const worker = async () => {
+    while (next < items.length) { const k = next++; out[k] = await run(items[k]); }
+  };
+  await Promise.all(Array.from({ length: Math.min(width, items.length) }, worker));
+  return out;
+};
 // A ledger keeps ONE table, and it is the ledger's own account: every
 // member's entries in a single record, not a table per passage. The
 // members' maps are banked separately (each address is its own line in the
@@ -1214,32 +1276,38 @@ const extendMerged = async (addrs) => {
   const lines = await Promise.all(addrs.map(cachedLine));
   const behind = addrs.filter((a, i) => lines[i] && !lines[i].complete);
   if (!behind.length) return null;
-  await Promise.all(behind.map((a) => extendLine(a)));
+  // A few at a time, and only a few members per pull: a ledger of 221
+  // vaults reaching deeper into every one of them at once is the same
+  // stampede the gathering above avoids, and the reader is owed the next
+  // page rather than every page. The members still short of their whole
+  // record are taken in shelf order, so successive pulls work through them.
+  await pooled(behind.slice(0, GATHER), 4, (a) => extendLine(a).catch(() => null));
   return mergedCached(addrs);
 };
 const runRecord = async (alive) => {
   const addrs = cur().addresses;
-  const heldP = Promise.all(addrs.map((a) => heldFresh(a))).then(mergeHeld);
+  // The account is gathered member by member, AT THE SCROLL'S PACE: nothing
+  // is asked of the chain until the reader reads toward it. A ledger of one
+  // or two members is asked for in the first pull and the distinction never
+  // shows; a ledger of 221 vaults asked for in one breath is a stampede the
+  // public mirrors answer with refusals, and a ledger nobody scrolls costs
+  // the chain nothing. What each member answers banks in the store, so
+  // mergedCached below simply finds more of the account each time.
+  const queue = addrs.slice();          // members not yet asked, shelf order
+  const helds = new Map();              // member -> held snapshot, asked with its turn
   const cached = await mergedCached(addrs);
   if (!alive()) return;
   let byTxid = null;     // held marks, once the snapshot agrees
   let rowsEl, foot, note, unsyn, rendered, io, group;
-  // The reader's own marks that fall ON this account: a bookmark counts
-  // where the ledger actually has an entry in that chapter, and nowhere
-  // else. A passage kept somewhere else in the same years is not this
-  // ledger's business -- the account would be claiming a reading that has
-  // nothing to do with it. Newest first, the order the rows are drawn in;
-  // the height set is rebuilt only as the reach grows, and growth only
-  // ever APPENDS older marks to the tail, so the count already consumed
-  // stays true across chunks.
-  let markHeights = null, markLen = -1;
-  const marksOn = (line) => {
-    if (markLen !== line.entries.length) {
-      markHeights = new Set(line.entries.map((e) => e.height));
-      markLen = line.entries.length;
-    }
-    return bookmarks.filter((b) => markHeights.has(b.height)).sort((a, z) => z.height - a.height);
-  };
+  // The reader's own marks, indexed once for the rows to wear. A ledger's
+  // table is its own transactions and nothing else: a mark labels the row
+  // that IS the transaction it was kept on, and otherwise does not appear
+  // here at all. (It used to be enough for a mark to share a BLOCK with one
+  // of this ledger's entries -- but a block holds thousands of
+  // transactions, so that hung marks in the table that had nothing to do
+  // with the ledger.) The index is built from the reader's whole shelf and
+  // never from the account, so it does not change as the reach grows.
+  const marks = markIndex(bookmarks);
   let busy = false;      // one draw at a time; the re-arm retriggers
   // The unsynced entry: an unreferenced line heading the record for the
   // transactions not yet gathered -- their count standing where the
@@ -1275,26 +1343,94 @@ const runRecord = async (alive) => {
     requestAnimationFrame(() => row.scrollIntoView({ block: 'center', behavior: 'instant' }));
     return false;
   };
+  // A gathered member's entries interleave anywhere in time, so the drawn
+  // window is set again rather than appended to -- anchored on the row
+  // nearest the top of the viewport, so the reader's place holds still
+  // while history fills in around it, and grown by what arrived so nothing
+  // already read slides out of reach. The heading state starts afresh with
+  // the redraw, exactly as it does with a paint.
+  const redraw = (line, grew) => {
+    const rows = rowsEl.querySelectorAll('.idx-row[data-txid]');
+    let hold = null;
+    for (const r of rows) {
+      const top = r.getBoundingClientRect().top;
+      if (top >= 0) { hold = { txid: r.dataset.txid, sats: r.dataset.sats, top }; break; }
+    }
+    rendered = Math.min(line.entries.length, Math.max(rendered + Math.max(0, grew), PAGE));
+    rowsEl.replaceChildren();
+    group = groupState();
+    renderRows(rowsEl, line.entries.slice(line.entries.length - rendered), byTxid,
+               { state: group, marks });
+    if (!hold) return;
+    const back = rowsEl.querySelector(`[data-txid="${hold.txid}"][data-sats="${hold.sats}"]`);
+    if (back) window.scrollBy(0, back.getBoundingClientRect().top - hold.top);
+  };
   const scroll = async () => {
     if (busy || !alive()) return;
     busy = true;
     let line = await mergedCached(addrs);
-    if (!alive() || !line) { busy = false; return; }
-    if (line.entries.length <= rendered && !line.complete) line = await extendMerged(addrs) ?? line;
-    if (!alive()) { busy = false; return; }
-    const len = line.entries.length;
-    const take = Math.min(len - rendered, PAGE);
-    if (take > 0) {
-      renderRows(rowsEl, line.entries.slice(len - rendered - take, len - rendered), byTxid,
-                 { state: group, bookmarks: marksOn(line) });
-      rendered += take;
+    // Nothing left to draw of what is banked: the pull reaches for more --
+    // the next few members' first word where any are still unasked, else
+    // one page deeper into the members whose banked history ran out. A
+    // member's answer interleaves entries anywhere in time, so that case
+    // redraws the window rather than appending to it.
+    let regathered = 0;
+    if ((!line || line.entries.length <= rendered) && queue.length) {
+      const before = line?.entries.length ?? 0;
+      const batch = queue.splice(0, GATHER);
+      foot.innerHTML = `${SPINNER_HTML}gathering ${n(batch.length, 'passage', 'passages')}…`;
+      const answered = await pooled(batch, 4, async (a) => {
+        const [l, h] = await Promise.all([lineOnce(a).catch(() => null), heldFresh(a).catch(() => null)]);
+        if (h) helds.set(a, h);
+        return !!l;
+      });
+      if (!alive()) { busy = false; return; }
+      // A batch the chain answered nothing of goes back on the queue,
+      // behind a retry the reader pulls by hand rather than the observer
+      // hammering the mirrors.
+      if (!answered.some(Boolean)) {
+        queue.unshift(...batch);
+        foot.replaceChildren(`— the chain could not be reached (${chainFailureText()}) · `);
+        const again = document.createElement('a');
+        again.href = '#';
+        again.textContent = 'retry';
+        again.addEventListener('click', (ev) => { ev.preventDefault(); if (alive()) scroll(); });
+        foot.append(again);
+        busy = false;
+        return;
+      }
+      line = await mergedCached(addrs) ?? line;
+      if (helds.size === addrs.length) byTxid = heldView(line, mergeHeld([...helds.values()])) ?? byTxid;
+      regathered = (line?.entries.length ?? 0) - before;
+    } else if (line && line.entries.length <= rendered && !line.complete) {
+      foot.innerHTML = `${SPINNER_HTML}reaching deeper…`;   // settled below either way
+      line = await extendMerged(addrs) ?? line;
     }
-    note.textContent = stateText(line);   // the reach grows as the reader reads
+    if (!alive() || !line) { busy = false; return; }
+    const len = line.entries.length;
+    if (regathered) {
+      redraw(line, regathered);
+    } else {
+      const take = Math.min(len - rendered, PAGE);
+      if (take > 0) {
+        renderRows(rowsEl, line.entries.slice(len - rendered - take, len - rendered), byTxid,
+                   { state: group, marks });
+        rendered += take;
+      }
+    }
+    // The note counts passages while any are ungathered -- the account
+    // cannot say how far it reaches until it knows what it is reaching
+    // through -- and reverts to the record's own reach once they are in.
+    note.textContent = queue.length
+      ? `${(addrs.length - queue.length).toLocaleString('en-US')} of ${n(addrs.length, 'passage', 'passages')} gathered — scrolling gathers the rest`
+      : stateText(line);
     setUnsynced(line);
     showTotals(line);
-    foot.textContent = line.complete && rendered >= len ? '— the beginning of the record' : '…';
-    // The fetch ahead: keep a page banked beyond what's drawn.
-    if (!line.complete && len - rendered < PAGE) extendMerged(addrs);
+    foot.textContent = !queue.length && line.complete && rendered >= len
+      ? '— the beginning of the record' : '…';
+    // The fetch ahead: keep a page banked beyond what's drawn -- but only
+    // once every member is in, so reading ahead never outruns gathering.
+    if (!queue.length && !line.complete && len - rendered < PAGE) extendMerged(addrs);
     busy = false;
     // The landing keeps drawing until its row exists (banked, so bounded).
     if (tryLand() && rendered < len) { queueMicrotask(scroll); return; }
@@ -1347,8 +1483,11 @@ const runRecord = async (alive) => {
     io.observe(foot);
     scroll();
   };
-  if (cached) paint(cached, null);
-  else { el.replaceChildren(); lineNote(el, '…'); }
+  // Always painted, even with nothing banked: the scroll's own sentinel is
+  // what gathers, so the record's furniture has to be there for it to hang
+  // from -- an empty account is a table waiting to be read into, not a
+  // page waiting on a fetch.
+  paint(cached ?? { entries: [], txCount: 0, walked: 0, complete: false, balance: null }, null);
   // Every member's sync ticks reach this one note, summed: the account is
   // whole only when all of them are.
   const latest = new Map(addrs.map((a) => [a, { g: 0, t: 0 }]));
@@ -1358,14 +1497,24 @@ const runRecord = async (alive) => {
       latest.set(a, { g: gathered, t: total });
       const g = [...latest.values()].reduce((x, v) => x + v.g, 0);
       const t = [...latest.values()].reduce((x, v) => x + v.t, 0);
-      if (t) note.textContent = `still syncing — ${g.toLocaleString('en-US')} of ${t.toLocaleString('en-US')} transactions gathered`;
+      // …but not while members are still ungathered: what the account is
+      // reaching THROUGH is the truer count then, and the scroll's own
+      // note says it.
+      if (t && !queue.length) note.textContent = `still syncing — ${g.toLocaleString('en-US')} of ${t.toLocaleString('en-US')} transactions gathered`;
     });
   }
-  const [lines, held] = await Promise.all([Promise.all(addrs.map(lineOnce)), heldP]);
-  if (!alive()) return;
-  const data = mergeLines(lines, addrs);
-  if (data) paint(data, held);
-  else if (!cached) unreachable(alive, () => runRecord(alive));
+  // An account already banked whole opens whole, and is then re-asked at
+  // walking pace so new arrivals and the held marks catch up. One not yet
+  // whole is left to the scroll: the first pull gathers the first batch,
+  // and nothing is asked before it.
+  if (cached?.complete) {
+    queue.length = 0;
+    const [lines, hs] = await Promise.all([pooled(addrs, 4, lineOnce), pooled(addrs, 4, heldFresh)]);
+    if (!alive()) return;
+    const data = mergeLines(lines, addrs);
+    if (data) paint(data, mergeHeld(hs));
+    else unreachable(alive, () => runRecord(alive));
+  }
 };
 
 // ── The merge: many members, one account ─────────────────────────────────
@@ -1646,47 +1795,31 @@ const openLedgerLeaf = (alive) => {
   el.replaceChildren();
   // A ledger is a set of scripts; each is a passage, and each passage's
   // appearances are the references beneath it.
-  lineNote(el, `${n(cur().addresses.length, 'passage', 'passages')} — ▾ opens the record`);
+  lineNote(el, `${n(cur().addresses.length, 'passage', 'passages')} — ▾ opens the record${cur().addresses.length > 1 ? ', read whole' : ''}`);
 
-  // The balance, four ways (the shelf's discipline, one ledger at a time):
-  // an answer under ten minutes old serves from memory in full ink; past
-  // that a live probe refreshes it; a probe that fails everywhere falls to
-  // the last-known figure (the quiet pending style); with nothing ever
-  // known, "unreachable" retrying in place when tapped. A sum shows only
-  // when every member answered -- a partial sum would read as the whole.
-  const stateOf = async (ask) => {
-    const states = [];
-    for (const a of cur().addresses) {
-      const s = ask ? await addressState(a) : lastKnownState(a);
-      if (!s) return null;
-      states.push(s);
-    }
-    return { balance: states.reduce((s2, st) => s2 + st.balance, 0),
-             stale: states.some((st) => st.stale) || undefined };
-  };
+  // The balance, from the bank alone: the title leaf asks the chain for
+  // nothing. It used to probe every member, and a many-vault ledger probed
+  // one by one is a throttling the mirrors answer with refusals -- while
+  // the figure a probe would fetch lives one leaf down anyway, where the
+  // record gathers and reconciles at the scroll's pace. So the title shows
+  // the last figure this copy of the book has proved: the members'
+  // last-known chain states, or failing that their banked lines, in the
+  // quiet last-known style. A sum shows only when every member is known --
+  // a partial sum would read as the whole -- and a ledger never yet
+  // gathered simply shows none until the descent gathers it.
   const probe = async () => {
-    balanceEl.textContent = '…';
+    balanceEl.textContent = '';
     balanceEl.className = 'anth-balance pending';
     balanceEl.onclick = null;
+    const states = cur().addresses.map((a) => lastKnownState(a));
+    const known = states.every(Boolean)
+      ? states.reduce((s2, st) => s2 + st.balance, 0) : null;
+    if (known != null) { balanceEl.textContent = formatBalanceBtc(known); return; }
     const lines = await Promise.all(cur().addresses.map((a) => cachedLine(a)));
     if (!alive()) return;
     const banked = lines.every((c) => c?.balance != null)
       ? lines.reduce((s2, c) => s2 + c.balance, 0) : null;
     if (banked != null) balanceEl.textContent = formatBalanceBtc(banked);
-    const state = await stateOf(true);
-    if (!alive()) return;
-    if (state && !state.stale) {
-      balanceEl.textContent = formatBalanceBtc(state.balance);
-      balanceEl.className = 'anth-balance';
-    } else if (state) {
-      balanceEl.textContent = formatBalanceBtc(state.balance);   // last known
-    } else if (banked != null) {
-      balanceEl.textContent = formatBalanceBtc(banked);          // as of its last sync
-    } else {
-      balanceEl.textContent = `${chainFailureText()} — retry`;
-      balanceEl.classList.add('retry');
-      balanceEl.onclick = () => { if (alive()) probe(); };
-    }
   };
   probe();
 };
@@ -1811,7 +1944,7 @@ const openEntryLeaf = async (alive) => {
   const stampUrl = (s) => {
     try {
       history.replaceState(null, '',
-        `${location.pathname}?address=${cur().addresses.join(',')}&ref=${latinRef(e.height, s, e.out ?? null)}`);
+        `${location.pathname}?address=${urlAddress()}&ref=${latinRef(e.height, s, e.out ?? null)}`);
     } catch (_) { /* unavailable */ }
   };
   stampUrl(null);
