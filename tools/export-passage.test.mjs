@@ -128,12 +128,25 @@ test('the filename outlives print(), and one path prepares every leaf', () => {
   // One preparation, so the mark and a plain ⌘P produce the same leaf --
   // encoded prose, colophon, filename. Wiring only the mark leaves ⌘P
   // printing an empty colophon under the site's own name.
-  assert.match(page, /window\.addEventListener\('beforeprint'[\s\S]{0,120}prepareLeaf\(\)/,
-    'beforeprint prepares the leaf, whichever way the dialogue was opened');
+  // Both paths arm it. Relying on the event alone is what left an Android
+  // save picker offering the site's name: Chrome hands printing to the system
+  // print service there and never fires beforeprint, so nothing set the title.
+  assert.match(page, /window\.addEventListener\('beforeprint', armLeaf\)/,
+    'beforeprint arms the leaf, which is what catches a plain ⌘P');
+  assert.match(fn, /armLeaf\(\);\s*\n\s*window\.print\(\);/,
+    'and the mark arms it itself, so the name does not depend on that event firing');
   const prep = page.slice(page.indexOf('function prepareLeaf'), page.indexOf('// Chrome generates its print preview'));
   for (const step of ['lazyEncode.fillAll', 'fillPrintColophon()', 'document.title =']) {
     assert.ok(prep.includes(step), `prepareLeaf does not ${step}`);
   }
+  // …and three separate things can hand the name back, because on Android
+  // neither afterprint nor beforeprint arrives: returning to the page is the
+  // signal there, and a long timer is the last resort.
+  assert.match(page, /window\.addEventListener\('afterprint', restoreSiteTitle\)/);
+  assert.match(page, /visibilitychange[\s\S]{0,320}restoreSiteTitle\(\)/,
+    'coming back into view restores it where no print event ever fires');
+  assert.match(page, /setTimeout\(restoreSiteTitle, TITLE_RESTORE_BACKSTOP_MS\)/,
+    'and a backstop timer behind both');
   assert.match(prep, /if \(!state \|\| !\$\('page-export'\)\) return false;/,
     'and does nothing where there is no passage — a leaf, a tombstone');
 });

@@ -282,6 +282,20 @@ they are why this is a function rather than an `onclick="print()"`:
    call, where it was always right. A stub that reads it a tick later, as a
    real preview does, reproduces the fault on the first run. **[ran]**
 
+   The first fix was still wrong on a phone, and for a reason worth keeping
+   here: it moved the naming *entirely* onto `beforeprint`, and Chrome on
+   **Android** hands printing to the system print service without firing
+   that event at all — so nothing set the title and the save picker offered
+   the site's name again. An engine's print events are not a thing to depend
+   on. The mark arms the leaf itself now and `beforeprint` is a second path
+   rather than the only one, both idempotent; and the name is handed back by
+   whichever of three arrives — `afterprint`, the page coming back into view
+   (Android's system UI takes it away for the whole flow, and returning can
+   only happen after the print job was made, so it cannot restore early), or
+   a long backstop timer. Verified against stubs for all three shapes: the
+   desktop preview, Android with no print events, and Android with the page
+   hidden. **[ran]**
+
 A print-only colophon closes the leaf, because a page that leaves the book
 should say what it is: the citation, the transaction id, the URL it came
 from, and the terms — the prose is a translation of these bytes and is
