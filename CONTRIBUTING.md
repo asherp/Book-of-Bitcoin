@@ -69,7 +69,7 @@ Then point the entry at it in `web/notables.yaml`:
 
 ```yaml
 - title: Bitcoin Pizza Day
-  id: 57043
+  id: a1075db55d416d3ca199f55b6084e2115b9345e16c5cf302fc80e9d5fbf5d48d
   commentary:
     - file: bitcoin-pizza-day.md
     - file: bitcoin-pizza-day-your-name.md

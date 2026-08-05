@@ -55,9 +55,17 @@
      Update affordances on the title's line, one copy for every page. -->
 <script src="./btc-chrome.js"></script>
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,400&family=IBM+Plex+Mono:wght@400;500;600&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<!-- The faces every leaf sets text in, fetched alongside the stylesheet
+     that declares them rather than after it. crossorigin is required even
+     same-origin: a font request is CORS-anonymous, and a preload without it
+     matches nothing and downloads the file twice. The rest of web/fonts/ is
+     left to unicode-range, which asks for a face only where its glyphs
+     appear -- the sigla leaf pulls the whole alphabet, a chapter four files. -->
+<link rel="preload" as="font" type="font/woff2" href="./fonts/newsreader-latin.woff2" crossorigin>
+<link rel="preload" as="font" type="font/woff2" href="./fonts/plexmono-500-latin.woff2" crossorigin>
+<link rel="preload" as="font" type="font/woff2" href="./fonts/plexmono-600-latin.woff2" crossorigin>
+<link rel="preload" as="font" type="font/woff2" href="./fonts/sigla-dejavu.woff2" crossorigin>
+<link rel="stylesheet" href="./fonts/fonts.css">
 <link rel="stylesheet" href="./btc-chrome.css">
 <!-- How a list of chapters is set: headings, rows, and the pencil the unmined
      ones are written in. Shared with the appendix leaves. -->
@@ -73,7 +81,7 @@
    the pull-down-at-top turn back to the cover (the book page does the same
    for its own vertical turns). */
 html, body { margin: 0; overscroll-behavior-y: none; }
-body { min-height: 100vh; background: var(--page); color: var(--ink); font-family: 'Public Sans', system-ui, sans-serif; line-height: 1.55; }
+body { min-height: 100vh; background: var(--page); color: var(--ink); font-family: 'Public Sans','Book Sigla', system-ui, sans-serif; line-height: 1.55; }
 /* The entering half of the book page's ascend-above-the-volume turn: the
    contents slide down into place, matching the carousel's pace. */
 @media (prefers-reduced-motion: no-preference) {
@@ -101,15 +109,15 @@ body { min-height: 100vh; background: var(--page); color: var(--ink); font-famil
 a { color: var(--accent); text-decoration: none; }
 a:hover { text-decoration: underline; }
 
-.page-eyebrow { text-align:center; padding-bottom:26px; font:600 11px/1 'IBM Plex Mono',monospace; letter-spacing:.3em; text-transform:uppercase; color:var(--accent); }
+.page-eyebrow { text-align:center; padding-bottom:26px; font:600 11px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.3em; text-transform:uppercase; color:var(--accent); }
 
 /* A leaf's own head: which part of the book this is the contents of, and a
    line saying what that part spans. Set like the appendix leaves' heads,
    since a contents leaf and an appendix leaf are the same kind of page --
    one that names a span and stands above it. */
 .leaf-head { text-align:center; padding-bottom:26px; margin-bottom:8px; border-bottom:1px solid var(--rule); }
-.leaf-title { margin:0; font:400 34px/1.15 'Newsreader',serif; letter-spacing:.01em; color:var(--ink); }
-.leaf-sub { margin-top:10px; font:400 13px/1.5 'IBM Plex Mono',monospace; letter-spacing:.06em; color:var(--meta); }
+.leaf-title { margin:0; font:400 34px/1.15 'Newsreader','Book Sigla',serif; letter-spacing:.01em; color:var(--ink); }
+.leaf-sub { margin-top:10px; font:400 13px/1.5 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.06em; color:var(--meta); }
 
 /* The door down: from a volume's contents into the volume itself, from an
    appendix's contents into the appendix's own leaf. The same mark, and the
@@ -126,13 +134,13 @@ a:hover { text-decoration: underline; }
 .toc-turns { position:sticky; bottom:0; z-index:40; background:var(--page);
   display:flex; flex-wrap:wrap; gap:10px 26px; margin-top:44px;
   padding:18px 0 max(18px, env(safe-area-inset-bottom)); border-top:1px solid var(--rule);
-  font:600 10px/1.5 'IBM Plex Mono',monospace; letter-spacing:.14em; text-transform:uppercase; }
+  font:600 10px/1.5 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.14em; text-transform:uppercase; }
 .toc-turns a { color:var(--meta); }
 .toc-turns a:hover { color:var(--accent); }
 
 /* Said about a leaf rather than in it: a volume nothing has been kept from
    yet, or a queue that could not be read. */
-.toc-empty { padding:26px 2px; text-align:center; font:400 14px/1.7 'Newsreader',serif; color:var(--meta); }
+.toc-empty { padding:26px 2px; text-align:center; font:400 14px/1.7 'Newsreader','Book Sigla',serif; color:var(--meta); }
 </style>
 <body>
 <div class="wrap">

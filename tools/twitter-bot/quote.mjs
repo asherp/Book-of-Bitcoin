@@ -238,6 +238,67 @@ const escapeHtml = (s) => String(s)
 export const PAGE_WIDTH = 1200;
 export const PAGE_HEIGHT = 1500;
 
+// ─── the vendored fonts ─────────────────────────────────────────────────
+//
+// The page's fonts, carried in the repository (web/fonts/) rather than
+// fetched from any network or left to whatever the rendering machine has
+// installed. Newsreader and IBM Plex Mono are the faces the page names;
+// 'Book Sigla' is the fallback family behind them, five subset faces that
+// together own every siglum the manuscript writes (⧉ ∇ ⌖ ⓪ ₿ …) — each
+// face declaring exactly the codepoints it serves, so a mark renders the
+// same on every machine that sets a card, a page, or a PDF. Provenance,
+// the donor-font assignment, and how to regenerate the subsets when a new
+// siglum joins the alphabet: web/fonts/README.md.
+//
+// The unicode-range on the two text families is Google Fonts' own
+// declaration for the subset each file is; a range only gates loading —
+// a codepoint a range names but a file's cmap lacks still falls through
+// to the next family, which is how ₿ (declared in latin-ext's range,
+// absent from Newsreader's glyphs) reaches Book Sigla.
+
+export const FONT_FACES = [
+  { file: 'newsreader-latin.woff2', family: 'Newsreader', style: 'normal', weight: '200 800',
+    range: 'U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD' },
+  { file: 'newsreader-latin-ext.woff2', family: 'Newsreader', style: 'normal', weight: '200 800',
+    range: 'U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF' },
+  { file: 'newsreader-italic-latin.woff2', family: 'Newsreader', style: 'italic', weight: '200 800',
+    range: 'U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD' },
+  { file: 'newsreader-italic-latin-ext.woff2', family: 'Newsreader', style: 'italic', weight: '200 800',
+    range: 'U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF' },
+  { file: 'plexmono-400-latin.woff2', family: 'IBM Plex Mono', style: 'normal', weight: '400',
+    range: 'U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD' },
+  { file: 'plexmono-500-latin.woff2', family: 'IBM Plex Mono', style: 'normal', weight: '500',
+    range: 'U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD' },
+  { file: 'plexmono-600-latin.woff2', family: 'IBM Plex Mono', style: 'normal', weight: '600',
+    range: 'U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD' },
+  // The sigla, by donor: DejaVu Sans for the bulk of the alphabet, the
+  // enclosed-digit run ⓪①–⑯ whole from one face (a 3-of-5 multisig prints
+  // its circles matching), and one glyph each from the faces that cover
+  // what DejaVu lacks — ⌖ (HASH160), ⧉ (DUP), ₿.
+  { file: 'sigla-dejavu.woff2', family: 'Book Sigla', style: 'normal', weight: '400',
+    range: 'U+0394, U+03A3-03A4, U+03B2, U+03B7, U+03C1, U+03C3-03C4, U+1D5B, U+2016, U+2070, U+2074-2079, U+207D-207E, U+2080-208A, U+2113, U+2192, U+2195, U+21A4, U+21A6-21A7, U+21BB, U+21C4, U+21CA, U+21D7-21D8, U+21E1, U+21E4-21E5, U+2205, U+2207-2208, U+2213, U+2227-222A, U+223C, U+2250-2251, U+2260-2261, U+2264-2265, U+2282, U+2293-2294, U+2296, U+2298, U+22BB, U+22D4, U+22EF, U+2304, U+2318, U+2326, U+2502, U+25A0-25A1, U+25BC, U+25C6-25C7, U+25CB, U+25CF, U+2612, U+2713, U+27E8-27E9, U+290B, U+2940, U+29FA' },
+  { file: 'sigla-noto-symbols.woff2', family: 'Book Sigla', style: 'normal', weight: '400',
+    range: 'U+2460-246F, U+24EA' },
+  { file: 'sigla-noto-symbols-2.woff2', family: 'Book Sigla', style: 'normal', weight: '400',
+    range: 'U+2316' },
+  { file: 'sigla-noto-math.woff2', family: 'Book Sigla', style: 'normal', weight: '400',
+    range: 'U+29C9' },
+  { file: 'sigla-noto-sans.woff2', family: 'Book Sigla', style: 'normal', weight: '400',
+    range: 'U+20BF' },
+];
+
+// The @font-face block. `srcOf` maps a filename to the URL the consumer
+// serves it at: the static passage pages pass the site's /fonts/ path, the
+// card renderer inlines each file as a data: URI (a setContent page has no
+// origin to resolve a relative URL against), and the default suits any page
+// served from the site root.
+export function fontFacesCss(srcOf = (file) => `/fonts/${file}`) {
+  return FONT_FACES.map(({ file, family, style, weight, range }) =>
+    `@font-face { font-family: '${family}'; font-style: ${style}; font-weight: ${weight}; ` +
+    `font-display: swap; src: url(${srcOf(file)}) format('woff2'); unicode-range: ${range}; }`
+  ).join('\n') + '\n';
+}
+
 // The root size the page is set from. The renderer searches this range for
 // the largest size whose passage still fits the page; a passage too long
 // even at the floor keeps the floor and shows its opening — the top of the
@@ -380,7 +441,7 @@ export function passageCss({ fontSize = 19, width = PAGE_WIDTH, height = PAGE_HE
     ${fixed ? `width: ${width}px; height: ${height}px;` : 'width: 100%; max-width: 54rem; margin: 0 auto;'}
     font-size: ${fontSize}px;
     background: var(--page); color: var(--ink-soft);
-    font-family: 'Newsreader', Georgia, 'Liberation Serif', 'Times New Roman', serif;
+    font-family: 'Newsreader', 'Book Sigla', Georgia, 'Liberation Serif', 'Times New Roman', serif;
     font-variant-numeric: oldstyle-nums;
     display: flex; flex-direction: column;
     padding: 2.2em 2.6em 1.4em;
@@ -392,19 +453,19 @@ export function passageCss({ fontSize = 19, width = PAGE_WIDTH, height = PAGE_HE
 
   /* ── the section heading ── */
   .section-title {
-    text-align: center; margin: 0; font: 600 .68em/1 'IBM Plex Mono', ui-monospace, monospace;
+    text-align: center; margin: 0; font: 600 .68em/1 'IBM Plex Mono', 'Book Sigla', ui-monospace, monospace;
     letter-spacing: .28em; text-transform: uppercase; color: var(--accent);
   }
   /* A footnote letter is part of an address; the heading's uppercase
      transform must not raise it, or §1.a would read as §1.A. */
   .fn-mark { text-transform: none; }
   .section-event {
-    display: block; margin-top: .8em; font: 500 1.15em/1.3 'Newsreader', Georgia, serif;
+    display: block; margin-top: .8em; font: 500 1.15em/1.3 'Newsreader', 'Book Sigla', Georgia, serif;
     letter-spacing: 0; text-transform: none; color: var(--ink-soft);
   }
   .section-hash {
     margin: .9em auto 0; max-width: 46ch; text-align: center;
-    font: italic 400 .76em/1.55 'Newsreader', Georgia, serif; color: var(--dim);
+    font: italic 400 .76em/1.55 'Newsreader', 'Book Sigla', Georgia, serif; color: var(--dim);
   }
   .section-hash .cfx-gold { color: var(--accent); font-weight: 700; font-style: normal; }
   .rule { border: 0; border-top: 1px solid var(--rule); margin: 1.6em 0; }
@@ -422,7 +483,7 @@ export function passageCss({ fontSize = 19, width = PAGE_WIDTH, height = PAGE_HE
   }
   .tx-in-cite {
     grid-column: 1; text-align: right; padding-top: .34em;
-    font: 500 .63em/1.5 'IBM Plex Mono', ui-monospace, monospace;
+    font: 500 .63em/1.5 'IBM Plex Mono', 'Book Sigla', ui-monospace, monospace;
     color: var(--dim); word-break: break-word;
   }
   .tx-in-cite-group { grid-column: 1; }
@@ -431,7 +492,7 @@ export function passageCss({ fontSize = 19, width = PAGE_WIDTH, height = PAGE_HE
   .tx-witness-ref { color: var(--accent); font-size: .8em; vertical-align: .4em; margin-left: .2em; }
   .cite-amount {
     margin-top: .1em; text-align: right;
-    font: italic 400 1em/1.3 'Newsreader', Georgia, serif; color: var(--meta);
+    font: italic 400 1em/1.3 'Newsreader', 'Book Sigla', Georgia, serif; color: var(--meta);
     font-variant-numeric: tabular-nums;
   }
   .tx-in-script { grid-column: 2; min-width: 0; }
@@ -443,7 +504,7 @@ export function passageCss({ fontSize = 19, width = PAGE_WIDTH, height = PAGE_HE
   .tx-out-script { grid-column: 1; min-width: 0; }
   .tx-out-value { grid-column: 2; text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
   .tx-locktime { grid-column: left / -1; grid-row: 3; text-align: center; font-style: normal; }
-  .tx-note { font: italic 400 .71em/1.4 'Newsreader', Georgia, serif; color: var(--dim); }
+  .tx-note { font: italic 400 .71em/1.4 'Newsreader', 'Book Sigla', Georgia, serif; color: var(--dim); }
   .tx-seq { font-style: normal; color: var(--meta); }
   .tx-seq-rbf { color: var(--accent-2); }
   .tx-seq-block, .tx-seq-time { color: var(--dim); font-variant-numeric: normal; }
@@ -453,7 +514,7 @@ export function passageCss({ fontSize = 19, width = PAGE_WIDTH, height = PAGE_HE
      prose data pushes. */
   .op { color: var(--accent); font-style: normal; }
   .op-name {
-    font: 600 .62em/1 'IBM Plex Mono', ui-monospace, monospace; letter-spacing: .04em;
+    font: 600 .62em/1 'IBM Plex Mono', 'Book Sigla', ui-monospace, monospace; letter-spacing: .04em;
     color: var(--dim); font-style: normal; vertical-align: .14em; white-space: nowrap;
   }
   .op-push { color: var(--meta); }
@@ -463,7 +524,7 @@ export function passageCss({ fontSize = 19, width = PAGE_WIDTH, height = PAGE_HE
   .tx-ascii {
     margin: 0 0 .55em; padding: .12em 0 .12em 1.05em;
     border-left: 2px solid var(--accent); border-radius: 1px;
-    font: italic 400 .92em/1.6 'Newsreader', Georgia, serif; color: var(--ink-soft);
+    font: italic 400 .92em/1.6 'Newsreader', 'Book Sigla', Georgia, serif; color: var(--ink-soft);
   }
   .tab { display: inline-block; width: 4ch; }
   /* The illuminated initial opening the transaction's prose. */
@@ -475,7 +536,7 @@ export function passageCss({ fontSize = 19, width = PAGE_WIDTH, height = PAGE_HE
   /* ── witness footnotes ── */
   .footnotes { margin-top: 1.6em; padding-top: 1.2em; border-top: 1px solid var(--rule); }
   .footnote {
-    margin: 0 0 .6em; font: 400 .8em/1.6 'Newsreader', Georgia, serif; color: var(--dim);
+    margin: 0 0 .6em; font: 400 .8em/1.6 'Newsreader', 'Book Sigla', Georgia, serif; color: var(--dim);
     overflow-wrap: anywhere;
   }
   .footnote sup { color: var(--accent); margin-right: .3em; }
@@ -483,15 +544,15 @@ export function passageCss({ fontSize = 19, width = PAGE_WIDTH, height = PAGE_HE
   /* ── a chapter card's head (bitcoin-book.html's chapter leaf) ── */
   .chapter-head { text-align: center; justify-content: center; }
   .chapter-title {
-    font: 500 1.95em/1.2 'Newsreader', Georgia, serif; color: var(--ink);
+    font: 500 1.95em/1.2 'Newsreader', 'Book Sigla', Georgia, serif; color: var(--ink);
     margin: 0 0 1.15em; letter-spacing: -.01em;
   }
   .chapter-hash {
-    font: italic 400 .79em/1.5 'Newsreader', Georgia, serif; color: var(--dim);
+    font: italic 400 .79em/1.5 'Newsreader', 'Book Sigla', Georgia, serif; color: var(--dim);
     margin: 0 auto .85em; max-width: 46ch;
   }
   .chapter-hash .cfx-gold { color: var(--accent); font-weight: 700; font-style: normal; }
-  .chapter-head .cfx { display: block; font: 400 .76em/1.55 'Newsreader', Georgia, serif; color: var(--dim); }
+  .chapter-head .cfx { display: block; font: 400 .76em/1.55 'Newsreader', 'Book Sigla', Georgia, serif; color: var(--dim); }
   .chapter-head .cfx + .cfx { margin-top: .45em; }
   .fx-mark { color: var(--accent); font-weight: 700; font-style: normal; }
 
@@ -517,7 +578,7 @@ export function passageCss({ fontSize = 19, width = PAGE_WIDTH, height = PAGE_HE
   .colophon {
     flex: 0 0 auto; margin-top: 1.2em; padding-top: .9em; border-top: 1px solid var(--rule);
     display: flex; justify-content: space-between; align-items: baseline;
-    font: 400 .66em/1 'IBM Plex Mono', ui-monospace, monospace; color: var(--meta);
+    font: 400 .66em/1 'IBM Plex Mono', 'Book Sigla', ui-monospace, monospace; color: var(--meta);
     letter-spacing: .06em;
   }
   .colophon .cite { color: var(--accent); }
@@ -537,6 +598,10 @@ export function passageHtml({
   // Or one witness, as its lettered footnote.
   witnessMark = null, witnessHtml = '',
   fontSize = 19, width = PAGE_WIDTH, height = PAGE_HEIGHT, clipped = false,
+  // The @font-face block to set the page with — fontFacesCss(...) from the
+  // consumer that knows where its font files live. Empty sets the page from
+  // whatever the machine has, exactly as before the fonts were vendored.
+  fontsCss = '',
 }) {
   const host = String(site).replace(/^https?:\/\//, '');
   const flow = section
@@ -580,7 +645,7 @@ export function passageHtml({
 
   return `<!doctype html>
 <meta charset="utf-8">
-<style>${passageCss({ fontSize, width, height, fixed: true })}
+<style>${fontsCss}${passageCss({ fontSize, width, height, fixed: true })}
 </style>
 <body>
 <div class="page" id="page">

@@ -17,7 +17,7 @@
  */
 .commentary-measure {
   max-width: 46ch; margin: 0 auto;
-  font: 400 calc(15.5px * var(--scale-commentary, 1))/1.6 'Newsreader',serif;
+  font: 400 calc(15.5px * var(--scale-commentary, 1))/1.6 'Newsreader','Book Sigla',serif;
 }
 .commentary-entry { margin: 0 0 26px; }
 .commentary-entry:last-of-type { margin-bottom: 0; }
@@ -25,11 +25,11 @@
    name — a heading, deliberately not the passage's own title type: this names
    what is being commented on, it does not retitle the page. */
 .commentary-name {
-  margin: 0 0 10px; font: 600 calc(10px * var(--scale-commentary, 1))/1.5 'IBM Plex Mono',monospace;
+  margin: 0 0 10px; font: 600 calc(10px * var(--scale-commentary, 1))/1.5 'IBM Plex Mono','Book Sigla',monospace;
   letter-spacing: .18em; text-transform: uppercase; color: var(--accent);
 }
 .commentary-entry p {
-  margin: 0 0 .8em; font: 400 calc(15.5px * var(--scale-commentary, 1))/1.6 'Newsreader',serif;
+  margin: 0 0 .8em; font: 400 calc(15.5px * var(--scale-commentary, 1))/1.6 'Newsreader','Book Sigla',serif;
   color: var(--ink-soft); font-variant-numeric: oldstyle-nums;
 }
 .commentary-entry p:last-child { margin-bottom: 0; }
@@ -37,9 +37,9 @@
    annotation's failure is worth stating (the record on the page is unaffected),
    never worth a blank sheet. */
 .commentary-loading, .commentary-missing {
-  margin: 0; font: italic 400 calc(14px * var(--scale-commentary, 1))/1.6 'Newsreader',serif; color: var(--meta);
+  margin: 0; font: italic 400 calc(14px * var(--scale-commentary, 1))/1.6 'Newsreader','Book Sigla',serif; color: var(--meta);
 }
-.commentary-missing code { font: 400 calc(12px * var(--scale-commentary, 1))/1.5 'IBM Plex Mono',monospace; color: var(--dim); }
+.commentary-missing code { font: 400 calc(12px * var(--scale-commentary, 1))/1.5 'IBM Plex Mono','Book Sigla',monospace; color: var(--dim); }
 /* A contributed reading's byline. The name is the point of the whole layer —
    it is what lets a reader weigh the claim — so it sits in the accent, quiet
    but not hidden. */
@@ -49,7 +49,7 @@
 /* An inline citation in a reading — btc-markdown's autolink: write the
    reference in the sigil spelling and it is the link. Set in the mono the
    book keeps for references, quiet until hovered, never wrapped. */
-.commentary-entry a.md-cite { font: 600 calc(13px * var(--scale-commentary, 1))/1.4 'IBM Plex Mono',monospace;
+.commentary-entry a.md-cite { font: 600 calc(13px * var(--scale-commentary, 1))/1.4 'IBM Plex Mono','Book Sigla',monospace;
   color: var(--accent); text-decoration: none; border-bottom: 1px solid var(--rule); white-space: nowrap; }
 .commentary-entry a.md-cite:hover { border-bottom-color: var(--accent); }
 /* ── A reading at rest, in a leaf ──────────────────────────────────────────
@@ -67,7 +67,7 @@
    reader learns on a ledger's readings is the gesture that offers them the
    empty page: the + opens something about commentary, wherever it stands. */
 .leaf-commentary > summary, .contribute > summary {
-  cursor: pointer; font: 500 11px/1 'IBM Plex Mono',monospace; letter-spacing: .1em; text-transform: uppercase;
+  cursor: pointer; font: 500 11px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing: .1em; text-transform: uppercase;
   color: var(--dim); list-style: none; text-align: center;
 }
 .leaf-commentary > summary::-webkit-details-marker,
@@ -85,7 +85,7 @@
 .contribute { margin: 34px auto 0; max-width: 560px; padding: 0 22px 44px; text-align: left; }
 .contribute .contribute-body { margin: 16px 0 0; }
 .contribute-body p {
-  margin: 0; font: italic 400 calc(14px * var(--scale-commentary, 1))/1.6 'Newsreader',serif;
+  margin: 0; font: italic 400 calc(14px * var(--scale-commentary, 1))/1.6 'Newsreader','Book Sigla',serif;
   color: var(--meta);
 }
 /* The two doors and the guide, in the mono the book keeps for its own chrome:
@@ -93,7 +93,7 @@
 .contribute-links { display: flex; flex-wrap: wrap; gap: 6px 20px; }
 .contribute-links, .contribute-body p + p { margin-top: 14px; }
 .contribute-links a {
-  font: 500 11px/1.4 'IBM Plex Mono',monospace; letter-spacing: .06em;
+  font: 500 11px/1.4 'IBM Plex Mono','Book Sigla',monospace; letter-spacing: .06em;
   color: var(--accent); text-decoration: none; border-bottom: 1px solid var(--rule);
 }
 .contribute-links a:hover { border-bottom-color: var(--accent); }

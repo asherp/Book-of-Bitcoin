@@ -39,7 +39,7 @@
 // has into a page and a card.
 
 import { volumeBookChapter, toRoman, reference, footnoteMark, footnoteIndexOf } from '../web/btc-citation.js';
-import { passageCss, txFlowHtml, htmlToText } from './twitter-bot/quote.mjs';
+import { passageCss, fontFacesCss, txFlowHtml, htmlToText } from './twitter-bot/quote.mjs';
 
 // Cards are 1200x630 (1.91:1) — the shape the site's existing og:image
 // declares, and what a large-image card wants. The passage is fitted to it
@@ -167,7 +167,7 @@ export function witnessPageHtml({
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="${escapeHtml(cite)}${title ? ` — ${escapeHtml(title)}` : ''}">
 <meta name="twitter:image" content="${escapeHtml(card)}">
-<style>${passageCss({ fontSize: 19, fixed: false })}${WITNESS_CSS}
+<style>${fontFacesCss((f) => `${site}/fonts/${f}`)}${passageCss({ fontSize: 19, fixed: false })}${WITNESS_CSS}
 </style>
 </head>
 <body>
@@ -250,7 +250,7 @@ export function outputPageHtml({
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="${escapeHtml(cite)}${title ? ` — ${escapeHtml(title)}` : ''}">
 <meta name="twitter:image" content="${escapeHtml(card)}">
-<style>${passageCss({ fontSize: 19, fixed: false })}${OUTPUT_CSS}
+<style>${fontFacesCss((f) => `${site}/fonts/${f}`)}${passageCss({ fontSize: 19, fixed: false })}${OUTPUT_CSS}
 </style>
 </head>
 <body>
@@ -356,7 +356,7 @@ export function chapterPageHtml({
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="${escapeHtml(cite)}${title ? ` — ${escapeHtml(title)}` : ''}">
 <meta name="twitter:image" content="${escapeHtml(card)}">
-<style>${passageCss({ fontSize: 19, fixed: false })}${CHAPTER_CSS}
+<style>${fontFacesCss((f) => `${site}/fonts/${f}`)}${passageCss({ fontSize: 19, fixed: false })}${CHAPTER_CSS}
 </style>
 </head>
 <body>
@@ -395,17 +395,17 @@ export function chapterPageHtml({
 const CHAPTER_CSS = `
   .chapter-head { text-align: center; }
   .chapter-title {
-    font: 500 1.95em/1.2 'Newsreader', Georgia, serif; color: #e8e4da;
+    font: 500 1.95em/1.2 'Newsreader', 'Book Sigla', Georgia, serif; color: #e8e4da;
     margin: 0 0 1.15em; letter-spacing: -.01em;
   }
   .chapter-hash {
-    font: italic 400 .79em/1.5 'Newsreader', Georgia, serif; color: #8f8a7e;
+    font: italic 400 .79em/1.5 'Newsreader', 'Book Sigla', Georgia, serif; color: #8f8a7e;
     margin: 0 auto .85em; max-width: 46ch;
   }
   .chapter-hash .cfx-gold { color: #c9a25f; font-weight: 700; font-style: normal; }
   .chapter-frontispiece {
     margin: 0 auto; max-width: 46ch;
-    font: 400 .76em/1.55 'Newsreader', Georgia, serif; color: #8f8a7e;
+    font: 400 .76em/1.55 'Newsreader', 'Book Sigla', Georgia, serif; color: #8f8a7e;
   }
   .chapter-frontispiece .cfx { display: block; }
   .chapter-frontispiece .cfx + .cfx { margin-top: .45em; }
@@ -466,21 +466,21 @@ export function passagePageHtml({
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="${escapeHtml(cite)}${title ? ` — ${escapeHtml(title)}` : ''}">
 <meta name="twitter:image" content="${escapeHtml(card)}">
-<style>${passageCss({ fontSize: 19, fixed: false })}
+<style>${fontFacesCss((f) => `${site}/fonts/${f}`)}${passageCss({ fontSize: 19, fixed: false })}
   body { padding: 2rem 1rem 3rem; }
   .nav {
     max-width: 54rem; margin: 0 auto 1.5rem; display: flex; gap: 1.2em; flex-wrap: wrap;
-    font: 400 13px/1.5 'IBM Plex Mono', ui-monospace, monospace; letter-spacing: .04em;
+    font: 400 13px/1.5 'IBM Plex Mono', 'Book Sigla', ui-monospace, monospace; letter-spacing: .04em;
   }
   .nav a { color: #c9a25f; text-decoration: none; }
   .nav a:hover { text-decoration: underline; }
   .also {
     max-width: 54rem; margin: 1.6rem auto 0; padding-top: 1.2rem; border-top: 1px solid #232228;
-    font: 400 14px/1.7 'Newsreader', Georgia, serif; color: #8f8a7e;
+    font: 400 14px/1.7 'Newsreader', 'Book Sigla', Georgia, serif; color: #8f8a7e;
   }
   .also a { color: #c9a25f; text-decoration: none; }
   .also a:hover { text-decoration: underline; }
-  .also code { font: 400 12.5px/1.5 'IBM Plex Mono', ui-monospace, monospace; overflow-wrap: anywhere; }
+  .also code { font: 400 12.5px/1.5 'IBM Plex Mono', 'Book Sigla', ui-monospace, monospace; overflow-wrap: anywhere; }
   /* The page is read, not screenshotted, so its type may scale with the
      viewport the way the reading pages' does. */
   @media (max-width: 640px) { .page { font-size: 16px; padding: 1.4em 1.2em; } }
