@@ -91,6 +91,33 @@ compiled to WASM) is consumed as a published
   a page long enough to scroll is read to its edge first, and only the next
   press turns off it. The header steppers and the eyebrow crumbs go the same
   places for hands that would rather click
+- **Taking a leaf.** A section flies a **printer mark** at its title's left
+  corner — level with the bookmark ribbon at the right, in the same faded
+  gold an unkept ribbon offers, so the passage carries two marks: one asking
+  to keep the place, one to take it away on paper. It writes that passage to
+  a PDF: the whole
+  transaction and its footnotes, set as a page of the book. Nothing draws the
+  PDF; the page already typesets a transaction, its fonts are served from the
+  book's own origin, and an `@media print` block says what a leaf of paper
+  changes (the app's furniture goes, the palette turns to ink on paper), so
+  the browser's own print pipeline writes it. Prose deferred to the scroll is
+  encoded first, or a passage exported straight off a fresh open would print ⋯
+  where its pushes should be — the same holds for a plain ⌘P. A print-only
+  colophon closes the leaf with the citation, the transaction id, the address
+  it came from and the terms, since a page that leaves the book should say
+  what it is. The file is named by the passage's address in the spelling a
+  link carries, with the passage's name after it where it has one —
+  `v1b29c596s2 — Bitcoin Pizza Day`, the reader's own title if they have kept
+  this section, else the curated one. The address rather than the citation the
+  book prints, because §, β and ■ are not filename characters; and since a
+  bookmark title is free text somebody typed, it is sanitized to what a
+  filesystem will actually take. The mark is drawn rather than typed — no font the book carries
+  has a printer glyph, and a typed one would fall back to whatever the
+  reader's machine owns — so it is inline SVG on `currentColor`, built the way
+  the ribbon beside it is and sharing its host, which is what keeps the two
+  level without measuring anything. A leaf and a superseded draft rebuild that
+  title without a mark, which is how they come to have no offer: what goes on
+  paper is a transaction
 - **Keeping a place.** Everything the citation scheme addresses — a volume, a
   book, a chapter, a §section, an output — is a place the search box answers
   to, and so a place a reader can keep. Each carries a **bookmark ribbon at
@@ -448,6 +475,32 @@ compiled to WASM) is consumed as a published
   - the reader's key to all of it: the sigla leaf in `web/bitcoin-front.html`
     (the whole table, plus the reference-format diagram), and the notation
     toggle in `web/bitcoin-book.html`'s section-nav bar while reading
+- `web/fonts/`, `web/fonts/fonts.css` — the book's faces, vendored, and
+  **nothing fetched from a third party**: Newsreader, IBM Plex Mono and
+  Public Sans (all OFL) as the Google Fonts API serves them, and **Book
+  Sigla** — five subset faces that together own every siglum the manuscript
+  writes (⧉ ∇ ⌖ ⓪ ₿ …), standing second in every font stack. A page of this
+  book therefore sets identically on every machine, and sets *offline*,
+  which a page that phones a font host cannot: the whole alphabet rides in
+  the PWA's precache. It is also the plainer reading of what the book
+  argues — a reader of a chain that asks no one's permission should not
+  have to announce the reading to a third party to see the letters. One
+  `@font-face` table in `tools/twitter-bot/quote.mjs` serves all three
+  consumers — the card renderer inlines the files, the static citation
+  pages address `/fonts/`, the app loads `fonts.css` generated from the
+  same table. A first visit is cheaper than the directory looks:
+  `unicode-range` asks for a face only where its glyphs appear, so a
+  chapter fetches four files (~167 KB, preloaded so they start alongside
+  the stylesheet rather than after it) where the Google Fonts stylesheet
+  they replaced pulled six from two other origins — and the sigla leaf,
+  which prints the alphabet at rest, is the one page that loads all of it.
+  `tools/fonts.test.mjs` fails if the table and the stylesheet drift, if a
+  face is missing from the service worker's shell, if a preload loses the
+  `crossorigin` that keeps it from double-fetching, or if any page reaches
+  for a font host again; the renderer's own suite fails if a new siglum
+  enters the alphabet that no vendored face declares. Provenance,
+  licenses, measurements, and regeneration:
+  [`web/fonts/README.md`](web/fonts/README.md)
 - `web/glossia-msg.js` — the encoding pipeline over the Glossia WASM engine
 - `web/glossia.js`, `web/glossia_bg.wasm` — **build artifacts** (gitignored),
   produced by `build_web.sh` from the published glossia crate

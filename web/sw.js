@@ -13,11 +13,11 @@
  *   - Cross-origin requests (block explorers, fonts) are left untouched — the SW
  *     never intercepts them.
  *
- * Bump CACHE when the shell list changes or you want to force-evict old caches.
+ * The cache name follows the shell list on its own (see CACHE, below SHELL);
+ * bump EPOCH only to force-evict when the list itself has not changed.
  * Everything here is scoped to the directory sw.js is served from, so it works
  * unchanged at the site root and under a per-PR preview subpath.
  */
-const CACHE = 'bitcoin-book-shell-v37';
 
 // App shell, relative to the SW scope. glossia.js / glossia_bg.wasm are
 // gitignored build artifacts — present after a build/deploy, possibly absent in
@@ -44,6 +44,7 @@ const SHELL = [
   './btc-templates.js',
   './btc-key-filter.js',
   './btc-commentary.js',
+  './btc-contribute.js',
   './btc-notables.js',
   './btc-yaml.js',
   './btc-markdown.js',
@@ -74,6 +75,23 @@ const SHELL = [
   './icons/beta-icon-180.png',
   './icons/beta-icon-192.png',
   './icons/beta-icon-512.png',
+  // The vendored fonts (web/fonts/README.md) — the pages name no third
+  // party, so the shell carries the faces or the reader gets the fallbacks.
+  './fonts/fonts.css',
+  './fonts/newsreader-latin.woff2',
+  './fonts/newsreader-latin-ext.woff2',
+  './fonts/newsreader-italic-latin.woff2',
+  './fonts/newsreader-italic-latin-ext.woff2',
+  './fonts/plexmono-400-latin.woff2',
+  './fonts/plexmono-500-latin.woff2',
+  './fonts/plexmono-600-latin.woff2',
+  './fonts/publicsans-latin.woff2',
+  './fonts/publicsans-latin-ext.woff2',
+  './fonts/sigla-dejavu.woff2',
+  './fonts/sigla-noto-symbols.woff2',
+  './fonts/sigla-noto-symbols-2.woff2',
+  './fonts/sigla-noto-math.woff2',
+  './fonts/sigla-noto-sans.woff2',
   './glossia.js',
   './glossia_bg.wasm',
   './glossia-msg.js',
@@ -81,6 +99,44 @@ const SHELL = [
   './passages/seed.json',   // deploy artifact like the WASM: absent in a bare checkout, tolerated
   './version.json',         // deploy artifact: the CalVer release stamp, absent in a bare checkout
 ];
+
+// ── The shell's own name ───────────────────────────────────────────────────
+//
+// A cache name has to change when the list of things cached changes, and this
+// one used to be a counter every contributor was asked to bump by hand. That
+// is a trap in a repository with several branches in flight at once: two of
+// them bump v36 to v37, git sees the SAME edit on both sides and merges it
+// without a conflict, and the surviving v37 names a shell list that neither
+// branch wrote. Silent, where every other collision at least announces itself.
+//
+// So the name carries a hash of the list instead. Two branches that each add a
+// file arrive at two different names without either knowing the other exists,
+// and nobody has to remember anything. EPOCH stays as the deliberate lever:
+// bump it to drop every reader's cache when SHELL itself has not changed.
+//
+// Nothing here is about a file's CONTENTS reaching a reader — that is what the
+// stale-while-revalidate fetch handler and refreshShell do, and they do it
+// without any name change at all. The name is about EVICTION: an entry that
+// leaves this list should stop being served, and a new name is what forgets it.
+//
+// Hashed over SHELL alone, not over what shellUrls() appends at runtime: the
+// name must be known when this file is parsed, and the commentary and proofs
+// it adds follow notables.yaml, which changes far more often than the shell
+// does and has no business evicting anybody's cache when it does.
+const EPOCH = 'v38';
+
+// FNV-1a, 32 bits: a few lines, no dependency, same answer in every engine
+// (Math.imul makes the 32-bit multiply exact, and >>> 0 keeps it unsigned).
+// A collision costs nothing that matters here — two different shell lists
+// hashing alike would only mean one reader's cache outliving a deploy that
+// should have dropped it, which is the state hand-bumping left us in anyway.
+const fnv1a = (s) => {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 0x01000193);
+  return (h >>> 0).toString(36);
+};
+
+const CACHE = `bitcoin-book-shell-${EPOCH}-${fnv1a(SHELL.join('\n'))}`;
 
 // The shell, plus the commentary files web/notables.yaml points at. The
 // editorial layer is authored as loose Markdown and referenced from that file,
