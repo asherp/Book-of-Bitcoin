@@ -1099,7 +1099,7 @@ export function renderScript(hex, collect, { eligible = false, nested = false, p
       // (p⁶⁵), so the datum's kind leads and its length rides after it; a bare
       // push keeps the superscript leading, before its prose.
       const dtMark = scriptDataMark(t.push, compact, prevOp, toks[i + 1]?.op);
-      parts.push(dtMark ? dtMark + mark : mark, collect(compact || t.push));
+      parts.push(dtMark ? dtMark + mark : mark, collect(compact || t.push, t.pushForm || 0));
     } else {
       pre = 'done';
       parts.push(collect(t.trunc));                           // malformed tail -- carry it as prose
@@ -1259,9 +1259,13 @@ export function renderWitness(items, encode) {
 export function composeTransactionFields(parsed, bestOf = 1, lazyData = null, encoder = null) {
   const payloadWords = [];
   const enc = encoder || encodeCanonical;
-  const collect = (hex) => {
+  // `form` is the push's opcode form (0 direct, 1/2/4 for OP_PUSHDATA1/2/4),
+  // forwarded so an encoder can treat a bulk payload differently from the
+  // apparatus around it -- the book defers the extended pushes an inscription
+  // body arrives in, and says the rest outright.
+  const collect = (hex, form = 0) => {
     if (!hex) return '';
-    const r = enc(hex, bookLang(), bestOf);   // the reader's saved book language
+    const r = enc(hex, bookLang(), bestOf, form);   // the reader's saved book language
     payloadWords.push(...r.payloadWords);
     return r.prose;
   };
