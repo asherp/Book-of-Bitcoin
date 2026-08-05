@@ -7,9 +7,9 @@
    tightens the masthead's bottom margin. */
 
 .masthead { display:flex; align-items:baseline; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:40px; }
-.masthead .title { font:600 13px/1 'IBM Plex Mono',monospace; letter-spacing:.22em; text-transform:uppercase; color:var(--ink); }
-.masthead .title .beta { color:var(--accent); text-transform:none; font-family:'Newsreader','Source Serif 4',Georgia,serif; font-weight:600; font-size:1.12em; }
-.masthead .home { margin-left:auto; font:500 12px/1 'IBM Plex Mono',monospace; letter-spacing:.04em; }
+.masthead .title { font:600 13px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.22em; text-transform:uppercase; color:var(--ink); }
+.masthead .title .beta { color:var(--accent); text-transform:none; font-family:'Newsreader','Book Sigla','Source Serif 4',Georgia,serif; font-weight:600; font-size:1.12em; }
+.masthead .home { margin-left:auto; font:500 12px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.04em; }
 
 /* Install-as-app affordance: hidden until the browser fires beforeinstallprompt
    (Chrome/Edge/Android), so it appears only when the app is actually
@@ -18,7 +18,7 @@
 .install-btn {
   display:none; margin-left:12px; vertical-align:baseline; background:transparent;
   border:1px solid var(--accent); color:var(--accent); border-radius:4px; padding:4px 10px;
-  cursor:pointer; font:600 11px/1 'IBM Plex Mono',monospace; letter-spacing:.08em; text-transform:uppercase;
+  cursor:pointer; font:600 11px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.08em; text-transform:uppercase;
   transition:background .15s ease, color .15s ease;
 }
 .install-btn.show { display:inline-block; }
@@ -32,7 +32,7 @@
   display:none; margin-left:12px; vertical-align:baseline;
   background:var(--accent); border:1px solid var(--accent); color:var(--btn-ink,#17140c);
   border-radius:4px; padding:4px 10px; cursor:pointer;
-  font:600 11px/1 'IBM Plex Mono',monospace; letter-spacing:.08em; text-transform:uppercase;
+  font:600 11px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.08em; text-transform:uppercase;
   transition:background .15s ease;
 }
 .update-btn.show { display:inline-block; }
