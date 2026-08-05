@@ -27,13 +27,14 @@ const STORES = {
   tx: 4000,           // txid -> raw hex
   heights: 8000,      // height -> block hash   (six confirmations deep or more)
   pages: 8000,        // height -> running tx count before it (six confirmations deep or more; btc-pages.js)
+  mined: 4000,        // height -> who mempool says mined it, and the coinbase signature it read that from (six deep or more; btc-mines.js)
 };
 
 let dbPromise = null;
 function db() {
   if (!dbPromise) dbPromise = new Promise((resolve) => {
     try {
-      const req = indexedDB.open(DB_NAME, 2);   // v2 added 'pages'
+      const req = indexedDB.open(DB_NAME, 3);   // v2 added 'pages'; v3 'mined'
       req.onupgradeneeded = () => {
         // Create whatever stores this version knows and the database doesn't --
         // a fresh install builds them all, an upgrade only the newcomers.
@@ -63,6 +64,49 @@ export async function storeGet(store, key) {
       req.onerror = () => resolve(null);
     } catch { resolve(null); }
   });
+}
+
+// Keep many values at once, in ONE transaction, and say when they have
+// landed. storePut below is right for the one-value-at-a-time case the
+// reading pages have -- a transaction each, pruned each time, and nobody
+// waiting. A caller banking a whole difficulty window (btc-mines.js: 2,016
+// blocks) would pay 2,016 transactions and 2,016 counts for that convenience,
+// and would lose whatever had not committed when the reader turned the leaf.
+// So: one transaction, one prune at the end, and a promise a caller may
+// await before it navigates. Resolves either way -- an archive that will not
+// write costs the next visit a fetch and nothing else.
+export function storePutMany(store, entries) {
+  return (async () => {
+    const d = await db();
+    if (!d || !entries.length) return;
+    try {
+      await new Promise((resolve) => {
+        const tx = d.transaction(store, 'readwrite');
+        const os = tx.objectStore(store);
+        const at = Date.now();
+        for (const [key, v] of entries) os.put({ at, v }, key);
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => resolve();
+        tx.onabort = () => resolve();
+      });
+      // One prune for the batch, rather than one per value.
+      const tx = d.transaction(store, 'readwrite');
+      const os = tx.objectStore(store);
+      const count = await new Promise((res) => {
+        const c = os.count();
+        c.onsuccess = () => res(c.result);
+        c.onerror = () => res(0);
+      });
+      let over = count - (STORES[store] || 1000);
+      if (over > 0) {
+        const cur = os.index('at').openCursor();
+        cur.onsuccess = () => {
+          const c = cur.result;
+          if (c && over-- > 0) { c.delete(); c.continue(); }
+        };
+      }
+    } catch { /* archive unavailable; the network still serves */ }
+  })();
 }
 
 // Keep a value. Fire-and-forget: the reader never waits on the archive, and

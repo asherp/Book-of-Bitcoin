@@ -386,7 +386,7 @@ function head(cls, label) { const d = document.createElement('div'); d.className
 function saying(text) { const d = document.createElement('div'); d.className = 'toc-empty'; d.textContent = text; return d; }
 
 const toc = $('toc');
-// The projected section (Appendix I, the mempool), rebuilt by loadProjected
+// The projected section (Appendix I's queue), rebuilt by loadProjected
 // and appended whenever that leaf is the one on screen.
 let projectedSection = null;
 // The Citations leaf's rows, built once the proofs have been read: each is
@@ -433,7 +433,7 @@ function leafSub(leaf) {
       + (n === 0 ? 'nothing kept yet' : count(n, 'entry', 'entries'));
   }
   const part = leaf.part;
-  if (part.kind === 'mempool') return 'Ahead of the chain tip · the queue, as far as it reaches';
+  if (part.kind === 'mining') return 'Ahead of the chain tip · the queue, as far as it reaches, and the mines that take from it';
   if (part.kind === 'consensus') return `The rules the chapters are written under · ${count(part.bips.length, 'fork', 'forks')}`;
   if (part.kind === 'inscriptions') return `Files in witnesses · ${count(part.entries.length, 'inscription', 'inscriptions')}`;
   if (part.kind === 'proofs') return `Works the chain attests · ${count(proofsCount ?? part.entries.length, 'work cited', 'works cited')}`;
@@ -471,7 +471,7 @@ function descent(leaf) {
 // place, a bookmark, a cold load -- opens the volume the reader was last
 // reading (the book notes it as it renders), and Volume I's leaf when there
 // is nothing to go on, that being where the book starts.
-const PART_ALIAS = { mempool: 'mempool', future: 'consensus', entries: 'consensus', consensus: 'consensus', inscriptions: 'inscriptions', ledgers: 'ledgers', proofs: 'proofs' };
+const PART_ALIAS = { mining: 'mining', mempool: 'mining', future: 'consensus', entries: 'consensus', consensus: 'consensus', inscriptions: 'inscriptions', ledgers: 'ledgers', proofs: 'proofs' };
 const params = new URLSearchParams(location.search);
 function openingIndex(list) {
   if (params.get('at') === 'last') return list.length - 1;
@@ -545,12 +545,13 @@ function renderVolume(volume) {
   }
 }
 
-// Appendix I: the mempool, built live from the queue (below). Appendix II:
+// Appendix I: the queue, built live (below) -- the mines it gathers beside
+// the queue are counted on the appendix's own leaf, not listed here. Appendix II:
 // chapters cited in full but marked □, the expected-chapter mark, since no
 // block has earned them an ■. Appendix III: the shelf of ledgers. Each part's
 // heading is the leaf's own head now, so nothing here prints one.
 function renderAppendix(part) {
-  if (part.kind === 'mempool') {
+  if (part.kind === 'mining') {
     if (projectedSection) toc.append(projectedSection);
     else toc.append(saying('The queue could not be read just now — no mirror answered. The contents simply end at the chain tip until one does.'));
     return;
@@ -1078,7 +1079,7 @@ async function loadProofs() {
   render();
 }
 
-// ── Appendix I: the mempool, read as far as it extends ────────────────────
+// ── Appendix I: the queue, read as far as it extends ──────────────────────
 // The queue itself is read and set by btc-mempool.js, shared with the
 // appendix's own page. Its heading is this leaf's own head, so it is built
 // with no lead of its own.

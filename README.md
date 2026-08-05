@@ -214,9 +214,14 @@ compiled to WASM) is consumed as a published
   them all — `partLabel` in `web/btc-notables.js` — so a part is called the
   same thing on every leaf that mentions it, and a family added to
   `appendix.yaml` is numbered, or not, in one place.
-  **Appendix I · The Mempool** — the chapters the queue is already forming,
-  first of them because the volumes close on the chain tip's row, so the turn
-  from the tip to the next provisional chapter stays one step down the page.
+  **Appendix I · Mining** — how a chapter comes to be written, from both
+  ends, and first of the parts because the volumes close on the chain tip's
+  row, so the turn from the tip to the next provisional chapter stays one
+  step down the page. Two leaves sit under it, side by side: **The Mempool**,
+  the queue a block is taken from, its subtitle carrying how deep that queue
+  is right now as mempool.space reports it; and **The Mines**, the hands that
+  take it — one leaf per pool, ordered by how much of the last difficulty
+  window each won, and beneath each mine the chapters it mined.
   **Appendix II · Consensus** — the soft forks, grouped under their BIPs with their
   recognized names (Taproot, Segregated Witness…): each fork's sub-head is
   the door to a title leaf of its own carrying its activation statistics —
@@ -247,12 +252,17 @@ compiled to WASM) is consumed as a published
   `?part=consensus`, `?part=proofs`, with `?part=future` kept as an alias for
   saved links): a title leaf saying what the part gathers and why
   that cannot be read in sequence, with what it gathers one level below.
-  Appendix I descends into the queue's **first chapter itself** — the block
-  a reader reaches by swiping forward off the chain tip — read in the book
-  like any other, marked □, and walked chapter by chapter from there; the
-  ascent from any of them lands back on this leaf, since a draft chapter
-  belongs to no volume or book of the body (the queue's own equivalent of a
-  book is still to be written). Appendix II lists its forks and descends
+  Appendix I descends into its own pair — **The Mempool** and, sideways of
+  it, **The Mines** (`?part=mining&at=mempool`, `&at=mines`). The Mempool
+  descends into the queue's **first chapter itself** — the block a reader
+  reaches by swiping forward off the chain tip — read in the book like any
+  other, marked □, and walked chapter by chapter from there; the ascent from
+  any of them lands back on that leaf, since a draft chapter belongs to no
+  volume or book of the body (the queue's own equivalent of a book is still
+  to be written). The Mines descends into the shelf of pools
+  (`&mine=<slug>`), turned through sideways in the order of the last
+  difficulty window, and a mine descends into the chapters it won
+  (`&mine=<slug>&at=blocks`), each row a door into the book. Appendix II lists its forks and descends
   into the first fork's own leaf (`?part=consensus&bip=341` names Taproot's):
   BIP number over recognized name, then the ballot itself, oldest block
   first — every block of the counted window, its version exactly as the
@@ -297,6 +307,23 @@ compiled to WASM) is consumed as a published
   mined one does, so it is listed by the same rules, in the pencil the ■ it
   has not earned is owed in. The stylesheet is shared with the appendix
   leaves so a chapter reads the same wherever it is set
+- `web/btc-mines.js` — the other half of Appendix I: who has been winning the
+  chapters. The last difficulty window — 2,016 blocks, one β and about a
+  fortnight — is counted block by block, each attributed to a pool, and the
+  pools ordered by how many they won. The window is **counted rather than
+  asked for**, for a reason worth knowing: mempool.space's
+  `/v1/mining/pools/<period>` does not validate the period, so `2w` answers
+  200 with the *all-time* distribution — byte for byte what `all` and even
+  `nonsense` return — and a page that asked for two weeks would print the
+  whole chain's history under a fortnight's heading. Counting it here also
+  makes the window the one the book already reads in. Which pool mined a
+  block is mempool.space's attribution, credited wherever a name is printed
+  and set beside the coinbase signature it is an inference from; every share
+  is printed with its own standard error, √(p(1−p)/N), because a share
+  published bare is the thing this appendix's commentary argues against. A
+  mined block never changes, so each one's record is banked in the archive
+  (`mined`, via `storePutMany`) and a later visit fetches only what is new —
+  a cold read is ~135 requests, a warm one is one
 - `web/bitcoin-ledger.html` — the Ledger: a compendium of every ledger
   (curated donation addresses, any the reader keeps, and ad-hoc
   `?address=a,b,…` queries) in one document, read the way the book is
