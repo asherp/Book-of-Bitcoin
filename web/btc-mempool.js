@@ -65,6 +65,21 @@ export async function chainTip(mirrors = MEMPOOL_MIRRORS) {
   return null;
 }
 
+// The fees waiting in the queue, in satoshis -- what the chapters not yet
+// written are carrying for whoever writes them. One call, and only the
+// figure: /mempool's own summary, whose total_fee is the sum over everything
+// held. Null where nowhere would answer, which prints as nothing rather than
+// as an empty queue.
+//
+// A count of what one node is holding at one moment is that node's claim
+// about its own queue and not a fact about any block that will ever exist,
+// so every surface that prints this names where it came from.
+export async function upcomingFees(mirrors = MEMPOOL_MIRRORS) {
+  const got = await anyMirror(mirrors, '/mempool');
+  const fees = Number(got?.data?.total_fee);
+  return Number.isFinite(fees) ? fees : null;
+}
+
 // One reading of the queue, or null when nowhere could answer -- in which
 // case the contents simply end at the tip, and the appendix's page says so.
 // Each answer is checked for the whole shape of a mempool reading, not merely

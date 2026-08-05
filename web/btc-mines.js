@@ -362,6 +362,45 @@ export function largestMines(read, floor = CONTENTS_FLOOR) {
   return { mines: big, rest: read.mines.length - big.length };
 }
 
+// ── What the whole network is doing ───────────────────────────────────────
+//
+// The one figure about mining that is not a share: how fast the whole network
+// is hashing. Nobody observes it. It is inferred from the difficulty and the
+// rate blocks are arriving, which is why this appendix's own commentary
+// singles it out -- a ratio of blocks won cancels the noise in that estimate,
+// and an absolute figure in EH/s inherits it on top of everything else. So
+// the leaf prints it as what it is: somebody's estimate, named.
+export async function networkHashrate(mirrors = MINES_MIRRORS) {
+  for (const base of mirrors) {
+    try {
+      const res = await fetch(`${base}/v1/mining/hashrate/3d`);
+      if (!res.ok) continue;
+      const d = await res.json();
+      const hs = Number(d?.currentHashrate);
+      if (Number.isFinite(hs) && hs > 0) return { hashrate: hs, difficulty: Number(d?.currentDifficulty) || null };
+    } catch { /* try the next mirror */ }
+  }
+  return null;
+}
+
+// A hash rate in the largest unit that leaves a figure worth reading: three
+// significant figures at the top of the scale, one decimal below a hundred.
+// Null in, null out -- a leaf prints nothing rather than a zero it did not
+// measure.
+export function formatHashrate(hs) {
+  const n = Number(hs);
+  if (!Number.isFinite(n) || n <= 0) return null;
+  const SCALE = [[1e21, 'ZH/s'], [1e18, 'EH/s'], [1e15, 'PH/s'], [1e12, 'TH/s'],
+    [1e9, 'GH/s'], [1e6, 'MH/s'], [1e3, 'kH/s']];
+  for (const [scale, label] of SCALE) {
+    if (n >= scale) {
+      const v = n / scale;
+      return `${v >= 100 ? Math.round(v).toLocaleString('en-US') : v.toFixed(1)} ${label}`;
+    }
+  }
+  return `${Math.round(n)} H/s`;
+}
+
 // A share as the shelf prints it: the figure and its own uncertainty, because
 // a point estimate published bare is the thing this appendix exists to argue
 // against. One decimal on both -- the error is rarely under a tenth of a

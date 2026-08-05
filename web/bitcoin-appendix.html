@@ -530,9 +530,10 @@ import { partLabel, partNumber } from './btc-notables.js';
 // asynchronously; this leaf IS one of its parts, so it waits for it.
 await loadNotables();
 const APPENDIX = appendix();
-import { chainTip, MEMPOOL_MIRRORS, readQueue, MVB } from './btc-mempool.js';
+import { chainTip, MEMPOOL_MIRRORS, readQueue, upcomingFees, MVB } from './btc-mempool.js';
 import {
   minedWindow, tallyMines, shareSay, sharePct, MINE_WINDOW, signatureOf,
+  networkHashrate, formatHashrate,
   UNATTRIBUTED as MINES_UNATTRIBUTED,
 } from './btc-mines.js';
 import { toRoman, volumeBookChapter, heightOf, expectedReference, footnoteMark } from './btc-citation.js';
@@ -895,7 +896,13 @@ if (!bip && !ins && !AT && blockLeaf == null && part.kind !== 'proofs') {
       body.innerHTML = commentaryHtml(items);
     });
     details.append(summary, body);
-    $('appx-note').after(details);
+    // Below the leaf's bottom rule, past the turns -- where a reading
+    // belongs. Raised above the doors it would sit between the leaf's title
+    // and what the leaf holds, which puts somebody's account of the part in
+    // front of the part itself. A fork's leaf keeps its reading at the foot
+    // for the same reason; this one has no sticky foot to use, so it takes
+    // the foot of the page.
+    $('appx-turns').after(details);
   }
 }
 
@@ -1116,9 +1123,10 @@ if (kind === 'inscriptions' && !ins) {
 // are read when the leaf opens, and both name whose reading they are.
 if (kind === 'mining' && AT === null) {
   const listEl = $('bip-list');
-  for (const [href, name, says] of [
-    [mempoolHref(), 'The Mempool', 'the queue a block is taken from'],
-    [minesHref(), 'The Mines', 'the hands that take it'],
+  const cite = {};
+  for (const [key, href, name] of [
+    ['fees', mempoolHref(), 'The Mempool'],
+    ['hashrate', minesHref(), 'The Mines'],
   ]) {
     const row = document.createElement('div');
     row.className = 'proof-row';
@@ -1127,9 +1135,17 @@ if (kind === 'mining' && AT === null) {
     const t = document.createElement('span');
     t.className = 'proof-name';
     t.textContent = name;
+    // Each door carries a figure rather than a description of itself: what
+    // the queue is holding for whoever takes it, and how fast the whole
+    // network is hashing. A leaf that described itself in the book's voice
+    // would be saying what the reading below already says with a name on
+    // it -- and these two numbers say what the leaves are FOR by being the
+    // thing each leaf is about. An ellipsis until they land, since neither
+    // is knowable without asking.
     const s = document.createElement('span');
     s.className = 'proof-cite';
-    s.textContent = says;
+    s.textContent = '…';
+    cite[key] = s;
     a.append(t, s);
     a.addEventListener('click', (ev) => {
       if (ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey || ev.button !== 0) return;
@@ -1140,6 +1156,27 @@ if (kind === 'mining' && AT === null) {
     listEl.append(row);
   }
   listEl.classList.remove('hidden');
+
+  // Both figures are somebody's claim, and both say whose. A figure that
+  // never lands leaves its row with the name alone, which is what the row
+  // was before either of them.
+  const settle = (el, text, why) => {
+    if (text == null) { el.textContent = ''; return; }
+    el.textContent = text;
+    el.title = why;
+  };
+  upcomingFees(['https://mempool.space/api']).then((sats) => {
+    settle(cite.fees, sats == null ? null : `${formatAmount(sats)} in upcoming fees`,
+      `${formatBtc(sats)} waiting in mempool.space's queue at this moment — that node's claim about what it is `
+      + 'holding, not a fact about any block that will ever exist');
+  }).catch(() => settle(cite.fees, null));
+  networkHashrate().then((got) => {
+    const said = got && formatHashrate(got.hashrate);
+    settle(cite.hashrate, said == null ? null : `${said} across the network`,
+      'mempool.space\'s estimate of the whole network\'s hash rate, inferred from the difficulty and the rate '
+      + 'blocks arrive — nobody observes this figure. The shares below are ratios of chapters won, which is why '
+      + 'they carry no part of this estimate\'s error.');
+  }).catch(() => settle(cite.hashrate, null));
 }
 
 // The queue's own leaf. It lists nothing -- listing the queue is the
