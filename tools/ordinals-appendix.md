@@ -350,14 +350,24 @@ content is merely the thing itself. `witnessAsset` reports which it used
 
 **Verification status, stated plainly.** The manifest format and the
 magic-number sniffing were read off real inscriptions. Tags 3, 5 and 7 were
-**not** — no live instance turned up to test against. The blocks scanned
-for this file carried tag 1 and nothing else: 95 envelopes in the tail of
-block 812628 (October 2023), plus ~800 transactions of a 2025 block that
-held no envelopes at all. So the encodings here follow ord's specification
-and are exercised byte by byte in `tools/inscriptions.test.mjs` against
-composed envelopes, not against the chain. The id encoding in particular —
-a reversed txid, then the index as a little-endian integer with trailing
-zeroes dropped — deserves a real example before anything leans on it.
+**not** — no live instance turned up to test against, and the search was
+not casual: 95 envelopes in the tail of block 812628 (October 2023); ~800
+transactions of a 2025 block that held no envelopes at all; 26 inscription
+pages walked on ordinals.com; and 30 recent reveals fetched and parsed with
+this reader, which found 28 envelopes carrying **tag 1 and nothing else**
+[verified 2026-08-05]. Tag 3 is rare on the wire in a way the specification
+does not prepare you for.
+
+The parent encoding is nonetheless **confirmed against ord's own
+specification**, not merely inferred from it. The Ordinal Theory Handbook
+states it as *"the 32-byte `TXID`, followed by the four-byte little-endian
+`INDEX`, with trailing zeroes omitted"*, and notes that *"the bytes of a
+bitcoin transaction ID are reversed in their text representation"* — which
+is exactly what `inscriptionIdFrom` does. The handbook's three worked
+examples (index 0, 255, 256) are pinned as literal test vectors in
+`tools/inscriptions.test.mjs`, so the encoding is checked against the
+convention's own arithmetic. What remains unchecked is only that some live
+inscription writes it that way in practice.
 
 ## What a reader keeps
 
@@ -397,6 +407,11 @@ reader. That is a small change if it is wanted.
   [convention], quoted as their claims.
 - Casey Rodarmor, the ord project and its handbook — the envelope
   grammar, inscription IDs, and ordinal theory's FIFO sat tracking
-  [convention, from the convention's own author].
+  [convention, from the convention's own author]. In particular
+  `docs.ordinals.com/inscriptions/provenance.html`, read 2026-08-05, for
+  the parent-tag encoding and its three worked examples.
+- ordinals.com's recent-inscriptions listing and reveal transactions,
+  read 2026-08-05 — the tag census above, parsed locally by
+  `web/btc-inscriptions.js` rather than by the site's own indexer.
 - BIPs 141 and 341 — the witness discount and the lifted script limits
   [rule]; already gathered in Appendix II.

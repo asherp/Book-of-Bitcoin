@@ -437,3 +437,16 @@ test("ord's own metadata outranks a name found inside the content", () => {
   assert.equal(asset.source, 'metadata');   // …and says so
   assert.deepEqual(asset.metadata, { name: 'Wren' });
 });
+
+test("the handbook's own parent vectors decode to the ids it names", () => {
+  // Ordinal Theory Handbook, "Provenance": the parent id is the 32-byte txid
+  // followed by the four-byte little-endian index with trailing zeroes
+  // omitted, and a txid's text form is its bytes reversed. These three are
+  // the handbook's worked examples, verbatim.
+  const id = '000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f';
+  const serialized = '1f1e1d1c1b1a191817161514131211100f0e0d0c0b0a09080706050403020100';
+  const b = (h) => Uint8Array.from(h.match(/../g).map((x) => parseInt(x, 16)));
+  assert.equal(inscriptionIdFrom(b(serialized)), `${id}i0`);
+  assert.equal(inscriptionIdFrom(b(serialized + 'ff')), `${id}i255`);
+  assert.equal(inscriptionIdFrom(b(serialized + '0001')), `${id}i256`);
+});
