@@ -322,22 +322,28 @@ mountLangMenu();  // …with the Language item, which any page can now set
 // the front matter is reachable only along the horizontal. The one vertical
 // gesture is the cover's: swiping up on the title leaf lifts the cover away
 // to the contents (leaveUp below).
-// Standard front-matter order, with the contents in its traditional place --
-// after the title and terms, and BEFORE the preface. CONTENTS is a
+// The front matter in reading order -- title, terms, preface, sigla -- and the
+// contents after all of it, where the run hands over to the book. CONTENTS is a
 // virtual leaf: stepping onto it leaves this page for bitcoin-contents.html.
+//
+// The contents used to sit between the terms and the preface, a book's
+// traditional place for it. It reads better at the end: the front matter is
+// then four leaves a reader turns through without interruption, and the
+// contents is the last thing before the volumes rather than a run spliced into
+// the middle of another one.
 import { OPCODE_SYMBOLS, OPCODE_NAMES, OPCODE_GROUPS } from './btc-sigla.js';
 import { NOTATION_HTML } from './btc-notation.js';
 import { renderMarkdown } from './btc-markdown.js';
 import './btc-fontscale.js';   // the reader's type size: the sigla leaf's key follows the book page's setting
 
 const CONTENTS = '__contents__';
-const LEAVES = ['leaf-title', 'leaf-terms', CONTENTS, 'leaf-preface', 'leaf-sigla'];
+const LEAVES = ['leaf-title', 'leaf-terms', 'leaf-preface', 'leaf-sigla', CONTENTS];
 const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const $ = (id) => document.getElementById(id);
 
 // ?leaf=preface (or any leaf's short name) opens directly on that leaf; the
-// contents page uses it to land its turn-back on the preface, the leaf that
-// adjoins it.
+// contents page uses it to land its turn-back on the sigla, the leaf that
+// now adjoins it.
 const wanted = new URLSearchParams(location.search).get('leaf');
 let at = Math.max(0, LEAVES.findIndex((id) => id === 'leaf-' + (wanted || 'title')));
 
@@ -383,18 +389,13 @@ function leaveUp() {
 const step = (dir) => {
   const next = at + dir;
   if (next < 0) return;
-  if (next >= LEAVES.length) {
-    leave('./bitcoin-book.html?block=0&page=volume', 1, 'glossia-book-entrance');
-    return;
-  }
+  if (next >= LEAVES.length) return;   // the contents closes the run; it turns on into the book
   if (LEAVES[next] === CONTENTS) {
-    // The contents is a run of leaves -- one per volume, one per appendix --
-    // so stepping onto it lands at the end the reader is arriving from:
-    // forward off the terms onto the leaf that opens the run, backward off
-    // the preface onto whichever closes it. Which leaves those are is the
-    // contents' business; this page names the ends and not the leaves.
-    leave(dir > 0 ? './bitcoin-contents.html?at=top' : './bitcoin-contents.html?at=last',
-          dir, 'glossia-toc-entrance', dir > 0 ? 'fwd' : 'back');
+    // The contents closes this run, so it is only ever stepped onto forward,
+    // off the sigla, and lands on the leaf that opens it -- Volume I. Which
+    // leaf that is stays the contents' business; this page names the end and
+    // not the leaf.
+    leave('./bitcoin-contents.html?at=top', dir, 'glossia-toc-entrance', 'fwd');
     return;
   }
   if (REDUCED) { show(next); return; }
