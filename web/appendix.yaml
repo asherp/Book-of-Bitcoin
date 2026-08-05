@@ -7,13 +7,17 @@
 # CONTENTS is what belongs to the book but not to its reading order — reading
 # order being the order blocks were mined.
 #
-# Four parts, in three families, rendered in this order. The family sets the
-# heading: an APPENDIX holds the book's own matter out of reading order, and is
-# numbered among appendices; an INDEX points into the text, many places per
-# entry, and is titled "Index of …"; CITATIONS points out of the text, at works
-# the book does not contain, and stands last unnumbered -- a reference list is
-# where a book ends. The family follows from the kind (btc-notables.js), so a
-# part is filed by what it is rather than by where it sits:
+# Five parts, in three families, rendered in this order. The family sets the
+# heading: an APPENDIX holds the book's own matter out of reading order, and
+# wears the numeral of its place in the run; an INDEX points into the text,
+# many places per entry, and is titled "Index of …"; CITATIONS points out of
+# the text, at works the book does not contain, and stands last unnumbered --
+# a reference list is where a book ends. An index or the register still
+# OCCUPIES its place in the run without printing a numeral, the way an
+# unnumbered plate still takes a leaf, so a part's numeral says where it
+# falls among the whole back matter rather than among its own kind. The
+# family follows from the kind (btc-notables.js), so a part is filed by what
+# it is rather than by where it sits:
 #
 #   I   The Mempool — the chapters the queue is already forming, which is why
 #       it comes first: it opens where the volumes close, so the turn from the
@@ -43,6 +47,17 @@
 #       leaves, which is why this part lists ledgers here and explains itself
 #       there. The contents and the index are inverses; this is where the
 #       contents points at the other one.
+#   IV  Inscriptions — files written into witnesses and read back out by
+#       software that agrees where to look. The book's own matter out of
+#       reading order: each entry is a witness footnote the volumes already
+#       hold (cited §n.a, like any witness place), gathered here because the
+#       inscriptions are one story told in scattered chapters. An entry names
+#       its place AND its `reveal:` — the transaction whose witness carries
+#       the envelope — and the part's leaves fetch that witness and read the
+#       envelope out of its bytes (btc-inscriptions.js), so what the leaf
+#       shows is the chain's, and everything past the bytes (the numbering,
+#       the collections, where an inscription "now sits") stays commentary,
+#       credited. Research in tools/ordinals-appendix.md.
 #   Citations — works cited: documents outside this text whose existence
 #       the chain attests. Every other reference in this book points inward,
 #       at a chapter the book contains; these point the other way, at something
@@ -55,7 +70,8 @@
 #       The entries below ship with the app; a reader's own proofs, dropped on
 #       the appendix's leaf, are kept beside them the way bookmarks are.
 #
-# A part's `kind` says who fills it: `consensus` is listed here, `mempool` and
+# A part's `kind` says who fills it: `consensus` and `inscriptions` are listed
+# here, `mempool` and
 # `ledgers` are gathered by the page, and `proofs` is listed here too but names
 # files rather than places — each entry a `proof:` (an .ots file in proofs/), the
 # `subject:` it stamps, if the file itself is small enough to ship, and a
@@ -242,17 +258,70 @@
     # The forks the chain declined are part of the rules' story too: each is
     # kept with its outcome, and a fork that left no chapter has none to cite
     # -- the empty record is the record.
+    # XT's yes is read as a minimum version rather than a bit: no single bit
+    # separates 0x20000007 from the ordinary versions of its era (v3 carries
+    # bits 0-1, v4 carries bit 2), and within a window closed in 2015 nothing
+    # but an XT block clears the minimum. The anchor is the era's fullest
+    # thousand blocks, found by reading every version from 361,000 (mid-June
+    # 2015, before BIP101 existed) through the era's fade in February 2016:
+    # thirty-nine casts in all, first at 370,434, densest at eight in the
+    # window closing 372,315 -- an autumn window matched that, and nothing
+    # ever beat it.
     - bip: '101'
       name: Bigger Blocks
       status: failed
-      note: The first serious attempt to move the block size by miner vote — eight-megabyte blocks, doubling on a schedule — carried by Bitcoin XT, a whole competing client, because the change could not get into Bitcoin Core. The vote never came near its threshold, the client faded, and the question it asked was finally settled elsewhere, years later and the other way. No chapter carries its name; the chain declined to write one.
+      version: '0x20000007'
+      ballot: '372315'
+      window: 1000
+      note: The first serious attempt to move the block size by miner vote — eight-megabyte blocks, doubling on a schedule — carried by Bitcoin XT, a whole competing client, because the change could not get into Bitcoin Core. Its yes was version 0x20000007, bits 0, 1 and 2 over the version-bits base, needing 750 of the 1,000 preceding. The vote never came near it — thirty-nine ballots were ever cast, XT's famous surge being nodes rather than blocks — and the window below is the fullest thousand blocks the chain ever held, eight signals two weeks after the client shipped. The near-empty table is the record, and the stats are read off it, not the other way round; the question the fork asked was finally settled elsewhere, years later and the other way.
       stats:
         - label: mechanism
           value: 750 of the last 1,000 blocks, by block version — carried by the Bitcoin XT client
+        - label: signal
+          value: version 0x20000007 — bits 0, 1 and 2 set over the version-bits base
         - label: proposed
           value: June 2015, by Gavin Andresen
+        - label: peak
+          value: 8 of the 1,000 blocks to 372,315 — 31 August 2015, two weeks after the client shipped; an autumn window matched it, and nothing ever beat it
         - label: outcome
           value: withdrawn — signaling never came near the threshold, and the client faded
+      entries:
+        - title: First signaling block
+          id: '370434'
+          note: The first block to fly 0x20000007 — 18 August 2015, three days after Bitcoin XT shipped. The first ballot cast in the size war, and nearly the whole of XT's record on the chain.
+        - title: High-water mark
+          id: '372315'
+          note: The close of the era's fullest window — 8 of its 1,000 chapters signaled, 31 August 2015, against the 750 the rule needed. An autumn window matched it; nothing ever beat it.
+    # Classic's bit, 28, sits at the top of the range version rolling later
+    # claimed for nonce entropy (BIP320, bits 13-28) -- so its ballot must
+    # anchor in 2016, when the bit still spoke: a closed window, never a live
+    # count at the tip, where rolled bits would read as signals. The anchor is
+    # the era's high-water mark, found by reading the era's versions whole:
+    # first 0x30000000 at 398,364, best 1,000-block window closing at 404,843
+    # with 70 signals, and no later stretch came near it.
+    - bip: '109'
+      name: Two-Megabyte Blocks
+      status: failed
+      bit: 28
+      ballot: '404843'
+      window: 1000
+      note: The second attempt to move the block size by miner vote, and the moderated one — two megabytes flat, where XT had asked for eight and doubling — carried by Bitcoin Classic, a client raised for the purpose within weeks of XT's fade. Its yes was a true version bit, 0x10000000 laid over the version word so a signaling chapter opened 0x30000000, needing 750 of a rolling 1,000. For a few weeks in the spring of 2016 Classic's node count passed Core's, but nodes are not blocks: the window below is the ballot at its high-water mark — seventy signals of the thousand, 29 March 2016 — and the count never rose again. The client dropped the fixed limit the next January for Bitcoin Unlimited's emergent-consensus banner, and the project closed in November 2017 commending its readers to Bitcoin Cash.
+      stats:
+        - label: mechanism
+          value: 750 of the last 1,000 blocks with bit 28 set (version 0x30000000), then a 28-day grace — carried by the Bitcoin Classic client
+        - label: proposed
+          value: January 2016, by Gavin Andresen — released that February, weeks after XT faded
+        - label: peak
+          value: 70 of the 1,000 blocks to 404,843 — 7%, on 29 March 2016, against a 75% threshold; the window below is the ballot at its high-water mark
+        - label: outcome
+          value: withdrawn — Classic dropped the fixed limit in January 2017 for an emergent-consensus size, and shut down that November, pointing at Bitcoin Cash
+      entries:
+        - title: First signaling block
+          id: '398364'
+          note: The first block to open 0x30000000 — 14 February 2016; a ballot cast is part of the record whatever the count turns out to be.
+        - title: High-water mark
+          id: '404843'
+          note: The close of the era's best window — 70 of its 1,000 chapters signaled, 29 March 2016, against the 750 the rule needed. The count never rose again.
     - bip: '68 · 112 · 113'
       name: Relative Timelocks
       status: active
@@ -292,7 +361,7 @@
       coinbase: /EB
       ballot: '478558'
       window: 2016
-      note: Not a BIP but a client, and the big-block banner after XT faded — under "emergent consensus," a miner advertised the block size it would accept rather than voting on a fixed rule. Its ballot was written into the coinbase text, /EB…/AD…/ at the head of each chapter that flew it, not into the version word — so this leaf reads first lines rather than versions, laying out the final window of chapters before the parting with each miner's own text in the row. At its spring-2017 peak more than a third of new blocks carried the banner; nothing ever activated, and that August the big-block constituency left to write its own book.
+      note: Not a BIP but a client, and the third to carry the big-block banner, after XT and Classic — under "emergent consensus," a miner advertised the block size it would accept rather than voting on a fixed rule. Its ballot was written into the coinbase text, /EB…/AD…/ at the head of each chapter that flew it, not into the version word — so this leaf reads first lines rather than versions, laying out the final window of chapters before the parting with each miner's own text in the row. At its spring-2017 peak more than a third of new blocks carried the banner; nothing ever activated, and that August the big-block constituency left to write its own book.
       stats:
         - label: mechanism
           value: emergent consensus — /EB…/AD…/ written into the coinbase, no threshold and no flag day
@@ -541,6 +610,22 @@
 - kind: ledgers
   title: Ledgers
   note: A ledger gathers what one keeper spends from — a single address, a set rotated over the years, or in time every leaf of one extended key — and reads each of its scripts as a passage, with the chapters that passage appears in listed beneath it. Nothing here carries a reference: the chain never writes an address, only the script one stands for, so a ledger is not cited but discovered, and its run of chapters stays open-ended.
+
+- kind: inscriptions
+  title: Inscriptions
+  note: Files written into witnesses and read back out by software that agrees where to look. The chain records the bytes — an unexecuted branch of a tapscript, carried by a spend and skipped by every validating node — and that they are an image, a token, or a table of contents is a convention held by people, not a rule held by nodes. So each leaf here fetches the reveal named beside its entry and reads the envelope out of the witness itself: what it shows is checkable against the bytes, and everything past the bytes — the numbering, where an inscription now sits — belongs to commentary, credited to whoever reads it that way. The rows below are the ones the book curates; a reader who keeps a witness of their own gets a leaf here too, named by whatever they called it, and a manifest kept that way opens as the collection it names.
+  entries:
+    - title: First Ordinals inscription
+      id: IV β69 ■343 §2323.a
+      reveal: 6fb976ab49dcec017f1e201e84395983204ae1a7c2abf7ced0a85d692e442799
+      note: The reveal in block 767430, December 2022 — 793 bytes of PNG in the witness, the first of the numbered series by the convention that numbers it.
+      commentary:
+        - file: first-ordinals-inscription.md
+          by: Claude Opus 5
+    - title: First BRC-20 inscription
+      id: IV β75 ■649 §408.a
+      reveal: b61b0172d95e266c18aea0c624db987e971a5d6d4ebc2aaed85da4642d635735
+      note: The ordi deploy, March 2023 — 94 bytes of JSON declaring a token scheme run entirely in readings of witness text.
 
 - kind: proofs
   title: Citations

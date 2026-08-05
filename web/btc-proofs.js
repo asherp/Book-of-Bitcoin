@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //
-// btc-proofs.js — Appendix IV's contents: the files whose existence this chain
+// btc-proofs.js — the Citations register's contents: the files whose existence this chain
 // attests, and where each one's proof lands.
 //
 // A timestamped file is not a passage. It is not on the chain at all — what is
@@ -16,7 +16,7 @@
 //   invitation. They are editorial in the same sense the contents is: someone
 //   chose them.
 //
-//   the reader's own — a proof dropped on Appendix IV's leaf, kept in
+//   the reader's own — a proof dropped on the register's leaf, kept in
 //   localStorage the way a bookmark is, and listed beside the bundled ones with
 //   the same ribbon a bookmark flies. The book's own list is short by nature;
 //   the reader's is the one that grows.
@@ -42,7 +42,7 @@ const fromBase64 = (text) => Uint8Array.from(atob(text), (c) => c.charCodeAt(0))
 
 // A proof, read: what it commits to, and where that commitment sits. `place` is
 // null when the proof reaches no Bitcoin block — a pending proof is a promise,
-// not a citation, and Appendix IV lists chapters.
+// not a citation, and the register lists chapters.
 export async function readProof(bytes) {
   const parsed = await parseOtsProof(bytes);
   const att = earliestBitcoin(parsed.attestations);
@@ -89,7 +89,7 @@ export const volumeOf = (place) => volumeBookChapter(place.height);
 // ─── the ladder: a proof read one rung at a time ────────────────────────
 //
 // A proof is a straight line of operations, but it is not a featureless one.
-// Read it and it falls into three movements, which is how Appendix IV's leaf
+// Read it and it falls into three movements, which is how the register's leaf
 // sets it:
 //
 //   the commitment — what was done to the file's digest to put it in a
@@ -261,11 +261,11 @@ export function dropProof(digest) {
 export const isKept = (digest) => keptProofs().some((p) => p.digest === digest);
 
 // The whole appendix, bundled and kept together in reading order -- what the
-// contents lists under Appendix IV and what its leaf shows above the picker.
+// contents lists under Citations and what its leaf shows above the picker.
 // The other direction. A passage cannot say what it dated -- the chain writes
 // commitments, not their meanings -- so this answers it from the appendix: the
 // listed works whose commitment sits in THIS output of THIS section, numbered
-// by their place in the list, so a passage's margin can print "Appendix IV.1"
+// by their place in the list, so a passage's margin can print its ‡₁ mark
 // and mean a row a reader can go and find.
 export function citedAt(listed, { height, section, out }) {
   return listed
@@ -364,7 +364,7 @@ export function checksumLines(text) {
   return read.length && read.every(Boolean) ? read : null;
 }
 
-// A proof's own page: Appendix IV's rows open the ladder rather than jumping
+// A proof's own page: the register's rows open the ladder rather than jumping
 // straight into the book, because the ladder is the thing this appendix has
 // to show. The chapter is one step further on, at the foot of it.
 export const leafOf = (proof) => `./bitcoin-proof.html?digest=${proof.digest}`;

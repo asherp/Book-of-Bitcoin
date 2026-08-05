@@ -16,7 +16,7 @@
 <meta property="og:image" content="https://bookofbitcoin.io/og-bookofbitcoin.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="The βook of βitcoin — the illuminated timechain. A gold β standing beside the book's title on a dark cover.">
+<meta property="og:image:alt" content="The βook of βitcoin — Vires in Numeris. A gold β standing beside the book's title on a dark cover.">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="The βook of βitcoin — Search">
 <meta name="twitter:description" content="Look up any chapter: a block height, a block hash, a transaction id, or a citation.">
@@ -35,9 +35,17 @@
      Update affordances on the title's line, one copy for every page. -->
 <script src="./btc-chrome.js"></script>
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,400&family=IBM+Plex+Mono:wght@400;500;600&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<!-- The faces every leaf sets text in, fetched alongside the stylesheet
+     that declares them rather than after it. crossorigin is required even
+     same-origin: a font request is CORS-anonymous, and a preload without it
+     matches nothing and downloads the file twice. The rest of web/fonts/ is
+     left to unicode-range, which asks for a face only where its glyphs
+     appear -- the sigla leaf pulls the whole alphabet, a chapter four files. -->
+<link rel="preload" as="font" type="font/woff2" href="./fonts/newsreader-latin.woff2" crossorigin>
+<link rel="preload" as="font" type="font/woff2" href="./fonts/plexmono-500-latin.woff2" crossorigin>
+<link rel="preload" as="font" type="font/woff2" href="./fonts/plexmono-600-latin.woff2" crossorigin>
+<link rel="preload" as="font" type="font/woff2" href="./fonts/sigla-dejavu.woff2" crossorigin>
+<link rel="stylesheet" href="./fonts/fonts.css">
 <link rel="stylesheet" href="./btc-chrome.css">
 <style>
 :root {
@@ -47,29 +55,29 @@
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; }
-body { min-height: 100vh; background: var(--page); color: var(--ink); font-family: 'Public Sans', system-ui, sans-serif; line-height: 1.55; }
+body { min-height: 100vh; background: var(--page); color: var(--ink); font-family: 'Public Sans','Book Sigla', system-ui, sans-serif; line-height: 1.55; }
 .wrap { max-width: 720px; margin: 0 auto; padding: 48px 22px 100px; }
 a { color: var(--accent); text-decoration: none; }
 a:hover { text-decoration: underline; }
-.mono { font-family: 'IBM Plex Mono', monospace; }
+.mono { font-family: 'IBM Plex Mono','Book Sigla', monospace; }
 
 .page-head { text-align:center; padding-bottom:30px; margin-bottom:36px; border-bottom:1px solid var(--rule); }
-.page-eyebrow { font:600 11px/1 'IBM Plex Mono',monospace; letter-spacing:.3em; text-transform:uppercase; color:var(--accent); }
+.page-eyebrow { font:600 11px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.3em; text-transform:uppercase; color:var(--accent); }
 
 .card {
   background: var(--card); border: 1px solid var(--card-bd); border-radius: 6px;
   padding: 24px 26px 26px; box-shadow: 0 24px 60px -32px rgba(0,0,0,.7);
 }
-label { display:block; font:500 11px/1 'IBM Plex Mono',monospace; letter-spacing:.06em; text-transform:uppercase; color:var(--dim); margin-bottom:8px; }
+label { display:block; font:500 11px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.06em; text-transform:uppercase; color:var(--dim); margin-bottom:8px; }
 .lookup-row { display:flex; gap:10px; }
 #block-input {
   flex: 1; min-width: 0; background: var(--input-bg); border: 1px solid var(--input-bd); border-radius: 4px;
-  color: var(--ink); font: 400 14px/1.4 'IBM Plex Mono',monospace; padding: 11px 12px;
+  color: var(--ink); font: 400 14px/1.4 'IBM Plex Mono','Book Sigla',monospace; padding: 11px 12px;
 }
 #block-input:focus { outline: none; border-color: var(--accent); }
 button {
   background: var(--accent); color: var(--btn-ink); border: none; border-radius: 4px;
-  font: 600 12.5px/1 'IBM Plex Mono',monospace; letter-spacing: .04em; text-transform: uppercase;
+  font: 600 12.5px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing: .04em; text-transform: uppercase;
   padding: 0 20px; cursor: pointer; transition: background .15s ease;
 }
 button:hover { background: var(--accent-2); }
@@ -78,10 +86,10 @@ button:hover { background: var(--accent-2); }
 /* Worked examples beneath the card: each opens the page it cites, so the
    citation forms are learned by using them rather than by reading a legend. */
 .examples { margin-top: 28px; }
-.examples-title { font:600 10px/1 'IBM Plex Mono',monospace; letter-spacing:.16em; text-transform:uppercase; color:var(--meta); margin-bottom:4px; padding-left:2px; }
+.examples-title { font:600 10px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.16em; text-transform:uppercase; color:var(--meta); margin-bottom:4px; padding-left:2px; }
 .example { display:flex; align-items:baseline; gap:16px; padding:9px 2px; border-bottom:1px solid var(--hair); text-decoration:none; }
-.example-what { flex:1; min-width:0; font:500 15px/1.35 'Newsreader',serif; color:var(--ink-soft); }
-.example-form { flex:none; max-width:55%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-align:right; font:500 12.5px/1.6 'IBM Plex Mono',monospace; color:var(--accent); }
+.example-what { flex:1; min-width:0; font:500 15px/1.35 'Newsreader','Book Sigla',serif; color:var(--ink-soft); }
+.example-form { flex:none; max-width:55%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-align:right; font:500 12.5px/1.6 'IBM Plex Mono','Book Sigla',monospace; color:var(--accent); }
 .example:hover .example-what { color:var(--ink); }
 .example:hover .example-form { color:var(--accent-2); text-decoration:underline; }
 </style>
@@ -109,7 +117,7 @@ button:hover { background: var(--accent-2); }
     <a class="example" href="./bitcoin-book.html?block=0"><span class="example-what">the Genesis block, by height</span><span class="example-form">0</span></a>
     <a class="example" href="./bitcoin-book.html?block=-1"><span class="example-what">the latest block — a negative height counts back from the chain tip</span><span class="example-form">-1</span></a>
     <a class="example" href="./bitcoin-book.html?block=III%20%CE%B22%20%E2%96%A05"><span class="example-what">a chapter, by the book's own citation</span><span class="example-form">III β2 ■5</span></a>
-    <a class="example" href="./bitcoin-book.html?block=57043"><span class="example-what">Bitcoin Pizza Day's chapter, by height</span><span class="example-form">57043</span></a>
+    <a class="example" href="./bitcoin-book.html?block=57043"><span class="example-what">the chapter that carries Bitcoin Pizza Day, by height</span><span class="example-form">57043</span></a>
     <a class="example" href="./bitcoin-book.html?txid=a1075db55d416d3ca199f55b6084e2115b9345e16c5cf302fc80e9d5fbf5d48d"><span class="example-what">the pizza transaction's own section, by its id</span><span class="example-form">a1075db5…f5d48d</span></a>
     <a class="example" href="./bitcoin-book.html?ref=v1b29c596"><span class="example-what">the same chapter, by its reference alone — as a βoβ quote carries it</span><span class="example-form">v1b29c596</span></a>
     <a class="example" href="./bitcoin-ledger.html?address=1Ross5Np5doy4ajF9iGXzgKaC2Q3Pwwxv"><span class="example-what">an address's ledger — every chapter it appears in, with amounts</span><span class="example-form">1Ross5Np…Pwwxv</span></a>

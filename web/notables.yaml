@@ -187,8 +187,13 @@
   commentary:
     - file: difficulty-45.md
       by: Claude Fable 5
+# The transaction, not the block that carries it: what happened on 22 May 2010
+# was a payment, and block 57043 is only where it came to rest. The chapter has
+# no name of its own to earn — nothing else in it is remembered — so the entry
+# cites the section, and the reading below reads a passage rather than a
+# chapter.
 - title: Bitcoin Pizza Day
-  id: '57043'
+  id: a1075db55d416d3ca199f55b6084e2115b9345e16c5cf302fc80e9d5fbf5d48d
   commentary:
     - file: bitcoin-pizza-day.md
       by: Claude Fable 5
@@ -261,6 +266,18 @@
   commentary:
     - file: 100k-block-milestone.md
       by: Claude Fable 5
+# The era's great theft with a passage: twenty-seven inputs worth 79,956.55 ₿
+# swept into one output of 79,956 ₿ even, 1 March 2011 — the week Mt. Gox
+# changed hands. The passage is a perfectly formed withdrawal; the theft is
+# the operator's own claim (Karpelès, 2023: moved "without authorization",
+# 79,956.55 ₿ — matching the inputs to the satoshi). The coins have never
+# moved; the receiving address reads in the Ledger as The 1Feex hoard.
+# Research and chain verification in tools/mtgox-era-thefts.md.
+- title: Mt. Gox robbed of 79,956 ₿
+  id: I β56 ■315 §2
+  commentary:
+    - file: the-79956-btc-theft.md
+      by: Claude Fable 5
 # The chain's smallest deliberate burn. This coinbase claims 49.99999999 ₿ —
 # one satoshi under the 50 ₿ subsidy, with the block's 0.01 ₿ of fees forgone
 # besides: 1,000,001 satoshis destroyed, on purpose. A coinbase may claim UP TO
@@ -273,6 +290,18 @@
   index: 0
   commentary:
     - file: the-satoshi-left-on-the-table.md
+      by: Claude Fable 5
+# Mt. Gox's answer to the June 2011 crash, three days after an attacker's
+# database coins printed $0.01 without touching the chain: nine inputs
+# totaling 442,000 ₿ even, one output of the announced joke amount
+# 424,242.42424242 ₿, and change of 17,757.57575758 ₿ — the subtraction
+# forcing a second repeating decimal. Control proved; solvency not, with
+# the March theft already sitting in 1Feex and the September drain eleven
+# weeks off. Research in tools/mtgox-era-thefts.md.
+- title: Karpelès's 424,242 ₿ proof
+  id: I β66 ■1710 §2
+  commentary:
+    - file: the-424242-btc-proof.md
       by: Claude Fable 5
 - title: Eligius, by Luke Dashjr
   id: '139690'
@@ -365,6 +394,10 @@
   commentary:
     - file: bip66-activation-v3.md
       by: Claude Fable 5
+- title: Bitcoin XT first signal
+  id: '370434'
+- title: Bitcoin XT high-water mark
+  id: '372315'
 - title: BIP65
   id: '387408'
   page: book
@@ -390,6 +423,10 @@
   commentary:
     - file: the-endianness-lock-of-2042.md
       by: Claude Fable 5
+- title: Bitcoin Classic first signal
+  id: '398364'
+- title: Bitcoin Classic high-water mark
+  id: '404843'
 # The largest fee ever paid, and the coinbase that collected it — two
 # sections of one chapter, each entry titled at its own level: thirteen
 # inputs worth 291.241 ₿, one output of 0.0001 ₿, and the 291.2409 ₿
@@ -422,6 +459,17 @@
   index: 0
   commentary:
     - file: the-second-halving.md
+      by: Claude Fable 5
+# One withdrawal of the 2016 Bitfinex hack — 109.02740674 ₿ from two of the
+# exchange's multisig wallets, 2 August 2016, one of some 2,000 unauthorized
+# transfers (2,072 in the case records' count) that took 119,754 ₿. Cited
+# because the chain wrote its ending itself: the receiving address held
+# still for 5½ years, then spent into the DOJ's 1 February 2022 custody
+# sweeps. Research and chain verification in tools/thefts-and-seizures.md.
+- title: One of Lichtenstein's 2,072
+  id: III β2 ■1284 §719
+  commentary:
+    - file: one-of-the-2072.md
       by: Claude Fable 5
 - title: BIP91
   id: '476448'
@@ -544,6 +592,27 @@
   commentary:
     - file: taproot-activation.md
       by: Claude Opus 5
+# The largest single passage of the Bitfinex seizure — 562 inputs,
+# 15,000 ₿ even to custody with 5.88 ₿ of staging change beside it,
+# 1 February 2022: the state spending the thief's coins with the thief's
+# own keys. The whole 23-transaction operation
+# (94,643.29837084 ₿ in 133 minutes) reads in the Ledger as The Bitfinex
+# custody. Research in tools/thefts-and-seizures.md.
+- title: The FBI's 15,000 ₿ sweep
+  id: IV β46 ■568 §676
+  commentary:
+    - file: the-15000-btc-sweep.md
+      by: Claude Fable 5
+# The Silk Road seizure's heart — 33 inputs, one output of 40,000.32735811 ₿,
+# 25 March 2022: the larger of James Zhong's two 2012 consolidation hoards
+# arriving in government custody as a single undivided output, ten years
+# after the fraud and four months after the popcorn-tin raid. Research in
+# tools/thefts-and-seizures.md.
+- title: The IRS's 40,000 ₿ seizure
+  id: IV β50 ■194 §336
+  commentary:
+    - file: the-40000-btc-seizure.md
+      by: Claude Fable 5
 - title: First Ordinals inscription
   # The inscription lives in the witness, so the entry cites the footnote
   # itself: section 2323's witness a, where the envelope's bytes read.
@@ -642,6 +711,28 @@
   id: 1HB5XMLmzFVj8ALj6mfBsbifRoD4miY36v
   commentary:
     - file: wikileaks-ledger.md
+      by: Claude Fable 5
+# The stolen hoard — a name whose record runs one way like the burn
+# ledgers below, but for the opposite reason: it presumably has a key.
+# 690 arrivals, 79,957.26866953 ₿, none ever spent — the first of them the
+# 79,956 ₿ swept from Mt. Gox on 1 March 2011 (Mt. Gox robbed of 79,956 ₿),
+# rest fifteen years of the world's dust. Shelved in btc-index-data.js;
+# research in tools/mtgox-era-thefts.md.
+- title: The 1Feex hoard
+  id: 1FeexV6bAHb8ybZjqQMjJrcCrHGW9sb6uF
+  commentary:
+    - file: mt-gox-1feex-ledger.md
+      by: Claude Fable 5
+# The second hoard — the DOJ custody address the Bitfinex hack's coins were
+# swept into on 1 February 2022 (23 transactions, 94,643.29837084 ₿, 133
+# minutes), plus the world's dust since; nothing ever out. Kept a row from
+# 1Feex on purpose: one hoard held by a thief nobody has named, one by the
+# state that named him, and their tables read the same. Shelved in
+# btc-index-data.js; research in tools/thefts-and-seizures.md.
+- title: The Bitfinex custody
+  id: bc1qazcm763858nkj2dj986etajv6wquslv8uxwczt
+  commentary:
+    - file: bitfinex-custody-ledger.md
       by: Claude Fable 5
 # The burn ledgers — names whose entire record is coins arriving and never
 # leaving, keyless by construction. Shelved in btc-index-data.js as "the

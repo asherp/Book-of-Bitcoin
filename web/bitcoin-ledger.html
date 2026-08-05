@@ -16,7 +16,7 @@
 <meta property="og:image" content="https://bookofbitcoin.io/og-bookofbitcoin.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="The βook of βitcoin — the illuminated timechain. A gold β standing beside the book's title on a dark cover.">
+<meta property="og:image:alt" content="The βook of βitcoin — Vires in Numeris. A gold β standing beside the book's title on a dark cover.">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="The βook of βitcoin — Ledger">
 <meta name="twitter:description" content="A compendium of notable donation addresses, each reconciled against the chain.">
@@ -92,9 +92,17 @@
   })();
 </script>
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,400&family=IBM+Plex+Mono:wght@400;500;600&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<!-- The faces every leaf sets text in, fetched alongside the stylesheet
+     that declares them rather than after it. crossorigin is required even
+     same-origin: a font request is CORS-anonymous, and a preload without it
+     matches nothing and downloads the file twice. The rest of web/fonts/ is
+     left to unicode-range, which asks for a face only where its glyphs
+     appear -- the sigla leaf pulls the whole alphabet, a chapter four files. -->
+<link rel="preload" as="font" type="font/woff2" href="./fonts/newsreader-latin.woff2" crossorigin>
+<link rel="preload" as="font" type="font/woff2" href="./fonts/plexmono-500-latin.woff2" crossorigin>
+<link rel="preload" as="font" type="font/woff2" href="./fonts/plexmono-600-latin.woff2" crossorigin>
+<link rel="preload" as="font" type="font/woff2" href="./fonts/sigla-dejavu.woff2" crossorigin>
+<link rel="stylesheet" href="./fonts/fonts.css">
 <link rel="stylesheet" href="./btc-chrome.css">
 <link rel="stylesheet" href="./commentary.css">
 <style>
@@ -106,7 +114,7 @@
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
 html, body { margin: 0; overscroll-behavior-y: contain; }
-body { min-height: 100vh; background: var(--page); color: var(--ink); font-family: 'Public Sans', system-ui, sans-serif; line-height: 1.55; }
+body { min-height: 100vh; background: var(--page); color: var(--ink); font-family: 'Public Sans','Book Sigla', system-ui, sans-serif; line-height: 1.55; }
 /* The entering half of the contents' descent into Appendix III: the shelf
    rises into place from below, matching the carousel's pace. */
 @media (prefers-reduced-motion: no-preference) {
@@ -132,22 +140,46 @@ a:hover { text-decoration: underline; }
   background:var(--card); border:1px solid var(--card-bd); border-radius:6px; padding:16px 18px 18px;
   box-shadow:0 24px 60px -32px rgba(0,0,0,.8); text-align:left; }
 .settings-panel.hidden { display:none; }
-.settings-title { font:600 10px/1 'IBM Plex Mono',monospace; letter-spacing:.16em; text-transform:uppercase; color:var(--dim); margin:14px 0 8px; }
+/* On a narrow leaf the nav sits mid-screen, so a panel anchored to its
+   link's right edge hangs off the left of the viewport. Anchor it to the
+   masthead instead: the menu span stops positioning, the masthead takes
+   over as containing block, and the panel spans the leaf just under the
+   nav line. */
+@media (max-width: 600px) {
+  .masthead { position:relative; }
+  .settings-menu { position:static; }
+  .settings-panel { left:0; right:0; width:auto; top:calc(100% + 8px); }
+}
+.settings-title { font:600 10px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.16em; text-transform:uppercase; color:var(--dim); margin:14px 0 8px; }
 .settings-title:first-child { margin-top:0; }
 .endpoint-row { display:flex; gap:8px; }
 .bb-select { flex:1; min-width:0; background:var(--input-bg); border:1px solid var(--input-bd); border-radius:4px;
-  color:var(--ink); font:400 12px/1.4 'IBM Plex Mono',monospace; padding:8px 8px; }
+  color:var(--ink); font:400 12px/1.4 'IBM Plex Mono','Book Sigla',monospace; padding:8px 8px; }
 .bb-select:focus { outline:none; border-color:var(--accent); }
 .ghost-btn, .save-btn { background:transparent; border:1px solid var(--input-bd); color:var(--dim); border-radius:4px;
-  padding:0 10px; cursor:pointer; font:600 10.5px/1 'IBM Plex Mono',monospace; letter-spacing:.06em; text-transform:uppercase; }
+  padding:0 10px; cursor:pointer; font:600 10.5px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.06em; text-transform:uppercase; }
 .ghost-btn:hover:not(:disabled), .save-btn:hover { border-color:var(--accent); color:var(--accent); }
 .ghost-btn:disabled { opacity:.4; cursor:default; }
 .endpoint-add-row { display:flex; gap:8px; margin-top:8px; }
 .endpoint-add-row.hidden { display:none; }
 .endpoint-add-row input { flex:1; min-width:0; background:var(--input-bg); border:1px solid var(--input-bd); border-radius:4px;
-  color:var(--ink); font:400 12px/1.4 'IBM Plex Mono',monospace; padding:8px 8px; }
+  color:var(--ink); font:400 12px/1.4 'IBM Plex Mono','Book Sigla',monospace; padding:8px 8px; }
 .endpoint-add-row input:focus { outline:none; border-color:var(--accent); }
-.settings-note { margin-top:12px; font:400 10.5px/1.6 'IBM Plex Mono',monospace; color:var(--meta); }
+/* The amount-notation rows: the book page's picker, worn here so a ledger
+   reader can change the figures' dress without leaving the shelf. Same
+   classes, same stored choice (btc-amounts.js). */
+.lang-rows { display:grid; gap:1px; }
+.lang-row {
+  display:flex; align-items:center; justify-content:space-between; gap:14px;
+  background:transparent; border:0; border-radius:4px; padding:5px 8px; cursor:pointer;
+  font:400 14px/1.2 'Newsreader','Book Sigla',serif; color:var(--ink-soft); text-align:left;
+  text-transform:none; letter-spacing:normal;
+}
+.lang-row:hover, .lang-row:focus-visible { background:var(--input-bg); color:var(--ink); outline:none; }
+.lang-row .lang-mark { font:600 11px/1 'IBM Plex Mono','Book Sigla',monospace; color:var(--accent); visibility:hidden; }
+.lang-row.current { color:var(--ink); }
+.lang-row.current .lang-mark { visibility:visible; }
+#amount-rows .lang-row { font-variant-numeric: tabular-nums; }
 
 /* The anthology's title page: a full leaf. The eyebrow names the form, the
    serif names the anthology, and the address appears once, in the book's own
@@ -158,19 +190,19 @@ a:hover { text-decoration: underline; }
    volumes and the dates its chapters run. Navigation continues downward into
    the table of contents. */
 .anth-hero { min-height: calc(100vh - 130px); display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:20px 0 8px; }
-.page-eyebrow { font:600 11px/1 'IBM Plex Mono',monospace; letter-spacing:.3em; text-transform:uppercase; color:var(--accent); }
+.page-eyebrow { font:600 11px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.3em; text-transform:uppercase; color:var(--accent); }
 /* The eyebrow as a crumb: on an address leaf it points a level up, to the
    compendium's title leaf for this ledger. */
 .page-eyebrow a { color:inherit; }
-.anth-title { margin:16px 0 0; font:500 30px/1.25 'Newsreader',serif; color:var(--ink); }
+.anth-title { margin:16px 0 0; font:500 30px/1.25 'Newsreader','Book Sigla',serif; color:var(--ink); }
 /* A ledger has one title page. A passage leaf carries no name of its own --
    the passage is its title, set below -- so the empty heading takes no room. */
 .anth-title:empty { display:none; }
 /* What the title names, said plainly beneath it: the appendix leaf's title is
    its number, and this is the appendix. */
-.anth-subtitle { margin-top:10px; font:400 19px/1.35 'Newsreader',serif; color:var(--dim); }
+.anth-subtitle { margin-top:10px; font:400 19px/1.35 'Newsreader','Book Sigla',serif; color:var(--dim); }
 .anth-subtitle:empty { display:none; }
-.anth-prose { margin:22px 0 0; max-width:560px; font:400 16px/1.7 'Newsreader',serif; font-style:italic; color:var(--ink-soft); }
+.anth-prose { margin:22px 0 0; max-width:560px; font:400 16px/1.7 'Newsreader','Book Sigla',serif; font-style:italic; color:var(--ink-soft); }
 .anth-prose:empty { display:none; }
 /* On a passage leaf the script IS the leaf's title, so it is set at a
    title's size -- the same voice, only louder. */
@@ -182,14 +214,14 @@ a:hover { text-decoration: underline; }
    accent, push marks quiet, data-type marks bold -- the grammar punctuating
    the prose that carries the opaque bytes. */
 .anth-prose .op { color: var(--accent); font-style: normal; }
-.anth-prose .op-name { font: 600 .62em/1 'IBM Plex Mono',monospace; letter-spacing:.04em; color: var(--dim); font-style: normal; vertical-align: .14em; white-space: nowrap; }
+.anth-prose .op-name { font: 600 .62em/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.04em; color: var(--dim); font-style: normal; vertical-align: .14em; white-space: nowrap; }
 .anth-prose .op-push { color: var(--meta); }
 .anth-prose .dt { color: var(--accent); font-style: normal; font-weight: 700; }
-.anth-range { margin-top:22px; font:600 12px/1.6 'IBM Plex Mono',monospace; letter-spacing:.14em; text-transform:uppercase; color:var(--accent); }
+.anth-range { margin-top:22px; font:600 12px/1.6 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.14em; text-transform:uppercase; color:var(--accent); }
 .anth-range:empty { display:none; }
-.anth-count { margin-top:8px; font:500 11px/1 'IBM Plex Mono',monospace; letter-spacing:.12em; text-transform:uppercase; color:var(--dim); }
+.anth-count { margin-top:8px; font:500 11px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.12em; text-transform:uppercase; color:var(--dim); }
 .anth-count:empty { display:none; }
-.anth-held { margin-top:8px; font:500 11px/1.6 'IBM Plex Mono',monospace; letter-spacing:.12em; text-transform:uppercase; color:var(--dim); }
+.anth-held { margin-top:8px; font:500 11px/1.6 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.12em; text-transform:uppercase; color:var(--dim); }
 .anth-held:empty { display:none; }
 .anth-held .held-amt { color:var(--accent); }
 .anth-down { margin-top:auto; padding-top:34px; font-size:20px; color:var(--dim); text-decoration:none; }
@@ -198,7 +230,7 @@ a:hover { text-decoration: underline; }
 /* The ledger's balance, headlining its title leaf -- the shelf row's figure,
    with a whole leaf to breathe on. Quiet pending style while unsettled or
    last-known; tappable to retry when nothing was ever known. */
-.anth-balance { margin-top:26px; font:500 22px/1.3 'IBM Plex Mono',monospace; color:var(--accent); white-space:nowrap; font-variant-numeric:tabular-nums; }
+.anth-balance { margin-top:26px; font:500 22px/1.3 'IBM Plex Mono','Book Sigla',monospace; color:var(--accent); white-space:nowrap; font-variant-numeric:tabular-nums; }
 .anth-balance:empty { display:none; }
 .anth-balance.pending { color:var(--meta); font-weight:400; font-size:14px; }
 .anth-balance.retry { cursor:pointer; }
@@ -209,27 +241,27 @@ a:hover { text-decoration: underline; }
    and the chapter's net closing, full eight decimals so the column aligns on
    the point. */
 .idx-vol { margin:22px 0 2px; padding-top:14px; border-top:1px solid var(--hair);
-  font:600 11px/1 'IBM Plex Mono',monospace; letter-spacing:.22em; text-transform:uppercase; color:var(--accent); }
+  font:600 11px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.22em; text-transform:uppercase; color:var(--accent); }
 .idx-vol:first-of-type { margin-top:10px; padding-top:0; border-top:none; }
 .idx-book { margin:12px 0 1px; padding-left:14px;
-  font:600 10px/1 'IBM Plex Mono',monospace; letter-spacing:.16em; text-transform:uppercase; color:var(--meta); }
+  font:600 10px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.16em; text-transform:uppercase; color:var(--meta); }
 .idx-row { display:flex; align-items:baseline; gap:16px; padding:8px 2px 8px 14px; border-bottom:1px solid var(--hair); text-decoration:none; }
 .idx-row.under-book { padding-left:28px; }
 .idx-row:last-child { border-bottom:none; }
-.idx-ref { flex:none; font:600 13px/1.4 'IBM Plex Mono',monospace; letter-spacing:.06em; color:var(--accent); white-space:nowrap; font-variant-numeric:tabular-nums; }
-.idx-amt { flex:1; min-width:0; text-align:right; font:500 13px/1.4 'IBM Plex Mono',monospace; color:var(--ink-soft); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-variant-numeric:tabular-nums; }
+.idx-ref { flex:none; font:600 13px/1.4 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.06em; color:var(--accent); white-space:nowrap; font-variant-numeric:tabular-nums; }
+.idx-amt { flex:1; min-width:0; text-align:right; font:500 13px/1.4 'IBM Plex Mono','Book Sigla',monospace; color:var(--ink-soft); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-variant-numeric:tabular-nums; }
 .idx-row:hover .idx-ref { text-decoration:underline; color:var(--accent-2); }
 .idx-row:hover .idx-amt { color:var(--ink); }
-.idx-note { display:block; margin-top:12px; padding-left:14px; font:400 12px/1.5 'IBM Plex Mono',monospace; color:var(--meta); }
+.idx-note { display:block; margin-top:12px; padding-left:14px; font:400 12px/1.5 'IBM Plex Mono','Book Sigla',monospace; color:var(--meta); }
 /* The sync state, heading whatever data this level has to show. */
 .idx-note.sync-note { text-align:center; padding-left:0; margin:22px 0 0; color:var(--dim); }
 
-.sp-eyebrow { margin:30px 0 0; font:600 10px/1 'IBM Plex Mono',monospace; letter-spacing:.3em; text-transform:uppercase; color:var(--dim); text-align:center; scroll-margin-top:26px; }
+.sp-eyebrow { margin:30px 0 0; font:600 10px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.3em; text-transform:uppercase; color:var(--dim); text-align:center; scroll-margin-top:26px; }
 .sp-toc { margin-bottom:8px; }
 .sp-row { display:flex; align-items:baseline; gap:16px; padding:7px 2px 7px 14px; border-bottom:1px solid var(--hair); text-decoration:none; }
 .sp-row:last-child { border-bottom:none; }
-.sp-label { flex:none; font:600 13px/1.4 'IBM Plex Mono',monospace; letter-spacing:.06em; color:var(--accent); white-space:nowrap; font-variant-numeric:tabular-nums; }
-.sp-count { flex:1; min-width:0; text-align:right; font:400 12px/1.4 'IBM Plex Mono',monospace; color:var(--meta); white-space:nowrap; font-variant-numeric:tabular-nums; }
+.sp-label { flex:none; font:600 13px/1.4 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.06em; color:var(--accent); white-space:nowrap; font-variant-numeric:tabular-nums; }
+.sp-count { flex:1; min-width:0; text-align:right; font:400 12px/1.4 'IBM Plex Mono','Book Sigla',monospace; color:var(--meta); white-space:nowrap; font-variant-numeric:tabular-nums; }
 .sp-amt { flex:none; }
 .sp-row:hover { text-decoration:none; }
 .sp-row:hover .sp-label { text-decoration:underline; color:var(--accent-2); }
@@ -243,7 +275,7 @@ a:hover { text-decoration: underline; }
 .idx-row.acct .idx-ref { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; }
 .idx-row.acct .idx-amt { flex:none; font-size:12.5px; }
 .col-deb, .col-cred { flex:none; width:100px; text-align:right; }
-.col-status { flex:none; width:56px; text-align:right; font:600 9.5px/1.6 'IBM Plex Mono',monospace; letter-spacing:.08em; text-transform:uppercase; color:var(--meta); }
+.col-status { flex:none; width:56px; text-align:right; font:600 9.5px/1.6 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.08em; text-transform:uppercase; color:var(--meta); }
 .idx-status.unspent { color:var(--accent); }
 /* The unsynced entry: an unreferenced line heading the record -- the
    not-yet-gathered transaction count standing where its citations will,
@@ -251,7 +283,7 @@ a:hover { text-decoration: underline; }
 .idx-row.unsynced { cursor:default; }
 .idx-row.unsynced .idx-ref, .idx-row.unsynced:hover .idx-ref { color:var(--meta); text-decoration:none; }
 .acct-heads { display:flex; gap:10px; align-items:baseline; padding:10px 2px 2px 14px;
-  font:600 9.5px/1 'IBM Plex Mono',monospace; letter-spacing:.14em; text-transform:uppercase; color:var(--meta); }
+  font:600 9.5px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.14em; text-transform:uppercase; color:var(--meta); }
 .acct-heads .h-ref { flex:1; }
 /* The totals bar: the reader pages' foot-nav seat -- sticky at the screen
    bottom, the rule its top edge, prose scrolling behind its page-colour
@@ -262,8 +294,8 @@ a:hover { text-decoration: underline; }
   padding:12px 2px max(12px, env(safe-area-inset-bottom)) 14px;
   border-top:1px solid var(--rule); background:var(--page); }
 .acct-totals .t-bal { flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.acct-totals .t-label { font:600 9.5px/1 'IBM Plex Mono',monospace; letter-spacing:.14em; text-transform:uppercase; color:var(--meta); margin-right:6px; }
-.acct-totals .t-fig { font:600 13px/1.4 'IBM Plex Mono',monospace; color:var(--accent); font-variant-numeric:tabular-nums; }
+.acct-totals .t-label { font:600 9.5px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.14em; text-transform:uppercase; color:var(--meta); margin-right:6px; }
+.acct-totals .t-fig { font:600 13px/1.4 'IBM Plex Mono','Book Sigla',monospace; color:var(--accent); font-variant-numeric:tabular-nums; }
 .acct-totals .idx-amt { flex:none; font-size:12.5px; color:var(--ink-soft); }
 @media (max-width: 560px) {
   .acct-totals .idx-amt { font-size:11px; }
@@ -277,8 +309,8 @@ a:hover { text-decoration: underline; }
    manuscript, the entry's net, and the running balance ruling the row off.
    The balance column steps aside on narrow leaves. */
 .idx-row.entry { gap:12px; }
-.idx-when { flex:none; width:46px; font:400 11px/1.4 'IBM Plex Mono',monospace; color:var(--meta); white-space:nowrap; font-variant-numeric:tabular-nums; }
-.idx-bal { flex:none; min-width:104px; text-align:right; font:400 12px/1.4 'IBM Plex Mono',monospace; color:var(--dim); white-space:nowrap; font-variant-numeric:tabular-nums; }
+.idx-when { flex:none; width:46px; font:400 11px/1.4 'IBM Plex Mono','Book Sigla',monospace; color:var(--meta); white-space:nowrap; font-variant-numeric:tabular-nums; }
+.idx-bal { flex:none; min-width:104px; text-align:right; font:400 12px/1.4 'IBM Plex Mono','Book Sigla',monospace; color:var(--dim); white-space:nowrap; font-variant-numeric:tabular-nums; }
 .idx-row.entry:hover .idx-bal { color:var(--ink-soft); }
 @media (max-width: 560px) { .idx-bal { display:none; } }
 
@@ -296,7 +328,7 @@ a:hover { text-decoration: underline; }
    quiet outline manner. On the ledger's own title leaf -- curated ledgers
    (already shelved) carry no button. */
 .anth-keep { display:none; margin-top:22px; background:transparent; border:1px solid var(--input-bd); color:var(--dim);
-  border-radius:4px; padding:6px 14px; cursor:pointer; font:600 11px/1 'IBM Plex Mono',monospace; letter-spacing:.08em; text-transform:uppercase;
+  border-radius:4px; padding:6px 14px; cursor:pointer; font:600 11px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.08em; text-transform:uppercase;
   transition:border-color .15s ease, color .15s ease; }
 .anth-keep.show { display:inline-block; }
 .anth-keep:hover { border-color:var(--accent); color:var(--accent); }
@@ -309,7 +341,7 @@ a:hover { text-decoration: underline; }
 .keep-title { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; max-width:440px; }
 .keep-title.hidden { display:none; }
 .keep-title input { flex:1 1 200px; min-width:0; background:var(--input-bg); border:1px solid var(--input-bd); border-radius:4px;
-  color:var(--ink); font:400 12px/1.4 'IBM Plex Mono',monospace; padding:8px; }
+  color:var(--ink); font:400 12px/1.4 'IBM Plex Mono','Book Sigla',monospace; padding:8px; }
 .keep-title input:focus { outline:none; border-color:var(--accent); }
 /* In the settings panel these buttons stretch to the height of the field
    beside them; on their own row they have to stand their own height. */
@@ -332,15 +364,21 @@ a:hover { text-decoration: underline; }
    and the door back into the reader -- a tap opens the passage in the
    manuscript itself. No text-transform: uppercasing would turn the β
    sigils into capital Betas, which read as plain Bs. */
-.entry-cite { font:600 11px/1.6 'IBM Plex Mono',monospace; letter-spacing:.3em; text-transform:none;
+.entry-cite { font:600 11px/1.6 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.3em; text-transform:none;
   color:var(--accent); text-align:center; font-variant-numeric:tabular-nums; }
 .entry-cite:empty { display:none; }
 .entry-cite:hover { color:var(--accent-2); text-decoration:none; }
 /* The passage's title: the transaction's own name in the book's tongue --
    its txid as Glossia prose, the italic serif voice every hash speaks in. */
-.entry-title { margin:14px 0 0; max-width:560px; font:italic 400 17px/1.65 'Newsreader',serif; font-weight:400; color:var(--ink-soft); }
-.entry-amt { margin-top:16px; font:500 20px/1.25 'IBM Plex Mono',monospace; color:var(--ink); white-space:nowrap; font-variant-numeric:tabular-nums; }
+.entry-title { margin:14px 0 0; max-width:560px; font:italic 400 17px/1.65 'Newsreader','Book Sigla',serif; font-weight:400; color:var(--ink-soft); }
+.entry-amt { margin-top:16px; font:500 20px/1.25 'IBM Plex Mono','Book Sigla',monospace; color:var(--ink); white-space:nowrap; font-variant-numeric:tabular-nums; }
 .entry-amt.credit { color:var(--accent); }
+/* Under the entry's amount, where that amount is a valuation: the rate's
+   provenance -- the day it is read at and the source that priced it -- in
+   the annotation's italic serif. Empty, where the amount is the record's
+   own figure, it takes no room. */
+.entry-val { margin-top:6px; font:italic 400 13px/1.4 'Newsreader','Book Sigla',serif; color:var(--meta); white-space:nowrap; }
+.entry-val:empty { display:none; }
 /* The section, whole, in the reader's own manuscript layout -- the book
    page's classes, metrics and grid verbatim (chapter-body type, the
    [left margin | body | right margin] tx-flow grid, the version note in
@@ -351,12 +389,12 @@ a:hover { text-decoration: underline; }
    addition beyond the title's txid prose: the referenced txo carries the
    accent rule (.hit), so the quoted line reads in context. */
 .entry-section { margin-top:34px; width:100%; text-align:left;
-  font-family:'Newsreader',serif; font-size:19px; line-height:1.75; color:var(--ink-soft); font-variant-numeric:oldstyle-nums; }
+  font-family:'Newsreader','Book Sigla',serif; font-size:19px; line-height:1.75; color:var(--ink-soft); font-variant-numeric:oldstyle-nums; }
 .entry-section:empty { display:none; }
 .entry-section .tx-wrap { position:relative; margin:0 0 2em; }
 .entry-section .tx-flow { display:grid; grid-template-columns:[left] 6.5em [body] minmax(0,1fr) [right] 7em; column-gap:1.3em; align-items:start; }
 .entry-section .tx-inputs { grid-column:left / right; grid-row:1; display:grid; grid-template-columns:subgrid; column-gap:1.3em; align-items:start; }
-.entry-section .tx-in-cite { grid-column:1; text-align:right; padding-top:.34em; font:500 12px/1.5 'IBM Plex Mono',monospace; color:var(--dim); word-break:break-word; }
+.entry-section .tx-in-cite { grid-column:1; text-align:right; padding-top:.34em; font:500 12px/1.5 'IBM Plex Mono','Book Sigla',monospace; color:var(--dim); word-break:break-word; }
 .entry-section .tx-in-cite-group { grid-column:1; }
 .entry-section .tx-in-cite-group > .tx-in-cite + .tx-in-cite { margin-top:.5em; }
 .entry-section .tx-in-cite.resolving { color:var(--meta); }
@@ -364,8 +402,8 @@ a:hover { text-decoration: underline; }
 .entry-section .tx-in-cite.tx-version { color:var(--meta); letter-spacing:.03em; }
 .entry-section .cite-section-link { color:var(--accent); text-decoration:none; }
 .entry-section .cite-section-link:hover { color:var(--accent-2); text-decoration:underline; }
-.entry-section .cite-amount { margin-top:.1em; text-align:right; font:italic 400 12px/1.3 'Newsreader',serif; color:var(--meta); font-variant-numeric:tabular-nums; }
-.entry-section .fwd-cite { margin-top:.1em; font:500 12px/1.3 'IBM Plex Mono',monospace; color:var(--dim); }
+.entry-section .cite-amount { margin-top:.1em; text-align:right; font:italic 400 12px/1.3 'Newsreader','Book Sigla',serif; color:var(--meta); font-variant-numeric:tabular-nums; }
+.entry-section .fwd-cite { margin-top:.1em; font:500 12px/1.3 'IBM Plex Mono','Book Sigla',monospace; color:var(--dim); }
 .entry-section .tx-in-script { grid-column:2; min-width:0; }
 .entry-section .tx-margin-cites { grid-column:left; grid-row:2; align-self:start; }
 .entry-section .tx-outputs { grid-column:body / -1; grid-row:2;
@@ -376,10 +414,10 @@ a:hover { text-decoration: underline; }
    Σ outputs right -- the geometry is the equation. Derived rather than on
    the wire, it leads the foot region below the section's one rule (a
    full-width row of the footnotes grid), apart from the record it totals. */
-.entry-section .tx-totals { grid-column:1 / -1; display:flex; justify-content:space-between; align-items:baseline; gap:1em; margin:0 0 1.6em; font:italic 400 13.5px/1.4 'Newsreader',serif; color:var(--dim); font-variant-numeric:tabular-nums; }
+.entry-section .tx-totals { grid-column:1 / -1; display:flex; justify-content:space-between; align-items:baseline; gap:1em; margin:0 0 1.6em; font:italic 400 13.5px/1.4 'Newsreader','Book Sigla',serif; color:var(--dim); font-variant-numeric:tabular-nums; }
 .entry-section .tx-totals .t-fee { color:var(--meta); }
 .entry-section .tx-locktime { grid-column:left / -1; grid-row:3; text-align:center; font-style:normal; }
-.entry-section .tx-note { font:italic 400 13.5px/1.4 'Newsreader',serif; color:var(--dim); }
+.entry-section .tx-note { font:italic 400 13.5px/1.4 'Newsreader','Book Sigla',serif; color:var(--dim); }
 .entry-section .tx-seq { font-style:normal; color:var(--meta); }
 .entry-section .tx-seq-rbf { color:var(--accent-2); }
 .entry-section .tx-seq-block, .entry-section .tx-seq-time { color:var(--dim); font-variant-numeric:normal; }
@@ -389,16 +427,16 @@ a:hover { text-decoration: underline; }
   font-weight:500; color:var(--accent); }
 /* The book's script notation, wherever the ledger prints it. */
 .entry-section .op { color: var(--accent); font-style: normal; }
-.entry-section .op-name { font: 600 .62em/1 'IBM Plex Mono',monospace; letter-spacing:.04em; color: var(--dim); font-style: normal; vertical-align: .14em; white-space: nowrap; }
+.entry-section .op-name { font: 600 .62em/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.04em; color: var(--dim); font-style: normal; vertical-align: .14em; white-space: nowrap; }
 .entry-section .op-push { color: var(--meta); }
 .entry-section .dt { color: var(--accent); font-style: normal; font-weight: 700; }
 .entry-section .wit-sep, .entry-section .wit-empty { color:var(--meta); font-style:normal; }
 .entry-section .glossia-lazy { color:var(--dim); }
 .entry-section .tx-ascii { margin:0 0 .55em; padding:.12em 0 .12em 1.05em;
   border-left:2px solid var(--accent); border-radius:1px;
-  font:italic 400 17.5px/1.6 'Newsreader',serif; color:var(--ink-soft); }
+  font:italic 400 17.5px/1.6 'Newsreader','Book Sigla',serif; color:var(--ink-soft); }
 .entry-section .tab { display:inline-block; width:4ch; }
-.entry-section .tx-witness-ref { font:500 .62em/1 'IBM Plex Mono',monospace; color:var(--accent); vertical-align:super; text-decoration:none; margin-left:.12em; }
+.entry-section .tx-witness-ref { font:500 .62em/1 'IBM Plex Mono','Book Sigla',monospace; color:var(--accent); vertical-align:super; text-decoration:none; margin-left:.12em; }
 .entry-section .tx-witness-ref:hover { text-decoration:underline; }
 /* Mirrors the book's #ch-footnotes grid: a witness-only input's citation
    follows its witness down and takes the left cell of its footnote's row,
@@ -415,9 +453,9 @@ a:hover { text-decoration: underline; }
 /* 11px/1.3 vs the 19px/1.75 body is the BIP141 discount set in type: 4x the
    character density, a quarter of the space per letter -- see the book page's
    .footnote-entry comment for the arithmetic. */
-.entry-section .footnote-entry { margin:0 0 1.1em; font:italic 400 11px/1.3 'Newsreader',serif; color:var(--dim); }
+.entry-section .footnote-entry { margin:0 0 1.1em; font:italic 400 11px/1.3 'Newsreader','Book Sigla',serif; color:var(--dim); }
 .entry-section .footnote-entry:target { color:var(--ink-soft); }
-.entry-section .footnote-mark { font:500 8px/1 'IBM Plex Mono',monospace; color:var(--accent); margin-right:.5em; font-style:normal; vertical-align:.35em; }
+.entry-section .footnote-mark { font:500 8px/1 'IBM Plex Mono','Book Sigla',monospace; color:var(--accent); margin-right:.5em; font-style:normal; vertical-align:.35em; }
 /* The one mark the reader doesn't draw: the txo this entry references --
    the accent rule beside it, and its prose set bold: the pushed bytes of
    this scriptPubKey are the address itself in the book's tongue, so the
@@ -451,11 +489,11 @@ a:hover { text-decoration: underline; }
 }
 .entry-card { margin-top:34px; width:min(440px, 100%); text-align:left; border-top:1px solid var(--rule); }
 .entry-card .e-row { display:flex; align-items:baseline; justify-content:space-between; gap:16px; padding:10px 2px; border-bottom:1px solid var(--hair); }
-.entry-card .e-k { flex:none; font:600 10px/1.6 'IBM Plex Mono',monospace; letter-spacing:.14em; text-transform:uppercase; color:var(--meta); }
-.entry-card .e-v { flex:1; min-width:0; text-align:right; font:500 13px/1.5 'IBM Plex Mono',monospace; color:var(--ink-soft);
+.entry-card .e-k { flex:none; font:600 10px/1.6 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.14em; text-transform:uppercase; color:var(--meta); }
+.entry-card .e-v { flex:1; min-width:0; text-align:right; font:500 13px/1.5 'IBM Plex Mono','Book Sigla',monospace; color:var(--ink-soft);
   white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-variant-numeric:tabular-nums; }
 .entry-card .e-v.unspent { color:var(--accent); }
-.entry-note { margin-top:20px; font:400 11px/1.6 'IBM Plex Mono',monospace; color:var(--meta); }
+.entry-note { margin-top:20px; font:400 11px/1.6 'IBM Plex Mono','Book Sigla',monospace; color:var(--meta); }
 .entry-note:empty { display:none; }
 
 /* The carousel, as the book turns its pages: the slide carries the whole
@@ -466,7 +504,7 @@ a:hover { text-decoration: underline; }
 /* The pager under the title: this leaf's place among its level's siblings,
    with arrows for hands without a touchscreen. */
 .anth-pager { margin-top:14px; display:flex; gap:10px; align-items:baseline; justify-content:center;
-  font:600 11px/1 'IBM Plex Mono',monospace; letter-spacing:.14em; text-transform:uppercase; color:var(--dim); }
+  font:600 11px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.14em; text-transform:uppercase; color:var(--dim); }
 .anth-pager:empty { display:none; }
 .anth-pager a { color:var(--dim); font-size:15px; padding:0 8px; text-decoration:none; }
 .anth-pager a:hover { color:var(--accent); text-decoration:none; }
@@ -478,8 +516,8 @@ a:hover { text-decoration: underline; }
    the ribbon it flies in the book, its title in the book's serif, its
    remaining reference on the right. */
 .sp-bm { display:flex; align-items:baseline; gap:16px; padding:6px 2px 6px 30px; border-bottom:1px solid var(--hair); text-decoration:none; }
-.sp-bm-title { flex:1; min-width:0; font:500 14.5px/1.35 'Newsreader',serif; color:var(--ink-soft); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.sp-bm-ref { flex:none; font:600 12px/1.4 'IBM Plex Mono',monospace; letter-spacing:.06em; color:var(--accent); white-space:nowrap; font-variant-numeric:tabular-nums; }
+.sp-bm-title { flex:1; min-width:0; font:500 14.5px/1.35 'Newsreader','Book Sigla',serif; color:var(--ink-soft); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.sp-bm-ref { flex:none; font:600 12px/1.4 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.06em; color:var(--accent); white-space:nowrap; font-variant-numeric:tabular-nums; }
 .sp-bm:hover { text-decoration:none; }
 .sp-bm:hover .sp-bm-title { color:var(--ink); }
 .sp-bm:hover .sp-bm-ref { text-decoration:underline; color:var(--accent-2); }
@@ -492,6 +530,12 @@ a:hover { text-decoration: underline; }
   <div class="masthead">
     <span class="title">The <span class="beta">β</span>ook of <span class="beta">β</span>itcoin</span>
     <span class="home"><a href="./bitcoin-book.html">Read</a> · <a href="./bitcoin-contents.html?part=ledgers">Contents</a> · <a href="./bitcoin-search.html">Search</a> · <span class="settings-menu"><a href="#" id="settings-link" role="button" aria-haspopup="dialog" aria-expanded="false">Settings</a><div id="settings-panel" class="settings-panel hidden" role="dialog" aria-label="Ledger settings">
+      <div class="settings-title">Amounts</div>
+      <!-- The book page's notation rows, same stored choice: the record's
+           three dresses, then the valuations — the day's USD price (each
+           ledger entry at its own day) and the reader's own unit where one
+           is defined. Filled by renderAmountRows. -->
+      <div id="amount-rows" class="lang-rows"></div>
       <div class="settings-title">Data source</div>
       <div class="endpoint-row">
         <select id="bb-select" class="bb-select" aria-label="Esplora endpoint"></select>
@@ -502,7 +546,6 @@ a:hover { text-decoration: underline; }
         <input type="text" id="bb-url" placeholder="https://your-esplora/api" autocomplete="off" spellcheck="false">
         <button type="button" id="bb-save" class="save-btn">Save</button>
       </div>
-      <div class="settings-note">Where the ledgers ask — Esplora-compatible endpoints, the chosen one tried first; the book's reading pages share this choice. Applies from the next fetch; banked history is never refetched.</div>
     </div></span></span>
   </div>
 
@@ -551,6 +594,7 @@ a:hover { text-decoration: underline; }
         <a class="entry-cite" id="entry-cite"></a>
         <h1 class="entry-title" id="entry-title"></h1>
         <div class="entry-amt" id="entry-amt"></div>
+        <div class="entry-val" id="entry-val"></div>
         <div class="entry-section" id="entry-section"></div>
         <p class="anth-prose" id="entry-prose"></p>
         <div class="entry-card" id="entry-card"></div>
@@ -580,10 +624,12 @@ import { localizeHome, mountLangMenu } from './btc-strings.js';
 localizeHome();   // the masthead in the reader's UI language
 mountLangMenu();  // …with the Language item, which any page can now set
 import { INDEXED, isAddress, isScriptHex, keptLedgers, saveKeptLedgers, sameAddresses, memberScriptHex, cachedLine, resolveLine,
-         extendLine, renderLedger, renderRows, periods, lineNote, reconciled, ledgerSum, heldCoins, addressState, lastKnownState,
+         extendLine, renderRows, groupState, periods, lineNote, reconciled, ledgerSum, heldCoins, addressState, lastKnownState,
          formatBalanceBtc, formatNetBtc, chainFailureText, citeHref, sectionOf, sectionOfFetched, citePlace, passageTxid, passageEntries, txHexOf, outspendsOf, prevoutValuesOf,
          DEFAULT_ESPLORA, esploraCustom, esploraSelected, setEsploraSettings } from './btc-index.js';
 import { volumeBookChapter, heightOf, subsidyAt, toRoman, parseReference, latinRefOf, footnoteMark } from './btc-citation.js';
+import { usdOn } from './btc-price.js';
+import { amountUnit, setAmountUnit, ownUnit, formatAmountAs, formatValuation } from './btc-amounts.js';
 import { BIP39, HP_SPELLS } from './btc-wordlists.js';
 import { appendix } from './btc-contents.js';
 import './btc-fontscale.js';   // the reader's type sizes: a ledger's readings are set at the size the book page's Commentary row chose
@@ -666,8 +712,51 @@ const notablesReady = loadNotables();
     ev.preventDefault();
     const open = panel.classList.toggle('hidden');
     link.setAttribute('aria-expanded', String(!open));
-    if (!open) rebuild();
+    if (!open) { rebuild(); renderAmountRows(); }
   });
+
+  // The amount-notation rows: the book page's picker, same stored choice
+  // (btc-amounts.js), so the figures' dress follows the reader between the
+  // manuscript and its ledgers. The record's three notations show the same
+  // sample amount; the valuations follow — 'usd' names what it does here
+  // (each entry at its own day) rather than faking one figure for rows
+  // that will each carry their own, and the reader's own unit shows only
+  // where one is defined (the book page's Amounts foot defines it).
+  // Switching re-opens the leaf in hand: every column reads in the new
+  // dress at once.
+  const AMOUNT_SAMPLE = 123456789;
+  const renderAmountRows = () => {
+    const rows = document.getElementById('amount-rows');
+    rows.replaceChildren();
+    const own = ownUnit();
+    for (const u of own ? ['btc', 'sats', 'raw', 'usd', 'own'] : ['btc', 'sats', 'raw', 'usd']) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'lang-row' + (u === amountUnit() ? ' current' : '');
+      btn.setAttribute('aria-pressed', u === amountUnit() ? 'true' : 'false');
+      const name = document.createElement('span');
+      if (u === 'usd') {
+        name.textContent = '⋯ USD';
+        btn.title = 'each entry at its own day’s price, per the book’s price source — a market’s valuation, not the record';
+      } else {
+        name.textContent = formatAmountAs(AMOUNT_SAMPLE, u);
+        if (u === 'own') btn.title = `at your rate of ${own.perBtc.toLocaleString('en-US')} ${own.label} per ₿ — your valuation, not the record`;
+      }
+      const mark = document.createElement('span');
+      mark.className = 'lang-mark';
+      mark.textContent = '●';
+      btn.append(name, mark);
+      btn.addEventListener('click', async () => {
+        if (u === amountUnit()) return;
+        setAmountUnit(u);
+        renderAmountRows();
+        await ensureNowPrice();   // the sums' rate, before the bar is repainted
+        openView();               // the leaf in hand, reprinted in the new dress
+      });
+      rows.append(btn);
+    }
+  };
+  renderAmountRows();
   select.addEventListener('change', () => {
     setEsploraSettings({ selected: DEFAULT_ESPLORA[0] === select.value ? null : select.value });
     rebuild();
@@ -766,8 +855,8 @@ const PREV_PART_HREF = PREV_PART
 // ── Where the reader stands ────────────────────────────────────────────────
 //   level 'appendix': the compendium's title page (Appendix III · Ledgers)
 //   level 'ledger'  : the title leaf of LEDGERS[li]
-//   level 'address' : passage leaf `at` of that ledger -- one script of it
-//                     (addrs.length = the merged entries leaf)
+//   level 'address' : passage leaf `at` of that ledger -- one script of it,
+//                     the ledger's one account standing below every one
 //   level 'entry'   : one entry of entryAddr's record. The current entry is
 //                     named by KEY, not index: extending the record PREPENDS
 //                     older entries (the array is ascending), so an index
@@ -845,6 +934,47 @@ const bookmarks = readBookmarks()
 
 const n = (v, one, many) => `${v.toLocaleString('en-US')} ${v === 1 ? one : many}`;
 
+// ── What a sum is worth ──────────────────────────────────────────────────
+// The rows of a ledger each carry their own day, and a valuation of one is
+// read at that day's price. The AGGREGATES -- the totals bar, the balance,
+// the held line -- have no single day between them, so a valuation of one
+// is read at TODAY's price instead: one rate across the bar keeps its
+// arithmetic linear (Σ credit less Σ debit is still the balance) where a
+// blend of dated rates would quietly stop adding up. The hover says which
+// day is being used, so the two registers are never confused for each
+// other. Today's price is asked once and repainted into (below).
+let nowPrice = null;
+const aggregateRate = () => {
+  const u = amountUnit();
+  if (u === 'own') return ownUnit();
+  if (u === 'usd' && nowPrice) return { label: 'USD', perBtc: nowPrice.perBtc };
+  return null;
+};
+const aggregateTitle = () => {
+  const u = amountUnit();
+  if (u === 'own') {
+    const o = ownUnit();
+    return o ? `at your rate of ${o.perBtc.toLocaleString('en-US')} ${o.label} per ₿ — your valuation, not the record` : '';
+  }
+  if (u === 'usd' && nowPrice) {
+    return `at today's price, ${nowPrice.perBtc.toLocaleString('en-US')} USD per ₿ (${nowPrice.date}, per ${nowPrice.source}) — a sum spans many days, so it is read at one; a market's valuation, not the record`;
+  }
+  return '';
+};
+// A sum, in the reader's chosen notation: at the aggregate rate where one
+// is to be had, and otherwise in the record's own figure — never in a unit
+// the reader did not choose, and never in two at once.
+const fmtSum = (sats) => {
+  const rate = aggregateRate();
+  return rate ? formatValuation(Math.abs(sats), rate) : formatBalanceBtc(sats);
+};
+// Today's price, asked once, when a USD reading needs one.
+const ensureNowPrice = async () => {
+  if (amountUnit() !== 'usd' || nowPrice) return false;
+  nowPrice = await usdOn(Math.floor(Date.now() / 1000));
+  return !!nowPrice;
+};
+
 const showCount = (data) => {
   if (!data || !data.entries.length) { count.textContent = ''; return; }
   const parts = [n(data.entries.length, 'entry', 'entries')];
@@ -879,7 +1009,8 @@ const heldView = (data, held) => {
   if (!held || !data || held.sum !== data.balance) return null;
   heldEl.replaceChildren();
   const amt = document.createElement('span'); amt.className = 'held-amt';
-  amt.textContent = formatBalanceBtc(held.sum);
+  amt.textContent = fmtSum(held.sum);
+  amt.title = aggregateTitle();
   if (held.count === 0) {
     heldEl.append('nothing still held — every gift has moved on');
   } else {
@@ -1004,25 +1135,6 @@ function heldFresh(addr) {
   return p;
 }
 
-// Whatever this leaf knows, shown with its state. A reconciled ledger
-// reads whole -- periods, entries, running balance, held marks. A ledger
-// not yet whole still shows everything banked so far, headed by a note
-// saying exactly how far the record has been read; only the held marks
-// wait for the full triple agreement. Nothing at all yields an
-// unreachable note that retries in place.
-const view = (data, held) => {
-  renderLedger(el, data, { bookmarks, held: heldView(data, held) });
-  showCount(data);
-  showRange(data);
-  if (!reconciled(data)) {
-    const s = document.createElement('span');
-    s.className = 'idx-note sync-note';
-    s.textContent = data.complete
-      ? 'unreconciled — this map disagrees with the chain balance; resyncing on the next visit'
-      : `${data.walked.toLocaleString('en-US')} of ${data.txCount.toLocaleString('en-US')} transactions gathered — thumbing an address’s pages reaches deeper`;
-    el.prepend(s);
-  }
-};
 const unreachable = (alive, retry) => {
   el.replaceChildren();
   totalsBar.classList.add('hidden');
@@ -1055,12 +1167,11 @@ const lineOnce = (addr) => {
 };
 
 // ── The record: an endless scroll, reference-organized ───────────────────
-// The address leaf's resolution: the stored line first -- instantly,
-// offline included -- then the head refreshed against the chain (new
-// arrivals only; no backfill) while the held snapshot arrives beside it.
-// Below the title, the record itself: the banked entries newest-first
-// under Volume and Book headers alone (reading by time lives on the
-// entries leaf), drawn a chunk at a time. A sentinel at the foot watches
+// The ledger's one account, resolved: every member's stored line first --
+// instantly, offline included -- then each head refreshed against the
+// chain (new arrivals only; no backfill) while the held snapshots arrive
+// beside them. Below the passage, the record itself: the banked entries
+// newest-first under Volume and Book headers, drawn a chunk at a time. A sentinel at the foot watches
 // the scroll from well above the bottom: nearing it draws the next chunk
 // from the bank, and when the bank runs low the next page fetches ahead
 // -- so the past keeps arriving with nothing to wait for. `alive` guards
@@ -1079,9 +1190,10 @@ const showTotals = (line) => {
     const net = (line.balance ?? 0) - ledgerSum(line);
     if (net >= 0) credit += net; else debit += -net;
   }
-  document.getElementById('t-balance').textContent = formatBalanceBtc(line.balance ?? credit - debit);
-  document.getElementById('t-debit').textContent = debit ? formatBalanceBtc(debit) : '';
-  document.getElementById('t-credit').textContent = formatBalanceBtc(credit);
+  document.getElementById('t-balance').textContent = fmtSum(line.balance ?? credit - debit);
+  document.getElementById('t-debit').textContent = debit ? fmtSum(debit) : '';
+  document.getElementById('t-credit').textContent = fmtSum(credit);
+  totalsBar.title = aggregateTitle();
   document.getElementById('t-count').textContent = `${line.txCount.toLocaleString('en-US')} §`;
   totalsBar.classList.remove('hidden');
 };
@@ -1089,12 +1201,45 @@ const stateText = (d) => !d.complete
   ? `the latest ${d.walked.toLocaleString('en-US')} of ${d.txCount.toLocaleString('en-US')} transactions gathered`
   : reconciled(d) ? 'the whole record gathered · reconciled with the chain'
   : 'unreconciled — this map disagrees with the chain balance';
-const runResolve = async (addr, alive) => {
-  const heldP = heldFresh(addr);
-  const cached = await cachedLine(addr);
+// A ledger keeps ONE table, and it is the ledger's own account: every
+// member's entries in a single record, not a table per passage. The
+// members' maps are banked separately (each address is its own line in the
+// store) and merged for reading -- so the passages above may be turned
+// through without the account below them changing, because it is not
+// theirs, it is the ledger's.
+const mergedCached = async (addrs) => mergeLines(await Promise.all(addrs.map(cachedLine)), addrs);
+// …and the reach grows the same way: whichever members are still short of
+// their whole record are extended together, and the merge is retaken.
+const extendMerged = async (addrs) => {
+  const lines = await Promise.all(addrs.map(cachedLine));
+  const behind = addrs.filter((a, i) => lines[i] && !lines[i].complete);
+  if (!behind.length) return null;
+  await Promise.all(behind.map((a) => extendLine(a)));
+  return mergedCached(addrs);
+};
+const runRecord = async (alive) => {
+  const addrs = cur().addresses;
+  const heldP = Promise.all(addrs.map((a) => heldFresh(a))).then(mergeHeld);
+  const cached = await mergedCached(addrs);
   if (!alive()) return;
   let byTxid = null;     // held marks, once the snapshot agrees
-  let rowsEl, foot, note, unsyn, rendered, io;
+  let rowsEl, foot, note, unsyn, rendered, io, group;
+  // The reader's own marks that fall ON this account: a bookmark counts
+  // where the ledger actually has an entry in that chapter, and nowhere
+  // else. A passage kept somewhere else in the same years is not this
+  // ledger's business -- the account would be claiming a reading that has
+  // nothing to do with it. Newest first, the order the rows are drawn in;
+  // the height set is rebuilt only as the reach grows, and growth only
+  // ever APPENDS older marks to the tail, so the count already consumed
+  // stays true across chunks.
+  let markHeights = null, markLen = -1;
+  const marksOn = (line) => {
+    if (markLen !== line.entries.length) {
+      markHeights = new Set(line.entries.map((e) => e.height));
+      markLen = line.entries.length;
+    }
+    return bookmarks.filter((b) => markHeights.has(b.height)).sort((a, z) => z.height - a.height);
+  };
   let busy = false;      // one draw at a time; the re-arm retriggers
   // The unsynced entry: an unreferenced line heading the record for the
   // transactions not yet gathered -- their count standing where the
@@ -1110,8 +1255,8 @@ const runResolve = async (addr, alive) => {
     if (l.complete || left <= 0) { unsyn.remove(); return; }
     const net = (l.balance ?? 0) - ledgerSum(l);
     unsyn.children[0].textContent = `${left.toLocaleString('en-US')} §`;
-    unsyn.children[1].textContent = net < 0 ? formatBalanceBtc(-net) : '';
-    unsyn.children[2].textContent = net >= 0 ? formatBalanceBtc(net) : '';
+    unsyn.children[1].textContent = net < 0 ? fmtSum(-net) : '';
+    unsyn.children[2].textContent = net >= 0 ? fmtSum(net) : '';
     unsyn.title = 'the net of the transactions not yet gathered — the balance the record below stands on';
   };
   // The landing: a dive returned from the entry leaves wants the record
@@ -1133,14 +1278,15 @@ const runResolve = async (addr, alive) => {
   const scroll = async () => {
     if (busy || !alive()) return;
     busy = true;
-    let line = await cachedLine(addr);
+    let line = await mergedCached(addrs);
     if (!alive() || !line) { busy = false; return; }
-    if (line.entries.length <= rendered && !line.complete) line = await extendLine(addr) ?? line;
+    if (line.entries.length <= rendered && !line.complete) line = await extendMerged(addrs) ?? line;
     if (!alive()) { busy = false; return; }
     const len = line.entries.length;
     const take = Math.min(len - rendered, PAGE);
     if (take > 0) {
-      renderRows(rowsEl, line.entries.slice(len - rendered - take, len - rendered), byTxid);
+      renderRows(rowsEl, line.entries.slice(len - rendered - take, len - rendered), byTxid,
+                 { state: group, bookmarks: marksOn(line) });
       rendered += take;
     }
     note.textContent = stateText(line);   // the reach grows as the reader reads
@@ -1148,7 +1294,7 @@ const runResolve = async (addr, alive) => {
     showTotals(line);
     foot.textContent = line.complete && rendered >= len ? '— the beginning of the record' : '…';
     // The fetch ahead: keep a page banked beyond what's drawn.
-    if (!line.complete && len - rendered < PAGE) extendLine(addr);
+    if (!line.complete && len - rendered < PAGE) extendMerged(addrs);
     busy = false;
     // The landing keeps drawing until its row exists (banked, so bounded).
     if (tryLand() && rendered < len) { queueMicrotask(scroll); return; }
@@ -1195,6 +1341,7 @@ const runResolve = async (addr, alive) => {
     el.append(unsyn, rowsEl, foot);
     setUnsynced(data);
     rendered = 0;
+    group = groupState();   // headings and marks start afresh with the paint
     io = new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) scroll(); },
                                   { rootMargin: '1600px 0px' });
     io.observe(foot);
@@ -1202,22 +1349,33 @@ const runResolve = async (addr, alive) => {
   };
   if (cached) paint(cached, null);
   else { el.replaceChildren(); lineNote(el, '…'); }
-  const [data, held] = await Promise.all([lineOnce(addr), heldP]);
+  // Every member's sync ticks reach this one note, summed: the account is
+  // whole only when all of them are.
+  const latest = new Map(addrs.map((a) => [a, { g: 0, t: 0 }]));
+  for (const a of addrs) {
+    progress.set(a, (gathered, total) => {
+      if (!alive() || !note) return;
+      latest.set(a, { g: gathered, t: total });
+      const g = [...latest.values()].reduce((x, v) => x + v.g, 0);
+      const t = [...latest.values()].reduce((x, v) => x + v.t, 0);
+      if (t) note.textContent = `still syncing — ${g.toLocaleString('en-US')} of ${t.toLocaleString('en-US')} transactions gathered`;
+    });
+  }
+  const [lines, held] = await Promise.all([Promise.all(addrs.map(lineOnce)), heldP]);
   if (!alive()) return;
+  const data = mergeLines(lines, addrs);
   if (data) paint(data, held);
-  else if (!cached) unreachable(alive, () => runResolve(addr, alive));
+  else if (!cached) unreachable(alive, () => runRecord(alive));
 };
 
-// ── The entries leaf: the ledger read whole ──────────────────────────────
-// Past the last address lies the ledger's own entries page: every member's
-// entries merged into one account, hierarchical in time -- years, then
-// quarters, then the entries themselves, references on the left and
-// amounts on the right, the running balance now running across the whole
-// set. The merge is a sort: entries already carry their heights, and the
-// same ordering the per-address maps keep (height, then txid, credits
-// before debits) interleaves them exactly. Each merged entry is tagged
-// with its home address, so a dive from this leaf lands in the right
-// column of the ledger.
+// ── The merge: many members, one account ─────────────────────────────────
+// A ledger's members each bank their own map (one line in the store per
+// address), and the account the reader reads is the merge of them. The
+// merge is a sort: entries already carry their heights, and the same
+// ordering every map keeps (height, then txid, credits before debits)
+// interleaves them exactly. Each merged entry is tagged with its home
+// address, so a dive lands in the right member's record; and the whole is
+// complete only when every member's map is.
 const mergeLines = (lines, addrs) => {
   const tagged = lines.map((l, i) => (l ? { line: l, addr: addrs[i] } : null)).filter(Boolean);
   if (!tagged.length) return null;
@@ -1241,30 +1399,6 @@ const mergeHeld = (helds) => {
     for (const [t, v] of h.byTxid) byTxid.set(t, (byTxid.get(t) ?? 0) + v);
   }
   return { sum, count: count2, byTxid };
-};
-const runEntries = async (alive) => {
-  const addrs = cur().addresses;
-  const heldP = Promise.all(addrs.map((a) => heldFresh(a)));
-  const cachedAll = await Promise.all(addrs.map((a) => cachedLine(a)));
-  if (!alive()) return;
-  const cached = mergeLines(cachedAll, addrs);
-  if (cached) view(cached, null);
-  else { el.replaceChildren(); lineNote(el, '…'); }
-  // Every member's sync ticks reach this leaf's one note, summed.
-  const latest = new Map(addrs.map((a, i) => [a, { g: cachedAll[i]?.walked ?? 0, t: cachedAll[i]?.txCount ?? 0 }]));
-  const tickNote = () => {
-    if (!alive()) return;
-    const gathered = [...latest.values()].reduce((n2, v) => n2 + v.g, 0);
-    const total = [...latest.values()].reduce((n2, v) => n2 + v.t, 0);
-    const note = el.querySelector('.idx-note');
-    if (note) note.textContent = `still syncing — ${gathered.toLocaleString('en-US')} of ${total.toLocaleString('en-US')} transactions gathered`;
-  };
-  for (const a of addrs) progress.set(a, (gathered, total) => { latest.set(a, { g: gathered, t: total }); tickNote(); });
-  const [lines, helds] = await Promise.all([Promise.all(addrs.map(lineOnce)), heldP]);
-  if (!alive()) return;
-  const data = mergeLines(lines.map((l, i) => l ?? cachedAll[i]), addrs);
-  if (data) view(data, mergeHeld(helds));
-  else unreachable(alive, () => runEntries(alive));
 };
 
 // ── The three leaves ───────────────────────────────────────────────────────
@@ -1558,18 +1692,20 @@ const openLedgerLeaf = (alive) => {
 };
 
 // A passage leaf (or, past the last passage, the ledger's table of entries).
-// A ledger has ONE title page, the leaf above; this one is titled by the
-// passage it sets -- the script in the book's own prose -- with the ledger's
-// name in the eyebrow, as the crumb back up to it.
+// A ledger has ONE title page, the leaf above, and ONE account, the table
+// below; this leaf is titled by the passage it sets -- the script in the
+// book's own prose -- with the ledger's name in the eyebrow, as the crumb
+// back up to it. Turning between passages turns the heading only: the
+// account beneath belongs to the ledger, not to any one of its members, so
+// it stands unchanged behind all of them.
 const openAddressLeaf = (alive) => {
   const addrs = cur().addresses;
+  if (at >= addrs.length) at = addrs.length - 1;   // no leaf past the last passage
   eyebrow.replaceChildren(arrowless('▴ ' + cur().name, () => ascend()));
   pager.replaceChildren();
-  if (addrs.length + 1 > 1) {
+  if (addrs.length > 1) {
     const pos = document.createElement('span');
-    pos.textContent = at < addrs.length
-      ? (addrs.length > 1 ? `passage ${at + 1} of ${addrs.length}` : 'passage')
-      : 'entries';
+    pos.textContent = `passage ${at + 1} of ${addrs.length}`;
     pager.append(
       arrow('‹', 'Previous leaf', at <= 0, () => turnAddress(-1)),
       pos,
@@ -1581,11 +1717,6 @@ const openAddressLeaf = (alive) => {
   downEl.setAttribute('aria-label', 'Down to the summary and entries');
   showBookmark();   // a searched address lands here; the ribbon is at hand
 
-  if (at >= addrs.length) {
-    showCommentary(addrs, alive);   // the merged entries leaf reads for the whole ledger
-    runEntries(alive);
-    return;
-  }
   const addr = addrs[at];
   showCommentary([addr], alive);
 
@@ -1612,7 +1743,7 @@ const openAddressLeaf = (alive) => {
     }
   })();
 
-  runResolve(addr, alive);
+  runRecord(alive);
 };
 const arrowless = (text, act) => {
   const a = document.createElement('a');
@@ -2038,9 +2169,44 @@ const openEntryLeaf = async (alive) => {
       });
     })();
   })();
+  // The entry's amount, in the reader's chosen notation and in that alone:
+  // a valuation replaces the record's figure rather than standing beside
+  // it. At the entry's OWN day under 'usd' (asked after the paint, since it
+  // may cost a request), at the reader's fixed rate under 'own', and in the
+  // record's ₿ wherever no rate can be had -- an entry with no day, or a
+  // day the source cannot price. The line beneath carries the rate's
+  // provenance rather than a second copy of the figure.
   const amt = document.getElementById('entry-amt');
-  amt.textContent = formatNetBtc(e.sats);
   amt.classList.toggle('credit', e.sats > 0);
+  const val = document.getElementById('entry-val');
+  val.textContent = '';
+  val.removeAttribute('title');
+  const signed = (figure) => `${e.sats < 0 ? '−' : '+'}${figure}`;
+  const unit = amountUnit();
+  const own = unit === 'own' ? ownUnit() : null;
+  if (own) {
+    amt.textContent = e.sats ? signed(formatValuation(Math.abs(e.sats), own)) : formatValuation(0, own);
+    val.textContent = 'at your rate';
+    val.title = `at your rate of ${own.perBtc.toLocaleString('en-US')} ${own.label} per ₿ — your valuation, not the record`;
+  } else if (unit === 'usd' && e.time) {
+    amt.textContent = '⋯';
+    usdOn(e.time).then((p) => {
+      if (!alive()) return;
+      if (!p) {
+        amt.textContent = formatNetBtc(e.sats);
+        val.textContent = 'no price for this day';
+        val.title = 'before the source’s record begins, or the source unreachable — the record’s own figure stands instead';
+        return;
+      }
+      amt.textContent = e.sats
+        ? signed(formatValuation(Math.abs(e.sats), { label: 'USD', perBtc: p.perBtc }))
+        : formatValuation(0, { label: 'USD', perBtc: p.perBtc });
+      val.textContent = `${p.date}, per ${p.source}`;
+      val.title = `at ${p.perBtc.toLocaleString('en-US')} USD per ₿ on ${p.date} — the day of this entry; a market's valuation, not the record`;
+    });
+  } else {
+    amt.textContent = formatNetBtc(e.sats);
+  }
 
   const card = document.getElementById('entry-card');
   card.replaceChildren();
@@ -2074,7 +2240,7 @@ const openEntryLeaf = async (alive) => {
   if (!adhoc && line.complete) {
     let bal = 0;
     for (let i = 0; i <= ei; i++) bal += line.entries[i].sats;
-    row('balance after', formatBalanceBtc(bal));
+    row('balance after', fmtSum(bal));
   }
   const stEl = row('status', e.sats === 0 ? '—' : '…');
   if (e.sats !== 0) {
@@ -2189,7 +2355,7 @@ function turnTo(step, dir, axis = 'x') {
 
 // The moves, one per edge of the grammar.
 const canLedger = (dir) => level === 'ledger' && li + dir >= 0 && li + dir < LEDGERS.length;
-const canAddress = (dir) => level === 'address' && at + dir >= 0 && at + dir <= cur().addresses.length;
+const canAddress = (dir) => level === 'address' && at + dir >= 0 && at + dir < cur().addresses.length;
 function turnLedger(dir) { if (canLedger(dir)) turnTo(() => { li += dir; }, dir, 'x'); }
 function turnAddress(dir) { if (canAddress(dir)) turnTo(() => { at += dir; }, dir, 'x'); }
 function ascend() {
@@ -2439,6 +2605,10 @@ document.addEventListener('keydown', (e) => {
 });
 
 openView();
+// The sums' rate lands after the first paint, where a USD reading wants
+// one: the rows carry their own days and need no waiting, so the leaf
+// opens at once and the bar catches up on the repaint.
+ensureNowPrice().then((got) => { if (got) openView(); });
 
 // ── Landing on a shared reference ─────────────────────────────────────────
 // A URL carrying ?ref=v…b…c…[s…][o…] routes by what the reference names.

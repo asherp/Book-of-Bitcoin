@@ -361,60 +361,16 @@ export function composeBlockHeaderFields(header) {
   };
 }
 
-// A decimal integer string with a middle-dot every three digits (an output
-// amount, in satoshis): "407621551" -> "407·621·551". Operates on the string to
-// avoid any precision loss on large values.
-export function groupDigits(s) {
-  return s.replace(/\B(?=(\d{3})+(?!\d))/g, '·');
-}
-
-// A satoshi amount -> its value in bitcoin, with the ₿ sign trailing the figure
-// and exact to the satoshi. English number formatting: the whole-bitcoin part is
-// comma-grouped, and the fraction is always the full eight decimal places, so a
-// right-aligned column of amounts aligns on the point. 50 BTC reads 50.00000000 ₿,
-// a lone satoshi 0.00000001 ₿. An exactly-zero amount (e.g. an OP_RETURN data
-// carrier) reads as a bare 0 ₿ rather than a row of zeros. BigInt keeps large sat
-// counts exact.
-export function formatBtc(sats) {
-  const s = BigInt(sats);
-  if (s === 0n) return '0 ₿';
-  const whole = (s / 100000000n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-  const frac = (s % 100000000n).toString().padStart(8, '0');
-  return `${whole}.${frac} ₿`;
-}
-
 // ─── amount notation ───────────────────────────────────────────────────
-// How the reader prints an amount is a choice, like the prose language:
-//   'btc'   1.23456789 ₿      bitcoin, the ₿ sign trailing (formatBtc above)
-//   'sats'  123·456·789 sats  satoshis, the book's middle-dot grouping
-//   'raw'   123456789         the bare satoshi integer — no marker, no separator
-// The choice persists in localStorage under its own key and is read at
-// format time, so a page re-render is all a switch needs. 'btc' is the
-// default and is stored as an absent key, so a reader who never chose
-// reads the book as it has always been set.
-const AMOUNT_UNIT_KEY = 'glossia-btc-amount-unit';
-export function amountUnit() {
-  try {
-    const v = localStorage.getItem(AMOUNT_UNIT_KEY);
-    return v === 'sats' || v === 'raw' ? v : 'btc';
-  } catch { return 'btc'; }
-}
-export function setAmountUnit(u) {
-  try {
-    if (u === 'sats' || u === 'raw') localStorage.setItem(AMOUNT_UNIT_KEY, u);
-    else localStorage.removeItem(AMOUNT_UNIT_KEY);
-  } catch { /* storage unavailable: the choice just doesn't persist */ }
-}
-// A satoshi amount in a named notation — the settings rows print one sample
-// amount in each, so the choice shows itself.
-export function formatAmountAs(sats, unit) {
-  if (unit === 'sats') return `${groupDigits(BigInt(sats).toString())} sats`;
-  if (unit === 'raw') return BigInt(sats).toString();
-  return formatBtc(sats);
-}
-// …and in the notation currently chosen: the one call every amount the
-// reader page prints goes through.
-export const formatAmount = (sats) => formatAmountAs(sats, amountUnit());
+// How the book prints value lives in btc-amounts.js — split out so the
+// ledger surfaces can dress an amount without the WASM engine this module
+// rides on. Imported for the composition below and re-exported whole, so
+// the book page keeps its one import; formatOwnAmount is this module's
+// name for the valuations' shared dress (btc-amounts' formatValuation).
+import { groupDigits, formatBtc } from './btc-amounts.js';
+export { groupDigits, formatBtc, amountUnit, setAmountUnit, ownUnit, setOwnUnit,
+         dayPrice, setDayPrice, formatAmountAs, formatAmount,
+         formatValuation as formatOwnAmount } from './btc-amounts.js';
 
 // Quoted script text comes directly from raw blockchain data -- a miner's
 // coinbase tag, an OP_RETURN message -- not our own wordlist, so unlike the
@@ -1247,7 +1203,10 @@ export function renderWitness(items, encode) {
 // `bestOf` forwards to encodeCanonical, which since glossia 0.3.0 renders the
 // canonical encoding and ignores it — the canonical version pins the fluency
 // budget. The parameter stays so custom `encoder` implementations (which share
-// encodeCanonical's signature) keep working.
+// encodeCanonical's signature) keep working. Since 0.4.0 the encoding is the
+// fixed one, so a field's prose is a word shorter and no longer opens on a
+// constant the field's width fixed; nothing here needs to know that, because
+// every field already arrives with its byte count.
 // `lazyData`, when supplied, is an alternative encoder (hex -> HTML) used for an
 // OP_RETURN payload only: OP_RETURN is the one body field that can carry a bulky
 // data-carrier blob, so the caller can pass a placeholder emitter to defer its
