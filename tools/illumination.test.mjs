@@ -127,6 +127,23 @@ test('an anchor embedded in its own text line still escapes and grows', () => {
   assert.ok(points.length > 10, 'an embedded anchor must still be able to grow once it clears its own line');
 });
 
+// A floated CSS drop cap can make Range.getClientRects() report TWO
+// overlapping rects for the same visual line -- the glyph's own box, and
+// the line box the float sits in (confirmed against the real page: see
+// issue #73's illuminated-initial work). Escaping only one of the two
+// left the anchor still trapped in the other; both must be exempted.
+test('an anchor embedded in TWO overlapping rects escapes both, not just the first found', () => {
+  const symbol = 'F'.repeat(30);
+  const glyphBox = { x: -5, y: -10, w: 20, h: 15 };     // the drop cap's own tight box
+  const lineBox = { x: -50, y: -10, w: 500, h: 100 };    // the float's much larger line box
+  const anchor = { x: 0, y: 0, angle: -Math.PI / 2 };    // heading straight up
+  assert.ok(pointInRect(anchor.x, anchor.y, glyphBox) && pointInRect(anchor.x, anchor.y, lineBox),
+    'test is only meaningful if the anchor starts inside both rects at once');
+
+  const points = interpretFrom(symbol, anchor, [glyphBox, lineBox], null, noJitterRng).flatMap((s) => s.points);
+  assert.ok(points.length > 10, 'an anchor embedded in two overlapping rects must still escape and grow, not stall on the second one');
+});
+
 test('once clear of its home line, the SAME rect blocks it again -- escape is one-way, not a standing exemption', () => {
   // Straight up and out, a clean 180 (7 * 24 degrees is just past 168, near
   // enough to a U-turn for this check), then a long run aimed back down at

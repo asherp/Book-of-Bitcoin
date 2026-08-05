@@ -205,22 +205,27 @@ function tangentAngles(px, py, rect) {
 // an opcode mark opens directly against its script's first letter, a
 // citation mark closes directly against the last one, no gap either side.
 // So the anchor point itself is very often already INSIDE the padded
-// rectangle of the very line it marks. No amount of steering escapes an
-// obstacle you start inside of -- that is a geometric impossibility, not a
-// pathfinding failure -- so this carves one exception: whichever obstacle
-// contains the anchor (its "home" rect, if any) is ignored until the walk
-// has actually left it, exactly once, and is a normal obstacle again from
-// then on. Every other anchor (one that starts in the clear, as the
-// worked examples so far all did) sees no change at all -- homeRect is null
-// and the walk behaves exactly as before.
+// rectangle of the very line it marks -- sometimes more than one at once:
+// a floated CSS drop cap can make a single text line report as two
+// overlapping client rects (the glyph's own box, and the line box the
+// float sits in), both containing the anchor. No amount of steering
+// escapes an obstacle you start inside of -- that is a geometric
+// impossibility, not a pathfinding failure -- so this carves one exception:
+// EVERY obstacle that contains the anchor at the start (its "home" rects,
+// plural) is ignored while the walk is still inside that specific one, and
+// becomes a normal obstacle again the first time the walk is found
+// outside it -- independently per rect, and one-way (re-entering a rect
+// already left does not re-exempt it). An anchor that starts in the clear
+// (every worked example before the drop cap) sees no change at all -- the
+// home-rect set is empty and the walk behaves exactly as before.
 export function interpretFrom(symbol, anchor, obstacles, bounds, rng) {
   let state = { x: anchor.x, y: anchor.y, angle: anchor.angle };
   const stack = [];
   const segments = [];
   let cur = { points: [{ x: state.x, y: state.y }], leaves: [] };
-  const homeRect = obstacles.find((r) => pointInRect(anchor.x, anchor.y, r)) || null;
-  let escaped = !homeRect;
-  const active = () => (escaped ? obstacles : obstacles.filter((r) => r !== homeRect));
+  const homeRects = new Set(obstacles.filter((r) => pointInRect(anchor.x, anchor.y, r)));
+  const active = () => (homeRects.size === 0 ? obstacles : obstacles.filter((r) => !homeRects.has(r)));
+  const pruneHomeRects = () => { for (const r of homeRects) if (!pointInRect(state.x, state.y, r)) homeRects.delete(r); };
 
   const finish = () => { if (cur.points.length > 1 || cur.leaves.length) segments.push(cur); };
 
@@ -282,7 +287,7 @@ export function interpretFrom(symbol, anchor, obstacles, bounds, rng) {
         state = { x: nx, y: ny, angle: a };
         cur.points.push({ x: nx, y: ny });
       }
-      if (!escaped && !pointInRect(state.x, state.y, homeRect)) escaped = true;
+      if (homeRects.size) pruneHomeRects();
     } else if (ch === 'L') {
       // A heavily size-boosted symbol forks far more branches than a
       // cramped spot has room for; most die on their very first step and
@@ -382,16 +387,16 @@ export function measureAnchors(seedEls, hostRect, opts = {}) {
     const size = sizeOf(el) || r.h;
     let x, y;
     if (mode === 'top-left') {
-      // A drop cap's own corner is exactly where its paragraph's densest
-      // text starts -- boxed in on every side by the very prose it opens,
-      // with nowhere to go regardless of how many generations it earned.
-      // Real marginalia doesn't start AT the initial's corner either; it
-      // starts a little past it, already reaching for the margin the
-      // decoration is actually going to occupy. Push out from the corner
-      // by a fraction of the sigil's OWN size -- a bigger initial starts
-      // its vine further into the clear rather than deeper in the crowd.
-      x = r.x + Math.cos(angle) * size * 0.4;
-      y = r.y + Math.sin(angle) * size * 0.4;
+      // Right at the corner, not pushed out past it: the vine has to read
+      // as growing FROM the initial, touching it, the way real marginalia
+      // is physically continuous with the letter it decorates. (An earlier
+      // version pushed this out by a fraction of the sigil's own size to
+      // give it more initial clearance -- but that reads as a flourish
+      // floating apart from the letter rather than growing out of it, which
+      // is the whole point of an illuminated initial. The clearance a large
+      // mark needs comes from its size-driven generation budget and from
+      // wall-following once it's under way, not from starting detached.)
+      x = r.x; y = r.y;
     } else if (mode === 'center') {
       x = rcx; y = rcy;
     } else {
