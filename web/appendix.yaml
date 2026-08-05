@@ -7,13 +7,17 @@
 # CONTENTS is what belongs to the book but not to its reading order — reading
 # order being the order blocks were mined.
 #
-# Four parts, in three families, rendered in this order. The family sets the
-# heading: an APPENDIX holds the book's own matter out of reading order, and is
-# numbered among appendices; an INDEX points into the text, many places per
-# entry, and is titled "Index of …"; CITATIONS points out of the text, at works
-# the book does not contain, and stands last unnumbered -- a reference list is
-# where a book ends. The family follows from the kind (btc-notables.js), so a
-# part is filed by what it is rather than by where it sits:
+# Five parts, in three families, rendered in this order. The family sets the
+# heading: an APPENDIX holds the book's own matter out of reading order, and
+# wears the numeral of its place in the run; an INDEX points into the text,
+# many places per entry, and is titled "Index of …"; CITATIONS points out of
+# the text, at works the book does not contain, and stands last unnumbered --
+# a reference list is where a book ends. An index or the register still
+# OCCUPIES its place in the run without printing a numeral, the way an
+# unnumbered plate still takes a leaf, so a part's numeral says where it
+# falls among the whole back matter rather than among its own kind. The
+# family follows from the kind (btc-notables.js), so a part is filed by what
+# it is rather than by where it sits:
 #
 #   I   The Mempool — the chapters the queue is already forming, which is why
 #       it comes first: it opens where the volumes close, so the turn from the
@@ -42,6 +46,17 @@
 #       leaves, which is why this part lists ledgers here and explains itself
 #       there. The contents and the index are inverses; this is where the
 #       contents points at the other one.
+#   IV  Inscriptions — files written into witnesses and read back out by
+#       software that agrees where to look. The book's own matter out of
+#       reading order: each entry is a witness footnote the volumes already
+#       hold (cited §n.a, like any witness place), gathered here because the
+#       inscriptions are one story told in scattered chapters. An entry names
+#       its place AND its `reveal:` — the transaction whose witness carries
+#       the envelope — and the part's leaves fetch that witness and read the
+#       envelope out of its bytes (btc-inscriptions.js), so what the leaf
+#       shows is the chain's, and everything past the bytes (the numbering,
+#       the collections, where an inscription "now sits") stays commentary,
+#       credited. Research in tools/ordinals-appendix.md.
 #   Citations — works cited: documents outside this text whose existence
 #       the chain attests. Every other reference in this book points inward,
 #       at a chapter the book contains; these point the other way, at something
@@ -54,7 +69,8 @@
 #       The entries below ship with the app; a reader's own proofs, dropped on
 #       the appendix's leaf, are kept beside them the way bookmarks are.
 #
-# A part's `kind` says who fills it: `consensus` is listed here, `mempool` and
+# A part's `kind` says who fills it: `consensus` and `inscriptions` are listed
+# here, `mempool` and
 # `ledgers` are gathered by the page, and `proofs` is listed here too but names
 # files rather than places — each entry a `proof:` (an .ots file in proofs/), the
 # `subject:` it stamps, if the file itself is small enough to ship, and a
@@ -586,6 +602,22 @@
 - kind: ledgers
   title: Ledgers
   note: A ledger gathers what one keeper spends from — a single address, a set rotated over the years, or in time every leaf of one extended key — and reads each of its scripts as a passage, with the chapters that passage appears in listed beneath it. Nothing here carries a reference: the chain never writes an address, only the script one stands for, so a ledger is not cited but discovered, and its run of chapters stays open-ended.
+
+- kind: inscriptions
+  title: Inscriptions
+  note: Files written into witnesses and read back out by software that agrees where to look. The chain records the bytes — an unexecuted branch of a tapscript, carried by a spend and skipped by every validating node — and that they are an image, a token, or a table of contents is a convention held by people, not a rule held by nodes. So each leaf here fetches the reveal named beside its entry and reads the envelope out of the witness itself: what it shows is checkable against the bytes, and everything past the bytes — the numbering, where an inscription now sits — belongs to commentary, credited to whoever reads it that way. The rows below are the ones the book curates; a reader who keeps a witness of their own gets a leaf here too, named by whatever they called it, and a manifest kept that way opens as the collection it names.
+  entries:
+    - title: First Ordinals inscription
+      id: IV β69 ■343 §2323.a
+      reveal: 6fb976ab49dcec017f1e201e84395983204ae1a7c2abf7ced0a85d692e442799
+      note: The reveal in block 767430, December 2022 — 793 bytes of PNG in the witness, the first of the numbered series by the convention that numbers it.
+      commentary:
+        - file: first-ordinals-inscription.md
+          by: Claude Opus 5
+    - title: First BRC-20 inscription
+      id: IV β75 ■649 §408.a
+      reveal: b61b0172d95e266c18aea0c624db987e971a5d6d4ebc2aaed85da4642d635735
+      note: The ordi deploy, March 2023 — 94 bytes of JSON declaring a token scheme run entirely in readings of witness text.
 
 - kind: proofs
   title: Citations
