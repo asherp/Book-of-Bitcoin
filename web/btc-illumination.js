@@ -1,0 +1,412 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+//
+// btc-illumination.js — a procedural decoration layer, prototype stage (see
+// issue #73): vines grown from the sigla the way a scribe's marginalia grows
+// from a manuscript's initials, deeper the longer a chapter has stood
+// confirmed. This module only ever reads the DOM the rest of the book already
+// produced (see btc-prose.js / bitcoin-book.html) — it has no dependency on
+// Glossia or any engine output, and touches none of it.
+//
+// Two things are cached separately, on purpose:
+//   - the L-SYSTEM'S SYMBOLIC OUTPUT (which branches exist, how the grammar
+//     unfolded) is a pure function of (block hash, growth stage) and is
+//     cached forever — a viewport never re-rolls it.
+//   - the TURTLE INTERPRETATION (where those branches land in pixels, which
+//     ones got redirected or cut short by a line of prose) is recomputed on
+//     every layout pass, cheaply, from the DOM's own measured rectangles.
+// A resize, an orientation change, a font finishing its load — none of that
+// changes what grew, only where it fits. See the design note on issue #73.
+//
+// Deliberately dependency-free and framework-agnostic: an <svg> is built and
+// attached with plain DOM calls, styled with inline attributes on
+// currentColor exactly as the bookmark ribbon and printer mark are (see
+// ribbonOf / printerOf in bitcoin-book.html) — no new stylesheet, no new
+// font, nothing fetched.
+
+// ─── deterministic RNG, seeded from a hex string (a block hash, a txid) ────
+// splitmix32: small, fast, good enough scatter for cover-word/branch choice —
+// not cryptographic, and doesn't need to be. The same hash always yields the
+// same stream, which is the whole point: two readers looking at the same
+// block see the same illumination.
+function rngFromHex(hex) {
+  let seed = 0x9e3779b9 >>> 0;
+  const clean = String(hex || '').replace(/[^0-9a-f]/gi, '') || '0';
+  for (let i = 0; i < clean.length; i++) {
+    seed = (Math.imul(seed ^ clean.charCodeAt(i), 0x01000193)) >>> 0;
+  }
+  let state = seed >>> 0;
+  return function rng() {
+    state = (state + 0x6D2B79F5) >>> 0;
+    let t = state;
+    t = Math.imul(t ^ (t >>> 15), t | 1) >>> 0;
+    t = (t ^ (t + Math.imul(t ^ (t >>> 7), t | 61))) >>> 0;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+// ─── age: confirmation count → discrete growth stage ───────────────────────
+// Buckets, not a continuous function of depth — see issue #73. A stage is a
+// cache key; a smooth mapping would mean nothing is ever settled enough to
+// cache or to stop re-animating.
+export const GROWTH_STAGES = [
+  { min: 0,    max: 0,        name: 'bare',      iterations: 0 },
+  { min: 1,    max: 5,        name: 'curl',      iterations: 1 },
+  { min: 6,    max: 143,      name: 'vine',      iterations: 3 },
+  { min: 144,  max: 4031,     name: 'bordered',  iterations: 4 },
+  { min: 4032, max: Infinity, name: 'illuminated', iterations: 6 },
+];
+export function growthStage(confirmations) {
+  const n = Math.max(0, Number(confirmations) || 0);
+  const idx = GROWTH_STAGES.findIndex((s) => n >= s.min && n <= s.max);
+  return idx < 0 ? GROWTH_STAGES.length - 1 : idx;
+}
+
+// ─── the grammar: a stochastic vine/flower L-system (Prusinkiewicz-style) ──
+// Alphabet: F = grow one step and draw it, L = put out a leaf here (no
+// movement), + / - = turn, [ / ] = push/pop a branch point. Angles carry a
+// small jitter (from the seeded RNG, not Math.random) so a run of F's doesn't
+// read as a ruler-straight line.
+const PRODUCTIONS = [
+  { weight: 3, to: 'F' },              // plain growth
+  { weight: 3, to: 'FL' },             // growth capped with a leaf
+  { weight: 2, to: 'F[+F]F' },         // a side branch, trunk continues
+  { weight: 2, to: 'F[-FL]F' },
+  { weight: 1, to: 'F[+FL][-FL]F' },   // a fuller fork, reserved for deep stages
+];
+function pickProduction(rng, branchiness) {
+  // Bias toward the branchier rules as `branchiness` (pass-driven) rises, by
+  // discarding the plainest option outright above a threshold — simpler than
+  // re-weighting the whole table per pass, and easy to reason about.
+  const pool = branchiness > 0.6 ? PRODUCTIONS : PRODUCTIONS.filter((p) => p.to !== 'F[+FL][-FL]F');
+  const total = pool.reduce((s, p) => s + p.weight, 0);
+  let r = rng() * total;
+  for (const p of pool) { r -= p.weight; if (r <= 0) return p.to; }
+  return pool[pool.length - 1].to;
+}
+
+// blockHash -> { rng, passes } — passes[i] is the symbol string after i
+// rewriting generations, one continuous derivation per block rather than an
+// independent roll per stage. This is the point, not just an optimization:
+// every production keeps at least one F, so a later generation can only
+// elaborate an earlier one, never come out sparser — stage N's shape is
+// always stage (N-1)'s shape grown one step further, for a given block, the
+// way real growth accumulates rather than getting re-decided from scratch
+// each time a reader checks back on a deeper-confirmed chapter.
+const derivationCache = new Map();
+function passesFor(blockHash) {
+  let rec = derivationCache.get(blockHash);
+  if (!rec) {
+    rec = { rng: rngFromHex(blockHash), passes: ['F'] };
+    derivationCache.set(blockHash, rec);
+  }
+  return rec;
+}
+
+// (blockHash, stage) -> symbol string after that stage's total iteration
+// count, derived (and cached) incrementally from generation 0 up. Cached
+// forever per (blockHash, generation) — this is the part that must NOT
+// change across a reflow, a resize, or an orientation flip.
+export function generateSymbol(blockHash, stage) {
+  const spec = GROWTH_STAGES[stage] || GROWTH_STAGES[0];
+  const target = spec.iterations;
+  const rec = passesFor(blockHash);
+  while (rec.passes.length - 1 < target) {
+    const passIndex = rec.passes.length; // the generation about to be produced
+    const branchiness = Math.min(0.8, passIndex * 0.14);
+    const prev = rec.passes[rec.passes.length - 1];
+    rec.passes.push(prev.replace(/F/g, () => pickProduction(rec.rng, branchiness)));
+  }
+  return rec.passes[target];
+}
+
+// ─── turtle interpretation: symbol string + obstacles -> SVG path data ────
+const STEP = 7;                 // px per F
+const TURN = (24 * Math.PI) / 180; // base turn angle
+const JITTER = (10 * Math.PI) / 180;
+const MAX_DEFLECT_TRIES = 6;     // how hard a blocked step tries to dodge
+
+function pointInRect(x, y, r) { return x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h; }
+// Segment/segment intersection (standard orientation test) -- used to check
+// a growth step against a rectangle's four edges, not just its endpoints, so
+// a step that jumps clean over a thin obstacle can't sneak through undetected.
+function segmentsCross(p1, p2, p3, p4) {
+  const d = (a, b, c) => (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
+  const d1 = d(p3, p4, p1), d2 = d(p3, p4, p2), d3 = d(p1, p2, p3), d4 = d(p1, p2, p4);
+  return ((d1 > 0 && d2 < 0) || (d1 < 0 && d2 > 0)) && ((d3 > 0 && d4 < 0) || (d3 < 0 && d4 > 0));
+}
+function segmentHitsRect(x1, y1, x2, y2, r) {
+  const p1 = { x: x1, y: y1 }, p2 = { x: x2, y: y2 };
+  if (pointInRect(x1, y1, r) || pointInRect(x2, y2, r)) return true;
+  const tl = { x: r.x, y: r.y }, tr = { x: r.x + r.w, y: r.y }, bl = { x: r.x, y: r.y + r.h }, br = { x: r.x + r.w, y: r.y + r.h };
+  return segmentsCross(p1, p2, tl, tr) || segmentsCross(p1, p2, tr, br)
+    || segmentsCross(p1, p2, br, bl) || segmentsCross(p1, p2, bl, tl);
+}
+function stepBlocked(x1, y1, x2, y2, obstacles, bounds) {
+  if (bounds && (x2 < bounds.x || x2 > bounds.x + bounds.w || y2 < bounds.y || y2 > bounds.y + bounds.h)) return true;
+  for (const r of obstacles) if (segmentHitsRect(x1, y1, x2, y2, r)) return true;
+  return false;
+}
+
+// One anchor -> a list of finished polylines ({points, leaves}) grown from it.
+// `obstacles` and `bounds` are already in the same coordinate space as the
+// anchor (host-relative pixels) — see measureObstacles/measureAnchors below.
+function interpretFrom(symbol, anchor, obstacles, bounds, rng) {
+  let state = { x: anchor.x, y: anchor.y, angle: anchor.angle };
+  const stack = [];
+  const segments = [];
+  let cur = { points: [{ x: state.x, y: state.y }], leaves: [] };
+
+  const finish = () => { if (cur.points.length > 1 || cur.leaves.length) segments.push(cur); };
+
+  for (const ch of symbol) {
+    if (ch === 'F') {
+      const jitter = (rng() - 0.5) * 2 * JITTER;
+      const a = state.angle + jitter;
+      const nx = state.x + Math.cos(a) * STEP;
+      const ny = state.y + Math.sin(a) * STEP;
+      if (stepBlocked(state.x, state.y, nx, ny, obstacles, bounds)) {
+        // Dodge: try turning by increasing deflections either side before
+        // giving up on this branch entirely -- a vine curls around a line
+        // of prose rather than stopping dead at its edge.
+        let placed = false;
+        for (let t = 1; t <= MAX_DEFLECT_TRIES && !placed; t++) {
+          for (const sign of [1, -1]) {
+            const da = state.angle + sign * t * (TURN / 2);
+            const dx = state.x + Math.cos(da) * STEP;
+            const dy = state.y + Math.sin(da) * STEP;
+            if (!stepBlocked(state.x, state.y, dx, dy, obstacles, bounds)) {
+              state = { x: dx, y: dy, angle: da };
+              cur.points.push({ x: dx, y: dy });
+              placed = true;
+              break;
+            }
+          }
+        }
+        if (!placed) { finish(); cur = { points: [{ x: state.x, y: state.y }], leaves: [] }; }
+      } else {
+        state = { x: nx, y: ny, angle: a };
+        cur.points.push({ x: nx, y: ny });
+      }
+    } else if (ch === 'L') {
+      cur.leaves.push({ x: state.x, y: state.y, angle: state.angle });
+    } else if (ch === '+') {
+      state = { ...state, angle: state.angle + TURN };
+    } else if (ch === '-') {
+      state = { ...state, angle: state.angle - TURN };
+    } else if (ch === '[') {
+      stack.push({ state: { ...state }, cur });
+      cur = { points: [{ x: state.x, y: state.y }], leaves: [] };
+    } else if (ch === ']') {
+      finish();
+      const popped = stack.pop();
+      if (!popped) continue;
+      state = popped.state;
+      cur = popped.cur;
+    }
+  }
+  finish();
+  return segments;
+}
+
+// ─── measuring the DOM: obstacles (prose) and anchors (sigla/marks) ────────
+// Everything here is expressed relative to `hostEl`'s own box, which is also
+// where the SVG overlay is positioned -- so a rectangle measured here can be
+// drawn there with no further transform.
+function toHostSpace(rect, hostRect) {
+  return { x: rect.left - hostRect.left, y: rect.top - hostRect.top, w: rect.width, h: rect.height };
+}
+
+// Per-line rectangles for a prose element's actual rendered text -- handles
+// wrapping, font metrics, zoom, all of it, because it comes straight from
+// layout rather than being calculated. A small pad keeps vines from hugging
+// letterforms.
+export function measureObstacles(proseEl, hostRect, pad = 3) {
+  if (!proseEl) return [];
+  const range = document.createRange();
+  range.selectNodeContents(proseEl);
+  const rects = Array.from(range.getClientRects());
+  return rects.map((r) => {
+    const h = toHostSpace(r, hostRect);
+    return { x: h.x - pad, y: h.y - pad, w: h.w + pad * 2, h: h.h + pad * 2 };
+  });
+}
+
+// Seed points vines grow from -- the sigla already on the page. Each anchor's
+// starting angle points away from the host's own center, which in practice
+// aims a mark near the text column out toward the gutter/margin rather than
+// back across the prose.
+export function measureAnchors(seedEls, hostRect) {
+  const cx = hostRect.width / 2, cy = hostRect.height / 2;
+  return Array.from(seedEls || []).map((el) => {
+    const r = toHostSpace(el.getBoundingClientRect(), hostRect);
+    const x = r.x + r.w / 2, y = r.y + r.h / 2;
+    const angle = Math.atan2(y - cy, x - cx) || 0;
+    return { x, y, angle, el };
+  });
+}
+
+// ─── SVG building ───────────────────────────────────────────────────────
+const SVGNS = 'http://www.w3.org/2000/svg';
+function svgEl(tag, attrs) {
+  const el = document.createElementNS(SVGNS, tag);
+  for (const k in attrs) el.setAttribute(k, attrs[k]);
+  return el;
+}
+function pathD(points) {
+  return points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+}
+// A small forked leaf glyph, drawn at a leaf point and turned to face the
+// direction the vine was travelling when it put it out.
+function leafD(leaf) {
+  const deg = (leaf.angle * 180) / Math.PI;
+  return { d: 'M0,0 Q3,-4 6,-1 Q3,1 0,0 Z', transform: `translate(${leaf.x.toFixed(1)},${leaf.y.toFixed(1)}) rotate(${deg.toFixed(1)})` };
+}
+
+function buildOverlaySvg(width, height) {
+  return svgEl('svg', {
+    class: 'illum-overlay',
+    viewBox: `0 0 ${width} ${height}`,
+    width: String(width),
+    height: String(height),
+    'aria-hidden': 'true',
+    focusable: 'false',
+    style: 'position:absolute;inset:0;pointer-events:none;overflow:visible;z-index:0;color:inherit;',
+  });
+}
+
+function renderSegments(svg, segmentsByAnchor, { animate }) {
+  while (svg.firstChild) svg.removeChild(svg.firstChild);
+  const group = svgEl('g', { class: 'illum-vines', 'stroke-linecap': 'round' });
+  svg.appendChild(group);
+  for (const segments of segmentsByAnchor) {
+    for (const seg of segments) {
+      if (seg.points.length > 1) {
+        const path = svgEl('path', {
+          d: pathD(seg.points), fill: 'none', stroke: 'currentColor',
+          'stroke-width': '1.1', opacity: '0.55', class: 'illum-vine',
+        });
+        group.appendChild(path);
+        if (animate) primeGrowIn(path);
+      }
+      for (const leaf of seg.leaves) {
+        const { d, transform } = leafD(leaf);
+        group.appendChild(svgEl('path', {
+          d, transform, fill: 'currentColor', opacity: '0.55', class: 'illum-leaf',
+        }));
+      }
+    }
+  }
+}
+
+// Grow-in via the standard dasharray/dashoffset trick: only ever primed on a
+// FIRST render (see illuminate() below) -- a reflow re-lays-out the same
+// settled shape and must not replay this.
+function primeGrowIn(pathEl) {
+  requestAnimationFrame(() => {
+    const len = pathEl.getTotalLength();
+    pathEl.style.strokeDasharray = String(len);
+    pathEl.style.strokeDashoffset = String(len);
+    pathEl.style.transition = 'stroke-dashoffset 900ms ease-out';
+    requestAnimationFrame(() => { pathEl.style.strokeDashoffset = '0'; });
+  });
+}
+
+const reducedMotion = () => {
+  try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; }
+  catch { return false; }
+};
+
+// ─── public entry point ────────────────────────────────────────────────
+// illuminate(hostEl, { proseEl, seedEls, blockHash, confirmations }) ->
+// { refresh(), destroy() }.
+//
+//   hostEl        the positioning context (given position:relative if it
+//                 isn't already) -- e.g. bitcoin-book.html's `.tx-wrap`.
+//   proseEl       the element whose rendered text is the obstacle field
+//                 (defaults to hostEl).
+//   seedEls       elements to grow from -- sigla marks, citation marks, the
+//                 bookmark ribbon; falls back to hostEl's own corners if
+//                 none are given, so the module still does something useful
+//                 standing alone.
+//   blockHash     seeds the grammar AND the RNG -- same hash, same reading,
+//                 for every visitor.
+//   confirmations drives growthStage(); stage 0 renders nothing at all.
+//
+// Geometry (obstacles, anchors, the turtle walk) is recomputed on every
+// refresh(); the symbol string is not -- see generateSymbol's cache.
+export function illuminate(hostEl, opts = {}) {
+  if (!hostEl) throw new Error('illuminate: hostEl is required');
+  const cs = getComputedStyle(hostEl);
+  if (cs.position === 'static') hostEl.style.position = 'relative';
+
+  let svg = hostEl.querySelector(':scope > svg.illum-overlay');
+  if (!svg) {
+    svg = buildOverlaySvg(hostEl.clientWidth || 1, hostEl.clientHeight || 1);
+    hostEl.insertBefore(svg, hostEl.firstChild);
+  }
+
+  let firstRender = true;
+  function layout() {
+    const stage = growthStage(opts.confirmations);
+    const hostRect = hostEl.getBoundingClientRect();
+    svg.setAttribute('viewBox', `0 0 ${hostRect.width} ${hostRect.height}`);
+    svg.setAttribute('width', String(hostRect.width));
+    svg.setAttribute('height', String(hostRect.height));
+
+    if (stage === 0 || !opts.blockHash) { renderSegments(svg, [], {}); return; }
+
+    const symbol = generateSymbol(opts.blockHash, stage);
+    const proseEl = opts.proseEl || hostEl;
+    const obstacles = measureObstacles(proseEl, hostRect);
+    const bounds = { x: 0, y: 0, w: hostRect.width, h: hostRect.height };
+    const seedEls = (opts.seedEls && opts.seedEls.length) ? opts.seedEls : [];
+    const anchors = seedEls.length
+      ? measureAnchors(seedEls, hostRect)
+      : [
+        { x: 2, y: hostRect.height / 2, angle: Math.PI },
+        { x: hostRect.width - 2, y: hostRect.height / 2, angle: 0 },
+      ];
+
+    const segmentsByAnchor = anchors.map((a) => {
+      const rng = rngFromHex(`${opts.blockHash}:${stage}:${a.x.toFixed(0)},${a.y.toFixed(0)}`);
+      return interpretFrom(symbol, a, obstacles, bounds, rng);
+    });
+    renderSegments(svg, segmentsByAnchor, { animate: firstRender && !reducedMotion() });
+    firstRender = false;
+  }
+
+  layout();
+
+  // Debounced reflow: mobile orientation events in particular can fire
+  // before the browser has actually finished relaying out the page, so wait
+  // a couple of frames before re-measuring rather than trusting the first
+  // tick. See issue #73's note on orientation handling.
+  let raf1 = null, raf2 = null;
+  function scheduleRelayout() {
+    if (raf1) cancelAnimationFrame(raf1);
+    raf1 = requestAnimationFrame(() => {
+      raf2 = requestAnimationFrame(layout);
+    });
+  }
+  const ro = new ResizeObserver(scheduleRelayout);
+  ro.observe(hostEl);
+  let orientationTarget = null;
+  if (window.screen && window.screen.orientation) {
+    orientationTarget = window.screen.orientation;
+    orientationTarget.addEventListener('change', scheduleRelayout);
+  } else {
+    window.addEventListener('orientationchange', scheduleRelayout);
+  }
+
+  return {
+    refresh: layout,
+    destroy() {
+      ro.disconnect();
+      if (orientationTarget) orientationTarget.removeEventListener('change', scheduleRelayout);
+      else window.removeEventListener('orientationchange', scheduleRelayout);
+      if (raf1) cancelAnimationFrame(raf1);
+      if (raf2) cancelAnimationFrame(raf2);
+      svg.remove();
+    },
+  };
+}
