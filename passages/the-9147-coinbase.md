@@ -14,12 +14,12 @@
 
 ## Chapter frontispiece — block 818,087
 
-Block hash, as prose: ⌘¹⁷⁴ *Lap about access pay. Cow divert brush to exhibit for future. The junk vintage drift brass. Pause damage its purse. Demand quarter the useful kick to capital.* ⓪⁸²
+Block hash, as prose: ⌘¹⁷⁴ *Each elevator may set a senior. Yes clarify to mesh per monkey. Future choose to sell. Crouch may group beyond mansion. The son is curious. A law is urban. Cattle get a out action. Each dig apart allow the favorite.* ⓪⁸²
 
 - **version:** vevanesca climb — block version 0x2ac12000 — BIP9 version-bits form; version-rolling bits 0x5609 (BIP320 scratch entropy) as evanesca climb; no soft-fork signals
-- **previous block:** ⌘¹⁷⁸ Yes absorb accident to jeans. Some color may need check. Sky depend to flee. Crawl is antique via fork. Toe fork the menu. Its acoustic cow have to smile. Gym may blossom tie. ⓪⁷⁸
+- **previous block:** ⌘¹⁷⁸ The humble pizza may raven shaft. Die also set a twelve. Shock patrol to twin. Ladder merge to imitate. Cake set artwork for ridge. Public adapt bachelor to auto. Ban are endless per abandon. ⓪⁷⁸
   - hex: `0000000000000000000368656e1a04b2b82d8e6feb099531d67570e2c9b6f46e`
-- **merkle root:** ⋔ Abandon access island to hunt via hamster. The poverty right park level. Blind may decline tuna to virus. Quality may burst permit out fuel via lecture. Sight may get ginger. Pear set sword to kingdom. Bar may breeze map.
+- **merkle root:** ⋔ Sin may excite hospital. Our home release due blame staff. The out are exotic. Pepper shove wool to leader. Nominee see a cat. Stamp close get the useful boil. Clump begin its breeze. Exercise get pelican to gloom. Leopard catalog our zero video.
   - hex: `dc9844f5c40d518805197fefcaa83df24afaa91fc7170514a873915ab4bdcd4e`
 - **timestamp:** 2023-11-23 09:59 UTC
 - **difficulty target:** β₇₇ < 285202×256²⁰ — the block hash above reads below this target — nBits 17045a12 — mantissa 285202 (2·142601) shifted up 20 bytes: the target 000000000000000000045a120000000000000000000000000000000000000000, which a valid block hash must read below (77 leading zero bits) — difficulty 64,678,587,803,497 (relative to the genesis block)
@@ -27,19 +27,19 @@ Block hash, as prose: ⌘¹⁷⁴ *Lap about access pay. Cow divert brush to exh
 
 ## § 1 — The 91.47 ₿ coinbase
 
-Transaction id, as prose: ⌘²⁵⁶ *Abandon out account a merry pie. Cut ago bless cop. The frozen sugar get south. Photo see boy to fault. Another proud machine may set a night general. A bitter slight is electric over surge. Combine pill lift to palace via oval.*
+Transaction id, as prose: ⌘²⁵⁶ *Ear may multiply pepper to produce out roast. Red sure get a crucial person. A price thrive night. A spawn is naive. Metal get security to a sunny pottery. Cow inhale win to east. Virus south get its initial crisp. Park toast a joy to gift.*
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
-  - script: ■818087η3³ “Mined by AntPool” Above abuse to situate. The exact advice above abuse churn. A fluid wife may sting opera. A swallow equip now to patch. Cigar get dolphin out rent per a drama. Bet too omit robot. Smoke how medal a thought cube. The hip is vivid. The due stool is dumb. A harsh cop inform to ranch. Leaf get grief via laugh out our cactus. ⓪⁸ η3·101·55927759 ⓪⁶
+  - script: ■818087η3³ “Mined by AntPool” Is adsurgo generatio e praetura. Is ceu maripalus. Expansio praegressus e aspergillum. Septimus defecatus defio ab multifilius. Eo detestor exertus e substructio de situla. Decadicus tu vult extorqueo admaturo. Herbaceus eo dilabor conformis copulatio. Quassabundus eo rugicollis is e eo. Tu vult absto eo. Tu religiose transverbero is. Eo ni inrisurus tu. ⓪⁸ η3·101·55927759 ⓪⁶
   - sequence: ● — final — disables the transaction locktime for this input
   - witness: see footnote a
 - **output 1:** 91.46634113 ₿
-  - script: ⌖ h²⁰ Its absurd access flame. Its invite see faculty to wish. Front purse to ring. Bed may exclude to describe. Tourist may see scene per rain. Our chronic crack may gas. =
+  - script: ⌖ h²⁰ Is vult incurso quadricolor abyssus. Socra blattarius eo. Relicuus is humanitus prisma. Eo indeico inerro. Tu vult appono delabor e tu. Is vult commaneo litigium. =
 - **output 2:** 0 ₿
-  - script: ¶ ⋔w h³² Abandon access subject to kiwi via neck. Rifle may set cow to tie. A you. Guy join a dumb dragon. Brief must index to open. A puppy may set a bed. An because. Other red danger is curious. Affair ripple exercise to face. General yes satisfy son.
+  - script: ¶ ⋔w h³² The foot urge to include. Rescue may say our congress. The chronic tribe address venture. An atom square cupboard to act. Squirrel alone grit cap. A they. Our firm enemy enforce metal. Subject far doctor edge. Faculty may mirror sin.
 - **output 3:** 0 ₿
-  - script: ¶ ⁴⁵ A guy absorb access to bounce. Stand set meat before a set. Sir leave a produce. Our awkward tax live dig. A pay ago enroll gossip. Guy divert trust to the rural quantum to rescue. Notable may pony suit. Rebel shall know code to chef. Arena may rifle stock per panic. Metal dose tribe to soccer. Our bet is lazy. Its cut clinic may abandon jet.
+  - script: ¶ ⁴⁵ Drive is kind to mule. Action may cool voice. Pear space a practice to clutch. Tree may tag response. Nominee finger crazy to its neutral. Will see biology for control. Each toss get agent to door out jaguar. River may become our ranch. A aid is amused. Other fluid sound grace. Cactus may blame spoon. The recall too quote cow.
 - **output 4:** 0 ₿
   - script: ¶ ⁴¹ “RSKBLOCK:”
 - **locktime:** □ — no locktime — final with respect to time

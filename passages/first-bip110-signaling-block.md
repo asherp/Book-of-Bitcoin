@@ -14,12 +14,12 @@
 
 ## Chapter frontispiece — block 938,903
 
-Block hash, as prose: ⌘¹⁷⁷ *Our guy absorb an access to peasant. Cow multiply the jealous yellow. Row may hover ship. Whale too accuse some scan. Its virtual guy remember the vague gun. Century may replace genre to amount.* ⓪⁷⁹
+Block hash, as prose: ⌘¹⁷⁷ *February cram its humble paper. Assist juice the busy parent. Retreat may direct to issue via safe. Guy provide tool to item. The slow absurd betray rival per prison. Its parade are bad.* ⓪⁷⁹
 
 - **version:** vevanesca acid 10000 — block version 0x20792010 — BIP9 version-bits form; version-rolling bits 0x03c9 (BIP320 scratch entropy) as evanesca acid; signaling bit 4
-- **previous block:** ⌘¹⁷⁷ Pop absorb acid to reward. Retreat see tiger per stock. Behind may order muscle. Cook see other tide to sweet. Maze get grape out surge per lamp. Bamboo may amount tie. ⓪⁷⁹
+- **previous block:** ⌘¹⁷⁷ Our warfare require to bring. Width get action near cow. Lip may cram magnet to recipe. Son bring swarm for raise per million. Swap exhibit seat to absurd. Blame snow review out theme. ⓪⁷⁹
   - hex: `0000000000000000000112e693b6cb98d86d87a3b32f8c0c272960fd70e016f7`
-- **merkle root:** ⋔ An abandon may achieve labor. Pan enable its milk. Our tobacco set dinner to the media per each tax. Son oblige buzz to captain. The bet is digital. Pop appear its aunt to dune. Our unfair cook cube couch. Memory expect to benefit. Die is quick for our output via the mistake out nod.
+- **merkle root:** ⋔ Sort empty to face. Organ is chief per eyebrow via the indoor catalog for lounge. A chicken throw may limit embrace to buffalo via album. Its pluck get gravity. Sky may vanish tube to dress. The curious recipe may set an immune theory. A heavy prize see wagon.
   - hex: `6f5c675f5321a82b1e66357d413b88f44085f744841fc19ca27c324e462589cf`
 - **timestamp:** 2026-03-01 18:41 UTC
 - **difficulty target:** β₇₉ < 127747×256²⁰ — the block hash above reads below this target — nBits 1701f303 — mantissa 127747 shifted up 20 bytes: the target 00000000000000000001f3030000000000000000000000000000000000000000, which a valid block hash must read below (79 leading zero bits) — difficulty 144,398,401,518,101 (relative to the genesis block)
@@ -27,81 +27,81 @@ Block hash, as prose: ⌘¹⁷⁷ *Our guy absorb an access to peasant. Cow mult
 
 ## § 1 — First BIP110 signaling block
 
-Transaction id, as prose: ⌘²⁵⁶ *Abandon may accuse spider to regret. A favorite see fantasy. Weather card to impose. Test due enlist an idle garlic. Its wool mechanic yet agree a worth. Sky is typical to fyi. The tie where get tap. A fragile cow choose diary. Voyage why whip affair.*
+Transaction id, as prose: ⌘²⁵⁶ *Riot repair our pride to apology. Business may picture its mixed winner per matter. Sock program to text for eyebrow. A camera get cabbage to word. The young is entire. Cow may govern element to gain out butter. Our set gauge doctor ecology. A because. The pay is eternal.*
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
-  - script: ■938903η2·1056271 “OCEAN.XYZ” η2⁵·19·31·53 “Barefoot Mining” Abstract set absurd to ability. Setup are useless for a rid cow. Hit again set our hungry door. Limb noise each diesel. Our drip may theme to avoid. ⓪⁸
+  - script: ■938903η2·1056271 “OCEAN.XYZ” η2⁵·19·31·53 “Barefoot Mining” Aes turmatim alo tibicen. Offa vult indecens cactus. Virga debet nuo tu. Eo itidem quadriduanus is. Derisorius tu eo. ⓪⁸
   - sequence: ● — final — disables the transaction locktime for this input
   - witness: see footnote a
 - **output 1:** 0 ₿
-  - script: ¶ h²⁰ Absurd access key to our spatial glance. The armed shaft see a domain to gas per abandon. Yes afford to seek. Its abandon is bad among junk. The pot grow to scale.
+  - script: ¶ h²⁰ Exercise borrow middle to pause. Our jet is sudden per trend. The ugly abandon above journey abandon. An abstract upset erupt blossom. Son enforce minimum to our unique abandon.
 - **output 2:** 0.77796915 ₿
-  - script: ⓪ h²⁰ Its absurd absurd why set oak. Industry may get choice to horse. A festival far shell a rhythm. Pop inhale to pave per some dolphin. Each toe may get inmate. Our various refuse scale fyi.
+  - script: ⓪ h²⁰ Tu nimio kyrieleison. Occa conplosus remeo. Is specto quatriduum e is. Tu seco instructus. Accomandatio ferinus tutamen e cellula. Amplificus is est.
 - **output 3:** 0.27933939 ₿
-  - script: ⓪ h²⁰ Absurd get its acid nature. Grocery may see effort. Pen tone a matrix. Due warm the jealous razor to aspect. Our biology toe forward. The guy bless to parade.
+  - script: ⓪ h²⁰ Eo adtrectandus pejorandus. Tristitudo incredulitas e fangus. Obaerarius at silvula. Tu eo custodio calenus thulium. Is obambulo convivo. Eo quadragiens saputum tu.
 - **output 4:** 0.25806724 ₿
-  - script: ⓪ h²⁰ An absurd acid return nose. Sauce pony its light gate. Our cream paddle out see the magnet. Cop write attack to stadium. Fyi only network some gas.
+  - script: ⓪ h²⁰ Edmontonicus nuptus aestimativas e detrectator. Eo pudenter comminatio. Delicus cataphractes biennis is. Farrarius eo est iubatus. Setosus is arguo auctorico.
 - **output 5:** 0.25143225 ₿
-  - script: ⧉ ⌖ h²⁰ An absurd account hunt to limit. Yes announce fault via alien. Advice close song to mushroom. Float weasel to equip. Its crunch may set myth per scale. ≡ ∇
+  - script: ⧉ ⌖ h²⁰ Allevator fere jussus epistomium. Iulis stercoralis lepusculus e masculinus duritas. Termes lagona at erratum ex cannabis. Tu vult absto eo. ≡ ∇
 - **output 6:** 0.18872448 ₿
-  - script: ⓪ h²⁰ Absurd may accuse sketch. Tennis render to manage per language to short. Book romance october via case. Dose sign to provide. Swift far gas cop.
+  - script: ⓪ h²⁰ Assignatio contemptio e expansivus contiuncula. Tu adgemo se camminus. Invisus tu vagio optenturus e rigiditas. Collativum coniuro degluttio. Igitur.
 - **output 7:** 0.16881044 ₿
-  - script: ⓪ h³² Its abandon are absurd. First may picnic cut. The rapid sun set region. Insect section eight to flock via pumpkin. Balance get kitchen to vendor. Agent may set sauce. Reunion drill cause to inquiry. Object term degree for squirrel.
+  - script: ⓪ h³² Eo caumo fulguro e chrysus. Rubriceps is subpilosus eo. Tu praevaleo requiesco e dimensio. Vitabundus is adprehendens metrica ad decagonum. Speculum candentia e offerenda. Is vult percipio iunianus puerulus. Maeria vult saltito is.
 - **output 8:** 0.14221576 ₿
-  - script: ⓪ h³² Abandon achieve a narrow permit. Hobby palm raccoon to deposit. Matter may season mystery. Danger chuckle to obey. Throw may dial crunch for ecology via couple. A pull may set a hot donor. Lie again expose its silver garment.
+  - script: ⓪ h³² Scelerosus tu excutio villanus. Is rapiendus quebecensis racemus. Litteratus caprificus hamiota. Efficientia pusillitas e nutritorius is. Tu ne anticipo plantaris pugillum. Dejugis tu sessim puerpera. Udus is vilito e eo.
 - **output 9:** 0.12729906 ₿
-  - script: ⓪ h²⁰ Absurd may get absurd. Fatigue see blade to day. Recall ago cancel pride. Dutch invite couple to rain. Hurdle object reason around divorce.
+  - script: ⓪ h²⁰ Caium palara e cepa. Kolymensis is vult praesipio aggero. Tu traho tonitrus e macilentia. Trossulus farciminum pistola en osma de exsequia.
 - **output 10:** 0.11590770 ₿
-  - script: ⓪ h²⁰ Its absurd accident win claw to the river. Bet far acquire furnace. Our jazz fine square page. Novel may reduce drum to its south toddler. Divorce is bad to a lot.
+  - script: ⓪ h²⁰ Eo ponendus piltrum e sardius ob ruditus. Coeliloquus eo vult adsiccatus praesensio. Aqueductus hmoi pugillares. Eo vapulo inlicio. Pus vult montanianus is.
 - **output 11:** 0.10764557 ₿
-  - script: ⓪ h²⁰ Our absurd acid joke its hidden conduct. Matrix may host category. Room wing abuse to actress per clerk. An amused marriage fruit a gas.
+  - script: ⓪ h²⁰ Is supereffluo ununoctium. Annamiticus tepalum e biocolyta. Vicentiensis tu proluceo eo. Is ne ructo tu. Is quoquo tigrinus eo. Caymanensis phoenix ingratis globuliferus tu.
 - **output 12:** 0.09257236 ₿
-  - script: ⓪ h²⁰ Absurd may account rebel. Warrior mistake symbol to cliff. Chat is fun per notable. Meat pistol to remain out some target. Orchard put to gas via cop to cut.
+  - script: ⓪ h²⁰ Corruptio subferentia. Damnaticum monoptotum e fellatrix. Sensutus is effodio morbus ob is. Tu performido frussatus e reprehensor. Acridium stringo at litigium.
 - **output 13:** 0.08739469 ₿
-  - script: ⓪ h²⁰ The absurd may set absurd to a property. The rare position are blue. Sentence powder the security to amount. Envelope powder to leave. Mechanic salute to allow out divorce.
+  - script: ⓪ h²⁰ Is rabio avocatio e eo. Tu denuo is. Eo summopere neglectio. Subcustos fraceo hamiota. Mammatus cornucopia cottidie glechon. Bellaria auctorico e eo.
 - **output 14:** 0.06265038 ₿
-  - script: ⓪ h²⁰ Absurd access gun to point. Maximum best set jaguar. Some limb see an angry hip. A cap alter raven. The out hover youth. Woman see our ivory parade.
+  - script: ⓪ h²⁰ Jejunus lychnis nautea. Eo humaniter sono aquosus tu. Eo sanguino clamandus. Tu coarcto progeneticus is. Evanidus tu fulguro manumitto e eo. Dierectus is.
 - **output 15:** 0.03934531 ₿
-  - script: ⓪ h²⁰ Absurd account van to our total. Son describe walk per exhibit. Its junk sword see a merry present. Hood set envelope to fruit. Town may get street per divorce.
+  - script: ⓪ h²⁰ Ieiunitas is e eo. Tu normaliter illapsus. Palus intaminatus is. Tu pergo suspendium. Cornifer interventus laetabundus elephans e eo. Tu vult impluit scaccarium. Is focillo.
 - **output 16:** 0.03874604 ₿
-  - script: ⓪ h³² An abandon abuse chalk to push. Dust sting to frequent. Roast due labor assault. Helmet bless bench to paddle for helmet. Monster raise latin to tenant per choice. Shiver may see that mosquito to invite via our immense lie.
+  - script: ⓪ h³² Is vult extero venumdo. Is solet abnutivus verecundia e quassabilis lacte. Eo toxico commutatio in vasculum. Cuniclus e conprehensio. Tu presso conpugnans. Eo supo litargia e colonus. Salarium uro ob expletrix. Is prensus tu.
 - **output 17:** 0.03758200 ₿
-  - script: ⓪ h²⁰ Absurd access museum to setup. Pop argue shop for quote. Its frozen conduct account to assume. The boss area far shift stick. Coil too parade lot.
+  - script: ⓪ h²⁰ Eo oporteo trittilo. Helenium delirium e iumentum. Stribligo seta ob readunatio. Regibilis eo terrisonus is. Tangibilis holmium e ocliferius tu. Eo ni monstro is.
 - **output 18:** 0.03397413 ₿
-  - script: ⓪ h²⁰ An absurd is absurd to end. A civil figure may set mammal via chase. Nature recall to bus. Pop please empower letter. Its two peace unfold abandon.
+  - script: ⓪ h²⁰ Is arceo passare e expansivus herbula ex lenitas. Tu vult adloquendus similarium e tu. Is funesto macrops lemniscus ex rusticatio. Prudens tu emuto is. Eo pudice tu.
 - **output 19:** 0.03384073 ₿
-  - script: ⓪ h³² Abandon achieve to core. Pride phone cargo out type. Yes earn its fresh comfort to puppy. Our artefact may enlist input. Son own reveal to course. Cotton far set hip. Its rose calm pistol smoke. Its acoustic erosion not get jet.
+  - script: ⓪ h³² Inconiugus is propere tu. Fasciger eo nordicus ptyas. Rivora vasculosus tu circiter is. Eo est circiter eo. Is identidem stylosus exagium. Abbreviatio prolabor labrum e sessio. Is vult regundus putillus stramentum. Canalis e is.
 - **output 20:** 0.03157072 ₿
-  - script: ⓪ h²⁰ Absurd accuse odor to word via oak. A gloom may see depth. Jet might rebuild its harsh cycle. A steel album set door to stadium. Panel may radio abandon.
+  - script: ⓪ h²⁰ Eo turbulare melanogaster tu. Insociabilis is e polyrhizus paramecium. Obtusio creatura ab plerus compressus. Eo vult inlusurus culpo. Resonus primogenita ne collaudo tu.
 - **output 21:** 0.03149378 ₿
-  - script: ⓪ h²⁰ Absurd may account fat. Current shall get column. Some nose set evil to barrel. Blood deliver deposit out mass. Kiwi wink affair to odor. Gas set a cut.
+  - script: ⓪ h²⁰ Vicennis tu demereor blasphemia. Somnificus eo incurvo is. Intestinalis tu avello domusio e deformatio ad icon. Is centiceps tu. Eo festive rufesco derisorius eo.
 - **output 22:** 0.03136014 ₿
-  - script: ⓪ h³² Our abandon may access some visual. Son donate the ancient west. Session too set town. Brush must get bet. Lie again see our mom. Pledge get apple to an amused rib. Surface may inflict about cow. Our slim yes gather space. Our cop is hidden. Foot may crash our yes.
+  - script: ⓪ h³² Abomasum rebellio e panax. Vesiculosus dulciolum iocunde aveo tu. Eo iuvandus concreo. Tu adhuc assaratum. Patres nei metopion. Catecheticus sandaraca auricomans eo. Pusillus tu adlisus irregibilis is.
 - **output 23:** 0.02771916 ₿
-  - script: ⧉ ⌖ h²⁰ Our absurd achieve salt. Twin sleep duck to velvet. Bed may deliver switch. Anger set tray to an onion. Each mind is harsh. Cap may set an exotic chef to scale. ≡ ∇
+  - script: ⧉ ⌖ h²⁰ Tu vulgariter eo. Vaniloquus is bipalmus tu e coaequalis is. Nemestrinus tu vult adnuo calceolarius ab trochiscus. Iulianus eo montare innavigo e nostras alimonium. Igitur. ≡ ∇
 - **output 24:** 0.02692982 ₿
-  - script: ⓪ h²⁰ Its absurd absurd venture spin. Gasp get salmon to ozone. Supreme alone set map. A fyi are bleak. Rate middle its crisp gesture. The inquiry pull scale.
+  - script: ⓪ h²⁰ Borago e militaris. Eo sino mercedarius en clausura. Aquilicium sesamum. Annellus vult tractuosus inductio. Teneritudo suppono adinspecto e tu. Eo vult accerso is.
 - **output 25:** 0.02640482 ₿
-  - script: ⓪ h²⁰ The absurd acid remain sugar. Our fall yellow to carry. Rain phrase hip for kidney. Puzzle is ordinary to match. Birth may get agent. Our theme is set.
+  - script: ⓪ h²⁰ Didascalicus tantundem vult fluvius. Almus gubernatio solet attractandus comprensus. Leucopus inlido sarpo. Mithrax sit oblicus e moschus tu. Eo et prophetizo is.
 - **output 26:** 0.02573953 ₿
-  - script: ⓪ h²⁰ Absurd is absurd to boss. Our just auto reflect genre. An alpha gift expect vocal to laundry. Our typical rice promote survey. Length may set jet.
+  - script: ⓪ h²⁰ Eo dius alternativus ampeloprasum. Is scarifo ambrum e glaucoma. Neriosus servulicola ni oryctognosia. Recusatio prosemino irascor. Caldus is accerso e tu.
 - **output 27:** 0.02512806 ₿
-  - script: ⓪ h²⁰ Absurd access a safe gym to amount out nose. Pepper square its hard jet. A sick balance see a fun. Floor is capital to the waste sample to each scale.
+  - script: ⓪ h²⁰ Is sacrate eo. Propinquus tu aveo nutrimentum. Lazulum litatio. Aluta trifurcifer e thyrsiger tu. Formidolosus eo est acalyphaceus. Ecaudis tu vult accognito dierectus is.
 - **output 28:** 0.02477544 ₿
-  - script: ⓪ h²⁰ Absurd achieve goat to swap out a lizard. Cop evoke wait to symptom. Bed may solve duck via smile. An ancient die is loud. Border set aisle to its live gas.
+  - script: ⓪ h²⁰ Oppugnator adsignatio e sicilis. Brabeum geranium. Is benigniter carnosus tu. Is dormito e malos is. Tu obdo malope. Funalis peccator globuliferus is.
 - **output 29:** 0.02332740 ₿
-  - script: ⓪ h²⁰ Absurd account hood to pyramid. Our cut are illegal. Our noise get the indoor tax. A famous cut become control. Alien are clever to red. Rub may empower era out map. A shy relief may theme tie.
+  - script: ⓪ h²⁰ Agrimonia vocatio e deleth. Glomellum est immotus. Is inprobaturus robustus pistola. Septipes eo interniteo e pyritis. Eo pectino splenium ad amplificus eo.
 - **output 30:** 0.02252586 ₿
-  - script: ⓪ h²⁰ Absurd accuse other person. Each broom may see initial to mass. Sky may endorse music. Lap yes empower property. A razor set corn. Tribe shoot to skin via gas.
+  - script: ⓪ h²⁰ Vaecordia exorior e equestris tu. Faeculentus haedus vult musculum. Is recludo e connubium. Capenas eo ingeniculo phasellus se conamen. Viriola vult perequito eo.
 - **output 31:** 0.00629268 ₿
-  - script: ⓪ h²⁰ An absurd access exhibit biology. Cushion see valley to cotton. Its cow may imitate its civil tie. A tragic trade double our rare search. Update get opinion to parade.
+  - script: ⓪ h²⁰ Is humilio e noumen. Tu procaciter octaphoron. Implacatus cinaedus ut athamanticus fanum. Is curto strobilinus aggregatio. Testeus pharisaeus chymus.
 - **output 32:** 0.00070617 ₿
-  - script: ⓪ h²⁰ Absurd may accuse winner. Voice could drop meat to nothing via tuition. Vehicle get an energy since moon. More case detail venue to scale.
+  - script: ⓪ h²⁰ Decalvatio et potamogeton. Ecclesia foedus plagiator e myloecus. Basipila eo palearia. Fastigiatus is attineo heroos. Scaevus castimonia transcensus.
 - **output 33:** 0.00008965 ₿
-  - script: ⌖ h²⁰ Absurd access antenna to a stone advance to top. Clutch may inch pool via garlic. Peasant pulp gas to color. Lot close hurt abandon. =
+  - script: ⌖ h²⁰ Is convoco reliquiae. Eo possideo myrmecitis e lubricitas ob cors. Nubilus is decalcio cilo. Eo mollio e peritonealis tu. Is minutim semiticus eo. Tu perequito is e tu. =
 - **output 34:** 0 ₿
-  - script: ¶ ⋔w h³² Abandon may access infant. The unaware hunt see forum to million. Atom get noble out sport. Concert see legend to bullet. Rabbit may test merit via its wine between degree. Cow bless monkey to walk for welcome. Its subway is moral to a lap.
+  - script: ¶ ⋔w h³² Example frown hospital to the hidden ranch to peace. A famous ripple place to quiz. Its long current may set desk. Its ago jet shall multiply panda. A live poet seed yes. The rapid cop disagree palace. Its force cradle park. Our detail may get green to a liquid.
 - **locktime:** □ — no locktime — final with respect to time
 
 ### Witness footnotes

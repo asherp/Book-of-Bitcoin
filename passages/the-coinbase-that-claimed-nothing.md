@@ -14,12 +14,12 @@
 
 ## Chapter frontispiece — block 501,726
 
-Block hash, as prose: ⌘¹⁸³ *The yes may absorb abuse. The correct cow found toast. Average tent neck to stock out purity to fashion. Cat may angle video. Spider yet use tennis. A chef may fix a fyi.* ⓪⁷³
+Block hash, as prose: ⌘¹⁸³ *The champion merit to detect. Acid swim fame via river. Beyond may get engine to dutch. Scissors taxi to surface. Sadness may room ceiling. Pie could enrich benefit to bus. Light is pop per a quote.* ⓪⁷³
 
 - **version:** vaccio abandon — block version 0x20000000 — BIP9 version-bits form; accio abandon — no version rolling; no soft-fork signals
-- **previous block:** ⌘¹⁸² Sir absorb to accuse. Summer may get salmon. Crater would set runway to a heavy lap. A federal son verify a simple leg. High way reject twin. Enough aware farm may fix bit. ⓪⁷⁴
+- **previous block:** ⌘¹⁸² Robot get daughter to green. Nut may set hood. Hedgehog might layer rice. Avocado set estate to pair. Bird word our harsh tilt per engine. Climb base cheese to the picnic via quote. ⓪⁷⁴
   - hex: `0000000000000000002b5382b8d2d64f0b7caee90fc9951fd5d4d64b99f926bb`
-- **merkle root:** ⋔ Abandon account our awesome goose. Flat valve the loud design. Frog may slush history. The glance shall see the peanut. Guy evoke stand to effort. Seed see domain per code. Our cop hurt jacket. A tea is casual. Build may see blood to beach.
+- **merkle root:** ⋔ Link milk mention to owner. The awesome cherry see slight via tax. Nod may define an eternal clump. Pop reflect truth to box. The match get reunion. Trend toss to assume via sin. Son solve to afford. Photo seed its tiny gate. A sir suggest episode to a diesel.
   - hex: `9bf8853b3a823bbfa1e54017ae11a9e1f4d08a854dcce9f24e08114f2c921182`
 - **timestamp:** 2017-12-30 12:55 UTC
 - **difficulty target:** β₇₂ < 38469×256²¹ — the block hash above reads below this target — nBits 18009645 — mantissa 38469 (3·12823) shifted up 21 bytes: the target 0000000000000000009645000000000000000000000000000000000000000000, which a valid block hash must read below (72 leading zero bits) — difficulty 1,873,105,475,222 (relative to the genesis block)
@@ -27,14 +27,14 @@ Block hash, as prose: ⌘¹⁸³ *The yes may absorb abuse. The correct cow foun
 
 ## § 1 — The coinbase that claimed nothing
 
-Transaction id, as prose: ⌘²⁵⁶ *Abandon account our awesome goose. Flat valve the loud design. Frog may slush history. The glance shall see the peanut. Guy evoke stand to effort. Seed see domain per code. Our cop hurt jacket. A tea is casual. Build may see blood to beach.*
+Transaction id, as prose: ⌘²⁵⁶ *Link milk mention to owner. The awesome cherry see slight via tax. Nod may define an eternal clump. Pop reflect truth to box. The match get reunion. Trend toss to assume via sin. Son solve to afford. Photo seed its tiny gate. A sir suggest episode to a diesel.*
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
   - script: ■501726 η2·3·29·42477979η2³·5·11·197·421·2027·2459 ⓪²
   - sequence: ● — final — disables the transaction locktime for this input
 - **output 1:** 0 ₿
-  - script: ② ③ Access access its foam. A narrow ozone cruise output. An ivory tuition kiss wise. Young nurse a polar post. Door may grunt a simple antenna to its local distance. Our elegant wreck get demise to address for degree. The turkey under moon our girl. An abandon is new.
+  - script: ② ③ Tu inferne frusto quincuplex is. Cirratus tu caeliloquus eo. Acidalius is pertimeo is. Magnirostris eo est minervalis. Pessarium ne secta. Eo adsidue oreae. Conditor occurso e illacessitus auraticum. Grassatio quietor condicio. Tu annumero lacto e ultor terminus.
 - **locktime:** □ — no locktime — final with respect to time
 
 ## Commentary

@@ -1247,7 +1247,10 @@ export function renderWitness(items, encode) {
 // `bestOf` forwards to encodeCanonical, which since glossia 0.3.0 renders the
 // canonical encoding and ignores it — the canonical version pins the fluency
 // budget. The parameter stays so custom `encoder` implementations (which share
-// encodeCanonical's signature) keep working.
+// encodeCanonical's signature) keep working. Since 0.4.0 the encoding is the
+// fixed one, so a field's prose is a word shorter and no longer opens on a
+// constant the field's width fixed; nothing here needs to know that, because
+// every field already arrives with its byte count.
 // `lazyData`, when supplied, is an alternative encoder (hex -> HTML) used for an
 // OP_RETURN payload only: OP_RETURN is the one body field that can carry a bulky
 // data-carrier blob, so the caller can pass a placeholder emitter to defer its

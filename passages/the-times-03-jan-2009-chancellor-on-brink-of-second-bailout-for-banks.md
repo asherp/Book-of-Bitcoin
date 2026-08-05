@@ -14,11 +14,11 @@
 
 ## Chapter frontispiece — block 0
 
-Block hash, as prose: ⌘²¹³ *Our abstract accident lecture to perfect. Cop betray humor via super. Slam crumble pelican to cube. Ocean update a weird per monster. Its assault may rotate foam. An eager boss ago promote mosquito.* ⓪⁴³
+Block hash, as prose: ⌘²¹³ *Husband behave actor to hospital. Brass may ride alley per stairs. Effort set the indoor worry. Palace cradle a double nurse to clip. The ancient today culture craft out canoe via rocket. Cop leave to theme per jet.* ⓪⁴³
 
 - **version:** v1 — block version 1 (0x00000001) — pre-BIP9 integer form
 - **previous block:** ⓪²⁵⁶ (no earlier block — this is the genesis block; all 256 bits zero)
-- **merkle root:** ⋔ Abandon abuse tackle to window. Wife may police matter. Size get flight to club. A veteran tank burst blood out tomato. Some humor is illegal. Medal maze to modify. Disorder may melt its cereal. A ear just sing cap.
+- **merkle root:** ⋔ Desert may get buyer. Leg not see visual. Raise float the twelve tortoise. Dinosaur desert phrase to seed out a wish. Pot may assume athlete. Bacon eye mushroom to pony. Image may pigeon monkey. Junior doctor an amused flame to bone.
   - hex: `4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b`
 - **timestamp:** 2009-01-03 18:15 UTC
 - **difficulty target:** β₃₂ < 65535×256²⁶ — the block hash above reads below this target — nBits 1d00ffff — mantissa 65535 (3·5·17·257) shifted up 26 bytes: the target 00000000ffff0000000000000000000000000000000000000000000000000000, which a valid block hash must read below (32 leading zero bits) — difficulty 1 (relative to the genesis block)
@@ -26,14 +26,14 @@ Block hash, as prose: ⌘²¹³ *Our abstract accident lecture to perfect. Cop b
 
 ## § 1 — The Times 03/Jan/2009 Chancellor on brink of second bailout for banks
 
-Transaction id, as prose: ⌘²⁵⁶ *Abandon abuse tackle to window. Wife may police matter. Size get flight to club. A veteran tank burst blood out tomato. Some humor is illegal. Medal maze to modify. Disorder may melt its cereal. A ear just sing cap.*
+Transaction id, as prose: ⌘²⁵⁶ *Desert may get buyer. Leg not see visual. Raise float the twelve tortoise. Dinosaur desert phrase to seed out a wish. Pot may assume athlete. Bacon eye mushroom to pony. Image may pigeon monkey. Junior doctor an amused flame to bone.*
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
   - script: β₃₂ 65535×256²⁶ η2² ⁶⁹ “The Times 03/Jan/2009 Chancellor on brink of second bailout for banks”
   - sequence: ● — final — disables the transaction locktime for this input
 - **output 1:** 50.00000000 ₿
-  - script: p⁶⁵ Abandon may get an absurd case. The tired window see avocado. Click due calm tobacco. Gun may minor the ordinary gesture to our illegal aid. Its tea is common. Yes follow to agree. Its sir then sign its hat. Version come insect to laugh. Design rent exile per pyramid out leader. Our ban may solve the organ. A because. Height see agent to cigar. A raccoon may set pan via its certain total. A son bring daughter. Warrior argue height to tip for ocean. Actor remove to settle. A program see a war. ∇
+  - script: p⁶⁵ Tu immo impartiens is. Tu deprendo monasticus eo e tu ad eo. Is relative naticidium. Eo vult ingeniculo tu e flabellatus aeroplanum se tu. Eo patior praenosco e alsius eo. Bavaricus stacta abstergeo subintroeo. Amplexus vult syricus is. Eo perdoceo telonium e postulatus. Indamnatus eo vult parvipendo balbo. Cachla unanimus decempeda e axula. Is obtorpeo trivius vojvoda. Dominator milies hydrodendron. Eo sacrate scauria. Stloppus vult. Igitur. ∇
 - **locktime:** □ — no locktime — final with respect to time
 
 ## Commentary

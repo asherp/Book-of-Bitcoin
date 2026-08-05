@@ -14,12 +14,12 @@
 
 ## Chapter frontispiece — block 370,434
 
-Block hash, as prose: ⌘¹⁸⁵ *Abuse account its type. Absurd may stock to become. Cop sell a shop via utility. Harvest may traffic item to elephant. Our awake portion tunnel fault. A door yet parade divorce.* ⓪⁷¹
+Block hash, as prose: ⌘¹⁸⁵ *Output may scan bracket to act for wear. Each juice is safe. Essay set lamp to solution. The similar search crush a front media. Trial inject to amount for police to junior. A goat may abandon to eat.* ⓪⁷¹
 
 - **version:** vaccio abandon 111 — block version 0x20000007 — BIP9 version-bits form; accio abandon — no version rolling; signaling bit 0 — CSV (BIP68/112/113), bit 1 — SegWit (BIP141), bit 2 — Taproot (BIP341)
-- **previous block:** ⌘¹⁸⁸ Abuse abuse a sister to scorpion. Course wink to prepare via pen. Audit eye to mail. Balcony quit this guy. Cow know its hungry image. Desk may gate our divorce. ⓪⁶⁸
+- **previous block:** ⌘¹⁸⁸ Decrease oblige change to garage per steel. Violin giggle any cotton to captain. Sting may swing dig. A sorry unknown evolve pie. Our red is electric. An ugly elite pink its tool. Illness may abandon fyi to a son. ⓪⁶⁸
   - hex: `000000000000000009ec3b8ad3dbf70cee5747c430517898e853bdaf98043339`
-- **merkle root:** ⋔ Abandon may get acid. Use are forward under box. Lawsuit ribbon to oppose out honey to our talent per glow. Valve may rely lobster to garbage. Neither fabric abandon its digital music. A ride set ear until pig to tag.
+- **merkle root:** ⋔ Worth get problem to talk. Son select more damp out beach. Misery desert hockey to taste per birth to idea per cloud. Myth set clay to gas via amateur. A vendor not warm a lava. A cruel option may get our cake. Pay may imitate behind suit.
   - hex: `e92669dc97fbc8f7006051a1e45706578b788fad3b6ddc446efca861766ff5fd`
 - **timestamp:** 2015-08-18 18:09 UTC
 - **difficulty target:** β₆₇ < 1367300×256²¹ — the block hash above reads below this target — nBits 1814dd04 — mantissa 1367300 (2²·5²·11²·113) shifted up 21 bytes: the target 000000000000000014dd04000000000000000000000000000000000000000000, which a valid block hash must read below (67 leading zero bits) — difficulty 52,699,842,409 (relative to the genesis block)
@@ -27,14 +27,14 @@ Block hash, as prose: ⌘¹⁸⁵ *Abuse account its type. Absurd may stock to b
 
 ## § 1 — Bitcoin XT first signal
 
-Transaction id, as prose: ⌘²⁵⁶ *Abandon may accuse north. Ribbon trip vapor to social. Pyramid get era for shrug. Member laugh crawl to exercise via nose. Its forward dress wing to refuse for squirrel. Fury jewel an outer floor to fossil.*
+Transaction id, as prose: ⌘²⁵⁶ *Son ready our fire. Brown taste a keen vote. Another flight see eyebrow. Its soul is main. Our sky prepare fan. The hidden sign see its satoshi to repair per kidney. A profit are humble to victory. A son enroll a hidden theory. Brand may get a brass energy.*
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
-  - script: ■370434 η51987679957039Its above acid may sting opera. Swarm spring to argue. Police may spike its angle. Our large save job current to our panel. The valid taste far get member. Our taxi are brisk. Few chat is boring to a casual style. Some cabbage accuse to fetch. An acoustic ear may see our set. ⓪⁷ Our set about abuse cash. Dolphin abandon its abandon. Anger struggle the thought abandon. “/slush/”
+  - script: ■370434 η51987679957039Manuballista verber e evocator. Dejugis tu sit inconivus. Fabaceus captura spiritaliter ebor. Inmobilis fatus vult rhexia. Colligatio ubilibet avens eo. Clibanus et subsannatio. Inous error ne insolitus laesio. Is vult adsolo e eo. Igitur. ⓪⁷ Eo excito quaestio abs aris. Eo vult vervago accerso. Acula diiudico vitatio. “/slush/”
   - sequence: ■0 — replaceable; relative locktime 0 blocks after the input's confirmation
 - **output 1:** 25.28535368 ₿
-  - script: ⧉ ⌖ h²⁰ Absurd see accident to thing. Father photo the sheriff. Raccoon jump pill to produce. Notice may get slight. Element flash traffic to country via cactus. ≡ ∇
+  - script: ⧉ ⌖ h²⁰ Operator patricius lanceola. Myrrha iaculabilis torris. Nixabundus tu venitus tentaculum. Lipolyticus juger cynomia. Intestinalis litigium vult tu. ≡ ∇
 - **locktime:** □ — no locktime — final with respect to time
 
 ---

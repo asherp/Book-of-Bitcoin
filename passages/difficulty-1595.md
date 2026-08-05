@@ -14,12 +14,12 @@
 
 ## Chapter frontispiece — block 622,944
 
-Block hash, as prose: ⌘¹⁸⁰ *Cow absorb access to snake. Service get our army. Clown may bracket motion. Its naive trigger ought get life. Amount may train good. Its advance where set lab. Guy deliver elite to lap for cop.* ⓪⁷⁶
+Block hash, as prose: ⌘¹⁸⁰ *A fluid decade canoe airport to addict. Our spirit is false. Rug mother to donate via brother. Pan may arrive to gather. Our young exhibit also get the animal. Balance may set its notable to our stone parade.* ⓪⁷⁶
 
 - **version:** vaccio link — block version 0x20800000 — BIP9 version-bits form; version-rolling bits 0x0400 (BIP320 scratch entropy) as accio link; no soft-fork signals
-- **previous block:** ⌘¹⁸⁰ Row may absorb absurd. Giant dress a print to puppy. Lip may enlist to include. The sky are annual out cap. A frozen powder salute badge. Twenty may spawn to gasp. Jet may avoid ship. Fix yes get cut. ⓪⁷⁶
+- **previous block:** ⌘¹⁸⁰ Bet around portion relief. Still may announce pop. Its soft map is gentle. Hill release daughter to the season. Latin deliver project via capital. Boat arch a blame. Tonight get museum to hybrid. ⓪⁷⁶
   - hex: `0000000000000000000bc6800858a1b3be08fb26b55d4b989c95e06ad50a350c`
-- **merkle root:** ⋔ Abandon set some accident. Its pink bridge evoke fitness. A tie once card yes. Our bet may emerge river. Cap alter to set. Its lie is amused. Stone parrot to say. A sir detect ozone. Client better pattern hour. Shock see vocal to map. Die due modify each siege.
+- **merkle root:** ⋔ Input may address six. April is viable to lounge out math. Ear may resemble science. Genre could depart favorite. Jewel travel to inherit per luxury to section. Neither evidence flee gadget. Fade may ribbon pie. Our able claim tank velvet.
   - hex: `40aea3ea652c3785b2c22af41ccf7f072aeb20ecc0ba45a208357f05276fa074`
 - **timestamp:** 2020-03-26 02:51 UTC
 - **difficulty target:** β₇₅ < 1325889×256²⁰ — the block hash above reads below this target — nBits 17143b41 — mantissa 1325889 (3⁴·16369) shifted up 20 bytes: the target 000000000000000000143b410000000000000000000000000000000000000000, which a valid block hash must read below (75 leading zero bits) — difficulty 13,912,524,048,946 (relative to the genesis block)
@@ -27,19 +27,19 @@ Block hash, as prose: ⌘¹⁸⁰ *Cow absorb access to snake. Service get our a
 
 ## § 1 — Difficulty −15.95%
 
-Transaction id, as prose: ⌘²⁵⁶ *Abandon achieve six to extra. Kitchen lift refuse out grab. Laptop why prison our layer. Ear erase regular to curtain. Foot see the amazing access. Our elite gauge may get our debris to uncle per fee. Due may protect our real mechanic.*
+Transaction id, as prose: ⌘²⁵⁶ *Summer sketch to author. Cow awake to isolate. Hole exile to betray. An average end may isolate short. Clip is thought to scan. Pop empower army out mandate for laugh. Melody is night to rent. Sky vanish cake per a refuse. Our honey see poverty.*
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
-  - script: ■622944η2·13 “/ViaBTC/Mined by sanpaolo/” Abstract abuse guitar to question out suspect. Subject obey a brisk pink. Woman exclude to submit. Our virtual salad foam bench. The ice fan galaxy. Son deliver to involve. Guy follow the two minute. Fatigue may get system to parade. Yes argue hotel per the abandon. ⓪⁷ Its access get absurd. A lonely jet is afraid. Split amount element to ticket. The elegant mix are ago. Hit get sky upon clip. The ugly abandon may abandon bed.
+  - script: ■622944η2·13 “/ViaBTC/Mined by sanpaolo/” Tu vult obduco acridium. Teatrum involaturus foculare. Eo ut flendus pauxillus dormitatio. Eo vult asculto squaleo. Nodamen solet lubens eo. Is conlaturus cubanus tu e renalis sequester in is. Tu vult pabulor eiulatus. Eo ago inportunus asa. Eo ut arguo ordinarius. ⓪⁷ Laena arcte tu. Discors melus submitto inconsuetus eo e is. Tu vult legendus supinum abs tu. Sed. Eo vult similo permetior.
   - sequence: ● — final — disables the transaction locktime for this input
   - witness: see footnote a
 - **output 1:** 12.72123454 ₿
-  - script: ⧉ ⌖ h²⁰ Absurd may access opinion to wrong. Crane empower portion for its damp. Document set the female. City may smile our elder kidney. Sir yes devote its neutral divorce. ≡ ∇
+  - script: ⧉ ⌖ h²⁰ Is eo perceno tu. Qualiscumque is. Eo grabare limpor e catastropha. Acedia confectio ob brachium. Peditatus e baebius is. Eo lucubro pervolo. Selectio ea prophetizo is. ≡ ∇
 - **output 2:** 0 ₿
   - script: ¶ ⁴¹ “RSKBLOCK:'”
 - **output 3:** 0 ₿
-  - script: ¶ ⋔w h³² Abandon access topic to a ritual wire. An they. Our lap may absorb our clinic. Each lot ago define the map. A myself. Time foil artist to noodle. A lunar super get subway per nut for onion. Silk may get soda inside festival to wild. Its cow predict a hit.
+  - script: ¶ ⋔w h³² Its frequent blanket panel despair. Length shell a out cheese. An myself. Fox ensure some giant. Barrel is awful to a brass roast. Cream rebuild its suit. Oil get concert to our click. Disorder benefit park via poverty. Claw may guide dig.
 - **locktime:** □ — no locktime — final with respect to time
 
 ### Witness footnotes

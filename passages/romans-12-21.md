@@ -14,12 +14,12 @@
 
 ## Chapter frontispiece — block 666,666
 
-Block hash, as prose: ⌘¹⁸⁰ *Sir absorb to account for goat. Loan too resource acid. Matrix may charge diesel to our slim task. Nut may agree frog to daughter. Vault mouse kitchen via fix.* ⓪⁷⁶
+Block hash, as prose: ⌘¹⁸⁰ *Milk away set black. Lens may see van to cave per marble. Offer swift base our pass. An arm are cheap to taste. Spirit quarter arch bar minor. Its diet is new to some quote.* ⓪⁷⁶
 
 - **version:** vaccio abandon — block version 0x20000000 — BIP9 version-bits form; accio abandon — no version rolling; no soft-fork signals
-- **previous block:** ⌘¹⁸⁰ Ear may absorb to accuse. Breeze enroll its big spike. Cow obey basket to safe. Crystal juice to attend via ribbon. Its urge set dune to shield. February decline to deliver. A gym see its tax. ⓪⁷⁶
+- **previous block:** ⌘¹⁸⁰ The pet maximum demand spray. A tiny daughter allow excuse. The scrub now get bulb. Hammer board pride to either trap out artist. Its blade is keen. Nature may copy ear. ⓪⁷⁶
   - hex: `0000000000000000000d3ac711558b41b477e4d2c178aa816f267ee9e82c71a3`
-- **merkle root:** ⋔ Abandon get accident to ginger. Machine may jacket fantasy. Tower program to feed. The video habit yet have our blue rival. Stamp set habit to demand via tornado. Avocado minor its census. Invite trip our casual task.
+- **merkle root:** ⋔ Hobby is awful to moment. Apology not see broom. Cube tunnel salmon to snack via coffee. Hit may perfect our firm ritual to home out chef. Device may giggle cap to its vast caution. Cap may excite brown. Yes settle its rookie lot. The able knife fog a fatigue.
   - hex: `f0ee88d161a79234fe61e5d109daa8ab2b8ca605cdf3a5fa6acc31853b16426c`
 - **timestamp:** 2021-01-18 23:28 UTC
 - **difficulty target:** β₇₆ < 895137×256²⁰ — the block hash above reads below this target — nBits 170da8a1 — mantissa 895137 (3·23·12973) shifted up 20 bytes: the target 0000000000000000000da8a10000000000000000000000000000000000000000, which a valid block hash must read below (76 leading zero bits) — difficulty 20,607,418,304,386 (relative to the genesis block)
@@ -27,23 +27,23 @@ Block hash, as prose: ⌘¹⁸⁰ *Sir absorb to account for goat. Loan too reso
 
 ## § 3 — Romans 12:21
 
-Transaction id, as prose: ⌘²⁵⁶ *Abandon account a new soup. Map once scrub the junk tower. A fork may emerge oak. A cut could manage maid to hotel. Lie grow knock via tent for an evil. Broccoli mail to wrestle. Wrong may card pie. A frozen faint get camera.*
+Transaction id, as prose: ⌘²⁵⁶ *Fyi okay see a viable row. The pop oblige song to a fresh clock. Harbor real speak our sin. A valid assist set coconut. Our author swim the endless toe. Each sir ignore to divert. Garlic picture a merry pan. Our pretty tomato park finger to a net cover.*
 
 - **version:** 1
 - **input 1:** spends output 4 of `5462b136cb81f5d200656d92240ccf60ad8428092d7fb99c91efde17d03a13ff`
   - sequence: ○ — not replaceable, but respects the transaction locktime
   - witness: see footnote a
 - **output 1:** 0.00432100 ₿
-  - script: ⧉ ⌖ h²⁰ Absurd may accuse health to vote. Square fork economy for nose. Our ancient home get its fluid. A swift quit to remember. The ago spoil later parade lie. ≡ ∇
+  - script: ⧉ ⌖ h²⁰ Saccellus vult pulvisculus. Eo debet dispello repudiatio e socerus. Echios vult nullus. Tu conmovendus principalis scalpellum. Tangibilis is reverto maculipes tanos. ≡ ∇
 - **output 2:** 0.00432100 ₿
-  - script: ⧉ ⌖ h²⁰ Absurd may see accident. A property might sail to betray. A sick toy is unaware. Sky prepare our direct asset. Flash fancy item to soccer. Each hockey may gas pop per each map. ≡ ∇
+  - script: ⧉ ⌖ h²⁰ Eo inolesco oronteus is. Similaris tu est aurugineus. Tentorium monoides eo. Tu ut sano is. Eo frequenter lavernio. Peregrinus inligandus fumidus is. Thalerus e stragulus eo. ≡ ∇
 - **output 3:** 0 ₿
   - script: ¶ ⁷⁰ “Do not be overcome by evil, but overcome evil with good - Romans 12:21”
 - **locktime:** □ — no locktime — final with respect to time
 
 ### Witness footnotes
 
-a. s An abandon is acid. Glow too announce peace. Sting uncover each now. The cost set its nuclear custom. Square may set vintage. A vivid road rival our artefact to blush. Industry grid height for wheel out an useless visual. A bench is bad to fold via athlete. The dig erode to burst. Guy say to begin. Some disorder canoe harbor. A row is awesome. Frog may get its sick gold. Network horse input to energy. Shell orient the canyon. Sight pilot to maze. The cow are dizzy. · p Tap about see its absurd. Blouse get seminar to the boss day. Immune may fit chest. Trophy how project path. A lock tail ozone. Quiz is proud to laundry. Mimic too set arctic. Jet easily middle tea. Tie may melt thumb. Color could host pay.
+a. s An unaware scorpion feature survey. Work real champion sin. Its real egg omit leader to dirt. A dance may get warrior. Cop pave toast to mobile. Coast may get each hood. Lap due satisfy our bulk burden. The tired area may limb. The ear is civil. Our long subject yes tip elevator. Some goddess due minor our acoustic tap. A merry decline is smart. The family soap soldier power. The board not inform the loud suit. Our cruel van is marine. Our cake may core our satoshi to kiss. · p Row may adapt debris. Local check athlete to priority. Shaft see other void beef. A vacant knife due fatigue nominee. A void soul ranch scrap. A chunk may muscle eyebrow. Sir rotate grant to punch. Our acoustic out are capable. A virus voyage a far dig.
 
 ---
 

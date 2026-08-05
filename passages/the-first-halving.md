@@ -14,12 +14,12 @@
 
 ## Chapter frontispiece — block 210,000
 
-Block hash, as prose: ⌘²⁰³ *Above abuse immune to broccoli. Drip may rib bacon out that cheese. Shiver reason scrub to slot. Diagram see region per round. Corn see lawsuit to pigeon. Glare ago amount sin.* ⓪⁵³
+Block hash, as prose: ⌘²⁰³ *Comfort phone half to damage. Timber set a fossil top. Son decide to cushion out blouse. The sunset always walk a due nurse. Gravity hurt its cruel proof to scissors. Its afraid cannon are metal via an abandon.* ⓪⁵³
 
 - **version:** v2 — block version 2 (0x00000002) — pre-BIP9 integer form
-- **previous block:** ⌘²⁰⁰ Ability is acid to antique. Grief set a village. Risk patch leaf to lens out gauge. Cannon paper syrup to start. Our net life hold goose. Metal may get the lamp. ⓪⁵⁶
+- **previous block:** ⌘²⁰⁰ A sin thrive yes under ozone. Blanket inject its sound quote. Clown loud see our initial. Wine due set its ritual. A raw rabbit are eternal. The milk muscle auto. Scheme may chalk its sphere to insect. ⓪⁵⁶
   - hex: `00000000000000f3819164645360294b5dee7f2e846001ac9f41a70b7a9a3de1`
-- **merkle root:** ⋔ Abandon may achieve scale. A wet double hint trouble. Its clock is blue. Pop defy peace to some nothing. Ocean may set carbon. Its cop engage day. Valley get its annual bit. Son have to impose via girl. Our correct farm may address pole.
+- **merkle root:** ⋔ Pop submit a busy market. Pulp tag air to glide. Elbow may reflect spot. Spread tone our harsh son. Either bulk thrive honey. A purchase is unable. Ecology may set media to call. An insane leopard snake our fiscal lie. A die out remain the yes.
   - hex: `3cdd40a60823b1c7356d0987078e9426724c5b3ab439c2d80ad2bdd620e603d8`
 - **timestamp:** 2012-11-28 15:24 UTC
 - **difficulty target:** β₅₃ < 319722×256²³ — the block hash above reads below this target — nBits 1a04e0ea — mantissa 319722 (2·3·13·4099) shifted up 23 bytes: the target 00000000000004e0ea0000000000000000000000000000000000000000000000, which a valid block hash must read below (53 leading zero bits) — difficulty 3,438,909 (relative to the genesis block)
@@ -27,14 +27,14 @@ Block hash, as prose: ⌘²⁰³ *Above abuse immune to broccoli. Drip may rib b
 
 ## § 1 — The First Halving
 
-Transaction id, as prose: ⌘²⁵⁶ *Abandon is acid to episode. Castle may fly guess. Taxi ago motion cereal. Boy win its slim crouch. The post install trick. Alien rate an obvious village. Defense exclude to sample. Its tie may direct human.*
+Transaction id, as prose: ⌘²⁵⁶ *Its set sir truly tongue menu. Yes undo to knock. Bit may improve a dwarf local. Satoshi floor shoot to crush per push to laptop for general. Some film may credit salon. A lap already hawk wave. Our amazing miss may scare the unhappy report. Ridge due get pan.*
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
-  - script: 210000 ⁶ “/P2SH/” 1354116268 ⁸ Its absent absurd divorce to attend for advice. Guy avoid abandon to amount. ⁷ “/slush/”
+  - script: 210000 ⁶ “/P2SH/” 1354116268 ⁸ Tu absto armita e procacia abs cisium. Planiloquus callis vult. ⁷ “/slush/”
   - sequence: ■0 — replaceable; relative locktime 0 blocks after the input's confirmation
 - **output 1:** 38.56295554 ₿
-  - script: ⧉ ⌖ h²⁰ Absurd may set acid. Elbow is private to search. Valve grunt kitten per monkey. Shove settle the chat. Liar may bundle sir. An outer piano scale cut. ≡ ∇
+  - script: ⧉ ⌖ h²⁰ Occipitalis tu vult refugio. Eo solet devotus villa. Sangirensis tu est pertristis. Annellus vapulo ampullor. Hederiger is cotidie piratia. Eo propalam monstro tu. ≡ ∇
 - **locktime:** □ — no locktime — final with respect to time
 
 ## Commentary

@@ -14,12 +14,12 @@
 
 ## Chapter frontispiece — block 478,558
 
-Block hash, as prose: ⌘¹⁸⁵ *Abuse access bonus to its essence. Pop attend cabbage per our welcome out device. Secret manage the field to mention. Order may dry yellow via math. A curious yes govern to scale out divorce.* ⓪⁷¹
+Block hash, as prose: ⌘¹⁸⁵ *Drip have dove to its loop. Sand is elegant per reunion. A move get turkey. Vapor may set bean. The chronic cop say bachelor. Cow allow to uncover. Blossom amount to pride. The guy say to explain out length.* ⓪⁷¹
 
 - **version:** vaccio abandon 10 — block version 0x20000002 — BIP9 version-bits form; accio abandon — no version rolling; signaling bit 1 — SegWit (BIP141)
-- **previous block:** ⌘¹⁸⁴ Yes absorb acid to candy. Gas see our gravity. Rescue may engage wink. Ski kit produce to ride. Its panther clutch salt via fitness per deal. Each orbit fix ban. ⓪⁷²
+- **previous block:** ⌘¹⁸⁴ The tomorrow equal art. Our black citizen garage sun. Exercise voice rescue to initial. Sheriff may get oak. Priority might train cricket. Twelve away set a due engine. Its random copy are set. ⓪⁷²
   - hex: `000000000000000000eb9bc1f9557dc9e2cfe576f57a52f6be94720b338029e4`
-- **merkle root:** ⋔ An abandon may access february. Its able scissors consider creek to sniff. Draft may set envelope. Its nod yet execute jungle. Its exact garden see tiger to dress. Its lunar start far frequent faint. Our lawsuit see main. Its pole face problem.
+- **merkle root:** ⋔ Cap enhance divorce to flag for album. Its edit defy habit. Cow truly size pay. Nod may connect antenna to episode. Pop rotate tribe via radar for box. Process pretty used cotton. Its female mechanic is nice. Gate may get chef. Our wasp set an indoor red.
   - hex: `5b65144f6518bf4795abd428acd0c3fb2527e4e5c94b0f5a7366f4826001884a`
 - **timestamp:** 2017-08-01 13:16 UTC
 - **difficulty target:** β₇₁ < 83765×256²¹ — the block hash above reads below this target — nBits 18014735 — mantissa 83765 (5·11·1523) shifted up 21 bytes: the target 0000000000000000014735000000000000000000000000000000000000000000, which a valid block hash must read below (71 leading zero bits) — difficulty 860,221,984,436 (relative to the genesis block)
@@ -27,16 +27,16 @@ Block hash, as prose: ⌘¹⁸⁵ *Abuse access bonus to its essence. Pop attend
 
 ## § 1 — Bitcoin Cash fork
 
-Transaction id, as prose: ⌘²⁵⁶ *Abandon get our accident. Maple believe to behave. Wine see mule out muffin. Hill fancy wave to our tooth. Genre witness to fetch per the scout. School get hamster to salt. Height decide to garden. Wealth get example out a brand.*
+Transaction id, as prose: ⌘²⁵⁶ *The ill cap is little. Our penalty is legal to a mutual fall. Coin may prevent year. Wish slow buzz primary. Flag may fix snack to result. Pull get its poem. Slogan sample clap to gloom. Its able cop may approve to satisfy. An obscure pan may get tax.*
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
-  - script: ■478558 2017-08-01 13:16“/BTC.COM/” Its absent access may index to expect per garment. A out program is cute. Bit may remind spoon. Deposit cement rack to coach. The base two develop its strong alarm. Pop relax decade to each despair. Head get some tornado. Cannon differ slight to company. Reject sniff luxury per key. Our advice is set. ⓪⁷ η49362083·204369941537 ⓪⁴
+  - script: ■478558 2017-08-01 13:16“/BTC.COM/” Locusta vult intuendus subintroduco. Peracerbus tu est vibrabilis. Is leidensis myxum e scolopax at numisma. Prophetalis malefactor colyma. Eo convello libro. Abusor consessor e spongea ob calumnia. Indianus panifica siparium. Inrogatio vult aroma. Is tondeo elegi. ⓪⁷ η49362083·204369941537 ⓪⁴
   - sequence: ● — final — disables the transaction locktime for this input
 - **output 1:** 12.61890202 ₿
-  - script: ⌖ h²⁰ Absurd is acid to advice. The sure hit may reflect the annual train. Kingdom is diamond to book via diary. Tray clap purchase to paddle. A sir choose gas. =
+  - script: ⌖ h²⁰ Difficultas veterasco scissura e interrogatio. Plenilunium gelatus en bupaes. Tu benigne praedicatio. Is ea incalesco eo. Tu septimum signale. Intervallum dierectus is e eo. =
 - **output 2:** 0 ₿
-  - script: ¶ ⋔w h³² Abandon abuse letter to an idea. Pie barely get our tax. A curious congress essay to attract. Despair ignore option out frown. Worth anger a motion. Switch out get eagle. Each mention set entry. The better radio may arm. Its yes crumble to say.
+  - script: ¶ ⋔w h³² A copy mix girl to mammal. Tourist may answer canyon out due. A shy asthma may square produce to panic. Its three is rare for fortune. Chunk badge the annual pencil to noodle. Scrap pledge our subject theory. Region thank a skull.
 - **locktime:** □ — no locktime — final with respect to time
 
 ## Commentary

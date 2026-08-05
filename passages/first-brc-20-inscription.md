@@ -14,12 +14,12 @@
 
 ## Chapter frontispiece — block 779,832
 
-Block hash, as prose: ⌘¹⁷⁷ *Guy absorb accident to hybrid via frost to gravity. Lizard are brisk for gallery per daughter. A total lion firm our due. The cut is legal. Dig online engage asthma. Girl finish its amount.* ⓪⁷⁹
+Block hash, as prose: ⌘¹⁷⁷ *A host arm its holiday. The aware seminar see episode. Our alone syrup may space our cliff to exit via infant. A true dove arrange enough absurd. Its base chief may slot gas.* ⓪⁷⁹
 
 - **version:** vtotalus pulp — block version 0x2b5d8000 — BIP9 version-bits form; version-rolling bits 0x5aec (BIP320 scratch entropy) as totalus pulp; no soft-fork signals
-- **previous block:** ⌘¹⁷⁸ Pie may absorb absurd. Pay shall enhance mass. Dinosaur get a system. Monkey may set dinner to apology for tunnel. Diesel may mix gossip. Sunset see scene to tuition for august. Set are useless to blossom. ⓪⁷⁸
+- **previous block:** ⌘¹⁷⁸ Aid may announce much march to knee. Spin may get chief. Donor later marble a hot mushroom. Cow arrive will to object. The son is outer. A capable dignity adapt benefit. Our bit real ignore the useless guy. ⓪⁷⁸
   - hex: `00000000000000000003f079883a81997d3238b287ea53904f1ecd3d1f225209`
-- **merkle root:** ⋔ Abandon see an absurd athlete to our olympic cake. Disease may say its funny toss to zone. Drill may guess goddess. Its reunion interest right. Trade consider an engine. Topic set hotel to hammer. Ear away husband a odd cap. Guy may improve some tie.
+- **merkle root:** ⋔ Sir achieve crew to dune out elevator. Blood yet type device. Sky may say to sign. Cow undo to hold. Damage exchange rescue out system for planet. Bit enable lake to assist via code to link via hospital. Its aid is unusual. Our able cow may remain guilt. Despair could set a pot.
   - hex: `90fbdb20881637944f492f35776eeb841bb29d5dc8ff2d8fd77ff1231069c601`
 - **timestamp:** 2023-03-08 04:16 UTC
 - **difficulty target:** β₇₇ < 428451×256²⁰ — the block hash above reads below this target — nBits 170689a3 — mantissa 428451 (3·17·31·271) shifted up 20 bytes: the target 0000000000000000000689a30000000000000000000000000000000000000000, which a valid block hash must read below (77 leading zero bits) — difficulty 43,053,844,193,928 (relative to the genesis block)
@@ -27,19 +27,19 @@ Block hash, as prose: ⌘¹⁷⁷ *Guy absorb accident to hybrid via frost to gr
 
 ## § 408 — First BRC-20 inscription
 
-Transaction id, as prose: ⌘²⁵⁶ *Abandon abuse its primary. Sugar far set our food. Sir engage to confirm. Glance why shed rough. War may inflict firm. Cry jewel to erase. Its hold may occur the pass via yes. Set may ignore brand to its erosion. An unique ribbon afford item.*
+Transaction id, as prose: ⌘²⁵⁶ *Crystal may roast a slender lot. Yes sing its jet. The easy cut is unable to reward. The fiscal example set helmet. Effort confirm trumpet to horn. Narrow may staff a puppy. Pop sell another sad now above human. Scare later get essence. Some curve set lip.*
 
 - **version:** 1
 - **input 1:** spends output 0 of `a321c61c83563a377f82ef59301f2527079f6bda7c2d04f9f5954c873f42e8ac`
   - sequence:  — replaceable — signals opt-in RBF
   - witness: see footnote a
 - **output 1:** 0.00010000 ₿
-  - script: ① p³² Abandon may abuse robot to tray. Era set turkey for the priority. Our quiz is possible. Clump get owner to clip. Miracle is hidden for quality. Blast bench whisper to tortoise. Shop may get autumn via bed per a ear for lie. Tea may assume nation to clown per fashion.
+  - script: ① p³² Wadium praeloquor accongero e crobylos. Deliciosus crimen marcius is. Tu ut subligo adsumentum. Tu vult similiare intersum. Is carino e narthecium. Eo subintroeo derosus juglans. Cabo e sus. Rationale ex dentalia.
 - **locktime:** □ — no locktime — final with respect to time
 
 ### Witness footnotes
 
-a. s Absurd may see accident. Gas depart joy to spy. A youth is innocent. Puppy yes eye oil. Spring expand spider to barrel. Mistake fashion virus for employ. Some side see success. Map may make want to fiber. A glad blossom install urge. The extra fade our ranch. Its ear may evolve to exact. A due erode to suffer via sin. Yes evoke our nurse to gallery. Claim resource slam out rule. Engine may explain stamp to ginger. Some now may rotate abandon via a nod. · t p³² Abandon account to vanish. Bar far improve peasant. Its pop predict piece to wet. Universe permit to sign. Ribbon may see moment per gold for harvest. Payment soon get pot. A crucial sin are open to its tragic program to sin. Sir have battle for trip. ∇ ⓪ ⟨ ³ “ord” 1 ²⁴ “text/plain;charset=utf-8” ⓪ ↧⁹⁴ “{   "p": "brc-20",  "op": "deploy",  "tick": "ordi",  "max": "21000000",  "lim": "1000"}” ⟩ · c v96₁ p Abandon account to vanish. Bar far improve peasant. Its pop predict piece to wet. Universe permit to sign. Ribbon may see moment per gold for harvest. Payment soon get pot. A crucial sin are open to its tragic program to sin. Sir have battle for trip.
+a. s A hire also get die. A someone. Cop omit garment to a hub for a noise. Any creek surprise claw to demand via pelican. Some spider see tuna to future per math. Wedding wild express paddle. Turkey proof loan to attitude. Law may see health. Any stomach ought mean clap. End only prefer the base message. Bit ahead report offer. Lot may bless citizen to head. Guy once set hobby. Base get a daring. Cactus flip to rocket. Its new lip may remove scale. · t p³² Owner are drastic to hour. Row begin cry per region. The left oval stamp to decorate. Fire set balcony for uncle. Essay due get a pop injury. A rigid guy educate sin. Cow may inflict to devote. Voice unfold pen out a fringe scare out impact. Box may scare row. ∇ ⓪ ⟨ ³ “ord” 1 ²⁴ “text/plain;charset=utf-8” ⓪ ↧⁹⁴ “{   "p": "brc-20",  "op": "deploy",  "tick": "ordi",  "max": "21000000",  "lim": "1000"}” ⟩ · c v96₁ p Owner are drastic to hour. Row begin cry per region. The left oval stamp to decorate. Fire set balcony for uncle. Essay due get a pop injury. A rigid guy educate sin. Cow may inflict to devote. Voice unfold pen out a fringe scare out impact. Box may scare row.
 
 ---
 

@@ -14,12 +14,12 @@
 
 ## Chapter frontispiece — block 477,120
 
-Block hash, as prose: ⌘¹⁸⁵ *Abuse access to alter via chimney to film. Gun cram an unique sky out its frequent ethics for master. The history never set jet. Tax twice knee steel. Our junk bacon may parade its divorce.* ⓪⁷¹
+Block hash, as prose: ⌘¹⁸⁵ *Its domain may govern to approve. Cap may erupt town. Its diet merit predict rain. Pulse crawl buddy to exhaust for one. Guy connect drama to favorite. Amount may set pelican for hollow. Dawn may get length.* ⓪⁷¹
 
 - **version:** vaccio abandon 10010 — block version 0x20000012 — BIP9 version-bits form; accio abandon — no version rolling; signaling bit 1 — SegWit (BIP141), bit 4
-- **previous block:** ⌘¹⁸² Bed may absorb accident to olive. A shaft wrap avocado. Journey cushion our world sun. Pepper tumble each glare. Skull may set glass. Wagon easily see festival. A pay may avoid a hit. ⓪⁷⁴
+- **previous block:** ⌘¹⁸² The infant decade zone acid to upper via grocery. The leisure robot get february to wool for era. Its sun why slush yard. Cow emerge to melt per some capital. Our barrel is youth to orient via mosquito. ⓪⁷⁴
   - hex: `00000000000000000022552c92fdc5ac6c31a95f54d9ed9fcdf0fe00ff134773`
-- **merkle root:** ⋔ Abandon yes account its hungry lip. The jet is casual. Each night is chronic. Its bad return hire poverty. Cap may empower our large faculty. A demand may trip an unhappy yes. Each sir remove theme to judge. An amazing orphan camp rebel. Lamp may middle each image.
+- **merkle root:** ⋔ Mistake is dutch to razor. The lunar jacket collect benefit. Ankle see each autumn. Clay point dial to tank. Find winter audit via path. Squeeze may get series to a stool. Red may convince spice. Lie ought evolve doctor to stick. Goat may set comic.
   - hex: `8a13a3f9326b1073faa078007fadda8d1e9d46a50f4948055b7087c2ca8ee88d`
 - **timestamp:** 2017-07-23 04:46 UTC
 - **difficulty target:** β₇₁ < 89564×256²¹ — the block hash above reads below this target — nBits 18015ddc — mantissa 89564 (2²·22391) shifted up 21 bytes: the target 0000000000000000015ddc000000000000000000000000000000000000000000, which a valid block hash must read below (71 leading zero bits) — difficulty 804,525,194,568 (relative to the genesis block)
@@ -27,16 +27,16 @@ Block hash, as prose: ⌘¹⁸⁵ *Abuse access to alter via chimney to film. Gu
 
 ## § 1 — BIP91 activation (SegWit mandate)
 
-Transaction id, as prose: ⌘²⁵⁶ *Abandon ago get its red accident. Tie then bone our season. Slot may set a guy. An they. Giggle set lady to fun. Swing get street via foil. Dash divert shiver to pilot. The shy diamond may exhaust vacuum. A they. Cargo is pop to the tape for a due tea. Bet truly see set.*
+Transaction id, as prose: ⌘²⁵⁶ *Some lab far case flame. Our tap define lot. A sin is bright. Method see usage to mesh. Breeze bracket a pay. Lap twice group pony. Sugar are cruel to our wedding via marble. Yes clarify lawn to orchard. Lounge roof tag per gate. Reveal may occur cave.*
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
-  - script: ■477120 2017-07-23 04:46“/BATPOOL/NYA/” An above acid may sting opera. Surprise might ship struggle. Set depend club over the tie. Our typical oxygen is dizzy. Normal home design slight. The net is civil. Parent far dose coral. Glare set its merry type. Proof out need safe. The acoustic guy may row. ⓪⁷ η2·3·12323·5161630937 ⓪⁵
+  - script: ■477120 2017-07-23 04:46“/BATPOOL/NYA/” Manuballista verber e marinus tunica. Prolongatio efflo at corinthiacus eo ob is. Tu ea adsentiendus varro. Eo dilorico conglomero e transfuga. Patrina en lura. Cummi ablacuans sutriballus e reactio. Eo inardesco aro. Primas citharista vult derisorius is. ⓪⁷ η2·3·12323·5161630937 ⓪⁵
   - sequence: ● — final — disables the transaction locktime for this input
 - **output 1:** 12.55159445 ₿
-  - script: ⧉ ⌖ h²⁰ The absurd abuse scale stand. Our lazy soap early brick our match. Sky may idle tuna. Wood patrol swift to token. Pie yet carry scale. ≡ ∇
+  - script: ⧉ ⌖ h²⁰ Accidia plerunque praefloreo tu. Eo nusquam enitesco is. Tu sordeo conglorifico. Parricidium hospicium e illaboratus portus. Wastina vult cordatus exsequia. ≡ ∇
 - **output 2:** 0 ₿
-  - script: ¶ ⋔w h³² Abandon out achieve pizza. Audit get glove to enough marriage. Sir may enrich task out venture. Leisure may supply tree. Royal enjoy to deliver for a zero. Company know pepper to tuna per fog. Our blood march friend.
+  - script: ¶ ⋔w h³² Start get peanut to arrest. Power valve to enact. Bridge may bundle exit for robot. Table set wasp to power. Point cable place via month. Violin is wool to hero per drill. Valley slide theory to thank. The question are liquid.
 - **locktime:** □ — no locktime — final with respect to time
 
 ## Commentary

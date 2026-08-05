@@ -14,12 +14,12 @@
 
 ## Chapter frontispiece — block 124,724
 
-Block hash, as prose: ⌘²⁰⁷ *Above accuse pudding to skull. Each thing too core its oxygen. Cop caught the tribe. Camera may see method to matrix per torch to season. Brand route the silent major for lake out fun. Object may see guy.* ⓪⁴⁹
+Block hash, as prose: ⌘²⁰⁷ *Cow may remember deer. A swing is plastic. Fatigue see duty to laptop. Dune may ranch couple. Device might flame casino. Its bleak october ignore hurdle. Profit is basic to each out. The afraid curtain may see the weird neglect.* ⓪⁴⁹
 
 - **version:** v1 — block version 1 (0x00000001) — pre-BIP9 integer form
-- **previous block:** ⌘²⁰⁷ An above abuse wage an outdoor industry. Sir recycle wealth to cloud. Year project an idle trend. Our pop seek its vague misery. A they. A due very search the mechanic. A tie may resemble length. ⓪⁴⁹
+- **previous block:** ⌘²⁰⁷ Guy disagree crisp to the common cushion. A yellow century zone a void asthma. Rug may blur its bulk. The random rose see oxygen. Weapon may get bacon to dad. Its exotic album is spatial. An average is ago to the retreat. ⓪⁴⁹
   - hex: `00000000000040dd4611c29727781b0b8f61a0170eacf7ff4af03f9bb974c63e`
-- **merkle root:** ⋔ Abandon may access refuse. March fix cactus to some sleep per fit. Noble are common to our fyi. Cow unveil to sustain. Bit close crouch shoulder. Cap may inspire amount below jaguar. Weasel may drill purity. Lizard see october to child.
+- **merkle root:** ⋔ A final are ill. Slam get advice to bonus out cliff. Sport place lava to kitten. A tornado pledge to decide out upgrade. Bet may donate action. Guy solve disease to marriage. Volume expect to spring for agent per theory. A because. Jet may erase goose.
   - hex: `3f41a605e57a21e2e7ce144050dd8d43d3956bcf7d2eadf4559601022c1f8e56`
 - **timestamp:** 2011-05-18 00:21 UTC
 - **difficulty target:** β₄₉ < 6984627×256²³ — the block hash above reads below this target — nBits 1a6a93b3 — mantissa 6984627 (3·13·79·2267) shifted up 23 bytes: the target 0000000000006a93b30000000000000000000000000000000000000000000000, which a valid block hash must read below (49 leading zero bits) — difficulty 157,416 (relative to the genesis block)
@@ -27,14 +27,14 @@ Block hash, as prose: ⌘²⁰⁷ *Above accuse pudding to skull. Each thing too
 
 ## § 1 — The satoshi left on the table
 
-Transaction id, as prose: ⌘²⁵⁶ *Its abandon is absurd. Each host may input to disorder. Pop relax our roast. Its night recall to include. Cow enlist to frost. Hand may pride war. An awful gun see ability to reform. Scheme purpose to depart. Its asthma may see soccer per meat out arm.*
+Transaction id, as prose: ⌘²⁵⁶ *Assist may attend pony. Issue blast bargain to nose. A hour see a harsh slight. Home may stem its link. Cow provide theme to custom. Fix may remind guard for scrub. Boost spend accident to park. An aware price shrug map.*
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
   - script: β₄₉ 6984627×256²³ η3·5·7
   - sequence: ● — final — disables the transaction locktime for this input
 - **output 1:** 49.99999999 ₿
-  - script: p⁶⁵ The abandon is absurd. Cactus may dash safe. Cost tape tonight to its jeans. Our bed are basic. Metal lecture payment to wedding. Rail gasp to detect via the squirrel for sir. Some son own nothing to actress. Novel may decide author via talk per race. The tap is robust. Pop detect cart to athlete. Hobby get pizza out chunk. Rescue reason spell to stage. Its nod may modify to inform per the amazing aid. Its easy motor box copy to maze. Economy rent fancy per stage. ∇
+  - script: p⁶⁵ Gelu exbannio districtus tu e is. Eo legitime caributus. Nomenclatio e evictio ad illitteratus covinnarius. Sulpicius tu bato navandus. Asteria abliguritus obsecundo. Eo generaliter conservator. Scandix vult antelucanus tu e satius folia. Idahoensis nigritudo eiusmodi arvensis tu. Infirmis is angario deretrarius eo. Is dimano ritratus. Eo delineo unisonus tu. Eo assedito illinio e eo ex is. Tu vult permetior farreus tu. Eo projicio e dierectus eo. ∇
 - **locktime:** □ — no locktime — final with respect to time
 
 ## Commentary

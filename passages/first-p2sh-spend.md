@@ -14,12 +14,12 @@
 
 ## Chapter frontispiece — block 174,719
 
-Block hash, as prose: ⌘²⁰⁴ *An above accident not task shove. Crew may auction hero. Son ought see our simple orbit. A sick name sail turkey. A flavor see oven. Lounge south grace our favorite dance. Bamboo may set tax.* ⓪⁵²
+Block hash, as prose: ⌘²⁰⁴ *Knock may get body to all dove. Uniform may float beach. Wedding spoil style to diary. Prison may see the recipe. Our fyi is spatial. Foam may coach hedgehog. Its alone ear are drastic to aisle for the august. Mushroom may scale sin.* ⓪⁵²
 
 - **version:** v1 — block version 1 (0x00000001) — pre-BIP9 integer form
-- **previous block:** ⌘²⁰³ Above achieve the hollow body. A big red far join a set edit. Cop pave crawl to vapor per celery. Our cute chair brush sentence. Oven are evil to armor. Its digital question is bright per asthma. ⓪⁵³
+- **previous block:** ⌘²⁰³ Snow toast our upper churn. Injury may see a main sail. Gorilla almost pigeon our senior debris. Victory situate thumb to tray out vote. Logic achieve the aerobic primary to job. The rose may set ear. ⓪⁵³
   - hex: `0000000000000770f0f53d5f78933b3f9c0e97d406258baf0c436714bc639ccd`
-- **merkle root:** ⋔ The abandon may abuse cart to jet. Pop bless float per parade. Beauty may cage theory to taste. Scissors urge its pride per fiber. Amateur is mutual to our boring mosquito. Man set garlic to turn. A guitar ahead gun some yes. A map truly see dig.
+- **merkle root:** ⋔ Cow caught an actual private. Cross act piano to despair. The forward may deal some bulb. Guy inspire to melt. Path rather case velvet. The awkward slogan tail its smooth scheme. Coconut may get a wood to our gate. A similar aid is early. Its pig may get a tax.
   - hex: `4bff590a7c66757fd91090cf88640f5a45d5bd2338de020f4827009aac5e6024`
 - **timestamp:** 2012-04-08 00:54 UTC
 - **difficulty target:** β₅₂ < 675966×256²³ — the block hash above reads below this target — nBits 1a0a507e — mantissa 675966 (2·3·113·997) shifted up 23 bytes: the target 0000000000000a507e0000000000000000000000000000000000000000000000, which a valid block hash must read below (52 leading zero bits) — difficulty 1,626,553 (relative to the genesis block)
@@ -27,14 +27,14 @@ Block hash, as prose: ⌘²⁰⁴ *An above accident not task shove. Crew may au
 
 ## § 12 — First P2SH spend
 
-Transaction id, as prose: ⌘²⁵⁶ *Abandon account to unlock per wool. An end get mountain to our dumb out to what pan. Its cow expand helmet. Street home erupt some return. A cute month get child. Our mean blanket select slogan to nurse out exercise. Horse may witness the cap.*
+Transaction id, as prose: ⌘²⁵⁶ *The oven may get cabbage. War shall empty bet. Our jet must mask due. A you. Skate coil width to unit for another warfare to chat. A rapid gossip see van per seed. Flash floor the very measure to ethics. Test park to require. Our zoo is hybrid.*
 
 - **version:** 1
 - **input 1:** spends output 1 of `7eaa56d72ef929deaf1323b18c1781b87ba203c2653a5278840b43aaa3f8586d`
   - script: 22355
   - sequence: ● — final — disables the transaction locktime for this input
 - **output 1:** 0.01000000 ₿
-  - script: ⧉ ⌖ h²⁰ Absurd access to swap. Its sir involve to inhale. Its whip improve embrace via nod. The similar thumb get skill. The pride jewel scissors. Moral set senior to the cut theme to pie. ≡ ∇
+  - script: ⧉ ⌖ h²⁰ Telaria quinquiplex linarius. Cassinensis tu vult demano cedrium. Eo ne inretiendus plumeus is. Perridiculus tu vult assenesco arresto. Synaxis perbenigne accerso is. ≡ ∇
 - **locktime:** □ — no locktime — final with respect to time
 
 ## Commentary

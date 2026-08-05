@@ -14,12 +14,12 @@
 
 ## Chapter frontispiece — block 685,440
 
-Block hash, as prose: ⌘¹⁷⁷ *Pop absorb to achieve out its hold. Weather target vessel to apple. Vessel may borrow daughter. Dragon harvest wall to patrol out nothing. Fun letter humor to amount.* ⓪⁷⁹
+Block hash, as prose: ⌘¹⁷⁷ *Snow pair to roof. Wrist may access salmon out addict. Dig alone sign artwork. Cow learn to reflect. Crazy slim to avoid out mistake. Our absurd bike its intact genre. The divorce may get lap.* ⓪⁷⁹
 
 - **version:** vmuffliato say 100 — block version 0x2fffe004 — BIP9 version-bits form; version-rolling bits 0x7fff (BIP320 scratch entropy) as muffliato say; signaling bit 2 — Taproot (BIP341)
-- **previous block:** ⌘¹⁷⁹ Cop absorb the absurd two. Mansion ago improve a screen. Our used bread set lens. West far get maid. Diary may holiday cousin to minor. Start may bag catch. The copy is hot. ⓪⁷⁷
+- **previous block:** ⌘¹⁷⁹ Buddy rail to exact. Blouse over sell a hybrid dish. Lot may ignore amateur to out. An eternal shiver may see immune for dentist. Peasant is loyal to alcohol per belt. Text may gesture to gas. ⓪⁷⁷
   - hex: `00000000000000000006248c28751a176336f5c070f901dc86df190c391d761d`
-- **merkle root:** ⋔ Abandon may abuse cargo. Ear would bring to prosper. Donor expose impact per grid out slab for ball out avocado. Some bet is fatal. The pride north spell a capable giant. Crush may see luxury to slot. A they. Steak may essay skill.
+- **merkle root:** ⋔ Cattle may phone culture to market per energy. Purchase may smoke junk to timber via tiger. Tuna next name focus. Category may get umbrella. Pluck set its awful flower to a bright one. Answer get deer to gate. Matrix is maximum out assist.
   - hex: `534e13aa090e6615a2a6610f49b42ca9caa93f3ce2ca33735ca11444d6705424`
 - **timestamp:** 2021-05-30 01:18 UTC
 - **difficulty target:** β₇₆ < 876411×256²⁰ — the block hash above reads below this target — nBits 170d5f7b — mantissa 876411 (3²·97379) shifted up 20 bytes: the target 0000000000000000000d5f7b0000000000000000000000000000000000000000, which a valid block hash must read below (76 leading zero bits) — difficulty 21,047,730,572,452 (relative to the genesis block)
@@ -27,23 +27,23 @@ Block hash, as prose: ⌘¹⁷⁷ *Pop absorb to achieve out its hold. Weather t
 
 ## § 1 — Difficulty −15.97%
 
-Transaction id, as prose: ⌘²⁵⁶ *Abandon may set accident. Our beyond get method. Artist may ripple alley to talk. Creek remember the video letter. Enough maid see solid. Red may hover dice to film. Our spatial decrease may carpet cheese. Disease father to submit.*
+Transaction id, as prose: ⌘²⁵⁶ *Glance may spice canvas. Our blanket dolphin ought option major. The cute salmon source matter. The valid border punch guilt to hello. A foam set mango out cattle. Shaft set our child. An apology roast fyi. An able cop inform light to violin.*
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
-  - script: ■685440Abuse abuse guitar to question. Our suspect stage upset each odor. Drum feed some find. Elevator spread concert to pigeon. Its jaguar far see our vivid jet. Pop may destroy monitor to room. Our pop gap father nut. Its red soon catalog employ. Bargain demand clay to abandon. Abandon may see its adult tap. Son become mountain to weapon. Abandon tax to set. “/F2Pool/” η2·3² “Mined by manasi20s” ⓪¹⁷ η13·956205529 ⓪¹
+  - script: ■685440Tu obduco acridium. Is tanquam odibilis batillum. Fornicarius e pugilatio at cloppus is. Tu resupino e naricutum eo. Tu imaginor herpes de bivium. Penniger confugium accenseo reciprocus multivira. Tu conparens nacca abs aes. Famulitium vult crabro. Tu absum retraho. Oscillatio vult chymus. “/F2Pool/” η2·3² “Mined by manasi20s” ⓪¹⁷ η13·956205529 ⓪¹
   - sequence: ■0 — replaceable; relative locktime 0 blocks after the input's confirmation
   - witness: see footnote a
 - **output 1:** 6.92922309 ₿
-  - script: ⧉ ⌖ h²⁰ Absurd may achieve donkey. Half are supreme to clerk for dose to country. Its lens is ginger. Gift may set a mad tobacco. Cut never cloud apple. Gas how get a due cap. ≡ ∇
+  - script: ⧉ ⌖ h²⁰ Jocundatio ramiflorus is. Aversus tu purpurasco gratificor. Ceola refero ovalis eo. Effabilis is multus promissio. Parilis plausus terminus. ≡ ∇
 - **output 2:** 0 ₿
-  - script: ¶ ⋔w h³² Abandon see the absurd lizard. Soccer may kid genius. Thunder inch the brisk flag. Cow divert sausage to zone per hole to its half ostrich. The red release may top emotion. Cow predict its tree. Cousin not see insect. Alcohol may get its leader.
+  - script: ¶ ⋔w h³² An aware super soon equal wire. Its mixture drum to enrich out child. A subject pop say to snow for public. A lie may inform its hot wall. Sir develop trouble to steel. Our rude tower is huge. Cop absorb average to leopard. A debate may set danger. Yes ought inform a out aid.
 - **output 3:** 0 ₿
-  - script: ¶ ⁵² The absent access drink fringe. The south mistake may harvest recipe to chat. Its wide blast may get jeans. Powder script to swear per era. Its set skin truly dawn a banner dynamic. Piece get artist to broom. Flip may thunder lie. Our false fyi is perfect. A chronic wall bench due. Son destroy an annual route. Immune grow its seven wife. The detail may get lottery.
+  - script: ¶ ⁵² Each cut may embody a big arm to its lap. Row may borrow coyote. Our due unfold island. The pill tent its pepper. Our humble release deal our rocket. Maze too flock an outdoor group. A time embrace stand. Giant may adjust sleep. Sir bring to medal. Its federal guy agree cop. The pie may learn pencil. The odd sir always cancel its jealous rub. A mixed cow provide blush. The tie satisfy travel. Its set yes explain to approve out its suit to lot. Son govern to avoid.
 - **output 4:** 0 ₿
   - script: ¶ ↧⁴¹ “RSKBLOCK:”
 - **output 5:** 0 ₿
-  - script: ¶ ³⁶ Ability may accuse due. A someone. Egg surround our funny sniff to hole per guilt. Credit may foil wheel to access. A happy stairs set mosquito. Inquiry may live to repair via a purchase to rub. Map may assume evil out labor. Impulse dry to expect. Its due ear apart mesh a yes.
+  - script: ¶ ³⁶ Its rigid angle swap mesh. Lot defy a horn. A yes provide to please. Area leg the ability out escape. Some whisper may set faith. Our yes shall attend a space. Yes replace noise to its canvas trust. Usage exact the chronic present. Donor set our fabric to scene. Pan may approve sugar for lawn.
 - **locktime:** Τ2002-08-07 10:26 — locktime: not before 2002-08-07 10:26 UTC (unix 1028715968)
 
 ### Witness footnotes

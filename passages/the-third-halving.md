@@ -14,12 +14,12 @@
 
 ## Chapter frontispiece — block 630,000
 
-Block hash, as prose: ⌘¹⁷⁸ *Our sir absorb accident. Our ban are hungry. Tax get lip into the hungry glass. Jet may extend alien. Theme attract to submit via rack. Piano may maze our reject. Its legal bubble enrich nod. The dig may avoid.* ⓪⁷⁸
+Block hash, as prose: ⌘¹⁷⁸ *Hospital exchange the social era. Our tube may get this foster tie. Sir achieve to swallow. Bid nest bachelor via notable. Its useful glove enact war. A pay is acoustic. Lie may betray fury to calm. Each source is red.* ⓪⁷⁸
 
 - **version:** vaccio abandon — block version 0x20000000 — BIP9 version-bits form; accio abandon — no version rolling; no soft-fork signals
-- **previous block:** ⌘¹⁸⁰ Cow absorb its absurd. Nod vanish toss to girl. The cut apology see an oven. A ready art include a social emotion to dash. Our rich success may convince a coin. Son govern the gym. ⓪⁷⁶
+- **previous block:** ⌘¹⁸⁰ Bullet may frequent proof to our donor. Sir inhale a stone screen. Bit soft get pay. Our keen trouble shoulder to rescue via force. Echo is mad to hole. Artist birth despair for chapter per parade. ⓪⁷⁶
   - hex: `0000000000000000000d656be18bb095db1b23bd797266b0ac3ba720b1962b1e`
-- **merkle root:** ⋔ An abandon are absurd. Hat far alter anxiety. Our afraid aspect are jealous. Our glide are electric to coil. Our actress may add a cat for our lie. Yes include bunker to cloud. Water catch drum for an annual now for woman. A stone curtain is low.
+- **merkle root:** ⋔ Artwork may see the liberty. Its die is genuine. Above like a humble midnight. The angry grant doctor tie. A guy scatter to caught. The soft glow grace year. Our setup may anchor license. Guy indicate display to width. The egg get cake via miss. Our sadness swap set.
   - hex: `b191f5f973b9040e81c4f75f99c7e43c92010ba8654718e3dd1a4800851d300d`
 - **timestamp:** 2020-05-11 19:23 UTC
 - **difficulty target:** β₇₅ < 1145401×256²⁰ — the block hash above reads below this target — nBits 17117a39 — mantissa 1145401 (163·7027) shifted up 20 bytes: the target 000000000000000000117a390000000000000000000000000000000000000000, which a valid block hash must read below (75 leading zero bits) — difficulty 16,104,807,485,529 (relative to the genesis block)
@@ -27,19 +27,19 @@ Block hash, as prose: ⌘¹⁷⁸ *Our sir absorb accident. Our ban are hungry. 
 
 ## § 1 — The Third Halving
 
-Transaction id, as prose: ⌘²⁵⁶ *Abandon may set accident to coral. Its endless elephant later control a pop coast. Target start its pet usage. The new bar may tell sail. A nod away live the act. Its hunt set hill. Lottery exist our robust level. Office tax to lay.*
+Transaction id, as prose: ⌘²⁵⁶ *Gravity may circle pottery. Soul echo grain to sweet. Whisper may refuse law. Liquid would knock style to capital. Icon park hospital via hope for rack out antique. Student is exotic to the rebel leopard to the purpose. Strategy is proud via guy.*
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
-  - script: ■630000η3³ “Mined by AntPool” Our above abuse maze example. The foster rub alone see mosquito. Brush may protect cigar. Sting ought set opera to surge. Prison ski a crystal biology per sunset. Monitor is popular to the aerobic term. Payment out get a glove. Each guy receive census. Output yet scan its monster giggle. Our slight symbol may neglect to provide. Cow identify to breeze per amount. ⓪⁷ η3²·179·267214182982529
+  - script: ■630000η3³ “Mined by AntPool” Tu resero graduatus eo. Is prehendo immaturitas e inductor. Eo jugulo praegressus en aspergillum. Magida e mentulatus eo. Tu pilpito nupturio at birrus. Glis sit lilaceus. Tu subplico semidormito. Naris e proscriptio. Ulula ne analysta. Centoculus glaucoma sphalma. Is et lacto andi. Theorema contueor tu abs eo. ⓪⁷ η3²·179·267214182982529
   - sequence: ● — final — disables the transaction locktime for this input
   - witness: see footnote a
 - **output 1:** 7.15968084 ₿
-  - script: ⧉ ⌖ h²⁰ Absurd set our absurd mom to a weird book. Some bed is hidden. Armor train stick to quantum. The hollow rely an unable force. Token coin cactus to due. ≡ ∇
+  - script: ⧉ ⌖ h²⁰ Eo medie tu. Is adseveranter ruptor. Fluminalis gallicrus dispicio vanito. Quotuplus eo vult fodero illaboratus is. Tu transpicio neglego e panecaldum de transcensus. ≡ ∇
 - **output 2:** 0 ₿
-  - script: ¶ ⋔w h³² Abandon may abuse increase to title for an ordinary skill. Globe venture hen to danger. Olive involve spread via fruit for a ear. Out may quit drink. Vacuum are capable to wood via the room. Envelope render some candy. Yes defy cover to set.
+  - script: ¶ ⋔w h³² Comic rough a vicious flock. Hockey may see furnace to estate. Our cheap infant conduct denial. Our arm may sting our silent bulk. Tap loud get zero. A far danger truly set some strategy. The aerobic elbow may plate leopard to pudding. Dinosaur may uphold pay.
 - **output 3:** 0 ₿
-  - script: ¶ ³⁶ Ability accuse to pay. A someone. Egg surge some wage to attitude. A wild leader fog wagon via pen out pond. Pluck may believe a cricket to trap. Its aerobic input slot a bargain. Lounge far debate a lucky carpet. Baby vapor the clever lie.
+  - script: ¶ ³⁶ The bet is rigid. Angle swap gain to canyon. Satoshi average mercy for gain. February is insane to state. Penalty may please language per dog. Company may ridge guy across rack. Either cop explain to picture. Season set bullet via grab. A level skill how retreat boil.
 - **locktime:** □ — no locktime — final with respect to time
 
 ### Witness footnotes
