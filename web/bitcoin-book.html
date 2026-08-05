@@ -1111,6 +1111,9 @@ import { toSubscript } from './btc-sigla.js';
 import { NOTATION_HTML } from './btc-notation.js';
 import { transactionTemplates } from './btc-templates.js';
 import { collectMarks, applyKeyFilter } from './btc-key-filter.js';
+// What a witness carries, read off its own bytes: a footnote whose payload
+// announces a format is named by it when nothing better has named it.
+import { witnessAsset } from './btc-inscriptions.js';
 import { commentaryFor, commentaryHtml, resolveCommentary } from './btc-commentary.js';
 
 // The curated index -- which blocks and transactions are notable, what they are
@@ -4574,14 +4577,36 @@ async function renderFootnotes(gen) {
     // The witness's name line, centered above its footnote and spanning the
     // grid: the reader's bookmark title when this witness is kept (defaulted
     // from -- and overriding -- the curated name), else the contents' own
-    // name for it (a curated §n.a place), else empty and hidden.
-    // syncBookmarkTitles keeps it live with the bookmark set.
+    // name for it (a curated §n.a place), else what the bytes say they are,
+    // else empty and hidden. syncBookmarkTitles keeps it live with the
+    // bookmark set.
+    //
+    // That third tier is read, not asserted: a format announces itself in
+    // its first bytes (a PNG opens \x89PNG whoever inscribed it), so a
+    // witness carrying one can be named without anybody deciding what it is.
+    // It sits BELOW the curated name because an editor who has named a
+    // passage has said something a magic number cannot; it sits above
+    // nothing at all because a footnote that is plainly a picture should not
+    // read as anonymous apparatus.
     const witTitle = document.createElement('div');
     witTitle.className = 'footnote-title';
     witTitle.dataset.bmWit = `${fn.txid}:${fn.vin}`;
     const witPlace = places().find((pl) => !pl.page && !pl.address && pl.wit === fn.n
       && pl.id === String(state.height) && (pl.index ?? null) === state.index);
-    witTitle.dataset.fallback = witPlace ? placeTitle(witPlace) : '';
+    const asset = witPlace ? null : witnessAsset(fn.items);
+    witTitle.dataset.fallback = witPlace ? placeTitle(witPlace) : (asset ? asset.label : '');
+    if (asset) {
+      // What the line is claiming, and on whose authority: the bytes' own
+      // announcement, or -- where they make none -- the envelope's word for
+      // them, which is a different thing and says so.
+      const size = `${asset.bytes.toLocaleString()} bytes`;
+      witTitle.title = asset.source === 'bytes'
+        ? `${size}, read as ${asset.mime} from the payload's own opening bytes`
+          + (asset.declared && asset.declared !== asset.mime
+            ? ` — the envelope declares ${asset.declared}, which these bytes do not bear out`
+            : '')
+        : `${size}${asset.encoding ? `, ${asset.encoding}-compressed` : ''} — “${asset.declared}” is the inscriber's declaration; the bytes themselves announce nothing`;
+    }
     el.append(witTitle);
     // A witness-only input's citation (carrying its in-N anchor, resolving
     // asynchronously wherever it sits) lands in the left cell of its own

@@ -11,7 +11,7 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { parseEnvelopes, tapscriptOf, inscriptionInTx, parseCollection } from '../web/btc-inscriptions.js';
+import { parseEnvelopes, tapscriptOf, inscriptionInTx, parseCollection, sniffAsset, witnessAsset } from '../web/btc-inscriptions.js';
 
 const hex = (bytes) => bytes.map((b) => b.toString(16).padStart(2, '0')).join('');
 const ascii = (s) => [...s].map((c) => c.charCodeAt(0));
@@ -222,4 +222,100 @@ test('inscriptionInTx walks the inputs and answers with the first envelope and i
   assert.equal(found.contentType, 'image/png');
   assert.equal(found.body.length, 2);
   assert.equal(inscriptionInTx({ vin: [{ witness: ['aa'.repeat(64)] }] }), null);
+});
+
+// ── What bytes say they are ───────────────────────────────────────────────
+
+const bytesOf = (...parts) => Uint8Array.from(parts.flatMap((p) =>
+  typeof p === 'string' ? [...p].map((c) => c.charCodeAt(0)) : [p]));
+
+test('a format announces itself in its opening bytes', () => {
+  for (const [bytes, label] of [
+    [bytesOf(0x89, 'PNG\r\n', 0x1a, '\n'), 'PNG image'],
+    [bytesOf(0xff, 0xd8, 0xff, 0xe0), 'JPEG image'],
+    [bytesOf('GIF89a'), 'GIF image'],
+    [bytesOf('RIFF', 0, 0, 0, 0, 'WEBP'), 'WebP image'],
+    [bytesOf('RIFF', 0, 0, 0, 0, 'WAVE'), 'WAV audio'],
+    [bytesOf('BM', 0, 0, 0, 0), 'BMP image'],
+    [bytesOf(0, 0, 0, 0x18, 'ftypavif'), 'AVIF image'],
+    [bytesOf(0, 0, 0, 0x18, 'ftypmp42'), 'MP4 video'],
+    [bytesOf(0x1a, 0x45, 0xdf, 0xa3), 'WebM video'],
+    [bytesOf('OggS'), 'Ogg audio'],
+    [bytesOf('ID3', 4, 0), 'MP3 audio'],
+    [bytesOf('%PDF-1.7'), 'PDF document'],
+    [bytesOf('PK', 3, 4), 'ZIP archive'],
+    [bytesOf(0x1f, 0x8b, 8), 'gzip data'],
+  ]) {
+    assert.equal(sniffAsset(bytes)?.label, label, label);
+  }
+});
+
+test('text is recognized by reading it, since text has no magic number', () => {
+  const u = (s) => new TextEncoder().encode(s);
+  assert.equal(sniffAsset(u('<svg viewBox="0 0 1 1"></svg>')).label, 'SVG image');
+  assert.equal(sniffAsset(u('<?xml version="1.0"?><svg xmlns="x"/>')).label, 'SVG image');
+  assert.equal(sniffAsset(u('<!DOCTYPE html><html></html>')).label, 'HTML');
+  assert.equal(sniffAsset(u('{"p":"brc-20","op":"deploy"}')).label, 'JSON');
+  assert.equal(sniffAsset(u('  [1, 2, 3]')).label, 'JSON');
+  assert.equal(sniffAsset(u('just some words')).label, 'plain text');
+  // Braces that do not parse are not JSON, whatever they look like.
+  assert.equal(sniffAsset(u('{not json at all')).label, 'plain text');
+});
+
+test('bytes that announce nothing are named nothing — a guess is not worth the ink', () => {
+  assert.equal(sniffAsset(Uint8Array.from([0x00, 0x01, 0x02, 0x03, 0xfe])), null);
+  assert.equal(sniffAsset(new Uint8Array(0)), null);
+  assert.equal(sniffAsset(null), null);
+});
+
+test('a witness names its asset from the envelope body, with the declaration beside it', () => {
+  const png = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
+  const script = scriptWith(envelope({ fields: [[1, ascii('image/png')]], body: [png] }));
+  const control = 'c0' + '11'.repeat(32);
+  const a = witnessAsset(['aa'.repeat(64), script, control]);
+  assert.equal(a.label, 'PNG image');
+  assert.equal(a.source, 'bytes');
+  assert.equal(a.declared, 'image/png');
+  assert.equal(a.bytes, 8);
+});
+
+test('when the bytes announce nothing the declaration stands, and says whose it is', () => {
+  const opaque = [0x00, 0x01, 0x02, 0x03, 0xfe, 0xff];
+  const script = scriptWith(envelope({ fields: [[1, ascii('model/gltf-binary')]], body: [opaque] }));
+  const a = witnessAsset(['aa'.repeat(64), script, 'c0' + '11'.repeat(32)]);
+  assert.equal(a.label, 'model/gltf-binary');
+  assert.equal(a.source, 'declaration');
+});
+
+test('a declaration the bytes contradict does not overrule them', () => {
+  const png = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
+  const script = scriptWith(envelope({ fields: [[1, ascii('text/plain')]], body: [png] }));
+  const a = witnessAsset(['aa'.repeat(64), script, 'c0' + '11'.repeat(32)]);
+  assert.equal(a.label, 'PNG image');       // what the bytes are
+  assert.equal(a.declared, 'text/plain');   // what somebody said they are
+});
+
+test('an ordinary spend carries no asset — a signature and a key are furniture', () => {
+  assert.equal(witnessAsset(['aa'.repeat(64)]), null);                    // key path
+  assert.equal(witnessAsset(['30'.repeat(71), '02'.repeat(33)]), null);   // P2WPKH
+  assert.equal(witnessAsset([]), null);
+  assert.equal(witnessAsset(null), null);
+});
+
+test('a bare data item announces itself too, envelope or no envelope', () => {
+  const gif = '474946383961' + '00'.repeat(30);   // GIF89a, long enough to be a payload
+  assert.equal(witnessAsset(['aa'.repeat(64), gif]).label, 'GIF image');
+  // …but not something too short to be one.
+  assert.equal(witnessAsset(['aa'.repeat(64), '474946383961']), null);
+});
+
+test('a compressed body is not sniffed — unpacking it would be a reading', () => {
+  const script = scriptWith(envelope({
+    fields: [[1, ascii('text/html')], [9, ascii('br')]],
+    body: [[0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00]],
+  }));
+  const a = witnessAsset(['aa'.repeat(64), script, 'c0' + '11'.repeat(32)]);
+  assert.equal(a.label, 'text/html');
+  assert.equal(a.source, 'declaration');
+  assert.equal(a.encoding, 'br');
 });
