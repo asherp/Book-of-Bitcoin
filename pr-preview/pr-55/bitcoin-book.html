@@ -2353,17 +2353,43 @@ function prepareLeaf() {
 // early is exactly the bug it exists to avoid.
 const TITLE_RESTORE_BACKSTOP_MS = 120000;
 let titleRestoreTimer = null;
+let titleArmed = false;
+let hiddenWhileArmed = false;
+
+// Prepare the leaf and hold the name until something says the dialogue is
+// done with it. Called by the mark itself AND by `beforeprint`, because
+// neither can be relied on alone: `beforeprint` is what catches a plain ⌘P,
+// and Chrome on Android hands printing to the system print service without
+// firing it at all -- which left the file named for the site rather than the
+// passage. Both call it, it is idempotent, and whichever runs first wins.
+function armLeaf() {
+  if (!prepareLeaf()) return false;
+  titleArmed = true;
+  hiddenWhileArmed = false;
+  clearTimeout(titleRestoreTimer);
+  titleRestoreTimer = setTimeout(restoreSiteTitle, TITLE_RESTORE_BACKSTOP_MS);
+  return true;
+}
 function restoreSiteTitle() {
   clearTimeout(titleRestoreTimer);
   titleRestoreTimer = null;
+  titleArmed = false;
+  hiddenWhileArmed = false;
   document.title = SITE_TITLE;
 }
-window.addEventListener('beforeprint', () => {
-  if (!prepareLeaf()) return;
-  clearTimeout(titleRestoreTimer);
-  titleRestoreTimer = setTimeout(restoreSiteTitle, TITLE_RESTORE_BACKSTOP_MS);
-});
+window.addEventListener('beforeprint', armLeaf);
 window.addEventListener('afterprint', restoreSiteTitle);
+// The Android path again: no afterprint either, and the system print UI and
+// its file picker take the page out of view for the whole flow. Coming back
+// into view is therefore the signal that the flow is over -- and it can only
+// arrive after the print job (and its name) was made, so it cannot restore
+// early. On a desktop the page never hides for the preview, so this never
+// fires there and afterprint stays in charge.
+document.addEventListener('visibilitychange', () => {
+  if (!titleArmed) return;
+  if (document.hidden) { hiddenWhileArmed = true; return; }
+  if (hiddenWhileArmed) restoreSiteTitle();
+});
 
 async function exportPassage() {
   const btn = $('page-export');
@@ -2387,9 +2413,11 @@ async function exportPassage() {
     // colophon would name the wrong one -- so a turn cancels the export.
     if (gen !== renderGen) return;
     if (filled) await new Promise((r) => requestAnimationFrame(() => r()));
-    // The rest -- colophon and filename -- rides on beforeprint, which
-    // print() fires for us. Nothing is restored here: the title has to
-    // outlive this call (see restoreSiteTitle).
+    // Colophon and filename, set here rather than left to the beforeprint
+    // listener: an engine that does not fire that event would otherwise
+    // print a leaf named for the site. Nothing is restored on the way out --
+    // the name has to outlive this call (see restoreSiteTitle).
+    armLeaf();
     window.print();
   } finally {
     btn.disabled = false;
