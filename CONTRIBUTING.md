@@ -145,12 +145,14 @@ says, and mark plainly where it stops saying it. "Ten thousand coins moved to a
 script" is the record; "they bought two pizzas" is testimony from the people
 involved, and a reader is entitled to see which is which.
 
-The book offers all of this from the page itself: at the foot of every passage
-is a `+ Commentary` toggle (`web/btc-contribute.js`) that opens the file
-already named for that passage and already carrying its licence header, or
-sends you to the pull request with the template applied. It is on every leaf,
-not only the curated ones — most of the chain has nothing said about it yet,
-which is the point.
+The book offers this from the page itself. The Commentary key in the foot bar,
+beside Notation, is on every page rather than only the curated ones: where the
+passage has a reading the sheet holds it, and where it has none the sheet says
+so — "Nothing has been said about V β61 ■145 §1 yet" — and offers **Add your
+commentary.** That link (`web/btc-contribute.js`) opens the file already named
+for that passage and already carrying its licence header, forking the
+repository for you if you have no fork. Most of the chain has nothing said
+about it yet, which is the point.
 
 The template asks for exactly what this section does — the passage, the
 reading, the line between record and testimony, and the two files — so if you

@@ -63,37 +63,28 @@
    that stays centred. Only the toggle keeps the hero's alignment, being chrome
    rather than reading matter. */
 .leaf-commentary { margin: 26px auto 0; max-width: 560px; text-align: left; }
-/* The toggle is shared with the contribute affordance below, so the gesture a
-   reader learns on a ledger's readings is the gesture that offers them the
-   empty page: the + opens something about commentary, wherever it stands. */
-.leaf-commentary > summary, .contribute > summary {
+.leaf-commentary > summary {
   cursor: pointer; font: 500 11px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing: .1em; text-transform: uppercase;
   color: var(--dim); list-style: none; text-align: center;
 }
-.leaf-commentary > summary::-webkit-details-marker,
-.contribute > summary::-webkit-details-marker { display: none; }
-.leaf-commentary > summary::before, .contribute > summary::before { content: '+ '; color: var(--accent); }
-.leaf-commentary[open] > summary::before, .contribute[open] > summary::before { content: '– '; }
-.leaf-commentary > summary:hover, .contribute > summary:hover { color: var(--ink-soft); }
+.leaf-commentary > summary::-webkit-details-marker { display: none; }
+.leaf-commentary > summary::before { content: '+ '; color: var(--accent); }
+.leaf-commentary[open] > summary::before { content: '– '; }
+.leaf-commentary > summary:hover { color: var(--ink-soft); }
 .leaf-commentary .commentary-measure { margin: 16px 0 0; }
 
-/* ── The page nobody has annotated ─────────────────────────────────────────
-   btc-contribute.js, at the foot of every passage: the one part of the
-   annotation layer that does not wait to be earned. It is set quieter than a
+/* ── The invitation at the sheet's foot ────────────────────────────────────
+   btc-contribute.js: what the Commentary key holds where the passage has no
+   reading, and what closes the sheet where it has one. Set quieter than a
    reading and in the meta voice, because it is not one — a reading is somebody
    speaking, and this is the book holding the door. */
-.contribute { margin: 34px auto 0; max-width: 560px; padding: 0 22px 44px; text-align: left; }
-.contribute .contribute-body { margin: 16px 0 0; }
-.contribute-body p {
+.contribute p {
   margin: 0; font: italic 400 calc(14px * var(--scale-commentary, 1))/1.6 'Newsreader','Book Sigla',serif;
   color: var(--meta);
 }
-/* The two doors and the guide, in the mono the book keeps for its own chrome:
-   these are not the reading, they are the way to write one. */
-.contribute-links { display: flex; flex-wrap: wrap; gap: 6px 20px; }
-.contribute-links, .contribute-body p + p { margin-top: 14px; }
-.contribute-links a {
-  font: 500 11px/1.4 'IBM Plex Mono','Book Sigla',monospace; letter-spacing: .06em;
-  color: var(--accent); text-decoration: none; border-bottom: 1px solid var(--rule);
-}
-.contribute-links a:hover { border-bottom-color: var(--accent); }
+/* Under a reading, it needs the air that separates it from somebody's writing;
+   alone on an unannotated passage it is the sheet's only line and stands where
+   the reading would have. */
+.commentary-measure + .contribute { margin-top: 22px; }
+.contribute a { color: var(--accent); text-decoration: none; border-bottom: 1px solid var(--rule); }
+.contribute a:hover { border-bottom-color: var(--accent); }

@@ -55,16 +55,21 @@ test('a curated passage is named for itself, an uncurated one for its citation',
     'web/commentary/v2b1c1-your-name.md');
 });
 
-test('the affordance says something different where a reading already stands', () => {
+test('an unannotated passage says so; an annotated one only invites', () => {
   const empty = contributeHtml(PASSAGE);
   const taken = contributeHtml({ ...PASSAGE, hasReading: true });
-  assert.match(empty, /Nothing has been said/);
-  assert.match(taken, /not the\s+last word/);
-  // Both offer the same three doors, and every one of them leaves the site.
+  assert.match(empty, /Nothing has been said about III β2 ■5 §85 yet\. /);
+  assert.doesNotMatch(taken, /Nothing has been said/);
+  // One door, the same one, wherever it stands -- and it leaves the site.
   for (const html of [empty, taken]) {
-    assert.equal(html.match(/rel="noopener noreferrer"/g).length, 3);
-    assert.ok(html.includes(REPO));
+    assert.equal(html.match(/<a /g).length, 1);
+    assert.match(html, />Add your commentary\.<\/a>/);
+    assert.match(html, /rel="noopener noreferrer"/);
+    assert.ok(html.includes(`${REPO}/new/main`));
   }
+  // The compare door is still known here -- CONTRIBUTING.md sends contributors
+  // through it -- it is just not offered at the foot of a passage.
+  assert.ok(!taken.includes('/compare'));
 });
 
 test('a title carrying markup cannot become markup', () => {
