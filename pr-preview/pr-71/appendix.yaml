@@ -129,11 +129,19 @@
 
 - kind: mining
   title: Mining
-  note: How a chapter comes to be written, from both ends. The Mempool is the queue a block is taken from, read as the chapters it is about to become — provisional numbers that hold only while the queue does, and only the first is a real forecast. The Mines is the hands that take it, one leaf to a pool, ordered by how much of the last difficulty window each won. Neither can be written down in advance: the queue is a fact about this minute, and who mined a block is an inference from an unauthenticated tag, so both are read off the chain when the leaf opens and both say whose reading they are.
-  # The part's reading is not of any one draft chapter but of the question the
-  # queue's ordering begs: who the miners are, and how anyone honestly counts
-  # their shares of the hashrate when the chain states blocks won and nothing
-  # else — window choice, smoothing, and the error bars the dashboards omit.
+  # No note. The leaf carries its two doors -- the queue, and the hands that
+  # take from it -- and they say what they are by being what they are; a
+  # paragraph above them would only say it again in the book's own voice,
+  # flush against the leaf, where the reading below it says it signed. The
+  # Citations part keeps its own leaf quiet on the same principle: a leaf sets
+  # the thing and gets out of the way, and saying what the thing IS is a
+  # reading.
+  #
+  # And here the reading is exactly that: not of any one draft chapter but of
+  # the question the queue's ordering begs -- who the miners are, and how
+  # anyone honestly counts their shares of the hashrate when the chain states
+  # blocks won and nothing else. Window choice, smoothing, and the error bars
+  # the dashboards omit.
   commentary:
     - file: measuring-pool-hashrate.md
       by: Claude Fable 5
