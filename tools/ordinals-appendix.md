@@ -204,21 +204,30 @@ editor adding a kind of back matter can follow the same path:
      the book gives every raw string. Repeated, not vouched for.
    - **The works** (`&item=n`), one level below, where the ▾ leads:
      one work to a leaf, turned to sideways the way every run in this
-     book is turned — ‹ back and forward › along the collection, and
-     back off the first is the title page that named them. The leaf
-     leads with the work's **citation** — the chapter, the section and
-     the footnote its envelope reads at, resolved from the member's own
-     merkle proof (the height, and the position in the block that IS
-     the §section) with the footnote letter counted off the
-     witness-bearing inputs, which is how the book letters its notes.
-     It is the one line on the leaf the chain answers for, and the door
-     back into the book at that footnote. Then the image, and beneath
-     it the manifest's caption — the same form the collection's own
-     statement takes one level up, because it is the same kind of
-     claim: somebody's words about something the chain holds. A
-     quotation is set as one and keeps its line breaks; the first work
-     of Museum Outdoor quotes the line painted on the door it
-     photographs.
+     book is turned. The head carries the work's name and, beneath it
+     and above the rule, its **citation** — the chapter, the section
+     and the footnote its envelope reads at, resolved from the
+     member's own merkle proof (the height, and the position in the
+     block that IS the §section) with the footnote letter counted off
+     the witness-bearing inputs, which is how the book letters its
+     notes. It is the one line on the leaf the chain answers for, and
+     the door back into the book at that footnote. Then the image, and
+     beneath it the manifest's caption — the same form the
+     collection's own statement takes one level up, because it is the
+     same kind of claim: somebody's words about something the chain
+     holds. A quotation is set as one and keeps its line breaks; the
+     first work of Museum Outdoor quotes the line painted on the door
+     it photographs.
+
+     **The run closes at both ends.** A sideways turn walks the works
+     and only the works; the way out is the ▴ and the pull-down, to
+     the title page that names them. Turning left off the first work
+     used to land on that page, which reads as a sideways move but is
+     a level up — and pressing on from there walked out through the
+     sibling inscriptions and into the neighbouring appendix, so a
+     reader paging back through a collection could leave it without
+     ever meaning to. The ballot's block leaves already settle this
+     question the same way: a run turns within itself.
    - **The chrome stands down** at the level of one inscription and
      below. What is shown there is a picture, or a page of somebody's
      text, and it should be met as that rather than framed by a row of
