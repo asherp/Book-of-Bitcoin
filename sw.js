@@ -17,7 +17,7 @@
  * Everything here is scoped to the directory sw.js is served from, so it works
  * unchanged at the site root and under a per-PR preview subpath.
  */
-const CACHE = 'bitcoin-book-shell-v36';
+const CACHE = 'bitcoin-book-shell-v37';
 
 // App shell, relative to the SW scope. glossia.js / glossia_bg.wasm are
 // gitignored build artifacts — present after a build/deploy, possibly absent in
@@ -74,6 +74,23 @@ const SHELL = [
   './icons/beta-icon-180.png',
   './icons/beta-icon-192.png',
   './icons/beta-icon-512.png',
+  // The vendored fonts (web/fonts/README.md) — the pages name no third
+  // party, so the shell carries the faces or the reader gets the fallbacks.
+  './fonts/fonts.css',
+  './fonts/newsreader-latin.woff2',
+  './fonts/newsreader-latin-ext.woff2',
+  './fonts/newsreader-italic-latin.woff2',
+  './fonts/newsreader-italic-latin-ext.woff2',
+  './fonts/plexmono-400-latin.woff2',
+  './fonts/plexmono-500-latin.woff2',
+  './fonts/plexmono-600-latin.woff2',
+  './fonts/publicsans-latin.woff2',
+  './fonts/publicsans-latin-ext.woff2',
+  './fonts/sigla-dejavu.woff2',
+  './fonts/sigla-noto-symbols.woff2',
+  './fonts/sigla-noto-symbols-2.woff2',
+  './fonts/sigla-noto-math.woff2',
+  './fonts/sigla-noto-sans.woff2',
   './glossia.js',
   './glossia_bg.wasm',
   './glossia-msg.js',

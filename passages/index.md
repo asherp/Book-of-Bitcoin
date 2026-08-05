@@ -12,7 +12,7 @@ scheme, and how to read passages beyond this curated set.
 - [The Times 03/Jan/2009 Chancellor on brink of second bailout for banks](./the-times-03-jan-2009-chancellor-on-brink-of-second-bailout-for-banks.md) — I β1 ■1 §1 ([as a page](https://bookofbitcoin.io/I/1/1/1/))
 - [Hal Finney transaction](./hal-finney-transaction.md) — I β1 ■171 §2 ([as a page](https://bookofbitcoin.io/I/1/171/2/))
 - [First P2PKH payment](./first-p2pkh-payment.md) — I β1 ■729 §2 ([as a page](https://bookofbitcoin.io/I/1/729/2/))
-- [Bitcoin Pizza Day](./bitcoin-pizza-day.md) — I β29 ■596 §1 ([as a page](https://bookofbitcoin.io/I/29/596/))
+- [Bitcoin Pizza Day](./bitcoin-pizza-day.md) — I β29 ■596 §2 ([as a page](https://bookofbitcoin.io/I/29/596/2/))
 - [Supply cap bug fix](./supply-cap-bug-fix.md) — I β37 ■1846 §3 ([as a page](https://bookofbitcoin.io/I/37/1846/3/))
 - [Script opcode purge](./script-opcode-purge.md) — I β38 ■47 §1 ([as a page](https://bookofbitcoin.io/I/38/47/))
 - [1 MB size limit activation](./1-mb-size-limit-activation.md) — I β40 ■777 §1 ([as a page](https://bookofbitcoin.io/I/40/777/))
