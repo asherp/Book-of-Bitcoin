@@ -66,6 +66,30 @@ export async function storeGet(store, key) {
   });
 }
 
+// Everything a store holds, as [key, value] pairs, in one cursor pass. For a
+// caller that wants the shape of what has already been banked rather than one
+// value it can name -- the contents' list of mines, which is whatever the
+// archive learned when the appendix last counted, and costs no network at
+// all. Empty on a cold or unavailable archive, which reads as "nothing has
+// been explored yet" and never as an error.
+export async function storeEntries(store) {
+  const d = await db();
+  if (!d) return [];
+  return new Promise((resolve) => {
+    const out = [];
+    try {
+      const cur = d.transaction(store, 'readonly').objectStore(store).openCursor();
+      cur.onsuccess = () => {
+        const c = cur.result;
+        if (!c) { resolve(out); return; }
+        out.push([c.key, c.value ? c.value.v : null]);
+        c.continue();
+      };
+      cur.onerror = () => resolve(out);
+    } catch { resolve(out); }
+  });
+}
+
 // Keep many values at once, in ONE transaction, and say when they have
 // landed. storePut below is right for the one-value-at-a-time case the
 // reading pages have -- a transaction each, pruned each time, and nobody
