@@ -49,7 +49,7 @@
 // more are banked, the depth the archive already treats as settled; the tip's
 // own neighbourhood is re-read every time, because it can still move.
 
-import { storeGet, storePutMany, storeEntries } from './btc-store.js';
+import { storePutMany, storeEntries } from './btc-store.js';
 
 // One difficulty window: the book's own unit, and about a fortnight.
 export const MINE_WINDOW = 2016;
@@ -106,17 +106,20 @@ export async function minedWindow(tip, { onProgress = null, mirrors = MINES_MIRR
   const from = Math.max(0, tip - window + 1);
   const found = new Map();
 
-  // What the archive already holds. A banked height is settled by
-  // definition -- nothing shallow was ever written -- so a hit needs no
-  // second thought.
-  const wanted = [];
-  for (let h = tip; h >= from; h--) wanted.push(h);
-  await Promise.all(wanted.map(async (h) => {
-    if (h > tip - UNSETTLED) return;              // still moving: always re-read
-    const kept = await storeGet('mined', String(h));
-    if (kept) found.set(h, kept);
-  }));
-  onProgress?.(found.size, wanted.length);
+  // What the archive already holds, in ONE pass. Asking for 2,016 heights
+  // one at a time is 2,016 read transactions against a database every other
+  // page is also using, which does not merely make this leaf slow -- it
+  // queues everyone else's chapter lookups behind it. A cursor reads the
+  // whole store in a single transaction instead. A banked height is settled
+  // by definition (nothing shallow was ever written), so a hit needs no
+  // second thought; anything outside this window is simply not ours.
+  const wanted = tip - from + 1;
+  for (const [key, rec] of await storeEntries('mined')) {
+    const h = Number(key);
+    if (!Number.isFinite(h) || h < from || h > tip - UNSETTLED || !rec) continue;
+    found.set(h, rec);
+  }
+  onProgress?.(found.size, wanted);
 
   // The pages still to ask for: every 15-block page whose span holds a
   // height the archive did not have. Asked for by the top of the page, the
@@ -145,7 +148,7 @@ export async function minedWindow(tip, { onProgress = null, mirrors = MINES_MIRR
       // the moment it draws would otherwise leave most of the window
       // uncommitted and pay for it again on the next visit.
       await storePutMany('mined', bank);
-      onProgress?.(found.size, wanted.length);
+      onProgress?.(found.size, wanted);
     }
   };
   await Promise.all(Array.from({ length: Math.min(LANES, tops.length) }, lane));
@@ -274,15 +277,39 @@ export async function rankedMines(mirrors = MINES_MIRRORS) {
 }
 
 // What the contents actually calls: the archive if it has anything, else the
-// one call, else nothing at all -- in which case the leaf says the mines are
-// counted when their own leaf is opened, which is the truth and costs a
-// reader nothing to be told.
+// one call, else nothing at all -- in which case the leaf lists no mines and
+// says nothing about them, the shelf being one turn down either way.
 export async function minesForContents(tip) {
   if (tip != null) {
     const banked = await bankedMines(tip);
     if (banked.mines.length) return { ...banked, ranked: false };
   }
   return await rankedMines();
+}
+
+// The floor a mine has to clear to be named in the CONTENTS. A contents lists
+// the large things and lets the leaf hold the rest -- and here "large" has a
+// meaning the book can defend rather than a round number of rows: below one
+// per cent, a window this long cannot tell one pool from another. Appendix
+// I's own commentary does the arithmetic -- holding a share p to within a
+// quarter of itself takes about 64·(1−p)/p blocks, which at p = 1% is more
+// than six thousand, three times the window. So a 1% pool and a 0.4% pool are
+// the same measurement here, and ranking them against each other in a table
+// of contents would be printing noise as if it were an order.
+//
+// The shelf itself lists every mine, down to the one that won a single
+// chapter. Nothing is hidden; it is one turn away, and the caller says so.
+export const CONTENTS_FLOOR = 0.01;
+
+// The mines a contents should name, and the count of those it left to the
+// leaf. The unattributed row is kept whatever its size -- it is not a mine
+// competing for rank but the remainder that makes the distribution sum to the
+// chain, and dropping it would quietly overstate everyone above it.
+export function largestMines(read, floor = CONTENTS_FLOOR) {
+  if (!read || !read.mines.length) return { mines: [], rest: 0 };
+  const counted = read.counted || read.mines.reduce((s, m) => s + m.won, 0);
+  const big = read.mines.filter((m) => !m.named || (counted ? m.won / counted : 0) >= floor);
+  return { mines: big, rest: read.mines.length - big.length };
 }
 
 // A share as the shelf prints it: the figure and its own uncertainty, because
