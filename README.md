@@ -107,10 +107,10 @@ compiled to WASM) is consumed as a published
   is a name rather than a place (see `bitcoin-ledger.html` below)
 - `web/bitcoin-front.html` — the front matter, run through in order on the
   horizontal axis: title leaf, terms (the copyright page, saying the reverse
-  of one), the preface, the sigla — **and then the contents**, which closes
-  the run and hands over to Volume I. Front matter that orients the reader
-  precedes front matter that argues; the contents comes last, where the book
-  is about to begin, rather than spliced into the middle of the run. The sigla leaf carries the reference-format diagram and
+  of one), the preface, the sigla — and then **the book**, at Volume I's title
+  page. Front matter that orients the reader precedes front matter that argues.
+  The contents is not on this axis: it is the storey above the volumes, and a
+  reader reaches it by ascending back out of one. The sigla leaf carries the reference-format diagram and
   the whole notation key — the shared glossed groups the book's toggle opens,
   then the exhaustive opcode index generated from the same tables the book
   sets scripts with; it lives in the front matter because a chain with no last
@@ -174,9 +174,9 @@ compiled to WASM) is consumed as a published
   contents** and nowhere else — the vertical axis is a correspondence, not a
   funnel — and the descent needs no memory of where the reader came up from,
   since the leaf says which volume it is the contents of. Sideways off
-  either end of it are the leaf behind and the book ahead: the order this page
-  closes is title, terms, preface, sigla, CONTENTS, so turning back lands on
-  the sigla and turning forward opens Volume I.
+  either end the run simply stops: the contents is a storey rather than a leaf
+  of the front matter, so there is nothing beside it to turn onto and the way
+  off is the vertical pair — up to the cover, down into the part.
   The back matter holds what reading order
   cannot carry, reading order being the order blocks were mined; each part has
   a contents leaf here and a leaf of its own one level down, the ▾ being the

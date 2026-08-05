@@ -452,9 +452,11 @@ function descent(leaf) {
 // ?volume=<n|roman> names a volume's contents, ?part=<mempool|future|ledgers>
 // an appendix's -- the same words those pages take for themselves, so the
 // ascent from any leaf of the book can name its own contents leaf. ?at=top
-// names whatever leaf opens the run and ?at=last whatever leaf closes it:
-// the front matter's two turns into the contents, neither of which needs to
-// know how far the volumes reach or what the appendix file holds.
+// names whatever leaf opens the run and ?at=last whatever leaf closes it,
+// without having to know how far the volumes reach or what the appendix file
+// holds. Nothing in the site produces those two now -- they were how the front
+// matter addressed the ends of the run while the contents was still spliced
+// into it -- but they are still answered, for links that were saved with them.
 //
 // A bare visit -- the masthead's Contents link from a page that carries no
 // place, a bookmark, a cold load -- opens the volume the reader was last
@@ -837,18 +839,19 @@ function leavePage(href, transform, flag, value = '1') {
   setTimeout(go, 180);
 }
 
-// Sideways along the run. The contents stands last in the front matter's
-// order, so its two ends are the sigla behind it -- the leaf a reader turned
-// forward off to get here -- and the book ahead of it. Turning forward off
-// the last back-matter leaf is the run handing over to Volume I, which is
-// what the sigla's forward turn used to do before the contents moved here.
+// Sideways along the run, and only along it. The contents is a storey rather
+// than a leaf of the front matter: it lies above the volumes, a leaf of it to
+// each, and a reader arrives by ascending out of a volume (or by the
+// masthead), not by turning through the front matter. So the run simply ends
+// at both ends -- there is no leaf to either side of it to turn onto, and the
+// way off is the vertical pair: up to the cover, down into the part this leaf
+// is the contents of.
 function turn(dir) {
   if (turning) return;
   settled = true;              // the reader has chosen; the URL stops choosing
   const list = leaves();
   const next = at + dir;
-  if (next < 0) return leavePage('./bitcoin-front.html?leaf=sigla', 'translateX(100vw)', 'glossia-front-entrance', 'back');
-  if (next >= list.length) return leavePage('./bitcoin-book.html?block=0&page=volume', 'translateX(-100vw)', 'glossia-book-entrance', '1');
+  if (next < 0 || next >= list.length) return;
   turnTo(() => { at = next; }, dir, 'x');
 }
 // Up is the cover, which the contents lie under; down is whatever this leaf
