@@ -359,8 +359,11 @@ function show(i) {
   LEAVES.forEach((id, n) => $(id).classList.toggle('current', n === i));
   document.body.classList.toggle('at-title', LEAVES[i] === 'leaf-title');
   $('leaf-where').textContent = label(i);
-  $('leaf-prev').disabled = i === 0;
-  $('leaf-prev').textContent = '← ' + (i > 0 ? label(i - 1) : 'Previous');
+  // No leaf here is a dead end any more: back off the cover is the chain tip,
+  // forward off the sigla is Volume I. (The title leaf hides this bar anyway --
+  // the leaf itself is the control there -- but the label should not lie to a
+  // reader who reaches it another way.)
+  $('leaf-prev').textContent = '← ' + (i > 0 ? label(i - 1) : 'Latest chapter');
   $('leaf-next').textContent = (i < LEAVES.length - 1 ? label(i + 1) : 'Read') + ' →';
   window.scrollTo(0, 0);
 }
@@ -393,7 +396,16 @@ function leaveUp() {
 
 const step = (dir) => {
   const next = at + dir;
-  if (next < 0) return;
+  if (next < 0) {
+    // Turning back off the cover opens the newest chapter. A chain has no last
+    // block, so the book has no back cover to turn onto -- what lies behind the
+    // front one is the tip, the most recently written chapter, and the run of
+    // leaves closes into a ring rather than stopping. ?block=-1 counts back
+    // from the tip, so this needs no idea of how far the chain has got; /latest
+    // is the same place under its standing address, and stays the one to share.
+    leave('./bitcoin-book.html?block=-1', -1, 'glossia-book-entrance', 'back');
+    return;
+  }
   if (next >= LEAVES.length) {
     // Forward off the sigla is the front matter handing over to the book:
     // Volume I's title page, not its contents leaf. The contents is a storey
