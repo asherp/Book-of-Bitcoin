@@ -218,7 +218,7 @@ function tangentAngles(px, py, rect) {
 // already left does not re-exempt it). An anchor that starts in the clear
 // (every worked example before the drop cap) sees no change at all -- the
 // home-rect set is empty and the walk behaves exactly as before.
-export function interpretFrom(symbol, anchor, obstacles, bounds, rng) {
+export function interpretFrom(symbol, anchor, obstacles, bounds, rng, maxReach = Infinity) {
   let state = { x: anchor.x, y: anchor.y, angle: anchor.angle };
   const stack = [];
   const segments = [];
@@ -226,6 +226,19 @@ export function interpretFrom(symbol, anchor, obstacles, bounds, rng) {
   const homeRects = new Set(obstacles.filter((r) => pointInRect(anchor.x, anchor.y, r)));
   const active = () => (homeRects.size === 0 ? obstacles : obstacles.filter((r) => !homeRects.has(r)));
   const pruneHomeRects = () => { for (const r of homeRects) if (!pointInRect(state.x, state.y, r)) homeRects.delete(r); };
+  // A leash on top of the obstacle/bounds checks: no step, of any kind, may
+  // land further than `maxReach` from where this anchor's walk actually
+  // started. `bounds` alone doesn't bound this -- it's as wide as the
+  // viewport, so once wall-following turns a step to run parallel to it,
+  // that direction is no longer "blocked" at all and a long straight run in
+  // the derivation just keeps going, reading as a separate flourish smeared
+  // across the page rather than something that grew from its anchor
+  // (confirmed against a real mobile screenshot on issue #73). The leash
+  // catches that regardless of which mechanism produced the drift.
+  const withinReach = (x, y) => {
+    const dx = x - anchor.x, dy = y - anchor.y;
+    return dx * dx + dy * dy <= maxReach * maxReach;
+  };
 
   const finish = () => { if (cur.points.length > 1 || cur.leaves.length) segments.push(cur); };
 
@@ -243,38 +256,44 @@ export function interpretFrom(symbol, anchor, obstacles, bounds, rng) {
       // from inside. Without this, an anchor near an edge (a drop cap
       // opening a section, sitting right at the top of it) would fall
       // straight to the crude deflection fallback on every single step
-      // instead of flowing smoothly along the boundary the way it does
-      // around a real obstacle -- wasting a large sigil's whole size-boosted
-      // generation budget on a cramped, scraggly tuft.
-      const hitRect = outOfBounds(nx, ny, bounds) ? bounds : firstBlockingRect(state.x, state.y, nx, ny, obs);
+      // instead of flowing smoothly around it the way it does around a real
+      // obstacle -- wasting a large sigil's whole size-boosted generation
+      // budget on a cramped, scraggly tuft.
+      const hitRect = (outOfBounds(nx, ny, bounds) || !withinReach(nx, ny)) ? bounds : firstBlockingRect(state.x, state.y, nx, ny, obs);
       if (hitRect) {
         let placed = false;
         // Wall-follow first: steer along whichever of the blocking box's two
         // tangent directions is closest to where the vine was already
         // heading. This is what makes growth trace a paragraph's silhouette
         // -- climbing along its edge and turning its corners -- instead of
-        // bouncing off it at a random angle.
+        // bouncing off it at a random angle. (When the leash itself is what
+        // triggered this -- `hitRect` fell back to `bounds` because no real
+        // rect was hit -- there's no meaningful edge to trace; the tangent
+        // candidates will fail the reach check below and fall straight
+        // through to the deflection fallback.)
         const tangents = tangentAngles(state.x, state.y, hitRect).sort((t1, t2) => angleDiff(a, t1) - angleDiff(a, t2));
         for (const ta of tangents) {
           const tx = state.x + Math.cos(ta) * STEP;
           const ty = state.y + Math.sin(ta) * STEP;
-          if (!outOfBounds(tx, ty, bounds) && !firstBlockingRect(state.x, state.y, tx, ty, obs)) {
+          if (!outOfBounds(tx, ty, bounds) && withinReach(tx, ty) && !firstBlockingRect(state.x, state.y, tx, ty, obs)) {
             state = { x: tx, y: ty, angle: ta };
             cur.points.push({ x: tx, y: ty });
             placed = true;
             break;
           }
         }
-        // Fallback: the corner case -- two obstacles meet, or an obstacle
-        // sits flush against the host bounds -- where neither tangent
-        // direction is free either. Widening, increasing deflections either
-        // side is a last resort rather than the first move.
+        // Fallback: the corner case -- two obstacles meet, an obstacle sits
+        // flush against the host bounds, or the leash itself is the limit --
+        // where no tangent direction is free either. Widening, increasing
+        // deflections either side is a last resort rather than the first
+        // move, and is what typically turns growth back toward its own
+        // anchor once the leash is what's binding.
         for (let t = 1; t <= MAX_DEFLECT_TRIES && !placed; t++) {
           for (const sign of [1, -1]) {
             const da = state.angle + sign * t * (TURN / 2);
             const dx = state.x + Math.cos(da) * STEP;
             const dy = state.y + Math.sin(da) * STEP;
-            if (!stepBlocked(state.x, state.y, dx, dy, obs, bounds)) {
+            if (!stepBlocked(state.x, state.y, dx, dy, obs, bounds) && withinReach(dx, dy)) {
               state = { x: dx, y: dy, angle: da };
               cur.points.push({ x: dx, y: dy });
               placed = true;
@@ -574,7 +593,12 @@ export function illuminate(hostEl, opts = {}) {
       const boost = sizeBoost(a.size, opts.baseSize);
       const symbol = generateSymbol(opts.blockHash, stage, boost);
       const rng = rngFromHex(`${opts.blockHash}:${stage}:${boost}:${a.x.toFixed(0)},${a.y.toFixed(0)}`);
-      return interpretFrom(symbol, a, obstacles, bounds, rng);
+      // How far this anchor's own decoration may roam, leashed to the
+      // sigil's own size (see interpretFrom's maxReach) -- generous enough
+      // for a real flourish, but never so wide it reads as belonging to a
+      // different part of the page than the mark that grew it.
+      const maxReach = Math.max(80, (a.size || 16) * 1.8);
+      return interpretFrom(symbol, a, obstacles, bounds, rng, maxReach);
     });
     renderSegments(svg, segmentsByAnchor, { animate: firstRender && !reducedMotion(), obstacles, debug: !!opts.debug });
     firstRender = false;

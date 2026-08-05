@@ -72,6 +72,36 @@ const noJitterRng = () => 0.5; // JITTER/deflection center exactly on the unturn
 
 function pointInRect(x, y, r) { return x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h; }
 
+test('a leash keeps growth near its own anchor, however long the F budget or however wide bounds is', () => {
+  // A viewport-wide `bounds` has no natural corner the way a real obstacle
+  // does: once wall-following turns a step to run parallel to it, that
+  // direction stops being "blocked" at all, and a long unbroken run in the
+  // derivation just keeps going -- reading as a separate flourish smeared
+  // across the page rather than something that grew from its anchor
+  // (confirmed against a real mobile screenshot on issue #73, where the
+  // drop cap's growth rode the top edge across most of the viewport's
+  // width). A long unbranched run starting right at the edge is the worst
+  // case: a hundred F's of budget, nothing else in its way, free to run
+  // parallel to the edge indefinitely once turned onto it.
+  const symbol = 'F'.repeat(100);
+  const anchor = { x: 0, y: 2, angle: -Math.PI / 2 }; // just inside, heading straight up into the top edge
+  const bounds = { x: -1000, y: 0, w: 2000, h: 500 };
+  const maxReach = 60;
+  const points = interpretFrom(symbol, anchor, [], bounds, noJitterRng, maxReach).flatMap((s) => s.points);
+  for (const p of points) {
+    const dist = Math.hypot(p.x - anchor.x, p.y - anchor.y);
+    assert.ok(dist <= maxReach + 1, `point at distance ${dist.toFixed(1)} exceeds the leash (${maxReach})`);
+  }
+});
+
+test('with no leash given (maxReach omitted), growth is unbounded -- existing callers see no change', () => {
+  const symbol = 'F'.repeat(20);
+  const anchor = { x: 0, y: 0, angle: 0 };
+  const points = interpretFrom(symbol, anchor, [], null, noJitterRng).flatMap((s) => s.points);
+  const last = points[points.length - 1];
+  assert.ok(Math.hypot(last.x - anchor.x, last.y - anchor.y) > 100, 'an unleashed walk should travel freely, same as before this option existed');
+});
+
 test('a vine heading straight into a rectangle turns to follow its edge rather than stopping', () => {
   const symbol = 'F'.repeat(40); // one long, unbranched trunk
   const anchor = { x: 0, y: 50, angle: 0 }; // heading due east
