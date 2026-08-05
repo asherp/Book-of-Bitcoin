@@ -105,11 +105,12 @@ compiled to WASM) is consumed as a published
   level each one names — a kept volume above the passages kept from it. An
   address is kept the same way, by the Ledger's own ribbon, since an address
   is a name rather than a place (see `bitcoin-ledger.html` below)
-- `web/bitcoin-front.html` — the front matter, straddling the contents on the
-  horizontal axis in the standard order: title leaf, terms (the copyright
-  page, saying the reverse of one), **then the contents**, and after it the
-  preface and the sigla — front matter that orients the reader precedes front
-  matter that argues. The sigla leaf carries the reference-format diagram and
+- `web/bitcoin-front.html` — the front matter, run through in order on the
+  horizontal axis: title leaf, terms (the copyright page, saying the reverse
+  of one), the preface, the sigla — **and then the contents**, which closes
+  the run and hands over to Volume I. Front matter that orients the reader
+  precedes front matter that argues; the contents comes last, where the book
+  is about to begin, rather than spliced into the middle of the run. The sigla leaf carries the reference-format diagram and
   the whole notation key — the shared glossed groups the book's toggle opens,
   then the exhaustive opcode index generated from the same tables the book
   sets scripts with; it lives in the front matter because a chain with no last
@@ -173,8 +174,9 @@ compiled to WASM) is consumed as a published
   contents** and nowhere else — the vertical axis is a correspondence, not a
   funnel — and the descent needs no memory of where the reader came up from,
   since the leaf says which volume it is the contents of. Sideways off
-  either end are the front matter's own leaves, the standard order this page
-  sits inside (title, terms, CONTENTS, preface, sigla).
+  either end of it are the leaf behind and the book ahead: the order this page
+  closes is title, terms, preface, sigla, CONTENTS, so turning back lands on
+  the sigla and turning forward opens Volume I.
   The back matter holds what reading order
   cannot carry, reading order being the order blocks were mined; each part has
   a contents leaf here and a leaf of its own one level down, the ▾ being the
