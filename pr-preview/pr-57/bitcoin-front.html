@@ -388,12 +388,11 @@ const step = (dir) => {
     return;
   }
   if (LEAVES[next] === CONTENTS) {
-    // The contents is a run of leaves now -- a top-level one, then one per
-    // volume and one per appendix -- so stepping onto it lands at the end the
-    // reader is arriving from: forward off the terms onto the top-level leaf,
-    // which is the run's head and says what the book is made of, and backward
-    // off the preface onto whichever leaf closes it (the contents knows; this
-    // page needn't).
+    // The contents is a run of leaves -- one per volume, one per appendix --
+    // so stepping onto it lands at the end the reader is arriving from:
+    // forward off the terms onto the leaf that opens the run, backward off
+    // the preface onto whichever closes it. Which leaves those are is the
+    // contents' business; this page names the ends and not the leaves.
     leave(dir > 0 ? './bitcoin-contents.html?at=top' : './bitcoin-contents.html?at=last',
           dir, 'glossia-toc-entrance', dir > 0 ? 'fwd' : 'back');
     return;
