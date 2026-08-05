@@ -12,12 +12,17 @@
 // has some millions of leaves, and any of them may be worth a note by somebody
 // who knows why.
 //
-// It states an invitation, not a claim. The commentary key still appears only
-// where there is a reading to open (see syncCommentary in bitcoin-book.html:
-// absence is information), and this stands apart from it, offering the empty
-// page rather than pretending it is full.
+// It rides at the foot of the Commentary sheet, which is why that key now
+// stands on every page beside Notation rather than coming and going with the
+// reading: a sheet that opens on nothing has something to say after all, and
+// what it says is that nothing has been said. An empty page is not a closed
+// one.
 //
 // ── Two doors, because GitHub has two ───────────────────────────────────────
+//
+// The book itself offers only the first. The second is documented here because
+// this is the one place that knows the URL shapes, and CONTRIBUTING.md sends a
+// contributor through it.
 //
 //   start    /new/<branch>?filename=…&value=…   A reader with no fork of the
 //            repository. GitHub forks it for them, opens the file already
@@ -85,32 +90,24 @@ export function contributionLinks({ citation, latin, title = null } = {}) {
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => (
   { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
-// The affordance itself: a closed toggle wearing the same + as the Ledger's
-// leaf-borne readings (commentary.css), because it is the same gesture — open
-// it and something about commentary appears. What it says depends on whether
-// the page already has a reading, since "no reading yet" and "another reading"
-// are different invitations, and the first is the one that has to explain
-// itself.
+// The line at the foot of the Commentary sheet: what the page in front of the
+// reader has had said about it, and the one door out. Below a curated reading
+// it is the invitation alone -- a reading is not the last word, and the book
+// publishes more than one on a passage that earns it. On a page with none it
+// says so first, because the empty sheet would otherwise read as a failure to
+// load rather than as an opening.
+//
+// One link, deliberately. Of the three doors this module knows, only `start`
+// asks nothing of the reader first: no fork, no branch, no clone. The compare
+// door is where the pull request template applies and is worth taking, but it
+// is worth taking from CONTRIBUTING.md, where somebody is already reading
+// about how to contribute -- not from the foot of a passage, where a second
+// and third link would turn an invitation into a set of instructions.
 export function contributeHtml({ citation, latin, title = null, hasReading = false } = {}) {
-  const links = contributionLinks({ citation, latin, title });
-  const say = hasReading
-    ? `A reading of ${esc(citation)} is offered above. It is one reading, not the
-       last word, and the book publishes more than one on a passage where more
-       than one is worth having.`
-    : `Nothing has been said about ${esc(citation)} yet. If you know why it
-       matters — what it set in motion, what the record here does and does not
-       say — the book takes contributed readings, and publishes them under your
-       name.`;
+  const { start } = contributionLinks({ citation, latin, title });
+  const said = hasReading ? '' : `Nothing has been said about ${esc(citation)} yet. `;
   return `
-        <details class="contribute">
-          <summary title="Contribute a reading of this passage">Commentary</summary>
-          <div class="contribute-body commentary-measure">
-            <p>${say}</p>
-            <p class="contribute-links">
-              <a href="${esc(links.start)}" target="_blank" rel="noopener noreferrer">Start the file</a>
-              <a href="${esc(links.propose)}" target="_blank" rel="noopener noreferrer">Open a pull request</a>
-              <a href="${esc(links.guide)}" target="_blank" rel="noopener noreferrer">How a reading is written</a>
-            </p>
-          </div>
-        </details>`;
+          <div class="commentary-measure contribute">
+            <p>${said}<a href="${esc(start)}" target="_blank" rel="noopener noreferrer">Add your commentary.</a></p>
+          </div>`;
 }

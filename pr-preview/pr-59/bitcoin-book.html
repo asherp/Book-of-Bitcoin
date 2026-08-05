@@ -525,11 +525,11 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 /* Previous at the left edge, Next at the right, the page's keys centred
    between them. Explicit tracks: a hidden stepper (display:none) leaves the
    grid, and auto-placement would reflow the survivors off-centre.
-   Two keys ride that centre: Notation, which every page carries, and
-   Commentary, which appears only where the passage in front of the reader has
-   a curated reading (btc-commentary.js) -- so its absence is information too.
-   Both raise their sheet into the one slot above the bar, and opening either
-   closes the other. */
+   Two keys ride that centre, and every page carries both: Notation, which
+   reads the same everywhere, and Commentary, which is this passage's reading
+   where it has one (btc-commentary.js) and the offer to write the first where
+   it has none (btc-contribute.js). Both raise their sheet into the one slot
+   above the bar, and opening either closes the other. */
 #page-prev { grid-column: 1; justify-self: start; }
 .section-nav .nav-keys { grid-column: 2; display: flex; align-items: center; justify-content: center; gap: 20px; }
 #page-next { grid-column: 3; justify-self: end; }
@@ -1165,19 +1165,14 @@ button:disabled { opacity: .4; cursor: not-allowed; }
     </div>
     </div>
 
-    <!-- The way in, at the foot of the passage and below everything the record
-         has to say: the offer to annotate this page (btc-contribute.js). It
-         stands here rather than in the nav bar's keys because it belongs to
-         the empty page as much as to a curated one -- the Commentary key comes
-         and goes with the reading, and this does not. -->
-    <div id="contribute"></div>
-
     <!-- Section paging sits at the foot of the section, after its witness
          footnotes: read the transaction through, then step to the next. The
          page's keys ride between the two steppers; opened, either one's body
          rises above the bar as a sheet. Commentary comes first because it is
-         about the page in hand, and it is present only when this passage has a
-         curated reading -- the notation key is the same on every page. -->
+         about the page in hand, and like the notation key it is on every page:
+         where the passage has a curated reading the sheet holds it, and where
+         it has none the sheet offers the reader the writing of one
+         (btc-contribute.js). -->
     <nav class="section-nav">
       <button type="button" id="page-prev" class="hidden" aria-label="Previous contents entry" title="Previous contents entry"></button>
       <div class="nav-keys">
@@ -4840,11 +4835,8 @@ function labelNav() {
   labelContentsNav();
 
   // The commentary key belongs to the page, not to the steppers, but it lives
-  // in the same bar and every render path passes through here. The contribute
-  // affordance follows it, and reads what it matched: a page with a reading is
-  // offered a different sentence from a page with none.
+  // in the same bar and every render path passes through here.
   syncCommentary();
-  syncContribute();
 
   // With the buttons decided, quietly ready both swipe directions' data.
   prefetchNeighbors();
@@ -4860,10 +4852,11 @@ function currentTxid() {
 }
 
 // Fit the commentary key to the page in front of the reader: the curated
-// readings of this passage, or no key at all. Absence is information -- the
-// book keeps places it has not yet said anything about, and a toggle that
-// opened onto nothing would blur the difference between an unannotated passage
-// and an unremarkable one.
+// readings of this passage where it has them, and where it has none the offer
+// to write the first (btc-contribute.js). So the key stands on every page
+// beside Notation, and an empty sheet says what it means -- that nothing has
+// been said about this passage yet, which is a thing worth a reader knowing
+// and a contributor acting on.
 //
 // Only the index is consulted here, so the key appears with the page and
 // nothing is fetched to decide it. The prose lives in commentary/*.md and
@@ -4876,17 +4869,19 @@ let commentaryFilled = false;  // whether the sheet is holding their prose
 function syncCommentary() {
   const box = $('commentary');
   // A projected chapter is not yet a place -- nothing curated can be about a
-  // block no miner has written. A ghost's own draft is nobody's curated entry.
-  commentaryItems = (!state || state.projected || state.ghost) ? [] : commentaryFor({
+  // block no miner has written, and neither can anything contributed. A ghost's
+  // own draft is nobody's curated entry either. Both keep no key at all.
+  const nowhere = !state || state.projected || state.ghost;
+  commentaryItems = nowhere ? [] : commentaryFor({
     height: state.height,
     index: state.index,
     txid: currentTxid(),
   });
   commentaryFilled = false;
   $('commentary-body').innerHTML = '';
-  box.classList.toggle('hidden', !commentaryItems.length);
-  if (!commentaryItems.length) {
-    box.open = false;                 // never reopen onto an empty sheet after a page turn
+  box.classList.toggle('hidden', nowhere);
+  if (nowhere) {
+    box.open = false;                 // never reopen onto a page with no reading to offer
     return;
   }
   // Turned the page with the sheet already open: the reader is reading
@@ -4894,22 +4889,43 @@ function syncCommentary() {
   if (box.open) fillCommentary();
 }
 
-// Fetch this page's readings and set them. Called on the sheet's first opening
-// (and on a page turn while it is open); each file is read once per session.
+// Fetch this page's readings and set them, with the invitation at their foot.
+// Called on the sheet's first opening (and on a page turn while it is open);
+// each file is read once per session.
+//
+// The citation is taken before the await, with the readings, so a page turn
+// mid-read cannot leave one page's invitation under another page's reading.
+// The curated name rides along where there is exactly one entry, so a
+// contributed reading of a named passage lands in commentary/ reading as prose
+// beside its siblings rather than as a citation -- in its English form,
+// deliberately: what a file is called should not depend on the language the
+// contributor happened to be reading in.
 async function fillCommentary() {
-  if (commentaryFilled || !commentaryItems.length) return;
+  // The key is hidden on a page with nothing to annotate, so this is a
+  // guard rather than a path: an invitation citing a chapter no miner has
+  // written would be an invitation to annotate nothing.
+  if (commentaryFilled || !state || state.projected || state.ghost) return;
   const mine = commentaryItems;                       // the page this fill belongs to
   const body = $('commentary-body');
+  const { citation, latin } = pageCitation();
+  const invitation = () => contributeHtml({
+    citation,
+    latin,
+    title: mine.length === 1 ? mine[0].title : null,
+    hasReading: mine.length > 0,
+  });
+  // Nothing to fetch on an unannotated passage: the sheet is the invitation.
+  if (!mine.length) { commentaryFilled = true; body.innerHTML = invitation(); return; }
   body.innerHTML = '<div class="commentary-measure"><p class="commentary-loading">reading…</p></div>';
   await resolveCommentary(mine);
   if (commentaryItems !== mine) return;               // page turned mid-read: that page's fill won
   commentaryFilled = true;
   // Built from authored Markdown, escaped at the source (btc-markdown.js).
-  body.innerHTML = commentaryHtml(mine);
+  body.innerHTML = commentaryHtml(mine) + invitation();
 }
 
 // The citation the page in front of the reader answers to, in both spellings:
-// the printed one, which the affordance names, and the latin one, which
+// the printed one, which the invitation names, and the latin one, which
 // becomes a file name. To the depth the page stands at, exactly as a leaf's
 // own bookmark cites itself (attachLeafBookmark) -- a volume leaf is III, not
 // III β1 ■1, because III is the place it is.
@@ -4920,26 +4936,6 @@ function pageCitation() {
   if (state.index === -1) return { citation: reference(state.height), latin: latinRefOf(state.height) };
   const num = state.index + 1;
   return { citation: `${reference(state.height)} §${num}`, latin: latinRefOf(state.height, num) };
-}
-
-// Offer the empty page. Wherever the record is real: a projected chapter is not
-// a passage yet, and a ghost's fee-replaced draft is nobody's to annotate --
-// the same two exclusions the commentary key makes, for the same reason.
-//
-// The curated name rides along where the page has one, so a reading of a named
-// passage lands in commentary/ reading as prose beside its siblings rather
-// than as a citation. Its English form, deliberately: what the file is called
-// should not depend on the language the contributor happened to be reading in.
-function syncContribute() {
-  const box = $('contribute');
-  if (!state || state.projected || state.ghost) { box.innerHTML = ''; return; }
-  const { citation, latin } = pageCitation();
-  box.innerHTML = contributeHtml({
-    citation,
-    latin,
-    title: commentaryItems.length === 1 ? commentaryItems[0].title : null,
-    hasReading: commentaryItems.length > 0,
-  });
 }
 
 // Encode every witness-bearing input's witness into a numbered footnote and
