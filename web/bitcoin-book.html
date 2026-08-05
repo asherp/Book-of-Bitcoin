@@ -1053,6 +1053,13 @@ button:disabled { opacity: .4; cursor: not-allowed; }
     </div>
     </div>
 
+    <!-- The way in, at the foot of the passage and below everything the record
+         has to say: the offer to annotate this page (btc-contribute.js). It
+         stands here rather than in the nav bar's keys because it belongs to
+         the empty page as much as to a curated one -- the Commentary key comes
+         and goes with the reading, and this does not. -->
+    <div id="contribute"></div>
+
     <!-- Section paging sits at the foot of the section, after its witness
          footnotes: read the transaction through, then step to the next. The
          page's keys ride between the two steppers; opened, either one's body
@@ -1111,6 +1118,7 @@ import { NOTATION_HTML } from './btc-notation.js';
 import { transactionTemplates } from './btc-templates.js';
 import { collectMarks, applyKeyFilter } from './btc-key-filter.js';
 import { commentaryFor, commentaryHtml, resolveCommentary } from './btc-commentary.js';
+import { contributeHtml } from './btc-contribute.js';
 
 // The curated index -- which blocks and transactions are notable, what they are
 // called, and which readings they carry -- is read from notables.yaml rather
@@ -4475,8 +4483,11 @@ function labelNav() {
   labelContentsNav();
 
   // The commentary key belongs to the page, not to the steppers, but it lives
-  // in the same bar and every render path passes through here.
+  // in the same bar and every render path passes through here. The contribute
+  // affordance follows it, and reads what it matched: a page with a reading is
+  // offered a different sentence from a page with none.
   syncCommentary();
+  syncContribute();
 
   // With the buttons decided, quietly ready both swipe directions' data.
   prefetchNeighbors();
@@ -4538,6 +4549,40 @@ async function fillCommentary() {
   commentaryFilled = true;
   // Built from authored Markdown, escaped at the source (btc-markdown.js).
   body.innerHTML = commentaryHtml(mine);
+}
+
+// The citation the page in front of the reader answers to, in both spellings:
+// the printed one, which the affordance names, and the latin one, which
+// becomes a file name. To the depth the page stands at, exactly as a leaf's
+// own bookmark cites itself (attachLeafBookmark) -- a volume leaf is III, not
+// III β1 ■1, because III is the place it is.
+function pageCitation() {
+  const { volume, book } = volumeBookChapter(state.height);
+  if (state.index === -3) return { citation: toRoman(volume), latin: `v${volume}` };
+  if (state.index === -2) return { citation: `${toRoman(volume)} β${book}`, latin: `v${volume}b${book}` };
+  if (state.index === -1) return { citation: reference(state.height), latin: latinRefOf(state.height) };
+  const num = state.index + 1;
+  return { citation: `${reference(state.height)} §${num}`, latin: latinRefOf(state.height, num) };
+}
+
+// Offer the empty page. Wherever the record is real: a projected chapter is not
+// a passage yet, and a ghost's fee-replaced draft is nobody's to annotate --
+// the same two exclusions the commentary key makes, for the same reason.
+//
+// The curated name rides along where the page has one, so a reading of a named
+// passage lands in commentary/ reading as prose beside its siblings rather
+// than as a citation. Its English form, deliberately: what the file is called
+// should not depend on the language the contributor happened to be reading in.
+function syncContribute() {
+  const box = $('contribute');
+  if (!state || state.projected || state.ghost) { box.innerHTML = ''; return; }
+  const { citation, latin } = pageCitation();
+  box.innerHTML = contributeHtml({
+    citation,
+    latin,
+    title: commentaryItems.length === 1 ? commentaryItems[0].title : null,
+    hasReading: commentaryItems.length > 0,
+  });
 }
 
 // Encode every witness-bearing input's witness into a numbered footnote and

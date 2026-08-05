@@ -145,9 +145,16 @@ says, and mark plainly where it stops saying it. "Ten thousand coins moved to a
 script" is the record; "they bought two pizzas" is testimony from the people
 involved, and a reader is entitled to see which is which.
 
-There is a pull request template that asks for exactly this — the passage, the
-reading, the line between record and testimony, and the two files — so open
-your pull request with
+The book offers all of this from the page itself: at the foot of every passage
+is a `+ Commentary` toggle (`web/btc-contribute.js`) that opens the file
+already named for that passage and already carrying its licence header, or
+sends you to the pull request with the template applied. It is on every leaf,
+not only the curated ones — most of the chain has nothing said about it yet,
+which is the point.
+
+The template asks for exactly what this section does — the passage, the
+reading, the line between record and testimony, and the two files — so if you
+are starting from GitHub rather than from the book, open your pull request with
 [`?template=commentary.md`](https://github.com/asherp/book-of-bitcoin/compare?template=commentary.md&expand=1)
 on the end of the URL and it will be filled in for you. It is
 [`.github/PULL_REQUEST_TEMPLATE/commentary.md`](.github/PULL_REQUEST_TEMPLATE/commentary.md)
