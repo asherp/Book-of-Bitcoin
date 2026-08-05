@@ -530,7 +530,7 @@ import { partLabel, partNumber } from './btc-notables.js';
 // asynchronously; this leaf IS one of its parts, so it waits for it.
 await loadNotables();
 const APPENDIX = appendix();
-import { chainTip, MEMPOOL_MIRRORS, readQueue, upcomingFees, MVB } from './btc-mempool.js';
+import { chainTip, MEMPOOL_MIRRORS, readQueue, expectedRevenue, MVB } from './btc-mempool.js';
 import {
   minedWindow, tallyMines, shareSay, sharePct, MINE_WINDOW, signatureOf,
   networkHashrate, formatHashrate,
@@ -541,7 +541,8 @@ import { formatBlockVersion, composeBlockHeaderFields } from './btc-prose.js';
 import { toSuperscript } from './btc-sigla.js';
 // Amounts read in whatever notation the reader has chosen -- ₿, satoshis, or
 // their own unit -- through the one call every printed amount goes through.
-import { formatAmount, formatBtc } from './btc-amounts.js';
+import { formatAmount, formatBtc, amountUnit, setDayPrice } from './btc-amounts.js';
+import { usdOn } from './btc-price.js';
 
 // ── One appendix, given a leaf of its own ─────────────────────────────────
 // The contents lists what each appendix holds; this is where an appendix
@@ -1165,11 +1166,28 @@ if (kind === 'mining' && AT === null) {
     el.textContent = text;
     el.title = why;
   };
-  upcomingFees(['https://mempool.space/api']).then((sats) => {
-    settle(cite.fees, sats == null ? null : `${formatAmount(sats)} in upcoming fees`,
-      `${formatBtc(sats)} waiting in mempool.space's queue at this moment — that node's claim about what it is `
-      + 'holding, not a fact about any block that will ever exist');
-  }).catch(() => settle(cite.fees, null));
+  (async () => {
+    // The reader's own notation, honoured before a single amount is set.
+    // Only 'usd' asks anything of anyone, and it asks for TODAY's rate --
+    // this leaf's figure is about chapters not yet written, so the day it
+    // belongs to is this one (btc-price.js caches by day, so the ask is
+    // usually a lookup). Every other notation clears the rate, so a stale
+    // one cannot outlive the choice, and a rate no source will give falls
+    // back to the record's own ₿ rather than to nothing.
+    if (amountUnit() === 'usd') setDayPrice(await usdOn(Math.floor(Date.now() / 1000)));
+    else setDayPrice(null);
+
+    const tip = await chainTip();
+    const rev = await expectedRevenue(tip, ['https://mempool.space/api']);
+    if (!rev) { settle(cite.fees, null); return; }
+    const chapters = rev.chapters.toLocaleString('en-US');
+    settle(cite.fees, `${formatAmount(rev.sats)} expected`,
+      `What mining the ${chapters} chapters now queued is expected to pay: `
+      + `${formatBtc(rev.sats - rev.fees)} of subsidy the schedule mints for writing them, and `
+      + `${formatBtc(rev.fees)} of fees the sections in them carry. `
+      + 'The queue is mempool.space\'s, at this moment — that node\'s claim about what it is holding, '
+      + 'not a fact about any block that will ever exist.');
+  })().catch(() => settle(cite.fees, null));
   networkHashrate().then((got) => {
     const said = got && formatHashrate(got.hashrate);
     settle(cite.hashrate, said == null ? null : `${said} across the network`,
