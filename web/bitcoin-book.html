@@ -789,17 +789,10 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 /* A witness footnote is a stack of items; a thin middot separates each, and an
    empty stack item shows as ∅. */
 .wit-sep, .wit-empty { color: var(--meta); font-style: normal; }
-/* A push whose prose has not been asked for (see lazyEncode): a dim ellipsis
-   standing where the words would be, and the handle that calls them up. It
-   reads as an offer rather than an omission -- brightening under the hand the
-   way every other door in the book does -- because the bytes it stands for
-   are somebody's file, not the chapter's sentence, and the reader decides
-   whether to have them read aloud. */
-.glossia-lazy { color: var(--dim); cursor: pointer; }
-.glossia-lazy:hover, .glossia-lazy:focus-visible { color: var(--accent); outline: none; }
-/* The other ⋯: prose the eager pass ran out of time for, which fills itself
-   as the reader scrolls to it. It offers nothing, so it invites nothing. */
-.glossia-pending { color: var(--dim); }
+/* A push chunk whose prose hasn't been encoded yet -- it streams in when it
+   scrolls near the viewport (see lazyEncode). Shown as a dim ellipsis until
+   then; each data push is its own chunk, so a large witness fills piecewise. */
+.glossia-lazy { color: var(--dim); }
 /* Verbatim human-readable text embedded in a script (a coinbase mining-pool
    tag, an OP_RETURN message) is a foreign voice quoted into the transaction,
    not part of its prose -- so it's set as a quote block (a marginal accent
@@ -1492,85 +1485,25 @@ const hashNotationHtml = ({ zeroBits, remainBits }, prose) =>
   `${prose} ` +
   `<span class="cfx-gold" title="${zeroBitsTitle(zeroBits)}">⓪</span><span class="op op-push">${toSuperscript(zeroBits)}</span>`;
 
-// Encode-on-ASK for bulk prose. A data push is capped at 520 bytes
+// Encode-on-scroll for script/witness prose. A data push is capped at 520 bytes
 // (MAX_SCRIPT_ELEMENT_SIZE), so any large payload -- an inscription's tapscript,
 // a bulky OP_RETURN -- already arrives pre-split into a run of bounded pushes.
-// renderScript/renderWitness emit each as a placeholder rather than encoding
-// it, and the prose is put into words only when the reader asks for it, by
-// clicking the ⋯ that stands in its place.
-//
-// It used to stream in on scroll, which meant a witness carrying a photograph
-// unrolled into thousands of words nobody had asked to read, on every page
-// that happened to hold one. The bytes of an inscription are not the book's
-// prose -- they are a file somebody stored in a witness -- and the ⋯ says so
-// honestly: here is a payload, of this many bytes, and here is what it says
-// if you want it said. Structure (type marks, push counts, opcode glyphs)
-// still renders eagerly, so the apparatus reads whole either way.
-//
-// One ⋯ speaks for its whole run: a witness split across eighty pushes is one
-// thing to read, not eighty, so a click fills every placeholder beside it.
-// The fill yields to the event loop as it goes -- forty kilobytes of prose is
-// seconds of encoding, and the page must stay alive while it arrives.
-//
-// Only the BULK pushes wait. "Bulk" is the push's own opcode form: an
-// extended push of two bytes or more (OP_PUSHDATA2/4 -- the ⇊ and ⤋ marks),
-// which is what a payload chopped into 520-byte chunks arrives as. Everything
-// shorter is the apparatus, not the payload -- a signature, a key, the "ord"
-// tag, a content type -- and the book says it outright, because that is the
-// chapter reading itself. Where the form is unknown (a witness stack item
-// carries a compact-size length, not a push opcode) the byte count says the
-// same thing: past 255 bytes nothing shorter could have encoded it.
-const isBulkPush = (hex, form) => (form >= 2) || (!!hex && hex.length / 2 > 255);
-// A second, different reason to defer: a section so large that encoding it
-// whole would freeze the page (see EAGER_ENCODE_BUDGET_MS). That prose is the
-// chapter's own and the reader means to read it, so it still streams in on
-// scroll as it always did. Deferred because the machine cannot, not because
-// the reader might not want it.
+// We exploit that: renderScript/renderWitness emit each push as a placeholder
+// rather than encoding it, and an IntersectionObserver Glossia-encodes each one
+// only as it scrolls near the viewport. So a kilobyte-scale witness never blocks
+// the main thread up front; its prose streams in chunk by chunk, and pushes the
+// reader never scrolls to are never encoded at all. Structure (type marks, push
+// counts, opcode glyphs) still renders eagerly, so the skeleton is instant.
 const lazyEncode = (() => {
   const fill = (el) => {
     const hex = el.dataset.hex;
     if (hex === undefined) return;   // already filled
     delete el.dataset.hex;
-    el.classList.remove('glossia-lazy', 'glossia-pending');
-    el.removeAttribute('role');
-    el.removeAttribute('tabindex');
-    el.removeAttribute('title');
+    el.classList.remove('glossia-lazy');
     el.innerHTML = encodeCanonical(hex, bookLang(), BEST_OF).prose;   // Glossia prose -- safe as innerHTML
   };
-
-  // ── the payload's own ⋯, which waits to be asked ──
-  // The run a placeholder belongs to: the footnote it sits in, else whatever
-  // element holds it. Every push of one witness shares that parent, which is
-  // what makes "read this out" a single act.
-  const runOf = (el) => el.closest('.footnote-entry') || el.parentElement || el;
-  let filling = false;
-  async function fillRun(el) {
-    if (filling) return;
-    filling = true;
-    try {
-      const run = runOf(el);
-      fill(el);                                  // the one asked for, first
-      let slice = performance.now();
-      for (const other of [...run.querySelectorAll('.glossia-lazy')]) {
-        if (performance.now() - slice > 24) {    // keep the page answering
-          await new Promise((r) => setTimeout(r, 0));
-          slice = performance.now();
-        }
-        fill(other);
-      }
-    } finally { filling = false; }
-  }
-  const ask = (e) => {
-    const el = e.target.closest?.('.glossia-lazy');
-    if (!el) return;
-    e.preventDefault();
-    e.stopPropagation();
-    fillRun(el);
-  };
-
-  // ── the budget's ⋯, which fills itself ──
-  // rootMargin pre-encodes a chunk before it enters view, so a scrolling
-  // reader almost never sees this one at all.
+  // rootMargin pre-encodes a chunk before it enters view, so a scrolling reader
+  // almost never sees the raw placeholder.
   const io = ('IntersectionObserver' in window)
     ? new IntersectionObserver((entries, obs) => {
         for (const e of entries) {
@@ -1580,30 +1513,16 @@ const lazyEncode = (() => {
         }
       }, { rootMargin: '600px 0px' })
     : null;
-
   return {
-    // A bulk push's prose, held back until asked for: the hex rides in a data
-    // attribute (hex is [0-9a-f], safe unquoted) and the ⋯ is the handle.
-    placeholder: (hex) => (hex
-      ? `<span class="glossia-lazy" data-hex="${hex}" role="button" tabindex="0"`
-        + ` title="${Math.ceil(hex.length / 2).toLocaleString()} bytes — click to put this into words">⋯</span>`
-      : ''),
-    // Prose the eager pass ran out of time for. Same mark, no handle: it is
-    // coming either way, as soon as the reader scrolls to it.
-    pending: (hex) => (hex ? `<span class="glossia-pending" data-hex="${hex}">⋯</span>` : ''),
-    // Drop pending chunks from a previous section (their nodes are already
-    // detached). The asked-for kind holds its own bytes and needs no reset.
+    // A push's prose, deferred: hex rides in a data attribute (hex is [0-9a-f],
+    // safe unquoted) and the ⋯ gives the span a layout box so the observer fires.
+    placeholder: (hex) => hex ? `<span class="glossia-lazy" data-hex="${hex}">⋯</span>` : '',
+    // Drop pending chunks from a previous section (their nodes are already detached).
     reset: () => { if (io) io.disconnect(); },
-    // Wire `root` for both: a press anywhere fills the bulk run it lands in
-    // (delegated, so footnotes laid out later need no rewiring), and every
-    // budget placeholder under it is watched for the scroll.
+    // Start watching every placeholder under `root`; encode all now if the
+    // browser has no IntersectionObserver.
     observe: (root) => {
-      if (!root.__lazyWired) {
-        root.__lazyWired = true;
-        root.addEventListener('click', ask);
-        root.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') ask(e); });
-      }
-      const pending = root.querySelectorAll('.glossia-pending');
+      const pending = root.querySelectorAll('.glossia-lazy');
       if (io) pending.forEach((el) => io.observe(el));
       else pending.forEach(fill);
     },
@@ -2868,7 +2787,7 @@ function sectionFields(txid) {
     const proseMemo = new Map();
     const record = [];
     composeTransactionFields(parsed, BEST_OF, lazyEncode.placeholder,
-      (h, _lang, _bestOf, form) => { if (!isBulkPush(h, form)) record.push(h); return { prose: '', payloadWords: [] }; });
+      (h) => { record.push(h); return { prose: '', payloadWords: [] }; });
     // A time budget bounds the eager pass: a normal section encodes whole
     // well inside it, and a giant one -- 562 P2PKH inputs is over a
     // thousand pushes, minutes of encoding -- defers the remainder to the
@@ -2892,12 +2811,8 @@ function sectionFields(txid) {
       // own default is english); the cache is flushed when the choice changes,
       // so an entry never outlives the language it was composed in.
       fields: composeTransactionFields(parsed, BEST_OF, lazyEncode.placeholder,
-        (h, lang, bestOf, form) => (isBulkPush(h, form)
-          // The payload: held until the reader asks for it.
-          ? { prose: lazyEncode.placeholder(h), payloadWords: [] }
-          // The chapter's own prose: said here, or -- past the budget --
-          // said on the scroll that reaches it.
-          : proseMemo.get(h) ?? { prose: lazyEncode.pending(h), payloadWords: [] })),
+        (h, lang, bestOf) => proseMemo.get(h)
+          ?? { prose: lazyEncode.placeholder(h), payloadWords: [] }),
       verified: verifiedTxid === txid,
       // Which of the notation key's script patterns this section puts on the
       // page, for the key's filter. Classified once, beside the fields.
@@ -3968,7 +3883,7 @@ function renderChapter(para) {
   // -- sits in the left margin, level with its scriptSig. The outputs are a
   // [scriptPubKey | amount] subgrid; the locktime closes on the right.
   const gen = ++renderGen;
-  lazyEncode.reset();   // nothing pends between sections now; kept as the seam
+  lazyEncode.reset();   // drop chunks still pending from the previous section (body + footnotes)
   lazyCites.reset();    // and the previous section's unresolved margin references
 
   // Successions are looked up for EVERY section, mined or projected: the
@@ -4288,7 +4203,7 @@ function renderChapter(para) {
   wrap.append(flow);
   body.append(wrap);
   syncBookmarkTitles();   // paint the section's and outputs' name lines from the bookmark set
-  lazyEncode.observe(body);   // a deferred OP_RETURN payload answers a press here
+  lazyEncode.observe(body);   // encode any deferred OP_RETURN payload as it scrolls into view
   // The margin amounts and the balance line price from the section's own
   // prevouts -- one request however many inputs there are -- and the
   // references then resolve one by one as the reader scrolls to them
@@ -4650,12 +4565,7 @@ async function renderFootnotes(gen) {
     // placeholder (renderWitness feeds each push through lazyEncode.placeholder)
     // and encoded when it scrolls into view -- building the DOM stays cheap even
     // for a kilobyte-scale inscription witness.
-    // A witness reads whole apart from its payload: the signature, the key,
-    // the control block and the envelope's own small pushes are said here,
-    // and only the bulk chunks wait behind their ⋯.
-    const prose = fn.zero ? '∅' : renderWitness(fn.items, (hex, form) => (isBulkPush(hex, form)
-      ? lazyEncode.placeholder(hex)
-      : (hex ? encodeCanonical(hex, bookLang(), BEST_OF).prose : '')));
+    const prose = fn.zero ? '∅' : renderWitness(fn.items, lazyEncode.placeholder);
     const p = document.createElement('p');
     p.className = 'footnote-entry';
     p.id = `fn-${footnoteMark(fn.n)}`;
@@ -4730,7 +4640,7 @@ async function renderFootnotes(gen) {
   syncBookmarkTitles();   // paint the witness name lines just laid out
   $('ch-footnotes-section').classList.remove('hidden');
   footnotesLoaded = true;
-  lazyEncode.observe(el);   // each witness push waits here for the reader to ask
+  lazyEncode.observe(el);   // stream each push's prose in as the reader scrolls to it
 }
 
 // The foot region's loading stand-in, for a navigation that targets a
