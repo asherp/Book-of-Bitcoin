@@ -340,17 +340,23 @@ button:disabled { opacity: .4; cursor: not-allowed; }
    print should not compete with the passage for the eye. */
 #page-export {
   grid-column: 1; justify-self: start;
-  background: transparent; border: none; border-radius: 0; padding: 0; cursor: pointer;
-  font:500 11px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.14em;
-  text-transform: uppercase; color: var(--dim); white-space: nowrap;
+  background: transparent; border: none; border-radius: 0; cursor: pointer;
+  color: var(--dim); line-height: 0;
+  /* Padding, not margin: it enlarges the tap target on a phone without
+     moving the mark off the bar's left edge, where it answers the folio. */
+  padding: 3px 6px 3px 0;
 }
+/* Sized to the folio's cap height beside it, so the two read as one row of
+   annotation rather than an icon parked next to some text. */
+#page-export svg { display: block; width: 14px; height: 14px; }
 #page-export:hover:not(:disabled), #page-export:focus-visible {
-  background: transparent; color: var(--accent-2); text-decoration: underline; outline: none;
+  background: transparent; color: var(--accent-2); outline: none;
 }
 /* Working: the encode pass ahead of the print dialogue (see exportPassage).
-   A long witness can take a beat, and a button that looks idle invites a
-   second click that would start the whole pass again. */
-#page-export:disabled { cursor: progress; color: var(--meta); text-decoration: none; }
+   A long witness can take a beat, and a mark that looks idle invites a second
+   click that would start the whole pass again. Dimmed rather than relabelled
+   -- there is no text to swap now, and the SVG must survive the busy state. */
+#page-export:disabled { cursor: progress; color: var(--meta); opacity: .55; }
 .chapter-num { font:600 11.5px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.3em; text-transform:uppercase; color: var(--accent); min-width: 0; text-align: center; }
 /* The eyebrow's Volume / Book / Chapter crumbs inherit its voice exactly;
    hover marks them navigable. (Overrides the global gold button styling.) */
@@ -1111,7 +1117,15 @@ button:disabled { opacity: .4; cursor: not-allowed; }
            the crumb as a printed running head brackets its title. A leaf has
            no button, as it has no folio: what is exported is a transaction,
            and a leaf is not one. -->
-      <button type="button" id="page-export" class="hidden" aria-label="Export this passage as a PDF" title="Export this passage as a PDF — the whole transaction, set as a page of the book">Export</button>
+      <!-- The mark is a printer, drawn rather than typed: no font the book
+           carries has a printer glyph (web/fonts/ covers the sigla and the
+           text faces), and a typed ⎙ would fall to whatever the reader's
+           machine happens to own — or, worse, to a colour emoji. Inline SVG
+           on currentColor is what the bookmark ribbon in this same head
+           already does, and it inherits the hover and the print palette for
+           free. The label lives in aria-label and title, where a symbol's
+           name belongs. -->
+      <button type="button" id="page-export" class="hidden" aria-label="Print this passage — the whole transaction, as a page of the book" title="Print this passage — the whole transaction, as a page of the book"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 9V3.8h10V9" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><path d="M7 17.5H5.2A2.2 2.2 0 0 1 3 15.3v-3.6A2.2 2.2 0 0 1 5.2 9.5h13.6A2.2 2.2 0 0 1 21 11.7v3.6a2.2 2.2 0 0 1-2.2 2.2H17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><path d="M7 14.6h10v5.6H7z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/></svg></button>
       <div class="chapter-num"><button type="button" id="ch-volume-link" class="crumb" title="This volume's page">Volume <span id="ch-volume"></span></button><span id="ch-sep-1"> · </span><button type="button" id="ch-book-link" class="crumb" title="This book's page">Book <span id="ch-book"></span></button><button type="button" id="ch-appendix-link" class="crumb hidden" title="The appendix this draft chapter belongs to">Appendix I</button><span id="ch-chapter-inline"></span></div>
       <button type="button" id="chapter-next" class="chapter-step hidden" aria-label="Next chapter" title="Next chapter"></button>
       <!-- The folio: a section's page number in the chain's running count of
@@ -2238,14 +2252,15 @@ async function exportPassage() {
   const gen = renderGen;                    // the passage as it stands now
   const cite = `${referenceOf(state.height)} §${state.index + 1}`;
   const restoreTitle = document.title;
-  const restoreLabel = btn.textContent;
 
+  // Disabled is the whole busy state: the CSS dims the mark, and the mark
+  // itself must survive -- it is an SVG child, so anything that wrote text
+  // into this button would delete the printer and leave an empty box.
   btn.disabled = true;
   try {
     // (1) Every deferred push, encoded. A long witness can take a beat, so
-    // the button says what it is doing; yielding a frame first lets that
-    // label actually paint before the encode blocks the main thread.
-    btn.textContent = tr('Setting…');
+    // yield a frame first and let the dimmed mark actually paint before the
+    // encode blocks the main thread.
     await new Promise((r) => requestAnimationFrame(() => r()));
     const filled = lazyEncode.fillAll($('page-slide'));
     // The reader can turn the page while the encode runs. A print dialogue
@@ -2289,7 +2304,6 @@ async function exportPassage() {
     window.print();
   } finally {
     document.title = restoreTitle;
-    btn.textContent = restoreLabel;
     btn.disabled = false;
   }
 }
@@ -6276,7 +6290,6 @@ function localizeChrome() {
     document.querySelector('.key-scope-note'),
     document.querySelector('.key-scope-link'),
     $('ch-appendix-link'),
-    $('page-export'),
   ]) localizeText(el);
   // The crumb words ride as leading text nodes before their number spans.
   for (const [id, en] of [['ch-volume-link', 'Volume'], ['ch-book-link', 'Book']]) {
