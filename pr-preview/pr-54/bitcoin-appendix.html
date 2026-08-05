@@ -390,14 +390,11 @@ a.bb-ref:hover { color:var(--accent-2); }
    caption for it follows, in the form above: the work first, then what its
    collection says about it. */
 .ins-member { margin:0; text-align:center; }
-/* The citation leads the plate, in the register every citation in this book
-   wears: the chapter, the section and the footnote its envelope reads at.
-   It is the door into the chapter that witness sits in -- and the one line
-   on the leaf the chain answers for. */
-.ins-cite { display:block; font:600 13px/1.6 'IBM Plex Mono',monospace; letter-spacing:.04em;
-  color:var(--accent); font-variant-numeric:tabular-nums; }
-a.ins-cite:hover { color:var(--accent-2); text-decoration:none; }
-.ins-cite.waiting { color:var(--meta); }
+/* A work's reference, in its head beneath the name: the chapter, the section
+   and the footnote its envelope reads at, set as the leaf above it sets its
+   own citation -- the reading face, gold, the door into that chapter. It
+   waits as a mark until the chain places the witness. */
+.work-ref.waiting { color:var(--meta); }
 /* The plate's place is held before the plate arrives: a member whose witness
    is still being fetched stands its own height, so the page does not jump as
    photographs land -- and so the draw below, which fills until the foot is
@@ -1117,37 +1114,45 @@ if (ins) {
     const collectionName = (collection.meta && collection.meta.name || '').trim() || ins.title;
 
     // The head: the manifest's name for this work, the collection above it,
-    // and the work's place in the run beneath -- a leaf says where it is.
+    // and beneath the name the citation -- above the rule, where every leaf
+    // in this book puts the reference for the thing it is showing -- with
+    // the work's place in the run after it. The citation is filled in when
+    // the chain places the witness (below); until then it is a mark.
     $('appx-title').textContent = (m.name || '').trim() || `Work ${at.toLocaleString('en-US')}`;
-    $('appx-subtitle').textContent = `${collectionName} · ${at.toLocaleString('en-US')} of ${members.length.toLocaleString('en-US')}`;
     $('appx-up').textContent = `▴ ${collectionName}`;
     document.title = `The βook of βitcoin — ${(m.name || '').trim() || `Work ${at}`}`;
+    const cite = document.createElement('a');
+    cite.className = 'work-ref waiting';
+    cite.href = `./bitcoin-book.html?txid=${m.txid}`;
+    cite.title = 'read this witness in the book';
+    cite.textContent = '…';
+    $('appx-subtitle').replaceChildren(cite,
+      document.createTextNode(` · ${at.toLocaleString('en-US')} of ${members.length.toLocaleString('en-US')}`));
 
-    // The neighbours, known only now the manifest is read: another work
-    // either side, and back off the first is the title page that names them.
+    // The neighbours: another work either side, and NOTHING either side of
+    // the run's ends. A sideways turn walks the works and only the works --
+    // the way out of a collection is the way in, the ▴ and the pull-down to
+    // the title page that names them. Turning left off the first work used
+    // to land on that page, which reads as a sideways move but is a level
+    // up: press on and the run leaks into the neighbouring inscriptions and
+    // then out of the appendix altogether. A run should close at both ends,
+    // as the ballot's block leaves do.
     setTurns(
       at > 1
         ? { href: insItemHref(ins, at - 1), text: (members[at - 2].name || `Work ${at - 1}`).trim() }
-        : { href: insHref(ins), text: collectionName },
+        : null,
       at < members.length
         ? { href: insItemHref(ins, at + 1), text: (members[at].name || `Work ${at + 1}`).trim() }
         : null,
     );
 
-    // The work itself: its citation, then the plate. The citation leads
-    // because it is the one line here the chain answers for -- where in the
-    // book this witness sits -- and everything under it (the picture, the
-    // caption) is what somebody put there.
+    // The work itself: the plate, and nothing over it. Its reference stands
+    // in the head above the rule, where a leaf states what it is showing.
     const plate = document.createElement('figure');
     plate.className = 'ins-member';
-    const cite = document.createElement('a');
-    cite.className = 'ins-cite waiting';
-    cite.href = `./bitcoin-book.html?txid=${m.txid}`;
-    cite.title = 'read this witness in the book';
-    cite.textContent = '…';
     const body = document.createElement('div');
     body.className = 'ins-member-body';
-    plate.append(cite, body);
+    plate.append(body);
     fig.replaceChildren(plate);
     fig.classList.remove('hidden');
 
