@@ -932,6 +932,10 @@ button:disabled { opacity: .4; cursor: not-allowed; }
    dress an output's name wears above its rows. Empty, it takes no room. */
 .footnote-title { grid-column: 1 / -1; text-align: center; font: italic 500 calc(13.5px * var(--scale-body, 1))/1.4 'Newsreader','Book Sigla',serif; color: var(--accent); margin: .4em 0 .3em; }
 .footnote-title:empty { display: none; }
+/* A name line that opens something says so the way every other door in the
+   book does -- on hover, and never by shouting in the running text. */
+a.footnote-title.is-asset { text-decoration: none; }
+a.footnote-title.is-asset:hover { color: var(--accent-2, #dcb877); text-decoration: underline; }
 /* A footnote's ribbon flies at its entry's right edge, the way an output's
    flies on its amount. The mark is the menu's click target, but an 8px
    letter is no place for an 18px button -- so the mark stays unpositioned
@@ -4945,12 +4949,24 @@ async function renderFootnotes(gen) {
     // passage has said something a magic number cannot; it sits above
     // nothing at all because a footnote that is plainly a picture should not
     // read as anonymous apparatus.
-    const witTitle = document.createElement('div');
+    // A witness that carries an asset is a door: the name line opens the
+    // appendix's leaf for that inscription, where the bytes are shown as
+    // what they are rather than said as prose. So the line is an anchor
+    // wherever there is something to open, and a plain div where there is
+    // not -- syncBookmarkTitles writes into either, and a reader's own name
+    // for the place rides the same link, since renaming a thing does not
+    // make it a different thing.
+    const witAsset = witnessAsset(fn.items);
+    const witTitle = document.createElement(witAsset ? 'a' : 'div');
     witTitle.className = 'footnote-title';
+    if (witAsset) {
+      witTitle.href = `./bitcoin-appendix.html?part=inscriptions&ins=${fn.txid}`;
+      witTitle.classList.add('is-asset');
+    }
     witTitle.dataset.bmWit = `${fn.txid}:${fn.vin}`;
     const witPlace = places().find((pl) => !pl.page && !pl.address && pl.wit === fn.n
       && pl.id === String(state.height) && (pl.index ?? null) === state.index);
-    const asset = witPlace ? null : witnessAsset(fn.items);
+    const asset = witPlace ? null : witAsset;
     witTitle.dataset.fallback = witPlace ? placeTitle(witPlace) : (asset ? asset.label : '');
     if (asset) {
       // What the line is claiming, and on whose authority: the bytes' own
@@ -4963,6 +4979,11 @@ async function renderFootnotes(gen) {
             ? ` — the envelope declares ${asset.declared}, which these bytes do not bear out`
             : '')
         : `${size}${asset.encoding ? `, ${asset.encoding}-compressed` : ''} — “${asset.declared}” is the inscriber's declaration; the bytes themselves announce nothing`;
+      witTitle.title += ' — open it';
+    } else if (witAsset) {
+      // Curated, so the name is an editor's rather than the bytes'; the line
+      // still opens the thing it names.
+      witTitle.title = `${witAsset.bytes.toLocaleString()} bytes of ${witAsset.mime} — open it`;
     }
     el.append(witTitle);
     // A witness-only input's citation (carrying its in-N anchor, resolving
