@@ -37,7 +37,7 @@
 // ones it is queued behind, in the pencil rather than the ink.
 
 import { entryHref } from './btc-contents.js';
-import { volumeBookChapter, toRoman, expectedReference } from './btc-citation.js';
+import { volumeBookChapter, toRoman, expectedReference, subsidyAt } from './btc-citation.js';
 
 export const MVB = 1_000_000;   // one block's worth of virtual bytes
 export const MEMPOOL_MIRRORS = ['https://blockstream.info/api', 'https://mempool.space/api'];
@@ -78,6 +78,48 @@ export async function upcomingFees(mirrors = MEMPOOL_MIRRORS) {
   const got = await anyMirror(mirrors, '/mempool');
   const fees = Number(got?.data?.total_fee);
   return Number.isFinite(fees) ? fees : null;
+}
+
+// ── What mining the queue is expected to pay ──────────────────────────────
+//
+// The fees alone understate it. A chapter pays its miner twice: the fees the
+// sections in it carry, and the subsidy the schedule mints for writing it at
+// all -- and the second is much the larger of the two at present, so a figure
+// that showed only fees would say mining earns a fortieth of what it earns.
+//
+// So: over the chapters the queue would fill, the subsidy each is due plus
+// the fees each carries. `subsidyAt` is the same coinage schedule the book
+// cites everywhere (btc-citation.js), so a queue that crosses a halving is
+// counted correctly on both sides of it, and past the 64th it mints nothing.
+//
+// Pure, and separate from the asking, so the arithmetic can be checked
+// without a network: `blocks` is what /v1/fees/mempool-blocks answers.
+export function revenueOf(tip, blocks) {
+  if (tip == null || !Array.isArray(blocks) || !blocks.length) return null;
+  let sats = 0;
+  let chapters = 0;
+  let fees = 0;
+  blocks.forEach((b, i) => {
+    // The backend's last entry is its aggregate of everything deeper, and
+    // stands for as many chapters as its vsize spans -- each of which is due
+    // a subsidy of its own. The same reading buildQueue takes of it.
+    const span = (i === blocks.length - 1 && b.blockVSize > 1.05 * MVB)
+      ? Math.max(1, Math.round(b.blockVSize / MVB))
+      : 1;
+    for (let k = 0; k < span; k++) sats += subsidyAt(tip + 1 + chapters + k);
+    chapters += span;
+    const f = Number(b.totalFees);
+    if (Number.isFinite(f)) { sats += f; fees += f; }
+  });
+  return { sats, fees, chapters };
+}
+
+// The same, asked of a mirror. Null where nowhere would answer, which prints
+// as nothing rather than as a queue worth nothing.
+export async function expectedRevenue(tip, mirrors = MEMPOOL_MIRRORS) {
+  if (tip == null) return null;
+  const got = await anyMirror(mirrors, '/v1/fees/mempool-blocks');
+  return revenueOf(tip, got?.data);
 }
 
 // One reading of the queue, or null when nowhere could answer -- in which
