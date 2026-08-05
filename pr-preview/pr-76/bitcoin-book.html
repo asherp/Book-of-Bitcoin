@@ -4149,25 +4149,43 @@ function renderGhostTombstone(txid) {
 }
 
 // Experimental (see issue #73): a procedural illumination layer over a
-// section's own .tx-wrap, grown from marks that already stand in real
-// whitespace -- the margin citations beside a script, the locktime line,
-// the bookmark ribbons -- rather than from opcode glyphs that sit flush
-// against the prose (see btc-illumination.js's homeRect handling for why
-// that distinction matters). Loaded lazily, exactly as the OpenTimestamps
-// reader in btc-ots.js is, so a chapter that never calls this carries no
-// extra module; guarded end to end so a failure here can never break the
-// page it decorates.
+// section's own .tx-wrap, grown from every sigil the passage actually
+// carries -- the opcode glyphs in a script, the margin citations, the
+// locktime line, the bookmark ribbons, the drop cap -- not just the ones
+// with obvious room around them (see btc-illumination.js's homeRect
+// handling for why an inline glyph can still grow from flush against the
+// prose). Loaded lazily, exactly as the OpenTimestamps reader in btc-ots.js
+// is, so a chapter that never calls this carries no extra module; guarded
+// end to end so a failure here can never break the page it decorates.
 let illumModule = null;
 async function illuminateSection(wrap, flow) {
   try {
     illumModule = illumModule || await import('./btc-illumination.js');
-    const seedEls = wrap.querySelectorAll('.tx-in-cite, .tx-locktime, .hash-bookmark');
+    const seedEls = wrap.querySelectorAll(
+      '.op, .cfx-gold, .tx-in-cite, .tx-locktime, .hash-bookmark, .tx-witness-ref, .tx-body-lead'
+    );
     const confirmations = (!state.projected && tipHeight !== null) ? tipHeight - state.height + 1 : 0;
     illumModule.illuminate(wrap, {
       proseEl: flow,
       seedEls,
       blockHash: state.projected ? null : state.hash,
       confirmations,
+      // "Ordinary" is whatever this reader's own body text actually is --
+      // the reader's font-scale preference (btc-fontscale.js) changes it,
+      // and every .op mark already renders at that same size, so pinning
+      // the reference to a fixed guess would misjudge them all alike.
+      baseSize: parseFloat(getComputedStyle(flow).fontSize) || undefined,
+      // The drop cap (.tx-body-lead's ::first-letter) has no box of its own
+      // to measure -- it's a CSS pseudo-element, not a real node -- so it's
+      // the one sigil handled specially: its SIZE comes from the pseudo's
+      // own computed font-size (the 3.4em that makes it an illuminated
+      // initial rather than an ordinary letter), and its START POINT is its
+      // paragraph's top-left corner, where the cap actually sits, rather
+      // than the paragraph's own much larger center.
+      sizeOf: (el) => (el.classList.contains('tx-body-lead')
+        ? parseFloat(getComputedStyle(el, '::first-letter').fontSize) || null
+        : null),
+      pointOf: (el) => (el.classList.contains('tx-body-lead') ? 'top-left' : 'edge'),
     });
   } catch (e) { console.error('illumination skipped:', e); }
 }

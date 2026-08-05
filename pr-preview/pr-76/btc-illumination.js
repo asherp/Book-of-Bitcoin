@@ -102,13 +102,34 @@ function passesFor(blockHash) {
   return rec;
 }
 
+// A sigil's own rendered size earns it extra rewriting generations on top of
+// what confirmation depth alone would give it -- the book's illuminated
+// initials (a drop cap at 3.4em, say) are meant to outgrow an inline opcode
+// glyph at body size, the way a real manuscript's decoration answers to the
+// letter it grows from as much as to the page's age. `baseSize` is the
+// "ordinary sigil" reference (a body-text line height); ratios at or below
+// that earn no boost at all -- most marks on a page are exactly that
+// ordinary, and shouldn't all be growing extra generations by default.
+// log2-scaled so a 2x mark and a 4x mark are visibly different without a
+// merely-larger mark blowing past the cap.
+const MAX_SIZE_BOOST = 6;
+export function sizeBoost(size, baseSize = 16) {
+  if (!size || size <= baseSize) return 0;
+  return Math.max(0, Math.min(MAX_SIZE_BOOST, Math.round(Math.log2(size / baseSize) * 2)));
+}
+
 // (blockHash, stage) -> symbol string after that stage's total iteration
-// count, derived (and cached) incrementally from generation 0 up. Cached
-// forever per (blockHash, generation) — this is the part that must NOT
-// change across a reflow, a resize, or an orientation flip.
-export function generateSymbol(blockHash, stage) {
+// count (plus any size-driven boost -- see sizeBoost), derived and cached
+// incrementally from generation 0 up. Cached forever per (blockHash,
+// generation) — this is the part that must NOT change across a reflow, a
+// resize, or an orientation flip. `boost` extends the SAME continuous
+// derivation further rather than rolling a separate one, so a large sigil's
+// vine is this block's shape grown a few generations past where a small
+// sigil's stops, never a different shape entirely.
+const MAX_GENERATION = GROWTH_STAGES[GROWTH_STAGES.length - 1].iterations + MAX_SIZE_BOOST;
+export function generateSymbol(blockHash, stage, boost = 0) {
   const spec = GROWTH_STAGES[stage] || GROWTH_STAGES[0];
-  const target = spec.iterations;
+  const target = Math.min(MAX_GENERATION, spec.iterations + Math.max(0, boost));
   const rec = passesFor(blockHash);
   while (rec.passes.length - 1 < target) {
     const passIndex = rec.passes.length; // the generation about to be produced
@@ -210,25 +231,33 @@ export function interpretFrom(symbol, anchor, obstacles, bounds, rng) {
       const a = state.angle + jitter;
       const nx = state.x + Math.cos(a) * STEP;
       const ny = state.y + Math.sin(a) * STEP;
-      const hitRect = outOfBounds(nx, ny, bounds) ? null : firstBlockingRect(state.x, state.y, nx, ny, obs);
-      if (hitRect || outOfBounds(nx, ny, bounds)) {
+      // Leaving `bounds` gets the exact same tangent treatment as meeting an
+      // obstacle -- "move parallel to the nearest edge" is direction-
+      // agnostic, it doesn't care whether that edge is a paragraph's outline
+      // being avoided from outside or the host's own boundary being hugged
+      // from inside. Without this, an anchor near an edge (a drop cap
+      // opening a section, sitting right at the top of it) would fall
+      // straight to the crude deflection fallback on every single step
+      // instead of flowing smoothly along the boundary the way it does
+      // around a real obstacle -- wasting a large sigil's whole size-boosted
+      // generation budget on a cramped, scraggly tuft.
+      const hitRect = outOfBounds(nx, ny, bounds) ? bounds : firstBlockingRect(state.x, state.y, nx, ny, obs);
+      if (hitRect) {
         let placed = false;
         // Wall-follow first: steer along whichever of the blocking box's two
         // tangent directions is closest to where the vine was already
         // heading. This is what makes growth trace a paragraph's silhouette
         // -- climbing along its edge and turning its corners -- instead of
         // bouncing off it at a random angle.
-        if (hitRect) {
-          const tangents = tangentAngles(state.x, state.y, hitRect).sort((t1, t2) => angleDiff(a, t1) - angleDiff(a, t2));
-          for (const ta of tangents) {
-            const tx = state.x + Math.cos(ta) * STEP;
-            const ty = state.y + Math.sin(ta) * STEP;
-            if (!outOfBounds(tx, ty, bounds) && !firstBlockingRect(state.x, state.y, tx, ty, obs)) {
-              state = { x: tx, y: ty, angle: ta };
-              cur.points.push({ x: tx, y: ty });
-              placed = true;
-              break;
-            }
+        const tangents = tangentAngles(state.x, state.y, hitRect).sort((t1, t2) => angleDiff(a, t1) - angleDiff(a, t2));
+        for (const ta of tangents) {
+          const tx = state.x + Math.cos(ta) * STEP;
+          const ty = state.y + Math.sin(ta) * STEP;
+          if (!outOfBounds(tx, ty, bounds) && !firstBlockingRect(state.x, state.y, tx, ty, obs)) {
+            state = { x: tx, y: ty, angle: ta };
+            cur.points.push({ x: tx, y: ty });
+            placed = true;
+            break;
           }
         }
         // Fallback: the corner case -- two obstacles meet, or an obstacle
@@ -255,7 +284,19 @@ export function interpretFrom(symbol, anchor, obstacles, bounds, rng) {
       }
       if (!escaped && !pointInRect(state.x, state.y, homeRect)) escaped = true;
     } else if (ch === 'L') {
-      cur.leaves.push({ x: state.x, y: state.y, angle: state.angle });
+      // A heavily size-boosted symbol forks far more branches than a
+      // cramped spot has room for; most die on their very first step and
+      // land their leaf right back at the SAME unmoved point (cur resets to
+      // the current, never-advanced state each time a branch fails outright
+      // -- see the F/'[' handling above). Left alone, hundreds of those
+      // stack into one dark blob instead of reading as more decoration.
+      // Skip a leaf that would land within a couple pixels of one already
+      // placed on this anchor's walk -- distinct nearby leaves still show
+      // (a real cluster), only true near-duplicates collapse.
+      const near = (p) => Math.abs(p.x - state.x) < 3 && Math.abs(p.y - state.y) < 3;
+      if (!cur.leaves.some(near) && !segments.some((s) => s.leaves.some(near))) {
+        cur.leaves.push({ x: state.x, y: state.y, angle: state.angle });
+      }
     } else if (ch === '+') {
       state = { ...state, angle: state.angle + TURN };
     } else if (ch === '-') {
@@ -298,17 +339,67 @@ export function measureObstacles(proseEl, hostRect, pad = 3) {
   });
 }
 
+// Where a ray from a rectangle's own center, heading in `angle`, crosses the
+// rectangle's boundary -- the standard center-to-edge intersection, taking
+// whichever of the two axis distances the ray reaches first.
+function edgePoint(r, angle) {
+  const cx = r.x + r.w / 2, cy = r.y + r.h / 2;
+  const dx = Math.cos(angle), dy = Math.sin(angle);
+  const tx = dx !== 0 ? (r.w / 2) / Math.abs(dx) : Infinity;
+  const ty = dy !== 0 ? (r.h / 2) / Math.abs(dy) : Infinity;
+  const t = Math.min(tx, ty);
+  return { x: cx + dx * t, y: cy + dy * t };
+}
+
 // Seed points vines grow from -- the sigla already on the page. Each anchor's
-// starting angle points away from the host's own center, which in practice
+// outward angle points away from the host's own center, which in practice
 // aims a mark near the text column out toward the gutter/margin rather than
-// back across the prose.
-export function measureAnchors(seedEls, hostRect) {
+// back across the prose. The anchor itself sits just past the sigil's own
+// boundary in that direction (see edgePoint), not at its centroid -- a vine
+// reads as growing OFF the glyph's edge, not sprouting out of its middle.
+//
+// `opts.sizeOf(el)` overrides the default bbox-derived size (used to scale
+// growth -- see sizeBoost); `opts.pointOf(el)` can force 'center' or
+// 'top-left' instead of the default 'edge', for a caller with no real
+// element to measure (a CSS ::first-letter drop cap has no box of its own --
+// see bitcoin-book.html's illuminateSection for exactly that case).
+export function measureAnchors(seedEls, hostRect, opts = {}) {
   const cx = hostRect.width / 2, cy = hostRect.height / 2;
+  const sizeOf = opts.sizeOf || (() => null);
+  const pointOf = opts.pointOf || (() => 'edge');
   return Array.from(seedEls || []).map((el) => {
     const r = toHostSpace(el.getBoundingClientRect(), hostRect);
-    const x = r.x + r.w / 2, y = r.y + r.h / 2;
-    const angle = Math.atan2(y - cy, x - cx) || 0;
-    return { x, y, angle, el };
+    const rcx = r.x + r.w / 2, rcy = r.y + r.h / 2;
+    const angle = Math.atan2(rcy - cy, rcx - cx) || 0;
+    const mode = pointOf(el);
+    // Height, not the larger of width/height: an inline mark's rendered
+    // SIZE is its glyph height (~ font-size); its width is mostly a
+    // function of how many characters happen to be in the span, which says
+    // nothing about how big it looks. Using width would boost a long but
+    // ordinary-height mark ("β₃₂ 65535×256²⁶") well past a genuinely large
+    // one-character mark, backwards from the intent. Computed before
+    // positioning below -- 'top-left' uses it too.
+    const size = sizeOf(el) || r.h;
+    let x, y;
+    if (mode === 'top-left') {
+      // A drop cap's own corner is exactly where its paragraph's densest
+      // text starts -- boxed in on every side by the very prose it opens,
+      // with nowhere to go regardless of how many generations it earned.
+      // Real marginalia doesn't start AT the initial's corner either; it
+      // starts a little past it, already reaching for the margin the
+      // decoration is actually going to occupy. Push out from the corner
+      // by a fraction of the sigil's OWN size -- a bigger initial starts
+      // its vine further into the clear rather than deeper in the crowd.
+      x = r.x + Math.cos(angle) * size * 0.4;
+      y = r.y + Math.sin(angle) * size * 0.4;
+    } else if (mode === 'center') {
+      x = rcx; y = rcy;
+    } else {
+      const p = edgePoint(r, angle);
+      x = p.x + Math.cos(angle) * 1.5;
+      y = p.y + Math.sin(angle) * 1.5;
+    }
+    return { x, y, angle, size, el };
   });
 }
 
@@ -414,6 +505,15 @@ const reducedMotion = () => {
 //   blockHash     seeds the grammar AND the RNG -- same hash, same reading,
 //                 for every visitor.
 //   confirmations drives growthStage(); stage 0 renders nothing at all.
+//   sizeOf(el)    optional override for an anchor's size (see sizeBoost) --
+//                 needed for a mark with no box of its own, e.g. a CSS
+//                 ::first-letter drop cap (read its computed font-size
+//                 instead). Omit it to just measure each seedEl's own bbox.
+//   pointOf(el)   optional override for where on the anchor to start --
+//                 'edge' (default), 'center', or 'top-left' (for that same
+//                 drop-cap case: its containing element's box, not its own).
+//   baseSize      the "ordinary sigil" reference size sizeBoost compares
+//                 against; defaults to a typical body line height (16).
 //
 // Geometry (obstacles, anchors, the turtle walk) is recomputed on every
 // refresh(); the symbol string is not -- see generateSymbol's cache.
@@ -438,20 +538,37 @@ export function illuminate(hostEl, opts = {}) {
 
     if (stage === 0 || !opts.blockHash) { renderSegments(svg, [], {}); return; }
 
-    const symbol = generateSymbol(opts.blockHash, stage);
     const proseEl = opts.proseEl || hostEl;
     const obstacles = measureObstacles(proseEl, hostRect);
-    const bounds = { x: 0, y: 0, w: hostRect.width, h: hostRect.height };
+    // A vine is allowed a little room past the host's own box, not just up
+    // to its exact edge -- the overlay already paints there (the SVG root
+    // is overflow:visible), and without it an anchor sitting right at an
+    // edge (a drop cap opening a section, say) would have its whole boosted
+    // generation budget wasted on being blocked at step one, however much
+    // it earned from sizeBoost. Default is modest -- comparable to the gap
+    // the book already leaves between one section and the next -- so a vine
+    // can breathe into that margin without regularly reaching into a
+    // neighboring section's own content.
+    const overflow = opts.overflow ?? 48;
+    const bounds = { x: -overflow, y: -overflow, w: hostRect.width + overflow * 2, h: hostRect.height + overflow * 2 };
     const seedEls = (opts.seedEls && opts.seedEls.length) ? opts.seedEls : [];
     const anchors = seedEls.length
-      ? measureAnchors(seedEls, hostRect)
+      ? measureAnchors(seedEls, hostRect, { sizeOf: opts.sizeOf, pointOf: opts.pointOf })
       : [
         { x: 2, y: hostRect.height / 2, angle: Math.PI },
         { x: hostRect.width - 2, y: hostRect.height / 2, angle: 0 },
       ];
 
+    // Each anchor's own sigil size earns it extra generations on top of the
+    // confirmation-driven stage (see sizeBoost) -- the SAME continuous
+    // per-block derivation, just carried a few generations further for a
+    // large mark than for an ordinary one, so a page's one illuminated
+    // initial can visibly outgrow its opcode glyphs without becoming a
+    // different grammar altogether.
     const segmentsByAnchor = anchors.map((a) => {
-      const rng = rngFromHex(`${opts.blockHash}:${stage}:${a.x.toFixed(0)},${a.y.toFixed(0)}`);
+      const boost = sizeBoost(a.size, opts.baseSize);
+      const symbol = generateSymbol(opts.blockHash, stage, boost);
+      const rng = rngFromHex(`${opts.blockHash}:${stage}:${boost}:${a.x.toFixed(0)},${a.y.toFixed(0)}`);
       return interpretFrom(symbol, a, obstacles, bounds, rng);
     });
     renderSegments(svg, segmentsByAnchor, { animate: firstRender && !reducedMotion(), obstacles, debug: !!opts.debug });
