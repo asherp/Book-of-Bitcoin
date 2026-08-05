@@ -206,13 +206,25 @@ editor adding a kind of back matter can follow the same path:
      one work to a leaf, turned to sideways the way every run in this
      book is turned — ‹ back and forward › along the collection, and
      back off the first is the title page that named them. The leaf
-     carries the work's txid said in the book's own prose, the image
-     its witness holds, and beneath that the manifest's caption for it
-     — the same form the collection's own statement takes one level up,
-     because it is the same kind of claim: somebody's words about
-     something the chain holds. A quotation is set as one and keeps its
-     line breaks; the first work of Museum Outdoor quotes the line
-     painted on the door it photographs.
+     leads with the work's **citation** — the chapter, the section and
+     the footnote its envelope reads at, resolved from the member's own
+     merkle proof (the height, and the position in the block that IS
+     the §section) with the footnote letter counted off the
+     witness-bearing inputs, which is how the book letters its notes.
+     It is the one line on the leaf the chain answers for, and the door
+     back into the book at that footnote. Then the image, and beneath
+     it the manifest's caption — the same form the collection's own
+     statement takes one level up, because it is the same kind of
+     claim: somebody's words about something the chain holds. A
+     quotation is set as one and keeps its line breaks; the first work
+     of Museum Outdoor quotes the line painted on the door it
+     photographs.
+   - **The chrome stands down** at the level of one inscription and
+     below. What is shown there is a picture, or a page of somebody's
+     text, and it should be met as that rather than framed by a row of
+     links offering three other places to be. Nothing is lost: the
+     crumb above the title climbs, the ▴ and the pull-down ascend, and
+     the masthead's own name stays as the running head.
 
    One leaf is one reveal fetched, which is the whole reason the works
    are a run rather than a page: a member is ~100 kB with the
