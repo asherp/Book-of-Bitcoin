@@ -164,7 +164,12 @@ for (const part of parts) {
     // where the fork HAD periods, since those boundaries are consensus
     // arithmetic and a misplaced anchor would tally the wrong blocks. A
     // coinbase ballot had no periods at all; its window is an editorial
-    // frame, and its anchor stands wherever the story closed.
+    // frame, and its anchor stands wherever the story closed. A failed fork
+    // is the same case whatever read its yes: no period ever closed on it,
+    // and where its rule counted a rolling window (BIP109's 750 of the 1,000
+    // preceding) there were no aligned boundaries even while it ran -- so
+    // its anchor too is editorial, the era's high-water mark or the block
+    // the argument left at, and only an ACTIVE bit fork must align.
     if ([bip.bit, bip.version, bip.coinbase].filter((x) => x != null).length > 1) {
       problems.push(`appendix "${part.title}": ${bip.title} names more than one way to read a yes — a bit, a version, or coinbase text, not several`);
     }
@@ -174,7 +179,7 @@ for (const part of parts) {
       }
       if (!Number.isFinite(bip.window)) {
         problems.push(`appendix "${part.title}": ${bip.title} names a ballot but no window`);
-      } else if (bip.bit != null && (bip.ballot + 1) % bip.window !== 0) {
+      } else if (bip.bit != null && bip.status !== 'failed' && (bip.ballot + 1) % bip.window !== 0) {
         problems.push(`appendix "${part.title}": ${bip.title}'s ballot ${bip.ballot} does not close a ${bip.window}-block period (period boundaries align from genesis)`);
       }
     }

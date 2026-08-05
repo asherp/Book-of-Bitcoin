@@ -31,8 +31,9 @@ import init, {
   encode_raw_base_n_best_of as wasmEncodeRawBaseNBestOf,
   decode_raw_base_n as wasmDecodeRawBaseN,
   detect_dialect_from_text as wasmDetectDialect,
-  canonical_encode_traced as wasmCanonicalEncodeTraced,
-  canonical_decode as wasmCanonicalDecode,
+  canonical_encode_fixed_traced as wasmCanonicalEncodeTraced,
+  canonical_decode_fixed as wasmCanonicalDecode,
+  canonical_decode as wasmCanonicalDecodeSelf,
 } from './glossia.js';
 
 export { init };
@@ -48,7 +49,19 @@ export const MSG_LANGS = [
   { id: 'czech',   label: 'Čeština',  language: 'czech',   wordlist: 'default', dialect: 'body' },
   { id: 'german',  label: 'Deutsch',  language: 'german',  wordlist: 'default', dialect: 'body' },
 ];
-export function msgLangById(id) { return MSG_LANGS.find(l => l.id === id) || MSG_LANGS[0]; }
+// The tongue the book is set in for a reader who has not chosen one. Latin: the
+// book is a record first and a reading second, and Latin says so — it is nobody's
+// native tongue now, so its prose reads as what it is, a notation, rather than as
+// a claim about the bytes in a language someone might mistake for commentary.
+// (It is also the shortest: the Latin payload wordlist is 32768 words, 15 bits
+// to English's 11, so the same hash lands in about a quarter fewer words.)
+// Named rather than taken from MSG_LANGS[0], so the menu's display order and the
+// default are separate decisions.
+export const DEFAULT_LANG_ID = 'latin';
+export function msgLangById(id) {
+  return MSG_LANGS.find(l => l.id === id)
+    || MSG_LANGS.find(l => l.id === DEFAULT_LANG_ID);
+}
 
 // ─── the book's language ──────────────────────────────────────────────
 // Which of MSG_LANGS the book's prose is set in, chosen by the reader and
@@ -57,11 +70,11 @@ export function msgLangById(id) { return MSG_LANGS.find(l => l.id === id) || MSG
 // transaction (decodeCanonical detects the language from the prose itself).
 // Kept here beside MSG_LANGS so every page that encodes reads one source of
 // truth. Guarded for non-browser callers (the node test suite imports this
-// module transitively): no localStorage, no persistence, english default.
+// module transitively): no localStorage, no persistence, DEFAULT_LANG_ID.
 const BOOK_LANG_KEY = 'glossia-btc-lang';
 let bookLangId = (() => {
   try { return msgLangById(localStorage.getItem(BOOK_LANG_KEY)).id; }
-  catch { return MSG_LANGS[0].id; }
+  catch { return DEFAULT_LANG_ID; }
 })();
 export function bookLang() { return bookLangId; }
 export function setBookLang(id) {
@@ -338,35 +351,50 @@ export async function encodeMessage(message, cred, langId = 'english', opts = {}
   return renderArtifact(await sealMessage(message, cred), langId, opts);
 }
 
-// Detect the language of some prose, restricted to MSG_LANGS. Falls back to english.
+// Detect the language of some prose, restricted to MSG_LANGS. Prose the
+// detector cannot place falls back to DEFAULT_LANG_ID -- the tongue the book
+// writes in, and so the likeliest thing an unplaceable paragraph is.
 export function detectLang(prose) {
   try {
     const matches = JSON.parse(wasmDetectDialect(prose));
     if (Array.isArray(matches)) {
       const best = matches.find(m => MSG_LANGS.some(l => l.language === m.language));
-      if (best) return (MSG_LANGS.find(l => l.language === best.language) || {}).id || 'english';
+      if (best) return (MSG_LANGS.find(l => l.language === best.language) || {}).id || DEFAULT_LANG_ID;
     }
   } catch (e) { /* fall through */ }
-  return 'english';
+  return DEFAULT_LANG_ID;
 }
 
 // ─── canonical prose: raw bytes ⇆ readable Glossia prose ──────────────
 // Any hex value — a txid, a merkle root, a hash160, a private key — rendered
 // as natural-language prose whose payload words carry the bytes. This is
-// glossia's CANONICAL encoding (0.3.0+): the payload rides with a version
-// byte, and the cover prose is seeded from a checksum of the bytes, so one
-// payload has exactly one prose form, the wording itself is checkable, and an
-// artifact keeps verifying under future engine versions (decode dispatches on
-// the version byte, not the current rules). Decoding still just filters the
-// prose against the wordlist, so bytes round-trip exactly. Key-bearing
-// callers append their own checksum before encoding (see glossia-nostr.js) so
-// a mistyped word is caught on load.
+// glossia's CANONICAL encoding (0.4.0+, format version 2): the payload is
+// followed by a version byte and a crc32, and the cover prose is seeded from a
+// checksum of the bytes, so one payload has exactly one prose form, the wording
+// itself is checkable, and an artifact keeps verifying under future engine
+// versions (decode dispatches on the version byte, not the current rules).
+// Decoding still just filters the prose against the wordlist, so bytes
+// round-trip exactly.
+//
+// The book uses the FIXED pair — canonical_encode_fixed / canonical_decode_fixed
+// — rather than the self-describing one. The self-describing packing spends a
+// word stating the payload's length, and this book never needs it told: every
+// value it encodes is a field whose width the notation already prints on the
+// page (⌘²²⁴ for a hash's remaining bits, h³² for a 32-byte push, p⁶⁵ for a
+// key). So the count is passed to the decoder instead of carried in the prose,
+// which is one word shorter and — because that word's index was the padding
+// count, a function of length alone — stops every 32-byte hash from opening on
+// the same word. Under 0.3.0 the whole book read "abandon" first.
+//
+// A caller that appends its own checksum to the bytes before encoding still
+// can: the envelope's crc32 covers payload and version, not whatever framing a
+// caller wrapped around them first.
 
 // hex string (any byte length) -> { prose, payloadWords, langId, version }.
 // The language defaults to the reader's saved book language (bookLang above),
 // so every page that omits it follows the one choice; pass a langId to pin.
 // `bestOf` is kept for caller compatibility but no longer does anything: the
-// canonical version's frozen rules pin the fluency budget (v1 is best-of-4),
+// canonical version's frozen rules pin the fluency budget (v2 is best-of-4),
 // which is what makes the rendering reproducible by a verifier.
 // Deterministic for a given (hex, language), so results are memoized (LRU,
 // keyed by language too): a caller can warm an encode ahead of time (the
@@ -398,19 +426,54 @@ export function encodeCanonical(hex, langId = bookLang(), _bestOf = 1) {
 
 // prose paragraph + known byte length -> { hex, payloadWords, langId, and for
 // canonical artifacts verified + version }. Decodes in the given language, or
-// the one auto-detected from the prose. Canonical artifacts (0.3.0+) are tried
+// the one auto-detected from the prose. Canonical artifacts (0.4.0+) are tried
 // first — `verified` reports whether the wording matches the canonical
-// re-render, i.e. the prose really is that payload's one form. Pre-0.3.0
-// artifacts have no version byte, so anything that fails the canonical shape
-// falls through to the legacy fixed-seed decode.
+// re-render, i.e. the prose really is that payload's one form. Anything that
+// fails the canonical shape falls through to the legacy fixed-seed decode,
+// which is what pre-0.3.0 prose needs and, since the envelope moved, what
+// 0.3.0's own version-1 prose gets too.
+//
+// `byteCount` is REQUIRED for the canonical path: the fixed packing does not
+// carry the payload's length, so the decoder has to be told it. Without one
+// there is nothing to try but the legacy decode. Every caller in this book has
+// the count to hand — it is the field width the page is already printing.
+//
+// Three decoders are tried, narrowest first:
+//
+//   1. the fixed canonical decode, which is what this book writes;
+//   2. the self-describing canonical decode, which reads the padding word out
+//      of the prose and so covers BOTH framings — including format version 1,
+//      the self-describing form glossia 0.3.0 wrote;
+//   3. the legacy fixed-seed raw decode, for prose older than the canonical
+//      encoding altogether.
+//
+// Step 2 is what makes a 0.3.0 artifact still readable here. It cannot be
+// merged into step 1: the fixed packing spends no word on the payload's length,
+// which is exactly why v1 — whose version byte leads — has no fixed form.
+//
+// The fallthrough is guarded by the engine's error `kind`, because "this is not
+// canonical prose" and "this is canonical prose and it is damaged" both fail
+// the canonical decode and must not be treated alike. Prose of another shape is
+// refused on shape (`decode`) and falls through; a canonical artifact with a
+// word swapped has the right shape and fails its checksum, and falling through
+// there would quietly hand back bytes read under a different codec — a wrong
+// answer wearing the manner of a right one. So checksum_mismatch throws.
 export function decodeCanonical(prose, byteCount, langId) {
   const text = (prose || '').trim();
   if (!text) throw new Error('empty prose');
   const lang = msgLangById(langId || detectLang(text));
-  const c = JSON.parse(wasmCanonicalDecode(text, lang.language, lang.wordlist));
-  if (!c.error && (!byteCount || c.payload_hex.length === byteCount * 2)) {
-    return { hex: c.payload_hex, payloadWords: [], langId: lang.id, verified: c.verified, version: c.version };
+  const asCanonical = (c) =>
+    ({ hex: c.payload_hex, payloadWords: [], langId: lang.id, verified: c.verified, version: c.version });
+
+  if (byteCount) {
+    const c = JSON.parse(wasmCanonicalDecode(text, lang.language, lang.wordlist, byteCount));
+    if (!c.error) return asCanonical(c);
+    if (c.kind === 'checksum_mismatch') throw new Error(c.error);
   }
+  const s = JSON.parse(wasmCanonicalDecodeSelf(text, lang.language, lang.wordlist));
+  if (!s.error && (!byteCount || s.payload_hex.length === byteCount * 2)) return asCanonical(s);
+  if (s.kind === 'checksum_mismatch') throw new Error(s.error);
+
   const r = JSON.parse(wasmDecodeRawBaseN(text, lang.language, lang.wordlist, byteCount));
   if (r.error) throw new Error(r.error);
   return { hex: r.decoded_hex || '', payloadWords: r.payload_words || [], langId: lang.id };

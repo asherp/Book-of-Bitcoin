@@ -129,7 +129,7 @@ the reply the bot would post, writing `passage.png` beside it:
 
 ```sh
 node tools/twitter-bot/bot.mjs --render "I β1 ■1 §1"
-node tools/twitter-bot/bot.mjs --render "block 57043"      # Pizza Day
+node tools/twitter-bot/bot.mjs --render "I β29 ■596 §2"    # Pizza Day
 node tools/twitter-bot/bot.mjs --render "gm no citation"   # answers nothing
 ```
 

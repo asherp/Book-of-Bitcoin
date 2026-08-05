@@ -16,7 +16,7 @@
 <meta property="og:image" content="https://bookofbitcoin.io/og-bookofbitcoin.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="The βook of βitcoin — the illuminated timechain. A gold β standing beside the book's title on a dark cover.">
+<meta property="og:image:alt" content="The βook of βitcoin — Vires in Numeris. A gold β standing beside the book's title on a dark cover.">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="The βook of βitcoin — A cited work">
 <meta name="twitter:description" content="A document's timestamp proof, written out as prose — ending on the merkle root a block header commits to.">
@@ -33,9 +33,17 @@
 <meta name="apple-mobile-web-app-title" content="βook of βitcoin">
 <script src="./btc-chrome.js"></script>
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,400&family=IBM+Plex+Mono:wght@400;500;600&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<!-- The faces every leaf sets text in, fetched alongside the stylesheet
+     that declares them rather than after it. crossorigin is required even
+     same-origin: a font request is CORS-anonymous, and a preload without it
+     matches nothing and downloads the file twice. The rest of web/fonts/ is
+     left to unicode-range, which asks for a face only where its glyphs
+     appear -- the sigla leaf pulls the whole alphabet, a chapter four files. -->
+<link rel="preload" as="font" type="font/woff2" href="./fonts/newsreader-latin.woff2" crossorigin>
+<link rel="preload" as="font" type="font/woff2" href="./fonts/plexmono-500-latin.woff2" crossorigin>
+<link rel="preload" as="font" type="font/woff2" href="./fonts/plexmono-600-latin.woff2" crossorigin>
+<link rel="preload" as="font" type="font/woff2" href="./fonts/sigla-dejavu.woff2" crossorigin>
+<link rel="stylesheet" href="./fonts/fonts.css">
 <link rel="stylesheet" href="./btc-chrome.css">
 <link rel="stylesheet" href="./commentary.css">
 <style>
@@ -46,7 +54,7 @@
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; }
-body { min-height: 100vh; background: var(--page); color: var(--ink); font-family: 'Public Sans', system-ui, sans-serif; line-height: 1.55; }
+body { min-height: 100vh; background: var(--page); color: var(--ink); font-family: 'Public Sans','Book Sigla', system-ui, sans-serif; line-height: 1.55; }
 .wrap { max-width: 760px; margin: 0 auto; padding: 48px 22px 100px; }
 a { color: var(--accent); text-decoration: none; }
 a:hover { text-decoration: underline; }
@@ -56,15 +64,15 @@ a:hover { text-decoration: underline; }
    file's digest set as prose -- which is the whole of what the chain was ever
    told about it, and the value every paragraph below descends from. */
 .page-head { padding:8px 0 26px; margin-bottom:30px; border-bottom:1px solid var(--rule); text-align:center; }
-.leaf-title { margin:0; font:300 clamp(24px,6vw,36px)/1.2 'IBM Plex Mono',monospace; color:var(--ink); word-break:break-all; }
-.leaf-named { margin-top:10px; font:400 17px/1.35 'Newsreader',serif; color:var(--dim); }
+.leaf-title { margin:0; font:300 clamp(24px,6vw,36px)/1.2 'IBM Plex Mono','Book Sigla',monospace; color:var(--ink); word-break:break-all; }
+.leaf-named { margin-top:10px; font:400 17px/1.35 'Newsreader','Book Sigla',serif; color:var(--dim); }
 .leaf-digest { max-width:56ch; margin:22px auto 0; text-align:left; }
 /* The header paragraph is a copy handle: clicking it opens the menu below. */
 .hash-copy { cursor:pointer; }
 /* The work's citation mark, worn as a footnote's superscript at the end of
    the header paragraph -- the leaf's one footnote is at its foot. */
 .leaf-cite-sup { margin-left:2px; line-height:0; }
-.leaf-cite-sup a { font:600 12px/1 'IBM Plex Mono',monospace; color:var(--accent); }
+.leaf-cite-sup a { font:600 12px/1 'IBM Plex Mono','Book Sigla',monospace; color:var(--accent); }
 
 /* The copy menu, the book's own idiom (bitcoin-book.html) cut to this leaf's
    one hash: the hex, or the prose that encodes it. */
@@ -74,14 +82,14 @@ a:hover { text-decoration: underline; }
   box-shadow: 0 18px 44px -18px rgba(0,0,0,.8);
 }
 .hash-menu-head {
-  padding: 6px 8px 8px; color: var(--dim); font: 600 10.5px/1 'IBM Plex Mono',monospace;
+  padding: 6px 8px 8px; color: var(--dim); font: 600 10.5px/1 'IBM Plex Mono','Book Sigla',monospace;
   letter-spacing: .1em; text-transform: uppercase; border-bottom: 1px solid var(--rule); margin-bottom: 5px;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 260px;
 }
 .hash-menu .hash-menu-item {
   display: block; width: 100%; text-align: left; background: transparent; color: var(--ink-soft);
   border: none; border-radius: 4px; padding: 8px 9px; cursor: pointer;
-  font: 500 12.5px/1.2 'IBM Plex Mono',monospace; letter-spacing: .02em; text-transform: none;
+  font: 500 12.5px/1.2 'IBM Plex Mono','Book Sigla',monospace; letter-spacing: .02em; text-transform: none;
 }
 .hash-menu .hash-menu-item:hover, .hash-menu .hash-menu-item:focus-visible { background: var(--input-bg); color: var(--ink); outline: none; }
 
@@ -94,7 +102,7 @@ a:hover { text-decoration: underline; }
   padding:11px 2px max(11px, env(safe-area-inset-bottom));
   border-top:1px solid var(--rule); background:var(--page);
   display:flex; gap:10px; align-items:baseline;
-  font:500 12px/1.6 'IBM Plex Mono',monospace; color:var(--meta); }
+  font:500 12px/1.6 'IBM Plex Mono','Book Sigla',monospace; color:var(--meta); }
 .leaf-footnote .fn-mark { flex:none; font-weight:600; color:var(--accent); }
 .leaf-footnote .fn-text { min-width:0; overflow-wrap:anywhere; }
 .leaf-footnote a { color:var(--accent); }
@@ -108,7 +116,7 @@ a:hover { text-decoration: underline; }
 .para { display:grid; grid-template-columns: fit-content(13ch) minmax(0,1fr); column-gap:1.3em;
   align-items:baseline; padding:11px 0; }
 .para + .para { border-top:1px solid var(--hair); }
-.marg { grid-column:1; text-align:right; font:500 11.5px/1.5 'IBM Plex Mono',monospace;
+.marg { grid-column:1; text-align:right; font:500 11.5px/1.5 'IBM Plex Mono','Book Sigla',monospace;
   color:var(--accent); white-space:nowrap; }
 .marg a { color:var(--accent); }
 .marg .mark { display:block; font-size:11px; color:var(--meta); }
@@ -116,8 +124,8 @@ a:hover { text-decoration: underline; }
 .body { grid-column:2; min-width:0; }
 .dt, .merkle-mark { color:var(--accent); font-weight:700; font-style:normal; }
 .op-count { color:var(--meta); font-size:.85em; }
-.prose { font:italic 400 15px/1.6 'Newsreader',serif; color:var(--ink-soft); }
-.prose.waiting { color:var(--meta); font-style:normal; font-family:'IBM Plex Mono',monospace; font-size:13px; }
+.prose { font:italic 400 15px/1.6 'Newsreader','Book Sigla',serif; color:var(--ink-soft); }
+.prose.waiting { color:var(--meta); font-style:normal; font-family:'IBM Plex Mono','Book Sigla',monospace; font-size:13px; }
 /* A sibling is another passage's hash, carried by the proof and belonging to
    no one here: set a shade back, so a column of paragraphs reads as the
    alternation it is. */
@@ -144,14 +152,14 @@ a:hover { text-decoration: underline; }
    is being shown, then the content -- writing as writing, a checksum file as
    one Σ-figure per line under the binary it names. */
 .subject { margin-top:34px; padding-top:16px; border-top:1px solid var(--rule); }
-.subject-lead { font:600 10.5px/1.6 'IBM Plex Mono',monospace; letter-spacing:.1em; text-transform:uppercase; color:var(--meta); }
-.subject-text { margin:16px 0 4px; font:italic 400 17px/1.7 'Newsreader',serif; color:var(--ink-soft); white-space:pre-wrap; text-align:center; overflow-wrap:break-word; }
+.subject-lead { font:600 10.5px/1.6 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.1em; text-transform:uppercase; color:var(--meta); }
+.subject-text { margin:16px 0 4px; font:italic 400 17px/1.7 'Newsreader','Book Sigla',serif; color:var(--ink-soft); white-space:pre-wrap; text-align:center; overflow-wrap:break-word; }
 .sum-line { padding:9px 0; }
 .sum-line + .sum-line { border-top:1px solid var(--hair); }
-.sum-file { display:block; margin-bottom:2px; font:500 11.5px/1.5 'IBM Plex Mono',monospace; color:var(--meta); word-break:break-all; }
+.sum-file { display:block; margin-bottom:2px; font:500 11.5px/1.5 'IBM Plex Mono','Book Sigla',monospace; color:var(--meta); word-break:break-all; }
 
 .leaf-turns { display:flex; flex-wrap:wrap; gap:10px 26px; margin-top:44px; padding-top:18px; border-top:1px solid var(--rule);
-  font:600 10px/1.5 'IBM Plex Mono',monospace; letter-spacing:.14em; text-transform:uppercase; }
+  font:600 10px/1.5 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.14em; text-transform:uppercase; }
 .leaf-turns a { color:var(--meta); }
 .leaf-turns a:hover { color:var(--accent); }
 </style>

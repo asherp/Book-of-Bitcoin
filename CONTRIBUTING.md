@@ -69,7 +69,7 @@ Then point the entry at it in `web/notables.yaml`:
 
 ```yaml
 - title: Bitcoin Pizza Day
-  id: 57043
+  id: a1075db55d416d3ca199f55b6084e2115b9345e16c5cf302fc80e9d5fbf5d48d
   commentary:
     - file: bitcoin-pizza-day.md
     - file: bitcoin-pizza-day-your-name.md
@@ -145,6 +145,23 @@ says, and mark plainly where it stops saying it. "Ten thousand coins moved to a
 script" is the record; "they bought two pizzas" is testimony from the people
 involved, and a reader is entitled to see which is which.
 
+The book offers this from the page itself. The Commentary key in the foot bar,
+beside Notation, is on every page rather than only the curated ones: where the
+passage has a reading the sheet holds it, and where it has none the sheet says
+so — "Nothing has been said about V β61 ■145 §1 yet" — and offers **Add your
+commentary.** That link (`web/btc-contribute.js`) opens the file already named
+for that passage and already carrying its licence header, forking the
+repository for you if you have no fork. Most of the chain has nothing said
+about it yet, which is the point.
+
+The template asks for exactly what this section does — the passage, the
+reading, the line between record and testimony, and the two files — so if you
+are starting from GitHub rather than from the book, open your pull request with
+[`?template=commentary.md`](https://github.com/asherp/book-of-bitcoin/compare?template=commentary.md&expand=1)
+on the end of the URL and it will be filled in for you. It is
+[`.github/PULL_REQUEST_TEMPLATE/commentary.md`](.github/PULL_REQUEST_TEMPLATE/commentary.md)
+if you would rather copy it in by hand.
+
 ## The sigla
 
 A new or revised mark — a glyph for an opcode that lacks one, a better mark
@@ -195,5 +212,7 @@ fluency every time.
   would reach a reader as a missing reading or an empty contents. The deploy and
   every PR preview run it too.
 - Pull requests get a live preview deployed automatically.
+- Offering commentary? Open the pull request with the commentary template —
+  add `?template=commentary.md&expand=1` to the compare URL.
 - For substantial commentary or a new curated entry, opening an issue first is
   a good way to check it fits before writing it.

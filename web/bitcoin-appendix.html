@@ -16,7 +16,7 @@
 <meta property="og:image" content="https://bookofbitcoin.io/og-bookofbitcoin.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="The βook of βitcoin — the illuminated timechain. A gold β standing beside the book's title on a dark cover.">
+<meta property="og:image:alt" content="The βook of βitcoin — Vires in Numeris. A gold β standing beside the book's title on a dark cover.">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="The βook of βitcoin — Appendices">
 <meta name="twitter:description" content="What the book gathers after the volumes — the queue, the fixed heights, the ledgers, and the works the chain has dated.">
@@ -145,9 +145,17 @@
      Update affordances on the title's line, one copy for every page. -->
 <script src="./btc-chrome.js"></script>
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,400&family=IBM+Plex+Mono:wght@400;500;600&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<!-- The faces every leaf sets text in, fetched alongside the stylesheet
+     that declares them rather than after it. crossorigin is required even
+     same-origin: a font request is CORS-anonymous, and a preload without it
+     matches nothing and downloads the file twice. The rest of web/fonts/ is
+     left to unicode-range, which asks for a face only where its glyphs
+     appear -- the sigla leaf pulls the whole alphabet, a chapter four files. -->
+<link rel="preload" as="font" type="font/woff2" href="./fonts/newsreader-latin.woff2" crossorigin>
+<link rel="preload" as="font" type="font/woff2" href="./fonts/plexmono-500-latin.woff2" crossorigin>
+<link rel="preload" as="font" type="font/woff2" href="./fonts/plexmono-600-latin.woff2" crossorigin>
+<link rel="preload" as="font" type="font/woff2" href="./fonts/sigla-dejavu.woff2" crossorigin>
+<link rel="stylesheet" href="./fonts/fonts.css">
 <link rel="stylesheet" href="./btc-chrome.css">
 <link rel="stylesheet" href="./commentary.css">
 <style>
@@ -160,7 +168,7 @@
 /* overscroll-behavior keeps the browser's pull-to-refresh from swallowing
    the pull-down-at-top ascent back to the contents. */
 html, body { margin: 0; overscroll-behavior-y: none; }
-body { min-height: 100vh; background: var(--page); color: var(--ink); font-family: 'Public Sans', system-ui, sans-serif; line-height: 1.55; }
+body { min-height: 100vh; background: var(--page); color: var(--ink); font-family: 'Public Sans','Book Sigla', system-ui, sans-serif; line-height: 1.55; }
 /* The entering half of the contents' descent into an appendix: the leaf
    rises into place from below, matching the carousel's pace. */
 @media (prefers-reduced-motion: no-preference) {
@@ -187,21 +195,21 @@ a:hover { text-decoration: underline; }
    out are the masthead's Contents, the pull down at the top, and the turns
    at the foot. */
 .page-head { text-align:center; padding:8px 0 26px; margin-bottom:14px; border-bottom:1px solid var(--rule); }
-.appx-title { margin:0; font:300 clamp(28px,7vw,40px)/1.15 'Newsreader',serif; color:var(--ink); letter-spacing:-.01em; }
-.appx-subtitle { margin-top:10px; font:400 19px/1.35 'Newsreader',serif; color:var(--dim); }
+.appx-title { margin:0; font:300 clamp(28px,7vw,40px)/1.15 'Newsreader','Book Sigla',serif; color:var(--ink); letter-spacing:-.01em; }
+.appx-subtitle { margin-top:10px; font:400 19px/1.35 'Newsreader','Book Sigla',serif; color:var(--dim); }
 /* The descent, as the book's leaves wear it: one mark, centred, at the foot
    of the title page. */
 .appx-down { display:block; margin:34px auto 0; width:2em; text-align:center; font-size:20px; line-height:1; color:var(--dim); }
 .appx-down:hover { color:var(--accent); text-decoration:none; }
 .hidden { display:none !important; }
-.appx-note { max-width:56ch; margin:22px auto 30px; font:400 15px/1.7 'Newsreader',serif; color:var(--ink-soft); text-align:left; }
+.appx-note { max-width:56ch; margin:22px auto 30px; font:400 15px/1.7 'Newsreader','Book Sigla',serif; color:var(--ink-soft); text-align:left; }
 /* The way up from a fork's leaf: the part that lists it, named above the
    title the way the ledger leaves name their compendium. */
-.appx-up { display:inline-block; margin-bottom:12px; font:600 10px/1.5 'IBM Plex Mono',monospace; letter-spacing:.14em; text-transform:uppercase; color:var(--meta); }
+.appx-up { display:inline-block; margin-bottom:12px; font:600 10px/1.5 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.14em; text-transform:uppercase; color:var(--meta); }
 .appx-up:hover { color:var(--accent); text-decoration:none; }
 /* A fork's activation statistics: the same key/value dress the proof picker
    reads results in -- these too are a record being read out. */
-.bip-stats { max-width:56ch; margin:0 auto 6px; font:400 13.5px/1.6 'Public Sans',sans-serif; color:var(--ink-soft); }
+.bip-stats { max-width:56ch; margin:0 auto 6px; font:400 13.5px/1.6 'Public Sans','Book Sigla',sans-serif; color:var(--ink-soft); }
 /* A chapter no block has reached yet keeps the manuscript's pencil. */
 .proof-row.bip-expected .proof-name { color:var(--meta); font-style:italic; }
 .proof-row.bip-expected .proof-cite { color:var(--meta); font-weight:400; }
@@ -213,28 +221,36 @@ a:hover { text-decoration: underline; }
 /* The heads borrow the rows' column classes for their widths alone; the
    dress is the ruling register's, not the row's -- and a head never breaks
    its word, however narrow the column beneath it runs. */
-.bb-heads > span { color:var(--meta); font:600 10px/1 'IBM Plex Mono',monospace; letter-spacing:.14em; text-transform:uppercase; text-align:left; white-space:nowrap; }
+.bb-heads > span { color:var(--meta); font:600 10px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.14em; text-transform:uppercase; text-align:left; white-space:nowrap; }
 .bb-heads > .bb-status { text-align:right; }
 .bb-row { display:flex; gap:14px; align-items:baseline; padding:6px 2px; border-bottom:1px solid var(--hair); }
-.bb-ref { flex:none; min-width:118px; font:600 12px/1.5 'IBM Plex Mono',monospace; letter-spacing:.04em;
+.bb-ref { flex:none; min-width:118px; font:600 12px/1.5 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.04em;
   color:var(--accent); white-space:nowrap; font-variant-numeric:tabular-nums; }
 a.bb-ref:hover { color:var(--accent-2); }
-.bb-ver { flex:1; min-width:0; font:italic 400 14px/1.5 'Newsreader',serif; color:var(--dim); overflow-wrap:anywhere; }
+.bb-ver { flex:1; min-width:0; font:italic 400 14px/1.5 'Newsreader','Book Sigla',serif; color:var(--dim); overflow-wrap:anywhere; }
 .bb-ver .dt { font-style:normal; }
-.bb-status { flex:none; min-width:48px; text-align:right; font:500 10.5px/1.6 'IBM Plex Mono',monospace; letter-spacing:.06em; }
+.bb-status { flex:none; min-width:48px; text-align:right; font:500 10.5px/1.6 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.06em; }
 .bb-status.yes { color:var(--accent); }
 .bb-status.no { color:var(--meta); }
 /* A coinbase ballot's middle column: the miner's own line, kept to one --
    the full text rides the hover. */
 .bb-say { font-style:normal; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:12px; }
+/* Inside a signaling period the version writes raw: the number in binary,
+   the counted bit in bold accent -- the ballot is read off this word, so
+   the record shows the word rather than the frontispiece's encoding of it
+   (which packs bits 13-28 into a word pair and would swallow the signal).
+   The prose reading still rides the hover. */
+.bb-bits { font:400 10.5px/1.6 'IBM Plex Mono','Book Sigla',monospace; font-style:normal; letter-spacing:.05em;
+  color:var(--meta); font-variant-numeric:tabular-nums; overflow-wrap:anywhere; }
+.bb-bits .bb-bit { font-weight:700; font-style:normal; color:var(--accent); }
 /* The clock at the row's head: the replay is chronological, and the days
    head their runs -- each row keeps only its minute. */
-.bb-time { flex:none; font:400 10px/1.7 'IBM Plex Mono',monospace; color:var(--meta); white-space:nowrap; font-variant-numeric:tabular-nums; }
-.bb-day { margin:14px 0 1px; padding:2px; font:600 10px/1 'IBM Plex Mono',monospace; letter-spacing:.16em; text-transform:uppercase; color:var(--meta); }
+.bb-time { flex:none; font:400 10px/1.7 'IBM Plex Mono','Book Sigla',monospace; color:var(--meta); white-space:nowrap; font-variant-numeric:tabular-nums; }
+.bb-day { margin:14px 0 1px; padding:2px; font:600 10px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.16em; text-transform:uppercase; color:var(--meta); }
 /* The accumulation: the count and the rate as they stood at each block, so
    the activation replays down the page. */
-.bb-sum { flex:none; min-width:44px; text-align:right; font:500 11px/1.6 'IBM Plex Mono',monospace; color:var(--ink-soft); font-variant-numeric:tabular-nums; }
-.bb-pct { flex:none; min-width:40px; text-align:right; font:600 11px/1.6 'IBM Plex Mono',monospace; color:var(--accent); font-variant-numeric:tabular-nums; }
+.bb-sum { flex:none; min-width:44px; text-align:right; font:500 11px/1.6 'IBM Plex Mono','Book Sigla',monospace; color:var(--ink-soft); font-variant-numeric:tabular-nums; }
+.bb-pct { flex:none; min-width:40px; text-align:right; font:600 11px/1.6 'IBM Plex Mono','Book Sigla',monospace; color:var(--accent); font-variant-numeric:tabular-nums; }
 /* Portrait: the row folds to two lines -- the clock, the chapter and the
    count keep the first; the version or coinbase text takes a full-width
    second of its own, so no column is ever squeezed to a letter a line and
@@ -251,13 +267,20 @@ a.bb-ref:hover { color:var(--accent-2); }
   .bb-pct { min-width:34px; }
   .bb-row .bb-ver { order:9; flex:1 0 100%; min-width:100%; padding-left:2px; }
 }
-.bb-foot { display:block; padding:9px 2px; text-align:center; font:400 12px/1.6 'Public Sans',sans-serif; color:var(--meta); }
+.bb-foot { display:block; padding:9px 2px; text-align:center; font:400 12px/1.6 'Public Sans','Book Sigla',sans-serif; color:var(--meta); }
 /* A labeled rule across the ballot, above the block it names -- where the
    signaling began, where the count crossed: the fork's own curated chapters,
    drawn as lines in the record they punctuate. */
 .bb-mark { display:flex; align-items:center; gap:10px; padding:12px 2px 4px;
-  font:600 9.5px/1 'IBM Plex Mono',monospace; letter-spacing:.14em; text-transform:uppercase; color:var(--accent); }
+  font:600 9.5px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.14em; text-transform:uppercase; color:var(--accent); }
 .bb-mark::before, .bb-mark::after { content:''; flex:1; border-top:1px solid var(--accent); opacity:.45; }
+/* A block notable beyond the fork -- a chapter the contents curates, or one
+   the reader bookmarked -- keeps its label in the record too, a quieter rule
+   in the contents' own words. A reader's own flies the bookmark's ribbon. */
+.bb-mark.bb-toc { color:var(--meta); }
+.bb-mark.bb-toc::before, .bb-mark.bb-toc::after { border-top-color:var(--rule); opacity:1; }
+.bb-bm-rib { display:inline-block; flex:none; width:8px; height:11px; margin-right:-2px; color:var(--accent); }
+.bb-bm-rib svg { display:block; width:100%; height:100%; }
 /* The fork leaf's foot, seated the way the Ledger's totals bar sits: sticky
    at the screen bottom, the rule its top edge, holding the running tally and
    -- beneath the summary line -- the fork's commentary, so the reading is at
@@ -271,9 +294,9 @@ a.bb-ref:hover { color:var(--accent-2); }
   padding:12px 2px 10px 14px; }
 .bip-foot .leaf-commentary { margin:0; max-width:none; border-top:1px solid var(--hair); padding:0 2px; }
 .bip-foot .commentary-body { max-height:45vh; overflow:auto; }
-.bip-tally .t-label { font:600 9.5px/1 'IBM Plex Mono',monospace; letter-spacing:.14em; text-transform:uppercase; color:var(--meta); margin-right:6px; }
-.bip-tally .t-fig { font:600 13px/1.4 'IBM Plex Mono',monospace; color:var(--accent); font-variant-numeric:tabular-nums; }
-.bip-tally .t-note { flex:1; min-width:0; text-align:right; font:400 11.5px/1.5 'Public Sans',sans-serif; color:var(--meta);
+.bip-tally .t-label { font:600 9.5px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.14em; text-transform:uppercase; color:var(--meta); margin-right:6px; }
+.bip-tally .t-fig { font:600 13px/1.4 'IBM Plex Mono','Book Sigla',monospace; color:var(--accent); font-variant-numeric:tabular-nums; }
+.bip-tally .t-note { flex:1; min-width:0; text-align:right; font:400 11.5px/1.5 'Public Sans','Book Sigla',sans-serif; color:var(--meta);
   white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 
 /* The Citations register's foot: the picker. A leaf lists nothing, as a rule -- the
@@ -288,31 +311,31 @@ a.bb-ref:hover { color:var(--accent-2); }
   padding:16px 16px 14px; text-align:center; transition:border-color .15s ease, background .15s ease;
 }
 .proof-drop.over { border-color:var(--accent); background:#191712; }
-.proof-say { display:block; font:400 13.5px/1.5 'Newsreader',serif; color:var(--dim); margin-bottom:11px; }
+.proof-say { display:block; font:400 13.5px/1.5 'Newsreader','Book Sigla',serif; color:var(--dim); margin-bottom:11px; }
 .ghost {
   background:none; color:var(--accent); border:1px solid var(--input-bd); border-radius:4px;
-  padding:8px 16px; font:600 11.5px/1 'IBM Plex Mono',monospace; letter-spacing:.04em;
+  padding:8px 16px; font:600 11.5px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.04em;
   text-transform:uppercase; cursor:pointer;
 }
 .ghost:hover { border-color:var(--accent); color:var(--accent-2); }
-.mono { font-family:'IBM Plex Mono',monospace; }
+.mono { font-family:'IBM Plex Mono','Book Sigla',monospace; }
 
-.proof-result { margin-top:16px; font:400 13.5px/1.6 'Public Sans',sans-serif; color:var(--ink-soft); }
+.proof-result { margin-top:16px; font:400 13.5px/1.6 'Public Sans','Book Sigla',sans-serif; color:var(--ink-soft); }
 .proof-line { display:flex; gap:14px; padding:5px 2px; border-bottom:1px solid var(--hair); }
-.proof-key { flex:none; width:96px; font:500 10.5px/1.9 'IBM Plex Mono',monospace; letter-spacing:.06em; text-transform:uppercase; color:var(--meta); }
+.proof-key { flex:none; width:96px; font:500 10.5px/1.9 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.06em; text-transform:uppercase; color:var(--meta); }
 .proof-val { flex:1; min-width:0; overflow-wrap:anywhere; }
 /* The book's own marks, on the book's own terms: ⌘ the identity hash, h a
    hash, ⋔ the merkle root, each with its count riding after it, and the hash
    itself set as prose in the reading face. */
 .dt, .merkle-mark { color:var(--accent); font-weight:700; font-style:normal; }
 .op-count { color:var(--meta); font-size:.85em; }
-.proof-figure { font:italic 400 14px/1.55 'Newsreader',serif; color:var(--dim); }
+.proof-figure { font:italic 400 14px/1.55 'Newsreader','Book Sigla',serif; color:var(--dim); }
 .proof-figure.waiting { color:var(--meta); }
-.proof-verdict { margin-top:14px; font:400 14px/1.5 'Newsreader',serif; }
+.proof-verdict { margin-top:14px; font:400 14px/1.5 'Newsreader','Book Sigla',serif; }
 .proof-verdict.good { color:var(--ink); }
 .proof-verdict.bad { color:#e08b7a; }
 .proof-verdict.unsure { color:var(--dim); }
-.proof-open { display:inline-block; margin-top:14px; font:500 13px/1 'IBM Plex Mono',monospace; }
+.proof-open { display:inline-block; margin-top:14px; font:500 13px/1 'IBM Plex Mono','Book Sigla',monospace; }
 
 /* What is already kept, listed above the picker: the appendix's own rows, in
    reading order, each one a door into the book. A reader's own carry the
@@ -321,9 +344,9 @@ a.bb-ref:hover { color:var(--accent-2); }
 .proof-row { display:flex; align-items:baseline; gap:14px; padding:8px 2px; border-bottom:1px solid var(--hair); }
 .proof-row a { flex:1; min-width:0; display:flex; align-items:baseline; gap:10px; color:var(--ink-soft); }
 .proof-row a:hover { color:var(--ink); }
-.proof-name { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font:500 15px/1.35 'Newsreader',serif; }
-.proof-cite { flex:none; font:500 12.5px/1.6 'IBM Plex Mono',monospace; color:var(--accent); }
-.proof-date { flex:none; font:400 12px/1.6 'Public Sans',sans-serif; color:var(--meta); }
+.proof-name { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font:500 15px/1.35 'Newsreader','Book Sigla',serif; }
+.proof-cite { flex:none; font:500 12.5px/1.6 'IBM Plex Mono','Book Sigla',monospace; color:var(--accent); }
+.proof-date { flex:none; font:400 12px/1.6 'Public Sans','Book Sigla',sans-serif; color:var(--meta); }
 .proof-bm { flex:none; width:8px; color:var(--accent); }
 .proof-cite-mark { flex:none; color:var(--accent); font-weight:600; font-size:14px; }
 .proof-drop-btn { flex:none; background:none; border:none; color:var(--meta); cursor:pointer; font-size:13px; line-height:1; padding:2px 4px; }
@@ -332,7 +355,7 @@ a.bb-ref:hover { color:var(--accent-2); }
 /* The other appendices, at the foot: the leaf's own turns, spelled out for
    hands that are not swiping. */
 .appx-turns { display:flex; flex-wrap:wrap; gap:10px 26px; margin-top:44px; padding-top:18px; border-top:1px solid var(--rule);
-  font:600 10px/1.5 'IBM Plex Mono',monospace; letter-spacing:.14em; text-transform:uppercase; }
+  font:600 10px/1.5 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.14em; text-transform:uppercase; }
 .appx-turns a { color:var(--meta); }
 .appx-turns a:hover { color:var(--accent); }
 </style>
@@ -409,7 +432,7 @@ a.bb-ref:hover { color:var(--accent-2); }
 import { localizeHome, mountLangMenu } from './btc-strings.js';
 localizeHome();   // the masthead in the reader's UI language
 mountLangMenu();  // …with the Language item, which any page can now set
-import { loadNotables, appendix, entryHref, isBlockId } from './btc-contents.js';
+import { loadNotables, appendix, entryHref, isBlockId, places, placeTitle } from './btc-contents.js';
 import { partLabel } from './btc-notables.js';
 
 // The appendix is read from appendix.yaml (btc-notables.js), so it arrives
@@ -443,6 +466,58 @@ const bipAt = bip ? bips.indexOf(bip) : -1;
 // One block of a fork's ballot, a level below the fork's own leaf: ?block=
 // names it by height, the way a ballot row links it.
 const blockLeaf = bip && /^[0-9]+$/.test(params.get('block') || '') ? Number(params.get('block')) : null;
+
+// ── The version word, as a consensus view writes it ───────────────────────
+// Inside an active signaling period the version IS the ballot, so these
+// leaves write it raw: the number in binary, the bit the fork counts in
+// boldface. The frontispiece's encoding stays for every block outside a
+// period -- it packs the rolling range (bits 13-28) into its word pair, and
+// would swallow the very bit a ballot is reading (Classic's 28 sits in it).
+// The prose form still speaks on hover, title-deep, wherever binary stands.
+//
+// A period: a closed ballot's window is one by definition; a live fork's
+// runs from its first cast (the earliest chapter its entries name) -- ahead
+// of that first cast nothing was signaling, and the frontispiece's own
+// notation stands.
+const inSignalingPeriod = (h) => {
+  if (!bip) return false;
+  if (bip.ballot != null) {
+    const floor = bip.ballot - (Number.isFinite(bip.window) ? bip.window : 2016) + 1;
+    return h >= floor && h <= bip.ballot;
+  }
+  const casts = (bip.entries || [])
+    .filter((e) => !e.expected && !e.page && isBlockId(e.id))
+    .map((e) => Number(e.id));
+  return casts.length ? h >= Math.min(...casts) : true;
+};
+// A minimum version, named the way its era wrote it: the integer forms read
+// as themselves (v3, v4), a version-bits form in hex -- XT's 0x20000007 is a
+// version word, and 536870919 is nobody's name for it.
+const versionName = (n) => ((n >>> 29) === 1 ? '0x' + (n >>> 0).toString(16) : String(n));
+// The binary word itself. A bit-read fork bolds its one counted bit (set --
+// an unset bit is a no, and a no is not a signal); a supermajority fork's
+// signal is the whole number clearing the minimum, so the whole number goes
+// bold when it does.
+const versionBitsEl = (version, bit, aye) => {
+  const bin = (version >>> 0).toString(2);
+  const el = document.createElement('span');
+  const bold = (text) => {
+    const b = document.createElement('b');
+    b.className = 'bb-bit';
+    b.textContent = text;
+    return b;
+  };
+  if (bit == null) {
+    el.append(aye ? bold(bin) : document.createTextNode(bin));
+    return el;
+  }
+  const at = (bin.length - 1) - bit;   // the counted bit's character
+  if (at < 0 || bin[at] !== '1') { el.append(document.createTextNode(bin)); return el; }
+  if (at > 0) el.append(document.createTextNode(bin.slice(0, at)));
+  el.append(bold('1'));
+  if (at < bin.length - 1) el.append(document.createTextNode(bin.slice(at + 1)));
+  return el;
+};
 
 const $ = (id) => document.getElementById(id);
 // A citation written whole -- volume and all, since no heading here has named
@@ -723,8 +798,8 @@ if (bip && blockLeaf == null) {
     const yes = (b) => (COIN ? (b.say != null && b.say.includes(COIN))
       : bip.bit != null ? ((b.version >>> bip.bit) & 1) === 1
       : (b.version >>> 0) >= bip.version);
-    const yesSays = COIN ? `${COIN}…/ written in the coinbase` : bip.bit != null ? `bit ${bip.bit} set` : `version ${bip.version} or above`;
-    const noSays = COIN ? `no ${COIN}…/ in the coinbase` : bip.bit != null ? `bit ${bip.bit} not set` : `below version ${bip.version}`;
+    const yesSays = COIN ? `${COIN}…/ written in the coinbase` : bip.bit != null ? `bit ${bip.bit} set` : `version ${versionName(bip.version)} or above`;
+    const noSays = COIN ? `no ${COIN}…/ in the coinbase` : bip.bit != null ? `bit ${bip.bit} not set` : `below version ${versionName(bip.version)}`;
     const WINDOW = Number.isFinite(bip.window) ? bip.window : 2016;
 
     const blocksEl = $('bip-blocks');
@@ -734,7 +809,7 @@ if (bip && blockLeaf == null) {
       ['bb-time', 'mined', 'the minute the block was mined, UTC — the days head their runs'],
       ['bb-ref', 'chapter', ''],
       COIN ? ['bb-ver', 'coinbase', "the chapter's first line — the printable runs of the coinbase scriptSig"]
-           : ['bb-ver', 'version', "as the chapter's frontispiece writes it"],
+           : ['bb-ver', 'version', 'in binary while the period runs, the counted bit in bold — the frontispiece\'s own form outside it, and always on hover'],
       ['bb-status', 'signal', `a yes is ${yesSays}`],
       ['bb-sum', 'Σ', 'the yeses so far — the count as it stood with this block written'],
       ['bb-pct', '%', 'the rate so far — the yeses over the blocks written to this point'],
@@ -766,6 +841,46 @@ if (bip && blockLeaf == null) {
       return d;
     };
 
+    // A ballot's blocks can be notable beyond the fork: a chapter the
+    // contents curates, or one the reader bookmarked. Those labels join the
+    // record where their blocks fall -- quieter rules, in the contents' own
+    // words -- so a window read here says what the contents would say about
+    // the same blocks. The fork's own entries keep precedence over the
+    // curated set (a height they already name is not ruled twice), but a
+    // reader's bookmark always flies: it is theirs, under the ribbon it
+    // wears everywhere else. Leaf-level places (page: book or volume) name
+    // spans rather than chapters, so they stay out of a table of blocks.
+    const extraMarks = new Map();   // height -> [{title, bm}]
+    const addExtra = (h, m) => { (extraMarks.get(h) ?? extraMarks.set(h, []).get(h)).push(m); };
+    for (const p of places()) {
+      if (p.page || p.address || !isBlockId(p.id)) continue;
+      const h = Number(p.id);
+      if (!marks.has(h)) addExtra(h, { title: placeTitle(p) });
+    }
+    try {
+      const kept = JSON.parse(localStorage.getItem('glossia-btc-bookmarks'));
+      for (const b of Array.isArray(kept) ? kept : []) {
+        if (!Number.isInteger(b.height) || b.page) continue;
+        addExtra(b.height, { title: String(b.title ?? '').trim() || 'bookmark', bm: true });
+      }
+    } catch (_) { /* unavailable */ }
+    const extraMarkEl = (m) => {
+      const d = document.createElement('div');
+      d.className = 'bb-mark bb-toc';
+      if (m.bm) {
+        const rib = document.createElement('span');
+        rib.className = 'bb-bm-rib';
+        rib.setAttribute('aria-label', 'your bookmark');
+        rib.innerHTML = '<svg viewBox="0 0 12 16"><path fill="currentColor" d="M0 0h12v16l-6-4-6 4z"/></svg>';
+        d.append(rib);
+        d.title = 'your bookmark';
+      } else {
+        d.title = 'a curated chapter — as the table of contents names it';
+      }
+      d.append(document.createTextNode(m.title));
+      return d;
+    };
+
     const rowEl = (b) => {
       const row = document.createElement('div');
       row.className = 'bb-row';
@@ -790,11 +905,21 @@ if (bip && blockLeaf == null) {
         ev.preventDefault();
         navTo(a.getAttribute('href'), 'down');
       });
+      const aye = yes(b);
       const v = document.createElement('span');
       if (COIN) {
         v.className = 'bb-ver bb-say';
         v.textContent = b.say == null ? 'unread' : (b.say || '—');
         v.title = b.say == null ? 'the coinbase could not be read — counted as no vote' : `the coinbase text\n${b.say}`;
+      } else if (inSignalingPeriod(b.height)) {
+        // In the period the version is the ballot: binary, the counted bit
+        // bold. The frontispiece's reading rides the hover.
+        const ver = formatBlockVersion(b.version);
+        v.className = 'bb-ver bb-bits';
+        const mark = document.createElement('span');
+        mark.className = 'dt'; mark.textContent = 'v';
+        v.append(mark, versionBitsEl(b.version, bip.bit ?? null, aye));
+        v.title = ver.title;
       } else {
         const ver = formatBlockVersion(b.version);
         v.className = 'bb-ver';
@@ -807,7 +932,6 @@ if (bip && blockLeaf == null) {
         v.title = ver.title;
       }
       const st = document.createElement('span');
-      const aye = yes(b);
       st.className = 'bb-status ' + (aye ? 'yes' : 'no');
       st.textContent = aye ? 'signals' : '—';
       st.title = aye ? yesSays : noSays;
@@ -1004,6 +1128,7 @@ if (bip && blockLeaf == null) {
         const day = new Date(b.timestamp * 1000).toISOString().slice(0, 10);
         if (day !== lastDay) { lastDay = day; rowsEl.append(dayEl(b.timestamp)); }
         if (marks.has(b.height)) rowsEl.append(markEl(marks.get(b.height)));
+        for (const m of extraMarks.get(b.height) ?? []) rowsEl.append(extraMarkEl(m));
         rowsEl.append(rowEl(b));
       }
       rendered += take;
@@ -1232,8 +1357,16 @@ if (blockLeaf != null) {
 
     const ver = formatBlockVersion(data.version);
     const vv = line('version');
-    const text = ver.text.replace(/^v/, '');
-    vv.append(mark('v', 'dt', ver.title), document.createTextNode((/^\d/.test(text) ? '' : ' ') + text));
+    if ((bip.bit != null || bip.version != null) && inSignalingPeriod(blockLeaf)) {
+      // The reprint keeps the ballot's own reading of the word: binary,
+      // the counted bit bold, the frontispiece's form on hover.
+      const aye = bip.bit != null ? ((data.version >>> bip.bit) & 1) === 1 : (data.version >>> 0) >= bip.version;
+      vv.classList.add('bb-bits');
+      vv.append(mark('v', 'dt', ver.title), versionBitsEl(data.version, bip.bit ?? null, aye));
+    } else {
+      const text = ver.text.replace(/^v/, '');
+      vv.append(mark('v', 'dt', ver.title), document.createTextNode((/^\d/.test(text) ? '' : ' ') + text));
+    }
     vv.title = ver.title;
 
     // The verdict, beside the field it is read off: a ballot is what brought
@@ -1243,8 +1376,8 @@ if (blockLeaf != null) {
       const aye = bip.bit != null ? ((data.version >>> bip.bit) & 1) === 1 : (data.version >>> 0) >= bip.version;
       const sv = line('signal');
       sv.textContent = aye
-        ? `signals — ${bip.bit != null ? `bit ${bip.bit} set` : `version ${bip.version} or above`}`
-        : `— ${bip.bit != null ? `bit ${bip.bit} not set` : `below version ${bip.version}`}`;
+        ? `signals — ${bip.bit != null ? `bit ${bip.bit} set` : `version ${versionName(bip.version)} or above`}`
+        : `— ${bip.bit != null ? `bit ${bip.bit} not set` : `below version ${versionName(bip.version)}`}`;
       sv.style.color = aye ? 'var(--accent)' : 'var(--meta)';
     } else if (bip.coinbase) {
       const sayV = line('coinbase');

@@ -217,6 +217,28 @@ export const INDEXED = [
       'bc1q5afm3gphuledrlkh087ctcfcv5kvend89r43uf8d2euhk6t9ymhsmwvd03', 'bc1qs0hglfq77gcxjhkmtt7fm79x53ha0fvl3hk23xx3sdvhke6n4fjsahfckj',
       'bc1qelmf0v2pdywwwwuvtuzy03l57pkvffp7q2a7kj9pw6yd258aw8mqr83870', 'bc1qsdawrjcjf4kk854rx8qsxr8dlnc5ml25g7mmpurs93mv3j8ncw0smsj8yk',
     ] },
+  // ── The hoards ────────────────────────────────────────────────────────
+  // Two names whose record runs one way like the incinerators', but for
+  // the opposite reason: each presumably has a key, which is the whole
+  // difference — unspent is a fact, unspendable only ever a claim. Both
+  // are public in the criteria's own senses (an exchange breach, coins
+  // seized by a state actor), entered into the record by the parties
+  // themselves; their stories are published readings (notables.yaml +
+  // commentary/). Kept a row apart on purpose: one hoard held by a thief
+  // nobody has named, one by the state that named him, and their tables
+  // read the same.
+  //
+  // The address the 79,956 BTC swept from Mt. Gox on 1 March 2011 have sat
+  // in ever since — claimed by the Mt. Gox estate (Karpelès, 2023) and,
+  // until the courts ended it, by Tulip Trading's 2021 suit; charged to no
+  // one. Research and chain verification in tools/mtgox-era-thefts.md.
+  { title: 'The 1Feex hoard', addresses: ['1FeexV6bAHb8ybZjqQMjJrcCrHGW9sb6uF'] },
+  // The DOJ custody address the 2016 Bitfinex hack's 94,643.29837084 BTC
+  // were swept into across 23 transactions on 1 February 2022 — the
+  // largest financial seizure in U.S. history, announced with the
+  // Lichtenstein/Morgan arrests a week later. Nothing has ever left it.
+  // Research and chain verification in tools/thefts-and-seizures.md.
+  { title: 'The Bitfinex custody', addresses: ['bc1qazcm763858nkj2dj986etajv6wquslv8uxwczt'] },
   // ── The incinerators ──────────────────────────────────────────────────
   // Three ledgers of a different family: names whose entire record is coins
   // arriving and never leaving. Each is public in the strongest sense the
