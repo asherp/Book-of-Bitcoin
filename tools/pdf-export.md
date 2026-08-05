@@ -237,8 +237,10 @@ ribbon (`printMarkOf`, beside `ribbonOf`). A leaf and a tombstone rebuild
 the title without one, which is how they come to have no offer at all —
 no hide to keep in step. **[read]**
 
-Two things had to happen before the dialogue opens, and they are why this
-is a function rather than an `onclick="print()"`:
+Both hang off **`beforeprint`** rather than off the mark, so a reader who
+never touches it and simply hits ⌘P gets the same leaf, colophon and
+filename included. Two things had to happen before the dialogue opens, and
+they are why this is a function rather than an `onclick="print()"`:
 
 1. **The prose has to exist.** This was the real hazard, and the one the
    note called out from the start: pushes are encoded on scroll, so a
@@ -266,6 +268,19 @@ is a function rather than an `onclick="print()"`:
    strips them silently, and a cap counted in **bytes** rather than
    characters — a title in a non-Latin script spends several per character,
    and a character cap would still overrun the limit. **[ran]**
+
+3. **And the name has to outlive `print()`.** Chrome generates its print
+   preview *after* `print()` returns and reads `document.title` then, so
+   restoring the title on the next line hands the dialogue the site's own
+   name however correct the title was during the call. That shipped, and it
+   is exactly what a reader saw in the save sheet: *The βook of βitcoin — a
+   block, read as a chapter*. The title goes back on **`afterprint`** now,
+   with a long timer as a backstop for an engine that never fires one —
+   long on purpose, since restoring early is the fault it exists to avoid.
+   Worth recording for the method as much as the fix: the test that missed
+   it stubbed `window.print()` synchronously and read the title *during* the
+   call, where it was always right. A stub that reads it a tick later, as a
+   real preview does, reproduces the fault on the first run. **[ran]**
 
 A print-only colophon closes the leaf, because a page that leaves the book
 should say what it is: the citation, the transaction id, the URL it came
