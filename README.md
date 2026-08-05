@@ -91,9 +91,11 @@ compiled to WASM) is consumed as a published
   a page long enough to scroll is read to its edge first, and only the next
   press turns off it. The header steppers and the eyebrow crumbs go the same
   places for hands that would rather click
-- **Taking a leaf.** A section page carries a **printer mark** at the left end
-  of the running head — the cell the chapter stepper leaves empty there,
-  opposite the folio — which writes that passage to a PDF: the whole
+- **Taking a leaf.** A section flies a **printer mark** at its title's left
+  corner — level with the bookmark ribbon at the right, in the same faded
+  gold an unkept ribbon offers, so the passage carries two marks: one asking
+  to keep the place, one to take it away on paper. It writes that passage to
+  a PDF: the whole
   transaction and its footnotes, set as a page of the book. Nothing draws the
   PDF; the page already typesets a transaction, its fonts are served from the
   book's own origin, and an `@media print` block says what a leaf of paper
@@ -105,9 +107,11 @@ compiled to WASM) is consumed as a published
   it came from and the terms, since a page that leaves the book should say
   what it is. The mark is drawn rather than typed — no font the book carries
   has a printer glyph, and a typed one would fall back to whatever the
-  reader's machine owns — so it is inline SVG on `currentColor`, as the
-  bookmark ribbon in the same head already is. A leaf has no mark for the same
-  reason it has no folio: what goes on paper is a transaction
+  reader's machine owns — so it is inline SVG on `currentColor`, built the way
+  the ribbon beside it is and sharing its host, which is what keeps the two
+  level without measuring anything. A leaf and a superseded draft rebuild that
+  title without a mark, which is how they come to have no offer: what goes on
+  paper is a transaction
 - **Keeping a place.** Everything the citation scheme addresses — a volume, a
   book, a chapter, a §section, an output — is a place the search box answers
   to, and so a place a reader can keep. Each carries a **bookmark ribbon at

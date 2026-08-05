@@ -205,9 +205,10 @@ step below.
 
 ## The passage in the reader's hands — built
 
-A printer mark at the left end of the reading page's running head, on
-section pages only: it writes the passage in front of the reader to a PDF,
-the whole transaction with its footnotes, set as a page of the book. The
+A printer mark at the left corner of a section's own title, level with the
+bookmark ribbon at its right and in the same faded gold: it writes the
+passage in front of the reader to a PDF, the whole transaction with its
+footnotes, set as a page of the book. The
 mark is inline SVG on `currentColor` — drawn, not typed, because no font
 the book carries has a printer glyph and a typed ⎙ would fall back to the
 reader's machine (or to a colour emoji); the bookmark ribbon in the same
@@ -225,12 +226,16 @@ implementation of the manuscript grid, the fonts embedded a second time,
 and a megabyte of dependency to keep in step with the first — for a worse
 result. The reader's Save-as-PDF is one dialogue away.
 
-Where it sits is the argument for what it is. On a section page the
-chapter stepper's grid cell is empty (the steppers belong to leaves) and
-the folio holds the right end — so the printer takes the left, and the two
-bracket the crumb the way a printed running head brackets its title. A
-leaf has no mark for the same reason it has no folio: what goes on paper
-is a transaction, and a leaf is not one. **[read]**
+Where it sits is the argument for what it is. It belongs to the passage,
+not to the app, so it rides the passage's own title rather than the
+running head — the two marks a section carries, one at each corner, in one
+weight of gold: the ribbon offering to keep the place, the printer to take
+it away on paper. Level is a fact rather than a measurement, both being
+absolute against the title that hosts them; and because `renderChapter`
+empties that title on every section, the mark is find-or-create like the
+ribbon (`printMarkOf`, beside `ribbonOf`). A leaf and a tombstone rebuild
+the title without one, which is how they come to have no offer at all —
+no hide to keep in step. **[read]**
 
 Two things had to happen before the dialogue opens, and they are why this
 is a function rather than an `onclick="print()"`:

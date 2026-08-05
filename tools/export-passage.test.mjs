@@ -18,37 +18,59 @@ import { readFile } from 'node:fs/promises';
 
 const page = await readFile(new URL('../web/bitcoin-book.html', import.meta.url), 'utf8');
 
-test('the control is in the running head, and only sections show it', () => {
-  assert.match(page, /<button type="button" id="page-export"[^>]*class="hidden"/,
-    'the export control ships hidden — a leaf must not offer it before a section asks');
-  assert.match(page, /#page-export \{[^}]*grid-column: 1;/,
-    'it belongs in the cell the chapter stepper vacates on a section page');
-  // Shown in exactly one place, hidden in the two that hold no transaction:
-  // the leaf and the tombstone. Counted, because a new render path that
-  // forgets the button would otherwise leave it showing from the last passage.
-  const shows = page.match(/\$\('page-export'\)\.classList\.remove\('hidden'\)/g) || [];
-  const hides = page.match(/\$\('page-export'\)\.classList\.add\('hidden'\)/g) || [];
-  assert.equal(shows.length, 1, 'exactly one render path reveals the control');
-  assert.equal(hides.length, 2, 'the leaf and the tombstone both hide it');
+test('the mark flies at the section title, and only a section gets one', () => {
+  // It lives inside #section-title rather than in the running head, which is
+  // what makes it level with the bookmark ribbon by construction: one
+  // positioned host, a mark at each corner, nothing measured.
+  assert.match(page, /function printMarkOf\(el\) \{/, 'find-or-create, as ribbonOf is');
+  assert.match(page, /el\.querySelector\(':scope > #page-export'\)/,
+    'found as a child of its host, so a re-render cannot leave two');
+  assert.match(page, /#page-export \{[^}]*position: absolute;[^}]*left: 0;/,
+    'flown at the left corner');
+  // The ribbon's own offsets, so "level with the bookmark" is a shared fact
+  // rather than two numbers that could drift apart.
+  const boxOf = (sel) => (page.match(new RegExp(`\\${sel} \\{([^}]*)\\}`)) || [])[1] || '';
+  const ribTop = /top: (-?\d+px)/.exec(boxOf('.hash-bookmark'))?.[1];
+  const markTop = /top: (-?\d+px)/.exec(boxOf('#page-export'))?.[1];
+  assert.ok(ribTop && markTop, 'both marks state a top offset');
+  assert.equal(markTop, ribTop, 'the printer sits level with the ribbon');
+
+  // Attached from exactly one render path -- the section's. A leaf and a
+  // tombstone rebuild the title from scratch, which is how they come to have
+  // no offer to print; an explicit hide would be a second thing to keep right.
+  const attaches = page.match(/setPrintMark\(sectionTitle\)/g) || [];
+  assert.equal(attaches.length, 1, 'one render path flies the mark');
+  assert.ok(!/\$\('page-export'\)\.classList\.(add|remove)\('hidden'\)/.test(page),
+    'nothing hides it by hand -- it exists only where it belongs');
 });
 
 test('the mark is drawn, and nothing writes text over it', () => {
-  // A printer, as inline SVG on currentColor. Not a typed glyph: no font the
+  // A printer as inline SVG on currentColor. Not a typed glyph: no font the
   // book carries has one (web/fonts/ covers the sigla and the text faces), so
-  // a ⎙ would fall to whatever the reader's machine owns — or to a colour
-  // emoji — which is the drift the vendored fonts exist to prevent.
-  const btn = page.slice(page.indexOf('<button type="button" id="page-export"'));
-  const tag = btn.slice(0, btn.indexOf('</button>'));
-  assert.ok(tag.includes('<svg'), 'the mark is drawn');
-  assert.ok(tag.includes('currentColor'), 'and inherits the colour, so hover and print need no special case');
-  assert.ok(tag.includes('aria-label='), 'a symbol carries its name in the label');
-  assert.ok(!/>\s*[A-Za-z⎙🖨]/.test(tag.slice(tag.indexOf('>'))), 'no typed label beside it');
+  // a ⎙ would fall to whatever the reader's machine owns -- or to a colour
+  // emoji -- which is the drift the vendored fonts exist to prevent.
+  const svg = page.slice(page.indexOf('const PRINTER_SVG'), page.indexOf('function printMarkOf'));
+  assert.ok(svg.includes('<svg'), 'the mark is drawn');
+  assert.ok(svg.includes('currentColor'), 'and inherits the colour, so hover and print need no special case');
+  // …and no typed glyph in what the mark actually renders. (The characters
+  // appear in the comment above it, which is where they belong: saying why
+  // they are not used.)
+  assert.ok(!/[⎙🖨]/.test(svg), 'the mark renders no typed printer glyph');
+  assert.match(page, /mark\.setAttribute\('aria-label'/, 'a symbol carries its name in the label');
+
+  // It answers the same faded gold the unkept ribbon offers -- the accent at
+  // the ribbon's own opacity, so the two corners read as one pair.
+  const boxOf = (sel) => (page.match(new RegExp(`\\${sel} \\{([^}]*)\\}`)) || [])[1] || '';
+  const rib = boxOf('.hash-bookmark'), mark = boxOf('#page-export');
+  assert.match(mark, /color: var\(--accent\)/, 'gold, as the ribbon is');
+  assert.equal(/opacity: ([.\d]+)/.exec(mark)?.[1], /opacity: ([.\d]+)/.exec(rib)?.[1],
+    'and faded to the same weight as an unbookmarked passage');
 
   // The busy state must not write into this button: textContent would delete
   // the SVG and leave an empty box that never comes back. Dimming is CSS.
   assert.ok(!/\$\('page-export'\)\.textContent\s*=/.test(page) && !/btn\.textContent\s*=/.test(page),
-    'nothing assigns text to the export button — that would destroy the mark');
-  assert.match(page, /#page-export:disabled \{[^}]*opacity/, 'the busy state is dimming, not relabelling');
+    'nothing assigns text to the export button -- that would destroy the mark');
+  assert.match(page, /#page-export:disabled \{[^}]*opacity/, 'the busy state is fading, not relabelling');
 });
 
 test('deferred prose is encoded before anything reaches paper', () => {

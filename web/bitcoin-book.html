@@ -334,29 +334,6 @@ button:disabled { opacity: .4; cursor: not-allowed; }
    it fills in a beat after the section renders; absent when no census
    answers. */
 #page-folio { grid-column: 3; justify-self: end; font:500 11px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.14em; color:var(--dim); white-space:nowrap; font-variant-numeric:tabular-nums; }
-/* The export control, opposite the folio and in the folio's own voice -- an
-   annotation on the running head, not a crumb into the book. Quiet until
-   hovered, the way the crumbs are: the reader came to read, and the offer to
-   print should not compete with the passage for the eye. */
-#page-export {
-  grid-column: 1; justify-self: start;
-  background: transparent; border: none; border-radius: 0; cursor: pointer;
-  color: var(--dim); line-height: 0;
-  /* Padding, not margin: it enlarges the tap target on a phone without
-     moving the mark off the bar's left edge, where it answers the folio. */
-  padding: 3px 6px 3px 0;
-}
-/* Sized to the folio's cap height beside it, so the two read as one row of
-   annotation rather than an icon parked next to some text. */
-#page-export svg { display: block; width: 14px; height: 14px; }
-#page-export:hover:not(:disabled), #page-export:focus-visible {
-  background: transparent; color: var(--accent-2); outline: none;
-}
-/* Working: the encode pass ahead of the print dialogue (see exportPassage).
-   A long witness can take a beat, and a mark that looks idle invites a second
-   click that would start the whole pass again. Dimmed rather than relabelled
-   -- there is no text to swap now, and the SVG must survive the busy state. */
-#page-export:disabled { cursor: progress; color: var(--meta); opacity: .55; }
 .chapter-num { font:600 11.5px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.3em; text-transform:uppercase; color: var(--accent); min-width: 0; text-align: center; }
 /* The eyebrow's Volume / Book / Chapter crumbs inherit its voice exactly;
    hover marks them navigable. (Overrides the global gold button styling.) */
@@ -485,6 +462,27 @@ button:disabled { opacity: .4; cursor: not-allowed; }
   opacity: .42;   /* the mark it would become, faded to an offer */
 }
 .hash-bookmark svg { display: block; width: 10px; height: 14px; }
+/* The printer at the passage's other corner: the same box as the ribbon, the
+   same faded gold, the same brightening under the pointer -- one mark offering
+   to keep the place, the other to take it away on paper. Left rather than
+   right because the ribbon owns the right, and level with it by construction:
+   both are absolute against the section title, which is their shared host, so
+   nothing measures anything. Sections only -- a leaf and a tombstone rebuild
+   that title without a mark (see printMarkOf). */
+#page-export {
+  position: absolute; top: -6px; left: 0; width: 18px; height: 18px; padding: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: none; border: 0; color: var(--accent); line-height: 0; cursor: pointer;
+  opacity: .42;   /* the offer, at the weight the unkept ribbon makes it */
+}
+/* Square where the ribbon is tall, so the two carry the same visual weight. */
+#page-export svg { display: block; width: 13px; height: 13px; }
+#page-export:hover:not(:disabled), #page-export:focus-visible { opacity: .8; outline: none; }
+/* Working: the encode pass ahead of the print dialogue (see exportPassage).
+   A long witness can take a beat, and a mark that looks idle invites a second
+   click that would start the whole pass again. Faded rather than relabelled --
+   there is no text to swap, and the drawing must survive the busy state. */
+#page-export:disabled { cursor: progress; opacity: .2; }
 .hash-bookmark .rib-fill { display: none; }
 .hash-bookmark:hover, .hash-bookmark:focus-visible { opacity: .8; outline: none; }
 /* Kept: the same ribbon the contents and the Ledger fly, in the same gold. */
@@ -1117,15 +1115,6 @@ button:disabled { opacity: .4; cursor: not-allowed; }
            the crumb as a printed running head brackets its title. A leaf has
            no button, as it has no folio: what is exported is a transaction,
            and a leaf is not one. -->
-      <!-- The mark is a printer, drawn rather than typed: no font the book
-           carries has a printer glyph (web/fonts/ covers the sigla and the
-           text faces), and a typed ⎙ would fall to whatever the reader's
-           machine happens to own — or, worse, to a colour emoji. Inline SVG
-           on currentColor is what the bookmark ribbon in this same head
-           already does, and it inherits the hover and the print palette for
-           free. The label lives in aria-label and title, where a symbol's
-           name belongs. -->
-      <button type="button" id="page-export" class="hidden" aria-label="Print this passage — the whole transaction, as a page of the book" title="Print this passage — the whole transaction, as a page of the book"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 9V3.8h10V9" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><path d="M7 17.5H5.2A2.2 2.2 0 0 1 3 15.3v-3.6A2.2 2.2 0 0 1 5.2 9.5h13.6A2.2 2.2 0 0 1 21 11.7v3.6a2.2 2.2 0 0 1-2.2 2.2H17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><path d="M7 14.6h10v5.6H7z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/></svg></button>
       <div class="chapter-num"><button type="button" id="ch-volume-link" class="crumb" title="This volume's page">Volume <span id="ch-volume"></span></button><span id="ch-sep-1"> · </span><button type="button" id="ch-book-link" class="crumb" title="This book's page">Book <span id="ch-book"></span></button><button type="button" id="ch-appendix-link" class="crumb hidden" title="The appendix this draft chapter belongs to">Appendix I</button><span id="ch-chapter-inline"></span></div>
       <button type="button" id="chapter-next" class="chapter-step hidden" aria-label="Next chapter" title="Next chapter"></button>
       <!-- The folio: a section's page number in the chain's running count of
@@ -2248,7 +2237,7 @@ async function fillFolio(el, gen) {
 //      copies of the site's own title.
 async function exportPassage() {
   const btn = $('page-export');
-  if (btn.disabled) return;                 // a pass is already running
+  if (!btn || btn.disabled) return;         // no mark, or a pass already running
   const gen = renderGen;                    // the passage as it stands now
   const cite = `${referenceOf(state.height)} §${state.index + 1}`;
   const restoreTitle = document.title;
@@ -3623,10 +3612,10 @@ function renderLeafShell() {
   $('ch-subtitle').textContent = '';
   $('ch-subtitle').classList.add('hidden');
   // A leaf has no folio -- pages belong to sections -- and its grid cell goes
-  // back to the chapter-next stepper. Nor an export: what the button writes
-  // to paper is a transaction, and a leaf is not one.
+  // back to the chapter-next stepper. The printer goes with the section
+  // title that carries it: what goes on paper is a transaction, and a leaf
+  // is not one.
   $('page-folio').classList.add('hidden');
-  $('page-export').classList.add('hidden');
   $('section-title').classList.add('hidden');
   $('section-hash').classList.add('hidden');
   $('section-meta').classList.add('hidden');
@@ -3943,9 +3932,9 @@ function renderGhostTombstone(txid) {
   sectionTitle.title = `txid ${txid} — replaced by fee; its raw form was never recorded here`;
   attachHashCopy(sectionTitle, txid, 'transaction id', txidProse);
   $('page-folio').classList.add('hidden');   // a superseded draft holds no page of its own
-  // ...and no export: the tombstone carries what the succession remembers,
-  // not the transaction's bytes, so there is no passage to set on paper.
-  $('page-export').classList.add('hidden');
+  // ...and no printer: the tombstone carries what the succession remembers,
+  // not the transaction's bytes, so there is no passage to set on paper. It
+  // rebuilds the section title from scratch, which drops the mark with it.
   const body = $('ch-paragraphs');
   body.innerHTML = '';
   const note = document.createElement('p');
@@ -4098,6 +4087,10 @@ function renderChapter(para) {
   // The section title is the clickable handle for the txid's copy/bookmark
   // menu (attached after the rebuild above, which re-adds the bookmark ribbon).
   attachHashCopy(sectionTitle, para.txid, 'transaction id', `⌘${toSuperscript(256)} ${txidProse}`);
+  // …and the printer at the title's other corner, level with the ribbon
+  // attachHashCopy just flew. Only here: a leaf and a tombstone rebuild this
+  // title without one, which is how they come to have no offer to print.
+  setPrintMark(sectionTitle);
 
   // The transaction is laid out in horizontal bands (see .tx-flow CSS). The
   // inputs are a [citation | scriptSig] subgrid: each input's provenance -- the
@@ -4135,8 +4128,6 @@ function renderChapter(para) {
   folio.title = '';
   folio.classList.remove('hidden');
   fillFolio(folio, gen);
-  // The passage is a transaction now, so it can be written to paper.
-  $('page-export').classList.remove('hidden');
   const flow = document.createElement('div');
   flow.className = 'tx-flow';
   const inputsEl = document.createElement('div');
@@ -5284,15 +5275,17 @@ $('page-prev').addEventListener('click', () => contentsStep(-1));
 $('page-next').addEventListener('click', () => contentsStep(1));
 $('chapter-prev').addEventListener('click', () => goToLevel(-1));
 $('chapter-next').addEventListener('click', () => goToLevel(1));
-$('page-export').addEventListener('click', exportPassage);
 // A reader who prints without touching the button gets the same leaf: the
 // deferred prose is encoded and the colophon filled on the way into the
 // dialogue, however the reader opened it (⌘P, the browser's own menu).
 // beforeprint cannot be awaited -- the dialogue does not wait for a promise
 // -- but fillAll is synchronous, which is exactly what this needs.
 window.addEventListener('beforeprint', () => {
-  if (!state || $('page-export').classList.contains('hidden')) return;
-  if ($('page-export').disabled) return;   // exportPassage is already doing it
+  // No mark means no passage in front of the reader -- a leaf, a tombstone --
+  // and nothing deferred that printing would catch out.
+  const mark = $('page-export');
+  if (!state || !mark) return;
+  if (mark.disabled) return;               // exportPassage is already doing it
   lazyEncode.fillAll($('page-slide'));
 });
 // The eyebrow crumbs: each opens the page of the span it names. Same block →
@@ -6299,8 +6292,6 @@ function localizeChrome() {
   localizeAttr($('endpoint-label'), 'placeholder');
   localizeAttr($('hash-title-input'), 'placeholder');
   localizeAttr(document.querySelector('.section-nav .commentary summary'), 'title');
-  localizeAttr($('page-export'), 'title');
-  localizeAttr($('page-export'), 'aria-label');
 }
 localizeChrome();
 
@@ -6427,6 +6418,56 @@ function ribbonOf(el) {
   });
   el.appendChild(rib);
   return rib;
+}
+
+// The printer, drawn rather than typed: no font the book carries has a
+// printer glyph (web/fonts/ covers the sigla and the text faces), so a typed
+// ⎙ would fall to whatever the reader's machine owns -- or, for 🖨, to a
+// colour emoji. Inline SVG on currentColor instead, exactly as the ribbon
+// above is, so the two marks flying at the section's two corners are built
+// the same way and answer the same colour.
+const PRINTER_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true">'
+  + '<path d="M7 9V3.8h10V9" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/>'
+  + '<path d="M7 17.5H5.2A2.2 2.2 0 0 1 3 15.3v-3.6A2.2 2.2 0 0 1 5.2 9.5h13.6A2.2 2.2 0 0 1 21 11.7v3.6a2.2 2.2 0 0 1-2.2 2.2H17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/>'
+  + '<path d="M7 14.6h10v5.6H7z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/></svg>';
+
+// The offer to print, flown at the section title's LEFT corner as the
+// bookmark ribbon is flown at its right -- the two marks the passage itself
+// carries, level with each other and in the same faded gold, one asking to
+// keep the place and one to take it away on paper.
+//
+// Find-or-create, like ribbonOf and for the same reason: renderChapter
+// empties the title on every section, so a mark placed once would be swept
+// away with the last passage's. It lives INSIDE the title because that is
+// what makes it level with the ribbon by construction -- one positioned
+// host, two corners of it -- rather than by a measurement that would have
+// to be kept in step.
+function printMarkOf(el) {
+  let mark = el.querySelector(':scope > #page-export');
+  if (mark) return mark;
+  el.classList.add('bm-host');
+  mark = document.createElement('button');
+  mark.type = 'button';
+  mark.id = 'page-export';
+  mark.innerHTML = PRINTER_SVG;
+  // The title is itself a click handle (it opens the copy menu), so a press
+  // on the mark is about printing and nothing else and stops here -- by
+  // keyboard too, where the handle takes Enter and Space for that menu.
+  mark.addEventListener('mousedown', (e) => e.stopPropagation());
+  mark.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') e.stopPropagation(); });
+  mark.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); exportPassage(); });
+  el.appendChild(mark);
+  return mark;
+}
+
+// Re-titled on every render rather than once at load, so a language chosen
+// mid-read reaches it the way it reaches the ribbon beside it.
+function setPrintMark(el) {
+  const mark = printMarkOf(el);
+  const label = tr('Print this passage — the whole transaction, as a page of the book');
+  mark.title = label;
+  mark.setAttribute('aria-label', label);
+  return mark;
 }
 
 // Dress `el`'s ribbon to match what the reader has kept. `on` is whether this
