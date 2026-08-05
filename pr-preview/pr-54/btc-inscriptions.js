@@ -118,15 +118,126 @@ export function parseEnvelopes(scriptBytes) {
   return found.map(({ end, ...e }) => e);
 }
 
+// A control block, per BIP341: 33 bytes plus a whole number of 32-byte path
+// elements, opening with the leaf version in its top seven bits. It is what
+// marks the item before it as a tapscript, so a witness that ends in one is
+// a script-path spend and every other witness is not.
+const isControlBlock = (hex) => {
+  const n = (hex || '').length / 2;
+  return n >= 33 && (n - 33) % 32 === 0 && (parseInt((hex || '').slice(0, 2), 16) & 0xfe) === 0xc0;
+};
+
 // The tapscript within one input's witness, per BIP341: the last item is the
 // control block, the one before it the script — after the annex, if any, is
 // set aside (with two or more items, a last item opening 0x50 is the annex).
-// A witness too short to carry a script path carries no envelope either.
+// A witness that does not end in a control block is not a script-path spend
+// at all (a key-path spend, a P2WPKH pair), and carries no tapscript to read.
 export function tapscriptOf(witnessItems) {
   const items = (witnessItems || []).slice();
   if (items.length >= 2 && /^50/i.test(items[items.length - 1] || '')) items.pop();
   if (items.length < 2) return null;
+  if (!isControlBlock(items[items.length - 1])) return null;
   return hexToBytes(items[items.length - 2]);
+}
+
+// ── What bytes say they are ───────────────────────────────────────────────
+// A format announces itself in its first bytes, and those bytes are the
+// chain's: a PNG opens \x89PNG\r\n\x1a\n whoever inscribed it and whatever
+// they declared it to be. So this reads the format off the payload itself,
+// which is a different kind of statement from the envelope's content-type
+// field — that one is the inscriber's claim about the same bytes, and the
+// two can disagree.
+//
+// Null when nothing announces itself. A guess is not worth the ink.
+const ascii = (bytes, at, s) => s.split('').every((c, i) => bytes[at + i] === c.charCodeAt(0));
+const MAGIC = [
+  { label: 'PNG image', mime: 'image/png', test: (b) => b[0] === 0x89 && ascii(b, 1, 'PNG') },
+  { label: 'JPEG image', mime: 'image/jpeg', test: (b) => b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff },
+  { label: 'GIF image', mime: 'image/gif', test: (b) => ascii(b, 0, 'GIF8') },
+  { label: 'WebP image', mime: 'image/webp', test: (b) => ascii(b, 0, 'RIFF') && ascii(b, 8, 'WEBP') },
+  { label: 'BMP image', mime: 'image/bmp', test: (b) => ascii(b, 0, 'BM') },
+  { label: 'AVIF image', mime: 'image/avif', test: (b) => ascii(b, 4, 'ftyp') && ascii(b, 8, 'avif') },
+  { label: 'WAV audio', mime: 'audio/wav', test: (b) => ascii(b, 0, 'RIFF') && ascii(b, 8, 'WAVE') },
+  { label: 'MP4 video', mime: 'video/mp4', test: (b) => ascii(b, 4, 'ftyp') },
+  { label: 'WebM video', mime: 'video/webm', test: (b) => b[0] === 0x1a && b[1] === 0x45 && b[2] === 0xdf && b[3] === 0xa3 },
+  { label: 'Ogg audio', mime: 'audio/ogg', test: (b) => ascii(b, 0, 'OggS') },
+  { label: 'MP3 audio', mime: 'audio/mpeg', test: (b) => ascii(b, 0, 'ID3') || (b[0] === 0xff && (b[1] & 0xe0) === 0xe0) },
+  { label: 'PDF document', mime: 'application/pdf', test: (b) => ascii(b, 0, '%PDF') },
+  { label: 'ZIP archive', mime: 'application/zip', test: (b) => ascii(b, 0, 'PK') && (b[2] === 3 || b[2] === 5 || b[2] === 7) },
+  { label: 'gzip data', mime: 'application/gzip', test: (b) => b[0] === 0x1f && b[1] === 0x8b },
+];
+
+// Text formats have no magic number, so they are recognized by reading: a
+// body that decodes as UTF-8 without control junk is text, and what KIND of
+// text is whatever its first non-blank characters open with.
+const looksTextual = (bytes) => {
+  if (!bytes.length) return false;
+  let text;
+  try { text = new TextDecoder('utf-8', { fatal: true }).decode(bytes); }
+  catch { return false; }
+  // Control characters other than tab, newline and return mark it as not-text.
+  return !/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/.test(text) && text;
+};
+
+export function sniffAsset(bytes) {
+  if (!bytes || !bytes.length) return null;
+  for (const m of MAGIC) {
+    try { if (m.test(bytes)) return { label: m.label, mime: m.mime }; } catch { /* short buffer */ }
+  }
+  const text = looksTextual(bytes);
+  if (text === false) return null;
+  const head = text.replace(/^\s+/, '').slice(0, 400);
+  if (/^<svg[\s>]/i.test(head) || (/^<\?xml/i.test(head) && /<svg[\s>]/i.test(head))) return { label: 'SVG image', mime: 'image/svg+xml' };
+  if (/^<!doctype html/i.test(head) || /^<html[\s>]/i.test(head)) return { label: 'HTML', mime: 'text/html' };
+  if (/^[{[]/.test(head)) {
+    try { JSON.parse(text); return { label: 'JSON', mime: 'application/json' }; } catch { /* not JSON after all */ }
+  }
+  return { label: 'plain text', mime: 'text/plain' };
+}
+
+// The asset one input's witness carries, read as far as the bytes allow. An
+// ord envelope names its own body, so that body is the asset and the
+// envelope's declaration rides along beside it — `source` says which of the
+// two the label came from, since one is the chain's reading and the other is
+// somebody's word for it. A witness with no envelope is still read: a bare
+// data item that announces a format is an asset too, whatever put it there.
+export function witnessAsset(witnessItems) {
+  const script = tapscriptOf(witnessItems);
+  if (script) {
+    const [env] = parseEnvelopes(script);
+    if (env) {
+      const declared = env.contentType || null;
+      // A compressed body announces nothing until it is unpacked, and
+      // unpacking is a reading; the declaration is all there is to go on.
+      const sniffed = env.contentEncoding ? null : sniffAsset(env.body);
+      if (!sniffed && !declared) return null;
+      return {
+        label: sniffed ? sniffed.label : declared,
+        mime: sniffed ? sniffed.mime : declared,
+        bytes: env.body.length,
+        declared,
+        encoding: env.contentEncoding || null,
+        source: sniffed ? 'bytes' : 'declaration',
+      };
+    }
+  }
+  // No envelope: the largest item that announces a format, if any does.
+  let best = null;
+  for (const hex of witnessItems || []) {
+    if (!hex || isControlBlock(hex)) continue;
+    const bytes = hexToBytes(hex);
+    // Signatures and keys are the witness's furniture, never its payload,
+    // and are far too short to be an asset worth naming.
+    if (bytes.length < 16) continue;
+    for (const m of MAGIC) {
+      try {
+        if (m.test(bytes) && (!best || bytes.length > best.bytes)) {
+          best = { label: m.label, mime: m.mime, bytes: bytes.length, declared: null, encoding: null, source: 'bytes' };
+        }
+      } catch { /* short buffer */ }
+    }
+  }
+  return best;
 }
 
 // ── A manifest, and what it names ─────────────────────────────────────────
