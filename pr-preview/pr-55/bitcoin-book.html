@@ -2284,84 +2284,114 @@ function fileNameFor(ref, name) {
 // whole reason this is a function rather than an onclick="print()":
 //
 //   1. The prose has to exist. Script and witness pushes are encoded on
-//      scroll (lazyEncode), so a passage opened and immediately exported
-//      would print ⋯ for every push the reader never reached. fillAll
+//      scroll (lazyEncode), so a passage opened and immediately printed
+//      would set ⋯ for every push the reader never reached. fillAll
 //      encodes the lot first.
-//   2. The file has to have a name. Browsers take the PDF's default
-//      filename from document.title, so the title becomes the citation for
-//      the duration of the dialogue and is put back afterwards -- a reader
-//      who exports three passages gets three named files rather than three
-//      copies of the site's own title.
+//   2. The leaf has to say what it is, and the file has to have a name.
+//
+// Both are done by prepareLeaf below, which hangs off `beforeprint` rather
+// than off the mark -- so a reader who never touches it and simply hits ⌘P
+// gets the same leaf, colophon and filename included.
+
+// The site's own title, kept from load: what the tab says when no leaf is
+// being printed, and what `afterprint` puts back.
+const SITE_TITLE = document.title;
+
+// The colophon: what this leaf is and where it came from, built from the
+// passage in hand rather than from the URL, so it says the same thing whether
+// the reader arrived by citation, by search or by swiping.
+//
+// Built as nodes rather than as markup: a curated title is authored text and a
+// bookmark title is text a reader typed, and a colophon is no place to start
+// interpreting either as HTML. The page sets untrusted text with textContent
+// everywhere else for the same reason, and this needs no escape helper because
+// it never makes a string.
+function fillPrintColophon() {
+  const cite = `${referenceOf(state.height)} §${state.index + 1}`;
+  const txid = state.txid || (state.txids && state.txids[state.index]) || '';
+  const url = `${location.origin}${location.pathname}?block=${state.height}&index=${state.index}`;
+  const name = printableName();
+  const colophon = $('print-colophon');
+  colophon.textContent = '';
+  const line = (...kids) => {
+    const p = document.createElement('p');
+    p.append(...kids);
+    colophon.append(p);
+    return p;
+  };
+  const citeEl = document.createElement('span');
+  citeEl.className = 'cite';
+  citeEl.textContent = cite;
+  line(citeEl, name ? ` — ${name}` : '');
+  if (txid) line(`${tr('Transaction')} ${txid}`).className = 'txid';
+  line(`${tr('The βook of βitcoin')} · ${url}`);
+  line(tr('The prose is a translation of this transaction’s bytes and decodes back to them; ' +
+    'it is dedicated to the public domain. Any commentary is its author’s.'));
+}
+
+// Everything a leaf needs before the dialogue opens, however it was opened.
+// Returns false where there is no passage to print -- a chapter leaf, a
+// tombstone -- and leaves the page exactly as it found it.
+function prepareLeaf() {
+  if (!state || !$('page-export')) return false;
+  lazyEncode.fillAll($('page-slide'));
+  fillPrintColophon();
+  // Browsers name the PDF from document.title, so the file is named by the
+  // passage's address rather than by the citation as the book prints it:
+  // §, β and ■ are not filename characters, and a name a filesystem has had
+  // to sanitize has stopped being the reference it was. The passage's own
+  // name follows it where it has one.
+  document.title = fileNameFor(latinRefOf(state.height, state.index + 1), printableName());
+  return true;
+}
+
+// Chrome generates its print preview AFTER print() returns, and reads
+// document.title then -- so the title cannot be put back on the next line, or
+// the dialogue offers the site's name instead of the passage's. afterprint is
+// the hook that means "the dialogue is done with us". The timer is a backstop
+// for an engine that never fires it; it is long on purpose, since restoring
+// early is exactly the bug it exists to avoid.
+const TITLE_RESTORE_BACKSTOP_MS = 120000;
+let titleRestoreTimer = null;
+function restoreSiteTitle() {
+  clearTimeout(titleRestoreTimer);
+  titleRestoreTimer = null;
+  document.title = SITE_TITLE;
+}
+window.addEventListener('beforeprint', () => {
+  if (!prepareLeaf()) return;
+  clearTimeout(titleRestoreTimer);
+  titleRestoreTimer = setTimeout(restoreSiteTitle, TITLE_RESTORE_BACKSTOP_MS);
+});
+window.addEventListener('afterprint', restoreSiteTitle);
+
 async function exportPassage() {
   const btn = $('page-export');
   if (!btn || btn.disabled) return;         // no mark, or a pass already running
   const gen = renderGen;                    // the passage as it stands now
-  const cite = `${referenceOf(state.height)} §${state.index + 1}`;
-  // The same address in the spelling a link carries (btc-citation.js) --
-  // v1b29c596s2 -- which is what the file is named. The printed citation
-  // above is the book's own, sigla and all, and stays on the page.
-  const fileRef = latinRefOf(state.height, state.index + 1);
-  const restoreTitle = document.title;
 
   // Disabled is the whole busy state: the CSS dims the mark, and the mark
   // itself must survive -- it is an SVG child, so anything that wrote text
   // into this button would delete the printer and leave an empty box.
   btn.disabled = true;
   try {
-    // (1) Every deferred push, encoded. A long witness can take a beat, so
-    // yield a frame first and let the dimmed mark actually paint before the
-    // encode blocks the main thread.
+    // Every deferred push, encoded. A long witness can take a beat, so yield
+    // a frame first and let the dimmed mark actually paint before the encode
+    // blocks the main thread. (beforeprint would do this too, but only once
+    // the dialogue is already opening, with nothing on screen to say why the
+    // page has stopped.)
     await new Promise((r) => requestAnimationFrame(() => r()));
     const filled = lazyEncode.fillAll($('page-slide'));
-    // The reader can turn the page while the encode runs. A print dialogue
-    // for a passage that is no longer on screen would be a surprise, and
-    // the colophon would name the wrong one -- so a turn cancels the export.
+    // The reader can turn the page while the encode runs. A dialogue for a
+    // passage that is no longer on screen would be a surprise, and the
+    // colophon would name the wrong one -- so a turn cancels the export.
     if (gen !== renderGen) return;
     if (filled) await new Promise((r) => requestAnimationFrame(() => r()));
-
-    // (2) The colophon: what this leaf is, and where it came from. Built
-    // from the passage in hand, not from the URL, so it says the same thing
-    // whether the reader arrived by citation, by search or by swiping.
-    const txid = state.txid || (state.txids && state.txids[state.index]) || '';
-    const url = `${location.origin}${location.pathname}?block=${state.height}&index=${state.index}`;
-    // The section's curated name, where the contents gives it one. It is a
-    // class inside the section title, not an element of its own.
-    const title = (document.querySelector('#section-title .section-event')?.textContent || '').trim();
-    // Built as nodes rather than as markup: a curated title is authored text
-    // and a colophon is no place to start interpreting it as HTML. The page
-    // sets untrusted text with textContent everywhere else for the same
-    // reason, and this needs no escape helper because it never makes a string.
-    const colophon = $('print-colophon');
-    colophon.textContent = '';
-    const line = (...kids) => {
-      const p = document.createElement('p');
-      p.append(...kids);
-      colophon.append(p);
-      return p;
-    };
-    const citeEl = document.createElement('span');
-    citeEl.className = 'cite';
-    citeEl.textContent = cite;
-    line(citeEl, title ? ` — ${title}` : '');
-    if (txid) line(`${tr('Transaction')} ${txid}`).className = 'txid';
-    line(`${tr('The βook of βitcoin')} · ${url}`);
-    line(tr('The prose is a translation of this transaction’s bytes and decodes back to them; ' +
-      'it is dedicated to the public domain. Any commentary is its author’s.'));
-
-    // Browsers name the PDF from document.title, so the file is named by the
-    // passage's address rather than by the citation as the book prints it:
-    // §, β and ■ are not filename characters, and a name a filesystem has to
-    // sanitize stops being the reference it was. This spelling is plain ascii
-    // and it round-trips -- paste v1b29c596s2 into the search box, or hand it
-    // to ?ref=, and the passage comes back. The curated name is not lost by
-    // leaving it off: the colophon inside the leaf carries it, which is the
-    // book's own division anyway -- an address addresses, a name is a reading.
-    document.title = fileNameFor(fileRef, printableName());
-    // print() is synchronous while the dialogue is open in every engine that
-    // shows one, so the restore below lands after the reader dismisses it.
+    // The rest -- colophon and filename -- rides on beforeprint, which
+    // print() fires for us. Nothing is restored here: the title has to
+    // outlive this call (see restoreSiteTitle).
     window.print();
   } finally {
-    document.title = restoreTitle;
     btn.disabled = false;
   }
 }
@@ -5351,19 +5381,6 @@ $('page-prev').addEventListener('click', () => contentsStep(-1));
 $('page-next').addEventListener('click', () => contentsStep(1));
 $('chapter-prev').addEventListener('click', () => goToLevel(-1));
 $('chapter-next').addEventListener('click', () => goToLevel(1));
-// A reader who prints without touching the button gets the same leaf: the
-// deferred prose is encoded and the colophon filled on the way into the
-// dialogue, however the reader opened it (⌘P, the browser's own menu).
-// beforeprint cannot be awaited -- the dialogue does not wait for a promise
-// -- but fillAll is synchronous, which is exactly what this needs.
-window.addEventListener('beforeprint', () => {
-  // No mark means no passage in front of the reader -- a leaf, a tombstone --
-  // and nothing deferred that printing would catch out.
-  const mark = $('page-export');
-  if (!state || !mark) return;
-  if (mark.disabled) return;               // exportPassage is already doing it
-  lazyEncode.fillAll($('page-slide'));
-});
 // The eyebrow crumbs: each opens the page of the span it names. Same block →
 // just re-render at the leaf; otherwise load the span's first block.
 const openCrumb = (height, idx) => {
