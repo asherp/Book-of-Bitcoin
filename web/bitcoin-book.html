@@ -4616,7 +4616,9 @@ async function renderFootnotes(gen) {
       // announcement, or -- where they make none -- the envelope's word for
       // them, which is a different thing and says so.
       const size = `${asset.bytes.toLocaleString()} bytes`;
-      witTitle.title = asset.source === 'bytes'
+      witTitle.title = asset.source === 'manifest'
+        ? `${size} of ${asset.mime} — a collection manifest; “${asset.label}” is the name it gives itself, not something the bytes announce`
+        : asset.source === 'bytes'
         ? `${size}, read as ${asset.mime} from the payload's own opening bytes`
           + (asset.declared && asset.declared !== asset.mime
             ? ` — the envelope declares ${asset.declared}, which these bytes do not bear out`

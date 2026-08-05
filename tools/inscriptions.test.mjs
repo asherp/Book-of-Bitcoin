@@ -319,3 +319,26 @@ test('a compressed body is not sniffed — unpacking it would be a reading', () 
   assert.equal(a.source, 'declaration');
   assert.equal(a.encoding, 'br');
 });
+
+test('a manifest is named by the name it gives itself, not by its format', () => {
+  const a = 'a'.repeat(64);
+  const manifest = JSON.stringify({ meta: { name: 'Museum Outdoor' }, data: [{ id: `${a}i0` }] });
+  const script = scriptWith(envelope({
+    fields: [[1, ascii('application/json')]],
+    body: [[...new TextEncoder().encode(manifest)]],
+  }));
+  const asset = witnessAsset(['aa'.repeat(64), script, 'c0' + '11'.repeat(32)]);
+  assert.equal(asset.label, 'Museum Outdoor');
+  assert.equal(asset.source, 'manifest');   // the collection's word, not the bytes'
+  assert.equal(asset.mime, 'application/json');
+});
+
+test('JSON that names nothing stays JSON', () => {
+  for (const body of ['{"p":"brc-20","op":"deploy"}', '{"data":[{"id":"nope"}]}', '{"meta":{"name":"  "},"data":[]}']) {
+    const script = scriptWith(envelope({
+      fields: [[1, ascii('application/json')]],
+      body: [[...new TextEncoder().encode(body)]],
+    }));
+    assert.equal(witnessAsset(['aa'.repeat(64), script, 'c0' + '11'.repeat(32)]).label, 'JSON', body);
+  }
+});

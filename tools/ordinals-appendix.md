@@ -78,11 +78,35 @@ What the chain holds, layer by layer, from rule to reading:
    inscription now sits is ord's reading of the record, and the book
    should credit it the way it credits a signaling monitor's count: a
    claim, named as whose.
-5. **The collection.** [convention] A collection is itself an inscription:
-   a JSON manifest listing member inscription IDs with editorial
-   attributes, recognized by marketplaces rather than by any rule. A
-   manifest is the most bookish object in the whole subject — a table of
-   contents written into a witness — and the worked example below is one.
+5. **The collection.** [convention] Here two different conventions are
+   often confused, and the book should not confuse them:
+   - **ord's own** mechanism is *provenance*: a child inscription names
+     its parent in envelope **tag 3**, and ord accepts the claim only if
+     the parent inscription is spent in the same transaction — so the
+     link is made on-chain and is checkable. Ord also defines **tag 5**,
+     `metadata` (CBOR), for on-chain metadata it will render itself.
+     [convention, but ord's own and verifiable]
+   - **The JSON manifest** — a body shaped `{"meta": {…}, "data":
+     [{"id": "<txid>i<n>", …}]}` — is **not** an ord standard. It is a
+     marketplace convention for registering a collection: the manifest
+     is inscribed, a marketplace reads it, and the grouping exists
+     because that marketplace says so. Nothing on-chain binds a member
+     to it. (Which marketplace first defined the shape is not
+     established here; treat the format as folk-standard.)
+
+   Museum Outdoor is the second kind, and demonstrably so: its manifest
+   and its members carry **tag 1 alone** — a content type and nothing
+   else [verified 2026-08-05, read off the envelopes]. No parent tag, no
+   metadata tag. The hundred photographs are a collection only because a
+   JSON file in a witness says they are, and because somebody chose to
+   read that file. A manifest is the most bookish object in the whole
+   subject — a table of contents written into a witness — and the worked
+   example below is one.
+
+   This is why the book names a manifest by its `meta.name` but files
+   that name as the collection's own word for itself rather than as a
+   reading of the bytes: `witnessAsset` returns `source: 'manifest'`
+   there, distinct from the `'bytes'` a magic number earns.
 
 ## Already in the book
 
