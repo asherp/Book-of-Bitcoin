@@ -18,6 +18,17 @@
 <head>
 <meta charset="utf-8">
 <title>Illumination lab</title>
+<!-- The book's own vendored faces, on the same terms every reading page
+     takes them (see web/fonts/README.md). Not cosmetic here: this bench
+     measures real rendered sigla -- their boxes, and now their glyph
+     outlines (sigla-outlines.js, extracted from these very files) -- so a
+     lab setting only transfers to the book if the marks it is tuned
+     against are the marks the book actually sets. -->
+<link rel="preload" as="font" type="font/woff2" href="./fonts/newsreader-latin.woff2" crossorigin>
+<link rel="preload" as="font" type="font/woff2" href="./fonts/plexmono-500-latin.woff2" crossorigin>
+<link rel="preload" as="font" type="font/woff2" href="./fonts/plexmono-600-latin.woff2" crossorigin>
+<link rel="preload" as="font" type="font/woff2" href="./fonts/sigla-dejavu.woff2" crossorigin>
+<link rel="stylesheet" href="./fonts/fonts.css">
 <style>
   :root {
     --page:#08080a; --card:#0d0d10; --card-bd:#232228; --ink:#e8e4da; --ink-soft:#cfcabf;
@@ -26,10 +37,10 @@
   * { box-sizing: border-box; }
   body {
     margin: 0; background: var(--page); color: var(--ink);
-    font-family: 'Public Sans', system-ui, sans-serif;
+    font-family: 'Public Sans','Book Sigla', system-ui, sans-serif;
     display: grid; grid-template-columns: 340px 1fr; min-height: 100vh;
   }
-  h1 { font: 600 13px/1 'IBM Plex Mono', monospace; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); margin: 0 0 4px; }
+  h1 { font: 600 13px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); margin: 0 0 4px; }
   .sub { font-size: 12px; color: var(--dim); margin: 0 0 20px; line-height: 1.5; }
 
   /* ─── control panel ─── */
@@ -38,11 +49,11 @@
   /* ─── shared control-panel classes (see illumination-controls.js) ─── */
   .illum-ctl-group { margin-bottom: 22px; padding-bottom: 16px; border-bottom: 1px solid var(--card-bd); }
   .illum-ctl-group:last-child { border-bottom: none; }
-  .illum-ctl-group h2 { font: 600 11px/1 'IBM Plex Mono', monospace; letter-spacing: .12em; text-transform: uppercase; color: var(--dim); margin: 0 0 10px; }
+  .illum-ctl-group h2 { font: 600 11px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing: .12em; text-transform: uppercase; color: var(--dim); margin: 0 0 10px; }
   .illum-ctl-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 8px 0; font-size: 12.5px; color: var(--ink-soft); }
   .illum-ctl-row .name { flex: 0 0 auto; }
-  .illum-ctl-row .val { color: var(--accent-2); font: 500 11.5px/1 'IBM Plex Mono', monospace; min-width: 3.5em; text-align: right; }
-  .illum-ctl-mono { font-family: 'IBM Plex Mono', monospace; font-size: 11px; }
+  .illum-ctl-row .val { color: var(--accent-2); font: 500 11.5px/1 'IBM Plex Mono','Book Sigla',monospace; min-width: 3.5em; text-align: right; }
+  .illum-ctl-mono { font-family: 'IBM Plex Mono','Book Sigla',monospace; font-size: 11px; }
   .illum-ctl-stage-row { display: grid; grid-template-columns: 1fr 4.5em; align-items: center; gap: 8px; margin: 6px 0; font-size: 12px; color: var(--ink-soft); }
   .illum-ctl-stage-row .range { color: var(--dim); font-size: 11px; }
   .illum-ctl-sub { font-size: 11.5px; color: var(--dim); line-height: 1.5; margin-top: 6px; }
@@ -51,16 +62,16 @@
 
   label.row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 8px 0; font-size: 12.5px; color: var(--ink-soft); }
   label.row span.name { flex: 0 0 auto; }
-  label.row .val { color: var(--accent-2); font: 500 11.5px/1 'IBM Plex Mono', monospace; min-width: 3.5em; text-align: right; }
+  label.row .val { color: var(--accent-2); font: 500 11.5px/1 'IBM Plex Mono','Book Sigla',monospace; min-width: 3.5em; text-align: right; }
   input[type="range"] { flex: 1 1 auto; margin: 0 8px; accent-color: var(--accent); }
-  input[type="number"] { width: 4.5em; background: var(--card); border: 1px solid var(--card-bd); color: var(--ink); border-radius: 4px; padding: 3px 6px; font: 12px 'IBM Plex Mono', monospace; }
-  input[type="text"] { width: 100%; background: var(--card); border: 1px solid var(--card-bd); color: var(--ink); border-radius: 4px; padding: 6px 8px; font: 12px 'IBM Plex Mono', monospace; }
+  input[type="number"] { width: 4.5em; background: var(--card); border: 1px solid var(--card-bd); color: var(--ink); border-radius: 4px; padding: 3px 6px; font: 12px 'IBM Plex Mono','Book Sigla',monospace; }
+  input[type="text"] { width: 100%; background: var(--card); border: 1px solid var(--card-bd); color: var(--ink); border-radius: 4px; padding: 6px 8px; font: 12px 'IBM Plex Mono','Book Sigla',monospace; }
   input[type="checkbox"] { accent-color: var(--accent); }
-  button { font: 600 11.5px/1 'IBM Plex Mono', monospace; letter-spacing: .04em; text-transform: uppercase; background: var(--accent); color: #17140c; border: none; border-radius: 4px; padding: 8px 12px; cursor: pointer; width: 100%; margin-top: 4px; }
+  button { font: 600 11.5px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing: .04em; text-transform: uppercase; background: var(--accent); color: #17140c; border: none; border-radius: 4px; padding: 8px 12px; cursor: pointer; width: 100%; margin-top: 4px; }
   button:hover { background: var(--accent-2); }
   button.ghost { background: transparent; color: var(--accent); border: 1px solid var(--card-bd); }
   button.ghost:hover { border-color: var(--accent); }
-  .readout { font: 12px/1.6 'IBM Plex Mono', monospace; color: var(--dim); background: var(--card); border: 1px solid var(--card-bd); border-radius: 6px; padding: 10px; margin-top: 8px; }
+  .readout { font: 12px/1.6 'IBM Plex Mono','Book Sigla',monospace; color: var(--dim); background: var(--card); border: 1px solid var(--card-bd); border-radius: 6px; padding: 10px; margin-top: 8px; }
   .readout b { color: var(--accent); }
 
   /* ─── stage ─── */
@@ -68,15 +79,15 @@
   .leaf { max-width: 620px; margin: 0 0 48px; }
   .tx-wrap { position: relative; color: var(--accent); border: 1px dashed transparent; padding: 34px 46px; }
   .tx-wrap.show-frame { border-color: var(--card-bd); }
-  .section-title { text-align: center; margin: 0 0 6px; font: 600 12px/1 'IBM Plex Mono', monospace; letter-spacing: .28em; text-transform: uppercase; color: var(--accent); }
+  .section-title { text-align: center; margin: 0 0 6px; font: 600 12px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing: .28em; text-transform: uppercase; color: var(--accent); }
   .chapter-body { font-family: Georgia, 'Times New Roman', serif; font-size: 18px; line-height: 1.75; color: var(--ink-soft); }
   .tx-body-lead::first-letter { font-size: 3.4em; float: left; line-height: .82; padding: .04em .07em 0 0; font-weight: 500; color: var(--accent); }
   .sigla, .op { color: var(--accent); font-weight: 600; }
   .amount-line { text-align: center; margin-top: 18px; font: 600 18px/1 Georgia, serif; color: var(--accent-2); }
-  .citation-line { margin-top: 14px; font: 600 12px/1 'IBM Plex Mono', monospace; color: var(--accent); letter-spacing: .04em; }
+  .citation-line { margin-top: 14px; font: 600 12px/1 'IBM Plex Mono','Book Sigla',monospace; color: var(--accent); letter-spacing: .04em; }
   .hash-bookmark { display: inline-flex; width: 14px; height: 18px; opacity: .6; }
   .hash-bookmark svg { width: 100%; height: 100%; }
-  .leaf-label { font: 600 11px/1 'IBM Plex Mono', monospace; letter-spacing: .1em; text-transform: uppercase; color: var(--dim); margin: 0 0 10px; }
+  .leaf-label { font: 600 11px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing: .1em; text-transform: uppercase; color: var(--dim); margin: 0 0 10px; }
 </style>
 </head>
 <body>
