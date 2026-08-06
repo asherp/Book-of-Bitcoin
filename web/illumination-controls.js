@@ -24,10 +24,19 @@
 //           for a caller with its own extra state to fold back to a default
 //           alongside params/GROWTH_STAGES (see illumination-lab.html's
 //           sample base-size).
+// opts.enabledDefault   initial state of the leading on/off switch (default
+//           true).
+// opts.onToggleEnabled(checked)   called when that switch changes. Not a
+//           `params` field -- it's the caller's own illuminate() call that
+//           decides what "off" means (its `enabled` opt; see
+//           btc-illumination.js), so this is the one control here with no
+//           default wiring of its own.
 export function buildIlluminationControls(root, illum, opts = {}) {
   const { params, GROWTH_STAGES, resetDerivations } = illum;
   const onChange = opts.onChange || (() => {});
   const onReset = opts.onReset || (() => {});
+  const onToggleEnabled = opts.onToggleEnabled || (() => {});
+  const enabledDefault = opts.enabledDefault !== false;
   const DEFAULTS = structuredClone(params);
   const DEFAULT_STAGES = structuredClone(GROWTH_STAGES);
 
@@ -51,6 +60,9 @@ export function buildIlluminationControls(root, illum, opts = {}) {
 
   root.innerHTML = `
     <div class="illum-ctl-group">
+      <label class="illum-ctl-row"><span class="name">Illumination</span><input type="checkbox" class="illum-ctl-enabled"></label>
+    </div>
+    <div class="illum-ctl-group">
       <h2>Growth stages (generations)</h2>
       <div class="illum-ctl-stages"></div>
     </div>
@@ -71,6 +83,10 @@ export function buildIlluminationControls(root, illum, opts = {}) {
     </div>
     <button type="button" class="illum-ctl-reset">Reset all to defaults</button>
   `;
+
+  const enabledInput = root.querySelector('.illum-ctl-enabled');
+  enabledInput.checked = enabledDefault;
+  enabledInput.addEventListener('change', () => onToggleEnabled(enabledInput.checked));
 
   const stagesEl = root.querySelector('.illum-ctl-stages');
   GROWTH_STAGES.forEach((s, i) => {
