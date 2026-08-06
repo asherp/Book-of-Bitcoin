@@ -365,7 +365,15 @@ export function interpretFrom(symbol, anchor, obstacles, bounds, rng, maxReach =
       // (a real cluster), only true near-duplicates collapse.
       const near = (p) => Math.abs(p.x - state.x) < params.leafDedupPx && Math.abs(p.y - state.y) < params.leafDedupPx;
       if (!cur.leaves.some(near) && !segments.some((s) => s.leaves.some(near))) {
-        cur.leaves.push({ x: state.x, y: state.y, angle: state.angle });
+        // A real vine's leaves don't all point straight along the stem or
+        // come out the same size (see the reference photos on issue #73) --
+        // each one splays to one side at its own angle off the vine's
+        // heading, and varies a little in size. Drawn from the same seeded
+        // rng as everything else, so it's still deterministic per anchor.
+        const side = rng() < 0.5 ? -1 : 1;
+        const splay = side * ((40 + rng() * 55) * Math.PI) / 180;
+        const scale = 0.75 + rng() * 0.7;
+        cur.leaves.push({ x: state.x, y: state.y, angle: state.angle + splay, scale });
       }
     } else if (ch === '+') {
       state = { ...state, angle: state.angle + TURN };
@@ -483,11 +491,21 @@ function svgEl(tag, attrs) {
 function pathD(points) {
   return points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
 }
-// A small forked leaf glyph, drawn at a leaf point and turned to face the
-// direction the vine was travelling when it put it out.
+// A small heart/arrowhead leaf, attached at the vine by its base (the local
+// origin) and pointing along `leaf.angle` -- two rounded lobes bulging out
+// near the attachment point, tapering to a single tip, the shape common to
+// the vine genus that prompted this (bindweed/morning-glory-style cordate
+// leaves; see the reference photos on issue #73). A faint midrib is drawn
+// as a second, thinner stroke down the same shape, since every leaf in
+// those photos shows one. `leaf.scale` (set per-leaf in the 'L' handling
+// above, from the same seeded rng as everything else) varies each leaf's
+// size a little, the way real leaves along one vine aren't all identical.
 function leafD(leaf) {
   const deg = (leaf.angle * 180) / Math.PI;
-  return { d: 'M0,0 Q3,-4 6,-1 Q3,1 0,0 Z', transform: `translate(${leaf.x.toFixed(1)},${leaf.y.toFixed(1)}) rotate(${deg.toFixed(1)})` };
+  const transform = `translate(${leaf.x.toFixed(1)},${leaf.y.toFixed(1)}) rotate(${deg.toFixed(1)}) scale(${(leaf.scale || 1).toFixed(2)})`;
+  const blade = 'M0,0 C1.5,-2.8 5,-3.8 7,-2 Q9,-0.4 9.4,0 Q9,0.4 7,2 C5,3.8 1.5,2.8 0,0 Z';
+  const vein = 'M0.6,0 Q5,0 8.6,0';
+  return { blade, vein, transform };
 }
 
 function buildOverlaySvg(width, height) {
@@ -533,9 +551,12 @@ function renderSegments(svg, segmentsByAnchor, { animate, obstacles, debug }) {
         if (animate) primeGrowIn(path);
       }
       for (const leaf of seg.leaves) {
-        const { d, transform } = leafD(leaf);
+        const { blade, vein, transform } = leafD(leaf);
         group.appendChild(svgEl('path', {
-          d, transform, fill: 'currentColor', opacity: '0.55', class: 'illum-leaf',
+          d: blade, transform, fill: 'currentColor', opacity: '0.55', class: 'illum-leaf',
+        }));
+        group.appendChild(svgEl('path', {
+          d: vein, transform, fill: 'none', stroke: 'currentColor', 'stroke-width': '0.6', opacity: '0.4', class: 'illum-leaf-vein',
         }));
       }
     }
