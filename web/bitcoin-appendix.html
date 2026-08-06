@@ -543,6 +543,7 @@ import { toSuperscript } from './btc-sigla.js';
 // their own unit -- through the one call every printed amount goes through.
 import { formatAmount, formatBtc, amountUnit, setDayPrice } from './btc-amounts.js';
 import { usdOn } from './btc-price.js';
+import { readAlpha } from './btc-projected.js';
 
 // ── One appendix, given a leaf of its own ─────────────────────────────────
 // The contents lists what each appendix holds; this is where an appendix
@@ -579,6 +580,22 @@ const index = APPENDIX.indexOf(part);
 const atParam = String(params.get('at') || '').toLowerCase();
 const mineSlug = kind === 'mines' ? String(params.get('mine') || '').toLowerCase() : '';
 const AT = kind === 'mines' && mineSlug ? (atParam === 'blocks' ? 'blocks' : 'mine') : null;
+// ── The Mempool's own book level ──────────────────────────────────────────
+// The part's leaf stands at the volumes' level, as every appendix does. A
+// storey down -- the level a book occupies in the body -- the queue is read
+// three ways, side by side:
+//
+//   ?part=mempool             the part's leaf: the queue entire
+//   ?part=mempool&at=alpha    the next chapter, as itself
+//   ?part=mempool&at=amount   its transactions, by what they move
+//   ?part=mempool&at=vbytes   its transactions, by what they weigh
+//
+// Only alpha is read this closely. It is the one projected block that is a
+// forecast rather than a statement about the queue now, and its contents cost
+// a websocket and 600 KB where the rest would cost five megabytes
+// (btc-projected.js says why at length).
+const QUEUE_LEAVES = ['alpha', 'amount', 'vbytes'];
+const QUEUE = kind === 'mempool' && QUEUE_LEAVES.includes(atParam) ? atParam : null;
 // One fork's own leaf, a level below the part's: ?bip= names it by number,
 // the way the contents' sub-heads link it.
 const bips = part.kind === 'consensus' ? (part.bips || []) : [];
@@ -743,6 +760,8 @@ const hrefFor = (p) => (p.kind === 'ledgers'
   : `./bitcoin-appendix.html?part=${PART_QUERY[p.kind]}`);
 const bipHref = (b) => `./bitcoin-appendix.html?part=consensus&bip=${b.key}`;
 // Appendix I's own leaves, addressed the way every other leaf here is.
+const queueHref = (at) => `./bitcoin-appendix.html?part=mempool&at=${at}`;
+const QUEUE_TITLES = { alpha: 'Alpha', amount: 'By amount', vbytes: 'By size' };
 const minesHref = () => './bitcoin-appendix.html?part=mines';
 const mineHref = (slug) => `./bitcoin-appendix.html?part=mines&mine=${encodeURIComponent(slug)}`;
 const mineBlocksHref = (slug) => `${mineHref(slug)}&at=blocks`;
@@ -821,6 +840,21 @@ if (blockLeaf != null) {
   up.textContent = itemAt ? `▴ ${ins.title}` : `▴ ${label(part)}`;
   up.href = itemAt ? insHref(ins) : hrefFor(part);
   up.classList.remove('hidden');
+} else if (QUEUE) {
+  // Each of the queue's three readings wears its own name and climbs to the
+  // part above it, the way a fork's leaf climbs to Consensus.
+  $('appx-title').textContent = QUEUE_TITLES[QUEUE];
+  $('appx-subtitle').textContent = 'reading…';
+  const up = $('appx-up');
+  up.textContent = `▴ ${label(part)}`;
+  up.href = hrefFor(part);
+  up.classList.remove('hidden');
+  up.addEventListener('click', (ev) => {
+    if (ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey || ev.button !== 0) return;
+    ev.preventDefault();
+    navTo(hrefFor(part), 'drop');
+  });
+  window.__appxAscend = () => navTo(hrefFor(part), 'drop');
 } else if (AT) {
   // One of Appendix I's own leaves. Each wears its name as the title and
   // climbs to whatever holds it -- the two beneath the part climb to the
@@ -932,8 +966,12 @@ if (kind === 'inscriptions') {
 if (kind === 'mines') {
   firstChapter = AT === 'mine' ? mineBlocksHref(mineSlug) : null;
 }
+// The queue's part leaf opens alpha, a storey down; alpha opens the chapter
+// itself, which waits on the tip. The two rankings are the floor -- what
+// lies under a transaction is the transaction, and it has no citation yet.
+if (kind === 'mempool' && QUEUE === null) firstChapter = queueHref('alpha');
 $('appx-down').classList.toggle('hidden', !firstChapter);
-if (kind === 'mempool') {
+if (kind === 'mempool' && QUEUE === 'alpha') {
   chainTip().then((tip) => {
     if (tip == null) return;
     firstChapter = `./bitcoin-book.html?block=${tip + 1}`;
@@ -990,7 +1028,12 @@ if (bip || ins) {
 // which is not known until the window has been counted, so those are named
 // late (setTurns, below); a mine's chapters are the floor and turn nowhere
 // sideways. The queue and the shelf are ordinary parts and turn as parts do.
-const prevTo = blockLeaf != null ? null : AT
+const queueAt = QUEUE ? QUEUE_LEAVES.indexOf(QUEUE) : -1;
+const prevTo = blockLeaf != null ? null : QUEUE
+  ? (queueAt > 0
+    ? { href: queueHref(QUEUE_LEAVES[queueAt - 1]), text: QUEUE_TITLES[QUEUE_LEAVES[queueAt - 1]] }
+    : { href: hrefFor(part), text: label(part) })
+  : AT
   ? null
   : bip
   ? (bipAt > 0
@@ -1004,7 +1047,10 @@ const prevTo = blockLeaf != null ? null : AT
     // neighbour there -- so its one sideways move is back to the shelf.
     : { href: hrefFor(part), text: label(part) })
   : (APPENDIX[index - 1] ? { href: hrefFor(APPENDIX[index - 1]), text: label(APPENDIX[index - 1]) } : null);
-const nextTo = blockLeaf != null ? null : AT
+const nextTo = blockLeaf != null ? null : QUEUE
+  ? (queueAt < QUEUE_LEAVES.length - 1
+    ? { href: queueHref(QUEUE_LEAVES[queueAt + 1]), text: QUEUE_TITLES[QUEUE_LEAVES[queueAt + 1]] } : null)
+  : AT
   ? null
   : bip
   ? (bipAt < bips.length - 1 ? { href: bipHref(bips[bipAt + 1]), text: bips[bipAt + 1].label } : null)
@@ -1126,7 +1172,7 @@ function statRowOf(key) {
 // mempool.space's, asked of mempool.space alone so the credit is exact -- a
 // count of what one node holds at one moment is that node's claim about its
 // own queue, not a fact about any block that will ever exist.
-if (kind === 'mempool') {
+if (kind === 'mempool' && QUEUE === null) {
   const setQueue = statRowOf('queue');
   const setSubsidy = statRowOf('subsidy');
   const setFees = statRowOf('fees');
@@ -1165,6 +1211,83 @@ if (kind === 'mempool') {
       `${formatBtc(rev.fees)} — what the sections in them carry, ${over}. ${credit}.`);
     setPaid(formatAmount(rev.sats), `${formatBtc(rev.sats)} in all, ${over}. ${credit}.`);
   })().catch(() => { setQueue(null); setSubsidy(null); setFees(null); setPaid(null); });
+}
+
+// ── The queue, read at the book level ─────────────────────────────────────
+//
+// Alpha as itself, and its transactions ranked two ways. Alpha's own figures
+// come off the REST API for nothing; the rankings need the block's contents,
+// which is a websocket and about 600 KB (btc-projected.js). One reading
+// serves both rankings -- it is taken once, reduced to the heads of the two
+// lists, and kept for the sideways turn between them.
+if (QUEUE) {
+  (async () => {
+    const sub = $('appx-subtitle');
+    const say = (t, why = '') => { sub.textContent = t; if (why) sub.title = why; };
+    if (amountUnit() === 'usd') setDayPrice(await usdOn(Math.floor(Date.now() / 1000)));
+    else setDayPrice(null);
+    const credit = 'mempool.space\'s reading of its own queue at this moment — not a fact about any '
+      + 'block that will ever exist, and true only while the queue holds';
+
+    if (QUEUE === 'alpha') {
+      const tip = await chainTip();
+      const queue = await readQueue(tip, ['https://mempool.space/api']);
+      const first = queue?.blocks?.[0];
+      if (!first) { say('the queue could not be read just now'); return; }
+      say(tip == null ? 'the next chapter, if the queue holds'
+        : `${expectedReference(tip + 1)} — the next chapter, if the queue holds`, credit);
+      const set = (k) => statRowOf(k);
+      set('sections')(Number(first.nTx).toLocaleString('en-US'),
+        'how many transactions the next chapter would carry');
+      set('weight')(`${(first.blockVSize / MVB).toFixed(3)} MvB`,
+        'virtual size, against the one million vB a block may hold');
+      set('fees')(formatAmount(Number(first.totalFees) || 0),
+        `${formatBtc(Number(first.totalFees) || 0)} — what its sections carry for whoever writes it`);
+      set('median rate')(`${Number(first.medianFee).toFixed(2)} sat/vB`, credit);
+      return;
+    }
+
+    // The two rankings. Both read the same snapshot.
+    say('reading the queue…');
+    const snap = await readAlpha();
+    if (!snap) {
+      say('the next chapter\'s transactions could not be read just now',
+        'this ranking comes over a websocket, which no mirror serves as an ordinary request — '
+        + 'nothing here is guessed at in its absence');
+      return;
+    }
+    const byValue = QUEUE === 'amount';
+    const rows = byValue ? snap.byAmount : snap.bySize;
+    const when = new Date(snap.readAt * 1000).toISOString().slice(11, 16);
+    say(`the largest ${rows.length.toLocaleString('en-US')} of ${snap.n.toLocaleString('en-US')} · read at ${when} UTC`,
+      `${credit}. The whole of the next chapter is ${snap.n.toLocaleString('en-US')} transactions, `
+      + `${formatBtc(snap.value)} moved across ${(snap.vsize / MVB).toFixed(3)} MvB; these are its largest by `
+      + `${byValue ? 'what they move' : 'what they weigh'}.`);
+
+    // Set as the ballot's rows are: a name on the left, its figure on the
+    // right. A transaction here has no citation -- no block has recorded it,
+    // so there is no chapter and no §section to name it by -- and its txid
+    // stands in until one does.
+    const el = $('bip-blocks');
+    for (const t of rows) {
+      const row = document.createElement('div');
+      row.className = 'bb-row';
+      const id = document.createElement('span');
+      id.className = 'bb-ref';
+      id.textContent = `${t.txid.slice(0, 8)}…${t.txid.slice(-4)}`;
+      id.title = `${t.txid} — ${formatBtc(t.value)} across ${t.vsize.toLocaleString('en-US')} vB`
+        + `${t.fee == null ? '' : `, paying ${formatBtc(t.fee)} in fees`}`;
+      const fig = document.createElement('span');
+      fig.className = 'bb-fees';
+      fig.textContent = byValue ? formatAmount(t.value) : `${t.vsize.toLocaleString('en-US')} vB`;
+      row.append(id, fig);
+      el.append(row);
+    }
+    el.classList.remove('hidden');
+  })().catch((e) => {
+    $('appx-subtitle').textContent = 'the queue could not be read just now';
+    console.warn('the projected block could not be read —', e);
+  });
 }
 
 // ── The mines ─────────────────────────────────────────────────────────────
@@ -2740,7 +2863,7 @@ if (kind === 'proofs') {
 // own siblings, and its lack of a backward neighbour means the run simply
 // starts there. Without that guard a mine would offer the last volume as its
 // left-hand turn, which is a turn out of two levels at once.
-if (!prevTo && !bip && !ins && AT === null) {
+if (!prevTo && !bip && !ins && !QUEUE && AT === null) {
   chainTip().then((tip) => {
     if (tip == null) return;
     const volume = volumeBookChapter(tip).volume;

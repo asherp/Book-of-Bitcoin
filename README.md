@@ -218,7 +218,10 @@ compiled to WASM) is consumed as a published
   first of the parts because the volumes close on the chain tip's row, so the
   turn from the tip to the next provisional chapter stays one step down the
   page. Its leaf states how deep the queue is and what mining it is expected
-  to pay, both as mempool.space reports them.
+  to pay, both as mempool.space reports them, and a storey down — the level a
+  book occupies in the body — the queue is read three ways side by side:
+  **Alpha**, the next chapter as itself; **By amount**, its transactions
+  ordered by what they move; **By size**, ordered by what they weigh.
   **Appendix II · The Mines** — the hands that take a chapter from that
   queue: one leaf per pool, ordered by how much of the last difficulty window
   each won, with the network's hash rate beside the shelf and, beneath each
@@ -255,8 +258,9 @@ compiled to WASM) is consumed as a published
   `?part=consensus`, `?part=proofs`, with `?part=future` kept as an alias for
   saved links): a title leaf saying what the part gathers and why
   that cannot be read in sequence, with what it gathers one level below.
-  Appendix I (`?part=mempool`) descends into the queue's **first chapter
-  itself** — the block a reader reaches by swiping forward off the chain tip
+  Appendix I (`?part=mempool`) descends into **Alpha**
+  (`&at=alpha`), turned sideways to `&at=amount` and `&at=vbytes`, and Alpha
+  descends into the queue's **first chapter itself** — the block a reader reaches by swiping forward off the chain tip
   — read in the book like any other, marked □, and walked chapter by chapter
   from there; the ascent from any of them lands back on that leaf, since a
   draft chapter belongs to no volume or book of the body (the queue's own
@@ -311,6 +315,23 @@ compiled to WASM) is consumed as a published
   and ink; what says it is provisional is the □ its reference wears in place
   of the ■ it has not earned. The stylesheet is shared with the appendix
   leaves so a chapter reads the same wherever it is set
+- `web/btc-projected.js` — what is actually inside the next chapter, for
+  Appendix I's two rankings. No HTTP endpoint on either mirror will give it:
+  `/mempool/recent` is ten transactions and ignores `?count=`,
+  `/mempool/txids` is ninety thousand ids and six megabytes with no amount or
+  vsize attached, and there is no batch tx lookup — so ranking the queue over
+  HTTP would mean six megabytes and ninety thousand requests. The websocket
+  has it: `wss://mempool.space/api/v1/ws`, `{"track-mempool-block": 0}`, and
+  one message carrying every transaction in the projected block as
+  `[txid, fee, vsize, value, rate]` (the mapping checked against its own
+  arithmetic — fee ÷ vsize reproduces the rate). **Only block 0**, which runs
+  ~5,200 transactions and ~600 KB where all eight would be four to five
+  megabytes, and which is the only projected block that is a forecast rather
+  than a statement about the queue now. The half-megabyte is not kept: the two
+  rankings are taken on arrival and only their heads are held, in
+  sessionStorage for a couple of minutes, so the sideways turn between them is
+  free where re-reading would cost another 600 KB to answer the same question
+  a different way. Every surface prints the minute the snapshot was taken
 - `web/btc-mines.js` — Appendix II: who has been winning the chapters. The last difficulty window — 2,016 blocks, one β and about a
   fortnight — is counted block by block, each attributed to a pool, and the
   pools ordered by how many they won. The window is **counted rather than
