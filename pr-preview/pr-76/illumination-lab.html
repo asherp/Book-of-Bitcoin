@@ -1,0 +1,341 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: MIT OR Apache-2.0
+
+     illumination-lab.html — a live tuning bench for btc-illumination.js's
+     L-system, not a reader-facing page (nothing links to this from the book
+     itself). Every knob in the module's exported `params` object gets a
+     control here; moving one calls resetDerivations() when it touches the
+     grammar, then refresh()es every sample passage on the page, so the
+     effect of a change is visible immediately rather than argued about.
+
+     Two sample passages are given real citation cells, a locktime line, a
+     bookmark ribbon, and a drop cap, mirroring bitcoin-book.html's actual
+     .tx-wrap closely enough that a setting tuned here transfers directly —
+     see illuminateSection() in bitcoin-book.html for where these same
+     options (seedEls, sizeOf, pointOf, baseSize) are threaded through in
+     the real page. -->
+<html>
+<head>
+<meta charset="utf-8">
+<title>Illumination lab</title>
+<style>
+  :root {
+    --page:#08080a; --card:#0d0d10; --card-bd:#232228; --ink:#e8e4da; --ink-soft:#cfcabf;
+    --accent:#c9a25f; --accent-2:#dcb877; --dim:#8f8a80; --panel:#111114;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--page); color: var(--ink);
+    font-family: 'Public Sans', system-ui, sans-serif;
+    display: grid; grid-template-columns: 340px 1fr; min-height: 100vh;
+  }
+  h1 { font: 600 13px/1 'IBM Plex Mono', monospace; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); margin: 0 0 4px; }
+  .sub { font-size: 12px; color: var(--dim); margin: 0 0 20px; line-height: 1.5; }
+
+  /* ─── control panel ─── */
+  #panel { background: var(--panel); border-right: 1px solid var(--card-bd); padding: 20px 18px; overflow-y: auto; height: 100vh; position: sticky; top: 0; }
+  .group { margin-bottom: 22px; padding-bottom: 16px; border-bottom: 1px solid var(--card-bd); }
+  .group:last-child { border-bottom: none; }
+  .group h2 { font: 600 11px/1 'IBM Plex Mono', monospace; letter-spacing: .12em; text-transform: uppercase; color: var(--dim); margin: 0 0 10px; }
+  label.row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 8px 0; font-size: 12.5px; color: var(--ink-soft); }
+  label.row span.name { flex: 0 0 auto; }
+  label.row .val { color: var(--accent-2); font: 500 11.5px/1 'IBM Plex Mono', monospace; min-width: 3.5em; text-align: right; }
+  input[type="range"] { flex: 1 1 auto; margin: 0 8px; accent-color: var(--accent); }
+  input[type="number"] { width: 4.5em; background: var(--card); border: 1px solid var(--card-bd); color: var(--ink); border-radius: 4px; padding: 3px 6px; font: 12px 'IBM Plex Mono', monospace; }
+  input[type="text"] { width: 100%; background: var(--card); border: 1px solid var(--card-bd); color: var(--ink); border-radius: 4px; padding: 6px 8px; font: 12px 'IBM Plex Mono', monospace; }
+  input[type="checkbox"] { accent-color: var(--accent); }
+  .stage-row { display: grid; grid-template-columns: 1fr 4.5em; align-items: center; gap: 8px; margin: 6px 0; font-size: 12px; color: var(--ink-soft); }
+  .stage-row .range { color: var(--dim); font-size: 11px; }
+  button { font: 600 11.5px/1 'IBM Plex Mono', monospace; letter-spacing: .04em; text-transform: uppercase; background: var(--accent); color: #17140c; border: none; border-radius: 4px; padding: 8px 12px; cursor: pointer; width: 100%; margin-top: 4px; }
+  button:hover { background: var(--accent-2); }
+  button.ghost { background: transparent; color: var(--accent); border: 1px solid var(--card-bd); }
+  button.ghost:hover { border-color: var(--accent); }
+  .readout { font: 12px/1.6 'IBM Plex Mono', monospace; color: var(--dim); background: var(--card); border: 1px solid var(--card-bd); border-radius: 6px; padding: 10px; margin-top: 8px; }
+  .readout b { color: var(--accent); }
+
+  /* ─── stage ─── */
+  #stage { padding: 40px 32px; overflow-y: auto; height: 100vh; }
+  .leaf { max-width: 620px; margin: 0 0 48px; }
+  .tx-wrap { position: relative; color: var(--accent); border: 1px dashed transparent; padding: 34px 46px; }
+  .tx-wrap.show-frame { border-color: var(--card-bd); }
+  .section-title { text-align: center; margin: 0 0 6px; font: 600 12px/1 'IBM Plex Mono', monospace; letter-spacing: .28em; text-transform: uppercase; color: var(--accent); }
+  .chapter-body { font-family: Georgia, 'Times New Roman', serif; font-size: 18px; line-height: 1.75; color: var(--ink-soft); }
+  .tx-body-lead::first-letter { font-size: 3.4em; float: left; line-height: .82; padding: .04em .07em 0 0; font-weight: 500; color: var(--accent); }
+  .sigla, .op { color: var(--accent); font-weight: 600; }
+  .amount-line { text-align: center; margin-top: 18px; font: 600 18px/1 Georgia, serif; color: var(--accent-2); }
+  .citation-line { margin-top: 14px; font: 600 12px/1 'IBM Plex Mono', monospace; color: var(--accent); letter-spacing: .04em; }
+  .hash-bookmark { display: inline-flex; width: 14px; height: 18px; opacity: .6; }
+  .hash-bookmark svg { width: 100%; height: 100%; }
+  .leaf-label { font: 600 11px/1 'IBM Plex Mono', monospace; letter-spacing: .1em; text-transform: uppercase; color: var(--dim); margin: 0 0 10px; }
+</style>
+</head>
+<body>
+
+<div id="panel">
+  <h1>Illumination lab</h1>
+  <p class="sub">Live tuning bench for <code>btc-illumination.js</code>'s L-system. Every control here mutates the module's <code>params</code> export directly — nothing is reimplemented. Not linked from the book; dev tool only.</p>
+
+  <div class="group">
+    <h2>Age &amp; anchor</h2>
+    <label class="row"><span class="name">Confirmations</span><span class="val" id="v-conf">0</span></label>
+    <input type="range" id="conf" min="0" max="4.5" step="0.01" style="width:100%">
+    <div class="readout" id="stage-readout"></div>
+    <label class="row" style="margin-top:10px;"><span class="name">Block hash</span></label>
+    <input type="text" id="hash" spellcheck="false">
+    <button class="ghost" id="rehash">Random hash</button>
+  </div>
+
+  <div class="group">
+    <h2>Growth stages (generations)</h2>
+    <div id="stages"></div>
+  </div>
+
+  <div class="group">
+    <h2>Grammar</h2>
+    <label class="row"><span class="name">Branchiness / generation</span><span class="val" id="v-branchinessPerGen"></span></label>
+    <input type="range" id="branchinessPerGen" min="0.02" max="0.5" step="0.01">
+    <label class="row"><span class="name">Branchiness cap</span><span class="val" id="v-branchinessCap"></span></label>
+    <input type="range" id="branchinessCap" min="0.1" max="1" step="0.05">
+    <label class="row"><span class="name">Fork threshold</span><span class="val" id="v-branchinessForkThreshold"></span></label>
+    <input type="range" id="branchinessForkThreshold" min="0" max="1" step="0.05">
+    <label class="row"><span class="name">Max size boost (gens)</span><span class="val" id="v-maxSizeBoost"></span></label>
+    <input type="range" id="maxSizeBoost" min="0" max="12" step="1">
+    <div id="prod-weights"></div>
+  </div>
+
+  <div class="group">
+    <h2>Turtle</h2>
+    <label class="row"><span class="name">Step (px)</span><span class="val" id="v-step"></span></label>
+    <input type="range" id="step" min="2" max="20" step="0.5">
+    <label class="row"><span class="name">Turn (deg)</span><span class="val" id="v-turnDeg"></span></label>
+    <input type="range" id="turnDeg" min="2" max="90" step="1">
+    <label class="row"><span class="name">Jitter (deg)</span><span class="val" id="v-jitterDeg"></span></label>
+    <input type="range" id="jitterDeg" min="0" max="45" step="1">
+    <label class="row"><span class="name">Max deflect tries</span><span class="val" id="v-maxDeflectTries"></span></label>
+    <input type="range" id="maxDeflectTries" min="1" max="16" step="1">
+    <label class="row"><span class="name">Leaf dedup radius (px)</span><span class="val" id="v-leafDedupPx"></span></label>
+    <input type="range" id="leafDedupPx" min="0" max="12" step="0.5">
+    <label class="row"><span class="name">Overflow past box (px)</span><span class="val" id="v-overflow"></span></label>
+    <input type="range" id="overflow" min="0" max="120" step="2">
+    <label class="row"><span class="name">Leash floor (px)</span><span class="val" id="v-maxReachFloor"></span></label>
+    <input type="range" id="maxReachFloor" min="10" max="300" step="5">
+    <label class="row"><span class="name">Leash × sigil size</span><span class="val" id="v-maxReachMul"></span></label>
+    <input type="range" id="maxReachMul" min="0.5" max="5" step="0.1">
+  </div>
+
+  <div class="group">
+    <h2>Base size</h2>
+    <label class="row"><span class="name">"Ordinary" sigil size (px)</span><span class="val" id="v-baseSize"></span></label>
+    <input type="range" id="baseSize" min="8" max="32" step="1">
+  </div>
+
+  <div class="group">
+    <h2>Display</h2>
+    <label class="row"><span class="name">Show obstacle boxes</span><input type="checkbox" id="debug"></label>
+    <label class="row"><span class="name">Show section frame</span><input type="checkbox" id="frame" checked></label>
+  </div>
+
+  <button id="reset" class="ghost">Reset all to defaults</button>
+</div>
+
+<div id="stage">
+  <div class="leaf">
+    <div class="leaf-label">Sample A — with a drop cap</div>
+    <div class="tx-wrap show-frame" id="wA">
+      <div class="section-title">§ 1</div>
+      <div class="chapter-body">
+        <p class="tx-body-lead">Beauty sue to tap out a tired roof. An you. Tax when see <span class="op" id="opA1">item⁶⁹</span>. A because. Dice see a museum. A sir behave to space via the dig. Due involve wrist to nerve. Mosquito empower to filter. Our siege divorce rub.<span class="op" id="opA2">∇</span></p>
+      </div>
+      <div class="amount-line">50.00000000 <span class="sigla" id="ribbonA">●</span></div>
+      <div class="citation-line" id="citeA">IV β1 <span class="sigla">■</span>37 §2042</div>
+    </div>
+  </div>
+
+  <div class="leaf">
+    <div class="leaf-label">Sample B — inline marks only, no drop cap</div>
+    <div class="tx-wrap show-frame" id="wB">
+      <div class="section-title">§ 2</div>
+      <div class="chapter-body">
+        <p><span class="op" id="opB1">⧉</span> Guy afford detail to satoshi via giggle. Torch see piano to organ per <span class="op" id="opB2">∇</span> coconut. A vast crime may equip hotel to alarm. Hero may pass lot. Its bright sir decorate essay to oxygen.</p>
+      </div>
+      <div class="amount-line">12.50000000 <span class="sigla" id="ribbonB">●</span></div>
+      <div class="citation-line" id="citeB">II β7 ■140 §912</div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import * as illum from './btc-illumination.js';
+
+  const { params, resetDerivations, illuminate, growthStage, GROWTH_STAGES, generateSymbol, sizeBoost } = illum;
+  const DEFAULTS = structuredClone(params);
+  const DEFAULT_STAGES = structuredClone(GROWTH_STAGES);
+
+  function randomHash() {
+    const bytes = crypto.getRandomValues(new Uint8Array(32));
+    return Array.from(bytes).map((b) => b.toString(16).padStart(2, '0')).join('');
+  }
+
+  const state = { confirmations: 6000, hash: randomHash(), baseSize: 16 };
+
+  const passages = [
+    { host: 'wA', seeds: ['opA1', 'opA2', 'ribbonA', 'citeA'], lead: true },
+    { host: 'wB', seeds: ['opB1', 'opB2', 'ribbonB', 'citeB'], lead: false },
+  ].map((p) => {
+    const host = document.getElementById(p.host);
+    const seedEls = p.seeds.map((id) => document.getElementById(id));
+    if (p.lead) seedEls.push(host.querySelector('.tx-body-lead'));
+    return { host, proseEl: host.querySelector('.chapter-body'), seedEls };
+  });
+
+  let handles = [];
+  function renderAll() {
+    for (const h of handles) h.destroy();
+    handles = passages.map((p) => illuminate(p.host, {
+      proseEl: p.proseEl,
+      seedEls: p.seedEls,
+      blockHash: state.hash,
+      confirmations: Math.round(state.confirmations),
+      debug: $('debug').checked,
+      sizeOf: (el) => (el.classList.contains('tx-body-lead')
+        ? parseFloat(getComputedStyle(el, '::first-letter').fontSize) || null
+        : null),
+      pointOf: (el) => (el.classList.contains('tx-body-lead') ? 'top-left' : 'edge'),
+      baseSize: state.baseSize,
+    }));
+    updateReadout();
+  }
+
+  function updateReadout() {
+    const stage = growthStage(state.confirmations);
+    const spec = GROWTH_STAGES[stage];
+    const symbol = generateSymbol(state.hash, stage, 0);
+    const fCount = (symbol.match(/F/g) || []).length;
+    const leadBoost = sizeBoost(64.6, state.baseSize);
+    const leadSymbol = generateSymbol(state.hash, stage, leadBoost);
+    const leadF = (leadSymbol.match(/F/g) || []).length;
+    document.getElementById('stage-readout').innerHTML =
+      `stage <b>${stage}</b> — "${spec.name}"<br>` +
+      `ordinary mark: <b>${spec.iterations}</b> gens, ${fCount} F's<br>` +
+      `drop cap (3.4em): <b>${spec.iterations + leadBoost}</b> gens (+${leadBoost}), ${leadF} F's`;
+  }
+
+  const $ = (id) => document.getElementById(id);
+
+  // ─── confirmations: log-scaled slider over 0..~1,000,000 ──────────────
+  function confFromSlider(v) { return v <= 0 ? 0 : Math.round(Math.pow(10, v) - 1); }
+  function sliderFromConf(c) { return c <= 0 ? 0 : Math.log10(c + 1); }
+  const confSlider = $('conf');
+  confSlider.value = sliderFromConf(state.confirmations);
+  function onConfChange() {
+    state.confirmations = confFromSlider(parseFloat(confSlider.value));
+    $('v-conf').textContent = state.confirmations.toLocaleString();
+    renderAll();
+  }
+  confSlider.addEventListener('input', onConfChange);
+
+  $('hash').value = state.hash;
+  $('hash').addEventListener('input', () => { state.hash = $('hash').value.trim() || randomHash(); renderAll(); });
+  $('rehash').addEventListener('click', () => { state.hash = randomHash(); $('hash').value = state.hash; renderAll(); });
+
+  // ─── growth stage iteration counts ─────────────────────────────────────
+  const stagesEl = $('stages');
+  GROWTH_STAGES.forEach((s, i) => {
+    const row = document.createElement('div');
+    row.className = 'stage-row';
+    const rangeLabel = s.max === Infinity ? `${s.min.toLocaleString()}+` : `${s.min.toLocaleString()}–${s.max.toLocaleString()}`;
+    row.innerHTML = `<span>${s.name}<br><span class="range">${rangeLabel} conf</span></span>`;
+    const input = document.createElement('input');
+    input.type = 'number'; input.min = 0; input.max = 20; input.value = s.iterations;
+    input.addEventListener('input', () => {
+      GROWTH_STAGES[i].iterations = Math.max(0, parseInt(input.value, 10) || 0);
+      resetDerivations();
+      renderAll();
+    });
+    row.appendChild(input);
+    stagesEl.appendChild(row);
+  });
+
+  // ─── production weights ────────────────────────────────────────────────
+  const prodEl = $('prod-weights');
+  params.productions.forEach((p, i) => {
+    const row = document.createElement('label');
+    row.className = 'row';
+    row.innerHTML = `<span class="name" style="font-family:'IBM Plex Mono',monospace;font-size:11px;">${p.to}${p.reserved ? ' *' : ''}</span><span class="val" id="v-prod${i}">${p.weight}</span>`;
+    const input = document.createElement('input');
+    input.type = 'range'; input.min = 0; input.max = 8; input.step = 1; input.value = p.weight;
+    input.addEventListener('input', () => {
+      params.productions[i].weight = parseFloat(input.value);
+      $(`v-prod${i}`).textContent = input.value;
+      resetDerivations();
+      renderAll();
+    });
+    row.insertBefore(input, row.querySelector('.val'));
+    prodEl.appendChild(row);
+  });
+  {
+    const note = document.createElement('div');
+    note.className = 'sub';
+    note.style.marginTop = '6px';
+    note.textContent = '* reserved: only picked once branchiness clears the fork threshold above.';
+    prodEl.appendChild(note);
+  }
+
+  // ─── grammar-affecting sliders (need resetDerivations) ─────────────────
+  const GRAMMAR_KEYS = ['branchinessPerGen', 'branchinessCap', 'branchinessForkThreshold', 'maxSizeBoost'];
+  // ─── turtle-only sliders (geometry, no cache to clear) ──────────────────
+  const TURTLE_KEYS = ['step', 'turnDeg', 'jitterDeg', 'maxDeflectTries', 'leafDedupPx', 'overflow', 'maxReachFloor', 'maxReachMul'];
+
+  function bindParam(key, grammar) {
+    const input = $(key);
+    const out = $(`v-${key}`);
+    input.value = params[key];
+    out.textContent = params[key];
+    input.addEventListener('input', () => {
+      params[key] = parseFloat(input.value);
+      out.textContent = input.value;
+      if (grammar) resetDerivations();
+      renderAll();
+    });
+  }
+  GRAMMAR_KEYS.forEach((k) => bindParam(k, true));
+  TURTLE_KEYS.forEach((k) => bindParam(k, false));
+
+  // Not a module param -- illuminate() takes baseSize as a per-call opt
+  // (the reader's own body-text size, in the real page), so this lab keeps
+  // it as its own state rather than bolting it onto the module's `params`.
+  $('baseSize').value = state.baseSize;
+  $('v-baseSize').textContent = state.baseSize;
+  $('baseSize').addEventListener('input', () => {
+    state.baseSize = parseFloat($('baseSize').value);
+    $('v-baseSize').textContent = $('baseSize').value;
+    renderAll();
+  });
+
+  $('debug').addEventListener('change', renderAll);
+  $('frame').addEventListener('change', () => {
+    document.querySelectorAll('.tx-wrap').forEach((w) => w.classList.toggle('show-frame', $('frame').checked));
+  });
+
+  $('reset').addEventListener('click', () => {
+    Object.assign(params, structuredClone(DEFAULTS));
+    DEFAULT_STAGES.forEach((s, i) => { GROWTH_STAGES[i].iterations = s.iterations; });
+    state.baseSize = 16;
+    resetDerivations();
+
+    GRAMMAR_KEYS.concat(TURTLE_KEYS).forEach((k) => { $(k).value = params[k]; $(`v-${k}`).textContent = params[k]; });
+    document.querySelectorAll('#prod-weights input[type="range"]').forEach((el, i) => {
+      el.value = params.productions[i].weight;
+      $(`v-prod${i}`).textContent = params.productions[i].weight;
+    });
+    document.querySelectorAll('#stages input').forEach((input, i) => { input.value = GROWTH_STAGES[i].iterations; });
+    $('baseSize').value = state.baseSize;
+    $('v-baseSize').textContent = state.baseSize;
+
+    renderAll();
+  });
+
+  onConfChange();
+</script>
+</body>
+</html>
