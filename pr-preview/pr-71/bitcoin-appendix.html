@@ -1128,6 +1128,8 @@ function statRowOf(key) {
 // own queue, not a fact about any block that will ever exist.
 if (kind === 'mempool') {
   const setQueue = statRowOf('queue');
+  const setSubsidy = statRowOf('subsidy');
+  const setFees = statRowOf('fees');
   const setPaid = statRowOf('expected');
   (async () => {
     // The reader's own notation, honoured before a single amount is set.
@@ -1155,12 +1157,14 @@ if (kind === 'mempool') {
       const deep = queue.blocks ? queue.blocks.length : Math.max(1, Math.ceil(queue.summary.vsize / MVB));
       setQueue(`${txs} transactions waiting, ${deep} ${deep === 1 ? 'chapter' : 'chapters'} deep`, credit);
     }
-    if (!rev) { setPaid(null); return; }
-    setPaid(formatAmount(rev.sats),
-      `What mining the ${rev.chapters.toLocaleString('en-US')} chapters now queued is expected to pay: `
-      + `${formatBtc(rev.sats - rev.fees)} of subsidy the schedule mints for writing them, and `
-      + `${formatBtc(rev.fees)} of fees the sections in them carry. ${credit}.`);
-  })().catch(() => { setQueue(null); setPaid(null); });
+    if (!rev) { setSubsidy(null); setFees(null); setPaid(null); return; }
+    const over = `over the ${rev.chapters.toLocaleString('en-US')} chapters now queued`;
+    setSubsidy(formatAmount(rev.sats - rev.fees),
+      `${formatBtc(rev.sats - rev.fees)} — what the schedule mints for writing them, ${over}`);
+    setFees(formatAmount(rev.fees),
+      `${formatBtc(rev.fees)} — what the sections in them carry, ${over}. ${credit}.`);
+    setPaid(formatAmount(rev.sats), `${formatBtc(rev.sats)} in all, ${over}. ${credit}.`);
+  })().catch(() => { setQueue(null); setSubsidy(null); setFees(null); setPaid(null); });
 }
 
 // ── The mines ─────────────────────────────────────────────────────────────

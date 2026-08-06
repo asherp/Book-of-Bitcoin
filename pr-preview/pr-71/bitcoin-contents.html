@@ -179,9 +179,7 @@ import { allProofs, citeOf, leafOf, estimatedDate, minedDate } from './btc-proof
 import { readingsOf } from './btc-commentary.js';
 
 import { minesForContents, largestMines, networkHashrate, formatHashrate } from './btc-mines.js';
-import { readQueue, expectedRevenue, MVB } from './btc-mempool.js';
-import { formatAmount, formatBtc, amountUnit, setDayPrice } from './btc-amounts.js';
-import { usdOn } from './btc-price.js';
+import { readQueue, buildQueue, MVB } from './btc-mempool.js';
 import { INDEXED, keptLedgers, sameAddresses } from './btc-index.js';
 import { volumeBookChapter, toRoman, fromRoman, heightOf, expectedReference, footnoteMark } from './btc-citation.js';
 import { storeGet, storePut } from './btc-store.js';
@@ -395,11 +393,11 @@ const toc = $('toc');
 // and from one small ranking call where it has not. Null until then, and the
 // leaf says so rather than standing empty.
 let minesSection = null;
-// The two live summaries the back matter's first pair carry in place of a
-// description of themselves -- filled when their leaf is opened, and until
-// then an ellipsis.
-let mempoolSummary = null;
-let mempoolStats = null;
+// Appendix I's projected chapters, set by btc-mempool.js the way a volume's
+// own chapters are set, and Appendix II's summary line -- each filled when
+// its leaf is opened, and until then an ellipsis.
+let projectedSection = null;
+let queueDepth = null;
 let minesSummary = null;
 // The Citations leaf's rows, built once the proofs have been read: each is
 // fetched (the bundled ones) or unpacked from storage (the reader's) and
@@ -449,7 +447,9 @@ function leafSub(leaf) {
   // is holding, and what the last window was won by. Both read when the leaf
   // is opened; an ellipsis until they land, and nothing at all where no
   // source will say.
-  if (part.kind === 'mempool') return mempoolSummary ?? '…';
+  if (part.kind === 'mempool') {
+    return `Ahead of the chain tip · ${queueDepth == null ? '…' : count(queueDepth, 'chapter', 'chapters')}`;
+  }
   if (part.kind === 'mines') return minesSummary ?? '…';
   if (part.kind === 'consensus') return `The rules the chapters are written under · ${count(part.bips.length, 'fork', 'forks')}`;
   if (part.kind === 'inscriptions') return `Files in witnesses · ${count(part.entries.length, 'inscription', 'inscriptions')}`;
@@ -576,7 +576,7 @@ function renderAppendix(part) {
   // are read on the queue's own leaf, one turn down, where a provisional
   // chapter can say it is provisional.
   if (part.kind === 'mempool') {
-    if (mempoolStats) toc.append(mempoolStats);
+    if (projectedSection) toc.append(projectedSection);
     return;
   }
   if (part.kind === 'mines') {
@@ -1146,50 +1146,20 @@ async function loadTip() {
   render();
 }
 
-// A live figure, set as the contents sets everything else: a name on the left
-// and the figure on the right, where a chapter's row carries a title and its
-// citation. Not a link -- a statistic is not a place to turn to.
-function statEl(name, figure, why) {
-  const row = document.createElement('div');
-  row.className = 'toc-entry';
-  if (why) row.title = why;
-  const t = document.createElement('span'); t.className = 'toc-title'; t.textContent = name;
-  const r = document.createElement('span'); r.className = 'toc-ref'; r.textContent = figure;
-  row.append(t, r);
-  return row;
-}
-
-// Appendix I's own figures: what the queue holds, and what mining it is
-// expected to pay. Asked once, when its leaf is the one on screen.
+// Appendix I's own list: the chapters the queue is forming, set the way a
+// volume's contents sets the chapters kept from it -- a Book heading over the
+// rows that share one, each row citing only what that heading has not already
+// named, all of it in the pencil the ■ they have not earned is owed in
+// (btc-mempool.js). Asked once, when its leaf is the one on screen.
 async function loadQueue() {
   const tip = await tipHeight();
-  if (amountUnit() === 'usd') setDayPrice(await usdOn(Math.floor(Date.now() / 1000)));
-  else setDayPrice(null);
-  const [queue, rev] = await Promise.all([
-    readQueue(tip, ['https://mempool.space/api']).catch(() => null),
-    expectedRevenue(tip, ['https://mempool.space/api']).catch(() => null),
-  ]);
-  if (!queue?.summary && !rev) { mempoolSummary = ''; render(); return; }
-  const wrap = document.createElement('div');
-  const credit = 'what mempool.space is holding at this moment — that node\'s claim about its own queue, '
-    + 'not a fact about any block that will ever exist';
-  // The head says how big the queue is; the rows say what mining it pays.
-  // Between them nothing is stated twice.
-  const bits = [];
-  if (queue?.summary) {
-    const deep = queue.blocks ? queue.blocks.length : Math.max(1, Math.ceil(queue.summary.vsize / MVB));
-    bits.push(`${queue.summary.count.toLocaleString('en-US')} transactions`,
-      `${deep} ${deep === 1 ? 'chapter' : 'chapters'} deep`);
-  }
-  if (rev) {
-    wrap.append(statEl('subsidy', formatAmount(rev.sats - rev.fees),
-      `what the schedule mints for writing the ${rev.chapters.toLocaleString('en-US')} chapters now queued`));
-    wrap.append(statEl('fees', formatAmount(rev.fees),
-      `what the sections in them carry. ${credit}`));
-    wrap.append(statEl('expected', formatAmount(rev.sats), `${formatBtc(rev.sats)} in all. ${credit}`));
-  }
-  mempoolStats = wrap.children.length ? wrap : null;
-  mempoolSummary = bits.join(' · ');
+  const queue = await readQueue(tip, ESPLORA_MIRRORS).catch(() => null);
+  if (!queue) { queueDepth = 0; render(); return; }
+  // The same arithmetic buildQueue uses for how far the queue reaches, so the
+  // head's count and the rows beneath it cannot disagree.
+  const projVsize = queue.blocks ? queue.blocks.reduce((sum, b) => sum + b.blockVSize, 0) : 0;
+  queueDepth = Math.max(1, Math.ceil((queue.summary ? queue.summary.vsize : projVsize) / MVB));
+  projectedSection = buildQueue(queue);
   render();
 }
 
