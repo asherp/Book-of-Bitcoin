@@ -1249,7 +1249,8 @@ import { parseTransaction, computeTxid, parseBlockHeader, computeBlockHash, bits
 // section joins it as a titled one-address ledger, the same registry the
 // Ledger page's own keep button writes. INDEXED is the curated shelf, whose
 // titles are the keep line's defaults.
-import { keptLedgers, saveKeptLedgers, INDEXED } from './btc-index.js';
+import { keptLedgers, saveKeptLedgers, keepLedger, INDEXED } from './btc-index.js';
+import { pathSegments } from './btc-path.js';   // a slash in a name the reader typed is a path
 import { composeTransactionFields, composeBlockHeaderFields, bitsInfo, groupDigits, formatBtc, formatAmount, formatAmountAs, formatOwnAmount, amountUnit, setAmountUnit, ownUnit, setOwnUnit, dayPrice, setDayPrice, renderWitness, toSuperscript, timestampInfo } from './btc-prose.js';
 import { usdOn, PRICE_SOURCES, priceSource, setPriceSource } from './btc-price.js';
 import { volumeBookChapter, heightOf, windowStartOf, retargetInside, subsidyAt, toRoman, reference, parseReference, footnoteMark, latinRefOf } from './btc-citation.js';
@@ -6922,7 +6923,8 @@ function syncScriptKeeps() {
     const curated = INDEXED.find((k) => k.addresses.includes(address));
     const ledgerHref = `./bitcoin-ledger.html?address=${encodeURIComponent(address)}`
       + (el.dataset.ref ? `&ref=${el.dataset.ref}` : '');
-    const name = reader ? (reader.title || address) : (curated ? curated.title : null);
+    // A filed name prints as the path it is -- `Coldcard hack / wave 3`.
+    const name = reader ? (pathSegments(reader.title).join(' / ') || address) : (curated ? curated.title : null);
     if (name) {
       const span = document.createElement('span');
       span.className = 'out-keep-name hash-copy';
@@ -7190,7 +7192,9 @@ function saveTitle() {
   // its address there), exactly what the Ledger page's keep button writes.
   if (menuEntry.ledger) {
     if (!keptLedgers().some((k) => k.addresses.includes(menuEntry.ledger))) {
-      saveKeptLedgers([...keptLedgers(), { title: titleInput.value.trim(), addresses: [menuEntry.ledger] }]);
+      // keepLedger folds a keep into the ledger already filed under that name
+      // (btc-index.js): naming this address as one already kept adds it there.
+      keepLedger(titleInput.value.trim(), [menuEntry.ledger]);
     }
     syncScriptKeeps();
     closeHashMenu();

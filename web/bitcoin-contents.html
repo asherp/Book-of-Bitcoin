@@ -178,7 +178,7 @@ import { toSubscript } from './btc-sigla.js';
 import { allProofs, citeOf, leafOf, estimatedDate, minedDate } from './btc-proofs.js';
 import { readingsOf } from './btc-commentary.js';
 import { readQueue, buildQueue } from './btc-mempool.js';
-import { INDEXED, keptLedgers, sameAddresses } from './btc-index.js';
+import { INDEXED, keptLedgers, sameAddresses, shelfLedgers } from './btc-index.js';
 // A slash in a name the reader typed is a path: their own keeps file into a
 // hierarchy, and only theirs do (btc-path.js says why).
 import { pathForest, pathSegments } from './btc-path.js';
@@ -458,7 +458,9 @@ function leafSub(leaf) {
   if (part.kind === 'consensus') return `The rules the chapters are written under · ${count(part.bips.length, 'fork', 'forks')}`;
   if (part.kind === 'inscriptions') return `Files in witnesses · ${count(part.entries.length, 'inscription', 'inscriptions')}`;
   if (part.kind === 'proofs') return `Works the chain attests · ${count(proofsCount ?? part.entries.length, 'work cited', 'works cited')}`;
-  const kept = keptLedgers().filter((k) => !INDEXED.some((e) => sameAddresses(e.addresses, k.addresses)));
+  // The shelf as it is listed, parents included: a filed parent is a ledger
+  // of its own, so it is one of the ledgers the subtitle counts.
+  const kept = shelfLedgers().filter((k) => !INDEXED.some((e) => sameAddresses(e.addresses, k.addresses)));
   return `Keepers, not chapters · ${count(INDEXED.length + kept.length, 'ledger', 'ledgers')}`;
 }
 
@@ -634,7 +636,11 @@ function renderAppendix(part) {
     else toc.append(saying('The proofs are still being read — or could not be. The register itself is one turn down, and a proof of your own can be dropped there either way.'));
     return;
   }
-  const kept = keptLedgers().filter((k) => !INDEXED.some((e) => sameAddresses(e.addresses, k.addresses)));
+  // The reader's shelf as they filed it: a slash in a name they typed nests
+  // the rows, and a parent is a ledger in its own right -- an openable row
+  // holding every member beneath it -- rather than a heading over them
+  // (btc-index.js's shelfLedgers says why the Coldcard hack settles that).
+  const kept = shelfLedgers().filter((k) => !INDEXED.some((e) => sameAddresses(e.addresses, k.addresses)));
   for (const l of INDEXED) toc.append(ledgerEl(l, false));
   for (const l of kept) toc.append(ledgerEl(l, true));
 }
@@ -649,7 +655,12 @@ function renderAppendix(part) {
 const shortAddr = (a) => `${a.slice(0, 6)}…${a.slice(-4)}`;
 function ledgerEl(ledger, isKept) {
   const row = document.createElement('a');
-  row.className = 'toc-entry under-book';
+  // A filed ledger steps in under the one it was filed under, the way a
+  // section listed beneath its chapter does. Its parent is a row of its own
+  // above it -- openable, holding every member beneath it -- so the indent
+  // is all the nesting needs to say.
+  row.className = 'toc-entry under-book' + (ledger.depth ? ' filed' : '');
+  if (ledger.depth) row.style.setProperty('--file-depth', String(ledger.depth));
   // A row here names a ledger, so it opens the ledger -- its title leaf,
   // where the compendium's descent into the passages begins. (An address
   // searched for is a passage, and the search page opens it as one, with
@@ -658,7 +669,13 @@ function ledgerEl(ledger, isKept) {
   // the size of the Coldcard hack's joined whole outgrows what a server
   // will take for a URI. A kept ledger resolves only from this reader's
   // own shelf, so its list rides whole and the link still carries the set.
-  row.href = `./bitcoin-ledger.html?address=${isKept ? ledger.addresses.join(',') : ledger.addresses[0]}&page=ledger`;
+  // A ledger the reader filed under a name of their own is named by that
+  // name: `?ledger=Coldcard hack/wave 3` says what it is, survives the set
+  // changing, and keeps a parent's 221 members out of a URI. Only this
+  // reader's shelf resolves it, which is exactly what a kept ledger is.
+  row.href = `./bitcoin-ledger.html?${isKept && ledger.title
+    ? `ledger=${encodeURIComponent(ledger.title)}`
+    : `address=${isKept ? ledger.addresses.join(',') : ledger.addresses[0]}&page=ledger`}`;
   const t = document.createElement('span');
   t.className = 'toc-title';
   if (isKept) {
@@ -670,7 +687,7 @@ function ledgerEl(ledger, isKept) {
   // what a row prints. Ledgers kept before that was asked of them fall back
   // to their first address, the same stand-in name the Ledger page gives
   // them -- a name in the title column, never a citation in the reference's.
-  t.append(document.createTextNode(ledger.title || shortAddr(ledger.addresses[0])));
+  t.append(document.createTextNode(ledger.leaf || ledger.name || ledger.title || shortAddr(ledger.addresses[0])));
   const r = document.createElement('span');
   r.className = 'toc-ref none';
   r.textContent = '—';

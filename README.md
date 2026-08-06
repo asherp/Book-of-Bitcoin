@@ -405,6 +405,29 @@ compiled to WASM) is consumed as a published
   transaction parsing, prose composition, citations, contents data,
   anthology data, and the archive (immutable chain data kept in IndexedDB,
   so revisited chapters and resolved citations read offline)
+- `web/btc-path.js` — a slash in a name the reader typed is a path. The book
+  files everything it holds in a hierarchy, and the one thing a reader could
+  name — a bookmark, a kept ledger — was the one thing that could not be
+  filed. `Coldcard hack/wave 1` files under `Coldcard hack`, at any depth,
+  with the group's name printed once as a heading and each row carrying only
+  its leaf. No new control: the naming form they already meet is the whole
+  interface, and an existing flat name is a path of depth one, so nothing
+  kept before this stops working. **Only the reader's own names read this
+  way** — a curated title is an editor's prose, and the book's most famous
+  one settles it: `The Times 03/Jan/2009 Chancellor on brink of second
+  bailout for banks` is a masthead date, not three levels of filing. In the
+  contents the two axes stay independent: a path makes headings, a citation
+  makes indents, and a keep the reader filed is never absorbed as the
+  citation-child of a row outside its group. On the shelf a path does more —
+  see `shelfLedgers` in `web/btc-index.js`: keeps sharing a path are one
+  ledger, and a parent is **a ledger in its own right** whose account is
+  every member beneath it, its children partitioning it. The Coldcard hack is
+  the argument: seven shared vaults and 214 that are not are two tables
+  answering different questions, while the parent still totals the 221 the
+  incident is quoted by. A filed ledger is named in a URL by its path
+  (`?ledger=Coldcard%20hack/wave%203`) rather than by its members — a name
+  that says what it is, survives the set changing, and keeps 221 addresses
+  out of a URI
 - `web/btc-lastread.js` — where the reader stopped. A book left face-down on
   a table opens where it was left, and this one now does too: the reading
   page keeps its own address as it turns, and a visit that names no passage —
