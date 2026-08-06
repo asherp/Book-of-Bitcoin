@@ -165,6 +165,11 @@ body {
 #chapter.span-leaf .chapter-title { margin-top: 4.5rem; }
 #chapter.span-leaf .chapter-hash { margin-top: 1.6rem; }
 #chapter.span-leaf .chapter-frontispiece { margin-top: auto; margin-bottom: 3.75rem; }
+/* The span's cost closes the leaf, so it inherits the breath the frontispiece
+   used to hold beneath it -- the pair sits at the foot of the leaf together
+   rather than the cost hanging off the bottom of it. */
+#chapter.span-leaf .chapter-frontispiece:has(+ .chapter-work:not(.hidden)) { margin-bottom: 1.5rem; }
+#chapter.span-leaf .chapter-work { margin-bottom: 3.75rem; }
 /* No bottom padding: the foot nav bar is the page's own floor. */
 .wrap { max-width: 720px; margin: 0 auto; padding: 48px 22px 0; }
 a { color: var(--accent); text-decoration: none; }
@@ -409,6 +414,19 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 .chapter-hash .book-target { white-space: nowrap; }
 .chapter-hash .book-target + .book-target { margin-top: .15em; }
 .chapter-hash .book-move { margin-top: .4em; }
+/* What the span cost, on every leaf that names a span: a chapter, a book, a
+   volume. It sits under the frontispiece rather than in it -- the
+   frontispiece is the eighty bytes in wire order, and this is a sum over
+   them, not a seventh field. The + is the whole reading: the number beside it
+   is what this span ADDED, where the chain's own total belongs to no one
+   chapter. Held on one line, and dim like everything else beneath the title,
+   since it is a margin note and not a claim the leaf is making. */
+.chapter-work {
+  margin: .5em auto 4px; max-width: 46ch; white-space: nowrap;
+  font: 400 calc(14.5px * var(--scale-body, 1))/1.55 'Newsreader','Book Sigla',serif;
+  color: var(--dim);
+}
+.chapter-work .work-mark { color: var(--accent); font-weight: 700; }
 /* The notation key, cut to the page: a row the page does not use leaves the
    flow entirely. The pattern tables are grids whose cells are direct children,
    so anything short of display:none would leave a hole in their columns. */
@@ -1168,6 +1186,7 @@ a.footnote-title.is-asset:hover { color: var(--accent-2, #dcb877); text-decorati
       <div class="chapter-subtitle hidden" id="ch-subtitle"></div>
       <div class="chapter-hash" id="ch-hash-short"></div>
       <div class="chapter-frontispiece" id="ch-frontispiece"></div>
+      <div class="chapter-work hidden" id="ch-work"></div>
       <h2 class="section-title" id="section-title"></h2>
       <div class="section-hash" id="section-hash"></div>
       <!-- The section's place in time, under its identity: the containing
@@ -1253,6 +1272,7 @@ import { keptLedgers, saveKeptLedgers, INDEXED } from './btc-index.js';
 import { composeTransactionFields, composeBlockHeaderFields, bitsInfo, groupDigits, formatBtc, formatAmount, formatAmountAs, formatOwnAmount, amountUnit, setAmountUnit, ownUnit, setOwnUnit, dayPrice, setDayPrice, renderWitness, toSuperscript, timestampInfo } from './btc-prose.js';
 import { usdOn, PRICE_SOURCES, priceSource, setPriceSource } from './btc-price.js';
 import { volumeBookChapter, heightOf, windowStartOf, retargetInside, subsidyAt, toRoman, reference, parseReference, footnoteMark, latinRefOf } from './btc-citation.js';
+import { blockWork, workBetween, formatHashes } from './btc-chainwork.js';
 import { loadNotables, places, placeTitle, blocksEta, appendix } from './btc-contents.js';
 import { queueLabel } from './btc-mempool.js';
 import { toSubscript } from './btc-sigla.js';
@@ -3669,6 +3689,9 @@ function renderChapterHead(onTitlePage) {
   $('ch-title').classList.toggle('hidden', !onTitlePage);
   $('ch-hash-short').classList.toggle('hidden', !onTitlePage);
   $('ch-frontispiece').classList.toggle('hidden', !onTitlePage);
+  // Hidden until something states it: renderWorkAdded below shows the line, and
+  // leaves it hidden where it has no figure to print.
+  $('ch-work').classList.add('hidden');
   if (onTitlePage) {
     const parts = blockHashParts(state.hash);
     const { prose: hashProse } = encodeCanonical(parts.hex, bookLang(), BEST_OF);
@@ -3679,6 +3702,9 @@ function renderChapterHead(onTitlePage) {
     $('ch-hash-short').innerHTML = hashNotationHtml(parts, hashProse);   // marks + Glossia prose -- safe as innerHTML
     attachHashCopy($('ch-title'), state.hash, 'block hash', hashNotationText(parts, hashProse));
     renderFrontispiece(state.header);
+    // Straight from the header above it, so a chapter states its cost at any
+    // height -- the vendored epochs are not consulted and cannot fall behind.
+    renderWorkAdded(blockWork(state.header.bits), 'this chapter');
   }
   return { volume, book, chapter };
 }
@@ -3730,6 +3756,10 @@ function renderProjectedHead(onTitlePage) {
   subtitle.classList.toggle('hidden', !onTitlePage);
   $('ch-hash-short').classList.toggle('hidden', !onTitlePage);
   $('ch-frontispiece').classList.toggle('hidden', !onTitlePage);
+  // A projected chapter has no header and so no target, and a chapter with no
+  // target has no cost to state -- what it will take to mine is not settled
+  // until the block that settles everything else about it.
+  $('ch-work').classList.add('hidden');
   if (!onTitlePage) return { volume, book, chapter };
 
   detachHashCopy($('ch-title'));   // no hash exists yet -- nothing to copy or bookmark
@@ -3885,6 +3915,12 @@ function renderVolumeLeaf() {
       fp.textContent = finished ? range : `${range} —`;
     }).catch(() => { if (gen === renderGen) fp.textContent = finished ? String(firstYear) : `${firstYear} —`; });
   }
+  // A volume's cost, on the same line every level states it. This is where the
+  // figure earns its place: the eras are not comparable in any unit a reader
+  // already has, and stated as hashes they are -- each volume so far has cost
+  // more than every volume before it put together.
+  renderWorkAdded(yearEnd === null ? null : workBetween(state.height, yearEnd),
+    finished ? 'this volume' : 'this volume so far', !finished);
   labelNav();
 }
 
@@ -3927,6 +3963,42 @@ function targetRow(parent, bits, governs) {
   if (bits !== null) appendBookTarget(row, bits, governs);
   parent.append(row);
   return row;
+}
+
+// What a span cost, on the leaf that names it: +5.45·10²³ hashes, the same
+// line at every level -- a chapter, a book, a volume.
+//
+// The unit is a word, not a mark. There is no sigil for a hash count, and the
+// vendored fonts are subset to exactly the glyphs the book uses (see
+// fonts.css's unicode-range and tools/fonts.test.mjs) -- an invented mark
+// would arrive as tofu on every reader's screen. The frontispiece states its
+// timestamp in words for the same reason.
+//
+// Work added, never the running total. The chain's own chainwork belongs to no
+// one chapter (consecutive chapters differ in the sixth figure and would print
+// the same number twice), and it is the added figure that says what a span was
+// worth. It is also the one figure the book's numbering cannot embarrass: a
+// book after Volume I straddles a retarget and states two targets for it, but
+// what it added is a single sum either way.
+//
+// Expected work, and rounded to three figures because of it -- 2^256/(target+1)
+// is a mean, not a measurement. See web/btc-chainwork.js.
+//
+// `span` names what was counted, for the tooltip; `partial` marks a span the
+// chain is still writing, whose figure is what has been recorded so far.
+function renderWorkAdded(work, span, partial = false) {
+  const el = $('ch-work');
+  el.textContent = '';
+  const figure = formatHashes(work);
+  el.classList.toggle('hidden', figure === null);
+  if (figure === null) return;   // past the vendored epochs: say nothing
+  const mark = document.createElement('span');
+  mark.className = 'work-mark';
+  mark.textContent = '+';
+  el.append(mark, `${figure} ${tr('hashes')}${partial ? ' —' : ''}`);
+  el.title = `the proof of work ${span} added — about ${figure} hashes, `
+    + 'the number of attempts it should have taken to mine'
+    + (partial ? ', counting only what has been recorded so far' : '');
 }
 
 // A difficulty, in the same shape bitsInfo's tooltip gives it.
@@ -4047,6 +4119,13 @@ function renderBookLeaf() {
     }).catch(() => { if (gen === renderGen) dates.textContent = `${timestampInfo(state.block.timestamp).mark}${finished ? '' : ' —'}`; });
   }
   fp.append(dates);
+  // What the book cost, under the targets it was mined under. Where those are
+  // two the leaf has just said so twice; this is the one figure that does not
+  // have to be, because a sum over chapters does not care which window they
+  // fell in. An unfinished book counts only as far as the tip.
+  const workEnd = finished ? bookEnd : tipIn;
+  renderWorkAdded(workEnd === null ? null : workBetween(state.height, workEnd),
+    finished ? 'this book' : 'this book so far', !finished);
   labelNav();
 }
 

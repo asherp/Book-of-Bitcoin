@@ -65,6 +65,7 @@
 // file rests on does not hold there.
 
 import { EPOCH_BITS } from './btc-chainwork-epochs.js';
+import { toSuperscript } from './btc-sigla.js';
 
 export { EPOCH_BITS };
 
@@ -132,10 +133,57 @@ export function chainWork(height) {
   return total;
 }
 
+// The work a run of chapters added, both ends inclusive -- what a book or a
+// volume cost, as against the chainWork above, which is what the chain had
+// cost by the time it reached one.
+//
+// This is the figure the leaves state, and it is the one that survives the
+// book's own numbering. A book is 2016 chapters but not, after Volume I, a
+// retarget window (see btc-citation.js): it opens 336 blocks further into a
+// live one with every volume, so a book that straddles a retarget was mined
+// under two targets and the leaf states both. Work added has no such trouble
+// -- however many windows a span crosses, what it added is one sum.
+export function workBetween(from, to) {
+  const lo = Math.floor(Number(from));
+  const hi = Math.floor(Number(to));
+  if (!Number.isFinite(lo) || !Number.isFinite(hi) || lo < 0 || hi < lo) return null;
+  const through = chainWork(hi);
+  if (through == null) return null;
+  if (lo === 0) return through;
+  const before = chainWork(lo - 1);
+  return before == null ? null : through - before;
+}
+
 // The 64-hex form Bitcoin Core prints, so a derived answer can be compared
 // with a node's byte for byte.
 export function formatWork(work) {
   return work == null ? null : work.toString(16).padStart(64, '0');
+}
+
+// A count of hashes as the book states a large number: three significant
+// figures over a power of ten, 5.42·10²³. The dot is the notation's own
+// multiplication sign throughout (2²⁰⁸·3·5·17·257) and × is not available for
+// one -- it is a Script opcode here.
+//
+// Rounded hard, and meant to be. The exact figure is an expectation, not a
+// measurement (a block realises whatever it realises; genesis's own hash sits
+// 2536x below the target it had to clear), so printing it to twenty-nine
+// digits would claim a precision the quantity does not have. Three figures is
+// what can be honestly read off it.
+export function formatHashes(work) {
+  if (work == null || work <= 0n) return null;
+  const n = Number(work);
+  if (!Number.isFinite(n)) return null;
+  let exponent = Math.floor(Math.log10(n));
+  let mantissa = n / 10 ** exponent;
+  // Two separate ways to land outside [1, 10), and they have to be settled in
+  // this order or they undo one another: log10 can fall on the wrong side of a
+  // power of ten, and rounding 9.999 to two figures then carries into the next
+  // one on its own.
+  if (mantissa < 1) { mantissa *= 10; exponent -= 1; }
+  if (mantissa >= 10) { mantissa /= 10; exponent += 1; }
+  if (Number(mantissa.toFixed(2)) >= 10) { mantissa = 1; exponent += 1; }
+  return `${mantissa.toFixed(2)}·10${toSuperscript(exponent)}`;
 }
 
 // The same quantity as a count of hashes, for prose that wants to say what it

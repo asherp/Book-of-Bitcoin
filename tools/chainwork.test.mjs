@@ -19,6 +19,7 @@ import assert from 'node:assert/strict';
 
 import {
   bitsToTarget, blockWork, difficultyOf, chainWork, formatWork,
+  workBetween, formatHashes,
   EPOCH_BITS, RETARGET_INTERVAL, LAST_HEIGHT,
   DIFFICULTY_1_TARGET, WORK_PER_DIFFICULTY,
 } from '../web/btc-chainwork.js';
@@ -118,6 +119,62 @@ test('nBits that no header would carry are refused', () => {
   assert.equal(bitsToTarget('03123456'), 0x123456n, 'exponent 3 is the mantissa itself');
   assert.equal(bitsToTarget('02123456'), 0x1234n, 'below 3 it shifts down, not up');
   assert.equal(bitsToTarget('0100ffff'), null, 'shifted away to nothing');
+});
+
+test('what a span added is what the chain gained across it', () => {
+  const ERA = 210000;
+  // The whole record is its volumes, and nothing is dropped between them.
+  let summed = 0n;
+  for (let v = 0; v * ERA <= LAST_HEIGHT; v++) {
+    summed += workBetween(v * ERA, Math.min((v + 1) * ERA - 1, LAST_HEIGHT));
+  }
+  assert.equal(summed, chainWork(LAST_HEIGHT));
+
+  // A span of one chapter is that chapter's own work.
+  assert.equal(workBetween(0, 0), blockWork(EPOCH_BITS[0]));
+  assert.equal(workBetween(900000, 900000), blockWork(EPOCH_BITS[Math.floor(900000 / 2016)]));
+
+  // A book that straddles a retarget still has one answer, and it is the two
+  // stretches added -- which is the whole reason the leaves can state it
+  // without the two rows difficulty needs.
+  const start = 210000, count = 2016, cut = 211680;
+  assert.equal(
+    workBetween(start, start + count - 1),
+    BigInt(cut - start) * blockWork(EPOCH_BITS[Math.floor(start / 2016)])
+      + BigInt(start + count - cut) * blockWork(EPOCH_BITS[cut / 2016]),
+  );
+});
+
+test('a span the table cannot reach is refused rather than shortened', () => {
+  assert.equal(workBetween(0, LAST_HEIGHT + 1), null);
+  assert.equal(workBetween(LAST_HEIGHT, LAST_HEIGHT + 1), null);
+  assert.equal(workBetween(5, 4), null, 'backwards');
+  assert.equal(workBetween(-1, 10), null);
+  assert.equal(workBetween(NaN, 10), null);
+  assert.ok(workBetween(LAST_HEIGHT, LAST_HEIGHT) > 0n);
+});
+
+test('a hash count is stated in the notation the book already uses', () => {
+  // Three figures over a power of ten, and the dot -- not x, which is a Script
+  // opcode here (btc-prose.js).
+  assert.equal(formatHashes(blockWork('1d00ffff')), '4.30·10⁹');
+  assert.match(formatHashes(chainWork(900000)), /^6\.21·10²⁸$/);
+  assert.equal(formatHashes(10n ** 20n), '1.00·10²⁰');
+  assert.equal(formatHashes(1n), '1.00·10⁰');
+  for (const w of [1n, 999n, 10n ** 28n, chainWork(500000), chainWork(LAST_HEIGHT)]) {
+    assert.match(formatHashes(w), /^\d\.\d\d·10[⁰¹²³⁴⁵⁶⁷⁸⁹]+$/, String(w));
+    assert.ok(!formatHashes(w).includes('×'), 'x is an opcode, not a product');
+  }
+  // The mantissa stays in [1, 10) across every power of ten, which is where
+  // log10's rounding is apt to push it out.
+  for (let e = 0; e < 40; e++) {
+    for (const w of [10n ** BigInt(e), 10n ** BigInt(e) * 9n + 10n ** BigInt(e) - 1n]) {
+      const m = Number(formatHashes(w).split('·')[0]);
+      assert.ok(m >= 1 && m < 10, `10^${e}: mantissa ${m}`);
+    }
+  }
+  assert.equal(formatHashes(0n), null);
+  assert.equal(formatHashes(null), null);
 });
 
 test('chainwork is what fork choice compares, so it only grows', () => {
