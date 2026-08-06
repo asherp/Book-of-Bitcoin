@@ -436,7 +436,8 @@ function leafSub(leaf) {
       + (n === 0 ? 'nothing kept yet' : count(n, 'entry', 'entries'));
   }
   const part = leaf.part;
-  if (part.kind === 'mining') return 'Ahead of the chain tip · the queue a block is taken from, and the hands that take it';
+  if (part.kind === 'mempool') return 'Ahead of the chain tip · the chapters the queue is already forming';
+  if (part.kind === 'mines') return 'The hands that take a chapter · the last difficulty window, counted';
   if (part.kind === 'consensus') return `The rules the chapters are written under · ${count(part.bips.length, 'fork', 'forks')}`;
   if (part.kind === 'inscriptions') return `Files in witnesses · ${count(part.entries.length, 'inscription', 'inscriptions')}`;
   if (part.kind === 'proofs') return `Works the chain attests · ${count(proofsCount ?? part.entries.length, 'work cited', 'works cited')}`;
@@ -474,7 +475,7 @@ function descent(leaf) {
 // place, a bookmark, a cold load -- opens the volume the reader was last
 // reading (the book notes it as it renders), and Volume I's leaf when there
 // is nothing to go on, that being where the book starts.
-const PART_ALIAS = { mining: 'mining', mempool: 'mining', future: 'consensus', entries: 'consensus', consensus: 'consensus', inscriptions: 'inscriptions', ledgers: 'ledgers', proofs: 'proofs' };
+const PART_ALIAS = { mempool: 'mempool', mines: 'mines', mining: 'mempool', future: 'consensus', entries: 'consensus', consensus: 'consensus', inscriptions: 'inscriptions', ledgers: 'ledgers', proofs: 'proofs' };
 const params = new URLSearchParams(location.search);
 function openingIndex(list) {
   if (params.get('at') === 'last') return list.length - 1;
@@ -557,12 +558,17 @@ function renderVolume(volume) {
 // the shelf of ledgers. Each part's heading is the leaf's own head now, so
 // nothing here prints one.
 function renderAppendix(part) {
-  if (part.kind === 'mining') {
-    toc.append(miningRow('The Mempool', './bitcoin-appendix.html?part=mining&at=mempool',
-      'The queue a block is taken from, read as the chapters it is about to become — on its own leaf, where a provisional chapter can say it is provisional.'));
-    toc.append(miningRow('The Mines', './bitcoin-appendix.html?part=mining&at=mines',
-      'The hands that take it, ordered by how much of the last difficulty window each won. Its leaf counts them.'));
+  // The queue's contents leaf lists nothing. Its coming chapters are places
+  // no block has reached, and the contents lists what the book holds -- they
+  // are read on the queue's own leaf, one turn down, where a provisional
+  // chapter can say it is provisional.
+  if (part.kind === 'mempool') {
+    toc.append(saying('The chapters the queue is forming are read on the appendix\'s own leaf, one turn down — provisional numbers that hold only while the queue does, and no place in a contents until a block has earned one.'));
+    return;
+  }
+  if (part.kind === 'mines') {
     if (minesSection) toc.append(minesSection);
+    else toc.append(saying('The mines are counted when their own leaf is opened — a fortnight of chapters, read off the chain. Nothing is listed here until they have been.'));
     return;
   }
   if (part.kind === 'consensus') {
@@ -627,21 +633,6 @@ function ledgerEl(ledger, isKept) {
 // in full (volume and all, since the leaf's head names an appendix, not a
 // volume); an unmined one is cited in full too but marked □, the
 // expected-chapter mark, its lookup answering with the date it is due.
-// One of Appendix I's two leaves, as a row of the contents: the door to the
-// leaf, set exactly as a volume's own entries are set -- same classes, same
-// face, same colour -- because it is the same kind of thing, a place in the
-// book you can turn to. Neither cites anything: a leaf is not a chapter.
-function miningRow(text, href, why) {
-  const row = document.createElement('a');
-  row.className = 'toc-entry';
-  row.href = href;
-  row.title = why;
-  const t = document.createElement('span'); t.className = 'toc-title';
-  t.textContent = text;
-  const r = document.createElement('span'); r.className = 'toc-ref';
-  row.append(t, r);
-  return row;
-}
 // A mine, as the contents names it: a name and no reference at all. A pool is
 // not a place in the chain -- the chain never writes one, only the tag a
 // coinbase carries -- so a row here cites nothing, exactly as a ledger's does,
@@ -650,7 +641,7 @@ function miningRow(text, href, why) {
 function mineEl(mine) {
   const row = document.createElement('a');
   row.className = 'toc-entry under-book';
-  row.href = `./bitcoin-appendix.html?part=mining&mine=${encodeURIComponent(mine.slug)}`;
+  row.href = `./bitcoin-appendix.html?part=mines&mine=${encodeURIComponent(mine.slug)}`;
   const t = document.createElement('span');
   t.className = 'toc-title';
   t.textContent = mine.name;
@@ -1147,7 +1138,7 @@ async function loadTip() {
 let minesAsked = false;
 function ensureMines() {
   const leaf = leaves()[at];
-  if (minesAsked || !leaf || leaf.part?.kind !== 'mining') return;
+  if (minesAsked || !leaf || leaf.part?.kind !== 'mines') return;
   minesAsked = true;
   loadMines();
 }
@@ -1170,7 +1161,7 @@ async function loadMines() {
   if (rest > 0) {
     const more = document.createElement('a');
     more.className = 'toc-entry under-book projected';
-    more.href = './bitcoin-appendix.html?part=mining&at=mines';
+    more.href = './bitcoin-appendix.html?part=mines';
     more.title = `Mines below one per cent of the window, where a fortnight of chapters cannot tell one from another. The shelf lists every one of them.`;
     const t = document.createElement('span'); t.className = 'toc-title';
     t.textContent = `and ${rest} smaller`;

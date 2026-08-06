@@ -7,7 +7,7 @@
 # CONTENTS is what belongs to the book but not to its reading order — reading
 # order being the order blocks were mined.
 #
-# Five parts, in three families, rendered in this order. The family sets the
+# Six parts, in three families, rendered in this order. The family sets the
 # heading: an APPENDIX holds the book's own matter out of reading order, and
 # wears the numeral of its place in the run; an INDEX points into the text,
 # many places per entry, and is titled "Index of …"; CITATIONS points out of
@@ -19,19 +19,21 @@
 # family follows from the kind (btc-notables.js), so a part is filed by what
 # it is rather than by where it sits:
 #
-#   I   Mining — the two ends of how a chapter comes to be written, which is
-#       why it comes first: it opens where the volumes close, so the turn from
-#       the chain tip to the next provisional chapter stays a single step down
-#       the page. Two leaves sit under it, side by side. THE MEMPOOL is the
-#       queue a block is taken from, read as the chapters it is about to
-#       become — built live by the page from the queue itself
-#       (btc-mempool.js), so there is nothing to list here. THE MINES is the
-#       hands that take it: one leaf per pool, in the order of how much of the
-#       last difficulty window each won, and beneath each the chapters it
-#       mined. Nothing is listed here for either — the mines are counted off
-#       the chain when the leaf opens (btc-mines.js), because who mined a
-#       block is not something a file can state in advance.
-#   II  Consensus — the rules the chapters are written under, grouped by the
+#   I   The Mempool — the chapters the queue is already forming, which is why
+#       it comes first: it opens where the volumes close, so the turn from the
+#       chain tip to the next provisional chapter stays a single step down the
+#       page. Built live by the page from the queue itself (btc-mempool.js);
+#       nothing to list here, a queue being a fact about this minute.
+#   II  The Mines — the hands that take a chapter from that queue: one leaf
+#       per pool, in the order of how much of the last difficulty window each
+#       won, and beneath each mine the chapters it mined. Nothing is listed
+#       here either — the mines are counted off the chain when the leaf opens
+#       (btc-mines.js), because who mined a block is an inference from an
+#       unauthenticated tag and not something a file can state in advance.
+#       The two stand apart rather than under one heading: the queue is about
+#       what is coming and the mines about what has been done, and a reader
+#       following either has no reason to be shown the other on the way.
+#   III Consensus — the rules the chapters are written under, grouped by the
 #       BIP that settled each. A soft fork names chapters the way nothing else
 #       does — the window that counted its signals, the height its rule first
 #       bound, the first passages written under it — and some of its chapters
@@ -53,7 +55,7 @@
 #       leaves, which is why this part lists ledgers here and explains itself
 #       there. The contents and the index are inverses; this is where the
 #       contents points at the other one.
-#   IV  Inscriptions — files written into witnesses and read back out by
+#   V   Inscriptions — files written into witnesses and read back out by
 #       software that agrees where to look. The book's own matter out of
 #       reading order: each entry is a witness footnote the volumes already
 #       hold (cited §n.a, like any witness place), gathered here because the
@@ -77,7 +79,7 @@
 #       the appendix's leaf, are kept beside them the way bookmarks are.
 #
 # A part's `kind` says who fills it: `consensus` and `inscriptions` are listed
-# here, `mining` and
+# here, `mempool`, `mines` and
 # `ledgers` are gathered by the page, and `proofs` is listed here too but names
 # files rather than places — each entry a `proof:` (an .ots file in proofs/), the
 # `subject:` it stamps, if the file itself is small enough to ship, and a
@@ -127,21 +129,21 @@
 # not a prophecy. This file and notables.yaml are read by the same machinery
 # (btc-notables.js) and licensed the same way; see the README's License section.
 
-- kind: mining
-  title: Mining
-  # No note. The leaf carries its two doors -- the queue, and the hands that
-  # take from it -- and they say what they are by being what they are; a
-  # paragraph above them would only say it again in the book's own voice,
-  # flush against the leaf, where the reading below it says it signed. The
-  # Citations part keeps its own leaf quiet on the same principle: a leaf sets
-  # the thing and gets out of the way, and saying what the thing IS is a
-  # reading.
-  #
-  # And here the reading is exactly that: not of any one draft chapter but of
-  # the question the queue's ordering begs -- who the miners are, and how
-  # anyone honestly counts their shares of the hashrate when the chain states
-  # blocks won and nothing else. Window choice, smoothing, and the error bars
-  # the dashboards omit.
+- kind: mempool
+  title: The Mempool
+  # No note. A leaf sets the thing and gets out of the way -- the Citations
+  # part keeps its own quiet on the same principle -- and this one's subtitle
+  # states the only thing about the queue worth stating: how deep it is and
+  # what mining it is expected to pay, both read when the leaf opens.
+
+- kind: mines
+  title: The Mines
+  # No note either, and for the same reason -- but the reading below is very
+  # much this part's: not of any one chapter but of the question the shelf
+  # begs. Who the miners are, and how anyone honestly counts their shares of
+  # the hashrate when the chain states blocks won and nothing else: window
+  # choice, smoothing, and the error bars the dashboards omit. It sits here
+  # rather than with the queue because it is about the mines.
   commentary:
     - file: measuring-pool-hashrate.md
       by: Claude Fable 5

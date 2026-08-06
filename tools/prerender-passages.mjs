@@ -507,7 +507,8 @@ export function indexMd(rendered) {
 export function sitemapXml(rendered, outputPaths = []) {
   const pages = [
     '', 'bitcoin-book.html', 'bitcoin-contents.html', 'bitcoin-front.html',
-    'bitcoin-appendix.html?part=mining', 'bitcoin-appendix.html?part=consensus',
+    'bitcoin-appendix.html?part=mempool', 'bitcoin-appendix.html?part=mines',
+    'bitcoin-appendix.html?part=consensus',
     'bitcoin-appendix.html?part=proofs',
     'bitcoin-search.html', 'bitcoin-ledger.html', 'bitcoin-ledgers.html',
     'preface.md', 'llms.txt', 'passages/index.md',

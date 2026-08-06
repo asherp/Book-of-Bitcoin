@@ -214,14 +214,17 @@ compiled to WASM) is consumed as a published
   them all — `partLabel` in `web/btc-notables.js` — so a part is called the
   same thing on every leaf that mentions it, and a family added to
   `appendix.yaml` is numbered, or not, in one place.
-  **Appendix I · Mining** — how a chapter comes to be written, from both
-  ends, and first of the parts because the volumes close on the chain tip's
-  row, so the turn from the tip to the next provisional chapter stays one
-  step down the page. Two leaves sit under it, side by side: **The Mempool**,
-  the queue a block is taken from, its subtitle carrying how deep that queue
-  is right now as mempool.space reports it; and **The Mines**, the hands that
-  take it — one leaf per pool, ordered by how much of the last difficulty
-  window each won, and beneath each mine the chapters it mined.
+  **Appendix I · The Mempool** — the chapters the queue is already forming,
+  first of the parts because the volumes close on the chain tip's row, so the
+  turn from the tip to the next provisional chapter stays one step down the
+  page. Its leaf states how deep the queue is and what mining it is expected
+  to pay, both as mempool.space reports them.
+  **Appendix II · The Mines** — the hands that take a chapter from that
+  queue: one leaf per pool, ordered by how much of the last difficulty window
+  each won, with the network's hash rate beside the shelf and, beneath each
+  mine, the chapters it mined. The two stand apart rather than under one
+  heading — the queue is about what is coming and the mines about what has
+  been done — and each has its own contents leaf.
   **Appendix II · Consensus** — the soft forks, grouped under their BIPs with their
   recognized names (Taproot, Segregated Witness…): each fork's sub-head is
   the door to a title leaf of its own carrying its activation statistics —
@@ -252,17 +255,17 @@ compiled to WASM) is consumed as a published
   `?part=consensus`, `?part=proofs`, with `?part=future` kept as an alias for
   saved links): a title leaf saying what the part gathers and why
   that cannot be read in sequence, with what it gathers one level below.
-  Appendix I descends into its own pair — **The Mempool** and, sideways of
-  it, **The Mines** (`?part=mining&at=mempool`, `&at=mines`). The Mempool
-  descends into the queue's **first chapter itself** — the block a reader
-  reaches by swiping forward off the chain tip — read in the book like any
-  other, marked □, and walked chapter by chapter from there; the ascent from
-  any of them lands back on that leaf, since a draft chapter belongs to no
-  volume or book of the body (the queue's own equivalent of a book is still
-  to be written). The Mines descends into the shelf of pools
-  (`&mine=<slug>`), turned through sideways in the order of the last
-  difficulty window, and a mine descends into the chapters it won
-  (`&mine=<slug>&at=blocks`), each row a door into the book. Appendix II lists its forks and descends
+  Appendix I (`?part=mempool`) descends into the queue's **first chapter
+  itself** — the block a reader reaches by swiping forward off the chain tip
+  — read in the book like any other, marked □, and walked chapter by chapter
+  from there; the ascent from any of them lands back on that leaf, since a
+  draft chapter belongs to no volume or book of the body (the queue's own
+  equivalent of a book is still to be written). Appendix II (`?part=mines`)
+  descends into the shelf of pools (`&mine=<slug>`), turned through sideways
+  in the order of the last difficulty window, and a mine descends into the
+  chapters it won (`&mine=<slug>&at=blocks`), each row a door into the book.
+  Links saved while the two stood under one `?part=mining` heading still
+  resolve — to the mines where they asked for them, to the queue otherwise. Appendix II lists its forks and descends
   into the first fork's own leaf (`?part=consensus&bip=341` names Taproot's):
   BIP number over recognized name, then the ballot itself, oldest block
   first — every block of the counted window, its version exactly as the
@@ -307,8 +310,7 @@ compiled to WASM) is consumed as a published
   mined one does, so it is listed by the same rules, in the pencil the ■ it
   has not earned is owed in. The stylesheet is shared with the appendix
   leaves so a chapter reads the same wherever it is set
-- `web/btc-mines.js` — the other half of Appendix I: who has been winning the
-  chapters. The last difficulty window — 2,016 blocks, one β and about a
+- `web/btc-mines.js` — Appendix II: who has been winning the chapters. The last difficulty window — 2,016 blocks, one β and about a
   fortnight — is counted block by block, each attributed to a pool, and the
   pools ordered by how many they won. The window is **counted rather than
   asked for**, for a reason worth knowing: mempool.space's
