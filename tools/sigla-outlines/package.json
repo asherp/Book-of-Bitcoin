@@ -1,0 +1,10 @@
+{
+  "name": "sigla-outline-extractor",
+  "private": true,
+  "type": "module",
+  "description": "Dev-only tool: extracts the Book Sigla glyph outlines the illumination pass uses for its initial growth tangent (see extract.mjs). Not a runtime dependency of the app -- its output (web/sigla-outlines.js) is what ships.",
+  "license": "MIT OR Apache-2.0",
+  "dependencies": {
+    "fontkit": "^2.0.4"
+  }
+}
