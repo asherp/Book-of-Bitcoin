@@ -307,8 +307,9 @@ compiled to WASM) is consumed as a published
   chapters**: a Book heading over the rows that share one, each row citing
   only what that heading has not already named (□2,016, then □1 under the
   next book) — a projected chapter falls in a book by the same arithmetic a
-  mined one does, so it is listed by the same rules, in the pencil the ■ it
-  has not earned is owed in. The stylesheet is shared with the appendix
+  mined one does, so it is listed by the same rules, in the volumes' own face
+  and ink; what says it is provisional is the □ its reference wears in place
+  of the ■ it has not earned. The stylesheet is shared with the appendix
   leaves so a chapter reads the same wherever it is set
 - `web/btc-mines.js` — Appendix II: who has been winning the chapters. The last difficulty window — 2,016 blocks, one β and about a
   fortnight — is counted block by block, each attributed to a pool, and the
