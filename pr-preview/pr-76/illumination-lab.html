@@ -34,9 +34,21 @@
 
   /* ─── control panel ─── */
   #panel { background: var(--panel); border-right: 1px solid var(--card-bd); padding: 20px 18px; overflow-y: auto; height: 100vh; position: sticky; top: 0; }
-  .group { margin-bottom: 22px; padding-bottom: 16px; border-bottom: 1px solid var(--card-bd); }
-  .group:last-child { border-bottom: none; }
-  .group h2 { font: 600 11px/1 'IBM Plex Mono', monospace; letter-spacing: .12em; text-transform: uppercase; color: var(--dim); margin: 0 0 10px; }
+
+  /* ─── shared control-panel classes (see illumination-controls.js) ─── */
+  .illum-ctl-group { margin-bottom: 22px; padding-bottom: 16px; border-bottom: 1px solid var(--card-bd); }
+  .illum-ctl-group:last-child { border-bottom: none; }
+  .illum-ctl-group h2 { font: 600 11px/1 'IBM Plex Mono', monospace; letter-spacing: .12em; text-transform: uppercase; color: var(--dim); margin: 0 0 10px; }
+  .illum-ctl-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 8px 0; font-size: 12.5px; color: var(--ink-soft); }
+  .illum-ctl-row .name { flex: 0 0 auto; }
+  .illum-ctl-row .val { color: var(--accent-2); font: 500 11.5px/1 'IBM Plex Mono', monospace; min-width: 3.5em; text-align: right; }
+  .illum-ctl-mono { font-family: 'IBM Plex Mono', monospace; font-size: 11px; }
+  .illum-ctl-stage-row { display: grid; grid-template-columns: 1fr 4.5em; align-items: center; gap: 8px; margin: 6px 0; font-size: 12px; color: var(--ink-soft); }
+  .illum-ctl-stage-row .range { color: var(--dim); font-size: 11px; }
+  .illum-ctl-sub { font-size: 11.5px; color: var(--dim); line-height: 1.5; margin-top: 6px; }
+  .illum-ctl-reset { background: transparent; color: var(--accent); border: 1px solid var(--card-bd); }
+  .illum-ctl-reset:hover { border-color: var(--accent); }
+
   label.row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 8px 0; font-size: 12.5px; color: var(--ink-soft); }
   label.row span.name { flex: 0 0 auto; }
   label.row .val { color: var(--accent-2); font: 500 11.5px/1 'IBM Plex Mono', monospace; min-width: 3.5em; text-align: right; }
@@ -44,8 +56,6 @@
   input[type="number"] { width: 4.5em; background: var(--card); border: 1px solid var(--card-bd); color: var(--ink); border-radius: 4px; padding: 3px 6px; font: 12px 'IBM Plex Mono', monospace; }
   input[type="text"] { width: 100%; background: var(--card); border: 1px solid var(--card-bd); color: var(--ink); border-radius: 4px; padding: 6px 8px; font: 12px 'IBM Plex Mono', monospace; }
   input[type="checkbox"] { accent-color: var(--accent); }
-  .stage-row { display: grid; grid-template-columns: 1fr 4.5em; align-items: center; gap: 8px; margin: 6px 0; font-size: 12px; color: var(--ink-soft); }
-  .stage-row .range { color: var(--dim); font-size: 11px; }
   button { font: 600 11.5px/1 'IBM Plex Mono', monospace; letter-spacing: .04em; text-transform: uppercase; background: var(--accent); color: #17140c; border: none; border-radius: 4px; padding: 8px 12px; cursor: pointer; width: 100%; margin-top: 4px; }
   button:hover { background: var(--accent-2); }
   button.ghost { background: transparent; color: var(--accent); border: 1px solid var(--card-bd); }
@@ -85,45 +95,10 @@
     <button class="ghost" id="rehash">Random hash</button>
   </div>
 
-  <div class="group">
-    <h2>Growth stages (generations)</h2>
-    <div id="stages"></div>
-  </div>
-
-  <div class="group">
-    <h2>Grammar</h2>
-    <label class="row"><span class="name">Branchiness / generation</span><span class="val" id="v-branchinessPerGen"></span></label>
-    <input type="range" id="branchinessPerGen" min="0.02" max="0.5" step="0.01">
-    <label class="row"><span class="name">Branchiness cap</span><span class="val" id="v-branchinessCap"></span></label>
-    <input type="range" id="branchinessCap" min="0.1" max="1" step="0.05">
-    <label class="row"><span class="name">Fork threshold</span><span class="val" id="v-branchinessForkThreshold"></span></label>
-    <input type="range" id="branchinessForkThreshold" min="0" max="1" step="0.05">
-    <label class="row"><span class="name">Max size boost (gens)</span><span class="val" id="v-maxSizeBoost"></span></label>
-    <input type="range" id="maxSizeBoost" min="0" max="12" step="1">
-    <div id="prod-weights"></div>
-  </div>
-
-  <div class="group">
-    <h2>Turtle</h2>
-    <label class="row"><span class="name">Step (px)</span><span class="val" id="v-step"></span></label>
-    <input type="range" id="step" min="2" max="20" step="0.5">
-    <label class="row"><span class="name">Turn (deg)</span><span class="val" id="v-turnDeg"></span></label>
-    <input type="range" id="turnDeg" min="2" max="90" step="1">
-    <label class="row"><span class="name">Jitter (deg)</span><span class="val" id="v-jitterDeg"></span></label>
-    <input type="range" id="jitterDeg" min="0" max="45" step="1">
-    <label class="row"><span class="name">Max deflect tries</span><span class="val" id="v-maxDeflectTries"></span></label>
-    <input type="range" id="maxDeflectTries" min="1" max="16" step="1">
-    <label class="row"><span class="name">Leaf dedup radius (px)</span><span class="val" id="v-leafDedupPx"></span></label>
-    <input type="range" id="leafDedupPx" min="0" max="12" step="0.5">
-    <label class="row"><span class="name">Overflow past box (px)</span><span class="val" id="v-overflow"></span></label>
-    <input type="range" id="overflow" min="0" max="120" step="2">
-    <label class="row"><span class="name">Leash floor (px)</span><span class="val" id="v-maxReachFloor"></span></label>
-    <input type="range" id="maxReachFloor" min="10" max="300" step="5">
-    <label class="row"><span class="name">Leash × sigil size</span><span class="val" id="v-maxReachMul"></span></label>
-    <input type="range" id="maxReachMul" min="0.5" max="5" step="0.1">
-    <label class="row"><span class="name">Reference font size (px)</span><span class="val" id="v-referenceFontSize"></span></label>
-    <input type="range" id="referenceFontSize" min="8" max="32" step="1">
-  </div>
+  <!-- Growth stages, Grammar, Turtle -- built by the shared control module
+       (see illumination-controls.js), the same one the book's own in-page
+       widget uses, so a knob added there shows up here for free. -->
+  <div id="shared-controls"></div>
 
   <div class="group">
     <h2>Base size</h2>
@@ -137,8 +112,6 @@
     <label class="row"><span class="name">Show obstacle boxes</span><input type="checkbox" id="debug"></label>
     <label class="row"><span class="name">Show section frame</span><input type="checkbox" id="frame" checked></label>
   </div>
-
-  <button id="reset" class="ghost">Reset all to defaults</button>
 </div>
 
 <div id="stage">
@@ -169,10 +142,9 @@
 
 <script type="module">
   import * as illum from './btc-illumination.js';
+  import { buildIlluminationControls } from './illumination-controls.js';
 
-  const { params, resetDerivations, illuminate, growthStage, GROWTH_STAGES, generateSymbol, sizeBoost } = illum;
-  const DEFAULTS = structuredClone(params);
-  const DEFAULT_STAGES = structuredClone(GROWTH_STAGES);
+  const { illuminate, growthStage, GROWTH_STAGES, generateSymbol, sizeBoost } = illum;
 
   function randomHash() {
     const bytes = crypto.getRandomValues(new Uint8Array(32));
@@ -245,68 +217,20 @@
   $('hash').addEventListener('input', () => { state.hash = $('hash').value.trim() || randomHash(); renderAll(); });
   $('rehash').addEventListener('click', () => { state.hash = randomHash(); $('hash').value = state.hash; renderAll(); });
 
-  // ─── growth stage iteration counts ─────────────────────────────────────
-  const stagesEl = $('stages');
-  GROWTH_STAGES.forEach((s, i) => {
-    const row = document.createElement('div');
-    row.className = 'stage-row';
-    const rangeLabel = s.max === Infinity ? `${s.min.toLocaleString()}+` : `${s.min.toLocaleString()}–${s.max.toLocaleString()}`;
-    row.innerHTML = `<span>${s.name}<br><span class="range">${rangeLabel} conf</span></span>`;
-    const input = document.createElement('input');
-    input.type = 'number'; input.min = 0; input.max = 20; input.value = s.iterations;
-    input.addEventListener('input', () => {
-      GROWTH_STAGES[i].iterations = Math.max(0, parseInt(input.value, 10) || 0);
-      resetDerivations();
-      renderAll();
-    });
-    row.appendChild(input);
-    stagesEl.appendChild(row);
+  // Growth stages, Grammar, and Turtle controls -- the shared module builds
+  // and binds them directly to `params`/`GROWTH_STAGES`; renderAll() is its
+  // onChange. Its own reset button covers params/GROWTH_STAGES; onReset
+  // folds this lab's one piece of extra state -- the sample base size --
+  // back to default alongside it.
+  buildIlluminationControls($('shared-controls'), illum, {
+    onChange: renderAll,
+    onReset: () => {
+      state.baseSize = 16;
+      $('baseSize').value = state.baseSize;
+      $('v-baseSize').textContent = state.baseSize;
+      document.querySelectorAll('.chapter-body').forEach((el) => { el.style.fontSize = `${state.baseSize}px`; });
+    },
   });
-
-  // ─── production weights ────────────────────────────────────────────────
-  const prodEl = $('prod-weights');
-  params.productions.forEach((p, i) => {
-    const row = document.createElement('label');
-    row.className = 'row';
-    row.innerHTML = `<span class="name" style="font-family:'IBM Plex Mono',monospace;font-size:11px;">${p.to}${p.reserved ? ' *' : ''}</span><span class="val" id="v-prod${i}">${p.weight}</span>`;
-    const input = document.createElement('input');
-    input.type = 'range'; input.min = 0; input.max = 8; input.step = 1; input.value = p.weight;
-    input.addEventListener('input', () => {
-      params.productions[i].weight = parseFloat(input.value);
-      $(`v-prod${i}`).textContent = input.value;
-      resetDerivations();
-      renderAll();
-    });
-    row.insertBefore(input, row.querySelector('.val'));
-    prodEl.appendChild(row);
-  });
-  {
-    const note = document.createElement('div');
-    note.className = 'sub';
-    note.style.marginTop = '6px';
-    note.textContent = '* reserved: only picked once branchiness clears the fork threshold above.';
-    prodEl.appendChild(note);
-  }
-
-  // ─── grammar-affecting sliders (need resetDerivations) ─────────────────
-  const GRAMMAR_KEYS = ['branchinessPerGen', 'branchinessCap', 'branchinessForkThreshold', 'maxSizeBoost'];
-  // ─── turtle-only sliders (geometry, no cache to clear) ──────────────────
-  const TURTLE_KEYS = ['step', 'turnDeg', 'jitterDeg', 'maxDeflectTries', 'leafDedupPx', 'overflow', 'maxReachFloor', 'maxReachMul', 'referenceFontSize'];
-
-  function bindParam(key, grammar) {
-    const input = $(key);
-    const out = $(`v-${key}`);
-    input.value = params[key];
-    out.textContent = params[key];
-    input.addEventListener('input', () => {
-      params[key] = parseFloat(input.value);
-      out.textContent = input.value;
-      if (grammar) resetDerivations();
-      renderAll();
-    });
-  }
-  GRAMMAR_KEYS.forEach((k) => bindParam(k, true));
-  TURTLE_KEYS.forEach((k) => bindParam(k, false));
 
   // Not a module param -- illuminate() takes baseSize as a per-call opt
   // (the reader's own body-text size, in the real page), so this lab keeps
@@ -327,24 +251,6 @@
   $('debug').addEventListener('change', renderAll);
   $('frame').addEventListener('change', () => {
     document.querySelectorAll('.tx-wrap').forEach((w) => w.classList.toggle('show-frame', $('frame').checked));
-  });
-
-  $('reset').addEventListener('click', () => {
-    Object.assign(params, structuredClone(DEFAULTS));
-    DEFAULT_STAGES.forEach((s, i) => { GROWTH_STAGES[i].iterations = s.iterations; });
-    state.baseSize = 16;
-    resetDerivations();
-
-    GRAMMAR_KEYS.concat(TURTLE_KEYS).forEach((k) => { $(k).value = params[k]; $(`v-${k}`).textContent = params[k]; });
-    document.querySelectorAll('#prod-weights input[type="range"]').forEach((el, i) => {
-      el.value = params.productions[i].weight;
-      $(`v-prod${i}`).textContent = params.productions[i].weight;
-    });
-    document.querySelectorAll('#stages input').forEach((input, i) => { input.value = GROWTH_STAGES[i].iterations; });
-    $('baseSize').value = state.baseSize;
-    $('v-baseSize').textContent = state.baseSize;
-
-    renderAll();
   });
 
   onConfChange();
