@@ -49,6 +49,25 @@ or go straight to <a href="./latest/">the latest chapter</a>.</p>
 <a href="./passages/index.md">curated passages as plain markdown</a>, the
 <a href="./preface.md">preface</a>, and <a href="./llms.txt">llms.txt</a> for
 how to read the rest of the chain the same way.</p>
-<script>location.replace('./bitcoin-front.html' + location.hash);</script>
+<!-- The root opens the book where the reader left it, and at the cover when
+     there is no such place — a first visit, a cleared machine, a reader who
+     has only ever seen the front matter. The record is btc-lastread.js's, and
+     its shape is written out here rather than imported because this page has
+     to decide before a module could load: the meta refresh above is already
+     racing it. tools/lastread.test.mjs fails if the two drift apart.
+     Anything unrecognized is simply not resumed — the cover is the safe
+     answer to a record this build does not understand. -->
+<script>
+(function () {
+  var to = './bitcoin-front.html';
+  try {
+    var rec = JSON.parse(localStorage.getItem('glossia-btc-last-read'));
+    if (rec && rec.v === 1 && typeof rec.q === 'string' && /^[\w=&%.,:+-]{1,300}$/.test(rec.q)) {
+      to = './bitcoin-book.html?' + rec.q;
+    }
+  } catch (e) { /* no storage, or nothing kept: the cover */ }
+  location.replace(to + location.hash);
+})();
+</script>
 </body>
 </html>

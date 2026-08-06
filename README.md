@@ -405,6 +405,21 @@ compiled to WASM) is consumed as a published
   transaction parsing, prose composition, citations, contents data,
   anthology data, and the archive (immutable chain data kept in IndexedDB,
   so revisited chapters and resolved citations read offline)
+- `web/btc-lastread.js` — where the reader stopped. A book left face-down on
+  a table opens where it was left, and this one now does too: the reading
+  page keeps its own address as it turns, and a visit that names no passage —
+  the bare domain, the installed app's own launch, a masthead's Read — resumes
+  there. What is kept is the query the page writes for itself, so a place is
+  as fine as the address grammar is (a §section, a book or volume leaf) and a
+  parameter added later rides along without this module learning about it. An
+  explicit target always wins: a shared link opens where it says and never on
+  the recipient's own place. A reader who stopped at the chain's front kept
+  the front rather than that block's number, so the tip is kept tip-relative
+  and resumes at whatever the tip is by then. The record is versioned and
+  self-checking, since it outlives the build that wrote it — taking an update
+  must not cost the reader their page — and one it does not recognize is
+  cleared rather than obeyed, leaving the reader at the cover, which is also
+  where a first visit begins
 - `web/btc-chaintime.js` — roughly when a height was mined, anchored on the
   halvings. One reading needs it: a coinbase's second field is a template
   timestamp in some pools' house style and a counter in others, and nothing

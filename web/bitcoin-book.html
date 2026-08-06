@@ -1421,6 +1421,9 @@ import { seedArchive } from './btc-seed.js';
 import { REGIONS, fontScale, setFontScale, resetFontScales, fontScaleDiverged,
          FONT_SCALE_MIN, FONT_SCALE_MAX, FONT_SCALE_STEP } from './btc-fontscale.js';
 import { pageAnchor, bankAnchor, peekAnchor, formatPage } from './btc-pages.js';
+// Where the reader stopped: written by updateUrl below (the one place that
+// knows what the page's own address is), read by a bare visit at the foot.
+import { keepPlace, lastPlace } from './btc-lastread.js';
 
 // A first visit provisions the archive with the curated passages' chain data
 // (idle-time, once ever; see btc-seed.js) -- the contents page's entries then
@@ -5135,6 +5138,14 @@ function updateUrl() {
   else if (state.index === -2) params.set('page', 'book');
   else if (state.index === -3) params.set('page', 'volume');
   history.replaceState(null, '', `${location.pathname}?${params.toString()}`);
+  // The same address, kept where closing the tab cannot reach it, so the next
+  // bare open resumes here (btc-lastread.js). One exception, and it is the
+  // reader's own meaning rather than a special case: someone who stopped at
+  // the chain's front kept the front, not that block's number — so the tip is
+  // recorded tip-relative and resumes at whatever the tip is by then.
+  const kept = new URLSearchParams(params);
+  if (tipHeight !== null && state.height === tipHeight) kept.set('block', '-1');
+  keepPlace(kept.toString());
 }
 
 // A section index is clamped into the block's transaction list; a negative
@@ -7238,11 +7249,15 @@ const pParam = parseReference(params.get('ref') || '');
 const txidParam = params.get('txid');
 const blockParam = params.get('block');
 // An absent ?index= opens the chapter's own page (-1); index=0 is §1;
-// ?page=volume / ?page=book open the block's volume or book leaf.
-const idxRaw = parseInt(params.get('index'), 10);
-const pageParam = params.get('page');
-const indexParam = Number.isFinite(idxRaw) ? idxRaw
-  : pageParam === 'volume' ? -3 : pageParam === 'book' ? -2 : -1;
+// ?page=volume / ?page=book open the block's volume or book leaf. Read as a
+// function of any parameters, because a resumed place is written in the same
+// grammar and has to be read by the same rules.
+const indexIn = (p) => {
+  const raw = parseInt(p.get('index'), 10);
+  const page = p.get('page');
+  return Number.isFinite(raw) ? raw : page === 'volume' ? -3 : page === 'book' ? -2 : -1;
+};
+const indexParam = indexIn(params);
 // The curated index before the first lookup: a chapter must not paint once
 // without its curated name and again with it. A local file (precached by the
 // service worker), so this costs a read rather than a round trip -- and a read
@@ -7300,7 +7315,21 @@ if (pParam) {
     }
   }).catch(() => { /* the lookup's own error handling has the page */ });
 } else {
-  openLookup('-1', indexParam);
+  // Nothing in the address at all: the bare reading page — the root's own
+  // forward, the installed app's start_url, a masthead's Read. This is where
+  // the book opens where it was left (btc-lastread.js); every branch above
+  // carries an explicit target and takes precedence, so a shared link always
+  // lands where it says and never on the recipient's own place.
+  //
+  // A resumed place that will not open is answered with a chapter that will,
+  // rather than an error the reader did nothing to earn — and the record is
+  // left standing, since the usual reason a lookup fails is a network that
+  // will be back.
+  const resume = [...params.keys()].length ? null : lastPlace();
+  const kept = resume ? new URLSearchParams(resume) : null;
+  if (kept) Promise.resolve(openLookup(kept.get('block') || '-1', indexIn(kept)))
+    .catch(() => openLookup('-1', -1));
+  else openLookup('-1', indexParam);
 }
 </script>
 </body>
