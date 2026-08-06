@@ -272,6 +272,20 @@ test('params.turnDeg is read live -- changing it changes how far "+"/"-" turn', 
   } finally { params.turnDeg = original; }
 });
 
+test('geometryScale scales step distance -- keeps decoration in proportion to font size', () => {
+  const anchor = { x: 0, y: 0, angle: 0 };
+  const unscaled = interpretFrom('FF', anchor, [], null, noJitterRng, Infinity, 1).flatMap((s) => s.points);
+  const doubled = interpretFrom('FF', anchor, [], null, noJitterRng, Infinity, 2).flatMap((s) => s.points);
+  assert.equal(doubled[1].x, unscaled[1].x * 2, 'doubling geometryScale should double each step\'s distance');
+});
+
+test('geometryScale defaults to 1 -- an unscaled caller sees no change', () => {
+  const anchor = { x: 0, y: 0, angle: 0 };
+  const withDefault = interpretFrom('FF', anchor, [], null, noJitterRng).flatMap((s) => s.points);
+  const explicit1 = interpretFrom('FF', anchor, [], null, noJitterRng, Infinity, 1).flatMap((s) => s.points);
+  assert.deepEqual(withDefault, explicit1);
+});
+
 test('resetDerivations() is required for a grammar change to actually take effect on an already-seen block', () => {
   const hash = 'params-live-tuning-test'.padEnd(64, '1');
   const before = generateSymbol(hash, 4, 0);
