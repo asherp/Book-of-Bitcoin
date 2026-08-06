@@ -5457,15 +5457,14 @@ function atAppendixEdge() {
 }
 function toAppendix() {
   try { sessionStorage.setItem('glossia-appendix-entrance', 'fwd'); } catch {}
-  location.href = './bitcoin-appendix.html?part=mining';
+  location.href = './bitcoin-appendix.html?part=mempool';
 }
-// Above a draft chapter is the queue's own leaf -- Appendix I gathers the
-// mines beside the mempool now, and a draft chapter belongs to the queue, so
-// the ascent lands there rather than on the part above it. The page lifts
-// away and the appendix drops in from above, as an ascent does.
+// Above a draft chapter is Appendix I's own leaf -- the queue it came out of.
+// The page lifts away and the appendix drops in from above, as an ascent
+// does.
 function toAppendixLeaf() {
   try { sessionStorage.setItem('glossia-appendix-entrance', 'drop'); } catch {}
-  location.href = './bitcoin-appendix.html?part=mining&at=mempool';
+  location.href = './bitcoin-appendix.html?part=mempool';
 }
 
 async function goToLevel(direction) {
