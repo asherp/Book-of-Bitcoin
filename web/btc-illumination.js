@@ -272,20 +272,66 @@ function tangentAlongPath(d, x, y) {
   return Math.atan2(p1.y - p0.y, p1.x - p0.x);
 }
 
-// The seed's own glyph, traced at its edge point -- sigla-outlines.js's
-// entries are pre-normalized to a unit square (see that file's own header),
-// so an anchor's actual measured rect `r` is the map back to host space: no
-// separate font-size factor to carry, since `r` is already the size the
-// browser rendered that exact character at. Returns null (not every
-// character the notation uses has an entry, and none of the composite
-// multi-glyph marks' non-leading codepoints do -- see extract.mjs) for
-// measureAnchors to fall back to the sigil's plain bounding-box edge.
+// Where a seed element's FIRST glyph actually puts ink, in host space.
+//
+// Not the same box as the element's own -- and the difference is not small.
+// A mark's span is an inline box: it carries the line's leading above and
+// below the letter (~19% of its height here), and it spans every character
+// in the mark, so a composite like "β₃₂" measures the subscript digits too
+// and comes out about 2.5x wider than the β itself. sigla-outlines.js's
+// entries are normalized to the glyph's own tight ink box, so mapping one
+// through the span's box would stretch and slide it off the letter it
+// describes, and the tangent read from it would be the direction of some
+// other part of the glyph entirely.
+//
+// The browser's own text metrics answer this exactly, for the very font and
+// size the element is rendered in: actualBoundingBox* is the glyph's ink
+// box relative to the text origin, and fontBoundingBox* locates the
+// baseline within the inline box (half-leading split evenly above and
+// below). Returns null where an engine doesn't report them, so the caller
+// falls back rather than trusting a half-measured box.
+let inkCtx = null;
+function glyphInkBox(el, r) {
+  const ch = Array.from(el.textContent || '')[0];
+  if (!ch) return null;
+  try {
+    inkCtx = inkCtx || document.createElement('canvas').getContext('2d');
+    if (!inkCtx) return null;
+    const cs = getComputedStyle(el);
+    inkCtx.font = `${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+    const m = inkCtx.measureText(ch);
+    const { actualBoundingBoxLeft: aL, actualBoundingBoxRight: aR,
+            actualBoundingBoxAscent: aA, actualBoundingBoxDescent: aD,
+            fontBoundingBoxAscent: fA, fontBoundingBoxDescent: fD } = m;
+    if (![aL, aR, aA, aD, fA, fD].every(Number.isFinite)) return null;
+    const w = aL + aR, h = aA + aD;
+    if (!(w > 0) || !(h > 0)) return null;
+    const baseline = r.y + (r.h - (fA + fD)) / 2 + fA;
+    return { x: r.x - aL, y: baseline - aA, w, h };
+  } catch (_) { return null; }
+}
+
+// The seed's own glyph, traced where growth is about to start from it. The
+// outline is a unit square (see sigla-outlines.js) and the glyph's measured
+// ink box (above) is the map back to host space -- no font-size factor to
+// carry separately, since that box is already the size the browser rendered
+// this exact character at. An anchor sitting outside the ink box (the edge
+// point is taken on the span's larger box, so it can land in the leading)
+// simply reads the tangent at the nearest point of the letter to it, which
+// is the same question asked from slightly further away.
+//
+// Returns null -- for measureAnchors to fall back to the sigil's plain
+// bounding-box edge -- when the character has no outline (not every mark in
+// the notation does, and none of the composite marks' non-leading
+// codepoints do; see extract.mjs) or its ink can't be measured.
 function glyphTangent(el, r, hostX, hostY) {
   if (!(r.w > 0) || !(r.h > 0)) return null;
   const ch = Array.from(el.textContent || '')[0];
   const d = ch && SIGLA_OUTLINES[ch];
   if (!d) return null;
-  const u = (hostX - r.x) / r.w, v = (hostY - r.y) / r.h;
+  const box = glyphInkBox(el, r);
+  if (!box) return null;
+  const u = (hostX - box.x) / box.w, v = (hostY - box.y) / box.h;
   return tangentAlongPath(d, u, v);
 }
 
