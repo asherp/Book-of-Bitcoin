@@ -405,20 +405,24 @@ compiled to WASM) is consumed as a published
   transaction parsing, prose composition, citations, contents data,
   anthology data, and the archive (immutable chain data kept in IndexedDB,
   so revisited chapters and resolved citations read offline)
-- `web/btc-path.js` — a slash in a name the reader typed is a path. The book
-  files everything it holds in a hierarchy, and the one thing a reader could
-  name — a bookmark, a kept ledger — was the one thing that could not be
-  filed. `Coldcard hack/wave 1` files under `Coldcard hack`, at any depth,
-  with the group's name printed once as a heading and each row carrying only
-  its leaf. No new control: the naming form they already meet is the whole
-  interface, and an existing flat name is a path of depth one, so nothing
-  kept before this stops working. **Only the reader's own names read this
-  way** — a curated title is an editor's prose, and the book's most famous
-  one settles it: `The Times 03/Jan/2009 Chancellor on brink of second
-  bailout for banks` is a masthead date, not three levels of filing. In the
-  contents the two axes stay independent: a path makes headings, a citation
-  makes indents, and a keep the reader filed is never absorbed as the
-  citation-child of a row outside its group. On the shelf a path does more —
+- `web/btc-path.js` — a slash in a name is a path. The book files everything
+  it holds in a hierarchy, and names were the one thing that could not be
+  filed. `Cold Card Attack/wave 1` files under `Cold Card Attack`, at any
+  depth, with the group's name printed once as a heading and each row
+  carrying only its leaf. No new control: the naming form a reader already
+  meets is the whole interface, an existing flat name is a path of depth one,
+  and the curated entries had been filing by hand with a comma
+  (`Coldcard attack, wave 1`) — a flat title straining to be a path. **A
+  group forms only where two or more names share a parent, and a name
+  standing alone prints exactly as its author wrote it.** That is what lets
+  the rule read an editor's prose safely: the book's most famous title,
+  `The Times 03/Jan/2009 Chancellor on brink of second bailout for banks`,
+  is a masthead date, it stands alone in its first segment, and so it is
+  never filed and never respelled — filing is something an author does
+  deliberately, by naming two entries alike, and one slash on its own is
+  punctuation. In the contents the two axes stay independent: filing makes
+  headings and citation makes indents, filing being the outer of the two, so
+  a row is only ever the citation-child of one it was filed beside. On the shelf a path does more —
   see `shelfLedgers` in `web/btc-index.js`: keeps sharing a path are one
   ledger, and a parent is **a ledger in its own right** whose account is
   every member beneath it, its children partitioning it. The Coldcard hack is
