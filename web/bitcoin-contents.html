@@ -178,7 +178,10 @@ import { toSubscript } from './btc-sigla.js';
 import { allProofs, citeOf, leafOf, estimatedDate, minedDate } from './btc-proofs.js';
 import { readingsOf } from './btc-commentary.js';
 
-import { minesForContents, largestMines } from './btc-mines.js';
+import { minesForContents, largestMines, networkHashrate, formatHashrate } from './btc-mines.js';
+import { readQueue, expectedRevenue, MVB } from './btc-mempool.js';
+import { formatAmount, formatBtc, amountUnit, setDayPrice } from './btc-amounts.js';
+import { usdOn } from './btc-price.js';
 import { INDEXED, keptLedgers, sameAddresses } from './btc-index.js';
 import { volumeBookChapter, toRoman, fromRoman, heightOf, expectedReference, footnoteMark } from './btc-citation.js';
 import { storeGet, storePut } from './btc-store.js';
@@ -392,6 +395,12 @@ const toc = $('toc');
 // and from one small ranking call where it has not. Null until then, and the
 // leaf says so rather than standing empty.
 let minesSection = null;
+// The two live summaries the back matter's first pair carry in place of a
+// description of themselves -- filled when their leaf is opened, and until
+// then an ellipsis.
+let mempoolSummary = null;
+let mempoolStats = null;
+let minesSummary = null;
 // The Citations leaf's rows, built once the proofs have been read: each is
 // fetched (the bundled ones) or unpacked from storage (the reader's) and
 // replayed, all of it offline but none of it synchronous, so the section
@@ -436,8 +445,12 @@ function leafSub(leaf) {
       + (n === 0 ? 'nothing kept yet' : count(n, 'entry', 'entries'));
   }
   const part = leaf.part;
-  if (part.kind === 'mempool') return 'Ahead of the chain tip · the chapters the queue is already forming';
-  if (part.kind === 'mines') return 'The hands that take a chapter · the last difficulty window, counted';
+  // These two say a figure, not a sentence about themselves: what the queue
+  // is holding, and what the last window was won by. Both read when the leaf
+  // is opened; an ellipsis until they land, and nothing at all where no
+  // source will say.
+  if (part.kind === 'mempool') return mempoolSummary ?? '…';
+  if (part.kind === 'mines') return minesSummary ?? '…';
   if (part.kind === 'consensus') return `The rules the chapters are written under · ${count(part.bips.length, 'fork', 'forks')}`;
   if (part.kind === 'inscriptions') return `Files in witnesses · ${count(part.entries.length, 'inscription', 'inscriptions')}`;
   if (part.kind === 'proofs') return `Works the chain attests · ${count(proofsCount ?? part.entries.length, 'work cited', 'works cited')}`;
@@ -563,7 +576,7 @@ function renderAppendix(part) {
   // are read on the queue's own leaf, one turn down, where a provisional
   // chapter can say it is provisional.
   if (part.kind === 'mempool') {
-    toc.append(saying('The chapters the queue is forming are read on the appendix\'s own leaf, one turn down — provisional numbers that hold only while the queue does, and no place in a contents until a block has earned one.'));
+    if (mempoolStats) toc.append(mempoolStats);
     return;
   }
   if (part.kind === 'mines') {
@@ -789,7 +802,7 @@ function render() {
     history.replaceState(null, '', `${location.pathname}?${leafQuery(leaf)}`);
   } catch (_) { /* unavailable */ }
   toc.replaceChildren();
-  ensureMines();   // arriving at Appendix I's leaf is what asks for the mines
+  ensureLive();   // arriving at a leaf is what asks for its own figures
   // The curation is a file this page reads (notables.yaml); if it could not be
   // read, the page says so rather than presenting an empty contents as though
   // the book kept nothing. The reader's own bookmarks still list below.
@@ -1129,6 +1142,53 @@ async function loadTip() {
   render();
 }
 
+// A live figure, set as the contents sets everything else: a name on the left
+// and the figure on the right, where a chapter's row carries a title and its
+// citation. Not a link -- a statistic is not a place to turn to.
+function statEl(name, figure, why) {
+  const row = document.createElement('div');
+  row.className = 'toc-entry';
+  if (why) row.title = why;
+  const t = document.createElement('span'); t.className = 'toc-title'; t.textContent = name;
+  const r = document.createElement('span'); r.className = 'toc-ref'; r.textContent = figure;
+  row.append(t, r);
+  return row;
+}
+
+// Appendix I's own figures: what the queue holds, and what mining it is
+// expected to pay. Asked once, when its leaf is the one on screen.
+async function loadQueue() {
+  const tip = await tipHeight();
+  if (amountUnit() === 'usd') setDayPrice(await usdOn(Math.floor(Date.now() / 1000)));
+  else setDayPrice(null);
+  const [queue, rev] = await Promise.all([
+    readQueue(tip, ['https://mempool.space/api']).catch(() => null),
+    expectedRevenue(tip, ['https://mempool.space/api']).catch(() => null),
+  ]);
+  if (!queue?.summary && !rev) { mempoolSummary = ''; render(); return; }
+  const wrap = document.createElement('div');
+  const credit = 'what mempool.space is holding at this moment — that node\'s claim about its own queue, '
+    + 'not a fact about any block that will ever exist';
+  // The head says how big the queue is; the rows say what mining it pays.
+  // Between them nothing is stated twice.
+  const bits = [];
+  if (queue?.summary) {
+    const deep = queue.blocks ? queue.blocks.length : Math.max(1, Math.ceil(queue.summary.vsize / MVB));
+    bits.push(`${queue.summary.count.toLocaleString('en-US')} transactions`,
+      `${deep} ${deep === 1 ? 'chapter' : 'chapters'} deep`);
+  }
+  if (rev) {
+    wrap.append(statEl('subsidy', formatAmount(rev.sats - rev.fees),
+      `what the schedule mints for writing the ${rev.chapters.toLocaleString('en-US')} chapters now queued`));
+    wrap.append(statEl('fees', formatAmount(rev.fees),
+      `what the sections in them carry. ${credit}`));
+    wrap.append(statEl('expected', formatAmount(rev.sats), `${formatBtc(rev.sats)} in all. ${credit}`));
+  }
+  mempoolStats = wrap.children.length ? wrap : null;
+  mempoolSummary = bits.join(' · ');
+  render();
+}
+
 // The mines are named for the leaf that lists them and for no other. Every
 // other leaf of the contents would otherwise pay the same call for rows
 // nobody is looking at -- so this is asked on arrival at Appendix I's leaf,
@@ -1136,11 +1196,11 @@ async function loadTip() {
 // archive-warm path costs nothing at all, which is what lets the cold one
 // stay this rare: a reader who never opens Appendix I never asks for a mine.
 let minesAsked = false;
-function ensureMines() {
-  const leaf = leaves()[at];
-  if (minesAsked || !leaf || leaf.part?.kind !== 'mines') return;
-  minesAsked = true;
-  loadMines();
+let queueAsked = false;
+function ensureLive() {
+  const kind = leaves()[at]?.part?.kind;
+  if (kind === 'mines' && !minesAsked) { minesAsked = true; loadMines(); }
+  if (kind === 'mempool' && !queueAsked) { queueAsked = true; loadQueue(); }
 }
 
 // The mines, named as cheaply as they can be named (btc-mines.js): the
@@ -1149,6 +1209,12 @@ function ensureMines() {
 // Either way this is a list of NAMES -- no share is printed here, because a
 // contents lists what the book holds and the measuring belongs to the leaf.
 async function loadMines() {
+  networkHashrate().then((got) => {
+    const rate = got && formatHashrate(got.hashrate);
+    if (!rate) return;
+    minesSummary = minesSummary ? `${rate} · ${minesSummary}` : rate;
+    render();
+  }).catch(() => { /* the leaf stands without it */ });
   const read = await minesForContents(await tipHeight()).catch(() => null);
   if (!read) return;                                // nothing listed; the shelf is one turn down
   const { mines, rest } = largestMines(read);
@@ -1170,6 +1236,8 @@ async function loadMines() {
     wrap.append(more);
   }
   minesSection = wrap;
+  const won = `${read.mines.length} mines`;
+  minesSummary = minesSummary && !minesSummary.includes('mines') ? `${minesSummary} · ${won}` : won;
   render();
 }
 
