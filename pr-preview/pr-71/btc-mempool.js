@@ -32,9 +32,13 @@
 // authority of the record it sits beneath. The chapters this is about to
 // become are worth listing. Their contents are not yet anything.
 //
-// The rows are dressed in the contents' own classes (.toc-entry.projected and
-// friends, from btc-toc.css): a projected chapter should look like the mined
-// ones it is queued behind, in the pencil rather than the ink.
+// The rows are dressed in the contents' own classes (.toc-entry and friends,
+// from btc-toc.css) -- the volumes' face and the volumes' ink, because a
+// projected chapter is listed here the way a mined one is listed there and a
+// contents that changed type halfway down would be saying so twice. What
+// says these are provisional is the □ each reference wears in place of the ■
+// it has not earned, which is the citation's own business and carries the
+// whole of the claim.
 
 import { entryHref } from './btc-contents.js';
 import { volumeBookChapter, toRoman, expectedReference, subsidyAt } from './btc-citation.js';
@@ -63,21 +67,6 @@ export async function chainTip(mirrors = MEMPOOL_MIRRORS) {
     } catch { /* try the next mirror */ }
   }
   return null;
-}
-
-// The fees waiting in the queue, in satoshis -- what the chapters not yet
-// written are carrying for whoever writes them. One call, and only the
-// figure: /mempool's own summary, whose total_fee is the sum over everything
-// held. Null where nowhere would answer, which prints as nothing rather than
-// as an empty queue.
-//
-// A count of what one node is holding at one moment is that node's claim
-// about its own queue and not a fact about any block that will ever exist,
-// so every surface that prints this names where it came from.
-export async function upcomingFees(mirrors = MEMPOOL_MIRRORS) {
-  const got = await anyMirror(mirrors, '/mempool');
-  const fees = Number(got?.data?.total_fee);
-  return Number.isFinite(fees) ? fees : null;
 }
 
 // ── What mining the queue is expected to pay ──────────────────────────────
@@ -191,7 +180,7 @@ function bookHead(height, tipVolume) {
 // row opens the book at that height.
 function projEntryEl({ height, text, ref, refTitle, underBook }) {
   const row = document.createElement('a');
-  row.className = 'toc-entry projected' + (underBook ? ' under-book' : '');
+  row.className = 'toc-entry' + (underBook ? ' under-book' : '');
   row.href = entryHref(String(height));
   const t = document.createElement('span');
   t.className = 'toc-title';
