@@ -600,7 +600,10 @@ a:hover { text-decoration: underline; }
              title. Opens under the button on a suggested name in the block
              version's own notation; the ledger is kept on save. -->
         <div class="keep-title hidden" id="keep-title">
-          <input type="text" id="keep-title-input" placeholder="Title for the contents" autocomplete="off" spellcheck="false" maxlength="80">
+          <!-- 160 rather than 80: a name is a path now (btc-path.js), and a
+               reader filing three levels deep spends most of a short limit on
+               the parents they have already typed once. -->
+          <input type="text" id="keep-title-input" placeholder="Title for the contents, / to file it" autocomplete="off" spellcheck="false" maxlength="160">
           <div class="keep-title-row">
             <button type="button" class="save-btn" id="keep-title-save">Keep</button>
             <button type="button" class="ghost-btn" id="keep-title-cancel">Cancel</button>

@@ -179,6 +179,9 @@ import { allProofs, citeOf, leafOf, estimatedDate, minedDate } from './btc-proof
 import { readingsOf } from './btc-commentary.js';
 import { readQueue, buildQueue } from './btc-mempool.js';
 import { INDEXED, keptLedgers, sameAddresses } from './btc-index.js';
+// A slash in a name the reader typed is a path: their own keeps file into a
+// hierarchy, and only theirs do (btc-path.js says why).
+import { pathForest, pathSegments } from './btc-path.js';
 import { volumeBookChapter, toRoman, fromRoman, heightOf, expectedReference, footnoteMark } from './btc-citation.js';
 import { storeGet, storePut } from './btc-store.js';
 import { seedArchive } from './btc-seed.js';
@@ -358,9 +361,15 @@ function tailRef({ book, chapter, section, vout, wit }, underBook, parent) {
 // never resolved carries a dash in place of a reference. `parent` marks a row
 // nested under its parent entry's row rather than directly under a heading:
 // one more step of indent, and a reference compressed against the parent's.
-function entryEl(entry, underBook, parent) {
+// `filing` carries the reader's own hierarchy where they have one: `title`
+// is the leaf to print in place of the whole path (the heading above has
+// said the rest), and `depth` how far in the group stands.
+function entryEl(entry, underBook, parent, filing = null) {
   const row = document.createElement('a');
-  row.className = 'toc-entry' + (underBook ? ' under-book' : '') + (parent ? ' under-parent' : '') + (entry.bookmark ? ' is-bookmark' : '');
+  const depth = filing?.depth ?? 0;
+  row.className = 'toc-entry' + (underBook ? ' under-book' : '') + (parent ? ' under-parent' : '')
+    + (depth ? ' filed' : '') + (entry.bookmark ? ' is-bookmark' : '');
+  if (depth) row.style.setProperty('--file-depth', String(depth - 1));
   row.dataset.entryId = entry.id;   // the projected section anchors after the tip's row
   // The witness coordinate travels two ways: a curated place carries its
   // footnote number (linked as the letter mark, the citation's own .a), a
@@ -375,7 +384,7 @@ function entryEl(entry, underBook, parent) {
     bm.innerHTML = '<svg viewBox="0 0 12 16"><path fill="currentColor" d="M0 0h12v16l-6-4-6 4z"/></svg>';
     t.append(bm);
   }
-  t.append(document.createTextNode(entry.title));
+  t.append(document.createTextNode(filing?.title || entry.title));
   const r = document.createElement('span'); r.className = 'toc-ref';
   if (entry.place) r.textContent = tailRef(entry.place, underBook, parent);
   else { r.textContent = '—'; r.classList.add('none'); }
@@ -383,6 +392,18 @@ function entryEl(entry, underBook, parent) {
   return row;
 }
 function head(cls, label) { const d = document.createElement('div'); d.className = cls; d.textContent = label; return d; }
+// A heading the reader wrote: the name they filed a run of keeps under. It
+// flies their ribbon, the way each row beneath it does, so a glance says
+// whose heading it is -- the volume's and the book's are the book's own.
+function fileHead(label, depth) {
+  const d = head('toc-file', label);
+  d.style.setProperty('--file-depth', String(depth));
+  const bm = document.createElement('span');
+  bm.className = 'toc-bm'; bm.setAttribute('aria-label', 'your bookmarks');
+  bm.innerHTML = '<svg viewBox="0 0 12 16"><path fill="currentColor" d="M0 0h12v16l-6-4-6 4z"/></svg>';
+  d.prepend(bm);
+  return d;
+}
 function saying(text) { const d = document.createElement('div'); d.className = 'toc-empty'; d.textContent = text; return d; }
 
 const toc = $('toc');
@@ -521,7 +542,15 @@ function renderVolume(volume) {
   // reference compressed against the parent's. Titles never bleed up a
   // level, but a listing may nest down one: the five burns of one chapter
   // read beneath the chapter's own row, each cited by its § alone.
-  const isChildOf = (p, c) => p.place.chapter != null && p.place.section == null && !p.page
+  // ...but only within one filing. A keep the reader filed under a name of
+  // their own belongs to that group first: it must not be absorbed as the
+  // child of whatever row happens to name its block, or the group loses a
+  // member to an accident of where the passage sits. Two entries nest only
+  // when they were filed in the same place -- both unfiled, or both under
+  // the same parent path -- which is what keeps the two axes independent.
+  const fileOf = (e) => (e.bookmark ? pathSegments(e.title).slice(0, -1).join('/') : '');
+  const isChildOf = (p, c) => fileOf(p) === fileOf(c)
+    && p.place.chapter != null && p.place.section == null && !p.page
     && c.place.book === p.place.book && c.place.chapter === p.place.chapter && c.place.section != null;
   const nodes = [];
   for (const e of entries) {
@@ -529,20 +558,54 @@ function renderVolume(volume) {
     if (last && isChildOf(last.entry, e)) last.children.push(e);
     else nodes.push({ entry: e, children: [] });
   }
-  // The Book sub-heading earns its place only over two or more rows at the
-  // top level: a lone parent with its children is already its own group,
+  // The reader's own filing, over the top of all that. A slash in a name
+  // THEY typed is a path (btc-path.js), so keeps that belong together read
+  // together — under a heading carrying the group's name, with each row
+  // printing only its leaf. A curated title never files: it is an editor's
+  // prose, and the book's most famous one settles it — "The Times
+  // 03/Jan/2009 …" is a masthead date, not three levels of filing. The two
+  // axes stay out of each other's way, which is the whole design: a path
+  // makes headings, a citation makes indents, and the citation nesting
+  // below carries on unchanged inside a group.
+  const filed = pathForest(nodes, (n) => (n.entry.bookmark ? n.entry.title : null));
+
+  // A run of ungrouped rows keeps the leaf's own manners exactly: the Book
+  // sub-heading earns its place only over two or more consecutive rows that
+  // share one -- a lone parent with its children is already its own group,
   // and its row carries the full β-marked reference the heading would.
-  for (let k = 0; k < nodes.length;) {
-    const bk = nodes[k].entry.place.book;
-    let jb = k + 1; while (jb < nodes.length && nodes[jb].entry.place.book === bk) jb++;
-    const underBook = jb - k >= 2;
-    if (underBook) toc.append(head('toc-book', `Book ${bk}`));   // spelled out, no β; the β sigil rides only the compact tail references
-    for (let m = k; m < jb; m++) {
-      toc.append(entryEl(nodes[m].entry, underBook));
-      for (const c of nodes[m].children) toc.append(entryEl(c, underBook, nodes[m].entry.place));
+  const rowsRun = (rows, depth) => {
+    for (let k = 0; k < rows.length;) {
+      const node = rows[k].entry;
+      const bk = node.entry.place.book;
+      let jb = k + 1;
+      while (jb < rows.length && rows[jb].entry.entry.place.book === bk) jb++;
+      // Inside a group the Book heading stands down: a group gathers rows
+      // from wherever the reader kept them, so each cites its own book.
+      const underBook = depth === 0 && jb - k >= 2;
+      if (underBook) toc.append(head('toc-book', `Book ${bk}`));   // spelled out, no β; the β sigil rides only the compact tail references
+      for (let m = k; m < jb; m++) {
+        const n = rows[m].entry;
+        toc.append(entryEl(n.entry, underBook, null, { title: rows[m].title, depth }));
+        for (const c of n.children) toc.append(entryEl(c, underBook, n.entry.place, { depth }));
+      }
+      k = jb;
     }
-    k = jb;
-  }
+  };
+
+  const renderFiled = (list, depth) => {
+    for (let k = 0; k < list.length;) {
+      if (list[k].kind === 'group') {
+        toc.append(fileHead(list[k].label, depth));
+        renderFiled(list[k].nodes, depth + 1);
+        k++;
+        continue;
+      }
+      let j = k; while (j < list.length && list[j].kind === 'row') j++;
+      rowsRun(list.slice(k, j), depth);
+      k = j;
+    }
+  };
+  renderFiled(filed, 0);
 }
 
 // Appendix I: the mempool, built live from the queue (below). Appendix II:
