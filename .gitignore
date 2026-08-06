@@ -25,3 +25,8 @@ tools/twitter-bot/state.json
 tools/twitter-bot/node_modules/
 tools/twitter-bot/package-lock.json
 passage.png
+
+# The sigla outline extractor's (tools/sigla-outlines/) one dependency --
+# its committed output is web/sigla-outlines.js, not this.
+tools/sigla-outlines/node_modules/
+tools/sigla-outlines/package-lock.json

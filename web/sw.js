@@ -78,6 +78,19 @@ const SHELL = [
   './btc-ots.js',
   './btc-proofs.js',
   './btc-fontscale.js',
+  // The illumination layer (issue #73) and the two modules it pulls: the
+  // control panel its in-page widget builds, and the generated glyph
+  // outlines it starts each vine's growth along. All three are imported
+  // lazily by the page, exactly as btc-ots.js above is -- and, like it,
+  // they belong in the shell anyway. Precaching is about a file being
+  // THERE offline and refreshing ATOMICALLY with the rest of a deploy
+  // (see refreshShell); it says nothing about when a page parses it. Left
+  // out, a reader taking an update would get the new bitcoin-book.html
+  // beside a stale illumination module -- the mixed build this list's
+  // whole-shell sweep exists to rule out.
+  './btc-illumination.js',
+  './illumination-controls.js',
+  './sigla-outlines.js',
   './bitcoin-book.webmanifest',
   './icons/beta-icon.svg',
   './icons/beta-icon-16.png',
