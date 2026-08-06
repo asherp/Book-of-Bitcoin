@@ -717,11 +717,11 @@
 # vaults by onlookers is not mistaken for the attack. No published reading
 # yet -- the entries are kept, per the note above, before anyone has
 # finished saying why.
-- title: Coldcard attack, wave 1
+- title: Cold Card Attack/wave 1
   id: 14edd9ee8445793c320e92e3b50365a0e18b8b25f424044bce337463f007fdd2
-- title: Coldcard attack, wave 2
+- title: Cold Card Attack/wave 2
   id: be0a120150d5e2bb246047d709e61e300617b7f288a8943f3bdfc04d3462eafc
-- title: Coldcard attack, wave 3
+- title: Cold Card Attack/wave 3
   id: 871d99f1ff2f1213a9677cbeca323a8d93c8041906db67e6d1265fe52a58ecb9
 
 # ── The ledgers ───────────────────────────────────────────────────────────

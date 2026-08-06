@@ -18,12 +18,19 @@
 // carries only its leaf.
 //
 // ── Whose names read this way ────────────────────────────────────────────
-// The reader's own, and only theirs. A curated title is prose an editor
-// wrote, and the book's most famous one settles it: `The Times 03/Jan/2009
-// Chancellor on brink of second bailout for banks` is a newspaper's masthead
-// date, not three levels of filing. A reader's title is a name they typed
-// into a naming form and can retype; an editor's is a quotation. So the
-// callers pass the reader's entries here and leave the curated ones alone.
+// Every name in the contents: the reader's own keeps, and the curated
+// entries too, which had been filing by hand with a comma (`Coldcard attack,
+// wave 1`) — a flat title straining to be a path.
+//
+// The hazard that reading raises is a real one and worth naming, because the
+// book's most famous title carries slashes: `The Times 03/Jan/2009 Chancellor
+// on brink of second bailout for banks` is a newspaper's masthead date, not
+// three levels of filing. What protects it is not an exception but the rule
+// below — a group forms only where two or more names share a parent, and a
+// name standing alone prints EXACTLY as its author wrote it. The masthead is
+// alone in its first segment and always will be, so it is never filed and
+// never respelled. Filing is a thing an author does deliberately, by naming
+// two entries alike; one slash on its own is punctuation.
 //
 // ── The grammar, written down once ───────────────────────────────────────
 // Segments are separated by `/`, each trimmed of its own whitespace, and
@@ -101,9 +108,16 @@ export function pathForest(entries, titleOf = (e) => e.title) {
     if (node.kind !== 'group') return node;
     // A lone row under a heading is a row, and it carries the rest of its
     // name: dropping the heading must not drop what the heading was saying.
+    // At the outer level nothing has been said above it, so it prints the
+    // title EXACTLY as its author wrote it -- which is what makes this rule
+    // safe over prose an editor wrote rather than a name a reader typed.
+    // `The Times 03/Jan/2009 Chancellor on brink of second bailout for
+    // banks` is a masthead date, and it stands alone, so it prints whole.
     const rows = flatRows(node);
     if (rows.length === 1) {
-      return { kind: 'row', entry: rows[0].entry, title: pathLabel(pathSegments(titleOf(rows[0].entry)).slice(depth)) };
+      const whole = titleOf(rows[0].entry);
+      return { kind: 'row', entry: rows[0].entry,
+               title: depth ? pathLabel(pathSegments(whole).slice(depth)) : whole };
     }
     // A heading whose only content is one further heading is one heading.
     let n = node;
