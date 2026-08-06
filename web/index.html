@@ -3,7 +3,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>The βitcoin βook</title>
 <meta name="description" content="The Bitcoin block chain, read as a book: each block a chapter, each transaction a paragraph of grammatically correct prose — every byte decodes back out exactly.">
 <!-- The root opens the book at its title page (bitcoin-front.html's first
@@ -34,6 +34,13 @@
 <meta name="twitter:title" content="The βook of βitcoin — Vires in Numeris">
 <meta name="twitter:description" content="The illuminated timechain: each block a chapter, each transaction a paragraph of grammatically correct prose.">
 <meta name="twitter:image" content="https://bookofbitcoin.io/og-bookofbitcoin.png">
+<style>
+  /* The root is gone in a frame and loads no stylesheet, but it renders under
+     the display cutout like every other page now, and its one line should not
+     spend that frame under a camera. The gutters btc-chrome.css keeps for the
+     pages that set text, written out for the page that only forwards. */
+  body { margin:8px max(8px, env(safe-area-inset-right, 0px)) 8px max(8px, env(safe-area-inset-left, 0px)); }
+</style>
 </head>
 <body>
 <p><a href="./bitcoin-front.html">Open The βitcoin βook</a> at its title page,

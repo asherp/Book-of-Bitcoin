@@ -3,7 +3,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>The βook of βitcoin — a block, read as a chapter</title>
 <meta name="description" content="A Bitcoin block rendered as a chapter: each transaction a paragraph, its witness data footnotes, in grammatically correct Glossia prose.">
 <link rel="icon" type="image/png" sizes="32x32" href="./icons/beta-icon-32.png">
@@ -166,7 +166,7 @@ body {
 #chapter.span-leaf .chapter-hash { margin-top: 1.6rem; }
 #chapter.span-leaf .chapter-frontispiece { margin-top: auto; margin-bottom: 3.75rem; }
 /* No bottom padding: the foot nav bar is the page's own floor. */
-.wrap { max-width: 720px; margin: 0 auto; padding: 48px 22px 0; }
+.wrap { max-width: 720px; margin: 0 auto; padding: 48px var(--gutter-r) 0 var(--gutter-l); }
 a { color: var(--accent); text-decoration: none; }
 a:hover { text-decoration: underline; }
 .mono { font-family: 'IBM Plex Mono','Book Sigla', monospace; }
