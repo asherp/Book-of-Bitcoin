@@ -22,6 +22,12 @@
 // currentColor exactly as the bookmark ribbon and printer mark are (see
 // ribbonOf / printerOf in bitcoin-book.html) — no new stylesheet, no new
 // font, nothing fetched.
+//
+// The one exception is sigla-outlines.js, a same-origin, dependency-free
+// data module of its own (a plain object of path strings, generated offline
+// by tools/sigla-outlines/extract.mjs from the vendored Book Sigla font
+// files themselves) -- see measureAnchors' glyphTangent for what it's for.
+import { SIGLA_OUTLINES } from './sigla-outlines.js';
 
 // ─── deterministic RNG, seeded from a hex string (a block hash, a txid) ────
 // splitmix32: small, fast, good enough scatter for cover-word/branch choice —
@@ -240,6 +246,95 @@ function tangentAngles(px, py, rect) {
   return [axis, axis + Math.PI];
 }
 
+// The direction an SVG path is running in wherever it passes closest to
+// (x, y) -- both in whatever coordinate space `d`'s own numbers are in.
+// Sampled with the browser's own path geometry (getPointAtLength) rather
+// than parsed by hand, on a <path> that is never attached to the document;
+// that works in every engine this app targets, so there's no DOM cost to
+// pay for an answer only measureAnchors' glyphTangent (below) needs once
+// per anchor, at layout time.
+function tangentAlongPath(d, x, y) {
+  const path = svgEl('path', { d });
+  const len = path.getTotalLength();
+  if (!(len > 0)) return null;
+  const SAMPLES = 48;
+  let bestT = 0, bestDist = Infinity;
+  for (let i = 0; i <= SAMPLES; i++) {
+    const t = (i / SAMPLES) * len;
+    const p = path.getPointAtLength(t);
+    const dist = (p.x - x) ** 2 + (p.y - y) ** 2;
+    if (dist < bestDist) { bestDist = dist; bestT = t; }
+  }
+  const eps = Math.max(len / 500, 0.001);
+  const p0 = path.getPointAtLength(Math.max(0, bestT - eps));
+  const p1 = path.getPointAtLength(Math.min(len, bestT + eps));
+  if (p0.x === p1.x && p0.y === p1.y) return null;   // a single-point path -- no direction to read
+  return Math.atan2(p1.y - p0.y, p1.x - p0.x);
+}
+
+// Where a seed element's FIRST glyph actually puts ink, in host space.
+//
+// Not the same box as the element's own -- and the difference is not small.
+// A mark's span is an inline box: it carries the line's leading above and
+// below the letter (~19% of its height here), and it spans every character
+// in the mark, so a composite like "β₃₂" measures the subscript digits too
+// and comes out about 2.5x wider than the β itself. sigla-outlines.js's
+// entries are normalized to the glyph's own tight ink box, so mapping one
+// through the span's box would stretch and slide it off the letter it
+// describes, and the tangent read from it would be the direction of some
+// other part of the glyph entirely.
+//
+// The browser's own text metrics answer this exactly, for the very font and
+// size the element is rendered in: actualBoundingBox* is the glyph's ink
+// box relative to the text origin, and fontBoundingBox* locates the
+// baseline within the inline box (half-leading split evenly above and
+// below). Returns null where an engine doesn't report them, so the caller
+// falls back rather than trusting a half-measured box.
+let inkCtx = null;
+function glyphInkBox(el, r) {
+  const ch = Array.from(el.textContent || '')[0];
+  if (!ch) return null;
+  try {
+    inkCtx = inkCtx || document.createElement('canvas').getContext('2d');
+    if (!inkCtx) return null;
+    const cs = getComputedStyle(el);
+    inkCtx.font = `${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+    const m = inkCtx.measureText(ch);
+    const { actualBoundingBoxLeft: aL, actualBoundingBoxRight: aR,
+            actualBoundingBoxAscent: aA, actualBoundingBoxDescent: aD,
+            fontBoundingBoxAscent: fA, fontBoundingBoxDescent: fD } = m;
+    if (![aL, aR, aA, aD, fA, fD].every(Number.isFinite)) return null;
+    const w = aL + aR, h = aA + aD;
+    if (!(w > 0) || !(h > 0)) return null;
+    const baseline = r.y + (r.h - (fA + fD)) / 2 + fA;
+    return { x: r.x - aL, y: baseline - aA, w, h };
+  } catch (_) { return null; }
+}
+
+// The seed's own glyph, traced where growth is about to start from it. The
+// outline is a unit square (see sigla-outlines.js) and the glyph's measured
+// ink box (above) is the map back to host space -- no font-size factor to
+// carry separately, since that box is already the size the browser rendered
+// this exact character at. An anchor sitting outside the ink box (the edge
+// point is taken on the span's larger box, so it can land in the leading)
+// simply reads the tangent at the nearest point of the letter to it, which
+// is the same question asked from slightly further away.
+//
+// Returns null -- for measureAnchors to fall back to the sigil's plain
+// bounding-box edge -- when the character has no outline (not every mark in
+// the notation does, and none of the composite marks' non-leading
+// codepoints do; see extract.mjs) or its ink can't be measured.
+function glyphTangent(el, r, hostX, hostY) {
+  if (!(r.w > 0) || !(r.h > 0)) return null;
+  const ch = Array.from(el.textContent || '')[0];
+  const d = ch && SIGLA_OUTLINES[ch];
+  if (!d) return null;
+  const box = glyphInkBox(el, r);
+  if (!box) return null;
+  const u = (hostX - box.x) / box.w, v = (hostY - box.y) / box.h;
+  return tangentAlongPath(d, u, v);
+}
+
 // One anchor -> a list of finished polylines ({points, leaves}) grown from it.
 // `obstacles` and `bounds` are already in the same coordinate space as the
 // anchor (host-relative pixels) — see measureObstacles/measureAnchors below.
@@ -439,18 +534,34 @@ function edgePoint(r, angle) {
   return { x: cx + dx * t, y: cy + dy * t };
 }
 
-// Seed points vines grow from -- the sigla already on the page. Each anchor's
-// outward angle points away from the host's own center, which in practice
-// aims a mark near the text column out toward the gutter/margin rather than
-// back across the prose. The anchor itself sits just past the sigil's own
-// boundary in that direction (see edgePoint), not at its centroid -- a vine
-// reads as growing OFF the glyph's edge, not sprouting out of its middle.
+// Seed points vines grow from -- the sigla already on the page. Each
+// anchor's POSITION sits just past the sigil's own boundary (see edgePoint),
+// not at its centroid -- a vine reads as growing OFF the glyph's edge, not
+// sprouting out of its middle -- on whichever side faces away from the
+// host's own center, which in practice aims a mark near the text column out
+// toward the gutter/margin rather than back across the prose.
+//
+// The anchor's initial growth TANGENT is a different question, and answered
+// separately: not which side of the glyph to start from, but which way to
+// head once there. Given a real outline to trace (glyphTangent, for a .op
+// or .cfx-gold mark whose own character sigla-outlines.js has), growth
+// starts running along the letter's own silhouette, the way it will trace
+// any OTHER obstacle's edge once under way (see interpretFrom's wall-
+// following) -- rather than launching straight off it. Lacking one (every
+// other seed kind: a margin citation, the drop cap, an unlisted character),
+// the sigil's plain bounding-box edge stands in, via the same tangentAngles
+// helper interpretFrom itself falls back on. Either way the two candidate
+// directions along that edge/outline are resolved toward whichever one
+// continues most nearly the outward-from-center heading above, so growth
+// still generally trends toward the margin rather than back into the prose.
 //
 // `opts.sizeOf(el)` overrides the default bbox-derived size (used to scale
 // growth -- see sizeBoost); `opts.pointOf(el)` can force 'center' or
 // 'top-left' instead of the default 'edge', for a caller with no real
 // element to measure (a CSS ::first-letter drop cap has no box of its own --
-// see bitcoin-book.html's illuminateSection for exactly that case).
+// see bitcoin-book.html's illuminateSection for exactly that case). Neither
+// of those two carries a real silhouette, so both keep the plain outward
+// angle as their initial tangent too.
 export function measureAnchors(seedEls, hostRect, opts = {}) {
   const cx = hostRect.width / 2, cy = hostRect.height / 2;
   const sizeOf = opts.sizeOf || (() => null);
@@ -487,7 +598,14 @@ export function measureAnchors(seedEls, hostRect, opts = {}) {
       x = p.x + Math.cos(angle) * 1.5;
       y = p.y + Math.sin(angle) * 1.5;
     }
-    return { x, y, angle, size, el };
+    let growthAngle = angle;
+    if (mode !== 'top-left' && mode !== 'center') {
+      const outward = (candidates) => angleDiff(candidates[0], angle) <= angleDiff(candidates[1], angle)
+        ? candidates[0] : candidates[1];
+      const t = glyphTangent(el, r, x, y);
+      growthAngle = t !== null ? outward([t, t + Math.PI]) : outward(tangentAngles(x, y, r));
+    }
+    return { x, y, angle: growthAngle, size, el };
   });
 }
 
