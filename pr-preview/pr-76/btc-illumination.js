@@ -606,6 +606,9 @@ const reducedMotion = () => {
 //   blockHash     seeds the grammar AND the RNG -- same hash, same reading,
 //                 for every visitor.
 //   confirmations drives growthStage(); stage 0 renders nothing at all.
+//   enabled       a hard override, default true; false renders nothing
+//                 regardless of stage (the illumination widget's on/off
+//                 switch -- see bitcoin-book.html's currentIllumOpts).
 //   sizeOf(el)    optional override for an anchor's size (see sizeBoost) --
 //                 needed for a mark with no box of its own, e.g. a CSS
 //                 ::first-letter drop cap (read its computed font-size
@@ -637,7 +640,7 @@ export function illuminate(hostEl, opts = {}) {
     svg.setAttribute('width', String(hostRect.width));
     svg.setAttribute('height', String(hostRect.height));
 
-    if (stage === 0 || !opts.blockHash) { renderSegments(svg, [], {}); return; }
+    if (opts.enabled === false || stage === 0 || !opts.blockHash) { renderSegments(svg, [], {}); return; }
 
     const proseEl = opts.proseEl || hostEl;
     const obstacles = measureObstacles(proseEl, hostRect);

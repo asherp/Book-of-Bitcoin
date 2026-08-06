@@ -151,7 +151,7 @@
     return Array.from(bytes).map((b) => b.toString(16).padStart(2, '0')).join('');
   }
 
-  const state = { confirmations: 6000, hash: randomHash(), baseSize: 16 };
+  const state = { confirmations: 6000, hash: randomHash(), baseSize: 16, enabled: true };
 
   const passages = [
     { host: 'wA', seeds: ['opA1', 'opA2', 'ribbonA', 'citeA'], lead: true },
@@ -171,6 +171,7 @@
       seedEls: p.seedEls,
       blockHash: state.hash,
       confirmations: Math.round(state.confirmations),
+      enabled: state.enabled,
       debug: $('debug').checked,
       sizeOf: (el) => (el.classList.contains('tx-body-lead')
         ? parseFloat(getComputedStyle(el, '::first-letter').fontSize) || null
@@ -223,6 +224,8 @@
   // folds this lab's one piece of extra state -- the sample base size --
   // back to default alongside it.
   buildIlluminationControls($('shared-controls'), illum, {
+    enabledDefault: state.enabled,
+    onToggleEnabled: (checked) => { state.enabled = checked; renderAll(); },
     onChange: renderAll,
     onReset: () => {
       state.baseSize = 16;
