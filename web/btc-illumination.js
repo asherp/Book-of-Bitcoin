@@ -44,6 +44,48 @@ function rngFromHex(hex) {
   };
 }
 
+// ─── tunable parameters, all in one place, all live ────────────────────────
+// Every knob the L-system and its turtle answer to, gathered so a caller (a
+// tuning widget, in particular -- see illumination-lab.html) can mutate them
+// directly and re-render: `params.step = 10; illum.refresh()`. Nothing here
+// is read into a local at module load and forgotten; every consumer below
+// reads `params.*` at the moment it's used, so a change takes effect on the
+// very next symbol/layout it touches.
+//
+// Two kinds of knob, and they clear differently:
+//   - GRAMMAR knobs (productions, the branchiness ramp, maxSizeBoost) shape
+//     the SYMBOLIC derivation cached in derivationCache (see passesFor).
+//     Changing one without clearing that cache would mix generations grown
+//     under different rules -- call resetDerivations() after touching any of
+//     them (the widget does this on every control's `input` event).
+//   - TURTLE knobs (step, turnDeg, jitterDeg, maxDeflectTries, leafDedupPx,
+//     overflow, maxReachFloor, maxReachMul) only affect the geometric walk,
+//     which is never cached -- calling illuminate()'s `refresh()` (a plain
+//     re-layout) is enough.
+export const params = {
+  // grammar
+  productions: [
+    { weight: 3, to: 'F' },              // plain growth
+    { weight: 3, to: 'FL' },             // growth capped with a leaf
+    { weight: 2, to: 'F[+F]F' },         // a side branch, trunk continues
+    { weight: 2, to: 'F[-FL]F' },
+    { weight: 1, to: 'F[+FL][-FL]F', reserved: true }, // a fuller fork, deep stages only
+  ],
+  branchinessPerGen: 0.14,      // how fast branchiness ramps up per generation
+  branchinessCap: 0.8,          // the ramp's ceiling
+  branchinessForkThreshold: 0.6, // branchiness needed before `reserved` productions can be picked
+  maxSizeBoost: 6,               // sizeBoost's own ceiling, in generations
+  // turtle
+  step: 7,                 // px per F
+  turnDeg: 24,              // base turn angle, in degrees ('+'/'-')
+  jitterDeg: 10,            // random wobble added to every F's heading, in degrees
+  maxDeflectTries: 6,       // how hard a blocked step tries to dodge before giving up
+  leafDedupPx: 3,           // leaves within this many px of one already placed collapse
+  overflow: 48,             // how far past hostEl's own box a vine may still roam (illuminate())
+  maxReachFloor: 80,        // the leash's minimum radius from an anchor (illuminate())
+  maxReachMul: 1.8,         // the leash's radius per px of the anchor's own size (illuminate())
+};
+
 // ─── age: confirmation count → discrete growth stage ───────────────────────
 // Buckets, not a continuous function of depth — see issue #73. A stage is a
 // cache key; a smooth mapping would mean nothing is ever settled enough to
@@ -65,19 +107,13 @@ export function growthStage(confirmations) {
 // Alphabet: F = grow one step and draw it, L = put out a leaf here (no
 // movement), + / - = turn, [ / ] = push/pop a branch point. Angles carry a
 // small jitter (from the seeded RNG, not Math.random) so a run of F's doesn't
-// read as a ruler-straight line.
-const PRODUCTIONS = [
-  { weight: 3, to: 'F' },              // plain growth
-  { weight: 3, to: 'FL' },             // growth capped with a leaf
-  { weight: 2, to: 'F[+F]F' },         // a side branch, trunk continues
-  { weight: 2, to: 'F[-FL]F' },
-  { weight: 1, to: 'F[+FL][-FL]F' },   // a fuller fork, reserved for deep stages
-];
+// read as a ruler-straight line. The rule table itself lives in params.productions.
 function pickProduction(rng, branchiness) {
   // Bias toward the branchier rules as `branchiness` (pass-driven) rises, by
-  // discarding the plainest option outright above a threshold — simpler than
+  // discarding `reserved` options outright below a threshold — simpler than
   // re-weighting the whole table per pass, and easy to reason about.
-  const pool = branchiness > 0.6 ? PRODUCTIONS : PRODUCTIONS.filter((p) => p.to !== 'F[+FL][-FL]F');
+  const all = params.productions;
+  const pool = branchiness > params.branchinessForkThreshold ? all : all.filter((p) => !p.reserved);
   const total = pool.reduce((s, p) => s + p.weight, 0);
   let r = rng() * total;
   for (const p of pool) { r -= p.weight; if (r <= 0) return p.to; }
@@ -101,6 +137,11 @@ function passesFor(blockHash) {
   }
   return rec;
 }
+// Grammar knobs (params.productions, the branchiness ramp, maxSizeBoost) all
+// shape what's cached here. Call this after changing any of them -- the
+// tuning widget does, on every control's `input` event -- or a block would
+// keep answering with generations grown under the OLD rules forever.
+export function resetDerivations() { derivationCache.clear(); }
 
 // A sigil's own rendered size earns it extra rewriting generations on top of
 // what confirmation depth alone would give it -- the book's illuminated
@@ -111,11 +152,10 @@ function passesFor(blockHash) {
 // that earn no boost at all -- most marks on a page are exactly that
 // ordinary, and shouldn't all be growing extra generations by default.
 // log2-scaled so a 2x mark and a 4x mark are visibly different without a
-// merely-larger mark blowing past the cap.
-const MAX_SIZE_BOOST = 6;
+// merely-larger mark blowing past the cap (params.maxSizeBoost).
 export function sizeBoost(size, baseSize = 16) {
   if (!size || size <= baseSize) return 0;
-  return Math.max(0, Math.min(MAX_SIZE_BOOST, Math.round(Math.log2(size / baseSize) * 2)));
+  return Math.max(0, Math.min(params.maxSizeBoost, Math.round(Math.log2(size / baseSize) * 2)));
 }
 
 // (blockHash, stage) -> symbol string after that stage's total iteration
@@ -126,14 +166,14 @@ export function sizeBoost(size, baseSize = 16) {
 // derivation further rather than rolling a separate one, so a large sigil's
 // vine is this block's shape grown a few generations past where a small
 // sigil's stops, never a different shape entirely.
-const MAX_GENERATION = GROWTH_STAGES[GROWTH_STAGES.length - 1].iterations + MAX_SIZE_BOOST;
+function maxGeneration() { return GROWTH_STAGES[GROWTH_STAGES.length - 1].iterations + params.maxSizeBoost; }
 export function generateSymbol(blockHash, stage, boost = 0) {
   const spec = GROWTH_STAGES[stage] || GROWTH_STAGES[0];
-  const target = Math.min(MAX_GENERATION, spec.iterations + Math.max(0, boost));
+  const target = Math.min(maxGeneration(), spec.iterations + Math.max(0, boost));
   const rec = passesFor(blockHash);
   while (rec.passes.length - 1 < target) {
     const passIndex = rec.passes.length; // the generation about to be produced
-    const branchiness = Math.min(0.8, passIndex * 0.14);
+    const branchiness = Math.min(params.branchinessCap, passIndex * params.branchinessPerGen);
     const prev = rec.passes[rec.passes.length - 1];
     rec.passes.push(prev.replace(/F/g, () => pickProduction(rec.rng, branchiness)));
   }
@@ -141,10 +181,9 @@ export function generateSymbol(blockHash, stage, boost = 0) {
 }
 
 // ─── turtle interpretation: symbol string + obstacles -> SVG path data ────
-const STEP = 7;                 // px per F
-const TURN = (24 * Math.PI) / 180; // base turn angle
-const JITTER = (10 * Math.PI) / 180;
-const MAX_DEFLECT_TRIES = 6;     // how hard a blocked step tries to dodge
+// Reads params.step/turnDeg/jitterDeg/maxDeflectTries/leafDedupPx live, at
+// the moment each is used, rather than capturing them once -- see the
+// params comment up top.
 
 function pointInRect(x, y, r) { return x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h; }
 // Segment/segment intersection (standard orientation test) -- used to check
@@ -219,6 +258,13 @@ function tangentAngles(px, py, rect) {
 // (every worked example before the drop cap) sees no change at all -- the
 // home-rect set is empty and the walk behaves exactly as before.
 export function interpretFrom(symbol, anchor, obstacles, bounds, rng, maxReach = Infinity) {
+  // Read live at the top of each call, not once at module load -- exactly
+  // what lets the tuning widget change these between one refresh() and the
+  // next with no other plumbing.
+  const STEP = params.step;
+  const TURN = (params.turnDeg * Math.PI) / 180;
+  const JITTER = (params.jitterDeg * Math.PI) / 180;
+  const MAX_DEFLECT_TRIES = params.maxDeflectTries;
   let state = { x: anchor.x, y: anchor.y, angle: anchor.angle };
   const stack = [];
   const segments = [];
@@ -317,7 +363,7 @@ export function interpretFrom(symbol, anchor, obstacles, bounds, rng, maxReach =
       // Skip a leaf that would land within a couple pixels of one already
       // placed on this anchor's walk -- distinct nearby leaves still show
       // (a real cluster), only true near-duplicates collapse.
-      const near = (p) => Math.abs(p.x - state.x) < 3 && Math.abs(p.y - state.y) < 3;
+      const near = (p) => Math.abs(p.x - state.x) < params.leafDedupPx && Math.abs(p.y - state.y) < params.leafDedupPx;
       if (!cur.leaves.some(near) && !segments.some((s) => s.leaves.some(near))) {
         cur.leaves.push({ x: state.x, y: state.y, angle: state.angle });
       }
@@ -573,7 +619,7 @@ export function illuminate(hostEl, opts = {}) {
     // the book already leaves between one section and the next -- so a vine
     // can breathe into that margin without regularly reaching into a
     // neighboring section's own content.
-    const overflow = opts.overflow ?? 48;
+    const overflow = opts.overflow ?? params.overflow;
     const bounds = { x: -overflow, y: -overflow, w: hostRect.width + overflow * 2, h: hostRect.height + overflow * 2 };
     const seedEls = (opts.seedEls && opts.seedEls.length) ? opts.seedEls : [];
     const anchors = seedEls.length
@@ -597,7 +643,7 @@ export function illuminate(hostEl, opts = {}) {
       // sigil's own size (see interpretFrom's maxReach) -- generous enough
       // for a real flourish, but never so wide it reads as belonging to a
       // different part of the page than the mark that grew it.
-      const maxReach = Math.max(80, (a.size || 16) * 1.8);
+      const maxReach = Math.max(opts.maxReachFloor ?? params.maxReachFloor, (a.size || 16) * (opts.maxReachMul ?? params.maxReachMul));
       return interpretFrom(symbol, a, obstacles, bounds, rng, maxReach);
     });
     renderSegments(svg, segmentsByAnchor, { animate: firstRender && !reducedMotion(), obstacles, debug: !!opts.debug });

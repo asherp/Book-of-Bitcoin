@@ -18,7 +18,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { growthStage, GROWTH_STAGES, generateSymbol, interpretFrom, sizeBoost } from '../web/btc-illumination.js';
+import { growthStage, GROWTH_STAGES, generateSymbol, interpretFrom, sizeBoost, params, resetDerivations } from '../web/btc-illumination.js';
 
 test('growthStage buckets confirmation count, not a continuous scale', () => {
   assert.equal(growthStage(0), 0, 'unconfirmed is stage 0 (bare)');
@@ -241,4 +241,53 @@ test('generateSymbol\'s boost extends the SAME per-block derivation, capped, and
   const capped1 = generateSymbol(hash, 4, 1000);
   const capped2 = generateSymbol(hash, 4, 1000);
   assert.equal(capped1, capped2, 'a capped boost must still be deterministic/cached, not recomputed differently');
+});
+
+// ─── live tuning: params is read at call time, not captured at module load ─
+// This is what the whole point of exposing `params` depends on -- a tuning
+// widget mutates it directly and expects the very next call to answer
+// differently, with no other API. Each test restores what it changed so the
+// rest of the suite (run in the same process) still sees the documented
+// defaults.
+test('params.step is read live -- changing it changes the turtle\'s own step length', () => {
+  const original = params.step;
+  try {
+    const anchor = { x: 0, y: 0, angle: 0 };
+    params.step = 20;
+    const points = interpretFrom('FF', anchor, [], null, noJitterRng).flatMap((s) => s.points);
+    assert.equal(points[1].x, 20, 'the first F should move by the CURRENT params.step, not a value fixed at module load');
+  } finally { params.step = original; }
+});
+
+test('params.turnDeg is read live -- changing it changes how far "+"/"-" turn', () => {
+  const original = params.turnDeg;
+  try {
+    const anchor = { x: 0, y: 0, angle: 0 };
+    params.turnDeg = 90;
+    const points = interpretFrom('F+F', anchor, [], null, noJitterRng).flatMap((s) => s.points);
+    // After a 90 degree left turn from heading east, the second F should
+    // move straight down (y increases, x barely changes) rather than the
+    // ~24 degree default's much shallower turn.
+    assert.ok(Math.abs(points[2].x - points[1].x) < 1, `a 90 degree turn should move nearly straight in y, got dx=${points[2].x - points[1].x}`);
+  } finally { params.turnDeg = original; }
+});
+
+test('resetDerivations() is required for a grammar change to actually take effect on an already-seen block', () => {
+  const hash = 'params-live-tuning-test'.padEnd(64, '1');
+  const before = generateSymbol(hash, 4, 0);
+  const originalProductions = params.productions;
+  try {
+    // Force every production to the richest, always-branching rule -- a
+    // maximally different grammar from the default table.
+    params.productions = [{ weight: 1, to: 'F[+F][-F]F', reserved: false }];
+    // Without clearing the cache, this block's already-computed passes are
+    // still sitting in derivationCache and must be returned unchanged.
+    assert.equal(generateSymbol(hash, 4, 0), before, 'a grammar change must not silently alter an already-cached derivation');
+    resetDerivations();
+    const after = generateSymbol(hash, 4, 0);
+    assert.notEqual(after, before, 'after resetDerivations(), the SAME block should re-derive under the NEW grammar');
+  } finally {
+    params.productions = originalProductions;
+    resetDerivations(); // leave no trace of the temporary grammar for later tests
+  }
 });
