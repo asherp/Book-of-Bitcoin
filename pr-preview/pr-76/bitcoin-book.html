@@ -4170,11 +4170,12 @@ async function illuminateSection(wrap, flow) {
       seedEls,
       blockHash: state.projected ? null : state.hash,
       confirmations,
-      // "Ordinary" is whatever this reader's own body text actually is --
-      // the reader's font-scale preference (btc-fontscale.js) changes it,
-      // and every .op mark already renders at that same size, so pinning
-      // the reference to a fixed guess would misjudge them all alike.
-      baseSize: parseFloat(getComputedStyle(flow).fontSize) || undefined,
+      // No baseSize passed deliberately: illuminate() measures `flow`'s own
+      // computed font-size itself, fresh on every layout pass rather than
+      // once here -- which is what lets it stay in sync with a reader's
+      // font-scale preference (btc-fontscale.js) changing later without
+      // this call needing to run again. Passing a value captured at THIS
+      // moment would freeze it exactly the way a comment used to explain.
       // The drop cap (.tx-body-lead's ::first-letter) has no box of its own
       // to measure -- it's a CSS pseudo-element, not a real node -- so it's
       // the one sigil handled specially: its SIZE comes from the pseudo's

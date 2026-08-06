@@ -84,6 +84,13 @@ export const params = {
   overflow: 48,             // how far past hostEl's own box a vine may still roam (illuminate())
   maxReachFloor: 80,        // the leash's minimum radius from an anchor (illuminate())
   maxReachMul: 1.8,         // the leash's radius per px of the anchor's own size (illuminate())
+  // the body-text size step/leaf drawing were tuned at. illuminate() scales
+  // step, leaf size, overflow and maxReachFloor by (the reader's current
+  // body size / this) -- see geometryScale below -- so the decoration stays
+  // in proportion to the letters when a reader scales the type up or down
+  // (see btc-fontscale.js), rather than staying a fixed pixel size while
+  // everything around it grows or shrinks.
+  referenceFontSize: 16,
 };
 
 // ─── age: confirmation count → discrete growth stage ───────────────────────
@@ -257,11 +264,14 @@ function tangentAngles(px, py, rect) {
 // already left does not re-exempt it). An anchor that starts in the clear
 // (every worked example before the drop cap) sees no change at all -- the
 // home-rect set is empty and the walk behaves exactly as before.
-export function interpretFrom(symbol, anchor, obstacles, bounds, rng, maxReach = Infinity) {
+export function interpretFrom(symbol, anchor, obstacles, bounds, rng, maxReach = Infinity, geometryScale = 1) {
   // Read live at the top of each call, not once at module load -- exactly
   // what lets the tuning widget change these between one refresh() and the
-  // next with no other plumbing.
-  const STEP = params.step;
+  // next with no other plumbing. `geometryScale` (see illuminate()) keeps
+  // step and leaf size in proportion to the reader's current body text size
+  // rather than a fixed pixel count regardless of it -- angles (TURN,
+  // JITTER) need no such scaling, only distances do.
+  const STEP = params.step * geometryScale;
   const TURN = (params.turnDeg * Math.PI) / 180;
   const JITTER = (params.jitterDeg * Math.PI) / 180;
   const MAX_DEFLECT_TRIES = params.maxDeflectTries;
@@ -372,7 +382,7 @@ export function interpretFrom(symbol, anchor, obstacles, bounds, rng, maxReach =
         // rng as everything else, so it's still deterministic per anchor.
         const side = rng() < 0.5 ? -1 : 1;
         const splay = side * ((40 + rng() * 55) * Math.PI) / 180;
-        const scale = 0.75 + rng() * 0.7;
+        const scale = (0.75 + rng() * 0.7) * geometryScale;
         cur.leaves.push({ x: state.x, y: state.y, angle: state.angle + splay, scale });
       }
     } else if (ch === '+') {
@@ -631,6 +641,23 @@ export function illuminate(hostEl, opts = {}) {
 
     const proseEl = opts.proseEl || hostEl;
     const obstacles = measureObstacles(proseEl, hostRect);
+    // The body text's OWN current size, measured fresh on every layout()
+    // pass rather than once when illuminate() was first called -- a font-
+    // scale change (btc-fontscale.js) reflows the text, which resizes
+    // hostEl, which the ResizeObserver below already treats as a reason to
+    // re-run layout(); measuring live here is what makes that re-run
+    // actually pick up the NEW size instead of quietly redrawing at the
+    // stale one. `opts.baseSize` remains available as an explicit override
+    // for a caller with no representative element to measure (a synthetic
+    // sample with no real body text, say -- see illumination-lab.html).
+    const baseSize = opts.baseSize ?? (parseFloat(getComputedStyle(proseEl).fontSize) || params.referenceFontSize);
+    // How far that size has drifted from the size step/leaf drawing were
+    // tuned at (params.referenceFontSize) -- scales step, leaf size,
+    // overflow and the leash's floor together, so the whole decoration
+    // grows or shrinks along with the reader's font-scale setting instead
+    // of staying a fixed pixel size while the letters around it do the
+    // actual growing or shrinking.
+    const geometryScale = baseSize / params.referenceFontSize;
     // A vine is allowed a little room past the host's own box, not just up
     // to its exact edge -- the overlay already paints there (the SVG root
     // is overflow:visible), and without it an anchor sitting right at an
@@ -640,7 +667,7 @@ export function illuminate(hostEl, opts = {}) {
     // the book already leaves between one section and the next -- so a vine
     // can breathe into that margin without regularly reaching into a
     // neighboring section's own content.
-    const overflow = opts.overflow ?? params.overflow;
+    const overflow = (opts.overflow ?? params.overflow) * geometryScale;
     const bounds = { x: -overflow, y: -overflow, w: hostRect.width + overflow * 2, h: hostRect.height + overflow * 2 };
     const seedEls = (opts.seedEls && opts.seedEls.length) ? opts.seedEls : [];
     const anchors = seedEls.length
@@ -657,15 +684,15 @@ export function illuminate(hostEl, opts = {}) {
     // initial can visibly outgrow its opcode glyphs without becoming a
     // different grammar altogether.
     const segmentsByAnchor = anchors.map((a) => {
-      const boost = sizeBoost(a.size, opts.baseSize);
+      const boost = sizeBoost(a.size, baseSize);
       const symbol = generateSymbol(opts.blockHash, stage, boost);
       const rng = rngFromHex(`${opts.blockHash}:${stage}:${boost}:${a.x.toFixed(0)},${a.y.toFixed(0)}`);
       // How far this anchor's own decoration may roam, leashed to the
       // sigil's own size (see interpretFrom's maxReach) -- generous enough
       // for a real flourish, but never so wide it reads as belonging to a
       // different part of the page than the mark that grew it.
-      const maxReach = Math.max(opts.maxReachFloor ?? params.maxReachFloor, (a.size || 16) * (opts.maxReachMul ?? params.maxReachMul));
-      return interpretFrom(symbol, a, obstacles, bounds, rng, maxReach);
+      const maxReach = Math.max((opts.maxReachFloor ?? params.maxReachFloor) * geometryScale, (a.size || 16) * (opts.maxReachMul ?? params.maxReachMul));
+      return interpretFrom(symbol, a, obstacles, bounds, rng, maxReach, geometryScale);
     });
     renderSegments(svg, segmentsByAnchor, { animate: firstRender && !reducedMotion(), obstacles, debug: !!opts.debug });
     firstRender = false;

@@ -121,10 +121,13 @@
     <input type="range" id="maxReachFloor" min="10" max="300" step="5">
     <label class="row"><span class="name">Leash × sigil size</span><span class="val" id="v-maxReachMul"></span></label>
     <input type="range" id="maxReachMul" min="0.5" max="5" step="0.1">
+    <label class="row"><span class="name">Reference font size (px)</span><span class="val" id="v-referenceFontSize"></span></label>
+    <input type="range" id="referenceFontSize" min="8" max="32" step="1">
   </div>
 
   <div class="group">
     <h2>Base size</h2>
+    <p class="sub" style="margin-bottom:8px;">The samples' own body text size — stands in for a reader's font-scale setting. Step, leaf size, overflow and the leash floor all scale by (this ÷ reference font size, above).</p>
     <label class="row"><span class="name">"Ordinary" sigil size (px)</span><span class="val" id="v-baseSize"></span></label>
     <input type="range" id="baseSize" min="8" max="32" step="1">
   </div>
@@ -201,7 +204,11 @@
         ? parseFloat(getComputedStyle(el, '::first-letter').fontSize) || null
         : null),
       pointOf: (el) => (el.classList.contains('tx-body-lead') ? 'top-left' : 'edge'),
-      baseSize: state.baseSize,
+      // No baseSize passed on purpose: illuminate() measures p.proseEl's
+      // own live font-size instead (see btc-illumination.js), which is
+      // exactly the mechanism this lab wants to exercise honestly -- drag
+      // "Base size" below and the sample text itself resizes, same as it
+      // would under a reader's real font-scale change.
     }));
     updateReadout();
   }
@@ -284,7 +291,7 @@
   // ─── grammar-affecting sliders (need resetDerivations) ─────────────────
   const GRAMMAR_KEYS = ['branchinessPerGen', 'branchinessCap', 'branchinessForkThreshold', 'maxSizeBoost'];
   // ─── turtle-only sliders (geometry, no cache to clear) ──────────────────
-  const TURTLE_KEYS = ['step', 'turnDeg', 'jitterDeg', 'maxDeflectTries', 'leafDedupPx', 'overflow', 'maxReachFloor', 'maxReachMul'];
+  const TURTLE_KEYS = ['step', 'turnDeg', 'jitterDeg', 'maxDeflectTries', 'leafDedupPx', 'overflow', 'maxReachFloor', 'maxReachMul', 'referenceFontSize'];
 
   function bindParam(key, grammar) {
     const input = $(key);
@@ -309,6 +316,11 @@
   $('baseSize').addEventListener('input', () => {
     state.baseSize = parseFloat($('baseSize').value);
     $('v-baseSize').textContent = $('baseSize').value;
+    // Actually resize the sample text too -- a real font-scale change (see
+    // btc-fontscale.js) is what this slider stands in for, and the point of
+    // geometryScale is that the decoration keeps up with THAT, not just
+    // with a number typed into illuminate()'s options.
+    document.querySelectorAll('.chapter-body').forEach((el) => { el.style.fontSize = `${state.baseSize}px`; });
     renderAll();
   });
 
