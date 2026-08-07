@@ -3919,8 +3919,7 @@ function renderVolumeLeaf() {
   // figure earns its place: the eras are not comparable in any unit a reader
   // already has, and stated as hashes they are -- each volume so far has cost
   // more than every volume before it put together.
-  renderWorkAdded(yearEnd === null ? null : workBetween(state.height, yearEnd),
-    finished ? 'this volume' : 'this volume so far', !finished);
+  renderWorkAdded(yearEnd === null ? null : workBetween(state.height, yearEnd), 'this volume', !finished);
   labelNav();
 }
 
@@ -3996,10 +3995,17 @@ function renderWorkAdded(work, span, partial = false) {
   mark.className = 'work-mark';
   mark.textContent = '+';
   el.append(mark, `${figure} ${tr('hashes')}${partial ? ' —' : ''}`);
-  el.title = `the proof of work ${span} added — about ${figure} hashes, `
-    + 'the number of attempts it should have taken to mine'
-    + (partial ? ', counting only what has been recorded so far' : '');
+  el.title = `the proof of work ${span} ${partial ? 'has added so far' : 'added'}`
+    + ` — about ${figure} hashes, the number of attempts it should have taken to mine`;
 }
+
+// A book's dates, to the day. The minute a book opened is a fact about one
+// chapter, not about the two thousand the leaf is standing for -- a span four
+// hundred hours long does not have a clock reading, and printing one twice
+// invites the range to be read as if it did. A chapter's frontispiece still
+// states its own time to the minute, which is where that precision belongs;
+// the exact stamps stay on this line's tooltip rather than on the page.
+const bookDate = (ts) => new Date(ts * 1000).toISOString().slice(0, 10);
 
 // A difficulty, in the same shape bitsInfo's tooltip gives it.
 const formatDifficulty = (d) => d.toLocaleString(undefined, { maximumFractionDigits: d < 1000 ? 2 : 0 });
@@ -4109,14 +4115,17 @@ function renderBookLeaf() {
   fp.append(range);
   const dates = document.createElement('div');
   const dateEnd = finished ? bookEnd : tipIn;
+  const opened = state.block.timestamp;
+  dates.title = `opened ${timestampInfo(opened).mark}`;
   if (dateEnd === null) {
-    dates.textContent = `${timestampInfo(state.block.timestamp).mark} —`;
+    dates.textContent = `${bookDate(opened)} —`;
   } else {
-    dates.textContent = `${timestampInfo(state.block.timestamp).mark} – …`;
+    dates.textContent = `${bookDate(opened)} – …`;
     loadBlockStamp(dateEnd).then((ts) => {
       if (gen !== renderGen) return;
-      dates.textContent = `${timestampInfo(state.block.timestamp).mark} – ${timestampInfo(ts).mark}${finished ? '' : ' —'}`;
-    }).catch(() => { if (gen === renderGen) dates.textContent = `${timestampInfo(state.block.timestamp).mark}${finished ? '' : ' —'}`; });
+      dates.textContent = `${bookDate(opened)} – ${bookDate(ts)}${finished ? '' : ' —'}`;
+      dates.title = `opened ${timestampInfo(opened).mark}, ${finished ? 'closed' : 'last recorded'} ${timestampInfo(ts).mark}`;
+    }).catch(() => { if (gen === renderGen) dates.textContent = `${bookDate(opened)}${finished ? '' : ' —'}`; });
   }
   fp.append(dates);
   // What the book cost, under the targets it was mined under. Where those are
@@ -4124,8 +4133,7 @@ function renderBookLeaf() {
   // have to be, because a sum over chapters does not care which window they
   // fell in. An unfinished book counts only as far as the tip.
   const workEnd = finished ? bookEnd : tipIn;
-  renderWorkAdded(workEnd === null ? null : workBetween(state.height, workEnd),
-    finished ? 'this book' : 'this book so far', !finished);
+  renderWorkAdded(workEnd === null ? null : workBetween(state.height, workEnd), 'this book', !finished);
   labelNav();
 }
 
