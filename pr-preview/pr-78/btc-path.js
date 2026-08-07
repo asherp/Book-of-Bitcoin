@@ -63,8 +63,10 @@ export const isPath = (title) => pathSegments(title).length > 1;
 // ── The forest ────────────────────────────────────────────────────────────
 // Entries in, a render plan out:
 //
-//   { kind: 'row',   entry, title }            — one row, printing `title`
-//   { kind: 'group', label, path, nodes }      — a heading and what is under it
+//   { kind: 'row',   entry, title }                  — one row, printing `title`
+//   { kind: 'group', label, path, nodes, head? }     — what is under a name,
+//        headed either by `label` (a bare heading) or, where an entry carries
+//        that very name, by `head` — that entry's own row.
 //
 // Two restraints, both of them the contents' own manners rather than
 // inventions here. A group holding a single row is not a group: it prints as
@@ -97,6 +99,21 @@ export function pathForest(entries, titleOf = (e) => e.title) {
       }
       g.items.push(it);
     }
+    // A name that is ALSO an entry of its own -- `SegWit` standing beside
+    // `SegWit/activation` -- is that filing's head rather than a sibling of
+    // it. The entry's own row stands where a bare heading otherwise would,
+    // and what is filed under it indents beneath, which is how a parent
+    // ledger stands over its children on the shelf. The group takes the
+    // earlier of the two positions, since either may have been written first.
+    for (const { node } of groups.values()) {
+      const key = node.path.join('/');
+      const i = out.findIndex((n) => n.kind === 'row' && pathSegments(titleOf(n.entry)).join('/') === key);
+      if (i < 0) continue;
+      node.head = { kind: 'row', entry: out[i].entry, title: node.path[depth] };
+      const gi = out.indexOf(node);
+      out.splice(Math.max(i, gi), 1);
+      out.splice(Math.min(i, gi), 1, node);
+    }
     for (const { node, items: kids } of groups.values()) node.nodes = build(kids, depth + 1);
     return out.map((n) => collapse(n, depth));
   };
@@ -113,21 +130,26 @@ export function pathForest(entries, titleOf = (e) => e.title) {
     // safe over prose an editor wrote rather than a name a reader typed.
     // `The Times 03/Jan/2009 Chancellor on brink of second bailout for
     // banks` is a masthead date, and it stands alone, so it prints whole.
+    // …unless the filing has a head: a row of its own with one row beneath it
+    // is a parent and its child, which is what citation nesting already looks
+    // like, and neither of them is a heading over nothing.
     const rows = flatRows(node);
-    if (rows.length === 1) {
+    if (!node.head && rows.length === 1) {
       const whole = titleOf(rows[0].entry);
       return { kind: 'row', entry: rows[0].entry,
                title: depth ? pathLabel(pathSegments(whole).slice(depth)) : whole };
     }
-    // A heading whose only content is one further heading is one heading.
+    // A heading whose only content is one further heading is one heading --
+    // but a filing with a head says something of its own and never merges.
     let n = node;
-    while (n.nodes.length === 1 && n.nodes[0].kind === 'group') {
+    while (!n.head && n.nodes.length === 1 && n.nodes[0].kind === 'group' && !n.nodes[0].head) {
       n = { ...n.nodes[0], label: pathLabel(n.nodes[0].path.slice(depth)) };
     }
     return n;
   };
 
-  const flatRows = (node) => (node.kind === 'row' ? [node] : node.nodes.flatMap(flatRows));
+  const flatRows = (node) => (node.kind === 'row' ? [node]
+    : [...(node.head ? [node.head] : []), ...node.nodes.flatMap(flatRows)]);
 
   return build(entries, 0);
 }
@@ -135,5 +157,6 @@ export function pathForest(entries, titleOf = (e) => e.title) {
 /** Every row a plan will print, in printed order — what a caller counts when
  *  it wants to know whether a heading is worth raising over the whole thing. */
 export function forestRows(nodes) {
-  return nodes.flatMap((n) => (n.kind === 'row' ? [n] : forestRows(n.nodes)));
+  return nodes.flatMap((n) => (n.kind === 'row' ? [n]
+    : [...(n.head ? [n.head] : []), ...forestRows(n.nodes)]));
 }
