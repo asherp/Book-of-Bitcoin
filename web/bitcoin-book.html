@@ -2579,6 +2579,35 @@ function fetchProjectedManifest(k) {
     });
   });
 }
+// Which projected block the queue currently seats an unwritten transaction
+// in: {"track-tx": id} answers at once with a txPosition naming it. Only the
+// block index is taken here -- the seat within it comes from that block's
+// manifest, which the section needs anyway. A transaction the pool doesn't
+// hold draws no answer, so this resolves null on the timeout rather than
+// waiting on a reply that isn't coming.
+const TX_POSITION_WAIT = 8000;
+function fetchTxProjection(txid) {
+  return new Promise((resolve) => {
+    if (!mempoolBackendBase) { resolve(null); return; }
+    let ws;
+    try { ws = new WebSocket(`${mempoolBackendBase.replace(/^http/, 'ws')}/v1/ws`); }
+    catch { resolve(null); return; }
+    let settled = false;
+    const done = (v) => { if (settled) return; settled = true; clearTimeout(timer); try { ws.close(); } catch {} resolve(v); };
+    const timer = setTimeout(() => done(null), TX_POSITION_WAIT);
+    ws.addEventListener('open', () => { try { ws.send(JSON.stringify({ 'track-tx': txid })); } catch { done(null); } });
+    ws.addEventListener('error', () => done(null));
+    ws.addEventListener('close', () => done(null));
+    ws.addEventListener('message', (ev) => {
+      try {
+        const tp = JSON.parse(ev.data).txPosition;
+        if (!tp || tp.txid !== txid) return;
+        done(tp.position && Number.isFinite(tp.position.block) ? tp.position.block : null);
+      } catch { /* not ours -- keep listening */ }
+    });
+  });
+}
+
 function projectedManifest(k) {
   const snap = projectedCache;
   if (!snap.manifests.has(k)) {
@@ -2614,6 +2643,30 @@ async function stepProjected(height, where = -1) {
   await showCurrentTx();
   if (manifestErr) setStatus('The projected manifest could not be read from this source — the chapter opens, but its sections are out of reach.', 'err');
   return true;
+}
+
+// Open a transaction the chain hasn't written yet. It has no confirming
+// block, so it has no chapter in ink -- but the queue seats it, and that seat
+// is a §section of a projected chapter like any other. Two questions answer
+// it: which projected block holds it (the backend's txPosition), and where in
+// that block's template order it falls (the manifest the section needs
+// regardless). Returns false when either goes unanswered -- a transaction too
+// deep in the backlog for the projection to order has no page here, and the
+// caller says so rather than inventing one. Once the page is open the live
+// feed owns it: the § drifts as the queue reshuffles, a replacement takes the
+// seat, and a mined block turns the page into the written chapter.
+async function stepUnconfirmed(txid) {
+  // The projection first: it is what learns the backend host the position
+  // question is asked over, and what says how far the projected chapters
+  // reach.
+  const proj = await loadProjection().catch(() => null);
+  if (tipHeight === null || !proj || !proj.blocks) return false;
+  const k = await fetchTxProjection(txid);
+  if (k === null || k < 0 || k >= proj.blocks.length) return false;
+  const manifest = await projectedManifest(k).catch(() => null);
+  const i = manifest ? manifest.findIndex((t) => t.txid === txid) : -1;
+  if (i < 0) return false;
+  return stepProjected(tipHeight + 1 + k, i);
 }
 
 // ── Live frontage ─────────────────────────────────────────────────────────
@@ -3022,7 +3075,15 @@ async function loadBlockByTxid(txid) {
   // This JSON is exactly what prevoutValues would fetch -- bank the margin
   // amounts now, so opening a section by txid never asks for it twice.
   if (Array.isArray(tx.vin) && !prevoutsCache.has(txid)) prevoutsCache.set(txid, Promise.resolve(prevoutsOfTxJson(tx)));
-  if (!tx.status || !tx.status.confirmed) throw new Error('That transaction is unconfirmed — it has no section yet. If it pays its way, it sits in one of the projected chapters past the tip.');
+  // Unconfirmed: no block has recorded it, so there is no chapter to resolve
+  // here. The queue may still seat it in a projected one -- that lookup is
+  // the caller's (openLookup -> stepUnconfirmed), and this message stands
+  // only if the queue has no seat this book can page to either.
+  if (!tx.status || !tx.status.confirmed) {
+    const e = new Error('That transaction is unconfirmed, and the queue seats it deeper than the projection orders — no chapter here can hold it yet.');
+    e.unconfirmed = true;
+    throw e;
+  }
   const hash = tx.status.block_hash;
   if (mpRes.ok) {
     const meta = await loadBlockMeta(hash, { withTxids: false });
@@ -5238,7 +5299,18 @@ async function openLookup(input, index = -1) {
         state = { ...meta, index: clampIndex(index, meta) };
       } else {
         setStatus(SPINNER_HTML + tr('locating transaction…'));
-        const loc = await loadBlockByTxid(hex);
+        let loc;
+        try {
+          loc = await loadBlockByTxid(hex);
+        } catch (e) {
+          // Not written yet -- but the queue may still have a seat for it,
+          // and a seat in a projected chapter is a page like any other.
+          if (!e.unconfirmed) throw e;
+          setStatus(SPINNER_HTML + tr('reading the mempool…'));
+          await tipP;   // stepUnconfirmed counts from the tip
+          if (await stepUnconfirmed(hex)) return;   // opened projected -- already rendered
+          throw e;
+        }
         state = { ...loc.meta, index: loc.index, txid: loc.txid };
       }
     } else {
