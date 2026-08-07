@@ -1265,15 +1265,19 @@ if (QUEUE) {
       + `${byValue ? 'what they move' : 'what they weigh'}.`);
 
     // Set as the ballot's rows are: a name on the left, its figure on the
-    // right. A transaction here has no citation -- no block has recorded it,
-    // so there is no chapter and no §section to name it by -- and its txid
-    // stands in until one does.
+    // right. No block has recorded these, so none has a citation to be named
+    // by and the txid stands in until one does -- but each is still a door.
+    // The book seats an unwritten transaction as a §section of the projected
+    // chapter the queue puts it in, numbers it live as the queue reshuffles,
+    // and follows it through a replacement or into the block that finally
+    // writes it.
     const el = $('bip-blocks');
     for (const t of rows) {
       const row = document.createElement('div');
       row.className = 'bb-row';
-      const id = document.createElement('span');
+      const id = document.createElement('a');
       id.className = 'bb-ref';
+      id.href = `./bitcoin-book.html?txid=${t.txid}`;
       id.textContent = `${t.txid.slice(0, 8)}…${t.txid.slice(-4)}`;
       id.title = `${t.txid} — ${formatBtc(t.value)} across ${t.vsize.toLocaleString('en-US')} vB`
         + `${t.fee == null ? '' : `, paying ${formatBtc(t.fee)} in fees`}`;
