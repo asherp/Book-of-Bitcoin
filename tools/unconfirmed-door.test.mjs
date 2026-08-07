@@ -21,18 +21,22 @@ import { readFile } from 'node:fs/promises';
 const book = await readFile(new URL('../web/bitcoin-book.html', import.meta.url), 'utf8');
 const appendix = await readFile(new URL('../web/bitcoin-appendix.html', import.meta.url), 'utf8');
 
-test('a ranked transaction is a door, addressed by the only name it has', () => {
-  // The rankings sit past the tip, so there is no reference to cite — the
-  // txid is the whole address, and ?txid= is the form the book already takes
-  // it in (the inscriptions leaf cites its reveals the same way).
+test('a ranked transaction is a door, and it reads as a reference', () => {
   const rows = appendix.slice(appendix.indexOf('const byValue = QUEUE ==='),
     appendix.indexOf("el.classList.remove('hidden')", appendix.indexOf('const byValue = QUEUE ===')));
   assert.match(rows, /createElement\('a'\)/, 'the reference cell is an anchor, not a dead span');
   assert.match(rows, /id\.href = `\.\/bitcoin-book\.html\?txid=\$\{t\.txid\}`/,
     'the whole txid travels — a shortened one addresses nothing');
-  // The visible text stays abbreviated; only the href carries the full id.
-  assert.match(rows, /t\.txid\.slice\(0, 8\)/, 'the cell still reads short');
-  assert.match(appendix, /a\.bb-ref:hover/, 'and reads as something to press');
+  // The book prints no txid a reader would have to squint at. The chapter is
+  // named and the transaction is seated, so the cell reads like every other
+  // citation in the book: a place, not an identifier.
+  assert.match(rows, /id\.textContent = `\$\{alpha\} §\$\{\(t\.seat \+ 1\)/,
+    'the cell reads chapter and §section');
+  assert.match(rows, /const alpha = queueLabel\(1\)/,
+    'and the chapter is named where the book names it, not spelled again here');
+  assert.doesNotMatch(rows, /t\.txid\.slice/, 'no part of a txid is shown');
+  assert.doesNotMatch(rows, /id\.title = `\$\{t\.txid\}/, 'nor hidden in the hover');
+  assert.match(appendix, /a\.bb-ref:hover/, 'and the cell reads as something to press');
 });
 
 test('an unconfirmed transaction is rerouted, not dead-ended', () => {

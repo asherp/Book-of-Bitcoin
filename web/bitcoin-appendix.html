@@ -1280,12 +1280,19 @@ if (QUEUE) {
       + `${byValue ? 'what they move' : 'what they weigh'}.`);
 
     // Set as the ballot's rows are: a name on the left, its figure on the
-    // right. No block has recorded these, so none has a citation to be named
-    // by and the txid stands in until one does -- but each is still a door.
-    // The book seats an unwritten transaction as a §section of the projected
-    // chapter the queue puts it in, numbers it live as the queue reshuffles,
-    // and follows it through a replacement or into the block that finally
-    // writes it.
+    // right. The name is a reference, not an identifier -- the book prints no
+    // txid a reader would have to squint at, and there is no reason for one
+    // here. A draft chapter is named (alpha) and its transactions are seated
+    // (§n, template order), so "alpha §5" says where this sits as exactly as
+    // a mined chapter's citation says where a written one does. The txid
+    // travels in the href, where the machine reads it and the reader does not.
+    //
+    // The number is the snapshot's, and the subtitle above says when the
+    // snapshot was taken. The queue reshuffles; a §5 read a minute ago may be
+    // §6 by the time it is pressed. That costs nothing: the door is the txid,
+    // so it lands on the transaction either way, and the book renumbers the
+    // section live once the reader is standing on it.
+    const alpha = queueLabel(1);
     const el = $('bip-blocks');
     for (const t of rows) {
       const row = document.createElement('div');
@@ -1293,9 +1300,10 @@ if (QUEUE) {
       const id = document.createElement('a');
       id.className = 'bb-ref';
       id.href = `./bitcoin-book.html?txid=${t.txid}`;
-      id.textContent = `${t.txid.slice(0, 8)}…${t.txid.slice(-4)}`;
-      id.title = `${t.txid} — ${formatBtc(t.value)} across ${t.vsize.toLocaleString('en-US')} vB`
-        + `${t.fee == null ? '' : `, paying ${formatBtc(t.fee)} in fees`}`;
+      id.textContent = `${alpha} §${(t.seat + 1).toLocaleString('en-US')}`;
+      id.title = `${formatBtc(t.value)} across ${t.vsize.toLocaleString('en-US')} vB`
+        + `${t.fee == null ? '' : `, paying ${formatBtc(t.fee)} in fees`}`
+        + ` — where the queue seats it now, in the draft it would be written into`;
       const fig = document.createElement('span');
       fig.className = 'bb-fees';
       fig.textContent = byValue ? formatAmount(t.value) : `${t.vsize.toLocaleString('en-US')} vB`;

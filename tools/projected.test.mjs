@@ -39,9 +39,30 @@ test('a row that is not a transaction is dropped, never guessed at', () => {
   assert.equal(txOf(['too short', 1, 2, 3]), null);          // not a 64-hex id
   assert.equal(txOf([REAL[0], 1, 'nonsense', 3]), null);      // no vsize
   assert.equal(txOf([REAL[0], 1, 200, undefined]), null);     // no value
-  // A malformed row among good ones costs itself and nothing else.
-  const { n } = rankTransactions([row(1), null, ['bad'], row(2)]);
-  assert.equal(n, 2);
+  // A malformed row among good ones costs itself and nothing else -- and, in
+  // particular, does not shift the seats behind it. The seat is a place in
+  // the manifest, which is the block the book will page; a dropped row still
+  // occupies its place there.
+  const r = rankTransactions([row(1), null, ['bad'], row(2)]);
+  assert.equal(r.n, 2);
+  assert.deepEqual(r.byAmount.map((t) => t.seat), [0, 3]);
+});
+
+test('a transaction carries its seat, which is its §section of the draft', () => {
+  // The reference a leaf prints is the chapter's name and this number: the
+  // manifest is template order, so the k-th row is the k-th section a miner
+  // writing this block would write. Rank is not seat -- the largest by amount
+  // is wherever the fee market put it -- so the seat has to survive the sort.
+  const rows = [
+    row(1, { value: 5 }),
+    row(2, { value: 900 }),
+    row(3, { value: 50 }),
+  ];
+  const r = rankTransactions(rows);
+  assert.deepEqual(r.byAmount.map((t) => t.seat), [1, 2, 0], 'seats follow their transactions through the ranking');
+  assert.deepEqual(r.byAmount.map((t) => t.value), [900, 50, 5]);
+  // Seat 0 is §1: the manifest is 0-based and the book's sections are not.
+  assert.equal(Math.min(...r.byAmount.map((t) => t.seat)), 0);
 });
 
 test('the rankings are largest first, by what they move and by what they weigh', () => {

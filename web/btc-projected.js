@@ -74,8 +74,20 @@ export function txOf(row) {
 
 // The two rankings a snapshot is reduced to, largest first, and what each
 // leaves behind. Pure, so the reduction can be checked without a socket.
+//
+// Each transaction carries its seat: its place in the manifest the socket
+// sent, which is template order -- the order a miner writing this block would
+// write them in -- so seat + 1 is its §section of the draft chapter. It is
+// taken here, before either ranking reorders anything, because a row's rank is
+// not its seat and nothing downstream could recover one from the other. A
+// malformed row is still dropped, but it does not shift the seats of the rows
+// behind it: the seat counts the manifest, not the survivors.
 export function rankTransactions(rows, top = TOP) {
-  const txs = (Array.isArray(rows) ? rows : []).map(txOf).filter(Boolean);
+  const txs = [];
+  (Array.isArray(rows) ? rows : []).forEach((row, seat) => {
+    const t = txOf(row);
+    if (t) txs.push({ ...t, seat });
+  });
   const by = (key) => [...txs].sort((a, b) => b[key] - a[key] || a.txid.localeCompare(b.txid));
   return {
     n: txs.length,
@@ -99,6 +111,10 @@ function kept() {
     if (!raw) return null;
     const snap = JSON.parse(raw);
     if (!snap || !Array.isArray(snap.byAmount)) return null;
+    // A snapshot kept by an older build has no seats, and a row without one
+    // has no reference to print. Treated as stale rather than repaired: it
+    // costs one socket, once, at the version boundary.
+    if (snap.byAmount.length && !Number.isFinite(snap.byAmount[0].seat)) return null;
     return (Date.now() - snap.readAt * 1000) < KEEP_MS ? snap : null;
   } catch { return null; }
 }
