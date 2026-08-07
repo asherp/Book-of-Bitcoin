@@ -424,9 +424,15 @@ compiled to WASM) is consumed as a published
   is a masthead date, it stands alone in its first segment, and so it is
   never filed and never respelled — filing is something an author does
   deliberately, by naming two entries alike, and one slash on its own is
-  punctuation. In the contents the two axes stay independent: filing makes
-  headings and citation makes indents, filing being the outer of the two, so
-  a row is only ever the citation-child of one it was filed beside. On the shelf a path does more —
+  punctuation. A name that is **also an entry** heads its own filing rather
+  than standing beside it: `SegWit` (the book) with `SegWit/activation` under
+  it prints the book's own row where a bare heading would otherwise go, and
+  what is filed beneath indents from it. In the contents the two axes meet on
+  one rule: an entry filed somewhere of its own keeps to it and is never
+  absorbed by whatever row happens to name its block, while an entry filed
+  nowhere follows the entry it cites — so `First SegWit spend`, and a
+  bookmark the reader kept in that same chapter, read beneath
+  `SegWit/activation` wherever that row ends up. On the shelf a path does more —
   see `shelfLedgers` in `web/btc-index.js`: keeps sharing a path are one
   ledger, and a parent is **a ledger in its own right** whose account is
   every member beneath it, its children partitioning it. The Coldcard hack is

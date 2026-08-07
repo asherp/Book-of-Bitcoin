@@ -108,7 +108,7 @@ test('the curated contents files where an editor filed it, and nowhere else', as
   const groups = [];
   const walk = (nodes) => nodes.forEach((n) => { if (n.kind === 'group') { groups.push(n.label); walk(n.nodes); } });
   walk(pathForest(titles.map((title) => ({ title }))));
-  assert.deepEqual(groups, ['Cold Card Attack'],
+  assert.deepEqual(groups, ['BIP91', 'SegWit', 'Cold Card Attack'],
     'a curated title filed itself by accident — a slash in prose is punctuation, not a path');
 
   const rows = forestRows(pathForest(titles.map((title) => ({ title }))));
@@ -120,14 +120,40 @@ test('the curated contents files where an editor filed it, and nowhere else', as
     ['wave 1', 'wave 2', 'wave 3']);
 });
 
-test('the contents keeps filing outside citation nesting', async () => {
+test('the contents nests first and files the whole listing', async () => {
   const { readFile } = await import('node:fs/promises');
   const toc = await readFile(new URL('../web/bitcoin-contents.html', import.meta.url), 'utf8');
-  // Filing is the outer axis: rows are grouped first, and a row can only
-  // ever be the citation-child of one it was filed beside.
-  assert.match(toc, /const filed = pathForest\(entries\);/, 'the contents no longer files its entries');
-  assert.match(toc, /rowsRun = \(rows, depth\) => \{[^]*?isChildOf\(last\.row\.entry, r\.entry\)/,
-    'citation nesting is no longer applied inside a filing');
+  // A parent travels into its filing with its children attached…
+  assert.match(toc, /const filed = pathForest\(nodes, \(n\) => n\.entry\.title\);/,
+    'the contents no longer files its listings');
+  // …and where the axes meet, filing decides for an entry that has one: a
+  // child filed elsewhere is never absorbed, a child filed nowhere follows
+  // the entry it cites.
+  assert.match(toc, /isChildOf = \(p, c\) => \(fileOf\(c\) === '' \|\| fileOf\(c\) === fileOf\(p\)\)/,
+    'citation nesting no longer defers to a filing');
+});
+
+test('a name that is also an entry heads its own filing', () => {
+  // `SegWit` beside `SegWit/activation`: the entry's own row stands where a
+  // bare heading would, and what is filed under it indents beneath — one
+  // child is enough, a parent and its child being no kind of heading.
+  const forest = pathForest([{ title: 'SegWit' }, { title: 'SegWit/activation' }]);
+  assert.equal(forest.length, 1);
+  assert.equal(forest[0].kind, 'group');
+  assert.equal(forest[0].head.entry.title, 'SegWit');
+  assert.equal(forest[0].head.title, 'SegWit');
+  assert.deepEqual(forest[0].nodes.map((n) => n.title), ['activation']);
+  // Every entry still prints exactly once, the head included.
+  assert.deepEqual(forestRows(forest).map((r) => r.entry.title), ['SegWit', 'SegWit/activation']);
+});
+
+test('a filing takes the earlier position of its head and its first member', () => {
+  // Either may have been written first; the filing stands where the earlier
+  // of them stood, so the leaf still reads in chain order.
+  const before = pathForest([{ title: 'a' }, { title: 'SegWit/x' }, { title: 'SegWit' }, { title: 'z' }]);
+  assert.deepEqual(before.map((n) => n.head?.entry.title ?? n.entry?.title ?? n.label), ['a', 'SegWit', 'z']);
+  const after = pathForest([{ title: 'a' }, { title: 'SegWit' }, { title: 'SegWit/x' }, { title: 'z' }]);
+  assert.deepEqual(after.map((n) => n.head?.entry.title ?? n.entry?.title ?? n.label), ['a', 'SegWit', 'z']);
 });
 
 test('a title that is only slashes is a title of nothing, and still prints', () => {

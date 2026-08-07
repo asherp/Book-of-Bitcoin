@@ -477,7 +477,7 @@
   commentary:
     - file: bip91.md
       by: Claude Fable 5
-- title: BIP91 activation (SegWit mandate)
+- title: BIP91/activation (SegWit mandate)
   id: '477120'
   commentary:
     - file: bip91-activation-segwit-mandate.md
@@ -493,7 +493,7 @@
   commentary:
     - file: segwit.md
       by: Claude Opus 5
-- title: SegWit activation
+- title: SegWit/activation
   id: '481824'
   commentary:
     - file: segwit-activation.md

@@ -181,7 +181,7 @@ import { readQueue, buildQueue } from './btc-mempool.js';
 import { INDEXED, keptLedgers, sameAddresses, shelfLedgers } from './btc-index.js';
 // A slash in a name the reader typed is a path: their own keeps file into a
 // hierarchy, and only theirs do (btc-path.js says why).
-import { pathForest } from './btc-path.js';
+import { pathForest, pathSegments, pathLabel } from './btc-path.js';
 import { volumeBookChapter, toRoman, fromRoman, heightOf, expectedReference, footnoteMark } from './btc-citation.js';
 import { storeGet, storePut } from './btc-store.js';
 import { seedArchive } from './btc-seed.js';
@@ -532,25 +532,43 @@ function renderVolume(volume) {
     toc.append(saying('Nothing is kept from this volume yet. The volume itself is one turn down, and reads chapter by chapter from its own leaf.'));
     return;
   }
-  // Two axes, and filing is the outer one. A slash in a title is a path
-  // (btc-path.js), so entries named alike read together under a heading of
-  // that name -- the reader's own keeps and the curated entries alike, the
-  // latter having been filing by hand with a comma until now. A name
-  // standing alone in its first segment is never filed and prints exactly as
-  // written, which is what keeps `The Times 03/Jan/2009 …` a masthead date
-  // rather than three levels of anything.
-  const filed = pathForest(entries);
-
-  // Citation nesting is the inner axis, and it works inside a filing exactly
-  // as it works outside one: an entry citing a section (or deeper) of a
-  // chapter that the preceding row names outright is that row's child --
-  // listed beneath it, one more indent in, its reference compressed against
-  // the parent's. Titles never bleed up a level, but a listing may nest down
-  // one: the five burns of one chapter read beneath the chapter's own row,
-  // each cited by its § alone. Applied per run of rows rather than over the
-  // whole leaf, so a row is only ever the child of one it was filed beside.
-  const isChildOf = (p, c) => p.place.chapter != null && p.place.section == null && !p.page
+  // Citation nesting, the inner axis: an entry citing a section (or deeper)
+  // of a chapter that the preceding entry names outright is that entry's
+  // child -- listed under the parent's row, one more indent in, its reference
+  // compressed against the parent's. Titles never bleed up a level, but a
+  // listing may nest down one: the five burns of one chapter read beneath the
+  // chapter's own row, each cited by its § alone.
+  //
+  // Where the two axes meet, filing decides -- but only for an entry that HAS
+  // a filing. A child filed somewhere of its own keeps to it, and is never
+  // absorbed by whatever row happens to name its block; a child filed nowhere
+  // follows the entry it cites, into that entry's filing if it has one. So
+  // `First SegWit spend`, filed nowhere, reads beneath `SegWit/activation`
+  // wherever that row ends up, and a keep the reader filed under a name of
+  // their own does not.
+  const fileOf = (e) => pathSegments(e.title).slice(0, -1).join('/');
+  const isChildOf = (p, c) => (fileOf(c) === '' || fileOf(c) === fileOf(p))
+    && p.place.chapter != null && p.place.section == null && !p.page
     && c.place.book === p.place.book && c.place.chapter === p.place.chapter && c.place.section != null;
+
+  // Nested first, then filed: a parent travels into its filing with its
+  // children attached, so what is filed is the whole listing rather than a
+  // row torn out of one.
+  const nodes = [];
+  for (const e of entries) {
+    const last = nodes[nodes.length - 1];
+    if (last && isChildOf(last.entry, e)) last.children.push(e);
+    else nodes.push({ entry: e, children: [] });
+  }
+
+  // And the outer axis. A slash in a title is a path (btc-path.js), so
+  // entries named alike read together -- the reader's own keeps and the
+  // curated rows alike. A name standing alone in its first segment is never
+  // filed and prints exactly as written, which is what keeps `The Times
+  // 03/Jan/2009 …` a masthead date rather than three levels of anything; a
+  // name that is ALSO an entry heads its own filing, its row standing where a
+  // bare heading otherwise would.
+  const filed = pathForest(nodes, (n) => n.entry.title);
 
   // A run of rows, in reading order. Nothing groups them automatically: the
   // leaf used to raise a `Book N` sub-heading wherever two consecutive rows
@@ -558,30 +576,25 @@ function renderVolume(volume) {
   // rather than by anything anyone meant. Filing is the deliberate grouping
   // now, and an automatic heading beside it only competes with it -- so every
   // row cites its own β book and stands at the leaf's own margin.
-  const rowsRun = (rows, depth) => {
-    const nodes = [];
-    for (const r of rows) {
-      const last = nodes[nodes.length - 1];
-      if (last && isChildOf(last.row.entry, r.entry)) last.children.push(r);
-      else nodes.push({ row: r, children: [] });
-    }
-    for (const n of nodes) {
-      toc.append(entryEl(n.row.entry, null, { title: n.row.title, depth }));
-      for (const c of n.children) toc.append(entryEl(c.entry, n.row.entry.place, { title: c.title, depth }));
+  // One row and whatever cites it. A child prints the part of its name the
+  // filing above has not already said -- nothing, for a child filed nowhere,
+  // which then prints its own name whole.
+  const renderRow = (row, depth) => {
+    const node = row.entry;
+    toc.append(entryEl(node.entry, null, { title: row.title, depth }));
+    for (const c of node.children) {
+      toc.append(entryEl(c, node.entry.place, { title: pathLabel(pathSegments(c.title).slice(depth)), depth }));
     }
   };
 
   const renderFiled = (list, depth) => {
-    for (let k = 0; k < list.length;) {
-      if (list[k].kind === 'group') {
-        toc.append(fileHead(list[k].label, depth));
-        renderFiled(list[k].nodes, depth + 1);
-        k++;
-        continue;
-      }
-      let j = k; while (j < list.length && list[j].kind === 'row') j++;
-      rowsRun(list.slice(k, j), depth);
-      k = j;
+    for (const n of list) {
+      if (n.kind === 'row') { renderRow(n, depth); continue; }
+      // A filing headed by an entry prints that entry's row; one headed by a
+      // name alone prints the name.
+      if (n.head) renderRow(n.head, depth);
+      else toc.append(fileHead(n.label, depth));
+      renderFiled(n.nodes, depth + 1);
     }
   };
   renderFiled(filed, 0);
