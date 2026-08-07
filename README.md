@@ -291,12 +291,16 @@ compiled to WASM) is consumed as a published
 - `web/btc-mempool.js`, `web/btc-toc.css` — the queue read as the chapters
   it is about to become, and how a list of chapters is set. Appendix I's
   contents leaf lists the queue **the way a volume's contents lists its own
-  chapters**: a Book heading over the rows that share one, each row citing
-  only what that heading has not already named (□2,016, then □1 under the
-  next book) — a projected chapter falls in a book by the same arithmetic a
-  mined one does, so it is listed by the same rules, in the pencil the ■ it
-  has not earned is owed in. The stylesheet is shared with the appendix
-  leaves so a chapter reads the same wherever it is set
+  chapters**: a row per projected chapter, in the order the queue holds them,
+  each citing its own place in full (β61 □530) in the pencil the ■ it has not
+  earned is owed in — a projected chapter falls in a book by the same
+  arithmetic a mined one does, so it is listed by the same rules. Neither
+  leaf groups by book any more: both used to raise a `Book N` heading
+  wherever two consecutive rows shared one, and the book a row falls in is an
+  accident of where the chain happens to have reached, not something anybody
+  meant. Filing is the deliberate grouping (`web/btc-path.js`), and an
+  automatic heading beside it only competed with it. The stylesheet is shared
+  with the appendix leaves so a chapter reads the same wherever it is set
 - `web/bitcoin-ledger.html` — the Ledger: a compendium of every ledger
   (curated donation addresses, any the reader keeps, and ad-hoc
   `?address=a,b,…` queries) in one document, read the way the book is
