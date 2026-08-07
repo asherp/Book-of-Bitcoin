@@ -332,14 +332,12 @@ async function resolveBookmark(b) {
 }
 
 // The tail of an entry's citation -- the part its heading hasn't already named.
-// The leaf's own head has named the volume, so under a Book heading only the
-// ■chapter (and a transaction's §section) remains, and directly on the leaf the
-// β-marked book leads it. Spaced like the book's own citations ("β29 ■596",
-// "■1 §1"). A row nested under its parent entry (a section listed under the
-// chapter row that names its block) cites only what differs from the parent:
-// the parent row has already printed the ■chapter, so the child carries the
-// §section alone.
-function tailRef({ book, chapter, section, vout, wit }, underBook, parent) {
+// The leaf's own head has named the volume, so the β-marked book leads what
+// remains. Spaced like the book's own citations ("β29 ■596"). A row nested
+// under its parent entry (a section listed under the chapter row that names
+// its block) cites only what differs from the parent: the parent row has
+// already printed the ■chapter, so the child carries the §section alone.
+function tailRef({ book, chapter, section, vout, wit }, parent) {
   // An output cites as §section.vout; a witness as §section.a -- the
   // footnote's alphabet index after the point, letters where an output
   // would carry digits.
@@ -348,10 +346,9 @@ function tailRef({ book, chapter, section, vout, wit }, underBook, parent) {
   if (parent && parent.book === book && parent.chapter === chapter) return sec;
   // A volume's own leaf: the leaf's head above the row has already named it.
   if (book == null) return '';
-  // A book's own leaf: under its Book heading nothing remains to cite; on the
-  // bare leaf, the β mark alone names it.
-  if (chapter == null) return underBook ? '' : `β${book}`;
-  let s = (underBook ? [`■${chapter}`] : [`β${book}`, `■${chapter}`]).join(' ');
+  // A book's own leaf: the β mark alone names it.
+  if (chapter == null) return `β${book}`;
+  let s = `β${book} ■${chapter}`;
   if (sec) s += ` ${sec}`;
   return s;
 }
@@ -364,10 +361,10 @@ function tailRef({ book, chapter, section, vout, wit }, underBook, parent) {
 // `filing` carries the reader's own hierarchy where they have one: `title`
 // is the leaf to print in place of the whole path (the heading above has
 // said the rest), and `depth` how far in the group stands.
-function entryEl(entry, underBook, parent, filing = null) {
+function entryEl(entry, parent, filing = null) {
   const row = document.createElement('a');
   const depth = filing?.depth ?? 0;
-  row.className = 'toc-entry' + (underBook ? ' under-book' : '') + (parent ? ' under-parent' : '')
+  row.className = 'toc-entry' + (parent ? ' under-parent' : '')
     + (depth ? ' filed' : '') + (entry.bookmark ? ' is-bookmark' : '');
   if (depth) row.style.setProperty('--file-depth', String(depth - 1));
   row.dataset.entryId = entry.id;   // the projected section anchors after the tip's row
@@ -386,7 +383,7 @@ function entryEl(entry, underBook, parent, filing = null) {
   }
   t.append(document.createTextNode(filing?.title || entry.title));
   const r = document.createElement('span'); r.className = 'toc-ref';
-  if (entry.place) r.textContent = tailRef(entry.place, underBook, parent);
+  if (entry.place) r.textContent = tailRef(entry.place, parent);
   else { r.textContent = '—'; r.classList.add('none'); }
   row.append(t, r);
   return row;
@@ -555,10 +552,12 @@ function renderVolume(volume) {
   const isChildOf = (p, c) => p.place.chapter != null && p.place.section == null && !p.page
     && c.place.book === p.place.book && c.place.chapter === p.place.chapter && c.place.section != null;
 
-  // A run of rows keeps the leaf's own manners exactly: the Book sub-heading
-  // earns its place only over two or more consecutive rows that share one --
-  // a lone parent with its children is already its own group, and its row
-  // carries the full β-marked reference the heading would.
+  // A run of rows, in reading order. Nothing groups them automatically: the
+  // leaf used to raise a `Book N` sub-heading wherever two consecutive rows
+  // shared a book, which grouped by an accident of where a passage sits
+  // rather than by anything anyone meant. Filing is the deliberate grouping
+  // now, and an automatic heading beside it only competes with it -- so every
+  // row cites its own β book and stands at the leaf's own margin.
   const rowsRun = (rows, depth) => {
     const nodes = [];
     for (const r of rows) {
@@ -566,20 +565,9 @@ function renderVolume(volume) {
       if (last && isChildOf(last.row.entry, r.entry)) last.children.push(r);
       else nodes.push({ row: r, children: [] });
     }
-    for (let k = 0; k < nodes.length;) {
-      const bk = nodes[k].row.entry.place.book;
-      let jb = k + 1;
-      while (jb < nodes.length && nodes[jb].row.entry.place.book === bk) jb++;
-      // Inside a filing the Book heading stands down: a group gathers rows
-      // from wherever they were named, so each cites its own book.
-      const underBook = depth === 0 && jb - k >= 2;
-      if (underBook) toc.append(head('toc-book', `Book ${bk}`));   // spelled out, no β; the β sigil rides only the compact tail references
-      for (let m = k; m < jb; m++) {
-        const n = nodes[m];
-        toc.append(entryEl(n.row.entry, underBook, null, { title: n.row.title, depth }));
-        for (const c of n.children) toc.append(entryEl(c.entry, underBook, n.row.entry.place, { title: c.title, depth }));
-      }
-      k = jb;
+    for (const n of nodes) {
+      toc.append(entryEl(n.row.entry, null, { title: n.row.title, depth }));
+      for (const c of n.children) toc.append(entryEl(c.entry, n.row.entry.place, { title: c.title, depth }));
     }
   };
 
@@ -846,7 +834,7 @@ function render() {
     const stranded = unresolved();
     if (stranded.length) {
       toc.append(head('toc-vol', 'Unresolved'));
-      for (const e of stranded) toc.append(entryEl(e, false));
+      for (const e of stranded) toc.append(entryEl(e));
     }
   }
   renderTurns(list);
