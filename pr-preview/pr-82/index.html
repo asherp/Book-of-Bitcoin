@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<!-- SPDX-License-Identifier: MIT OR Apache-2.0 -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The βitcoin βook</title>
+<meta name="description" content="The Bitcoin block chain, read as a book: each block a chapter, each transaction a paragraph of grammatically correct prose — every byte decodes back out exactly.">
+<!-- The root opens the book at its title page (bitcoin-front.html's first
+     leaf, set as a manuscript title page and turned by swiping up), not at
+     the chain tip. A book is opened at its cover; arriving instead in the
+     middle of the latest chapter asks the reader to work out where they are
+     before it has said what it is. The tip keeps its own standing address at
+     /latest for anyone who wants it, and the reading page keeps its stable
+     URL at bitcoin-book.html, which the PWA manifest and service worker
+     share. -->
+<meta http-equiv="refresh" content="0; url=./bitcoin-front.html">
+<link rel="canonical" href="./bitcoin-front.html">
+<link rel="icon" type="image/svg+xml" href="./icons/beta-icon.svg">
+
+<!-- Social / rich unfurl: the root is the URL people actually paste, and
+     crawlers don't follow the meta refresh — so the root carries the book's
+     own card. -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="The βook of βitcoin">
+<meta property="og:title" content="The βook of βitcoin — Vires in Numeris">
+<meta property="og:description" content="The illuminated timechain: each block a chapter, each transaction a paragraph of grammatically correct prose — witness data collected as footnotes. Every byte decodes back out exactly.">
+<meta property="og:url" content="https://bookofbitcoin.io/">
+<meta property="og:image" content="https://bookofbitcoin.io/og-bookofbitcoin.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="The βook of βitcoin — Vires in Numeris. A gold β standing beside the book's title on a dark cover.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="The βook of βitcoin — Vires in Numeris">
+<meta name="twitter:description" content="The illuminated timechain: each block a chapter, each transaction a paragraph of grammatically correct prose.">
+<meta name="twitter:image" content="https://bookofbitcoin.io/og-bookofbitcoin.png">
+</head>
+<body>
+<p><a href="./bitcoin-front.html">Open The βitcoin βook</a> at its title page,
+or go straight to <a href="./latest/">the latest chapter</a>.</p>
+<p>Reading without JavaScript (crawlers, AI assistants): the
+<a href="./passages/index.md">curated passages as plain markdown</a>, the
+<a href="./preface.md">preface</a>, and <a href="./llms.txt">llms.txt</a> for
+how to read the rest of the chain the same way.</p>
+<script>location.replace('./bitcoin-front.html' + location.hash);</script>
+</body>
+</html>
