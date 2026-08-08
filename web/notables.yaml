@@ -47,10 +47,15 @@
 #
 # An entry may be found in more than one place. Write `ids:` instead of `id:`,
 # each item a place of its own (with its own index / page / out where it needs
-# them), and `as:` naming what that place is within the entry — the contents
-# prints it after the title, so rows sharing a name still say which is which.
-# The readings below belong to the entry, so one reading serves every place: the
-# four printings of the two twice-confirmed coinbases are one story, told once.
+# them), and `as:` naming what that place is within the entry. Such an entry is
+# a filing already — the title names it, each `as:` names a leaf — so the
+# contents files it: the title stands once as a heading and the places read
+# beneath it by their `as` alone, each with its own reference beside it. A page
+# naming the passage a reader is standing on says it the other way, in prose
+# ("The twice-confirmed coinbases — first printing"), a slash there being
+# punctuation rather than filing. The readings below belong to the entry, so
+# one reading serves every place: the four printings of the two
+# twice-confirmed coinbases are one story, told once.
 #
 #   - title: The twice-confirmed coinbases
 #     ids:
