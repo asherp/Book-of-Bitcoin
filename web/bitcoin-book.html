@@ -442,6 +442,25 @@ button:disabled { opacity: .4; cursor: not-allowed; }
   transition: border-color .15s ease, color .15s ease;
 }
 .illum-ctl-reset:hover:not(:disabled) { background: transparent; color: var(--ink); border-color: var(--accent); }
+/* The single-mark stage: one sigil off the page, grown on its own, with
+   ‹ › to step through the rest (see illumination-controls.js). */
+.illum-ctl-preview-nav { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.illum-ctl-preview-label { font: 500 10.5px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing: .06em; color: var(--dim); text-align: center; flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.illum-ctl-step {
+  background: transparent; border: 1px solid var(--input-bd); border-radius: 4px;
+  color: var(--dim); font: 400 15px/1 'IBM Plex Mono','Book Sigla',monospace;
+  padding: 2px 9px; width: auto; margin: 0; cursor: pointer; flex: 0 0 auto;
+}
+.illum-ctl-step:hover:not(:disabled) { background: transparent; color: var(--accent); border-color: var(--accent); }
+.illum-ctl-preview-stage {
+  position: relative; height: 168px; border: 1px solid var(--rule); border-radius: 6px;
+  background: var(--page); overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+}
+/* The stage inherits what a passage inherits, not what reads best here: the
+   overlay draws on currentColor, and .tx-wrap's is the body's ink, so a gold
+   stage would quietly misreport the colour the page actually grows in. */
+.illum-ctl-preview-host { position: relative; color: var(--ink-soft); display: inline-block; }
 .chapter-title { font: 500 37px/1.2 'Newsreader','Book Sigla', serif; color: var(--ink); margin: 0 0 22px; letter-spacing: -.01em; }
 /* A notable chapter's event name, set small under the unchanging "Chapter n"
    heading. The negative top margin tucks it into the title's own 22px gap,
@@ -4281,6 +4300,9 @@ async function illuminateSection(wrap, flow) {
       pointOf: (el) => (el.classList.contains('tx-body-lead') ? 'top-left' : 'edge'),
     };
     currentIllumHandle = illumModule.illuminate(wrap, currentIllumOpts);
+    // The panel outlives the section it was opened over: a page turn gives
+    // it a whole new set of marks, so re-stage whatever it is showing.
+    if (illumControls) illumControls.refreshPreview();
   } catch (e) { console.error('illumination skipped:', e); }
 }
 
@@ -4294,6 +4316,7 @@ async function illuminateSection(wrap, flow) {
 // masthead's settings/language popovers.
 const illumToggle = $('illum-toggle');
 let illumWidget = null;
+let illumControls = null;   // the panel's own handle -- see refreshPreview below
 function openIllumWidget(buildIlluminationControls) {
   if (!illumWidget) {
     illumWidget = document.createElement('div');
@@ -4309,7 +4332,7 @@ function openIllumWidget(buildIlluminationControls) {
       <div id="illum-widget-body"></div>
     `;
     document.body.append(illumWidget);
-    buildIlluminationControls($('illum-widget-body'), illumModule, {
+    illumControls = buildIlluminationControls($('illum-widget-body'), illumModule, {
       enabledDefault: illumEnabled,
       onToggleEnabled: (checked) => {
         illumEnabled = checked;
@@ -4317,6 +4340,20 @@ function openIllumWidget(buildIlluminationControls) {
         if (currentIllumHandle) currentIllumHandle.refresh();
       },
       onChange: () => { if (currentIllumHandle) currentIllumHandle.refresh(); },
+      // The stage at the top of the panel: this section's own marks, one at
+      // a time, each grown alone -- the same seeds and the same options the
+      // passage itself is illuminated with (currentIllumOpts), so what the
+      // stage shows is what the page is doing, minus the prose crowding it.
+      preview: {
+        seeds: () => (currentIllumOpts ? Array.from(currentIllumOpts.seedEls || []) : []),
+        optionsFor: () => ({
+          blockHash: currentIllumOpts && currentIllumOpts.blockHash,
+          confirmations: currentIllumOpts && currentIllumOpts.confirmations,
+          enabled: illumEnabled,
+          sizeOf: currentIllumOpts && currentIllumOpts.sizeOf,
+          pointOf: currentIllumOpts && currentIllumOpts.pointOf,
+        }),
+      },
     });
     $('illum-widget-close').addEventListener('click', closeIllumWidget);
   }

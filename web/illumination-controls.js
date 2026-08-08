@@ -31,12 +31,29 @@
 //           decides what "off" means (its `enabled` opt; see
 //           btc-illumination.js), so this is the one control here with no
 //           default wiring of its own.
+// opts.preview      turns on the single-mark stage at the top of the panel:
+//           one of the page's own sigla, illuminated ALONE, with ‹ › to
+//           step through the rest. The point is isolation -- a mark in the
+//           page is hemmed in by the lines around it, and what a setting
+//           does to the vine itself is hard to read through all that. The
+//           stage carries no prose, so the only obstacle is the mark's own
+//           box and the growth is the grammar's, plainly.
+//             .seeds()        -> the page's current seed elements. Called
+//                                afresh every render, so a caller whose
+//                                page has moved on doesn't have to say so.
+//             .optionsFor(el) -> the illuminate() options that mark would
+//                                be grown with (blockHash, confirmations,
+//                                sizeOf, pointOf...). Optional.
+//
+// Returns { refreshPreview() } so a caller can re-stage after its page
+// changes underneath the panel (see bitcoin-book.html's illuminateSection).
 export function buildIlluminationControls(root, illum, opts = {}) {
   const { params, GROWTH_STAGES, resetDerivations } = illum;
   const onChange = opts.onChange || (() => {});
   const onReset = opts.onReset || (() => {});
   const onToggleEnabled = opts.onToggleEnabled || (() => {});
   const enabledDefault = opts.enabledDefault !== false;
+  const preview = opts.preview || null;
   const DEFAULTS = structuredClone(params);
   const DEFAULT_STAGES = structuredClone(GROWTH_STAGES);
 
@@ -62,6 +79,15 @@ export function buildIlluminationControls(root, illum, opts = {}) {
   'glyphFollowMax', 'glyphClearanceMul', 'glyphDepartDeg'];
 
   root.innerHTML = `
+    ${preview ? `
+    <div class="illum-ctl-group illum-ctl-preview">
+      <div class="illum-ctl-preview-nav">
+        <button type="button" class="illum-ctl-step illum-ctl-prev" aria-label="Previous mark">&lsaquo;</button>
+        <span class="illum-ctl-preview-label"></span>
+        <button type="button" class="illum-ctl-step illum-ctl-next" aria-label="Next mark">&rsaquo;</button>
+      </div>
+      <div class="illum-ctl-preview-stage"></div>
+    </div>` : ''}
     <div class="illum-ctl-group">
       <label class="illum-ctl-row"><span class="name">Illumination</span><input type="checkbox" class="illum-ctl-enabled"></label>
     </div>
@@ -87,6 +113,63 @@ export function buildIlluminationControls(root, illum, opts = {}) {
     <button type="button" class="illum-ctl-reset">Reset all to defaults</button>
   `;
 
+  // ─── the single-mark stage ────────────────────────────────────────────
+  // A CLONE of the chosen mark, not the mark itself: the real one has to
+  // stay where it is on the page, still growing its own vine. The clone is
+  // stripped of ids (two elements answering to one id otherwise) and given
+  // the original's own computed type, so it renders as the same letter at
+  // the same size even though it now sits inside the panel's own styling
+  // rather than the passage's.
+  let previewIdx = 0, previewHandle = null;
+  function renderPreview() {
+    if (!preview) return;
+    const stage = root.querySelector('.illum-ctl-preview-stage');
+    const label = root.querySelector('.illum-ctl-preview-label');
+    const seeds = (preview.seeds && preview.seeds()) || [];
+    if (previewHandle) { previewHandle.destroy(); previewHandle = null; }
+    stage.textContent = '';
+    if (!seeds.length) { label.textContent = 'no marks on this page'; return; }
+    previewIdx = ((previewIdx % seeds.length) + seeds.length) % seeds.length;
+    const src = seeds[previewIdx];
+
+    const clone = src.cloneNode(true);
+    clone.removeAttribute('id');
+    clone.querySelectorAll('[id]').forEach((n) => n.removeAttribute('id'));
+    const cs = getComputedStyle(src);
+    for (const prop of ['fontFamily', 'fontSize', 'fontWeight', 'fontStyle', 'lineHeight', 'letterSpacing', 'color']) {
+      clone.style[prop] = cs[prop];
+    }
+    // A whole paragraph is a seed too (the drop cap is styled off its
+    // opening letter, so the mark IS its paragraph). Staging all of that
+    // would put the page's text back on a stage whose whole purpose is
+    // being rid of it -- so the clone keeps only enough to carry the mark.
+    const text = clone.textContent || '';
+    if (text.length > 14) clone.textContent = text.slice(0, 14);
+
+    const host = document.createElement('div');
+    host.className = 'illum-ctl-preview-host';
+    host.append(clone);
+    stage.append(host);
+
+    const kind = (src.className || '').split(/\s+/).filter(Boolean)[0] || src.tagName.toLowerCase();
+    label.textContent = `${previewIdx + 1}/${seeds.length} · ${kind}`;
+    label.title = (src.textContent || '').trim().slice(0, 60);
+
+    try {
+      previewHandle = illum.illuminate(host, {
+        seedEls: [clone],
+        ...(preview.optionsFor ? preview.optionsFor(src) : {}),
+      });
+    } catch (e) { console.error('illumination preview failed:', e); }
+  }
+  if (preview) {
+    root.querySelector('.illum-ctl-prev').addEventListener('click', () => { previewIdx -= 1; renderPreview(); });
+    root.querySelector('.illum-ctl-next').addEventListener('click', () => { previewIdx += 1; renderPreview(); });
+  }
+  // Every control's change re-stages the preview as well as re-running the
+  // caller's own render, so the isolated mark and the page agree.
+  const fire = () => { renderPreview(); onChange(); };
+
   const enabledInput = root.querySelector('.illum-ctl-enabled');
   enabledInput.checked = enabledDefault;
   enabledInput.addEventListener('change', () => onToggleEnabled(enabledInput.checked));
@@ -102,7 +185,7 @@ export function buildIlluminationControls(root, illum, opts = {}) {
     input.addEventListener('input', () => {
       GROWTH_STAGES[i].iterations = Math.max(0, parseInt(input.value, 10) || 0);
       resetDerivations();
-      onChange();
+      fire();
     });
     r.append(input);
     stagesEl.append(r);
@@ -121,7 +204,7 @@ export function buildIlluminationControls(root, illum, opts = {}) {
       params.productions[i].weight = parseFloat(input.value);
       valEl.textContent = input.value;
       resetDerivations();
-      onChange();
+      fire();
     });
     rowEl.insertBefore(input, valEl);
     prodEl.append(rowEl);
@@ -140,7 +223,7 @@ export function buildIlluminationControls(root, illum, opts = {}) {
       params[key] = parseFloat(input.value);
       out.textContent = input.value;
       if (grammar) resetDerivations();
-      onChange();
+      fire();
     });
   }
   GRAMMAR_KEYS.forEach((k) => bindParam(k, true));
@@ -162,6 +245,9 @@ export function buildIlluminationControls(root, illum, opts = {}) {
     root.querySelectorAll('.illum-ctl-stages input').forEach((input, i) => { input.value = String(GROWTH_STAGES[i].iterations); });
 
     onReset();
-    onChange();
+    fire();
   });
+
+  renderPreview();
+  return { refreshPreview: renderPreview };
 }
