@@ -443,10 +443,22 @@ export const places = () => entries.flatMap((entry) =>
 
 // A place's own name: the entry's title — in the reader's language where a
 // translation is written — and what this place is within it.
-// "The twice-confirmed coinbases — e3bf…468, first printing".
+// "The twice-confirmed coinbases — first printing".
 export const placeTitle = (place) => {
   const title = pickLocalized(place.titles, place.title);
   return place.as ? `${title} — ${place.as}` : title;
+};
+
+// The same name, written as a path. An entry kept in several places already
+// IS a filing -- the entry names it, `as` names each leaf -- so a listing can
+// file it (btc-path.js) instead of repeating the entry's whole title on every
+// row: the twice-confirmed coinbases' four printings read as four leaves
+// under one heading. Only a listing wants this; a page naming the passage a
+// reader is standing on wants the prose form above, where a slash would read
+// as punctuation rather than as filing.
+export const placeFiling = (place) => {
+  const title = pickLocalized(place.titles, place.title);
+  return place.as ? `${title}/${place.as}` : title;
 };
 
 // The appendix's parts, synchronously, like notables(): what the contents

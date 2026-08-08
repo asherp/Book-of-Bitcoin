@@ -172,7 +172,7 @@ a:hover { text-decoration: underline; }
 import { localizeHome, mountLangMenu, t as tr } from './btc-strings.js';
 localizeHome();   // the masthead in the reader's UI language
 mountLangMenu();  // …with the Language item, which any page can now set
-import { loadNotables, notables, places, placeTitle, appendix, isBlockId, isRelativeBlockId, entryHref } from './btc-contents.js';
+import { loadNotables, notables, places, placeFiling, appendix, isBlockId, isRelativeBlockId, entryHref } from './btc-contents.js';
 import { partLabel } from './btc-notables.js';
 import { toSubscript } from './btc-sigla.js';
 import { allProofs, citeOf, leafOf, estimatedDate, minedDate } from './btc-proofs.js';
@@ -1106,7 +1106,9 @@ const bookmarks = allBookmarks.filter((b) => !overridingKeys.has(bmKey(b)));
 const entries = () => [
   ...places().filter((p) => !p.address && !p.script).map((p) => {
     const bm = bmForPlace(p);
-    return { ...p, title: (bm && bm.title) || placeTitle(p), bookmark: bm ? true : undefined,
+    // The filed form of the name: an entry kept in several places files its
+    // own places, each row printing what `as` calls it (btc-notables.js).
+    return { ...p, title: (bm && bm.title) || placeFiling(p), bookmark: bm ? true : undefined,
       commentary: p.entry.commentary,
       place: placements.get(placeKey(p)), tried: placements.has(placeKey(p)) };
   }),
