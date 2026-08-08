@@ -1848,9 +1848,12 @@ function loadOutspends(txid) {
 // the mirror of the input margin's provenance cites: the left margin says
 // where value came from, the right margin says where it went next. One
 // outspends call covers every output; each confirmed spender then resolves
-// through the same memoized citation lookup as a prevout. An unspent (or
-// unconfirmed-spend) output leaves its cell empty, and any failure stays
-// silent -- a missing forward reference is absence, not an error.
+// through the same memoized citation lookup as a prevout. A spender still in
+// the queue is cited where the queue drafts it, exactly as the left margin
+// cites an unmined prevout -- the two margins say what they know in the same
+// terms, and neither waits on a miner to say anything at all. An unspent
+// output leaves its cell empty, and any failure stays silent -- a missing
+// forward reference is absence, not an error.
 // The works this section dated, if any: the Citations register read backwards. The list is
 // read once per page load -- it is small, and it is the same list for every
 // section -- and each output that carries a listed commitment prints its row's
@@ -1891,7 +1894,8 @@ async function resolveForwardCitations(txid, cells, gen) {
     const spends = await loadOutspends(txid);
     await Promise.all(cells.map(async (cell, i) => {
       const sp = spends[i];
-      if (!sp || !sp.spent || !sp.txid || !sp.status || !sp.status.confirmed) return;
+      if (!sp || !sp.spent || !sp.txid) return;
+      if (!sp.status || !sp.status.confirmed) { await citeDraftSpender(cell, sp, gen); return; }
       try {
         const { height, pos, wits } = await resolveCitation(sp.txid);
         if (gen !== renderGen || height === null) return;   // confirmed a moment ago, not yet provable: no cell rather than a wrong one
@@ -1919,6 +1923,30 @@ async function resolveForwardCitations(txid, cells, gen) {
   } catch { /* outspends unavailable -- every cell stays empty */ }
 }
 
+// The forward cite for a spender the chain has not written. It has no merkle
+// proof and so no settled section, but it has a place -- the draft chapter
+// the queue seats it in -- and the book pages that chapter, so the coin's
+// next move is readable now rather than after a miner agrees to it. □ says
+// what kind of place it is: one that holds only as long as the queue does.
+//
+// The door is the txid, not the seat. A seat printed a moment ago may have
+// moved by the time the link is pressed; the transaction has not, and
+// ?txid= lands on it wherever the queue has since put it.
+async function citeDraftSpender(cell, sp, gen) {
+  const place = await draftPlace(sp.txid);
+  if (!place || gen !== renderGen) return;
+  const link = document.createElement('a');
+  link.className = 'cite-section-link';
+  link.href = `?txid=${sp.txid}`;
+  link.textContent = place.pos === null
+    ? referenceOf(place.height)
+    : `${referenceOf(place.height)} §${place.pos + 1}`;
+  link.title = `spent by input ${sp.vin + 1} of ${sp.txid} — unmined, and cited where the queue drafts it now`
+    + (place.pos === null ? '; the chapter is known, the section it will take is not' : '');
+  link.addEventListener('click', (e) => { e.preventDefault(); goToTransaction(sp.txid, `in-${sp.vin}`); });
+  cell.append(link);
+}
+
 // Populate a citation cell with the scripture-style reference "volume(Roman)
 // book chapter §section.verse" -- the section is the transaction, the verse its
 // output index (e.g. "XII 37 184 §17.2"), the whole of which links to that
@@ -1943,15 +1971,27 @@ function renderCitation(citeBody, height, pos, vout) {
 // to the input that spends it (in-N).
 async function goToSection(height, index, scrollId) {
   await openLookup(String(height), index);
-  if (scrollId) {
-    // A witness-only input's citation lives in the footnotes, which render
-    // lazily after the section paints -- if the anchor isn't in the DOM yet,
-    // land on the loading stub at once, force the footnotes in (a no-op
-    // once loaded), and look again.
-    let el = $(scrollId);
-    if (!el) { footnoteStub(); await renderFootnotes(renderGen); el = $(scrollId); }
-    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }
+  await landOnAnchor(scrollId);
+}
+
+// The same move, for a section with no settled coordinate to name it by: a
+// draft's seat shifts under the queue, so the transaction is opened by the
+// one name that does not (openLookup resolves an unmined txid through the
+// projection -- see stepUnconfirmed).
+async function goToTransaction(txid, scrollId) {
+  await openLookup(txid);
+  await landOnAnchor(scrollId);
+}
+
+async function landOnAnchor(scrollId) {
+  if (!scrollId) return;
+  // A witness-only input's citation lives in the footnotes, which render
+  // lazily after the section paints -- if the anchor isn't in the DOM yet,
+  // land on the loading stub at once, force the footnotes in (a no-op
+  // once loaded), and look again.
+  let el = $(scrollId);
+  if (!el) { footnoteStub(); await renderFootnotes(renderGen); el = $(scrollId); }
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 // A prevout whose transaction isn't mined has no merkle proof and so no
@@ -1974,6 +2014,45 @@ async function projectedCitation(txid) {
     if (pos >= 0) return { height: tipHeight + 1 + k, pos };
   }
   return null;
+}
+
+// Where a draft sits, for a page that has no manifest to look it up in.
+//
+// The manifests in hand answer for nothing (projectedCitation), and answer
+// exactly -- chapter and seat both. Where they cannot, the backend still
+// knows which draft chapter holds the transaction, and says so for the cost
+// of one small message ({"track-tx"} -> txPosition). That is a chapter and
+// not a §section, which is less than a full citation and a great deal more
+// than nothing: the chapter is real, the book pages it, and the door still
+// opens on the transaction itself. Pulling half a megabyte of draft down to
+// number the section would cost more than the number is worth.
+//
+// The questions go one at a time -- the backend keeps a single tracked
+// transaction per client, so two asked at once would answer each other's --
+// and a page stops asking after DRAFT_PLACES: a citation is an annotation,
+// not a reason to hold the network open. Cells past the cap stay empty, as
+// they were before any of this.
+const DRAFT_PLACES = 6;
+let draftAsked = 0;
+let draftRenderGen = -1;
+let draftChain = Promise.resolve();
+async function draftPlace(txid) {
+  const seated = await projectedCitation(txid);
+  if (seated) return seated;
+  if (draftRenderGen !== renderGen) { draftRenderGen = renderGen; draftAsked = 0; }
+  if (draftAsked >= DRAFT_PLACES) return null;
+  draftAsked++;
+  // The projection first: it is what learns the backend host the position
+  // question is asked over, and what says how far the drafted chapters reach.
+  // A reader who arrived straight at a mined chapter has asked for neither.
+  const proj = await loadProjection().catch(() => null);
+  if (!proj || !proj.blocks || tipHeight === null) return null;
+  const gen = renderGen;
+  const next = draftChain.then(() => (gen === renderGen ? fetchTxProjection(txid) : null));
+  draftChain = next.then(() => {}, () => {});
+  const k = await next;
+  if (k === null || k < 0 || k >= proj.blocks.length) return null;
+  return { height: tipHeight + 1 + k, pos: null };
 }
 
 // An amount's hover: whatever the chosen notation leaves unsaid. Reading in
