@@ -3,7 +3,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>The βook of βitcoin — a block, read as a chapter</title>
 <meta name="description" content="A Bitcoin block rendered as a chapter: each transaction a paragraph, its witness data footnotes, in grammatically correct Glossia prose.">
 <link rel="icon" type="image/png" sizes="32x32" href="./icons/beta-icon-32.png">
@@ -165,8 +165,13 @@ body {
 #chapter.span-leaf .chapter-title { margin-top: 4.5rem; }
 #chapter.span-leaf .chapter-hash { margin-top: 1.6rem; }
 #chapter.span-leaf .chapter-frontispiece { margin-top: auto; margin-bottom: 3.75rem; }
+/* The span's cost closes the leaf, so it inherits the breath the frontispiece
+   used to hold beneath it -- the pair sits at the foot of the leaf together
+   rather than the cost hanging off the bottom of it. */
+#chapter.span-leaf .chapter-frontispiece:has(+ .chapter-work:not(.hidden)) { margin-bottom: 1.5rem; }
+#chapter.span-leaf .chapter-work { margin-bottom: 3.75rem; }
 /* No bottom padding: the foot nav bar is the page's own floor. */
-.wrap { max-width: 720px; margin: 0 auto; padding: 48px 22px 0; }
+.wrap { max-width: 720px; margin: 0 auto; padding: 48px var(--gutter-r) 0 var(--gutter-l); }
 a { color: var(--accent); text-decoration: none; }
 a:hover { text-decoration: underline; }
 .mono { font-family: 'IBM Plex Mono','Book Sigla', monospace; }
@@ -497,6 +502,19 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 .chapter-hash .book-target { white-space: nowrap; }
 .chapter-hash .book-target + .book-target { margin-top: .15em; }
 .chapter-hash .book-move { margin-top: .4em; }
+/* What the span cost, on every leaf that names a span: a chapter, a book, a
+   volume. It sits under the frontispiece rather than in it -- the
+   frontispiece is the eighty bytes in wire order, and this is a sum over
+   them, not a seventh field. The + is the whole reading: the number beside it
+   is what this span ADDED, where the chain's own total belongs to no one
+   chapter. Held on one line, and dim like everything else beneath the title,
+   since it is a margin note and not a claim the leaf is making. */
+.chapter-work {
+  margin: .5em auto 4px; max-width: 46ch; white-space: nowrap;
+  font: 400 calc(14.5px * var(--scale-body, 1))/1.55 'Newsreader','Book Sigla',serif;
+  color: var(--dim);
+}
+.chapter-work .work-mark { color: var(--accent); font-weight: 700; }
 /* The notation key, cut to the page: a row the page does not use leaves the
    flow entirely. The pattern tables are grids whose cells are direct children,
    so anything short of display:none would leave a hole in their columns. */
@@ -1243,7 +1261,7 @@ a.footnote-title.is-asset:hover { color: var(--accent-2, #dcb877); text-decorati
            the crumb as a printed running head brackets its title. A leaf has
            no button, as it has no folio: what is exported is a transaction,
            and a leaf is not one. -->
-      <div class="chapter-num"><button type="button" id="ch-volume-link" class="crumb" title="This volume's page">Volume <span id="ch-volume"></span></button><span id="ch-sep-1"> · </span><button type="button" id="ch-book-link" class="crumb" title="This book's page">Book <span id="ch-book"></span></button><button type="button" id="ch-appendix-link" class="crumb hidden" title="The appendix this draft chapter belongs to">Appendix I</button><span id="ch-chapter-inline"></span></div>
+      <div class="chapter-num"><button type="button" id="ch-volume-link" class="crumb" title="This volume's page">Volume <span id="ch-volume"></span></button><span id="ch-sep-1"> · </span><button type="button" id="ch-book-link" class="crumb" title="This book's page">Book <span id="ch-book"></span></button><button type="button" id="ch-appendix-link" class="crumb hidden" title="The leaf that holds the drafts — Appendix I, the queue's own book level">Provisional blocks</button><span id="ch-chapter-inline"></span></div>
       <button type="button" id="chapter-next" class="chapter-step hidden" aria-label="Next chapter" title="Next chapter"></button>
       <!-- The folio: a section's page number in the chain's running count of
            transactions, at the right end of the running head (see btc-pages.js).
@@ -1263,6 +1281,7 @@ a.footnote-title.is-asset:hover { color: var(--accent-2, #dcb877); text-decorati
       <div class="chapter-subtitle hidden" id="ch-subtitle"></div>
       <div class="chapter-hash" id="ch-hash-short"></div>
       <div class="chapter-frontispiece" id="ch-frontispiece"></div>
+      <div class="chapter-work hidden" id="ch-work"></div>
       <h2 class="section-title" id="section-title"></h2>
       <div class="section-hash" id="section-hash"></div>
       <!-- The section's place in time, under its identity: the containing
@@ -1344,10 +1363,12 @@ import { parseTransaction, computeTxid, parseBlockHeader, computeBlockHash, bits
 // section joins it as a titled one-address ledger, the same registry the
 // Ledger page's own keep button writes. INDEXED is the curated shelf, whose
 // titles are the keep line's defaults.
-import { keptLedgers, saveKeptLedgers, INDEXED } from './btc-index.js';
+import { keptLedgers, saveKeptLedgers, keepLedger, INDEXED } from './btc-index.js';
+import { pathSegments } from './btc-path.js';   // a slash in a name the reader typed is a path
 import { composeTransactionFields, composeBlockHeaderFields, bitsInfo, groupDigits, formatBtc, formatAmount, formatAmountAs, formatOwnAmount, amountUnit, setAmountUnit, ownUnit, setOwnUnit, dayPrice, setDayPrice, renderWitness, toSuperscript, timestampInfo } from './btc-prose.js';
 import { usdOn, PRICE_SOURCES, priceSource, setPriceSource } from './btc-price.js';
 import { volumeBookChapter, heightOf, windowStartOf, retargetInside, subsidyAt, toRoman, reference, parseReference, footnoteMark, latinRefOf } from './btc-citation.js';
+import { blockWork, workBetween, formatHashes } from './btc-chainwork.js';
 import { loadNotables, places, placeTitle, blocksEta, appendix } from './btc-contents.js';
 import { queueLabel } from './btc-mempool.js';
 import { toSubscript } from './btc-sigla.js';
@@ -1516,6 +1537,9 @@ import { seedArchive } from './btc-seed.js';
 import { REGIONS, fontScale, setFontScale, resetFontScales, fontScaleDiverged,
          FONT_SCALE_MIN, FONT_SCALE_MAX, FONT_SCALE_STEP } from './btc-fontscale.js';
 import { pageAnchor, bankAnchor, peekAnchor, formatPage } from './btc-pages.js';
+// Where the reader stopped: written by updateUrl below (the one place that
+// knows what the page's own address is), read by a bare visit at the foot.
+import { keepPlace, lastPlace } from './btc-lastread.js';
 
 // A first visit provisions the archive with the curated passages' chain data
 // (idle-time, once ever; see btc-seed.js) -- the contents page's entries then
@@ -1923,9 +1947,12 @@ function loadOutspends(txid) {
 // the mirror of the input margin's provenance cites: the left margin says
 // where value came from, the right margin says where it went next. One
 // outspends call covers every output; each confirmed spender then resolves
-// through the same memoized citation lookup as a prevout. An unspent (or
-// unconfirmed-spend) output leaves its cell empty, and any failure stays
-// silent -- a missing forward reference is absence, not an error.
+// through the same memoized citation lookup as a prevout. A spender still in
+// the queue is cited where the queue drafts it, exactly as the left margin
+// cites an unmined prevout -- the two margins say what they know in the same
+// terms, and neither waits on a miner to say anything at all. An unspent
+// output leaves its cell empty, and any failure stays silent -- a missing
+// forward reference is absence, not an error.
 // The works this section dated, if any: the Citations register read backwards. The list is
 // read once per page load -- it is small, and it is the same list for every
 // section -- and each output that carries a listed commitment prints its row's
@@ -1966,7 +1993,8 @@ async function resolveForwardCitations(txid, cells, gen) {
     const spends = await loadOutspends(txid);
     await Promise.all(cells.map(async (cell, i) => {
       const sp = spends[i];
-      if (!sp || !sp.spent || !sp.txid || !sp.status || !sp.status.confirmed) return;
+      if (!sp || !sp.spent || !sp.txid) return;
+      if (!sp.status || !sp.status.confirmed) { await citeDraftSpender(cell, sp, gen); return; }
       try {
         const { height, pos, wits } = await resolveCitation(sp.txid);
         if (gen !== renderGen || height === null) return;   // confirmed a moment ago, not yet provable: no cell rather than a wrong one
@@ -1994,6 +2022,30 @@ async function resolveForwardCitations(txid, cells, gen) {
   } catch { /* outspends unavailable -- every cell stays empty */ }
 }
 
+// The forward cite for a spender the chain has not written. It has no merkle
+// proof and so no settled section, but it has a place -- the draft chapter
+// the queue seats it in -- and the book pages that chapter, so the coin's
+// next move is readable now rather than after a miner agrees to it. □ says
+// what kind of place it is: one that holds only as long as the queue does.
+//
+// The door is the txid, not the seat. A seat printed a moment ago may have
+// moved by the time the link is pressed; the transaction has not, and
+// ?txid= lands on it wherever the queue has since put it.
+async function citeDraftSpender(cell, sp, gen) {
+  const place = await draftPlace(sp.txid);
+  if (!place || gen !== renderGen) return;
+  const link = document.createElement('a');
+  link.className = 'cite-section-link';
+  link.href = `?txid=${sp.txid}`;
+  link.textContent = place.pos === null
+    ? referenceOf(place.height)
+    : `${referenceOf(place.height)} §${place.pos + 1}`;
+  link.title = `spent by input ${sp.vin + 1} of ${sp.txid} — unmined, and cited where the queue drafts it now`
+    + (place.pos === null ? '; the chapter is known, the section it will take is not' : '');
+  link.addEventListener('click', (e) => { e.preventDefault(); goToTransaction(sp.txid, `in-${sp.vin}`); });
+  cell.append(link);
+}
+
 // Populate a citation cell with the scripture-style reference "volume(Roman)
 // book chapter §section.verse" -- the section is the transaction, the verse its
 // output index (e.g. "XII 37 184 §17.2"), the whole of which links to that
@@ -2011,6 +2063,21 @@ function renderCitation(citeBody, height, pos, vout) {
   citeBody.append(link);
 }
 
+// The same cell for a prevout the queue has placed but not seated: the
+// chapter, and an open § where the number will go. The whole of it still
+// links -- to the transaction rather than to a coordinate, since that is
+// what is known about it.
+function renderDraftCitation(citeBody, height, txid, vout) {
+  const link = document.createElement('a');
+  link.className = 'cite-section-link';
+  link.href = `?txid=${txid}`;
+  link.textContent = `${referenceOf(height)} §… .${vout}`;
+  link.title = 'go to the draft chapter that holds it';
+  link.addEventListener('click', (e) => { e.preventDefault(); goToTransaction(txid, `out-${vout}`); });
+  citeBody.textContent = '';
+  citeBody.append(link);
+}
+
 // Navigate to a referenced section (the transaction at `index` in the block at
 // `height`) in place, then bring `scrollId` to the top of the page. The two
 // directions mirror each other: following an input's provenance scrolls to the
@@ -2018,15 +2085,27 @@ function renderCitation(citeBody, height, pos, vout) {
 // to the input that spends it (in-N).
 async function goToSection(height, index, scrollId) {
   await openLookup(String(height), index);
-  if (scrollId) {
-    // A witness-only input's citation lives in the footnotes, which render
-    // lazily after the section paints -- if the anchor isn't in the DOM yet,
-    // land on the loading stub at once, force the footnotes in (a no-op
-    // once loaded), and look again.
-    let el = $(scrollId);
-    if (!el) { footnoteStub(); await renderFootnotes(renderGen); el = $(scrollId); }
-    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }
+  await landOnAnchor(scrollId);
+}
+
+// The same move, for a section with no settled coordinate to name it by: a
+// draft's seat shifts under the queue, so the transaction is opened by the
+// one name that does not (openLookup resolves an unmined txid through the
+// projection -- see stepUnconfirmed).
+async function goToTransaction(txid, scrollId) {
+  await openLookup(txid);
+  await landOnAnchor(scrollId);
+}
+
+async function landOnAnchor(scrollId) {
+  if (!scrollId) return;
+  // A witness-only input's citation lives in the footnotes, which render
+  // lazily after the section paints -- if the anchor isn't in the DOM yet,
+  // land on the loading stub at once, force the footnotes in (a no-op
+  // once loaded), and look again.
+  let el = $(scrollId);
+  if (!el) { footnoteStub(); await renderFootnotes(renderGen); el = $(scrollId); }
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 // A prevout whose transaction isn't mined has no merkle proof and so no
@@ -2049,6 +2128,45 @@ async function projectedCitation(txid) {
     if (pos >= 0) return { height: tipHeight + 1 + k, pos };
   }
   return null;
+}
+
+// Where a draft sits, for a page that has no manifest to look it up in.
+//
+// The manifests in hand answer for nothing (projectedCitation), and answer
+// exactly -- chapter and seat both. Where they cannot, the backend still
+// knows which draft chapter holds the transaction, and says so for the cost
+// of one small message ({"track-tx"} -> txPosition). That is a chapter and
+// not a §section, which is less than a full citation and a great deal more
+// than nothing: the chapter is real, the book pages it, and the door still
+// opens on the transaction itself. Pulling half a megabyte of draft down to
+// number the section would cost more than the number is worth.
+//
+// The questions go one at a time -- the backend keeps a single tracked
+// transaction per client, so two asked at once would answer each other's --
+// and a page stops asking after DRAFT_PLACES: a citation is an annotation,
+// not a reason to hold the network open. Cells past the cap stay empty, as
+// they were before any of this.
+const DRAFT_PLACES = 6;
+let draftAsked = 0;
+let draftRenderGen = -1;
+let draftChain = Promise.resolve();
+async function draftPlace(txid) {
+  const seated = await projectedCitation(txid);
+  if (seated) return seated;
+  if (draftRenderGen !== renderGen) { draftRenderGen = renderGen; draftAsked = 0; }
+  if (draftAsked >= DRAFT_PLACES) return null;
+  draftAsked++;
+  // The projection first: it is what learns the backend host the position
+  // question is asked over, and what says how far the drafted chapters reach.
+  // A reader who arrived straight at a mined chapter has asked for neither.
+  const proj = await loadProjection().catch(() => null);
+  if (!proj || !proj.blocks || tipHeight === null) return null;
+  const gen = renderGen;
+  const next = draftChain.then(() => (gen === renderGen ? fetchTxProjection(txid) : null));
+  draftChain = next.then(() => {}, () => {});
+  const k = await next;
+  if (k === null || k < 0 || k >= proj.blocks.length) return null;
+  return { height: tipHeight + 1 + k, pos: null };
 }
 
 // An amount's hover: whatever the chosen notation leaves unsaid. Reading in
@@ -2086,13 +2204,22 @@ async function resolveCitations(pending, gen) {
       // drafts it, cited with the expected mark. Neither one prints a txid --
       // a hash is not a reference, and the page keeps every hash where the
       // rest of them live, in the hover label.
-      const place = height !== null ? { height, pos } : await projectedCitation(txid);
+      const place = height !== null ? { height, pos } : await draftPlace(txid);
       if (gen !== renderGen) return null;
       cite.classList.remove('resolving');
-      if (place) {
+      if (place && place.pos !== null) {
         renderCitation(citeBody, place.height, place.pos, vout);
         cite.title = height !== null ? `${txid}:${vout}`
           : `${txid}:${vout} — unmined: cited where the queue drafts it now`;
+      } else if (place) {
+        // The chapter is known and the seat is not: the draft holding it has
+        // not been read, and half a megabyte of it is not worth a section
+        // number. So the reference prints as far as it goes and says where it
+        // stops -- the chapter, then the open §… the output rides on. The
+        // link opens the transaction itself, which is the coordinate that
+        // does not move.
+        renderDraftCitation(citeBody, place.height, txid, vout);
+        cite.title = `${txid}:${vout} — unmined: the queue drafts it into this chapter, at a section it has not settled`;
       } else {
         // Unmined and outside every chapter the queue has drafted: there is
         // no reference to print, so the cell says exactly that.
@@ -2674,6 +2801,35 @@ function fetchProjectedManifest(k) {
     });
   });
 }
+// Which projected block the queue currently seats an unwritten transaction
+// in: {"track-tx": id} answers at once with a txPosition naming it. Only the
+// block index is taken here -- the seat within it comes from that block's
+// manifest, which the section needs anyway. A transaction the pool doesn't
+// hold draws no answer, so this resolves null on the timeout rather than
+// waiting on a reply that isn't coming.
+const TX_POSITION_WAIT = 8000;
+function fetchTxProjection(txid) {
+  return new Promise((resolve) => {
+    if (!mempoolBackendBase) { resolve(null); return; }
+    let ws;
+    try { ws = new WebSocket(`${mempoolBackendBase.replace(/^http/, 'ws')}/v1/ws`); }
+    catch { resolve(null); return; }
+    let settled = false;
+    const done = (v) => { if (settled) return; settled = true; clearTimeout(timer); try { ws.close(); } catch {} resolve(v); };
+    const timer = setTimeout(() => done(null), TX_POSITION_WAIT);
+    ws.addEventListener('open', () => { try { ws.send(JSON.stringify({ 'track-tx': txid })); } catch { done(null); } });
+    ws.addEventListener('error', () => done(null));
+    ws.addEventListener('close', () => done(null));
+    ws.addEventListener('message', (ev) => {
+      try {
+        const tp = JSON.parse(ev.data).txPosition;
+        if (!tp || tp.txid !== txid) return;
+        done(tp.position && Number.isFinite(tp.position.block) ? tp.position.block : null);
+      } catch { /* not ours -- keep listening */ }
+    });
+  });
+}
+
 function projectedManifest(k) {
   const snap = projectedCache;
   if (!snap.manifests.has(k)) {
@@ -2709,6 +2865,30 @@ async function stepProjected(height, where = -1) {
   await showCurrentTx();
   if (manifestErr) setStatus('The projected manifest could not be read from this source — the chapter opens, but its sections are out of reach.', 'err');
   return true;
+}
+
+// Open a transaction the chain hasn't written yet. It has no confirming
+// block, so it has no chapter in ink -- but the queue seats it, and that seat
+// is a §section of a projected chapter like any other. Two questions answer
+// it: which projected block holds it (the backend's txPosition), and where in
+// that block's template order it falls (the manifest the section needs
+// regardless). Returns false when either goes unanswered -- a transaction too
+// deep in the backlog for the projection to order has no page here, and the
+// caller says so rather than inventing one. Once the page is open the live
+// feed owns it: the § drifts as the queue reshuffles, a replacement takes the
+// seat, and a mined block turns the page into the written chapter.
+async function stepUnconfirmed(txid) {
+  // The projection first: it is what learns the backend host the position
+  // question is asked over, and what says how far the projected chapters
+  // reach.
+  const proj = await loadProjection().catch(() => null);
+  if (tipHeight === null || !proj || !proj.blocks) return false;
+  const k = await fetchTxProjection(txid);
+  if (k === null || k < 0 || k >= proj.blocks.length) return false;
+  const manifest = await projectedManifest(k).catch(() => null);
+  const i = manifest ? manifest.findIndex((t) => t.txid === txid) : -1;
+  if (i < 0) return false;
+  return stepProjected(tipHeight + 1 + k, i);
 }
 
 // ── Live frontage ─────────────────────────────────────────────────────────
@@ -3117,7 +3297,15 @@ async function loadBlockByTxid(txid) {
   // This JSON is exactly what prevoutValues would fetch -- bank the margin
   // amounts now, so opening a section by txid never asks for it twice.
   if (Array.isArray(tx.vin) && !prevoutsCache.has(txid)) prevoutsCache.set(txid, Promise.resolve(prevoutsOfTxJson(tx)));
-  if (!tx.status || !tx.status.confirmed) throw new Error('That transaction is unconfirmed — it has no section yet. If it pays its way, it sits in one of the projected chapters past the tip.');
+  // Unconfirmed: no block has recorded it, so there is no chapter to resolve
+  // here. The queue may still seat it in a projected one -- that lookup is
+  // the caller's (openLookup -> stepUnconfirmed), and this message stands
+  // only if the queue has no seat this book can page to either.
+  if (!tx.status || !tx.status.confirmed) {
+    const e = new Error('That transaction is unconfirmed, and the queue seats it deeper than the projection orders — no chapter here can hold it yet.');
+    e.unconfirmed = true;
+    throw e;
+  }
   const hash = tx.status.block_hash;
   if (mpRes.ok) {
     const meta = await loadBlockMeta(hash, { withTxids: false });
@@ -3764,6 +3952,9 @@ function renderChapterHead(onTitlePage) {
   $('ch-title').classList.toggle('hidden', !onTitlePage);
   $('ch-hash-short').classList.toggle('hidden', !onTitlePage);
   $('ch-frontispiece').classList.toggle('hidden', !onTitlePage);
+  // Hidden until something states it: renderWorkAdded below shows the line, and
+  // leaves it hidden where it has no figure to print.
+  $('ch-work').classList.add('hidden');
   if (onTitlePage) {
     const parts = blockHashParts(state.hash);
     const { prose: hashProse } = encodeCanonical(parts.hex, bookLang(), BEST_OF);
@@ -3774,6 +3965,9 @@ function renderChapterHead(onTitlePage) {
     $('ch-hash-short').innerHTML = hashNotationHtml(parts, hashProse);   // marks + Glossia prose -- safe as innerHTML
     attachHashCopy($('ch-title'), state.hash, 'block hash', hashNotationText(parts, hashProse));
     renderFrontispiece(state.header);
+    // Straight from the header above it, so a chapter states its cost at any
+    // height -- the vendored epochs are not consulted and cannot fall behind.
+    renderWorkAdded(blockWork(state.header.bits), 'this chapter');
   }
   return { volume, book, chapter };
 }
@@ -3825,6 +4019,10 @@ function renderProjectedHead(onTitlePage) {
   subtitle.classList.toggle('hidden', !onTitlePage);
   $('ch-hash-short').classList.toggle('hidden', !onTitlePage);
   $('ch-frontispiece').classList.toggle('hidden', !onTitlePage);
+  // A projected chapter has no header and so no target, and a chapter with no
+  // target has no cost to state -- what it will take to mine is not settled
+  // until the block that settles everything else about it.
+  $('ch-work').classList.add('hidden');
   if (!onTitlePage) return { volume, book, chapter };
 
   detachHashCopy($('ch-title'));   // no hash exists yet -- nothing to copy or bookmark
@@ -3980,6 +4178,11 @@ function renderVolumeLeaf() {
       fp.textContent = finished ? range : `${range} —`;
     }).catch(() => { if (gen === renderGen) fp.textContent = finished ? String(firstYear) : `${firstYear} —`; });
   }
+  // A volume's cost, on the same line every level states it. This is where the
+  // figure earns its place: the eras are not comparable in any unit a reader
+  // already has, and stated as hashes they are -- each volume so far has cost
+  // more than every volume before it put together.
+  renderWorkAdded(yearEnd === null ? null : workBetween(state.height, yearEnd), 'this volume', !finished);
   labelNav();
 }
 
@@ -4023,6 +4226,49 @@ function targetRow(parent, bits, governs) {
   parent.append(row);
   return row;
 }
+
+// What a span cost, on the leaf that names it: +5.45·10²³ hashes, the same
+// line at every level -- a chapter, a book, a volume.
+//
+// The unit is a word, not a mark. There is no sigil for a hash count, and the
+// vendored fonts are subset to exactly the glyphs the book uses (see
+// fonts.css's unicode-range and tools/fonts.test.mjs) -- an invented mark
+// would arrive as tofu on every reader's screen. The frontispiece states its
+// timestamp in words for the same reason.
+//
+// Work added, never the running total. The chain's own chainwork belongs to no
+// one chapter (consecutive chapters differ in the sixth figure and would print
+// the same number twice), and it is the added figure that says what a span was
+// worth. It is also the one figure the book's numbering cannot embarrass: a
+// book after Volume I straddles a retarget and states two targets for it, but
+// what it added is a single sum either way.
+//
+// Expected work, and rounded to three figures because of it -- 2^256/(target+1)
+// is a mean, not a measurement. See web/btc-chainwork.js.
+//
+// `span` names what was counted, for the tooltip; `partial` marks a span the
+// chain is still writing, whose figure is what has been recorded so far.
+function renderWorkAdded(work, span, partial = false) {
+  const el = $('ch-work');
+  el.textContent = '';
+  const figure = formatHashes(work);
+  el.classList.toggle('hidden', figure === null);
+  if (figure === null) return;   // past the vendored epochs: say nothing
+  const mark = document.createElement('span');
+  mark.className = 'work-mark';
+  mark.textContent = '+';
+  el.append(mark, `${figure} ${tr('hashes')}${partial ? ' —' : ''}`);
+  el.title = `the proof of work ${span} ${partial ? 'has added so far' : 'added'}`
+    + ` — about ${figure} hashes, the number of attempts it should have taken to mine`;
+}
+
+// A book's dates, to the day. The minute a book opened is a fact about one
+// chapter, not about the two thousand the leaf is standing for -- a span four
+// hundred hours long does not have a clock reading, and printing one twice
+// invites the range to be read as if it did. A chapter's frontispiece still
+// states its own time to the minute, which is where that precision belongs;
+// the exact stamps stay on this line's tooltip rather than on the page.
+const bookDate = (ts) => new Date(ts * 1000).toISOString().slice(0, 10);
 
 // A difficulty, in the same shape bitsInfo's tooltip gives it.
 const formatDifficulty = (d) => d.toLocaleString(undefined, { maximumFractionDigits: d < 1000 ? 2 : 0 });
@@ -4132,16 +4378,25 @@ function renderBookLeaf() {
   fp.append(range);
   const dates = document.createElement('div');
   const dateEnd = finished ? bookEnd : tipIn;
+  const opened = state.block.timestamp;
+  dates.title = `opened ${timestampInfo(opened).mark}`;
   if (dateEnd === null) {
-    dates.textContent = `${timestampInfo(state.block.timestamp).mark} —`;
+    dates.textContent = `${bookDate(opened)} —`;
   } else {
-    dates.textContent = `${timestampInfo(state.block.timestamp).mark} – …`;
+    dates.textContent = `${bookDate(opened)} – …`;
     loadBlockStamp(dateEnd).then((ts) => {
       if (gen !== renderGen) return;
-      dates.textContent = `${timestampInfo(state.block.timestamp).mark} – ${timestampInfo(ts).mark}${finished ? '' : ' —'}`;
-    }).catch(() => { if (gen === renderGen) dates.textContent = `${timestampInfo(state.block.timestamp).mark}${finished ? '' : ' —'}`; });
+      dates.textContent = `${bookDate(opened)} – ${bookDate(ts)}${finished ? '' : ' —'}`;
+      dates.title = `opened ${timestampInfo(opened).mark}, ${finished ? 'closed' : 'last recorded'} ${timestampInfo(ts).mark}`;
+    }).catch(() => { if (gen === renderGen) dates.textContent = `${bookDate(opened)}${finished ? '' : ' —'}`; });
   }
   fp.append(dates);
+  // What the book cost, under the targets it was mined under. Where those are
+  // two the leaf has just said so twice; this is the one figure that does not
+  // have to be, because a sum over chapters does not care which window they
+  // fell in. An unfinished book counts only as far as the tip.
+  const workEnd = finished ? bookEnd : tipIn;
+  renderWorkAdded(workEnd === null ? null : workBetween(state.height, workEnd), 'this book', !finished);
   labelNav();
 }
 
@@ -5114,6 +5369,11 @@ function labelNav() {
       stepNext = { text: `■${volumeBookChapter(state.height + 1).chapter}`, label: `${tr('Next chapter')} (${reference(state.height + 1)})` };
     } else if (!lineEnds) {
       stepNext = { text: `□${volumeBookChapter(state.height + 1).chapter}`, label: `${tr('Next chapter — projected')} (${referenceOf(state.height + 1)})` };
+    } else if (state.projected) {
+      // The last draft, and the run still has somewhere to go: what these
+      // chapters hold, sorted -- the queue's two rankings, which stand at
+      // this level in Appendix I rather than starting a level of their own.
+      stepNext = { text: '₿↓', label: 'Sorted by amount — what the drafts hold, largest first' };
     }
   }
   showBtn('chapter-prev', !!stepPrev);
@@ -5128,7 +5388,9 @@ function labelNav() {
   // key still pages one leaf or section at a time, and this flag is their
   // forward guard (navAvailable) now that the foot buttons no longer stand
   // for it.
-  sectionNextExists = !(lineEnds && idx >= state.txCount - 1);
+  // Past the last draft's last section the walk still has somewhere to go --
+  // the rankings, at this same level -- so forward stays available there.
+  sectionNextExists = !(lineEnds && idx >= state.txCount - 1) || (state.projected && reach > 0);
 
   // The foot bar's own steppers walk the TABLE OF CONTENTS instead: the
   // nearest curated place to either side, in reading order, wrapping through
@@ -5381,6 +5643,14 @@ function updateUrl() {
   else if (state.index === -2) params.set('page', 'book');
   else if (state.index === -3) params.set('page', 'volume');
   history.replaceState(null, '', `${location.pathname}?${params.toString()}`);
+  // The same address, kept where closing the tab cannot reach it, so the next
+  // bare open resumes here (btc-lastread.js). One exception, and it is the
+  // reader's own meaning rather than a special case: someone who stopped at
+  // the chain's front kept the front, not that block's number — so the tip is
+  // recorded tip-relative and resumes at whatever the tip is by then.
+  const kept = new URLSearchParams(params);
+  if (tipHeight !== null && state.height === tipHeight) kept.set('block', '-1');
+  keepPlace(kept.toString());
 }
 
 // A section index is clamped into the block's transaction list; a negative
@@ -5484,7 +5754,18 @@ async function openLookup(input, index = -1) {
         state = { ...meta, index: clampIndex(index, meta) };
       } else {
         setStatus(SPINNER_HTML + tr('locating transaction…'));
-        const loc = await loadBlockByTxid(hex);
+        let loc;
+        try {
+          loc = await loadBlockByTxid(hex);
+        } catch (e) {
+          // Not written yet -- but the queue may still have a seat for it,
+          // and a seat in a projected chapter is a page like any other.
+          if (!e.unconfirmed) throw e;
+          setStatus(SPINNER_HTML + tr('reading the mempool…'));
+          await tipP;   // stepUnconfirmed counts from the tip
+          if (await stepUnconfirmed(hex)) return;   // opened projected -- already rendered
+          throw e;
+        }
         state = { ...loc.meta, index: loc.index, txid: loc.txid };
       }
     } else {
@@ -5571,6 +5852,7 @@ async function stepTx(direction) {
     setStatus(SPINNER_HTML + tr('reading the mempool…'));
     try {
       if (await stepProjected(newHeight, direction > 0 ? -1 : 'last')) return;
+      if (direction > 0 && projectedReach() > 0) { toQueueTable(); return; }
       setStatus(projectedReach() > 0
         ? 'The projection ends here — deeper chapters are only a backlog, with no reliable order yet.'
         : 'No next block yet — this is the current chain tip.', 'err');
@@ -5616,6 +5898,7 @@ async function stepSectionAcross(direction) {
     setStatus(SPINNER_HTML + tr('reading the mempool…'));
     try {
       if (!(await stepProjected(newHeight, direction > 0 ? 0 : 'last'))) {
+        if (direction > 0 && projectedReach() > 0) { toQueueTable(); return; }
         setStatus(projectedReach() > 0
           ? 'The projection ends here — deeper chapters are only a backlog, with no reliable order yet.'
           : 'No next block yet — this is the current chain tip.', 'err');
@@ -5659,6 +5942,7 @@ async function openLeafAt(height, idx, direction = 0) {
     // never project -- an unwritten book has no leaf).
     if (tipHeight !== null && height > tipHeight && idx === -1) {
       if (!(await stepProjected(height, -1))) {
+        if (direction > 0 && projectedReach() > 0) { toQueueTable(); return; }
         setStatus(projectedReach() > 0
           ? 'The projection ends here — deeper chapters are only a backlog, with no reliable order yet.'
           : 'Not written yet — this is the current chain tip.', 'err');
@@ -5705,11 +5989,23 @@ function toAppendix() {
   try { sessionStorage.setItem('glossia-appendix-entrance', 'fwd'); } catch {}
   location.href = './bitcoin-appendix.html?part=mempool';
 }
-// Above a draft chapter is Appendix I's own leaf: the ascent lifts this page
-// away and the appendix drops in from above, as an ascent does.
+// Above a draft chapter is the leaf that holds the drafts -- Provisional
+// blocks, the queue's book level -- and not the queue's own leaf a storey
+// above that. An ascent climbs one storey, the way it does everywhere else in
+// the book: up from a chapter of the body is its book, not its volume. From
+// there the same gesture goes on to The Mempool and then to the contents.
+// The page lifts away and the appendix drops in from above, as an ascent does.
 function toAppendixLeaf() {
   try { sessionStorage.setItem('glossia-appendix-entrance', 'drop'); } catch {}
-  location.href = './bitcoin-appendix.html?part=mempool';
+  location.href = './bitcoin-appendix.html?part=mempool&at=alpha';
+}
+// Past the last draft chapter the run does not stop -- it goes on into the
+// queue's two rankings, which stand at this same level: alpha, beta, … and
+// then what those drafts hold, sorted. Forward only. Backward off the first
+// draft is the chain tip, as it has always been.
+function toQueueTable() {
+  try { sessionStorage.setItem('glossia-appendix-entrance', 'fwd'); } catch {}
+  location.href = './bitcoin-appendix.html?part=mempool&at=amount&table';
 }
 
 async function goToLevel(direction) {
@@ -7157,7 +7453,8 @@ function syncScriptKeeps() {
     const curated = INDEXED.find((k) => k.addresses.includes(address));
     const ledgerHref = `./bitcoin-ledger.html?address=${encodeURIComponent(address)}`
       + (el.dataset.ref ? `&ref=${el.dataset.ref}` : '');
-    const name = reader ? (reader.title || address) : (curated ? curated.title : null);
+    // A filed name prints as the path it is -- `Coldcard hack / wave 3`.
+    const name = reader ? (pathSegments(reader.title).join(' / ') || address) : (curated ? curated.title : null);
     if (name) {
       const span = document.createElement('span');
       span.className = 'out-keep-name hash-copy';
@@ -7425,7 +7722,9 @@ function saveTitle() {
   // its address there), exactly what the Ledger page's keep button writes.
   if (menuEntry.ledger) {
     if (!keptLedgers().some((k) => k.addresses.includes(menuEntry.ledger))) {
-      saveKeptLedgers([...keptLedgers(), { title: titleInput.value.trim(), addresses: [menuEntry.ledger] }]);
+      // keepLedger folds a keep into the ledger already filed under that name
+      // (btc-index.js): naming this address as one already kept adds it there.
+      keepLedger(titleInput.value.trim(), [menuEntry.ledger]);
     }
     syncScriptKeeps();
     closeHashMenu();
@@ -7484,11 +7783,15 @@ const pParam = parseReference(params.get('ref') || '');
 const txidParam = params.get('txid');
 const blockParam = params.get('block');
 // An absent ?index= opens the chapter's own page (-1); index=0 is §1;
-// ?page=volume / ?page=book open the block's volume or book leaf.
-const idxRaw = parseInt(params.get('index'), 10);
-const pageParam = params.get('page');
-const indexParam = Number.isFinite(idxRaw) ? idxRaw
-  : pageParam === 'volume' ? -3 : pageParam === 'book' ? -2 : -1;
+// ?page=volume / ?page=book open the block's volume or book leaf. Read as a
+// function of any parameters, because a resumed place is written in the same
+// grammar and has to be read by the same rules.
+const indexIn = (p) => {
+  const raw = parseInt(p.get('index'), 10);
+  const page = p.get('page');
+  return Number.isFinite(raw) ? raw : page === 'volume' ? -3 : page === 'book' ? -2 : -1;
+};
+const indexParam = indexIn(params);
 // The curated index before the first lookup: a chapter must not paint once
 // without its curated name and again with it. A local file (precached by the
 // service worker), so this costs a read rather than a round trip -- and a read
@@ -7546,7 +7849,21 @@ if (pParam) {
     }
   }).catch(() => { /* the lookup's own error handling has the page */ });
 } else {
-  openLookup('-1', indexParam);
+  // Nothing in the address at all: the bare reading page — the root's own
+  // forward, the installed app's start_url, a masthead's Read. This is where
+  // the book opens where it was left (btc-lastread.js); every branch above
+  // carries an explicit target and takes precedence, so a shared link always
+  // lands where it says and never on the recipient's own place.
+  //
+  // A resumed place that will not open is answered with a chapter that will,
+  // rather than an error the reader did nothing to earn — and the record is
+  // left standing, since the usual reason a lookup fails is a network that
+  // will be back.
+  const resume = [...params.keys()].length ? null : lastPlace();
+  const kept = resume ? new URLSearchParams(resume) : null;
+  if (kept) Promise.resolve(openLookup(kept.get('block') || '-1', indexIn(kept)))
+    .catch(() => openLookup('-1', -1));
+  else openLookup('-1', indexParam);
 }
 </script>
 </body>

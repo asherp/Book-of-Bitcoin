@@ -20,6 +20,7 @@ import { storeGet, storePut } from './btc-store.js';
 import { INDEXED as CURATED } from './btc-index-data.js';
 import { usdOn } from './btc-price.js';
 import { amountUnit, ownUnit, groupDigits, formatValuation } from './btc-amounts.js';
+import { pathSegments } from './btc-path.js';
 
 // A loose shape test for the address forms the chain has used: base58 P2PKH
 // ('1…') and P2SH ('3…'), and bech32/bech32m ('bc1…', matched lowercase --
@@ -75,6 +76,113 @@ export function saveKeptLedgers(list) {
 
 // Two ledgers are the same when they hold the same addresses, in any order.
 export const sameAddresses = (a, b) => a.length === b.length && a.every((x) => b.includes(x));
+
+// ── The shelf, filed ──────────────────────────────────────────────────────
+// A slash in a kept ledger's title is a path (btc-path.js), exactly as it is
+// in a bookmark's, and here it does more than group rows: a parent is a
+// ledger in its own right, holding every member of everything beneath it,
+// with its children partitioning it.
+//
+// The Coldcard hack is the argument for that reading. It has 221 members
+// whose structure is real -- seven shared vaults from waves 1-2, and 214
+// one-per-victim vaults from wave 3 whose whole distinguishing feature is
+// that they are NOT shared -- so `Coldcard hack/waves 1–2` and
+// `Coldcard hack/wave 3` are two tables answering different questions while
+// `Coldcard hack` still totals all 221, which is the figure the incident is
+// quoted by. A grouping that could not be opened would make the reader
+// choose one of the two and lose the other.
+//
+// Three rules and a restraint:
+//   · keeps sharing a full path are ONE ledger -- the union of their
+//     members, in the order they were kept. Keeping under a name already
+//     used folds into it rather than shelving a second ledger of that name.
+//   · a parent's account is its own members plus every descendant's, in
+//     shelf order, each member counted once however many children hold it.
+//   · order is depth-first in the order the reader kept things, so the
+//     shelf reads as it was built.
+//   · a parent whose account is exactly its one child's is not shelved
+//     twice: the same restraint the contents keeps in declining to raise a
+//     heading over a lone row.
+export function shelfLedgers(kept = keptLedgers()) {
+  const byPath = new Map();          // 'a/b' -> { path, addresses }
+  const own = (path) => {
+    const key = path.join('/');
+    if (!byPath.has(key)) byPath.set(key, { path, addresses: [] });
+    return byPath.get(key);
+  };
+  for (const k of kept) {
+    const segs = pathSegments(k.title);
+    const node = own(segs.length ? segs : ['']);
+    for (const a of k.addresses) if (!node.addresses.includes(a)) node.addresses.push(a);
+    for (let d = 1; d < segs.length; d++) own(segs.slice(0, d));   // the parents it implies
+  }
+  // Depth-first over first-appearance order: a node's children are the keys
+  // one segment longer that start with its path.
+  const out = [];
+  const shelved = new Set();   // the paths actually standing as rows, for the depth below
+  const walk = (prefix) => {
+    for (const node of byPath.values()) {
+      if (node.path.length !== prefix.length + 1) continue;
+      if (!prefix.every((s, i) => node.path[i] === s)) continue;
+      const kids = [];
+      const gather = (n) => {
+        for (const m of byPath.values()) {
+          if (m.path.length !== n.path.length + 1) continue;
+          if (!n.path.every((s, i) => m.path[i] === s)) continue;
+          kids.push(m); gather(m);
+        }
+      };
+      gather(node);
+      const addresses = [...node.addresses];
+      for (const kid of kids) for (const a of kid.addresses) if (!addresses.includes(a)) addresses.push(a);
+      // The restraint: a parent that would open the same account as its one
+      // child stands as a heading over it in the listing and not as a second
+      // ledger of the same coins.
+      const doubles = kids.length === 1 && !node.addresses.length;
+      if (!doubles) {
+        // How far in a row stands is how many of its ancestors are actually
+        // on the shelf, not how many segments its name has: a row whose
+        // parent was skipped steps up to take its place, carrying the whole
+        // name the skipped heading would have said.
+        out.push({
+          title: node.path.join('/'),
+          name: node.path.join(' / '),
+          leaf: shelved.has(node.path.slice(0, -1).join('/')) ? node.path[node.path.length - 1] : node.path.join(' / '),
+          depth: node.path.slice(0, -1).filter((_, i) => shelved.has(node.path.slice(0, i + 1).join('/'))).length,
+          addresses,
+          parent: kids.length > 0,
+        });
+        shelved.add(node.path.join('/'));
+      }
+      walk(node.path);
+    }
+  };
+  walk([]);
+  return out.filter((l) => l.addresses.length);
+}
+
+/** Keep a set of members under a name — the one writer for both pages that
+ *  offer it, so the fold is the same wherever it is done. Keeping under a
+ *  name already used folds into that ledger rather than shelving a second of
+ *  the name: two keeps sharing a path are one ledger, which is the whole
+ *  point of reading the name as a path. An untitled keep appends as it
+ *  always did — a name is what folds, and it has none. */
+export function keepLedger(title, addresses) {
+  const path = pathSegments(title).join('/');
+  const all = keptLedgers();
+  const mine = path ? all.find((k) => pathSegments(k.title).join('/') === path) : null;
+  if (mine) mine.addresses = [...mine.addresses, ...addresses.filter((a) => !mine.addresses.includes(a))];
+  else all.push({ title, addresses: [...addresses] });
+  saveKeptLedgers(all);
+  return path;
+}
+
+/** The shelved ledger a path names, or null. The path is the name a reader
+ *  typed, so it is matched as they wrote it, trimmed segment by segment. */
+export const shelfLedgerFor = (path, kept = keptLedgers()) => {
+  const want = pathSegments(path).join('/');
+  return want ? shelfLedgers(kept).find((l) => l.title === want) ?? null : null;
+};
 
 // Resolve the ledger a URL names from its address list. One address that
 // belongs to a curated or kept ledger opens that whole ledger, positioned

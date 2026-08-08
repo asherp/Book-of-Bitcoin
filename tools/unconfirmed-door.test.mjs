@@ -1,0 +1,295 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+//
+// tools/unconfirmed-door.test.mjs — the door from the queue's rankings into
+// the book (web/bitcoin-appendix.html), and the landing behind it
+// (web/bitcoin-book.html).
+//
+// A transaction no block has recorded still has a page: the queue seats it in
+// a projected chapter, and that seat is a §section like any other. Both ends
+// of that are wiring in two large documents with no module seam to import, so
+// these are static assertions over their source — the same stance
+// export-passage.test.mjs takes, and for the same reason: every way this can
+// break is silent. A row that stops being an anchor still renders. A lookup
+// that stops rerouting still prints a sentence. Neither throws.
+//
+//   node --test tools/unconfirmed-door.test.mjs
+
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+import { readFileSync } from 'node:fs';
+
+const book = await readFile(new URL('../web/bitcoin-book.html', import.meta.url), 'utf8');
+const appendix = await readFile(new URL('../web/bitcoin-appendix.html', import.meta.url), 'utf8');
+
+// The rankings' row-building block, from where the leaf decides which
+// ranking it is showing to where it hands the list to the screen.
+const RANK_END = 'addEventListener(\'pagehide\', stop)';
+const rankRows = appendix.slice(appendix.indexOf('const byValue = QUEUE ==='),
+  appendix.indexOf(RANK_END) + RANK_END.length);
+
+test('a ranked transaction is a door, and it reads as a reference', () => {
+  assert.match(rankRows, /createElement\('a'\)/, 'the reference cell is an anchor, not a dead span');
+  assert.match(rankRows, /id\.href = `\.\/bitcoin-book\.html\?txid=\$\{t\.txid\}`/,
+    'the whole txid travels — a shortened one addresses nothing');
+  // The book prints no txid a reader would have to squint at. The chapter is
+  // cited as the chapter view's own eyebrow cites it and the transaction is
+  // seated, so the cell reads like every other citation in the book: a place,
+  // not an identifier.
+  assert.match(rankRows, /□\$\{chapter\.toLocaleString\('en-US'\)\} `\}§\$\{\(t\.seat \+ 1\)/,
+    'the cell reads □chapter §section');
+  assert.match(rankRows, /chapter == null \? '' :/,
+    'and prints half a reference rather than a wrong one while the tip is unknown');
+  assert.doesNotMatch(rankRows, /t\.txid\.slice/, 'no part of a txid is shown');
+  assert.doesNotMatch(rankRows, /title = `\$\{t\.txid\}/, 'nor hidden in the hover');
+  assert.match(appendix, /a\.bb-ref:hover/, 'and the cell reads as something to press');
+});
+
+test('the seats are kept in step with the queue, not printed once', () => {
+  // A §section number is a claim about where a transaction sits now. The
+  // queue reseats constantly, so the feed is held open and every frame
+  // repaints — otherwise the leaf would be citing a seat the book has
+  // already moved.
+  assert.match(rankRows, /const stop = watchAlpha\(\{/, 'the feed is watched, not read once');
+  assert.match(rankRows, /onReading: \(snap\) => \{/, 'and each frame comes back to the leaf');
+  assert.match(rankRows, /addEventListener\('pagehide', stop\)/, 'and the socket goes when the page does');
+  // Reordering by moving the existing nodes, not rebuilding them: a renumber
+  // every few seconds must not blink the table or drop a hover.
+  assert.match(rankRows, /const seats = new Map\(\);/, 'rows are held by txid');
+  assert.match(rankRows, /el\.append\(row\.node\);/, 'and moved into place rather than recreated');
+  assert.match(rankRows, /if \(row\.id\.textContent !== ref\)/, 'a seat that did not move is not rewritten');
+  // A dropped feed must not blank rows that are still on screen.
+  assert.match(rankRows, /if \(last\) return;\s*\/\/ the feed dropped mid-reading/,
+    'a mid-reading failure leaves the table standing');
+});
+
+test('the chapter the seats are cited in follows the tip', () => {
+  assert.match(rankRows, /volumeBookChapter\(tip \+ 1\)\.chapter/,
+    'the draft is the chapter past the tip');
+  assert.match(rankRows, /onTip: setTip/, 'and a mined block renames it without a reload');
+});
+
+test('an unconfirmed transaction is rerouted, not dead-ended', () => {
+  // The throw is marked so the lookup can tell this failure from every other
+  // one: a 404 or a mirror error must still surface as itself.
+  assert.match(book, /e\.unconfirmed = true;/, 'the unconfirmed case names itself on the error');
+  const lookup = book.slice(book.indexOf('async function openLookup'),
+    book.indexOf('async function futureCommentary'));
+  assert.match(lookup, /if \(!e\.unconfirmed\) throw e;/, 'only that case is rerouted');
+  assert.match(lookup, /if \(await stepUnconfirmed\(hex\)\) return;/, 'and it is rerouted to the queue');
+  assert.match(lookup, /await tipP;\s*\/\/ stepUnconfirmed counts from the tip/,
+    'the tip is known before a height past it is computed');
+  // The message that remains is the one for a transaction the projection
+  // cannot seat -- it must not still promise a chapter the reader was just
+  // refused.
+  const msg = /const e = new Error\('([^']+)'\);/.exec(book.slice(book.indexOf('if (!tx.status || !tx.status.confirmed)')));
+  assert.ok(msg, 'the unconfirmed throw carries a sentence');
+  assert.doesNotMatch(msg[1], /it sits in one of the projected chapters/,
+    'the fallback no longer points at a chapter the landing already tried');
+});
+
+test('the landing asks the two questions a seat is made of', () => {
+  const step = book.slice(book.indexOf('async function stepUnconfirmed'),
+    book.indexOf('// ── Live frontage'));
+  // Which projected block, then where in it. Order matters: loadProjection is
+  // what learns the backend host the position question is asked over.
+  assert.ok(step.indexOf('loadProjection()') < step.indexOf('fetchTxProjection(txid)'),
+    'the projection is read first, so the feed has a host to ask');
+  assert.match(step, /k < 0 \|\| k >= proj\.blocks\.length/, 'a block past the projection\'s reach is no seat');
+  assert.match(step, /manifest\.findIndex\(\(t\) => t\.txid === txid\)/, 'the seat is found by name, never guessed');
+  assert.match(step, /if \(i < 0\) return false;/, 'a transaction the manifest does not list has no page here');
+  assert.match(step, /return stepProjected\(tipHeight \+ 1 \+ k, i\)/,
+    'the seat opens as the section it is, in the chapter that holds it');
+});
+
+test('the position feed answers or lets go — it never hangs the lookup', () => {
+  const feed = book.slice(book.indexOf('function fetchTxProjection'),
+    book.indexOf('function projectedManifest'));
+  assert.match(feed, /'track-tx': txid/, 'the backend is asked where the transaction sits');
+  assert.match(feed, /tp\.txid !== txid/, 'and an answer about another transaction is not taken for ours');
+  assert.match(feed, /setTimeout\(\(\) => done\(null\), TX_POSITION_WAIT\)/, 'a silent pool costs a wait, not the page');
+  for (const ev of ['error', 'close']) {
+    assert.match(feed, new RegExp(`addEventListener\\('${ev}', \\(\\) => done\\(null\\)\\)`),
+      `a feed that ${ev}s resolves rather than leaving the promise open`);
+  }
+  assert.match(feed, /if \(!mempoolBackendBase\) \{ resolve\(null\); return; \}/,
+    'no backend, no question — the caller says so instead of waiting');
+});
+
+test('a coin spent into the queue is cited there, not left blank', () => {
+  // The two margins are meant to mirror each other -- the left says where
+  // value came from, the right where it went next -- and the left has cited
+  // unmined prevouts all along (projectedCitation). The right used to drop
+  // them, so a coin already spent read as unspent until a miner agreed.
+  const fwd = book.slice(book.indexOf('async function resolveForwardCitations'),
+    book.indexOf('// Populate a citation cell with the scripture-style reference'));
+  assert.match(fwd, /if \(!sp \|\| !sp\.spent \|\| !sp\.txid\) return;/,
+    'an unspent output is still the only one with nothing to say');
+  assert.match(fwd, /if \(!sp\.status \|\| !sp\.status\.confirmed\) \{ await citeDraftSpender/,
+    'an unmined spender is cited rather than dropped');
+  const draft = book.slice(book.indexOf('async function citeDraftSpender'),
+    book.indexOf('// Populate a citation cell with the scripture-style reference'));
+  // □ over ■, from the same helper the chapter's own reference uses, so a
+  // provisional citation differs from a settled one by one glyph.
+  assert.match(draft, /referenceOf\(place\.height\)/, 'cited with the expected mark');
+  assert.match(draft, /place\.pos === null/, 'and with the seat only when the seat is known');
+  // The door is the txid: a seat printed a moment ago may have moved, the
+  // transaction has not.
+  assert.match(draft, /link\.href = `\?txid=\$\{sp\.txid\}`/, 'the door is the name that does not move');
+  assert.match(draft, /goToTransaction\(sp\.txid, `in-\$\{sp\.vin\}`\)/,
+    'and it lands on the input that took the coin, as the mined form does');
+});
+
+test('placing a draft costs the manifests in hand first, and is bounded after', () => {
+  const place = book.slice(book.indexOf('async function draftPlace'),
+    book.indexOf('// An amount\'s hover'));
+  assert.ok(place.indexOf('projectedCitation(txid)') < place.indexOf('fetchTxProjection(txid)'),
+    'what is already in hand is free, and answers exactly — it is asked first');
+  assert.ok(place.indexOf('loadProjection()') < place.indexOf('fetchTxProjection(txid)'),
+    'and the projection is read before the feed, so the feed has a host to ask');
+  assert.match(place, /if \(draftAsked >= DRAFT_PLACES\) return null;/,
+    'a page stops asking: a citation is an annotation, not a reason to hold the network open');
+  assert.match(place, /draftRenderGen !== renderGen/, 'and the count is per page, not per session');
+  // The backend keeps ONE tracked transaction per client, so two questions
+  // asked at once would answer each other's.
+  assert.match(place, /draftChain = next\.then/, 'the questions are asked one at a time');
+  assert.match(place, /gen === renderGen \? fetchTxProjection\(txid\) : null/,
+    'and a question queued for a page the reader has left is not asked at all');
+});
+
+test('the left margin names the chapter even when it cannot name the seat', () => {
+  // A prevout in a draft this page has not read: the manifest in hand cannot
+  // seat it, and half a megabyte of draft is not worth a section number. The
+  // cell used to print a bare §… — no chapter, no link, nothing to follow.
+  const res = book.slice(book.indexOf('async function resolveCitations'),
+    book.indexOf('const lazyCites = (() => {'));
+  assert.match(res, /await draftPlace\(txid\)/, 'the prevout is placed, not just looked up in hand');
+  assert.match(res, /if \(place && place\.pos !== null\)/, 'an exact seat still reads as a full citation');
+  assert.match(res, /\} else if \(place\) \{/, 'and a chapter without one is its own case');
+  assert.match(res, /renderDraftCitation\(citeBody, place\.height, txid, vout\)/);
+  const draft = book.slice(book.indexOf('function renderDraftCitation'),
+    book.indexOf('async function goToSection'));
+  assert.match(draft, /`\$\{referenceOf\(height\)\} §… \.\$\{vout\}`/,
+    'the reference prints as far as it goes and says where it stops');
+  assert.match(draft, /link\.href = `\?txid=\$\{txid\}`/, 'and follows the coordinate that does not move');
+  // Nothing is left that prints a seatless cell with no chapter when a
+  // chapter was available.
+  assert.match(res, /citeBody\.textContent = `§… \.\$\{vout\}`/,
+    'the bare form survives only for a transaction in no drafted chapter at all');
+});
+
+// ── The queue's storeys ───────────────────────────────────────────────────
+//
+// The mempool is a volume of the book that no miner has written, and it is
+// built like one: a volume's leaf, three book leaves under it, and the
+// chapters under those. What makes that a structure rather than a set of
+// pages is that each storey's turns land on the right neighbour, so these pin
+// the joins — which are wiring, and fail silently when they break.
+
+test('the queue is three storeys, and each is set as its level is set', () => {
+  // Volume level: the part's own leaf, dressed as a volume leaf — the
+  // appendix numeral on the eyebrow, the part's name as the title, no
+  // subtitle and no rule under it.
+  assert.match(appendix, /\$\('appx-eyebrow'\)\.textContent = `Appendix \$\{toRoman\(partNumber\(APPENDIX, part\)\)\}`/,
+    'the numeral rides the eyebrow, as VOLUME 5 does over Book 2');
+  const volLeaf = appendix.slice(appendix.indexOf("} else if (kind === 'mempool') {"),
+    appendix.indexOf("} else if (part.family === 'appendix') {"));
+  assert.match(volLeaf, /\$\('appx-title'\)\.textContent = part\.title;/, 'and the part\'s name is the title');
+  assert.match(volLeaf, /classList\.add\('leaf'\)/, 'set as a span leaf: no rule under the head');
+  // Book level: three title pages, and the rule that keeps a table off them.
+  assert.match(appendix, /const QUEUE_TITLES = \{ alpha: 'Provisional blocks', amount: 'Sorted by amount', vbytes: 'Sorted by size' \}/);
+  assert.match(appendix, /const TABLE = QUEUE === 'amount' \|\| QUEUE === 'vbytes' \? params\.has\('table'\) : false;/,
+    'a ranking\'s table is a storey of its own, named in the address');
+  assert.match(appendix, /if \(!TABLE\) \$\('appx-title'\)\.closest\('\.page-head'\)\.classList\.add\('leaf'\)/,
+    'a title page is a span leaf; a table is not');
+});
+
+test('the storeys are joined: down one level lands on the next', () => {
+  assert.match(appendix, /if \(kind === 'mempool' && QUEUE === null\) firstChapter = queueHref\('alpha'\);/,
+    'the queue opens the provisional blocks');
+  assert.match(appendix, /firstChapter = TABLE \? null : tableHref\(QUEUE\);/,
+    'a ranking opens its table, and a table is the floor');
+  assert.match(appendix, /firstChapter = `\.\/bitcoin-book\.html\?block=\$\{tip \+ 1\}`/,
+    'and the provisional blocks open the first draft, in the book');
+});
+
+test('the chapters\' run does not stop at the last draft', () => {
+  // Turning right off the last draft used to dead-end in a sentence. The
+  // rankings stand at that same level, so the run continues into them.
+  assert.match(book, /function toQueueTable\(\) \{/);
+  assert.match(book, /location\.href = '\.\/bitcoin-appendix\.html\?part=mempool&at=amount&table';/);
+  const forwards = book.match(/if \(direction > 0 && projectedReach\(\) > 0\) \{ toQueueTable\(\); return; \}/g) || [];
+  assert.equal(forwards.length, 3, 'every way forward past the last draft takes it: chapter, section, and stepper');
+  assert.match(book, /stepNext = \{ text: '₿↓', label: 'Sorted by amount/,
+    'and the stepper says where it goes rather than vanishing');
+  assert.match(book, /\|\| \(state\.projected && reach > 0\)/,
+    'the forward gesture stays available at the last draft\'s last section');
+  // And the mirror: the amount table's back turn is that same chapter,
+  // counted the same way, so the two turns are inverses.
+  assert.match(appendix, /if \(TABLE && QUEUE === 'amount'\) \{/);
+  assert.match(appendix, /const href = `\.\/bitcoin-book\.html\?block=\$\{tip \+ reach\}`;/);
+  assert.match(appendix, /const pageableDrafts = \(blocks\) =>/,
+    'and both count the run by what the book can actually page');
+});
+
+test('the contents groups the drafts and lists the rankings beside them', () => {
+  const contents = readFileSync(new URL('../web/bitcoin-contents.html', import.meta.url), 'utf8');
+  assert.match(contents, /buildQueue\(queue, \{ group: 'Provisional blocks' \}\)/,
+    'the drafts are one group, not one per book');
+  assert.match(contents, /queueLeafRow\('Sorted by amount', 'amount'/);
+  assert.match(contents, /queueLeafRow\('Sorted by size', 'vbytes'/);
+  const rowFn = contents.slice(contents.indexOf('function queueLeafRow'), contents.indexOf('const toc = $('));
+  assert.match(rowFn, /r\.className = 'toc-ref';\s*\n\s*row\.append\(t, r\);/,
+    'and neither carries a reference — a ranking is not a place in the book');
+  assert.doesNotMatch(rowFn, /—/, 'nor the dash a row whose citation failed would wear');
+  // The group heading is a contents heading like any other, so the leaf reads
+  // in the same face and colour a volume's does.
+  const mempool = readFileSync(new URL('../web/btc-mempool.js', import.meta.url), 'utf8');
+  assert.match(mempool, /wrap\.append\(head\('toc-book', group\)\);/);
+});
+
+test('an ascent from a draft climbs one storey, not two', () => {
+  // Up from a chapter of the body is its book, not its volume. A draft's
+  // book is Provisional blocks, so that is what the ascent lands on — and
+  // the same gesture again goes on to The Mempool, and then to the contents.
+  assert.match(book, /location\.href = '\.\/bitcoin-appendix\.html\?part=mempool&at=alpha';/,
+    'the ascent lands on the leaf that holds the drafts');
+  assert.match(book, /id="ch-appendix-link"[^>]*>Provisional blocks</,
+    'and the crumb offering it says so');
+  // The descent from that leaf is the same move backwards, so the two are
+  // inverses: down opens the first draft, up comes back to the leaf.
+  assert.match(appendix, /firstChapter = `\.\/bitcoin-book\.html\?block=\$\{tip \+ 1\}`/);
+});
+
+test('every part of the appendix has an address its own turns can write', () => {
+  // hrefFor writes ?part=<PART_QUERY[kind]>, and a kind missing from that map
+  // writes ?part=undefined — which the address reader then falls back to the
+  // first part for. The page still renders, so the only symptom is a turn
+  // landing on the wrong leaf. Both halves are pinned here so they cannot
+  // drift apart again.
+  const kinds = (m) => new Set([...(appendix.slice(appendix.indexOf(m), appendix.indexOf('}', appendix.indexOf(m)))
+    .matchAll(/(\w+):\s*'[\w]+'/g))].map((x) => x[1]));
+  const read = kinds('const PARTS = {');
+  const written = kinds('const PART_QUERY = {');
+  read.delete('future');   // an alias the reader accepts; nothing is ever addressed by it
+  for (const k of read) assert.ok(written.has(k), `PART_QUERY has no address for ${k}`);
+});
+
+test('the contents run closes into a ring', () => {
+  const contents = readFileSync(new URL('../web/bitcoin-contents.html', import.meta.url), 'utf8');
+  const fn = contents.slice(contents.indexOf('function turn(dir) {'), contents.indexOf('function ascend()'));
+  assert.match(fn, /const next = \(at \+ dir \+ list\.length\) % list\.length;/,
+    'past the last leaf is the first, and back off the first is the last');
+  assert.doesNotMatch(fn, /if \(next < 0 \|\| next >= list\.length\) return;/,
+    'neither end stops');
+  // Both neighbours are always named, so no turn advertises a leaf it will
+  // not open -- the ends used to offer the front matter and go nowhere.
+  const turns = contents.slice(contents.indexOf('function renderTurns'), contents.indexOf('function turn(dir) {'));
+  assert.match(turns, /const around = \(i\) => list\[\(i \+ list\.length\) % list\.length\];/);
+  assert.doesNotMatch(turns, /'‹ Terms'/);
+  assert.doesNotMatch(turns, /'Preface ›'/);
+  // The book's own volume level is NOT a ring: the sigla stay behind Volume
+  // I's title page, which is where the front matter hands over.
+  assert.match(book, /location\.href = '\.\/bitcoin-front\.html\?leaf=sigla';/,
+    'the body still turns back into the front matter');
+});

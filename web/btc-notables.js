@@ -190,14 +190,15 @@ function normalize(raw, i) {
 // (appendix.yaml). `kind` says who fills it: 'consensus' lists its own -- forks
 // grouped by BIP, whose entries are places like any other and resolve the same
 // way, so an unmined chapter may be written as the height consensus fixed or as
-// the reference that height already has (LXV β1 □1); 'mempool' and 'ledgers'
-// are gathered by the page from the queue and from the shelf, and carry only
-// their heading and its note.
+// the reference that height already has (LXV β1 □1); 'mempool', 'mines' and
+// 'ledgers' are gathered by the page -- from the queue, from the last
+// difficulty window's blocks, and from the shelf -- and carry only their
+// heading and whatever reading hangs on it.
 function normalizePart(raw, i) {
   const kind = String(raw.kind ?? '').trim();
   const title = String(raw.title ?? '').trim();
   if (!kind || !title) throw new Error(`btc-notables: appendix part ${i + 1} needs a kind and a title`);
-  if (!['mempool', 'consensus', 'ledgers', 'proofs', 'inscriptions'].includes(kind)) {
+  if (!['mempool', 'mines', 'consensus', 'ledgers', 'proofs', 'inscriptions'].includes(kind)) {
     throw new Error(`btc-notables: appendix part "${title}" has an unknown kind: ${kind}`);
   }
   // Which family of back matter this part belongs to, which is what its
@@ -443,10 +444,22 @@ export const places = () => entries.flatMap((entry) =>
 
 // A place's own name: the entry's title — in the reader's language where a
 // translation is written — and what this place is within it.
-// "The twice-confirmed coinbases — e3bf…468, first printing".
+// "The twice-confirmed coinbases — first printing".
 export const placeTitle = (place) => {
   const title = pickLocalized(place.titles, place.title);
   return place.as ? `${title} — ${place.as}` : title;
+};
+
+// The same name, written as a path. An entry kept in several places already
+// IS a filing -- the entry names it, `as` names each leaf -- so a listing can
+// file it (btc-path.js) instead of repeating the entry's whole title on every
+// row: the twice-confirmed coinbases' four printings read as four leaves
+// under one heading. Only a listing wants this; a page naming the passage a
+// reader is standing on wants the prose form above, where a slash would read
+// as punctuation rather than as filing.
+export const placeFiling = (place) => {
+  const title = pickLocalized(place.titles, place.title);
+  return place.as ? `${title}/${place.as}` : title;
 };
 
 // The appendix's parts, synchronously, like notables(): what the contents

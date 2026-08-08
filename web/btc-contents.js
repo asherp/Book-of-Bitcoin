@@ -19,7 +19,7 @@
 import { reference } from './btc-citation.js';
 import { looksLikeAddress } from './btc-lookup.js';
 
-export { loadNotables, notables, places, placeTitle, appendix } from './btc-notables.js';
+export { loadNotables, notables, places, placeTitle, placeFiling, appendix } from './btc-notables.js';
 
 // A bare non-negative integer is an absolute block height. A negative integer is
 // a height relative to the chain tip (-1 = latest block), resolved online.
