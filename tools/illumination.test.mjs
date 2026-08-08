@@ -378,3 +378,35 @@ test('an anchor with no rail behaves exactly as it did before', () => {
     .flatMap((s) => s.points);
   assert.ok(points.every((p) => Math.abs(p.y) < 1e-9), 'an unrailed straight run should stay straight');
 });
+
+// ─── numerals are not sigla ───────────────────────────────────────────────
+// The generated outline set (web/sigla-outlines.js, from
+// tools/sigla-outlines/extract.mjs) is what decides which marks a vine can
+// trace. A count riding a mark is apparatus, not notation -- β's subscript
+// says how many leading zero bits, a direct push's superscript how many
+// bytes -- so no figure gets an outline, and no vine traces the shape of
+// one. Guarded here because the rule lives in a build step nobody runs by
+// hand, and a regenerate that quietly readmitted the numerals would leave
+// no other trace.
+const { SIGLA_OUTLINES } = await import('../web/sigla-outlines.js');
+
+test('no numeral carries an outline -- a count is apparatus, not a mark', () => {
+  const digits = Object.keys(SIGLA_OUTLINES).filter((ch) => /[0-9²³¹⁰-⁹₀-₉]/.test(ch));
+  assert.deepEqual(digits, [], `numerals must not be sigla, found ${JSON.stringify(digits)}`);
+});
+
+test('the enclosed digits ⓪ ①–⑯ DO keep theirs -- they are the marks, not counts', () => {
+  // OP_0..OP_16 are written as single enclosed glyphs; the notation has no
+  // other way to write them, so the rule above must not sweep them up.
+  for (const ch of '⓪①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯') {
+    assert.ok(SIGLA_OUTLINES[ch], `${ch} is an opcode mark and needs its outline`);
+  }
+});
+
+test('the marks a passage actually grows from still carry outlines', () => {
+  // A spot check across the families, so a filter that went too wide shows up
+  // as a missing letterform rather than as silently plainer decoration.
+  for (const ch of ['β', '∇', '⧉', '⌘', '⌖', '◆', '▼', 'τ', 'Δ', 'σ', 'ρ', 'Σ', '∅', '●']) {
+    assert.ok(SIGLA_OUTLINES[ch], `${ch} should have an outline`);
+  }
+});

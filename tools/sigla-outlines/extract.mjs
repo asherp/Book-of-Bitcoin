@@ -32,14 +32,30 @@ const OUT_FILE = new URL('../../web/sigla-outlines.js', import.meta.url);
 // .cfx-gold seed's textContent (see measureAnchors in btc-illumination.js) --
 // not just each mark's own base glyph, since a two-codepoint mark like
 // '¬⟨' or '⊘ᵛ' is still keyed by its actual first codepoint at render time.
-// Cheap to be generous here: an extra glyph nobody ends up looking up just
-// sits unused in the output.
+//
+// NUMERALS ARE NOT SIGLA, and none are carried. A count riding a mark is
+// apparatus, not notation -- β's subscript says how many leading zero bits,
+// ⧉₂'s says which DUP -- and a vine has no business tracing the shape of a
+// figure. The marks themselves are what a scribe would have illuminated.
+// (bitcoin-book.html drops count-only marks from its seed list for the same
+// reason; see isCountOnly there.) The enclosed digits ⓪ ①–⑯ stay: those are
+// not numerals riding a mark, they ARE the marks for OP_0..OP_16, a single
+// glyph each, and the notation has no other way to write them.
+const DIGIT_FORMS = /[0-9²³¹⁰-⁹₀-₉]/;
+// The notation's marks that are not opcodes, and so are in none of the tables
+// btc-sigla.js exports -- but which a passage seeds vines from just the same:
+// an input's sequence mark and a locktime's (btc-prose.js's seqInfo and
+// locktimeInfo), the empty-list mark, the reference marks a citation is built
+// from, the merkle-proof mark, the header's nonce, and the dagger a superseded
+// draft wears. Without these the very marks a margin citation or a locktime
+// line grows from had no letterform to trace and fell back to their bounding
+// box, quietly, while the opcodes beside them traced properly.
+const NOTATION_MARKS = ['β', '∅', '●', '○', '□', '■', '§', '‡', '⋔', 'η', '†'];
 function targetChars() {
   const chars = new Set();
   for (const sym of Object.values(OPCODE_SYMBOLS)) for (const ch of sym) chars.add(ch);
-  for (let d = 0; d <= 9; d++) { chars.add(toSuperscript(d)); chars.add(toSubscript(d)); }
-  chars.add('β');   // the difficulty-target mark (bitsInfo, btc-prose.js) -- not an opcode
-  return [...chars];
+  for (const ch of NOTATION_MARKS) chars.add(ch);
+  return [...chars].filter((ch) => !DIGIT_FORMS.test(ch));
 }
 
 // ─── unicode-range membership, the same ranges fonts.css declares ──────
