@@ -3,7 +3,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>The βook of βitcoin — a block, read as a chapter</title>
 <meta name="description" content="A Bitcoin block rendered as a chapter: each transaction a paragraph, its witness data footnotes, in grammatically correct Glossia prose.">
 <link rel="icon" type="image/png" sizes="32x32" href="./icons/beta-icon-32.png">
@@ -171,7 +171,7 @@ body {
 #chapter.span-leaf .chapter-frontispiece:has(+ .chapter-work:not(.hidden)) { margin-bottom: 1.5rem; }
 #chapter.span-leaf .chapter-work { margin-bottom: 3.75rem; }
 /* No bottom padding: the foot nav bar is the page's own floor. */
-.wrap { max-width: 720px; margin: 0 auto; padding: 48px 22px 0; }
+.wrap { max-width: 720px; margin: 0 auto; padding: 48px var(--gutter-r) 0 var(--gutter-l); }
 a { color: var(--accent); text-decoration: none; }
 a:hover { text-decoration: underline; }
 .mono { font-family: 'IBM Plex Mono','Book Sigla', monospace; }
@@ -1268,7 +1268,8 @@ import { parseTransaction, computeTxid, parseBlockHeader, computeBlockHash, bits
 // section joins it as a titled one-address ledger, the same registry the
 // Ledger page's own keep button writes. INDEXED is the curated shelf, whose
 // titles are the keep line's defaults.
-import { keptLedgers, saveKeptLedgers, INDEXED } from './btc-index.js';
+import { keptLedgers, saveKeptLedgers, keepLedger, INDEXED } from './btc-index.js';
+import { pathSegments } from './btc-path.js';   // a slash in a name the reader typed is a path
 import { composeTransactionFields, composeBlockHeaderFields, bitsInfo, groupDigits, formatBtc, formatAmount, formatAmountAs, formatOwnAmount, amountUnit, setAmountUnit, ownUnit, setOwnUnit, dayPrice, setDayPrice, renderWitness, toSuperscript, timestampInfo } from './btc-prose.js';
 import { usdOn, PRICE_SOURCES, priceSource, setPriceSource } from './btc-price.js';
 import { volumeBookChapter, heightOf, windowStartOf, retargetInside, subsidyAt, toRoman, reference, parseReference, footnoteMark, latinRefOf } from './btc-citation.js';
@@ -1441,6 +1442,9 @@ import { seedArchive } from './btc-seed.js';
 import { REGIONS, fontScale, setFontScale, resetFontScales, fontScaleDiverged,
          FONT_SCALE_MIN, FONT_SCALE_MAX, FONT_SCALE_STEP } from './btc-fontscale.js';
 import { pageAnchor, bankAnchor, peekAnchor, formatPage } from './btc-pages.js';
+// Where the reader stopped: written by updateUrl below (the one place that
+// knows what the page's own address is), read by a bare visit at the foot.
+import { keepPlace, lastPlace } from './btc-lastread.js';
 
 // A first visit provisions the archive with the curated passages' chain data
 // (idle-time, once ever; see btc-seed.js) -- the contents page's entries then
@@ -5122,6 +5126,11 @@ function labelNav() {
       stepNext = { text: `■${volumeBookChapter(state.height + 1).chapter}`, label: `${tr('Next chapter')} (${reference(state.height + 1)})` };
     } else if (!lineEnds) {
       stepNext = { text: `□${volumeBookChapter(state.height + 1).chapter}`, label: `${tr('Next chapter — projected')} (${referenceOf(state.height + 1)})` };
+    } else if (state.projected) {
+      // The last draft, and the run still has somewhere to go: what these
+      // chapters hold, sorted -- the queue's two rankings, which stand at
+      // this level in Appendix I rather than starting a level of their own.
+      stepNext = { text: '₿↓', label: 'Sorted by amount — what the drafts hold, largest first' };
     }
   }
   showBtn('chapter-prev', !!stepPrev);
@@ -5133,7 +5142,9 @@ function labelNav() {
   // key still pages one leaf or section at a time, and this flag is their
   // forward guard (navAvailable) now that the foot buttons no longer stand
   // for it.
-  sectionNextExists = !(lineEnds && idx >= state.txCount - 1);
+  // Past the last draft's last section the walk still has somewhere to go --
+  // the rankings, at this same level -- so forward stays available there.
+  sectionNextExists = !(lineEnds && idx >= state.txCount - 1) || (state.projected && reach > 0);
 
   // The foot bar's own steppers walk the TABLE OF CONTENTS instead: the
   // nearest curated place to either side, in reading order, wrapping through
@@ -5386,6 +5397,14 @@ function updateUrl() {
   else if (state.index === -2) params.set('page', 'book');
   else if (state.index === -3) params.set('page', 'volume');
   history.replaceState(null, '', `${location.pathname}?${params.toString()}`);
+  // The same address, kept where closing the tab cannot reach it, so the next
+  // bare open resumes here (btc-lastread.js). One exception, and it is the
+  // reader's own meaning rather than a special case: someone who stopped at
+  // the chain's front kept the front, not that block's number — so the tip is
+  // recorded tip-relative and resumes at whatever the tip is by then.
+  const kept = new URLSearchParams(params);
+  if (tipHeight !== null && state.height === tipHeight) kept.set('block', '-1');
+  keepPlace(kept.toString());
 }
 
 // A section index is clamped into the block's transaction list; a negative
@@ -5587,6 +5606,7 @@ async function stepTx(direction) {
     setStatus(SPINNER_HTML + tr('reading the mempool…'));
     try {
       if (await stepProjected(newHeight, direction > 0 ? -1 : 'last')) return;
+      if (direction > 0 && projectedReach() > 0) { toQueueTable(); return; }
       setStatus(projectedReach() > 0
         ? 'The projection ends here — deeper chapters are only a backlog, with no reliable order yet.'
         : 'No next block yet — this is the current chain tip.', 'err');
@@ -5632,6 +5652,7 @@ async function stepSectionAcross(direction) {
     setStatus(SPINNER_HTML + tr('reading the mempool…'));
     try {
       if (!(await stepProjected(newHeight, direction > 0 ? 0 : 'last'))) {
+        if (direction > 0 && projectedReach() > 0) { toQueueTable(); return; }
         setStatus(projectedReach() > 0
           ? 'The projection ends here — deeper chapters are only a backlog, with no reliable order yet.'
           : 'No next block yet — this is the current chain tip.', 'err');
@@ -5675,6 +5696,7 @@ async function openLeafAt(height, idx, direction = 0) {
     // never project -- an unwritten book has no leaf).
     if (tipHeight !== null && height > tipHeight && idx === -1) {
       if (!(await stepProjected(height, -1))) {
+        if (direction > 0 && projectedReach() > 0) { toQueueTable(); return; }
         setStatus(projectedReach() > 0
           ? 'The projection ends here — deeper chapters are only a backlog, with no reliable order yet.'
           : 'Not written yet — this is the current chain tip.', 'err');
@@ -5727,6 +5749,14 @@ function toAppendix() {
 function toAppendixLeaf() {
   try { sessionStorage.setItem('glossia-appendix-entrance', 'drop'); } catch {}
   location.href = './bitcoin-appendix.html?part=mempool';
+}
+// Past the last draft chapter the run does not stop -- it goes on into the
+// queue's two rankings, which stand at this same level: alpha, beta, … and
+// then what those drafts hold, sorted. Forward only. Backward off the first
+// draft is the chain tip, as it has always been.
+function toQueueTable() {
+  try { sessionStorage.setItem('glossia-appendix-entrance', 'fwd'); } catch {}
+  location.href = './bitcoin-appendix.html?part=mempool&at=amount&table';
 }
 
 async function goToLevel(direction) {
@@ -7174,7 +7204,8 @@ function syncScriptKeeps() {
     const curated = INDEXED.find((k) => k.addresses.includes(address));
     const ledgerHref = `./bitcoin-ledger.html?address=${encodeURIComponent(address)}`
       + (el.dataset.ref ? `&ref=${el.dataset.ref}` : '');
-    const name = reader ? (reader.title || address) : (curated ? curated.title : null);
+    // A filed name prints as the path it is -- `Coldcard hack / wave 3`.
+    const name = reader ? (pathSegments(reader.title).join(' / ') || address) : (curated ? curated.title : null);
     if (name) {
       const span = document.createElement('span');
       span.className = 'out-keep-name hash-copy';
@@ -7442,7 +7473,9 @@ function saveTitle() {
   // its address there), exactly what the Ledger page's keep button writes.
   if (menuEntry.ledger) {
     if (!keptLedgers().some((k) => k.addresses.includes(menuEntry.ledger))) {
-      saveKeptLedgers([...keptLedgers(), { title: titleInput.value.trim(), addresses: [menuEntry.ledger] }]);
+      // keepLedger folds a keep into the ledger already filed under that name
+      // (btc-index.js): naming this address as one already kept adds it there.
+      keepLedger(titleInput.value.trim(), [menuEntry.ledger]);
     }
     syncScriptKeeps();
     closeHashMenu();
@@ -7501,11 +7534,15 @@ const pParam = parseReference(params.get('ref') || '');
 const txidParam = params.get('txid');
 const blockParam = params.get('block');
 // An absent ?index= opens the chapter's own page (-1); index=0 is §1;
-// ?page=volume / ?page=book open the block's volume or book leaf.
-const idxRaw = parseInt(params.get('index'), 10);
-const pageParam = params.get('page');
-const indexParam = Number.isFinite(idxRaw) ? idxRaw
-  : pageParam === 'volume' ? -3 : pageParam === 'book' ? -2 : -1;
+// ?page=volume / ?page=book open the block's volume or book leaf. Read as a
+// function of any parameters, because a resumed place is written in the same
+// grammar and has to be read by the same rules.
+const indexIn = (p) => {
+  const raw = parseInt(p.get('index'), 10);
+  const page = p.get('page');
+  return Number.isFinite(raw) ? raw : page === 'volume' ? -3 : page === 'book' ? -2 : -1;
+};
+const indexParam = indexIn(params);
 // The curated index before the first lookup: a chapter must not paint once
 // without its curated name and again with it. A local file (precached by the
 // service worker), so this costs a read rather than a round trip -- and a read
@@ -7563,7 +7600,21 @@ if (pParam) {
     }
   }).catch(() => { /* the lookup's own error handling has the page */ });
 } else {
-  openLookup('-1', indexParam);
+  // Nothing in the address at all: the bare reading page — the root's own
+  // forward, the installed app's start_url, a masthead's Read. This is where
+  // the book opens where it was left (btc-lastread.js); every branch above
+  // carries an explicit target and takes precedence, so a shared link always
+  // lands where it says and never on the recipient's own place.
+  //
+  // A resumed place that will not open is answered with a chapter that will,
+  // rather than an error the reader did nothing to earn — and the record is
+  // left standing, since the usual reason a lookup fails is a network that
+  // will be back.
+  const resume = [...params.keys()].length ? null : lastPlace();
+  const kept = resume ? new URLSearchParams(resume) : null;
+  if (kept) Promise.resolve(openLookup(kept.get('block') || '-1', indexIn(kept)))
+    .catch(() => openLookup('-1', -1));
+  else openLookup('-1', indexParam);
 }
 </script>
 </body>

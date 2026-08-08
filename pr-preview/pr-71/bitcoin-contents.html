@@ -1,6 +1,6 @@
 <!-- SPDX-License-Identifier: MIT OR Apache-2.0 -->
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>The βook of βitcoin — Table of Contents</title>
 <meta name="description" content="A table of contents for the Glossia Bitcoin Book: famous transactions and the first occurrence of each payment type, each read as a chapter in grammatically correct prose.">
 <link rel="icon" type="image/png" sizes="32x32" href="./icons/beta-icon-32.png">
@@ -103,7 +103,7 @@ body { min-height: 100vh; background: var(--page); color: var(--ink); font-famil
    leaf's turns rest exactly where a tall leaf's sticky bar rides -- the same
    arrangement the reader's own foot nav keeps. No bottom padding: the bar is
    the page's own floor. */
-.wrap { max-width: 720px; margin: 0 auto; padding: 48px 22px 0;
+.wrap { max-width: 720px; margin: 0 auto; padding: 48px var(--gutter-r) 0 var(--gutter-l);
   display: flex; flex-direction: column; min-height: 100vh; min-height: 100dvh; }
 #toc { flex: 1 0 auto; }
 a { color: var(--accent); text-decoration: none; }
@@ -172,7 +172,7 @@ a:hover { text-decoration: underline; }
 import { localizeHome, mountLangMenu, t as tr } from './btc-strings.js';
 localizeHome();   // the masthead in the reader's UI language
 mountLangMenu();  // …with the Language item, which any page can now set
-import { loadNotables, notables, places, placeTitle, appendix, isBlockId, isRelativeBlockId, entryHref } from './btc-contents.js';
+import { loadNotables, notables, places, placeFiling, appendix, isBlockId, isRelativeBlockId, entryHref } from './btc-contents.js';
 import { partLabel } from './btc-notables.js';
 import { toSubscript } from './btc-sigla.js';
 import { allProofs, citeOf, leafOf, estimatedDate, minedDate } from './btc-proofs.js';
@@ -180,7 +180,10 @@ import { readingsOf } from './btc-commentary.js';
 
 import { minesForContents, largestMines, networkHashrate, formatHashrate } from './btc-mines.js';
 import { readQueue, buildQueue, MVB } from './btc-mempool.js';
-import { INDEXED, keptLedgers, sameAddresses } from './btc-index.js';
+import { INDEXED, keptLedgers, sameAddresses, shelfLedgers } from './btc-index.js';
+// A slash in a name the reader typed is a path: their own keeps file into a
+// hierarchy, and only theirs do (btc-path.js says why).
+import { pathForest, pathSegments, pathLabel } from './btc-path.js';
 import { volumeBookChapter, toRoman, fromRoman, heightOf, expectedReference, footnoteMark } from './btc-citation.js';
 import { storeGet, storePut } from './btc-store.js';
 import { seedArchive } from './btc-seed.js';
@@ -331,14 +334,12 @@ async function resolveBookmark(b) {
 }
 
 // The tail of an entry's citation -- the part its heading hasn't already named.
-// The leaf's own head has named the volume, so under a Book heading only the
-// ■chapter (and a transaction's §section) remains, and directly on the leaf the
-// β-marked book leads it. Spaced like the book's own citations ("β29 ■596",
-// "■1 §1"). A row nested under its parent entry (a section listed under the
-// chapter row that names its block) cites only what differs from the parent:
-// the parent row has already printed the ■chapter, so the child carries the
-// §section alone.
-function tailRef({ book, chapter, section, vout, wit }, underBook, parent) {
+// The leaf's own head has named the volume, so the β-marked book leads what
+// remains. Spaced like the book's own citations ("β29 ■596"). A row nested
+// under its parent entry (a section listed under the chapter row that names
+// its block) cites only what differs from the parent: the parent row has
+// already printed the ■chapter, so the child carries the §section alone.
+function tailRef({ book, chapter, section, vout, wit }, parent) {
   // An output cites as §section.vout; a witness as §section.a -- the
   // footnote's alphabet index after the point, letters where an output
   // would carry digits.
@@ -347,10 +348,9 @@ function tailRef({ book, chapter, section, vout, wit }, underBook, parent) {
   if (parent && parent.book === book && parent.chapter === chapter) return sec;
   // A volume's own leaf: the leaf's head above the row has already named it.
   if (book == null) return '';
-  // A book's own leaf: under its Book heading nothing remains to cite; on the
-  // bare leaf, the β mark alone names it.
-  if (chapter == null) return underBook ? '' : `β${book}`;
-  let s = (underBook ? [`■${chapter}`] : [`β${book}`, `■${chapter}`]).join(' ');
+  // A book's own leaf: the β mark alone names it.
+  if (chapter == null) return `β${book}`;
+  let s = `β${book} ■${chapter}`;
   if (sec) s += ` ${sec}`;
   return s;
 }
@@ -360,9 +360,15 @@ function tailRef({ book, chapter, section, vout, wit }, underBook, parent) {
 // never resolved carries a dash in place of a reference. `parent` marks a row
 // nested under its parent entry's row rather than directly under a heading:
 // one more step of indent, and a reference compressed against the parent's.
-function entryEl(entry, underBook, parent) {
+// `filing` carries the reader's own hierarchy where they have one: `title`
+// is the leaf to print in place of the whole path (the heading above has
+// said the rest), and `depth` how far in the group stands.
+function entryEl(entry, parent, filing = null) {
   const row = document.createElement('a');
-  row.className = 'toc-entry' + (underBook ? ' under-book' : '') + (parent ? ' under-parent' : '') + (entry.bookmark ? ' is-bookmark' : '');
+  const depth = filing?.depth ?? 0;
+  row.className = 'toc-entry' + (parent ? ' under-parent' : '')
+    + (depth ? ' filed' : '') + (entry.bookmark ? ' is-bookmark' : '');
+  if (depth) row.style.setProperty('--file-depth', String(depth - 1));
   row.dataset.entryId = entry.id;   // the projected section anchors after the tip's row
   // The witness coordinate travels two ways: a curated place carries its
   // footnote number (linked as the letter mark, the citation's own .a), a
@@ -377,15 +383,40 @@ function entryEl(entry, underBook, parent) {
     bm.innerHTML = '<svg viewBox="0 0 12 16"><path fill="currentColor" d="M0 0h12v16l-6-4-6 4z"/></svg>';
     t.append(bm);
   }
-  t.append(document.createTextNode(entry.title));
+  t.append(document.createTextNode(filing?.title || entry.title));
   const r = document.createElement('span'); r.className = 'toc-ref';
-  if (entry.place) r.textContent = tailRef(entry.place, underBook, parent);
+  if (entry.place) r.textContent = tailRef(entry.place, parent);
   else { r.textContent = '—'; r.classList.add('none'); }
   row.append(t, r);
   return row;
 }
 function head(cls, label) { const d = document.createElement('div'); d.className = cls; d.textContent = label; return d; }
+// A filing's heading: the name two or more entries were filed under, be
+// they the reader's keeps or the book's own curated rows. It carries no
+// ribbon -- a heading over a mixed run could not honestly fly one, and each
+// row beneath still says for itself whose it is.
+function fileHead(label, depth) {
+  const d = head('toc-file', label);
+  d.style.setProperty('--file-depth', String(depth));
+  return d;
+}
 function saying(text) { const d = document.createElement('div'); d.className = 'toc-empty'; d.textContent = text; return d; }
+
+// A row for one of the queue's rankings. Set like every other contents row,
+// with one cell left empty: a ranking is not a place in the book, it is a way
+// of reading one, so there is no citation for the right-hand cell to hold.
+// Empty, not a dash -- a dash is what a row whose citation would not resolve
+// wears, and nothing failed here.
+function queueLeafRow(title, at, why) {
+  const row = document.createElement('a');
+  row.className = 'toc-entry';
+  row.href = `./bitcoin-appendix.html?part=mempool&at=${at}`;
+  row.title = why;
+  const t = document.createElement('span'); t.className = 'toc-title'; t.textContent = title;
+  const r = document.createElement('span'); r.className = 'toc-ref';
+  row.append(t, r);
+  return row;
+}
 
 const toc = $('toc');
 // And the mines beside it: one row per pool, names only. Built by loadMines
@@ -454,7 +485,9 @@ function leafSub(leaf) {
   if (part.kind === 'consensus') return `The rules the chapters are written under · ${count(part.bips.length, 'fork', 'forks')}`;
   if (part.kind === 'inscriptions') return `Files in witnesses · ${count(part.entries.length, 'inscription', 'inscriptions')}`;
   if (part.kind === 'proofs') return `Works the chain attests · ${count(proofsCount ?? part.entries.length, 'work cited', 'works cited')}`;
-  const kept = keptLedgers().filter((k) => !INDEXED.some((e) => sameAddresses(e.addresses, k.addresses)));
+  // The shelf as it is listed, parents included: a filed parent is a ledger
+  // of its own, so it is one of the ledgers the subtitle counts.
+  const kept = shelfLedgers().filter((k) => !INDEXED.some((e) => sameAddresses(e.addresses, k.addresses)));
   return `Keepers, not chapters · ${count(INDEXED.length + kept.length, 'ledger', 'ledgers')}`;
 }
 
@@ -532,34 +565,72 @@ function renderVolume(volume) {
     toc.append(saying('Nothing is kept from this volume yet. The volume itself is one turn down, and reads chapter by chapter from its own leaf.'));
     return;
   }
-  // Children group under parents, not under books: an entry citing a section
-  // (or deeper) of a chapter that the preceding entry names outright is that
-  // entry's child -- listed under the parent's row, one more indent in, its
-  // reference compressed against the parent's. Titles never bleed up a
-  // level, but a listing may nest down one: the five burns of one chapter
-  // read beneath the chapter's own row, each cited by its § alone.
-  const isChildOf = (p, c) => p.place.chapter != null && p.place.section == null && !p.page
+  // Citation nesting, the inner axis: an entry citing a section (or deeper)
+  // of a chapter that the preceding entry names outright is that entry's
+  // child -- listed under the parent's row, one more indent in, its reference
+  // compressed against the parent's. Titles never bleed up a level, but a
+  // listing may nest down one: the five burns of one chapter read beneath the
+  // chapter's own row, each cited by its § alone.
+  //
+  // Where the two axes meet, filing decides -- but only for an entry that HAS
+  // a filing. A child filed somewhere of its own keeps to it, and is never
+  // absorbed by whatever row happens to name its block; a child filed nowhere
+  // follows the entry it cites, into that entry's filing if it has one. So
+  // `First SegWit spend`, filed nowhere, reads beneath `SegWit/activation`
+  // wherever that row ends up, and a keep the reader filed under a name of
+  // their own does not.
+  const fileOf = (e) => pathSegments(e.title).slice(0, -1).join('/');
+  const isChildOf = (p, c) => (fileOf(c) === '' || fileOf(c) === fileOf(p))
+    && p.place.chapter != null && p.place.section == null && !p.page
     && c.place.book === p.place.book && c.place.chapter === p.place.chapter && c.place.section != null;
+
+  // Nested first, then filed: a parent travels into its filing with its
+  // children attached, so what is filed is the whole listing rather than a
+  // row torn out of one.
   const nodes = [];
   for (const e of entries) {
     const last = nodes[nodes.length - 1];
     if (last && isChildOf(last.entry, e)) last.children.push(e);
     else nodes.push({ entry: e, children: [] });
   }
-  // The Book sub-heading earns its place only over two or more rows at the
-  // top level: a lone parent with its children is already its own group,
-  // and its row carries the full β-marked reference the heading would.
-  for (let k = 0; k < nodes.length;) {
-    const bk = nodes[k].entry.place.book;
-    let jb = k + 1; while (jb < nodes.length && nodes[jb].entry.place.book === bk) jb++;
-    const underBook = jb - k >= 2;
-    if (underBook) toc.append(head('toc-book', `Book ${bk}`));   // spelled out, no β; the β sigil rides only the compact tail references
-    for (let m = k; m < jb; m++) {
-      toc.append(entryEl(nodes[m].entry, underBook));
-      for (const c of nodes[m].children) toc.append(entryEl(c, underBook, nodes[m].entry.place));
+
+  // And the outer axis. A slash in a title is a path (btc-path.js), so
+  // entries named alike read together -- the reader's own keeps and the
+  // curated rows alike. A name standing alone in its first segment is never
+  // filed and prints exactly as written, which is what keeps `The Times
+  // 03/Jan/2009 …` a masthead date rather than three levels of anything; a
+  // name that is ALSO an entry heads its own filing, its row standing where a
+  // bare heading otherwise would.
+  const filed = pathForest(nodes, (n) => n.entry.title);
+
+  // A run of rows, in reading order. Nothing groups them automatically: the
+  // leaf used to raise a `Book N` sub-heading wherever two consecutive rows
+  // shared a book, which grouped by an accident of where a passage sits
+  // rather than by anything anyone meant. Filing is the deliberate grouping
+  // now, and an automatic heading beside it only competes with it -- so every
+  // row cites its own β book and stands at the leaf's own margin.
+  // One row and whatever cites it. A child prints the part of its name the
+  // filing above has not already said -- nothing, for a child filed nowhere,
+  // which then prints its own name whole.
+  const renderRow = (row, depth) => {
+    const node = row.entry;
+    toc.append(entryEl(node.entry, null, { title: row.title, depth }));
+    for (const c of node.children) {
+      toc.append(entryEl(c, node.entry.place, { title: pathLabel(pathSegments(c.title).slice(depth)), depth }));
     }
-    k = jb;
-  }
+  };
+
+  const renderFiled = (list, depth) => {
+    for (const n of list) {
+      if (n.kind === 'row') { renderRow(n, depth); continue; }
+      // A filing headed by an entry prints that entry's row; one headed by a
+      // name alone prints the name.
+      if (n.head) renderRow(n.head, depth);
+      else toc.append(fileHead(n.label, depth));
+      renderFiled(n.nodes, depth + 1);
+    }
+  };
+  renderFiled(filed, 0);
 }
 
 // Appendix I: its two leaves, each with what it holds beneath it -- the
@@ -576,7 +647,14 @@ function renderAppendix(part) {
   // are read on the queue's own leaf, one turn down, where a provisional
   // chapter can say it is provisional.
   if (part.kind === 'mempool') {
+    // The drafts as one group -- they are one thing, the chapters the queue
+    // would fill -- and then the two readings of them, which are leaves of
+    // the same storey and list beside the group rather than inside it.
     if (projectedSection) toc.append(projectedSection);
+    toc.append(queueLeafRow('Sorted by amount', 'amount',
+      'the next chapter\'s transactions, largest first by what they move'));
+    toc.append(queueLeafRow('Sorted by size', 'vbytes',
+      'the next chapter\'s transactions, largest first by what they weigh'));
     return;
   }
   if (part.kind === 'mines') {
@@ -600,7 +678,11 @@ function renderAppendix(part) {
     else toc.append(saying('The proofs are still being read — or could not be. The register itself is one turn down, and a proof of your own can be dropped there either way.'));
     return;
   }
-  const kept = keptLedgers().filter((k) => !INDEXED.some((e) => sameAddresses(e.addresses, k.addresses)));
+  // The reader's shelf as they filed it: a slash in a name they typed nests
+  // the rows, and a parent is a ledger in its own right -- an openable row
+  // holding every member beneath it -- rather than a heading over them
+  // (btc-index.js's shelfLedgers says why the Coldcard hack settles that).
+  const kept = shelfLedgers().filter((k) => !INDEXED.some((e) => sameAddresses(e.addresses, k.addresses)));
   for (const l of INDEXED) toc.append(ledgerEl(l, false));
   for (const l of kept) toc.append(ledgerEl(l, true));
 }
@@ -615,7 +697,12 @@ function renderAppendix(part) {
 const shortAddr = (a) => `${a.slice(0, 6)}…${a.slice(-4)}`;
 function ledgerEl(ledger, isKept) {
   const row = document.createElement('a');
-  row.className = 'toc-entry under-book';
+  // A filed ledger steps in under the one it was filed under, the way a
+  // section listed beneath its chapter does. Its parent is a row of its own
+  // above it -- openable, holding every member beneath it -- so the indent
+  // is all the nesting needs to say.
+  row.className = 'toc-entry under-book' + (ledger.depth ? ' filed' : '');
+  if (ledger.depth) row.style.setProperty('--file-depth', String(ledger.depth));
   // A row here names a ledger, so it opens the ledger -- its title leaf,
   // where the compendium's descent into the passages begins. (An address
   // searched for is a passage, and the search page opens it as one, with
@@ -624,7 +711,13 @@ function ledgerEl(ledger, isKept) {
   // the size of the Coldcard hack's joined whole outgrows what a server
   // will take for a URI. A kept ledger resolves only from this reader's
   // own shelf, so its list rides whole and the link still carries the set.
-  row.href = `./bitcoin-ledger.html?address=${isKept ? ledger.addresses.join(',') : ledger.addresses[0]}&page=ledger`;
+  // A ledger the reader filed under a name of their own is named by that
+  // name: `?ledger=Coldcard hack/wave 3` says what it is, survives the set
+  // changing, and keeps a parent's 221 members out of a URI. Only this
+  // reader's shelf resolves it, which is exactly what a kept ledger is.
+  row.href = `./bitcoin-ledger.html?${isKept && ledger.title
+    ? `ledger=${encodeURIComponent(ledger.title)}`
+    : `address=${isKept ? ledger.addresses.join(',') : ledger.addresses[0]}&page=ledger`}`;
   const t = document.createElement('span');
   t.className = 'toc-title';
   if (isKept) {
@@ -636,7 +729,7 @@ function ledgerEl(ledger, isKept) {
   // what a row prints. Ledgers kept before that was asked of them fall back
   // to their first address, the same stand-in name the Ledger page gives
   // them -- a name in the title column, never a citation in the reference's.
-  t.append(document.createTextNode(ledger.title || shortAddr(ledger.addresses[0])));
+  t.append(document.createTextNode(ledger.leaf || ledger.name || ledger.title || shortAddr(ledger.addresses[0])));
   const r = document.createElement('span');
   r.className = 'toc-ref none';
   r.textContent = '—';
@@ -827,7 +920,7 @@ function render() {
     const stranded = unresolved();
     if (stranded.length) {
       toc.append(head('toc-vol', 'Unresolved'));
-      for (const e of stranded) toc.append(entryEl(e, false));
+      for (const e of stranded) toc.append(entryEl(e));
     }
   }
   renderTurns(list);
@@ -1086,7 +1179,9 @@ const bookmarks = allBookmarks.filter((b) => !overridingKeys.has(bmKey(b)));
 const entries = () => [
   ...places().filter((p) => !p.address && !p.script).map((p) => {
     const bm = bmForPlace(p);
-    return { ...p, title: (bm && bm.title) || placeTitle(p), bookmark: bm ? true : undefined,
+    // The filed form of the name: an entry kept in several places files its
+    // own places, each row printing what `as` calls it (btc-notables.js).
+    return { ...p, title: (bm && bm.title) || placeFiling(p), bookmark: bm ? true : undefined,
       commentary: p.entry.commentary,
       place: placements.get(placeKey(p)), tried: placements.has(placeKey(p)) };
   }),
@@ -1159,7 +1254,7 @@ async function loadQueue() {
   // head's count and the rows beneath it cannot disagree.
   const projVsize = queue.blocks ? queue.blocks.reduce((sum, b) => sum + b.blockVSize, 0) : 0;
   queueDepth = Math.max(1, Math.ceil((queue.summary ? queue.summary.vsize : projVsize) / MVB));
-  projectedSection = buildQueue(queue);
+  projectedSection = buildQueue(queue, { group: 'Provisional blocks' });
   render();
 }
 
