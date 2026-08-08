@@ -70,6 +70,8 @@ const SHELL = [
   './btc-citation.js',
   './btc-contents.js',
   './btc-mempool.js',
+  './btc-mines.js',
+  './btc-projected.js',
   './btc-toc.css',
   './btc-pages.js',
   './btc-index.js',
@@ -78,6 +80,8 @@ const SHELL = [
   './btc-ots.js',
   './btc-proofs.js',
   './btc-fontscale.js',
+  './btc-lastread.js',
+  './btc-path.js',
   // The illumination layer (issue #73) and the two modules it pulls: the
   // control panel its in-page widget builds, and the generated glyph
   // outlines it starts each vine's growth along. All three are imported
