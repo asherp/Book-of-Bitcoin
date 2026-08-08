@@ -21,22 +21,51 @@ import { readFile } from 'node:fs/promises';
 const book = await readFile(new URL('../web/bitcoin-book.html', import.meta.url), 'utf8');
 const appendix = await readFile(new URL('../web/bitcoin-appendix.html', import.meta.url), 'utf8');
 
+// The rankings' row-building block, from where the leaf decides which
+// ranking it is showing to where it hands the list to the screen.
+const RANK_END = 'addEventListener(\'pagehide\', stop)';
+const rankRows = appendix.slice(appendix.indexOf('const byValue = QUEUE ==='),
+  appendix.indexOf(RANK_END) + RANK_END.length);
+
 test('a ranked transaction is a door, and it reads as a reference', () => {
-  const rows = appendix.slice(appendix.indexOf('const byValue = QUEUE ==='),
-    appendix.indexOf("el.classList.remove('hidden')", appendix.indexOf('const byValue = QUEUE ===')));
-  assert.match(rows, /createElement\('a'\)/, 'the reference cell is an anchor, not a dead span');
-  assert.match(rows, /id\.href = `\.\/bitcoin-book\.html\?txid=\$\{t\.txid\}`/,
+  assert.match(rankRows, /createElement\('a'\)/, 'the reference cell is an anchor, not a dead span');
+  assert.match(rankRows, /id\.href = `\.\/bitcoin-book\.html\?txid=\$\{t\.txid\}`/,
     'the whole txid travels — a shortened one addresses nothing');
   // The book prints no txid a reader would have to squint at. The chapter is
-  // named and the transaction is seated, so the cell reads like every other
-  // citation in the book: a place, not an identifier.
-  assert.match(rows, /id\.textContent = `\$\{alpha\} §\$\{\(t\.seat \+ 1\)/,
-    'the cell reads chapter and §section');
-  assert.match(rows, /const alpha = queueLabel\(1\)/,
-    'and the chapter is named where the book names it, not spelled again here');
-  assert.doesNotMatch(rows, /t\.txid\.slice/, 'no part of a txid is shown');
-  assert.doesNotMatch(rows, /id\.title = `\$\{t\.txid\}/, 'nor hidden in the hover');
+  // cited as the chapter view's own eyebrow cites it and the transaction is
+  // seated, so the cell reads like every other citation in the book: a place,
+  // not an identifier.
+  assert.match(rankRows, /□\$\{chapter\.toLocaleString\('en-US'\)\} `\}§\$\{\(t\.seat \+ 1\)/,
+    'the cell reads □chapter §section');
+  assert.match(rankRows, /chapter == null \? '' :/,
+    'and prints half a reference rather than a wrong one while the tip is unknown');
+  assert.doesNotMatch(rankRows, /t\.txid\.slice/, 'no part of a txid is shown');
+  assert.doesNotMatch(rankRows, /title = `\$\{t\.txid\}/, 'nor hidden in the hover');
   assert.match(appendix, /a\.bb-ref:hover/, 'and the cell reads as something to press');
+});
+
+test('the seats are kept in step with the queue, not printed once', () => {
+  // A §section number is a claim about where a transaction sits now. The
+  // queue reseats constantly, so the feed is held open and every frame
+  // repaints — otherwise the leaf would be citing a seat the book has
+  // already moved.
+  assert.match(rankRows, /const stop = watchAlpha\(\{/, 'the feed is watched, not read once');
+  assert.match(rankRows, /onReading: \(snap\) => \{/, 'and each frame comes back to the leaf');
+  assert.match(rankRows, /addEventListener\('pagehide', stop\)/, 'and the socket goes when the page does');
+  // Reordering by moving the existing nodes, not rebuilding them: a renumber
+  // every few seconds must not blink the table or drop a hover.
+  assert.match(rankRows, /const seats = new Map\(\);/, 'rows are held by txid');
+  assert.match(rankRows, /el\.append\(row\.node\);/, 'and moved into place rather than recreated');
+  assert.match(rankRows, /if \(row\.id\.textContent !== ref\)/, 'a seat that did not move is not rewritten');
+  // A dropped feed must not blank rows that are still on screen.
+  assert.match(rankRows, /if \(last\) return;\s*\/\/ the feed dropped mid-reading/,
+    'a mid-reading failure leaves the table standing');
+});
+
+test('the chapter the seats are cited in follows the tip', () => {
+  assert.match(rankRows, /volumeBookChapter\(tip \+ 1\)\.chapter/,
+    'the draft is the chapter past the tip');
+  assert.match(rankRows, /onTip: setTip/, 'and a mined block renames it without a reload');
 });
 
 test('an unconfirmed transaction is rerouted, not dead-ended', () => {

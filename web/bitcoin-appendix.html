@@ -543,7 +543,7 @@ import { toSuperscript } from './btc-sigla.js';
 // their own unit -- through the one call every printed amount goes through.
 import { formatAmount, formatBtc, amountUnit, setDayPrice } from './btc-amounts.js';
 import { usdOn } from './btc-price.js';
-import { readAlpha } from './btc-projected.js';
+import { watchAlpha, keptAlpha } from './btc-projected.js';
 
 // ── One appendix, given a leaf of its own ─────────────────────────────────
 // The contents lists what each appendix holds; this is where an appendix
@@ -1226,9 +1226,12 @@ if (kind === 'mempool' && QUEUE === null) {
 // that is a forecast rather than a backlog, so its figures are the ones worth
 // printing. They come off the REST API for nothing; the rankings need the
 // whole of the block's contents, which is a websocket and about 600 KB
-// (btc-projected.js). One reading serves both rankings -- it is taken once,
-// reduced to the heads of the two lists, and kept for the sideways turn
-// between them.
+// (btc-projected.js). That feed is then held rather than dropped, because
+// the rows print §section numbers and the queue renumbers its sections every
+// few seconds -- the deltas are a few hundred bytes each, and they are what
+// keeps a printed reference true. The heads of the two lists are kept for the
+// sideways turn between them, so the second leaf paints before its own socket
+// has opened.
 if (QUEUE) {
   (async () => {
     const sub = $('appx-subtitle');
@@ -1262,55 +1265,106 @@ if (QUEUE) {
       return;
     }
 
-    // The two rankings. Both read the same snapshot.
-    say('reading the queue…');
-    const snap = await readAlpha();
-    if (!snap) {
-      say('the next chapter\'s transactions could not be read just now',
-        'this ranking comes over a websocket, which no mirror serves as an ordinary request — '
-        + 'nothing here is guessed at in its absence');
-      return;
-    }
-    const byValue = QUEUE === 'amount';
-    const rows = byValue ? snap.byAmount : snap.bySize;
-    const when = new Date(snap.readAt * 1000).toISOString().slice(11, 16);
-    say(`the largest ${rows.length.toLocaleString('en-US')} of ${snap.n.toLocaleString('en-US')} · read at ${when} UTC`,
-      `${credit}. The whole of the next chapter is ${snap.n.toLocaleString('en-US')} transactions, `
-      + `${formatBtc(snap.value)} moved across ${(snap.vsize / MVB).toFixed(3)} MvB; these are its largest by `
-      + `${byValue ? 'what they move' : 'what they weigh'}.`);
-
+    // The two rankings, kept in step with the queue rather than read once.
+    //
     // Set as the ballot's rows are: a name on the left, its figure on the
     // right. The name is a reference, not an identifier -- the book prints no
     // txid a reader would have to squint at, and there is no reason for one
-    // here. A draft chapter is named (alpha) and its transactions are seated
-    // (§n, template order), so "alpha §5" says where this sits as exactly as
-    // a mined chapter's citation says where a written one does. The txid
+    // here. A draft chapter is cited the way the chapter view's own eyebrow
+    // cites it, □ for a block consensus has numbered and nobody has written,
+    // and its transactions are seated in template order, so "□531 §5" places
+    // this exactly as a mined chapter's ■531 §5 places a written one. The txid
     // travels in the href, where the machine reads it and the reader does not.
     //
-    // The number is the snapshot's, and the subtitle above says when the
-    // snapshot was taken. The queue reshuffles; a §5 read a minute ago may be
-    // §6 by the time it is pressed. That costs nothing: the door is the txid,
-    // so it lands on the transaction either way, and the book renumbers the
-    // section live once the reader is standing on it.
-    const alpha = queueLabel(1);
+    // And the numbers move, so the rows move with them: every arrival that
+    // pays better than a row takes a seat in front of it, and the §number a
+    // leaf printed a minute ago is not the one the book would print now. The
+    // feed stays open (btc-projected.js) and each frame renumbers what is on
+    // screen. Rows are matched by txid and reordered in place rather than
+    // rebuilt, so a renumber does not blink the table or drop a hover.
+    const byValue = QUEUE === 'amount';
     const el = $('bip-blocks');
-    for (const t of rows) {
-      const row = document.createElement('div');
-      row.className = 'bb-row';
-      const id = document.createElement('a');
-      id.className = 'bb-ref';
-      id.href = `./bitcoin-book.html?txid=${t.txid}`;
-      id.textContent = `${alpha} §${(t.seat + 1).toLocaleString('en-US')}`;
-      id.title = `${formatBtc(t.value)} across ${t.vsize.toLocaleString('en-US')} vB`
-        + `${t.fee == null ? '' : `, paying ${formatBtc(t.fee)} in fees`}`
-        + ` — where the queue seats it now, in the draft it would be written into`;
-      const fig = document.createElement('span');
-      fig.className = 'bb-fees';
-      fig.textContent = byValue ? formatAmount(t.value) : `${t.vsize.toLocaleString('en-US')} vB`;
-      row.append(id, fig);
-      el.append(row);
-    }
-    el.classList.remove('hidden');
+    const seats = new Map();   // txid -> the row already on screen
+    let chapter = null;        // the draft's chapter number, once the tip is known
+
+    const paint = (snap) => {
+      const rows = byValue ? snap.byAmount : snap.bySize;
+      const when = new Date(snap.readAt * 1000).toISOString().slice(11, 16);
+      say(`the largest ${rows.length.toLocaleString('en-US')} of ${snap.n.toLocaleString('en-US')} · read at ${when} UTC`,
+        `${credit}. The whole of the next chapter is ${snap.n.toLocaleString('en-US')} transactions, `
+        + `${formatBtc(snap.value)} moved across ${(snap.vsize / MVB).toFixed(3)} MvB; these are its largest by `
+        + `${byValue ? 'what they move' : 'what they weigh'}. The seats renumber as the queue reshuffles.`);
+      const here = new Set();
+      for (const t of rows) {
+        here.add(t.txid);
+        let row = seats.get(t.txid);
+        if (!row) {
+          const node = document.createElement('div');
+          node.className = 'bb-row';
+          const id = document.createElement('a');
+          id.className = 'bb-ref';
+          id.href = `./bitcoin-book.html?txid=${t.txid}`;
+          const fig = document.createElement('span');
+          fig.className = 'bb-fees';
+          node.append(id, fig);
+          row = { node, id, fig };
+          seats.set(t.txid, row);
+        }
+        // The chapter is unknown until the tip lands, and a reference missing
+        // half of itself is worse than one that waits: until then the seat
+        // stands alone.
+        const ref = `${chapter == null ? '' : `□${chapter.toLocaleString('en-US')} `}§${(t.seat + 1).toLocaleString('en-US')}`;
+        if (row.id.textContent !== ref) row.id.textContent = ref;
+        row.id.title = `${formatBtc(t.value)} across ${t.vsize.toLocaleString('en-US')} vB`
+          + `${t.fee == null ? '' : `, paying ${formatBtc(t.fee)} in fees`}`
+          + ' — where the queue seats it now, in the draft it would be written into';
+        const fig = byValue ? formatAmount(t.value) : `${t.vsize.toLocaleString('en-US')} vB`;
+        if (row.fig.textContent !== fig) row.fig.textContent = fig;
+        el.append(row.node);   // an element already in the list is moved, not duplicated
+      }
+      for (const [txid, row] of seats) {
+        if (here.has(txid)) continue;   // dropped out of the largest hundred
+        row.node.remove();
+        seats.delete(txid);
+      }
+      el.classList.remove('hidden');
+    };
+
+    // The chapter these seats are cited in is the one past the tip -- so the
+    // tip is asked for once, and the feed's own block announcements keep it
+    // current: a mined block renames the draft, and the listing that follows
+    // renumbers it.
+    let last = null;
+    const setTip = (tip) => {
+      if (tip == null) return;
+      const c = volumeBookChapter(tip + 1).chapter;
+      if (c === chapter) return;
+      chapter = c;
+      if (last) paint(last);
+    };
+    chainTip().then(setTip).catch(() => { /* the seats stand alone */ });
+
+    // A kept reduction paints at once, so a sideways turn between the two
+    // rankings shows rows rather than an empty leaf while the socket opens.
+    say('reading the queue…');
+    const had = keptAlpha();
+    if (had) { last = had; paint(had); }
+
+    const stop = watchAlpha({
+      onTip: setTip,
+      onReading: (snap) => {
+        if (!snap) {
+          if (last) return;   // the feed dropped mid-reading; what is on screen stands
+          say('the next chapter\'s transactions could not be read just now',
+            'this ranking comes over a websocket, which no mirror serves as an ordinary request — '
+            + 'nothing here is guessed at in its absence');
+          return;
+        }
+        last = snap;
+        paint(snap);
+      },
+    });
+    addEventListener('pagehide', stop);
   })().catch((e) => {
     $('appx-subtitle').textContent = 'the queue could not be read just now';
     console.warn('the projected block could not be read —', e);

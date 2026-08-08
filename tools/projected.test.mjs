@@ -11,7 +11,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { txOf, rankTransactions, TOP } from '../web/btc-projected.js';
+import { txOf, rankTransactions, rankSeated, manifestOf, applyDelta, TOP } from '../web/btc-projected.js';
 
 // A row exactly as mempool.space sends one, read off the live socket:
 //   txid, fee, vsize, value, rate
@@ -105,4 +105,68 @@ test('nothing to read is a block of nothing, not a crash', () => {
   const r = rankTransactions([]);
   assert.deepEqual(r, { n: 0, value: 0, vsize: 0, byAmount: [], bySize: [] });
   assert.equal(rankTransactions(null).n, 0);
+});
+
+// ── The manifest, maintained ──────────────────────────────────────────────
+//
+// The seats are what the leaf prints, so the arithmetic that moves them is
+// the arithmetic worth pinning: a removal ahead of a transaction moves it
+// forward, an arrival ahead of it moves it back, and a reference that did not
+// move with them would be a wrong citation rather than a stale one.
+
+const rate = (i, r) => [String(i).padStart(64, 'a'), 500, 200, 1000, r];
+const ids = (m) => m.map((t) => (t ? Number(t.txid.replace(/^a+/, '') || 0) : null));
+
+test('a removal moves everything behind it one seat forward', () => {
+  const m = manifestOf([rate(1, 30), rate(2, 20), rate(3, 10)]);
+  const after = applyDelta(m, { removed: [m[0].txid] });
+  assert.deepEqual(ids(after), [2, 3]);
+  assert.equal(rankTransactions([rate(2, 20), rate(3, 10)]).byAmount[0].seat, 0);
+  // §2 became §1: the leaf that printed §2 a moment ago is now printing a
+  // number the book would disagree with, which is the whole reason the feed
+  // is held open.
+  assert.equal(after.findIndex((t) => t.txid === m[1].txid), 0);
+});
+
+test('an arrival is seated by what it pays, and pushes the rest back', () => {
+  const m = manifestOf([rate(1, 30), rate(2, 10)]);
+  const after = applyDelta(m, { added: [rate(9, 20)] });
+  assert.deepEqual(ids(after), [1, 9, 2], 'seated between the two it outbids and underbids');
+  const tail = applyDelta(m, { added: [rate(9, 5)] });
+  assert.deepEqual(ids(tail), [1, 2, 9], 'a transaction paying less than any of them goes last');
+});
+
+test('a rate change restates a rate without reseating anything', () => {
+  // The backend reseats by sending its own listing; a change frame says only
+  // what a transaction now pays, and guessing a new order from it would put
+  // this page's seats out of step with the book's.
+  const m = manifestOf([rate(1, 30), rate(2, 20)]);
+  const after = applyDelta(m, { changed: [[m[1].txid, 99]] });
+  assert.deepEqual(ids(after), [1, 2]);
+  assert.equal(after[1].rate, 99);
+});
+
+test('a transaction already seated is not seated twice', () => {
+  const m = manifestOf([rate(1, 30), rate(2, 20)]);
+  assert.deepEqual(ids(applyDelta(m, { added: [rate(2, 20)] })), [1, 2]);
+});
+
+test('a hole in the listing holds its seat', () => {
+  // The book's manifest counts every row the socket listed, so a row this
+  // page cannot parse still occupies a §section. It ranks nowhere and shifts
+  // nothing behind it.
+  const m = manifestOf([rate(1, 30), null, rate(3, 10)]);
+  assert.deepEqual(ids(m), [1, null, 3]);
+  const r = rankSeated(m);
+  assert.equal(r.n, 2, 'the hole is ranked nowhere');
+  assert.deepEqual([...r.byAmount].map((t) => t.seat).sort(), [0, 2], 'and the seat behind it is 2, not 1');
+  // And it survives maintenance: the delta neither removes nor counts it.
+  assert.deepEqual(ids(applyDelta(m, { added: [rate(9, 20)] })), [1, null, 9, 3]);
+});
+
+test('an empty or absent delta leaves the manifest exactly as it was', () => {
+  const m = manifestOf([rate(1, 30), rate(2, 20)]);
+  assert.equal(applyDelta(m, null), m);
+  assert.deepEqual(ids(applyDelta(m, {})), [1, 2]);
+  assert.deepEqual(applyDelta(null, { added: [rate(1, 5)] }), []);
 });
