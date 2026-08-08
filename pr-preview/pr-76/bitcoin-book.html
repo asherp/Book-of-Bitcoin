@@ -4522,12 +4522,28 @@ let currentIllumHandle = null;
 // page turn.
 let currentIllumOpts = null;
 let illumEnabled = true;
+// A count is not a sigil. Much of the notation's numeric apparatus is marked
+// up exactly like a mark -- a direct push's own mark IS its byte count (see
+// pushToken in btc-prose.js: ⁶⁹, ⁶⁵ as .op.op-count), and the bit counts
+// riding ⌘ and ⓪ are .op.op-push spans holding nothing but a superscript
+// numeral. Growing a vine from one of those decorates an annotation as
+// though it were an opcode: the widget staged a bare ⁶⁹ as a sigil of its
+// own, which is what gave it away. Class names won't separate the two (the
+// PUSHDATA arrows ↧ ⇊ ⤋ are .op-push too, and they ARE marks), so the test
+// is on the glyphs: a mark carrying digits and nothing else is apparatus.
+// A mark with no text at all -- the bookmark ribbon, which is an SVG -- is
+// left alone, hence the digit-bearing precondition.
+const NUMERIC_MARK = /^[\s0-9²³¹⁰-⁹₀-₉]+$/;
+const isCountOnly = (el) => {
+  const text = (el.textContent || '').trim();
+  return text !== '' && NUMERIC_MARK.test(text);
+};
 async function illuminateSection(wrap, flow) {
   try {
     illumModule = illumModule || await import('./btc-illumination.js');
-    const seedEls = wrap.querySelectorAll(
+    const seedEls = Array.from(wrap.querySelectorAll(
       '.op, .cfx-gold, .tx-in-cite, .tx-locktime, .hash-bookmark, .tx-witness-ref, .tx-body-lead'
-    );
+    )).filter((el) => !isCountOnly(el));
     const confirmations = (!state.projected && tipHeight !== null) ? tipHeight - state.height + 1 : 0;
     if (currentIllumHandle) { currentIllumHandle.destroy(); currentIllumHandle = null; }
     currentIllumOpts = {
