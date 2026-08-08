@@ -90,6 +90,17 @@ export const params = {
   overflow: 48,             // how far past hostEl's own box a vine may still roam (illuminate())
   maxReachFloor: 80,        // the leash's minimum radius from an anchor (illuminate())
   maxReachMul: 1.8,         // the leash's radius per px of the anchor's own size (illuminate())
+  // ── riding the sigil's own outline ────────────────────────────────────
+  // A vine's opening run traces the letterform it grows from (see the rail
+  // in interpretFrom) before peeling off into the prose. glyphFollowMax
+  // caps how many steps it may spend there -- a closed contour would
+  // otherwise carry it all the way round and back onto its own trail;
+  // glyphClearanceMul is how near (in step-lengths) its own earlier trail
+  // has to come before it counts as about to cross itself; glyphDepartDeg
+  // is how sharply it turns away from the letter when it does leave.
+  glyphFollowMax: 26,
+  glyphClearanceMul: 0.9,
+  glyphDepartDeg: 52,
   // the body-text size step/leaf drawing were tuned at. illuminate() scales
   // step, leaf size, overflow and maxReachFloor by (the reader's current
   // body size / this) -- see geometryScale below -- so the decoration stays
@@ -246,32 +257,6 @@ function tangentAngles(px, py, rect) {
   return [axis, axis + Math.PI];
 }
 
-// The direction an SVG path is running in wherever it passes closest to
-// (x, y) -- both in whatever coordinate space `d`'s own numbers are in.
-// Sampled with the browser's own path geometry (getPointAtLength) rather
-// than parsed by hand, on a <path> that is never attached to the document;
-// that works in every engine this app targets, so there's no DOM cost to
-// pay for an answer only measureAnchors' glyphTangent (below) needs once
-// per anchor, at layout time.
-function tangentAlongPath(d, x, y) {
-  const path = svgEl('path', { d });
-  const len = path.getTotalLength();
-  if (!(len > 0)) return null;
-  const SAMPLES = 48;
-  let bestT = 0, bestDist = Infinity;
-  for (let i = 0; i <= SAMPLES; i++) {
-    const t = (i / SAMPLES) * len;
-    const p = path.getPointAtLength(t);
-    const dist = (p.x - x) ** 2 + (p.y - y) ** 2;
-    if (dist < bestDist) { bestDist = dist; bestT = t; }
-  }
-  const eps = Math.max(len / 500, 0.001);
-  const p0 = path.getPointAtLength(Math.max(0, bestT - eps));
-  const p1 = path.getPointAtLength(Math.min(len, bestT + eps));
-  if (p0.x === p1.x && p0.y === p1.y) return null;   // a single-point path -- no direction to read
-  return Math.atan2(p1.y - p0.y, p1.x - p0.x);
-}
-
 // Where a seed element's FIRST glyph actually puts ink, in host space.
 //
 // Not the same box as the element's own -- and the difference is not small.
@@ -311,28 +296,85 @@ function glyphInkBox(el, r) {
   } catch (_) { return null; }
 }
 
-// The seed's own glyph, traced where growth is about to start from it. The
-// outline is a unit square (see sigla-outlines.js) and the glyph's measured
-// ink box (above) is the map back to host space -- no font-size factor to
-// carry separately, since that box is already the size the browser rendered
-// this exact character at. An anchor sitting outside the ink box (the edge
-// point is taken on the span's larger box, so it can land in the leading)
-// simply reads the tangent at the nearest point of the letter to it, which
-// is the same question asked from slightly further away.
+// A glyph's outline, sampled into plain polylines in the unit square it was
+// stored in -- one per subpath, since a letter is rarely one closed curve (β
+// has an outer contour and two counters, and sampling straight across the
+// jump between them would invent a segment that crosses the letter). Cached
+// per character: the sampling is the expensive part and does not depend on
+// the size the glyph happens to be drawn at, which is pure arithmetic
+// applied afterwards (see railFor).
+const unitContourCache = new Map();
+function unitContours(ch, d) {
+  if (unitContourCache.has(ch)) return unitContourCache.get(ch);
+  const SAMPLES = 220;
+  const out = [];
+  for (const sub of d.split(/(?=M)/).filter((s) => s.trim())) {
+    const path = svgEl('path', { d: sub });
+    const len = path.getTotalLength();
+    if (!(len > 0)) continue;
+    const pts = [];
+    for (let i = 0; i < SAMPLES; i++) {
+      const p = path.getPointAtLength((i / SAMPLES) * len);
+      pts.push({ x: p.x, y: p.y });
+    }
+    out.push(pts);
+  }
+  unitContourCache.set(ch, out);
+  return out;
+}
+
+// The rail a vine rides out of its sigil: the contour of that sigil's own
+// first glyph, in host space, plus where on it to start and which way round
+// to go. interpretFrom walks this for its opening run, so growth leaves the
+// mark by tracing the letterform rather than merely setting off at a
+// tangent to it.
+//
+// The outline is a unit square (see sigla-outlines.js) and the glyph's
+// measured ink box (above) is the map back to host space -- no font-size
+// factor to carry separately, since that box is already the size the
+// browser rendered this exact character at. Of the letter's contours the
+// nearest to the start point wins (the outer one, for a mark growing off
+// its edge); an anchor sitting outside the ink box -- the edge point is
+// taken on the span's larger box, so it can land in the leading -- simply
+// joins the letter at its closest point, the same question asked from
+// slightly further away.
 //
 // Returns null -- for measureAnchors to fall back to the sigil's plain
 // bounding-box edge -- when the character has no outline (not every mark in
 // the notation does, and none of the composite marks' non-leading
 // codepoints do; see extract.mjs) or its ink can't be measured.
-function glyphTangent(el, r, hostX, hostY) {
+function railFor(el, r, hostX, hostY, outward) {
   if (!(r.w > 0) || !(r.h > 0)) return null;
   const ch = Array.from(el.textContent || '')[0];
   const d = ch && SIGLA_OUTLINES[ch];
   if (!d) return null;
   const box = glyphInkBox(el, r);
   if (!box) return null;
-  const u = (hostX - box.x) / box.w, v = (hostY - box.y) / box.h;
-  return tangentAlongPath(d, u, v);
+
+  let best = null;
+  for (const unit of unitContours(ch, d)) {
+    const pts = unit.map((p) => ({ x: box.x + p.x * box.w, y: box.y + p.y * box.h }));
+    let bi = 0, bd = Infinity;
+    for (let i = 0; i < pts.length; i++) {
+      const dist = (pts[i].x - hostX) ** 2 + (pts[i].y - hostY) ** 2;
+      if (dist < bd) { bd = dist; bi = i; }
+    }
+    if (!best || bd < best.dist) best = { pts, startIdx: bi, dist: bd };
+  }
+  if (!best || best.pts.length < 3) return null;
+
+  const { pts, startIdx } = best;
+  const N = pts.length;
+  // Which way round the contour continues most nearly outward -- the same
+  // question, and the same answer, the plain bounding-box fallback settles
+  // with tangentAngles.
+  const at = (i) => pts[((i % N) + N) % N];
+  const fwd = Math.atan2(at(startIdx + 2).y - at(startIdx).y, at(startIdx + 2).x - at(startIdx).x);
+  const dir = angleDiff(fwd, outward) <= angleDiff(fwd + Math.PI, outward) ? 1 : -1;
+  const tangent = dir === 1 ? fwd : fwd + Math.PI;
+  let cx = 0, cy = 0;
+  for (const p of pts) { cx += p.x; cy += p.y; }
+  return { pts, startIdx, dir, tangent, cx: cx / N, cy: cy / N };
 }
 
 // One anchor -> a list of finished polylines ({points, leaves}) grown from it.
@@ -370,13 +412,52 @@ export function interpretFrom(symbol, anchor, obstacles, bounds, rng, maxReach =
   const TURN = (params.turnDeg * Math.PI) / 180;
   const JITTER = (params.jitterDeg * Math.PI) / 180;
   const MAX_DEFLECT_TRIES = params.maxDeflectTries;
-  let state = { x: anchor.x, y: anchor.y, angle: anchor.angle };
+  let state = { x: anchor.x, y: anchor.y, angle: anchor.angle, railing: !!anchor.rail, railSteps: 0 };
   const stack = [];
   const segments = [];
   let cur = { points: [{ x: state.x, y: state.y }], leaves: [] };
-  const homeRects = new Set(obstacles.filter((r) => pointInRect(anchor.x, anchor.y, r)));
-  const active = () => (homeRects.size === 0 ? obstacles : obstacles.filter((r) => !homeRects.has(r)));
-  const pruneHomeRects = () => { for (const r of homeRects) if (!pointInRect(state.x, state.y, r)) homeRects.delete(r); };
+  // The sigil's own contour, if this anchor was given one (see railFor):
+  // the opening run rides it, so a vine leaves its mark by tracing the
+  // letterform rather than merely setting off at a tangent to it.
+  const rail = anchor.rail || null;
+  let railIdx = rail ? rail.startIdx : 0;
+  // One step's worth of travel along the contour from `idx`, in the
+  // direction this anchor settled on -- accumulating REAL distance between
+  // samples, so a glyph scaled unevenly (the outline is a unit square; the
+  // ink box it maps onto rarely is) still advances by a true step.
+  const advanceRail = (idx, dist) => {
+    const N = rail.pts.length;
+    let i = idx, acc = 0, px = rail.pts[i].x, py = rail.pts[i].y, guard = 0;
+    while (acc < dist) {
+      if (++guard > N) return null;   // walked the whole contour without covering a step
+      i = ((i + rail.dir) % N + N) % N;
+      acc += Math.hypot(rail.pts[i].x - px, rail.pts[i].y - py);
+      px = rail.pts[i].x; py = rail.pts[i].y;
+    }
+    return { idx: i, x: px, y: py };
+  };
+  // Where the vine turns when it leaves the letter: away from the contour's
+  // own middle, so it peels outward into the margin rather than back across
+  // the glyph it just traced.
+  const departAngle = (x, y, tangent) => {
+    const bias = (params.glyphDepartDeg * Math.PI) / 180;
+    const left = tangent - Math.PI / 2;
+    const awayIsLeft = Math.cos(left) * (rail.cx - x) + Math.sin(left) * (rail.cy - y) < 0;
+    return tangent + (awayIsLeft ? -bias : bias);
+  };
+  // The exemption belongs to the BRANCH, not the walk: it says "this line of
+  // growth is legitimately inside these boxes", and only the branch that is
+  // actually inside them can say when it has left. Shared across the whole
+  // walk it is wrong in a way that only shows once growth starts INSIDE a
+  // mark rather than heading straight out of it -- a side shoot that clears
+  // the mark prunes the exemption out from under a stem still tracing the
+  // letter, handing that stem a live obstacle it is standing in the middle
+  // of and can never legally step out of. (Measured: 59 of a symbol's 61
+  // steps died on the spot.) So each branch carries its own set, cloned at
+  // the fork; the parent's survives untouched for when the branch closes.
+  state.home = new Set(obstacles.filter((r) => pointInRect(anchor.x, anchor.y, r)));
+  const active = () => (state.home.size === 0 ? obstacles : obstacles.filter((r) => !state.home.has(r)));
+  const pruneHomeRects = () => { for (const r of state.home) if (!pointInRect(state.x, state.y, r)) state.home.delete(r); };
   // A leash on top of the obstacle/bounds checks: no step, of any kind, may
   // land further than `maxReach` from where this anchor's walk actually
   // started. `bounds` alone doesn't bound this -- it's as wide as the
@@ -396,6 +477,53 @@ export function interpretFrom(symbol, anchor, obstacles, bounds, rng, maxReach =
   for (const ch of symbol) {
     if (ch === 'F') {
       const obs = active();
+      // ── riding the sigil ──────────────────────────────────────────────
+      // While railing, the contour supplies the step outright: no jitter,
+      // no turn, just the letter's own line. It ends the moment continuing
+      // would double back onto the trail already drawn -- a closed contour
+      // carries you all the way round to where you began, and the point of
+      // this run is the letter's shape, not a loop of it -- or when the
+      // step budget, the leash, the bounds or a real obstacle says stop.
+      // Either way the walk keeps its position and turns away from the
+      // glyph (departAngle), then carries on as any other vine does,
+      // finding the prose's edges and following those instead.
+      if (state.railing && rail) {
+        const clear = params.glyphClearanceMul * STEP;
+        const SKIP = 3;   // the trail immediately behind is always "near"; it's the far end that matters
+        const crossesOwnTrail = (x, y) => {
+          for (let k = 0; k < cur.points.length - SKIP; k++) {
+            const p = cur.points[k];
+            if ((p.x - x) ** 2 + (p.y - y) ** 2 < clear * clear) return true;
+          }
+          return false;
+        };
+        const adv = state.railSteps < params.glyphFollowMax ? advanceRail(railIdx, STEP) : null;
+        const ok = adv
+          && withinReach(adv.x, adv.y)
+          && !outOfBounds(adv.x, adv.y, bounds)
+          && !firstBlockingRect(state.x, state.y, adv.x, adv.y, obs)
+          && !crossesOwnTrail(adv.x, adv.y);
+        if (ok) {
+          const ra = Math.atan2(adv.y - state.y, adv.x - state.x);
+          railIdx = adv.idx;
+          state = { ...state, x: adv.x, y: adv.y, angle: ra, railSteps: state.railSteps + 1 };
+          cur.points.push({ x: adv.x, y: adv.y });
+          // Riding the letter means moving about INSIDE the box the mark
+          // occupies -- and a rect the vine is inside but which is not
+          // exempt is a trap it can never step out of (the same geometric
+          // impossibility the home-rect set exists for: the anchor's own
+          // starting rects). The anchor sits just OUTSIDE the mark's box,
+          // so those rects are not home rects; without this the first
+          // railed step walked into the line the mark sits on and the whole
+          // walk died there, 4 points in. Anything the ride legitimately
+          // carries the vine inside of joins the exemption, and is pruned
+          // back to a live obstacle by the ordinary rule the moment the
+          // vine is found outside it again.
+          for (const r of obstacles) if (!state.home.has(r) && pointInRect(adv.x, adv.y, r)) state.home.add(r);
+          continue;
+        }
+        state = { ...state, angle: departAngle(state.x, state.y, state.angle), railing: false };
+      }
       const jitter = (rng() - 0.5) * 2 * JITTER;
       const a = state.angle + jitter;
       const nx = state.x + Math.cos(a) * STEP;
@@ -427,7 +555,7 @@ export function interpretFrom(symbol, anchor, obstacles, bounds, rng, maxReach =
           const tx = state.x + Math.cos(ta) * STEP;
           const ty = state.y + Math.sin(ta) * STEP;
           if (!outOfBounds(tx, ty, bounds) && withinReach(tx, ty) && !firstBlockingRect(state.x, state.y, tx, ty, obs)) {
-            state = { x: tx, y: ty, angle: ta };
+            state = { ...state, x: tx, y: ty, angle: ta };
             cur.points.push({ x: tx, y: ty });
             placed = true;
             break;
@@ -445,7 +573,7 @@ export function interpretFrom(symbol, anchor, obstacles, bounds, rng, maxReach =
             const dx = state.x + Math.cos(da) * STEP;
             const dy = state.y + Math.sin(da) * STEP;
             if (!stepBlocked(state.x, state.y, dx, dy, obs, bounds) && withinReach(dx, dy)) {
-              state = { x: dx, y: dy, angle: da };
+              state = { ...state, x: dx, y: dy, angle: da };
               cur.points.push({ x: dx, y: dy });
               placed = true;
               break;
@@ -454,10 +582,10 @@ export function interpretFrom(symbol, anchor, obstacles, bounds, rng, maxReach =
         }
         if (!placed) { finish(); cur = { points: [{ x: state.x, y: state.y }], leaves: [] }; }
       } else {
-        state = { x: nx, y: ny, angle: a };
+        state = { ...state, x: nx, y: ny, angle: a };
         cur.points.push({ x: nx, y: ny });
       }
-      if (homeRects.size) pruneHomeRects();
+      if (state.home.size) pruneHomeRects();
     } else if (ch === 'L') {
       // A heavily size-boosted symbol forks far more branches than a
       // cramped spot has room for; most die on their very first step and
@@ -485,14 +613,22 @@ export function interpretFrom(symbol, anchor, obstacles, bounds, rng, maxReach =
     } else if (ch === '-') {
       state = { ...state, angle: state.angle - TURN };
     } else if (ch === '[') {
-      stack.push({ state: { ...state }, cur });
+      // A side branch springs OFF the letter rather than along it: the main
+      // stem keeps the rail (restored when this branch closes), the branch
+      // itself grows free from the point it left, which is what makes the
+      // opening run read as one traced line with shoots coming off it.
+      stack.push({ state: { ...state }, cur, railIdx });
       cur = { points: [{ x: state.x, y: state.y }], leaves: [] };
+      // Its own copy of the exemption (see state.home above) -- what this
+      // shoot leaves behind is its business, not the stem's.
+      state = { ...state, railing: false, home: new Set(state.home) };
     } else if (ch === ']') {
       finish();
       const popped = stack.pop();
       if (!popped) continue;
       state = popped.state;
       cur = popped.cur;
+      railIdx = popped.railIdx;
     }
   }
   finish();
@@ -598,14 +734,17 @@ export function measureAnchors(seedEls, hostRect, opts = {}) {
       x = p.x + Math.cos(angle) * 1.5;
       y = p.y + Math.sin(angle) * 1.5;
     }
-    let growthAngle = angle;
+    let growthAngle = angle, rail = null;
     if (mode !== 'top-left' && mode !== 'center') {
-      const outward = (candidates) => angleDiff(candidates[0], angle) <= angleDiff(candidates[1], angle)
-        ? candidates[0] : candidates[1];
-      const t = glyphTangent(el, r, x, y);
-      growthAngle = t !== null ? outward([t, t + Math.PI]) : outward(tangentAngles(x, y, r));
+      rail = railFor(el, r, x, y, angle);
+      if (rail) {
+        growthAngle = rail.tangent;
+      } else {
+        const c = tangentAngles(x, y, r);
+        growthAngle = angleDiff(c[0], angle) <= angleDiff(c[1], angle) ? c[0] : c[1];
+      }
     }
-    return { x, y, angle: growthAngle, size, el };
+    return { x, y, angle: growthAngle, size, el, rail };
   });
 }
 

@@ -46,6 +46,7 @@ export function buildIlluminationControls(root, illum, opts = {}) {
     step: [2, 20, 0.5], turnDeg: [2, 90, 1], jitterDeg: [0, 45, 1],
     maxDeflectTries: [1, 16, 1], leafDedupPx: [0, 12, 0.5], overflow: [0, 120, 2],
     maxReachFloor: [10, 300, 5], maxReachMul: [0.5, 5, 0.1], referenceFontSize: [8, 32, 1],
+    glyphFollowMax: [0, 80, 1], glyphClearanceMul: [0.2, 3, 0.1], glyphDepartDeg: [0, 120, 2],
   };
   const LABELS = {
     branchinessPerGen: 'Branchiness / generation', branchinessCap: 'Branchiness cap',
@@ -54,9 +55,11 @@ export function buildIlluminationControls(root, illum, opts = {}) {
     maxDeflectTries: 'Max deflect tries', leafDedupPx: 'Leaf dedup radius (px)',
     overflow: 'Overflow past box (px)', maxReachFloor: 'Leash floor (px)',
     maxReachMul: 'Leash × sigil size', referenceFontSize: 'Reference font size (px)',
+    glyphFollowMax: 'Ride the sigil (steps)', glyphClearanceMul: 'Self-cross clearance (×step)', glyphDepartDeg: 'Depart angle (deg)',
   };
   const GRAMMAR_KEYS = ['branchinessPerGen', 'branchinessCap', 'branchinessForkThreshold', 'maxSizeBoost'];
-  const TURTLE_KEYS = ['step', 'turnDeg', 'jitterDeg', 'maxDeflectTries', 'leafDedupPx', 'overflow', 'maxReachFloor', 'maxReachMul', 'referenceFontSize'];
+  const TURTLE_KEYS = ['step', 'turnDeg', 'jitterDeg', 'maxDeflectTries', 'leafDedupPx', 'overflow', 'maxReachFloor', 'maxReachMul', 'referenceFontSize',
+  'glyphFollowMax', 'glyphClearanceMul', 'glyphDepartDeg'];
 
   root.innerHTML = `
     <div class="illum-ctl-group">

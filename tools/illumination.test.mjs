@@ -305,3 +305,76 @@ test('resetDerivations() is required for a grammar change to actually take effec
     resetDerivations(); // leave no trace of the temporary grammar for later tests
   }
 });
+
+// ─── riding the sigil's own outline ───────────────────────────────────────
+// The rail is plain geometry once measureAnchors has built it (a polyline in
+// host space, a start index, a direction), so it can be handed to
+// interpretFrom directly here -- no DOM, no font, no glyph parsing. A square
+// contour stands in for a letterform: big enough to ride for several steps,
+// and closed, so following it far enough necessarily returns to the start,
+// which is the case the departure rule exists for.
+function squareRail(size = 40, samplesPerSide = 40) {
+  const pts = [];
+  const push = (x, y) => pts.push({ x, y });
+  for (let i = 0; i < samplesPerSide; i++) push(size * (i / samplesPerSide), 0);
+  for (let i = 0; i < samplesPerSide; i++) push(size, size * (i / samplesPerSide));
+  for (let i = 0; i < samplesPerSide; i++) push(size - size * (i / samplesPerSide), size);
+  for (let i = 0; i < samplesPerSide; i++) push(0, size - size * (i / samplesPerSide));
+  return { pts, startIdx: 0, dir: 1, tangent: 0, cx: size / 2, cy: size / 2 };
+}
+
+test('a railed anchor traces its glyph contour instead of striking out straight', () => {
+  const rail = squareRail();
+  const anchor = { x: 0, y: 0, angle: 0, rail };
+  // Straight 'F's: with no rail this is a horizontal line; with one it has
+  // to turn the contour's first corner.
+  const points = interpretFrom('FFFFFFFFFF', anchor, [], null, noJitterRng, Infinity, 1)
+    .flatMap((s) => s.points);
+  const turned = points.some((p) => p.y > 5);
+  assert.ok(turned, 'growth should have followed the contour around its corner, not run straight');
+  // Every railed point sits on the contour itself (within a sample's width).
+  const onRail = points.slice(0, 6).every((p) =>
+    rail.pts.some((q) => Math.hypot(q.x - p.x, q.y - p.y) < 2));
+  assert.ok(onRail, 'the opening run should lie on the contour');
+});
+
+test('the rail is abandoned before the contour closes back onto its own trail', () => {
+  const rail = squareRail();
+  const anchor = { x: 0, y: 0, angle: 0, rail };
+  // Far more F's than the 160px contour has room for at a 7px step (~23),
+  // so an unguarded rail would lap it and redraw its own opening.
+  const points = interpretFrom('F'.repeat(120), anchor, [], null, noJitterRng, Infinity, 1)
+    .flatMap((s) => s.points);
+  // No point may come back onto the start after the walk has left it.
+  const returned = points.slice(12).filter((p) => Math.hypot(p.x, p.y) < 4).length;
+  assert.equal(returned, 0, 'the walk lapped the contour and closed back onto its own start');
+});
+
+test('params.glyphFollowMax caps the railed run, and 0 disables railing outright', () => {
+  const rail = squareRail();
+  const anchor = { x: 0, y: 0, angle: 0, rail };
+  const original = params.glyphFollowMax;
+  try {
+    params.glyphFollowMax = 0;
+    const free = interpretFrom('FFFFFF', anchor, [], null, noJitterRng, Infinity, 1)
+      .flatMap((s) => s.points);
+    // With no railed steps allowed the very first move is the ordinary one:
+    // the departure turn off the contour, then a straight walk.
+    assert.ok(free.every((p) => Math.abs(p.y) < 1e-9 || p.x !== 0),
+      'with glyphFollowMax 0 the walk should not be tracing the contour');
+    params.glyphFollowMax = 3;
+    const capped = interpretFrom('F'.repeat(40), anchor, [], null, noJitterRng, Infinity, 1)
+      .flatMap((s) => s.points);
+    const onRail = capped.filter((p) => rail.pts.some((q) => Math.hypot(q.x - p.x, q.y - p.y) < 1.5));
+    assert.ok(onRail.length <= 6, `expected the railed run capped near 3 steps, got ${onRail.length} on-contour points`);
+  } finally {
+    params.glyphFollowMax = original;
+  }
+});
+
+test('an anchor with no rail behaves exactly as it did before', () => {
+  const anchor = { x: 0, y: 0, angle: 0 };
+  const points = interpretFrom('FFFFF', anchor, [], null, noJitterRng, Infinity, 1)
+    .flatMap((s) => s.points);
+  assert.ok(points.every((p) => Math.abs(p.y) < 1e-9), 'an unrailed straight run should stay straight');
+});
