@@ -51,10 +51,13 @@
 //
 // ── What is kept ──────────────────────────────────────────────────────────
 //
-// Only the heads of the two lists, a few kilobytes in sessionStorage, written
-// when a full listing arrives. It buys the first paint on a sideways turn
-// between the rankings — rows on screen while the socket opens — and nothing
-// else; the live feed replaces it within a second or two.
+// Only the heads of the two lists, a few kilobytes in sessionStorage. It buys
+// the first paint on a sideways turn between the rankings — rows on screen
+// while the next socket opens — and nothing else; the live feed replaces them
+// within a second or two. Written on the full listing, refreshed at a walking
+// pace as the deltas land, and flushed on the way out, so what the next leaf
+// finds is what this one had on screen when it was left rather than whatever
+// the queue looked like when the page was opened.
 //
 // Every reduction carries the moment it was made, and every surface prints
 // it. A queue is a fact about a moment.
@@ -185,17 +188,29 @@ export function watchAlpha({ url = WS_URL, timeout = 20_000, onReading = () => {
   if (typeof WebSocket === 'undefined') { onReading(null); return () => {}; }
   let ws = null, stopped = false, manifest = null, expectedSeq = null;
   let timer = null, retry = null, answered = false;
+  let latest = null, cachedAt = 0;
+
+  // Kept for the leaf the reader turns to next, so it has rows to show while
+  // its own socket is still opening. Written on the full listing, then at a
+  // walking pace as the deltas land, and once more on the way out -- so what
+  // the next leaf loads is what this one had on screen when it was left, not
+  // whatever the queue looked like when the page was opened. Every frame
+  // would be tens of kilobytes of JSON every couple of seconds, which buys a
+  // freshness nobody is reading.
+  const CACHE_EVERY = 10_000;
+  const keep = () => {
+    if (!latest) return;
+    cachedAt = Date.now();
+    try { sessionStorage.setItem(CACHE_KEY, JSON.stringify(latest)); } catch { /* the next leaf re-reads */ }
+  };
 
   const emit = ({ cache = false } = {}) => {
     if (!manifest) return;
     answered = true;
     if (timer) { clearTimeout(timer); timer = null; }
-    const snap = { ...rankSeated(manifest), readAt: now() };
-    // Kept on the full listing only. The deltas arrive every few seconds and
-    // the cache exists for a first paint, not for freshness -- rewriting tens
-    // of kilobytes on every frame would buy nothing and cost the main thread.
-    if (cache) { try { sessionStorage.setItem(CACHE_KEY, JSON.stringify(snap)); } catch { /* the next leaf re-reads */ } }
-    onReading(snap);
+    latest = { ...rankSeated(manifest), readAt: now() };
+    if (cache || Date.now() - cachedAt >= CACHE_EVERY) keep();
+    onReading(latest);
   };
 
   const subscribe = () => {
@@ -256,6 +271,7 @@ export function watchAlpha({ url = WS_URL, timeout = 20_000, onReading = () => {
   connect();
   return () => {
     stopped = true;
+    keep();   // the last thing seen, left where the next leaf will look for it
     if (timer) clearTimeout(timer);
     if (retry) clearTimeout(retry);
     try { ws?.close(); } catch { /* already gone */ }

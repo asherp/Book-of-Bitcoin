@@ -1,17 +1,19 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //
-// tools/projected.test.mjs — the alpha block's transactions, as the websocket
-// sends them and as the two rankings reduce them. The socket itself is not
-// exercised here (it is network, and belongs to no bare checkout's test run);
-// what is pinned is the parsing and the ranking, which is everything a reader
-// actually reads.
+// tools/projected.test.mjs — the alpha block's transactions: as the websocket
+// sends them, as the deltas move them, and as the two rankings reduce them.
+// No network is touched (a bare checkout's test run reaches nothing), so the
+// feed is driven through a socket the test pushes frames into. What is pinned
+// is the parsing, the seats, and what survives a turn between the leaves —
+// everything a reader actually reads.
 //
 //   node --test tools/projected.test.mjs
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { txOf, rankTransactions, rankSeated, manifestOf, applyDelta, TOP } from '../web/btc-projected.js';
+import { txOf, rankTransactions, rankSeated, manifestOf, applyDelta, watchAlpha, keptAlpha, TOP }
+  from '../web/btc-projected.js';
 
 // A row exactly as mempool.space sends one, read off the live socket:
 //   txid, fee, vsize, value, rate
@@ -169,4 +171,108 @@ test('an empty or absent delta leaves the manifest exactly as it was', () => {
   assert.equal(applyDelta(m, null), m);
   assert.deepEqual(ids(applyDelta(m, {})), [1, 2]);
   assert.deepEqual(applyDelta(null, { added: [rate(1, 5)] }), []);
+});
+
+// ── The handoff ───────────────────────────────────────────────────────────
+//
+// Turning from one ranking to the other opens a fresh socket, and a socket
+// takes a second or two to answer. What fills that second is the reduction
+// the previous leaf left behind — so it has to be the one that leaf had on
+// screen when it was left, not the one it opened with. A snapshot two minutes
+// stale would show seats the book has long since moved.
+
+// A socket that answers only what the test pushes into it, and a store that
+// stands in for sessionStorage.
+function bench() {
+  const store = new Map();
+  const sockets = [];
+  const realWs = globalThis.WebSocket;
+  const realStore = globalThis.sessionStorage;
+  globalThis.sessionStorage = {
+    getItem: (k) => (store.has(k) ? store.get(k) : null),
+    setItem: (k, v) => store.set(k, String(v)),
+    removeItem: (k) => store.delete(k),
+  };
+  globalThis.WebSocket = class {
+    constructor() { sockets.push(this); this.sent = []; queueMicrotask(() => this.onopen && this.onopen()); }
+    send(raw) { this.sent.push(JSON.parse(raw)); }
+    close() { this.onclose && this.onclose(); }
+    push(o) { this.onmessage && this.onmessage({ data: JSON.stringify(o) }); }
+  };
+  return {
+    sockets,
+    restore() {
+      if (realWs === undefined) delete globalThis.WebSocket; else globalThis.WebSocket = realWs;
+      if (realStore === undefined) delete globalThis.sessionStorage; else globalThis.sessionStorage = realStore;
+    },
+  };
+}
+const tick = () => new Promise((r) => setTimeout(r, 0));
+
+test('the reduction left behind is the one the leaf was last showing', async () => {
+  const b = bench();
+  try {
+    const seen = [];
+    const stop = watchAlpha({ onReading: (s) => seen.push(s) });
+    await tick();
+    const ws = b.sockets[0];
+    assert.deepEqual(ws.sent.at(-1), { 'track-mempool-block': 0 }, 'alpha, and nothing deeper');
+
+    const listing = [rate(1, 30), rate(2, 20), rate(3, 10)];
+    ws.push({ 'projected-block-transactions': { index: 0, sequence: 7, blockTransactions: listing } });
+    assert.equal(seen.length, 1);
+    assert.equal(keptAlpha().n, 3, 'the full listing is kept at once');
+
+    // The queue moves while the reader is here: the first transaction goes.
+    ws.push({ 'projected-block-transactions': { index: 0, sequence: 8, delta: { removed: [listing[0][0]] } } });
+    assert.equal(seen.at(-1).n, 2);
+    // The walking-pace refresh will not have fired this soon, so leaving is
+    // what has to carry it -- otherwise the next leaf paints seats that moved
+    // a minute ago.
+    stop();
+    const kept = keptAlpha();
+    assert.equal(kept.n, 2, 'the next leaf finds the queue as it was left');
+    assert.equal(kept.byAmount[0].seat, 0, 'seats and all');
+  } finally { b.restore(); }
+});
+
+test('a frame out of sequence asks for the listing again, and does not renumber', async () => {
+  const b = bench();
+  try {
+    const seen = [];
+    const stop = watchAlpha({ onReading: (s) => seen.push(s) });
+    await tick();
+    const ws = b.sockets[0];
+    ws.push({ 'projected-block-transactions': { index: 0, sequence: 7, blockTransactions: [rate(1, 30), rate(2, 20)] } });
+    const subs = ws.sent.filter((m) => m['track-mempool-block'] === 0).length;
+    ws.push({ 'projected-block-transactions': { index: 0, sequence: 99, delta: { removed: [] } } });
+    assert.equal(seen.length, 1, 'nothing is painted from an order that may have drifted');
+    assert.equal(ws.sent.filter((m) => m['track-mempool-block'] === 0).length, subs + 1, 'the listing is asked for again');
+    stop();
+  } finally { b.restore(); }
+});
+
+test('a socket that never answers is reported once, and only once', async () => {
+  const b = bench();
+  try {
+    const seen = [];
+    const stop = watchAlpha({ onReading: (s) => seen.push(s), timeout: 5 });
+    await tick();
+    b.sockets[0].close();
+    assert.deepEqual(seen, [null], 'the leaf is told, so it can say what it could not read');
+    stop();
+  } finally { b.restore(); }
+});
+
+test('a feed that drops after answering keeps its answer and comes back', async () => {
+  const b = bench();
+  try {
+    const seen = [];
+    const stop = watchAlpha({ onReading: (s) => seen.push(s) });
+    await tick();
+    b.sockets[0].push({ 'projected-block-transactions': { index: 0, sequence: 1, blockTransactions: [rate(1, 30)] } });
+    b.sockets[0].close();
+    assert.deepEqual(seen.map((s) => s && s.n), [1], 'no null follows a reading — the rows on screen stand');
+    stop();
+  } finally { b.restore(); }
 });

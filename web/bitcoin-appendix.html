@@ -1286,6 +1286,11 @@ if (QUEUE) {
     const el = $('bip-blocks');
     const seats = new Map();   // txid -> the row already on screen
     let chapter = null;        // the draft's chapter number, once the tip is known
+    // A virtual size is a quarter of a weight and lands on quarters, so some
+    // are whole and some are not. Always two places: the column is
+    // right-aligned in tabular figures, and a decimal point that comes and
+    // goes puts every whole number one place out of line with its neighbours.
+    const vbytes = (v) => `${v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} vB`;
 
     const paint = (snap) => {
       const rows = byValue ? snap.byAmount : snap.bySize;
@@ -1315,10 +1320,10 @@ if (QUEUE) {
         // stands alone.
         const ref = `${chapter == null ? '' : `□${chapter.toLocaleString('en-US')} `}§${(t.seat + 1).toLocaleString('en-US')}`;
         if (row.id.textContent !== ref) row.id.textContent = ref;
-        row.id.title = `${formatBtc(t.value)} across ${t.vsize.toLocaleString('en-US')} vB`
+        row.id.title = `${formatBtc(t.value)} across ${vbytes(t.vsize)}`
           + `${t.fee == null ? '' : `, paying ${formatBtc(t.fee)} in fees`}`
           + ' — where the queue seats it now, in the draft it would be written into';
-        const fig = byValue ? formatAmount(t.value) : `${t.vsize.toLocaleString('en-US')} vB`;
+        const fig = byValue ? formatAmount(t.value) : vbytes(t.vsize);
         if (row.fig.textContent !== fig) row.fig.textContent = fig;
         el.append(row.node);   // an element already in the list is moved, not duplicated
       }
