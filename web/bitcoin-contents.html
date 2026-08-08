@@ -387,6 +387,22 @@ function entryEl(entry, underBook, parent) {
 function head(cls, label) { const d = document.createElement('div'); d.className = cls; d.textContent = label; return d; }
 function saying(text) { const d = document.createElement('div'); d.className = 'toc-empty'; d.textContent = text; return d; }
 
+// A row for one of the queue's rankings. Set like every other contents row,
+// with one cell left empty: a ranking is not a place in the book, it is a way
+// of reading one, so there is no citation for the right-hand cell to hold.
+// Empty, not a dash -- a dash is what a row whose citation would not resolve
+// wears, and nothing failed here.
+function queueLeafRow(title, at, why) {
+  const row = document.createElement('a');
+  row.className = 'toc-entry';
+  row.href = `./bitcoin-appendix.html?part=mempool&at=${at}`;
+  row.title = why;
+  const t = document.createElement('span'); t.className = 'toc-title'; t.textContent = title;
+  const r = document.createElement('span'); r.className = 'toc-ref';
+  row.append(t, r);
+  return row;
+}
+
 const toc = $('toc');
 // And the mines beside it: one row per pool, names only. Built by loadMines
 // from the archive where the appendix has already counted -- for nothing --
@@ -576,7 +592,14 @@ function renderAppendix(part) {
   // are read on the queue's own leaf, one turn down, where a provisional
   // chapter can say it is provisional.
   if (part.kind === 'mempool') {
+    // The drafts as one group -- they are one thing, the chapters the queue
+    // would fill -- and then the two readings of them, which are leaves of
+    // the same storey and list beside the group rather than inside it.
     if (projectedSection) toc.append(projectedSection);
+    toc.append(queueLeafRow('Sorted by amount', 'amount',
+      'the next chapter\'s transactions, largest first by what they move'));
+    toc.append(queueLeafRow('Sorted by size', 'vbytes',
+      'the next chapter\'s transactions, largest first by what they weigh'));
     return;
   }
   if (part.kind === 'mines') {
@@ -1155,7 +1178,7 @@ async function loadQueue() {
   // head's count and the rows beneath it cannot disagree.
   const projVsize = queue.blocks ? queue.blocks.reduce((sum, b) => sum + b.blockVSize, 0) : 0;
   queueDepth = Math.max(1, Math.ceil((queue.summary ? queue.summary.vsize : projVsize) / MVB));
-  projectedSection = buildQueue(queue);
+  projectedSection = buildQueue(queue, { group: 'Provisional blocks' });
   render();
 }
 

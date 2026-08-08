@@ -208,6 +208,25 @@ a:hover { text-decoration: underline; }
    title the way the ledger leaves name their compendium. */
 .appx-up { display:inline-block; margin-bottom:12px; font:600 10px/1.5 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.14em; text-transform:uppercase; color:var(--meta); }
 .appx-up:hover { color:var(--accent); text-decoration:none; }
+/* The same line where there is nothing above to climb to -- a level naming
+   the one it belongs to, as the book's eyebrow names VOLUME 5 over Book 2. */
+.appx-eyebrow { display:block; margin-bottom:12px; font:600 10px/1.5 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.14em; text-transform:uppercase; color:var(--meta); }
+/* A span leaf, set as the book sets a volume's and a book's own (see
+   bitcoin-book.html, .span-leaf): the level named high on the page, what it
+   holds stated just under the name, and the span it covers alone at the
+   foot, with the whole height of the leaf between them. The queue's leaves
+   are that same kind of page -- a level, and what it covers -- so they wear
+   that dress rather than one of their own, and a reader turning from Volume
+   V onto The Mempool turns onto a page of the same make. */
+.page-head.leaf { border-bottom:none; margin-bottom:0; padding-bottom:6px; }
+.leaf-figures { max-width:46ch; margin:26px auto 0; text-align:center;
+  font:400 15px/1.55 'Newsreader','Book Sigla',serif; color:var(--dim); }
+.leaf-frontis { max-width:46ch; margin:clamp(7rem,24vh,15rem) auto 2.5rem; text-align:center;
+  font:400 14.5px/1.55 'Newsreader','Book Sigla',serif; color:var(--dim); }
+.leaf-figures span, .leaf-frontis span { display:block; }
+.leaf-figures span + span, .leaf-frontis span + span { margin-top:.45em; }
+/* The queue's own marks, gold as the book sets its sigla. */
+.leaf-figures .sig, .leaf-frontis .sig { color:var(--accent); font-weight:600; }
 /* A fork's activation statistics: the same key/value dress the proof picker
    reads results in -- these too are a record being read out. */
 .bip-stats { max-width:56ch; margin:0 auto 6px; font:400 13.5px/1.6 'Public Sans','Book Sigla',sans-serif; color:var(--ink-soft); }
@@ -440,9 +459,13 @@ a.bb-ref:hover { color:var(--accent-2); }
 
   <header class="page-head">
     <a class="appx-up hidden" id="appx-up" href="#"></a>
+    <div class="appx-eyebrow hidden" id="appx-eyebrow"></div>
     <h1 class="appx-title" id="appx-title"></h1>
     <div class="appx-subtitle" id="appx-subtitle"></div>
   </header>
+  <!-- A span leaf's two lines: what this level holds, set just under its
+       name, and the span it covers, set alone at the foot. -->
+  <div class="leaf-figures hidden" id="leaf-figures"></div>
   <p class="appx-note" id="appx-note"></p>
 
   <!-- One block of a ballot (?part=consensus&bip=N&block=H), reprinted as a
@@ -501,6 +524,8 @@ a.bb-ref:hover { color:var(--accent-2); }
     </div>
     <div class="proof-result hidden" id="proof-result"></div>
   </div>
+
+  <div class="leaf-frontis hidden" id="leaf-frontis"></div>
 
   <a class="appx-down" id="appx-down" href="#" aria-label="Down into the appendix">▾</a>
   <nav class="appx-turns" id="appx-turns"></nav>
@@ -580,22 +605,32 @@ const index = APPENDIX.indexOf(part);
 const atParam = String(params.get('at') || '').toLowerCase();
 const mineSlug = kind === 'mines' ? String(params.get('mine') || '').toLowerCase() : '';
 const AT = kind === 'mines' && mineSlug ? (atParam === 'blocks' ? 'blocks' : 'mine') : null;
-// ── The Mempool's own book level ──────────────────────────────────────────
-// The part's leaf stands at the volumes' level, as every appendix does. A
-// storey down -- the level a book occupies in the body -- the queue is read
-// three ways, side by side:
+// ── The Mempool's own storeys ─────────────────────────────────────────────
+// The queue is a volume of the book that no miner has written, and it is
+// built like one. The part's leaf stands at the volumes' level, as every
+// appendix does. A storey down -- where a book stands in the body -- it is
+// read three ways, side by side. A storey below that is the chapters'
+// level: the drafts themselves, which are pages of the book proper
+// (bitcoin-book.html), and then the two rankings' tables, which continue
+// that same run rather than starting one of their own.
 //
-//   ?part=mempool             the part's leaf: the queue entire
-//   ?part=mempool&at=alpha    the next chapter, as itself
-//   ?part=mempool&at=amount   its transactions, by what they move
-//   ?part=mempool&at=vbytes   its transactions, by what they weigh
+//   ?part=mempool                     volume level: the queue entire
+//   ?part=mempool&at=alpha            book  level: the drafts, as a run
+//   ?part=mempool&at=amount           book  level: by what they move
+//   ?part=mempool&at=vbytes           book  level: by what they weigh
+//   …/bitcoin-book.html?block=tip+1   chapter level: alpha, then the rest
+//   ?part=mempool&at=amount&table     chapter level: the ranking itself
+//   ?part=mempool&at=vbytes&table     chapter level: the ranking itself
 //
-// Only alpha is read this closely. It is the one projected block that is a
-// forecast rather than a statement about the queue now, and its contents cost
-// a websocket and 600 KB where the rest would cost five megabytes
-// (btc-projected.js says why at length).
+// Only alpha is read closely enough to rank. It is the one projected block
+// that is a forecast rather than a statement about the queue now, and its
+// contents cost a websocket and 600 KB where the rest would cost five
+// megabytes (btc-projected.js says why at length).
 const QUEUE_LEAVES = ['alpha', 'amount', 'vbytes'];
 const QUEUE = kind === 'mempool' && QUEUE_LEAVES.includes(atParam) ? atParam : null;
+// A ranking's own table, one storey under its title page: the chapters'
+// level, where the drafts themselves are read.
+const TABLE = QUEUE === 'amount' || QUEUE === 'vbytes' ? params.has('table') : false;
 // One fork's own leaf, a level below the part's: ?bip= names it by number,
 // the way the contents' sub-heads link it.
 const bips = part.kind === 'consensus' ? (part.bips || []) : [];
@@ -761,12 +796,13 @@ const hrefFor = (p) => (p.kind === 'ledgers'
 const bipHref = (b) => `./bitcoin-appendix.html?part=consensus&bip=${b.key}`;
 // Appendix I's own leaves, addressed the way every other leaf here is.
 const queueHref = (at) => `./bitcoin-appendix.html?part=mempool&at=${at}`;
+const tableHref = (at) => `${queueHref(at)}&table`;
 // The first of these names a level, not a chapter. The chapters below it are
 // alpha, beta, gamma -- lettered places in a line -- and the page that stands
 // over them has to be called something else, or the storey and its first room
 // answer to the same name. Provisional is what they all are: blocks the queue
 // has drafted and no miner has written.
-const QUEUE_TITLES = { alpha: 'Provisional blocks', amount: 'By amount', vbytes: 'By size' };
+const QUEUE_TITLES = { alpha: 'Provisional blocks', amount: 'Sorted by amount', vbytes: 'Sorted by size' };
 const minesHref = () => './bitcoin-appendix.html?part=mines';
 const mineHref = (slug) => `./bitcoin-appendix.html?part=mines&mine=${encodeURIComponent(slug)}`;
 const mineBlocksHref = (slug) => `${mineHref(slug)}&at=blocks`;
@@ -846,20 +882,25 @@ if (blockLeaf != null) {
   up.href = itemAt ? insHref(ins) : hrefFor(part);
   up.classList.remove('hidden');
 } else if (QUEUE) {
-  // Each of the queue's three readings wears its own name and climbs to the
-  // part above it, the way a fork's leaf climbs to Consensus.
+  // The queue's book level, and the chapter level under it. A title page
+  // wears the span leaf's dress -- the level named, what it holds under the
+  // name, the span it covers at the foot -- because that is what a book's own
+  // leaf is. A table is not a title page: it is the thing itself, so it keeps
+  // the ordinary head and says in its subtitle what it is a reading of.
   $('appx-title').textContent = QUEUE_TITLES[QUEUE];
   $('appx-subtitle').textContent = 'reading…';
+  if (!TABLE) $('appx-subtitle').classList.add('hidden');
+  if (!TABLE) $('appx-title').closest('.page-head').classList.add('leaf');
   const up = $('appx-up');
-  up.textContent = `▴ ${label(part)}`;
-  up.href = hrefFor(part);
+  up.textContent = TABLE ? `▴ ${QUEUE_TITLES[QUEUE]}` : `▴ ${label(part)}`;
+  up.href = TABLE ? queueHref(QUEUE) : hrefFor(part);
   up.classList.remove('hidden');
   up.addEventListener('click', (ev) => {
     if (ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey || ev.button !== 0) return;
     ev.preventDefault();
-    navTo(hrefFor(part), 'drop');
+    navTo(up.href, 'drop');
   });
-  window.__appxAscend = () => navTo(hrefFor(part), 'drop');
+  window.__appxAscend = () => navTo(up.href, 'drop');
 } else if (AT) {
   // One of Appendix I's own leaves. Each wears its name as the title and
   // climbs to whatever holds it -- the two beneath the part climb to the
@@ -883,6 +924,16 @@ if (blockLeaf != null) {
     navTo(head.up, 'drop');
   });
   window.__appxAscend = () => navTo(head.up, 'drop');
+} else if (kind === 'mempool') {
+  // The queue's own leaf stands where a volume's does, so it is set as one:
+  // the appendix's numeral on the eyebrow, the way the book's eyebrow sets
+  // VOLUME 5 over Book 2, and the part's name as the title -- which is the
+  // name the turns either side of it already use.
+  $('appx-eyebrow').textContent = `Appendix ${toRoman(partNumber(APPENDIX, part))}`;
+  $('appx-eyebrow').classList.remove('hidden');
+  $('appx-title').textContent = part.title;
+  $('appx-subtitle').classList.add('hidden');
+  $('appx-title').closest('.page-head').classList.add('leaf');
 } else if (part.family === 'appendix') {
   $('appx-title').textContent = `Appendix ${toRoman(partNumber(APPENDIX, part))}`;
   $('appx-subtitle').textContent = part.title;
@@ -973,9 +1024,13 @@ if (kind === 'mines') {
 }
 // The queue's part leaf opens the provisional blocks, a storey down; that
 // page opens the first of them -- alpha, the chapter itself -- which waits on
-// the tip. The two rankings are the floor: what lies under a transaction is
-// the transaction, and it has no citation yet.
+// the tip. A ranking's title page opens its table, which stands at the
+// chapters' level beside the drafts. A table is the floor: what lies under a
+// transaction is the transaction.
 if (kind === 'mempool' && QUEUE === null) firstChapter = queueHref('alpha');
+if (kind === 'mempool' && (QUEUE === 'amount' || QUEUE === 'vbytes')) {
+  firstChapter = TABLE ? null : tableHref(QUEUE);
+}
 $('appx-down').classList.toggle('hidden', !firstChapter);
 if (kind === 'mempool' && QUEUE === 'alpha') {
   chainTip().then((tip) => {
@@ -1035,7 +1090,16 @@ if (bip || ins) {
 // late (setTurns, below); a mine's chapters are the floor and turn nowhere
 // sideways. The queue and the shelf are ordinary parts and turn as parts do.
 const queueAt = QUEUE ? QUEUE_LEAVES.indexOf(QUEUE) : -1;
-const prevTo = blockLeaf != null ? null : QUEUE
+// A table stands at the chapters' level, where the run it belongs to is the
+// drafts themselves. So back of the amount table is the last draft chapter --
+// a page of the book, not of this file -- and the size table follows the
+// amount table, as the tail of that same run. Filled late for the amount
+// table, which has to ask the chain where the drafts end (setQueueTurns).
+const tableTurns = TABLE
+  ? { prev: QUEUE === 'vbytes' ? { href: tableHref('amount'), text: QUEUE_TITLES.amount } : null,
+      next: QUEUE === 'amount' ? { href: tableHref('vbytes'), text: QUEUE_TITLES.vbytes } : null }
+  : null;
+const prevTo = blockLeaf != null ? null : tableTurns ? tableTurns.prev : QUEUE
   ? (queueAt > 0
     ? { href: queueHref(QUEUE_LEAVES[queueAt - 1]), text: QUEUE_TITLES[QUEUE_LEAVES[queueAt - 1]] }
     : { href: hrefFor(part), text: label(part) })
@@ -1053,7 +1117,7 @@ const prevTo = blockLeaf != null ? null : QUEUE
     // neighbour there -- so its one sideways move is back to the shelf.
     : { href: hrefFor(part), text: label(part) })
   : (APPENDIX[index - 1] ? { href: hrefFor(APPENDIX[index - 1]), text: label(APPENDIX[index - 1]) } : null);
-const nextTo = blockLeaf != null ? null : QUEUE
+const nextTo = blockLeaf != null ? null : tableTurns ? tableTurns.next : QUEUE
   ? (queueAt < QUEUE_LEAVES.length - 1
     ? { href: queueHref(QUEUE_LEAVES[queueAt + 1]), text: QUEUE_TITLES[QUEUE_LEAVES[queueAt + 1]] } : null)
   : AT
@@ -1169,20 +1233,58 @@ function statRowOf(key) {
   };
 }
 
+// A span leaf's lines, set as the book's frontispiece sets its own: one
+// figure to a line, centred, each carrying in its hover whatever the line
+// itself does not say. The setter replaces the whole set, so a leaf that
+// reads twice -- once from what it had, once from what it fetched -- does
+// not have to unpick the first reading.
+function leafLines(id) {
+  const el = $(id);
+  return (lines) => {
+    el.replaceChildren();
+    for (const l of (lines || []).filter(Boolean)) {
+      const s = document.createElement('span');
+      if (l.mark) {
+        const m = document.createElement('span');
+        m.className = 'sig';
+        m.textContent = l.mark;
+        s.append(m, ` ${l.text}`);
+      } else {
+        s.textContent = l.text;
+      }
+      if (l.title) s.title = l.title;
+      el.append(s);
+    }
+    el.classList.toggle('hidden', !el.childNodes.length);
+  };
+}
+
+// How far the drafted chapters reach: the pageable ones only. The backend's
+// last entry is its own aggregate of everything deeper whenever it runs past
+// what a block can hold, and the book does not page that one either -- so
+// both agree on where the run ends.
+const pageableDrafts = (blocks) => (Array.isArray(blocks)
+  ? blocks.filter((b, i) => i < blocks.length - 1 || b.blockVSize <= 1.05 * MVB).length
+  : 0);
+const draftSpan = (tip, reach) => (reach <= 1
+  ? expectedReference(tip + 1)
+  : `${expectedReference(tip + 1)} – □${volumeBookChapter(tip + reach).chapter.toLocaleString('en-US')}`);
+
 // ── Appendix I: the queue ─────────────────────────────────────────────────
 //
 // The leaf lists nothing -- listing is the contents' business, and what lies
-// below is the first draft chapter itself. What it states instead is the only
-// thing about a queue worth stating and the one thing no file could hold in
-// advance: how deep it is, and what mining it is expected to pay. Both are
-// mempool.space's, asked of mempool.space alone so the credit is exact -- a
-// count of what one node holds at one moment is that node's claim about its
-// own queue, not a fact about any block that will ever exist.
+// below is the first draft chapter itself. It is set as a volume's own leaf
+// is set, because that is the level it stands at: the chapters it spans
+// under its name, and at the foot the only two things about a queue worth
+// stating that no file could hold in advance -- how much is waiting, and what
+// writing it is expected to pay. Both are mempool.space's, asked of
+// mempool.space alone so the credit is exact: a count of what one node holds
+// at one moment is that node's claim about its own queue, not a fact about
+// any block that will ever exist.
 if (kind === 'mempool' && QUEUE === null) {
-  const setQueue = statRowOf('queue');
-  const setSubsidy = statRowOf('subsidy');
-  const setFees = statRowOf('fees');
-  const setPaid = statRowOf('expected');
+  const setSpan = leafLines('leaf-figures');
+  const setFoot = leafLines('leaf-frontis');
+  setSpan([{ text: '…' }]);
   (async () => {
     // The reader's own notation, honoured before a single amount is set.
     // Only 'usd' asks anything of anyone, and it asks for TODAY's rate --
@@ -1202,66 +1304,96 @@ if (kind === 'mempool' && QUEUE === null) {
     const credit = 'what mempool.space is holding at this moment — that node\'s claim about its own queue, '
       + 'not a fact about any block that will ever exist';
     if (!queue || !queue.summary) {
-      setQueue('could not be read just now',
-        'no mirror answered — the appendix simply ends at the chain tip until one does');
-    } else {
-      const txs = queue.summary.count.toLocaleString('en-US');
-      const deep = queue.blocks ? queue.blocks.length : Math.max(1, Math.ceil(queue.summary.vsize / MVB));
-      setQueue(`${txs} transactions waiting, ${deep} ${deep === 1 ? 'chapter' : 'chapters'} deep`, credit);
+      setSpan([{ text: 'the queue could not be read just now',
+        title: 'no mirror answered — the appendix simply ends at the chain tip until one does' }]);
+      return;
     }
-    if (!rev) { setSubsidy(null); setFees(null); setPaid(null); return; }
-    const over = `over the ${rev.chapters.toLocaleString('en-US')} chapters now queued`;
-    setSubsidy(formatAmount(rev.sats - rev.fees),
-      `${formatBtc(rev.sats - rev.fees)} — what the schedule mints for writing them, ${over}`);
-    setFees(formatAmount(rev.fees),
-      `${formatBtc(rev.fees)} — what the sections in them carry, ${over}. ${credit}.`);
-    setPaid(formatAmount(rev.sats), `${formatBtc(rev.sats)} in all, ${over}. ${credit}.`);
-  })().catch(() => { setQueue(null); setSubsidy(null); setFees(null); setPaid(null); });
+    const reach = pageableDrafts(queue.blocks)
+      || Math.max(1, Math.ceil(queue.summary.vsize / MVB));
+    setSpan([{ text: draftSpan(tip, reach),
+      title: `the chapters the queue would fill — provisional, and renumbered by every block mined. ${credit}` }]);
+    const txs = queue.summary.count.toLocaleString('en-US');
+    const lines = [{ text: `${txs} transactions waiting`, title: credit }];
+    if (rev) {
+      const over = `over the ${rev.chapters.toLocaleString('en-US')} chapters now queued`;
+      lines.push({ text: `${formatAmount(rev.sats)} expected`,
+        title: `${formatBtc(rev.sats)} in all, ${over} — ${formatBtc(rev.sats - rev.fees)} the schedule mints `
+          + `for writing them and ${formatBtc(rev.fees)} the sections in them carry. ${credit}.` });
+    }
+    setFoot(lines);
+  })().catch(() => { setSpan([]); setFoot([]); });
 }
 
-// ── The queue, read at the book level ─────────────────────────────────────
+// ── The queue's book level, and the chapters under it ─────────────────────
 //
-// The provisional blocks as a level, and alpha's transactions ranked two
-// ways. Alpha stands for the level on its own page -- it is the one draft
-// that is a forecast rather than a backlog, so its figures are the ones worth
-// printing. They come off the REST API for nothing; the rankings need the
-// whole of the block's contents, which is a websocket and about 600 KB
-// (btc-projected.js). That feed is then held rather than dropped, because
-// the rows print §section numbers and the queue renumbers its sections every
-// few seconds -- the deltas are a few hundred bytes each, and they are what
-// keeps a printed reference true. The heads of the two lists are kept for the
-// sideways turn between them, so the second leaf paints before its own socket
-// has opened.
+// Three title pages, each set as a book's own leaf is set -- what the level
+// holds under its name, the span it covers at the foot -- and, one storey
+// down, the two rankings themselves.
+//
+// The drafts' figures come off the REST API for nothing. The rankings need
+// the whole of alpha's contents, which is a websocket and about 600 KB
+// (btc-projected.js), so only the tables pay for it: a title page that
+// summarises a ranking can do it from the same cheap figures the drafts use.
+// That feed is then held rather than dropped, because the rows print §section
+// numbers and the queue renumbers its sections every few seconds -- the
+// deltas are a few hundred bytes each, and they are what keeps a printed
+// reference true. The heads of the two lists are kept for the sideways turn
+// between the tables, so the second paints before its own socket has opened.
 if (QUEUE) {
   (async () => {
     const sub = $('appx-subtitle');
     const say = (t, why = '') => { sub.textContent = t; if (why) sub.title = why; };
+    const setFigures = leafLines('leaf-figures');
+    const setFoot = leafLines('leaf-frontis');
+    if (!TABLE) setFigures([{ text: '…' }]);
     if (amountUnit() === 'usd') setDayPrice(await usdOn(Math.floor(Date.now() / 1000)));
     else setDayPrice(null);
     const credit = 'mempool.space\'s reading of its own queue at this moment — not a fact about any '
       + 'block that will ever exist, and true only while the queue holds';
 
-    if (QUEUE === 'alpha') {
+    // A title page: the level's own figures, and the chapters it covers.
+    // Every one of these is a reading of the same cheap queue call.
+    if (!TABLE) {
       const tip = await chainTip();
       const queue = await readQueue(tip, ['https://mempool.space/api']);
       const first = queue?.blocks?.[0];
-      if (!first) { say('the queue could not be read just now'); return; }
-      // The head names the level now, so the subtitle names which of them
-      // these figures belong to: the first, and the only one that is a
-      // forecast rather than a backlog. Its name comes from the same place
-      // the chapter's own head takes it (btc-mempool.js), so the storey and
-      // the room below it cannot come to disagree.
-      const alpha = queueLabel(1);
-      say(tip == null ? `${alpha}, the next chapter, if the queue holds`
-        : `${expectedReference(tip + 1)} — ${alpha}, the next chapter, if the queue holds`, credit);
-      const set = (k) => statRowOf(k);
-      set('sections')(Number(first.nTx).toLocaleString('en-US'),
-        'how many transactions the next chapter would carry');
-      set('weight')(`${(first.blockVSize / MVB).toFixed(3)} MvB`,
-        'virtual size, against the one million vB a block may hold');
-      set('fees')(formatAmount(Number(first.totalFees) || 0),
-        `${formatBtc(Number(first.totalFees) || 0)} — what its sections carry for whoever writes it`);
-      set('median rate')(`${Number(first.medianFee).toFixed(2)} sat/vB`, credit);
+      if (!first || tip == null) { setFigures([{ text: 'the queue could not be read just now' }]); return; }
+      const reach = pageableDrafts(queue.blocks);
+      const alphaRef = expectedReference(tip + 1);
+      const sections = Number(first.nTx).toLocaleString('en-US');
+      if (QUEUE === 'alpha') {
+        // The run entire: how much is drafted, and across how many chapters.
+        // The drafted ones only -- the backend's aggregate tail is the
+        // backlog, which has no order and so is not a chapter of anything.
+        const drafted = queue.blocks.slice(0, reach);
+        const vsize = drafted.reduce((s, b) => s + b.blockVSize, 0);
+        const fees = drafted.reduce((s, b) => s + (Number(b.totalFees) || 0), 0);
+        setFigures([
+          { text: `${reach.toLocaleString('en-US')} ${reach === 1 ? 'chapter' : 'chapters'} drafted`,
+            title: 'what the queue holds in order — the backlog past them has no reliable ordering' },
+          { text: `${(vsize / MVB).toFixed(2)} MvB · ${formatAmount(fees)} in fees`,
+            title: `${formatBtc(fees)} across the drafted chapters. ${credit}` },
+        ]);
+        setFoot([{ text: draftSpan(tip, reach),
+          title: `the chapters these drafts would become, if the queue holds. ${credit}` }]);
+        return;
+      }
+      // A ranking's title page says what it is a ranking OF: alpha entire,
+      // in the measure the table sorts by. The hundred rows themselves are a
+      // storey down, where they cost a socket.
+      const byValue = QUEUE === 'amount';
+      setFigures([
+        { text: `${sections} § in the next chapter`,
+          title: 'how many transactions the next chapter would carry' },
+        byValue
+          ? { text: `${(first.blockVSize / MVB).toFixed(2)} MvB · ${formatAmount(Number(first.totalFees) || 0)} in fees`,
+            title: `${formatBtc(Number(first.totalFees) || 0)} — what its sections carry for whoever writes it. ${credit}` }
+          : { text: `${(first.blockVSize / MVB).toFixed(2)} MvB · ${Number(first.medianFee).toFixed(2)} sat/vB median`,
+            title: `virtual size against the one million vB a block may hold. ${credit}` },
+      ]);
+      setFoot([{ text: `${alphaRef} — ${queueLabel(1)}`,
+        title: `the chapter this ranking reads: the first of the drafts, and the only one that is a forecast `
+          + `rather than a statement about the queue now` }]);
       return;
     }
 
@@ -2958,6 +3090,25 @@ if (!prevTo && !bip && !ins && !QUEUE && AT === null) {
     const a = turnLink(href, `‹ Volume ${toRoman(volume)}`, true);
     turns.prepend(a);   // back is the left-hand turn, whenever it arrives
   }).catch(() => { /* no tip, no way back but the contents */ });
+}
+
+// The amount table's own backward turn, the mirror of the book's forward one
+// (toQueueTable): back of it is the last draft chapter, a page of the book
+// rather than of this file. How many drafts there are is a question for the
+// queue, so this waits on the same answer the book waits on -- and the two
+// count the run the same way (pageableDrafts), so the turn lands exactly
+// where the turn that got here came from.
+if (TABLE && QUEUE === 'amount') {
+  (async () => {
+    const tip = await chainTip();
+    if (tip == null) return;
+    const queue = await readQueue(tip, ['https://mempool.space/api']);
+    const reach = pageableDrafts(queue?.blocks);
+    if (!reach) return;
+    const href = `./bitcoin-book.html?block=${tip + reach}`;
+    window.__appxTurns.prev = href;
+    turns.prepend(turnLink(href, `‹ ${queueLabel(reach)}`, true));
+  })().catch(() => { /* no queue: the way back is the ascent */ });
 }
 
 

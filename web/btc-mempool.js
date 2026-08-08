@@ -163,12 +163,16 @@ function projRange(from, to, tipVolume, underBook = false) {
 // contents sets one: the book spelled out, no β -- that sigil rides the
 // compact tail references alone. The volume joins it only where the queue has
 // crossed out of the tip's own, since no head above these rows names one.
+const head = (cls, label) => {
+  const d = document.createElement('div');
+  d.className = cls;
+  d.textContent = label;
+  return d;
+};
 function bookHead(height, tipVolume) {
   const p = volumeBookChapter(height);
-  const d = document.createElement('div');
-  d.className = 'toc-book';
-  d.textContent = p.volume === tipVolume ? `Book ${p.book}` : `Volume ${toRoman(p.volume)} · Book ${p.book}`;
-  return d;
+  return head('toc-book', p.volume === tipVolume
+    ? `Book ${p.book}` : `Volume ${toRoman(p.volume)} · Book ${p.book}`);
 }
 
 // One projected row, set like every other row in the contents: a name on the
@@ -220,7 +224,7 @@ const BACKLOG = 'etcetera';
 // them. Nothing else. The figures the sources carry are read for two things
 // only -- how many rows there are, and how far the last one reaches -- and
 // then set aside.
-export function buildQueue({ tip, summary, blocks }, lead = null) {
+export function buildQueue({ tip, summary, blocks }, { lead = null, group = null } = {}) {
   const tipVolume = volumeBookChapter(tip).volume;
   const wrap = document.createElement('div');
   if (lead) wrap.append(lead);
@@ -279,6 +283,30 @@ export function buildQueue({ tip, summary, blocks }, lead = null) {
   // for itself, the same rule and for the same reason: a heading over a
   // single row says nothing the row does not.
   const bookOf = (h) => { const p = volumeBookChapter(h); return `${p.volume}.${p.book}`; };
+
+  // Or, where the caller names a group of its own, that name over all of them
+  // and nothing else: the drafts are one thing -- the chapters the queue would
+  // fill -- and on a leaf that lists the rankings beside them, saying so once
+  // is what separates the two. The books go unnamed then, so a row that falls
+  // in a different book from the first says so in its own reference, which is
+  // the rule the Book headings follow anyway: cite what the heading above did
+  // not.
+  if (group) {
+    wrap.append(head('toc-book', group));
+    const firstBook = rows.length ? bookOf(rows[0].height) : null;
+    for (const row of rows) {
+      const sameBook = bookOf(row.height) === firstBook;
+      wrap.append(projEntryEl({
+        ...row,
+        underBook: true,
+        ref: row.to == null
+          ? projRef(row.height, tipVolume, sameBook)
+          : projRange(row.height, row.to, tipVolume, sameBook),
+      }));
+    }
+    return wrap;
+  }
+
   for (let i = 0; i < rows.length;) {
     let j = i + 1;
     while (j < rows.length && bookOf(rows[j].height) === bookOf(rows[i].height)) j++;

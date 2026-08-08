@@ -5035,6 +5035,11 @@ function labelNav() {
       stepNext = { text: `■${volumeBookChapter(state.height + 1).chapter}`, label: `${tr('Next chapter')} (${reference(state.height + 1)})` };
     } else if (!lineEnds) {
       stepNext = { text: `□${volumeBookChapter(state.height + 1).chapter}`, label: `${tr('Next chapter — projected')} (${referenceOf(state.height + 1)})` };
+    } else if (state.projected) {
+      // The last draft, and the run still has somewhere to go: what these
+      // chapters hold, sorted -- the queue's two rankings, which stand at
+      // this level in Appendix I rather than starting a level of their own.
+      stepNext = { text: '₿↓', label: 'Sorted by amount — what the drafts hold, largest first' };
     }
   }
   showBtn('chapter-prev', !!stepPrev);
@@ -5046,7 +5051,9 @@ function labelNav() {
   // key still pages one leaf or section at a time, and this flag is their
   // forward guard (navAvailable) now that the foot buttons no longer stand
   // for it.
-  sectionNextExists = !(lineEnds && idx >= state.txCount - 1);
+  // Past the last draft's last section the walk still has somewhere to go --
+  // the rankings, at this same level -- so forward stays available there.
+  sectionNextExists = !(lineEnds && idx >= state.txCount - 1) || (state.projected && reach > 0);
 
   // The foot bar's own steppers walk the TABLE OF CONTENTS instead: the
   // nearest curated place to either side, in reading order, wrapping through
@@ -5500,6 +5507,7 @@ async function stepTx(direction) {
     setStatus(SPINNER_HTML + tr('reading the mempool…'));
     try {
       if (await stepProjected(newHeight, direction > 0 ? -1 : 'last')) return;
+      if (direction > 0 && projectedReach() > 0) { toQueueTable(); return; }
       setStatus(projectedReach() > 0
         ? 'The projection ends here — deeper chapters are only a backlog, with no reliable order yet.'
         : 'No next block yet — this is the current chain tip.', 'err');
@@ -5545,6 +5553,7 @@ async function stepSectionAcross(direction) {
     setStatus(SPINNER_HTML + tr('reading the mempool…'));
     try {
       if (!(await stepProjected(newHeight, direction > 0 ? 0 : 'last'))) {
+        if (direction > 0 && projectedReach() > 0) { toQueueTable(); return; }
         setStatus(projectedReach() > 0
           ? 'The projection ends here — deeper chapters are only a backlog, with no reliable order yet.'
           : 'No next block yet — this is the current chain tip.', 'err');
@@ -5588,6 +5597,7 @@ async function openLeafAt(height, idx, direction = 0) {
     // never project -- an unwritten book has no leaf).
     if (tipHeight !== null && height > tipHeight && idx === -1) {
       if (!(await stepProjected(height, -1))) {
+        if (direction > 0 && projectedReach() > 0) { toQueueTable(); return; }
         setStatus(projectedReach() > 0
           ? 'The projection ends here — deeper chapters are only a backlog, with no reliable order yet.'
           : 'Not written yet — this is the current chain tip.', 'err');
@@ -5640,6 +5650,14 @@ function toAppendix() {
 function toAppendixLeaf() {
   try { sessionStorage.setItem('glossia-appendix-entrance', 'drop'); } catch {}
   location.href = './bitcoin-appendix.html?part=mempool';
+}
+// Past the last draft chapter the run does not stop -- it goes on into the
+// queue's two rankings, which stand at this same level: alpha, beta, … and
+// then what those drafts hold, sorted. Forward only. Backward off the first
+// draft is the chain tip, as it has always been.
+function toQueueTable() {
+  try { sessionStorage.setItem('glossia-appendix-entrance', 'fwd'); } catch {}
+  location.href = './bitcoin-appendix.html?part=mempool&at=amount&table';
 }
 
 async function goToLevel(direction) {

@@ -17,6 +17,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
+import { readFileSync } from 'node:fs';
 
 const book = await readFile(new URL('../web/bitcoin-book.html', import.meta.url), 'utf8');
 const appendix = await readFile(new URL('../web/bitcoin-appendix.html', import.meta.url), 'utf8');
@@ -175,4 +176,74 @@ test('the left margin names the chapter even when it cannot name the seat', () =
   // chapter was available.
   assert.match(res, /citeBody\.textContent = `§… \.\$\{vout\}`/,
     'the bare form survives only for a transaction in no drafted chapter at all');
+});
+
+// ── The queue's storeys ───────────────────────────────────────────────────
+//
+// The mempool is a volume of the book that no miner has written, and it is
+// built like one: a volume's leaf, three book leaves under it, and the
+// chapters under those. What makes that a structure rather than a set of
+// pages is that each storey's turns land on the right neighbour, so these pin
+// the joins — which are wiring, and fail silently when they break.
+
+test('the queue is three storeys, and each is set as its level is set', () => {
+  // Volume level: the part's own leaf, dressed as a volume leaf — the
+  // appendix numeral on the eyebrow, the part's name as the title, no
+  // subtitle and no rule under it.
+  assert.match(appendix, /\$\('appx-eyebrow'\)\.textContent = `Appendix \$\{toRoman\(partNumber\(APPENDIX, part\)\)\}`/,
+    'the numeral rides the eyebrow, as VOLUME 5 does over Book 2');
+  const volLeaf = appendix.slice(appendix.indexOf("} else if (kind === 'mempool') {"),
+    appendix.indexOf("} else if (part.family === 'appendix') {"));
+  assert.match(volLeaf, /\$\('appx-title'\)\.textContent = part\.title;/, 'and the part\'s name is the title');
+  assert.match(volLeaf, /classList\.add\('leaf'\)/, 'set as a span leaf: no rule under the head');
+  // Book level: three title pages, and the rule that keeps a table off them.
+  assert.match(appendix, /const QUEUE_TITLES = \{ alpha: 'Provisional blocks', amount: 'Sorted by amount', vbytes: 'Sorted by size' \}/);
+  assert.match(appendix, /const TABLE = QUEUE === 'amount' \|\| QUEUE === 'vbytes' \? params\.has\('table'\) : false;/,
+    'a ranking\'s table is a storey of its own, named in the address');
+  assert.match(appendix, /if \(!TABLE\) \$\('appx-title'\)\.closest\('\.page-head'\)\.classList\.add\('leaf'\)/,
+    'a title page is a span leaf; a table is not');
+});
+
+test('the storeys are joined: down one level lands on the next', () => {
+  assert.match(appendix, /if \(kind === 'mempool' && QUEUE === null\) firstChapter = queueHref\('alpha'\);/,
+    'the queue opens the provisional blocks');
+  assert.match(appendix, /firstChapter = TABLE \? null : tableHref\(QUEUE\);/,
+    'a ranking opens its table, and a table is the floor');
+  assert.match(appendix, /firstChapter = `\.\/bitcoin-book\.html\?block=\$\{tip \+ 1\}`/,
+    'and the provisional blocks open the first draft, in the book');
+});
+
+test('the chapters\' run does not stop at the last draft', () => {
+  // Turning right off the last draft used to dead-end in a sentence. The
+  // rankings stand at that same level, so the run continues into them.
+  assert.match(book, /function toQueueTable\(\) \{/);
+  assert.match(book, /location\.href = '\.\/bitcoin-appendix\.html\?part=mempool&at=amount&table';/);
+  const forwards = book.match(/if \(direction > 0 && projectedReach\(\) > 0\) \{ toQueueTable\(\); return; \}/g) || [];
+  assert.equal(forwards.length, 3, 'every way forward past the last draft takes it: chapter, section, and stepper');
+  assert.match(book, /stepNext = \{ text: '₿↓', label: 'Sorted by amount/,
+    'and the stepper says where it goes rather than vanishing');
+  assert.match(book, /\|\| \(state\.projected && reach > 0\)/,
+    'the forward gesture stays available at the last draft\'s last section');
+  // And the mirror: the amount table's back turn is that same chapter,
+  // counted the same way, so the two turns are inverses.
+  assert.match(appendix, /if \(TABLE && QUEUE === 'amount'\) \{/);
+  assert.match(appendix, /const href = `\.\/bitcoin-book\.html\?block=\$\{tip \+ reach\}`;/);
+  assert.match(appendix, /const pageableDrafts = \(blocks\) =>/,
+    'and both count the run by what the book can actually page');
+});
+
+test('the contents groups the drafts and lists the rankings beside them', () => {
+  const contents = readFileSync(new URL('../web/bitcoin-contents.html', import.meta.url), 'utf8');
+  assert.match(contents, /buildQueue\(queue, \{ group: 'Provisional blocks' \}\)/,
+    'the drafts are one group, not one per book');
+  assert.match(contents, /queueLeafRow\('Sorted by amount', 'amount'/);
+  assert.match(contents, /queueLeafRow\('Sorted by size', 'vbytes'/);
+  const rowFn = contents.slice(contents.indexOf('function queueLeafRow'), contents.indexOf('const toc = $('));
+  assert.match(rowFn, /r\.className = 'toc-ref';\s*\n\s*row\.append\(t, r\);/,
+    'and neither carries a reference — a ranking is not a place in the book');
+  assert.doesNotMatch(rowFn, /—/, 'nor the dash a row whose citation failed would wear');
+  // The group heading is a contents heading like any other, so the leaf reads
+  // in the same face and colour a volume's does.
+  const mempool = readFileSync(new URL('../web/btc-mempool.js', import.meta.url), 'utf8');
+  assert.match(mempool, /wrap\.append\(head\('toc-book', group\)\);/);
 });
