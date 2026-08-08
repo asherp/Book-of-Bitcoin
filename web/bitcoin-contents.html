@@ -945,8 +945,11 @@ function renderTurns(list) {
     turns.append(a);
     return a;
   };
-  link(at > 0 ? `‹ ${leafTitle(list[at - 1])}` : '‹ Terms', () => turn(-1), false);
-  link(at < list.length - 1 ? `${leafTitle(list[at + 1])} ›` : 'Preface ›', () => turn(1), true);
+  // The run closes into a ring, so both neighbours are always named: past
+  // Citations, the last of the appendices, is Volume I again.
+  const around = (i) => list[(i + list.length) % list.length];
+  link(`‹ ${leafTitle(around(at - 1))}`, () => turn(-1), false);
+  link(`${leafTitle(around(at + 1))} ›`, () => turn(1), true);
   $('toc-down').setAttribute('aria-label', `Down into ${leafTitle(list[at])}`);
 }
 $('toc-down').addEventListener('click', (ev) => { ev.preventDefault(); descend(); });
@@ -1029,12 +1032,18 @@ function leavePage(href, transform, flag, value = '1') {
 // at both ends -- there is no leaf to either side of it to turn onto, and the
 // way off is the vertical pair: up to the cover, down into the part this leaf
 // is the contents of.
+// The contents' leaves are a ring, not a line. The book's own levels close
+// the same way -- turning back off the cover opens the tip's chapter rather
+// than stopping -- and here the reason is the list itself: the appendices are
+// the volumes' own level continued, so past the last of them is the first of
+// them again. The alternative is two dead ends on a page whose whole business
+// is showing what there is.
 function turn(dir) {
   if (turning) return;
   settled = true;              // the reader has chosen; the URL stops choosing
   const list = leaves();
-  const next = at + dir;
-  if (next < 0 || next >= list.length) return;
+  const next = (at + dir + list.length) % list.length;
+  if (next === at) return;     // a run of one has nowhere to turn
   turnTo(() => { at = next; }, dir, 'x');
 }
 // Up is the cover, which the contents lie under; down is whatever this leaf

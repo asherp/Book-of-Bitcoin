@@ -274,3 +274,22 @@ test('every part of the appendix has an address its own turns can write', () => 
   read.delete('future');   // an alias the reader accepts; nothing is ever addressed by it
   for (const k of read) assert.ok(written.has(k), `PART_QUERY has no address for ${k}`);
 });
+
+test('the contents run closes into a ring', () => {
+  const contents = readFileSync(new URL('../web/bitcoin-contents.html', import.meta.url), 'utf8');
+  const fn = contents.slice(contents.indexOf('function turn(dir) {'), contents.indexOf('function ascend()'));
+  assert.match(fn, /const next = \(at \+ dir \+ list\.length\) % list\.length;/,
+    'past the last leaf is the first, and back off the first is the last');
+  assert.doesNotMatch(fn, /if \(next < 0 \|\| next >= list\.length\) return;/,
+    'neither end stops');
+  // Both neighbours are always named, so no turn advertises a leaf it will
+  // not open -- the ends used to offer the front matter and go nowhere.
+  const turns = contents.slice(contents.indexOf('function renderTurns'), contents.indexOf('function turn(dir) {'));
+  assert.match(turns, /const around = \(i\) => list\[\(i \+ list\.length\) % list\.length\];/);
+  assert.doesNotMatch(turns, /'‹ Terms'/);
+  assert.doesNotMatch(turns, /'Preface ›'/);
+  // The book's own volume level is NOT a ring: the sigla stay behind Volume
+  // I's title page, which is where the front matter hands over.
+  assert.match(book, /location\.href = '\.\/bitcoin-front\.html\?leaf=sigla';/,
+    'the body still turns back into the front matter');
+});
