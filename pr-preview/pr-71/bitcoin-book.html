@@ -1964,6 +1964,21 @@ function renderCitation(citeBody, height, pos, vout) {
   citeBody.append(link);
 }
 
+// The same cell for a prevout the queue has placed but not seated: the
+// chapter, and an open § where the number will go. The whole of it still
+// links -- to the transaction rather than to a coordinate, since that is
+// what is known about it.
+function renderDraftCitation(citeBody, height, txid, vout) {
+  const link = document.createElement('a');
+  link.className = 'cite-section-link';
+  link.href = `?txid=${txid}`;
+  link.textContent = `${referenceOf(height)} §… .${vout}`;
+  link.title = 'go to the draft chapter that holds it';
+  link.addEventListener('click', (e) => { e.preventDefault(); goToTransaction(txid, `out-${vout}`); });
+  citeBody.textContent = '';
+  citeBody.append(link);
+}
+
 // Navigate to a referenced section (the transaction at `index` in the block at
 // `height`) in place, then bring `scrollId` to the top of the page. The two
 // directions mirror each other: following an input's provenance scrolls to the
@@ -2090,13 +2105,22 @@ async function resolveCitations(pending, gen) {
       // drafts it, cited with the expected mark. Neither one prints a txid --
       // a hash is not a reference, and the page keeps every hash where the
       // rest of them live, in the hover label.
-      const place = height !== null ? { height, pos } : await projectedCitation(txid);
+      const place = height !== null ? { height, pos } : await draftPlace(txid);
       if (gen !== renderGen) return null;
       cite.classList.remove('resolving');
-      if (place) {
+      if (place && place.pos !== null) {
         renderCitation(citeBody, place.height, place.pos, vout);
         cite.title = height !== null ? `${txid}:${vout}`
           : `${txid}:${vout} — unmined: cited where the queue drafts it now`;
+      } else if (place) {
+        // The chapter is known and the seat is not: the draft holding it has
+        // not been read, and half a megabyte of it is not worth a section
+        // number. So the reference prints as far as it goes and says where it
+        // stops -- the chapter, then the open §… the output rides on. The
+        // link opens the transaction itself, which is the coordinate that
+        // does not move.
+        renderDraftCitation(citeBody, place.height, txid, vout);
+        cite.title = `${txid}:${vout} — unmined: the queue drafts it into this chapter, at a section it has not settled`;
       } else {
         // Unmined and outside every chapter the queue has drafted: there is
         // no reference to print, so the cell says exactly that.
