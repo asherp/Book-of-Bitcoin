@@ -247,3 +247,30 @@ test('the contents groups the drafts and lists the rankings beside them', () => 
   const mempool = readFileSync(new URL('../web/btc-mempool.js', import.meta.url), 'utf8');
   assert.match(mempool, /wrap\.append\(head\('toc-book', group\)\);/);
 });
+
+test('an ascent from a draft climbs one storey, not two', () => {
+  // Up from a chapter of the body is its book, not its volume. A draft's
+  // book is Provisional blocks, so that is what the ascent lands on — and
+  // the same gesture again goes on to The Mempool, and then to the contents.
+  assert.match(book, /location\.href = '\.\/bitcoin-appendix\.html\?part=mempool&at=alpha';/,
+    'the ascent lands on the leaf that holds the drafts');
+  assert.match(book, /id="ch-appendix-link"[^>]*>Provisional blocks</,
+    'and the crumb offering it says so');
+  // The descent from that leaf is the same move backwards, so the two are
+  // inverses: down opens the first draft, up comes back to the leaf.
+  assert.match(appendix, /firstChapter = `\.\/bitcoin-book\.html\?block=\$\{tip \+ 1\}`/);
+});
+
+test('every part of the appendix has an address its own turns can write', () => {
+  // hrefFor writes ?part=<PART_QUERY[kind]>, and a kind missing from that map
+  // writes ?part=undefined — which the address reader then falls back to the
+  // first part for. The page still renders, so the only symptom is a turn
+  // landing on the wrong leaf. Both halves are pinned here so they cannot
+  // drift apart again.
+  const kinds = (m) => new Set([...(appendix.slice(appendix.indexOf(m), appendix.indexOf('}', appendix.indexOf(m)))
+    .matchAll(/(\w+):\s*'[\w]+'/g))].map((x) => x[1]));
+  const read = kinds('const PARTS = {');
+  const written = kinds('const PART_QUERY = {');
+  read.delete('future');   // an alias the reader accepts; nothing is ever addressed by it
+  for (const k of read) assert.ok(written.has(k), `PART_QUERY has no address for ${k}`);
+});

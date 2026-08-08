@@ -789,7 +789,11 @@ $('toc-link').href = `./bitcoin-contents.html?part=${kind}`;
 // and the pull-down ascend, and the masthead's own name still stands as the
 // running head, saying whose book this is.
 if (ins) document.querySelector('.masthead .home')?.classList.add('hidden');
-const PART_QUERY = { mining: 'mining', consensus: 'consensus', proofs: 'proofs', inscriptions: 'inscriptions' };
+// A part's kind, as the address writes it. Every kind PARTS reads has to
+// appear here or hrefFor writes ?part=undefined -- which the reader of the
+// address then falls back to the first part for, so the page still renders
+// and the mistake shows only as a turn that lands on the wrong leaf.
+const PART_QUERY = { mempool: 'mempool', mines: 'mines', consensus: 'consensus', proofs: 'proofs', inscriptions: 'inscriptions' };
 const hrefFor = (p) => (p.kind === 'ledgers'
   ? './bitcoin-ledger.html'
   : `./bitcoin-appendix.html?part=${PART_QUERY[p.kind]}`);

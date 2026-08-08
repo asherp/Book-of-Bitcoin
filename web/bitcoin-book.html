@@ -1166,7 +1166,7 @@ a.footnote-title.is-asset:hover { color: var(--accent-2, #dcb877); text-decorati
            the crumb as a printed running head brackets its title. A leaf has
            no button, as it has no folio: what is exported is a transaction,
            and a leaf is not one. -->
-      <div class="chapter-num"><button type="button" id="ch-volume-link" class="crumb" title="This volume's page">Volume <span id="ch-volume"></span></button><span id="ch-sep-1"> · </span><button type="button" id="ch-book-link" class="crumb" title="This book's page">Book <span id="ch-book"></span></button><button type="button" id="ch-appendix-link" class="crumb hidden" title="The appendix this draft chapter belongs to">Appendix I</button><span id="ch-chapter-inline"></span></div>
+      <div class="chapter-num"><button type="button" id="ch-volume-link" class="crumb" title="This volume's page">Volume <span id="ch-volume"></span></button><span id="ch-sep-1"> · </span><button type="button" id="ch-book-link" class="crumb" title="This book's page">Book <span id="ch-book"></span></button><button type="button" id="ch-appendix-link" class="crumb hidden" title="The leaf that holds the drafts — Appendix I, the queue's own book level">Provisional blocks</button><span id="ch-chapter-inline"></span></div>
       <button type="button" id="chapter-next" class="chapter-step hidden" aria-label="Next chapter" title="Next chapter"></button>
       <!-- The folio: a section's page number in the chain's running count of
            transactions, at the right end of the running head (see btc-pages.js).
@@ -5743,12 +5743,15 @@ function toAppendix() {
   try { sessionStorage.setItem('glossia-appendix-entrance', 'fwd'); } catch {}
   location.href = './bitcoin-appendix.html?part=mempool';
 }
-// Above a draft chapter is Appendix I's own leaf -- the queue it came out of.
-// The page lifts away and the appendix drops in from above, as an ascent
-// does.
+// Above a draft chapter is the leaf that holds the drafts -- Provisional
+// blocks, the queue's book level -- and not the queue's own leaf a storey
+// above that. An ascent climbs one storey, the way it does everywhere else in
+// the book: up from a chapter of the body is its book, not its volume. From
+// there the same gesture goes on to The Mempool and then to the contents.
+// The page lifts away and the appendix drops in from above, as an ascent does.
 function toAppendixLeaf() {
   try { sessionStorage.setItem('glossia-appendix-entrance', 'drop'); } catch {}
-  location.href = './bitcoin-appendix.html?part=mempool';
+  location.href = './bitcoin-appendix.html?part=mempool&at=alpha';
 }
 // Past the last draft chapter the run does not stop -- it goes on into the
 // queue's two rankings, which stand at this same level: alpha, beta, … and
