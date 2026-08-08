@@ -155,3 +155,24 @@ test('placing a draft costs the manifests in hand first, and is bounded after', 
   assert.match(place, /gen === renderGen \? fetchTxProjection\(txid\) : null/,
     'and a question queued for a page the reader has left is not asked at all');
 });
+
+test('the left margin names the chapter even when it cannot name the seat', () => {
+  // A prevout in a draft this page has not read: the manifest in hand cannot
+  // seat it, and half a megabyte of draft is not worth a section number. The
+  // cell used to print a bare §… — no chapter, no link, nothing to follow.
+  const res = book.slice(book.indexOf('async function resolveCitations'),
+    book.indexOf('const lazyCites = (() => {'));
+  assert.match(res, /await draftPlace\(txid\)/, 'the prevout is placed, not just looked up in hand');
+  assert.match(res, /if \(place && place\.pos !== null\)/, 'an exact seat still reads as a full citation');
+  assert.match(res, /\} else if \(place\) \{/, 'and a chapter without one is its own case');
+  assert.match(res, /renderDraftCitation\(citeBody, place\.height, txid, vout\)/);
+  const draft = book.slice(book.indexOf('function renderDraftCitation'),
+    book.indexOf('async function goToSection'));
+  assert.match(draft, /`\$\{referenceOf\(height\)\} §… \.\$\{vout\}`/,
+    'the reference prints as far as it goes and says where it stops');
+  assert.match(draft, /link\.href = `\?txid=\$\{txid\}`/, 'and follows the coordinate that does not move');
+  // Nothing is left that prints a seatless cell with no chapter when a
+  // chapter was available.
+  assert.match(res, /citeBody\.textContent = `§… \.\$\{vout\}`/,
+    'the bare form survives only for a transaction in no drafted chapter at all');
+});
