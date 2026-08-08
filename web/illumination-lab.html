@@ -1,0 +1,293 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: MIT OR Apache-2.0
+
+     illumination-lab.html — a live tuning bench for btc-illumination.js's
+     L-system, not a reader-facing page (nothing links to this from the book
+     itself). Every knob in the module's exported `params` object gets a
+     control here; moving one calls resetDerivations() when it touches the
+     grammar, then refresh()es every sample passage on the page, so the
+     effect of a change is visible immediately rather than argued about.
+
+     Two sample passages are given real citation cells, a locktime line, a
+     bookmark ribbon, and a drop cap, mirroring bitcoin-book.html's actual
+     .tx-wrap closely enough that a setting tuned here transfers directly —
+     see illuminateSection() in bitcoin-book.html for where these same
+     options (seedEls, sizeOf, pointOf, baseSize) are threaded through in
+     the real page. -->
+<html>
+<head>
+<meta charset="utf-8">
+<title>Illumination lab</title>
+<!-- The book's own vendored faces, on the same terms every reading page
+     takes them (see web/fonts/README.md). Not cosmetic here: this bench
+     measures real rendered sigla -- their boxes, and now their glyph
+     outlines (sigla-outlines.js, extracted from these very files) -- so a
+     lab setting only transfers to the book if the marks it is tuned
+     against are the marks the book actually sets. -->
+<link rel="preload" as="font" type="font/woff2" href="./fonts/newsreader-latin.woff2" crossorigin>
+<link rel="preload" as="font" type="font/woff2" href="./fonts/plexmono-500-latin.woff2" crossorigin>
+<link rel="preload" as="font" type="font/woff2" href="./fonts/plexmono-600-latin.woff2" crossorigin>
+<link rel="preload" as="font" type="font/woff2" href="./fonts/sigla-dejavu.woff2" crossorigin>
+<link rel="stylesheet" href="./fonts/fonts.css">
+<style>
+  :root {
+    --page:#08080a; --card:#0d0d10; --card-bd:#232228; --ink:#e8e4da; --ink-soft:#cfcabf;
+    --accent:#c9a25f; --accent-2:#dcb877; --dim:#8f8a80; --panel:#111114;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--page); color: var(--ink);
+    font-family: 'Public Sans','Book Sigla', system-ui, sans-serif;
+    display: grid; grid-template-columns: 340px 1fr; min-height: 100vh;
+  }
+  h1 { font: 600 13px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); margin: 0 0 4px; }
+  .sub { font-size: 12px; color: var(--dim); margin: 0 0 20px; line-height: 1.5; }
+
+  /* ─── control panel ─── */
+  #panel { background: var(--panel); border-right: 1px solid var(--card-bd); padding: 20px 18px; overflow-y: auto; height: 100vh; position: sticky; top: 0; }
+
+  /* ─── shared control-panel classes (see illumination-controls.js) ─── */
+  .illum-ctl-group { margin-bottom: 22px; padding-bottom: 16px; border-bottom: 1px solid var(--card-bd); }
+  .illum-ctl-group:last-child { border-bottom: none; }
+  .illum-ctl-group h2 { font: 600 11px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing: .12em; text-transform: uppercase; color: var(--dim); margin: 0 0 10px; }
+  .illum-ctl-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 8px 0; font-size: 12.5px; color: var(--ink-soft); }
+  .illum-ctl-row .name { flex: 0 0 auto; }
+  .illum-ctl-row .val { color: var(--accent-2); font: 500 11.5px/1 'IBM Plex Mono','Book Sigla',monospace; min-width: 3.5em; text-align: right; }
+  .illum-ctl-mono { font-family: 'IBM Plex Mono','Book Sigla',monospace; font-size: 11px; }
+  .illum-ctl-stage-row { display: grid; grid-template-columns: 1fr 4.5em; align-items: center; gap: 8px; margin: 6px 0; font-size: 12px; color: var(--ink-soft); }
+  .illum-ctl-stage-row .range { color: var(--dim); font-size: 11px; }
+  .illum-ctl-sub { font-size: 11.5px; color: var(--dim); line-height: 1.5; margin-top: 6px; }
+  .illum-ctl-reset { background: transparent; color: var(--accent); border: 1px solid var(--card-bd); }
+  .illum-ctl-reset:hover { border-color: var(--accent); }
+  .illum-ctl-preview-nav { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+  .illum-ctl-preview-label { font: 500 10.5px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing: .06em; color: var(--dim); text-align: center; flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .illum-ctl-step { background: transparent; border: 1px solid var(--card-bd); border-radius: 4px; color: var(--dim); font: 400 15px/1 'IBM Plex Mono','Book Sigla',monospace; padding: 2px 9px; width: auto; margin: 0; cursor: pointer; flex: 0 0 auto; text-transform: none; letter-spacing: normal; }
+  .illum-ctl-step:hover { background: transparent; color: var(--accent); border-color: var(--accent); }
+  .illum-ctl-preview-stage { position: relative; height: 168px; border: 1px solid var(--card-bd); border-radius: 6px; background: var(--page); overflow: hidden; display: flex; align-items: center; justify-content: center; }
+  .illum-ctl-preview-host { position: relative; color: var(--accent); display: inline-block; }
+
+  label.row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 8px 0; font-size: 12.5px; color: var(--ink-soft); }
+  label.row span.name { flex: 0 0 auto; }
+  label.row .val { color: var(--accent-2); font: 500 11.5px/1 'IBM Plex Mono','Book Sigla',monospace; min-width: 3.5em; text-align: right; }
+  input[type="range"] { flex: 1 1 auto; margin: 0 8px; accent-color: var(--accent); }
+  input[type="number"] { width: 4.5em; background: var(--card); border: 1px solid var(--card-bd); color: var(--ink); border-radius: 4px; padding: 3px 6px; font: 12px 'IBM Plex Mono','Book Sigla',monospace; }
+  input[type="text"] { width: 100%; background: var(--card); border: 1px solid var(--card-bd); color: var(--ink); border-radius: 4px; padding: 6px 8px; font: 12px 'IBM Plex Mono','Book Sigla',monospace; }
+  input[type="checkbox"] { accent-color: var(--accent); }
+  button { font: 600 11.5px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing: .04em; text-transform: uppercase; background: var(--accent); color: #17140c; border: none; border-radius: 4px; padding: 8px 12px; cursor: pointer; width: 100%; margin-top: 4px; }
+  button:hover { background: var(--accent-2); }
+  button.ghost { background: transparent; color: var(--accent); border: 1px solid var(--card-bd); }
+  button.ghost:hover { border-color: var(--accent); }
+  .readout { font: 12px/1.6 'IBM Plex Mono','Book Sigla',monospace; color: var(--dim); background: var(--card); border: 1px solid var(--card-bd); border-radius: 6px; padding: 10px; margin-top: 8px; }
+  .readout b { color: var(--accent); }
+
+  /* ─── stage ─── */
+  #stage { padding: 40px 32px; overflow-y: auto; height: 100vh; }
+  .leaf { max-width: 620px; margin: 0 0 48px; }
+  .tx-wrap { position: relative; color: var(--accent); border: 1px dashed transparent; padding: 34px 46px; }
+  .tx-wrap.show-frame { border-color: var(--card-bd); }
+  .section-title { text-align: center; margin: 0 0 6px; font: 600 12px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing: .28em; text-transform: uppercase; color: var(--accent); }
+  .chapter-body { font-family: Georgia, 'Times New Roman', serif; font-size: 18px; line-height: 1.75; color: var(--ink-soft); }
+  .tx-body-lead::first-letter { font-size: 3.4em; float: left; line-height: .82; padding: .04em .07em 0 0; font-weight: 500; color: var(--accent); }
+  .sigla, .op { color: var(--accent); font-weight: 600; }
+  .amount-line { text-align: center; margin-top: 18px; font: 600 18px/1 Georgia, serif; color: var(--accent-2); }
+  .citation-line { margin-top: 14px; font: 600 12px/1 'IBM Plex Mono','Book Sigla',monospace; color: var(--accent); letter-spacing: .04em; }
+  .hash-bookmark { display: inline-flex; width: 14px; height: 18px; opacity: .6; }
+  .hash-bookmark svg { width: 100%; height: 100%; }
+  .leaf-label { font: 600 11px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing: .1em; text-transform: uppercase; color: var(--dim); margin: 0 0 10px; }
+</style>
+</head>
+<body>
+
+<div id="panel">
+  <h1>Illumination lab</h1>
+  <p class="sub">Live tuning bench for <code>btc-illumination.js</code>'s L-system. Every control here mutates the module's <code>params</code> export directly — nothing is reimplemented. Not linked from the book; dev tool only.</p>
+
+  <div class="group">
+    <h2>Age &amp; anchor</h2>
+    <label class="row"><span class="name">Confirmations</span><span class="val" id="v-conf">0</span></label>
+    <input type="range" id="conf" min="0" max="4.5" step="0.01" style="width:100%">
+    <div class="readout" id="stage-readout"></div>
+    <label class="row" style="margin-top:10px;"><span class="name">Block hash</span></label>
+    <input type="text" id="hash" spellcheck="false">
+    <button class="ghost" id="rehash">Random hash</button>
+  </div>
+
+  <!-- Growth stages, Grammar, Turtle -- built by the shared control module
+       (see illumination-controls.js), the same one the book's own in-page
+       widget uses, so a knob added there shows up here for free. -->
+  <div id="shared-controls"></div>
+
+  <div class="group">
+    <h2>Base size</h2>
+    <p class="sub" style="margin-bottom:8px;">The samples' own body text size — stands in for a reader's font-scale setting. Step, leaf size, overflow and the leash floor all scale by (this ÷ reference font size, above).</p>
+    <label class="row"><span class="name">"Ordinary" sigil size (px)</span><span class="val" id="v-baseSize"></span></label>
+    <input type="range" id="baseSize" min="8" max="32" step="1">
+  </div>
+
+  <div class="group">
+    <h2>Display</h2>
+    <label class="row"><span class="name">Show obstacle boxes</span><input type="checkbox" id="debug"></label>
+    <label class="row"><span class="name">Show section frame</span><input type="checkbox" id="frame" checked></label>
+  </div>
+</div>
+
+<div id="stage">
+  <div class="leaf">
+    <div class="leaf-label">Sample A — with a drop cap</div>
+    <div class="tx-wrap show-frame" id="wA">
+      <div class="section-title">§ 1</div>
+      <div class="chapter-body">
+        <p class="tx-body-lead">Beauty sue to tap out a tired roof. An you. Tax when see <span class="op" id="opA1">item⁶⁹</span>. A because. Dice see a museum. A sir behave to space via the dig. Due involve wrist to nerve. Mosquito empower to filter. Our siege divorce rub.<span class="op" id="opA2">∇</span></p>
+      </div>
+      <div class="amount-line">50.00000000 <span class="sigla" id="ribbonA">●</span></div>
+      <div class="citation-line" id="citeA">IV β1 <span class="sigla">■</span>37 §2042</div>
+    </div>
+  </div>
+
+  <div class="leaf">
+    <div class="leaf-label">Sample B — inline marks only, no drop cap</div>
+    <div class="tx-wrap show-frame" id="wB">
+      <div class="section-title">§ 2</div>
+      <div class="chapter-body">
+        <p><span class="op" id="opB1">⧉</span> Guy afford detail to satoshi via giggle. Torch see piano to organ per <span class="op" id="opB2">∇</span> coconut. A vast crime may equip hotel to alarm. Hero may pass lot. Its bright sir decorate essay to oxygen.</p>
+      </div>
+      <div class="amount-line">12.50000000 <span class="sigla" id="ribbonB">●</span></div>
+      <div class="citation-line" id="citeB">II β7 ■140 §912</div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import * as illum from './btc-illumination.js';
+  import { buildIlluminationControls } from './illumination-controls.js';
+
+  const { illuminate, growthStage, GROWTH_STAGES, generateSymbol, sizeBoost } = illum;
+
+  function randomHash() {
+    const bytes = crypto.getRandomValues(new Uint8Array(32));
+    return Array.from(bytes).map((b) => b.toString(16).padStart(2, '0')).join('');
+  }
+
+  const state = { confirmations: 6000, hash: randomHash(), baseSize: 16, enabled: true };
+
+  const passages = [
+    { host: 'wA', seeds: ['opA1', 'opA2', 'ribbonA', 'citeA'], lead: true },
+    { host: 'wB', seeds: ['opB1', 'opB2', 'ribbonB', 'citeB'], lead: false },
+  ].map((p) => {
+    const host = document.getElementById(p.host);
+    const seedEls = p.seeds.map((id) => document.getElementById(id));
+    if (p.lead) seedEls.push(host.querySelector('.tx-body-lead'));
+    return { host, proseEl: host.querySelector('.chapter-body'), seedEls };
+  });
+
+  let handles = [];
+  function renderAll() {
+    for (const h of handles) h.destroy();
+    handles = passages.map((p) => illuminate(p.host, {
+      proseEl: p.proseEl,
+      seedEls: p.seedEls,
+      blockHash: state.hash,
+      confirmations: Math.round(state.confirmations),
+      enabled: state.enabled,
+      debug: $('debug').checked,
+      sizeOf: (el) => (el.classList.contains('tx-body-lead')
+        ? parseFloat(getComputedStyle(el, '::first-letter').fontSize) || null
+        : null),
+      pointOf: (el) => (el.classList.contains('tx-body-lead') ? 'top-left' : 'edge'),
+      // No baseSize passed on purpose: illuminate() measures p.proseEl's
+      // own live font-size instead (see btc-illumination.js), which is
+      // exactly the mechanism this lab wants to exercise honestly -- drag
+      // "Base size" below and the sample text itself resizes, same as it
+      // would under a reader's real font-scale change.
+    }));
+    updateReadout();
+  }
+
+  function updateReadout() {
+    const stage = growthStage(state.confirmations);
+    const spec = GROWTH_STAGES[stage];
+    const symbol = generateSymbol(state.hash, stage, 0);
+    const fCount = (symbol.match(/F/g) || []).length;
+    const leadBoost = sizeBoost(64.6, state.baseSize);
+    const leadSymbol = generateSymbol(state.hash, stage, leadBoost);
+    const leadF = (leadSymbol.match(/F/g) || []).length;
+    document.getElementById('stage-readout').innerHTML =
+      `stage <b>${stage}</b> — "${spec.name}"<br>` +
+      `ordinary mark: <b>${spec.iterations}</b> gens, ${fCount} F's<br>` +
+      `drop cap (3.4em): <b>${spec.iterations + leadBoost}</b> gens (+${leadBoost}), ${leadF} F's`;
+  }
+
+  const $ = (id) => document.getElementById(id);
+
+  // ─── confirmations: log-scaled slider over 0..~1,000,000 ──────────────
+  function confFromSlider(v) { return v <= 0 ? 0 : Math.round(Math.pow(10, v) - 1); }
+  function sliderFromConf(c) { return c <= 0 ? 0 : Math.log10(c + 1); }
+  const confSlider = $('conf');
+  confSlider.value = sliderFromConf(state.confirmations);
+  function onConfChange() {
+    state.confirmations = confFromSlider(parseFloat(confSlider.value));
+    $('v-conf').textContent = state.confirmations.toLocaleString();
+    renderAll();
+  }
+  confSlider.addEventListener('input', onConfChange);
+
+  $('hash').value = state.hash;
+  $('hash').addEventListener('input', () => { state.hash = $('hash').value.trim() || randomHash(); renderAll(); });
+  $('rehash').addEventListener('click', () => { state.hash = randomHash(); $('hash').value = state.hash; renderAll(); });
+
+  // Growth stages, Grammar, and Turtle controls -- the shared module builds
+  // and binds them directly to `params`/`GROWTH_STAGES`; renderAll() is its
+  // onChange. Its own reset button covers params/GROWTH_STAGES; onReset
+  // folds this lab's one piece of extra state -- the sample base size --
+  // back to default alongside it.
+  buildIlluminationControls($('shared-controls'), illum, {
+    enabledDefault: state.enabled,
+    onToggleEnabled: (checked) => { state.enabled = checked; renderAll(); },
+    onChange: renderAll,
+    // Both samples' marks, staged one at a time on their own -- the same
+    // isolation the book's in-page widget offers over a real passage.
+    preview: {
+      seeds: () => passages.flatMap((p) => p.seedEls),
+      optionsFor: () => ({
+        blockHash: state.hash,
+        confirmations: Math.round(state.confirmations),
+        enabled: state.enabled,
+        sizeOf: (el) => (el.classList.contains('tx-body-lead')
+          ? parseFloat(getComputedStyle(el, '::first-letter').fontSize) || null
+          : null),
+        pointOf: (el) => (el.classList.contains('tx-body-lead') ? 'top-left' : 'edge'),
+      }),
+    },
+    onReset: () => {
+      state.baseSize = 16;
+      $('baseSize').value = state.baseSize;
+      $('v-baseSize').textContent = state.baseSize;
+      document.querySelectorAll('.chapter-body').forEach((el) => { el.style.fontSize = `${state.baseSize}px`; });
+    },
+  });
+
+  // Not a module param -- illuminate() takes baseSize as a per-call opt
+  // (the reader's own body-text size, in the real page), so this lab keeps
+  // it as its own state rather than bolting it onto the module's `params`.
+  $('baseSize').value = state.baseSize;
+  $('v-baseSize').textContent = state.baseSize;
+  $('baseSize').addEventListener('input', () => {
+    state.baseSize = parseFloat($('baseSize').value);
+    $('v-baseSize').textContent = $('baseSize').value;
+    // Actually resize the sample text too -- a real font-scale change (see
+    // btc-fontscale.js) is what this slider stands in for, and the point of
+    // geometryScale is that the decoration keeps up with THAT, not just
+    // with a number typed into illuminate()'s options.
+    document.querySelectorAll('.chapter-body').forEach((el) => { el.style.fontSize = `${state.baseSize}px`; });
+    renderAll();
+  });
+
+  $('debug').addEventListener('change', renderAll);
+  $('frame').addEventListener('change', () => {
+    document.querySelectorAll('.tx-wrap').forEach((w) => w.classList.toggle('show-frame', $('frame').checked));
+  });
+
+  onConfChange();
+</script>
+</body>
+</html>
