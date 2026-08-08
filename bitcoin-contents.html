@@ -177,7 +177,9 @@ import { partLabel } from './btc-notables.js';
 import { toSubscript } from './btc-sigla.js';
 import { allProofs, citeOf, leafOf, estimatedDate, minedDate } from './btc-proofs.js';
 import { readingsOf } from './btc-commentary.js';
-import { readQueue, buildQueue } from './btc-mempool.js';
+
+import { minesForContents, largestMines, networkHashrate, formatHashrate } from './btc-mines.js';
+import { readQueue, buildQueue, MVB } from './btc-mempool.js';
 import { INDEXED, keptLedgers, sameAddresses, shelfLedgers } from './btc-index.js';
 // A slash in a name the reader typed is a path: their own keeps file into a
 // hierarchy, and only theirs do (btc-path.js says why).
@@ -400,10 +402,34 @@ function fileHead(label, depth) {
 }
 function saying(text) { const d = document.createElement('div'); d.className = 'toc-empty'; d.textContent = text; return d; }
 
+// A row for one of the queue's rankings. Set like every other contents row,
+// with one cell left empty: a ranking is not a place in the book, it is a way
+// of reading one, so there is no citation for the right-hand cell to hold.
+// Empty, not a dash -- a dash is what a row whose citation would not resolve
+// wears, and nothing failed here.
+function queueLeafRow(title, at, why) {
+  const row = document.createElement('a');
+  row.className = 'toc-entry';
+  row.href = `./bitcoin-appendix.html?part=mempool&at=${at}`;
+  row.title = why;
+  const t = document.createElement('span'); t.className = 'toc-title'; t.textContent = title;
+  const r = document.createElement('span'); r.className = 'toc-ref';
+  row.append(t, r);
+  return row;
+}
+
 const toc = $('toc');
-// The projected section (Appendix I, the mempool), rebuilt by loadProjected
-// and appended whenever that leaf is the one on screen.
+// And the mines beside it: one row per pool, names only. Built by loadMines
+// from the archive where the appendix has already counted -- for nothing --
+// and from one small ranking call where it has not. Null until then, and the
+// leaf says so rather than standing empty.
+let minesSection = null;
+// Appendix I's projected chapters, set by btc-mempool.js the way a volume's
+// own chapters are set, and Appendix II's summary line -- each filled when
+// its leaf is opened, and until then an ellipsis.
 let projectedSection = null;
+let queueDepth = null;
+let minesSummary = null;
 // The Citations leaf's rows, built once the proofs have been read: each is
 // fetched (the bundled ones) or unpacked from storage (the reader's) and
 // replayed, all of it offline but none of it synchronous, so the section
@@ -448,7 +474,14 @@ function leafSub(leaf) {
       + (n === 0 ? 'nothing kept yet' : count(n, 'entry', 'entries'));
   }
   const part = leaf.part;
-  if (part.kind === 'mempool') return 'Ahead of the chain tip · the queue, as far as it reaches';
+  // These two say a figure, not a sentence about themselves: what the queue
+  // is holding, and what the last window was won by. Both read when the leaf
+  // is opened; an ellipsis until they land, and nothing at all where no
+  // source will say.
+  if (part.kind === 'mempool') {
+    return `Ahead of the chain tip · ${queueDepth == null ? '…' : count(queueDepth, 'chapter', 'chapters')}`;
+  }
+  if (part.kind === 'mines') return minesSummary ?? '…';
   if (part.kind === 'consensus') return `The rules the chapters are written under · ${count(part.bips.length, 'fork', 'forks')}`;
   if (part.kind === 'inscriptions') return `Files in witnesses · ${count(part.entries.length, 'inscription', 'inscriptions')}`;
   if (part.kind === 'proofs') return `Works the chain attests · ${count(proofsCount ?? part.entries.length, 'work cited', 'works cited')}`;
@@ -488,7 +521,7 @@ function descent(leaf) {
 // place, a bookmark, a cold load -- opens the volume the reader was last
 // reading (the book notes it as it renders), and Volume I's leaf when there
 // is nothing to go on, that being where the book starts.
-const PART_ALIAS = { mempool: 'mempool', future: 'consensus', entries: 'consensus', consensus: 'consensus', inscriptions: 'inscriptions', ledgers: 'ledgers', proofs: 'proofs' };
+const PART_ALIAS = { mempool: 'mempool', mines: 'mines', mining: 'mempool', future: 'consensus', entries: 'consensus', consensus: 'consensus', inscriptions: 'inscriptions', ledgers: 'ledgers', proofs: 'proofs' };
 const params = new URLSearchParams(location.search);
 function openingIndex(list) {
   if (params.get('at') === 'last') return list.length - 1;
@@ -600,14 +633,33 @@ function renderVolume(volume) {
   renderFiled(filed, 0);
 }
 
-// Appendix I: the mempool, built live from the queue (below). Appendix II:
-// chapters cited in full but marked □, the expected-chapter mark, since no
-// block has earned them an ■. Appendix III: the shelf of ledgers. Each part's
-// heading is the leaf's own head now, so nothing here prints one.
+// Appendix I: its two leaves, each with what it holds beneath it -- the
+// its two leaves, and under The Mines the mines themselves. The queue's own
+// coming chapters are NOT listed: they are places no block has reached, and
+// the contents lists what the book holds -- the queue's leaf is where it is
+// read. Appendix II: chapters cited in full but marked □, the
+// expected-chapter mark, since no block has earned them an ■. Appendix III:
+// the shelf of ledgers. Each part's heading is the leaf's own head now, so
+// nothing here prints one.
 function renderAppendix(part) {
+  // The queue's contents leaf lists nothing. Its coming chapters are places
+  // no block has reached, and the contents lists what the book holds -- they
+  // are read on the queue's own leaf, one turn down, where a provisional
+  // chapter can say it is provisional.
   if (part.kind === 'mempool') {
+    // The drafts as one group -- they are one thing, the chapters the queue
+    // would fill -- and then the two readings of them, which are leaves of
+    // the same storey and list beside the group rather than inside it.
     if (projectedSection) toc.append(projectedSection);
-    else toc.append(saying('The queue could not be read just now — no mirror answered. The contents simply end at the chain tip until one does.'));
+    toc.append(queueLeafRow('Sorted by amount', 'amount',
+      'the next chapter\'s transactions, largest first by what they move'));
+    toc.append(queueLeafRow('Sorted by size', 'vbytes',
+      'the next chapter\'s transactions, largest first by what they weigh'));
+    return;
+  }
+  if (part.kind === 'mines') {
+    if (minesSection) toc.append(minesSection);
+    else toc.append(saying('The mines are counted when their own leaf is opened — a fortnight of chapters, read off the chain. Nothing is listed here until they have been.'));
     return;
   }
   if (part.kind === 'consensus') {
@@ -691,6 +743,26 @@ function ledgerEl(ledger, isKept) {
 // in full (volume and all, since the leaf's head names an appendix, not a
 // volume); an unmined one is cited in full too but marked □, the
 // expected-chapter mark, its lookup answering with the date it is due.
+// A mine, as the contents names it: a name and no reference at all. A pool is
+// not a place in the chain -- the chain never writes one, only the tag a
+// coinbase carries -- so a row here cites nothing, exactly as a ledger's does,
+// and for the same reason. The share is not printed either: the contents lists
+// what the book holds, and measuring is the leaf's own work.
+function mineEl(mine) {
+  const row = document.createElement('a');
+  row.className = 'toc-entry under-book';
+  row.href = `./bitcoin-appendix.html?part=mines&mine=${encodeURIComponent(mine.slug)}`;
+  const t = document.createElement('span');
+  t.className = 'toc-title';
+  t.textContent = mine.name;
+  row.title = mine.named
+    ? `${mine.name} — its leaf states what it won of the last difficulty window, and the chapters it won`
+    : 'the chapters of this window carrying no tag the attribution could name — one row, however many hands';
+  const r = document.createElement('span');
+  r.className = 'toc-ref';
+  row.append(t, r);
+  return row;
+}
 function bipHead(bip) {
   const a = document.createElement('a');
   a.className = 'toc-book toc-bip';
@@ -827,6 +899,7 @@ function render() {
     history.replaceState(null, '', `${location.pathname}?${leafQuery(leaf)}`);
   } catch (_) { /* unavailable */ }
   toc.replaceChildren();
+  ensureLive();   // arriving at a leaf is what asks for its own figures
   // The curation is a file this page reads (notables.yaml); if it could not be
   // read, the page says so rather than presenting an empty contents as though
   // the book kept nothing. The reader's own bookmarks still list below.
@@ -872,8 +945,11 @@ function renderTurns(list) {
     turns.append(a);
     return a;
   };
-  link(at > 0 ? `‹ ${leafTitle(list[at - 1])}` : '‹ Terms', () => turn(-1), false);
-  link(at < list.length - 1 ? `${leafTitle(list[at + 1])} ›` : 'Preface ›', () => turn(1), true);
+  // The run closes into a ring, so both neighbours are always named: past
+  // Citations, the last of the appendices, is Volume I again.
+  const around = (i) => list[(i + list.length) % list.length];
+  link(`‹ ${leafTitle(around(at - 1))}`, () => turn(-1), false);
+  link(`${leafTitle(around(at + 1))} ›`, () => turn(1), true);
   $('toc-down').setAttribute('aria-label', `Down into ${leafTitle(list[at])}`);
 }
 $('toc-down').addEventListener('click', (ev) => { ev.preventDefault(); descend(); });
@@ -956,12 +1032,18 @@ function leavePage(href, transform, flag, value = '1') {
 // at both ends -- there is no leaf to either side of it to turn onto, and the
 // way off is the vertical pair: up to the cover, down into the part this leaf
 // is the contents of.
+// The contents' leaves are a ring, not a line. The book's own levels close
+// the same way -- turning back off the cover opens the tip's chapter rather
+// than stopping -- and here the reason is the list itself: the appendices are
+// the volumes' own level continued, so past the last of them is the first of
+// them again. The alternative is two dead ends on a page whose whole business
+// is showing what there is.
 function turn(dir) {
   if (turning) return;
   settled = true;              // the reader has chosen; the URL stops choosing
   const list = leaves();
-  const next = at + dir;
-  if (next < 0 || next >= list.length) return;
+  const next = (at + dir + list.length) % list.length;
+  if (next === at) return;     // a run of one has nowhere to turn
   turnTo(() => { at = next; }, dir, 'x');
 }
 // Up is the cover, which the contents lie under; down is whatever this leaf
@@ -1154,15 +1236,86 @@ async function loadProofs() {
   render();
 }
 
-// ── Appendix I: the mempool, read as far as it extends ────────────────────
-// The queue itself is read and set by btc-mempool.js, shared with the
-// appendix's own page. Its heading is this leaf's own head, so it is built
-// with no lead of its own.
-async function loadProjected() {
+// ── How far the book reaches ──────────────────────────────────────────────
+// The tip decides how many volumes the contents runs. It used to read the
+// queue here too, and set the coming chapters out as rows -- alpha, beta,
+// etcetera -- under Appendix I. It no longer does: those rows named blocks
+// that do not exist, on the one page whose job is to list what the book
+// holds, and the queue's own leaf is where it belongs. Dropping them takes
+// the queue's two calls off every visit to the contents, and with them the
+// minute-by-minute poll that refreshed rows nobody was reading.
+async function loadTip() {
   const tip = await tipHeight();
   if (tip != null) growVolumes(volumeBookChapter(tip).volume);
-  const queue = await readQueue(tip, ESPLORA_MIRRORS);
-  if (queue) projectedSection = buildQueue(queue);   // else the leaf says it could not be read
+  render();
+}
+
+// Appendix I's own list: the chapters the queue is forming, set the way a
+// volume's contents sets the chapters kept from it -- a Book heading over the
+// rows that share one, each row citing only what that heading has not already
+// named, all of it in the pencil the ■ they have not earned is owed in
+// (btc-mempool.js). Asked once, when its leaf is the one on screen.
+async function loadQueue() {
+  const tip = await tipHeight();
+  const queue = await readQueue(tip, ESPLORA_MIRRORS).catch(() => null);
+  if (!queue) { queueDepth = 0; render(); return; }
+  // The same arithmetic buildQueue uses for how far the queue reaches, so the
+  // head's count and the rows beneath it cannot disagree.
+  const projVsize = queue.blocks ? queue.blocks.reduce((sum, b) => sum + b.blockVSize, 0) : 0;
+  queueDepth = Math.max(1, Math.ceil((queue.summary ? queue.summary.vsize : projVsize) / MVB));
+  projectedSection = buildQueue(queue, { group: 'Provisional blocks' });
+  render();
+}
+
+// The mines are named for the leaf that lists them and for no other. Every
+// other leaf of the contents would otherwise pay the same call for rows
+// nobody is looking at -- so this is asked on arrival at Appendix I's leaf,
+// whether the reader opened it or turned to it, and asked once. The
+// archive-warm path costs nothing at all, which is what lets the cold one
+// stay this rare: a reader who never opens Appendix I never asks for a mine.
+let minesAsked = false;
+let queueAsked = false;
+function ensureLive() {
+  const kind = leaves()[at]?.part?.kind;
+  if (kind === 'mines' && !minesAsked) { minesAsked = true; loadMines(); }
+  if (kind === 'mempool' && !queueAsked) { queueAsked = true; loadQueue(); }
+}
+
+// The mines, named as cheaply as they can be named (btc-mines.js): the
+// archive first, which costs nothing and lists exactly the mines whose leaves
+// the appendix has; one small ranking call only where the archive is cold.
+// Either way this is a list of NAMES -- no share is printed here, because a
+// contents lists what the book holds and the measuring belongs to the leaf.
+async function loadMines() {
+  networkHashrate().then((got) => {
+    const rate = got && formatHashrate(got.hashrate);
+    if (!rate) return;
+    minesSummary = minesSummary ? `${rate} · ${minesSummary}` : rate;
+    render();
+  }).catch(() => { /* the leaf stands without it */ });
+  const read = await minesForContents(await tipHeight()).catch(() => null);
+  if (!read) return;                                // nothing listed; the shelf is one turn down
+  const { mines, rest } = largestMines(read);
+  if (!mines.length) return;
+  const wrap = document.createElement('div');
+  for (const mine of mines) wrap.append(mineEl(mine));
+  // A cap that said nothing would read as "these are all of them". The
+  // smaller mines are not hidden -- they are one turn down, on the shelf --
+  // and this row says so and opens it.
+  if (rest > 0) {
+    const more = document.createElement('a');
+    more.className = 'toc-entry under-book projected';
+    more.href = './bitcoin-appendix.html?part=mines';
+    more.title = `Mines below one per cent of the window, where a fortnight of chapters cannot tell one from another. The shelf lists every one of them.`;
+    const t = document.createElement('span'); t.className = 'toc-title';
+    t.textContent = `and ${rest} smaller`;
+    const r = document.createElement('span'); r.className = 'toc-ref';
+    more.append(t, r);
+    wrap.append(more);
+  }
+  minesSection = wrap;
+  const won = `${read.mines.length} mines`;
+  minesSummary = minesSummary && !minesSummary.includes('mines') ? `${minesSummary} · ${won}` : won;
   render();
 }
 
@@ -1196,8 +1349,7 @@ render();
 // keeps moving -- blocks land, replacements arrive -- so it refreshes itself
 // each minute while the page is on screen.
 loadProofs();
-loadProjected();
-setInterval(() => { if (!document.hidden) loadProjected(); }, 60_000);
+loadTip();
 // One lookup per key, however many registers cite the place.
 const unplaced = new Map();
 for (const p of [...places(), ...consensusPlaces(), ...inscriptionPlaces()]) {
