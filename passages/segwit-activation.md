@@ -1,4 +1,4 @@
-# SegWit activation
+# SegWit/activation
 
 > A passage of **The βook of βitcoin** — the Bitcoin chain read as a book. This is
 > block 481,824 read as a chapter, and its transaction 1
@@ -7,7 +7,7 @@
 > connective grammar is the translator's, the content is the chain's.
 
 - **Citation:** III β31 ■1345 §1 (Volume III, Book 31, Chapter 1345, section 1)
-- **Block:** 481,824 — SegWit activation
+- **Block:** 481,824 — SegWit/activation
 - **Block hash:** `0000000000000000001c8018d9cb3b742ef25114f27563e3fc4a1902167f9893`
 - **Transaction id:** `da917699942e4a96272401b534381a75512eeebe8403084500bd637bd47168b3`
 - **Read live:** https://bookofbitcoin.io/bitcoin-book.html?txid=da917699942e4a96272401b534381a75512eeebe8403084500bd637bd47168b3
@@ -25,7 +25,7 @@ Block hash, as prose: ⌘¹⁸¹ *A ear near sentence sheriff. Our aerobic net i
 - **difficulty target:** β₇₁ < 81129×256²¹ — the block hash above reads below this target — nBits 18013ce9 — mantissa 81129 (3·27043) shifted up 21 bytes: the target 0000000000000000013ce9000000000000000000000000000000000000000000, which a valid block hash must read below (71 leading zero bits) — difficulty 888,171,856,257 (relative to the genesis block)
 - **nonce:** η 2·337·854593
 
-## § 1 — SegWit activation
+## § 1 — SegWit/activation
 
 Transaction id, as prose: ⌘²⁵⁶ *Recall may drum insect to walnut. Design set lens before dig about the lucky wash. Some merit may pepper faculty. Our bright spot ought parent category. The device see myth to frog. An end is robust. The electric doctor extend panda. Some pipe is pop.*
 

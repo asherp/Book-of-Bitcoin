@@ -1,4 +1,4 @@
-# Coldcard attack, wave 1
+# Cold Card Attack/wave 1
 
 > A passage of **The βook of βitcoin** — the Bitcoin chain read as a book. This is
 > block 960,190 read as a chapter, and its transaction 13
@@ -25,7 +25,7 @@ Block hash, as prose: ⌘¹⁷⁵ *The mix are lemon. Tourist is dynamic to our 
 - **difficulty target:** β₇₈ < 146132×256²⁰ — the block hash above reads below this target — nBits 17023ad4 — mantissa 146132 (2²·7·17·307) shifted up 20 bytes: the target 000000000000000000023ad40000000000000000000000000000000000000000, which a valid block hash must read below (78 leading zero bits) — difficulty 126,231,507,121,868 (relative to the genesis block)
 - **nonce:** η 1266651527
 
-## § 13 — Coldcard attack, wave 1
+## § 13 — Cold Card Attack/wave 1
 
 Transaction id, as prose: ⌘²⁵⁶ *Spray is trial to winter. Shoulder drip the transfer. Clown is loyal to vintage. Clump title the select alien. Limb stuff inch to athlete. Music may bundle to mention. Guy exclude to hollow. Reform may set leopard. Pig between get poverty.*
 

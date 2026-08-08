@@ -1,4 +1,4 @@
-# Coldcard attack, wave 3
+# Cold Card Attack/wave 3
 
 > A passage of **The βook of βitcoin** — the Bitcoin chain read as a book. This is
 > block 960,519 read as a chapter, and its transaction 20
@@ -25,7 +25,7 @@ Block hash, as prose: ⌘¹⁷⁷ *The guy is proud. A process get strategy. Dia
 - **difficulty target:** β₇₈ < 146132×256²⁰ — the block hash above reads below this target — nBits 17023ad4 — mantissa 146132 (2²·7·17·307) shifted up 20 bytes: the target 000000000000000000023ad40000000000000000000000000000000000000000, which a valid block hash must read below (78 leading zero bits) — difficulty 126,231,507,121,868 (relative to the genesis block)
 - **nonce:** η 4250962297
 
-## § 20 — Coldcard attack, wave 3
+## § 20 — Cold Card Attack/wave 3
 
 Transaction id, as prose: ⌘²⁵⁶ *A rigid glare see apple. Skirt may get its venue. A happy office window alcohol. Our sight cram check to squirrel. Bonus set cliff out sort. Guilt embrace setup to garment. A yellow is smart. Its invite get each theory to staff. Sky set few fatigue.*
 

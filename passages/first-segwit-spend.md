@@ -7,7 +7,7 @@
 > connective grammar is the translator's, the content is the chain's.
 
 - **Citation:** III β31 ■1345 §13 (Volume III, Book 31, Chapter 1345, section 13)
-- **Block:** 481,824 — SegWit activation
+- **Block:** 481,824 — SegWit/activation
 - **Block hash:** `0000000000000000001c8018d9cb3b742ef25114f27563e3fc4a1902167f9893`
 - **Transaction id:** `8f907925d2ebe48765103e6845c06f1f2bb77c6adc1cc002865865eb5cfd5c1c`
 - **Read live:** https://bookofbitcoin.io/bitcoin-book.html?txid=8f907925d2ebe48765103e6845c06f1f2bb77c6adc1cc002865865eb5cfd5c1c

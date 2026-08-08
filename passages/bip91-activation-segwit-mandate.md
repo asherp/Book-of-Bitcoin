@@ -1,4 +1,4 @@
-# BIP91 activation (SegWit mandate)
+# BIP91/activation (SegWit mandate)
 
 > A passage of **The βook of βitcoin** — the Bitcoin chain read as a book. This is
 > block 477,120 read as a chapter, and its transaction 1
@@ -7,7 +7,7 @@
 > connective grammar is the translator's, the content is the chain's.
 
 - **Citation:** III β29 ■673 §1 (Volume III, Book 29, Chapter 673, section 1)
-- **Block:** 477,120 — BIP91 activation (SegWit mandate)
+- **Block:** 477,120 — BIP91/activation (SegWit mandate)
 - **Block hash:** `0000000000000000015411ca4b35f7b48ecab015b14de5627b647e262ba0ec40`
 - **Transaction id:** `4b777745084ef83da587c7278db17f7a33ad5b831b5ee47b18c1c11c6165047c`
 - **Read live:** https://bookofbitcoin.io/bitcoin-book.html?txid=4b777745084ef83da587c7278db17f7a33ad5b831b5ee47b18c1c11c6165047c
@@ -25,7 +25,7 @@ Block hash, as prose: ⌘¹⁸⁵ *Its domain may govern to approve. Cap may eru
 - **difficulty target:** β₇₁ < 89564×256²¹ — the block hash above reads below this target — nBits 18015ddc — mantissa 89564 (2²·22391) shifted up 21 bytes: the target 0000000000000000015ddc000000000000000000000000000000000000000000, which a valid block hash must read below (71 leading zero bits) — difficulty 804,525,194,568 (relative to the genesis block)
 - **nonce:** η 2·3²·7·13·37·30241
 
-## § 1 — BIP91 activation (SegWit mandate)
+## § 1 — BIP91/activation (SegWit mandate)
 
 Transaction id, as prose: ⌘²⁵⁶ *Some lab far case flame. Our tap define lot. A sin is bright. Method see usage to mesh. Breeze bracket a pay. Lap twice group pony. Sugar are cruel to our wedding via marble. Yes clarify lawn to orchard. Lounge roof tag per gate. Reveal may occur cave.*
 

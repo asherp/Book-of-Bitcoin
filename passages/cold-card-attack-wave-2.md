@@ -1,4 +1,4 @@
-# Coldcard attack, wave 2
+# Cold Card Attack/wave 2
 
 > A passage of **The βook of βitcoin** — the Bitcoin chain read as a book. This is
 > block 960,352 read as a chapter, and its transaction 148
@@ -25,7 +25,7 @@ Block hash, as prose: ⌘¹⁷⁷ *Love may hazard our future spring. Shallow ho
 - **difficulty target:** β₇₈ < 146132×256²⁰ — the block hash above reads below this target — nBits 17023ad4 — mantissa 146132 (2²·7·17·307) shifted up 20 bytes: the target 000000000000000000023ad40000000000000000000000000000000000000000, which a valid block hash must read below (78 leading zero bits) — difficulty 126,231,507,121,868 (relative to the genesis block)
 - **nonce:** η 2³·474911497
 
-## § 148 — Coldcard attack, wave 2
+## § 148 — Cold Card Attack/wave 2
 
 Transaction id, as prose: ⌘²⁵⁶ *Woman get a fantasy to minimum. Map may oppose to assume. Outside wrestle its sir. Lie never set material. Noble shift arrest to acid. Its indoor chef set trophy. Gasp chair weather to primary. Abandon get its math. Cliff scare the force to cat. A frame ago see pay.*
 

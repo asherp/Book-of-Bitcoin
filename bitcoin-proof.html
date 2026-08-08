@@ -1,6 +1,6 @@
 <!-- SPDX-License-Identifier: MIT OR Apache-2.0 -->
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>The βook of βitcoin — A timestamped file</title>
 <meta name="description" content="One file's OpenTimestamps proof, written out as prose: the file's digest, then every value the proof passes through, ending on the merkle root a block header commits to. The parts that are on chain carry their citation in the margin.">
 <link rel="icon" type="image/png" sizes="32x32" href="./icons/beta-icon-32.png">
@@ -55,7 +55,7 @@
 * { box-sizing: border-box; }
 html, body { margin: 0; }
 body { min-height: 100vh; background: var(--page); color: var(--ink); font-family: 'Public Sans','Book Sigla', system-ui, sans-serif; line-height: 1.55; }
-.wrap { max-width: 760px; margin: 0 auto; padding: 48px 22px 100px; }
+.wrap { max-width: 760px; margin: 0 auto; padding: 48px var(--gutter-r) 100px var(--gutter-l); }
 a { color: var(--accent); text-decoration: none; }
 a:hover { text-decoration: underline; }
 .hidden { display: none !important; }
