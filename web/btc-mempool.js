@@ -90,14 +90,11 @@ export async function readQueue(tip, mirrors = MEMPOOL_MIRRORS) {
 
 // The provisional reference for a not-yet-mined height: the expected-chapter
 // mark □ where a mined chapter's reference wears ■ -- the number holds only
-// if the queue does. Each level a heading above the row has already named is
-// left off, as it is on a volume's leaf; the volume goes unwritten while it
-// is the tip's own, no head here having named one.
-function projRef(height, tipVolume, underBook = false) {
+// if the queue does. The volume goes unwritten while it is the tip's own, no
+// head here having named one; every other level is cited, since nothing above
+// the row names anything.
+function projRef(height, tipVolume) {
   const p = volumeBookChapter(height);
-  // Under a Book heading only the chapter is left to cite, exactly as in a
-  // volume's contents.
-  if (underBook) return `□${p.chapter}`;
   const vol = p.volume === tipVolume ? '' : `${toRoman(p.volume)} `;
   return `${vol}β${p.book} □${p.chapter}`;
 }
@@ -105,24 +102,12 @@ function projRef(height, tipVolume, underBook = false) {
 // book is named once and the marks run on, the book's own idiom for a range
 // (a volume leaf reads ■1 – ■2,016); across a book boundary each end is
 // cited in full, since the second names a book the first did not.
-function projRange(from, to, tipVolume, underBook = false) {
+function projRange(from, to, tipVolume) {
   const a = volumeBookChapter(from), b = volumeBookChapter(to);
   const sameBook = a.volume === b.volume && a.book === b.book;
-  // A range reaching past the heading's own book still cites its far end in
-  // full: the heading did not name that book.
-  return `${projRef(from, tipVolume, underBook)} – ${sameBook ? `□${b.chapter}` : projRef(to, tipVolume)}`;
-}
-
-// The heading a run of projected chapters sits under, set as a volume's
-// contents sets one: the book spelled out, no β -- that sigil rides the
-// compact tail references alone. The volume joins it only where the queue has
-// crossed out of the tip's own, since no head above these rows names one.
-function bookHead(height, tipVolume) {
-  const p = volumeBookChapter(height);
-  const d = document.createElement('div');
-  d.className = 'toc-book';
-  d.textContent = p.volume === tipVolume ? `Book ${p.book}` : `Volume ${toRoman(p.volume)} · Book ${p.book}`;
-  return d;
+  // Within one book the far end needs only its mark; across a boundary it is
+  // cited in full, since it names a book the near end did not.
+  return `${projRef(from, tipVolume)} – ${sameBook ? `□${b.chapter}` : projRef(to, tipVolume)}`;
 }
 
 // One projected row, set like every other row in the contents: a name on the
@@ -132,9 +117,9 @@ function bookHead(height, tipVolume) {
 // hover either: a figure whispered is still a figure printed. The reference
 // keeps its note, which says only that the number is provisional. The whole
 // row opens the book at that height.
-function projEntryEl({ height, text, ref, refTitle, underBook }) {
+function projEntryEl({ height, text, ref, refTitle }) {
   const row = document.createElement('a');
-  row.className = 'toc-entry projected' + (underBook ? ' under-book' : '');
+  row.className = 'toc-entry projected';
   row.href = entryHref(String(height));
   const t = document.createElement('span');
   t.className = 'toc-title';
@@ -223,32 +208,17 @@ export function buildQueue({ tip, summary, blocks }, lead = null) {
     });
   }
 
-  // And how they are grouped: by the book they fall in, which is how a
-  // volume's contents groups the chapters kept from it -- a Book heading
-  // wherever two or more consecutive rows share one, and then each row cites
-  // only what that heading has not already said. The queue is a run of
-  // consecutive heights, so a book's rows are contiguous by construction, and
-  // the heading changes exactly where the queue crosses a retarget. One row
-  // alone keeps its book in its own reference rather than earning a heading
-  // for itself, the same rule and for the same reason: a heading over a
-  // single row says nothing the row does not.
-  const bookOf = (h) => { const p = volumeBookChapter(h); return `${p.volume}.${p.book}`; };
-  for (let i = 0; i < rows.length;) {
-    let j = i + 1;
-    while (j < rows.length && bookOf(rows[j].height) === bookOf(rows[i].height)) j++;
-    const underBook = j - i >= 2;
-    if (underBook) wrap.append(bookHead(rows[i].height, tipVolume));
-    for (let k = i; k < j; k++) {
-      const row = rows[k];
-      wrap.append(projEntryEl({
-        ...row,
-        underBook,
-        ref: row.to == null
-          ? projRef(row.height, tipVolume, underBook)
-          : projRange(row.height, row.to, tipVolume, underBook),
-      }));
-    }
-    i = j;
+  // And how they are set: in the order the queue holds them, each citing its
+  // own place in full. The leaf used to raise a Book heading wherever two
+  // consecutive rows shared one, as a volume's contents did -- both of those
+  // groupings are gone, and for the same reason: the book a row falls in is
+  // an accident of where the chain happens to have reached, and a heading
+  // over it groups by nothing anybody meant.
+  for (const row of rows) {
+    wrap.append(projEntryEl({
+      ...row,
+      ref: row.to == null ? projRef(row.height, tipVolume) : projRange(row.height, row.to, tipVolume),
+    }));
   }
   return wrap;
 }

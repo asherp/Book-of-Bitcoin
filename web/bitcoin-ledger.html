@@ -1,6 +1,6 @@
 <!-- SPDX-License-Identifier: MIT OR Apache-2.0 -->
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>The βook of βitcoin — Ledger</title>
 <meta name="description" content="The Ledger of the Glossia Bitcoin Book: a compendium of notable donation addresses — and any the reader keeps — each a view of the manuscript focused on amounts, reconciled against the chain.">
 <link rel="icon" type="image/png" sizes="32x32" href="./icons/beta-icon-32.png">
@@ -123,7 +123,7 @@ body { min-height: 100vh; background: var(--page); color: var(--ink); font-famil
   .ledger-entrance-fwd body { animation: ledger-in-fwd .22s ease-out; }
   @keyframes ledger-in-fwd { from { transform: translateX(100vw); } }
 }
-.wrap { max-width: 720px; margin: 0 auto; padding: 48px 22px 100px; }
+.wrap { max-width: 720px; margin: 0 auto; padding: 48px var(--gutter-r) 100px var(--gutter-l); }
 a { color: var(--accent); text-decoration: none; }
 a:hover { text-decoration: underline; }
 
@@ -316,16 +316,26 @@ a:hover { text-decoration: underline; }
    bottom, the rule its top edge, prose scrolling behind its page-colour
    backing -- holding the column sums and the balance they net to. */
 .hidden { display:none !important; }
+/* Nothing in this bar ellipsizes. A total that ends in `…` is not a total
+   (issue #66): the figures here are the books adding up, and a clipped one
+   is worse than a wrapped one -- an accountant reading `1,234,5…` has been
+   told nothing, politely. So the bar wraps instead: the balance takes the
+   first line whole when it cannot share it, and the three column cells
+   follow on the next, right-aligned so they still read down the columns
+   above. The cells grow past their column width rather than cut a figure --
+   a summary line that is right beats one that is exactly aligned. */
 .acct-totals { position:sticky; bottom:0; z-index:40;
-  display:flex; gap:10px; align-items:baseline; margin-top:30px;
+  display:flex; flex-wrap:wrap; justify-content:flex-end; gap:10px; row-gap:6px;
+  align-items:baseline; margin-top:30px;
   padding:12px 2px max(12px, env(safe-area-inset-bottom)) 14px;
   border-top:1px solid var(--rule); background:var(--page); }
-.acct-totals .t-bal { flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.acct-totals .t-bal { flex:1 0 auto; margin-right:auto; white-space:nowrap; }
 .acct-totals .t-label { font:600 9.5px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.14em; text-transform:uppercase; color:var(--meta); margin-right:6px; }
 .acct-totals .t-fig { font:600 13px/1.4 'IBM Plex Mono','Book Sigla',monospace; color:var(--accent); font-variant-numeric:tabular-nums; }
-.acct-totals .idx-amt { flex:none; font-size:12.5px; color:var(--ink-soft); }
+.acct-totals .idx-amt { flex:none; width:auto; min-width:100px; font-size:12.5px; color:var(--ink-soft);
+  overflow:visible; text-overflow:clip; }
 @media (max-width: 560px) {
-  .acct-totals .idx-amt { font-size:11px; }
+  .acct-totals .idx-amt { font-size:11px; min-width:84px; }
   .acct-totals .t-fig { font-size:12px; }
 }
 @media (max-width: 560px) {
@@ -600,7 +610,10 @@ a:hover { text-decoration: underline; }
              title. Opens under the button on a suggested name in the block
              version's own notation; the ledger is kept on save. -->
         <div class="keep-title hidden" id="keep-title">
-          <input type="text" id="keep-title-input" placeholder="Title for the contents" autocomplete="off" spellcheck="false" maxlength="80">
+          <!-- 160 rather than 80: a name is a path now (btc-path.js), and a
+               reader filing three levels deep spends most of a short limit on
+               the parents they have already typed once. -->
+          <input type="text" id="keep-title-input" placeholder="Title for the contents, / to file it" autocomplete="off" spellcheck="false" maxlength="160">
           <div class="keep-title-row">
             <button type="button" class="save-btn" id="keep-title-save">Keep</button>
             <button type="button" class="ghost-btn" id="keep-title-cancel">Cancel</button>
@@ -650,7 +663,7 @@ a:hover { text-decoration: underline; }
 import { localizeHome, mountLangMenu } from './btc-strings.js';
 localizeHome();   // the masthead in the reader's UI language
 mountLangMenu();  // …with the Language item, which any page can now set
-import { INDEXED, isAddress, isScriptHex, keptLedgers, saveKeptLedgers, sameAddresses, memberScriptHex, cachedLine, resolveLine,
+import { INDEXED, isAddress, isScriptHex, keptLedgers, saveKeptLedgers, sameAddresses, shelfLedgers, keepLedger, memberScriptHex, cachedLine, resolveLine,
          extendLine, renderRows, groupState, markIndex, periods, lineNote, reconciled, ledgerSum, heldCoins, lastKnownState,
          formatBalanceBtc, formatNetBtc, chainFailureText, citeHref, sectionOf, sectionOfFetched, citePlace, passageTxid, passageEntries, txHexOf, outspendsOf, prevoutValuesOf,
          DEFAULT_ESPLORA, esploraCustom, esploraSelected, setEsploraSettings } from './btc-index.js';
@@ -658,6 +671,9 @@ import { volumeBookChapter, heightOf, subsidyAt, toRoman, parseReference, latinR
 import { usdOn } from './btc-price.js';
 import { amountUnit, setAmountUnit, ownUnit, formatAmountAs, formatValuation } from './btc-amounts.js';
 import { BIP39, HP_SPELLS } from './btc-wordlists.js';
+// A slash in a name the reader typed is a path: their shelf files, and a
+// ledger can be named in a URL by the name they kept it under.
+import { pathSegments } from './btc-path.js';
 import { appendix } from './btc-contents.js';
 import './btc-fontscale.js';   // the reader's type sizes: a ledger's readings are set at the size the book page's Commentary row chose
 import { loadNotables, partLabel } from './btc-notables.js';
@@ -836,6 +852,13 @@ const qList = q ? q.split(',').map((s) => norm(s.trim())).filter(Boolean) : [];
 // ledger in the table of contents is a ledger, so its row opens the title
 // leaf; a searched address is a passage, so it opens the passage.
 const qPage = (new URLSearchParams(location.search).get('page') || '').trim();
+// A kept ledger can be named by the name it was kept under instead of by its
+// members: ?ledger=Coldcard%20hack/wave%203. A path is a far better name than
+// a member list -- it says what the ledger is, it survives the set changing,
+// and it does not put 221 addresses in a URI. It resolves only on the shelf
+// that holds it, which is this reader's own, so it names nothing anywhere
+// else; ?address= remains the form every shared link uses.
+const qPath = (new URLSearchParams(location.search).get('ledger') || '').trim();
 
 // A passage named in the URL: the citation itself, carried in Latin --
 // v4b1c3s85o4 for volume 4, book 1, chapter 3, §85, output .4 (section and
@@ -850,7 +873,10 @@ const pRef = pParsed ? { height: pParsed.height, s: pParsed.section, o: pParsed.
 // The same reference, written: what an entry leaf stamps into the URL.
 const latinRef = (height, s, o) => latinRefOf(height, s, o);
 const untitled = (l) => l.addresses[0] + (l.addresses.length > 1 ? ` +${l.addresses.length - 1}` : '');
-const kept = keptLedgers().filter((k) => !INDEXED.some((e) => sameAddresses(e.addresses, k.addresses)));
+// The reader's shelf as they filed it (shelfLedgers): keeps sharing a path
+// folded into one ledger, and every parent standing as a ledger of everything
+// beneath it. A flat shelf comes back exactly as it was kept.
+const kept = shelfLedgers().filter((k) => !INDEXED.some((e) => sameAddresses(e.addresses, k.addresses)));
 // One member address names its whole ledger (ledgerFor's rule); only a query
 // matching nothing shelved joins as its own temporary ledger.
 const matchesQuery = (e) => (qList.length === 1
@@ -861,7 +887,7 @@ const LEDGERS = [
   ...adhoc,
   ...INDEXED.map((e) => ({ ...e, curated: true })),
   ...kept.map((e) => ({ ...e, curated: false })),
-].map((e) => ({ ...e, name: e.title || untitled(e) }));
+].map((e) => ({ ...e, name: e.name || e.title || untitled(e) }));
 
 // The appendix this compendium is, taken from the contents' own list so the
 // leaf and the row cannot disagree about its number or its explanation. The
@@ -897,7 +923,14 @@ let adhocEntry = null;        // a landed passage below the banked frontier, car
 const rememberedAt = new Map();   // li -> the address leaf a descent returns to
 let landAt = null;            // { txid, sats } -- scroll the record here on return
 
-if (qList.length) {
+if (qPath) {
+  // A ledger named by the path it was filed under. It opens at its title
+  // leaf: a path names the ledger, never one passage of it. A path this
+  // reader's shelf does not hold opens the compendium at the top rather than
+  // on somebody else's first ledger.
+  const i = LEDGERS.findIndex((e) => !e.curated && e.title === pathSegments(qPath).join('/'));
+  if (i >= 0) { li = i; level = 'ledger'; at = 0; }
+} else if (qList.length) {
   const i = LEDGERS.findIndex((e) => (qList.length === 1
     ? e.addresses.includes(qList[0]) : sameAddresses(e.addresses, qList)));
   li = Math.max(0, i);
@@ -920,16 +953,23 @@ const findEntry = (line, key) =>
 // take for a URI -- the Coldcard hack spans 221 vaults. A ledger the reader
 // brought has no name any other copy of the book would resolve, so its list
 // still rides whole; readers' own ledgers stay hand-sized.
+// A ledger the reader filed under a name of their own has a better name than
+// its members: its path. Only its title leaf takes it -- below that the URL
+// names a passage, and a passage is named by the member it is -- and only
+// this reader's shelf can resolve it, which is why a title leaf is also the
+// one level at which nothing is lost by that.
 const urlAddress = () => (cur().curated
   ? cur().addresses[Math.max(0, Math.min(at, cur().addresses.length - 1))]
   : cur().addresses.join(','));
+const urlFor = (leafLevel) => (leafLevel === 'ledger' && !cur().curated && cur().title
+  ? `?ledger=${encodeURIComponent(cur().title)}`
+  : `?address=${urlAddress()}${leafLevel === 'ledger' ? '&page=ledger' : ''}`);
 function syncUrl() {
   // Only the appendix leaf is nobody's ledger; every leaf below it names the
   // ledger it belongs to, and a title leaf says so with &page=ledger -- so a
   // reload, or a link shared from here, comes back to the leaf it left.
   try {
-    const url = level === 'appendix' ? location.pathname
-      : `${location.pathname}?address=${urlAddress()}${level === 'ledger' ? '&page=ledger' : ''}`;
+    const url = level === 'appendix' ? location.pathname : location.pathname + urlFor(level);
     history.replaceState(null, '', url);
   } catch (_) { /* unavailable */ }
   document.title = level === 'appendix' ? `The βook of βitcoin — ${PART_LABEL}`
@@ -1631,11 +1671,21 @@ const showBookmark = () => {
   if (cur().curated) return;   // curated ledgers are already shelved
   keepBtn.classList.add('show');
   const one = cur().addresses.length === 1;
+  // The path this ledger is filed under, where it has one. A filed ledger is
+  // kept if its path is on the shelf -- which is how a parent, whose account
+  // is synthesized from its children rather than stored as a record of its
+  // own, reads as kept without being stored twice.
+  const filedPath = () => pathSegments(cur().title || '').join('/');
+  const under = (p, path) => p === path || p.startsWith(`${path}/`);
+  const keptPaths = (all) => all.map((k) => pathSegments(k.title).join('/'));
   const reflect = () => {
-    const isKept = keptLedgers().some((k) => sameAddresses(k.addresses, cur().addresses));
+    const path = filedPath();
+    const isKept = path
+      ? keptPaths(keptLedgers()).some((p) => under(p, path))
+      : keptLedgers().some((k) => sameAddresses(k.addresses, cur().addresses));
     keepBtn.classList.toggle('kept', isKept);
     keepBtn.innerHTML = `<span class="keep-rib">${RIBBON}</span>` + (isKept
-      ? 'bookmarked — remove'
+      ? (cur().parent ? 'bookmarked — remove, and everything filed under it' : 'bookmarked — remove')
       : one ? 'bookmark this address' : 'bookmark this ledger');
     // A bookmarked ledger's title leaf flies the ribbon, the way a
     // bookmarked passage does in the contents.
@@ -1656,21 +1706,38 @@ const showBookmark = () => {
   // a row in the reader's own table of contents, where a row is read by its
   // title. So an untitled ledger opens the naming form instead of saving,
   // and the save is what keeps it. Removing needs no name.
+  // Keeping under a name already used FOLDS into it rather than shelving a
+  // second ledger of that name: two keeps sharing a path are one ledger, and
+  // that is the point of the feature rather than a collision to avoid. The
+  // fold is written into the registry itself, so what is stored says what the
+  // shelf shows.
   const shelve = (title) => {
-    saveKeptLedgers([...keptLedgers(), { title, addresses: cur().addresses }]);
+    keepLedger(title, cur().addresses);
     // The ledger now has the name it was kept under: this leaf, the pager's
-    // count, and the shelf all read it from here.
-    cur().title = title;
-    cur().name = title;
-    document.getElementById('anth-title').textContent = title;
+    // count, and the shelf all read it from here. A filed name prints spaced
+    // -- `Coldcard hack / wave 3` -- which is the name, not the storage key.
+    const shown = pathSegments(title).join(' / ') || title;
+    cur().title = pathSegments(title).join('/') || title;
+    cur().name = shown;
+    document.getElementById('anth-title').textContent = shown;
     closeTitleForm();
     reflect();
   };
   keepBtn.onclick = () => {
     const all = keptLedgers();
-    const has = all.some((k) => k.addresses && sameAddresses(k.addresses, cur().addresses));
+    const path = filedPath();
+    const has = path
+      ? keptPaths(all).some((p) => under(p, path))
+      : all.some((k) => k.addresses && sameAddresses(k.addresses, cur().addresses));
     if (has) {
-      saveKeptLedgers(all.filter((k) => !sameAddresses(k.addresses, cur().addresses)));
+      // Removing a filed ledger removes what it holds -- its own record and
+      // everything filed beneath it -- because its account IS theirs: a
+      // parent left behind with its children gone would be a ledger of
+      // nothing, and children left behind under a removed parent would be a
+      // shelf the reader did not file.
+      saveKeptLedgers(path
+        ? all.filter((k) => !under(pathSegments(k.title).join('/'), path))
+        : all.filter((k) => !sameAddresses(k.addresses, cur().addresses)));
       closeTitleForm();
       reflect();
     } else if (cur().title.trim()) {

@@ -47,10 +47,15 @@
 #
 # An entry may be found in more than one place. Write `ids:` instead of `id:`,
 # each item a place of its own (with its own index / page / out where it needs
-# them), and `as:` naming what that place is within the entry — the contents
-# prints it after the title, so rows sharing a name still say which is which.
-# The readings below belong to the entry, so one reading serves every place: the
-# four printings of the two twice-confirmed coinbases are one story, told once.
+# them), and `as:` naming what that place is within the entry. Such an entry is
+# a filing already — the title names it, each `as:` names a leaf — so the
+# contents files it: the title stands once as a heading and the places read
+# beneath it by their `as` alone, each with its own reference beside it. A page
+# naming the passage a reader is standing on says it the other way, in prose
+# ("The twice-confirmed coinbases — first printing"), a slash there being
+# punctuation rather than filing. The readings below belong to the entry, so
+# one reading serves every place: the four printings of the two
+# twice-confirmed coinbases are one story, told once.
 #
 #   - title: The twice-confirmed coinbases
 #     ids:
@@ -477,7 +482,7 @@
   commentary:
     - file: bip91.md
       by: Claude Fable 5
-- title: BIP91 activation (SegWit mandate)
+- title: BIP91/activation (SegWit mandate)
   id: '477120'
   commentary:
     - file: bip91-activation-segwit-mandate.md
@@ -493,7 +498,7 @@
   commentary:
     - file: segwit.md
       by: Claude Opus 5
-- title: SegWit activation
+- title: SegWit/activation
   id: '481824'
   commentary:
     - file: segwit-activation.md
@@ -717,11 +722,11 @@
 # vaults by onlookers is not mistaken for the attack. No published reading
 # yet -- the entries are kept, per the note above, before anyone has
 # finished saying why.
-- title: Coldcard attack, wave 1
+- title: Cold Card Attack/wave 1
   id: 14edd9ee8445793c320e92e3b50365a0e18b8b25f424044bce337463f007fdd2
-- title: Coldcard attack, wave 2
+- title: Cold Card Attack/wave 2
   id: be0a120150d5e2bb246047d709e61e300617b7f288a8943f3bdfc04d3462eafc
-- title: Coldcard attack, wave 3
+- title: Cold Card Attack/wave 3
   id: 871d99f1ff2f1213a9677cbeca323a8d93c8041906db67e6d1265fe52a58ecb9
 
 # ── The ledgers ───────────────────────────────────────────────────────────

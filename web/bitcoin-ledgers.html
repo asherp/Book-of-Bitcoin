@@ -1,6 +1,6 @@
 <!-- SPDX-License-Identifier: MIT OR Apache-2.0 -->
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>The βook of βitcoin — Ledger</title>
 <meta name="description" content="The Ledgers shelf has become the Ledger compendium — one page holding every ledger, read the way the book is read.">
 <link rel="icon" type="image/png" sizes="32x32" href="./icons/beta-icon-32.png">
@@ -28,7 +28,11 @@
      frame — so it names no vendored face: promising one it cannot load
      would only be a slower way to reach the same system monospace. Its one
      line is plain Latin, with no siglum to set. */
+  /* It loads no stylesheet, so it cannot borrow btc-chrome.css's gutters:
+     the insets are written out here, for the one line this page sets. */
   body { min-height:100vh; margin:0; display:flex; align-items:center; justify-content:center;
+    padding:0 max(12px, env(safe-area-inset-right, 0px)) 0 max(12px, env(safe-area-inset-left, 0px));
+    box-sizing:border-box;
     background:#08080a; color:#9c99a6; font:400 12px/1.6 ui-monospace,monospace; }
   a { color:#c9a25f; text-decoration:none; }
   a:hover { text-decoration:underline; }
