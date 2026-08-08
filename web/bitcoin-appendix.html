@@ -1,6 +1,6 @@
 <!-- SPDX-License-Identifier: MIT OR Apache-2.0 -->
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>The βook of βitcoin — Appendix</title>
 <meta name="description" content="The appendices of the Glossia Bitcoin Book: the mempool read as the chapters it is about to become, and the chapters consensus has already numbered but no block has reached.">
 <link rel="icon" type="image/png" sizes="32x32" href="./icons/beta-icon-32.png">
@@ -186,7 +186,7 @@ body { min-height: 100vh; background: var(--page); color: var(--ink); font-famil
   .appx-entrance-drop body { animation: appx-in-drop .22s ease-out; }
   @keyframes appx-in-drop { from { transform: translateY(-100vh); } }
 }
-.wrap { max-width: 720px; margin: 0 auto; padding: 48px 22px 100px; }
+.wrap { max-width: 720px; margin: 0 auto; padding: 48px var(--gutter-r) 100px var(--gutter-l); }
 a { color: var(--accent); text-decoration: none; }
 a:hover { text-decoration: underline; }
 
@@ -392,12 +392,12 @@ a.bb-ref:hover { color:var(--accent-2); }
 .ins-content { margin:26px auto 0; max-width:56ch; text-align:center; }
 .ins-content img { max-width:100%; image-rendering:pixelated; border:1px solid var(--card-bd); border-radius:4px; background:var(--card); }
 .ins-text { max-height:60vh; overflow:auto; text-align:left; white-space:pre-wrap; overflow-wrap:anywhere;
-  font:400 12px/1.6 'IBM Plex Mono',monospace; color:var(--ink-soft); background:var(--card);
+  font:400 12px/1.6 'IBM Plex Mono','Book Sigla',monospace; color:var(--ink-soft); background:var(--card);
   border:1px solid var(--card-bd); border-radius:4px; padding:14px 16px; margin:0; }
 /* Not a caption: the leaf explains nothing about the content it shows. This
    is the line that stands where the content would be while the witness is
    being read, and stays only when there is nothing a plate can show. */
-.ins-status { font:400 12.5px/1.6 'Public Sans',sans-serif; color:var(--meta); }
+.ins-status { font:400 12.5px/1.6 'Public Sans','Book Sigla',sans-serif; color:var(--meta); }
 
 /* What a collection says of itself, set as a form: the fields as written and
    in the manifest's own order, the key in the ruling register and the value
@@ -407,16 +407,16 @@ a.bb-ref:hover { color:var(--accent-2); }
 .ins-form { max-width:56ch; margin:26px auto 0; }
 .ins-field { display:flex; gap:16px; padding:9px 2px; border-bottom:1px solid var(--hair); }
 .ins-field:first-child { border-top:1px solid var(--rule); }
-.ins-key { flex:none; width:104px; font:500 10px/1.9 'IBM Plex Mono',monospace; letter-spacing:.06em;
+.ins-key { flex:none; width:104px; font:500 10px/1.9 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.06em;
   text-transform:uppercase; color:var(--meta); }
-.ins-val { flex:1; min-width:0; font:400 14px/1.6 'Newsreader',serif; color:var(--ink-soft); overflow-wrap:anywhere; }
+.ins-val { flex:1; min-width:0; font:400 14px/1.6 'Newsreader','Book Sigla',serif; color:var(--ink-soft); overflow-wrap:anywhere; }
 .ins-val a { color:var(--accent); }
 /* An id or a key is a handle, not a sentence: it reads in the mono the book
    gives every raw string, so it is never mistaken for the prose beside it. */
-.ins-val.raw { font:400 11.5px/1.7 'IBM Plex Mono',monospace; color:var(--dim); }
+.ins-val.raw { font:400 11.5px/1.7 'IBM Plex Mono','Book Sigla',monospace; color:var(--dim); }
 /* An id that is also a door -- a parent inscription's own leaf -- reads as
    the handle it is, and as the link it is. */
-.ins-val a.raw-link { font:400 11.5px/1.7 'IBM Plex Mono',monospace; overflow-wrap:anywhere; }
+.ins-val a.raw-link { font:400 11.5px/1.7 'IBM Plex Mono','Book Sigla',monospace; overflow-wrap:anywhere; }
 /* A manifest that quotes a wall is quoting somebody; the line reads as the
    quotation it is, and keeps the breaks whoever wrote it put in. */
 .ins-val.quote { font-style:italic; color:var(--dim); white-space:pre-line; }
@@ -441,7 +441,7 @@ a.bb-ref:hover { color:var(--accent-2); }
 .ins-member-body img { max-width:100%; border:1px solid var(--card-bd); border-radius:4px; background:var(--card); }
 /* A member whose witness will not answer, or carries something no plate can
    show, keeps its poem and says so quietly where the image would stand. */
-.ins-member-say { font:400 12px/1.6 'Public Sans',sans-serif; color:var(--meta); }
+.ins-member-say { font:400 12px/1.6 'Public Sans','Book Sigla',sans-serif; color:var(--meta); }
 
 /* The other appendices, at the foot: the leaf's own turns, spelled out for
    hands that are not swiping. */

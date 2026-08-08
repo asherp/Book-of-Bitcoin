@@ -6,6 +6,26 @@
    before the page's inline styles, so a page can override — the book page
    tightens the masthead's bottom margin. */
 
+/* The page's own margins, and the one place they are decided. Every page sets
+   its text in a column 22px clear of the screen's edges; what that constant
+   cannot know is that a phone in landscape spends part of its width on a
+   display cutout. Every page declares `viewport-fit=cover`, so the window
+   runs the whole screen — which is the only way to be rid of the system's
+   black letterbox — and a page that renders under the cutout has to pad
+   itself back out of the way, or the camera sits on the text.
+
+   Both edges are read, because the cutout swaps sides between the two
+   landscape rotations and a rule that pads one of them is right half the
+   time. The inset wins only where it is the larger of the two, so portrait,
+   every desktop, and every page in print resolve both to 22px exactly as
+   before. A page that wants a different measure sets --gutter; the pair
+   below follow it. */
+:root {
+  --gutter: 22px;
+  --gutter-l: max(var(--gutter), env(safe-area-inset-left, 0px));
+  --gutter-r: max(var(--gutter), env(safe-area-inset-right, 0px));
+}
+
 .masthead { display:flex; align-items:baseline; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:40px; }
 .masthead .title { font:600 13px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.22em; text-transform:uppercase; color:var(--ink); }
 .masthead .title .beta { color:var(--accent); text-transform:none; font-family:'Newsreader','Book Sigla','Source Serif 4',Georgia,serif; font-weight:600; font-size:1.12em; }

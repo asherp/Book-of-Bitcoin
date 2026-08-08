@@ -26,6 +26,21 @@
    stands, and its reference cites only what the parent's hasn't already. */
 .toc-entry.under-parent { padding-left:32px; }
 .toc-entry.under-book.under-parent { padding-left:48px; }
+
+/* The reader's own filing: a slash in a name they typed groups the keeps
+   beneath a heading of that name (btc-path.js), at any depth, --file-depth
+   counting how far in. It reads as a heading of the same family as a Book's
+   -- small, spaced, uppercase -- but in the accent the reader's ribbon flies,
+   because this heading is theirs and the volume's and the book's are the
+   book's own. A filed row steps in from its heading exactly as a row steps
+   in from a Book heading, and a citation child steps in once more from
+   there: the two axes indent independently, which is what keeps a section
+   listed under its chapter reading the same wherever the reader filed it. */
+.toc-file { margin:15px 0 1px; padding-left:calc(16px + 16px * var(--file-depth, 0));
+  font:600 10px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.16em; text-transform:uppercase; color:var(--accent); }
+.toc-file .toc-bm { width:7px; height:10px; margin-right:6px; }
+.toc-entry.filed { padding-left:calc(32px + 16px * var(--file-depth, 0)); }
+.toc-entry.filed.under-parent { padding-left:calc(48px + 16px * var(--file-depth, 0)); }
 .toc-title { flex:1; min-width:0; font:500 17px/1.35 'Newsreader','Book Sigla',serif; color:var(--ink-soft); }
 .toc-ref { flex:none; min-width:84px; text-align:right; font:600 13px/1.4 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.06em; color:var(--accent); white-space:nowrap; font-variant-numeric:tabular-nums; }
 .toc-ref.none { color:var(--meta); font-weight:400; }

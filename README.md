@@ -308,13 +308,21 @@ compiled to WASM) is consumed as a published
 - `web/btc-mempool.js`, `web/btc-toc.css` — the queue read as the chapters
   it is about to become, and how a list of chapters is set. Appendix I's
   contents leaf lists the queue **the way a volume's contents lists its own
-  chapters**: a Book heading over the rows that share one, each row citing
-  only what that heading has not already named (□2,016, then □1 under the
-  next book) — a projected chapter falls in a book by the same arithmetic a
-  mined one does, so it is listed by the same rules, in the volumes' own face
-  and ink; what says it is provisional is the □ its reference wears in place
-  of the ■ it has not earned. The stylesheet is shared with the appendix
-  leaves so a chapter reads the same wherever it is set
+  chapters**: a row per projected chapter, in the order the queue holds them,
+  in the volumes' own face and ink — what says a row is provisional is the □
+  its reference wears in place of the ■ it has not earned, and a contents
+  that changed type halfway down would be saying so twice. Neither leaf
+  groups by book any more: both used to raise a `Book N` heading wherever two
+  consecutive rows shared one, and the book a row falls in is an accident of
+  where the chain happens to have reached, not something anybody meant.
+  Filing is the deliberate grouping (`web/btc-path.js`), and an automatic
+  heading beside it only competed with it. The queue's leaf does raise one
+  heading, `Provisional blocks`, over all of its rows at once — that groups by
+  what they are, and it is what separates the drafts from the two rankings
+  listed beside them. Under it a row cites its chapter alone (□530), and one
+  falling in a different book from the first says so in its own reference.
+  The stylesheet is shared with the appendix leaves so a chapter reads the
+  same wherever it is set
 - `web/btc-projected.js` — what is actually inside the next chapter, for
   Appendix I's two rankings. No HTTP endpoint on either mirror will give it:
   `/mempool/recent` is ten transactions and ignores `?count=`,
@@ -327,11 +335,16 @@ compiled to WASM) is consumed as a published
   arithmetic — fee ÷ vsize reproduces the rate). **Only block 0**, which runs
   ~5,200 transactions and ~600 KB where all eight would be four to five
   megabytes, and which is the only projected block that is a forecast rather
-  than a statement about the queue now. The half-megabyte is not kept: the two
-  rankings are taken on arrival and only their heads are held, in
-  sessionStorage for a couple of minutes, so the sideways turn between them is
-  free where re-reading would cost another 600 KB to answer the same question
-  a different way. Every surface prints the minute the snapshot was taken
+  than a statement about the queue now. The socket is then **held open**,
+  because each row prints a §section number and the queue renumbers its
+  sections constantly — watched live, one transaction moved §2526 → §2113 →
+  §2696 across three consecutive frames. One full listing establishes
+  template order and the deltas maintain it (removals and rate changes
+  exactly, insertions seated by effective rate; a sequence gap resubscribes
+  rather than renumbering from an order that has drifted). Only the heads of
+  the two lists are kept, in sessionStorage — refreshed at a walking pace and
+  flushed on the way out, so the leaf a reader turns to next paints what this
+  one had on screen when it was left
 - `web/btc-mines.js` — Appendix II: who has been winning the chapters. The last difficulty window — 2,016 blocks, one β and about a
   fortnight — is counted block by block, each attributed to a pool, and the
   pools ordered by how many they won. The window is **counted rather than
@@ -456,6 +469,54 @@ compiled to WASM) is consumed as a published
   transaction parsing, prose composition, citations, contents data,
   anthology data, and the archive (immutable chain data kept in IndexedDB,
   so revisited chapters and resolved citations read offline)
+- `web/btc-path.js` — a slash in a name is a path. The book files everything
+  it holds in a hierarchy, and names were the one thing that could not be
+  filed. `Cold Card Attack/wave 1` files under `Cold Card Attack`, at any
+  depth, with the group's name printed once as a heading and each row
+  carrying only its leaf. No new control: the naming form a reader already
+  meets is the whole interface, an existing flat name is a path of depth one,
+  and the curated entries had been filing by hand with a comma
+  (`Coldcard attack, wave 1`) — a flat title straining to be a path. **A
+  group forms only where two or more names share a parent, and a name
+  standing alone prints exactly as its author wrote it.** That is what lets
+  the rule read an editor's prose safely: the book's most famous title,
+  `The Times 03/Jan/2009 Chancellor on brink of second bailout for banks`,
+  is a masthead date, it stands alone in its first segment, and so it is
+  never filed and never respelled — filing is something an author does
+  deliberately, by naming two entries alike, and one slash on its own is
+  punctuation. A name that is **also an entry** heads its own filing rather
+  than standing beside it: `SegWit` (the book) with `SegWit/activation` under
+  it prints the book's own row where a bare heading would otherwise go, and
+  what is filed beneath indents from it. In the contents the two axes meet on
+  one rule: an entry filed somewhere of its own keeps to it and is never
+  absorbed by whatever row happens to name its block, while an entry filed
+  nowhere follows the entry it cites — so `First SegWit spend`, and a
+  bookmark the reader kept in that same chapter, read beneath
+  `SegWit/activation` wherever that row ends up. On the shelf a path does more —
+  see `shelfLedgers` in `web/btc-index.js`: keeps sharing a path are one
+  ledger, and a parent is **a ledger in its own right** whose account is
+  every member beneath it, its children partitioning it. The Coldcard hack is
+  the argument: seven shared vaults and 214 that are not are two tables
+  answering different questions, while the parent still totals the 221 the
+  incident is quoted by. A filed ledger is named in a URL by its path
+  (`?ledger=Coldcard%20hack/wave%203`) rather than by its members — a name
+  that says what it is, survives the set changing, and keeps 221 addresses
+  out of a URI
+- `web/btc-lastread.js` — where the reader stopped. A book left face-down on
+  a table opens where it was left, and this one now does too: the reading
+  page keeps its own address as it turns, and a visit that names no passage —
+  the bare domain, the installed app's own launch, a masthead's Read — resumes
+  there. What is kept is the query the page writes for itself, so a place is
+  as fine as the address grammar is (a §section, a book or volume leaf) and a
+  parameter added later rides along without this module learning about it. An
+  explicit target always wins: a shared link opens where it says and never on
+  the recipient's own place. A reader who stopped at the chain's front kept
+  the front rather than that block's number, so the tip is kept tip-relative
+  and resumes at whatever the tip is by then. The record is versioned and
+  self-checking, since it outlives the build that wrote it — taking an update
+  must not cost the reader their page — and one it does not recognize is
+  cleared rather than obeyed, leaving the reader at the cover, which is also
+  where a first visit begins
 - `web/btc-chaintime.js` — roughly when a height was mined, anchored on the
   halvings. One reading needs it: a coinbase's second field is a template
   timestamp in some pools' house style and a counter in others, and nothing
@@ -489,7 +550,11 @@ compiled to WASM) is consumed as a published
   than a place and so reads in the Ledger instead of opening a chapter. An entry
   found in more than one place writes `ids:` and gives each an `as:` — the two
   twice-confirmed coinbases are one thing in four printings, so the contents
-  carries four rows and the reading beneath them is written once.
+  files them: the title once as a heading, the four printings beneath it by
+  their `as` alone, each citing its own chapter, and the reading written once.
+  The reading page, naming the passage a reader stands on rather than listing
+  it, says the same name in prose instead — *The twice-confirmed coinbases —
+  first printing*.
   YAML and Markdown rather than JavaScript because this is the part of the
   repository written by people who are writing rather than programming — and
   nothing is generated from them: the browser reads these files as they stand,
