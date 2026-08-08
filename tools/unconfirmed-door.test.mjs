@@ -114,3 +114,44 @@ test('the position feed answers or lets go — it never hangs the lookup', () =>
   assert.match(feed, /if \(!mempoolBackendBase\) \{ resolve\(null\); return; \}/,
     'no backend, no question — the caller says so instead of waiting');
 });
+
+test('a coin spent into the queue is cited there, not left blank', () => {
+  // The two margins are meant to mirror each other -- the left says where
+  // value came from, the right where it went next -- and the left has cited
+  // unmined prevouts all along (projectedCitation). The right used to drop
+  // them, so a coin already spent read as unspent until a miner agreed.
+  const fwd = book.slice(book.indexOf('async function resolveForwardCitations'),
+    book.indexOf('// Populate a citation cell with the scripture-style reference'));
+  assert.match(fwd, /if \(!sp \|\| !sp\.spent \|\| !sp\.txid\) return;/,
+    'an unspent output is still the only one with nothing to say');
+  assert.match(fwd, /if \(!sp\.status \|\| !sp\.status\.confirmed\) \{ await citeDraftSpender/,
+    'an unmined spender is cited rather than dropped');
+  const draft = book.slice(book.indexOf('async function citeDraftSpender'),
+    book.indexOf('// Populate a citation cell with the scripture-style reference'));
+  // □ over ■, from the same helper the chapter's own reference uses, so a
+  // provisional citation differs from a settled one by one glyph.
+  assert.match(draft, /referenceOf\(place\.height\)/, 'cited with the expected mark');
+  assert.match(draft, /place\.pos === null/, 'and with the seat only when the seat is known');
+  // The door is the txid: a seat printed a moment ago may have moved, the
+  // transaction has not.
+  assert.match(draft, /link\.href = `\?txid=\$\{sp\.txid\}`/, 'the door is the name that does not move');
+  assert.match(draft, /goToTransaction\(sp\.txid, `in-\$\{sp\.vin\}`\)/,
+    'and it lands on the input that took the coin, as the mined form does');
+});
+
+test('placing a draft costs the manifests in hand first, and is bounded after', () => {
+  const place = book.slice(book.indexOf('async function draftPlace'),
+    book.indexOf('// An amount\'s hover'));
+  assert.ok(place.indexOf('projectedCitation(txid)') < place.indexOf('fetchTxProjection(txid)'),
+    'what is already in hand is free, and answers exactly — it is asked first');
+  assert.ok(place.indexOf('loadProjection()') < place.indexOf('fetchTxProjection(txid)'),
+    'and the projection is read before the feed, so the feed has a host to ask');
+  assert.match(place, /if \(draftAsked >= DRAFT_PLACES\) return null;/,
+    'a page stops asking: a citation is an annotation, not a reason to hold the network open');
+  assert.match(place, /draftRenderGen !== renderGen/, 'and the count is per page, not per session');
+  // The backend keeps ONE tracked transaction per client, so two questions
+  // asked at once would answer each other's.
+  assert.match(place, /draftChain = next\.then/, 'the questions are asked one at a time');
+  assert.match(place, /gen === renderGen \? fetchTxProjection\(txid\) : null/,
+    'and a question queued for a page the reader has left is not asked at all');
+});
