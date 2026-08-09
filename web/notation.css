@@ -123,6 +123,22 @@
    beneath, so it is the one place these two ever meet. */
 .pattern-scroll + .glyph-grid { margin-top: 15px; }
 .pattern-table .lam { color: var(--meta); font-weight: 400; }
+/* The addresses table reads the same patterns from the outside: what a string
+   handed to a wallet carries, which is the term's argument and a tag naming the
+   term it goes into. Five columns, like the common table, so it needs no
+   template rule of its own -- only the class, so the two never share a split.
+
+   .mach is the machine's spelling rather than the book's: an address prefix, a
+   base58 version byte, the name of an encoding. None of these is a siglum -- an
+   address is how other software writes a script, and this book writes its own --
+   so they set in the key's quiet colour and in the mono face the rest of the
+   apparatus uses, never in the serif the marks take. What stays in the book's
+   own hand across the row is exactly what the chain keeps: the argument, and
+   base58's ⌘, which is the chain's own hash doing duty as a typo check. */
+.pattern-table .seq.mach {
+  font: 400 calc(13px * var(--scale-notation, 1))/1.5 'IBM Plex Mono','Book Sigla',monospace;
+  color: var(--meta);
+}
 /* The Lightning table carries two extra columns: what each channel party
    computes independently, off chain -- keys from its own secret k, signatures,
    and the same script hash h, reached without a secret crossing the wire.
