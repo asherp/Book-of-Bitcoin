@@ -467,7 +467,12 @@ export function illuminate(hostEl, opts = {}) {
 
     const out = illum.illuminate({
       seed: opts.blockHash,
-      confirmations: opts.confirmations ?? 0,
+      // The engine counts in whatever unit its stage ladder is written in and
+      // attaches no meaning to the number; this book's ladder is written in
+      // confirmations, so that is what goes across. The word stays `confirmations`
+      // on THIS side, where it is the truth, and `time` on that side, where it
+      // is anybody's.
+      time: opts.confirmations ?? 0,
       host: { x: 0, y: 0, w: hostRect.width, h: hostRect.height },
       page: opts.boundsEl ? toHostSpace(opts.boundsEl.getBoundingClientRect(), hostRect) : null,
       obstacles,
