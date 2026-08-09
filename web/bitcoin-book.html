@@ -448,7 +448,23 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 }
 .illum-ctl-reset:hover:not(:disabled) { background: transparent; color: var(--ink); border-color: var(--accent); }
 /* The single-mark stage: one sigil off the page, grown on its own, with
-   ‹ › to step through the rest (see illumination-controls.js). */
+   ‹ › to step through the rest (see illumination-controls.js).
+
+   Stuck to the top of the scrolling panel, because it is what the knobs
+   below it are FOR: the turtle group sits far enough down that reaching a
+   slider used to scroll the very thing it changes out of sight, leaving a
+   reader dragging blind and scrolling back up to see what they did. The
+   panel's own background carries under it (the group is otherwise
+   transparent, and the controls would show through as they pass beneath),
+   and it keeps its bottom rule, which reads as the divider it already was
+   when it was merely the first group. The group's usual bottom MARGIN
+   becomes padding: a margin is outside the background, so a slider passing
+   through that band would show as a sliver under the stage. */
+.illum-ctl-preview {
+  position: sticky; top: 0; z-index: 2;
+  background: var(--card);
+  padding-top: 4px; padding-bottom: 20px; margin-bottom: 0;
+}
 .illum-ctl-preview-nav { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
 .illum-ctl-preview-label { font: 500 10.5px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing: .06em; color: var(--dim); text-align: center; flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .illum-ctl-step {
@@ -4548,6 +4564,16 @@ async function illuminateSection(wrap, flow) {
     if (currentIllumHandle) { currentIllumHandle.destroy(); currentIllumHandle = null; }
     currentIllumOpts = {
       proseEl: flow,
+      // The page, on both counts. Growth is bounded by the leaf's own edge
+      // rather than by the passage's box (#page-frame is also what clips,
+      // so a vine that reached past it would be cut mid-stroke rather than
+      // turned), which opens the margin around the text column to it -- and
+      // once a vine can be out there, every word it could pass has to be in
+      // the obstacle field, not just the transaction's own: the chapter
+      // head, the section title and its hash prose, the totals line, the
+      // witness footnotes. #page-slide holds all of it.
+      obstacleEl: $('page-slide'),
+      boundsEl: $('page-frame'),
       seedEls,
       blockHash: state.projected ? null : state.hash,
       confirmations,
@@ -4569,6 +4595,13 @@ async function illuminateSection(wrap, flow) {
         ? parseFloat(getComputedStyle(el, '::first-letter').fontSize) || null
         : null),
       pointOf: (el) => (el.classList.contains('tx-body-lead') ? 'top-left' : 'edge'),
+      // …and its MARK is that one letter, not the word it opens. The seed
+      // is the whole paragraph (the cap is a CSS pseudo-element with no
+      // node of its own), so without this the rest of the opening word
+      // counts as sigil too and drops out of the obstacle field -- growth
+      // would cross it. Every other seed carries its mark at the front of
+      // its own text and needs no telling; see markLeadLength.
+      markLengthOf: (el) => (el.classList.contains('tx-body-lead') ? 1 : null),
     };
     currentIllumHandle = illumModule.illuminate(wrap, currentIllumOpts);
     // The panel outlives the section it was opened over: a page turn gives
@@ -4623,6 +4656,7 @@ function openIllumWidget(buildIlluminationControls) {
           enabled: illumEnabled,
           sizeOf: currentIllumOpts && currentIllumOpts.sizeOf,
           pointOf: currentIllumOpts && currentIllumOpts.pointOf,
+          markLengthOf: currentIllumOpts && currentIllumOpts.markLengthOf,
         }),
       },
     });

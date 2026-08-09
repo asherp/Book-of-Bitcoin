@@ -61,22 +61,28 @@ export function buildIlluminationControls(root, illum, opts = {}) {
     branchinessPerGen: [0.02, 0.5, 0.01], branchinessCap: [0.1, 1, 0.05],
     branchinessForkThreshold: [0, 1, 0.05], maxSizeBoost: [0, 12, 1],
     step: [2, 20, 0.5], turnDeg: [2, 90, 1], jitterDeg: [0, 45, 1],
-    maxDeflectTries: [1, 16, 1], leafDedupPx: [0, 12, 0.5], overflow: [0, 120, 2],
+    maxDeflectTries: [1, 16, 1], leafDedupPx: [0, 12, 0.5], obstaclePad: [0, 12, 0.5],
+    overflow: [0, 120, 2], boundsInset: [0, 40, 1],
     maxReachFloor: [10, 300, 5], maxReachMul: [0.5, 5, 0.1], referenceFontSize: [8, 32, 1],
     glyphFollowMax: [0, 80, 1], glyphClearanceMul: [0.2, 3, 0.1], glyphDepartDeg: [0, 120, 2],
+    departForkSteps: [0, 12, 1],
   };
   const LABELS = {
     branchinessPerGen: 'Branchiness / generation', branchinessCap: 'Branchiness cap',
     branchinessForkThreshold: 'Fork threshold', maxSizeBoost: 'Max size boost (gens)',
     step: 'Step (px)', turnDeg: 'Turn (deg)', jitterDeg: 'Jitter (deg)',
     maxDeflectTries: 'Max deflect tries', leafDedupPx: 'Leaf dedup radius (px)',
-    overflow: 'Overflow past box (px)', maxReachFloor: 'Leash floor (px)',
+    obstaclePad: 'Clearance around a term (px)',
+    overflow: 'Overflow past box (px)', boundsInset: 'Inset from page edge (px)',
+    maxReachFloor: 'Leash floor (px)',
     maxReachMul: 'Leash × sigil size', referenceFontSize: 'Reference font size (px)',
     glyphFollowMax: 'Ride the sigil (steps)', glyphClearanceMul: 'Self-cross clearance (×step)', glyphDepartDeg: 'Depart angle (deg)',
+    departForkSteps: 'Fork at departure (steps)',
   };
   const GRAMMAR_KEYS = ['branchinessPerGen', 'branchinessCap', 'branchinessForkThreshold', 'maxSizeBoost'];
-  const TURTLE_KEYS = ['step', 'turnDeg', 'jitterDeg', 'maxDeflectTries', 'leafDedupPx', 'overflow', 'maxReachFloor', 'maxReachMul', 'referenceFontSize',
-  'glyphFollowMax', 'glyphClearanceMul', 'glyphDepartDeg'];
+  const TURTLE_KEYS = ['step', 'turnDeg', 'jitterDeg', 'maxDeflectTries', 'leafDedupPx', 'obstaclePad',
+  'overflow', 'boundsInset', 'maxReachFloor', 'maxReachMul', 'referenceFontSize',
+  'glyphFollowMax', 'glyphClearanceMul', 'glyphDepartDeg', 'departForkSteps'];
 
   root.innerHTML = `
     ${preview ? `

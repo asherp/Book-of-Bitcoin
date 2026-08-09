@@ -17,6 +17,23 @@
 // A resize, an orientation change, a font finishing its load — none of that
 // changes what grew, only where it fits. See the design note on issue #73.
 //
+// What that interpretation answers to, in the order it binds:
+//   - THE SIGIL, which a vine leaves by riding its own outer contour (see
+//     railFor / outerContours), forking away where following it further
+//     would close the letter back onto the trail just drawn.
+//   - THE TEXT, as one padded rectangle per TERM the page laid out, the
+//     marks themselves excepted (see measureObstacles). Growth traces those
+//     boxes' silhouettes the way a scribe's vine runs between the lines --
+//     which is why the field has to be the whole page's text, not the
+//     passage's, once growth is allowed into the margin.
+//   - THE PAGE, whose own edge bounds growth (illuminate's boundsEl) and,
+//     being an edge like any other, gets ridden rather than crashed into.
+//   - THE LEASH, so that what grows off a mark still reads as belonging to
+//     it and not to some other part of the page (see maxReachMul).
+// Numerals are on the text's side of that list, never the sigil's: a count
+// riding a mark is apparatus, and neither lends a letterform to trace nor
+// earns the vine any right to cross it. See markLeadLength.
+//
 // Deliberately dependency-free and framework-agnostic: an <svg> is built and
 // attached with plain DOM calls, styled with inline attributes on
 // currentColor exactly as the bookmark ribbon and printer mark are (see
@@ -87,7 +104,9 @@ export const params = {
   jitterDeg: 10,            // random wobble added to every F's heading, in degrees
   maxDeflectTries: 6,       // how hard a blocked step tries to dodge before giving up
   leafDedupPx: 3,           // leaves within this many px of one already placed collapse
-  overflow: 48,             // how far past hostEl's own box a vine may still roam (illuminate())
+  obstaclePad: 2.5,         // halo around each TERM's box, in px (measureObstacles)
+  overflow: 48,             // how far past hostEl's own box a vine may still roam, WITHOUT a page to bound it (illuminate())
+  boundsInset: 2,           // how far inside the page's own edge growth stops, given one (illuminate()'s boundsEl)
   maxReachFloor: 80,        // the leash's minimum radius from an anchor (illuminate())
   maxReachMul: 1.8,         // the leash's radius per px of the anchor's own size (illuminate())
   // ── riding the sigil's own outline ────────────────────────────────────
@@ -101,6 +120,11 @@ export const params = {
   glyphFollowMax: 26,
   glyphClearanceMul: 0.9,
   glyphDepartDeg: 52,
+  // …and where it leaves, it FORKS: the stem peels off at glyphDepartDeg
+  // while a shoot this many steps long carries on at twice that angle, so
+  // the ride ends in a branching rather than in a single quiet turn. 0
+  // disables it, leaving the plain departure.
+  departForkSteps: 3,
   // the body-text size step/leaf drawing were tuned at. illuminate() scales
   // step, leaf size, overflow and maxReachFloor by (the reader's current
   // body size / this) -- see geometryScale below -- so the decoration stays
@@ -296,13 +320,59 @@ function glyphInkBox(el, r) {
   } catch (_) { return null; }
 }
 
+// ─── outer contours: the letterform's silhouette, not its holes ───────────
+// A vine rides the OUTSIDE of a mark. More than half the notation's
+// outlines are made of several subpaths -- ⓪ has four, ⌘ six, β an outer
+// contour and two counters -- and a counter is a hole in the letter, not an
+// edge of it: growth that rode one would be growth crawling around inside
+// the glyph. So a contour that lies within a larger one is dropped, and
+// what remains is the silhouette. Note the plural: plenty of these marks
+// are genuinely several separate outer shapes (= is two bars, ‖ two
+// strokes, |·| three), none of which contains the others, and all of which
+// are legitimately rideable -- so this discards the enclosed, never all but
+// the biggest. Everything is in the outline's own unit square, which is a
+// similarity transform away from host space, so containment answers the
+// same either side of the mapping.
+function contourArea(pts) {
+  let a = 0;
+  for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+    a += (pts[j].x + pts[i].x) * (pts[j].y - pts[i].y);
+  }
+  return a / 2;   // signed: the font's winding decides which way, and only |area| is used
+}
+// Standard crossing-number test, on the sampled polyline rather than the
+// curve it came from -- 220 samples of a letterform is far finer than the
+// distinction being drawn here (is this shape inside that one?) needs.
+function pointInContour(p, pts) {
+  let inside = false;
+  for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+    const a = pts[i], b = pts[j];
+    if ((a.y > p.y) !== (b.y > p.y)
+      && p.x < ((b.x - a.x) * (p.y - a.y)) / (b.y - a.y) + a.x) inside = !inside;
+  }
+  return inside;
+}
+// Exported for the tests: this is pure geometry, and the rule it encodes --
+// counters are not edges -- is worth pinning down without a font in hand.
+// A contour is a counter if some LARGER contour contains it; comparing
+// areas is what keeps a pair of contours that (through sampling noise on a
+// shared edge) each appear to contain the other from eliminating both.
+export function outerContours(contours) {
+  if (contours.length < 2) return contours;
+  const areas = contours.map((c) => Math.abs(contourArea(c)));
+  const keep = contours.filter((c, i) => !contours.some((other, j) =>
+    j !== i && areas[j] > areas[i] && pointInContour(c[0], other)));
+  return keep.length ? keep : contours;
+}
+
 // A glyph's outline, sampled into plain polylines in the unit square it was
 // stored in -- one per subpath, since a letter is rarely one closed curve (β
 // has an outer contour and two counters, and sampling straight across the
-// jump between them would invent a segment that crosses the letter). Cached
-// per character: the sampling is the expensive part and does not depend on
-// the size the glyph happens to be drawn at, which is pure arithmetic
-// applied afterwards (see railFor).
+// jump between them would invent a segment that crosses the letter), and
+// then reduced to the outer ones (above). Cached per character: the
+// sampling is the expensive part and does not depend on the size the glyph
+// happens to be drawn at, which is pure arithmetic applied afterwards (see
+// railFor).
 const unitContourCache = new Map();
 function unitContours(ch, d) {
   if (unitContourCache.has(ch)) return unitContourCache.get(ch);
@@ -319,8 +389,9 @@ function unitContours(ch, d) {
     }
     out.push(pts);
   }
-  unitContourCache.set(ch, out);
-  return out;
+  const outer = outerContours(out);
+  unitContourCache.set(ch, outer);
+  return outer;
 }
 
 // The rail a vine rides out of its sigil: the contour of that sigil's own
@@ -332,12 +403,11 @@ function unitContours(ch, d) {
 // The outline is a unit square (see sigla-outlines.js) and the glyph's
 // measured ink box (above) is the map back to host space -- no font-size
 // factor to carry separately, since that box is already the size the
-// browser rendered this exact character at. Of the letter's contours the
-// nearest to the start point wins (the outer one, for a mark growing off
-// its edge); an anchor sitting outside the ink box -- the edge point is
-// taken on the span's larger box, so it can land in the leading -- simply
-// joins the letter at its closest point, the same question asked from
-// slightly further away.
+// browser rendered this exact character at. Only the letter's OUTER
+// contours are candidates (see outerContours: a counter is a hole, and a
+// vine that rode one would be crawling around inside the glyph), and of
+// those the nearest to the start point wins -- which for a mark drawn as
+// several separate strokes is the stroke the vine actually grows off.
 //
 // Returns null -- for measureAnchors to fall back to the sigil's plain
 // bounding-box edge -- when the character has no outline (not every mark in
@@ -438,12 +508,15 @@ export function interpretFrom(symbol, anchor, obstacles, bounds, rng, maxReach =
   };
   // Where the vine turns when it leaves the letter: away from the contour's
   // own middle, so it peels outward into the margin rather than back across
-  // the glyph it just traced.
-  const departAngle = (x, y, tangent) => {
+  // the glyph it just traced. `fork` is the same turn again -- twice the
+  // bias, the same side -- for the shoot thrown off at that point (see
+  // departFork below): both leave outward, at a visible angle to each other.
+  const departFrom = (x, y, tangent) => {
     const bias = (params.glyphDepartDeg * Math.PI) / 180;
     const left = tangent - Math.PI / 2;
     const awayIsLeft = Math.cos(left) * (rail.cx - x) + Math.sin(left) * (rail.cy - y) < 0;
-    return tangent + (awayIsLeft ? -bias : bias);
+    const sign = awayIsLeft ? -1 : 1;
+    return { angle: tangent + sign * bias, fork: tangent + sign * bias * 2 };
   };
   // The exemption belongs to the BRANCH, not the walk: it says "this line of
   // growth is legitimately inside these boxes", and only the branch that is
@@ -474,6 +547,28 @@ export function interpretFrom(symbol, anchor, obstacles, bounds, rng, maxReach =
 
   const finish = () => { if (cur.points.length > 1 || cur.leaves.length) segments.push(cur); };
 
+  // The shoot thrown off where the ride ends: a short straight run at
+  // `angle`, obeying every rule an ordinary step does (leash, bounds, the
+  // obstacles live at that moment) and simply stopping at the first one it
+  // can't satisfy. Deliberately not part of the derivation -- it is a
+  // property of MEETING the letter's end, which the symbol string knows
+  // nothing about, and it carries no leaf, so it reads as the stem
+  // splitting rather than as another branch of the grammar.
+  const departFork = (x, y, angle, obs) => {
+    const steps = Math.max(0, Math.round(params.departForkSteps));
+    if (!steps) return;
+    const pts = [{ x, y }];
+    let sx = x, sy = y;
+    for (let i = 0; i < steps; i++) {
+      const nx = sx + Math.cos(angle) * STEP;
+      const ny = sy + Math.sin(angle) * STEP;
+      if (!withinReach(nx, ny) || outOfBounds(nx, ny, bounds) || firstBlockingRect(sx, sy, nx, ny, obs)) break;
+      sx = nx; sy = ny;
+      pts.push({ x: sx, y: sy });
+    }
+    if (pts.length > 1) segments.push({ points: pts, leaves: [] });
+  };
+
   for (const ch of symbol) {
     if (ch === 'F') {
       const obs = active();
@@ -484,9 +579,9 @@ export function interpretFrom(symbol, anchor, obstacles, bounds, rng, maxReach =
       // carries you all the way round to where you began, and the point of
       // this run is the letter's shape, not a loop of it -- or when the
       // step budget, the leash, the bounds or a real obstacle says stop.
-      // Either way the walk keeps its position and turns away from the
-      // glyph (departAngle), then carries on as any other vine does,
-      // finding the prose's edges and following those instead.
+      // Either way the walk keeps its position and forks away from the
+      // glyph (departFrom/departFork), then carries on as any other vine
+      // does, finding the prose's edges and following those instead.
       if (state.railing && rail) {
         const clear = params.glyphClearanceMul * STEP;
         const SKIP = 3;   // the trail immediately behind is always "near"; it's the far end that matters
@@ -522,7 +617,9 @@ export function interpretFrom(symbol, anchor, obstacles, bounds, rng, maxReach =
           for (const r of obstacles) if (!state.home.has(r) && pointInRect(adv.x, adv.y, r)) state.home.add(r);
           continue;
         }
-        state = { ...state, angle: departAngle(state.x, state.y, state.angle), railing: false };
+        const dep = departFrom(state.x, state.y, state.angle);
+        departFork(state.x, state.y, dep.fork, obs);
+        state = { ...state, angle: dep.angle, railing: false };
       }
       const jitter = (rng() - 0.5) * 2 * JITTER;
       const a = state.angle + jitter;
@@ -643,19 +740,157 @@ function toHostSpace(rect, hostRect) {
   return { x: rect.left - hostRect.left, y: rect.top - hostRect.top, w: rect.width, h: rect.height };
 }
 
-// Per-line rectangles for a prose element's actual rendered text -- handles
-// wrapping, font metrics, zoom, all of it, because it comes straight from
-// layout rather than being calculated. A small pad keeps vines from hugging
-// letterforms.
-export function measureObstacles(proseEl, hostRect, pad = 3) {
-  if (!proseEl) return [];
+// ─── which characters are the mark, and which are apparatus ──────────────
+// A count is not a mark. A direct push's own sigil IS its byte count (⁶⁹,
+// ⁶⁵), the bit counts ride ⌘ and ⓪, and the house subscripts distinguish a
+// family's variants (⧉₂, °₄, β₃₂) -- all of it annotation ABOUT the
+// notation rather than notation itself. So numerals are not part of a
+// sigil for any of this module's purposes: nothing traces the shape of a
+// figure, a figure contributes nothing to the box a vine grows off, and a
+// figure is ordinary text to be grown AROUND like any other. (The enclosed
+// digits ⓪ ①–⑯ are unaffected: those are not numerals riding a mark, they
+// ARE the marks for OP_0..OP_16, and they carry outlines of their own --
+// see tools/sigla-outlines/extract.mjs.)
+const NUMERAL = /[0-9²³¹⁰-⁹₀-₉]/;
+// How much of a seed's text is the mark itself: its leading run of
+// characters that are neither space nor figure. Composite marks keep all
+// their parts (¬⟨ is two characters, |·| three), a mark wearing a count
+// sheds it (⧉₂ -> ⧉, ■140 -> ■), and a seed that is really a CONTAINER for
+// a mark -- a citation line, a locktime note, the paragraph a drop cap
+// opens -- yields just its opening token, which is the only part of it
+// that is notation at all.
+// A caller that knows better than this rule can say so, per seed, with
+// illuminate()'s `markLengthOf` -- and one does. A CSS ::first-letter drop
+// cap makes the whole PARAGRAPH the seed, and the mark is its first letter
+// alone; left to the rule above, the rest of that opening word would be
+// exempted from the obstacle field along with the cap, and vines would
+// cross it.
+export function markLeadLength(text, override = null) {
+  if (Number.isFinite(override)) return Math.max(0, Math.min(text.length, override));
+  let n = 0;
+  while (n < text.length && !/\s/.test(text[n]) && !NUMERAL.test(text[n])) n++;
+  return n;
+}
+function firstTextNode(el) {
+  if (!el || !el.nodeType) return null;
+  const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+  for (let n = walker.nextNode(); n; n = walker.nextNode()) if ((n.nodeValue || '').trim()) return n;
+  return null;
+}
+// text node -> how many of its leading characters are sigil rather than
+// prose, for every seed on the page. This is the whole of what the
+// obstacle field and the anchors need to know about "which ink is a mark":
+// measureObstacles skips exactly this much of exactly these nodes, and
+// markRect measures exactly it.
+export function siglaSpans(seedEls, markLengthOf = null) {
+  const spans = new Map();
+  for (const el of seedEls || []) {
+    const node = firstTextNode(el);
+    if (!node) continue;                       // a mark with no text of its own -- the bookmark ribbon is an SVG
+    const text = node.nodeValue;
+    const lead = text.length - text.trimStart().length;
+    const end = lead + markLeadLength(text.slice(lead), markLengthOf && markLengthOf(el));
+    if (end > lead) spans.set(node, Math.max(spans.get(node) || 0, end));
+  }
+  return spans;
+}
+
+// The obstacle field: one padded rectangle per TERM of rendered text --
+// every run of non-space characters the page actually laid out -- with the
+// sigla themselves left out of it.
+//
+// Per term, not per line, and that is the point. A line rectangle spans the
+// full measure whether or not the text reaches the end of it, and stands as
+// tall as the line box including its leading, so a field made of them
+// leaves a vine nowhere to be except outside the paragraph altogether. Term
+// boxes leave the page as it actually reads: the channel between two lines,
+// the ragged end of a short line, the gutter beside a margin citation --
+// room to grow through without a letter of the prose being touched. That is
+// what lets growth roam as far as the page's own edge (see illuminate's
+// boundsEl) while still obscuring nothing.
+//
+// The marks are excluded because a vine grows OFF its own sigil and along
+// its outline -- it is inside that box by construction, and an obstacle you
+// start inside of is a trap, not a boundary (the same problem the home-rect
+// exemption in interpretFrom exists for, here simply not created). Only the
+// mark itself is excluded, though: the count riding it, and the rest of the
+// line a container-seed holds, stay in the field like any other text.
+export function measureObstacles(rootEl, hostRect, opts = {}) {
+  const o = (typeof opts === 'number') ? { pad: opts } : (opts || {});
+  const pad = o.pad ?? params.obstaclePad;
+  const spans = o.siglaSpans || new Map();
+  const out = [];
+  if (!rootEl) return out;
   const range = document.createRange();
-  range.selectNodeContents(proseEl);
-  const rects = Array.from(range.getClientRects());
-  return rects.map((r) => {
-    const h = toHostSpace(r, hostRect);
-    return { x: h.x - pad, y: h.y - pad, w: h.w + pad * 2, h: h.h + pad * 2 };
-  });
+  const emit = (node, start, end) => {
+    range.setStart(node, start);
+    range.setEnd(node, end);
+    for (const r of range.getClientRects()) {
+      if (!(r.width > 0) || !(r.height > 0)) continue;
+      const h = toHostSpace(r, hostRect);
+      out.push({ x: h.x - pad, y: h.y - pad, w: h.w + pad * 2, h: h.h + pad * 2 });
+    }
+  };
+  const walker = document.createTreeWalker(rootEl, NodeFilter.SHOW_TEXT);
+  for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+    const text = node.nodeValue || '';
+    if (!text.trim()) continue;
+    let start = -1;
+    for (let i = spans.get(node) || 0; i <= text.length; i++) {
+      const isTerm = i < text.length && !/\s/.test(text[i]);
+      if (isTerm && start < 0) start = i;
+      else if (!isTerm && start >= 0) { emit(node, start, i); start = -1; }
+    }
+  }
+  return out;
+}
+
+// Whether a rectangle comes within `radius` of a point -- the standard
+// distance from a point to an axis-aligned box, zero on each axis the point
+// already falls within. Used to hand each anchor only the obstacles its own
+// leash could ever bring it near: a page's worth of term boxes runs into
+// the thousands, and every one of them would otherwise be tested against
+// every step of every walk.
+function rectNear(r, x, y, radius) {
+  const dx = Math.max(r.x - x, 0, x - (r.x + r.w));
+  const dy = Math.max(r.y - y, 0, y - (r.y + r.h));
+  return dx * dx + dy * dy <= radius * radius;
+}
+
+// The mark's OWN rectangle: the box its sigil characters (see
+// markLeadLength) actually occupy, measured from layout, rather than the
+// box of the element carrying them.
+//
+// The difference is not small, and it runs the whole length of this module.
+// A composite like "β₃₂" measures about 2.5x wider as a span than the β
+// itself, so an edge point taken on the span sits off the subscript rather
+// than off the letter, and the outward direction is read from a center
+// pulled sideways by figures. A container seed is worse: a citation line,
+// or the paragraph a drop cap opens, is a whole block box whose corner has
+// nothing to do with where the mark is. Both resolve the same way -- ask
+// layout for the rectangle of just those characters.
+//
+// Returns null for a seed with no text at all (the bookmark ribbon is an
+// SVG), or one that is all figures, for the caller to fall back on the
+// element's own box.
+function markRect(el, hostRect, markLengthOf = null) {
+  const node = firstTextNode(el);
+  if (!node) return null;
+  const text = node.nodeValue;
+  const lead = text.length - text.trimStart().length;
+  const len = markLeadLength(text.slice(lead), markLengthOf && markLengthOf(el));
+  if (!len) return null;
+  const range = document.createRange();
+  range.setStart(node, lead);
+  range.setEnd(node, lead + len);
+  let left = Infinity, top = Infinity, right = -Infinity, bottom = -Infinity;
+  for (const r of range.getClientRects()) {
+    if (!(r.width > 0) || !(r.height > 0)) continue;
+    left = Math.min(left, r.left); top = Math.min(top, r.top);
+    right = Math.max(right, r.right); bottom = Math.max(bottom, r.bottom);
+  }
+  if (!(right > left) || !(bottom > top)) return null;
+  return toHostSpace({ left, top, width: right - left, height: bottom - top }, hostRect);
 }
 
 // Where a ray from a rectangle's own center, heading in `angle`, crosses the
@@ -703,17 +938,25 @@ export function measureAnchors(seedEls, hostRect, opts = {}) {
   const sizeOf = opts.sizeOf || (() => null);
   const pointOf = opts.pointOf || (() => 'edge');
   return Array.from(seedEls || []).map((el) => {
-    const r = toHostSpace(el.getBoundingClientRect(), hostRect);
+    const mode = pointOf(el);
+    // The mark's own characters, not the element's box -- so a count riding
+    // a sigil neither shifts the point growth starts from nor inflates the
+    // size that earns it generations (see markRect). The two overridden
+    // modes are about the ELEMENT's box by construction, though: 'top-left'
+    // exists for a CSS ::first-letter drop cap, which has no box of its own
+    // and sits at its paragraph's corner, and both come with a sizeOf()
+    // that answers the size question separately.
+    const box = toHostSpace(el.getBoundingClientRect(), hostRect);
+    const r = (mode === 'edge' && markRect(el, hostRect, opts.markLengthOf)) || box;
     const rcx = r.x + r.w / 2, rcy = r.y + r.h / 2;
     const angle = Math.atan2(rcy - cy, rcx - cx) || 0;
-    const mode = pointOf(el);
     // Height, not the larger of width/height: an inline mark's rendered
     // SIZE is its glyph height (~ font-size); its width is mostly a
-    // function of how many characters happen to be in the span, which says
-    // nothing about how big it looks. Using width would boost a long but
-    // ordinary-height mark ("β₃₂ 65535×256²⁶") well past a genuinely large
-    // one-character mark, backwards from the intent. Computed before
-    // positioning below -- 'top-left' uses it too.
+    // function of how many characters happen to be in the mark, which says
+    // nothing about how big it looks. Using width would boost a composite
+    // mark ("¬⟨", "|·|") well past a genuinely large one-character mark,
+    // backwards from the intent. Computed before positioning below --
+    // 'top-left' uses it too.
     const size = sizeOf(el) || r.h;
     let x, y;
     if (mode === 'top-left') {
@@ -854,8 +1097,27 @@ const reducedMotion = () => {
 //
 //   hostEl        the positioning context (given position:relative if it
 //                 isn't already) -- e.g. bitcoin-book.html's `.tx-wrap`.
-//   proseEl       the element whose rendered text is the obstacle field
+//   proseEl       the element whose body-text size sets the scale the
+//                 decoration is drawn at, and the default obstacle root
 //                 (defaults to hostEl).
+//   obstacleEl    the root whose rendered text is measured into the
+//                 obstacle field (defaults to proseEl). Give it the whole
+//                 PAGE where growth is allowed to leave the host's own box:
+//                 a vine roaming the margin passes text -- a running head,
+//                 a section title, a footnote -- that the host does not
+//                 contain, and every word of it has to be in the field or
+//                 the decoration will cover it.
+//   boundsEl      the element whose box growth may not leave -- the page
+//                 itself (bitcoin-book.html gives it #page-frame, which is
+//                 also what clips). Given one, the margin between the host
+//                 and the page's edge is open ground: a vine crosses it and
+//                 then RUNS ALONG that edge, exactly as it traces any other
+//                 boundary (see interpretFrom's wall-following), which is
+//                 what a manuscript's border does. What keeps the prose
+//                 clear is the obstacle field, and what keeps a small mark
+//                 from claiming the whole page is its own leash (see
+//                 maxReachMul). Omitted, growth is bounded the older way:
+//                 the host's own box plus `overflow`.
 //   seedEls       elements to grow from -- sigla marks, citation marks, the
 //                 bookmark ribbon; falls back to hostEl's own corners if
 //                 none are given, so the module still does something useful
@@ -870,6 +1132,13 @@ const reducedMotion = () => {
 //                 needed for a mark with no box of its own, e.g. a CSS
 //                 ::first-letter drop cap (read its computed font-size
 //                 instead). Omit it to just measure each seedEl's own bbox.
+//   markLengthOf(el)  optional override for HOW MUCH of a seed's text is
+//                 the mark (default: its leading run of non-figure,
+//                 non-space characters -- see markLeadLength). Needed for a
+//                 seed whose mark is smaller than that rule assumes: a
+//                 ::first-letter drop cap makes the whole paragraph the
+//                 seed, and the cap is one letter, not the opening word.
+//                 Return null to take the default.
 //   pointOf(el)   optional override for where on the anchor to start --
 //                 'edge' (default), 'center', or 'top-left' (for that same
 //                 drop-cap case: its containing element's box, not its own).
@@ -900,7 +1169,11 @@ export function illuminate(hostEl, opts = {}) {
     if (opts.enabled === false || stage === 0 || !opts.blockHash) { renderSegments(svg, [], {}); return; }
 
     const proseEl = opts.proseEl || hostEl;
-    const obstacles = measureObstacles(proseEl, hostRect);
+    const seedEls = (opts.seedEls && opts.seedEls.length) ? Array.from(opts.seedEls) : [];
+    // The marks themselves are not obstacles to their own vines -- see
+    // measureObstacles. Everything else under the obstacle root is,
+    // including the counts riding those marks.
+    const obstacles = measureObstacles(opts.obstacleEl || proseEl, hostRect, { siglaSpans: siglaSpans(seedEls, opts.markLengthOf) });
     // The body text's OWN current size, measured fresh on every layout()
     // pass rather than once when illuminate() was first called -- a font-
     // scale change (btc-fontscale.js) reflows the text, which resizes
@@ -927,11 +1200,23 @@ export function illuminate(hostEl, opts = {}) {
     // the book already leaves between one section and the next -- so a vine
     // can breathe into that margin without regularly reaching into a
     // neighboring section's own content.
-    const overflow = (opts.overflow ?? params.overflow) * geometryScale;
-    const bounds = { x: -overflow, y: -overflow, w: hostRect.width + overflow * 2, h: hostRect.height + overflow * 2 };
-    const seedEls = (opts.seedEls && opts.seedEls.length) ? opts.seedEls : [];
+    // The page's own edge, where there is a page to ask (see boundsEl
+    // above): growth stops just inside it -- `boundsInset`, enough that a
+    // stroke drawn on the boundary isn't half-clipped by it -- and, because
+    // leaving `bounds` gets the same tangent treatment as meeting an
+    // obstacle, runs along it rather than dying against it. Lacking a page,
+    // the older bound stands: the host's own box plus a modest overflow.
+    let bounds;
+    if (opts.boundsEl) {
+      const b = toHostSpace(opts.boundsEl.getBoundingClientRect(), hostRect);
+      const inset = (opts.boundsInset ?? params.boundsInset) * geometryScale;
+      bounds = { x: b.x + inset, y: b.y + inset, w: Math.max(0, b.w - inset * 2), h: Math.max(0, b.h - inset * 2) };
+    } else {
+      const overflow = (opts.overflow ?? params.overflow) * geometryScale;
+      bounds = { x: -overflow, y: -overflow, w: hostRect.width + overflow * 2, h: hostRect.height + overflow * 2 };
+    }
     const anchors = seedEls.length
-      ? measureAnchors(seedEls, hostRect, { sizeOf: opts.sizeOf, pointOf: opts.pointOf })
+      ? measureAnchors(seedEls, hostRect, { sizeOf: opts.sizeOf, pointOf: opts.pointOf, markLengthOf: opts.markLengthOf })
       : [
         { x: 2, y: hostRect.height / 2, angle: Math.PI },
         { x: hostRect.width - 2, y: hostRect.height / 2, angle: 0 },
@@ -952,7 +1237,13 @@ export function illuminate(hostEl, opts = {}) {
       // for a real flourish, but never so wide it reads as belonging to a
       // different part of the page than the mark that grew it.
       const maxReach = Math.max((opts.maxReachFloor ?? params.maxReachFloor) * geometryScale, (a.size || 16) * (opts.maxReachMul ?? params.maxReachMul));
-      return interpretFrom(symbol, a, obstacles, bounds, rng, maxReach, geometryScale);
+      // Only the obstacles this anchor's leash could ever bring it near --
+      // a page's obstacle root holds thousands of term boxes, and the walk
+      // tests every candidate step against every rect it is handed. The
+      // margin is a step's worth either side of the leash, which is the
+      // furthest a rect can sit and still block a reachable step.
+      const near = obstacles.filter((r) => rectNear(r, a.x, a.y, maxReach + params.step * geometryScale * 2));
+      return interpretFrom(symbol, a, near, bounds, rng, maxReach, geometryScale);
     });
     renderSegments(svg, segmentsByAnchor, { animate: firstRender && !reducedMotion(), obstacles, debug: !!opts.debug });
     firstRender = false;
