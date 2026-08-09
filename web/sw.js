@@ -102,6 +102,7 @@ const SHELL = [
   './fonts/publicsans-latin.woff2',
   './fonts/publicsans-latin-ext.woff2',
   './fonts/sigla-dejavu.woff2',
+  './fonts/sigla-dejavu-2.woff2',
   './fonts/sigla-noto-symbols.woff2',
   './fonts/sigla-noto-symbols-2.woff2',
   './fonts/sigla-noto-math.woff2',

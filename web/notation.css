@@ -109,6 +109,20 @@
 .pattern-table .ph { color: var(--accent); font-style: normal; font-weight: 700; }
 .pattern-table .seq.exec .op, .pattern-table .seq.exec .ph { color: var(--ink); font-weight: 400; }
 .pattern-table .seq.exec .ph.chain { color: var(--accent); font-weight: 700; }
+/* The terms table reads the same patterns as functions: the abstraction, the
+   normal form it reduces to (which is the UTXO column above, arrived at rather
+   than asserted), and the one-way step the committed datum came through.
+   Four columns, and its own class so the five-column rule above is untouched.
+
+   .lam is the calculus rather than the script -- λ, the brackets, the dot. It
+   is apparatus about the marks and not a mark, so it sets in the key's quiet
+   colour and never takes the gold or the weight that means "the chain kept
+   this". A reader can tell what would be on the wire by what is bright. */
+.pattern-table.terms { grid-template-columns: repeat(4, max-content); }
+/* This is the one group that sets a table and then glosses its own apparatus
+   beneath, so it is the one place these two ever meet. */
+.pattern-scroll + .glyph-grid { margin-top: 15px; }
+.pattern-table .lam { color: var(--meta); font-weight: 400; }
 /* The Lightning table carries two extra columns: what each channel party
    computes independently, off chain -- keys from its own secret k, signatures,
    and the same script hash h, reached without a secret crossing the wire.
