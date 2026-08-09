@@ -204,7 +204,7 @@ fluency every time.
 
 ## Practical notes
 
-- Build with `./build_web.sh` and `./build_illuminator.sh`, then serve over HTTP
+- Build with `./build_web.sh` and `./build_scriptorium.sh`, then serve over HTTP
   (`python3 -m http.server -d web 8080`); see the README for details. Neither
   build is needed to run the test suite.
 - Editing the contents, its appendix or its commentary? Run `node

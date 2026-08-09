@@ -27,7 +27,7 @@
  */
 
 // App shell, relative to the SW scope. Both engines' artifacts — glossia.js /
-// glossia_bg.wasm and illuminator.js / illuminator_bg.wasm — are gitignored
+// glossia_bg.wasm and scriptorium.js / scriptorium_bg.wasm — are gitignored
 // build artifacts, present after a build/deploy and possibly absent in a bare
 // checkout, so precaching tolerates their absence (see install below).
 const SHELL = [
@@ -94,8 +94,8 @@ const SHELL = [
   // beside a stale illumination module -- the mixed build this list's
   // whole-shell sweep exists to rule out.
   './btc-illumination.js',
-  './illuminator.js',
-  './illuminator_bg.wasm',
+  './scriptorium.js',
+  './scriptorium_bg.wasm',
   './illumination-controls.js',
   './sigla-outlines.js',
   './bitcoin-book.webmanifest',

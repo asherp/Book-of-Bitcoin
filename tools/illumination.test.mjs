@@ -2,8 +2,8 @@
 //
 // tools/illumination.test.mjs — the generated outline set (web/sigla-outlines.js).
 //
-// The engine that grows the decoration lives in the `illuminator` crate now
-// (see build_illuminator.sh), and so do its tests: the growth-stage buckets,
+// The engine that grows the decoration lives in the `scriptorium` crate now
+// (see build_scriptorium.sh), and so do its tests: the growth-stage buckets,
 // the L-system's symbolic output, the turtle's wall-following, the contour
 // rules and the mark/apparatus split are all checked there, natively, against
 // the same assertions that used to live here. `cargo test` in that repo is

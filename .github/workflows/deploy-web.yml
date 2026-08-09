@@ -7,7 +7,7 @@ on:
       - 'web/**'
       - 'tools/**'
       - 'build_web.sh'
-      - 'build_illuminator.sh'
+      - 'build_scriptorium.sh'
       - '.github/workflows/deploy-web.yml'
   workflow_dispatch:
 
@@ -62,13 +62,13 @@ jobs:
           ./build_web.sh --fetch-only
           echo "GLOSSIA_VERSION=$(sed -n 's/.*GLOSSIA_VERSION:-\([0-9][0-9.]*\).*/\1/p' build_web.sh)" >> "$GITHUB_ENV"
 
-      # The Illuminator engine (the decoration layer's Rust core) is the same
-      # arrangement: its own crate, pinned in build_illuminator.sh, fetched
+      # The Scriptorium engine (the decoration layer's Rust core) is the same
+      # arrangement: its own crate, pinned in build_scriptorium.sh, fetched
       # here so its build gets its own cargo cache below.
-      - name: Fetch illuminator engine crate
+      - name: Fetch scriptorium engine crate
         run: |
-          dir="$(./build_illuminator.sh --fetch-only | sed -n 's/^==> Engine source ready at //p')"
-          echo "ILLUMINATOR_DIR=${dir%.}" >> "$GITHUB_ENV"
+          dir="$(./build_scriptorium.sh --fetch-only | sed -n 's/^==> Engine source ready at //p')"
+          echo "SCRIPTORIUM_DIR=${dir%.}" >> "$GITHUB_ENV"
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -78,7 +78,7 @@ jobs:
         with:
           workspaces: |
             .glossia-build/glossia-${{ env.GLOSSIA_VERSION }}
-            ${{ env.ILLUMINATOR_DIR }}
+            ${{ env.SCRIPTORIUM_DIR }}
 
       - name: Install wasm-pack
         run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
@@ -90,7 +90,7 @@ jobs:
       - name: Build WASM
         run: |
           ./build_web.sh
-          ./build_illuminator.sh
+          ./build_scriptorium.sh
 
       # Headless Chromium, for the passage cards: each curated passage's page
       # carries its own og:image, rendered by the same renderer the reply bot

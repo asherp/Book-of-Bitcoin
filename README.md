@@ -75,8 +75,8 @@ repository; the book now lives here, while the Glossia engine (the Rust core
 compiled to WASM) is consumed as a published
 [crates.io release](https://crates.io/crates/glossia), pinned in
 `build_web.sh` — so the book always builds against a released engine version.
-The decoration layer's engine, [asherp/illuminator](https://github.com/asherp/illuminator),
-is consumed the same way, pinned in `build_illuminator.sh`.
+The decoration layer's engine, [scriptorium](https://github.com/asherp/illuminator),
+is consumed the same way, pinned in `build_scriptorium.sh`.
 
 ## Layout
 
@@ -626,7 +626,7 @@ is consumed the same way, pinned in `build_illuminator.sh`.
   measures the page (term boxes for the obstacle field, a mark's own box, where
   a glyph puts ink) and draws the result. What decides what grows — the
   L-system, the turtle and its wall-following, the glyph-contour rail, the
-  leash, the leaf shapes — is the [illuminator](https://github.com/asherp/illuminator)
+  leash, the leaf shapes — is the [scriptorium](https://github.com/asherp/illuminator)
   crate, host-agnostic Rust with its own tests and its own version. The book
   hands it rectangles and gets SVG path data back
 - `web/sigla-outlines.js` — **generated** (`tools/sigla-outlines/extract.mjs`):
@@ -637,8 +637,8 @@ is consumed the same way, pinned in `build_illuminator.sh`.
 - `web/illumination-controls.js`, `web/illumination-lab.html` — the shared
   tuning panel, and a standalone bench for it. Every control binds to the live
   `params` the engine is handed on each layout pass
-- `web/illuminator.js`, `web/illuminator_bg.wasm` — **build artifacts**
-  (gitignored), produced by `build_illuminator.sh`
+- `web/scriptorium.js`, `web/scriptorium_bg.wasm` — **build artifacts**
+  (gitignored), produced by `build_scriptorium.sh`
 - `web/sw.js`, `web/bitcoin-book.webmanifest`, `web/icons/` — PWA shell
 - `tools/passage-page.mjs` — a chapter, a section, or an output as a page at
   its own citation path, with its own Open Graph card. The reading pages take a passage as a query
@@ -688,11 +688,11 @@ Requires Rust and [wasm-pack](https://rustwasm.github.io/wasm-pack/).
 
 ```sh
 ./build_web.sh                # fetches the pinned glossia crate from crates.io
-./build_illuminator.sh        # the illumination engine, same arrangement
+./build_scriptorium.sh        # the illumination engine, same arrangement
 python3 -m http.server -d web 8080
 ```
 
-Set `GLOSSIA_DIR=/path/to/glossia` or `ILLUMINATOR_DIR=/path/to/illuminator` to
+Set `GLOSSIA_DIR=/path/to/glossia` or `SCRIPTORIUM_DIR=/path/to/scriptorium` to
 build an unreleased local checkout of either engine instead.
 
 Neither build is required to read the book's source or run its test suite —
@@ -711,7 +711,7 @@ The engine version is pinned by the `GLOSSIA_VERSION` default in
 then bump the pin here. The pinned version must exist on crates.io before this
 repo's builds can succeed.
 
-The illumination engine works the same way, pinned in `build_illuminator.sh`.
+The illumination engine works the same way, pinned in `build_scriptorium.sh`.
 Its own tests (the L-system, the turtle, the contour rules) live with it and
 run in its repo; what stays here is the guard on the generated outline table
 this book hands it (`tools/illumination.test.mjs`).

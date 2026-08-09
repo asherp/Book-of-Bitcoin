@@ -156,7 +156,7 @@ async function main() {
 //
 // A character not listed here (a Latin letter, the drop cap, anything the
 // notation doesn't use as a seed) has no entry; callers fall back to the
-// sigil's own bounding-box edge -- see the illuminator crate's rail_for.
+// sigil's own bounding-box edge -- see the scriptorium crate's rail_for.
 export const SIGLA_OUTLINES = {
 ${entries}
 };

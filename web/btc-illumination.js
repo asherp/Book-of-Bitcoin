@@ -3,8 +3,8 @@
 // btc-illumination.js — the book's side of the illumination layer: it
 // MEASURES the page and DRAWS the result, and does nothing else.
 //
-// Everything that decides what grows lives in the `illuminator` crate (see
-// build_illuminator.sh), which is host-agnostic Rust compiled to WASM: the
+// Everything that decides what grows lives in the `scriptorium` crate (see
+// build_scriptorium.sh), which is host-agnostic Rust compiled to WASM: the
 // L-system and its cached derivations, the turtle walk and its wall-following,
 // the glyph-contour sampling a vine rides, the leash, the leaf shapes, the
 // path data. None of that ever needed a browser — it is arithmetic over
@@ -38,7 +38,7 @@ import { SIGLA_OUTLINES } from './sigla-outlines.js';
 // ─── the engine ───────────────────────────────────────────────────────────
 // Loaded once, lazily, and awaited before anything else here will work --
 // same shape as glossia-msg.js's own init(), and for the same reason: the
-// WASM artifact is built at deploy time (build_illuminator.sh) rather than
+// WASM artifact is built at deploy time (build_scriptorium.sh) rather than
 // committed, so a caller has to be able to see the failure.
 let engine = null;
 let readyP = null;
@@ -72,7 +72,7 @@ export const GROWTH_STAGES = [];
 // registered with it. Idempotent: every caller awaits the same promise.
 export function init() {
   readyP = readyP || (async () => {
-    const mod = await import('./illuminator.js');
+    const mod = await import('./scriptorium.js');
     await mod.default();
     mod.initPanicHook();
     // Which characters a vine can trace is a property of this book's notation
