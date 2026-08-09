@@ -29,7 +29,7 @@ const OUT_FILE = new URL('../../web/sigla-outlines.js', import.meta.url);
 
 // ─── which characters need an outline ──────────────────────────────────
 // Every codepoint that can appear as the FIRST character of a .op or
-// .cfx-gold seed's textContent (see measureAnchors in btc-illumination.js) --
+// .cfx-gold seed's textContent (see btc-illumination.js's describeSeed) --
 // not just each mark's own base glyph, since a two-codepoint mark like
 // '¬⟨' or '⊘ᵛ' is still keyed by its actual first codepoint at render time.
 //
@@ -144,8 +144,8 @@ async function main() {
 // Do not hand-edit; regenerate with:
 //   cd tools/sigla-outlines && npm install && node extract.mjs
 //
-// One normalized outline per Book Sigla character btc-illumination.js's
-// seed marks (.op, .cfx-gold) can carry -- an SVG path 'd' string in a
+// One normalized outline per Book Sigla character the book's seed marks
+// (.op, .cfx-gold) can carry -- an SVG path 'd' string in a
 // UNIT SQUARE (x: 0..1 left-to-right, y: 0..1 top-to-bottom, the screen's
 // own convention rather than the font's own Y-up one). A caller holding
 // the character's own measured rect \`r\` maps straight into it:
@@ -156,7 +156,7 @@ async function main() {
 //
 // A character not listed here (a Latin letter, the drop cap, anything the
 // notation doesn't use as a seed) has no entry; callers fall back to the
-// sigil's own bounding-box edge -- see btc-illumination.js's measureAnchors.
+// sigil's own bounding-box edge -- see the illuminator crate's rail_for.
 export const SIGLA_OUTLINES = {
 ${entries}
 };

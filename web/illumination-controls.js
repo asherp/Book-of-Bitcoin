@@ -8,9 +8,10 @@
 // control in both places, or in neither.
 //
 // Binds directly to the module's own `params` and `GROWTH_STAGES` exports --
-// the SAME objects the live page's illuminate() calls read from on every
-// layout() pass -- so a change made through a control here is never copied
-// anywhere. It just is the value already in force; the caller's onChange is
+// the SAME objects the live page's illuminate() calls hand the engine on every
+// layout() pass (their defaults come from the engine itself, filled in place by
+// btc-illumination.js's init) -- so a change made through a control here is
+// never copied anywhere. It just is the value already in force; the caller's onChange is
 // only responsible for re-triggering a layout (resetDerivations() is called
 // here already, wherever a grammar-affecting knob needs it).
 //

@@ -204,8 +204,9 @@ fluency every time.
 
 ## Practical notes
 
-- Build with `./build_web.sh` and serve over HTTP (`python3 -m http.server -d
-  web 8080`); see the README for details.
+- Build with `./build_web.sh` and `./build_illuminator.sh`, then serve over HTTP
+  (`python3 -m http.server -d web 8080`); see the README for details. Neither
+  build is needed to run the test suite.
 - Editing the contents, its appendix or its commentary? Run `node
   tools/check-editorial.mjs`. It reads `web/notables.yaml`, `web/appendix.yaml`
   and `web/commentary/*.md` the way the browser will and reports anything that

@@ -1,7 +1,7 @@
 <!doctype html>
 <!-- SPDX-License-Identifier: MIT OR Apache-2.0
 
-     illumination-lab.html — a live tuning bench for btc-illumination.js's
+     illumination-lab.html — a live tuning bench for the illumination layer's
      L-system, not a reader-facing page (nothing links to this from the book
      itself). Every knob in the module's exported `params` object gets a
      control here; moving one calls resetDerivations() when it touches the
@@ -167,6 +167,11 @@
   import * as illum from './btc-illumination.js';
   import { buildIlluminationControls } from './illumination-controls.js';
 
+  // The engine is WASM (see build_illuminator.sh) and has to be up before
+  // anything below can ask it anything. `params` and `GROWTH_STAGES` are
+  // filled in place by init() from the crate's own defaults, so destructuring
+  // them afterwards still yields the live objects the controls bind to.
+  await illum.init();
   const { illuminate, growthStage, GROWTH_STAGES, generateSymbol, sizeBoost } = illum;
 
   function randomHash() {

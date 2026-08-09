@@ -4518,9 +4518,10 @@ function renderGhostTombstone(txid) {
 // section's own .tx-wrap, grown from every sigil the passage actually
 // carries -- the opcode glyphs in a script, the margin citations, the
 // locktime line, the bookmark ribbons, the drop cap -- not just the ones
-// with obvious room around them (see btc-illumination.js's homeRect
-// handling for why an inline glyph can still grow from flush against the
-// prose). Loaded lazily, exactly as the OpenTimestamps reader in btc-ots.js
+// with obvious room around them (the engine carries a home-rect exemption
+// for exactly that: an inline glyph sitting flush against its own line can
+// still grow, where an obstacle you start inside of would otherwise be a
+// trap). Loaded lazily, exactly as the OpenTimestamps reader in btc-ots.js
 // is, so a chapter that never calls this carries no extra module; guarded
 // end to end so a failure here can never break the page it decorates.
 let illumModule = null;
@@ -4557,6 +4558,12 @@ const isCountOnly = (el) => {
 async function illuminateSection(wrap, flow) {
   try {
     illumModule = illumModule || await import('./btc-illumination.js');
+    // The engine behind it is WASM, built at deploy time and loaded on
+    // first use -- same shape as glossia-msg.js's own init(), and awaited
+    // here so a failure to load surfaces in this try/catch rather than as a
+    // half-drawn overlay. Idempotent: every later section awaits the same
+    // resolved promise.
+    await illumModule.init();
     const seedEls = Array.from(wrap.querySelectorAll(
       '.op, .cfx-gold, .tx-in-cite, .tx-locktime, .hash-bookmark, .tx-witness-ref, .tx-body-lead'
     )).filter((el) => !isCountOnly(el));
@@ -4601,6 +4608,7 @@ async function illuminateSection(wrap, flow) {
       // counts as sigil too and drops out of the obstacle field -- growth
       // would cross it. Every other seed carries its mark at the front of
       // its own text and needs no telling; see markLeadLength.
+      // (The rule itself is the engine's; btc-illumination.js is the door.)
       markLengthOf: (el) => (el.classList.contains('tx-body-lead') ? 1 : null),
     };
     currentIllumHandle = illumModule.illuminate(wrap, currentIllumOpts);
@@ -4680,6 +4688,7 @@ illumToggle.addEventListener('click', async () => {
   if (illumWidget && !illumWidget.classList.contains('hidden')) { closeIllumWidget(); return; }
   try {
     illumModule = illumModule || await import('./btc-illumination.js');
+    await illumModule.init();
     // Loaded lazily too, same reasoning as illumModule itself: a reader who
     // never opens the bulb never pays for the control-panel builder either.
     const { buildIlluminationControls } = await import('./illumination-controls.js');
