@@ -59,6 +59,12 @@
   .illum-ctl-sub { font-size: 11.5px; color: var(--dim); line-height: 1.5; margin-top: 6px; }
   .illum-ctl-reset { background: transparent; color: var(--accent); border: 1px solid var(--card-bd); }
   .illum-ctl-reset:hover { border-color: var(--accent); }
+  /* Stuck to the top of the panel while the knobs scroll under it -- see the
+     same rule in bitcoin-book.html. Here its containing block is
+     #shared-controls rather than the scroller itself, so it rides along
+     until the shared controls are wholly past, which is nearly the whole
+     panel. */
+  .illum-ctl-preview { position: sticky; top: 0; z-index: 2; background: var(--panel); padding-top: 4px; padding-bottom: 22px; margin-bottom: 0; }
   .illum-ctl-preview-nav { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
   .illum-ctl-preview-label { font: 500 10.5px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing: .06em; color: var(--dim); text-align: center; flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .illum-ctl-step { background: transparent; border: 1px solid var(--card-bd); border-radius: 4px; color: var(--dim); font: 400 15px/1 'IBM Plex Mono','Book Sigla',monospace; padding: 2px 9px; width: auto; margin: 0; cursor: pointer; flex: 0 0 auto; text-transform: none; letter-spacing: normal; }
@@ -177,7 +183,13 @@
     const host = document.getElementById(p.host);
     const seedEls = p.seeds.map((id) => document.getElementById(id));
     if (p.lead) seedEls.push(host.querySelector('.tx-body-lead'));
-    return { host, proseEl: host.querySelector('.chapter-body'), seedEls };
+    // The leaf stands in for the book's page: it bounds growth (the sample
+    // wrap's own box no longer does), and its whole text -- label, section
+    // title, amount and citation lines, not just the paragraph -- is the
+    // obstacle field, exactly as #page-frame/#page-slide are on the real
+    // page. See btc-illumination.js's boundsEl/obstacleEl.
+    const leaf = host.closest('.leaf');
+    return { host, leaf, proseEl: host.querySelector('.chapter-body'), seedEls };
   });
 
   let handles = [];
@@ -185,6 +197,8 @@
     for (const h of handles) h.destroy();
     handles = passages.map((p) => illuminate(p.host, {
       proseEl: p.proseEl,
+      obstacleEl: p.leaf,
+      boundsEl: p.leaf,
       seedEls: p.seedEls,
       blockHash: state.hash,
       confirmations: Math.round(state.confirmations),
@@ -194,6 +208,9 @@
         ? parseFloat(getComputedStyle(el, '::first-letter').fontSize) || null
         : null),
       pointOf: (el) => (el.classList.contains('tx-body-lead') ? 'top-left' : 'edge'),
+      // The drop cap's MARK is that one letter, not the word it opens --
+      // see btc-illumination.js's markLengthOf.
+      markLengthOf: (el) => (el.classList.contains('tx-body-lead') ? 1 : null),
       // No baseSize passed on purpose: illuminate() measures p.proseEl's
       // own live font-size instead (see btc-illumination.js), which is
       // exactly the mechanism this lab wants to exercise honestly -- drag
@@ -256,6 +273,7 @@
           ? parseFloat(getComputedStyle(el, '::first-letter').fontSize) || null
           : null),
         pointOf: (el) => (el.classList.contains('tx-body-lead') ? 'top-left' : 'edge'),
+        markLengthOf: (el) => (el.classList.contains('tx-body-lead') ? 1 : null),
       }),
     },
     onReset: () => {

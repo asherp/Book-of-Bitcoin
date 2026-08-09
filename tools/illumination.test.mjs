@@ -18,7 +18,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { growthStage, GROWTH_STAGES, generateSymbol, interpretFrom, sizeBoost, params, resetDerivations } from '../web/btc-illumination.js';
+import { growthStage, GROWTH_STAGES, generateSymbol, interpretFrom, sizeBoost, params, resetDerivations,
+  outerContours, markLeadLength } from '../web/btc-illumination.js';
 
 test('growthStage buckets confirmation count, not a continuous scale', () => {
   assert.equal(growthStage(0), 0, 'unconfirmed is stage 0 (bare)');
@@ -372,6 +373,37 @@ test('params.glyphFollowMax caps the railed run, and 0 disables railing outright
   }
 });
 
+test('the ride ends in a fork -- a shoot leaves with the stem, on the same side', () => {
+  const rail = squareRail();
+  const anchor = { x: 0, y: 0, angle: 0, rail };
+  const original = params.glyphFollowMax;
+  try {
+    params.glyphFollowMax = 3;   // a short ride, so the departure is well inside the F budget
+    const segments = interpretFrom('F'.repeat(20), anchor, [], null, noJitterRng, Infinity, 1);
+    assert.ok(segments.length >= 2, `departure should leave a shoot beside the stem, got ${segments.length} segment(s)`);
+    // Both leave the letter OUTWARD -- the shoot is the stem's turn taken
+    // twice, not its mirror -- so neither ends up back across the contour's
+    // own middle (the square's centre is (20,20)).
+    const tips = segments.map((s) => s.points[s.points.length - 1]);
+    for (const t of tips) {
+      assert.ok(!(t.x > 2 && t.x < 38 && t.y > 2 && t.y < 38),
+        `a departing branch ended at (${t.x.toFixed(1)},${t.y.toFixed(1)}), back inside the letter it left`);
+    }
+  } finally { params.glyphFollowMax = original; }
+});
+
+test('params.departForkSteps 0 leaves the plain departure, no shoot', () => {
+  const rail = squareRail();
+  const anchor = { x: 0, y: 0, angle: 0, rail };
+  const followMax = params.glyphFollowMax, fork = params.departForkSteps;
+  try {
+    params.glyphFollowMax = 3;
+    params.departForkSteps = 0;
+    const segments = interpretFrom('F'.repeat(20), anchor, [], null, noJitterRng, Infinity, 1);
+    assert.equal(segments.length, 1, 'with the fork off, one unbranched run should leave the letter');
+  } finally { params.glyphFollowMax = followMax; params.departForkSteps = fork; }
+});
+
 test('an anchor with no rail behaves exactly as it did before', () => {
   const anchor = { x: 0, y: 0, angle: 0 };
   const points = interpretFrom('FFFFF', anchor, [], null, noJitterRng, Infinity, 1)
@@ -379,7 +411,78 @@ test('an anchor with no rail behaves exactly as it did before', () => {
   assert.ok(points.every((p) => Math.abs(p.y) < 1e-9), 'an unrailed straight run should stay straight');
 });
 
+// ─── the outer path: a vine rides the silhouette, not the holes ──────────
+// A counter is a hole in a letter, not an edge of it, and growth that rode
+// one would be crawling around inside the glyph. Half the notation's marks
+// are multi-contour (⓪ has four subpaths, ⌘ six, β an outer contour and two
+// counters), and railFor picks the contour NEAREST the anchor -- so without
+// this filter an anchor that happens to sit near a counter rides it.
+// Squares stand in for letterforms here: the containment question is the
+// same shape whatever the curve.
+function squareContour(x, y, size, samplesPerSide = 20) {
+  const pts = [];
+  for (let i = 0; i < samplesPerSide; i++) pts.push({ x: x + size * (i / samplesPerSide), y });
+  for (let i = 0; i < samplesPerSide; i++) pts.push({ x: x + size, y: y + size * (i / samplesPerSide) });
+  for (let i = 0; i < samplesPerSide; i++) pts.push({ x: x + size - size * (i / samplesPerSide), y: y + size });
+  for (let i = 0; i < samplesPerSide; i++) pts.push({ x, y: y + size - size * (i / samplesPerSide) });
+  return pts;
+}
+
+test('outerContours drops a counter and keeps the silhouette', () => {
+  const outer = squareContour(0, 0, 100);
+  const counter = squareContour(30, 30, 40);     // a hole well inside it -- β's bowl, ⓪'s zero
+  const kept = outerContours([outer, counter]);
+  assert.equal(kept.length, 1, 'the counter should not be a candidate for a vine to ride');
+  assert.equal(kept[0], outer);
+});
+
+test('outerContours keeps every separate outer shape -- a mark can be several strokes', () => {
+  // = is two bars, ‖ two strokes, |·| three: none contains the others, and
+  // a vine growing off one of them rides that one. Keeping only the largest
+  // would strand growth on the wrong stroke of its own mark.
+  const bars = [squareContour(0, 0, 30), squareContour(0, 60, 28), squareContour(0, 120, 26)];
+  assert.equal(outerContours(bars).length, 3);
+});
+
+test('outerContours leaves a single contour alone, and never eliminates everything', () => {
+  const one = squareContour(0, 0, 50);
+  assert.deepEqual(outerContours([one]), [one]);
+  // Two identical contours each "contain" the other; neither is larger, so
+  // the area comparison keeps both rather than discarding the pair.
+  assert.equal(outerContours([one, one.slice()]).length, 2);
+});
+
 // ─── numerals are not sigla ───────────────────────────────────────────────
+test('markLeadLength stops at a count -- the figure riding a mark is not the mark', () => {
+  assert.equal(markLeadLength('⧉₂'), 1, 'a family subscript is apparatus');
+  assert.equal(markLeadLength('β₃₂'), 1);
+  assert.equal(markLeadLength('■140'), 1, 'a height written after its mark is not part of it');
+  assert.equal(markLeadLength('⌘'), 1);
+  assert.equal(markLeadLength('¬⟨'), 2, 'a composite mark keeps all of its parts');
+  assert.equal(markLeadLength('|·|'), 3);
+  assert.equal(markLeadLength('⁶⁹'), 0, 'a bare count is no mark at all');
+  assert.equal(markLeadLength(''), 0);
+});
+
+test('markLeadLength yields only the opening token of a container seed', () => {
+  // A citation line, a locktime note, the paragraph a drop cap opens: the
+  // element is a seed, but only its first token is notation -- the rest is
+  // text the vine has to grow around like any other.
+  assert.equal(markLeadLength('∅ 4a5e1e4b'), 1);
+  assert.equal(markLeadLength('Beauty sue to tap out a tired roof.'), 6);
+});
+
+test('markLeadLength takes a caller\'s override -- a drop cap is one letter, not a word', () => {
+  // A ::first-letter cap has no node of its own, so the seed is the whole
+  // paragraph; left to the rule, its opening WORD would count as sigil and
+  // drop out of the obstacle field, and vines would cross it.
+  assert.equal(markLeadLength('Beauty sue to tap', 1), 1);
+  assert.equal(markLeadLength('Beauty', 99), 6, 'an override past the text is clamped, not trusted blind');
+  assert.equal(markLeadLength('Beauty', -3), 0);
+  assert.equal(markLeadLength('⧉₂', null), 1, 'no override falls back to the rule');
+});
+
+
 // The generated outline set (web/sigla-outlines.js, from
 // tools/sigla-outlines/extract.mjs) is what decides which marks a vine can
 // trace. A count riding a mark is apparatus, not notation -- β's subscript
