@@ -18,8 +18,9 @@
 //                 I β29 ■596 §85      spelling and to any depth (btc-citation.js
 //                 v1b29c596s85        parses it; the sigils are optional)
 //   address       1Ross5Np5doy4…      not a place but a name, and so not a
-//                                     chapter: the search box hands these to
-//                                     the Ledger instead
+//                                     chapter: the search box answers these
+//                                     where they were typed, by writing the
+//                                     term the address binds (btc-term.js)
 //   script        script:76a90088ac   a raw scriptPubKey, by its own bytes --
 //                                     the name of an output no address can
 //                                     write (a malformed or nonstandard

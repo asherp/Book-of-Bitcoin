@@ -3,8 +3,9 @@
 // btc-index.js — the ledgers of the Bitcoin Book: notable addresses, each a
 // view of the manuscript focused on amounts. Shared by bitcoin-ledger.html
 // (the Ledger compendium: every ledger in one document, ledgers over
-// addresses over entries) and bitcoin-search.html (which routes an address
-// query there). Besides the curated data, this module carries the machinery
+// addresses over entries) and bitcoin-search.html (which decodes an address
+// query with addressScriptHex, to write the term it binds — see btc-term.js —
+// rather than routing it here). Besides the curated data, this module carries the machinery
 // the ledger pages share: the mapping that discovers an address's chapters,
 // the store that remembers them, and the renderers that lay them out. (The
 // filename keeps its index-era name so cached module graphs never mix
