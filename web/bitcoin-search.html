@@ -86,9 +86,11 @@ button:hover { background: var(--accent-2); }
 /* The term a searched address binds.
    An address is not a place, so it opens no chapter; but it is not nothing
    either. It is the argument of exactly one abstraction, and this is where the
-   book writes that down: the term applied, a β, and the normal form the chain
-   actually holds. The Notation key's Scripts as terms and Addresses groups are
-   what this leaf is one worked instance of. */
+   book writes that down: the address in its purest form -- structure alone,
+   with the opcodes and the datum both standing outside as arguments -- and the
+   two reductions that carry it to the script the chain actually holds. The
+   Notation key's Scripts as terms and Addresses groups are what this leaf is
+   one worked instance of; the middle line is the very term the key draws. */
 .term { margin-top: 26px; }
 .term[hidden] { display: none; }
 .term-head { display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; margin-bottom:14px; }
@@ -108,9 +110,13 @@ button:hover { background: var(--accent-2); }
 .term-line .op-push { color: var(--meta); }
 .term-line .dt { color: var(--accent); font-style: normal; font-weight: 700; }
 .term-line .lam { color: var(--meta); }
-/* β between the two lines: the step itself, and the one mark on the leaf that
-   is neither script nor prose. */
-.term-step { font:400 15px/1 'Newsreader','Book Sigla',serif; color:var(--accent); margin:10px 0 10px 2px; }
+/* β between the lines: the step itself, and the one mark on the leaf that is
+   neither script nor prose. */
+.term-step { display:flex; align-items:baseline; gap:12px; font:400 15px/1 'Newsreader','Book Sigla',serif; color:var(--accent); margin:10px 0 10px 2px; }
+/* What that step supplied. The two βs are not the same move -- one hands over
+   the opcodes and one the datum -- and a reader should not have to work out
+   which by diffing the lines. */
+.term-step-what { font:500 10px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.14em; text-transform:uppercase; color:var(--meta); }
 .term-note { margin:16px 0 0; font:400 13px/1.55 'Public Sans','Book Sigla',sans-serif; color:var(--meta); max-width:62ch; }
 
 /* Worked examples beneath the card: each opens the page it cites, so the
@@ -178,7 +184,7 @@ mountLangMenu();  // …with the Language item, which any page can now set
 import { isAddress, addressScriptHex } from './btc-index.js';
 import { parseLookup } from './btc-lookup.js';
 import { latinReference } from './btc-citation.js';
-import { termOfScript, applicationHtml, normalFormHtml } from './btc-term.js';
+import { termOfScript, pureForm, pureApplicationHtml, applicationHtml, normalFormHtml } from './btc-term.js';
 const input = document.getElementById('block-input');
 const termEl = document.getElementById('term');
 
@@ -212,22 +218,40 @@ async function showTerm(address) {
   const head = `<div class="term-head"><span class="term-kind">${t ? escapeHtml(t.label) : 'Address'}</span>`
     + `<span class="term-addr">${escapeHtml(address)}</span></div>`;
   if (!t) {
-    // A well-formed address whose witness version this book has no term for --
-    // nothing on the chain wears one yet. Say so rather than guess a shape.
-    termEl.innerHTML = head + '<p class="term-note">This address decodes, but its tag names a '
-      + 'version the book has no term for yet — so there is no abstraction here to bind it into.</p>';
+    // A well-formed address for a witness version consensus has not defined --
+    // a version above ①, or ① at a length Taproot does not take. The absence
+    // is the chain's, not the book's: an undefined version demands nothing, so
+    // an output paying one is unencumbered until a fork gives it meaning. A
+    // term here would draw a lock where there is none.
+    termEl.innerHTML = head + '<p class="term-note">This address decodes, and its tag names a witness '
+      + 'version no rule has defined yet. There is no term to write: an output under an undefined '
+      + 'version demands nothing, so it is spendable by anyone until a fork gives that version a '
+      + 'meaning — and drawing an abstraction over the datum would claim a lock the chain is not '
+      + 'holding.</p>';
     termEl.hidden = false;
     return;
   }
+  // Three lines and two steps. The first is the address in its purest form:
+  // every constant lifted out, so the body is shape alone and the arguments
+  // run opcodes-then-datum, lowest entropy to highest. The first β supplies
+  // the opcodes and lands on the term the notation key draws; the second
+  // supplies the datum and lands on the scriptPubKey. Which is the address
+  // format's own two parts, done in the open — the tag picks the term, the
+  // argument fills it.
+  const pure = pureForm(t);
   const draw = (prose) => {
     termEl.innerHTML = head
-      + `<div class="term-line">${applicationHtml(t, { prose })}</div>`
-      + '<div class="term-step">β</div>'
+      + `<div class="term-line">${pureApplicationHtml(pure)}</div>`
+      + '<div class="term-step">β<span class="term-step-what">the opcodes supplied</span></div>'
+      + `<div class="term-line">${applicationHtml(t)}</div>`
+      + '<div class="term-step">β<span class="term-step-what">the datum supplied</span></div>'
       + `<div class="term-line">${normalFormHtml(t, { prose })}</div>`
-      + '<p class="term-note">An address carries one datum and a tag saying which abstraction to put '
-      + 'it in. Above, the term with this address’s datum handed to it; below, what β leaves — the '
-      + 'scriptPubKey itself, which is what the chain holds and what every chapter paying this address '
-      + 'prints.</p>';
+      + '<p class="term-note">An address carries one datum and a tag saying which abstraction to put it '
+      + 'in. Written purely, both are arguments: the body above is structure and nothing else, so it '
+      + 'names no pattern and indexes no table — the term says which operations, in which order, and '
+      + 'the byte count rides in the binder’s own name. Reduce twice and what falls out is the '
+      + 'scriptPubKey, which is what the chain holds and what every chapter paying this address prints.'
+      + '</p>';
     termEl.hidden = false;
   };
   draw('');

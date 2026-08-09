@@ -22,7 +22,8 @@ import assert from 'node:assert/strict';
 
 import { addressScriptHex } from '../web/btc-index.js';
 import { NOTATION_HTML } from '../web/btc-notation.js';
-import { TERMS, termOfScript, reduce, abstractionText, applicationText, normalFormText } from '../web/btc-term.js';
+import { TERMS, termOfScript, reduce, abstractionText, applicationText, normalFormText,
+         pureForm, reducePure, pureText, pureApplicationText } from '../web/btc-term.js';
 
 // One address of every form that has one, which is every row of the key's
 // Addresses group: the book's own Ross Ulbricht ledger, a P2SH, and the BIP173
@@ -87,6 +88,54 @@ test('a bare key is a term too, and the reason it has no address is not that', (
   assert.equal(t.argument, key);
   assert.equal(abstractionText(t), 'λp. ⟦ p ∇ ⟧');
   assert.equal(normalFormText(t), '⟦ p⁶⁵ ∇ ⟧');
+});
+
+// ─── the pure form ───────────────────────────────────────────────────────
+
+test('the pure form reduces to the same script, through its own names', () => {
+  for (const [id, address] of ADDRESSES) {
+    const script = addressScriptHex(address);
+    const pure = pureForm(termOfScript(script));
+    // Substituted back through the binders the form is written with -- so a
+    // body naming something the λ never bound fails here, rather than merely
+    // reading oddly on the page.
+    assert.equal(reducePure(pure), script, `${id} does not reduce purely`);
+    // Every binder is used, and every one of them is bound: the arguments and
+    // the holes are the same set.
+    assert.deepEqual([...new Set(pure.body)].sort(), [...pure.binders].sort(), id);
+    assert.equal(pure.binders.length, pure.opcodes.length + 1, `${id}'s arity`);
+    // Opcodes first, datum last -- the whole ordering claim, which is what
+    // makes the tail the only incompressible part.
+    assert.equal(pure.binders[pure.binders.length - 1], pure.datumName, `${id} ends on its datum`);
+  }
+});
+
+test('the byte count rides in the binder name, so the body fixes the push', () => {
+  const p2wpkh = pureForm(termOfScript(addressScriptHex('bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4')));
+  assert.equal(pureText(p2wpkh), 'λo₁ h²⁰. ⟦ o₁ h²⁰ ⟧');
+  assert.equal(pureApplicationText(p2wpkh), '(λo₁ h²⁰. ⟦ o₁ h²⁰ ⟧) ⓪ h²⁰');
+  const p2pkh = pureForm(termOfScript(addressScriptHex('1Ross5Np5doy4ajF9iGXzgKaC2Q3Pwwxv')));
+  assert.equal(pureApplicationText(p2pkh), '(λo₁ o₂ o₃ o₄ h²⁰. ⟦ o₁ o₂ h²⁰ o₃ o₄ ⟧) ⧉ ⌖ ≡ ∇ h²⁰');
+});
+
+test('the witness forms are one body at three arguments, not three formats', () => {
+  // The Addresses group says this in prose. Under the pure form it is not a
+  // resemblance to be argued for: erase the datum's name -- the one place a
+  // length or a letter could differ -- and the three bodies are the same string,
+  // while the terms above them (which bake their opcode in) are not.
+  const shape = (address) => {
+    const pure = pureForm(termOfScript(addressScriptHex(address)));
+    return pure.body.map((n) => (n === pure.datumName ? '·' : n)).join(' ');
+  };
+  const witness = ['bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4',
+    'bc1qrp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3qccfmv3',
+    'bc1p5d7rjq7g6rdk2yhzks9smlaqtedr4dekq08ge8ztwac72sfr9rusxg3297'].map(shape);
+  assert.deepEqual(witness, ['o₁ ·', 'o₁ ·', 'o₁ ·']);
+  // And the legacy pair, which segwit's one term is the answer to, do not join
+  // them: a different shape apiece, and neither is the witness shape.
+  const legacy = ['1Ross5Np5doy4ajF9iGXzgKaC2Q3Pwwxv', '3J98t1WpEZ73CNmQviecrnyiWrnqRhWNLy'].map(shape);
+  assert.deepEqual(legacy, ['o₁ o₂ · o₃ o₄', 'o₁ · o₂']);
+  assert.equal(new Set([...witness, ...legacy]).size, 3);
 });
 
 // ─── the key's own tables, read back ─────────────────────────────────────

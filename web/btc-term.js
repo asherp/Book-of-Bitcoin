@@ -24,7 +24,7 @@
 // mark, unsaid, which is what the book does everywhere else rather than fall
 // back to hex.
 
-import { OPCODE_SYMBOLS, OPCODE_NAMES, toSuperscript } from './btc-sigla.js';
+import { OPCODE_SYMBOLS, OPCODE_NAMES, toSuperscript, toSubscript } from './btc-sigla.js';
 import { outputTemplates } from './btc-templates.js';
 import { tokenizeScript } from './btc-tx.js';
 
@@ -109,6 +109,57 @@ export function reduce(term, argumentHex) {
     : code.toString(16).padStart(2, '0'))).join('');
 }
 
+// ─── the pure form ───────────────────────────────────────────────────────
+//
+// The terms above still hold their opcodes: λh. ⟦ ⧉ ⌖ h ≡ ∇ ⟧ has ⧉ and ⌖
+// baked into it, so P2PKH's abstraction is a different object from P2WPKH's
+// and a reader has to be told which is which. Lift the opcodes out as
+// arguments too and what is left is structure alone:
+//
+//   (λo₁ o₂ o₃ o₄ h²⁰. ⟦ o₁ o₂ h²⁰ o₃ o₄ ⟧) ⧉ ⌖ ≡ ∇ h²⁰
+//
+// The binders are ordered opcodes first, datum last, which sorts the whole
+// thing by entropy: the body is pure shape and shared, the opcode arguments
+// come from an alphabet of a hundred-odd marks, and only the tail is
+// incompressible. It is also self-describing — the term states which
+// operations in which order, so nothing has to index a table of known
+// patterns, which is the one thing base58's version byte could never stop
+// doing. And the byte count rides in the binder's own name (h²⁰, p³²), so the
+// body alone fixes the push: the length is not a separate field anywhere.
+//
+// What falls out is the Addresses group's claim, structurally. P2WPKH, P2WSH
+// and P2TR do not merely resemble one another under this form — they are the
+// same body, λo₁ x. ⟦ o₁ x ⟧, at three arguments. term.test.mjs checks that.
+//
+// One binder per position rather than per distinct opcode: none of these terms
+// uses the same mark twice, and a term that did would be saying something
+// (this operation, again) that the positional reading does not.
+export function pureForm(t) {
+  const opcodes = t.term.body.filter((code) => code !== null);
+  const datumName = t.binder + toSuperscript(t.bytes);
+  const opNames = opcodes.map((_, i) => `o${toSubscript(i + 1)}`);
+  let next = 0;
+  const body = t.term.body.map((code) => (code === null ? datumName : opNames[next++]));
+  return { binders: [...opNames, datumName], body, opcodes, datum: t.argument, datumName, term: t };
+}
+
+// The pure form's arguments substituted back through its binders -> the
+// scriptPubKey. A second road to the same bytes, and it runs over the names
+// the form is actually written with, so a body that named a binder the λ never
+// bound would fail here rather than merely look wrong on the page.
+export function reducePure(pure) {
+  const env = new Map(pure.binders.map((name, i) =>
+    [name, i < pure.opcodes.length ? pure.opcodes[i] : pure.datum]));
+  const parts = pure.body.map((name) => {
+    const value = env.get(name);
+    if (value === undefined) return null;
+    return typeof value === 'number'
+      ? value.toString(16).padStart(2, '0')
+      : (value.length / 2).toString(16).padStart(2, '0') + value.toLowerCase();
+  });
+  return parts.includes(null) ? null : parts.join('');
+}
+
 // ─── writing one down ────────────────────────────────────────────────────
 
 const escapeHtml = (s) => String(s)
@@ -164,3 +215,28 @@ export const applicationHtml = (t, { prose = '' } = {}) =>
 
 export const normalFormHtml = (t, { prose = '' } = {}) =>
   `${lam('⟦')} ${bodyHtml(t, true, prose)} ${lam('⟧')}`;
+
+// The pure form, written out. Its binders and body are variables throughout --
+// nothing here is on the wire yet, not even an operation -- so the whole
+// skeleton takes the quiet apparatus colour, and the arguments beside it are
+// the first bright thing on the line. Reducing brightens the body, which is
+// the reduction made visible: the marks move into the holes.
+//
+// The datum's argument stands as its name rather than its prose. It is the
+// same datum on every line of a reduction, and saying it three times would
+// bury the shape the form exists to show; the normal form is where it lands
+// and where the book says what it is.
+const pureName = (pure, name) => (name === pure.datumName
+  ? dt(pure.term) + count(pure.term)
+  : `<span class="lam">${escapeHtml(name)}</span>`);
+
+export const pureText = (pure) => `λ${pure.binders.join(' ')}. ⟦ ${pure.body.join(' ')} ⟧`;
+
+export const pureApplicationText = (pure) =>
+  `(${pureText(pure)}) ${pure.opcodes.map(glyph).join(' ')} ${pure.datumName}`;
+
+export const pureHtml = (pure) => `${lam('λ')}${pure.binders.map((n) => pureName(pure, n)).join(' ')}${lam('.')} `
+  + `${lam('⟦')} ${pure.body.map((n) => pureName(pure, n)).join(' ')} ${lam('⟧')}`;
+
+export const pureApplicationHtml = (pure) => `${lam('(')}${pureHtml(pure)}${lam(')')} `
+  + `${pure.opcodes.map(op).join(' ')} ${dt(pure.term)}${count(pure.term)}`;
