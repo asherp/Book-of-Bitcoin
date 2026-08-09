@@ -75,7 +75,7 @@ repository; the book now lives here, while the Glossia engine (the Rust core
 compiled to WASM) is consumed as a published
 [crates.io release](https://crates.io/crates/glossia), pinned in
 `build_web.sh` — so the book always builds against a released engine version.
-The decoration layer's engine, [scriptorium](https://github.com/asherp/illuminator),
+The decoration layer's engine, [scriptorium](https://github.com/asherp/scriptorium),
 is consumed the same way, pinned in `build_scriptorium.sh`.
 
 ## Layout
@@ -626,7 +626,7 @@ is consumed the same way, pinned in `build_scriptorium.sh`.
   measures the page (term boxes for the obstacle field, a mark's own box, where
   a glyph puts ink) and draws the result. What decides what grows — the
   L-system, the turtle and its wall-following, the glyph-contour rail, the
-  leash, the leaf shapes — is the [scriptorium](https://github.com/asherp/illuminator)
+  leash, the leaf shapes — is the [scriptorium](https://github.com/asherp/scriptorium)
   crate, host-agnostic Rust with its own tests and its own version. The book
   hands it rectangles and gets SVG path data back
 - `web/sigla-outlines.js` — **generated** (`tools/sigla-outlines/extract.mjs`):
