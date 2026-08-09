@@ -155,19 +155,30 @@ test('the key emits the structure the filter reaches for', () => {
   assert.ok(count(/class="notation-group"/g) > 10, 'groups');
   assert.ok(count(/class="glyph-row"/g) + count(/class="glyph-row" data-marks=/g) > 90, 'rows');
   assert.equal(count(/<span class="g">/g), count(/<span class="m">/g), 'every row has a glyph and a gloss');
-  assert.equal(count(/class="pattern-table/g), 2, 'the two pattern tables');
+  assert.equal(count(/class="pattern-table/g), 3, 'the three pattern tables');
   assert.ok(count(/class="phead"/g) >= 12, 'column heads');
   // Every pattern cell is tagged, and every tag names a template the
-  // classifier can actually produce.
+  // classifier can actually produce. A cell may name more than one, which is
+  // how the terms table gives P2SH and P2TR a single row apiece where the
+  // common table has two -- applyKeyFilter splits on whitespace, so the test
+  // reads a tag the same way the filter does.
   const KNOWN = new Set(['p2pk', 'p2pkh', 'multisig', 'p2sh', 'p2sh-multisig', 'p2wpkh',
     'p2wsh', 'p2tr-key', 'p2tr-script', 'data', 'lightning']);
-  const tagged = [...NOTATION_HTML.matchAll(/data-row="([^"]+)"/g)].map((m) => m[1]);
+  const idsIn = (html) => [...html.matchAll(/data-row="([^"]+)"/g)].flatMap((m) => m[1].split(/\s+/));
+  const tagged = idsIn(NOTATION_HTML);
   assert.ok(tagged.length > 80, `only ${tagged.length} cells tagged`);
   for (const id of new Set(tagged)) assert.ok(KNOWN.has(id), `unknown template id ${id}`);
-  // Each of the common table's rows is tagged across all five of its cells.
-  for (const id of KNOWN) {
-    if (id === 'lightning') continue;
-    assert.equal(tagged.filter((t) => t === id).length, 5, `${id} should tag five cells`);
+  // Each table tags every one of its rows across every one of its columns, so
+  // a row can never be half-shown: five cells in the common table, four in the
+  // terms table beneath it.
+  const tableOf = (cls) => NOTATION_HTML.split(`<div class="pattern-table${cls}">`)[1].split('</div>')[0];
+  for (const [cls, cells] of [['', 5], [' terms', 4]]) {
+    const ids = idsIn(tableOf(cls));
+    for (const id of KNOWN) {
+      if (id === 'lightning') continue;
+      assert.equal(ids.filter((t) => t === id).length, cells,
+        `${id} should tag ${cells} cells of the${cls || ' common'} table`);
+    }
   }
   // Every pname carries a tag -- an untagged row could never be shown.
   assert.equal(count(/<span class="pname"/g), count(/<span class="pname" data-row=/g));
