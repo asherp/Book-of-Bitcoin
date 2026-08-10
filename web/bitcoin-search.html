@@ -125,6 +125,15 @@ button:hover { background: var(--accent-2); }
    search box takes it back, so this is the format's own proof -- a string that
    resolves to Script with no version byte behind it and no table to consult. */
 .term-spelled-label { margin:20px 0 6px; font:600 10px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.14em; text-transform:uppercase; color:var(--meta); }
+.term-check { margin:18px 0 0; font:400 13px/1.55 'Public Sans','Book Sigla',sans-serif; color:var(--meta); max-width:62ch; }
+.term-check b { color: var(--ink-soft); }
+/* Agreement is quiet; disagreement is not. A book that derived a script and
+   printed its own derivation would be checking nothing, so the one outcome
+   that must never be mistaken for another is a mismatch. */
+.term-check-agrees::before { content: '✓ '; color: var(--accent); }
+.term-check-differs { color: var(--ink); }
+.term-check-differs::before { content: '✗ '; color: #d9564b; }
+.term-hex { font-family: 'IBM Plex Mono','Book Sigla', monospace; font-size: .92em; overflow-wrap: anywhere; }
 .term-spelled {
   font: 400 13px/1.7 'IBM Plex Mono','Book Sigla', monospace; color: var(--ink-soft);
   background: var(--input-bg); border: 1px solid var(--input-bd); border-radius: 4px;
@@ -193,9 +202,10 @@ mountLangMenu();  // …with the Language item, which any page can now set
 // the book already answers to, and vice versa. Address recognition is the
 // ledger's own (isAddress decodes base58 and bech32); uppercase bech32, as a QR
 // scan yields it, is normalized to the lowercase form the ledger queries with.
-import { isAddress, addressScriptHex } from './btc-index.js';
+import { isAddress, addressScriptHex, chainWitness, witnessVerdict, chainFailureText, citeHref } from './btc-index.js';
+import { reference, latinReference } from './btc-citation.js';
 import { parseLookup } from './btc-lookup.js';
-import { latinReference } from './btc-citation.js';
+
 import { termOfScript, pureForm, pureApplicationHtml, lockApplicationHtml,
          applicationHtml, normalFormHtml } from './btc-term.js';
 import { spell, read, looksSpelled } from './btc-address-form.js';
@@ -241,6 +251,30 @@ function spelledBlock(hex, gl) {
   return '<div class="term-spelled-label">the same script, in the book’s own hand — this box takes it back</div>'
     + `<div class="term-spelled">${escapeHtml(spelled.text)}</div>`;
 }
+
+// The chain, asked whether it agrees. Everything above this point is derived:
+// the address decodes to a script by arithmetic, and a book that printed its
+// own arithmetic back would be checking nothing. So one output that really
+// carries these bytes is fetched and compared -- and the four answers are kept
+// distinct, because "nobody could be asked" must never read as "yes".
+const chainNote = (verdict, witness, ours) => {
+  if (verdict === 'unreachable') return `The chain could not be asked — ${escapeHtml(chainFailureText())}. `
+    + 'What stands above is derived from the address alone, and unchecked.';
+  if (verdict === 'absent') return 'No confirmed output on chain carries this script yet, so there is nothing '
+    + 'to check it against. The form above is what an output paying this address would have to hold.';
+  const at = reference(witness.height);
+  const where = `<a href="${citeHref(witness.txid, witness.out ?? undefined)}">${escapeHtml(at)}</a>`;
+  if (verdict === 'differs') {
+    return `The chain does <b>not</b> agree. At ${where} it writes <span class="term-hex">`
+      + `${escapeHtml(witness.script)}</span>, and the form above reduces to <span class="term-hex">`
+      + `${escapeHtml(ours)}</span>. Trust the chain and not this page.`;
+  }
+  return (witness.whole
+    ? `The chain agrees, at the first output that ever carried this script — ${where}, `
+    : `The chain agrees, at ${where} — a reference, not the earliest: this member has more history than one `
+      + 'page holds, and walking back to its first is the Ledger\'s work. ')
+    + 'Those are the chain\'s own bytes, and the reduction above lands on them exactly.';
+};
 
 // Why a script that decodes still binds no term, which is never the same
 // reason twice and is always the chain's answer rather than the book's.
@@ -301,9 +335,18 @@ async function showScript(hex, { address = null, at = '' } = {}) {
   draw('', '');
   // The engine says the datum, and the same engine spells the whole script.
   const gl = await glossia();
-  if (!gl || !still()) return;
-  const prose = say(gl)(t.argument);
-  if (prose) draw(prose, spelledBlock(hex, gl));
+  let tail = '';
+  if (gl && still()) {
+    const prose = say(gl)(t.argument);
+    tail = spelledBlock(hex, gl);
+    if (prose) draw(prose, tail);
+  }
+  // …and then the chain is asked whether any of it is true.
+  const witness = await chainWitness(address ?? hex);
+  if (!still()) return;
+  const verdict = witnessVerdict(hex, witness);
+  draw(gl ? say(gl)(t.argument) || '' : '',
+    tail + `<p class="term-check term-check-${verdict}">${chainNote(verdict, witness, hex)}</p>`);
 }
 
 // The book's own spelling, read back. The alphabet is a bijection and the mark
