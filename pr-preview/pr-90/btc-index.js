@@ -460,6 +460,72 @@ function esploraTouches(txs, member) {
   return recs;
 }
 
+// ─── the chain's own copy of a member's script ───────────────────────────
+//
+// addressScriptHex derives a scriptPubKey from an address by decoding it. That
+// is arithmetic, and arithmetic can be wrong in the same way twice -- a book
+// that derived a script and then printed its own derivation would be checking
+// nothing. So a page that means to SHOW a script asks the chain for an output
+// that really carries it, and compares.
+//
+// One page of history, which is one request: esplora returns the newest 25
+// confirmed transactions, and the oldest on that page is the earliest
+// reference this cheaply reaches. When the page holds fewer than a full 25 it
+// holds the member's whole confirmed history, and that oldest record is the
+// FIRST reference outright -- `whole` says which case this is, because "the
+// first time the chain wrote this script" and "some time the chain wrote it"
+// are different claims and only one of them is usually true. Walking back to
+// the true first on a busy member is the Ledger's work, not a search box's.
+//
+// The bytes come off an output paying the member, or off a spent prevout where
+// the page's oldest transaction only drew from it -- esplora carries the
+// scriptPubKey on both, and both are the chain's own copy.
+// One page of esplora's newest-first history -> the oldest reference on it, or
+// { found: false }. Pure, so the reading that matters -- which record, and
+// where on it the bytes are -- is testable without a network.
+export function readWitness(page, member) {
+  const whole = page.length < ESPLORA_PAGE;
+  const confirmed = page.filter((t) => t?.status?.confirmed && t.status.block_height > 0);
+  const byScript = !isAddress(member);
+  const pays = (o) => (byScript ? o?.scriptpubkey === member : o?.scriptpubkey_address === member);
+  // Newest first, so the oldest record on the page is the last of them.
+  for (let i = confirmed.length - 1; i >= 0; i--) {
+    const t = confirmed[i];
+    const at = (t.vout || []).findIndex(pays);
+    if (at >= 0) {
+      return { found: true, whole, script: String(t.vout[at].scriptpubkey || '').toLowerCase(),
+               txid: t.txid, height: t.status.block_height, out: at };
+    }
+    // A record that only DREW from the member carries the same bytes on the
+    // prevout it spent -- the chain's copy either way.
+    const spent = (t.vin || []).find((v) => pays(v.prevout));
+    if (spent) {
+      return { found: true, whole, script: String(spent.prevout.scriptpubkey || '').toLowerCase(),
+               txid: t.txid, height: t.status.block_height, out: null };
+    }
+  }
+  return { found: false, whole };
+}
+
+export async function chainWitness(member) {
+  const pagePath = await chainPage(member);
+  if (!pagePath) return null;
+  for (const mirror of esploraMirrors()) {
+    const page = await esploraJson(mirror, pagePath);
+    if (Array.isArray(page)) return readWitness(page, member);
+  }
+  return null;   // every mirror refused; chainFailureText() says how
+}
+
+// Our normal form against the chain's copy. Pure, so the reading is testable
+// without a network: null witness means nobody could be asked, which is not
+// the same as an answer, and must never read as agreement.
+export function witnessVerdict(ours, witness) {
+  if (!witness) return 'unreachable';
+  if (!witness.found) return 'absent';
+  return witness.script === String(ours || '').toLowerCase() ? 'agrees' : 'differs';
+}
+
 // The member's chain state -- confirmed balance and transaction count --
 // straight from its stats endpoint, no memory: the mapper reconciles
 // against the chain's now, not a remembered figure.
