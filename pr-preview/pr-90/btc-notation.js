@@ -129,6 +129,22 @@ export const NOTATION_HTML = `
               from the moment the address is written to the moment it is spent, so the output carries the δ image of
               a script the chain has never seen. Taproot goes further and commits to a whole tree of them, at the
               same thirty-three bytes however many leaves there are — what is never reduced is never visible.</p>
+            <p class="notation-note">Lift the opcodes out as arguments too, and the length of the push
+              with them, and what is left of a lock is shape alone: <span class="lam">λ</span><i>o</i><sub>1</sub>
+              <i>o</i><sub>2</sub> <i>o</i><sub>3</sub> <i>o</i><sub>4</sub> <i>n</i> <b>h</b><span
+              class="lam">.</span> <span class="lam">⟦</span> <i>o</i><sub>1</sub> <i>o</i><sub>2</sub>
+              <b>h</b><sup><i>n</i></sup> <i>o</i><sub>3</sub> <i>o</i><sub>4</sub> <span class="lam">⟧</span>,
+              which is P2PKH at the arguments ⧉ ⌖ ≡ ∇ 20 <b>h</b>. The push arrives as a pair, its length and
+              then the bytes that length measures, because that is the order the chain prints it in: a direct
+              push opcode <i>is</i> its byte count, so ¹⁴ and the twenty bytes after it are one statement, and
+              20 <b>h</b> is the same one. Written this way a term says on its face how much key material an
+              output of its kind requires — and the Addresses group's claim stops being a resemblance. P2WPKH,
+              P2WSH and P2TR are not three formats, nor three terms that look alike: they are one term,
+              <span class="lam">λ</span><i>o</i> <i>n</i> <b>x</b><span class="lam">.</span> <span class="lam">⟦</span>
+              <i>o</i> <b>x</b><sup><i>n</i></sup> <span class="lam">⟧</span>, and everything that tells them
+              apart has moved into the arguments — the witness version, the byte count, and what the bytes are.
+              Reduce it and the wire falls out, as it does from every form above.</p>
+
             <p class="notation-note">The one place the stack marks survive is the validator column, and now for a
               reason rather than an apology: it is two terms written end to end (<b>⟦</b>spend<b>⟧</b> then
               <b>⟦</b>lock<b>⟧</b>) by two people, years apart, with a hash between them. No name can cross that

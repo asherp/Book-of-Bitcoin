@@ -28,6 +28,11 @@ import { OPCODE_SYMBOLS, OPCODE_NAMES, toSuperscript, toSubscript } from './btc-
 import { outputTemplates } from './btc-templates.js';
 import { tokenizeScript } from './btc-tx.js';
 
+// The length variable's mark, on the datum's shoulder where every byte count in
+// this book rides. U+207F, the superscript n -- a variable where a figure
+// usually stands.
+const SUPERSCRIPT_N = 'ⁿ';
+
 const OP_0 = 0x00, OP_1 = 0x51;
 const OP_DUP = 0x76, OP_HASH160 = 0xa9;
 const OP_EQUAL = 0x87, OP_EQUALVERIFY = 0x88, OP_CHECKSIG = 0xac;
@@ -113,49 +118,75 @@ export function reduce(term, argumentHex) {
 //
 // The terms above still hold their opcodes: λh. ⟦ ⧉ ⌖ h ≡ ∇ ⟧ has ⧉ and ⌖
 // baked into it, so P2PKH's abstraction is a different object from P2WPKH's
-// and a reader has to be told which is which. Lift the opcodes out as
-// arguments too and what is left is structure alone:
+// and a reader has to be told which is which. Lift out everything that is not
+// structure -- the opcodes, and the push's length with them -- and what is left
+// is shape alone:
 //
-//   (λo₁ o₂ o₃ o₄ h²⁰. ⟦ o₁ o₂ h²⁰ o₃ o₄ ⟧) ⧉ ⌖ ≡ ∇ h²⁰
+//   (λo₁ o₂ o₃ o₄ n h. ⟦ o₁ o₂ hⁿ o₃ o₄ ⟧) ⧉ ⌖ ≡ ∇ 20 h
 //
-// The binders are ordered opcodes first, datum last, which sorts the whole
-// thing by entropy: the body is pure shape and shared, the opcode arguments
-// come from an alphabet of a hundred-odd marks, and only the tail is
-// incompressible. It is also self-describing — the term states which
-// operations in which order, so nothing has to index a table of known
-// patterns, which is the one thing base58's version byte could never stop
-// doing. And the byte count rides in the binder's own name (h²⁰, p³²), so the
-// body alone fixes the push: the length is not a separate field anywhere.
+// The binders run opcodes first, then each push as a PAIR: its length, then the
+// datum it measures. That is the wire's own order -- a direct push opcode IS
+// its byte count, so the chain writes 14 <20 bytes> and the term writes 20 h --
+// and pairing is what keeps a length beside the bytes it governs when a script
+// carries more than one push. It costs a little of the entropy ordering, since
+// a low-entropy count now sits between the opcodes and the datum rather than
+// ahead of both; it buys a term that says on its face exactly how many bytes of
+// key material the lock requires, which is the thing anyone making an output of
+// this kind actually needs to know.
+//
+// Self-describing, and now completely: the term states which operations, in
+// which order, over a push of what length, so nothing indexes a table of known
+// patterns -- the one thing base58's version byte could never stop doing.
 //
 // What falls out is the Addresses group's claim, structurally. P2WPKH, P2WSH
-// and P2TR do not merely resemble one another under this form — they are the
-// same body, λo₁ x. ⟦ o₁ x ⟧, at three arguments. term.test.mjs checks that.
+// and P2TR do not merely resemble one another under this form -- they are one
+// term, λo n x. ⟦ o xⁿ ⟧, at three arguments, the length among them.
+// term.test.mjs checks that.
 //
 // One binder per position rather than per distinct opcode: none of these terms
 // uses the same mark twice, and a term that did would be saying something
 // (this operation, again) that the positional reading does not.
 export function pureForm(t) {
   const opcodes = t.term.body.filter((code) => code !== null);
-  const datumName = t.binder + toSuperscript(t.bytes);
+  const lenName = 'n';
+  const datumName = t.binder;
   const opNames = opcodes.map((_, i) => `o${toSubscript(i + 1)}`);
   let next = 0;
-  const body = t.term.body.map((code) => (code === null ? datumName : opNames[next++]));
-  return { binders: [...opNames, datumName], body, opcodes, datum: t.argument, datumName, term: t };
+  // In the body the push is one mark, as the book always writes it: the datum
+  // with its count on its shoulder. The count is a bound variable here, so what
+  // rides there is the variable's own superscript rather than a figure.
+  const hole = datumName + SUPERSCRIPT_N;
+  const body = t.term.body.map((code) => (code === null ? hole : opNames[next++]));
+  return {
+    binders: [...opNames, lenName, datumName], body, opcodes, lenName, datumName, hole,
+    bytes: t.bytes, datum: t.argument, term: t,
+  };
 }
 
 // The pure form's arguments substituted back through its binders -> the
 // scriptPubKey. A second road to the same bytes, and it runs over the names
 // the form is actually written with, so a body that named a binder the λ never
-// bound would fail here rather than merely look wrong on the page.
+// bound would fail here rather than merely look wrong on the page. The length
+// is an argument like any other now, so this reduction proves the pairing as
+// well as the shape: a term whose n did not reach its own push would not
+// normalize to the wire.
 export function reducePure(pure) {
-  const env = new Map(pure.binders.map((name, i) =>
-    [name, i < pure.opcodes.length ? pure.opcodes[i] : pure.datum]));
+  const env = new Map(pure.opcodes.map((code, i) => [pure.binders[i], code]));
+  env.set(pure.lenName, pure.bytes);
+  env.set(pure.datumName, pure.datum);
   const parts = pure.body.map((name) => {
-    const value = env.get(name);
-    if (value === undefined) return null;
-    return typeof value === 'number'
-      ? value.toString(16).padStart(2, '0')
-      : (value.length / 2).toString(16).padStart(2, '0') + value.toLowerCase();
+    if (name !== pure.hole) {
+      const code = env.get(name);
+      return typeof code === 'number' ? code.toString(16).padStart(2, '0') : null;
+    }
+    // The push, from its pair: n becomes the push opcode -- on the wire a
+    // direct push IS its count -- and the datum follows it. The two are checked
+    // against each other here, which is the pairing's whole content: a length
+    // that did not measure the bytes beside it would spell a different script.
+    const n = env.get(pure.lenName), datum = env.get(pure.datumName);
+    if (typeof n !== 'number' || typeof datum !== 'string') return null;
+    if (n < 1 || n > 75 || datum.length / 2 !== n) return null;
+    return n.toString(16).padStart(2, '0') + datum.toLowerCase();
   });
   return parts.includes(null) ? null : parts.join('');
 }
@@ -217,26 +248,47 @@ export const normalFormHtml = (t, { prose = '' } = {}) =>
   `${lam('⟦')} ${bodyHtml(t, true, prose)} ${lam('⟧')}`;
 
 // The pure form, written out. Its binders and body are variables throughout --
-// nothing here is on the wire yet, not even an operation -- so the whole
-// skeleton takes the quiet apparatus colour, and the arguments beside it are
-// the first bright thing on the line. Reducing brightens the body, which is
+// nothing here is on the wire yet, not even an operation or a length -- so the
+// whole skeleton takes the quiet apparatus colour, and the arguments beside it
+// are the first bright thing on the line. Reducing brightens the body, which is
 // the reduction made visible: the marks move into the holes.
 //
-// The datum's argument stands as its name rather than its prose. It is the
-// same datum on every line of a reduction, and saying it three times would
-// bury the shape the form exists to show; the normal form is where it lands
-// and where the book says what it is.
-const pureName = (pure, name) => (name === pure.datumName
-  ? dt(pure.term) + count(pure.term)
+// The datum's argument stands as its name rather than its prose. It is the same
+// datum on every line of a reduction, and saying it three times would bury the
+// shape the form exists to show; the normal form is where it lands and where
+// the book says what it is. Its length stands as a figure, because a figure is
+// what is being supplied -- 20, not ²⁰. The superscript is what the count
+// becomes once it has been applied.
+const pureName = (pure, name) => (name === pure.hole
+  ? dt(pure.term) + `<span class="op op-push">${SUPERSCRIPT_N}</span>`
   : `<span class="lam">${escapeHtml(name)}</span>`);
 
 export const pureText = (pure) => `λ${pure.binders.join(' ')}. ⟦ ${pure.body.join(' ')} ⟧`;
 
 export const pureApplicationText = (pure) =>
-  `(${pureText(pure)}) ${pure.opcodes.map(glyph).join(' ')} ${pure.datumName}`;
+  `(${pureText(pure)}) ${pure.opcodes.map(glyph).join(' ')} ${pure.bytes} ${pure.datumName}`;
 
 export const pureHtml = (pure) => `${lam('λ')}${pure.binders.map((n) => pureName(pure, n)).join(' ')}${lam('.')} `
   + `${lam('⟦')} ${pure.body.map((n) => pureName(pure, n)).join(' ')} ${lam('⟧')}`;
 
 export const pureApplicationHtml = (pure) => `${lam('(')}${pureHtml(pure)}${lam(')')} `
-  + `${pure.opcodes.map(op).join(' ')} ${dt(pure.term)}${count(pure.term)}`;
+  + `${pure.opcodes.map(op).join(' ')} <span class="op op-push">${pure.bytes}</span> ${dt(pure.term)}`;
+
+// The lock, one β on: the opcodes are in the body now and what the term still
+// wants is a push -- a length, and that many bytes. This is the line that says
+// how much key material an output of this kind requires, which is the whole
+// reason the length is an argument rather than an annotation.
+const lockBody = (pure, marks) => pure.term.term.body
+  .map((code) => (code === null ? marks.hole : marks.op(code))).join(' ');
+
+export const lockText = (pure) =>
+  `λ${pure.lenName} ${pure.datumName}. ⟦ ${lockBody(pure, { hole: pure.hole, op: glyph })} ⟧`;
+
+export const lockApplicationText = (pure) =>
+  `(${lockText(pure)}) ${pure.bytes} ${pure.datumName}`;
+
+export const lockHtml = (pure) => `${lam('λ')}${lam(pure.lenName)} ${dt(pure.term)}${lam('.')} `
+  + `${lam('⟦')} ${lockBody(pure, { hole: pureName(pure, pure.hole), op })} ${lam('⟧')}`;
+
+export const lockApplicationHtml = (pure) => `${lam('(')}${lockHtml(pure)}${lam(')')} `
+  + `<span class="op op-push">${pure.bytes}</span> ${dt(pure.term)}`;
