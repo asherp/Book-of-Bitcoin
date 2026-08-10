@@ -1,0 +1,347 @@
+<!-- SPDX-License-Identifier: MIT OR Apache-2.0 -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The βook of βitcoin — Search</title>
+<meta name="description" content="Look up any chapter of the Glossia Bitcoin Book: a block height, a block hash, a transaction id, or the book's own citation form.">
+<link rel="icon" type="image/png" sizes="32x32" href="./icons/beta-icon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="./icons/beta-icon-16.png">
+<link rel="icon" href="./icons/beta-icon.svg" type="image/svg+xml">
+
+<!-- Social / rich unfurl -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="The βook of βitcoin">
+<meta property="og:title" content="The βook of βitcoin — Search">
+<meta property="og:description" content="Look up any chapter of the book: a block height, a block hash, a transaction id, or the book's own citation form.">
+<meta property="og:url" content="https://bookofbitcoin.io/bitcoin-search.html">
+<meta property="og:image" content="https://bookofbitcoin.io/og-bookofbitcoin.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="The βook of βitcoin — Vires in Numeris. A gold β standing beside the book's title on a dark cover.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="The βook of βitcoin — Search">
+<meta name="twitter:description" content="Look up any chapter: a block height, a block hash, a transaction id, or a citation.">
+<meta name="twitter:image" content="https://bookofbitcoin.io/og-bookofbitcoin.png">
+
+<!-- PWA: installable, offline-capable app shell. Shares the Bitcoin book's
+     gold-β manifest so every page installs as one "Bitcoin Book" app. -->
+<link rel="manifest" href="./bitcoin-book.webmanifest">
+<meta name="theme-color" content="#08080a">
+<link rel="apple-touch-icon" href="./icons/beta-icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="βook of βitcoin">
+<!-- The shared masthead chrome: service worker registration and the Install /
+     Update affordances on the title's line, one copy for every page. -->
+<script src="./btc-chrome.js"></script>
+
+<!-- The faces every leaf sets text in, fetched alongside the stylesheet
+     that declares them rather than after it. crossorigin is required even
+     same-origin: a font request is CORS-anonymous, and a preload without it
+     matches nothing and downloads the file twice. The rest of web/fonts/ is
+     left to unicode-range, which asks for a face only where its glyphs
+     appear -- the sigla leaf pulls the whole alphabet, a chapter four files. -->
+<link rel="preload" as="font" type="font/woff2" href="./fonts/newsreader-latin.woff2" crossorigin>
+<link rel="preload" as="font" type="font/woff2" href="./fonts/plexmono-500-latin.woff2" crossorigin>
+<link rel="preload" as="font" type="font/woff2" href="./fonts/plexmono-600-latin.woff2" crossorigin>
+<link rel="preload" as="font" type="font/woff2" href="./fonts/sigla-dejavu.woff2" crossorigin>
+<link rel="stylesheet" href="./fonts/fonts.css">
+<link rel="stylesheet" href="./btc-chrome.css">
+<style>
+:root {
+  --page:#08080a; --card:#0d0d10; --card-bd:#232228; --ink:#e8e4da; --ink-soft:#cfcabf;
+  --accent:#c9a25f; --accent-2:#dcb877; --dim:#9c99a6; --meta:#7e7b88; --rule:#24232a; --hair:#2a2930;
+  --input-bg:#151519; --input-bd:#2a2930; --btn-ink:#17140c;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { min-height: 100vh; background: var(--page); color: var(--ink); font-family: 'Public Sans','Book Sigla', system-ui, sans-serif; line-height: 1.55; }
+.wrap { max-width: 720px; margin: 0 auto; padding: 48px var(--gutter-r) 100px var(--gutter-l); }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+.mono { font-family: 'IBM Plex Mono','Book Sigla', monospace; }
+
+.page-head { text-align:center; padding-bottom:30px; margin-bottom:36px; border-bottom:1px solid var(--rule); }
+.page-eyebrow { font:600 11px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.3em; text-transform:uppercase; color:var(--accent); }
+
+.card {
+  background: var(--card); border: 1px solid var(--card-bd); border-radius: 6px;
+  padding: 24px 26px 26px; box-shadow: 0 24px 60px -32px rgba(0,0,0,.7);
+}
+label { display:block; font:500 11px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.06em; text-transform:uppercase; color:var(--dim); margin-bottom:8px; }
+.lookup-row { display:flex; gap:10px; }
+#block-input {
+  flex: 1; min-width: 0; background: var(--input-bg); border: 1px solid var(--input-bd); border-radius: 4px;
+  color: var(--ink); font: 400 14px/1.4 'IBM Plex Mono','Book Sigla',monospace; padding: 11px 12px;
+}
+#block-input:focus { outline: none; border-color: var(--accent); }
+button {
+  background: var(--accent); color: var(--btn-ink); border: none; border-radius: 4px;
+  font: 600 12.5px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing: .04em; text-transform: uppercase;
+  padding: 0 20px; cursor: pointer; transition: background .15s ease;
+}
+button:hover { background: var(--accent-2); }
+
+
+/* The term a searched address binds.
+   An address is not a place, so it opens no chapter; but it is not nothing
+   either. It is the argument of exactly one abstraction, and this is where the
+   book writes that down: the address in its purest form -- structure alone,
+   with the opcodes and the datum both standing outside as arguments -- and the
+   two reductions that carry it to the script the chain actually holds. The
+   Notation key's Scripts as terms and Addresses groups are what this leaf is
+   one worked instance of; the middle line is the very term the key draws. */
+.term { margin-top: 26px; }
+.term[hidden] { display: none; }
+.term-head { display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; margin-bottom:14px; }
+.term-kind { font:600 10px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.18em; text-transform:uppercase; color:var(--accent); }
+/* The address as the reader typed it: the machine's spelling of this same
+   script, so it sets quiet and in the mono face, never in the book's own. */
+.term-addr { font:400 12px/1.5 'IBM Plex Mono','Book Sigla',monospace; color:var(--meta); overflow-wrap:anywhere; }
+.term-line {
+  font: 400 19px/1.6 'Newsreader','Book Sigla', system-ui, 'Segoe UI Symbol', serif;
+  color: var(--ink-soft); overflow-wrap: anywhere;
+}
+/* The marks, styled as the book styles them everywhere else: opcode glyphs in
+   accent, the datum's letter bold, its byte count quiet. .lam is the calculus
+   and not the script -- λ, the dot, the brackets, the application's parens --
+   so it never takes the gold that means "the chain kept this". */
+.term-line .op { color: var(--accent); font-style: normal; }
+.term-line .op-push { color: var(--meta); }
+.term-line .dt { color: var(--accent); font-style: normal; font-weight: 700; }
+.term-line .lam { color: var(--meta); }
+/* β between the lines: the step itself, and the one mark on the leaf that is
+   neither script nor prose. */
+.term-step { display:flex; align-items:baseline; gap:12px; font:400 15px/1 'Newsreader','Book Sigla',serif; color:var(--accent); margin:10px 0 10px 2px; }
+/* What that step supplied. The two βs are not the same move -- one hands over
+   the opcodes and one the datum -- and a reader should not have to work out
+   which by diffing the lines. */
+.term-step-what { font:500 10px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.14em; text-transform:uppercase; color:var(--meta); }
+.term-note { margin:16px 0 0; font:400 13px/1.55 'Public Sans','Book Sigla',sans-serif; color:var(--meta); max-width:62ch; }
+/* The same script in the book's own hand, set to be copied rather than read:
+   the bottom line of the chain without its brackets, which are apparatus. The
+   search box takes it back, so this is the format's own proof -- a string that
+   resolves to Script with no version byte behind it and no table to consult. */
+.term-spelled-label { margin:20px 0 6px; font:600 10px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.14em; text-transform:uppercase; color:var(--meta); }
+.term-spelled {
+  font: 400 13px/1.7 'IBM Plex Mono','Book Sigla', monospace; color: var(--ink-soft);
+  background: var(--input-bg); border: 1px solid var(--input-bd); border-radius: 4px;
+  padding: 11px 12px; overflow-wrap: anywhere; user-select: all;
+}
+
+/* Worked examples beneath the card: each opens the page it cites, so the
+   citation forms are learned by using them rather than by reading a legend. */
+.examples { margin-top: 28px; }
+.examples-title { font:600 10px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.16em; text-transform:uppercase; color:var(--meta); margin-bottom:4px; padding-left:2px; }
+.example { display:flex; align-items:baseline; gap:16px; padding:9px 2px; border-bottom:1px solid var(--hair); text-decoration:none; }
+.example-what { flex:1; min-width:0; font:500 15px/1.35 'Newsreader','Book Sigla',serif; color:var(--ink-soft); }
+.example-form { flex:none; max-width:55%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-align:right; font:500 12.5px/1.6 'IBM Plex Mono','Book Sigla',monospace; color:var(--accent); }
+.example:hover .example-what { color:var(--ink); }
+.example:hover .example-form { color:var(--accent-2); text-decoration:underline; }
+</style>
+<body>
+<div class="wrap">
+  <div class="masthead">
+    <span class="title">The <span class="beta">β</span>ook of <span class="beta">β</span>itcoin</span>
+    <span class="home"><a href="./bitcoin-book.html">Read</a> · <a href="./bitcoin-contents.html">Contents</a></span>
+  </div>
+
+  <header class="page-head">
+    <div class="page-eyebrow">Search</div>
+  </header>
+
+  <div class="card">
+    <label for="block-input">Block height, hash, transaction id, reference, or address</label>
+    <div class="lookup-row">
+      <input type="text" id="block-input" class="mono" placeholder="e.g. III β2 ■5, a height, a hash, a transaction id, or an address" autocomplete="off" spellcheck="false" autofocus>
+      <button type="button" id="block-btn">Read</button>
+    </div>
+  </div>
+
+  <section class="term" id="term" aria-live="polite" hidden></section>
+
+  <div class="examples">
+    <div class="examples-title">For example</div>
+    <a class="example" href="./bitcoin-book.html?block=0"><span class="example-what">the Genesis block, by height</span><span class="example-form">0</span></a>
+    <a class="example" href="./bitcoin-book.html?block=-1"><span class="example-what">the latest block — a negative height counts back from the chain tip</span><span class="example-form">-1</span></a>
+    <a class="example" href="./bitcoin-book.html?block=III%20%CE%B22%20%E2%96%A05"><span class="example-what">a chapter, by the book's own citation</span><span class="example-form">III β2 ■5</span></a>
+    <a class="example" href="./bitcoin-book.html?block=57043"><span class="example-what">the chapter that carries Bitcoin Pizza Day, by height</span><span class="example-form">57043</span></a>
+    <a class="example" href="./bitcoin-book.html?txid=a1075db55d416d3ca199f55b6084e2115b9345e16c5cf302fc80e9d5fbf5d48d"><span class="example-what">the pizza transaction's own section, by its id</span><span class="example-form">a1075db5…f5d48d</span></a>
+    <a class="example" href="./bitcoin-book.html?ref=v1b29c596"><span class="example-what">the same chapter, by its reference alone — as a βoβ quote carries it</span><span class="example-form">v1b29c596</span></a>
+    <a class="example" href="./bitcoin-search.html?q=1Ross5Np5doy4ajF9iGXzgKaC2Q3Pwwxv"><span class="example-what">an address — not a place but a name, so it opens no chapter: it reads here as the term it binds</span><span class="example-form">1Ross5Np…Pwwxv</span></a>
+    <a class="example" href="./bitcoin-appendix.html?part=proofs"><span class="example-what">a file's own chapter — an OpenTimestamps proof names the passage it was stamped into, and the Citations register keeps it</span><span class="example-form">.ots</span></a>
+  </div>
+</div>
+
+<script type="module">
+import { localizeHome, mountLangMenu } from './btc-strings.js';
+localizeHome();   // the masthead in the reader's UI language
+mountLangMenu();  // …with the Language item, which any page can now set
+// The book page resolves every input form itself (?block= accepts a height, a
+// negative tip-relative height, a 64-hex block hash or txid, and the citation
+// form alike), so searching is a hand-off: carry the query there and let the
+// book open it. Two forms route specially: an address is not a place but a
+// name, so it opens no chapter -- it is answered here instead, by writing the
+// term it names (see the term leaf below); and a passage reference -- in either
+// spelling, the Latin URL form (v1b50c1807s85o4) or the quoted βoβ form
+// (βoβ I β50 ■1807 §85.4) -- hands the book the reference whole (?ref=…),
+// which resolves it by citation arithmetic alone: no txid involved.
+// The grammar is btc-lookup.js, shared with the book's own lookup and with the
+// curated contents' `id:` field -- so anything typed here is a form the rest of
+// the book already answers to, and vice versa. Address recognition is the
+// ledger's own (isAddress decodes base58 and bech32); uppercase bech32, as a QR
+// scan yields it, is normalized to the lowercase form the ledger queries with.
+import { isAddress, addressScriptHex } from './btc-index.js';
+import { parseLookup } from './btc-lookup.js';
+import { latinReference } from './btc-citation.js';
+import { termOfScript, pureForm, pureApplicationHtml, applicationHtml, normalFormHtml } from './btc-term.js';
+import { spell, read, looksSpelled } from './btc-address-form.js';
+const input = document.getElementById('block-input');
+const termEl = document.getElementById('term');
+
+// The argument's bytes, said in the book's own tongue. Only the Glossia engine
+// can say them, and the engine is the WASM build (see README) -- absent from a
+// bare checkout, and no part of what this page needs to draw a term. So it is
+// imported when an address arrives and never before, and when it cannot be had
+// the datum simply stays behind its mark: unsaid, which is what the book does
+// everywhere rather than fall back to hex.
+//
+// The prose is words, and safe to set as markup by the same contract the
+// book's own script renderer relies on.
+let engine = null;
+async function glossia() {
+  try {
+    engine ??= import('./glossia-msg.js').then(async (gl) => { await gl.init(); return gl; });
+    return await engine;
+  } catch { return null; }
+}
+const say = (gl) => (hex) => { try { return gl.encodeCanonical(hex).prose; } catch { return null; } };
+const hear = (gl) => (prose, bytes) => { try { return gl.decodeCanonical(prose, bytes).hex; } catch { return null; } };
+
+// A script, answered where it was typed. An address names no chapter, so there
+// is nothing to open; what it does name is one abstraction and the one datum
+// bound into it, and that is a thing the page can simply write down. The book's
+// own spelling of a script is taken here too, and answered identically -- it is
+// the same script, said in the book's hand instead of the machine's.
+const escapeHtml = (s) => String(s)
+  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+// The script in the book's own hand, beneath the reduction and set to be
+// copied: sigla for the opcodes, the byte count on the mark, prose for the
+// datum. It says what the bottom line of the chain says, and the search box
+// takes it back -- which is what makes it a format rather than a rendering.
+// Only ever offered whole: a spelling whose datum could not be said is legible
+// but resolves to nothing, and must not be passed off as an address.
+function spelledBlock(hex, gl) {
+  const spelled = gl && spell(hex, { say: say(gl) });
+  if (!spelled?.complete) return '';
+  return '<div class="term-spelled-label">the same script, in the book’s own hand — this box takes it back</div>'
+    + `<div class="term-spelled">${escapeHtml(spelled.text)}</div>`;
+}
+
+// Why a script that decodes still binds no term, which is never the same
+// reason twice and is always the chain's answer rather than the book's.
+function noTerm(address) {
+  if (address) {
+    // A well-formed address for a witness version consensus has not defined --
+    // a version above ①, or ① at a length Taproot does not take.
+    return 'This address decodes, and its tag names a witness version no rule has defined yet. '
+      + 'There is no term to write: an output under an undefined version demands nothing, so it is '
+      + 'spendable by anyone until a fork gives that version a meaning — and drawing an abstraction '
+      + 'over the datum would claim a lock the chain is not holding.';
+  }
+  return 'This spells a script, and the script is not one abstraction over one datum — a bare '
+    + 'multisig abstracts over m, n and n keys, a data output over bytes of no fixed length. So no '
+    + 'term is written, and no address could carry one either. That refusal is the whole of what '
+    + 'P2SH is for: it wraps any term at all in one that takes a single twenty-byte datum.';
+}
+
+async function showScript(hex, { address = null, at = '' } = {}) {
+  const t = hex ? termOfScript(hex) : null;
+  const head = `<div class="term-head"><span class="term-kind">${t ? escapeHtml(t.label) : 'Script'}</span>`
+    + (address ? `<span class="term-addr">${escapeHtml(address)}</span>` : '') + '</div>';
+  const still = () => termEl.dataset.at === at;
+  if (!t) {
+    termEl.innerHTML = head + `<p class="term-note">${noTerm(address)}</p>`;
+    termEl.hidden = false;
+    const gl = await glossia();
+    if (gl && still()) termEl.innerHTML = head + `<p class="term-note">${noTerm(address)}</p>` + spelledBlock(hex, gl);
+    return;
+  }
+  // Three lines and two steps. The first is the address in its purest form:
+  // every constant lifted out, so the body is shape alone and the arguments
+  // run opcodes-then-datum, lowest entropy to highest. The first β supplies
+  // the opcodes and lands on the term the notation key draws; the second
+  // supplies the datum and lands on the scriptPubKey. Which is the address
+  // format's own two parts, done in the open — the tag picks the term, the
+  // argument fills it.
+  const pure = pureForm(t);
+  const draw = (prose, tail) => {
+    termEl.innerHTML = head
+      + `<div class="term-line">${pureApplicationHtml(pure)}</div>`
+      + '<div class="term-step">β<span class="term-step-what">the opcodes supplied</span></div>'
+      + `<div class="term-line">${applicationHtml(t)}</div>`
+      + '<div class="term-step">β<span class="term-step-what">the datum supplied</span></div>'
+      + `<div class="term-line">${normalFormHtml(t, { prose })}</div>`
+      + '<p class="term-note">An address carries one datum and a tag saying which abstraction to put it '
+      + 'in. Written purely, both are arguments: the body above is structure and nothing else, so it '
+      + 'names no pattern and indexes no table — the term says which operations, in which order, and '
+      + 'the byte count rides in the binder’s own name. Which is also what makes the last line '
+      + 'resolve: the count on the mark is the length the datum’s prose is read back at, so the '
+      + 'spelling below carries its bytes rather than pointing at them.</p>'
+      + tail;
+    termEl.hidden = false;
+  };
+  draw('', '');
+  // The engine says the datum, and the same engine spells the whole script.
+  const gl = await glossia();
+  if (!gl || !still()) return;
+  const prose = say(gl)(t.argument);
+  if (prose) draw(prose, spelledBlock(hex, gl));
+}
+
+// The book's own spelling, read back. The alphabet is a bijection and the mark
+// carries the byte count Glossia's decode has to be told, so this resolves to
+// one script or to none -- a mistyped word is an error and never another
+// output.
+async function showSpelled(text, at) {
+  const gl = await glossia();
+  if (termEl.dataset.at !== at) return;
+  const hex = gl ? read(text, { hear: hear(gl) }) : null;
+  if (!hex) {
+    termEl.innerHTML = '<div class="term-head"><span class="term-kind">Spelled</span></div>'
+      + `<p class="term-note">${gl
+        ? 'This is written in the book’s alphabet, but it does not resolve: a mark’s byte count and '
+          + 'the prose beside it have to agree, and here they do not.'
+        : 'This is written in the book’s alphabet. Reading the datum back needs the Glossia engine, '
+          + 'which this build does not carry, so the marks can be recognised but not resolved.'}</p>`;
+    termEl.hidden = false;
+    return;
+  }
+  showScript(hex, { at });
+}
+
+const go = () => {
+  const q = input.value.trim();
+  if (!q) { input.focus(); return; }
+  const found = parseLookup(q, { isAddress, isSpelled: looksSpelled });
+  termEl.dataset.at = q;
+  if (found.kind === 'address') { showScript(addressScriptHex(found.address), { address: found.address, at: q }); return; }
+  if (found.kind === 'spelled') { showSpelled(found.spelled, q); return; }
+  if (found.kind === 'reference') {
+    location.href = './bitcoin-book.html?ref=' + encodeURIComponent(latinReference(q));
+    return;
+  }
+  location.href = './bitcoin-book.html?block=' + encodeURIComponent(q);
+};
+document.getElementById('block-btn').addEventListener('click', go);
+input.addEventListener('keydown', (e) => { if (e.key === 'Enter') go(); });
+
+// ?q= runs a search on arrival: what the address example below links to, and
+// what a reader who wants to hand someone a term can copy out of the bar.
+const asked = new URLSearchParams(location.search).get('q');
+if (asked) { input.value = asked; go(); }
+
+</script>
+</body>
+</html>
