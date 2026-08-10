@@ -91,3 +91,60 @@ test('the sigla fallback stands behind every stack that names a vendored face', 
     }
   }
 });
+
+test('fonts.css declares every siglum the app writes, opcode or not', async () => {
+  // The other half of the vendoring guarantee, and the half nobody was
+  // watching. The renderer's suite checks the faces a *card* sets, off a list
+  // of the modules that compose a passage. Nothing checked the app's own
+  // stylesheet against the modules that write the book's notation -- so a mark
+  // could join the alphabet, reach a reader, and fall to whatever face the
+  // reader's machine happened to have.
+  //
+  // It matters most for the marks that are notation without being opcodes. λ is
+  // the case in point: no chain has ever carried one, so no rendering of a
+  // transaction could have caught it -- and the first OP_RETURN that carries a
+  // term will put it in front of a reader. It is vendored (U+03BB, with δ and
+  // ⟦ ⟧), and this is what keeps it so.
+  const SOURCES = ['btc-sigla.js', 'btc-notation.js', 'btc-term.js', 'btc-address-form.js'];
+  const LIT = /'(?:[^'\\\n]|\\.)*'|"(?:[^"\\\n]|\\.)*"|`(?:[^`\\]|\\.)*`/gs;
+
+  const declared = new Set();
+  for (const m of fontsCss.matchAll(/unicode-range:\s*([^;]+);/g)) {
+    for (const part of m[1].split(',')) {
+      const [a, b] = part.trim().slice(2).split('-');
+      const lo = parseInt(a, 16), hi = b ? parseInt(b, 16) : lo;
+      for (let cp = lo; cp <= hi; cp++) declared.add(cp);
+    }
+  }
+
+  // Four marks the key prints that no vendored face declares, so they fall to
+  // a system face today. Named rather than waved through: each is real debt,
+  // the fix is a re-vendor rather than an edit here, and naming them is what
+  // lets the fifth one fail this test instead of joining them quietly.
+  const UNVENDORED = new Set([
+    0x207f,   // ⁿ  — a push of n bytes, in the key's Data row and Pushes group
+    0x2099,   // ₙ  — the cited-work mark's subscript, ‡ₙ
+    0x2248,   // ≈  — a projected chapter's expected wait
+    0x221a,   // √  — the same gloss's spread, ±10·√k minutes
+  ]);
+
+  const missing = new Set();
+  for (const name of SOURCES) {
+    let text = await readFile(new URL(name, WEB), 'utf8');
+    text = text.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+    for (const lit of text.match(LIT) || []) {
+      for (const ch of lit) {
+        const cp = ch.codePointAt(0);
+        if (cp > 0x7f && !declared.has(cp) && !UNVENDORED.has(cp)) missing.add(cp);
+      }
+    }
+  }
+  assert.deepEqual([...missing].map((cp) => `U+${cp.toString(16).toUpperCase().padStart(4, '0')} ${String.fromCodePoint(cp)}`),
+    [], 'sigla no @font-face in fonts.css declares — re-vendor the fonts');
+
+  // And the marks of the calculus are vendored, which is the claim this test
+  // exists to keep true rather than merely to have checked once.
+  for (const [cp, mark] of [[0x03bb, 'λ'], [0x03b4, 'δ'], [0x27e6, '⟦'], [0x27e7, '⟧']]) {
+    assert.ok(declared.has(cp), `${mark} is not declared by any face`);
+  }
+});

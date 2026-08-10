@@ -587,6 +587,26 @@ compiled to WASM) is consumed as a published
     what they are — a word pair carrying the 16 version-rolling bits, then the
     signaling bits in plain binary (`accio library 100`). Invertible: the
     notation reads back to the nVersion integer
+  - the term notation (`web/btc-term.js`, and the key's *Scripts as terms*
+    group): `λ` the abstraction, `⟦ ⟧` the script constructor, `β` the
+    reduction, `δ` the one-way steps. Marks of the calculus rather than of the
+    chain — no opcode wears one, which is exactly why they are not in the
+    opcode alphabet above and must not be added to it: that table is a
+    bijection, and the address format below rests on its being one. The only
+    part of the book's notation no chain has ever carried, so no rendering of a
+    transaction could have caught a gap in it; `λ`, `δ` and `⟦ ⟧` are vendored
+    all the same (`tools/fonts.test.mjs` keeps them so), against the first
+    OP_RETURN to carry a term
+  - the address format (`web/btc-address-form.js`): a scriptPubKey spelled in
+    the opcode alphabet, its pushes' byte counts on their marks and their bytes
+    as Glossia prose — `⧉ ⌖ h²⁰ ridge amused garment … inmate ≡ ∇`. The
+    alphabet is a bijection whose marks hold no ASCII letter and no space, so a
+    spelled script resolves to Script and to nothing else: an address needing
+    no version byte, no table of patterns and no registry to extend, and one
+    that can name a script no address can write. The superscript is what makes
+    it invertible rather than merely legible — Glossia's canonical decode has
+    to be told a payload's byte length, and the mark has been carrying that
+    length since the first chapter. The search box takes the form back
   - the amount conventions (`web/btc-prose.js`): `₿`, and the lone satoshi
   - the reader's key to all of it: the sigla leaf in `web/bitcoin-front.html`
     (the whole table, plus the reference-format diagram), and the notation
@@ -807,7 +827,8 @@ they are Bitcoin's, made readable.** Speech needs no license to be quoted.
 ### The sigla
 
 The notation the book writes in — the opcode alphabet, the citation sigla, the
-block-version notation, the amount conventions — is dedicated to the public
+block-version notation, the amount conventions, the term notation and the
+address format built on it — is dedicated to the public
 domain under [CC0 1.0 Universal](LICENSE-CC0), on the same terms as the prose,
 and for the same reason.
 
