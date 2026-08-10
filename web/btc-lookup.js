@@ -21,6 +21,13 @@
 //                                     chapter: the search box answers these
 //                                     where they were typed, by writing the
 //                                     term the address binds (btc-term.js)
+//   spelled       ⧉ ⌖ h²⁰ ridge …     the same script in the book's own hand:
+//                                     sigla for the opcodes, the byte count on
+//                                     the mark, Glossia prose for the datum.
+//                                     The alphabet is a bijection, so this
+//                                     resolves to Script and to nothing else --
+//                                     an address format needing no version byte
+//                                     and no table of patterns (btc-address-form.js)
 //   script        script:76a90088ac   a raw scriptPubKey, by its own bytes --
 //                                     the name of an output no address can
 //                                     write (a malformed or nonstandard
@@ -57,7 +64,12 @@ export const looksLikeAddress = (s) => /^(?:[13][a-km-zA-HJ-NP-Z1-9]{25,34}|bc1[
 // 'relative', 'hex', 'reference', 'address', or null when the string is none of
 // them. A reference carries its parse (see btc-citation.js); everything else
 // carries the query as written, trimmed.
-export function parseLookup(query, { isAddress = looksLikeAddress } = {}) {
+// Recognition is injected for the two forms whose real test is a decode. An
+// address's is the ledger's (isAddress, above); a spelled script's is the
+// alphabet's own (looksSpelled in btc-address-form.js), and it defaults to off
+// so that no page pays for the opcode table to answer a question about a
+// height. A caller that means to take the form passes its recognizer.
+export function parseLookup(query, { isAddress = looksLikeAddress, isSpelled = () => false } = {}) {
   const q = String(query ?? '').trim();
   if (!q) return { kind: null, query: q };
   // Addresses first: bech32 is all-lowercase in the form the ledger queries,
@@ -66,6 +78,11 @@ export function parseLookup(query, { isAddress = looksLikeAddress } = {}) {
   if (isAddress(q)) return { kind: 'address', query: q, address: q };
   if (isAddress(q.toLowerCase())) return { kind: 'address', query: q, address: q.toLowerCase() };
   if (isScriptQuery(q)) return { kind: 'script', query: q, script: q.slice(7).toLowerCase() };
+  // The book's own spelling of a script. It carries its bytes rather than
+  // pointing at them, so what comes back is the text: reading it is the
+  // engine's job and belongs to whoever asked. No other form here can hold a
+  // glyph or a push mark, so the shapes never contend.
+  if (isSpelled(q)) return { kind: 'spelled', query: q, spelled: q };
   if (isHeight(q)) return { kind: 'height', query: q, height: Number(q) };
   if (isRelativeHeight(q)) return { kind: 'relative', query: q, offset: Number(q) };
   if (isHex64(q)) return { kind: 'hex', query: q, hex: q.toLowerCase() };
