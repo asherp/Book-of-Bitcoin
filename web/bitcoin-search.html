@@ -87,10 +87,12 @@ button:hover { background: var(--accent-2); }
    An address is not a place, so it opens no chapter; but it is not nothing
    either. It is the argument of exactly one abstraction, and this is where the
    book writes that down: the address in its purest form -- structure alone,
-   with the opcodes and the datum both standing outside as arguments -- and the
-   two reductions that carry it to the script the chain actually holds. The
-   Notation key's Scripts as terms and Addresses groups are what this leaf is
-   one worked instance of; the middle line is the very term the key draws. */
+   every constant standing outside it as an argument -- and the three reductions
+   that carry it to the script the chain actually holds. Each β supplies one
+   class, so the lines answer one question apiece: which operations, how many
+   bytes of key material, and then which bytes. The Notation key's Scripts as
+   terms and Addresses groups are what this leaf is one worked instance of; the
+   third line is the very term the key draws. */
 .term { margin-top: 26px; }
 .term[hidden] { display: none; }
 .term-head { display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; margin-bottom:14px; }
@@ -113,9 +115,9 @@ button:hover { background: var(--accent-2); }
 /* β between the lines: the step itself, and the one mark on the leaf that is
    neither script nor prose. */
 .term-step { display:flex; align-items:baseline; gap:12px; font:400 15px/1 'Newsreader','Book Sigla',serif; color:var(--accent); margin:10px 0 10px 2px; }
-/* What that step supplied. The two βs are not the same move -- one hands over
-   the opcodes and one the datum -- and a reader should not have to work out
-   which by diffing the lines. */
+/* What that step supplied. The three βs are not the same move -- the opcodes,
+   the push's length, then the bytes themselves -- and a reader should not have
+   to work out which by diffing the lines. */
 .term-step-what { font:500 10px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.14em; text-transform:uppercase; color:var(--meta); }
 .term-note { margin:16px 0 0; font:400 13px/1.55 'Public Sans','Book Sigla',sans-serif; color:var(--meta); max-width:62ch; }
 /* The same script in the book's own hand, set to be copied rather than read:
@@ -194,7 +196,8 @@ mountLangMenu();  // …with the Language item, which any page can now set
 import { isAddress, addressScriptHex } from './btc-index.js';
 import { parseLookup } from './btc-lookup.js';
 import { latinReference } from './btc-citation.js';
-import { termOfScript, pureForm, pureApplicationHtml, applicationHtml, normalFormHtml } from './btc-term.js';
+import { termOfScript, pureForm, pureApplicationHtml, lockApplicationHtml,
+         applicationHtml, normalFormHtml } from './btc-term.js';
 import { spell, read, looksSpelled } from './btc-address-form.js';
 const input = document.getElementById('block-input');
 const termEl = document.getElementById('term');
@@ -280,15 +283,18 @@ async function showScript(hex, { address = null, at = '' } = {}) {
     termEl.innerHTML = head
       + `<div class="term-line">${pureApplicationHtml(pure)}</div>`
       + '<div class="term-step">β<span class="term-step-what">the opcodes supplied</span></div>'
+      + `<div class="term-line">${lockApplicationHtml(pure)}</div>`
+      + `<div class="term-step">β<span class="term-step-what">the length supplied — ${t.bytes} bytes of key material</span></div>`
       + `<div class="term-line">${applicationHtml(t)}</div>`
       + '<div class="term-step">β<span class="term-step-what">the datum supplied</span></div>'
       + `<div class="term-line">${normalFormHtml(t, { prose })}</div>`
       + '<p class="term-note">An address carries one datum and a tag saying which abstraction to put it '
-      + 'in. Written purely, both are arguments: the body above is structure and nothing else, so it '
-      + 'names no pattern and indexes no table — the term says which operations, in which order, and '
-      + 'the byte count rides in the binder’s own name. Which is also what makes the last line '
-      + 'resolve: the count on the mark is the length the datum’s prose is read back at, so the '
-      + 'spelling below carries its bytes rather than pointing at them.</p>'
+      + 'in. Written purely, every constant is an argument: the body at the top is structure and '
+      + 'nothing else, so it names no pattern and indexes no table. The push arrives as a pair — its '
+      + 'length, then the bytes it measures — which is the order the wire prints, since a direct push '
+      + 'opcode <em>is</em> its byte count. So the second line states exactly how much key material an '
+      + 'output of this kind requires, and the count that lands on the mark is the length the datum’s '
+      + 'prose is read back at: the spelling below carries its bytes rather than pointing at them.</p>'
       + tail;
     termEl.hidden = false;
   };

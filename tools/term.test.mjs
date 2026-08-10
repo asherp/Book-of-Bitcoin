@@ -23,7 +23,8 @@ import assert from 'node:assert/strict';
 import { addressScriptHex } from '../web/btc-index.js';
 import { NOTATION_HTML } from '../web/btc-notation.js';
 import { TERMS, termOfScript, reduce, abstractionText, applicationText, normalFormText,
-         pureForm, reducePure, pureText, pureApplicationText } from '../web/btc-term.js';
+         pureForm, reducePure, pureText, pureApplicationText,
+         lockText, lockApplicationText } from '../web/btc-term.js';
 
 // One address of every form that has one, which is every row of the key's
 // Addresses group: the book's own Ross Ulbricht ledger, a P2SH, and the BIP173
@@ -100,42 +101,65 @@ test('the pure form reduces to the same script, through its own names', () => {
     // body naming something the λ never bound fails here, rather than merely
     // reading oddly on the page.
     assert.equal(reducePure(pure), script, `${id} does not reduce purely`);
-    // Every binder is used, and every one of them is bound: the arguments and
-    // the holes are the same set.
-    assert.deepEqual([...new Set(pure.body)].sort(), [...pure.binders].sort(), id);
-    assert.equal(pure.binders.length, pure.opcodes.length + 1, `${id}'s arity`);
-    // Opcodes first, datum last -- the whole ordering claim, which is what
-    // makes the tail the only incompressible part.
-    assert.equal(pure.binders[pure.binders.length - 1], pure.datumName, `${id} ends on its datum`);
+    // Opcodes, then the push as a pair: its length, then the datum. Every
+    // constant is an argument now, so the arity is fixed by the body alone.
+    assert.equal(pure.binders.length, pure.opcodes.length + 2, `${id}'s arity`);
+    assert.deepEqual(pure.binders.slice(-2), [pure.lenName, pure.datumName],
+      `${id} does not end on its push, length first`);
+    // The body spends every binder: the opcode names stand where their marks
+    // will, and the hole is the other two written as one mark -- the datum with
+    // its count on its shoulder, which is how the book writes a push and how
+    // the wire prints one.
+    assert.equal(pure.body.filter((n) => n === pure.hole).length, 1, `${id}'s push`);
+    assert.equal(pure.hole, pure.datumName + 'ⁿ', `${id}'s push mark`);
+    for (const name of pure.binders.slice(0, -2)) {
+      assert.ok(pure.body.includes(name), `${id} never uses ${name}`);
+    }
   }
 });
 
-test('the byte count rides in the binder name, so the body fixes the push', () => {
-  const p2wpkh = pureForm(termOfScript(addressScriptHex('bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4')));
-  assert.equal(pureText(p2wpkh), 'λo₁ h²⁰. ⟦ o₁ h²⁰ ⟧');
-  assert.equal(pureApplicationText(p2wpkh), '(λo₁ h²⁰. ⟦ o₁ h²⁰ ⟧) ⓪ h²⁰');
+test('the length is an argument, and the pair is checked against itself', () => {
+  const pure = pureForm(termOfScript(addressScriptHex('bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4')));
+  assert.equal(pureText(pure), 'λo₁ n h. ⟦ o₁ hⁿ ⟧');
+  // The argument list is the wire's own order: the count, then the bytes it
+  // measures. On chain a direct push opcode IS its count, so 14 <20 bytes>
+  // and 20 h are the same statement.
+  assert.equal(pureApplicationText(pure), '(λo₁ n h. ⟦ o₁ hⁿ ⟧) ⓪ 20 h');
+  assert.equal(lockApplicationText(pure), '(λn h. ⟦ ⓪ hⁿ ⟧) 20 h');
+  // n reaches the push, rather than the reduction quietly measuring the datum
+  // for itself: a length that does not match the bytes beside it spells no
+  // script at all.
+  assert.equal(reducePure({ ...pure, bytes: 19 }), null, 'a mismatched pair should not reduce');
+  assert.equal(reducePure({ ...pure, bytes: 0 }), null);
   const p2pkh = pureForm(termOfScript(addressScriptHex('1Ross5Np5doy4ajF9iGXzgKaC2Q3Pwwxv')));
-  assert.equal(pureApplicationText(p2pkh), '(λo₁ o₂ o₃ o₄ h²⁰. ⟦ o₁ o₂ h²⁰ o₃ o₄ ⟧) ⧉ ⌖ ≡ ∇ h²⁰');
+  assert.equal(pureApplicationText(p2pkh), '(λo₁ o₂ o₃ o₄ n h. ⟦ o₁ o₂ hⁿ o₃ o₄ ⟧) ⧉ ⌖ ≡ ∇ 20 h');
 });
 
-test('the witness forms are one body at three arguments, not three formats', () => {
-  // The Addresses group says this in prose. Under the pure form it is not a
-  // resemblance to be argued for: erase the datum's name -- the one place a
-  // length or a letter could differ -- and the three bodies are the same string,
-  // while the terms above them (which bake their opcode in) are not.
-  const shape = (address) => {
+test('the witness forms are one term, and only their arguments differ', () => {
+  // The Addresses group says this in prose. With the length abstracted it is no
+  // longer a resemblance to be argued for, nor even a shape that matches once
+  // the type is forgotten: the three terms are α-equivalent outright -- rename
+  // the datum's binder and they are the same string -- and everything that
+  // distinguishes P2WPKH from P2WSH from P2TR has moved into the arguments,
+  // the byte count among them.
+  const alpha = (address) => {
     const pure = pureForm(termOfScript(addressScriptHex(address)));
-    return pure.body.map((n) => (n === pure.datumName ? '·' : n)).join(' ');
+    return pureText(pure).split(pure.datumName).join('x');
+  };
+  const args = (address) => {
+    const pure = pureForm(termOfScript(addressScriptHex(address)));
+    return `${pure.opcodes.map((c) => c.toString(16)).join(' ')} ${pure.bytes}`;
   };
   const witness = ['bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4',
     'bc1qrp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3qccfmv3',
-    'bc1p5d7rjq7g6rdk2yhzks9smlaqtedr4dekq08ge8ztwac72sfr9rusxg3297'].map(shape);
-  assert.deepEqual(witness, ['o₁ ·', 'o₁ ·', 'o₁ ·']);
-  // And the legacy pair, which segwit's one term is the answer to, do not join
-  // them: a different shape apiece, and neither is the witness shape.
-  const legacy = ['1Ross5Np5doy4ajF9iGXzgKaC2Q3Pwwxv', '3J98t1WpEZ73CNmQviecrnyiWrnqRhWNLy'].map(shape);
-  assert.deepEqual(legacy, ['o₁ o₂ · o₃ o₄', 'o₁ · o₂']);
-  assert.equal(new Set([...witness, ...legacy]).size, 3);
+    'bc1p5d7rjq7g6rdk2yhzks9smlaqtedr4dekq08ge8ztwac72sfr9rusxg3297'];
+  assert.deepEqual(witness.map(alpha), Array(3).fill('λo₁ n x. ⟦ o₁ xⁿ ⟧'));
+  assert.deepEqual(witness.map(args), ['0 20', '0 32', '51 32'], 'all three differ, and only here');
+  // The legacy pair do not join them: a different body apiece, and neither is
+  // the witness body. Which is what segwit's one term was the answer to.
+  const legacy = ['1Ross5Np5doy4ajF9iGXzgKaC2Q3Pwwxv', '3J98t1WpEZ73CNmQviecrnyiWrnqRhWNLy'].map(alpha);
+  assert.deepEqual(legacy, ['λo₁ o₂ o₃ o₄ n x. ⟦ o₁ o₂ xⁿ o₃ o₄ ⟧', 'λo₁ o₂ n x. ⟦ o₁ xⁿ o₂ ⟧']);
+  assert.equal(new Set([...witness.map(alpha), ...legacy]).size, 3);
 });
 
 // ─── the key's own tables, read back ─────────────────────────────────────
