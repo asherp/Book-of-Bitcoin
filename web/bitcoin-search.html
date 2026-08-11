@@ -83,14 +83,17 @@ button {
 button:hover { background: var(--accent-2); }
 
 
-/* The term a searched address binds.
+/* The term the box is holding, drawn as it is typed.
    An address is not a place, so it opens no chapter; but it is not nothing
-   either. It is the argument of exactly one abstraction, and this leaf is that
-   written down: the address in its purest form -- structure alone, every
-   constant standing outside it as an argument -- one β, and the script the
-   chain actually holds. The steps between are currying, which is a fact about
-   the notation and not about this address; the Notation key's Scripts as terms
-   group walks them once, where they belong. */
+   either, and what it is can be read straight off the bytes -- so it is, on
+   every keystroke, before anything is clicked. The address in its purest form:
+   structure alone, every constant standing outside it as an argument, one β,
+   and the script the chain actually holds. The steps between are currying,
+   which is a fact about the notation rather than about this address; the
+   Notation key's Scripts as terms group walks them once, where they belong.
+
+   Read still opens the place, as it always did. This says what the thing is;
+   the button goes to it. */
 .term { margin-top: 26px; }
 .term[hidden] { display: none; }
 .term-head { display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; margin-bottom:14px; }
@@ -187,9 +190,10 @@ mountLangMenu();  // …with the Language item, which any page can now set
 // The book page resolves every input form itself (?block= accepts a height, a
 // negative tip-relative height, a 64-hex block hash or txid, and the citation
 // form alike), so searching is a hand-off: carry the query there and let the
-// book open it. Two forms route specially: an address is not a place but a
-// name, so it opens no chapter -- it is answered here instead, by writing the
-// term it names (see the term leaf below); and a passage reference -- in either
+// book open it. Two forms route elsewhere: a member -- an address, or a script
+// by its own bytes -- is not a place but a name, so Read opens its Ledger,
+// while the leaf below says what it IS as the reader types it; and a passage
+// reference -- in either
 // spelling, the Latin URL form (v1b50c1807s85o4) or the quoted βoβ form
 // (βoβ I β50 ■1807 §85.4) -- hands the book the reference whole (?ref=…),
 // which resolves it by citation arithmetic alone: no txid involved.
@@ -295,52 +299,47 @@ function noTerm(address) {
     + 'P2SH is for: it wraps any term at all in one that takes a single twenty-byte datum.';
 }
 
-async function showScript(hex, { address = null, at = '' } = {}) {
+// The leaf, drawn from the bytes alone: the address in its purest form, one β,
+// and the script it normalizes to. Everything here is arithmetic, so it can be
+// drawn on every keystroke -- what costs anything (the engine's prose, the
+// chain) arrives afterwards, and the leaf is legible before it does.
+function drawTerm(hex, { address = null, at = '', prose = '', tail = '' } = {}) {
   const t = hex ? termOfScript(hex) : null;
   const head = `<div class="term-head"><span class="term-kind">${t ? escapeHtml(t.label) : 'Script'}</span>`
     + (address ? `<span class="term-addr">${escapeHtml(address)}</span>` : '') + '</div>';
-  const still = () => termEl.dataset.at === at;
-  if (!t) {
-    termEl.innerHTML = head + `<p class="term-note">${noTerm(address)}</p>`;
-    termEl.hidden = false;
-    const gl = await glossia();
-    if (gl && still()) termEl.innerHTML = head + `<p class="term-note">${noTerm(address)}</p>` + spelledBlock(hex, gl);
-    return;
-  }
-  // Two lines and one step: the address in its purest form, and what it
-  // normalizes to. Everything between them is currying, and currying is a
-  // property of the notation rather than of this address -- the key's Scripts
-  // as terms group walks it once, where it belongs.
-  const pure = pureForm(t);
-  const draw = (prose, tail) => {
-    termEl.innerHTML = head
-      + `<div class="term-line">${pureApplicationHtml(pure)}</div>`
+  termEl.innerHTML = t
+    ? head
+      + `<div class="term-line">${pureApplicationHtml(pureForm(t))}</div>`
       + '<div class="term-step">β</div>'
       + `<div class="term-line">${normalFormHtml(t, { prose })}</div>`
-      + tail;
-    termEl.hidden = false;
-  };
-  draw('', '');
-  // The engine says the datum, and the same engine spells the whole script.
+      + tail
+    : head + `<p class="term-note">${noTerm(address)}</p>` + tail;
+  termEl.hidden = false;
+  termEl.dataset.at = at;
+}
+
+// …and then what has to be fetched. The engine says the datum and spells the
+// whole script; the chain is asked whether it ever wrote these bytes. Both are
+// held back until the reader stops typing, since one is a WASM import and the
+// other is somebody else's server.
+async function enrichTerm(hex, { address = null, at = '' } = {}) {
+  const still = () => termEl.dataset.at === at;
+  const t = hex ? termOfScript(hex) : null;
   const gl = await glossia();
-  let tail = '';
-  if (gl && still()) {
-    const prose = say(gl)(t.argument);
-    tail = spelledBlock(hex, gl);
-    if (prose) draw(prose, tail);
-  }
-  // …and then the chain is asked whether any of it is true.
+  if (!still()) return;
+  const prose = gl && t ? say(gl)(t.argument) || '' : '';
+  const spelled = gl ? spelledBlock(hex, gl) : '';
+  if (prose || spelled) drawTerm(hex, { address, at, prose, tail: spelled });
   const witness = await chainWitness(address ?? hex);
   if (!still()) return;
   const verdict = witnessVerdict(hex, witness);
-  draw(gl ? say(gl)(t.argument) || '' : '',
-    `<div class="term-said">${chainMark(verdict, witness, hex)}</div>` + tail);
+  drawTerm(hex, { address, at, prose,
+    tail: `<div class="term-said">${chainMark(verdict, witness, hex)}</div>${spelled}` });
 }
 
-// The book's own spelling, read back. The alphabet is a bijection and the mark
-// carries the byte count Glossia's decode has to be told, so this resolves to
-// one script or to none -- a mistyped word is an error and never another
-// output.
+// The book's own spelling, read back. It carries its bytes rather than pointing
+// at them, so nothing about it can be drawn until the engine has read the datum
+// -- which is why this one form waits where the others do not.
 async function showSpelled(text, at) {
   const gl = await glossia();
   if (termEl.dataset.at !== at) return;
@@ -355,23 +354,65 @@ async function showSpelled(text, at) {
     termEl.hidden = false;
     return;
   }
-  showScript(hex, { at });
+  drawTerm(hex, { at });
+  enrichTerm(hex, { at });
 }
 
-const go = () => {
+// What a query is, once. Both the preview and the button ask this, so what the
+// reader is shown and what the button then opens can never disagree.
+const classify = (q) => parseLookup(q, {
+  isAddress, isSpelled: looksSpelled, isLockingScript: isWholeScript,
+});
+
+// The leaf follows the box. A script or an address is a thing the page can draw
+// from the bytes in hand, so it draws as the reader types; every other form
+// names a place, and a place is what the button opens.
+let pending = null;
+function preview() {
+  const q = input.value.trim();
+  const found = classify(q);
+  if (found.kind !== 'address' && found.kind !== 'script' && found.kind !== 'spelled') {
+    termEl.hidden = true;
+    termEl.dataset.at = '';
+    return;
+  }
+  if (termEl.dataset.at === q) return;                 // already showing this one
+  if (found.kind === 'spelled') termEl.dataset.at = q;
+  else {
+    const hex = found.kind === 'address' ? addressScriptHex(found.address) : found.script;
+    drawTerm(hex, { address: found.kind === 'address' ? found.address : null, at: q });
+  }
+  clearTimeout(pending);
+  pending = setTimeout(() => {
+    if (input.value.trim() !== q) return;
+    if (found.kind === 'spelled') showSpelled(found.spelled, q);
+    else {
+      const hex = found.kind === 'address' ? addressScriptHex(found.address) : found.script;
+      enrichTerm(hex, { address: found.kind === 'address' ? found.address : null, at: q });
+    }
+  }, 450);
+}
+
+// Read opens the place. An address and a script are both ledger members -- a
+// set of outputs under one name -- and the Ledger is where a name's record
+// lives; everything else is a passage, and the book resolves it. The leaf above
+// stays where it is: it says what the thing IS, and the button goes to it.
+const go = async () => {
   const q = input.value.trim();
   if (!q) { input.focus(); return; }
-  // Bare hex is a lock unless it is already something else in this grammar --
-  // a height or an id (isWholeScript names the two shapes and why).
-  const found = parseLookup(q, { isAddress, isSpelled: looksSpelled, isLockingScript: isWholeScript });
-  termEl.dataset.at = q;
-  if (found.kind === 'address') { showScript(addressScriptHex(found.address), { address: found.address, at: q }); return; }
-  if (found.kind === 'spelled') { showSpelled(found.spelled, q); return; }
-  // A raw scriptPubKey, by its own bytes. The prefix is the grammar's, not the
-  // chain's: bare hex would be ambiguous with a height or a txid, and this book
-  // does not guess. What comes back is the same leaf — a script is a script
-  // however it was named, and this one may be a lock no address can write.
-  if (found.kind === 'script') { showScript(found.script, { at: q }); return; }
+  const found = classify(q);
+  const ledger = (member) => {
+    location.href = './bitcoin-ledger.html?address=' + encodeURIComponent(member);
+  };
+  if (found.kind === 'address') return ledger(found.address);
+  if (found.kind === 'script') return ledger(found.script);
+  if (found.kind === 'spelled') {
+    // A spelling names its member by carrying it, so it has to be read first.
+    const gl = await glossia();
+    const hex = gl ? read(found.spelled, { hear: hear(gl) }) : null;
+    if (hex) return ledger(hex);
+    return showSpelled(found.spelled, q);      // it does not resolve; the leaf says why
+  }
   if (found.kind === 'reference') {
     location.href = './bitcoin-book.html?ref=' + encodeURIComponent(latinReference(q));
     return;
@@ -380,11 +421,12 @@ const go = () => {
 };
 document.getElementById('block-btn').addEventListener('click', go);
 input.addEventListener('keydown', (e) => { if (e.key === 'Enter') go(); });
+input.addEventListener('input', preview);
 
-// ?q= runs a search on arrival: what the address example below links to, and
-// what a reader who wants to hand someone a term can copy out of the bar.
+// ?q= fills the box and draws what it names, without opening anything: a link
+// that showed a term and then navigated away from it would be showing nothing.
 const asked = new URLSearchParams(location.search).get('q');
-if (asked) { input.value = asked; go(); }
+if (asked) { input.value = asked; preview(); }
 
 </script>
 </body>
