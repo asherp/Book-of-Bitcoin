@@ -128,13 +128,14 @@ button:hover { background: var(--accent-2); }
    the bottom line of the chain without its brackets, which are apparatus. The
    search box takes it back, so this is the format's own proof -- a string that
    resolves to Script with no version byte behind it and no table to consult. */
-/* What the chain said, said in four of the book's own marks and a citation:
-   ✓ asserts true, ∅ is empty, ⋯ is not yet knowable, ☒ is invalid. Nothing is
-   explained here -- the reference is the evidence, and what a mark means is in
-   its hover, which is where this book keeps a claim about a claim. */
-.term-said { margin:18px 0 0; font:400 15px/1.7 'Newsreader','Book Sigla',serif; color:var(--meta); }
+/* Where the quote above was found, set as an attribution and not as a verdict:
+   an em dash and the place, which is how this book attributes anything it
+   quotes. The other three answers have no source to name, so they keep their
+   marks -- ∅ is empty, ⋯ is not yet knowable, ☒ is invalid -- and what each one
+   means is in its hover, which is where this book keeps a claim about a claim. */
+.term-said { margin:10px 0 0; font:400 15px/1.7 'Newsreader','Book Sigla',serif; color:var(--meta); }
+.term-cite { color: var(--meta); }
 .term-check { font-size: 1.1em; }
-.term-check-agrees { color: var(--accent); }
 .term-check-said { color: var(--meta); }
 /* A mismatch is the one outcome that must never be mistaken for another. */
 .term-check-differs { color: #d9564b; }
@@ -217,7 +218,7 @@ import { isAddress, addressScriptHex, chainWitness, witnessVerdict, witnessDisag
 import { reference, latinReference } from './btc-citation.js';
 import { parseLookup } from './btc-lookup.js';
 
-import { termOfScript, demandsHtml, normalFormHtml } from './btc-term.js';
+import { termOfScript, demandsHtml } from './btc-term.js';
 import { spell, spellHtml, read, looksSpelled, isWholeScript, scriptFault } from './btc-address-form.js';
 const input = document.getElementById('block-input');
 const termEl = document.getElementById('term');
@@ -286,11 +287,15 @@ const chainMark = (verdict, witness, ours) => {
       + `not this page">☒</span> ${where}`
       + `<div class="term-hex">${escapeHtml(theirs)}</div><div class="term-hex">${escapeHtml(ours)}</div>`;
   }
+  // Found, so the quote above has a source, and it is set as one: an em dash
+  // and the place, which is how this book attributes anything it quotes. The
+  // attribution IS the finding -- a citation nobody could confirm would not be
+  // written -- so no separate mark of assent is needed beside it.
   const said = witness.whole
     ? `the first output that ever carried this script, and every one of ${n} references on the page — `
     : `the earliest reference one page reaches, and every one of ${n} on it — `;
-  return `<span class="term-check term-check-agrees" title="${said}${witness.outputs} paying it, `
-    + `${witness.prevouts} spent from it, all carrying these bytes">✓</span> ${where}`;
+  return `<span class="term-cite" title="${said}${witness.outputs} paying it, `
+    + `${witness.prevouts} spent from it, all carrying these bytes">—</span> ${where}`;
 };
 
 // What is wrong with the bytes, said at the byte it is wrong at. Devs paste hex
@@ -310,12 +315,9 @@ const faultNote = (f) => {
   return '<span class="term-check term-check-differs">☒</span> not whole bytes';
 };
 
-const lam = (m) => `<span class="lam">${m}</span>`;
-
-function drawTerm(hex, { address = null, at = '', say: sayFn = null, tail = '' } = {}) {
+function drawTerm(hex, { address = null, at = '', say: sayFn = null, quote = '', said = '' } = {}) {
   const fault = scriptFault(hex);
   const t = fault ? null : termOfScript(hex);
-  const prose = t && sayFn ? sayFn(t.argument) || '' : '';
   const head = `<div class="term-head"><span class="term-kind">${t ? escapeHtml(t.label) : 'Script'}</span>`
     + (address ? `<span class="term-addr">${escapeHtml(address)}</span>` : '') + '</div>';
   // A term binds, or it does not, or the bytes are not a script at all. The
@@ -325,12 +327,11 @@ function drawTerm(hex, { address = null, at = '', say: sayFn = null, tail = '' }
   // still waiting for, and what the chain is holding. They are not a
   // derivation of each other -- a β between them would be a lie -- so the only
   // thing that joins them is that they are about the same output.
-  const body = t
-    ? `<div class="term-line term-awaits">${demandsHtml(t) || ''}</div>`
-      + `<div class="term-line">${normalFormHtml(t, { prose })}</div>` + tail
-    : fault
-      ? `<div class="term-said">${faultNote(fault)}</div>`
-      : `<div class="term-line">${lam('⟦')} ${spellHtml(hex, { say: sayFn }) || ''} ${lam('⟧')}</div>` + tail;
+  const body = fault
+    ? `<div class="term-said">${faultNote(fault)}</div>`
+    : (t ? `<div class="term-line term-awaits">${demandsHtml(t) || ''}</div>` : '')
+      + `<div class="term-line">${spellHtml(hex, { say: sayFn }) || ''}</div>`
+      + quote + said;
   termEl.innerHTML = head + body;
   termEl.hidden = false;
   termEl.dataset.at = at;
@@ -345,13 +346,13 @@ async function enrichTerm(hex, { address = null, at = '' } = {}) {
   const gl = await glossia();
   if (!still()) return;
   const sayFn = gl ? say(gl) : null;
-  const spelled = gl ? spelledBlock(hex, gl) : '';
-  if (sayFn) drawTerm(hex, { address, at, say: sayFn, tail: spelled });
+  const quote = gl ? spelledBlock(hex, gl) : '';
+  if (sayFn) drawTerm(hex, { address, at, say: sayFn, quote });
   const witness = await chainWitness(address ?? hex);
   if (!still()) return;
   const verdict = witnessVerdict(hex, witness);
-  drawTerm(hex, { address, at, say: sayFn,
-    tail: `<div class="term-said">${chainMark(verdict, witness, hex)}</div>${spelled}` });
+  drawTerm(hex, { address, at, say: sayFn, quote,
+    said: `<div class="term-said">${chainMark(verdict, witness, hex)}</div>` });
 }
 
 // The book's own spelling, read back. It carries its bytes rather than pointing
