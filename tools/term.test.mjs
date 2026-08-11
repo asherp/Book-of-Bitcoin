@@ -24,7 +24,7 @@ import { addressScriptHex } from '../web/btc-index.js';
 import { NOTATION_HTML } from '../web/btc-notation.js';
 import { TERMS, termOfScript, reduce, abstractionText, applicationText, normalFormText,
          pureForm, reducePure, pureText, pureApplicationText,
-         lockText, lockApplicationText } from '../web/btc-term.js';
+         lockText, lockApplicationText, demandsOf, demandsText, demandsHtml } from '../web/btc-term.js';
 
 // One address of every form that has one, which is every row of the key's
 // Addresses group: the book's own Ross Ulbricht ledger, a P2SH, and the BIP173
@@ -183,6 +183,67 @@ test('bare hex is a lock when the bytes settle it, and otherwise is not', () => 
   // A nonstandard lock binds no term, so it settles nothing by itself and keeps
   // the script: prefix -- which is exactly what the prefix is for.
   assert.equal(isLockingScript('76a90088ac'), false, 'a malformed lock needs the prefix');
+});
+
+// ─── what the address awaits ─────────────────────────────────────────────
+
+test('an address says what it demands of whoever comes to spend it', () => {
+  const of = (address) => demandsText(termOfScript(addressScriptHex(address)));
+  assert.equal(of('1Ross5Np5doy4ajF9iGXzgKaC2Q3Pwwxv'), 'λs p. ⌖ p ≡ h²⁰ ∧ ∇ s p');
+  assert.equal(of('bc1p5d7rjq7g6rdk2yhzks9smlaqtedr4dekq08ge8ztwac72sfr9rusxg3297'),
+    'λs. ∇ s p³² ∨ λs t c. ⋔ c t ≡ p³² ∧ ( t )', 'taproot asks for one of two things');
+  // P2PK's key is a constant of the term now, not its argument: the datum sits
+  // on the other side of the binder from where the committed-datum reading put
+  // it, which is what makes these two readings duals rather than rewordings.
+  assert.equal(demandsText(termOfScript(reduce(TERMS.p2pk, '04' + 'ab'.repeat(64)))), 'λs. ∇ s p⁶⁵');
+});
+
+test('P2PKH and P2WPKH demand exactly the same thing', () => {
+  // The committed-datum reading makes these different objects. Read as demands
+  // they are one string: segwit moved where a witness rides, not what is asked
+  // for. Nothing about the difference between them is a difference to a spender.
+  const of = (address) => demandsText(termOfScript(addressScriptHex(address)));
+  assert.equal(of('1Ross5Np5doy4ajF9iGXzgKaC2Q3Pwwxv'),
+    of('bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4'));
+  // …and the scripts they resolve to are not the same at all, which is the
+  // point: two readings of one output, and only one of them collapses.
+  assert.notEqual(addressScriptHex('1Ross5Np5doy4ajF9iGXzgKaC2Q3Pwwxv'),
+    addressScriptHex('bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4'));
+});
+
+test('the wrapped forms cannot say what they will ask for', () => {
+  // P2SH and P2WSH run out of binders: the redeem script, and then whatever IT
+  // requires, which the address does not know and cannot know. The ellipsis is
+  // load-bearing -- a requirement hidden behind a hash rather than a datum.
+  for (const [address, expected] of [
+    ['3J98t1WpEZ73CNmQviecrnyiWrnqRhWNLy', 'λr …. ⌖ r ≡ h²⁰ ∧ ( r )'],
+    ['bc1qrp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3qccfmv3', 'λw …. Σ w ≡ h³² ∧ ( w )'],
+  ]) {
+    const t = termOfScript(addressScriptHex(address));
+    assert.equal(demandsText(t), expected);
+    assert.ok(demandsOf(t)[0].awaits.includes('…'), `${address} should admit it cannot say`);
+  }
+  // Every other form can say, in full.
+  for (const address of ['1Ross5Np5doy4ajF9iGXzgKaC2Q3Pwwxv',
+    'bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4',
+    'bc1p5d7rjq7g6rdk2yhzks9smlaqtedr4dekq08ge8ztwac72sfr9rusxg3297']) {
+    const t = termOfScript(addressScriptHex(address));
+    for (const alt of demandsOf(t)) assert.ok(!alt.awaits.includes('…'), address);
+  }
+});
+
+test('the two renderings of a demand never drift', () => {
+  const strip = (html) => html.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+  for (const [, address] of ADDRESSES) {
+    const t = termOfScript(addressScriptHex(address));
+    assert.equal(strip(demandsHtml(t)), demandsText(t), address);
+  }
+  // Every term the module knows says what it awaits; a new one that did not
+  // would draw a blank line on the page rather than fail here.
+  for (const id of Object.keys(TERMS)) {
+    const bytes = TERMS[id].bytes ?? 65;
+    assert.ok(demandsOf(termOfScript(reduce(TERMS[id], 'ab'.repeat(bytes)))), `${id} awaits nothing`);
+  }
 });
 
 // ─── the key's own tables, read back ─────────────────────────────────────
