@@ -22,8 +22,8 @@ import assert from 'node:assert/strict';
 
 import { OPCODE_SYMBOLS, OPCODE_NAMES } from '../web/btc-sigla.js';
 import { addressScriptHex } from '../web/btc-index.js';
-import { spell, read, scan, looksSpelled, isWholeScript, parseMark,
-         OPCODE_OF_GLYPH } from '../web/btc-address-form.js';
+import { spell, spellHtml, read, scan, looksSpelled, isWholeScript, scriptFault,
+         parseMark, OPCODE_OF_GLYPH } from '../web/btc-address-form.js';
 
 // A stand-in for Glossia: each byte becomes one word carrying it. Nothing about
 // the real prose is being tested here -- only that the format hands the engine a
@@ -182,4 +182,41 @@ test('bare hex is a lock unless the grammar already spends that shape', () => {
   // But 76a9 is a whole script -- OP_DUP OP_HASH160, going nowhere. Nonsense is
   // not the test; a push claiming bytes that are not there is.
   assert.equal(isWholeScript('76a9'), true);
+});
+
+test('the two renderings of a spelling never drift', () => {
+  // One walk over the tokens feeds both, so stripping the markup off the marks
+  // must give back the string exactly. A page that set one and a test that
+  // checked the other would be checking nothing.
+  const strip = (html) => html.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+  for (const script of ['76a90088ac', '6a0548656c6c6f', '52' + '21' + 'ab'.repeat(33) + '52ae',
+    addressScriptHex('1Ross5Np5doy4ajF9iGXzgKaC2Q3Pwwxv'),
+    addressScriptHex('bc1p5d7rjq7g6rdk2yhzks9smlaqtedr4dekq08ge8ztwac72sfr9rusxg3297')]) {
+    assert.equal(strip(spellHtml(script, { say })), spell(script, { say }).text, script);
+    assert.equal(strip(spellHtml(script)), spell(script).text, `${script}, unsaid`);
+  }
+  assert.equal(spellHtml('76a914ab'), null, 'what has no spelling has no marks either');
+});
+
+test('hex that is not a script says where it stops being one', () => {
+  // What a dev pasting bytes actually wants: not "invalid", but where.
+  assert.equal(scriptFault(addressScriptHex('1Ross5Np5doy4ajF9iGXzgKaC2Q3Pwwxv')), null);
+  assert.equal(scriptFault('76a90088ac'), null, 'the Mt. Gox void is well formed');
+  assert.equal(scriptFault('51'), null, 'and so is a bare OP_1');
+
+  // A push claiming more than remains: the bytes cannot be parsed at all.
+  assert.deepEqual(scriptFault('76a914ab'), { reason: 'truncated', at: 2, remain: 2 });
+  assert.deepEqual(scriptFault('4c'), { reason: 'truncated', at: 0, remain: 1 });
+
+  // Well formed, but holding a byte consensus never defined -- it parses, and
+  // no spend could satisfy it, which is a different answer and worth saying.
+  assert.deepEqual(scriptFault('deadbeef'), { reason: 'undefined', at: 0, byte: 0xde });
+  assert.deepEqual(scriptFault('76bb'), { reason: 'undefined', at: 1, byte: 0xbb },
+    'the offset counts bytes, not tokens');
+  // …and the offset counts a push's data too, not just its opcode.
+  assert.deepEqual(scriptFault('0114bb'), { reason: 'undefined', at: 2, byte: 0xbb });
+
+  assert.deepEqual(scriptFault(''), { reason: 'empty', at: 0 });
+  assert.deepEqual(scriptFault('7'), { reason: 'not-bytes', at: 0 });
+  assert.deepEqual(scriptFault('zz'), { reason: 'not-bytes', at: 0 });
 });

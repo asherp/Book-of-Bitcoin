@@ -208,7 +208,7 @@ import { reference, latinReference } from './btc-citation.js';
 import { parseLookup } from './btc-lookup.js';
 
 import { termOfScript, pureForm, pureApplicationHtml, normalFormHtml } from './btc-term.js';
-import { spell, read, looksSpelled, isWholeScript } from './btc-address-form.js';
+import { spell, spellHtml, read, looksSpelled, isWholeScript, scriptFault } from './btc-address-form.js';
 const input = document.getElementById('block-input');
 const termEl = document.getElementById('term');
 
@@ -282,38 +282,42 @@ const chainMark = (verdict, witness, ours) => {
     + `${witness.prevouts} spent from it, all carrying these bytes">✓</span> ${where}`;
 };
 
-// Why a script that decodes still binds no term, which is never the same
-// reason twice and is always the chain's answer rather than the book's.
-function noTerm(address) {
-  if (address) {
-    // A well-formed address for a witness version consensus has not defined --
-    // a version above ①, or ① at a length Taproot does not take.
-    return 'This address decodes, and its tag names a witness version no rule has defined yet. '
-      + 'There is no term to write: an output under an undefined version demands nothing, so it is '
-      + 'spendable by anyone until a fork gives that version a meaning — and drawing an abstraction '
-      + 'over the datum would claim a lock the chain is not holding.';
+// What is wrong with the bytes, said at the byte it is wrong at. Devs paste hex
+// to find out whether it is a script; a diagnosis with no place in it is not
+// much better than silence.
+const faultNote = (f) => {
+  const where = `<span class="term-hex">byte ${f.at}</span>`;
+  if (f.reason === 'truncated') {
+    return `<span class="term-check term-check-differs">☒</span> the push at ${where} claims more `
+      + `than the ${f.remain} byte${f.remain === 1 ? '' : 's'} that remain`;
   }
-  return 'This spells a script, and the script is not one abstraction over one datum — a bare '
-    + 'multisig abstracts over m, n and n keys, a data output over bytes of no fixed length. So no '
-    + 'term is written, and no address could carry one either. That refusal is the whole of what '
-    + 'P2SH is for: it wraps any term at all in one that takes a single twenty-byte datum.';
-}
+  if (f.reason === 'undefined') {
+    return `<span class="term-check term-check-differs">☒</span> ${where} is `
+      + `<span class="term-hex">${f.byte.toString(16).padStart(2, '0')}</span>, which consensus has `
+      + 'never defined — no spend could satisfy an output locked this way';
+  }
+  return '<span class="term-check term-check-differs">☒</span> not whole bytes';
+};
 
-// The leaf, drawn from the bytes alone: the address in its purest form, one β,
-// and the script it normalizes to. Everything here is arithmetic, so it can be
-// drawn on every keystroke -- what costs anything (the engine's prose, the
-// chain) arrives afterwards, and the leaf is legible before it does.
-function drawTerm(hex, { address = null, at = '', prose = '', tail = '' } = {}) {
-  const t = hex ? termOfScript(hex) : null;
+const lam = (m) => `<span class="lam">${m}</span>`;
+
+function drawTerm(hex, { address = null, at = '', say: sayFn = null, tail = '' } = {}) {
+  const fault = scriptFault(hex);
+  const t = fault ? null : termOfScript(hex);
+  const prose = t && sayFn ? sayFn(t.argument) || '' : '';
   const head = `<div class="term-head"><span class="term-kind">${t ? escapeHtml(t.label) : 'Script'}</span>`
     + (address ? `<span class="term-addr">${escapeHtml(address)}</span>` : '') + '</div>';
-  termEl.innerHTML = t
-    ? head
-      + `<div class="term-line">${pureApplicationHtml(pureForm(t))}</div>`
+  // A term binds, or it does not, or the bytes are not a script at all. The
+  // middle case is not an absence: there is always the script itself, and
+  // setting it beats explaining why there was nothing to set.
+  const body = t
+    ? `<div class="term-line">${pureApplicationHtml(pureForm(t))}</div>`
       + '<div class="term-step">β</div>'
-      + `<div class="term-line">${normalFormHtml(t, { prose })}</div>`
-      + tail
-    : head + `<p class="term-note">${noTerm(address)}</p>` + tail;
+      + `<div class="term-line">${normalFormHtml(t, { prose })}</div>` + tail
+    : fault
+      ? `<div class="term-said">${faultNote(fault)}</div>`
+      : `<div class="term-line">${lam('⟦')} ${spellHtml(hex, { say: sayFn }) || ''} ${lam('⟧')}</div>` + tail;
+  termEl.innerHTML = head + body;
   termEl.hidden = false;
   termEl.dataset.at = at;
 }
@@ -324,16 +328,15 @@ function drawTerm(hex, { address = null, at = '', prose = '', tail = '' } = {}) 
 // other is somebody else's server.
 async function enrichTerm(hex, { address = null, at = '' } = {}) {
   const still = () => termEl.dataset.at === at;
-  const t = hex ? termOfScript(hex) : null;
   const gl = await glossia();
   if (!still()) return;
-  const prose = gl && t ? say(gl)(t.argument) || '' : '';
+  const sayFn = gl ? say(gl) : null;
   const spelled = gl ? spelledBlock(hex, gl) : '';
-  if (prose || spelled) drawTerm(hex, { address, at, prose, tail: spelled });
+  if (sayFn) drawTerm(hex, { address, at, say: sayFn, tail: spelled });
   const witness = await chainWitness(address ?? hex);
   if (!still()) return;
   const verdict = witnessVerdict(hex, witness);
-  drawTerm(hex, { address, at, prose,
+  drawTerm(hex, { address, at, say: sayFn,
     tail: `<div class="term-said">${chainMark(verdict, witness, hex)}</div>${spelled}` });
 }
 
@@ -367,29 +370,35 @@ const classify = (q) => parseLookup(q, {
 // The leaf follows the box. A script or an address is a thing the page can draw
 // from the bytes in hand, so it draws as the reader types; every other form
 // names a place, and a place is what the button opens.
+// Hex the box is holding, whatever the grammar routes it as. A 32-byte script
+// is a transaction id by shape and Read opens it as one -- but the bytes are
+// still bytes, and saying what they are costs nothing and hijacks nothing. The
+// all-digit shapes stay out: a height is not a paste, and OP_AND OP_0 OP_0 is
+// not what a reader typing 840000 came for.
+const hexish = (q) => /^(?:[0-9a-fA-F]{2})+$/.test(q) && !/^[0-9]+$/.test(q);
+
 let pending = null;
 function preview() {
   const q = input.value.trim();
   const found = classify(q);
-  if (found.kind !== 'address' && found.kind !== 'script' && found.kind !== 'spelled') {
+  const asHex = found.kind !== 'address' && found.kind !== 'spelled' && hexish(q);
+  if (found.kind !== 'address' && found.kind !== 'script' && found.kind !== 'spelled' && !asHex) {
     termEl.hidden = true;
     termEl.dataset.at = '';
     return;
   }
   if (termEl.dataset.at === q) return;                 // already showing this one
+  const address = found.kind === 'address' ? found.address : null;
+  const hex = address ? addressScriptHex(address)
+    : found.kind === 'script' ? found.script
+    : q.toLowerCase();
   if (found.kind === 'spelled') termEl.dataset.at = q;
-  else {
-    const hex = found.kind === 'address' ? addressScriptHex(found.address) : found.script;
-    drawTerm(hex, { address: found.kind === 'address' ? found.address : null, at: q });
-  }
+  else drawTerm(hex, { address, at: q });
   clearTimeout(pending);
   pending = setTimeout(() => {
     if (input.value.trim() !== q) return;
     if (found.kind === 'spelled') showSpelled(found.spelled, q);
-    else {
-      const hex = found.kind === 'address' ? addressScriptHex(found.address) : found.script;
-      enrichTerm(hex, { address: found.kind === 'address' ? found.address : null, at: q });
-    }
+    else if (!scriptFault(hex)) enrichTerm(hex, { address, at: q });
   }, 450);
 }
 
@@ -406,6 +415,8 @@ const go = async () => {
   };
   if (found.kind === 'address') return ledger(found.address);
   if (found.kind === 'script') return ledger(found.script);
+  // Bytes the leaf has just called invalid name no place to open.
+  if (hexish(q) && scriptFault(q.toLowerCase())) { input.focus(); return; }
   if (found.kind === 'spelled') {
     // A spelling names its member by carrying it, so it has to be read first.
     const gl = await glossia();
