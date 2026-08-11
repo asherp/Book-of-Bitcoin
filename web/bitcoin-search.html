@@ -124,16 +124,17 @@ button:hover { background: var(--accent-2); }
    the bottom line of the chain without its brackets, which are apparatus. The
    search box takes it back, so this is the format's own proof -- a string that
    resolves to Script with no version byte behind it and no table to consult. */
-.term-spelled-label { margin:20px 0 6px; font:600 10px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.14em; text-transform:uppercase; color:var(--meta); }
-.term-check { margin:18px 0 0; font:400 13px/1.55 'Public Sans','Book Sigla',sans-serif; color:var(--meta); max-width:62ch; }
-.term-check b { color: var(--ink-soft); }
-/* Agreement is quiet; disagreement is not. A book that derived a script and
-   printed its own derivation would be checking nothing, so the one outcome
-   that must never be mistaken for another is a mismatch. */
-.term-check-agrees::before { content: '✓ '; color: var(--accent); }
-.term-check-differs { color: var(--ink); }
-.term-check-differs::before { content: '✗ '; color: #d9564b; }
-.term-hex { font-family: 'IBM Plex Mono','Book Sigla', monospace; font-size: .92em; overflow-wrap: anywhere; }
+/* What the chain said, said in four of the book's own marks and a citation:
+   ✓ asserts true, ∅ is empty, ⋯ is not yet knowable, ☒ is invalid. Nothing is
+   explained here -- the reference is the evidence, and what a mark means is in
+   its hover, which is where this book keeps a claim about a claim. */
+.term-said { margin:18px 0 0; font:400 15px/1.7 'Newsreader','Book Sigla',serif; color:var(--meta); }
+.term-check { font-size: 1.1em; }
+.term-check-agrees { color: var(--accent); }
+.term-check-said { color: var(--meta); }
+/* A mismatch is the one outcome that must never be mistaken for another. */
+.term-check-differs { color: #d9564b; }
+.term-hex { font: 400 12px/1.7 'IBM Plex Mono','Book Sigla', monospace; color: var(--meta); overflow-wrap: anywhere; }
 .term-spelled {
   font: 400 13px/1.7 'IBM Plex Mono','Book Sigla', monospace; color: var(--ink-soft);
   background: var(--input-bg); border: 1px solid var(--input-bd); border-radius: 4px;
@@ -180,6 +181,7 @@ button:hover { background: var(--accent-2); }
     <a class="example" href="./bitcoin-book.html?txid=a1075db55d416d3ca199f55b6084e2115b9345e16c5cf302fc80e9d5fbf5d48d"><span class="example-what">the pizza transaction's own section, by its id</span><span class="example-form">a1075db5…f5d48d</span></a>
     <a class="example" href="./bitcoin-book.html?ref=v1b29c596"><span class="example-what">the same chapter, by its reference alone — as a βoβ quote carries it</span><span class="example-form">v1b29c596</span></a>
     <a class="example" href="./bitcoin-search.html?q=1Ross5Np5doy4ajF9iGXzgKaC2Q3Pwwxv"><span class="example-what">an address — not a place but a name, so it opens no chapter: it reads here as the term it binds</span><span class="example-form">1Ross5Np…Pwwxv</span></a>
+    <a class="example" href="./bitcoin-search.html?q=script%3A76a91404b11d2eb716291f33be29210ee5b2a161c071af88ac"><span class="example-what">a locking script by its own bytes — the prefix disambiguates, since bare hex could be a height or an id</span><span class="example-form">script:76a914…88ac</span></a>
     <a class="example" href="./bitcoin-appendix.html?part=proofs"><span class="example-what">a file's own chapter — an OpenTimestamps proof names the passage it was stamped into, and the Citations register keeps it</span><span class="example-form">.ots</span></a>
   </div>
 </div>
@@ -202,7 +204,8 @@ mountLangMenu();  // …with the Language item, which any page can now set
 // the book already answers to, and vice versa. Address recognition is the
 // ledger's own (isAddress decodes base58 and bech32); uppercase bech32, as a QR
 // scan yields it, is normalized to the lowercase form the ledger queries with.
-import { isAddress, addressScriptHex, chainWitness, witnessVerdict, chainFailureText, citeHref } from './btc-index.js';
+import { isAddress, addressScriptHex, chainWitness, witnessVerdict, witnessDisagreement,
+         chainFailureText, citeHref } from './btc-index.js';
 import { reference, latinReference } from './btc-citation.js';
 import { parseLookup } from './btc-lookup.js';
 
@@ -248,8 +251,8 @@ const escapeHtml = (s) => String(s)
 function spelledBlock(hex, gl) {
   const spelled = gl && spell(hex, { say: say(gl) });
   if (!spelled?.complete) return '';
-  return '<div class="term-spelled-label">the same script, in the book’s own hand — this box takes it back</div>'
-    + `<div class="term-spelled">${escapeHtml(spelled.text)}</div>`;
+  return `<div class="term-spelled" title="the same script in the book’s own hand — this box takes it back">`
+    + `${escapeHtml(spelled.text)}</div>`;
 }
 
 // The chain, asked whether it agrees. Everything above this point is derived:
@@ -257,23 +260,29 @@ function spelledBlock(hex, gl) {
 // own arithmetic back would be checking nothing. So one output that really
 // carries these bytes is fetched and compared -- and the four answers are kept
 // distinct, because "nobody could be asked" must never read as "yes".
-const chainNote = (verdict, witness, ours) => {
-  if (verdict === 'unreachable') return `The chain could not be asked — ${escapeHtml(chainFailureText())}. `
-    + 'What stands above is derived from the address alone, and unchecked.';
-  if (verdict === 'absent') return 'No confirmed output on chain carries this script yet, so there is nothing '
-    + 'to check it against. The form above is what an output paying this address would have to hold.';
+const chainMark = (verdict, witness, ours) => {
+  if (verdict === 'unreachable') {
+    return `<span class="term-check term-check-said" title="the chain could not be asked — `
+      + `${escapeHtml(chainFailureText())}">⋯</span>`;
+  }
+  if (verdict === 'absent') {
+    return '<span class="term-check term-check-said" title="no confirmed output on chain carries '
+      + 'this script yet">∅</span>';
+  }
   const at = reference(witness.height);
+  const n = witness.outputs + witness.prevouts;
   const where = `<a href="${citeHref(witness.txid, witness.out ?? undefined)}">${escapeHtml(at)}</a>`;
   if (verdict === 'differs') {
-    return `The chain does <b>not</b> agree. At ${where} it writes <span class="term-hex">`
-      + `${escapeHtml(witness.script)}</span>, and the form above reduces to <span class="term-hex">`
-      + `${escapeHtml(ours)}</span>. Trust the chain and not this page.`;
+    const theirs = witnessDisagreement(ours, witness) ?? witness.script;
+    return `<span class="term-check term-check-differs" title="the chain does not agree — trust it, `
+      + `not this page">☒</span> ${where}`
+      + `<div class="term-hex">${escapeHtml(theirs)}</div><div class="term-hex">${escapeHtml(ours)}</div>`;
   }
-  return (witness.whole
-    ? `The chain agrees, at the first output that ever carried this script — ${where}, `
-    : `The chain agrees, at ${where} — a reference, not the earliest: this member has more history than one `
-      + 'page holds, and walking back to its first is the Ledger\'s work. ')
-    + 'Those are the chain\'s own bytes, and the reduction above lands on them exactly.';
+  const said = witness.whole
+    ? `the first output that ever carried this script, and every one of ${n} references on the page — `
+    : `the earliest reference one page reaches, and every one of ${n} on it — `;
+  return `<span class="term-check term-check-agrees" title="${said}${witness.outputs} paying it, `
+    + `${witness.prevouts} spent from it, all carrying these bytes">✓</span> ${where}`;
 };
 
 // Why a script that decodes still binds no term, which is never the same
@@ -322,13 +331,6 @@ async function showScript(hex, { address = null, at = '' } = {}) {
       + `<div class="term-line">${applicationHtml(t)}</div>`
       + '<div class="term-step">β<span class="term-step-what">the datum supplied</span></div>'
       + `<div class="term-line">${normalFormHtml(t, { prose })}</div>`
-      + '<p class="term-note">An address carries one datum and a tag saying which abstraction to put it '
-      + 'in. Written purely, every constant is an argument: the body at the top is structure and '
-      + 'nothing else, so it names no pattern and indexes no table. The push arrives as a pair — its '
-      + 'length, then the bytes it measures — which is the order the wire prints, since a direct push '
-      + 'opcode <em>is</em> its byte count. So the second line states exactly how much key material an '
-      + 'output of this kind requires, and the count that lands on the mark is the length the datum’s '
-      + 'prose is read back at: the spelling below carries its bytes rather than pointing at them.</p>'
       + tail;
     termEl.hidden = false;
   };
@@ -346,7 +348,7 @@ async function showScript(hex, { address = null, at = '' } = {}) {
   if (!still()) return;
   const verdict = witnessVerdict(hex, witness);
   draw(gl ? say(gl)(t.argument) || '' : '',
-    tail + `<p class="term-check term-check-${verdict}">${chainNote(verdict, witness, hex)}</p>`);
+    `<div class="term-said">${chainMark(verdict, witness, hex)}</div>` + tail);
 }
 
 // The book's own spelling, read back. The alphabet is a bijection and the mark
@@ -377,6 +379,11 @@ const go = () => {
   termEl.dataset.at = q;
   if (found.kind === 'address') { showScript(addressScriptHex(found.address), { address: found.address, at: q }); return; }
   if (found.kind === 'spelled') { showSpelled(found.spelled, q); return; }
+  // A raw scriptPubKey, by its own bytes. The prefix is the grammar's, not the
+  // chain's: bare hex would be ambiguous with a height or a txid, and this book
+  // does not guess. What comes back is the same leaf — a script is a script
+  // however it was named, and this one may be a lock no address can write.
+  if (found.kind === 'script') { showScript(found.script, { at: q }); return; }
   if (found.kind === 'reference') {
     location.href = './bitcoin-book.html?ref=' + encodeURIComponent(latinReference(q));
     return;
