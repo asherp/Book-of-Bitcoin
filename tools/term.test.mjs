@@ -162,6 +162,29 @@ test('the witness forms are one term, and only their arguments differ', () => {
   assert.equal(new Set([...witness.map(alpha), ...legacy]).size, 3);
 });
 
+test('bare hex is a lock when the bytes settle it, and otherwise is not', () => {
+  // The recognizer the search box injects: hex that binds a term is a locking
+  // script and can be nothing else, so a reader pastes bytes and gets a term.
+  // What makes that safe is arithmetic rather than optimism -- the shortest
+  // term is 23 bytes and none is the 32 a transaction id takes, so no term's
+  // bytes can be read as an id, and none is short enough to pass for a height.
+  const isLockingScript = (h) => /^(?:[0-9a-fA-F]{2})+$/.test(h) && termOfScript(h.toLowerCase()) !== null;
+  for (const [, address] of ADDRESSES) {
+    const script = addressScriptHex(address);
+    assert.ok(isLockingScript(script), `${script} should be read as a lock`);
+    assert.notEqual(script.length, 64, 'no term may be as long as a transaction id');
+    assert.ok(/[a-f]/i.test(script), 'nor spell a height');
+  }
+  // And the forms it must never take from the rest of the grammar.
+  for (const q of ['0', '57043', '-1', 'a'.repeat(64), '0'.repeat(64), 'III β2 ■5',
+    'v1b29c596s85', '1Ross5Np5doy4ajF9iGXzgKaC2Q3Pwwxv', 'script:76a90088ac', 'deadbeef', '']) {
+    assert.equal(isLockingScript(q), false, `${q} should not be read as a lock`);
+  }
+  // A nonstandard lock binds no term, so it settles nothing by itself and keeps
+  // the script: prefix -- which is exactly what the prefix is for.
+  assert.equal(isLockingScript('76a90088ac'), false, 'a malformed lock needs the prefix');
+});
+
 // ─── the key's own tables, read back ─────────────────────────────────────
 
 // The terms table's rows, as { ids, cells } -- the cells are grid children, so

@@ -85,14 +85,12 @@ button:hover { background: var(--accent-2); }
 
 /* The term a searched address binds.
    An address is not a place, so it opens no chapter; but it is not nothing
-   either. It is the argument of exactly one abstraction, and this is where the
-   book writes that down: the address in its purest form -- structure alone,
-   every constant standing outside it as an argument -- and the three reductions
-   that carry it to the script the chain actually holds. Each β supplies one
-   class, so the lines answer one question apiece: which operations, how many
-   bytes of key material, and then which bytes. The Notation key's Scripts as
-   terms and Addresses groups are what this leaf is one worked instance of; the
-   third line is the very term the key draws. */
+   either. It is the argument of exactly one abstraction, and this leaf is that
+   written down: the address in its purest form -- structure alone, every
+   constant standing outside it as an argument -- one β, and the script the
+   chain actually holds. The steps between are currying, which is a fact about
+   the notation and not about this address; the Notation key's Scripts as terms
+   group walks them once, where they belong. */
 .term { margin-top: 26px; }
 .term[hidden] { display: none; }
 .term-head { display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; margin-bottom:14px; }
@@ -115,10 +113,6 @@ button:hover { background: var(--accent-2); }
 /* β between the lines: the step itself, and the one mark on the leaf that is
    neither script nor prose. */
 .term-step { display:flex; align-items:baseline; gap:12px; font:400 15px/1 'Newsreader','Book Sigla',serif; color:var(--accent); margin:10px 0 10px 2px; }
-/* What that step supplied. The three βs are not the same move -- the opcodes,
-   the push's length, then the bytes themselves -- and a reader should not have
-   to work out which by diffing the lines. */
-.term-step-what { font:500 10px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.14em; text-transform:uppercase; color:var(--meta); }
 .term-note { margin:16px 0 0; font:400 13px/1.55 'Public Sans','Book Sigla',sans-serif; color:var(--meta); max-width:62ch; }
 /* The same script in the book's own hand, set to be copied rather than read:
    the bottom line of the chain without its brackets, which are apparatus. The
@@ -181,7 +175,7 @@ button:hover { background: var(--accent-2); }
     <a class="example" href="./bitcoin-book.html?txid=a1075db55d416d3ca199f55b6084e2115b9345e16c5cf302fc80e9d5fbf5d48d"><span class="example-what">the pizza transaction's own section, by its id</span><span class="example-form">a1075db5…f5d48d</span></a>
     <a class="example" href="./bitcoin-book.html?ref=v1b29c596"><span class="example-what">the same chapter, by its reference alone — as a βoβ quote carries it</span><span class="example-form">v1b29c596</span></a>
     <a class="example" href="./bitcoin-search.html?q=1Ross5Np5doy4ajF9iGXzgKaC2Q3Pwwxv"><span class="example-what">an address — not a place but a name, so it opens no chapter: it reads here as the term it binds</span><span class="example-form">1Ross5Np…Pwwxv</span></a>
-    <a class="example" href="./bitcoin-search.html?q=script%3A76a91404b11d2eb716291f33be29210ee5b2a161c071af88ac"><span class="example-what">a locking script by its own bytes — the prefix disambiguates, since bare hex could be a height or an id</span><span class="example-form">script:76a914…88ac</span></a>
+    <a class="example" href="./bitcoin-search.html?q=76a91404b11d2eb716291f33be29210ee5b2a161c071af88ac"><span class="example-what">a locking script by its own bytes — bare, where the bytes settle it; a <span class="mono">script:</span> prefix forces the reading for a lock that binds no term</span><span class="example-form">76a914…88ac</span></a>
     <a class="example" href="./bitcoin-appendix.html?part=proofs"><span class="example-what">a file's own chapter — an OpenTimestamps proof names the passage it was stamped into, and the Citations register keeps it</span><span class="example-form">.ots</span></a>
   </div>
 </div>
@@ -209,8 +203,7 @@ import { isAddress, addressScriptHex, chainWitness, witnessVerdict, witnessDisag
 import { reference, latinReference } from './btc-citation.js';
 import { parseLookup } from './btc-lookup.js';
 
-import { termOfScript, pureForm, pureApplicationHtml, lockApplicationHtml,
-         applicationHtml, normalFormHtml } from './btc-term.js';
+import { termOfScript, pureForm, pureApplicationHtml, normalFormHtml } from './btc-term.js';
 import { spell, read, looksSpelled } from './btc-address-form.js';
 const input = document.getElementById('block-input');
 const termEl = document.getElementById('term');
@@ -314,22 +307,15 @@ async function showScript(hex, { address = null, at = '' } = {}) {
     if (gl && still()) termEl.innerHTML = head + `<p class="term-note">${noTerm(address)}</p>` + spelledBlock(hex, gl);
     return;
   }
-  // Three lines and two steps. The first is the address in its purest form:
-  // every constant lifted out, so the body is shape alone and the arguments
-  // run opcodes-then-datum, lowest entropy to highest. The first β supplies
-  // the opcodes and lands on the term the notation key draws; the second
-  // supplies the datum and lands on the scriptPubKey. Which is the address
-  // format's own two parts, done in the open — the tag picks the term, the
-  // argument fills it.
+  // Two lines and one step: the address in its purest form, and what it
+  // normalizes to. Everything between them is currying, and currying is a
+  // property of the notation rather than of this address -- the key's Scripts
+  // as terms group walks it once, where it belongs.
   const pure = pureForm(t);
   const draw = (prose, tail) => {
     termEl.innerHTML = head
       + `<div class="term-line">${pureApplicationHtml(pure)}</div>`
-      + '<div class="term-step">β<span class="term-step-what">the opcodes supplied</span></div>'
-      + `<div class="term-line">${lockApplicationHtml(pure)}</div>`
-      + `<div class="term-step">β<span class="term-step-what">the length supplied — ${t.bytes} bytes of key material</span></div>`
-      + `<div class="term-line">${applicationHtml(t)}</div>`
-      + '<div class="term-step">β<span class="term-step-what">the datum supplied</span></div>'
+      + '<div class="term-step">β</div>'
       + `<div class="term-line">${normalFormHtml(t, { prose })}</div>`
       + tail;
     termEl.hidden = false;
@@ -375,7 +361,12 @@ async function showSpelled(text, at) {
 const go = () => {
   const q = input.value.trim();
   if (!q) { input.focus(); return; }
-  const found = parseLookup(q, { isAddress, isSpelled: looksSpelled });
+  // Bare hex is admitted as a lock exactly when the bytes bind a term, which
+  // is a fact about them rather than a guess about what the reader meant.
+  const found = parseLookup(q, {
+    isAddress, isSpelled: looksSpelled,
+    isLockingScript: (h) => /^(?:[0-9a-fA-F]{2})+$/.test(h) && termOfScript(h.toLowerCase()) !== null,
+  });
   termEl.dataset.at = q;
   if (found.kind === 'address') { showScript(addressScriptHex(found.address), { address: found.address, at: q }); return; }
   if (found.kind === 'spelled') { showSpelled(found.spelled, q); return; }
