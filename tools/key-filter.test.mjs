@@ -155,7 +155,7 @@ test('the key emits the structure the filter reaches for', () => {
   assert.ok(count(/class="notation-group"/g) > 10, 'groups');
   assert.ok(count(/class="glyph-row"/g) + count(/class="glyph-row" data-marks=/g) > 90, 'rows');
   assert.equal(count(/<span class="g">/g), count(/<span class="m">/g), 'every row has a glyph and a gloss');
-  assert.equal(count(/class="pattern-table/g), 3, 'the three pattern tables');
+  assert.equal(count(/class="pattern-table/g), 4, 'the four pattern tables');
   assert.ok(count(/class="phead"/g) >= 12, 'column heads');
   // Every pattern cell is tagged, and every tag names a template the
   // classifier can actually produce. A cell may name more than one, which is
@@ -170,14 +170,23 @@ test('the key emits the structure the filter reaches for', () => {
   for (const id of new Set(tagged)) assert.ok(KNOWN.has(id), `unknown template id ${id}`);
   // Each table tags every one of its rows across every one of its columns, so
   // a row can never be half-shown: five cells in the common table, four in the
-  // terms table beneath it.
+  // terms table beneath it, five in the addresses table under that.
+  //
+  // The addresses table is the one that does not run the whole alphabet. A bare
+  // key, a bare multisig and a data output have no address form, and their
+  // absence is what that group argues -- so it is written down here as its own
+  // list, and a row appearing there later would have to be argued for rather
+  // than merely added.
+  const ADDRESSED = new Set(['p2pkh', 'p2sh', 'p2sh-multisig', 'p2wpkh', 'p2wsh',
+    'p2tr-key', 'p2tr-script']);
   const tableOf = (cls) => NOTATION_HTML.split(`<div class="pattern-table${cls}">`)[1].split('</div>')[0];
-  for (const [cls, cells] of [['', 5], [' terms', 4]]) {
+  for (const [cls, cells, rows] of [['', 5, KNOWN], [' terms', 4, KNOWN], [' addresses', 5, ADDRESSED]]) {
     const ids = idsIn(tableOf(cls));
     for (const id of KNOWN) {
       if (id === 'lightning') continue;
-      assert.equal(ids.filter((t) => t === id).length, cells,
-        `${id} should tag ${cells} cells of the${cls || ' common'} table`);
+      const want = rows.has(id) ? cells : 0;
+      assert.equal(ids.filter((t) => t === id).length, want,
+        `${id} should tag ${want} cells of the${cls || ' common'} table`);
     }
   }
   // Every pname carries a tag -- an untagged row could never be shown.
