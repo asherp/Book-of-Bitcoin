@@ -129,10 +129,14 @@ button:hover { background: var(--accent-2); }
    search box takes it back, so this is the format's own proof -- a string that
    resolves to Script with no version byte behind it and no table to consult. */
 /* Where the quote above was found, set as an attribution and not as a verdict:
-   an em dash and the place, which is how this book attributes anything it
-   quotes. The other three answers have no source to name, so they keep their
-   marks -- ∅ is empty, ⋯ is not yet knowable, ☒ is invalid -- and what each one
-   means is in its hover, which is where this book keeps a claim about a claim. */
+   an em dash and the place, ranged right under the passage it belongs to, which
+   is how an attribution sits under anything this book quotes. The other three
+   answers have no source to name, so they keep their marks -- ∅ is empty, ⋯ is
+   not yet knowable, ☒ is invalid -- and what each one means is in its hover,
+   which is where this book keeps a claim about a claim. */
+.term-attrib { margin:10px 0 0; text-align:right; font:400 15px/1.7 'Newsreader','Book Sigla',serif; color:var(--meta); }
+/* A diagnosis is not an attribution: bytes that are not a script name no place,
+   so what is wrong with them stays on the left where reading begins. */
 .term-said { margin:10px 0 0; font:400 15px/1.7 'Newsreader','Book Sigla',serif; color:var(--meta); }
 .term-cite { color: var(--meta); }
 .term-check { font-size: 1.1em; }
@@ -140,11 +144,12 @@ button:hover { background: var(--accent-2); }
 /* A mismatch is the one outcome that must never be mistaken for another. */
 .term-check-differs { color: #d9564b; }
 .term-hex { font: 400 12px/1.7 'IBM Plex Mono','Book Sigla', monospace; color: var(--meta); overflow-wrap: anywhere; }
-.term-spelled {
-  font: 400 13px/1.7 'IBM Plex Mono','Book Sigla', monospace; color: var(--ink-soft);
-  background: var(--input-bg); border: 1px solid var(--input-bd); border-radius: 4px;
-  padding: 11px 12px; overflow-wrap: anywhere; user-select: all;
-}
+/* The on-chain line is also the format itself, so it is set to be taken: one
+   click selects the whole of it, and the search box reads it back. It stood as
+   a mono block below for a while, which only ever meant the same passage twice
+   -- the book's own setting renders it better, and a passage that can be
+   copied does not need a second copy of itself to be copyable. */
+.term-onchain { user-select: all; }
 
 /* Worked examples beneath the card: each opens the page it cites, so the
    citation forms are learned by using them rather than by reading a legend.
@@ -219,7 +224,7 @@ import { reference, latinReference } from './btc-citation.js';
 import { parseLookup } from './btc-lookup.js';
 
 import { termOfScript, demandsHtml } from './btc-term.js';
-import { spell, spellHtml, read, looksSpelled, isWholeScript, scriptFault } from './btc-address-form.js';
+import { spellHtml, read, looksSpelled, isWholeScript, scriptFault } from './btc-address-form.js';
 const input = document.getElementById('block-input');
 const termEl = document.getElementById('term');
 const examplesEl = document.getElementById('examples');
@@ -251,24 +256,10 @@ const hear = (gl) => (prose, bytes) => { try { return gl.decodeCanonical(prose, 
 const escapeHtml = (s) => String(s)
   .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
-// The script in the book's own hand, beneath the reduction and set to be
-// copied: sigla for the opcodes, the byte count on the mark, prose for the
-// datum. It says what the bottom line of the chain says, and the search box
-// takes it back -- which is what makes it a format rather than a rendering.
-// Only ever offered whole: a spelling whose datum could not be said is legible
-// but resolves to nothing, and must not be passed off as an address.
-function spelledBlock(hex, gl) {
-  const spelled = gl && spell(hex, { say: say(gl) });
-  if (!spelled?.complete) return '';
-  return `<div class="term-spelled" title="the same script in the book’s own hand — this box takes it back">`
-    + `${escapeHtml(spelled.text)}</div>`;
-}
-
-// The chain, asked whether it agrees. Everything above this point is derived:
-// the address decodes to a script by arithmetic, and a book that printed its
-// own arithmetic back would be checking nothing. So one output that really
-// carries these bytes is fetched and compared -- and the four answers are kept
-// distinct, because "nobody could be asked" must never read as "yes".
+// Where the chain says the passage above is found — or, when it is found
+// nowhere and no place can be named, what it says instead. Everything on the
+// leaf up to here is derived from the bytes in hand; this is the one line that
+// went and asked.
 const chainMark = (verdict, witness, ours) => {
   if (verdict === 'unreachable') {
     return `<span class="term-check term-check-said" title="the chain could not be asked — `
@@ -287,7 +278,7 @@ const chainMark = (verdict, witness, ours) => {
       + `not this page">☒</span> ${where}`
       + `<div class="term-hex">${escapeHtml(theirs)}</div><div class="term-hex">${escapeHtml(ours)}</div>`;
   }
-  // Found, so the quote above has a source, and it is set as one: an em dash
+  // Found, so the passage above has a source, and it is set as one: an em dash
   // and the place, which is how this book attributes anything it quotes. The
   // attribution IS the finding -- a citation nobody could confirm would not be
   // written -- so no separate mark of assent is needed beside it.
@@ -315,7 +306,7 @@ const faultNote = (f) => {
   return '<span class="term-check term-check-differs">☒</span> not whole bytes';
 };
 
-function drawTerm(hex, { address = null, at = '', say: sayFn = null, quote = '', said = '' } = {}) {
+function drawTerm(hex, { address = null, at = '', say: sayFn = null, said = '' } = {}) {
   const fault = scriptFault(hex);
   const t = fault ? null : termOfScript(hex);
   const head = `<div class="term-head"><span class="term-kind">${t ? escapeHtml(t.label) : 'Script'}</span>`
@@ -330,8 +321,9 @@ function drawTerm(hex, { address = null, at = '', say: sayFn = null, quote = '',
   const body = fault
     ? `<div class="term-said">${faultNote(fault)}</div>`
     : (t ? `<div class="term-line term-awaits">${demandsHtml(t) || ''}</div>` : '')
-      + `<div class="term-line">${spellHtml(hex, { say: sayFn }) || ''}</div>`
-      + quote + said;
+      + `<div class="term-line term-onchain" title="the same script in the book’s own hand — `
+      + `this box takes it back">${spellHtml(hex, { say: sayFn }) || ''}</div>`
+      + said;
   termEl.innerHTML = head + body;
   termEl.hidden = false;
   termEl.dataset.at = at;
@@ -346,13 +338,12 @@ async function enrichTerm(hex, { address = null, at = '' } = {}) {
   const gl = await glossia();
   if (!still()) return;
   const sayFn = gl ? say(gl) : null;
-  const quote = gl ? spelledBlock(hex, gl) : '';
-  if (sayFn) drawTerm(hex, { address, at, say: sayFn, quote });
+  if (sayFn) drawTerm(hex, { address, at, say: sayFn });
   const witness = await chainWitness(address ?? hex);
   if (!still()) return;
   const verdict = witnessVerdict(hex, witness);
-  drawTerm(hex, { address, at, say: sayFn, quote,
-    said: `<div class="term-said">${chainMark(verdict, witness, hex)}</div>` });
+  drawTerm(hex, { address, at, say: sayFn,
+    said: `<div class="term-attrib">${chainMark(verdict, witness, hex)}</div>` });
 }
 
 // The book's own spelling, read back. It carries its bytes rather than pointing
