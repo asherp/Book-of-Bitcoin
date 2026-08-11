@@ -98,29 +98,56 @@ function dataLetter(pushHex, prevOp) {
 // Null when the bytes are not a whole script: a truncated push has no spelling,
 // and inventing one would be inventing a script.
 export function spell(scriptHex, { say = null } = {}) {
+  const parts = spellParts(scriptHex, say);
+  if (!parts) return null;
+  return {
+    text: parts.map((p) => (p.glyph ?? `${p.letter}${p.arrow}${p.count}`) + (p.prose ? ` ${p.prose}` : ''))
+      .join(' '),
+    complete: parts.every((p) => p.glyph !== undefined || !p.bytes || p.prose),
+  };
+}
+
+// The same walk, set as marks rather than as a string: opcode glyphs in the
+// class the book gives an operation everywhere else, the datum's letter and its
+// count on the classes it wears in every chapter. So a script with no term to
+// draw is still drawn -- there is always the script itself, and saying what it
+// is beats explaining why there is nothing to say.
+export function spellHtml(scriptHex, { say = null } = {}) {
+  const parts = spellParts(scriptHex, say);
+  if (!parts) return null;
+  const esc = (x) => String(x).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  return parts.map((p) => (p.glyph !== undefined
+    ? `<span class="op" title="${esc(OPCODE_NAMES[p.op] || 'OP_UNKNOWN')}">${esc(p.glyph)}</span>`
+    : (p.letter ? `<span class="dt">${p.letter}</span>` : '')
+      + `<span class="op op-push">${esc(p.arrow + p.count)}</span>`
+      + (p.prose ? ` ${p.prose}` : ''))).join(' ');
+}
+
+// One walk over the tokens, so the two renderings can never drift. Null when
+// the bytes are not a whole script, or hold a byte the alphabet has no mark
+// for: inventing a spelling would be inventing a script.
+function spellParts(scriptHex, say) {
   let toks;
   try { toks = tokenizeScript(scriptHex); } catch { return null; }
   if (!toks.length || toks.some((t) => t.trunc !== undefined)) return null;
   const parts = [];
-  let complete = true;
   let prevOp = null;
   for (const t of toks) {
     if (t.op !== undefined) {
       const glyph = OPCODE_SYMBOLS[t.op];
-      if (glyph === undefined) return null;      // an undefined byte is not a mark
+      if (glyph === undefined) return null;
       prevOp = t.op;
-      parts.push(glyph);
+      parts.push({ op: t.op, glyph });
       continue;
     }
     const bytes = t.push.length / 2;
-    parts.push(dataLetter(t.push, prevOp) + (ARROW_OF_FORM[t.pushForm] || '') + toSuperscript(bytes));
+    parts.push({
+      letter: dataLetter(t.push, prevOp), arrow: ARROW_OF_FORM[t.pushForm] || '',
+      count: toSuperscript(bytes), bytes, prose: bytes && say ? say(t.push) || '' : '',
+    });
     prevOp = null;
-    if (!bytes) continue;                        // a zero-length push says itself
-    const prose = say ? say(t.push) : null;
-    if (prose) parts.push(prose);
-    else complete = false;
   }
-  return { text: parts.join(' '), complete };
+  return parts;
 }
 
 // ─── reading it back ─────────────────────────────────────────────────────
@@ -153,6 +180,38 @@ export function scan(text) {
   // Every push that opened must have been given something to say.
   if (out.some((t) => t.bytes && !t.words.length)) return null;
   return out;
+}
+
+// What is wrong with these bytes as a script, or null if nothing is. A dev
+// pasting hex wants an answer to "is this valid Bitcoin", and the two ways it
+// can fail are not the same failure:
+//
+//   · not well formed -- a push claims more bytes than remain, so the bytes
+//     cannot be parsed as a script at all and no reading of them is possible;
+//   · well formed, but holding a byte consensus has never defined. It parses,
+//     and the alphabet has no mark for it: an output locked this way is one no
+//     spend could satisfy, since executing an undefined opcode fails the script.
+//
+// Both are reported at their byte offset, because "invalid" without a place is
+// not much better than silence.
+export function scriptFault(hex) {
+  if (typeof hex !== 'string' || hex === '') return { reason: 'empty', at: 0 };
+  if (!/^(?:[0-9a-fA-F]{2})+$/.test(hex)) return { reason: 'not-bytes', at: 0 };
+  let toks;
+  try { toks = tokenizeScript(hex); } catch { return { reason: 'not-bytes', at: 0 };  }
+  let at = 0;
+  for (const t of toks) {
+    if (t.trunc !== undefined) return { reason: 'truncated', at, remain: t.trunc.length / 2 };
+    if (t.op !== undefined) {
+      if (OPCODE_SYMBOLS[t.op] === undefined && OPCODE_NAMES[t.op] === undefined) {
+        return { reason: 'undefined', at, byte: t.op };
+      }
+      at += 1;
+    } else {
+      at += 1 + (t.pushForm || 0) + t.push.length / 2;   // the push opcode, its prefix, its bytes
+    }
+  }
+  return null;
 }
 
 // Bare hex read as a locking script. Any byte string is a scriptPubKey by
