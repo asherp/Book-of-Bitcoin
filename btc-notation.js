@@ -129,6 +129,22 @@ export const NOTATION_HTML = `
               from the moment the address is written to the moment it is spent, so the output carries the δ image of
               a script the chain has never seen. Taproot goes further and commits to a whole tree of them, at the
               same thirty-three bytes however many leaves there are — what is never reduced is never visible.</p>
+            <p class="notation-note">Lift the opcodes out as arguments too, and the length of the push
+              with them, and what is left of a lock is shape alone: <span class="lam">λ</span><i>o</i><sub>1</sub>
+              <i>o</i><sub>2</sub> <i>o</i><sub>3</sub> <i>o</i><sub>4</sub> <i>n</i> <b>h</b><span
+              class="lam">.</span> <span class="lam">⟦</span> <i>o</i><sub>1</sub> <i>o</i><sub>2</sub>
+              <b>h</b><sup><i>n</i></sup> <i>o</i><sub>3</sub> <i>o</i><sub>4</sub> <span class="lam">⟧</span>,
+              which is P2PKH at the arguments ⧉ ⌖ ≡ ∇ 20 <b>h</b>. The push arrives as a pair, its length and
+              then the bytes that length measures, because that is the order the chain prints it in: a direct
+              push opcode <i>is</i> its byte count, so ¹⁴ and the twenty bytes after it are one statement, and
+              20 <b>h</b> is the same one. Written this way a term says on its face how much key material an
+              output of its kind requires — and the Addresses group's claim stops being a resemblance. P2WPKH,
+              P2WSH and P2TR are not three formats, nor three terms that look alike: they are one term,
+              <span class="lam">λ</span><i>o</i> <i>n</i> <b>x</b><span class="lam">.</span> <span class="lam">⟦</span>
+              <i>o</i> <b>x</b><sup><i>n</i></sup> <span class="lam">⟧</span>, and everything that tells them
+              apart has moved into the arguments — the witness version, the byte count, and what the bytes are.
+              Reduce it and the wire falls out, as it does from every form above.</p>
+
             <p class="notation-note">The one place the stack marks survive is the validator column, and now for a
               reason rather than an apology: it is two terms written end to end (<b>⟦</b>spend<b>⟧</b> then
               <b>⟦</b>lock<b>⟧</b>) by two people, years apart, with a hash between them. No name can cross that
@@ -138,6 +154,70 @@ export const NOTATION_HTML = `
               never inside a script and the other is never outside one. What they share is the work of settling on
               a single form. Below, that is free — a term has one normal form however it is reduced. Above, where
               two chapters can both be well formed and only one can stand, it has to be bought, and β is the price.</p>
+          </div>
+
+          <div class="notation-group">
+            <h4>Addresses — the argument, written down</h4>
+            <p class="notation-note">An address is not a lock. Every lock above is one abstraction over one
+              committed datum, and an address carries the datum plus a tag saying which abstraction to put it in —
+              nothing else fits in one, and nothing else has to. The sender's software holds the λ; the string holds
+              its argument. Which is why the book prints the term and not the string: the term names its own address,
+              since the tag is which abstraction this is and the argument is the rest, while an address runs only the
+              one way — it gives back the datum, and never what the datum is a hash of.</p>
+            <div class="pattern-scroll">
+            <div class="pattern-table addresses">
+              <span class="phead"></span><span class="phead">Address</span><span class="phead">Tag</span><span class="phead">Argument</span><span class="phead">Checksum</span>
+              <span class="pname" data-row="p2pkh">P2PKH</span>
+                <span class="seq mach" data-row="p2pkh">1…</span>
+                <span class="seq mach" data-row="p2pkh">0</span>
+                <span class="seq" data-row="p2pkh"><span class="ph">h</span><span class="op op-push">²⁰</span></span>
+                <span class="seq" data-row="p2pkh"><span class="op">⌘</span> <span class="op">↤</span><span class="op op-push">⁴</span></span>
+              <span class="pname" data-row="p2sh p2sh-multisig">P2SH</span>
+                <span class="seq mach" data-row="p2sh p2sh-multisig">3…</span>
+                <span class="seq mach" data-row="p2sh p2sh-multisig">5</span>
+                <span class="seq" data-row="p2sh p2sh-multisig"><span class="ph">h</span><span class="op op-push">²⁰</span></span>
+                <span class="seq" data-row="p2sh p2sh-multisig"><span class="op">⌘</span> <span class="op">↤</span><span class="op op-push">⁴</span></span>
+              <span class="pname" data-row="p2wpkh">P2WPKH</span>
+                <span class="seq mach" data-row="p2wpkh">bc1q…</span>
+                <span class="seq" data-row="p2wpkh"><span class="op">⓪</span></span>
+                <span class="seq" data-row="p2wpkh"><span class="ph">h</span><span class="op op-push">²⁰</span></span>
+                <span class="seq mach" data-row="p2wpkh">bech32</span>
+              <span class="pname" data-row="p2wsh">P2WSH</span>
+                <span class="seq mach" data-row="p2wsh">bc1q…</span>
+                <span class="seq" data-row="p2wsh"><span class="op">⓪</span></span>
+                <span class="seq" data-row="p2wsh"><span class="ph">h</span><span class="op op-push">³²</span></span>
+                <span class="seq mach" data-row="p2wsh">bech32</span>
+              <span class="pname" data-row="p2tr-key p2tr-script">P2TR</span>
+                <span class="seq mach" data-row="p2tr-key p2tr-script">bc1p…</span>
+                <span class="seq" data-row="p2tr-key p2tr-script"><span class="op">①</span></span>
+                <span class="seq" data-row="p2tr-key p2tr-script"><span class="ph">p</span><span class="op op-push">³²</span></span>
+                <span class="seq mach" data-row="p2tr-key p2tr-script">bech32m</span>
+            </div>
+            </div>
+            <p class="notation-note">Read down the Tag column and the table splits in two, which is the whole
+              history of the format. Base58's tag is a byte outside the script — an index into a table of terms, 0 for
+              P2PKH's abstraction and 5 for P2SH's — so a term with no byte assigned to it has no address, and only
+              a new byte and a new table entry could give it one. Segwit's tag is not an index at all: it is the
+              script's own opening opcode, carried through unchanged, and the character after the separator is that
+              opcode spelled out (q is ⓪, p is ①). Every witness output is the same abstraction, <span
+              class="lam">λ</span><i>v</i> <b>h</b><span class="lam">.</span> <span class="lam">⟦</span> <i>v</i>
+              <b>h</b> <span class="lam">⟧</span>, so P2WPKH, P2WSH and P2TR are one term at three arguments rather
+              than three formats — the first two share bc1q… and are told apart only by the length of the argument —
+              and version 2 will need no new prefix and no new code in any wallet that already writes this one. The
+              checksums divide the same way: base58 takes ⌘ of the tag and the argument together and keeps the left
+              four bytes, which is the chain's own hash doing duty as a typo check, while bech32 and bech32m are
+              codes of their own with no counterpart on chain, differing only in the constant they are checked
+              against: ⓪ keeps the older one, and every version above it takes bech32m, which was written after a
+              flaw was found in how the first code handled a character inserted at its end.</p>
+            <p class="notation-note">Three rows of the tables above are missing here, and each is missing for the
+              reason its λ gives. A bare multisig abstracts over <i>m</i>, <i>n</i> and <i>n</i> keys: more than one
+              argument, so there is nothing an address could carry — and that is the whole of what P2SH is for, since
+              it wraps any term at all in one that takes a single twenty-byte datum, which is how a multi-key wallet
+              came to be paid at an address opening with 3. A data output's argument has no fixed length and nothing
+              to spend, so there
+              is nothing to address. And P2PK takes one argument of fixed length but was never assigned a byte; the
+              address written for such a key is P2PKH's, over ⌖ <b>p</b> — a different term, which is why the coins
+              in the earliest chapters sit at outputs no address names.</p>
           </div>
 
           <div class="notation-group">

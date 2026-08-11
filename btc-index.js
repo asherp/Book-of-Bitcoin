@@ -3,8 +3,9 @@
 // btc-index.js — the ledgers of the Bitcoin Book: notable addresses, each a
 // view of the manuscript focused on amounts. Shared by bitcoin-ledger.html
 // (the Ledger compendium: every ledger in one document, ledgers over
-// addresses over entries) and bitcoin-search.html (which routes an address
-// query there). Besides the curated data, this module carries the machinery
+// addresses over entries) and bitcoin-search.html (which decodes an address
+// query with addressScriptHex, to write the term it binds — see btc-term.js —
+// rather than routing it here). Besides the curated data, this module carries the machinery
 // the ledger pages share: the mapping that discovers an address's chapters,
 // the store that remembers them, and the renderers that lay them out. (The
 // filename keeps its index-era name so cached module graphs never mix
@@ -458,6 +459,98 @@ function esploraTouches(txs, member) {
   }
   return recs;
 }
+
+// ─── the chain's own copy of a member's script ───────────────────────────
+//
+// addressScriptHex derives a scriptPubKey from an address by decoding it. That
+// is arithmetic, and arithmetic can be wrong in the same way twice -- a book
+// that derived a script and then printed its own derivation would be checking
+// nothing. So a page that means to SHOW a script asks the chain for an output
+// that really carries it, and compares.
+//
+// One page of history, which is one request: esplora returns the newest 25
+// confirmed transactions, and the oldest on that page is the earliest
+// reference this cheaply reaches. When the page holds fewer than a full 25 it
+// holds the member's whole confirmed history, and that oldest record is the
+// FIRST reference outright -- `whole` says which case this is, because "the
+// first time the chain wrote this script" and "some time the chain wrote it"
+// are different claims and only one of them is usually true. Walking back to
+// the true first on a busy member is the Ledger's work, not a search box's.
+//
+// The bytes come off an output paying the member, or off a spent prevout where
+// the page's oldest transaction only drew from it -- esplora carries the
+// scriptPubKey on both, and both are the chain's own copy.
+// One page of esplora's newest-first history -> what that page says about the
+// member's locking script. Pure, so the reading that matters is testable
+// without a network.
+//
+// An address is a name for exactly one scriptPubKey, so this is not a sample:
+// EVERY output paying the member on the page must carry the same bytes, and so
+// must every prevout its spends consumed. The page is already fetched, so
+// checking all of them costs nothing and catches what one sample cannot -- a
+// single anomalous output among many. `scripts` is what was actually found,
+// deduped; more than one entry means the chain does not agree with itself,
+// which should be impossible and is therefore worth saying out loud.
+//
+// A transaction returned by an address query need not pay the member at all:
+// a spend-only record touches it through the prevout it consumes, and on a
+// busy address those are the majority. Their prevout carries the same script,
+// so they count as references like any other -- and `earliest` falls back to
+// one when the page's oldest record only drew from the member.
+export function readWitness(page, member) {
+  const whole = page.length < ESPLORA_PAGE;
+  const confirmed = page.filter((t) => t?.status?.confirmed && t.status.block_height > 0);
+  const byScript = !isAddress(member);
+  const pays = (o) => (byScript ? o?.scriptpubkey === member : o?.scriptpubkey_address === member);
+  const scripts = new Set();
+  let outputs = 0, prevouts = 0, earliest = null;
+  // Newest first, so walking backwards reaches the oldest record last and the
+  // earliest reference is whatever it leaves behind.
+  for (let i = confirmed.length - 1; i >= 0; i--) {
+    const t = confirmed[i];
+    const at = (t.vout || []).findIndex(pays);
+    (t.vout || []).forEach((o) => { if (pays(o)) { outputs++; scripts.add(String(o.scriptpubkey || '').toLowerCase()); } });
+    for (const v of t.vin || []) {
+      if (pays(v.prevout)) { prevouts++; scripts.add(String(v.prevout.scriptpubkey || '').toLowerCase()); }
+    }
+    if (earliest === null && (at >= 0 || (t.vin || []).some((v) => pays(v.prevout)))) {
+      const spent = (t.vin || []).find((v) => pays(v.prevout));
+      earliest = {
+        script: String((at >= 0 ? t.vout[at] : spent.prevout).scriptpubkey || '').toLowerCase(),
+        txid: t.txid, height: t.status.block_height, out: at >= 0 ? at : null,
+      };
+    }
+  }
+  if (!earliest) return { found: false, whole, outputs: 0, prevouts: 0, scripts: [] };
+  return { found: true, whole, ...earliest, outputs, prevouts, scripts: [...scripts] };
+}
+
+export async function chainWitness(member) {
+  const pagePath = await chainPage(member);
+  if (!pagePath) return null;
+  for (const mirror of esploraMirrors()) {
+    const page = await esploraJson(mirror, pagePath);
+    if (Array.isArray(page)) return readWitness(page, member);
+  }
+  return null;   // every mirror refused; chainFailureText() says how
+}
+
+// Our normal form against the chain's copy. Pure, so the reading is testable
+// without a network: null witness means nobody could be asked, which is not
+// the same as an answer, and must never read as agreement.
+export function witnessVerdict(ours, witness) {
+  if (!witness) return 'unreachable';
+  if (!witness.found) return 'absent';
+  const mine = String(ours || '').toLowerCase();
+  // Every reference on the page, not just the one cited: agreement means the
+  // chain wrote these bytes everywhere it named this member, and one odd
+  // output among fifty is exactly the thing a single sample would miss.
+  return witness.scripts.length === 1 && witness.scripts[0] === mine ? 'agrees' : 'differs';
+}
+
+// The reference on the page that disagrees, for a page that does.
+export const witnessDisagreement = (ours, witness) =>
+  (witness?.scripts ?? []).find((s) => s !== String(ours || '').toLowerCase()) ?? null;
 
 // The member's chain state -- confirmed balance and transaction count --
 // straight from its stats endpoint, no memory: the mapper reconciles
