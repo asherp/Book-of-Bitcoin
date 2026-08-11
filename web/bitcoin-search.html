@@ -204,7 +204,7 @@ import { reference, latinReference } from './btc-citation.js';
 import { parseLookup } from './btc-lookup.js';
 
 import { termOfScript, pureForm, pureApplicationHtml, normalFormHtml } from './btc-term.js';
-import { spell, read, looksSpelled } from './btc-address-form.js';
+import { spell, read, looksSpelled, isWholeScript } from './btc-address-form.js';
 const input = document.getElementById('block-input');
 const termEl = document.getElementById('term');
 
@@ -361,12 +361,9 @@ async function showSpelled(text, at) {
 const go = () => {
   const q = input.value.trim();
   if (!q) { input.focus(); return; }
-  // Bare hex is admitted as a lock exactly when the bytes bind a term, which
-  // is a fact about them rather than a guess about what the reader meant.
-  const found = parseLookup(q, {
-    isAddress, isSpelled: looksSpelled,
-    isLockingScript: (h) => /^(?:[0-9a-fA-F]{2})+$/.test(h) && termOfScript(h.toLowerCase()) !== null,
-  });
+  // Bare hex is a lock unless it is already something else in this grammar --
+  // a height or an id (isWholeScript names the two shapes and why).
+  const found = parseLookup(q, { isAddress, isSpelled: looksSpelled, isLockingScript: isWholeScript });
   termEl.dataset.at = q;
   if (found.kind === 'address') { showScript(addressScriptHex(found.address), { address: found.address, at: q }); return; }
   if (found.kind === 'spelled') { showSpelled(found.spelled, q); return; }

@@ -155,6 +155,33 @@ export function scan(text) {
   return out;
 }
 
+// Bare hex read as a locking script. Any byte string is a scriptPubKey by
+// consensus, so what this excludes is not "not a script" but "already
+// something else in this grammar", and there are exactly two of those:
+//
+//   · all-digit hex, which is how a height is written. This is the one that
+//     matters, and not for the toy cases: 840000 is even-length hex and
+//     tokenizes cleanly (OP_AND OP_0 OP_0), as do 500000 and 630000. A rule
+//     that took every clean script would swallow the halving.
+//   · exactly 64 characters, which is a transaction id or a block hash. It
+//     costs nothing to give up: no term is 32 bytes, so nothing addressable
+//     is lost, and only a nonstandard lock of that exact size is excluded.
+//
+// Everything else the grammar takes is ASCII, base58 or bech32 and cannot read
+// as hex at all -- a relative height wears a sign, a citation its sigla or its
+// leading v, base58 spells no 0 and bech32 opens bc1. So those two shapes are
+// the whole of what the script: prefix is still for, and every script the book
+// actually shelves passes here bare, its Mt. Gox void (76a90088ac) included.
+export function isWholeScript(hex) {
+  if (!/^(?:[0-9a-fA-F]{2})+$/.test(hex)) return false;
+  if (/^[0-9]+$/.test(hex)) return false;
+  if (hex.length === 64) return false;
+  try {
+    const toks = tokenizeScript(hex);
+    return toks.length > 0 && toks.every((t) => t.trunc === undefined);
+  } catch { return false; }
+}
+
 // Is this string a spelled script? Shape only, and no datum is read -- enough
 // to route a query, never enough to accept one. A spelled script holds at least
 // one mark of the alphabet, which is what keeps every other form the search box

@@ -22,7 +22,8 @@ import assert from 'node:assert/strict';
 
 import { OPCODE_SYMBOLS, OPCODE_NAMES } from '../web/btc-sigla.js';
 import { addressScriptHex } from '../web/btc-index.js';
-import { spell, read, scan, looksSpelled, parseMark, OPCODE_OF_GLYPH } from '../web/btc-address-form.js';
+import { spell, read, scan, looksSpelled, isWholeScript, parseMark,
+         OPCODE_OF_GLYPH } from '../web/btc-address-form.js';
 
 // A stand-in for Glossia: each byte becomes one word carrying it. Nothing about
 // the real prose is being tested here -- only that the format hands the engine a
@@ -139,4 +140,46 @@ test('no other form the search box takes answers to this one', () => {
     'bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4', 'script:76a90088ac', '']) {
     assert.equal(looksSpelled(q), false, `${q} reads as a spelled script`);
   }
+});
+
+test('bare hex is a lock unless the grammar already spends that shape', () => {
+  // Any byte string is a scriptPubKey by consensus, so the exclusions are not
+  // "this is not a script" -- they are "this is already something else here",
+  // and there are two.
+  //
+  // The one that matters is a height. Not the toy cases: these are the block
+  // numbers a reader actually types, and every one of them is even-length hex
+  // that tokenizes as a clean script.
+  for (const height of ['840000', '500000', '630000', '210000', '0', '57043']) {
+    assert.equal(isWholeScript(height), false, `${height} is a height, not a lock`);
+  }
+  // And an id, where the cost of giving it up is nothing: no term is 32 bytes,
+  // so only a nonstandard lock of that exact size loses its bare spelling.
+  assert.equal(isWholeScript('a'.repeat(64)), false);
+  assert.equal(isWholeScript('6a1e' + 'ab'.repeat(30)), false, 'a 32-byte OP_RETURN keeps the prefix');
+
+  // Everything else the grammar takes is ASCII, base58 or bech32, and cannot
+  // read as hex at all.
+  for (const q of ['-1', 'III β2 ■5', 'I β29 ■596 §85', 'v1b29c596s85',
+    '1Ross5Np5doy4ajF9iGXzgKaC2Q3Pwwxv', 'bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4',
+    'script:76a90088ac', '']) {
+    assert.equal(isWholeScript(q), false, `${q} is not hex`);
+  }
+
+  // What it does take: every lock that binds a term, and the nonstandard ones
+  // that do not -- including the book's own script member, the Mt. Gox void,
+  // which is the whole reason a raw scriptPubKey is a name at all.
+  assert.equal(isWholeScript('76a90088ac'), true, 'the Mt. Gox void reads bare');
+  for (const address of ['1Ross5Np5doy4ajF9iGXzgKaC2Q3Pwwxv',
+    'bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4',
+    'bc1p5d7rjq7g6rdk2yhzks9smlaqtedr4dekq08ge8ztwac72sfr9rusxg3297']) {
+    assert.equal(isWholeScript(addressScriptHex(address)), true, address);
+  }
+  // Bytes that are not a whole script are still refused: a push claiming more
+  // than remains is not a lock, whatever else it might be.
+  assert.equal(isWholeScript('76a914ab'), false, 'a truncated push is not a script');
+  assert.equal(isWholeScript('7'), false, 'nor half a byte');
+  // But 76a9 is a whole script -- OP_DUP OP_HASH160, going nowhere. Nonsense is
+  // not the test; a push claiming bytes that are not there is.
+  assert.equal(isWholeScript('76a9'), true);
 });
