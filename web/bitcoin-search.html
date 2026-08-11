@@ -113,8 +113,11 @@ button:hover { background: var(--accent-2); }
 }
 /* The marks, styled as the book styles them everywhere else: opcode glyphs in
    accent, the datum's letter bold, its byte count quiet. .lam is the calculus
-   and not the script -- λ, the dot, the brackets, the application's parens --
-   so it never takes the gold that means "the chain kept this". */
+   and not the script -- λ, the dot, the application's parens, and the ⧺ that
+   joins a spend to the lock it runs against -- so it never takes the gold that
+   means "the chain kept this". The joint is the case that has to be quiet: it
+   is a real opcode's mark, and it is on the line precisely because it is the
+   one step neither script performs. */
 .term-line .op { color: var(--accent); font-style: normal; }
 .term-line .op-push { color: var(--meta); }
 .term-line .dt { color: var(--accent); font-style: normal; font-weight: 700; }
@@ -319,9 +322,9 @@ function drawTerm(hex, { address = null, at = '', say: sayFn = null, said = '' }
   // setting it beats explaining why there was nothing to set.
   // Two readings of one thing, one β apart: the address as a term with its own
   // argument supplied and the payer's still bound, and what the chain is
-  // holding, which is that term's lock bracket once the argument has gone in.
-  // Nothing on the upper line is a mark the wire could not carry, which is what
-  // makes the reduction between them a claim rather than a picture.
+  // holding, which is everything right of that term's ⧺ once the argument has
+  // gone in. The joint is the only mark above that the wire will not carry,
+  // which is what makes the reduction between them a claim and not a picture.
   // The address line carries its own datum, said: an address is a term with one
   // argument supplied, and the argument is the thing a base58 or bech32 string
   // spends its entropy on. Without the engine the mark stands alone, as it does

@@ -122,7 +122,7 @@ export function reduce(term, argumentHex) {
 // is opened far enough to hold BOTH parties' key material: the payee's datum,
 // which the address already has, and the payer's, which nobody has yet.
 //
-//   (λh s p. ⟦ s p ⟧ ⟦ ⧉ ⌖ h ≡ ∇ ⟧) h²⁰ ridge amused garment … inmate
+//   (λh s p. s p ⧺ ⧉ ⌖ h ≡ ∇) h²⁰ ridge amused garment … inmate
 //
 // An address is that expression with exactly one argument supplied. The λ is
 // the shape; the prose after it is the argument -- the high-entropy half a
@@ -131,30 +131,36 @@ export function reduce(term, argumentHex) {
 // output. It is a partial application, and it wants more before anything can be
 // written down.
 //
-// Everything inside ⟦ ⟧ is what the wire will hold, so nothing may stand there
-// that consensus does not define. That is why the demands are written as the
-// two scripts a validator actually runs end to end -- ⟦spend⟧ then ⟦lock⟧, the
-// key's own reading of the validator column -- and not as a predicate over
-// them. A conjunction between clauses would have been the one mark on the line
-// that no β could ever remove, and in this book's alphabet it would have been
-// ∧: the glyph OP_AND wears, an opcode consensus disabled. Supply s and p and
-// this line is a spend, mark for mark; supply nothing more and its right-hand
-// bracket is already the scriptPubKey the chain is asked about below.
+// The line is the two scripts a validator runs end to end, spend then lock,
+// joined by the mark that says so: ⧺, which is OP_CAT. Disabled, and chosen
+// anyway -- concatenating two byte strings is exactly the step being written,
+// and the book has a mark for that step already. It stands between the halves
+// rather than inside either, so nothing it joins is anything but an opcode
+// consensus defines or a variable standing for a push, and β takes the line all
+// the way down: supply s and p and it is a spend, mark for mark; supply nothing
+// more and its right half is the scriptPubKey the chain is asked about below.
+//
+// The mark it replaced was a conjunction, which is what a demand written as a
+// predicate needs and what no β could ever have removed. It printed as ∧ --
+// OP_BOOLAND, an opcode that is not disabled at all, and that pops two numbers
+// off a stack. A live opcode standing in for a connective is the worse failure
+// of the two: nothing marked the line as unreducible, it simply was not.
 //
 // Two things fall out that the committed-datum reading hides. P2PKH and P2WPKH
 // ask for the same key material in the same order -- segwit moved where a
 // witness rides, not what is asked for -- while the locks it rides against are
 // not the same script at all. And P2SH and P2WSH cannot say what they want: the
-// spend group opens on `…`, whatever the redeem script requires, which the
-// address does not know and cannot know. Not a datum hidden behind a hash, but
-// a REQUIREMENT hidden behind one.
+// spend opens on `…`, whatever the redeem script requires, which the address
+// does not know and cannot know. Not a datum hidden behind a hash, but a
+// REQUIREMENT hidden behind one.
 //
 // A reading, not an encoding. These are written down per term, because deriving
 // them from arbitrary bytes is symbolic execution and undecidable in general;
 // the sigla spelling stays the invertible form. `brings` is the spend in the
 // order the spender pushes it -- a wrapped form's script rides on top, so it
-// comes last -- and `runs` is the term that bracket then hands back, which is
-// the one step ( ) exists for.
+// comes last -- and `runs` is what the lock then hands back to be run, the one
+// step ( ) exists for and the only thing on the line that is neither a spend
+// nor a lock.
 const DEMANDS = {
   p2pk:   [{ brings: 's' }],
   p2pkh:  [{ brings: 's p' }],
@@ -180,8 +186,12 @@ export function demandsOf(t) {
   });
 }
 
+// The joint, taken from the alphabet rather than written out, so the mark on
+// the page is the one the book gives 0x7e and cannot drift from it.
+const CAT = OPCODE_SYMBOLS[0x7e];
+
 const demandText = (t, alt) => `(λ${alt.binders.join(' ')}. `
-  + `⟦ ${alt.brings.join(' ')} ⟧ ⟦ ${bodyText(t, false)} ⟧`
+  + `${alt.brings.join(' ')} ${CAT} ${bodyText(t, false)}`
   + (alt.runs ? ` ( ${alt.runs} )` : '')
   + `) ${t.binder}${toSuperscript(t.bytes)}`;
 
@@ -200,6 +210,12 @@ const boundHtml = (t, name) => (name === '…' ? lam('…')
   : name === t.binder ? dt(t)
   : awaited(name));
 
+// The joint takes the quiet colour, not the gold: it is the step between the
+// two scripts and not a byte either of them holds -- which is also why it can
+// be a disabled opcode's mark without the line claiming a disabled opcode.
+const cat = () => `<span class="lam" title="${escapeHtml(OPCODE_NAMES[0x7e])} — the spend and the `
+  + `lock, run end to end">${escapeHtml(CAT)}</span>`;
+
 // `prose` is the argument's bytes said in the book's own tongue, and it lands
 // where an address keeps its payload: after the term, behind the mark that
 // gives its length. Withheld, the datum stays behind that mark -- the line is
@@ -209,8 +225,7 @@ export function demandsHtml(t, { prose = '' } = {}) {
   if (!alts) return null;
   const name = (n) => boundHtml(t, n);
   const line = (alt) => `${lam('(λ')}${alt.binders.map(name).join(' ')}${lam('.')} `
-    + `${lam('⟦')} ${alt.brings.map(name).join(' ')} ${lam('⟧')} `
-    + `${lam('⟦')} ${bodyHtml(t, false)} ${lam('⟧')}`
+    + `${alt.brings.map(name).join(' ')} ${cat()} ${bodyHtml(t, false)}`
     + (alt.runs ? ` ${lam('(')} ${name(alt.runs)} ${lam(')')}` : '')
     + `${lam(')')} ${dt(t)}${count(t)}${prose ? ` ${prose}` : ''}`;
   return alts.map(line).join(` ${lam('·')} `);
