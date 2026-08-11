@@ -83,14 +83,17 @@ button {
 button:hover { background: var(--accent-2); }
 
 
-/* The term the box is holding, drawn as it is typed.
+/* The address, read twice, as it is typed.
    An address is not a place, so it opens no chapter; but it is not nothing
    either, and what it is can be read straight off the bytes -- so it is, on
-   every keystroke, before anything is clicked. The address in its purest form:
-   structure alone, every constant standing outside it as an argument, one β,
-   and the script the chain actually holds. The steps between are currying,
-   which is a fact about the notation rather than about this address; the
-   Notation key's Scripts as terms group walks them once, where they belong.
+   every keystroke, before anything is clicked.
+
+   Above: what it awaits. The λ binds what a spend must bring, so the line says
+   what the address demands of whoever comes to move the coin, and what it
+   already holds stands as a constant inside it. Below: what the chain holds,
+   which is the script itself. Neither is derived from the other -- they are two
+   readings of one output, and the notation key's Scripts as terms group is
+   where the encoding's own β chain lives.
 
    Read still opens the place, as it always did. This says what the thing is;
    the button goes to it. */
@@ -113,9 +116,13 @@ button:hover { background: var(--accent-2); }
 .term-line .op-push { color: var(--meta); }
 .term-line .dt { color: var(--accent); font-style: normal; font-weight: 700; }
 .term-line .lam { color: var(--meta); }
-/* β between the lines: the step itself, and the one mark on the leaf that is
-   neither script nor prose. */
-.term-step { display:flex; align-items:baseline; gap:12px; font:400 15px/1 'Newsreader','Book Sigla',serif; color:var(--accent); margin:10px 0 10px 2px; }
+/* What the address awaits, above what the chain holds. One distinction does
+   the work: the gold is what the chain already has, and everything plain is
+   what the address is still waiting for a spend to bring -- the same split the
+   key's validator column keeps, and here it means a reader sees at a glance
+   which half of the line is a fact and which is a demand. */
+.term-awaits { margin-bottom: 14px; }
+.term-line .aw { color: var(--ink); font-style: normal; }
 .term-note { margin:16px 0 0; font:400 13px/1.55 'Public Sans','Book Sigla',sans-serif; color:var(--meta); max-width:62ch; }
 /* The same script in the book's own hand, set to be copied rather than read:
    the bottom line of the chain without its brackets, which are apparatus. The
@@ -207,7 +214,7 @@ import { isAddress, addressScriptHex, chainWitness, witnessVerdict, witnessDisag
 import { reference, latinReference } from './btc-citation.js';
 import { parseLookup } from './btc-lookup.js';
 
-import { termOfScript, pureForm, pureApplicationHtml, normalFormHtml } from './btc-term.js';
+import { termOfScript, demandsHtml, normalFormHtml } from './btc-term.js';
 import { spell, spellHtml, read, looksSpelled, isWholeScript, scriptFault } from './btc-address-form.js';
 const input = document.getElementById('block-input');
 const termEl = document.getElementById('term');
@@ -310,9 +317,12 @@ function drawTerm(hex, { address = null, at = '', say: sayFn = null, tail = '' }
   // A term binds, or it does not, or the bytes are not a script at all. The
   // middle case is not an absence: there is always the script itself, and
   // setting it beats explaining why there was nothing to set.
+  // Two readings of one thing, and nothing between them: what the address is
+  // still waiting for, and what the chain is holding. They are not a
+  // derivation of each other -- a β between them would be a lie -- so the only
+  // thing that joins them is that they are about the same output.
   const body = t
-    ? `<div class="term-line">${pureApplicationHtml(pureForm(t))}</div>`
-      + '<div class="term-step">β</div>'
+    ? `<div class="term-line term-awaits">${demandsHtml(t) || ''}</div>`
       + `<div class="term-line">${normalFormHtml(t, { prose })}</div>` + tail
     : fault
       ? `<div class="term-said">${faultNote(fault)}</div>`

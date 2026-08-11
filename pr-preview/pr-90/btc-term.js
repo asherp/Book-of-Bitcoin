@@ -114,6 +114,86 @@ export function reduce(term, argumentHex) {
     : code.toString(16).padStart(2, '0'))).join('');
 }
 
+// ─── what the address awaits ─────────────────────────────────────────────
+//
+// The other reading, and the one an address is actually FOR. Above, the λ binds
+// what the address carries -- its own committed datum, supplied when it was
+// written. Here it binds what the address still wants: the things a spend must
+// bring before the coin moves. The two are duals, and the datum sits on
+// opposite sides of the binder in each.
+//
+//   λs p. ⌖ p ≡ h²⁰ ∧ ∇ s p
+//
+// "Bring me a signature and a key whose hash is this, and the signature must
+// verify under the key." That is the whole of what a P2PKH address demands, and
+// it is what a recipient, a wallet or an auditor is looking at an address to
+// find out.
+//
+// Two things fall out that the committed-datum reading hides. P2PKH and P2WPKH
+// come out IDENTICAL -- segwit moved where a witness rides, not what is asked
+// for. And P2SH and P2WSH cannot state their demands at all: the binder list
+// runs out at `r …`, the redeem script and then whatever IT requires, which the
+// address does not know. Not a datum hidden behind a hash, but a REQUIREMENT
+// hidden behind one -- an address that cannot say what it will ask of you.
+//
+// A reading, not an encoding. These are written down per term, because deriving
+// them from arbitrary bytes is symbolic execution and undecidable in general;
+// the sigla spelling stays the invertible form. `@x` marks something awaited
+// and `$` the datum the address already holds.
+const DEMANDS = {
+  p2pk:   [{ awaits: 's',     needs: ['∇ @s $'] }],
+  p2pkh:  [{ awaits: 's p',   needs: ['⌖ @p ≡ $', '∇ @s @p'] }],
+  p2sh:   [{ awaits: 'r …',   needs: ['⌖ @r ≡ $', '( @r )'] }],
+  p2wpkh: [{ awaits: 's p',   needs: ['⌖ @p ≡ $', '∇ @s @p'] }],
+  p2wsh:  [{ awaits: 'w …',   needs: ['Σ @w ≡ $', '( @w )'] }],
+  // Taproot asks for one of two things, which is the whole of what a taptree
+  // buys: a signature under the output key, or a leaf that proves to it.
+  p2tr:   [{ awaits: 's',     needs: ['∇ @s $'] },
+           { awaits: 's t c', needs: ['⋔ @c @t ≡ $', '( @t )'] }],
+};
+
+// The alternatives an address awaits, or null for a term with none written
+// down. Each is { awaits: [names], needs: [[tokens]] }, where a token is
+// { aw } for something the spend must bring, { datum: true } for what the
+// address already holds, and { mark } for an operation.
+export function demandsOf(t) {
+  const alts = DEMANDS[t.id];
+  if (!alts) return null;
+  const token = (word) => (word.startsWith('@') ? { aw: word.slice(1) }
+    : word === '$' ? { datum: true } : { mark: word });
+  return alts.map((alt) => ({
+    awaits: alt.awaits.split(' '),
+    needs: alt.needs.map((need) => need.split(' ').map(token)),
+  }));
+}
+
+const demandText = (t, alt) => `λ${alt.awaits.join(' ')}. `
+  + alt.needs.map((need) => need.map((k) => (k.aw ?? (k.datum ? t.binder + toSuperscript(t.bytes) : k.mark)))
+    .join(' ')).join(' ∧ ');
+
+export const demandsText = (t) => {
+  const alts = demandsOf(t);
+  return alts ? alts.map((alt) => demandText(t, alt)).join(' ∨ ') : null;
+};
+
+// Set as marks, with one distinction doing real work: what the chain already
+// holds takes the gold, and what the address is still waiting for does not.
+// The same split the key's validator column keeps, and here it means a reader
+// can see at a glance which half of the line is a fact and which is a demand.
+const awaited = (name) => (name === '…'
+  ? `<span class="lam">…</span>`
+  : `<span class="aw">${escapeHtml(name)}</span>`);
+
+export function demandsHtml(t) {
+  const alts = demandsOf(t);
+  if (!alts) return null;
+  const body = (alt) => `${lam('λ')}${alt.awaits.map(awaited).join(' ')}${lam('.')} `
+    + alt.needs.map((need) => need.map((k) => (k.aw ? awaited(k.aw)
+      : k.datum ? dt(t) + count(t)
+      : `<span class="op">${escapeHtml(k.mark)}</span>`)).join(' ')).join(` ${lam('∧')} `);
+  return alts.map(body).join(` ${lam('∨')} `);
+}
+
 // ─── the pure form ───────────────────────────────────────────────────────
 //
 // The terms above still hold their opcodes: λh. ⟦ ⧉ ⌖ h ≡ ∇ ⟧ has ⧉ and ⌖
