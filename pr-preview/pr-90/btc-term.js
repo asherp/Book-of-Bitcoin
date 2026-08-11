@@ -239,11 +239,6 @@ const bodyHtml = (t, counted, prose) => t.term.body
     ? dt(t) + (counted ? count(t) + (prose ? ` ${prose}` : '') : '')
     : op(code))).join(' ');
 
-export const abstractionHtml = (t) => `${lam('λ')}${dt(t)}${lam('.')} ${lam('⟦')} ${bodyHtml(t, false)} ${lam('⟧')}`;
-
-export const applicationHtml = (t, { prose = '' } = {}) =>
-  `${lam('(')}${abstractionHtml(t)}${lam(')')} ${dt(t)}${count(t)}${prose ? ` ${prose}` : ''}`;
-
 export const normalFormHtml = (t, { prose = '' } = {}) =>
   `${lam('⟦')} ${bodyHtml(t, true, prose)} ${lam('⟧')}`;
 
@@ -278,17 +273,11 @@ export const pureApplicationHtml = (pure) => `${lam('(')}${pureHtml(pure)}${lam(
 // wants is a push -- a length, and that many bytes. This is the line that says
 // how much key material an output of this kind requires, which is the whole
 // reason the length is an argument rather than an annotation.
-const lockBody = (pure, marks) => pure.term.term.body
-  .map((code) => (code === null ? marks.hole : marks.op(code))).join(' ');
+const lockBody = (pure) => pure.term.term.body
+  .map((code) => (code === null ? pure.hole : glyph(code))).join(' ');
 
 export const lockText = (pure) =>
-  `λ${pure.lenName} ${pure.datumName}. ⟦ ${lockBody(pure, { hole: pure.hole, op: glyph })} ⟧`;
+  `λ${pure.lenName} ${pure.datumName}. ⟦ ${lockBody(pure)} ⟧`;
 
 export const lockApplicationText = (pure) =>
   `(${lockText(pure)}) ${pure.bytes} ${pure.datumName}`;
-
-export const lockHtml = (pure) => `${lam('λ')}${lam(pure.lenName)} ${dt(pure.term)}${lam('.')} `
-  + `${lam('⟦')} ${lockBody(pure, { hole: pureName(pure, pure.hole), op })} ${lam('⟧')}`;
-
-export const lockApplicationHtml = (pure) => `${lam('(')}${lockHtml(pure)}${lam(')')} `
-  + `<span class="op op-push">${pure.bytes}</span> ${dt(pure.term)}`;

@@ -28,14 +28,20 @@
 //                                     resolves to Script and to nothing else --
 //                                     an address format needing no version byte
 //                                     and no table of patterns (btc-address-form.js)
-//   script        script:76a90088ac   a raw scriptPubKey, by its own bytes --
-//                                     the name of an output no address can
-//                                     write (a malformed or nonstandard
-//                                     script), and a ledger like an address
-//                                     is. The prefix is the grammar's, not
-//                                     the chain's: bare hex would be
-//                                     ambiguous with heights and txids, and
-//                                     this book does not guess
+//   locking hex   76a914…88ac        a locking script, by its own bytes, bare:
+//                                     admitted when the bytes bind a term
+//                                     (btc-term.js) and so can be nothing else.
+//                                     No term is 32 bytes, which is what makes
+//                                     this safe beside a txid; none is short
+//                                     enough to read as a height either
+//   script        script:76a90088ac   the same, forced: the name of an output
+//                                     no address can write (a malformed or
+//                                     nonstandard script), and a ledger like an
+//                                     address is. Bytes that bind no term
+//                                     settle nothing on their own -- they can
+//                                     spell a height or a txid -- so the prefix
+//                                     is how a reader says which they meant,
+//                                     rather than the book guessing
 //
 // Address recognition is injected rather than imported: the real test decodes
 // base58 and bech32 (isAddress in btc-index.js, the ledger's own machinery),
@@ -64,12 +70,15 @@ export const looksLikeAddress = (s) => /^(?:[13][a-km-zA-HJ-NP-Z1-9]{25,34}|bc1[
 // 'relative', 'hex', 'reference', 'address', or null when the string is none of
 // them. A reference carries its parse (see btc-citation.js); everything else
 // carries the query as written, trimmed.
-// Recognition is injected for the two forms whose real test is a decode. An
+// Recognition is injected for the three forms whose real test is a decode. An
 // address's is the ledger's (isAddress, above); a spelled script's is the
-// alphabet's own (looksSpelled in btc-address-form.js), and it defaults to off
-// so that no page pays for the opcode table to answer a question about a
-// height. A caller that means to take the form passes its recognizer.
-export function parseLookup(query, { isAddress = looksLikeAddress, isSpelled = () => false } = {}) {
+// alphabet's own (looksSpelled in btc-address-form.js); a bare locking
+// script's is whether the bytes bind a term at all. Each defaults to off, so
+// no page pays for the opcode table to answer a question about a height, and a
+// caller that means to take a form passes its recognizer.
+export function parseLookup(query, {
+  isAddress = looksLikeAddress, isSpelled = () => false, isLockingScript = () => false,
+} = {}) {
   const q = String(query ?? '').trim();
   if (!q) return { kind: null, query: q };
   // Addresses first: bech32 is all-lowercase in the form the ledger queries,
@@ -78,6 +87,12 @@ export function parseLookup(query, { isAddress = looksLikeAddress, isSpelled = (
   if (isAddress(q)) return { kind: 'address', query: q, address: q };
   if (isAddress(q.toLowerCase())) return { kind: 'address', query: q, address: q.toLowerCase() };
   if (isScriptQuery(q)) return { kind: 'script', query: q, script: q.slice(7).toLowerCase() };
+  // Bare hex that IS a lock, which is not a guess: the recognizer binds it as a
+  // term or refuses, and no term's bytes can be read as a height or a
+  // transaction id -- the shortest is 23 bytes and none is the 32 an id takes.
+  // Anything the bytes do not settle keeps the script: prefix, which is what
+  // the prefix is for.
+  if (isLockingScript(q)) return { kind: 'script', query: q, script: q.toLowerCase() };
   // The book's own spelling of a script. It carries its bytes rather than
   // pointing at them, so what comes back is the text: reading it is the
   // engine's job and belongs to whoever asked. No other form here can hold a
