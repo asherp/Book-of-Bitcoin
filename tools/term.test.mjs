@@ -22,6 +22,7 @@ import assert from 'node:assert/strict';
 
 import { addressScriptHex } from '../web/btc-index.js';
 import { NOTATION_HTML } from '../web/btc-notation.js';
+import { OPCODE_SYMBOLS } from '../web/btc-sigla.js';
 import { TERMS, termOfScript, reduce, abstractionText, applicationText, normalFormText,
          pureForm, reducePure, pureText, pureApplicationText,
          lockText, lockApplicationText, demandsOf, demandsText, demandsHtml } from '../web/btc-term.js';
@@ -185,50 +186,116 @@ test('bare hex is a lock when the bytes settle it, and otherwise is not', () => 
   assert.equal(isLockingScript('76a90088ac'), false, 'a malformed lock needs the prefix');
 });
 
-// ─── what the address awaits ─────────────────────────────────────────────
+// ─── the address as a partial application ────────────────────────────────
 
-test('an address says what it demands of whoever comes to spend it', () => {
+test('an address is its term with one argument supplied', () => {
   const of = (address) => demandsText(termOfScript(addressScriptHex(address)));
-  assert.equal(of('1Ross5Np5doy4ajF9iGXzgKaC2Q3Pwwxv'), 'λs p. ⌖ p ≡ h²⁰ ∧ ∇ s p');
+  // The λ binds both parties' key material -- the payee's datum first, because
+  // that is the one argument the address itself carries, and the payer's after
+  // it, because nobody has it yet. What follows the term is the datum: the half
+  // of a base58 or bech32 string that is entropy rather than tag.
+  assert.equal(of('1Ross5Np5doy4ajF9iGXzgKaC2Q3Pwwxv'),
+    '(λh s p. ⟦ s p ⟧ ⟦ ⧉ ⌖ h ≡ ∇ ⟧) h²⁰');
   assert.equal(of('bc1p5d7rjq7g6rdk2yhzks9smlaqtedr4dekq08ge8ztwac72sfr9rusxg3297'),
-    'λs. ∇ s p³² ∨ λs t c. ⋔ c t ≡ p³² ∧ ( t )', 'taproot asks for one of two things');
-  // P2PK's key is a constant of the term now, not its argument: the datum sits
-  // on the other side of the binder from where the committed-datum reading put
-  // it, which is what makes these two readings duals rather than rewordings.
-  assert.equal(demandsText(termOfScript(reduce(TERMS.p2pk, '04' + 'ab'.repeat(64)))), 'λs. ∇ s p⁶⁵');
+    '(λp s. ⟦ s ⟧ ⟦ ① p ⟧) p³² · (λp s t c. ⟦ s t c ⟧ ⟦ ① p ⟧ ( t )) p³²',
+    'taproot asks for one of two things');
+  // P2PK's key is the argument here too, and what it awaits is one signature.
+  assert.equal(demandsText(termOfScript(reduce(TERMS.p2pk, '04' + 'ab'.repeat(64)))),
+    '(λp s. ⟦ s ⟧ ⟦ p ∇ ⟧) p⁶⁵');
 });
 
-test('P2PKH and P2WPKH demand exactly the same thing', () => {
+test('nothing inside ⟦ ⟧ is a mark the wire could not carry', () => {
+  // The point of the form, and the bug it was written to close: a demand set as
+  // a predicate needs a conjunction between its clauses, and in this book's
+  // alphabet that mark is ∧ -- the glyph OP_AND wears, an opcode consensus
+  // disabled. Written as ⟦spend⟧ then ⟦lock⟧ there is no clause to join, so
+  // every mark between the brackets is an opcode the chain defines or a
+  // variable standing for a push, and β takes the line all the way to the wire.
+  const disabled = new Set([0x83, 0x84, 0x85, 0x86, 0x8d, 0x8e,
+    0x95, 0x96, 0x97, 0x98, 0x99, 0x9a, 0x9b]);
+  const banned = new Set([...disabled].map((code) => OPCODE_SYMBOLS[code]));
+  assert.ok(banned.has('∧') && banned.has('∨'), 'the marks this test is about');
+  for (const id of Object.keys(TERMS)) {
+    const bytes = TERMS[id].bytes ?? 65;
+    const t = termOfScript(reduce(TERMS[id], 'ab'.repeat(bytes)));
+    for (const alt of demandsOf(t)) {
+      // Every mark the brackets hold: the spend's items, and the lock's body.
+      const inside = [...alt.brings,
+        ...t.term.body.map((code) => (code === null ? t.binder : OPCODE_SYMBOLS[code]))];
+      for (const mark of inside) {
+        assert.ok(!banned.has(mark), `${id} writes ${mark}, which consensus disabled`);
+      }
+    }
+    // …and the line as a whole carries no disabled mark either, brackets,
+    // binders, argument and all.
+    for (const mark of banned) {
+      assert.ok(!demandsText(t).includes(mark), `${id}'s line writes ${mark}`);
+    }
+  }
+});
+
+// The lock body as the demand line writes it, built from the term's own
+// opcodes: the marks the notation key's Reduces-to column prints, with the
+// datum's binder standing bare where the push will go.
+const bodyOf = (t) => t.term.body
+  .map((code) => (code === null ? t.binder : OPCODE_SYMBOLS[code])).join(' ');
+
+test('the lock the address writes is the script the chain holds', () => {
+  // The claim the form makes: the right-hand bracket is the term's own body, so
+  // supplying the argument the address carries gives the scriptPubKey -- the
+  // same bytes the leaf sets below it, and the same the chain is asked about.
+  // The two lines of the search page are one β apart rather than two readings
+  // that merely agree.
+  for (const [, address] of ADDRESSES) {
+    const script = addressScriptHex(address);
+    const t = termOfScript(script);
+    const line = demandsText(t);
+    for (const alt of demandsOf(t)) {
+      assert.ok(line.includes(`⟦ ${alt.brings.join(' ')} ⟧ ⟦ ${bodyOf(t)} ⟧`),
+        `${address} does not write ⟦spend⟧ then ⟦lock⟧`);
+    }
+    assert.equal(reduce(t.term, t.argument), script, address);
+  }
+});
+
+test('P2PKH and P2WPKH ask for the same key material', () => {
   // The committed-datum reading makes these different objects. Read as demands
-  // they are one string: segwit moved where a witness rides, not what is asked
-  // for. Nothing about the difference between them is a difference to a spender.
-  const of = (address) => demandsText(termOfScript(addressScriptHex(address)));
-  assert.equal(of('1Ross5Np5doy4ajF9iGXzgKaC2Q3Pwwxv'),
-    of('bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4'));
-  // …and the scripts they resolve to are not the same at all, which is the
-  // point: two readings of one output, and only one of them collapses.
+  // they want the same two things in the same order: segwit moved where a
+  // witness rides, not what is asked for.
+  const brings = (address) => demandsOf(termOfScript(addressScriptHex(address)))
+    .map((alt) => alt.binders.join(' '));
+  assert.deepEqual(brings('1Ross5Np5doy4ajF9iGXzgKaC2Q3Pwwxv'), ['h s p']);
+  assert.deepEqual(brings('1Ross5Np5doy4ajF9iGXzgKaC2Q3Pwwxv'),
+    brings('bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4'));
+  // …and the locks that key material rides against are not the same script at
+  // all, which is the other half of the point: one demand, two wires.
   assert.notEqual(addressScriptHex('1Ross5Np5doy4ajF9iGXzgKaC2Q3Pwwxv'),
     addressScriptHex('bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4'));
+  assert.notEqual(demandsText(termOfScript(addressScriptHex('1Ross5Np5doy4ajF9iGXzgKaC2Q3Pwwxv'))),
+    demandsText(termOfScript(addressScriptHex('bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4'))));
 });
 
 test('the wrapped forms cannot say what they will ask for', () => {
-  // P2SH and P2WSH run out of binders: the redeem script, and then whatever IT
-  // requires, which the address does not know and cannot know. The ellipsis is
-  // load-bearing -- a requirement hidden behind a hash rather than a datum.
+  // P2SH and P2WSH run out of binders: whatever the redeem script requires,
+  // which the address does not know and cannot know, and then the script
+  // itself, which rides on top because that is where the spender pushes it. The
+  // ellipsis is load-bearing -- a requirement hidden behind a hash rather than
+  // a datum -- and ( ) is what the bracket hands back once the hash matches.
   for (const [address, expected] of [
-    ['3J98t1WpEZ73CNmQviecrnyiWrnqRhWNLy', 'λr …. ⌖ r ≡ h²⁰ ∧ ( r )'],
-    ['bc1qrp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3qccfmv3', 'λw …. Σ w ≡ h³² ∧ ( w )'],
+    ['3J98t1WpEZ73CNmQviecrnyiWrnqRhWNLy', '(λh … r. ⟦ … r ⟧ ⟦ ⌖ h = ⟧ ( r )) h²⁰'],
+    ['bc1qrp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3qccfmv3',
+      '(λh … w. ⟦ … w ⟧ ⟦ ⓪ h ⟧ ( w )) h³²'],
   ]) {
     const t = termOfScript(addressScriptHex(address));
     assert.equal(demandsText(t), expected);
-    assert.ok(demandsOf(t)[0].awaits.includes('…'), `${address} should admit it cannot say`);
+    assert.ok(demandsOf(t)[0].brings.includes('…'), `${address} should admit it cannot say`);
   }
   // Every other form can say, in full.
   for (const address of ['1Ross5Np5doy4ajF9iGXzgKaC2Q3Pwwxv',
     'bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4',
     'bc1p5d7rjq7g6rdk2yhzks9smlaqtedr4dekq08ge8ztwac72sfr9rusxg3297']) {
     const t = termOfScript(addressScriptHex(address));
-    for (const alt of demandsOf(t)) assert.ok(!alt.awaits.includes('…'), address);
+    for (const alt of demandsOf(t)) assert.ok(!alt.brings.includes('…'), address);
   }
 });
 
@@ -244,6 +311,21 @@ test('the two renderings of a demand never drift', () => {
     const bytes = TERMS[id].bytes ?? 65;
     assert.ok(demandsOf(termOfScript(reduce(TERMS[id], 'ab'.repeat(bytes)))), `${id} awaits nothing`);
   }
+});
+
+test('the datum is said where an address keeps its payload', () => {
+  // The prose follows the term, behind the mark that gives its length -- the
+  // same pairing the sigla address format uses, and the same place base58 and
+  // bech32 put their entropy. Given no engine there is no prose, and the line
+  // keeps its shape rather than falling back to hex.
+  const t = termOfScript(addressScriptHex('1Ross5Np5doy4ajF9iGXzgKaC2Q3Pwwxv'));
+  const strip = (html) => html.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+  assert.equal(strip(demandsHtml(t, { prose: 'ridge amused garment inmate' })),
+    '(λh s p. ⟦ s p ⟧ ⟦ ⧉ ⌖ h ≡ ∇ ⟧) h²⁰ ridge amused garment inmate');
+  assert.equal(strip(demandsHtml(t, {})), strip(demandsHtml(t)));
+  // Taproot's two alternatives each carry it: either is a whole address.
+  const tr = termOfScript(addressScriptHex('bc1p5d7rjq7g6rdk2yhzks9smlaqtedr4dekq08ge8ztwac72sfr9rusxg3297'));
+  assert.equal(strip(demandsHtml(tr, { prose: 'said' })).match(/said/g).length, 2);
 });
 
 // ─── the key's own tables, read back ─────────────────────────────────────

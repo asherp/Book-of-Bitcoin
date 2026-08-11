@@ -114,84 +114,106 @@ export function reduce(term, argumentHex) {
     : code.toString(16).padStart(2, '0'))).join('');
 }
 
-// ─── what the address awaits ─────────────────────────────────────────────
+// ─── the address, as the partial application it is ───────────────────────
 //
 // The other reading, and the one an address is actually FOR. Above, the λ binds
-// what the address carries -- its own committed datum, supplied when it was
-// written. Here it binds what the address still wants: the things a spend must
-// bring before the coin moves. The two are duals, and the datum sits on
-// opposite sides of the binder in each.
+// what the address carries -- its own committed datum, supplied when the
+// address was written -- and reducing gives the lock alone. Here the same term
+// is opened far enough to hold BOTH parties' key material: the payee's datum,
+// which the address already has, and the payer's, which nobody has yet.
 //
-//   λs p. ⌖ p ≡ h²⁰ ∧ ∇ s p
+//   (λh s p. ⟦ s p ⟧ ⟦ ⧉ ⌖ h ≡ ∇ ⟧) h²⁰ ridge amused garment … inmate
 //
-// "Bring me a signature and a key whose hash is this, and the signature must
-// verify under the key." That is the whole of what a P2PKH address demands, and
-// it is what a recipient, a wallet or an auditor is looking at an address to
-// find out.
+// An address is that expression with exactly one argument supplied. The λ is
+// the shape; the prose after it is the argument -- the high-entropy half a
+// base58 or bech32 string carries, said in the book's own tongue; and s and p
+// stay bound, which is precisely what makes the thing an address rather than an
+// output. It is a partial application, and it wants more before anything can be
+// written down.
+//
+// Everything inside ⟦ ⟧ is what the wire will hold, so nothing may stand there
+// that consensus does not define. That is why the demands are written as the
+// two scripts a validator actually runs end to end -- ⟦spend⟧ then ⟦lock⟧, the
+// key's own reading of the validator column -- and not as a predicate over
+// them. A conjunction between clauses would have been the one mark on the line
+// that no β could ever remove, and in this book's alphabet it would have been
+// ∧: the glyph OP_AND wears, an opcode consensus disabled. Supply s and p and
+// this line is a spend, mark for mark; supply nothing more and its right-hand
+// bracket is already the scriptPubKey the chain is asked about below.
 //
 // Two things fall out that the committed-datum reading hides. P2PKH and P2WPKH
-// come out IDENTICAL -- segwit moved where a witness rides, not what is asked
-// for. And P2SH and P2WSH cannot state their demands at all: the binder list
-// runs out at `r …`, the redeem script and then whatever IT requires, which the
-// address does not know. Not a datum hidden behind a hash, but a REQUIREMENT
-// hidden behind one -- an address that cannot say what it will ask of you.
+// ask for the same key material in the same order -- segwit moved where a
+// witness rides, not what is asked for -- while the locks it rides against are
+// not the same script at all. And P2SH and P2WSH cannot say what they want: the
+// spend group opens on `…`, whatever the redeem script requires, which the
+// address does not know and cannot know. Not a datum hidden behind a hash, but
+// a REQUIREMENT hidden behind one.
 //
 // A reading, not an encoding. These are written down per term, because deriving
 // them from arbitrary bytes is symbolic execution and undecidable in general;
-// the sigla spelling stays the invertible form. `@x` marks something awaited
-// and `$` the datum the address already holds.
+// the sigla spelling stays the invertible form. `brings` is the spend in the
+// order the spender pushes it -- a wrapped form's script rides on top, so it
+// comes last -- and `runs` is the term that bracket then hands back, which is
+// the one step ( ) exists for.
 const DEMANDS = {
-  p2pk:   [{ awaits: 's',     needs: ['∇ @s $'] }],
-  p2pkh:  [{ awaits: 's p',   needs: ['⌖ @p ≡ $', '∇ @s @p'] }],
-  p2sh:   [{ awaits: 'r …',   needs: ['⌖ @r ≡ $', '( @r )'] }],
-  p2wpkh: [{ awaits: 's p',   needs: ['⌖ @p ≡ $', '∇ @s @p'] }],
-  p2wsh:  [{ awaits: 'w …',   needs: ['Σ @w ≡ $', '( @w )'] }],
+  p2pk:   [{ brings: 's' }],
+  p2pkh:  [{ brings: 's p' }],
+  p2sh:   [{ brings: '… r', runs: 'r' }],
+  p2wpkh: [{ brings: 's p' }],
+  p2wsh:  [{ brings: '… w', runs: 'w' }],
   // Taproot asks for one of two things, which is the whole of what a taptree
   // buys: a signature under the output key, or a leaf that proves to it.
-  p2tr:   [{ awaits: 's',     needs: ['∇ @s $'] },
-           { awaits: 's t c', needs: ['⋔ @c @t ≡ $', '( @t )'] }],
+  p2tr:   [{ brings: 's' },
+           { brings: 's t c', runs: 't' }],
 };
 
-// The alternatives an address awaits, or null for a term with none written
-// down. Each is { awaits: [names], needs: [[tokens]] }, where a token is
-// { aw } for something the spend must bring, { datum: true } for what the
-// address already holds, and { mark } for an operation.
+// The alternatives an address admits, or null for a term with none written
+// down. Each is { binders: [names], brings: [names], runs: name|null } -- the
+// datum's binder heads the list, since that is the one argument an address
+// supplies, and everything after it is what a spend must still bring.
 export function demandsOf(t) {
   const alts = DEMANDS[t.id];
   if (!alts) return null;
-  const token = (word) => (word.startsWith('@') ? { aw: word.slice(1) }
-    : word === '$' ? { datum: true } : { mark: word });
-  return alts.map((alt) => ({
-    awaits: alt.awaits.split(' '),
-    needs: alt.needs.map((need) => need.split(' ').map(token)),
-  }));
+  return alts.map((alt) => {
+    const brings = alt.brings.split(' ');
+    return { binders: [t.binder, ...brings], brings, runs: alt.runs ?? null };
+  });
 }
 
-const demandText = (t, alt) => `λ${alt.awaits.join(' ')}. `
-  + alt.needs.map((need) => need.map((k) => (k.aw ?? (k.datum ? t.binder + toSuperscript(t.bytes) : k.mark)))
-    .join(' ')).join(' ∧ ');
+const demandText = (t, alt) => `(λ${alt.binders.join(' ')}. `
+  + `⟦ ${alt.brings.join(' ')} ⟧ ⟦ ${bodyText(t, false)} ⟧`
+  + (alt.runs ? ` ( ${alt.runs} )` : '')
+  + `) ${t.binder}${toSuperscript(t.bytes)}`;
 
 export const demandsText = (t) => {
   const alts = demandsOf(t);
-  return alts ? alts.map((alt) => demandText(t, alt)).join(' ∨ ') : null;
+  return alts ? alts.map((alt) => demandText(t, alt)).join(' · ') : null;
 };
 
-// Set as marks, with one distinction doing real work: what the chain already
-// holds takes the gold, and what the address is still waiting for does not.
-// The same split the key's validator column keeps, and here it means a reader
-// can see at a glance which half of the line is a fact and which is a demand.
-const awaited = (name) => (name === '…'
-  ? `<span class="lam">…</span>`
-  : `<span class="aw">${escapeHtml(name)}</span>`);
+// Set as marks, with one distinction doing real work: what the address already
+// holds takes the gold, and what it is still waiting for does not. The same
+// split the key's validator column keeps, and here it means a reader can see at
+// a glance which half of the line is a fact and which is a demand.
+const awaited = (name) => `<span class="aw">${escapeHtml(name)}</span>`;
 
-export function demandsHtml(t) {
+const boundHtml = (t, name) => (name === '…' ? lam('…')
+  : name === t.binder ? dt(t)
+  : awaited(name));
+
+// `prose` is the argument's bytes said in the book's own tongue, and it lands
+// where an address keeps its payload: after the term, behind the mark that
+// gives its length. Withheld, the datum stays behind that mark -- the line is
+// still the right shape, it simply cannot be read back.
+export function demandsHtml(t, { prose = '' } = {}) {
   const alts = demandsOf(t);
   if (!alts) return null;
-  const body = (alt) => `${lam('λ')}${alt.awaits.map(awaited).join(' ')}${lam('.')} `
-    + alt.needs.map((need) => need.map((k) => (k.aw ? awaited(k.aw)
-      : k.datum ? dt(t) + count(t)
-      : `<span class="op">${escapeHtml(k.mark)}</span>`)).join(' ')).join(` ${lam('∧')} `);
-  return alts.map(body).join(` ${lam('∨')} `);
+  const name = (n) => boundHtml(t, n);
+  const line = (alt) => `${lam('(λ')}${alt.binders.map(name).join(' ')}${lam('.')} `
+    + `${lam('⟦')} ${alt.brings.map(name).join(' ')} ${lam('⟧')} `
+    + `${lam('⟦')} ${bodyHtml(t, false)} ${lam('⟧')}`
+    + (alt.runs ? ` ${lam('(')} ${name(alt.runs)} ${lam(')')}` : '')
+    + `${lam(')')} ${dt(t)}${count(t)}${prose ? ` ${prose}` : ''}`;
+  return alts.map(line).join(` ${lam('·')} `);
 }
 
 // ─── the pure form ───────────────────────────────────────────────────────

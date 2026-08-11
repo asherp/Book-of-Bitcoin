@@ -88,11 +88,14 @@ button:hover { background: var(--accent-2); }
    either, and what it is can be read straight off the bytes -- so it is, on
    every keystroke, before anything is clicked.
 
-   Above: what it awaits. The λ binds what a spend must bring, so the line says
-   what the address demands of whoever comes to move the coin, and what it
-   already holds stands as a constant inside it. Below: what the chain holds,
-   which is the script itself. Neither is derived from the other -- they are two
-   readings of one output, and the notation key's Scripts as terms group is
+   Above: the address as the partial application it is. The λ binds both
+   parties' key material -- the payee's datum, which this address already has,
+   and the payer's, which nobody has yet -- and the one argument written after
+   it is the payee's, said in the book's own tongue, standing where a base58 or
+   bech32 string spends its entropy. Below: what the chain holds, which is the
+   script itself. The two are one reduction apart, and only in one direction:
+   supply the rest of the arguments and the line above becomes the line below
+   with a spend in front of it. The notation key's Scripts as terms group is
    where the encoding's own β chain lives.
 
    Read still opens the place, as it always did. This says what the thing is;
@@ -116,11 +119,11 @@ button:hover { background: var(--accent-2); }
 .term-line .op-push { color: var(--meta); }
 .term-line .dt { color: var(--accent); font-style: normal; font-weight: 700; }
 .term-line .lam { color: var(--meta); }
-/* What the address awaits, above what the chain holds. One distinction does
-   the work: the gold is what the chain already has, and everything plain is
-   what the address is still waiting for a spend to bring -- the same split the
-   key's validator column keeps, and here it means a reader sees at a glance
-   which half of the line is a fact and which is a demand. */
+/* What the address holds and what it awaits, above what the chain holds. One
+   distinction does the work: the gold is what the address already has, and
+   everything plain is what it is still waiting for a spend to bring -- the same
+   split the key's validator column keeps, and here it means a reader sees at a
+   glance which half of the line is a fact and which is a demand. */
 .term-awaits { margin-bottom: 14px; }
 .term-line .aw { color: var(--ink); font-style: normal; }
 .term-note { margin:16px 0 0; font:400 13px/1.55 'Public Sans','Book Sigla',sans-serif; color:var(--meta); max-width:62ch; }
@@ -314,13 +317,19 @@ function drawTerm(hex, { address = null, at = '', say: sayFn = null, said = '' }
   // A term binds, or it does not, or the bytes are not a script at all. The
   // middle case is not an absence: there is always the script itself, and
   // setting it beats explaining why there was nothing to set.
-  // Two readings of one thing, and nothing between them: what the address is
-  // still waiting for, and what the chain is holding. They are not a
-  // derivation of each other -- a β between them would be a lie -- so the only
-  // thing that joins them is that they are about the same output.
+  // Two readings of one thing, one β apart: the address as a term with its own
+  // argument supplied and the payer's still bound, and what the chain is
+  // holding, which is that term's lock bracket once the argument has gone in.
+  // Nothing on the upper line is a mark the wire could not carry, which is what
+  // makes the reduction between them a claim rather than a picture.
+  // The address line carries its own datum, said: an address is a term with one
+  // argument supplied, and the argument is the thing a base58 or bech32 string
+  // spends its entropy on. Without the engine the mark stands alone, as it does
+  // everywhere else in the book.
+  const argument = t && sayFn ? sayFn(t.argument) || '' : '';
   const body = fault
     ? `<div class="term-said">${faultNote(fault)}</div>`
-    : (t ? `<div class="term-line term-awaits">${demandsHtml(t) || ''}</div>` : '')
+    : (t ? `<div class="term-line term-awaits">${demandsHtml(t, { prose: argument }) || ''}</div>` : '')
       + `<div class="term-line term-onchain" title="the same script in the book’s own hand — `
       + `this box takes it back">${spellHtml(hex, { say: sayFn }) || ''}</div>`
       + said;
