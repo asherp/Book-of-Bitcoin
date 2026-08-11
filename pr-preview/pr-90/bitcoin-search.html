@@ -146,7 +146,10 @@ button:hover { background: var(--accent-2); }
 }
 
 /* Worked examples beneath the card: each opens the page it cites, so the
-   citation forms are learned by using them rather than by reading a legend. */
+   citation forms are learned by using them rather than by reading a legend.
+   They answer "what can I type here?", so they stand while the box is empty
+   and step aside the moment it is not -- a reader who has begun has stopped
+   asking, and what the box now holds has something of its own to say. */
 .examples { margin-top: 28px; }
 .examples-title { font:600 10px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.16em; text-transform:uppercase; color:var(--meta); margin-bottom:4px; padding-left:2px; }
 .example { display:flex; align-items:baseline; gap:16px; padding:9px 2px; border-bottom:1px solid var(--hair); text-decoration:none; }
@@ -176,7 +179,7 @@ button:hover { background: var(--accent-2); }
 
   <section class="term" id="term" aria-live="polite" hidden></section>
 
-  <div class="examples">
+  <div class="examples" id="examples">
     <div class="examples-title">For example</div>
     <a class="example" href="./bitcoin-book.html?block=0"><span class="example-what">the Genesis block, by height</span><span class="example-form">0</span></a>
     <a class="example" href="./bitcoin-book.html?block=-1"><span class="example-what">the latest block — a negative height counts back from the chain tip</span><span class="example-form">-1</span></a>
@@ -218,6 +221,7 @@ import { termOfScript, demandsHtml, normalFormHtml } from './btc-term.js';
 import { spell, spellHtml, read, looksSpelled, isWholeScript, scriptFault } from './btc-address-form.js';
 const input = document.getElementById('block-input');
 const termEl = document.getElementById('term');
+const examplesEl = document.getElementById('examples');
 
 // The argument's bytes, said in the book's own tongue. Only the Glossia engine
 // can say them, and the engine is the WASM build (see README) -- absent from a
@@ -390,6 +394,7 @@ const hexish = (q) => /^(?:[0-9a-fA-F]{2})+$/.test(q) && !/^[0-9]+$/.test(q);
 let pending = null;
 function preview() {
   const q = input.value.trim();
+  examplesEl.hidden = q !== '';
   const found = classify(q);
   const asHex = found.kind !== 'address' && found.kind !== 'spelled' && hexish(q);
   if (found.kind !== 'address' && found.kind !== 'script' && found.kind !== 'spelled' && !asHex) {
