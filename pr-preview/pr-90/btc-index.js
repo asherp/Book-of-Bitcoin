@@ -480,31 +480,49 @@ function esploraTouches(txs, member) {
 // The bytes come off an output paying the member, or off a spent prevout where
 // the page's oldest transaction only drew from it -- esplora carries the
 // scriptPubKey on both, and both are the chain's own copy.
-// One page of esplora's newest-first history -> the oldest reference on it, or
-// { found: false }. Pure, so the reading that matters -- which record, and
-// where on it the bytes are -- is testable without a network.
+// One page of esplora's newest-first history -> what that page says about the
+// member's locking script. Pure, so the reading that matters is testable
+// without a network.
+//
+// An address is a name for exactly one scriptPubKey, so this is not a sample:
+// EVERY output paying the member on the page must carry the same bytes, and so
+// must every prevout its spends consumed. The page is already fetched, so
+// checking all of them costs nothing and catches what one sample cannot -- a
+// single anomalous output among many. `scripts` is what was actually found,
+// deduped; more than one entry means the chain does not agree with itself,
+// which should be impossible and is therefore worth saying out loud.
+//
+// A transaction returned by an address query need not pay the member at all:
+// a spend-only record touches it through the prevout it consumes, and on a
+// busy address those are the majority. Their prevout carries the same script,
+// so they count as references like any other -- and `earliest` falls back to
+// one when the page's oldest record only drew from the member.
 export function readWitness(page, member) {
   const whole = page.length < ESPLORA_PAGE;
   const confirmed = page.filter((t) => t?.status?.confirmed && t.status.block_height > 0);
   const byScript = !isAddress(member);
   const pays = (o) => (byScript ? o?.scriptpubkey === member : o?.scriptpubkey_address === member);
-  // Newest first, so the oldest record on the page is the last of them.
+  const scripts = new Set();
+  let outputs = 0, prevouts = 0, earliest = null;
+  // Newest first, so walking backwards reaches the oldest record last and the
+  // earliest reference is whatever it leaves behind.
   for (let i = confirmed.length - 1; i >= 0; i--) {
     const t = confirmed[i];
     const at = (t.vout || []).findIndex(pays);
-    if (at >= 0) {
-      return { found: true, whole, script: String(t.vout[at].scriptpubkey || '').toLowerCase(),
-               txid: t.txid, height: t.status.block_height, out: at };
+    (t.vout || []).forEach((o) => { if (pays(o)) { outputs++; scripts.add(String(o.scriptpubkey || '').toLowerCase()); } });
+    for (const v of t.vin || []) {
+      if (pays(v.prevout)) { prevouts++; scripts.add(String(v.prevout.scriptpubkey || '').toLowerCase()); }
     }
-    // A record that only DREW from the member carries the same bytes on the
-    // prevout it spent -- the chain's copy either way.
-    const spent = (t.vin || []).find((v) => pays(v.prevout));
-    if (spent) {
-      return { found: true, whole, script: String(spent.prevout.scriptpubkey || '').toLowerCase(),
-               txid: t.txid, height: t.status.block_height, out: null };
+    if (earliest === null && (at >= 0 || (t.vin || []).some((v) => pays(v.prevout)))) {
+      const spent = (t.vin || []).find((v) => pays(v.prevout));
+      earliest = {
+        script: String((at >= 0 ? t.vout[at] : spent.prevout).scriptpubkey || '').toLowerCase(),
+        txid: t.txid, height: t.status.block_height, out: at >= 0 ? at : null,
+      };
     }
   }
-  return { found: false, whole };
+  if (!earliest) return { found: false, whole, outputs: 0, prevouts: 0, scripts: [] };
+  return { found: true, whole, ...earliest, outputs, prevouts, scripts: [...scripts] };
 }
 
 export async function chainWitness(member) {
@@ -523,8 +541,16 @@ export async function chainWitness(member) {
 export function witnessVerdict(ours, witness) {
   if (!witness) return 'unreachable';
   if (!witness.found) return 'absent';
-  return witness.script === String(ours || '').toLowerCase() ? 'agrees' : 'differs';
+  const mine = String(ours || '').toLowerCase();
+  // Every reference on the page, not just the one cited: agreement means the
+  // chain wrote these bytes everywhere it named this member, and one odd
+  // output among fifty is exactly the thing a single sample would miss.
+  return witness.scripts.length === 1 && witness.scripts[0] === mine ? 'agrees' : 'differs';
 }
+
+// The reference on the page that disagrees, for a page that does.
+export const witnessDisagreement = (ours, witness) =>
+  (witness?.scripts ?? []).find((s) => s !== String(ours || '').toLowerCase()) ?? null;
 
 // The member's chain state -- confirmed balance and transaction count --
 // straight from its stats endpoint, no memory: the mapper reconciles
