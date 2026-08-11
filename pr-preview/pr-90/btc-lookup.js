@@ -29,19 +29,17 @@
 //                                     an address format needing no version byte
 //                                     and no table of patterns (btc-address-form.js)
 //   locking hex   76a914…88ac        a locking script, by its own bytes, bare:
-//                                     admitted when the bytes bind a term
-//                                     (btc-term.js) and so can be nothing else.
-//                                     No term is 32 bytes, which is what makes
-//                                     this safe beside a txid; none is short
-//                                     enough to read as a height either
-//   script        script:76a90088ac   the same, forced: the name of an output
-//                                     no address can write (a malformed or
-//                                     nonstandard script), and a ledger like an
-//                                     address is. Bytes that bind no term
-//                                     settle nothing on their own -- they can
-//                                     spell a height or a txid -- so the prefix
-//                                     is how a reader says which they meant,
-//                                     rather than the book guessing
+//                                     whole bytes that tokenize as a script and
+//                                     are not already something else here --
+//                                     see isWholeScript in btc-address-form.js,
+//                                     which excludes exactly two shapes, both
+//                                     of them another form of this grammar
+//   script        script:840000       the same, forced, and now only for the
+//                                     two shapes bare hex gives up: all-digit
+//                                     hex, which is how a height is written,
+//                                     and exactly 64 characters, which is an
+//                                     id. Nothing else needs it -- every script
+//                                     the book shelves reads bare
 //
 // Address recognition is injected rather than imported: the real test decodes
 // base58 and bech32 (isAddress in btc-index.js, the ledger's own machinery),
@@ -87,11 +85,10 @@ export function parseLookup(query, {
   if (isAddress(q)) return { kind: 'address', query: q, address: q };
   if (isAddress(q.toLowerCase())) return { kind: 'address', query: q, address: q.toLowerCase() };
   if (isScriptQuery(q)) return { kind: 'script', query: q, script: q.slice(7).toLowerCase() };
-  // Bare hex that IS a lock, which is not a guess: the recognizer binds it as a
-  // term or refuses, and no term's bytes can be read as a height or a
-  // transaction id -- the shortest is 23 bytes and none is the 32 an id takes.
-  // Anything the bytes do not settle keeps the script: prefix, which is what
-  // the prefix is for.
+  // Bare hex that is a whole script. Not a guess about what the reader meant:
+  // the two shapes this grammar already spends -- an all-digit height, a
+  // 64-character id -- are refused by the recognizer, and nothing else it takes
+  // can be read as hex at all.
   if (isLockingScript(q)) return { kind: 'script', query: q, script: q.toLowerCase() };
   // The book's own spelling of a script. It carries its bytes rather than
   // pointing at them, so what comes back is the text: reading it is the
