@@ -230,7 +230,7 @@ import { isAddress, addressScriptHex, chainWitness, witnessVerdict, witnessDisag
 import { reference, latinReference } from './btc-citation.js';
 import { parseLookup } from './btc-lookup.js';
 
-import { termOfScript, demandsHtml } from './btc-term.js';
+import { termOfScript, addressHtml, lockedMarks, lockBodyHtml } from './btc-term.js';
 import { spellHtml, read, looksSpelled, isWholeScript, scriptFault } from './btc-address-form.js';
 const input = document.getElementById('block-input');
 const termEl = document.getElementById('term');
@@ -331,11 +331,22 @@ function drawTerm(hex, { address = null, at = '', say: sayFn = null, said = '' }
   // spends its entropy on. Without the engine the mark stands alone, as it does
   // everywhere else in the book.
   const argument = t && sayFn ? sayFn(t.argument) || '' : '';
+  const script = `<span class="term-onchain" title="the same script in the book’s own hand — `
+    + `this box takes it back">${spellHtml(hex, { say: sayFn }) || ''}</span>`;
+  // The second rung, one line per way of opening the output. The first carries
+  // the spelled script, which is the copyable form and has to stay bare bytes:
+  // the binders sit outside that span, so a click takes the script and not the
+  // λ. A second alternative has nothing new to say about the datum, so it shows
+  // the lock's marks alone and lets the prose above stand for both.
+  const marks = t ? lockedMarks(t) : null;
+  const locked = marks
+    ? marks.map((m, i) => `<div class="term-line">${m.prefix} `
+        + (i === 0 ? script : lockBodyHtml(t)) + `${m.suffix}</div>`).join('')
+    : `<div class="term-line">${script}</div>`;
   const body = fault
     ? `<div class="term-said">${faultNote(fault)}</div>`
-    : (t ? `<div class="term-line term-awaits">${demandsHtml(t, { prose: argument }) || ''}</div>` : '')
-      + `<div class="term-line term-onchain" title="the same script in the book’s own hand — `
-      + `this box takes it back">${spellHtml(hex, { say: sayFn }) || ''}</div>`
+    : (t ? `<div class="term-line term-awaits">${addressHtml(t, { prose: argument })}</div>` : '')
+      + locked
       + said;
   termEl.innerHTML = head + body;
   termEl.hidden = false;
