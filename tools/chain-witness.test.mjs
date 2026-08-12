@@ -16,8 +16,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
+import { footnoteMark } from '../web/btc-citation.js';
 import { readWitness, witnessVerdict, witnessDisagreement, suppliedBy,
-         citeHref } from '../web/btc-index.js';
+         citeHref, footnoteNumberOf } from '../web/btc-index.js';
 
 const ADDR = '1Ross5Np5doy4ajF9iGXzgKaC2Q3Pwwxv';
 const SPK = '76a91404b11d2eb716291f33be29210ee5b2a161c071af88ac';
@@ -153,7 +154,7 @@ test('a lock is cited where it was written; its arguments where they were suppli
   const w = readWitness([spend(700000, 'open', 2), paid(600000, 'pay')], ADDR);
   assert.equal(w.txid, 'pay', 'the lock is cited where it was written');
   assert.equal(w.height, 600000);
-  assert.deepEqual(w.opened, { txid: 'open', height: 700000, in: 2, items: [] },
+  assert.deepEqual(w.opened, { txid: 'open', height: 700000, in: 2, wn: null, items: [] },
     'and its arguments where they were supplied, at the input that supplied them');
   // The first spend, not the last: a member opened twice is cited at the first.
   const twice = readWitness([spend(800000, 'later'), spend(700000, 'first'), paid(600000, 'pay')], ADDR);
@@ -194,4 +195,48 @@ test('a citation names the coordinate it was read from, not just the page', () =
   assert.equal(citeHref('abc'), 'bitcoin-book.html?txid=abc');
   // Zero is a coordinate, not an absence, on both sides.
   assert.match(citeHref('abc', 0, 0), /out=0&wit=0$/);
+});
+
+test('a witness reference is a letter, and only a witness has one', () => {
+  // The book raises a footnote for an input that carries witness data and for
+  // no other, numbered in input order — so the letter is read off the same vins
+  // rather than guessed, and a legacy input has no letter because it has no
+  // footnote. Not a gap in the citation: a coordinate that does not exist.
+  const wit = (items) => ({ witness: items });
+  const legacy = { scriptsig: '00' };
+  //          0        1              2        3
+  const vins = [legacy, wit(['aa']), legacy, wit(['bb'])];
+  assert.equal(footnoteNumberOf(vins, 0), null, 'a legacy input raises no footnote');
+  assert.equal(footnoteNumberOf(vins, 1), 1, 'the first witness is footnote a');
+  assert.equal(footnoteNumberOf(vins, 2), null);
+  assert.equal(footnoteNumberOf(vins, 3), 2, 'the second is b, counting footnotes not inputs');
+  assert.equal(footnoteNumberOf(vins, 9), null, 'no such input');
+  assert.equal(footnoteNumberOf(null, 0), null);
+  assert.equal(footnoteNumberOf([wit([])], 0), null, 'an empty witness is not one');
+  // The mark itself runs the book's own alphabet, which skips q and continues
+  // in bijective base-25 — a, b, … z, aa, ab.
+  assert.equal(footnoteMark(1), 'a');
+  assert.equal(footnoteMark(25), 'z');
+  assert.equal(footnoteMark(26), 'aa');
+  assert.equal(footnoteMark(27), 'ab');
+  assert.equal(footnoteMark(17), 'r', 'q is skipped, so the 17th letter is r');
+});
+
+test('the spend citation carries the footnote its witness raised', () => {
+  const SIG = '30' + '44'.repeat(70);
+  const opened = (vin) => readWitness([
+    { txid: 'open', status: { confirmed: true, block_height: 700000 },
+      vout: [{ scriptpubkey: 'ff', scriptpubkey_address: 'elsewhere' }], vin },
+    paid(600000, 'pay'),
+  ], ADDR).opened;
+  // Segwit: our input is the second witness-bearing one, so it is footnote b.
+  const w = opened([{ prevout: { scriptpubkey: 'ff' }, witness: [SIG] },
+    { prevout: { scriptpubkey: SPK, scriptpubkey_address: ADDR }, witness: [SIG, '02' + 'ab'.repeat(32)] }]);
+  assert.equal(w.in, 1);
+  assert.equal(w.wn, 2, 'the second footnote, whose mark is b');
+  assert.equal(footnoteMark(w.wn), 'b');
+  // Legacy: the same spend with a scriptSig raises no footnote at all.
+  const l = opened([{ prevout: { scriptpubkey: SPK, scriptpubkey_address: ADDR }, scriptsig: '47' + SIG }]);
+  assert.equal(l.wn, null);
+  assert.equal(l.items.length, 1, 'and its arguments are read all the same');
 });
