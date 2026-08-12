@@ -23,7 +23,7 @@ import assert from 'node:assert/strict';
 import { addressScriptHex } from '../web/btc-index.js';
 import { NOTATION_HTML } from '../web/btc-notation.js';
 import { OPCODE_SYMBOLS, OPCODE_NAMES, toSuperscript } from '../web/btc-sigla.js';
-import { TERMS, termOfScript, reduce, abstractionText, applicationText, normalFormText,
+import { TERMS, termOfScript, addressable, reduce, abstractionText, applicationText, normalFormText,
          pureForm, reducePure, pureText, pureApplicationText,
          lockText, lockApplicationText, demandsOf, addressText, addressHtml,
          lockedText, lockedHtml, lockedMarks, spendText } from '../web/btc-term.js';
@@ -50,7 +50,7 @@ test('every address form binds its term, and β gives back the script', () => {
     // the very bytes the address decodes to. Nothing about the string survives
     // the reduction -- base58 or bech32, the normal form is the same kind of
     // thing -- which is why the book prints this and not that.
-    assert.equal(reduce(t.term, t.argument), script, `${id} does not reduce to its script`);
+    assert.equal(reduce(t, t.argument), script, `${id} does not reduce to its script`);
   }
 });
 
@@ -70,15 +70,51 @@ test('the argument is the datum the address carries, and nothing else', () => {
   assert.equal(applicationText(tr), '(λp. ⟦ ① p ⟧) p³²');
 });
 
-test('a term is one abstraction over one datum, and refuses everything else', () => {
+test('a term is read off the script, however many holes it has', () => {
   const P = (n) => n.toString(16).padStart(2, '0') + 'ab'.repeat(n);
-  // Bare multisig: its λ takes m, n and n keys, so there is no single argument
-  // to bind -- the refusal the Addresses group turns into an argument for P2SH.
-  assert.equal(termOfScript('52' + P(33) + P(33) + P(33) + '53ae'), null);
-  assert.equal(termOfScript('6a' + P(8)), null, 'a data output binds nothing');
+  // A compressed key, shaped like one: the letter a push gets is the book's own
+  // reading of its bytes, so a test that fed it filler would be asking the
+  // renderer to guess.
+  const K = () => '21' + '02' + 'ab'.repeat(32);
+  // Bare multisig binds, and binds three keys -- the key's own terms table has
+  // always had a multisig row, and refusing it here made the module disagree
+  // with the book. What multisig has no business being is an ADDRESS, and that
+  // is a different predicate: one hole, not one term.
+  const ms = termOfScript('52' + K() + K() + K() + '53ae');
+  assert.equal(ms.holes.length, 3, 'three keys, three binders');
+  assert.deepEqual(ms.holes.map((h) => h.name), ['p₁', 'p₂', 'p₃'], 'a repeated letter is numbered');
+  assert.equal(addressText(ms), '(λp₁ p₂ p₃. ② p₁ p₂ p₃ ③ ◇) p₁³³ p₂³³ p₃³³');
+  assert.equal(addressable(ms), false, 'no address could carry three arguments');
+  // …and it reduces back, which is the whole warrant for reading a term off
+  // bytes rather than looking one up.
+  assert.equal(reduce(ms, ms.holes.map((h) => h.argument)), ms.script);
+  // A data output binds its blob. Its letter is d: neither a hash nor a key.
+  const data = termOfScript('6a' + P(8));
+  assert.equal(addressText(data), '(λd. ¶ d) d⁸');
+  assert.equal(addressable(data), true, 'one hole, though no address form takes it');
+  // A well-formed script the classifier does not know binds all the same: the
+  // term is read off the bytes, so recognition is not what makes one. What it
+  // lacks is a name, and it says so by having no id.
+  const odd = termOfScript('76a914' + 'ab'.repeat(20));
+  assert.equal(odd.id, null, 'no template claims these bytes');
+  assert.equal(addressText(odd), '(λh. ⧉ ⌖ h) h²⁰');
+  assert.equal(reduce(odd, odd.argument), odd.script);
+  assert.equal(lockedText(odd), null, 'and nothing is written down about what it awaits');
+  // What is still refused is what cannot be read at all.
   assert.equal(termOfScript(''), null);
-  assert.equal(termOfScript('76a914' + 'ab'.repeat(20)), null, 'a truncated lock is not a term');
-  assert.equal(termOfScript('deadbeef'), null, 'nor an unrecognised one');
+  assert.equal(termOfScript('76a914' + 'ab'.repeat(19)), null, 'a truncated push is not a term');
+  assert.equal(termOfScript('deadbeef'), null, 'nor bytes consensus never defined');
+  assert.equal(termOfScript('76a988ac'), null, 'nor a script with nothing to abstract over');
+});
+
+test('every address is one hole, and that is what makes it one', () => {
+  for (const [, address] of ADDRESSES) {
+    const t = termOfScript(addressScriptHex(address));
+    assert.equal(t.holes.length, 1, address);
+    assert.ok(addressable(t), address);
+    // The derived letter is the tabled one: both read the same bytes.
+    assert.equal(t.binder, TERMS[t.id].binder, `${address}'s binder`);
+  }
 });
 
 test('a bare key is a term too, and the reason it has no address is not that', () => {
@@ -222,7 +258,7 @@ test('what the address hands back is another λ, not a fragment', () => {
   for (const [, address] of ADDRESSES) {
     const t = termOfScript(addressScriptHex(address));
     const script = addressScriptHex(address);
-    assert.equal(reduce(t.term, t.argument), script, address);
+    assert.equal(reduce(t, t.argument), script, address);
     for (const line of lockedText(t)) {
       assert.ok(line.includes(bodyOf(t, true)), `${address}: rung two is not the lock`);
     }
@@ -250,7 +286,7 @@ test('the only opcode on a rung the lock does not own is the joint', () => {
   for (const id of Object.keys(TERMS)) {
     const bytes = TERMS[id].bytes ?? 65;
     const t = termOfScript(reduce(TERMS[id], 'ab'.repeat(bytes)));
-    const own = new Set(t.term.body.filter((c) => c !== null).map((c) => OPCODE_SYMBOLS[c]));
+    const own = new Set(t.body.filter((c) => c !== null).map((c) => OPCODE_SYMBOLS[c]));
     for (const line of [addressText(t), ...lockedText(t)]) {
       assert.ok(!line.includes(CAT), `${id} joins nothing on this rung`);
       for (const [code, glyph] of Object.entries(OPCODE_SYMBOLS)) {
@@ -267,7 +303,7 @@ test('the only opcode on a rung the lock does not own is the joint', () => {
 
 // The lock body as the rungs write it, from the term's own opcodes: bare on
 // rung one, where the count has not arrived, and counted below that.
-const bodyOf = (t, counted) => t.term.body
+const bodyOf = (t, counted) => t.body
   .map((code) => (code === null ? t.binder + (counted ? toSuperscript(t.bytes) : '')
     : OPCODE_SYMBOLS[code])).join(' ');
 
