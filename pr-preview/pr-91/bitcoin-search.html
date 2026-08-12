@@ -330,10 +330,16 @@ const faultNote = (f) => {
 const spendRung = (t, opened, sayFn) => {
   const brought = opened?.items?.length ? suppliedHtml(t, opened.items, { say: sayFn }) : null;
   if (!brought) return '';
-  const where = `<a href="${citeHref(opened.txid)}">${escapeHtml(reference(opened.height))}</a>`;
+  // The citation lands on the INPUT, not merely the transaction that holds it.
+  // These marks were read off one vin, and a spend can draw from many places at
+  // once -- a citation that stopped at the section would send a reader to a page
+  // and leave them to find which line the quote came from.
+  const where = `<a href="${citeHref(opened.txid, undefined, opened.in)}">`
+    + `${escapeHtml(reference(opened.height))}</a>`;
   return `<div class="term-line term-spend">${brought.html}</div>`
-    + `<div class="term-attrib"><span class="term-cite" title="the first spend of this `
-    + `output — the input that supplied what the lock was waiting for">—</span> ${where}</div>`;
+    + `<div class="term-attrib"><span class="term-cite" title="quoted from input `
+    + `${opened.in} of the first transaction to spend this output — the input that `
+    + `supplied what the lock was waiting for">—</span> ${where}</div>`;
 };
 
 function drawTerm(hex, { address = null, at = '', say: sayFn = null, said = '', opened = null } = {}) {
