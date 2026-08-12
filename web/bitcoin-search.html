@@ -119,10 +119,13 @@ button:hover { background: var(--accent-2); }
    means "the chain kept this". The joint is the case that has to be quiet: it
    is a real opcode's mark, and it is on the line precisely because it is the
    one step neither script performs. */
-.term-line .op { color: var(--accent); font-style: normal; }
-.term-line .op-push { color: var(--meta); }
+.term-line .op { color: var(--accent); font-style: normal; font-weight: 700; }
+/* The count is a push opcode -- on the wire a direct push IS its byte count --
+   so it takes the same gold and the same weight as any other byte, rather than
+   the quiet it wears elsewhere in the book as an annotation. */
+.term-line .op-push { color: var(--accent); font-weight: 700; }
 .term-line .dt { color: var(--accent); font-style: normal; font-weight: 700; }
-.term-line .lam { color: var(--meta); }
+.term-line .lam { color: var(--meta); font-weight: 400; }
 /* What the address holds and what it awaits, above what the chain holds. One
    distinction does the work: the gold is what the address already has, and
    everything plain is what it is still waiting for a spend to bring -- the same
