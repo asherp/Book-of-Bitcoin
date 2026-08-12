@@ -207,8 +207,14 @@ export function ledgerFor(list) {
 // opens by txid, and the book resolves its exact §section itself. An output
 // index deepens the landing (&out=N): the book brings that output to the
 // top, the same landing its own marginalia make.
-export const citeHref = (txid, out) =>
-  `bitcoin-book.html?txid=${txid}${out != null ? `&out=${out}` : ''}`;
+// A citation's URL: the transaction, and where in it. `out` names an output --
+// the coordinate a credit lands on -- and `wit` an input, which is where a
+// spend's own data lives. The book takes the input as a plain vin number and
+// resolves it to the footnote that carries it (landOnWitness), so nothing here
+// has to know which inputs got footnotes and which did not.
+export const citeHref = (txid, out, wit) =>
+  `bitcoin-book.html?txid=${txid}${out != null ? `&out=${out}` : ''}`
+  + `${wit != null ? `&wit=${wit}` : ''}`;
 
 // The address's scriptPubKey, as hex: its on-chain identity, and the exact
 // bytes the book Glossia-encodes wherever a chapter pays this address -- so a

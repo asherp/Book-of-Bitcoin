@@ -16,7 +16,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { readWitness, witnessVerdict, witnessDisagreement, suppliedBy } from '../web/btc-index.js';
+import { readWitness, witnessVerdict, witnessDisagreement, suppliedBy,
+         citeHref } from '../web/btc-index.js';
 
 const ADDR = '1Ross5Np5doy4ajF9iGXzgKaC2Q3Pwwxv';
 const SPK = '76a91404b11d2eb716291f33be29210ee5b2a161c071af88ac';
@@ -180,4 +181,17 @@ test('what a spending input brought, whichever way it carried it', () => {
   assert.deepEqual(suppliedBy({ scriptsig: '51' + '47' + SIG }), []);
   assert.deepEqual(suppliedBy({}), []);
   assert.deepEqual(suppliedBy({ scriptsig: '' }), []);
+});
+
+test('a citation names the coordinate it was read from, not just the page', () => {
+  // The two halves of a term are quoted from two different places, and a spend
+  // can draw from many inputs at once -- so a citation that stopped at the
+  // transaction would send a reader to a page and leave them to find the line.
+  // The book resolves an input by its plain vin number (landOnWitness), so
+  // nothing here has to know which inputs got footnotes and which did not.
+  assert.equal(citeHref('abc', 0), 'bitcoin-book.html?txid=abc&out=0');
+  assert.equal(citeHref('abc', undefined, 2), 'bitcoin-book.html?txid=abc&wit=2');
+  assert.equal(citeHref('abc'), 'bitcoin-book.html?txid=abc');
+  // Zero is a coordinate, not an absence, on both sides.
+  assert.match(citeHref('abc', 0, 0), /out=0&wit=0$/);
 });
