@@ -119,10 +119,20 @@ export function reduce(term, argumentHex) {
 // The other reading, and the one an address is actually FOR. Above, the λ binds
 // what the address carries -- its own committed datum, supplied when the
 // address was written -- and reducing gives the lock alone. Here the same term
-// is opened far enough to hold BOTH parties' key material: the payee's datum,
-// which the address already has, and the payer's, which nobody has yet.
+// is opened far enough to hold one party's key material at BOTH its moments:
+// the image the address publishes now, and the preimage and signature only its
+// author can produce later.
 //
 //   (λh s p. s p ⧺ ⧉ ⌖ h ≡ ∇) h²⁰ ridge amused garment … inmate
+//
+// One party, not two. h is ⌖p, and the lock's whole content is that the p a
+// spend brings is the p behind h (⌖ … ≡) and that the spender holds the scalar
+// behind it (∇) -- two clauses about one person. The payer never appears: they
+// transcribe someone else's h into an output and supply nothing to it, their
+// own keys going to their own inputs against their own prior locks. So an
+// address demands of its author alone, and ⧉ is there because no name survives
+// from the writing to the spending: the identity has to be re-established from
+// bytes.
 //
 // An address is that expression with exactly one argument supplied. The λ is
 // the shape; the prose after it is the argument -- the high-entropy half a
