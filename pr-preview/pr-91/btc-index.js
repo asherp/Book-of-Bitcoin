@@ -530,6 +530,20 @@ export function suppliedBy(vin) {
   } catch { return []; }
 }
 
+// Which footnote an input is, 1-based, or null for one that is not a footnote
+// at all. The book's rule, read off the same vins: a footnote is raised for an
+// input that carries witness data and for no other, numbered in input order
+// (bitcoin-book.html, where the reference mark is appended). So a legacy spend
+// has no letter to cite -- not a gap in the citation, but a coordinate that
+// does not exist, since there is no witness to have a footnote for.
+export function footnoteNumberOf(vins, index) {
+  const carries = (v) => Array.isArray(v?.witness) && v.witness.length > 0;
+  if (!Array.isArray(vins) || !carries(vins[index])) return null;
+  let n = 0;
+  for (let i = 0; i <= index; i++) if (carries(vins[i])) n++;
+  return n;
+}
+
 export function readWitness(page, member) {
   const whole = page.length < ESPLORA_PAGE;
   const confirmed = page.filter((t) => t?.status?.confirmed && t.status.block_height > 0);
@@ -554,7 +568,8 @@ export function readWitness(page, member) {
       scripts.add(String(v.prevout.scriptpubkey || '').toLowerCase());
       // The walk runs oldest to newest, so the first one seen is the first
       // spend -- set once, exactly as the earliest reference above is.
-      opened ??= { txid: t.txid, height: t.status.block_height, in: n, items: suppliedBy(v) };
+      opened ??= { txid: t.txid, height: t.status.block_height, in: n,
+        wn: footnoteNumberOf(t.vin, n), items: suppliedBy(v) };
     });
     if (earliest === null && (at >= 0 || (t.vin || []).some((v) => pays(v.prevout)))) {
       const spent = (t.vin || []).find((v) => pays(v.prevout));
