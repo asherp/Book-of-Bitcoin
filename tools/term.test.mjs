@@ -190,10 +190,11 @@ test('bare hex is a lock when the bytes settle it, and otherwise is not', () => 
 
 test('an address is its term with one argument supplied', () => {
   const of = (address) => demandsText(termOfScript(addressScriptHex(address)));
-  // The λ binds both parties' key material -- the payee's datum first, because
-  // that is the one argument the address itself carries, and the payer's after
-  // it, because nobody has it yet. What follows the term is the datum: the half
-  // of a base58 or bech32 string that is entropy rather than tag.
+  // The λ binds one party's key material at both its moments -- the image
+  // first, because that is the one argument the address itself carries, and the
+  // preimage and signature after it, because only its author can produce them
+  // and has not yet. What follows the term is that image: the half of a base58
+  // or bech32 string that is entropy rather than tag.
   assert.equal(of('1Ross5Np5doy4ajF9iGXzgKaC2Q3Pwwxv'),
     '(λh s p. s p ⧺ ⧉ ⌖ h ≡ ∇) h²⁰');
   assert.equal(of('bc1p5d7rjq7g6rdk2yhzks9smlaqtedr4dekq08ge8ztwac72sfr9rusxg3297'),

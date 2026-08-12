@@ -88,11 +88,12 @@ button:hover { background: var(--accent-2); }
    either, and what it is can be read straight off the bytes -- so it is, on
    every keystroke, before anything is clicked.
 
-   Above: the address as the partial application it is. The λ binds both
-   parties' key material -- the payee's datum, which this address already has,
-   and the payer's, which nobody has yet -- and the one argument written after
-   it is the payee's, said in the book's own tongue, standing where a base58 or
-   bech32 string spends its entropy. Below: what the chain holds, which is the
+   Above: the address as the partial application it is. The λ binds one party's
+   key material at both its moments -- the image this address already carries,
+   and the preimage and signature only its author can produce -- and the one
+   argument written after it is that image, said in the book's own tongue,
+   standing where a base58 or bech32 string spends its entropy. Not two people:
+   the payer transcribes an h and supplies nothing to it. Below: what the chain holds, which is the
    script itself. The two are one reduction apart, and only in one direction:
    supply the rest of the arguments and the line above becomes the line below
    with a spend in front of it. The notation key's Scripts as terms group is
@@ -320,10 +321,10 @@ function drawTerm(hex, { address = null, at = '', say: sayFn = null, said = '' }
   // A term binds, or it does not, or the bytes are not a script at all. The
   // middle case is not an absence: there is always the script itself, and
   // setting it beats explaining why there was nothing to set.
-  // Two readings of one thing, one β apart: the address as a term with its own
-  // argument supplied and the payer's still bound, and what the chain is
-  // holding, which is everything right of that term's ⧺ once the argument has
-  // gone in. The joint is the only mark above that the wire will not carry,
+  // Two readings of one thing, one β apart: the address as a term with its
+  // image supplied and what only its author can produce still bound, and what
+  // the chain is holding, which is everything right of that term's ⧺ once the
+  // argument has gone in. The joint is the only mark above that the wire will not carry,
   // which is what makes the reduction between them a claim and not a picture.
   // The address line carries its own datum, said: an address is a term with one
   // argument supplied, and the argument is the thing a base58 or bech32 string
