@@ -234,7 +234,7 @@ mountLangMenu();  // …with the Language item, which any page can now set
 // scan yields it, is normalized to the lowercase form the ledger queries with.
 import { isAddress, addressScriptHex, chainWitness, witnessVerdict, witnessDisagreement,
          chainFailureText, citeHref, sectionOfFetched } from './btc-index.js';
-import { reference, latinReference, footnoteMark } from './btc-citation.js';
+import { reference, latinReference, inputMark } from './btc-citation.js';
 import { parseLookup } from './btc-lookup.js';
 
 import { termOfScript, addressHtml, lockedMarks, lockBodyHtml, suppliedHtml } from './btc-term.js';
@@ -278,15 +278,14 @@ const escapeHtml = (s) => String(s)
 // chapter; the § is the transaction's place in its block, which costs one
 // merkle proof and is banked forever, so it arrives after the line is already
 // drawn and deepens it. Below the point the two halves part company, and the
-// grammar decides what may follow it: an output is a figure (§12.0) and a
-// witness is a letter (§42.c), which is the mark the book prints on the
-// footnote itself. A legacy spend carries no witness and so raises no footnote,
-// and there the citation really does stop at the section -- not a gap, but a
-// coordinate that does not exist.
-const cite = (height, section, { out = null, wn = null } = {}) => reference(height)
+// grammar decides what may follow it: an output is a figure (§12.0) and an
+// input is a letter, cased for what it carried -- §42.c a witness, §42.C a
+// scriptSig. Both name the same coordinate, because they are the same
+// coordinate: segwit moved where the data rides, not what an input supplies.
+const cite = (height, section, { out = null, mark = null } = {}) => reference(height)
   + (section != null ? ` §${section + 1}` : '')
   + (section != null && out != null ? `.${out}` : '')
-  + (section != null && wn != null ? `.${footnoteMark(wn)}` : '');
+  + (section != null && mark ? `.${inputMark(mark.n, mark.sig)}` : '');
 
 const chainMark = (verdict, witness, ours, section = null) => {
   if (verdict === 'unreachable') {
@@ -349,7 +348,7 @@ const spendRung = (t, opened, sayFn, section = null) => {
   // once -- a citation that stopped at the section would send a reader to a page
   // and leave them to find which line the quote came from.
   const where = `<a href="${citeHref(opened.txid, undefined, opened.in)}">`
-    + `${escapeHtml(cite(opened.height, section, { wn: opened.wn }))}</a>`;
+    + `${escapeHtml(cite(opened.height, section, { mark: opened.mark }))}</a>`;
   return `<div class="term-line term-spend">${brought.html}</div>`
     + `<div class="term-attrib"><span class="term-cite" title="quoted from input `
     + `${opened.in} of the first transaction to spend this output — the input that `
