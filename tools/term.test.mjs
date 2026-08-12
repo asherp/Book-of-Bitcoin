@@ -23,7 +23,7 @@ import assert from 'node:assert/strict';
 import { addressScriptHex } from '../web/btc-index.js';
 import { NOTATION_HTML } from '../web/btc-notation.js';
 import { OPCODE_SYMBOLS, OPCODE_NAMES, toSuperscript } from '../web/btc-sigla.js';
-import { TERMS, termOfScript, addressable, reduce, spendMarks, abstractionText, applicationText, normalFormText,
+import { TERMS, termOfScript, addressable, reduce, spendMarks, pathTaken, suppliedNames, suppliedHtml, abstractionText, applicationText, normalFormText,
          pureForm, reducePure, pureText, pureApplicationText,
          lockText, lockApplicationText, demandsOf, addressText, addressHtml,
          lockedText, lockedHtml, lockedMarks, spendText } from '../web/btc-term.js';
@@ -479,4 +479,64 @@ test('the module draws the terms the notation key draws', () => {
   }
   assert.deepEqual([...seen].sort(), Object.keys(TERMS).sort(),
     'every term the module knows should have a row in the key, and vice versa');
+});
+
+// ─── which path a spend took ─────────────────────────────────────────────
+
+const TR = 'bc1p5d7rjq7g6rdk2yhzks9smlaqtedr4dekq08ge8ztwac72sfr9rusxg3297';
+const SIG = '30' + '44'.repeat(70);            // 71 bytes, DER-shaped
+const KEY = '02' + 'ab'.repeat(32);            // 33 bytes, compressed
+const SCHNORR = 'ab'.repeat(64);
+
+test('the term keeps every way in; the spend quotes the one taken', () => {
+  // An unspent taproot output really can be opened either way, so rung two
+  // keeps both. What the chain has a record of is one of them, and which is
+  // read off the count rather than guessed: consensus's own rule is that
+  // exactly one witness item is the key path.
+  const tr = termOfScript(addressScriptHex(TR));
+  assert.equal(lockedText(tr).length, 2, 'the lock admits two paths');
+  assert.equal(pathTaken(tr, [SCHNORR]), 0, 'one item is the key path');
+  assert.equal(pathTaken(tr, [SIG, '51' + KEY + 'ac', 'c0' + 'ab'.repeat(32)]), 1,
+    'a leaf and its proof is the script path');
+  // The wrapped forms generalize it: an alternative handing a script back takes
+  // at least its binders and however many more that script wants.
+  const sh = termOfScript(addressScriptHex('3J98t1WpEZ73CNmQviecrnyiWrnqRhWNLy'));
+  assert.equal(pathTaken(sh, [SIG, SIG, '52' + KEY + '51ae']), 0, 'the only path, at any depth');
+  // Nothing brought is nothing to read.
+  assert.equal(pathTaken(termOfScript(addressScriptHex(TR)), []), null);
+  assert.equal(pathTaken(termOfScript('76a914' + 'ab'.repeat(20)), [SIG]), null,
+    'a term with nothing written down about its paths chooses none');
+});
+
+test('the values a spend brought are named by the term, from the top down', () => {
+  const p2pkh = termOfScript(addressScriptHex('1Ross5Np5doy4ajF9iGXzgKaC2Q3Pwwxv'));
+  assert.deepEqual(suppliedNames(demandsOf(p2pkh)[0], [SIG, KEY]), ['s', 'p']);
+  // A wrapped form's script rides on top, so its binder names the LAST item and
+  // what stands before it is whatever that script wanted -- which the term
+  // above never knew, so those keep the book's ordinary reading of a push.
+  const sh = termOfScript(addressScriptHex('3J98t1WpEZ73CNmQviecrnyiWrnqRhWNLy'));
+  assert.deepEqual(suppliedNames(demandsOf(sh)[0], [SIG, SIG, '52' + KEY + '51ae']),
+    ['s', 's', 'r'], 'the redeem script is r; its own arguments are read as what they look like');
+  // Taproot's script path names the last two, leaf then proof.
+  const tr = termOfScript(addressScriptHex(TR));
+  assert.deepEqual(suppliedNames(demandsOf(tr)[1], [SIG, '51' + KEY + 'ac', 'c0' + 'ab'.repeat(32)]),
+    ['s', 't', 'c']);
+});
+
+test('the spend rung is written from the chain, marks counts and prose', () => {
+  const strip = (html) => html.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+  const t = termOfScript(addressScriptHex('1Ross5Np5doy4ajF9iGXzgKaC2Q3Pwwxv'));
+  const got = suppliedHtml(t, [SIG, KEY]);
+  assert.equal(got.which, 0);
+  assert.equal(strip(got.html), 's⁷¹ p³³ ⧺ ⧉ ⌖ h²⁰ ≡ ∇');
+  // The prose rides behind each mark, as a push's prose does in every chapter.
+  const said = suppliedHtml(t, [SIG, KEY], { say: (hex) => (hex === KEY ? 'ridge amused' : 'sworn') });
+  assert.equal(strip(said.html), 's⁷¹ sworn p³³ ridge amused ⧺ ⧉ ⌖ h²⁰ ≡ ∇');
+  // Taproot writes whichever path it was, and says which.
+  const tr = termOfScript(addressScriptHex(TR));
+  assert.equal(strip(suppliedHtml(tr, [SCHNORR]).html), 's⁶⁴ ⧺ ① p³²');
+  const leaf = suppliedHtml(tr, [SIG, '51' + KEY + 'ac', 'c0' + 'ab'.repeat(32)]);
+  assert.equal(leaf.which, 1);
+  assert.equal(strip(leaf.html), 's⁷¹ t³⁵ c³³ ⧺ ① p³² ( t )');
+  assert.equal(suppliedHtml(t, []), null, 'nothing brought, nothing to write');
 });

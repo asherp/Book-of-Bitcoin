@@ -237,7 +237,7 @@ import { isAddress, addressScriptHex, chainWitness, witnessVerdict, witnessDisag
 import { reference, latinReference } from './btc-citation.js';
 import { parseLookup } from './btc-lookup.js';
 
-import { termOfScript, addressHtml, lockedMarks, lockBodyHtml, spendMarks } from './btc-term.js';
+import { termOfScript, addressHtml, lockedMarks, lockBodyHtml, suppliedHtml } from './btc-term.js';
 import { spellHtml, read, looksSpelled, isWholeScript, scriptFault } from './btc-address-form.js';
 const input = document.getElementById('block-input');
 const termEl = document.getElementById('term');
@@ -322,17 +322,16 @@ const faultNote = (f) => {
 
 // The third rung, and the only one whose content this page cannot compute. A
 // lock is bytes, so the chain can be asked for them; what satisfies a lock is
-// not in the address and no reduction reaches it, so the shape is all that can
-// be written and the citation beside it supplies the rest -- go and read what
-// was actually brought. Drawn only where the chain reports a spend, and only
-// where the output had one way to open it: with two, which path was taken is in
-// the witness, and this page has not read it. Guessing is the thing this whole
-// leaf exists not to do.
-const spendRung = (t, opened) => {
-  const marks = spendMarks(t);
-  if (!marks || marks.length !== 1 || !opened) return '';
+// not in the address and no reduction reaches it, so it is read off the input
+// that supplied it. Which is also what settles taproot: the lock keeps both its
+// paths above, because an unspent output really can be opened either way, and
+// this line is the one the chain has a record of. Consensus's own rule picks it
+// -- exactly one witness item is the key path -- so nothing here is a guess.
+const spendRung = (t, opened, sayFn) => {
+  const brought = opened?.items?.length ? suppliedHtml(t, opened.items, { say: sayFn }) : null;
+  if (!brought) return '';
   const where = `<a href="${citeHref(opened.txid)}">${escapeHtml(reference(opened.height))}</a>`;
-  return `<div class="term-line term-spend">${marks[0].prefix} ${lockBodyHtml(t)}${marks[0].suffix}</div>`
+  return `<div class="term-line term-spend">${brought.html}</div>`
     + `<div class="term-attrib"><span class="term-cite" title="the first spend of this `
     + `output — the input that supplied what the lock was waiting for">—</span> ${where}</div>`;
 };
@@ -372,7 +371,7 @@ function drawTerm(hex, { address = null, at = '', say: sayFn = null, said = '', 
     : (t ? `<div class="term-line term-awaits">${addressHtml(t, { prose: argument })}</div>` : '')
       + locked
       + said
-      + (t ? spendRung(t, opened) : '');
+      + (t ? spendRung(t, opened, sayFn) : '');
   termEl.innerHTML = head + body;
   termEl.hidden = false;
   termEl.dataset.at = at;

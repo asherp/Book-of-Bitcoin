@@ -22,6 +22,7 @@ import { INDEXED as CURATED } from './btc-index-data.js';
 import { usdOn } from './btc-price.js';
 import { amountUnit, ownUnit, groupDigits, formatValuation } from './btc-amounts.js';
 import { pathSegments } from './btc-path.js';
+import { tokenizeScript } from './btc-tx.js';
 
 // A loose shape test for the address forms the chain has used: base58 P2PKH
 // ('1…') and P2SH ('3…'), and bech32/bech32m ('bc1…', matched lowercase --
@@ -497,6 +498,32 @@ function esploraTouches(txs, member) {
 // busy address those are the majority. Their prevout carries the same script,
 // so they count as references like any other -- and `earliest` falls back to
 // one when the page's oldest record only drew from the member.
+// What a spending input actually brought, as a list of pushed values in the
+// order the spender wrote them. Segwit carries them as a witness stack and
+// legacy as a scriptSig, which is a script whose every token is a push -- two
+// spellings of one thing, and the term above them does not care which.
+//
+// Taproot's annex, if there is one, is dropped: it rides last, is flagged by a
+// leading 0x50, is never an argument to the script, and BIP341 excludes it from
+// the count that decides key path from script path. Keeping it would make a
+// key-path spend look like a script-path one.
+export function suppliedBy(vin) {
+  const witness = Array.isArray(vin?.witness) ? vin.witness.map((w) => String(w).toLowerCase()) : [];
+  if (witness.length) {
+    const last = witness[witness.length - 1];
+    return witness.length >= 2 && last.startsWith('50') ? witness.slice(0, -1) : witness;
+  }
+  const sig = String(vin?.scriptsig || '').toLowerCase();
+  if (!sig) return [];
+  try {
+    const toks = tokenizeScript(sig);
+    // A scriptSig that is not pushes end to end is not a list of arguments, and
+    // saying what it brought would mean guessing which tokens were which.
+    if (!toks.length || toks.some((tk) => tk.push === undefined)) return [];
+    return toks.map((tk) => tk.push.toLowerCase());
+  } catch { return []; }
+}
+
 export function readWitness(page, member) {
   const whole = page.length < ESPLORA_PAGE;
   const confirmed = page.filter((t) => t?.status?.confirmed && t.status.block_height > 0);
@@ -521,7 +548,7 @@ export function readWitness(page, member) {
       scripts.add(String(v.prevout.scriptpubkey || '').toLowerCase());
       // The walk runs oldest to newest, so the first one seen is the first
       // spend -- set once, exactly as the earliest reference above is.
-      opened ??= { txid: t.txid, height: t.status.block_height, in: n };
+      opened ??= { txid: t.txid, height: t.status.block_height, in: n, items: suppliedBy(v) };
     });
     if (earliest === null && (at >= 0 || (t.vin || []).some((v) => pays(v.prevout)))) {
       const spent = (t.vin || []).find((v) => pays(v.prevout));
