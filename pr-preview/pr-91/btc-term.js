@@ -167,28 +167,33 @@ export function reduce(term, argumentHex) {
 // Two things fall out that the committed-datum reading hides. P2PKH and P2WPKH
 // ask for the same key material in the same order -- segwit moved where a
 // witness rides, not what is asked for -- while the locks it rides against are
-// not the same script at all. And P2SH and P2WSH cannot say what they want: the
-// spend opens on `…`, whatever the redeem script requires, which the address
-// does not know and cannot know. Not a datum hidden behind a hash, but a
-// REQUIREMENT hidden behind one.
+// not the same script at all. And the wrapped forms cannot say what they want,
+// which the structure now states rather than gestures at: a lock ending in
+// ( r ) hands back a function, and how many arguments THAT one takes is a
+// property of a script the address has never seen. Not a datum hidden behind a
+// hash, but a REQUIREMENT hidden behind one -- and an arity is exactly the
+// thing an unapplied function is already unable to promise. An earlier draft
+// wrote a `…` binder for this. It was a hand-wave where the term was already
+// telling the truth, and it cost taproot's script path an invented `s`, as if
+// every leaf wanted a signature.
 //
 // A reading, not an encoding. These are written down per term, because deriving
 // them from arbitrary bytes is symbolic execution and undecidable in general;
-// the sigla spelling stays the invertible form. `brings` is the spend in the
-// order the spender pushes it -- a wrapped form's script rides on top, so it
-// comes last -- and `runs` is what the lock then hands back to be run, the one
-// step ( ) exists for and the only thing on the line that is neither a spend
-// nor a lock.
+// the sigla spelling stays the invertible form. `brings` is what the lock is a
+// function of, in the order the spender pushes it -- a wrapped form's script
+// rides on top, so it comes last -- and `runs` is what the lock then hands back
+// to be run, the one step ( ) exists for and the only thing on a line that is
+// neither a spend nor a lock.
 const DEMANDS = {
   p2pk:   [{ brings: 's' }],
   p2pkh:  [{ brings: 's p' }],
-  p2sh:   [{ brings: '… r', runs: 'r' }],
+  p2sh:   [{ brings: 'r', runs: 'r' }],
   p2wpkh: [{ brings: 's p' }],
-  p2wsh:  [{ brings: '… w', runs: 'w' }],
+  p2wsh:  [{ brings: 'w', runs: 'w' }],
   // Taproot asks for one of two things, which is the whole of what a taptree
   // buys: a signature under the output key, or a leaf that proves to it.
   p2tr:   [{ brings: 's' },
-           { brings: 's t c', runs: 't' }],
+           { brings: 't c', runs: 't' }],
 };
 
 // What the lock, once written, is still a function of -- or null for a term
@@ -240,8 +245,7 @@ export const spendText = (t) => {
 // gold, and what it is still waiting for does not. The same split the key's
 // validator column keeps, and here it means a reader sees at a glance which
 // half of a line is a fact and which is a demand.
-const awaited = (name) => (name === '…' ? lam('…')
-  : `<span class="aw">${escapeHtml(name)}</span>`);
+const awaited = (name) => `<span class="aw">${escapeHtml(name)}</span>`;
 
 // `prose` is the argument's bytes said in the book's own tongue, and it lands
 // where an address keeps its payload: after the term, behind the mark that
