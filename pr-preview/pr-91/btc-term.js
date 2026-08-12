@@ -102,7 +102,9 @@ const TERM_OF_ROW = { 'p2tr-key': 'p2tr', 'p2tr-script': 'p2tr' };
 // a push that claims more than remains, an opcode consensus never defined (the
 // alphabet has no mark for it, so no line could be drawn), or a script with no
 // push at all, which abstracts over nothing.
-const TITLES = { h: 'hash', p: 'public key', d: 'data' };
+const TITLES = { h: 'hash', p: 'public key', d: 'data',
+  s: 'signature', r: 'redeem script', w: 'witness script', t: 'tapscript leaf',
+  c: 'control block — the leaf’s proof to the output key' };
 
 export function termOfScript(scriptHex) {
   let toks;
@@ -341,6 +343,100 @@ export function lockedMarks(t) {
     suffix: alt.runs ? ` ${lam('(')} ${awaited(alt.runs)} ${lam(')')}` : '',
   }));
 }
+
+// ─── which path a spend took ─────────────────────────────────────────────
+//
+// A term encodes every way its output can be opened; a spend quotes one. Rung
+// two keeps them all, because they are all still true of the lock -- an unspent
+// taproot output really can be opened either way -- and rung three shows the
+// one the chain has a record of.
+//
+// Which one is read off the count of what was brought, not guessed. Taproot's
+// rule is consensus's own: exactly one witness item is the key path, and
+// anything else is a leaf and its proof. The wrapped forms generalize it -- an
+// alternative that hands a script back takes at least its own binders and
+// however many more that script wants, so it matches on `at least`, while an
+// alternative that hands nothing back must match exactly.
+export function pathTaken(t, items) {
+  const alts = demandsOf(t);
+  if (!alts || !Array.isArray(items) || !items.length) return null;
+  const exact = alts.findIndex((alt) => !alt.runs && alt.brings.length === items.length);
+  if (exact >= 0) return exact;
+  let best = -1;
+  alts.forEach((alt, i) => {
+    if (!alt.runs || alt.brings.length > items.length) return;
+    if (best < 0 || alt.brings.length > alts[best].brings.length) best = i;
+  });
+  return best < 0 ? null : best;
+}
+
+// The values a spend brought, named by the term rather than by their bytes.
+// The binders align to the END of the list, because a wrapped form's script
+// rides on top and its own arguments go underneath: w names the last item, and
+// what stands before it is whatever that script wanted, which the term above
+// never knew. Those leading values keep the book's ordinary reading of a push.
+const SIG_MIN = 68, SIG_MAX = 73;
+const suppliedLetter = (hex) => {
+  const shaped = dataLetter(hex, null);
+  if (shaped === 'p') return 'p';
+  const n = hex.length / 2;
+  // A DER signature, or a Schnorr one with or without its sighash byte.
+  if ((hex.startsWith('30') && n >= SIG_MIN && n <= SIG_MAX) || n === 64 || n === 65) return 's';
+  return shaped || 'd';
+};
+
+export function suppliedNames(alt, items) {
+  const names = items.map(suppliedLetter);
+  const from = items.length - alt.brings.length;
+  alt.brings.forEach((name, i) => { if (from + i >= 0) names[from + i] = name; });
+  return names;
+}
+
+// The third rung as marks. It is drawn only where the chain says it happened,
+// because that is the only way anyone can know it: s and p are not in the
+// address and no reduction reaches them, so the shape is all this page can
+// write and the citation beside it is what supplies the rest.
+export function spendMarks(t) {
+  const alts = demandsOf(t);
+  if (!alts) return null;
+  return alts.map((alt) => ({
+    prefix: `${alt.brings.map(awaited).join(' ')} ${cat()}`,
+    suffix: alt.runs ? ` ${lam('(')} ${awaited(alt.runs)} ${lam(')')}` : '',
+  }));
+}
+
+// …and with the values in hand, the same rung written out: each one a mark, its
+// byte count and — where an engine has said it — its prose, exactly as a push
+// is set everywhere else in the book. This is the one line on the leaf whose
+// content came from the chain rather than from the bytes in the box.
+export function suppliedHtml(t, items, { say = null } = {}) {
+  const which = pathTaken(t, items);
+  if (which === null) return null;
+  const alt = demandsOf(t)[which];
+  const names = suppliedNames(alt, items);
+  // These take the gold. On the rungs above, a name in plain ink is something
+  // no one has brought yet; here the chain has a record of it, cited on the
+  // line below, so it is as much a fact as the lock beside it. What separates
+  // them is the joint, not the colour -- they are two scripts, both written.
+  const brought = items.map((hex, i) => {
+    const prose = say ? say(hex) || '' : '';
+    return `<span class="dt" title="${escapeHtml(TITLES[names[i][0]] ?? 'data')}">`
+      + `${escapeHtml(names[i])}</span>`
+      + `<span class="op op-push" title="a push of ${hex.length / 2} bytes">`
+      + `${toSuperscript(hex.length / 2)}</span>${prose ? ` ${prose}` : ''}`;
+  }).join(' ');
+  return {
+    which,
+    html: `${brought} ${cat()} ${bodyHtml(t, true)}`
+      + (alt.runs ? ` ${lam('(')} <span class="dt">${escapeHtml(alt.runs)}</span> ${lam(')')}` : ''),
+  };
+}
+
+// The joint takes the quiet colour, not the gold: it is the step between the
+// two scripts and not a byte either of them holds -- which is also why it can
+// be a disabled opcode's mark without the line claiming a disabled opcode.
+const cat = () => `<span class="lam" title="${escapeHtml(OPCODE_NAMES[0x7e])} — the arguments `
+  + `applied, which a stack machine writes as their pushes ahead of the code">${escapeHtml(CAT)}</span>`;
 
 // The lock's own marks, with no prose and nothing copyable about them: what a
 // second alternative shows, since the datum has already been said once above.

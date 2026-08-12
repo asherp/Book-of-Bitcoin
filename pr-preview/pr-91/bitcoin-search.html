@@ -144,6 +144,10 @@ button:hover { background: var(--accent-2); }
    answers have no source to name, so they keep their marks -- ∅ is empty, ⋯ is
    not yet knowable, ☒ is invalid -- and what each one means is in its hover,
    which is where this book keeps a claim about a claim. */
+/* The spend stands apart from the lock's own citation, because it is a
+   different claim about a different transaction: not where these bytes were
+   written, but where somebody satisfied them. */
+.term-spend { margin-top: 18px; }
 .term-attrib { margin:10px 0 0; text-align:right; font:400 15px/1.7 'Newsreader','Book Sigla',serif; color:var(--meta); }
 /* A diagnosis is not an attribution: bytes that are not a script name no place,
    so what is wrong with them stays on the left where reading begins. */
@@ -233,7 +237,7 @@ import { isAddress, addressScriptHex, chainWitness, witnessVerdict, witnessDisag
 import { reference, latinReference } from './btc-citation.js';
 import { parseLookup } from './btc-lookup.js';
 
-import { termOfScript, addressHtml, lockedMarks, lockBodyHtml } from './btc-term.js';
+import { termOfScript, addressHtml, lockedMarks, lockBodyHtml, suppliedHtml } from './btc-term.js';
 import { spellHtml, read, looksSpelled, isWholeScript, scriptFault } from './btc-address-form.js';
 const input = document.getElementById('block-input');
 const termEl = document.getElementById('term');
@@ -316,7 +320,23 @@ const faultNote = (f) => {
   return '<span class="term-check term-check-differs">☒</span> not whole bytes';
 };
 
-function drawTerm(hex, { address = null, at = '', say: sayFn = null, said = '' } = {}) {
+// The third rung, and the only one whose content this page cannot compute. A
+// lock is bytes, so the chain can be asked for them; what satisfies a lock is
+// not in the address and no reduction reaches it, so it is read off the input
+// that supplied it. Which is also what settles taproot: the lock keeps both its
+// paths above, because an unspent output really can be opened either way, and
+// this line is the one the chain has a record of. Consensus's own rule picks it
+// -- exactly one witness item is the key path -- so nothing here is a guess.
+const spendRung = (t, opened, sayFn) => {
+  const brought = opened?.items?.length ? suppliedHtml(t, opened.items, { say: sayFn }) : null;
+  if (!brought) return '';
+  const where = `<a href="${citeHref(opened.txid)}">${escapeHtml(reference(opened.height))}</a>`;
+  return `<div class="term-line term-spend">${brought.html}</div>`
+    + `<div class="term-attrib"><span class="term-cite" title="the first spend of this `
+    + `output — the input that supplied what the lock was waiting for">—</span> ${where}</div>`;
+};
+
+function drawTerm(hex, { address = null, at = '', say: sayFn = null, said = '', opened = null } = {}) {
   const fault = scriptFault(hex);
   const t = fault ? null : termOfScript(hex);
   const head = `<div class="term-head"><span class="term-kind">${t ? escapeHtml(t.label) : 'Script'}</span>`
@@ -350,7 +370,8 @@ function drawTerm(hex, { address = null, at = '', say: sayFn = null, said = '' }
     ? `<div class="term-said">${faultNote(fault)}</div>`
     : (t ? `<div class="term-line term-awaits">${addressHtml(t, { prose: argument })}</div>` : '')
       + locked
-      + said;
+      + said
+      + (t ? spendRung(t, opened, sayFn) : '');
   termEl.innerHTML = head + body;
   termEl.hidden = false;
   termEl.dataset.at = at;
@@ -370,7 +391,8 @@ async function enrichTerm(hex, { address = null, at = '' } = {}) {
   if (!still()) return;
   const verdict = witnessVerdict(hex, witness);
   drawTerm(hex, { address, at, say: sayFn,
-    said: `<div class="term-attrib">${chainMark(verdict, witness, hex)}</div>` });
+    said: `<div class="term-attrib">${chainMark(verdict, witness, hex)}</div>`,
+    opened: witness?.opened ?? null });
 }
 
 // The book's own spelling, read back. It carries its bytes rather than pointing
