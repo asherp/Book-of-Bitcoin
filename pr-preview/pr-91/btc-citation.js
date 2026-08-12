@@ -235,9 +235,16 @@ export function expectedReference(height) {
 // A witness footnote is lettered the way a book letters its notes — a, b, c
 // — not numbered, so a superscript mark never reads as arithmetic beside the
 // numerals the prose is full of (push counts, amounts, indices). The
-// alphabet omits q: at superscript size, and in the serif the book sets, a
-// q is too near a g, and a footnote mark is the one glyph a reader must
-// identify at a glance to find its note.
+// alphabet omits q because Unicode has no raised q: the modifier letters
+// cover every other lowercase letter and stop at that one, so the run below
+// is exactly the letters a mark CAN be set in. This book raises things as
+// characters rather than as styling wherever it can — h²⁰, p³³, ⁿ — and a
+// mark that had no character would have to be an exception to that.
+//
+// (An earlier comment here said q was dropped for looking too near a g. It
+// reads plausibly and it is not the reason: g and q are not the pair a serif
+// confuses, and no shape judgement would land on exactly the 25 letters
+// Unicode happens to raise. tools/chain-witness.test.mjs pins the real one.)
 //
 // That leaves 25 letters, and the run continues in bijective base-25 —
 // aa after z, aaa after zz — the same scheme a spreadsheet letters its
