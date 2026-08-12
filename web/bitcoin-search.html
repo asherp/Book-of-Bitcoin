@@ -233,7 +233,7 @@ mountLangMenu();  // …with the Language item, which any page can now set
 // ledger's own (isAddress decodes base58 and bech32); uppercase bech32, as a QR
 // scan yields it, is normalized to the lowercase form the ledger queries with.
 import { isAddress, addressScriptHex, chainWitness, witnessVerdict, witnessDisagreement,
-         chainFailureText, citeHref } from './btc-index.js';
+         chainFailureText, citeHref, sectionOfFetched } from './btc-index.js';
 import { reference, latinReference } from './btc-citation.js';
 import { parseLookup } from './btc-lookup.js';
 
@@ -274,7 +274,16 @@ const escapeHtml = (s) => String(s)
 // nowhere and no place can be named, what it says instead. Everything on the
 // leaf up to here is derived from the bytes in hand; this is the one line that
 // went and asked.
-const chainMark = (verdict, witness, ours) => {
+// A citation to the depth this page can actually name. reference() reaches the
+// chapter; the § is the transaction's place in its block, which costs one
+// merkle proof and is banked forever, so it arrives after the line is already
+// drawn and deepens it. Below the point the two halves part company, and the
+// ledger's own rule decides: an output is a coordinate (§12.0), a departure
+// through an input is not, so a spend's citation stops at the section.
+const cite = (height, section, out) => reference(height)
+  + (section != null ? ` §${section + 1}${out != null ? `.${out}` : ''}` : '');
+
+const chainMark = (verdict, witness, ours, section = null) => {
   if (verdict === 'unreachable') {
     return `<span class="term-check term-check-said" title="the chain could not be asked — `
       + `${escapeHtml(chainFailureText())}">⋯</span>`;
@@ -283,7 +292,7 @@ const chainMark = (verdict, witness, ours) => {
     return '<span class="term-check term-check-said" title="no confirmed output on chain carries '
       + 'this script yet">∅</span>';
   }
-  const at = reference(witness.height);
+  const at = cite(witness.height, section, witness.out);
   const n = witness.outputs + witness.prevouts;
   const where = `<a href="${citeHref(witness.txid, witness.out ?? undefined)}">${escapeHtml(at)}</a>`;
   if (verdict === 'differs') {
@@ -327,7 +336,7 @@ const faultNote = (f) => {
 // paths above, because an unspent output really can be opened either way, and
 // this line is the one the chain has a record of. Consensus's own rule picks it
 // -- exactly one witness item is the key path -- so nothing here is a guess.
-const spendRung = (t, opened, sayFn) => {
+const spendRung = (t, opened, sayFn, section = null) => {
   const brought = opened?.items?.length ? suppliedHtml(t, opened.items, { say: sayFn }) : null;
   if (!brought) return '';
   // The citation lands on the INPUT, not merely the transaction that holds it.
@@ -335,14 +344,15 @@ const spendRung = (t, opened, sayFn) => {
   // once -- a citation that stopped at the section would send a reader to a page
   // and leave them to find which line the quote came from.
   const where = `<a href="${citeHref(opened.txid, undefined, opened.in)}">`
-    + `${escapeHtml(reference(opened.height))}</a>`;
+    + `${escapeHtml(cite(opened.height, section))}</a>`;
   return `<div class="term-line term-spend">${brought.html}</div>`
     + `<div class="term-attrib"><span class="term-cite" title="quoted from input `
     + `${opened.in} of the first transaction to spend this output — the input that `
     + `supplied what the lock was waiting for">—</span> ${where}</div>`;
 };
 
-function drawTerm(hex, { address = null, at = '', say: sayFn = null, said = '', opened = null } = {}) {
+function drawTerm(hex, { address = null, at = '', say: sayFn = null, said = '',
+                        opened = null, spendSection = null } = {}) {
   const fault = scriptFault(hex);
   const t = fault ? null : termOfScript(hex);
   const head = `<div class="term-head"><span class="term-kind">${t ? escapeHtml(t.label) : 'Script'}</span>`
@@ -377,7 +387,7 @@ function drawTerm(hex, { address = null, at = '', say: sayFn = null, said = '', 
     : (t ? `<div class="term-line term-awaits">${addressHtml(t, { prose: argument })}</div>` : '')
       + locked
       + said
-      + (t ? spendRung(t, opened, sayFn) : '');
+      + (t ? spendRung(t, opened, sayFn, spendSection) : '');
   termEl.innerHTML = head + body;
   termEl.hidden = false;
   termEl.dataset.at = at;
@@ -396,9 +406,19 @@ async function enrichTerm(hex, { address = null, at = '' } = {}) {
   const witness = await chainWitness(address ?? hex);
   if (!still()) return;
   const verdict = witnessVerdict(hex, witness);
-  drawTerm(hex, { address, at, say: sayFn,
-    said: `<div class="term-attrib">${chainMark(verdict, witness, hex)}</div>`,
-    opened: witness?.opened ?? null });
+  const opened = witness?.opened ?? null;
+  // Drawn at the depth in hand, then again when the sections arrive: a citation
+  // a reader can already follow beats a blank while two proofs are fetched.
+  const draw = (lock, spend) => drawTerm(hex, { address, at, say: sayFn,
+    said: `<div class="term-attrib">${chainMark(verdict, witness, hex, lock)}</div>`,
+    opened, spendSection: spend });
+  draw(null, null);
+  const [lock, spend] = await Promise.all([
+    witness?.found ? sectionOfFetched(witness.txid) : null,
+    opened ? sectionOfFetched(opened.txid) : null,
+  ]);
+  if (!still()) return;
+  if (lock != null || spend != null) draw(lock, spend);
 }
 
 // The book's own spelling, read back. It carries its bytes rather than pointing
