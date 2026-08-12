@@ -10,11 +10,18 @@
 // two together and an address is an application waiting to be written down:
 // the term, the argument, and a β between them.
 //
-// This module is that sentence as code. It knows five terms (six with P2PK,
-// which takes an argument like the rest and simply never got an address), it
-// binds an argument into one, it renders both sides of the reduction, and it
-// reduces — so the claim the key makes in prose is one the suite can check:
-// reduce(term, argument) is the scriptPubKey, byte for byte.
+// This module is that sentence as code. It reads a term off any script it can
+// tokenize — every push a binder, every opcode where it stands — renders both
+// sides of the reduction, and reduces; so the claim the key makes in prose is
+// one the suite can check: reduce(term, arguments) is the scriptPubKey, byte
+// for byte, for the six tabled forms and for everything else alike.
+//
+// Curried, because a script is: bare multisig binds three keys, a revealed
+// redeem script binds whatever it holds, and one hole is not what makes a term
+// but what makes an ADDRESS — see `addressable`. The names are the calculus's
+// (a repeated letter gets a subscript, p₁ p₂ p₃) and the marks are the wire's,
+// which is why the spelled form below a term carries no subscripts: it is a
+// serialization, and the search box has to read it back.
 //
 // Deliberately light. It imports the opcode alphabet, the classifier and the
 // tokenizer, and nothing that reaches the Glossia engine — a page can write a
@@ -27,6 +34,7 @@
 import { OPCODE_SYMBOLS, OPCODE_NAMES, toSuperscript, toSubscript } from './btc-sigla.js';
 import { outputTemplates } from './btc-templates.js';
 import { tokenizeScript } from './btc-tx.js';
+import { dataLetter } from './btc-address-form.js';
 
 // The length variable's mark, on the datum's shoulder where every byte count in
 // this book rides. U+207F, the superscript n -- a variable where a figure
@@ -73,29 +81,81 @@ const TERM_OF_ROW = { 'p2tr-key': 'p2tr', 'p2tr-script': 'p2tr' };
 
 // ─── binding ─────────────────────────────────────────────────────────────
 
-// A scriptPubKey -> the term it is, with its argument bound:
+// A scriptPubKey -> the term it is, with its arguments bound:
 //
-//   { id, label, binder, bytes, argument, script, term }
+//   { id, label, holes: [{ name, title, bytes, argument }], body, script }
 //
-// Null for a script that is not one abstraction over one datum. Bare multisig
-// is the interesting refusal: its λ takes m, n and n keys, so there is no
-// single argument to bind and no address that could carry one — which is the
-// whole of what P2SH is for. A data output and anything the classifier does
-// not recognise are refused for the same kind of reason.
+// The term is not looked up, it is READ: every push in the script becomes a
+// hole, every opcode stays where it stands, and what falls out is a curried
+// function of as many arguments as the script has pushes. So the six tabled
+// forms are derived rather than tabled -- the letters agree with TERMS because
+// both take them from the same reading of the bytes -- and the shapes with no
+// table entry come out too. Bare multisig binds three keys, a data output its
+// blob, and a redeem script revealed by a spend binds whatever it holds.
+//
+// That is a widening, and the claim it used to enforce moves rather than dies:
+// one hole is what an ADDRESS can carry, not what a term can have. `addressable`
+// says which, and rung one shows the rest their own refusal -- three arguments
+// after the parens where an address has one.
+//
+// Null only when there is no term to read: bytes that are not a whole script,
+// a push that claims more than remains, an opcode consensus never defined (the
+// alphabet has no mark for it, so no line could be drawn), or a script with no
+// push at all, which abstracts over nothing.
+const TITLES = { h: 'hash', p: 'public key', d: 'data' };
+
 export function termOfScript(scriptHex) {
+  let toks;
+  try { toks = tokenizeScript(scriptHex); } catch { return null; }
+  if (!toks.length || toks.some((tk) => tk.trunc !== undefined)) return null;
+  if (toks.some((tk) => tk.op !== undefined && OPCODE_SYMBOLS[tk.op] === undefined)) return null;
+  const body = [], holes = [];
+  let prevOp = null;
+  for (const tk of toks) {
+    if (tk.op !== undefined) { body.push(tk.op); prevOp = tk.op; continue; }
+    // The letter is the book's own reading of the push (btc-address-form's
+    // dataLetter, which the chapter renderer shares): h a committed hash, p a
+    // key, and d for bytes that are neither and are simply data.
+    holes.push({ letter: dataLetter(tk.push, prevOp) || 'd',
+      bytes: tk.push.length / 2, argument: tk.push });
+    body.push(null);
+    prevOp = null;
+  }
+  if (!holes.length) return null;
+  // A letter used twice is two variables, so it is numbered -- p₁ p₂ p₃, the
+  // way the key's own multisig row writes them. Used once it stands bare.
+  const seen = new Map();
+  for (const hole of holes) seen.set(hole.letter, (seen.get(hole.letter) ?? 0) + 1);
+  const nth = new Map();
+  for (const hole of holes) {
+    const n = seen.get(hole.letter);
+    if (n === 1) { hole.name = hole.letter; continue; }
+    nth.set(hole.letter, (nth.get(hole.letter) ?? 0) + 1);
+    hole.name = hole.letter + toSubscript(nth.get(hole.letter));
+  }
   const rows = outputTemplates(scriptHex);
-  const id = rows.map((r) => TERM_OF_ROW[r] ?? r).find((r) => TERMS[r]);
-  if (id === undefined) return null;
-  const term = TERMS[id];
-  // One abstraction, one datum: the body has exactly one hole, so the script
-  // must carry exactly one push to fill it.
-  const pushes = tokenizeScript(scriptHex).filter((t) => t.push !== undefined);
-  if (pushes.length !== 1) return null;
-  const argument = pushes[0].push;
-  const bytes = argument.length / 2;
-  if (term.bytes !== null && bytes !== term.bytes) return null;
-  return { id, label: term.label, binder: term.binder, bytes, argument, script: scriptHex, term };
+  const id = rows.map((r) => TERM_OF_ROW[r] ?? r).find((r) => TERMS[r]) ?? null;
+  // A tabled form takes its letter and title from the table rather than from
+  // the bytes. The classifier has already said what this push IS by where it
+  // stands -- P2PK's argument is a public key however unkeylike its bytes look
+  // -- and a position beats a shape heuristic. Taproot gains by it too: its
+  // datum is an output key, which no reading of 32 bytes could have told.
+  for (const hole of holes) hole.title = TITLES[hole.letter] ?? 'data';
+  if (id && holes.length === 1) {
+    holes[0].letter = holes[0].name = TERMS[id].binder;
+    holes[0].title = TERMS[id].title;
+  }
+  return {
+    id, label: TERMS[id]?.label ?? rows[0] ?? 'Script', holes, body, script: scriptHex,
+    // The single-datum case, named as it always was: an address has exactly one
+    // argument, so everything that reads an address reads these.
+    binder: holes[0].name, bytes: holes[0].bytes, argument: holes[0].argument,
+  };
 }
+
+// One abstraction over one datum -- which is what an address can carry, and the
+// whole of what the key's Addresses group is about.
+export const addressable = (t) => !!t && t.holes.length === 1;
 
 // ─── reduction ───────────────────────────────────────────────────────────
 
@@ -106,12 +166,20 @@ export function termOfScript(scriptHex) {
 // decodes to rather than taking the tables' word for it. Every argument these
 // terms take is 20 to 65 bytes, well inside a direct push, so the length byte
 // is the push opcode and no PUSHDATA prefix arises.
-export function reduce(term, argumentHex) {
-  const n = argumentHex.length / 2;
-  if (n < 1 || n > 75) return null;
-  return term.body.map((code) => (code === null
-    ? n.toString(16).padStart(2, '0') + argumentHex.toLowerCase()
-    : code.toString(16).padStart(2, '0'))).join('');
+// Curried, so the arguments are a list and they fill the holes in order. One
+// hex string is accepted for the single-datum case, which is every address.
+export function reduce(term, args) {
+  const list = typeof args === 'string' ? [args] : [...args];
+  if (list.length !== term.body.filter((code) => code === null).length) return null;
+  let next = 0;
+  const parts = term.body.map((code) => {
+    if (code !== null) return code.toString(16).padStart(2, '0');
+    const arg = list[next++];
+    const n = arg.length / 2;
+    if (n < 1 || n > 75) return null;
+    return n.toString(16).padStart(2, '0') + arg.toLowerCase();
+  });
+  return parts.includes(null) ? null : parts.join('');
 }
 
 // ─── the address, as the partial application it is ───────────────────────
@@ -211,11 +279,14 @@ const CAT = OPCODE_SYMBOLS[0x7e];
 
 // ─── rung one: the address ───────────────────────────────────────────────
 //
-// The term applied to the datum it carries, and nothing else supplied. The
-// binder stands bare inside the body, because the count arrives with the
-// argument -- which is the same way applicationText writes it, one group up.
+// The term applied to the data it carries, and nothing else supplied. Curried,
+// so the binders run in the order the pushes do and the arguments follow in the
+// same order -- one apiece for an address, three for a bare multisig, which is
+// that form being shown its own refusal rather than told about it. The binders
+// stand bare inside the body, because a count arrives with its argument.
 export const addressText = (t) =>
-  `(λ${t.binder}. ${bodyText(t, false)}) ${t.binder}${toSuperscript(t.bytes)}`;
+  `(λ${t.holes.map((h) => h.name).join(' ')}. ${bodyText(t, false)}) `
+  + t.holes.map((h) => h.name + toSuperscript(h.bytes)).join(' ');
 
 // ─── rung two: what that hands back ──────────────────────────────────────
 //
@@ -252,8 +323,9 @@ const awaited = (name) => `<span class="aw">${escapeHtml(name)}</span>`;
 // gives its length. Withheld, the datum stays behind that mark -- the line is
 // still the right shape, it simply cannot be read back.
 export const addressHtml = (t, { prose = '' } = {}) =>
-  `${lam('(λ')}${dt(t)}${lam('.')} ${bodyHtml(t, false)}${lam(')')} `
-  + `${dt(t)}${count(t)}${prose ? ` ${prose}` : ''}`;
+  `${lam('(λ')}${t.holes.map(dt).join(' ')}${lam('.')} ${bodyHtml(t, false)}${lam(')')} `
+  + t.holes.map((h, i) => dt(h) + count(h)
+    + (prose && i === 0 && t.holes.length === 1 ? ` ${prose}` : '')).join(' ');
 
 // The second rung, split so a caller can set the script between the marks: the
 // leaf's lock line is also the copyable sigla address, and a λ inside that
@@ -312,7 +384,8 @@ export const lockedHtml = (t) => {
 // uses the same mark twice, and a term that did would be saying something
 // (this operation, again) that the positional reading does not.
 export function pureForm(t) {
-  const opcodes = t.term.body.filter((code) => code !== null);
+  if (!addressable(t)) return null;
+  const opcodes = t.body.filter((code) => code !== null);
   const lenName = 'n';
   const datumName = t.binder;
   const opNames = opcodes.map((_, i) => `o${toSubscript(i + 1)}`);
@@ -321,7 +394,7 @@ export function pureForm(t) {
   // with its count on its shoulder. The count is a bound variable here, so what
   // rides there is the variable's own superscript rather than a figure.
   const hole = datumName + SUPERSCRIPT_N;
-  const body = t.term.body.map((code) => (code === null ? hole : opNames[next++]));
+  const body = t.body.map((code) => (code === null ? hole : opNames[next++]));
   return {
     binders: [...opNames, lenName, datumName], body, opcodes, lenName, datumName, hole,
     bytes: t.bytes, datum: t.argument, term: t,
@@ -367,10 +440,14 @@ const glyph = (code) => OPCODE_SYMBOLS[code] ?? OPCODE_NAMES[code] ?? '?';
 // one comes out is whether the bound variable still stands bare (the term, its
 // argument not yet supplied) or wears the byte count that says what filled it
 // (the normal form, where the datum is on the wire and its length is a push).
-const bodyText = (t, counted) => t.term.body
-  .map((code) => (code === null
-    ? t.binder + (counted ? toSuperscript(t.bytes) : '')
-    : glyph(code))).join(' ');
+const bodyText = (t, counted) => {
+  let next = 0;
+  return t.body.map((code) => {
+    if (code !== null) return glyph(code);
+    const hole = t.holes[next++];
+    return hole.name + (counted ? toSuperscript(hole.bytes) : '');
+  }).join(' ');
+};
 
 // λh. ⟦ ⧉ ⌖ h ≡ ∇ ⟧ — the lock with nothing supplied.
 export const abstractionText = (t) => `λ${t.binder}. ⟦ ${bodyText(t, false)} ⟧`;
@@ -396,13 +473,17 @@ export const normalFormText = (t) => `⟦ ${bodyText(t, true)} ⟧`;
 // datum stays behind its mark and is simply not said.
 const lam = (s) => `<span class="lam">${escapeHtml(s)}</span>`;
 const op = (code) => `<span class="op" title="${escapeHtml(OPCODE_NAMES[code] || 'OP_UNKNOWN')}">${escapeHtml(glyph(code))}</span>`;
-const dt = (t) => `<span class="dt" title="${escapeHtml(t.term.title)}">${t.binder}</span>`;
-const count = (t) => `<span class="op op-push op-count" title="OP_PUSHBYTES_${t.bytes} — push the next ${t.bytes} bytes">${toSuperscript(t.bytes)}</span>`;
+const dt = (hole) => `<span class="dt" title="${escapeHtml(hole.title)}">${escapeHtml(hole.name)}</span>`;
+const count = (hole) => `<span class="op op-push op-count" title="OP_PUSHBYTES_${hole.bytes} — push the next ${hole.bytes} bytes">${toSuperscript(hole.bytes)}</span>`;
 
-const bodyHtml = (t, counted, prose) => t.term.body
-  .map((code) => (code === null
-    ? dt(t) + (counted ? count(t) + (prose ? ` ${prose}` : '') : '')
-    : op(code))).join(' ');
+const bodyHtml = (t, counted, prose) => {
+  let next = 0;
+  return t.body.map((code) => {
+    if (code !== null) return op(code);
+    const hole = t.holes[next++];
+    return dt(hole) + (counted ? count(hole) + (prose ? ` ${prose}` : '') : '');
+  }).join(' ');
+};
 
 export const normalFormHtml = (t, { prose = '' } = {}) =>
   `${lam('⟦')} ${bodyHtml(t, true, prose)} ${lam('⟧')}`;
@@ -420,7 +501,7 @@ export const normalFormHtml = (t, { prose = '' } = {}) =>
 // what is being supplied -- 20, not ²⁰. The superscript is what the count
 // becomes once it has been applied.
 const pureName = (pure, name) => (name === pure.hole
-  ? dt(pure.term) + `<span class="op op-push">${SUPERSCRIPT_N}</span>`
+  ? dt(pure.term.holes[0]) + `<span class="op op-push">${SUPERSCRIPT_N}</span>`
   : `<span class="lam">${escapeHtml(name)}</span>`);
 
 export const pureText = (pure) => `λ${pure.binders.join(' ')}. ⟦ ${pure.body.join(' ')} ⟧`;
@@ -438,7 +519,7 @@ export const pureApplicationHtml = (pure) => `${lam('(')}${pureHtml(pure)}${lam(
 // wants is a push -- a length, and that many bytes. This is the line that says
 // how much key material an output of this kind requires, which is the whole
 // reason the length is an argument rather than an annotation.
-const lockBody = (pure) => pure.term.term.body
+const lockBody = (pure) => pure.term.body
   .map((code) => (code === null ? pure.hole : glyph(code))).join(' ');
 
 export const lockText = (pure) =>
