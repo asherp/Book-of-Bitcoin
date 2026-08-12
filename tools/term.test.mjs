@@ -216,7 +216,7 @@ test('what the address hands back is another λ, not a fragment', () => {
   assert.deepEqual(of('bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4'), ['λs p. ⓪ h²⁰']);
   // An output with two ways to open it is one lock and two λ over it.
   assert.deepEqual(of('bc1p5d7rjq7g6rdk2yhzks9smlaqtedr4dekq08ge8ztwac72sfr9rusxg3297'),
-    ['λs. ① p³²', 'λs t c. ① p³² ( t )']);
+    ['λs. ① p³²', 'λt c. ① p³² ( t )']);
   // Every rung-two line is the rung above it with the argument gone in: the
   // body is the same marks, and only the datum's count has arrived.
   for (const [, address] of ADDRESSES) {
@@ -236,7 +236,7 @@ test('the rung below the wire is the spend, and ⧺ is its application', () => {
   assert.deepEqual(spendText(termOfScript(addressScriptHex('1Ross5Np5doy4ajF9iGXzgKaC2Q3Pwwxv'))),
     ['s p ⧺ ⧉ ⌖ h²⁰ ≡ ∇']);
   assert.deepEqual(spendText(termOfScript(addressScriptHex('3J98t1WpEZ73CNmQviecrnyiWrnqRhWNLy'))),
-    ['… r ⧺ ⌖ h²⁰ = ( r )']);
+    ['r ⧺ ⌖ h²⁰ = ( r )']);
 });
 
 test('the only opcode on a rung the lock does not own is the joint', () => {
@@ -289,27 +289,49 @@ test('P2PKH and P2WPKH ask for the same key material', () => {
 });
 
 test('the wrapped forms cannot say what they will ask for', () => {
-  // P2SH and P2WSH run out of binders: whatever the redeem script requires,
-  // which the address does not know and cannot know, and then the script
-  // itself, which rides on top because that is where the spender pushes it. The
-  // ellipsis is load-bearing -- a requirement hidden behind a hash rather than
-  // a datum -- and ( ) is what the lock hands back once the hash matches.
+  // P2SH, P2WSH and taproot's script path all end on a function they hand back
+  // rather than on a value: ( r ) awaits arguments of its own, and how many is
+  // a property of a script the address has never seen. That is the whole of
+  // "cannot say" -- an unapplied function is already unable to promise an
+  // arity, so nothing needs to stand in for the missing binders.
   for (const [address, expected] of [
-    ['3J98t1WpEZ73CNmQviecrnyiWrnqRhWNLy', 'λ… r. ⌖ h²⁰ = ( r )'],
-    ['bc1qrp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3qccfmv3', 'λ… w. ⓪ h³² ( w )'],
+    ['3J98t1WpEZ73CNmQviecrnyiWrnqRhWNLy', ['λr. ⌖ h²⁰ = ( r )']],
+    ['bc1qrp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3qccfmv3', ['λw. ⓪ h³² ( w )']],
   ]) {
     const t = termOfScript(addressScriptHex(address));
-    assert.deepEqual(lockedText(t), [expected]);
-    assert.ok(demandsOf(t)[0].brings.includes('…'), `${address} should admit it cannot say`);
+    assert.deepEqual(lockedText(t), expected);
+    assert.ok(demandsOf(t).every((alt) => alt.runs), `${address} should hand something back`);
     // …and rung one is unaffected: an address says what it holds either way.
-    assert.ok(!addressText(t).includes('…'), `${address}'s address form is complete`);
+    assert.equal(addressText(t), `(λh. ${bodyOf(t, false)}) h${toSuperscript(t.bytes)}`);
   }
-  // Every other form can say, in full.
+  // The forms that can say hand nothing back: every binder is a value, and the
+  // lock is a function of exactly those.
   for (const address of ['1Ross5Np5doy4ajF9iGXzgKaC2Q3Pwwxv',
-    'bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4',
-    'bc1p5d7rjq7g6rdk2yhzks9smlaqtedr4dekq08ge8ztwac72sfr9rusxg3297']) {
+    'bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4']) {
     const t = termOfScript(addressScriptHex(address));
-    for (const alt of demandsOf(t)) assert.ok(!alt.brings.includes('…'), address);
+    for (const alt of demandsOf(t)) assert.equal(alt.runs, null, address);
+  }
+  // Taproot is both at once, one path apiece -- which is what a taptree is.
+  const tr = termOfScript(addressScriptHex('bc1p5d7rjq7g6rdk2yhzks9smlaqtedr4dekq08ge8ztwac72sfr9rusxg3297'));
+  assert.deepEqual(demandsOf(tr).map((alt) => alt.runs), [null, 't']);
+});
+
+test('no binder stands for something the address cannot count', () => {
+  // The ellipsis is gone, and nothing may bring it back: a binder is a value a
+  // spend supplies, so a mark meaning "and however many more" is not one. It
+  // also cost an invented binder while it stood -- taproot's script path bound
+  // an `s`, as if every leaf wanted a signature, which no address can know.
+  for (const id of Object.keys(TERMS)) {
+    const bytes = TERMS[id].bytes ?? 65;
+    const t = termOfScript(reduce(TERMS[id], 'ab'.repeat(bytes)));
+    for (const alt of demandsOf(t)) {
+      for (const name of alt.brings) {
+        assert.match(name, /^[a-z]$/, `${id} binds ${name}, which is not a value`);
+      }
+    }
+    for (const line of [addressText(t), ...lockedText(t), ...spendText(t)]) {
+      assert.ok(!line.includes('…'), `${id} writes an ellipsis`);
+    }
   }
 });
 
