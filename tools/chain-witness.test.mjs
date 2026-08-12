@@ -16,7 +16,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { footnoteMark, inputMark, parseReference } from '../web/btc-citation.js';
+import { footnoteMark, inputMark, parseReference, FOOTNOTE_BASE } from '../web/btc-citation.js';
 import { latinReference } from '../web/btc-citation.js';
 import { readWitness, witnessVerdict, witnessDisagreement, suppliedBy,
          citeHref, inputMarkOf } from '../web/btc-index.js';
@@ -239,4 +239,42 @@ test('a citation reads its case back, and survives losing it', () => {
   assert.equal(parseReference('IV β35 ■1457 §42.Ab'), null);
   assert.equal(parseReference('IV β35 ■1457 §42.0').out, 0);
   assert.equal(parseReference('IV β35 ■1457 §42.q'), null, 'still no q');
+});
+
+// The raised forms Unicode actually has, read out of ICU rather than listed
+// from memory: fold every modifier/superscript codepoint back to its base.
+const raised = (which) => {
+  const found = new Set();
+  for (const [lo, hi] of [[0x02b0, 0x02ff], [0x1d2c, 0x1d6a], [0x1d78, 0x1dbf],
+    [0x2070, 0x209f], [0x2c7d, 0x2c7d]]) {
+    for (let cp = lo; cp <= hi; cp++) {
+      const base = String.fromCodePoint(cp).normalize('NFKD');
+      if (/^[A-Za-z]$/.test(base) && (base === base.toUpperCase()) === (which === 'upper')) {
+        found.add(base.toLowerCase());
+      }
+    }
+  }
+  return found;
+};
+
+test('the footnote alphabet is exactly the letters that can be raised', () => {
+  // Why q is missing, and it is not a judgement about how q looks. Unicode
+  // gives a raised form to every lowercase letter except q, and the book's run
+  // is that set character for character — so a mark can always be set as a
+  // character rather than as styling, which is how this book raises h²⁰ and ⁿ.
+  const lower = raised('lower');
+  const alphabet = 'abcdefghijklmnopqrstuvwxyz'.split('').filter((c) => lower.has(c)).join('');
+  assert.equal(alphabet, 'abcdefghijklmnoprstuvwxyz');
+  assert.equal(FOOTNOTE_BASE, alphabet.length, 'the run is that alphabet and no other');
+  assert.equal(footnoteMark(17), 'r', 'so the 17th mark skips q');
+  assert.ok(!lower.has('q'), 'q is the one lowercase letter with no raised form');
+  // And the cost of the uppercase tag, stated where it cannot be forgotten:
+  // six of those 25 letters have no raised CAPITAL, so a scriptSig's mark
+  // cannot always be set as a character the way a witness's can. The book
+  // raises its marks with CSS today, so nothing is broken — but the property
+  // the alphabet was chosen for does not hold for the uppercase half.
+  const upper = raised('upper');
+  const unraisable = alphabet.split('').filter((c) => !upper.has(c));
+  assert.deepEqual(unraisable, ['c', 'f', 's', 'x', 'y', 'z']);
+  assert.equal(inputMark(3, true), 'C', 'which is input 3, among others');
 });
