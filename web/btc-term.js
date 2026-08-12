@@ -342,6 +342,25 @@ export function lockedMarks(t) {
   }));
 }
 
+// The third rung as marks. It is drawn only where the chain says it happened,
+// because that is the only way anyone can know it: s and p are not in the
+// address and no reduction reaches them, so the shape is all this page can
+// write and the citation beside it is what supplies the rest.
+export function spendMarks(t) {
+  const alts = demandsOf(t);
+  if (!alts) return null;
+  return alts.map((alt) => ({
+    prefix: `${alt.brings.map(awaited).join(' ')} ${cat()}`,
+    suffix: alt.runs ? ` ${lam('(')} ${awaited(alt.runs)} ${lam(')')}` : '',
+  }));
+}
+
+// The joint takes the quiet colour, not the gold: it is the step between the
+// two scripts and not a byte either of them holds -- which is also why it can
+// be a disabled opcode's mark without the line claiming a disabled opcode.
+const cat = () => `<span class="lam" title="${escapeHtml(OPCODE_NAMES[0x7e])} — the arguments `
+  + `applied, which a stack machine writes as their pushes ahead of the code">${escapeHtml(CAT)}</span>`;
+
 // The lock's own marks, with no prose and nothing copyable about them: what a
 // second alternative shows, since the datum has already been said once above.
 export const lockBodyHtml = (t) => bodyHtml(t, true);

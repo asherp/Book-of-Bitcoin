@@ -71,7 +71,8 @@ test('a record that only drew from the member answers with its prevout', () => {
 
 test('unconfirmed records are not the chain saying anything', () => {
   const pending = { txid: 'p', status: { confirmed: false }, vout: [{ scriptpubkey: SPK, scriptpubkey_address: ADDR }], vin: [] };
-  assert.deepEqual(readWitness([pending], ADDR), { found: false, whole: true, outputs: 0, prevouts: 0, scripts: [] });
+  assert.deepEqual(readWitness([pending], ADDR),
+    { found: false, whole: true, outputs: 0, prevouts: 0, scripts: [], opened: null });
   assert.equal(readWitness([], ADDR).found, false);
   // A page whose records never touch the member (esplora would not serve one,
   // but a mirror is not a promise) reads as nothing found rather than as bytes.
@@ -132,4 +133,33 @@ test('the four verdicts stay apart, and silence is never assent', () => {
   // The one that matters: a chain nobody could reach has not agreed.
   assert.equal(witnessVerdict(SPK, null), 'unreachable');
   assert.equal(witnessVerdict(SPK, undefined), 'unreachable');
+});
+
+test('a lock is cited where it was written; its arguments where they were supplied', () => {
+  // Two different questions with two different answers. The bytes of a lock are
+  // a thing the chain can be asked for, so the earliest output carrying them is
+  // a citation. What satisfies that lock is not derivable from those bytes at
+  // all -- s and p are not in the address, and no reduction reaches them -- so
+  // the only way anyone knows them is that somebody supplied them, and where
+  // they did is the only citation that half of the term can have.
+  const spend = (height, txid, at = 0) => ({
+    txid, status: { confirmed: true, block_height: height },
+    vout: [{ scriptpubkey: 'ff', scriptpubkey_address: 'elsewhere' }],
+    vin: [...Array(at).fill({ prevout: { scriptpubkey: 'ff', scriptpubkey_address: 'nobody' } }),
+      { prevout: { scriptpubkey: SPK, scriptpubkey_address: ADDR } }],
+  });
+  // Newest first, as esplora serves it: paid at 600000, opened at 700000.
+  const w = readWitness([spend(700000, 'open', 2), paid(600000, 'pay')], ADDR);
+  assert.equal(w.txid, 'pay', 'the lock is cited where it was written');
+  assert.equal(w.height, 600000);
+  assert.deepEqual(w.opened, { txid: 'open', height: 700000, in: 2 },
+    'and its arguments where they were supplied, at the input that supplied them');
+  // The first spend, not the last: a member opened twice is cited at the first.
+  const twice = readWitness([spend(800000, 'later'), spend(700000, 'first'), paid(600000, 'pay')], ADDR);
+  assert.equal(twice.opened.txid, 'first');
+  assert.equal(twice.prevouts, 2, 'both are still counted');
+  // Never opened is not the same as never written: a lock with no spend has a
+  // citation for itself and none for its arguments, which is the ordinary
+  // state of every unspent output on chain.
+  assert.equal(readWitness([paid(600000, 'pay')], ADDR).opened, null);
 });

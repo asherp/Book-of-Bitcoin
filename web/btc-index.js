@@ -504,15 +504,25 @@ export function readWitness(page, member) {
   const pays = (o) => (byScript ? o?.scriptpubkey === member : o?.scriptpubkey_address === member);
   const scripts = new Set();
   let outputs = 0, prevouts = 0, earliest = null;
+  // …and the first time anyone opened it, which is a different question and
+  // has a different answer. A lock is bytes the chain can be asked for; the
+  // arguments that satisfy it are not derivable from those bytes at all, so
+  // the only way to know them is that somebody supplied them. This is where.
+  let opened = null;
   // Newest first, so walking backwards reaches the oldest record last and the
   // earliest reference is whatever it leaves behind.
   for (let i = confirmed.length - 1; i >= 0; i--) {
     const t = confirmed[i];
     const at = (t.vout || []).findIndex(pays);
     (t.vout || []).forEach((o) => { if (pays(o)) { outputs++; scripts.add(String(o.scriptpubkey || '').toLowerCase()); } });
-    for (const v of t.vin || []) {
-      if (pays(v.prevout)) { prevouts++; scripts.add(String(v.prevout.scriptpubkey || '').toLowerCase()); }
-    }
+    (t.vin || []).forEach((v, n) => {
+      if (!pays(v.prevout)) return;
+      prevouts++;
+      scripts.add(String(v.prevout.scriptpubkey || '').toLowerCase());
+      // The walk runs oldest to newest, so the first one seen is the first
+      // spend -- set once, exactly as the earliest reference above is.
+      opened ??= { txid: t.txid, height: t.status.block_height, in: n };
+    });
     if (earliest === null && (at >= 0 || (t.vin || []).some((v) => pays(v.prevout)))) {
       const spent = (t.vin || []).find((v) => pays(v.prevout));
       earliest = {
@@ -521,8 +531,8 @@ export function readWitness(page, member) {
       };
     }
   }
-  if (!earliest) return { found: false, whole, outputs: 0, prevouts: 0, scripts: [] };
-  return { found: true, whole, ...earliest, outputs, prevouts, scripts: [...scripts] };
+  if (!earliest) return { found: false, whole, outputs: 0, prevouts: 0, scripts: [], opened: null };
+  return { found: true, whole, ...earliest, outputs, prevouts, scripts: [...scripts], opened };
 }
 
 export async function chainWitness(member) {

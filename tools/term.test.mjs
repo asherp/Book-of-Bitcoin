@@ -23,7 +23,7 @@ import assert from 'node:assert/strict';
 import { addressScriptHex } from '../web/btc-index.js';
 import { NOTATION_HTML } from '../web/btc-notation.js';
 import { OPCODE_SYMBOLS, OPCODE_NAMES, toSuperscript } from '../web/btc-sigla.js';
-import { TERMS, termOfScript, addressable, reduce, abstractionText, applicationText, normalFormText,
+import { TERMS, termOfScript, addressable, reduce, spendMarks, abstractionText, applicationText, normalFormText,
          pureForm, reducePure, pureText, pureApplicationText,
          lockText, lockApplicationText, demandsOf, addressText, addressHtml,
          lockedText, lockedHtml, lockedMarks, spendText } from '../web/btc-term.js';
@@ -273,6 +273,30 @@ test('the rung below the wire is the spend, and ⧺ is its application', () => {
     ['s p ⧺ ⧉ ⌖ h²⁰ ≡ ∇']);
   assert.deepEqual(spendText(termOfScript(addressScriptHex('3J98t1WpEZ73CNmQviecrnyiWrnqRhWNLy'))),
     ['r ⧺ ⌖ h²⁰ = ( r )']);
+});
+
+test('the spend rung is marks and a citation, because it cannot be computed', () => {
+  // The one rung whose content no page can derive: s and p are not in the
+  // address and no reduction reaches them. So the marks say the shape and the
+  // citation beside them says where to read what was actually brought -- which
+  // is why the leaf draws this rung only when the chain reports a spend.
+  const strip = (html) => html.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+  const t = termOfScript(addressScriptHex('1Ross5Np5doy4ajF9iGXzgKaC2Q3Pwwxv'));
+  const [m] = spendMarks(t);
+  assert.equal(strip(`${m.prefix} X${m.suffix}`), 's p ⧺ X');
+  // The joint is apparatus, not a byte: it never takes the gold, which is the
+  // rule the whole leaf is styled by.
+  assert.match(m.prefix, /class="lam"[^>]*>⧺/);
+  // A wrapped form carries its eval step into the suffix, where the caller can
+  // set the script between the two.
+  const [sh] = spendMarks(termOfScript(addressScriptHex('3J98t1WpEZ73CNmQviecrnyiWrnqRhWNLy')));
+  assert.equal(strip(`${sh.prefix} X${sh.suffix}`), 'r ⧺ X ( r )');
+  // Taproot has two, and the leaf declines to draw either: which path was taken
+  // is in the witness, and guessing is the thing this page exists not to do.
+  assert.equal(spendMarks(termOfScript(addressScriptHex(
+    'bc1p5d7rjq7g6rdk2yhzks9smlaqtedr4dekq08ge8ztwac72sfr9rusxg3297'))).length, 2);
+  // A term with nothing written down about what it awaits has no rung three.
+  assert.equal(spendMarks(termOfScript('76a914' + 'ab'.repeat(20))), null);
 });
 
 test('the only opcode on a rung the lock does not own is the joint', () => {
