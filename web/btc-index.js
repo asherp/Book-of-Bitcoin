@@ -530,18 +530,15 @@ export function suppliedBy(vin) {
   } catch { return []; }
 }
 
-// Which footnote an input is, 1-based, or null for one that is not a footnote
-// at all. The book's rule, read off the same vins: a footnote is raised for an
-// input that carries witness data and for no other, numbered in input order
-// (bitcoin-book.html, where the reference mark is appended). So a legacy spend
-// has no letter to cite -- not a gap in the citation, but a coordinate that
-// does not exist, since there is no witness to have a footnote for.
-export function footnoteNumberOf(vins, index) {
-  const carries = (v) => Array.isArray(v?.witness) && v.witness.length > 0;
-  if (!Array.isArray(vins) || !carries(vins[index])) return null;
-  let n = 0;
-  for (let i = 0; i <= index; i++) if (carries(vins[i])) n++;
-  return n;
+// An input's citation mark, as { n, sig }: its 1-based number, and whether what
+// it brought rode in a scriptSig rather than a witness. The number is the
+// input's own position -- not an ordinal over some subset of the inputs -- so
+// it needs no counting and cannot shift because a neighbour changed carriage.
+// The case built from `sig` is what tells the two apart on the page.
+export function inputMarkOf(vins, index) {
+  const v = Array.isArray(vins) ? vins[index] : null;
+  if (!v) return null;
+  return { n: index + 1, sig: !(Array.isArray(v.witness) && v.witness.length > 0) };
 }
 
 export function readWitness(page, member) {
@@ -569,7 +566,7 @@ export function readWitness(page, member) {
       // The walk runs oldest to newest, so the first one seen is the first
       // spend -- set once, exactly as the earliest reference above is.
       opened ??= { txid: t.txid, height: t.status.block_height, in: n,
-        wn: footnoteNumberOf(t.vin, n), items: suppliedBy(v) };
+        mark: inputMarkOf(t.vin, n), items: suppliedBy(v) };
     });
     if (earliest === null && (at >= 0 || (t.vin || []).some((v) => pays(v.prevout)))) {
       const spent = (t.vin || []).find((v) => pays(v.prevout));

@@ -167,18 +167,30 @@ export function parseReference(input) {
   // apart by what it's made of -- digits are an output, letters a footnote
   // mark, read back to its number (null for a non-mark, failing the whole
   // reference).
-  let out = null, wit = null;
+  let out = null, wit = null, sig = false;
+  // A lettered mark names an input, and its CASE says what that input carried:
+  // lowercase a witness, uppercase a scriptSig. One mark, two facts -- and the
+  // letter alone still names the right input, so a citation that loses its case
+  // in transit loses the carriage and not the target. Mixed case is neither,
+  // and a coordinate that could be read two ways is not one.
+  const readMark = (mark) => {
+    const lower = /^[a-z]+$/.test(mark), upper = /^[A-Z]+$/.test(mark);
+    if (!lower && !upper) return false;
+    sig = upper;
+    wit = footnoteIndexOf(mark);
+    return wit != null;
+  };
   if (url) {
     out = m[5] ? parseInt(m[5], 10) : null;
-    if (m[6] != null) { wit = footnoteIndexOf(m[6]); if (wit == null) return null; }
+    if (m[6] != null && !readMark(m[6])) return null;
   } else if (m[5] != null) {
     if (/^\d+$/.test(m[5])) out = parseInt(m[5], 10);
-    else { wit = footnoteIndexOf(m[5]); if (wit == null) return null; }
+    else if (!readMark(m[5])) return null;
   }
   if ((book !== null && book < 1) || (chapter !== null && chapter < 1)
     || (section !== null && section < 1) || (out !== null && out < 0)) return null;
   return {
-    volume, book, chapter, section, out, wit,
+    volume, book, chapter, section, out, wit, sig,
     height: heightOf(volume, book ?? 1, chapter ?? 1),
     index: section !== null ? section - 1 : chapter !== null ? -1 : book !== null ? -2 : -3,
   };
@@ -195,18 +207,18 @@ export function latinReference(input) {
     + (r.chapter !== null ? `c${r.chapter}` : '')
     + (r.section !== null ? `s${r.section}` : '')
     + (r.out !== null ? `o${r.out}` : '')
-    + (r.wit != null ? `w${footnoteMark(r.wit)}` : '');
+    + (r.wit != null ? `w${inputMark(r.wit, r.sig)}` : '');
 }
 
 // The URL spelling built from a height (which always names a chapter), plus the
 // section and output where they are known -- what a ledger row's citation links
 // to, and the inverse of parseReference's `height`.
-export function latinRefOf(height, section = null, out = null, wit = null) {
+export function latinRefOf(height, section = null, out = null, wit = null, sig = false) {
   const { volume, book, chapter } = volumeBookChapter(height);
   return `v${volume}b${book}c${chapter}`
     + (section != null ? `s${section}` : '')
     + (out != null ? `o${out}` : '')
-    + (wit != null ? `w${footnoteMark(wit)}` : '');
+    + (wit != null ? `w${inputMark(wit, sig)}` : '');
 }
 
 // The same reference for a height no block has reached: the expected-chapter
@@ -247,6 +259,13 @@ export function footnoteMark(n) {
   }
   return out;
 }
+
+// An input's mark: the letter for its number, cased for what it carried --
+// lowercase a witness, uppercase a scriptSig. The letter is positional, so it
+// is the input's own number and needs no counting; the case is a tag on top of
+// it, which is why lowercasing a citation still lands on the right input.
+export const inputMark = (n, sig = false) =>
+  (sig ? footnoteMark(n).toUpperCase() : footnoteMark(n));
 
 // The inverse: a mark -> its 1-based index, or null if it isn't one (an
 // unknown letter, a q, anything else). Lets a lettered address be read back

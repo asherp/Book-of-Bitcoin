@@ -1272,7 +1272,7 @@ import { keptLedgers, saveKeptLedgers, keepLedger, INDEXED } from './btc-index.j
 import { pathSegments } from './btc-path.js';   // a slash in a name the reader typed is a path
 import { composeTransactionFields, composeBlockHeaderFields, bitsInfo, groupDigits, formatBtc, formatAmount, formatAmountAs, formatOwnAmount, amountUnit, setAmountUnit, ownUnit, setOwnUnit, dayPrice, setDayPrice, renderWitness, toSuperscript, timestampInfo } from './btc-prose.js';
 import { usdOn, PRICE_SOURCES, priceSource, setPriceSource } from './btc-price.js';
-import { volumeBookChapter, heightOf, windowStartOf, retargetInside, subsidyAt, toRoman, reference, parseReference, footnoteMark, latinRefOf } from './btc-citation.js';
+import { volumeBookChapter, heightOf, windowStartOf, retargetInside, subsidyAt, toRoman, reference, parseReference, footnoteMark, footnoteIndexOf, latinRefOf } from './btc-citation.js';
 import { blockWork, workBetween, formatHashes } from './btc-chainwork.js';
 import { loadNotables, places, placeTitle, blocksEta, appendix } from './btc-contents.js';
 import { queueLabel } from './btc-mempool.js';
@@ -4699,7 +4699,12 @@ function renderChapter(para) {
     // the input that bears it -- inputIndex already advanced past this input
     // when the citation took its in-N id) so the footnote can offer its own
     // copy/bookmark menu when it renders.
-    if (inp.witnessHex) { footnotes.push({ n: footnotes.length + 1, vin: inputIndex - 1, txid: para.txid, num: para.num, items: inp.witnessItems, zero: inp.witnessZero }); cite.append(witnessRef(footnotes.length)); }
+    // The mark is the INPUT's own number, not an ordinal over the footnotes:
+    // a citation names input n of section m whichever way that input carried
+    // what it brought, so the letter must not shift because a neighbour spends
+    // a legacy output. Lowercase says witness (btc-citation's inputMark casing);
+    // a scriptSig raises no footnote here and is cited uppercase.
+    if (inp.witnessHex) { footnotes.push({ n: inputIndex, vin: inputIndex - 1, txid: para.txid, num: para.num, items: inp.witnessItems, zero: inp.witnessZero }); cite.append(witnessRef(inputIndex)); }
     // A second line sits beneath the reference: the sequence mark leads it, then
     // the amount of the output this input spends (filled on resolve, into its own
     // span so the mark survives). A coinbase has no prevout, so its line carries
@@ -7570,7 +7575,14 @@ async function landOnWitness(raw) {
     const fn = currentFootnotes.find((f) => f.vin === Number(raw));
     el = (fn && $(`fn-${footnoteMark(fn.n)}`)) || $(`in-${raw}`);
   } else if (/^[a-z]+$/i.test(raw)) {
-    el = $(`fn-${raw.toLowerCase()}`);
+    // A letter names an input, so it lands the same way a number does: the
+    // footnote that input raised, or the input itself when it raised none --
+    // which is every legacy spend, cited uppercase and carrying no footnote.
+    const n = footnoteIndexOf(raw);
+    if (n != null) {
+      const fn = currentFootnotes.find((f) => f.vin === n - 1);
+      el = (fn && $(`fn-${footnoteMark(fn.n)}`)) || $(`in-${n - 1}`);
+    }
   }
   if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
