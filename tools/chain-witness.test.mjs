@@ -155,7 +155,7 @@ test('a lock is cited where it was written; its arguments where they were suppli
   const w = readWitness([spend(700000, 'open', 2), paid(600000, 'pay')], ADDR);
   assert.equal(w.txid, 'pay', 'the lock is cited where it was written');
   assert.equal(w.height, 600000);
-  assert.deepEqual(w.opened, { txid: 'open', height: 700000, in: 2, mark: { n: 3, sig: true }, items: [], args: [] },
+  assert.deepEqual(w.opened, { txid: 'open', height: 700000, in: 2, mark: { n: 3, sig: true }, items: [], args: [], scriptsig: null },
     'and its arguments where they were supplied, at the input that supplied them');
   // The first spend, not the last: a member opened twice is cited at the first.
   const twice = readWitness([spend(800000, 'later'), spend(700000, 'first'), paid(600000, 'pay')], ADDR);
@@ -182,9 +182,16 @@ test('what a spending input brought, whichever way it carried it', () => {
   assert.deepEqual(spendArgsOf([SIG, '50ff'], true), [SIG]);
   assert.deepEqual(spendArgsOf(['50ff'], true), ['50ff'], 'alone it is not an annex');
   assert.deepEqual(spendArgsOf([SIG, '50ff'], false), [SIG, '50ff'], 'a scriptSig has no annex');
-  // A scriptSig that is not pushes end to end brought no list this can name,
-  // and guessing which tokens were arguments is not on offer.
-  assert.deepEqual(suppliedBy({ scriptsig: '51' + '47' + SIG }), []);
+  // OP_0 is a push of nothing, and it opens nearly every P2SH multisig
+  // scriptSig — standing in for the item OP_CHECKMULTISIG pops and ignores.
+  // Reading it as an operation left the commonest legacy spend on chain
+  // looking as though it had brought nothing at all.
+  assert.deepEqual(suppliedBy({ scriptsig: '00' + '47' + SIG }), ['', SIG]);
+  assert.deepEqual(suppliedBy({ scriptsig: '51' + '47' + SIG }), ['01', SIG], 'OP_1 pushes a 1');
+  assert.deepEqual(suppliedBy({ scriptsig: '4f' + '47' + SIG }), ['81', SIG], 'OP_1NEGATE');
+  // A real operation is not an argument, and guessing which tokens were which
+  // is not on offer.
+  assert.deepEqual(suppliedBy({ scriptsig: '76' + '47' + SIG }), [], 'OP_DUP is not a push');
   assert.deepEqual(suppliedBy({}), []);
   assert.deepEqual(suppliedBy({ scriptsig: '' }), []);
 });
