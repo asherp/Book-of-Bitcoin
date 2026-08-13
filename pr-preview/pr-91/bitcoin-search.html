@@ -133,6 +133,10 @@ button:hover { background: var(--accent-2); }
    glance which half of the line is a fact and which is a demand. */
 .term-awaits { margin-bottom: 14px; }
 .term-line .aw { color: var(--ink); font-style: normal; }
+/* The reader's witness apparatus, set as the reader sets it: the separator
+   between stack items and the ∅ of an item that carried nothing are neither
+   opcodes nor data, so they take the quiet the book gives them. */
+.term-line .wit-sep, .term-line .wit-empty { color: var(--meta); font-style: normal; font-weight: 400; }
 .term-note { margin:16px 0 0; font:400 13px/1.55 'Public Sans','Book Sigla',sans-serif; color:var(--meta); max-width:62ch; }
 /* The same script in the book's own hand, set to be copied rather than read:
    the bottom line of the chain without its brackets, which are apparatus. The
@@ -266,6 +270,22 @@ async function glossia() {
   } catch { return null; }
 }
 const say = (gl) => (hex) => { try { return gl.encodeCanonical(hex).prose; } catch { return null; } };
+
+// The reader's own witness rendering, borrowed rather than reimplemented: it
+// reveals a witness script as opcodes, strips a DER signature to its compact
+// form before saying it, tells an annex from an argument and an empty stack
+// item from a missing one. Lazily, and for the same reason the engine is --
+// btc-prose.js imports glossia-msg at the top, so a static import would take
+// the whole leaf down in a build with no WASM. It arrives when the engine
+// does, which is right: what it adds over the term's own marks is prose, and
+// prose is what the engine says.
+let proseMod = null;
+async function witnessProse() {
+  try {
+    proseMod ??= import('./btc-prose.js').then((m) => m.renderWitness);
+    return await proseMod;
+  } catch { return null; }
+}
 const hear = (gl) => (prose, bytes) => { try { return gl.decodeCanonical(prose, bytes).hex; } catch { return null; } };
 
 // A script, answered where it was typed. An address names no chapter, so there
@@ -346,23 +366,26 @@ const faultNote = (f) => {
 // paths above, because an unspent output really can be opened either way, and
 // this line is the one the chain has a record of. Consensus's own rule picks it
 // -- exactly one witness item is the key path -- so nothing here is a guess.
-const spendRung = (t, opened, sayFn, section = null) => {
-  const brought = opened?.items?.length ? suppliedHtml(t, opened.items, { say: sayFn }) : null;
-  if (!brought) return '';
+const spendRung = (t, opened, sayFn, section = null, brought = null) => {
+  // The arity is read off what the script takes; the line shows everything the
+  // input carried, annex and all, exactly as the reader would.
+  const rung = opened?.args?.length
+    ? suppliedHtml(t, opened.args, { say: sayFn, brought }) : null;
+  if (!rung) return '';
   // The citation lands on the INPUT, not merely the transaction that holds it.
   // These marks were read off one vin, and a spend can draw from many places at
   // once -- a citation that stopped at the section would send a reader to a page
   // and leave them to find which line the quote came from.
   const where = `<a href="${citeHref(opened.txid, undefined, opened.in)}">`
     + `${escapeHtml(cite(opened.height, section, { mark: opened.mark }))}</a>`;
-  return `<div class="term-line term-spend">${brought.html}</div>`
+  return `<div class="term-line term-spend">${rung.html}</div>`
     + `<div class="term-attrib"><span class="term-cite" title="quoted from input `
     + `${opened.in} of the first transaction to spend this output — the input that `
     + `supplied what the lock was waiting for">—</span> ${where}</div>`;
 };
 
 function drawTerm(hex, { address = null, at = '', say: sayFn = null, said = '',
-                        opened = null, spendSection = null } = {}) {
+                        opened = null, spendSection = null, brought = null } = {}) {
   const fault = scriptFault(hex);
   const t = fault ? null : termOfScript(hex);
   const head = `<div class="term-head"><span class="term-kind">${t ? escapeHtml(t.label) : 'Script'}</span>`
@@ -397,7 +420,7 @@ function drawTerm(hex, { address = null, at = '', say: sayFn = null, said = '',
     : (t ? `<div class="term-line term-awaits">${addressHtml(t, { prose: argument })}</div>` : '')
       + locked
       + said
-      + (t ? spendRung(t, opened, sayFn, spendSection) : '');
+      + (t ? spendRung(t, opened, sayFn, spendSection, brought) : '');
   termEl.innerHTML = head + body;
   termEl.hidden = false;
   termEl.dataset.at = at;
@@ -409,7 +432,7 @@ function drawTerm(hex, { address = null, at = '', say: sayFn = null, said = '',
 // other is somebody else's server.
 async function enrichTerm(hex, { address = null, at = '' } = {}) {
   const still = () => termEl.dataset.at === at;
-  const gl = await glossia();
+  const [gl, renderWitness] = await Promise.all([glossia(), witnessProse()]);
   if (!still()) return;
   const sayFn = gl ? say(gl) : null;
   if (sayFn) drawTerm(hex, { address, at, say: sayFn });
@@ -417,11 +440,18 @@ async function enrichTerm(hex, { address = null, at = '' } = {}) {
   if (!still()) return;
   const verdict = witnessVerdict(hex, witness);
   const opened = witness?.opened ?? null;
+  // A witness is set the way the reader sets one. A legacy scriptSig is not:
+  // the reader has no rendering for those -- its footnotes are raised over
+  // witness data alone -- so borrowing one here would be inventing it, and the
+  // term's own marks say those instead.
+  const brought = renderWitness && opened?.items?.length && !opened.mark?.sig
+    ? renderWitness(opened.items, (h) => (sayFn ? sayFn(h) || '' : ''))
+    : null;
   // Drawn at the depth in hand, then again when the sections arrive: a citation
   // a reader can already follow beats a blank while two proofs are fetched.
   const draw = (lock, spend) => drawTerm(hex, { address, at, say: sayFn,
     said: `<div class="term-attrib">${chainMark(verdict, witness, hex, lock)}</div>`,
-    opened, spendSection: spend });
+    opened, spendSection: spend, brought });
   draw(null, null);
   const [lock, spend] = await Promise.all([
     witness?.found ? sectionOfFetched(witness.txid) : null,

@@ -509,16 +509,19 @@ function esploraTouches(txs, member) {
 // legacy as a scriptSig, which is a script whose every token is a push -- two
 // spellings of one thing, and the term above them does not care which.
 //
-// Taproot's annex, if there is one, is dropped: it rides last, is flagged by a
-// leading 0x50, is never an argument to the script, and BIP341 excludes it from
-// the count that decides key path from script path. Keeping it would make a
-// key-path spend look like a script-path one.
+// Everything it brought is kept, annex included -- the reader shows an annex,
+// so a page borrowing the reader's rendering must have one to show. What the
+// annex is excluded from is the COUNT: it rides last behind a leading 0x50, is
+// never an argument to the script, and BIP341 leaves it out of the tally that
+// tells a key path from a script path. So `args` is the arity and `items` is
+// the record, and only one of them is short.
+export const spendArgsOf = (items, witnessCarried) => (witnessCarried
+  && items.length >= 2 && items[items.length - 1].startsWith('50')
+  ? items.slice(0, -1) : items);
+
 export function suppliedBy(vin) {
   const witness = Array.isArray(vin?.witness) ? vin.witness.map((w) => String(w).toLowerCase()) : [];
-  if (witness.length) {
-    const last = witness[witness.length - 1];
-    return witness.length >= 2 && last.startsWith('50') ? witness.slice(0, -1) : witness;
-  }
+  if (witness.length) return witness;
   const sig = String(vin?.scriptsig || '').toLowerCase();
   if (!sig) return [];
   try {
@@ -539,6 +542,12 @@ export function inputMarkOf(vins, index) {
   const v = Array.isArray(vins) ? vins[index] : null;
   if (!v) return null;
   return { n: index + 1, sig: !(Array.isArray(v.witness) && v.witness.length > 0) };
+}
+
+// What an input brought, in both readings: the record, and the arity.
+function brought(vin) {
+  const items = suppliedBy(vin);
+  return { items, args: spendArgsOf(items, Array.isArray(vin?.witness) && vin.witness.length > 0) };
 }
 
 export function readWitness(page, member) {
@@ -566,7 +575,7 @@ export function readWitness(page, member) {
       // The walk runs oldest to newest, so the first one seen is the first
       // spend -- set once, exactly as the earliest reference above is.
       opened ??= { txid: t.txid, height: t.status.block_height, in: n,
-        mark: inputMarkOf(t.vin, n), items: suppliedBy(v) };
+        mark: inputMarkOf(t.vin, n), ...brought(v) };
     });
     if (earliest === null && (at >= 0 || (t.vin || []).some((v) => pays(v.prevout)))) {
       const spent = (t.vin || []).find((v) => pays(v.prevout));

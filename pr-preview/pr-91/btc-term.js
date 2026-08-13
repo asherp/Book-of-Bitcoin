@@ -409,7 +409,20 @@ export function spendMarks(t) {
 // byte count and — where an engine has said it — its prose, exactly as a push
 // is set everywhere else in the book. This is the one line on the leaf whose
 // content came from the chain rather than from the bytes in the box.
-export function suppliedHtml(t, items, { say = null } = {}) {
+// The joint takes the quiet colour, not the gold: it is the step between the
+// two scripts and not a byte either of them holds -- which is also why it can
+// be a disabled opcode's mark without the line claiming a disabled opcode.
+const cat = () => `<span class="lam" title="${escapeHtml(OPCODE_NAMES[0x7e])} — the arguments `
+  + `applied, which a stack machine writes as their pushes ahead of the code">${escapeHtml(CAT)}</span>`;
+
+// …and with the values in hand, the same rung written out. `brought` is the
+// left half pre-rendered by whoever has a better renderer -- the reader's own
+// renderWitness, which reveals a witness script as opcodes, strips a DER
+// signature to its compact form before saying it, and knows an annex from an
+// argument. Given none, the values are named from the term instead and set as
+// marks with their counts, which is all this module can do without reaching
+// for the engine.
+export function suppliedHtml(t, items, { say = null, brought = null } = {}) {
   const which = pathTaken(t, items);
   if (which === null) return null;
   const alt = demandsOf(t)[which];
@@ -418,7 +431,7 @@ export function suppliedHtml(t, items, { say = null } = {}) {
   // no one has brought yet; here the chain has a record of it, cited on the
   // line below, so it is as much a fact as the lock beside it. What separates
   // them is the joint, not the colour -- they are two scripts, both written.
-  const brought = items.map((hex, i) => {
+  const own = () => items.map((hex, i) => {
     const prose = say ? say(hex) || '' : '';
     return `<span class="dt" title="${escapeHtml(TITLES[names[i][0]] ?? 'data')}">`
       + `${escapeHtml(names[i])}</span>`
@@ -427,16 +440,10 @@ export function suppliedHtml(t, items, { say = null } = {}) {
   }).join(' ');
   return {
     which,
-    html: `${brought} ${cat()} ${bodyHtml(t, true)}`
+    html: `${brought ?? own()} ${cat()} ${bodyHtml(t, true)}`
       + (alt.runs ? ` ${lam('(')} <span class="dt">${escapeHtml(alt.runs)}</span> ${lam(')')}` : ''),
   };
 }
-
-// The joint takes the quiet colour, not the gold: it is the step between the
-// two scripts and not a byte either of them holds -- which is also why it can
-// be a disabled opcode's mark without the line claiming a disabled opcode.
-const cat = () => `<span class="lam" title="${escapeHtml(OPCODE_NAMES[0x7e])} — the arguments `
-  + `applied, which a stack machine writes as their pushes ahead of the code">${escapeHtml(CAT)}</span>`;
 
 // The lock's own marks, with no prose and nothing copyable about them: what a
 // second alternative shows, since the datum has already been said once above.
