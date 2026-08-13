@@ -65,14 +65,16 @@ async function copiesTable() {
   return Function(`return ${literal[1]}`)();
 }
 
-// Every label the hash menu is ever opened with. Three shapes reach it: a
-// literal third argument to attachHashCopy, a header field's { menu } or
-// { copy }, and the locking script's entry built by hand.
+// Every label the hash menu is ever opened with. Two shapes reach it: a literal
+// third argument to attachHashCopy, and an entry object built by hand (a header
+// field's { menu }, the locking script's). Lowercase only — a menu label is a
+// phrase the head prints, and the page's other `label:` fields name proper
+// things (Blockstream, mempool.space, USD) or whole sentences.
 async function menuLabels() {
   const page = await bookPage();
   return new Set([
     ...[...page.matchAll(/attachHashCopy\([^;]*?,\s*'([a-z ]+)'/g)].map((m) => m[1]),
-    ...[...page.matchAll(/\{[^{}]*hex:[^{}]*label:\s*'([^']+)'/g)].map((m) => m[1]),
+    ...[...page.matchAll(/\blabel:\s*'([a-z][a-z ]*)'/g)].map((m) => m[1]),
   ]);
 }
 
@@ -225,4 +227,59 @@ test('a chrome string carried in one language is carried in all of them', async 
       assert.ok(body.includes(`'${item}':`), `${table} carries 'Copy hex' but not '${item}'`);
     }
   }
+});
+
+test('a script is its own handle, and it does not eat the selection', async () => {
+  const page = await bookPage();
+  // The reader's report: to copy a locking script you first had to bookmark it,
+  // then click the bookmark's title. syncScriptKeeps prints a NAME line, and it
+  // prints one only for a script the reader has kept or a shelf has curated —
+  // so an ordinary output had nothing to click. The bytes were there from the
+  // first paint; only the affordance was conditional on a keep.
+  assert.match(page, /attachBodyMenu\(scriptCell, \(\) => scriptEntry\(outKeep\), 'locking script/);
+  assert.match(page, /attachBodyMenu\(scriptCell, \(\) => sigMark\.__hashMenu, 'scriptSig/);
+  assert.match(page, /attachBodyMenu\(p, \(\) => markEl\.__hashMenu, 'witness/);
+
+  const body = /function attachBodyMenu\(el, entryOf, said\) \{[\s\S]*?\n\}/.exec(page);
+  assert.ok(body, 'the body handle is gone');
+  // Prose is selected, not just clicked. Every mark handle swallows mousedown
+  // to stop the browser scrolling it into view; a paragraph that did the same
+  // would take the page's own text away from the reader.
+  assert.ok(!/mousedown/.test(body[0]), 'a body handle must not swallow mousedown');
+
+  // …and the guard, run rather than read. A stub element collects the wired
+  // listeners, a stub selection says whether the reader had one, and what is
+  // counted is how often the menu opened.
+  const fire = ({ collapsed, entry }, type, ev) => {
+    const opened = [];
+    const wired = {};
+    const el = { addEventListener: (t, f) => { wired[t] = f; }, setAttribute() {} };
+    const doc = { getSelection: () => ({ isCollapsed: collapsed }) };
+    Function('el', 'document', 'openHashMenu', 'entryOf', 'said',
+      `${body[0]}\nattachBodyMenu(el, entryOf, said);`)(
+      el, doc, (e, got) => opened.push(got), () => entry, 'a script — click for menu');
+    assert.equal(el.tabIndex, 0, 'a handle a keyboard cannot reach is not a handle');
+    wired[type](ev);
+    return opened.length;
+  };
+  const CLICK = { type: 'click' };
+  const ENTER = { type: 'keydown', key: 'Enter', preventDefault() {} };
+  const entry = { label: 'witness' };
+  assert.equal(fire({ collapsed: true, entry }, 'click', CLICK), 1, 'a plain click opens it');
+  assert.equal(fire({ collapsed: false, entry }, 'click', CLICK), 0,
+    'a click that ended a selection was the reader taking the text, not the menu');
+  assert.equal(fire({ collapsed: false, entry }, 'keydown', ENTER), 1,
+    'the keyboard has no selection to protect');
+  assert.equal(fire({ collapsed: true, entry: null }, 'click', CLICK), 0,
+    'an entry that has not arrived opens nothing');
+  assert.equal(fire({ collapsed: true, entry }, 'keydown',
+    { type: 'keydown', key: 'x', preventDefault() {} }), 0, 'and no other key opens it');
+
+  // The keep line and the body build their entry the same way, so the two
+  // cannot drift — and the entry survives an output with no address at all.
+  assert.match(page, /const entry = scriptEntry\(el\);/, 'the keep line asks the same builder');
+  const builder = /function scriptEntry\(keepEl\) \{[\s\S]*?\n\}/.exec(page)[0];
+  assert.match(builder, /if \(!hex\) return null;/, 'no bytes, no menu');
+  assert.match(builder, /ledgerHref: address\s*\n?\s*\?/,
+    'an OP_RETURN has no ledger road, and still has a script to copy');
 });
