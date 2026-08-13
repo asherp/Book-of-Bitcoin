@@ -289,3 +289,54 @@ test('the footnote alphabet is exactly the letters that can be raised', () => {
   assert.deepEqual(unraisable, ['c', 'f', 's', 'x', 'y', 'z']);
   assert.equal(inputMark(3, true), 'C', 'which is input 3, among others');
 });
+
+// ─── and what the leaf does with the answer ──────────────────────────────
+//
+// The verdicts are read once more, this time as the search leaf reads them: a
+// quotation is marked as one, and only where a place can be named. Source-level,
+// because the leaf's renderer is an inline module in the page — the same way the
+// examples column is checked in address-form.test.mjs.
+const searchPage = async () => {
+  const { readFile } = await import('node:fs/promises');
+  return readFile(new URL('../web/bitcoin-search.html', import.meta.url), 'utf8');
+};
+
+test('a quoted passage is set as a quotation, the way the book sets one', async () => {
+  const page = await searchPage();
+  // The book's own device for a quotation, from bitcoin-book.html's .tx-ascii
+  // and a hit output: a marginal accent rule and the indent beside it. Not
+  // inline quotation marks -- “ ” already means something in this book, the
+  // extent of writing a miner put in a coinbase.
+  const rule = page.split('.term-quote {')[1].split('}')[0];
+  assert.match(rule, /border-left:\s*2px solid var\(--accent\)/, 'a quotation carries the rule');
+  assert.match(rule, /padding-left/, 'and the indent that goes with it');
+  // Taking back a reserved gutter, not pushing the text: the leaf draws these
+  // lines before the chain answers and again after, and an indent that arrived
+  // with the citation would slide the passage under a reader already reading it.
+  // So .term pays for the rule's column whether or not anything is quoted, and
+  // .term-quote spends exactly that much back.
+  const gutter = /padding-left:\s*(\d+)px/.exec(page.split('.term {')[1].split('}')[0]);
+  assert.ok(gutter, 'the leaf reserves no gutter for the rule');
+  assert.match(rule, new RegExp(`margin-left:\\s*-${gutter[1]}px`), 'the rule would move the text');
+  assert.ok(!/“/.test(rule), 'a script is not writing, so it takes no quotation marks');
+});
+
+test('the leaf marks a quotation only where it can name the place', async () => {
+  const page = await searchPage();
+  // The lock rung is a quotation exactly when the chain agrees: reached, found,
+  // and carrying these bytes at every reference on the page. ⋯ never asked, ∅
+  // found nothing, ☒ found something else -- none of them is a passage.
+  assert.match(page, /quoted:\s*verdict === 'agrees'/, 'only agreement makes it a quotation');
+  assert.match(page, /const locked = quoted \?/, 'and the rule is drawn on that alone');
+  // The spend rung has no such condition, because it is only ever drawn when an
+  // input was found to read it off.
+  assert.match(page, /class="term-line term-spend term-quote"/);
+  // The address rung is a reading of the bytes in the box -- true whether or not
+  // the chain ever wrote them -- so it is never inside the rule. If it were, the
+  // mark would stop meaning anything.
+  const classes = [...page.matchAll(/class="([^"]*)"/g)].map((m) => m[1].split(/\s+/));
+  const awaits = classes.filter((c) => c.includes('term-awaits'));
+  assert.equal(awaits.length, 1, 'the address rung is drawn once');
+  assert.ok(!awaits.some((c) => c.includes('term-quote')),
+    'the address rung is a reading, not a quotation');
+});
