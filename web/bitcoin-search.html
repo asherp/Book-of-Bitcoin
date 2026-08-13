@@ -101,7 +101,11 @@ button:hover { background: var(--accent-2); }
 
    Read still opens the place, as it always did. This says what the thing is;
    the button goes to it. */
-.term { margin-top: 26px; }
+/* The leaf reserves the rule's own gutter, always, whether or not anything on
+   it turns out to be quoted -- see .term-quote below for why it cannot be paid
+   for out of the passage's own indent. 12px is the book's .62em at the size the
+   book sets a quote block in. */
+.term { margin-top: 26px; padding-left: 12px; }
 .term[hidden] { display: none; }
 .term-head { display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; margin-bottom:14px; }
 .term-kind { font:600 10px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.18em; text-transform:uppercase; color:var(--accent); }
@@ -114,11 +118,8 @@ button:hover { background: var(--accent-2); }
 }
 /* The marks, styled as the book styles them everywhere else: opcode glyphs in
    accent, the datum's letter bold, its byte count quiet. .lam is the calculus
-   and not the script -- λ, the dot, the application's parens, and the ⧺ that
-   joins a spend to the lock it runs against -- so it never takes the gold that
-   means "the chain kept this". The joint is the case that has to be quiet: it
-   is a real opcode's mark, and it is on the line precisely because it is the
-   one step neither script performs. */
+   and not the script -- λ, the dot, and the application's parens -- so it never
+   takes the gold that means "the chain kept this". */
 .term-line .op { color: var(--accent); font-style: normal; font-weight: 700; }
 /* The count is a push opcode -- on the wire a direct push IS its byte count --
    so it takes the same gold and the same weight as any other byte, rather than
@@ -142,23 +143,44 @@ button:hover { background: var(--accent-2); }
    the bottom line of the chain without its brackets, which are apparatus. The
    search box takes it back, so this is the format's own proof -- a string that
    resolves to Script with no version byte behind it and no table to consult. */
+/* A passage this leaf is quoting rather than deriving, marked as the book marks
+   one everywhere else: the marginal accent rule and the indent it sets .tx-ascii
+   and a hit output in (see bitcoin-book.html), and never inline quotation marks
+   -- those already mean something here, the extent of writing a miner put in a
+   coinbase, and a script is not writing. It is drawn only where a citation can
+   be named, so the rule and the attribution under it arrive together and say the
+   same thing twice: this was read off the chain, and here is where.
+   Not every line on this leaf is a quotation. The address rung is a reading of
+   the bytes in the box, true whether or not the chain ever wrote them, and it
+   stays bare -- which is the whole use of marking the other two.
+   The rule takes back a gutter the leaf reserved rather than pushing the text
+   right, because these lines are drawn before the chain has answered and again
+   after: an indent that arrived with the citation would slide the passage
+   sideways under a reader already reading it. The gutter is .term's own padding
+   and not the page's, so a rule can never end up in the margin the safe-area
+   inset is defending (see --gutter-l in btc-chrome.css). */
+.term-quote {
+  border-left: 2px solid var(--accent); border-radius: 1px;
+  margin-left: -12px; padding-left: 10px;
+}
 /* Where the quote above was found, set as an attribution and not as a verdict:
    an em dash and the place, ranged right under the passage it belongs to, which
-   is how an attribution sits under anything this book quotes. The other three
-   answers have no source to name, so they keep their marks -- ∅ is empty, ⋯ is
-   not yet knowable, ☒ is invalid -- and what each one means is in its hover,
-   which is where this book keeps a claim about a claim. */
+   is how an attribution sits under anything this book quotes. It stands outside
+   the rule, because an attribution is not part of what it attributes. The other
+   three answers have no source to name -- and so nothing to mark as quoted --
+   so they keep their marks: ∅ is empty, ⋯ is not yet knowable, ☒ is invalid,
+   and what each one means is in its hover, which is where this book keeps a
+   claim about a claim. */
 /* The spend stands apart from the lock's own citation, because it is a
    different claim about a different transaction: not where these bytes were
-   written, but where somebody satisfied them. */
+   written, but where somebody satisfied them. Which is also why nothing stands
+   on this line but what that input carried: the joint is apparatus, and the
+   lock the arguments were applied to is the output's bytes, set one rung up
+   under a citation of their own. Both used to trail the quotation in a quiet
+   echo, which still put another transaction's marks under an attribution that
+   names this one — so the line stops where the input does, and the attribution
+   beneath it covers all of it. */
 .term-spend { margin-top: 18px; }
-/* What is on the spend's line but not quoted from it: the joint, and the lock
-   the arguments were applied to. Those bytes are the output's, set one rung up
-   under a citation of their own, so here they are an echo — quiet, so the
-   attribution ranged under this line covers the passage it names and stops
-   where the quotation stops. */
-.term-line .echo .op, .term-line .echo .dt, .term-line .echo .op-push,
-.term-line .echo .lam { color: var(--meta); font-weight: 400; }
 .term-attrib { margin:10px 0 0; text-align:right; font:400 15px/1.7 'Newsreader','Book Sigla',serif; color:var(--meta); }
 /* A diagnosis is not an attribution: bytes that are not a script name no place,
    so what is wrong with them stays on the left where reading begins. */
@@ -348,10 +370,17 @@ const chainMark = (verdict, witness, ours, section = null) => {
   // and the place, which is how this book attributes anything it quotes. The
   // attribution IS the finding -- a citation nobody could confirm would not be
   // written -- so no separate mark of assent is needed beside it.
-  const said = witness.whole
-    ? `the first output that ever carried this script, and every one of ${n} references on the page — `
-    : `the earliest reference one page reaches, and every one of ${n} on it — `;
-  return `<span class="term-cite" title="${said}${witness.outputs} paying it, `
+  // Which output got cited is a choice, and the hover says which choice was
+  // made: an output with a spend to show beats an earlier one with none, since
+  // the rung below then quotes the input that opened THIS output rather than
+  // some other one carrying the same bytes.
+  const said = witness.paired
+    ? 'the earliest output this page reaches that anyone has opened — and the input quoted below is what opened it'
+    : witness.whole
+      ? 'the first output that ever carried this script'
+      : 'the earliest reference one page reaches';
+  return `<span class="term-cite" title="${said}, and every one of ${n} references on `
+    + `the page — ${witness.outputs} paying it, `
     + `${witness.prevouts} spent from it, all carrying these bytes">—</span> ${where}`;
 };
 
@@ -379,7 +408,7 @@ const faultNote = (f) => {
 // paths above, because an unspent output really can be opened either way, and
 // this line is the one the chain has a record of. Consensus's own rule picks it
 // -- exactly one witness item is the key path -- so nothing here is a guess.
-const spendRung = (t, opened, sayFn, section = null, brought = null) => {
+const spendRung = (t, opened, sayFn, section = null, brought = null, paired = false) => {
   // The arity is read off what the script takes; the line shows everything the
   // input carried, annex and all, exactly as the reader would.
   const rung = opened?.args?.length
@@ -391,14 +420,23 @@ const spendRung = (t, opened, sayFn, section = null, brought = null) => {
   // and leave them to find which line the quote came from.
   const where = `<a href="${citeHref(opened.txid, undefined, opened.in)}">`
     + `${escapeHtml(cite(opened.height, section, { mark: opened.mark }))}</a>`;
-  return `<div class="term-line term-spend">${rung.html}</div>`
-    + `<div class="term-attrib"><span class="term-cite" title="quoted from input `
-    + `${opened.in} of the first transaction to spend this output — the input that `
-    + `supplied what the lock was waiting for">—</span> ${where}</div>`;
+  // What this input opened. Usually the very output cited above, because the two
+  // are chosen together (readWitness); where the page could not reach that
+  // output the claim narrows to what is still true -- these arguments satisfied
+  // these bytes -- rather than overstating a pair that was never found.
+  const says = paired
+    ? `quoted from input ${opened.in} of the transaction that opened the output cited `
+      + 'above — the input that supplied what that lock was waiting for'
+    : `quoted from input ${opened.in} of the earliest spend this page reaches. It opened `
+      + 'a different output carrying these same bytes: nothing on this page opens the one '
+      + 'cited above';
+  return `<div class="term-line term-spend term-quote">${rung.html}</div>`
+    + `<div class="term-attrib"><span class="term-cite" title="${says}">—</span> ${where}</div>`;
 };
 
 function drawTerm(hex, { address = null, at = '', say: sayFn = null, said = '',
-                        opened = null, spendSection = null, brought = null } = {}) {
+                        quoted = false, opened = null, spendSection = null, brought = null,
+                        paired = false } = {}) {
   const fault = scriptFault(hex);
   const t = fault ? null : termOfScript(hex);
   const head = `<div class="term-head"><span class="term-kind">${t ? escapeHtml(t.label) : 'Script'}</span>`
@@ -424,16 +462,23 @@ function drawTerm(hex, { address = null, at = '', say: sayFn = null, said = '',
   // λ. A second alternative has nothing new to say about the datum, so it shows
   // the lock's marks alone and lets the prose above stand for both.
   const marks = t ? lockedMarks(t) : null;
-  const locked = marks
+  const lines = marks
     ? marks.map((m, i) => `<div class="term-line">${m.prefix} `
         + (i === 0 ? script : lockBodyHtml(t)) + `${m.suffix}</div>`).join('')
     : `<div class="term-line">${script}</div>`;
+  // …and marked as a quotation once, and only once, the chain has said where
+  // these bytes are written. Until it answers -- and if it answers ∅, ⋯ or ☒ --
+  // the same marks are only a reading of what the reader typed, which is a true
+  // thing to draw and not a passage anyone can be sent to. One rule covers every
+  // alternative, because they are one script however many ways it opens, and the
+  // citation below covers them the same way.
+  const locked = quoted ? `<div class="term-quote">${lines}</div>` : lines;
   const body = fault
     ? `<div class="term-said">${faultNote(fault)}</div>`
     : (t ? `<div class="term-line term-awaits">${addressHtml(t, { prose: argument })}</div>` : '')
       + locked
       + said
-      + (t ? spendRung(t, opened, sayFn, spendSection, brought) : '');
+      + (t ? spendRung(t, opened, sayFn, spendSection, brought, paired) : '');
   termEl.innerHTML = head + body;
   termEl.hidden = false;
   termEl.dataset.at = at;
@@ -463,9 +508,14 @@ async function enrichTerm(hex, { address = null, at = '' } = {}) {
       : (opened.items?.length ? reader.renderWitness(opened.items, encode) : null);
   // Drawn at the depth in hand, then again when the sections arrive: a citation
   // a reader can already follow beats a blank while two proofs are fetched.
+  // `agrees` is the one verdict that makes the lock rung a quotation: the chain
+  // was reached, it carries these bytes, and every reference on the page carries
+  // the same ones. ⋯ never asked, ∅ found nothing, and ☒ found something else --
+  // under none of those is there a passage to mark, so the rule stays off.
   const draw = (lock, spend) => drawTerm(hex, { address, at, say: sayFn,
     said: `<div class="term-attrib">${chainMark(verdict, witness, hex, lock)}</div>`,
-    opened, spendSection: spend, brought });
+    quoted: verdict === 'agrees', opened, spendSection: spend, brought,
+    paired: Boolean(witness?.paired) });
   draw(null, null);
   const [lock, spend] = await Promise.all([
     witness?.found ? sectionOfFetched(witness.txid) : null,
