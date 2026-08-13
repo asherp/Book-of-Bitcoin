@@ -88,11 +88,15 @@ button:hover { background: var(--accent-2); }
    either, and what it is can be read straight off the bytes -- so it is, on
    every keystroke, before anything is clicked.
 
-   Above: what it awaits. The λ binds what a spend must bring, so the line says
-   what the address demands of whoever comes to move the coin, and what it
-   already holds stands as a constant inside it. Below: what the chain holds,
-   which is the script itself. Neither is derived from the other -- they are two
-   readings of one output, and the notation key's Scripts as terms group is
+   Above: the address as the partial application it is. The λ binds one party's
+   key material at both its moments -- the image this address already carries,
+   and the preimage and signature only its author can produce -- and the one
+   argument written after it is that image, said in the book's own tongue,
+   standing where a base58 or bech32 string spends its entropy. Not two people:
+   the payer transcribes an h and supplies nothing to it. Below: what the chain holds, which is the
+   script itself. The two are one reduction apart, and only in one direction:
+   supply the rest of the arguments and the line above becomes the line below
+   with a spend in front of it. The notation key's Scripts as terms group is
    where the encoding's own β chain lives.
 
    Read still opens the place, as it always did. This says what the thing is;
@@ -110,19 +114,29 @@ button:hover { background: var(--accent-2); }
 }
 /* The marks, styled as the book styles them everywhere else: opcode glyphs in
    accent, the datum's letter bold, its byte count quiet. .lam is the calculus
-   and not the script -- λ, the dot, the brackets, the application's parens --
-   so it never takes the gold that means "the chain kept this". */
-.term-line .op { color: var(--accent); font-style: normal; }
-.term-line .op-push { color: var(--meta); }
+   and not the script -- λ, the dot, the application's parens, and the ⧺ that
+   joins a spend to the lock it runs against -- so it never takes the gold that
+   means "the chain kept this". The joint is the case that has to be quiet: it
+   is a real opcode's mark, and it is on the line precisely because it is the
+   one step neither script performs. */
+.term-line .op { color: var(--accent); font-style: normal; font-weight: 700; }
+/* The count is a push opcode -- on the wire a direct push IS its byte count --
+   so it takes the same gold and the same weight as any other byte, rather than
+   the quiet it wears elsewhere in the book as an annotation. */
+.term-line .op-push { color: var(--accent); font-weight: 700; }
 .term-line .dt { color: var(--accent); font-style: normal; font-weight: 700; }
-.term-line .lam { color: var(--meta); }
-/* What the address awaits, above what the chain holds. One distinction does
-   the work: the gold is what the chain already has, and everything plain is
-   what the address is still waiting for a spend to bring -- the same split the
-   key's validator column keeps, and here it means a reader sees at a glance
-   which half of the line is a fact and which is a demand. */
+.term-line .lam { color: var(--meta); font-weight: 400; }
+/* What the address holds and what it awaits, above what the chain holds. One
+   distinction does the work: the gold is what the address already has, and
+   everything plain is what it is still waiting for a spend to bring -- the same
+   split the key's validator column keeps, and here it means a reader sees at a
+   glance which half of the line is a fact and which is a demand. */
 .term-awaits { margin-bottom: 14px; }
 .term-line .aw { color: var(--ink); font-style: normal; }
+/* The reader's witness apparatus, set as the reader sets it: the separator
+   between stack items and the ∅ of an item that carried nothing are neither
+   opcodes nor data, so they take the quiet the book gives them. */
+.term-line .wit-sep, .term-line .wit-empty { color: var(--meta); font-style: normal; font-weight: 400; }
 .term-note { margin:16px 0 0; font:400 13px/1.55 'Public Sans','Book Sigla',sans-serif; color:var(--meta); max-width:62ch; }
 /* The same script in the book's own hand, set to be copied rather than read:
    the bottom line of the chain without its brackets, which are apparatus. The
@@ -134,6 +148,17 @@ button:hover { background: var(--accent-2); }
    answers have no source to name, so they keep their marks -- ∅ is empty, ⋯ is
    not yet knowable, ☒ is invalid -- and what each one means is in its hover,
    which is where this book keeps a claim about a claim. */
+/* The spend stands apart from the lock's own citation, because it is a
+   different claim about a different transaction: not where these bytes were
+   written, but where somebody satisfied them. */
+.term-spend { margin-top: 18px; }
+/* What is on the spend's line but not quoted from it: the joint, and the lock
+   the arguments were applied to. Those bytes are the output's, set one rung up
+   under a citation of their own, so here they are an echo — quiet, so the
+   attribution ranged under this line covers the passage it names and stops
+   where the quotation stops. */
+.term-line .echo .op, .term-line .echo .dt, .term-line .echo .op-push,
+.term-line .echo .lam { color: var(--meta); font-weight: 400; }
 .term-attrib { margin:10px 0 0; text-align:right; font:400 15px/1.7 'Newsreader','Book Sigla',serif; color:var(--meta); }
 /* A diagnosis is not an attribution: bytes that are not a script name no place,
    so what is wrong with them stays on the left where reading begins. */
@@ -160,7 +185,13 @@ button:hover { background: var(--accent-2); }
 .examples-title { font:600 10px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.16em; text-transform:uppercase; color:var(--meta); margin-bottom:4px; padding-left:2px; }
 .example { display:flex; align-items:baseline; gap:16px; padding:9px 2px; border-bottom:1px solid var(--hair); text-decoration:none; }
 .example-what { flex:1; min-width:0; font:500 15px/1.35 'Newsreader','Book Sigla',serif; color:var(--ink-soft); }
-.example-form { flex:none; max-width:55%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-align:right; font:500 12.5px/1.6 'IBM Plex Mono','Book Sigla',monospace; color:var(--accent); }
+/* Whole, or not at all. A member elided head…tail is the shape address
+   poisoning feeds on -- a forged address need only match what a reader can
+   see, and what a reader can see is what the column left after clipping. So
+   this one wraps instead of clipping, and the forms below are written out.
+   The discipline is what the prose format buys: a sentence can be read to the
+   end, which is why it must be given to the end. */
+.example-form { flex:none; max-width:55%; text-align:right; overflow-wrap:anywhere; font:500 12.5px/1.6 'IBM Plex Mono','Book Sigla',monospace; color:var(--accent); }
 .example:hover .example-what { color:var(--ink); }
 .example:hover .example-form { color:var(--accent-2); text-decoration:underline; }
 </style>
@@ -191,10 +222,10 @@ button:hover { background: var(--accent-2); }
     <a class="example" href="./bitcoin-book.html?block=-1"><span class="example-what">the latest block — a negative height counts back from the chain tip</span><span class="example-form">-1</span></a>
     <a class="example" href="./bitcoin-book.html?block=III%20%CE%B22%20%E2%96%A05"><span class="example-what">a chapter, by the book's own citation</span><span class="example-form">III β2 ■5</span></a>
     <a class="example" href="./bitcoin-book.html?block=57043"><span class="example-what">the chapter that carries Bitcoin Pizza Day, by height</span><span class="example-form">57043</span></a>
-    <a class="example" href="./bitcoin-book.html?txid=a1075db55d416d3ca199f55b6084e2115b9345e16c5cf302fc80e9d5fbf5d48d"><span class="example-what">the pizza transaction's own section, by its id</span><span class="example-form">a1075db5…f5d48d</span></a>
+    <a class="example" href="./bitcoin-book.html?txid=a1075db55d416d3ca199f55b6084e2115b9345e16c5cf302fc80e9d5fbf5d48d"><span class="example-what">the pizza transaction's own section, by its id</span><span class="example-form">a1075db55d416d3ca199f55b6084e2115b9345e16c5cf302fc80e9d5fbf5d48d</span></a>
     <a class="example" href="./bitcoin-book.html?ref=v1b29c596"><span class="example-what">the same chapter, by its reference alone — as a βoβ quote carries it</span><span class="example-form">v1b29c596</span></a>
-    <a class="example" href="./bitcoin-search.html?q=1Ross5Np5doy4ajF9iGXzgKaC2Q3Pwwxv"><span class="example-what">an address — not a place but a name, so it opens no chapter: it reads here as the term it binds</span><span class="example-form">1Ross5Np…Pwwxv</span></a>
-    <a class="example" href="./bitcoin-search.html?q=76a91404b11d2eb716291f33be29210ee5b2a161c071af88ac"><span class="example-what">a locking script by its own bytes — bare, where the bytes settle it; a <span class="mono">script:</span> prefix forces the reading for a lock that binds no term</span><span class="example-form">76a914…88ac</span></a>
+    <a class="example" href="./bitcoin-search.html?q=1Ross5Np5doy4ajF9iGXzgKaC2Q3Pwwxv"><span class="example-what">an address — not a place but a name, so it opens no chapter: it reads here as the term it binds</span><span class="example-form">1Ross5Np5doy4ajF9iGXzgKaC2Q3Pwwxv</span></a>
+    <a class="example" href="./bitcoin-search.html?q=76a91404b11d2eb716291f33be29210ee5b2a161c071af88ac"><span class="example-what">a locking script by its own bytes — bare, where the bytes settle it; a <span class="mono">script:</span> prefix forces the reading for a lock that binds no term</span><span class="example-form">76a91404b11d2eb716291f33be29210ee5b2a161c071af88ac</span></a>
     <a class="example" href="./bitcoin-appendix.html?part=proofs"><span class="example-what">a file's own chapter — an OpenTimestamps proof names the passage it was stamped into, and the Citations register keeps it</span><span class="example-form">.ots</span></a>
   </div>
 </div>
@@ -219,11 +250,11 @@ mountLangMenu();  // …with the Language item, which any page can now set
 // ledger's own (isAddress decodes base58 and bech32); uppercase bech32, as a QR
 // scan yields it, is normalized to the lowercase form the ledger queries with.
 import { isAddress, addressScriptHex, chainWitness, witnessVerdict, witnessDisagreement,
-         chainFailureText, citeHref } from './btc-index.js';
-import { reference, latinReference } from './btc-citation.js';
+         chainFailureText, citeHref, sectionOfFetched } from './btc-index.js';
+import { reference, latinReference, inputMark } from './btc-citation.js';
 import { parseLookup } from './btc-lookup.js';
 
-import { termOfScript, demandsHtml } from './btc-term.js';
+import { termOfScript, addressHtml, lockedMarks, lockBodyHtml, suppliedHtml } from './btc-term.js';
 import { spellHtml, read, looksSpelled, isWholeScript, scriptFault } from './btc-address-form.js';
 const input = document.getElementById('block-input');
 const termEl = document.getElementById('term');
@@ -246,6 +277,28 @@ async function glossia() {
   } catch { return null; }
 }
 const say = (gl) => (hex) => { try { return gl.encodeCanonical(hex).prose; } catch { return null; } };
+
+// The reader's own renderings, borrowed rather than reimplemented -- both of
+// them, because an input carries its data one of two ways and the reader draws
+// each. renderWitness sets a stack: a witness script as opcodes, a DER
+// signature stripped to its compact form before it is said, an annex told from
+// an argument, an empty item as ∅. renderScript sets a scriptSig, and `nested`
+// is what reveals a P2SH redeem script as opcodes rather than leaving it an
+// opaque push.
+//
+// Lazily, and for the same reason the engine is: btc-prose.js imports
+// glossia-msg at the top, so a static import would take the whole leaf down in
+// a build with no WASM. They arrive when the engine does, which is right --
+// what they add over the term's own marks is prose, and prose is what the
+// engine says.
+let proseMod = null;
+async function readerProse() {
+  try {
+    proseMod ??= import('./btc-prose.js')
+      .then((m) => ({ renderWitness: m.renderWitness, renderScript: m.renderScript }));
+    return await proseMod;
+  } catch { return null; }
+}
 const hear = (gl) => (prose, bytes) => { try { return gl.decodeCanonical(prose, bytes).hex; } catch { return null; } };
 
 // A script, answered where it was typed. An address names no chapter, so there
@@ -260,7 +313,20 @@ const escapeHtml = (s) => String(s)
 // nowhere and no place can be named, what it says instead. Everything on the
 // leaf up to here is derived from the bytes in hand; this is the one line that
 // went and asked.
-const chainMark = (verdict, witness, ours) => {
+// A citation to the depth this page can actually name. reference() reaches the
+// chapter; the § is the transaction's place in its block, which costs one
+// merkle proof and is banked forever, so it arrives after the line is already
+// drawn and deepens it. Below the point the two halves part company, and the
+// grammar decides what may follow it: an output is a figure (§12.0) and an
+// input is a letter, cased for what it carried -- §42.c a witness, §42.C a
+// scriptSig. Both name the same coordinate, because they are the same
+// coordinate: segwit moved where the data rides, not what an input supplies.
+const cite = (height, section, { out = null, mark = null } = {}) => reference(height)
+  + (section != null ? ` §${section + 1}` : '')
+  + (section != null && out != null ? `.${out}` : '')
+  + (section != null && mark ? `.${inputMark(mark.n, mark.sig)}` : '');
+
+const chainMark = (verdict, witness, ours, section = null) => {
   if (verdict === 'unreachable') {
     return `<span class="term-check term-check-said" title="the chain could not be asked — `
       + `${escapeHtml(chainFailureText())}">⋯</span>`;
@@ -269,7 +335,7 @@ const chainMark = (verdict, witness, ours) => {
     return '<span class="term-check term-check-said" title="no confirmed output on chain carries '
       + 'this script yet">∅</span>';
   }
-  const at = reference(witness.height);
+  const at = cite(witness.height, section, { out: witness.out });
   const n = witness.outputs + witness.prevouts;
   const where = `<a href="${citeHref(witness.txid, witness.out ?? undefined)}">${escapeHtml(at)}</a>`;
   if (verdict === 'differs') {
@@ -306,7 +372,33 @@ const faultNote = (f) => {
   return '<span class="term-check term-check-differs">☒</span> not whole bytes';
 };
 
-function drawTerm(hex, { address = null, at = '', say: sayFn = null, said = '' } = {}) {
+// The third rung, and the only one whose content this page cannot compute. A
+// lock is bytes, so the chain can be asked for them; what satisfies a lock is
+// not in the address and no reduction reaches it, so it is read off the input
+// that supplied it. Which is also what settles taproot: the lock keeps both its
+// paths above, because an unspent output really can be opened either way, and
+// this line is the one the chain has a record of. Consensus's own rule picks it
+// -- exactly one witness item is the key path -- so nothing here is a guess.
+const spendRung = (t, opened, sayFn, section = null, brought = null) => {
+  // The arity is read off what the script takes; the line shows everything the
+  // input carried, annex and all, exactly as the reader would.
+  const rung = opened?.args?.length
+    ? suppliedHtml(t, opened.args, { say: sayFn, brought }) : null;
+  if (!rung) return '';
+  // The citation lands on the INPUT, not merely the transaction that holds it.
+  // These marks were read off one vin, and a spend can draw from many places at
+  // once -- a citation that stopped at the section would send a reader to a page
+  // and leave them to find which line the quote came from.
+  const where = `<a href="${citeHref(opened.txid, undefined, opened.in)}">`
+    + `${escapeHtml(cite(opened.height, section, { mark: opened.mark }))}</a>`;
+  return `<div class="term-line term-spend">${rung.html}</div>`
+    + `<div class="term-attrib"><span class="term-cite" title="quoted from input `
+    + `${opened.in} of the first transaction to spend this output — the input that `
+    + `supplied what the lock was waiting for">—</span> ${where}</div>`;
+};
+
+function drawTerm(hex, { address = null, at = '', say: sayFn = null, said = '',
+                        opened = null, spendSection = null, brought = null } = {}) {
   const fault = scriptFault(hex);
   const t = fault ? null : termOfScript(hex);
   const head = `<div class="term-head"><span class="term-kind">${t ? escapeHtml(t.label) : 'Script'}</span>`
@@ -314,16 +406,34 @@ function drawTerm(hex, { address = null, at = '', say: sayFn = null, said = '' }
   // A term binds, or it does not, or the bytes are not a script at all. The
   // middle case is not an absence: there is always the script itself, and
   // setting it beats explaining why there was nothing to set.
-  // Two readings of one thing, and nothing between them: what the address is
-  // still waiting for, and what the chain is holding. They are not a
-  // derivation of each other -- a β between them would be a lie -- so the only
-  // thing that joins them is that they are about the same output.
+  // Two readings of one thing, one β apart: the address as a term with its
+  // image supplied and what only its author can produce still bound, and what
+  // the chain is holding, which is everything right of that term's ⧺ once the
+  // argument has gone in. The joint is the only mark above that the wire will not carry,
+  // which is what makes the reduction between them a claim and not a picture.
+  // The address line carries its own datum, said: an address is a term with one
+  // argument supplied, and the argument is the thing a base58 or bech32 string
+  // spends its entropy on. Without the engine the mark stands alone, as it does
+  // everywhere else in the book.
+  const argument = t && sayFn ? sayFn(t.argument) || '' : '';
+  const script = `<span class="term-onchain" title="the same script in the book’s own hand — `
+    + `this box takes it back">${spellHtml(hex, { say: sayFn }) || ''}</span>`;
+  // The second rung, one line per way of opening the output. The first carries
+  // the spelled script, which is the copyable form and has to stay bare bytes:
+  // the binders sit outside that span, so a click takes the script and not the
+  // λ. A second alternative has nothing new to say about the datum, so it shows
+  // the lock's marks alone and lets the prose above stand for both.
+  const marks = t ? lockedMarks(t) : null;
+  const locked = marks
+    ? marks.map((m, i) => `<div class="term-line">${m.prefix} `
+        + (i === 0 ? script : lockBodyHtml(t)) + `${m.suffix}</div>`).join('')
+    : `<div class="term-line">${script}</div>`;
   const body = fault
     ? `<div class="term-said">${faultNote(fault)}</div>`
-    : (t ? `<div class="term-line term-awaits">${demandsHtml(t) || ''}</div>` : '')
-      + `<div class="term-line term-onchain" title="the same script in the book’s own hand — `
-      + `this box takes it back">${spellHtml(hex, { say: sayFn }) || ''}</div>`
-      + said;
+    : (t ? `<div class="term-line term-awaits">${addressHtml(t, { prose: argument })}</div>` : '')
+      + locked
+      + said
+      + (t ? spendRung(t, opened, sayFn, spendSection, brought) : '');
   termEl.innerHTML = head + body;
   termEl.hidden = false;
   termEl.dataset.at = at;
@@ -335,15 +445,34 @@ function drawTerm(hex, { address = null, at = '', say: sayFn = null, said = '' }
 // other is somebody else's server.
 async function enrichTerm(hex, { address = null, at = '' } = {}) {
   const still = () => termEl.dataset.at === at;
-  const gl = await glossia();
+  const [gl, reader] = await Promise.all([glossia(), readerProse()]);
   if (!still()) return;
   const sayFn = gl ? say(gl) : null;
   if (sayFn) drawTerm(hex, { address, at, say: sayFn });
   const witness = await chainWitness(address ?? hex);
   if (!still()) return;
   const verdict = witnessVerdict(hex, witness);
-  drawTerm(hex, { address, at, say: sayFn,
-    said: `<div class="term-attrib">${chainMark(verdict, witness, hex)}</div>` });
+  const opened = witness?.opened ?? null;
+  // Set the way the reader sets it, whichever way the input carried it: a
+  // witness as a stack, a scriptSig as script. Only the carriage decides which,
+  // exactly as it does in a chapter.
+  const encode = (h) => (sayFn ? sayFn(h) || '' : '');
+  const brought = !reader || !opened ? null
+    : opened.mark?.sig
+      ? (opened.scriptsig ? reader.renderScript(opened.scriptsig, encode, { nested: true }) : null)
+      : (opened.items?.length ? reader.renderWitness(opened.items, encode) : null);
+  // Drawn at the depth in hand, then again when the sections arrive: a citation
+  // a reader can already follow beats a blank while two proofs are fetched.
+  const draw = (lock, spend) => drawTerm(hex, { address, at, say: sayFn,
+    said: `<div class="term-attrib">${chainMark(verdict, witness, hex, lock)}</div>`,
+    opened, spendSection: spend, brought });
+  draw(null, null);
+  const [lock, spend] = await Promise.all([
+    witness?.found ? sectionOfFetched(witness.txid) : null,
+    opened ? sectionOfFetched(opened.txid) : null,
+  ]);
+  if (!still()) return;
+  if (lock != null || spend != null) draw(lock, spend);
 }
 
 // The book's own spelling, read back. It carries its bytes rather than pointing

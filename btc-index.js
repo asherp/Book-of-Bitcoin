@@ -22,6 +22,7 @@ import { INDEXED as CURATED } from './btc-index-data.js';
 import { usdOn } from './btc-price.js';
 import { amountUnit, ownUnit, groupDigits, formatValuation } from './btc-amounts.js';
 import { pathSegments } from './btc-path.js';
+import { tokenizeScript } from './btc-tx.js';
 
 // A loose shape test for the address forms the chain has used: base58 P2PKH
 // ('1…') and P2SH ('3…'), and bech32/bech32m ('bc1…', matched lowercase --
@@ -206,8 +207,14 @@ export function ledgerFor(list) {
 // opens by txid, and the book resolves its exact §section itself. An output
 // index deepens the landing (&out=N): the book brings that output to the
 // top, the same landing its own marginalia make.
-export const citeHref = (txid, out) =>
-  `bitcoin-book.html?txid=${txid}${out != null ? `&out=${out}` : ''}`;
+// A citation's URL: the transaction, and where in it. `out` names an output --
+// the coordinate a credit lands on -- and `wit` an input, which is where a
+// spend's own data lives. The book takes the input as a plain vin number and
+// resolves it to the footnote that carries it (landOnWitness), so nothing here
+// has to know which inputs got footnotes and which did not.
+export const citeHref = (txid, out, wit) =>
+  `bitcoin-book.html?txid=${txid}${out != null ? `&out=${out}` : ''}`
+  + `${wit != null ? `&wit=${wit}` : ''}`;
 
 // The address's scriptPubKey, as hex: its on-chain identity, and the exact
 // bytes the book Glossia-encodes wherever a chapter pays this address -- so a
@@ -497,6 +504,78 @@ function esploraTouches(txs, member) {
 // busy address those are the majority. Their prevout carries the same script,
 // so they count as references like any other -- and `earliest` falls back to
 // one when the page's oldest record only drew from the member.
+// What a spending input actually brought, as a list of pushed values in the
+// order the spender wrote them. Segwit carries them as a witness stack and
+// legacy as a scriptSig, which is a script whose every token is a push -- two
+// spellings of one thing, and the term above them does not care which.
+//
+// Everything it brought is kept, annex included -- the reader shows an annex,
+// so a page borrowing the reader's rendering must have one to show. What the
+// annex is excluded from is the COUNT: it rides last behind a leading 0x50, is
+// never an argument to the script, and BIP341 leaves it out of the tally that
+// tells a key path from a script path. So `args` is the arity and `items` is
+// the record, and only one of them is short.
+// The opcodes that are pushes by another name: OP_0 pushes nothing at all,
+// OP_1NEGATE and OP_1…OP_16 push their own value as a byte.
+const SMALL_PUSH = {
+  0x00: '', 0x4f: '81',
+  ...Object.fromEntries(Array.from({ length: 16 },
+    (_, i) => [0x51 + i, (i + 1).toString(16).padStart(2, '0')])),
+};
+
+export const spendArgsOf = (items, witnessCarried) => (witnessCarried
+  && items.length >= 2 && items[items.length - 1].startsWith('50')
+  ? items.slice(0, -1) : items);
+
+export function suppliedBy(vin) {
+  const witness = Array.isArray(vin?.witness) ? vin.witness.map((w) => String(w).toLowerCase()) : [];
+  if (witness.length) return witness;
+  const sig = String(vin?.scriptsig || '').toLowerCase();
+  if (!sig) return [];
+  try {
+    const toks = tokenizeScript(sig);
+    if (!toks.length) return [];
+    const items = [];
+    for (const tk of toks) {
+      if (tk.push !== undefined) { items.push(tk.push.toLowerCase()); continue; }
+      // The small-number opcodes are pushes too, and one of them is not an edge
+      // case: OP_0 opens nearly every P2SH multisig scriptSig, standing in for
+      // the item OP_CHECKMULTISIG pops and ignores. Reading it as an operation
+      // rather than as an argument left the commonest legacy spend on chain
+      // looking like it brought nothing at all.
+      const n = SMALL_PUSH[tk.op];
+      if (n === undefined) return [];   // not an argument list; guessing is not on offer
+      items.push(n);
+    }
+    return items;
+  } catch { return []; }
+}
+
+// An input's citation mark, as { n, sig }: its 1-based number, and whether what
+// it brought rode in a scriptSig rather than a witness. The number is the
+// input's own position -- not an ordinal over some subset of the inputs -- so
+// it needs no counting and cannot shift because a neighbour changed carriage.
+// The case built from `sig` is what tells the two apart on the page.
+export function inputMarkOf(vins, index) {
+  const v = Array.isArray(vins) ? vins[index] : null;
+  if (!v) return null;
+  return { n: index + 1, sig: !(Array.isArray(v.witness) && v.witness.length > 0) };
+}
+
+// What an input brought, in every reading a page needs: the record, the arity,
+// and -- for an input that carried a scriptSig -- the script itself. The
+// reader renders those as script rather than as a stack (renderScript with
+// nested: true, which reveals a P2SH redeem script as opcodes), so the bytes
+// have to survive being tokenized into pushes.
+function brought(vin) {
+  const carried = Array.isArray(vin?.witness) && vin.witness.length > 0;
+  const items = suppliedBy(vin);
+  return {
+    items, args: spendArgsOf(items, carried),
+    scriptsig: carried ? null : (String(vin?.scriptsig || '').toLowerCase() || null),
+  };
+}
+
 export function readWitness(page, member) {
   const whole = page.length < ESPLORA_PAGE;
   const confirmed = page.filter((t) => t?.status?.confirmed && t.status.block_height > 0);
@@ -504,15 +583,26 @@ export function readWitness(page, member) {
   const pays = (o) => (byScript ? o?.scriptpubkey === member : o?.scriptpubkey_address === member);
   const scripts = new Set();
   let outputs = 0, prevouts = 0, earliest = null;
+  // …and the first time anyone opened it, which is a different question and
+  // has a different answer. A lock is bytes the chain can be asked for; the
+  // arguments that satisfy it are not derivable from those bytes at all, so
+  // the only way to know them is that somebody supplied them. This is where.
+  let opened = null;
   // Newest first, so walking backwards reaches the oldest record last and the
   // earliest reference is whatever it leaves behind.
   for (let i = confirmed.length - 1; i >= 0; i--) {
     const t = confirmed[i];
     const at = (t.vout || []).findIndex(pays);
     (t.vout || []).forEach((o) => { if (pays(o)) { outputs++; scripts.add(String(o.scriptpubkey || '').toLowerCase()); } });
-    for (const v of t.vin || []) {
-      if (pays(v.prevout)) { prevouts++; scripts.add(String(v.prevout.scriptpubkey || '').toLowerCase()); }
-    }
+    (t.vin || []).forEach((v, n) => {
+      if (!pays(v.prevout)) return;
+      prevouts++;
+      scripts.add(String(v.prevout.scriptpubkey || '').toLowerCase());
+      // The walk runs oldest to newest, so the first one seen is the first
+      // spend -- set once, exactly as the earliest reference above is.
+      opened ??= { txid: t.txid, height: t.status.block_height, in: n,
+        mark: inputMarkOf(t.vin, n), ...brought(v) };
+    });
     if (earliest === null && (at >= 0 || (t.vin || []).some((v) => pays(v.prevout)))) {
       const spent = (t.vin || []).find((v) => pays(v.prevout));
       earliest = {
@@ -521,8 +611,8 @@ export function readWitness(page, member) {
       };
     }
   }
-  if (!earliest) return { found: false, whole, outputs: 0, prevouts: 0, scripts: [] };
-  return { found: true, whole, ...earliest, outputs, prevouts, scripts: [...scripts] };
+  if (!earliest) return { found: false, whole, outputs: 0, prevouts: 0, scripts: [], opened: null };
+  return { found: true, whole, ...earliest, outputs, prevouts, scripts: [...scripts], opened };
 }
 
 export async function chainWitness(member) {

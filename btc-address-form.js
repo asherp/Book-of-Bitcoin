@@ -82,7 +82,7 @@ export function parseMark(token) {
 // fuller reading (btc-prose.js) has nothing here to disagree with.
 const isKeyShaped = (hex) => (hex.length / 2 === 33 && /^0[23]/.test(hex))
   || (hex.length / 2 === 65 && hex.startsWith('04'));
-function dataLetter(pushHex, prevOp) {
+export function dataLetter(pushHex, prevOp) {
   const n = pushHex.length / 2;
   if (isKeyShaped(pushHex)) return 'p';
   if (n === 32 && prevOp === 0x51) return 'p';   // a Taproot output key

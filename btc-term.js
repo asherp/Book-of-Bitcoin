@@ -10,11 +10,18 @@
 // two together and an address is an application waiting to be written down:
 // the term, the argument, and a β between them.
 //
-// This module is that sentence as code. It knows five terms (six with P2PK,
-// which takes an argument like the rest and simply never got an address), it
-// binds an argument into one, it renders both sides of the reduction, and it
-// reduces — so the claim the key makes in prose is one the suite can check:
-// reduce(term, argument) is the scriptPubKey, byte for byte.
+// This module is that sentence as code. It reads a term off any script it can
+// tokenize — every push a binder, every opcode where it stands — renders both
+// sides of the reduction, and reduces; so the claim the key makes in prose is
+// one the suite can check: reduce(term, arguments) is the scriptPubKey, byte
+// for byte, for the six tabled forms and for everything else alike.
+//
+// Curried, because a script is: bare multisig binds three keys, a revealed
+// redeem script binds whatever it holds, and one hole is not what makes a term
+// but what makes an ADDRESS — see `addressable`. The names are the calculus's
+// (a repeated letter gets a subscript, p₁ p₂ p₃) and the marks are the wire's,
+// which is why the spelled form below a term carries no subscripts: it is a
+// serialization, and the search box has to read it back.
 //
 // Deliberately light. It imports the opcode alphabet, the classifier and the
 // tokenizer, and nothing that reaches the Glossia engine — a page can write a
@@ -27,6 +34,7 @@
 import { OPCODE_SYMBOLS, OPCODE_NAMES, toSuperscript, toSubscript } from './btc-sigla.js';
 import { outputTemplates } from './btc-templates.js';
 import { tokenizeScript } from './btc-tx.js';
+import { dataLetter } from './btc-address-form.js';
 
 // The length variable's mark, on the datum's shoulder where every byte count in
 // this book rides. U+207F, the superscript n -- a variable where a figure
@@ -73,29 +81,83 @@ const TERM_OF_ROW = { 'p2tr-key': 'p2tr', 'p2tr-script': 'p2tr' };
 
 // ─── binding ─────────────────────────────────────────────────────────────
 
-// A scriptPubKey -> the term it is, with its argument bound:
+// A scriptPubKey -> the term it is, with its arguments bound:
 //
-//   { id, label, binder, bytes, argument, script, term }
+//   { id, label, holes: [{ name, title, bytes, argument }], body, script }
 //
-// Null for a script that is not one abstraction over one datum. Bare multisig
-// is the interesting refusal: its λ takes m, n and n keys, so there is no
-// single argument to bind and no address that could carry one — which is the
-// whole of what P2SH is for. A data output and anything the classifier does
-// not recognise are refused for the same kind of reason.
+// The term is not looked up, it is READ: every push in the script becomes a
+// hole, every opcode stays where it stands, and what falls out is a curried
+// function of as many arguments as the script has pushes. So the six tabled
+// forms are derived rather than tabled -- the letters agree with TERMS because
+// both take them from the same reading of the bytes -- and the shapes with no
+// table entry come out too. Bare multisig binds three keys, a data output its
+// blob, and a redeem script revealed by a spend binds whatever it holds.
+//
+// That is a widening, and the claim it used to enforce moves rather than dies:
+// one hole is what an ADDRESS can carry, not what a term can have. `addressable`
+// says which, and rung one shows the rest their own refusal -- three arguments
+// after the parens where an address has one.
+//
+// Null only when there is no term to read: bytes that are not a whole script,
+// a push that claims more than remains, an opcode consensus never defined (the
+// alphabet has no mark for it, so no line could be drawn), or a script with no
+// push at all, which abstracts over nothing.
+const TITLES = { h: 'hash', p: 'public key', d: 'data',
+  s: 'signature', r: 'redeem script', w: 'witness script', t: 'tapscript leaf',
+  c: 'control block — the leaf’s proof to the output key' };
+
 export function termOfScript(scriptHex) {
+  let toks;
+  try { toks = tokenizeScript(scriptHex); } catch { return null; }
+  if (!toks.length || toks.some((tk) => tk.trunc !== undefined)) return null;
+  if (toks.some((tk) => tk.op !== undefined && OPCODE_SYMBOLS[tk.op] === undefined)) return null;
+  const body = [], holes = [];
+  let prevOp = null;
+  for (const tk of toks) {
+    if (tk.op !== undefined) { body.push(tk.op); prevOp = tk.op; continue; }
+    // The letter is the book's own reading of the push (btc-address-form's
+    // dataLetter, which the chapter renderer shares): h a committed hash, p a
+    // key, and d for bytes that are neither and are simply data.
+    holes.push({ letter: dataLetter(tk.push, prevOp) || 'd',
+      bytes: tk.push.length / 2, argument: tk.push });
+    body.push(null);
+    prevOp = null;
+  }
+  if (!holes.length) return null;
+  // A letter used twice is two variables, so it is numbered -- p₁ p₂ p₃, the
+  // way the key's own multisig row writes them. Used once it stands bare.
+  const seen = new Map();
+  for (const hole of holes) seen.set(hole.letter, (seen.get(hole.letter) ?? 0) + 1);
+  const nth = new Map();
+  for (const hole of holes) {
+    const n = seen.get(hole.letter);
+    if (n === 1) { hole.name = hole.letter; continue; }
+    nth.set(hole.letter, (nth.get(hole.letter) ?? 0) + 1);
+    hole.name = hole.letter + toSubscript(nth.get(hole.letter));
+  }
   const rows = outputTemplates(scriptHex);
-  const id = rows.map((r) => TERM_OF_ROW[r] ?? r).find((r) => TERMS[r]);
-  if (id === undefined) return null;
-  const term = TERMS[id];
-  // One abstraction, one datum: the body has exactly one hole, so the script
-  // must carry exactly one push to fill it.
-  const pushes = tokenizeScript(scriptHex).filter((t) => t.push !== undefined);
-  if (pushes.length !== 1) return null;
-  const argument = pushes[0].push;
-  const bytes = argument.length / 2;
-  if (term.bytes !== null && bytes !== term.bytes) return null;
-  return { id, label: term.label, binder: term.binder, bytes, argument, script: scriptHex, term };
+  const id = rows.map((r) => TERM_OF_ROW[r] ?? r).find((r) => TERMS[r]) ?? null;
+  // A tabled form takes its letter and title from the table rather than from
+  // the bytes. The classifier has already said what this push IS by where it
+  // stands -- P2PK's argument is a public key however unkeylike its bytes look
+  // -- and a position beats a shape heuristic. Taproot gains by it too: its
+  // datum is an output key, which no reading of 32 bytes could have told.
+  for (const hole of holes) hole.title = TITLES[hole.letter] ?? 'data';
+  if (id && holes.length === 1) {
+    holes[0].letter = holes[0].name = TERMS[id].binder;
+    holes[0].title = TERMS[id].title;
+  }
+  return {
+    id, label: TERMS[id]?.label ?? rows[0] ?? 'Script', holes, body, script: scriptHex,
+    // The single-datum case, named as it always was: an address has exactly one
+    // argument, so everything that reads an address reads these.
+    binder: holes[0].name, bytes: holes[0].bytes, argument: holes[0].argument,
+  };
 }
+
+// One abstraction over one datum -- which is what an address can carry, and the
+// whole of what the key's Addresses group is about.
+export const addressable = (t) => !!t && t.holes.length === 1;
 
 // ─── reduction ───────────────────────────────────────────────────────────
 
@@ -106,93 +168,298 @@ export function termOfScript(scriptHex) {
 // decodes to rather than taking the tables' word for it. Every argument these
 // terms take is 20 to 65 bytes, well inside a direct push, so the length byte
 // is the push opcode and no PUSHDATA prefix arises.
-export function reduce(term, argumentHex) {
-  const n = argumentHex.length / 2;
-  if (n < 1 || n > 75) return null;
-  return term.body.map((code) => (code === null
-    ? n.toString(16).padStart(2, '0') + argumentHex.toLowerCase()
-    : code.toString(16).padStart(2, '0'))).join('');
+// Curried, so the arguments are a list and they fill the holes in order. One
+// hex string is accepted for the single-datum case, which is every address.
+export function reduce(term, args) {
+  const list = typeof args === 'string' ? [args] : [...args];
+  if (list.length !== term.body.filter((code) => code === null).length) return null;
+  let next = 0;
+  const parts = term.body.map((code) => {
+    if (code !== null) return code.toString(16).padStart(2, '0');
+    const arg = list[next++];
+    const n = arg.length / 2;
+    if (n < 1 || n > 75) return null;
+    return n.toString(16).padStart(2, '0') + arg.toLowerCase();
+  });
+  return parts.includes(null) ? null : parts.join('');
 }
 
-// ─── what the address awaits ─────────────────────────────────────────────
+// ─── the address, as the partial application it is ───────────────────────
 //
 // The other reading, and the one an address is actually FOR. Above, the λ binds
-// what the address carries -- its own committed datum, supplied when it was
-// written. Here it binds what the address still wants: the things a spend must
-// bring before the coin moves. The two are duals, and the datum sits on
-// opposite sides of the binder in each.
+// what the address carries -- its own committed datum, supplied when the
+// address was written -- and reducing gives the lock alone. Here the same term
+// is opened far enough to hold one party's key material at BOTH its moments:
+// the image the address publishes now, and the preimage and signature only its
+// author can produce later.
 //
-//   λs p. ⌖ p ≡ h²⁰ ∧ ∇ s p
+//   (λh. ⧉ ⌖ h ≡ ∇) h²⁰ ridge amused garment … inmate
+//         λs p. ⧉ ⌖ h²⁰ ≡ ∇
 //
-// "Bring me a signature and a key whose hash is this, and the signature must
-// verify under the key." That is the whole of what a P2PKH address demands, and
-// it is what a recipient, a wallet or an auditor is looking at an address to
-// find out.
+// One party, not two. h is ⌖p, and the lock's whole content is that the p a
+// spend brings is the p behind h (⌖ … ≡) and that the spender holds the scalar
+// behind it (∇) -- two clauses about one person. The payer never appears: they
+// transcribe someone else's h into an output and supply nothing to it, their
+// own keys going to their own inputs against their own prior locks. So an
+// address demands of its author alone, and ⧉ is there because no name survives
+// from the writing to the spending: the identity has to be re-established from
+// bytes.
+//
+// Two lines because there are two λ, and applying the first is what hands back
+// the second. An address is a combinator over one argument -- closed, since its
+// only other marks are opcodes -- and what it returns when that argument goes
+// in is not a fragment but another abstraction: the scriptPubKey, which is
+// itself a function of what a spend will bring. So the leaf's two paragraphs
+// are two rungs of one descent, and the reduction between them is the payer's
+// whole contribution.
+//
+// The descent is longer than these two, and the rest of it is already in this
+// module: pureForm lifts the opcodes and the push's length out as arguments
+// too, lockText applies the opcodes back, abstractionText applies the length,
+// and this is what applying the datum gives. Every rung is the one above it
+// with one more argument supplied, and the chain stores the rung where the
+// arguments run out -- everything below that is a spend, and a spend is a
+// transaction, not an output.
+//
+// The rung below the wire is spendText: the arguments applied, written the way
+// a stack machine writes an application, which is the arguments' pushes ahead
+// of the function's code. ⧺ is that application -- OP_CAT's mark, disabled and
+// chosen anyway, since concatenating the two byte strings is exactly what
+// applying a function is on a concatenative machine. It is not drawn on the
+// leaf: the leaf is showing an address, and no spend has happened.
+//
+// What all of this replaced was a demand written as a predicate, which needed a
+// conjunction between its clauses that no β could ever have removed. It printed
+// as ∧ -- OP_BOOLAND, an opcode that is not disabled at all, and that pops two
+// numbers off a stack. A live opcode standing in for a connective is the worse
+// failure of the two: nothing marked the line as unreducible, it simply was not.
 //
 // Two things fall out that the committed-datum reading hides. P2PKH and P2WPKH
-// come out IDENTICAL -- segwit moved where a witness rides, not what is asked
-// for. And P2SH and P2WSH cannot state their demands at all: the binder list
-// runs out at `r …`, the redeem script and then whatever IT requires, which the
-// address does not know. Not a datum hidden behind a hash, but a REQUIREMENT
-// hidden behind one -- an address that cannot say what it will ask of you.
+// ask for the same key material in the same order -- segwit moved where a
+// witness rides, not what is asked for -- while the locks it rides against are
+// not the same script at all. And the wrapped forms cannot say what they want,
+// which the structure now states rather than gestures at: a lock ending in
+// ( r ) hands back a function, and how many arguments THAT one takes is a
+// property of a script the address has never seen. Not a datum hidden behind a
+// hash, but a REQUIREMENT hidden behind one -- and an arity is exactly the
+// thing an unapplied function is already unable to promise. An earlier draft
+// wrote a `…` binder for this. It was a hand-wave where the term was already
+// telling the truth, and it cost taproot's script path an invented `s`, as if
+// every leaf wanted a signature.
 //
 // A reading, not an encoding. These are written down per term, because deriving
 // them from arbitrary bytes is symbolic execution and undecidable in general;
-// the sigla spelling stays the invertible form. `@x` marks something awaited
-// and `$` the datum the address already holds.
+// the sigla spelling stays the invertible form. `brings` is what the lock is a
+// function of, in the order the spender pushes it -- a wrapped form's script
+// rides on top, so it comes last -- and `runs` is what the lock then hands back
+// to be run, the one step ( ) exists for and the only thing on a line that is
+// neither a spend nor a lock.
 const DEMANDS = {
-  p2pk:   [{ awaits: 's',     needs: ['∇ @s $'] }],
-  p2pkh:  [{ awaits: 's p',   needs: ['⌖ @p ≡ $', '∇ @s @p'] }],
-  p2sh:   [{ awaits: 'r …',   needs: ['⌖ @r ≡ $', '( @r )'] }],
-  p2wpkh: [{ awaits: 's p',   needs: ['⌖ @p ≡ $', '∇ @s @p'] }],
-  p2wsh:  [{ awaits: 'w …',   needs: ['Σ @w ≡ $', '( @w )'] }],
+  p2pk:   [{ brings: 's' }],
+  p2pkh:  [{ brings: 's p' }],
+  p2sh:   [{ brings: 'r', runs: 'r' }],
+  p2wpkh: [{ brings: 's p' }],
+  p2wsh:  [{ brings: 'w', runs: 'w' }],
   // Taproot asks for one of two things, which is the whole of what a taptree
   // buys: a signature under the output key, or a leaf that proves to it.
-  p2tr:   [{ awaits: 's',     needs: ['∇ @s $'] },
-           { awaits: 's t c', needs: ['⋔ @c @t ≡ $', '( @t )'] }],
+  p2tr:   [{ brings: 's' },
+           { brings: 't c', runs: 't' }],
 };
 
-// The alternatives an address awaits, or null for a term with none written
-// down. Each is { awaits: [names], needs: [[tokens]] }, where a token is
-// { aw } for something the spend must bring, { datum: true } for what the
-// address already holds, and { mark } for an operation.
+// What the lock, once written, is still a function of -- or null for a term
+// with nothing written down. Each alternative is { brings: [names], runs }, and
+// a term with two of them is an output with two ways to open it.
 export function demandsOf(t) {
   const alts = DEMANDS[t.id];
   if (!alts) return null;
-  const token = (word) => (word.startsWith('@') ? { aw: word.slice(1) }
-    : word === '$' ? { datum: true } : { mark: word });
+  return alts.map((alt) => ({ brings: alt.brings.split(' '), runs: alt.runs ?? null }));
+}
+
+// The joint, taken from the alphabet rather than written out, so the mark on
+// the page is the one the book gives 0x7e and cannot drift from it.
+const CAT = OPCODE_SYMBOLS[0x7e];
+
+// ─── rung one: the address ───────────────────────────────────────────────
+//
+// The term applied to the data it carries, and nothing else supplied. Curried,
+// so the binders run in the order the pushes do and the arguments follow in the
+// same order -- one apiece for an address, three for a bare multisig, which is
+// that form being shown its own refusal rather than told about it. The binders
+// stand bare inside the body, because a count arrives with its argument.
+export const addressText = (t) =>
+  `(λ${t.holes.map((h) => h.name).join(' ')}. ${bodyText(t, false)}) `
+  + t.holes.map((h) => h.name + toSuperscript(h.bytes)).join(' ');
+
+// ─── rung two: what that hands back ──────────────────────────────────────
+//
+// Not a fragment: a λ of its own, over what a spend must bring. One line per
+// alternative, since the lock is one script however many ways there are to
+// satisfy it.
+export const lockedText = (t) => {
+  const alts = demandsOf(t);
+  return alts ? alts.map((alt) => `λ${alt.brings.join(' ')}. ${bodyText(t, true)}`
+    + (alt.runs ? ` ( ${alt.runs} )` : '')) : null;
+};
+
+// ─── rung three: the spend ───────────────────────────────────────────────
+//
+// The arguments applied, in the order a stack machine writes an application:
+// the pushes ahead of the code. Not drawn on the leaf -- an address has no
+// spend yet -- but it is the rung the two above are descending toward.
+export const spendText = (t) => {
+  const alts = demandsOf(t);
+  return alts ? alts.map((alt) => `${alt.brings.join(' ')} ${CAT} ${bodyText(t, true)}`
+    + (alt.runs ? ` ( ${alt.runs} )` : '')) : null;
+};
+
+// ─── the same, as marks ──────────────────────────────────────────────────
+//
+// One distinction does the work: what the address already holds takes the
+// gold, and what it is still waiting for does not. The same split the key's
+// validator column keeps, and here it means a reader sees at a glance which
+// half of a line is a fact and which is a demand.
+const awaited = (name) => `<span class="aw">${escapeHtml(name)}</span>`;
+
+// `prose` is the argument's bytes said in the book's own tongue, and it lands
+// where an address keeps its payload: after the term, behind the mark that
+// gives its length. Withheld, the datum stays behind that mark -- the line is
+// still the right shape, it simply cannot be read back.
+export const addressHtml = (t, { prose = '' } = {}) =>
+  `${lam('(λ')}${t.holes.map(dt).join(' ')}${lam('.')} ${bodyHtml(t, false)}${lam(')')} `
+  + t.holes.map((h, i) => dt(h) + count(h)
+    + (prose && i === 0 && t.holes.length === 1 ? ` ${prose}` : '')).join(' ');
+
+// The second rung, split so a caller can set the script between the marks: the
+// leaf's lock line is also the copyable sigla address, and a λ inside that
+// span would go into the clipboard and stop the search box reading it back.
+// So the binders come out as a prefix and the eval step as a suffix, and what
+// goes between them is the caller's -- spelled with its prose, or drawn from
+// the term alone when there is no engine to say it.
+export function lockedMarks(t) {
+  const alts = demandsOf(t);
+  if (!alts) return null;
   return alts.map((alt) => ({
-    awaits: alt.awaits.split(' '),
-    needs: alt.needs.map((need) => need.split(' ').map(token)),
+    prefix: `${lam('λ')}${alt.brings.map(awaited).join(' ')}${lam('.')}`,
+    suffix: alt.runs ? ` ${lam('(')} ${awaited(alt.runs)} ${lam(')')}` : '',
   }));
 }
 
-const demandText = (t, alt) => `λ${alt.awaits.join(' ')}. `
-  + alt.needs.map((need) => need.map((k) => (k.aw ?? (k.datum ? t.binder + toSuperscript(t.bytes) : k.mark)))
-    .join(' ')).join(' ∧ ');
-
-export const demandsText = (t) => {
+// ─── which path a spend took ─────────────────────────────────────────────
+//
+// A term encodes every way its output can be opened; a spend quotes one. Rung
+// two keeps them all, because they are all still true of the lock -- an unspent
+// taproot output really can be opened either way -- and rung three shows the
+// one the chain has a record of.
+//
+// Which one is read off the count of what was brought, not guessed. Taproot's
+// rule is consensus's own: exactly one witness item is the key path, and
+// anything else is a leaf and its proof. The wrapped forms generalize it -- an
+// alternative that hands a script back takes at least its own binders and
+// however many more that script wants, so it matches on `at least`, while an
+// alternative that hands nothing back must match exactly.
+export function pathTaken(t, items) {
   const alts = demandsOf(t);
-  return alts ? alts.map((alt) => demandText(t, alt)).join(' ∨ ') : null;
+  if (!alts || !Array.isArray(items) || !items.length) return null;
+  const exact = alts.findIndex((alt) => !alt.runs && alt.brings.length === items.length);
+  if (exact >= 0) return exact;
+  let best = -1;
+  alts.forEach((alt, i) => {
+    if (!alt.runs || alt.brings.length > items.length) return;
+    if (best < 0 || alt.brings.length > alts[best].brings.length) best = i;
+  });
+  return best < 0 ? null : best;
+}
+
+// The values a spend brought, named by the term rather than by their bytes.
+// The binders align to the END of the list, because a wrapped form's script
+// rides on top and its own arguments go underneath: w names the last item, and
+// what stands before it is whatever that script wanted, which the term above
+// never knew. Those leading values keep the book's ordinary reading of a push.
+const SIG_MIN = 68, SIG_MAX = 73;
+const suppliedLetter = (hex) => {
+  const shaped = dataLetter(hex, null);
+  if (shaped === 'p') return 'p';
+  const n = hex.length / 2;
+  // A DER signature, or a Schnorr one with or without its sighash byte.
+  if ((hex.startsWith('30') && n >= SIG_MIN && n <= SIG_MAX) || n === 64 || n === 65) return 's';
+  return shaped || 'd';
 };
 
-// Set as marks, with one distinction doing real work: what the chain already
-// holds takes the gold, and what the address is still waiting for does not.
-// The same split the key's validator column keeps, and here it means a reader
-// can see at a glance which half of the line is a fact and which is a demand.
-const awaited = (name) => (name === '…'
-  ? `<span class="lam">…</span>`
-  : `<span class="aw">${escapeHtml(name)}</span>`);
+export function suppliedNames(alt, items) {
+  const names = items.map(suppliedLetter);
+  const from = items.length - alt.brings.length;
+  alt.brings.forEach((name, i) => { if (from + i >= 0) names[from + i] = name; });
+  return names;
+}
 
-export function demandsHtml(t) {
+// The third rung as marks. It is drawn only where the chain says it happened,
+// because that is the only way anyone can know it: s and p are not in the
+// address and no reduction reaches them, so the shape is all this page can
+// write and the citation beside it is what supplies the rest.
+export function spendMarks(t) {
   const alts = demandsOf(t);
   if (!alts) return null;
-  const body = (alt) => `${lam('λ')}${alt.awaits.map(awaited).join(' ')}${lam('.')} `
-    + alt.needs.map((need) => need.map((k) => (k.aw ? awaited(k.aw)
-      : k.datum ? dt(t) + count(t)
-      : `<span class="op">${escapeHtml(k.mark)}</span>`)).join(' ')).join(` ${lam('∧')} `);
-  return alts.map(body).join(` ${lam('∨')} `);
+  return alts.map((alt) => ({
+    prefix: `${alt.brings.map(awaited).join(' ')} ${cat()}`,
+    suffix: alt.runs ? ` ${lam('(')} ${awaited(alt.runs)} ${lam(')')}` : '',
+  }));
 }
+
+// …and with the values in hand, the same rung written out: each one a mark, its
+// byte count and — where an engine has said it — its prose, exactly as a push
+// is set everywhere else in the book. This is the one line on the leaf whose
+// content came from the chain rather than from the bytes in the box.
+// The joint takes the quiet colour, not the gold: it is the step between the
+// two scripts and not a byte either of them holds -- which is also why it can
+// be a disabled opcode's mark without the line claiming a disabled opcode.
+const cat = () => `<span class="lam" title="${escapeHtml(OPCODE_NAMES[0x7e])} — the arguments `
+  + `applied, which a stack machine writes as their pushes ahead of the code">${escapeHtml(CAT)}</span>`;
+
+// …and with the values in hand, the same rung written out. `brought` is the
+// left half pre-rendered by whoever has a better renderer -- the reader's own
+// renderWitness, which reveals a witness script as opcodes, strips a DER
+// signature to its compact form before saying it, and knows an annex from an
+// argument. Given none, the values are named from the term instead and set as
+// marks with their counts, which is all this module can do without reaching
+// for the engine.
+export function suppliedHtml(t, items, { say = null, brought = null } = {}) {
+  const which = pathTaken(t, items);
+  if (which === null) return null;
+  const alt = demandsOf(t)[which];
+  const names = suppliedNames(alt, items);
+  // These take the gold. On the rungs above, a name in plain ink is something
+  // no one has brought yet; here the chain has a record of it, cited on the
+  // line below, so it is as much a fact as the lock beside it. What separates
+  // them is the joint, not the colour -- they are two scripts, both written.
+  const own = () => items.map((hex, i) => {
+    const prose = say ? say(hex) || '' : '';
+    return `<span class="dt" title="${escapeHtml(TITLES[names[i][0]] ?? 'data')}">`
+      + `${escapeHtml(names[i])}</span>`
+      + `<span class="op op-push" title="a push of ${hex.length / 2} bytes">`
+      + `${toSuperscript(hex.length / 2)}</span>${prose ? ` ${prose}` : ''}`;
+  }).join(' ');
+  // Only the left half is quoted. The joint is apparatus, and the lock after it
+  // is the OUTPUT's bytes -- already set one rung up, under a citation of their
+  // own -- so they are echoed here to show what the arguments were applied to
+  // and marked as an echo, which is what keeps the attribution below this line
+  // covering what it actually attributes.
+  return {
+    which,
+    quoted: brought ?? own(),
+    echo: `${cat()} ${bodyHtml(t, true)}`
+      + (alt.runs ? ` ${lam('(')} <span class="dt">${escapeHtml(alt.runs)}</span> ${lam(')')}` : ''),
+    get html() { return `${this.quoted} <span class="echo">${this.echo}</span>`; },
+  };
+}
+
+// The lock's own marks, with no prose and nothing copyable about them: what a
+// second alternative shows, since the datum has already been said once above.
+export const lockBodyHtml = (t) => bodyHtml(t, true);
+
+export const lockedHtml = (t) => {
+  const marks = lockedMarks(t);
+  return marks ? marks.map((m) => `${m.prefix} ${lockBodyHtml(t)}${m.suffix}`) : null;
+};
 
 // ─── the pure form ───────────────────────────────────────────────────────
 //
@@ -227,7 +494,8 @@ export function demandsHtml(t) {
 // uses the same mark twice, and a term that did would be saying something
 // (this operation, again) that the positional reading does not.
 export function pureForm(t) {
-  const opcodes = t.term.body.filter((code) => code !== null);
+  if (!addressable(t)) return null;
+  const opcodes = t.body.filter((code) => code !== null);
   const lenName = 'n';
   const datumName = t.binder;
   const opNames = opcodes.map((_, i) => `o${toSubscript(i + 1)}`);
@@ -236,7 +504,7 @@ export function pureForm(t) {
   // with its count on its shoulder. The count is a bound variable here, so what
   // rides there is the variable's own superscript rather than a figure.
   const hole = datumName + SUPERSCRIPT_N;
-  const body = t.term.body.map((code) => (code === null ? hole : opNames[next++]));
+  const body = t.body.map((code) => (code === null ? hole : opNames[next++]));
   return {
     binders: [...opNames, lenName, datumName], body, opcodes, lenName, datumName, hole,
     bytes: t.bytes, datum: t.argument, term: t,
@@ -282,10 +550,14 @@ const glyph = (code) => OPCODE_SYMBOLS[code] ?? OPCODE_NAMES[code] ?? '?';
 // one comes out is whether the bound variable still stands bare (the term, its
 // argument not yet supplied) or wears the byte count that says what filled it
 // (the normal form, where the datum is on the wire and its length is a push).
-const bodyText = (t, counted) => t.term.body
-  .map((code) => (code === null
-    ? t.binder + (counted ? toSuperscript(t.bytes) : '')
-    : glyph(code))).join(' ');
+const bodyText = (t, counted) => {
+  let next = 0;
+  return t.body.map((code) => {
+    if (code !== null) return glyph(code);
+    const hole = t.holes[next++];
+    return hole.name + (counted ? toSuperscript(hole.bytes) : '');
+  }).join(' ');
+};
 
 // λh. ⟦ ⧉ ⌖ h ≡ ∇ ⟧ — the lock with nothing supplied.
 export const abstractionText = (t) => `λ${t.binder}. ⟦ ${bodyText(t, false)} ⟧`;
@@ -311,13 +583,17 @@ export const normalFormText = (t) => `⟦ ${bodyText(t, true)} ⟧`;
 // datum stays behind its mark and is simply not said.
 const lam = (s) => `<span class="lam">${escapeHtml(s)}</span>`;
 const op = (code) => `<span class="op" title="${escapeHtml(OPCODE_NAMES[code] || 'OP_UNKNOWN')}">${escapeHtml(glyph(code))}</span>`;
-const dt = (t) => `<span class="dt" title="${escapeHtml(t.term.title)}">${t.binder}</span>`;
-const count = (t) => `<span class="op op-push op-count" title="OP_PUSHBYTES_${t.bytes} — push the next ${t.bytes} bytes">${toSuperscript(t.bytes)}</span>`;
+const dt = (hole) => `<span class="dt" title="${escapeHtml(hole.title)}">${escapeHtml(hole.name)}</span>`;
+const count = (hole) => `<span class="op op-push op-count" title="OP_PUSHBYTES_${hole.bytes} — push the next ${hole.bytes} bytes">${toSuperscript(hole.bytes)}</span>`;
 
-const bodyHtml = (t, counted, prose) => t.term.body
-  .map((code) => (code === null
-    ? dt(t) + (counted ? count(t) + (prose ? ` ${prose}` : '') : '')
-    : op(code))).join(' ');
+const bodyHtml = (t, counted, prose) => {
+  let next = 0;
+  return t.body.map((code) => {
+    if (code !== null) return op(code);
+    const hole = t.holes[next++];
+    return dt(hole) + (counted ? count(hole) + (prose ? ` ${prose}` : '') : '');
+  }).join(' ');
+};
 
 export const normalFormHtml = (t, { prose = '' } = {}) =>
   `${lam('⟦')} ${bodyHtml(t, true, prose)} ${lam('⟧')}`;
@@ -335,7 +611,7 @@ export const normalFormHtml = (t, { prose = '' } = {}) =>
 // what is being supplied -- 20, not ²⁰. The superscript is what the count
 // becomes once it has been applied.
 const pureName = (pure, name) => (name === pure.hole
-  ? dt(pure.term) + `<span class="op op-push">${SUPERSCRIPT_N}</span>`
+  ? dt(pure.term.holes[0]) + `<span class="op op-push">${SUPERSCRIPT_N}</span>`
   : `<span class="lam">${escapeHtml(name)}</span>`);
 
 export const pureText = (pure) => `λ${pure.binders.join(' ')}. ⟦ ${pure.body.join(' ')} ⟧`;
@@ -353,7 +629,7 @@ export const pureApplicationHtml = (pure) => `${lam('(')}${pureHtml(pure)}${lam(
 // wants is a push -- a length, and that many bytes. This is the line that says
 // how much key material an output of this kind requires, which is the whole
 // reason the length is an argument rather than an annotation.
-const lockBody = (pure) => pure.term.term.body
+const lockBody = (pure) => pure.term.body
   .map((code) => (code === null ? pure.hole : glyph(code))).join(' ');
 
 export const lockText = (pure) =>

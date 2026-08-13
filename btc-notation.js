@@ -116,54 +116,41 @@ export const NOTATION_HTML = `
             </div>
             <div class="glyph-grid">
               <div class="glyph-row" data-marks="tpl:p2pk tpl:p2pkh tpl:multisig tpl:p2sh tpl:p2sh-multisig tpl:p2wpkh tpl:p2wsh tpl:p2tr-key tpl:p2tr-script tpl:data tpl:lightning"><span class="g">⟦ ⟧</span><span class="m">the <b>script constructor</b> — the marks in order, which is what the chain holds. Inert: a mark <i>inside</i> is a byte that gets printed, the same glyph <i>outside</i> is that operation being run. ⌖ inside is the opcode; ⌖ outside is the hash actually being taken. Its counterpart is <b>( )</b>, above, which runs what the brackets hold — quote and its eval. The brackets also carry the push length, which is where a mark's superscript comes from</span></div>
-              <div class="glyph-row" data-marks="tpl:p2pk tpl:p2pkh tpl:multisig tpl:p2sh tpl:p2sh-multisig tpl:p2wpkh tpl:p2wsh tpl:p2tr-key tpl:p2tr-script tpl:data tpl:lightning"><span class="g">λ</span><span class="m"><b>abstraction</b> — what the term still wants. An unspent output's free variables are exactly what has not been decided yet; a spend supplies them. Naming the values is also what disposes of the stack marks: ⧉ is a variable used twice, ⌄ one never used, and ⇄ ⇗ ↻ ⇘ ⇡ ⥀ are nothing at all once the arguments have names</span></div>
+              <div class="glyph-row" data-marks="tpl:p2pk tpl:p2pkh tpl:multisig tpl:p2sh tpl:p2sh-multisig tpl:p2wpkh tpl:p2wsh tpl:p2tr-key tpl:p2tr-script tpl:data tpl:lightning"><span class="g">λ</span><span class="m"><b>abstraction</b> — what the term still wants. An unspent output's free variables are exactly what has not been decided yet; a spend supplies them. It abstracts over the bytes and not over what they do: ⧉ is a variable used twice, and it is also a byte the output carries, so the term keeps it. A calculus that named the values away would normalize to something the chain does not hold</span></div>
               <div class="glyph-row" data-marks="tpl:p2pk tpl:p2pkh tpl:multisig tpl:p2sh tpl:p2sh-multisig tpl:p2wpkh tpl:p2wsh tpl:p2tr-key tpl:p2tr-script tpl:data tpl:lightning"><span class="g">β</span><span class="m"><b>reduction</b> — notation collapsing, and reversible: nothing is lost, so a term can always be abstracted again. It is also why a script never contains one. What the chain holds is already reduced, and a node checks it rather than running it down</span></div>
               <div class="glyph-row" data-marks="tpl:p2pk tpl:p2pkh tpl:multisig tpl:p2sh tpl:p2sh-multisig tpl:p2wpkh tpl:p2wsh tpl:p2tr-key tpl:p2tr-script tpl:data tpl:lightning"><span class="g">δ</span><span class="m">the <b>one-way steps</b> — ⌖ ⌘ Σ, and a public key from the scalar behind it. What is on chain is a β-reduced term whose δ steps cannot be run backwards, which is the whole of what the marks above keep secret</span></div>
             </div>
-            <p class="notation-note">Three ways for a thing not to be on chain, and the columns above are sorted by
-              which: <b>under λ</b>, not yet chosen — a taproot leaf that may still be added, the key that will sign
-              next; <b>under ⟦ ⟧</b>, chosen and committed but not revealed — a redeem script, a witness script, a
-              leaf never taken, each of which is why its row commits to <b>h</b> rather than to what <b>h</b> is a
-              hash of; and <b>behind δ</b>, revealed only as an image — <b>k</b> behind its point, a preimage behind
-              its hash. P2SH is the whole argument in one row: the term it commits to stays bracketed and unreduced
-              from the moment the address is written to the moment it is spent, so the output carries the δ image of
-              a script the chain has never seen. Taproot goes further and commits to a whole tree of them, at the
-              same thirty-three bytes however many leaves there are — what is never reduced is never visible.</p>
+            <p class="notation-note">Three ways for a thing not to be on chain, sorted down the columns above:
+              <b>under λ</b>, not yet chosen; <b>under ⟦ ⟧</b>, committed but not revealed — which is why those
+              rows commit to <b>h</b> and not to what <b>h</b> hashes; <b>behind δ</b>, revealed only as an image.
+              P2SH keeps its term bracketed from the address to the spend, Taproot a whole tree of them at the same
+              thirty-three bytes: what is never reduced is never visible.</p>
             <p class="notation-note">Lift the opcodes out as arguments too, and the length of the push
               with them, and what is left of a lock is shape alone: <span class="lam">λ</span><i>o</i><sub>1</sub>
               <i>o</i><sub>2</sub> <i>o</i><sub>3</sub> <i>o</i><sub>4</sub> <i>n</i> <b>h</b><span
               class="lam">.</span> <span class="lam">⟦</span> <i>o</i><sub>1</sub> <i>o</i><sub>2</sub>
-              <b>h</b><sup><i>n</i></sup> <i>o</i><sub>3</sub> <i>o</i><sub>4</sub> <span class="lam">⟧</span>,
-              which is P2PKH at the arguments ⧉ ⌖ ≡ ∇ 20 <b>h</b>. The push arrives as a pair, its length and
-              then the bytes that length measures, because that is the order the chain prints it in: a direct
-              push opcode <i>is</i> its byte count, so ¹⁴ and the twenty bytes after it are one statement, and
-              20 <b>h</b> is the same one. Written this way a term says on its face how much key material an
-              output of its kind requires — and the Addresses group's claim stops being a resemblance. P2WPKH,
-              P2WSH and P2TR are not three formats, nor three terms that look alike: they are one term,
-              <span class="lam">λ</span><i>o</i> <i>n</i> <b>x</b><span class="lam">.</span> <span class="lam">⟦</span>
-              <i>o</i> <b>x</b><sup><i>n</i></sup> <span class="lam">⟧</span>, and everything that tells them
-              apart has moved into the arguments — the witness version, the byte count, and what the bytes are.
-              Reduce it and the wire falls out, as it does from every form above.</p>
+              <b>h</b><sup><i>n</i></sup> <i>o</i><sub>3</sub> <i>o</i><sub>4</sub> <span class="lam">⟧</span> —
+              P2PKH at the arguments ⧉ ⌖ ≡ ∇ 20 <b>h</b>. The push is a pair, length then bytes, because a direct
+              push opcode <i>is</i> its count. A term then says on its face how much key material its outputs
+              need, and P2WPKH, P2WSH and P2TR stop resembling one another: they are one term, <span
+              class="lam">λ</span><i>o</i> <i>n</i> <b>x</b><span class="lam">.</span> <span class="lam">⟦</span>
+              <i>o</i> <b>x</b><sup><i>n</i></sup> <span class="lam">⟧</span>, at three arguments.</p>
 
-            <p class="notation-note">The one place the stack marks survive is the validator column, and now for a
-              reason rather than an apology: it is two terms written end to end (<b>⟦</b>spend<b>⟧</b> then
-              <b>⟦</b>lock<b>⟧</b>) by two people, years apart, with a hash between them. No name can cross that
-              boundary, so ⧉ is what a binding degrades into when the abstraction barrier is a δ step and not a
-              scope. β is elsewhere too: it never appears in a script, and neither does the reduction — a chapter's
-              β is a target, a term's β is a step, and the two can never be met in the same place, because one is
-              never inside a script and the other is never outside one. What they share is the work of settling on
-              a single form. Below, that is free — a term has one normal form however it is reduced. Above, where
-              two chapters can both be well formed and only one can stand, it has to be bought, and β is the price.</p>
+            <p class="notation-note">⧉ is in the term because it is on the wire. A term normalizes to the bytes a
+              node stores, so nothing a script prints can be named away — dispose of the stack marks and what falls
+              out is not that output. Disposing of them is the validator column's reading, which runs a script
+              rather than printing one: two terms end to end, <b>⟦</b>spend<b>⟧</b> then <b>⟦</b>lock<b>⟧</b>, with
+              a δ step between them that no name crosses. β never appears in a script either — a term's β is a step
+              and free, a chapter's β is a target and bought.</p>
           </div>
 
           <div class="notation-group">
             <h4>Addresses — the argument, written down</h4>
-            <p class="notation-note">An address is not a lock. Every lock above is one abstraction over one
-              committed datum, and an address carries the datum plus a tag saying which abstraction to put it in —
-              nothing else fits in one, and nothing else has to. The sender's software holds the λ; the string holds
-              its argument. Which is why the book prints the term and not the string: the term names its own address,
-              since the tag is which abstraction this is and the argument is the rest, while an address runs only the
-              one way — it gives back the datum, and never what the datum is a hash of.</p>
+            <p class="notation-note">An address is not a lock: it carries the datum and a tag naming which
+              abstraction to put it in, while the sender's software holds the λ. Nothing else fits in one, and
+              nothing else has to. So the book prints the term, which names its own address — where a string runs
+              one way only, giving back the datum and never what it is a hash of. The search leaf writes the pair
+              out, term then argument: an address as the partial application it is.</p>
             <div class="pattern-scroll">
             <div class="pattern-table addresses">
               <span class="phead"></span><span class="phead">Address</span><span class="phead">Tag</span><span class="phead">Argument</span><span class="phead">Checksum</span>
@@ -195,29 +182,19 @@ export const NOTATION_HTML = `
             </div>
             </div>
             <p class="notation-note">Read down the Tag column and the table splits in two, which is the whole
-              history of the format. Base58's tag is a byte outside the script — an index into a table of terms, 0 for
-              P2PKH's abstraction and 5 for P2SH's — so a term with no byte assigned to it has no address, and only
-              a new byte and a new table entry could give it one. Segwit's tag is not an index at all: it is the
-              script's own opening opcode, carried through unchanged, and the character after the separator is that
-              opcode spelled out (q is ⓪, p is ①). Every witness output is the same abstraction, <span
-              class="lam">λ</span><i>v</i> <b>h</b><span class="lam">.</span> <span class="lam">⟦</span> <i>v</i>
-              <b>h</b> <span class="lam">⟧</span>, so P2WPKH, P2WSH and P2TR are one term at three arguments rather
-              than three formats — the first two share bc1q… and are told apart only by the length of the argument —
-              and version 2 will need no new prefix and no new code in any wallet that already writes this one. The
-              checksums divide the same way: base58 takes ⌘ of the tag and the argument together and keeps the left
-              four bytes, which is the chain's own hash doing duty as a typo check, while bech32 and bech32m are
-              codes of their own with no counterpart on chain, differing only in the constant they are checked
-              against: ⓪ keeps the older one, and every version above it takes bech32m, which was written after a
-              flaw was found in how the first code handled a character inserted at its end.</p>
-            <p class="notation-note">Three rows of the tables above are missing here, and each is missing for the
-              reason its λ gives. A bare multisig abstracts over <i>m</i>, <i>n</i> and <i>n</i> keys: more than one
-              argument, so there is nothing an address could carry — and that is the whole of what P2SH is for, since
-              it wraps any term at all in one that takes a single twenty-byte datum, which is how a multi-key wallet
-              came to be paid at an address opening with 3. A data output's argument has no fixed length and nothing
-              to spend, so there
-              is nothing to address. And P2PK takes one argument of fixed length but was never assigned a byte; the
-              address written for such a key is P2PKH's, over ⌖ <b>p</b> — a different term, which is why the coins
-              in the earliest chapters sit at outputs no address names.</p>
+              history of the format. Base58's tag is a byte outside the script, an index into a table of terms — so
+              a term with no byte assigned has no address, and only a new byte could give it one. Segwit's is the
+              script's own opening opcode carried through unchanged, and the character after the separator is that
+              opcode spelled out (q is ⓪, p is ①): every witness output is <span class="lam">λ</span><i>v</i>
+              <b>h</b><span class="lam">.</span> <span class="lam">⟦</span> <i>v</i> <b>h</b> <span
+              class="lam">⟧</span>, so version 2 needs no new prefix. The checksums divide the same way: base58
+              keeps four bytes of ⌘ over tag and argument, the chain's own hash doing duty as a typo check, while
+              bech32 and bech32m are codes of their own.</p>
+            <p class="notation-note">Three rows above are missing here, each for the reason its λ gives. Multisig
+              abstracts over <i>m</i>, <i>n</i> and <i>n</i> keys — more than one argument, which is the whole of
+              what P2SH is for. A data output's has no fixed length and nothing to spend. P2PK's has fixed length
+              but never got a byte, so such a key is paid at P2PKH's address, over ⌖ <b>p</b> — a different term,
+              which is why the earliest chapters' coins sit at outputs no address names.</p>
           </div>
 
           <div class="notation-group">
