@@ -3586,6 +3586,34 @@ function attachHashCopy(el, hex, label, prose = el.textContent, vout = null, vin
   el.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(e); } });
 }
 
+// The same menu, opened from a script's own text instead of from a mark.
+//
+// Every handle above is small -- a letter, an amount, a title -- so it can
+// afford to swallow the mousedown that would otherwise scroll it into view. A
+// paragraph cannot: a reader selects prose, and a handle that killed the
+// selection would take the page's own text away from them. So this one leaves
+// mousedown alone and opens only on a click that selected nothing.
+//
+// It is not a second source of truth. `entryOf` is a thunk, and what it returns
+// is the very entry the mark beside it carries (or, for a locking script, the
+// one its keep line builds) -- so the body and the mark can never offer two
+// different menus, and a menu that has not arrived yet simply does not open.
+// That matters most for the locking script, whose entry waits on an address
+// derived asynchronously from the bytes.
+function attachBodyMenu(el, entryOf, said) {
+  el.tabIndex = 0;
+  if (said) { el.title = said; el.setAttribute('aria-label', said); }
+  const open = (e) => {
+    // A drag that ended here was a selection, not a click on a handle.
+    const sel = document.getSelection();
+    if (e.type === 'click' && sel && !sel.isCollapsed) return;
+    const entry = entryOf();
+    if (entry) openHashMenu(e, entry, el);
+  };
+  el.addEventListener('click', open);
+  el.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(e); } });
+}
+
 // Strip the hash-menu affordance from a persistent element: the chapter-title
 // slot doubles as the volume/book leaf title, where there is no hash to copy.
 // The wired listeners stay; a null __hashMenu makes them inert.
@@ -4747,6 +4775,10 @@ function renderChapter(para) {
   }
   let inputIndex = 0;
   for (const inp of f.inputs) {
+    // The raised capital this input gets if it spent with a scriptSig alone --
+    // set below, and the one place its menu entry lives, so the mark and the
+    // script body beneath it open the same thing.
+    let sigMark = null;
     const cite = document.createElement('div');
     cite.className = 'tx-in-cite';
     cite.id = `in-${inputIndex++}`;   // an output's forward citation scrolls here so the spending input leads the page
@@ -4782,6 +4814,7 @@ function renderChapter(para) {
         `${reference(state.height)} §${para.num}.${inputMark(inputIndex, true)}`,
         null, inputIndex - 1, inputIndex);
       cite.append(m);
+      sigMark = m;
     }
     // A second line sits beneath the reference: the sequence mark leads it, then
     // the amount of the output this input spends (filled on resolve, into its own
@@ -4813,6 +4846,11 @@ function renderChapter(para) {
       scriptCell.className = 'tx-in-script';
       if (inp.scriptAscii) addQuote(scriptCell, inp.scriptAscii);
       else addLine(scriptCell, inp.script);
+      // …and the scriptSig is its own handle, opening the mark's menu from the
+      // text the mark is about. Only where the mark exists: an input that also
+      // carried a witness is lettered lowercase, and its place is the footnote,
+      // so its scriptSig body has no citation of its own to offer.
+      if (sigMark) attachBodyMenu(scriptCell, () => sigMark.__hashMenu, 'scriptSig — click for menu');
       inputsEl.append(citeCell, scriptCell);
     } else if (inp.witnessHex) {
       footnotes[footnotes.length - 1].cite = cite;
@@ -4861,6 +4899,12 @@ function renderChapter(para) {
     scriptCell.className = 'tx-out-script';
     scriptCell.id = `out-${i}`;   // a referencing input scrolls here so this output leads the page
     if (out.scriptAscii) addQuote(scriptCell, out.scriptAscii); else addLine(scriptCell, out.script);
+    // The script itself is its own handle. Until now the only way to reach a
+    // locking script's menu was the keep line above it, and that line prints a
+    // NAME -- so a script nobody had bookmarked and no shelf had curated had
+    // nothing to click, and a reader had to keep it first to copy it. The
+    // bytes were always there; only the affordance was conditional.
+    attachBodyMenu(scriptCell, () => scriptEntry(outKeep), 'locking script — click for menu');
     const valueCell = document.createElement('div');
     valueCell.className = 'tx-note tx-out-value';
     // The composed fields carry the amount raw (out.sats) beside the ₿ string;
@@ -5376,6 +5420,12 @@ async function renderFootnotes(gen) {
     if (markEl && fn.txid) {
       attachHashCopy(markEl, fn.txid, 'witness',
         `${reference(state.height)} §${fn.num}.${footnoteMark(fn.n)}`, null, fn.vin, fn.n);
+      // …and the witness itself opens the same menu. The mark stays the small,
+      // precise handle; a click anywhere in the footnote reaches it too, which
+      // for an inscription running to kilobytes is the difference between a
+      // target and a hunt. A click ON the mark never doubles up: openHashMenu
+      // stops the event where it fires, so it never reaches this paragraph.
+      attachBodyMenu(p, () => markEl.__hashMenu, 'witness — click for menu');
     }
     // The witness's name line, centered above its footnote and spanning the
     // grid: the reader's bookmark title when this witness is kept (defaulted
@@ -7288,6 +7338,26 @@ function syncBookmarkTitles() {
 // very section wrote. A keep living inside a multi-address ledger is
 // managed on the Ledger page, so its ribbon leads there instead of
 // toggling a whole shelf row away.
+// A locking script's menu entry, read off its keep line's dataset at open time.
+// The bytes are there from the first paint; the address is derived from them
+// asynchronously (scriptToAddress) and an OP_RETURN never gets one at all, so
+// the entry is built when it is asked for rather than stored. Without an
+// address there is still a script to copy — which is the whole reason the body
+// is a handle: a menu that waited for the ledger road would never open on the
+// outputs that have no road.
+function scriptEntry(keepEl) {
+  const address = keepEl?.dataset.address || null;
+  const hex = keepEl?.dataset.spk || '';
+  if (!hex) return null;
+  return {
+    hex, prose: address, label: 'locking script', nav: false,
+    ledgerHref: address
+      ? `./bitcoin-ledger.html?address=${encodeURIComponent(address)}`
+        + (keepEl.dataset.ref ? `&ref=${keepEl.dataset.ref}` : '')
+      : null,
+  };
+}
+
 function syncScriptKeeps() {
   for (const el of document.querySelectorAll('.tx-out-keep')) {
     const address = el.dataset.address;
@@ -7306,7 +7376,7 @@ function syncScriptKeeps() {
       span.textContent = name;
       span.title = `${address} — click for menu`;
       span.setAttribute('aria-label', `locking script ${address} — click for menu`);
-      const entry = { hex: el.dataset.spk, prose: address, label: 'locking script', nav: false, ledgerHref };
+      const entry = scriptEntry(el);
       span.addEventListener('mousedown', (e) => e.preventDefault());
       span.addEventListener('click', (e) => openHashMenu(e, entry, span));
       span.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openHashMenu(e, entry, span); } });
