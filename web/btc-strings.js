@@ -55,6 +55,10 @@ const STRINGS = {
     'Title for contents': 'Název pro obsah',
     // the hash menu
     'Copy hex': 'Kopírovat hex',
+    'Copy block hash': 'Kopírovat hash bloku',
+    'Copy merkle root': 'Kopírovat merkle root',
+    'Copy transaction id': 'Kopírovat ID transakce',
+    'Copy script': 'Kopírovat skript',
     'Copy text': 'Kopírovat text',
     'Copy link': 'Kopírovat odkaz',
     'Ledger entry': 'Záznam v účetní knize',
@@ -137,6 +141,10 @@ const STRINGS = {
     'Title for contents': 'Titel für den Inhalt',
     // the hash menu
     'Copy hex': 'Hex kopieren',
+    'Copy block hash': 'Block-Hash kopieren',
+    'Copy merkle root': 'Merkle-Root kopieren',
+    'Copy transaction id': 'Transaktions-ID kopieren',
+    'Copy script': 'Skript kopieren',
     'Copy text': 'Text kopieren',
     'Copy link': 'Link kopieren',
     'Ledger entry': 'Hauptbucheintrag',

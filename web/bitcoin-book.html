@@ -3489,6 +3489,30 @@ const KEEPS = {
   book: 'this book',
 };
 
+// …and what the copy item is called, which is a different question: the ribbon
+// keeps a PLACE, the copy takes the VALUE that names it, and for three of these
+// labels those are not the same thing. An output's menu carries its
+// transaction's id, and so does a witness's -- a §17.a is a place on a page,
+// but the string behind it is a txid, and a reader who pastes it will get the
+// transaction. "Copy hex" said none of that. It named the encoding, which is
+// the one thing about a copied value nobody needs told, and left a reader to
+// find out what they were holding by pasting it somewhere and seeing.
+//
+// So the item says what comes back. Where the value really is nothing but hex
+// -- the header's small fields, four bytes wide, that name no place and can be
+// looked up nowhere -- it keeps the old name, because there is nothing truer to
+// call them.
+const COPIES = {
+  'block hash': 'Copy block hash',
+  'previous block hash': 'Copy block hash',
+  'merkle root': 'Copy merkle root',
+  'transaction id': 'Copy transaction id',
+  output: 'Copy transaction id',
+  witness: 'Copy transaction id',
+  'locking script': 'Copy script',
+};
+const copyItem = (label) => COPIES[label] || 'Copy hex';
+
 // Attach a click menu to an element already showing a Glossia-encoded hash as
 // prose: `hex` is the exact raw value that prose encodes. Clicking (or
 // Enter/Space) opens the hash menu -- copy the hex, or bookmark it; the raw hex
@@ -7354,7 +7378,7 @@ function openHashMenu(ev, entry, anchorEl) {
   menuEntry = entry;
   fromRibbon = false;
   $('hash-menu-head').textContent = entry.label;
-  menuCopyBtn.textContent = tr('Copy hex');
+  menuCopyBtn.textContent = tr(copyItem(entry.label));
   menuCopyTextBtn.textContent = tr('Copy text');
   menuCopyLinkBtn.textContent = tr('Copy link');
   // The link item is offered only where a link exists to copy: a place the
