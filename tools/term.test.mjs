@@ -250,9 +250,11 @@ test('what the address hands back is another λ, not a fragment', () => {
   const of = (address) => lockedText(termOfScript(addressScriptHex(address)));
   assert.deepEqual(of('1Ross5Np5doy4ajF9iGXzgKaC2Q3Pwwxv'), ['λs p. ⧉ ⌖ h²⁰ ≡ ∇']);
   assert.deepEqual(of('bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4'), ['λs p. ⓪ h²⁰']);
-  // An output with two ways to open it is one lock and two λ over it.
+  // An output with two ways to open it is one lock and two λ over it. Both end
+  // on something run: a leaf the spender reveals, or the check consensus makes
+  // itself where no script is revealed at all.
   assert.deepEqual(of('bc1p5d7rjq7g6rdk2yhzks9smlaqtedr4dekq08ge8ztwac72sfr9rusxg3297'),
-    ['λs. ① p³²', 'λ… t c. ① p³² ( t )']);
+    ['λs. ① p³² ( ∇ )', 'λ… t c. ① p³² ( t )']);
   // Every rung-two line is the rung above it with the argument gone in: the
   // body is the same marks, and only the datum's count has arrived.
   for (const [, address] of ADDRESSES) {
@@ -291,12 +293,49 @@ test('the spend rung is marks and a citation, because it cannot be computed', ()
   // set the script between the two.
   const [sh] = spendMarks(termOfScript(addressScriptHex('3J98t1WpEZ73CNmQviecrnyiWrnqRhWNLy')));
   assert.equal(strip(`${sh.prefix} X${sh.suffix}`), '… r ⧺ X ( r )');
-  // Taproot has two, and the leaf declines to draw either: which path was taken
-  // is in the witness, and guessing is the thing this page exists not to do.
-  assert.equal(spendMarks(termOfScript(addressScriptHex(
-    'bc1p5d7rjq7g6rdk2yhzks9smlaqtedr4dekq08ge8ztwac72sfr9rusxg3297'))).length, 2);
+  // Taproot has two, and a spend took one: the leaf draws the alternative
+  // pathTaken names and no other, because which path was taken is in the
+  // witness and guessing is the thing this page exists not to do.
+  const [key, script] = spendMarks(termOfScript(addressScriptHex(
+    'bc1p5d7rjq7g6rdk2yhzks9smlaqtedr4dekq08ge8ztwac72sfr9rusxg3297')));
+  assert.equal(strip(`${key.prefix} X${key.suffix}`), 's ⧺ X ( ∇ )');
+  assert.equal(strip(`${script.prefix} X${script.suffix}`), '… t c ⧺ X ( t )');
   // A term with nothing written down about what it awaits has no rung three.
   assert.equal(spendMarks(termOfScript('76a914' + 'ab'.repeat(20))), null);
+});
+
+test('what a key-path spend runs is consensus’s own, and the term says so', () => {
+  // The one operation on any of these lines that is not a byte in the output.
+  // A key-path taproot spend runs no script at all -- consensus verifies the
+  // witness's single item against the output key as if by OP_CHECKSIG -- so ∇
+  // is nowhere in ⟦ ① p³² ⟧ and no reduction could ever put it there. Without
+  // it the key path's term said a lock wanted a signature and never said what
+  // became of it: a demand with no verdict.
+  const tr = termOfScript(addressScriptHex(TR));
+  const [key, script] = demandsOf(tr);
+  assert.equal(key.checks, 0xac, 'the key path is checked, not run');
+  assert.equal(OPCODE_NAMES[key.checks], 'OP_CHECKSIG');
+  assert.equal(key.runs, null, 'and reveals no script to run');
+  assert.equal(script.checks, null, 'the script path runs a leaf instead');
+  // It rides in the same ( ) a revealed script does, because the reader's
+  // question is the same one: after the marks the chain holds, what runs?
+  assert.match(lockedText(tr)[0], / \( ∇ \)$/);
+  assert.match(spendText(tr)[0], / \( ∇ \)$/);
+  // …and it brings no ellipsis with it. … is the notation admitting binders it
+  // cannot write, and this alternative can write them: one signature, named.
+  assert.ok(!lockedText(tr)[0].includes('…'), 'the key path counts its argument');
+  // Marked as an operation, not as apparatus: the check really happens. What
+  // makes it implicit is that it stands outside the marks the chain holds.
+  const [m] = lockedMarks(tr);
+  assert.match(m.suffix, /class="op"[^>]*OP_CHECKSIG[^>]*>∇/);
+  assert.match(m.suffix, /class="lam">\(/, 'the eval step is still apparatus');
+  // Every other tabled form does its own checking, in bytes of its own.
+  for (const id of Object.keys(TERMS)) {
+    if (id === 'p2tr') continue;
+    const bytes = TERMS[id].bytes ?? 65;
+    const t = termOfScript(reduce(TERMS[id], 'ab'.repeat(bytes)));
+    for (const alt of demandsOf(t)) assert.equal(alt.checks, null, id);
+  }
 });
 
 test('the only opcode on a rung the lock does not own is the joint', () => {
@@ -304,17 +343,24 @@ test('the only opcode on a rung the lock does not own is the joint', () => {
   // a conjunction between its clauses, and the mark that printed was ∧ --
   // OP_BOOLAND, which is not disabled at all: a live opcode that pops two
   // numbers, standing on a line that claimed to reduce to a script. Nothing on
-  // any rung is a mark the lock does not own, save ⧺ on the spend.
+  // any rung is a mark the lock does not own, save ⧺ on the spend -- and save
+  // the one opcode an alternative declares as consensus's own, which is the
+  // only other way a mark can be true of a spend without being a byte of the
+  // output. Each line is checked against what ITS alternative declares, so rung
+  // one can never carry one of these and neither can a sibling path.
   const CAT = OPCODE_SYMBOLS[0x7e];
   assert.equal(OPCODE_NAMES[0x7e], 'OP_CAT');
   for (const id of Object.keys(TERMS)) {
     const bytes = TERMS[id].bytes ?? 65;
     const t = termOfScript(reduce(TERMS[id], 'ab'.repeat(bytes)));
-    const own = new Set(t.body.filter((c) => c !== null).map((c) => OPCODE_SYMBOLS[c]));
-    for (const line of [addressText(t), ...lockedText(t)]) {
+    const own = t.body.filter((c) => c !== null).map((c) => OPCODE_SYMBOLS[c]);
+    const rungs = [[addressText(t), null],
+      ...lockedText(t).map((line, i) => [line, demandsOf(t)[i].checks])];
+    for (const [line, check] of rungs) {
       assert.ok(!line.includes(CAT), `${id} joins nothing on this rung`);
+      const allowed = new Set(check === null ? own : [...own, OPCODE_SYMBOLS[check]]);
       for (const [code, glyph] of Object.entries(OPCODE_SYMBOLS)) {
-        if (own.has(glyph)) continue;
+        if (allowed.has(glyph)) continue;
         assert.ok(!line.includes(glyph),
           `${id} writes ${glyph} (${OPCODE_NAMES[code]}), which its lock never does`);
       }
@@ -414,9 +460,11 @@ test('a wrapped form writes the arguments it cannot count, and only it does', ()
   assert.deepEqual(of('bc1qrp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3qccfmv3'),
     ['λ… w. ⓪ h³² ( w )']);
   // Taproot, both paths at once: the key path counts its one argument exactly,
-  // and only the script path reveals a script with an arity of its own.
+  // and only the script path reveals a script with an arity of its own. The key
+  // path ends on a ( ) all the same, and takes no ellipsis with it -- what runs
+  // there is consensus's own check, whose arity is the one binder already named.
   assert.deepEqual(of('bc1p5d7rjq7g6rdk2yhzks9smlaqtedr4dekq08ge8ztwac72sfr9rusxg3297'),
-    ['λs. ① p³²', 'λ… t c. ① p³² ( t )']);
+    ['λs. ① p³² ( ∇ )', 'λ… t c. ① p³² ( t )']);
   // It leads, because that is where the arguments go: pushed first, with the
   // revealed script on top of them.
   for (const line of of('3J98t1WpEZ73CNmQviecrnyiWrnqRhWNLy')) {

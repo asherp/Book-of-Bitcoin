@@ -392,7 +392,7 @@ export const NOTATION_HTML = `
             <div class="glyph-grid">
               <div class="glyph-row"><span class="g">⟨ │ ⟩</span><span class="m">if … else … end</span></div>
               <div class="glyph-row"><span class="g">¬⟨</span><span class="m"><b>if not</b></span></div>
-              <div class="glyph-row"><span class="g">( )</span><span class="m"><b>run</b> the revealed script (r w t) — the eval to ⟦ ⟧'s quote, under Scripts as terms</span></div>
+              <div class="glyph-row"><span class="g">( )</span><span class="m"><b>run</b> what the lock hands back — the eval to ⟦ ⟧'s quote, under Scripts as terms. Usually a script the spender revealed (r w t); on a key-path taproot spend it is ∇, which consensus supplies itself, since that path runs no script at all and verifies the witness's one item against the output key as if by OP_CHECKSIG</span></div>
               <div class="glyph-row"><span class="g">✓</span><span class="m">assert true</span></div>
               <div class="glyph-row"><span class="g">¶</span><span class="m"><b>data output</b> — provably unspendable</span></div>
               <div class="glyph-row"><span class="g">° °<i>n</i></span><span class="m"><b>no-op</b> · numbered no-ops</span></div>

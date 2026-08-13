@@ -267,6 +267,16 @@ export function reduce(term, args) {
 // neither a spend nor a lock. `runs` is also what puts the … there, since a lock
 // that hands back a script is exactly a lock whose arity it cannot state: the
 // two can never disagree because there is only one field.
+//
+// `checks` is the other way a lock can hand something back, and the only one
+// where the program comes from consensus rather than from the spender. A
+// key-path taproot spend runs no script at all: the witness's one item is
+// verified against the output key as if by OP_CHECKSIG, and that opcode is
+// nowhere in the output's bytes. Without it the key path's line said a lock
+// wanted a signature and never said what became of it -- ⟦ ① p³² ⟧ carries no
+// verification, so the term read as though the signature were merely collected.
+// So the same ( ) that runs a revealed script runs this one, and the arity is
+// known rather than hidden, which is why `checks` puts no … on the line.
 const DEMANDS = {
   p2pk:   [{ brings: 's' }],
   p2pkh:  [{ brings: 's p' }],
@@ -274,18 +284,20 @@ const DEMANDS = {
   p2wpkh: [{ brings: 's p' }],
   p2wsh:  [{ brings: 'w', runs: 'w' }],
   // Taproot asks for one of two things, which is the whole of what a taptree
-  // buys: a signature under the output key, or a leaf that proves to it.
-  p2tr:   [{ brings: 's' },
+  // buys: a signature under the output key, checked by consensus itself, or a
+  // leaf that proves to it and is then run like any other script.
+  p2tr:   [{ brings: 's', checks: OP_CHECKSIG },
            { brings: 't c', runs: 't' }],
 };
 
 // What the lock, once written, is still a function of -- or null for a term
-// with nothing written down. Each alternative is { brings: [names], runs }, and
-// a term with two of them is an output with two ways to open it.
+// with nothing written down. Each alternative is { brings: [names], runs,
+// checks }, and a term with two of them is an output with two ways to open it.
 export function demandsOf(t) {
   const alts = DEMANDS[t.id];
   if (!alts) return null;
-  return alts.map((alt) => ({ brings: alt.brings.split(' '), runs: alt.runs ?? null }));
+  return alts.map((alt) => ({ brings: alt.brings.split(' '), runs: alt.runs ?? null,
+    checks: alt.checks ?? null }));
 }
 
 // The joint, taken from the alphabet rather than written out, so the mark on
@@ -306,6 +318,14 @@ const UNDER_SAID = 'however many arguments the revealed script wants, pushed ben
 // off `runs`, which is what makes the … and the ( ) one claim rather than two.
 const binderText = (alt) => (alt.runs ? `${UNDER} ` : '') + alt.brings.join(' ');
 
+// The eval step: what the lock hands back to be run, in the ( ) that exists for
+// it. Two sources, one shape -- a script the SPENDER revealed (r w t), or the
+// check CONSENSUS supplies where no script is revealed at all -- and the shape
+// is shared because the reader's question is the same either way: after the
+// marks the chain holds, what actually runs?
+const evalText = (alt) => (alt.runs ? ` ( ${alt.runs} )`
+  : alt.checks !== null ? ` ( ${glyph(alt.checks)} )` : '');
+
 // ─── rung one: the address ───────────────────────────────────────────────
 //
 // The term applied to the data it carries, and nothing else supplied. Curried,
@@ -324,8 +344,7 @@ export const addressText = (t) =>
 // satisfy it.
 export const lockedText = (t) => {
   const alts = demandsOf(t);
-  return alts ? alts.map((alt) => `λ${binderText(alt)}. ${bodyText(t, true)}`
-    + (alt.runs ? ` ( ${alt.runs} )` : '')) : null;
+  return alts ? alts.map((alt) => `λ${binderText(alt)}. ${bodyText(t, true)}${evalText(alt)}`) : null;
 };
 
 // ─── rung three: the spend ───────────────────────────────────────────────
@@ -335,8 +354,7 @@ export const lockedText = (t) => {
 // spend yet -- but it is the rung the two above are descending toward.
 export const spendText = (t) => {
   const alts = demandsOf(t);
-  return alts ? alts.map((alt) => `${binderText(alt)} ${CAT} ${bodyText(t, true)}`
-    + (alt.runs ? ` ( ${alt.runs} )` : '')) : null;
+  return alts ? alts.map((alt) => `${binderText(alt)} ${CAT} ${bodyText(t, true)}${evalText(alt)}`) : null;
 };
 
 // ─── the same, as marks ──────────────────────────────────────────────────
@@ -354,6 +372,26 @@ const awaited = (name) => `<span class="aw">${escapeHtml(name)}</span>`;
 const under = () => `<span class="aw" title="${escapeHtml(UNDER_SAID)}">${UNDER}</span>`;
 const binderMarks = (alt) => (alt.runs ? `${under()} ` : '') + alt.brings.map(awaited).join(' ');
 
+// Consensus's own step, and the one operation on any of these lines that is not
+// a byte in the output. It takes the gold all the same, because the check
+// really happens; what makes it implicit is where it stands -- outside the
+// marks the chain holds, which is the rule the book keeps everywhere: a glyph
+// inside the script is a byte, the same glyph outside is that operation being
+// run. The claim it makes is in its hover, which is where this book puts one it
+// cannot set in type.
+const CHECKS_SAID = (code) => `${OPCODE_NAMES[code]} — consensus’s own, and not a byte in this `
+  + 'output: a key-path spend runs no script at all, the one item the witness carries being '
+  + 'verified against the output key as if by this opcode. So it stands outside the marks the '
+  + 'chain holds, where a glyph is the operation and not the byte';
+const checks = (code) => `<span class="op" title="${escapeHtml(CHECKS_SAID(code))}">`
+  + `${escapeHtml(glyph(code))}</span>`;
+
+// The eval step as marks, from whichever field the alternative fills. The ( )
+// is apparatus either way -- the step between two scripts, and no byte of
+// either -- so it keeps the quiet colour around whatever it runs.
+const evalMarks = (alt) => (alt.runs ? ` ${lam('(')} ${awaited(alt.runs)} ${lam(')')}`
+  : alt.checks !== null ? ` ${lam('(')} ${checks(alt.checks)} ${lam(')')}` : '');
+
 // `prose` is the argument's bytes said in the book's own tongue, and it lands
 // where an address keeps its payload: after the term, behind the mark that
 // gives its length. Withheld, the datum stays behind that mark -- the line is
@@ -363,18 +401,18 @@ export const addressHtml = (t, { prose = '' } = {}) =>
   + t.holes.map((h, i) => dt(h) + count(h)
     + (prose && i === 0 && t.holes.length === 1 ? ` ${prose}` : '')).join(' ');
 
-// The second rung, split so a caller can set the script between the marks: the
-// leaf's lock line is also the copyable sigla address, and a λ inside that
-// span would go into the clipboard and stop the search box reading it back.
-// So the binders come out as a prefix and the eval step as a suffix, and what
-// goes between them is the caller's -- spelled with its prose, or drawn from
-// the term alone when there is no engine to say it.
+// The second rung, split at the body so a caller can set what it likes between
+// the marks. The λ, the binders and the eval step are the book's own notation
+// about a script and not one byte of it, which is the whole reason they come
+// out separately: a page that QUOTES the script has to be able to keep them off
+// the quotation, and a page that lets it be COPIED has to be able to keep them
+// out of the clipboard. lockedHtml puts the term's own body back between them.
 export function lockedMarks(t) {
   const alts = demandsOf(t);
   if (!alts) return null;
   return alts.map((alt) => ({
     prefix: `${lam('λ')}${binderMarks(alt)}${lam('.')}`,
-    suffix: alt.runs ? ` ${lam('(')} ${awaited(alt.runs)} ${lam(')')}` : '',
+    suffix: evalMarks(alt),
   }));
 }
 
@@ -435,7 +473,7 @@ export function spendMarks(t) {
   if (!alts) return null;
   return alts.map((alt) => ({
     prefix: `${binderMarks(alt)} ${cat()}`,
-    suffix: alt.runs ? ` ${lam('(')} ${awaited(alt.runs)} ${lam(')')}` : '',
+    suffix: evalMarks(alt),
   }));
 }
 

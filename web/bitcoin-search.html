@@ -99,6 +99,12 @@ button:hover { background: var(--accent-2); }
    with a spend in front of it. The notation key's Scripts as terms group is
    where the encoding's own β chain lives.
 
+   Each rung below the first comes in two lines, and the split is what a
+   quotation costs: the term, which this page derives, and then the passage,
+   which the chain wrote. The lock's term says what the script still wants and
+   what it hands back to be run; the spend's says the same application with the
+   arguments in front of it. Neither is a quotation, so neither takes the rule.
+
    Read still opens the place, as it always did. This says what the thing is;
    the button goes to it. */
 /* The leaf reserves the rule's own gutter, always, whether or not anything on
@@ -150,9 +156,14 @@ button:hover { background: var(--accent-2); }
    coinbase, and a script is not writing. It is drawn only where a citation can
    be named, so the rule and the attribution under it arrive together and say the
    same thing twice: this was read off the chain, and here is where.
-   Not every line on this leaf is a quotation. The address rung is a reading of
-   the bytes in the box, true whether or not the chain ever wrote them, and it
-   stays bare -- which is the whole use of marking the other two.
+   Not every line on this leaf is a quotation, and most are not. The address
+   rung is a reading of the bytes in the box, true whether or not the chain ever
+   wrote them. So is every term line: λ, its binders, the ellipsis and the eval
+   step are the book's notation ABOUT a script rather than any byte of one, and
+   the two passages that are quoted hold nothing else -- the script the chain
+   wrote, and what an input carried to open it. A rule around the notation would
+   attribute the reader's own apparatus to the place cited beneath it, which is
+   the whole use of marking anything.
    The rule takes back a gutter the leaf reserved rather than pushing the text
    right, because these lines are drawn before the chain has answered and again
    after: an indent that arrived with the citation would slide the passage
@@ -173,13 +184,15 @@ button:hover { background: var(--accent-2); }
    claim about a claim. */
 /* The spend stands apart from the lock's own citation, because it is a
    different claim about a different transaction: not where these bytes were
-   written, but where somebody satisfied them. Which is also why nothing stands
-   on this line but what that input carried: the joint is apparatus, and the
-   lock the arguments were applied to is the output's bytes, set one rung up
-   under a citation of their own. Both used to trail the quotation in a quiet
-   echo, which still put another transaction's marks under an attribution that
-   names this one — so the line stops where the input does, and the attribution
-   beneath it covers all of it. */
+   written, but where somebody satisfied them. So the gap opens above the term
+   line that heads it, and the pair below — that term and the passage under it —
+   reads as one rung.
+   The lock's marks are on that term line, joint and eval step and all, and the
+   quotation under it holds nothing but what the input carried. They were on one
+   line once, which put two transactions' worth of marks under an attribution
+   naming a single input: a quotation that quotes more than it was given. The
+   answer is not to drop the application but to un-quote it — it was never read
+   off a spend, it is what this page derives from the output's own bytes. */
 .term-spend { margin-top: 18px; }
 .term-attrib { margin:10px 0 0; text-align:right; font:400 15px/1.7 'Newsreader','Book Sigla',serif; color:var(--meta); }
 /* A diagnosis is not an attribution: bytes that are not a script name no place,
@@ -276,7 +289,7 @@ import { isAddress, addressScriptHex, chainWitness, witnessVerdict, witnessDisag
 import { reference, latinReference, inputMark } from './btc-citation.js';
 import { parseLookup } from './btc-lookup.js';
 
-import { termOfScript, addressHtml, lockedMarks, lockBodyHtml, suppliedHtml } from './btc-term.js';
+import { termOfScript, addressHtml, lockedHtml, lockBodyHtml, spendMarks, suppliedHtml } from './btc-term.js';
 import { spellHtml, read, looksSpelled, isWholeScript, scriptFault } from './btc-address-form.js';
 const input = document.getElementById('block-input');
 const termEl = document.getElementById('term');
@@ -408,12 +421,28 @@ const faultNote = (f) => {
 // paths above, because an unspent output really can be opened either way, and
 // this line is the one the chain has a record of. Consensus's own rule picks it
 // -- exactly one witness item is the key path -- so nothing here is a guess.
+//
+// Two lines, and the split is the same one the lock rung makes: the term the
+// spend satisfies, which is notation, and then the passage, which is what the
+// input carried. The term is the whole application -- the arguments, the joint,
+// the lock's marks, and whatever the lock hands back to be run -- and none of
+// it is quoted from anywhere, so it stands clear of the rule. Which is what
+// makes it safe to write the lock's marks here at all: they belong to the
+// OUTPUT, cited a rung up, and a line under this input's attribution that
+// carried them would be quoting more than it was given.
 const spendRung = (t, opened, sayFn, section = null, brought = null, paired = false) => {
   // The arity is read off what the script takes; the line shows everything the
   // input carried, annex and all, exactly as the reader would.
   const rung = opened?.args?.length
     ? suppliedHtml(t, opened.args, { say: sayFn, brought }) : null;
   if (!rung) return '';
+  // One term, not both: rung two keeps every way in because they are all still
+  // true of an unspent output, and this rung is about the path a spend actually
+  // took. suppliedHtml read that path off the count consensus itself counts, so
+  // the term above the passage is the one those arguments went into.
+  const form = spendMarks(t)[rung.which];
+  const term = `<div class="term-line term-spend">${form.prefix} `
+    + `${lockBodyHtml(t)}${form.suffix}</div>`;
   // The citation lands on the INPUT, not merely the transaction that holds it.
   // These marks were read off one vin, and a spend can draw from many places at
   // once -- a citation that stopped at the section would send a reader to a page
@@ -430,7 +459,8 @@ const spendRung = (t, opened, sayFn, section = null, brought = null, paired = fa
     : `quoted from input ${opened.in} of the earliest spend this page reaches. It opened `
       + 'a different output carrying these same bytes: nothing on this page opens the one '
       + 'cited above';
-  return `<div class="term-line term-spend term-quote">${rung.html}</div>`
+  return term
+    + `<div class="term-line term-quote">${rung.html}</div>`
     + `<div class="term-attrib"><span class="term-cite" title="${says}">—</span> ${where}</div>`;
 };
 
@@ -456,23 +486,33 @@ function drawTerm(hex, { address = null, at = '', say: sayFn = null, said = '',
   const argument = t && sayFn ? sayFn(t.argument) || '' : '';
   const script = `<span class="term-onchain" title="the same script in the book’s own hand — `
     + `this box takes it back">${spellHtml(hex, { say: sayFn }) || ''}</span>`;
-  // The second rung, one line per way of opening the output. The first carries
-  // the spelled script, which is the copyable form and has to stay bare bytes:
-  // the binders sit outside that span, so a click takes the script and not the
-  // λ. A second alternative has nothing new to say about the datum, so it shows
-  // the lock's marks alone and lets the prose above stand for both.
-  const marks = t ? lockedMarks(t) : null;
-  const lines = marks
-    ? marks.map((m, i) => `<div class="term-line">${m.prefix} `
-        + (i === 0 ? script : lockBodyHtml(t)) + `${m.suffix}</div>`).join('')
-    : `<div class="term-line">${script}</div>`;
-  // …and marked as a quotation once, and only once, the chain has said where
-  // these bytes are written. Until it answers -- and if it answers ∅, ⋯ or ☒ --
-  // the same marks are only a reading of what the reader typed, which is a true
-  // thing to draw and not a passage anyone can be sent to. One rule covers every
-  // alternative, because they are one script however many ways it opens, and the
-  // citation below covers them the same way.
-  const locked = quoted ? `<div class="term-quote">${lines}</div>` : lines;
+  // The second rung, in two parts: what the lock IS as a term, and then the
+  // script itself. One term line per way of opening the output -- an unspent
+  // taproot output really can be opened either way -- and one script, because
+  // they are one script however many ways it opens.
+  //
+  // The term lines stand above the passage and outside the rule. λ, the
+  // binders, the ellipsis and the eval step are the book's notation ABOUT this
+  // script and not one byte of it, and a quotation that carried them would be
+  // attributing the reader's own apparatus to the chain, under a citation
+  // saying where to go and read it. They also stayed out of the copyable span
+  // for the same reason from the other side: a click here takes bare bytes, and
+  // the search box reads them back.
+  // A term with nothing written down about what it awaits has no second rung of
+  // its own -- bare multisig, a data output, any shape the book has not tabled
+  // -- and the script still stands, quoted or not. There is simply no notation
+  // above it, which is the honest thing to draw: the page knows the bytes and
+  // does not know what opens them.
+  const terms = ((t && lockedHtml(t)) || [])
+    .map((line) => `<div class="term-line">${line}</div>`).join('');
+  const passage = `<div class="term-line">${script}</div>`;
+  // …and the passage is marked as a quotation once, and only once, the chain
+  // has said where these bytes are written. Until it answers -- and if it
+  // answers ∅, ⋯ or ☒ -- the same marks are only a reading of what the reader
+  // typed, which is a true thing to draw and not a passage anyone can be sent
+  // to. The term lines above are never quoted under any answer: they are a
+  // reading of the bytes in the box, exactly as rung one is.
+  const locked = terms + (quoted ? `<div class="term-quote">${passage}</div>` : passage);
   const body = fault
     ? `<div class="term-said">${faultNote(fault)}</div>`
     : (t ? `<div class="term-line term-awaits">${addressHtml(t, { prose: argument })}</div>` : '')
