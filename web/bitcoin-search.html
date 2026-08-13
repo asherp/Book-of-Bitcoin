@@ -114,11 +114,8 @@ button:hover { background: var(--accent-2); }
 }
 /* The marks, styled as the book styles them everywhere else: opcode glyphs in
    accent, the datum's letter bold, its byte count quiet. .lam is the calculus
-   and not the script -- λ, the dot, the application's parens, and the ⧺ that
-   joins a spend to the lock it runs against -- so it never takes the gold that
-   means "the chain kept this". The joint is the case that has to be quiet: it
-   is a real opcode's mark, and it is on the line precisely because it is the
-   one step neither script performs. */
+   and not the script -- λ, the dot, and the application's parens -- so it never
+   takes the gold that means "the chain kept this". */
 .term-line .op { color: var(--accent); font-style: normal; font-weight: 700; }
 /* The count is a push opcode -- on the wire a direct push IS its byte count --
    so it takes the same gold and the same weight as any other byte, rather than
@@ -150,15 +147,14 @@ button:hover { background: var(--accent-2); }
    which is where this book keeps a claim about a claim. */
 /* The spend stands apart from the lock's own citation, because it is a
    different claim about a different transaction: not where these bytes were
-   written, but where somebody satisfied them. */
+   written, but where somebody satisfied them. Which is also why nothing stands
+   on this line but what that input carried: the joint is apparatus, and the
+   lock the arguments were applied to is the output's bytes, set one rung up
+   under a citation of their own. Both used to trail the quotation in a quiet
+   echo, which still put another transaction's marks under an attribution that
+   names this one — so the line stops where the input does, and the attribution
+   beneath it covers all of it. */
 .term-spend { margin-top: 18px; }
-/* What is on the spend's line but not quoted from it: the joint, and the lock
-   the arguments were applied to. Those bytes are the output's, set one rung up
-   under a citation of their own, so here they are an echo — quiet, so the
-   attribution ranged under this line covers the passage it names and stops
-   where the quotation stops. */
-.term-line .echo .op, .term-line .echo .dt, .term-line .echo .op-push,
-.term-line .echo .lam { color: var(--meta); font-weight: 400; }
 .term-attrib { margin:10px 0 0; text-align:right; font:400 15px/1.7 'Newsreader','Book Sigla',serif; color:var(--meta); }
 /* A diagnosis is not an attribution: bytes that are not a script name no place,
    so what is wrong with them stays on the left where reading begins. */

@@ -405,22 +405,28 @@ export function spendMarks(t) {
   }));
 }
 
-// …and with the values in hand, the same rung written out: each one a mark, its
-// byte count and — where an engine has said it — its prose, exactly as a push
-// is set everywhere else in the book. This is the one line on the leaf whose
-// content came from the chain rather than from the bytes in the box.
 // The joint takes the quiet colour, not the gold: it is the step between the
 // two scripts and not a byte either of them holds -- which is also why it can
 // be a disabled opcode's mark without the line claiming a disabled opcode.
 const cat = () => `<span class="lam" title="${escapeHtml(OPCODE_NAMES[0x7e])} — the arguments `
   + `applied, which a stack machine writes as their pushes ahead of the code">${escapeHtml(CAT)}</span>`;
 
-// …and with the values in hand, the same rung written out. `brought` is the
-// left half pre-rendered by whoever has a better renderer -- the reader's own
-// renderWitness, which reveals a witness script as opcodes, strips a DER
-// signature to its compact form before saying it, and knows an annex from an
-// argument. Given none, the values are named from the term instead and set as
-// marks with their counts, which is all this module can do without reaching
+// …and with the values in hand, the same rung written out: each one a mark, its
+// byte count and — where an engine has said it — its prose, exactly as a push
+// is set everywhere else in the book. This is the one line on the leaf whose
+// content came from the chain rather than from the bytes in the box, and it is
+// nothing else: the joint is apparatus, and the lock behind it is the OUTPUT's
+// bytes, already set one rung up under a citation of their own. Writing them
+// here put two transactions' worth of marks on a line attributed to one input,
+// which is a quotation that quotes more than it was given. So the line stops
+// where the input stops, and the ⧺ that used to follow lives on rung two's own
+// marks (spendMarks), where nothing is claimed to have been read off a spend.
+//
+// `brought` is the line pre-rendered by whoever has a better renderer -- the
+// reader's own renderWitness, which reveals a witness script as opcodes, strips
+// a DER signature to its compact form before saying it, and knows an annex from
+// an argument. Given none, the values are named from the term instead and set
+// as marks with their counts, which is all this module can do without reaching
 // for the engine.
 export function suppliedHtml(t, items, { say = null, brought = null } = {}) {
   const which = pathTaken(t, items);
@@ -429,8 +435,7 @@ export function suppliedHtml(t, items, { say = null, brought = null } = {}) {
   const names = suppliedNames(alt, items);
   // These take the gold. On the rungs above, a name in plain ink is something
   // no one has brought yet; here the chain has a record of it, cited on the
-  // line below, so it is as much a fact as the lock beside it. What separates
-  // them is the joint, not the colour -- they are two scripts, both written.
+  // line below, so it is as much a fact as the lock a rung above.
   const own = () => items.map((hex, i) => {
     const prose = say ? say(hex) || '' : '';
     return `<span class="dt" title="${escapeHtml(TITLES[names[i][0]] ?? 'data')}">`
@@ -438,18 +443,7 @@ export function suppliedHtml(t, items, { say = null, brought = null } = {}) {
       + `<span class="op op-push" title="a push of ${hex.length / 2} bytes">`
       + `${toSuperscript(hex.length / 2)}</span>${prose ? ` ${prose}` : ''}`;
   }).join(' ');
-  // Only the left half is quoted. The joint is apparatus, and the lock after it
-  // is the OUTPUT's bytes -- already set one rung up, under a citation of their
-  // own -- so they are echoed here to show what the arguments were applied to
-  // and marked as an echo, which is what keeps the attribution below this line
-  // covering what it actually attributes.
-  return {
-    which,
-    quoted: brought ?? own(),
-    echo: `${cat()} ${bodyHtml(t, true)}`
-      + (alt.runs ? ` ${lam('(')} <span class="dt">${escapeHtml(alt.runs)}</span> ${lam(')')}` : ''),
-    get html() { return `${this.quoted} <span class="echo">${this.echo}</span>`; },
-  };
+  return { which, html: brought ?? own() };
 }
 
 // The lock's own marks, with no prose and nothing copyable about them: what a

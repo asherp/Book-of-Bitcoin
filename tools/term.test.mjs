@@ -528,24 +528,21 @@ test('the spend rung is written from the chain, marks counts and prose', () => {
   const t = termOfScript(addressScriptHex('1Ross5Np5doy4ajF9iGXzgKaC2Q3Pwwxv'));
   const got = suppliedHtml(t, [SIG, KEY]);
   assert.equal(got.which, 0);
-  assert.equal(strip(got.html), 's⁷¹ p³³ ⧺ ⧉ ⌖ h²⁰ ≡ ∇');
-  // The line is one thing to read and two things to attribute. Only the left
-  // half was quoted from the input the citation names; the joint is apparatus
-  // and the lock after it belongs to the OUTPUT, cited a rung above. So they
-  // come out separately, and an attribution ranged under this line covers the
-  // passage it names rather than everything on the row.
-  assert.equal(strip(got.quoted), 's⁷¹ p³³');
-  assert.equal(strip(got.echo), '⧺ ⧉ ⌖ h²⁰ ≡ ∇');
-  assert.ok(!got.quoted.includes('⧺'), 'the joint is not part of the quotation');
-  assert.ok(got.html.includes('class="echo"'), 'and what follows it is marked as not quoted');
+  // Everything on this line was read off the input the citation names, and
+  // nothing else is on it. The joint is apparatus -- the one step neither
+  // script performs -- and the lock behind it belongs to the OUTPUT, cited a
+  // rung above; a line that carried them would put two transactions' marks
+  // under an attribution that names one.
+  assert.equal(strip(got.html), 's⁷¹ p³³');
+  assert.ok(!got.html.includes('⧺'), 'the joint is not on the wire, so it is not on the line');
   // The prose rides behind each mark, as a push's prose does in every chapter.
   const said = suppliedHtml(t, [SIG, KEY], { say: (hex) => (hex === KEY ? 'ridge amused' : 'sworn') });
-  assert.equal(strip(said.html), 's⁷¹ sworn p³³ ridge amused ⧺ ⧉ ⌖ h²⁰ ≡ ∇');
+  assert.equal(strip(said.html), 's⁷¹ sworn p³³ ridge amused');
   // Taproot writes whichever path it was, and says which.
   const tr = termOfScript(addressScriptHex(TR));
-  assert.equal(strip(suppliedHtml(tr, [SCHNORR]).html), 's⁶⁴ ⧺ ① p³²');
+  assert.equal(strip(suppliedHtml(tr, [SCHNORR]).html), 's⁶⁴');
   const leaf = suppliedHtml(tr, [SIG, '51' + KEY + 'ac', 'c0' + 'ab'.repeat(32)]);
   assert.equal(leaf.which, 1);
-  assert.equal(strip(leaf.html), 's⁷¹ t³⁵ c³³ ⧺ ① p³² ( t )');
+  assert.equal(strip(leaf.html), 's⁷¹ t³⁵ c³³');
   assert.equal(suppliedHtml(t, []), null, 'nothing brought, nothing to write');
 });
