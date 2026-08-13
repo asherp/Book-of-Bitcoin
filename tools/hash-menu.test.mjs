@@ -198,10 +198,13 @@ test('a scriptSig input carries the mark the scheme always gave it', async () =>
   const page = await bookPage();
   // It had never been printed, so a reader could not cite the input they were
   // looking at. Now it is set beside the citation exactly where a witness's
-  // letter sits — and only where there is no witness, since a witness makes
-  // the letter lowercase whatever else the input brought.
-  assert.match(page, /else if \(inp\.scriptAscii \|\| inp\.script\) \{\s*\n\s*const m = sigRef\(inputIndex\);/,
-    'the mark is raised only on an input with no witness');
+  // letter sits — and on every input that spent with a scriptSig, footnote or
+  // no. An input can carry both: a wrapped segwit spend pushes its redeem
+  // script in the scriptSig and brings the arguments in the witness, which is
+  // two things in two places, and the scheme letters them by case for exactly
+  // that. `if`, not `else if` — the two carriages do not exclude each other.
+  assert.match(page, /\n    if \(inp\.scriptAscii \|\| inp\.script\) \{\s*\n\s*const m = sigRef\(inputIndex\);/,
+    'a scriptSig raises its mark whether or not the input also raised a footnote');
   assert.match(page, /attachHashCopy\(m, para\.txid, 'script sig',/);
   assert.match(page, /s\.textContent = inputMark\(n, true\);/, 'and it is the scheme’s own letter');
   // Not a link: a witness's mark leads to its footnote, a scriptSig is on the
@@ -282,4 +285,46 @@ test('a script is its own handle, and it does not eat the selection', async () =
   assert.match(builder, /if \(!hex\) return null;/, 'no bytes, no menu');
   assert.match(builder, /ledgerHref: address\s*\n?\s*\?/,
     'an OP_RETURN has no ledger road, and still has a script to copy');
+});
+
+test('the letter’s case picks which of an input’s two carriages is meant', async () => {
+  const page = await bookPage();
+  // A wrapped segwit input carries a scriptSig AND a witness: the scriptSig
+  // pushes the redeem script on its own line, the witness brings the arguments
+  // down in the foot. §n.A is the first, §n.a the second, and nothing but the
+  // case distinguishes them -- so a landing that looked at what the section
+  // held rather than at the mark it was given sent every §n.A on such an input
+  // past the scriptSig it named.
+  const land = /async function landOnWitness\(raw\) \{[\s\S]*?\n\}/.exec(page);
+  assert.ok(land, 'the landing is gone');
+
+  // Run it: a page holding a footnote for input 1, asked for both marks.
+  const scrolled = [];
+  const el = (id) => ({ id, scrollIntoView: () => scrolled.push(id) });
+  const found = new Map([['fn-a', el('fn-a')], ['in-0', el('in-0')]]);
+  const { footnoteMark, footnoteIndexOf } = await import('../web/btc-citation.js');
+  const go = (raw) => {
+    scrolled.length = 0;
+    return Function('$', 'footnoteMark', 'footnoteIndexOf', 'currentFootnotes',
+      'footnoteStub', 'renderFootnotes', 'renderGen',
+      `${land[0]}\nreturn landOnWitness(${JSON.stringify(raw)});`)(
+      (id) => found.get(id) ?? null, footnoteMark, footnoteIndexOf,
+      [{ n: 1, vin: 0 }], () => {}, async () => {}, 0).then(() => scrolled[0] ?? null);
+  };
+  assert.equal(await go('a'), 'fn-a', 'the lowercase letter is the witness, in the foot');
+  assert.equal(await go('A'), 'in-0', 'the raised capital is the scriptSig, on its own line');
+  // An input with no footnote lands on itself either way -- there is only one
+  // thing there to land on.
+  found.delete('fn-a');
+  assert.equal(await go('a'), 'in-0');
+  assert.equal(await go('A'), 'in-0');
+  // A bare number is the input and not one of its carriages, so it keeps the
+  // old reading: whatever that input put on the page.
+  found.set('fn-a', el('fn-a'));
+  assert.equal(await go('0'), 'fn-a');
+
+  // …and the case has to survive the trip. ?ref= parses the letter into a
+  // number plus `sig`, so the mark is written back out cased rather than
+  // through footnoteMark, which is always lowercase.
+  assert.match(page, /await landOnWitness\(inputMark\(pWit, Boolean\(pParam\.sig\)\)\);/);
 });

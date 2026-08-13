@@ -4803,12 +4803,14 @@ function renderChapter(para) {
     // a legacy output. Lowercase says witness (btc-citation's inputMark casing);
     // a scriptSig raises no footnote here and is cited uppercase.
     if (inp.witnessHex) { footnotes.push({ n: inputIndex, vin: inputIndex - 1, txid: para.txid, num: para.num, items: inp.witnessItems, zero: inp.witnessZero }); cite.append(witnessRef(inputIndex)); }
-    // An input that carried a scriptSig and no witness takes the raised capital
-    // instead, and the menu with it. The two carriages never both claim an
-    // input: a witness makes the letter lowercase whatever else the input
-    // brought, which is the rule inputMarkOf reads the chain by, so a wrapped
-    // segwit spend keeps its footnote's mark and gets no second one here.
-    else if (inp.scriptAscii || inp.script) {
+    // …and an input that spent with a scriptSig takes the raised capital, with
+    // the menu on it. Not "instead": an input can carry both, and a wrapped
+    // segwit spend does -- the scriptSig pushes the redeem script, the witness
+    // brings the arguments it wants. Two carriages, two things printed in two
+    // places, and the scheme letters them by case for exactly this reason. So
+    // such an input wears both marks: ᵃ for the witness in the foot, ᴬ for the
+    // scriptSig on the line.
+    if (inp.scriptAscii || inp.script) {
       const m = sigRef(inputIndex);
       attachHashCopy(m, para.txid, 'script sig',
         `${reference(state.height)} §${para.num}.${inputMark(inputIndex, true)}`,
@@ -4847,9 +4849,9 @@ function renderChapter(para) {
       if (inp.scriptAscii) addQuote(scriptCell, inp.scriptAscii);
       else addLine(scriptCell, inp.script);
       // …and the scriptSig is its own handle, opening the mark's menu from the
-      // text the mark is about. Only where the mark exists: an input that also
-      // carried a witness is lettered lowercase, and its place is the footnote,
-      // so its scriptSig body has no citation of its own to offer.
+      // text the mark is about. Every scriptSig has one, footnote or no: the
+      // witness in the foot is a different thing in a different place, and it
+      // has a handle and a citation of its own, one letter apart.
       if (sigMark) attachBodyMenu(scriptCell, () => sigMark.__hashMenu, 'scriptSig — click for menu');
       inputsEl.append(citeCell, scriptCell);
     } else if (inp.witnessHex) {
@@ -7764,12 +7766,16 @@ async function landOnWitness(raw) {
     const fn = currentFootnotes.find((f) => f.vin === Number(raw));
     el = (fn && $(`fn-${footnoteMark(fn.n)}`)) || $(`in-${raw}`);
   } else if (/^[a-z]+$/i.test(raw)) {
-    // A letter names an input, so it lands the same way a number does: the
-    // footnote that input raised, or the input itself when it raised none --
-    // which is every legacy spend, cited uppercase and carrying no footnote.
+    // A letter names an input, and its CASE names which of that input's two
+    // carriages: lowercase the witness it raised a footnote for, uppercase the
+    // scriptSig on its own line. An input can carry both -- a wrapped segwit
+    // spend does -- so the case is the only thing that tells §n.a from §n.A,
+    // and it is read off the mark rather than off what the section happens to
+    // hold. Reading it the other way sent every §n.A on such an input down to
+    // the foot, past the scriptSig it named.
     const n = footnoteIndexOf(raw);
     if (n != null) {
-      const fn = currentFootnotes.find((f) => f.vin === n - 1);
+      const fn = /[A-Z]/.test(raw) ? null : currentFootnotes.find((f) => f.vin === n - 1);
       el = (fn && $(`fn-${footnoteMark(fn.n)}`)) || $(`in-${n - 1}`);
     }
   }
@@ -7778,11 +7784,15 @@ async function landOnWitness(raw) {
 
 if (pParam) {
   const pOut = pParam.out;
-  const pWit = pParam.wit;   // a footnote number, parsed off the reference's .a
+  // The input a reference names, and which of its carriages: parseReference
+  // reads the letter's case into `sig`, and the mark is written back out cased
+  // so landOnWitness can tell §n.a from §n.A. Sending it as a bare number, or
+  // as footnoteMark's always-lowercase letter, threw that away.
+  const pWit = pParam.wit;
   Promise.resolve(openLookup(String(pParam.height), pParam.index)).then(async () => {
     if (pParam.index >= 0) {
       if (pOut != null) $(`out-${pOut}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      if (pWit != null) await landOnWitness(footnoteMark(pWit));
+      if (pWit != null) await landOnWitness(inputMark(pWit, Boolean(pParam.sig)));
     }
   }).catch(() => { /* the lookup's own error handling has the page */ });
 } else if (txidParam) {
