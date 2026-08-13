@@ -19,7 +19,7 @@ import assert from 'node:assert/strict';
 import { footnoteMark, inputMark, parseReference, FOOTNOTE_BASE } from '../web/btc-citation.js';
 import { latinReference } from '../web/btc-citation.js';
 import { readWitness, witnessVerdict, witnessDisagreement, suppliedBy,
-         citeHref, inputMarkOf } from '../web/btc-index.js';
+         citeHref, inputMarkOf, spendArgsOf } from '../web/btc-index.js';
 
 const ADDR = '1Ross5Np5doy4ajF9iGXzgKaC2Q3Pwwxv';
 const SPK = '76a91404b11d2eb716291f33be29210ee5b2a161c071af88ac';
@@ -155,7 +155,7 @@ test('a lock is cited where it was written; its arguments where they were suppli
   const w = readWitness([spend(700000, 'open', 2), paid(600000, 'pay')], ADDR);
   assert.equal(w.txid, 'pay', 'the lock is cited where it was written');
   assert.equal(w.height, 600000);
-  assert.deepEqual(w.opened, { txid: 'open', height: 700000, in: 2, mark: { n: 3, sig: true }, items: [] },
+  assert.deepEqual(w.opened, { txid: 'open', height: 700000, in: 2, mark: { n: 3, sig: true }, items: [], args: [] },
     'and its arguments where they were supplied, at the input that supplied them');
   // The first spend, not the last: a member opened twice is cited at the first.
   const twice = readWitness([spend(800000, 'later'), spend(700000, 'first'), paid(600000, 'pay')], ADDR);
@@ -176,8 +176,12 @@ test('what a spending input brought, whichever way it carried it', () => {
   assert.deepEqual(suppliedBy({ scriptsig: '47' + SIG + '21' + KEY }), [SIG, KEY]);
   // Taproot's annex rides last behind a 0x50 and is not an argument: keeping it
   // would make a key-path spend count as two items and read as a script path.
-  assert.deepEqual(suppliedBy({ witness: [SIG, '50ff'] }), [SIG]);
-  assert.deepEqual(suppliedBy({ witness: ['50ff'] }), ['50ff'], 'alone it is not an annex');
+  // An annex is kept in the record -- the reader shows one -- and left out of
+  // the arity, which is the tally BIP341 uses to tell the two paths apart.
+  assert.deepEqual(suppliedBy({ witness: [SIG, '50ff'] }), [SIG, '50ff']);
+  assert.deepEqual(spendArgsOf([SIG, '50ff'], true), [SIG]);
+  assert.deepEqual(spendArgsOf(['50ff'], true), ['50ff'], 'alone it is not an annex');
+  assert.deepEqual(spendArgsOf([SIG, '50ff'], false), [SIG, '50ff'], 'a scriptSig has no annex');
   // A scriptSig that is not pushes end to end brought no list this can name,
   // and guessing which tokens were arguments is not on offer.
   assert.deepEqual(suppliedBy({ scriptsig: '51' + '47' + SIG }), []);
