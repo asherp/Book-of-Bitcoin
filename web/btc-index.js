@@ -582,37 +582,71 @@ export function readWitness(page, member) {
   const byScript = !isAddress(member);
   const pays = (o) => (byScript ? o?.scriptpubkey === member : o?.scriptpubkey_address === member);
   const scripts = new Set();
-  let outputs = 0, prevouts = 0, earliest = null;
-  // …and the first time anyone opened it, which is a different question and
-  // has a different answer. A lock is bytes the chain can be asked for; the
-  // arguments that satisfy it are not derivable from those bytes at all, so
-  // the only way to know them is that somebody supplied them. This is where.
-  let opened = null;
+  let outputs = 0, prevouts = 0, prevoutOnly = null, firstSpend = null;
+  // Every output on the page that carries these bytes, oldest first, and every
+  // input that opened one, under the outpoint it consumed. Kept as two lists
+  // rather than two winners because the citations are chosen as a PAIR below,
+  // which cannot be done while each half is still deciding on its own.
+  const outs = [];
+  const spends = new Map();
   // Newest first, so walking backwards reaches the oldest record last and the
   // earliest reference is whatever it leaves behind.
   for (let i = confirmed.length - 1; i >= 0; i--) {
     const t = confirmed[i];
-    const at = (t.vout || []).findIndex(pays);
-    (t.vout || []).forEach((o) => { if (pays(o)) { outputs++; scripts.add(String(o.scriptpubkey || '').toLowerCase()); } });
+    const height = t.status.block_height;
+    (t.vout || []).forEach((o, n) => {
+      if (!pays(o)) return;
+      outputs++;
+      const script = String(o.scriptpubkey || '').toLowerCase();
+      scripts.add(script);
+      outs.push({ script, txid: t.txid, height, out: n });
+    });
+    // …and the times anyone opened it, which is a different question and has a
+    // different answer. A lock is bytes the chain can be asked for; the
+    // arguments that satisfy it are not derivable from those bytes at all, so
+    // the only way to know them is that somebody supplied them. These are where.
     (t.vin || []).forEach((v, n) => {
       if (!pays(v.prevout)) return;
       prevouts++;
       scripts.add(String(v.prevout.scriptpubkey || '').toLowerCase());
-      // The walk runs oldest to newest, so the first one seen is the first
-      // spend -- set once, exactly as the earliest reference above is.
-      opened ??= { txid: t.txid, height: t.status.block_height, in: n,
-        mark: inputMarkOf(t.vin, n), ...brought(v) };
+      const spend = { txid: t.txid, height, in: n, mark: inputMarkOf(t.vin, n), ...brought(v) };
+      firstSpend ??= spend;
+      // Filed under the outpoint it ate. An input names the output it opens
+      // (vin.txid, vin.vout), which is the one fact that can tie the two rungs
+      // to one another instead of merely to the same member.
+      const key = `${v.txid}:${v.vout}`;
+      if (!spends.has(key)) spends.set(key, spend);
     });
-    if (earliest === null && (at >= 0 || (t.vin || []).some((v) => pays(v.prevout)))) {
+    // The last resort, for a page that reaches no output at all: a spend carries
+    // the same bytes on the prevout it consumed, so the record is real, but it
+    // cites no output of its own and the citation stops at the transaction.
+    // Only ever consulted when `outs` is empty, which is why it may be set here
+    // at a record an output would have beaten.
+    if (prevoutOnly === null && (t.vin || []).some((v) => pays(v.prevout))) {
       const spent = (t.vin || []).find((v) => pays(v.prevout));
-      earliest = {
-        script: String((at >= 0 ? t.vout[at] : spent.prevout).scriptpubkey || '').toLowerCase(),
-        txid: t.txid, height: t.status.block_height, out: at >= 0 ? at : null,
-      };
+      prevoutOnly = { script: String(spent.prevout.scriptpubkey || '').toLowerCase(),
+        txid: t.txid, height, out: null };
     }
   }
-  if (!earliest) return { found: false, whole, outputs: 0, prevouts: 0, scripts: [], opened: null };
-  return { found: true, whole, ...earliest, outputs, prevouts, scripts: [...scripts], opened };
+  // Two rungs, and where possible one outpoint between them. Chosen on their
+  // own merits the halves drifted apart: the lock cited the earliest reference
+  // and the spend cited the earliest input, and on a member paid more than once
+  // those are two different outputs -- so the leaf showed an output nobody had
+  // opened above an input that had opened some other one. Both true, and no
+  // reader could put them together.
+  //
+  // So the pair is chosen first: the earliest output this page reaches that
+  // somebody opened, and the input that opened THAT output. Failing that -- a
+  // member whose spends all ate outputs older than this page -- the earliest
+  // output stands with the earliest spend beside it, and `paired` says so, since
+  // the citations then name one member rather than one outpoint and the leaf
+  // must not claim otherwise.
+  const key = (o) => `${o.txid}:${o.out}`;
+  const pair = outs.find((o) => spends.has(key(o))) ?? null;
+  const lock = pair ?? outs[0] ?? prevoutOnly;
+  if (!lock) return { found: false, whole, outputs: 0, prevouts: 0, scripts: [], opened: null, paired: false };
+  return { found: true, whole, ...lock, outputs, prevouts, scripts: [...scripts],
+    opened: pair ? spends.get(key(pair)) : firstSpend, paired: Boolean(pair) };
 }
 
 export async function chainWitness(member) {
