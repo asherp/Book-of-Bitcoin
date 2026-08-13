@@ -17,18 +17,18 @@
 //   reference     III β2 ■5           the book's own citation, in either
 //                 I β29 ■596 §85      spelling and to any depth (btc-citation.js
 //                 v1b29c596s85        parses it; the sigils are optional)
-//   address       1Ross5Np5doy4…      not a place but a name, and so not a
+//   address       an address entire   not a place but a name, and so not a
 //                                     chapter: the search box answers these
 //                                     where they were typed, by writing the
 //                                     term the address binds (btc-term.js)
-//   spelled       ⧉ ⌖ h²⁰ ridge …     the same script in the book's own hand:
+//   spelled       ⧉ ⌖ h²⁰ and prose   the same script in the book's own hand:
 //                                     sigla for the opcodes, the byte count on
 //                                     the mark, Glossia prose for the datum.
 //                                     The alphabet is a bijection, so this
 //                                     resolves to Script and to nothing else --
 //                                     an address format needing no version byte
 //                                     and no table of patterns (btc-address-form.js)
-//   locking hex   76a914…88ac        a locking script, by its own bytes, bare:
+//   locking hex   the script's bytes  a locking script, by its own bytes, bare:
 //                                     whole bytes that tokenize as a script and
 //                                     are not already something else here --
 //                                     see isWholeScript in btc-address-form.js,
