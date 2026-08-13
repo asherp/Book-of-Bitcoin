@@ -370,10 +370,17 @@ const chainMark = (verdict, witness, ours, section = null) => {
   // and the place, which is how this book attributes anything it quotes. The
   // attribution IS the finding -- a citation nobody could confirm would not be
   // written -- so no separate mark of assent is needed beside it.
-  const said = witness.whole
-    ? `the first output that ever carried this script, and every one of ${n} references on the page — `
-    : `the earliest reference one page reaches, and every one of ${n} on it — `;
-  return `<span class="term-cite" title="${said}${witness.outputs} paying it, `
+  // Which output got cited is a choice, and the hover says which choice was
+  // made: an output with a spend to show beats an earlier one with none, since
+  // the rung below then quotes the input that opened THIS output rather than
+  // some other one carrying the same bytes.
+  const said = witness.paired
+    ? 'the earliest output this page reaches that anyone has opened — and the input quoted below is what opened it'
+    : witness.whole
+      ? 'the first output that ever carried this script'
+      : 'the earliest reference one page reaches';
+  return `<span class="term-cite" title="${said}, and every one of ${n} references on `
+    + `the page — ${witness.outputs} paying it, `
     + `${witness.prevouts} spent from it, all carrying these bytes">—</span> ${where}`;
 };
 
@@ -401,7 +408,7 @@ const faultNote = (f) => {
 // paths above, because an unspent output really can be opened either way, and
 // this line is the one the chain has a record of. Consensus's own rule picks it
 // -- exactly one witness item is the key path -- so nothing here is a guess.
-const spendRung = (t, opened, sayFn, section = null, brought = null) => {
+const spendRung = (t, opened, sayFn, section = null, brought = null, paired = false) => {
   // The arity is read off what the script takes; the line shows everything the
   // input carried, annex and all, exactly as the reader would.
   const rung = opened?.args?.length
@@ -413,17 +420,23 @@ const spendRung = (t, opened, sayFn, section = null, brought = null) => {
   // and leave them to find which line the quote came from.
   const where = `<a href="${citeHref(opened.txid, undefined, opened.in)}">`
     + `${escapeHtml(cite(opened.height, section, { mark: opened.mark }))}</a>`;
-  // Quoted, and marked as quoted: this rung exists only because an input was
-  // found, so the citation is never in doubt and the rule is never conditional
-  // the way the lock's is.
+  // What this input opened. Usually the very output cited above, because the two
+  // are chosen together (readWitness); where the page could not reach that
+  // output the claim narrows to what is still true -- these arguments satisfied
+  // these bytes -- rather than overstating a pair that was never found.
+  const says = paired
+    ? `quoted from input ${opened.in} of the transaction that opened the output cited `
+      + 'above — the input that supplied what that lock was waiting for'
+    : `quoted from input ${opened.in} of the earliest spend this page reaches. It opened `
+      + 'a different output carrying these same bytes: nothing on this page opens the one '
+      + 'cited above';
   return `<div class="term-line term-spend term-quote">${rung.html}</div>`
-    + `<div class="term-attrib"><span class="term-cite" title="quoted from input `
-    + `${opened.in} of the first transaction to spend this output — the input that `
-    + `supplied what the lock was waiting for">—</span> ${where}</div>`;
+    + `<div class="term-attrib"><span class="term-cite" title="${says}">—</span> ${where}</div>`;
 };
 
 function drawTerm(hex, { address = null, at = '', say: sayFn = null, said = '',
-                        quoted = false, opened = null, spendSection = null, brought = null } = {}) {
+                        quoted = false, opened = null, spendSection = null, brought = null,
+                        paired = false } = {}) {
   const fault = scriptFault(hex);
   const t = fault ? null : termOfScript(hex);
   const head = `<div class="term-head"><span class="term-kind">${t ? escapeHtml(t.label) : 'Script'}</span>`
@@ -465,7 +478,7 @@ function drawTerm(hex, { address = null, at = '', say: sayFn = null, said = '',
     : (t ? `<div class="term-line term-awaits">${addressHtml(t, { prose: argument })}</div>` : '')
       + locked
       + said
-      + (t ? spendRung(t, opened, sayFn, spendSection, brought) : '');
+      + (t ? spendRung(t, opened, sayFn, spendSection, brought, paired) : '');
   termEl.innerHTML = head + body;
   termEl.hidden = false;
   termEl.dataset.at = at;
@@ -501,7 +514,8 @@ async function enrichTerm(hex, { address = null, at = '' } = {}) {
   // under none of those is there a passage to mark, so the rule stays off.
   const draw = (lock, spend) => drawTerm(hex, { address, at, say: sayFn,
     said: `<div class="term-attrib">${chainMark(verdict, witness, hex, lock)}</div>`,
-    quoted: verdict === 'agrees', opened, spendSection: spend, brought });
+    quoted: verdict === 'agrees', opened, spendSection: spend, brought,
+    paired: Boolean(witness?.paired) });
   draw(null, null);
   const [lock, spend] = await Promise.all([
     witness?.found ? sectionOfFetched(witness.txid) : null,
