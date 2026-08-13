@@ -916,6 +916,14 @@ button:disabled { opacity: .4; cursor: not-allowed; }
    witness prose collects at the foot of the page. */
 .tx-witness-ref { font: 500 .62em/1 'IBM Plex Mono','Book Sigla',monospace; color: var(--accent); vertical-align: super; text-decoration: none; margin-left: .12em; }
 .tx-witness-ref:hover { text-decoration: underline; }
+/* A scriptSig's mark, set exactly as a witness's and raised the same way: the
+   scheme distinguishes the two carriages by CASE, so anything else distinguishing
+   them here would be saying it twice. It underlines on hover like its neighbour
+   -- the affordance is real, it simply opens a menu rather than going anywhere.
+   (Raised with CSS, not with a raised codepoint: six of the alphabet's letters
+   have no raised capital in Unicode — see chain-witness.test.mjs.) */
+.tx-sig-ref { font: 500 .62em/1 'IBM Plex Mono','Book Sigla',monospace; color: var(--accent); vertical-align: super; margin-left: .12em; }
+.tx-sig-ref:hover { text-decoration: underline; }
 .chapter-footnotes { margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--rule); }
 /* A witness-only input leaves no scriptSig row in the body, so its margin
    citation follows its witness down (see renderFootnotes): the footnote list
@@ -1272,7 +1280,7 @@ import { keptLedgers, saveKeptLedgers, keepLedger, INDEXED } from './btc-index.j
 import { pathSegments } from './btc-path.js';   // a slash in a name the reader typed is a path
 import { composeTransactionFields, composeBlockHeaderFields, bitsInfo, groupDigits, formatBtc, formatAmount, formatAmountAs, formatOwnAmount, amountUnit, setAmountUnit, ownUnit, setOwnUnit, dayPrice, setDayPrice, renderWitness, toSuperscript, timestampInfo } from './btc-prose.js';
 import { usdOn, PRICE_SOURCES, priceSource, setPriceSource } from './btc-price.js';
-import { volumeBookChapter, heightOf, windowStartOf, retargetInside, subsidyAt, toRoman, reference, parseReference, footnoteMark, footnoteIndexOf, latinRefOf } from './btc-citation.js';
+import { volumeBookChapter, heightOf, windowStartOf, retargetInside, subsidyAt, toRoman, reference, parseReference, footnoteMark, footnoteIndexOf, inputMark, latinRefOf } from './btc-citation.js';
 import { blockWork, workBetween, formatHashes } from './btc-chainwork.js';
 import { loadNotables, places, placeTitle, blocksEta, appendix } from './btc-contents.js';
 import { queueLabel } from './btc-mempool.js';
@@ -3490,13 +3498,9 @@ const KEEPS = {
 };
 
 // …and what the copy item is called, which is a different question: the ribbon
-// keeps a PLACE, the copy takes the VALUE that names it, and for three of these
-// labels those are not the same thing. An output's menu carries its
-// transaction's id, and so does a witness's -- a §17.a is a place on a page,
-// but the string behind it is a txid, and a reader who pastes it will get the
-// transaction. "Copy hex" said none of that. It named the encoding, which is
-// the one thing about a copied value nobody needs told, and left a reader to
-// find out what they were holding by pasting it somewhere and seeing.
+// keeps a PLACE, the copy takes the VALUE that names it. "Copy hex" named the
+// encoding, which is the one thing about a copied value nobody needs told, and
+// left a reader to find out what they were holding by pasting it somewhere.
 //
 // So the item says what comes back. Where the value really is nothing but hex
 // -- the header's small fields, four bytes wide, that name no place and can be
@@ -3509,9 +3513,28 @@ const COPIES = {
   'transaction id': 'Copy transaction id',
   output: 'Copy transaction id',
   witness: 'Copy transaction id',
+  'script sig': 'Copy transaction id',
   'locking script': 'Copy script',
 };
 const copyItem = (label) => COPIES[label] || 'Copy hex';
+
+// …and three of them are not named by a hash at all. An output, a witness and
+// a scriptSig are PARTS of a section: no chain identifier reaches them, and the
+// hex their menus carry is the enclosing transaction's id, which names the
+// whole and not the part. A reader who copied it out of an output's menu got a
+// string that opens the section they were already reading.
+//
+// What names them is the book's own citation, down to the coordinate the scheme
+// spells: §n.0 an output, §n.a a witness, §n.A a scriptSig. That is a real
+// address -- the search box takes it, ?ref= resolves it, and it lands on the
+// exact line it names -- and it is the only string that answers "where is
+// this?" for these three. So it is what their first item copies.
+//
+// A transaction keeps its id. A txid is what a transaction is called everywhere
+// outside this book, and a section's own reference is one item down as the
+// link. The rule is not "prefer references": it is that a copy should hand back
+// the name of the thing whose menu it was.
+const REFERENCED = new Set(['output', 'witness', 'script sig']);
 
 // Attach a click menu to an element already showing a Glossia-encoded hash as
 // prose: `hex` is the exact raw value that prose encodes. Clicking (or
@@ -4687,6 +4710,25 @@ function renderChapter(para) {
     return a;
   };
 
+  // …and the same mark for an input that spent with a scriptSig, in the case
+  // the scheme reserves for that carriage: uppercase (inputMark's `sig`). The
+  // letter has been in the citation scheme from the start -- §n.A parses,
+  // resolves and lands -- and nothing on the page had ever printed one, so a
+  // reader could not cite an input they were looking at.
+  //
+  // Not a link. A witness's mark leads somewhere, its footnote being elsewhere
+  // on the page; a scriptSig is on the line beneath its own mark, and an arrow
+  // pointing at what it is already touching is noise. What it carries instead
+  // is the menu, which is the whole of what a reader wants from a place: its
+  // reference, to keep or to paste.
+  const sigRef = (n) => {
+    const s = document.createElement('span');
+    s.className = 'tx-sig-ref';
+    s.textContent = inputMark(n, true);
+    s.title = `scriptSig — this input, cited §…${inputMark(n, true)}`;
+    return s;
+  };
+
   const f = para.fields;
   const footnotes = [];
   // Citations with no scriptSig body to sit beside. A witness-spend input's
@@ -4729,6 +4771,18 @@ function renderChapter(para) {
     // a legacy output. Lowercase says witness (btc-citation's inputMark casing);
     // a scriptSig raises no footnote here and is cited uppercase.
     if (inp.witnessHex) { footnotes.push({ n: inputIndex, vin: inputIndex - 1, txid: para.txid, num: para.num, items: inp.witnessItems, zero: inp.witnessZero }); cite.append(witnessRef(inputIndex)); }
+    // An input that carried a scriptSig and no witness takes the raised capital
+    // instead, and the menu with it. The two carriages never both claim an
+    // input: a witness makes the letter lowercase whatever else the input
+    // brought, which is the rule inputMarkOf reads the chain by, so a wrapped
+    // segwit spend keeps its footnote's mark and gets no second one here.
+    else if (inp.scriptAscii || inp.script) {
+      const m = sigRef(inputIndex);
+      attachHashCopy(m, para.txid, 'script sig',
+        `${reference(state.height)} §${para.num}.${inputMark(inputIndex, true)}`,
+        null, inputIndex - 1, inputIndex);
+      cite.append(m);
+    }
     // A second line sits beneath the reference: the sequence mark leads it, then
     // the amount of the output this input spends (filled on resolve, into its own
     // span so the mark survives). A coinbase has no prevout, so its line carries
@@ -7019,6 +7073,13 @@ function entryPlacement(entry) {
   if (entry.page) return { height: state.height, pos: null, page: entry.page };
   if (entry.label === 'output') return { height: state.height, pos: state.index, vout: entry.vout };
   if (entry.label === 'witness') return { height: state.height, pos: state.index, vin: entry.vin, wn: entry.wn };
+  // A scriptSig is placed exactly as a witness is, and cited with the same
+  // letter raised: the scheme distinguishes the two carriages by case alone
+  // (inputMark), so `sig` travels with the place and every speller of it --
+  // the citation, the ?ref= link -- reads it off the one field.
+  if (entry.label === 'script sig') {
+    return { height: state.height, pos: state.index, vin: entry.vin, wn: entry.wn, sig: true };
+  }
   if (entry.label === 'transaction id') return { height: state.height, pos: state.index };
   return { height: state.height, pos: null };   // a block hash -- this chapter
 }
@@ -7378,9 +7439,15 @@ function openHashMenu(ev, entry, anchorEl) {
   menuEntry = entry;
   fromRibbon = false;
   $('hash-menu-head').textContent = entry.label;
-  menuCopyBtn.textContent = tr(copyItem(entry.label));
+  const copy = menuCopy(entry);
+  menuCopyBtn.textContent = tr(copy.item);
   menuCopyTextBtn.textContent = tr('Copy text');
   menuCopyLinkBtn.textContent = tr('Copy link');
+  // A witness's readable form IS its citation -- there is nothing else a
+  // footnote mark could be said as -- so with the reference on the item above
+  // it, Copy text would offer the same string twice. One rule, no special case:
+  // an item that would repeat its neighbour is not an item.
+  menuCopyTextBtn.classList.toggle('hidden', !entry.prose || entry.prose === copy.text);
   // The link item is offered only where a link exists to copy: a place the
   // book's own URLs can cite, or a locking script's road to its ledger.
   menuCopyLinkBtn.classList.toggle('hidden', !entryShareUrl(entry));
@@ -7417,7 +7484,7 @@ function closeHashMenu() { hashMenu.classList.add('hidden'); menuEntry = null; f
 
 menuCopyBtn.addEventListener('click', () => {
   if (!menuEntry) return;
-  navigator.clipboard.writeText(menuEntry.hex).then(() => {
+  navigator.clipboard.writeText(menuCopy(menuEntry).text).then(() => {
     menuCopyBtn.textContent = 'Copied ✓';
     setTimeout(closeHashMenu, 650);
   }).catch(closeHashMenu);
@@ -7437,11 +7504,39 @@ menuCopyTextBtn.addEventListener('click', () => {
 // its ledger instead, the one page that reads it whole. Null where no link
 // exists -- a merkle root leads nowhere, a draft chapter has no settled
 // reference yet -- and the menu then offers no link to copy.
+// The book's own citation for the place an entry names, in the spelling the
+// book prints -- which is the spelling a reader pastes back into the search
+// box. Null where there is no settled place to cite: a draft section, or a
+// hash that names the chapter rather than anything inside it.
+function entryRef(entry) {
+  const place = entryPlacement(entry);
+  if (!place || place.page || place.pos == null) return null;
+  const section = `${reference(place.height)} §${place.pos + 1}`;
+  if (place.vout != null) return `${section}.${place.vout}`;
+  if (place.wn != null) return `${section}.${inputMark(place.wn, Boolean(place.sig))}`;
+  return section;
+}
+
+// What the first item copies, and what it is called -- one function, so the
+// name on the button and the string in the clipboard can never disagree. Where
+// a part of a section has a citation, that is its name; everything else is
+// named by its bytes, and a draft with no settled reference falls back to them
+// rather than promising an address the contents could not resolve.
+function menuCopy(entry) {
+  const ref = REFERENCED.has(entry.label) ? entryRef(entry) : null;
+  return ref ? { item: 'Copy reference', text: ref }
+    : { item: copyItem(entry.label), text: entry.hex };
+}
+
 function entryShareUrl(entry) {
   if (entry.ledgerHref) return new URL(entry.ledgerHref, location.href).href;
-  if (!entry.nav) return null;
   const place = entryPlacement(entry);
   if (!place) return null;
+  // A place the citation scheme can spell, whether or not it can be KEPT: a
+  // scriptSig is cited §n.A and ?ref= lands on its input, so the link is as
+  // good as any other -- it simply takes no row in the contents, which is what
+  // `nav` is about and not this.
+  if (!entry.nav && place.vin == null) return null;
   const url = new URL(location.href);
   url.hash = '';
   // A leaf names a span rather than a chapter, which ?ref= cannot spell from
@@ -7449,7 +7544,7 @@ function entryShareUrl(entry) {
   // bar itself writes (updateUrl).
   url.search = place.page
     ? `block=${place.height}&page=${place.page}`
-    : `ref=${latinRefOf(place.height, place.pos == null ? null : place.pos + 1, place.vout ?? null, place.wn ?? null)}`;
+    : `ref=${latinRefOf(place.height, place.pos == null ? null : place.pos + 1, place.vout ?? null, place.wn ?? null, Boolean(place.sig))}`;
   return url.href;
 }
 menuCopyLinkBtn.addEventListener('click', () => {
