@@ -267,14 +267,33 @@ test('what the address hands back is another λ, not a fragment', () => {
   }
 });
 
-test('the rung below the wire is the spend, and ⧺ is its application', () => {
-  // Rung three, which the leaf does not draw -- an address has no spend yet.
-  // The arguments go ahead of the code, because that is how a stack machine
-  // writes an application, and ⧺ is the mark for it.
+test('the rung below the wire is the spend, and it is rung two applied', () => {
+  // Rung three, which the address leaf does not draw -- an address has no spend
+  // yet. Written as every application in this book is written: the abstraction
+  // in parentheses, and what goes into it after. Not a mark of its own. ⧺ stood
+  // here once, OP_CAT's glyph, on the reading that concatenation is application
+  // on a concatenative machine -- an opcode doing a calculus's work, on a line
+  // already written in the calculus, beside parentheses that had meant exactly
+  // this two rungs up.
   assert.deepEqual(spendText(termOfScript(addressScriptHex('1Ross5Np5doy4ajF9iGXzgKaC2Q3Pwwxv'))),
-    ['s p ⧺ ⧉ ⌖ h²⁰ ≡ ∇']);
+    ['(λs p. ⧉ ⌖ h²⁰ ≡ ∇) s p']);
   assert.deepEqual(spendText(termOfScript(addressScriptHex('3J98t1WpEZ73CNmQviecrnyiWrnqRhWNLy'))),
-    ['… r ⧺ ⌖ h²⁰ = ( r )']);
+    ['(λ… r. ⌖ h²⁰ = ( r )) … r']);
+  // The abstraction inside the parentheses is rung two, mark for mark: applying
+  // a term is not rewriting it, and a rung that drifted from the one above
+  // would be a different lock claiming to be this one.
+  for (const [, address] of ADDRESSES) {
+    const t = termOfScript(addressScriptHex(address));
+    lockedText(t).forEach((line, i) => {
+      assert.ok(spendText(t)[i].startsWith(`(${line})`), `${address}: rung three left rung two behind`);
+    });
+  }
+  // The wire's order is not lost with the joint: it never lived there. λ… r.
+  // says which push comes first, and the values a spend rung quotes beneath are
+  // in that same order.
+  for (const line of spendText(termOfScript(addressScriptHex('3J98t1WpEZ73CNmQviecrnyiWrnqRhWNLy')))) {
+    assert.match(line, /^\(λ… r\./, 'the uncounted arguments are still pushed first');
+  }
 });
 
 test('the spend rung is marks and a citation, because it cannot be computed', () => {
@@ -285,21 +304,22 @@ test('the spend rung is marks and a citation, because it cannot be computed', ()
   const strip = (html) => html.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
   const t = termOfScript(addressScriptHex('1Ross5Np5doy4ajF9iGXzgKaC2Q3Pwwxv'));
   const [m] = spendMarks(t);
-  assert.equal(strip(`${m.prefix} X${m.suffix}`), 's p ⧺ X');
-  // The joint is apparatus, not a byte: it never takes the gold, which is the
-  // rule the whole leaf is styled by.
-  assert.match(m.prefix, /class="lam"[^>]*>⧺/);
-  // A wrapped form carries its eval step into the suffix, where the caller can
-  // set the script between the two.
+  assert.equal(strip(`${m.prefix} X${m.suffix}`), '(λs p. X) s p');
+  // The application's parentheses are apparatus, not bytes: they never take the
+  // gold, which is the rule the whole leaf is styled by.
+  assert.match(m.prefix, /class="lam">\(λ/);
+  assert.match(m.suffix, /class="lam">\)/);
+  // A wrapped form carries its eval step into the suffix too, inside the close:
+  // what the lock hands back is part of the function, not part of the argument.
   const [sh] = spendMarks(termOfScript(addressScriptHex('3J98t1WpEZ73CNmQviecrnyiWrnqRhWNLy')));
-  assert.equal(strip(`${sh.prefix} X${sh.suffix}`), '… r ⧺ X ( r )');
+  assert.equal(strip(`${sh.prefix} X${sh.suffix}`), '(λ… r. X ( r )) … r');
   // Taproot has two, and a spend took one: the leaf draws the alternative
   // pathTaken names and no other, because which path was taken is in the
   // witness and guessing is the thing this page exists not to do.
   const [key, script] = spendMarks(termOfScript(addressScriptHex(
     'bc1p5d7rjq7g6rdk2yhzks9smlaqtedr4dekq08ge8ztwac72sfr9rusxg3297')));
-  assert.equal(strip(`${key.prefix} X${key.suffix}`), 's ⧺ X ( ∇ )');
-  assert.equal(strip(`${script.prefix} X${script.suffix}`), '… t c ⧺ X ( t )');
+  assert.equal(strip(`${key.prefix} X${key.suffix}`), '(λs. X ( ∇ )) s');
+  assert.equal(strip(`${script.prefix} X${script.suffix}`), '(λ… t c. X ( t )) … t c');
   // A term with nothing written down about what it awaits has no rung three.
   assert.equal(spendMarks(termOfScript('76a914' + 'ab'.repeat(20))), null);
 });
@@ -320,7 +340,9 @@ test('what a key-path spend runs is consensus’s own, and the term says so', ()
   // It rides in the same ( ) a revealed script does, because the reader's
   // question is the same one: after the marks the chain holds, what runs?
   assert.match(lockedText(tr)[0], / \( ∇ \)$/);
-  assert.match(spendText(tr)[0], / \( ∇ \)$/);
+  // …and it stays inside the application's own parentheses on rung three: what
+  // the lock hands back is part of the function, not part of the argument.
+  assert.match(spendText(tr)[0], / \( ∇ \)\) s$/);
   // …and it brings no ellipsis with it. … is the notation admitting binders it
   // cannot write, and this alternative can write them: one signature, named.
   assert.ok(!lockedText(tr)[0].includes('…'), 'the key path counts its argument');
@@ -338,35 +360,41 @@ test('what a key-path spend runs is consensus’s own, and the term says so', ()
   }
 });
 
-test('the only opcode on a rung the lock does not own is the joint', () => {
+test('no rung writes an opcode the lock does not own', () => {
   // The bug the ladder was written to close. A demand set as a predicate needs
   // a conjunction between its clauses, and the mark that printed was ∧ --
   // OP_BOOLAND, which is not disabled at all: a live opcode that pops two
-  // numbers, standing on a line that claimed to reduce to a script. Nothing on
-  // any rung is a mark the lock does not own, save ⧺ on the spend -- and save
-  // the one opcode an alternative declares as consensus's own, which is the
-  // only other way a mark can be true of a spend without being a byte of the
-  // output. Each line is checked against what ITS alternative declares, so rung
-  // one can never carry one of these and neither can a sibling path.
+  // numbers, standing on a line that claimed to reduce to a script. The same
+  // failure took a second scalp on rung three, where ⧺ stood for application:
+  // OP_CAT is disabled, so nothing could run, but an opcode was still doing a
+  // calculus's work on a line written in the calculus. Parentheses do it now,
+  // and they are apparatus rather than an instruction.
+  //
+  // So one exception is left, and it is declared rather than assumed: the
+  // opcode an alternative names as consensus's own, which is true of a spend
+  // without being a byte of the output. Each line is checked against what ITS
+  // alternative declares, so rung one can never carry one and neither can a
+  // sibling path.
   const CAT = OPCODE_SYMBOLS[0x7e];
   assert.equal(OPCODE_NAMES[0x7e], 'OP_CAT');
   for (const id of Object.keys(TERMS)) {
     const bytes = TERMS[id].bytes ?? 65;
     const t = termOfScript(reduce(TERMS[id], 'ab'.repeat(bytes)));
     const own = t.body.filter((c) => c !== null).map((c) => OPCODE_SYMBOLS[c]);
+    // Every rung this time, rung three included: there is no longer a line with
+    // a licence to write an opcode of its own.
+    const checks = demandsOf(t).map((alt) => alt.checks);
     const rungs = [[addressText(t), null],
-      ...lockedText(t).map((line, i) => [line, demandsOf(t)[i].checks])];
+      ...lockedText(t).map((line, i) => [line, checks[i]]),
+      ...spendText(t).map((line, i) => [line, checks[i]])];
     for (const [line, check] of rungs) {
-      assert.ok(!line.includes(CAT), `${id} joins nothing on this rung`);
+      assert.ok(!line.includes(CAT), `${id} still joins with an opcode on this rung`);
       const allowed = new Set(check === null ? own : [...own, OPCODE_SYMBOLS[check]]);
       for (const [code, glyph] of Object.entries(OPCODE_SYMBOLS)) {
         if (allowed.has(glyph)) continue;
         assert.ok(!line.includes(glyph),
           `${id} writes ${glyph} (${OPCODE_NAMES[code]}), which its lock never does`);
       }
-    }
-    for (const line of spendText(t)) {
-      assert.equal(line.split(CAT).length - 1, 1, `${id} should apply once`);
     }
   }
 });
@@ -615,12 +643,13 @@ test('the spend rung is written from the chain, marks counts and prose', () => {
   const got = suppliedHtml(t, [SIG, KEY]);
   assert.equal(got.which, 0);
   // Everything on this line was read off the input the citation names, and
-  // nothing else is on it. The joint is apparatus -- the one step neither
-  // script performs -- and the lock behind it belongs to the OUTPUT, cited a
-  // rung above; a line that carried them would put two transactions' marks
-  // under an attribution that names one.
+  // nothing else is on it. These values are the ARGUMENT of the application
+  // spendMarks writes above: the abstraction, its parentheses and the lock
+  // inside them all belong to the OUTPUT, cited a rung further up, and a line
+  // that carried any of it would put two transactions' marks under an
+  // attribution that names one.
   assert.equal(strip(got.html), 's⁷¹ p³³');
-  assert.ok(!got.html.includes('⧺'), 'the joint is not on the wire, so it is not on the line');
+  assert.ok(!/[()λ⧺]/.test(strip(got.html)), 'no apparatus rides into the quotation');
   // The prose rides behind each mark, as a push's prose does in every chapter.
   const said = suppliedHtml(t, [SIG, KEY], { say: (hex) => (hex === KEY ? 'ridge amused' : 'sworn') });
   assert.equal(strip(said.html), 's⁷¹ sworn p³³ ridge amused');

@@ -187,8 +187,10 @@ button:hover { background: var(--accent-2); }
    written, but where somebody satisfied them. So the gap opens above the term
    line that heads it, and the pair below — that term and the passage under it —
    reads as one rung.
-   The lock's marks are on that term line, joint and eval step and all, and the
-   quotation under it holds nothing but what the input carried. They were on one
+   The lock's marks are on that term line, parenthesized as the function they
+   are, and the quotation under it holds the values that go into them — one
+   redex across two lines, the same shape the address rung sets on one. They
+   were on one
    line once, which put two transactions' worth of marks under an attribution
    naming a single input: a quotation that quotes more than it was given. The
    answer is not to drop the application but to un-quote it — it was never read
@@ -424,12 +426,15 @@ const faultNote = (f) => {
 //
 // Two lines, and the split is the same one the lock rung makes: the term the
 // spend satisfies, which is notation, and then the passage, which is what the
-// input carried. The term is the whole application -- the arguments, the joint,
-// the lock's marks, and whatever the lock hands back to be run -- and none of
-// it is quoted from anywhere, so it stands clear of the rule. Which is what
-// makes it safe to write the lock's marks here at all: they belong to the
-// OUTPUT, cited a rung up, and a line under this input's attribution that
+// input carried. The term is rung two in parentheses -- the lock's marks,
+// whatever it hands back to be run, and the arguments named after the close --
+// and none of it is quoted from anywhere, so it stands clear of the rule. Which
+// is what makes it safe to write the lock's marks here at all: they belong to
+// the OUTPUT, cited a rung up, and a line under this input's attribution that
 // carried them would be quoting more than it was given.
+//
+// So the two lines are one application: the abstraction, and then the values
+// that go into it, which are the only part of it anybody had to be told.
 const spendRung = (t, opened, sayFn, section = null, brought = null, paired = false) => {
   // The arity is read off what the script takes; the line shows everything the
   // input carried, annex and all, exactly as the reader would.
@@ -476,9 +481,10 @@ function drawTerm(hex, { address = null, at = '', say: sayFn = null, said = '',
   // setting it beats explaining why there was nothing to set.
   // Two readings of one thing, one β apart: the address as a term with its
   // image supplied and what only its author can produce still bound, and what
-  // the chain is holding, which is everything right of that term's ⧺ once the
-  // argument has gone in. The joint is the only mark above that the wire will not carry,
-  // which is what makes the reduction between them a claim and not a picture.
+  // the chain is holding, which is that term with the argument gone in. The
+  // parentheses are the only marks above that the wire will not carry -- an
+  // application is a step, not a byte -- which is what makes the reduction
+  // between them a claim and not a picture.
   // The address line carries its own datum, said: an address is a term with one
   // argument supplied, and the argument is the thing a base58 or bech32 string
   // spends its entropy on. Without the engine the mark stands alone, as it does

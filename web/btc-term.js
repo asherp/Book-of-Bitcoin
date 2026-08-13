@@ -221,12 +221,21 @@ export function reduce(term, args) {
 // arguments run out -- everything below that is a spend, and a spend is a
 // transaction, not an output.
 //
-// The rung below the wire is spendText: the arguments applied, written the way
-// a stack machine writes an application, which is the arguments' pushes ahead
-// of the function's code. ⧺ is that application -- OP_CAT's mark, disabled and
-// chosen anyway, since concatenating the two byte strings is exactly what
-// applying a function is on a concatenative machine. It is not drawn on the
-// leaf: the leaf is showing an address, and no spend has happened.
+// The rung below the wire is spendText, and it is rung two applied: the same
+// abstraction in parentheses with what a spend brings written after it, which
+// is how rung one already writes an application and how this book writes every
+// other one. It is not drawn on the address leaf -- the leaf is showing an
+// address, and no spend has happened.
+//
+// The joint used to be a mark of its own. ⧺ stood there, OP_CAT's glyph, on the
+// reading that concatenating two byte strings is what applying a function is on
+// a concatenative machine -- the arguments' pushes ahead of the function's code,
+// which is the order the wire really uses. True about the machine, and wrong
+// about the notation: an opcode was doing a calculus's work, on a line already
+// written in the calculus, beside parentheses that meant application two rungs
+// up. So the parentheses take it back. The wire's order is not lost by this and
+// never lived in the joint anyway -- it is in the binder list, where λ… r. says
+// which push comes first, and in the quoted values a spend rung sets beneath.
 //
 // What all of this replaced was a demand written as a predicate, which needed a
 // conjunction between its clauses that no β could ever have removed. It printed
@@ -300,11 +309,7 @@ export function demandsOf(t) {
     checks: alt.checks ?? null }));
 }
 
-// The joint, taken from the alphabet rather than written out, so the mark on
-// the page is the one the book gives 0x7e and cannot drift from it.
-const CAT = OPCODE_SYMBOLS[0x7e];
-
-// …and the mark for the binders a wrapped form cannot write: however many
+// The mark for the binders a wrapped form cannot write: however many
 // arguments the script it hands back will want, pushed beneath it. It leads,
 // because that is where they go -- the spender pushes them first and the
 // revealed script rides on top.
@@ -349,12 +354,19 @@ export const lockedText = (t) => {
 
 // ─── rung three: the spend ───────────────────────────────────────────────
 //
-// The arguments applied, in the order a stack machine writes an application:
-// the pushes ahead of the code. Not drawn on the leaf -- an address has no
-// spend yet -- but it is the rung the two above are descending toward.
+// Rung two applied: the abstraction in parentheses, and what a spend brings
+// written after it. Exactly the form rung one takes, one rung down -- there the
+// parenthesized term takes the address's own datum, here it takes the values an
+// input carried. Not drawn on the address leaf, since an address has no spend
+// yet, but it is the rung the two above are descending toward.
+//
+// The arguments stand as their names and not as values: the counts and the
+// bytes arrive from the chain, and this module is the one that cannot ask.
+// Rung one writes h²⁰ there because an address really does hold its datum.
 export const spendText = (t) => {
   const alts = demandsOf(t);
-  return alts ? alts.map((alt) => `${binderText(alt)} ${CAT} ${bodyText(t, true)}${evalText(alt)}`) : null;
+  return alts ? alts.map((alt) =>
+    `(λ${binderText(alt)}. ${bodyText(t, true)}${evalText(alt)}) ${binderText(alt)}`) : null;
 };
 
 // ─── the same, as marks ──────────────────────────────────────────────────
@@ -468,31 +480,33 @@ export function suppliedNames(alt, items) {
 // because that is the only way anyone can know it: s and p are not in the
 // address and no reduction reaches them, so the shape is all this page can
 // write and the citation beside it is what supplies the rest.
+//
+// Split at the body like rung two's, and for the same reason -- the caller may
+// have a better hand to set the script in. The application's parentheses close
+// in the suffix, after the eval step and before the arguments, so the whole
+// redex is one line: the abstraction, then what goes into it.
 export function spendMarks(t) {
   const alts = demandsOf(t);
   if (!alts) return null;
   return alts.map((alt) => ({
-    prefix: `${binderMarks(alt)} ${cat()}`,
-    suffix: evalMarks(alt),
+    prefix: `${lam('(λ')}${binderMarks(alt)}${lam('.')}`,
+    suffix: `${evalMarks(alt)}${lam(')')} ${binderMarks(alt)}`,
   }));
 }
-
-// The joint takes the quiet colour, not the gold: it is the step between the
-// two scripts and not a byte either of them holds -- which is also why it can
-// be a disabled opcode's mark without the line claiming a disabled opcode.
-const cat = () => `<span class="lam" title="${escapeHtml(OPCODE_NAMES[0x7e])} — the arguments `
-  + `applied, which a stack machine writes as their pushes ahead of the code">${escapeHtml(CAT)}</span>`;
 
 // …and with the values in hand, the same rung written out: each one a mark, its
 // byte count and — where an engine has said it — its prose, exactly as a push
 // is set everywhere else in the book. This is the one line on the leaf whose
 // content came from the chain rather than from the bytes in the box, and it is
-// nothing else: the joint is apparatus, and the lock behind it is the OUTPUT's
-// bytes, already set one rung up under a citation of their own. Writing them
-// here put two transactions' worth of marks on a line attributed to one input,
-// which is a quotation that quotes more than it was given. So the line stops
-// where the input stops, and the ⧺ that used to follow lives on rung two's own
-// marks (spendMarks), where nothing is claimed to have been read off a spend.
+// nothing else: the lock the arguments went into is the OUTPUT's bytes, set one
+// rung up under a citation of its own. Writing them here put two transactions'
+// worth of marks on a line attributed to one input, which is a quotation that
+// quotes more than it was given. So the line stops where the input stops, and
+// the application lives on spendMarks, which no citation covers.
+//
+// These values ARE the arguments spendMarks writes after its parentheses --
+// the same names, with the counts and the prose the chain supplies. Two lines,
+// one redex: the abstraction above, quoted values below.
 //
 // `brought` is the line pre-rendered by whoever has a better renderer -- the
 // reader's own renderWitness, which reveals a witness script as opcodes, strips
