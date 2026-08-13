@@ -22,9 +22,11 @@ import assert from 'node:assert/strict';
 
 import { addressScriptHex } from '../web/btc-index.js';
 import { NOTATION_HTML } from '../web/btc-notation.js';
-import { TERMS, termOfScript, reduce, abstractionText, applicationText, normalFormText,
+import { OPCODE_SYMBOLS, OPCODE_NAMES, toSuperscript } from '../web/btc-sigla.js';
+import { TERMS, termOfScript, addressable, reduce, spendMarks, pathTaken, suppliedNames, suppliedHtml, abstractionText, applicationText, normalFormText,
          pureForm, reducePure, pureText, pureApplicationText,
-         lockText, lockApplicationText, demandsOf, demandsText, demandsHtml } from '../web/btc-term.js';
+         lockText, lockApplicationText, demandsOf, addressText, addressHtml,
+         lockedText, lockedHtml, lockedMarks, spendText } from '../web/btc-term.js';
 
 // One address of every form that has one, which is every row of the key's
 // Addresses group: the book's own Ross Ulbricht ledger, a P2SH, and the BIP173
@@ -48,7 +50,7 @@ test('every address form binds its term, and β gives back the script', () => {
     // the very bytes the address decodes to. Nothing about the string survives
     // the reduction -- base58 or bech32, the normal form is the same kind of
     // thing -- which is why the book prints this and not that.
-    assert.equal(reduce(t.term, t.argument), script, `${id} does not reduce to its script`);
+    assert.equal(reduce(t, t.argument), script, `${id} does not reduce to its script`);
   }
 });
 
@@ -68,15 +70,51 @@ test('the argument is the datum the address carries, and nothing else', () => {
   assert.equal(applicationText(tr), '(λp. ⟦ ① p ⟧) p³²');
 });
 
-test('a term is one abstraction over one datum, and refuses everything else', () => {
+test('a term is read off the script, however many holes it has', () => {
   const P = (n) => n.toString(16).padStart(2, '0') + 'ab'.repeat(n);
-  // Bare multisig: its λ takes m, n and n keys, so there is no single argument
-  // to bind -- the refusal the Addresses group turns into an argument for P2SH.
-  assert.equal(termOfScript('52' + P(33) + P(33) + P(33) + '53ae'), null);
-  assert.equal(termOfScript('6a' + P(8)), null, 'a data output binds nothing');
+  // A compressed key, shaped like one: the letter a push gets is the book's own
+  // reading of its bytes, so a test that fed it filler would be asking the
+  // renderer to guess.
+  const K = () => '21' + '02' + 'ab'.repeat(32);
+  // Bare multisig binds, and binds three keys -- the key's own terms table has
+  // always had a multisig row, and refusing it here made the module disagree
+  // with the book. What multisig has no business being is an ADDRESS, and that
+  // is a different predicate: one hole, not one term.
+  const ms = termOfScript('52' + K() + K() + K() + '53ae');
+  assert.equal(ms.holes.length, 3, 'three keys, three binders');
+  assert.deepEqual(ms.holes.map((h) => h.name), ['p₁', 'p₂', 'p₃'], 'a repeated letter is numbered');
+  assert.equal(addressText(ms), '(λp₁ p₂ p₃. ② p₁ p₂ p₃ ③ ◇) p₁³³ p₂³³ p₃³³');
+  assert.equal(addressable(ms), false, 'no address could carry three arguments');
+  // …and it reduces back, which is the whole warrant for reading a term off
+  // bytes rather than looking one up.
+  assert.equal(reduce(ms, ms.holes.map((h) => h.argument)), ms.script);
+  // A data output binds its blob. Its letter is d: neither a hash nor a key.
+  const data = termOfScript('6a' + P(8));
+  assert.equal(addressText(data), '(λd. ¶ d) d⁸');
+  assert.equal(addressable(data), true, 'one hole, though no address form takes it');
+  // A well-formed script the classifier does not know binds all the same: the
+  // term is read off the bytes, so recognition is not what makes one. What it
+  // lacks is a name, and it says so by having no id.
+  const odd = termOfScript('76a914' + 'ab'.repeat(20));
+  assert.equal(odd.id, null, 'no template claims these bytes');
+  assert.equal(addressText(odd), '(λh. ⧉ ⌖ h) h²⁰');
+  assert.equal(reduce(odd, odd.argument), odd.script);
+  assert.equal(lockedText(odd), null, 'and nothing is written down about what it awaits');
+  // What is still refused is what cannot be read at all.
   assert.equal(termOfScript(''), null);
-  assert.equal(termOfScript('76a914' + 'ab'.repeat(20)), null, 'a truncated lock is not a term');
-  assert.equal(termOfScript('deadbeef'), null, 'nor an unrecognised one');
+  assert.equal(termOfScript('76a914' + 'ab'.repeat(19)), null, 'a truncated push is not a term');
+  assert.equal(termOfScript('deadbeef'), null, 'nor bytes consensus never defined');
+  assert.equal(termOfScript('76a988ac'), null, 'nor a script with nothing to abstract over');
+});
+
+test('every address is one hole, and that is what makes it one', () => {
+  for (const [, address] of ADDRESSES) {
+    const t = termOfScript(addressScriptHex(address));
+    assert.equal(t.holes.length, 1, address);
+    assert.ok(addressable(t), address);
+    // The derived letter is the tabled one: both read the same bytes.
+    assert.equal(t.binder, TERMS[t.id].binder, `${address}'s binder`);
+  }
 });
 
 test('a bare key is a term too, and the reason it has no address is not that', () => {
@@ -185,64 +223,208 @@ test('bare hex is a lock when the bytes settle it, and otherwise is not', () => 
   assert.equal(isLockingScript('76a90088ac'), false, 'a malformed lock needs the prefix');
 });
 
-// ─── what the address awaits ─────────────────────────────────────────────
+// ─── the ladder: address, lock, spend ────────────────────────────────────
 
-test('an address says what it demands of whoever comes to spend it', () => {
-  const of = (address) => demandsText(termOfScript(addressScriptHex(address)));
-  assert.equal(of('1Ross5Np5doy4ajF9iGXzgKaC2Q3Pwwxv'), 'λs p. ⌖ p ≡ h²⁰ ∧ ∇ s p');
+test('an address is its term with one argument supplied', () => {
+  const of = (address) => addressText(termOfScript(addressScriptHex(address)));
+  // Rung one. The λ takes the image the address carries -- one argument, and
+  // the only one an address has -- and what follows the term is that image:
+  // the half of a base58 or bech32 string that is entropy rather than tag.
+  assert.equal(of('1Ross5Np5doy4ajF9iGXzgKaC2Q3Pwwxv'), '(λh. ⧉ ⌖ h ≡ ∇) h²⁰');
   assert.equal(of('bc1p5d7rjq7g6rdk2yhzks9smlaqtedr4dekq08ge8ztwac72sfr9rusxg3297'),
-    'λs. ∇ s p³² ∨ λs t c. ⋔ c t ≡ p³² ∧ ( t )', 'taproot asks for one of two things');
-  // P2PK's key is a constant of the term now, not its argument: the datum sits
-  // on the other side of the binder from where the committed-datum reading put
-  // it, which is what makes these two readings duals rather than rewordings.
-  assert.equal(demandsText(termOfScript(reduce(TERMS.p2pk, '04' + 'ab'.repeat(64)))), 'λs. ∇ s p⁶⁵');
+    '(λp. ① p) p³²');
+  assert.equal(addressText(termOfScript(reduce(TERMS.p2pk, '04' + 'ab'.repeat(64)))),
+    '(λp. p ∇) p⁶⁵');
+  // One argument on every rung-one line, whatever the term: that is what makes
+  // an address an address, and it is why multisig has none.
+  for (const [, address] of ADDRESSES) {
+    const t = termOfScript(addressScriptHex(address));
+    assert.equal(addressText(t).split(') ')[1], t.binder + toSuperscript(t.bytes), address);
+  }
 });
 
-test('P2PKH and P2WPKH demand exactly the same thing', () => {
+test('what the address hands back is another λ, not a fragment', () => {
+  // Rung two, and the claim the two-paragraph leaf rests on: applying the
+  // datum does not leave a piece of syntax, it leaves the scriptPubKey -- which
+  // is itself a function of what a spend will bring.
+  const of = (address) => lockedText(termOfScript(addressScriptHex(address)));
+  assert.deepEqual(of('1Ross5Np5doy4ajF9iGXzgKaC2Q3Pwwxv'), ['λs p. ⧉ ⌖ h²⁰ ≡ ∇']);
+  assert.deepEqual(of('bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4'), ['λs p. ⓪ h²⁰']);
+  // An output with two ways to open it is one lock and two λ over it.
+  assert.deepEqual(of('bc1p5d7rjq7g6rdk2yhzks9smlaqtedr4dekq08ge8ztwac72sfr9rusxg3297'),
+    ['λs. ① p³²', 'λt c. ① p³² ( t )']);
+  // Every rung-two line is the rung above it with the argument gone in: the
+  // body is the same marks, and only the datum's count has arrived.
+  for (const [, address] of ADDRESSES) {
+    const t = termOfScript(addressScriptHex(address));
+    const script = addressScriptHex(address);
+    assert.equal(reduce(t, t.argument), script, address);
+    for (const line of lockedText(t)) {
+      assert.ok(line.includes(bodyOf(t, true)), `${address}: rung two is not the lock`);
+    }
+  }
+});
+
+test('the rung below the wire is the spend, and ⧺ is its application', () => {
+  // Rung three, which the leaf does not draw -- an address has no spend yet.
+  // The arguments go ahead of the code, because that is how a stack machine
+  // writes an application, and ⧺ is the mark for it.
+  assert.deepEqual(spendText(termOfScript(addressScriptHex('1Ross5Np5doy4ajF9iGXzgKaC2Q3Pwwxv'))),
+    ['s p ⧺ ⧉ ⌖ h²⁰ ≡ ∇']);
+  assert.deepEqual(spendText(termOfScript(addressScriptHex('3J98t1WpEZ73CNmQviecrnyiWrnqRhWNLy'))),
+    ['r ⧺ ⌖ h²⁰ = ( r )']);
+});
+
+test('the spend rung is marks and a citation, because it cannot be computed', () => {
+  // The one rung whose content no page can derive: s and p are not in the
+  // address and no reduction reaches them. So the marks say the shape and the
+  // citation beside them says where to read what was actually brought -- which
+  // is why the leaf draws this rung only when the chain reports a spend.
+  const strip = (html) => html.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+  const t = termOfScript(addressScriptHex('1Ross5Np5doy4ajF9iGXzgKaC2Q3Pwwxv'));
+  const [m] = spendMarks(t);
+  assert.equal(strip(`${m.prefix} X${m.suffix}`), 's p ⧺ X');
+  // The joint is apparatus, not a byte: it never takes the gold, which is the
+  // rule the whole leaf is styled by.
+  assert.match(m.prefix, /class="lam"[^>]*>⧺/);
+  // A wrapped form carries its eval step into the suffix, where the caller can
+  // set the script between the two.
+  const [sh] = spendMarks(termOfScript(addressScriptHex('3J98t1WpEZ73CNmQviecrnyiWrnqRhWNLy')));
+  assert.equal(strip(`${sh.prefix} X${sh.suffix}`), 'r ⧺ X ( r )');
+  // Taproot has two, and the leaf declines to draw either: which path was taken
+  // is in the witness, and guessing is the thing this page exists not to do.
+  assert.equal(spendMarks(termOfScript(addressScriptHex(
+    'bc1p5d7rjq7g6rdk2yhzks9smlaqtedr4dekq08ge8ztwac72sfr9rusxg3297'))).length, 2);
+  // A term with nothing written down about what it awaits has no rung three.
+  assert.equal(spendMarks(termOfScript('76a914' + 'ab'.repeat(20))), null);
+});
+
+test('the only opcode on a rung the lock does not own is the joint', () => {
+  // The bug the ladder was written to close. A demand set as a predicate needs
+  // a conjunction between its clauses, and the mark that printed was ∧ --
+  // OP_BOOLAND, which is not disabled at all: a live opcode that pops two
+  // numbers, standing on a line that claimed to reduce to a script. Nothing on
+  // any rung is a mark the lock does not own, save ⧺ on the spend.
+  const CAT = OPCODE_SYMBOLS[0x7e];
+  assert.equal(OPCODE_NAMES[0x7e], 'OP_CAT');
+  for (const id of Object.keys(TERMS)) {
+    const bytes = TERMS[id].bytes ?? 65;
+    const t = termOfScript(reduce(TERMS[id], 'ab'.repeat(bytes)));
+    const own = new Set(t.body.filter((c) => c !== null).map((c) => OPCODE_SYMBOLS[c]));
+    for (const line of [addressText(t), ...lockedText(t)]) {
+      assert.ok(!line.includes(CAT), `${id} joins nothing on this rung`);
+      for (const [code, glyph] of Object.entries(OPCODE_SYMBOLS)) {
+        if (own.has(glyph)) continue;
+        assert.ok(!line.includes(glyph),
+          `${id} writes ${glyph} (${OPCODE_NAMES[code]}), which its lock never does`);
+      }
+    }
+    for (const line of spendText(t)) {
+      assert.equal(line.split(CAT).length - 1, 1, `${id} should apply once`);
+    }
+  }
+});
+
+// The lock body as the rungs write it, from the term's own opcodes: bare on
+// rung one, where the count has not arrived, and counted below that.
+const bodyOf = (t, counted) => t.body
+  .map((code) => (code === null ? t.binder + (counted ? toSuperscript(t.bytes) : '')
+    : OPCODE_SYMBOLS[code])).join(' ');
+
+test('P2PKH and P2WPKH ask for the same key material', () => {
   // The committed-datum reading makes these different objects. Read as demands
-  // they are one string: segwit moved where a witness rides, not what is asked
-  // for. Nothing about the difference between them is a difference to a spender.
-  const of = (address) => demandsText(termOfScript(addressScriptHex(address)));
-  assert.equal(of('1Ross5Np5doy4ajF9iGXzgKaC2Q3Pwwxv'),
-    of('bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4'));
-  // …and the scripts they resolve to are not the same at all, which is the
-  // point: two readings of one output, and only one of them collapses.
+  // they want the same two things in the same order: segwit moved where a
+  // witness rides, not what is asked for.
+  const brings = (address) => demandsOf(termOfScript(addressScriptHex(address)))
+    .map((alt) => alt.brings.join(' '));
+  assert.deepEqual(brings('1Ross5Np5doy4ajF9iGXzgKaC2Q3Pwwxv'), ['s p']);
+  assert.deepEqual(brings('1Ross5Np5doy4ajF9iGXzgKaC2Q3Pwwxv'),
+    brings('bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4'));
+  // …and the locks that key material rides against are not the same script at
+  // all, which is the other half of the point: one demand, two wires.
   assert.notEqual(addressScriptHex('1Ross5Np5doy4ajF9iGXzgKaC2Q3Pwwxv'),
     addressScriptHex('bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4'));
+  assert.notDeepEqual(lockedText(termOfScript(addressScriptHex('1Ross5Np5doy4ajF9iGXzgKaC2Q3Pwwxv'))),
+    lockedText(termOfScript(addressScriptHex('bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4'))));
 });
 
 test('the wrapped forms cannot say what they will ask for', () => {
-  // P2SH and P2WSH run out of binders: the redeem script, and then whatever IT
-  // requires, which the address does not know and cannot know. The ellipsis is
-  // load-bearing -- a requirement hidden behind a hash rather than a datum.
+  // P2SH, P2WSH and taproot's script path all end on a function they hand back
+  // rather than on a value: ( r ) awaits arguments of its own, and how many is
+  // a property of a script the address has never seen. That is the whole of
+  // "cannot say" -- an unapplied function is already unable to promise an
+  // arity, so nothing needs to stand in for the missing binders.
   for (const [address, expected] of [
-    ['3J98t1WpEZ73CNmQviecrnyiWrnqRhWNLy', 'λr …. ⌖ r ≡ h²⁰ ∧ ( r )'],
-    ['bc1qrp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3qccfmv3', 'λw …. Σ w ≡ h³² ∧ ( w )'],
+    ['3J98t1WpEZ73CNmQviecrnyiWrnqRhWNLy', ['λr. ⌖ h²⁰ = ( r )']],
+    ['bc1qrp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3qccfmv3', ['λw. ⓪ h³² ( w )']],
   ]) {
     const t = termOfScript(addressScriptHex(address));
-    assert.equal(demandsText(t), expected);
-    assert.ok(demandsOf(t)[0].awaits.includes('…'), `${address} should admit it cannot say`);
+    assert.deepEqual(lockedText(t), expected);
+    assert.ok(demandsOf(t).every((alt) => alt.runs), `${address} should hand something back`);
+    // …and rung one is unaffected: an address says what it holds either way.
+    assert.equal(addressText(t), `(λh. ${bodyOf(t, false)}) h${toSuperscript(t.bytes)}`);
   }
-  // Every other form can say, in full.
+  // The forms that can say hand nothing back: every binder is a value, and the
+  // lock is a function of exactly those.
   for (const address of ['1Ross5Np5doy4ajF9iGXzgKaC2Q3Pwwxv',
-    'bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4',
-    'bc1p5d7rjq7g6rdk2yhzks9smlaqtedr4dekq08ge8ztwac72sfr9rusxg3297']) {
+    'bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4']) {
     const t = termOfScript(addressScriptHex(address));
-    for (const alt of demandsOf(t)) assert.ok(!alt.awaits.includes('…'), address);
+    for (const alt of demandsOf(t)) assert.equal(alt.runs, null, address);
+  }
+  // Taproot is both at once, one path apiece -- which is what a taptree is.
+  const tr = termOfScript(addressScriptHex('bc1p5d7rjq7g6rdk2yhzks9smlaqtedr4dekq08ge8ztwac72sfr9rusxg3297'));
+  assert.deepEqual(demandsOf(tr).map((alt) => alt.runs), [null, 't']);
+});
+
+test('no binder stands for something the address cannot count', () => {
+  // The ellipsis is gone, and nothing may bring it back: a binder is a value a
+  // spend supplies, so a mark meaning "and however many more" is not one. It
+  // also cost an invented binder while it stood -- taproot's script path bound
+  // an `s`, as if every leaf wanted a signature, which no address can know.
+  for (const id of Object.keys(TERMS)) {
+    const bytes = TERMS[id].bytes ?? 65;
+    const t = termOfScript(reduce(TERMS[id], 'ab'.repeat(bytes)));
+    for (const alt of demandsOf(t)) {
+      for (const name of alt.brings) {
+        assert.match(name, /^[a-z]$/, `${id} binds ${name}, which is not a value`);
+      }
+    }
+    for (const line of [addressText(t), ...lockedText(t), ...spendText(t)]) {
+      assert.ok(!line.includes('…'), `${id} writes an ellipsis`);
+    }
   }
 });
 
-test('the two renderings of a demand never drift', () => {
+test('the two renderings of a rung never drift', () => {
   const strip = (html) => html.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
   for (const [, address] of ADDRESSES) {
     const t = termOfScript(addressScriptHex(address));
-    assert.equal(strip(demandsHtml(t)), demandsText(t), address);
+    assert.equal(strip(addressHtml(t)), addressText(t), address);
+    assert.deepEqual(lockedHtml(t).map(strip), lockedText(t), address);
   }
   // Every term the module knows says what it awaits; a new one that did not
   // would draw a blank line on the page rather than fail here.
   for (const id of Object.keys(TERMS)) {
     const bytes = TERMS[id].bytes ?? 65;
     assert.ok(demandsOf(termOfScript(reduce(TERMS[id], 'ab'.repeat(bytes)))), `${id} awaits nothing`);
+  }
+});
+
+test('the datum is said where an address keeps its payload', () => {
+  // The prose follows the term, behind the mark that gives its length -- the
+  // same pairing the sigla address format uses, and the same place base58 and
+  // bech32 put their entropy. Rung two never carries it: the leaf sets the
+  // spelled script there, which says the datum in its own right.
+  const t = termOfScript(addressScriptHex('1Ross5Np5doy4ajF9iGXzgKaC2Q3Pwwxv'));
+  const strip = (html) => html.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+  assert.equal(strip(addressHtml(t, { prose: 'ridge amused garment inmate' })),
+    '(λh. ⧉ ⌖ h ≡ ∇) h²⁰ ridge amused garment inmate');
+  assert.equal(strip(addressHtml(t, {})), strip(addressHtml(t)));
+  // The lock line's binders stay outside the script, so a click on the copyable
+  // span takes bare bytes and the search box can read them back.
+  for (const m of lockedMarks(t)) {
+    assert.ok(!m.prefix.includes('term-onchain') && !m.suffix.includes('term-onchain'));
+    assert.ok(m.prefix.startsWith('<span class="lam">λ'), 'the binders lead the line');
   }
 });
 
@@ -297,4 +479,73 @@ test('the module draws the terms the notation key draws', () => {
   }
   assert.deepEqual([...seen].sort(), Object.keys(TERMS).sort(),
     'every term the module knows should have a row in the key, and vice versa');
+});
+
+// ─── which path a spend took ─────────────────────────────────────────────
+
+const TR = 'bc1p5d7rjq7g6rdk2yhzks9smlaqtedr4dekq08ge8ztwac72sfr9rusxg3297';
+const SIG = '30' + '44'.repeat(70);            // 71 bytes, DER-shaped
+const KEY = '02' + 'ab'.repeat(32);            // 33 bytes, compressed
+const SCHNORR = 'ab'.repeat(64);
+
+test('the term keeps every way in; the spend quotes the one taken', () => {
+  // An unspent taproot output really can be opened either way, so rung two
+  // keeps both. What the chain has a record of is one of them, and which is
+  // read off the count rather than guessed: consensus's own rule is that
+  // exactly one witness item is the key path.
+  const tr = termOfScript(addressScriptHex(TR));
+  assert.equal(lockedText(tr).length, 2, 'the lock admits two paths');
+  assert.equal(pathTaken(tr, [SCHNORR]), 0, 'one item is the key path');
+  assert.equal(pathTaken(tr, [SIG, '51' + KEY + 'ac', 'c0' + 'ab'.repeat(32)]), 1,
+    'a leaf and its proof is the script path');
+  // The wrapped forms generalize it: an alternative handing a script back takes
+  // at least its binders and however many more that script wants.
+  const sh = termOfScript(addressScriptHex('3J98t1WpEZ73CNmQviecrnyiWrnqRhWNLy'));
+  assert.equal(pathTaken(sh, [SIG, SIG, '52' + KEY + '51ae']), 0, 'the only path, at any depth');
+  // Nothing brought is nothing to read.
+  assert.equal(pathTaken(termOfScript(addressScriptHex(TR)), []), null);
+  assert.equal(pathTaken(termOfScript('76a914' + 'ab'.repeat(20)), [SIG]), null,
+    'a term with nothing written down about its paths chooses none');
+});
+
+test('the values a spend brought are named by the term, from the top down', () => {
+  const p2pkh = termOfScript(addressScriptHex('1Ross5Np5doy4ajF9iGXzgKaC2Q3Pwwxv'));
+  assert.deepEqual(suppliedNames(demandsOf(p2pkh)[0], [SIG, KEY]), ['s', 'p']);
+  // A wrapped form's script rides on top, so its binder names the LAST item and
+  // what stands before it is whatever that script wanted -- which the term
+  // above never knew, so those keep the book's ordinary reading of a push.
+  const sh = termOfScript(addressScriptHex('3J98t1WpEZ73CNmQviecrnyiWrnqRhWNLy'));
+  assert.deepEqual(suppliedNames(demandsOf(sh)[0], [SIG, SIG, '52' + KEY + '51ae']),
+    ['s', 's', 'r'], 'the redeem script is r; its own arguments are read as what they look like');
+  // Taproot's script path names the last two, leaf then proof.
+  const tr = termOfScript(addressScriptHex(TR));
+  assert.deepEqual(suppliedNames(demandsOf(tr)[1], [SIG, '51' + KEY + 'ac', 'c0' + 'ab'.repeat(32)]),
+    ['s', 't', 'c']);
+});
+
+test('the spend rung is written from the chain, marks counts and prose', () => {
+  const strip = (html) => html.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+  const t = termOfScript(addressScriptHex('1Ross5Np5doy4ajF9iGXzgKaC2Q3Pwwxv'));
+  const got = suppliedHtml(t, [SIG, KEY]);
+  assert.equal(got.which, 0);
+  assert.equal(strip(got.html), 's⁷¹ p³³ ⧺ ⧉ ⌖ h²⁰ ≡ ∇');
+  // The line is one thing to read and two things to attribute. Only the left
+  // half was quoted from the input the citation names; the joint is apparatus
+  // and the lock after it belongs to the OUTPUT, cited a rung above. So they
+  // come out separately, and an attribution ranged under this line covers the
+  // passage it names rather than everything on the row.
+  assert.equal(strip(got.quoted), 's⁷¹ p³³');
+  assert.equal(strip(got.echo), '⧺ ⧉ ⌖ h²⁰ ≡ ∇');
+  assert.ok(!got.quoted.includes('⧺'), 'the joint is not part of the quotation');
+  assert.ok(got.html.includes('class="echo"'), 'and what follows it is marked as not quoted');
+  // The prose rides behind each mark, as a push's prose does in every chapter.
+  const said = suppliedHtml(t, [SIG, KEY], { say: (hex) => (hex === KEY ? 'ridge amused' : 'sworn') });
+  assert.equal(strip(said.html), 's⁷¹ sworn p³³ ridge amused ⧺ ⧉ ⌖ h²⁰ ≡ ∇');
+  // Taproot writes whichever path it was, and says which.
+  const tr = termOfScript(addressScriptHex(TR));
+  assert.equal(strip(suppliedHtml(tr, [SCHNORR]).html), 's⁶⁴ ⧺ ① p³²');
+  const leaf = suppliedHtml(tr, [SIG, '51' + KEY + 'ac', 'c0' + 'ab'.repeat(32)]);
+  assert.equal(leaf.which, 1);
+  assert.equal(strip(leaf.html), 's⁷¹ t³⁵ c³³ ⧺ ① p³² ( t )');
+  assert.equal(suppliedHtml(t, []), null, 'nothing brought, nothing to write');
 });

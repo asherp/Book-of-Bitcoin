@@ -220,3 +220,44 @@ test('hex that is not a script says where it stops being one', () => {
   assert.deepEqual(scriptFault('7'), { reason: 'not-bytes', at: 0 });
   assert.deepEqual(scriptFault('zz'), { reason: 'not-bytes', at: 0 });
 });
+
+// ─── nothing a reader could pay is shown in halves ───────────────────────
+
+test('no page writes a member elided head…tail', async () => {
+  // The shape address poisoning feeds on. A forged address only has to match
+  // what a reader can see, and what a reader can see is whatever the display
+  // left after clipping — so a member is written whole or it is not written.
+  //
+  // This is the discipline the prose format buys rather than a property it
+  // has: a substituted address is different bytes, and different bytes are
+  // different prose with different semantics, which a person notices. They
+  // notice none of it if the middle was the part that got elided.
+  const { readdir, readFile } = await import('node:fs/promises');
+  const WEB = new URL('../web/', import.meta.url);
+  // A run of member-shaped characters, an ellipsis, and more of the same:
+  // base58, bech32 and hex all read as this, and nothing else in the book does.
+  const ELIDED = /[0-9a-zA-Z]{6,}…[0-9a-zA-Z]{4,}/g;
+  const files = (await readdir(WEB)).filter((f) => f.endsWith('.html') || f.endsWith('.js'));
+  const found = [];
+  for (const name of files) {
+    const text = await readFile(new URL(name, WEB), 'utf8');
+    for (const m of text.match(ELIDED) || []) found.push(`${name}: ${m}`);
+  }
+  assert.deepEqual(found, []);
+});
+
+test('the examples column shows a form whole rather than clipping it', async () => {
+  // The column that teaches the reader what may be typed is the last place
+  // that should teach an abbreviation. It wraps now; a returning ellipsis
+  // would put the head…tail shape back on the one page that explains members.
+  const { readFile } = await import('node:fs/promises');
+  const page = await readFile(new URL('../web/bitcoin-search.html', import.meta.url), 'utf8');
+  const rule = page.split('.example-form {')[1].split('}')[0];
+  assert.ok(!/text-overflow\s*:\s*ellipsis/.test(rule), 'the forms column clips again');
+  assert.ok(!/white-space\s*:\s*nowrap/.test(rule), 'a form that cannot wrap will be clipped');
+  // …and the members it lists are the real ones, entire.
+  for (const whole of ['1Ross5Np5doy4ajF9iGXzgKaC2Q3Pwwxv',
+    '76a91404b11d2eb716291f33be29210ee5b2a161c071af88ac']) {
+    assert.ok(page.includes(`>${whole}<`), `${whole} is not written out`);
+  }
+});
