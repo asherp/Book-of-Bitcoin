@@ -237,15 +237,26 @@ export function reduce(term, args) {
 // Two things fall out that the committed-datum reading hides. P2PKH and P2WPKH
 // ask for the same key material in the same order -- segwit moved where a
 // witness rides, not what is asked for -- while the locks it rides against are
-// not the same script at all. And the wrapped forms cannot say what they want,
-// which the structure now states rather than gestures at: a lock ending in
-// ( r ) hands back a function, and how many arguments THAT one takes is a
-// property of a script the address has never seen. Not a datum hidden behind a
-// hash, but a REQUIREMENT hidden behind one -- and an arity is exactly the
-// thing an unapplied function is already unable to promise. An earlier draft
-// wrote a `…` binder for this. It was a hand-wave where the term was already
-// telling the truth, and it cost taproot's script path an invented `s`, as if
-// every leaf wanted a signature.
+// not the same script at all. And the wrapped forms cannot say what they want:
+// a lock ending in ( r ) hands back a function, and how many arguments THAT one
+// takes is a property of a script the address has never seen. Not a datum
+// hidden behind a hash, but a REQUIREMENT hidden behind one -- and an arity is
+// exactly the thing an unapplied function is already unable to promise.
+//
+// What the wrapped forms DO say is that there are some. A revealed script is
+// run the way every other script is run -- the machine is the same machine, and
+// a tapscript leaf is not a special case of it: its arguments go on the stack
+// beneath it and it consumes them in order. So the term writes … ahead of the
+// binders it can name, and the reader is told an unknown number of arguments
+// belongs there rather than left to infer it from the ( ) at the far end.
+//
+// An earlier draft dropped that mark entirely, on the ground that a binder
+// names one value a spend supplies and … names no value at all. That much
+// holds, and is why … stays OUT of `brings` and is written from `runs`: it is
+// not a binder, it is the notation admitting the binders it cannot write. What
+// the draft was really right about was the invented `s` it carried alongside --
+// taproot's script path bound one, as if every leaf wanted a signature, which no
+// address can know. That stays gone. `brings` is letters, one value apiece.
 //
 // A reading, not an encoding. These are written down per term, because deriving
 // them from arbitrary bytes is symbolic execution and undecidable in general;
@@ -253,7 +264,9 @@ export function reduce(term, args) {
 // function of, in the order the spender pushes it -- a wrapped form's script
 // rides on top, so it comes last -- and `runs` is what the lock then hands back
 // to be run, the one step ( ) exists for and the only thing on a line that is
-// neither a spend nor a lock.
+// neither a spend nor a lock. `runs` is also what puts the … there, since a lock
+// that hands back a script is exactly a lock whose arity it cannot state: the
+// two can never disagree because there is only one field.
 const DEMANDS = {
   p2pk:   [{ brings: 's' }],
   p2pkh:  [{ brings: 's p' }],
@@ -279,6 +292,20 @@ export function demandsOf(t) {
 // the page is the one the book gives 0x7e and cannot drift from it.
 const CAT = OPCODE_SYMBOLS[0x7e];
 
+// …and the mark for the binders a wrapped form cannot write: however many
+// arguments the script it hands back will want, pushed beneath it. It leads,
+// because that is where they go -- the spender pushes them first and the
+// revealed script rides on top.
+const UNDER = '…';
+const UNDER_SAID = 'however many arguments the revealed script wants, pushed beneath it — '
+  + 'a script is a script, and this one runs on the same stack as any other. How many '
+  + 'is a property of bytes the output committed to only by their hash, so the term '
+  + 'writes that they are there and declines to count them';
+
+// The binders of one alternative, in the order the spender pushes them. Read
+// off `runs`, which is what makes the … and the ( ) one claim rather than two.
+const binderText = (alt) => (alt.runs ? `${UNDER} ` : '') + alt.brings.join(' ');
+
 // ─── rung one: the address ───────────────────────────────────────────────
 //
 // The term applied to the data it carries, and nothing else supplied. Curried,
@@ -297,7 +324,7 @@ export const addressText = (t) =>
 // satisfy it.
 export const lockedText = (t) => {
   const alts = demandsOf(t);
-  return alts ? alts.map((alt) => `λ${alt.brings.join(' ')}. ${bodyText(t, true)}`
+  return alts ? alts.map((alt) => `λ${binderText(alt)}. ${bodyText(t, true)}`
     + (alt.runs ? ` ( ${alt.runs} )` : '')) : null;
 };
 
@@ -308,7 +335,7 @@ export const lockedText = (t) => {
 // spend yet -- but it is the rung the two above are descending toward.
 export const spendText = (t) => {
   const alts = demandsOf(t);
-  return alts ? alts.map((alt) => `${alt.brings.join(' ')} ${CAT} ${bodyText(t, true)}`
+  return alts ? alts.map((alt) => `${binderText(alt)} ${CAT} ${bodyText(t, true)}`
     + (alt.runs ? ` ( ${alt.runs} )` : '')) : null;
 };
 
@@ -319,6 +346,13 @@ export const spendText = (t) => {
 // validator column keeps, and here it means a reader sees at a glance which
 // half of a line is a fact and which is a demand.
 const awaited = (name) => `<span class="aw">${escapeHtml(name)}</span>`;
+
+// The … is awaited too -- a spend really does have to bring those -- so it takes
+// the same ink as the names beside it rather than the calculus's quiet. It is
+// the one mark on the line that names no single value, so what it stands for is
+// in its hover, which is where this book keeps a claim it cannot set in type.
+const under = () => `<span class="aw" title="${escapeHtml(UNDER_SAID)}">${UNDER}</span>`;
+const binderMarks = (alt) => (alt.runs ? `${under()} ` : '') + alt.brings.map(awaited).join(' ');
 
 // `prose` is the argument's bytes said in the book's own tongue, and it lands
 // where an address keeps its payload: after the term, behind the mark that
@@ -339,7 +373,7 @@ export function lockedMarks(t) {
   const alts = demandsOf(t);
   if (!alts) return null;
   return alts.map((alt) => ({
-    prefix: `${lam('λ')}${alt.brings.map(awaited).join(' ')}${lam('.')}`,
+    prefix: `${lam('λ')}${binderMarks(alt)}${lam('.')}`,
     suffix: alt.runs ? ` ${lam('(')} ${awaited(alt.runs)} ${lam(')')}` : '',
   }));
 }
@@ -400,7 +434,7 @@ export function spendMarks(t) {
   const alts = demandsOf(t);
   if (!alts) return null;
   return alts.map((alt) => ({
-    prefix: `${alt.brings.map(awaited).join(' ')} ${cat()}`,
+    prefix: `${binderMarks(alt)} ${cat()}`,
     suffix: alt.runs ? ` ${lam('(')} ${awaited(alt.runs)} ${lam(')')}` : '',
   }));
 }
