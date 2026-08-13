@@ -603,17 +603,35 @@ const classify = (q) => parseLookup(q, {
 // names a place, and a place is what the button opens.
 // Hex the box is holding, whatever the grammar routes it as. A 32-byte script
 // is a transaction id by shape and Read opens it as one -- but the bytes are
-// still bytes, and saying what they are costs nothing and hijacks nothing. The
+// still bytes, and where they really do tokenize, saying so costs nothing. The
 // all-digit shapes stay out: a height is not a paste, and OP_AND OP_0 OP_0 is
 // not what a reader typing 840000 came for.
 const hexish = (q) => /^(?:[0-9a-fA-F]{2})+$/.test(q) && !/^[0-9]+$/.test(q);
+
+// …and where they do not tokenize, it costs everything. A transaction id is 32
+// bytes of hash, and hash bytes are a broken script nearly every time -- one
+// push in six claims more than remains. So a reader who pasted a perfectly good
+// id got a card headed SCRIPT and a red ☒ under it, and then Read, which will
+// not open a place the leaf has just called invalid, refused to go anywhere at
+// all. Two of the shapes this box advertises, dead in the box that advertises
+// them.
+//
+// The grammar had already answered: isWholeScript refuses exactly 64 characters
+// because that is an id, and parseLookup routes it to 'hex' for the book to
+// resolve. The leaf's reading is the guess; the grammar's is the ruling. So a
+// query the grammar has named a place for is only drawn as a term where the
+// bytes really are one, and it is never drawn as a fault -- the diagnosis stays
+// for hex that names nothing else, where it is the only thing on the page that
+// would explain the silence.
+const drawsAsHex = (q, found) => hexish(q)
+  && (found.kind !== 'hex' || !scriptFault(q.toLowerCase()));
 
 let pending = null;
 function preview() {
   const q = input.value.trim();
   examplesEl.hidden = q !== '';
   const found = classify(q);
-  const asHex = found.kind !== 'address' && found.kind !== 'spelled' && hexish(q);
+  const asHex = found.kind !== 'address' && found.kind !== 'spelled' && drawsAsHex(q, found);
   if (found.kind !== 'address' && found.kind !== 'script' && found.kind !== 'spelled' && !asHex) {
     termEl.hidden = true;
     termEl.dataset.at = '';
@@ -647,8 +665,12 @@ const go = async () => {
   };
   if (found.kind === 'address') return ledger(found.address);
   if (found.kind === 'script') return ledger(found.script);
-  // Bytes the leaf has just called invalid name no place to open.
-  if (hexish(q) && scriptFault(q.toLowerCase())) { input.focus(); return; }
+  // Bytes the leaf has just called invalid name no place to open -- and only
+  // bytes that name nothing else can be those. A transaction id reads as a
+  // broken script nearly every time, so this guard, written for hex that is
+  // hex and nothing more, was catching every id in the box and refusing to
+  // open a chapter that was there all along.
+  if (found.kind === null && hexish(q) && scriptFault(q.toLowerCase())) { input.focus(); return; }
   if (found.kind === 'spelled') {
     // A spelling names its member by carrying it, so it has to be read first.
     const gl = await glossia();

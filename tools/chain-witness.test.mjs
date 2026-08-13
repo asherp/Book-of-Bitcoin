@@ -411,3 +411,50 @@ test('the leaf marks a quotation only where it can name the place', async () => 
   assert.ok(!awaits.some((c) => c.includes('term-quote')),
     'the address rung is a reading, not a quotation');
 });
+
+// ─── an id is not a script, however its bytes read ───────────────────────
+
+test('the leaf never calls an id a broken script, and Read still opens it', async () => {
+  const { parseLookup } = await import('../web/btc-lookup.js');
+  const { isWholeScript, scriptFault, looksSpelled } = await import('../web/btc-address-form.js');
+  const { isAddress } = await import('../web/btc-index.js');
+  const classify = (q) => parseLookup(q, { isAddress, isSpelled: looksSpelled,
+    isLockingScript: isWholeScript });
+  // The shape the leaf's hex reading was never meant to hold. An id is 32 bytes
+  // of hash, so its bytes tokenize as a script by luck and usually badly -- a
+  // push in the middle claiming more than remains, or a byte consensus never
+  // defined. Every one of these is a real transaction id or block hash.
+  const IDS = [
+    'b38a88b073743bcc84170071cff4b68dec6fb5dc0bc8ffcb3d4ca632c2c78255',
+    '4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b',
+    'a1075db55d416d3ca199f55b6084e2115b9345e16c5cf302fc80e9d5fbf5d48d',
+    'f4184fc596403b9d638783cf57adfe4c75c605f6356fbc91338530e9831e9e16',
+    '000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f',
+  ];
+  for (const id of IDS) {
+    // The grammar's ruling, and it is not a guess: isWholeScript refuses
+    // exactly 64 characters BECAUSE that is an id, and parseLookup routes it to
+    // the book to resolve.
+    assert.equal(isWholeScript(id), false, `${id} is not offered as a script`);
+    assert.equal(classify(id).kind, 'hex', `${id} names a place`);
+  }
+  // …and most of them fault, which is exactly why the leaf must not read them.
+  assert.ok(IDS.filter((id) => scriptFault(id)).length >= 4,
+    'ids that read as broken scripts are the common case, not a corner');
+
+  const page = await searchPage();
+  // Drawn as a term only where the bytes really are one. Never as a fault: a
+  // card headed SCRIPT with a red ☒ under it, for a string this same page is
+  // about to open as a transaction, is the page contradicting itself.
+  assert.match(page, /found\.kind !== 'hex' \|\| !scriptFault\(/,
+    'the leaf reads a named place as hex only where it tokenizes whole');
+  // And Read goes there regardless. The guard that stops a chapter opening on
+  // invalid bytes is for hex that names nothing else; an id names something.
+  assert.match(page, /if \(found\.kind === null && hexish\(q\) && scriptFault\(/,
+    'Read refuses only bytes the grammar could not place');
+  // The case the guard is actually for: whole bytes that stop mid-push name no
+  // block, no transaction and no script, and the diagnosis is the only thing on
+  // the page that would explain the silence.
+  assert.equal(classify('76a914ab').kind, null);
+  assert.deepEqual(scriptFault('76a914ab'), { reason: 'truncated', at: 2, remain: 2 });
+});
