@@ -529,6 +529,15 @@ test('the spend rung is written from the chain, marks counts and prose', () => {
   const got = suppliedHtml(t, [SIG, KEY]);
   assert.equal(got.which, 0);
   assert.equal(strip(got.html), 's⁷¹ p³³ ⧺ ⧉ ⌖ h²⁰ ≡ ∇');
+  // The line is one thing to read and two things to attribute. Only the left
+  // half was quoted from the input the citation names; the joint is apparatus
+  // and the lock after it belongs to the OUTPUT, cited a rung above. So they
+  // come out separately, and an attribution ranged under this line covers the
+  // passage it names rather than everything on the row.
+  assert.equal(strip(got.quoted), 's⁷¹ p³³');
+  assert.equal(strip(got.echo), '⧺ ⧉ ⌖ h²⁰ ≡ ∇');
+  assert.ok(!got.quoted.includes('⧺'), 'the joint is not part of the quotation');
+  assert.ok(got.html.includes('class="echo"'), 'and what follows it is marked as not quoted');
   // The prose rides behind each mark, as a push's prose does in every chapter.
   const said = suppliedHtml(t, [SIG, KEY], { say: (hex) => (hex === KEY ? 'ridge amused' : 'sworn') });
   assert.equal(strip(said.html), 's⁷¹ sworn p³³ ridge amused ⧺ ⧉ ⌖ h²⁰ ≡ ∇');

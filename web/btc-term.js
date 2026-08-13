@@ -438,10 +438,17 @@ export function suppliedHtml(t, items, { say = null, brought = null } = {}) {
       + `<span class="op op-push" title="a push of ${hex.length / 2} bytes">`
       + `${toSuperscript(hex.length / 2)}</span>${prose ? ` ${prose}` : ''}`;
   }).join(' ');
+  // Only the left half is quoted. The joint is apparatus, and the lock after it
+  // is the OUTPUT's bytes -- already set one rung up, under a citation of their
+  // own -- so they are echoed here to show what the arguments were applied to
+  // and marked as an echo, which is what keeps the attribution below this line
+  // covering what it actually attributes.
   return {
     which,
-    html: `${brought ?? own()} ${cat()} ${bodyHtml(t, true)}`
+    quoted: brought ?? own(),
+    echo: `${cat()} ${bodyHtml(t, true)}`
       + (alt.runs ? ` ${lam('(')} <span class="dt">${escapeHtml(alt.runs)}</span> ${lam(')')}` : ''),
+    get html() { return `${this.quoted} <span class="echo">${this.echo}</span>`; },
   };
 }
 
