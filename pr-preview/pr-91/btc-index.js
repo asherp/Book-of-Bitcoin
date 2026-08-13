@@ -515,6 +515,14 @@ function esploraTouches(txs, member) {
 // never an argument to the script, and BIP341 leaves it out of the tally that
 // tells a key path from a script path. So `args` is the arity and `items` is
 // the record, and only one of them is short.
+// The opcodes that are pushes by another name: OP_0 pushes nothing at all,
+// OP_1NEGATE and OP_1…OP_16 push their own value as a byte.
+const SMALL_PUSH = {
+  0x00: '', 0x4f: '81',
+  ...Object.fromEntries(Array.from({ length: 16 },
+    (_, i) => [0x51 + i, (i + 1).toString(16).padStart(2, '0')])),
+};
+
 export const spendArgsOf = (items, witnessCarried) => (witnessCarried
   && items.length >= 2 && items[items.length - 1].startsWith('50')
   ? items.slice(0, -1) : items);
@@ -526,10 +534,20 @@ export function suppliedBy(vin) {
   if (!sig) return [];
   try {
     const toks = tokenizeScript(sig);
-    // A scriptSig that is not pushes end to end is not a list of arguments, and
-    // saying what it brought would mean guessing which tokens were which.
-    if (!toks.length || toks.some((tk) => tk.push === undefined)) return [];
-    return toks.map((tk) => tk.push.toLowerCase());
+    if (!toks.length) return [];
+    const items = [];
+    for (const tk of toks) {
+      if (tk.push !== undefined) { items.push(tk.push.toLowerCase()); continue; }
+      // The small-number opcodes are pushes too, and one of them is not an edge
+      // case: OP_0 opens nearly every P2SH multisig scriptSig, standing in for
+      // the item OP_CHECKMULTISIG pops and ignores. Reading it as an operation
+      // rather than as an argument left the commonest legacy spend on chain
+      // looking like it brought nothing at all.
+      const n = SMALL_PUSH[tk.op];
+      if (n === undefined) return [];   // not an argument list; guessing is not on offer
+      items.push(n);
+    }
+    return items;
   } catch { return []; }
 }
 
@@ -544,10 +562,18 @@ export function inputMarkOf(vins, index) {
   return { n: index + 1, sig: !(Array.isArray(v.witness) && v.witness.length > 0) };
 }
 
-// What an input brought, in both readings: the record, and the arity.
+// What an input brought, in every reading a page needs: the record, the arity,
+// and -- for an input that carried a scriptSig -- the script itself. The
+// reader renders those as script rather than as a stack (renderScript with
+// nested: true, which reveals a P2SH redeem script as opcodes), so the bytes
+// have to survive being tokenized into pushes.
 function brought(vin) {
+  const carried = Array.isArray(vin?.witness) && vin.witness.length > 0;
   const items = suppliedBy(vin);
-  return { items, args: spendArgsOf(items, Array.isArray(vin?.witness) && vin.witness.length > 0) };
+  return {
+    items, args: spendArgsOf(items, carried),
+    scriptsig: carried ? null : (String(vin?.scriptsig || '').toLowerCase() || null),
+  };
 }
 
 export function readWitness(page, member) {
