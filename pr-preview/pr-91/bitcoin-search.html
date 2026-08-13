@@ -152,6 +152,13 @@ button:hover { background: var(--accent-2); }
    different claim about a different transaction: not where these bytes were
    written, but where somebody satisfied them. */
 .term-spend { margin-top: 18px; }
+/* What is on the spend's line but not quoted from it: the joint, and the lock
+   the arguments were applied to. Those bytes are the output's, set one rung up
+   under a citation of their own, so here they are an echo — quiet, so the
+   attribution ranged under this line covers the passage it names and stops
+   where the quotation stops. */
+.term-line .echo .op, .term-line .echo .dt, .term-line .echo .op-push,
+.term-line .echo .lam { color: var(--meta); font-weight: 400; }
 .term-attrib { margin:10px 0 0; text-align:right; font:400 15px/1.7 'Newsreader','Book Sigla',serif; color:var(--meta); }
 /* A diagnosis is not an attribution: bytes that are not a script name no place,
    so what is wrong with them stays on the left where reading begins. */
