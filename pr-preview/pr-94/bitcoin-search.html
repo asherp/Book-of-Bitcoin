@@ -144,6 +144,15 @@ button:hover { background: var(--accent-2); }
    the quiet it wears elsewhere in the book as an annotation. */
 .term-line .op-push { color: var(--accent); font-weight: 700; }
 .term-line .dt { color: var(--accent); font-style: normal; font-weight: 700; }
+/* The datum's mark, pointing at the passage that holds it. It keeps the ink it
+   had -- it is the same mark, and a link is not a different kind of thing to
+   say about it -- and shows itself only on hover, the way a footnote mark does.
+   What it is FOR is the spend: a title that writes p³² is naming the key the
+   OUTPUT published, cited in a different section a rung above, while every
+   other name on that line is something the input brought and the passage
+   directly below quotes. One mark bound somewhere else, one road to it. */
+.term-line a.term-ref { color: inherit; text-decoration: none; }
+.term-line a.term-ref:hover, .term-line a.term-ref:focus-visible { text-decoration: underline; }
 .term-line .lam { color: var(--meta); font-weight: 400; }
 /* What the address holds and what it awaits, above what the chain holds. One
    distinction does the work: the gold is what the address already has, and
@@ -465,7 +474,8 @@ const faultNote = (f) => {
 //
 // So the two lines are one application: the abstraction, and then the values
 // that go into it, which are the only part of it anybody had to be told.
-const spendRung = (t, opened, sayFn, section = null, brought = null, paired = false, message = null) => {
+const spendRung = (t, opened, sayFn, section = null, brought = null, paired = false,
+                   message = null, ref = null) => {
   // The arity is read off what the script takes; the line shows everything the
   // input carried, annex and all, exactly as the reader would.
   const rung = opened?.args?.length
@@ -501,8 +511,15 @@ const spendRung = (t, opened, sayFn, section = null, brought = null, paired = fa
     + 'it is: the script itself where the output committed to one, and otherwise the '
     + 'demand with its commitment discharged, since the value it hid is now on the page. '
     + 'Derived from the bytes quoted below rather than quoted from anywhere';
+  // …and the datum in that title carries a road back to the output. It is the
+  // one mark on this line bound somewhere else: p³² is the key the OUTPUT
+  // published, not anything this input brought, and the input's own values are
+  // quoted immediately below where a reader can see them. So the mark that
+  // refers to another passage is the mark that points at it, and the citation
+  // it points at is the lock's, a section above -- not this input's, which the
+  // attribution under the quotation already names.
   const reveal = (revealedHtml(t, opened.args ?? [],
-    { scriptsig: opened.scriptsig, msg }) ?? [])
+    { scriptsig: opened.scriptsig, msg, ref }) ?? [])
     .map((line) => `<div class="term-line term-reveal" title="${escapeHtml(said)}">${line}</div>`)
     .join('');
   // The citation lands on the INPUT, not merely the transaction that holds it.
@@ -557,7 +574,7 @@ const messageFoot = (message) => {
 
 function drawTerm(hex, { address = null, at = '', say: sayFn = null, said = '',
                         quoted = false, opened = null, spendSection = null, brought = null,
-                        paired = false, message = null } = {}) {
+                        paired = false, message = null, ref = null } = {}) {
   const fault = scriptFault(hex);
   const t = fault ? null : termOfScript(hex);
   const head = `<div class="term-head"><span class="term-kind">${t ? escapeHtml(t.label) : 'Script'}</span>`
@@ -619,10 +636,10 @@ function drawTerm(hex, { address = null, at = '', say: sayFn = null, said = '',
   const locked = terms + (quoted ? `<div class="term-quote">${passage}</div>` : passage);
   const body = fault
     ? `<div class="term-said">${faultNote(fault)}</div>`
-    : (t ? `<div class="term-line term-awaits">${addressHtml(t, { prose: argument })}</div>` : '')
+    : (t ? `<div class="term-line term-awaits">${addressHtml(t, { prose: argument, ref })}</div>` : '')
       + locked
       + said
-      + (t ? spendRung(t, opened, sayFn, spendSection, brought, paired, message) : '');
+      + (t ? spendRung(t, opened, sayFn, spendSection, brought, paired, message, ref) : '');
   termEl.innerHTML = head + body;
   termEl.hidden = false;
   termEl.dataset.at = at;
@@ -656,10 +673,24 @@ async function enrichTerm(hex, { address = null, at = '' } = {}) {
   // was reached, it carries these bytes, and every reference on the page carries
   // the same ones. ⋯ never asked, ∅ found nothing, and ☒ found something else --
   // under none of those is there a passage to mark, so the rule stays off.
+  // The road back to the datum. Every term line on this leaf that writes the
+  // output's own datum is writing ONE value -- the bytes the locking script
+  // carries -- however many lines write it: rung one applies the term to it,
+  // and a spend title that says p³² is naming the very key the output
+  // published rather than anything the input brought. So the mark points at
+  // the passage that holds it, which is the lock's citation and never the
+  // spend's. Only where the chain agreed: under ⋯ ∅ ☒ there is no passage to
+  // send anyone to, and a road to a place the page could not confirm would be
+  // worse than the mark standing alone.
+  const refOf = (lock) => (verdict === 'agrees' && witness?.found
+    ? { href: citeHref(witness.txid, witness.out ?? undefined),
+        said: `the datum this term binds, written at ${cite(witness.height, lock, { out: witness.out })}`
+          + ' — the locking script carries it, and every line here that names it names that one' }
+    : null);
   const draw = (lock, spend, message) => drawTerm(hex, { address, at, say: sayFn,
     said: `<div class="term-attrib">${chainMark(verdict, witness, hex, lock)}</div>`,
     quoted: verdict === 'agrees', opened, spendSection: spend, brought,
-    paired: Boolean(witness?.paired), message });
+    paired: Boolean(witness?.paired), message, ref: refOf(lock) });
   draw(null, null, null);
   const [lock, spend, message] = await Promise.all([
     witness?.found ? sectionOfFetched(witness.txid) : null,
