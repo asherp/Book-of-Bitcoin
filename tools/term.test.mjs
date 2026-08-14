@@ -28,7 +28,8 @@ import { TERMS, termOfScript, addressable, reduce, spendHtml, pathTaken, supplie
          lockText, lockApplicationText, demandsOf, addressText, addressHtml,
          lockedText, lockedHtml, spendText,
          revealedOf, revealedText, revealedHtml,
-         titleText, titleHtml } from '../web/btc-term.js';
+         titleText, titleHtml,
+         commitmentOf, commitmentText, commitmentHtml } from '../web/btc-term.js';
 
 // One address of every form that has one, which is every row of the key's
 // Addresses group: the book's own Ross Ulbricht ledger, a P2SH, and the BIP173
@@ -857,4 +858,61 @@ test('the datum points at the passage that holds it; nothing else does', () => {
   const ms = termOfScript('52' + '21' + KEY + '21' + KEY + '21' + KEY + '53ae');
   assert.equal(ms.holes.length, 3);
   assert.ok(!linked(addressHtml(ms, { ref })), 'three arguments name no one passage');
+});
+
+test('the commitment says what to hash and against what, and declines the rest', async () => {
+  const { sha256 } = await import('../web/btc-sighash.js');
+  const { digestOf } = await import('../web/btc-ots.js');
+  const bytes = (h) => new Uint8Array((h.match(/../g) || []).map((b) => parseInt(b, 16)));
+  // The module says what the check IS; taking it is the caller's, since
+  // RIPEMD-160 is in no browser and SHA-256 is async, and btc-term.js stays the
+  // light synchronous module a page can draw a term with.
+  const take = async (c) => {
+    const once = await sha256(c.of);
+    return c.op === 0xa8 ? once : digestOf(bytes(once), 'ripemd160');
+  };
+  // BIP143's own vector: the key it prints, and the program built from it.
+  const KEY = '025476c2e83188368da1ff3e292e7acafcdb3566bb0ad253f62fc70f07aeee6357';
+  const H160 = '1d0f172a0ecb48aee1be1f2687d2963ae33f71a1';
+  const wpkh = termOfScript('0014' + H160);
+  const c = commitmentOf(wpkh, [SIG, KEY]);
+  assert.equal(commitmentText(c), '⌖ p ≡ h²⁰');
+  assert.equal(c.of, KEY, 'the key the spend brought, not the datum');
+  assert.equal(c.against, H160, 'against the datum the output published');
+  assert.equal(await take(c), H160, 'and the hash of one really is the other');
+  // …which is the whole point: a key that is not the committed one fails it.
+  assert.notEqual(await take(commitmentOf(wpkh, [SIG, KEY.slice(0, -2) + 'ff'])), H160);
+  // P2WSH commits with a single SHA-256 over the script the witness revealed.
+  const push = (h) => (h.length / 2).toString(16).padStart(2, '0') + h;
+  const ws = push(KEY) + 'ac';
+  const wsh = termOfScript('0020' + await sha256(ws));
+  const c2 = commitmentOf(wsh, [SIG, ws]);
+  assert.equal(commitmentText(c2), 'Σ w ≡ h³²');
+  assert.equal(await take(c2), c2.against);
+  // P2SH's is the redeem script from the scriptSig, hashed the legacy way.
+  const redeem = '51' + push(KEY) + '51ae';
+  const h = await digestOf(bytes(await sha256(redeem)), 'ripemd160');
+  const sh = termOfScript('a914' + h + '87');
+  const c3 = commitmentOf(sh, ['', SIG, redeem], { scriptsig: '00' + push(SIG) + push(redeem) });
+  assert.equal(commitmentText(c3), '⌖ r ≡ h²⁰');
+  assert.equal(await take(c3), c3.against);
+  // What is declined, and why each is not a failure to try. A key published
+  // outright commits to nothing -- there is no preimage anyone withheld.
+  const tr = termOfScript(addressScriptHex(TR));
+  assert.equal(commitmentOf(tr, [SCHNORR]), null, 'taproot’s key path hid nothing');
+  assert.equal(commitmentOf(termOfScript(reduce(TERMS.p2pk, '04' + 'ab'.repeat(64))), [SIG]), null);
+  // …and taproot's script path hid a great deal, but settling it is elliptic
+  // curve arithmetic and not a digest, so it is declined rather than guessed.
+  assert.equal(commitmentOf(tr, [SIG, push(KEY) + 'ac', 'c0' + 'ab'.repeat(32)]), null,
+    'a tweak is not a hash');
+  // Nothing brought is nothing to check.
+  assert.equal(commitmentOf(wpkh, []), null);
+  // The two renderings never drift, as everywhere else in this module.
+  const strip = (html) => html.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+  assert.equal(strip(commitmentHtml(c)), commitmentText(c));
+  // …and the datum takes the road to the passage that holds it, exactly as it
+  // does on every other line that names it: the h²⁰ here IS the lock's.
+  const ref = { href: './bitcoin-book.html?ref=v4b78c160s1250o0', said: 'written at IV β78 ■160 §1250.0' };
+  assert.match(commitmentHtml(c, { ref }), /<a class="term-ref"/);
+  assert.ok(!/<a /.test(commitmentHtml(c)), 'and none where the chain named no passage');
 });
