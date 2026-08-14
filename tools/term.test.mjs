@@ -821,3 +821,40 @@ test('the spend quotation is titled by what the chain revealed', () => {
   assert.equal(revealedOf(sh, ['', SIG, unreadable], bad), unreadable,
     'the bytes themselves are still named');
 });
+
+test('the datum points at the passage that holds it; nothing else does', () => {
+  const strip = (html) => html.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+  const linked = (html) => /<a class="term-ref"/.test(html);
+  const ref = { href: './bitcoin-book.html?ref=v4b78c160s1250o0',
+    said: 'written at IV β78 ■160 §1250.0' };
+  const tr = termOfScript(addressScriptHex(TR));
+  // A term line that writes the output's datum is naming ONE value however
+  // many lines write it -- the bytes the locking script carries -- so the mark
+  // carries a road to the passage that holds it.
+  assert.ok(linked(addressHtml(tr, { ref })), 'the address rung’s argument');
+  const key = revealedHtml(tr, [SCHNORR], { msg: 'w', ref });
+  assert.ok(linked(key[0]), 'and a spend title naming the key the OUTPUT published');
+  // …which is the case the road exists for: p³² is bound a section above, in a
+  // different transaction, while every other name on that line is something
+  // this input brought and the passage below quotes. So a keyhash reveal, whose
+  // p came from the spend itself, gets none.
+  const wpkh = termOfScript('00142b0a02e9917ef97e5b441b566fe671dcdf232dde');
+  const brought = revealedHtml(wpkh, [SIG, KEY], { msg: 'w', ref });
+  assert.equal(strip(brought[0]), 'λs p. ∇ s p ( ⌘ w )');
+  assert.ok(!linked(brought[0]), 'a value the spend brought needs no road to another passage');
+  // The mark is never replaced by the reference: a citation names an output,
+  // which is the whole script -- the term's own reduced form -- so writing it
+  // where the argument stands would apply the term to its own result, and
+  // would throw away which datum this is and how many bytes of it.
+  assert.equal(strip(addressHtml(tr, { ref })), addressText(tr));
+  assert.match(addressHtml(tr, { ref }), /term-ref[^>]*>.*?class="dt".*?class="op op-push op-count"/);
+  // And no road where the chain did not answer: under ⋯ ∅ ☒ there is no passage
+  // to send anyone to, and the mark stands alone as it does before any fetch.
+  assert.ok(!linked(addressHtml(tr)), 'unasked, the mark stands bare');
+  assert.ok(!linked(revealedHtml(tr, [SCHNORR], { msg: 'w' })[0]));
+  // A term with more than one hole carries no address and no single datum, so
+  // no hole is the one the chain cited: none of them takes the road.
+  const ms = termOfScript('52' + '21' + KEY + '21' + KEY + '21' + KEY + '53ae');
+  assert.equal(ms.holes.length, 3);
+  assert.ok(!linked(addressHtml(ms, { ref })), 'three arguments name no one passage');
+});

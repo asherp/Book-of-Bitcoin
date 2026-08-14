@@ -532,8 +532,8 @@ const opMark = (tok) => (tok === TWEAK
   ? `<span class="op" title="${escapeHtml(TWEAK_SAID)}">${escapeHtml(TWEAK)}</span>`
   : op(tok));
 
-const demandHtml = (t, alt, msg) => alt.demand.map((tok) => {
-  if (tok === D) return dt(t.holes[0]) + count(t.holes[0]);
+const demandHtml = (t, alt, msg, ref = null) => alt.demand.map((tok) => {
+  if (tok === D) return datumMark(t.holes[0], ref);
   if (tok === MSG) return msgMark(msg);
   if (tok === RUN) return `${lam('(')} ${awaited(alt.runs)} ${lam(')')}`;
   if (tok === AND) return andMark();
@@ -546,9 +546,9 @@ const demandHtml = (t, alt, msg) => alt.demand.map((tok) => {
 // where an address keeps its payload: after the term, behind the mark that
 // gives its length. Withheld, the datum stays behind that mark -- the line is
 // still the right shape, it simply cannot be read back.
-export const addressHtml = (t, { prose = '' } = {}) =>
+export const addressHtml = (t, { prose = '', ref = null } = {}) =>
   `${lam('(λ')}${t.holes.map(dt).join(' ')}${lam('.')} ${bodyHtml(t, false)}${lam(')')} `
-  + t.holes.map((h, i) => dt(h) + count(h)
+  + t.holes.map((h, i) => datumMark(h, i === 0 && t.holes.length === 1 ? ref : null)
     + (prose && i === 0 && t.holes.length === 1 ? ` ${prose}` : '')).join(' ');
 
 // The second rung as marks: the binders, and then what they have to make true.
@@ -748,10 +748,15 @@ export const revealedText = (t, items, opts = {}) => revealed(t, items, opts, {
     + `${demandText(t, { ...alt, demand: alt.shown }, opts.msg ?? UNSAID)}`,
 });
 
+// `ref` reaches the datum and nothing else, which is the distinction the token
+// list already draws: D is the value the OUTPUT carries, and every other name
+// on the line is something this spend brought and the passage below quotes. So
+// the one mark that refers to another passage is the one that gets a road to
+// it, and the marks a reader can see the bytes of right here do not.
 export const revealedHtml = (t, items, opts = {}) => revealed(t, items, opts, {
   title: (tr) => titleHtml(tr),
   shown: (alt) => `${lam('λ')}${alt.brings.map(awaited).join(' ')}${lam('.')} `
-    + `${demandHtml(t, { ...alt, demand: alt.shown }, opts.msg ?? null)}`,
+    + `${demandHtml(t, { ...alt, demand: alt.shown }, opts.msg ?? null, opts.ref ?? null)}`,
 });
 
 // ─── the pure form ───────────────────────────────────────────────────────
@@ -878,6 +883,26 @@ const lam = (s) => `<span class="lam">${escapeHtml(s)}</span>`;
 const op = (code) => `<span class="op" title="${escapeHtml(OPCODE_NAMES[code] || 'OP_UNKNOWN')}">${escapeHtml(glyph(code))}</span>`;
 const dt = (hole) => `<span class="dt" title="${escapeHtml(hole.title)}">${escapeHtml(hole.name)}</span>`;
 const count = (hole) => `<span class="op op-push op-count" title="OP_PUSHBYTES_${hole.bytes} — push the next ${hole.bytes} bytes">${toSuperscript(hole.bytes)}</span>`;
+
+// The datum with its count, and -- where a caller has found the passage that
+// holds it -- pointing at it. The same move ⌘ makes: a mark stops being a
+// promise about bytes somewhere and becomes bytes a reader can go and read.
+//
+// The mark is not REPLACED by the reference, and cannot be. A citation names
+// an output, which is the whole script -- the reduced form, `⓪ h²⁰` -- so
+// writing it where the argument stands would say the term was applied to its
+// own result. It would also throw away the two things the mark is for: which
+// kind of datum this is, and how many bytes of it. So the reference goes
+// behind the mark, as a link and a hover, and the attribution below the
+// passage stays the one place it is set in type.
+//
+// `ref` is { href, said }, built by whoever asked the chain -- this module
+// does not know what a citation is, exactly as it does not know what prose is.
+const datumMark = (hole, ref) => {
+  const mark = dt(hole) + count(hole);
+  return ref ? `<a class="term-ref" href="${escapeHtml(ref.href)}" `
+    + `title="${escapeHtml(ref.said)}">${mark}</a>` : mark;
+};
 
 const bodyHtml = (t, counted, prose) => {
   let next = 0;

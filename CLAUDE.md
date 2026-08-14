@@ -117,6 +117,18 @@ Where this lives today:
   forms (`TERMS`) are derived, not looked up.
 - Rung one: the address as a partial application — `addressText` /
   `addressHtml`, `(λp. ① p) p³²`.
+- **The datum is one value across every line that names it.** A spend title
+  writing `p³²` is naming the key the *output* published, bound a section
+  above in a different transaction — not anything the input brought. So that
+  mark carries a road to the passage holding it (`datumMark` / the `ref`
+  option, built by the page from the lock's citation), the way `⌘` carries its
+  footnote. Only the `D` token gets it: every other name on a spend line is a
+  value the input supplied and the passage directly below quotes. The mark is
+  never *replaced* by the reference — a citation names an output, which is the
+  term's own reduced form, so writing it where the argument stands would apply
+  the term to its own result, and would throw away which datum it is and how
+  many bytes. No road under ⋯ ∅ ☒: there is no confirmed passage to send
+  anyone to.
 - Rung two: what the lock still demands, one line per way of opening it —
   `demandsOf` / `lockedHtml`, a *predicate* a reader can check, not a script.
 - Rung three: the spend, rung two applied to what the input actually carried —
