@@ -42,7 +42,7 @@ import { dataLetter } from './btc-address-form.js';
 const SUPERSCRIPT_N = 'ⁿ';
 
 const OP_0 = 0x00, OP_1 = 0x51;
-const OP_DUP = 0x76, OP_HASH160 = 0xa9;
+const OP_DUP = 0x76, OP_HASH160 = 0xa9, OP_SHA256 = 0xa8, OP_HASH256 = 0xaa;
 const OP_EQUAL = 0x87, OP_EQUALVERIFY = 0x88, OP_CHECKSIG = 0xac;
 
 // The terms, exactly as the key's terms table draws them: the binder's letter,
@@ -221,12 +221,21 @@ export function reduce(term, args) {
 // arguments run out -- everything below that is a spend, and a spend is a
 // transaction, not an output.
 //
-// The rung below the wire is spendText: the arguments applied, written the way
-// a stack machine writes an application, which is the arguments' pushes ahead
-// of the function's code. ⧺ is that application -- OP_CAT's mark, disabled and
-// chosen anyway, since concatenating the two byte strings is exactly what
-// applying a function is on a concatenative machine. It is not drawn on the
-// leaf: the leaf is showing an address, and no spend has happened.
+// The rung below the wire is spendText, and it is rung two applied: the same
+// abstraction in parentheses with what a spend brings written after it, which
+// is how rung one already writes an application and how this book writes every
+// other one. It is not drawn on the address leaf -- the leaf is showing an
+// address, and no spend has happened.
+//
+// The joint used to be a mark of its own. ⧺ stood there, OP_CAT's glyph, on the
+// reading that concatenating two byte strings is what applying a function is on
+// a concatenative machine -- the arguments' pushes ahead of the function's code,
+// which is the order the wire really uses. True about the machine, and wrong
+// about the notation: an opcode was doing a calculus's work, on a line already
+// written in the calculus, beside parentheses that meant application two rungs
+// up. So the parentheses take it back. The wire's order is not lost by this and
+// never lived in the joint anyway -- it is in the binder list, where λ… r. says
+// which push comes first, and in the quoted values a spend rung sets beneath.
 //
 // What all of this replaced was a demand written as a predicate, which needed a
 // conjunction between its clauses that no β could ever have removed. It printed
@@ -237,15 +246,26 @@ export function reduce(term, args) {
 // Two things fall out that the committed-datum reading hides. P2PKH and P2WPKH
 // ask for the same key material in the same order -- segwit moved where a
 // witness rides, not what is asked for -- while the locks it rides against are
-// not the same script at all. And the wrapped forms cannot say what they want,
-// which the structure now states rather than gestures at: a lock ending in
-// ( r ) hands back a function, and how many arguments THAT one takes is a
-// property of a script the address has never seen. Not a datum hidden behind a
-// hash, but a REQUIREMENT hidden behind one -- and an arity is exactly the
-// thing an unapplied function is already unable to promise. An earlier draft
-// wrote a `…` binder for this. It was a hand-wave where the term was already
-// telling the truth, and it cost taproot's script path an invented `s`, as if
-// every leaf wanted a signature.
+// not the same script at all. And the wrapped forms cannot say what they want:
+// a lock ending in ( r ) hands back a function, and how many arguments THAT one
+// takes is a property of a script the address has never seen. Not a datum
+// hidden behind a hash, but a REQUIREMENT hidden behind one -- and an arity is
+// exactly the thing an unapplied function is already unable to promise.
+//
+// What the wrapped forms DO say is that there are some. A revealed script is
+// run the way every other script is run -- the machine is the same machine, and
+// a tapscript leaf is not a special case of it: its arguments go on the stack
+// beneath it and it consumes them in order. So the term writes … ahead of the
+// binders it can name, and the reader is told an unknown number of arguments
+// belongs there rather than left to infer it from the ( ) at the far end.
+//
+// An earlier draft dropped that mark entirely, on the ground that a binder
+// names one value a spend supplies and … names no value at all. That much
+// holds, and is why … stays OUT of `brings` and is written from `runs`: it is
+// not a binder, it is the notation admitting the binders it cannot write. What
+// the draft was really right about was the invented `s` it carried alongside --
+// taproot's script path bound one, as if every leaf wanted a signature, which no
+// address can know. That stays gone. `brings` is letters, one value apiece.
 //
 // A reading, not an encoding. These are written down per term, because deriving
 // them from arbitrary bytes is symbolic execution and undecidable in general;
@@ -253,31 +273,119 @@ export function reduce(term, args) {
 // function of, in the order the spender pushes it -- a wrapped form's script
 // rides on top, so it comes last -- and `runs` is what the lock then hands back
 // to be run, the one step ( ) exists for and the only thing on a line that is
-// neither a spend nor a lock.
+// neither a spend nor a lock. `runs` is also what puts the … there, since a lock
+// that hands back a script is exactly a lock whose arity it cannot state: the
+// two can never disagree because there is only one field.
+//
+// `demand` is what a spend has to make true, which is a different question
+// from what the output holds and the only one a reader can actually check. It
+// is a PREDICATE, not a script: clauses joined by a conjunction, over the
+// values a spend brings and the datum the output carries.
+//
+//   P2PKH · P2WPKH  ( ⌖ p ≡ h²⁰ ) ∧ ∇ s p ( ⌘ … )
+//   P2SH            ( ⌖ r ≡ h²⁰ ) ∧ ( r )
+//   P2WSH           ( Σ w ≡ h³² ) ∧ ( w )
+//   P2TR key        ∇ s p³² ( ⌘ … )
+//   P2TR script     ( ⋔ t c ≡ p³² ) ∧ ( t )
+//
+// This is a return, and the thing returned to was thrown out for a reason
+// worth restating. A demand written as a predicate once stood on rung two, and
+// its conjunction printed as ∧ -- OP_BOOLAND, a live opcode that pops two
+// numbers off a stack -- on a line that claimed to reduce to a script. The
+// claim was the fault, not the mark: nothing said the line was unreducible, so
+// a reader had every reason to read ∧ as an instruction, and it simply was not
+// one.
+//
+// What changed is that the claim is gone. Rung two no longer says it reduces to
+// anything; the script it used to spell is set immediately below it, quoted,
+// under a citation. So the line is free to say what only a predicate can, which
+// is the whole point of writing one: a reader with the page in front of them
+// can check the math. ⌖ p ≡ h is a hash they can take. ∇ s p ( ⌘ … ) is a
+// signature they can verify, once ⌘'s message is a thing they can see -- which
+// is what the footnote a spent output points them to is for.
+//
+// The ∧ stays quiet, in the apparatus colour, and that is what keeps it honest:
+// on this leaf gold means a byte the chain holds or an operation being run, and
+// the conjunction is neither. A reader who wonders is told in its hover.
+//
+// `runs` still carries the ellipsis, and now also a clause of its own -- ( r )
+// says the revealed script's own demand stands here, uncounted and unread,
+// which is exactly as much as an output that committed to a hash can say.
+const D = Symbol('datum');       // the datum the output carries, with its count
+const MSG = Symbol('message');   // ( ⌘ … ), the message a signature is over
+const RUN = Symbol('runs');      // ( r ), whatever the revealed script demands
+const AND = Symbol('and');       // ∧, the conjunction -- notation, not an opcode
+const OPEN = Symbol('('), CLOSE = Symbol(')');
+const TWEAK = '⋔';               // the taptweak, which no opcode spells
+
+const SIGNED = (key) => [OP_CHECKSIG, 's', key, MSG];
+const HASHED = (op, name) => [OPEN, op, name, OP_EQUALVERIFY, D, CLOSE, AND];
+
 const DEMANDS = {
-  p2pk:   [{ brings: 's' }],
-  p2pkh:  [{ brings: 's p' }],
-  p2sh:   [{ brings: 'r', runs: 'r' }],
-  p2wpkh: [{ brings: 's p' }],
-  p2wsh:  [{ brings: 'w', runs: 'w' }],
+  p2pk:   [{ brings: 's', demand: SIGNED(D) }],
+  p2pkh:  [{ brings: 's p', demand: [...HASHED(OP_HASH160, 'p'), ...SIGNED('p')] }],
+  p2sh:   [{ brings: 'r', runs: 'r', demand: [...HASHED(OP_HASH160, 'r'), RUN] }],
+  p2wpkh: [{ brings: 's p', demand: [...HASHED(OP_HASH160, 'p'), ...SIGNED('p')] }],
+  p2wsh:  [{ brings: 'w', runs: 'w', demand: [...HASHED(OP_SHA256, 'w'), RUN] }],
   // Taproot asks for one of two things, which is the whole of what a taptree
-  // buys: a signature under the output key, or a leaf that proves to it.
-  p2tr:   [{ brings: 's' },
-           { brings: 't c', runs: 't' }],
+  // buys: a signature under the output key, or a leaf that proves to it and is
+  // then run like any other script -- the proof being the control block, which
+  // tweaks the leaf back to the key the output committed to.
+  p2tr:   [{ brings: 's', demand: SIGNED(D) },
+           { brings: 't c', runs: 't',
+             demand: [OPEN, TWEAK, 't', 'c', OP_EQUALVERIFY, D, CLOSE, AND, RUN] }],
 };
 
 // What the lock, once written, is still a function of -- or null for a term
-// with nothing written down. Each alternative is { brings: [names], runs }, and
-// a term with two of them is an output with two ways to open it.
+// with nothing written down. Each alternative is { brings: [names], runs,
+// demand }, and a term with two of them is an output with two ways to open it.
 export function demandsOf(t) {
   const alts = DEMANDS[t.id];
   if (!alts) return null;
-  return alts.map((alt) => ({ brings: alt.brings.split(' '), runs: alt.runs ?? null }));
+  return alts.map((alt) => ({ brings: alt.brings.split(' '), runs: alt.runs ?? null,
+    demand: alt.demand ?? null,
+    // Every opcode this alternative's demand writes, named so a caller can hold
+    // the line to its own vocabulary rather than to the whole alphabet. ⌘ is in
+    // it wherever a message is: the digest a signature is over is a hash being
+    // taken, and the mark for it is the one the alphabet gives OP_HASH256.
+    marks: (alt.demand ?? []).flatMap((tok) => (typeof tok === 'number' ? [tok]
+      : tok === MSG ? [OP_HASH256] : [])) }));
 }
 
-// The joint, taken from the alphabet rather than written out, so the mark on
-// the page is the one the book gives 0x7e and cannot drift from it.
-const CAT = OPCODE_SYMBOLS[0x7e];
+// The mark for the binders a wrapped form cannot write: however many
+// arguments the script it hands back will want, pushed beneath it. It leads,
+// because that is where they go -- the spender pushes them first and the
+// revealed script rides on top.
+const UNDER = '…';
+const UNDER_SAID = 'however many arguments the revealed script wants, pushed beneath it — '
+  + 'a script is a script, and this one runs on the same stack as any other. How many '
+  + 'is a property of bytes the output committed to only by their hash, so the term '
+  + 'writes that they are there and declines to count them';
+
+// The binders of one alternative, in the order the spender pushes them. Read
+// off `runs`, which is what makes the … and the ( ) one claim rather than two.
+const binderText = (alt) => (alt.runs ? `${UNDER} ` : '') + alt.brings.join(' ');
+
+// The demand, written out. One walk of the clause list serves both renderings,
+// so the marks on the page and the marks in a test can never be two different
+// readings of one table.
+//
+// `msg` is what the signature is over: … where nothing names it, and the letter
+// of a footnote where the page has fetched the preimage and can set the bytes a
+// reader would hash. That is the whole reason the message is a mark and not a
+// word -- a demand nobody can evaluate is a demand nobody can check.
+const datumText = (t) => t.holes[0].name + toSuperscript(t.holes[0].bytes);
+const UNSAID = '…';
+
+const demandText = (t, alt, msg = UNSAID) => alt.demand.map((tok) => {
+  if (tok === D) return datumText(t);
+  if (tok === MSG) return `( ⌘ ${msg} )`;
+  if (tok === RUN) return `( ${alt.runs} )`;
+  if (tok === AND) return '∧';
+  if (tok === OPEN) return '(';
+  if (tok === CLOSE) return ')';
+  return typeof tok === 'number' ? glyph(tok) : tok;
+}).join(' ').replace(/\( /g, '( ').replace(/ \)/g, ' )');
 
 // ─── rung one: the address ───────────────────────────────────────────────
 //
@@ -292,24 +400,34 @@ export const addressText = (t) =>
 
 // ─── rung two: what that hands back ──────────────────────────────────────
 //
-// Not a fragment: a λ of its own, over what a spend must bring. One line per
-// alternative, since the lock is one script however many ways there are to
-// satisfy it.
-export const lockedText = (t) => {
+// Not a fragment: a λ of its own, over what a spend must bring -- and what it
+// wants of them, which is a predicate a reader can evaluate rather than a
+// script they would have to run. One line per alternative, since the lock is
+// one script however many ways there are to satisfy it.
+//
+// The script itself is not on this line and does not need to be: it is set
+// immediately below, quoted, under a citation of its own. That is what frees
+// the line to state the demand instead of restating the bytes.
+export const lockedText = (t, msg) => {
   const alts = demandsOf(t);
-  return alts ? alts.map((alt) => `λ${alt.brings.join(' ')}. ${bodyText(t, true)}`
-    + (alt.runs ? ` ( ${alt.runs} )` : '')) : null;
+  return alts ? alts.map((alt) => `λ${binderText(alt)}. ${demandText(t, alt, msg)}`) : null;
 };
 
 // ─── rung three: the spend ───────────────────────────────────────────────
 //
-// The arguments applied, in the order a stack machine writes an application:
-// the pushes ahead of the code. Not drawn on the leaf -- an address has no
-// spend yet -- but it is the rung the two above are descending toward.
-export const spendText = (t) => {
+// Rung two applied: the abstraction in parentheses, and what a spend brings
+// written after it. Exactly the form rung one takes, one rung down -- there the
+// parenthesized term takes the address's own datum, here it takes the values an
+// input carried. Not drawn on the address leaf, since an address has no spend
+// yet, but it is the rung the two above are descending toward.
+//
+// The arguments stand as their names and not as values: the counts and the
+// bytes arrive from the chain, and this module is the one that cannot ask.
+// Rung one writes h²⁰ there because an address really does hold its datum.
+export const spendText = (t, msg) => {
   const alts = demandsOf(t);
-  return alts ? alts.map((alt) => `${alt.brings.join(' ')} ${CAT} ${bodyText(t, true)}`
-    + (alt.runs ? ` ( ${alt.runs} )` : '')) : null;
+  return alts ? alts.map((alt) =>
+    `(λ${binderText(alt)}. ${demandText(t, alt, msg)}) ${binderText(alt)}`) : null;
 };
 
 // ─── the same, as marks ──────────────────────────────────────────────────
@@ -320,6 +438,58 @@ export const spendText = (t) => {
 // half of a line is a fact and which is a demand.
 const awaited = (name) => `<span class="aw">${escapeHtml(name)}</span>`;
 
+// The … is awaited too -- a spend really does have to bring those -- so it takes
+// the same ink as the names beside it rather than the calculus's quiet. It is
+// the one mark on the line that names no single value, so what it stands for is
+// in its hover, which is where this book keeps a claim it cannot set in type.
+const under = () => `<span class="aw" title="${escapeHtml(UNDER_SAID)}">${UNDER}</span>`;
+const binderMarks = (alt) => (alt.runs ? `${under()} ` : '') + alt.brings.map(awaited).join(' ');
+
+// The demand as marks. The colours carry the reading, and they are the ones the
+// whole leaf is styled by: gold for what the chain holds and for an operation
+// that really runs, plain ink for what a spend has still to bring, and the
+// quiet apparatus colour for the notation's own marks.
+//
+// The conjunction is the one that has to be got right. ∧ is OP_BOOLAND's glyph,
+// and this book threw it off this very rung once for exactly that: a live
+// opcode standing in for a connective, on a line that claimed to be a script.
+// The claim is gone now -- the script is quoted below, and this line states a
+// predicate -- so the mark can come back, and what keeps it honest is the ink.
+// It takes the apparatus colour, never the gold, so on a leaf where gold means
+// "the chain wrote this or this runs" the conjunction is visibly neither. A
+// reader who wonders is told so in its hover.
+const AND_SAID = 'and — the notation’s conjunction, joining two things a spend must make true. '
+  + 'Not OP_BOOLAND, which shares its glyph: nothing on this line is a script, and the marks '
+  + 'that would be bytes are set in gold, which this one never takes';
+const andMark = () => `<span class="lam" title="${escapeHtml(AND_SAID)}">∧</span>`;
+
+const MSG_SAID = 'the message the signature is over — the transaction serialized as the '
+  + 'signature’s own sighash flag says, hashed twice. Everything about a spend that is signed '
+  + 'is in here, and everything that is not is malleable';
+const UNSAID_SAID = 'not named — no spend has been reached, so there is no serialization to set '
+  + 'and nothing here a reader could hash for themselves';
+const msgMark = (msg) => `${lam('(')} <span class="op" title="${escapeHtml(MSG_SAID)}">`
+  + `${escapeHtml(glyph(0xaa))}</span> ${msg || `<span class="aw" title="${escapeHtml(UNSAID_SAID)}">${UNSAID}</span>`} ${lam(')')}`;
+
+// The tweak has no opcode behind it -- no script performs it, consensus does --
+// so it is named rather than glossed from the alphabet.
+const TWEAK_SAID = 'the taptweak — the leaf hashed up its branch with the control block’s '
+  + 'path and added to the internal key. No opcode does this; consensus does it before any '
+  + 'leaf is allowed to run';
+const opMark = (tok) => (tok === TWEAK
+  ? `<span class="op" title="${escapeHtml(TWEAK_SAID)}">${escapeHtml(TWEAK)}</span>`
+  : op(tok));
+
+const demandHtml = (t, alt, msg) => alt.demand.map((tok) => {
+  if (tok === D) return dt(t.holes[0]) + count(t.holes[0]);
+  if (tok === MSG) return msgMark(msg);
+  if (tok === RUN) return `${lam('(')} ${awaited(alt.runs)} ${lam(')')}`;
+  if (tok === AND) return andMark();
+  if (tok === OPEN) return lam('(');
+  if (tok === CLOSE) return lam(')');
+  return typeof tok === 'number' || tok === TWEAK ? opMark(tok) : awaited(tok);
+}).join(' ');
+
 // `prose` is the argument's bytes said in the book's own tongue, and it lands
 // where an address keeps its payload: after the term, behind the mark that
 // gives its length. Withheld, the datum stays behind that mark -- the line is
@@ -329,19 +499,15 @@ export const addressHtml = (t, { prose = '' } = {}) =>
   + t.holes.map((h, i) => dt(h) + count(h)
     + (prose && i === 0 && t.holes.length === 1 ? ` ${prose}` : '')).join(' ');
 
-// The second rung, split so a caller can set the script between the marks: the
-// leaf's lock line is also the copyable sigla address, and a λ inside that
-// span would go into the clipboard and stop the search box reading it back.
-// So the binders come out as a prefix and the eval step as a suffix, and what
-// goes between them is the caller's -- spelled with its prose, or drawn from
-// the term alone when there is no engine to say it.
-export function lockedMarks(t) {
+// The second rung as marks: the binders, and then what they have to make true.
+// Nothing of the caller's goes between them any more -- the line used to be
+// split so a page could set the spelled script in the middle, and the script
+// now has a quoted line of its own below.
+export function lockedHtml(t, msg) {
   const alts = demandsOf(t);
   if (!alts) return null;
-  return alts.map((alt) => ({
-    prefix: `${lam('λ')}${alt.brings.map(awaited).join(' ')}${lam('.')}`,
-    suffix: alt.runs ? ` ${lam('(')} ${awaited(alt.runs)} ${lam(')')}` : '',
-  }));
+  return alts.map((alt) =>
+    `${lam('λ')}${binderMarks(alt)}${lam('.')} ${demandHtml(t, alt, msg)}`);
 }
 
 // ─── which path a spend took ─────────────────────────────────────────────
@@ -396,31 +562,36 @@ export function suppliedNames(alt, items) {
 // because that is the only way anyone can know it: s and p are not in the
 // address and no reduction reaches them, so the shape is all this page can
 // write and the citation beside it is what supplies the rest.
-export function spendMarks(t) {
+//
+// Rung two in parentheses with its arguments after it -- and, where the page
+// has fetched the spend, with ⌘'s message named: the letter of the footnote
+// holding the bytes a reader would hash to check the signature themselves.
+export function spendHtml(t, msg) {
   const alts = demandsOf(t);
   if (!alts) return null;
-  return alts.map((alt) => ({
-    prefix: `${alt.brings.map(awaited).join(' ')} ${cat()}`,
-    suffix: alt.runs ? ` ${lam('(')} ${awaited(alt.runs)} ${lam(')')}` : '',
-  }));
+  return alts.map((alt) => `${lam('(λ')}${binderMarks(alt)}${lam('.')} `
+    + `${demandHtml(t, alt, msg)}${lam(')')} ${binderMarks(alt)}`);
 }
 
 // …and with the values in hand, the same rung written out: each one a mark, its
 // byte count and — where an engine has said it — its prose, exactly as a push
 // is set everywhere else in the book. This is the one line on the leaf whose
-// content came from the chain rather than from the bytes in the box.
-// The joint takes the quiet colour, not the gold: it is the step between the
-// two scripts and not a byte either of them holds -- which is also why it can
-// be a disabled opcode's mark without the line claiming a disabled opcode.
-const cat = () => `<span class="lam" title="${escapeHtml(OPCODE_NAMES[0x7e])} — the arguments `
-  + `applied, which a stack machine writes as their pushes ahead of the code">${escapeHtml(CAT)}</span>`;
-
-// …and with the values in hand, the same rung written out. `brought` is the
-// left half pre-rendered by whoever has a better renderer -- the reader's own
-// renderWitness, which reveals a witness script as opcodes, strips a DER
-// signature to its compact form before saying it, and knows an annex from an
-// argument. Given none, the values are named from the term instead and set as
-// marks with their counts, which is all this module can do without reaching
+// content came from the chain rather than from the bytes in the box, and it is
+// nothing else: the lock the arguments went into is the OUTPUT's bytes, set one
+// rung up under a citation of its own. Writing them here put two transactions'
+// worth of marks on a line attributed to one input, which is a quotation that
+// quotes more than it was given. So the line stops where the input stops, and
+// the application lives on spendMarks, which no citation covers.
+//
+// These values ARE the arguments spendMarks writes after its parentheses --
+// the same names, with the counts and the prose the chain supplies. Two lines,
+// one redex: the abstraction above, quoted values below.
+//
+// `brought` is the line pre-rendered by whoever has a better renderer -- the
+// reader's own renderWitness, which reveals a witness script as opcodes, strips
+// a DER signature to its compact form before saying it, and knows an annex from
+// an argument. Given none, the values are named from the term instead and set
+// as marks with their counts, which is all this module can do without reaching
 // for the engine.
 export function suppliedHtml(t, items, { say = null, brought = null } = {}) {
   const which = pathTaken(t, items);
@@ -429,8 +600,7 @@ export function suppliedHtml(t, items, { say = null, brought = null } = {}) {
   const names = suppliedNames(alt, items);
   // These take the gold. On the rungs above, a name in plain ink is something
   // no one has brought yet; here the chain has a record of it, cited on the
-  // line below, so it is as much a fact as the lock beside it. What separates
-  // them is the joint, not the colour -- they are two scripts, both written.
+  // line below, so it is as much a fact as the lock a rung above.
   const own = () => items.map((hex, i) => {
     const prose = say ? say(hex) || '' : '';
     return `<span class="dt" title="${escapeHtml(TITLES[names[i][0]] ?? 'data')}">`
@@ -438,28 +608,8 @@ export function suppliedHtml(t, items, { say = null, brought = null } = {}) {
       + `<span class="op op-push" title="a push of ${hex.length / 2} bytes">`
       + `${toSuperscript(hex.length / 2)}</span>${prose ? ` ${prose}` : ''}`;
   }).join(' ');
-  // Only the left half is quoted. The joint is apparatus, and the lock after it
-  // is the OUTPUT's bytes -- already set one rung up, under a citation of their
-  // own -- so they are echoed here to show what the arguments were applied to
-  // and marked as an echo, which is what keeps the attribution below this line
-  // covering what it actually attributes.
-  return {
-    which,
-    quoted: brought ?? own(),
-    echo: `${cat()} ${bodyHtml(t, true)}`
-      + (alt.runs ? ` ${lam('(')} <span class="dt">${escapeHtml(alt.runs)}</span> ${lam(')')}` : ''),
-    get html() { return `${this.quoted} <span class="echo">${this.echo}</span>`; },
-  };
+  return { which, html: brought ?? own() };
 }
-
-// The lock's own marks, with no prose and nothing copyable about them: what a
-// second alternative shows, since the datum has already been said once above.
-export const lockBodyHtml = (t) => bodyHtml(t, true);
-
-export const lockedHtml = (t) => {
-  const marks = lockedMarks(t);
-  return marks ? marks.map((m) => `${m.prefix} ${lockBodyHtml(t)}${m.suffix}`) : null;
-};
 
 // ─── the pure form ───────────────────────────────────────────────────────
 //
