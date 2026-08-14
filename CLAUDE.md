@@ -37,24 +37,37 @@ The lambda also serves as an auto-derived title for the passages the page
 quotes (wired up on the search page), and the two quotations take different
 lambdas — the same split as the committed/revealed modes below:
 
-- the quoted *locking script* is titled by the lambda derived from the address
-  alone — rung two's term, computable from the bytes in the box with nothing
-  fetched. That is all a lock's title needs: the address already determines
-  it, and the term lines standing above the quotation are that title.
-- the quoted *spend* is titled by the lambda representing the *revealed*
-  script — the term read off what the input disclosed (a redeem script, a
-  witness script, a tapscript leaf), which exists only once there is a spend
-  to quote. `revealedOf` / `revealedText` / `revealedHtml` (btc-term.js) read
-  it — by consensus's placement, never by shape: P2SH's from the scriptSig's
-  last push (where it stays even when the program it wraps moved its
-  arguments to the witness stack), the witness forms' from the stack position
-  `runs` names — and `spendRung` (bitcoin-search.html) draws it between the
-  application line and the quotation, rendered as the revealed script's own
-  demand where one is tabled and as its bytes' own application otherwise.
-  For keyhash/visible types the two titles coincide (the reveal is null and
-  no line is drawn); for script-hash forms the spend's title is where `( r )`
-  finally gets a term of its own. A reveal that does not tokenize titles
-  nothing — declining beats guessing, here as everywhere.
+- the *locking script* is titled by the anonymous lambda it binds, derived
+  from the bytes alone: `λh. ⓪ h` for a P2WPKH output. `titleText` /
+  `titleHtml` (btc-term.js) write it. Bare of everything a title does not
+  need — no `⟦ ⟧` (those claim the wire's own bytes, and the script itself
+  stands below), no application or parentheses (`(λh. ⓪ h) h²⁰` says what was
+  *done* to the term, which is rung one's business), and no count on the
+  binder, since every output of a shape shares its title. The demand rung is
+  deliberately *not* this: P2PKH and P2WPKH ask for the same key material, so
+  the demand does not distinguish what a name must distinguish.
+- the *spend* is titled by what the chain revealed, and there are two kinds of
+  reveal because an output can hide two kinds of thing.
+  `revealedText` / `revealedHtml` (btc-term.js) write both; `spendRung`
+  (bitcoin-search.html) draws the result between the application line and the
+  quotation.
+  - A *script-hash* form hid a **script**: the spend hands over its bytes, so
+    the title is that script's own title — the same anonymous lambda it would
+    carry anywhere else (a P2SH wrapping a witness program titles `λh. ⓪ h`).
+    Which bytes were revealed is read by consensus's placement, never by
+    shape: `revealedOf` takes P2SH's from the scriptSig's last push (where it
+    stays even when the program it wraps moved its arguments to the witness
+    stack), the witness forms' from the stack position `runs` names.
+  - A *keyhash* form hid a **value**, the key behind `⌖p`. There is no script
+    to read, so the title is the demand with its commitment discharged
+    (`shown` in `DEMANDS`): `λs p. ∇ s p ( ⌘ w )`. The hash clause is a
+    question already answered, the key stands bare because it came from the
+    spend rather than the output, and `⌘`'s footnote letter rides in where the
+    page has fetched the preimage.
+  - Forms that hid nothing (P2PK, taproot's key path) get no second title —
+    their key was in the output from the first, so the spend revealed only its
+    own signature and the lock's title still stands. A reveal that does not
+    tokenize titles nothing: declining beats guessing, here as everywhere.
 
 The same title stands in the reading, as an editorial decision: a paragraph is
 titled where anyone has named it (the reader's keep, else the curated shelf),
@@ -63,10 +76,15 @@ and the term is the title it has when nobody has. `termTitle` /
 already centered above each output's script. A filed name wins — a name says
 whose this is, the term only says what it is — and the term returns when the
 keep is removed. It is drawn at first paint from the bytes alone (no address,
-no engine, no network), and a shape with nothing tabled goes untitled. Because
-the reading did not have `.lam` / `.aw`, they are styled scoped to
-`.out-term`: those marks mean something on the search leaf, and a chapter is
-not that leaf.
+no engine, no network), so anything that binds a term is titled whether or not
+the book has tabled what opens it (a data output reads `λd. ¶ d`); what goes
+untitled is what binds nothing. Because the reading did not have `.lam`, it is
+styled scoped to `.out-term`: that mark means something on the search leaf,
+where a whole descent is written in it, and a chapter is not that leaf.
+
+The search page's rungs are not titles and keep their own job: rung two states
+the demand (every way in, one line each), rung three the application. The
+titles are the bare lambdas above the two quotations.
 
 Where this lives today:
 

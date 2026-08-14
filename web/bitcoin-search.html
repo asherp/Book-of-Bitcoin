@@ -485,10 +485,15 @@ const spendRung = (t, opened, sayFn, section = null, brought = null, paired = fa
   // reader's derivation from bytes quoted BELOW it, not a passage of its own.
   // Where nothing was hidden -- a keyhash spend, taproot's key path -- there
   // is no line, and the title is the lock's, already standing a rung up.
-  const said = 'the spend quotation’s title — the script this input revealed, read as the '
-    + 'term it is. The lock above could only write a hole for it; this is what the hole '
-    + 'held, derived from the bytes quoted below rather than quoted from anywhere';
-  const reveal = (revealedHtml(t, opened.args ?? [], { scriptsig: opened.scriptsig }) ?? [])
+  const said = 'the spend quotation’s title — what this input revealed, read as the term '
+    + 'it is: the script itself where the output committed to one, and otherwise the '
+    + 'demand with its commitment discharged, since the value it hid is now on the page. '
+    + 'Derived from the bytes quoted below rather than quoted from anywhere';
+  // ⌘'s letter rides into the title too. A keyhash reveal IS a signature over a
+  // message, and a title that named it … while the footnote below held the very
+  // bytes would be declining to say something the page had already fetched.
+  const reveal = (revealedHtml(t, opened.args ?? [],
+    { scriptsig: opened.scriptsig, msg }) ?? [])
     .map((line) => `<div class="term-line term-reveal" title="${escapeHtml(said)}">${line}</div>`)
     .join('');
   // The citation lands on the INPUT, not merely the transaction that holds it.
