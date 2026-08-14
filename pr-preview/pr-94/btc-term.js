@@ -612,6 +612,71 @@ export function suppliedHtml(t, items, { say = null, brought = null } = {}) {
   return { which, html: brought ?? own() };
 }
 
+// ─── the revealed script, and the title it gives a quotation ─────────────
+//
+// A wrapped form's lock ends in ( r ): a requirement hidden behind a hash,
+// which the address could name and never write. The spend is where it stops
+// being hidden -- the input disclosed the script itself -- and the spend
+// quotation's title is that script read as the term it is (see CLAUDE.md,
+// "Search page"). The lock quotation needs no counterpart: its title is the
+// demand rung two derives from the address alone, already standing above it,
+// and for a keyhash or visible type the two coincide because nothing was ever
+// hidden to reveal.
+//
+// Which bytes were revealed is read the way the arguments are: by consensus's
+// own placement, never by shape. P2WSH's script is the last witness item and a
+// tapscript leaf rides just under its control block -- the binder named by
+// `runs`, aligned to the end of the list exactly as suppliedNames aligns it.
+// P2SH is the one form whose script does not ride with the arguments counted:
+// its redeem script is the scriptSig's last push, and when the program it
+// wraps is a witness program the arguments move to the stack while the redeem
+// script stays behind in the scriptSig -- so it is read from the scriptSig or
+// not at all, and a wrapped spend's witness items are never mistaken for it.
+//
+// No hash is re-taken here, and none is needed: the reveal is only ever read
+// off a spend the chain confirmed, cited on the line below it, and consensus
+// checked the script against the committed hash before that spend was allowed
+// to exist. Witness-and-check -- the citation is the verification.
+export function revealedOf(t, items, { scriptsig = null } = {}) {
+  const which = pathTaken(t, items);
+  if (which === null) return null;
+  const alt = demandsOf(t)[which];
+  if (!alt.runs) return null;                        // nothing was hidden: no reveal
+  if (t.id === 'p2sh') {
+    if (!scriptsig) return null;
+    try {
+      const pushes = tokenizeScript(scriptsig).filter((tk) => tk.push !== undefined);
+      return pushes.length ? pushes[pushes.length - 1].push.toLowerCase() : null;
+    } catch { return null; }
+  }
+  const at = items.length - alt.brings.length + alt.brings.indexOf(alt.runs);
+  return at >= 0 && at < items.length ? String(items[at]).toLowerCase() : null;
+}
+
+// The title itself: the revealed script's own rung two where the book has one
+// tabled -- a wrapped witness program's demand, which is the same line its own
+// address would be titled by -- and otherwise the term read off its bytes,
+// applied to its own data the way rung one writes an application. A reveal
+// that does not tokenize (a tapscript leaf full of opcodes the alphabet has no
+// mark for, a script with no push to bind) titles nothing: the page knows the
+// bytes and does not know what they are, and the quotation below still stands.
+const revealedTerm = (t, items, opts) => {
+  const r = revealedOf(t, items, opts);
+  return r ? termOfScript(r) : null;
+};
+
+export function revealedText(t, items, opts = {}) {
+  const tr = revealedTerm(t, items, opts);
+  if (!tr) return null;
+  return lockedText(tr) ?? [addressText(tr)];
+}
+
+export function revealedHtml(t, items, opts = {}) {
+  const tr = revealedTerm(t, items, opts);
+  if (!tr) return null;
+  return lockedHtml(tr) ?? [addressHtml(tr)];
+}
+
 // ─── the pure form ───────────────────────────────────────────────────────
 //
 // The terms above still hold their opcodes: λh. ⟦ ⧉ ⌖ h ≡ ∇ ⟧ has ⧉ and ⌖

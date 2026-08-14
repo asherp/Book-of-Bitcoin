@@ -309,7 +309,8 @@ import { isAddress, addressScriptHex, chainWitness, witnessVerdict, witnessDisag
 import { reference, latinReference, inputMark } from './btc-citation.js';
 import { parseLookup } from './btc-lookup.js';
 
-import { termOfScript, addressHtml, lockedHtml, spendHtml, suppliedHtml } from './btc-term.js';
+import { termOfScript, addressHtml, lockedHtml, spendHtml, suppliedHtml,
+         revealedHtml } from './btc-term.js';
 import { messageOf, sighashName } from './btc-sighash.js';
 import { spellHtml, read, looksSpelled, isWholeScript, scriptFault } from './btc-address-form.js';
 const input = document.getElementById('block-input');
@@ -473,6 +474,23 @@ const spendRung = (t, opened, sayFn, section = null, brought = null, paired = fa
       + `${escapeHtml(message.algorithm)}, ${escapeHtml(sighashName(message.type))}">w</a>`
     : null;
   const term = `<div class="term-line term-spend">${spendHtml(t, msg)[rung.which]}</div>`;
+  // The spend quotation's title, completed. The application line above writes
+  // ( r ) exactly as the lock did -- a hole the address could name and never
+  // fill -- and this line is where the spend fills it: the script the input
+  // revealed, read as the term it is (its own demand where the book has one
+  // tabled, its bytes' own abstraction otherwise). It stands between the
+  // application and the quotation because that is the descent's own order --
+  // the lock applied, the hole resolved, the values quoted -- and it stands
+  // outside the rule for the same reason every term line does: it is the
+  // reader's derivation from bytes quoted BELOW it, not a passage of its own.
+  // Where nothing was hidden -- a keyhash spend, taproot's key path -- there
+  // is no line, and the title is the lock's, already standing a rung up.
+  const said = 'the spend quotation’s title — the script this input revealed, read as the '
+    + 'term it is. The lock above could only write a hole for it; this is what the hole '
+    + 'held, derived from the bytes quoted below rather than quoted from anywhere';
+  const reveal = (revealedHtml(t, opened.args ?? [], { scriptsig: opened.scriptsig }) ?? [])
+    .map((line) => `<div class="term-line term-reveal" title="${escapeHtml(said)}">${line}</div>`)
+    .join('');
   // The citation lands on the INPUT, not merely the transaction that holds it.
   // These marks were read off one vin, and a spend can draw from many places at
   // once -- a citation that stopped at the section would send a reader to a page
@@ -489,7 +507,7 @@ const spendRung = (t, opened, sayFn, section = null, brought = null, paired = fa
     : `quoted from input ${opened.in} of the earliest spend this page reaches. It opened `
       + 'a different output carrying these same bytes: nothing on this page opens the one '
       + 'cited above';
-  return term
+  return term + reveal
     + `<div class="term-line term-quote">${rung.html}</div>`
     + `<div class="term-attrib"><span class="term-cite" title="${says}">—</span> ${where}</div>`
     + messageFoot(message);
