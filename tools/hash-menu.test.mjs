@@ -185,7 +185,7 @@ test('the citation and the link name one place', async () => {
   assert.match(page, /menuCopyTextBtn\.classList\.toggle\('hidden', !entry\.prose \|\| entry\.prose === copy\.text\);/);
 });
 
-test('a scriptSig input carries the mark the scheme always gave it', async () => {
+test('nothing is raised on a citation that names another place', async () => {
   // Uppercase says scriptSig, lowercase says witness -- the scheme's one
   // distinction between the two carriages, and it round-trips.
   assert.equal(inputMark(3, true), 'C');
@@ -196,22 +196,21 @@ test('a scriptSig input carries the mark the scheme always gave it', async () =>
   assert.equal(parseReference('IV β68 ■1749 §2053.a').sig, false);
 
   const page = await bookPage();
-  // It had never been printed, so a reader could not cite the input they were
-  // looking at. Now it is set beside the citation exactly where a witness's
-  // letter sits — and on every input that spent with a scriptSig, footnote or
-  // no. An input can carry both: a wrapped segwit spend pushes its redeem
-  // script in the scriptSig and brings the arguments in the witness, which is
-  // two things in two places, and the scheme letters them by case for exactly
-  // that. `if`, not `else if` — the two carriages do not exclude each other.
-  assert.match(page, /\n    if \(inp\.scriptAscii \|\| inp\.script\) \{\s*\n\s*const m = sigRef\(inputIndex\);/,
-    'a scriptSig raises its mark whether or not the input also raised a footnote');
-  assert.match(page, /attachHashCopy\(m, para\.txid, 'script sig',/);
-  assert.match(page, /s\.textContent = inputMark\(n, true\);/, 'and it is the scheme’s own letter');
-  // Not a link: a witness's mark leads to its footnote, a scriptSig is on the
-  // line beneath its own mark.
-  const sigRefFn = /const sigRef = \(n\) => \{[\s\S]*?\n  \};/.exec(page)[0];
-  assert.ok(!/createElement\('a'\)|\.href/.test(sigRefFn), 'the scriptSig mark points at nothing');
-  assert.match(page, /\.tx-sig-ref \{/, 'and it is raised the way its neighbour is');
+  // The reference in an input's margin names the OUTPUT that input spends — a
+  // place in another chapter — so a letter hung on it was one place's mark on
+  // another place's citation. Both letters came off it.
+  const cited = /cite\.append\(citeBody\);[\s\S]*?cite\.append\(amtLine\);/.exec(page);
+  assert.ok(cited, 'the citation is no longer assembled where it was');
+  assert.ok(!/cite\.append\(witnessRef/.test(page), 'the witness letter is off the citation');
+  assert.ok(!/sigRef|tx-sig-ref/.test(page), 'and the scriptSig raises no letter at all');
+
+  // A witness's letter moves to the end of the script it shares an input with,
+  // which is where a footnote mark has always gone: after the text it annotates.
+  assert.match(page, /if \(inp\.witnessHex\) scriptCell\.append\(witnessRef\(inputIndex\)\);/);
+  assert.match(page, /\.tx-in-script \.tx-witness-ref \{/, 'and it is set for that position');
+  // A witness-only input needs no letter either: its citation travels down and
+  // renders in the footnote's own left cell, beside the witness itself.
+  assert.match(page, /footnotes\[footnotes\.length - 1\]\.cite = cite;/);
 });
 
 test('a chrome string carried in one language is carried in all of them', async () => {
@@ -240,8 +239,11 @@ test('a script is its own handle, and it does not eat the selection', async () =
   // so an ordinary output had nothing to click. The bytes were there from the
   // first paint; only the affordance was conditional on a keep.
   assert.match(page, /attachBodyMenu\(scriptCell, \(\) => scriptEntry\(outKeep\), 'locking script/);
-  assert.match(page, /attachBodyMenu\(scriptCell, \(\) => sigMark\.__hashMenu, 'scriptSig/);
+  assert.match(page, /attachBodyMenu\(scriptCell, \(\) => entry, 'scriptSig/);
   assert.match(page, /attachBodyMenu\(p, \(\) => markEl\.__hashMenu, 'witness/);
+  // The scriptSig's is the only menu with no mark to hang on, now that the
+  // citation carries no letter — so the entry is built beside the script.
+  assert.match(page, /const entry = \{ \.\.\.sigEntry\(inputIndex\), footnote: inp\.witnessHex \? inputIndex : null \};/);
 
   const body = /function attachBodyMenu\(el, entryOf, said\) \{[\s\S]*?\n\}/.exec(page);
   assert.ok(body, 'the body handle is gone');
@@ -327,4 +329,35 @@ test('the letter’s case picks which of an input’s two carriages is meant', a
   // number plus `sig`, so the mark is written back out cased rather than
   // through footnoteMark, which is always lowercase.
   assert.match(page, /await landOnWitness\(inputMark\(pWit, Boolean\(pParam\.sig\)\)\);/);
+});
+
+test('the menu carries the way down to the other half of a spend', async () => {
+  const page = await bookPage();
+  // A wrapped segwit input is set in two places a screen apart: its scriptSig
+  // pushes the redeem script in the body, its witness brings what that script
+  // wants down in the foot. The letter at the end of the script makes that
+  // jump; so does the menu, for a reader who already has it open and should
+  // not have to close it and go find the mark.
+  assert.match(page, /data-act="footnote" role="menuitem">Witness footnote<\/button>/);
+  assert.match(page, /menuFootnoteBtn\.classList\.toggle\('hidden', entry\.footnote == null\);/,
+    'offered only where there is a footnote to go to');
+  assert.match(page, /menuFootnoteBtn\.textContent = tr\('Witness footnote'\);/);
+  // It encodes the footnotes if they have not been drawn yet, then scrolls --
+  // the same call the mark makes, so the two roads cannot diverge.
+  const wired = /menuFootnoteBtn\.addEventListener\('click', \(\) => \{[\s\S]*?\n\}\);/.exec(page);
+  assert.ok(wired, 'the item is not wired');
+  assert.match(wired[0], /loadFootnotes\(n\)/);
+  assert.match(page, /a\.addEventListener\('click', \(e\) => \{ e\.preventDefault\(\); loadFootnotes\(n\); \}\);/,
+    'the mark makes the same jump');
+  // A scriptSig on an input that raised no footnote has nowhere to go, and the
+  // item stays hidden rather than jumping to a neighbour's witness.
+  const { menuCopy } = await menuLogic(SETTLED);
+  assert.equal(menuCopy({ label: 'script sig', hex: TXID, vin: 0, wn: 1, footnote: null }).item,
+    'Copy reference', 'the entry is the same either way');
+
+  const strings = await readFile(new URL('../web/btc-strings.js', import.meta.url), 'utf8');
+  for (const table of ['czech', 'german']) {
+    const body = strings.split(`  ${table}: {`)[1].split('\n  },')[0];
+    assert.ok(body.includes("'Witness footnote':"), `${table} carries the new item`);
+  }
 });

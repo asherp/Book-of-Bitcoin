@@ -916,14 +916,14 @@ button:disabled { opacity: .4; cursor: not-allowed; }
    witness prose collects at the foot of the page. */
 .tx-witness-ref { font: 500 .62em/1 'IBM Plex Mono','Book Sigla',monospace; color: var(--accent); vertical-align: super; text-decoration: none; margin-left: .12em; }
 .tx-witness-ref:hover { text-decoration: underline; }
-/* A scriptSig's mark, set exactly as a witness's and raised the same way: the
-   scheme distinguishes the two carriages by CASE, so anything else distinguishing
-   them here would be saying it twice. It underlines on hover like its neighbour
-   -- the affordance is real, it simply opens a menu rather than going anywhere.
-   (Raised with CSS, not with a raised codepoint: six of the alphabet's letters
-   have no raised capital in Unicode — see chain-witness.test.mjs.) */
-.tx-sig-ref { font: 500 .62em/1 'IBM Plex Mono','Book Sigla',monospace; color: var(--accent); vertical-align: super; margin-left: .12em; }
-.tx-sig-ref:hover { text-decoration: underline; }
+/* …and it rides at the end of the scriptSig it belongs beside, which is where a
+   footnote mark has gone since footnotes were invented: after the text it
+   annotates. It sat on the input's citation once, and that citation names the
+   OUTPUT being spent — a place in another chapter — so the letter was
+   annotating somebody else's reference. A scriptSig gets no mark of its own at
+   all: its citation is level with it (or, narrow, directly above it), and
+   adjacency says everything a letter would have. */
+.tx-in-script .tx-witness-ref { margin-left: .3em; }
 .chapter-footnotes { margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--rule); }
 /* A witness-only input leaves no scriptSig row in the body, so its margin
    citation follows its witness down (see renderFootnotes): the footnote list
@@ -1255,6 +1255,7 @@ a.footnote-title.is-asset:hover { color: var(--accent-2, #dcb877); text-decorati
       <button type="button" class="hash-menu-item" data-act="copy" role="menuitem">Copy hex</button>
       <button type="button" class="hash-menu-item" data-act="copy-text" role="menuitem">Copy text</button>
       <button type="button" class="hash-menu-item" data-act="copy-link" role="menuitem">Copy link</button>
+      <button type="button" class="hash-menu-item hidden" data-act="footnote" role="menuitem">Witness footnote</button>
       <button type="button" class="hash-menu-item hidden" data-act="ledger" role="menuitem">Ledger entry</button>
       <button type="button" class="hash-menu-item" data-act="bookmark" role="menuitem">Bookmark</button>
     </div>
@@ -4738,24 +4739,24 @@ function renderChapter(para) {
     return a;
   };
 
-  // …and the same mark for an input that spent with a scriptSig, in the case
-  // the scheme reserves for that carriage: uppercase (inputMark's `sig`). The
-  // letter has been in the citation scheme from the start -- §n.A parses,
-  // resolves and lands -- and nothing on the page had ever printed one, so a
-  // reader could not cite an input they were looking at.
+  // A scriptSig gets no mark, and needs none. Its citation is set beside it --
+  // level with it where the page is wide, above it where it is narrow -- and
+  // adjacency is the whole of what a mark would have said. §n.A is still its
+  // name; the menu on the script itself is where a reader takes it.
   //
-  // Not a link. A witness's mark leads somewhere, its footnote being elsewhere
-  // on the page; a scriptSig is on the line beneath its own mark, and an arrow
-  // pointing at what it is already touching is noise. What it carries instead
-  // is the menu, which is the whole of what a reader wants from a place: its
-  // reference, to keep or to paste.
-  const sigRef = (n) => {
-    const s = document.createElement('span');
-    s.className = 'tx-sig-ref';
-    s.textContent = inputMark(n, true);
-    s.title = `scriptSig — this input, cited §…${inputMark(n, true)}`;
-    return s;
-  };
+  // The reference in that margin is the one thing a letter must never ride on:
+  // it names the OUTPUT this input spends, a place in another chapter, so an
+  // input's own mark hung there would be one place's letter on another place's
+  // citation. That is true of the witness's mark as much as the scriptSig's --
+  // hence the footnote letter moving to the end of the script below, where a
+  // footnote mark belongs: after the text it annotates.
+  //
+  // The scriptSig's own menu entry. Built here rather than off a mark, since
+  // there is no longer a mark to hang it on, and read by the body handle.
+  const sigEntry = (n) => ({
+    hex: para.txid, label: 'script sig', nav: false, vin: n - 1, wn: n,
+    prose: `${reference(state.height)} §${para.num}.${inputMark(n, true)}`,
+  });
 
   const f = para.fields;
   const footnotes = [];
@@ -4775,10 +4776,6 @@ function renderChapter(para) {
   }
   let inputIndex = 0;
   for (const inp of f.inputs) {
-    // The raised capital this input gets if it spent with a scriptSig alone --
-    // set below, and the one place its menu entry lives, so the mark and the
-    // script body beneath it open the same thing.
-    let sigMark = null;
     const cite = document.createElement('div');
     cite.className = 'tx-in-cite';
     cite.id = `in-${inputIndex++}`;   // an output's forward citation scrolls here so the spending input leads the page
@@ -4790,8 +4787,11 @@ function renderChapter(para) {
       citeBody.textContent = '⋯';   // placeholder until the reference resolves
       cite.classList.add('resolving');
     }
-    // The reference leads the citation, then -- for a witness-bearing input --
-    // its footnote superscript (numbered in input order).
+    // The citation stands alone: the reference and, beneath it, the amount.
+    // Nothing is raised on it, because everything a raised letter could say is
+    // already said by where the citation sits -- beside the scriptSig it
+    // belongs to, or (for a witness-only spend) down in the footnote, in the
+    // cell left of the witness itself.
     cite.append(citeBody);
     // The witness record carries its section coordinates (txid, § number, and
     // the input that bears it -- inputIndex already advanced past this input
@@ -4800,23 +4800,12 @@ function renderChapter(para) {
     // The mark is the INPUT's own number, not an ordinal over the footnotes:
     // a citation names input n of section m whichever way that input carried
     // what it brought, so the letter must not shift because a neighbour spends
-    // a legacy output. Lowercase says witness (btc-citation's inputMark casing);
-    // a scriptSig raises no footnote here and is cited uppercase.
-    if (inp.witnessHex) { footnotes.push({ n: inputIndex, vin: inputIndex - 1, txid: para.txid, num: para.num, items: inp.witnessItems, zero: inp.witnessZero }); cite.append(witnessRef(inputIndex)); }
-    // …and an input that spent with a scriptSig takes the raised capital, with
-    // the menu on it. Not "instead": an input can carry both, and a wrapped
-    // segwit spend does -- the scriptSig pushes the redeem script, the witness
-    // brings the arguments it wants. Two carriages, two things printed in two
-    // places, and the scheme letters them by case for exactly this reason. So
-    // such an input wears both marks: ᵃ for the witness in the foot, ᴬ for the
-    // scriptSig on the line.
-    if (inp.scriptAscii || inp.script) {
-      const m = sigRef(inputIndex);
-      attachHashCopy(m, para.txid, 'script sig',
-        `${reference(state.height)} §${para.num}.${inputMark(inputIndex, true)}`,
-        null, inputIndex - 1, inputIndex);
-      cite.append(m);
-      sigMark = m;
+    // a legacy output. Lowercase says witness (btc-citation's inputMark
+    // casing); the scriptSig's own letter is the capital, and it is printed
+    // nowhere -- the menu on the script is where a reader takes it.
+    if (inp.witnessHex) {
+      footnotes.push({ n: inputIndex, vin: inputIndex - 1, txid: para.txid, num: para.num,
+        items: inp.witnessItems, zero: inp.witnessZero });
     }
     // A second line sits beneath the reference: the sequence mark leads it, then
     // the amount of the output this input spends (filled on resolve, into its own
@@ -4839,6 +4828,11 @@ function renderChapter(para) {
     // instead (renderFootnotes), where the input then reads whole: provenance
     // and amount beside the apparatus that spent it.
     if (inp.scriptAscii || inp.script) {
+      // What this input's script body opens. A footnote number rides along
+      // where the same input also carried a witness, so the menu can offer the
+      // jump down to it -- the reader is looking at half of what the input
+      // brought, and the other half is a screen away.
+      const entry = { ...sigEntry(inputIndex), footnote: inp.witnessHex ? inputIndex : null };
       const citeCell = document.createElement('div');
       citeCell.className = 'tx-in-cite-group';
       for (const p of pendingMargin) citeCell.append(p);
@@ -4848,11 +4842,16 @@ function renderChapter(para) {
       scriptCell.className = 'tx-in-script';
       if (inp.scriptAscii) addQuote(scriptCell, inp.scriptAscii);
       else addLine(scriptCell, inp.script);
-      // …and the scriptSig is its own handle, opening the mark's menu from the
-      // text the mark is about. Every scriptSig has one, footnote or no: the
-      // witness in the foot is a different thing in a different place, and it
-      // has a handle and a citation of its own, one letter apart.
-      if (sigMark) attachBodyMenu(scriptCell, () => sigMark.__hashMenu, 'scriptSig — click for menu');
+      // An input that ALSO carried a witness -- a wrapped segwit spend, whose
+      // scriptSig pushes the redeem script and whose witness brings what that
+      // script wants -- raises its footnote letter here, at the end of the
+      // script, which is where a footnote mark has always gone: after the text
+      // it annotates. On the citation it was annotating the wrong thing.
+      if (inp.witnessHex) scriptCell.append(witnessRef(inputIndex));
+      // The script is its own handle. There is no mark to hang the menu on any
+      // more, and none is wanted: the text is the thing, and clicking it is how
+      // a reader reaches §n.A, the scriptSig's own name.
+      attachBodyMenu(scriptCell, () => entry, 'scriptSig — click for menu');
       inputsEl.append(citeCell, scriptCell);
     } else if (inp.witnessHex) {
       footnotes[footnotes.length - 1].cite = cite;
@@ -7478,6 +7477,7 @@ const menuCopyBtn = hashMenu.querySelector('[data-act="copy"]');
 const menuCopyTextBtn = hashMenu.querySelector('[data-act="copy-text"]');
 const menuCopyLinkBtn = hashMenu.querySelector('[data-act="copy-link"]');
 const menuBmBtn = hashMenu.querySelector('[data-act="bookmark"]');
+const menuFootnoteBtn = hashMenu.querySelector('[data-act="footnote"]');
 const menuLedgerBtn = hashMenu.querySelector('[data-act="ledger"]');
 const titleInput = $('hash-title-input');
 let menuEntry = null;
@@ -7523,6 +7523,14 @@ function openHashMenu(ev, entry, anchorEl) {
   // The link item is offered only where a link exists to copy: a place the
   // book's own URLs can cite, or a locking script's road to its ledger.
   menuCopyLinkBtn.classList.toggle('hidden', !entryShareUrl(entry));
+  // The other half of a wrapped segwit spend. Its scriptSig pushes the redeem
+  // script and its witness brings what that script wants, and the two are set a
+  // screen apart -- the script in the body, the witness in the foot. So the
+  // script's menu carries the way down, which is also the one thing the letter
+  // at the end of the script does; a reader who opened the menu should not have
+  // to close it and find the mark.
+  menuFootnoteBtn.textContent = tr('Witness footnote');
+  menuFootnoteBtn.classList.toggle('hidden', entry.footnote == null);
   // A locking script's menu carries the road to its ledger: the entry this
   // very section wrote in that address's record (?address + ?ref).
   menuLedgerBtn.classList.toggle('hidden', !entry.ledgerHref);
@@ -7630,6 +7638,15 @@ menuCopyLinkBtn.addEventListener('click', () => {
 });
 // The road out of the passage and into the record: the address's ledger,
 // opened at the entry this very section wrote in it.
+// Down to the witness this input also carried: the same jump the letter at the
+// end of the script makes, which encodes the footnotes if they have not been
+// drawn yet and then scrolls to the one named.
+menuFootnoteBtn.addEventListener('click', () => {
+  if (!menuEntry || menuEntry.footnote == null) return;
+  const n = menuEntry.footnote;
+  closeHashMenu();
+  loadFootnotes(n);
+});
 menuLedgerBtn.addEventListener('click', () => {
   if (!menuEntry || !menuEntry.ledgerHref) return;
   location.href = menuEntry.ledgerHref;
