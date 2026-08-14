@@ -1291,22 +1291,28 @@ export async function txHexOf(txid) {
   return null;
 }
 
-// Every input's spent amount in one request sized by the transaction
-// itself: Esplora has no endpoint for a single referenced output's value
+// Every input's spent coin in one request sized by the transaction
+// itself: Esplora has no endpoint for a single referenced output
 // (/outspend/:vout carries spend status only), but a transaction's own
-// JSON (/tx/:txid) lists each input's prevout -- value included -- so a
-// section's margin amounts never require fetching the referenced
-// transactions, however enormous (an exchange batch withdrawal) those
-// are. Confirmed prevouts are immutable; memoized for the session, with
-// the book's citations archive still answering first upstream.
+// JSON (/tx/:txid) lists each input's prevout -- value and script alike
+// -- so neither a section's margin amounts nor a BIP341 message ever
+// requires fetching the referenced transactions, however enormous (an
+// exchange batch withdrawal) those are. Confirmed prevouts are
+// immutable; memoized for the session, with the book's citations archive
+// still answering first upstream. One {value, script} per input, in
+// input order; null where the mirror named no coin (a coinbase input).
 const prevoutsMemo = new Map();
-export function prevoutValuesOf(txid) {
+export function prevoutsOf(txid) {
   if (!prevoutsMemo.has(txid)) {
     prevoutsMemo.set(txid, (async () => {
       for (const mirror of esploraMirrors()) {
         const j = await esploraJson(mirror, `/tx/${txid}`);
         if (j && j.txid === txid && Array.isArray(j.vin)) {
-          return j.vin.map((v) => (v.prevout && v.prevout.value != null ? Number(v.prevout.value) : null));
+          return j.vin.map((v) => (v.prevout ? {
+            value: v.prevout.value != null ? Number(v.prevout.value) : null,
+            script: typeof v.prevout.scriptpubkey === 'string'
+              ? v.prevout.scriptpubkey.toLowerCase() : null,
+          } : null));
         }
       }
       prevoutsMemo.delete(txid);   // nothing answered -- ask again next time
@@ -1314,6 +1320,13 @@ export function prevoutValuesOf(txid) {
     })());
   }
   return prevoutsMemo.get(txid);
+}
+
+// The values alone, for the pages that only total: the same fetch, the
+// same memo, one field kept.
+export async function prevoutValuesOf(txid) {
+  const coins = await prevoutsOf(txid);
+  return coins ? coins.map((c) => (c && c.value != null ? c.value : null)) : null;
 }
 
 // The spending status of every output of a transaction at once (Esplora

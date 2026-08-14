@@ -305,7 +305,7 @@ mountLangMenu();  // …with the Language item, which any page can now set
 // scan yields it, is normalized to the lowercase form the ledger queries with.
 import { isAddress, addressScriptHex, chainWitness, witnessVerdict, witnessDisagreement,
          chainFailureText, citeHref, sectionOfFetched,
-         txHexOf, prevoutValuesOf } from './btc-index.js';
+         txHexOf, prevoutsOf } from './btc-index.js';
 import { reference, latinReference, inputMark } from './btc-citation.js';
 import { parseLookup } from './btc-lookup.js';
 
@@ -513,8 +513,8 @@ const messageFoot = (message) => {
   return `<div class="term-foot" id="term-msg"><div class="term-fn-head">`
     + `<span class="term-fn-mark">w</span> the message — ${escapeHtml(message.algorithm)}, `
     + `${escapeHtml(sighashName(message.type))}</div>${rows}`
-    + `<div class="term-fn-row term-fn-sum"><span class="term-fn-name" title="SHA-256 of the SHA-256 of `
-    + `every field above, in the order they are set: the number this signature was made over">⌘</span>`
+    + `<div class="term-fn-row term-fn-sum"><span class="term-fn-name" `
+    + `title="${escapeHtml(message.digestSaid)}">⌘</span>`
     + `<span class="term-fn-bytes term-onchain">${escapeHtml(message.digest)}</span></div></div>`;
 };
 
@@ -631,21 +631,22 @@ async function enrichTerm(hex, { address = null, at = '' } = {}) {
 
 // What the input signed, fetched. Two requests the rest of the leaf does not
 // need: the spending transaction's own bytes, since a digest is a serialization
-// of the whole of it, and its inputs' prevout values, since BIP143 signs the
-// amount and the witness does not carry it. Both are the book's own fetchers,
-// memoized, and both are for confirmed data that cannot change.
+// of the whole of it, and its inputs' prevout coins, since BIP143 signs this
+// input's amount and BIP341 every input's amount and script, none of which the
+// witness carries. Both are the book's own fetchers, memoized, and both are
+// for confirmed data that cannot change.
 //
 // Everything here is allowed to fail quietly. A mirror that refuses, a taproot
-// spend whose digest this does not write, a preimage that cannot be built --
-// each leaves ⌘ … on the line, which is the true statement in every one of
-// those cases. The alternative is a mark pointing at bytes that are wrong.
+// spend that took its script path, a preimage that cannot be built -- each
+// leaves ⌘ … on the line, which is the true statement in every one of those
+// cases. The alternative is a mark pointing at bytes that are wrong.
 async function signedMessage(script, opened) {
   if (!opened) return null;
   try {
-    const [raw, values] = await Promise.all([txHexOf(opened.txid), prevoutValuesOf(opened.txid)]);
+    const [raw, coins] = await Promise.all([txHexOf(opened.txid), prevoutsOf(opened.txid)]);
     if (!raw) return null;
     return await messageOf({ script, raw, index: opened.in,
-      value: values?.[opened.in] ?? null,
+      value: coins?.[opened.in]?.value ?? null, prevouts: coins,
       items: opened.items ?? [], scriptsig: opened.scriptsig ?? null });
   } catch { return null; }
 }

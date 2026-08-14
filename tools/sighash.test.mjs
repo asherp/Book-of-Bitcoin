@@ -18,14 +18,17 @@
 // think to write down: SINGLE past the end of the outputs, an input index past
 // the end, OP_CODESEPARATOR inside a scriptCode. BIP143 is run against the
 // worked examples in the BIP, which print their preimages in full, including
-// all six sighash flags over one input.
+// all six sighash flags over one input. BIP341 is run against the BIP's own
+// wallet test vectors (bip-0341/wallet-test-vectors.json, kept verbatim as
+// fixtures-bip341.json), whose one transaction signs seven key-path inputs
+// under seven different flags and prints every sigMsg and sigHash.
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
-import { parseTx, legacyPreimage, bip143Preimage, dsha256, compact,
-         sighashOf, sighashName, v0KeyHashCode } from '../web/btc-sighash.js';
+import { parseTx, legacyPreimage, bip143Preimage, bip341Preimage, dsha256, taggedHash,
+         compact, sighashOf, sighashName, v0KeyHashCode, messageOf } from '../web/btc-sighash.js';
 
 // Core writes a uint256 the way it prints one, which is backwards from the way
 // it hashes one.
@@ -249,12 +252,121 @@ test('the algorithm is chosen by the output, not by the spend', async () => {
   assert.ok(v0.fields.some(([name]) => name === 'amount'));
   assert.ok(legacy.fields.some(([name]) => name === '(no amount)'));
 
-  // Taproot's digest is BIP341's and is not written here, so it is not claimed.
+  // A taproot claim over a witness that is not one item is a script path, and
+  // a script path's message is declined, not guessed — its flag rides on a
+  // signature at a position only running the leaf could name.
   assert.equal(await messageOf({ script: '5120' + 'ab'.repeat(32), raw: signed, index: 1, value: 1 }), null,
     'a message this cannot serialize is named as unknown, not guessed');
   // BIP143 signs the amount, so without one there is no message to write.
   assert.equal(await messageOf({ script: '00141d0f172a0ecb48aee1be1f2687d2963ae33f71a1',
     raw: signed, index: 1, value: null }), null);
+});
+
+// ─── BIP341, from the BIP's own wallet test vectors ──────────────────────
+//
+// One transaction, nine coins spent, and seven of its inputs signed by key
+// path — one under each flag taproot admits, DEFAULT among them. The vectors
+// print every sigMsg (the preimage, epoch byte included) and every sigHash, so
+// both the serialization and the tagged hashing are pinned to published bytes.
+const bip341Vectors = async () => {
+  const v = JSON.parse(await readFile(new URL('./fixtures-bip341.json', import.meta.url), 'utf8'));
+  const spend = v.keyPathSpending[0];
+  return { spend,
+    tx: parseTx(spend.given.rawUnsignedTx),
+    prevouts: spend.given.utxosSpent.map((u) => ({ value: u.amountSats, script: u.scriptPubKey })),
+  };
+};
+
+test('BIP341 writes the sigMsgs the BIP prints, under all seven flags', async () => {
+  const { spend, tx, prevouts } = await bip341Vectors();
+  assert.equal(spend.inputSpending.length, 7, 'the fixture lost or gained cases');
+  const flags = new Set();
+  for (const c of spend.inputSpending) {
+    const { txinIndex, hashType } = c.given;
+    flags.add(hashType);
+    const preimage = await bip341Preimage(tx, txinIndex, prevouts, hashType);
+    assert.equal(preimage, c.intermediary.sigMsg,
+      `input ${txinIndex}, type 0x${hashType.toString(16)}`);
+    // The digest is the tagged hash, taken once — dsha256 of the same bytes is
+    // a different number, which is the whole point of tagging.
+    assert.equal(await taggedHash('TapSighash', preimage), c.intermediary.sigHash,
+      `input ${txinIndex}: the digest`);
+    assert.notEqual(await dsha256(preimage), c.intermediary.sigHash);
+    // …and the flag each witness carries is the one its digest was taken
+    // under: a 65th byte, or DEFAULT said by omission.
+    assert.equal(sighashOf(c.expected.witness[0]), hashType);
+  }
+  assert.deepEqual([...flags].sort((a, b) => a - b), [0x00, 0x01, 0x02, 0x03, 0x81, 0x82, 0x83],
+    'one input per flag taproot admits');
+});
+
+test('BIP341 refuses what consensus refuses, and what it cannot know', async () => {
+  const { tx, prevouts } = await bip341Vectors();
+  // SINGLE past the end of the outputs: legacy digests it as the number 1 and
+  // keeps the bug; BIP341 makes the spend invalid, so there is nothing to write.
+  assert.equal(tx.outs.length, 2);
+  assert.equal(await bip341Preimage(tx, 8, prevouts, 0x03), null,
+    'SINGLE with no output at this index is invalid under BIP341, not the number 1');
+  // A flag taproot never defined, and a message missing the coins it signs.
+  assert.equal(await bip341Preimage(tx, 0, prevouts, 0x04), null);
+  assert.equal(await bip341Preimage(tx, 0, null, 0x01), null,
+    'every spent coin is in the message, so without them there is none');
+  assert.equal(await bip341Preimage(tx, 0, prevouts.slice(1), 0x01), null,
+    'a coin per input, or nothing');
+  // …but ANYONECANPAY signs only its own coin, and needs only that one.
+  const own = prevouts.map((p, i) => (i === 8 ? p : null));
+  const { spend } = await bip341Vectors();
+  const c = spend.inputSpending.find((i) => i.given.hashType === 0x81);
+  assert.equal(await bip341Preimage(tx, 8, own, 0x81), c.intermediary.sigMsg);
+});
+
+test('a taproot key-path spend names its message', async () => {
+  const { spend, tx, prevouts } = await bip341Vectors();
+  // The fully signed transaction, so the witnesses are read off the wire the
+  // way the page reads them — and input 4 signed under DEFAULT, the flag that
+  // is only ever said by omission.
+  const raw = spend.auxiliary.fullySignedTx;
+  const c = spend.inputSpending.find((i) => i.given.txinIndex === 4);
+  const msg = await messageOf({ script: prevouts[4].script, raw, index: 4,
+    value: prevouts[4].value, prevouts });
+  assert.equal(msg.algorithm, 'BIP341');
+  assert.equal(msg.type, 0x00);
+  assert.equal(sighashName(msg.type), 'DEFAULT (ALL)');
+  assert.equal(msg.preimage, c.intermediary.sigMsg);
+  assert.equal(msg.digest, c.intermediary.sigHash);
+  // What BIP143 signed for one input, this signs for all of them — the fields
+  // say so by name — and the digest row says it hashes once, under the tag.
+  assert.ok(msg.fields.some(([name]) => name === 'sha_amounts'));
+  assert.ok(msg.fields.some(([name]) => name === 'sha_scriptpubkeys'));
+  assert.match(msg.digestSaid, /tagged/);
+  // The preimage really is the fields in order, byte for byte — the page's
+  // claim that a reader can hash the rows themselves.
+  assert.equal(msg.fields.map(([, bytes]) => bytes).join(''), msg.preimage);
+  // SINGLE, through the same door.
+  const c0 = spend.inputSpending.find((i) => i.given.txinIndex === 0);
+  const m0 = await messageOf({ script: prevouts[0].script, raw, index: 0,
+    value: prevouts[0].value, prevouts });
+  assert.equal(m0.digest, c0.intermediary.sigHash);
+  assert.equal(m0.fields.map(([, bytes]) => bytes).join(''), m0.preimage);
+  // Without the coins there is no message: BIP341 signs them all.
+  assert.equal(await messageOf({ script: prevouts[4].script, raw, index: 4,
+    value: prevouts[4].value }), null);
+  // An annex is stripped from the count but not from the message: the same
+  // spend with one rides is still the key path, and signs a different number.
+  const annexed = await messageOf({ script: prevouts[4].script, raw, index: 4,
+    value: prevouts[4].value, prevouts, items: [c.expected.witness[0], '50ff'] });
+  assert.equal(annexed.algorithm, 'BIP341');
+  assert.notEqual(annexed.digest, msg.digest);
+  assert.ok(annexed.fields.some(([name]) => name === 'sha_annex'));
+  assert.equal(annexed.fields.map(([, bytes]) => bytes).join(''), annexed.preimage);
+  // Three items besides no annex is a leaf and its proof: declined, not guessed.
+  assert.equal(await messageOf({ script: prevouts[4].script, raw, index: 4,
+    value: prevouts[4].value, prevouts,
+    items: ['ab'.repeat(64), '51', 'c0' + '99'.repeat(32)] }), null);
+  // A 65-byte signature whose last byte is 0x00 is invalid — DEFAULT is said
+  // by omission, or not at all.
+  assert.equal(await messageOf({ script: prevouts[4].script, raw, index: 4,
+    value: prevouts[4].value, prevouts, items: [c.expected.witness[0] + '00'] }), null);
 });
 
 test('a real signature verifies against the preimage this writes', async () => {

@@ -464,7 +464,8 @@ const AND_SAID = 'and — the notation’s conjunction, joining two things a spe
 const andMark = () => `<span class="lam" title="${escapeHtml(AND_SAID)}">∧</span>`;
 
 const MSG_SAID = 'the message the signature is over — the transaction serialized as the '
-  + 'signature’s own sighash flag says, hashed twice. Everything about a spend that is signed '
+  + 'signature’s own sighash flag says, then hashed: twice through SHA-256 before taproot, '
+  + 'once under BIP341’s tag from it on. Everything about a spend that is signed '
   + 'is in here, and everything that is not is malleable';
 const UNSAID_SAID = 'not named — no spend has been reached, so there is no serialization to set '
   + 'and nothing here a reader could hash for themselves';
