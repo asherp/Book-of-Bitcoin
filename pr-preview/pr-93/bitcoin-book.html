@@ -916,14 +916,16 @@ button:disabled { opacity: .4; cursor: not-allowed; }
    witness prose collects at the foot of the page. */
 .tx-witness-ref { font: 500 .62em/1 'IBM Plex Mono','Book Sigla',monospace; color: var(--accent); vertical-align: super; text-decoration: none; margin-left: .12em; }
 .tx-witness-ref:hover { text-decoration: underline; }
-/* …and it rides at the end of the scriptSig it belongs beside, which is where a
-   footnote mark has gone since footnotes were invented: after the text it
-   annotates. It sat on the input's citation once, and that citation names the
-   OUTPUT being spent — a place in another chapter — so the letter was
-   annotating somebody else's reference. A scriptSig gets no mark of its own at
-   all: its citation is level with it (or, narrow, directly above it), and
-   adjacency says everything a letter would have. */
-.tx-in-script .tx-witness-ref { margin-left: .3em; }
+/* …and it closes the scriptSig's own paragraph, which is where a footnote mark
+   has gone since footnotes were invented: ending the text it annotates. It sat
+   on the input's citation once, and that citation names the OUTPUT being spent
+   — a place in another chapter — so the letter was annotating somebody else's
+   reference. A scriptSig gets no mark of its own at all: its citation is level
+   with it (or, narrow, directly above it), and adjacency says everything a
+   letter would have.
+   Inside the paragraph, so it rides the last word: the class is the same one
+   the mark wears anywhere else, and the raise is already in it. */
+.tx-line .tx-witness-ref, .tx-in-script .tx-ascii .tx-witness-ref { margin-left: .12em; }
 .chapter-footnotes { margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--rule); }
 /* A witness-only input leaves no scriptSig row in the body, so its margin
    citation follows its witness down (see renderFootnotes): the footnote list
@@ -4700,11 +4702,12 @@ function renderChapter(para) {
   // Detected ASCII (a coinbase tag, an OP_RETURN message) is set as a quote
   // block instead of an inline-quoted line -- and never claims the drop cap.
   const addQuote = (container, html) => {
-    if (!html) return;
+    if (!html) return null;
     const q = document.createElement('blockquote');
     q.className = 'tx-ascii';
     q.innerHTML = html;
     container.append(q);
+    return q;
   };
   // The input's sequence mark, leading the amount line beneath its reference:
   // ● final · ○ respects locktime · † replaceable · † ■n / † Τn replaceable with
@@ -4840,14 +4843,20 @@ function renderChapter(para) {
       citeCell.append(cite);
       const scriptCell = document.createElement('div');
       scriptCell.className = 'tx-in-script';
-      if (inp.scriptAscii) addQuote(scriptCell, inp.scriptAscii);
-      else addLine(scriptCell, inp.script);
+      const body = inp.scriptAscii ? addQuote(scriptCell, inp.scriptAscii)
+        : addLine(scriptCell, inp.script);
       // An input that ALSO carried a witness -- a wrapped segwit spend, whose
       // scriptSig pushes the redeem script and whose witness brings what that
-      // script wants -- raises its footnote letter here, at the end of the
-      // script, which is where a footnote mark has always gone: after the text
-      // it annotates. On the citation it was annotating the wrong thing.
-      if (inp.witnessHex) scriptCell.append(witnessRef(inputIndex));
+      // script wants -- raises its footnote letter here, ending the paragraph.
+      // Inside it, not after it: both addLine and addQuote build a block, so a
+      // mark appended to the CELL is a sibling of the text and drops to a line
+      // of its own, which is a letter sitting under a paragraph rather than a
+      // superscript closing one.
+      //
+      // On a quoted coinbase it lands after the closing “ ” -- the quotation
+      // marks are the extent of what a miner wrote, and the letter is the
+      // book's, so it ends the paragraph without entering the quotation.
+      if (inp.witnessHex) (body ?? scriptCell).append(witnessRef(inputIndex));
       // The script is its own handle. There is no mark to hang the menu on any
       // more, and none is wanted: the text is the thing, and clicking it is how
       // a reader reaches §n.A, the scriptSig's own name.
