@@ -321,17 +321,39 @@ const TWEAK = '⋔';               // the taptweak, which no opcode spells
 const SIGNED = (key) => [OP_CHECKSIG, 's', key, MSG];
 const HASHED = (op, name) => [OPEN, op, name, OP_EQUALVERIFY, D, CLOSE, AND];
 
+// `shown` is the demand with its commitment discharged: what is left to make
+// true once the spend has disclosed the thing the output only committed to.
+// A keyhash output holds ⌖p and nothing else, so the whole of what it says is
+// "the p you bring hashes to this, and you can sign under it" -- and once the
+// chain has shown the p, the hash clause is a question already answered. What
+// remains is the signature, over a message the page can now name. That is the
+// reveal's own title: not what the output demanded of an unknown spender, but
+// what the spend that happened turned out to be.
+//
+// Every form that hides a VALUE has one, and the two kinds differ only in
+// what the spend had to bring. A keyhash output hid the key, so the spend
+// brought it and it stands as a binder; P2PK and taproot's key path carried
+// their key in the output all along, so the spend brought only a signature and
+// the key stays the datum it always was -- λs. ∇ s p³² ( ⌘ ※ ). Neither is the
+// lock's demand any more: what a spend must make true is a question about a
+// future, and these describe one that happened.
+//
+// The script-hash forms hide a whole SCRIPT rather than a value, so they have
+// none of these: their reveal is titled by that script's own term, which the
+// spend handed over in full (see revealedHtml).
 const DEMANDS = {
-  p2pk:   [{ brings: 's', demand: SIGNED(D) }],
-  p2pkh:  [{ brings: 's p', demand: [...HASHED(OP_HASH160, 'p'), ...SIGNED('p')] }],
+  p2pk:   [{ brings: 's', demand: SIGNED(D), shown: SIGNED(D) }],
+  p2pkh:  [{ brings: 's p', demand: [...HASHED(OP_HASH160, 'p'), ...SIGNED('p')],
+             shown: SIGNED('p') }],
   p2sh:   [{ brings: 'r', runs: 'r', demand: [...HASHED(OP_HASH160, 'r'), RUN] }],
-  p2wpkh: [{ brings: 's p', demand: [...HASHED(OP_HASH160, 'p'), ...SIGNED('p')] }],
+  p2wpkh: [{ brings: 's p', demand: [...HASHED(OP_HASH160, 'p'), ...SIGNED('p')],
+             shown: SIGNED('p') }],
   p2wsh:  [{ brings: 'w', runs: 'w', demand: [...HASHED(OP_SHA256, 'w'), RUN] }],
   // Taproot asks for one of two things, which is the whole of what a taptree
   // buys: a signature under the output key, or a leaf that proves to it and is
   // then run like any other script -- the proof being the control block, which
   // tweaks the leaf back to the key the output committed to.
-  p2tr:   [{ brings: 's', demand: SIGNED(D) },
+  p2tr:   [{ brings: 's', demand: SIGNED(D), shown: SIGNED(D) },
            { brings: 't c', runs: 't',
              demand: [OPEN, TWEAK, 't', 'c', OP_EQUALVERIFY, D, CLOSE, AND, RUN] }],
 };
@@ -343,7 +365,7 @@ export function demandsOf(t) {
   const alts = DEMANDS[t.id];
   if (!alts) return null;
   return alts.map((alt) => ({ brings: alt.brings.split(' '), runs: alt.runs ?? null,
-    demand: alt.demand ?? null,
+    demand: alt.demand ?? null, shown: alt.shown ?? null,
     // Every opcode this alternative's demand writes, named so a caller can hold
     // the line to its own vocabulary rather than to the whole alphabet. ⌘ is in
     // it wherever a message is: the digest a signature is over is a hash being
@@ -386,6 +408,35 @@ const demandText = (t, alt, msg = UNSAID) => alt.demand.map((tok) => {
   if (tok === CLOSE) return ')';
   return typeof tok === 'number' ? glyph(tok) : tok;
 }).join(' ').replace(/\( /g, '( ').replace(/ \)/g, ' )');
+
+// ─── the title: the anonymous λ a script is ──────────────────────────────
+//
+// What a lock is called when nobody has called it anything. Every script on
+// chain binds an abstraction over its own pushes, and that abstraction is
+// derivable from the bytes with no reader, no shelf and no network -- so a
+// paragraph is never nameless for want of somebody having spoken first.
+//
+//   λh. ⓪ h        a P2WPKH output
+//   λp₁ p₂ p₃. ② p₁ p₂ p₃ ③ ◇     a bare multisig, which no address can carry
+//
+// Bare of everything a title does not need. No ⟦ ⟧: the brackets say "this is
+// the wire's own bytes", and a title is not a quotation of them -- the script
+// itself stands below, set as the passage it is. No application and no
+// parentheses either: a title says what a thing IS, and (λh. ⓪ h) h²⁰ says
+// what was DONE to it, which is rung one's business and not a name. And the
+// binder stands bare, without the count its argument would give it, because
+// what is being named is the abstraction rather than any one output that
+// instantiates it -- every P2WPKH on chain shares this title, which is the
+// whole use of a title.
+//
+// The demand rung is not this. It says what a spend must bring, which is a
+// truer thing to know and a worse thing to be called by: two outputs of
+// different shapes can want the same key material (P2PKH and P2WPKH ask
+// alike), so the demand does not distinguish what a name has to distinguish.
+export const titleText = (t) => `λ${t.holes.map((h) => h.name).join(' ')}. ${bodyText(t, false)}`;
+
+export const titleHtml = (t) =>
+  `${lam('λ')}${t.holes.map(dt).join(' ')}${lam('.')} ${bodyHtml(t, false)}`;
 
 // ─── rung one: the address ───────────────────────────────────────────────
 //
@@ -464,7 +515,8 @@ const AND_SAID = 'and — the notation’s conjunction, joining two things a spe
 const andMark = () => `<span class="lam" title="${escapeHtml(AND_SAID)}">∧</span>`;
 
 const MSG_SAID = 'the message the signature is over — the transaction serialized as the '
-  + 'signature’s own sighash flag says, hashed twice. Everything about a spend that is signed '
+  + 'signature’s own sighash flag says, then hashed: twice through SHA-256 before taproot, '
+  + 'once under BIP341’s tag from it on. Everything about a spend that is signed '
   + 'is in here, and everything that is not is malleable';
 const UNSAID_SAID = 'not named — no spend has been reached, so there is no serialization to set '
   + 'and nothing here a reader could hash for themselves';
@@ -480,8 +532,8 @@ const opMark = (tok) => (tok === TWEAK
   ? `<span class="op" title="${escapeHtml(TWEAK_SAID)}">${escapeHtml(TWEAK)}</span>`
   : op(tok));
 
-const demandHtml = (t, alt, msg) => alt.demand.map((tok) => {
-  if (tok === D) return dt(t.holes[0]) + count(t.holes[0]);
+const demandHtml = (t, alt, msg, ref = null) => alt.demand.map((tok) => {
+  if (tok === D) return datumMark(t.holes[0], ref);
   if (tok === MSG) return msgMark(msg);
   if (tok === RUN) return `${lam('(')} ${awaited(alt.runs)} ${lam(')')}`;
   if (tok === AND) return andMark();
@@ -494,9 +546,9 @@ const demandHtml = (t, alt, msg) => alt.demand.map((tok) => {
 // where an address keeps its payload: after the term, behind the mark that
 // gives its length. Withheld, the datum stays behind that mark -- the line is
 // still the right shape, it simply cannot be read back.
-export const addressHtml = (t, { prose = '' } = {}) =>
+export const addressHtml = (t, { prose = '', ref = null } = {}) =>
   `${lam('(λ')}${t.holes.map(dt).join(' ')}${lam('.')} ${bodyHtml(t, false)}${lam(')')} `
-  + t.holes.map((h, i) => dt(h) + count(h)
+  + t.holes.map((h, i) => datumMark(h, i === 0 && t.holes.length === 1 ? ref : null)
     + (prose && i === 0 && t.holes.length === 1 ? ` ${prose}` : '')).join(' ');
 
 // The second rung as marks: the binders, and then what they have to make true.
@@ -610,6 +662,156 @@ export function suppliedHtml(t, items, { say = null, brought = null } = {}) {
   }).join(' ');
   return { which, html: brought ?? own() };
 }
+
+// ─── the revealed script, and the title it gives a quotation ─────────────
+//
+// A wrapped form's lock ends in ( r ): a requirement hidden behind a hash,
+// which the address could name and never write. The spend is where it stops
+// being hidden -- the input disclosed the script itself -- and the spend
+// quotation's title is that script read as the term it is (see CLAUDE.md,
+// "Search page"). The lock quotation needs no counterpart: its title is the
+// demand rung two derives from the address alone, already standing above it,
+// and for a keyhash or visible type the two coincide because nothing was ever
+// hidden to reveal.
+//
+// Which bytes were revealed is read the way the arguments are: by consensus's
+// own placement, never by shape. P2WSH's script is the last witness item and a
+// tapscript leaf rides just under its control block -- the binder named by
+// `runs`, aligned to the end of the list exactly as suppliedNames aligns it.
+// P2SH is the one form whose script does not ride with the arguments counted:
+// its redeem script is the scriptSig's last push, and when the program it
+// wraps is a witness program the arguments move to the stack while the redeem
+// script stays behind in the scriptSig -- so it is read from the scriptSig or
+// not at all, and a wrapped spend's witness items are never mistaken for it.
+//
+// No hash is re-taken here, and none is needed: the reveal is only ever read
+// off a spend the chain confirmed, cited on the line below it, and consensus
+// checked the script against the committed hash before that spend was allowed
+// to exist. Witness-and-check -- the citation is the verification.
+export function revealedOf(t, items, { scriptsig = null } = {}) {
+  const which = pathTaken(t, items);
+  if (which === null) return null;
+  const alt = demandsOf(t)[which];
+  if (!alt.runs) return null;                        // nothing was hidden: no reveal
+  if (t.id === 'p2sh') {
+    if (!scriptsig) return null;
+    try {
+      const pushes = tokenizeScript(scriptsig).filter((tk) => tk.push !== undefined);
+      return pushes.length ? pushes[pushes.length - 1].push.toLowerCase() : null;
+    } catch { return null; }
+  }
+  const at = items.length - alt.brings.length + alt.brings.indexOf(alt.runs);
+  return at >= 0 && at < items.length ? String(items[at]).toLowerCase() : null;
+}
+
+// The title itself, and there are two kinds of reveal because there are two
+// kinds of thing an output can hide.
+//
+// A script-hash form hides a SCRIPT, and the spend hands over its bytes -- so
+// the title is that script's own title, the anonymous λ it binds, exactly as
+// the lock a rung up is titled by its own. A P2SH wrapping a witness program
+// is titled `λh. ⓪ h` there, which is the title that program would carry
+// anywhere else, because it is the same script wherever it stands.
+//
+// Everything else hid a VALUE, or hid nothing at all, and either way there is
+// no script to read -- so the title is the demand with its commitment
+// discharged: the key is on the page now, the hash clause is a question
+// already answered, and what the spend turned out to be is the signature over
+// the message. `msg` is the footnote's letter where the page has one, which is
+// the whole point of naming it here: a title a reader can check, and the only
+// place ⌘ is written once the rungs that used to carry it are gone.
+//
+// A reveal that does not tokenize -- a leaf full of opcodes the alphabet has
+// no mark for, a script with no push to bind -- titles nothing: the page knows
+// the bytes and does not know what they are, and the quotation still stands.
+const revealedTerm = (t, items, opts) => {
+  const r = revealedOf(t, items, opts);
+  return r ? termOfScript(r) : null;
+};
+
+// One walk for both renderings, as everywhere else in this module: the marks
+// on the page and the marks in a test can never be two different readings.
+const revealed = (t, items, opts, write) => {
+  const which = pathTaken(t, items);
+  if (which === null) return null;
+  const alt = demandsOf(t)[which];
+  if (alt.runs) {
+    const tr = revealedTerm(t, items, opts);
+    return tr ? [write.title(tr)] : null;
+  }
+  return alt.shown ? [write.shown(alt)] : null;
+};
+
+export const revealedText = (t, items, opts = {}) => revealed(t, items, opts, {
+  title: (tr) => titleText(tr),
+  shown: (alt) => `λ${alt.brings.join(' ')}. `
+    + `${demandText(t, { ...alt, demand: alt.shown }, opts.msg ?? UNSAID)}`,
+});
+
+// `ref` reaches the datum and nothing else, which is the distinction the token
+// list already draws: D is the value the OUTPUT carries, and every other name
+// on the line is something this spend brought and the passage below quotes. So
+// the one mark that refers to another passage is the one that gets a road to
+// it, and the marks a reader can see the bytes of right here do not.
+export const revealedHtml = (t, items, opts = {}) => revealed(t, items, opts, {
+  title: (tr) => titleHtml(tr),
+  shown: (alt) => `${lam('λ')}${alt.brings.map(awaited).join(' ')}${lam('.')} `
+    + `${demandHtml(t, { ...alt, demand: alt.shown }, opts.msg ?? null, opts.ref ?? null)}`,
+});
+
+// ─── the commitment, and whether it holds ────────────────────────────────
+//
+// The one claim on a search card that spans both passages, and the only one a
+// reader can settle by hand with both in view: the value this spend revealed
+// hashes to the datum that output published. `p` is quoted in the spend's own
+// passage; `h²⁰` is written in the lock's, a section above. Take one hash and
+// compare, and the two quotations are demonstrably about one coin.
+//
+// It used to be stated, as a clause of the demand, and stating it was the
+// weaker thing to do -- a demand describes what a spender must make true,
+// which is a claim about a future, while this is a fact about a spend that
+// happened and the page holds both halves of it. So the page takes the hash
+// itself and marks the result: witness-and-check, which is the model the whole
+// notation rests on (see CLAUDE.md) and the same model Bitcoin uses.
+//
+// This module says WHAT to hash and against what; it does not hash. There is
+// no digest here and there could not be -- ripemd160 is not in any browser and
+// SHA-256 is async -- so the caller takes it, and this stays the light,
+// synchronous, engine-free module a page can draw a term with.
+//
+// Null where nothing was committed to. P2PK and taproot's key path publish
+// their key outright, so there is no preimage to reveal and nothing to check.
+// Taproot's script path IS a commitment, and a hash alone will not settle it:
+// the tweak adds a point to the internal key, which is elliptic-curve
+// arithmetic and not a digest. Declining beats guessing, so it declines.
+const COMMITS = { p2pkh: OP_HASH160, p2wpkh: OP_HASH160, p2sh: OP_HASH160, p2wsh: OP_SHA256 };
+
+export function commitmentOf(t, items, { scriptsig = null } = {}) {
+  const op = COMMITS[t.id];
+  if (!op || !t.holes.length) return null;
+  const which = pathTaken(t, items);
+  if (which === null) return null;
+  const alt = demandsOf(t)[which];
+  // A script-hash form committed to a script, and the spend handed it over; a
+  // keyhash form committed to a key, which stands among the values it brought.
+  // Either way the thing hashed is read by consensus's own placement, never by
+  // shape -- the same reading `revealedOf` and `suppliedNames` already make.
+  const of = alt.runs ? revealedOf(t, items, { scriptsig })
+    : items[suppliedNames(alt, items).indexOf('p')] ?? null;
+  const name = alt.runs ?? 'p';
+  if (!of) return null;
+  return { op, of, name, hole: t.holes[0], against: t.holes[0].argument };
+}
+
+// The check, written out: the operation, what it is taken over, and the datum
+// it must equal. The same marks the demand's own clause used, because it is
+// the same claim -- only now it is one the page has carried out rather than
+// one it is passing on.
+export const commitmentText = (c) =>
+  `${glyph(c.op)} ${c.name} ${glyph(OP_EQUALVERIFY)} ${datumText({ holes: [c.hole] })}`;
+
+export const commitmentHtml = (c, { ref = null } = {}) =>
+  `${op(c.op)} ${awaited(c.name)} ${op(OP_EQUALVERIFY)} ${datumMark(c.hole, ref)}`;
 
 // ─── the pure form ───────────────────────────────────────────────────────
 //
@@ -735,6 +937,26 @@ const lam = (s) => `<span class="lam">${escapeHtml(s)}</span>`;
 const op = (code) => `<span class="op" title="${escapeHtml(OPCODE_NAMES[code] || 'OP_UNKNOWN')}">${escapeHtml(glyph(code))}</span>`;
 const dt = (hole) => `<span class="dt" title="${escapeHtml(hole.title)}">${escapeHtml(hole.name)}</span>`;
 const count = (hole) => `<span class="op op-push op-count" title="OP_PUSHBYTES_${hole.bytes} — push the next ${hole.bytes} bytes">${toSuperscript(hole.bytes)}</span>`;
+
+// The datum with its count, and -- where a caller has found the passage that
+// holds it -- pointing at it. The same move ⌘ makes: a mark stops being a
+// promise about bytes somewhere and becomes bytes a reader can go and read.
+//
+// The mark is not REPLACED by the reference, and cannot be. A citation names
+// an output, which is the whole script -- the reduced form, `⓪ h²⁰` -- so
+// writing it where the argument stands would say the term was applied to its
+// own result. It would also throw away the two things the mark is for: which
+// kind of datum this is, and how many bytes of it. So the reference goes
+// behind the mark, as a link and a hover, and the attribution below the
+// passage stays the one place it is set in type.
+//
+// `ref` is { href, said }, built by whoever asked the chain -- this module
+// does not know what a citation is, exactly as it does not know what prose is.
+const datumMark = (hole, ref) => {
+  const mark = dt(hole) + count(hole);
+  return ref ? `<a class="term-ref" href="${escapeHtml(ref.href)}" `
+    + `title="${escapeHtml(ref.said)}">${mark}</a>` : mark;
+};
 
 const bodyHtml = (t, counted, prose) => {
   let next = 0;

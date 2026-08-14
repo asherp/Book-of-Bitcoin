@@ -5,7 +5,7 @@
 //
 //   node --test tools/sighash.test.mjs
 //
-// The spend rung claims ∇ s p ( ⌘ w ) and points a reader at the bytes behind
+// The spend rung claims ∇ s p ( ⌘ ※ ) and points a reader at the bytes behind
 // ⌘. That is a promise the page can only keep if the serialization is right to
 // the byte, and a preimage that is subtly wrong is worse than none at all: it
 // would put math on a page whose whole claim is that the math can be checked,
@@ -18,14 +18,17 @@
 // think to write down: SINGLE past the end of the outputs, an input index past
 // the end, OP_CODESEPARATOR inside a scriptCode. BIP143 is run against the
 // worked examples in the BIP, which print their preimages in full, including
-// all six sighash flags over one input.
+// all six sighash flags over one input. BIP341 is run against the BIP's own
+// wallet test vectors (bip-0341/wallet-test-vectors.json, kept verbatim as
+// fixtures-bip341.json), whose one transaction signs seven key-path inputs
+// under seven different flags and prints every sigMsg and sigHash.
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
-import { parseTx, legacyPreimage, bip143Preimage, dsha256, compact,
-         sighashOf, sighashName, v0KeyHashCode } from '../web/btc-sighash.js';
+import { parseTx, legacyPreimage, bip143Preimage, bip341Preimage, dsha256, taggedHash,
+         compact, sighashOf, sighashName, v0KeyHashCode, messageOf } from '../web/btc-sighash.js';
 
 // Core writes a uint256 the way it prints one, which is backwards from the way
 // it hashes one.
@@ -246,15 +249,124 @@ test('the algorithm is chosen by the output, not by the spend', async () => {
   assert.equal(legacy.preimage,
     legacyPreimage(parseTx(signed), 0, '2103c9f4836b9a4f77fc0d81f7bcb01b7f1b35916864b9476c241ce9fc198bd25432ac', 1));
   // …and the amount is in one and not the other, which the fields say in words.
-  assert.ok(v0.fields.some(([name]) => name === 'amount'));
-  assert.ok(legacy.fields.some(([name]) => name === '(no amount)'));
+  assert.ok(v0.fields.some((f) => f.name === 'amount'));
+  assert.ok(legacy.fields.some((f) => f.name === '(no amount)'));
 
-  // Taproot's digest is BIP341's and is not written here, so it is not claimed.
+  // A taproot claim over a witness that is not one item is a script path, and
+  // a script path's message is declined, not guessed — its flag rides on a
+  // signature at a position only running the leaf could name.
   assert.equal(await messageOf({ script: '5120' + 'ab'.repeat(32), raw: signed, index: 1, value: 1 }), null,
     'a message this cannot serialize is named as unknown, not guessed');
   // BIP143 signs the amount, so without one there is no message to write.
   assert.equal(await messageOf({ script: '00141d0f172a0ecb48aee1be1f2687d2963ae33f71a1',
     raw: signed, index: 1, value: null }), null);
+});
+
+// ─── BIP341, from the BIP's own wallet test vectors ──────────────────────
+//
+// One transaction, nine coins spent, and seven of its inputs signed by key
+// path — one under each flag taproot admits, DEFAULT among them. The vectors
+// print every sigMsg (the preimage, epoch byte included) and every sigHash, so
+// both the serialization and the tagged hashing are pinned to published bytes.
+const bip341Vectors = async () => {
+  const v = JSON.parse(await readFile(new URL('./fixtures-bip341.json', import.meta.url), 'utf8'));
+  const spend = v.keyPathSpending[0];
+  return { spend,
+    tx: parseTx(spend.given.rawUnsignedTx),
+    prevouts: spend.given.utxosSpent.map((u) => ({ value: u.amountSats, script: u.scriptPubKey })),
+  };
+};
+
+test('BIP341 writes the sigMsgs the BIP prints, under all seven flags', async () => {
+  const { spend, tx, prevouts } = await bip341Vectors();
+  assert.equal(spend.inputSpending.length, 7, 'the fixture lost or gained cases');
+  const flags = new Set();
+  for (const c of spend.inputSpending) {
+    const { txinIndex, hashType } = c.given;
+    flags.add(hashType);
+    const preimage = await bip341Preimage(tx, txinIndex, prevouts, hashType);
+    assert.equal(preimage, c.intermediary.sigMsg,
+      `input ${txinIndex}, type 0x${hashType.toString(16)}`);
+    // The digest is the tagged hash, taken once — dsha256 of the same bytes is
+    // a different number, which is the whole point of tagging.
+    assert.equal(await taggedHash('TapSighash', preimage), c.intermediary.sigHash,
+      `input ${txinIndex}: the digest`);
+    assert.notEqual(await dsha256(preimage), c.intermediary.sigHash);
+    // …and the flag each witness carries is the one its digest was taken
+    // under: a 65th byte, or DEFAULT said by omission.
+    assert.equal(sighashOf(c.expected.witness[0]), hashType);
+  }
+  assert.deepEqual([...flags].sort((a, b) => a - b), [0x00, 0x01, 0x02, 0x03, 0x81, 0x82, 0x83],
+    'one input per flag taproot admits');
+});
+
+test('BIP341 refuses what consensus refuses, and what it cannot know', async () => {
+  const { tx, prevouts } = await bip341Vectors();
+  // SINGLE past the end of the outputs: legacy digests it as the number 1 and
+  // keeps the bug; BIP341 makes the spend invalid, so there is nothing to write.
+  assert.equal(tx.outs.length, 2);
+  assert.equal(await bip341Preimage(tx, 8, prevouts, 0x03), null,
+    'SINGLE with no output at this index is invalid under BIP341, not the number 1');
+  // A flag taproot never defined, and a message missing the coins it signs.
+  assert.equal(await bip341Preimage(tx, 0, prevouts, 0x04), null);
+  assert.equal(await bip341Preimage(tx, 0, null, 0x01), null,
+    'every spent coin is in the message, so without them there is none');
+  assert.equal(await bip341Preimage(tx, 0, prevouts.slice(1), 0x01), null,
+    'a coin per input, or nothing');
+  // …but ANYONECANPAY signs only its own coin, and needs only that one.
+  const own = prevouts.map((p, i) => (i === 8 ? p : null));
+  const { spend } = await bip341Vectors();
+  const c = spend.inputSpending.find((i) => i.given.hashType === 0x81);
+  assert.equal(await bip341Preimage(tx, 8, own, 0x81), c.intermediary.sigMsg);
+});
+
+test('a taproot key-path spend names its message', async () => {
+  const { spend, tx, prevouts } = await bip341Vectors();
+  // The fully signed transaction, so the witnesses are read off the wire the
+  // way the page reads them — and input 4 signed under DEFAULT, the flag that
+  // is only ever said by omission.
+  const raw = spend.auxiliary.fullySignedTx;
+  const c = spend.inputSpending.find((i) => i.given.txinIndex === 4);
+  const msg = await messageOf({ script: prevouts[4].script, raw, index: 4,
+    value: prevouts[4].value, prevouts });
+  assert.equal(msg.algorithm, 'BIP341');
+  assert.equal(msg.type, 0x00);
+  assert.equal(sighashName(msg.type), 'DEFAULT (ALL)');
+  assert.equal(msg.preimage, c.intermediary.sigMsg);
+  assert.equal(msg.digest, c.intermediary.sigHash);
+  // What BIP143 signed for one input, this signs for all of them — the fields
+  // say so by name — and the digest row says it hashes once, under the tag.
+  assert.ok(msg.fields.some((f) => f.name === 'sha_amounts'));
+  assert.ok(msg.fields.some((f) => f.name === 'sha_scriptpubkeys'));
+  assert.match(msg.digestSaid, /tagged/);
+  // The preimage really is the fields in order, byte for byte — the page's
+  // claim that a reader can hash the rows themselves.
+  assert.equal(msg.fields.map((f) => f.bytes).join(''), msg.preimage);
+  // SINGLE, through the same door.
+  const c0 = spend.inputSpending.find((i) => i.given.txinIndex === 0);
+  const m0 = await messageOf({ script: prevouts[0].script, raw, index: 0,
+    value: prevouts[0].value, prevouts });
+  assert.equal(m0.digest, c0.intermediary.sigHash);
+  assert.equal(m0.fields.map((f) => f.bytes).join(''), m0.preimage);
+  // Without the coins there is no message: BIP341 signs them all.
+  assert.equal(await messageOf({ script: prevouts[4].script, raw, index: 4,
+    value: prevouts[4].value }), null);
+  // An annex is stripped from the count but not from the message: the same
+  // spend with one rides is still the key path, and signs a different number.
+  const annexed = await messageOf({ script: prevouts[4].script, raw, index: 4,
+    value: prevouts[4].value, prevouts, items: [c.expected.witness[0], '50ff'] });
+  assert.equal(annexed.algorithm, 'BIP341');
+  assert.notEqual(annexed.digest, msg.digest);
+  assert.ok(annexed.fields.some((f) => f.name === 'sha_annex'));
+  assert.equal(annexed.fields.map((f) => f.bytes).join(''), annexed.preimage);
+  // Three items besides no annex is a leaf and its proof: declined, not guessed.
+  assert.equal(await messageOf({ script: prevouts[4].script, raw, index: 4,
+    value: prevouts[4].value, prevouts,
+    items: ['ab'.repeat(64), '51', 'c0' + '99'.repeat(32)] }), null);
+  // A 65-byte signature whose last byte is 0x00 is invalid — DEFAULT is said
+  // by omission, or not at all.
+  assert.equal(await messageOf({ script: prevouts[4].script, raw, index: 4,
+    value: prevouts[4].value, prevouts, items: [c.expected.witness[0] + '00'] }), null);
 });
 
 test('a real signature verifies against the preimage this writes', async () => {
@@ -285,4 +397,68 @@ test('a real signature verifies against the preimage this writes', async () => {
   const bent = preimage.slice(0, 8) + (preimage[8] === '0' ? '1' : '0') + preimage.slice(9);
   const bentOnce = crypto.createHash('sha256').update(Buffer.from(bent, 'hex')).digest();
   assert.equal(crypto.verify('sha256', bentOnce, key, Buffer.from(sig, 'hex')), false);
+});
+
+test('every field says what it is, so no page has to print hex at it', async () => {
+  // The footnote sets each field the way the book sets that kind of thing, and
+  // it can only do that if the serializer says which kind each one is. What the
+  // split tracks is entropy: a version, a count and an index are figures and
+  // print as figures; a locktime and a sequence have marks; an amount is ₿; a
+  // script is opcodes; and a hash is unreadable by construction, so it is said
+  // in prose rather than shown as hex, which is what this book does everywhere
+  // with bytes nobody can read.
+  const { spend, tx, prevouts } = await bip341Vectors();
+  const raw = spend.auxiliary.fullySignedTx;
+  const kinds = (fields) => Object.fromEntries(fields.map((f) => [f.name, f.kind]));
+  const tap = await messageOf({ script: prevouts[4].script, raw, index: 4,
+    value: prevouts[4].value, prevouts });
+  assert.deepEqual(kinds(tap.fields), {
+    epoch: 'figure', hash_type: 'flag', nVersion: 'figure', nLockTime: 'locktime',
+    sha_prevouts: 'said', sha_amounts: 'said', sha_scriptpubkeys: 'said',
+    sha_sequences: 'said', sha_outputs: 'said', spend_type: 'figure', input_index: 'figure',
+  });
+  // ANYONECANPAY writes this input's coin out in full instead of the four
+  // transaction-wide hashes, and those fields are the ones with marks of their
+  // own: an outpoint, an amount, a script, a sequence.
+  const one = await messageOf({ script: prevouts[8].script, raw, index: 8,
+    value: prevouts[8].value, prevouts });
+  assert.equal(one.type, 0x81);
+  const k = kinds(one.fields);
+  assert.equal(k.outpoint, 'outpoint');
+  assert.equal(k.amount, 'amount');
+  assert.equal(k.scriptPubKey, 'script');
+  assert.equal(k.nSequence, 'sequence');
+  // `of` carries what the reading needs, decoded from the wire's own order --
+  // the page should never be parsing little-endian hex to print a figure.
+  const of = Object.fromEntries(one.fields.map((f) => [f.name, f.of]));
+  assert.equal(of.nVersion, 2);
+  assert.equal(of.amount, prevouts[8].value);
+  assert.equal(of.scriptPubKey, prevouts[8].script, 'the bare script, without its length prefix');
+  assert.equal(of.outpoint.txid.length, 64);
+  assert.equal(typeof of.outpoint.vout, 'number');
+  assert.equal(of.hash_type, 0x81);
+  // …and `bytes` is untouched by any of it: the fields still rejoin to the
+  // preimage, which is the one claim the footnote rests on.
+  assert.equal(one.fields.map((f) => f.bytes).join(''), one.preimage);
+  // The older algorithms label theirs too, and legacy's missing amount is the
+  // one field that is no bytes at all.
+  // Both older algorithms read their flag off the signature, so one has to be
+  // there for there to be a message: a v0 input carries it on the stack.
+  const der = '30' + '44'.repeat(69) + '01';
+  const v0 = await messageOf({ script: '00141d0f172a0ecb48aee1be1f2687d2963ae33f71a1',
+    raw: NATIVE_P2WPKH.raw, index: 1, value: NATIVE_P2WPKH.value, items: [der] });
+  assert.equal(kinds(v0.fields).hashPrevouts, 'said');
+  assert.equal(kinds(v0.fields).scriptCode, 'script');
+  assert.equal(v0.fields.find((f) => f.name === 'scriptCode').of, NATIVE_P2WPKH.code);
+  // …and a legacy input in its scriptSig.
+  const legacy = await messageOf({ script: '2103c9f4836b9a4f77fc0d81f7bcb01b7f1b35916864b9476c241ce9fc198bd25432ac',
+    raw: NATIVE_P2WPKH.raw, index: 1, value: null,
+    scriptsig: (der.length / 2).toString(16).padStart(2, '0') + der });
+  assert.equal(kinds(legacy.fields)['(no amount)'], 'none');
+  // Legacy's list is the one that does NOT rejoin, and saying so is the point:
+  // its preimage is the whole transaction serialized again, so the fields are a
+  // summary of its joints rather than a decomposition of it. The footnote sets
+  // the preimage entire beneath them for exactly this reason.
+  assert.notEqual(legacy.fields.map((f) => f.bytes).join(''), legacy.preimage);
+  assert.ok(legacy.preimage.startsWith(legacy.fields[0].bytes), 'it still opens with nVersion');
 });

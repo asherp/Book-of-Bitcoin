@@ -99,11 +99,23 @@ button:hover { background: var(--accent-2); }
    with a spend in front of it. The notation key's Scripts as terms group is
    where the encoding's own β chain lives.
 
-   Each rung below the first comes in two lines, and the split is what a
-   quotation costs: the term, which this page derives, and then the passage,
-   which the chain wrote. The lock's term says what the script still wants and
-   what it hands back to be run; the spend's says the same application with the
-   arguments in front of it. Neither is a quotation, so neither takes the rule.
+   Below it, two passages, and each takes a title and nothing else: the term,
+   which this page derives, and then the passage, which the chain wrote. The
+   lock's title is the anonymous λ its bytes bind; the spend's is what that
+   spend revealed. Neither is a quotation, so neither takes the rule, and the
+   pairing is the reading's own -- a paragraph there carries a title above it
+   and the script below (see termTitle in bitcoin-book.html).
+
+   The demand stood on the lock's line once, and the application on the
+   spend's: what any spender must bring, and that with the arguments in front
+   of it. Both went, and for one reason -- they said what a lock asks of a
+   future above passages that are a lock somebody wrote and one spender's
+   answer to it. A title says what the thing IS, which is what a reader wants
+   over a quotation and what the reading already prints. The demand is still
+   the table this leaf reads (DEMANDS in btc-term.js -- it is what picks the
+   path a spend took, and what the reveal's own title is derived from) and
+   still what the notation key prints in its validator column. It is simply no
+   longer a rung.
 
    Read still opens the place, as it always did. This says what the thing is;
    the button goes to it. */
@@ -132,6 +144,15 @@ button:hover { background: var(--accent-2); }
    the quiet it wears elsewhere in the book as an annotation. */
 .term-line .op-push { color: var(--accent); font-weight: 700; }
 .term-line .dt { color: var(--accent); font-style: normal; font-weight: 700; }
+/* The datum's mark, pointing at the passage that holds it. It keeps the ink it
+   had -- it is the same mark, and a link is not a different kind of thing to
+   say about it -- and shows itself only on hover, the way a footnote mark does.
+   What it is FOR is the spend: a title that writes p³² is naming the key the
+   OUTPUT published, cited in a different section a rung above, while every
+   other name on that line is something the input brought and the passage
+   directly below quotes. One mark bound somewhere else, one road to it. */
+.term-line a.term-ref { color: inherit; text-decoration: none; }
+.term-line a.term-ref:hover, .term-line a.term-ref:focus-visible { text-decoration: underline; }
 .term-line .lam { color: var(--meta); font-weight: 400; }
 /* What the address holds and what it awaits, above what the chain holds. One
    distinction does the work: the gold is what the address already has, and
@@ -184,18 +205,16 @@ button:hover { background: var(--accent-2); }
    claim about a claim. */
 /* The spend stands apart from the lock's own citation, because it is a
    different claim about a different transaction: not where these bytes were
-   written, but where somebody satisfied them. So the gap opens above the term
-   line that heads it, and the pair below — that term and the passage under it —
-   reads as one rung.
-   The lock's marks are on that term line, parenthesized as the function they
-   are, and the quotation under it holds the values that go into them — one
-   redex across two lines, the same shape the address rung sets on one. They
-   were on one
-   line once, which put two transactions' worth of marks under an attribution
-   naming a single input: a quotation that quotes more than it was given. The
-   answer is not to drop the application but to un-quote it — it was never read
-   off a spend, it is what this page derives from the output's own bytes. */
+   written, but where somebody satisfied them. So a gap opens above the whole
+   of it — the title, the passage, the attribution and the message footnote
+   read as one section, and the wrapper that groups them is what carries the
+   gap. It hung off the application line while there was one; a gap belonging
+   to a line disappears with that line, and this one has to survive a reveal
+   the page could not title. */
 .term-spend { margin-top: 18px; }
+/* The spend quotation's title, set exactly as the lock quotation's is: a term
+   line above a passage, outside the rule, because it is the reader's own
+   derivation and not a byte anybody wrote. */
 .term-attrib { margin:10px 0 0; text-align:right; font:400 15px/1.7 'Newsreader','Book Sigla',serif; color:var(--meta); }
 /* A diagnosis is not an attribution: bytes that are not a script name no place,
    so what is wrong with them stays on the left where reading begins. */
@@ -205,24 +224,70 @@ button:hover { background: var(--accent-2); }
 .term-check-said { color: var(--meta); }
 /* A mismatch is the one outcome that must never be mistaken for another. */
 .term-check-differs { color: #d9564b; }
+/* The commitment, taken. It sits between the spend's title and the passage it
+   quotes, because it is about both -- the value quoted below, and the datum
+   written a section above -- and it is the one line on this card the page
+   settled rather than derived. The tick takes the gold every made mark takes;
+   a failure takes the red, since a check that does not hold and looks like one
+   that does is worse than no check at all. */
+.term-checked { margin-top: 2px; }
+.term-held { color: var(--accent); }
 /* The message ⌘ names, set as a footnote: not a quotation — no chain wrote
    these bytes in this order, the page serialized them — so it takes no rule.
    Each field on its own row, its name in the margin with the gloss in its
    hover, its bytes in the mono face and free to wrap, because a scriptCode or
    a hashOutputs is long and a reader who wants to hash it needs all of it. */
 .term-foot { margin-top: 22px; padding-top: 12px; border-top: 1px solid var(--hair); }
+/* The digest, said, standing as the heading of everything that made it. The
+   fields below are the metadata -- what went in, in order -- and this is what
+   came out, which is the one number a reader actually checks. It leads because
+   a footnote's heading should name the thing the footnote is about. */
+.term-fn-digest { font:400 15px/1.6 'Newsreader','Book Sigla',serif; color:var(--ink-soft); margin-bottom:4px; }
+.term-fn-digest .op { color: var(--accent); font-weight: 700; }
 .term-fn-head { font:400 13px/1.5 'Public Sans','Book Sigla',sans-serif; color:var(--meta); margin-bottom:10px; }
 .term-fn-mark { font:500 .8em/1 'IBM Plex Mono','Book Sigla',monospace; color:var(--accent); vertical-align:super; margin-right:.4em; }
 .term-fn-row { display:grid; grid-template-columns: 11ch 1fr; gap:10px; align-items:baseline; margin-bottom:4px; }
 .term-fn-name { font:400 11px/1.6 'IBM Plex Mono','Book Sigla',monospace; color:var(--meta); }
 .term-fn-bytes { font:400 11.5px/1.6 'IBM Plex Mono','Book Sigla',monospace; color:var(--ink-soft); overflow-wrap:anywhere; }
-/* The digest sits under a hairline, apart from the fields it is taken over. */
-.term-fn-sum { margin-top:8px; padding-top:8px; border-top:1px solid var(--hair); }
-.term-fn-sum .term-fn-name, .term-fn-sum .term-fn-bytes { color: var(--accent); }
+/* A field that is prose rather than bytes -- a hash said in the book's own
+   tongue, a script set as opcodes -- reads as the book sets prose, not as the
+   mono the hex took. The marks inside keep the ink they have everywhere else. */
+.term-fn-bytes { font-family: 'Newsreader','Book Sigla',serif; font-size: 13px; }
+.term-fn-bytes .op { color: var(--accent); font-style: normal; font-weight: 700; }
+.term-fn-bytes .dt { color: var(--accent); font-style: normal; font-weight: 700; }
+.term-fn-bytes .op-push { color: var(--meta); font-weight: 400; }
+.term-fn-bytes .wit-empty { color: var(--meta); }
+/* …and a figure is a figure: a version, a count, an index, an amount. Set in
+   the mono face, because it is a number to be read exactly and not a word. */
+.term-fn-bytes .fn-figure { font-family: 'IBM Plex Mono','Book Sigla',monospace; font-size: .9em; color: var(--ink-soft); }
 /* The mark on the line above, which is a footnote reference and set as one. */
 .term-fn-ref { font-size:.72em; vertical-align:super; text-decoration:none; }
 .term-fn-ref:hover { text-decoration:underline; }
 .term-hex { font: 400 12px/1.7 'IBM Plex Mono','Book Sigla', monospace; color: var(--meta); overflow-wrap: anywhere; }
+/* A Glossia-encoded hash, set the way the reading sets one: the prose is the
+   visible text and clicking anywhere on it opens a menu to copy the exact bytes
+   it encodes. The raw hex is never shown -- that is the rule this book keeps
+   everywhere (see .hash-copy in bitcoin-book.html), and it is not only a matter
+   of taste: a hash printed as hex is a string nobody can read and nobody can
+   reliably select by hand on a touch device, so showing it serves no one that
+   copying it does not serve better. */
+.hash-copy { position: relative; cursor: pointer; }
+.hash-copy:hover, .hash-copy:focus-visible { color: var(--ink); outline: none; }
+.hash-menu {
+  position: fixed; z-index: 40; min-width: 172px; padding: 6px;
+  background: var(--card); border: 1px solid var(--card-bd); border-radius: 7px;
+  box-shadow: 0 18px 44px -18px rgba(0,0,0,.8);
+}
+.hash-menu-head {
+  padding: 6px 8px 8px; color: var(--dim); font: 600 10.5px/1 'IBM Plex Mono','Book Sigla',monospace;
+  letter-spacing: .1em; text-transform: uppercase; border-bottom: 1px solid var(--rule); margin-bottom: 5px;
+}
+.hash-menu-item {
+  display: block; width: 100%; text-align: left; background: transparent; color: var(--ink-soft);
+  border: none; border-radius: 4px; padding: 8px 9px; cursor: pointer;
+  font: 500 12.5px/1.2 'IBM Plex Mono','Book Sigla',monospace; letter-spacing: .02em; text-transform: none;
+}
+.hash-menu-item:hover, .hash-menu-item:focus-visible { background: var(--input-bg); color: var(--ink); outline: none; }
 /* The on-chain line is also the format itself, so it is set to be taken: one
    click selects the whole of it, and the search box reads it back. It stood as
    a mono block below for a while, which only ever meant the same passage twice
@@ -305,12 +370,16 @@ mountLangMenu();  // …with the Language item, which any page can now set
 // scan yields it, is normalized to the lowercase form the ledger queries with.
 import { isAddress, addressScriptHex, chainWitness, witnessVerdict, witnessDisagreement,
          chainFailureText, citeHref, sectionOfFetched,
-         txHexOf, prevoutValuesOf } from './btc-index.js';
+         txHexOf, prevoutsOf } from './btc-index.js';
 import { reference, latinReference, inputMark } from './btc-citation.js';
 import { parseLookup } from './btc-lookup.js';
 
-import { termOfScript, addressHtml, lockedHtml, spendHtml, suppliedHtml } from './btc-term.js';
-import { messageOf, sighashName } from './btc-sighash.js';
+import { termOfScript, addressHtml, titleHtml, suppliedHtml,
+         revealedHtml, commitmentOf, commitmentHtml } from './btc-term.js';
+import { messageOf, sighashName, sha256 } from './btc-sighash.js';
+// RIPEMD-160 is in no browser, so the book carries one -- written for reading
+// OpenTimestamps proofs, which need it for the same reason Bitcoin does.
+import { digestOf } from './btc-ots.js';
 import { spellHtml, read, looksSpelled, isWholeScript, scriptFault } from './btc-address-form.js';
 const input = document.getElementById('block-input');
 const termEl = document.getElementById('term');
@@ -351,7 +420,12 @@ let proseMod = null;
 async function readerProse() {
   try {
     proseMod ??= import('./btc-prose.js')
-      .then((m) => ({ renderWitness: m.renderWitness, renderScript: m.renderScript }));
+      // …and the field marks with them: a locktime and a sequence read the
+      // same way in a footnote as on a chapter's own input, and they read that
+      // way because both take them from here rather than from a second copy.
+      .then((m) => ({ renderWitness: m.renderWitness, renderScript: m.renderScript,
+        locktimeInfo: m.locktimeInfo, sequenceInfo: m.sequenceInfo,
+        formatAmount: m.formatAmount }));
     return await proseMod;
   } catch { return null; }
 }
@@ -382,7 +456,7 @@ const cite = (height, section, { out = null, mark = null } = {}) => reference(he
   + (section != null && out != null ? `.${out}` : '')
   + (section != null && mark ? `.${inputMark(mark.n, mark.sig)}` : '');
 
-const chainMark = (verdict, witness, ours, section = null) => {
+const chainMark = (verdict, witness, ours, section = null, sayFn = null) => {
   if (verdict === 'unreachable') {
     return `<span class="term-check term-check-said" title="the chain could not be asked — `
       + `${escapeHtml(chainFailureText())}">⋯</span>`;
@@ -395,10 +469,17 @@ const chainMark = (verdict, witness, ours, section = null) => {
   const n = witness.outputs + witness.prevouts;
   const where = `<a href="${citeHref(witness.txid, witness.out ?? undefined)}">${escapeHtml(at)}</a>`;
   if (verdict === 'differs') {
+    // The two readings, set against each other -- and set as the book sets a
+    // script, not as hex. A disagreement is the one place a reader most needs
+    // to compare two things closely, and prose is what this book gives them to
+    // compare: the same rule as everywhere else, and no exception earned by the
+    // line being an error message.
     const theirs = witnessDisagreement(ours, witness) ?? witness.script;
+    const set = (h) => (sayFn ? spellHtml(h, { say: sayFn }) || unsaid() : unsaid());
     return `<span class="term-check term-check-differs" title="the chain does not agree — trust it, `
       + `not this page">☒</span> ${where}`
-      + `<div class="term-hex">${escapeHtml(theirs)}</div><div class="term-hex">${escapeHtml(ours)}</div>`;
+      + `<div class="term-line" title="what the chain carries">${set(theirs)}</div>`
+      + `<div class="term-line" title="what this page derived from the box">${set(ours)}</div>`;
   }
   // Found, so the passage above has a source, and it is set as one: an em dash
   // and the place, which is how this book attributes anything it quotes. The
@@ -454,25 +535,54 @@ const faultNote = (f) => {
 //
 // So the two lines are one application: the abstraction, and then the values
 // that go into it, which are the only part of it anybody had to be told.
-const spendRung = (t, opened, sayFn, section = null, brought = null, paired = false, message = null) => {
+const spendRung = (t, opened, sayFn, section = null, brought = null, paired = false,
+                   message = null, ref = null, reader = null, check = null) => {
   // The arity is read off what the script takes; the line shows everything the
   // input carried, annex and all, exactly as the reader would.
   const rung = opened?.args?.length
     ? suppliedHtml(t, opened.args, { say: sayFn, brought }) : null;
   if (!rung) return '';
-  // One term, not both: rung two keeps every way in because they are all still
-  // true of an unspent output, and this rung is about the path a spend actually
-  // took. suppliedHtml read that path off the count consensus itself counts, so
-  // the term above the passage is the one those arguments went into.
   // ⌘'s message, named where the page has it. The mark is a letter and a link,
   // the way a footnote mark always is: what it points at is the serialization a
-  // reader would hash, so the last clause of the demand stops being a promise
-  // and becomes something they can carry out.
+  // reader would hash, so the signature clause stops being a promise and
+  // becomes something a reader can carry out. It rides in the title now, which
+  // is the only line left that writes ⌘ -- the application rung that used to
+  // carry it is gone (below).
   const msg = message
     ? `<a class="term-fn-ref" href="#term-msg" title="the message, field by field — `
-      + `${escapeHtml(message.algorithm)}, ${escapeHtml(sighashName(message.type))}">w</a>`
+      + `${escapeHtml(message.algorithm)}, ${escapeHtml(sighashName(message.type))}">※</a>`
     : null;
-  const term = `<div class="term-line term-spend">${spendHtml(t, msg)[rung.which]}</div>`;
+  // The spend quotation's title, and the whole of what stands above the
+  // passage now. The application used to lead here -- rung two in parentheses
+  // with the arguments after it -- and it went the way the demand rung went,
+  // for the same reason: it stated what a lock asks of any spender, above a
+  // passage that is one spender's answer. What a quotation wants over it is its
+  // name, so the two quotations are titled alike, and the leaf mirrors the
+  // reading, where a paragraph carries a title and nothing else.
+  //
+  // Which title is what the chain revealed: the script itself where the output
+  // committed to one, and otherwise the demand with its commitment discharged,
+  // since the value it hid is on the page now. suppliedHtml read which path the
+  // spend took off the count consensus itself counts, and this reads the same
+  // count, so the title over the passage is the one those arguments went into.
+  //
+  // It stands outside the rule, as every term line does: the reader's
+  // derivation from bytes quoted BELOW it, not a passage of its own.
+  const said = 'the spend quotation’s title — what this input revealed, read as the term '
+    + 'it is: the script itself where the output committed to one, and otherwise the '
+    + 'demand with its commitment discharged, since the value it hid is now on the page. '
+    + 'Derived from the bytes quoted below rather than quoted from anywhere';
+  // …and the datum in that title carries a road back to the output. It is the
+  // one mark on this line bound somewhere else: p³² is the key the OUTPUT
+  // published, not anything this input brought, and the input's own values are
+  // quoted immediately below where a reader can see them. So the mark that
+  // refers to another passage is the mark that points at it, and the citation
+  // it points at is the lock's, a section above -- not this input's, which the
+  // attribution under the quotation already names.
+  const reveal = (revealedHtml(t, opened.args ?? [],
+    { scriptsig: opened.scriptsig, msg, ref }) ?? [])
+    .map((line) => `<div class="term-line term-reveal" title="${escapeHtml(said)}">${line}</div>`)
+    .join('');
   // The citation lands on the INPUT, not merely the transaction that holds it.
   // These marks were read off one vin, and a spend can draw from many places at
   // once -- a citation that stopped at the section would send a reader to a page
@@ -489,10 +599,34 @@ const spendRung = (t, opened, sayFn, section = null, brought = null, paired = fa
     : `quoted from input ${opened.in} of the earliest spend this page reaches. It opened `
       + 'a different output carrying these same bytes: nothing on this page opens the one '
       + 'cited above';
-  return term
+  // The whole spend, in one wrapper, which is what opens the gap above it. The
+  // gap used to hang off the application line; that line is gone, and a gap
+  // that hung off the title instead would close whenever a reveal could not be
+  // titled. It belongs to the section either way -- what it separates is two
+  // claims about two transactions, not two lines.
+  // …and beneath the title, the one claim on this card that spans both
+  // passages: the value this input revealed hashes to the datum that output
+  // published. Not stated -- taken. The page has the revealed value quoted
+  // below and the datum written a section above, so it takes the hash and says
+  // whether it holds, and the datum carries its road to the passage it is
+  // written in. A demand said what a spender must make true; this says what
+  // this spender did, and a reader with both passages can take the same hash.
+  //
+  // Drawn only where it can be settled: nothing for a key the output published
+  // outright, and nothing for taproot's script path, whose tweak is curve
+  // arithmetic rather than a digest.
+  const held = check && (check.holds
+    ? `<span class="term-check term-held" title="taken and it holds — this page hashed the `
+      + `${escapeHtml(check.name === 'p' ? 'key' : 'script')} quoted below and got the datum the `
+      + `output published, which is what makes these two passages one coin">✓</span>`
+    : `<span class="term-check term-check-differs" title="taken and it does NOT hold — the `
+      + `chain accepted this spend, so trust it and not this page">☒</span>`);
+  const checked = check
+    ? `<div class="term-line term-checked">${held} ${commitmentHtml(check, { ref })}</div>` : '';
+  return `<div class="term-spend">${reveal}${checked}`
     + `<div class="term-line term-quote">${rung.html}</div>`
     + `<div class="term-attrib"><span class="term-cite" title="${says}">—</span> ${where}</div>`
-    + messageFoot(message);
+    + `${messageFoot(message, sayFn, reader)}</div>`;
 };
 
 // The footnote ⌘ points at: the preimage cut at its joints, each field named and
@@ -505,22 +639,160 @@ const spendRung = (t, opened, sayFn, section = null, brought = null, paired = fa
 // actually made over. A reader with the preimage can take it themselves in one
 // line, and that is the point of setting the preimage above it rather than the
 // digest alone.
-const messageFoot = (message) => {
-  if (!message) return '';
-  const rows = message.fields.map(([name, bytes, said]) =>
-    `<div class="term-fn-row"><span class="term-fn-name" title="${escapeHtml(said)}">${escapeHtml(name)}</span>`
-    + `<span class="term-fn-bytes">${escapeHtml(bytes) || '—'}</span></div>`).join('');
-  return `<div class="term-foot" id="term-msg"><div class="term-fn-head">`
-    + `<span class="term-fn-mark">w</span> the message — ${escapeHtml(message.algorithm)}, `
-    + `${escapeHtml(sighashName(message.type))}</div>${rows}`
-    + `<div class="term-fn-row term-fn-sum"><span class="term-fn-name" title="SHA-256 of the SHA-256 of `
-    + `every field above, in the order they are set: the number this signature was made over">⌘</span>`
-    + `<span class="term-fn-bytes term-onchain">${escapeHtml(message.digest)}</span></div></div>`;
+// A field is set the way the book sets that kind of thing, which is the whole
+// reason btc-sighash.js labels them rather than handing over hex and wishing
+// the page luck. The split is entropy, and it is the book's own:
+//
+//   a figure is a figure -- a version, a count, an index -- and prints as one
+//   a flag has a name, and the name is what a reader checks
+//   a locktime and a sequence have marks (□ ■ Τ ● ○), the reading's own, taken
+//     from btc-prose so the footnote and a chapter can never say them apart
+//   an amount is ₿
+//   a script is opcodes, revealed as the reader reveals one
+//   an outpoint is a coin: the txid said, and which output of it
+//   and a hash is unreadable by construction, so it is SAID -- prose, in the
+//     book's own tongue, which is what this book does with bytes nobody can
+//     read rather than fall back to hex
+//
+// Without the engine the high-entropy rows keep their bytes: the marks can be
+// drawn from the bytes alone but the words cannot, and hex is better than a
+// blank where a reader was promised something to hash.
+// What a value looks like when the engine that says it is not here. Never the
+// hex: high-entropy bytes reach a reader through Glossia or they do not reach
+// them at all, which is the rule this book keeps everywhere it prints a hash.
+// So the mark stands with the claim in its hover, exactly as it does for every
+// other thing this page cannot compute honestly.
+const UNSAID_BYTES = 'these bytes are a hash, and a hash reaches a reader as prose or not at all — '
+  + 'the Glossia engine says them, and this build does not carry it. The copy menu on the '
+  + 'digest above still hands over the exact bytes';
+const unsaid = () => `<span class="wit-empty" title="${escapeHtml(UNSAID_BYTES)}">…</span>`;
+
+const zeros = (hex) => /^0+$/.test(hex);
+const fieldValue = (f, sayFn, reader) => {
+  if (f.kind === 'none') return '—';
+  // A field a flag freed. BIP143 writes thirty-two zero bytes there and the
+  // book has a mark for nothing, so it takes it rather than printing a run of
+  // noughts that reads like data.
+  if (f.bytes && zeros(f.bytes) && f.kind === 'said') {
+    return `<span class="wit-empty" title="zeroed — ${escapeHtml(f.said)}">∅</span>`;
+  }
+  if (f.kind === 'figure') return `<span class="fn-figure">${escapeHtml(String(f.of))}</span>`;
+  if (f.kind === 'flag') return `<span class="fn-figure">${escapeHtml(sighashName(f.of))}</span>`;
+  if (f.kind === 'amount') {
+    return `<span class="fn-figure">${escapeHtml(reader
+      ? reader.formatAmount(f.of) : `${f.of} sat`)}</span>`;
+  }
+  if (f.kind === 'locktime' || f.kind === 'sequence') {
+    const info = reader
+      ? (f.kind === 'locktime' ? reader.locktimeInfo(f.of) : reader.sequenceInfo(f.of))
+      : null;
+    return info
+      ? `<span class="op" title="${escapeHtml(info.title)}">${escapeHtml(info.mark || '†')}</span>`
+      : `<span class="fn-figure">${escapeHtml(String(f.of))}</span>`;
+  }
+  if (f.kind === 'script') {
+    if (!f.of) return `<span class="wit-empty" title="no script at all">∅</span>`;
+    return reader && sayFn ? reader.renderScript(f.of, (h) => sayFn(h) || '') : unsaid();
+  }
+  // A coin, named as the chain names it: the txid said in the book's tongue,
+  // and the output's own number after it. The id is reversed on the wire from
+  // the way it is written, and the bytes here are the wire's -- so what is said
+  // is what the message actually carries, which is the point of saying it.
+  if (f.kind === 'outpoint') {
+    const said = sayFn ? sayFn(f.of.txid) || '' : '';
+    return (said || unsaid())
+      + ` <span class="op op-push" title="output ${f.of.vout} of it">.${f.of.vout}</span>`;
+  }
+  const said = sayFn ? sayFn(f.bytes) || '' : '';
+  return said || (f.bytes ? unsaid() : '—');
 };
+
+const messageFoot = (message, sayFn = null, reader = null) => {
+  if (!message) return '';
+  const rows = message.fields.map((f) =>
+    `<div class="term-fn-row"><span class="term-fn-name" title="${escapeHtml(f.said)}">${escapeHtml(f.name)}</span>`
+    + `<span class="term-fn-bytes">${fieldValue(f, sayFn, reader)}</span></div>`).join('');
+  // The digest, said, as the heading of everything that made it. The fields
+  // below are the metadata -- what went into the hash, in the order it went --
+  // and this is what came out, which is the one number a reader checks. A
+  // footnote's heading should name the thing the footnote is about, and this
+  // is that thing.
+  //
+  // Never as hex. A hash reaches a reader as prose or it does not reach them:
+  // that is the rule everywhere this book prints one (see .hash-copy in
+  // bitcoin-book.html), and the copy menu is what makes it cost nothing --
+  // clicking hands over the exact bytes, of the digest or of the whole
+  // preimage, which is more reliable than selecting a string this long by hand
+  // anyway. The bytes ride on the element rather than in the text, where they
+  // can be copied and cannot be read.
+  const digest = sayFn ? sayFn(message.digest) || '' : '';
+  const said = `the digest — ${message.algorithm}, ${sighashName(message.type)}. `
+    + 'Click to copy it, or the preimage it was taken over';
+  return `<div class="term-foot" id="term-msg">`
+    + `<div class="term-fn-digest"><span class="term-fn-mark">※</span>`
+    + `<span class="hash-copy" tabindex="0" role="button" title="${escapeHtml(said)}" `
+    + `data-hash="${escapeHtml(message.digest)}" data-preimage="${escapeHtml(message.preimage)}">`
+    + `<span class="op" title="${escapeHtml(message.digestSaid)}">⌘</span> `
+    + `${digest || unsaid()}</span></div>`
+    + `<div class="term-fn-head">the message it was taken over — `
+    + `${escapeHtml(message.algorithm)}, ${escapeHtml(sighashName(message.type))}</div>${rows}</div>`;
+};
+
+// The copy menu behind a said hash, which is what lets the rule cost nothing:
+// the prose is what a reader sees, and the bytes are one click away. Two items,
+// because a digest has two things worth taking — the number itself, and the
+// serialization it was taken over, so a reader can hash it and compare rather
+// than take the page's word.
+//
+// Delegated from the card, since the card is rebuilt from a string on every
+// keystroke and a listener bound to a span inside it would not survive the
+// next paint. The bytes ride on the element in data attributes: copyable,
+// unreadable, and never set in type.
+let copyMenu = null;
+const closeCopyMenu = () => { copyMenu?.remove(); copyMenu = null; };
+function openCopyMenu(host) {
+  closeCopyMenu();
+  const items = [['Copy hash', host.dataset.hash], ['Copy preimage', host.dataset.preimage]];
+  const menu = document.createElement('div');
+  menu.className = 'hash-menu';
+  menu.setAttribute('role', 'menu');
+  menu.innerHTML = '<div class="hash-menu-head">the message</div>';
+  for (const [label, value] of items) {
+    if (!value) continue;
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'hash-menu-item';
+    b.setAttribute('role', 'menuitem');
+    b.textContent = label;
+    b.addEventListener('click', async () => {
+      try { await navigator.clipboard.writeText(value); } catch { /* denied; nothing to say */ }
+      closeCopyMenu();
+    });
+    menu.append(b);
+  }
+  document.body.append(menu);
+  const r = host.getBoundingClientRect();
+  menu.style.left = `${Math.min(r.left, window.innerWidth - menu.offsetWidth - 8)}px`;
+  menu.style.top = `${Math.min(r.bottom + 6, window.innerHeight - menu.offsetHeight - 8)}px`;
+  copyMenu = menu;
+  menu.querySelector('.hash-menu-item')?.focus();
+}
+document.addEventListener('click', (e) => {
+  const host = e.target.closest?.('.hash-copy');
+  if (host) { e.stopPropagation(); openCopyMenu(host); return; }
+  if (!e.target.closest?.('.hash-menu')) closeCopyMenu();
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') { closeCopyMenu(); return; }
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  const host = e.target.closest?.('.hash-copy');
+  if (host) { e.preventDefault(); openCopyMenu(host); }
+});
 
 function drawTerm(hex, { address = null, at = '', say: sayFn = null, said = '',
                         quoted = false, opened = null, spendSection = null, brought = null,
-                        paired = false, message = null } = {}) {
+                        paired = false, message = null, ref = null, reader = null,
+                        check = null } = {}) {
   const fault = scriptFault(hex);
   const t = fault ? null : termOfScript(hex);
   const head = `<div class="term-head"><span class="term-kind">${t ? escapeHtml(t.label) : 'Script'}</span>`
@@ -549,25 +821,29 @@ function drawTerm(hex, { address = null, at = '', say: sayFn = null, said = '',
   const argument = quoted ? '' : (t && sayFn ? sayFn(t.argument) || '' : '');
   const script = `<span class="term-onchain" title="the same script in the book’s own hand — `
     + `this box takes it back">${spellHtml(hex, { say: sayFn }) || ''}</span>`;
-  // The second rung, in two parts: what the lock IS as a term, and then the
-  // script itself. One term line per way of opening the output -- an unspent
-  // taproot output really can be opened either way -- and one script, because
-  // they are one script however many ways it opens.
+  // The quotation's title: the anonymous λ this script binds, which is exactly
+  // what the reading prints above the same paragraph (see termTitle in
+  // bitcoin-book.html). One line, because a title names the abstraction and a
+  // script has one however many ways it opens.
   //
-  // The term lines stand above the passage and outside the rule. λ, the
-  // binders, the ellipsis and the eval step are the book's notation ABOUT this
-  // script and not one byte of it, and a quotation that carried them would be
-  // attributing the reader's own apparatus to the chain, under a citation
-  // saying where to go and read it. They also stayed out of the copyable span
-  // for the same reason from the other side: a click here takes bare bytes, and
-  // the search box reads them back.
-  // A term with nothing written down about what it awaits has no second rung of
-  // its own -- bare multisig, a data output, any shape the book has not tabled
-  // -- and the script still stands, quoted or not. There is simply no notation
-  // above it, which is the honest thing to draw: the page knows the bytes and
-  // does not know what opens them.
-  const terms = ((t && lockedHtml(t)) || [])
-    .map((line) => `<div class="term-line">${line}</div>`).join('');
+  // The demand used to stand here -- one line per way in, saying what a spend
+  // must bring. It was a truer thing to know and a worse thing to be titled
+  // by: two shapes can want the same key material, so it did not distinguish
+  // what a name has to distinguish, and it said what a future spend must do
+  // above a passage that is simply a lock somebody wrote. What a reader wants
+  // over a quotation is its name. The demand is still the table this module
+  // reads (btc-term.js's DEMANDS) and still what the notation key prints in
+  // its validator column; it is no longer drawn as a rung of its own.
+  //
+  // The title stands above the passage and outside the rule. λ, the dot and
+  // the binders are the book's notation ABOUT this script and not one byte of
+  // it, and a quotation that carried them would be attributing the reader's own
+  // apparatus to the chain, under a citation saying where to go and read it. It
+  // also stays out of the copyable span for the same reason from the other
+  // side: a click here takes bare bytes, and the search box reads them back.
+  // What goes untitled is what binds nothing -- bytes that are not a script at
+  // all -- and the script still stands, quoted or not.
+  const terms = t ? `<div class="term-line">${titleHtml(t)}</div>` : '';
   const passage = `<div class="term-line">${script}</div>`;
   // …and the passage is marked as a quotation once, and only once, the chain
   // has said where these bytes are written. Until it answers -- and if it
@@ -578,10 +854,10 @@ function drawTerm(hex, { address = null, at = '', say: sayFn = null, said = '',
   const locked = terms + (quoted ? `<div class="term-quote">${passage}</div>` : passage);
   const body = fault
     ? `<div class="term-said">${faultNote(fault)}</div>`
-    : (t ? `<div class="term-line term-awaits">${addressHtml(t, { prose: argument })}</div>` : '')
+    : (t ? `<div class="term-line term-awaits">${addressHtml(t, { prose: argument, ref })}</div>` : '')
       + locked
       + said
-      + (t ? spendRung(t, opened, sayFn, spendSection, brought, paired, message) : '');
+      + (t ? spendRung(t, opened, sayFn, spendSection, brought, paired, message, ref, reader, check) : '');
   termEl.innerHTML = head + body;
   termEl.hidden = false;
   termEl.dataset.at = at;
@@ -601,6 +877,10 @@ async function enrichTerm(hex, { address = null, at = '' } = {}) {
   if (!still()) return;
   const verdict = witnessVerdict(hex, witness);
   const opened = witness?.opened ?? null;
+  // The term, read once here as well: the commitment check is about what this
+  // script binds, and the draw below is the only other place that reads it.
+  const t = termOfScript(hex);
+  let check = null;
   // Set the way the reader sets it, whichever way the input carried it: a
   // witness as a stack, a scriptSig as script. Only the carriage decides which,
   // exactly as it does in a chapter.
@@ -615,37 +895,81 @@ async function enrichTerm(hex, { address = null, at = '' } = {}) {
   // was reached, it carries these bytes, and every reference on the page carries
   // the same ones. ⋯ never asked, ∅ found nothing, and ☒ found something else --
   // under none of those is there a passage to mark, so the rule stays off.
+  // The road back to the datum. Every term line on this leaf that writes the
+  // output's own datum is writing ONE value -- the bytes the locking script
+  // carries -- however many lines write it: rung one applies the term to it,
+  // and a spend title that says p³² is naming the very key the output
+  // published rather than anything the input brought. So the mark points at
+  // the passage that holds it, which is the lock's citation and never the
+  // spend's. Only where the chain agreed: under ⋯ ∅ ☒ there is no passage to
+  // send anyone to, and a road to a place the page could not confirm would be
+  // worse than the mark standing alone.
+  const refOf = (lock) => (verdict === 'agrees' && witness?.found
+    ? { href: citeHref(witness.txid, witness.out ?? undefined),
+        said: `the datum this term binds, written at ${cite(witness.height, lock, { out: witness.out })}`
+          + ' — the locking script carries it, and every line here that names it names that one' }
+    : null);
   const draw = (lock, spend, message) => drawTerm(hex, { address, at, say: sayFn,
-    said: `<div class="term-attrib">${chainMark(verdict, witness, hex, lock)}</div>`,
+    said: `<div class="term-attrib">${chainMark(verdict, witness, hex, lock, sayFn)}</div>`,
     quoted: verdict === 'agrees', opened, spendSection: spend, brought,
-    paired: Boolean(witness?.paired), message });
+    paired: Boolean(witness?.paired), message, ref: refOf(lock), reader, check });
   draw(null, null, null);
-  const [lock, spend, message] = await Promise.all([
+  const [lock, spend, message, checked] = await Promise.all([
     witness?.found ? sectionOfFetched(witness.txid) : null,
     opened ? sectionOfFetched(opened.txid) : null,
     signedMessage(hex, opened),
+    // The commitment needs nothing from the network -- both halves are in hand
+    // the moment the spend is -- but it is taken here with the rest so the card
+    // is repainted once rather than three times.
+    t ? commitmentCheck(t, opened) : null,
   ]);
   if (!still()) return;
-  if (lock != null || spend != null || message) draw(lock, spend, message);
+  check = checked;
+  if (lock != null || spend != null || message || check) draw(lock, spend, message);
+}
+
+// The commitment, carried out. The output published a hash; the spend revealed
+// what it was a hash of; and the page holds both, so it takes the hash itself
+// rather than restating that somebody ought to. HASH160 is SHA-256 and then
+// RIPEMD-160, which is why this needs two modules and a browser needs help with
+// the second.
+//
+// What comes back is the check and its verdict, or null where there is nothing
+// to check (a key published outright) or nothing this can settle (taproot's
+// script path, whose tweak is curve arithmetic and not a digest). A failure to
+// hash is a null too: a mark that could not be computed is not drawn, exactly
+// as everywhere else on this leaf.
+const bytesOfHex = (h) => new Uint8Array((String(h).match(/../g) || []).map((b) => parseInt(b, 16)));
+
+async function commitmentCheck(t, opened) {
+  if (!opened) return null;
+  try {
+    const c = commitmentOf(t, opened.args ?? [], { scriptsig: opened.scriptsig });
+    if (!c) return null;
+    const once = await sha256(c.of);
+    const got = c.op === 0xa8 ? once : await digestOf(bytesOfHex(once), 'ripemd160');
+    return { ...c, got, holds: got === c.against };
+  } catch { return null; }
 }
 
 // What the input signed, fetched. Two requests the rest of the leaf does not
 // need: the spending transaction's own bytes, since a digest is a serialization
-// of the whole of it, and its inputs' prevout values, since BIP143 signs the
-// amount and the witness does not carry it. Both are the book's own fetchers,
-// memoized, and both are for confirmed data that cannot change.
+// of the whole of it, and its inputs' prevout coins, since BIP143 signs this
+// input's amount and BIP341 every input's amount and script, none of which the
+// witness carries. Both are the book's own fetchers, memoized, and both are
+// for confirmed data that cannot change.
 //
 // Everything here is allowed to fail quietly. A mirror that refuses, a taproot
-// spend whose digest this does not write, a preimage that cannot be built --
-// each leaves ⌘ … on the line, which is the true statement in every one of
-// those cases. The alternative is a mark pointing at bytes that are wrong.
+// spend that took its script path, a preimage that cannot be built -- each
+// leaves ⌘ … on the line, which is the true statement in every one of those
+// cases. The alternative is a mark pointing at bytes that are wrong.
 async function signedMessage(script, opened) {
   if (!opened) return null;
   try {
-    const [raw, values] = await Promise.all([txHexOf(opened.txid), prevoutValuesOf(opened.txid)]);
+    const [raw, coins] = await Promise.all([txHexOf(opened.txid), prevoutsOf(opened.txid)]);
     if (!raw) return null;
     return await messageOf({ script, raw, index: opened.in,
-      value: values?.[opened.in] ?? null,
+      value: coins?.[opened.in]?.value ?? null, prevouts: coins,
       items: opened.items ?? [], scriptsig: opened.scriptsig ?? null });
   } catch { return null; }
 }

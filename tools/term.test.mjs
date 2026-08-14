@@ -26,7 +26,10 @@ import { OPCODE_SYMBOLS, OPCODE_NAMES, toSuperscript } from '../web/btc-sigla.js
 import { TERMS, termOfScript, addressable, reduce, spendHtml, pathTaken, suppliedNames, suppliedHtml, abstractionText, applicationText, normalFormText,
          pureForm, reducePure, pureText, pureApplicationText,
          lockText, lockApplicationText, demandsOf, addressText, addressHtml,
-         lockedText, lockedHtml, spendText } from '../web/btc-term.js';
+         lockedText, lockedHtml, spendText,
+         revealedOf, revealedText, revealedHtml,
+         titleText, titleHtml,
+         commitmentOf, commitmentText, commitmentHtml } from '../web/btc-term.js';
 
 // One address of every form that has one, which is every row of the key's
 // Addresses group: the book's own Ross Ulbricht ledger, a P2SH, and the BIP173
@@ -378,7 +381,7 @@ test('a signature’s clause names the message, and says when it cannot', () => 
   // between a demand a reader can read and one they can carry out.
   const t = termOfScript(addressScriptHex('bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4'));
   assert.match(lockedText(t)[0], /\( ⌘ … \)$/);
-  assert.match(spendText(t, 'w')[0], /\( ⌘ w \)\) s p$/);
+  assert.match(spendText(t, '※')[0], /\( ⌘ ※ \)\) s p$/);
   // …and only the forms that check a signature name a message at all. P2SH and
   // P2WSH hand the signature check over with the script they reveal, so ⌘
   // appears nowhere on their lines: the output never knew there would be one.
@@ -733,4 +736,183 @@ test('the spend rung is written from the chain, marks counts and prose', () => {
   assert.equal(leaf.which, 1);
   assert.equal(strip(leaf.html), 's⁷¹ t³⁵ c³³');
   assert.equal(suppliedHtml(t, []), null, 'nothing brought, nothing to write');
+});
+
+test('the spend quotation is titled by what the chain revealed', () => {
+  const strip = (html) => html.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+  // A push as the wire writes one: direct to 75 bytes, OP_PUSHDATA1 past it
+  // -- which a three-key redeem script always is.
+  const push = (h) => {
+    const n = h.length / 2;
+    return (n <= 75 ? '' : '4c') + n.toString(16).padStart(2, '0') + h;
+  };
+  // Two kinds of output hide two kinds of thing, so a reveal is titled two
+  // ways. A script-hash form hid a SCRIPT: the spend hands over its bytes, and
+  // the title is that script's own -- the anonymous λ it binds, exactly as the
+  // lock a rung up is titled by its own.
+  const sh = termOfScript(addressScriptHex('3J98t1WpEZ73CNmQviecrnyiWrnqRhWNLy'));
+  const redeem = '52' + push(KEY) + push(KEY) + push(KEY) + '53ae';
+  const scriptsig = '00' + push(SIG) + push(SIG) + push(redeem);
+  const items = ['', SIG, SIG, redeem];
+  assert.equal(revealedOf(sh, items, { scriptsig }), redeem);
+  assert.deepEqual(revealedText(sh, items, { scriptsig }), ['λp₁ p₂ p₃. ② p₁ p₂ p₃ ③ ◇']);
+  assert.deepEqual(revealedText(sh, items, { scriptsig }), [titleText(termOfScript(redeem))]);
+  // …and the two renderings never drift, exactly as every other rung's do not.
+  assert.deepEqual(revealedHtml(sh, items, { scriptsig }).map(strip),
+    revealedText(sh, items, { scriptsig }));
+  // A P2SH output wrapping a witness program: the arguments move to the stack
+  // and the redeem script stays behind in the scriptSig, so it is read from
+  // there. Its title is the title that program carries anywhere else, because
+  // it is the same script wherever it stands.
+  const program = '0014' + 'cd'.repeat(20);
+  assert.deepEqual(revealedText(sh, [SIG, KEY], { scriptsig: push(program) }), ['λh. ⓪ h']);
+  // Without the scriptSig there is no redeem script to read, and the last
+  // witness item is never mistaken for one: null, not the pubkey.
+  assert.equal(revealedOf(sh, [SIG, KEY]), null);
+  // P2WSH reveals on the stack: the witness script is the last item.
+  const wsh = termOfScript(addressScriptHex('bc1qrp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3qccfmv3'));
+  const witnessScript = push(KEY) + 'ac';
+  assert.equal(revealedOf(wsh, [SIG, witnessScript]), witnessScript);
+  assert.deepEqual(revealedText(wsh, [SIG, witnessScript]), ['λp. p ∇']);
+
+  // The other kind: a keyhash form hid a VALUE, the key behind ⌖p. There is no
+  // script to read, so the title is the demand with its commitment discharged
+  // -- the p is on the page now, and what the spend turned out to be is the
+  // signature over a message the page can name.
+  const wpkh = termOfScript('00142b0a02e9917ef97e5b441b566fe671dcdf232dde');
+  assert.equal(titleText(wpkh), 'λh. ⓪ h', 'the lock is titled by the λ it binds');
+  assert.deepEqual(revealedText(wpkh, [SIG, KEY], { msg: '※' }), ['λs p. ∇ s p ( ⌘ ※ )']);
+  assert.deepEqual(revealedHtml(wpkh, [SIG, KEY], { msg: '※' }).map(strip),
+    revealedText(wpkh, [SIG, KEY], { msg: '※' }));
+  // The hash clause is gone because it is a question already answered, and the
+  // key stands bare: it came from the spend, not from the output.
+  assert.ok(!/⌖|∧|²⁰/.test(revealedText(wpkh, [SIG, KEY], { msg: '※' })[0]));
+  // Unnamed where the page has not fetched the preimage, said the way the
+  // lock rung says it.
+  assert.deepEqual(revealedText(wpkh, [SIG, KEY]), ['λs p. ∇ s p ( ⌘ … )']);
+  // P2PKH hid the same value and is titled the same way on its reveal, though
+  // its lock is a different script and carries a different title.
+  const pkh = termOfScript(addressScriptHex('1Ross5Np5doy4ajF9iGXzgKaC2Q3Pwwxv'));
+  assert.equal(titleText(pkh), 'λh. ⧉ ⌖ h ≡ ∇');
+  assert.deepEqual(revealedText(pkh, [SIG, KEY], { msg: '※' }), ['λs p. ∇ s p ( ⌘ ※ )']);
+
+  // The forms that hid nothing are titled too, and the difference shows in the
+  // binders: their key was in the output from the first, so the spend brought
+  // only a signature and the key stays the datum it always was -- p³² with its
+  // count, where a keyhash reveal writes a bare p it had to be given.
+  const tr = termOfScript(addressScriptHex(TR));
+  assert.equal(revealedOf(tr, [SCHNORR]), null, 'no script was revealed');
+  assert.deepEqual(revealedText(tr, [SCHNORR], { msg: '※' }), ['λs. ∇ s p³² ( ⌘ ※ )']);
+  assert.deepEqual(revealedText(termOfScript(reduce(TERMS.p2pk, '04' + 'ab'.repeat(64))), [SIG],
+    { msg: '※' }), ['λs. ∇ s p⁶⁵ ( ⌘ ※ )'], 'a bare key, at its own length');
+  // Which is what keeps ⌘ anchored. The message footnote is drawn wherever the
+  // page could serialize one, and with the application rung gone this title is
+  // the only line that writes ⌘ -- a footnote whose mark appeared nowhere would
+  // be a reference to nothing.
+  assert.ok(revealedText(tr, [SCHNORR], { msg: '※' })[0].includes('⌘ ※'));
+  // Taproot's script path hid a leaf, which is a script: titled by its own λ.
+  const leaf = push(KEY) + 'ac';
+  assert.equal(revealedOf(tr, [SIG, leaf, 'c0' + 'ab'.repeat(32)]), leaf);
+  assert.deepEqual(revealedText(tr, [SIG, leaf, 'c0' + 'ab'.repeat(32)]), ['λp. p ∇']);
+  // …and a reveal the alphabet cannot read titles nothing: the bytes are
+  // known, what they are is not, and declining beats guessing.
+  const unreadable = 'ba'.repeat(3);                // opcodes consensus never defined
+  const bad = { scriptsig: '00' + push(SIG) + push(unreadable) };
+  assert.equal(revealedText(sh, ['', SIG, unreadable], bad), null);
+  assert.equal(revealedOf(sh, ['', SIG, unreadable], bad), unreadable,
+    'the bytes themselves are still named');
+});
+
+test('the datum points at the passage that holds it; nothing else does', () => {
+  const strip = (html) => html.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+  const linked = (html) => /<a class="term-ref"/.test(html);
+  const ref = { href: './bitcoin-book.html?ref=v4b78c160s1250o0',
+    said: 'written at IV β78 ■160 §1250.0' };
+  const tr = termOfScript(addressScriptHex(TR));
+  // A term line that writes the output's datum is naming ONE value however
+  // many lines write it -- the bytes the locking script carries -- so the mark
+  // carries a road to the passage that holds it.
+  assert.ok(linked(addressHtml(tr, { ref })), 'the address rung’s argument');
+  const key = revealedHtml(tr, [SCHNORR], { msg: '※', ref });
+  assert.ok(linked(key[0]), 'and a spend title naming the key the OUTPUT published');
+  // …which is the case the road exists for: p³² is bound a section above, in a
+  // different transaction, while every other name on that line is something
+  // this input brought and the passage below quotes. So a keyhash reveal, whose
+  // p came from the spend itself, gets none.
+  const wpkh = termOfScript('00142b0a02e9917ef97e5b441b566fe671dcdf232dde');
+  const brought = revealedHtml(wpkh, [SIG, KEY], { msg: '※', ref });
+  assert.equal(strip(brought[0]), 'λs p. ∇ s p ( ⌘ ※ )');
+  assert.ok(!linked(brought[0]), 'a value the spend brought needs no road to another passage');
+  // The mark is never replaced by the reference: a citation names an output,
+  // which is the whole script -- the term's own reduced form -- so writing it
+  // where the argument stands would apply the term to its own result, and
+  // would throw away which datum this is and how many bytes of it.
+  assert.equal(strip(addressHtml(tr, { ref })), addressText(tr));
+  assert.match(addressHtml(tr, { ref }), /term-ref[^>]*>.*?class="dt".*?class="op op-push op-count"/);
+  // And no road where the chain did not answer: under ⋯ ∅ ☒ there is no passage
+  // to send anyone to, and the mark stands alone as it does before any fetch.
+  assert.ok(!linked(addressHtml(tr)), 'unasked, the mark stands bare');
+  assert.ok(!linked(revealedHtml(tr, [SCHNORR], { msg: '※' })[0]));
+  // A term with more than one hole carries no address and no single datum, so
+  // no hole is the one the chain cited: none of them takes the road.
+  const ms = termOfScript('52' + '21' + KEY + '21' + KEY + '21' + KEY + '53ae');
+  assert.equal(ms.holes.length, 3);
+  assert.ok(!linked(addressHtml(ms, { ref })), 'three arguments name no one passage');
+});
+
+test('the commitment says what to hash and against what, and declines the rest', async () => {
+  const { sha256 } = await import('../web/btc-sighash.js');
+  const { digestOf } = await import('../web/btc-ots.js');
+  const bytes = (h) => new Uint8Array((h.match(/../g) || []).map((b) => parseInt(b, 16)));
+  // The module says what the check IS; taking it is the caller's, since
+  // RIPEMD-160 is in no browser and SHA-256 is async, and btc-term.js stays the
+  // light synchronous module a page can draw a term with.
+  const take = async (c) => {
+    const once = await sha256(c.of);
+    return c.op === 0xa8 ? once : digestOf(bytes(once), 'ripemd160');
+  };
+  // BIP143's own vector: the key it prints, and the program built from it.
+  const KEY = '025476c2e83188368da1ff3e292e7acafcdb3566bb0ad253f62fc70f07aeee6357';
+  const H160 = '1d0f172a0ecb48aee1be1f2687d2963ae33f71a1';
+  const wpkh = termOfScript('0014' + H160);
+  const c = commitmentOf(wpkh, [SIG, KEY]);
+  assert.equal(commitmentText(c), '⌖ p ≡ h²⁰');
+  assert.equal(c.of, KEY, 'the key the spend brought, not the datum');
+  assert.equal(c.against, H160, 'against the datum the output published');
+  assert.equal(await take(c), H160, 'and the hash of one really is the other');
+  // …which is the whole point: a key that is not the committed one fails it.
+  assert.notEqual(await take(commitmentOf(wpkh, [SIG, KEY.slice(0, -2) + 'ff'])), H160);
+  // P2WSH commits with a single SHA-256 over the script the witness revealed.
+  const push = (h) => (h.length / 2).toString(16).padStart(2, '0') + h;
+  const ws = push(KEY) + 'ac';
+  const wsh = termOfScript('0020' + await sha256(ws));
+  const c2 = commitmentOf(wsh, [SIG, ws]);
+  assert.equal(commitmentText(c2), 'Σ w ≡ h³²');
+  assert.equal(await take(c2), c2.against);
+  // P2SH's is the redeem script from the scriptSig, hashed the legacy way.
+  const redeem = '51' + push(KEY) + '51ae';
+  const h = await digestOf(bytes(await sha256(redeem)), 'ripemd160');
+  const sh = termOfScript('a914' + h + '87');
+  const c3 = commitmentOf(sh, ['', SIG, redeem], { scriptsig: '00' + push(SIG) + push(redeem) });
+  assert.equal(commitmentText(c3), '⌖ r ≡ h²⁰');
+  assert.equal(await take(c3), c3.against);
+  // What is declined, and why each is not a failure to try. A key published
+  // outright commits to nothing -- there is no preimage anyone withheld.
+  const tr = termOfScript(addressScriptHex(TR));
+  assert.equal(commitmentOf(tr, [SCHNORR]), null, 'taproot’s key path hid nothing');
+  assert.equal(commitmentOf(termOfScript(reduce(TERMS.p2pk, '04' + 'ab'.repeat(64))), [SIG]), null);
+  // …and taproot's script path hid a great deal, but settling it is elliptic
+  // curve arithmetic and not a digest, so it is declined rather than guessed.
+  assert.equal(commitmentOf(tr, [SIG, push(KEY) + 'ac', 'c0' + 'ab'.repeat(32)]), null,
+    'a tweak is not a hash');
+  // Nothing brought is nothing to check.
+  assert.equal(commitmentOf(wpkh, []), null);
+  // The two renderings never drift, as everywhere else in this module.
+  const strip = (html) => html.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+  assert.equal(strip(commitmentHtml(c)), commitmentText(c));
+  // …and the datum takes the road to the passage that holds it, exactly as it
+  // does on every other line that names it: the h²⁰ here IS the lock's.
+  const ref = { href: './bitcoin-book.html?ref=v4b78c160s1250o0', said: 'written at IV β78 ■160 §1250.0' };
+  assert.match(commitmentHtml(c, { ref }), /<a class="term-ref"/);
+  assert.ok(!/<a /.test(commitmentHtml(c)), 'and none where the chain named no passage');
 });
