@@ -42,7 +42,7 @@ import { dataLetter } from './btc-address-form.js';
 const SUPERSCRIPT_N = 'ⁿ';
 
 const OP_0 = 0x00, OP_1 = 0x51;
-const OP_DUP = 0x76, OP_HASH160 = 0xa9, OP_SHA256 = 0xa8;
+const OP_DUP = 0x76, OP_HASH160 = 0xa9, OP_SHA256 = 0xa8, OP_HASH256 = 0xaa;
 const OP_EQUAL = 0x87, OP_EQUALVERIFY = 0x88, OP_CHECKSIG = 0xac;
 
 // The terms, exactly as the key's terms table draws them: the binder's letter,
@@ -277,60 +277,79 @@ export function reduce(term, args) {
 // that hands back a script is exactly a lock whose arity it cannot state: the
 // two can never disagree because there is only one field.
 //
-// `checks` is the other way a lock can hand something back, and the only one
-// where the program comes from CONSENSUS rather than from the spender. It is a
-// script written the way a term's body is -- opcodes, and null where the datum
-// goes -- because that is what it is: a program the protocol builds out of the
-// marks the output carries, and runs against what the spend brought.
+// `demand` is what a spend has to make true, which is a different question
+// from what the output holds and the only one a reader can actually check. It
+// is a PREDICATE, not a script: clauses joined by a conjunction, over the
+// values a spend brings and the datum the output carries.
 //
-// Every witness output needs one, and for one reason: a segwit scriptPubKey
-// commits to a program, it does not carry one. ⟦ ⓪ h²⁰ ⟧ is a version byte and
-// twenty bytes of hash; nothing in it hashes, compares or verifies anything, so
-// the term as written collected a signature and a key and never said what
-// became of them. What consensus does is written down in BIP141 and BIP341, and
-// this is that, in the book's own marks:
+//   P2PKH · P2WPKH  ( ⌖ p ≡ h²⁰ ) ∧ ∇ s p ( ⌘ … )
+//   P2SH            ( ⌖ r ≡ h²⁰ ) ∧ ( r )
+//   P2WSH           ( Σ w ≡ h³² ) ∧ ( w )
+//   P2TR key        ∇ s p³² ( ⌘ … )
+//   P2TR script     ( ⋔ t c ≡ p³² ) ∧ ( t )
 //
-//   P2WPKH   ( ⧉ ⌖ h²⁰ ≡ ∇ )   the P2PKH template, built from the program's
-//                              own datum -- so the two forms ask for the same
-//                              key material AND run the same script, and only
-//                              the wire between them differs
-//   P2WSH    ( Σ h³² = )        the commitment check, before the revealed
-//                              script runs: the one step P2SH writes in bytes
-//                              and segwit does not
-//   P2TR key ( ∇ )              no script at all, the one witness item verified
-//                              against the output key as if by this opcode
+// This is a return, and the thing returned to was thrown out for a reason
+// worth restating. A demand written as a predicate once stood on rung two, and
+// its conjunction printed as ∧ -- OP_BOOLAND, a live opcode that pops two
+// numbers off a stack -- on a line that claimed to reduce to a script. The
+// claim was the fault, not the mark: nothing said the line was unreducible, so
+// a reader had every reason to read ∧ as an instruction, and it simply was not
+// one.
 //
-// The distinction the parentheses now carry is exact, and it is the one ⟦ ⟧
-// already makes: bare marks are bytes the output holds, and what stands inside
-// a ( ) is an operation being run that no byte on the wire spells. Set P2SH
-// beside P2WSH and the whole of segwit's change is one pair of parentheses --
+// What changed is that the claim is gone. Rung two no longer says it reduces to
+// anything; the script it used to spell is set immediately below it, quoted,
+// under a citation. So the line is free to say what only a predicate can, which
+// is the whole point of writing one: a reader with the page in front of them
+// can check the math. ⌖ p ≡ h is a hash they can take. ∇ s p ( ⌘ … ) is a
+// signature they can verify, once ⌘'s message is a thing they can see -- which
+// is what the footnote a spent output points them to is for.
 //
-//   λ… r. ⌖ h²⁰ =        ( r )     the check on the wire
-//   λ… w. ⓪ h³² ( Σ h³² = ) ( w )  the check supplied
+// The ∧ stays quiet, in the apparatus colour, and that is what keeps it honest:
+// on this leaf gold means a byte the chain holds or an operation being run, and
+// the conjunction is neither. A reader who wonders is told in its hover.
 //
-// `checks` never puts a … on the line: what it runs has the arity of the
-// binders already named, and the ellipsis belongs to `runs`, which cannot.
+// `runs` still carries the ellipsis, and now also a clause of its own -- ( r )
+// says the revealed script's own demand stands here, uncounted and unread,
+// which is exactly as much as an output that committed to a hash can say.
+const D = Symbol('datum');       // the datum the output carries, with its count
+const MSG = Symbol('message');   // ( ⌘ … ), the message a signature is over
+const RUN = Symbol('runs');      // ( r ), whatever the revealed script demands
+const AND = Symbol('and');       // ∧, the conjunction -- notation, not an opcode
+const OPEN = Symbol('('), CLOSE = Symbol(')');
+const TWEAK = '⋔';               // the taptweak, which no opcode spells
+
+const SIGNED = (key) => [OP_CHECKSIG, 's', key, MSG];
+const HASHED = (op, name) => [OPEN, op, name, OP_EQUALVERIFY, D, CLOSE, AND];
+
 const DEMANDS = {
-  p2pk:   [{ brings: 's' }],
-  p2pkh:  [{ brings: 's p' }],
-  p2sh:   [{ brings: 'r', runs: 'r' }],
-  p2wpkh: [{ brings: 's p', checks: [OP_DUP, OP_HASH160, null, OP_EQUALVERIFY, OP_CHECKSIG] }],
-  p2wsh:  [{ brings: 'w', runs: 'w', checks: [OP_SHA256, null, OP_EQUAL] }],
+  p2pk:   [{ brings: 's', demand: SIGNED(D) }],
+  p2pkh:  [{ brings: 's p', demand: [...HASHED(OP_HASH160, 'p'), ...SIGNED('p')] }],
+  p2sh:   [{ brings: 'r', runs: 'r', demand: [...HASHED(OP_HASH160, 'r'), RUN] }],
+  p2wpkh: [{ brings: 's p', demand: [...HASHED(OP_HASH160, 'p'), ...SIGNED('p')] }],
+  p2wsh:  [{ brings: 'w', runs: 'w', demand: [...HASHED(OP_SHA256, 'w'), RUN] }],
   // Taproot asks for one of two things, which is the whole of what a taptree
-  // buys: a signature under the output key, checked by consensus itself, or a
-  // leaf that proves to it and is then run like any other script.
-  p2tr:   [{ brings: 's', checks: [OP_CHECKSIG] },
-           { brings: 't c', runs: 't' }],
+  // buys: a signature under the output key, or a leaf that proves to it and is
+  // then run like any other script -- the proof being the control block, which
+  // tweaks the leaf back to the key the output committed to.
+  p2tr:   [{ brings: 's', demand: SIGNED(D) },
+           { brings: 't c', runs: 't',
+             demand: [OPEN, TWEAK, 't', 'c', OP_EQUALVERIFY, D, CLOSE, AND, RUN] }],
 };
 
 // What the lock, once written, is still a function of -- or null for a term
 // with nothing written down. Each alternative is { brings: [names], runs,
-// checks }, and a term with two of them is an output with two ways to open it.
+// demand }, and a term with two of them is an output with two ways to open it.
 export function demandsOf(t) {
   const alts = DEMANDS[t.id];
   if (!alts) return null;
   return alts.map((alt) => ({ brings: alt.brings.split(' '), runs: alt.runs ?? null,
-    checks: alt.checks ?? null }));
+    demand: alt.demand ?? null,
+    // Every opcode this alternative's demand writes, named so a caller can hold
+    // the line to its own vocabulary rather than to the whole alphabet. ⌘ is in
+    // it wherever a message is: the digest a signature is over is a hash being
+    // taken, and the mark for it is the one the alphabet gives OP_HASH256.
+    marks: (alt.demand ?? []).flatMap((tok) => (typeof tok === 'number' ? [tok]
+      : tok === MSG ? [OP_HASH256] : [])) }));
 }
 
 // The mark for the binders a wrapped form cannot write: however many
@@ -347,23 +366,26 @@ const UNDER_SAID = 'however many arguments the revealed script wants, pushed ben
 // off `runs`, which is what makes the … and the ( ) one claim rather than two.
 const binderText = (alt) => (alt.runs ? `${UNDER} ` : '') + alt.brings.join(' ');
 
-// The eval step: what the lock hands back to be run, in the ( ) that exists for
-// it. Two sources, one shape -- the program CONSENSUS supplies, and the script
-// the SPENDER revealed (r w t) -- and the shape is shared because the reader's
-// question is the same either way: after the marks the chain holds, what runs?
+// The demand, written out. One walk of the clause list serves both renderings,
+// so the marks on the page and the marks in a test can never be two different
+// readings of one table.
 //
-// Both, in that order, where both apply. P2WSH is checked and then runs what it
-// checked, which is two steps and reads as two: ( Σ h³² = ) ( w ).
-//
-// The supplied program is written the way a body is, its datum counted, because
-// the count is the one thing that says WHICH twenty bytes -- the same twenty the
-// output carries, appearing once on the wire and once in the script consensus
-// derives from them.
-const checksText = (t, codes) => codes
-  .map((c) => (c === null ? datumText(t) : glyph(c))).join(' ');
+// `msg` is what the signature is over: … where nothing names it, and the letter
+// of a footnote where the page has fetched the preimage and can set the bytes a
+// reader would hash. That is the whole reason the message is a mark and not a
+// word -- a demand nobody can evaluate is a demand nobody can check.
 const datumText = (t) => t.holes[0].name + toSuperscript(t.holes[0].bytes);
-const evalText = (t, alt) => (alt.checks ? ` ( ${checksText(t, alt.checks)} )` : '')
-  + (alt.runs ? ` ( ${alt.runs} )` : '');
+const UNSAID = '…';
+
+const demandText = (t, alt, msg = UNSAID) => alt.demand.map((tok) => {
+  if (tok === D) return datumText(t);
+  if (tok === MSG) return `( ⌘ ${msg} )`;
+  if (tok === RUN) return `( ${alt.runs} )`;
+  if (tok === AND) return '∧';
+  if (tok === OPEN) return '(';
+  if (tok === CLOSE) return ')';
+  return typeof tok === 'number' ? glyph(tok) : tok;
+}).join(' ').replace(/\( /g, '( ').replace(/ \)/g, ' )');
 
 // ─── rung one: the address ───────────────────────────────────────────────
 //
@@ -378,12 +400,17 @@ export const addressText = (t) =>
 
 // ─── rung two: what that hands back ──────────────────────────────────────
 //
-// Not a fragment: a λ of its own, over what a spend must bring. One line per
-// alternative, since the lock is one script however many ways there are to
-// satisfy it.
-export const lockedText = (t) => {
+// Not a fragment: a λ of its own, over what a spend must bring -- and what it
+// wants of them, which is a predicate a reader can evaluate rather than a
+// script they would have to run. One line per alternative, since the lock is
+// one script however many ways there are to satisfy it.
+//
+// The script itself is not on this line and does not need to be: it is set
+// immediately below, quoted, under a citation of its own. That is what frees
+// the line to state the demand instead of restating the bytes.
+export const lockedText = (t, msg) => {
   const alts = demandsOf(t);
-  return alts ? alts.map((alt) => `λ${binderText(alt)}. ${bodyText(t, true)}${evalText(t, alt)}`) : null;
+  return alts ? alts.map((alt) => `λ${binderText(alt)}. ${demandText(t, alt, msg)}`) : null;
 };
 
 // ─── rung three: the spend ───────────────────────────────────────────────
@@ -397,10 +424,10 @@ export const lockedText = (t) => {
 // The arguments stand as their names and not as values: the counts and the
 // bytes arrive from the chain, and this module is the one that cannot ask.
 // Rung one writes h²⁰ there because an address really does hold its datum.
-export const spendText = (t) => {
+export const spendText = (t, msg) => {
   const alts = demandsOf(t);
   return alts ? alts.map((alt) =>
-    `(λ${binderText(alt)}. ${bodyText(t, true)}${evalText(t, alt)}) ${binderText(alt)}`) : null;
+    `(λ${binderText(alt)}. ${demandText(t, alt, msg)}) ${binderText(alt)}`) : null;
 };
 
 // ─── the same, as marks ──────────────────────────────────────────────────
@@ -418,33 +445,50 @@ const awaited = (name) => `<span class="aw">${escapeHtml(name)}</span>`;
 const under = () => `<span class="aw" title="${escapeHtml(UNDER_SAID)}">${UNDER}</span>`;
 const binderMarks = (alt) => (alt.runs ? `${under()} ` : '') + alt.brings.map(awaited).join(' ');
 
-// Consensus's own step, and the one operation on any of these lines that is not
-// a byte in the output. It takes the gold all the same, because the check
-// really happens; what makes it implicit is where it stands -- outside the
-// marks the chain holds, which is the rule the book keeps everywhere: a glyph
-// inside the script is a byte, the same glyph outside is that operation being
-// run. The claim it makes is in its hover, which is where this book puts one it
-// cannot set in type.
-const CHECKS_SAID = (code) => `${OPCODE_NAMES[code]} — consensus’s own, and not a byte in this `
-  + 'output. A witness output commits to a program rather than carrying one, so what runs here '
-  + 'is the script the protocol builds from the marks to the left, and it stands inside the ( ) '
-  + 'because that is where this book puts an operation no byte on the wire spells';
-const checksMark = (code) => `<span class="op" title="${escapeHtml(CHECKS_SAID(code))}">`
-  + `${escapeHtml(glyph(code))}</span>`;
+// The demand as marks. The colours carry the reading, and they are the ones the
+// whole leaf is styled by: gold for what the chain holds and for an operation
+// that really runs, plain ink for what a spend has still to bring, and the
+// quiet apparatus colour for the notation's own marks.
+//
+// The conjunction is the one that has to be got right. ∧ is OP_BOOLAND's glyph,
+// and this book threw it off this very rung once for exactly that: a live
+// opcode standing in for a connective, on a line that claimed to be a script.
+// The claim is gone now -- the script is quoted below, and this line states a
+// predicate -- so the mark can come back, and what keeps it honest is the ink.
+// It takes the apparatus colour, never the gold, so on a leaf where gold means
+// "the chain wrote this or this runs" the conjunction is visibly neither. A
+// reader who wonders is told so in its hover.
+const AND_SAID = 'and — the notation’s conjunction, joining two things a spend must make true. '
+  + 'Not OP_BOOLAND, which shares its glyph: nothing on this line is a script, and the marks '
+  + 'that would be bytes are set in gold, which this one never takes';
+const andMark = () => `<span class="lam" title="${escapeHtml(AND_SAID)}">∧</span>`;
 
-// The supplied program as marks, written the way a body is: its operations in
-// the gold every operation takes -- they really do run -- and its datum with
-// the count that says which bytes they run over.
-const checksHtml = (t, codes) => codes
-  .map((c) => (c === null ? dt(t.holes[0]) + count(t.holes[0]) : checksMark(c))).join(' ');
+const MSG_SAID = 'the message the signature is over — the transaction serialized as the '
+  + 'signature’s own sighash flag says, hashed twice. Everything about a spend that is signed '
+  + 'is in here, and everything that is not is malleable';
+const UNSAID_SAID = 'not named — no spend has been reached, so there is no serialization to set '
+  + 'and nothing here a reader could hash for themselves';
+const msgMark = (msg) => `${lam('(')} <span class="op" title="${escapeHtml(MSG_SAID)}">`
+  + `${escapeHtml(glyph(0xaa))}</span> ${msg || `<span class="aw" title="${escapeHtml(UNSAID_SAID)}">${UNSAID}</span>`} ${lam(')')}`;
 
-// The eval step as marks: what consensus supplies, then what the spend revealed.
-// The ( ) is apparatus in both -- the step between two scripts, and no byte of
-// either -- so it keeps the quiet colour around whatever it holds, and the
-// distinction between the two kinds is carried by what is inside: a plain
-// letter the spend has yet to bring, or a program already written.
-const evalMarks = (t, alt) => (alt.checks ? ` ${lam('(')} ${checksHtml(t, alt.checks)} ${lam(')')}` : '')
-  + (alt.runs ? ` ${lam('(')} ${awaited(alt.runs)} ${lam(')')}` : '');
+// The tweak has no opcode behind it -- no script performs it, consensus does --
+// so it is named rather than glossed from the alphabet.
+const TWEAK_SAID = 'the taptweak — the leaf hashed up its branch with the control block’s '
+  + 'path and added to the internal key. No opcode does this; consensus does it before any '
+  + 'leaf is allowed to run';
+const opMark = (tok) => (tok === TWEAK
+  ? `<span class="op" title="${escapeHtml(TWEAK_SAID)}">${escapeHtml(TWEAK)}</span>`
+  : op(tok));
+
+const demandHtml = (t, alt, msg) => alt.demand.map((tok) => {
+  if (tok === D) return dt(t.holes[0]) + count(t.holes[0]);
+  if (tok === MSG) return msgMark(msg);
+  if (tok === RUN) return `${lam('(')} ${awaited(alt.runs)} ${lam(')')}`;
+  if (tok === AND) return andMark();
+  if (tok === OPEN) return lam('(');
+  if (tok === CLOSE) return lam(')');
+  return typeof tok === 'number' || tok === TWEAK ? opMark(tok) : awaited(tok);
+}).join(' ');
 
 // `prose` is the argument's bytes said in the book's own tongue, and it lands
 // where an address keeps its payload: after the term, behind the mark that
@@ -455,19 +499,15 @@ export const addressHtml = (t, { prose = '' } = {}) =>
   + t.holes.map((h, i) => dt(h) + count(h)
     + (prose && i === 0 && t.holes.length === 1 ? ` ${prose}` : '')).join(' ');
 
-// The second rung, split at the body so a caller can set what it likes between
-// the marks. The λ, the binders and the eval step are the book's own notation
-// about a script and not one byte of it, which is the whole reason they come
-// out separately: a page that QUOTES the script has to be able to keep them off
-// the quotation, and a page that lets it be COPIED has to be able to keep them
-// out of the clipboard. lockedHtml puts the term's own body back between them.
-export function lockedMarks(t) {
+// The second rung as marks: the binders, and then what they have to make true.
+// Nothing of the caller's goes between them any more -- the line used to be
+// split so a page could set the spelled script in the middle, and the script
+// now has a quoted line of its own below.
+export function lockedHtml(t, msg) {
   const alts = demandsOf(t);
   if (!alts) return null;
-  return alts.map((alt) => ({
-    prefix: `${lam('λ')}${binderMarks(alt)}${lam('.')}`,
-    suffix: evalMarks(t, alt),
-  }));
+  return alts.map((alt) =>
+    `${lam('λ')}${binderMarks(alt)}${lam('.')} ${demandHtml(t, alt, msg)}`);
 }
 
 // ─── which path a spend took ─────────────────────────────────────────────
@@ -523,17 +563,14 @@ export function suppliedNames(alt, items) {
 // address and no reduction reaches them, so the shape is all this page can
 // write and the citation beside it is what supplies the rest.
 //
-// Split at the body like rung two's, and for the same reason -- the caller may
-// have a better hand to set the script in. The application's parentheses close
-// in the suffix, after the eval step and before the arguments, so the whole
-// redex is one line: the abstraction, then what goes into it.
-export function spendMarks(t) {
+// Rung two in parentheses with its arguments after it -- and, where the page
+// has fetched the spend, with ⌘'s message named: the letter of the footnote
+// holding the bytes a reader would hash to check the signature themselves.
+export function spendHtml(t, msg) {
   const alts = demandsOf(t);
   if (!alts) return null;
-  return alts.map((alt) => ({
-    prefix: `${lam('(λ')}${binderMarks(alt)}${lam('.')}`,
-    suffix: `${evalMarks(t, alt)}${lam(')')} ${binderMarks(alt)}`,
-  }));
+  return alts.map((alt) => `${lam('(λ')}${binderMarks(alt)}${lam('.')} `
+    + `${demandHtml(t, alt, msg)}${lam(')')} ${binderMarks(alt)}`);
 }
 
 // …and with the values in hand, the same rung written out: each one a mark, its
@@ -573,15 +610,6 @@ export function suppliedHtml(t, items, { say = null, brought = null } = {}) {
   }).join(' ');
   return { which, html: brought ?? own() };
 }
-
-// The lock's own marks, with no prose and nothing copyable about them: what a
-// second alternative shows, since the datum has already been said once above.
-export const lockBodyHtml = (t) => bodyHtml(t, true);
-
-export const lockedHtml = (t) => {
-  const marks = lockedMarks(t);
-  return marks ? marks.map((m) => `${m.prefix} ${lockBodyHtml(t)}${m.suffix}`) : null;
-};
 
 // ─── the pure form ───────────────────────────────────────────────────────
 //
