@@ -777,25 +777,39 @@ button:disabled { opacity: .4; cursor: not-allowed; }
    standard address) it takes no room. */
 .tx-out-keep { grid-column: 1 / -1; text-align: center; margin: .1em 0 .15em; font: italic 500 calc(13.5px * var(--scale-body, 1))/1.4 'Newsreader','Book Sigla',serif; color: var(--ink-soft); }
 .tx-out-keep:empty { display: none; }
-/* The title a locking script has when nobody has given it one: the term it
-   binds, written as the anonymous λ it is. Every script on chain carries a
-   name in this sense -- the abstraction is derivable from the bytes and needs
-   no reader, no shelf and no network -- so the line above a paragraph is never
-   empty for want of somebody having spoken first. A filed name still wins:
-   a name says WHOSE this is, the term only says what it is, and the reader who
-   kept it was answering the harder question. The one paragraph that goes on
-   untitled is the one with nothing tabled to say (a data output, a shape the
-   book has not written a demand for), where declining beats guessing.
-   Set quieter than a name -- the apparatus colour, not the accent -- because
-   it is the book's notation about the paragraph rather than anyone's claim
-   over it, and roman rather than the italic a name takes. */
-.tx-out-keep .out-term { font-style: normal; color: var(--meta); font-size: .92em; }
-/* The marks inside it read as they read everywhere else (.op .dt are the
-   book's own, defined above), with the calculus's own -- λ and the dot -- kept
-   quiet, since they are the notation and not the script. Scoped rather than
-   loosed on the page: .lam means something on the search leaf, where a whole
-   descent is written in it, and a chapter is not that leaf. */
-.tx-out-keep .out-term .lam { color: var(--meta); font-weight: 400; }
+/* The title a locking script carries: the term it binds, written as the
+   anonymous λ it is. Every script on chain has a name in this sense -- the
+   abstraction is derivable from the bytes and needs no reader, no shelf and no
+   network -- so a paragraph is never nameless for want of somebody having
+   spoken first, and what goes untitled is only what binds nothing.
+   It sits BELOW the keep line, because a bookmark stands above a title: a name
+   is somebody's claim on this paragraph and comes first, the term is what the
+   book can say about it without anyone's help and follows. Both stand -- they
+   answer different questions, whose and what -- so neither displaces the other.
+   Set quieter than a name (the apparatus colour, not the accent) and roman
+   rather than the italic a name takes, because it is the book's notation about
+   the paragraph rather than anyone's claim over it. */
+.tx-out-term { grid-column: 1 / -1; text-align: center; margin: .1em 0 .2em; color: var(--meta);
+  font-family: 'Newsreader','Book Sigla',serif; font-style: normal; font-weight: 500; line-height: 1.4; }
+.tx-out-term:empty { display: none; }
+/* Sized from the SIGLA scale, alone among the lines on a section. Everything
+   else here is prose with marks set into it, so the marks ride
+   --scale-sigla-ratio and the sentence around them keeps the body's size (see
+   the glyph rules below). A title has no sentence around it: λ, the dot, the
+   binders and the opcodes are notation end to end, and a reader who has sized
+   the sigla up to read them has sized up the whole of this line by saying so. */
+.tx-out-term { font-size: calc(13.5px * var(--scale-body, 1) * var(--scale-sigla-ratio, 1)); }
+/* …which is why the glyph rule must not land on top of it: #page-slide .op
+   multiplies 1em by the same ratio, and a line already carrying it would take
+   the ratio twice. The same neutralizing the book already does for .op-count,
+   for the same arithmetic. */
+#page-slide .tx-out-term .op { font-size: 1em; }
+/* The marks inside read as they read everywhere else (.op .dt are the book's
+   own, defined below), with the calculus's own -- λ and the dot -- kept quiet,
+   since they are the notation and not the script. Scoped rather than loosed on
+   the page: .lam means something on the search leaf, where a whole descent is
+   written in it, and a chapter is not that leaf. */
+.tx-out-term .out-term .lam { color: var(--meta); font-weight: 400; }
 .tx-out-keep .out-keep-name { cursor: pointer; }
 .tx-out-keep .out-keep-name:hover, .tx-out-keep .out-keep-name:focus-visible { color: var(--accent-2); outline: none; }
 .tx-out-keep .keep-rib { display: inline-block; line-height: 0; color: var(--accent); vertical-align: -2px; background: none; border: 0; padding: 2px 5px; cursor: pointer; opacity: .42; }
@@ -4924,12 +4938,20 @@ function renderChapter(para) {
     outKeep.dataset.spk = out.spkHex;
     if (!state.projected) outKeep.dataset.ref = latinRefOf(state.height, para.num, i);
     outputsEl.append(outKeep);
-    // The term, at once. It is read off the bytes in hand, so it needs neither
-    // the address below nor anything from the network, and a title that waited
-    // for either would leave the line blank under a reader already reading the
-    // paragraph it titles. syncScriptKeeps repaints over this the moment there
-    // is a name to prefer, and draws the term again itself where there is not.
-    termTitle(outKeep);
+    // …and below it the term, which is the title this script has whether or
+    // not anyone ever names it. Its own line rather than the keep's, because a
+    // bookmark stands above a title and the two say different things: the keep
+    // names whose paragraph this is, the term what it is. So neither waits on
+    // the other and neither displaces it.
+    //
+    // Painted once, here. It is read off the bytes in hand -- no address, no
+    // engine, no network -- so it is on the page at first paint, and nothing
+    // that happens to a keep afterwards can change it.
+    const outTerm = document.createElement('div');
+    outTerm.className = 'tx-out-term';
+    outTerm.dataset.spk = out.spkHex;
+    outputsEl.append(outTerm);
+    termTitle(outTerm);
     scriptToAddress(out.spkHex).then((r) => {
       if (gen !== renderGen || !r || !r.address) return;
       outKeep.dataset.address = r.address;
@@ -7426,9 +7448,10 @@ function syncScriptKeeps() {
     const address = el.dataset.address;
     el.textContent = '';
     // No address is no ledger to keep and no name to file -- an OP_RETURN, or a
-    // script no address form spells. The term does not need one, so the line
-    // still says what the lock is and simply offers no ribbon beside it.
-    if (!address) { termTitle(el); continue; }
+    // script no address form spells. The paragraph is still titled: the term
+    // stands on its own line below, which needs no address and never waited on
+    // one.
+    if (!address) continue;
     const reader = keptLedgers().find((k) => k.addresses.includes(address));
     const curated = INDEXED.find((k) => k.addresses.includes(address));
     const ledgerHref = `./bitcoin-ledger.html?address=${encodeURIComponent(address)}`
@@ -7447,12 +7470,6 @@ function syncScriptKeeps() {
       span.addEventListener('click', (e) => openHashMenu(e, entry, span));
       span.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openHashMenu(e, entry, span); } });
       el.append(span);
-    } else {
-      // Unnamed, which is the ordinary state of nearly every output on chain:
-      // the term stands as the title. It yields the moment anyone files a name
-      // -- the reader's keep or the curated shelf's -- because a name answers
-      // whose this is and the term only answers what it is.
-      termTitle(el);
     }
     const rib = document.createElement('button');
     rib.type = 'button';

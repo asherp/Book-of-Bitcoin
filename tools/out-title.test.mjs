@@ -112,25 +112,49 @@ test('anything that binds a term is titled, tabled or not', async () => {
   assert.equal(paint(null).drew, false, 'a line with no script on it');
 });
 
-test('a filed name wins, and the term returns when it is removed', async () => {
-  // The precedence the page keeps, read out of the page: the term is painted in
-  // the branch where no name was found, never beside one. A name says whose
-  // this is; the term only says what it is.
+test('the bookmark stands above the title, and neither displaces the other', async () => {
   const page = await bookPage();
+  // Two lines, in that order: the keep -- a name somebody filed, and the ribbon
+  // that files it -- and then the term below it. A bookmark goes above a title
+  // because it answers the harder question (whose this is); the term answers
+  // what it is, which the book can say without anyone's help.
+  const keep = page.indexOf("outputsEl.append(outKeep);");
+  const term = page.indexOf("outputsEl.append(outTerm);");
+  assert.ok(keep > 0 && term > 0, 'the page no longer appends both lines');
+  assert.ok(keep < term, 'the term is painted above the bookmark');
+  // The term is painted once, where it is built, and never from the keep
+  // painter -- so no name can displace it and none has to be removed to bring
+  // it back. They are different lines saying different things.
+  assert.match(page, /outTerm\.className = 'tx-out-term';[\s\S]{0,200}?termTitle\(outTerm\);/,
+    'the term is no longer painted on its own line');
   const fn = /function syncScriptKeeps\(\) \{[\s\S]*?\n\}/.exec(page);
   assert.ok(fn, 'the page no longer paints its keep lines');
-  const src = fn[0];
-  // `if (name) { ... } else { termTitle(el); }` -- the term is the else, so a
-  // reader's keep or a curated shelf title displaces it, and removing the keep
-  // brings it back because the whole line repaints from scratch each time.
-  assert.match(src, /if \(name\) \{[\s\S]*?\} else \{[\s\S]*?termTitle\(el\);[\s\S]*?\}/,
-    'the term is no longer the fallback under a filed name');
-  assert.match(src, /el\.textContent = '';/, 'the line no longer repaints from scratch');
-  // …and a script with no address of its own still gets one: an OP_RETURN has
-  // no ledger to keep, which is a reason to offer no ribbon, not a reason to
-  // say nothing about the paragraph.
-  assert.match(src, /if \(!address\) \{ termTitle\(el\); continue; \}/,
-    'a script with no address is titled too');
+  assert.ok(!/termTitle\(/.test(fn[0]), 'the keep painter is writing titles again');
+  // …and a script with no address still gets one: an OP_RETURN has no ledger
+  // to keep, which is a reason to offer no ribbon, not a reason to leave the
+  // paragraph untitled.
+  assert.match(fn[0], /if \(!address\) continue;/, 'the keep line still needs an address');
+  assert.match(page, /outTerm\.dataset\.spk = out\.spkHex;/, 'the term reads the bytes alone');
+});
+
+test('the title is sized by the sigla, and takes their scale once', async () => {
+  const page = await bookPage();
+  const css = page.slice(0, page.indexOf('</style>'));
+  // Every other line on a section is prose with marks set into it, so the
+  // marks ride --scale-sigla-ratio and the sentence keeps the body's size. A
+  // title has no sentence around it -- it is notation end to end -- so the
+  // whole line takes the sigla scale.
+  assert.match(css, /\.tx-out-term \{ font-size: calc\(13\.5px \* var\(--scale-body, 1\) \* var\(--scale-sigla-ratio, 1\)\); \}/,
+    'the title no longer scales with the sigla');
+  // …once. #page-slide .op multiplies 1em by the same ratio, so a mark on a
+  // line already carrying it would take the ratio twice; the page neutralizes
+  // that here exactly as it does for .op-count.
+  assert.match(css, /#page-slide \.tx-out-term \.op \{ font-size: 1em; \}/,
+    'the opcodes in a title take the sigla ratio twice');
+  // The neutralizer has to outrank the rule it neutralizes: an id and two
+  // classes against an id and one, which is why it carries #page-slide too.
+  const at = css.indexOf('#page-slide .tx-out-term .op');
+  assert.ok(at > 0 && css.indexOf('#page-slide .op {') !== at, 'the two rules must be distinct');
 });
 
 test('every mark the title sets is a mark the reading styles', async () => {

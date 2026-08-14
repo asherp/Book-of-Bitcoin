@@ -69,18 +69,30 @@ lambdas — the same split as the committed/revealed modes below:
     own signature and the lock's title still stands. A reveal that does not
     tokenize titles nothing: declining beats guessing, here as everywhere.
 
-The same title stands in the reading, as an editorial decision: a paragraph is
-titled where anyone has named it (the reader's keep, else the curated shelf),
-and the term is the title it has when nobody has. `termTitle` /
-`syncScriptKeeps` (bitcoin-book.html) paint it on `.tx-out-keep`, the line
-already centered above each output's script. A filed name wins — a name says
-whose this is, the term only says what it is — and the term returns when the
-keep is removed. It is drawn at first paint from the bytes alone (no address,
-no engine, no network), so anything that binds a term is titled whether or not
-the book has tabled what opens it (a data output reads `λd. ¶ d`); what goes
-untitled is what binds nothing. Because the reading did not have `.lam`, it is
-styled scoped to `.out-term`: that mark means something on the search leaf,
-where a whole descent is written in it, and a chapter is not that leaf.
+The same title stands in the reading, as an editorial decision: every output's
+locking script is titled by the term it binds, on its own line (`.tx-out-term`,
+painted by `termTitle` in bitcoin-book.html) directly above the script.
+
+- **The bookmark goes above the title.** The keep line (`.tx-out-keep`: a filed
+  name, and the ribbon that files it) stands above the term line, and the two
+  do not compete — a name answers *whose* this paragraph is, the term answers
+  *what* it is, so neither displaces the other and no keep has to be removed
+  to see the term. `syncScriptKeeps` paints only the bookmark; the term is
+  painted once where it is built.
+- Drawn at first paint from the bytes alone (no address, no engine, no
+  network), so anything that binds a term is titled whether or not the book has
+  tabled what opens it (a data output reads `λd. ¶ d`), and a script with no
+  address form is titled though it can offer no ribbon. What goes untitled is
+  what binds nothing.
+- **Sized from the sigla scale**, alone among a section's lines: everywhere
+  else the marks ride `--scale-sigla-ratio` while the prose around them keeps
+  the body's size, but a title has no prose in it — λ, the dot, the binders and
+  the opcodes are notation end to end. `#page-slide .tx-out-term .op` resets to
+  `1em` so the ratio is not applied twice (the same neutralizing the book
+  already does for `.op-count`).
+- Because the reading did not have `.lam`, it is styled scoped to `.out-term`:
+  that mark means something on the search leaf, where a whole descent is
+  written in it, and a chapter is not that leaf.
 
 The search page's rungs are not titles and keep their own job: rung two states
 the demand (every way in, one line each), rung three the application. The
