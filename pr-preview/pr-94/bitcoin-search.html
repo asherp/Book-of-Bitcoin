@@ -224,6 +224,14 @@ button:hover { background: var(--accent-2); }
 .term-check-said { color: var(--meta); }
 /* A mismatch is the one outcome that must never be mistaken for another. */
 .term-check-differs { color: #d9564b; }
+/* The commitment, taken. It sits between the spend's title and the passage it
+   quotes, because it is about both -- the value quoted below, and the datum
+   written a section above -- and it is the one line on this card the page
+   settled rather than derived. The tick takes the gold every made mark takes;
+   a failure takes the red, since a check that does not hold and looks like one
+   that does is worse than no check at all. */
+.term-checked { margin-top: 2px; }
+.term-held { color: var(--accent); }
 /* The message ⌘ names, set as a footnote: not a quotation — no chain wrote
    these bytes in this order, the page serialized them — so it takes no rule.
    Each field on its own row, its name in the margin with the gloss in its
@@ -367,8 +375,11 @@ import { reference, latinReference, inputMark } from './btc-citation.js';
 import { parseLookup } from './btc-lookup.js';
 
 import { termOfScript, addressHtml, titleHtml, suppliedHtml,
-         revealedHtml } from './btc-term.js';
-import { messageOf, sighashName } from './btc-sighash.js';
+         revealedHtml, commitmentOf, commitmentHtml } from './btc-term.js';
+import { messageOf, sighashName, sha256 } from './btc-sighash.js';
+// RIPEMD-160 is in no browser, so the book carries one -- written for reading
+// OpenTimestamps proofs, which need it for the same reason Bitcoin does.
+import { digestOf } from './btc-ots.js';
 import { spellHtml, read, looksSpelled, isWholeScript, scriptFault } from './btc-address-form.js';
 const input = document.getElementById('block-input');
 const termEl = document.getElementById('term');
@@ -525,7 +536,7 @@ const faultNote = (f) => {
 // So the two lines are one application: the abstraction, and then the values
 // that go into it, which are the only part of it anybody had to be told.
 const spendRung = (t, opened, sayFn, section = null, brought = null, paired = false,
-                   message = null, ref = null, reader = null) => {
+                   message = null, ref = null, reader = null, check = null) => {
   // The arity is read off what the script takes; the line shows everything the
   // input carried, annex and all, exactly as the reader would.
   const rung = opened?.args?.length
@@ -593,7 +604,26 @@ const spendRung = (t, opened, sayFn, section = null, brought = null, paired = fa
   // that hung off the title instead would close whenever a reveal could not be
   // titled. It belongs to the section either way -- what it separates is two
   // claims about two transactions, not two lines.
-  return `<div class="term-spend">${reveal}`
+  // …and beneath the title, the one claim on this card that spans both
+  // passages: the value this input revealed hashes to the datum that output
+  // published. Not stated -- taken. The page has the revealed value quoted
+  // below and the datum written a section above, so it takes the hash and says
+  // whether it holds, and the datum carries its road to the passage it is
+  // written in. A demand said what a spender must make true; this says what
+  // this spender did, and a reader with both passages can take the same hash.
+  //
+  // Drawn only where it can be settled: nothing for a key the output published
+  // outright, and nothing for taproot's script path, whose tweak is curve
+  // arithmetic rather than a digest.
+  const held = check && (check.holds
+    ? `<span class="term-check term-held" title="taken and it holds — this page hashed the `
+      + `${escapeHtml(check.name === 'p' ? 'key' : 'script')} quoted below and got the datum the `
+      + `output published, which is what makes these two passages one coin">✓</span>`
+    : `<span class="term-check term-check-differs" title="taken and it does NOT hold — the `
+      + `chain accepted this spend, so trust it and not this page">☒</span>`);
+  const checked = check
+    ? `<div class="term-line term-checked">${held} ${commitmentHtml(check, { ref })}</div>` : '';
+  return `<div class="term-spend">${reveal}${checked}`
     + `<div class="term-line term-quote">${rung.html}</div>`
     + `<div class="term-attrib"><span class="term-cite" title="${says}">—</span> ${where}</div>`
     + `${messageFoot(message, sayFn, reader)}</div>`;
@@ -761,7 +791,8 @@ document.addEventListener('keydown', (e) => {
 
 function drawTerm(hex, { address = null, at = '', say: sayFn = null, said = '',
                         quoted = false, opened = null, spendSection = null, brought = null,
-                        paired = false, message = null, ref = null, reader = null } = {}) {
+                        paired = false, message = null, ref = null, reader = null,
+                        check = null } = {}) {
   const fault = scriptFault(hex);
   const t = fault ? null : termOfScript(hex);
   const head = `<div class="term-head"><span class="term-kind">${t ? escapeHtml(t.label) : 'Script'}</span>`
@@ -826,7 +857,7 @@ function drawTerm(hex, { address = null, at = '', say: sayFn = null, said = '',
     : (t ? `<div class="term-line term-awaits">${addressHtml(t, { prose: argument, ref })}</div>` : '')
       + locked
       + said
-      + (t ? spendRung(t, opened, sayFn, spendSection, brought, paired, message, ref, reader) : '');
+      + (t ? spendRung(t, opened, sayFn, spendSection, brought, paired, message, ref, reader, check) : '');
   termEl.innerHTML = head + body;
   termEl.hidden = false;
   termEl.dataset.at = at;
@@ -846,6 +877,10 @@ async function enrichTerm(hex, { address = null, at = '' } = {}) {
   if (!still()) return;
   const verdict = witnessVerdict(hex, witness);
   const opened = witness?.opened ?? null;
+  // The term, read once here as well: the commitment check is about what this
+  // script binds, and the draw below is the only other place that reads it.
+  const t = termOfScript(hex);
+  let check = null;
   // Set the way the reader sets it, whichever way the input carried it: a
   // witness as a stack, a scriptSig as script. Only the carriage decides which,
   // exactly as it does in a chapter.
@@ -877,15 +912,44 @@ async function enrichTerm(hex, { address = null, at = '' } = {}) {
   const draw = (lock, spend, message) => drawTerm(hex, { address, at, say: sayFn,
     said: `<div class="term-attrib">${chainMark(verdict, witness, hex, lock, sayFn)}</div>`,
     quoted: verdict === 'agrees', opened, spendSection: spend, brought,
-    paired: Boolean(witness?.paired), message, ref: refOf(lock), reader });
+    paired: Boolean(witness?.paired), message, ref: refOf(lock), reader, check });
   draw(null, null, null);
-  const [lock, spend, message] = await Promise.all([
+  const [lock, spend, message, checked] = await Promise.all([
     witness?.found ? sectionOfFetched(witness.txid) : null,
     opened ? sectionOfFetched(opened.txid) : null,
     signedMessage(hex, opened),
+    // The commitment needs nothing from the network -- both halves are in hand
+    // the moment the spend is -- but it is taken here with the rest so the card
+    // is repainted once rather than three times.
+    t ? commitmentCheck(t, opened) : null,
   ]);
   if (!still()) return;
-  if (lock != null || spend != null || message) draw(lock, spend, message);
+  check = checked;
+  if (lock != null || spend != null || message || check) draw(lock, spend, message);
+}
+
+// The commitment, carried out. The output published a hash; the spend revealed
+// what it was a hash of; and the page holds both, so it takes the hash itself
+// rather than restating that somebody ought to. HASH160 is SHA-256 and then
+// RIPEMD-160, which is why this needs two modules and a browser needs help with
+// the second.
+//
+// What comes back is the check and its verdict, or null where there is nothing
+// to check (a key published outright) or nothing this can settle (taproot's
+// script path, whose tweak is curve arithmetic and not a digest). A failure to
+// hash is a null too: a mark that could not be computed is not drawn, exactly
+// as everywhere else on this leaf.
+const bytesOfHex = (h) => new Uint8Array((String(h).match(/../g) || []).map((b) => parseInt(b, 16)));
+
+async function commitmentCheck(t, opened) {
+  if (!opened) return null;
+  try {
+    const c = commitmentOf(t, opened.args ?? [], { scriptsig: opened.scriptsig });
+    if (!c) return null;
+    const once = await sha256(c.of);
+    const got = c.op === 0xa8 ? once : await digestOf(bytesOfHex(once), 'ripemd160');
+    return { ...c, got, holds: got === c.against };
+  } catch { return null; }
 }
 
 // What the input signed, fetched. Two requests the rest of the leaf does not

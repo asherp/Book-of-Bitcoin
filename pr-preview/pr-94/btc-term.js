@@ -759,6 +759,60 @@ export const revealedHtml = (t, items, opts = {}) => revealed(t, items, opts, {
     + `${demandHtml(t, { ...alt, demand: alt.shown }, opts.msg ?? null, opts.ref ?? null)}`,
 });
 
+// ─── the commitment, and whether it holds ────────────────────────────────
+//
+// The one claim on a search card that spans both passages, and the only one a
+// reader can settle by hand with both in view: the value this spend revealed
+// hashes to the datum that output published. `p` is quoted in the spend's own
+// passage; `h²⁰` is written in the lock's, a section above. Take one hash and
+// compare, and the two quotations are demonstrably about one coin.
+//
+// It used to be stated, as a clause of the demand, and stating it was the
+// weaker thing to do -- a demand describes what a spender must make true,
+// which is a claim about a future, while this is a fact about a spend that
+// happened and the page holds both halves of it. So the page takes the hash
+// itself and marks the result: witness-and-check, which is the model the whole
+// notation rests on (see CLAUDE.md) and the same model Bitcoin uses.
+//
+// This module says WHAT to hash and against what; it does not hash. There is
+// no digest here and there could not be -- ripemd160 is not in any browser and
+// SHA-256 is async -- so the caller takes it, and this stays the light,
+// synchronous, engine-free module a page can draw a term with.
+//
+// Null where nothing was committed to. P2PK and taproot's key path publish
+// their key outright, so there is no preimage to reveal and nothing to check.
+// Taproot's script path IS a commitment, and a hash alone will not settle it:
+// the tweak adds a point to the internal key, which is elliptic-curve
+// arithmetic and not a digest. Declining beats guessing, so it declines.
+const COMMITS = { p2pkh: OP_HASH160, p2wpkh: OP_HASH160, p2sh: OP_HASH160, p2wsh: OP_SHA256 };
+
+export function commitmentOf(t, items, { scriptsig = null } = {}) {
+  const op = COMMITS[t.id];
+  if (!op || !t.holes.length) return null;
+  const which = pathTaken(t, items);
+  if (which === null) return null;
+  const alt = demandsOf(t)[which];
+  // A script-hash form committed to a script, and the spend handed it over; a
+  // keyhash form committed to a key, which stands among the values it brought.
+  // Either way the thing hashed is read by consensus's own placement, never by
+  // shape -- the same reading `revealedOf` and `suppliedNames` already make.
+  const of = alt.runs ? revealedOf(t, items, { scriptsig })
+    : items[suppliedNames(alt, items).indexOf('p')] ?? null;
+  const name = alt.runs ?? 'p';
+  if (!of) return null;
+  return { op, of, name, hole: t.holes[0], against: t.holes[0].argument };
+}
+
+// The check, written out: the operation, what it is taken over, and the datum
+// it must equal. The same marks the demand's own clause used, because it is
+// the same claim -- only now it is one the page has carried out rather than
+// one it is passing on.
+export const commitmentText = (c) =>
+  `${glyph(c.op)} ${c.name} ${glyph(OP_EQUALVERIFY)} ${datumText({ holes: [c.hole] })}`;
+
+export const commitmentHtml = (c, { ref = null } = {}) =>
+  `${op(c.op)} ${awaited(c.name)} ${op(OP_EQUALVERIFY)} ${datumMark(c.hole, ref)}`;
+
 // ─── the pure form ───────────────────────────────────────────────────────
 //
 // The terms above still hold their opcodes: λh. ⟦ ⧉ ⌖ h ≡ ∇ ⟧ has ⧉ and ⌖
