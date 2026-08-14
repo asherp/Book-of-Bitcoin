@@ -56,6 +56,18 @@ lambdas — the same split as the committed/revealed modes below:
   finally gets a term of its own. A reveal that does not tokenize titles
   nothing — declining beats guessing, here as everywhere.
 
+The same title stands in the reading, as an editorial decision: a paragraph is
+titled where anyone has named it (the reader's keep, else the curated shelf),
+and the term is the title it has when nobody has. `termTitle` /
+`syncScriptKeeps` (bitcoin-book.html) paint it on `.tx-out-keep`, the line
+already centered above each output's script. A filed name wins — a name says
+whose this is, the term only says what it is — and the term returns when the
+keep is removed. It is drawn at first paint from the bytes alone (no address,
+no engine, no network), and a shape with nothing tabled goes untitled. Because
+the reading did not have `.lam` / `.aw`, they are styled scoped to
+`.out-term`: those marks mean something on the search leaf, and a chapter is
+not that leaf.
+
 Where this lives today:
 
 - `termOfScript` (btc-term.js) reads a term off any tokenizable script: every
