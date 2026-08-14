@@ -75,7 +75,7 @@ test('a record that only drew from the member answers with its prevout', () => {
 test('unconfirmed records are not the chain saying anything', () => {
   const pending = { txid: 'p', status: { confirmed: false }, vout: [{ scriptpubkey: SPK, scriptpubkey_address: ADDR }], vin: [] };
   assert.deepEqual(readWitness([pending], ADDR),
-    { found: false, whole: true, outputs: 0, prevouts: 0, scripts: [], opened: null });
+    { found: false, whole: true, outputs: 0, prevouts: 0, scripts: [], opened: null, paired: false });
   assert.equal(readWitness([], ADDR).found, false);
   // A page whose records never touch the member (esplora would not serve one,
   // but a mirror is not a promise) reads as nothing found rather than as bytes.
@@ -138,19 +138,23 @@ test('the four verdicts stay apart, and silence is never assent', () => {
   assert.equal(witnessVerdict(SPK, undefined), 'unreachable');
 });
 
+// An input that draws from the member, naming the outpoint it eats the way
+// esplora does: vin.txid and vin.vout are the output being opened, which is the
+// one fact that can tie the lock rung to the spend rung.
+const spend = (height, txid, at = 0, eats = { txid: 'pay', vout: 0 }) => ({
+  txid, status: { confirmed: true, block_height: height },
+  vout: [{ scriptpubkey: 'ff', scriptpubkey_address: 'elsewhere' }],
+  vin: [...Array(at).fill({ txid: 'other', vout: 0, prevout: { scriptpubkey: 'ff', scriptpubkey_address: 'nobody' } }),
+    { ...eats, prevout: { scriptpubkey: SPK, scriptpubkey_address: ADDR } }],
+});
+
 test('a lock is cited where it was written; its arguments where they were supplied', () => {
   // Two different questions with two different answers. The bytes of a lock are
-  // a thing the chain can be asked for, so the earliest output carrying them is
-  // a citation. What satisfies that lock is not derivable from those bytes at
+  // a thing the chain can be asked for, so an output carrying them is a
+  // citation. What satisfies that lock is not derivable from those bytes at
   // all -- s and p are not in the address, and no reduction reaches them -- so
   // the only way anyone knows them is that somebody supplied them, and where
   // they did is the only citation that half of the term can have.
-  const spend = (height, txid, at = 0) => ({
-    txid, status: { confirmed: true, block_height: height },
-    vout: [{ scriptpubkey: 'ff', scriptpubkey_address: 'elsewhere' }],
-    vin: [...Array(at).fill({ prevout: { scriptpubkey: 'ff', scriptpubkey_address: 'nobody' } }),
-      { prevout: { scriptpubkey: SPK, scriptpubkey_address: ADDR } }],
-  });
   // Newest first, as esplora serves it: paid at 600000, opened at 700000.
   const w = readWitness([spend(700000, 'open', 2), paid(600000, 'pay')], ADDR);
   assert.equal(w.txid, 'pay', 'the lock is cited where it was written');
@@ -165,6 +169,56 @@ test('a lock is cited where it was written; its arguments where they were suppli
   // citation for itself and none for its arguments, which is the ordinary
   // state of every unspent output on chain.
   assert.equal(readWitness([paid(600000, 'pay')], ADDR).opened, null);
+});
+
+test('the two citations name one outpoint: the output opened, and what opened it', () => {
+  // The pair, and why it is chosen as one. A member paid twice holds the same
+  // bytes at two outputs, and picking each rung on its own merit cited the
+  // earlier output above the earliest input -- which had opened the OTHER one.
+  // Two true claims that no reader could put together, and the leaf drew them
+  // one under the other as though the second answered the first.
+  const first = paid(600000, 'unspent');            // paid, and never opened
+  const later = paid(700000, 'spent');              // paid, and opened below
+  const opener = spend(800000, 'open', 3, { txid: 'spent', vout: 0 });
+  const w = readWitness([opener, later, first], ADDR);
+  assert.equal(w.paired, true);
+  assert.equal(w.txid, 'spent', 'the lock is cited at the output that was opened');
+  assert.equal(w.out, 0);
+  assert.equal(w.opened.txid, 'open', 'and the spend at the input that opened THAT output');
+  assert.equal(w.opened.in, 3);
+  assert.equal(w.outputs, 2, 'the one passed over is still counted');
+
+  // Earliest among the opened, not merely the first spend on the page: two
+  // outputs, both opened, and the pair is the older of them with its own opener.
+  const both = readWitness([
+    spend(900000, 'opens-old', 0, { txid: 'old', vout: 0 }),   // newest spend…
+    spend(850000, 'opens-new', 0, { txid: 'new', vout: 0 }),
+    paid(700000, 'new'), paid(600000, 'old'),
+  ], ADDR);
+  assert.equal(both.txid, 'old', 'the earliest opened output wins');
+  assert.equal(both.opened.txid, 'opens-old', 'paired with its own opener, not the earliest spend');
+});
+
+test('an unpaired spend is still quoted, and says it is unpaired', () => {
+  // A page that reaches an output but no input opening one: every spend on it
+  // ate something older than the page can see. Both halves are still true --
+  // pays() matched the prevout, so the arguments really did satisfy these bytes
+  // -- so the spend is kept and `paired` is what stops the leaf claiming the
+  // input opened the output cited above it.
+  const w = readWitness([
+    spend(800000, 'open', 0, { txid: 'off-page', vout: 7 }),
+    paid(600000, 'pay'),
+  ], ADDR);
+  assert.equal(w.paired, false);
+  assert.equal(w.txid, 'pay', 'the lock falls back to the earliest output');
+  assert.equal(w.opened.txid, 'open', 'and the spend is still shown, at the earliest one');
+  // A page with nothing but spends reaches no output at all, and cites the
+  // prevout's transaction -- the last resort, and the only case left where the
+  // lock's citation names no output of its own.
+  const none = readWitness([spend(800000, 'open', 0, { txid: 'off-page', vout: 7 })], ADDR);
+  assert.equal(none.found, true);
+  assert.equal(none.out, null);
+  assert.equal(none.paired, false);
 });
 
 test('what a spending input brought, whichever way it carried it', () => {
@@ -288,4 +342,120 @@ test('the footnote alphabet is exactly the letters that can be raised', () => {
   const unraisable = alphabet.split('').filter((c) => !upper.has(c));
   assert.deepEqual(unraisable, ['c', 'f', 's', 'x', 'y', 'z']);
   assert.equal(inputMark(3, true), 'C', 'which is input 3, among others');
+});
+
+// ─── and what the leaf does with the answer ──────────────────────────────
+//
+// The verdicts are read once more, this time as the search leaf reads them: a
+// quotation is marked as one, and only where a place can be named. Source-level,
+// because the leaf's renderer is an inline module in the page — the same way the
+// examples column is checked in address-form.test.mjs.
+const searchPage = async () => {
+  const { readFile } = await import('node:fs/promises');
+  return readFile(new URL('../web/bitcoin-search.html', import.meta.url), 'utf8');
+};
+
+test('a quoted passage is set as a quotation, the way the book sets one', async () => {
+  const page = await searchPage();
+  // The book's own device for a quotation, from bitcoin-book.html's .tx-ascii
+  // and a hit output: a marginal accent rule and the indent beside it. Not
+  // inline quotation marks -- “ ” already means something in this book, the
+  // extent of writing a miner put in a coinbase.
+  const rule = page.split('.term-quote {')[1].split('}')[0];
+  assert.match(rule, /border-left:\s*2px solid var\(--accent\)/, 'a quotation carries the rule');
+  assert.match(rule, /padding-left/, 'and the indent that goes with it');
+  // Taking back a reserved gutter, not pushing the text: the leaf draws these
+  // lines before the chain answers and again after, and an indent that arrived
+  // with the citation would slide the passage under a reader already reading it.
+  // So .term pays for the rule's column whether or not anything is quoted, and
+  // .term-quote spends exactly that much back.
+  const gutter = /padding-left:\s*(\d+)px/.exec(page.split('.term {')[1].split('}')[0]);
+  assert.ok(gutter, 'the leaf reserves no gutter for the rule');
+  assert.match(rule, new RegExp(`margin-left:\\s*-${gutter[1]}px`), 'the rule would move the text');
+  assert.ok(!/“/.test(rule), 'a script is not writing, so it takes no quotation marks');
+});
+
+test('the leaf marks a quotation only where it can name the place', async () => {
+  const page = await searchPage();
+  // The lock rung is a quotation exactly when the chain agrees: reached, found,
+  // and carrying these bytes at every reference on the page. ⋯ never asked, ∅
+  // found nothing, ☒ found something else -- none of them is a passage.
+  assert.match(page, /quoted:\s*verdict === 'agrees'/, 'only agreement makes it a quotation');
+  assert.match(page, /const locked = terms \+ \(quoted \?/, 'and the rule is drawn on that alone');
+  // The spend rung has no such condition, because it is only ever drawn when an
+  // input was found to read it off.
+  assert.match(page, /class="term-line term-quote">\$\{rung\.html\}/);
+  // Both rungs quote the passage and only the passage. λ, its binders and the
+  // eval step are this page's own notation about a script -- true of the bytes
+  // in the box whether or not the chain ever wrote them -- so they stand on a
+  // bare line above the rule, exactly as the address rung does. The term inside
+  // a quotation would put the reader's apparatus under a citation telling them
+  // where to go and read it.
+  assert.match(page, /const terms = \(\(t && lockedHtml\(t\)\)/, 'the lock rung derives its term');
+  assert.match(page, /class="term-quote">\$\{passage\}/, 'and quotes the script alone');
+  assert.match(page, /class="term-line term-spend">\$\{spendHtml\(t, msg\)\[rung\.which\]\}/,
+    'the spend rung has one too');
+  // The invariant behind both: nothing a rule encloses is built out of the
+  // term's marks. λ, …, the joint and the eval step reach the page from
+  // lockedHtml and spendMarks, and every one of those lands above a rule and
+  // never inside one.
+  for (const m of page.matchAll(/class="[^"]*term-quote"[^>]*>([^<]*)/g)) {
+    assert.ok(!/prefix|suffix|lockedHtml|lockBodyHtml/.test(m[1]),
+      `a quotation is built from the term's own marks: ${m[1]}`);
+  }
+  // The address rung is a reading of the bytes in the box -- true whether or not
+  // the chain ever wrote them -- so it is never inside the rule. If it were, the
+  // mark would stop meaning anything.
+  const classes = [...page.matchAll(/class="([^"]*)"/g)].map((m) => m[1].split(/\s+/));
+  const awaits = classes.filter((c) => c.includes('term-awaits'));
+  assert.equal(awaits.length, 1, 'the address rung is drawn once');
+  assert.ok(!awaits.some((c) => c.includes('term-quote')),
+    'the address rung is a reading, not a quotation');
+});
+
+// ─── an id is not a script, however its bytes read ───────────────────────
+
+test('the leaf never calls an id a broken script, and Read still opens it', async () => {
+  const { parseLookup } = await import('../web/btc-lookup.js');
+  const { isWholeScript, scriptFault, looksSpelled } = await import('../web/btc-address-form.js');
+  const { isAddress } = await import('../web/btc-index.js');
+  const classify = (q) => parseLookup(q, { isAddress, isSpelled: looksSpelled,
+    isLockingScript: isWholeScript });
+  // The shape the leaf's hex reading was never meant to hold. An id is 32 bytes
+  // of hash, so its bytes tokenize as a script by luck and usually badly -- a
+  // push in the middle claiming more than remains, or a byte consensus never
+  // defined. Every one of these is a real transaction id or block hash.
+  const IDS = [
+    'b38a88b073743bcc84170071cff4b68dec6fb5dc0bc8ffcb3d4ca632c2c78255',
+    '4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b',
+    'a1075db55d416d3ca199f55b6084e2115b9345e16c5cf302fc80e9d5fbf5d48d',
+    'f4184fc596403b9d638783cf57adfe4c75c605f6356fbc91338530e9831e9e16',
+    '000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f',
+  ];
+  for (const id of IDS) {
+    // The grammar's ruling, and it is not a guess: isWholeScript refuses
+    // exactly 64 characters BECAUSE that is an id, and parseLookup routes it to
+    // the book to resolve.
+    assert.equal(isWholeScript(id), false, `${id} is not offered as a script`);
+    assert.equal(classify(id).kind, 'hex', `${id} names a place`);
+  }
+  // …and most of them fault, which is exactly why the leaf must not read them.
+  assert.ok(IDS.filter((id) => scriptFault(id)).length >= 4,
+    'ids that read as broken scripts are the common case, not a corner');
+
+  const page = await searchPage();
+  // Drawn as a term only where the bytes really are one. Never as a fault: a
+  // card headed SCRIPT with a red ☒ under it, for a string this same page is
+  // about to open as a transaction, is the page contradicting itself.
+  assert.match(page, /found\.kind !== 'hex' \|\| !scriptFault\(/,
+    'the leaf reads a named place as hex only where it tokenizes whole');
+  // And Read goes there regardless. The guard that stops a chapter opening on
+  // invalid bytes is for hex that names nothing else; an id names something.
+  assert.match(page, /if \(found\.kind === null && hexish\(q\) && scriptFault\(/,
+    'Read refuses only bytes the grammar could not place');
+  // The case the guard is actually for: whole bytes that stop mid-push name no
+  // block, no transaction and no script, and the diagnosis is the only thing on
+  // the page that would explain the silence.
+  assert.equal(classify('76a914ab').kind, null);
+  assert.deepEqual(scriptFault('76a914ab'), { reason: 'truncated', at: 2, remain: 2 });
 });
