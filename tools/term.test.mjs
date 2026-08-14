@@ -380,7 +380,7 @@ test('a signature’s clause names the message, and says when it cannot', () => 
   // between a demand a reader can read and one they can carry out.
   const t = termOfScript(addressScriptHex('bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4'));
   assert.match(lockedText(t)[0], /\( ⌘ … \)$/);
-  assert.match(spendText(t, 'w')[0], /\( ⌘ w \)\) s p$/);
+  assert.match(spendText(t, '※')[0], /\( ⌘ ※ \)\) s p$/);
   // …and only the forms that check a signature name a message at all. P2SH and
   // P2WSH hand the signature check over with the script they reveal, so ⌘
   // appears nowhere on their lines: the output never knew there would be one.
@@ -780,12 +780,12 @@ test('the spend quotation is titled by what the chain revealed', () => {
   // signature over a message the page can name.
   const wpkh = termOfScript('00142b0a02e9917ef97e5b441b566fe671dcdf232dde');
   assert.equal(titleText(wpkh), 'λh. ⓪ h', 'the lock is titled by the λ it binds');
-  assert.deepEqual(revealedText(wpkh, [SIG, KEY], { msg: 'w' }), ['λs p. ∇ s p ( ⌘ w )']);
-  assert.deepEqual(revealedHtml(wpkh, [SIG, KEY], { msg: 'w' }).map(strip),
-    revealedText(wpkh, [SIG, KEY], { msg: 'w' }));
+  assert.deepEqual(revealedText(wpkh, [SIG, KEY], { msg: '※' }), ['λs p. ∇ s p ( ⌘ ※ )']);
+  assert.deepEqual(revealedHtml(wpkh, [SIG, KEY], { msg: '※' }).map(strip),
+    revealedText(wpkh, [SIG, KEY], { msg: '※' }));
   // The hash clause is gone because it is a question already answered, and the
   // key stands bare: it came from the spend, not from the output.
-  assert.ok(!/⌖|∧|²⁰/.test(revealedText(wpkh, [SIG, KEY], { msg: 'w' })[0]));
+  assert.ok(!/⌖|∧|²⁰/.test(revealedText(wpkh, [SIG, KEY], { msg: '※' })[0]));
   // Unnamed where the page has not fetched the preimage, said the way the
   // lock rung says it.
   assert.deepEqual(revealedText(wpkh, [SIG, KEY]), ['λs p. ∇ s p ( ⌘ … )']);
@@ -793,7 +793,7 @@ test('the spend quotation is titled by what the chain revealed', () => {
   // its lock is a different script and carries a different title.
   const pkh = termOfScript(addressScriptHex('1Ross5Np5doy4ajF9iGXzgKaC2Q3Pwwxv'));
   assert.equal(titleText(pkh), 'λh. ⧉ ⌖ h ≡ ∇');
-  assert.deepEqual(revealedText(pkh, [SIG, KEY], { msg: 'w' }), ['λs p. ∇ s p ( ⌘ w )']);
+  assert.deepEqual(revealedText(pkh, [SIG, KEY], { msg: '※' }), ['λs p. ∇ s p ( ⌘ ※ )']);
 
   // The forms that hid nothing are titled too, and the difference shows in the
   // binders: their key was in the output from the first, so the spend brought
@@ -801,14 +801,14 @@ test('the spend quotation is titled by what the chain revealed', () => {
   // count, where a keyhash reveal writes a bare p it had to be given.
   const tr = termOfScript(addressScriptHex(TR));
   assert.equal(revealedOf(tr, [SCHNORR]), null, 'no script was revealed');
-  assert.deepEqual(revealedText(tr, [SCHNORR], { msg: 'w' }), ['λs. ∇ s p³² ( ⌘ w )']);
+  assert.deepEqual(revealedText(tr, [SCHNORR], { msg: '※' }), ['λs. ∇ s p³² ( ⌘ ※ )']);
   assert.deepEqual(revealedText(termOfScript(reduce(TERMS.p2pk, '04' + 'ab'.repeat(64))), [SIG],
-    { msg: 'w' }), ['λs. ∇ s p⁶⁵ ( ⌘ w )'], 'a bare key, at its own length');
+    { msg: '※' }), ['λs. ∇ s p⁶⁵ ( ⌘ ※ )'], 'a bare key, at its own length');
   // Which is what keeps ⌘ anchored. The message footnote is drawn wherever the
   // page could serialize one, and with the application rung gone this title is
   // the only line that writes ⌘ -- a footnote whose mark appeared nowhere would
   // be a reference to nothing.
-  assert.ok(revealedText(tr, [SCHNORR], { msg: 'w' })[0].includes('⌘ w'));
+  assert.ok(revealedText(tr, [SCHNORR], { msg: '※' })[0].includes('⌘ ※'));
   // Taproot's script path hid a leaf, which is a script: titled by its own λ.
   const leaf = push(KEY) + 'ac';
   assert.equal(revealedOf(tr, [SIG, leaf, 'c0' + 'ab'.repeat(32)]), leaf);
@@ -832,15 +832,15 @@ test('the datum points at the passage that holds it; nothing else does', () => {
   // many lines write it -- the bytes the locking script carries -- so the mark
   // carries a road to the passage that holds it.
   assert.ok(linked(addressHtml(tr, { ref })), 'the address rung’s argument');
-  const key = revealedHtml(tr, [SCHNORR], { msg: 'w', ref });
+  const key = revealedHtml(tr, [SCHNORR], { msg: '※', ref });
   assert.ok(linked(key[0]), 'and a spend title naming the key the OUTPUT published');
   // …which is the case the road exists for: p³² is bound a section above, in a
   // different transaction, while every other name on that line is something
   // this input brought and the passage below quotes. So a keyhash reveal, whose
   // p came from the spend itself, gets none.
   const wpkh = termOfScript('00142b0a02e9917ef97e5b441b566fe671dcdf232dde');
-  const brought = revealedHtml(wpkh, [SIG, KEY], { msg: 'w', ref });
-  assert.equal(strip(brought[0]), 'λs p. ∇ s p ( ⌘ w )');
+  const brought = revealedHtml(wpkh, [SIG, KEY], { msg: '※', ref });
+  assert.equal(strip(brought[0]), 'λs p. ∇ s p ( ⌘ ※ )');
   assert.ok(!linked(brought[0]), 'a value the spend brought needs no road to another passage');
   // The mark is never replaced by the reference: a citation names an output,
   // which is the whole script -- the term's own reduced form -- so writing it
@@ -851,7 +851,7 @@ test('the datum points at the passage that holds it; nothing else does', () => {
   // And no road where the chain did not answer: under ⋯ ∅ ☒ there is no passage
   // to send anyone to, and the mark stands alone as it does before any fetch.
   assert.ok(!linked(addressHtml(tr)), 'unasked, the mark stands bare');
-  assert.ok(!linked(revealedHtml(tr, [SCHNORR], { msg: 'w' })[0]));
+  assert.ok(!linked(revealedHtml(tr, [SCHNORR], { msg: '※' })[0]));
   // A term with more than one hole carries no address and no single datum, so
   // no hole is the one the chain cited: none of them takes the road.
   const ms = termOfScript('52' + '21' + KEY + '21' + KEY + '21' + KEY + '53ae');

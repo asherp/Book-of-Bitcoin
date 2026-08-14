@@ -3,7 +3,7 @@
 // btc-sighash.js — the message a signature is over, serialized so a reader can
 // hash it themselves.
 //
-// A spend rung says ∇ s p ( ⌘ w ): this signature, under this key, over this
+// A spend rung says ∇ s p ( ⌘ ※ ): this signature, under this key, over this
 // message. The first two are on the page already — they are what the input
 // carried, quoted and cited. The third was a mark with nothing behind it, and
 // a demand nobody can evaluate is a demand nobody can check. This module is
@@ -314,26 +314,54 @@ export async function bip341Preimage(tx, nIn, prevouts, type, { annex = null } =
 // A preimage set as one run of hex is a thing to be believed, not read. What a
 // page wants is the same bytes cut at the joints, each piece named — so a
 // reader can see that the amount is in there, or that the outputs are not.
+//
+// Each field carries what it IS as well as what it weighs, because hex is the
+// one rendering this book never settles for. `kind` says which reading the
+// bytes take and `of` carries the value that reading needs:
+//
+//   figure     a small integer — a version, a count, an index, a spend type
+//   flag       the sighash type, which has a name
+//   locktime   a height or a time, and the book has a mark for each
+//   sequence   ● ○ † ■n Τd, the same marks the reading sets on an input
+//   amount     satoshis, which the book writes in ₿
+//   script     bytes that are a script, to be set as opcodes
+//   outpoint   a coin: 32 bytes of txid, and which output of it
+//   said       high entropy — a hash, and nothing but prose can say it
+//   none       no bytes at all (legacy's missing amount)
+//
+// The split is entropy, and it is the book's own everywhere else: a figure is
+// a figure and prints as one, and bytes nobody can read are said in Glossia
+// rather than shown as hex. `bytes` stays exactly what it was — the
+// serialization, in order — so a page can still join the fields and get the
+// preimage back, which is the one claim the footnote exists to support.
+const int = (hexLE) => Number(BigInt('0x' + ((hexLE.match(/../g) || ['00']).reverse().join(''))));
+const field = (name, bytes, said, kind = 'said', of = null) => ({ name, bytes, said, kind, of });
 export function bip143Fields(tx, nIn, scriptCode, value, type, parts) {
   const input = tx.ins[nIn];
   return [
-    ['nVersion', tx.version, 'the transaction’s version, four bytes'],
-    ['hashPrevouts', parts.hashPrevouts, anyone(type)
+    field('nVersion', tx.version, 'the transaction’s version, four bytes', 'figure', int(tx.version)),
+    field('hashPrevouts', parts.hashPrevouts, anyone(type)
       ? 'zero — ANYONECANPAY signs no other input, so any of them may be added or dropped'
-      : 'every input’s outpoint, hashed: which coins this transaction spends'],
-    ['hashSequence', parts.hashSequence, parts.hashSequence === '00'.repeat(32)
+      : 'every input’s outpoint, hashed: which coins this transaction spends'),
+    field('hashSequence', parts.hashSequence, parts.hashSequence === '00'.repeat(32)
       ? 'zero — this flag leaves every other input’s sequence free to be rewritten'
-      : 'every input’s nSequence, hashed'],
-    ['outpoint', input.txid + input.vout, 'the coin this input spends, named as the chain names it'],
-    ['scriptCode', withLength(scriptCode), 'the script this signature is made under'],
-    ['amount', le(value, 8), 'what the coin is worth — the field legacy signing had no place for'],
-    ['nSequence', input.sequence, 'this input’s own sequence'],
-    ['hashOutputs', parts.hashOutputs, base(type) === SIGHASH_NONE
+      : 'every input’s nSequence, hashed'),
+    field('outpoint', input.txid + input.vout,
+      'the coin this input spends, named as the chain names it',
+      'outpoint', { txid: input.txid, vout: int(input.vout) }),
+    field('scriptCode', withLength(scriptCode), 'the script this signature is made under',
+      'script', scriptCode),
+    field('amount', le(value, 8),
+      'what the coin is worth — the field legacy signing had no place for', 'amount', value),
+    field('nSequence', input.sequence, 'this input’s own sequence', 'sequence', int(input.sequence)),
+    field('hashOutputs', parts.hashOutputs, base(type) === SIGHASH_NONE
       ? 'zero — NONE signs no output at all, so where the value goes is not committed to'
       : base(type) === SIGHASH_SINGLE ? 'the one output at this input’s index, hashed'
-      : 'every output, hashed: the amounts and where they go'],
-    ['nLockTime', tx.locktime, 'the earliest the transaction may be mined'],
-    ['nHashType', le(type, 4), `${sighashName(type)} — which of the above the signature covers`],
+      : 'every output, hashed: the amounts and where they go'),
+    field('nLockTime', tx.locktime, 'the earliest the transaction may be mined',
+      'locktime', int(tx.locktime)),
+    field('nHashType', le(type, 4),
+      `${sighashName(type)} — which of the above the signature covers`, 'flag', type),
   ];
 }
 
@@ -346,41 +374,47 @@ function bip341Fields(tx, nIn, prevout, type, annex, parts) {
   const input = tx.ins[nIn];
   const one = anyone(type);
   return [
-    ['epoch', '00', 'a version byte for the digest itself, so a future soft fork '
-      + 'can serialize differently without any message colliding with this one'],
-    ['hash_type', le(type, 1), `${sighashName(type)} — which fields follow: a freed field is `
-      + 'left out of this serialization, not zeroed'],
-    ['nVersion', tx.version, 'the transaction’s version, four bytes'],
-    ['nLockTime', tx.locktime, 'the earliest the transaction may be mined'],
+    field('epoch', '00', 'a version byte for the digest itself, so a future soft fork '
+      + 'can serialize differently without any message colliding with this one', 'figure', 0),
+    field('hash_type', le(type, 1), `${sighashName(type)} — which fields follow: a freed field is `
+      + 'left out of this serialization, not zeroed', 'flag', type),
+    field('nVersion', tx.version, 'the transaction’s version, four bytes', 'figure', int(tx.version)),
+    field('nLockTime', tx.locktime, 'the earliest the transaction may be mined',
+      'locktime', int(tx.locktime)),
     ...(one ? [] : [
-      ['sha_prevouts', parts.shaPrevouts, 'every input’s outpoint, hashed once: '
-        + 'which coins this transaction spends'],
-      ['sha_amounts', parts.shaAmounts, 'every spent coin’s value, hashed — BIP143 signed '
-        + 'this input’s own amount; this signs them all'],
-      ['sha_scriptpubkeys', parts.shaScriptPubkeys, 'every spent coin’s locking script, '
-        + 'hashed — a signer shown any wrong output signs nothing that verifies'],
-      ['sha_sequences', parts.shaSequences, 'every input’s nSequence, hashed'],
+      field('sha_prevouts', parts.shaPrevouts, 'every input’s outpoint, hashed once: '
+        + 'which coins this transaction spends'),
+      field('sha_amounts', parts.shaAmounts, 'every spent coin’s value, hashed — BIP143 signed '
+        + 'this input’s own amount; this signs them all'),
+      field('sha_scriptpubkeys', parts.shaScriptPubkeys, 'every spent coin’s locking script, '
+        + 'hashed — a signer shown any wrong output signs nothing that verifies'),
+      field('sha_sequences', parts.shaSequences, 'every input’s nSequence, hashed'),
     ]),
     ...(parts.shaOutputs != null
-      ? [['sha_outputs', parts.shaOutputs, 'every output, hashed: the amounts and where they go']]
+      ? [field('sha_outputs', parts.shaOutputs,
+        'every output, hashed: the amounts and where they go')]
       : []),
-    ['spend_type', le(annex ? 1 : 0, 1), annex
+    field('spend_type', le(annex ? 1 : 0, 1), annex
       ? 'an annex rides this input, and the low bit says so; the key path, so no leaf extension'
-      : 'zero — the key path, with no annex'],
+      : 'zero — the key path, with no annex', 'figure', annex ? 1 : 0),
     ...(one ? [
-      ['outpoint', input.txid + input.vout, 'the coin this input spends, named as the chain '
-        + 'names it — ANYONECANPAY signs no other input, so any of them may be added or dropped'],
-      ['amount', le(prevout.value, 8), 'what this coin is worth'],
-      ['scriptPubKey', withLength(prevout.script), 'the very lock being opened'],
-      ['nSequence', input.sequence, 'this input’s own sequence'],
+      field('outpoint', input.txid + input.vout, 'the coin this input spends, named as the chain '
+        + 'names it — ANYONECANPAY signs no other input, so any of them may be added or dropped',
+        'outpoint', { txid: input.txid, vout: int(input.vout) }),
+      field('amount', le(prevout.value, 8), 'what this coin is worth', 'amount', prevout.value),
+      field('scriptPubKey', withLength(prevout.script), 'the very lock being opened',
+        'script', prevout.script),
+      field('nSequence', input.sequence, 'this input’s own sequence',
+        'sequence', int(input.sequence)),
     ] : [
-      ['input_index', le(nIn, 4), 'which input of the transaction this signature belongs to'],
+      field('input_index', le(nIn, 4),
+        'which input of the transaction this signature belongs to', 'figure', nIn),
     ]),
-    ...(annex ? [['sha_annex', parts.shaAnnex, 'the annex this input carries, '
-      + 'length-prefixed and hashed']] : []),
+    ...(annex ? [field('sha_annex', parts.shaAnnex, 'the annex this input carries, '
+      + 'length-prefixed and hashed')] : []),
     ...(parts.shaSingle != null
-      ? [['sha_output', parts.shaSingle, 'the one output at this input’s index, hashed — '
-        + 'SINGLE signs where its own value goes and frees the rest']]
+      ? [field('sha_output', parts.shaSingle, 'the one output at this input’s index, hashed — '
+        + 'SINGLE signs where its own value goes and frees the rest')]
       : []),
   ];
 }
@@ -536,20 +570,24 @@ async function bip143Parts(tx, nIn, type) {
 // they show is the hole: there is no amount anywhere in this list.
 function legacyFields(tx, nIn, code, type) {
   const one = anyone(type);
+  const outs = base(type) === SIGHASH_NONE ? 0
+    : base(type) === SIGHASH_SINGLE ? nIn + 1 : tx.outs.length;
   return [
-    ['nVersion', tx.version, 'the transaction’s version, four bytes'],
-    ['inputs', compact(one ? 1 : tx.ins.length), one
-      ? 'one — ANYONECANPAY serializes this input alone' : 'how many inputs follow'],
-    ['scriptCode', withLength(code), 'this input’s script, standing where its scriptSig would; '
-      + 'every other input’s is blanked to nothing'],
-    ['outputs', compact(base(type) === SIGHASH_NONE ? 0
-      : base(type) === SIGHASH_SINGLE ? nIn + 1 : tx.outs.length),
+    field('nVersion', tx.version, 'the transaction’s version, four bytes', 'figure', int(tx.version)),
+    field('inputs', compact(one ? 1 : tx.ins.length), one
+      ? 'one — ANYONECANPAY serializes this input alone' : 'how many inputs follow',
+      'figure', one ? 1 : tx.ins.length),
+    field('scriptCode', withLength(code), 'this input’s script, standing where its scriptSig would; '
+      + 'every other input’s is blanked to nothing', 'script', code),
+    field('outputs', compact(outs),
       base(type) === SIGHASH_NONE ? 'none — NONE commits to no output at all'
         : base(type) === SIGHASH_SINGLE ? 'up to this input’s index, with every earlier one blanked'
-        : 'all of them, amounts and scripts'],
-    ['nLockTime', tx.locktime, 'the earliest the transaction may be mined'],
-    ['nHashType', le(type, 4), `${sighashName(type)} — which of the above the signature covers`],
-    ['(no amount)', '', 'nowhere in this serialization is the value being spent — '
-      + 'the hole BIP143 was written to close'],
+        : 'all of them, amounts and scripts', 'figure', outs),
+    field('nLockTime', tx.locktime, 'the earliest the transaction may be mined',
+      'locktime', int(tx.locktime)),
+    field('nHashType', le(type, 4),
+      `${sighashName(type)} — which of the above the signature covers`, 'flag', type),
+    field('(no amount)', '', 'nowhere in this serialization is the value being spent — '
+      + 'the hole BIP143 was written to close', 'none'),
   ];
 }

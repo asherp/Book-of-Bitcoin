@@ -235,6 +235,21 @@ button:hover { background: var(--accent-2); }
 .term-fn-row { display:grid; grid-template-columns: 11ch 1fr; gap:10px; align-items:baseline; margin-bottom:4px; }
 .term-fn-name { font:400 11px/1.6 'IBM Plex Mono','Book Sigla',monospace; color:var(--meta); }
 .term-fn-bytes { font:400 11.5px/1.6 'IBM Plex Mono','Book Sigla',monospace; color:var(--ink-soft); overflow-wrap:anywhere; }
+/* A field that is prose rather than bytes -- a hash said in the book's own
+   tongue, a script set as opcodes -- reads as the book sets prose, not as the
+   mono the hex took. The marks inside keep the ink they have everywhere else. */
+.term-fn-bytes { font-family: 'Newsreader','Book Sigla',serif; font-size: 13px; }
+.term-fn-bytes .op { color: var(--accent); font-style: normal; font-weight: 700; }
+.term-fn-bytes .dt { color: var(--accent); font-style: normal; font-weight: 700; }
+.term-fn-bytes .op-push { color: var(--meta); font-weight: 400; }
+.term-fn-bytes .wit-empty { color: var(--meta); }
+/* …and a figure is a figure: a version, a count, an index, an amount. Set in
+   the mono face, because it is a number to be read exactly and not a word. */
+.term-fn-bytes .fn-figure { font-family: 'IBM Plex Mono','Book Sigla',monospace; font-size: .9em; color: var(--ink-soft); }
+/* The preimage entire, which is the one row that stays bytes: the rows above
+   say what the message IS, and this says what to hash. One click takes it. */
+.term-fn-raw .term-fn-bytes { font-family: 'IBM Plex Mono','Book Sigla',monospace; font-size: 11px; color: var(--meta); }
+.term-fn-raw { margin-top: 8px; }
 /* The digest sits under a hairline, apart from the fields it is taken over. */
 .term-fn-sum { margin-top:8px; padding-top:8px; border-top:1px solid var(--hair); }
 .term-fn-sum .term-fn-name, .term-fn-sum .term-fn-bytes { color: var(--accent); }
@@ -371,7 +386,12 @@ let proseMod = null;
 async function readerProse() {
   try {
     proseMod ??= import('./btc-prose.js')
-      .then((m) => ({ renderWitness: m.renderWitness, renderScript: m.renderScript }));
+      // …and the field marks with them: a locktime and a sequence read the
+      // same way in a footnote as on a chapter's own input, and they read that
+      // way because both take them from here rather than from a second copy.
+      .then((m) => ({ renderWitness: m.renderWitness, renderScript: m.renderScript,
+        locktimeInfo: m.locktimeInfo, sequenceInfo: m.sequenceInfo,
+        formatAmount: m.formatAmount }));
     return await proseMod;
   } catch { return null; }
 }
@@ -475,7 +495,7 @@ const faultNote = (f) => {
 // So the two lines are one application: the abstraction, and then the values
 // that go into it, which are the only part of it anybody had to be told.
 const spendRung = (t, opened, sayFn, section = null, brought = null, paired = false,
-                   message = null, ref = null) => {
+                   message = null, ref = null, reader = null) => {
   // The arity is read off what the script takes; the line shows everything the
   // input carried, annex and all, exactly as the reader would.
   const rung = opened?.args?.length
@@ -489,7 +509,7 @@ const spendRung = (t, opened, sayFn, section = null, brought = null, paired = fa
   // carry it is gone (below).
   const msg = message
     ? `<a class="term-fn-ref" href="#term-msg" title="the message, field by field — `
-      + `${escapeHtml(message.algorithm)}, ${escapeHtml(sighashName(message.type))}">w</a>`
+      + `${escapeHtml(message.algorithm)}, ${escapeHtml(sighashName(message.type))}">※</a>`
     : null;
   // The spend quotation's title, and the whole of what stands above the
   // passage now. The application used to lead here -- rung two in parentheses
@@ -546,7 +566,7 @@ const spendRung = (t, opened, sayFn, section = null, brought = null, paired = fa
   return `<div class="term-spend">${reveal}`
     + `<div class="term-line term-quote">${rung.html}</div>`
     + `<div class="term-attrib"><span class="term-cite" title="${says}">—</span> ${where}</div>`
-    + `${messageFoot(message)}</div>`;
+    + `${messageFoot(message, sayFn, reader)}</div>`;
 };
 
 // The footnote ⌘ points at: the preimage cut at its joints, each field named and
@@ -559,14 +579,80 @@ const spendRung = (t, opened, sayFn, section = null, brought = null, paired = fa
 // actually made over. A reader with the preimage can take it themselves in one
 // line, and that is the point of setting the preimage above it rather than the
 // digest alone.
-const messageFoot = (message) => {
+// A field is set the way the book sets that kind of thing, which is the whole
+// reason btc-sighash.js labels them rather than handing over hex and wishing
+// the page luck. The split is entropy, and it is the book's own:
+//
+//   a figure is a figure -- a version, a count, an index -- and prints as one
+//   a flag has a name, and the name is what a reader checks
+//   a locktime and a sequence have marks (□ ■ Τ ● ○), the reading's own, taken
+//     from btc-prose so the footnote and a chapter can never say them apart
+//   an amount is ₿
+//   a script is opcodes, revealed as the reader reveals one
+//   an outpoint is a coin: the txid said, and which output of it
+//   and a hash is unreadable by construction, so it is SAID -- prose, in the
+//     book's own tongue, which is what this book does with bytes nobody can
+//     read rather than fall back to hex
+//
+// Without the engine the high-entropy rows keep their bytes: the marks can be
+// drawn from the bytes alone but the words cannot, and hex is better than a
+// blank where a reader was promised something to hash.
+const zeros = (hex) => /^0+$/.test(hex);
+const fieldValue = (f, sayFn, reader) => {
+  if (f.kind === 'none') return '—';
+  // A field a flag freed. BIP143 writes thirty-two zero bytes there and the
+  // book has a mark for nothing, so it takes it rather than printing a run of
+  // noughts that reads like data.
+  if (f.bytes && zeros(f.bytes) && f.kind === 'said') {
+    return `<span class="wit-empty" title="zeroed — ${escapeHtml(f.said)}">∅</span>`;
+  }
+  if (f.kind === 'figure') return `<span class="fn-figure">${escapeHtml(String(f.of))}</span>`;
+  if (f.kind === 'flag') return `<span class="fn-figure">${escapeHtml(sighashName(f.of))}</span>`;
+  if (f.kind === 'amount') {
+    return `<span class="fn-figure">${escapeHtml(reader
+      ? reader.formatAmount(f.of) : `${f.of} sat`)}</span>`;
+  }
+  if (f.kind === 'locktime' || f.kind === 'sequence') {
+    const info = reader
+      ? (f.kind === 'locktime' ? reader.locktimeInfo(f.of) : reader.sequenceInfo(f.of))
+      : null;
+    return info
+      ? `<span class="op" title="${escapeHtml(info.title)}">${escapeHtml(info.mark || '†')}</span>`
+      : `<span class="fn-figure">${escapeHtml(String(f.of))}</span>`;
+  }
+  if (f.kind === 'script') {
+    if (!f.of) return `<span class="wit-empty" title="no script at all">∅</span>`;
+    return reader ? reader.renderScript(f.of, (h) => (sayFn ? sayFn(h) || '' : ''))
+      : escapeHtml(f.bytes);
+  }
+  // A coin, named as the chain names it: the txid said in the book's tongue,
+  // and the output's own number after it. The id is reversed on the wire from
+  // the way it is written, and the bytes here are the wire's -- so what is said
+  // is what the message actually carries, which is the point of saying it.
+  if (f.kind === 'outpoint') {
+    const said = sayFn ? sayFn(f.of.txid) || '' : '';
+    return (said || escapeHtml(f.of.txid))
+      + ` <span class="op op-push" title="output ${f.of.vout} of it">.${f.of.vout}</span>`;
+  }
+  const said = sayFn ? sayFn(f.bytes) || '' : '';
+  return said || escapeHtml(f.bytes) || '—';
+};
+
+const messageFoot = (message, sayFn = null, reader = null) => {
   if (!message) return '';
-  const rows = message.fields.map(([name, bytes, said]) =>
-    `<div class="term-fn-row"><span class="term-fn-name" title="${escapeHtml(said)}">${escapeHtml(name)}</span>`
-    + `<span class="term-fn-bytes">${escapeHtml(bytes) || '—'}</span></div>`).join('');
+  const rows = message.fields.map((f) =>
+    `<div class="term-fn-row"><span class="term-fn-name" title="${escapeHtml(f.said)}">${escapeHtml(f.name)}</span>`
+    + `<span class="term-fn-bytes">${fieldValue(f, sayFn, reader)}</span></div>`).join('');
+  // …and the whole of it once more, as bytes, which is the one thing the rows
+  // above stopped being. The footnote's promise is that a reader can take the
+  // digest themselves; the fields say what they are FOR, and this says what to
+  // hash. One click takes it, as the on-chain line does.
+  const raw = `<div class="term-fn-row term-fn-raw"><span class="term-fn-name" `
+    + `title="every field above, in the order they are set — the bytes the digest is taken over">`
+    + `⟦ ⟧</span><span class="term-fn-bytes term-onchain">${escapeHtml(message.preimage)}</span></div>`;
   return `<div class="term-foot" id="term-msg"><div class="term-fn-head">`
-    + `<span class="term-fn-mark">w</span> the message — ${escapeHtml(message.algorithm)}, `
-    + `${escapeHtml(sighashName(message.type))}</div>${rows}`
+    + `<span class="term-fn-mark">※</span> the message — ${escapeHtml(message.algorithm)}, `
+    + `${escapeHtml(sighashName(message.type))}</div>${rows}${raw}`
     + `<div class="term-fn-row term-fn-sum"><span class="term-fn-name" `
     + `title="${escapeHtml(message.digestSaid)}">⌘</span>`
     + `<span class="term-fn-bytes term-onchain">${escapeHtml(message.digest)}</span></div></div>`;
@@ -574,7 +660,7 @@ const messageFoot = (message) => {
 
 function drawTerm(hex, { address = null, at = '', say: sayFn = null, said = '',
                         quoted = false, opened = null, spendSection = null, brought = null,
-                        paired = false, message = null, ref = null } = {}) {
+                        paired = false, message = null, ref = null, reader = null } = {}) {
   const fault = scriptFault(hex);
   const t = fault ? null : termOfScript(hex);
   const head = `<div class="term-head"><span class="term-kind">${t ? escapeHtml(t.label) : 'Script'}</span>`
@@ -639,7 +725,7 @@ function drawTerm(hex, { address = null, at = '', say: sayFn = null, said = '',
     : (t ? `<div class="term-line term-awaits">${addressHtml(t, { prose: argument, ref })}</div>` : '')
       + locked
       + said
-      + (t ? spendRung(t, opened, sayFn, spendSection, brought, paired, message, ref) : '');
+      + (t ? spendRung(t, opened, sayFn, spendSection, brought, paired, message, ref, reader) : '');
   termEl.innerHTML = head + body;
   termEl.hidden = false;
   termEl.dataset.at = at;
@@ -690,7 +776,7 @@ async function enrichTerm(hex, { address = null, at = '' } = {}) {
   const draw = (lock, spend, message) => drawTerm(hex, { address, at, say: sayFn,
     said: `<div class="term-attrib">${chainMark(verdict, witness, hex, lock)}</div>`,
     quoted: verdict === 'agrees', opened, spendSection: spend, brought,
-    paired: Boolean(witness?.paired), message, ref: refOf(lock) });
+    paired: Boolean(witness?.paired), message, ref: refOf(lock), reader });
   draw(null, null, null);
   const [lock, spend, message] = await Promise.all([
     witness?.found ? sectionOfFetched(witness.txid) : null,

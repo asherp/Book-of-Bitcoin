@@ -60,14 +60,14 @@ lambdas — the same split as the committed/revealed modes below:
     stack), the witness forms' from the stack position `runs` names.
   - A *keyhash* form hid a **value**, the key behind `⌖p`. There is no script
     to read, so the title is the demand with its commitment discharged
-    (`shown` in `DEMANDS`): `λs p. ∇ s p ( ⌘ w )`. The hash clause is a
+    (`shown` in `DEMANDS`): `λs p. ∇ s p ( ⌘ ※ )`. The hash clause is a
     question already answered, the key stands bare because it came from the
     spend rather than the output, and `⌘`'s footnote letter rides in where the
     page has fetched the preimage.
   - Forms that hid nothing (P2PK, taproot's key path) are titled the same way,
     and the binders show the difference: their key was in the output all along,
     so the spend brought only a signature and the key stays the datum it was —
-    `λs. ∇ s p³² ( ⌘ w )`, against a keyhash reveal's bare `p`. This is also
+    `λs. ∇ s p³² ( ⌘ ※ )`, against a keyhash reveal's bare `p`. This is also
     what keeps `⌘` anchored: the title is now the only line that writes it, so
     the message footnote always has a mark referring to it.
   - A reveal that does not tokenize titles nothing: declining beats guessing,
@@ -141,6 +141,22 @@ Where this lives today:
   and BIP341 key-path serializations, each pinned to published vectors in
   `tools/sighash.test.mjs`. Script-path taproot spends are declined, not
   guessed (flag position and codeseparator state are facts about execution).
+  Its footnote mark is **※** — not a letter, because every letter is a binder
+  somewhere (`w` is P2WSH's witness script, which made `( ⌘ w )` read as "the
+  witness hash").
+- **The message's fields are set in the book's hand, not in hex.** Each field
+  carries a `kind` (`figure` `flag` `locktime` `sequence` `amount` `script`
+  `outpoint` `said` `none`) and an `of` holding the decoded value, so the page
+  never parses little-endian hex to print a figure. The split is entropy: small
+  integers print as figures, a locktime and a sequence take the reading's own
+  marks (via `locktimeInfo` / `sequenceInfo`, exported from btc-prose.js so the
+  footnote and a chapter cannot drift), an amount is ₿, a script is opcodes,
+  and a hash — unreadable by construction — is **said in Glossia**. A field a
+  flag zeroed shows ∅. `bytes` is untouched, so the fields still rejoin to the
+  preimage for BIP143/BIP341; legacy's list is a summary of the transaction's
+  joints and deliberately does not. The whole preimage is set once beneath the
+  rows, selectable, since the rows now say what the message *is* rather than
+  what to hash.
 
 **Two states per output.** Script-hash outputs (P2SH, P2WSH; taproot's script
 path likewise) commit only to a hash until spent. So the representation has
