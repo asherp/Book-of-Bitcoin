@@ -321,11 +321,27 @@ const TWEAK = '⋔';               // the taptweak, which no opcode spells
 const SIGNED = (key) => [OP_CHECKSIG, 's', key, MSG];
 const HASHED = (op, name) => [OPEN, op, name, OP_EQUALVERIFY, D, CLOSE, AND];
 
+// `shown` is the demand with its commitment discharged: what is left to make
+// true once the spend has disclosed the thing the output only committed to.
+// A keyhash output holds ⌖p and nothing else, so the whole of what it says is
+// "the p you bring hashes to this, and you can sign under it" -- and once the
+// chain has shown the p, the hash clause is a question already answered. What
+// remains is the signature, over a message the page can now name. That is the
+// reveal's own title: not what the output demanded of an unknown spender, but
+// what the spend that happened turned out to be.
+//
+// Only the forms that hide something have one. P2PK and taproot's key path
+// carry their key in the output, so a spend of either reveals nothing but its
+// signature and there is no second title to write -- the lock's own stands.
+// The script-hash forms hide a whole script rather than a value, and their
+// reveal is titled by that script's own term instead (see revealedHtml).
 const DEMANDS = {
   p2pk:   [{ brings: 's', demand: SIGNED(D) }],
-  p2pkh:  [{ brings: 's p', demand: [...HASHED(OP_HASH160, 'p'), ...SIGNED('p')] }],
+  p2pkh:  [{ brings: 's p', demand: [...HASHED(OP_HASH160, 'p'), ...SIGNED('p')],
+             shown: SIGNED('p') }],
   p2sh:   [{ brings: 'r', runs: 'r', demand: [...HASHED(OP_HASH160, 'r'), RUN] }],
-  p2wpkh: [{ brings: 's p', demand: [...HASHED(OP_HASH160, 'p'), ...SIGNED('p')] }],
+  p2wpkh: [{ brings: 's p', demand: [...HASHED(OP_HASH160, 'p'), ...SIGNED('p')],
+             shown: SIGNED('p') }],
   p2wsh:  [{ brings: 'w', runs: 'w', demand: [...HASHED(OP_SHA256, 'w'), RUN] }],
   // Taproot asks for one of two things, which is the whole of what a taptree
   // buys: a signature under the output key, or a leaf that proves to it and is
@@ -343,7 +359,7 @@ export function demandsOf(t) {
   const alts = DEMANDS[t.id];
   if (!alts) return null;
   return alts.map((alt) => ({ brings: alt.brings.split(' '), runs: alt.runs ?? null,
-    demand: alt.demand ?? null,
+    demand: alt.demand ?? null, shown: alt.shown ?? null,
     // Every opcode this alternative's demand writes, named so a caller can hold
     // the line to its own vocabulary rather than to the whole alphabet. ⌘ is in
     // it wherever a message is: the digest a signature is over is a hash being
@@ -386,6 +402,35 @@ const demandText = (t, alt, msg = UNSAID) => alt.demand.map((tok) => {
   if (tok === CLOSE) return ')';
   return typeof tok === 'number' ? glyph(tok) : tok;
 }).join(' ').replace(/\( /g, '( ').replace(/ \)/g, ' )');
+
+// ─── the title: the anonymous λ a script is ──────────────────────────────
+//
+// What a lock is called when nobody has called it anything. Every script on
+// chain binds an abstraction over its own pushes, and that abstraction is
+// derivable from the bytes with no reader, no shelf and no network -- so a
+// paragraph is never nameless for want of somebody having spoken first.
+//
+//   λh. ⓪ h        a P2WPKH output
+//   λp₁ p₂ p₃. ② p₁ p₂ p₃ ③ ◇     a bare multisig, which no address can carry
+//
+// Bare of everything a title does not need. No ⟦ ⟧: the brackets say "this is
+// the wire's own bytes", and a title is not a quotation of them -- the script
+// itself stands below, set as the passage it is. No application and no
+// parentheses either: a title says what a thing IS, and (λh. ⓪ h) h²⁰ says
+// what was DONE to it, which is rung one's business and not a name. And the
+// binder stands bare, without the count its argument would give it, because
+// what is being named is the abstraction rather than any one output that
+// instantiates it -- every P2WPKH on chain shares this title, which is the
+// whole use of a title.
+//
+// The demand rung is not this. It says what a spend must bring, which is a
+// truer thing to know and a worse thing to be called by: two outputs of
+// different shapes can want the same key material (P2PKH and P2WPKH ask
+// alike), so the demand does not distinguish what a name has to distinguish.
+export const titleText = (t) => `λ${t.holes.map((h) => h.name).join(' ')}. ${bodyText(t, false)}`;
+
+export const titleHtml = (t) =>
+  `${lam('λ')}${t.holes.map(dt).join(' ')}${lam('.')} ${bodyHtml(t, false)}`;
 
 // ─── rung one: the address ───────────────────────────────────────────────
 //
@@ -653,29 +698,58 @@ export function revealedOf(t, items, { scriptsig = null } = {}) {
   return at >= 0 && at < items.length ? String(items[at]).toLowerCase() : null;
 }
 
-// The title itself: the revealed script's own rung two where the book has one
-// tabled -- a wrapped witness program's demand, which is the same line its own
-// address would be titled by -- and otherwise the term read off its bytes,
-// applied to its own data the way rung one writes an application. A reveal
-// that does not tokenize (a tapscript leaf full of opcodes the alphabet has no
-// mark for, a script with no push to bind) titles nothing: the page knows the
-// bytes and does not know what they are, and the quotation below still stands.
+// The title itself, and there are two kinds of reveal because there are two
+// kinds of thing an output can hide.
+//
+// A script-hash form hides a SCRIPT, and the spend hands over its bytes -- so
+// the title is that script's own title, the anonymous λ it binds, exactly as
+// the lock a rung up is titled by its own. A P2SH wrapping a witness program
+// is titled `λh. ⓪ h` there, which is the title that program would carry
+// anywhere else, because it is the same script wherever it stands.
+//
+// A keyhash form hides a VALUE -- the key behind ⌖p -- and there is no script
+// to read, so the title is the demand with its commitment discharged: the p is
+// on the page now, the hash clause is a question already answered, and what
+// the spend turned out to be is the signature over the message the page can
+// name. `msg` is the footnote's letter where it has one, which is the whole
+// point of naming it here: a title a reader can check.
+//
+// The forms that hide nothing (P2PK, taproot's key path) get no second title.
+// Their key was in the output from the first, so the spend revealed only its
+// own signature, and the lock's title already says what this is.
+//
+// A reveal that does not tokenize -- a leaf full of opcodes the alphabet has
+// no mark for, a script with no push to bind -- titles nothing: the page knows
+// the bytes and does not know what they are, and the quotation still stands.
 const revealedTerm = (t, items, opts) => {
   const r = revealedOf(t, items, opts);
   return r ? termOfScript(r) : null;
 };
 
-export function revealedText(t, items, opts = {}) {
-  const tr = revealedTerm(t, items, opts);
-  if (!tr) return null;
-  return lockedText(tr) ?? [addressText(tr)];
-}
+// One walk for both renderings, as everywhere else in this module: the marks
+// on the page and the marks in a test can never be two different readings.
+const revealed = (t, items, opts, write) => {
+  const which = pathTaken(t, items);
+  if (which === null) return null;
+  const alt = demandsOf(t)[which];
+  if (alt.runs) {
+    const tr = revealedTerm(t, items, opts);
+    return tr ? [write.title(tr)] : null;
+  }
+  return alt.shown ? [write.shown(alt)] : null;
+};
 
-export function revealedHtml(t, items, opts = {}) {
-  const tr = revealedTerm(t, items, opts);
-  if (!tr) return null;
-  return lockedHtml(tr) ?? [addressHtml(tr)];
-}
+export const revealedText = (t, items, opts = {}) => revealed(t, items, opts, {
+  title: (tr) => titleText(tr),
+  shown: (alt) => `λ${alt.brings.join(' ')}. `
+    + `${demandText(t, { ...alt, demand: alt.shown }, opts.msg ?? UNSAID)}`,
+});
+
+export const revealedHtml = (t, items, opts = {}) => revealed(t, items, opts, {
+  title: (tr) => titleHtml(tr),
+  shown: (alt) => `${lam('λ')}${alt.brings.map(awaited).join(' ')}${lam('.')} `
+    + `${demandHtml(t, { ...alt, demand: alt.shown }, opts.msg ?? null)}`,
+});
 
 // ─── the pure form ───────────────────────────────────────────────────────
 //

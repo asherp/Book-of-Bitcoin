@@ -791,15 +791,11 @@ button:disabled { opacity: .4; cursor: not-allowed; }
    over it, and roman rather than the italic a name takes. */
 .tx-out-keep .out-term { font-style: normal; color: var(--meta); font-size: .92em; }
 /* The marks inside it read as they read everywhere else (.op .dt are the
-   book's own, defined above), with the calculus's own marks -- λ, the dot,
-   the parens, the conjunction -- kept quiet, and what a spend has still to
-   bring in plain ink against the gold of what the chain already holds. */
+   book's own, defined above), with the calculus's own -- λ and the dot -- kept
+   quiet, since they are the notation and not the script. Scoped rather than
+   loosed on the page: .lam means something on the search leaf, where a whole
+   descent is written in it, and a chapter is not that leaf. */
 .tx-out-keep .out-term .lam { color: var(--meta); font-weight: 400; }
-.tx-out-keep .out-term .aw { color: var(--ink-soft); font-style: normal; font-weight: 400; }
-/* One line per way of opening the output -- an unspent taproot output really
-   can be opened either way -- stacked rather than run together, since they are
-   alternatives and not a sequence. */
-.tx-out-keep .out-term + .out-term { display: block; }
 .tx-out-keep .out-keep-name { cursor: pointer; }
 .tx-out-keep .out-keep-name:hover, .tx-out-keep .out-keep-name:focus-visible { color: var(--accent-2); outline: none; }
 .tx-out-keep .keep-rib { display: inline-block; line-height: 0; color: var(--accent); vertical-align: -2px; background: none; border: 0; padding: 2px 5px; cursor: pointer; opacity: .42; }
@@ -1317,7 +1313,7 @@ import { transactionTemplates } from './btc-templates.js';
 // light and engine-free (see btc-term.js), so a title is drawn from the bytes
 // at paint time with nothing fetched and nothing awaited -- which is what lets
 // it stand where a name has not been given rather than arriving after one.
-import { termOfScript, lockedHtml } from './btc-term.js';
+import { termOfScript, titleHtml } from './btc-term.js';
 import { collectMarks, applyKeyFilter } from './btc-key-filter.js';
 // What a witness carries, read off its own bytes: a footnote whose payload
 // announces a format is named by it when nothing better has named it.
@@ -7412,19 +7408,16 @@ function scriptEntry(keepEl) {
 function termTitle(el) {
   const hex = el.dataset.spk || '';
   const t = hex ? termOfScript(hex) : null;
-  const lines = t ? lockedHtml(t) : null;
-  if (!lines) return false;
-  for (const line of lines) {
-    const span = document.createElement('span');
-    span.className = 'out-term';
-    // The marks are the module's own and safe as markup by the same contract
-    // the book's script renderer relies on: opcode glyphs, binder letters and
-    // the calculus's punctuation, nothing read off the chain.
-    span.innerHTML = line;
-    span.title = 'what this lock still asks of a spend — the term it binds, '
-      + 'which is the title it has until somebody gives it another';
-    el.append(span);
-  }
+  if (!t) return false;
+  const span = document.createElement('span');
+  span.className = 'out-term';
+  // The marks are the module's own and safe as markup by the same contract
+  // the book's script renderer relies on: opcode glyphs, binder letters and
+  // the calculus's punctuation, nothing read off the chain.
+  span.innerHTML = titleHtml(t);
+  span.title = 'the term this lock binds — the title it has until somebody '
+    + 'gives it another';
+  el.append(span);
   return true;
 }
 
