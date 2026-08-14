@@ -788,22 +788,22 @@ button:disabled { opacity: .4; cursor: not-allowed; }
    answer different questions, whose and what -- so neither displaces the other.
    Set quieter than a name (the apparatus colour, not the accent) and roman
    rather than the italic a name takes, because it is the book's notation about
-   the paragraph rather than anyone's claim over it. */
+   the paragraph rather than anyone's claim over it.
+   Sized from the BODY, like the keep line above it and the bookmark title
+   above that: the three are one group of headings over one paragraph, and a
+   title that sized itself would fall out of step with the lines it is stacked
+   with. The sigla scale is not the control for this even though the line is
+   made of marks -- it is defined for the sigla set INLINE in the reading
+   matter, marks sized apart from the sentence carrying them, and a title has
+   no sentence to be sized apart from. (The book's own precedent for a surface
+   that is nothing but notation is the notation key, which takes a region of
+   its own and is kept clear of the inline ratio.) So the opcodes here ride
+   --scale-sigla-ratio exactly as they do in the paragraph below, the data
+   letters stay at the line's own size exactly as they do there, and the title
+   and the script it titles are the same notation at two sizes. */
 .tx-out-term { grid-column: 1 / -1; text-align: center; margin: .1em 0 .2em; color: var(--meta);
-  font-family: 'Newsreader','Book Sigla',serif; font-style: normal; font-weight: 500; line-height: 1.4; }
+  font: 500 calc(13.5px * var(--scale-body, 1))/1.4 'Newsreader','Book Sigla',serif; }
 .tx-out-term:empty { display: none; }
-/* Sized from the SIGLA scale, alone among the lines on a section. Everything
-   else here is prose with marks set into it, so the marks ride
-   --scale-sigla-ratio and the sentence around them keeps the body's size (see
-   the glyph rules below). A title has no sentence around it: λ, the dot, the
-   binders and the opcodes are notation end to end, and a reader who has sized
-   the sigla up to read them has sized up the whole of this line by saying so. */
-.tx-out-term { font-size: calc(13.5px * var(--scale-body, 1) * var(--scale-sigla-ratio, 1)); }
-/* …which is why the glyph rule must not land on top of it: #page-slide .op
-   multiplies 1em by the same ratio, and a line already carrying it would take
-   the ratio twice. The same neutralizing the book already does for .op-count,
-   for the same arithmetic. */
-#page-slide .tx-out-term .op { font-size: 1em; }
 /* The marks inside read as they read everywhere else (.op .dt are the book's
    own, defined below), with the calculus's own -- λ and the dot -- kept quiet,
    since they are the notation and not the script. Scoped rather than loosed on

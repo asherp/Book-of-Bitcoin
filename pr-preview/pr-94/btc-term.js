@@ -330,13 +330,19 @@ const HASHED = (op, name) => [OPEN, op, name, OP_EQUALVERIFY, D, CLOSE, AND];
 // reveal's own title: not what the output demanded of an unknown spender, but
 // what the spend that happened turned out to be.
 //
-// Only the forms that hide something have one. P2PK and taproot's key path
-// carry their key in the output, so a spend of either reveals nothing but its
-// signature and there is no second title to write -- the lock's own stands.
-// The script-hash forms hide a whole script rather than a value, and their
-// reveal is titled by that script's own term instead (see revealedHtml).
+// Every form that hides a VALUE has one, and the two kinds differ only in
+// what the spend had to bring. A keyhash output hid the key, so the spend
+// brought it and it stands as a binder; P2PK and taproot's key path carried
+// their key in the output all along, so the spend brought only a signature and
+// the key stays the datum it always was -- λs. ∇ s p³² ( ⌘ w ). Neither is the
+// lock's demand any more: what a spend must make true is a question about a
+// future, and these describe one that happened.
+//
+// The script-hash forms hide a whole SCRIPT rather than a value, so they have
+// none of these: their reveal is titled by that script's own term, which the
+// spend handed over in full (see revealedHtml).
 const DEMANDS = {
-  p2pk:   [{ brings: 's', demand: SIGNED(D) }],
+  p2pk:   [{ brings: 's', demand: SIGNED(D), shown: SIGNED(D) }],
   p2pkh:  [{ brings: 's p', demand: [...HASHED(OP_HASH160, 'p'), ...SIGNED('p')],
              shown: SIGNED('p') }],
   p2sh:   [{ brings: 'r', runs: 'r', demand: [...HASHED(OP_HASH160, 'r'), RUN] }],
@@ -347,7 +353,7 @@ const DEMANDS = {
   // buys: a signature under the output key, or a leaf that proves to it and is
   // then run like any other script -- the proof being the control block, which
   // tweaks the leaf back to the key the output committed to.
-  p2tr:   [{ brings: 's', demand: SIGNED(D) },
+  p2tr:   [{ brings: 's', demand: SIGNED(D), shown: SIGNED(D) },
            { brings: 't c', runs: 't',
              demand: [OPEN, TWEAK, 't', 'c', OP_EQUALVERIFY, D, CLOSE, AND, RUN] }],
 };
@@ -707,16 +713,13 @@ export function revealedOf(t, items, { scriptsig = null } = {}) {
 // is titled `λh. ⓪ h` there, which is the title that program would carry
 // anywhere else, because it is the same script wherever it stands.
 //
-// A keyhash form hides a VALUE -- the key behind ⌖p -- and there is no script
-// to read, so the title is the demand with its commitment discharged: the p is
-// on the page now, the hash clause is a question already answered, and what
-// the spend turned out to be is the signature over the message the page can
-// name. `msg` is the footnote's letter where it has one, which is the whole
-// point of naming it here: a title a reader can check.
-//
-// The forms that hide nothing (P2PK, taproot's key path) get no second title.
-// Their key was in the output from the first, so the spend revealed only its
-// own signature, and the lock's title already says what this is.
+// Everything else hid a VALUE, or hid nothing at all, and either way there is
+// no script to read -- so the title is the demand with its commitment
+// discharged: the key is on the page now, the hash clause is a question
+// already answered, and what the spend turned out to be is the signature over
+// the message. `msg` is the footnote's letter where the page has one, which is
+// the whole point of naming it here: a title a reader can check, and the only
+// place ⌘ is written once the rungs that used to carry it are gone.
 //
 // A reveal that does not tokenize -- a leaf full of opcodes the alphabet has
 // no mark for, a script with no push to bind -- titles nothing: the page knows

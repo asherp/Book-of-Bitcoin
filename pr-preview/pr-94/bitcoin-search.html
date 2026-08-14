@@ -99,11 +99,23 @@ button:hover { background: var(--accent-2); }
    with a spend in front of it. The notation key's Scripts as terms group is
    where the encoding's own β chain lives.
 
-   Each rung below the first comes in two lines, and the split is what a
-   quotation costs: the term, which this page derives, and then the passage,
-   which the chain wrote. The lock's term says what the script still wants and
-   what it hands back to be run; the spend's says the same application with the
-   arguments in front of it. Neither is a quotation, so neither takes the rule.
+   Below it, two passages, and each takes a title and nothing else: the term,
+   which this page derives, and then the passage, which the chain wrote. The
+   lock's title is the anonymous λ its bytes bind; the spend's is what that
+   spend revealed. Neither is a quotation, so neither takes the rule, and the
+   pairing is the reading's own -- a paragraph there carries a title above it
+   and the script below (see termTitle in bitcoin-book.html).
+
+   The demand stood on the lock's line once, and the application on the
+   spend's: what any spender must bring, and that with the arguments in front
+   of it. Both went, and for one reason -- they said what a lock asks of a
+   future above passages that are a lock somebody wrote and one spender's
+   answer to it. A title says what the thing IS, which is what a reader wants
+   over a quotation and what the reading already prints. The demand is still
+   the table this leaf reads (DEMANDS in btc-term.js -- it is what picks the
+   path a spend took, and what the reveal's own title is derived from) and
+   still what the notation key prints in its validator column. It is simply no
+   longer a rung.
 
    Read still opens the place, as it always did. This says what the thing is;
    the button goes to it. */
@@ -184,18 +196,16 @@ button:hover { background: var(--accent-2); }
    claim about a claim. */
 /* The spend stands apart from the lock's own citation, because it is a
    different claim about a different transaction: not where these bytes were
-   written, but where somebody satisfied them. So the gap opens above the term
-   line that heads it, and the pair below — that term and the passage under it —
-   reads as one rung.
-   The lock's marks are on that term line, parenthesized as the function they
-   are, and the quotation under it holds the values that go into them — one
-   redex across two lines, the same shape the address rung sets on one. They
-   were on one
-   line once, which put two transactions' worth of marks under an attribution
-   naming a single input: a quotation that quotes more than it was given. The
-   answer is not to drop the application but to un-quote it — it was never read
-   off a spend, it is what this page derives from the output's own bytes. */
+   written, but where somebody satisfied them. So a gap opens above the whole
+   of it — the title, the passage, the attribution and the message footnote
+   read as one section, and the wrapper that groups them is what carries the
+   gap. It hung off the application line while there was one; a gap belonging
+   to a line disappears with that line, and this one has to survive a reveal
+   the page could not title. */
 .term-spend { margin-top: 18px; }
+/* The spend quotation's title, set exactly as the lock quotation's is: a term
+   line above a passage, outside the rule, because it is the reader's own
+   derivation and not a byte anybody wrote. */
 .term-attrib { margin:10px 0 0; text-align:right; font:400 15px/1.7 'Newsreader','Book Sigla',serif; color:var(--meta); }
 /* A diagnosis is not an attribution: bytes that are not a script name no place,
    so what is wrong with them stays on the left where reading begins. */
@@ -309,7 +319,7 @@ import { isAddress, addressScriptHex, chainWitness, witnessVerdict, witnessDisag
 import { reference, latinReference, inputMark } from './btc-citation.js';
 import { parseLookup } from './btc-lookup.js';
 
-import { termOfScript, addressHtml, lockedHtml, spendHtml, suppliedHtml,
+import { termOfScript, addressHtml, titleHtml, suppliedHtml,
          revealedHtml } from './btc-term.js';
 import { messageOf, sighashName } from './btc-sighash.js';
 import { spellHtml, read, looksSpelled, isWholeScript, scriptFault } from './btc-address-form.js';
@@ -461,37 +471,36 @@ const spendRung = (t, opened, sayFn, section = null, brought = null, paired = fa
   const rung = opened?.args?.length
     ? suppliedHtml(t, opened.args, { say: sayFn, brought }) : null;
   if (!rung) return '';
-  // One term, not both: rung two keeps every way in because they are all still
-  // true of an unspent output, and this rung is about the path a spend actually
-  // took. suppliedHtml read that path off the count consensus itself counts, so
-  // the term above the passage is the one those arguments went into.
   // ⌘'s message, named where the page has it. The mark is a letter and a link,
   // the way a footnote mark always is: what it points at is the serialization a
-  // reader would hash, so the last clause of the demand stops being a promise
-  // and becomes something they can carry out.
+  // reader would hash, so the signature clause stops being a promise and
+  // becomes something a reader can carry out. It rides in the title now, which
+  // is the only line left that writes ⌘ -- the application rung that used to
+  // carry it is gone (below).
   const msg = message
     ? `<a class="term-fn-ref" href="#term-msg" title="the message, field by field — `
       + `${escapeHtml(message.algorithm)}, ${escapeHtml(sighashName(message.type))}">w</a>`
     : null;
-  const term = `<div class="term-line term-spend">${spendHtml(t, msg)[rung.which]}</div>`;
-  // The spend quotation's title, completed. The application line above writes
-  // ( r ) exactly as the lock did -- a hole the address could name and never
-  // fill -- and this line is where the spend fills it: the script the input
-  // revealed, read as the term it is (its own demand where the book has one
-  // tabled, its bytes' own abstraction otherwise). It stands between the
-  // application and the quotation because that is the descent's own order --
-  // the lock applied, the hole resolved, the values quoted -- and it stands
-  // outside the rule for the same reason every term line does: it is the
-  // reader's derivation from bytes quoted BELOW it, not a passage of its own.
-  // Where nothing was hidden -- a keyhash spend, taproot's key path -- there
-  // is no line, and the title is the lock's, already standing a rung up.
+  // The spend quotation's title, and the whole of what stands above the
+  // passage now. The application used to lead here -- rung two in parentheses
+  // with the arguments after it -- and it went the way the demand rung went,
+  // for the same reason: it stated what a lock asks of any spender, above a
+  // passage that is one spender's answer. What a quotation wants over it is its
+  // name, so the two quotations are titled alike, and the leaf mirrors the
+  // reading, where a paragraph carries a title and nothing else.
+  //
+  // Which title is what the chain revealed: the script itself where the output
+  // committed to one, and otherwise the demand with its commitment discharged,
+  // since the value it hid is on the page now. suppliedHtml read which path the
+  // spend took off the count consensus itself counts, and this reads the same
+  // count, so the title over the passage is the one those arguments went into.
+  //
+  // It stands outside the rule, as every term line does: the reader's
+  // derivation from bytes quoted BELOW it, not a passage of its own.
   const said = 'the spend quotation’s title — what this input revealed, read as the term '
     + 'it is: the script itself where the output committed to one, and otherwise the '
     + 'demand with its commitment discharged, since the value it hid is now on the page. '
     + 'Derived from the bytes quoted below rather than quoted from anywhere';
-  // ⌘'s letter rides into the title too. A keyhash reveal IS a signature over a
-  // message, and a title that named it … while the footnote below held the very
-  // bytes would be declining to say something the page had already fetched.
   const reveal = (revealedHtml(t, opened.args ?? [],
     { scriptsig: opened.scriptsig, msg }) ?? [])
     .map((line) => `<div class="term-line term-reveal" title="${escapeHtml(said)}">${line}</div>`)
@@ -512,10 +521,15 @@ const spendRung = (t, opened, sayFn, section = null, brought = null, paired = fa
     : `quoted from input ${opened.in} of the earliest spend this page reaches. It opened `
       + 'a different output carrying these same bytes: nothing on this page opens the one '
       + 'cited above';
-  return term + reveal
+  // The whole spend, in one wrapper, which is what opens the gap above it. The
+  // gap used to hang off the application line; that line is gone, and a gap
+  // that hung off the title instead would close whenever a reveal could not be
+  // titled. It belongs to the section either way -- what it separates is two
+  // claims about two transactions, not two lines.
+  return `<div class="term-spend">${reveal}`
     + `<div class="term-line term-quote">${rung.html}</div>`
     + `<div class="term-attrib"><span class="term-cite" title="${says}">—</span> ${where}</div>`
-    + messageFoot(message);
+    + `${messageFoot(message)}</div>`;
 };
 
 // The footnote ⌘ points at: the preimage cut at its joints, each field named and
@@ -572,25 +586,29 @@ function drawTerm(hex, { address = null, at = '', say: sayFn = null, said = '',
   const argument = quoted ? '' : (t && sayFn ? sayFn(t.argument) || '' : '');
   const script = `<span class="term-onchain" title="the same script in the book’s own hand — `
     + `this box takes it back">${spellHtml(hex, { say: sayFn }) || ''}</span>`;
-  // The second rung, in two parts: what the lock IS as a term, and then the
-  // script itself. One term line per way of opening the output -- an unspent
-  // taproot output really can be opened either way -- and one script, because
-  // they are one script however many ways it opens.
+  // The quotation's title: the anonymous λ this script binds, which is exactly
+  // what the reading prints above the same paragraph (see termTitle in
+  // bitcoin-book.html). One line, because a title names the abstraction and a
+  // script has one however many ways it opens.
   //
-  // The term lines stand above the passage and outside the rule. λ, the
-  // binders, the ellipsis and the eval step are the book's notation ABOUT this
-  // script and not one byte of it, and a quotation that carried them would be
-  // attributing the reader's own apparatus to the chain, under a citation
-  // saying where to go and read it. They also stayed out of the copyable span
-  // for the same reason from the other side: a click here takes bare bytes, and
-  // the search box reads them back.
-  // A term with nothing written down about what it awaits has no second rung of
-  // its own -- bare multisig, a data output, any shape the book has not tabled
-  // -- and the script still stands, quoted or not. There is simply no notation
-  // above it, which is the honest thing to draw: the page knows the bytes and
-  // does not know what opens them.
-  const terms = ((t && lockedHtml(t)) || [])
-    .map((line) => `<div class="term-line">${line}</div>`).join('');
+  // The demand used to stand here -- one line per way in, saying what a spend
+  // must bring. It was a truer thing to know and a worse thing to be titled
+  // by: two shapes can want the same key material, so it did not distinguish
+  // what a name has to distinguish, and it said what a future spend must do
+  // above a passage that is simply a lock somebody wrote. What a reader wants
+  // over a quotation is its name. The demand is still the table this module
+  // reads (btc-term.js's DEMANDS) and still what the notation key prints in
+  // its validator column; it is no longer drawn as a rung of its own.
+  //
+  // The title stands above the passage and outside the rule. λ, the dot and
+  // the binders are the book's notation ABOUT this script and not one byte of
+  // it, and a quotation that carried them would be attributing the reader's own
+  // apparatus to the chain, under a citation saying where to go and read it. It
+  // also stays out of the copyable span for the same reason from the other
+  // side: a click here takes bare bytes, and the search box reads them back.
+  // What goes untitled is what binds nothing -- bytes that are not a script at
+  // all -- and the script still stands, quoted or not.
+  const terms = t ? `<div class="term-line">${titleHtml(t)}</div>` : '';
   const passage = `<div class="term-line">${script}</div>`;
   // …and the passage is marked as a quotation once, and only once, the chain
   // has said where these bytes are written. Until it answers -- and if it
