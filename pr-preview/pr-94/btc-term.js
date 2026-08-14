@@ -334,7 +334,7 @@ const HASHED = (op, name) => [OPEN, op, name, OP_EQUALVERIFY, D, CLOSE, AND];
 // what the spend had to bring. A keyhash output hid the key, so the spend
 // brought it and it stands as a binder; P2PK and taproot's key path carried
 // their key in the output all along, so the spend brought only a signature and
-// the key stays the datum it always was -- λs. ∇ s p³² ( ⌘ w ). Neither is the
+// the key stays the datum it always was -- λs. ∇ s p³² ( ⌘ ※ ). Neither is the
 // lock's demand any more: what a spend must make true is a question about a
 // future, and these describe one that happened.
 //

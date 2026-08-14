@@ -64,7 +64,7 @@ function durationFrom512s(n) {
 // a bare height -- the chapter's own ■ block-mark carries the "block" sense the
 // leading ■ used to, so no separate operator is needed), Τ + UTC date for an
 // absolute time (rendered physically, the raw unix value in the hover).
-function locktimeInfo(locktime) {
+export function locktimeInfo(locktime) {
   if (locktime === 0) return { mark: '□', title: 'no locktime — final with respect to time' };
   if (locktime < LOCKTIME_THRESHOLD) {
     const { volume, book, chapter } = volumeBookChapter(locktime);
@@ -81,7 +81,7 @@ function locktimeInfo(locktime) {
 // (e.g. "† ■144"). Otherwise: ● final (0xffffffff, disables the transaction
 // locktime for this input), ○ non-replaceable but respecting the locktime
 // (0xfffffffe), or a bare † replaceable (< 0xfffffffe, opt-in RBF).
-function sequenceInfo(seq) {
+export function sequenceInfo(seq) {
   if ((seq & 0x80000000) === 0) {
     const n = seq & 0x0000ffff;
     // A relative block delay counts chapters, so it reads as a decimal count
