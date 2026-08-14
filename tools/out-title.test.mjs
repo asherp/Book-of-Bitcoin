@@ -137,24 +137,29 @@ test('the bookmark stands above the title, and neither displaces the other', asy
   assert.match(page, /outTerm\.dataset\.spk = out\.spkHex;/, 'the term reads the bytes alone');
 });
 
-test('the title is sized by the sigla, and takes their scale once', async () => {
+test('the title is sized with the lines it is stacked with', async () => {
   const page = await bookPage();
   const css = page.slice(0, page.indexOf('</style>'));
-  // Every other line on a section is prose with marks set into it, so the
-  // marks ride --scale-sigla-ratio and the sentence keeps the body's size. A
-  // title has no sentence around it -- it is notation end to end -- so the
-  // whole line takes the sigla scale.
-  assert.match(css, /\.tx-out-term \{ font-size: calc\(13\.5px \* var\(--scale-body, 1\) \* var\(--scale-sigla-ratio, 1\)\); \}/,
-    'the title no longer scales with the sigla');
-  // …once. #page-slide .op multiplies 1em by the same ratio, so a mark on a
-  // line already carrying it would take the ratio twice; the page neutralizes
-  // that here exactly as it does for .op-count.
-  assert.match(css, /#page-slide \.tx-out-term \.op \{ font-size: 1em; \}/,
-    'the opcodes in a title take the sigla ratio twice');
-  // The neutralizer has to outrank the rule it neutralizes: an id and two
-  // classes against an id and one, which is why it carries #page-slide too.
-  const at = css.indexOf('#page-slide .tx-out-term .op');
-  assert.ok(at > 0 && css.indexOf('#page-slide .op {') !== at, 'the two rules must be distinct');
+  // The three lines above a paragraph -- the bookmark title, the keep, the
+  // term -- are one group of headings over one paragraph, so they take one
+  // scale. A title that sized itself from the sigla would fall out of step
+  // with the two it is stacked under the moment a reader diverged them.
+  const size = /calc\(13\.5px \* var\(--scale-body, 1\)\)/;
+  for (const line of ['tx-out-title', 'tx-out-keep', 'tx-out-term']) {
+    const rule = new RegExp(`\\.${line} \\{[^}]*\\}`).exec(css);
+    assert.ok(rule, `.${line} is no longer sized here`);
+    assert.match(rule[0], size, `.${line} left the body scale`);
+    assert.ok(!/--scale-sigla-ratio/.test(rule[0]), `.${line} sizes itself from the sigla`);
+  }
+  // …and the marks inside it are left to the page's own glyph rules, which is
+  // what makes the title and the script it titles the same notation at two
+  // sizes: the opcodes ride the sigla ratio in both, the data letters ride
+  // neither in both. A line carrying the ratio itself would have had to undo
+  // it for every mark, and would have been the only line on a section to.
+  assert.ok(!/#page-slide \.tx-out-term \.op/.test(css),
+    'the title is undoing a glyph rule it no longer needs to');
+  assert.match(css, /#page-slide \.op \{ font-size: calc\(1em \* var\(--scale-sigla-ratio, 1\)\); \}/,
+    'the glyph rule the title now relies on is gone');
 });
 
 test('every mark the title sets is a mark the reading styles', async () => {

@@ -391,10 +391,11 @@ test('the leaf marks a quotation only where it can name the place', async () => 
   // bare line above the rule, exactly as the address rung does. The term inside
   // a quotation would put the reader's apparatus under a citation telling them
   // where to go and read it.
-  assert.match(page, /const terms = \(\(t && lockedHtml\(t\)\)/, 'the lock rung derives its term');
+  assert.match(page, /const terms = t \? `<div class="term-line">\$\{titleHtml\(t\)\}/,
+    'the lock quotation derives its title');
   assert.match(page, /class="term-quote">\$\{passage\}/, 'and quotes the script alone');
-  assert.match(page, /class="term-line term-spend">\$\{spendHtml\(t, msg\)\[rung\.which\]\}/,
-    'the spend rung has one too');
+  assert.match(page, /class="term-line term-reveal"[^>]*>\$\{line\}/,
+    'the spend quotation has one too');
   // The invariant behind both: nothing a rule encloses is built out of the
   // term's marks. λ, …, the joint and the eval step reach the page from
   // lockedHtml and spendMarks, and every one of those lands above a rule and

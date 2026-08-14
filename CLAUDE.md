@@ -64,10 +64,14 @@ lambdas — the same split as the committed/revealed modes below:
     question already answered, the key stands bare because it came from the
     spend rather than the output, and `⌘`'s footnote letter rides in where the
     page has fetched the preimage.
-  - Forms that hid nothing (P2PK, taproot's key path) get no second title —
-    their key was in the output from the first, so the spend revealed only its
-    own signature and the lock's title still stands. A reveal that does not
-    tokenize titles nothing: declining beats guessing, here as everywhere.
+  - Forms that hid nothing (P2PK, taproot's key path) are titled the same way,
+    and the binders show the difference: their key was in the output all along,
+    so the spend brought only a signature and the key stays the datum it was —
+    `λs. ∇ s p³² ( ⌘ w )`, against a keyhash reveal's bare `p`. This is also
+    what keeps `⌘` anchored: the title is now the only line that writes it, so
+    the message footnote always has a mark referring to it.
+  - A reveal that does not tokenize titles nothing: declining beats guessing,
+    here as everywhere.
 
 The same title stands in the reading, as an editorial decision: every output's
 locking script is titled by the term it binds, on its own line (`.tx-out-term`,
@@ -94,9 +98,17 @@ painted by `termTitle` in bitcoin-book.html) directly above the script.
   that mark means something on the search leaf, where a whole descent is
   written in it, and a chapter is not that leaf.
 
-The search page's rungs are not titles and keep their own job: rung two states
-the demand (every way in, one line each), rung three the application. The
-titles are the bare lambdas above the two quotations.
+The search page mirrors that: rung one (the address as a partial application)
+still leads, and below it each of the two quotations carries a title and
+nothing else. The demand rung and the application rung are **gone** — both
+stated what a lock asks of any spender, above passages that are one lock
+somebody wrote and one spender's answer to it, where what a reader wants is
+the passage's name. `DEMANDS` is still the table everything reads (it picks
+the path a spend took, and the reveal's title derives from it) and the
+notation key still prints the demand in its validator column; it is simply no
+longer drawn as a rung. `.term-spend` is now the spend section's wrapper
+rather than a line, so the gap above it survives a reveal that cannot be
+titled.
 
 Where this lives today:
 

@@ -795,13 +795,20 @@ test('the spend quotation is titled by what the chain revealed', () => {
   assert.equal(titleText(pkh), 'λh. ⧉ ⌖ h ≡ ∇');
   assert.deepEqual(revealedText(pkh, [SIG, KEY], { msg: 'w' }), ['λs p. ∇ s p ( ⌘ w )']);
 
-  // The forms that hid nothing get no second title: their key was in the
-  // output from the first, so a spend reveals only its own signature.
+  // The forms that hid nothing are titled too, and the difference shows in the
+  // binders: their key was in the output from the first, so the spend brought
+  // only a signature and the key stays the datum it always was -- p³² with its
+  // count, where a keyhash reveal writes a bare p it had to be given.
   const tr = termOfScript(addressScriptHex(TR));
-  assert.equal(revealedOf(tr, [SCHNORR]), null);
-  assert.equal(revealedText(tr, [SCHNORR]), null, 'taproot’s key path reveals nothing');
-  assert.equal(revealedText(termOfScript(reduce(TERMS.p2pk, '04' + 'ab'.repeat(64))), [SIG]), null,
-    'nor does a bare key');
+  assert.equal(revealedOf(tr, [SCHNORR]), null, 'no script was revealed');
+  assert.deepEqual(revealedText(tr, [SCHNORR], { msg: 'w' }), ['λs. ∇ s p³² ( ⌘ w )']);
+  assert.deepEqual(revealedText(termOfScript(reduce(TERMS.p2pk, '04' + 'ab'.repeat(64))), [SIG],
+    { msg: 'w' }), ['λs. ∇ s p⁶⁵ ( ⌘ w )'], 'a bare key, at its own length');
+  // Which is what keeps ⌘ anchored. The message footnote is drawn wherever the
+  // page could serialize one, and with the application rung gone this title is
+  // the only line that writes ⌘ -- a footnote whose mark appeared nowhere would
+  // be a reference to nothing.
+  assert.ok(revealedText(tr, [SCHNORR], { msg: 'w' })[0].includes('⌘ w'));
   // Taproot's script path hid a leaf, which is a script: titled by its own λ.
   const leaf = push(KEY) + 'ac';
   assert.equal(revealedOf(tr, [SIG, leaf, 'c0' + 'ab'.repeat(32)]), leaf);
