@@ -249,7 +249,12 @@ test('what the address hands back is another λ, not a fragment', () => {
   // is itself a function of what a spend will bring.
   const of = (address) => lockedText(termOfScript(addressScriptHex(address)));
   assert.deepEqual(of('1Ross5Np5doy4ajF9iGXzgKaC2Q3Pwwxv'), ['λs p. ⧉ ⌖ h²⁰ ≡ ∇']);
-  assert.deepEqual(of('bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4'), ['λs p. ⓪ h²⁰']);
+  // …and the same program one wire down, in the ( ) that says consensus wrote
+  // it rather than the output. A v0 key-hash output carries a version byte and
+  // a hash and nothing that hashes, compares or verifies; BIP141 runs it as the
+  // P2PKH template, which is the line above, mark for mark.
+  assert.deepEqual(of('bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4'),
+    ['λs p. ⓪ h²⁰ ( ⧉ ⌖ h²⁰ ≡ ∇ )']);
   // An output with two ways to open it is one lock and two λ over it. Both end
   // on something run: a leaf the spender reveals, or the check consensus makes
   // itself where no script is revealed at all.
@@ -324,19 +329,46 @@ test('the spend rung is marks and a citation, because it cannot be computed', ()
   assert.equal(spendMarks(termOfScript('76a914' + 'ab'.repeat(20))), null);
 });
 
-test('what a key-path spend runs is consensus’s own, and the term says so', () => {
-  // The one operation on any of these lines that is not a byte in the output.
-  // A key-path taproot spend runs no script at all -- consensus verifies the
-  // witness's single item against the output key as if by OP_CHECKSIG -- so ∇
-  // is nowhere in ⟦ ① p³² ⟧ and no reduction could ever put it there. Without
-  // it the key path's term said a lock wanted a signature and never said what
-  // became of it: a demand with no verdict.
+test('a witness output commits to a program, and the term writes the program', () => {
+  // The operations on these lines that are not bytes in the output. A witness
+  // scriptPubKey is a version byte and a commitment: ⟦ ⓪ h²⁰ ⟧ hashes nothing,
+  // compares nothing and verifies nothing, and no reduction could ever put a
+  // verification there. So each of these terms collected what a spend brought
+  // and never said what became of it -- a demand with no verdict -- until the
+  // program consensus runs was written in the ( ) beside it.
   const tr = termOfScript(addressScriptHex(TR));
   const [key, script] = demandsOf(tr);
-  assert.equal(key.checks, 0xac, 'the key path is checked, not run');
-  assert.equal(OPCODE_NAMES[key.checks], 'OP_CHECKSIG');
+  assert.deepEqual(key.checks, [0xac], 'a key path is checked, not run');
+  assert.equal(OPCODE_NAMES[key.checks[0]], 'OP_CHECKSIG');
   assert.equal(key.runs, null, 'and reveals no script to run');
   assert.equal(script.checks, null, 'the script path runs a leaf instead');
+
+  // Segwit v0, both forms. A key-hash output runs the P2PKH template built
+  // from its own datum -- so P2PKH and P2WPKH ask for the same key material AND
+  // run the same script, and the only difference left between them is the wire.
+  const [v0key] = demandsOf(termOfScript(addressScriptHex(
+    'bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4')));
+  assert.deepEqual(v0key.checks, [0x76, 0xa9, null, 0x88, 0xac]);
+  const p2pkh = termOfScript(addressScriptHex('1Ross5Np5doy4ajF9iGXzgKaC2Q3Pwwxv'));
+  assert.deepEqual(v0key.checks, p2pkh.body, 'the supplied program IS the P2PKH lock');
+  // A script-hash output checks the commitment and then runs what it checked,
+  // which is two steps and reads as two.
+  const [v0sh] = demandsOf(termOfScript(addressScriptHex(
+    'bc1qrp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3qccfmv3')));
+  assert.deepEqual(v0sh.checks, [0xa8, null, 0x87]);
+  assert.equal(v0sh.runs, 'w', 'and the revealed script still runs after it');
+  // Which is P2SH's own line with one pair of parentheses added: the same two
+  // steps, the check on the wire there and supplied here.
+  assert.deepEqual(lockedText(termOfScript(addressScriptHex('3J98t1WpEZ73CNmQviecrnyiWrnqRhWNLy'))),
+    ['λ… r. ⌖ h²⁰ = ( r )']);
+  assert.deepEqual(lockedText(termOfScript(addressScriptHex(
+    'bc1qrp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3qccfmv3'))),
+    ['λ… w. ⓪ h³² ( Σ h³² = ) ( w )']);
+  // The datum is counted inside the supplied program, because the count is what
+  // says WHICH bytes: the same ones the output carries, appearing once on the
+  // wire and once in the script consensus derives from them.
+  assert.match(lockedText(termOfScript(addressScriptHex(
+    'bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4')))[0], /\( ⧉ ⌖ h²⁰ ≡ ∇ \)$/);
   // It rides in the same ( ) a revealed script does, because the reader's
   // question is the same one: after the marks the chain holds, what runs?
   assert.match(lockedText(tr)[0], / \( ∇ \)$/);
@@ -351,13 +383,17 @@ test('what a key-path spend runs is consensus’s own, and the term says so', ()
   const [m] = lockedMarks(tr);
   assert.match(m.suffix, /class="op"[^>]*OP_CHECKSIG[^>]*>∇/);
   assert.match(m.suffix, /class="lam">\(/, 'the eval step is still apparatus');
-  // Every other tabled form does its own checking, in bytes of its own.
-  for (const id of Object.keys(TERMS)) {
-    if (id === 'p2tr') continue;
+  // …and exactly the pre-segwit forms supply nothing, because their scripts do
+  // their own work: P2PK, P2PKH and P2SH carry every operation they need in
+  // bytes the chain holds. The rule is the wire, not the form -- every witness
+  // output commits to a program, and no legacy one does.
+  const supplies = (id) => {
     const bytes = TERMS[id].bytes ?? 65;
     const t = termOfScript(reduce(TERMS[id], 'ab'.repeat(bytes)));
-    for (const alt of demandsOf(t)) assert.equal(alt.checks, null, id);
-  }
+    return demandsOf(t).some((alt) => alt.checks);
+  };
+  assert.deepEqual(Object.keys(TERMS).filter(supplies), ['p2wpkh', 'p2wsh', 'p2tr']);
+  assert.deepEqual(Object.keys(TERMS).filter((id) => !supplies(id)), ['p2pk', 'p2pkh', 'p2sh']);
 });
 
 test('no rung writes an opcode the lock does not own', () => {
@@ -371,10 +407,11 @@ test('no rung writes an opcode the lock does not own', () => {
   // and they are apparatus rather than an instruction.
   //
   // So one exception is left, and it is declared rather than assumed: the
-  // opcode an alternative names as consensus's own, which is true of a spend
-  // without being a byte of the output. Each line is checked against what ITS
-  // alternative declares, so rung one can never carry one and neither can a
-  // sibling path.
+  // program an alternative names as consensus's own, whose marks are true of a
+  // spend without being bytes of the output. Each line is checked against what
+  // ITS alternative declares, so rung one can never carry one of those marks
+  // and neither can a sibling path -- taproot's script path may not borrow the
+  // key path's ∇, and no line may write an opcode that is nowhere at all.
   const CAT = OPCODE_SYMBOLS[0x7e];
   assert.equal(OPCODE_NAMES[0x7e], 'OP_CAT');
   for (const id of Object.keys(TERMS)) {
@@ -389,7 +426,8 @@ test('no rung writes an opcode the lock does not own', () => {
       ...spendText(t).map((line, i) => [line, checks[i]])];
     for (const [line, check] of rungs) {
       assert.ok(!line.includes(CAT), `${id} still joins with an opcode on this rung`);
-      const allowed = new Set(check === null ? own : [...own, OPCODE_SYMBOLS[check]]);
+      const supplied = (check ?? []).filter((c) => c !== null).map((c) => OPCODE_SYMBOLS[c]);
+      const allowed = new Set([...own, ...supplied]);
       for (const [code, glyph] of Object.entries(OPCODE_SYMBOLS)) {
         if (allowed.has(glyph)) continue;
         assert.ok(!line.includes(glyph),
@@ -430,7 +468,8 @@ test('the wrapped forms cannot say what they will ask for', () => {
   // arity, so nothing needs to stand in for the missing binders.
   for (const [address, expected] of [
     ['3J98t1WpEZ73CNmQviecrnyiWrnqRhWNLy', ['λ… r. ⌖ h²⁰ = ( r )']],
-    ['bc1qrp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3qccfmv3', ['λ… w. ⓪ h³² ( w )']],
+    ['bc1qrp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3qccfmv3',
+      ['λ… w. ⓪ h³² ( Σ h³² = ) ( w )']],
   ]) {
     const t = termOfScript(addressScriptHex(address));
     assert.deepEqual(lockedText(t), expected);
@@ -486,7 +525,7 @@ test('a wrapped form writes the arguments it cannot count, and only it does', ()
   const of = (address) => lockedText(termOfScript(addressScriptHex(address)));
   assert.deepEqual(of('3J98t1WpEZ73CNmQviecrnyiWrnqRhWNLy'), ['λ… r. ⌖ h²⁰ = ( r )']);
   assert.deepEqual(of('bc1qrp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3qccfmv3'),
-    ['λ… w. ⓪ h³² ( w )']);
+    ['λ… w. ⓪ h³² ( Σ h³² = ) ( w )']);
   // Taproot, both paths at once: the key path counts its one argument exactly,
   // and only the script path reveals a script with an arity of its own. The key
   // path ends on a ( ) all the same, and takes no ellipsis with it -- what runs
