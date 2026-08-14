@@ -31,9 +31,20 @@ expression. The search page takes a locking script (or an address, or the
 book's own spelled form) as input, renders it as its lambda expression, and
 cites the on-chain pages where a matching locking transaction and its spending
 transaction were found. The lambda is the *semantic* form; the Glossia-encoded
-opcodes are the *literal* syntax. The lambda can serve as an auto-derived
-title for the referenced passage (not yet wired up — a candidate use, not a
-current feature).
+opcodes are the *literal* syntax.
+
+The lambda also serves as an auto-derived title for the passages the page
+quotes (direction, not yet wired up), and the two quotations take different
+lambdas — the same split as the committed/revealed modes below:
+
+- the quoted *locking script* is titled by the lambda derived from the address
+  alone — rung two's term, computable from the bytes in the box with nothing
+  fetched. That is all a lock's title needs: the address already determines it.
+- the quoted *spend* is titled by the lambda representing the *revealed*
+  script — the term read off what the input disclosed (a redeem script, a
+  witness script, a tapscript leaf), which exists only once there is a spend
+  to quote. For keyhash/visible types the two titles coincide; for script-hash
+  forms the spend's title is where `( r )` finally gets a term of its own.
 
 Where this lives today:
 
@@ -70,6 +81,10 @@ two modes:
   today the spend rung shows what the input carried (a redeem script is
   revealed as opcodes via `renderScript nested`); folding the revealed
   script's own demands back into a full lambda is direction, not yet built.
+  The revealed lambda is also what the spend quotation's title carries (see
+  Concept above): `termOfScript` already reads a term off any tokenizable
+  script, the revealed script included, so the title needs no new machinery —
+  only the wiring.
 
 **Closed vs. open normal form** (the key analytical handle). A lambda in beta
 normal form may or may not have free variables:
