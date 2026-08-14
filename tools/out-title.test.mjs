@@ -189,3 +189,57 @@ test('every mark the title sets is a mark the reading styles', async () => {
     assert.ok(!new RegExp(`\\.out-term \\.${c} \\{`).test(css), `.${c} is restyled for the title`);
   }
 });
+
+// ─── the rule: high entropy reaches a reader as prose or not at all ──────
+
+const searchPage = () => readFile(new URL('../web/bitcoin-search.html', import.meta.url), 'utf8');
+
+test('the message footnote is headed by its digest, said, and never by hex', async () => {
+  const page = await searchPage();
+  const foot = /const messageFoot = [\s\S]*?\n\};/.exec(page);
+  assert.ok(foot, 'the leaf no longer sets a message footnote');
+  const src = foot[0];
+  // The digest leads, said in the book's own tongue. The fields below are the
+  // metadata -- what went into the hash -- and this is what came out, which is
+  // the one number a reader checks.
+  assert.match(src, /const digest = sayFn \? sayFn\(message\.digest\)/, 'the digest is not said');
+  assert.match(src, /term-fn-digest[\s\S]*?term-fn-head[\s\S]*?\$\{rows\}/,
+    'the digest no longer heads the fields');
+  // …and neither the digest nor the preimage is ever set in type. They ride on
+  // the element, where they can be copied and cannot be read.
+  assert.match(src, /data-hash="\$\{escapeHtml\(message\.digest\)\}"/);
+  assert.match(src, /data-preimage="\$\{escapeHtml\(message\.preimage\)\}"/);
+  for (const bad of [/>\$\{escapeHtml\(message\.digest\)\}</, />\$\{escapeHtml\(message\.preimage\)\}</]) {
+    assert.ok(!bad.test(src), 'the footnote prints raw bytes as text');
+  }
+  // Two things are worth taking from a digest: the number, and the
+  // serialization it was taken over, so a reader can hash it and compare
+  // rather than take the page's word.
+  assert.match(page, /\['Copy hash', host\.dataset\.hash\], \['Copy preimage', host\.dataset\.preimage\]/);
+});
+
+test('nothing high-entropy on the leaf falls back to hex', async () => {
+  const page = await searchPage();
+  // Every field of the message, and both sides of a disagreement, are said or
+  // they show a mark. The engine is what says them, and a build without it
+  // gets … with the claim in its hover -- never the bytes, which is the rule
+  // this book keeps wherever it prints a hash.
+  const values = /const fieldValue = [\s\S]*?\n\};/.exec(page);
+  assert.ok(values, 'the leaf no longer sets message fields');
+  assert.ok(!/escapeHtml\(f\.bytes\)/.test(values[0]), 'a field falls back to its own hex');
+  assert.ok(!/escapeHtml\(f\.of\.txid\)/.test(values[0]), 'an outpoint falls back to its id');
+  assert.match(values[0], /return said \|\| \(f\.bytes \? unsaid\(\) : '—'\)/);
+  // The ☒ path is not an exception. A disagreement is where a reader most
+  // needs to compare two scripts closely, and prose is what they compare.
+  const mark = /const chainMark = [\s\S]*?\n\};/.exec(page);
+  assert.ok(mark, 'the leaf no longer marks the chain’s answer');
+  assert.ok(!/term-hex">\$\{escapeHtml\(theirs\)\}/.test(mark[0]),
+    'the disagreement still prints scripts as hex');
+  assert.match(mark[0], /spellHtml\(h, \{ say: sayFn \}\) \|\| unsaid\(\)/);
+  // What may still be set as figures is what is not high entropy: a byte's
+  // position in a script, and the one undefined byte at it. Those are a
+  // diagnosis, and a diagnosis with no place in it is not much better than
+  // silence.
+  const fault = /const faultNote = [\s\S]*?\n\};/.exec(page);
+  assert.match(fault[0], /byte \$\{f\.at\}/, 'a fault no longer says where it is');
+});

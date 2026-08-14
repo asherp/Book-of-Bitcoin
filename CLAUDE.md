@@ -20,6 +20,17 @@ marks-without-prose when it is missing; nothing in `tools/` needs it.
 - Prefer declining over guessing: throughout the codebase, a value that cannot
   be computed honestly is `null` and the page shows a mark (… ∅ ⋯ ☒) with the
   claim in its hover, never a fabricated fallback.
+- **High-entropy data reaches a reader through Glossia or not at all.** A hash,
+  a key, a script, a txid, a digest, a preimage — none is ever set in type as
+  hex. It is said in prose, and where the engine is absent it shows `…` with
+  the claim in its hover. Copying is how the exact bytes travel: the value
+  rides on the element (a data attribute, `.hash-copy`) and a click opens a
+  copy menu, which is also more reliable than selecting a long string by hand.
+  This holds on error paths too — the ☒ disagreement sets both scripts as
+  prose, since a mismatch is where a reader most needs to compare closely.
+  What may still be set as figures is what carries no entropy: a version, a
+  count, an index, an amount, a byte's position in a script and the one
+  undefined byte at it.
 
 ## Search page: lambda-expression address representation
 
@@ -152,11 +163,16 @@ Where this lives today:
   marks (via `locktimeInfo` / `sequenceInfo`, exported from btc-prose.js so the
   footnote and a chapter cannot drift), an amount is ₿, a script is opcodes,
   and a hash — unreadable by construction — is **said in Glossia**. A field a
-  flag zeroed shows ∅. `bytes` is untouched, so the fields still rejoin to the
-  preimage for BIP143/BIP341; legacy's list is a summary of the transaction's
-  joints and deliberately does not. The whole preimage is set once beneath the
-  rows, selectable, since the rows now say what the message *is* rather than
-  what to hash.
+  flag zeroed shows ∅; one the engine cannot say shows `…`, never its bytes.
+  `bytes` is untouched, so the fields still rejoin to the preimage for
+  BIP143/BIP341; legacy's list is a summary of the transaction's joints and
+  deliberately does not.
+- **The digest heads the footnote, said.** `⌘` plus the digest in prose is the
+  heading; the fields below are the metadata that made it. Clicking the heading
+  opens a copy menu — *Copy hash*, *Copy preimage* — and those bytes live in
+  data attributes, copyable and never legible. That is what lets the
+  high-entropy rule cost nothing: a reader who wants to take the digest
+  themselves still gets the exact serialization.
 
 **Two states per output.** Script-hash outputs (P2SH, P2WSH; taproot's script
 path likewise) commit only to a hash until spent. So the representation has

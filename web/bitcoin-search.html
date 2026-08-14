@@ -230,6 +230,12 @@ button:hover { background: var(--accent-2); }
    hover, its bytes in the mono face and free to wrap, because a scriptCode or
    a hashOutputs is long and a reader who wants to hash it needs all of it. */
 .term-foot { margin-top: 22px; padding-top: 12px; border-top: 1px solid var(--hair); }
+/* The digest, said, standing as the heading of everything that made it. The
+   fields below are the metadata -- what went in, in order -- and this is what
+   came out, which is the one number a reader actually checks. It leads because
+   a footnote's heading should name the thing the footnote is about. */
+.term-fn-digest { font:400 15px/1.6 'Newsreader','Book Sigla',serif; color:var(--ink-soft); margin-bottom:4px; }
+.term-fn-digest .op { color: var(--accent); font-weight: 700; }
 .term-fn-head { font:400 13px/1.5 'Public Sans','Book Sigla',sans-serif; color:var(--meta); margin-bottom:10px; }
 .term-fn-mark { font:500 .8em/1 'IBM Plex Mono','Book Sigla',monospace; color:var(--accent); vertical-align:super; margin-right:.4em; }
 .term-fn-row { display:grid; grid-template-columns: 11ch 1fr; gap:10px; align-items:baseline; margin-bottom:4px; }
@@ -246,17 +252,34 @@ button:hover { background: var(--accent-2); }
 /* …and a figure is a figure: a version, a count, an index, an amount. Set in
    the mono face, because it is a number to be read exactly and not a word. */
 .term-fn-bytes .fn-figure { font-family: 'IBM Plex Mono','Book Sigla',monospace; font-size: .9em; color: var(--ink-soft); }
-/* The preimage entire, which is the one row that stays bytes: the rows above
-   say what the message IS, and this says what to hash. One click takes it. */
-.term-fn-raw .term-fn-bytes { font-family: 'IBM Plex Mono','Book Sigla',monospace; font-size: 11px; color: var(--meta); }
-.term-fn-raw { margin-top: 8px; }
-/* The digest sits under a hairline, apart from the fields it is taken over. */
-.term-fn-sum { margin-top:8px; padding-top:8px; border-top:1px solid var(--hair); }
-.term-fn-sum .term-fn-name, .term-fn-sum .term-fn-bytes { color: var(--accent); }
 /* The mark on the line above, which is a footnote reference and set as one. */
 .term-fn-ref { font-size:.72em; vertical-align:super; text-decoration:none; }
 .term-fn-ref:hover { text-decoration:underline; }
 .term-hex { font: 400 12px/1.7 'IBM Plex Mono','Book Sigla', monospace; color: var(--meta); overflow-wrap: anywhere; }
+/* A Glossia-encoded hash, set the way the reading sets one: the prose is the
+   visible text and clicking anywhere on it opens a menu to copy the exact bytes
+   it encodes. The raw hex is never shown -- that is the rule this book keeps
+   everywhere (see .hash-copy in bitcoin-book.html), and it is not only a matter
+   of taste: a hash printed as hex is a string nobody can read and nobody can
+   reliably select by hand on a touch device, so showing it serves no one that
+   copying it does not serve better. */
+.hash-copy { position: relative; cursor: pointer; }
+.hash-copy:hover, .hash-copy:focus-visible { color: var(--ink); outline: none; }
+.hash-menu {
+  position: fixed; z-index: 40; min-width: 172px; padding: 6px;
+  background: var(--card); border: 1px solid var(--card-bd); border-radius: 7px;
+  box-shadow: 0 18px 44px -18px rgba(0,0,0,.8);
+}
+.hash-menu-head {
+  padding: 6px 8px 8px; color: var(--dim); font: 600 10.5px/1 'IBM Plex Mono','Book Sigla',monospace;
+  letter-spacing: .1em; text-transform: uppercase; border-bottom: 1px solid var(--rule); margin-bottom: 5px;
+}
+.hash-menu-item {
+  display: block; width: 100%; text-align: left; background: transparent; color: var(--ink-soft);
+  border: none; border-radius: 4px; padding: 8px 9px; cursor: pointer;
+  font: 500 12.5px/1.2 'IBM Plex Mono','Book Sigla',monospace; letter-spacing: .02em; text-transform: none;
+}
+.hash-menu-item:hover, .hash-menu-item:focus-visible { background: var(--input-bg); color: var(--ink); outline: none; }
 /* The on-chain line is also the format itself, so it is set to be taken: one
    click selects the whole of it, and the search box reads it back. It stood as
    a mono block below for a while, which only ever meant the same passage twice
@@ -422,7 +445,7 @@ const cite = (height, section, { out = null, mark = null } = {}) => reference(he
   + (section != null && out != null ? `.${out}` : '')
   + (section != null && mark ? `.${inputMark(mark.n, mark.sig)}` : '');
 
-const chainMark = (verdict, witness, ours, section = null) => {
+const chainMark = (verdict, witness, ours, section = null, sayFn = null) => {
   if (verdict === 'unreachable') {
     return `<span class="term-check term-check-said" title="the chain could not be asked — `
       + `${escapeHtml(chainFailureText())}">⋯</span>`;
@@ -435,10 +458,17 @@ const chainMark = (verdict, witness, ours, section = null) => {
   const n = witness.outputs + witness.prevouts;
   const where = `<a href="${citeHref(witness.txid, witness.out ?? undefined)}">${escapeHtml(at)}</a>`;
   if (verdict === 'differs') {
+    // The two readings, set against each other -- and set as the book sets a
+    // script, not as hex. A disagreement is the one place a reader most needs
+    // to compare two things closely, and prose is what this book gives them to
+    // compare: the same rule as everywhere else, and no exception earned by the
+    // line being an error message.
     const theirs = witnessDisagreement(ours, witness) ?? witness.script;
+    const set = (h) => (sayFn ? spellHtml(h, { say: sayFn }) || unsaid() : unsaid());
     return `<span class="term-check term-check-differs" title="the chain does not agree — trust it, `
       + `not this page">☒</span> ${where}`
-      + `<div class="term-hex">${escapeHtml(theirs)}</div><div class="term-hex">${escapeHtml(ours)}</div>`;
+      + `<div class="term-line" title="what the chain carries">${set(theirs)}</div>`
+      + `<div class="term-line" title="what this page derived from the box">${set(ours)}</div>`;
   }
   // Found, so the passage above has a source, and it is set as one: an em dash
   // and the place, which is how this book attributes anything it quotes. The
@@ -597,6 +627,16 @@ const spendRung = (t, opened, sayFn, section = null, brought = null, paired = fa
 // Without the engine the high-entropy rows keep their bytes: the marks can be
 // drawn from the bytes alone but the words cannot, and hex is better than a
 // blank where a reader was promised something to hash.
+// What a value looks like when the engine that says it is not here. Never the
+// hex: high-entropy bytes reach a reader through Glossia or they do not reach
+// them at all, which is the rule this book keeps everywhere it prints a hash.
+// So the mark stands with the claim in its hover, exactly as it does for every
+// other thing this page cannot compute honestly.
+const UNSAID_BYTES = 'these bytes are a hash, and a hash reaches a reader as prose or not at all — '
+  + 'the Glossia engine says them, and this build does not carry it. The copy menu on the '
+  + 'digest above still hands over the exact bytes';
+const unsaid = () => `<span class="wit-empty" title="${escapeHtml(UNSAID_BYTES)}">…</span>`;
+
 const zeros = (hex) => /^0+$/.test(hex);
 const fieldValue = (f, sayFn, reader) => {
   if (f.kind === 'none') return '—';
@@ -622,8 +662,7 @@ const fieldValue = (f, sayFn, reader) => {
   }
   if (f.kind === 'script') {
     if (!f.of) return `<span class="wit-empty" title="no script at all">∅</span>`;
-    return reader ? reader.renderScript(f.of, (h) => (sayFn ? sayFn(h) || '' : ''))
-      : escapeHtml(f.bytes);
+    return reader && sayFn ? reader.renderScript(f.of, (h) => sayFn(h) || '') : unsaid();
   }
   // A coin, named as the chain names it: the txid said in the book's tongue,
   // and the output's own number after it. The id is reversed on the wire from
@@ -631,11 +670,11 @@ const fieldValue = (f, sayFn, reader) => {
   // is what the message actually carries, which is the point of saying it.
   if (f.kind === 'outpoint') {
     const said = sayFn ? sayFn(f.of.txid) || '' : '';
-    return (said || escapeHtml(f.of.txid))
+    return (said || unsaid())
       + ` <span class="op op-push" title="output ${f.of.vout} of it">.${f.of.vout}</span>`;
   }
   const said = sayFn ? sayFn(f.bytes) || '' : '';
-  return said || escapeHtml(f.bytes) || '—';
+  return said || (f.bytes ? unsaid() : '—');
 };
 
 const messageFoot = (message, sayFn = null, reader = null) => {
@@ -643,20 +682,82 @@ const messageFoot = (message, sayFn = null, reader = null) => {
   const rows = message.fields.map((f) =>
     `<div class="term-fn-row"><span class="term-fn-name" title="${escapeHtml(f.said)}">${escapeHtml(f.name)}</span>`
     + `<span class="term-fn-bytes">${fieldValue(f, sayFn, reader)}</span></div>`).join('');
-  // …and the whole of it once more, as bytes, which is the one thing the rows
-  // above stopped being. The footnote's promise is that a reader can take the
-  // digest themselves; the fields say what they are FOR, and this says what to
-  // hash. One click takes it, as the on-chain line does.
-  const raw = `<div class="term-fn-row term-fn-raw"><span class="term-fn-name" `
-    + `title="every field above, in the order they are set — the bytes the digest is taken over">`
-    + `⟦ ⟧</span><span class="term-fn-bytes term-onchain">${escapeHtml(message.preimage)}</span></div>`;
-  return `<div class="term-foot" id="term-msg"><div class="term-fn-head">`
-    + `<span class="term-fn-mark">※</span> the message — ${escapeHtml(message.algorithm)}, `
-    + `${escapeHtml(sighashName(message.type))}</div>${rows}${raw}`
-    + `<div class="term-fn-row term-fn-sum"><span class="term-fn-name" `
-    + `title="${escapeHtml(message.digestSaid)}">⌘</span>`
-    + `<span class="term-fn-bytes term-onchain">${escapeHtml(message.digest)}</span></div></div>`;
+  // The digest, said, as the heading of everything that made it. The fields
+  // below are the metadata -- what went into the hash, in the order it went --
+  // and this is what came out, which is the one number a reader checks. A
+  // footnote's heading should name the thing the footnote is about, and this
+  // is that thing.
+  //
+  // Never as hex. A hash reaches a reader as prose or it does not reach them:
+  // that is the rule everywhere this book prints one (see .hash-copy in
+  // bitcoin-book.html), and the copy menu is what makes it cost nothing --
+  // clicking hands over the exact bytes, of the digest or of the whole
+  // preimage, which is more reliable than selecting a string this long by hand
+  // anyway. The bytes ride on the element rather than in the text, where they
+  // can be copied and cannot be read.
+  const digest = sayFn ? sayFn(message.digest) || '' : '';
+  const said = `the digest — ${message.algorithm}, ${sighashName(message.type)}. `
+    + 'Click to copy it, or the preimage it was taken over';
+  return `<div class="term-foot" id="term-msg">`
+    + `<div class="term-fn-digest"><span class="term-fn-mark">※</span>`
+    + `<span class="hash-copy" tabindex="0" role="button" title="${escapeHtml(said)}" `
+    + `data-hash="${escapeHtml(message.digest)}" data-preimage="${escapeHtml(message.preimage)}">`
+    + `<span class="op" title="${escapeHtml(message.digestSaid)}">⌘</span> `
+    + `${digest || unsaid()}</span></div>`
+    + `<div class="term-fn-head">the message it was taken over — `
+    + `${escapeHtml(message.algorithm)}, ${escapeHtml(sighashName(message.type))}</div>${rows}</div>`;
 };
+
+// The copy menu behind a said hash, which is what lets the rule cost nothing:
+// the prose is what a reader sees, and the bytes are one click away. Two items,
+// because a digest has two things worth taking — the number itself, and the
+// serialization it was taken over, so a reader can hash it and compare rather
+// than take the page's word.
+//
+// Delegated from the card, since the card is rebuilt from a string on every
+// keystroke and a listener bound to a span inside it would not survive the
+// next paint. The bytes ride on the element in data attributes: copyable,
+// unreadable, and never set in type.
+let copyMenu = null;
+const closeCopyMenu = () => { copyMenu?.remove(); copyMenu = null; };
+function openCopyMenu(host) {
+  closeCopyMenu();
+  const items = [['Copy hash', host.dataset.hash], ['Copy preimage', host.dataset.preimage]];
+  const menu = document.createElement('div');
+  menu.className = 'hash-menu';
+  menu.setAttribute('role', 'menu');
+  menu.innerHTML = '<div class="hash-menu-head">the message</div>';
+  for (const [label, value] of items) {
+    if (!value) continue;
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'hash-menu-item';
+    b.setAttribute('role', 'menuitem');
+    b.textContent = label;
+    b.addEventListener('click', async () => {
+      try { await navigator.clipboard.writeText(value); } catch { /* denied; nothing to say */ }
+      closeCopyMenu();
+    });
+    menu.append(b);
+  }
+  document.body.append(menu);
+  const r = host.getBoundingClientRect();
+  menu.style.left = `${Math.min(r.left, window.innerWidth - menu.offsetWidth - 8)}px`;
+  menu.style.top = `${Math.min(r.bottom + 6, window.innerHeight - menu.offsetHeight - 8)}px`;
+  copyMenu = menu;
+  menu.querySelector('.hash-menu-item')?.focus();
+}
+document.addEventListener('click', (e) => {
+  const host = e.target.closest?.('.hash-copy');
+  if (host) { e.stopPropagation(); openCopyMenu(host); return; }
+  if (!e.target.closest?.('.hash-menu')) closeCopyMenu();
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') { closeCopyMenu(); return; }
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  const host = e.target.closest?.('.hash-copy');
+  if (host) { e.preventDefault(); openCopyMenu(host); }
+});
 
 function drawTerm(hex, { address = null, at = '', say: sayFn = null, said = '',
                         quoted = false, opened = null, spendSection = null, brought = null,
@@ -774,7 +875,7 @@ async function enrichTerm(hex, { address = null, at = '' } = {}) {
           + ' — the locking script carries it, and every line here that names it names that one' }
     : null);
   const draw = (lock, spend, message) => drawTerm(hex, { address, at, say: sayFn,
-    said: `<div class="term-attrib">${chainMark(verdict, witness, hex, lock)}</div>`,
+    said: `<div class="term-attrib">${chainMark(verdict, witness, hex, lock, sayFn)}</div>`,
     quoted: verdict === 'agrees', opened, spendSection: spend, brought,
     paired: Boolean(witness?.paired), message, ref: refOf(lock), reader });
   draw(null, null, null);
