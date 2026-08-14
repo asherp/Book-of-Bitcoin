@@ -563,16 +563,20 @@ export function inputMarkOf(vins, index) {
 }
 
 // What an input brought, in every reading a page needs: the record, the arity,
-// and -- for an input that carried a scriptSig -- the script itself. The
-// reader renders those as script rather than as a stack (renderScript with
+// and the scriptSig itself where the input wrote one. The reader renders a
+// sig-carried input as script rather than as a stack (renderScript with
 // nested: true, which reveals a P2SH redeem script as opcodes), so the bytes
-// have to survive being tokenized into pushes.
+// have to survive being tokenized into pushes. The scriptSig is kept even
+// beside a witness: a P2SH output wrapping a witness program is opened by
+// both at once -- the redeem script rides in the scriptSig while the
+// program's arguments ride the stack -- and dropping it left the one push
+// that says what the hash committed to unreachable from the record.
 function brought(vin) {
   const carried = Array.isArray(vin?.witness) && vin.witness.length > 0;
   const items = suppliedBy(vin);
   return {
     items, args: spendArgsOf(items, carried),
-    scriptsig: carried ? null : (String(vin?.scriptsig || '').toLowerCase() || null),
+    scriptsig: String(vin?.scriptsig || '').toLowerCase() || null,
   };
 }
 
@@ -1291,22 +1295,28 @@ export async function txHexOf(txid) {
   return null;
 }
 
-// Every input's spent amount in one request sized by the transaction
-// itself: Esplora has no endpoint for a single referenced output's value
+// Every input's spent coin in one request sized by the transaction
+// itself: Esplora has no endpoint for a single referenced output
 // (/outspend/:vout carries spend status only), but a transaction's own
-// JSON (/tx/:txid) lists each input's prevout -- value included -- so a
-// section's margin amounts never require fetching the referenced
-// transactions, however enormous (an exchange batch withdrawal) those
-// are. Confirmed prevouts are immutable; memoized for the session, with
-// the book's citations archive still answering first upstream.
+// JSON (/tx/:txid) lists each input's prevout -- value and script alike
+// -- so neither a section's margin amounts nor a BIP341 message ever
+// requires fetching the referenced transactions, however enormous (an
+// exchange batch withdrawal) those are. Confirmed prevouts are
+// immutable; memoized for the session, with the book's citations archive
+// still answering first upstream. One {value, script} per input, in
+// input order; null where the mirror named no coin (a coinbase input).
 const prevoutsMemo = new Map();
-export function prevoutValuesOf(txid) {
+export function prevoutsOf(txid) {
   if (!prevoutsMemo.has(txid)) {
     prevoutsMemo.set(txid, (async () => {
       for (const mirror of esploraMirrors()) {
         const j = await esploraJson(mirror, `/tx/${txid}`);
         if (j && j.txid === txid && Array.isArray(j.vin)) {
-          return j.vin.map((v) => (v.prevout && v.prevout.value != null ? Number(v.prevout.value) : null));
+          return j.vin.map((v) => (v.prevout ? {
+            value: v.prevout.value != null ? Number(v.prevout.value) : null,
+            script: typeof v.prevout.scriptpubkey === 'string'
+              ? v.prevout.scriptpubkey.toLowerCase() : null,
+          } : null));
         }
       }
       prevoutsMemo.delete(txid);   // nothing answered -- ask again next time
@@ -1314,6 +1324,13 @@ export function prevoutValuesOf(txid) {
     })());
   }
   return prevoutsMemo.get(txid);
+}
+
+// The values alone, for the pages that only total: the same fetch, the
+// same memo, one field kept.
+export async function prevoutValuesOf(txid) {
+  const coins = await prevoutsOf(txid);
+  return coins ? coins.map((c) => (c && c.value != null ? c.value : null)) : null;
 }
 
 // The spending status of every output of a transaction at once (Esplora
