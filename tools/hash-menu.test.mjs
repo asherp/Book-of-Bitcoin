@@ -205,9 +205,9 @@ test('nothing is raised on a citation that names another place', async () => {
   assert.ok(!/sigRef|tx-sig-ref/.test(page), 'and the scriptSig raises no letter at all');
 
   // A witness's letter moves to the end of the script it shares an input with,
-  // which is where a footnote mark has always gone: after the text it annotates.
-  assert.match(page, /if \(inp\.witnessHex\) scriptCell\.append\(witnessRef\(inputIndex\)\);/);
-  assert.match(page, /\.tx-in-script \.tx-witness-ref \{/, 'and it is set for that position');
+  // closing that paragraph from inside it — see the test below for where.
+  assert.match(page, /if \(inp\.witnessHex\) \(body \?\? scriptCell\)\.append\(witnessRef\(inputIndex\)\);/);
+  assert.match(page, /\.tx-line \.tx-witness-ref/, 'and it is set for that position');
   // A witness-only input needs no letter either: its citation travels down and
   // renders in the footnote's own left cell, beside the witness itself.
   assert.match(page, /footnotes\[footnotes\.length - 1\]\.cite = cite;/);
@@ -360,4 +360,50 @@ test('the menu carries the way down to the other half of a spend', async () => {
     const body = strings.split(`  ${table}: {`)[1].split('\n  },')[0];
     assert.ok(body.includes("'Witness footnote':"), `${table} carries the new item`);
   }
+});
+
+test('the witness letter ends the paragraph, inside it', async () => {
+  const page = await bookPage();
+  // addLine builds a <p> and addQuote a <blockquote>, so a mark appended to the
+  // CELL is a sibling of the text: it forms its own line box and sits under the
+  // paragraph rather than closing it. The letter has to go inside whichever
+  // block the script was set in.
+  assert.match(page, /const body = inp\.scriptAscii \? addQuote\(scriptCell, inp\.scriptAscii\)\s*\n\s*: addLine\(scriptCell, inp\.script\);/);
+  assert.match(page, /if \(inp\.witnessHex\) \(body \?\? scriptCell\)\.append\(witnessRef\(inputIndex\)\);/);
+  assert.match(page, /const addQuote = \(container, html\) => \{[\s\S]*?return q;\s*\n  \};/,
+    'addQuote has to hand its block back for that');
+
+  // …and run, in a DOM small enough to fit here: what matters is only which
+  // element the mark ends up a child of.
+  const el = (tagName) => ({
+    tagName: tagName.toUpperCase(), className: '', innerHTML: '', textContent: '', kids: [],
+    append(...n) { for (const k of n) { k.parent = this; this.kids.push(k); } },
+    addEventListener() {},
+  });
+  const src = [
+    /const addLine = \(container, html\) => \{[\s\S]*?\n  \};/.exec(page)[0],
+    /const addQuote = \(container, html\) => \{[\s\S]*?\n  \};/.exec(page)[0],
+    /const witnessRef = \(n\) => \{[\s\S]*?\n  \};/.exec(page)[0],
+  ].join('\n');
+  const place = (ascii) => Function('document', 'footnoteMark', 'loadFootnotes', 'leadUsed', 'el', `
+    ${src}
+    const scriptCell = el('div');
+    const body = ${ascii ? "addQuote(scriptCell, '“a coinbase tag”')" : "addLine(scriptCell, 'sworn oak ridge')"};
+    (body ?? scriptCell).append(witnessRef(1));
+    return { block: body.tagName, holder: body.kids[body.kids.length - 1].parent.tagName,
+             cellKids: scriptCell.kids.length };
+  `)({ createElement: el }, () => 'a', () => {}, true, el);
+
+  const line = place(false);
+  assert.equal(line.block, 'P', 'a script is set as a paragraph');
+  assert.equal(line.holder, 'P', 'and the letter closes it from inside');
+  assert.equal(line.cellKids, 1, 'nothing is left beside the paragraph');
+
+  // A quoted coinbase is a blockquote, and the letter lands after the closing
+  // “ ” that quoteText wrote -- the quotation marks are the extent of what a
+  // miner put there, and the letter is the book's.
+  const quote = place(true);
+  assert.equal(quote.block, 'BLOCKQUOTE');
+  assert.equal(quote.holder, 'BLOCKQUOTE', 'the letter ends the quotation’s own block');
+  assert.equal(quote.cellKids, 1);
 });
