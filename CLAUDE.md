@@ -34,17 +34,27 @@ transaction were found. The lambda is the *semantic* form; the Glossia-encoded
 opcodes are the *literal* syntax.
 
 The lambda also serves as an auto-derived title for the passages the page
-quotes (direction, not yet wired up), and the two quotations take different
+quotes (wired up on the search page), and the two quotations take different
 lambdas — the same split as the committed/revealed modes below:
 
 - the quoted *locking script* is titled by the lambda derived from the address
   alone — rung two's term, computable from the bytes in the box with nothing
-  fetched. That is all a lock's title needs: the address already determines it.
+  fetched. That is all a lock's title needs: the address already determines
+  it, and the term lines standing above the quotation are that title.
 - the quoted *spend* is titled by the lambda representing the *revealed*
   script — the term read off what the input disclosed (a redeem script, a
   witness script, a tapscript leaf), which exists only once there is a spend
-  to quote. For keyhash/visible types the two titles coincide; for script-hash
-  forms the spend's title is where `( r )` finally gets a term of its own.
+  to quote. `revealedOf` / `revealedText` / `revealedHtml` (btc-term.js) read
+  it — by consensus's placement, never by shape: P2SH's from the scriptSig's
+  last push (where it stays even when the program it wraps moved its
+  arguments to the witness stack), the witness forms' from the stack position
+  `runs` names — and `spendRung` (bitcoin-search.html) draws it between the
+  application line and the quotation, rendered as the revealed script's own
+  demand where one is tabled and as its bytes' own application otherwise.
+  For keyhash/visible types the two titles coincide (the reveal is null and
+  no line is drawn); for script-hash forms the spend's title is where `( r )`
+  finally gets a term of its own. A reveal that does not tokenize titles
+  nothing — declining beats guessing, here as everywhere.
 
 Where this lives today:
 
@@ -78,13 +88,11 @@ two modes:
 - *Revealed* — spent output, or a keyhash/visible type. The spending
   transaction reveals the full script, so render the complete lambda. The
   citation to the spending tx is literally where abstract becomes concrete —
-  today the spend rung shows what the input carried (a redeem script is
-  revealed as opcodes via `renderScript nested`); folding the revealed
-  script's own demands back into a full lambda is direction, not yet built.
-  The revealed lambda is also what the spend quotation's title carries (see
-  Concept above): `termOfScript` already reads a term off any tokenizable
-  script, the revealed script included, so the title needs no new machinery —
-  only the wiring.
+  the spend rung shows what the input carried (a redeem script is revealed as
+  opcodes via `renderScript nested`), and the revealed lambda is what the
+  spend quotation's title carries (see Concept above — wired). What remains
+  direction: substituting the revealed term into the lock's own `( r )` so
+  the committed→revealed transition renders as an actual reduction step.
 
 **Closed vs. open normal form** (the key analytical handle). A lambda in beta
 normal form may or may not have free variables:

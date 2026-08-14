@@ -26,7 +26,8 @@ import { OPCODE_SYMBOLS, OPCODE_NAMES, toSuperscript } from '../web/btc-sigla.js
 import { TERMS, termOfScript, addressable, reduce, spendHtml, pathTaken, suppliedNames, suppliedHtml, abstractionText, applicationText, normalFormText,
          pureForm, reducePure, pureText, pureApplicationText,
          lockText, lockApplicationText, demandsOf, addressText, addressHtml,
-         lockedText, lockedHtml, spendText } from '../web/btc-term.js';
+         lockedText, lockedHtml, spendText,
+         revealedOf, revealedText, revealedHtml } from '../web/btc-term.js';
 
 // One address of every form that has one, which is every row of the key's
 // Addresses group: the book's own Ross Ulbricht ledger, a P2SH, and the BIP173
@@ -733,4 +734,65 @@ test('the spend rung is written from the chain, marks counts and prose', () => {
   assert.equal(leaf.which, 1);
   assert.equal(strip(leaf.html), 's⁷¹ t³⁵ c³³');
   assert.equal(suppliedHtml(t, []), null, 'nothing brought, nothing to write');
+});
+
+test('the spend quotation is titled by the revealed script’s term', () => {
+  const strip = (html) => html.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+  // A legacy P2SH spend: the redeem script is the scriptSig's last push, and
+  // the title is that script read as the term it is -- a bare multisig has no
+  // tabled demand, so it stands as its own application, every key bound.
+  const sh = termOfScript(addressScriptHex('3J98t1WpEZ73CNmQviecrnyiWrnqRhWNLy'));
+  // A push as the wire writes one: direct to 75 bytes, OP_PUSHDATA1 past it
+  // -- which a three-key redeem script always is.
+  const push = (h) => {
+    const n = h.length / 2;
+    return (n <= 75 ? '' : '4c') + n.toString(16).padStart(2, '0') + h;
+  };
+  const redeem = '52' + push(KEY) + push(KEY) + push(KEY) + '53ae';
+  const scriptsig = '00' + push(SIG) + push(SIG) + push(redeem);
+  const items = ['', SIG, SIG, redeem];
+  assert.equal(revealedOf(sh, items, { scriptsig }), redeem);
+  assert.deepEqual(revealedText(sh, items, { scriptsig }),
+    [addressText(termOfScript(redeem))]);
+  assert.ok(revealedText(sh, items, { scriptsig })[0].startsWith('(λp₁ p₂ p₃.'),
+    'the reveal binds its own data, subscripted as the calculus numbers a reused letter');
+  // …and the two renderings never drift, exactly as every other rung's do not.
+  assert.deepEqual(revealedHtml(sh, items, { scriptsig }).map(strip),
+    revealedText(sh, items, { scriptsig }));
+  // A P2SH output wrapping a witness program: the arguments move to the stack
+  // and the redeem script stays behind in the scriptSig, so it is read from
+  // there -- and being a tabled form, its title is its own demand, the same
+  // line its own address would be titled by.
+  const program = '0014' + 'cd'.repeat(20);
+  const wrapped = revealedText(sh, [SIG, KEY], { scriptsig: push(program) });
+  assert.deepEqual(wrapped, ['λs p. ( ⌖ p ≡ h²⁰ ) ∧ ∇ s p ( ⌘ … )']);
+  assert.deepEqual(wrapped, lockedText(termOfScript(program)));
+  // Without the scriptSig there is no redeem script to read, and the last
+  // witness item is never mistaken for one: null, not the pubkey.
+  assert.equal(revealedOf(sh, [SIG, KEY]), null);
+  // P2WSH reveals on the stack: the witness script is the last item.
+  const wsh = termOfScript(addressScriptHex('bc1qrp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3qccfmv3'));
+  const witnessScript = push(KEY) + 'ac';
+  assert.equal(revealedOf(wsh, [SIG, witnessScript]), witnessScript);
+  assert.deepEqual(revealedText(wsh, [SIG, witnessScript]),
+    lockedText(termOfScript(witnessScript)), 'P2PK is tabled, so its demand is the title');
+  // Taproot: the key path reveals nothing -- the title is the lock's own,
+  // standing a rung up -- and the script path reveals the leaf, under its
+  // control block.
+  const tr = termOfScript(addressScriptHex(TR));
+  assert.equal(revealedOf(tr, [SCHNORR]), null);
+  const leaf = push(KEY) + 'ac';
+  assert.equal(revealedOf(tr, [SIG, leaf, 'c0' + 'ab'.repeat(32)]), leaf);
+  assert.ok(revealedText(tr, [SIG, leaf, 'c0' + 'ab'.repeat(32)]),
+    'a leaf that tokenizes is titled');
+  // A keyhash spend hid nothing, so there is nothing revealed to title.
+  const pkh = termOfScript(addressScriptHex('1Ross5Np5doy4ajF9iGXzgKaC2Q3Pwwxv'));
+  assert.equal(revealedOf(pkh, [SIG, KEY]), null);
+  // …and a reveal the alphabet cannot read titles nothing: the bytes are
+  // known, what they are is not, and declining beats guessing.
+  const unreadable = 'ba'.repeat(3);                // opcodes consensus never defined
+  assert.equal(revealedText(sh, ['', SIG, unreadable], { scriptsig: '00' + push(SIG) + push(unreadable) }),
+    null);
+  assert.equal(revealedOf(sh, ['', SIG, unreadable], { scriptsig: '00' + push(SIG) + push(unreadable) }),
+    unreadable, 'the bytes themselves are still named');
 });

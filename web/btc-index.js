@@ -563,16 +563,20 @@ export function inputMarkOf(vins, index) {
 }
 
 // What an input brought, in every reading a page needs: the record, the arity,
-// and -- for an input that carried a scriptSig -- the script itself. The
-// reader renders those as script rather than as a stack (renderScript with
+// and the scriptSig itself where the input wrote one. The reader renders a
+// sig-carried input as script rather than as a stack (renderScript with
 // nested: true, which reveals a P2SH redeem script as opcodes), so the bytes
-// have to survive being tokenized into pushes.
+// have to survive being tokenized into pushes. The scriptSig is kept even
+// beside a witness: a P2SH output wrapping a witness program is opened by
+// both at once -- the redeem script rides in the scriptSig while the
+// program's arguments ride the stack -- and dropping it left the one push
+// that says what the hash committed to unreachable from the record.
 function brought(vin) {
   const carried = Array.isArray(vin?.witness) && vin.witness.length > 0;
   const items = suppliedBy(vin);
   return {
     items, args: spendArgsOf(items, carried),
-    scriptsig: carried ? null : (String(vin?.scriptsig || '').toLowerCase() || null),
+    scriptsig: String(vin?.scriptsig || '').toLowerCase() || null,
   };
 }
 
