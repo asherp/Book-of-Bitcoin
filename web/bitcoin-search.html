@@ -668,14 +668,18 @@ const spendRung = (t, opened, sayFn, section = null, brought = null, paired = fa
   // Drawn only where it can be settled: nothing for a key the output published
   // outright, and nothing for taproot's script path, whose tweak is curve
   // arithmetic rather than a digest.
-  const held = check && (check.holds
-    ? `<span class="term-check term-held" title="it holds — the `
-      + `${escapeHtml(check.name === 'p' ? 'key' : 'script')} quoted below hashes to the datum `
-      + `the output published">✓</span>`
-    : `<span class="term-check term-check-differs" title="it does not hold — the chain accepted `
-      + `this spend, so trust it and not this page">☒</span>`);
+  // Three outcomes, and the third is not a failure. A check the page took reads
+  // ✓ or ☒; one it could only state carries no mark at all, since a mark here
+  // means a verdict and there is none to give.
+  const held = !check || check.holds == null ? ''
+    : (check.holds
+      ? `<span class="term-check term-held" title="it holds — the `
+        + `${escapeHtml(check.name === 'p' ? 'key' : 'script')} quoted above hashes to the datum `
+        + `the output published">✓</span> `
+      : `<span class="term-check term-check-differs" title="it does not hold — the chain accepted `
+        + `this spend, so trust it and not this page">☒</span> `);
   const checked = check
-    ? `<div class="term-line term-checked">${held} ${commitmentHtml(check, { ref })}</div>` : '';
+    ? `<div class="term-line term-checked">${held}${commitmentHtml(check, { ref })}</div>` : '';
   return `<div class="term-spend">${reveal}`
     + `<div class="term-line term-quote">${rung.html}</div>`
     + `<div class="term-attrib"><span class="term-cite" title="${says}">—</span> ${where}</div>`
@@ -988,6 +992,11 @@ async function commitmentCheck(t, opened) {
   try {
     const c = commitmentOf(t, opened.args ?? [], { scriptsig: opened.scriptsig });
     if (!c) return null;
+    // A check the page cannot carry out is still a check worth stating: the
+    // taptweak is what consensus verified, and the line says so with no verdict
+    // beside it. `holds` is null rather than false -- a claim nobody took is not
+    // a claim that failed, and the two must never draw the same mark.
+    if (!c.taken) return { ...c, got: null, holds: null };
     const once = await sha256(c.of);
     const got = c.op === 0xa8 ? once : await digestOf(bytesOfHex(once), 'ripemd160');
     return { ...c, got, holds: got === c.against };

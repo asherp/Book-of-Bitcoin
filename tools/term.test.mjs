@@ -810,24 +810,16 @@ test('the spend quotation is titled by what the chain revealed', () => {
   // the only line that writes ⌘ -- a footnote whose mark appeared nowhere would
   // be a reference to nothing.
   assert.ok(revealedText(tr, [SCHNORR], { msg: '※' })[0].includes('⌘ ※'));
-  // Taproot's script path hid a leaf, which is a script -- and it is the one
-  // reveal whose witness carries a third item: the control block proving that
-  // leaf belongs to the output. Titled by the leaf alone, that item was
-  // accounted for nowhere on the card, so this alternative composes instead --
-  // the revealed term substituted into the demand's own ( t ), which states
-  // the proof and the payload as one line and is the committed→revealed
-  // transition drawn as the reduction it is.
+  // Taproot's script path hid a leaf, which is a script: titled by its own λ,
+  // exactly as every other script-hash reveal is. The control block the same
+  // witness carries is not named here -- it is an operand of the check below
+  // the quotation (`⋔ t c ≡ p³²`), where the proof belongs, rather than
+  // something a title of the leaf could state.
   const leaf = push(KEY) + 'ac';
   const path = [SIG, leaf, 'c0' + 'ab'.repeat(32)];
   assert.equal(revealedOf(tr, path), leaf);
-  assert.deepEqual(revealedText(tr, path), ['λt c. ( ⋔ t c ≡ p³² ) ∧ ( λp. p ∇ )']);
-  // …and what stands inside it is the leaf's own title, so the line is a
-  // substitution rather than a second reading of the same bytes.
-  assert.ok(revealedText(tr, path)[0].includes(titleText(termOfScript(leaf))));
-  assert.deepEqual(revealedHtml(tr, path).map(strip), revealedText(tr, path));
-  // A P2SH or a P2WSH reveal hands over bytes and nothing more -- no third
-  // item to account for -- so those keep the script's own title, as asserted
-  // above. The control block is what tells the two cases apart.
+  assert.deepEqual(revealedText(tr, path), ['λp. p ∇']);
+  assert.deepEqual(revealedText(tr, path), [titleText(termOfScript(leaf))]);
   // …and a reveal the alphabet cannot read titles nothing: the bytes are
   // known, what they are is not, and declining beats guessing.
   const unreadable = 'ba'.repeat(3);                // opcodes consensus never defined
@@ -915,10 +907,21 @@ test('the commitment says what to hash and against what, and declines the rest',
   const tr = termOfScript(addressScriptHex(TR));
   assert.equal(commitmentOf(tr, [SCHNORR]), null, 'taproot’s key path hid nothing');
   assert.equal(commitmentOf(termOfScript(reduce(TERMS.p2pk, '04' + 'ab'.repeat(64))), [SIG]), null);
-  // …and taproot's script path hid a great deal, but settling it is elliptic
-  // curve arithmetic and not a digest, so it is declined rather than guessed.
-  assert.equal(commitmentOf(tr, [SIG, push(KEY) + 'ac', 'c0' + 'ab'.repeat(32)]), null,
-    'a tweak is not a hash');
+  // …and taproot's script path commits by a tweak rather than a digest, so it
+  // is STATED and not taken: the leaf hashed up its branch with the control
+  // block's path and added to the internal key. Both items the spend brought
+  // are operands, which is what puts the control block on this line and
+  // nowhere else on the card.
+  const tweak = commitmentOf(tr, [SIG, push(KEY) + 'ac', 'c0' + 'ab'.repeat(32)]);
+  assert.ok(tweak, 'the script path states no commitment at all');
+  assert.equal(commitmentText(tweak), '⋔ t c ≡ p³²');
+  assert.equal(commitmentHtml(tweak).replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim(),
+    commitmentText(tweak), 'the two renderings drifted');
+  // `taken` is the whole of the difference: settling this is elliptic curve
+  // arithmetic, so a caller must state the claim and never mark a verdict on
+  // it. A hash commitment says the opposite, and both say which.
+  assert.equal(tweak.taken, false, 'a tweak is offered as though it were taken');
+  assert.equal(commitmentOf(wpkh, [SIG, KEY]).taken, true, 'a hash is not taken');
   // Nothing brought is nothing to check.
   assert.equal(commitmentOf(wpkh, []), null);
   // The two renderings never drift, as everywhere else in this module.
