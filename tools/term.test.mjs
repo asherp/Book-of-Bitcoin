@@ -810,10 +810,24 @@ test('the spend quotation is titled by what the chain revealed', () => {
   // the only line that writes ⌘ -- a footnote whose mark appeared nowhere would
   // be a reference to nothing.
   assert.ok(revealedText(tr, [SCHNORR], { msg: '※' })[0].includes('⌘ ※'));
-  // Taproot's script path hid a leaf, which is a script: titled by its own λ.
+  // Taproot's script path hid a leaf, which is a script -- and it is the one
+  // reveal whose witness carries a third item: the control block proving that
+  // leaf belongs to the output. Titled by the leaf alone, that item was
+  // accounted for nowhere on the card, so this alternative composes instead --
+  // the revealed term substituted into the demand's own ( t ), which states
+  // the proof and the payload as one line and is the committed→revealed
+  // transition drawn as the reduction it is.
   const leaf = push(KEY) + 'ac';
-  assert.equal(revealedOf(tr, [SIG, leaf, 'c0' + 'ab'.repeat(32)]), leaf);
-  assert.deepEqual(revealedText(tr, [SIG, leaf, 'c0' + 'ab'.repeat(32)]), ['λp. p ∇']);
+  const path = [SIG, leaf, 'c0' + 'ab'.repeat(32)];
+  assert.equal(revealedOf(tr, path), leaf);
+  assert.deepEqual(revealedText(tr, path), ['λt c. ( ⋔ t c ≡ p³² ) ∧ ( λp. p ∇ )']);
+  // …and what stands inside it is the leaf's own title, so the line is a
+  // substitution rather than a second reading of the same bytes.
+  assert.ok(revealedText(tr, path)[0].includes(titleText(termOfScript(leaf))));
+  assert.deepEqual(revealedHtml(tr, path).map(strip), revealedText(tr, path));
+  // A P2SH or a P2WSH reveal hands over bytes and nothing more -- no third
+  // item to account for -- so those keep the script's own title, as asserted
+  // above. The control block is what tells the two cases apart.
   // …and a reveal the alphabet cannot read titles nothing: the bytes are
   // known, what they are is not, and declining beats guessing.
   const unreadable = 'ba'.repeat(3);                // opcodes consensus never defined
@@ -915,4 +929,58 @@ test('the commitment says what to hash and against what, and declines the rest',
   const ref = { href: './bitcoin-book.html?ref=v4b78c160s1250o0', said: 'written at IV β78 ■160 §1250.0' };
   assert.match(commitmentHtml(c, { ref }), /<a class="term-ref"/);
   assert.ok(!/<a /.test(commitmentHtml(c)), 'and none where the chain named no passage');
+});
+
+// ─── the ord envelope, as the form it is ─────────────────────────────────
+
+test('an ord envelope binds what varies and prints what the format fixes', async () => {
+  const { ordTermOf, titleText, titleHtml } = await import('../web/btc-term.js');
+  const strip = (html) => html.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+  // An envelope in the shape ord defines: the key the tapscript spends by,
+  // then the branch nobody runs — OP_FALSE OP_IF "ord", tag 1 and its value,
+  // the empty push that opens the body, the body, OP_ENDIF.
+  // A push as the wire writes one, up to the tapscript cap: direct to 75,
+  // OP_PUSHDATA1 to 255, OP_PUSHDATA2 (little-endian) past that — which any
+  // body over 255 bytes needs, the 520-byte chunk below included.
+  const push = (h) => {
+    const n = h.length / 2;
+    if (n <= 75) return n.toString(16).padStart(2, '0') + h;
+    if (n <= 255) return '4c' + n.toString(16).padStart(2, '0') + h;
+    const le = (n & 0xff).toString(16).padStart(2, '0') + (n >> 8).toString(16).padStart(2, '0');
+    return '4d' + le + h;
+  };
+  const key = 'ab'.repeat(32);
+  const type = Buffer.from('text/plain', 'utf8').toString('hex');
+  const body = 'cd'.repeat(40);
+  const script = push(key) + 'ac' + '00' + '63' + push('6f7264')
+    + push('01') + push(type) + '00' + push(body) + '68';
+  const t = ordTermOf(script);
+  assert.ok(t, 'the envelope is no longer read');
+  assert.equal(t.label, 'Ord');
+  // Three binders, and only three: what an inscription can differ in.
+  assert.equal(titleText(t), 'λp y b. p ∇ ⓪ ⟨ ord 1 y ⓪ b ⟩');
+  assert.deepEqual(t.holes.map((h) => h.name), ['p', 'y', 'b']);
+  assert.deepEqual(t.holes.map((h) => h.bytes), [32, type.length / 2, body.length / 2]);
+  // "ord" and the tag are constants of the form, so nothing binds them — but
+  // they are bytes the chain wrote, so they take the gold a written byte takes
+  // rather than a binder's ink.
+  assert.ok(!t.holes.some((h) => h.name === 'ord'), 'the protocol tag is bound');
+  assert.match(titleHtml(t), /<span class="op"[^>]*>ord<\/span>/, 'ord is not written as a byte');
+  assert.match(titleHtml(t), /<span class="op"[^>]*>1<\/span>/, 'the field tag is not written as a byte');
+  assert.deepEqual(strip(titleHtml(t)), titleText(t), 'the two renderings drifted');
+  // The body is one binder however many pushes carry it: a tapscript push holds
+  // at most 520 bytes and ord concatenates the chunks, so the split is the
+  // cap's doing and not a field. The chunks are kept, so the bytes still count.
+  const split = push(key) + 'ac' + '00' + '63' + push('6f7264') + push('01') + push(type)
+    + '00' + push('cd'.repeat(520)) + push('cd'.repeat(30)) + '68';
+  const two = ordTermOf(split);
+  assert.equal(titleText(two), titleText(t), 'a chunked body binds more than a whole one');
+  assert.deepEqual(two.holes.at(-1).chunks.map((c) => c.length / 2), [520, 30]);
+  assert.equal(two.holes.at(-1).bytes, 550, 'the body is not counted whole');
+  // A script that is not an envelope is not read as one: declining beats
+  // guessing, so anything outside ord's grammar falls through to the anonymous
+  // reading rather than being named by a form it does not have.
+  assert.equal(ordTermOf(push(key) + 'ac'), null, 'a bare leaf');
+  assert.equal(ordTermOf(push(key) + 'ac' + '0063' + push('6e6674') + '68'), null, 'another tag');
+  assert.equal(ordTermOf(addressScriptHex(TR)), null, 'a taproot output');
 });
