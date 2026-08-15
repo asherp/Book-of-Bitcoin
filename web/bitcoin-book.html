@@ -797,10 +797,11 @@ button:disabled { opacity: .4; cursor: not-allowed; }
    matter, marks sized apart from the sentence carrying them, and a title has
    no sentence to be sized apart from. (The book's own precedent for a surface
    that is nothing but notation is the notation key, which takes a region of
-   its own and is kept clear of the inline ratio.) So the opcodes here ride
-   --scale-sigla-ratio exactly as they do in the paragraph below, the data
-   letters stay at the line's own size exactly as they do there, and the title
-   and the script it titles are the same notation at two sizes. */
+   its own and is kept clear of the inline ratio.) The line is proportional to
+   the body end to end, marks included: the opcodes in it are neutralized to
+   1em below, so a reader who diverges the sigla moves the marks in the
+   paragraph and leaves this heading where it stands with the two lines above
+   it. The data letters were never on the ratio and need no undoing. */
 .tx-out-term { grid-column: 1 / -1; text-align: center; margin: .1em 0 .2em; color: var(--meta);
   font: 500 calc(13.5px * var(--scale-body, 1))/1.4 'Newsreader','Book Sigla',serif; }
 .tx-out-term:empty { display: none; }
@@ -887,6 +888,12 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 #page-slide .op { font-size: calc(1em * var(--scale-sigla-ratio, 1)); }
 #page-slide .op-name { font-size: calc(.62em * var(--scale-sigla-ratio, 1)); }
 #page-slide .op.op-count, #page-slide .op.op-tpltime { font-size: 1em; }
+/* …and an output's title, which is a heading rather than reading matter. It is
+   nothing but marks, so the ratio would size the whole line and pull it out of
+   step with the keep and the bookmark it is stacked under. Neutralized here
+   rather than sized here: the line takes the body scale in its own rule above,
+   and this only stops the inline ratio reaching the marks inside it. */
+#page-slide .tx-out-term .op { font-size: 1em; }
 /* A witness footnote is a stack of items; a thin middot separates each, and an
    empty stack item shows as ∅. */
 .wit-sep, .wit-empty { color: var(--meta); font-style: normal; }

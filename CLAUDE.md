@@ -61,15 +61,24 @@ lambdas — the same split as the committed/revealed modes below:
   `titleHtml` (btc-term.js) write it. Bare of everything a title does not
   need — no `⟦ ⟧` (those claim the wire's own bytes, and the script itself
   stands below), no application or parentheses (`(λh. ⓪ h) h²⁰` says what was
-  *done* to the term, which is rung one's business), and no count on the
-  binder, since every output of a shape shares its title. The demand rung is
-  deliberately *not* this: P2PKH and P2WPKH ask for the same key material, so
-  the demand does not distinguish what a name must distinguish.
+  *done* to the term rather than what it is), and no count on the binder, since
+  every output of a shape shares its title. The demand rung is deliberately
+  *not* this: P2PKH and P2WPKH ask for the same key material, so the demand
+  does not distinguish what a name must distinguish.
+  - **The kind opens it, and `:=` binds the two**: `P2WPKH := λh. ⓪ h`. The
+    kind names the shape and the term says what the script abstracts over, so
+    they are one statement of what these bytes are rather than a label and a
+    line a rung apart. Both surfaces state it the same way — the search leaf in
+    its head (`.term-kind`, `.term-def`, `.term-title`), the reading in the
+    title line (`.out-kind`, `.out-def`) — and both derive the kind from
+    `t.label`, which is the term table's where a form is tabled and the
+    template row's name otherwise, so an untabled script reads `Script := …`
+    and a data output `data := λd. ¶ d`. `:=` is apparatus and takes the quiet
+    `.lam` takes, never the gold: the wire carries no such mark.
 - the *spend* is titled by what the chain revealed, and there are two kinds of
   reveal because an output can hide two kinds of thing.
   `revealedText` / `revealedHtml` (btc-term.js) write both; `spendRung`
-  (bitcoin-search.html) draws the result between the application line and the
-  quotation.
+  (bitcoin-search.html) draws the result above the quotation.
   - A *script-hash* form hid a **script**: the spend hands over its bytes, so
     the title is that script's own title — the same anonymous lambda it would
     carry anywhere else (a P2SH wrapping a witness program titles `λh. ⓪ h`).
@@ -93,8 +102,9 @@ lambdas — the same split as the committed/revealed modes below:
     here as everywhere.
 
 The same title stands in the reading, as an editorial decision: every output's
-locking script is titled by the term it binds, on its own line (`.tx-out-term`,
-painted by `termTitle` in bitcoin-book.html) directly above the script.
+locking script is titled by the kind and the term it binds, on its own line
+(`.tx-out-term`, painted by `termTitle` in bitcoin-book.html) directly above
+the script.
 
 - **The bookmark goes above the title.** The keep line (`.tx-out-keep`: a filed
   name, and the ribbon that files it) stands above the term line, and the two
@@ -107,35 +117,42 @@ painted by `termTitle` in bitcoin-book.html) directly above the script.
   tabled what opens it (a data output reads `λd. ¶ d`), and a script with no
   address form is titled though it can offer no ribbon. What goes untitled is
   what binds nothing.
-- **Sized from the sigla scale**, alone among a section's lines: everywhere
-  else the marks ride `--scale-sigla-ratio` while the prose around them keeps
-  the body's size, but a title has no prose in it — λ, the dot, the binders and
-  the opcodes are notation end to end. `#page-slide .tx-out-term .op` resets to
-  `1em` so the ratio is not applied twice (the same neutralizing the book
-  already does for `.op-count`).
+- **Proportional to the body end to end, marks included.** The line takes
+  `--scale-body` like the keep and the bookmark it is stacked under — the three
+  are one group of headings over one paragraph — and
+  `#page-slide .tx-out-term .op` holds its opcodes at `1em` so the inline sigla
+  ratio does not reach them. A title is nothing but marks, so leaving them on
+  the ratio would size the whole heading by it and pull it out of step with the
+  two lines above the moment a reader diverged the sigla. `--scale-sigla-ratio`
+  is for marks set *inline in reading matter*, sized apart from the sentence
+  carrying them, and a title has no sentence to be sized apart from. The same
+  neutralizing the book already does for `.op-count` and `.op-tpltime`; the
+  data letters were never on the ratio and need no undoing.
 - Because the reading did not have `.lam`, it is styled scoped to `.out-term`:
   that mark means something on the search leaf, where a whole descent is
   written in it, and a chapter is not that leaf.
 
-The search page mirrors that: rung one (the address as a partial application)
-still leads, and below it each of the two quotations carries a title and
-nothing else. The demand rung and the application rung are **gone** — both
-stated what a lock asks of any spender, above passages that are one lock
-somebody wrote and one spender's answer to it, where what a reader wants is
-the passage's name. `DEMANDS` is still the table everything reads (it picks
-the path a spend took, and the reveal's title derives from it) and the
-notation key still prints the demand in its validator column; it is simply no
-longer drawn as a rung. `.term-spend` is now the spend section's wrapper
-rather than a line, so the gap above it survives a reveal that cannot be
-titled.
+The search page mirrors that: the head states the definition and below it each
+of the two quotations carries a title and nothing else. All three rungs are
+**gone**. The demand and the application both stated what a lock asks of any
+spender, above passages that are one lock somebody wrote and one spender's
+answer to it, where what a reader wants is the passage's name; the address
+rung then reduced to the very passage printed beneath it, so the leaf set one
+script twice and left a reader to find the difference. `DEMANDS` is still the
+table everything reads (it picks the path a spend took, and the reveal's title
+derives from it) and the notation key still prints the demand in its validator
+column; it is simply no longer drawn as a rung. `.term-spend` is now the spend
+section's wrapper rather than a line, so the gap above it survives a reveal
+that cannot be titled.
 
 Where this lives today:
 
 - `termOfScript` (btc-term.js) reads a term off any tokenizable script: every
   push becomes a binder, every opcode stays where it stands. The six tabled
   forms (`TERMS`) are derived, not looked up.
-- Rung one: the address as a partial application — `addressText` /
-  `addressHtml`, `(λp. ① p) p³²`.
+- `addressText` / `addressHtml` still write the address as a partial
+  application, `(λp. ① p) p³²`, and `term.test.mjs` still checks them against
+  the scripts addresses really decode to — but no page draws them.
 - **The datum is one value across every line that names it.** A spend title
   writing `p³²` is naming the key the *output* published, bound a section
   above in a different transaction — not anything the input brought. So that
@@ -148,11 +165,13 @@ Where this lives today:
   the term to its own result, and would throw away which datum it is and how
   many bytes. No road under ⋯ ∅ ☒: there is no confirmed passage to send
   anyone to.
-- Rung two: what the lock still demands, one line per way of opening it —
-  `demandsOf` / `lockedHtml`, a *predicate* a reader can check, not a script.
-- Rung three: the spend, rung two applied to what the input actually carried —
-  `spendHtml` / `suppliedHtml`, drawn only where the chain records it, cited
-  to the input (`§85.a`; letter = input, case = carriage).
+- `demandsOf` / `lockedHtml` write what a lock still demands, one line per way
+  of opening it — a *predicate* a reader can check, not a script. Undrawn too,
+  and still the table the reveal's title derives from.
+- The spend section is what the leaf does draw: `revealedHtml` titles it,
+  `suppliedHtml` sets what the input carried and `commitmentHtml` the check,
+  drawn only where the chain records it and cited to the input (`§85.a`;
+  letter = input, case = carriage).
 - Citations come from `chainWitness` / `readWitness` (btc-index.js), chosen as
   a *pair* — the earliest output anyone opened, and the input that opened that
   very output — so the two rungs describe one outpoint.
@@ -204,14 +223,22 @@ two modes:
 normal form may or may not have free variables:
 
 - *Closed* normal form (no free variables) = fully self-contained, settles
-  on-chain, a plain address. Rung one is this: the term applied to its own
-  datum, and `reduce(term, args)` IS the scriptPubKey, byte for byte.
+  on-chain, a plain address. **The scriptPubKey is this normal form; the
+  address is the redex that reduces to it** — `(λp. ① p) p³²` is an
+  application, not a normal form, and `reduce(term, args)` performing it IS the
+  scriptPubKey, byte for byte. Keeping the two straight is what makes
+  Church–Rosser load-bearing rather than decorative: confluence says an address
+  cannot ambiguously reduce to two different scripts. It does *not* say only
+  one address reduces to a given script — uniqueness is not injectivity — so
+  canonicality is a separate rule, and `termOfScript` is it: every push a
+  binder, every opcode where it stands, no discarded binders and no
+  higher-order indirection.
 - *Open* normal form (free variables) = the free variables name exactly the
   data a spender must still supply (signature, preimage, oracle value,
-  counterparty input). These are the "holes" the spend fills. Rung two's
-  binders (`s`, `p`, `r`, `w`, `t`, `c`, `…`) are this typed interface,
-  and the page already renders the distinction: gold ink for what is settled
-  on-chain, plain ink for what a spend has still to bring (`.aw` vs `.dt`).
+  counterparty input). These are the "holes" the spend fills. The demand
+  binders (`s`, `p`, `r`, `w`, `t`, `c`, `…`) are this typed interface, and the
+  spend section renders the distinction: gold ink for what is settled on-chain,
+  plain ink for what a spend has still to bring (`.aw` vs `.dt`).
 
 For the search page, this means the rendered lambda visually distinguishes
 what's settled from what's still awaiting input, and the free variables can be

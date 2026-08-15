@@ -155,15 +155,21 @@ test('the title is sized with the lines it is stacked with', async () => {
     assert.match(rule[0], size, `.${line} left the body scale`);
     assert.ok(!/--scale-sigla-ratio/.test(rule[0]), `.${line} sizes itself from the sigla`);
   }
-  // …and the marks inside it are left to the page's own glyph rules, which is
-  // what makes the title and the script it titles the same notation at two
-  // sizes: the opcodes ride the sigla ratio in both, the data letters ride
-  // neither in both. A line carrying the ratio itself would have had to undo
-  // it for every mark, and would have been the only line on a section to.
-  assert.ok(!/#page-slide \.tx-out-term \.op/.test(css),
-    'the title is undoing a glyph rule it no longer needs to');
+  // …and the marks inside it are proportional to the body too. The title is
+  // nothing but marks, so leaving them on the inline ratio would size the whole
+  // line by it and pull the heading out of step with the two it is stacked
+  // under the moment a reader diverged the sigla. The ratio still reaches the
+  // paragraph below, where the marks punctuate prose and the divergence is
+  // what it is for.
+  assert.match(css, /#page-slide \.tx-out-term \.op \{ font-size: 1em; \}/,
+    'the title leaves its marks on the sigla ratio');
   assert.match(css, /#page-slide \.op \{ font-size: calc\(1em \* var\(--scale-sigla-ratio, 1\)\); \}/,
-    'the glyph rule the title now relies on is gone');
+    'the rule the title neutralizes is gone');
+  // The neutralizing follows the book's own precedent, and reads as one family
+  // with it: a push count and a template timestamp are held at 1em for the
+  // same reason, being measurements rather than operations.
+  assert.match(css, /#page-slide \.op\.op-count, #page-slide \.op\.op-tpltime \{ font-size: 1em; \}/,
+    'the precedent for holding a mark at the body size is gone');
 });
 
 test('every mark the title sets is a mark the reading styles', async () => {
