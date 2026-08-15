@@ -731,9 +731,14 @@ const messageFoot = (message, sayFn = null, reader = null) => {
   // flavour stand in the heading's own hover, and the flavour again in the
   // nHashType row every serialization writes. A caption that names the thing
   // it sits on top of is a caption doing nothing.
+  //
+  // The hover is the one string here that is not the book talking. It names
+  // what the heading is and says what clicking does, in the words a reader
+  // would use for a control -- the register the rest of the page keeps is for
+  // prose a reader reads, and this is a tooltip on a button.
   const digest = sayFn ? sayFn(message.digest) || '' : '';
   const said = `the digest — ${message.algorithm}, ${sighashName(message.type)}. `
-    + 'Click to copy it, or the preimage it was taken over';
+    + 'Click to copy the digest or its preimage';
   return `<div class="term-foot" id="term-msg">`
     + `<div class="term-fn-digest"><span class="term-fn-mark">※</span>`
     + `<span class="hash-copy" tabindex="0" role="button" title="${escapeHtml(said)}" `
