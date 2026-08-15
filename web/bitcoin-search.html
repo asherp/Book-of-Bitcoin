@@ -127,6 +127,19 @@ button:hover { background: var(--accent-2); }
 .term[hidden] { display: none; }
 .term-head { display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; margin-bottom:14px; }
 .term-kind { font:600 10px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.18em; text-transform:uppercase; color:var(--accent); }
+/* The kind and the term it binds, as one title: P2TR := λp. ① p. The kind
+   names the shape and the term says what the script abstracts over, so the two
+   belong on one line rather than a rung apart. Sized from the notation and not
+   from the label beside it: λ, the dot, the binders and the opcodes are
+   notation end to end, with no prose among them to keep at the body's size. */
+.term-title {
+  font: 400 19px/1.6 'Newsreader','Book Sigla', system-ui, 'Segoe UI Symbol', serif;
+  color: var(--ink-soft); overflow-wrap: anywhere;
+}
+/* The definition itself, which is apparatus rather than script -- it says what
+   this page calls the bytes, and the wire carries no such mark -- so it takes
+   the quiet .lam takes and never the gold. */
+.term-def { color: var(--meta); font-weight: 400; margin-right: .3em; }
 /* The address as the reader typed it: the machine's spelling of this same
    script, so it sets quiet and in the mono face, never in the book's own. */
 .term-addr { font:400 12px/1.5 'IBM Plex Mono','Book Sigla',monospace; color:var(--meta); overflow-wrap:anywhere; }
@@ -138,12 +151,12 @@ button:hover { background: var(--accent-2); }
    accent, the datum's letter bold, its byte count quiet. .lam is the calculus
    and not the script -- λ, the dot, and the application's parens -- so it never
    takes the gold that means "the chain kept this". */
-.term-line .op { color: var(--accent); font-style: normal; font-weight: 700; }
+:is(.term-line, .term-title) .op { color: var(--accent); font-style: normal; font-weight: 700; }
 /* The count is a push opcode -- on the wire a direct push IS its byte count --
    so it takes the same gold and the same weight as any other byte, rather than
    the quiet it wears elsewhere in the book as an annotation. */
 .term-line .op-push { color: var(--accent); font-weight: 700; }
-.term-line .dt { color: var(--accent); font-style: normal; font-weight: 700; }
+:is(.term-line, .term-title) .dt { color: var(--accent); font-style: normal; font-weight: 700; }
 /* The datum's mark, pointing at the passage that holds it. It keeps the ink it
    had -- it is the same mark, and a link is not a different kind of thing to
    say about it -- and shows itself only on hover, the way a footnote mark does.
@@ -153,13 +166,11 @@ button:hover { background: var(--accent-2); }
    directly below quotes. One mark bound somewhere else, one road to it. */
 .term-line a.term-ref { color: inherit; text-decoration: none; }
 .term-line a.term-ref:hover, .term-line a.term-ref:focus-visible { text-decoration: underline; }
-.term-line .lam { color: var(--meta); font-weight: 400; }
-/* What the address holds and what it awaits, above what the chain holds. One
-   distinction does the work: the gold is what the address already has, and
-   everything plain is what it is still waiting for a spend to bring -- the same
-   split the key's validator column keeps, and here it means a reader sees at a
-   glance which half of the line is a fact and which is a demand. */
-.term-awaits { margin-bottom: 14px; }
+:is(.term-line, .term-title) .lam { color: var(--meta); font-weight: 400; }
+/* What the chain already holds against what a spend must still bring: the gold
+   is settled on-chain, everything plain is awaited. The same split the key's
+   validator column keeps, and on a spend line it shows which half is a fact and
+   which is a demand. */
 .term-line .aw { color: var(--ink); font-style: normal; }
 /* The reader's witness apparatus, set as the reader sets it: the separator
    between stack items and the ∅ of an item that carried nothing are neither
@@ -373,7 +384,7 @@ import { isAddress, addressScriptHex, chainWitness, witnessVerdict, witnessDisag
 import { reference, latinReference, inputMark } from './btc-citation.js';
 import { parseLookup } from './btc-lookup.js';
 
-import { termOfScript, addressHtml, titleHtml, suppliedHtml,
+import { termOfScript, titleHtml, suppliedHtml,
          revealedHtml, commitmentOf, commitmentHtml } from './btc-term.js';
 import { messageOf, sighashName, sha256 } from './btc-sighash.js';
 // RIPEMD-160 is in no browser, so the book carries one -- written for reading
@@ -796,67 +807,46 @@ function drawTerm(hex, { address = null, at = '', say: sayFn = null, said = '',
                         check = null } = {}) {
   const fault = scriptFault(hex);
   const t = fault ? null : termOfScript(hex);
+  // The head states the definition: the kind names the shape, := binds it to
+  // the term the script abstracts over. The two used to stand a rung apart --
+  // the kind as a label, the term as a line above the quotation -- and they say
+  // one thing between them, which is what this script is. Bytes that bind
+  // nothing are named by their kind alone, there being no term to define.
+  const title = t
+    ? `<span class="term-title"><span class="term-def">:=</span> ${titleHtml(t)}</span>` : '';
   const head = `<div class="term-head"><span class="term-kind">${t ? escapeHtml(t.label) : 'Script'}</span>`
+    + title
     + (address ? `<span class="term-addr">${escapeHtml(address)}</span>` : '') + '</div>';
   // A term binds, or it does not, or the bytes are not a script at all. The
   // middle case is not an absence: there is always the script itself, and
   // setting it beats explaining why there was nothing to set.
-  // Two readings of one thing, one β apart: the address as a term with its
-  // image supplied and what only its author can produce still bound, and what
-  // the chain is holding, which is that term with the argument gone in. The
-  // parentheses are the only marks above that the wire will not carry -- an
-  // application is a step, not a byte -- which is what makes the reduction
-  // between them a claim and not a picture.
-  // The address line carries its own datum, said: an address is a term with one
-  // argument supplied, and the argument is the thing a base58 or bech32 string
-  // spends its entropy on. Without the engine the mark stands alone, as it does
-  // everywhere else in the book.
-  // …said once. The datum's prose belongs to rung one, where an address is a
-  // term with its argument supplied and the argument is the thing a base58 or
-  // bech32 string spends its entropy on. But the moment the chain answers, the
-  // same bytes are set again a line below, under a citation — and the second
-  // setting is the one a reader can be sent to. Two identical paragraphs, one
-  // quoted and one not, is the leaf saying the same thing twice and inviting a
-  // reader to look for the difference. So where there is an output to cite,
-  // rung one keeps the mark and drops the words.
-  const argument = quoted ? '' : (t && sayFn ? sayFn(t.argument) || '' : '');
+  //
+  // The application rung stood here -- the address as the term applied to its
+  // own datum, `(λp. ① p) p³²`. It went the way the demand rung went: it stated
+  // a reduction whose result is the passage directly below it, so the leaf drew
+  // one script twice and left a reader to find the difference. What the rung
+  // alone carried is carried still -- the datum's prose by the passage, which
+  // spells the whole script, and the road to the lock's citation by the spend
+  // title, which is the line that names a datum bound in another section.
   const script = `<span class="term-onchain" title="the same script in the book’s own hand — `
     + `the box above reads it back">${spellHtml(hex, { say: sayFn }) || ''}</span>`;
-  // The quotation's title: the anonymous λ this script binds, which is exactly
-  // what the reading prints above the same paragraph (see termTitle in
-  // bitcoin-book.html). One line, because a title names the abstraction and a
-  // script has one however many ways it opens.
-  //
-  // The demand used to stand here -- one line per way in, saying what a spend
-  // must bring. It was a truer thing to know and a worse thing to be titled
-  // by: two shapes can want the same key material, so it did not distinguish
-  // what a name has to distinguish, and it said what a future spend must do
-  // above a passage that is simply a lock somebody wrote. What a reader wants
-  // over a quotation is its name. The demand is still the table this module
-  // reads (btc-term.js's DEMANDS) and still what the notation key prints in
-  // its validator column; it is no longer drawn as a rung of its own.
-  //
-  // The title stands above the passage and outside the rule. λ, the dot and
-  // the binders are the book's notation ABOUT this script and not one byte of
-  // it, and a quotation that carried them would be attributing the reader's own
-  // apparatus to the chain, under a citation saying where to go and read it. It
-  // also stays out of the copyable span for the same reason from the other
-  // side: a click here takes bare bytes, and the search box reads them back.
-  // What goes untitled is what binds nothing -- bytes that are not a script at
-  // all -- and the script still stands, quoted or not.
-  const terms = t ? `<div class="term-line">${titleHtml(t)}</div>` : '';
+  // The passage stands under the head that names it. λ, the dot and the binders
+  // are this page's notation ABOUT the script and not one byte of it, so they
+  // stay in the head, outside the rule and outside the copyable span: a
+  // quotation carrying them would attribute the reader's apparatus to the
+  // chain, under a citation telling them where to go and read it, and a click
+  // here takes bare bytes the search box reads back.
   const passage = `<div class="term-line">${script}</div>`;
   // …and the passage is marked as a quotation once, and only once, the chain
   // has said where these bytes are written. Until it answers -- and if it
   // answers ∅, ⋯ or ☒ -- the same marks are only a reading of what the reader
   // typed, which is a true thing to draw and not a passage anyone can be sent
-  // to. The term lines above are never quoted under any answer: they are a
-  // reading of the bytes in the box, exactly as rung one is.
-  const locked = terms + (quoted ? `<div class="term-quote">${passage}</div>` : passage);
+  // to. The head is never quoted under any answer: it names the bytes in the
+  // box, which is a reading and not a place.
+  const locked = quoted ? `<div class="term-quote">${passage}</div>` : passage;
   const body = fault
     ? `<div class="term-said">${faultNote(fault)}</div>`
-    : (t ? `<div class="term-line term-awaits">${addressHtml(t, { prose: argument, ref })}</div>` : '')
-      + locked
+    : locked
       + said
       + (t ? spendRung(t, opened, sayFn, spendSection, brought, paired, message, ref, reader, check) : '');
   termEl.innerHTML = head + body;
