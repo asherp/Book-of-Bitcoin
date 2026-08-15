@@ -394,10 +394,20 @@ test('the leaf marks a quotation only where it can name the place', async () => 
   // The lock's title is the head: the kind, := and the term the script binds,
   // which is one statement of what these bytes are rather than a label and a
   // line a rung apart.
-  assert.match(page, /const title = t\s*\n?\s*\? `<span class="term-title"><span class="term-def">:=<\/span> \$\{titleHtml\(t\)\}/,
+  // Kind, := and term in one span: as separate flex items they broke between
+  // the kind and the term at a narrow width, splitting a statement that reads
+  // as one line.
+  assert.match(page, /const title = `<span class="term-title"><span class="term-kind">/,
+    'the kind no longer opens the definition');
+  assert.match(page, /<span class="term-def">:=<\/span> \$\{titleHtml\(t\)\}/,
     'the head no longer defines the term it names');
-  assert.match(page, /const head = `<div class="term-head">[\s\S]{0,200}?\+ title/,
+  assert.match(page, /const head = `<div class="term-head">\$\{title\}/,
     'and the title does not stand in the head');
+  // …and never as a sibling of the term it opens, which is the arrangement
+  // that broke. (The spelled card's head carries a kind alone, with no term to
+  // be split from, so this is about the pairing rather than the class.)
+  assert.ok(!/class="term-head">\s*(?:\$\{)?<span class="term-kind">[\s\S]{0,120}?class="term-title"/.test(page),
+    'the kind stands beside the term it opens rather than inside it');
   assert.match(page, /class="term-quote">\$\{passage\}/, 'and quotes the script alone');
   assert.match(page, /class="term-line term-reveal"[^>]*>\$\{line\}/,
     'the spend quotation has one too');

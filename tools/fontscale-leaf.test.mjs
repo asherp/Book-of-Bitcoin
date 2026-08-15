@@ -16,14 +16,17 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
 const leaf = () => readFile(new URL('../web/bitcoin-search.html', import.meta.url), 'utf8');
-const styleOf = (page) => page.slice(0, page.indexOf('</style>'));
+// The sheet with its commentary removed. The rules here are found by selector,
+// and this file's comments name selectors freely -- so a comment explaining why
+// .term-kind inherits .term-title would otherwise be read as a rule for it.
+const styleOf = (page) => page.slice(0, page.indexOf('</style>')).replace(/\/\*[\s\S]*?\*\//g, '');
 
 test('the card reads at the reader\'s size, and its spacing does not', async () => {
   const css = styleOf(await leaf());
   // Every type size inside the card takes the body scale. The list is the
   // card's own rules -- the head and the lines under it, the spend section's
   // attributions, the message footnote's rows, and the copyable hex.
-  const SIZED = ['term-kind', 'term-title', 'term-addr', 'term-line', 'term-note',
+  const SIZED = ['term-title', 'term-addr', 'term-line', 'term-note',
     'term-attrib', 'term-said', 'term-fn-digest', 'term-fn-name', 'term-fn-bytes',
     'term-hex'];
   for (const cls of SIZED) {
@@ -32,6 +35,13 @@ test('the card reads at the reader\'s size, and its spacing does not', async () 
     assert.match(rule[0], /calc\(\d+(\.\d+)?px \* var\(--scale-body, 1\)\)/,
       `.${cls} reads at a fixed size whatever the reader chose`);
   }
+  // The kind opens the definition and carries no size of its own: inheriting
+  // the term's face is what makes the two halves one statement, and what keeps
+  // them one line at every scale a reader chooses.
+  const kind = /\.term-kind \{[^}]*\}/.exec(css);
+  assert.ok(kind, '.term-kind is no longer styled here');
+  assert.ok(!/font(-size|-family)?:/.test(kind[0]),
+    'the kind sizes itself apart from the term it opens');
   // …and the marks that size themselves against the line they sit in are left
   // in em, so they follow it without being scaled twice.
   for (const [cls, unit] of [['term-check', '1.1em'], ['term-fn-mark', '.8em'],

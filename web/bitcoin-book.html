@@ -811,12 +811,14 @@ button:disabled { opacity: .4; cursor: not-allowed; }
    the page: .lam means something on the search leaf, where a whole descent is
    written in it, and a chapter is not that leaf. */
 .tx-out-term .out-term .lam { color: var(--meta); font-weight: 400; }
-/* The kind that opens the title, and the := binding it to the term. The label
-   reads as a label -- the mono face, letterspaced, the shape the search leaf
-   gives it -- and both keep the line's own quiet, since neither is a byte the
-   chain wrote. Scoped like .lam above, for the same reason. */
-.tx-out-term .out-term .out-kind { font-family: 'IBM Plex Mono','Book Sigla',monospace;
-  font-size: .82em; letter-spacing: .12em; text-transform: uppercase; }
+/* The kind that opens the title, and the := binding it to the term. Both read
+   in the line's own face: the kind opens a statement the rest of which is
+   notation, and a mono-and-letterspaced tag beside λ would set the two halves
+   of one line as two kinds of thing. The kind takes the reading ink rather than
+   the line's quiet, so it stands as the name it is without reaching for the
+   gold, which here means the chain wrote it. Scoped like .lam above, for the
+   same reason. */
+.tx-out-term .out-term .out-kind { color: var(--ink-soft); }
 .tx-out-term .out-term .out-def { font-weight: 400; }
 .tx-out-keep .out-keep-name { cursor: pointer; }
 .tx-out-keep .out-keep-name:hover, .tx-out-keep .out-keep-name:focus-visible { color: var(--accent-2); outline: none; }
@@ -1306,6 +1308,7 @@ a.footnote-title.is-asset:hover { color: var(--accent-2, #dcb877); text-decorati
       <button type="button" class="hash-menu-item" data-act="copy-link" role="menuitem">Copy link</button>
       <button type="button" class="hash-menu-item hidden" data-act="footnote" role="menuitem">Witness footnote</button>
       <button type="button" class="hash-menu-item hidden" data-act="ledger" role="menuitem">Ledger entry</button>
+      <button type="button" class="hash-menu-item hidden" data-act="search" role="menuitem">Search</button>
       <button type="button" class="hash-menu-item" data-act="bookmark" role="menuitem">Bookmark</button>
     </div>
     <div id="hash-menu-title" class="hash-menu-title hidden">
@@ -7427,6 +7430,11 @@ function scriptEntry(keepEl) {
   if (!hex) return null;
   return {
     hex, prose: address, label: 'locking script', nav: false,
+    // The road to the leaf that reads these bytes as the term they bind. The
+    // script itself is the query -- ?q= takes a locking script by its own
+    // hex, as the box does when a reader pastes one -- so it needs no address
+    // and is offered on every output, an OP_RETURN included.
+    searchHref: `./bitcoin-search.html?q=${encodeURIComponent(hex)}`,
     ledgerHref: address
       ? `./bitcoin-ledger.html?address=${encodeURIComponent(address)}`
         + (keepEl.dataset.ref ? `&ref=${keepEl.dataset.ref}` : '')
@@ -7588,6 +7596,7 @@ const menuCopyLinkBtn = hashMenu.querySelector('[data-act="copy-link"]');
 const menuBmBtn = hashMenu.querySelector('[data-act="bookmark"]');
 const menuFootnoteBtn = hashMenu.querySelector('[data-act="footnote"]');
 const menuLedgerBtn = hashMenu.querySelector('[data-act="ledger"]');
+const menuSearchBtn = hashMenu.querySelector('[data-act="search"]');
 const titleInput = $('hash-title-input');
 let menuEntry = null;
 let menuPoint = { x: 0, y: 0 };
@@ -7643,6 +7652,11 @@ function openHashMenu(ev, entry, anchorEl) {
   // A locking script's menu carries the road to its ledger: the entry this
   // very section wrote in that address's record (?address + ?ref).
   menuLedgerBtn.classList.toggle('hidden', !entry.ledgerHref);
+  // …and the road to the search leaf, which reads the same bytes as the term
+  // they bind. The ledger says where this script has been paid; the leaf says
+  // what it is, which is the one question the reading cannot answer in place.
+  menuSearchBtn.textContent = tr('Search');
+  menuSearchBtn.classList.toggle('hidden', !entry.searchHref);
   menuBmBtn.classList.toggle('hidden', !entry.nav);
   // Keyed by the whole place, output and all: a transaction's own bookmark and
   // one of its outputs' are two different keeps, and the item must say which
@@ -7759,6 +7773,10 @@ menuFootnoteBtn.addEventListener('click', () => {
 menuLedgerBtn.addEventListener('click', () => {
   if (!menuEntry || !menuEntry.ledgerHref) return;
   location.href = menuEntry.ledgerHref;
+});
+menuSearchBtn.addEventListener('click', () => {
+  if (!menuEntry || !menuEntry.searchHref) return;
+  location.href = menuEntry.searchHref;
 });
 // Keeping a place asks for a name first: the title is the row it will take in
 // the table of contents, and a row is read by its title. Reached from the
