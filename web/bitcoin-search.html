@@ -478,7 +478,7 @@ const chainMark = (verdict, witness, ours, section = null, sayFn = null) => {
     return `<span class="term-check term-check-differs" title="the chain does not agree — trust it, `
       + `not this page">☒</span> ${where}`
       + `<div class="term-line" title="what the chain carries">${set(theirs)}</div>`
-      + `<div class="term-line" title="what this page derived from the box">${set(ours)}</div>`;
+      + `<div class="term-line" title="what this page derived">${set(ours)}</div>`;
   }
   // Found, so the passage above has a source, and it is set as one: an em dash
   // and the place, which is how this book attributes anything it quotes. The
@@ -489,13 +489,12 @@ const chainMark = (verdict, witness, ours, section = null, sayFn = null) => {
   // the rung below then quotes the input that opened THIS output rather than
   // some other one carrying the same bytes.
   const said = witness.paired
-    ? 'the earliest output this page reaches that anyone has opened — and the input quoted below is what opened it'
+    ? 'the earliest output this page reaches that anyone has opened — the input quoted below opened it'
     : witness.whole
       ? 'the first output that ever carried this script'
       : 'the earliest reference one page reaches';
-  return `<span class="term-cite" title="${said}, and every one of ${n} references on `
-    + `the page — ${witness.outputs} paying it, `
-    + `${witness.prevouts} spent from it, all carrying these bytes">—</span> ${where}`;
+  return `<span class="term-cite" title="${said}. ${n} references on the page: `
+    + `${witness.outputs} paying it, ${witness.prevouts} spent from it">—</span> ${where}`;
 };
 
 // What is wrong with the bytes, said at the byte it is wrong at. Devs paste hex
@@ -593,11 +592,9 @@ const spendRung = (t, opened, sayFn, section = null, brought = null, paired = fa
   // output the claim narrows to what is still true -- these arguments satisfied
   // these bytes -- rather than overstating a pair that was never found.
   const says = paired
-    ? `quoted from input ${opened.in} of the transaction that opened the output cited `
-      + 'above — the input that supplied what that lock was waiting for'
-    : `quoted from input ${opened.in} of the earliest spend this page reaches. It opened `
-      + 'a different output carrying these same bytes: nothing on this page opens the one '
-      + 'cited above';
+    ? `input ${opened.in} of the transaction that opened the output cited above`
+    : `input ${opened.in} of the earliest spend this page reaches. It opened a different `
+      + 'output carrying these same bytes; nothing here opens the one cited above';
   // The whole spend, in one wrapper, which is what opens the gap above it. The
   // gap used to hang off the application line; that line is gone, and a gap
   // that hung off the title instead would close whenever a reveal could not be
@@ -615,11 +612,11 @@ const spendRung = (t, opened, sayFn, section = null, brought = null, paired = fa
   // outright, and nothing for taproot's script path, whose tweak is curve
   // arithmetic rather than a digest.
   const held = check && (check.holds
-    ? `<span class="term-check term-held" title="taken and it holds — this page hashed the `
-      + `${escapeHtml(check.name === 'p' ? 'key' : 'script')} quoted below and got the datum the `
-      + `output published, which is what makes these two passages one coin">✓</span>`
-    : `<span class="term-check term-check-differs" title="taken and it does NOT hold — the `
-      + `chain accepted this spend, so trust it and not this page">☒</span>`);
+    ? `<span class="term-check term-held" title="it holds — the `
+      + `${escapeHtml(check.name === 'p' ? 'key' : 'script')} quoted below hashes to the datum `
+      + `the output published">✓</span>`
+    : `<span class="term-check term-check-differs" title="it does not hold — the chain accepted `
+      + `this spend, so trust it and not this page">☒</span>`);
   const checked = check
     ? `<div class="term-line term-checked">${held} ${commitmentHtml(check, { ref })}</div>` : '';
   return `<div class="term-spend">${reveal}${checked}`
@@ -661,9 +658,8 @@ const spendRung = (t, opened, sayFn, section = null, brought = null, paired = fa
 // them at all, which is the rule this book keeps everywhere it prints a hash.
 // So the mark stands with the claim in its hover, exactly as it does for every
 // other thing this page cannot compute honestly.
-const UNSAID_BYTES = 'these bytes are a hash, and a hash reaches a reader as prose or not at all — '
-  + 'the Glossia engine says them, and this build does not carry it. The copy menu on the '
-  + 'digest above still hands over the exact bytes';
+const UNSAID_BYTES = 'a hash, said in prose or not at all — this build does not carry the '
+  + 'Glossia engine. The copy menu on the digest above still hands over the bytes';
 const unsaid = () => `<span class="wit-empty" title="${escapeHtml(UNSAID_BYTES)}">…</span>`;
 
 const zeros = (hex) => /^0+$/.test(hex);
@@ -825,7 +821,7 @@ function drawTerm(hex, { address = null, at = '', say: sayFn = null, said = '',
   // rung one keeps the mark and drops the words.
   const argument = quoted ? '' : (t && sayFn ? sayFn(t.argument) || '' : '');
   const script = `<span class="term-onchain" title="the same script in the book’s own hand — `
-    + `this box takes it back">${spellHtml(hex, { say: sayFn }) || ''}</span>`;
+    + `the box above reads it back">${spellHtml(hex, { say: sayFn }) || ''}</span>`;
   // The quotation's title: the anonymous λ this script binds, which is exactly
   // what the reading prints above the same paragraph (see termTitle in
   // bitcoin-book.html). One line, because a title names the abstraction and a

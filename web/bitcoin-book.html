@@ -1209,7 +1209,7 @@ a.footnote-title.is-asset:hover { color: var(--accent-2, #dcb877); text-decorati
            the crumb as a printed running head brackets its title. A leaf has
            no button, as it has no folio: what is exported is a transaction,
            and a leaf is not one. -->
-      <div class="chapter-num"><button type="button" id="ch-volume-link" class="crumb" title="This volume's page">Volume <span id="ch-volume"></span></button><span id="ch-sep-1"> · </span><button type="button" id="ch-book-link" class="crumb" title="This book's page">Book <span id="ch-book"></span></button><button type="button" id="ch-appendix-link" class="crumb hidden" title="The leaf that holds the drafts — Appendix I, the queue's own book level">Provisional blocks</button><span id="ch-chapter-inline"></span></div>
+      <div class="chapter-num"><button type="button" id="ch-volume-link" class="crumb" title="This volume's page">Volume <span id="ch-volume"></span></button><span id="ch-sep-1"> · </span><button type="button" id="ch-book-link" class="crumb" title="This book's page">Book <span id="ch-book"></span></button><button type="button" id="ch-appendix-link" class="crumb hidden" title="Appendix I — the drafts the queue would fill">Provisional blocks</button><span id="ch-chapter-inline"></span></div>
       <button type="button" id="chapter-next" class="chapter-step hidden" aria-label="Next chapter" title="Next chapter"></button>
       <!-- The folio: a section's page number in the chain's running count of
            transactions, at the right end of the running head (see btc-pages.js).
@@ -1272,7 +1272,7 @@ a.footnote-title.is-asset:hover { color: var(--accent-2, #dcb877); text-decorati
       <button type="button" id="page-prev" class="hidden" aria-label="Previous contents entry" title="Previous contents entry"></button>
       <div class="nav-keys">
         <details class="nav-sheet commentary hidden" id="commentary">
-          <summary title="Commentary on this passage — a reading of the record, credited to whoever wrote it">Commentary</summary>
+          <summary title="Readings of this passage — editorial, credited to whoever wrote it">Commentary</summary>
           <div class="nav-sheet-body commentary-body" id="commentary-body"></div>
         </details>
         <details class="nav-sheet notation">
@@ -3781,7 +3781,7 @@ function renderFrontispiece(header) {
     // compact 4-byte hex, or the display form.
     hf.bitsExpr
       ? { text: `< ${hf.bitsExpr}`, mark: hf.bits, markClass: 'fx-mark', gap: true,
-          title: `the proof of work — the chapter hash at the head of the page, read as a 256-bit number, is below this target. ${hf.bitsTitle}`,
+          title: `the proof of work — the chapter hash, as a 256-bit number, is below this target. ${hf.bitsTitle}`,
           menu: { hex: (header.bits >>> 0).toString(16).padStart(8, '0'), label: 'difficulty target', prose: `${hf.bits} ${hf.bitsExpr}` } }
       : { text: hf.bits, title: hf.bitsTitle, gold: true,
           menu: { hex: (header.bits >>> 0).toString(16).padStart(8, '0'), label: 'difficulty target', prose: hf.bits } },
@@ -4070,12 +4070,12 @@ function renderProjectedHead(onTitlePage) {
     el.append(span);
     return span;
   };
-  slot({ mark: 'v', markClass: 'fx-mark', text: '—', title: 'no version until a miner writes one — and with it, their rule vote' });
+  slot({ mark: 'v', markClass: 'fx-mark', text: '—', title: 'no version until a miner writes one, and with it their rule vote' });
   const prevSpan = slot(k === 0
     ? { mark: 'h', markClass: 'dt', text: '⋯', title: 'the previous block — the chain tip, resolving…' }
     : { text: '⋯', title: 'the previous chapter is itself unwritten' });
   slot({ mark: '⋔', markClass: 'merkle-mark', text: '—', title: 'no merkle root until the section list is sealed' });
-  slot({ text: `ETA ${blocksEta(k + 1)}`, title: `no timestamp until mined — expected in about ${(k + 1) * 10} min, give or take ${Math.round(10 * Math.sqrt(k + 1))}: block arrivals average one per ten minutes` });
+  slot({ text: `ETA ${blocksEta(k + 1)}`, title: `no timestamp until mined — about ${(k + 1) * 10} min out, give or take ${Math.round(10 * Math.sqrt(k + 1))}` });
   const betaSpan = slot({ text: 'β —', gold: true, title: 'the difficulty target' });
   slot({ mark: 'η', markClass: 'fx-mark', text: '—', title: 'no nonce until the proof of work is found' });
 
@@ -4572,7 +4572,7 @@ function renderChapter(para) {
   // double-SHA256, with no proof-of-work zeros to state: all 256 bits encoded,
   // and the superscript (bits, ⌘'s unit) says so. The section title carries
   // the txid's copy/bookmark menu.
-  const txidMarkTitle = 'transaction id — the double-SHA256 of this transaction&#39;s bytes, its identity; all 256 bits carried in the prose';
+  const txidMarkTitle = 'transaction id — the double-SHA256 of this transaction&#39;s bytes; all 256 bits carried in the prose';
   $('section-hash').innerHTML =
     `<span class="cfx-gold" title="${txidMarkTitle}">⌘</span><span class="op op-push">${toSuperscript(256)}</span> ${txidProse}`;
   renderSectionMeta();

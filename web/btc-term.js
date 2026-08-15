@@ -380,9 +380,7 @@ export function demandsOf(t) {
 // revealed script rides on top.
 const UNDER = '…';
 const UNDER_SAID = 'however many arguments the revealed script wants, pushed beneath it — '
-  + 'a script is a script, and this one runs on the same stack as any other. How many '
-  + 'is a property of bytes the output committed to only by their hash, so the term '
-  + 'writes that they are there and declines to count them';
+  + 'uncountable until the script is revealed, since the output committed only to its hash';
 
 // The binders of one alternative, in the order the spender pushes them. Read
 // off `runs`, which is what makes the … and the ( ) one claim rather than two.
@@ -510,24 +508,20 @@ const binderMarks = (alt) => (alt.runs ? `${under()} ` : '') + alt.brings.map(aw
 // "the chain wrote this or this runs" the conjunction is visibly neither. A
 // reader who wonders is told so in its hover.
 const AND_SAID = 'and — the notation’s conjunction, joining two things a spend must make true. '
-  + 'Not OP_BOOLAND, which shares its glyph: nothing on this line is a script, and the marks '
-  + 'that would be bytes are set in gold, which this one never takes';
+  + 'Not OP_BOOLAND, which shares its glyph but is set in gold';
 const andMark = () => `<span class="lam" title="${escapeHtml(AND_SAID)}">∧</span>`;
 
-const MSG_SAID = 'the message the signature is over — the transaction serialized as the '
-  + 'signature’s own sighash flag says, then hashed: twice through SHA-256 before taproot, '
-  + 'once under BIP341’s tag from it on. Everything about a spend that is signed '
-  + 'is in here, and everything that is not is malleable';
-const UNSAID_SAID = 'not named — no spend has been reached, so there is no serialization to set '
-  + 'and nothing here a reader could hash for themselves';
+const MSG_SAID = 'the message the signature is over — the transaction serialized as its sighash '
+  + 'flag says, then hashed: twice through SHA-256 before taproot, once under BIP341’s tag from '
+  + 'it on';
+const UNSAID_SAID = 'not named — no spend has been reached, so there is no serialization to set';
 const msgMark = (msg) => `${lam('(')} <span class="op" title="${escapeHtml(MSG_SAID)}">`
   + `${escapeHtml(glyph(0xaa))}</span> ${msg || `<span class="aw" title="${escapeHtml(UNSAID_SAID)}">${UNSAID}</span>`} ${lam(')')}`;
 
 // The tweak has no opcode behind it -- no script performs it, consensus does --
 // so it is named rather than glossed from the alphabet.
-const TWEAK_SAID = 'the taptweak — the leaf hashed up its branch with the control block’s '
-  + 'path and added to the internal key. No opcode does this; consensus does it before any '
-  + 'leaf is allowed to run';
+const TWEAK_SAID = 'the taptweak — the leaf hashed up its branch and added to the internal key. '
+  + 'No opcode does this; consensus does it before a leaf may run';
 const opMark = (tok) => (tok === TWEAK
   ? `<span class="op" title="${escapeHtml(TWEAK_SAID)}">${escapeHtml(TWEAK)}</span>`
   : op(tok));

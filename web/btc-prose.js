@@ -635,7 +635,7 @@ export function templateTimePush(hex, height) {
 // Marked op-tpltime so the notation key can find it: the mark is a date, which
 // is different in every block that carries one, so no literal in the key could
 // name it (see collectMarks in btc-key-filter.js).
-const templateTimeMark = (unix) => `<span class="op op-tpltime" title="the moment this block's template was assembled, as the pool's software wrote it into the coinbase (unix ${unix}) — a clock reading, not a counter: the pools built on btccom's server push it directly behind the height. It is here because it agrees with the height beside it; nothing in the bytes declares it">${utcMinute(unix)}</span>`;
+const templateTimeMark = (unix) => `<span class="op op-tpltime" title="template assembly time, as the pool wrote it into the coinbase (unix ${unix}) — read from its agreement with the height beside it; nothing in the bytes declares it">${utcMinute(unix)}</span>`;
 
 // The counters that follow -> their decimals, and what's left.
 //
@@ -680,7 +680,7 @@ export function peelExtranonces(hex) {
 // block's own first page, with the number it states reading straight on from
 // it. (A bare push count can't do that: its cap would eat a digit and leave
 // the rest of the numeral behind. See bitcoin-book.html's addLine.)
-const blockHeightMark = (height) => `<span class="op op-blockmark" title="BIP34 — the block writes its own height, ${groupDigits(String(height))}, into the coinbase: the push that makes every coinbase distinct. Everything after it is the miner's own margin, under no rule">■${height}</span>`;
+const blockHeightMark = (height) => `<span class="op op-blockmark" title="BIP34 — the block's own height, ${groupDigits(String(height))}, pushed into the coinbase. What follows it is the miner's margin, under no rule">■${height}</span>`;
 
 // The miner's margin -> its display: readable runs quoted, everything between
 // them as Glossia prose. No opcodes, no push counts -- there are no pushes --
@@ -816,7 +816,7 @@ export function splitZeroRuns(hex, min = ZERO_MIN_RUN) {
   return parts;
 }
 
-const zeroRunMark = (n) => `<span class="op op-zeros" title="${n} zero bytes — the space the pool's template left and nothing filled: room for a counter, or for a commitment this block is not carrying. Written as the zero opcode with its byte count, because ${n} words saying nothing is not a reading of it. The count restores the bytes exactly">⓪${toSuperscript(n)}</span>`;
+const zeroRunMark = (n) => `<span class="op op-zeros" title="${n} zero bytes — space the pool's template left unfilled. The count restores the bytes exactly">⓪${toSuperscript(n)}</span>`;
 
 // The signature mark: the pool's own name, quoted to its exact extent, with
 // who wrote it riding the mark rather than printed in the passage. The name is
@@ -824,7 +824,7 @@ const zeroRunMark = (n) => `<span class="op op-zeros" title="${n} zero bytes —
 // readings off the record's own line. What the passage gains is the boundary:
 // the quotation closes where the pool's writing closes, not wherever the
 // counter's bytes stopped being printable.
-const signatureMark = (part) => `<span class="pool-sig" title="${escapeHtml(part.pool)} — the pool's own signature, matched against the book's table (web/btc-pools.js). That these bytes are in the coinbase is the record; that ${escapeHtml(part.pool)} mined the block is a reading of it, since a tag is unauthenticated and anyone may copy one">“${quoteText(part.text)}”</span>`;
+const signatureMark = (part) => `<span class="pool-sig" title="${escapeHtml(part.pool)} — a pool tag, matched against the book's table (web/btc-pools.js). The bytes are the record; the pool named is a reading, since a tag is unauthenticated and anyone may copy one">“${quoteText(part.text)}”</span>`;
 
 // The miner's margin -> its display. A run the scanner found is cut at the
 // signature inside it, if any: the pool's writing is quoted under its mark,
