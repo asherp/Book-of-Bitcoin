@@ -14,9 +14,17 @@ marks-without-prose when it is missing; nothing in `tools/` needs it.
 
 - Run tests: `node --test tools/*.test.mjs` (per-file runs work too)
 - Editorial layer: `node tools/check-editorial.mjs`
-- Comments are written in the book's voice: they say why a thing is the way it
-  is, at length, and are part of the work. Match that register; don't strip or
-  abbreviate them.
+- **Register follows the destination.** Text here is not written in one voice
+  throughout. Which kind you are writing decides how:
+  - *Reader-facing prose* is not hand-written at all — Glossia generates it
+    from the bytes. Nothing in `web/` composes the book's sentences.
+  - *Code comments* are formal: what the code does and why, stated plainly.
+  - *UI strings* — labels, headings, button text, tooltips on controls — are
+    brief and neutral. A tooltip says what the control does.
+  - *Descriptions in notation* — a mark's hover, a term's gloss, a field's
+    `said` — are minimal. Name the thing; do not expound on it.
+  - *Commentary* (`web/commentary/*.md`, contributed under CC BY 4.0) is in its
+    author's own voice and stays as that author wrote it.
 - Prefer declining over guessing: throughout the codebase, a value that cannot
   be computed honestly is `null` and the page shows a mark (… ∅ ⋯ ☒) with the
   claim in its hover, never a fabricated fallback.

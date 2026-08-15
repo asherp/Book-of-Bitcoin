@@ -725,17 +725,13 @@ const messageFoot = (message, sayFn = null, reader = null) => {
   // anyway. The bytes ride on the element rather than in the text, where they
   // can be copied and cannot be read.
   //
-  // One heading, not two. A second line under it saying what the fields were
-  // taken over only told a reader what the rows beneath it already are -- and
-  // the two facts it carried are both still here: the algorithm and the
-  // flavour stand in the heading's own hover, and the flavour again in the
-  // nHashType row every serialization writes. A caption that names the thing
-  // it sits on top of is a caption doing nothing.
+  // One heading, not two. A caption below the digest used to repeat the
+  // algorithm and the sighash flavour; both remain available -- the algorithm
+  // in the heading's hover, the flavour there and in the nHashType row that
+  // every serialization writes.
   //
-  // The hover is the one string here that is not the book talking. It names
-  // what the heading is and says what clicking does, in the words a reader
-  // would use for a control -- the register the rest of the page keeps is for
-  // prose a reader reads, and this is a tooltip on a button.
+  // The hover names the heading and states what clicking does. It is a tooltip
+  // on a control, so it is brief and neutral rather than in the book's voice.
   const digest = sayFn ? sayFn(message.digest) || '' : '';
   const said = `the digest — ${message.algorithm}, ${sighashName(message.type)}. `
     + 'Click to copy the digest or its preimage';
