@@ -242,9 +242,8 @@ button:hover { background: var(--accent-2); }
    fields below are the metadata -- what went in, in order -- and this is what
    came out, which is the one number a reader actually checks. It leads because
    a footnote's heading should name the thing the footnote is about. */
-.term-fn-digest { font:400 15px/1.6 'Newsreader','Book Sigla',serif; color:var(--ink-soft); margin-bottom:4px; }
+.term-fn-digest { font:400 15px/1.6 'Newsreader','Book Sigla',serif; color:var(--ink-soft); margin-bottom:10px; }
 .term-fn-digest .op { color: var(--accent); font-weight: 700; }
-.term-fn-head { font:400 13px/1.5 'Public Sans','Book Sigla',sans-serif; color:var(--meta); margin-bottom:10px; }
 .term-fn-mark { font:500 .8em/1 'IBM Plex Mono','Book Sigla',monospace; color:var(--accent); vertical-align:super; margin-right:.4em; }
 .term-fn-row { display:grid; grid-template-columns: 11ch 1fr; gap:10px; align-items:baseline; margin-bottom:4px; }
 .term-fn-name { font:400 11px/1.6 'IBM Plex Mono','Book Sigla',monospace; color:var(--meta); }
@@ -725,6 +724,13 @@ const messageFoot = (message, sayFn = null, reader = null) => {
   // preimage, which is more reliable than selecting a string this long by hand
   // anyway. The bytes ride on the element rather than in the text, where they
   // can be copied and cannot be read.
+  //
+  // One heading, not two. A second line under it saying what the fields were
+  // taken over only told a reader what the rows beneath it already are -- and
+  // the two facts it carried are both still here: the algorithm and the
+  // flavour stand in the heading's own hover, and the flavour again in the
+  // nHashType row every serialization writes. A caption that names the thing
+  // it sits on top of is a caption doing nothing.
   const digest = sayFn ? sayFn(message.digest) || '' : '';
   const said = `the digest — ${message.algorithm}, ${sighashName(message.type)}. `
     + 'Click to copy it, or the preimage it was taken over';
@@ -733,9 +739,7 @@ const messageFoot = (message, sayFn = null, reader = null) => {
     + `<span class="hash-copy" tabindex="0" role="button" title="${escapeHtml(said)}" `
     + `data-hash="${escapeHtml(message.digest)}" data-preimage="${escapeHtml(message.preimage)}">`
     + `<span class="op" title="${escapeHtml(message.digestSaid)}">⌘</span> `
-    + `${digest || unsaid()}</span></div>`
-    + `<div class="term-fn-head">the message it was taken over — `
-    + `${escapeHtml(message.algorithm)}, ${escapeHtml(sighashName(message.type))}</div>${rows}</div>`;
+    + `${digest || unsaid()}</span></div>${rows}</div>`;
 };
 
 // The copy menu behind a said hash, which is what lets the rule cost nothing:

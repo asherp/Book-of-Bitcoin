@@ -203,8 +203,12 @@ test('the message footnote is headed by its digest, said, and never by hex', asy
   // metadata -- what went into the hash -- and this is what came out, which is
   // the one number a reader checks.
   assert.match(src, /const digest = sayFn \? sayFn\(message\.digest\)/, 'the digest is not said');
-  assert.match(src, /term-fn-digest[\s\S]*?term-fn-head[\s\S]*?\$\{rows\}/,
-    'the digest no longer heads the fields');
+  assert.match(src, /term-fn-digest[\s\S]*?\$\{rows\}/, 'the digest no longer heads the fields');
+  // And it heads them alone: a second caption saying what the rows below it
+  // were taken over named the thing it sat on top of, which is a caption doing
+  // nothing. What it carried survives -- the algorithm and the flavour in the
+  // heading's hover, the flavour again in the nHashType row.
+  assert.ok(!/term-fn-head/.test(src), 'the footnote has grown a second heading again');
   // …and neither the digest nor the preimage is ever set in type. They ride on
   // the element, where they can be copied and cannot be read.
   assert.match(src, /data-hash="\$\{escapeHtml\(message\.digest\)\}"/);
