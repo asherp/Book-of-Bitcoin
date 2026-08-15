@@ -1,0 +1,35 @@
+/* SPDX-License-Identifier: MIT OR Apache-2.0 */
+/* The app's fonts, served from this directory rather than any third party:
+ * the same faces the passage renderer sets cards and citation pages with
+ * (the FONT_FACES table in tools/twitter-bot/quote.mjs — regenerate this
+ * block from it when that table changes; the test suite checks the two
+ * agree), plus Public Sans, the app's own UI face, which no rendered
+ * passage uses. URLs are relative to this file, so the same stylesheet
+ * serves the site root and a per-PR preview subpath alike. Provenance and
+ * licenses: README.md, OFL.txt, LICENSE-DEJAVU.txt alongside. */
+
+@font-face { font-family: 'Newsreader'; font-style: normal; font-weight: 200 800; font-display: swap; src: url(newsreader-latin.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: 'Newsreader'; font-style: normal; font-weight: 200 800; font-display: swap; src: url(newsreader-latin-ext.woff2) format('woff2'); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+@font-face { font-family: 'Newsreader'; font-style: italic; font-weight: 200 800; font-display: swap; src: url(newsreader-italic-latin.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: 'Newsreader'; font-style: italic; font-weight: 200 800; font-display: swap; src: url(newsreader-italic-latin-ext.woff2) format('woff2'); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+@font-face { font-family: 'IBM Plex Mono'; font-style: normal; font-weight: 400; font-display: swap; src: url(plexmono-400-latin.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: 'IBM Plex Mono'; font-style: normal; font-weight: 500; font-display: swap; src: url(plexmono-500-latin.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: 'IBM Plex Mono'; font-style: normal; font-weight: 600; font-display: swap; src: url(plexmono-600-latin.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: 'Book Sigla'; font-style: normal; font-weight: 400; font-display: swap; src: url(sigla-dejavu.woff2) format('woff2'); unicode-range: U+0394, U+03A3-03A4, U+03B2, U+03B7, U+03C1, U+03C3-03C4, U+1D5B, U+2016, U+2070, U+2074-2079, U+207D-207E, U+2080-208A, U+2113, U+2192, U+2195, U+21A4, U+21A6-21A7, U+21BB, U+21C4, U+21CA, U+21D7-21D8, U+21E1, U+21E4-21E5, U+2205, U+2207-2208, U+2213, U+2227-222A, U+223C, U+2250-2251, U+2260-2261, U+2264-2265, U+2282, U+2293-2294, U+2296, U+2298, U+22BB, U+22D4, U+22EF, U+2304, U+2318, U+2326, U+2502, U+25A0-25A1, U+25BC, U+25C6-25C7, U+25CB, U+25CF, U+2612, U+2713, U+27E8-27E9, U+290B, U+2940, U+29FA; }
+/* The calculus the sigla leaf reads scripts in: λ for the abstraction, δ for
+ * the one-way steps (a hash, a key from its scalar), and ⟦ ⟧ for the marks a
+ * script is built from. Same source as the face above and the same subsetting,
+ * kept as its own file so that one stays byte-for-byte what it was — these
+ * four glyphs are wanted by one group of the key and by no passage at all.
+ *   pyftsubset DejaVuSans.ttf --unicodes=U+03B4,U+03BB,U+27E6,U+27E7 \
+ *     --flavor=woff2 --name-IDs='*' --output-file=sigla-dejavu-2.woff2
+ * then the name table renamed to Book Sigla, as the file above is. */
+@font-face { font-family: 'Book Sigla'; font-style: normal; font-weight: 400; font-display: swap; src: url(sigla-dejavu-2.woff2) format('woff2'); unicode-range: U+03B4, U+03BB, U+27E6-27E7; }
+@font-face { font-family: 'Book Sigla'; font-style: normal; font-weight: 400; font-display: swap; src: url(sigla-noto-symbols.woff2) format('woff2'); unicode-range: U+2460-246F, U+24EA; }
+@font-face { font-family: 'Book Sigla'; font-style: normal; font-weight: 400; font-display: swap; src: url(sigla-noto-symbols-2.woff2) format('woff2'); unicode-range: U+2316; }
+@font-face { font-family: 'Book Sigla'; font-style: normal; font-weight: 400; font-display: swap; src: url(sigla-noto-math.woff2) format('woff2'); unicode-range: U+29C9; }
+@font-face { font-family: 'Book Sigla'; font-style: normal; font-weight: 400; font-display: swap; src: url(sigla-noto-sans.woff2) format('woff2'); unicode-range: U+20BF; }
+
+/* Public Sans — variable (wght 100-900), the app chrome's sans. */
+@font-face { font-family: 'Public Sans'; font-style: normal; font-weight: 100 900; font-display: swap; src: url(publicsans-latin.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: 'Public Sans'; font-style: normal; font-weight: 100 900; font-display: swap; src: url(publicsans-latin-ext.woff2) format('woff2'); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
