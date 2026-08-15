@@ -426,6 +426,7 @@ const RUN = Symbol('runs');      // ( r ), whatever the revealed script demands
 const AND = Symbol('and');       // ∧, the conjunction -- notation, not an opcode
 const OPEN = Symbol('('), CLOSE = Symbol(')');
 const TWEAK = '⋔';               // the taptweak, which no opcode spells
+const CONTROL = 'c';           // the control block's binder, in every demand that brings one
 
 const SIGNED = (key) => [OP_CHECKSIG, 's', key, MSG];
 const HASHED = (op, name) => [OPEN, op, name, OP_EQUALVERIFY, D, CLOSE, AND];
@@ -837,36 +838,19 @@ const revealedTerm = (t, items, opts) => {
 
 // One walk for both renderings, as everywhere else in this module: the marks
 // on the page and the marks in a test can never be two different readings.
-// A reveal whose alternative also brings a control block is the one place a
-// title of the script alone leaves a witness item unaccounted for: the block
-// is what proves this script belongs to the output, and it is neither in the
-// script nor anywhere else on the card. So that alternative composes -- the
-// revealed term substituted into the demand's own `( t )`, which writes the
-// proof and the payload as one statement and is the committed→revealed
-// transition drawn as a reduction. The `…` goes with it: the arguments it
-// stood for are the revealed term's own binders, and they are written now.
-//
-// Everything else keeps the script's own title. A P2SH or a P2WSH reveal hands
-// over bytes and nothing more -- there is no third item to account for -- and
-// a composed line there would restate a hash clause above a passage that is
-// simply the script somebody wrote.
-const CONTROL = 'c';
 const revealed = (t, items, opts, write) => {
   const which = pathTaken(t, items);
   if (which === null) return null;
   const alt = demandsOf(t)[which];
   if (alt.runs) {
     const tr = revealedTerm(t, items, opts);
-    if (!tr) return null;
-    return [alt.brings.includes(CONTROL) ? write.reduced(alt, tr) : write.title(tr)];
+    return tr ? [write.title(tr)] : null;
   }
   return alt.shown ? [write.shown(alt)] : null;
 };
 
 export const revealedText = (t, items, opts = {}) => revealed(t, items, opts, {
   title: (tr) => titleText(tr),
-  reduced: (alt, tr) => `λ${alt.brings.join(' ')}. `
-    + `${demandText(t, alt, opts.msg ?? UNSAID, titleText(tr))}`,
   shown: (alt) => `λ${alt.brings.join(' ')}. `
     + `${demandText(t, { ...alt, demand: alt.shown }, opts.msg ?? UNSAID)}`,
 });
@@ -878,8 +862,6 @@ export const revealedText = (t, items, opts = {}) => revealed(t, items, opts, {
 // it, and the marks a reader can see the bytes of right here do not.
 export const revealedHtml = (t, items, opts = {}) => revealed(t, items, opts, {
   title: (tr) => titleHtml(tr),
-  reduced: (alt, tr) => `${lam('λ')}${alt.brings.map(awaited).join(' ')}${lam('.')} `
-    + `${demandHtml(t, alt, opts.msg ?? null, opts.ref ?? null, titleHtml(tr))}`,
   shown: (alt) => `${lam('λ')}${alt.brings.map(awaited).join(' ')}${lam('.')} `
     + `${demandHtml(t, { ...alt, demand: alt.shown }, opts.msg ?? null, opts.ref ?? null)}`,
 });
@@ -912,11 +894,27 @@ export const revealedHtml = (t, items, opts = {}) => revealed(t, items, opts, {
 const COMMITS = { p2pkh: OP_HASH160, p2wpkh: OP_HASH160, p2sh: OP_HASH160, p2wsh: OP_SHA256 };
 
 export function commitmentOf(t, items, { scriptsig = null } = {}) {
-  const op = COMMITS[t.id];
-  if (!op || !t.holes.length) return null;
+  if (!t.holes.length) return null;
   const which = pathTaken(t, items);
   if (which === null) return null;
   const alt = demandsOf(t)[which];
+  // Taproot's script path commits by a tweak rather than a digest: the leaf
+  // hashed up its branch with the control block's path, added to the internal
+  // key. It takes both items the spend brought, which is why the control block
+  // belongs on this line and nowhere else on the card -- it is an operand of
+  // the check, not a thing the title names.
+  //
+  // Stated, and never taken. Settling it is elliptic curve arithmetic rather
+  // than a hash, so the page writes the claim consensus checked and does not
+  // pretend to have checked it again: `taken` says which, and a caller that
+  // cannot settle a check must not mark one.
+  if (alt.runs && alt.brings.includes(CONTROL)) {
+    const of = revealedOf(t, items, { scriptsig });
+    return of ? { op: TWEAK, name: alt.runs, names: [alt.runs, CONTROL], of,
+      hole: t.holes[0], against: t.holes[0].argument, taken: false } : null;
+  }
+  const op = COMMITS[t.id];
+  if (!op) return null;
   // A script-hash form committed to a script, and the spend handed it over; a
   // keyhash form committed to a key, which stands among the values it brought.
   // Either way the thing hashed is read by consensus's own placement, never by
@@ -925,18 +923,25 @@ export function commitmentOf(t, items, { scriptsig = null } = {}) {
     : items[suppliedNames(alt, items).indexOf('p')] ?? null;
   const name = alt.runs ?? 'p';
   if (!of) return null;
-  return { op, of, name, hole: t.holes[0], against: t.holes[0].argument };
+  return { op, of, name, names: [name], hole: t.holes[0],
+    against: t.holes[0].argument, taken: true };
 }
 
 // The check, written out: the operation, what it is taken over, and the datum
 // it must equal. The same marks the demand's own clause used, because it is
 // the same claim -- only now it is one the page has carried out rather than
 // one it is passing on.
+// One operand or two: a hash is taken over the one thing that was hidden, and
+// a tweak over the leaf and the control block together.
+const operands = (c) => c.names ?? [c.name];
+
 export const commitmentText = (c) =>
-  `${glyph(c.op)} ${c.name} ${glyph(OP_EQUALVERIFY)} ${datumText({ holes: [c.hole] })}`;
+  `${c.op === TWEAK ? TWEAK : glyph(c.op)} ${operands(c).join(' ')} `
+  + `${glyph(OP_EQUALVERIFY)} ${datumText({ holes: [c.hole] })}`;
 
 export const commitmentHtml = (c, { ref = null } = {}) =>
-  `${op(c.op)} ${awaited(c.name)} ${op(OP_EQUALVERIFY)} ${datumMark(c.hole, ref)}`;
+  `${c.op === TWEAK ? opMark(TWEAK) : op(c.op)} ${operands(c).map(awaited).join(' ')} `
+  + `${op(OP_EQUALVERIFY)} ${datumMark(c.hole, ref)}`;
 
 // ─── the pure form ───────────────────────────────────────────────────────
 //
