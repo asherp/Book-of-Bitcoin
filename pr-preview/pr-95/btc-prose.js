@@ -1147,18 +1147,28 @@ function witnessScriptIndices(items) {
 const WIT_SEP = '<span class="wit-sep"> · </span>';
 
 // A Taproot control block -> its footnote form, decomposed into its three
-// components. The leading byte splits into its top 7 bits -- the tapleaf version,
-// read as v<n> -- and its low bit, the output-key parity, read as a subscript;
-// the 32-byte internal key reads under a p mark; and the trailing 32-byte sibling
-// hashes -- the merkle path proving the revealed leaf is committed in the taptree
-// -- read under a pitchfork ⋔ as a merkle proof. The three parts are fixed-width
-// (1 byte, then 32, then 32 per sibling), so splitting the one item this way stays
-// exactly reconstructable: the leading byte is (version << 1) | parity. A
+// components. The leading byte splits into the tapleaf version, read as v<n>,
+// and its low bit, the output-key parity, read as a subscript; the 32-byte
+// internal key reads under a p mark; and the trailing 32-byte sibling hashes --
+// the merkle path proving the revealed leaf is committed in the taptree --
+// read under a pitchfork ⋔ as a merkle proof. The three parts are fixed-width
+// (1 byte, then 32, then 32 per sibling), so splitting the one item this way
+// stays exactly reconstructable: the leading byte is version | parity. A
 // single-leaf taptree has an empty path, so its control block ends at the key.
+//
+// The version is the byte with its parity bit masked off (b & 0xfe) and it is
+// set in hex, which is the one figure in this book written that way on purpose.
+// It carries no entropy -- a version is nothing else this book would decline to
+// print -- and the only reason it is on the page is to be checked against a
+// constant BIP341 writes as 0xc0. A reader who met it as a decimal would have
+// to convert before they could confirm anything, and one who met it shifted
+// right (the top 7 bits read as a number of their own) would be checking a
+// value that appears in no specification at all.
 function renderControlBlock(hex, encode) {
-  const b = witFirst(hex);                                    // tapleaf version (top 7 bits) | output-key parity (low bit)
-  const leafVer = b >> 1, parity = b & 1;
-  const ctrlByte = `<span class="op" title="control byte — tapleaf version ${leafVer} (top 7 bits; 0x${b.toString(16).padStart(2, '0')}), output-key parity ${parity}">v${leafVer}${parity ? '₁' : '₀'}</span>`;
+  const b = witFirst(hex);                                    // tapleaf version | output-key parity (low bit)
+  const leafVer = b & 0xfe, parity = b & 1;
+  const ver = leafVer.toString(16).padStart(2, '0');
+  const ctrlByte = `<span class="op" title="control byte — tapleaf version 0x${ver} (BIP341’s tapscript leaf is 0xc0), output-key parity ${parity}">v${ver}${parity ? '₁' : '₀'}</span>`;
   const parts = [
     dataMark('c', 'control block — a Taproot script-path reveal') + ' ' + ctrlByte,
     dataMark('p', 'public key — the Taproot internal key') + ' ' + encode(hex.slice(2, 66)),
