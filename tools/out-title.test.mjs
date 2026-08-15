@@ -61,11 +61,11 @@ async function painter() {
 // output of a shape shares it. The demand rung is what varies by how an output
 // may be opened -- taproot has two -- and a title is not that rung.
 const ADDRESSES = [
-  ['P2PKH',  '1Ross5Np5doy4ajF9iGXzgKaC2Q3Pwwxv', 'λh. ⧉ ⌖ h ≡ ∇'],
-  ['P2SH',   '3J98t1WpEZ73CNmQviecrnyiWrnqRhWNLy', 'λh. ⌖ h ='],
-  ['P2WPKH', 'bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4', 'λh. ⓪ h'],
-  ['P2WSH',  'bc1qrp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3qccfmv3', 'λh. ⓪ h'],
-  ['P2TR',   'bc1p5d7rjq7g6rdk2yhzks9smlaqtedr4dekq08ge8ztwac72sfr9rusxg3297', 'λp. ① p'],
+  ['P2PKH',  '1Ross5Np5doy4ajF9iGXzgKaC2Q3Pwwxv', 'P2PKH := λh. ⧉ ⌖ h ≡ ∇'],
+  ['P2SH',   '3J98t1WpEZ73CNmQviecrnyiWrnqRhWNLy', 'P2SH := λh. ⌖ h ='],
+  ['P2WPKH', 'bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4', 'P2WPKH := λh. ⓪ h'],
+  ['P2WSH',  'bc1qrp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3qccfmv3', 'P2WSH := λh. ⓪ h'],
+  ['P2TR',   'bc1p5d7rjq7g6rdk2yhzks9smlaqtedr4dekq08ge8ztwac72sfr9rusxg3297', 'P2TR := λp. ① p'],
 ];
 
 test('every form is titled by the anonymous λ it binds, on one line', async () => {
@@ -85,7 +85,10 @@ test('every form is titled by the anonymous λ it binds, on one line', async () 
     // since every output of this shape carries the same title.
     assert.ok(!/[⟦⟧()]/.test(strip(line.innerHTML)), `${what}: a title carries no apparatus`);
     assert.ok(!/[⁰¹²³⁴⁵⁶⁷⁸⁹]/.test(strip(line.innerHTML)), `${what}: the binder stands bare`);
-    assert.equal(strip(line.innerHTML), titleText(termOfScript(addressScriptHex(address))));
+    // The kind opens the line and := binds it to the term the module writes,
+    // so the reading and the search leaf state one definition the same way.
+    const t = termOfScript(addressScriptHex(address));
+    assert.equal(strip(line.innerHTML), `${t.label} := ${titleText(t)}`);
   }
 });
 
@@ -98,11 +101,12 @@ test('anything that binds a term is titled, tabled or not', async () => {
   // question its own bytes answer.
   const data = paint('6a' + '04' + 'ab'.repeat(4));
   assert.equal(data.drew, true, 'a data output');
-  assert.equal(strip(data.lines[0].innerHTML), 'λd. ¶ d');
-  // …and a well-formed script no template claims.
+  assert.equal(strip(data.lines[0].innerHTML), 'data := λd. ¶ d');
+  // …and a well-formed script no template claims, which the kind names for
+  // exactly what the page knows it to be.
   const odd = paint('76a914' + 'ab'.repeat(20));
   assert.equal(odd.drew, true, 'an unclassified script');
-  assert.equal(strip(odd.lines[0].innerHTML), 'λh. ⧉ ⌖ h');
+  assert.equal(strip(odd.lines[0].innerHTML), 'Script := λh. ⧉ ⌖ h');
   // What goes untitled is what binds nothing: bytes that are not a script,
   // a push claiming more than remains, a script with nothing to abstract over.
   assert.equal(paint('deadbeef').drew, false, 'undefined opcodes');
@@ -174,6 +178,10 @@ test('every mark the title sets is a mark the reading styles', async () => {
     const line = titleHtml(termOfScript(addressScriptHex(address)));
     for (const m of line.matchAll(/class="([^"]+)"/g)) m[1].split(/\s+/).forEach((c) => classes.add(c));
   }
+  // …and the painter's own, which the module never emits: the kind and the :=
+  // are written by the page, so nothing above would have caught them going
+  // unstyled.
+  for (const c of ['out-kind', 'out-def']) classes.add(c);
   assert.ok(classes.size >= 2, 'the term stopped setting marks at all');
   for (const c of classes) {
     assert.match(css, new RegExp(`\\.${c}[\\s,{:]`), `.${c} is set by the title and styled nowhere`);

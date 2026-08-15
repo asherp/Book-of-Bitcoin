@@ -810,6 +810,13 @@ button:disabled { opacity: .4; cursor: not-allowed; }
    the page: .lam means something on the search leaf, where a whole descent is
    written in it, and a chapter is not that leaf. */
 .tx-out-term .out-term .lam { color: var(--meta); font-weight: 400; }
+/* The kind that opens the title, and the := binding it to the term. The label
+   reads as a label -- the mono face, letterspaced, the shape the search leaf
+   gives it -- and both keep the line's own quiet, since neither is a byte the
+   chain wrote. Scoped like .lam above, for the same reason. */
+.tx-out-term .out-term .out-kind { font-family: 'IBM Plex Mono','Book Sigla',monospace;
+  font-size: .82em; letter-spacing: .12em; text-transform: uppercase; }
+.tx-out-term .out-term .out-def { font-weight: 400; }
 .tx-out-keep .out-keep-name { cursor: pointer; }
 .tx-out-keep .out-keep-name:hover, .tx-out-keep .out-keep-name:focus-visible { color: var(--accent-2); outline: none; }
 .tx-out-keep .keep-rib { display: inline-block; line-height: 0; color: var(--accent); vertical-align: -2px; background: none; border: 0; padding: 2px 5px; cursor: pointer; opacity: .42; }
@@ -7433,10 +7440,17 @@ function termTitle(el) {
   if (!t) return false;
   const span = document.createElement('span');
   span.className = 'out-term';
+  // The kind opens the title and := binds it to the term, as the search leaf
+  // states it: the kind names the shape, the term says what the script
+  // abstracts over, and the two are one statement of what these bytes are.
+  //
   // The marks are the module's own and safe as markup by the same contract
   // the book's script renderer relies on: opcode glyphs, binder letters and
-  // the calculus's punctuation, nothing read off the chain.
-  span.innerHTML = titleHtml(t);
+  // the calculus's punctuation, nothing read off the chain. The kind is a
+  // module constant by the same contract -- a label from the term table, or a
+  // template row's name -- so it carries no markup either.
+  span.innerHTML = `<span class="out-kind">${t.label}</span> `
+    + `<span class="out-def">:=</span> ${titleHtml(t)}`;
   span.title = 'the term this lock binds — the title it has until somebody '
     + 'gives it another';
   el.append(span);
