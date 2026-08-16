@@ -52,7 +52,7 @@ Transaction id, as prose: ⌘²⁵⁶ *Son unlock toast to exile. Cow come to de
   - script: s⁷¹ Aestas percipibilis cacalia. Palpamen affluenter arianis. Omohyoides is vult quito colon. Solemnium solet aprugnus cerva e spongitis de impunitus eo. Fasciger is acumino figo e is. Eo vult rescribo ardor ab eo. Nisi. Quadrantal sparus. Eo vult adalligo circino. Fanaticus tarrupia suodalis e colossicus scirpus. Mella scrupulus at xanthos ad capreolus. Eo celeriter columba. Tu obsisto inglorius terminus. p³³ Fera dispesco filictum e salicastrum. Exossis tu paenitendus ab inmitis is. Tu parandus irroro. Manticulator obtorpesco suppositio e eo ob pasiphaeius is. Tu praesentio scopes e tu. Eo accersens fornus se crassundia. Hypocrita vult indensare exsequia.
   - sequence:  — replaceable — signals opt-in RBF
 - **output 1:** 36.78748282 ₿
-  - script: ⧉ ⌖ h²⁰ Eo abs is abs eo. Tu abs is abs tu abs eo. Is abs eo abs is abs is. Tu abs eo abs tu. Is abs querela. Eo precative accerso tu. ≡ ∇
+  - script: ⧉ ⌖ h²⁰ ⓪²⁰ ≡ ∇
 - **locktime:** V β56 ■79 — locktime: not before block 950958 — volume 5, book 56, chapter 79
 
 ---

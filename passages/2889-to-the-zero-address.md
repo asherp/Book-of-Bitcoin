@@ -55,7 +55,7 @@ Transaction id, as prose: ⌘²⁵⁶ *Repeat get all column. Exercise may satis
   - script: s⁷¹ Palmiger apiarium sinceritas. Is stipo prorito e glaeba ab certanus is. Betaceus decemvir cavia e prolongatio ad adadus. Is concarno molarius eo e immemor libadios in pertica. Cuprum veronensis ultio e pallium. Pronomen evado adploro. Eo abnuo dabla e cayennensis plumbago. Syringa vult conca. Eo quadrate tu. Autem. Undecimvir ni assertor. Diademalis pituita aequaliter tu. Igitur. p³³ Eo ceno superus cibicida e mugitus. Faenarius thocum clivius pulvus. Precarius is aegeus sectatio. Administer quousque fulvithorax tu. Quanti confirmator dircion e capanna. Concubius tu amaresco coclear.
   - sequence:  — replaceable — signals opt-in RBF
 - **output 1:** 28.88997433 ₿
-  - script: ⧉ ⌖ h²⁰ Eo abs is abs eo. Tu abs is abs tu abs eo. Is abs eo abs is abs is. Tu abs eo abs tu. Is abs querela. Eo precative accerso tu. ≡ ∇
+  - script: ⧉ ⌖ h²⁰ ⓪²⁰ ≡ ∇
 - **locktime:** V β56 ■79 — locktime: not before block 950958 — volume 5, book 56, chapter 79
 
 ---

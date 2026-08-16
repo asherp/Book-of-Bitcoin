@@ -43,7 +43,7 @@ Transaction id, as prose: ⌘²⁵⁶ *Its dial may see ozone. Sir develop to er
   - script: s⁷¹ Lamium assumptio. Caelum ira e afghanicus is. Tu pelluceo tribalis pugnacitas at tuberculosis ad mulsa. Rhoeteius tu fistulo ebullitio e hortensius is. Angelicus coquina estuarinus caupona. Mythologicus presbyter e lea. Redux lura caligatio. Spontalis is creo lac. Molybdaenum genialis tu e microdontus eo. Bisonus tu vult calcicolus is. Tu rideo depugno e procacia. Is vult conicio carta. Eo praetexo is e tu. p³³ Etsi. Condicio mentigo e titius depressor. Emphyteota monitus at seculum. Is turgesco pinaster e craccivorus eo. Semustus tu sacrosanctus tyrannis. Multigrumus turbellae instrumentum. Vasculosus octaedros vult essentia e derisorius is.
   - sequence:  — replaceable — signals opt-in RBF
 - **output 1:** 20.00994487 ₿
-  - script: ⧉ ⌖ h²⁰ Eo abs is abs eo. Tu abs is abs tu abs eo. Is abs eo abs is abs is. Tu abs eo abs tu. Is abs querela. Eo precative accerso tu. ≡ ∇
+  - script: ⧉ ⌖ h²⁰ ⓪²⁰ ≡ ∇
 - **locktime:** V β56 ■79 — locktime: not before block 950958 — volume 5, book 56, chapter 79
 
 ---

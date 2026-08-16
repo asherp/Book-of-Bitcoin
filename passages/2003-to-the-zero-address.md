@@ -40,7 +40,7 @@ Transaction id, as prose: ⌘²⁵⁶ *Its die is bright. Swarm is out to cube v
   - script: s⁷¹ Eo patro adipsatheon e gemellicium. Classiarii vult frango adaequatio. Eo innodo intento. Primoris tu vult colligandus. Nativus pythia rendus excito. Sarcinatus is increbesco soliloquium e vibix. Omentum rufithorax tu. Eo prognariter is. Tu scienter porcella. Boninensis eo indeclivis is. Palearis tu sit besalis. Stipitatus eo est palealis. Tergeminus biria vult abstulo. Ornatus asymptota e diademalis eo. Sativus tu est inviolatus. Is accerso eo. p³³ Emax inspector petilium. Presens eo ut adservans clocca. Conscriptus necubi dispartio tu. Eo commendo scorpius e commoratio. Eo conlaudatus thocum at manicella. Is laetanter musa. Vivum choaspitis. Tu vult abjuncturus praetexo e eo.
   - sequence:  — replaceable — signals opt-in RBF
 - **output 1:** 20.02697328 ₿
-  - script: ⧉ ⌖ h²⁰ Eo abs is abs eo. Tu abs is abs tu abs eo. Is abs eo abs is abs is. Tu abs eo abs tu. Is abs querela. Eo precative accerso tu. ≡ ∇
+  - script: ⧉ ⌖ h²⁰ ⓪²⁰ ≡ ∇
 - **locktime:** V β56 ■79 — locktime: not before block 950958 — volume 5, book 56, chapter 79
 
 ---

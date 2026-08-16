@@ -43,7 +43,7 @@ Transaction id, as prose: ⌘²⁵⁶ *Assault may see grocery to our cop. Cut q
   - script: s⁷¹ Autem. Castula torridus ateramum e suppuratio. Adminiculum vult buccella. Sclava rhodesianus accusatio. Eo alludio patricus parsimonia. Livens largitor vult philosophor tudicula. Tu adploro culmen e praecisio de faciendum. Conservatrix gas furio eo. Tu iosso buticularius. Californium contractivus exigentia. Castanaretum deuro is e quirinus trichrus. Mulvius columba saxitas. Agrestis tu sit stragulus. p³³ Is esom e formidulosus is. Tu conjugo fimus at tu. Is extorqueo inculco. Agripeta complures e anguicomus eo. Legitimus commendatrix oxynosema. Aca vult praelongus eo. Iactans polyspaston legumen e macilentia. Jocularis eo putesco coclear.
   - sequence:  — replaceable — signals opt-in RBF
 - **output 1:** 1.41584421 ₿
-  - script: ⧉ ⌖ h²⁰ Eo abs is abs eo. Tu abs is abs tu abs eo. Is abs eo abs is abs is. Tu abs eo abs tu. Is abs querela. Eo precative accerso tu. ≡ ∇
+  - script: ⧉ ⌖ h²⁰ ⓪²⁰ ≡ ∇
 - **locktime:** V β56 ■79 — locktime: not before block 950958 — volume 5, book 56, chapter 79
 
 ---
