@@ -917,11 +917,16 @@ test('the commitment says what to hash and against what, and declines the rest',
   assert.equal(commitmentText(tweak), '⋔ t c ≡ p³²');
   assert.equal(commitmentHtml(tweak).replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim(),
     commitmentText(tweak), 'the two renderings drifted');
-  // `taken` is the whole of the difference: settling this is elliptic curve
-  // arithmetic, so a caller must state the claim and never mark a verdict on
-  // it. A hash commitment says the opposite, and both say which.
-  assert.equal(tweak.taken, false, 'a tweak is offered as though it were taken');
-  assert.equal(commitmentOf(wpkh, [SIG, KEY]).taken, true, 'a hash is not taken');
+  // `taken` names the road a caller must send the check down, since the two
+  // are settled by different arithmetic: a hash the page takes itself, a tweak
+  // over the vendored curve (btc-taptweak.js). Both are taken; neither is
+  // guessed.
+  assert.equal(tweak.taken, 'tweak', 'the tweak is sent down the hashing road');
+  assert.equal(commitmentOf(wpkh, [SIG, KEY]).taken, 'hash', 'a hash is not');
+  // …and the tweak carries the control block it is proved by, which the hash
+  // road has no use for: it is the operand that makes the check possible.
+  assert.equal(tweak.control, 'c0' + 'ab'.repeat(32));
+  assert.equal(commitmentOf(wpkh, [SIG, KEY]).control, undefined);
   // Nothing brought is nothing to check.
   assert.equal(commitmentOf(wpkh, []), null);
   // The two renderings never drift, as everywhere else in this module.
