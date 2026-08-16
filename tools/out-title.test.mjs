@@ -144,17 +144,28 @@ test('the bookmark stands above the title, and neither displaces the other', asy
 test('the title is sized with the lines it is stacked with', async () => {
   const page = await bookPage();
   const css = page.slice(0, page.indexOf('</style>'));
-  // The three lines above a paragraph -- the bookmark title, the keep, the
-  // term -- are one group of headings over one paragraph, so they take one
-  // scale. A title that sized itself from the sigla would fall out of step
-  // with the two it is stacked under the moment a reader diverged them.
+  // The two lines above the script -- the keep and the term -- are one group of
+  // headings over one paragraph, so they take the paragraph's own scale. A
+  // title that sized itself from the sigla would fall out of step with the line
+  // it is stacked with the moment a reader diverged them.
   const size = /calc\(13\.5px \* var\(--scale-body, 1\)\)/;
-  for (const line of ['tx-out-title', 'tx-out-keep', 'tx-out-term']) {
+  for (const line of ['tx-out-keep', 'tx-out-term']) {
     const rule = new RegExp(`\\.${line} \\{[^}]*\\}`).exec(css);
     assert.ok(rule, `.${line} is no longer sized here`);
     assert.match(rule[0], size, `.${line} left the body scale`);
     assert.ok(!/--scale-sigla-ratio/.test(rule[0]), `.${line} sizes itself from the sigla`);
   }
+  // The output's own keep is not in that group: it names the coin rather than
+  // the paragraph, and stands above the amount, which is the coin's handle. So
+  // it takes the scale of the column it is now stacked in -- a name that grew
+  // with the body while the figure under it grew with the margins would be the
+  // same drift, one column over.
+  const title = /\.tx-out-title \{[^}]*\}/.exec(css);
+  assert.ok(title, '.tx-out-title is no longer sized here');
+  assert.match(title[0], /calc\(13\.5px \* var\(--scale-margins, 1\)\)/,
+    'the output keep left the margin scale it shares with the amount');
+  assert.ok(!/grid-column/.test(title[0]),
+    'the output keep is spanning the grid again rather than sitting in the cell');
   // …and the marks inside it are proportional to the body too. The title is
   // nothing but marks, so leaving them on the inline ratio would size the whole
   // line by it and pull the heading out of step with the two it is stacked

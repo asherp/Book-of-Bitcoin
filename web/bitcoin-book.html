@@ -524,7 +524,11 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 .hash-bookmark.set .rib-hollow { display: none; }
 /* On an amount the ribbon sits ON its line rather than above it: the outputs
    stack close together, and a mark hanging above a row reads as belonging to
-   the row before it. (A title has room above it, and keeps the corner.) */
+   the row before it. (A title has room above it, and keeps the corner.)
+   Where this output is kept, its name stands first in the same cell and the
+   ribbon rides beside that instead -- still inside this output's own block, so
+   the reason above is untouched, and beside the name is where the script's
+   keep already flies its ribbon. .tx-out-title's padding keeps them clear. */
 .tx-out-value > .hash-bookmark { top: 0; }
 
 /* The title-entry form the menu swaps to when bookmarking: the title becomes a
@@ -763,11 +767,28 @@ button:disabled { opacity: .4; cursor: not-allowed; }
    this is the fallback rather than a standing case). */
 #ch-totals:not(:empty) + .chapter-footnotes { margin-top: 0; border-top: none; padding-top: 12px; }
 .tx-locktime { grid-column: left / -1; grid-row: 3; text-align: center; font-style: normal; }
-/* An output the reader has kept under a name (or the contents already
-   names): the title stands centered above the output's own rows, spanning
-   script and amount. Empty -- unkept and unnamed -- it takes no room.
-   Filled by syncBookmarkTitles, live with the bookmark set. */
-.tx-out-title { grid-column: 1 / -1; text-align: center; font: italic 500 calc(13.5px * var(--scale-body, 1))/1.4 'Newsreader','Book Sigla',serif; color: var(--accent); margin: .4em 0 .15em; }
+/* An output the reader has kept under a name (or the contents already names):
+   the title stands directly above the amount, inside that cell, because the
+   amount is the coin's own handle -- a click on it keeps §section.vout, the
+   finest place the book cites. It used to span script and amount both, which
+   read as a heading over the script; that paragraph has a keep of its own, and
+   that one files an address's ledger rather than this single coin.
+   Ranged right with the figure it names, and sized from --scale-margins like
+   it: the two are one stack in the margin column, and a name that scaled with
+   the body would fall out of step with the amount it sits on the moment a
+   reader diverged them. Wrapping is re-allowed -- the amount beside it is
+   nowrap, and a reader's title is prose that may run on.
+   Empty -- unkept and unnamed -- it takes no room. Filled by
+   syncBookmarkTitles, live with the bookmark set. */
+   The ribbon is absolutely positioned at this cell's top right, so with a
+   title present it rides beside the name rather than the figure -- which is
+   where the script's own keep already puts it, and where it belongs, both
+   being this coin's keep. The padding is what keeps the name from running
+   under it; unkept, the title is display:none and the ribbon drops back to the
+   amount's line, which has padding of its own. */
+.tx-out-title { text-align: right; white-space: normal; padding-right: 22px;
+  font: italic 500 calc(13.5px * var(--scale-margins, 1))/1.4 'Newsreader','Book Sigla',serif;
+  color: var(--accent); margin: 0 0 .15em; }
 .tx-out-title:empty { display: none; }
 /* The locking script's keep line, centered above its paragraph: unkept and
    uncurated, the hollow ribbon alone -- the offer, faded like every unmade
@@ -4928,17 +4949,24 @@ function renderChapter(para) {
   for (const p of pendingMargin) marginEl.append(p);
   currentFootnotes = footnotes;
   f.outputs.forEach((out, i) => {
-    // The output's name line, centered above its rows: the reader's bookmark
-    // title when this output is kept (defaulted from -- and overriding --
-    // the curated name), else the contents' own name for it, else empty and
-    // hidden. syncBookmarkTitles keeps it live with the bookmark set.
+    // The output's name line: the reader's bookmark title when this output is
+    // kept (defaulted from -- and overriding -- the curated name), else the
+    // contents' own name for it, else empty and hidden. syncBookmarkTitles
+    // keeps it live with the bookmark set.
+    //
+    // It goes above the AMOUNT, and is appended into that cell below rather
+    // than spanning the output's rows. The amount is what a reader bookmarks a
+    // coin by -- it is this output's handle, and §section.vout, the finest
+    // place the book cites, is what a click on it keeps -- so the name a keep
+    // gives belongs over the thing that was kept. Over the script it named the
+    // wrong paragraph: that one has a keep of its own, and that keep files an
+    // address's ledger rather than this one coin.
     const outTitle = document.createElement('div');
     outTitle.className = 'tx-out-title';
     outTitle.dataset.bmOut = `${para.txid}:${i}`;
     const outPlace = places().find((p) => !p.page && !p.address && (p.out ?? null) === i
       && (p.id === para.txid || (p.id === String(state.height) && p.index === state.index)));
     outTitle.dataset.fallback = outPlace ? placeTitle(outPlace) : '';
-    outputsEl.append(outTitle);
     // The locking script's own keep, centered above its paragraph: a hollow
     // ribbon offers to shelve this script's address among the reader's
     // ledgers (Appendix III, the same registry the Ledger page's keep button
@@ -4991,6 +5019,9 @@ function renderChapter(para) {
     // setting reprint a section without re-composing it.
     valueCell.textContent = formatAmount(out.sats);
     valueCell.title = amountTitle(out.sats);
+    // …and the keep's name above it. Prepended after the amount is written,
+    // since setting textContent would clear a child put there first.
+    valueCell.prepend(outTitle);
     // The amount is this output's handle: click it to copy or bookmark the
     // output itself -- §section.vout, the finest place the book cites.
     attachHashCopy(valueCell, para.txid, 'output',
