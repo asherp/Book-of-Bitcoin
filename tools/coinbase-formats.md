@@ -492,6 +492,20 @@ an unfilled field moves. **[unverified]**
   witness item with zeros in it still reads as prose, and whether the same mark
   belongs there is a separate question from this one.
 
+  Since answered, and the answer is yes — `sayBytes` now stands between every
+  data run and the engine, so a witness item, a control block's internal key or
+  merkle path, and any data push inside a script take the mark on the same
+  terms the margin does. Only the hover differs: the margin's says a pool's
+  template left the room empty, and elsewhere the bytes state nothing beyond
+  being zero, so the mark claims nothing beyond the count. Two populations turn
+  up, sampled across the segwit era (33 blocks, 145,109 witness-bearing inputs):
+  a Taproot internal key chosen as a nothing-up-my-sleeve value — the
+  activation-day spends in block 709,635 use `00…01`, 31 zero bytes, about 23
+  `abandon`s — and, for nearly all the rest, the zero-padding inside an
+  inscription's image payload, which is where the long runs live (127 bytes in
+  block 840,000, 210 in block 962,600 — the latter some 153 `abandon`s, near
+  forty sentences of nothing). Rare per input, long when it lands.
+
 The rest of what the survey can find belongs where it is. The book stops reading
 opcodes at the height mark deliberately, and none of the above is a reason to
 start again: a pool tag is already quoted as the writing it is, and a

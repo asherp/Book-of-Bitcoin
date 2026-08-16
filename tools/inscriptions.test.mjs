@@ -463,8 +463,13 @@ test('the control byte is set as the version BIP341 names, not a shifted one', a
   assert.ok(fn, 'the page no longer renders a control block');
   const witFirst = (h) => parseInt(h.slice(0, 2), 16);
   const dataMark = (s, t) => `<span class="dt" title="${t}">${s}</span>`;
-  const render = Function('witFirst', 'dataMark',
-    `${fn[0]}\nreturn renderControlBlock;`)(witFirst, dataMark);
+  // The key and the path reach prose through sayBytes, which lifts a run of
+  // zeros out under ⓪ⁿ; here it stands as a pass-through, since what this test
+  // is about is the control byte. The lifting itself is checked against the
+  // real function in tools/witness-zeros.test.mjs.
+  const sayBytes = (hex, encode) => encode(hex);
+  const render = Function('witFirst', 'dataMark', 'sayBytes',
+    `${fn[0]}\nreturn renderControlBlock;`)(witFirst, dataMark, sayBytes);
   const strip = (h) => h.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
   const key = 'ab'.repeat(32);
 

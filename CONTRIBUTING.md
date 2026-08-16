@@ -155,12 +155,13 @@ repository for you if you have no fork. Most of the chain has nothing said
 about it yet, which is the point.
 
 The template asks for exactly what this section does — the passage, the
-reading, the line between record and testimony, and the two files — so if you
-are starting from GitHub rather than from the book, open your pull request with
-[`?template=commentary.md`](https://github.com/asherp/book-of-bitcoin/compare?template=commentary.md&expand=1)
-on the end of the URL and it will be filled in for you. It is
-[`.github/PULL_REQUEST_TEMPLATE/commentary.md`](.github/PULL_REQUEST_TEMPLATE/commentary.md)
-if you would rather copy it in by hand.
+reading, the line between record and testimony, and the two files — and it is
+the form a pull request opens on by default, so there is nothing to add to any
+URL and nothing to remember. That is deliberate: the door the book offers from
+the page cannot ask for a template by name, and a reader who has just written
+a reading is the contributor least able to go looking for the right form. It is
+[`.github/pull_request_template.md`](.github/pull_request_template.md) if you
+would rather read it first.
 
 ## The sigla
 
@@ -212,7 +213,14 @@ fluency every time.
   would reach a reader as a missing reading or an empty contents. The deploy and
   every PR preview run it too.
 - Pull requests get a live preview deployed automatically.
-- Offering commentary? Open the pull request with the commentary template —
-  add `?template=commentary.md&expand=1` to the compare URL.
+- Offering commentary? There is nothing to do: the commentary form
+  ([`.github/pull_request_template.md`](.github/pull_request_template.md)) is
+  what a pull request opens on by default, whichever door you came through —
+  including **Add your commentary** at the foot of a passage, which is the one
+  route that cannot ask for a template by name.
+- Changing the machinery — the pages, the notation, the tooling? That form is
+  [`.github/PULL_REQUEST_TEMPLATE/code.md`](.github/PULL_REQUEST_TEMPLATE/code.md):
+  add `?template=code.md&expand=1` to the compare URL, or paste it in over the
+  default. It asks how the round trip survives and which checks were run.
 - For substantial commentary or a new curated entry, opening an issue first is
   a good way to check it fits before writing it.

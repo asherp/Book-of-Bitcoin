@@ -50,7 +50,7 @@ export function isHidden(el, root) {
 // as a date, which differs in every block that carries one and could only be
 // matched by a prefix loose enough to catch anything: 'time:template'. And a
 // pool's signature is whatever that pool wrote -- the mark is the quotation
-// itself: 'sig:pool'. A margin's run of zeros writes ⓪ with a byte count,
+// itself: 'sig:pool'. A run of zeros writes ⓪ with a byte count,
 // which the chapter head's ⓪ⁿ (zero BITS of the block hash) would answer for
 // on a prefix match, so it takes 'zero:run' and opens its own row.
 export function collectMarks(root) {

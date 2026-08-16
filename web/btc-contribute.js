@@ -27,24 +27,31 @@
 //   start    /new/<branch>?filename=…&value=…   A reader with no fork of the
 //            repository. GitHub forks it for them, opens the file already
 //            named and already carrying its licence header, and offers a pull
-//            request when they commit. This route cannot carry a pull request
-//            template: there is no compare URL for the parameter to ride on.
+//            request when they commit. This route cannot ask for a template:
+//            there is no compare URL for the parameter to ride on, and the
+//            compare page GitHub takes them to afterwards is its own. So what
+//            this reader meets is whatever the repository default is -- and
+//            since this is the only door the book itself offers, the default
+//            is the commentary form (.github/pull_request_template.md).
 //
-//   propose  /compare?expand=1&template=commentary.md   A contributor who has
-//            a branch already. This is the door the commentary template comes
-//            through, and it is why the template is a NAMED one, under
-//            .github/PULL_REQUEST_TEMPLATE/, rather than the repository
-//            default: a default would hand every code contributor a form
-//            about record and testimony. Named templates apply only when
-//            asked for by name, and this is what asks.
+//   propose  /compare?expand=1   A contributor who has a branch already. The
+//            same form arrives here by the same route: it is the default, so
+//            nothing has to be asked for by name.
 //
-// `body` is deliberately never passed. On a compare URL it OVERRIDES
-// `template`, so prefilling the passage into the body would quietly cost the
+// Which settles what the default has to be. A template is either the one
+// everybody gets without asking or the one somebody knows to ask for, and only
+// one of the two doors can ask -- so the form that cannot be asked for is the
+// form that must be default. A change to the machinery has the other, named
+// (.github/PULL_REQUEST_TEMPLATE/code.md, ?template=code.md), because a
+// contributor writing code is already at a compare URL with a parameter on it
+// and can carry one more.
+//
+// `body` is deliberately never passed. On a compare URL it OVERRIDES the
+// template, so prefilling the passage into the body would quietly cost the
 // form — the passage rides in `title` instead, which does not conflict.
 
 export const REPO = 'https://github.com/asherp/book-of-bitcoin';
 const BRANCH = 'main';
-const TEMPLATE = 'commentary.md';
 
 // Only the characters a file name should carry, from whatever the passage is
 // called: a curated title where it has one, so the file lands beside its
@@ -82,7 +89,7 @@ export function contributionLinks({ citation, latin, title = null } = {}) {
   const named = title ? `${citation} — ${title}` : citation;
   return {
     start: `${REPO}/new/${BRANCH}?${query({ filename: commentaryPath({ latin, title }), value: stub(named) })}`,
-    propose: `${REPO}/compare?${query({ expand: 1, template: TEMPLATE, title: `Commentary: ${named}` })}`,
+    propose: `${REPO}/compare?${query({ expand: 1, title: `Commentary: ${named}` })}`,
     guide: `${REPO}/blob/${BRANCH}/CONTRIBUTING.md#commentary-and-annotations`,
   };
 }

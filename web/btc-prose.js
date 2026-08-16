@@ -790,6 +790,16 @@ function counterPieces(hex) {
 // counter, and interrupting the prose to mark one would cost more than it
 // saves; at four the run is the pool's layout showing through, and the prose
 // would otherwise be three words of nothing.
+//
+// The same floor holds one register down, in the witness and in a script's own
+// pushes, because the reason does: the trade is between a count that restores
+// the bytes and a paragraph that repeats one word. What differs is only what
+// left the room empty. A Taproot control block carries an internal key chosen
+// as a nothing-up-my-sleeve value -- the activation-day spends at ■709635 use
+// 00…01, which is 23 abandons -- and an inscription's payload carries the
+// zero-padding of whatever image it is, which runs to hundreds of bytes. The
+// second is where nearly all of them are: sampled across the segwit era, runs
+// in witness prose are rare per input and long when they land.
 const ZERO_MIN_RUN = 4;
 
 // A byte string -> its runs of zeros and the spans between them, in order,
@@ -816,7 +826,27 @@ export function splitZeroRuns(hex, min = ZERO_MIN_RUN) {
   return parts;
 }
 
-const zeroRunMark = (n) => `<span class="op op-zeros" title="${n} zero bytes — space the pool's template left unfilled. The count restores the bytes exactly">⓪${toSuperscript(n)}</span>`;
+// What a run of zeros is depends on where it was found, and the mark's hover is
+// the one place that can say so: in a coinbase it is room a pool's template
+// left unfilled, and anywhere else the bytes state only that they are zero.
+const ZERO_MARGIN = "space the pool's template left unfilled";
+const zeroRunMark = (n, why = null) => `<span class="op op-zeros" title="${n} zero bytes${why ? ` — ${why}` : ''}. The count restores the bytes exactly">⓪${toSuperscript(n)}</span>`;
+
+// A run of bytes bound for prose -> its rendering, with any run of four or more
+// zeros lifted out under ⓪ⁿ and only what is left handed to the engine. Every
+// byte still reaches the page exactly once and in order; the mark and the prose
+// each carry their own, so the run rejoins exactly as it was.
+//
+// The engine is called once per surviving span rather than once per run, which
+// is what the deferred encoders already assume -- each span gets its own
+// placeholder, and payloadWords accumulates across them.
+function sayBytes(hex, collect) {
+  if (!hex) return '';
+  return splitZeroRuns(hex)
+    .map((p) => (p.zeros !== undefined ? zeroRunMark(p.zeros) : collect(p.hex)))
+    .filter(Boolean)
+    .join(' ');
+}
 
 // The signature mark: the pool's own name, quoted to its exact extent, with
 // who wrote it riding the mark rather than printed in the passage. The name is
@@ -864,7 +894,7 @@ function renderMinerMargin(hex, collect) {
   return merged
     .flatMap((p) => (p.hex === undefined ? [p] : splitZeroRuns(p.hex)))
     .flatMap((p) => (p.hex === undefined ? [p] : counterPieces(p.hex)))
-    .map((p) => (p.zeros !== undefined ? zeroRunMark(p.zeros)
+    .map((p) => (p.zeros !== undefined ? zeroRunMark(p.zeros, ZERO_MARGIN)
       : p.counter !== undefined ? rawCounterMark(p.counter)
         : p.hex !== undefined ? collect(p.hex)
           : p.pool ? signatureMark(p) : `“${quoteText(p.text)}”`))
@@ -1055,10 +1085,10 @@ export function renderScript(hex, collect, { eligible = false, nested = false, p
       // (p⁶⁵), so the datum's kind leads and its length rides after it; a bare
       // push keeps the superscript leading, before its prose.
       const dtMark = scriptDataMark(t.push, compact, prevOp, toks[i + 1]?.op);
-      parts.push(dtMark ? dtMark + mark : mark, collect(compact || t.push));
+      parts.push(dtMark ? dtMark + mark : mark, sayBytes(compact || t.push, collect));
     } else {
       pre = 'done';
-      parts.push(collect(t.trunc));                           // malformed tail -- carry it as prose
+      parts.push(sayBytes(t.trunc, collect));                 // malformed tail -- carry it as prose
     }
   });
   // The break rides on the last preamble mark rather than standing as its own
@@ -1171,10 +1201,10 @@ function renderControlBlock(hex, encode) {
   const ctrlByte = `<span class="op" title="control byte — tapleaf version 0x${ver} (BIP341’s tapscript leaf is 0xc0), output-key parity ${parity}">v${ver}${parity ? '₁' : '₀'}</span>`;
   const parts = [
     dataMark('c', 'control block — a Taproot script-path reveal') + ' ' + ctrlByte,
-    dataMark('p', 'public key — the Taproot internal key') + ' ' + encode(hex.slice(2, 66)),
+    dataMark('p', 'public key — the Taproot internal key') + ' ' + sayBytes(hex.slice(2, 66), encode),
   ];
   const path = hex.slice(66);                                 // zero or more 32-byte sibling hashes
-  if (path) parts.push(dataMark('⋔', 'merkle proof — the sibling hashes proving the revealed leaf is committed in the taptree') + ' ' + encode(path));
+  if (path) parts.push(dataMark('⋔', 'merkle proof — the sibling hashes proving the revealed leaf is committed in the taptree') + ' ' + sayBytes(path, encode));
   return parts.join(' ');
 }
 
@@ -1191,7 +1221,7 @@ export function renderWitness(items, encode) {
   return items
     .map((hex, i) => {
       if (!hex) return '<span class="wit-empty">∅</span>';    // an empty stack item
-      if (i === annexIdx) return dataMark('a', 'annex — reserved Taproot spend data (BIP341)') + ' ' + encode(hex);
+      if (i === annexIdx) return dataMark('a', 'annex — reserved Taproot spend data (BIP341)') + ' ' + sayBytes(hex, encode);
       if (scriptIdxs.has(i)) {
         const isTapscript = i + 1 < items.length && isControlBlock(items[i + 1]);
         return (isTapscript ? dataMark('t', 'tapscript — a Taproot leaf, revealed as opcodes') : dataMark('w', 'witness script — revealed as opcodes'))
@@ -1201,7 +1231,7 @@ export function renderWitness(items, encode) {
       const compact = derToCompact(hex);                      // a DER signature is stripped to r‖s‖sighash
       const dm = (compact || isSignature(hex)) ? dataMark('s', 'signature')
         : isPubkey(hex) ? dataMark('p', 'public key') : '';
-      return (dm ? dm + ' ' : '') + encode(compact || hex);
+      return (dm ? dm + ' ' : '') + sayBytes(compact || hex, encode);
     })
     .join(WIT_SEP);
 }

@@ -5,6 +5,15 @@ A pull request offering a reading: a note on a passage, a name for a
 transaction, a correction to the historical record. CONTRIBUTING.md is the
 long form of everything below; this is the short form, to fill in.
 
+This is the form every pull request opens on, because the door the book offers
+a reader — "Add your commentary", at the foot of every passage — cannot carry
+a template parameter, and a reader who has something to say about a page
+should meet the questions worth asking about a reading rather than a form
+about someone else's work. Changing the book's machinery instead — the pages,
+the notation, the tooling? That form is
+.github/PULL_REQUEST_TEMPLATE/code.md, reached with `?template=code.md&expand=1`
+on the compare URL, or paste it in over this one.
+
 Delete any section that does not apply, and delete these comments as you go.
 -->
 
