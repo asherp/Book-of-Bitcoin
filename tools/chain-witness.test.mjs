@@ -479,3 +479,27 @@ test('the leaf never calls an id a broken script, and Read still opens it', asyn
   assert.equal(classify('76a914ab').kind, null);
   assert.deepEqual(scriptFault('76a914ab'), { reason: 'truncated', at: 2, remain: 2 });
 });
+
+// ─── ?q= draws while the module is still evaluating ──────────────────────
+
+test('a card drawn from ?q= reaches nothing that is not initialized yet', async () => {
+  const page = await searchPage();
+  const body = /<script type="module">([\s\S]*?)<\/script>/.exec(page);
+  assert.ok(body, 'the leaf no longer carries a module');
+  const lines = body[1].split('\n');
+  const kick = lines.findIndex((l) => l.startsWith('if (asked)'));
+  assert.ok(kick > 0, 'the leaf no longer draws what ?q= names');
+  // ?q= is the one path that draws a card DURING module evaluation — every
+  // other draw is a keystroke, long after it. So everything drawTerm reaches
+  // has to be initialized by the time this line runs, and const/let are not
+  // hoisted: a helper declared below it is in its temporal dead zone, and the
+  // draw throws before it can paint. That is not a hypothetical. The Search
+  // item on a locking script's menu opens ?q=<hex>, and it opened a blank leaf
+  // while pasting the same bytes worked, because the notation key's helpers
+  // were declared underneath.
+  const late = lines.slice(kick + 1)
+    .map((l) => /^(?:const|let)\s+(\w+)/.exec(l))
+    .filter(Boolean).map((m) => m[1]);
+  assert.deepEqual(late, [],
+    `declared after the first draw, so a ?q= card cannot reach them: ${late.join(', ')}`);
+});
