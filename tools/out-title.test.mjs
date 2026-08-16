@@ -242,8 +242,14 @@ test('the message footnote is headed by its digest, said, and never by hex', asy
   }
   // Two things are worth taking from a digest: the number, and the
   // serialization it was taken over, so a reader can hash it and compare
-  // rather than take the page's word.
-  assert.match(page, /\['Copy hash', host\.dataset\.hash\], \['Copy preimage', host\.dataset\.preimage\]/);
+  // rather than take the page's word. The menu reads its items off the element
+  // now — the commitment check on this same leaf offers a third and calls all
+  // of them something else — but a host that names only these two still gets
+  // exactly these two, under these names.
+  assert.match(page, /\[d\.hashLabel \|\| 'Copy hash', d\.hash\]/);
+  assert.match(page, /\[d\.preimageLabel \|\| 'Copy preimage', d\.preimage\]/);
+  assert.match(page, /const items = \[[\s\S]{0,200}?d\.datum,?\s*\]/,
+    'the third value a check is made of is not offered');
 });
 
 test('nothing high-entropy on the leaf falls back to hex', async () => {

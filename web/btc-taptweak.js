@@ -82,9 +82,12 @@ export async function tapRoot(leafHash, path) {
 // a check nobody could carry out is not a check that failed. Callers draw a
 // verdict on true and false and no mark on null, which is the same rule the
 // rest of this book keeps for a value it cannot compute honestly.
-export async function tweakHolds(scriptHex, controlHex, outputKeyHex) {
+// The key this spend's own bytes give, and the root it passed through on the
+// way. Returned rather than only compared, so a reader can be shown the
+// working: the leaf, what it folded to, and the key that came out.
+export async function tweakedKeyOf(scriptHex, controlHex) {
   const cb = controlBlockOf(controlHex);
-  if (!cb || !scriptHex || !outputKeyHex) return null;
+  if (!cb || !scriptHex) return null;
   try {
     const leaf = await tapLeafHash(scriptHex, cb.version);
     if (!leaf) return null;
@@ -94,12 +97,18 @@ export async function tweakHolds(scriptHex, controlHex, outputKeyHex) {
     // x-only key means, and a 02-prefixed compressed key is how the public API
     // says it. A key off the curve throws, and throwing is a null below.
     const P = Point.fromBytes(bytesOf(`02${cb.internal}`));
-    const Q = P.add(Point.BASE.multiply(BigInt(`0x${t}`)));
-    const a = Q.toAffine();
-    const x = a.x.toString(16).padStart(64, '0');
-    // Both halves, because the x alone does not name a point: the control
-    // block wrote which of the two y's consensus meant, and a spend that got
-    // that bit wrong is not this output's.
-    return x === String(outputKeyHex).toLowerCase() && (a.y % 2n === 0n) === (cb.parity === 0);
+    const a = P.add(Point.BASE.multiply(BigInt(`0x${t}`))).toAffine();
+    return { leaf, root, tweak: t, key: a.x.toString(16).padStart(64, '0'), evenY: a.y % 2n === 0n };
   } catch { return null; }
+}
+
+export async function tweakHolds(scriptHex, controlHex, outputKeyHex) {
+  if (!outputKeyHex) return null;
+  const got = await tweakedKeyOf(scriptHex, controlHex);
+  if (!got) return null;
+  // Both halves, because the x alone does not name a point: the control block
+  // wrote which of the two y's consensus meant, and a spend that got that bit
+  // wrong is not this output's.
+  return got.key === String(outputKeyHex).toLowerCase()
+    && got.evenY === (controlBlockOf(controlHex).parity === 0);
 }
