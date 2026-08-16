@@ -941,9 +941,23 @@ export const commitmentText = (c) =>
   `${c.op === TWEAK ? TWEAK : glyph(c.op)} ${operands(c).join(' ')} `
   + `${glyph(OP_EQUALVERIFY)} ${datumText({ holes: [c.hole] })}`;
 
-export const commitmentHtml = (c, { ref = null } = {}) =>
+// The datum stands bare here, alone among the lines that name it. Elsewhere it
+// carries a road to the passage that holds it; on this one it must not, and for
+// two reasons that agree.
+//
+// The line is a control -- the whole of it opens the check's own menu, which
+// offers this very datum among the three values the claim is made of. A link
+// inside that is a second affordance on one mark: a click on the datum would
+// leave the page instead of handing over the bytes, and which it did would
+// depend on where in the line it landed.
+//
+// And a conclusion is not a naming. The title above says which datum this term
+// binds and sends a reader to where it is written; this line says what became
+// of it. Sending them away from a result they have just been shown is the one
+// move that would not help.
+export const commitmentHtml = (c) =>
   `${c.op === TWEAK ? opMark(TWEAK) : op(c.op)} ${operands(c).map(awaited).join(' ')} `
-  + `${op(OP_EQUALVERIFY)} ${datumMark(c.hole, ref)}`;
+  + `${op(OP_EQUALVERIFY)} ${datumMark(c.hole, null)}`;
 
 // ─── the pure form ───────────────────────────────────────────────────────
 //

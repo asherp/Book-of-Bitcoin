@@ -754,7 +754,7 @@ const spendRung = (t, opened, sayFn, section = null, brought = null, paired = fa
     ? `<div class="term-line term-checked">`
       + `<span class="hash-copy" tabindex="0" role="button"${menu} `
       + `title="click to copy the three values this check is made of">`
-      + `${held}${commitmentHtml(check, { ref })}</span></div>` : '';
+      + `${held}${commitmentHtml(check)}</span></div>` : '';
   return `<div class="term-spend">${reveal}`
     + `<div class="term-line term-quote">${rung.html}</div>`
     + `<div class="term-attrib"><span class="term-cite" title="${says}">—</span> ${where}</div>`
