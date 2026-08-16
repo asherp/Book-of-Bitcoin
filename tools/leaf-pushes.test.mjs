@@ -135,3 +135,25 @@ test('the leaf raises the same key, cut to the card', async () => {
   // sheet.
   assert.match(page, /if \(!notationSheet\?\.open\) return;/, 'a shut sheet is filtered anyway');
 });
+
+test('the class the filter cuts with is styled where every page can reach it', async () => {
+  // The failure this guards is silent and complete: applyKeyFilter only ever
+  // ADDS .key-cut, so a page holding the key's rows without the rule computes
+  // the whole cut and then shows every row. Nothing throws and nothing logs —
+  // the sheet simply opens unfiltered, which is what the search leaf did while
+  // the rule lived in the book's own stylesheet.
+  const css = await readFile(new URL('../web/notation.css', import.meta.url), 'utf8');
+  assert.match(css, /\.key-cut \{[^}]*display: none[^}]*\}/,
+    'the cut is styled somewhere a second page would have to remember to copy');
+  // …and nowhere else, or the two copies can drift and only one page notices.
+  for (const name of ['bitcoin-book.html', 'bitcoin-front.html', 'bitcoin-search.html']) {
+    const page = await readFile(new URL(`../web/${name}`, import.meta.url), 'utf8');
+    assert.ok(!/\.key-cut\s*\{/.test(page.slice(0, page.indexOf('</style>'))),
+      `${name} styles .key-cut itself instead of taking notation.css's`);
+    // Every page that raises the key must load the sheet that hides with it.
+    if (/btc-key-filter\.js/.test(page)) {
+      assert.match(page, /href="\.\/notation\.css"/,
+        `${name} filters the key without loading what cuts it`);
+    }
+  }
+});
