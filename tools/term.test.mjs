@@ -932,11 +932,17 @@ test('the commitment says what to hash and against what, and declines the rest',
   // The two renderings never drift, as everywhere else in this module.
   const strip = (html) => html.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
   assert.equal(strip(commitmentHtml(c)), commitmentText(c));
-  // …and the datum takes the road to the passage that holds it, exactly as it
-  // does on every other line that names it: the h²⁰ here IS the lock's.
+  // …and the datum stands bare here, alone among the lines that name it. The
+  // check is a control -- the whole line opens a menu offering this very datum
+  // -- so a road inside it would be a second affordance on one mark, and which
+  // one a click got would depend on where in the line it landed. A conclusion
+  // is not a naming either: the title above says where this datum is written,
+  // and this line says what became of it.
+  assert.ok(!/<a /.test(commitmentHtml(c)), 'the datum carries a road out of a control');
   const ref = { href: './bitcoin-book.html?ref=v4b78c160s1250o0', said: 'written at IV β78 ■160 §1250.0' };
-  assert.match(commitmentHtml(c, { ref }), /<a class="term-ref"/);
-  assert.ok(!/<a /.test(commitmentHtml(c)), 'and none where the chain named no passage');
+  assert.ok(!/<a /.test(commitmentHtml(c, { ref })), 'a caller can still hand it one');
+  // The road belongs to the lines that NAME the datum, and still reaches them.
+  assert.match(addressHtml(termOfScript(addressScriptHex(TR)), { ref }), /<a class="term-ref"/);
 });
 
 // ─── the ord envelope, as the form it is ─────────────────────────────────
