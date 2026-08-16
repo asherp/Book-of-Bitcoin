@@ -275,9 +275,13 @@ button:hover { background: var(--accent-2); }
    is the one line on this card the page settled rather than derived. The tick
    takes the gold every made mark takes; a failure takes the red, since a check
    that does not hold and looks like one that does is worse than no check at
-   all. It reads from the left, where a claim begins, rather than following the
-   citation to the right margin. */
-.term-checked { margin-top: 6px; text-align: left; }
+   all. Centred under the passage, as the titles above are centred over theirs:
+   it is about that quotation and the one a section before it, not a line of
+   either, so it sits on neither margin.
+   The span inside is the handle, and inline — so a click lands on the marks
+   rather than anywhere along the width of the card. */
+.term-checked { margin-top: 6px; text-align: center; }
+.term-checked .hash-copy { cursor: pointer; }
 .term-held { color: var(--accent); }
 /* The message ⌘ names, set as a footnote: not a quotation — no chain wrote
    these bytes in this order, the page serialized them — so it takes no rule.
@@ -431,7 +435,7 @@ import { messageOf, sighashName, sha256 } from './btc-sighash.js';
 // RIPEMD-160 is in no browser, so the book carries one -- written for reading
 // OpenTimestamps proofs, which need it for the same reason Bitcoin does.
 import { digestOf } from './btc-ots.js';
-import { tweakHolds } from './btc-taptweak.js';
+import { tweakHolds, tweakedKeyOf } from './btc-taptweak.js';
 import { spellHtml, read, looksSpelled, isWholeScript, scriptFault } from './btc-address-form.js';
 const input = document.getElementById('block-input');
 const termEl = document.getElementById('term');
@@ -679,8 +683,30 @@ const spendRung = (t, opened, sayFn, section = null, brought = null, paired = fa
         + `the output published">✓</span> `
       : `<span class="term-check term-check-differs" title="it does not hold — the chain accepted `
         + `this spend, so trust it and not this page">☒</span> `);
+  // …and the line is a handle. The check states that one value gives another;
+  // clicking it hands over the three bytes that claim is made of — what was
+  // taken, what came out, and the datum the output published — so a reader can
+  // take the same hash, or the same tweak, and need not take this page's word.
+  // That is what the claim was always for; until now the only road to the bytes
+  // was the passages either side of it.
+  //
+  // What each is called depends on which check this is: a keyhash form took a
+  // key, a script-hash form took a script, and taproot's script path took a
+  // leaf and its control block through a tweak rather than a digest.
+  const took = check && (check.op === '⋔' ? 'the leaf'
+    : check.name === 'p' ? 'the key' : 'the script');
+  const gave = check && (check.op === '⋔' ? 'the output key it tweaks to' : 'the hash it gives');
+  const menu = check
+    ? ` data-menu-head="${escapeHtml(`${took}, and what it gives`)}"`
+      + ` data-preimage="${escapeHtml(check.of || '')}" data-preimage-label="Copy ${escapeHtml(took)}"`
+      + (check.got ? ` data-hash="${escapeHtml(check.got)}" data-hash-label="Copy ${escapeHtml(gave)}"` : '')
+      + ` data-datum="${escapeHtml(check.against || '')}" data-datum-label="Copy what the output published"`
+    : '';
   const checked = check
-    ? `<div class="term-line term-checked">${held}${commitmentHtml(check, { ref })}</div>` : '';
+    ? `<div class="term-line term-checked">`
+      + `<span class="hash-copy" tabindex="0" role="button"${menu} `
+      + `title="click to copy the three values this check is made of">`
+      + `${held}${commitmentHtml(check, { ref })}</span></div>` : '';
   return `<div class="term-spend">${reveal}`
     + `<div class="term-line term-quote">${rung.html}</div>`
     + `<div class="term-attrib"><span class="term-cite" title="${says}">—</span> ${where}</div>`
@@ -813,13 +839,24 @@ const messageFoot = (message, sayFn = null, reader = null) => {
 // unreadable, and never set in type.
 let copyMenu = null;
 const closeCopyMenu = () => { copyMenu?.remove(); copyMenu = null; };
+// Three values at most, and a host offers whichever it has: the digest names
+// two (the hash and the serialization it was taken over), a check names three
+// (what was taken, what came out, and the datum the output published, so the
+// three a reader needs to carry it out themselves are all one click away).
+// The labels ride on the element too, since what to call these depends on
+// which check it is -- a preimage on the message, a key or a script here.
 function openCopyMenu(host) {
   closeCopyMenu();
-  const items = [['Copy hash', host.dataset.hash], ['Copy preimage', host.dataset.preimage]];
+  const d = host.dataset;
+  const items = [
+    [d.hashLabel || 'Copy hash', d.hash],
+    [d.preimageLabel || 'Copy preimage', d.preimage],
+    [d.datumLabel || 'Copy datum', d.datum],
+  ];
   const menu = document.createElement('div');
   menu.className = 'hash-menu';
   menu.setAttribute('role', 'menu');
-  menu.innerHTML = '<div class="hash-menu-head">the message</div>';
+  menu.innerHTML = `<div class="hash-menu-head">${escapeHtml(d.menuHead || 'the message')}</div>`;
   for (const [label, value] of items) {
     if (!value) continue;
     const b = document.createElement('button');
@@ -1000,7 +1037,9 @@ async function commitmentCheck(t, opened) {
     // and null is not false: a claim nobody could settle is not one that
     // failed, and the two must never draw the same mark.
     if (c.taken === 'tweak') {
-      return { ...c, got: null, holds: await tweakHolds(c.of, c.control, c.against) };
+      const t = await tweakedKeyOf(c.of, c.control);
+      return { ...c, got: t ? t.key : null,
+        holds: await tweakHolds(c.of, c.control, c.against) };
     }
     const once = await sha256(c.of);
     const got = c.op === 0xa8 ? once : await digestOf(bytesOfHex(once), 'ripemd160');
