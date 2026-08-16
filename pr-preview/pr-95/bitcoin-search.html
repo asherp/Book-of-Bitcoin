@@ -734,8 +734,18 @@ const spendRung = (t, opened, sayFn, section = null, brought = null, paired = fa
   const took = check && (check.op === '⋔' ? 'the leaf'
     : check.name === 'p' ? 'the key' : 'the script');
   const gave = check && (check.op === '⋔' ? 'the output key it tweaks to' : 'the hash it gives');
+  // The head says the outcome, so it says it three ways: the page confirms
+  // only what it carried out and got. "Confirmed" over a check that failed --
+  // or over one that could not be taken at all -- would be the page claiming a
+  // verdict it does not have, which is the one thing this line must never do.
+  // What each is measured against is the same phrase on both roads: a keyhash
+  // form published a datum and taproot an output key, and both are what the
+  // output put on chain.
+  const outcome = check && (check.holds === true ? `confirmed — ${took} matches`
+    : check.holds === false ? `${took} does not match`
+    : `not taken — ${took}, and`);
   const menu = check
-    ? ` data-menu-head="${escapeHtml(`${took}, and what it gives`)}"`
+    ? ` data-menu-head="${escapeHtml(`${outcome} what the output published`)}"`
       + ` data-preimage="${escapeHtml(check.of || '')}" data-preimage-label="Copy ${escapeHtml(took)}"`
       + (check.got ? ` data-hash="${escapeHtml(check.got)}" data-hash-label="Copy ${escapeHtml(gave)}"` : '')
       + ` data-datum="${escapeHtml(check.against || '')}" data-datum-label="Copy what the output published"`
