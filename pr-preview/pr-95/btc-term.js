@@ -904,14 +904,16 @@ export function commitmentOf(t, items, { scriptsig = null } = {}) {
   // belongs on this line and nowhere else on the card -- it is an operand of
   // the check, not a thing the title names.
   //
-  // Stated, and never taken. Settling it is elliptic curve arithmetic rather
-  // than a hash, so the page writes the claim consensus checked and does not
-  // pretend to have checked it again: `taken` says which, and a caller that
-  // cannot settle a check must not mark one.
+  // Settling it is a point addition rather than a hash, so it is carried out
+  // elsewhere (btc-taptweak.js, over the vendored curve) and this only says
+  // what to take it over: the leaf, and the control block it is proved by.
+  // `taken` is what tells a caller which road to send a check down.
   if (alt.runs && alt.brings.includes(CONTROL)) {
     const of = revealedOf(t, items, { scriptsig });
-    return of ? { op: TWEAK, name: alt.runs, names: [alt.runs, CONTROL], of,
-      hole: t.holes[0], against: t.holes[0].argument, taken: false } : null;
+    const control = items[items.length - 1] ?? null;
+    return of && control ? { op: TWEAK, name: alt.runs, names: [alt.runs, CONTROL], of,
+      control: String(control).toLowerCase(), hole: t.holes[0],
+      against: t.holes[0].argument, taken: 'tweak' } : null;
   }
   const op = COMMITS[t.id];
   if (!op) return null;
@@ -924,7 +926,7 @@ export function commitmentOf(t, items, { scriptsig = null } = {}) {
   const name = alt.runs ?? 'p';
   if (!of) return null;
   return { op, of, name, names: [name], hole: t.holes[0],
-    against: t.holes[0].argument, taken: true };
+    against: t.holes[0].argument, taken: 'hash' };
 }
 
 // The check, written out: the operation, what it is taken over, and the datum

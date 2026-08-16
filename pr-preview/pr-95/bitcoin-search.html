@@ -431,6 +431,7 @@ import { messageOf, sighashName, sha256 } from './btc-sighash.js';
 // RIPEMD-160 is in no browser, so the book carries one -- written for reading
 // OpenTimestamps proofs, which need it for the same reason Bitcoin does.
 import { digestOf } from './btc-ots.js';
+import { tweakHolds } from './btc-taptweak.js';
 import { spellHtml, read, looksSpelled, isWholeScript, scriptFault } from './btc-address-form.js';
 const input = document.getElementById('block-input');
 const termEl = document.getElementById('term');
@@ -992,11 +993,15 @@ async function commitmentCheck(t, opened) {
   try {
     const c = commitmentOf(t, opened.args ?? [], { scriptsig: opened.scriptsig });
     if (!c) return null;
-    // A check the page cannot carry out is still a check worth stating: the
-    // taptweak is what consensus verified, and the line says so with no verdict
-    // beside it. `holds` is null rather than false -- a claim nobody took is not
-    // a claim that failed, and the two must never draw the same mark.
-    if (!c.taken) return { ...c, got: null, holds: null };
+    // Taproot's road: the leaf hashed up its branch and added to the internal
+    // key, which is a point addition rather than a digest and is carried out
+    // over the vendored curve. It answers null where it cannot be taken at all
+    // -- an internal key off the curve, bytes that are not a control block --
+    // and null is not false: a claim nobody could settle is not one that
+    // failed, and the two must never draw the same mark.
+    if (c.taken === 'tweak') {
+      return { ...c, got: null, holds: await tweakHolds(c.of, c.control, c.against) };
+    }
     const once = await sha256(c.of);
     const got = c.op === 0xa8 ? once : await digestOf(bytesOfHex(once), 'ripemd160');
     return { ...c, got, holds: got === c.against };
