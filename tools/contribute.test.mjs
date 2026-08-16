@@ -8,18 +8,25 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { access } from 'node:fs/promises';
 
 const { contributionLinks, commentaryPath, contributeHtml, REPO } =
   await import('../web/btc-contribute.js');
 
 const PASSAGE = { citation: 'III β2 ■5 §85', latin: 'v3b2c5s85' };
 
-test('the pull request door asks for the commentary template by name', () => {
+test('the pull request door takes the commentary form as the default', () => {
   const { propose } = contributionLinks(PASSAGE);
   const url = new URL(propose);
   assert.equal(url.pathname, '/asherp/book-of-bitcoin/compare');
-  assert.equal(url.searchParams.get('template'), 'commentary.md');
   assert.equal(url.searchParams.get('expand'), '1');
+  // Nothing is asked for by name. The commentary form is the repository
+  // default (.github/pull_request_template.md) because the door the book
+  // itself offers -- `start`, which has no compare URL -- cannot ask, and a
+  // reader with something to say about a passage has to land on the right
+  // questions. Asking here for a template that no longer sits under
+  // .github/PULL_REQUEST_TEMPLATE/ would name a file that is not there.
+  assert.equal(url.searchParams.get('template'), null);
   // The passage rides in the title, never the body: on a compare URL `body`
   // overrides `template`, so prefilling one costs the other.
   assert.equal(url.searchParams.get('body'), null);
@@ -42,6 +49,27 @@ test('the new-file door names the file and opens it under the licence', () => {
   const value = url.searchParams.get('value');
   assert.match(value, /^<!-- SPDX-License-Identifier: CC-BY-4\.0 -->/);
   assert.match(value, /III β2 ■5 §85/);
+});
+
+// The doors assume where the forms sit, and GitHub is silent when they move:
+// a default at the wrong path simply does not load, and a named template
+// asked for by a name nothing answers to falls back without a word. Both look
+// exactly like a contributor who did not fill the form in.
+test('the forms sit where the doors assume', async () => {
+  const at = (p) => access(new URL(`../${p}`, import.meta.url)).then(() => true, () => false);
+  // The commentary form is the DEFAULT, and the path is the whole of why:
+  // `start` cannot ask for a template, so what it cannot ask for is what has
+  // to arrive unasked.
+  assert.ok(await at('.github/pull_request_template.md'),
+    'the commentary form is no longer the repository default');
+  // A change to the machinery is asked for by name, from a compare URL that
+  // is already carrying parameters.
+  assert.ok(await at('.github/PULL_REQUEST_TEMPLATE/code.md'),
+    'the machinery form is not where ?template=code.md would look');
+  // And the commentary form is not ALSO named, which would be two files to
+  // keep in step and no way to notice when they stopped.
+  assert.equal(await at('.github/PULL_REQUEST_TEMPLATE/commentary.md'), false,
+    'the commentary form is in two places at once');
 });
 
 test('a curated passage is named for itself, an uncurated one for its citation', () => {
