@@ -146,3 +146,15 @@
 .pattern-table.two-party { grid-template-columns: repeat(7, max-content); }
 .pattern-table .seq.calc .op, .pattern-table .seq.calc .ph { color: var(--ink); font-weight: 400; }
 @media (max-width: 480px) { .glyph-grid { grid-template-columns: 1fr; } }
+
+/* The notation key, cut to the page: a row the page does not use leaves the
+   flow entirely. The pattern tables are grids whose cells are direct children,
+   so anything short of display:none would leave a hole in their columns.
+   Here rather than on the page that raises the sheet, because it is the other
+   half of applyKeyFilter (btc-key-filter.js) and useless apart from it: the
+   filter only ever adds this class, so a page that loaded the key's rows
+   without this rule would compute the whole cut and then show every row. That
+   is exactly what the search leaf did until this moved. The sigla leaf loads
+   this sheet too and never calls the filter, so nothing there wears the class
+   and the key at rest stays whole. */
+.key-cut { display: none !important; }

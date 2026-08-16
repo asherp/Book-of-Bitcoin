@@ -35,6 +35,7 @@ import { OPCODE_SYMBOLS, OPCODE_NAMES, toSuperscript, toSubscript } from './btc-
 import { outputTemplates } from './btc-templates.js';
 import { tokenizeScript } from './btc-tx.js';
 import { dataLetter } from './btc-address-form.js';
+import { parseEnvelopes } from './btc-inscriptions.js';
 
 // The length variable's mark, on the datum's shoulder where every byte count in
 // this book rides. U+207F, the superscript n -- a variable where a figure
@@ -107,6 +108,11 @@ const TITLES = { h: 'hash', p: 'public key', d: 'data',
   c: 'control block — the leaf’s proof to the output key' };
 
 export function termOfScript(scriptHex) {
+  // A form the book has a grammar for is named by it. Anything else falls
+  // through to the anonymous reading below, which knows only pushes and
+  // opcodes -- true of every script, and the less it can say.
+  const ord = ordTermOf(scriptHex);
+  if (ord) return ord;
   let toks;
   try { toks = tokenizeScript(scriptHex); } catch { return null; }
   if (!toks.length || toks.some((tk) => tk.trunc !== undefined)) return null;
@@ -155,6 +161,106 @@ export function termOfScript(scriptHex) {
   };
 }
 
+// ─── the ord envelope, as the form it is ─────────────────────────────────
+//
+// An inscription is not a script consensus distinguishes: it is an unexecuted
+// branch inside a tapscript, skipped by every validating node precisely
+// because the IF is false. What ord fixes is the grammar -- OP_FALSE OP_IF
+// "ord", tagged fields, an empty push, the body, OP_ENDIF -- so a term over
+// these bytes binds what varies and prints what the format decides.
+//
+// "ord" and a field's tag number are the same in every inscription ever made.
+// Binding them would parameterize two values that cannot differ, so they are
+// constants of the form: written bytes, and they take the gold every written
+// byte takes rather than a binder's ink.
+//
+// The body is one binder however many pushes carry it. A tapscript push holds
+// at most 520 bytes and ord concatenates the chunks, so the split is an
+// artefact of the cap rather than a field of the envelope; the hole keeps the
+// chunks, so the bytes can still be counted and put back.
+//
+// The grammar is read by parseEnvelopes (btc-inscriptions.js), which is the
+// book's one reader for it -- a second would be a second opinion about what an
+// inscription is. Null for anything that is not exactly one envelope in the
+// shape ord defines: declining beats guessing.
+const ORD_TAGS = { 1: 'content type', 2: 'pointer', 3: 'parent', 5: 'metadata',
+  7: 'metaprotocol', 9: 'content encoding', 11: 'delegate' };
+const ORD_LETTER = { 1: 'y' };
+const hexBytes = (hex) => {
+  const out = new Uint8Array(hex.length / 2);
+  for (let i = 0; i < out.length; i++) out[i] = parseInt(hex.slice(i * 2, i * 2 + 2), 16);
+  return out;
+};
+// A constant's own bytes, push opcode and all. Direct pushes only: every
+// constant the grammar fixes is a few bytes, and a form whose constant needed
+// OP_PUSHDATA is not one this table describes.
+const pushOf = (hex) => {
+  const n = hex.length / 2;
+  return n >= 1 && n <= 75 ? n.toString(16).padStart(2, '0') + hex.toLowerCase() : null;
+};
+
+export function ordTermOf(scriptHex) {
+  let toks;
+  try { toks = tokenizeScript(scriptHex); } catch { return null; }
+  if (!toks.length || toks.some((tk) => tk.trunc !== undefined)) return null;
+  if (parseEnvelopes(hexBytes(scriptHex)).length !== 1) return null;
+  const body = [], holes = [];
+  let i = 0;
+  // The key the tapscript actually spends by, standing before the branch that
+  // nobody runs. Read by its place, not its shape: a 32-byte push under
+  // OP_CHECKSIG is an x-only key whatever its bytes look like.
+  if (toks[0]?.push?.length === 64 && toks[1]?.op === 0xac) {
+    holes.push({ letter: 'p', name: 'p', bytes: 32, argument: toks[0].push,
+      title: 'public key — the tapscript’s own' });
+    body.push(null, 0xac);
+    i = 2;
+  }
+  if (toks[i]?.op !== 0x00 || toks[i + 1]?.op !== 0x63) return null;
+  body.push(0x00, 0x63);
+  i += 2;
+  const name = toks[i];
+  if (name?.push !== '6f7264') return null;                       // "ord"
+  const named = pushOf(name.push);
+  if (!named) return null;
+  body.push({ hex: named, mark: 'ord', said: 'ord — the tag every envelope opens with' });
+  i += 1;
+  // Tagged fields, pair by pair, until the empty push that opens the body.
+  while (i < toks.length && toks[i]?.op !== 0x68) {
+    if (toks[i].op === 0x00) { body.push(0x00); i += 1; break; }
+    const tag = toks[i], value = toks[i + 1];
+    if (tag.push === undefined || value?.push === undefined) return null;
+    const n = parseInt(tag.push.slice(0, 2), 16);
+    const encoded = pushOf(tag.push);
+    if (!encoded) return null;
+    const what = ORD_TAGS[n] ?? 'a field ord does not define';
+    body.push({ hex: encoded, mark: String(n), said: `${what} — the tag it is written under` });
+    const letter = ORD_LETTER[n] ?? 'd';
+    holes.push({ letter, name: letter, bytes: value.push.length / 2,
+      argument: value.push, title: what });
+    body.push(null);
+    i += 2;
+  }
+  const chunks = [];
+  while (i < toks.length && toks[i]?.op !== 0x68) {
+    if (toks[i].push === undefined) return null;
+    chunks.push(toks[i].push);
+    i += 1;
+  }
+  if (toks[i]?.op !== 0x68) return null;
+  if (chunks.length) {
+    const all = chunks.join('');
+    holes.push({ letter: 'b', name: 'b', bytes: all.length / 2, argument: all, chunks,
+      title: 'the inscription body' });
+    body.push(null);
+  }
+  body.push(0x68);
+  if (!holes.length) return null;
+  return {
+    id: 'ord', label: 'Ord', holes, body, script: scriptHex,
+    binder: holes[0].name, bytes: holes[0].bytes, argument: holes[0].argument,
+  };
+}
+
 // One abstraction over one datum -- which is what an address can carry, and the
 // whole of what the key's Addresses group is about.
 export const addressable = (t) => !!t && t.holes.length === 1;
@@ -175,6 +281,9 @@ export function reduce(term, args) {
   if (list.length !== term.body.filter((code) => code === null).length) return null;
   let next = 0;
   const parts = term.body.map((code) => {
+    // A constant of a form carries its own bytes, push opcode and all, since
+    // nothing supplies it: it is what these bytes are rather than what varies.
+    if (code !== null && typeof code === 'object') return code.hex;
     if (code !== null) return code.toString(16).padStart(2, '0');
     const arg = list[next++];
     const n = arg.length / 2;
@@ -317,6 +426,7 @@ const RUN = Symbol('runs');      // ( r ), whatever the revealed script demands
 const AND = Symbol('and');       // ∧, the conjunction -- notation, not an opcode
 const OPEN = Symbol('('), CLOSE = Symbol(')');
 const TWEAK = '⋔';               // the taptweak, which no opcode spells
+const CONTROL = 'c';           // the control block's binder, in every demand that brings one
 
 const SIGNED = (key) => [OP_CHECKSIG, 's', key, MSG];
 const HASHED = (op, name) => [OPEN, op, name, OP_EQUALVERIFY, D, CLOSE, AND];
@@ -380,9 +490,7 @@ export function demandsOf(t) {
 // revealed script rides on top.
 const UNDER = '…';
 const UNDER_SAID = 'however many arguments the revealed script wants, pushed beneath it — '
-  + 'a script is a script, and this one runs on the same stack as any other. How many '
-  + 'is a property of bytes the output committed to only by their hash, so the term '
-  + 'writes that they are there and declines to count them';
+  + 'uncountable until the script is revealed, since the output committed only to its hash';
 
 // The binders of one alternative, in the order the spender pushes them. Read
 // off `runs`, which is what makes the … and the ( ) one claim rather than two.
@@ -399,10 +507,13 @@ const binderText = (alt) => (alt.runs ? `${UNDER} ` : '') + alt.brings.join(' ')
 const datumText = (t) => t.holes[0].name + toSuperscript(t.holes[0].bytes);
 const UNSAID = '…';
 
-const demandText = (t, alt, msg = UNSAID) => alt.demand.map((tok) => {
+// `runs`, given, stands in for the binder the demand names as the script that
+// still has to run: the revealed term written out where `( t )` stood, which
+// is the committed→revealed transition drawn as the reduction it is.
+const demandText = (t, alt, msg = UNSAID, runs = null) => alt.demand.map((tok) => {
   if (tok === D) return datumText(t);
   if (tok === MSG) return `( ⌘ ${msg} )`;
-  if (tok === RUN) return `( ${alt.runs} )`;
+  if (tok === RUN) return `( ${runs ?? alt.runs} )`;
   if (tok === AND) return '∧';
   if (tok === OPEN) return '(';
   if (tok === CLOSE) return ')';
@@ -510,32 +621,28 @@ const binderMarks = (alt) => (alt.runs ? `${under()} ` : '') + alt.brings.map(aw
 // "the chain wrote this or this runs" the conjunction is visibly neither. A
 // reader who wonders is told so in its hover.
 const AND_SAID = 'and — the notation’s conjunction, joining two things a spend must make true. '
-  + 'Not OP_BOOLAND, which shares its glyph: nothing on this line is a script, and the marks '
-  + 'that would be bytes are set in gold, which this one never takes';
+  + 'Not OP_BOOLAND, which shares its glyph but is set in gold';
 const andMark = () => `<span class="lam" title="${escapeHtml(AND_SAID)}">∧</span>`;
 
-const MSG_SAID = 'the message the signature is over — the transaction serialized as the '
-  + 'signature’s own sighash flag says, then hashed: twice through SHA-256 before taproot, '
-  + 'once under BIP341’s tag from it on. Everything about a spend that is signed '
-  + 'is in here, and everything that is not is malleable';
-const UNSAID_SAID = 'not named — no spend has been reached, so there is no serialization to set '
-  + 'and nothing here a reader could hash for themselves';
+const MSG_SAID = 'the message the signature is over — the transaction serialized as its sighash '
+  + 'flag says, then hashed: twice through SHA-256 before taproot, once under BIP341’s tag from '
+  + 'it on';
+const UNSAID_SAID = 'not named — no spend has been reached, so there is no serialization to set';
 const msgMark = (msg) => `${lam('(')} <span class="op" title="${escapeHtml(MSG_SAID)}">`
   + `${escapeHtml(glyph(0xaa))}</span> ${msg || `<span class="aw" title="${escapeHtml(UNSAID_SAID)}">${UNSAID}</span>`} ${lam(')')}`;
 
 // The tweak has no opcode behind it -- no script performs it, consensus does --
 // so it is named rather than glossed from the alphabet.
-const TWEAK_SAID = 'the taptweak — the leaf hashed up its branch with the control block’s '
-  + 'path and added to the internal key. No opcode does this; consensus does it before any '
-  + 'leaf is allowed to run';
+const TWEAK_SAID = 'the taptweak — the leaf hashed up its branch and added to the internal key. '
+  + 'No opcode does this; consensus does it before a leaf may run';
 const opMark = (tok) => (tok === TWEAK
   ? `<span class="op" title="${escapeHtml(TWEAK_SAID)}">${escapeHtml(TWEAK)}</span>`
   : op(tok));
 
-const demandHtml = (t, alt, msg, ref = null) => alt.demand.map((tok) => {
+const demandHtml = (t, alt, msg, ref = null, runs = null) => alt.demand.map((tok) => {
   if (tok === D) return datumMark(t.holes[0], ref);
   if (tok === MSG) return msgMark(msg);
-  if (tok === RUN) return `${lam('(')} ${awaited(alt.runs)} ${lam(')')}`;
+  if (tok === RUN) return `${lam('(')} ${runs ?? awaited(alt.runs)} ${lam(')')}`;
   if (tok === AND) return andMark();
   if (tok === OPEN) return lam('(');
   if (tok === CLOSE) return lam(')');
@@ -787,11 +894,29 @@ export const revealedHtml = (t, items, opts = {}) => revealed(t, items, opts, {
 const COMMITS = { p2pkh: OP_HASH160, p2wpkh: OP_HASH160, p2sh: OP_HASH160, p2wsh: OP_SHA256 };
 
 export function commitmentOf(t, items, { scriptsig = null } = {}) {
-  const op = COMMITS[t.id];
-  if (!op || !t.holes.length) return null;
+  if (!t.holes.length) return null;
   const which = pathTaken(t, items);
   if (which === null) return null;
   const alt = demandsOf(t)[which];
+  // Taproot's script path commits by a tweak rather than a digest: the leaf
+  // hashed up its branch with the control block's path, added to the internal
+  // key. It takes both items the spend brought, which is why the control block
+  // belongs on this line and nowhere else on the card -- it is an operand of
+  // the check, not a thing the title names.
+  //
+  // Settling it is a point addition rather than a hash, so it is carried out
+  // elsewhere (btc-taptweak.js, over the vendored curve) and this only says
+  // what to take it over: the leaf, and the control block it is proved by.
+  // `taken` is what tells a caller which road to send a check down.
+  if (alt.runs && alt.brings.includes(CONTROL)) {
+    const of = revealedOf(t, items, { scriptsig });
+    const control = items[items.length - 1] ?? null;
+    return of && control ? { op: TWEAK, name: alt.runs, names: [alt.runs, CONTROL], of,
+      control: String(control).toLowerCase(), hole: t.holes[0],
+      against: t.holes[0].argument, taken: 'tweak' } : null;
+  }
+  const op = COMMITS[t.id];
+  if (!op) return null;
   // A script-hash form committed to a script, and the spend handed it over; a
   // keyhash form committed to a key, which stands among the values it brought.
   // Either way the thing hashed is read by consensus's own placement, never by
@@ -800,18 +925,39 @@ export function commitmentOf(t, items, { scriptsig = null } = {}) {
     : items[suppliedNames(alt, items).indexOf('p')] ?? null;
   const name = alt.runs ?? 'p';
   if (!of) return null;
-  return { op, of, name, hole: t.holes[0], against: t.holes[0].argument };
+  return { op, of, name, names: [name], hole: t.holes[0],
+    against: t.holes[0].argument, taken: 'hash' };
 }
 
 // The check, written out: the operation, what it is taken over, and the datum
 // it must equal. The same marks the demand's own clause used, because it is
 // the same claim -- only now it is one the page has carried out rather than
 // one it is passing on.
-export const commitmentText = (c) =>
-  `${glyph(c.op)} ${c.name} ${glyph(OP_EQUALVERIFY)} ${datumText({ holes: [c.hole] })}`;
+// One operand or two: a hash is taken over the one thing that was hidden, and
+// a tweak over the leaf and the control block together.
+const operands = (c) => c.names ?? [c.name];
 
-export const commitmentHtml = (c, { ref = null } = {}) =>
-  `${op(c.op)} ${awaited(c.name)} ${op(OP_EQUALVERIFY)} ${datumMark(c.hole, ref)}`;
+export const commitmentText = (c) =>
+  `${c.op === TWEAK ? TWEAK : glyph(c.op)} ${operands(c).join(' ')} `
+  + `${glyph(OP_EQUALVERIFY)} ${datumText({ holes: [c.hole] })}`;
+
+// The datum stands bare here, alone among the lines that name it. Elsewhere it
+// carries a road to the passage that holds it; on this one it must not, and for
+// two reasons that agree.
+//
+// The line is a control -- the whole of it opens the check's own menu, which
+// offers this very datum among the three values the claim is made of. A link
+// inside that is a second affordance on one mark: a click on the datum would
+// leave the page instead of handing over the bytes, and which it did would
+// depend on where in the line it landed.
+//
+// And a conclusion is not a naming. The title above says which datum this term
+// binds and sends a reader to where it is written; this line says what became
+// of it. Sending them away from a result they have just been shown is the one
+// move that would not help.
+export const commitmentHtml = (c) =>
+  `${c.op === TWEAK ? opMark(TWEAK) : op(c.op)} ${operands(c).map(awaited).join(' ')} `
+  + `${op(OP_EQUALVERIFY)} ${datumMark(c.hole, null)}`;
 
 // ─── the pure form ───────────────────────────────────────────────────────
 //
@@ -905,7 +1051,7 @@ const glyph = (code) => OPCODE_SYMBOLS[code] ?? OPCODE_NAMES[code] ?? '?';
 const bodyText = (t, counted) => {
   let next = 0;
   return t.body.map((code) => {
-    if (code !== null) return glyph(code);
+    if (code !== null) return typeof code === 'object' ? code.mark : glyph(code);
     const hole = t.holes[next++];
     return hole.name + (counted ? toSuperscript(hole.bytes) : '');
   }).join(' ');
@@ -936,6 +1082,10 @@ export const normalFormText = (t) => `⟦ ${bodyText(t, true)} ⟧`;
 const lam = (s) => `<span class="lam">${escapeHtml(s)}</span>`;
 const op = (code) => `<span class="op" title="${escapeHtml(OPCODE_NAMES[code] || 'OP_UNKNOWN')}">${escapeHtml(glyph(code))}</span>`;
 const dt = (hole) => `<span class="dt" title="${escapeHtml(hole.title)}">${escapeHtml(hole.name)}</span>`;
+// A constant of a form: bytes the chain wrote and the format fixes, so it takes
+// the gold every written byte takes rather than a binder's ink. It is not a
+// hole -- two inscriptions differ in nothing here -- so nothing binds it.
+const lit = (c) => `<span class="op" title="${escapeHtml(c.said)}">${escapeHtml(c.mark)}</span>`;
 const count = (hole) => `<span class="op op-push op-count" title="OP_PUSHBYTES_${hole.bytes} — push the next ${hole.bytes} bytes">${toSuperscript(hole.bytes)}</span>`;
 
 // The datum with its count, and -- where a caller has found the passage that
@@ -961,7 +1111,7 @@ const datumMark = (hole, ref) => {
 const bodyHtml = (t, counted, prose) => {
   let next = 0;
   return t.body.map((code) => {
-    if (code !== null) return op(code);
+    if (code !== null) return typeof code === 'object' ? lit(code) : op(code);
     const hole = t.holes[next++];
     return dt(hole) + (counted ? count(hole) + (prose ? ` ${prose}` : '') : '');
   }).join(' ');

@@ -189,7 +189,7 @@ a:hover { text-decoration: underline; }
        The leaf itself says nothing about what a proof is -- that is a reading,
        and readings carry names. -->
   <details class="leaf-commentary hidden" id="commentary">
-    <summary title="A reading of this proof — editorial, and kept apart from the record above it">Commentary</summary>
+    <summary title="Readings of this proof — editorial, kept apart from the record above">Commentary</summary>
     <div class="commentary-body" id="commentary-body"></div>
   </details>
 
@@ -334,7 +334,7 @@ function render(proof) {
         // confirmed, not this link being followed.
         ? { href: `./bitcoin-book.html?ref=${latinRefOf(proof.place.height)}&hl=merkle:${proof.place.merkleRoot}`,
             text: reference(proof.place.height),
-            title: 'the chapter whose header commits to this root — its ⋔ line comes up bold only if the header carries exactly these bytes' }
+            title: 'the chapter whose header commits to this root — its ⋔ line comes up bold only on an exact match' }
         : null;
     const mark = isRoot ? '⋔' : rung.kind === 'transaction' ? '⌘' : rung.result.length === 40 ? 'h' : '⌘';
     const sup = mark === '⌘' ? 256 : rung.result.length / 2;
