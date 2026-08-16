@@ -47,6 +47,9 @@
 <link rel="preload" as="font" type="font/woff2" href="./fonts/sigla-dejavu.woff2" crossorigin>
 <link rel="stylesheet" href="./fonts/fonts.css">
 <link rel="stylesheet" href="./btc-chrome.css">
+<!-- The notation key's own typography and the sheet that raises it, shared
+     with the book and the front matter's sigla leaf rather than restated. -->
+<link rel="stylesheet" href="./notation.css">
 <style>
 :root {
   --page:#08080a; --card:#0d0d10; --card-bd:#232228; --ink:#e8e4da; --ink-soft:#cfcabf;
@@ -281,6 +284,16 @@ button:hover { background: var(--accent-2); }
    The span inside is the handle, and inline — so a click lands on the marks
    rather than anywhere along the width of the card. */
 .term-checked { margin-top: 6px; text-align: center; }
+/* The foot bar the key rises from, and the sheet's positioning context: the
+   panel is absolute against it (notation.css), so it has to be positioned, and
+   sticky both positions it and keeps the key where a reader left it while a
+   long card scrolls under. One key centred, where the reading centres two. */
+.leaf-nav {
+  position: sticky; bottom: 0; z-index: 40;
+  display: flex; justify-content: center; margin-top: 44px;
+  padding: 14px 0 max(14px, env(safe-area-inset-bottom));
+  border-top: 1px solid var(--rule); background: var(--page);
+}
 /* A push held back until it is asked for. Quiet, because it stands for prose
    that is not there yet rather than for anything the chain wrote — the same
    ink the reading gives its own deferred pushes. */
@@ -403,6 +416,18 @@ button:hover { background: var(--accent-2); }
     <a class="example" href="./bitcoin-search.html?q=76a91404b11d2eb716291f33be29210ee5b2a161c071af88ac"><span class="example-what">a locking script by its own bytes — bare, where the bytes settle it; a <span class="mono">script:</span> prefix forces the reading for a lock that binds no term</span><span class="example-form">76a91404b11d2eb716291f33be29210ee5b2a161c071af88ac</span></a>
     <a class="example" href="./bitcoin-appendix.html?part=proofs"><span class="example-what">a file's own chapter — an OpenTimestamps proof names the passage it was stamped into, and the Citations register keeps it</span><span class="example-form">.ots</span></a>
   </div>
+
+  <!-- The key, raised from the foot as the reading raises it. One sheet, not
+       the reading's two: a leaf carries no passage, so it has no commentary to
+       offer beside it. The bar is the sheet's positioning context — the panel
+       is absolute against it — and sticky, so a long card scrolls under a key
+       that stays where a reader left it. -->
+  <nav class="leaf-nav">
+    <details class="nav-sheet notation">
+      <summary>Notation</summary>
+      <div class="notation-body nav-sheet-body"></div>
+    </details>
+  </nav>
 </div>
 
 <script type="module">
@@ -434,13 +459,18 @@ import { isAddress, addressScriptHex, chainWitness, witnessVerdict, witnessDisag
 import { reference, latinReference, inputMark } from './btc-citation.js';
 import { parseLookup } from './btc-lookup.js';
 
-import { termOfScript, titleHtml, suppliedHtml,
+import { termOfScript, titleHtml, suppliedHtml, revealedOf,
          revealedHtml, commitmentOf, commitmentHtml } from './btc-term.js';
 import { messageOf, sighashName, sha256 } from './btc-sighash.js';
 // RIPEMD-160 is in no browser, so the book carries one -- written for reading
 // OpenTimestamps proofs, which need it for the same reason Bitcoin does.
 import { digestOf } from './btc-ots.js';
 import { tweakHolds, tweakedKeyOf } from './btc-taptweak.js';
+// The key itself, and the filter that cuts it to a page — both shared with the
+// reading, so a mark reads the same wherever a reader meets it.
+import { NOTATION_HTML } from './btc-notation.js';
+import { applyKeyFilter, collectMarks } from './btc-key-filter.js';
+import { outputTemplates } from './btc-templates.js';
 import { spellHtml, read, looksSpelled, isWholeScript, scriptFault } from './btc-address-form.js';
 const input = document.getElementById('block-input');
 const termEl = document.getElementById('term');
@@ -1012,6 +1042,11 @@ function drawTerm(hex, { address = null, at = '', say: sayFn = null, said = '',
   termEl.innerHTML = head + body;
   termEl.hidden = false;
   termEl.dataset.at = at;
+  // The key follows the card. Every draw is a fresh string, so the marks it
+  // was cut to are gone with the last one.
+  setCardTemplates(hex, t && opened
+    ? revealedOf(t, opened.args ?? [], { scriptsig: opened.scriptsig }) : null);
+  refreshNotationKey();
 }
 
 // …and then what has to be fetched. The engine says the datum and spells the
@@ -1258,6 +1293,53 @@ input.addEventListener('input', preview);
 // that showed a term and then navigated away from it would be showing nothing.
 const asked = new URLSearchParams(location.search).get('q');
 if (asked) { input.value = asked; preview(); }
+
+// ── The notation key, cut to the card ─────────────────────────────────────
+//
+// The same key the reading raises, filtered the same way (btc-key-filter.js):
+// the rows whose marks are actually drawn stay, the rest fold away, and the
+// sheet points at the sigla leaf for the whole of it. What differs is only
+// what it is cut TO — a chapter filters against the passage under it, and
+// this filters against the one card, which is the whole of what a leaf prints.
+//
+// Recomputed when the sheet opens and again whenever the card is redrawn, so a
+// reader who types with the key open watches it follow: the marks change as
+// the term does, and a key showing the last query's marks would be worse than
+// one showing them all.
+const notationSheet = document.querySelector('.leaf-nav .nav-sheet.notation');
+const notationBody = document.querySelector('.notation-body');
+notationBody.innerHTML = `
+  <div class="key-scope">
+    <span class="key-scope-note">the marks on this card</span>
+    <a class="key-scope-link" href="./bitcoin-front.html?leaf=sigla">The sigla →</a>
+  </div>` + NOTATION_HTML;
+
+// The pattern rows ask a different question from the glyph rows: not whether a
+// mark is drawn but whether the page carries the template. On a leaf that is
+// the script in the box, and the spend's own forms where the chain answered.
+let cardTemplates = new Set();
+const setCardTemplates = (hex, revealed = null) => {
+  cardTemplates = new Set();
+  for (const h of [hex, revealed]) {
+    if (!h) continue;
+    try { for (const row of outputTemplates(h)) cardTemplates.add(row); } catch { /* not a script */ }
+  }
+};
+function refreshNotationKey() {
+  if (!notationSheet?.open) return;
+  applyKeyFilter(notationBody, { marks: collectMarks(termEl), templates: cardTemplates });
+}
+notationSheet?.addEventListener('toggle', () => { if (notationSheet.open) refreshNotationKey(); });
+
+// A sheet is a panel over the leaf, so a click on the leaf puts it down --
+// the same rule the reading keeps. The bar it is anchored to is exempt: the
+// summary is what closes it, and it does that itself.
+const closeNotation = () => { if (notationSheet?.open) notationSheet.open = false; };
+document.addEventListener('click', (e) => {
+  if (e.target.closest?.('.leaf-nav')) return;
+  closeNotation();
+});
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeNotation(); });
 
 // Two fingers on the card set the type size, the same gesture and the same
 // stored scales as the book's (btc-fontscale.js), quantized to 0.05 so the

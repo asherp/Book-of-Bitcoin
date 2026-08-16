@@ -101,3 +101,37 @@ test('a readable push reads as its text, deferral and all', { skip: skipNoEngine
   assert.match(out, /class="glossia-lazy"/, 'the blob beside it was said anyway');
   assert.ok(!out.includes('«300»'), 'the blob was said anyway');
 });
+
+// ─── the key, raised from the leaf's own foot ────────────────────────────
+
+test('the leaf raises the same key, cut to the card', async () => {
+  const page = await leaf();
+  const css = page.slice(0, page.indexOf('</style>')).replace(/\/\*[\s\S]*?\*\//g, '');
+  // Borrowed whole, not restated: the key's rows, the sheet's typography and
+  // the filter are the reading's, so a mark reads the same wherever it is met.
+  assert.match(page, /href="\.\/notation\.css"/, 'the sheet carries no typography');
+  assert.match(page, /import \{ NOTATION_HTML \} from '\.\/btc-notation\.js'/);
+  assert.match(page, /import \{ applyKeyFilter, collectMarks \} from '\.\/btc-key-filter\.js'/);
+  // One sheet, where the reading raises two: a leaf carries no passage, so it
+  // has no commentary to offer beside the key.
+  assert.match(page, /<details class="nav-sheet notation">/);
+  assert.ok(!/class="nav-sheet commentary/.test(page), 'a leaf is offering a reading of nothing');
+  // The panel is absolute against the bar (notation.css), so the bar has to be
+  // positioned — and sticky both positions it and keeps the key in place while
+  // a long card scrolls under.
+  const bar = /\.leaf-nav \{[^}]*\}/.exec(css);
+  assert.ok(bar, '.leaf-nav is styled nowhere');
+  assert.match(bar[0], /position: sticky/, 'the sheet has nothing to be absolute against');
+  assert.match(bar[0], /bottom: 0/);
+  // Cut to the card, and to the card alone: a leaf prints one, and that is the
+  // whole of what its key should answer for.
+  assert.match(page, /applyKeyFilter\(notationBody, \{ marks: collectMarks\(termEl\)/,
+    'the key is cut to something other than the card');
+  // …and re-cut whenever the card is redrawn, since every draw is a fresh
+  // string and the marks the key was cut to went with the last one.
+  const draw = /termEl\.innerHTML = head \+ body;[\s\S]*?refreshNotationKey\(\);/.exec(page);
+  assert.ok(draw, 'the key does not follow the card it is cut to');
+  // Nothing to do while it is shut, or every keystroke would filter a hidden
+  // sheet.
+  assert.match(page, /if \(!notationSheet\?\.open\) return;/, 'a shut sheet is filtered anyway');
+});
