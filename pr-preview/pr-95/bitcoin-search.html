@@ -1288,11 +1288,8 @@ const go = async () => {
 document.getElementById('block-btn').addEventListener('click', go);
 input.addEventListener('keydown', (e) => { if (e.key === 'Enter') go(); });
 input.addEventListener('input', preview);
-
-// ?q= fills the box and draws what it names, without opening anything: a link
-// that showed a term and then navigated away from it would be showing nothing.
 const asked = new URLSearchParams(location.search).get('q');
-if (asked) { input.value = asked; preview(); }
+
 
 // ── The notation key, cut to the card ─────────────────────────────────────
 //
@@ -1406,6 +1403,16 @@ document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeNotat
   }
 })();
 
+// ?q= fills the box and draws what it names, without opening anything: a link
+// that showed a term and then navigated away from it would be showing nothing.
+//
+// LAST in this module, and it has to be. This is the one path that draws a card
+// while the module is still evaluating -- every other draw is a keystroke, long
+// after -- so anything drawTerm reaches must already be initialized. Declared
+// with const, the key's own helpers are not hoisted, and a first draw that ran
+// above them threw before it could paint: the Search item on a locking script's
+// menu opened a leaf with nothing on it, while pasting the same bytes worked.
+if (asked) { input.value = asked; preview(); }
 </script>
 </body>
 </html>
