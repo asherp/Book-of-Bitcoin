@@ -810,10 +810,16 @@ test('the spend quotation is titled by what the chain revealed', () => {
   // the only line that writes ⌘ -- a footnote whose mark appeared nowhere would
   // be a reference to nothing.
   assert.ok(revealedText(tr, [SCHNORR], { msg: '※' })[0].includes('⌘ ※'));
-  // Taproot's script path hid a leaf, which is a script: titled by its own λ.
+  // Taproot's script path hid a leaf, which is a script: titled by its own λ,
+  // exactly as every other script-hash reveal is. The control block the same
+  // witness carries is not named here -- it is an operand of the check below
+  // the quotation (`⋔ t c ≡ p³²`), where the proof belongs, rather than
+  // something a title of the leaf could state.
   const leaf = push(KEY) + 'ac';
-  assert.equal(revealedOf(tr, [SIG, leaf, 'c0' + 'ab'.repeat(32)]), leaf);
-  assert.deepEqual(revealedText(tr, [SIG, leaf, 'c0' + 'ab'.repeat(32)]), ['λp. p ∇']);
+  const path = [SIG, leaf, 'c0' + 'ab'.repeat(32)];
+  assert.equal(revealedOf(tr, path), leaf);
+  assert.deepEqual(revealedText(tr, path), ['λp. p ∇']);
+  assert.deepEqual(revealedText(tr, path), [titleText(termOfScript(leaf))]);
   // …and a reveal the alphabet cannot read titles nothing: the bytes are
   // known, what they are is not, and declining beats guessing.
   const unreadable = 'ba'.repeat(3);                // opcodes consensus never defined
@@ -901,18 +907,94 @@ test('the commitment says what to hash and against what, and declines the rest',
   const tr = termOfScript(addressScriptHex(TR));
   assert.equal(commitmentOf(tr, [SCHNORR]), null, 'taproot’s key path hid nothing');
   assert.equal(commitmentOf(termOfScript(reduce(TERMS.p2pk, '04' + 'ab'.repeat(64))), [SIG]), null);
-  // …and taproot's script path hid a great deal, but settling it is elliptic
-  // curve arithmetic and not a digest, so it is declined rather than guessed.
-  assert.equal(commitmentOf(tr, [SIG, push(KEY) + 'ac', 'c0' + 'ab'.repeat(32)]), null,
-    'a tweak is not a hash');
+  // …and taproot's script path commits by a tweak rather than a digest, so it
+  // is STATED and not taken: the leaf hashed up its branch with the control
+  // block's path and added to the internal key. Both items the spend brought
+  // are operands, which is what puts the control block on this line and
+  // nowhere else on the card.
+  const tweak = commitmentOf(tr, [SIG, push(KEY) + 'ac', 'c0' + 'ab'.repeat(32)]);
+  assert.ok(tweak, 'the script path states no commitment at all');
+  assert.equal(commitmentText(tweak), '⋔ t c ≡ p³²');
+  assert.equal(commitmentHtml(tweak).replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim(),
+    commitmentText(tweak), 'the two renderings drifted');
+  // `taken` names the road a caller must send the check down, since the two
+  // are settled by different arithmetic: a hash the page takes itself, a tweak
+  // over the vendored curve (btc-taptweak.js). Both are taken; neither is
+  // guessed.
+  assert.equal(tweak.taken, 'tweak', 'the tweak is sent down the hashing road');
+  assert.equal(commitmentOf(wpkh, [SIG, KEY]).taken, 'hash', 'a hash is not');
+  // …and the tweak carries the control block it is proved by, which the hash
+  // road has no use for: it is the operand that makes the check possible.
+  assert.equal(tweak.control, 'c0' + 'ab'.repeat(32));
+  assert.equal(commitmentOf(wpkh, [SIG, KEY]).control, undefined);
   // Nothing brought is nothing to check.
   assert.equal(commitmentOf(wpkh, []), null);
   // The two renderings never drift, as everywhere else in this module.
   const strip = (html) => html.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
   assert.equal(strip(commitmentHtml(c)), commitmentText(c));
-  // …and the datum takes the road to the passage that holds it, exactly as it
-  // does on every other line that names it: the h²⁰ here IS the lock's.
+  // …and the datum stands bare here, alone among the lines that name it. The
+  // check is a control -- the whole line opens a menu offering this very datum
+  // -- so a road inside it would be a second affordance on one mark, and which
+  // one a click got would depend on where in the line it landed. A conclusion
+  // is not a naming either: the title above says where this datum is written,
+  // and this line says what became of it.
+  assert.ok(!/<a /.test(commitmentHtml(c)), 'the datum carries a road out of a control');
   const ref = { href: './bitcoin-book.html?ref=v4b78c160s1250o0', said: 'written at IV β78 ■160 §1250.0' };
-  assert.match(commitmentHtml(c, { ref }), /<a class="term-ref"/);
-  assert.ok(!/<a /.test(commitmentHtml(c)), 'and none where the chain named no passage');
+  assert.ok(!/<a /.test(commitmentHtml(c, { ref })), 'a caller can still hand it one');
+  // The road belongs to the lines that NAME the datum, and still reaches them.
+  assert.match(addressHtml(termOfScript(addressScriptHex(TR)), { ref }), /<a class="term-ref"/);
+});
+
+// ─── the ord envelope, as the form it is ─────────────────────────────────
+
+test('an ord envelope binds what varies and prints what the format fixes', async () => {
+  const { ordTermOf, titleText, titleHtml } = await import('../web/btc-term.js');
+  const strip = (html) => html.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+  // An envelope in the shape ord defines: the key the tapscript spends by,
+  // then the branch nobody runs — OP_FALSE OP_IF "ord", tag 1 and its value,
+  // the empty push that opens the body, the body, OP_ENDIF.
+  // A push as the wire writes one, up to the tapscript cap: direct to 75,
+  // OP_PUSHDATA1 to 255, OP_PUSHDATA2 (little-endian) past that — which any
+  // body over 255 bytes needs, the 520-byte chunk below included.
+  const push = (h) => {
+    const n = h.length / 2;
+    if (n <= 75) return n.toString(16).padStart(2, '0') + h;
+    if (n <= 255) return '4c' + n.toString(16).padStart(2, '0') + h;
+    const le = (n & 0xff).toString(16).padStart(2, '0') + (n >> 8).toString(16).padStart(2, '0');
+    return '4d' + le + h;
+  };
+  const key = 'ab'.repeat(32);
+  const type = Buffer.from('text/plain', 'utf8').toString('hex');
+  const body = 'cd'.repeat(40);
+  const script = push(key) + 'ac' + '00' + '63' + push('6f7264')
+    + push('01') + push(type) + '00' + push(body) + '68';
+  const t = ordTermOf(script);
+  assert.ok(t, 'the envelope is no longer read');
+  assert.equal(t.label, 'Ord');
+  // Three binders, and only three: what an inscription can differ in.
+  assert.equal(titleText(t), 'λp y b. p ∇ ⓪ ⟨ ord 1 y ⓪ b ⟩');
+  assert.deepEqual(t.holes.map((h) => h.name), ['p', 'y', 'b']);
+  assert.deepEqual(t.holes.map((h) => h.bytes), [32, type.length / 2, body.length / 2]);
+  // "ord" and the tag are constants of the form, so nothing binds them — but
+  // they are bytes the chain wrote, so they take the gold a written byte takes
+  // rather than a binder's ink.
+  assert.ok(!t.holes.some((h) => h.name === 'ord'), 'the protocol tag is bound');
+  assert.match(titleHtml(t), /<span class="op"[^>]*>ord<\/span>/, 'ord is not written as a byte');
+  assert.match(titleHtml(t), /<span class="op"[^>]*>1<\/span>/, 'the field tag is not written as a byte');
+  assert.deepEqual(strip(titleHtml(t)), titleText(t), 'the two renderings drifted');
+  // The body is one binder however many pushes carry it: a tapscript push holds
+  // at most 520 bytes and ord concatenates the chunks, so the split is the
+  // cap's doing and not a field. The chunks are kept, so the bytes still count.
+  const split = push(key) + 'ac' + '00' + '63' + push('6f7264') + push('01') + push(type)
+    + '00' + push('cd'.repeat(520)) + push('cd'.repeat(30)) + '68';
+  const two = ordTermOf(split);
+  assert.equal(titleText(two), titleText(t), 'a chunked body binds more than a whole one');
+  assert.deepEqual(two.holes.at(-1).chunks.map((c) => c.length / 2), [520, 30]);
+  assert.equal(two.holes.at(-1).bytes, 550, 'the body is not counted whole');
+  // A script that is not an envelope is not read as one: declining beats
+  // guessing, so anything outside ord's grammar falls through to the anonymous
+  // reading rather than being named by a form it does not have.
+  assert.equal(ordTermOf(push(key) + 'ac'), null, 'a bare leaf');
+  assert.equal(ordTermOf(push(key) + 'ac' + '0063' + push('6e6674') + '68'), null, 'another tag');
+  assert.equal(ordTermOf(addressScriptHex(TR)), null, 'a taproot output');
 });

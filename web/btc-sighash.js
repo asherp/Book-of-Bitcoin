@@ -386,8 +386,7 @@ function bip341Fields(tx, nIn, prevout, type, annex, parts) {
         + 'which coins this transaction spends'),
       field('sha_amounts', parts.shaAmounts, 'every spent coin’s value, hashed — BIP143 signed '
         + 'this input’s own amount; this signs them all'),
-      field('sha_scriptpubkeys', parts.shaScriptPubkeys, 'every spent coin’s locking script, '
-        + 'hashed — a signer shown any wrong output signs nothing that verifies'),
+      field('sha_scriptpubkeys', parts.shaScriptPubkeys, 'every spent coin’s locking script, hashed'),
       field('sha_sequences', parts.shaSequences, 'every input’s nSequence, hashed'),
     ]),
     ...(parts.shaOutputs != null
@@ -587,7 +586,7 @@ function legacyFields(tx, nIn, code, type) {
       'locktime', int(tx.locktime)),
     field('nHashType', le(type, 4),
       `${sighashName(type)} — which of the above the signature covers`, 'flag', type),
-    field('(no amount)', '', 'nowhere in this serialization is the value being spent — '
-      + 'the hole BIP143 was written to close', 'none'),
+    field('(no amount)', '', 'the value being spent is nowhere in this serialization — '
+      + 'the hole BIP143 closed', 'none'),
   ];
 }

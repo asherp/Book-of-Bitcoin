@@ -11,6 +11,7 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import { parseEnvelopes, tapscriptOf, inscriptionInTx, parseCollection, sniffAsset, witnessAsset,
   inscriptionIdFrom, decodeCbor } from '../web/btc-inscriptions.js';
 
@@ -449,4 +450,40 @@ test("the handbook's own parent vectors decode to the ids it names", () => {
   assert.equal(inscriptionIdFrom(b(serialized)), `${id}i0`);
   assert.equal(inscriptionIdFrom(b(serialized + 'ff')), `${id}i255`);
   assert.equal(inscriptionIdFrom(b(serialized + '0001')), `${id}i256`);
+});
+
+// ─── the control block, as the page sets it ──────────────────────────────
+
+test('the control byte is set as the version BIP341 names, not a shifted one', async () => {
+  // renderControlBlock is not exported and its module wants the Glossia WASM,
+  // absent from a bare checkout — so the function is read out of the source
+  // and run against stubs, the way the book's other page-source tests do.
+  const src = await readFile(new URL('../web/btc-prose.js', import.meta.url), 'utf8');
+  const fn = /function renderControlBlock\(hex, encode\) \{[\s\S]*?\n\}/.exec(src);
+  assert.ok(fn, 'the page no longer renders a control block');
+  const witFirst = (h) => parseInt(h.slice(0, 2), 16);
+  const dataMark = (s, t) => `<span class="dt" title="${t}">${s}</span>`;
+  const render = Function('witFirst', 'dataMark',
+    `${fn[0]}\nreturn renderControlBlock;`)(witFirst, dataMark);
+  const strip = (h) => h.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+  const key = 'ab'.repeat(32);
+
+  // BIP341's leading byte is the leaf version with the output-key parity in
+  // its low bit. The version is the byte with that bit masked off — 0xc0 for
+  // a tapscript leaf — and it is set in hex because the only reason it is on
+  // the page is to be checked against the constant the BIP writes that way.
+  assert.equal(strip(render('c0' + key, () => '…')), 'c vc0₀ p …');
+  // The parity rides as a subscript and moves the version not at all.
+  assert.equal(strip(render('c1' + key, () => '…')), 'c vc0₁ p …');
+  // A future leaf version reads as itself rather than as a fraction of itself.
+  assert.equal(strip(render('c2' + key, () => '…')), 'c vc2₀ p …');
+  // What the render must never be: the top seven bits read as a number of
+  // their own (0xc0 >> 1 = 96), which is a value no specification states and
+  // nothing a reader could look up.
+  assert.ok(!/v96/.test(render('c0' + key, () => '…')), 'the version is shifted right');
+
+  // A single-leaf taptree has an empty path, so its control block ends at the
+  // key and no merkle proof is drawn — there is none to draw.
+  assert.ok(!/⋔/.test(render('c0' + key, () => '…')), 'a proof is drawn where there is none');
+  assert.match(render('c0' + key + 'cd'.repeat(32), () => '…'), /⋔/, 'a sibling hash goes unmarked');
 });

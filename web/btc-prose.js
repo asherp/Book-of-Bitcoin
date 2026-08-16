@@ -635,7 +635,7 @@ export function templateTimePush(hex, height) {
 // Marked op-tpltime so the notation key can find it: the mark is a date, which
 // is different in every block that carries one, so no literal in the key could
 // name it (see collectMarks in btc-key-filter.js).
-const templateTimeMark = (unix) => `<span class="op op-tpltime" title="the moment this block's template was assembled, as the pool's software wrote it into the coinbase (unix ${unix}) — a clock reading, not a counter: the pools built on btccom's server push it directly behind the height. It is here because it agrees with the height beside it; nothing in the bytes declares it">${utcMinute(unix)}</span>`;
+const templateTimeMark = (unix) => `<span class="op op-tpltime" title="template assembly time, as the pool wrote it into the coinbase (unix ${unix}) — read from its agreement with the height beside it; nothing in the bytes declares it">${utcMinute(unix)}</span>`;
 
 // The counters that follow -> their decimals, and what's left.
 //
@@ -680,7 +680,7 @@ export function peelExtranonces(hex) {
 // block's own first page, with the number it states reading straight on from
 // it. (A bare push count can't do that: its cap would eat a digit and leave
 // the rest of the numeral behind. See bitcoin-book.html's addLine.)
-const blockHeightMark = (height) => `<span class="op op-blockmark" title="BIP34 — the block writes its own height, ${groupDigits(String(height))}, into the coinbase: the push that makes every coinbase distinct. Everything after it is the miner's own margin, under no rule">■${height}</span>`;
+const blockHeightMark = (height) => `<span class="op op-blockmark" title="BIP34 — the block's own height, ${groupDigits(String(height))}, pushed into the coinbase. What follows it is the miner's margin, under no rule">■${height}</span>`;
 
 // The miner's margin -> its display: readable runs quoted, everything between
 // them as Glossia prose. No opcodes, no push counts -- there are no pushes --
@@ -816,7 +816,7 @@ export function splitZeroRuns(hex, min = ZERO_MIN_RUN) {
   return parts;
 }
 
-const zeroRunMark = (n) => `<span class="op op-zeros" title="${n} zero bytes — the space the pool's template left and nothing filled: room for a counter, or for a commitment this block is not carrying. Written as the zero opcode with its byte count, because ${n} words saying nothing is not a reading of it. The count restores the bytes exactly">⓪${toSuperscript(n)}</span>`;
+const zeroRunMark = (n) => `<span class="op op-zeros" title="${n} zero bytes — space the pool's template left unfilled. The count restores the bytes exactly">⓪${toSuperscript(n)}</span>`;
 
 // The signature mark: the pool's own name, quoted to its exact extent, with
 // who wrote it riding the mark rather than printed in the passage. The name is
@@ -824,7 +824,7 @@ const zeroRunMark = (n) => `<span class="op op-zeros" title="${n} zero bytes —
 // readings off the record's own line. What the passage gains is the boundary:
 // the quotation closes where the pool's writing closes, not wherever the
 // counter's bytes stopped being printable.
-const signatureMark = (part) => `<span class="pool-sig" title="${escapeHtml(part.pool)} — the pool's own signature, matched against the book's table (web/btc-pools.js). That these bytes are in the coinbase is the record; that ${escapeHtml(part.pool)} mined the block is a reading of it, since a tag is unauthenticated and anyone may copy one">“${quoteText(part.text)}”</span>`;
+const signatureMark = (part) => `<span class="pool-sig" title="${escapeHtml(part.pool)} — a pool tag, matched against the book's table (web/btc-pools.js). The bytes are the record; the pool named is a reading, since a tag is unauthenticated and anyone may copy one">“${quoteText(part.text)}”</span>`;
 
 // The miner's margin -> its display. A run the scanner found is cut at the
 // signature inside it, if any: the pool's writing is quoted under its mark,
@@ -1147,18 +1147,28 @@ function witnessScriptIndices(items) {
 const WIT_SEP = '<span class="wit-sep"> · </span>';
 
 // A Taproot control block -> its footnote form, decomposed into its three
-// components. The leading byte splits into its top 7 bits -- the tapleaf version,
-// read as v<n> -- and its low bit, the output-key parity, read as a subscript;
-// the 32-byte internal key reads under a p mark; and the trailing 32-byte sibling
-// hashes -- the merkle path proving the revealed leaf is committed in the taptree
-// -- read under a pitchfork ⋔ as a merkle proof. The three parts are fixed-width
-// (1 byte, then 32, then 32 per sibling), so splitting the one item this way stays
-// exactly reconstructable: the leading byte is (version << 1) | parity. A
+// components. The leading byte splits into the tapleaf version, read as v<n>,
+// and its low bit, the output-key parity, read as a subscript; the 32-byte
+// internal key reads under a p mark; and the trailing 32-byte sibling hashes --
+// the merkle path proving the revealed leaf is committed in the taptree --
+// read under a pitchfork ⋔ as a merkle proof. The three parts are fixed-width
+// (1 byte, then 32, then 32 per sibling), so splitting the one item this way
+// stays exactly reconstructable: the leading byte is version | parity. A
 // single-leaf taptree has an empty path, so its control block ends at the key.
+//
+// The version is the byte with its parity bit masked off (b & 0xfe) and it is
+// set in hex, which is the one figure in this book written that way on purpose.
+// It carries no entropy -- a version is nothing else this book would decline to
+// print -- and the only reason it is on the page is to be checked against a
+// constant BIP341 writes as 0xc0. A reader who met it as a decimal would have
+// to convert before they could confirm anything, and one who met it shifted
+// right (the top 7 bits read as a number of their own) would be checking a
+// value that appears in no specification at all.
 function renderControlBlock(hex, encode) {
-  const b = witFirst(hex);                                    // tapleaf version (top 7 bits) | output-key parity (low bit)
-  const leafVer = b >> 1, parity = b & 1;
-  const ctrlByte = `<span class="op" title="control byte — tapleaf version ${leafVer} (top 7 bits; 0x${b.toString(16).padStart(2, '0')}), output-key parity ${parity}">v${leafVer}${parity ? '₁' : '₀'}</span>`;
+  const b = witFirst(hex);                                    // tapleaf version | output-key parity (low bit)
+  const leafVer = b & 0xfe, parity = b & 1;
+  const ver = leafVer.toString(16).padStart(2, '0');
+  const ctrlByte = `<span class="op" title="control byte — tapleaf version 0x${ver} (BIP341’s tapscript leaf is 0xc0), output-key parity ${parity}">v${ver}${parity ? '₁' : '₀'}</span>`;
   const parts = [
     dataMark('c', 'control block — a Taproot script-path reveal') + ' ' + ctrlByte,
     dataMark('p', 'public key — the Taproot internal key') + ' ' + encode(hex.slice(2, 66)),

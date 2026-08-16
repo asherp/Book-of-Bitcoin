@@ -427,10 +427,6 @@ button:disabled { opacity: .4; cursor: not-allowed; }
   color: var(--dim);
 }
 .chapter-work .work-mark { color: var(--accent); font-weight: 700; }
-/* The notation key, cut to the page: a row the page does not use leaves the
-   flow entirely. The pattern tables are grids whose cells are direct children,
-   so anything short of display:none would leave a hole in their columns. */
-.key-cut { display: none !important; }
 /* The merkle root's ⋔ mark: the clickable handle for its hash menu (copy hex /
    prose), bold and accented (like the h data mark) so it reads as the actionable
    element while the root's prose beside it stays plain. Upright, like every
@@ -524,7 +520,11 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 .hash-bookmark.set .rib-hollow { display: none; }
 /* On an amount the ribbon sits ON its line rather than above it: the outputs
    stack close together, and a mark hanging above a row reads as belonging to
-   the row before it. (A title has room above it, and keeps the corner.) */
+   the row before it. (A title has room above it, and keeps the corner.)
+   Where this output is kept, its name stands first in the same cell and the
+   ribbon rides beside that instead -- still inside this output's own block, so
+   the reason above is untouched, and beside the name is where the script's
+   keep already flies its ribbon. .tx-out-title's padding keeps them clear. */
 .tx-out-value > .hash-bookmark { top: 0; }
 
 /* The title-entry form the menu swaps to when bookmarking: the title becomes a
@@ -763,11 +763,28 @@ button:disabled { opacity: .4; cursor: not-allowed; }
    this is the fallback rather than a standing case). */
 #ch-totals:not(:empty) + .chapter-footnotes { margin-top: 0; border-top: none; padding-top: 12px; }
 .tx-locktime { grid-column: left / -1; grid-row: 3; text-align: center; font-style: normal; }
-/* An output the reader has kept under a name (or the contents already
-   names): the title stands centered above the output's own rows, spanning
-   script and amount. Empty -- unkept and unnamed -- it takes no room.
-   Filled by syncBookmarkTitles, live with the bookmark set. */
-.tx-out-title { grid-column: 1 / -1; text-align: center; font: italic 500 calc(13.5px * var(--scale-body, 1))/1.4 'Newsreader','Book Sigla',serif; color: var(--accent); margin: .4em 0 .15em; }
+/* An output the reader has kept under a name (or the contents already names):
+   the title stands directly above the amount, inside that cell, because the
+   amount is the coin's own handle -- a click on it keeps §section.vout, the
+   finest place the book cites. It used to span script and amount both, which
+   read as a heading over the script; that paragraph has a keep of its own, and
+   that one files an address's ledger rather than this single coin.
+   Ranged right with the figure it names, and sized from --scale-margins like
+   it: the two are one stack in the margin column, and a name that scaled with
+   the body would fall out of step with the amount it sits on the moment a
+   reader diverged them. Wrapping is re-allowed -- the amount beside it is
+   nowrap, and a reader's title is prose that may run on.
+   Empty -- unkept and unnamed -- it takes no room. Filled by
+   syncBookmarkTitles, live with the bookmark set. */
+   The ribbon is absolutely positioned at this cell's top right, so with a
+   title present it rides beside the name rather than the figure -- which is
+   where the script's own keep already puts it, and where it belongs, both
+   being this coin's keep. The padding is what keeps the name from running
+   under it; unkept, the title is display:none and the ribbon drops back to the
+   amount's line, which has padding of its own. */
+.tx-out-title { text-align: right; white-space: normal; padding-right: 22px;
+  font: italic 500 calc(13.5px * var(--scale-margins, 1))/1.4 'Newsreader','Book Sigla',serif;
+  color: var(--accent); margin: 0 0 .15em; }
 .tx-out-title:empty { display: none; }
 /* The locking script's keep line, centered above its paragraph: unkept and
    uncurated, the hollow ribbon alone -- the offer, faded like every unmade
@@ -797,10 +814,11 @@ button:disabled { opacity: .4; cursor: not-allowed; }
    matter, marks sized apart from the sentence carrying them, and a title has
    no sentence to be sized apart from. (The book's own precedent for a surface
    that is nothing but notation is the notation key, which takes a region of
-   its own and is kept clear of the inline ratio.) So the opcodes here ride
-   --scale-sigla-ratio exactly as they do in the paragraph below, the data
-   letters stay at the line's own size exactly as they do there, and the title
-   and the script it titles are the same notation at two sizes. */
+   its own and is kept clear of the inline ratio.) The line is proportional to
+   the body end to end, marks included: the opcodes in it are neutralized to
+   1em below, so a reader who diverges the sigla moves the marks in the
+   paragraph and leaves this heading where it stands with the two lines above
+   it. The data letters were never on the ratio and need no undoing. */
 .tx-out-term { grid-column: 1 / -1; text-align: center; margin: .1em 0 .2em; color: var(--meta);
   font: 500 calc(13.5px * var(--scale-body, 1))/1.4 'Newsreader','Book Sigla',serif; }
 .tx-out-term:empty { display: none; }
@@ -810,6 +828,15 @@ button:disabled { opacity: .4; cursor: not-allowed; }
    the page: .lam means something on the search leaf, where a whole descent is
    written in it, and a chapter is not that leaf. */
 .tx-out-term .out-term .lam { color: var(--meta); font-weight: 400; }
+/* The kind that opens the title, and the := binding it to the term. Both read
+   in the line's own face: the kind opens a statement the rest of which is
+   notation, and a mono-and-letterspaced tag beside λ would set the two halves
+   of one line as two kinds of thing. The kind takes the reading ink rather than
+   the line's quiet, so it stands as the name it is without reaching for the
+   gold, which here means the chain wrote it. Scoped like .lam above, for the
+   same reason. */
+.tx-out-term .out-term .out-kind { color: var(--ink-soft); }
+.tx-out-term .out-term .out-def { font-weight: 400; }
 .tx-out-keep .out-keep-name { cursor: pointer; }
 .tx-out-keep .out-keep-name:hover, .tx-out-keep .out-keep-name:focus-visible { color: var(--accent-2); outline: none; }
 .tx-out-keep .keep-rib { display: inline-block; line-height: 0; color: var(--accent); vertical-align: -2px; background: none; border: 0; padding: 2px 5px; cursor: pointer; opacity: .42; }
@@ -880,6 +907,12 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 #page-slide .op { font-size: calc(1em * var(--scale-sigla-ratio, 1)); }
 #page-slide .op-name { font-size: calc(.62em * var(--scale-sigla-ratio, 1)); }
 #page-slide .op.op-count, #page-slide .op.op-tpltime { font-size: 1em; }
+/* …and an output's title, which is a heading rather than reading matter. It is
+   nothing but marks, so the ratio would size the whole line and pull it out of
+   step with the keep and the bookmark it is stacked under. Neutralized here
+   rather than sized here: the line takes the body scale in its own rule above,
+   and this only stops the inline ratio reaching the marks inside it. */
+#page-slide .tx-out-term .op { font-size: 1em; }
 /* A witness footnote is a stack of items; a thin middot separates each, and an
    empty stack item shows as ∅. */
 .wit-sep, .wit-empty { color: var(--meta); font-style: normal; }
@@ -1209,7 +1242,7 @@ a.footnote-title.is-asset:hover { color: var(--accent-2, #dcb877); text-decorati
            the crumb as a printed running head brackets its title. A leaf has
            no button, as it has no folio: what is exported is a transaction,
            and a leaf is not one. -->
-      <div class="chapter-num"><button type="button" id="ch-volume-link" class="crumb" title="This volume's page">Volume <span id="ch-volume"></span></button><span id="ch-sep-1"> · </span><button type="button" id="ch-book-link" class="crumb" title="This book's page">Book <span id="ch-book"></span></button><button type="button" id="ch-appendix-link" class="crumb hidden" title="The leaf that holds the drafts — Appendix I, the queue's own book level">Provisional blocks</button><span id="ch-chapter-inline"></span></div>
+      <div class="chapter-num"><button type="button" id="ch-volume-link" class="crumb" title="This volume's page">Volume <span id="ch-volume"></span></button><span id="ch-sep-1"> · </span><button type="button" id="ch-book-link" class="crumb" title="This book's page">Book <span id="ch-book"></span></button><button type="button" id="ch-appendix-link" class="crumb hidden" title="Appendix I — the drafts the queue would fill">Provisional blocks</button><span id="ch-chapter-inline"></span></div>
       <button type="button" id="chapter-next" class="chapter-step hidden" aria-label="Next chapter" title="Next chapter"></button>
       <!-- The folio: a section's page number in the chain's running count of
            transactions, at the right end of the running head (see btc-pages.js).
@@ -1272,7 +1305,7 @@ a.footnote-title.is-asset:hover { color: var(--accent-2, #dcb877); text-decorati
       <button type="button" id="page-prev" class="hidden" aria-label="Previous contents entry" title="Previous contents entry"></button>
       <div class="nav-keys">
         <details class="nav-sheet commentary hidden" id="commentary">
-          <summary title="Commentary on this passage — a reading of the record, credited to whoever wrote it">Commentary</summary>
+          <summary title="Readings of this passage — editorial, credited to whoever wrote it">Commentary</summary>
           <div class="nav-sheet-body commentary-body" id="commentary-body"></div>
         </details>
         <details class="nav-sheet notation">
@@ -1292,6 +1325,7 @@ a.footnote-title.is-asset:hover { color: var(--accent-2, #dcb877); text-decorati
       <button type="button" class="hash-menu-item" data-act="copy-link" role="menuitem">Copy link</button>
       <button type="button" class="hash-menu-item hidden" data-act="footnote" role="menuitem">Witness footnote</button>
       <button type="button" class="hash-menu-item hidden" data-act="ledger" role="menuitem">Ledger entry</button>
+      <button type="button" class="hash-menu-item hidden" data-act="search" role="menuitem">Search</button>
       <button type="button" class="hash-menu-item" data-act="bookmark" role="menuitem">Bookmark</button>
     </div>
     <div id="hash-menu-title" class="hash-menu-title hidden">
@@ -3781,7 +3815,7 @@ function renderFrontispiece(header) {
     // compact 4-byte hex, or the display form.
     hf.bitsExpr
       ? { text: `< ${hf.bitsExpr}`, mark: hf.bits, markClass: 'fx-mark', gap: true,
-          title: `the proof of work — the chapter hash at the head of the page, read as a 256-bit number, is below this target. ${hf.bitsTitle}`,
+          title: `the proof of work — the chapter hash, as a 256-bit number, is below this target. ${hf.bitsTitle}`,
           menu: { hex: (header.bits >>> 0).toString(16).padStart(8, '0'), label: 'difficulty target', prose: `${hf.bits} ${hf.bitsExpr}` } }
       : { text: hf.bits, title: hf.bitsTitle, gold: true,
           menu: { hex: (header.bits >>> 0).toString(16).padStart(8, '0'), label: 'difficulty target', prose: hf.bits } },
@@ -4070,12 +4104,12 @@ function renderProjectedHead(onTitlePage) {
     el.append(span);
     return span;
   };
-  slot({ mark: 'v', markClass: 'fx-mark', text: '—', title: 'no version until a miner writes one — and with it, their rule vote' });
+  slot({ mark: 'v', markClass: 'fx-mark', text: '—', title: 'no version until a miner writes one, and with it their rule vote' });
   const prevSpan = slot(k === 0
     ? { mark: 'h', markClass: 'dt', text: '⋯', title: 'the previous block — the chain tip, resolving…' }
     : { text: '⋯', title: 'the previous chapter is itself unwritten' });
   slot({ mark: '⋔', markClass: 'merkle-mark', text: '—', title: 'no merkle root until the section list is sealed' });
-  slot({ text: `ETA ${blocksEta(k + 1)}`, title: `no timestamp until mined — expected in about ${(k + 1) * 10} min, give or take ${Math.round(10 * Math.sqrt(k + 1))}: block arrivals average one per ten minutes` });
+  slot({ text: `ETA ${blocksEta(k + 1)}`, title: `no timestamp until mined — about ${(k + 1) * 10} min out, give or take ${Math.round(10 * Math.sqrt(k + 1))}` });
   const betaSpan = slot({ text: 'β —', gold: true, title: 'the difficulty target' });
   slot({ mark: 'η', markClass: 'fx-mark', text: '—', title: 'no nonce until the proof of work is found' });
 
@@ -4572,7 +4606,7 @@ function renderChapter(para) {
   // double-SHA256, with no proof-of-work zeros to state: all 256 bits encoded,
   // and the superscript (bits, ⌘'s unit) says so. The section title carries
   // the txid's copy/bookmark menu.
-  const txidMarkTitle = 'transaction id — the double-SHA256 of this transaction&#39;s bytes, its identity; all 256 bits carried in the prose';
+  const txidMarkTitle = 'transaction id — the double-SHA256 of this transaction&#39;s bytes; all 256 bits carried in the prose';
   $('section-hash').innerHTML =
     `<span class="cfx-gold" title="${txidMarkTitle}">⌘</span><span class="op op-push">${toSuperscript(256)}</span> ${txidProse}`;
   renderSectionMeta();
@@ -4911,17 +4945,24 @@ function renderChapter(para) {
   for (const p of pendingMargin) marginEl.append(p);
   currentFootnotes = footnotes;
   f.outputs.forEach((out, i) => {
-    // The output's name line, centered above its rows: the reader's bookmark
-    // title when this output is kept (defaulted from -- and overriding --
-    // the curated name), else the contents' own name for it, else empty and
-    // hidden. syncBookmarkTitles keeps it live with the bookmark set.
+    // The output's name line: the reader's bookmark title when this output is
+    // kept (defaulted from -- and overriding -- the curated name), else the
+    // contents' own name for it, else empty and hidden. syncBookmarkTitles
+    // keeps it live with the bookmark set.
+    //
+    // It goes above the AMOUNT, and is appended into that cell below rather
+    // than spanning the output's rows. The amount is what a reader bookmarks a
+    // coin by -- it is this output's handle, and §section.vout, the finest
+    // place the book cites, is what a click on it keeps -- so the name a keep
+    // gives belongs over the thing that was kept. Over the script it named the
+    // wrong paragraph: that one has a keep of its own, and that keep files an
+    // address's ledger rather than this one coin.
     const outTitle = document.createElement('div');
     outTitle.className = 'tx-out-title';
     outTitle.dataset.bmOut = `${para.txid}:${i}`;
     const outPlace = places().find((p) => !p.page && !p.address && (p.out ?? null) === i
       && (p.id === para.txid || (p.id === String(state.height) && p.index === state.index)));
     outTitle.dataset.fallback = outPlace ? placeTitle(outPlace) : '';
-    outputsEl.append(outTitle);
     // The locking script's own keep, centered above its paragraph: a hollow
     // ribbon offers to shelve this script's address among the reader's
     // ledgers (Appendix III, the same registry the Ledger page's keep button
@@ -4974,6 +5015,9 @@ function renderChapter(para) {
     // setting reprint a section without re-composing it.
     valueCell.textContent = formatAmount(out.sats);
     valueCell.title = amountTitle(out.sats);
+    // …and the keep's name above it. Prepended after the amount is written,
+    // since setting textContent would clear a child put there first.
+    valueCell.prepend(outTitle);
     // The amount is this output's handle: click it to copy or bookmark the
     // output itself -- §section.vout, the finest place the book cites.
     attachHashCopy(valueCell, para.txid, 'output',
@@ -7413,6 +7457,11 @@ function scriptEntry(keepEl) {
   if (!hex) return null;
   return {
     hex, prose: address, label: 'locking script', nav: false,
+    // The road to the leaf that reads these bytes as the term they bind. The
+    // script itself is the query -- ?q= takes a locking script by its own
+    // hex, as the box does when a reader pastes one -- so it needs no address
+    // and is offered on every output, an OP_RETURN included.
+    searchHref: `./bitcoin-search.html?q=${encodeURIComponent(hex)}`,
     ledgerHref: address
       ? `./bitcoin-ledger.html?address=${encodeURIComponent(address)}`
         + (keepEl.dataset.ref ? `&ref=${keepEl.dataset.ref}` : '')
@@ -7433,10 +7482,17 @@ function termTitle(el) {
   if (!t) return false;
   const span = document.createElement('span');
   span.className = 'out-term';
+  // The kind opens the title and := binds it to the term, as the search leaf
+  // states it: the kind names the shape, the term says what the script
+  // abstracts over, and the two are one statement of what these bytes are.
+  //
   // The marks are the module's own and safe as markup by the same contract
   // the book's script renderer relies on: opcode glyphs, binder letters and
-  // the calculus's punctuation, nothing read off the chain.
-  span.innerHTML = titleHtml(t);
+  // the calculus's punctuation, nothing read off the chain. The kind is a
+  // module constant by the same contract -- a label from the term table, or a
+  // template row's name -- so it carries no markup either.
+  span.innerHTML = `<span class="out-kind">${t.label}</span> `
+    + `<span class="out-def">:=</span> ${titleHtml(t)}`;
   span.title = 'the term this lock binds — the title it has until somebody '
     + 'gives it another';
   el.append(span);
@@ -7567,6 +7623,7 @@ const menuCopyLinkBtn = hashMenu.querySelector('[data-act="copy-link"]');
 const menuBmBtn = hashMenu.querySelector('[data-act="bookmark"]');
 const menuFootnoteBtn = hashMenu.querySelector('[data-act="footnote"]');
 const menuLedgerBtn = hashMenu.querySelector('[data-act="ledger"]');
+const menuSearchBtn = hashMenu.querySelector('[data-act="search"]');
 const titleInput = $('hash-title-input');
 let menuEntry = null;
 let menuPoint = { x: 0, y: 0 };
@@ -7622,6 +7679,11 @@ function openHashMenu(ev, entry, anchorEl) {
   // A locking script's menu carries the road to its ledger: the entry this
   // very section wrote in that address's record (?address + ?ref).
   menuLedgerBtn.classList.toggle('hidden', !entry.ledgerHref);
+  // …and the road to the search leaf, which reads the same bytes as the term
+  // they bind. The ledger says where this script has been paid; the leaf says
+  // what it is, which is the one question the reading cannot answer in place.
+  menuSearchBtn.textContent = tr('Search');
+  menuSearchBtn.classList.toggle('hidden', !entry.searchHref);
   menuBmBtn.classList.toggle('hidden', !entry.nav);
   // Keyed by the whole place, output and all: a transaction's own bookmark and
   // one of its outputs' are two different keeps, and the item must say which
@@ -7738,6 +7800,10 @@ menuFootnoteBtn.addEventListener('click', () => {
 menuLedgerBtn.addEventListener('click', () => {
   if (!menuEntry || !menuEntry.ledgerHref) return;
   location.href = menuEntry.ledgerHref;
+});
+menuSearchBtn.addEventListener('click', () => {
+  if (!menuEntry || !menuEntry.searchHref) return;
+  location.href = menuEntry.searchHref;
 });
 // Keeping a place asks for a name first: the title is the row it will take in
 // the table of contents, and a row is read by its title. Reached from the

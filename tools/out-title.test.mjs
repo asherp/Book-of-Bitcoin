@@ -61,11 +61,11 @@ async function painter() {
 // output of a shape shares it. The demand rung is what varies by how an output
 // may be opened -- taproot has two -- and a title is not that rung.
 const ADDRESSES = [
-  ['P2PKH',  '1Ross5Np5doy4ajF9iGXzgKaC2Q3Pwwxv', 'λh. ⧉ ⌖ h ≡ ∇'],
-  ['P2SH',   '3J98t1WpEZ73CNmQviecrnyiWrnqRhWNLy', 'λh. ⌖ h ='],
-  ['P2WPKH', 'bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4', 'λh. ⓪ h'],
-  ['P2WSH',  'bc1qrp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3qccfmv3', 'λh. ⓪ h'],
-  ['P2TR',   'bc1p5d7rjq7g6rdk2yhzks9smlaqtedr4dekq08ge8ztwac72sfr9rusxg3297', 'λp. ① p'],
+  ['P2PKH',  '1Ross5Np5doy4ajF9iGXzgKaC2Q3Pwwxv', 'P2PKH := λh. ⧉ ⌖ h ≡ ∇'],
+  ['P2SH',   '3J98t1WpEZ73CNmQviecrnyiWrnqRhWNLy', 'P2SH := λh. ⌖ h ='],
+  ['P2WPKH', 'bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4', 'P2WPKH := λh. ⓪ h'],
+  ['P2WSH',  'bc1qrp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3qccfmv3', 'P2WSH := λh. ⓪ h'],
+  ['P2TR',   'bc1p5d7rjq7g6rdk2yhzks9smlaqtedr4dekq08ge8ztwac72sfr9rusxg3297', 'P2TR := λp. ① p'],
 ];
 
 test('every form is titled by the anonymous λ it binds, on one line', async () => {
@@ -85,7 +85,10 @@ test('every form is titled by the anonymous λ it binds, on one line', async () 
     // since every output of this shape carries the same title.
     assert.ok(!/[⟦⟧()]/.test(strip(line.innerHTML)), `${what}: a title carries no apparatus`);
     assert.ok(!/[⁰¹²³⁴⁵⁶⁷⁸⁹]/.test(strip(line.innerHTML)), `${what}: the binder stands bare`);
-    assert.equal(strip(line.innerHTML), titleText(termOfScript(addressScriptHex(address))));
+    // The kind opens the line and := binds it to the term the module writes,
+    // so the reading and the search leaf state one definition the same way.
+    const t = termOfScript(addressScriptHex(address));
+    assert.equal(strip(line.innerHTML), `${t.label} := ${titleText(t)}`);
   }
 });
 
@@ -98,11 +101,12 @@ test('anything that binds a term is titled, tabled or not', async () => {
   // question its own bytes answer.
   const data = paint('6a' + '04' + 'ab'.repeat(4));
   assert.equal(data.drew, true, 'a data output');
-  assert.equal(strip(data.lines[0].innerHTML), 'λd. ¶ d');
-  // …and a well-formed script no template claims.
+  assert.equal(strip(data.lines[0].innerHTML), 'data := λd. ¶ d');
+  // …and a well-formed script no template claims, which the kind names for
+  // exactly what the page knows it to be.
   const odd = paint('76a914' + 'ab'.repeat(20));
   assert.equal(odd.drew, true, 'an unclassified script');
-  assert.equal(strip(odd.lines[0].innerHTML), 'λh. ⧉ ⌖ h');
+  assert.equal(strip(odd.lines[0].innerHTML), 'Script := λh. ⧉ ⌖ h');
   // What goes untitled is what binds nothing: bytes that are not a script,
   // a push claiming more than remains, a script with nothing to abstract over.
   assert.equal(paint('deadbeef').drew, false, 'undefined opcodes');
@@ -140,26 +144,43 @@ test('the bookmark stands above the title, and neither displaces the other', asy
 test('the title is sized with the lines it is stacked with', async () => {
   const page = await bookPage();
   const css = page.slice(0, page.indexOf('</style>'));
-  // The three lines above a paragraph -- the bookmark title, the keep, the
-  // term -- are one group of headings over one paragraph, so they take one
-  // scale. A title that sized itself from the sigla would fall out of step
-  // with the two it is stacked under the moment a reader diverged them.
+  // The two lines above the script -- the keep and the term -- are one group of
+  // headings over one paragraph, so they take the paragraph's own scale. A
+  // title that sized itself from the sigla would fall out of step with the line
+  // it is stacked with the moment a reader diverged them.
   const size = /calc\(13\.5px \* var\(--scale-body, 1\)\)/;
-  for (const line of ['tx-out-title', 'tx-out-keep', 'tx-out-term']) {
+  for (const line of ['tx-out-keep', 'tx-out-term']) {
     const rule = new RegExp(`\\.${line} \\{[^}]*\\}`).exec(css);
     assert.ok(rule, `.${line} is no longer sized here`);
     assert.match(rule[0], size, `.${line} left the body scale`);
     assert.ok(!/--scale-sigla-ratio/.test(rule[0]), `.${line} sizes itself from the sigla`);
   }
-  // …and the marks inside it are left to the page's own glyph rules, which is
-  // what makes the title and the script it titles the same notation at two
-  // sizes: the opcodes ride the sigla ratio in both, the data letters ride
-  // neither in both. A line carrying the ratio itself would have had to undo
-  // it for every mark, and would have been the only line on a section to.
-  assert.ok(!/#page-slide \.tx-out-term \.op/.test(css),
-    'the title is undoing a glyph rule it no longer needs to');
+  // The output's own keep is not in that group: it names the coin rather than
+  // the paragraph, and stands above the amount, which is the coin's handle. So
+  // it takes the scale of the column it is now stacked in -- a name that grew
+  // with the body while the figure under it grew with the margins would be the
+  // same drift, one column over.
+  const title = /\.tx-out-title \{[^}]*\}/.exec(css);
+  assert.ok(title, '.tx-out-title is no longer sized here');
+  assert.match(title[0], /calc\(13\.5px \* var\(--scale-margins, 1\)\)/,
+    'the output keep left the margin scale it shares with the amount');
+  assert.ok(!/grid-column/.test(title[0]),
+    'the output keep is spanning the grid again rather than sitting in the cell');
+  // …and the marks inside it are proportional to the body too. The title is
+  // nothing but marks, so leaving them on the inline ratio would size the whole
+  // line by it and pull the heading out of step with the two it is stacked
+  // under the moment a reader diverged the sigla. The ratio still reaches the
+  // paragraph below, where the marks punctuate prose and the divergence is
+  // what it is for.
+  assert.match(css, /#page-slide \.tx-out-term \.op \{ font-size: 1em; \}/,
+    'the title leaves its marks on the sigla ratio');
   assert.match(css, /#page-slide \.op \{ font-size: calc\(1em \* var\(--scale-sigla-ratio, 1\)\); \}/,
-    'the glyph rule the title now relies on is gone');
+    'the rule the title neutralizes is gone');
+  // The neutralizing follows the book's own precedent, and reads as one family
+  // with it: a push count and a template timestamp are held at 1em for the
+  // same reason, being measurements rather than operations.
+  assert.match(css, /#page-slide \.op\.op-count, #page-slide \.op\.op-tpltime \{ font-size: 1em; \}/,
+    'the precedent for holding a mark at the body size is gone');
 });
 
 test('every mark the title sets is a mark the reading styles', async () => {
@@ -174,6 +195,10 @@ test('every mark the title sets is a mark the reading styles', async () => {
     const line = titleHtml(termOfScript(addressScriptHex(address)));
     for (const m of line.matchAll(/class="([^"]+)"/g)) m[1].split(/\s+/).forEach((c) => classes.add(c));
   }
+  // …and the painter's own, which the module never emits: the kind and the :=
+  // are written by the page, so nothing above would have caught them going
+  // unstyled.
+  for (const c of ['out-kind', 'out-def']) classes.add(c);
   assert.ok(classes.size >= 2, 'the term stopped setting marks at all');
   for (const c of classes) {
     assert.match(css, new RegExp(`\\.${c}[\\s,{:]`), `.${c} is set by the title and styled nowhere`);
@@ -203,8 +228,11 @@ test('the message footnote is headed by its digest, said, and never by hex', asy
   // metadata -- what went into the hash -- and this is what came out, which is
   // the one number a reader checks.
   assert.match(src, /const digest = sayFn \? sayFn\(message\.digest\)/, 'the digest is not said');
-  assert.match(src, /term-fn-digest[\s\S]*?term-fn-head[\s\S]*?\$\{rows\}/,
-    'the digest no longer heads the fields');
+  assert.match(src, /term-fn-digest[\s\S]*?\$\{rows\}/, 'the digest no longer heads the fields');
+  // And it heads them alone. A caption below it used to repeat the algorithm
+  // and the sighash flavour; both are still available from the heading's hover
+  // and the nHashType row.
+  assert.ok(!/term-fn-head/.test(src), 'the footnote has grown a second heading again');
   // …and neither the digest nor the preimage is ever set in type. They ride on
   // the element, where they can be copied and cannot be read.
   assert.match(src, /data-hash="\$\{escapeHtml\(message\.digest\)\}"/);
@@ -214,8 +242,14 @@ test('the message footnote is headed by its digest, said, and never by hex', asy
   }
   // Two things are worth taking from a digest: the number, and the
   // serialization it was taken over, so a reader can hash it and compare
-  // rather than take the page's word.
-  assert.match(page, /\['Copy hash', host\.dataset\.hash\], \['Copy preimage', host\.dataset\.preimage\]/);
+  // rather than take the page's word. The menu reads its items off the element
+  // now — the commitment check on this same leaf offers a third and calls all
+  // of them something else — but a host that names only these two still gets
+  // exactly these two, under these names.
+  assert.match(page, /\[d\.hashLabel \|\| 'Copy hash', d\.hash\]/);
+  assert.match(page, /\[d\.preimageLabel \|\| 'Copy preimage', d\.preimage\]/);
+  assert.match(page, /const items = \[[\s\S]{0,200}?d\.datum,?\s*\]/,
+    'the third value a check is made of is not offered');
 });
 
 test('nothing high-entropy on the leaf falls back to hex', async () => {

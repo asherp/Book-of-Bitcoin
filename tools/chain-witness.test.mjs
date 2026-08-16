@@ -381,18 +381,33 @@ test('the leaf marks a quotation only where it can name the place', async () => 
   // and carrying these bytes at every reference on the page. ⋯ never asked, ∅
   // found nothing, ☒ found something else -- none of them is a passage.
   assert.match(page, /quoted:\s*verdict === 'agrees'/, 'only agreement makes it a quotation');
-  assert.match(page, /const locked = terms \+ \(quoted \?/, 'and the rule is drawn on that alone');
+  assert.match(page, /const locked = quoted \?/, 'and the rule is drawn on that alone');
   // The spend rung has no such condition, because it is only ever drawn when an
   // input was found to read it off.
   assert.match(page, /class="term-line term-quote">\$\{rung\.html\}/);
   // Both rungs quote the passage and only the passage. λ, its binders and the
   // eval step are this page's own notation about a script -- true of the bytes
-  // in the box whether or not the chain ever wrote them -- so they stand on a
-  // bare line above the rule, exactly as the address rung does. The term inside
-  // a quotation would put the reader's apparatus under a citation telling them
-  // where to go and read it.
-  assert.match(page, /const terms = t \? `<div class="term-line">\$\{titleHtml\(t\)\}/,
-    'the lock quotation derives its title');
+  // in the box whether or not the chain ever wrote them -- so they stand
+  // outside the rule. The term inside a quotation would put the reader's
+  // apparatus under a citation telling them where to go and read it.
+  //
+  // The lock's title is the head: the kind, := and the term the script binds,
+  // which is one statement of what these bytes are rather than a label and a
+  // line a rung apart.
+  // Kind, := and term in one span: as separate flex items they broke between
+  // the kind and the term at a narrow width, splitting a statement that reads
+  // as one line.
+  assert.match(page, /const title = `<span class="term-title"><span class="term-kind">/,
+    'the kind no longer opens the definition');
+  assert.match(page, /<span class="term-def">:=<\/span> \$\{titleHtml\(t\)\}/,
+    'the head no longer defines the term it names');
+  assert.match(page, /const head = `<div class="term-head">\$\{title\}/,
+    'and the title does not stand in the head');
+  // …and never as a sibling of the term it opens, which is the arrangement
+  // that broke. (The spelled card's head carries a kind alone, with no term to
+  // be split from, so this is about the pairing rather than the class.)
+  assert.ok(!/class="term-head">\s*(?:\$\{)?<span class="term-kind">[\s\S]{0,120}?class="term-title"/.test(page),
+    'the kind stands beside the term it opens rather than inside it');
   assert.match(page, /class="term-quote">\$\{passage\}/, 'and quotes the script alone');
   assert.match(page, /class="term-line term-reveal"[^>]*>\$\{line\}/,
     'the spend quotation has one too');
@@ -404,14 +419,18 @@ test('the leaf marks a quotation only where it can name the place', async () => 
     assert.ok(!/prefix|suffix|lockedHtml|lockBodyHtml/.test(m[1]),
       `a quotation is built from the term's own marks: ${m[1]}`);
   }
-  // The address rung is a reading of the bytes in the box -- true whether or not
-  // the chain ever wrote them -- so it is never inside the rule. If it were, the
+  // The head is a reading of the bytes in the box -- true whether or not the
+  // chain ever wrote them -- so it is never inside the rule. If it were, the
   // mark would stop meaning anything.
   const classes = [...page.matchAll(/class="([^"]*)"/g)].map((m) => m[1].split(/\s+/));
-  const awaits = classes.filter((c) => c.includes('term-awaits'));
-  assert.equal(awaits.length, 1, 'the address rung is drawn once');
-  assert.ok(!awaits.some((c) => c.includes('term-quote')),
-    'the address rung is a reading, not a quotation');
+  const titles = classes.filter((c) => c.includes('term-title'));
+  assert.equal(titles.length, 1, 'the term is defined once');
+  assert.ok(!titles.some((c) => c.includes('term-quote')),
+    'the definition is a reading, not a quotation');
+  // The application rung is gone: it reduced to the passage printed directly
+  // below it, so the leaf set one script twice.
+  assert.ok(!/term-awaits/.test(page), 'the application rung is drawn again');
+  assert.ok(!/\baddressHtml\b/.test(page), 'and the leaf still imports what drew it');
 });
 
 // ─── an id is not a script, however its bytes read ───────────────────────
@@ -459,4 +478,28 @@ test('the leaf never calls an id a broken script, and Read still opens it', asyn
   // the page that would explain the silence.
   assert.equal(classify('76a914ab').kind, null);
   assert.deepEqual(scriptFault('76a914ab'), { reason: 'truncated', at: 2, remain: 2 });
+});
+
+// ─── ?q= draws while the module is still evaluating ──────────────────────
+
+test('a card drawn from ?q= reaches nothing that is not initialized yet', async () => {
+  const page = await searchPage();
+  const body = /<script type="module">([\s\S]*?)<\/script>/.exec(page);
+  assert.ok(body, 'the leaf no longer carries a module');
+  const lines = body[1].split('\n');
+  const kick = lines.findIndex((l) => l.startsWith('if (asked)'));
+  assert.ok(kick > 0, 'the leaf no longer draws what ?q= names');
+  // ?q= is the one path that draws a card DURING module evaluation — every
+  // other draw is a keystroke, long after it. So everything drawTerm reaches
+  // has to be initialized by the time this line runs, and const/let are not
+  // hoisted: a helper declared below it is in its temporal dead zone, and the
+  // draw throws before it can paint. That is not a hypothetical. The Search
+  // item on a locking script's menu opens ?q=<hex>, and it opened a blank leaf
+  // while pasting the same bytes worked, because the notation key's helpers
+  // were declared underneath.
+  const late = lines.slice(kick + 1)
+    .map((l) => /^(?:const|let)\s+(\w+)/.exec(l))
+    .filter(Boolean).map((m) => m[1]);
+  assert.deepEqual(late, [],
+    `declared after the first draw, so a ?q= card cannot reach them: ${late.join(', ')}`);
 });

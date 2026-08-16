@@ -538,7 +538,7 @@ a.bb-ref:hover { color:var(--accent-2); }
   <div class="bip-foot hidden" id="bip-foot">
     <div class="bip-tally hidden" id="bip-tally"></div>
     <details class="leaf-commentary hidden" id="bip-commentary">
-      <summary title="What this fork is, and readings of it — editorial, and kept apart from the record above">Commentary</summary>
+      <summary title="Readings of this fork — editorial, kept apart from the record above">Commentary</summary>
       <div class="commentary-body" id="bip-commentary-body"></div>
     </details>
   </div>
@@ -1321,8 +1321,8 @@ if (kind === 'mempool' && QUEUE === null) {
     if (rev) {
       const over = `over the ${rev.chapters.toLocaleString('en-US')} chapters now queued`;
       lines.push({ text: `${formatAmount(rev.sats)} expected`,
-        title: `${formatBtc(rev.sats)} in all, ${over} — ${formatBtc(rev.sats - rev.fees)} the schedule mints `
-          + `for writing them and ${formatBtc(rev.fees)} the sections in them carry. ${credit}.` });
+        title: `${formatBtc(rev.sats)} in all, ${over} — ${formatBtc(rev.sats - rev.fees)} minted by the `
+          + `schedule, ${formatBtc(rev.fees)} carried by the sections. ${credit}.` });
     }
     setFoot(lines);
   })().catch(() => { setSpan([]); setFoot([]); });
@@ -1391,13 +1391,13 @@ if (QUEUE) {
           title: 'how many transactions the next chapter would carry' },
         byValue
           ? { text: `${(first.blockVSize / MVB).toFixed(2)} MvB · ${formatAmount(Number(first.totalFees) || 0)} in fees`,
-            title: `${formatBtc(Number(first.totalFees) || 0)} — what its sections carry for whoever writes it. ${credit}` }
+            title: `${formatBtc(Number(first.totalFees) || 0)} — what its sections carry. ${credit}` }
           : { text: `${(first.blockVSize / MVB).toFixed(2)} MvB · ${Number(first.medianFee).toFixed(2)} sat/vB median`,
             title: `virtual size against the one million vB a block may hold. ${credit}` },
       ]);
       setFoot([{ text: `${alphaRef} — ${queueLabel(1)}`,
-        title: `the chapter this ranking reads: the first of the drafts, and the only one that is a forecast `
-          + `rather than a statement about the queue now` }]);
+        title: 'the chapter this ranking reads: the first of the drafts, and a forecast rather than '
+          + 'a statement about the queue now' }]);
       return;
     }
 
