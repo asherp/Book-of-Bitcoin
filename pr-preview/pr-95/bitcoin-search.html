@@ -281,6 +281,11 @@ button:hover { background: var(--accent-2); }
    The span inside is the handle, and inline — so a click lands on the marks
    rather than anywhere along the width of the card. */
 .term-checked { margin-top: 6px; text-align: center; }
+/* A push held back until it is asked for. Quiet, because it stands for prose
+   that is not there yet rather than for anything the chain wrote — the same
+   ink the reading gives its own deferred pushes. */
+.glossia-lazy { color: var(--meta); cursor: pointer; }
+.glossia-lazy:hover, .glossia-lazy:focus-visible { color: var(--accent); outline: none; }
 .term-checked .hash-copy { cursor: pointer; }
 .term-held { color: var(--accent); }
 /* The message ⌘ names, set as a footnote: not a quotation — no chain wrote
@@ -458,6 +463,39 @@ async function glossia() {
   } catch { return null; }
 }
 const say = (gl) => (hex) => { try { return gl.encodeCanonical(hex).prose; } catch { return null; } };
+
+// A push big enough to be a payload rather than a value, held back behind a ⋯
+// until a reader asks for it. The book defers the same pushes on a scroll,
+// which a card this short would never earn: here the mark is the affordance,
+// and a click is what spends the encoding.
+//
+// The threshold is what a script carries as VALUES: a hash is 20 or 32 bytes,
+// a key 32 or 33 or 65, a signature 64 to 72. Everything above that is a blob
+// somebody stored — an inscription's body, an OP_RETURN's cargo — and setting
+// several hundred bytes of it as prose buries the line it belongs to. The hex
+// rides on the element, where the click can find it and nobody can read it.
+const LAZY_BYTES = 100;
+let currentSay = null;
+const lazySay = (sayFn) => (hex) => {
+  if (!hex || !sayFn) return '';
+  if (hex.length / 2 <= LAZY_BYTES) return sayFn(hex) || '';
+  return `<span class="glossia-lazy" data-hex="${escapeHtml(hex)}" role="button" tabindex="0"`
+    + ` title="${hex.length / 2} bytes, not yet said — click to read them">⋯</span>`;
+};
+// Delegated, because the card is rebuilt from a string on every keystroke and
+// a listener bound inside it would not survive the next paint.
+const fillLazy = (el) => {
+  const hex = el.dataset.hex;
+  if (hex === undefined || !currentSay) return;
+  const said = currentSay(hex);
+  if (!said) return;                      // no engine: the mark stands, as it does everywhere
+  delete el.dataset.hex;
+  el.classList.remove('glossia-lazy');
+  el.removeAttribute('role');
+  el.removeAttribute('tabindex');
+  el.removeAttribute('title');
+  el.innerHTML = said;                    // Glossia prose — safe as innerHTML
+};
 
 // The reader's own renderings, borrowed rather than reimplemented -- both of
 // them, because an input carries its data one of two ways and the reader draws
@@ -878,6 +916,10 @@ function openCopyMenu(host) {
   menu.querySelector('.hash-menu-item')?.focus();
 }
 document.addEventListener('click', (e) => {
+  // A held-back push first: it sits inside the quotation, which is itself a
+  // copy handle, so the ⋯ has to claim the click before the menu does.
+  const lazy = e.target.closest?.('.glossia-lazy');
+  if (lazy) { e.stopPropagation(); fillLazy(lazy); return; }
   const host = e.target.closest?.('.hash-copy');
   if (host) { e.stopPropagation(); openCopyMenu(host); return; }
   if (!e.target.closest?.('.hash-menu')) closeCopyMenu();
@@ -885,6 +927,8 @@ document.addEventListener('click', (e) => {
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') { closeCopyMenu(); return; }
   if (e.key !== 'Enter' && e.key !== ' ') return;
+  const lazy = e.target.closest?.('.glossia-lazy');
+  if (lazy) { e.preventDefault(); fillLazy(lazy); return; }
   const host = e.target.closest?.('.hash-copy');
   if (host) { e.preventDefault(); openCopyMenu(host); }
 });
@@ -921,8 +965,21 @@ function drawTerm(hex, { address = null, at = '', say: sayFn = null, said = '',
   // alone carried is carried still -- the datum's prose by the passage, which
   // spells the whole script, and the road to the lock's citation by the spend
   // title, which is the line that names a datum bound in another section.
+  // The quotation, set the way a chapter sets the same script: the reading's
+  // own renderer, so a wholly readable push reads as the text it is rather
+  // than as cover prose, and a payload waits behind its ⋯. One script, two
+  // pages, one set of rules — a reader who met these bytes in a chapter should
+  // meet them here unchanged.
+  //
+  // spellHtml stands in until btc-prose arrives, and for bytes it declines:
+  // the spelled form is the invertible one, which is what the box reads back,
+  // and a first paint that showed nothing while a module loaded would be worse
+  // than showing the serialization. Where the reading's rules do apply the
+  // line is no longer a spelling — a quoted run is not the spelled form — so
+  // the copy menu, not the text, is what carries the exact bytes now.
+  const read = reader && sayFn ? reader.renderScript(hex, lazySay(sayFn)) : null;
   const script = `<span class="term-onchain" title="the same script in the book’s own hand — `
-    + `the box above reads it back">${spellHtml(hex, { say: sayFn }) || ''}</span>`;
+    + `click to copy the bytes">${read || spellHtml(hex, { say: sayFn }) || ''}</span>`;
   // The passage stands under the head that names it. λ, the dot and the binders
   // are this page's notation ABOUT the script and not one byte of it, so they
   // stay in the head, outside the rule and outside the copyable span: a
@@ -956,6 +1013,7 @@ async function enrichTerm(hex, { address = null, at = '' } = {}) {
   const [gl, reader] = await Promise.all([glossia(), readerProse()]);
   if (!still()) return;
   const sayFn = gl ? say(gl) : null;
+  currentSay = sayFn;   // what a held-back push is filled from when clicked
   if (sayFn) drawTerm(hex, { address, at, say: sayFn });
   const witness = await chainWitness(address ?? hex);
   if (!still()) return;
@@ -968,7 +1026,7 @@ async function enrichTerm(hex, { address = null, at = '' } = {}) {
   // Set the way the reader sets it, whichever way the input carried it: a
   // witness as a stack, a scriptSig as script. Only the carriage decides which,
   // exactly as it does in a chapter.
-  const encode = (h) => (sayFn ? sayFn(h) || '' : '');
+  const encode = lazySay(sayFn);
   const brought = !reader || !opened ? null
     : opened.mark?.sig
       ? (opened.scriptsig ? reader.renderScript(opened.scriptsig, encode, { nested: true }) : null)
