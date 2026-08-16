@@ -212,7 +212,16 @@ fluency every time.
   would reach a reader as a missing reading or an empty contents. The deploy and
   every PR preview run it too.
 - Pull requests get a live preview deployed automatically.
+- A pull request opens on
+  [`.github/pull_request_template.md`](.github/pull_request_template.md) by
+  default: the form for a change to the book's machinery — the pages, the
+  notation, the tooling — which asks how the round trip survives and which
+  checks were run. Delete any section that does not apply.
 - Offering commentary? Open the pull request with the commentary template —
-  add `?template=commentary.md&expand=1` to the compare URL.
+  add `?template=commentary.md&expand=1` to the compare URL. It replaces the
+  default with the form that asks about the passage instead. Coming through
+  **Add your commentary** on a page, the URL cannot carry the parameter, so
+  that route lands on the default: say which passage you are annotating and it
+  can be sorted out in review.
 - For substantial commentary or a new curated entry, opening an issue first is
   a good way to check it fits before writing it.

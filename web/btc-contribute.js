@@ -28,14 +28,21 @@
 //            repository. GitHub forks it for them, opens the file already
 //            named and already carrying its licence header, and offers a pull
 //            request when they commit. This route cannot carry a pull request
-//            template: there is no compare URL for the parameter to ride on.
+//            template: there is no compare URL for the parameter to ride on,
+//            so what a contributor meets on the compare page GitHub takes them
+//            to is the repository default -- the form for a change to the
+//            book's machinery, which opens by saying so and where to go
+//            instead. It is the one door where the wrong form is what a
+//            commentary contributor sees first, and the cost of the door
+//            asking nothing of them beforehand.
 //
 //   propose  /compare?expand=1&template=commentary.md   A contributor who has
 //            a branch already. This is the door the commentary template comes
 //            through, and it is why the template is a NAMED one, under
 //            .github/PULL_REQUEST_TEMPLATE/, rather than the repository
-//            default: a default would hand every code contributor a form
-//            about record and testimony. Named templates apply only when
+//            default: the default is the form every contributor gets without
+//            asking, and a form about record and testimony is not what a
+//            change to the renderer wants. Named templates apply only when
 //            asked for by name, and this is what asks.
 //
 // `body` is deliberately never passed. On a compare URL it OVERRIDES
