@@ -288,3 +288,31 @@ export function footnoteIndexOf(mark) {
   }
   return n || null;
 }
+
+// ── A citation, whole ─────────────────────────────────────────────────────
+// The book's own printed spelling, built from the parts a place is known by:
+// the chapter's reference, the §section where one is named, and after the
+// point the output or the witness footnote that names a part of it. This is
+// latinRefOf's counterpart -- the same place, in the form the book prints
+// rather than the form a URL carries -- and it lives here for the reason the
+// parser does: a citation spelled two ways is two citation schemes.
+export function citation(height, section = null, out = null, wit = null, sig = false) {
+  const sec = section == null ? ''
+    : ` §${section}${out != null ? `.${out}` : wit != null ? `.${inputMark(wit, sig)}` : ''}`;
+  return reference(height) + sec;
+}
+
+// What a keep is called when it has neither the reader's own title nor prose
+// to be said by. A txid is never the answer: it is high-entropy bytes, which
+// reach a reader through Glossia or not at all, and the book has a name for
+// this place already -- its reference. A LEAF is named by the span it stands
+// at, a volume by its numeral and a book by the β mark, because the chapter
+// reference would cite the block that opens the span: a different place, and
+// a different keep.
+export function keepReference({ height, pos = null, vout = null, wn = null, page = null }) {
+  if (!Number.isInteger(height)) return '';
+  const { volume, book } = volumeBookChapter(height);
+  if (page === 'volume') return toRoman(volume);
+  if (page === 'book') return `${toRoman(volume)} β${book}`;
+  return citation(height, pos == null ? null : pos + 1, vout, wn);
+}

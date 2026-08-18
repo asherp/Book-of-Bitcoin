@@ -711,7 +711,7 @@ import { INDEXED, isAddress, isScriptHex, keptLedgers, saveKeptLedgers, sameAddr
          extendLine, renderRows, groupState, markIndex, periods, lineNote, reconciled, ledgerSum, heldCoins, lastKnownState,
          formatBalanceBtc, formatNetBtc, chainFailureText, citeHref, sectionOf, sectionOfFetched, citePlace, passageTxid, passageEntries, txHexOf, outspendsOf, prevoutValuesOf,
          DEFAULT_ESPLORA, esploraCustom, esploraSelected, setEsploraSettings } from './btc-index.js';
-import { volumeBookChapter, heightOf, subsidyAt, toRoman, parseReference, latinRefOf, footnoteMark } from './btc-citation.js';
+import { volumeBookChapter, heightOf, subsidyAt, toRoman, parseReference, latinRefOf, footnoteMark, keepReference } from './btc-citation.js';
 import { usdOn } from './btc-price.js';
 import { amountUnit, setAmountUnit, ownUnit, formatAmountAs, formatValuation } from './btc-amounts.js';
 import { BIP39, HP_SPELLS } from './btc-wordlists.js';
@@ -1050,15 +1050,23 @@ const readBookmarks = () => {
   try { const v = JSON.parse(localStorage.getItem('glossia-btc-bookmarks')); return Array.isArray(v) ? v : []; }
   catch { return []; }
 };
-const shortHex = (hex) => `${hex.slice(0, 10)}…${hex.slice(-6)}`;
 // The reader's bookmarked passages, which the ledger hangs in its quarters
 // beside the entries they fall among. A bookmark of a volume or a book (b.page)
 // is a span, not a passage: it has a height, but hanging it on that block's
 // quarter would cite a whole volume as though it were the chapter that opens
 // it. Those live in the table of contents, at the level they name.
+//
+// A keep with no title of the reader's own is said by its prose; failing that
+// it has no name, and the tag it wears is the ribbon alone. Never its txid,
+// whole or shortened: those are high-entropy bytes, which reach a reader
+// through Glossia or not at all -- and the row the tag rides on already cites
+// the place, so a name here could only repeat it. The reference is carried in
+// the hover instead, where a keep is stored only once its place is known
+// (addBookmark declines without one) so there is always one to carry.
 const bookmarks = readBookmarks()
   .filter((b) => Number.isInteger(b.height) && !b.page)
-  .map((b) => ({ hex: b.hex, height: b.height, pos: b.pos ?? null, title: b.title || b.prose || shortHex(b.hex) }));
+  .map((b) => ({ hex: b.hex, height: b.height, pos: b.pos ?? null,
+    title: b.title || b.prose || '', said: keepReference(b) }));
 
 const n = (v, one, many) => `${v.toLocaleString('en-US')} ${v === 1 ? one : many}`;
 

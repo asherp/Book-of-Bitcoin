@@ -1393,12 +1393,17 @@ function lineRow({ txid, sats, place, out, addr, time, height }, held, marks = n
     if (!bm || r.querySelector('.idx-bm')) return;
     const tag = document.createElement('span');
     tag.className = 'idx-bm';
-    tag.title = `your bookmark — ${bm.title}`;
+    // A keep the reader never named wears the ribbon alone: the row it rides
+    // on already cites the place, so the only thing a name could add is that
+    // same citation twice. What names it travels in the hover -- `said`, the
+    // book's own reference for the keep -- never its id.
+    tag.title = `your bookmark${bm.title || bm.said ? ` — ${bm.title || bm.said}` : ''}`;
     const rib = document.createElement('span');
     rib.className = 'toc-bm';
-    rib.setAttribute('aria-label', 'your bookmark');
+    rib.setAttribute('aria-label', tag.title);
     rib.innerHTML = BOOKMARK_RIBBON;
-    tag.append(rib, document.createTextNode(bm.title));
+    tag.append(rib);
+    if (bm.title) tag.append(document.createTextNode(bm.title));
     r.append(tag);
   };
   wear(marks?.byTxid.get(txid));
