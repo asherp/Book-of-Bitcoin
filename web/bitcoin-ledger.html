@@ -1,8 +1,8 @@
 <!-- SPDX-License-Identifier: MIT OR Apache-2.0 -->
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>The βook of βitcoin — Ledger</title>
-<meta name="description" content="The Ledger of the Glossia Bitcoin Book: a compendium of notable donation addresses — and any the reader keeps — each a view of the manuscript focused on amounts, reconciled against the chain.">
+<title>The βook of βitcoin — The Ledgers</title>
+<meta name="description" content="The Ledgers of the Glossia Bitcoin Book: a compendium of notable donation addresses — and any the reader keeps — each a view of the manuscript focused on amounts, reconciled against the chain.">
 <link rel="icon" type="image/png" sizes="32x32" href="./icons/beta-icon-32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="./icons/beta-icon-16.png">
 <link rel="icon" href="./icons/beta-icon.svg" type="image/svg+xml">
@@ -10,7 +10,7 @@
 <!-- Social / rich unfurl -->
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="The βook of βitcoin">
-<meta property="og:title" content="The βook of βitcoin — Ledger">
+<meta property="og:title" content="The βook of βitcoin — The Ledgers">
 <meta property="og:description" content="A compendium of notable donation addresses — each a view of the manuscript focused on amounts, reconciled against the chain.">
 <meta property="og:url" content="https://bookofbitcoin.io/bitcoin-ledger.html">
 <meta property="og:image" content="https://bookofbitcoin.io/og-bookofbitcoin.png">
@@ -18,7 +18,7 @@
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="The βook of βitcoin — Vires in Numeris. A gold β standing beside the book's title on a dark cover.">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="The βook of βitcoin — Ledger">
+<meta name="twitter:title" content="The βook of βitcoin — The Ledgers">
 <meta name="twitter:description" content="A compendium of notable donation addresses, each reconciled against the chain.">
 <meta name="twitter:image" content="https://bookofbitcoin.io/og-bookofbitcoin.png">
 
@@ -566,7 +566,7 @@ a:hover { text-decoration: underline; }
 <div class="wrap">
   <div class="masthead">
     <span class="title">The <span class="beta">β</span>ook of <span class="beta">β</span>itcoin</span>
-    <span class="home"><a href="./bitcoin-book.html">Read</a> · <a href="./bitcoin-contents.html?part=ledgers">Contents</a> · <a href="./bitcoin-search.html">Search</a> · <span class="settings-menu"><a href="#" id="settings-link" role="button" aria-haspopup="dialog" aria-expanded="false">Settings</a><div id="settings-panel" class="settings-panel hidden" role="dialog" aria-label="Ledger settings">
+    <span class="home"><a href="./bitcoin-book.html">Read</a> · <a href="./bitcoin-contents.html?part=ledgers">Contents</a> · <a href="./bitcoin-search.html">Search</a> · <span class="settings-menu"><a href="#" id="settings-link" role="button" aria-haspopup="dialog" aria-expanded="false">Settings</a><div id="settings-panel" class="settings-panel hidden" role="dialog" aria-label="Settings">
       <div class="settings-title">Amounts</div>
       <!-- The book page's notation rows, same stored choice: the record's
            three dresses, then the valuations — the day's USD price (each
@@ -589,7 +589,7 @@ a:hover { text-decoration: underline; }
   <div id="ledger-frame">
     <div id="ledger-slide">
       <header class="anth-hero" id="anth-hero">
-        <div class="page-eyebrow" id="anth-eyebrow">Ledger</div>
+        <div class="page-eyebrow" id="anth-eyebrow">The Ledgers</div>
         <h1 class="anth-title" id="anth-title"></h1>
         <div class="anth-subtitle" id="anth-subtitle"></div>
         <div class="anth-pager" id="anth-pager"></div>
@@ -973,8 +973,8 @@ function syncUrl() {
     history.replaceState(null, '', url);
   } catch (_) { /* unavailable */ }
   document.title = level === 'appendix' ? `The βook of βitcoin — ${PART_LABEL}`
-    : level === 'ledger' && !qList.length ? 'The βook of βitcoin — Ledger'
-    : `The βook of βitcoin — Ledger · ${cur().name}`;
+    : level === 'ledger' && !qList.length ? 'The βook of βitcoin — The Ledgers'
+    : `The βook of βitcoin — The Ledgers · ${cur().name}`;
 }
 
 // ── Shared leaf furniture ──────────────────────────────────────────────────
