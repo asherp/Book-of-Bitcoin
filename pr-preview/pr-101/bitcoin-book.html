@@ -541,6 +541,13 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 }
 .hash-menu-title .hash-title-row .ghost { background: transparent; color: var(--dim); border: 1px solid var(--input-bd); }
 .hash-menu-title .hash-title-row .ghost:hover { background: transparent; color: var(--ink); border-color: var(--accent); }
+/* The reason a name will not save, under the field it is about. Quiet: it is
+   an instruction, not an alarm, and it stands only while the name is at
+   fault. Empty, it takes no room -- the form has one shape for a reader
+   whose name is fine and no extra step for anybody. */
+.hash-title-note { padding: 2px 5px 0; color: var(--meta);
+  font: 400 10.5px/1.4 'IBM Plex Mono','Book Sigla',monospace; max-width: 232px; }
+.hash-title-note:empty { display: none; }
 
 /* Per-section paging: Previous / Next pushed to opposite edges, each labelled
    with the section (or adjacent leaf) it steps to. Anchored to the bottom of
@@ -1330,6 +1337,10 @@ a.footnote-title.is-asset:hover { color: var(--accent-2, #dcb877); text-decorati
     </div>
     <div id="hash-menu-title" class="hash-menu-title hidden">
       <input type="text" id="hash-title-input" class="mono" placeholder="Title for contents" autocomplete="off" spellcheck="false">
+      <!-- Why the name cannot be saved, where it cannot: a keep has to be
+           named, and no two keeps may share a name. Empty, it takes no room,
+           so the form is unchanged for a reader whose name is fine. -->
+      <div id="hash-title-note" class="hash-title-note" role="status"></div>
       <div class="hash-title-row">
         <button type="button" data-act="title-save">Save</button>
         <button type="button" class="ghost" data-act="title-cancel">Cancel</button>
@@ -1348,6 +1359,9 @@ import { parseTransaction, computeTxid, parseBlockHeader, computeBlockHash, bits
 // titles are the keep line's defaults.
 import { keptLedgers, saveKeptLedgers, keepLedger, INDEXED } from './btc-index.js';
 import { pathSegments } from './btc-path.js';   // a slash in a name the reader typed is a path
+// A keep has to be named, and no two keeps may share a name (btc-keepname.js):
+// the form and the store decide it there, so they cannot disagree.
+import { nameFault, takenNames } from './btc-keepname.js';
 import { composeTransactionFields, composeBlockHeaderFields, bitsInfo, groupDigits, formatBtc, formatAmount, formatAmountAs, formatOwnAmount, amountUnit, setAmountUnit, ownUnit, setOwnUnit, dayPrice, setDayPrice, renderWitness, toSuperscript, timestampInfo } from './btc-prose.js';
 import { usdOn, PRICE_SOURCES, priceSource, setPriceSource } from './btc-price.js';
 import { volumeBookChapter, heightOf, windowStartOf, retargetInside, subsidyAt, toRoman, reference, parseReference, footnoteMark, footnoteIndexOf, inputMark, latinRefOf } from './btc-citation.js';
@@ -7214,6 +7228,12 @@ const keyOf = (b) => bookmarkKey(b.hex, bmSubOf(b), b.page ?? null);
 const isBookmarked = (hex, vout = null, page = null) => bookmarks.some((b) => keyOf(b) === bookmarkKey(hex, vout, page));
 const saveBookmarks = () => { try { localStorage.setItem(BOOKMARKS_KEY, JSON.stringify(bookmarks)); } catch {} };
 
+// Why this keep's name cannot be saved, or null when it can: the shared rule
+// (btc-keepname.js) asked over the keeps this page holds. `exceptKey` is the
+// keep being retitled -- a name is never taken from itself.
+const keepNameFault = (title, exceptKey = null) =>
+  nameFault(title, takenNames(bookmarks, keyOf, exceptKey));
+
 // The curated entries live in notables.yaml, loaded through btc-contents.js and
 // shared with the table-of-contents page; they lead the Bookmarks list here.
 
@@ -7246,6 +7266,10 @@ function entryPlacement(entry) {
 // nothing) when the reference can't be resolved.
 function addBookmark(entry, title) {
   const key = bookmarkKey(entry.hex, bmSubOf(entry), entry.page ?? null);
+  // Named, and named uniquely. The form does not offer Save while either
+  // fails, so this is the store's own guard rather than the reader's first
+  // news of it -- and the one that holds for any other caller.
+  if (keepNameFault(title, key)) return false;
   const existing = bookmarks.find((b) => keyOf(b) === key);
   if (existing) {
     existing.title = title;
@@ -7810,10 +7834,26 @@ menuSearchBtn.addEventListener('click', () => {
 // menu's Bookmark item and from a hollow ribbon alike.
 function promptForTitle() {
   titleInput.value = suggestTitle(menuEntry);
+  refreshTitleForm();
   setMenuMode('title');
   titleInput.focus({ preventScroll: true });
   titleInput.select();
 }
+
+// The form, told what it may do. A locking-script keep is exempt: it names a
+// LEDGER, and naming one that is already kept is how an address joins it
+// (keepLedger folds by name) -- so there a repeated name is the point, not
+// the fault. Only a keep of a place answers to the rule.
+const titleNote = $('hash-title-note');
+const titleSaveBtn = hashMenu.querySelector('[data-act="title-save"]');
+function refreshTitleForm() {
+  if (!menuEntry || menuEntry.ledger) { titleNote.textContent = ''; titleSaveBtn.disabled = false; return; }
+  const key = bookmarkKey(menuEntry.hex, bmSubOf(menuEntry), menuEntry.page ?? null);
+  const fault = keepNameFault(titleInput.value, key);
+  titleNote.textContent = fault ? tr(fault) : '';
+  titleSaveBtn.disabled = Boolean(fault);
+}
+titleInput.addEventListener('input', refreshTitleForm);
 menuBmBtn.addEventListener('click', () => {
   if (!menuEntry) return;
   const key = bookmarkKey(menuEntry.hex, bmSubOf(menuEntry), menuEntry.page ?? null);
@@ -7849,6 +7889,15 @@ function saveTitle() {
     }
     syncScriptKeeps();
     closeHashMenu();
+    return;
+  }
+  // A name at fault keeps the form open on the field that is wrong: the
+  // reader has something to fix here, and closing would throw away what they
+  // typed. (Reachable by Enter, which does not ask whether Save is offered.)
+  const key = bookmarkKey(menuEntry.hex, bmSubOf(menuEntry), menuEntry.page ?? null);
+  if (keepNameFault(titleInput.value, key)) {
+    refreshTitleForm();
+    titleInput.focus({ preventScroll: true });
     return;
   }
   if (addBookmark(menuEntry, titleInput.value.trim())) { closeHashMenu(); return; }
