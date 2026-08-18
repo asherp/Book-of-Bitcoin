@@ -184,7 +184,7 @@ import { INDEXED, keptLedgers, sameAddresses, shelfLedgers } from './btc-index.j
 // A slash in a name the reader typed is a path: their own keeps file into a
 // hierarchy, and only theirs do (btc-path.js says why).
 import { pathForest, pathSegments, pathLabel } from './btc-path.js';
-import { volumeBookChapter, toRoman, fromRoman, heightOf, expectedReference, footnoteMark } from './btc-citation.js';
+import { volumeBookChapter, toRoman, fromRoman, heightOf, expectedReference, footnoteMark, keepReference } from './btc-citation.js';
 import { storeGet, storePut } from './btc-store.js';
 import { seedArchive } from './btc-seed.js';
 
@@ -229,7 +229,6 @@ const readBookmarks = () => {
   try { const v = JSON.parse(localStorage.getItem(BOOKMARKS_KEY)); return Array.isArray(v) ? v : []; }
   catch { return []; }
 };
-const shortHex = (hex) => `${hex.slice(0, 10)}…${hex.slice(-6)}`;
 
 // The genesis coinbase places offline -- block 0, first transaction -- so the
 // book opens at I 1 1 §1 without waiting on the network.
@@ -384,6 +383,13 @@ function entryEl(entry, parent, filing = null) {
     t.append(bm);
   }
   t.append(document.createTextNode(filing?.title || entry.title));
+  // A keep the reader never named prints no name -- the reference cell names
+  // the place. So the hover carries what the cell does not: which keep this
+  // ribbon is, said as the book cites it rather than as bytes.
+  if (entry.bookmark && !(filing?.title || entry.title) && entry.said) {
+    row.title = `your bookmark — ${entry.said}`;
+    t.querySelector('.toc-bm')?.setAttribute('aria-label', `your bookmark — ${entry.said}`);
+  }
   const r = document.createElement('span'); r.className = 'toc-ref';
   if (entry.place) r.textContent = tailRef(entry.place, parent);
   else { r.textContent = '—'; r.classList.add('none'); }
@@ -694,7 +700,6 @@ function renderAppendix(part) {
 // there is nothing to cite here, only somewhere to go. The rows open the
 // Ledger compendium at that ledger, the way a contents row opens the book at
 // its chapter.
-const shortAddr = (a) => `${a.slice(0, 6)}…${a.slice(-4)}`;
 function ledgerEl(ledger, isKept) {
   const row = document.createElement('a');
   // A filed ledger steps in under the one it was filed under, the way a
@@ -726,10 +731,15 @@ function ledgerEl(ledger, isKept) {
     t.append(bm);
   }
   // A kept ledger is named by its reader before it is shelved, so a title is
-  // what a row prints. Ledgers kept before that was asked of them fall back
-  // to their first address, the same stand-in name the Ledger page gives
-  // them -- a name in the title column, never a citation in the reference's.
-  t.append(document.createTextNode(ledger.leaf || ledger.name || ledger.title || shortAddr(ledger.addresses[0])));
+  // what a row prints. Ledgers kept before that was asked of them fall back to
+  // what The Ledgers itself calls an unnamed one (`untitled`, bitcoin-ledger
+  // .html): what it is and how many passages it holds. Not its first address
+  // -- that is a member set in type, which no page of this book does -- and a
+  // name in the title column either way, never a citation in the reference's.
+  const unnamed = ledger.addresses.length > 1
+    ? `Unnamed ledger · ${ledger.addresses.length} passages`
+    : 'Unnamed ledger';
+  t.append(document.createTextNode(ledger.leaf || ledger.name || ledger.title || unnamed));
   const r = document.createElement('span');
   r.className = 'toc-ref none';
   r.textContent = '—';
@@ -1196,7 +1206,15 @@ const entries = () => [
   }),
   ...bookmarks.map((b) => ({
     id: b.page ? String(b.height) : b.hex, index: b.pos ?? undefined, vout: b.vout ?? undefined, vin: b.vin ?? undefined, page: b.page,
-    title: b.title || b.prose || shortHex(b.hex),
+    // No title of the reader's own, and no prose to say it by: then the keep
+    // has no name, and the row says so by leaving the cell empty. It is not
+    // nameless -- the reference cell beside it names the place, which is this
+    // page's own rule ("cited by its reference, never its raw id") -- so a
+    // name here could only be that same citation set twice on one row. The
+    // reference still travels where a cell cannot: the row's hover, and the
+    // ribbon's label (keepReference).
+    title: b.title || b.prose || '',
+    said: keepReference(b),
     bookmark: true, place: bmPlacements.get(bmKey(b)), tried: bmPlacements.has(bmKey(b)),
   })),
 ];
