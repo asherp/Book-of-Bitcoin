@@ -12,7 +12,7 @@
 #   ./build_web.sh --fetch-only            # download+extract the crate, no build
 set -e
 
-GLOSSIA_VERSION="${GLOSSIA_VERSION:-0.4.0}"
+GLOSSIA_VERSION="${GLOSSIA_VERSION:-0.5.0}"
 
 if [ -z "$GLOSSIA_DIR" ]; then
   GLOSSIA_DIR=".glossia-build/glossia-$GLOSSIA_VERSION"

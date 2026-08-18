@@ -368,13 +368,21 @@ export function detectLang(prose) {
 // ─── canonical prose: raw bytes ⇆ readable Glossia prose ──────────────
 // Any hex value — a txid, a merkle root, a hash160, a private key — rendered
 // as natural-language prose whose payload words carry the bytes. This is
-// glossia's CANONICAL encoding (0.4.0+, format version 2): the payload is
+// glossia's CANONICAL encoding (0.5.0+, format version 3): the payload is
 // followed by a version byte and a crc32, and the cover prose is seeded from a
 // checksum of the bytes, so one payload has exactly one prose form, the wording
 // itself is checkable, and an artifact keeps verifying under future engine
 // versions (decode dispatches on the version byte, not the current rules).
 // Decoding still just filters the prose against the wordlist, so bytes
 // round-trip exactly.
+//
+// Since format version 3 a passage also carries Reed-Solomon parity over its
+// payload words -- one symbol per eight, never fewer than four -- so a word
+// mistranscribed on its way back is repaired rather than only refused. The
+// parity words ride after the payload, which is why a v3 passage runs longer
+// than the v2 one for the same bytes. Older artifacts are unaffected: decode
+// dispatches on the version byte, so v1 and v2 prose still reads exactly as it
+// always did.
 //
 // The book uses the FIXED pair — canonical_encode_fixed / canonical_decode_fixed
 // — rather than the self-describing one. The self-describing packing spends a
