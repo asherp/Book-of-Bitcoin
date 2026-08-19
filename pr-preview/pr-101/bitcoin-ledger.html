@@ -417,6 +417,12 @@ a:hover { text-decoration: underline; }
 .keep-title-row { display:flex; gap:8px; }
 .keep-title-row button { padding:8px 12px; }
 .keep-title .save-btn:disabled { opacity:.4; cursor:default; border-color:var(--input-bd); color:var(--dim); }
+/* What the typed name will do, under the field it is about. Quiet: it states
+   a consequence, not a fault -- both outcomes are things a reader may mean.
+   Empty, it takes no room. */
+.keep-note { flex:1 1 100%; padding:0 2px; color:var(--meta);
+  font:400 11px/1.45 'IBM Plex Mono','Book Sigla',monospace; }
+.keep-note:empty { display:none; }
 /* The kept mark on a title leaf: the contents' ribbon, beside the name. */
 .anth-title .toc-bm { width:12px; height:16px; margin-right:12px; vertical-align:baseline; }
 /* The β sigil is a mark, not a letter: exempt from the headers' small caps. */
@@ -645,7 +651,17 @@ a:hover { text-decoration: underline; }
           <!-- 160 rather than 80: a name is a path now (btc-path.js), and a
                reader filing three levels deep spends most of a short limit on
                the parents they have already typed once. -->
-          <input type="text" id="keep-title-input" placeholder="Title for the contents, / to file it" autocomplete="off" spellcheck="false" maxlength="160">
+          <input type="text" id="keep-title-input" placeholder="Title for the contents, / to file it" autocomplete="off" spellcheck="false" maxlength="160" list="keep-ledger-paths">
+          <!-- The reader's own shelf as completions: adding to a ledger they
+               already keep is picking a name rather than remembering how they
+               spelled it last time. -->
+          <datalist id="keep-ledger-paths"></datalist>
+          <!-- …and what the name in the field will DO. Keeping under a name
+               already used folds into that ledger rather than shelving a
+               second, which is how one keeper's addresses gather -- but it
+               used to happen silently, and a reader learned which of the two
+               they had done by going and looking at the shelf. -->
+          <div class="keep-note" id="keep-note" role="status"></div>
           <div class="keep-title-row">
             <button type="button" class="save-btn" id="keep-title-save">Keep</button>
             <button type="button" class="ghost-btn" id="keep-title-cancel">Cancel</button>
@@ -718,6 +734,9 @@ import { BIP39, HP_SPELLS } from './btc-wordlists.js';
 // A slash in a name the reader typed is a path: their shelf files, and a
 // ledger can be named in a URL by the name they kept it under.
 import { pathSegments } from './btc-path.js';
+// What keeping under a name will do -- join a shelved ledger, or shelve a
+// new one -- phrased as the reading page's keep form phrases it.
+import { ledgerOutcome, ledgerOutcomeSaid } from './btc-keepname.js';
 import { appendix } from './btc-contents.js';
 import './btc-fontscale.js';   // the reader's type sizes: a ledger's readings are set at the size the book page's Commentary row chose
 import { loadNotables, partLabel } from './btc-notables.js';
@@ -1974,10 +1993,31 @@ function suggestedName() {
 // up, as the field's shape suggests.
 const keepTitleSave = document.getElementById('keep-title-save');
 const keepTitleCancel = document.getElementById('keep-title-cancel');
+const keepNote = document.getElementById('keep-note');
+const keepPaths = document.getElementById('keep-ledger-paths');
 function closeTitleForm() {
   keepTitle.classList.add('hidden');
   keepTitleInput.value = '';
   keepTitleSave.disabled = true;
+  keepNote.textContent = '';   // a promise about a name nobody is typing any more
+}
+// Which of the two the typed name is about to do -- join a ledger already
+// shelved, or shelve a new one -- said as the reading page's own keep form
+// says it (btc-keepname.js), so one answer reaches the reader wherever they
+// are keeping from.
+function syncKeepNote() {
+  keepNote.textContent = ledgerOutcomeSaid(ledgerOutcome(keepTitleInput.value, shelfLedgers()));
+}
+// The shelf as the field's completions, rebuilt each time the form opens: a
+// ledger kept since the last one would otherwise be missing from the list.
+function fillKeepPaths() {
+  keepPaths.replaceChildren();
+  for (const l of shelfLedgers()) {
+    const opt = document.createElement('option');
+    opt.value = l.title;    // the path as keepLedger folds by it
+    opt.label = l.name;     // …spelled as the shelf prints it
+    keepPaths.append(opt);
+  }
 }
 function openTitleForm(onSave) {
   keepTitle.classList.remove('hidden');
@@ -1985,11 +2025,16 @@ function openTitleForm(onSave) {
   // keystroke replaces it whole.
   keepTitleInput.value = suggestedName();
   keepTitleSave.disabled = false;
+  fillKeepPaths();
+  syncKeepNote();
   keepTitleInput.focus();
   keepTitleInput.select();
   const commit = () => { const t = keepTitleInput.value.trim(); if (t) onSave(t); };
   keepTitleSave.onclick = commit;
-  keepTitleInput.oninput = () => { keepTitleSave.disabled = !keepTitleInput.value.trim(); };
+  keepTitleInput.oninput = () => {
+    keepTitleSave.disabled = !keepTitleInput.value.trim();
+    syncKeepNote();
+  };
   keepTitleInput.onkeydown = (ev) => {
     if (ev.key === 'Enter') { ev.preventDefault(); commit(); }
     else if (ev.key === 'Escape') { ev.preventDefault(); closeTitleForm(); }

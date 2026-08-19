@@ -16,17 +16,30 @@ import { pathSegments } from './btc-path.js';
 
 // A name as it COMPARES, which is not quite as it prints. pathSegments already
 // trims each segment and drops the empty ones, so a slash is a filing mark
-// rather than a character a reader has to place exactly; case folds away too,
-// since a row printing "Pizza" beside one printing "pizza" is precisely the
-// ambiguity this rule exists to prevent.
-//
-// Only the comparison is folded. What the reader typed is what the store keeps
-// and what the contents prints -- this decides sameness, never spelling.
+// rather than a character a reader has to place exactly. Only the comparison
+// is folded: what the reader typed is what the store keeps and what the
+// contents prints -- these decide sameness, never spelling.
 //
 // The WHOLE path is the name, never its leaf: filing exists so that
 // `Thefts/Mt. Gox` and `Donations/Mt. Gox` can both stand, each under the
 // heading that says which is which.
-export const nameKey = (title) => pathSegments(title).join('/').toLowerCase();
+//
+// There are two of them because the book keeps two rules, and they differ.
+
+// The path itself, trimmed segment by segment: how a LEDGER decides sameness,
+// because this is the comparison keepLedger folds by (btc-index.js). Kept
+// separate from nameKey below, and deliberately: the two rules differ, and a
+// form that promised a fold this one would not perform would be lying.
+export const namePath = (title) => pathSegments(title).join('/');
+
+// …and how a BOOKMARK decides it: the same path with case folded away, since
+// two contents rows reading "Pizza" and "pizza" are the ambiguity the
+// uniqueness rule exists to prevent. A ledger has no such rule -- keeping
+// under a name already used is how a keeper's addresses gather -- so it folds
+// by namePath, and a name differing only in case shelves a second ledger.
+// Whether that should be true is a question about keepLedger, not about this;
+// what matters here is that the two are told apart rather than assumed alike.
+export const nameKey = (title) => namePath(title).toLowerCase();
 
 // …so an empty key is a keep with no name at all, and one helper answers both
 // halves of the rule.
@@ -56,4 +69,40 @@ export function takenNames(keeps, keyOf, exceptKey = null) {
     if (key) taken.add(key);
   }
   return taken;
+}
+
+
+// ── Which of the two a keeper is doing ────────────────────────────────────
+// A ledger is not a bookmark. Keeping under a name already used FOLDS into
+// that ledger (keepLedger), which is how one keeper's addresses gather into
+// one record -- so the question a reader needs answered before they press is
+// not "is this name allowed" but "which of the two am I about to do".
+// Silence answered it only after the fact, on a shelf they had to go and look
+// at.
+//
+// `shelf` is shelfLedgers()'s rows -- what the reader can actually see -- so
+// the promise made here and the list offered beside it describe one thing.
+export function ledgerOutcome(title, shelf = []) {
+  const path = namePath(title);
+  if (!path) return null;                      // nothing typed yet: nothing to promise
+  const joined = shelf.find((l) => namePath(l.title) === path);
+  if (joined) return { kind: 'joins', ledger: joined };
+  // A name that differs from a shelved one only in case shelves a SECOND
+  // ledger, because the fold is case-sensitive. That is the near-miss worth
+  // naming: it looks like joining and is not.
+  const key = path.toLowerCase();
+  const near = shelf.find((l) => namePath(l.title).toLowerCase() === key);
+  return near ? { kind: 'new', near } : { kind: 'new' };
+}
+
+// …said in the words the form shows, so both keep forms phrase it alike.
+export function ledgerOutcomeSaid(outcome) {
+  if (!outcome) return '';
+  if (outcome.kind === 'joins') {
+    const n = outcome.ledger.addresses.length;
+    return `Joins ${outcome.ledger.name} — ${n} passage${n === 1 ? '' : 's'}`;
+  }
+  return outcome.near
+    ? `New ledger — “${outcome.near.name}” differs only in case`
+    : 'New ledger';
 }
