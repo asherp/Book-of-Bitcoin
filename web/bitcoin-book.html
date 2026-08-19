@@ -541,10 +541,12 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 }
 .hash-menu-title .hash-title-row .ghost { background: transparent; color: var(--dim); border: 1px solid var(--input-bd); }
 .hash-menu-title .hash-title-row .ghost:hover { background: transparent; color: var(--ink); border-color: var(--accent); }
-/* The reason a name will not save, under the field it is about. Quiet: it is
-   an instruction, not an alarm, and it stands only while the name is at
-   fault. Empty, it takes no room -- the form has one shape for a reader
-   whose name is fine and no extra step for anybody. */
+/* What the field's name will do, under the field it is about. Two things say
+   themselves here, because two things are being named: a keep must be named
+   uniquely, so the line is a FAULT and Save stands down; a ledger folds into
+   one already kept, so the line is a CONSEQUENCE and both outcomes are legal.
+   Quiet either way -- an instruction, not an alarm. Empty, it takes no room,
+   so the form keeps one shape and costs nobody an extra step. */
 .hash-title-note { padding: 2px 5px 0; color: var(--meta);
   font: 400 10.5px/1.4 'IBM Plex Mono','Book Sigla',monospace; max-width: 232px; }
 .hash-title-note:empty { display: none; }
@@ -1336,10 +1338,18 @@ a.footnote-title.is-asset:hover { color: var(--accent-2, #dcb877); text-decorati
       <button type="button" class="hash-menu-item" data-act="bookmark" role="menuitem">Bookmark</button>
     </div>
     <div id="hash-menu-title" class="hash-menu-title hidden">
-      <input type="text" id="hash-title-input" class="mono" placeholder="Title for contents" autocomplete="off" spellcheck="false">
-      <!-- Why the name cannot be saved, where it cannot: a keep has to be
-           named, and no two keeps may share a name. Empty, it takes no room,
-           so the form is unchanged for a reader whose name is fine. -->
+      <input type="text" id="hash-title-input" class="mono" placeholder="Title for contents" autocomplete="off" spellcheck="false" list="ledger-paths">
+      <!-- The reader's own shelf, offered as completions: adding an address to
+           a ledger they already keep is picking a name, not remembering how
+           they spelled it. Filled only for a locking-script keep, which is the
+           only one that folds -- a bookmark's names are all refused, so
+           offering them would be offering the way to be turned away. -->
+      <datalist id="ledger-paths"></datalist>
+      <!-- What this name will do. For a keep: why it cannot be saved, since a
+           keep must be named and no two may share a name. For a ledger: which
+           of the two it is about to do, since keeping under a name already
+           used folds into that ledger rather than shelving a second. Empty,
+           it takes no room. -->
       <div id="hash-title-note" class="hash-title-note" role="status"></div>
       <div class="hash-title-row">
         <button type="button" data-act="title-save">Save</button>
@@ -1357,11 +1367,11 @@ import { parseTransaction, computeTxid, parseBlockHeader, computeBlockHash, bits
 // section joins it as a titled one-address ledger, the same registry the
 // Ledger page's own keep button writes. INDEXED is the curated shelf, whose
 // titles are the keep line's defaults.
-import { keptLedgers, saveKeptLedgers, keepLedger, INDEXED } from './btc-index.js';
+import { keptLedgers, saveKeptLedgers, keepLedger, shelfLedgers, INDEXED } from './btc-index.js';
 import { pathSegments } from './btc-path.js';   // a slash in a name the reader typed is a path
 // A keep has to be named, and no two keeps may share a name (btc-keepname.js):
 // the form and the store decide it there, so they cannot disagree.
-import { nameFault, takenNames } from './btc-keepname.js';
+import { nameFault, takenNames, ledgerOutcome, ledgerOutcomeSaid } from './btc-keepname.js';
 import { composeTransactionFields, composeBlockHeaderFields, bitsInfo, groupDigits, formatBtc, formatAmount, formatAmountAs, formatOwnAmount, amountUnit, setAmountUnit, ownUnit, setOwnUnit, dayPrice, setDayPrice, renderWitness, toSuperscript, timestampInfo } from './btc-prose.js';
 import { usdOn, PRICE_SOURCES, priceSource, setPriceSource } from './btc-price.js';
 import { volumeBookChapter, heightOf, windowStartOf, retargetInside, subsidyAt, toRoman, reference, parseReference, footnoteMark, footnoteIndexOf, inputMark, latinRefOf } from './btc-citation.js';
@@ -7834,6 +7844,7 @@ menuSearchBtn.addEventListener('click', () => {
 // menu's Bookmark item and from a hollow ribbon alike.
 function promptForTitle() {
   titleInput.value = suggestTitle(menuEntry);
+  fillLedgerPaths();
   refreshTitleForm();
   setMenuMode('title');
   titleInput.focus({ preventScroll: true });
@@ -7846,14 +7857,38 @@ function promptForTitle() {
 // the fault. Only a keep of a place answers to the rule.
 const titleNote = $('hash-title-note');
 const titleSaveBtn = hashMenu.querySelector('[data-act="title-save"]');
+const ledgerPaths = $('ledger-paths');
 function refreshTitleForm() {
-  if (!menuEntry || menuEntry.ledger) { titleNote.textContent = ''; titleSaveBtn.disabled = false; return; }
+  if (!menuEntry) { titleNote.textContent = ''; titleSaveBtn.disabled = false; return; }
+  // A locking-script keep names a LEDGER, which folds rather than refuses. So
+  // the note is not a fault but a consequence: which of the two this name is
+  // about to do. Save stays offered either way -- both are things a reader may
+  // legitimately mean.
+  if (menuEntry.ledger) {
+    titleNote.textContent = ledgerOutcomeSaid(ledgerOutcome(titleInput.value, shelfLedgers()));
+    titleSaveBtn.disabled = false;
+    return;
+  }
   const key = bookmarkKey(menuEntry.hex, bmSubOf(menuEntry), menuEntry.page ?? null);
   const fault = keepNameFault(titleInput.value, key);
   titleNote.textContent = fault ? tr(fault) : '';
   titleSaveBtn.disabled = Boolean(fault);
 }
 titleInput.addEventListener('input', refreshTitleForm);
+
+// The shelf, as the field's completions -- rebuilt each time the form opens,
+// since a keep made since the last one would otherwise be missing from it.
+// Cleared for anything but a ledger keep: see the datalist's own note.
+function fillLedgerPaths() {
+  ledgerPaths.replaceChildren();
+  if (!menuEntry || !menuEntry.ledger) return;
+  for (const l of shelfLedgers()) {
+    const opt = document.createElement('option');
+    opt.value = l.title;    // the path as keepLedger folds by it
+    opt.label = l.name;     // …spelled as the shelf prints it
+    ledgerPaths.append(opt);
+  }
+}
 menuBmBtn.addEventListener('click', () => {
   if (!menuEntry) return;
   const key = bookmarkKey(menuEntry.hex, bmSubOf(menuEntry), menuEntry.page ?? null);

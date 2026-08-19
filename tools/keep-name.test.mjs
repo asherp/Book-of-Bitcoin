@@ -18,7 +18,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { nameKey, isNamed, nameFault, takenNames, UNNAMED, TAKEN } from '../web/btc-keepname.js';
+import { readFileSync } from 'node:fs';
+import { nameKey, namePath, isNamed, nameFault, takenNames, ledgerOutcome, ledgerOutcomeSaid,
+         UNNAMED, TAKEN } from '../web/btc-keepname.js';
 
 const book = await readFile(new URL('../web/bitcoin-book.html', import.meta.url), 'utf8');
 const sw = await readFile(new URL('../web/sw.js', import.meta.url), 'utf8');
@@ -90,7 +92,7 @@ test('keeps already stored unnamed do not lay claim to a name', () => {
 test('the book page asks the shared rule, and asks it in both places', () => {
   // The form that offers Save and the store that accepts the write must
   // decide identically, or a reader is refused for a reason never shown.
-  assert.match(book, /import \{ nameFault, takenNames \} from '\.\/btc-keepname\.js';/,
+  assert.match(book, /import \{ nameFault, takenNames[^}]*\} from '\.\/btc-keepname\.js';/,
     'the page imports the rule rather than restating it');
   assert.match(book, /const keepNameFault = \(title, exceptKey = null\) =>\s*\n\s*nameFault\(title, takenNames\(bookmarks, keyOf, exceptKey\)\);/,
     'and asks it over its own keeps');
@@ -106,13 +108,93 @@ test('the book page asks the shared rule, and asks it in both places', () => {
 
 test('a locking-script keep is exempt, because it names a ledger', () => {
   // keepLedger folds an address into the ledger already filed under that name,
-  // so there a repeated name is the point rather than the fault.
-  assert.match(book, /if \(!menuEntry \|\| menuEntry\.ledger\) \{ titleNote\.textContent = ''; titleSaveBtn\.disabled = false; return; \}/,
-    'the form does not hold a ledger keep to the uniqueness rule');
+  // so there a repeated name is the point rather than the fault: the note says
+  // which of the two will happen instead of refusing either.
+  assert.match(book, /if \(menuEntry\.ledger\) \{\s*\n\s*titleNote\.textContent = ledgerOutcomeSaid\(/,
+    'a ledger keep is told what it will do, not whether it is allowed');
+  assert.doesNotMatch(book, /menuEntry\.ledger[\s\S]{0,200}?keepNameFault/,
+    'and is never held to the uniqueness rule');
 });
 
 test('the new module is in the app shell', () => {
   // Every module is precached by name; one missing from the list 404s for an
   // offline reader, and an import that 404s takes the whole page with it.
   assert.match(sw, /'\.\/btc-keepname\.js',/, 'btc-keepname.js is served offline');
+});
+
+// ── Which of the two a keeper is doing ────────────────────────────────────
+// A ledger folds where a bookmark refuses, so the form's job is not to permit
+// or deny but to say which of the two a name is about to do.
+const SHELF = [
+  { title: 'Coldcard hack', name: 'Coldcard hack', addresses: ['a', 'b', 'c'] },
+  { title: 'Coldcard hack/wave 3', name: 'Coldcard hack / wave 3', addresses: ['c'] },
+  { title: 'Donations', name: 'Donations', addresses: ['d'] },
+];
+
+test('nothing typed promises nothing', () => {
+  for (const empty of ['', '   ', '/', null, undefined]) {
+    assert.equal(ledgerOutcome(empty, SHELF), null);
+    assert.equal(ledgerOutcomeSaid(ledgerOutcome(empty, SHELF)), '');
+  }
+});
+
+test('a name already on the shelf joins it, and says how much is there', () => {
+  assert.deepEqual(ledgerOutcome('Coldcard hack/wave 3', SHELF).kind, 'joins');
+  assert.equal(ledgerOutcomeSaid(ledgerOutcome('Coldcard hack/wave 3', SHELF)),
+    'Joins Coldcard hack / wave 3 — 1 passage', 'one passage is singular');
+  assert.equal(ledgerOutcomeSaid(ledgerOutcome('Coldcard hack', SHELF)),
+    'Joins Coldcard hack — 3 passages', 'a parent totals what is filed beneath it');
+  // A slash is a filing mark, so the space around it is not part of the name:
+  // a reader typing it out with spaces still joins.
+  assert.equal(ledgerOutcomeSaid(ledgerOutcome('  Coldcard hack / wave 3  ', SHELF)),
+    'Joins Coldcard hack / wave 3 — 1 passage');
+});
+
+test('a name not on the shelf shelves a new ledger', () => {
+  assert.equal(ledgerOutcome('My cold wallet', SHELF).kind, 'new');
+  assert.equal(ledgerOutcomeSaid(ledgerOutcome('My cold wallet', SHELF)), 'New ledger');
+  // A leaf that repeats under a different parent is its own ledger.
+  assert.equal(ledgerOutcomeSaid(ledgerOutcome('Thefts/wave 3', SHELF)), 'New ledger');
+});
+
+test('a name differing only in case is named as the near miss it is', () => {
+  // keepLedger folds by namePath, which is case-SENSITIVE, so this shelves a
+  // second ledger. It looks like joining and is not — which is exactly why
+  // the form has to say so rather than stay quiet.
+  const out = ledgerOutcome('Coldcard Hack/Wave 3', SHELF);
+  assert.equal(out.kind, 'new', 'it does not fold');
+  assert.equal(out.near.title, 'Coldcard hack/wave 3', 'and it knows what it nearly was');
+  assert.equal(ledgerOutcomeSaid(out),
+    'New ledger — “Coldcard hack / wave 3” differs only in case');
+});
+
+test('the two comparisons are told apart, not assumed alike', () => {
+  // This divergence is the reason ledgerOutcome cannot be written in terms of
+  // nameKey: promising a fold that keepLedger will not perform would be worse
+  // than saying nothing.
+  const a = 'Coldcard hack/wave 3', b = 'Coldcard Hack/Wave 3';
+  assert.notEqual(namePath(a), namePath(b), 'a ledger folds by path, case and all');
+  assert.equal(nameKey(a), nameKey(b), 'a bookmark compares with case folded away');
+});
+
+test('both keep forms say it, and offer the shelf to pick from', () => {
+  const ledgerSrc = readFileSync(new URL('../web/bitcoin-ledger.html', import.meta.url), 'utf8');
+  for (const [name, src, list] of [['book', book, 'ledger-paths'], ['ledger', ledgerSrc, 'keep-ledger-paths']]) {
+    assert.match(src, new RegExp(`list="${list}"`), `${name}: the field completes from the shelf`);
+    assert.match(src, new RegExp(`<datalist id="${list}"></datalist>`), `${name}: and the list is there to fill`);
+    assert.match(src, /opt\.value = l\.title;/, `${name}: offered as the path keepLedger folds by`);
+    assert.match(src, /opt\.label = l\.name;/, `${name}: and spelled as the shelf prints it`);
+    assert.match(src, /ledgerOutcomeSaid\(ledgerOutcome\(/, `${name}: the note says which of the two`);
+  }
+  // Rebuilt on open, so a ledger kept since the last one is in the list.
+  assert.match(book, /fillLedgerPaths\(\);/, 'book: the list is refilled as the form opens');
+  assert.match(ledgerSrc, /fillKeepPaths\(\);/, 'ledger: likewise');
+});
+
+test('a bookmark is offered no ledger names, since every one would be refused', () => {
+  assert.match(book, /if \(!menuEntry \|\| !menuEntry\.ledger\) return;/,
+    'the completions stand down for a keep that is not a ledger');
+  // …and a ledger keep is never refused for its name: both outcomes are legal.
+  assert.match(book, /titleSaveBtn\.disabled = false;\s*\n\s*return;/,
+    'Save stays offered for a ledger keep');
 });
