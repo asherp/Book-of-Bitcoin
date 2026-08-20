@@ -467,7 +467,7 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 /* The shelf offered as a list. Capped and scrolling, because a reader may
    keep more ledgers than a menu can stand; the rows are the menu's own
    items, so pressing one reads like pressing any other. */
-.hash-menu-ledgers { max-height: 46vh; overflow-y: auto; }
+.hash-menu-ledgers { max-height: 46vh; overflow-y: auto; overscroll-behavior: contain; }
 /* The ledger the address sits in now: shown so the reader can see where it
    is, dimmed and inert because moving it to where it already is is not a
    move. The ribbon says whose it is, as it does everywhere else. */
@@ -8078,9 +8078,15 @@ document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeHashM
 // Dismiss on a genuine user scroll or resize -- but never while the title form
 // is up, so a mobile keyboard's viewport resize (or a focus scroll) can't
 // discard a half-typed bookmark title.
-const dismissOnViewportChange = () => {
+const dismissOnViewportChange = (ev) => {
   if (menuMode === 'title') return;                  // never nuke a title being typed
   if (performance.now() < menuSettleUntil) return;   // ignore the open's own scroll
+  // A scroll INSIDE the menu is the reader working it, not the viewport moving
+  // out from under it. The ledger list is capped and scrolls itself, and this
+  // listener is bound on the capture phase -- which is how it hears a scroll on
+  // an inner element at all -- so without this the first wheel over the list
+  // dismissed the very menu it was scrolling.
+  if (ev && ev.target instanceof Node && hashMenu.contains(ev.target)) return;
   closeHashMenu();
 };
 window.addEventListener('resize', dismissOnViewportChange);

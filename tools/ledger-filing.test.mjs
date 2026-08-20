@@ -120,3 +120,16 @@ test('cancelling the naming form hands back the list it was raised from', () => 
     'a cancel returns to the shelf rather than the top of the menu');
   assert.match(book, /fromPicker = true; promptForTitle\(\);/, 'which is only where it came from');
 });
+
+test('the ledger list scrolls, and scrolling it does not dismiss the menu', () => {
+  // The list is capped so a long shelf cannot outgrow the screen…
+  assert.match(book, /\.hash-menu-ledgers \{ max-height: 46vh; overflow-y: auto; overscroll-behavior: contain; \}/,
+    'the list is capped and scrolls itself');
+  // …but the menu dismisses on scroll, and that listener is bound on the
+  // CAPTURE phase — which is how it hears a scroll on an inner element at
+  // all. Without this guard the first wheel over the list closed the very
+  // menu it was scrolling, so the cap had nothing to scroll in.
+  assert.match(book, /if \(ev && ev\.target instanceof Node && hashMenu\.contains\(ev\.target\)\) return;/,
+    'a scroll inside the menu is the reader working it, not the viewport moving');
+  assert.match(book, /const dismissOnViewportChange = \(ev\) =>/, 'so the handler takes the event');
+});
