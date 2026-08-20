@@ -736,7 +736,7 @@ import { BIP39, HP_SPELLS } from './btc-wordlists.js';
 import { pathSegments } from './btc-path.js';
 // What keeping under a name will do -- join a shelved ledger, or shelve a
 // new one -- phrased as the reading page's keep form phrases it.
-import { ledgerOutcome, ledgerOutcomeSaid } from './btc-keepname.js';
+import { nameKey, ledgerOutcome, ledgerOutcomeSaid } from './btc-keepname.js';
 import { appendix } from './btc-contents.js';
 import './btc-fontscale.js';   // the reader's type sizes: a ledger's readings are set at the size the book page's Commentary row chose
 import { loadNotables, partLabel } from './btc-notables.js';
@@ -999,7 +999,7 @@ if (qPath) {
   // leaf: a path names the ledger, never one passage of it. A path this
   // reader's shelf does not hold opens the compendium at the top rather than
   // on somebody else's first ledger.
-  const i = LEDGERS.findIndex((e) => !e.curated && e.title === pathSegments(qPath).join('/'));
+  const i = LEDGERS.findIndex((e) => !e.curated && nameKey(e.title) === nameKey(qPath));
   if (i >= 0) { li = i; level = 'ledger'; at = 0; }
 } else if (qList.length) {
   const i = LEDGERS.findIndex((e) => (qList.length === 1
@@ -1891,9 +1891,13 @@ const showBookmark = () => {
   // kept if its path is on the shelf -- which is how a parent, whose account
   // is synthesized from its children rather than stored as a record of its
   // own, reads as kept without being stored twice.
-  const filedPath = () => pathSegments(cur().title || '').join('/');
+  // Compared by the one comparison (nameKey), folded: `Coldcard Hack` names
+  // the ledger `Coldcard hack` is filed under, here as in the registry, so
+  // this leaf's ribbon and what keepLedger would do cannot disagree. Folded
+  // at the source, so `under` goes on comparing directly.
+  const filedPath = () => nameKey(cur().title || '');
   const under = (p, path) => p === path || p.startsWith(`${path}/`);
-  const keptPaths = (all) => all.map((k) => pathSegments(k.title).join('/'));
+  const keptPaths = (all) => all.map((k) => nameKey(k.title));
   const reflect = () => {
     const path = filedPath();
     const isKept = path
@@ -1952,7 +1956,7 @@ const showBookmark = () => {
       // nothing, and children left behind under a removed parent would be a
       // shelf the reader did not file.
       saveKeptLedgers(path
-        ? all.filter((k) => !under(pathSegments(k.title).join('/'), path))
+        ? all.filter((k) => !under(nameKey(k.title), path))
         : all.filter((k) => !sameAddresses(k.addresses, cur().addresses)));
       closeTitleForm();
       reflect();

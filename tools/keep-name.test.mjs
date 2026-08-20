@@ -157,24 +157,27 @@ test('a name not on the shelf shelves a new ledger', () => {
   assert.equal(ledgerOutcomeSaid(ledgerOutcome('Thefts/wave 3', SHELF)), 'New ledger');
 });
 
-test('a name differing only in case is named as the near miss it is', () => {
-  // keepLedger folds by namePath, which is case-SENSITIVE, so this shelves a
-  // second ledger. It looks like joining and is not — which is exactly why
-  // the form has to say so rather than stay quiet.
+test('a name differing only in case joins, and says so in the shelf’s spelling', () => {
+  // It used to shelve a second ledger — a silently split record whose parent
+  // no longer totalled the incident. Now it folds, and the note names the
+  // spelling that will actually stand rather than the one just typed.
   const out = ledgerOutcome('Coldcard Hack/Wave 3', SHELF);
-  assert.equal(out.kind, 'new', 'it does not fold');
-  assert.equal(out.near.title, 'Coldcard hack/wave 3', 'and it knows what it nearly was');
-  assert.equal(ledgerOutcomeSaid(out),
-    'New ledger — “Coldcard hack / wave 3” differs only in case');
+  assert.equal(out.kind, 'joins', 'a capital is a typing accident, not a distinction');
+  assert.equal(ledgerOutcomeSaid(out), 'Joins Coldcard hack / wave 3 — 1 passage');
+  assert.equal(ledgerOutcomeSaid(ledgerOutcome('COLDCARD HACK', SHELF)),
+    'Joins Coldcard hack — 3 passages');
 });
 
-test('the two comparisons are told apart, not assumed alike', () => {
-  // This divergence is the reason ledgerOutcome cannot be written in terms of
-  // nameKey: promising a fold that keepLedger will not perform would be worse
-  // than saying nothing.
+test('one comparison decides sameness; the two rules only differ in what they do', () => {
+  // A bookmark refuses a name already taken, a ledger folds into it. What is
+  // DONE about sameness differs. Whether two names ARE the same must not, or
+  // the book answers one question two ways.
   const a = 'Coldcard hack/wave 3', b = 'Coldcard Hack/Wave 3';
-  assert.notEqual(namePath(a), namePath(b), 'a ledger folds by path, case and all');
-  assert.equal(nameKey(a), nameKey(b), 'a bookmark compares with case folded away');
+  assert.equal(nameKey(a), nameKey(b), 'both judge them the same name');
+  // namePath survives as the spelling — what is stored and printed — and is
+  // deliberately NOT a comparison any more.
+  assert.notEqual(namePath(a), namePath(b), 'while the spellings stay distinct');
+  assert.equal(namePath('  Thefts / Mt. Gox  '), 'Thefts/Mt. Gox', 'trimmed, not folded');
 });
 
 test('both keep forms say it, and offer the shelf to pick from', () => {

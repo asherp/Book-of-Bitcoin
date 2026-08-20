@@ -24,21 +24,22 @@ import { pathSegments } from './btc-path.js';
 // `Thefts/Mt. Gox` and `Donations/Mt. Gox` can both stand, each under the
 // heading that says which is which.
 //
-// There are two of them because the book keeps two rules, and they differ.
-
-// The path itself, trimmed segment by segment: how a LEDGER decides sameness,
-// because this is the comparison keepLedger folds by (btc-index.js). Kept
-// separate from nameKey below, and deliberately: the two rules differ, and a
-// form that promised a fold this one would not perform would be lying.
+// The path as it is STORED and PRINTED: trimmed segment by segment, spelled
+// as the reader spelled it. This is what a title becomes and what a URL
+// carries -- never the thing two names are compared by.
 export const namePath = (title) => pathSegments(title).join('/');
 
-// …and how a BOOKMARK decides it: the same path with case folded away, since
-// two contents rows reading "Pizza" and "pizza" are the ambiguity the
-// uniqueness rule exists to prevent. A ledger has no such rule -- keeping
-// under a name already used is how a keeper's addresses gather -- so it folds
-// by namePath, and a name differing only in case shelves a second ledger.
-// Whether that should be true is a question about keepLedger, not about this;
-// what matters here is that the two are told apart rather than assumed alike.
+// …and the one comparison. Case folds away because nobody means it: a reader
+// typing `Coldcard Hack` beside a shelved `Coldcard hack` has made a typing
+// accident, not a distinction, and the book already treats a name as what
+// they MEANT rather than as a literal string -- pathSegments trims the space
+// around a separator for exactly that reason.
+//
+// One comparison, two actions. A bookmark REFUSES a name already taken, since
+// two contents rows reading alike are two places a reader cannot tell apart;
+// a ledger FOLDS into it, since that is how one keeper's addresses gather
+// into one record. What is done about sameness differs. Whether two names ARE
+// the same must not, or the book answers one question two ways.
 export const nameKey = (title) => namePath(title).toLowerCase();
 
 // …so an empty key is a keep with no name at all, and one helper answers both
@@ -83,16 +84,14 @@ export function takenNames(keeps, keyOf, exceptKey = null) {
 // `shelf` is shelfLedgers()'s rows -- what the reader can actually see -- so
 // the promise made here and the list offered beside it describe one thing.
 export function ledgerOutcome(title, shelf = []) {
-  const path = namePath(title);
-  if (!path) return null;                      // nothing typed yet: nothing to promise
-  const joined = shelf.find((l) => namePath(l.title) === path);
-  if (joined) return { kind: 'joins', ledger: joined };
-  // A name that differs from a shelved one only in case shelves a SECOND
-  // ledger, because the fold is case-sensitive. That is the near-miss worth
-  // naming: it looks like joining and is not.
-  const key = path.toLowerCase();
-  const near = shelf.find((l) => namePath(l.title).toLowerCase() === key);
-  return near ? { kind: 'new', near } : { kind: 'new' };
+  const key = nameKey(title);
+  if (!key) return null;                       // nothing typed yet: nothing to promise
+  // Folded, so a name differing from a shelved one only in case JOINS it --
+  // and the note names the shelf's own spelling, which is the one that will
+  // stand. There is no near miss left to warn about: the fold that used to
+  // slip past on a capital now catches it.
+  const joined = shelf.find((l) => nameKey(l.title) === key);
+  return joined ? { kind: 'joins', ledger: joined } : { kind: 'new' };
 }
 
 // …said in the words the form shows, so both keep forms phrase it alike.
@@ -102,7 +101,5 @@ export function ledgerOutcomeSaid(outcome) {
     const n = outcome.ledger.addresses.length;
     return `Joins ${outcome.ledger.name} — ${n} passage${n === 1 ? '' : 's'}`;
   }
-  return outcome.near
-    ? `New ledger — “${outcome.near.name}” differs only in case`
-    : 'New ledger';
+  return 'New ledger';
 }
