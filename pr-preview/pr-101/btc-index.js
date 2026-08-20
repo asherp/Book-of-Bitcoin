@@ -22,6 +22,9 @@ import { INDEXED as CURATED } from './btc-index-data.js';
 import { usdOn } from './btc-price.js';
 import { amountUnit, ownUnit, groupDigits, formatValuation } from './btc-amounts.js';
 import { pathSegments } from './btc-path.js';
+// The one comparison two names are judged the same by (btc-keepname.js).
+// A ledger folds by it; a bookmark refuses by it; neither spells it itself.
+import { nameKey } from './btc-keepname.js';
 import { tokenizeScript } from './btc-tx.js';
 
 // A loose shape test for the address forms the chain has used: base58 P2PKH
@@ -107,13 +110,24 @@ export const sameAddresses = (a, b) => a.length === b.length && a.every((x) => b
 //     heading over a lone row.
 export function shelfLedgers(kept = keptLedgers()) {
   const byPath = new Map();          // 'a/b' -> { path, addresses }
+  // Names fold (nameKey), so two keeps differing only in case are ONE ledger
+  // and the shelf must settle which spelling to print. The first kept wins,
+  // and every later segment is re-spelled to it -- which also keeps a parent
+  // and its children spelled alike, so the walk below can go on comparing
+  // segments directly instead of folding at every step.
+  const spelling = new Map();        // folded prefix -> the segments as first kept
+  const canon = (segs) => segs.map((seg, i) => {
+    const key = nameKey(segs.slice(0, i + 1).join('/'));
+    if (!spelling.has(key)) spelling.set(key, seg);
+    return spelling.get(key);
+  });
   const own = (path) => {
     const key = path.join('/');
     if (!byPath.has(key)) byPath.set(key, { path, addresses: [] });
     return byPath.get(key);
   };
   for (const k of kept) {
-    const segs = pathSegments(k.title);
+    const segs = canon(pathSegments(k.title));
     const node = own(segs.length ? segs : ['']);
     for (const a of k.addresses) if (!node.addresses.includes(a)) node.addresses.push(a);
     for (let d = 1; d < segs.length; d++) own(segs.slice(0, d));   // the parents it implies
@@ -166,24 +180,36 @@ export function shelfLedgers(kept = keptLedgers()) {
 /** Keep a set of members under a name — the one writer for both pages that
  *  offer it, so the fold is the same wherever it is done. Keeping under a
  *  name already used folds into that ledger rather than shelving a second of
- *  the name: two keeps sharing a path are one ledger, which is the whole
- *  point of reading the name as a path. An untitled keep appends as it
- *  always did — a name is what folds, and it has none. */
+ *  the name: two keeps sharing a name are one ledger, which is the whole
+ *  point of reading the name as a path. Sameness is nameKey's to decide, so
+ *  case is not part of it — a capital is a typing accident, and the fold
+ *  catching it is what keeps a keeper's record from splitting in two. An
+ *  untitled keep appends as it always did — a name is what folds, and it
+ *  has none. */
 export function keepLedger(title, addresses) {
   const path = pathSegments(title).join('/');
+  const key = nameKey(title);
   const all = keptLedgers();
-  const mine = path ? all.find((k) => pathSegments(k.title).join('/') === path) : null;
+  // Folded, so `Coldcard Hack` joins a shelved `Coldcard hack` rather than
+  // shelving a second ledger beside it -- a split record whose parent no
+  // longer totals the incident, which is the one thing a ledger is for. The
+  // title already stored is left as it stands: the first spelling wins, and
+  // a reader who wanted a different one renames rather than re-keeps.
+  const mine = key ? all.find((k) => nameKey(k.title) === key) : null;
   if (mine) mine.addresses = [...mine.addresses, ...addresses.filter((a) => !mine.addresses.includes(a))];
   else all.push({ title, addresses: [...addresses] });
   saveKeptLedgers(all);
-  return path;
+  // The path that now STANDS, which after a fold is the spelling already
+  // kept rather than the one just typed.
+  return mine ? pathSegments(mine.title).join('/') : path;
 }
 
-/** The shelved ledger a path names, or null. The path is the name a reader
- *  typed, so it is matched as they wrote it, trimmed segment by segment. */
+/** The shelved ledger a path names, or null. Matched by the one comparison
+ *  (nameKey): trimmed segment by segment and folded, so a link shared with a
+ *  capital where the shelf has none still opens the ledger it names. */
 export const shelfLedgerFor = (path, kept = keptLedgers()) => {
-  const want = pathSegments(path).join('/');
-  return want ? shelfLedgers(kept).find((l) => l.title === want) ?? null : null;
+  const want = nameKey(path);
+  return want ? shelfLedgers(kept).find((l) => nameKey(l.title) === want) ?? null : null;
 };
 
 // Resolve the ledger a URL names from its address list. One address that
