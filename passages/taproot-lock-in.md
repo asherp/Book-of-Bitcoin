@@ -14,12 +14,12 @@
 
 ## Chapter frontispiece — block 687,285
 
-Block hash, as prose: ⌘¹⁸⁰ *Pistol set gloom to can per style to the mother conduct. Border may stamp scheme. Royal is funny to cop. The rub together nurse tap. Guy invest coyote to logic for army. Beach fade mass to an exotic tie.* ⓪⁷⁶
+Block hash, as prose: ⌘¹⁸⁰ *Pistol may set gloom. Can style the mother conduct to border out stamp to scheme. A royal is funny. Lap together nurse map. The sir invest coyote. Logic too see army. Boat get a mosquito. Trust copy orient to garbage. Tap may oblige sting.* ⓪⁷⁶
 
 - **version:** vdensaugeo zoo 100 — block version 0x3fff0004 — BIP9 version-bits form; version-rolling bits 0xfff8 (BIP320 scratch entropy) as densaugeo zoo; signaling bit 2 — Taproot (BIP341)
-- **previous block:** ⌘¹⁷⁷ Cap may excite dust to lawsuit out message to blame. Rack may receive its rabbit. Our raw wonder execute network to the busy chunk. Warrior thank absurd to blame. The elder cotton avoid rub. ⓪⁷⁹
+- **previous block:** ⌘¹⁷⁷ Son excite to dust. The lawsuit may message the blame out rack. Set may receive its rabbit. The raw wonder execute network. Cop busy chunk to warrior. Thank may see absurd. The aid is broken. Yes make faint to hybrid since our celery. Spider firm to buy. ⓪⁷⁹
   - hex: `00000000000000000001fed67d51f261ca3ca19fb281e52c6173f1c5f889c84e`
-- **merkle root:** ⋔ Our guilt is spatial. Talent allow essence to celery. Domain may see story for inquiry. The rare tissue may get garlic. Cop explain shove to offer. Sir observe our ugly winner. Its bit is afraid. Lip when cook some hedgehog. Yes exist the able nod. Its angry agent may wheel dig.
+- **merkle root:** ⋔ Guilt may get a spatial talent to rub. Guy allow essence via celery. A domain get story to inquiry. Its lap are rare. Tissue how see garlic. Cow may explain shove. Offer observe an ugly winner. The red is afraid. Bet when cook hedgehog. Son why exist rub. Due about lend dice. Its test yes get ketchup. Each tea why uncover salon. Each die is clever to the pop cut.
   - hex: `f013d5fa127d127c1fecc35c268e09e52f8b43d674b43e104ad454837513ba67`
 - **timestamp:** 2021-06-12 12:18 UTC
 - **difficulty target:** β₇₆ < 876411×256²⁰ — the block hash above reads below this target — nBits 170d5f7b — mantissa 876411 (3²·97379) shifted up 20 bytes: the target 0000000000000000000d5f7b0000000000000000000000000000000000000000, which a valid block hash must read below (76 leading zero bits) — difficulty 21,047,730,572,452 (relative to the genesis block)
@@ -27,19 +27,19 @@ Block hash, as prose: ⌘¹⁸⁰ *Pistol set gloom to can per style to the moth
 
 ## § 1 — Taproot lock-in
 
-Transaction id, as prose: ⌘²⁵⁶ *Record may jelly a display. A cool safe renew yes. Sir arrange our curious guy. The pop describe mesh. Black may get forum. Trophy remain tissue to scale. The tie how arrange escape. A sure dune cause edit to each siege. Our park rose ice out some walk.*
+Transaction id, as prose: ⌘²⁵⁶ *Record may jelly display. The cool safe would renew. Pot yet arrange its curious pie. Cow describe the mesh. Black set a forum. Trophy may remain tissue. Scale arrange to escape. Our sure dune may cause edit. Some siege parrot slam to an endless spread. Its toe is clever. A map modify pigeon.*
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
-  - script: ■687285Manuballista vult verber e moabitis. Embolum exolvo beccus ad bituminosus tu. Eo annatans disseco. Ordinator ni cornuarius. Cordifolius byssus ut lixivius eo. Flavicomus tu atlanticus gula. Disgregus integimentum aro inpero. Sumatrensis is ne auctorico tu. ⓪⁷ Pycnitis scapulae e servitor. Eo ni depso pectorina. Acona masturbatio e syrtis. ⓪⁵ η5·21467·342211 “/slush/”
+  - script: ■687285Manuballista verber e moabitis. Embolum exolvo de beccus. Bituminosus is annatans disseco. Ordinator et cornuarius. Cordifolius byssus vult lixivius tu. Flavicomus is atlanticus gula. Disgregus integimentum aro clostra e vicennalia in iucunditas. Tu aestuo e introductor. Silva defendo tu ad is. ⓪⁷ Pycnitis scapulae e servitor. Is depso at pectorina. Actio arbutum e pyralis. Disputatio exactio. Is vult expiscor octaedron. ⓪⁵ η5·21467·342211 “/slush/”
   - sequence: ■0 — replaceable; relative locktime 0 blocks after the input's confirmation
   - witness: see footnote a
 - **output 1:** 6.52032931 ₿
-  - script: ⧉ ⌖ h²⁰ Operator patricius lanceola. Myrrha iaculabilis torris. Nixabundus tu venitus tentaculum. Lipolyticus juger cynomia. Intestinalis litigium vult tu. ≡ ∇
+  - script: ⧉ ⌖ h²⁰ Operator patricius lanceola. Myrrha vult iaculabilis torris. Nixabundus is ni venitus tentaculum. Lipolyticus juger et dictatio. Eo vult vivifico iucunditas. Parthus is ut respondo cantrix. Eo vult denoto is. ≡ ∇
 - **output 2:** 0 ₿
   - script: ¶ ↧⁴¹ “RSKBLOCK:”
 - **output 3:** 0 ₿
-  - script: ¶ ⋔w h³² Chimney may see mountain. Our quick trial address dignity. Video get its cousin. Our rural reunion slide sting. Rate thumb a spatial dig. Sir enjoy alcohol to helmet. Its walnut fan attend travel via blast. Gate get a hamster. Jewel may evoke aid.
+  - script: ¶ ⋔w h³² Our chimney get mountain. Its quick trial address dignity. Our video cousin is rural. Reunion slide sting to rate. Thumb is spatial per some out. Our yes enjoy alcohol to helmet. Walnut fan to attend. Travel blast to gather out cabbage for an example. High cram to occur. Our toe water cop.
 - **locktime:** □ — no locktime — final with respect to time
 
 ### Witness footnotes

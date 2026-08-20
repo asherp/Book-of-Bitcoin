@@ -14,12 +14,12 @@
 
 ## Chapter frontispiece — block 124,724
 
-Block hash, as prose: ⌘²⁰⁷ *Cow may remember deer. A swing is plastic. Fatigue see duty to laptop. Dune may ranch couple. Device might flame casino. Its bleak october ignore hurdle. Profit is basic to each out. The afraid curtain may see the weird neglect.* ⓪⁴⁹
+Block hash, as prose: ⌘²⁰⁷ *Son remember deer to swing for plastic. Fatigue may set duty to laptop via dune. Its ranch couple device. Flame may see casino. A ear is bleak. October ignore to hurdle. The profit is basic. All edge gesture slot to wedding. Some tap may enact a smooth pluck.* ⓪⁴⁹
 
 - **version:** v1 — block version 1 (0x00000001) — pre-BIP9 integer form
-- **previous block:** ⌘²⁰⁷ Guy disagree crisp to the common cushion. A yellow century zone a void asthma. Rug may blur its bulk. The random rose see oxygen. Weapon may get bacon to dad. Its exotic album is spatial. An average is ago to the retreat. ⓪⁴⁹
+- **previous block:** ⌘²⁰⁷ Our sir disagree crisp to its common cushion. Yellow may get century. Zone void asthma to rug. Blur may bulk the random rose. An oxygen set weapon to bacon. Dad is exotic per alpha via a path per nurse. The new theme may gauge mosquito to the dumb august. ⓪⁴⁹
   - hex: `00000000000040dd4611c29727781b0b8f61a0170eacf7ff4af03f9bb974c63e`
-- **merkle root:** ⋔ A final are ill. Slam get advice to bonus out cliff. Sport place lava to kitten. A tornado pledge to decide out upgrade. Bet may donate action. Guy solve disease to marriage. Volume expect to spring for agent per theory. A because. Jet may erase goose.
+- **merkle root:** ⋔ Its final is ill. Slam set advice to bonus via cliff. The sport place lava. Kitten get our tornado. Pledge may decide upgrade. Our bit shall donate the action. Bet may solve disease. A pop marriage shall get volume. Cow expect to spring. Agent there set gospel. Pop invest to donate per rifle. Month punch its frozen set to the nod.
   - hex: `3f41a605e57a21e2e7ce144050dd8d43d3956bcf7d2eadf4559601022c1f8e56`
 - **timestamp:** 2011-05-18 00:21 UTC
 - **difficulty target:** β₄₉ < 6984627×256²³ — the block hash above reads below this target — nBits 1a6a93b3 — mantissa 6984627 (3·13·79·2267) shifted up 23 bytes: the target 0000000000006a93b30000000000000000000000000000000000000000000000, which a valid block hash must read below (49 leading zero bits) — difficulty 157,416 (relative to the genesis block)
@@ -27,14 +27,14 @@ Block hash, as prose: ⌘²⁰⁷ *Cow may remember deer. A swing is plastic. Fa
 
 ## § 1 — The satoshi left on the table
 
-Transaction id, as prose: ⌘²⁵⁶ *Assist may attend pony. Issue blast bargain to nose. A hour see a harsh slight. Home may stem its link. Cow provide theme to custom. Fix may remind guard for scrub. Boost spend accident to park. An aware price shrug map.*
+Transaction id, as prose: ⌘²⁵⁶ *Assist far attend pony. Issue blast bargain to nose. Hour is harsh for slight. Home stem to link. Cow provide theme per custom. Fix remind to guard. Scrub boost to spend per accident. Parrot guard negative to a tissue. Belt may theme its drive for the exact map.*
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
   - script: β₄₉ 6984627×256²³ η3·5·7
   - sequence: ● — final — disables the transaction locktime for this input
 - **output 1:** 49.99999999 ₿
-  - script: p⁶⁵ Gelu exbannio districtus tu e is. Eo legitime caributus. Nomenclatio e evictio ad illitteratus covinnarius. Sulpicius tu bato navandus. Asteria abliguritus obsecundo. Eo generaliter conservator. Scandix vult antelucanus tu e satius folia. Idahoensis nigritudo eiusmodi arvensis tu. Infirmis is angario deretrarius eo. Is dimano ritratus. Eo delineo unisonus tu. Eo assedito illinio e eo ex is. Tu vult permetior farreus tu. Eo projicio e dierectus eo. ∇
+  - script: p⁶⁵ Gelu exbannio districtus tu e eo. Is legitime caributus. Nomenclatio evictio e illitteratus covinnarius. Sulpicius is vult bato navandus ad asteria. Tu abliguritus obsecundo. Is generaliter conservator. Scandix e antelucanus tu. Satius folia idahoensis nigritudo ex is. Tu eiusmodi arvensis eo. Infirmis is ut angario deretrarius is. Tu ea dimano ritratus. Is vult delineo unisonus eo. Tu assedito illinio. Is permetior consisto e belligeratio. Igitur. Lapidaris plagella vult frutesco. Alsbergum litargia. ∇
 - **locktime:** □ — no locktime — final with respect to time
 
 ## Commentary

@@ -14,12 +14,12 @@
 
 ## Chapter frontispiece — block 478,558
 
-Block hash, as prose: ⌘¹⁸⁵ *Drip have dove to its loop. Sand is elegant per reunion. A move get turkey. Vapor may set bean. The chronic cop say bachelor. Cow allow to uncover. Blossom amount to pride. The guy say to explain out length.* ⓪⁷¹
+Block hash, as prose: ⌘¹⁸⁵ *Drip may have dove to loop. The sand is elegant. Reunion may move turkey to vapor. Bean may see its chronic cap. A ago tap may say bachelor. Cut shall allow to uncover. Blossom amount warrior out ranch. Fly set length to million. Leader may set laundry. The out is fresh.* ⓪⁷¹
 
 - **version:** vaccio abandon 10 — block version 0x20000002 — BIP9 version-bits form; accio abandon — no version rolling; signaling bit 1 — SegWit (BIP141)
-- **previous block:** ⌘¹⁸⁴ The tomorrow equal art. Our black citizen garage sun. Exercise voice rescue to initial. Sheriff may get oak. Priority might train cricket. Twelve away set a due engine. Its random copy are set. ⓪⁷²
+- **previous block:** ⌘¹⁸⁴ Tomorrow may equal art to black. Citizen garage sun for exercise out voice per rescue out initial. Sheriff get oak to priority. Train may set cricket. A twelve bridge its merry cut to aid. The spatial tie is exotic. Rubber process breeze to reveal. ⓪⁷²
   - hex: `000000000000000000eb9bc1f9557dc9e2cfe576f57a52f6be94720b338029e4`
-- **merkle root:** ⋔ Cap enhance divorce to flag for album. Its edit defy habit. Cow truly size pay. Nod may connect antenna to episode. Pop rotate tribe via radar for box. Process pretty used cotton. Its female mechanic is nice. Gate may get chef. Our wasp set an indoor red.
+- **merkle root:** ⋔ Fyi enhance divorce to flag via album to edit. Set may defy a habit. Tie truly size cut. Dig may connect antenna. Episode could rotate tribe. Radar may box process. Red pretty used cotton. Our female is mechanic. A nice cow gather to expect via sock to final. Inch cruise lava for vote.
   - hex: `5b65144f6518bf4795abd428acd0c3fb2527e4e5c94b0f5a7366f4826001884a`
 - **timestamp:** 2017-08-01 13:16 UTC
 - **difficulty target:** β₇₁ < 83765×256²¹ — the block hash above reads below this target — nBits 18014735 — mantissa 83765 (5·11·1523) shifted up 21 bytes: the target 0000000000000000014735000000000000000000000000000000000000000000, which a valid block hash must read below (71 leading zero bits) — difficulty 860,221,984,436 (relative to the genesis block)
@@ -27,16 +27,16 @@ Block hash, as prose: ⌘¹⁸⁵ *Drip have dove to its loop. Sand is elegant p
 
 ## § 1 — Bitcoin Cash fork
 
-Transaction id, as prose: ⌘²⁵⁶ *The ill cap is little. Our penalty is legal to a mutual fall. Coin may prevent year. Wish slow buzz primary. Flag may fix snack to result. Pull get its poem. Slogan sample clap to gloom. Its able cop may approve to satisfy. An obscure pan may get tax.*
+Transaction id, as prose: ⌘²⁵⁶ *Our ill sky are little. Penalty is legal to a mutual fall. Coin prevent year to wish. A slow buzz see primary via flag. Fix snack result to pull per poem to slogan. Sample may clap gloom. Our ban see guy about lava to man. Its odd saddle scout worry for tourist out seed.*
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
-  - script: ■478558 2017-08-01 13:16“/BTC.COM/” Locusta vult intuendus subintroduco. Peracerbus tu est vibrabilis. Is leidensis myxum e scolopax at numisma. Prophetalis malefactor colyma. Eo convello libro. Abusor consessor e spongea ob calumnia. Indianus panifica siparium. Inrogatio vult aroma. Is tondeo elegi. ⓪⁷ η49362083·204369941537 ⓪⁴
+  - script: ■478558 2017-08-01 13:16“/BTC.COM/” Locusta intuendus subintroduco. Peracerbus eo sit vibrabilis. Leidensis myxum scolopax. Numisma prophetalis malefactor. Colyma convello libro e abusor. Consessor spongea en calumnia. Indianus panifica siparium. Inrogatio est ditis e tu. Is vult apologo falvarium is. Indigestus tu evoco abdo e eo. Tu vult repraesento is ad tu. ⓪⁷ η49362083·204369941537 ⓪⁴
   - sequence: ● — final — disables the transaction locktime for this input
 - **output 1:** 12.61890202 ₿
-  - script: ⌖ h²⁰ Difficultas veterasco scissura e interrogatio. Plenilunium gelatus en bupaes. Tu benigne praedicatio. Is ea incalesco eo. Tu septimum signale. Intervallum dierectus is e eo. =
+  - script: ⌖ h²⁰ Difficultas veterasco scissura e interrogatio in plenilunium. Gelatus e bupaes. Is benigne praedicatio. Eo vult incalesco tu. Eo septimum levianum cuscolium. Igitur. Eo congratulor e plausibilis eo. Is vult conbibiturus oceanis de is. =
 - **output 2:** 0 ₿
-  - script: ¶ ⋔w h³² A copy mix girl to mammal. Tourist may answer canyon out due. A shy asthma may square produce to panic. Its three is rare for fortune. Chunk badge the annual pencil to noodle. Scrap pledge our subject theory. Region thank a skull.
+  - script: ¶ ⋔w h³² Copy may mix girl. Mammal see tourist to answer per canyon. A shy asthma square produce to panic. Three yes see its rare fortune. Chunk badge an annual pencil. Noodle may scrap pledge. Its subject there see seminar. Our town set its urban trumpet. Lock bundle to forget.
 - **locktime:** □ — no locktime — final with respect to time
 
 ## Commentary

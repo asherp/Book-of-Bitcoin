@@ -14,12 +14,12 @@
 
 ## Chapter frontispiece — block 630,000
 
-Block hash, as prose: ⌘¹⁷⁸ *Hospital exchange the social era. Our tube may get this foster tie. Sir achieve to swallow. Bid nest bachelor via notable. Its useful glove enact war. A pay is acoustic. Lie may betray fury to calm. Each source is red.* ⓪⁷⁸
+Block hash, as prose: ⌘¹⁷⁸ *Hospital exchange our social. Era tube this bit. A foster cap may achieve swallow. Bid nest our bachelor to notable. The useful glove enact son. Our acoustic burst may panic double. Our pop quote between set frog. A cake may get visual.* ⓪⁷⁸
 
 - **version:** vaccio abandon — block version 0x20000000 — BIP9 version-bits form; accio abandon — no version rolling; no soft-fork signals
-- **previous block:** ⌘¹⁸⁰ Bullet may frequent proof to our donor. Sir inhale a stone screen. Bit soft get pay. Our keen trouble shoulder to rescue via force. Echo is mad to hole. Artist birth despair for chapter per parade. ⓪⁷⁶
+- **previous block:** ⌘¹⁸⁰ Bullet out frequent proof. Donor inhale a stone screen. Nod are soft to a keen trouble to shoulder. Rescue force echo per our mad hole. The artist brown worry. Elder scale estate to secret. Cheese ago see sphere. ⓪⁷⁶
   - hex: `0000000000000000000d656be18bb095db1b23bd797266b0ac3ba720b1962b1e`
-- **merkle root:** ⋔ Artwork may see the liberty. Its die is genuine. Above like a humble midnight. The angry grant doctor tie. A guy scatter to caught. The soft glow grace year. Our setup may anchor license. Guy indicate display to width. The egg get cake via miss. Our sadness swap set.
+- **merkle root:** ⋔ Artwork see each liberty. A genuine above is like. Its humble midnight see an angry grant to doctor. Cop scatter to caught out the soft glow. Grace see year to setup. An anchor license to indicate via display out width for egg. Call may see width to love. Yard rival cement out horn per ozone.
   - hex: `b191f5f973b9040e81c4f75f99c7e43c92010ba8654718e3dd1a4800851d300d`
 - **timestamp:** 2020-05-11 19:23 UTC
 - **difficulty target:** β₇₅ < 1145401×256²⁰ — the block hash above reads below this target — nBits 17117a39 — mantissa 1145401 (163·7027) shifted up 20 bytes: the target 000000000000000000117a390000000000000000000000000000000000000000, which a valid block hash must read below (75 leading zero bits) — difficulty 16,104,807,485,529 (relative to the genesis block)
@@ -27,19 +27,19 @@ Block hash, as prose: ⌘¹⁷⁸ *Hospital exchange the social era. Our tube ma
 
 ## § 1 — The Third Halving
 
-Transaction id, as prose: ⌘²⁵⁶ *Gravity may circle pottery. Soul echo grain to sweet. Whisper may refuse law. Liquid would knock style to capital. Icon park hospital via hope for rack out antique. Student is exotic to the rebel leopard to the purpose. Strategy is proud via guy.*
+Transaction id, as prose: ⌘²⁵⁶ *Gravity circle pottery to soul. Echo may see grain out its sweet whisper. Refuse get law to a liquid knock to style. A capital icon may park hospital. Our hope shall rack the antique student. Its exotic rebel lesson its sunny jet to sir. The urban matter nerve stable. Skull add a tax.*
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
-  - script: ■630000η3³ “Mined by AntPool” Tu resero graduatus eo. Is prehendo immaturitas e inductor. Eo jugulo praegressus en aspergillum. Magida e mentulatus eo. Tu pilpito nupturio at birrus. Glis sit lilaceus. Tu subplico semidormito. Naris e proscriptio. Ulula ne analysta. Centoculus glaucoma sphalma. Is et lacto andi. Theorema contueor tu abs eo. ⓪⁷ η3²·179·267214182982529
+  - script: ■630000η3³ “Mined by AntPool” Is resero graduatus tu. Eo prehendo immaturitas e inductor. Tu jugulo praegressus ab aspergillum ob magida. Mentulatus is pilpito nupturio. Birrus et glis. Lilaceus tu subplico semidormito. Naris proscriptio e ulula ad analysta. Eo centoculus glaucoma e sphalma. Tu eo lacto andi. Tibicinium vult attermino admixtio. Eo debet perturbo gaster e foraminatus eo. Theologicus is sit. ⓪⁷ η3²·179·267214182982529
   - sequence: ● — final — disables the transaction locktime for this input
   - witness: see footnote a
 - **output 1:** 7.15968084 ₿
-  - script: ⧉ ⌖ h²⁰ Eo medie tu. Is adseveranter ruptor. Fluminalis gallicrus dispicio vanito. Quotuplus eo vult fodero illaboratus is. Tu transpicio neglego e panecaldum de transcensus. ≡ ∇
+  - script: ⧉ ⌖ h²⁰ Is medie eo. Tu adseveranter ruptor. Fluminalis gallicrus dispicio vanito e quotuplus eo. Tu fodero is ob illaboratus tu. Eo transpicio pertinax is. Tu ut conprimens coclear. Is vult subplicans aspiro. Is solet emitto repo. ≡ ∇
 - **output 2:** 0 ₿
-  - script: ¶ ⋔w h³² Comic rough a vicious flock. Hockey may see furnace to estate. Our cheap infant conduct denial. Our arm may sting our silent bulk. Tap loud get zero. A far danger truly set some strategy. The aerobic elbow may plate leopard to pudding. Dinosaur may uphold pay.
+  - script: ¶ ⋔w h³² Comic rough a vicious flock. Hockey set our furnace. Estate may see a cheap infant to conduct. The denial yet arm a sting. Its silent bulk loud get zero. Danger truly set the strategy. An aerobic elbow plate lesson. Surface is new among jet. The slender behind is usual. The cow settle to confirm.
 - **output 3:** 0 ₿
-  - script: ¶ ³⁶ The bet is rigid. Angle swap gain to canyon. Satoshi average mercy for gain. February is insane to state. Penalty may please language per dog. Company may ridge guy across rack. Either cop explain to picture. Season set bullet via grab. A level skill how retreat boil.
+  - script: ¶ ³⁶ Our dig is rigid. Angle swap gain to canyon. Satoshi average mercy out gain. February is insane to state. Penalty please set language. Dog may see company. Ridge across rack lot. Either cop explain picture to season for bullet. A grab see a cut liberty. Sir caught slam to faith. A defense may set satoshi for thank per waste.
 - **locktime:** □ — no locktime — final with respect to time
 
 ### Witness footnotes

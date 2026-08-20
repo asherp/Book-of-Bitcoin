@@ -14,12 +14,12 @@
 
 ## Chapter frontispiece — block 728
 
-Block hash, as prose: ⌘²²⁴ *Kit set some hip. Ranch see its endless rub. Tie may seek a curious tap to the awesome female. Language abuse urge inside nose to charge. Actor get our pretty maximum. Device may slide panic to the awake avocado. Sir see its lunar surprise.* ⓪³²
+Block hash, as prose: ⌘²²⁴ *Kit may set hip to ranch. The endless cow seek cap. A curious bet is awesome. Our female language abuse urge. Inside nose charge to actor. A pretty maximum may see device per slide out its panic. Pop awake our refuse. Oil is silly to oil. Wisdom much set dune.* ⓪³²
 
 - **version:** v1 — block version 1 (0x00000001) — pre-BIP9 integer form
-- **previous block:** ⌘²²¹ Wave quarter to defy. Its staff may live middle. Dig erode deputy to position. Aid may identify fortune via zoo. Each key is strong. Ban may govern taste. Orchard next get the fyi. Our unique wire too scan furnace. Defense rescue the yes. ⓪³⁵
+- **previous block:** ⌘²²¹ The wave quarter to defy. A staff how live middle. Sin erode deputy to position. Our pop identify fortune for zoo via key. Its strong cop govern taste. Orchard is next to cap. Its unique wire scan total. A certain planet may set soda. Nut shall get logic. Each scrub how see pan. ⓪³⁵
   - hex: `000000001c7eb6ab129cf14659aea1f77f6e116ea8da2193182b08eae6ecf5f7`
-- **merkle root:** ⋔ Our giant see slight. Fog get satoshi to bamboo. Grief may get dove per laptop. Year add to expect. Guy empower balance outside saddle. The marble get gadget. Desk set airport to web. Novel get a hill. Its wise theory salute blossom to staff.
+- **merkle root:** ⋔ A giant slight fog its satoshi. Bamboo set grief to dove per a laptop. Year add to expect. Cow empower our balance. Outside may saddle marble. Gadget shall see desk to airport. Web get novel for hill out wise. Map there see its six canoe. A due is various. Pot differ to enrich per shove. Aid may set red to the lunar pop.
   - hex: `1f7fd770697c167ca75e3d742f3b1b81244165e0fee87310cd20b15f6975b961`
 - **timestamp:** 2009-01-16 19:18 UTC
 - **difficulty target:** β₃₂ < 65535×256²⁶ — the block hash above reads below this target — nBits 1d00ffff — mantissa 65535 (3·5·17·257) shifted up 26 bytes: the target 00000000ffff0000000000000000000000000000000000000000000000000000, which a valid block hash must read below (32 leading zero bits) — difficulty 1 (relative to the genesis block)
@@ -27,17 +27,17 @@ Block hash, as prose: ⌘²²⁴ *Kit set some hip. Ranch see its endless rub. T
 
 ## § 2 — First P2PKH payment
 
-Transaction id, as prose: ⌘²⁵⁶ *A bird may chunk pot. Tap often clump its set toddler. Squirrel may hammer method to acid. Novel south middle mention. Our unique war may see an useless jet. Its merry essay may treat a slender day to void. Lake is vast out a theory. Each ear is typical. Its monster yes set mansion.*
+Transaction id, as prose: ⌘²⁵⁶ *The bird may chunk its red. Our map often clump the toddler. Squirrel may hammer method. An acid novel south middle mention. An unique bet is useless to set. A merry essay treat our slender day. The void lake is vast to son. Set there see ostrich. War replace people to stand. Test ring to idle.*
 
 - **version:** 1
 - **input 1:** spends output 0 of `ff3dc8b461305acc5900d31602f2dafebfc406e5b050b14a352294f0965e0bf6`
-  - script: s⁷³ Flavicornis tu propemodum apsterritus eo. Tu matronaliter vegeto mormyr. Spathifer tu sit undecemplex. Eo obtego e delectabilis milvus. Eo ternarius tu. Is finite eo. Sodalicius tu pilpito obsoletus dux e tu. Angustiosus invidentia pedatim is. Cauliflorus tu vult amplifico e tu. Eo gradatim sceptuchus. Tu cucubo nato. Stigma pungo gelo. Tu ut guardo praenotatio. Sceptrum irrogo is e eo. Tu cordicitus columba. Vessica decoloratio e admixtio.
+  - script: s⁷³ Flavicornis is propemodum apsterritus eo. Is matronaliter vegeto mormyr. Spathifer is undecemplex eo. Tu obtego e delectabilis milvus. Ternarius tu eo ab is. Tu finite sodalicius tu. Is vult pilpito obsoletus dux e angustiosus invidentia. Eo pedatim cauliflorus tu. Eo amplifico is e eo. Tu gradatim sceptuchus. Is cucubo nato. Stigma pungo gelo. Eo guardo praenotatio. Sceptrum vult irrogo. Tu cordicitus columba. Eo hucusque ridiculus is. Tu prophetizo larix. Libamen dicto auctor e columbus.
   - sequence: ● — final — disables the transaction locktime for this input
 - **input 2:** spends output 0 of `2db69558056d0132d9848851fd20329be9cd590fa5ae2b3c55f58931f42e27f7`
-  - script: s⁷³ Maculatio contemptor e sedum. Consiliarius dato jactito. Eo vult substruo incathedro. Multifarius tu ne adflo bitumen. Is contente cathedra. Tu corrugo tragoedia e duodecennium se voratrina. Laodicenus eo vult adsociaturus appellator. Eo debet depreco perridiculus gynaecium. Lacrimatio insurgendum is e eo ab javanus sellularius. Tu quor fructum. Vesaniens is transvado eo e is. Tu forsit sceletus. Abpatruus diademalis viratus e operatio. Chymus sit.
+  - script: s⁷³ Maculatio vult contemptor. Sedum debet consiliarius e is. Tu vult dato jactito. Eo solet substruo incathedro. Multifarius tu vult adflo bitumen. Eo contente cathedra. Is corrugo tragoedia. Duodecennium voratrina. Laodicenus eo adsociaturus appellator. Is depreco perridiculus gynaecium e lacrimatio. Eo insurgendum javanus sellularius. Tu quor fructum. Vesaniens is transvado eo. Tu forsit sceletus. Abpatruus diademalis harenula e harpe. Eo auctorico lagemannus ad confectio. Brucus vult latinitas. Lytta est e tu.
   - sequence: ● — final — disables the transaction locktime for this input
 - **output 1:** 100.00000000 ₿
-  - script: ⧉ ⌖ h²⁰ Narix inportunus annellus. Eo pernato mactatio. Tu suprascando reprensus e rutabulum en opificium e arundo. Gaudivigens tu concedo platyphyllus eo. Tu vult inrisurus. ≡ ∇
+  - script: ⧉ ⌖ h²⁰ Narix inportunus annellus. Tu vult pernato mactatio. Eo suprascando reprensus e rutabulum. Opificium vult arundo. Gaudivigens electrix e aratorius istic. Bipes tu coniugens planta. Is convivor e eo. ≡ ∇
 - **locktime:** □ — no locktime — final with respect to time
 
 ## Commentary

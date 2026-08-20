@@ -464,6 +464,22 @@ button:disabled { opacity: .4; cursor: not-allowed; }
   font: 500 12.5px/1.2 'IBM Plex Mono','Book Sigla',monospace; letter-spacing: .02em; text-transform: none;
 }
 .hash-menu .hash-menu-item:hover, .hash-menu .hash-menu-item:focus-visible { background: var(--input-bg); color: var(--ink); outline: none; }
+/* The shelf offered as a list. Capped and scrolling, because a reader may
+   keep more ledgers than a menu can stand; the rows are the menu's own
+   items, so pressing one reads like pressing any other. */
+.hash-menu-ledgers { max-height: 46vh; overflow-y: auto; overscroll-behavior: contain; }
+/* The ledger the address sits in now: shown so the reader can see where it
+   is, dimmed and inert because moving it to where it already is is not a
+   move. The ribbon says whose it is, as it does everywhere else. */
+.hash-menu-ledgers .hash-menu-item.here { color: var(--dim); cursor: default; }
+.hash-menu-ledgers .hash-menu-item.here:hover { background: transparent; color: var(--dim); }
+.hash-menu-ledgers .here-rib { color: var(--accent); margin-right: 6px; }
+/* A filed ledger reads as filed: its depth on the shelf, in the menu too. */
+.hash-menu-ledgers .hash-menu-item[data-depth="1"] { padding-left: 21px; }
+.hash-menu-ledgers .hash-menu-item[data-depth="2"] { padding-left: 33px; }
+.hash-menu-ledgers .hash-menu-item[data-depth="3"] { padding-left: 45px; }
+/* …and the way out of the list, ruled off from the names above it. */
+.hash-menu-ledgers .hash-menu-item.fresh { border-top: 1px solid var(--rule); border-radius: 0 0 4px 4px; margin-top: 5px; padding-top: 10px; }
 
 /* The bookmark ribbon, pinned to the top-right corner of a place that can be
    kept: a chapter's title, a §section's, an output's amount, a volume's or a
@@ -541,6 +557,15 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 }
 .hash-menu-title .hash-title-row .ghost { background: transparent; color: var(--dim); border: 1px solid var(--input-bd); }
 .hash-menu-title .hash-title-row .ghost:hover { background: transparent; color: var(--ink); border-color: var(--accent); }
+/* What the field's name will do, under the field it is about. Two things say
+   themselves here, because two things are being named: a keep must be named
+   uniquely, so the line is a FAULT and Save stands down; a ledger folds into
+   one already kept, so the line is a CONSEQUENCE and both outcomes are legal.
+   Quiet either way -- an instruction, not an alarm. Empty, it takes no room,
+   so the form keeps one shape and costs nobody an extra step. */
+.hash-title-note { padding: 2px 5px 0; color: var(--meta);
+  font: 400 10.5px/1.4 'IBM Plex Mono','Book Sigla',monospace; max-width: 232px; }
+.hash-title-note:empty { display: none; }
 
 /* Per-section paging: Previous / Next pushed to opposite edges, each labelled
    with the section (or adjacent leaf) it steps to. Anchored to the bottom of
@@ -1324,12 +1349,38 @@ a.footnote-title.is-asset:hover { color: var(--accent-2, #dcb877); text-decorati
       <button type="button" class="hash-menu-item" data-act="copy-text" role="menuitem">Copy text</button>
       <button type="button" class="hash-menu-item" data-act="copy-link" role="menuitem">Copy link</button>
       <button type="button" class="hash-menu-item hidden" data-act="footnote" role="menuitem">Witness footnote</button>
-      <button type="button" class="hash-menu-item hidden" data-act="ledger" role="menuitem">Ledger entry</button>
+      <!-- The road to this address's record, and the way to file the address
+           itself. Two different things: one goes and looks, the other writes
+           the reader's shelf, and the second says which of the two writes it
+           will make -- Add where the address is in none of their ledgers,
+           Move where it is already in one. -->
+      <button type="button" class="hash-menu-item hidden" data-act="ledger" role="menuitem">View ledger</button>
+      <button type="button" class="hash-menu-item hidden" data-act="ledger-add" role="menuitem">Add to ledger</button>
       <button type="button" class="hash-menu-item hidden" data-act="search" role="menuitem">Search</button>
       <button type="button" class="hash-menu-item" data-act="bookmark" role="menuitem">Bookmark</button>
     </div>
+    <!-- The shelf, to press rather than to type: filing an address into a
+         ledger the reader already keeps is a choice among things that exist,
+         so it is offered as a list. The ledger it sits in now stands in the
+         list too, marked and not pressable -- a reader should see where it is
+         before choosing where it goes, and moving it to where it already is
+         is not a move. `New ledger…` at the foot drops into the naming form,
+         which is the only path that needs typing. -->
+    <div id="hash-menu-ledgers" class="hash-menu-ledgers hidden" role="menu"></div>
     <div id="hash-menu-title" class="hash-menu-title hidden">
-      <input type="text" id="hash-title-input" class="mono" placeholder="Title for contents" autocomplete="off" spellcheck="false">
+      <input type="text" id="hash-title-input" class="mono" placeholder="Title for contents" autocomplete="off" spellcheck="false" list="ledger-paths">
+      <!-- The reader's own shelf, offered as completions: adding an address to
+           a ledger they already keep is picking a name, not remembering how
+           they spelled it. Filled only for a locking-script keep, which is the
+           only one that folds -- a bookmark's names are all refused, so
+           offering them would be offering the way to be turned away. -->
+      <datalist id="ledger-paths"></datalist>
+      <!-- What this name will do. For a keep: why it cannot be saved, since a
+           keep must be named and no two may share a name. For a ledger: which
+           of the two it is about to do, since keeping under a name already
+           used folds into that ledger rather than shelving a second. Empty,
+           it takes no room. -->
+      <div id="hash-title-note" class="hash-title-note" role="status"></div>
       <div class="hash-title-row">
         <button type="button" data-act="title-save">Save</button>
         <button type="button" class="ghost" data-act="title-cancel">Cancel</button>
@@ -1346,8 +1397,11 @@ import { parseTransaction, computeTxid, parseBlockHeader, computeBlockHash, bits
 // section joins it as a titled one-address ledger, the same registry the
 // Ledger page's own keep button writes. INDEXED is the curated shelf, whose
 // titles are the keep line's defaults.
-import { keptLedgers, saveKeptLedgers, keepLedger, INDEXED } from './btc-index.js';
+import { keptLedgers, saveKeptLedgers, keepLedger, unkeepAddress, shelfLedgers, INDEXED } from './btc-index.js';
 import { pathSegments } from './btc-path.js';   // a slash in a name the reader typed is a path
+// A keep has to be named, and no two keeps may share a name (btc-keepname.js):
+// the form and the store decide it there, so they cannot disagree.
+import { nameKey, nameFault, takenNames, ledgerOutcome, ledgerOutcomeSaid } from './btc-keepname.js';
 import { composeTransactionFields, composeBlockHeaderFields, bitsInfo, groupDigits, formatBtc, formatAmount, formatAmountAs, formatOwnAmount, amountUnit, setAmountUnit, ownUnit, setOwnUnit, dayPrice, setDayPrice, renderWitness, toSuperscript, timestampInfo } from './btc-prose.js';
 import { usdOn, PRICE_SOURCES, priceSource, setPriceSource } from './btc-price.js';
 import { volumeBookChapter, heightOf, windowStartOf, retargetInside, subsidyAt, toRoman, reference, parseReference, footnoteMark, footnoteIndexOf, inputMark, latinRefOf } from './btc-citation.js';
@@ -7214,6 +7268,12 @@ const keyOf = (b) => bookmarkKey(b.hex, bmSubOf(b), b.page ?? null);
 const isBookmarked = (hex, vout = null, page = null) => bookmarks.some((b) => keyOf(b) === bookmarkKey(hex, vout, page));
 const saveBookmarks = () => { try { localStorage.setItem(BOOKMARKS_KEY, JSON.stringify(bookmarks)); } catch {} };
 
+// Why this keep's name cannot be saved, or null when it can: the shared rule
+// (btc-keepname.js) asked over the keeps this page holds. `exceptKey` is the
+// keep being retitled -- a name is never taken from itself.
+const keepNameFault = (title, exceptKey = null) =>
+  nameFault(title, takenNames(bookmarks, keyOf, exceptKey));
+
 // The curated entries live in notables.yaml, loaded through btc-contents.js and
 // shared with the table-of-contents page; they lead the Bookmarks list here.
 
@@ -7246,6 +7306,10 @@ function entryPlacement(entry) {
 // nothing) when the reference can't be resolved.
 function addBookmark(entry, title) {
   const key = bookmarkKey(entry.hex, bmSubOf(entry), entry.page ?? null);
+  // Named, and named uniquely. The form does not offer Save while either
+  // fails, so this is the store's own guard rather than the reader's first
+  // news of it -- and the one that holds for any other caller.
+  if (keepNameFault(title, key)) return false;
   const existing = bookmarks.find((b) => keyOf(b) === key);
   if (existing) {
     existing.title = title;
@@ -7457,6 +7521,11 @@ function scriptEntry(keepEl) {
   if (!hex) return null;
   return {
     hex, prose: address, label: 'locking script', nav: false,
+    // The address itself, not only the road to it: the menu files this script
+    // into a ledger as well as opening the one it is in, and filing needs the
+    // member rather than a URL. Named as the ribbon's own entry names it, so
+    // the two paths into keepLedger carry the same field.
+    ledger: address,
     // The road to the leaf that reads these bytes as the term they bind. The
     // script itself is the query -- ?q= takes a locking script by its own
     // hex, as the box does when a reader pastes one -- so it needs no address
@@ -7623,6 +7692,7 @@ const menuCopyLinkBtn = hashMenu.querySelector('[data-act="copy-link"]');
 const menuBmBtn = hashMenu.querySelector('[data-act="bookmark"]');
 const menuFootnoteBtn = hashMenu.querySelector('[data-act="footnote"]');
 const menuLedgerBtn = hashMenu.querySelector('[data-act="ledger"]');
+const menuLedgerAddBtn = hashMenu.querySelector('[data-act="ledger-add"]');
 const menuSearchBtn = hashMenu.querySelector('[data-act="search"]');
 const titleInput = $('hash-title-input');
 let menuEntry = null;
@@ -7645,8 +7715,9 @@ let menuMode = 'actions';
 let menuSettleUntil = 0;
 function setMenuMode(mode) {
   menuMode = mode;
-  $('hash-menu-actions').classList.toggle('hidden', mode === 'title');
+  $('hash-menu-actions').classList.toggle('hidden', mode !== 'actions');
   $('hash-menu-title').classList.toggle('hidden', mode !== 'title');
+  $('hash-menu-ledgers').classList.toggle('hidden', mode !== 'ledgers');
   positionMenu();
 }
 
@@ -7655,6 +7726,7 @@ function openHashMenu(ev, entry, anchorEl) {
   ev.stopPropagation();
   menuEntry = entry;
   fromRibbon = false;
+  fromPicker = false;
   $('hash-menu-head').textContent = entry.label;
   const copy = menuCopy(entry);
   menuCopyBtn.textContent = tr(copy.item);
@@ -7678,7 +7750,13 @@ function openHashMenu(ev, entry, anchorEl) {
   menuFootnoteBtn.classList.toggle('hidden', entry.footnote == null);
   // A locking script's menu carries the road to its ledger: the entry this
   // very section wrote in that address's record (?address + ?ref).
+  menuLedgerBtn.textContent = tr('View ledger');
   menuLedgerBtn.classList.toggle('hidden', !entry.ledgerHref);
+  // …and, beside it, the way to file the address. Add or Move by whether the
+  // reader already keeps it: a curated ledger is not theirs to move out of,
+  // so only their own shelf makes this a move.
+  menuLedgerAddBtn.textContent = tr(keptLedgerOf(entry.ledger) ? 'Move to ledger' : 'Add to ledger');
+  menuLedgerAddBtn.classList.toggle('hidden', !entry.ledger);
   // …and the road to the search leaf, which reads the same bytes as the term
   // they bind. The ledger says where this script has been paid; the leaf says
   // what it is, which is the one question the reading cannot answer in place.
@@ -7708,9 +7786,19 @@ function openHashMenu(ev, entry, anchorEl) {
 // list to fall back to -- and must not invent one: a leaf's title offers a
 // bookmark and nothing else, having no hash of its own to copy.
 let fromRibbon = false;
-const cancelTitle = () => { if (fromRibbon) closeHashMenu(); else setMenuMode('actions'); };
+// …and whether it was raised from the ledger list, which is a step further in
+// than the actions: cancelling should hand the reader back the list they were
+// choosing from, not throw them out to the top of the menu.
+let fromPicker = false;
+const cancelTitle = () => {
+  if (fromRibbon) closeHashMenu();
+  else if (fromPicker) openLedgerPicker();
+  else setMenuMode('actions');
+};
 
-function closeHashMenu() { hashMenu.classList.add('hidden'); menuEntry = null; fromRibbon = false; }
+function closeHashMenu() {
+  hashMenu.classList.add('hidden'); menuEntry = null; fromRibbon = false; fromPicker = false;
+}
 
 menuCopyBtn.addEventListener('click', () => {
   if (!menuEntry) return;
@@ -7801,6 +7889,70 @@ menuLedgerBtn.addEventListener('click', () => {
   if (!menuEntry || !menuEntry.ledgerHref) return;
   location.href = menuEntry.ledgerHref;
 });
+
+// The reader's own ledger holding this address, or null. Only theirs: a
+// curated ledger is not something they filed, so an address of one joining a
+// ledger of theirs is an addition and not a move.
+const keptLedgerOf = (address) =>
+  (address ? keptLedgers().find((k) => k.addresses.includes(address)) ?? null : null);
+
+// The shelf, drawn to press. The row the address sits in now is drawn too --
+// marked and inert, so a reader sees where it is before choosing where it
+// goes -- and `New ledger…` at the foot is the one way out that needs typing.
+const menuLedgers = $('hash-menu-ledgers');
+function openLedgerPicker() {
+  const address = menuEntry?.ledger;
+  if (!address) return;
+  const home = keptLedgerOf(address);
+  menuLedgers.replaceChildren();
+  for (const l of shelfLedgers()) {
+    const row = document.createElement('button');
+    row.type = 'button';
+    row.setAttribute('role', 'menuitem');
+    row.dataset.depth = String(l.depth);
+    const here = home && nameKey(home.title) === nameKey(l.title);
+    row.className = 'hash-menu-item' + (here ? ' here' : '');
+    if (here) {
+      const rib = document.createElement('span');
+      rib.className = 'here-rib';
+      rib.textContent = '▮';
+      rib.setAttribute('aria-hidden', 'true');
+      row.append(rib);
+      row.disabled = true;
+      row.setAttribute('aria-disabled', 'true');
+    }
+    row.append(document.createTextNode(l.leaf));
+    row.title = `${l.name} — ${l.addresses.length} passage${l.addresses.length === 1 ? '' : 's'}`;
+    if (!here) row.addEventListener('click', () => fileInto(l.title));
+    menuLedgers.append(row);
+  }
+  const fresh = document.createElement('button');
+  fresh.type = 'button';
+  fresh.setAttribute('role', 'menuitem');
+  fresh.className = 'hash-menu-item fresh';
+  fresh.textContent = tr('New ledger…');
+  fresh.addEventListener('click', () => { fromPicker = true; promptForTitle(); });
+  menuLedgers.append(fresh);
+  fromPicker = false;   // the list is where a cancel returns TO, not from
+  setMenuMode('ledgers');
+}
+
+// Filing the address into the ledger a row names. A MOVE takes it out of the
+// ledger it was in first -- a member reading as though it were in two of the
+// reader's ledgers at once would make both accounts wrong -- and keepLedger
+// folds it into the chosen one either way.
+function fileInto(title) {
+  const address = menuEntry?.ledger;
+  if (!address) return;
+  if (keptLedgerOf(address)) unkeepAddress(address);
+  keepLedger(title, [address]);
+  syncScriptKeeps();
+  closeHashMenu();
+}
+
+menuLedgerAddBtn.addEventListener('click', () => {
+  if (menuEntry?.ledger) openLedgerPicker();
+});
 menuSearchBtn.addEventListener('click', () => {
   if (!menuEntry || !menuEntry.searchHref) return;
   location.href = menuEntry.searchHref;
@@ -7810,9 +7962,53 @@ menuSearchBtn.addEventListener('click', () => {
 // menu's Bookmark item and from a hollow ribbon alike.
 function promptForTitle() {
   titleInput.value = suggestTitle(menuEntry);
+  fillLedgerPaths();
+  refreshTitleForm();
   setMenuMode('title');
   titleInput.focus({ preventScroll: true });
   titleInput.select();
+}
+
+// The form, told what it may do. A locking-script keep is exempt: it names a
+// LEDGER, and naming one that is already kept is how an address joins it
+// (keepLedger folds by name) -- so there a repeated name is the point, not
+// the fault. Only a keep of a place answers to the rule.
+const titleNote = $('hash-title-note');
+const titleSaveBtn = hashMenu.querySelector('[data-act="title-save"]');
+const ledgerPaths = $('ledger-paths');
+function refreshTitleForm() {
+  if (!menuEntry) { titleNote.textContent = ''; titleSaveBtn.disabled = false; return; }
+  // A locking-script keep names a LEDGER, which folds rather than refuses. So
+  // the note is not a fault but a consequence: which of the two this name is
+  // about to do. Save stays offered either way -- both are things a reader may
+  // legitimately mean.
+  if (menuEntry.ledger) {
+    titleNote.textContent = ledgerOutcomeSaid(ledgerOutcome(titleInput.value, shelfLedgers()));
+    // Named, but not uniquely: a repeated name folds, which is the point. An
+    // empty one would shelve a ledger with no name at all, which the Ledgers
+    // page's own form has always refused.
+    titleSaveBtn.disabled = !titleInput.value.trim();
+    return;
+  }
+  const key = bookmarkKey(menuEntry.hex, bmSubOf(menuEntry), menuEntry.page ?? null);
+  const fault = keepNameFault(titleInput.value, key);
+  titleNote.textContent = fault ? tr(fault) : '';
+  titleSaveBtn.disabled = Boolean(fault);
+}
+titleInput.addEventListener('input', refreshTitleForm);
+
+// The shelf, as the field's completions -- rebuilt each time the form opens,
+// since a keep made since the last one would otherwise be missing from it.
+// Cleared for anything but a ledger keep: see the datalist's own note.
+function fillLedgerPaths() {
+  ledgerPaths.replaceChildren();
+  if (!menuEntry || !menuEntry.ledger) return;
+  for (const l of shelfLedgers()) {
+    const opt = document.createElement('option');
+    opt.value = l.title;    // the path as keepLedger folds by it
+    opt.label = l.name;     // …spelled as the shelf prints it
+    ledgerPaths.append(opt);
+  }
 }
 menuBmBtn.addEventListener('click', () => {
   if (!menuEntry) return;
@@ -7842,13 +8038,22 @@ function saveTitle() {
   // the address becomes a titled one-address ledger (untitled, it reads by
   // its address there), exactly what the Ledger page's keep button writes.
   if (menuEntry.ledger) {
-    if (!keptLedgers().some((k) => k.addresses.includes(menuEntry.ledger))) {
-      // keepLedger folds a keep into the ledger already filed under that name
-      // (btc-index.js): naming this address as one already kept adds it there.
-      keepLedger(titleInput.value.trim(), [menuEntry.ledger]);
-    }
-    syncScriptKeeps();
-    closeHashMenu();
+    // Through the one filer, so naming a ledger and picking one off the list
+    // do the same thing -- including taking the address out of the ledger it
+    // was in, which the guard that used to stand here made impossible: an
+    // address already kept simply fell through and nothing happened at all.
+    const title = titleInput.value.trim();
+    if (!title) { refreshTitleForm(); titleInput.focus({ preventScroll: true }); return; }
+    fileInto(title);
+    return;
+  }
+  // A name at fault keeps the form open on the field that is wrong: the
+  // reader has something to fix here, and closing would throw away what they
+  // typed. (Reachable by Enter, which does not ask whether Save is offered.)
+  const key = bookmarkKey(menuEntry.hex, bmSubOf(menuEntry), menuEntry.page ?? null);
+  if (keepNameFault(titleInput.value, key)) {
+    refreshTitleForm();
+    titleInput.focus({ preventScroll: true });
     return;
   }
   if (addBookmark(menuEntry, titleInput.value.trim())) { closeHashMenu(); return; }
@@ -7873,9 +8078,15 @@ document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeHashM
 // Dismiss on a genuine user scroll or resize -- but never while the title form
 // is up, so a mobile keyboard's viewport resize (or a focus scroll) can't
 // discard a half-typed bookmark title.
-const dismissOnViewportChange = () => {
+const dismissOnViewportChange = (ev) => {
   if (menuMode === 'title') return;                  // never nuke a title being typed
   if (performance.now() < menuSettleUntil) return;   // ignore the open's own scroll
+  // A scroll INSIDE the menu is the reader working it, not the viewport moving
+  // out from under it. The ledger list is capped and scrolls itself, and this
+  // listener is bound on the capture phase -- which is how it hears a scroll on
+  // an inner element at all -- so without this the first wheel over the list
+  // dismissed the very menu it was scrolling.
+  if (ev && ev.target instanceof Node && hashMenu.contains(ev.target)) return;
   closeHashMenu();
 };
 window.addEventListener('resize', dismissOnViewportChange);

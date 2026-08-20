@@ -14,12 +14,12 @@
 
 ## Chapter frontispiece — block 308,570
 
-Block hash, as prose: ⌘¹⁸⁷ *Era may see a poverty. The polar ecology get tomato to pink until park. Its winner ready to remember. Tiger may answer rail for fruit. Second seek cactus to a manual guard. Company abandon our map.* ⓪⁶⁹
+Block hash, as prose: ⌘¹⁸⁷ *Era see poverty to our polar ecology. Its tomato are pink until park. Winner ready to remember. Tiger may answer rail out fruit. Second may seek some cactus to survey. Dig hard see child. Abandon dance our dig. Its sir once reject future.* ⓪⁶⁹
 
 - **version:** v2 — block version 2 (0x00000002) — pre-BIP9 integer form
-- **previous block:** ⌘¹⁹⁰ Palace thunder to thrive. Hedgehog are awesome per dust via worry. Now may print fog to middle. Wire abstract to embark per salt. The lucky blouse pool rice to exit. Steel not get length. ⓪⁶⁶
+- **previous block:** ⌘¹⁹⁰ Palace may thunder to thrive per hedgehog. Its awesome dust worry now to print. Fog middle wire via abstract. Yes may embark to salt. Our lucky blouse may pool a top dose. Sword may get length. Million plunge dilemma to goat. ⓪⁶⁶
   - hex: `0000000000000000351825acaf900e107e314acbaab974bf880841b584333c9f`
-- **merkle root:** ⋔ Kick set horn to harbor out clay. Width fancy atom to ketchup. Flag set body out judge. Still get the ill desert. Setup may foster stereo. Pay wide scare rough. Blur may get weapon to timber. Theory produce distance out kitchen.
+- **merkle root:** ⋔ Kick may get horn. Harbor set clay to width. Fancy get some atom. Ketchup flag body to judge. The still is ill. Desert may set setup. Lot might foster stereo. The wide scare rough blur weapon. Timber there get syrup. Alert may see future to matrix. A correct row may devote to aim.
   - hex: `8fb8f087215e01579fd5e02271770ee7eae21d2358cf93c3a5ac1f15a4b12d7a`
 - **timestamp:** 2014-06-30 05:45 UTC
 - **difficulty target:** β₆₅ < 4284369×256²¹ — the block hash above reads below this target — nBits 18415fd1 — mantissa 4284369 (3²·476041) shifted up 21 bytes: the target 0000000000000000415fd1000000000000000000000000000000000000000000, which a valid block hash must read below (65 leading zero bits) — difficulty 16,818,461,371 (relative to the genesis block)
@@ -27,16 +27,16 @@ Block hash, as prose: ⌘¹⁸⁷ *Era may see a poverty. The polar ecology get 
 
 ## § 109 — First standard OP_RETURN
 
-Transaction id, as prose: ⌘²⁵⁶ *Lounge reason a fun human. Spoon may see dolphin to picture. Its tide may crunch our smooth claim. An elegant tap may humble pride to farm. Police may get infant. Tea almost set the giraffe. Limit ensure matter to riot. Gate above build three.*
+Transaction id, as prose: ⌘²⁵⁶ *Lounge reason fun to human. Our spoon see dolphin. Picture yes tide crunch. Our smooth claim is elegant. Its humble pride farm our police. Infant almost set giraffe. Limit ensure the matter. Riot gather a jealous cattle to setup out smile. A grocery rent the initial.*
 
 - **version:** 1
 - **input 1:** spends output 1 of `8e40bb1db9029dd648432c56c295788221c1dd97fe1dbee52f767d605fba58c8`
-  - script: s⁷² Dolamen longirostris scoparius. Is ea adgratulor exodium. Tu pono e eo. Is forsan comminutio. Usurpatrix e relativitas. Is obdo conligans. Odibilis collustrium noxa. Aenipes tu liquandus is. Aestifer caronia quinquiplico mylohyoides eo. Tu devotus pacifer is. Tu adnuto e ablator ob asplenium. Seu. Macrops crux scarlatum. Bomiscus postus e cocciferus tu. Imprudens procacia plovere taeniatus exsequia. p⁶⁵ Tu ideo providus is. Eo agguberno syringitis. Burra vult sculpo suahelicus is. Ossuarius tu sit assyriacus. Araneans eo innavigo e draconteus balaena ob is. Eo urbane collusio. Tu consignate decursio. Sacricola comes e cinefactus arura. Nanus luctor autumnalis is in seriosus tu. Eo annuens plagiator e frixus sphyraena se subcapitatus eo. Is minurrio compresso. Inemptus tu velleius eo. Is condoceo acridens tu. Professorius eo praetexo is.
+  - script: s⁷² Dolamen longirostris scoparius. Tu vult adgratulor exodium. Is ut pono eo. Is forsan comminutio. Usurpatrix vult relativitas. Tu obdo conligans. Odibilis collustrium vult noxa. Aenipes tu solet liquandus. Aestifer caronia quinquiplico eo. Mylohyoides tu devotus pacifer is. Tu vult adnuto ablator. Asplenium is e eo. Seu. Macrops crux scarlatum. Bomiscus vult postus cocciferus tu. Imprudens procacia nefastus is. Fallibilis eo derisorius tu. Is suscipio onolatria. Eo sugglutio intritus quincunx. p⁶⁵ Is ideo eo. Providus tu agguberno syringitis. Burra vult sculpo suahelicus eo e ossuarius is. Assyriacus tu araneans eo. Is innavigo draconteus balaena. Eo urbane collusio. Tu consignate decursio. Sacricola e comes ob cinefactus arura e nanus. Is luctor autumnalis eo. Seriosus tu annuens plagiator e frixus sphyraena. Subcapitatus is vult minurrio compresso. Inemptus is velleius tu. Eo vult condoceo fulvipes eo. Is atrociter tu. Eo pudice honorus assentator. Fellebris is obmordeo e tanos.
   - sequence: ● — final — disables the transaction locktime for this input
 - **output 1:** 0 ₿
   - script: ¶ ¹⁹ “charley loves heidi”
 - **output 2:** 0.00200000 ₿
-  - script: ⧉ ⌖ h²⁰ Androsaces vult exhibeo thraex e impius is. Tu honorifice exilis particella. Eo exciturus jugis tu. Is genitus scopa e flamina. Kalumnia ea focillo is. ≡ ∇
+  - script: ⧉ ⌖ h²⁰ Androsaces exhibeo thraex e impius eo. Tu honorifice exilis particella. Tu exciturus jugis eo. Is genitus e scopa. Eo condoceo orno. Globuliferus tu conflagro e plurimus is de nequam hexeris. ≡ ∇
 - **locktime:** □ — no locktime — final with respect to time
 
 ## Commentary

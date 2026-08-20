@@ -14,12 +14,12 @@
 
 ## Chapter frontispiece — block 818,087
 
-Block hash, as prose: ⌘¹⁷⁴ *Each elevator may set a senior. Yes clarify to mesh per monkey. Future choose to sell. Crouch may group beyond mansion. The son is curious. A law is urban. Cattle get a out action. Each dig apart allow the favorite.* ⓪⁸²
+Block hash, as prose: ⌘¹⁷⁴ *Elevator may set a senior ear. Sir clarify mesh to monkey for the future. Its cow choose to sell. Crouch is due out group beyond mansion. Its rub is curious. Law set an urban cattle. Advance why raven skin. Job set the horror to great. Favorite may add cow.* ⓪⁸²
 
 - **version:** vevanesca climb — block version 0x2ac12000 — BIP9 version-bits form; version-rolling bits 0x5609 (BIP320 scratch entropy) as evanesca climb; no soft-fork signals
-- **previous block:** ⌘¹⁷⁸ The humble pizza may raven shaft. Die also set a twelve. Shock patrol to twin. Ladder merge to imitate. Cake set artwork for ridge. Public adapt bachelor to auto. Ban are endless per abandon. ⓪⁷⁸
+- **previous block:** ⌘¹⁷⁸ Our humble pizza raven shaft. Hit also get a twelve. Shock patrol our twin to ladder. Due merge to imitate out cake. Artwork may ridge some public. The aid adapt its box. Bet soft chuckle gas. Tea over blur joy. The rub are able to pot. ⓪⁷⁸
   - hex: `0000000000000000000368656e1a04b2b82d8e6feb099531d67570e2c9b6f46e`
-- **merkle root:** ⋔ Sin may excite hospital. Our home release due blame staff. The out are exotic. Pepper shove wool to leader. Nominee see a cat. Stamp close get the useful boil. Clump begin its breeze. Exercise get pelican to gloom. Leopard catalog our zero video.
+- **merkle root:** ⋔ Red may excite hospital to home. Release may blame a staff. The exotic pepper far shove wool. Leader may get a cut nominee to cat via stamp. Cow close our useful boil. Clump begin breeze to exercise per pelican. Gloom lesson its female shiver to stone. Board paper its suspect airport.
   - hex: `dc9844f5c40d518805197fefcaa83df24afaa91fc7170514a873915ab4bdcd4e`
 - **timestamp:** 2023-11-23 09:59 UTC
 - **difficulty target:** β₇₇ < 285202×256²⁰ — the block hash above reads below this target — nBits 17045a12 — mantissa 285202 (2·142601) shifted up 20 bytes: the target 000000000000000000045a120000000000000000000000000000000000000000, which a valid block hash must read below (77 leading zero bits) — difficulty 64,678,587,803,497 (relative to the genesis block)
@@ -27,19 +27,19 @@ Block hash, as prose: ⌘¹⁷⁴ *Each elevator may set a senior. Yes clarify t
 
 ## § 1 — The 91.47 ₿ coinbase
 
-Transaction id, as prose: ⌘²⁵⁶ *Ear may multiply pepper to produce out roast. Red sure get a crucial person. A price thrive night. A spawn is naive. Metal get security to a sunny pottery. Cow inhale win to east. Virus south get its initial crisp. Park toast a joy to gift.*
+Transaction id, as prose: ⌘²⁵⁶ *Guy multiply pepper to produce. Our roast sure see its crucial person. Price thrive night to spawn per the naive metal. Its security is sunny to a pottery. Cow inhale win out east. Virus south get its initial crisp. Parrot neglect to donate. Our dust may winter drift. Jet resist to frequent.*
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
-  - script: ■818087η3³ “Mined by AntPool” Is adsurgo generatio e praetura. Is ceu maripalus. Expansio praegressus e aspergillum. Septimus defecatus defio ab multifilius. Eo detestor exertus e substructio de situla. Decadicus tu vult extorqueo admaturo. Herbaceus eo dilabor conformis copulatio. Quassabundus eo rugicollis is e eo. Tu vult absto eo. Tu religiose transverbero is. Eo ni inrisurus tu. ⓪⁸ η3·101·55927759 ⓪⁶
+  - script: ■818087η3³ “Mined by AntPool” Is adsurgo generatio. Praetura ceu maripalus. Expansio praegressus e aspergillum ab septimus. Eo defecatus defio. Multifilius detestor exertus e substructio. Situla decadicus eo. Is extorqueo admaturo. Herbaceus tu dilabor eo e conformis copulatio. Quassabundus tu sit rugicollis. Eo absto acutisepalus is e vatax eo. Derisorius tu tutus is. Eo remolior e exhorrentia. Cignus vult is. ⓪⁸ η3·101·55927759 ⓪⁶
   - sequence: ● — final — disables the transaction locktime for this input
   - witness: see footnote a
 - **output 1:** 91.46634113 ₿
-  - script: ⌖ h²⁰ Is vult incurso quadricolor abyssus. Socra blattarius eo. Relicuus is humanitus prisma. Eo indeico inerro. Tu vult appono delabor e tu. Is vult commaneo litigium. =
+  - script: ⌖ h²⁰ Tu incurso quadricolor abyssus e socra se is. Tu sit blattarius e relicuus eo. Tu humanitus prisma. Eo vult indeico inerro. Eo appono dementia. Tu adpeto iucunditas e caliditas en oestrus. Lachryma ne oditurus tu. =
 - **output 2:** 0 ₿
-  - script: ¶ ⋔w h³² The foot urge to include. Rescue may say our congress. The chronic tribe address venture. An atom square cupboard to act. Squirrel alone grit cap. A they. Our firm enemy enforce metal. Subject far doctor edge. Faculty may mirror sin.
+  - script: ¶ ⋔w h³² Foot may urge to include. A rescue say congress. Our chronic tribe address venture. Atom square cupboard to act per squirrel. Tea alone grit bit. A they. Our firm enemy may enforce metal. Subject document a course. Habit pool scrub to cousin. Our mix why pool bit.
 - **output 3:** 0 ₿
-  - script: ¶ ⁴⁵ Drive is kind to mule. Action may cool voice. Pear space a practice to clutch. Tree may tag response. Nominee finger crazy to its neutral. Will see biology for control. Each toss get agent to door out jaguar. River may become our ranch. A aid is amused. Other fluid sound grace. Cactus may blame spoon. The recall too quote cow.
+  - script: ¶ ⁴⁵ Drive are kind to mule. Action cool to voice. Pear space practice via clutch. Tree tag response to nominee. Finger are crazy via a neutral will. Biology may control toss to agent. Door far get jaguar. River become ranch to our amused rub. Other fluid sound grace. Cactus get the broken battle. A spoil is big to each source. A they. Praise oppose liar to kite.
 - **output 4:** 0 ₿
   - script: ¶ ⁴¹ “RSKBLOCK:”
 - **locktime:** □ — no locktime — final with respect to time

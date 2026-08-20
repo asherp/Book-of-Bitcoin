@@ -942,8 +942,10 @@ if (blockLeaf != null) {
   $('appx-title').textContent = `Appendix ${toRoman(partNumber(APPENDIX, part))}`;
   $('appx-subtitle').textContent = part.title;
 } else {
-  $('appx-title').textContent = part.family === 'index' ? `Index of ${part.title}` : part.title;
-  $('appx-subtitle').textContent = part.family === 'citations' ? 'Works the chain attests' : '';
+  // Only the citations register is left: every other part is family `appendix`
+  // and wears its numeral above.
+  $('appx-title').textContent = part.title;
+  $('appx-subtitle').textContent = 'Works the chain attests';
 }
 // A fork's description is a reading of the fork, so it reads where readings
 // read: in the commentary sheet at the leaf's foot, not as front matter. The

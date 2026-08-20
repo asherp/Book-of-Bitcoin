@@ -14,12 +14,12 @@
 
 ## Chapter frontispiece — block 526,591
 
-Block hash, as prose: ⌘¹⁸² *Ring may wreck vehicle to advice. Cut unfold tourist out a ship per analyst out swarm. Base embark such usage. Slice update cruise to climb. Badge desert to cup per scale.* ⓪⁷⁴
+Block hash, as prose: ⌘¹⁸² *Ring may wreck vehicle. Advice unfold its tourist. Ship get analyst to a swarm. Base embark such usage out slice per update. Cruise may climb bracket to whip. Fee parade to suffer. Set may include way. Our saddle is due.* ⓪⁷⁴
 
 - **version:** vaccio abandon — block version 0x20000000 — BIP9 version-bits form; accio abandon — no version rolling; no soft-fork signals
-- **previous block:** ⌘¹⁷⁹ Icon chunk gown to cloth per soda. Pet scatter to mind for weekend. A ban is federal. A trial bomb ride debate. Its problem message alpha. Bar spawn field to divorce. ⓪⁷⁷
+- **previous block:** ⌘¹⁷⁹ Icon chunk gown to cloth. Our soda pet to scatter. Mind may weekend a federal trial. Bomb ride debate to a problem via message to alpha. Border may badge to crumble per cactus. Lift may cash industry. Ban about see pot. ⓪⁷⁷
   - hex: `000000000000000000075fdcaa70969b8ca08f0af9671cf046e3ec9594154570`
-- **merkle root:** ⋔ State skate heart to time. Our annual phone stay leg. The sea not phrase a pilot. Son ensure the hot cheese. Tax may consider cherry. Police is leisure to network. The legal alarm wave an unique moment. A park profit to divert per yes. Cow rebuild to sue.
+- **merkle root:** ⋔ State skate heart to time. Our annual phone may stay leg. Sea ought phrase pilot. Our big lip may ensure cheese. Sir consider cherry to police. A leisure network are legal via alarm for wave. The unique moment parrot system to alien per nothing. A rare fiction is shy. Our fortune see cow.
   - hex: `bd23db7fef82fd99b27f3ddd895e72a2a5937af4c1fa3b3547972071a941d9d4`
 - **timestamp:** 2018-06-08 14:52 UTC
 - **difficulty target:** β₇₄ < 3733569×256²⁰ — the block hash above reads below this target — nBits 1738f841 — mantissa 3733569 (3²·7·59263) shifted up 20 bytes: the target 00000000000000000038f8410000000000000000000000000000000000000000, which a valid block hash must read below (74 leading zero bits) — difficulty 4,940,704,885,522 (relative to the genesis block)
@@ -27,14 +27,14 @@ Block hash, as prose: ⌘¹⁸² *Ring may wreck vehicle to advice. Cut unfold t
 
 ## § 1 — The half-claimed subsidy
 
-Transaction id, as prose: ⌘²⁵⁶ *State skate heart to time. Our annual phone stay leg. The sea not phrase a pilot. Son ensure the hot cheese. Tax may consider cherry. Police is leisure to network. The legal alarm wave an unique moment. A park profit to divert per yes. Cow rebuild to sue.*
+Transaction id, as prose: ⌘²⁵⁶ *State skate heart to time. Our annual phone may stay leg. Sea ought phrase pilot. Our big lip may ensure cheese. Sir consider cherry to police. A leisure network are legal via alarm for wave. The unique moment parrot system to alien per nothing. A rare fiction is shy. Our fortune see cow.*
 
 - **version:** 2
 - **input 1:** coinbase (∅ — no previous output; new coin)
-  - script: ■526591 2018-06-08 14:52η2·3·17 “/BTC.COM/” Manuballista vult verber. Tortuca debet traiectus. Eo annosus fictia. Is diuturne conceptualis tu. Is devenio macellum e abactus. Tepor excrementum in borchgravius. Plerunque trigonus eo. Brevirictus polimenta melilotos e adorator de hostis. Figlina pudice is. ⓪⁷ η54010345754881 ⓪⁶
+  - script: ■526591 2018-06-08 14:52η2·3·17 “/BTC.COM/” Manuballista verber e tortuca de traiectus. Annosus fictia diuturne conceptualis eo. Tu devenio macellum e abactus. Tepor excrementum at borchgravius ad plerunque. Trigonus eo est brevirictus. Polimenta melilotos e adorator. Raudus perspiro collaudo. Olenticetum ni abolefacio caballa. Tu inridens. ⓪⁷ η54010345754881 ⓪⁶
   - sequence: ● — final — disables the transaction locktime for this input
 - **output 1:** 6.25000000 ₿
-  - script: ⧉ ⌖ h²⁰ Marasmus exilio dossum. Fraudator e interula se sublimitas. Fuscitas quaero percieo. Subsecivus tu eo e formonsus tu. Eo et pangito nymphaeum. Igitur. ≡ ∇
+  - script: ⧉ ⌖ h²⁰ Marasmus exilio dossum e fraudator. Interula sublimitas. Fuscitas quaero percieo e eo. Subsecivus tu sit formonsus. Oricilla trochiscus. Dierectus eo intertexo navigo. Is dulco promutuum. ≡ ∇
 - **locktime:** □ — no locktime — final with respect to time
 
 ## Commentary

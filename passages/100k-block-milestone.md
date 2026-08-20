@@ -14,12 +14,12 @@
 
 ## Chapter frontispiece — block 100,000
 
-Block hash, as prose: ⌘²¹⁰ *Some map are alone. A civil young yet cup position. Its broken language may see an unique crouch. Mother club pilot to a minute fever. Race lift camera to eye. Update get alcohol per cactus. Rally may see a lion to gas.* ⓪⁴⁶
+Block hash, as prose: ⌘²¹⁰ *An alone cap is civil. A young may cup position to our broken language. The unique crouch mother club to pilot. Our minute fever race lift per camera. Eye update alcohol to danger. Crazy may document parade. Staff once host fluid.* ⓪⁴⁶
 
 - **version:** v1 — block version 1 (0x00000001) — pre-BIP9 integer form
-- **previous block:** ⌘²¹⁰ Its exotic mosquito edge comic. Plastic link to make. Such absurd update is slow for recipe. Our vacant swallow see success. Success may slot wedding. Cross set advice to coconut. The heart due license abandon. ⓪⁴⁶
+- **previous block:** ⌘²¹⁰ An exotic mosquito edge comic to plastic per link. Son may make such absurd update. A slow recipe are vacant. Swallow may get success. Success slot its wedding cross. Advice may describe truth. Drop scale limit to search for its rice. Shoot lie to tap. ⓪⁴⁶
   - hex: `000000000002d01c1fccc21636b607dfd930d31d01c3a62104612a1719011250`
-- **merkle root:** ⋔ Green run to enable. Cow fetch the snap. Theory may ski license. Notice gun torch to dust. Our method set lobster. Vessel is immune to embrace per control. Our uniform enable service. Catalog may pond gate. Its column out crew our need.
+- **merkle root:** ⋔ A green run may enable to fetch. Snap may see theory. Ski license notice to a gun. Torch dust method out lobster. Vessel set an immune embrace to control. Uniform may enable service. The catalog pond to gather. Food approve rent for travel via its jacket. Injury is outside to hit.
   - hex: `f3e94742aca4b5ef85488dc37c06c3282295ffec960994b2c0d5ac2a25a95766`
 - **timestamp:** 2010-12-29 11:57 UTC
 - **difficulty target:** β₄₅ < 296524×256²⁴ — the block hash above reads below this target — nBits 1b04864c — mantissa 296524 (2²·74131) shifted up 24 bytes: the target 000000000004864c000000000000000000000000000000000000000000000000, which a valid block hash must read below (45 leading zero bits) — difficulty 14,484 (relative to the genesis block)
@@ -27,14 +27,14 @@ Block hash, as prose: ⌘²¹⁰ *Some map are alone. A civil young yet cup posi
 
 ## § 1 — 100K block milestone
 
-Transaction id, as prose: ⌘²⁵⁶ *Manual see hub to cigar. Cut may teach penalty out arena. Young may deal a pop click. Set rather gauge release. Flavor may margin to solve for guilt to hundred. Vacuum may get neither tiny tank. The way fall leopard. Crunch may blanket elephant.*
+Transaction id, as prose: ⌘²⁵⁶ *Manual get hub to cigar. Due may teach penalty out arena. Young may deal a click. A son rather gauge our release. A flavor margin to solve. Guilt get a hundred vacuum. Neither tiny tank way fall the lesson. Each hit is dumb. Conduct far set girl. Cow connect tongue to crazy. Pencil may get pay.*
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
   - script: β₄₅ 296524×256²⁴ η2·7·37
   - sequence: ● — final — disables the transaction locktime for this input
 - **output 1:** 50.00000000 ₿
-  - script: p⁶⁵ Gula vult suppeilo artus tu. Hadrumetinus is peragro eo e is. Necunde. Timorensis eo sit arytaenoides. Tu vult illaqueo dedolo. Is memoro unus recalvities. Is vult sumo lasciviosus tu. Semirutus eo inflecto apprendo. Tumidus tangens est crespulus e furius alutiae. Iovius agape duodevicenus hortator. Eo praetondeo e injunctio. Tu retexo exanimatio ob transcursus de conterminus. Tu ammonendus dolabrarius e debitor. Mutilatio ab litigium. ∇
+  - script: p⁶⁵ Gula vult suppeilo artus. Hadrumetinus tu peragro. Necunde. Timorensis eo sit arytaenoides. Is vult illaqueo dedolo. Tu memoro unus recalvities e eo. Tu sumo lasciviosus is. Semirutus tu vult inflecto apprendo. Tumidus tangens sit crespulus. Furius alutiae iovius agape. Duodevicenus hortator vult praetondeo injunctio. Eo retexo exanimatio e transcursus. Conterminus ammonendus dolabrarius se detentio. Violascens iucunditas adgravandus peturnicula. Simulatio vult stasanor. Tu veto is e eo. ∇
 - **locktime:** □ — no locktime — final with respect to time
 
 ## Commentary

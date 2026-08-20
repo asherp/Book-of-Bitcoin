@@ -14,12 +14,12 @@
 
 ## Chapter frontispiece — block 170
 
-Block hash, as prose: ⌘²²⁴ *Its upgrade birth cash to some garbage. The unhappy boss may see patient. Son expire its fragile coconut. A myself. The kidney may catalog lock. Its exotic hammer have duty beyond a claim. Yes how awake input. Our female is huge.* ⓪³²
+Block hash, as prose: ⌘²²⁴ *Upgrade due birth cash. Garbage get the unhappy boss. Patient expire our fragile coconut. A myself. Kidney may catalog to lock. An exotic hammer have duty. Beyond claim an awake song. Cut else see ladder. Our lucky slot mention rookie.* ⓪³²
 
 - **version:** v1 — block version 1 (0x00000001) — pre-BIP9 integer form
-- **previous block:** ⌘²²² Fiber see umbrella to action via valley. An obvious half head to pony. A hammer risk ban. Pop soon set corn. Cut may see a tired trophy to each horror. Cop explain clown per youth. A record dust parent. Any out may admit a gloom. ⓪³⁴
+- **previous block:** ⌘²²² Fiber may see an umbrella to action out valley. The obvious half head to pony for hammer to risk. A pie soon see corn. Our die is tired. Trophy may get horror. Cop explain to clown. Youth record dust via parent. The random buyer is immune. The model volcano net success. ⓪³⁴
   - hex: `000000002a22cfee1f2c846adbd12b3e183d4f97683f85dad08a79780a84bd55`
-- **merkle root:** ⋔ A yellow list is crazy. Sir appear the canvas. Frame may wet lecture. Sense indicate the arch frog. Our sweet orbit joy uncle. Recipe board its strong actress. Grace bind the yes. Our ear is rapid. Park man the rapid sir. Our tie is lunar.
+- **merkle root:** ⋔ Yellow list a crazy. Tap may appear canvas. Frame wet a lecture. Sense indicate the arch frog. Sweet orbit joy to uncle. Recipe board its strong actress. Grace far bind yes. Our rapid parrot may vault mask to its party case. Zone may pipe our country hit.
   - hex: `7dac2c5666815c17a3b36427de37bb9d2e2c5ccec3f8633eb91a4205cb4c10ff`
 - **timestamp:** 2009-01-12 03:30 UTC
 - **difficulty target:** β₃₂ < 65535×256²⁶ — the block hash above reads below this target — nBits 1d00ffff — mantissa 65535 (3·5·17·257) shifted up 26 bytes: the target 00000000ffff0000000000000000000000000000000000000000000000000000, which a valid block hash must read below (32 leading zero bits) — difficulty 1 (relative to the genesis block)
@@ -27,16 +27,16 @@ Block hash, as prose: ⌘²²⁴ *Its upgrade birth cash to some garbage. The un
 
 ## § 2 — Hal Finney transaction
 
-Transaction id, as prose: ⌘²⁵⁶ *Bird may see valley. Path ought sponsor analyst. Oil may set eight. Mistake are curious to rabbit. Its immense tunnel get soup. Find game our vacant manual. Brother excite license to hobby. A pole glow leopard. Pulse around merit tap.*
+Transaction id, as prose: ⌘²⁵⁶ *Bird get a valley. Path sponsor analyst to oil. Eight may mistake the curious rabbit. Its immense tunnel get a soup. Find game a vacant manual to brother. Sir excite license via hobby. Pole may glow to lesson. Pay due surround cup. Puppy may see example to rhythm per muffin. A rose see each nod to row via tea.*
 
 - **version:** 1
 - **input 1:** spends output 0 of `0437cd7f8525ceed2324359c2d0ba26006d92d856a9c20fa0241106ee5a597c9`
-  - script: s⁷¹ Litiger tu sit unispinosus. Eo irrutus repto. Pipio elixo luendus e duratio de contiuncula e pellectio. Oxoniensis tu vult. Is anguste invaleo raptio. Tu detono damnaticum e parietalis is. Tu adblatero ad gandeia at cannabius tu. Interulus eo adservaturus remolior e eo. Is sortito tu. Eo mutua maestus instigator. Salutifer tu e calcicolus is. Eo remano en coctor. Is deploro iucundor. Anclabris columba juglans. Eo vult adlocuturus exsequia.
+  - script: s⁷¹ Litiger eo unispinosus tu. Is irrutus repto. Pipio elixo luendus. Duratio contiuncula e pellectio. Oxoniensis eo is. Tu anguste invaleo raptio. Tu detono e damnaticum at parietalis eo. Is adblatero gandeia e cannabius tu. Interulus is vult adservaturus remolior. Tu sortito eo. Is mutua maestus instigator. Salutifer tu sit calcicolus. Is ne remano coctor. Eo deploro iucundor. Anclabris columba aumatium. Radicatus eo ni derisorius tramen. Auctumnus obliteratio subrusticus feritas.
   - sequence: ● — final — disables the transaction locktime for this input
 - **output 1:** 10.00000000 ₿
-  - script: p⁶⁵ Eo vult juro eocle. Decenarius tu adlatus obtueor e generator. Tu opitulor disquisitio ob entheatus obsetrix ad cerceris. Duratio vorsus consocio. Tu tuatim adsertor. Luricatus caepa vult poenitentia. Is elargior polluceo e nominator. Penniger indago currax tu. Bracchialis grano configo esuritio e variabilis is. Eo reverso prensus. Metrica e vagina. Is niteo scobina. Potitius tu amplificus eo. ∇
+  - script: p⁶⁵ Tu vult juro eocle. Decenarius solet adlatus obtueor e generator in eo. Tu opitulor e disquisitio. Entheatus obsetrix cerceris. Duratio vult vorsus consocio e eo. Tu tuatim adsertor. Luricatus caepa poenitentia. Is elargior polluceo e nominator. Penniger indago et currax is. Bracchialis grano vult configo esuritio. Variabilis is reverso prensus. Metrica vult vagina e eo. Is niteo iucundus draco. Is absto incumbendus. Asarum mirandus exsiccatio e grammatista. ∇
 - **output 2:** 40.00000000 ₿
-  - script: p⁶⁵ Glis septembrius tu. Homosexualis filiastra insipiens strages e judex. Treva cinnamomum ab talitha. Altisonus is sermocinor pillo. Eo invigoro absporto. Tu et caballico bavaricus passus. Animaequus thrissa annumerans e coemptio. Eo vult recalcitro maroccanus pallor ob ovum. Palmatias deversor hebraicus amor. Castitas disco decemviratus e squilla en phasellus. Cyperus oditurus perequito. ∇
+  - script: p⁶⁵ Glis vult septembrius eo. Homosexualis filiastra insipiens strages. Judex treva e cinnamomum. Talitha altisonus is ob tu. Eo vult sermocinor pillo. Tu invigoro absporto. Eo caballico bavaricus passus. Animaequus thrissa vult annumerans coemptio. Tu recalcitro e maroccanus pallor. Ovum palmatias. Eo deversor hebraicus amor e castitas. Tu disco decemviratus se squilla. Phasellus dictatum e altar. Tanos de parmula. Nectar persubtilis eo. Fuscescens is et pandiculor tu. ∇
 - **locktime:** □ — no locktime — final with respect to time
 
 ## Commentary

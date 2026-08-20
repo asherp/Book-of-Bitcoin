@@ -14,12 +14,12 @@
 
 ## Chapter frontispiece — block 552,384
 
-Block hash, as prose: ⌘¹⁸¹ *Other shed may see high to globe for school. A myself. Pop afford to assume via woman. Dynamic too prefer the ecology. A jealous fence set timber. Document bench a bitter shrug. Winner are useless to die.* ⓪⁷⁵
+Block hash, as prose: ⌘¹⁸¹ *Other shed are high. A globe is low to school. A myself. Son afford to assume via woman. Our dynamic too prefer ecology. Its jealous fence set timber. Document bench buddy to alley. Onion may see mosquito. Yes admit humor to cover. Our sky is mad.* ⓪⁷⁵
 
 - **version:** vaccio abandon — block version 0x20000000 — BIP9 version-bits form; accio abandon — no version rolling; no soft-fork signals
-- **previous block:** ⌘¹⁸¹ A tired grain may set what guy. Pop develop tone to buddy per split. Our south squeeze may auction. Die prepare pluck to title via effort. Our keen pop divert bench. Cop bless spread to concert out abandon. ⓪⁷⁵
+- **previous block:** ⌘¹⁸¹ A ear is tired. Its grain set what lip. Guy develop tone to buddy. A split south squeeze auction. Lot prepare pluck to title. Effort are keen for sky. Some cop divert bench. A bright barrel exhibit gas. Its patient job may see airport to a ghost. ⓪⁷⁵
   - hex: `00000000000000000015fe695e8d2e5ed3a7de81d3818ef43a444e1ee7b3ace2`
-- **merkle root:** ⋔ Its left fine mass to oppose. Enough tag set the raw host. Its awful luggage get hybrid. Edge coach puzzle since what swallow. Leisure host a youth device to crash. Rival scare its shallow cruise. The clutch is ago.
+- **merkle root:** ⋔ A left fine mass to oppose via enough tag. Some sin is raw. Host is awful to luggage. Hybrid edge the coach. Puzzle since see what swallow. Leisure host the youth device. Its crash rival to scatter. A son is rare. Artwork may see animal to alpha for alert. Its six are funny.
   - hex: `aeee64cab37fb8f50fdbce4ff25dcb2223c099b01070a36cbaafc44d22da2a7f`
 - **timestamp:** 2018-12-03 11:59 UTC
 - **difficulty target:** β₇₄ < 3266940×256²⁰ — the block hash above reads below this target — nBits 1731d97c — mantissa 3266940 (2²·3·5·54449) shifted up 20 bytes: the target 00000000000000000031d97c0000000000000000000000000000000000000000, which a valid block hash must read below (74 leading zero bits) — difficulty 5,646,403,851,535 (relative to the genesis block)
@@ -27,17 +27,17 @@ Block hash, as prose: ⌘¹⁸¹ *Other shed may see high to globe for school. A
 
 ## § 1 — Difficulty −15.13%
 
-Transaction id, as prose: ⌘²⁵⁶ *Garden nest to verify via return. Sheriff book a round fortune. Air set hobby to horn for negative to script. Our nation may set ozone out piece per its ear. Yes enforce to question via ribbon to cliff. Switch may replace the outer leopard. Pudding may bottom display.*
+Transaction id, as prose: ⌘²⁵⁶ *Garden nest to verify via return. Sheriff book the round fortune. Air get hobby to its horn. Negative script nation out ozone per piece. Son enforce question to ribbon. Cliff may switch to replace. The outer lesson may surface cat. Each pan might borrow our cart. Pop execute kidney to raise.*
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
-  - script: ■552384Crypton promoveo praecurro. Ledo mollities. Anachorita accieo mula e inanimis eo. Inlaboratus tu est ad is in tu. “a,/BTC.TOP/” Manuballista verber e atriolum. Oligarchia ni consedo basus. Cirsion vult saltuosus piscarius e camera. Creatrix tettigonium. Vadium agora e intramuralis aenum. Conditorium est palliolatus. Gabonensis eo auctorico fulgor. Is vult affirmo tanos e tu. ⓪⁷ Dryopteris montanea e coclear. Eo ouls fretum. Tu breviter inrumpens is. Eo illuc bombarda. Tu abs is.
+  - script: ■552384Crypton vult promoveo praecurro. Ledo mollities e anachorita. Tu vult accieo is. Eo vage historia. Is scaturrio kalendae e quadrator. Porcinus navis est. “a,/BTC.TOP/” Manuballista verber. Atriolum oligarchia e consedo. Basus cirsion ab saltuosus piscarius. Camera creatrix e tettigonium. Vadium vult agora. Intramuralis aenum debet conditorium. Palliolatus eo sit gabonensis. Is vult auctorico retina. Aut. Coclear lumen e eo. Is vult evello dieta de collinus tu. ⓪⁷ Dryopteris montanea e coclear ouls fretum. Eo breviter insapiens tu. Esquimensis eo vult purpuro abs eo. Tu refusare e is at lanatus tu. Eo petrifico perliniens.
   - sequence: ● — final — disables the transaction locktime for this input
   - witness: see footnote a
 - **output 1:** 12.76129339 ₿
-  - script: ⧉ ⌖ h²⁰ Bisticosus bucitum vult metaphora. Lagunensis fibula aes. Is innovo genuinus eo. Aereus tergus e acinus. Eo concubo labilis tu. Amplificus is eo e eo. ≡ ∇
+  - script: ⧉ ⌖ h²⁰ Bisticosus bucitum metaphora e lagunensis fibula. Aes vult innovo genuinus tu. Aereus tergus vult acinus. Effigies eo calcium. Is vult absto ruptio. Mucosus eo coquinus tu. Is vult conventicius eo. ≡ ∇
 - **output 2:** 0 ₿
-  - script: ¶ ⋔w h³² A proud month is happy. Beauty yes side coast. Run correct response to marriage for mobile to its silly knife. Our draft village get soccer. Bracket may set excess. March would confirm our due. Its yes then source sense. Its able gasp ago get topic. The evidence too set tax.
+  - script: ¶ ⋔w h³² Our proud month is happy. Beauty side coast to run. Sir too correct response. Marriage may see mobile. Its silly knife draft village to soccer via bracket. Its excess march to confirm. Cap then source a sense. Tax about blame symptom. Hair far get the hair. Our son ignore sir toward blame.
 - **locktime:** □ — no locktime — final with respect to time
 
 ### Witness footnotes

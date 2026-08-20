@@ -14,12 +14,12 @@
 
 ## Chapter frontispiece — block 91,812
 
-Block hash, as prose: ⌘²¹² *Control set kangaroo to dinosaur. The public are digital. A hit may found iron. Our cap is glad. Our urban son unveil soap. The gain get horn to vehicle via debris to earth. Pie keep pistol per rose. Beef may champion bullet to dance out scale.* ⓪⁴⁴
+Block hash, as prose: ⌘²¹² *Control may get kangaroo. Dinosaur see public to the lot. Its digital son found to iron. Lap is glad out an urban ban out ear. Guy unveil soap to gain per horn. Vehicle see debris to earth. Red may keep pistol per rose. Beef set cousin to oval. A vital abandon see skill. Baby document son into lip.* ⓪⁴⁴
 
 - **version:** v1 — block version 1 (0x00000001) — pre-BIP9 integer form
-- **previous block:** ⌘²¹⁰ August rally each warfare. Combine convince divorce to chalk. The mixed wood may net quote. Damage get each cupboard. Its due cow easily see the odd artwork. Lip may situate circle. Nod soon see cloth. Advice set the company to cap. Yes sing a similar length. ⓪⁴⁶
+- **previous block:** ⌘²¹⁰ The august rally warfare to combine. Tea not convince divorce. Chalk are mixed to wood. Net may quote damage. Cupboard easily see artwork. Our die may situate circle. Our war soon see cloth. Advice delay to enlist. Some apple may divorce a buyer. The lunar hobby wish our dig. ⓪⁴⁶
   - hex: `000000000002afe839294d4e038b5c831bc09632fd717c0980f8f216dc2b360f`
-- **merkle root:** ⋔ A grant may see cousin. Its slim yes is strong. Bet may awake pie. Our sir is hidden. Pulp may tape noble to a very rail. A pop whale when set dinosaur. Sign may cook lap upon garage. A vast lake see danger. Guy attract gown to cake. Base guard to end.
+- **merkle root:** ⋔ The far grant may get cousin. Its son slim the strong die. Guy awake our hidden pulp to tape. Noble very rail a whale. Son when set dinosaur. Sign may cook sky. Map is odd upon garage to its vast lake. Danger attract gown to call via grass. Gain may hire grid to deposit. Can may caution yes.
   - hex: `49991d7653bec6efebee7d11f27ca2dffcc35ebe95ee5eebd602916b2f2fa665`
 - **timestamp:** 2010-11-14 17:59 UTC
 - **difficulty target:** β₄₄ < 946774×256²⁴ — the block hash above reads below this target — nBits 1b0e7256 — mantissa 946774 (2·43·101·109) shifted up 24 bytes: the target 00000000000e7256000000000000000000000000000000000000000000000000, which a valid block hash must read below (44 leading zero bits) — difficulty 4,536 (relative to the genesis block)
@@ -27,14 +27,14 @@ Block hash, as prose: ⌘²¹² *Control set kangaroo to dinosaur. The public ar
 
 ## § 1 — The twice-confirmed coinbases — first printing
 
-Transaction id, as prose: ⌘²⁵⁶ *Office is far to conduct. Some set apart prefer an axis. Much soldier see bachelor to alarm. Toilet spoil buddy per a dust for credit via craft. Our twenty tobacco change wave. Element is chronic to tax. The rude son ensure park via cross. Pot off display set.*
+Transaction id, as prose: ⌘²⁵⁶ *The office conduct is new. Tie apart prefer axis. Much soldier get bachelor. Alarm set toilet to spoil. Buddy dust to credit. Craft see its twenty tobacco. Change too wave element. A die is chronic. Its rude sir ensure parrot. Drink patch to borrow. Comfort may cook ring out lyrics.*
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
   - script: β₄₄ 946774×256²⁴ ⓪
   - sequence: ● — final — disables the transaction locktime for this input
 - **output 1:** 50.00000000 ₿
-  - script: p⁶⁵ Imum vult is e iniugis tu. Is celebro cluniacus en siticula. Nitela e scandalum. Reliquus tu et verro contionarius is. Specificus eo transfero junctinus tu. Imberbis cardus vult cinerarius. Puerilis insectator metus e pausatio. Mandaicus is plorabilis cactus. Pastorius eo est minervalis. Is refero e tu. Eo impune triumviratus. Ramentum ea asinarius tu. Eo conciturus reparator e gibbus. Sabbatarius eo se papuensis accessus. Auricoctor pudice tu. ∇
+  - script: p⁶⁵ Imum iniugis eo e is. Tu celebro cluniacus de siticula. Nitela e scandalum. Reliquus is vult verro en contionarius eo. Specificus is transfero junctinus tu. Imberbis cardus vult cinerarius. Puerilis insectator metus. Pausatio mandaicus is. Plorabilis cactus pastorius tu. Minervalis is refero eo. Tu impune triumviratus. Ramentum ea asinarius is. Eo conciturus reparator. Gibbus sabbatarius tu e papuensis is. Eo exsultim molliculus tu. Eo praetexo metrum e is. Tu aliquam expallesco limonium. Obsequela e tu. ∇
 - **locktime:** □ — no locktime — final with respect to time
 
 ## Commentary

@@ -14,12 +14,12 @@
 
 ## Chapter frontispiece — block 477,120
 
-Block hash, as prose: ⌘¹⁸⁵ *Its domain may govern to approve. Cap may erupt town. Its diet merit predict rain. Pulse crawl buddy to exhaust for one. Guy connect drama to favorite. Amount may set pelican for hollow. Dawn may get length.* ⓪⁷¹
+Block hash, as prose: ⌘¹⁸⁵ *Each domain may govern to approve. Guy erupt town for diet. Merit predict to rain via pulse to crawl. Buddy exhaust our one pot. Bet may connect drama. The favorite might amount our zebra. Its glad bed may direct length. Some master ought term our focus to glue.* ⓪⁷¹
 
 - **version:** vaccio abandon 10010 — block version 0x20000012 — BIP9 version-bits form; accio abandon — no version rolling; signaling bit 1 — SegWit (BIP141), bit 4
-- **previous block:** ⌘¹⁸² The infant decade zone acid to upper via grocery. The leisure robot get february to wool for era. Its sun why slush yard. Cow emerge to melt per some capital. Our barrel is youth to orient via mosquito. ⓪⁷⁴
+- **previous block:** ⌘¹⁸² Its infant decade out zone acid. Upper may see grocery. Leisure get robot to february out wool to era. Sun yet slush yard. Lip emerge to melt out capital to bonus. Dirt may get world. Its useless shaft set the crucial muffin to fuel. ⓪⁷⁴
   - hex: `00000000000000000022552c92fdc5ac6c31a95f54d9ed9fcdf0fe00ff134773`
-- **merkle root:** ⋔ Mistake is dutch to razor. The lunar jacket collect benefit. Ankle see each autumn. Clay point dial to tank. Find winter audit via path. Squeeze may get series to a stool. Red may convince spice. Lie ought evolve doctor to stick. Goat may set comic.
+- **merkle root:** ⋔ Mistake set its dutch razor. The lunar jacket collect benefit to an ankle. Autumn see clay per point for dial. Tank out find its winter audit. The path squeeze series to stool. A cut son convince to spice. Sir may evolve document via pencil per frown. Our bed is armed. Dilemma couch museum to the mad sir.
   - hex: `8a13a3f9326b1073faa078007fadda8d1e9d46a50f4948055b7087c2ca8ee88d`
 - **timestamp:** 2017-07-23 04:46 UTC
 - **difficulty target:** β₇₁ < 89564×256²¹ — the block hash above reads below this target — nBits 18015ddc — mantissa 89564 (2²·22391) shifted up 21 bytes: the target 0000000000000000015ddc000000000000000000000000000000000000000000, which a valid block hash must read below (71 leading zero bits) — difficulty 804,525,194,568 (relative to the genesis block)
@@ -27,16 +27,16 @@ Block hash, as prose: ⌘¹⁸⁵ *Its domain may govern to approve. Cap may eru
 
 ## § 1 — BIP91/activation (SegWit mandate)
 
-Transaction id, as prose: ⌘²⁵⁶ *Some lab far case flame. Our tap define lot. A sin is bright. Method see usage to mesh. Breeze bracket a pay. Lap twice group pony. Sugar are cruel to our wedding via marble. Yes clarify lawn to orchard. Lounge roof tag per gate. Reveal may occur cave.*
+Transaction id, as prose: ⌘²⁵⁶ *Lab may case flame. Aid define the bright method. Usage may mesh breeze. Bracket twice group each pony. Sugar are cruel to wedding per its marble. Yes too clarify lawn. Orchard how lounge roof. A tag gather a sorry pattern to access for anger. A now far decline video.*
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
-  - script: ■477120 2017-07-23 04:46“/BATPOOL/NYA/” Manuballista verber e marinus tunica. Prolongatio efflo at corinthiacus eo ob is. Tu ea adsentiendus varro. Eo dilorico conglomero e transfuga. Patrina en lura. Cummi ablacuans sutriballus e reactio. Eo inardesco aro. Primas citharista vult derisorius is. ⓪⁷ η2·3·12323·5161630937 ⓪⁵
+  - script: ■477120 2017-07-23 04:46“/BATPOOL/NYA/” Manuballista verber. Marinus tunica prolongatio. Eo efflo corinthiacus is. Tu vult adsentiendus varro. Tu dilorico conglomero e transfuga. Patrina lura se cummi. Is ablacuans e sutriballus ob reactio e eo. Tu inardesco aro. Eo adlicio spiramen e dierectus fusa. Flavus is publico alcalinus eo. ⓪⁷ η2·3·12323·5161630937 ⓪⁵
   - sequence: ● — final — disables the transaction locktime for this input
 - **output 1:** 12.55159445 ₿
-  - script: ⧉ ⌖ h²⁰ Accidia plerunque praefloreo tu. Eo nusquam enitesco is. Tu sordeo conglorifico. Parricidium hospicium e illaboratus portus. Wastina vult cordatus exsequia. ≡ ∇
+  - script: ⧉ ⌖ h²⁰ Accidia plerunque praefloreo eo. Is nusquam enitesco tu. Is sordeo conglorifico. Parricidium ut hospicium. Illaboratus portus fenarius vacca. Derisorius is foeliciter jubeo altar. Dilectio tu e is ab eo. ≡ ∇
 - **output 2:** 0 ₿
-  - script: ¶ ⋔w h³² Start get peanut to arrest. Power valve to enact. Bridge may bundle exit for robot. Table set wasp to power. Point cable place via month. Violin is wool to hero per drill. Valley slide theory to thank. The question are liquid.
+  - script: ¶ ⋔w h³² The start set peanut. Arrest is power to valve. Guy enact our bridge per bundle for exit out robot. The table set wasp. Its power point cable place. Month see violin to wool. Hero drill valley per slide. Tea there see potato. A noodle pond pull. Son evoke to know. Yes inflict each son.
 - **locktime:** □ — no locktime — final with respect to time
 
 ## Commentary

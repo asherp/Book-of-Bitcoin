@@ -14,12 +14,12 @@
 
 ## Chapter frontispiece — block 481,824
 
-Block hash, as prose: ⌘¹⁸¹ *A ear near sentence sheriff. Our aerobic net is lazy. A mirror are huge. Velvet get penalty to lady. Friend dry a tourist. Good avoid its bright bar. Ship job to avoid.* ⓪⁷⁵
+Block hash, as prose: ⌘¹⁸¹ *Tie near sentence sheriff. An aerobic net is lazy. Mirror set our huge velvet. Penalty see lady to friend. A guy dry tourist for a good. Yes avoid a bright border. Its amazing bomb is hybrid to sleep. Such pan far rotate wrong.* ⓪⁷⁵
 
 - **version:** vaccio abandon 10 — block version 0x20000002 — BIP9 version-bits form; accio abandon — no version rolling; signaling bit 1 — SegWit (BIP141)
-- **previous block:** ⌘¹⁸⁴ Length swing to flavor. Chapter get episode for elbow. Type get our runway. Wine see usage to check. Crack buzz the border for style out bulb. A set slam is big. A because. Our rid version number source. ⓪⁷²
+- **previous block:** ⌘¹⁸⁴ Length swing to flavor per chapter. Episode elbow type to its runway. Wine see usage via check. Crack buzz its border to style. Bulb slam blur via credit. Wagon quote to donate. Dream get analyst via brief. ⓪⁷²
   - hex: `000000000000000000cbeff0b533f8e1189cf09dfbebf57a8ebe349362811b80`
-- **merkle root:** ⋔ Dolphin set mixture to limb. Zone see a wrist. World may total timber. Rival get alcohol to body. Sun may oppose item. A faculty see cupboard. The abuse get dynamic. The pay may approve matter. Cow yet speak each due. Our cow barely thunder leopard. Bunker see dad to sugar.
+- **merkle root:** ⋔ Dolphin see its mixture to limb. Its zone set wrist. World total timber to rival. Our alcohol set body. Sun oppose item to faculty. Its cupboard out abuse dynamic. Bit may approve its matter. A big pop speak our ban. A guy barely thunder lesson. Harvest may author wool. Check is raw to the spawn. A will may see a bet.
   - hex: `6438250cad442b982801ae6994edb8a9ec63c0a0ba117779fbe7ef7f07cad140`
 - **timestamp:** 2017-08-24 01:57 UTC
 - **difficulty target:** β₇₁ < 81129×256²¹ — the block hash above reads below this target — nBits 18013ce9 — mantissa 81129 (3·27043) shifted up 21 bytes: the target 0000000000000000013ce9000000000000000000000000000000000000000000, which a valid block hash must read below (71 leading zero bits) — difficulty 888,171,856,257 (relative to the genesis block)
@@ -27,17 +27,17 @@ Block hash, as prose: ⌘¹⁸¹ *A ear near sentence sheriff. Our aerobic net i
 
 ## § 1 — SegWit/activation
 
-Transaction id, as prose: ⌘²⁵⁶ *Recall may drum insect to walnut. Design set lens before dig about the lucky wash. Some merit may pepper faculty. Our bright spot ought parent category. The device see myth to frog. An end is robust. The electric doctor extend panda. Some pipe is pop.*
+Transaction id, as prose: ⌘²⁵⁶ *Recall drum insect to walnut. Design set a lens before lap about its lucky wash. Merit pepper our faculty to tax. The bright spot parent category out device. Myth set frog to end per our robust map. Cut is electric to document out child to plunge per liar. Our tap is federal. Effort may fall survey.*
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
-  - script: ■481824Commenticius is professorius tu. Eo reinvito e indomitus eo. Tu adfaturus lividus is. Tu vult superdico actrix e eo. Is inolesco surripio. Salictum adscendendus libator e timoratus eo. Tu eructo vaecors naucum ab ebeneus cultor se chymus. Tu jacio atticismos. Eo vult bombizo. ⓪⁸ Bracchialis is projicio taxus. Spartum vestras eo. Is regusto liturgus e ethologus. Nema abs eo. “/BTCC/ Support /NYA/” ⓪¹⁸
+  - script: ■481824Commenticius is professorius eo. Tu reinvito indomitus tu. Is adfaturus lividus eo. Is vult superdico actrix e tu. Is vult inolesco surripio. Salictum adscendendus e libator. Timoratus is eructo vaecors naucum. Ebeneus cultor chymus. Eo jubeo e is. Tu sci eo. Is verticaliter suffossio. Eo cite bua. Is vult mendico tu. ⓪⁸ Bracchialis is projicio e taxus ob spartum. Vestras eo regusto is. Lixivius litigans tutela abs iasione. Recordatus cadmium e amarities. “/BTCC/ Support /NYA/” ⓪¹⁸
   - sequence: ■0 — replaceable; relative locktime 0 blocks after the input's confirmation
   - witness: see footnote a
 - **output 1:** 14.62514269 ₿
-  - script: ⧉ ⌖ h²⁰ Nardus e pelamis ex tu. Is protervio triennium. Tu summitto versutia. Is insterno e occupatio. Tu virescens neomexicanus eo. Tu conplano obiurgo e abronius is. Eo monstro. ≡ ∇
+  - script: ⧉ ⌖ h²⁰ Nardus vult pelamis. Tu protervio e triennium. Tu vult summitto versutia. Eo insterno occupatio. Tu virescens neomexicanus is. Eo conplano porcinus orator e defensatrix. Praedictivus iuramentum vult scaturiens maestitudo. ≡ ∇
 - **output 2:** 0 ₿
-  - script: ¶ ⋔w h³² History see its tiny lemon. An uniform first allow giant. Choice elbow to crash. The tap else see artist. Page may set adult. The angry skull network category. Slogan approve turn to kiss. Number out get our able hire. The rid skill are amazing.
+  - script: ¶ ⋔w h³² History are tiny to lemon. Our uniform first allow giant per choice for elbow out crash. Some aid else set artist. A page may see adult. Our angry skull network category. Slogan may approve turn. Kiss number a pop. Jet about brand view. The car ice ketchup. Pen may get lab.
 - **locktime:** □ — no locktime — final with respect to time
 
 ### Witness footnotes

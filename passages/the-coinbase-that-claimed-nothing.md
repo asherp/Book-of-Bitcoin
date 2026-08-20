@@ -14,12 +14,12 @@
 
 ## Chapter frontispiece — block 501,726
 
-Block hash, as prose: ⌘¹⁸³ *The champion merit to detect. Acid swim fame via river. Beyond may get engine to dutch. Scissors taxi to surface. Sadness may room ceiling. Pie could enrich benefit to bus. Light is pop per a quote.* ⓪⁷³
+Block hash, as prose: ⌘¹⁸³ *The champion merit to detect. Acid swim fame per river. Beyond set engine to dutch. Scissors taxi surface via sadness for room. Ceiling enrich burden to tennis. Thing may source width via medal. The anxiety panic some bit.* ⓪⁷³
 
 - **version:** vaccio abandon — block version 0x20000000 — BIP9 version-bits form; accio abandon — no version rolling; no soft-fork signals
-- **previous block:** ⌘¹⁸² Robot get daughter to green. Nut may set hood. Hedgehog might layer rice. Avocado set estate to pair. Bird word our harsh tilt per engine. Climb base cheese to the picnic via quote. ⓪⁷⁴
+- **previous block:** ⌘¹⁸² The robot get daughter. Green may nut hood to hedgehog. Layer see rice per avocado. Estate not pair bird. Word set the harsh tilt. Its engine may climb bone. Our tragic shallow source grocery to attitude. A scrub may carry a cap. ⓪⁷⁴
   - hex: `0000000000000000002b5382b8d2d64f0b7caee90fc9951fd5d4d64b99f926bb`
-- **merkle root:** ⋔ Link milk mention to owner. The awesome cherry see slight via tax. Nod may define an eternal clump. Pop reflect truth to box. The match get reunion. Trend toss to assume via sin. Son solve to afford. Photo seed its tiny gate. A sir suggest episode to a diesel.
+- **merkle root:** ⋔ Link may milk mention to owner. Its awesome cherry may set slight. Out define an eternal clump. Sir reflect truth to box. Match set reunion per a trend via toss. Each son assume to solve. The guy afford photo via seed. A tiny son gather quiz. Out include blossom to kick for a hollow force to hat.
   - hex: `9bf8853b3a823bbfa1e54017ae11a9e1f4d08a854dcce9f24e08114f2c921182`
 - **timestamp:** 2017-12-30 12:55 UTC
 - **difficulty target:** β₇₂ < 38469×256²¹ — the block hash above reads below this target — nBits 18009645 — mantissa 38469 (3·12823) shifted up 21 bytes: the target 0000000000000000009645000000000000000000000000000000000000000000, which a valid block hash must read below (72 leading zero bits) — difficulty 1,873,105,475,222 (relative to the genesis block)
@@ -27,14 +27,14 @@ Block hash, as prose: ⌘¹⁸³ *The champion merit to detect. Acid swim fame v
 
 ## § 1 — The coinbase that claimed nothing
 
-Transaction id, as prose: ⌘²⁵⁶ *Link milk mention to owner. The awesome cherry see slight via tax. Nod may define an eternal clump. Pop reflect truth to box. The match get reunion. Trend toss to assume via sin. Son solve to afford. Photo seed its tiny gate. A sir suggest episode to a diesel.*
+Transaction id, as prose: ⌘²⁵⁶ *Link may milk mention to owner. Its awesome cherry may set slight. Out define an eternal clump. Sir reflect truth to box. Match set reunion per a trend via toss. Each son assume to solve. The guy afford photo via seed. A tiny son gather quiz. Out include blossom to kick for a hollow force to hat.*
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
   - script: ■501726 η2·3·29·42477979η2³·5·11·197·421·2027·2459 ⓪²
   - sequence: ● — final — disables the transaction locktime for this input
 - **output 1:** 0 ₿
-  - script: ② ③ Tu inferne frusto quincuplex is. Cirratus tu caeliloquus eo. Acidalius is pertimeo is. Magnirostris eo est minervalis. Pessarium ne secta. Eo adsidue oreae. Conditor occurso e illacessitus auraticum. Grassatio quietor condicio. Tu annumero lacto e ultor terminus.
+  - script: ② ③ Eo inferne frusto tu. Quincuplex eo cirratus is. Caeliloquus tu ea acidalius tu. Is pertimeo magnirostris eo. Minervalis pessarium ne secta. Tu adsidue oreae. Conditor occurso illacessitus auraticum e grassatio. Is quietor ab condicio. Eo annumero alcyon e hera. Is et mixticare pullulus. Tradux contemero sedulus tu.
 - **locktime:** □ — no locktime — final with respect to time
 
 ## Commentary

@@ -29,7 +29,7 @@
 
 import { parseOtsProof, earliestBitcoin, digestOf } from './btc-ots.js';
 import { parseTransaction } from './btc-tx.js';
-import { volumeBookChapter, reference, latinRefOf } from './btc-citation.js';
+import { volumeBookChapter, citation, latinRefOf } from './btc-citation.js';
 import { expectedBlockTime } from './btc-chaintime.js';
 import { storeGet, storePut } from './btc-store.js';
 
@@ -74,8 +74,10 @@ export const attests = async (proof, subjectBytes) =>
 // The citation a place reads as, and the link that opens it. A proof always
 // names a chapter; whether it names a §section depends on its merkle path being
 // readable (btc-ots.js says so by leaving `index` null), so both forms are here.
-export const citeOf = (place) => reference(place.height) + (place.section ? ` §${place.section}` : '')
-  + (place.section && place.out != null ? `.${place.out}` : '');
+// One spelling of a citation, in btc-citation.js: a place printed here and a
+// place printed in the contents must read the same. (`|| null` keeps this
+// caller's own rule that a falsy section names no section.)
+export const citeOf = (place) => citation(place.height, place.section || null, place.out ?? null);
 export const hrefOf = (place) => (place.section
   ? `./bitcoin-book.html?ref=${latinRefOf(place.height, place.section, place.out ?? undefined)}`
   : `./bitcoin-book.html?block=${place.height}`);

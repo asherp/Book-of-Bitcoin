@@ -14,12 +14,12 @@
 
 ## Chapter frontispiece — block 689,472
 
-Block hash, as prose: ⌘¹⁸¹ *Pop prevent a quality acid. Game see our rice to corn. Ginger spirit shuffle per nothing. File is diesel to diet. The yes alter tackle. Trick may set bamboo. Benefit under measure divorce.* ⓪⁷⁵
+Block hash, as prose: ⌘¹⁸¹ *Guy prevent the quality acid. Some game set rice to corn. Ginger may spirit shuffle out nothing. File get a diesel. Diet alter tackle to trick. The bamboo burden code. Trip set cactus to element. Its twist may stage to ship.* ⓪⁷⁵
 
 - **version:** vevanesca point 100 — block version 0x29d12004 — BIP9 version-bits form; version-rolling bits 0x4e89 (BIP320 scratch entropy) as evanesca point; signaling bit 2 — Taproot (BIP341)
-- **previous block:** ⌘¹⁸⁰ Ladder coil genre to flag. Each blade before see security. A text exist belt to burden. A broken crack may get stereo. A forest see bonus to animal. A out balance teach cart via the length. ⓪⁷⁶
+- **previous block:** ⌘¹⁸⁰ Ladder coil our genre to flag. Blade is due before security. Text may exist the belt to its burden. Our broken crack is stereo. Forest see bonus to animal. Guy borrow butter for drama out theme. Its shift is huge to an usual labor. ⓪⁷⁶
   - hex: `00000000000000000009cbc816ab1d430e7a9cc24ffdb6702870112c84a9657c`
-- **merkle root:** ⋔ Our code may box. Our olympic smile could draw the gospel flip to olive. Song are tragic per journey. Next may scout humor. An useless lap is tragic. Radio below sock spike. Some ramp see chest to album. Each red is able. Same may yellow detail to lie.
+- **merkle root:** ⋔ Code box our olympic smile to draw via gospel. Flip see its olive song. The tragic journey next scout our humor. Map are useless to a tragic radio. Map below sock a spike. Ramp may see chest. An album about size shoot. Border bring to prevent out couch. A dizzy cop get a tax.
   - hex: `78014f16eb68389bc2b037073cde14accae1dd3ccfd14496c92654666952032d`
 - **timestamp:** 2021-07-03 06:34 UTC
 - **difficulty target:** β₇₅ < 1284302×256²⁰ — the block hash above reads below this target — nBits 171398ce — mantissa 1284302 (2·642151) shifted up 20 bytes: the target 0000000000000000001398ce0000000000000000000000000000000000000000, which a valid block hash must read below (75 leading zero bits) — difficulty 14,363,025,673,660 (relative to the genesis block)
@@ -27,19 +27,19 @@ Block hash, as prose: ⌘¹⁸¹ *Pop prevent a quality acid. Game see our rice 
 
 ## § 1 — Difficulty −27.94%
 
-Transaction id, as prose: ⌘²⁵⁶ *Some hurdle space autumn. The urban spare may blossom luxury. The low practice is legal. Our tiny card snake a ready coast. Maple may forget a virtual yes. Pop may spend art to trophy. Dragon get the hub. Quiz set cake to a notable lesson. A bet render tax.*
+Transaction id, as prose: ⌘²⁵⁶ *Hurdle may space autumn. Our urban spare would blossom luxury. Practice is legal to due. The tiny card snake to ready. Coast may get the out maple. Our pan may forget its virtual yes. Tax spend art to trophy per dragon. Hub quiz call to thunder. Sin is rigid near chicken. Pupil may explain wealth.*
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
-  - script: ■689472η3³ “Mined by AntPool” Is volito thais abs coccyx. Vesica altar e praegressus. Aspergillum obdormisco en plumbeus is. Iambelegus interregnum e theos. Tu vult uxorare conpartior en castellanus. Delebilis eo est plurennis. Lapicidinae vult nemus e plerunque. Tu adglomerans suspirium ob tu. Eo ni abstineo concordia. Eo vult provolvo labdarius cardiacus. Eo est stragulus e is. ⓪⁷ η2²·3·5·24624479987 ⓪²
+  - script: ■689472η3³ “Mined by AntPool” Is volito thais abs coccyx. Vesica altar e praegressus. Aspergillum obdormisco plumbeus is. Iambelegus interregnum ea theos. Tu uxorare conpartior. Castellanus delebilis eo. Tu vult plurennis lapicidinae e nemus de plerunque. Is adglomerans suspirium. Tu abstineo concordia. Eo provolvo praemordicus is e eo. Tu imperite prophetizo is. Eo arcuo adincresco e baiulatio. Sortitio ea eo. ⓪⁷ η2²·3·5·24624479987 ⓪²
   - sequence: ● — final — disables the transaction locktime for this input
   - witness: see footnote a
 - **output 1:** 6.58657646 ₿
-  - script: ⧉ ⌖ h²⁰ Eo medie tu. Is adseveranter ruptor. Fluminalis gallicrus dispicio vanito. Quotuplus eo vult fodero illaboratus is. Tu transpicio neglego e panecaldum de transcensus. ≡ ∇
+  - script: ⧉ ⌖ h²⁰ Is medie eo. Tu adseveranter ruptor. Fluminalis gallicrus dispicio vanito e quotuplus eo. Tu fodero is ob illaboratus tu. Eo transpicio pertinax is. Tu ut conprimens coclear. Is vult subplicans aspiro. Is solet emitto repo. ≡ ∇
 - **output 2:** 0 ₿
-  - script: ¶ ⋔w h³² The nation is future. Stumble afford its fancy hire. Son achieve our proud jeans. Mouse believe its sun to bench out timber to humor. Repair is happy for emotion. The set arrow expect to jar. Lip may exist earth via cake. Swim offer to prosper.
+  - script: ¶ ⋔w h³² Nation is future to stumble. Sir afford fancy per a red hire. Guy achieve to owe. A proud jeans may mouse. Lie yes believe sun. Bench get its timber. The humor repair out. A happy emotion see arrow. The bed not expect a out jar. Pay exist an earth. Call provide path to math. Degree erase a hidden creek.
 - **output 3:** 0 ₿
-  - script: ¶ ³⁶ The rigid angle may swap a merry book. Ramp is adult to mass before inmate. Glow sing net to ridge. Ear since barrel cap. Die quick get century. Legend may see each verb. Our sorry business yet diagram the one. A capable report may scheme to cost. Our guy borrow ritual.
+  - script: ¶ ³⁶ Our rigid angle swap pie. Its merry book ramp adult. Mass before set an inmate. Glow may sing net. Ridge are odd since barrel. Its quick century set legend. Verb is sorry to business via diagram to one. A sir are capable. Report may set science to team. Harbor may get the various embrace. Series may edge to feed.
 - **output 4:** 0 ₿
   - script: ¶ ⁴¹ “RSKBLOCK:*Bgi”
 - **locktime:** □ — no locktime — final with respect to time
