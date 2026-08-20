@@ -92,7 +92,7 @@ test('keeps already stored unnamed do not lay claim to a name', () => {
 test('the book page asks the shared rule, and asks it in both places', () => {
   // The form that offers Save and the store that accepts the write must
   // decide identically, or a reader is refused for a reason never shown.
-  assert.match(book, /import \{ nameFault, takenNames[^}]*\} from '\.\/btc-keepname\.js';/,
+  assert.match(book, /import \{[^}]*\bnameFault\b[^}]*\btakenNames\b[^}]*\} from '\.\/btc-keepname\.js';/,
     'the page imports the rule rather than restating it');
   assert.match(book, /const keepNameFault = \(title, exceptKey = null\) =>\s*\n\s*nameFault\(title, takenNames\(bookmarks, keyOf, exceptKey\)\);/,
     'and asks it over its own keeps');
@@ -197,7 +197,11 @@ test('both keep forms say it, and offer the shelf to pick from', () => {
 test('a bookmark is offered no ledger names, since every one would be refused', () => {
   assert.match(book, /if \(!menuEntry \|\| !menuEntry\.ledger\) return;/,
     'the completions stand down for a keep that is not a ledger');
-  // …and a ledger keep is never refused for its name: both outcomes are legal.
-  assert.match(book, /titleSaveBtn\.disabled = false;\s*\n\s*return;/,
-    'Save stays offered for a ledger keep');
+  // A ledger keep is never refused for a name already used -- folding is the
+  // point -- but it still has to have one, as the Ledgers page's own form has
+  // always required.
+  assert.match(book, /titleSaveBtn\.disabled = !titleInput\.value\.trim\(\);/,
+    'Save waits only on the field being empty');
+  assert.doesNotMatch(book, /menuEntry\.ledger[\s\S]{0,400}?TAKEN/,
+    'never on the name being taken');
 });

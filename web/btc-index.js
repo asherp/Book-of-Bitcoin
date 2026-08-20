@@ -204,6 +204,21 @@ export function keepLedger(title, addresses) {
   return mine ? pathSegments(mine.title).join('/') : path;
 }
 
+/** Take a member out of every kept ledger, and drop any ledger the removal
+ *  leaves holding nothing. What a MOVE needs: a member that sat in one of the
+ *  reader's ledgers and now sits in another must not go on reading as though
+ *  it were in both, and a ledger emptied by the move is not a ledger — it is
+ *  a name over no account. Curated ledgers are untouched: they are not the
+ *  reader's to file, so an address of theirs joining a kept ledger is an
+ *  addition rather than a move. */
+export function unkeepAddress(address) {
+  const all = keptLedgers()
+    .map((k) => ({ ...k, addresses: k.addresses.filter((a) => a !== address) }))
+    .filter((k) => k.addresses.length);
+  saveKeptLedgers(all);
+  return all;
+}
+
 /** The shelved ledger a path names, or null. Matched by the one comparison
  *  (nameKey): trimmed segment by segment and folded, so a link shared with a
  *  capital where the shelf has none still opens the ledger it names. */
