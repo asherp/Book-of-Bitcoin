@@ -45,16 +45,14 @@
 #       (dropped in among the volumes, BIP42 alone opened a Volume LXV two
 #       centuries wide) — and because grouped by BIP, each fork gets a title
 #       leaf of its own, carrying its activation statistics and its reading.
-#   Index of Ledgers — the shelf of curated ledgers (btc-index-data.js), and any the
+#   IV  The Ledgers — the shelf of curated ledgers (btc-index-data.js), and any the
 #       reader keeps. Keepers, not chapters, and so the only entries in the
 #       contents with no reference at all: the chain never writes an address,
 #       only the script one stands for, and a ledger's chapters are discovered
 #       by reading rather than cited in advance. A ledger holds as many scripts
 #       as its keeper uses — one address, a rotated set, or every leaf of one
-#       extended key — each read as a passage on the Ledger compendium's own
-#       leaves, which is why this part lists ledgers here and explains itself
-#       there. The contents and the index are inverses; this is where the
-#       contents points at the other one.
+#       extended key — each read as a passage on this part's own leaves,
+#       which is why it lists ledgers here and explains itself there.
 #   V   Inscriptions — files written into witnesses and read back out by
 #       software that agrees where to look. The book's own matter out of
 #       reading order: each entry is a witness footnote the volumes already
@@ -624,7 +622,7 @@
               by: Claude Fable 5
 
 - kind: ledgers
-  title: Ledgers
+  title: The Ledgers
   note: A ledger gathers what one keeper spends from — a single address, a set rotated over the years, or in time every leaf of one extended key — and reads each of its scripts as a passage, with the chapters that passage appears in listed beneath it. Nothing here carries a reference: the chain never writes an address, only the script one stands for, so a ledger is not cited but discovered, and its run of chapters stays open-ended.
 
 - kind: inscriptions

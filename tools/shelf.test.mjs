@@ -101,3 +101,57 @@ test('a path names a ledger — which is what a URL can carry instead of 221 add
   assert.equal(shelfLedgerFor('nothing kept here', list), null);
   assert.equal(shelfLedgerFor('', list), null);
 });
+
+// ── One name, however it is cased ─────────────────────────────────────────
+// Names fold (nameKey, btc-keepname.js), so two keeps differing only in case
+// are one ledger. The alternative was a silently SPLIT record whose parent no
+// longer totalled the incident, which is the one thing a ledger is for — and
+// nobody means a capital as a distinction the way they mean a slash.
+
+test('keeps differing only in case are one ledger, not two', () => {
+  const shelf = shelfLedgers(kept(
+    ['Coldcard hack/wave 3', [A(1)]],
+    ['Coldcard Hack/Wave 3', [A(2)]],
+  ));
+  assert.equal(shelf.length, 1, 'one row, not two');
+  assert.equal(shelf[0].addresses.length, 2, 'and it holds both keeps’ members');
+});
+
+test('the first spelling kept is the one the shelf prints', () => {
+  // The reader chose it; a later capital is a typing accident, and re-spelling
+  // the row under them would be the shelf editing their name.
+  const shelf = shelfLedgers(kept(
+    ['Coldcard hack/wave 3', [A(1)]],
+    ['COLDCARD HACK/WAVE 3', [A(2)]],
+  ));
+  assert.equal(shelf[0].title, 'Coldcard hack/wave 3');
+  assert.equal(shelf[0].name, 'Coldcard hack / wave 3');
+});
+
+test('a parent and its children are spelled alike, however each was kept', () => {
+  // The walk matches children to parents by segment, so a parent spelled from
+  // one keep and a child from another would leave the child orphaned — it
+  // would stand as its own top-level row and the parent would not total it.
+  const shelf = shelfLedgers(kept(
+    ['Coldcard hack/waves 1–2', [A(1), A(2)]],
+    ['coldcard hack/wave 3', [A(3)]],
+  ));
+  assert.deepEqual(shape(shelf), [
+    'Coldcard hack (3)',
+    '  waves 1–2 (2)',
+    '  wave 3 (1)',
+  ]);
+  // …and the parent totals every member beneath it, which is the figure the
+  // incident is quoted by.
+  assert.equal(shelf[0].addresses.length, 3);
+});
+
+test('a folded name still opens the ledger it names', () => {
+  // A link shared with a capital the shelf has none of must still resolve, or
+  // the fold would join records while splitting the ways in to them.
+  const list = kept(['Coldcard hack/wave 3', [A(1)]]);
+  for (const asked of ['Coldcard hack/wave 3', 'coldcard hack/wave 3', 'COLDCARD HACK / WAVE 3']) {
+    assert.equal(shelfLedgerFor(asked, list)?.title, 'Coldcard hack/wave 3', `${asked} resolves`);
+  }
+  assert.equal(shelfLedgerFor('Coldcard hack/wave 4', list), null, 'a name nobody kept resolves to nothing');
+});

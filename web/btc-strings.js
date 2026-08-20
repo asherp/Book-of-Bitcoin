@@ -63,7 +63,10 @@ const STRINGS = {
     'Copy text': 'Kopírovat text',
     'Copy link': 'Kopírovat odkaz',
     'Witness footnote': 'Poznámka pod čarou k witnessu',
-    'Ledger entry': 'Záznam v účetní knize',
+    'View ledger': 'Zobrazit účetní knihu',
+    'Add to ledger': 'Přidat do účetní knihy',
+    'Move to ledger': 'Přesunout do účetní knihy',
+    'New ledger…': 'Nová účetní kniha…',
     'Bookmark': 'Záložka',
     'Remove bookmark': 'Odebrat záložku',
     // the notation key's scope line
@@ -151,7 +154,10 @@ const STRINGS = {
     'Copy text': 'Text kopieren',
     'Copy link': 'Link kopieren',
     'Witness footnote': 'Witness-Fußnote',
-    'Ledger entry': 'Hauptbucheintrag',
+    'View ledger': 'Hauptbuch anzeigen',
+    'Add to ledger': 'Zum Hauptbuch hinzufügen',
+    'Move to ledger': 'In Hauptbuch verschieben',
+    'New ledger…': 'Neues Hauptbuch…',
     'Bookmark': 'Lesezeichen',
     'Remove bookmark': 'Lesezeichen entfernen',
     // the notation key's scope line

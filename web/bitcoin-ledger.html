@@ -1,8 +1,8 @@
 <!-- SPDX-License-Identifier: MIT OR Apache-2.0 -->
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>The βook of βitcoin — Ledger</title>
-<meta name="description" content="The Ledger of the Glossia Bitcoin Book: a compendium of notable donation addresses — and any the reader keeps — each a view of the manuscript focused on amounts, reconciled against the chain.">
+<title>The βook of βitcoin — The Ledgers</title>
+<meta name="description" content="The Ledgers of the Glossia Bitcoin Book: a compendium of notable donation addresses — and any the reader keeps — each a view of the manuscript focused on amounts, reconciled against the chain.">
 <link rel="icon" type="image/png" sizes="32x32" href="./icons/beta-icon-32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="./icons/beta-icon-16.png">
 <link rel="icon" href="./icons/beta-icon.svg" type="image/svg+xml">
@@ -10,7 +10,7 @@
 <!-- Social / rich unfurl -->
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="The βook of βitcoin">
-<meta property="og:title" content="The βook of βitcoin — Ledger">
+<meta property="og:title" content="The βook of βitcoin — The Ledgers">
 <meta property="og:description" content="A compendium of notable donation addresses — each a view of the manuscript focused on amounts, reconciled against the chain.">
 <meta property="og:url" content="https://bookofbitcoin.io/bitcoin-ledger.html">
 <meta property="og:image" content="https://bookofbitcoin.io/og-bookofbitcoin.png">
@@ -18,7 +18,7 @@
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="The βook of βitcoin — Vires in Numeris. A gold β standing beside the book's title on a dark cover.">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="The βook of βitcoin — Ledger">
+<meta name="twitter:title" content="The βook of βitcoin — The Ledgers">
 <meta name="twitter:description" content="A compendium of notable donation addresses, each reconciled against the chain.">
 <meta name="twitter:image" content="https://bookofbitcoin.io/og-bookofbitcoin.png">
 
@@ -217,6 +217,38 @@ a:hover { text-decoration: underline; }
 .anth-prose .op-name { font: 600 .62em/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.04em; color: var(--dim); font-style: normal; vertical-align: .14em; white-space: nowrap; }
 .anth-prose .op-push { color: var(--meta); }
 .anth-prose .dt { color: var(--accent); font-style: normal; font-weight: 700; }
+
+/* The passage IS the handle. A member's locking script is the only rendering
+   of the address this book sets, so the prose a reader is looking at is what
+   they click to take the value away: the traditional base58/bech32 form the
+   machines want, or the script's own bytes. The reading pages carry the same
+   menu on every hash they print; it is spelled the same here so the two read
+   as one affordance rather than two. */
+.anth-prose.hash-copy, .e-v .hash-copy { cursor:pointer; }
+/* The mark that stands where the prose cannot: no engine in this build, so
+   the bytes are declined rather than set as hex -- the claim in the hover,
+   and the menu still handing over the value. */
+.anth-prose .wit-empty, .e-v .wit-empty { color:var(--meta); font-style:normal; }
+
+/* The copy menu, raised by clicking the passage. Spelled as the reading
+   page's own (.hash-menu there), down to the metrics: one affordance, one
+   look, whichever leaf a reader meets it on. */
+.hash-menu {
+  position:fixed; z-index:40; min-width:172px; padding:6px;
+  background:var(--card); border:1px solid var(--card-bd); border-radius:7px;
+  box-shadow:0 18px 44px -18px rgba(0,0,0,.8);
+}
+.hash-menu-head {
+  padding:6px 8px 8px; color:var(--dim); font:600 10.5px/1 'IBM Plex Mono','Book Sigla',monospace;
+  letter-spacing:.1em; text-transform:uppercase; border-bottom:1px solid var(--rule); margin-bottom:5px;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:260px;
+}
+.hash-menu .hash-menu-item {
+  display:block; width:100%; text-align:left; background:transparent; color:var(--ink-soft);
+  border:none; border-radius:4px; padding:8px 9px; cursor:pointer;
+  font:500 12.5px/1.2 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.02em; text-transform:none;
+}
+.hash-menu .hash-menu-item:hover, .hash-menu .hash-menu-item:focus-visible { background:var(--input-bg); color:var(--ink); outline:none; }
 .anth-range { margin-top:22px; font:600 12px/1.6 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.14em; text-transform:uppercase; color:var(--accent); }
 .anth-range:empty { display:none; }
 .anth-count { margin-top:8px; font:500 11px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.12em; text-transform:uppercase; color:var(--dim); }
@@ -385,6 +417,12 @@ a:hover { text-decoration: underline; }
 .keep-title-row { display:flex; gap:8px; }
 .keep-title-row button { padding:8px 12px; }
 .keep-title .save-btn:disabled { opacity:.4; cursor:default; border-color:var(--input-bd); color:var(--dim); }
+/* What the typed name will do, under the field it is about. Quiet: it states
+   a consequence, not a fault -- both outcomes are things a reader may mean.
+   Empty, it takes no room. */
+.keep-note { flex:1 1 100%; padding:0 2px; color:var(--meta);
+  font:400 11px/1.45 'IBM Plex Mono','Book Sigla',monospace; }
+.keep-note:empty { display:none; }
 /* The kept mark on a title leaf: the contents' ribbon, beside the name. */
 .anth-title .toc-bm { width:12px; height:16px; margin-right:12px; vertical-align:baseline; }
 /* The β sigil is a mark, not a letter: exempt from the headers' small caps. */
@@ -566,7 +604,7 @@ a:hover { text-decoration: underline; }
 <div class="wrap">
   <div class="masthead">
     <span class="title">The <span class="beta">β</span>ook of <span class="beta">β</span>itcoin</span>
-    <span class="home"><a href="./bitcoin-book.html">Read</a> · <a href="./bitcoin-contents.html?part=ledgers">Contents</a> · <a href="./bitcoin-search.html">Search</a> · <span class="settings-menu"><a href="#" id="settings-link" role="button" aria-haspopup="dialog" aria-expanded="false">Settings</a><div id="settings-panel" class="settings-panel hidden" role="dialog" aria-label="Ledger settings">
+    <span class="home"><a href="./bitcoin-book.html">Read</a> · <a href="./bitcoin-contents.html?part=ledgers">Contents</a> · <a href="./bitcoin-search.html">Search</a> · <span class="settings-menu"><a href="#" id="settings-link" role="button" aria-haspopup="dialog" aria-expanded="false">Settings</a><div id="settings-panel" class="settings-panel hidden" role="dialog" aria-label="Settings">
       <div class="settings-title">Amounts</div>
       <!-- The book page's notation rows, same stored choice: the record's
            three dresses, then the valuations — the day's USD price (each
@@ -589,7 +627,7 @@ a:hover { text-decoration: underline; }
   <div id="ledger-frame">
     <div id="ledger-slide">
       <header class="anth-hero" id="anth-hero">
-        <div class="page-eyebrow" id="anth-eyebrow">Ledger</div>
+        <div class="page-eyebrow" id="anth-eyebrow">The Ledgers</div>
         <h1 class="anth-title" id="anth-title"></h1>
         <div class="anth-subtitle" id="anth-subtitle"></div>
         <div class="anth-pager" id="anth-pager"></div>
@@ -613,7 +651,17 @@ a:hover { text-decoration: underline; }
           <!-- 160 rather than 80: a name is a path now (btc-path.js), and a
                reader filing three levels deep spends most of a short limit on
                the parents they have already typed once. -->
-          <input type="text" id="keep-title-input" placeholder="Title for the contents, / to file it" autocomplete="off" spellcheck="false" maxlength="160">
+          <input type="text" id="keep-title-input" placeholder="Title for the contents, / to file it" autocomplete="off" spellcheck="false" maxlength="160" list="keep-ledger-paths">
+          <!-- The reader's own shelf as completions: adding to a ledger they
+               already keep is picking a name rather than remembering how they
+               spelled it last time. -->
+          <datalist id="keep-ledger-paths"></datalist>
+          <!-- …and what the name in the field will DO. Keeping under a name
+               already used folds into that ledger rather than shelving a
+               second, which is how one keeper's addresses gather -- but it
+               used to happen silently, and a reader learned which of the two
+               they had done by going and looking at the shelf. -->
+          <div class="keep-note" id="keep-note" role="status"></div>
           <div class="keep-title-row">
             <button type="button" class="save-btn" id="keep-title-save">Keep</button>
             <button type="button" class="ghost-btn" id="keep-title-cancel">Cancel</button>
@@ -659,6 +707,18 @@ a:hover { text-decoration: underline; }
   </div>
 </div>
 
+<!-- The copy menu the passage raises. Two items, because a locking script has
+     two forms worth taking away: the address, which is what a wallet or an
+     explorer wants pasted into it, and the script's own bytes. Neither is ever
+     set in type on the leaf -- the prose above is the book's rendering of both
+     -- so this menu is how the exact value travels, which is also more
+     reliable than selecting a long string by hand. -->
+<div id="hash-menu" class="hash-menu hidden" role="menu">
+  <div id="hash-menu-head" class="hash-menu-head"></div>
+  <button type="button" class="hash-menu-item" data-act="copy-address" role="menuitem">Copy address</button>
+  <button type="button" class="hash-menu-item" data-act="copy-script" role="menuitem">Copy script</button>
+</div>
+
 <script type="module">
 import { localizeHome, mountLangMenu } from './btc-strings.js';
 localizeHome();   // the masthead in the reader's UI language
@@ -667,13 +727,16 @@ import { INDEXED, isAddress, isScriptHex, keptLedgers, saveKeptLedgers, sameAddr
          extendLine, renderRows, groupState, markIndex, periods, lineNote, reconciled, ledgerSum, heldCoins, lastKnownState,
          formatBalanceBtc, formatNetBtc, chainFailureText, citeHref, sectionOf, sectionOfFetched, citePlace, passageTxid, passageEntries, txHexOf, outspendsOf, prevoutValuesOf,
          DEFAULT_ESPLORA, esploraCustom, esploraSelected, setEsploraSettings } from './btc-index.js';
-import { volumeBookChapter, heightOf, subsidyAt, toRoman, parseReference, latinRefOf, footnoteMark } from './btc-citation.js';
+import { volumeBookChapter, heightOf, subsidyAt, toRoman, parseReference, latinRefOf, footnoteMark, keepReference } from './btc-citation.js';
 import { usdOn } from './btc-price.js';
 import { amountUnit, setAmountUnit, ownUnit, formatAmountAs, formatValuation } from './btc-amounts.js';
 import { BIP39, HP_SPELLS } from './btc-wordlists.js';
 // A slash in a name the reader typed is a path: their shelf files, and a
 // ledger can be named in a URL by the name they kept it under.
 import { pathSegments } from './btc-path.js';
+// What keeping under a name will do -- join a shelved ledger, or shelve a
+// new one -- phrased as the reading page's keep form phrases it.
+import { nameKey, ledgerOutcome, ledgerOutcomeSaid } from './btc-keepname.js';
 import { appendix } from './btc-contents.js';
 import './btc-fontscale.js';   // the reader's type sizes: a ledger's readings are set at the size the book page's Commentary row chose
 import { loadNotables, partLabel } from './btc-notables.js';
@@ -872,7 +935,15 @@ const pParsed = parseReference(pQ);
 const pRef = pParsed ? { height: pParsed.height, s: pParsed.section, o: pParsed.out } : null;
 // The same reference, written: what an entry leaf stamps into the URL.
 const latinRef = (height, s, o) => latinRefOf(height, s, o);
-const untitled = (l) => l.addresses[0] + (l.addresses.length > 1 ? ` +${l.addresses.length - 1}` : '');
+// The one untitled ledger is what a reader brought in a ?address= query: it has
+// no name any other copy of the book would resolve. It used to be named by its
+// first member -- an address, set in type, which is the one thing the book does
+// not do. So it says instead what can be said without entropy: what it is, and
+// how many passages it holds. The passages themselves are one leaf down, each
+// read in the book's own tongue.
+const untitled = (l) => (l.addresses.length > 1
+  ? `Unnamed ledger · ${l.addresses.length} passages`
+  : 'Unnamed ledger');
 // The reader's shelf as they filed it (shelfLedgers): keeps sharing a path
 // folded into one ledger, and every parent standing as a ledger of everything
 // beneath it. A flat shelf comes back exactly as it was kept.
@@ -928,7 +999,7 @@ if (qPath) {
   // leaf: a path names the ledger, never one passage of it. A path this
   // reader's shelf does not hold opens the compendium at the top rather than
   // on somebody else's first ledger.
-  const i = LEDGERS.findIndex((e) => !e.curated && e.title === pathSegments(qPath).join('/'));
+  const i = LEDGERS.findIndex((e) => !e.curated && nameKey(e.title) === nameKey(qPath));
   if (i >= 0) { li = i; level = 'ledger'; at = 0; }
 } else if (qList.length) {
   const i = LEDGERS.findIndex((e) => (qList.length === 1
@@ -973,8 +1044,8 @@ function syncUrl() {
     history.replaceState(null, '', url);
   } catch (_) { /* unavailable */ }
   document.title = level === 'appendix' ? `The βook of βitcoin — ${PART_LABEL}`
-    : level === 'ledger' && !qList.length ? 'The βook of βitcoin — Ledger'
-    : `The βook of βitcoin — Ledger · ${cur().name}`;
+    : level === 'ledger' && !qList.length ? 'The βook of βitcoin — The Ledgers'
+    : `The βook of βitcoin — The Ledgers · ${cur().name}`;
 }
 
 // ── Shared leaf furniture ──────────────────────────────────────────────────
@@ -998,16 +1069,23 @@ const readBookmarks = () => {
   try { const v = JSON.parse(localStorage.getItem('glossia-btc-bookmarks')); return Array.isArray(v) ? v : []; }
   catch { return []; }
 };
-const shortHex = (hex) => `${hex.slice(0, 10)}…${hex.slice(-6)}`;
-const shortAddr = (a) => (a.length > 17 ? `${a.slice(0, 8)}…${a.slice(-6)}` : a);
 // The reader's bookmarked passages, which the ledger hangs in its quarters
 // beside the entries they fall among. A bookmark of a volume or a book (b.page)
 // is a span, not a passage: it has a height, but hanging it on that block's
 // quarter would cite a whole volume as though it were the chapter that opens
 // it. Those live in the table of contents, at the level they name.
+//
+// A keep with no title of the reader's own is said by its prose; failing that
+// it has no name, and the tag it wears is the ribbon alone. Never its txid,
+// whole or shortened: those are high-entropy bytes, which reach a reader
+// through Glossia or not at all -- and the row the tag rides on already cites
+// the place, so a name here could only repeat it. The reference is carried in
+// the hover instead, where a keep is stored only once its place is known
+// (addBookmark declines without one) so there is always one to carry.
 const bookmarks = readBookmarks()
   .filter((b) => Number.isInteger(b.height) && !b.page)
-  .map((b) => ({ hex: b.hex, height: b.height, pos: b.pos ?? null, title: b.title || b.prose || shortHex(b.hex) }));
+  .map((b) => ({ hex: b.hex, height: b.height, pos: b.pos ?? null,
+    title: b.title || b.prose || '', said: keepReference(b) }));
 
 const n = (v, one, many) => `${v.toLocaleString('en-US')} ${v === 1 ? one : many}`;
 
@@ -1125,6 +1203,142 @@ function txoProse(addr) {
   }
   return txoProseMemo.get(addr);
 }
+
+// ── The passage's copy menu ────────────────────────────────────────────────
+// A member is a locking script, and the book prints a locking script as prose:
+// the passage on the leaf IS the address, in the only rendering this book
+// sets. The base58/bech32 form is the machine's spelling of those same bytes,
+// so it is not printed beside them -- but it is what a wallet or an explorer
+// wants pasted into it, so it travels the way every high-entropy value in the
+// book travels: by a menu the reader opens on the prose itself.
+const hashMenu = document.getElementById('hash-menu');
+const menuHead = document.getElementById('hash-menu-head');
+const menuAddrBtn = hashMenu.querySelector('[data-act="copy-address"]');
+const menuScriptBtn = hashMenu.querySelector('[data-act="copy-script"]');
+let menuMember = null;
+let menuPoint = { x: 0, y: 0 };
+// A scroll or resize fired as a side-effect of opening (the browser bringing
+// the just-clicked prose into view) must not dismiss the menu. Ignore viewport
+// changes until this moment, set a beat after each open.
+let menuSettleUntil = 0;
+
+// Clamp the menu to the viewport at the point it was raised from.
+const positionMenu = () => {
+  const pad = 8;
+  const r = hashMenu.getBoundingClientRect();
+  hashMenu.style.left = `${Math.min(Math.max(pad, menuPoint.x), window.innerWidth - r.width - pad)}px`;
+  hashMenu.style.top = `${Math.min(Math.max(pad, menuPoint.y), window.innerHeight - r.height - pad)}px`;
+};
+const closeCopyMenu = () => {
+  hashMenu.classList.add('hidden');
+  menuMember = null;
+  menuAddrBtn.textContent = 'Copy address';     // a menu that said Copied ✓ must not
+  menuScriptBtn.textContent = 'Copy script';    // open saying it again
+};
+
+function openCopyMenu(ev, member, anchorEl) {
+  ev.preventDefault();
+  ev.stopPropagation();   // …so the document's own dismiss does not see this click
+  menuMember = member;
+  // A member the book holds as raw script bytes has no address form at all --
+  // a nonstandard script is precisely what no address can spell -- so the item
+  // stands down rather than offering nothing.
+  const addressed = isAddress(member);
+  menuHead.textContent = addressed ? 'address' : 'locking script';
+  menuAddrBtn.textContent = 'Copy address';
+  menuScriptBtn.textContent = 'Copy script';
+  menuAddrBtn.classList.toggle('hidden', !addressed);
+  menuScriptBtn.classList.toggle('hidden', !memberScriptHex(member));
+  hashMenu.classList.remove('hidden');
+  // Anchor at the click; for a keyboard open, sit under the element.
+  if (ev.type === 'keydown' && anchorEl) {
+    const a = anchorEl.getBoundingClientRect();
+    menuPoint = { x: a.left, y: a.bottom + 4 };
+  } else menuPoint = { x: ev.clientX, y: ev.clientY };
+  positionMenu();
+  // Focus travels into the menu only for a keyboard open. On a mouse open,
+  // focusing a button can scroll it into view (preventScroll is not honored
+  // everywhere), and that scroll would trip the dismiss below and close the
+  // menu the instant it appeared.
+  if (ev.type === 'keydown') menuAddrBtn.focus({ preventScroll: true });
+  menuSettleUntil = performance.now() + 400;
+}
+
+const copyInto = (btn, text) => {
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = 'Copied ✓';
+    setTimeout(closeCopyMenu, 650);
+  }).catch(closeCopyMenu);
+};
+menuAddrBtn.addEventListener('click', () => { if (menuMember) copyInto(menuAddrBtn, menuMember); });
+menuScriptBtn.addEventListener('click', () => {
+  const hex = menuMember && memberScriptHex(menuMember);
+  if (hex) copyInto(menuScriptBtn, hex);
+});
+// Dismissal: a click outside it, Escape, or the leaf moving under it.
+document.addEventListener('click', (ev) => {
+  if (hashMenu.classList.contains('hidden')) return;
+  if (ev.target.closest && ev.target.closest('.hash-menu')) return;
+  closeCopyMenu();
+});
+document.addEventListener('keydown', (ev) => {
+  if (ev.key === 'Escape' && !hashMenu.classList.contains('hidden')) closeCopyMenu();
+});
+const menuSettled = () => performance.now() > menuSettleUntil;
+window.addEventListener('scroll', () => { if (menuSettled()) closeCopyMenu(); }, true);
+window.addEventListener('resize', () => { if (menuSettled()) closeCopyMenu(); });
+
+// The prose as the handle, wired once and re-pointed on every leaf turn: the
+// element belongs to the leaf, not to the passage, so what it is ABOUT changes
+// under it while the listeners stay put. A click that ended a selection is a
+// reader selecting prose, not reaching for a menu, and opens nothing -- the
+// same rule the reading page's own body menu keeps, and for the same reason:
+// a paragraph cannot afford to swallow the gesture that selects it.
+function attachMemberMenu(el, member) {
+  el.classList.add('hash-copy');
+  el.tabIndex = 0;
+  el.__member = member;
+  const said = isAddress(member)
+    ? 'the locking script this passage is — click to copy its address, or its bytes'
+    : 'the locking script this passage is — click to copy its bytes';
+  el.title = said;
+  el.setAttribute('aria-label', said);
+  if (el.__menuWired) return;
+  el.__menuWired = true;
+  const open = (ev) => {
+    const sel = document.getSelection();
+    if (ev.type === 'click' && sel && !sel.isCollapsed) return;
+    if (el.__member) openCopyMenu(ev, el.__member, el);
+  };
+  el.addEventListener('click', open);
+  el.addEventListener('keydown', (ev) => {
+    if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); open(ev); }
+  });
+}
+// …and the same element made inert: the leaf above carries no member, and a
+// handle still offering the last one would be worse than no handle at all.
+// The listeners stay wired; a null member makes them do nothing.
+function detachMemberMenu(el) {
+  el.classList.remove('hash-copy');
+  el.removeAttribute('title');
+  el.removeAttribute('aria-label');
+  el.tabIndex = -1;
+  el.__member = null;
+}
+
+// What stands where the prose cannot. The engine is a build artifact and may
+// be absent; high-entropy bytes reach a reader through Glossia or not at all,
+// never as hex. So the mark stands with the claim in its hover, and the menu
+// on it still hands over the value the page declines to print.
+const UNSAID_SCRIPT = 'a locking script, said in prose or not at all — this build does not '
+  + 'carry the Glossia engine. The copy menu here still hands over the address and the bytes';
+const unsaidMark = () => {
+  const mark = document.createElement('span');
+  mark.className = 'wit-empty';
+  mark.textContent = '…';
+  mark.title = UNSAID_SCRIPT;
+  return mark;
+};
 
 // The whole section, composed the way the book composes it: the banked (or
 // fetched-once) raw bytes, parsed and self-verified -- the txid recomputed
@@ -1614,6 +1828,8 @@ const clearHero = () => {
   const prose = document.getElementById('anth-prose');
   prose.replaceChildren();
   prose.classList.remove('explainer', 'passage');   // each leaf sets the prose it wants, at its own size
+  detachMemberMenu(prose);   // …and only a passage leaf's prose is a handle
+  closeCopyMenu();           // a menu about the leaf just left does not follow the reader
   count.textContent = '';
   range.textContent = '';
   heldEl.replaceChildren();
@@ -1675,9 +1891,13 @@ const showBookmark = () => {
   // kept if its path is on the shelf -- which is how a parent, whose account
   // is synthesized from its children rather than stored as a record of its
   // own, reads as kept without being stored twice.
-  const filedPath = () => pathSegments(cur().title || '').join('/');
+  // Compared by the one comparison (nameKey), folded: `Coldcard Hack` names
+  // the ledger `Coldcard hack` is filed under, here as in the registry, so
+  // this leaf's ribbon and what keepLedger would do cannot disagree. Folded
+  // at the source, so `under` goes on comparing directly.
+  const filedPath = () => nameKey(cur().title || '');
   const under = (p, path) => p === path || p.startsWith(`${path}/`);
-  const keptPaths = (all) => all.map((k) => pathSegments(k.title).join('/'));
+  const keptPaths = (all) => all.map((k) => nameKey(k.title));
   const reflect = () => {
     const path = filedPath();
     const isKept = path
@@ -1736,7 +1956,7 @@ const showBookmark = () => {
       // nothing, and children left behind under a removed parent would be a
       // shelf the reader did not file.
       saveKeptLedgers(path
-        ? all.filter((k) => !under(pathSegments(k.title).join('/'), path))
+        ? all.filter((k) => !under(nameKey(k.title), path))
         : all.filter((k) => !sameAddresses(k.addresses, cur().addresses)));
       closeTitleForm();
       reflect();
@@ -1777,10 +1997,31 @@ function suggestedName() {
 // up, as the field's shape suggests.
 const keepTitleSave = document.getElementById('keep-title-save');
 const keepTitleCancel = document.getElementById('keep-title-cancel');
+const keepNote = document.getElementById('keep-note');
+const keepPaths = document.getElementById('keep-ledger-paths');
 function closeTitleForm() {
   keepTitle.classList.add('hidden');
   keepTitleInput.value = '';
   keepTitleSave.disabled = true;
+  keepNote.textContent = '';   // a promise about a name nobody is typing any more
+}
+// Which of the two the typed name is about to do -- join a ledger already
+// shelved, or shelve a new one -- said as the reading page's own keep form
+// says it (btc-keepname.js), so one answer reaches the reader wherever they
+// are keeping from.
+function syncKeepNote() {
+  keepNote.textContent = ledgerOutcomeSaid(ledgerOutcome(keepTitleInput.value, shelfLedgers()));
+}
+// The shelf as the field's completions, rebuilt each time the form opens: a
+// ledger kept since the last one would otherwise be missing from the list.
+function fillKeepPaths() {
+  keepPaths.replaceChildren();
+  for (const l of shelfLedgers()) {
+    const opt = document.createElement('option');
+    opt.value = l.title;    // the path as keepLedger folds by it
+    opt.label = l.name;     // …spelled as the shelf prints it
+    keepPaths.append(opt);
+  }
 }
 function openTitleForm(onSave) {
   keepTitle.classList.remove('hidden');
@@ -1788,11 +2029,16 @@ function openTitleForm(onSave) {
   // keystroke replaces it whole.
   keepTitleInput.value = suggestedName();
   keepTitleSave.disabled = false;
+  fillKeepPaths();
+  syncKeepNote();
   keepTitleInput.focus();
   keepTitleInput.select();
   const commit = () => { const t = keepTitleInput.value.trim(); if (t) onSave(t); };
   keepTitleSave.onclick = commit;
-  keepTitleInput.oninput = () => { keepTitleSave.disabled = !keepTitleInput.value.trim(); };
+  keepTitleInput.oninput = () => {
+    keepTitleSave.disabled = !keepTitleInput.value.trim();
+    syncKeepNote();
+  };
   keepTitleInput.onkeydown = (ev) => {
     if (ev.key === 'Enter') { ev.preventDefault(); commit(); }
     else if (ev.key === 'Escape') { ev.preventDefault(); closeTitleForm(); }
@@ -1934,13 +2180,15 @@ const openAddressLeaf = (alive) => {
   (async () => {
     const html = await txoProse(addr);
     if (!alive()) return;
-    if (html) {
-      const prose = document.getElementById('anth-prose');
-      prose.classList.add('passage');
-      prose.innerHTML = html;
-    } else {
-      document.getElementById('anth-title').textContent = shortAddr(addr);
-    }
+    const prose = document.getElementById('anth-prose');
+    prose.classList.add('passage');
+    // Prose where the engine can say it, the mark where it cannot -- but the
+    // address itself is set in type in neither case, and the handle is on the
+    // slot either way, so the value is one click from the reader regardless of
+    // whether this build can read it aloud.
+    if (html) prose.innerHTML = html;
+    else prose.replaceChildren(unsaidMark());
+    attachMemberMenu(prose, addr);
   })();
 
   runRecord(alive);
@@ -2433,7 +2681,17 @@ const openEntryLeaf = async (alive) => {
     // the book carries the citation, not a txid.
     cite.href = `./bitcoin-book.html?ref=${latinRef(e.height, pos + 1, e.out ?? null)}`;
   });
-  if (cur().addresses.length > 1) row('address', shortAddr(entryAddr));
+  // Which member of a many-passage ledger this entry paid. It used to print a
+  // shortened address, which is the one thing the book never sets in type; an
+  // INDEX carries no entropy, names the passage exactly, and is the very
+  // number the leaf's own pager turns by. The address is still a click away:
+  // the value rides on the row, as it does on the passage itself.
+  if (cur().addresses.length > 1) {
+    const which = cur().addresses.indexOf(entryAddr);
+    const vEl = row('passage', which < 0 ? '—'
+      : `${which + 1} of ${cur().addresses.length}`);
+    if (which >= 0) attachMemberMenu(vEl, entryAddr);
+  }
   // The running balance is the sum of everything up to this entry -- an
   // opening the record stands on. Over an incomplete map that opening is
   // unknown, so the figure waits rather than guesses.
