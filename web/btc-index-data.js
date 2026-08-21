@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: CC-BY-4.0
 //
-// btc-index-data.js — the curated ledgers of the Bitcoin Book: which addresses
-// the book keeps a ledger for, what to call them, and the story that earned
-// each one its place.
+// btc-index-data.js — the curated ledgers of the Book of Bitcoin: which
+// addresses the book keeps a ledger for, what to call them, and the story
+// that earned each one its place.
 //
 // This file is the editorial layer — a reading of the record, not the record
 // itself — and is licensed CC BY 4.0, separately from the machinery that

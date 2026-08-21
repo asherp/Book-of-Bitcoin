@@ -1,6 +1,6 @@
 #!/bin/bash
 # SPDX-License-Identifier: MIT OR Apache-2.0
-# Build the Glossia WASM engine the Bitcoin Book runs on and drop the
+# Build the Glossia WASM engine the Book of Bitcoin runs on and drop the
 # artifacts (glossia.js / glossia_bg.wasm) into web/.
 #
 # By default this builds the *published* glossia crate pinned below, fetched
