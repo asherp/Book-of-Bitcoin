@@ -1,15 +1,7 @@
-# The βitcoin βook
+# The βook of βitcoin
 
-Bitcoin verbatim — a Bitcoin block, read as a chapter: each transaction
-rendered as a paragraph of grammatically correct [Glossia](https://glossia.io/)
-prose, with witness data collected as footnotes. Installable as a PWA and
-offline-capable.
+What if you could read the blockchain like a manuscript, if every block is a chapter, every transaction a page, and ledgers are just references? This project uses  [Glossia](https://glossia.io/) to provide Latin, English, German and Czech translations that make the Bitcoin legible. Halving eras are volumes, books separate difficulty adjustments, chapters represent blocks. A transaction's inputs and outputs are just forward and back references referenced in the margin, and a utxo is just an output with no ref. This allows for a deeper understanding of its function just by exploring the manuscript structure. The appendices provide context: ledgers collect related passages (addresses are just passages that may recur). The mempool represents future chapters not yet bound, and inscriptions are renderings. In practice, we find each aspect of the software has natural place in the manuscript. 
 
-**Read the book: <https://bookofbitcoin.io/>**
-
-The book states all of this in its own voice, at length, in
-[the preface](web/preface.md) — what follows here is the short form, for a
-reader arriving at the repository rather than the book.
 
 ## A literal translation
 
