@@ -24,6 +24,16 @@ engine.
   included. Where an entry carries commentary, it follows the passage under a
   "Commentary" heading: editorial, CC BY 4.0, and not part of the record above
   it. Quote the two differently.
+- [Brief](https://bookofbitcoin.io/brief.md): the whole book explained in one
+  file — the arrangement, the notation, the page layout, the registers, and
+  what a reader should avoid saying about it. Written for a reader holding
+  this document and nothing else; start here if you can only fetch one thing.
+- [Notation key](https://bookofbitcoin.io/notation.md): every opcode's mark
+  with its OP_ name, the citation sigla, the marks a passage carries, and the
+  term (λ) notation scripts are titled by. Generated from the book's own
+  tables on each deploy, so it says what the pages print. Without it a script
+  in a passage is unreadable — the prose is legible and the notation it is
+  written in was not, until this file.
 - [Preface](https://bookofbitcoin.io/preface.md): the book's
   front matter — what the book is and why, in its own voice. Plain markdown.
 - [Sitemap](https://bookofbitcoin.io/sitemap.xml)

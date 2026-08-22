@@ -303,7 +303,8 @@ the notation — is authored work, licensed [CC BY 4.0](LICENSE-CC-BY). Reuse it
 freely, including commercially; just credit it. Attribution here is not a toll,
 it is the label that keeps commentary distinguishable from record. The boundary
 is a file boundary so a machine can see it too: `web/notables.yaml`,
-`web/appendix.yaml`, `web/commentary/*.md` and `web/btc-index-data.js` carry
+`web/appendix.yaml`, `web/commentary/*.md`, `web/brief.md` and
+`web/btc-index-data.js` carry
 `SPDX-License-Identifier: CC-BY-4.0`; every other source file carries
 `MIT OR Apache-2.0`. Nothing is compiled from the one into the other.
 
