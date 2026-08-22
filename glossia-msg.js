@@ -406,7 +406,7 @@ export function detectLang(prose) {
 // which is what makes the rendering reproducible by a verifier.
 // Deterministic for a given (hex, language), so results are memoized (LRU,
 // keyed by language too): a caller can warm an encode ahead of time (the
-// Bitcoin book prefetches its swipe neighbours) and the eventual render is a
+// Book of Bitcoin prefetches its swipe neighbours) and the eventual render is a
 // lookup instead of a WASM pass.
 const canonicalMemo = new Map();
 const CANONICAL_MEMO_MAX = 400;

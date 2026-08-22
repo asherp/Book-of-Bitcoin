@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //
-// btc-contents.js — the machinery behind the Bitcoin Book's table of contents:
-// the id/reference helpers and deep links the contents pages share. Used by
+// btc-contents.js — the machinery behind the Book of Bitcoin's table of
+// contents: the id/reference helpers and deep links the contents pages share. Used by
 // bitcoin-book.html (which names a curated section beneath its § number) and
 // bitcoin-contents.html (the table-of-contents page).
 //
