@@ -101,10 +101,10 @@ test('fonts.css declares every siglum the app writes, opcode or not', async () =
   // reader's machine happened to have.
   //
   // It matters most for the marks that are notation without being opcodes. λ is
-  // the case in point: no chain has ever carried one, so no rendering of a
-  // transaction could have caught it -- and the first OP_RETURN that carries a
-  // term will put it in front of a reader. It is vendored (U+03BB, with δ and
-  // ⟦ ⟧), and this is what keeps it so.
+  // the case in point, and now the only one: no chain has ever carried one, so
+  // no rendering of a transaction could have caught it -- and the first
+  // OP_RETURN that carries a term will put it in front of a reader. It is
+  // vendored (U+03BB), and this is what keeps it so.
   const SOURCES = ['btc-sigla.js', 'btc-notation.js', 'btc-term.js', 'btc-address-form.js'];
   const LIT = /'(?:[^'\\\n]|\\.)*'|"(?:[^"\\\n]|\\.)*"|`(?:[^`\\]|\\.)*`/gs;
 
@@ -142,9 +142,9 @@ test('fonts.css declares every siglum the app writes, opcode or not', async () =
   assert.deepEqual([...missing].map((cp) => `U+${cp.toString(16).toUpperCase().padStart(4, '0')} ${String.fromCodePoint(cp)}`),
     [], 'sigla no @font-face in fonts.css declares — re-vendor the fonts');
 
-  // And the marks of the calculus are vendored, which is the claim this test
+  // And the mark of the calculus is vendored, which is the claim this test
   // exists to keep true rather than merely to have checked once.
-  for (const [cp, mark] of [[0x03bb, 'λ'], [0x03b4, 'δ'], [0x27e6, '⟦'], [0x27e7, '⟧']]) {
+  for (const [cp, mark] of [[0x03bb, 'λ']]) {
     assert.ok(declared.has(cp), `${mark} is not declared by any face`);
   }
 });

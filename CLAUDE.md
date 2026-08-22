@@ -59,10 +59,9 @@ lambdas — the same split as the committed/revealed modes below:
 - the *locking script* is titled by the anonymous lambda it binds, derived
   from the bytes alone: `λh. ⓪ h` for a P2WPKH output. `titleText` /
   `titleHtml` (btc-term.js) write it. Bare of everything a title does not
-  need — no `⟦ ⟧` (those claim the wire's own bytes, and the script itself
-  stands below), no application or parentheses (`(λh. ⓪ h) h²⁰` says what was
-  *done* to the term rather than what it is), and no count on the binder, since
-  every output of a shape shares its title. The demand rung is deliberately
+  need — no application or parentheses (`(λh. ⓪ h) h²⁰` says what was *done* to
+  the term rather than what it is), and no count on the binder, since every
+  output of a shape shares its title. The demand rung is deliberately
   *not* this: P2PKH and P2WPKH ask for the same key material, so the demand
   does not distinguish what a name must distinguish.
   - **The kind opens it, and `:=` binds the two**: `P2WPKH := λh. ⓪ h`. The
@@ -150,6 +149,18 @@ Where this lives today:
 - `termOfScript` (btc-term.js) reads a term off any tokenizable script: every
   push becomes a binder, every opcode stays where it stands. The six tabled
   forms (`TERMS`) are derived, not looked up.
+- **The key writes a term the way the pages do.** The notation key's Scripts as
+  terms group once carried three marks of its own — `⟦ ⟧` for the script
+  constructor, `β` for reduction, `δ` for the one-way steps. None of them ever
+  reached a reader: no page draws them, so the key was teaching an apparatus
+  that existed only in the key. All three are gone, and the terms table now
+  writes what `titleText` writes (`λh. ⓪ h`, `⓪ h²⁰`) rather than a bracketed
+  variant of it. What the removed rows were saying survives as prose where it
+  is still load-bearing — a hash is what a commitment hides behind, a one-way
+  step is ⌖ ⌘ Σ and a key from its scalar — and `β` is left to the one office
+  it still holds, the difficulty target in a chapter's frontispiece. This is
+  also why `abstractionText` and `applicationText` are gone: with no brackets
+  to distinguish them they were `titleText` and `addressText` verbatim.
 - `addressText` / `addressHtml` still write the address as a partial
   application, `(λp. ① p) p³²`, and `term.test.mjs` still checks them against
   the scripts addresses really decode to — but no page draws them.

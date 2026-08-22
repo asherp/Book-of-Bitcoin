@@ -23,7 +23,7 @@ import assert from 'node:assert/strict';
 import { addressScriptHex } from '../web/btc-index.js';
 import { NOTATION_HTML } from '../web/btc-notation.js';
 import { OPCODE_SYMBOLS, OPCODE_NAMES, toSuperscript } from '../web/btc-sigla.js';
-import { TERMS, termOfScript, addressable, reduce, spendHtml, pathTaken, suppliedNames, suppliedHtml, abstractionText, applicationText, normalFormText,
+import { TERMS, termOfScript, addressable, reduce, spendHtml, pathTaken, suppliedNames, suppliedHtml, normalFormText,
          pureForm, reducePure, pureText, pureApplicationText,
          lockText, lockApplicationText, demandsOf, addressText, addressHtml,
          lockedText, lockedHtml, spendText,
@@ -64,13 +64,13 @@ test('the argument is the datum the address carries, and nothing else', () => {
   assert.equal(t.argument, '751e76e8199196d454941c45d1b3a323f1433bd6');
   assert.equal(t.bytes, 20);
   assert.equal(t.binder, 'h');
-  assert.equal(applicationText(t), '(λh. ⟦ ⓪ h ⟧) h²⁰');
-  assert.equal(normalFormText(t), '⟦ ⓪ h²⁰ ⟧');
+  assert.equal(addressText(t), '(λh. ⓪ h) h²⁰');
+  assert.equal(normalFormText(t), '⓪ h²⁰');
   // Taproot's argument is an output key rather than a hash, and takes the
   // letter the book's own renderer would give the same push.
   const tr = termOfScript(addressScriptHex('bc1p5d7rjq7g6rdk2yhzks9smlaqtedr4dekq08ge8ztwac72sfr9rusxg3297'));
   assert.equal(tr.binder, 'p');
-  assert.equal(applicationText(tr), '(λp. ⟦ ① p ⟧) p³²');
+  assert.equal(addressText(tr), '(λp. ① p) p³²');
 });
 
 test('a term is read off the script, however many holes it has', () => {
@@ -128,8 +128,8 @@ test('a bare key is a term too, and the reason it has no address is not that', (
   const t = termOfScript(reduce(TERMS.p2pk, key));
   assert.equal(t.id, 'p2pk');
   assert.equal(t.argument, key);
-  assert.equal(abstractionText(t), 'λp. ⟦ p ∇ ⟧');
-  assert.equal(normalFormText(t), '⟦ p⁶⁵ ∇ ⟧');
+  assert.equal(titleText(t), 'λp. p ∇');
+  assert.equal(normalFormText(t), 'p⁶⁵ ∇');
 });
 
 // ─── the pure form ───────────────────────────────────────────────────────
@@ -161,19 +161,19 @@ test('the pure form reduces to the same script, through its own names', () => {
 
 test('the length is an argument, and the pair is checked against itself', () => {
   const pure = pureForm(termOfScript(addressScriptHex('bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4')));
-  assert.equal(pureText(pure), 'λo₁ n h. ⟦ o₁ hⁿ ⟧');
+  assert.equal(pureText(pure), 'λo₁ n h. o₁ hⁿ');
   // The argument list is the wire's own order: the count, then the bytes it
   // measures. On chain a direct push opcode IS its count, so 14 <20 bytes>
   // and 20 h are the same statement.
-  assert.equal(pureApplicationText(pure), '(λo₁ n h. ⟦ o₁ hⁿ ⟧) ⓪ 20 h');
-  assert.equal(lockApplicationText(pure), '(λn h. ⟦ ⓪ hⁿ ⟧) 20 h');
+  assert.equal(pureApplicationText(pure), '(λo₁ n h. o₁ hⁿ) ⓪ 20 h');
+  assert.equal(lockApplicationText(pure), '(λn h. ⓪ hⁿ) 20 h');
   // n reaches the push, rather than the reduction quietly measuring the datum
   // for itself: a length that does not match the bytes beside it spells no
   // script at all.
   assert.equal(reducePure({ ...pure, bytes: 19 }), null, 'a mismatched pair should not reduce');
   assert.equal(reducePure({ ...pure, bytes: 0 }), null);
   const p2pkh = pureForm(termOfScript(addressScriptHex('1Ross5Np5doy4ajF9iGXzgKaC2Q3Pwwxv')));
-  assert.equal(pureApplicationText(p2pkh), '(λo₁ o₂ o₃ o₄ n h. ⟦ o₁ o₂ hⁿ o₃ o₄ ⟧) ⧉ ⌖ ≡ ∇ 20 h');
+  assert.equal(pureApplicationText(p2pkh), '(λo₁ o₂ o₃ o₄ n h. o₁ o₂ hⁿ o₃ o₄) ⧉ ⌖ ≡ ∇ 20 h');
 });
 
 test('the witness forms are one term, and only their arguments differ', () => {
@@ -194,12 +194,12 @@ test('the witness forms are one term, and only their arguments differ', () => {
   const witness = ['bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4',
     'bc1qrp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3qccfmv3',
     'bc1p5d7rjq7g6rdk2yhzks9smlaqtedr4dekq08ge8ztwac72sfr9rusxg3297'];
-  assert.deepEqual(witness.map(alpha), Array(3).fill('λo₁ n x. ⟦ o₁ xⁿ ⟧'));
+  assert.deepEqual(witness.map(alpha), Array(3).fill('λo₁ n x. o₁ xⁿ'));
   assert.deepEqual(witness.map(args), ['0 20', '0 32', '51 32'], 'all three differ, and only here');
   // The legacy pair do not join them: a different body apiece, and neither is
   // the witness body. Which is what segwit's one term was the answer to.
   const legacy = ['1Ross5Np5doy4ajF9iGXzgKaC2Q3Pwwxv', '3J98t1WpEZ73CNmQviecrnyiWrnqRhWNLy'].map(alpha);
-  assert.deepEqual(legacy, ['λo₁ o₂ o₃ o₄ n x. ⟦ o₁ o₂ xⁿ o₃ o₄ ⟧', 'λo₁ o₂ n x. ⟦ o₁ xⁿ o₂ ⟧']);
+  assert.deepEqual(legacy, ['λo₁ o₂ o₃ o₄ n x. o₁ o₂ xⁿ o₃ o₄', 'λo₁ o₂ n x. o₁ xⁿ o₂']);
   assert.equal(new Set([...witness.map(alpha), ...legacy]).size, 3);
 });
 
@@ -336,7 +336,7 @@ test('the demand is what a spend must make true, form by form', () => {
   // citation, so the line is free to say what a reader can actually evaluate.
   //
   // What that buys shows up first on the witness forms. A witness scriptPubKey
-  // is a version byte and a commitment -- ⟦ ⓪ h²⁰ ⟧ hashes nothing, compares
+  // is a version byte and a commitment -- ⓪ h²⁰ hashes nothing, compares
   // nothing, verifies nothing -- so a line that restated it said only what was
   // already quoted underneath. The demand says what consensus does with it.
   const of = (address) => lockedText(termOfScript(addressScriptHex(address)));
@@ -664,7 +664,7 @@ test('the module draws the terms the notation key draws', () => {
     const bytes = term.bytes ?? 65;
     const t = termOfScript(reduce(term, 'ab'.repeat(bytes)));
     assert.ok(t, `${id} does not bind`);
-    assert.equal(abstractionText(t), cells[0], `${id}'s term`);
+    assert.equal(titleText(t), cells[0], `${id}'s term`);
     assert.equal(normalFormText(t), cells[1], `${id}'s normal form`);
   }
   assert.deepEqual([...seen].sort(), Object.keys(TERMS).sort(),
