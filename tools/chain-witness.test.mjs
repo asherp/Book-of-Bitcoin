@@ -310,12 +310,7 @@ test('a citation reads its case back, and survives losing it', () => {
 });
 
 test('the run is the whole alphabet, in bijective base-26', () => {
-  // It was 25 letters once, skipping q. Two reasons were given for that over
-  // the years -- that a raised q read too near a g, and that Unicode had no
-  // raised q -- and neither survived examination: U+107A5 exists, and no
-  // footnote letter was ever set as a character anyway (see below). So the
-  // run is a, b, c … z and then aa, the scheme a spreadsheet letters its
-  // columns in.
+  // a, b, c … z and then aa, the scheme a spreadsheet letters its columns in.
   assert.equal(FOOTNOTE_BASE, 26);
   assert.equal(footnoteMark(17), 'q', 'the 17th mark is q, where it belongs');
   assert.equal(footnoteMark(26), 'z');
@@ -329,12 +324,12 @@ test('the run is the whole alphabet, in bijective base-26', () => {
 });
 
 test('a footnote mark is plain ASCII, raised by the stylesheet', () => {
-  // The invariant that actually governs, and the one that makes all 26
-  // letters available. The book raises DIGITS as characters (h²⁰, ⌘²⁵⁶ --
-  // toSuperscript), and a few marks carry a raised letter of their own (⊘ᵛ is
-  // OP_VER, in the opcode alphabet). A footnote's letter is neither: it is
-  // emitted as plain ASCII and raised by CSS, so no letter of the run has to
-  // exist in a raised form, in Unicode or in any vendored face.
+  // What makes every letter available. The book raises DIGITS as characters
+  // (h²⁰, ⌘²⁵⁶ -- toSuperscript), and a few marks carry a raised letter of
+  // their own (⊘ᵛ is OP_VER, in the opcode alphabet). A footnote's letter is
+  // neither: it is emitted as plain ASCII and raised by CSS, so no letter of
+  // the run has to exist in a raised form, in Unicode or in any vendored
+  // face.
   for (let n = 1; n <= 2000; n++) {
     assert.match(footnoteMark(n), /^[a-z]+$/, `mark ${n} is not plain ASCII`);
   }
@@ -346,9 +341,9 @@ test('a footnote mark is plain ASCII, raised by the stylesheet', () => {
     assert.ok(line, `${rule} has no rule of its own any more`);
     assert.match(line, /vertical-align:/, `${rule} no longer raises its letter by styling`);
   }
-  // The uppercase tag comes along for free. Six letters have no raised
-  // capital, and the scriptSig marks used them regardless -- which was the
-  // standing evidence that nothing here needed a raised character.
+  // The uppercase tag is the same letter, cased -- and six letters have no
+  // raised capital at all, which is the plainest evidence that nothing here
+  // needs a raised character.
   assert.equal(inputMark(3, true), 'C');
   assert.equal(inputMark(17, true), 'Q', 'including the letter the run used to skip');
 });

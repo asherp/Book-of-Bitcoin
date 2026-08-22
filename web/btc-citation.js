@@ -236,35 +236,15 @@ export function expectedReference(height) {
 // — not numbered, so a superscript mark never reads as arithmetic beside the
 // numerals the prose is full of (push counts, amounts, indices).
 //
-// The run is the alphabet entire. It was 25 letters for most of this book's
-// life, skipping q, and the reason given for that was wrong twice over: first
-// that q sat too near a g to be told apart raised, then that Unicode had no
-// raised q at all. The second was true when it was written and is not now —
-// U+107A5 MODIFIER LETTER SMALL Q arrived in Unicode 14 — and neither
-// mattered, because nothing in this book has ever set a letter as a raised
-// character. toSuperscript raises DIGITS. A footnote's letter is plain ASCII
-// raised by the stylesheet (.tx-witness-ref, .footnote-mark, both a font-size
-// and a vertical-align), and a stylesheet raises a q as readily as an r.
+// The run is the alphabet entire, and continues in bijective base-26 — aa
+// after z, aaa after zz — the same scheme a spreadsheet letters its columns
+// in. Single letters cover 1–26, doubles 27–702 (26 × 26 = 676 of them,
+// starting at 27), triples 703 upward. The doubles' span is what puts the
+// third letter at 703 rather than at 677.
 //
-// The uppercase half had been saying so all along: six of those letters have
-// no raised capital, and the scriptSig marks used them regardless. An
-// alphabet chosen for a property its own other half did not have was a rule
-// nothing enforced. What does govern is pinned in
-// tools/chain-witness.test.mjs — no source sets a raised letter as a
-// character, so every letter is available to be raised.
-//
-// Changing it cost something real and it was paid once, knowingly: from the
-// 17th mark on, a letter now names a different input than it named before,
-// and every multi-letter mark moved with the base. A citation is permanent
-// addressing, so this was the last cheap moment to do it — nothing curated
-// cites past .a, and what cannot be reached is a reader's own bookmarks and
-// links already shared.
-//
-// The run continues in bijective base-26 — aa after z, aaa after zz — the
-// same scheme a spreadsheet letters its columns in. Single letters cover
-// 1–26, doubles 27–702 (26 × 26 = 676 of them, starting at 27), triples 703
-// upward. The doubles' span is what puts the third letter at 703 rather than
-// at 677.
+// The letter is plain ASCII, raised by the stylesheet where a mark is set
+// (.tx-witness-ref, .footnote-mark), so no letter has to exist in a raised
+// form for a mark to be set in it. tools/chain-witness.test.mjs holds that.
 const FOOTNOTE_ALPHABET = 'abcdefghijklmnopqrstuvwxyz';
 export const FOOTNOTE_BASE = FOOTNOTE_ALPHABET.length;   // 26
 
