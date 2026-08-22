@@ -9,6 +9,10 @@ web/glossia_bg.wasm
 # passages and sitemap are generated fresh on every deploy, not committed.
 web/passages/
 web/sitemap.xml
+# …and of tools/prerender-notation.mjs: the notation key, written out of the
+# book's own sigla and term tables on every deploy so it cannot drift from
+# what the pages print.
+web/notation.md
 # …along with the citation pages (web/III/2/5/1/) and their cards. The volume
 # directories are Roman numerals at the web root; the pattern is case-
 # sensitive, so it cannot catch web/icons/, and it matches directories only,

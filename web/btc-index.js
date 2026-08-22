@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //
-// btc-index.js — the ledgers of the Bitcoin Book: notable addresses, each a
-// view of the manuscript focused on amounts. Shared by bitcoin-ledger.html
+// btc-index.js — the ledgers of the Book of Bitcoin: notable addresses,
+// each a view of the manuscript focused on amounts. Shared by bitcoin-ledger.html
 // (the Ledger compendium: every ledger in one document, ledgers over
 // addresses over entries) and bitcoin-search.html (which decodes an address
 // query with addressScriptHex, to write the term it binds — see btc-term.js —

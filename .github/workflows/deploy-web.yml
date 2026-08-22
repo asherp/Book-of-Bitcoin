@@ -107,6 +107,14 @@ jobs:
       # Best-effort: the script skips entries whose explorer data can't be
       # fetched and always exits 0, so an explorer outage never blocks a deploy
       # (the sitemap still ships, covering whatever rendered).
+      # The notation key as a static document (web/notation.md), written out
+      # of btc-sigla.js and btc-term.js. No engine and no network: the sigla
+      # are notation rather than prose, so this runs before the passages and
+      # fails the deploy if an opcode has no mark or no family — a hole in the
+      # key is not something to ship quietly.
+      - name: Pre-render the notation key
+        run: node tools/prerender-notation.mjs
+
       - name: Pre-render curated passages
         run: node tools/prerender-passages.mjs
 

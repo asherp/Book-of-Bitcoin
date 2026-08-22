@@ -511,7 +511,7 @@ export function sitemapXml(rendered, outputPaths = []) {
     'bitcoin-appendix.html?part=consensus',
     'bitcoin-appendix.html?part=proofs',
     'bitcoin-search.html', 'bitcoin-ledger.html', 'bitcoin-ledgers.html',
-    'preface.md', 'llms.txt', 'passages/index.md',
+    'preface.md', 'brief.md', 'notation.md', 'llms.txt', 'passages/index.md',
     ...rendered.map((r) => `passages/${r.slug}.md`),
     // The citation paths: a passage's canonical, shareable address, each
     // carrying its own card (see tools/passage-page.mjs). Listed without the

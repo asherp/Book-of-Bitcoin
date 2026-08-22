@@ -4,7 +4,7 @@ Guidance for Claude Code sessions working in this repository.
 
 ## What this is
 
-The βitcoin βook (<https://bookofbitcoin.io/>) — a verbatim translation of the
+The βook of βitcoin (<https://bookofbitcoin.io/>) — a verbatim translation of the
 Bitcoin chain into prose. Every byte of every transaction is carried in the
 words of grammatically correct Glossia sentences and can be read back exactly.
 `web/` is the static site (no bundler; ES modules served as-is), `tools/` is
