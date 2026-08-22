@@ -84,6 +84,18 @@
 .glyph-row .m b { color: var(--ink-soft); font-weight: 500; }
 /* Data-type letters (p s h r w t) glow gold in the key, as they do on chain. */
 .glyph-row .g b { color: var(--accent); }
+/* The plain-English gloss of each lock: what the term above it means for
+   somebody who has to spend the output, one row per form. The same .glyph-row
+   the filter walks, so a reader on a P2SH page is shown P2SH's paragraph and
+   nobody else's -- but the name stands where a mark stands in every other row,
+   so it takes the pattern table's own label face rather than the mark face,
+   and the grid drops to one column to leave a sentence room to be one. */
+.glyph-grid.forms { grid-template-columns: 1fr; gap: 9px; }
+.glyph-grid.forms .glyph-row .g {
+  flex: 0 0 5.4em; text-align: left;
+  font: 600 calc(10px * var(--scale-notation, 1))/1.7 'IBM Plex Mono','Book Sigla',monospace;
+  letter-spacing: .06em; text-transform: uppercase; color: var(--meta);
+}
 .notation-note { margin: 12px 0 0; font-size: calc(12px * var(--scale-notation, 1)); line-height: 1.5; color: var(--meta); }
 /* Common script patterns: one row per payment type, read as a state
    transition -- the unspent output at rest (UTXO), the script a node runs then

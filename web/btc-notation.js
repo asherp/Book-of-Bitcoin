@@ -35,7 +35,7 @@ export const NOTATION_HTML = `
               <span class="pname" data-row="p2sh">P2SH</span>
                 <span class="seq" data-row="p2sh"><span class="op">⌖</span> <span class="ph">h</span><span class="op op-push">²⁰</span> <span class="op">=</span></span>
                 <span class="seq exec" data-row="p2sh"><span class="ph">r</span> <span class="op">⌖</span> <span class="ph chain">h</span> <span class="op">=</span> <span class="op">(r)</span></span>
-                <span class="seq" data-row="p2sh"><span class="lam">⟦</span><span class="ph">r</span><span class="lam">⟧</span></span>
+                <span class="seq" data-row="p2sh"><span class="ph">r</span></span>
                 <span class="seq none" data-row="p2sh">—</span>
               <span class="pname" data-row="p2sh-multisig">P2SH · 2-of-3</span>
                 <span class="seq" data-row="p2sh-multisig"><span class="op">⌖</span> <span class="ph">h</span><span class="op op-push">²⁰</span> <span class="op">=</span></span>
@@ -51,7 +51,7 @@ export const NOTATION_HTML = `
                 <span class="seq" data-row="p2wsh"><span class="op">⓪</span> <span class="ph">h</span><span class="op op-push">³²</span></span>
                 <span class="seq exec" data-row="p2wsh"><span class="ph">w</span> <span class="op">Σ</span> <span class="ph chain">h</span> <span class="op">=</span> <span class="op">(w)</span></span>
                 <span class="seq none" data-row="p2wsh">∅</span>
-                <span class="seq" data-row="p2wsh"><span class="lam">⟦</span><span class="ph">w</span><span class="lam">⟧</span></span>
+                <span class="seq" data-row="p2wsh"><span class="ph">w</span></span>
               <span class="pname" data-row="p2tr-key">P2TR key</span>
                 <span class="seq" data-row="p2tr-key"><span class="op">①</span> <span class="ph">p</span><span class="op op-push">³²</span></span>
                 <span class="seq exec" data-row="p2tr-key"><span class="ph">s</span> <span class="op">∇</span></span>
@@ -73,76 +73,75 @@ export const NOTATION_HTML = `
 
           <div class="notation-group">
             <h4>Scripts as terms</h4>
-            <p class="notation-note">Every lock above is one abstraction over one committed datum. λ is what the
-              term still wants; ⟦ ⟧ holds the marks it is built from; and the datum arrives through a step that
-              cannot be run backwards. Reduce, and what falls out is the UTXO column of the table above — the
-              chain holds normal forms and nothing else.</p>
+            <p class="notation-note">A transaction spends outputs left by earlier transactions and makes new
+              ones in their place. That is the whole of what happens on chain: no accounts and no balances, only
+              outputs waiting to be spent and the transactions that spend them. Each output holds an amount and a
+              <b>locking script</b> — a short program saying what somebody must produce before those coins can move
+              again. Nothing runs it when the output is written. It runs when someone tries to spend it, against
+              whatever they supplied, and either it passes or the spend is not valid.</p>
+            <p class="notation-note">The line above each script in the reading names the lock: the kind on the
+              left, and on the right the same lock with its one variable part left blank. λ marks the blank, and
+              the letter after it says what fills it — <b>h</b> a hash, <b>p</b> a public key, <b>d</b> a payload.
+              So <span class="lam">λ</span><b>h</b><span class="lam">.</span> ⓪ <b>h</b> reads <i>a lock of this
+              shape, around some twenty-byte hash</i>. Fill the blank in and what you have is exactly the bytes the
+              chain holds — the middle column below, and the script quoted under every title in the book.</p>
             <div class="pattern-scroll">
             <div class="pattern-table terms">
-              <span class="phead"></span><span class="phead">Term</span><span class="phead">Reduces to</span><span class="phead">Committed by</span>
+              <span class="phead"></span><span class="phead">The lock</span><span class="phead">Filled in</span><span class="phead">Made from</span>
               <span class="pname" data-row="p2pk">P2PK</span>
-                <span class="seq" data-row="p2pk"><span class="lam">λ</span><span class="ph">p</span><span class="lam">.</span> <span class="lam">⟦</span> <span class="ph">p</span> <span class="op">∇</span> <span class="lam">⟧</span></span>
-                <span class="seq" data-row="p2pk"><span class="lam">⟦</span> <span class="ph">p</span><span class="op op-push">⁶⁵</span> <span class="op">∇</span> <span class="lam">⟧</span></span>
+                <span class="seq" data-row="p2pk"><span class="lam">λ</span><span class="ph">p</span><span class="lam">.</span> <span class="ph">p</span> <span class="op">∇</span></span>
+                <span class="seq" data-row="p2pk"><span class="ph">p</span><span class="op op-push">⁶⁵</span> <span class="op">∇</span></span>
                 <span class="seq calc" data-row="p2pk"><span class="ph">p</span> <span class="op">=</span> <span class="ph">k</span><span class="op">G</span></span>
               <span class="pname" data-row="p2pkh">P2PKH</span>
-                <span class="seq" data-row="p2pkh"><span class="lam">λ</span><span class="ph">h</span><span class="lam">.</span> <span class="lam">⟦</span> <span class="op">⧉</span> <span class="op">⌖</span> <span class="ph">h</span> <span class="op">≡</span> <span class="op">∇</span> <span class="lam">⟧</span></span>
-                <span class="seq" data-row="p2pkh"><span class="lam">⟦</span> <span class="op">⧉</span> <span class="op">⌖</span> <span class="ph">h</span><span class="op op-push">²⁰</span> <span class="op">≡</span> <span class="op">∇</span> <span class="lam">⟧</span></span>
+                <span class="seq" data-row="p2pkh"><span class="lam">λ</span><span class="ph">h</span><span class="lam">.</span> <span class="op">⧉</span> <span class="op">⌖</span> <span class="ph">h</span> <span class="op">≡</span> <span class="op">∇</span></span>
+                <span class="seq" data-row="p2pkh"><span class="op">⧉</span> <span class="op">⌖</span> <span class="ph">h</span><span class="op op-push">²⁰</span> <span class="op">≡</span> <span class="op">∇</span></span>
                 <span class="seq calc" data-row="p2pkh"><span class="ph">h</span> <span class="op">=</span> <span class="op">⌖</span> <span class="ph">p</span></span>
               <span class="pname" data-row="multisig">Multisig</span>
-                <span class="seq" data-row="multisig"><span class="lam">λ</span><i>m</i> <i>n</i> <span class="ph">p</span><sub>1</sub>…<span class="ph">p</span><sub><i>n</i></sub><span class="lam">.</span> <span class="lam">⟦</span> <i>m</i> <span class="ph">p</span><sub>1</sub>…<span class="ph">p</span><sub><i>n</i></sub> <i>n</i> <span class="op">◇</span> <span class="lam">⟧</span></span>
-                <span class="seq" data-row="multisig"><span class="lam">⟦</span> <span class="op">②</span> <span class="ph">p<sub>1</sub></span><span class="op op-push">³³</span> <span class="ph">p<sub>2</sub></span><span class="op op-push">³³</span> <span class="ph">p<sub>3</sub></span><span class="op op-push">³³</span> <span class="op">③</span> <span class="op">◇</span> <span class="lam">⟧</span></span>
+                <span class="seq" data-row="multisig"><span class="lam">λ</span><i>m</i> <i>n</i> <span class="ph">p</span><sub>1</sub>…<span class="ph">p</span><sub><i>n</i></sub><span class="lam">.</span> <i>m</i> <span class="ph">p</span><sub>1</sub>…<span class="ph">p</span><sub><i>n</i></sub> <i>n</i> <span class="op">◇</span></span>
+                <span class="seq" data-row="multisig"><span class="op">②</span> <span class="ph">p<sub>1</sub></span><span class="op op-push">³³</span> <span class="ph">p<sub>2</sub></span><span class="op op-push">³³</span> <span class="ph">p<sub>3</sub></span><span class="op op-push">³³</span> <span class="op">③</span> <span class="op">◇</span></span>
                 <span class="seq none" data-row="multisig">—</span>
               <span class="pname" data-row="p2sh p2sh-multisig">P2SH</span>
-                <span class="seq" data-row="p2sh p2sh-multisig"><span class="lam">λ</span><span class="ph">h</span><span class="lam">.</span> <span class="lam">⟦</span> <span class="op">⌖</span> <span class="ph">h</span> <span class="op">=</span> <span class="lam">⟧</span></span>
-                <span class="seq" data-row="p2sh p2sh-multisig"><span class="lam">⟦</span> <span class="op">⌖</span> <span class="ph">h</span><span class="op op-push">²⁰</span> <span class="op">=</span> <span class="lam">⟧</span></span>
+                <span class="seq" data-row="p2sh p2sh-multisig"><span class="lam">λ</span><span class="ph">h</span><span class="lam">.</span> <span class="op">⌖</span> <span class="ph">h</span> <span class="op">=</span></span>
+                <span class="seq" data-row="p2sh p2sh-multisig"><span class="op">⌖</span> <span class="ph">h</span><span class="op op-push">²⁰</span> <span class="op">=</span></span>
                 <span class="seq calc" data-row="p2sh p2sh-multisig"><span class="ph">h</span> <span class="op">=</span> <span class="op">⌖</span> <span class="ph">r</span></span>
               <span class="pname" data-row="p2wpkh">P2WPKH</span>
-                <span class="seq" data-row="p2wpkh"><span class="lam">λ</span><span class="ph">h</span><span class="lam">.</span> <span class="lam">⟦</span> <span class="op">⓪</span> <span class="ph">h</span> <span class="lam">⟧</span></span>
-                <span class="seq" data-row="p2wpkh"><span class="lam">⟦</span> <span class="op">⓪</span> <span class="ph">h</span><span class="op op-push">²⁰</span> <span class="lam">⟧</span></span>
+                <span class="seq" data-row="p2wpkh"><span class="lam">λ</span><span class="ph">h</span><span class="lam">.</span> <span class="op">⓪</span> <span class="ph">h</span></span>
+                <span class="seq" data-row="p2wpkh"><span class="op">⓪</span> <span class="ph">h</span><span class="op op-push">²⁰</span></span>
                 <span class="seq calc" data-row="p2wpkh"><span class="ph">h</span> <span class="op">=</span> <span class="op">⌖</span> <span class="ph">p</span></span>
               <span class="pname" data-row="p2wsh">P2WSH</span>
-                <span class="seq" data-row="p2wsh"><span class="lam">λ</span><span class="ph">h</span><span class="lam">.</span> <span class="lam">⟦</span> <span class="op">⓪</span> <span class="ph">h</span> <span class="lam">⟧</span></span>
-                <span class="seq" data-row="p2wsh"><span class="lam">⟦</span> <span class="op">⓪</span> <span class="ph">h</span><span class="op op-push">³²</span> <span class="lam">⟧</span></span>
+                <span class="seq" data-row="p2wsh"><span class="lam">λ</span><span class="ph">h</span><span class="lam">.</span> <span class="op">⓪</span> <span class="ph">h</span></span>
+                <span class="seq" data-row="p2wsh"><span class="op">⓪</span> <span class="ph">h</span><span class="op op-push">³²</span></span>
                 <span class="seq calc" data-row="p2wsh"><span class="ph">h</span> <span class="op">=</span> <span class="op">Σ</span> <span class="ph">w</span></span>
               <span class="pname" data-row="p2tr-key p2tr-script">P2TR</span>
-                <span class="seq" data-row="p2tr-key p2tr-script"><span class="lam">λ</span><span class="ph">p</span><span class="lam">.</span> <span class="lam">⟦</span> <span class="op">①</span> <span class="ph">p</span> <span class="lam">⟧</span></span>
-                <span class="seq" data-row="p2tr-key p2tr-script"><span class="lam">⟦</span> <span class="op">①</span> <span class="ph">p</span><span class="op op-push">³²</span> <span class="lam">⟧</span></span>
+                <span class="seq" data-row="p2tr-key p2tr-script"><span class="lam">λ</span><span class="ph">p</span><span class="lam">.</span> <span class="op">①</span> <span class="ph">p</span></span>
+                <span class="seq" data-row="p2tr-key p2tr-script"><span class="op">①</span> <span class="ph">p</span><span class="op op-push">³²</span></span>
                 <span class="seq calc" data-row="p2tr-key p2tr-script"><span class="ph">p</span> <span class="op">=</span> <span class="ph">p<sub>0</sub></span> <span class="op">+</span> <span class="op">Σ(</span><span class="ph">p<sub>0</sub></span><span class="op">⧺</span><span class="ph">⋔</span><span class="op">)</span><span class="op">G</span></span>
               <span class="pname" data-row="data">Data</span>
-                <span class="seq" data-row="data"><span class="lam">λ</span><span class="ph">d</span><span class="lam">.</span> <span class="lam">⟦</span> <span class="op">¶</span> <span class="ph">d</span> <span class="lam">⟧</span></span>
-                <span class="seq" data-row="data"><span class="lam">⟦</span> <span class="op">¶</span> <span class="op op-push">ⁿ</span> <span class="lam">⟧</span></span>
+                <span class="seq" data-row="data"><span class="lam">λ</span><span class="ph">d</span><span class="lam">.</span> <span class="op">¶</span> <span class="ph">d</span></span>
+                <span class="seq" data-row="data"><span class="op">¶</span> <span class="op op-push">ⁿ</span></span>
                 <span class="seq none" data-row="data">—</span>
             </div>
             </div>
+            <div class="glyph-grid forms">
+              <div class="glyph-row" data-marks="tpl:p2pk"><span class="g">P2PK</span><span class="m">Pays a public key written into the output itself. To spend it, sign with that key — nothing else is asked. The oldest form, and long since rare: it publishes the key years before the coins move.</span></div>
+              <div class="glyph-row" data-marks="tpl:p2pkh"><span class="g">P2PKH</span><span class="m">Pays the <b>hash</b> of a public key, so the key is not on chain at all until somebody spends. A spender hands over the key and a signature; the script checks that the key hashes to <b>h</b>, then checks the signature against it. This is what every address beginning 1 pays to.</span></div>
+              <div class="glyph-row" data-marks="tpl:multisig"><span class="g">Multisig</span><span class="m">Pays several keys at once and says how many of them have to sign — two of three, and so on. Written bare into an output like this it has no address form, so in practice it is nearly always hidden inside a P2SH and only shows itself when the coins move.</span></div>
+              <div class="glyph-row" data-marks="tpl:p2sh tpl:p2sh-multisig"><span class="g">P2SH</span><span class="m">Pays the hash of a <b>script</b> rather than of a key. The output says nothing whatever about what opens it — only that what a spender hands over must hash to <b>h</b>. So a spend comes in two parts: reveal the script, then satisfy it. A condition of any size fits in twenty bytes this way, whoever pays needs to know none of it, and nobody carries its weight until it is used. This is what every address beginning 3 pays to.</span></div>
+              <div class="glyph-row" data-marks="tpl:p2wpkh"><span class="g">P2WPKH</span><span class="m">P2PKH’s bargain — the hash of a key — moved to the witness. The key and the signature travel beside the transaction instead of inside it, which is what segwit changed; what is being asked for is the same as before.</span></div>
+              <div class="glyph-row" data-marks="tpl:p2wsh tpl:lightning"><span class="g">P2WSH</span><span class="m">P2SH’s bargain — the hash of a script — moved to the witness, over a thirty-two byte hash rather than twenty. Reveal the script there, then satisfy it. Lightning’s channels are outputs of this shape.</span></div>
+              <div class="glyph-row" data-marks="tpl:p2tr-key tpl:p2tr-script"><span class="g">P2TR</span><span class="m">Pays one public key that may have a whole tree of scripts folded into it. Sign with the key and the spend looks like any other — nobody learns a tree was ever there. Or reveal one script out of the tree and satisfy that, leaving the rest unpublished. Either way the output is the same thirty-two bytes.</span></div>
+              <div class="glyph-row" data-marks="tpl:data"><span class="g">Data</span><span class="m">Not a lock at all. ¶ makes the script fail the moment it is read, so the output can never be spent and no node has to keep it as money; what follows the mark is a payload somebody wanted written down where it could not be altered.</span></div>
+            </div>
             <div class="glyph-grid">
-              <div class="glyph-row" data-marks="tpl:p2pk tpl:p2pkh tpl:multisig tpl:p2sh tpl:p2sh-multisig tpl:p2wpkh tpl:p2wsh tpl:p2tr-key tpl:p2tr-script tpl:data tpl:lightning"><span class="g">⟦ ⟧</span><span class="m">the <b>script constructor</b> — the marks in order, which is what the chain holds. Inert: a mark <i>inside</i> is a byte that gets printed, the same glyph <i>outside</i> is that operation being run. ⌖ inside is the opcode; ⌖ outside is the hash actually being taken. Its counterpart is <b>( )</b>, above, which runs what the brackets hold — quote and its eval. The brackets also carry the push length, which is where a mark's superscript comes from</span></div>
-              <div class="glyph-row" data-marks="tpl:p2pk tpl:p2pkh tpl:multisig tpl:p2sh tpl:p2sh-multisig tpl:p2wpkh tpl:p2wsh tpl:p2tr-key tpl:p2tr-script tpl:data tpl:lightning"><span class="g">λ</span><span class="m"><b>abstraction</b> — what the term still wants. An unspent output's free variables are exactly what has not been decided yet; a spend supplies them. It abstracts over the bytes and not over what they do: ⧉ is a variable used twice, and it is also a byte the output carries, so the term keeps it. A calculus that named the values away would normalize to something the chain does not hold</span></div>
-              <div class="glyph-row" data-marks="tpl:p2sh tpl:p2sh-multisig tpl:p2wsh tpl:p2tr-script"><span class="g">…</span><span class="m">the <b>binders a wrapped form cannot write</b> — however many arguments the script it hands back will want, pushed beneath it. It leads, because that is where they go: the spender pushes them first and the revealed script rides on top. A revealed script runs on the same stack as any other, tapscript included, so there is no doubt that the arguments are there; how many, and what each one is, is a property of bytes this output committed to only by their hash. So the term writes that they exist and declines to count them. Not a binder: a binder names one value a spend supplies, and every one of those is a letter</span></div>
-              <div class="glyph-row" data-marks="tpl:p2pk tpl:p2pkh tpl:multisig tpl:p2sh tpl:p2sh-multisig tpl:p2wpkh tpl:p2wsh tpl:p2tr-key tpl:p2tr-script tpl:data tpl:lightning"><span class="g">β</span><span class="m"><b>reduction</b> — notation collapsing, and reversible: nothing is lost, so a term can always be abstracted again. It is also why a script never contains one. What the chain holds is already reduced, and a node checks it rather than running it down</span></div>
-              <div class="glyph-row" data-marks="tpl:p2pk tpl:p2pkh tpl:multisig tpl:p2sh tpl:p2sh-multisig tpl:p2wpkh tpl:p2wsh tpl:p2tr-key tpl:p2tr-script tpl:data tpl:lightning"><span class="g">δ</span><span class="m">the <b>one-way steps</b> — ⌖ ⌘ Σ, and a public key from the scalar behind it. What is on chain is a β-reduced term whose δ steps cannot be run backwards, which is the whole of what the marks above keep secret</span></div>
+              <div class="glyph-row" data-marks="tpl:p2pk tpl:p2pkh tpl:multisig tpl:p2sh tpl:p2sh-multisig tpl:p2wpkh tpl:p2wsh tpl:p2tr-key tpl:p2tr-script tpl:data tpl:lightning"><span class="g">λ</span><span class="m"><b>the blank</b> — the part of the lock nobody has filled in. The letter after it is the one thing that differs between two outputs of the same shape; everything else on the line is marks the output really carries, which is why ⧉ and its like stay put rather than being tidied away. An unspent output's blanks are exactly what has not been decided yet, and a spend is what decides them</span></div>
+              <div class="glyph-row" data-marks="tpl:p2sh tpl:p2sh-multisig tpl:p2wsh tpl:p2tr-script"><span class="g">…</span><span class="m"><b>however many more</b> — a form that hides a script (P2SH, P2WSH, a tapscript leaf) hands back a script wanting arguments of its own, and how many is a fact about bytes this output committed to only by their hash. So the notation says they exist and declines to count them. It leads because that is where they go: a spender pushes them first and the revealed script rides on top. Every blank it can name is a letter; this one it cannot name</span></div>
             </div>
             <p class="notation-note">Three ways for a thing not to be on chain, sorted down the columns above:
-              <b>under λ</b>, not yet chosen; <b>under ⟦ ⟧</b>, committed but not revealed — which is why those
-              rows commit to <b>h</b> and not to what <b>h</b> hashes; <b>behind δ</b>, revealed only as an image.
-              P2SH keeps its term bracketed from the address to the spend, Taproot a whole tree of them at the same
-              thirty-three bytes: what is never reduced is never visible.</p>
-            <p class="notation-note">Lift the opcodes out as arguments too, and the length of the push
-              with them, and what is left of a lock is shape alone: <span class="lam">λ</span><i>o</i><sub>1</sub>
-              <i>o</i><sub>2</sub> <i>o</i><sub>3</sub> <i>o</i><sub>4</sub> <i>n</i> <b>h</b><span
-              class="lam">.</span> <span class="lam">⟦</span> <i>o</i><sub>1</sub> <i>o</i><sub>2</sub>
-              <b>h</b><sup><i>n</i></sup> <i>o</i><sub>3</sub> <i>o</i><sub>4</sub> <span class="lam">⟧</span> —
-              P2PKH at the arguments ⧉ ⌖ ≡ ∇ 20 <b>h</b>. The push is a pair, length then bytes, because a direct
-              push opcode <i>is</i> its count. A term then says on its face how much key material its outputs
-              need, and P2WPKH, P2WSH and P2TR stop resembling one another: they are one term, <span
-              class="lam">λ</span><i>o</i> <i>n</i> <b>x</b><span class="lam">.</span> <span class="lam">⟦</span>
-              <i>o</i> <b>x</b><sup><i>n</i></sup> <span class="lam">⟧</span>, at three arguments.</p>
-
-            <p class="notation-note">⧉ is in the term because it is on the wire. A term normalizes to the bytes a
-              node stores, so nothing a script prints can be named away — dispose of the stack marks and what falls
-              out is not that output. Disposing of them is the validator column's reading, which runs a script
-              rather than printing one: two terms end to end, <b>⟦</b>spend<b>⟧</b> then <b>⟦</b>lock<b>⟧</b>, with
-              a δ step between them that no name crosses. β never appears in a script either — a term's β is a step
-              and free, a chapter's β is a target and bought.</p>
+              <b>in a blank</b>, not chosen yet; <b>behind a hash</b>, committed to but not shown — which is why
+              those rows hold <b>h</b> and not the thing <b>h</b> is a hash of; <b>behind a one-way step</b> — ⌖ ⌘
+              Σ, or a public key made from the secret behind it — where what is written down cannot be turned back
+              into what made it. P2SH keeps its script out of sight from the address all the way to the spend, and
+              Taproot a whole tree of them behind the same thirty-two bytes.</p>
           </div>
 
           <div class="notation-group">
@@ -187,8 +186,7 @@ export const NOTATION_HTML = `
               a term with no byte assigned has no address, and only a new byte could give it one. Segwit's is the
               script's own opening opcode carried through unchanged, and the character after the separator is that
               opcode spelled out (q is ⓪, p is ①): every witness output is <span class="lam">λ</span><i>v</i>
-              <b>h</b><span class="lam">.</span> <span class="lam">⟦</span> <i>v</i> <b>h</b> <span
-              class="lam">⟧</span>, so version 2 needs no new prefix. The checksums divide the same way: base58
+              <b>h</b><span class="lam">.</span> <i>v</i> <b>h</b>, so version 2 needs no new prefix. The checksums divide the same way: base58
               keeps four bytes of ⌘ over tag and argument, the chain's own hash doing duty as a typo check, while
               bech32 and bech32m are codes of their own.</p>
             <p class="notation-note">Three rows above are missing here, each for the reason its λ gives. Multisig
@@ -328,7 +326,7 @@ export const NOTATION_HTML = `
               <div class="glyph-row"><span class="g">⌘<sup><i>m</i></sup></span><span class="m">the hash's remaining <i>m</i> <b>bits</b>, Glossia-encoded — ⌘'s superscript counts bits (<i>n</i>+<i>m</i> = 256). It opens the line, and the prose it names runs from it to the ⓪ⁿ that closes</span></div>
               <div class="glyph-row" data-marks="⓪²⁵⁶"><span class="g">⓪<sup>256</sup></span><span class="m">no previous block — the genesis chapter</span></div>
               <div class="glyph-row" data-marks="&lt;*"><span class="g">&lt;</span><span class="m">the <b>proof of work</b> — on β's line, binding the chapter hash above to the target after the sign</span></div>
-              <div class="glyph-row"><span class="g">β<i>n</i></span><span class="m">the <b>difficulty target</b>, as in the preamble. The book's one glyph with a second office: under Scripts as terms β is a reduction, which is why it never appears in a script — a chapter's β is what buys a single settled form where two could stand, and a term's β is what makes one free where nothing is being settled at all</span></div>
+              <div class="glyph-row"><span class="g">β<i>n</i></span><span class="m">the <b>difficulty target</b>, as in the preamble — what buys a single settled form where two could stand</span></div>
               <div class="glyph-row" data-marks="re:256[⁰¹²³⁴⁵⁶⁷⁸⁹]"><span class="g"><i>m</i>×256<sup><i>e</i></sup></span><span class="m">the target written <b>exactly</b>, in the two parts nBits is made of: its <b>mantissa</b>, times the whole-byte <b>shift</b> it rides on. 256<sup><i>e</i></sup> is the target's scale, said in the unit the header keeps it in — a retarget moves it by whole bytes — and <i>m</i> is the twenty-odd bits a window's work is actually chosen from. The mantissa is written as short as it goes: factored, then each part taken as its power or its figure, whichever is fewer characters, and neighbours multiplied back together wherever that is shorter still. Most mantissas come out as the plain figure, which is the honest answer — at six digits a factorization was buying the reader nothing — and a power that earns its place survives (2²²·3). The whole factorization is in the hover, where genesis' 65535 = 2¹⁶−1 opens as the Fermat primes 3·5·17·257. Its leading zeros are β's demand. The early coinbase preamble carries the same pair</span></div>
               <div class="glyph-row" data-marks="η*"><span class="g">η<i>p</i>·<i>q</i>…</span><span class="m">the <b>nonce</b> the miner landed on, <b>factored</b> — and factored in full, unlike the target above it, which is shortened to whatever writes in fewest characters. The difference is the reading. A target is chosen: a small mantissa on a scale of whole bytes, and the figure says that as well as the primes do. A nonce is arrived at by counting, and its two or three arbitrary primes — one of them usually enormous — are the whole of what there is to say about it. Shortening that to a figure would take away the only thing it shows</span></div>
               <div class="glyph-row"><span class="g">■<i>n</i></span><span class="m">the <b>chapter mark</b> — a mined block cited by its place within its book (n counts chapters, never a raw height); in a margin, the same glyph counts chapters of relative delay. The one place n is a raw height is the coinbase's BIP34 mark, above, where the miner wrote the number himself</span></div>
@@ -392,7 +390,7 @@ export const NOTATION_HTML = `
             <div class="glyph-grid">
               <div class="glyph-row"><span class="g">⟨ │ ⟩</span><span class="m">if … else … end</span></div>
               <div class="glyph-row"><span class="g">¬⟨</span><span class="m"><b>if not</b></span></div>
-              <div class="glyph-row"><span class="g">( )</span><span class="m"><b>run</b> what the lock hands back — the eval to ⟦ ⟧'s quote, under Scripts as terms. Two kinds ride in it, and the difference is who wrote the program. A script the SPENDER revealed stands as its letter, still awaited: ( r ) ( w ) ( t ). A program CONSENSUS supplies stands written out, because it is already known — ( ⧉ ⌖ h²⁰ ≡ ∇ ) is the P2PKH template a v0 key-hash output is run as, ( Σ h³² = ) the commitment check before a witness script runs, ( ∇ ) the key-path signature check that runs no script at all. So a mark inside a ( ) is an operation the wire never spells, which is the same distinction ⟦ ⟧ makes one level down. Set P2SH beside P2WSH and the whole of segwit is one pair of parentheses: ⌖ h²⁰ = ( r ) checks on the wire, ⓪ h³² ( Σ h³² = ) ( w ) has the check supplied</span></div>
+              <div class="glyph-row"><span class="g">( )</span><span class="m"><b>run</b> what the lock hands back. Two kinds ride in it, and the difference is who wrote the program. A script the SPENDER revealed stands as its letter, still awaited: ( r ) ( w ) ( t ). A program CONSENSUS supplies stands written out, because it is already known — ( ⧉ ⌖ h²⁰ ≡ ∇ ) is the P2PKH template a v0 key-hash output is run as, ( Σ h³² = ) the commitment check before a witness script runs, ( ∇ ) the key-path signature check that runs no script at all. So a mark inside a ( ) is an operation the wire never spells, where every other mark on the line is a byte something wrote. Set P2SH beside P2WSH and the whole of segwit is one pair of parentheses: ⌖ h²⁰ = ( r ) checks on the wire, ⓪ h³² ( Σ h³² = ) ( w ) has the check supplied</span></div>
               <div class="glyph-row"><span class="g">✓</span><span class="m">assert true</span></div>
               <div class="glyph-row"><span class="g">¶</span><span class="m"><b>data output</b> — provably unspendable</span></div>
               <div class="glyph-row"><span class="g">° °<i>n</i></span><span class="m"><b>no-op</b> · numbered no-ops</span></div>

@@ -59,10 +59,9 @@ lambdas — the same split as the committed/revealed modes below:
 - the *locking script* is titled by the anonymous lambda it binds, derived
   from the bytes alone: `λh. ⓪ h` for a P2WPKH output. `titleText` /
   `titleHtml` (btc-term.js) write it. Bare of everything a title does not
-  need — no `⟦ ⟧` (those claim the wire's own bytes, and the script itself
-  stands below), no application or parentheses (`(λh. ⓪ h) h²⁰` says what was
-  *done* to the term rather than what it is), and no count on the binder, since
-  every output of a shape shares its title. The demand rung is deliberately
+  need — no application or parentheses (`(λh. ⓪ h) h²⁰` says what was *done* to
+  the term rather than what it is), and no count on the binder, since every
+  output of a shape shares its title. The demand rung is deliberately
   *not* this: P2PKH and P2WPKH ask for the same key material, so the demand
   does not distinguish what a name must distinguish.
   - **The kind opens it, and `:=` binds the two**: `P2WPKH := λh. ⓪ h`. The
@@ -150,6 +149,33 @@ Where this lives today:
 - `termOfScript` (btc-term.js) reads a term off any tokenizable script: every
   push becomes a binder, every opcode stays where it stands. The six tabled
   forms (`TERMS`) are derived, not looked up.
+- **The key writes a term the way the pages do.** The notation key's Scripts as
+  terms group once carried three marks of its own — `⟦ ⟧` for the script
+  constructor, `β` for reduction, `δ` for the one-way steps. None of them ever
+  reached a reader: no page draws them, so the key was teaching an apparatus
+  that existed only in the key. All three are gone, and the terms table now
+  writes what `titleText` writes (`λh. ⓪ h`, `⓪ h²⁰`) rather than a bracketed
+  variant of it. What the removed rows were saying survives as prose where it
+  is still load-bearing — a hash is what a commitment hides behind, a one-way
+  step is ⌖ ⌘ Σ and a key from its scalar — and `β` is left to the one office
+  it still holds, the difficulty target in a chapter's frontispiece. This is
+  also why `abstractionText` and `applicationText` are gone: with no brackets
+  to distinguish them they were `titleText` and `addressText` verbatim.
+- **The key's Scripts as terms group explains, it does not notate.** The group
+  now opens in plain English — what a transaction is (outputs waiting to be
+  spent, and the transactions that spend them), what a locking script is (a
+  short program run at spend time, not at write time), and what the title line
+  above every script means (λ marks the blank; fill it in and you have the
+  bytes the chain holds). Below the terms table, one `.glyph-row` per form
+  states in plain terms what that lock asks of a spender, tagged `tpl:<id>` so
+  the key's filter shows a reader on a P2SH page P2SH's paragraph and nobody
+  else's. `.glyph-grid.forms` (notation.css) is that grid: same row the filter
+  walks, one column wide, the form's name where a mark stands. The two
+  calculus-only paragraphs (the pure form lifted to `λo n x. o xⁿ`, and why ⧉
+  stays in the term) are gone — the first is still argued in the Addresses
+  group, the second in the λ row. The terms table's heads are plain too: **The
+  lock / Filled in / Made from**. The one claim `term.test.mjs` rests on is
+  unchanged, only reworded: fill the blank in and you get the scriptPubKey.
 - `addressText` / `addressHtml` still write the address as a partial
   application, `(λp. ① p) p³²`, and `term.test.mjs` still checks them against
   the scripts addresses really decode to — but no page draws them.
