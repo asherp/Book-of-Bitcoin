@@ -73,18 +73,15 @@ export const NOTATION_HTML = `
 
           <div class="notation-group">
             <h4>Scripts as terms</h4>
-            <p class="notation-note">A transaction spends outputs left by earlier transactions and makes new
-              ones in their place. That is the whole of what happens on chain: no accounts and no balances, only
-              outputs waiting to be spent and the transactions that spend them. Each output holds an amount and a
-              <b>locking script</b> — a short program saying what somebody must produce before those coins can move
-              again. Nothing runs it when the output is written. It runs when someone tries to spend it, against
-              whatever they supplied, and either it passes or the spend is not valid.</p>
-            <p class="notation-note">The line above each script in the reading names the lock: the kind on the
-              left, and on the right the same lock with its one variable part left blank. λ marks the blank, and
-              the letter after it says what fills it — <b>h</b> a hash, <b>p</b> a public key, <b>d</b> a payload.
-              So <span class="lam">λ</span><b>h</b><span class="lam">.</span> ⓪ <b>h</b> reads <i>a lock of this
-              shape, around some twenty-byte hash</i>. Fill the blank in and what you have is exactly the bytes the
-              chain holds — the middle column below, and the script quoted under every title in the book.</p>
+            <p class="notation-note">Some passages in this book are locks: they set a condition and wait.
+              A passage further on answers one. Nothing in either points at the other — they are joined by their
+              marks alone, in that a value written into a lock is written again by whatever opens it, and that
+              shared mark is the whole of the relation between the two.</p>
+            <p class="notation-note">Above a lock stands a line naming it: the kind on the left, and on the right
+              the same lock with a blank where its own value stands. λ marks a blank, and the letter after it says
+              what belongs there — <b>h</b> a hash, <b>p</b> a key, <b>d</b> a payload. Most locks leave one blank;
+              a few leave several. Fill them in from the passage below and what you have is that passage, mark for
+              mark — the middle column of the table.</p>
             <div class="pattern-scroll">
             <div class="pattern-table terms">
               <span class="phead"></span><span class="phead">The lock</span><span class="phead">Filled in</span><span class="phead">Made from</span>
@@ -123,25 +120,25 @@ export const NOTATION_HTML = `
             </div>
             </div>
             <div class="glyph-grid forms">
-              <div class="glyph-row" data-marks="tpl:p2pk"><span class="g">P2PK</span><span class="m">Pays a public key written into the output itself. To spend it, sign with that key — nothing else is asked. The oldest form, and long since rare: it publishes the key years before the coins move.</span></div>
-              <div class="glyph-row" data-marks="tpl:p2pkh"><span class="g">P2PKH</span><span class="m">Pays the <b>hash</b> of a public key, so the key is not on chain at all until somebody spends. A spender hands over the key and a signature; the script checks that the key hashes to <b>h</b>, then checks the signature against it. This is what every address beginning 1 pays to.</span></div>
-              <div class="glyph-row" data-marks="tpl:multisig"><span class="g">Multisig</span><span class="m">Pays several keys at once and says how many of them have to sign — two of three, and so on. Written bare into an output like this it has no address form, so in practice it is nearly always hidden inside a P2SH and only shows itself when the coins move.</span></div>
-              <div class="glyph-row" data-marks="tpl:p2sh tpl:p2sh-multisig"><span class="g">P2SH</span><span class="m">Pays the hash of a <b>script</b> rather than of a key. The output says nothing whatever about what opens it — only that what a spender hands over must hash to <b>h</b>. So a spend comes in two parts: reveal the script, then satisfy it. A condition of any size fits in twenty bytes this way, whoever pays needs to know none of it, and nobody carries its weight until it is used. This is what every address beginning 3 pays to.</span></div>
-              <div class="glyph-row" data-marks="tpl:p2wpkh"><span class="g">P2WPKH</span><span class="m">P2PKH’s bargain — the hash of a key — moved to the witness. The key and the signature travel beside the transaction instead of inside it, which is what segwit changed; what is being asked for is the same as before.</span></div>
-              <div class="glyph-row" data-marks="tpl:p2wsh tpl:lightning"><span class="g">P2WSH</span><span class="m">P2SH’s bargain — the hash of a script — moved to the witness, over a thirty-two byte hash rather than twenty. Reveal the script there, then satisfy it. Lightning’s channels are outputs of this shape.</span></div>
-              <div class="glyph-row" data-marks="tpl:p2tr-key tpl:p2tr-script"><span class="g">P2TR</span><span class="m">Pays one public key that may have a whole tree of scripts folded into it. Sign with the key and the spend looks like any other — nobody learns a tree was ever there. Or reveal one script out of the tree and satisfy that, leaving the rest unpublished. Either way the output is the same thirty-two bytes.</span></div>
-              <div class="glyph-row" data-marks="tpl:data"><span class="g">Data</span><span class="m">Not a lock at all. ¶ makes the script fail the moment it is read, so the output can never be spent and no node has to keep it as money; what follows the mark is a payload somebody wanted written down where it could not be altered.</span></div>
+              <div class="glyph-row" data-marks="tpl:p2pk"><span class="g">P2PK</span><span class="m">Names a key outright. What opens it is a signature by that key, and nothing else is asked. The oldest of these locks and long since rare: the key stands in the open from the day it is written, rather than from the day it is used.</span></div>
+              <div class="glyph-row" data-marks="tpl:p2pkh"><span class="g">P2PKH</span><span class="m">Names the <b>hash</b> of a key, so the key itself is nowhere in the passage. What opens it writes the key and a signature; the lock checks that the key hashes to <b>h</b>, then that the signature is that key’s. The form behind every address beginning 1.</span></div>
+              <div class="glyph-row" data-marks="tpl:multisig"><span class="g">Multisig</span><span class="m">Names several keys and how many of them must sign — two of three, and so on. The one lock in the table with more than one blank, and written bare like this it takes no address, so it is nearly always found folded inside a P2SH and shows itself only when it is opened.</span></div>
+              <div class="glyph-row" data-marks="tpl:p2sh tpl:p2sh-multisig"><span class="g">P2SH</span><span class="m">Names a hash and nothing else — not a key, not a condition, nothing whatever about what would satisfy it. So what opens it comes in two parts: first the marks that hash to <b>h</b>, which are themselves a lock, and then whatever <i>that</i> lock asks for. A condition of any size fits in twenty bytes this way, and none of it is written down until the day it is opened. The form behind every address beginning 3.</span></div>
+              <div class="glyph-row" data-marks="tpl:p2wpkh"><span class="g">P2WPKH</span><span class="m">P2PKH’s bargain — the hash of a key — with the key and the signature carried in a footnote rather than in the passage that opens the lock. What is asked for is the same as before; where it is written down is not.</span></div>
+              <div class="glyph-row" data-marks="tpl:p2wsh tpl:lightning"><span class="g">P2WSH</span><span class="m">P2SH’s bargain — a hash standing in for a lock nobody has seen — with the revealed lock carried in a footnote, and over a thirty-two byte hash rather than twenty. Lightning’s channels are locks of this shape.</span></div>
+              <div class="glyph-row" data-marks="tpl:p2tr-key tpl:p2tr-script"><span class="g">P2TR</span><span class="m">Names one key that may have a whole tree of locks folded into it. Sign with the key and nothing shows that a tree was ever there; or write out one lock from the tree and satisfy that, leaving the rest unwritten. Either way the passage is the same thirty-two bytes.</span></div>
+              <div class="glyph-row" data-marks="tpl:data"><span class="g">Data</span><span class="m">Not a lock. ¶ makes the passage fail the moment it is read, so nothing can ever open it and nothing is waiting to; what follows the mark is a payload somebody wanted written where it could not be altered afterwards.</span></div>
             </div>
             <div class="glyph-grid">
-              <div class="glyph-row" data-marks="tpl:p2pk tpl:p2pkh tpl:multisig tpl:p2sh tpl:p2sh-multisig tpl:p2wpkh tpl:p2wsh tpl:p2tr-key tpl:p2tr-script tpl:data tpl:lightning"><span class="g">λ</span><span class="m"><b>the blank</b> — the part of the lock nobody has filled in. The letter after it is the one thing that differs between two outputs of the same shape; everything else on the line is marks the output really carries, which is why ⧉ and its like stay put rather than being tidied away. An unspent output's blanks are exactly what has not been decided yet, and a spend is what decides them</span></div>
-              <div class="glyph-row" data-marks="tpl:p2sh tpl:p2sh-multisig tpl:p2wsh tpl:p2tr-script"><span class="g">…</span><span class="m"><b>however many more</b> — a form that hides a script (P2SH, P2WSH, a tapscript leaf) hands back a script wanting arguments of its own, and how many is a fact about bytes this output committed to only by their hash. So the notation says they exist and declines to count them. It leads because that is where they go: a spender pushes them first and the revealed script rides on top. Every blank it can name is a letter; this one it cannot name</span></div>
+              <div class="glyph-row" data-marks="tpl:p2pk tpl:p2pkh tpl:multisig tpl:p2sh tpl:p2sh-multisig tpl:p2wpkh tpl:p2wsh tpl:p2tr-key tpl:p2tr-script tpl:data tpl:lightning"><span class="g">λ</span><span class="m"><b>the blank</b> — the part of a lock nobody has filled in. The letter after it is the one thing that differs between two locks of the same shape; everything else on the line is marks the passage really carries, which is why ⧉ and its like stay where they stand rather than being tidied away. A blank still open is a thing not yet decided, and opening the lock is what decides it</span></div>
+              <div class="glyph-row" data-marks="tpl:p2sh tpl:p2sh-multisig tpl:p2wsh tpl:p2tr-script"><span class="g">…</span><span class="m"><b>however many more</b> — a lock that hides a lock (P2SH, P2WSH, a tapscript leaf) hands back one wanting blanks of its own, and how many is a fact about marks this passage keeps behind a hash. So the notation says they are there and declines to count them. It leads because that is where they are written: whatever opens the lock writes them first, and the revealed lock stands on top. Every blank it can name is a letter; this one it cannot name</span></div>
             </div>
-            <p class="notation-note">Three ways for a thing not to be on chain, sorted down the columns above:
+            <p class="notation-note">Three ways for a thing not to be written down, sorted down the columns above:
               <b>in a blank</b>, not chosen yet; <b>behind a hash</b>, committed to but not shown — which is why
               those rows hold <b>h</b> and not the thing <b>h</b> is a hash of; <b>behind a one-way step</b> — ⌖ ⌘
-              Σ, or a public key made from the secret behind it — where what is written down cannot be turned back
-              into what made it. P2SH keeps its script out of sight from the address all the way to the spend, and
-              Taproot a whole tree of them behind the same thirty-two bytes.</p>
+              Σ, or a key made from the secret behind it — where what is written cannot be turned back into what
+              made it. A P2SH keeps its inner lock out of sight from the address all the way to the passage that
+              opens it, and P2TR a whole tree of them behind the same thirty-two bytes.</p>
           </div>
 
           <div class="notation-group">

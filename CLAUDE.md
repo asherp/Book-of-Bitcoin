@@ -161,12 +161,19 @@ Where this lives today:
   it still holds, the difficulty target in a chapter's frontispiece. This is
   also why `abstractionText` and `applicationText` are gone: with no brackets
   to distinguish them they were `titleText` and `addressText` verbatim.
-- **The key's Scripts as terms group explains, it does not notate.** The group
-  now opens in plain English — what a transaction is (outputs waiting to be
-  spent, and the transactions that spend them), what a locking script is (a
-  short program run at spend time, not at write time), and what the title line
-  above every script means (λ marks the blank; fill it in and you have the
-  bytes the chain holds). Below the terms table, one `.glyph-row` per form
+- **The key's Scripts as terms group explains, it does not notate — and it
+  explains from inside the manuscript.** A reader holding this book has not
+  been told what Bitcoin is, so the group names nothing outside what is on the
+  page: no transactions, outputs, accounts, balances, coins or chain. What it
+  says instead is that some passages are **locks**, that a passage further on
+  answers one, and that the two are joined by their marks alone — a value
+  written into a lock is written again by whatever opens it. Then what the
+  title line means (λ marks a blank; fill it in from the passage below and you
+  have that passage, mark for mark). Segwit needs no outside word either: a
+  witness is already a **footnote** in this book (`§1.a`), so P2WPKH and P2WSH
+  are glossed as the same bargain with the key or the revealed lock carried in
+  a footnote. Keep new prose here inside that vocabulary.
+  Below the terms table, one `.glyph-row` per form
   states in plain terms what that lock asks of a spender, tagged `tpl:<id>` so
   the key's filter shows a reader on a P2SH page P2SH's paragraph and nobody
   else's. `.glyph-grid.forms` (notation.css) is that grid: same row the filter
