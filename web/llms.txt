@@ -84,10 +84,9 @@ and a letter is a witness footnote (§1.a).
 
 Footnotes are lettered, not numbered: a, b, c … the alphabet entire, and the
 run continues in bijective base-26 — aa after z, aaa after zz — so singles
-cover 1–26, doubles 27–702, triples 703 up. (The run skipped q until 2026,
-which is why an older link may name one input and this scheme another.) A witness is addressed by the footnote
-letter its section's margin prints, counted over the witness-bearing inputs
-in input order.
+cover 1–26, doubles 27–702, triples 703 up. A witness is addressed by the
+footnote letter its section's margin prints, counted over the witness-bearing
+inputs in input order.
 
 These are ordinary HTML pages, readable without JavaScript, each titled by
 its citation and carrying its own preview image: a chapter page carries the
