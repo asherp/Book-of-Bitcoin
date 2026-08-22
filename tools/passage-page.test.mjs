@@ -248,33 +248,33 @@ test('a section page leads down to the outputs that were written', () => {
 
 // ─── footnote marks, and witness addresses ──────────────────────────────
 
-test('footnote marks letter in bijective base-25, skipping q', () => {
+test('footnote marks letter in bijective base-26', () => {
   assert.equal(footnoteMark(1), 'a');
   assert.equal(footnoteMark(16), 'p');
-  assert.equal(footnoteMark(17), 'r', 'q is skipped: p is followed by r');
-  assert.equal(footnoteMark(25), 'z');
-  // Doubles begin after the 25 singles and cover 25×25 = 625 of them, so the
-  // third letter arrives at 651 rather than 626.
-  assert.equal(footnoteMark(26), 'aa');
-  assert.equal(footnoteMark(650), 'zz');
-  assert.equal(footnoteMark(651), 'aaa');
-  assert.equal(footnoteMark(16275), 'zzz');
-  assert.ok(!Array.from({ length: 700 }, (_, i) => footnoteMark(i + 1)).join('').includes('q'),
-    'no mark anywhere contains a q');
+  assert.equal(footnoteMark(17), 'q', 'p is followed by q, no letter being skipped');
+  assert.equal(footnoteMark(26), 'z');
+  // Doubles begin after the 26 singles and cover 26×26 = 676 of them, so the
+  // third letter arrives at 703 rather than 677.
+  assert.equal(footnoteMark(27), 'aa');
+  assert.equal(footnoteMark(702), 'zz');
+  assert.equal(footnoteMark(703), 'aaa');
+  assert.equal(footnoteMark(18278), 'zzz');
+  assert.ok(Array.from({ length: 700 }, (_, i) => footnoteMark(i + 1)).join('').includes('q'),
+    'and q is among them, as any letter is');
   // Out of range yields nothing rather than a bogus mark.
   assert.equal(footnoteMark(0), '');
   assert.equal(footnoteMark(-1), '');
 });
 
 test('a footnote mark reads back to its index', () => {
-  for (const n of [1, 16, 17, 25, 26, 27, 650, 651, 16275]) {
+  for (const n of [1, 16, 17, 26, 27, 28, 702, 703, 18278]) {
     assert.equal(footnoteIndexOf(footnoteMark(n)), n, `round trip at ${n}`);
   }
-  assert.equal(footnoteIndexOf('q'), null, 'q is not a mark');
-  assert.equal(footnoteIndexOf('aq'), null);
+  assert.equal(footnoteIndexOf('q'), 17, 'q reads back like any other letter');
+  assert.equal(footnoteIndexOf('aq'), 43);
   assert.equal(footnoteIndexOf(''), null);
   assert.equal(footnoteIndexOf('a1'), null);
-  assert.equal(footnoteIndexOf('AA'), 26, 'case-insensitive');
+  assert.equal(footnoteIndexOf('AA'), 27, 'case-insensitive');
 });
 
 test('a witness is addressed by its letter, an output by its numeral', () => {
@@ -291,8 +291,8 @@ test('a last segment says for itself what it names', () => {
   assert.deepEqual(partOfSegment('0'), { output: 0 });
   assert.deepEqual(partOfSegment('12'), { output: 12 });
   assert.deepEqual(partOfSegment('a'), { witness: 1 });
-  assert.deepEqual(partOfSegment('aa'), { witness: 26 });
-  assert.equal(partOfSegment('q'), null, 'a refused address, not a guessed one');
+  assert.deepEqual(partOfSegment('aa'), { witness: 27 });
+  assert.deepEqual(partOfSegment('q'), { witness: 17 });
   assert.equal(partOfSegment('-1'), null);
   assert.equal(partOfSegment(''), null);
 });
@@ -321,9 +321,9 @@ test('a witness page is addressed and cited by its footnote letter', () => {
   assert.ok(!/description/.test(html), 'no description tag here either');
 });
 
-test('the second witness is b, the twenty-sixth aa', () => {
+test('the second witness is b, the twenty-seventh aa', () => {
   assert.ok(witnessPage({ footnoteIndex: 2 }).includes('<span class="fn-mark">b</span>'));
-  assert.match(witnessPage({ footnoteIndex: 26 }), /og:url" content="[^"]*\/1\/aa\//);
+  assert.match(witnessPage({ footnoteIndex: 27 }), /og:url" content="[^"]*\/1\/aa\//);
 });
 
 test('a section page leads down to its witnesses as well as its outputs', () => {

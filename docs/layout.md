@@ -508,9 +508,8 @@ not mean reading six hundred lines of it first.
     difficulty mark (a book is a difficulty window), `■` the block mark (a
     chapter is a block), `§` the section (a transaction) — e.g. `III β2 ■5 §1`,
     with an output appended as `§1.0` and a witness as its footnote letter,
-    `§1.a`. Footnotes are lettered a, b, c … skipping `q` (the one lowercase letter
-    Unicode gives no raised form) and continuing in bijective base-25 — `aa`
-    after `z`
+    `§1.a`. Footnotes are lettered a, b, c … the alphabet entire, continuing
+    in bijective base-26 — `aa` after `z`
   - the block-version notation (`web/btc-prose.js`): BIP9's fields rendered as
     what they are — a word pair carrying the 16 version-rolling bits, then the
     signaling bits in plain binary (`accio library 100`). Invertible: the

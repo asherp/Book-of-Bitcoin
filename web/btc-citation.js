@@ -234,25 +234,39 @@ export function expectedReference(height) {
 //
 // A witness footnote is lettered the way a book letters its notes — a, b, c
 // — not numbered, so a superscript mark never reads as arithmetic beside the
-// numerals the prose is full of (push counts, amounts, indices). The
-// alphabet omits q because Unicode has no raised q: the modifier letters
-// cover every other lowercase letter and stop at that one, so the run below
-// is exactly the letters a mark CAN be set in. This book raises things as
-// characters rather than as styling wherever it can — h²⁰, p³³, ⁿ — and a
-// mark that had no character would have to be an exception to that.
+// numerals the prose is full of (push counts, amounts, indices).
 //
-// (An earlier comment here said q was dropped for looking too near a g. It
-// reads plausibly and it is not the reason: g and q are not the pair a serif
-// confuses, and no shape judgement would land on exactly the 25 letters
-// Unicode happens to raise. tools/chain-witness.test.mjs pins the real one.)
+// The run is the alphabet entire. It was 25 letters for most of this book's
+// life, skipping q, and the reason given for that was wrong twice over: first
+// that q sat too near a g to be told apart raised, then that Unicode had no
+// raised q at all. The second was true when it was written and is not now —
+// U+107A5 MODIFIER LETTER SMALL Q arrived in Unicode 14 — and neither
+// mattered, because nothing in this book has ever set a letter as a raised
+// character. toSuperscript raises DIGITS. A footnote's letter is plain ASCII
+// raised by the stylesheet (.tx-witness-ref, .footnote-mark, both a font-size
+// and a vertical-align), and a stylesheet raises a q as readily as an r.
 //
-// That leaves 25 letters, and the run continues in bijective base-25 —
-// aa after z, aaa after zz — the same scheme a spreadsheet letters its
-// columns in. So single letters cover 1–25, doubles 26–650 (25 × 25 = 625
-// of them, starting at 26), triples 651 upward. The doubles' span is what
-// puts the third letter at 651 rather than 626.
-const FOOTNOTE_ALPHABET = 'abcdefghijklmnoprstuvwxyz';   // no q
-export const FOOTNOTE_BASE = FOOTNOTE_ALPHABET.length;   // 25
+// The uppercase half had been saying so all along: six of those letters have
+// no raised capital, and the scriptSig marks used them regardless. An
+// alphabet chosen for a property its own other half did not have was a rule
+// nothing enforced. What does govern is pinned in
+// tools/chain-witness.test.mjs — no source sets a raised letter as a
+// character, so every letter is available to be raised.
+//
+// Changing it cost something real and it was paid once, knowingly: from the
+// 17th mark on, a letter now names a different input than it named before,
+// and every multi-letter mark moved with the base. A citation is permanent
+// addressing, so this was the last cheap moment to do it — nothing curated
+// cites past .a, and what cannot be reached is a reader's own bookmarks and
+// links already shared.
+//
+// The run continues in bijective base-26 — aa after z, aaa after zz — the
+// same scheme a spreadsheet letters its columns in. Single letters cover
+// 1–26, doubles 27–702 (26 × 26 = 676 of them, starting at 27), triples 703
+// upward. The doubles' span is what puts the third letter at 703 rather than
+// at 677.
+const FOOTNOTE_ALPHABET = 'abcdefghijklmnopqrstuvwxyz';
+export const FOOTNOTE_BASE = FOOTNOTE_ALPHABET.length;   // 26
 
 // A 1-based footnote index -> its mark. 1 is 'a', 25 'z', 26 'aa', 651 'aaa'.
 export function footnoteMark(n) {
@@ -274,16 +288,15 @@ export function footnoteMark(n) {
 export const inputMark = (n, sig = false) =>
   (sig ? footnoteMark(n).toUpperCase() : footnoteMark(n));
 
-// The inverse: a mark -> its 1-based index, or null if it isn't one (an
-// unknown letter, a q, anything else). Lets a lettered address be read back
-// to the footnote it names.
+// The inverse: a mark -> its 1-based index, or null if it isn't one. Lets a
+// lettered address be read back to the footnote it names.
 export function footnoteIndexOf(mark) {
   const s = String(mark || '').toLowerCase();
   if (!s || !/^[a-z]+$/.test(s)) return null;
   let n = 0;
   for (const ch of s) {
     const i = FOOTNOTE_ALPHABET.indexOf(ch);
-    if (i < 0) return null;                  // a q, or not a letter of the run
+    if (i < 0) return null;                  // not a letter of the run
     n = n * FOOTNOTE_BASE + (i + 1);
   }
   return n || null;

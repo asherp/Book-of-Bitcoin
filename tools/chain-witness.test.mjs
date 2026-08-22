@@ -14,9 +14,10 @@
 // distinct: an unreachable chain has not said yes.
 
 import test from 'node:test';
+import { readFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
 
-import { footnoteMark, inputMark, parseReference, FOOTNOTE_BASE } from '../web/btc-citation.js';
+import { footnoteMark, footnoteIndexOf, inputMark, parseReference, FOOTNOTE_BASE } from '../web/btc-citation.js';
 import { latinReference } from '../web/btc-citation.js';
 import { readWitness, witnessVerdict, witnessDisagreement, suppliedBy,
          citeHref, inputMarkOf, spendArgsOf } from '../web/btc-index.js';
@@ -278,12 +279,14 @@ test('an input cites by its own number, cased for what carried it', () => {
   assert.equal(inputMarkOf(vins, 9), null, 'no such input');
   assert.equal(inputMarkOf(null, 0), null);
   assert.deepEqual(inputMarkOf([wit([])], 0), { n: 1, sig: true }, 'an empty witness is not one');
-  // The marks themselves run the book's alphabet, which skips q and continues
-  // in bijective base-25 — a, b, … z, aa, ab — and upper for a scriptSig.
+  // The marks themselves run the book's alphabet, which is the alphabet
+  // entire and continues in bijective base-26 — a, b, … z, aa, ab — and
+  // upper for a scriptSig.
   assert.equal(inputMark(1), 'a');
-  assert.equal(inputMark(17), 'r', 'q is skipped, so the 17th letter is r');
-  assert.equal(inputMark(26), 'aa');
-  assert.equal(inputMark(27, true), 'AB');
+  assert.equal(inputMark(17), 'q', 'the 17th letter is q, no letter being skipped');
+  assert.equal(inputMark(26), 'z');
+  assert.equal(inputMark(27), 'aa');
+  assert.equal(inputMark(28, true), 'AB');
 });
 
 test('a citation reads its case back, and survives losing it', () => {
@@ -303,45 +306,51 @@ test('a citation reads its case back, and survives losing it', () => {
   // one. An output is untouched by any of this: digits are digits.
   assert.equal(parseReference('IV β35 ■1457 §42.Ab'), null);
   assert.equal(parseReference('IV β35 ■1457 §42.0').out, 0);
-  assert.equal(parseReference('IV β35 ■1457 §42.q'), null, 'still no q');
+  assert.equal(parseReference('IV β35 ■1457 §42.q').wit, 17, 'q is a letter like any other');
 });
 
-// The raised forms Unicode actually has, read out of ICU rather than listed
-// from memory: fold every modifier/superscript codepoint back to its base.
-const raised = (which) => {
-  const found = new Set();
-  for (const [lo, hi] of [[0x02b0, 0x02ff], [0x1d2c, 0x1d6a], [0x1d78, 0x1dbf],
-    [0x2070, 0x209f], [0x2c7d, 0x2c7d]]) {
-    for (let cp = lo; cp <= hi; cp++) {
-      const base = String.fromCodePoint(cp).normalize('NFKD');
-      if (/^[A-Za-z]$/.test(base) && (base === base.toUpperCase()) === (which === 'upper')) {
-        found.add(base.toLowerCase());
-      }
-    }
+test('the run is the whole alphabet, in bijective base-26', () => {
+  // It was 25 letters once, skipping q. Two reasons were given for that over
+  // the years -- that a raised q read too near a g, and that Unicode had no
+  // raised q -- and neither survived examination: U+107A5 exists, and no
+  // footnote letter was ever set as a character anyway (see below). So the
+  // run is a, b, c … z and then aa, the scheme a spreadsheet letters its
+  // columns in.
+  assert.equal(FOOTNOTE_BASE, 26);
+  assert.equal(footnoteMark(17), 'q', 'the 17th mark is q, where it belongs');
+  assert.equal(footnoteMark(26), 'z');
+  assert.equal(footnoteMark(27), 'aa', 'doubles open at 27');
+  assert.equal(footnoteMark(702), 'zz', '26 x 26 of them, ending at 702');
+  assert.equal(footnoteMark(703), 'aaa');
+  // And it reads back, which is what makes a lettered address an address.
+  for (let n = 1; n <= 1000; n++) {
+    assert.equal(footnoteIndexOf(footnoteMark(n)), n, `mark ${n} does not read back`);
   }
-  return found;
-};
+});
 
-test('the footnote alphabet is exactly the letters that can be raised', () => {
-  // Why q is missing, and it is not a judgement about how q looks. Unicode
-  // gives a raised form to every lowercase letter except q, and the book's run
-  // is that set character for character — so a mark can always be set as a
-  // character rather than as styling, which is how this book raises h²⁰ and ⁿ.
-  const lower = raised('lower');
-  const alphabet = 'abcdefghijklmnopqrstuvwxyz'.split('').filter((c) => lower.has(c)).join('');
-  assert.equal(alphabet, 'abcdefghijklmnoprstuvwxyz');
-  assert.equal(FOOTNOTE_BASE, alphabet.length, 'the run is that alphabet and no other');
-  assert.equal(footnoteMark(17), 'r', 'so the 17th mark skips q');
-  assert.ok(!lower.has('q'), 'q is the one lowercase letter with no raised form');
-  // And the cost of the uppercase tag, stated where it cannot be forgotten:
-  // six of those 25 letters have no raised CAPITAL, so a scriptSig's mark
-  // cannot always be set as a character the way a witness's can. The book
-  // raises its marks with CSS today, so nothing is broken — but the property
-  // the alphabet was chosen for does not hold for the uppercase half.
-  const upper = raised('upper');
-  const unraisable = alphabet.split('').filter((c) => !upper.has(c));
-  assert.deepEqual(unraisable, ['c', 'f', 's', 'x', 'y', 'z']);
-  assert.equal(inputMark(3, true), 'C', 'which is input 3, among others');
+test('a footnote mark is plain ASCII, raised by the stylesheet', () => {
+  // The invariant that actually governs, and the one that makes all 26
+  // letters available. The book raises DIGITS as characters (h²⁰, ⌘²⁵⁶ --
+  // toSuperscript), and a few marks carry a raised letter of their own (⊘ᵛ is
+  // OP_VER, in the opcode alphabet). A footnote's letter is neither: it is
+  // emitted as plain ASCII and raised by CSS, so no letter of the run has to
+  // exist in a raised form, in Unicode or in any vendored face.
+  for (let n = 1; n <= 2000; n++) {
+    assert.match(footnoteMark(n), /^[a-z]+$/, `mark ${n} is not plain ASCII`);
+  }
+  // Which is a claim about the page, so it is checked against the page: both
+  // places a mark is set raise it by styling.
+  const css = readFileSync(new URL('../web/bitcoin-book.html', import.meta.url), 'utf8');
+  for (const rule of ['.tx-witness-ref', '.footnote-mark']) {
+    const line = css.split('\n').find((l) => l.startsWith(`${rule} {`));
+    assert.ok(line, `${rule} has no rule of its own any more`);
+    assert.match(line, /vertical-align:/, `${rule} no longer raises its letter by styling`);
+  }
+  // The uppercase tag comes along for free. Six letters have no raised
+  // capital, and the scriptSig marks used them regardless -- which was the
+  // standing evidence that nothing here needed a raised character.
+  assert.equal(inputMark(3, true), 'C');
+  assert.equal(inputMark(17, true), 'Q', 'including the letter the run used to skip');
 });
 
 // ─── and what the leaf does with the answer ──────────────────────────────
