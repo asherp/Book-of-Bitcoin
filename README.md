@@ -32,6 +32,128 @@ transaction, while a reading is set apart, credited, and licensed to its
 author. The book states all of this in its own voice, at length, in
 [the preface](web/preface.md).
 
+## The layout
+
+Nothing in the arrangement is invented. A block is a chapter, a difficulty
+window is a book, a halving era is a volume, a transaction is a section — the
+divisions were already in the chain, and every passage cites itself in that
+form: `III β2 ■5 §1`, the volume in Roman, the book after the difficulty mark,
+the chapter after the block mark, the section last. An output appends its index
+(`§1.0`) and a witness its footnote letter (`§1.a`).
+
+**The contents** runs one leaf per volume and per back-matter part, all at a
+single level — a storey above the book itself. Each row is a title and the
+reference it points at, so a significant moment is named and located in the
+same line: the genesis block, the pizza, the first SegWit spend, a halving.
+The reader's own bookmarks list here too, in reading order, at the level each
+one names. Ascending from Volume III lands on Volume III's contents and nowhere
+else — the vertical axis is a correspondence, not a funnel.
+
+**A volume is an era of supply** — the 210,000 blocks from one halving to the
+next. Its title leaf carries the Roman numeral, the books it spans, the years
+it ran, and what it cost: `+ N hashes`, the proof of work the era took,
+summed from the headers rather than quoted from anyone's server. That figure is
+the one that makes eras comparable — each volume so far has cost more than
+every volume before it put together.
+
+**A book is a difficulty window**, and the leaf states the ceiling its chapters
+were mined under, as the inequality it is (`β₇₈ < 2¹⁶⁰·213529`), over the dates
+it ran and the work it added. In Volume I a book is a difficulty window and
+nothing else. From Volume II on the two clocks come apart: an era is not a
+whole number of windows, so each new volume opens a further sixth of a book
+into a window already running, the last book of every volume is a short one
+(336 blocks against 2,016), and a book after Volume I carries the tail of one
+window and the head of the next — so it states *two* targets, opening above
+closing, with what the retarget did to the difficulty on the line between. The
+drift comes back around: six eras are exactly 625 windows, so Volume VII opens
+on a retarget with the two in step again. The seam is left visible because it
+is a real fact about Bitcoin — supply and difficulty are two different clocks.
+
+**A chapter is a block, and its title page is the header.** The block hash
+stands as prose between two marks — `⌘ᵐ …prose… ⓪ⁿ`, the double-SHA256 that
+produced it and the proof-of-work zeros that close it, their bit counts always
+summing to 256. Beneath it the frontispiece sets the eighty header bytes in
+wire order, each in the book's own hand rather than as hex: the version, the
+previous block's hash as prose, the merkle root, the timestamp in words, the
+target as `<` and a factored ceiling binding the hash above it, and the nonce.
+
+**The first page of a chapter is the coinbase** — the miner's own section, the
+one page in the book with no prior output to cite, so its margin reads ∅. Its
+balance line inverts to match: the subsidy the schedule mints at that height
+stands at the left, the chapter's gathered fees between as `+ fee`, and the
+miner's take arrives where every other section's leaves. The pages after it are
+the block's transactions in the order the block records them, one page each,
+carrying a folio — the chain's running count of transactions since genesis.
+
+**A transaction page is a manuscript page**, in three columns:
+
+- the **left margin is provenance** — each input's citation to the output it
+  spends, on the line of the input that spends it
+- the **body is the prose** — version, inputs, outputs, locktime, in the order
+  the bytes run, with the locktime centred at the foot like a colophon
+- the **right margin is amounts** — each output's value on its own line, the
+  column aligned on the point
+
+Under them runs the **balance line**: the inputs' sum at the left, the outputs'
+at the right, and the fee between, signed negative. No labels — the geometry is
+the equation. It is derived arithmetic rather than bytes on the wire, so it
+rides in a band of its own, sticky at the foot while the record scrolls; an
+input the book cannot price leaves the sum and the fee unsaid (⋯) rather than
+guessing.
+
+**Witness data gathers at the foot as footnotes**, lettered a, b, c…, each
+marked from the input that carries it. It sits mid-serialization on the wire,
+but it is spending apparatus rather than speech — and an input that authorizes
+this way and no other has nothing to say in the body at all, so its citation
+goes down with its witness and the input reads whole at the foot. Even the type
+size is consensus's rule rather than the book's: a witness byte weighs a
+quarter of any other, and the footnotes are set to that same discount.
+
+## The appendices
+
+The back matter holds what reading order cannot carry, reading order being the
+order blocks were mined. Each part has a contents leaf and a leaf of its own
+one level down, and all of them sit at the volumes' level, so the last volume's
+forward turn leaves the body for the queue.
+
+- **Appendix I · The Mempool** — the chapters not yet bound. Its leaf says how
+  deep the queue is and what mining it is expected to pay; a storey down the
+  queue is read three ways side by side — **Alpha**, the next chapter as
+  itself, and the same transactions ordered **by amount** and **by size**. A
+  provisional chapter's rows wear □ where a mined one wears ■, and Alpha
+  descends into the first chapter itself, read like any other.
+- **Appendix II · The Mines** — the hands that take a chapter from that queue.
+  One leaf per pool, ordered by how much of the last difficulty window each
+  won, with the network's hash rate beside the shelf and the chapters it mined
+  beneath it. The window is counted block by block rather than asked for, and
+  every share is printed with its own standard error.
+- **Appendix III · Consensus** — the rules the chapters are written under, out
+  of reading order and gathered under their BIPs. Each fork's leaf carries its
+  activation statistics and then the ballot itself, oldest block first: every
+  block of the counted window, its version as the chapter's own frontispiece
+  writes it, whether it read as a yes, and the count as it stood. The forks the
+  chain declined are kept among them with their outcomes, and heights no block
+  has reached yet wear □ until a block earns them the ■.
+- **Appendix IV · The Ledgers** — an address is not a place but a name, so a
+  ledger is the one part of the book with no reference at all. A ledger gathers
+  the scripts one keeper spends from, reads each as a passage with the chapters
+  it appears in beneath it, and closes with the whole table of entries in time
+  order. Nothing here is cited; it is discovered, and stays open-ended.
+- **Appendix V · Inscriptions** — files written into witnesses. Each leaf
+  fetches the reveal named beside its entry and reads the envelope out of the
+  witness itself, so what it shows is checkable against the bytes; the
+  numbering and the collections are conventions held by people rather than
+  rules held by nodes, and belong to commentary, credited to whoever reads them
+  that way.
+- **Citations** — works cited outside this text, standing last and unnumbered
+  the way a works-cited list closes a book. Every other reference in the book
+  points inward; these point outward, each dated into a chapter and section by
+  its own OpenTimestamps proof, and the passage that dates one carries the ‡
+  mark in its margin. A proof is written out paragraph by paragraph, every
+  value along the line said in prose, and the margin carries a citation exactly
+  where the paragraph beside it is on the chain — twice, which is the page's
+  argument: a proof is mostly arithmetic and touches the chain only there.
+
 ## How it works
 
 [Glossia](https://glossia.io/) — a Rust engine compiled to WASM, consumed as a
