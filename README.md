@@ -44,24 +44,6 @@ in the browser, and banks immutable chain data in IndexedDB, so a chapter read
 once reads offline. It installs as a PWA, and the fonts are vendored — nothing
 is fetched from a third party.
 
-- `web/bitcoin-book.html` — the reading page: a block, read as a chapter
-- `web/bitcoin-front.html` — the front matter: title, terms, preface, and the
-  sigla (the opcode alphabet and the citation scheme `III β2 ■5 §1`)
-- `web/bitcoin-contents.html` — the contents, one leaf per volume and per
-  back-matter part
-- `web/bitcoin-appendix.html` — the back matter: the mempool, the mines,
-  consensus, citations
-- `web/bitcoin-ledger.html` — the Ledger: an address as the passages it recurs in
-- `web/btc-*.js` — parsing, prose, citations, sigla, terms, lookup, storage
-- `web/notables.yaml`, `web/appendix.yaml`, `web/commentary/*.md` — the
-  editorial layer, written by hand and read by the browser as it stands
-- `tools/` — the test suite, the editorial checker, the pre-renderer, the reply bot
-
-Every file, and why it is the way it is: [`docs/layout.md`](docs/layout.md).
-
-Originally part of [asherp/glossia](https://github.com/asherp/glossia); the
-book lives here and builds against a released engine version.
-
 ## Write a reading
 
 **Most of the chain has nothing said about it yet.** That is the part of this

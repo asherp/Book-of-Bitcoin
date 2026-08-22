@@ -1,9 +1,8 @@
 # Layout
 
-Every file in the repository, and why it is the way it is. This is the long
-form of the map in the [README](../README.md#how-it-works) — the design record,
-kept out of the README so that arriving at the repository does not mean reading
-six hundred lines of it first.
+Every file in the repository, and why it is the way it is — the design record,
+kept out of the [README](../README.md) so that arriving at the repository does
+not mean reading six hundred lines of it first.
 
 
 - `web/bitcoin-book.html` — the book: fetches a block from a configurable
