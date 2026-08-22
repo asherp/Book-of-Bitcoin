@@ -96,8 +96,8 @@ equation. It is derived arithmetic rather than bytes on the wire. A coinbase
 inverts it: the subsidy at the left, the block's gathered fees between as
 `+ fee`, since the miner's take arrives where every other section's leaves.
 
-**Witness data gathers at the foot as footnotes**, lettered a, b, c… (skipping
-q, which has no raised form), continuing in bijective base-25. It sits
+**Witness data gathers at the foot as footnotes**, lettered a, b, c… through
+the whole alphabet, continuing in bijective base-26 — aa after z. It sits
 mid-serialization on the wire, but it is spending apparatus rather than speech,
 so it goes to the foot and takes its input's citation and amount with it. Even
 its type size is consensus's rule: a witness byte weighs a quarter of any

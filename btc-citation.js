@@ -234,25 +234,19 @@ export function expectedReference(height) {
 //
 // A witness footnote is lettered the way a book letters its notes — a, b, c
 // — not numbered, so a superscript mark never reads as arithmetic beside the
-// numerals the prose is full of (push counts, amounts, indices). The
-// alphabet omits q because Unicode has no raised q: the modifier letters
-// cover every other lowercase letter and stop at that one, so the run below
-// is exactly the letters a mark CAN be set in. This book raises things as
-// characters rather than as styling wherever it can — h²⁰, p³³, ⁿ — and a
-// mark that had no character would have to be an exception to that.
+// numerals the prose is full of (push counts, amounts, indices).
 //
-// (An earlier comment here said q was dropped for looking too near a g. It
-// reads plausibly and it is not the reason: g and q are not the pair a serif
-// confuses, and no shape judgement would land on exactly the 25 letters
-// Unicode happens to raise. tools/chain-witness.test.mjs pins the real one.)
+// The run is the alphabet entire, and continues in bijective base-26 — aa
+// after z, aaa after zz — the same scheme a spreadsheet letters its columns
+// in. Single letters cover 1–26, doubles 27–702 (26 × 26 = 676 of them,
+// starting at 27), triples 703 upward. The doubles' span is what puts the
+// third letter at 703 rather than at 677.
 //
-// That leaves 25 letters, and the run continues in bijective base-25 —
-// aa after z, aaa after zz — the same scheme a spreadsheet letters its
-// columns in. So single letters cover 1–25, doubles 26–650 (25 × 25 = 625
-// of them, starting at 26), triples 651 upward. The doubles' span is what
-// puts the third letter at 651 rather than 626.
-const FOOTNOTE_ALPHABET = 'abcdefghijklmnoprstuvwxyz';   // no q
-export const FOOTNOTE_BASE = FOOTNOTE_ALPHABET.length;   // 25
+// The letter is plain ASCII, raised by the stylesheet where a mark is set
+// (.tx-witness-ref, .footnote-mark), so no letter has to exist in a raised
+// form for a mark to be set in it. tools/chain-witness.test.mjs holds that.
+const FOOTNOTE_ALPHABET = 'abcdefghijklmnopqrstuvwxyz';
+export const FOOTNOTE_BASE = FOOTNOTE_ALPHABET.length;   // 26
 
 // A 1-based footnote index -> its mark. 1 is 'a', 25 'z', 26 'aa', 651 'aaa'.
 export function footnoteMark(n) {
@@ -274,16 +268,15 @@ export function footnoteMark(n) {
 export const inputMark = (n, sig = false) =>
   (sig ? footnoteMark(n).toUpperCase() : footnoteMark(n));
 
-// The inverse: a mark -> its 1-based index, or null if it isn't one (an
-// unknown letter, a q, anything else). Lets a lettered address be read back
-// to the footnote it names.
+// The inverse: a mark -> its 1-based index, or null if it isn't one. Lets a
+// lettered address be read back to the footnote it names.
 export function footnoteIndexOf(mark) {
   const s = String(mark || '').toLowerCase();
   if (!s || !/^[a-z]+$/.test(s)) return null;
   let n = 0;
   for (const ch of s) {
     const i = FOOTNOTE_ALPHABET.indexOf(ch);
-    if (i < 0) return null;                  // a q, or not a letter of the run
+    if (i < 0) return null;                  // not a letter of the run
     n = n * FOOTNOTE_BASE + (i + 1);
   }
   return n || null;
