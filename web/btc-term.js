@@ -4,11 +4,12 @@
 // bound into it.
 //
 // The notation key's Scripts as terms group says every common lock is one
-// abstraction over one committed datum: λh. ⧉ ⌖ h ≡ ∇, and reducing it
-// gives the scriptPubKey the chain holds. Its Addresses group says an address
-// carries that datum and a tag naming which abstraction to put it in. Put the
-// two together and an address is an application waiting to be written down:
-// the term, the argument, and a β between them.
+// shape around one committed datum -- λh. ⧉ ⌖ h ≡ ∇, with the blank standing
+// where the datum goes -- and that filling the blank in gives the scriptPubKey
+// the chain holds. Its Addresses group says an address carries that datum and
+// a tag naming which shape to put it in. Put the two together and an address
+// is an application waiting to be written down: the term, the argument, and a
+// reduction between them.
 //
 // This module is that sentence as code. It reads a term off any script it can
 // tokenize — every push a binder, every opcode where it stands — renders both

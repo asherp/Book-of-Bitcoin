@@ -161,6 +161,21 @@ Where this lives today:
   it still holds, the difficulty target in a chapter's frontispiece. This is
   also why `abstractionText` and `applicationText` are gone: with no brackets
   to distinguish them they were `titleText` and `addressText` verbatim.
+- **The key's Scripts as terms group explains, it does not notate.** The group
+  now opens in plain English — what a transaction is (outputs waiting to be
+  spent, and the transactions that spend them), what a locking script is (a
+  short program run at spend time, not at write time), and what the title line
+  above every script means (λ marks the blank; fill it in and you have the
+  bytes the chain holds). Below the terms table, one `.glyph-row` per form
+  states in plain terms what that lock asks of a spender, tagged `tpl:<id>` so
+  the key's filter shows a reader on a P2SH page P2SH's paragraph and nobody
+  else's. `.glyph-grid.forms` (notation.css) is that grid: same row the filter
+  walks, one column wide, the form's name where a mark stands. The two
+  calculus-only paragraphs (the pure form lifted to `λo n x. o xⁿ`, and why ⧉
+  stays in the term) are gone — the first is still argued in the Addresses
+  group, the second in the λ row. The terms table's heads are plain too: **The
+  lock / Filled in / Made from**. The one claim `term.test.mjs` rests on is
+  unchanged, only reworded: fill the blank in and you get the scriptPubKey.
 - `addressText` / `addressHtml` still write the address as a partial
   application, `(λp. ① p) p³²`, and `term.test.mjs` still checks them against
   the scripts addresses really decode to — but no page draws them.
