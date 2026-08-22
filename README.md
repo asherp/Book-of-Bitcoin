@@ -41,73 +41,103 @@ form: `III β2 ■5 §1`, the volume in Roman, the book after the difficulty mar
 the chapter after the block mark, the section last. An output appends its index
 (`§1.0`) and a witness its footnote letter (`§1.a`).
 
+**The cover** carries the title and the version of the deploy in the reader's
+hands — a release is stamped with the hour it shipped, so the cover says which
+copy this is.
+
 **The contents** runs one leaf per volume and per back-matter part, all at a
-single level — a storey above the book itself. Each row is a title and the
-reference it points at, so a significant moment is named and located in the
-same line: the genesis block, the pizza, the first SegWit spend, a halving.
-The reader's own bookmarks list here too, in reading order, at the level each
-one names. Ascending from Volume III lands on Volume III's contents and nowhere
-else — the vertical axis is a correspondence, not a funnel.
+single level, a storey above the book itself. Each leaf names its volume, the
+blocks it covers and how many entries it holds; each row pairs a title with the
+reference it points at, cited to whatever depth the entry means — a book alone
+for a retarget (`β16`), a chapter for a block (`β1 ■1`), a section for a
+transaction (`β1 ■1 §1`). So a significant moment is named and located on one
+line: the genesis block, the pizza, the first difficulty decrease, a halving.
+The reader's own bookmarks list here too, at the level each one names.
+Ascending from Volume III lands on Volume III's contents and nowhere else — the
+vertical axis is a correspondence, not a funnel.
 
 **A volume is an era of supply** — the 210,000 blocks from one halving to the
-next. Its title leaf carries the Roman numeral, the books it spans, the years
-it ran, and what it cost: `+ N hashes`, the proof of work the era took,
-summed from the headers rather than quoted from anyone's server. That figure is
-the one that makes eras comparable — each volume so far has cost more than
-every volume before it put together.
+next. Its title leaf carries the Roman numeral, the books it spans, the years it
+ran, and what it cost:
 
-**A book is a difficulty window**, and the leaf states the ceiling its chapters
-were mined under, as the inequality it is (`β₇₈ < 2¹⁶⁰·213529`), over the dates
-it ran and the work it added. In Volume I a book is a difficulty window and
-nothing else. From Volume II on the two clocks come apart: an era is not a
-whole number of windows, so each new volume opens a further sixth of a book
-into a window already running, the last book of every volume is a short one
-(336 blocks against 2,016), and a book after Volume I carries the tail of one
-window and the head of the next — so it states *two* targets, opening above
-closing, with what the retarget did to the difficulty on the line between. The
-drift comes back around: six eras are exactly 625 windows, so Volume VII opens
-on a retarget with the two in step again. The seam is left visible because it
-is a real fact about Bitcoin — supply and difficulty are two different clocks.
+    Volume I · β1 – β105 · 2009 – 2012 · +6.29·10²⁰ hashes
 
-**A chapter is a block, and its title page is the header.** The block hash
-stands as prose between two marks — `⌘ᵐ …prose… ⓪ⁿ`, the double-SHA256 that
-produced it and the proof-of-work zeros that close it, their bit counts always
-summing to 256. Beneath it the frontispiece sets the eighty header bytes in
-wire order, each in the book's own hand rather than as hex: the version, the
-previous block's hash as prose, the merkle root, the timestamp in words, the
-target as `<` and a factored ceiling binding the hash above it, and the nonce.
+That last figure is summed from the headers rather than quoted from anyone's
+server, and it is what makes eras comparable: each volume so far has cost more
+than every volume before it put together.
+
+**A book is a difficulty window.** Its leaf states the ceiling its chapters were
+mined under, as the inequality it is, over the chapters it holds and the days it
+took to write them:
+
+    Book 1 · β₃₂ < 65535×256²⁶ · ■1 – ■2,016 · 2009-01-03 – 2009-01-27 · +8.66·10¹² hashes
+
+In Volume I a book is a difficulty window and nothing else. From Volume II on
+the two clocks come apart: an era is not a whole number of windows, so each new
+volume opens a further sixth of a book into a window already running, the last
+book of every volume is a short one (336 blocks against 2,016), and a book after
+Volume I carries the tail of one window and the head of the next — so it states
+*two* targets, opening above closing, with what the retarget did to the
+difficulty on the line between. The drift comes back around: six eras are
+exactly 625 windows, so Volume VII opens on a retarget with the two in step
+again. The seam is left visible because it is a real fact about Bitcoin —
+supply and difficulty are two different clocks.
+
+**A chapter is a block, and its title page is the header.** The running head
+gives the volume and book; the title is spelled out — *Chapter One* — under any
+name the block has earned (*The Genesis Block*). Then the block's own hash, said
+in prose between two marks: `⌘²¹³ …prose… ⓪⁴³`, the double-SHA256 that produced
+it and the proof-of-work zeros that close it, the two bit counts always summing
+to 256. Beneath that the frontispiece sets the eighty header bytes in wire
+order, each in the book's hand rather than as hex — the version (`v1`), the
+previous block's hash as prose (`⓪²⁵⁶` where there is no previous block), the
+merkle root (`⋔³²`), the timestamp in words, the target as `β₃₂ < 65535×256²⁶`
+binding the hash above it, and the nonce factored (`η19·97·1130351`) — and
+closes with the work the chapter added.
+
+**Every section opens with its own head**: the § number, the name the book or
+the reader has given it, the transaction id said in prose (`⌘²⁵⁶`), the time it
+was recorded, and how many confirmations now stand over it.
 
 **The first page of a chapter is the coinbase** — the miner's own section, the
 one page in the book with no prior output to cite, so its margin reads ∅. Its
 balance line inverts to match: the subsidy the schedule mints at that height
 stands at the left, the chapter's gathered fees between as `+ fee`, and the
-miner's take arrives where every other section's leaves. The pages after it are
-the block's transactions in the order the block records them, one page each,
-carrying a folio — the chain's running count of transactions since genesis.
+miner's take arrives where every other section's leaves (the genesis coinbase:
+`50.00000000 ₿ · + 0 ₿ · = 50.00000000 ₿`). The pages after it are the block's
+transactions in the order the block records them, one page each, carrying a
+folio — the chain's running count of transactions since genesis.
 
 **A transaction page is a manuscript page**, in three columns:
 
-- the **left margin is provenance** — each input's citation to the output it
-  spends, on the line of the input that spends it
-- the **body is the prose** — version, inputs, outputs, locktime, in the order
-  the bytes run, with the locktime centred at the foot like a colophon
-- the **right margin is amounts** — each output's value on its own line, the
-  column aligned on the point
+- the **left margin is provenance** — the citation of the output each input
+  spends, on that input's own line, with its sequence mark beside it (● final,
+  † replaceable)
+- the **body is the prose**, in wire order. An output's script is titled by the
+  term it binds — `P2WPKH := λh. ⓪ h` — under any name the reader has kept on
+  it, and the script's first opcode stands as an illuminated initial
+- the **right margin is consequence** — the amount on the output's own line
+  and, beneath it, the citation of the section that later spent it. **An output
+  with no citation there has not been spent: that absence is the UTXO.**
 
-Under them runs the **balance line**: the inputs' sum at the left, the outputs'
-at the right, and the fee between, signed negative. No labels — the geometry is
-the equation. It is derived arithmetic rather than bytes on the wire, so it
-rides in a band of its own, sticky at the foot while the record scrolls; an
-input the book cannot price leaves the sum and the fee unsaid (⋯) rather than
-guessing.
+The locktime closes the page, centred like a colophon: `□` for no locktime, a
+chapter reference where the transaction named a height, a timestamp where it
+named a time.
+
+Under it runs the **balance line**: the inputs' sum at the left, the outputs' at
+the right, the fee between, signed negative. No labels — the geometry is the
+equation. It is derived arithmetic rather than bytes on the wire, so it rides in
+a band of its own, sticky at the foot while the record scrolls; an input the
+book cannot price leaves the sum and the fee unsaid (⋯) rather than guessing.
 
 **Witness data gathers at the foot as footnotes**, lettered a, b, c…, each
 marked from the input that carries it. It sits mid-serialization on the wire,
 but it is spending apparatus rather than speech — and an input that authorizes
-this way and no other has nothing to say in the body at all, so its citation
-goes down with its witness and the input reads whole at the foot. Even the type
-size is consensus's rule rather than the book's: a witness byte weighs a
-quarter of any other, and the footnotes are set to that same discount.
+this way and no other has nothing to say in the body at all, so its citation and
+its amount go down with its witness and the input reads whole at the foot: where
+it came from, what it spent, and what unlocked it, together. Even the type size
+is consensus's rule rather than the book's: a witness byte weighs a quarter of
+any other, and the footnotes are set to that same discount.
 
 ## The appendices
 
