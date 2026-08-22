@@ -82,6 +82,15 @@
 .glyph-row .g i { font-style: normal; opacity: .5; font-size: .82em; }
 .glyph-row .m { font: 400 calc(13px * var(--scale-notation, 1))/1.45 'Public Sans','Book Sigla', sans-serif; color: var(--dim); }
 .glyph-row .m b { color: var(--ink-soft); font-weight: 500; }
+/* Reading rule first, essay second. A gloss's opening clause is the rule for
+   reading the mark -- what ⧉ gets in four words -- and everything after it is
+   why the book reads it that way, which a reader wants on a second pass and
+   not while they are looking a mark up. So the rationale drops to its own
+   block, a shade back: the key skims as a column of rules, and the argument
+   is still there for whoever came for it. Nested inside .m rather than beside
+   it, so every row still has exactly one glyph cell and one gloss cell -- the
+   pair applyKeyFilter walks. */
+.glyph-row .m .why { display: block; margin-top: .4em; color: var(--meta); }
 /* Data-type letters (p s h r w t) glow gold in the key, as they do on chain. */
 .glyph-row .g b { color: var(--accent); }
 /* The plain-English gloss of each lock: what the term above it means for

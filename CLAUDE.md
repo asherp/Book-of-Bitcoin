@@ -161,6 +161,16 @@ Where this lives today:
   it still holds, the difficulty target in a chapter's frontispiece. This is
   also why `abstractionText` and `applicationText` are gone: with no brackets
   to distinguish them they were `titleText` and `addressText` verbatim.
+- **A gloss leads with the reading rule; rationale goes in `.why`.** The key is
+  a legend, so the first thing in a `.m` cell is how to read the mark — what ⧉
+  gets in four words ("duplicate the top item"). Everything after it is why the
+  book reads it that way, which a reader wants on a second pass and not while
+  looking a mark up, so it drops into `<span class="why">` nested inside the
+  same `.m` (notation.css sets it as a dimmer block beneath). Nested rather
+  than beside, so every row still has exactly one `.g` and one `.m` — the pair
+  `applyKeyFilter` walks and `key-filter.test.mjs` counts. Budget: median gloss
+  is 6 words, and nothing that reads as a rule runs past ~50. If a new entry
+  needs a paragraph, the paragraph is `.why`.
 - **The key's Scripts as terms group explains, it does not notate — and it
   explains from inside the manuscript.** A reader holding this book has not
   been told what Bitcoin is, so the group names nothing outside what is on the

@@ -19,8 +19,12 @@ import { marksOf, rowShows, isHidden } from '../web/btc-key-filter.js';
 import { NOTATION_HTML } from '../web/btc-notation.js';
 
 // Every glyph row as the filter sees it: the cell's markup and its data-marks.
+// The gloss runs to the END of the row rather than to the first close, because
+// a gloss may nest one span of its own -- the .why block that carries the
+// rationale under the reading rule -- and a non-greedy stop would read half a
+// gloss and call it the whole.
 const ROWS = [...NOTATION_HTML.matchAll(
-  /<div class="glyph-row"(?: data-marks="([^"]*)")?><span class="g">(.*?)<\/span><span class="m">(.*?)<\/span>/g,
+  /<div class="glyph-row"(?: data-marks="([^"]*)")?><span class="g">(.*?)<\/span><span class="m">(.*)?<\/span><\/div>/g,
 )].map((m) => ({ dataMarks: m[1] ?? null, glyph: m[2], gloss: m[3] }));
 
 test('the key still parses into rows', () => {
