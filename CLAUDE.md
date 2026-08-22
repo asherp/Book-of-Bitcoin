@@ -176,8 +176,13 @@ Where this lives today:
   been told what Bitcoin is, so the group names nothing outside what is on the
   page: no transactions, outputs, accounts, balances, coins or chain. What it
   says instead is that some passages are **locks**, that a passage further on
-  answers one, and that the two are joined by their marks alone — a value
-  written into a lock is written again by whatever opens it. Then what the
+  answers one and cites it in the margin, and that what the two never do is
+  name each other *in their marks* — a lock states what will open it and never
+  who, so the linkage the notation shows is the shared value, written into the
+  lock and written again by whatever opens it. Scope that claim to the scripts:
+  an input names its prevout by txid and index, and the reading draws exactly
+  that pointer (`.tx-in-cite`, bitcoin-book.html), so "nothing points at the
+  other" is false about Bitcoin and about this book's own page. Then what the
   title line means (λ marks a blank; fill it in from the passage below and you
   have that passage, mark for mark). Segwit needs no outside word either: a
   witness is already a **footnote** in this book (`§1.a`), so P2WPKH and P2WSH
