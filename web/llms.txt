@@ -82,12 +82,11 @@ section is 1-based; the last segment says for itself what it names — a
 numeral is an output (0-based, the index Bitcoin gives a vout, printed §1.0)
 and a letter is a witness footnote (§1.a).
 
-Footnotes are lettered, not numbered: a, b, c … skipping q, which at
-superscript size is too near a g. That leaves 25 letters, and the run
-continues in bijective base-25 — aa after z, aaa after zz — so singles cover
-1–25, doubles 26–650, triples 651 up. A witness is addressed by the footnote
-letter its section's margin prints, counted over the witness-bearing inputs
-in input order.
+Footnotes are lettered, not numbered: a, b, c … the alphabet entire, and the
+run continues in bijective base-26 — aa after z, aaa after zz — so singles
+cover 1–26, doubles 27–702, triples 703 up. A witness is addressed by the
+footnote letter its section's margin prints, counted over the witness-bearing
+inputs in input order.
 
 These are ordinary HTML pages, readable without JavaScript, each titled by
 its citation and carrying its own preview image: a chapter page carries the
