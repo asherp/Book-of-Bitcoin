@@ -4912,6 +4912,7 @@ function renderChapter(para) {
     citeBody.className = 'cite-body';
     if (inp.isNullPrevout) {
       citeBody.textContent = '∅';   // coinbase: no previous output
+      citeBody.classList.add('mk'); // an unclassed mark the key's ∅ row answers for
     } else {
       citeBody.textContent = '⋯';   // placeholder until the reference resolves
       cite.classList.add('resolving');
@@ -5568,7 +5569,7 @@ async function renderFootnotes(gen) {
     // placeholder (renderWitness feeds each push through lazyEncode.placeholder)
     // and encoded when it scrolls into view -- building the DOM stays cheap even
     // for a kilobyte-scale inscription witness.
-    const prose = fn.zero ? '∅' : renderWitness(fn.items, lazyEncode.placeholder);
+    const prose = fn.zero ? '<span class="wit-empty">∅</span>' : renderWitness(fn.items, lazyEncode.placeholder);
     const p = document.createElement('p');
     p.className = 'footnote-entry';
     p.id = `fn-${footnoteMark(fn.n)}`;

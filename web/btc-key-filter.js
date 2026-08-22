@@ -19,10 +19,18 @@
 
 // Every element that carries a mark rather than prose: script marks and their
 // data letters, the chapter head's fields, an input's sequence and amount, the
-// transaction's locktime, the § number, and .mk where a mark would otherwise
+// transaction's locktime, the § number, .wit-empty for the ∅ standing where a
+// witness or one of its items is empty, and .mk where a mark would otherwise
 // go unclassed.
+//
+// A mark written straight into an element the selector does not name is a mark
+// the filter cannot see, and its row is cut from every page that shows one --
+// which is how a coinbase's absent prevout (∅, written into the citation) went
+// unexplained on the one kind of page that always carries it. Adding a mark to
+// the book means giving it one of these classes.
 const MARK_SELECTOR = '.op, .dt, .cfx, .cfx-gold, .fx-mark, .merkle-mark, '
-  + '.tx-seq, .tx-locktime, .cite-amount, .tx-out-value, .section-num, .mk, .pool-sig';
+  + '.tx-seq, .tx-locktime, .cite-amount, .tx-out-value, .section-num, .mk, .pool-sig, '
+  + '.wit-empty';
 
 // Is this element inside something the page has folded away?
 //
