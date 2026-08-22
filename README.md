@@ -4,6 +4,8 @@ What if you could read the blockchain like a manuscript, if every block is a cha
 
 **Read the book: <https://bookofbitcoin.io/>**
 
+<img src="docs/images/cover.png" alt="The cover: The Book of Bitcoin set in white with gold beta letters standing for the two B's, and the release version stamped beneath it" width="380">
+
 ## What it does
 
 The book is a *verbatim* translation of the chain into human language. Every
@@ -56,11 +58,13 @@ The reader's own bookmarks list here too, at the level each one names.
 Ascending from Volume III lands on Volume III's contents and nowhere else — the
 vertical axis is a correspondence, not a funnel.
 
+![Volume I's contents leaf: the heading Table of Contents over the title Volume I, the line Blocks 0-209,999 and 30 entries, then rows pairing a title with its reference in gold — The Genesis Block at book 1 chapter 1, the Times headline at its section, First difficulty adjustment at book 16 alone](docs/images/contents-volume-i.png)
+
 **A volume is an era of supply** — the 210,000 blocks from one halving to the
 next. Its title leaf carries the Roman numeral, the books it spans, the years it
 ran, and what it cost:
 
-    Volume I · β1 – β105 · 2009 – 2012 · +6.29·10²⁰ hashes
+<img src="docs/images/volume-title-leaf.png" alt="Volume I's title leaf: the title Volume I, the books it spans from book 1 to book 105, the years 2009 to 2012, and the work it added — plus 6.29 times ten to the twentieth hashes" width="520">
 
 That last figure is summed from the headers rather than quoted from anyone's
 server, and it is what makes eras comparable: each volume so far has cost more
@@ -70,7 +74,7 @@ than every volume before it put together.
 mined under, as the inequality it is, over the chapters it holds and the days it
 took to write them:
 
-    Book 1 · β₃₂ < 65535×256²⁶ · ■1 – ■2,016 · 2009-01-03 – 2009-01-27 · +8.66·10¹² hashes
+<img src="docs/images/book-title-leaf.png" alt="Book 1's title leaf: the title Book 1, the target it was mined under written as an inequality, the chapters it holds from 1 to 2,016, the dates 2009-01-03 to 2009-01-27, and the work it added — plus 8.66 times ten to the twelfth hashes" width="520">
 
 In Volume I a book is a difficulty window and nothing else. From Volume II on
 the two clocks come apart: an era is not a whole number of windows, so each new
@@ -95,6 +99,8 @@ merkle root (`⋔³²`), the timestamp in words, the target as `β₃₂ < 65535
 binding the hash above it, and the nonce factored (`η19·97·1130351`) — and
 closes with the work the chapter added.
 
+<img src="docs/images/chapter-genesis-block.png" alt="Chapter One's title page: the running head Volume 1 Book 1, the title Chapter One over the name The Genesis Block, the block hash said in prose between its two marks, then the header fields in wire order — version, previous block, merkle root, timestamp, target, nonce — closing on the work added" width="560">
+
 **Every section opens with its own head**: the § number, the name the book or
 the reader has given it, the transaction id said in prose (`⌘²⁵⁶`), the time it
 was recorded, and how many confirmations now stand over it.
@@ -107,6 +113,8 @@ miner's take arrives where every other section's leaves (the genesis coinbase:
 `50.00000000 ₿ · + 0 ₿ · = 50.00000000 ₿`). The pages after it are the block's
 transactions in the order the block records them, one page each, carrying a
 folio — the chain's running count of transactions since genesis.
+
+![The genesis coinbase, section 1: its head carries the section number, the name The Times 03/Jan/2009 Chancellor on brink of second bailout for banks, the transaction id in prose, the time and the confirmations; the left margin reads null since there is no prior output; the newspaper headline stands quoted in the script; and the balance line reads 50 bitcoin, plus 0 in fees, equals 50 bitcoin](docs/images/section-genesis-coinbase.png)
 
 **A transaction page is a manuscript page**, in three columns:
 
@@ -130,6 +138,8 @@ equation. It is derived arithmetic rather than bytes on the wire, so it rides in
 a band of its own, sticky at the foot while the record scrolls; an input the
 book cannot price leaves the sum and the fee unsaid (⋯) rather than guessing.
 
+![Section 13, named Coldcard attack wave 1: the output's script titled by the term it binds, its amount in the right margin, the locktime mark centred beneath, then the balance line — inputs at the left, fee negative between, outputs at the right — and beneath it the witness footnotes, each carrying its own input's citation and amount in the left margin](docs/images/section-coldcard-attack.png)
+
 **Witness data gathers at the foot as footnotes**, lettered a, b, c…, each
 marked from the input that carries it. It sits mid-serialization on the wire,
 but it is spending apparatus rather than speech — and an input that authorizes
@@ -138,6 +148,8 @@ its amount go down with its witness and the input reads whole at the foot: where
 it came from, what it spent, and what unlocked it, together. Even the type size
 is consensus's rule rather than the book's: a witness byte weighs a quarter of
 any other, and the footnotes are set to that same discount.
+
+![Section 2323, the first Ordinals inscription: the output carries its amount and, beneath it, the citation of the section that later spent it; the witness footnote below sets the inscription's own envelope — the ord marks and the image content type — in the same prose, at a quarter of the body's size](docs/images/section-first-ordinals-inscription.png)
 
 ## The appendices
 
