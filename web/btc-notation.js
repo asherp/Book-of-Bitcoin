@@ -432,7 +432,7 @@ export const NOTATION_HTML = `
               <div class="glyph-row"><span class="g">□</span><span class="m">no locktime</span></div>
               <div class="glyph-row"><span class="g"><i>v</i> β<i>b</i> ■<i>c</i></span><span class="m">not before the cited chapter (volume, β book, ■ chapter)</span></div>
               <div class="glyph-row"><span class="g">Τ<i>t</i></span><span class="m">not before a UTC date</span></div>
-              <div class="glyph-row"><span class="g">∅</span><span class="m"><b>empty</b> — a coinbase's absent prevout, a segwit input's zero-byte script, an empty witness item</span></div>
+              <div class="glyph-row"><span class="g">∅</span><span class="m"><b>empty</b> — nothing is there. <span class="why">A coinbase's absent prevout, a segwit input's zero-byte script, an empty witness or one of its items, a field a flag zeroed</span></span></div>
               <div class="glyph-row"><span class="g">§<i>n</i></span><span class="m">section — the transaction's position</span></div>
               <div class="glyph-row"><span class="g">§<i>n</i> †</span><span class="m"><b>superseded</b> — a draft replaced by fee; the book keeps its page seated beneath the successor that took its §</span></div>
               <div class="glyph-row"><span class="g"><i>n</i></span><span class="m"><b>page</b> — the bare number at the running head's right edge: the transaction's running count in the whole chain since genesis (one page per transaction)</span></div>

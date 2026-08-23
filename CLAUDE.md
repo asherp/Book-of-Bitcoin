@@ -171,6 +171,16 @@ Where this lives today:
   `applyKeyFilter` walks and `key-filter.test.mjs` counts. Budget: median gloss
   is 6 words, and nothing that reads as a rule runs past ~50. If a new entry
   needs a paragraph, the paragraph is `.why`.
+- **Two documents gloss the marks, and they must agree.** The interactive key
+  (`btc-notation.js`) and the generated `notation.md` (`MARKS` in
+  `tools/prerender-notation.mjs`) are both hand-written, and they drifted: each
+  glossed ∅ with cases the other omitted, so a reader meeting both learned two
+  different marks and neither was complete. The union is the truth. The key
+  layers it (rule in `.m`, cases in `.why`); the legend is one table cell with
+  no second register, so it runs the same words together, rule first.
+  `notation-page.test.mjs` pins the two flattened texts equal — the idiom
+  `term.test.mjs` already uses for hand-written sources that must not diverge.
+  Change one, change the other.
 - **The key's Scripts as terms group explains, it does not notate — and it
   explains from inside the manuscript.** A reader holding this book has not
   been told what Bitcoin is, so the group names nothing outside what is on the
