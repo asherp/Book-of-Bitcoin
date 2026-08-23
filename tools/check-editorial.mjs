@@ -155,8 +155,13 @@ for (const part of parts) {
   for (const bip of part.bips) {
     if (handles.has(bip.key)) problems.push(`appendix "${part.title}": two bips share the URL handle "${bip.key}"`);
     handles.add(bip.key);
-    if (bip.status === 'signaling' && (!Number.isFinite(bip.bit) || !Number.isFinite(bip.threshold))) {
-      problems.push(`appendix "${part.title}": ${bip.title} is signaling but names no bit/threshold to count by`);
+    // A fork whose ballot is or was read off the version word must say how it
+    // was counted, and an expired one must go on saying it: the count is the
+    // whole of what happened to it, and a leaf that dropped the bit and the
+    // threshold on the way out would leave the loss unmeasurable.
+    if ((bip.status === 'signaling' || bip.status === 'expired')
+        && (!Number.isFinite(bip.bit) || !Number.isFinite(bip.threshold))) {
+      problems.push(`appendix "${part.title}": ${bip.title} is ${bip.status} but names no bit/threshold to count by`);
     }
     // The ballot table needs a coherent reading of a yes: a bit, a minimum
     // version, or coinbase text (one of them, not two), a window, and -- for
@@ -186,15 +191,29 @@ for (const part of parts) {
     if (bip.status === 'signaling' && bip.ballot != null) {
       problems.push(`appendix "${part.title}": ${bip.title} is still signaling — its ballot has not closed, so it names none and its leaf counts from the tip`);
     }
+    // The two cannot both stand. A ballot anchors the table at the window it
+    // closed on and replays that window; a monitor pins the bar to whatever
+    // period is running now. Name both and the bar states a count for one
+    // window over a table drawing another, and the figures disagree on the
+    // same screen for no reason a reader could work out.
+    if (bip.ballot != null && bip.monitor !== undefined) {
+      problems.push(`appendix "${part.title}": ${bip.title} names both a ballot and a monitor — the table would replay the ballot's window while the bar counted the period running now`);
+    }
     // A monitor is an external claim the leaf will fetch and credit: it must
-    // be an https URL, and only a fork still signaling has a period to ask
-    // about -- a closed window's count is the chain's, not a site's.
+    // be an https URL, and it must name a fork with a period still running to
+    // ask about -- a ballot that closed years ago is counted in the chain, not
+    // at a site. A fork still signaling has one. So, for a while, does an
+    // expired one: BIP110's rule stopped being reachable at 963,648, but bit 4
+    // is still read out of every frontispiece, the last of its heights is
+    // still ahead, and the period going by at zero is the record of that. What
+    // may not name a monitor is a fork that ended (`active`, `failed`) or has
+    // not begun (`scheduled`).
     if (bip.monitor !== undefined) {
       if (!/^https:\/\//.test(bip.monitor)) {
         problems.push(`appendix "${part.title}": ${bip.title}'s monitor "${bip.monitor}" is not an https URL`);
       }
-      if (bip.status !== 'signaling') {
-        problems.push(`appendix "${part.title}": ${bip.title} names a monitor but is not signaling — a closed window's count is the chain's own`);
+      if (bip.status !== 'signaling' && bip.status !== 'expired') {
+        problems.push(`appendix "${part.title}": ${bip.title} names a monitor but is neither signaling nor expired — a closed window's count is the chain's own`);
       }
     }
     for (const e of bip.entries) {

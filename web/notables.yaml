@@ -818,9 +818,9 @@
 # and the supply-cap section above. Each is worth reading; none has a published
 # reading yet, and an annotation layer that guesses is worse than one with gaps.
 #
-# Heights consensus has fixed but no block has reached — BIP110's flag heights,
-# BIP42's cap — are not entries here: a chapter cited before it exists cannot be
-# read in sequence with chapters that do (dropped in among the volumes, BIP42
+# Heights consensus has fixed but no block has reached — BIP110's last flag
+# height, BIP42's cap — are not entries here: a chapter cited before it exists
+# cannot be read in sequence with chapters that do (dropped in among the volumes, BIP42
 # alone opened a Volume LXV two centuries wide). They are gathered in
 # appendix.yaml, as Appendix II: Consensus, grouped under their BIPs beside the
 # forks already active.
