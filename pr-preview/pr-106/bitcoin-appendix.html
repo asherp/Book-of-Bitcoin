@@ -501,24 +501,28 @@ a.bb-ref:hover { color:var(--accent-2); }
   <a class="appx-down hidden" id="block-up" href="#" aria-label="The next newer block">▴</a>
   <div class="bip-stats hidden" id="block-card"></div>
 
-  <!-- A fork's own leaf (?part=consensus&bip=N). The statistics first, as the
-       file states them -- what the fork is, how it was counted, what became of
-       it -- then the ballot: every block of the counted window, its version as
+  <!-- A fork's own leaf (?part=consensus&bip=N). What the fork is first, as
+       the file states it: the statistics -- how it was counted, what became of
+       it -- and then the chapters and sections it names, each a door into the
+       book. The ballot last: every block of the counted window, its version as
        the frontispiece writes it, and whether it says yes, drawn a page at a
        time as the reader scrolls with the running tally held in the sticky bar
-       at the foot. Then the chapters and sections the fork names, each a door
-       into the book.
+       at the foot.
 
-       The statistics stand ABOVE the ballot because of what the ballot is: up
-       to two thousand rows, drawn lazily as the reader scrolls. Below it they
-       rendered while the table was still empty, held the reader's eye for as
-       long as that lasted, and were then pushed off the screen by the rows
-       arriving above them -- so the summary of a fork could only be read again
-       by scrolling past every block of its window, having already been seen
-       and lost. A summary is read before the record it summarizes. -->
+       Both of the first two stand ABOVE the ballot because of what the ballot
+       is: up to two thousand rows, drawn lazily as the reader scrolls. Below
+       it they rendered while the table was still empty, held the reader's eye
+       for as long as that lasted, and were then pushed off the screen by the
+       rows arriving above them -- so a fork's summary, and the doors into the
+       chapters it named, could only be reached again by scrolling past every
+       block of its window, having already been seen and lost. A summary is
+       read before the record it summarizes, and a door is no use behind the
+       room. The fork's own chapters are still marked WITHIN the ballot where
+       their blocks fall (.bb-mark), so the list above is a directory and the
+       rules below it are the places themselves. -->
   <div class="bip-stats hidden" id="bip-stats"></div>
-  <div class="bip-blocks hidden" id="bip-blocks"></div>
   <div class="proof-list hidden" id="bip-entries"></div>
+  <div class="bip-blocks hidden" id="bip-blocks"></div>
 
   <!-- The Consensus leaf itself lists its forks: one row per BIP, each the
        door to that fork's own leaf. The Inscriptions leaf borrows the same
