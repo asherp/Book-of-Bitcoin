@@ -14,8 +14,9 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 
-import { lockClause, marksOf, rowShows, isHidden } from '../web/btc-key-filter.js';
+import { lockClause, markGlosses, marksOf, rowShows, isHidden } from '../web/btc-key-filter.js';
 import { NOTATION_HTML } from '../web/btc-notation.js';
 
 // Every glyph row as the filter sees it: the cell's markup and its data-marks.
@@ -164,6 +165,33 @@ test('the opening names the locks on the page, or says nothing', () => {
   // an unfiltered key reads without it rather than with a stale list.
   assert.match(NOTATION_HTML, /kind of lock they use<span class="key-locks"><\/span>/,
     'the opening has no slot for the filter to fill');
+});
+
+test('a mark carries the key\'s own rule, so hovering one explains it', () => {
+  // The renderer titles every opcode mark with the name consensus gives it,
+  // which is no help to a reader who does not already know what that name
+  // means. The key has the rule; this is how it reaches the page.
+  const g = markGlosses(NOTATION_HTML);
+  assert.ok(g.size > 80, `only ${g.size} marks glossed`);
+  assert.equal(g.get('⧉'), 'duplicate the top item');
+  assert.equal(g.get('∇'), 'check a signature');
+  // The rule, and not the essay under it: a tooltip is not where anyone reads
+  // a second-pass argument.
+  for (const [mark, rule] of g) {
+    assert.ok(!rule.includes('why'), `${mark} carries markup`);
+    assert.ok(rule.split(' ').length <= 60, `${mark}'s tooltip is an essay: ${rule}`);
+  }
+  // A row whose glyph carries a value teaches a family, not the one printing
+  // under the pointer, so it lends its gloss to no single mark.
+  assert.equal(g.get('■'), undefined, 'a value-carrying mark should not be glossed here');
+  assert.equal(g.get('■840000'), undefined);
+  // And the page applies it only where the title is a bare consensus name --
+  // everything the renderer explains for itself already says more.
+  const book = readFileSync(new URL('../web/bitcoin-book.html', import.meta.url), 'utf8');
+  assert.match(book, /const OPCODE_TITLE = \/\^OP_\[A-Z0-9_\]\+\$\//,
+    'the page no longer distinguishes a bare OP_ name from a written-out title');
+  assert.match(book, /glossMarks\(\$\('page-slide'\)\)/,
+    'nothing applies the glosses to the page');
 });
 
 test('the key emits the structure the filter reaches for', () => {

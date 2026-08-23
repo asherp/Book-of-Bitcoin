@@ -146,6 +146,38 @@ export const lockClause = (names) => {
   return `: ${names.length === 1 ? last : `${names.slice(0, -1).join(', ')} and ${last}`}`;
 };
 
+// The rule the key gives each mark, keyed by the mark itself -- so a reader
+// hovering a siglum in the reading is told what it does, rather than having to
+// open the key and find its row.
+//
+// The RULE only. What sits in .why beneath it is a second-pass argument, and a
+// tooltip is not where anyone reads one.
+//
+// And only marks a row names exactly. A loose row teaches a mark that carries a
+// value (■n, βn, ηp·q…), and its gloss is written for the whole family rather
+// than for the one printing under the pointer; a row tied to a template or a
+// pattern names no literal at all. Both are the key's business, not a mark's.
+//
+// First row wins, since a glyph with two offices is glossed twice -- the
+// coinbase margin's ⓪ⁿ counts bytes, the chapter head's counts bits -- and
+// each row says so in its own words. Reading order is the book's order, so the
+// gloss a mark carries is the one whose group comes first.
+export function markGlosses(keyHtml) {
+  const out = new Map();
+  const rows = keyHtml.matchAll(
+    /<div class="glyph-row"(?: data-marks="([^"]*)")?><span class="g">(.*?)<\/span><span class="m">(.*)?<\/span><\/div>/g);
+  for (const [, dataMarks, glyph, gloss] of rows) {
+    const rule = (gloss || '').split('<span class="why">')[0]
+      .replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+    if (!rule) continue;
+    for (const t of marksOf(glyph, dataMarks || null)) {
+      if (t.text === undefined || t.loose || out.has(t.text)) continue;
+      out.set(t.text, rule);
+    }
+  }
+  return out;
+}
+
 // ─── applying it to a rendered key ───────────────────────────────────────
 
 // Hide an element without disturbing the grids the key is built from: the

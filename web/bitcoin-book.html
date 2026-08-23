@@ -1416,7 +1416,7 @@ import { transactionTemplates } from './btc-templates.js';
 // at paint time with nothing fetched and nothing awaited -- which is what lets
 // it stand where a name has not been given rather than arriving after one.
 import { termOfScript, titleHtml } from './btc-term.js';
-import { collectMarks, applyKeyFilter } from './btc-key-filter.js';
+import { collectMarks, applyKeyFilter, markGlosses } from './btc-key-filter.js';
 // What a witness carries, read off its own bytes: a footnote whose payload
 // announces a format is named by it when nothing better has named it.
 import { witnessAsset } from './btc-inscriptions.js';
@@ -1451,6 +1451,31 @@ document.querySelector('.notation-body').innerHTML = KEY_SCOPE_HTML + NOTATION_H
 // The script patterns the page in hand carries; empty on a leaf, which has no
 // transaction under it.
 let pageTemplates = new Set();
+
+// What each mark means, from the key itself, so the two can never say
+// different things about one siglum.
+const MARK_GLOSSES = markGlosses(NOTATION_HTML);
+
+// A siglum's own name is on it already -- the renderer titles every opcode
+// mark with the name consensus gives it -- but a name is not a definition, and
+// a reader who does not already know what OP_CHECKSIGVERIFY does is not helped
+// by being told it is OP_CHECKSIGVERIFY. So the key's reading rule joins it,
+// and hovering any mark says both: what it is called and what it does.
+//
+// Only the marks whose title is a bare OP_ name. Everything the renderer
+// explains for itself -- a zero run, a BIP34 height, a pool's tag, a datum
+// letter -- already says more than the key's row would, and saying it twice
+// would be worse than saying it once.
+const OPCODE_TITLE = /^OP_[A-Z0-9_]+$/;
+function glossMarks(root) {
+  if (!root) return;
+  for (const el of root.querySelectorAll('.op')) {
+    const name = el.getAttribute('title') || '';
+    if (!OPCODE_TITLE.test(name)) continue;
+    const rule = MARK_GLOSSES.get((el.textContent || '').trim());
+    if (rule) el.setAttribute('title', `${name} — ${rule}`);
+  }
+}
 
 // Cut the key to the page. Recomputed when the sheet opens and again whenever
 // the page beneath it changes, so a reader who turns pages with the key open
@@ -3588,6 +3613,7 @@ async function showCurrentTx() {
     $('chapter').classList.remove('hidden');
     setStatus('');
     consumeSlide();
+    glossMarks($('page-slide'));
     refreshNotationKey();
     liveProjection.sync();
     return;
@@ -3617,6 +3643,7 @@ async function showCurrentTx() {
       $('chapter').classList.remove('hidden');
       setStatus('');
       consumeSlide();
+      glossMarks($('page-slide'));
       refreshNotationKey();
       liveProjection.sync();
       return;
@@ -3634,6 +3661,7 @@ async function showCurrentTx() {
   $('chapter').classList.remove('hidden');
   setStatus('');
   consumeSlide();
+  glossMarks($('page-slide'));
   refreshNotationKey();
   liveProjection.sync();
 }
