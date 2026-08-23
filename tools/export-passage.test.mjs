@@ -114,16 +114,20 @@ test('the filename outlives print(), and one path prepares every leaf', () => {
   // The bug this pins, and it is invisible to any synchronous test: Chrome
   // generates its print preview AFTER print() returns and reads document.title
   // then. Restoring the title on the line after print() therefore hands the
-  // dialogue the site's own name -- "The βook of βitcoin — a block, read as a
-  // chapter" -- however correct the title was during the call.
+  // dialogue whatever the tab says next rather than the passage's own name,
+  // however correct the title was during the call.
   const fn = page.slice(page.indexOf('async function exportPassage'),
     page.indexOf('// The chain tip height'));
   assert.ok(!/document\.title\s*=/.test(fn),
     'exportPassage must not set or restore the title around print() — afterprint owns that');
-  assert.match(page, /window\.addEventListener\('afterprint', restoreSiteTitle\)/,
+  assert.match(page, /window\.addEventListener\('afterprint', restorePageTitle\)/,
     'the title goes back when the dialogue is done, not when print() returns');
-  assert.match(page, /function restoreSiteTitle\(\)[\s\S]{0,160}document\.title = SITE_TITLE/,
-    'and it goes back to what the tab said at load');
+  // ...and it goes back to the PASSAGE's name, not the document's own <title>.
+  // The tab is named per passage now (see the test below), so restoring what
+  // the document loaded with would leave every printed passage's tab reading
+  // like the front door until the reader navigated again.
+  assert.match(page, /function restorePageTitle\(\)[\s\S]{0,160}document\.title = pageTitle\(\)/,
+    'and it goes back to whatever this passage is called');
 
   // One preparation, so the mark and a plain ⌘P produce the same leaf --
   // encoded prose, colophon, filename. Wiring only the mark leaves ⌘P
@@ -142,13 +146,34 @@ test('the filename outlives print(), and one path prepares every leaf', () => {
   // …and three separate things can hand the name back, because on Android
   // neither afterprint nor beforeprint arrives: returning to the page is the
   // signal there, and a long timer is the last resort.
-  assert.match(page, /window\.addEventListener\('afterprint', restoreSiteTitle\)/);
-  assert.match(page, /visibilitychange[\s\S]{0,320}restoreSiteTitle\(\)/,
+  assert.match(page, /window\.addEventListener\('afterprint', restorePageTitle\)/);
+  assert.match(page, /visibilitychange[\s\S]{0,320}restorePageTitle\(\)/,
     'coming back into view restores it where no print event ever fires');
-  assert.match(page, /setTimeout\(restoreSiteTitle, TITLE_RESTORE_BACKSTOP_MS\)/,
+  assert.match(page, /setTimeout\(restorePageTitle, TITLE_RESTORE_BACKSTOP_MS\)/,
     'and a backstop timer behind both');
   assert.match(prep, /if \(!state \|\| !\$\('page-export'\)\) return false;/,
     'and does nothing where there is no passage — a leaf, a tombstone');
+});
+
+test('every passage names the tab, so history reads back as references', () => {
+  // The document's <title> describes the book and never changes, so a reader's
+  // history was one line repeated -- nothing to tell one visited passage from
+  // another. The title is set where the address is, which is every navigation.
+  const upd = page.slice(page.indexOf('function updateUrl'), page.indexOf('function updateUrl') + 1400);
+  assert.match(upd, /document\.title = pageTitle\(\)/,
+    'updateUrl does not name the tab, so history is a column of one title');
+  // Held back mid-print: the engine reads document.title when the dialogue
+  // closes, so naming the tab on a navigation then would rename the file.
+  assert.match(upd, /if \(!titleArmed\) document\.title = pageTitle\(\)/,
+    'a navigation during print would rename the leaf');
+  // The name is the book's own citation, not the leaf's filesystem-safe Latin:
+  // § β ■ are what a reader scanning history is looking for.
+  const fn = page.slice(page.indexOf('function pageTitle'), page.indexOf('function pageTitle') + 700);
+  assert.match(fn, /referenceOf\(state\.height\)/, 'the title is not the book citation');
+  assert.match(fn, /§\$\{state\.index \+ 1\}/, 'a section is not named by its §');
+  assert.ok(!/latinRefOf/.test(fn), 'the tab should take the book marks, not the filename Latin');
+  assert.match(fn, /if \(!state\) return SITE_TITLE/,
+    'with no passage drawn the tab keeps the document title');
 });
 
 test('a name is filed only where the passage has one, and never unsanitized', async () => {

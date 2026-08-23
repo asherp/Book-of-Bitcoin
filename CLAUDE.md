@@ -59,10 +59,9 @@ lambdas — the same split as the committed/revealed modes below:
 - the *locking script* is titled by the anonymous lambda it binds, derived
   from the bytes alone: `λh. ⓪ h` for a P2WPKH output. `titleText` /
   `titleHtml` (btc-term.js) write it. Bare of everything a title does not
-  need — no `⟦ ⟧` (those claim the wire's own bytes, and the script itself
-  stands below), no application or parentheses (`(λh. ⓪ h) h²⁰` says what was
-  *done* to the term rather than what it is), and no count on the binder, since
-  every output of a shape shares its title. The demand rung is deliberately
+  need — no application or parentheses (`(λh. ⓪ h) h²⁰` says what was *done* to
+  the term rather than what it is), and no count on the binder, since every
+  output of a shape shares its title. The demand rung is deliberately
   *not* this: P2PKH and P2WPKH ask for the same key material, so the demand
   does not distinguish what a name must distinguish.
   - **The kind opens it, and `:=` binds the two**: `P2WPKH := λh. ⓪ h`. The
@@ -150,6 +149,65 @@ Where this lives today:
 - `termOfScript` (btc-term.js) reads a term off any tokenizable script: every
   push becomes a binder, every opcode stays where it stands. The six tabled
   forms (`TERMS`) are derived, not looked up.
+- **The key writes a term the way the pages do.** The notation key's Scripts as
+  terms group once carried three marks of its own — `⟦ ⟧` for the script
+  constructor, `β` for reduction, `δ` for the one-way steps. None of them ever
+  reached a reader: no page draws them, so the key was teaching an apparatus
+  that existed only in the key. All three are gone, and the terms table now
+  writes what `titleText` writes (`λh. ⓪ h`, `⓪ h²⁰`) rather than a bracketed
+  variant of it. What the removed rows were saying survives as prose where it
+  is still load-bearing — a hash is what a commitment hides behind, a one-way
+  step is ⌖ ⌘ Σ and a key from its scalar — and `β` is left to the one office
+  it still holds, the difficulty target in a chapter's frontispiece. This is
+  also why `abstractionText` and `applicationText` are gone: with no brackets
+  to distinguish them they were `titleText` and `addressText` verbatim.
+- **A gloss leads with the reading rule; rationale goes in `.why`.** The key is
+  a legend, so the first thing in a `.m` cell is how to read the mark — what ⧉
+  gets in four words ("duplicate the top item"). Everything after it is why the
+  book reads it that way, which a reader wants on a second pass and not while
+  looking a mark up, so it drops into `<span class="why">` nested inside the
+  same `.m` (notation.css sets it as a dimmer block beneath). Nested rather
+  than beside, so every row still has exactly one `.g` and one `.m` — the pair
+  `applyKeyFilter` walks and `key-filter.test.mjs` counts. Budget: median gloss
+  is 6 words, and nothing that reads as a rule runs past ~50. If a new entry
+  needs a paragraph, the paragraph is `.why`.
+- **Two documents gloss the marks, and they must agree.** The interactive key
+  (`btc-notation.js`) and the generated `notation.md` (`MARKS` in
+  `tools/prerender-notation.mjs`) are both hand-written, and they drifted: each
+  glossed ∅ with cases the other omitted, so a reader meeting both learned two
+  different marks and neither was complete. The union is the truth. The key
+  layers it (rule in `.m`, cases in `.why`); the legend is one table cell with
+  no second register, so it runs the same words together, rule first.
+  `notation-page.test.mjs` pins the two flattened texts equal — the idiom
+  `term.test.mjs` already uses for hand-written sources that must not diverge.
+  Change one, change the other.
+- **The key's Scripts as terms group explains, it does not notate — and it
+  explains from inside the manuscript.** A reader holding this book has not
+  been told what Bitcoin is, so the group names nothing outside what is on the
+  page: no transactions, outputs, accounts, balances, coins or chain. What it
+  says instead is that some passages are **locks**, that a passage further on
+  answers one and cites it in the margin, and that what the two never do is
+  name each other *in their marks* — a lock states what will open it and never
+  who, so the linkage the notation shows is the shared value, written into the
+  lock and written again by whatever opens it. Scope that claim to the scripts:
+  an input names its prevout by txid and index, and the reading draws exactly
+  that pointer (`.tx-in-cite`, bitcoin-book.html), so "nothing points at the
+  other" is false about Bitcoin and about this book's own page. Then what the
+  title line means (λ marks a blank; fill it in from the passage below and you
+  have that passage, mark for mark). Segwit needs no outside word either: a
+  witness is already a **footnote** in this book (`§1.a`), so P2WPKH and P2WSH
+  are glossed as the same bargain with the key or the revealed lock carried in
+  a footnote. Keep new prose here inside that vocabulary.
+  Below the terms table, one `.glyph-row` per form
+  states in plain terms what that lock asks of a spender, tagged `tpl:<id>` so
+  the key's filter shows a reader on a P2SH page P2SH's paragraph and nobody
+  else's. `.glyph-grid.forms` (notation.css) is that grid: same row the filter
+  walks, one column wide, the form's name where a mark stands. The two
+  calculus-only paragraphs (the pure form lifted to `λo n x. o xⁿ`, and why ⧉
+  stays in the term) are gone — the first is still argued in the Addresses
+  group, the second in the λ row. The terms table's heads are plain too: **The
+  lock / Filled in / Made from**. The one claim `term.test.mjs` rests on is
+  unchanged, only reworded: fill the blank in and you get the scriptPubKey.
 - `addressText` / `addressHtml` still write the address as a partial
   application, `(λp. ① p) p³²`, and `term.test.mjs` still checks them against
   the scripts addresses really decode to — but no page draws them.

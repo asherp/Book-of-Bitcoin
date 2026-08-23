@@ -86,6 +86,34 @@ test('every mark the key names is one the book actually writes', async () => {
   }
 });
 
+test('the key and the generated legend gloss ∅ with the same words', async () => {
+  // Two hand-written sources said different things about one mark, and each
+  // named cases the other left out: the interactive key had segwit's empty
+  // scriptSig and an empty witness, notation.md had a field a flag zeroed. A
+  // reader who met both learned two different marks, and neither was complete.
+  //
+  // The union is the truth, so it is written once in each and pinned here --
+  // the way term.test.mjs pins btc-term.js against the terms table, and for the
+  // same reason: nothing else compares two documents that are typed by hand.
+  //
+  // The key layers it (the rule in .m, the four places in .why beneath), and
+  // the legend is one table cell with no second register, so it runs them
+  // together. Flattened, they have to be the same sentence.
+  const key = await web('btc-notation.js');
+  const row = key.match(/<span class="g">∅<\/span><span class="m">(.*?)<\/span><\/div>/);
+  assert.ok(row, 'the key no longer has a ∅ row');
+  const entry = MARKS.find(([m]) => m === '∅');
+  assert.ok(entry, 'notation.md no longer glosses ∅');
+  // Each file keeps its own typography; what has to agree is the words.
+  const flat = (t) => t.replace(/<[^>]+>/g, '').replace(/['’]/g, "'").replace(/\s+/g, ' ').trim();
+  assert.equal(flat(row[1]), flat(entry[1]),
+    'the key and notation.md disagree about what ∅ means');
+  // And the rule comes first in both, so the legend's cell opens the way the
+  // key's row does rather than with one of the places.
+  assert.ok(flat(entry[1]).startsWith('empty — nothing is there.'),
+    'the legend should lead with the reading rule');
+});
+
 // ── the brief ─────────────────────────────────────────────────────────────
 
 test('the brief states the terms the term module derives', async () => {
