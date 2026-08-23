@@ -15,7 +15,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { marksOf, rowShows, isHidden } from '../web/btc-key-filter.js';
+import { lockClause, marksOf, rowShows, isHidden } from '../web/btc-key-filter.js';
 import { NOTATION_HTML } from '../web/btc-notation.js';
 
 // Every glyph row as the filter sees it: the cell's markup and its data-marks.
@@ -149,6 +149,21 @@ test('a plain P2PKH page opens the rows it needs and no others', () => {
   assert.ok(!opens('☒'), 'no invalid opcode');
   assert.ok(!opens('<b>t</b>'), 'no tapscript');
   assert.ok(!opens('<b>k</b>', 'tpl:lightning'), 'no channel');
+});
+
+test('the opening names the locks on the page, or says nothing', () => {
+  // The Scripts as terms opening ends with the kinds the page in hand carries,
+  // filled from the terms table's own surviving row names. It has to read as a
+  // sentence with no names at all: the front matter's sigla leaf never filters,
+  // and a page whose only passage is a data output carries no lock to name.
+  assert.equal(lockClause([]), '', 'with nothing to name the clause is nothing');
+  assert.equal(lockClause(['P2PKH']), ': P2PKH');
+  assert.equal(lockClause(['P2PKH', 'P2SH']), ': P2PKH and P2SH');
+  assert.equal(lockClause(['P2PKH', 'P2SH', 'P2TR']), ': P2PKH, P2SH and P2TR');
+  // The slot is in the key for the filter to find, and empty in the source, so
+  // an unfiltered key reads without it rather than with a stale list.
+  assert.match(NOTATION_HTML, /kind of lock they use<span class="key-locks"><\/span>/,
+    'the opening has no slot for the filter to fill');
 });
 
 test('the key emits the structure the filter reaches for', () => {
