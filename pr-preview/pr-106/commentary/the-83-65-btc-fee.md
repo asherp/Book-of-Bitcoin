@@ -1,0 +1,7 @@
+<!-- SPDX-License-Identifier: CC-BY-4.0 -->
+
+One input of 139.42495946 ₿, one output of 55.76998378 ₿, and 83.65497568 ₿ left between them: the largest fee ever paid in dollar terms — about $3.1 million on 23 November 2023 — and the second-largest in coin, behind only the 291 ₿ of 2016 (II β99 ■1441 §2). The transaction replaced earlier, lower-fee versions of itself in the minutes before it was mined; AntPool's block collected it.
+
+Whose mistake it was is contested testimony, and the page cannot settle it. A claimant calling themselves 83_5BTC said the wallet had been hacked and the fee was the thief's replace-by-fee racing gone wrong; they signed a message with the spending key, and Mononaut — the pseudonymous developer of the mempool.space explorer — verified the signature (The Block, November 2023). A signature proves the key, not the story: it is the hack claim's evidence and also exactly what a remorseful sender would produce. AntPool said its risk control had frozen the sum and offered it back against a signed proof of keys by 10 December 2023; the offer is the last act on the public record.
+
+Ten weeks earlier F2Pool had returned the 19.82 ₿ fee at IV β88 ■1666 §2 within days. Here the return needed the one thing the chain never carries — who the coins belonged to — and the freeze, the deadline, and the signature were all machinery for establishing off the record what no passage can state on it.

@@ -1,0 +1,59 @@
+/* SPDX-License-Identifier: MIT OR Apache-2.0 */
+/* Shared masthead chrome — the header every page wears: the book's title on
+   the left, the page's own nav on the right, and the Install / Update
+   affordances riding the title's line (appended and revealed by
+   btc-chrome.js). Colors come from each page's own :root palette. Linked
+   before the page's inline styles, so a page can override — the book page
+   tightens the masthead's bottom margin. */
+
+/* The page's own margins, and the one place they are decided. Every page sets
+   its text in a column 22px clear of the screen's edges; what that constant
+   cannot know is that a phone in landscape spends part of its width on a
+   display cutout. Every page declares `viewport-fit=cover`, so the window
+   runs the whole screen — which is the only way to be rid of the system's
+   black letterbox — and a page that renders under the cutout has to pad
+   itself back out of the way, or the camera sits on the text.
+
+   Both edges are read, because the cutout swaps sides between the two
+   landscape rotations and a rule that pads one of them is right half the
+   time. The inset wins only where it is the larger of the two, so portrait,
+   every desktop, and every page in print resolve both to 22px exactly as
+   before. A page that wants a different measure sets --gutter; the pair
+   below follow it. */
+:root {
+  --gutter: 22px;
+  --gutter-l: max(var(--gutter), env(safe-area-inset-left, 0px));
+  --gutter-r: max(var(--gutter), env(safe-area-inset-right, 0px));
+}
+
+.masthead { display:flex; align-items:baseline; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:40px; }
+.masthead .title { font:600 13px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.22em; text-transform:uppercase; color:var(--ink); }
+.masthead .title .beta { color:var(--accent); text-transform:none; font-family:'Newsreader','Book Sigla','Source Serif 4',Georgia,serif; font-weight:600; font-size:1.12em; }
+.masthead .home { margin-left:auto; font:500 12px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.04em; }
+
+/* Install-as-app affordance: hidden until the browser fires beforeinstallprompt
+   (Chrome/Edge/Android), so it appears only when the app is actually
+   installable and not already installed. On iOS Safari it stays hidden — that
+   platform installs via Share → Add to Home Screen instead. */
+.install-btn {
+  display:none; margin-left:12px; vertical-align:baseline; background:transparent;
+  border:1px solid var(--accent); color:var(--accent); border-radius:4px; padding:4px 10px;
+  cursor:pointer; font:600 11px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.08em; text-transform:uppercase;
+  transition:background .15s ease, color .15s ease;
+}
+.install-btn.show { display:inline-block; }
+.install-btn:hover { background:var(--accent); color:var(--btn-ink,#17140c); }
+
+/* Update affordance: hidden until the service worker reports that a newer
+   build has been cached behind the page. Filled gold, unlike the quiet
+   Install outline, because it's an action the reader probably wants to take
+   now. */
+.update-btn {
+  display:none; margin-left:12px; vertical-align:baseline;
+  background:var(--accent); border:1px solid var(--accent); color:var(--btn-ink,#17140c);
+  border-radius:4px; padding:4px 10px; cursor:pointer;
+  font:600 11px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.08em; text-transform:uppercase;
+  transition:background .15s ease;
+}
+.update-btn.show { display:inline-block; }
+.update-btn:hover { background:var(--accent-2); border-color:var(--accent-2); }
