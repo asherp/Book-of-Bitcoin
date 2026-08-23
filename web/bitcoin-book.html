@@ -453,6 +453,21 @@ button:disabled { opacity: .4; cursor: not-allowed; }
   background: var(--card); border: 1px solid var(--card-bd); border-radius: 7px;
   box-shadow: 0 18px 44px -18px rgba(0,0,0,.8);
 }
+.mark-gloss {
+  position: fixed; z-index: 40; max-width: min(19rem, calc(100vw - 24px)); padding: 6px;
+  background: var(--card); border: 1px solid var(--card-bd); border-radius: 7px;
+  box-shadow: 0 18px 44px -18px rgba(0,0,0,.8);
+}
+.mark-gloss-body {
+  padding: 0 8px 5px; color: var(--dim);
+  font: 400 13px/1.45 'Public Sans','Book Sigla', sans-serif;
+}
+/* A mark that has something to say offers no ink of its own -- the book's
+   marks are its text, and underlining every opcode would set the page
+   twitching. The pointer is the whole of the affordance, and on a touch
+   screen there is no pointer and no affordance: a reader taps a mark to see
+   what it is, which is what they would do anyway. */
+[data-gloss] { cursor: help; }
 .hash-menu-head {
   padding: 6px 8px 8px; color: var(--dim); font: 600 10.5px/1 'IBM Plex Mono','Book Sigla',monospace;
   letter-spacing: .1em; text-transform: uppercase; border-bottom: 1px solid var(--rule); margin-bottom: 5px;
@@ -1342,6 +1357,13 @@ a.footnote-title.is-asset:hover { color: var(--accent-2, #dcb877); text-decorati
     </nav>
   </article>
 
+  <!-- What a mark means, for a reader who cannot hover one. Same words the
+       tooltip carries and the key's row opens with -- markGlosses is the one
+       source, so a tap and a hover cannot say different things. -->
+  <div id="mark-gloss" class="mark-gloss hidden" role="tooltip">
+    <div id="mark-gloss-head" class="hash-menu-head"></div>
+    <div id="mark-gloss-body" class="mark-gloss-body"></div>
+  </div>
   <div id="hash-menu" class="hash-menu hidden" role="menu">
     <div id="hash-menu-head" class="hash-menu-head"></div>
     <div id="hash-menu-actions">
@@ -1473,9 +1495,53 @@ function glossMarks(root) {
     const name = el.getAttribute('title') || '';
     if (!OPCODE_TITLE.test(name)) continue;
     const rule = MARK_GLOSSES.get((el.textContent || '').trim());
-    if (rule) el.setAttribute('title', `${name} — ${rule}`);
+    if (!rule) continue;
+    el.setAttribute('title', `${name} — ${rule}`);
+    // ...and on the element, where a tap can reach it. One source for both, so
+    // the popover and the tooltip cannot drift, and one attribute the script
+    // body's own menu can test to know it was not the thing that was pressed.
+    el.dataset.gloss = rule;
+    el.dataset.glossName = name;
   }
 }
+
+// A mark's gloss, shown where a pointer cannot hover: the same rule the title
+// carries, in a popover a tap can open. Positioned at the mark rather than at
+// the pointer, so it lands in the same place however it was opened.
+const markGlossEl = () => $('mark-gloss');
+function openMarkGloss(el) {
+  const box = markGlossEl();
+  if (!box || !el.dataset.gloss) return;
+  $('mark-gloss-head').textContent = el.dataset.glossName || '';
+  $('mark-gloss-body').textContent = el.dataset.gloss;
+  box.classList.remove('hidden');
+  const pad = 8;
+  const m = el.getBoundingClientRect();
+  const r = box.getBoundingClientRect();
+  box.style.left = `${Math.min(Math.max(pad, m.left + m.width / 2 - r.width / 2), window.innerWidth - r.width - pad)}px`;
+  // Below the mark where there is room, above it where there is not, so the
+  // popover never covers the mark a reader is asking about.
+  box.style.top = `${m.bottom + 6 + r.height + pad > window.innerHeight && m.top - 6 - r.height > pad
+    ? m.top - 6 - r.height : m.bottom + 6}px`;
+}
+function closeMarkGloss() {
+  const box = markGlossEl();
+  if (box) box.classList.add('hidden');
+}
+
+// Delegated, because marks are rebuilt on every render and there are hundreds
+// of them on a page: one listener on the slide outlives them all.
+document.addEventListener('click', (e) => {
+  const mark = e.target.closest && e.target.closest('[data-gloss]');
+  if (!mark || !$('page-slide')?.contains(mark)) return;
+  // A drag that ended on a mark was a selection, not a tap on it -- the same
+  // rule the script body keeps, since the marks are inside its prose.
+  const sel = document.getSelection();
+  if (sel && !sel.isCollapsed) return;
+  e.preventDefault();
+  e.stopPropagation();
+  openMarkGloss(mark);
+});
 
 // Cut the key to the page. Recomputed when the sheet opens and again whenever
 // the page beneath it changes, so a reader who turns pages with the key open
@@ -3790,6 +3856,10 @@ function attachBodyMenu(el, entryOf, said) {
     // A drag that ended here was a selection, not a click on a handle.
     const sel = document.getSelection();
     if (e.type === 'click' && sel && !sel.isCollapsed) return;
+    // A mark inside the body answers for itself -- it opens its own gloss, and
+    // a reader who pressed ⧉ was asking what ⧉ means, not for the bytes of the
+    // script around it. So the copy menu belongs to the prose alone.
+    if (e.target && e.target.closest && e.target.closest('[data-gloss]')) return;
     const entry = entryOf();
     if (entry) openHashMenu(e, entry, el);
   };
@@ -5707,6 +5777,11 @@ async function renderFootnotes(gen) {
     el.append(p);
   }
   syncBookmarkTitles();   // paint the witness name lines just laid out
+  // The footnotes are laid out after the page was glossed -- three of the four
+  // ways in here are a reader opening one, not the render -- so their marks
+  // take their glosses now. Without this a siglum in a witness said only its
+  // consensus name, and a tap on one did nothing at all.
+  glossMarks(el);
   $('ch-footnotes-section').classList.remove('hidden');
   footnotesLoaded = true;
   lazyEncode.observe(el);   // stream each push's prose in as the reader scrolls to it
@@ -8133,8 +8208,14 @@ titleInput.addEventListener('keydown', (e) => {
 // so opening the menu on one hash doesn't immediately close it.
 document.addEventListener('mousedown', (e) => {
   if (!hashMenu.classList.contains('hidden') && !hashMenu.contains(e.target)) closeHashMenu();
+  // The gloss goes the same way -- but not on the mark that is about to open
+  // it, or the press would close what the click then reopens.
+  const box = markGlossEl();
+  if (box && !box.classList.contains('hidden') && !box.contains(e.target)
+      && !(e.target.closest && e.target.closest('[data-gloss]'))) closeMarkGloss();
 });
-document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeHashMenu(); });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { closeHashMenu(); closeMarkGloss(); } });
+window.addEventListener('scroll', closeMarkGloss, { passive: true });
 // Dismiss on a genuine user scroll or resize -- but never while the title form
 // is up, so a mobile keyboard's viewport resize (or a focus scroll) can't
 // discard a half-typed bookmark title.
