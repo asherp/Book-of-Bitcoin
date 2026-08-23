@@ -236,7 +236,12 @@ a:hover { text-decoration: underline; }
 /* The ballot itself: one row per block of the counted window -- its chapter,
    its version as the frontispiece writes it, and whether it says yes. Drawn a
    page at a time as the foot comes into reach, the way a ledger's record is. */
-.bip-blocks { max-width:56ch; margin:0 auto; }
+/* Room above the ballot now that the statistics stand there: the stats table
+   rules its own rows and the ballot rules its column heads, and abutted on
+   the 6px the stats carry below them the two rule systems read as one
+   confused table. The gap is on the ballot rather than on .bip-stats, which
+   a block's leaf and the mines shelf also wear. */
+.bip-blocks { max-width:56ch; margin:20px auto 0; }
 .bb-heads { display:flex; gap:14px; padding:0 2px 6px; border-bottom:1px solid var(--rule); }
 /* The heads borrow the rows' column classes for their widths alone; the
    dress is the ruling register's, not the row's -- and a head never breaks
@@ -326,12 +331,11 @@ a.bb-ref:hover { color:var(--accent-2); }
 .bb-mark.bb-toc::before, .bb-mark.bb-toc::after { border-top-color:var(--rule); opacity:1; }
 .bb-bm-rib { display:inline-block; flex:none; width:8px; height:11px; margin-right:-2px; color:var(--accent); }
 .bb-bm-rib svg { display:block; width:100%; height:100%; }
-/* The fork leaf's foot: sticky at the screen bottom, the rule its top edge,
-   holding the fork's commentary so the reading is at hand at every moment of
-   the scroll. An opened sheet rises from the foot, capped so the ballot stays
-   in view behind it. The running tally used to sit here too, above the sheet;
-   it now heads the ballot instead (.bip-tally), where the record it counts
-   begins rather than where it ends. */
+/* The fork leaf's foot, seated the way the Ledger's totals bar sits: sticky
+   at the screen bottom, the rule its top edge, holding the running tally and
+   -- beneath the summary line -- the fork's commentary, so the reading is at
+   hand at every moment of the scroll. An opened sheet rises from the foot,
+   capped so the ballot stays in view behind it. */
 .bip-foot { position:sticky; bottom:0; z-index:40;
   max-width:56ch; margin:0 auto;
   padding-bottom:max(6px, env(safe-area-inset-bottom));
@@ -341,20 +345,9 @@ a.bb-ref:hover { color:var(--accent-2); }
    foot rests where it falls. Sticky there earns nothing and costs something:
    on a leaf that nearly fits the screen it pins the sheet over the turns. */
 .bip-foot.at-rest { position:static; }
-/* The summary, at the ballot's head rather than its foot. The count is what
-   the table is for, so a reader meets it before the record instead of after
-   it -- and sticky at the top it holds its figure over every row as the
-   window goes by, which is the office it held at the foot. Framed like the
-   table it heads (56ch, centred), with the rule as its bottom edge: the bar
-   and the column heads beneath it read as one head over one record. */
-.bip-tally { position:sticky; top:0; z-index:40;
-  max-width:56ch; margin:0 auto;
-  display:flex; gap:10px; align-items:baseline;
-  padding:12px 2px 10px 14px;
-  border-bottom:1px solid var(--rule); background:var(--page); }
-/* The commentary is the foot's only tenant now, and the foot already rules
-   its own top edge -- a second hairline above the sheet would double it. */
-.bip-foot .leaf-commentary { margin:0; max-width:none; padding:0 2px; }
+.bip-tally { display:flex; gap:10px; align-items:baseline;
+  padding:12px 2px 10px 14px; }
+.bip-foot .leaf-commentary { margin:0; max-width:none; border-top:1px solid var(--hair); padding:0 2px; }
 .bip-foot .commentary-body { max-height:45vh; overflow:auto; }
 .bip-tally .t-label { font:600 9.5px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.14em; text-transform:uppercase; color:var(--meta); margin-right:6px; }
 .bip-tally .t-fig { font:600 13px/1.4 'IBM Plex Mono','Book Sigla',monospace; color:var(--accent); font-variant-numeric:tabular-nums; }
@@ -508,16 +501,23 @@ a.bb-ref:hover { color:var(--accent-2); }
   <a class="appx-down hidden" id="block-up" href="#" aria-label="The next newer block">▴</a>
   <div class="bip-stats hidden" id="block-card"></div>
 
-  <!-- A fork's own leaf (?part=consensus&bip=N). Below the description, the
-       ballot: every block of the counted window, its version as the
-       frontispiece writes it, and whether it says yes -- drawn a page at a
-       time as the reader scrolls, under a summary line that heads the table
-       and holds its figure there. Then the statistics as the file states them,
-       and the chapters and sections the fork names, each a door into the
-       book. -->
-  <div class="bip-tally hidden" id="bip-tally"></div>
-  <div class="bip-blocks hidden" id="bip-blocks"></div>
+  <!-- A fork's own leaf (?part=consensus&bip=N). The statistics first, as the
+       file states them -- what the fork is, how it was counted, what became of
+       it -- then the ballot: every block of the counted window, its version as
+       the frontispiece writes it, and whether it says yes, drawn a page at a
+       time as the reader scrolls with the running tally held in the sticky bar
+       at the foot. Then the chapters and sections the fork names, each a door
+       into the book.
+
+       The statistics stand ABOVE the ballot because of what the ballot is: up
+       to two thousand rows, drawn lazily as the reader scrolls. Below it they
+       rendered while the table was still empty, held the reader's eye for as
+       long as that lasted, and were then pushed off the screen by the rows
+       arriving above them -- so the summary of a fork could only be read again
+       by scrolling past every block of its window, having already been seen
+       and lost. A summary is read before the record it summarizes. -->
   <div class="bip-stats hidden" id="bip-stats"></div>
+  <div class="bip-blocks hidden" id="bip-blocks"></div>
   <div class="proof-list hidden" id="bip-entries"></div>
 
   <!-- The Consensus leaf itself lists its forks: one row per BIP, each the
@@ -561,12 +561,13 @@ a.bb-ref:hover { color:var(--accent-2); }
   <a class="appx-down" id="appx-down" href="#" aria-label="Down into the appendix">▾</a>
   <nav class="appx-turns" id="appx-turns"></nav>
 
-  <!-- The fork leaf's sticky foot: the fork's reading -- what somebody makes
-       of it -- kept where every reading is kept: behind a toggle, over the
-       record rather than in it. Last in the flow, so it holds the screen's
-       foot for the whole of the scroll. The summary line is NOT here; it
-       heads the ballot, above the table it counts. -->
+  <!-- The fork leaf's sticky foot: the summary line, and beneath it the
+       fork's reading -- what the fork is, and what somebody makes of it --
+       kept where every reading is kept: behind a toggle, over the record
+       rather than in it. Last in the flow, so it holds the screen's foot
+       for the whole of the scroll. -->
   <div class="bip-foot hidden" id="bip-foot">
+    <div class="bip-tally hidden" id="bip-tally"></div>
     <details class="leaf-commentary hidden" id="bip-commentary">
       <summary title="Readings of this fork — editorial, kept apart from the record above">Commentary</summary>
       <div class="commentary-body" id="bip-commentary-body"></div>
@@ -2507,6 +2508,7 @@ if (bip && blockLeaf == null) {
       tallyEl.append(fig, note);
       if (title) tallyEl.title = title;
       tallyEl.classList.remove('hidden');
+      $('bip-foot').classList.remove('hidden');
     };
     const against = Number.isFinite(bip.threshold) ? `against ${bip.threshold}% — ` : '';
     // The bar prefers the period's WHOLE count over the table's sample: a
