@@ -32,6 +32,34 @@ test('the cache name carries the epoch and a hash of the shell', () => {
   assert.match(CACHE, /^bitcoin-book-shell-v\d+-[0-9a-z]+$/);
 });
 
+// Every module the pages actually pull in has to BE in the shell. The cache
+// name is derived, so adding a module and forgetting the list renames nothing
+// and breaks nothing that a test or a browser online would notice -- the page
+// simply fetches the missing file from the network every time, and offline it
+// fetches nothing at all and the leaf that imports it stops working. That is
+// the failure this guards: shell membership, not the file's existence (the
+// engine is a build artifact and absent from a bare checkout).
+test('every module the pages import is carried in the shell', () => {
+  const { SHELL } = load();
+  const carried = new Set(SHELL);
+  const dir = new URL('../web/', import.meta.url);
+  const seen = new Map();   // specifier -> the files asking for it
+  for (const name of fs.readdirSync(dir)) {
+    if (!/\.(html|js)$/.test(name)) continue;
+    const src = fs.readFileSync(new URL(name, dir), 'utf8');
+    // Both ways a page reaches a module: the static form at the top of a
+    // leaf, and the lazy `import('./x.js')` a page defers behind a click.
+    for (const m of src.matchAll(/(?:from|import)\s*\(?\s*'(\.\/[A-Za-z0-9._/-]+\.js)'/g)) {
+      if (!seen.has(m[1])) seen.set(m[1], new Set());
+      seen.get(m[1]).add(name);
+    }
+  }
+  assert.ok(seen.size > 20, `the scan found only ${seen.size} imports — it has stopped reading the pages`);
+  const missing = [...seen].filter(([spec]) => !carried.has(spec))
+    .map(([spec, who]) => `${spec} (imported by ${[...who].sort().join(', ')})`);
+  assert.deepEqual(missing, [], 'these are imported but not in the shell, so they are unavailable offline');
+});
+
 test('a file joining the shell renames the cache', () => {
   // The case the derivation exists for: two branches each adding a file used
   // to bump the same counter to the same number and merge without a conflict.

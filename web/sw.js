@@ -57,8 +57,10 @@ const SHELL = [
   './btc-commentary.js',
   './btc-contribute.js',
   './btc-notables.js',
+  './btc-ballot.js',
   './btc-inscriptions.js',
   './btc-taptweak.js',
+  './btc-sighash.js',
   // Vendored, unmodified, and pinned: see web/vendor/README.md. The curve
   // arithmetic BIP341's output key needs, which is not this book's to invent.
   './vendor/noble-secp256k1.js',
@@ -77,6 +79,7 @@ const SHELL = [
   './btc-contents.js',
   './btc-mempool.js',
   './btc-mines.js',
+  './btc-pools.js',
   './btc-projected.js',
   './btc-toc.css',
   './btc-pages.js',
@@ -85,6 +88,9 @@ const SHELL = [
   './btc-store.js',
   './btc-ots.js',
   './btc-proofs.js',
+  './btc-chaintime.js',
+  './btc-chainwork.js',
+  './btc-chainwork-epochs.js',
   './btc-fontscale.js',
   './btc-lastread.js',
   './btc-path.js',
