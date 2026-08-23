@@ -135,6 +135,17 @@ export function rowShows(tokens, marks, templates = new Set()) {
   });
 }
 
+// The Scripts as terms opening names the locks the page in hand actually
+// carries. Written as a clause rather than a sentence so it can be nothing at
+// all: the front matter's sigla leaf never filters, and a page whose only
+// passage is a data output carries no lock to name -- in both the paragraph
+// has to read without it. Pure string work, so the listing is testable.
+export const lockClause = (names) => {
+  if (!names.length) return '';
+  const last = names[names.length - 1];
+  return `: ${names.length === 1 ? last : `${names.slice(0, -1).join(', ')} and ${last}`}`;
+};
+
 // ─── applying it to a rendered key ───────────────────────────────────────
 
 // Hide an element without disturbing the grids the key is built from: the
@@ -168,6 +179,20 @@ export function applyKeyFilter(keyRoot, { marks = new Set(), templates = new Set
       if (show && cell.classList.contains('pname')) kept++;
     }
     for (const head of table.querySelectorAll('.phead')) setHidden(head, kept === 0);
+  }
+
+  // ...and the opening names what survived in the terms table, which is the
+  // table of locks -- read off the key's own row names rather than from a
+  // second list of them, so a form cannot be in one and missing from the
+  // other. Data is in that table and is explicitly not a lock, so it is not
+  // named among them.
+  const slot = keyRoot.querySelector('.key-locks');
+  if (slot) {
+    const table = keyRoot.querySelector('.pattern-table.terms');
+    const names = table ? [...table.querySelectorAll('.pname')]
+      .filter((c) => !c.classList.contains('key-cut') && c.dataset.row !== 'data')
+      .map((c) => (c.textContent || '').trim()).filter(Boolean) : [];
+    slot.textContent = lockClause(names);
   }
 
   // A group with nothing left in it is a heading over a gap.

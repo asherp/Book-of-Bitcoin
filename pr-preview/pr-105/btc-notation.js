@@ -73,11 +73,12 @@ export const NOTATION_HTML = `
 
           <div class="notation-group">
             <h4>Scripts as terms</h4>
-            <p class="notation-note">Some passages in this book are locks: they set a condition and wait.
-              A passage further on answers one, and cites in its margin the very passage it opens, so a reader can
-              go straight there. What the two never do is name each other in their <i>marks</i>: a lock states what
-              will open it and never who. So the only thing joining the two hands is the value written into the
-              lock and written again by whatever opens it, and that shared mark is what the notation shows.</p>
+            <p class="notation-note">Some passages in this book set a locking condition, and are titled by the
+              kind of lock they use<span class="key-locks"></span>. Such a passage states what a later page must
+              bring, and waits. The later page cites the one it opens, so a reader can go straight there — but what
+              the two never do is name each other in their <i>marks</i>: a lock states what will open it and never
+              who. So the only thing joining the two hands is the value written into the lock and written again by
+              whatever opens it, and that shared mark is what the notation shows.</p>
             <p class="notation-note">Above a lock stands a line naming it: the kind on the left, and on the right
               the same lock with a blank where its own value stands. λ marks a blank, and the letter after it says
               what belongs there — <b>h</b> a hash, <b>p</b> a key, <b>d</b> a payload. Most locks leave one blank;
