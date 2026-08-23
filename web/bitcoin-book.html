@@ -2612,9 +2612,35 @@ function fileNameFor(ref, name) {
 // than off the mark -- so a reader who never touches it and simply hits ⌘P
 // gets the same leaf, colophon and filename included.
 
-// The site's own title, kept from load: what the tab says when no leaf is
-// being printed, and what `afterprint` puts back.
+// The site's own title, kept from load: what the tab says before any passage
+// is drawn, and the tail every passage's title ends with.
 const SITE_TITLE = document.title;
+const SITE_NAME = SITE_TITLE.split(' — ')[0];
+
+// What the tab, a history entry and a bookmark are called.
+//
+// The document's own <title> is a description of the book and the same on
+// every passage, so a reader's history was a column of one repeated line with
+// nothing to tell one visit from another. A passage has a name already -- its
+// citation, which is what the book calls it everywhere else -- so that is what
+// this says, and history reads back as the references a reader actually read.
+//
+// In the book's own marks rather than the Latin the print leaf uses: nothing
+// here has to survive a filesystem, and § β ■ are exactly what somebody
+// scanning their history is looking for. Volume and book leaves are named by
+// as much of the reference as they are, a chapter by its chapter, a section by
+// its §; the passage's name follows where it has one, as it does on the leaf.
+function pageTitle() {
+  if (!state) return SITE_TITLE;
+  const p = volumeBookChapter(state.height);
+  let ref;
+  if (state.index >= 0) ref = `${referenceOf(state.height)} §${state.index + 1}`;
+  else if (state.index === -2) ref = `${toRoman(p.volume)} β${p.book}`;
+  else if (state.index === -3) ref = toRoman(p.volume);
+  else ref = referenceOf(state.height);
+  const name = printableName();
+  return `${ref}${name ? ` — ${name}` : ''} — ${SITE_NAME}`;
+}
 
 // The colophon: what this leaf is and where it came from, built from the
 // passage in hand rather than from the URL, so it says the same thing whether
@@ -2686,18 +2712,18 @@ function armLeaf() {
   titleArmed = true;
   hiddenWhileArmed = false;
   clearTimeout(titleRestoreTimer);
-  titleRestoreTimer = setTimeout(restoreSiteTitle, TITLE_RESTORE_BACKSTOP_MS);
+  titleRestoreTimer = setTimeout(restorePageTitle, TITLE_RESTORE_BACKSTOP_MS);
   return true;
 }
-function restoreSiteTitle() {
+function restorePageTitle() {
   clearTimeout(titleRestoreTimer);
   titleRestoreTimer = null;
   titleArmed = false;
   hiddenWhileArmed = false;
-  document.title = SITE_TITLE;
+  document.title = pageTitle();
 }
 window.addEventListener('beforeprint', armLeaf);
-window.addEventListener('afterprint', restoreSiteTitle);
+window.addEventListener('afterprint', restorePageTitle);
 // The Android path again: no afterprint either, and the system print UI and
 // its file picker take the page out of view for the whole flow. Coming back
 // into view is therefore the signal that the flow is over -- and it can only
@@ -2707,7 +2733,7 @@ window.addEventListener('afterprint', restoreSiteTitle);
 document.addEventListener('visibilitychange', () => {
   if (!titleArmed) return;
   if (document.hidden) { hiddenWhileArmed = true; return; }
-  if (hiddenWhileArmed) restoreSiteTitle();
+  if (hiddenWhileArmed) restorePageTitle();
 });
 
 async function exportPassage() {
@@ -2735,7 +2761,7 @@ async function exportPassage() {
     // Colophon and filename, set here rather than left to the beforeprint
     // listener: an engine that does not fire that event would otherwise
     // print a leaf named for the site. Nothing is restored on the way out --
-    // the name has to outlive this call (see restoreSiteTitle).
+    // the name has to outlive this call (see restorePageTitle).
     armLeaf();
     window.print();
   } finally {
@@ -5691,6 +5717,11 @@ function updateUrl() {
   else if (state.index === -2) params.set('page', 'book');
   else if (state.index === -3) params.set('page', 'volume');
   history.replaceState(null, '', `${location.pathname}?${params.toString()}`);
+  // The tab takes the passage's name with the address. Held back while a leaf
+  // is armed: the engine reads document.title when the print dialogue closes,
+  // so renaming here mid-flow would name the file after wherever the reader
+  // went next. restorePageTitle puts this back when the dialogue is done.
+  if (!titleArmed) document.title = pageTitle();
   // The same address, kept where closing the tab cannot reach it, so the next
   // bare open resumes here (btc-lastread.js). One exception, and it is the
   // reader's own meaning rather than a special case: someone who stopped at
