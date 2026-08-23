@@ -4,11 +4,12 @@
 // bound into it.
 //
 // The notation key's Scripts as terms group says every common lock is one
-// abstraction over one committed datum: λh. ⟦ ⧉ ⌖ h ≡ ∇ ⟧, and reducing it
-// gives the scriptPubKey the chain holds. Its Addresses group says an address
-// carries that datum and a tag naming which abstraction to put it in. Put the
-// two together and an address is an application waiting to be written down:
-// the term, the argument, and a β between them.
+// shape around one committed datum -- λh. ⧉ ⌖ h ≡ ∇, with the blank standing
+// where the datum goes -- and that filling the blank in gives the scriptPubKey
+// the chain holds. Its Addresses group says an address carries that datum and
+// a tag naming which shape to put it in. Put the two together and an address
+// is an application waiting to be written down: the term, the argument, and a
+// reduction between them.
 //
 // This module is that sentence as code. It reads a term off any script it can
 // tokenize — every push a binder, every opcode where it stands — renders both
@@ -324,8 +325,8 @@ export function reduce(term, args) {
 //
 // The descent is longer than these two, and the rest of it is already in this
 // module: pureForm lifts the opcodes and the push's length out as arguments
-// too, lockText applies the opcodes back, abstractionText applies the length,
-// and this is what applying the datum gives. Every rung is the one above it
+// too, lockText applies the opcodes back, titleText applies the length, and
+// this is what applying the datum gives. Every rung is the one above it
 // with one more argument supplied, and the chain stores the rung where the
 // arguments run out -- everything below that is a spend, and a spend is a
 // transaction, not an output.
@@ -530,11 +531,9 @@ const demandText = (t, alt, msg = UNSAID, runs = null) => alt.demand.map((tok) =
 //   λh. ⓪ h        a P2WPKH output
 //   λp₁ p₂ p₃. ② p₁ p₂ p₃ ③ ◇     a bare multisig, which no address can carry
 //
-// Bare of everything a title does not need. No ⟦ ⟧: the brackets say "this is
-// the wire's own bytes", and a title is not a quotation of them -- the script
-// itself stands below, set as the passage it is. No application and no
-// parentheses either: a title says what a thing IS, and (λh. ⓪ h) h²⁰ says
-// what was DONE to it, which is rung one's business and not a name. And the
+// Bare of everything a title does not need. No application and no parentheses:
+// a title says what a thing IS, and (λh. ⓪ h) h²⁰ says what was DONE to it,
+// which is the address's business and not a name. And the
 // binder stands bare, without the count its argument would give it, because
 // what is being named is the abstraction rather than any one output that
 // instantiates it -- every P2WPKH on chain shares this title, which is the
@@ -961,13 +960,13 @@ export const commitmentHtml = (c) =>
 
 // ─── the pure form ───────────────────────────────────────────────────────
 //
-// The terms above still hold their opcodes: λh. ⟦ ⧉ ⌖ h ≡ ∇ ⟧ has ⧉ and ⌖
+// The terms above still hold their opcodes: λh. ⧉ ⌖ h ≡ ∇ has ⧉ and ⌖
 // baked into it, so P2PKH's abstraction is a different object from P2WPKH's
 // and a reader has to be told which is which. Lift out everything that is not
 // structure -- the opcodes, and the push's length with them -- and what is left
 // is shape alone:
 //
-//   (λo₁ o₂ o₃ o₄ n h. ⟦ o₁ o₂ hⁿ o₃ o₄ ⟧) ⧉ ⌖ ≡ ∇ 20 h
+//   (λo₁ o₂ o₃ o₄ n h. o₁ o₂ hⁿ o₃ o₄) ⧉ ⌖ ≡ ∇ 20 h
 //
 // The binders run opcodes first, then each push as a PAIR: its length, then the
 // datum it measures. That is the wire's own order -- a direct push opcode IS
@@ -985,7 +984,7 @@ export const commitmentHtml = (c) =>
 //
 // What falls out is the Addresses group's claim, structurally. P2WPKH, P2WSH
 // and P2TR do not merely resemble one another under this form -- they are one
-// term, λo n x. ⟦ o xⁿ ⟧, at three arguments, the length among them.
+// term, λo n x. o xⁿ, at three arguments, the length among them.
 // term.test.mjs checks that.
 //
 // One binder per position rather than per distinct opcode: none of these terms
@@ -1057,23 +1056,20 @@ const bodyText = (t, counted) => {
   }).join(' ');
 };
 
-// λh. ⟦ ⧉ ⌖ h ≡ ∇ ⟧ — the lock with nothing supplied.
-export const abstractionText = (t) => `λ${t.binder}. ⟦ ${bodyText(t, false)} ⟧`;
+// ⧉ ⌖ h²⁰ ≡ ∇ — what a reduction leaves, which is the scriptPubKey: the same
+// marks the book sets this script in wherever a chapter pays this address.
+//
+// The two unreduced sides of it have writers already: the lock with nothing
+// supplied is `titleText` and the lock holding this address's datum is
+// `addressText`, both above. They are the lines pages actually draw, and with
+// the brackets gone there is nothing left for a second pair to say.
+export const normalFormText = (t) => bodyText(t, true);
 
-// (λh. ⟦ ⧉ ⌖ h ≡ ∇ ⟧) h²⁰ — the same term with this address's datum handed to
-// it. The parentheses are the application's, not the script's: nothing here is
-// on chain yet, which is the point of writing it this way round.
-export const applicationText = (t) => `(${abstractionText(t)}) ${t.binder}${toSuperscript(t.bytes)}`;
-
-// ⟦ ⧉ ⌖ h²⁰ ≡ ∇ ⟧ — what β leaves, which is the scriptPubKey: the same marks
-// the book sets this script in wherever a chapter pays this address.
-export const normalFormText = (t) => `⟦ ${bodyText(t, true)} ⟧`;
-
-// The same three as HTML, in the classes the rest of the book uses for marks:
+// The same as HTML, in the classes the rest of the book uses for marks:
 // .op an operation, .dt the datum's type letter, .op-push its byte count. .lam
-// is the calculus rather than the script -- λ, the dot, the brackets, the
-// application's parentheses -- and takes the quiet colour the notation key
-// gives it, so a reader can still tell at a glance what would be on the wire.
+// is the calculus rather than the script -- λ, the dot, the application's
+// parentheses -- and takes the quiet colour the notation key gives it, so a
+// reader can still tell at a glance what would be on the wire.
 //
 // `prose` is the argument's bytes said in the book's own tongue, which only a
 // caller holding the Glossia engine can supply. Given, it follows the mark it
@@ -1117,8 +1113,7 @@ const bodyHtml = (t, counted, prose) => {
   }).join(' ');
 };
 
-export const normalFormHtml = (t, { prose = '' } = {}) =>
-  `${lam('⟦')} ${bodyHtml(t, true, prose)} ${lam('⟧')}`;
+export const normalFormHtml = (t, { prose = '' } = {}) => bodyHtml(t, true, prose);
 
 // The pure form, written out. Its binders and body are variables throughout --
 // nothing here is on the wire yet, not even an operation or a length -- so the
@@ -1136,18 +1131,18 @@ const pureName = (pure, name) => (name === pure.hole
   ? dt(pure.term.holes[0]) + `<span class="op op-push">${SUPERSCRIPT_N}</span>`
   : `<span class="lam">${escapeHtml(name)}</span>`);
 
-export const pureText = (pure) => `λ${pure.binders.join(' ')}. ⟦ ${pure.body.join(' ')} ⟧`;
+export const pureText = (pure) => `λ${pure.binders.join(' ')}. ${pure.body.join(' ')}`;
 
 export const pureApplicationText = (pure) =>
   `(${pureText(pure)}) ${pure.opcodes.map(glyph).join(' ')} ${pure.bytes} ${pure.datumName}`;
 
 export const pureHtml = (pure) => `${lam('λ')}${pure.binders.map((n) => pureName(pure, n)).join(' ')}${lam('.')} `
-  + `${lam('⟦')} ${pure.body.map((n) => pureName(pure, n)).join(' ')} ${lam('⟧')}`;
+  + pure.body.map((n) => pureName(pure, n)).join(' ');
 
 export const pureApplicationHtml = (pure) => `${lam('(')}${pureHtml(pure)}${lam(')')} `
   + `${pure.opcodes.map(op).join(' ')} <span class="op op-push">${pure.bytes}</span> ${dt(pure.term)}`;
 
-// The lock, one β on: the opcodes are in the body now and what the term still
+// The lock, one reduction on: the opcodes are in the body now and what it still
 // wants is a push -- a length, and that many bytes. This is the line that says
 // how much key material an output of this kind requires, which is the whole
 // reason the length is an argument rather than an annotation.
@@ -1155,7 +1150,7 @@ const lockBody = (pure) => pure.term.body
   .map((code) => (code === null ? pure.hole : glyph(code))).join(' ');
 
 export const lockText = (pure) =>
-  `λ${pure.lenName} ${pure.datumName}. ⟦ ${lockBody(pure)} ⟧`;
+  `λ${pure.lenName} ${pure.datumName}. ${lockBody(pure)}`;
 
 export const lockApplicationText = (pure) =>
   `(${lockText(pure)}) ${pure.bytes} ${pure.datumName}`;

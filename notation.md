@@ -259,7 +259,7 @@ The letters:
 | `λ` | an abstraction — the term a locking script binds (see below) |
 | `□` | no locktime — final with respect to time |
 | `● ○ †` | an input’s sequence: final, non-replaceable, replaceable (opt-in RBF) |
-| `∅` | nothing is there — a coinbase’s absent prior output, a field a flag zeroed |
+| `∅` | empty — nothing is there. A coinbase’s absent prevout, a segwit input’s zero-byte script, an empty witness or one of its items, a field a flag zeroed |
 | `⋯` | not yet known — a value still being fetched, or one that cannot be priced |
 | `☒` | a disagreement — two readings of the same bytes that do not match |
 

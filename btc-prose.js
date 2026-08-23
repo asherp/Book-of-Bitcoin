@@ -1215,7 +1215,7 @@ function renderControlBlock(hex, encode) {
 // signature, p a key, c a control block (its merkle proof split off under ⋔), a
 // an annex -- and items are separated so each reads as its own element.
 export function renderWitness(items, encode) {
-  if (!items || !items.length) return '∅';
+  if (!items || !items.length) return '<span class="wit-empty">∅</span>';
   const scriptIdxs = witnessScriptIndices(items);
   const annexIdx = annexIndex(items);
   return items

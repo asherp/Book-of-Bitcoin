@@ -19,10 +19,18 @@
 
 // Every element that carries a mark rather than prose: script marks and their
 // data letters, the chapter head's fields, an input's sequence and amount, the
-// transaction's locktime, the § number, and .mk where a mark would otherwise
+// transaction's locktime, the § number, .wit-empty for the ∅ standing where a
+// witness or one of its items is empty, and .mk where a mark would otherwise
 // go unclassed.
+//
+// A mark written straight into an element the selector does not name is a mark
+// the filter cannot see, and its row is cut from every page that shows one --
+// which is how a coinbase's absent prevout (∅, written into the citation) went
+// unexplained on the one kind of page that always carries it. Adding a mark to
+// the book means giving it one of these classes.
 const MARK_SELECTOR = '.op, .dt, .cfx, .cfx-gold, .fx-mark, .merkle-mark, '
-  + '.tx-seq, .tx-locktime, .cite-amount, .tx-out-value, .section-num, .mk, .pool-sig';
+  + '.tx-seq, .tx-locktime, .cite-amount, .tx-out-value, .section-num, .mk, .pool-sig, '
+  + '.wit-empty';
 
 // Is this element inside something the page has folded away?
 //
@@ -127,6 +135,49 @@ export function rowShows(tokens, marks, templates = new Set()) {
   });
 }
 
+// The Scripts as terms opening names the locks the page in hand actually
+// carries. Written as a clause rather than a sentence so it can be nothing at
+// all: the front matter's sigla leaf never filters, and a page whose only
+// passage is a data output carries no lock to name -- in both the paragraph
+// has to read without it. Pure string work, so the listing is testable.
+export const lockClause = (names) => {
+  if (!names.length) return '';
+  const last = names[names.length - 1];
+  return `: ${names.length === 1 ? last : `${names.slice(0, -1).join(', ')} and ${last}`}`;
+};
+
+// The rule the key gives each mark, keyed by the mark itself -- so a reader
+// hovering a siglum in the reading is told what it does, rather than having to
+// open the key and find its row.
+//
+// The RULE only. What sits in .why beneath it is a second-pass argument, and a
+// tooltip is not where anyone reads one.
+//
+// And only marks a row names exactly. A loose row teaches a mark that carries a
+// value (■n, βn, ηp·q…), and its gloss is written for the whole family rather
+// than for the one printing under the pointer; a row tied to a template or a
+// pattern names no literal at all. Both are the key's business, not a mark's.
+//
+// First row wins, since a glyph with two offices is glossed twice -- the
+// coinbase margin's ⓪ⁿ counts bytes, the chapter head's counts bits -- and
+// each row says so in its own words. Reading order is the book's order, so the
+// gloss a mark carries is the one whose group comes first.
+export function markGlosses(keyHtml) {
+  const out = new Map();
+  const rows = keyHtml.matchAll(
+    /<div class="glyph-row"(?: data-marks="([^"]*)")?><span class="g">(.*?)<\/span><span class="m">(.*)?<\/span><\/div>/g);
+  for (const [, dataMarks, glyph, gloss] of rows) {
+    const rule = (gloss || '').split('<span class="why">')[0]
+      .replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+    if (!rule) continue;
+    for (const t of marksOf(glyph, dataMarks || null)) {
+      if (t.text === undefined || t.loose || out.has(t.text)) continue;
+      out.set(t.text, rule);
+    }
+  }
+  return out;
+}
+
 // ─── applying it to a rendered key ───────────────────────────────────────
 
 // Hide an element without disturbing the grids the key is built from: the
@@ -160,6 +211,20 @@ export function applyKeyFilter(keyRoot, { marks = new Set(), templates = new Set
       if (show && cell.classList.contains('pname')) kept++;
     }
     for (const head of table.querySelectorAll('.phead')) setHidden(head, kept === 0);
+  }
+
+  // ...and the opening names what survived in the terms table, which is the
+  // table of locks -- read off the key's own row names rather than from a
+  // second list of them, so a form cannot be in one and missing from the
+  // other. Data is in that table and is explicitly not a lock, so it is not
+  // named among them.
+  const slot = keyRoot.querySelector('.key-locks');
+  if (slot) {
+    const table = keyRoot.querySelector('.pattern-table.terms');
+    const names = table ? [...table.querySelectorAll('.pname')]
+      .filter((c) => !c.classList.contains('key-cut') && c.dataset.row !== 'data')
+      .map((c) => (c.textContent || '').trim()).filter(Boolean) : [];
+    slot.textContent = lockClause(names);
   }
 
   // A group with nothing left in it is a heading over a gap.
