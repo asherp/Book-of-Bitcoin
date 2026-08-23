@@ -546,52 +546,59 @@
           value: January 2020, by Jeremy Rubin
         - label: outcome
           value: no consensus — the opcode waits, and no chapter carries its name
-    # BIP110 (reduced_data, the 2026 temporary data-limit attempt): nothing has
-    # activated to cite — ~0.5% signaling as of July 2026 — but its BIP8-style
-    # heights are citable sight unseen, three real retarget boundaries one book
-    # apart, sharing a chapter number. Conditional in a way BIP42's height is
-    # not: the blocks will be mined either way, on schedule, and will carry
-    # these names only if the fork locks in.
+    # BIP110 (reduced_data, the 2026 temporary data-limit attempt): the window
+    # opened, ran its course, and closed with nothing bound. Two of the three
+    # heights it named have now been mined under the old rules — 961,632,
+    # where mandatory signaling began and the rule parted from this chain, and
+    # 963,648, where lock-in was due and did not come — so those cite in full
+    # and only 965,664 is still ahead, still marked □. Hence `expired` rather
+    # than BIP119's `failed`: CTV never opened a window and the chain says
+    # nothing about it, while BIP110 named these heights, was counted at every
+    # block, and lost. The count is the record, so the leaf goes on counting.
     - bip: '110'
       name: Reduced Data
-      status: signaling
+      status: expired
       bit: 4
       threshold: 55
       window: 2016
       monitor: https://bip110monitor.com/api
-      note: A temporary cap on how much data a transaction may carry. BIP8-style, with fixed heights — whether its chapters ever carry these names is a question about the next few thousand blocks, not about arithmetic. The heights are fixed; the fork is not. This leaf counts the signals live.
+      note: A temporary cap on how much data a transaction may carry, deployed BIP8-style at fixed heights and never bound. Bit 4 was set in 938,903 and in 51 of the 2,016 blocks of period 476, the last window that could have reached the threshold; the mandatory-signaling period that followed ran 961,632 to 963,647 and closed at none at all. The heights were fixed and were mined on schedule, and what never arrived was the fork. This leaf counts the signals still: the period now running is the record of a rule nothing is asking for.
       stats:
         - label: mechanism
           value: BIP8-style fixed heights — mandatory signaling, lock-in, activation, one book apart
         - label: signal
           value: bit 4 — the bit BIP91 once flew
         - label: threshold
-          value: 55% of a signaling window
+          value: 1,109 of a 2,016-block window (55%)
+        - label: best window
+          value: 51 blocks, 2.53% — period 476, closing at 961,631, the last window that could have carried it
+        - label: mandatory signaling
+          value: 961,632 to 963,647, entered whatever the count — 0 of 2,016 blocks set the bit
+        - label: outcome
+          value: expired at 963,648 with no lock-in; the heights it named were mined on schedule under the old rules
       entries:
         - title: First signaling block
           id: '938903'
-          note: The first block to set bit 4 for BIP110 — a ballot cast is part of the record whatever the count turns out to be.
+          note: The first block to set bit 4 for BIP110 — a ballot cast is part of the record whatever the count turned out to be.
           commentary:
             - file: first-bip110-signaling-block.md
               by: Claude Opus 5
-        - title: Mandatory signaling
+        - title: The fork height
           id: '961632'
-          expected: true
-          note: BIP8-style flag height — mandatory signaling from 961,632, should BIP110 lock in. ~0.5% of blocks signaling as of July 2026, against a 55% threshold.
+          note: BIP8's mandatory-signaling period opens here, and it opens from the signaling state whatever the count — it was never conditional on lock-in, as this leaf once said it was. Under BIP110's own rules a block at this height without bit 4 is invalid; the block this chain carries does not set it. The chapter before this is the last both chains share.
           commentary:
             - file: bip110-mandatory-signaling.md
               by: Claude Opus 5
-        - title: Lock-in
+        - title: The lock-in that did not come
           id: '963648'
-          expected: true
-          note: Lock-in by 963,648, one book on, should the threshold be met.
+          note: Lock-in was due by this height. The mandatory period behind it, 961,632 to 963,647, closed at 0 of 2,016 — so nothing locked in, and the block at this height was mined on schedule under the old rules like every block since. A name the record declined to claim.
           commentary:
             - file: bip110-lock-in.md
               by: Claude Fable 5
-        - title: Activation
+        - title: The activation that will not bind
           id: '965664'
           expected: true
-          note: Activation at 965,664, one book after lock-in — the height where the reduced data limit would first bind.
+          note: Where the reduced-data limit would have first bound, one book after the lock-in that did not come. It is still ahead and will be mined on schedule like the two before it, and nothing about it will be different — which is the whole of what the fork came to.
           commentary:
             - file: bip110-activation.md
               by: Claude Opus 5

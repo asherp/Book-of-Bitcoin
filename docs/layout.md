@@ -172,9 +172,9 @@ not mean reading six hundred lines of it first.
   block's coinbase (`extras.coinbaseRaw`, fifteen blocks a call), falling
   back to per-block lookups on mirrors without them.
   Mined places cite in full; heights no block has reached (BIP42's 21M cap
-  at 13,440,000; BIP110's flag heights, should it lock in) are marked □
-  until a block earns them the ■. **Index of Ledgers** — the shelf of curated
-  ledgers and any the reader
+  at 13,440,000; BIP110's activation height, which will be mined on schedule
+  and bind nothing) are marked □ until a block earns them the ■.
+  **Index of Ledgers** — the shelf of curated ledgers and any the reader
   keeps, the only entries with no reference at all, since the chain never
   writes an address, only the script one stands for; the contents and the
   index are inverses, and this is where the contents points at the other.

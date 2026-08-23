@@ -728,6 +728,21 @@
   id: be0a120150d5e2bb246047d709e61e300617b7f288a8943f3bdfc04d3462eafc
 - title: Cold Card Attack/wave 3
   id: 871d99f1ff2f1213a9677cbeca323a8d93c8041906db67e6d1265fe52a58ecb9
+# Where BIP110's deployment and this chain parted, 8 August 2026. The BIP8
+# mandatory-signaling period opens at this height and opens whatever the
+# count, so from here a node enforcing the rule rejects any block that does
+# not set bit 4 -- and the block this chain carries does not set it. The
+# chapter before is the last both chains share, which is why the entry stands
+# at this one rather than that: 961,631 is where the arithmetic ran out, and
+# it had run out days earlier; 961,632 is where the disagreement became two
+# records. Kept for the same reason the Bitcoin Cash fork above is kept, and
+# read the same way -- the split is not an event inside the block, so nothing
+# in the chapter marks it, and the note is where the book says so.
+- title: BIP110 fork
+  id: '961632'
+  commentary:
+    - file: bip110-mandatory-signaling.md
+      by: Claude Opus 5
 
 # ── The ledgers ───────────────────────────────────────────────────────────
 # A curated entry may name an ADDRESS instead of a place in the chain. An
@@ -818,9 +833,9 @@
 # and the supply-cap section above. Each is worth reading; none has a published
 # reading yet, and an annotation layer that guesses is worse than one with gaps.
 #
-# Heights consensus has fixed but no block has reached — BIP110's flag heights,
-# BIP42's cap — are not entries here: a chapter cited before it exists cannot be
-# read in sequence with chapters that do (dropped in among the volumes, BIP42
+# Heights consensus has fixed but no block has reached — BIP110's last flag
+# height, BIP42's cap — are not entries here: a chapter cited before it exists
+# cannot be read in sequence with chapters that do (dropped in among the volumes, BIP42
 # alone opened a Volume LXV two centuries wide). They are gathered in
 # appendix.yaml, as Appendix II: Consensus, grouped under their BIPs beside the
 # forks already active.

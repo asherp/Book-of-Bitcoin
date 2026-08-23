@@ -274,9 +274,15 @@ function normalizePart(raw, i) {
       const number = String(b.bip ?? '').trim();
       const name = String(b.name ?? '').trim();
       if (!number || !name) throw new Error(`btc-notables: a bip in "${title}" needs a bip number and a name`);
+      // Five states, and the last two are not the same failure. `failed` is a
+      // fork that never deployed -- no window ever opened and the chain says
+      // nothing about it (BIP119). `expired` is a fork that deployed, named
+      // heights, was counted at every block and lost: the window opened and
+      // closed, and the heights it named were mined under the old rules
+      // (BIP110). The record differs, so the word does.
       const status = String(b.status ?? '').trim();
-      if (!['active', 'signaling', 'scheduled', 'failed'].includes(status)) {
-        throw new Error(`btc-notables: BIP ${number} has a status that is not active, signaling, scheduled, or failed: ${status || '(none)'}`);
+      if (!['active', 'signaling', 'scheduled', 'failed', 'expired'].includes(status)) {
+        throw new Error(`btc-notables: BIP ${number} has a status that is not active, signaling, scheduled, failed, or expired: ${status || '(none)'}`);
       }
       // Most groups are BIPs and wear the number after the word; a fork that
       // was never a BIP (Bitcoin Unlimited was a client, its proposals its
