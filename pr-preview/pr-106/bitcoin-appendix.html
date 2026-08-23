@@ -243,6 +243,21 @@ a:hover { text-decoration: underline; }
    its word, however narrow the column beneath it runs. */
 .bb-heads > span { color:var(--meta); font:600 10px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.14em; text-transform:uppercase; text-align:left; white-space:nowrap; }
 .bb-heads > .bb-status { text-align:right; }
+/* A sortable head is a control, and it wears the ruling register it always
+   wore -- the button brings no dress of its own, only a focus ring and a
+   pointer. The head it sits in keeps the column class, so the widths and the
+   mobile fold are unchanged by the control being there. */
+.bb-sort { font:inherit; color:inherit; letter-spacing:inherit; text-transform:inherit;
+  background:none; border:0; padding:0; margin:0; cursor:pointer; white-space:nowrap; }
+.bb-sort:hover { color:var(--ink-soft); }
+.bb-sort:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+.bb-sort.bb-on { color:var(--accent); }
+/* Outside the replay the count and the rate are still each block's own
+   figures, but they no longer read down the page as a running total -- so the
+   columns stand down to the quiet ink a derived column should carry, and their
+   heads say as much on hover. The figures are not rewritten: a tally that
+   cannot be honest under reordering is dimmed, not restated. */
+.bb-sorted .bb-sum, .bb-sorted .bb-pct { color:var(--meta); }
 .bb-row { display:flex; gap:14px; align-items:baseline; padding:6px 2px; border-bottom:1px solid var(--hair); }
 .bb-ref { flex:none; min-width:118px; font:600 12px/1.5 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.04em;
   color:var(--accent); white-space:nowrap; font-variant-numeric:tabular-nums; }
@@ -281,11 +296,14 @@ a.bb-ref:hover { color:var(--accent-2); }
 /* Portrait: the row folds to two lines -- the clock, the chapter and the
    count keep the first; the version or coinbase text takes a full-width
    second of its own, so no column is ever squeezed to a letter a line and
-   nothing bleeds past the page's edge. Its head retires with it: a column
-   on its own line needs no ruling. */
+   nothing bleeds past the page's edge. Its head used to retire with it -- a
+   column on its own line needs no ruling -- but the head is now the control
+   that orders the ballot by it, and a control that vanishes on a phone is an
+   order a phone cannot reach. So it stays, and only stops claiming the width
+   of a column it no longer stands over. */
 @media (max-width: 620px) {
   .bb-heads { gap:8px; }
-  .bb-heads > .bb-ver { display:none; }
+  .bb-heads > .bb-ver { flex:none; }
   .bb-row { flex-wrap:wrap; gap:2px 8px; }
   .bb-time { font-size:9.5px; }
   .bb-ref { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; }
@@ -563,6 +581,9 @@ import {
 } from './btc-mines.js';
 import { toRoman, volumeBookChapter, heightOf, expectedReference, footnoteMark } from './btc-citation.js';
 import { formatBlockVersion, composeBlockHeaderFields } from './btc-prose.js';
+import {
+  BALLOT_ORDERS, parseBallotSort, ballotSortQuery, toggleBallotDir, orderBallot, isReplay,
+} from './btc-ballot.js';
 import { toSuperscript } from './btc-sigla.js';
 // Amounts read in whatever notation the reader has chosen -- ₿, satoshis, or
 // their own unit -- through the one call every printed amount goes through.
@@ -663,6 +684,11 @@ const itemAt = ins != null && Number.isFinite(itemRaw) && itemRaw >= 1 ? itemRaw
 // One block of a fork's ballot, a level below the fork's own leaf: ?block=
 // names it by height, the way a ballot row links it.
 const blockLeaf = bip && /^[0-9]+$/.test(params.get('block') || '') ? Number(params.get('block')) : null;
+// The order the ballot is read in travels in the address, so a sorted one
+// can be linked and cited -- and so a dive into a block's leaf and the climb
+// back restores what the reader was looking at rather than resetting to the
+// replay. Unreadable orders fall back to it (btc-ballot.js).
+let ballotSort = parseBallotSort(params);
 
 // ── The version word, as a consensus view writes it ───────────────────────
 // Inside an active signaling period the version IS the ballot, so these
@@ -798,6 +824,11 @@ const hrefFor = (p) => (p.kind === 'ledgers'
   ? './bitcoin-ledger.html'
   : `./bitcoin-appendix.html?part=${PART_QUERY[p.kind]}`);
 const bipHref = (b) => `./bitcoin-appendix.html?part=consensus&bip=${b.key}`;
+// The return from a block's leaf to the ballot it came from -- the one place
+// bipHref is asked for the leaf the reader already had, so the one that
+// carries the order back. A turn to a DIFFERENT fork keeps the plain
+// address: an order is a reading of one ballot, not a setting.
+const ballotHref = () => `${bipHref(bip)}${ballotSortQuery(ballotSort)}`;
 // Appendix I's own leaves, addressed the way every other leaf here is.
 const queueHref = (at) => `./bitcoin-appendix.html?part=mempool&at=${at}`;
 const tableHref = (at) => `${queueHref(at)}&table`;
@@ -851,7 +882,7 @@ if (blockLeaf != null) {
   sub.replaceChildren(door);
   const up = $('appx-up');
   up.textContent = `▴ ${bip.title}`;
-  up.href = bipHref(bip);
+  up.href = ballotHref();
   up.title = 'up to the ballot, at this block\'s row';
   up.classList.remove('hidden');
 } else if (bip) {
@@ -1075,7 +1106,7 @@ if (bip || ins) {
     ev.preventDefault();
     if (blockLeaf != null) {
       try { sessionStorage.setItem('glossia-ballot-land', String(blockLeaf)); } catch (_) { /* unavailable */ }
-      navTo(bipHref(bip), 'drop');
+      navTo(ballotHref(), 'drop');
     } else {
       window.__appxAscend();
     }
@@ -2179,25 +2210,78 @@ if (bip && blockLeaf == null) {
     const WINDOW = Number.isFinite(bip.window) ? bip.window : 2016;
 
     const blocksEl = $('bip-blocks');
+    // The replay is the order the leaf opens in and the one the table's own
+    // devices belong to; any other order stands some of them down (below).
+    let REPLAY = isReplay(ballotSort);
     const heads = document.createElement('div');
     heads.className = 'bb-heads';
-    for (const [cls, text, why] of [
-      ['bb-time', 'mined', 'the minute the block was mined, UTC — the days head their runs'],
-      ['bb-ref', 'chapter', ''],
-      COIN ? ['bb-ver', 'coinbase', "the chapter's first line — the printable runs of the coinbase scriptSig"]
-           : ['bb-ver', 'version', 'in binary while the period runs, the counted bit in bold — the frontispiece\'s own form outside it, and always on hover'],
-      ['bb-status', 'signal', `a yes is ${yesSays}`],
-      ['bb-sum', 'Σ', 'the yeses so far — the count as it stood with this block written'],
-      ['bb-pct', '%', 'the rate so far — the yeses over the blocks written to this point'],
-    ]) {
-      const h = document.createElement('span');
-      h.className = cls; h.textContent = text;
-      if (why) h.title = why;
-      heads.append(h);
-    }
+    heads.setAttribute('role', 'row');
+    // Each direction in the ballot's own words, for the head's hover: a reader
+    // choosing one is asking for the oldest blocks or the newest, the
+    // signallers or the holdouts, and "ascending" names neither of those.
+    const SAYS = {
+      time: { old: 'oldest first — the replay', new: 'newest first' },
+      version: { yes: `the blocks that signalled first — ${yesSays}`, no: `the holdouts first — ${noSays}` },
+    };
+    // A version order is not an alphanumeric one -- its first key is the
+    // ballot's verdict -- so it announces itself as `other` rather than
+    // claiming a direction a screen reader would read as up or down the word.
+    const ARIA = { old: 'ascending', new: 'descending', yes: 'other', no: 'other' };
+    const HEADS = [
+      ['bb-time', 'mined', 'the minute the block was mined, UTC — the days head their runs', 'time'],
+      ['bb-ref', 'chapter', '', null],
+      COIN ? ['bb-ver', 'coinbase', "the chapter's first line — the printable runs of the coinbase scriptSig", 'version']
+           : ['bb-ver', 'version', 'in binary while the period runs, the counted bit in bold — the frontispiece\'s own form outside it, and always on hover', 'version'],
+      ['bb-status', 'signal', `a yes is ${yesSays}`, null],
+      ['bb-sum', 'Σ', '', null],
+      ['bb-pct', '%', '', null],
+    ];
+    // Σ and % are the count and the rate AS THEY STOOD when each block was
+    // written -- a fact about the block, so the figures stay true in any
+    // order, but only in the replay do they read down the page as a running
+    // total. Outside it they say what they are and the columns dim, rather
+    // than being rewritten into something they are not.
+    const derived = (glyph) => (REPLAY
+      ? (glyph === 'Σ' ? 'the yeses so far — the count as it stood with this block written'
+                       : 'the rate so far — the yeses over the blocks written to this point')
+      : (glyph === 'Σ' ? 'the count as it stood when this block was written — not a running total in this order'
+                       : 'the rate as it stood when this block was written — not a running rate in this order'));
+    const paintHeads = () => {
+      heads.replaceChildren();
+      for (const [cls, text, why, order] of HEADS) {
+        const h = document.createElement('span');
+        h.className = cls;
+        if (!order) {
+          h.textContent = text;
+          const t = (text === 'Σ' || text === '%') ? derived(text) : why;
+          if (t) h.title = t;
+          heads.append(h);
+          continue;
+        }
+        const on = ballotSort.by === order;
+        const next = { by: order, dir: on ? toggleBallotDir(ballotSort) : BALLOT_ORDERS[order].fallback };
+        h.setAttribute('role', 'columnheader');
+        h.setAttribute('aria-sort', on ? ARIA[ballotSort.dir] : 'none');
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'bb-sort' + (on ? ' bb-on' : '');
+        // The mark is a toggle's, not a claim about the column: reading down
+        // the page, this order runs as it is written or turned about. What it
+        // MEANS is in the words on the hover.
+        b.textContent = on ? `${text} ${ballotSort.dir === 'old' || ballotSort.dir === 'yes' ? '▾' : '▴'}` : text;
+        b.title = on
+          ? `${SAYS[order][ballotSort.dir]} — turn for ${SAYS[order][next.dir]}`
+          : `${why ? `${why}\n` : ''}read the ballot ${SAYS[order][next.dir]}`;
+        b.addEventListener('click', () => reorder(next));
+        h.append(b);
+        heads.append(h);
+      }
+    };
     const rowsEl = document.createElement('div');
     const foot = document.createElement('span');
     foot.className = 'bb-foot'; foot.textContent = '…';
+    paintHeads();
+    blocksEl.classList.toggle('bb-sorted', !REPLAY);
     blocksEl.append(heads, rowsEl, foot);
     blocksEl.classList.remove('hidden');
     const tallyEl = $('bip-tally');
@@ -2273,7 +2357,7 @@ if (bip && blockLeaf == null) {
       // door into the book, as a Ledger entry's citation does.
       const a = document.createElement('a');
       a.className = 'bb-ref';
-      a.href = `./bitcoin-appendix.html?part=consensus&bip=${bip.key}&block=${b.height}`;
+      a.href = `./bitcoin-appendix.html?part=consensus&bip=${bip.key}&block=${b.height}${ballotSortQuery(ballotSort)}`;
       a.textContent = wholeRef(b.height);
       a.title = `block ${b.height.toLocaleString()} — read this block's leaf`;
       a.addEventListener('click', (ev) => {
@@ -2427,11 +2511,15 @@ if (bip && blockLeaf == null) {
     let pinned = false;
     const tally = () => {
       if (pinned) return;
-      // The last row read, not the last block fetched: the bank runs a page
-      // ahead of the reader, and the bar must not.
-      const last = rendered ? bank[rendered - 1] : null;
+      // In the replay, the last row READ -- not the last block fetched: the
+      // bank runs a page ahead of the reader, and the bar must not. In any
+      // other order the whole window is gathered before a row is ranked, so
+      // there is no "as far as read" to hold to, and the bar states the
+      // window's own total: the block at its end carries it.
+      const last = REPLAY ? (rendered ? view[rendered - 1] : null)
+                          : (bank.length ? bank[bank.length - 1] : null);
       if (!last) { tallyEl.classList.add('hidden'); return; }
-      setTally(last.sum, last.n, `${against}the window, as far as read`);
+      setTally(last.sum, last.n, `${against}the window, ${REPLAY ? 'as far as read' : 'whole'}`);
     };
     if (bip.monitor) {
       (async () => {
@@ -2484,45 +2572,118 @@ if (bip && blockLeaf == null) {
       return false;
     };
     let rendered = 0, led = false, busy = false, io = null;
-    const scroll = async () => {
+    let leadEl = null;
+    // A draw is a run of awaits, and choosing a new order part-way through one
+    // would leave the old run appending rows to a table that had already been
+    // cleared for the new one. So every draw carries the generation it began
+    // in and stands down the moment that is no longer the current one, and
+    // reordering waits for the run in flight to unwind before starting its
+    // own. The fetching such a run did is not wasted: the bank keeps it.
+    let gen = 0;
+    let inflight = Promise.resolve();
+    let view = bank;        // what the draw walks: the bank itself, in the replay
+    let gathered = false;   // the whole window banked, and put in the chosen order
+    // A sort over a partly-drawn table is a lie. The bank runs a page ahead of
+    // the reader and a window is up to two thousand blocks, so ranking what
+    // happens to be banked would rank a sample and print it as the ballot.
+    // Every order but the replay therefore gathers the whole window before it
+    // ranks a row, and says so while it gathers -- bounded work with a stated
+    // end, ten blocks a call, the way the Ledger says it is still syncing.
+    const gather = async () => {
+      if (gathered) return;
+      while (!done) {
+        foot.textContent = `— gathering the window to put it in order… ${bank.length.toLocaleString('en-US')} blocks`;
+        await fetchMore();
+      }
+      view = orderBallot(bank, ballotSort, { yes, coinbase: !!COIN });
+      gathered = true;
+    };
+    const draw = async () => {
       if (busy) return;
       busy = true;
-      while (bank.length - rendered < PAGE && !done) await fetchMore();
-      // The table opens where the ballot opens, and says so -- unless a
-      // marked chapter (the first signaling block) already heads it.
-      if (!led && bank.length) {
-        led = true;
-        const lead = document.createElement('span');
-        lead.className = 'bb-foot';
-        lead.textContent = bip.ballot != null
-          ? `— the window's opening, block ${floor.toLocaleString('en-US')}`
-          : (marks.has(floor) ? '' : '— one window back from the tip');
-        if (lead.textContent) rowsEl.before(lead);
+      const mine = gen;
+      // Stood down: another order has been chosen since this draw began.
+      const stale = () => mine !== gen && ((busy = false), true);
+      if (REPLAY) {
+        while (bank.length - rendered < PAGE && !done) { await fetchMore(); if (stale()) return; }
+      } else {
+        await gather();
+        if (stale()) return;
       }
-      const take = Math.min(bank.length - rendered, PAGE);
-      for (const b of bank.slice(rendered, rendered + take)) {
-        const day = new Date(b.timestamp * 1000).toISOString().slice(0, 10);
-        if (day !== lastDay) { lastDay = day; rowsEl.append(dayEl(b.timestamp)); }
+      // The table opens where the ballot opens, and says so -- unless a
+      // marked chapter (the first signaling block) already heads it. Only the
+      // replay opens anywhere: in another order the first row is whatever the
+      // order put there, and no line above it could name the window.
+      if (!led && view.length) {
+        led = true;
+        if (REPLAY) {
+          const lead = document.createElement('span');
+          lead.className = 'bb-foot';
+          lead.textContent = bip.ballot != null
+            ? `— the window's opening, block ${floor.toLocaleString('en-US')}`
+            : (marks.has(floor) ? '' : '— one window back from the tip');
+          if (lead.textContent) { leadEl = lead; rowsEl.before(lead); }
+        }
+      }
+      const take = Math.min(view.length - rendered, PAGE);
+      for (const b of view.slice(rendered, rendered + take)) {
+        // The day heads rule the replay's runs across the page, and they exist
+        // BECAUSE the rows are chronological: in any other order they would
+        // rule nothing and mean less. The fork's own marks stay either way --
+        // each names one block rather than a span, so it still labels the row
+        // it stands above, wherever the order has put it.
+        if (REPLAY) {
+          const day = new Date(b.timestamp * 1000).toISOString().slice(0, 10);
+          if (day !== lastDay) { lastDay = day; rowsEl.append(dayEl(b.timestamp)); }
+        }
         if (marks.has(b.height)) rowsEl.append(markEl(marks.get(b.height)));
         for (const m of extraMarks.get(b.height) ?? []) rowsEl.append(extraMarkEl(m));
         rowsEl.append(rowEl(b));
       }
       rendered += take;
       tally();
-      foot.textContent = done && rendered >= bank.length
-        ? (bank.length
-          ? (bip.ballot != null ? `— the ballot's close, block ${anchor.toLocaleString('en-US')}` : '— the chain tip, and counting')
+      foot.textContent = done && rendered >= view.length
+        ? (view.length
+          ? (!REPLAY
+            ? `— the window, ${view.length.toLocaleString('en-US')} blocks, in order`
+            : bip.ballot != null ? `— the ballot's close, block ${anchor.toLocaleString('en-US')}` : '— the chain tip, and counting')
           : 'the chain could not be reached')
         : '…';
       // The fetch ahead: keep a page banked beyond what's drawn.
-      if (!done && bank.length - rendered < PAGE) fetchMore();
+      if (!done && view.length - rendered < PAGE) fetchMore();
       busy = false;
       // The landing keeps drawing until its row exists (within the window,
       // so bounded).
-      if (tryLand() && (rendered < bank.length || !done)) { queueMicrotask(scroll); return; }
+      if (tryLand() && (rendered < view.length || !done)) { queueMicrotask(scroll); return; }
       // Re-arm: appending moved the sentinel; observe it afresh so a foot
       // still within reach fires again.
       if (io) { io.unobserve(foot); io.observe(foot); }
+    };
+    const scroll = () => { inflight = draw(); return inflight; };
+    // Choosing an order redraws from the bank the leaf already holds: the
+    // window is fetched once and ranked as often as the reader likes, so a
+    // head is a turn of the same record rather than a reload of it. The choice
+    // is written into the address as it is made -- replaced, not pushed, since
+    // re-ordering a table is not a place to come back to with the Back button
+    // -- so the reading can be linked, cited, and returned to from a block's
+    // own leaf.
+    const reorder = async (next) => {
+      gen++;              // any draw in flight is now drawing the wrong order
+      await inflight;     // and this lets it unwind before the table is cleared
+      ballotSort = { by: next.by, dir: next.dir };
+      REPLAY = isReplay(ballotSort);
+      try { history.replaceState(null, '', ballotHref()); } catch (_) { /* unavailable */ }
+      paintHeads();
+      blocksEl.classList.toggle('bb-sorted', !REPLAY);
+      leadEl?.remove();
+      leadEl = null;
+      rowsEl.replaceChildren();
+      rendered = 0; led = false; lastDay = null;
+      // The bank is kept; only the view over it is rebuilt. In the replay that
+      // view IS the bank, in fetch order, which is the order they were written.
+      gathered = false;
+      view = bank;
+      scroll();
     };
     io = new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) scroll(); },
                                   { rootMargin: '1600px 0px' });
@@ -2793,12 +2954,14 @@ if (blockLeaf != null) {
   // block lies the ballot itself.
   const WINDOW = Number.isFinite(bip.window) ? bip.window : 2016;
   let newest = Number.isFinite(bip.ballot) ? bip.ballot : null;
-  const blockHref = (h) => `./bitcoin-appendix.html?part=consensus&bip=${bip.key}&block=${h}`;
+  // The order the reader chose rides along the walk between block leaves, so
+  // the climb back out of any of them returns to the ballot as they left it.
+  const blockHref = (h) => `./bitcoin-appendix.html?part=consensus&bip=${bip.key}&block=${h}${ballotSortQuery(ballotSort)}`;
   const upEl = $('block-up');
   const downEl = $('appx-down');
   const toBallot = () => {
     try { sessionStorage.setItem('glossia-ballot-land', String(blockLeaf)); } catch (_) { /* unavailable */ }
-    navTo(bipHref(bip), 'drop');
+    navTo(ballotHref(), 'drop');
   };
   // A live ballot's record runs back to where its story begins (the earliest
   // chapter the fork names), and the vertical walk reaches as far as the
@@ -2817,7 +2980,7 @@ if (blockLeaf != null) {
     const olderUp = blockLeaf > 0 && (oldest == null || blockLeaf > oldest);
     upEl.title = olderUp ? 'the next older block of the window' : 'up to the ballot';
     upEl.setAttribute('aria-label', olderUp ? 'The next older block of the window' : 'Up to the ballot');
-    upEl.href = olderUp ? blockHref(blockLeaf - 1) : bipHref(bip);
+    upEl.href = olderUp ? blockHref(blockLeaf - 1) : ballotHref();
     upEl.classList.remove('hidden');
     window.__appxAscend = () => (olderUp ? navTo(blockHref(blockLeaf - 1), 'drop') : toBallot());
     const newer = newest == null || blockLeaf < newest;
