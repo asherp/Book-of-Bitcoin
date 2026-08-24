@@ -960,6 +960,18 @@ button:disabled { opacity: .4; cursor: not-allowed; }
    scrolls near the viewport (see lazyEncode). Shown as a dim ellipsis until
    then; each data push is its own chunk, so a large witness fills piecewise. */
 .glossia-lazy { color: var(--dim); }
+/* A held-back push whose prose will run past a line reserves the room it is
+   about to take. Unreserved, a run of them collapses to one line of ⋯ -- and a
+   witness split across eighty pushes then sits entirely inside the observer's
+   margin, so every chunk fills at once and the streaming undoes itself. The
+   box is dropped the moment the prose lands: fill removes .glossia-lazy, which
+   is what this compound selector hangs on. `lh` sizes it in real lines where
+   the browser has the unit; the em fallback above it is close enough. */
+.glossia-lazy.lazy-block {
+  display: inline-block; width: 100%; vertical-align: top;
+  height: calc(var(--lazy-lines, 1) * 1.5em);
+  height: calc(var(--lazy-lines, 1) * 1lh);
+}
 /* Verbatim human-readable text embedded in a script (a coinbase mining-pool
    tag, an OP_RETURN message) is a foreign voice quoted into the transaction,
    not part of its prose -- so it's set as a quote block (a marginal accent
@@ -1892,13 +1904,91 @@ const hashNotationHtml = ({ zeroBits, remainBits }, prose) =>
 // reader never scrolls to are never encoded at all. Structure (type marks, push
 // counts, opcode glyphs) still renders eagerly, so the skeleton is instant.
 const lazyEncode = (() => {
+  // Words a held-back push becomes, by language. Measured on glossia 0.5.0 --
+  // the engine build_web.sh pins -- over 32/128/520-byte payloads: a payload
+  // word carries a fixed number of bits, so the count is linear in the byte
+  // count. `per` is words per byte, `base` the envelope's own few words. This
+  // is the reserved box's whole basis, so it is measured rather than guessed;
+  // it needs only to be close, since being out by a line or two costs a small
+  // scroll adjustment where collapsing costs the streaming altogether.
+  const WORDS = {
+    latin:   { per: 1.074, base: 5 },
+    english: { per: 1.414, base: 16 },
+    czech:   { per: 1.447, base: 3 },
+    german:  { per: 1.520, base: 15 },
+  };
+  // One fill is tens of milliseconds -- Latin, the default, is the slowest at
+  // roughly 65-90 ms a push in the browser's threadless build, since the
+  // concurrent best-of draw glossia 0.5.0 added is native-only. So filling
+  // every intersecting placeholder in one callback freezes the page for the
+  // length of the run. The queue yields instead, on the same ~24 ms slice
+  // sectionFields' eager pass keeps. A single fill already overruns a slice,
+  // so in practice this yields between every chunk -- which is the point: the
+  // browser paints, and the reader watches prose arrive rather than waiting.
+  const SLICE_MS = 24;
+  // Lead time, not coverage. A reserved box runs to ~40 lines for a 520-byte
+  // push, so 600px no longer reaches the next chunk the way it did when a run
+  // collapsed to one line; the yielding queue is what makes a generous margin
+  // cheap now, since a wide net no longer means a long freeze.
+  const ROOT_MARGIN = '1200px 0px';
+
   const fill = (el) => {
     const hex = el.dataset.hex;
     if (hex === undefined) return;   // already filled
     delete el.dataset.hex;
-    el.classList.remove('glossia-lazy');
+    delete el.dataset.bytes;
+    el.classList.remove('glossia-lazy', 'lazy-block');
+    el.style.removeProperty('--lazy-lines');
     el.innerHTML = encodeCanonical(hex, bookLang(), BEST_OF).prose;   // Glossia prose -- safe as innerHTML
   };
+
+  // Give each placeholder the room its prose will take, so a run of them
+  // occupies the height it is about to fill. Measured once per call from the
+  // root -- one layout read for the whole run rather than one apiece -- and
+  // applied only where the estimate runs past a line: a push whose prose is a
+  // line or less reads better as the inline ⋯ it already is.
+  const reserve = (root, pending) => {
+    const width = root.clientWidth;
+    const fontPx = parseFloat(getComputedStyle(root).fontSize);
+    // ~0.5em an average glyph and ~7 characters a word with its space: enough
+    // to size a gap nobody reads. Measured from the root, so a reader who has
+    // pinched the type (btc-fontscale.js) reserves by their own measure. A root
+    // measured while its chapter is still hidden reads zero -- fall back to a
+    // typical measure rather than skip, since an unreserved run is the collapse
+    // this exists to prevent, and a rough box beats none.
+    const perLine = (width && fontPx) ? Math.max(8, width / (fontPx * 0.5) / 7) : 12;
+    const est = WORDS[bookLang()] || WORDS.latin;
+    for (const el of pending) {
+      const bytes = Number(el.dataset.bytes);
+      if (!bytes) continue;
+      const lines = Math.round((est.base + est.per * bytes) / perLine);
+      if (lines < 2) continue;
+      el.style.setProperty('--lazy-lines', lines);
+      el.classList.add('lazy-block');
+    }
+  };
+
+  // Intersecting placeholders are queued, never filled in the callback: see
+  // SLICE_MS. Draining is single-flight -- a second observer callback during a
+  // drain appends to the queue the running loop is already walking.
+  const queue = [];
+  let draining = false;
+  const drain = async () => {
+    if (draining) return;
+    draining = true;
+    let slice = performance.now();
+    while (queue.length) {
+      const el = queue.shift();
+      if (!el.isConnected) continue;   // the section turned since it was queued
+      fill(el);
+      if (performance.now() - slice > SLICE_MS) {
+        await new Promise((r) => setTimeout(r, 0));
+        slice = performance.now();
+      }
+    }
+    draining = false;
+  };
+
   // rootMargin pre-encodes a chunk before it enters view, so a scrolling reader
   // almost never sees the raw placeholder.
   const io = ('IntersectionObserver' in window)
@@ -1906,29 +1996,38 @@ const lazyEncode = (() => {
         for (const e of entries) {
           if (!e.isIntersecting) continue;
           obs.unobserve(e.target);
-          fill(e.target);
+          queue.push(e.target);
         }
-      }, { rootMargin: '600px 0px' })
+        drain();
+      }, { rootMargin: ROOT_MARGIN })
     : null;
   return {
     // A push's prose, deferred: hex rides in a data attribute (hex is [0-9a-f],
     // safe unquoted) and the ⋯ gives the span a layout box so the observer fires.
-    placeholder: (hex) => hex ? `<span class="glossia-lazy" data-hex="${hex}">⋯</span>` : '',
-    // Drop pending chunks from a previous section (their nodes are already detached).
-    reset: () => { if (io) io.disconnect(); },
+    // The byte count rides beside it so `reserve` can size the gap without
+    // measuring the hex again.
+    placeholder: (hex) => hex ? `<span class="glossia-lazy" data-hex="${hex}" data-bytes="${hex.length >> 1}">⋯</span>` : '',
+    // Drop pending chunks from a previous section (their nodes are already
+    // detached), the queued ones with them.
+    reset: () => { queue.length = 0; if (io) io.disconnect(); },
     // Start watching every placeholder under `root`; encode all now if the
     // browser has no IntersectionObserver.
     observe: (root) => {
       const pending = root.querySelectorAll('.glossia-lazy');
-      if (io) pending.forEach((el) => io.observe(el));
-      else pending.forEach(fill);
+      if (!pending.length) return;
+      if (!io) { pending.forEach(fill); return; }
+      reserve(root, pending);
+      pending.forEach((el) => io.observe(el));
     },
     // Encode every outstanding placeholder under `root`, now. Scrolling is
     // what normally earns a chunk its prose, and print does not scroll: a
     // passage sent to paper straight off a fresh open would set its unread
     // pushes as the ⋯ that stands for prose not yet encoded. Whatever is
     // going to be printed is encoded first, however far down the witness it
-    // sits. Returns how many it had to do, so a caller can tell a passage
+    // sits. Synchronous by design -- the print path cannot yield and then
+    // print -- so it fills past the queue rather than through it; fill is
+    // idempotent, so a chunk the drain reaches afterwards is a no-op.
+    // Returns how many it had to do, so a caller can tell a passage
     // that was ready from one that was not.
     fillAll: (root) => {
       const pending = [...root.querySelectorAll('.glossia-lazy')];
