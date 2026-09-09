@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<!-- SPDX-License-Identifier: MIT OR Apache-2.0 -->
+<!-- /latest — the chapter being read at the tip. The reader already resolves
+     a relative height (?block=-1 is the newest block), so this page is only
+     an address for that lookup: a stable URL that always opens the book at
+     its latest written chapter. Any extra query parameters ride along, so
+     /latest?index=0 lands on the tip's §1 exactly as ?block=-1&index=0 would.
+     The meta refresh is the no-JS fallback; the script preserves params. -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex">
+  <meta http-equiv="refresh" content="0; url=../bitcoin-book.html?block=-1">
+  <title>The βook of βitcoin — the latest chapter</title>
+  <script>
+    (function () {
+      var extra = location.search ? '&' + location.search.slice(1) : '';
+      location.replace('../bitcoin-book.html?block=-1' + extra + location.hash);
+    })();
+  </script>
+</head>
+<body>
+  <p>Opening the latest chapter… <a href="../bitcoin-book.html?block=-1">continue</a>.</p>
+</body>
+</html>
