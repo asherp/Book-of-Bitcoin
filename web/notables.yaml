@@ -744,6 +744,55 @@
     - file: bip110-mandatory-signaling.md
       by: Claude Opus 5
 
+# ── The Liquid federation drain ───────────────────────────────────────────
+# 6-7 September 2026: 3,996.01834922 ₿ left the P2WSH the Liquid Federation
+# pegs into, and 3,400 ₿ came back thirty hours later. Every other theft this
+# book keeps is silent -- a perfectly formed passage that says nothing about
+# itself, the chain connecting the parties without ever making them speak.
+# This one is not. The parties negotiated the return IN OP_RETURN OUTPUTS, in
+# readable English, in the chapters between the two movements, and the
+# federation side signed its messages against a published PGP key, so the
+# exchange is checkable by anyone holding the blocks. That is why the
+# conversation is kept alongside the coins rather than left to the research
+# note: it is the rarest thing this book carries, bytes whose author meant
+# them as a sentence.
+#
+# Attribution is by signature, not by address history. Both addresses drew
+# heavy third-party OP_RETURN traffic through the event -- advertising,
+# solicitations, and accusations naming private individuals -- and only a
+# transaction spending an address's own outputs was written by whoever holds
+# it. None of that traffic is kept: a curated entry is an assertion that a
+# passage is worth attention UNDER THE TITLE IT IS GIVEN, and the book cannot
+# title an accusation without repeating it. Those bytes read in sequence where
+# they stand; the contents simply does not send anyone to them.
+#
+# What is chain fact and what is reporting: the P2WSH paid out, an address one
+# hop on received, and 3,400 ₿ returned to the same P2WSH -- verified. That the
+# P2WSH is the Federation's, that the hop is SideSwap's payout address, that
+# the cause was a range-proof verification cache bug in Elements and no signing
+# key was compromised -- reported. And "whitehat" is the sender's own word
+# about themselves, written in an output they paid for; the entry cites the
+# sentence without endorsing it. 598.50007353 ₿ remains unspent.
+# Chain verification in tools/liquid-federation-drain.md. No published reading
+# yet -- the entries are kept, per the note above, before anyone has finished
+# saying why.
+- title: The Liquid drain/the peg-out
+  id: V β63 ■792 §1176
+- title: The Liquid drain/the forward
+  id: V β63 ■792 §1243
+- title: The Liquid drain/the return
+  id: V β63 ■959 §129
+- title: The Liquid negotiation/first contact
+  id: V β63 ■827 §1106
+- title: The Liquid negotiation/the answer
+  id: V β63 ■831 §684
+- title: The Liquid negotiation/consent asked
+  id: V β63 ■878 §1678
+- title: The Liquid negotiation/consent given
+  id: V β63 ■884 §1278
+- title: The Liquid negotiation/the all-clear
+  id: V β63 ■931 §1397
+
 # ── The ledgers ───────────────────────────────────────────────────────────
 # A curated entry may name an ADDRESS instead of a place in the chain. An
 # address is a name rather than a place, so it opens no chapter: the row reads

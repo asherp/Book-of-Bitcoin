@@ -97,9 +97,9 @@ test('every entry printed exactly once, whatever the filing', () => {
 
 test('the curated contents files where an editor filed it, and nowhere else', async () => {
   // The real editorial layer, read as the contents reads it. Two claims: the
-  // masthead date is never filed, and the only group the curated titles form
-  // is the one an editor wrote deliberately. This fails loudly the day a
-  // title with a slash lands beside another sharing its first segment.
+  // masthead date is never filed, and every group the curated titles form is
+  // one an editor wrote deliberately. This fails loudly the day a title with
+  // a slash lands beside another sharing its first segment.
   const { readFile } = await import('node:fs/promises');
   const yaml = await readFile(new URL('../web/notables.yaml', import.meta.url), 'utf8');
   const titles = [...yaml.matchAll(/^-\s+title:\s*(.+?)\s*$/gm)].map((m) => m[1]);
@@ -108,16 +108,20 @@ test('the curated contents files where an editor filed it, and nowhere else', as
   const groups = [];
   const walk = (nodes) => nodes.forEach((n) => { if (n.kind === 'group') { groups.push(n.label); walk(n.nodes); } });
   walk(pathForest(titles.map((title) => ({ title }))));
-  assert.deepEqual(groups, ['BIP91', 'SegWit', 'Cold Card Attack'],
+  assert.deepEqual(groups, ['BIP91', 'SegWit', 'Cold Card Attack', 'The Liquid drain', 'The Liquid negotiation'],
     'a curated title filed itself by accident — a slash in prose is punctuation, not a path');
 
   const rows = forestRows(pathForest(titles.map((title) => ({ title }))));
   const masthead = rows.find((r) => r.entry.title.startsWith('The Times'));
   assert.equal(masthead.title, masthead.entry.title, 'the masthead date was respelled');
   assert.match(masthead.title, /^The Times 03\/Jan\/2009 /);
-  // …and the three that ARE filed print their leaf under one heading.
+  // …and the ones that ARE filed print their leaf under one heading.
   assert.deepEqual(rows.filter((r) => r.entry.title.startsWith('Cold Card Attack')).map((r) => r.title),
     ['wave 1', 'wave 2', 'wave 3']);
+  assert.deepEqual(rows.filter((r) => r.entry.title.startsWith('The Liquid drain')).map((r) => r.title),
+    ['the peg-out', 'the forward', 'the return']);
+  assert.deepEqual(rows.filter((r) => r.entry.title.startsWith('The Liquid negotiation')).map((r) => r.title),
+    ['first contact', 'the answer', 'consent asked', 'consent given', 'the all-clear']);
 });
 
 test('the contents nests first and files the whole listing', async () => {
