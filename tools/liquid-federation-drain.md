@@ -15,8 +15,9 @@ their authors meant as sentences.
 
 What this file supports:
 
-- **`web/notables.yaml`** — eight entries drafted at the end of this file:
-  three for the movement of coins, five for the exchange that moved them.
+- **`web/notables.yaml`** — eight entries drafted at the end of this file,
+  filed as one group in chain order: the coins and the conversation about
+  them interleaved, because the sequence is the story.
 - The editorial rule this file obeys: a story not yet checked against the
   chain stays a note here rather than becoming published commentary.
   Publishing is the assertion.
@@ -147,19 +148,25 @@ naming a person a criminal, where the evidence is nil.
   id: V β63 ■792 §1176
 - title: The Liquid drain/the forward
   id: V β63 ■792 §1243
+- title: The Liquid drain/first contact
+  id: V β63 ■827 §1106
+- title: The Liquid drain/the answer
+  id: V β63 ■831 §684
+- title: The Liquid drain/consent asked
+  id: V β63 ■878 §1678
+- title: The Liquid drain/consent given
+  id: V β63 ■884 §1278
+- title: The Liquid drain/the all-clear
+  id: V β63 ■931 §1397
 - title: The Liquid drain/the return
   id: V β63 ■959 §129
-- title: The Liquid negotiation/first contact
-  id: V β63 ■827 §1106
-- title: The Liquid negotiation/the answer
-  id: V β63 ■831 §684
-- title: The Liquid negotiation/consent asked
-  id: V β63 ■878 §1678
-- title: The Liquid negotiation/consent given
-  id: V β63 ■884 §1278
-- title: The Liquid negotiation/the all-clear
-  id: V β63 ■931 §1397
 ```
+
+One group, chain order. Filing the coins apart from the conversation about
+them was the first draft's mistake: a group stands where its first member
+stood, so two groups printed the return (**■959**) above the message that
+asked whether to send it (**■878**). The contents is chronological, and here
+chronology carries the whole argument — patch, then confirm, then pay.
 
 No published reading yet. The event is three days old, the 598.5 ₿ is
 unspent, and whether this ends as a bounty, a settlement, or a theft is not

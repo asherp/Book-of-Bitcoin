@@ -108,7 +108,7 @@ test('the curated contents files where an editor filed it, and nowhere else', as
   const groups = [];
   const walk = (nodes) => nodes.forEach((n) => { if (n.kind === 'group') { groups.push(n.label); walk(n.nodes); } });
   walk(pathForest(titles.map((title) => ({ title }))));
-  assert.deepEqual(groups, ['BIP91', 'SegWit', 'Cold Card Attack', 'The Liquid drain', 'The Liquid negotiation'],
+  assert.deepEqual(groups, ['BIP91', 'SegWit', 'Cold Card Attack', 'The Liquid drain'],
     'a curated title filed itself by accident — a slash in prose is punctuation, not a path');
 
   const rows = forestRows(pathForest(titles.map((title) => ({ title }))));
@@ -118,10 +118,13 @@ test('the curated contents files where an editor filed it, and nowhere else', as
   // …and the ones that ARE filed print their leaf under one heading.
   assert.deepEqual(rows.filter((r) => r.entry.title.startsWith('Cold Card Attack')).map((r) => r.title),
     ['wave 1', 'wave 2', 'wave 3']);
+  // The Liquid drain is filed as ONE group on purpose: a group stands where
+  // its first member stood, so filing the coins apart from the conversation
+  // about them printed the return above the messages that asked for it. Read
+  // straight down, these leaves are the event's chain order.
   assert.deepEqual(rows.filter((r) => r.entry.title.startsWith('The Liquid drain')).map((r) => r.title),
-    ['the peg-out', 'the forward', 'the return']);
-  assert.deepEqual(rows.filter((r) => r.entry.title.startsWith('The Liquid negotiation')).map((r) => r.title),
-    ['first contact', 'the answer', 'consent asked', 'consent given', 'the all-clear']);
+    ['the peg-out', 'the forward', 'first contact', 'the answer',
+      'consent asked', 'consent given', 'the all-clear', 'the return']);
 });
 
 test('the contents nests first and files the whole listing', async () => {

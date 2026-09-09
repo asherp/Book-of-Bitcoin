@@ -757,6 +757,14 @@
 # note: it is the rarest thing this book carries, bytes whose author meant
 # them as a sentence.
 #
+# ONE filing, in chain order, and the order is the argument. The coins and the
+# conversation were first kept as two groups, which put the return above the
+# first message that asked for it -- a group stands where its first member
+# stood, so filing the story by kind hid the sequence that IS the story. Filed
+# as one and read straight down, the chapters say it themselves: the coins
+# leave, the sender says what they are, the federation answers, consent is
+# asked and given, the bug is patched, and only then do the coins come back.
+#
 # Attribution is by signature, not by address history. Both addresses drew
 # heavy third-party OP_RETURN traffic through the event -- advertising,
 # solicitations, and accusations naming private individuals -- and only a
@@ -780,18 +788,18 @@
   id: V β63 ■792 §1176
 - title: The Liquid drain/the forward
   id: V β63 ■792 §1243
+- title: The Liquid drain/first contact
+  id: V β63 ■827 §1106
+- title: The Liquid drain/the answer
+  id: V β63 ■831 §684
+- title: The Liquid drain/consent asked
+  id: V β63 ■878 §1678
+- title: The Liquid drain/consent given
+  id: V β63 ■884 §1278
+- title: The Liquid drain/the all-clear
+  id: V β63 ■931 §1397
 - title: The Liquid drain/the return
   id: V β63 ■959 §129
-- title: The Liquid negotiation/first contact
-  id: V β63 ■827 §1106
-- title: The Liquid negotiation/the answer
-  id: V β63 ■831 §684
-- title: The Liquid negotiation/consent asked
-  id: V β63 ■878 §1678
-- title: The Liquid negotiation/consent given
-  id: V β63 ■884 §1278
-- title: The Liquid negotiation/the all-clear
-  id: V β63 ■931 §1397
 
 # ── The ledgers ───────────────────────────────────────────────────────────
 # A curated entry may name an ADDRESS instead of a place in the chain. An
