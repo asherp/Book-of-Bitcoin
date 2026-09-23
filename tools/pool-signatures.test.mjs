@@ -115,6 +115,30 @@ test('poolOf reads the runs, never the bytes', () => {
   assert.equal(poolOf([]), null);
 });
 
+test('an operator running ckpool is named for the operator, not the software', () => {
+  // testnet4 block 153,726: the coinbase carries ckpool's own "ckpool" tag and
+  // the operator's "Samaritan mining" beside it -- the two readable runs the
+  // book's scanner finds, in the order it finds them.
+  const runs = ['\nckpool', 'Samaritan mining'];
+  // The attribution is the operator's, though its tag comes second and the
+  // software's comes first.
+  assert.equal(poolOf(runs).pool, 'Samaritan mining');
+  // Samaritan is cut to its own extent, like any other hand.
+  const sam = findSignature('Samaritan mining');
+  assert.ok(sam, 'Samaritan is a signature the table knows');
+  assert.equal(sam.pool, 'Samaritan mining');
+  assert.equal(sam.text, 'Samaritan mining');
+  // The margin still quotes both hands -- the software marker and the operator
+  // tag -- since a record shows every name in the coinbase; only the single
+  // attribution chooses between them.
+  const both = runs.map((r) => splitOnSignature(r).filter((p) => p.pool).map((p) => p.pool));
+  assert.deepEqual(both, [['ckpool'], ['Samaritan mining']]);
+  // A solo.ckpool block -- "ckpool" and no operator tag beside it -- is still
+  // ckpool's: the software marker names the hand when nobody else does.
+  assert.equal(poolOf(['/ckpool/']).pool, 'ckpool');
+  assert.equal(poolOf(['\nckpool']).pool, 'ckpool');
+});
+
 test('the margin quotes the signature and puts the leaning byte back', { skip: skipNoEngine }, async () => {
   const { composeTransactionFields } = await import('../web/btc-prose.js');
   const { parseTransaction } = await import('../web/btc-tx.js');
