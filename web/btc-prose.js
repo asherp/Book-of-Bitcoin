@@ -1328,6 +1328,10 @@ export function composeTransactionFields(parsed, bestOf = 1, lazyData = null, en
       // The signature the margin carries, as { pool, link, text }, or null --
       // a reading, kept out of the passage and available beside it.
       signature,
+      // A coinbase's scriptSig as the chain wrote it, for a reader that names
+      // the pool by mempool's own rule (btc-pool-registry.js), which matches
+      // tags against the raw bytes. Data beside the fields, never displayed.
+      ...(isNullPrevout ? { scriptSigHex: v.scriptSig } : {}),
       sequence: seq.mark, sequenceKind: seq.kind, sequenceTitle: seq.title, sequenceRbf: seq.rbf,
       witnessHex: v.witnessHex || '',
       witnessItems: v.witness || [],

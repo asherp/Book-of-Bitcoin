@@ -878,6 +878,9 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 .tx-out-term .out-term .out-kind { color: var(--ink-soft); }
 .tx-out-term .out-term .out-def { font-weight: 400; }
 .tx-out-keep .out-keep-name { cursor: pointer; }
+/* A payout's pool, offered before anyone has filed a name: a reading, marked
+   the way a pool's tag is in the margin (.pool-sig). */
+.tx-out-keep .out-keep-pool { border-bottom: 1px dotted var(--dim); }
 .tx-out-keep .out-keep-name:hover, .tx-out-keep .out-keep-name:focus-visible { color: var(--accent-2); outline: none; }
 .tx-out-keep .keep-rib { display: inline-block; line-height: 0; color: var(--accent); vertical-align: -2px; background: none; border: 0; padding: 2px 5px; cursor: pointer; opacity: .42; }
 .tx-out-keep .keep-rib svg { display: inline-block; width: 10px; height: 14px; }
@@ -1434,6 +1437,7 @@ a.footnote-title.is-asset:hover { color: var(--accent-2, #dcb877); text-decorati
 import { init, encodeCanonical, MSG_LANGS, bookLang, setBookLang } from './glossia-msg.js';
 import { t as tr, localizeText, localizeAttr, numberName } from './btc-strings.js';
 import { parseTransaction, computeTxid, parseBlockHeader, computeBlockHash, bitsToDifficulty, scriptToAddress } from './btc-tx.js';
+import { payoutPool } from './btc-pool-registry.js';
 // The reader's ledger shelf (Appendix III): a locking script kept from a
 // section joins it as a titled one-address ledger, the same registry the
 // Ledger page's own keep button writes. INDEXED is the curated shelf, whose
@@ -5232,6 +5236,14 @@ function renderChapter(para) {
   // scriptSig nor witness) sits beside the outputs.
   for (const p of pendingMargin) marginEl.append(p);
   currentFootnotes = footnotes;
+  // A coinbase names the pool that mined it, and that name titles the pool's
+  // payout: the payout's keep line offers it, and keeping the address files it
+  // under that name (payoutPool, btc-pool-registry.js). It is worked out once
+  // every output's address is known, so the loop below hands each output's
+  // keep line and address here as it builds them.
+  const coinbaseIn = f.inputs.length === 1 && f.inputs[0].isNullPrevout ? f.inputs[0] : null;
+  const outKeeps = [];
+  const outAddresses = [];
   f.outputs.forEach((out, i) => {
     // The output's name line: the reader's bookmark title when this output is
     // kept (defaulted from -- and overriding -- the curated name), else the
@@ -5267,6 +5279,7 @@ function renderChapter(para) {
     outKeep.dataset.spk = out.spkHex;
     if (!state.projected) outKeep.dataset.ref = latinRefOf(state.height, para.num, i);
     outputsEl.append(outKeep);
+    outKeeps.push(outKeep);
     // …and below it the term, which is the title this script has whether or
     // not anyone ever names it. Its own line rather than the keep's, because a
     // bookmark stands above a title and the two say different things: the keep
@@ -5281,11 +5294,12 @@ function renderChapter(para) {
     outTerm.dataset.spk = out.spkHex;
     outputsEl.append(outTerm);
     termTitle(outTerm);
-    scriptToAddress(out.spkHex).then((r) => {
-      if (gen !== renderGen || !r || !r.address) return;
+    outAddresses.push(scriptToAddress(out.spkHex).then((r) => {
+      if (gen !== renderGen || !r || !r.address) return null;
       outKeep.dataset.address = r.address;
       syncScriptKeeps();
-    }).catch(() => {});
+      return r.address;
+    }).catch(() => null));
     const scriptCell = document.createElement('div');
     scriptCell.className = 'tx-out-script';
     scriptCell.id = `out-${i}`;   // a referencing input scrolls here so this output leads the page
@@ -5326,6 +5340,17 @@ function renderChapter(para) {
     citedCells.push({ el: cited, out: i });
     outputsEl.append(scriptCell, valueCell);
   });
+  // A draft's coinbase is a template, not a block anyone mined.
+  if (coinbaseIn && !state.projected) {
+    Promise.all(outAddresses).then((addresses) => {
+      if (gen !== renderGen) return;
+      const payout = payoutPool({ scriptSig: coinbaseIn.scriptSigHex, addresses, tablePool: coinbaseIn.signature?.pool ?? null });
+      if (!payout) return;
+      outKeeps[payout.output].dataset.pool = payout.name;
+      outKeeps[payout.output].dataset.poolFrom = payout.from;
+      syncScriptKeeps();
+    });
+  }
   // The balance line -- Σ inputs at the left, − fee between, Σ outputs at
   // the right (see the .tx-totals CSS comment). Derived, not on the wire,
   // so it renders in the foot region below the section's rule rather than
@@ -7782,6 +7807,9 @@ function scriptEntry(keepEl) {
     // member rather than a URL. Named as the ribbon's own entry names it, so
     // the two paths into keepLedger carry the same field.
     ledger: address,
+    // A coinbase payout's pool, which the title form offers as the ledger's
+    // name (suggestTitle); absent on every other output.
+    pool: keepEl.dataset.pool || null,
     // The road to the leaf that reads these bytes as the term they bind. The
     // script itself is the query -- ?q= takes a locking script by its own
     // hex, as the box does when a reader pastes one -- so it needs no address
@@ -7824,6 +7852,12 @@ function termTitle(el) {
   return true;
 }
 
+// Whose reading a payout's pool name is, for its hover.
+const POOL_READINGS = {
+  'registry-address': "mempool.space's pool registry, by this payout address",
+  'registry-tag': "mempool.space's pool registry, by the coinbase's tag",
+  table: "the coinbase's pool tag (the book's table)",
+};
 function syncScriptKeeps() {
   for (const el of document.querySelectorAll('.tx-out-keep')) {
     const address = el.dataset.address;
@@ -7839,12 +7873,18 @@ function syncScriptKeeps() {
       + (el.dataset.ref ? `&ref=${el.dataset.ref}` : '');
     // A filed name prints as the path it is -- `Coldcard hack / wave 3`.
     const name = reader ? (pathSegments(reader.title).join(' / ') || address) : (curated ? curated.title : null);
-    if (name) {
+    // A coinbase payout that nobody has named reads by the pool that mined the
+    // block (set on the line by renderChapter). It is a reading, not a filing:
+    // marked as a claim and credited, until a keep files it.
+    const pool = name ? null : (el.dataset.pool || null);
+    if (name || pool) {
       const span = document.createElement('span');
-      span.className = 'out-keep-name hash-copy';
+      span.className = 'out-keep-name hash-copy' + (pool ? ' out-keep-pool' : '');
       span.tabIndex = 0;
-      span.textContent = name;
-      span.title = `${address} — click for menu`;
+      span.textContent = name || pool;
+      span.title = pool
+        ? `${pool} — per ${POOL_READINGS[el.dataset.poolFrom] ?? 'the coinbase'}; bookmark to file this address under this name`
+        : `${address} — click for menu`;
       span.setAttribute('aria-label', `locking script ${address} — click for menu`);
       const entry = scriptEntry(el);
       span.addEventListener('mousedown', (e) => e.preventDefault());
@@ -7859,11 +7899,13 @@ function syncScriptKeeps() {
     if (!reader) {
       rib.title = curated
         ? `bookmark this locking script — your name for it overrides “${curated.title}” until removed`
-        : 'bookmark this locking script — its address joins your ledgers';
+        : pool
+          ? `bookmark this locking script — files its address as “${pool}”`
+          : 'bookmark this locking script — its address joins your ledgers';
       rib.setAttribute('aria-label', 'Bookmark this locking script: keep its address as a ledger');
       rib.addEventListener('click', (e) => {
         e.stopPropagation();
-        startBookmark(e, { label: 'locking script', ledger: address, prose: address, what: KEEPS['locking script'] }, rib);
+        startBookmark(e, { label: 'locking script', ledger: address, pool, prose: address, what: KEEPS['locking script'] }, rib);
       });
     } else if (reader.addresses.length === 1) {
       rib.title = 'bookmarked — remove';
@@ -7909,11 +7951,13 @@ function curatedTitleFor(entry, place) {
 function suggestTitle(entry) {
   // A locking-script keep names a ledger. The curated shelf's title is the
   // default when the address is already there -- keep it and the name
-  // stands, change it and yours overrides until the keep is removed --
-  // otherwise the name is the reader's to give.
+  // stands, change it and yours overrides until the keep is removed -- and a
+  // coinbase payout's pool is the default where nothing is curated, so its
+  // address files under the pool that mined the block; otherwise the name is
+  // the reader's to give.
   if (entry.ledger) {
     const cur = INDEXED.find((k) => k.addresses.includes(entry.ledger));
-    return cur ? cur.title : '';
+    return cur ? cur.title : (entry.pool || '');
   }
   const b = bookmarks.find((x) => keyOf(x) === bookmarkKey(entry.hex, bmSubOf(entry)));
   if (b && b.title) return b.title;               // keep an existing title when retitling

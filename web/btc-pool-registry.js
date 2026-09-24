@@ -64,6 +64,36 @@ export function registryPoolOf({ scriptSig = '', addresses = [] } = {}, pools = 
   return null;
 }
 
+// Which of a coinbase's outputs is the pool's payout, and the pool's name for
+// it -- the name a reader keeping that output's address is offered for the
+// ledger it files. Null where that cannot be said without guessing.
+//
+//   scriptSig   the coinbase's scriptSig, hex
+//   addresses   each output's address in output order, null where it has
+//               none (the witness commitment, any other OP_RETURN)
+//   tablePool   the pool the book's own table reads in the scriptSig
+//               (btc-pools.js poolOf), for pools the registry does not know
+//
+// Returns { output, name, from }, `from` being 'registry-address',
+// 'registry-tag' or 'table' -- whose reading it is and what it rests on.
+//
+// The registry is asked first, by mempool's rule. Where it names the pool by
+// an address the coinbase pays, that output is the payout. Where it names the
+// pool by a tag, or only the book's table does, the tag says who mined the
+// block and nothing about which output is theirs -- so the name is given only
+// where the coinbase pays exactly one address. A coinbase paying several (a
+// pool that pays its miners from the coinbase directly) is left unnamed
+// rather than guessed at.
+export function payoutPool({ scriptSig = '', addresses = [], tablePool = null } = {}, pools = MEMPOOL_POOLS) {
+  const paid = [...new Set(addresses.filter(Boolean))];
+  const lone = paid.length === 1 ? addresses.indexOf(paid[0]) : -1;
+  const hit = registryPoolOf({ scriptSig, addresses: paid }, pools);
+  if (hit?.by === 'address') return { output: addresses.indexOf(hit.matched), name: hit.name, from: 'registry-address' };
+  if (hit) return lone < 0 ? null : { output: lone, name: hit.name, from: 'registry-tag' };
+  if (tablePool && lone >= 0) return { output: lone, name: tablePool, from: 'table' };
+  return null;
+}
+
 // One pool's entry by its registry id or its name (case aside), or null --
 // where a pool's own addresses are read from, to shelve them as its ledger.
 export function registryPool(idOrName, pools = MEMPOOL_POOLS) {

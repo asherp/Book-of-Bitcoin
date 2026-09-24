@@ -16,7 +16,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
-import { MEMPOOL_POOLS, MEMPOOL_POOLS_SOURCE, registryPoolOf, registryPool, asciiOf } from '../web/btc-pool-registry.js';
+import { MEMPOOL_POOLS, MEMPOOL_POOLS_SOURCE, registryPoolOf, registryPool, asciiOf, payoutPool } from '../web/btc-pool-registry.js';
 import { NETWORKS, addressShape } from '../web/btc-network.js';
 
 const hex = (s) => Buffer.from(s, 'latin1').toString('hex');
@@ -106,4 +106,37 @@ test("a pool's entry is found by id or by name, for its ledger", () => {
   assert.equal(registryPool(first.name.toUpperCase())?.id, first.id);
   assert.equal(registryPool('no such pool'), null);
   assert.equal(registryPool(''), null);
+});
+
+test("a coinbase payout is titled by its pool only where it can be said which output is the pool's", () => {
+  const pools = [
+    { id: 1, name: 'Paid Pool', addresses: ['bc1qpool'], tags: ['/paid/'], link: '' },
+    { id: 2, name: 'Tagged Pool', addresses: [], tags: ['/tagged/'], link: '' },
+  ];
+  // The registry names the pool by an address the coinbase pays: that output,
+  // however many others the coinbase pays.
+  assert.deepEqual(payoutPool({ scriptSig: hex('/paid/'), addresses: ['bc1qminer', null, 'bc1qpool'] }, pools),
+    { output: 2, name: 'Paid Pool', from: 'registry-address' });
+  // By a tag: the lone paying output, past the witness commitment.
+  assert.deepEqual(payoutPool({ scriptSig: hex('/tagged/'), addresses: ['bc1qonly', null] }, pools),
+    { output: 0, name: 'Tagged Pool', from: 'registry-tag' });
+  // By a tag with several paid: the tag says who mined, not which output is theirs.
+  assert.equal(payoutPool({ scriptSig: hex('/tagged/'), addresses: ['bc1qa', 'bc1qb', null] }, pools), null);
+  // The same address paid twice is still one payee.
+  assert.equal(payoutPool({ scriptSig: hex('/tagged/'), addresses: ['bc1qa', 'bc1qa'] }, pools)?.output, 0);
+  // Nothing either source reads: nothing offered.
+  assert.equal(payoutPool({ scriptSig: hex('nobody'), addresses: ['bc1qa'] }, pools), null);
+});
+
+test("a pool the registry does not know is named by the book's table: Samaritan's payout", () => {
+  // Block 153,726 on testnet4: Samaritan's coinbase, its payout, and the
+  // witness commitment (no address). The registry has no Samaritan; the
+  // book's table read "Samaritan mining" in the same bytes.
+  const scriptSig = '037e58020004f33db46a048515aa0a0c5806b46a3b000000000000000a636b706f6f6c1053616d61726974616e206d696e696e67';
+  const payout = 'tb1q93k8n2snvqau488v5mxv0ycm0atsw5xwae0w74';
+  assert.equal(registryPoolOf({ scriptSig, addresses: [payout] }), null, 'mempool calls it Unknown');
+  assert.deepEqual(payoutPool({ scriptSig, addresses: [payout, null], tablePool: 'Samaritan mining' }),
+    { output: 0, name: 'Samaritan mining', from: 'table' });
+  // Paying two addresses, even the book's own reading names no output.
+  assert.equal(payoutPool({ scriptSig, addresses: [payout, 'tb1qother'], tablePool: 'Samaritan mining' }), null);
 });
