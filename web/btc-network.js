@@ -119,7 +119,9 @@ export function switchNetwork(id) {
 // testnet4 would open as block 153,726 of mainnet, a different block, with
 // nothing to say so. Mainnet addresses are returned as they were, so no link
 // already made changes. Appended rather than re-serialized, so the rest of the
-// address keeps its own encoding.
+// address keeps its own encoding. btc-chrome.js applies the same rule to every
+// link on a page that points at another of the book's pages (chainHref), since
+// a link is also something a reader copies and sends.
 export function withChain(url, net = NET) {
   if (net.id === DEFAULT_NETWORK) return url;
   const hashAt = url.indexOf('#');

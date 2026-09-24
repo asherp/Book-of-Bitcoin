@@ -272,3 +272,63 @@ test('the masthead script names the chain in the address the page opened on', as
   assert.deepEqual(open(null, '?q=1'), [], 'a mainnet address is left alone');
   assert.deepEqual(open('mainnet', '?q=1'), []);
 });
+
+test("the masthead script names the chain in every link to the book's pages", async () => {
+  const { runInNewContext } = await import('node:vm');
+  const { withChain } = await import('../web/btc-network.js');
+  const chrome = await readFile(new URL('btc-chrome.js', WEB), 'utf8');
+  const anchor = (href) => {
+    const attrs = new Map([['href', href]]);
+    return { nodeType: 1, tagName: 'A', querySelectorAll: () => [],
+      getAttribute: (k) => attrs.get(k) ?? null, setAttribute: (k, v) => attrs.set(k, v) };
+  };
+  // A page that holds some links, then adds one and re-points another.
+  const open = (kept) => {
+    const links = [
+      './bitcoin-book.html?block=153726&index=0', './bitcoin-appendix.html?part=mining#mines',
+      './bitcoin-contents.html', './', '#', '#s3', 'https://github.com/asherp/book-of-bitcoin',
+      './passages/index.md', './bitcoin-search.html?q=1&network=testnet4',
+    ].map(anchor);
+    let observer = null;
+    const store = new Map([[NETWORK_KEY, kept]]);
+    runInNewContext(chrome, {
+      URL, URLSearchParams,
+      location: { href: 'http://book.test/bitcoin-contents.html', origin: 'http://book.test',
+        pathname: '/bitcoin-contents.html', search: `?network=${kept}`, hash: '' },
+      history: { state: null, replaceState() {} },
+      localStorage: { getItem: (k) => store.get(k) ?? null, setItem: (k, v) => store.set(k, v) },
+      document: { readyState: 'complete', querySelector: () => null, querySelectorAll: () => [], addEventListener() {},
+        documentElement: { nodeType: 1, tagName: 'HTML', setAttribute() {}, querySelectorAll: () => links } },
+      MutationObserver: class { constructor(cb) { observer = cb; } observe() {} },
+      window: { addEventListener() {}, matchMedia: () => ({ matches: false }), navigator: {} },
+      navigator: {}, fetch: () => Promise.resolve({ ok: false }), setTimeout,
+    });
+    return { links, observer };
+  };
+
+  const { links, observer } = open('testnet4');
+  const hrefs = links.map((a) => a.getAttribute('href'));
+  const t4 = NETWORKS.testnet4;
+  // The book's pages are named, by the same rule as withChain.
+  for (const i of [0, 1, 2, 3, 8]) {
+    const before = ['./bitcoin-book.html?block=153726&index=0', './bitcoin-appendix.html?part=mining#mines',
+      './bitcoin-contents.html', './', '', '', '', '', './bitcoin-search.html?q=1&network=testnet4'][i];
+    assert.equal(hrefs[i], withChain(before, t4), `link ${i}`);
+  }
+  assert.equal(hrefs[1], './bitcoin-appendix.html?part=mining&network=testnet4#mines', 'the fragment stays last');
+  // Nothing else is touched: a fragment on this page, another site, a file.
+  assert.deepEqual(hrefs.slice(4, 8), ['#', '#s3', 'https://github.com/asherp/book-of-bitcoin', './passages/index.md']);
+
+  // A link the page adds later, and one it re-points, are named as they happen.
+  const added = anchor('./bitcoin-ledger.html?address=tb1qexample');
+  observer([{ type: 'childList', addedNodes: [added] }]);
+  assert.equal(added.getAttribute('href'), './bitcoin-ledger.html?address=tb1qexample&network=testnet4');
+  links[4].setAttribute('href', './bitcoin-proof.html?digest=00');
+  observer([{ type: 'attributes', target: links[4] }]);
+  assert.equal(links[4].getAttribute('href'), './bitcoin-proof.html?digest=00&network=testnet4');
+
+  // On mainnet, nothing is observed and no link changes.
+  const main = open('mainnet');
+  assert.equal(main.observer, null, 'mainnet installs no observer');
+  assert.equal(main.links[0].getAttribute('href'), './bitcoin-book.html?block=153726&index=0');
+});
