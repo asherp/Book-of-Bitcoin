@@ -1,0 +1,62 @@
+name: Mining pools
+
+# Keep the book's copy of mempool.space's pool registry in step with its
+# source (tools/fetch-mining-pools.mjs -> web/btc-mempool-pools.js). Weekly:
+# the registry changes when a pool is added or a pool's addresses or tags do,
+# which is a few times a month at most, and a copy a week behind names the
+# same pools. Each run fetches the registry, checks it, runs the suite on the
+# result, and opens (or updates) a pull request only if the registry changed
+# -- the copy is reviewed like any other change, never pushed to main.
+#
+# The suite runs here because a pull request opened with the workflow's own
+# token does not start other workflows, tests.yml among them.
+#
+# Opening the pull request needs the repository setting "Allow GitHub
+# Actions to create and approve pull requests" (Settings -> Actions ->
+# General). Without it the run still refreshes and tests the copy, and fails
+# at the last step, saying so.
+
+on:
+  schedule:
+    - cron: '17 6 * * 1'   # Mondays, 06:17 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: mining-pools
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # The token lets the tool pin the copy to the commit it came from.
+      - name: Fetch the registry
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          node tools/fetch-mining-pools.mjs --summary "$RUNNER_TEMP/pools.md" \
+            | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Run the suite
+        run: node --test 'tools/**/*.test.mjs' tools/twitter-bot/test.mjs
+
+      - name: Open a pull request
+        uses: peter-evans/create-pull-request@v7
+        with:
+          branch: automation/mining-pools
+          delete-branch: true
+          add-paths: web/btc-mempool-pools.js
+          commit-message: Refresh mempool.space's pool registry
+          title: Refresh mempool.space's pool registry
+          body-path: ${{ runner.temp }}/pools.md

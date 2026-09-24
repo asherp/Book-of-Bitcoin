@@ -81,6 +81,8 @@ const SHELL = [
   './btc-mines.js',
   './btc-network.js',
   './btc-pools.js',
+  './btc-pool-registry.js',
+  './btc-mempool-pools.js',
   './btc-projected.js',
   './btc-toc.css',
   './btc-pages.js',
