@@ -5344,7 +5344,8 @@ function renderChapter(para) {
   if (coinbaseIn && !state.projected) {
     Promise.all(outAddresses).then((addresses) => {
       if (gen !== renderGen) return;
-      const payout = payoutPool({ scriptSig: coinbaseIn.scriptSigHex, addresses, tablePool: coinbaseIn.signature?.pool ?? null });
+      const outputs = addresses.map((address, i) => ({ address, sats: f.outputs[i].sats }));
+      const payout = payoutPool({ scriptSig: coinbaseIn.scriptSigHex, outputs, tablePool: coinbaseIn.signature?.pool ?? null });
       if (!payout) return;
       outKeeps[payout.output].dataset.pool = payout.name;
       outKeeps[payout.output].dataset.poolFrom = payout.from;

@@ -108,24 +108,40 @@ test("a pool's entry is found by id or by name, for its ledger", () => {
   assert.equal(registryPool(''), null);
 });
 
+const out = (address, sats = 0) => ({ address, sats });
+
 test("a coinbase payout is titled by its pool only where it can be said which output is the pool's", () => {
   const pools = [
     { id: 1, name: 'Paid Pool', addresses: ['bc1qpool'], tags: ['/paid/'], link: '' },
     { id: 2, name: 'Tagged Pool', addresses: [], tags: ['/tagged/'], link: '' },
   ];
   // The registry names the pool by an address the coinbase pays: that output,
-  // however many others the coinbase pays.
-  assert.deepEqual(payoutPool({ scriptSig: hex('/paid/'), addresses: ['bc1qminer', null, 'bc1qpool'] }, pools),
+  // however many others the coinbase pays and whatever they carry.
+  assert.deepEqual(payoutPool({ scriptSig: hex('/paid/'), outputs: [out('bc1qminer', 9e8), out(null), out('bc1qpool', 1)] }, pools),
     { output: 2, name: 'Paid Pool', from: 'registry-address' });
   // By a tag: the lone paying output, past the witness commitment.
-  assert.deepEqual(payoutPool({ scriptSig: hex('/tagged/'), addresses: ['bc1qonly', null] }, pools),
+  assert.deepEqual(payoutPool({ scriptSig: hex('/tagged/'), outputs: [out('bc1qonly', 3e8), out(null)] }, pools),
     { output: 0, name: 'Tagged Pool', from: 'registry-tag' });
-  // By a tag with several paid: the tag says who mined, not which output is theirs.
-  assert.equal(payoutPool({ scriptSig: hex('/tagged/'), addresses: ['bc1qa', 'bc1qb', null] }, pools), null);
+  // By a tag with the value shared out -- miners paid from the coinbase, or a
+  // split between payees: the tag says who mined, not which output is theirs.
+  assert.equal(payoutPool({ scriptSig: hex('/tagged/'), outputs: [out('bc1qa', 2e8), out('bc1qb', 1e8), out(null)] }, pools), null);
+  assert.equal(payoutPool({ scriptSig: hex('/tagged/'), outputs: [out('bc1qa', 98e6), out('bc1qb', 2e6)] }, pools), null, 'short of the share');
   // The same address paid twice is still one payee.
-  assert.equal(payoutPool({ scriptSig: hex('/tagged/'), addresses: ['bc1qa', 'bc1qa'] }, pools)?.output, 0);
+  assert.equal(payoutPool({ scriptSig: hex('/tagged/'), outputs: [out('bc1qa', 1), out('bc1qa', 1)] }, pools)?.output, 0);
   // Nothing either source reads: nothing offered.
-  assert.equal(payoutPool({ scriptSig: hex('nobody'), addresses: ['bc1qa'] }, pools), null);
+  assert.equal(payoutPool({ scriptSig: hex('nobody'), outputs: [out('bc1qa', 1)] }, pools), null);
+});
+
+test("AntPool's payout carries the reward beside a marker, and is named", () => {
+  // Mainnet block 968,448, as mempool.space served it: the reward to
+  // 39C7fx… beside 546 satoshis to 37jKPS… and five OP_RETURNs. The registry
+  // lists neither address; its AntPool tag is in the coinbase.
+  const antpool = registryPool('AntPool');
+  const tag = antpool.tags.find((t) => /^Mined by AntPool$/.test(t)) ?? antpool.tags[0];
+  const outputs = [out('37jKPSmbEGwgfacCr2nayn1wTaqMAbA94Z', 546), out('39C7fxSzEACPjM78Z7xdPxhf7mKxJwvfMJ', 313867032),
+    out(null), out(null), out(null), out(null), out(null)];
+  assert.deepEqual(payoutPool({ scriptSig: heightPush + hex(tag + ' x6mm0Uwq'), outputs }),
+    { output: 1, name: 'AntPool', from: 'registry-tag' });
 });
 
 test("a pool the registry does not know is named by the book's table: Samaritan's payout", () => {
@@ -135,8 +151,8 @@ test("a pool the registry does not know is named by the book's table: Samaritan'
   const scriptSig = '037e58020004f33db46a048515aa0a0c5806b46a3b000000000000000a636b706f6f6c1053616d61726974616e206d696e696e67';
   const payout = 'tb1q93k8n2snvqau488v5mxv0ycm0atsw5xwae0w74';
   assert.equal(registryPoolOf({ scriptSig, addresses: [payout] }), null, 'mempool calls it Unknown');
-  assert.deepEqual(payoutPool({ scriptSig, addresses: [payout, null], tablePool: 'Samaritan mining' }),
+  assert.deepEqual(payoutPool({ scriptSig, outputs: [out(payout, 5002671077), out(null)], tablePool: 'Samaritan mining' }),
     { output: 0, name: 'Samaritan mining', from: 'table' });
-  // Paying two addresses, even the book's own reading names no output.
-  assert.equal(payoutPool({ scriptSig, addresses: [payout, 'tb1qother'], tablePool: 'Samaritan mining' }), null);
+  // The value shared between two payees: even the book's own reading names no output.
+  assert.equal(payoutPool({ scriptSig, outputs: [out(payout, 25e8), out('tb1qother', 25e8)], tablePool: 'Samaritan mining' }), null);
 });

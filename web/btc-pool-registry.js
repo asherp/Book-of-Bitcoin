@@ -69,8 +69,9 @@ export function registryPoolOf({ scriptSig = '', addresses = [] } = {}, pools = 
 // ledger it files. Null where that cannot be said without guessing.
 //
 //   scriptSig   the coinbase's scriptSig, hex
-//   addresses   each output's address in output order, null where it has
-//               none (the witness commitment, any other OP_RETURN)
+//   outputs     each output in order, as { address, sats }: address null
+//               where it has none (the witness commitment, any other
+//               OP_RETURN)
 //   tablePool   the pool the book's own table reads in the scriptSig
 //               (btc-pools.js poolOf), for pools the registry does not know
 //
@@ -80,18 +81,42 @@ export function registryPoolOf({ scriptSig = '', addresses = [] } = {}, pools = 
 // The registry is asked first, by mempool's rule. Where it names the pool by
 // an address the coinbase pays, that output is the payout. Where it names the
 // pool by a tag, or only the book's table does, the tag says who mined the
-// block and nothing about which output is theirs -- so the name is given only
-// where the coinbase pays exactly one address. A coinbase paying several (a
-// pool that pays its miners from the coinbase directly) is left unnamed
+// block and nothing about which output is theirs -- so the payout is the
+// output that carries the block's reward: the lone paid address, or the one
+// output holding at least PAYOUT_SHARE of the value paid to addresses. That
+// is AntPool's shape, the reward to one address beside a 546-sat marker to
+// another. A coinbase that shares its value out (a pool paying its miners
+// from the coinbase directly, or a split between payees) is left unnamed
 // rather than guessed at.
-export function payoutPool({ scriptSig = '', addresses = [], tablePool = null } = {}, pools = MEMPOOL_POOLS) {
+export const PAYOUT_SHARE = 0.99;
+
+export function payoutPool({ scriptSig = '', outputs = [], tablePool = null } = {}, pools = MEMPOOL_POOLS) {
+  const addresses = outputs.map((o) => o?.address || null);
   const paid = [...new Set(addresses.filter(Boolean))];
-  const lone = paid.length === 1 ? addresses.indexOf(paid[0]) : -1;
   const hit = registryPoolOf({ scriptSig, addresses: paid }, pools);
   if (hit?.by === 'address') return { output: addresses.indexOf(hit.matched), name: hit.name, from: 'registry-address' };
-  if (hit) return lone < 0 ? null : { output: lone, name: hit.name, from: 'registry-tag' };
-  if (tablePool && lone >= 0) return { output: lone, name: tablePool, from: 'table' };
-  return null;
+  const name = hit ? hit.name : tablePool;
+  if (!name) return null;
+  const output = rewardOutput(outputs);
+  return output < 0 ? null : { output, name, from: hit ? 'registry-tag' : 'table' };
+}
+
+// The output carrying a coinbase's reward, by index, or -1: the lone paid
+// address, or the one paid output holding PAYOUT_SHARE of what addresses are
+// paid. The same address paid twice is one payee, and counts as the first.
+function rewardOutput(outputs) {
+  const byAddress = new Map();
+  outputs.forEach((o, i) => {
+    if (!o?.address) return;
+    const was = byAddress.get(o.address);
+    byAddress.set(o.address, { index: was ? was.index : i, sats: (was ? was.sats : 0) + (Number(o.sats) || 0) });
+  });
+  const payees = [...byAddress.values()];
+  if (payees.length === 1) return payees[0].index;
+  const total = payees.reduce((n, p) => n + p.sats, 0);
+  if (!(total > 0)) return -1;
+  const top = payees.reduce((a, b) => (b.sats > a.sats ? b : a));
+  return top.sats >= PAYOUT_SHARE * total ? top.index : -1;
 }
 
 // One pool's entry by its registry id or its name (case aside), or null --
