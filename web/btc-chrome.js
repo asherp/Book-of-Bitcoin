@@ -37,6 +37,7 @@
   // The chain the book reads. btc-network.js holds the table every module
   // reads; this script is classic and cannot import it, so it names the key
   // and the networks itself -- tools/network.test.mjs keeps the two in step.
+  // It chooses nothing: the reader chooses in Settings (bitcoin-book.html).
   // Same precedence as the module: the URL, then the kept choice, then
   // mainnet. Marked on the root at once, so a test chain is set apart before
   // the page paints.
@@ -204,29 +205,16 @@
     // Label and aria-label are owned by reflectUpdate (called below), which
     // also renders how far behind the running copy is once that's known.
 
-    // Switching chains reopens the page bare: its address names a place on
-    // the chain being left, which on the other is a different block or none
-    // at all, and a bare page reads its own chain's place (the book resumes
-    // where the reader last stopped on that chain). Where storage will not
-    // keep the choice, the URL carries it instead.
-    const networkSel = document.createElement('select');
-    networkSel.className = 'network-select';
-    networkSel.setAttribute('aria-label', 'Chain');
-    networkSel.title = 'Which chain the book reads';
-    for (const [id, label] of NETWORKS) {
-      const opt = document.createElement('option');
-      opt.value = id;
-      opt.textContent = label;
-      opt.selected = id === network;
-      networkSel.appendChild(opt);
+    // Off mainnet, a quiet label says which chain the page is reading, so a
+    // test chain is never taken for the real one. It is not a control: the
+    // chain is chosen in the reading page's Settings.
+    if (network !== 'mainnet') {
+      const badge = document.createElement('span');
+      badge.className = 'network-badge';
+      badge.textContent = NETWORKS.find((n) => n[0] === network)[1];
+      badge.title = 'The chain this page reads — changed in Settings';
+      title.appendChild(badge);
     }
-    networkSel.addEventListener('change', () => {
-      let kept = false;
-      try { localStorage.setItem(NETWORK_KEY, networkSel.value); kept = true; } catch (_) { /* carried by the URL */ }
-      location.assign(location.pathname + (kept ? '' : '?network=' + networkSel.value));
-    });
-
-    title.appendChild(networkSel);
     title.appendChild(installBtn);
     title.appendChild(updateBtn);
     reflectInstall();

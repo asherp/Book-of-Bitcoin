@@ -193,3 +193,29 @@ test('on testnet4 the contents is the bare chain', async () => {
   // What the chain fills by itself, in the appendix's own order.
   assert.deepEqual(got.kinds, ['mempool', 'mines', 'ledgers']);
 });
+
+test('switching keeps the choice and reopens the page bare', () => {
+  const got = onTestnet4(`
+    const went = [];
+    globalThis.location = { search: '', pathname: '/bitcoin-book.html', assign: (u) => went.push(u) };
+    const { switchNetwork } = await import('./web/btc-network.js');
+    switchNetwork('testnet4');     // already reading it: nothing happens
+    switchNetwork('regtest');      // not a network the book reads: nothing happens
+    switchNetwork('mainnet');
+    console.log(JSON.stringify({ went, kept: localStorage.getItem('${NETWORK_KEY}') }));
+  `);
+  assert.deepEqual(got.went, ['/bitcoin-book.html'], 'the page reopens once, without its address');
+  assert.equal(got.kept, 'mainnet');
+});
+
+test('the chain is chosen first in Settings, and nowhere else', async () => {
+  const book = await readFile(new URL('bitcoin-book.html', WEB), 'utf8');
+  const panel = book.slice(book.indexOf('id="settings-panel"'));
+  const firstTitle = panel.match(/<div class="settings-title">([^<]*)<\/div>/)?.[1];
+  assert.equal(firstTitle, 'Chain', 'Chain is not the first section of Settings');
+  assert.ok(panel.indexOf('id="network-select"') < panel.indexOf('>Text size<'), 'the chain select is not under its heading');
+  assert.match(book, /networkSelect\.addEventListener\('change', \(\) => switchNetwork\(networkSelect\.value\)\)/);
+  // The masthead only labels a test chain; it offers no control.
+  const chrome = await readFile(new URL('btc-chrome.js', WEB), 'utf8');
+  assert.ok(!/createElement\('select'\)/.test(chrome), 'the masthead still builds a chain control');
+});
