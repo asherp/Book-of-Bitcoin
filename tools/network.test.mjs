@@ -219,3 +219,56 @@ test('the chain is chosen first in Settings, and nowhere else', async () => {
   const chrome = await readFile(new URL('btc-chrome.js', WEB), 'utf8');
   assert.ok(!/createElement\('select'\)/.test(chrome), 'the masthead still builds a chain control');
 });
+
+test('an address names its chain off mainnet, and only there', async () => {
+  const { withChain } = await import('../web/btc-network.js');
+  const t4 = NETWORKS.testnet4;
+  // Mainnet: returned as it was, so no link already made changes.
+  assert.equal(withChain('/bitcoin-book.html?block=153726', NETWORKS.mainnet), '/bitcoin-book.html?block=153726');
+  assert.equal(withChain('/bitcoin-book.html?block=153726'), '/bitcoin-book.html?block=153726', 'this process reads mainnet');
+  // Testnet4: appended, keeping the rest as written and the fragment last.
+  assert.equal(withChain('/bitcoin-book.html?block=153726&index=0', t4), '/bitcoin-book.html?block=153726&index=0&network=testnet4');
+  assert.equal(withChain('/bitcoin-appendix.html', t4), '/bitcoin-appendix.html?network=testnet4');
+  assert.equal(withChain('/bitcoin-book.html?block=1#s3', t4), '/bitcoin-book.html?block=1&network=testnet4#s3');
+  // Never twice.
+  assert.equal(withChain('/x?network=testnet4&block=1', t4), '/x?network=testnet4&block=1');
+});
+
+test('every address a page writes for itself goes through withChain', async () => {
+  const { readdir } = await import('node:fs/promises');
+  const pages = (await readdir(WEB)).filter((f) => f.endsWith('.html'));
+  let writes = 0;
+  for (const page of pages) {
+    const src = await readFile(new URL(page, WEB), 'utf8');
+    for (const m of src.matchAll(/history\.(?:replaceState|pushState)\(\s*[^,]+,\s*[^,]+,\s*([^]{0,40})/g)) {
+      writes++;
+      assert.match(m[1], /^withChain\(/, `${page}: an address written without its chain — ${m[0].slice(0, 90)}`);
+    }
+  }
+  assert.ok(writes >= 5, `found only ${writes} address writes — the scan has stopped reading the pages`);
+});
+
+test('the masthead script names the chain in the address the page opened on', async () => {
+  const { runInNewContext } = await import('node:vm');
+  const chrome = await readFile(new URL('btc-chrome.js', WEB), 'utf8');
+  const open = (kept, search, hash = '') => {
+    const written = [];
+    const store = new Map(kept ? [[NETWORK_KEY, kept]] : []);
+    runInNewContext(chrome, {
+      URLSearchParams,
+      location: { search, pathname: '/bitcoin-search.html', hash },
+      history: { state: null, replaceState: (_s, _t, url) => written.push(url) },
+      localStorage: { getItem: (k) => store.get(k) ?? null, setItem: (k, v) => store.set(k, v) },
+      document: { readyState: 'complete', documentElement: { setAttribute() {} }, querySelector: () => null, querySelectorAll: () => [], addEventListener() {} },
+      window: { addEventListener() {}, matchMedia: () => ({ matches: false }), navigator: {} },
+      navigator: {},
+      fetch: () => Promise.resolve({ ok: false }),
+      setTimeout,
+    });
+    return written;
+  };
+  assert.deepEqual(open('testnet4', '?q=153726', '#top'), ['/bitcoin-search.html?q=153726&network=testnet4#top']);
+  assert.deepEqual(open('testnet4', '?q=1&network=testnet4'), [], 'an address that already names its chain is left alone');
+  assert.deepEqual(open(null, '?q=1'), [], 'a mainnet address is left alone');
+  assert.deepEqual(open('mainnet', '?q=1'), []);
+});

@@ -729,7 +729,7 @@ import { INDEXED, isAddress, isScriptHex, keptLedgers, saveKeptLedgers, sameAddr
          DEFAULT_ESPLORA, esploraCustom, esploraSelected, setEsploraSettings } from './btc-index.js';
 import { volumeBookChapter, heightOf, subsidyAt, toRoman, parseReference, latinRefOf, footnoteMark, keepReference } from './btc-citation.js';
 import { usdOn } from './btc-price.js';
-import { nsKey } from './btc-network.js';
+import { nsKey, withChain } from './btc-network.js';
 import { amountUnit, setAmountUnit, ownUnit, formatAmountAs, formatValuation } from './btc-amounts.js';
 import { BIP39, HP_SPELLS } from './btc-wordlists.js';
 // A slash in a name the reader typed is a path: their shelf files, and a
@@ -1042,7 +1042,7 @@ function syncUrl() {
   // reload, or a link shared from here, comes back to the leaf it left.
   try {
     const url = level === 'appendix' ? location.pathname : location.pathname + urlFor(level);
-    history.replaceState(null, '', url);
+    history.replaceState(null, '', withChain(url));
   } catch (_) { /* unavailable */ }
   document.title = level === 'appendix' ? `The βook of βitcoin — ${PART_LABEL}`
     : level === 'ledger' && !qList.length ? 'The βook of βitcoin — The Ledgers'
@@ -2260,7 +2260,7 @@ const openEntryLeaf = async (alive) => {
   const stampUrl = (s) => {
     try {
       history.replaceState(null, '',
-        `${location.pathname}?address=${urlAddress()}&ref=${latinRef(e.height, s, e.out ?? null)}`);
+        withChain(`${location.pathname}?address=${urlAddress()}&ref=${latinRef(e.height, s, e.out ?? null)}`));
     } catch (_) { /* unavailable */ }
   };
   stampUrl(null);

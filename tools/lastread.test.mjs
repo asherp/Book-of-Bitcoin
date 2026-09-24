@@ -113,7 +113,9 @@ test('the reading page keeps the place, and the shell carries the module offline
   assert.match(book, /history\.replaceState\([^]*?keepPlace\(/, 'updateUrl no longer keeps the place');
   // …and read only where nothing was asked for: an explicit target always wins,
   // or a shared link would open on the recipient's own chapter.
-  assert.match(book, /\[\.\.\.params\.keys\(\)\]\.length \? null : lastPlace\(\)/,
+  // The chain an address names (btc-network.js) is not a target: a bare page
+  // on testnet4 carries ?network= and must still resume.
+  assert.match(book, /\[\.\.\.params\.keys\(\)\]\.filter\(\(k\) => k !== 'network'\)\.length \? null : lastPlace\(\)/,
     'the resume no longer defers to an explicit target');
 
   const sw = await readFile(new URL('sw.js', WEB), 'utf8');

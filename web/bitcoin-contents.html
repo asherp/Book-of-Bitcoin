@@ -180,7 +180,7 @@ import { readingsOf } from './btc-commentary.js';
 
 import { minesForContents, largestMines, networkHashrate, formatHashrate } from './btc-mines.js';
 import { readQueue, buildQueue, MVB } from './btc-mempool.js';
-import { NET, nsKey } from './btc-network.js';
+import { NET, nsKey, withChain } from './btc-network.js';
 import { INDEXED, keptLedgers, sameAddresses, shelfLedgers } from './btc-index.js';
 // A slash in a name the reader typed is a path: their own keeps file into a
 // hierarchy, and only theirs do (btc-path.js says why).
@@ -907,7 +907,7 @@ function render() {
   // read. The opening query was copied at load, so rewriting it can't
   // disturb which leaf a still-growing run is aiming for.
   try {
-    history.replaceState(null, '', `${location.pathname}?${leafQuery(leaf)}`);
+    history.replaceState(null, '', withChain(`${location.pathname}?${leafQuery(leaf)}`));
   } catch (_) { /* unavailable */ }
   toc.replaceChildren();
   ensureLive();   // arriving at a leaf is what asks for its own figures
