@@ -52,6 +52,10 @@ export const NETWORKS = {
     p2sh: 0x05,
     base58Lead: '13',
     genesisCoinbase: '4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b',
+    // The first height whose coinbase must open with its own height (BIP34;
+    // Bitcoin Core's BIP34Height). Below it a coinbase's first bytes are
+    // whatever the miner wrote, and are not read as a height.
+    bip34Height: 227931,
     // [height, nTime] pairs the chain clock interpolates between; null keeps
     // btc-chaintime.js's own halving table.
     anchors: null,
@@ -73,6 +77,8 @@ export const NETWORKS = {
     p2sh: 0xc4,
     base58Lead: 'mn2',
     genesisCoinbase: '7aa0a7ae1e223414cb807e40cd57e667b718e42aaf9306db9102fe28912b7b4e',
+    // Every soft fork is active from block 1 on testnet4, BIP34 among them.
+    bip34Height: 1,
     // No halving yet, and the twenty-minute rule lets blocks come faster than
     // ten minutes, so genesis alone puts block 153,726 some 195 days late --
     // past the clock's plausibility window. The second anchor is that block's
