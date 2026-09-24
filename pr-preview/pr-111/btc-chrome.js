@@ -59,6 +59,18 @@
     return 'mainnet';
   })();
   document.documentElement.setAttribute('data-network', network);
+  // Off mainnet, the address names its chain from the moment the page opens,
+  // so a link copied from it opens on the same chain for whoever it is sent to
+  // (withChain in btc-network.js keeps it there as the page rewrites its own
+  // address). Pages that never rewrite theirs -- a search, a proof, a leaf
+  // opened from a link -- are covered here. Mainnet addresses are untouched.
+  if (network !== 'mainnet' && new URLSearchParams(location.search).get('network') !== network) {
+    try {
+      const query = new URLSearchParams(location.search);
+      query.set('network', network);
+      history.replaceState(history.state, '', location.pathname + '?' + query.toString() + location.hash);
+    } catch (_) { /* the address stays as it was */ }
+  }
 
   let updateReady = false;
   let updateBehind = null; // e.g. '3 days' — how far behind the running build is

@@ -1449,7 +1449,7 @@ import { volumeBookChapter, heightOf, windowStartOf, retargetInside, subsidyAt, 
 import { blockWork, workBetween, formatHashes } from './btc-chainwork.js';
 import { loadNotables, places, placeTitle, blocksEta, appendix } from './btc-contents.js';
 import { queueLabel } from './btc-mempool.js';
-import { NET, NETWORKS, nsKey, switchNetwork } from './btc-network.js';
+import { NET, NETWORKS, nsKey, switchNetwork, withChain } from './btc-network.js';
 import { toSubscript } from './btc-sigla.js';
 import { NOTATION_HTML } from './btc-notation.js';
 import { transactionTemplates } from './btc-templates.js';
@@ -5928,7 +5928,7 @@ function updateUrl() {
   if (state.index >= 0) params.set('index', String(state.index));
   else if (state.index === -2) params.set('page', 'book');
   else if (state.index === -3) params.set('page', 'volume');
-  history.replaceState(null, '', `${location.pathname}?${params.toString()}`);
+  history.replaceState(null, '', withChain(`${location.pathname}?${params.toString()}`));
   // The tab takes the passage's name with the address. Held back while a leaf
   // is armed: the engine reads document.title when the print dialogue closes,
   // so renaming here mid-flow would name the file after wherever the reader
@@ -8468,7 +8468,7 @@ if (pParam) {
   // rather than an error the reader did nothing to earn — and the record is
   // left standing, since the usual reason a lookup fails is a network that
   // will be back.
-  const resume = [...params.keys()].length ? null : lastPlace();
+  const resume = [...params.keys()].filter((k) => k !== 'network').length ? null : lastPlace();
   const kept = resume ? new URLSearchParams(resume) : null;
   if (kept) Promise.resolve(openLookup(kept.get('block') || '-1', indexIn(kept)))
     .catch(() => openLookup('-1', -1));

@@ -113,6 +113,22 @@ export function switchNetwork(id) {
   location.assign(location.pathname + (kept ? '' : `?network=${id}`));
 }
 
+// An address this page writes for itself, naming its chain where that is not
+// mainnet. A page's address is what a reader copies and sends, and on another
+// reader's machine a bare one opens on that reader's chain -- block 153,726 of
+// testnet4 would open as block 153,726 of mainnet, a different block, with
+// nothing to say so. Mainnet addresses are returned as they were, so no link
+// already made changes. Appended rather than re-serialized, so the rest of the
+// address keeps its own encoding.
+export function withChain(url, net = NET) {
+  if (net.id === DEFAULT_NETWORK) return url;
+  const hashAt = url.indexOf('#');
+  const base = hashAt < 0 ? url : url.slice(0, hashAt);
+  const hash = hashAt < 0 ? '' : url.slice(hashAt);
+  if (/[?&]network=/.test(base)) return url;
+  return `${base}${base.includes('?') ? '&' : '?'}network=${net.id}${hash}`;
+}
+
 // A storage key or database name for chain data on the chosen network.
 export const nsKey = (key, net = NET) => key + net.suffix;
 
