@@ -332,3 +332,10 @@ test("the masthead script names the chain in every link to the book's pages", as
   assert.equal(main.observer, null, 'mainnet installs no observer');
   assert.equal(main.links[0].getAttribute('href'), './bitcoin-book.html?block=153726&index=0');
 });
+
+test("the book's own Copy link names the chain", async () => {
+  const book = await readFile(new URL('bitcoin-book.html', WEB), 'utf8');
+  const share = book.slice(book.indexOf('function entryShareUrl'), book.indexOf("menuCopyLinkBtn.addEventListener('click'"));
+  assert.ok(share.length > 0, 'entryShareUrl is gone');
+  assert.match(share, /return withChain\(url\.href\);/, 'the copied link is built without its chain');
+});

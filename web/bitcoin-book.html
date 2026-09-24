@@ -8119,7 +8119,8 @@ function entryShareUrl(entry) {
   url.search = place.page
     ? `block=${place.height}&page=${place.page}`
     : `ref=${latinRefOf(place.height, place.pos == null ? null : place.pos + 1, place.vout ?? null, place.wn ?? null, Boolean(place.sig))}`;
-  return url.href;
+  // Off mainnet the link names its chain, or it would open on the recipient's.
+  return withChain(url.href);
 }
 menuCopyLinkBtn.addEventListener('click', () => {
   if (!menuEntry) return;
