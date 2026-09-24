@@ -120,21 +120,24 @@ test('the classic scripts name the same key and networks as the module', async (
   }
 });
 
-// What the book does when the choice is testnet4, read in a fresh process.
-function onTestnet4(script) {
+// What the book does on a page whose address reads `search`, in a fresh
+// process (the modules read the address once, when they are imported).
+function onPage(search, script) {
   const prelude = `
-    const kept = new Map([['${NETWORK_KEY}', 'testnet4']]);
+    const kept = new Map();
     globalThis.localStorage = {
       getItem: (k) => (kept.has(k) ? kept.get(k) : null),
       setItem: (k, v) => kept.set(k, String(v)),
       removeItem: (k) => kept.delete(k),
     };
+    globalThis.location = { search: ${JSON.stringify(search)}, pathname: '/bitcoin-book.html', hash: '', assign() {} };
   `;
   const out = execFileSync(process.execPath, ['--input-type=module', '-e', prelude + script], {
     cwd: new URL('..', WEB), encoding: 'utf8',
   });
   return JSON.parse(out);
 }
+const onTestnet4 = (script) => onPage('?network=testnet4', script);
 
 test('on testnet4 every module reads testnet4', () => {
   const got = onTestnet4(`
@@ -194,18 +197,21 @@ test('on testnet4 the contents is the bare chain', async () => {
   assert.deepEqual(got.kinds, ['mempool', 'mines', 'ledgers']);
 });
 
-test('switching keeps the choice and reopens the page bare', () => {
-  const got = onTestnet4(`
+test("switching opens the page on the other chain's address, and nothing more", () => {
+  const switching = (search, to) => onPage(search, `
     const went = [];
-    globalThis.location = { search: '', pathname: '/bitcoin-book.html', assign: (u) => went.push(u) };
-    const { switchNetwork } = await import('./web/btc-network.js');
-    switchNetwork('testnet4');     // already reading it: nothing happens
-    switchNetwork('regtest');      // not a network the book reads: nothing happens
-    switchNetwork('mainnet');
+    location.assign = (u) => went.push(u);
+    const { switchNetwork, NET } = await import('./web/btc-network.js');
+    switchNetwork(NET.id);          // already reading it: nothing happens
+    switchNetwork('regtest');       // not a network the book reads: nothing happens
+    switchNetwork(${JSON.stringify(to)});
     console.log(JSON.stringify({ went, kept: localStorage.getItem('${NETWORK_KEY}') }));
   `);
-  assert.deepEqual(got.went, ['/bitcoin-book.html'], 'the page reopens once, without its address');
-  assert.equal(got.kept, 'mainnet');
+  // The rest of the address stays behind: it names a place on the chain being left.
+  assert.deepEqual(switching('?block=153726&network=testnet4', 'mainnet').went, ['/bitcoin-book.html']);
+  assert.deepEqual(switching('?block=800000', 'testnet4').went, ['/bitcoin-book.html?network=testnet4']);
+  // The address carries the choice; nothing is stored for it.
+  assert.equal(switching('?block=1', 'testnet4').kept, null);
 });
 
 test('the chain is chosen first in Settings, and nowhere else', async () => {
@@ -248,29 +254,53 @@ test('every address a page writes for itself goes through withChain', async () =
   assert.ok(writes >= 5, `found only ${writes} address writes — the scan has stopped reading the pages`);
 });
 
-test('the masthead script names the chain in the address the page opened on', async () => {
+test('the masthead reads the chain from the address alone, and remembers it for the front door', async () => {
   const { runInNewContext } = await import('node:vm');
   const chrome = await readFile(new URL('btc-chrome.js', WEB), 'utf8');
-  const open = (kept, search, hash = '') => {
+  const open = (saved, search) => {
     const written = [];
-    const store = new Map(kept ? [[NETWORK_KEY, kept]] : []);
+    let marked = null;
+    const store = new Map(saved ? [[NETWORK_KEY, saved]] : []);
     runInNewContext(chrome, {
       URLSearchParams,
-      location: { search, pathname: '/bitcoin-search.html', hash },
+      location: { search, pathname: '/bitcoin-search.html', hash: '' },
       history: { state: null, replaceState: (_s, _t, url) => written.push(url) },
       localStorage: { getItem: (k) => store.get(k) ?? null, setItem: (k, v) => store.set(k, v) },
-      document: { readyState: 'complete', documentElement: { setAttribute() {} }, querySelector: () => null, querySelectorAll: () => [], addEventListener() {} },
+      document: { readyState: 'complete', querySelector: () => null, querySelectorAll: () => [], addEventListener() {},
+        documentElement: { setAttribute: (k, v) => { if (k === 'data-network') marked = v; } } },
       window: { addEventListener() {}, matchMedia: () => ({ matches: false }), navigator: {} },
       navigator: {},
       fetch: () => Promise.resolve({ ok: false }),
       setTimeout,
     });
-    return written;
+    return { marked, saved: store.get(NETWORK_KEY), written };
   };
-  assert.deepEqual(open('testnet4', '?q=153726', '#top'), ['/bitcoin-search.html?q=153726&network=testnet4#top']);
-  assert.deepEqual(open('testnet4', '?q=1&network=testnet4'), [], 'an address that already names its chain is left alone');
-  assert.deepEqual(open(null, '?q=1'), [], 'a mainnet address is left alone');
-  assert.deepEqual(open('mainnet', '?q=1'), []);
+  // The address names testnet4: testnet4, whatever was read last.
+  assert.deepEqual(open('mainnet', '?q=1&network=testnet4'), { marked: 'testnet4', saved: 'testnet4', written: [] });
+  // A bare address is mainnet, even for a reader who last read testnet4 --
+  // which is what lets a mainnet link open on mainnet for everyone.
+  assert.deepEqual(open('testnet4', '?q=1'), { marked: 'mainnet', saved: 'mainnet', written: [] });
+  // A chain the book does not read is no chain: mainnet.
+  assert.equal(open(null, '?network=regtest').marked, 'mainnet');
+});
+
+test('every navigation a script makes keeps the chain', async () => {
+  const { readdir } = await import('node:fs/promises');
+  const files = (await readdir(WEB)).filter((f) => f.endsWith('.html') || f.endsWith('.js'));
+  let navigations = 0;
+  for (const file of files) {
+    const src = await readFile(new URL(file, WEB), 'utf8');
+    for (const m of src.matchAll(/location\.(?:href\s*=(?!=)|assign\(|replace\()\s*([^;\n]*)/g)) {
+      navigations++;
+      const target = m[1];
+      // A redirect that forwards the whole query carries ?network= with it.
+      if (target.includes('location.search')) continue;
+      // switchNetwork and the front door build the chain into their target.
+      if (file === 'btc-network.js' || (file === 'index.html' && target.startsWith('to '))) continue;
+      assert.match(target, /^(?:withChain\(|window\.__bookChain)/, `${file}: a navigation without its chain — ${m[0].slice(0, 90)}`);
+    }
+  }
+  assert.ok(navigations >= 20, `found only ${navigations} navigations — the scan has stopped reading the pages`);
 });
 
 test("the masthead script names the chain in every link to the book's pages", async () => {

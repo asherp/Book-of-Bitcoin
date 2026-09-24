@@ -5,10 +5,14 @@
 // address or leans on a chain constant takes its answer from here, so the
 // choice is made in one place and read the same way everywhere.
 //
-// The choice is made once per page load: `?network=testnet4` in the URL sets
-// it (and keeps it), otherwise the reader's kept choice, otherwise mainnet.
-// Changing it means reloading -- the masthead toggle (btc-chrome.js) writes
-// the key and reloads -- so no fetch, archive handle or socket is ever open
+// The address alone says which chain a page reads: `?network=testnet4` is
+// testnet4, and no `network` at all is mainnet, whatever the reader last
+// read. So a link opens on the chain it was made on, for anyone -- which is
+// why every testnet4 address and link the book writes carries the parameter
+// (withChain below, and btc-chrome.js for the links). The reader's last chain
+// is remembered only for the front door (index.html), so reopening the book
+// returns to it. Changing chain means opening a page on the other chain's
+// address (switchNetwork), so no fetch, archive handle or socket is ever open
 // against one chain while the page believes it is reading another.
 //
 // Mainnet's storage suffix is empty, so every key and database a reader
@@ -19,9 +23,10 @@
 // Safe to import where there is no browser (the tools/ tests): no
 // localStorage and no location reads as mainnet.
 
-// The key the choice is kept under. btc-chrome.js is a classic script and
-// cannot import this module, so it names the same key itself -- change one,
-// change the other.
+// The key the last chain read is remembered under, for the front door.
+// btc-chrome.js (which writes it) and index.html (which reads it) are classic
+// scripts and cannot import this module, so they name the same key
+// themselves -- tools/network.test.mjs keeps the three in step.
 export const NETWORK_KEY = 'glossia-btc-network';
 
 export const NETWORKS = {
@@ -80,37 +85,27 @@ export const NETWORKS = {
 
 export const DEFAULT_NETWORK = 'mainnet';
 
-// The network a page reads, from the URL, then the kept choice, then the
-// default. A URL choice is kept, so the links a reader follows stay on it.
+// The network a page reads: the one its address names, or mainnet.
 export function chosenNetwork() {
   try {
     if (typeof location !== 'undefined') {
       const asked = new URLSearchParams(location.search).get('network');
-      if (asked && NETWORKS[asked]) {
-        try { localStorage.setItem(NETWORK_KEY, asked); } catch (_) { /* not kept */ }
-        return asked;
-      }
+      if (asked && NETWORKS[asked]) return asked;
     }
   } catch (_) { /* no URL to read */ }
-  try {
-    const kept = typeof localStorage !== 'undefined' ? localStorage.getItem(NETWORK_KEY) : null;
-    if (kept && NETWORKS[kept]) return kept;
-  } catch (_) { /* storage unavailable */ }
   return DEFAULT_NETWORK;
 }
 
 export const NET = NETWORKS[chosenNetwork()];
 
-// Change the chain the book reads. The page reopens bare: its address names a
-// place on the chain being left, which on the other is a different block or
-// none at all, and a bare page reads its own chain's place (the book resumes
-// where the reader last stopped on that chain). Where storage will not keep
-// the choice, the URL carries it instead.
+// Change the chain the book reads: open this page on the other chain's
+// address, and nothing more. The rest of the address is left behind -- it
+// names a place on the chain being left, which on the other is a different
+// block or none at all -- so the page opens bare on the new chain and reads
+// its own place there (the book resumes where the reader last stopped on it).
 export function switchNetwork(id) {
   if (!NETWORKS[id] || id === NET.id) return;
-  let kept = false;
-  try { localStorage.setItem(NETWORK_KEY, id); kept = true; } catch (_) { /* carried by the URL */ }
-  location.assign(location.pathname + (kept ? '' : `?network=${id}`));
+  location.assign(withChain(location.pathname, NETWORKS[id]));
 }
 
 // An address this page writes for itself, naming its chain where that is not

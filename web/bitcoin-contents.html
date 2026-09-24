@@ -1029,7 +1029,7 @@ function turnTo(step, dir, axis = 'x') {
 // destination finishes the entrance on arrival.
 function leavePage(href, transform, flag, value = '1') {
   try { sessionStorage.setItem(flag, value); } catch (_) {}
-  const go = () => { location.href = href; };
+  const go = () => { location.href = withChain(href); };
   if (REDUCED_MOTION) { go(); return; }
   document.body.style.transition = 'transform .2s linear';
   document.body.style.transform = transform;

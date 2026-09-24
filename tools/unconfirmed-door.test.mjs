@@ -217,7 +217,7 @@ test('the chapters\' run does not stop at the last draft', () => {
   // Turning right off the last draft used to dead-end in a sentence. The
   // rankings stand at that same level, so the run continues into them.
   assert.match(book, /function toQueueTable\(\) \{/);
-  assert.match(book, /location\.href = '\.\/bitcoin-appendix\.html\?part=mempool&at=amount&table';/);
+  assert.match(book, /location\.href = withChain\('\.\/bitcoin-appendix\.html\?part=mempool&at=amount&table'\);/);
   const forwards = book.match(/if \(direction > 0 && projectedReach\(\) > 0\) \{ toQueueTable\(\); return; \}/g) || [];
   assert.equal(forwards.length, 3, 'every way forward past the last draft takes it: chapter, section, and stepper');
   assert.match(book, /stepNext = \{ text: '₿↓', label: 'Sorted by amount/,
@@ -252,7 +252,7 @@ test('an ascent from a draft climbs one storey, not two', () => {
   // Up from a chapter of the body is its book, not its volume. A draft's
   // book is Provisional blocks, so that is what the ascent lands on — and
   // the same gesture again goes on to The Mempool, and then to the contents.
-  assert.match(book, /location\.href = '\.\/bitcoin-appendix\.html\?part=mempool&at=alpha';/,
+  assert.match(book, /location\.href = withChain\('\.\/bitcoin-appendix\.html\?part=mempool&at=alpha'\);/,
     'the ascent lands on the leaf that holds the drafts');
   assert.match(book, /id="ch-appendix-link"[^>]*>Provisional blocks</,
     'and the crumb offering it says so');
@@ -290,6 +290,6 @@ test('the contents run closes into a ring', () => {
   assert.doesNotMatch(turns, /'Preface ›'/);
   // The book's own volume level is NOT a ring: the sigla stay behind Volume
   // I's title page, which is where the front matter hands over.
-  assert.match(book, /location\.href = '\.\/bitcoin-front\.html\?leaf=sigla';/,
+  assert.match(book, /location\.href = withChain\('\.\/bitcoin-front\.html\?leaf=sigla'\);/,
     'the body still turns back into the front matter');
 });
