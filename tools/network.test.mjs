@@ -49,7 +49,7 @@ const VECTORS = {
 
 test('every network says everything the modules ask of it', () => {
   const fields = ['id', 'label', 'esplora', 'mempool', 'mempoolWs', 'blockchair', 'hasPrice', 'curated',
-    'hrp', 'p2pkh', 'p2sh', 'base58Lead', 'genesisCoinbase', 'anchors', 'suffix'];
+    'hrp', 'p2pkh', 'p2sh', 'base58Lead', 'genesisCoinbase', 'bip34Height', 'anchors', 'suffix'];
   const suffixes = new Set();
   for (const [id, net] of Object.entries(NETWORKS)) {
     for (const f of fields) assert.ok(f in net, `${id} says nothing about ${f}`);
@@ -368,4 +368,30 @@ test("the book's own Copy link names the chain", async () => {
   const share = book.slice(book.indexOf('function entryShareUrl'), book.indexOf("menuCopyLinkBtn.addEventListener('click'"));
   assert.ok(share.length > 0, 'entryShareUrl is gone');
   assert.match(share, /return withChain\(url\.href\);/, 'the copied link is built without its chain');
+});
+
+// Rendering a coinbase runs the Glossia engine, a build artifact a bare
+// checkout lacks; the tests that need it skip without it, as elsewhere.
+const engineBuilt = await readFile(new URL('glossia.js', WEB)).then(() => true, () => false);
+
+test("testnet4's coinbases open with their height, so the miner's margin is read", { skip: !engineBuilt && 'web/glossia.js not built' }, () => {
+  // Block 153,726's coinbase scriptSig, as the chain wrote it: Samaritan's.
+  // BIP34 is active from block 1 on testnet4, where mainnet waited until
+  // 227,931 -- read with mainnet's bound, every testnet4 coinbase was quoted
+  // whole and nothing in it was marked.
+  const scriptSig = '037e58020004f33db46a048515aa0a0c5806b46a3b000000000000000a636b706f6f6c1053616d61726974616e206d696e696e67';
+  const got = onTestnet4(`
+    const { composeTransactionFields, bip34HeightPush } = await import('./web/btc-prose.js');
+    const { parseTransaction } = await import('./web/btc-tx.js');
+    const ss = ${JSON.stringify(scriptSig)};
+    const tx = '01000000' + '01' + '00'.repeat(32) + 'ffffffff' + (ss.length / 2).toString(16).padStart(2, '0') + ss
+      + '00000000' + '01' + '0000000000000000' + '0151' + '00000000';
+    const mark = (hex) => ({ prose: '‹' + hex + '›', payloadWords: [] });
+    const input = composeTransactionFields(parseTransaction(tx), 1, null, mark).inputs[0];
+    console.log(JSON.stringify({ height: bip34HeightPush(ss)?.height ?? null, script: input.script, pool: input.signature?.pool ?? null }));
+  `);
+  assert.equal(got.height, 153726, 'the height is read as a height');
+  assert.equal(got.pool, 'Samaritan mining');
+  const marked = [...got.script.matchAll(/class="pool-sig" title="([^"—]*) —[^"]*">“([^”]*)”/g)].map((m) => `${m[2]} [${m[1].trim()}]`);
+  assert.deepEqual(marked, ['ckpool [ckpool]', 'Samaritan mining [Samaritan mining]'], 'both hands are marked in the margin');
 });
