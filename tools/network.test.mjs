@@ -49,7 +49,7 @@ const VECTORS = {
 
 test('every network says everything the modules ask of it', () => {
   const fields = ['id', 'label', 'esplora', 'mempool', 'mempoolWs', 'blockchair', 'hasPrice', 'curated',
-    'hrp', 'p2pkh', 'p2sh', 'base58Lead', 'genesisCoinbase', 'anchors', 'epochs', 'suffix'];
+    'hrp', 'p2pkh', 'p2sh', 'base58Lead', 'genesisCoinbase', 'anchors', 'suffix'];
   const suffixes = new Set();
   for (const [id, net] of Object.entries(NETWORKS)) {
     for (const f of fields) assert.ok(f in net, `${id} says nothing about ${f}`);
@@ -143,14 +143,22 @@ test('on testnet4 every module reads testnet4', () => {
     const { MINES_MIRRORS } = await import('./web/btc-mines.js');
     const { INDEXED, DEFAULT_ESPLORA } = await import('./web/btc-index.js');
     const { HALVING_ANCHORS } = await import('./web/btc-chaintime.js');
-    const { LAST_HEIGHT, chainWork, workBetween } = await import('./web/btc-chainwork.js');
+    const { LAST_HEIGHT, chainWork, workBetween, blockWork, MIN_BITS } = await import('./web/btc-chainwork.js');
+    const { TESTNET4_EPOCHS } = await import('./web/btc-chainwork-testnet4.js');
+    // The first epoch with minimum-difficulty blocks in it, read as a book.
+    const e = TESTNET4_EPOCHS.findIndex(([bits, low]) => low > 0 && bits !== MIN_BITS);
+    const [bits, low] = TESTNET4_EPOCHS[e];
+    const expected = BigInt(2016 - low) * blockWork(bits) + BigInt(low) * blockWork(MIN_BITS);
     const { usdOn } = await import('./web/btc-price.js');
     const { WS_URL } = await import('./web/btc-projected.js');
     console.log(JSON.stringify({
       net: NET.id, key: nsKey('glossia-btc-bookmarks'),
       mempool: MEMPOOL_MIRRORS, mines: MINES_MIRRORS, esplora: DEFAULT_ESPLORA, ws: WS_URL,
       curated: INDEXED.length, anchors: HALVING_ANCHORS,
-      lastHeight: LAST_HEIGHT, work: chainWork(1000), between: workBetween(0, 1000),
+      lastHeight: LAST_HEIGHT, vendored: TESTNET4_EPOCHS.length,
+      genesisEpoch: String(chainWork(1000)), genesisExpected: String(1001n * blockWork(MIN_BITS)),
+      book: String(workBetween(e * 2016, e * 2016 + 2015)), bookExpected: String(expected),
+      partOfBook: workBetween(e * 2016, e * 2016 + 100),
       usd: await usdOn(1790197567),
     }));
   `);
@@ -163,10 +171,12 @@ test('on testnet4 every module reads testnet4', () => {
   assert.equal(got.ws, 'wss://mempool.space/testnet4/api/v1/ws');
   assert.equal(got.curated, 0, 'no curated mainnet ledger is offered on a test chain');
   assert.deepEqual(got.anchors, NETWORKS.testnet4.anchors);
-  // One nBits per epoch does not hold there, so every work figure declines.
-  assert.equal(got.lastHeight, -1);
-  assert.equal(got.work, null);
-  assert.equal(got.between, null);
+  // testnet4's own table, counted with its minimum-difficulty blocks.
+  assert.ok(got.vendored > 0, 'no testnet4 epochs are vendored');
+  assert.equal(got.lastHeight, got.vendored * 2016 - 1);
+  assert.equal(got.genesisEpoch, got.genesisExpected, 'an epoch at the minimum difficulty sums at any height');
+  assert.equal(got.book, got.bookExpected, 'a whole book sums its own blocks and its minimum-difficulty ones');
+  assert.equal(got.partOfBook, null, 'part of a mixed epoch declines: the table says how many fell, not which');
   assert.equal(got.usd, null, 'a test chain has no market price, and none is asked for');
 });
 

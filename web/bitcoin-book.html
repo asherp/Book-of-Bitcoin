@@ -4588,7 +4588,7 @@ function renderWorkAdded(work, span, partial = false) {
   el.textContent = '';
   const figure = formatHashes(work);
   el.classList.toggle('hidden', figure === null);
-  if (figure === null) return;   // past the vendored epochs: say nothing
+  if (figure === null) return;   // past the vendored epochs, or part of a mixed testnet epoch: say nothing
   const mark = document.createElement('span');
   mark.className = 'work-mark';
   mark.textContent = '+';

@@ -92,6 +92,7 @@ const SHELL = [
   './btc-chaintime.js',
   './btc-chainwork.js',
   './btc-chainwork-epochs.js',
+  './btc-chainwork-testnet4.js',
   './btc-fontscale.js',
   './btc-lastread.js',
   './btc-path.js',

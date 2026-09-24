@@ -50,8 +50,6 @@ export const NETWORKS = {
     // [height, nTime] pairs the chain clock interpolates between; null keeps
     // btc-chaintime.js's own halving table.
     anchors: null,
-    // Whether one nBits per retarget epoch holds (btc-chainwork.js).
-    epochs: true,
     suffix: '',
   },
   testnet4: {
@@ -76,8 +74,6 @@ export const NETWORKS = {
     // own nTime; past it the clock extrapolates at ten minutes again, and a
     // newer anchor belongs here as the chain moves on.
     anchors: [[0, 1714777860], [153726, 1790197567]],
-    // The twenty-minute rule lets nBits vary inside an epoch.
-    epochs: false,
     suffix: '-testnet4',
   },
 };
