@@ -395,3 +395,18 @@ test("testnet4's coinbases open with their height, so the miner's margin is read
   const marked = [...got.script.matchAll(/class="pool-sig" title="([^"—]*) —[^"]*">“([^”]*)”/g)].map((m) => `${m[2]} [${m[1].trim()}]`);
   assert.deepEqual(marked, ['ckpool [ckpool]', 'Samaritan mining [Samaritan mining]'], 'both hands are marked in the margin');
 });
+
+test("a script is spelled as its chain's explorer spells its address", async () => {
+  // The inverse of the decode above, over the same outputs: keeping a locking
+  // script files the address this spells, and an address spelled for the
+  // other chain is refused by every reader of this one -- the keep vanished.
+  const { scriptToAddress } = await import('../web/btc-tx.js');
+  for (const [id, vectors] of Object.entries(VECTORS)) {
+    for (const [address, script] of vectors) {
+      assert.equal((await scriptToAddress(script, NETWORKS[id])).address, address, `${script} on ${id}`);
+    }
+  }
+  // Samaritan's payout at block 153,726, which a testnet4 keep once filed as bc1….
+  assert.equal((await scriptToAddress('00142c6c79aa13603bca9ceca6ccc7931b7f570750ce', NETWORKS.testnet4)).address,
+    'tb1q93k8n2snvqau488v5mxv0ycm0atsw5xwae0w74');
+});
