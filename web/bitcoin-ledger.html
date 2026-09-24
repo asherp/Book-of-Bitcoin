@@ -729,6 +729,7 @@ import { INDEXED, isAddress, isScriptHex, keptLedgers, saveKeptLedgers, sameAddr
          DEFAULT_ESPLORA, esploraCustom, esploraSelected, setEsploraSettings } from './btc-index.js';
 import { volumeBookChapter, heightOf, subsidyAt, toRoman, parseReference, latinRefOf, footnoteMark, keepReference } from './btc-citation.js';
 import { usdOn } from './btc-price.js';
+import { nsKey } from './btc-network.js';
 import { amountUnit, setAmountUnit, ownUnit, formatAmountAs, formatValuation } from './btc-amounts.js';
 import { BIP39, HP_SPELLS } from './btc-wordlists.js';
 // A slash in a name the reader typed is a path: their shelf files, and a
@@ -1066,7 +1067,7 @@ const downEl = document.getElementById('anth-down');
 const totalsBar = document.getElementById('acct-totals');
 
 const readBookmarks = () => {
-  try { const v = JSON.parse(localStorage.getItem('glossia-btc-bookmarks')); return Array.isArray(v) ? v : []; }
+  try { const v = JSON.parse(localStorage.getItem(nsKey('glossia-btc-bookmarks'))); return Array.isArray(v) ? v : []; }
   catch { return []; }
 };
 // The reader's bookmarked passages, which the ledger hangs in its quarters

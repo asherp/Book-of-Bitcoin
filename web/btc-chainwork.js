@@ -66,6 +66,7 @@
 
 import { EPOCH_BITS } from './btc-chainwork-epochs.js';
 import { toSuperscript } from './btc-sigla.js';
+import { NET } from './btc-network.js';
 
 export { EPOCH_BITS };
 
@@ -81,7 +82,12 @@ export const WORK_PER_DIFFICULTY = (1n << 256n) / DIFFICULTY_1_TARGET;
 // The last height the vendored epochs can speak for. Past this the answer is
 // null rather than a guess -- a chapter beyond the table is a chapter this
 // file has no record of, and saying so is the only honest move.
-export const LAST_HEIGHT = EPOCH_BITS.length * RETARGET_INTERVAL - 1;
+//
+// On a network where one nBits per epoch does not hold (testnet4's
+// twenty-minute rule, btc-network.js) the table speaks for no height at all,
+// so every work figure declines and the page shows its mark. Summing the
+// headers' own nBits there is the exact answer, and is not done yet.
+export const LAST_HEIGHT = NET.epochs ? EPOCH_BITS.length * RETARGET_INTERVAL - 1 : -1;
 
 // nBits -> the target it packs. Accepts the header's hex or the number, since
 // explorers disagree about which they serve.

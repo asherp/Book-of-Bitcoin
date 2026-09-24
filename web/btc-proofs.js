@@ -30,8 +30,9 @@
 import { parseOtsProof, earliestBitcoin, digestOf } from './btc-ots.js';
 import { parseTransaction } from './btc-tx.js';
 import { volumeBookChapter, citation, latinRefOf } from './btc-citation.js';
-import { expectedBlockTime } from './btc-chaintime.js';
+import { expectedBlockTime, MAINNET_ANCHORS } from './btc-chaintime.js';
 import { storeGet, storePut } from './btc-store.js';
+import { NET } from './btc-network.js';
 
 const KEPT_KEY = 'glossia-btc-proofs';
 export const PROOF_DIR = './proofs/';
@@ -288,7 +289,15 @@ export function citedAt(listed, { height, section, out }) {
 // chapter will want when the reader turns to it. Failing both, the height
 // dates itself by arithmetic (btc-chaintime.js) -- days off at worst, and
 // said with the hedge that admits it.
+//
+// Mainnet always, whichever chain the book is reading (btc-network.js): the
+// proofs are the book's own timestamps, and their calendars committed them to
+// mainnet. So these mirrors are not the chosen network's, and the archive --
+// which is the chosen network's -- is read and written only when that is
+// mainnet; a mainnet hash kept in a testnet archive would be read back as the
+// testnet block at the same height.
 const DATE_MIRRORS = ['https://blockstream.info/api', 'https://mempool.space/api'];
+const ARCHIVE_IS_MAINNET = NET.id === 'mainnet';
 // Written to the archive only when settled: the archive keeps finals, and a
 // day's depth is far past any reorg (the book's own rule is six blocks).
 const SETTLED = 86400;
@@ -300,7 +309,7 @@ const deadline = () => { try { return AbortSignal.timeout(5000); } catch { retur
 const minedTimes = new Map();        // height -> Promise<unix seconds | null>
 function minedTime(height) {
   if (!minedTimes.has(height)) minedTimes.set(height, (async () => {
-    let hash = await storeGet('heights', height).catch(() => null);
+    let hash = ARCHIVE_IS_MAINNET ? await storeGet('heights', height).catch(() => null) : null;
     if (hash) {
       const kept = await storeGet('blocks', hash).catch(() => null);
       if (kept?.block?.timestamp) return kept.block.timestamp;
@@ -322,7 +331,7 @@ function minedTime(height) {
         if (!blockRes.ok || !headerRes.ok) continue;
         const block = await blockRes.json();
         const headerHex = (await headerRes.text()).trim();
-        if (Date.now() / 1000 - block.timestamp > SETTLED) {
+        if (ARCHIVE_IS_MAINNET && Date.now() / 1000 - block.timestamp > SETTLED) {
           storePut('heights', height, hash);
           storePut('blocks', hash, { block, headerHex });
         }
@@ -341,7 +350,7 @@ function minedTime(height) {
 // for; a row prints the estimate at once and lets this replace it.
 const UTC = { timeZone: 'UTC' };
 export const estimatedDate = (height) =>
-  `c. ${new Date(expectedBlockTime(height) * 1000).toLocaleDateString('en-GB', { month: 'long', year: 'numeric', ...UTC })}`;
+  `c. ${new Date(expectedBlockTime(height, MAINNET_ANCHORS) * 1000).toLocaleDateString('en-GB', { month: 'long', year: 'numeric', ...UTC })}`;
 export async function minedDate(height) {
   const t = await minedTime(height);
   return t == null ? null

@@ -1442,6 +1442,7 @@ import { volumeBookChapter, heightOf, windowStartOf, retargetInside, subsidyAt, 
 import { blockWork, workBetween, formatHashes } from './btc-chainwork.js';
 import { loadNotables, places, placeTitle, blocksEta, appendix } from './btc-contents.js';
 import { queueLabel } from './btc-mempool.js';
+import { NET, nsKey } from './btc-network.js';
 import { toSubscript } from './btc-sigla.js';
 import { NOTATION_HTML } from './btc-notation.js';
 import { transactionTemplates } from './btc-templates.js';
@@ -1700,12 +1701,14 @@ const $ = (id) => document.getElementById(id);
 // one can be replayed against any other by swapping the base -- which is what
 // esploraFetch does when a mirror rate-limits. Custom endpoints and the
 // current selection persist in localStorage.
-const BUILTIN_MIRRORS = [
-  { label: 'Blockstream', url: 'https://blockstream.info/api' },
-  { label: 'mempool.space', url: 'https://mempool.space/api' },
-];
-const ENDPOINTS_KEY = 'glossia-btc-endpoints'; // custom endpoints: [{label,url}]
-const SELECTED_KEY = 'glossia-btc-endpoint';   // selected endpoint url
+// The built-ins are the chosen network's (btc-network.js); a custom endpoint
+// serves one chain, so the reader's own list is kept per network too.
+const BUILTIN_MIRRORS = NET.esplora.map((url) => {
+  const host = new URL(url).hostname;
+  return { label: host === 'blockstream.info' ? 'Blockstream' : host, url };
+});
+const ENDPOINTS_KEY = nsKey('glossia-btc-endpoints'); // custom endpoints: [{label,url}]
+const SELECTED_KEY = nsKey('glossia-btc-endpoint');   // selected endpoint url
 
 const readCustomMirrors = () => {
   try {
@@ -3617,7 +3620,7 @@ function loadTxHex(txid) {
 // serve once the pool has dropped it. A superseded draft doesn't disappear
 // from the book: it seats beneath its successor as a ghost page (see
 // renderChapter / applyRbf), and the ledger is what lets it render forever.
-const REPLACED_KEY = 'glossia-btc-replaced';
+const REPLACED_KEY = nsKey('glossia-btc-replaced');
 const REPLACED_MAX = 40;
 let replacedLedger = (() => {
   try { const v = JSON.parse(localStorage.getItem(REPLACED_KEY)); return v && typeof v === 'object' ? v : {}; }
@@ -7478,7 +7481,7 @@ localizeChrome();
 // Bookmarks -- navigable hashes the reader wants to return to (block hashes,
 // previous-block hashes, txids) -- persist in localStorage and list in the card.
 // Each carries a reader-supplied title, which a table of contents will draw on.
-const BOOKMARKS_KEY = 'glossia-btc-bookmarks';
+const BOOKMARKS_KEY = nsKey('glossia-btc-bookmarks');   // per network: a bookmark is a place on one chain
 const readBookmarks = () => {
   try { const v = JSON.parse(localStorage.getItem(BOOKMARKS_KEY)); return Array.isArray(v) ? v : []; }
   catch { return []; }

@@ -180,6 +180,7 @@ import { readingsOf } from './btc-commentary.js';
 
 import { minesForContents, largestMines, networkHashrate, formatHashrate } from './btc-mines.js';
 import { readQueue, buildQueue, MVB } from './btc-mempool.js';
+import { NET, nsKey } from './btc-network.js';
 import { INDEXED, keptLedgers, sameAddresses, shelfLedgers } from './btc-index.js';
 // A slash in a name the reader typed is a path: their own keeps file into a
 // hierarchy, and only theirs do (btc-path.js says why).
@@ -224,22 +225,22 @@ const $ = (id) => document.getElementById(id);
 })();
 const REDUCED_MOTION = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-const BOOKMARKS_KEY = 'glossia-btc-bookmarks';
+const BOOKMARKS_KEY = nsKey('glossia-btc-bookmarks');   // per network: a bookmark is a place on one chain
 const readBookmarks = () => {
   try { const v = JSON.parse(localStorage.getItem(BOOKMARKS_KEY)); return Array.isArray(v) ? v : []; }
   catch { return []; }
 };
 
 // The genesis coinbase places offline -- block 0, first transaction -- so the
-// book opens at I 1 1 §1 without waiting on the network.
-const GENESIS_COINBASE = '4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b';
+// book opens at I 1 1 §1 without waiting on the network. Each chain has its own.
+const GENESIS_COINBASE = NET.genesisCoinbase;
 
 // Every entry is cited by its reference, never its raw id. A block's placement
 // is known offline from its height; a transaction's is resolved the same way the
 // reader resolves a citation -- a /tx/<txid>/merkle-proof gives the confirming
 // block height and the transaction's index (its §section). Tried across the same
 // public mirrors the book uses.
-const ESPLORA_MIRRORS = ['https://blockstream.info/api', 'https://mempool.space/api'];
+const ESPLORA_MIRRORS = NET.esplora;
 // A book-page entry (page: 'book') places at its book with no chapter -- the
 // leaf precedes every chapter of its book in reading order.
 const placeOf = (height, pos, page, vout = null, wn = null) => {

@@ -57,3 +57,12 @@
 }
 .update-btn.show { display:inline-block; }
 .update-btn:hover { background:var(--accent-2); border-color:var(--accent-2); }
+
+/* Which chain the book reads (btc-chrome.js). A quiet outline on mainnet;
+   filled on a test chain, so a reader never takes one for the other. */
+.network-select {
+  margin-left:12px; vertical-align:baseline; background:transparent;
+  border:1px solid var(--dim, currentColor); color:var(--dim, var(--ink)); border-radius:4px; padding:3px 6px;
+  cursor:pointer; font:600 11px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.08em; text-transform:uppercase;
+}
+:root[data-network="testnet4"] .network-select { background:var(--accent); border-color:var(--accent); color:var(--btn-ink,#17140c); }

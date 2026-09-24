@@ -591,6 +591,7 @@ import { partLabel, partNumber } from './btc-notables.js';
 await loadNotables();
 const APPENDIX = appendix();
 import { chainTip, MEMPOOL_MIRRORS, readQueue, expectedRevenue, queueLabel, MVB } from './btc-mempool.js';
+import { NET, nsKey } from './btc-network.js';
 import {
   minedWindow, tallyMines, shareSay, sharePct, MINE_WINDOW, signatureOf,
   networkHashrate, formatHashrate,
@@ -1352,8 +1353,8 @@ if (kind === 'mempool' && QUEUE === null) {
 
     const tip = await chainTip();
     const [queue, rev] = await Promise.all([
-      readQueue(tip, ['https://mempool.space/api']),
-      expectedRevenue(tip, ['https://mempool.space/api']),
+      readQueue(tip, [NET.mempool]),
+      expectedRevenue(tip, [NET.mempool]),
     ]);
     const credit = 'what mempool.space is holding at this moment — that node\'s claim about its own queue, '
       + 'not a fact about any block that will ever exist';
@@ -1409,7 +1410,7 @@ if (QUEUE) {
     // Every one of these is a reading of the same cheap queue call.
     if (!TABLE) {
       const tip = await chainTip();
-      const queue = await readQueue(tip, ['https://mempool.space/api']);
+      const queue = await readQueue(tip, [NET.mempool]);
       const first = queue?.blocks?.[0];
       if (!first || tip == null) { setFigures([{ text: 'the queue could not be read just now' }]); return; }
       const reach = pageableDrafts(queue.blocks);
@@ -2335,7 +2336,7 @@ if (bip && blockLeaf == null) {
       if (!marks.has(h)) addExtra(h, { title: placeTitle(p) });
     }
     try {
-      const kept = JSON.parse(localStorage.getItem('glossia-btc-bookmarks'));
+      const kept = JSON.parse(localStorage.getItem(nsKey('glossia-btc-bookmarks')));
       for (const b of Array.isArray(kept) ? kept : []) {
         if (!Number.isInteger(b.height) || b.page) continue;
         addExtra(b.height, { title: String(b.title ?? '').trim() || 'bookmark', bm: true });
@@ -3288,7 +3289,7 @@ if (TABLE && QUEUE === 'amount') {
   (async () => {
     const tip = await chainTip();
     if (tip == null) return;
-    const queue = await readQueue(tip, ['https://mempool.space/api']);
+    const queue = await readQueue(tip, [NET.mempool]);
     const reach = pageableDrafts(queue?.blocks);
     if (!reach) return;
     const href = `./bitcoin-book.html?block=${tip + reach}`;

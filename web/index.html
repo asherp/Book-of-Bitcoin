@@ -63,7 +63,13 @@ same way.</p>
 (function () {
   var to = './bitcoin-front.html';
   try {
-    var rec = JSON.parse(localStorage.getItem('glossia-btc-last-read'));
+    // The place is kept per network (btc-network.js): a ?network= here is
+    // kept the way the module keeps it, since the redirect below drops the
+    // query, and testnet4's place carries its suffix. Mainnet's is empty.
+    var asked = /[?&]network=(mainnet|testnet4)(?:&|$)/.exec(location.search);
+    if (asked) localStorage.setItem('glossia-btc-network', asked[1]);
+    var suffix = localStorage.getItem('glossia-btc-network') === 'testnet4' ? '-testnet4' : '';
+    var rec = JSON.parse(localStorage.getItem('glossia-btc-last-read' + suffix));
     if (rec && rec.v === 1 && typeof rec.q === 'string' && /^[\w=&%.,:+-]{1,300}$/.test(rec.q)) {
       to = './bitcoin-book.html?' + rec.q;
     }
