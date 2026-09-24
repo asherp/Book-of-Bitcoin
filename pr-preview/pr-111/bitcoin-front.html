@@ -342,6 +342,7 @@ mountLangMenu();  // …with the Language item, which any page can now set
 import { OPCODE_SYMBOLS, OPCODE_NAMES, OPCODE_GROUPS } from './btc-sigla.js';
 import { NOTATION_HTML } from './btc-notation.js';
 import { renderMarkdown } from './btc-markdown.js';
+import { withChain } from './btc-network.js';
 import './btc-fontscale.js';   // the reader's type size: the sigla leaf's key follows the book page's setting
 
 const LEAVES = ['leaf-title', 'leaf-terms', 'leaf-preface', 'leaf-sigla'];
@@ -373,7 +374,7 @@ function show(i) {
 // the front matter -- opens the book itself at Volume I.
 function leave(href, dir, flag, value = '1') {
   try { if (flag) sessionStorage.setItem(flag, value); } catch (_) {}
-  const go = () => { location.href = href; };
+  const go = () => { location.href = withChain(href); };
   if (REDUCED) { go(); return; }
   document.body.style.transition = 'transform .2s linear';
   document.body.style.transform = `translateX(${dir > 0 ? -100 : 100}vw)`;
@@ -387,7 +388,7 @@ function leave(href, dir, flag, value = '1') {
 // storey above the volumes on the book's own axis.
 function leaveUp() {
   try { sessionStorage.setItem('glossia-toc-entrance', 'up'); } catch (_) {}
-  const go = () => { location.href = './bitcoin-contents.html'; };
+  const go = () => { location.href = withChain('./bitcoin-contents.html'); };
   if (REDUCED) { go(); return; }
   document.body.style.transition = 'transform .2s linear';
   document.body.style.transform = 'translateY(-100vh)';

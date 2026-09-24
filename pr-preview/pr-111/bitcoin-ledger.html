@@ -2830,7 +2830,7 @@ function ascend() {
 // on the slide.
 function leavePage(href, transform, flag, value = '1') {
   try { sessionStorage.setItem(flag, value); } catch (_) {}
-  const go = () => { location.href = href; };
+  const go = () => { location.href = withChain(href); };
   if (REDUCED_MOTION) { go(); return; }
   document.body.style.transition = 'transform .2s linear';
   document.body.style.transform = transform;
@@ -3091,7 +3091,7 @@ if (pRef) (async () => {
   // the citation and nothing else -- a txid never rides beside (or instead
   // of) the reference that already names the same place.
   if ((pRef.s == null && pRef.o == null) || !qList.length) {
-    location.href = `./bitcoin-book.html?ref=${encodeURIComponent(pQ)}`;
+    location.href = withChain(`./bitcoin-book.html?ref=${encodeURIComponent(pQ)}`);
     return;
   }
   const g = gen;                          // abandon if the reader turns away

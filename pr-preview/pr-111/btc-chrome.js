@@ -34,43 +34,26 @@
   let installBtn = null;
   let updateBtn = null;
 
-  // The chain the book reads. btc-network.js holds the table every module
-  // reads; this script is classic and cannot import it, so it names the key
-  // and the networks itself -- tools/network.test.mjs keeps the two in step.
-  // It chooses nothing: the reader chooses in Settings (bitcoin-book.html).
-  // Same precedence as the module: the URL, then the kept choice, then
-  // mainnet. Marked on the root at once, so a test chain is set apart before
-  // the page paints.
+  // The chain the page reads: the one its address names, or mainnet -- the
+  // same rule as btc-network.js, which every module reads; this script is
+  // classic and cannot import it, so it names the key and the networks itself
+  // (tools/network.test.mjs keeps the two in step). It chooses nothing: the
+  // reader chooses in Settings (bitcoin-book.html). The chain read is
+  // remembered for the front door alone (index.html), so reopening the book
+  // returns to it. Marked on the root at once, so a test chain is set apart
+  // before the page paints.
   const NETWORK_KEY = 'glossia-btc-network';
   const NETWORKS = [['mainnet', 'Mainnet'], ['testnet4', 'Testnet4']];
   const isNetwork = (id) => NETWORKS.some((n) => n[0] === id);
   const network = (() => {
     try {
       const asked = new URLSearchParams(location.search).get('network');
-      if (isNetwork(asked)) {
-        // Kept, as the module keeps it, so a page that loads no module still
-        // hands the choice on to the next.
-        try { localStorage.setItem(NETWORK_KEY, asked); } catch (_) { /* not kept */ }
-        return asked;
-      }
-      const kept = localStorage.getItem(NETWORK_KEY);
-      if (isNetwork(kept)) return kept;
-    } catch (_) { /* no storage: the default */ }
+      if (isNetwork(asked)) return asked;
+    } catch (_) { /* no address to read */ }
     return 'mainnet';
   })();
+  try { localStorage.setItem(NETWORK_KEY, network); } catch (_) { /* the front door opens on mainnet */ }
   document.documentElement.setAttribute('data-network', network);
-  // Off mainnet, the address names its chain from the moment the page opens,
-  // so a link copied from it opens on the same chain for whoever it is sent to
-  // (withChain in btc-network.js keeps it there as the page rewrites its own
-  // address). Pages that never rewrite theirs -- a search, a proof, a leaf
-  // opened from a link -- are covered here. Mainnet addresses are untouched.
-  if (network !== 'mainnet' && new URLSearchParams(location.search).get('network') !== network) {
-    try {
-      const query = new URLSearchParams(location.search);
-      query.set('network', network);
-      history.replaceState(history.state, '', location.pathname + '?' + query.toString() + location.hash);
-    } catch (_) { /* the address stays as it was */ }
-  }
 
   // Off mainnet, every link to one of the book's own pages names the chain
   // too, so "Copy link" on a passage, a citation or a contents entry gives an
@@ -112,6 +95,10 @@
     }).observe(document.documentElement, { subtree: true, childList: true, attributes: true, attributeFilter: ['href'] });
     sweep(document.documentElement);
   }
+  // The same rule for a classic script that navigates by assigning an address
+  // (the appendix's page turns): modules import withChain instead. Returns a
+  // mainnet address unchanged.
+  window.__bookChain = (href) => (network === 'mainnet' ? href : chainHref(href));
 
   let updateReady = false;
   let updateBehind = null; // e.g. '3 days' — how far behind the running build is
