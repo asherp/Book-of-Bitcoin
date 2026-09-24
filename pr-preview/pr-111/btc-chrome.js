@@ -72,6 +72,47 @@
     } catch (_) { /* the address stays as it was */ }
   }
 
+  // Off mainnet, every link to one of the book's own pages names the chain
+  // too, so "Copy link" on a passage, a citation or a contents entry gives an
+  // address that opens on this chain for whoever it is sent to. The links are
+  // built in a hundred places, in markup and in script, so they are named here
+  // once rather than at each: every link the page holds, and every one it adds
+  // or re-points later. Only same-origin links to a page are touched -- never a
+  // fragment on this page, another site, or a file such as the passages'
+  // markdown -- and the rule is withChain's (btc-network.js), written again
+  // here because this script cannot import it; tools/network.test.mjs holds
+  // the two to the same answers. On mainnet nothing is observed or changed.
+  const chainHref = (href) => {
+    const hashAt = href.indexOf('#');
+    const base = hashAt < 0 ? href : href.slice(0, hashAt);
+    const hash = hashAt < 0 ? '' : href.slice(hashAt);
+    if (/[?&]network=/.test(base)) return href;
+    return base + (base.indexOf('?') < 0 ? '?' : '&') + 'network=' + network + hash;
+  };
+  const nameChain = (a) => {
+    const raw = a.getAttribute('href');
+    if (!raw || raw.charAt(0) === '#') return;
+    let target;
+    try { target = new URL(raw, location.href); } catch (_) { return; }
+    if (target.origin !== location.origin || !/(\.html|\/)$/.test(target.pathname)) return;
+    const named = chainHref(raw);
+    if (named !== raw) a.setAttribute('href', named);
+  };
+  if (network !== 'mainnet' && typeof MutationObserver === 'function') {
+    const sweep = (node) => {
+      if (node.nodeType !== 1) return;
+      if (node.tagName === 'A') nameChain(node);
+      node.querySelectorAll('a[href]').forEach(nameChain);
+    };
+    new MutationObserver((records) => {
+      for (const r of records) {
+        if (r.type === 'attributes') { if (r.target.tagName === 'A') nameChain(r.target); }
+        else r.addedNodes.forEach(sweep);
+      }
+    }).observe(document.documentElement, { subtree: true, childList: true, attributes: true, attributeFilter: ['href'] });
+    sweep(document.documentElement);
+  }
+
   let updateReady = false;
   let updateBehind = null; // e.g. '3 days' — how far behind the running build is
 
