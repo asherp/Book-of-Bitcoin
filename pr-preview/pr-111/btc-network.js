@@ -101,6 +101,18 @@ export function chosenNetwork() {
 
 export const NET = NETWORKS[chosenNetwork()];
 
+// Change the chain the book reads. The page reopens bare: its address names a
+// place on the chain being left, which on the other is a different block or
+// none at all, and a bare page reads its own chain's place (the book resumes
+// where the reader last stopped on that chain). Where storage will not keep
+// the choice, the URL carries it instead.
+export function switchNetwork(id) {
+  if (!NETWORKS[id] || id === NET.id) return;
+  let kept = false;
+  try { localStorage.setItem(NETWORK_KEY, id); kept = true; } catch (_) { /* carried by the URL */ }
+  location.assign(location.pathname + (kept ? '' : `?network=${id}`));
+}
+
 // A storage key or database name for chain data on the chosen network.
 export const nsKey = (key, net = NET) => key + net.suffix;
 

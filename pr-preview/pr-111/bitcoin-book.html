@@ -1213,6 +1213,13 @@ a.footnote-title.is-asset:hover { color: var(--accent-2, #dcb877); text-decorati
            language, and the prose decodes back to the same transaction. -->
       <div id="lang-rows" class="lang-rows"></div>
     </div></span> · <span class="settings-menu"><a href="#" id="settings-link" role="button" aria-haspopup="dialog" aria-expanded="false">Settings</a><div id="settings-panel" class="settings-panel hidden" role="dialog" aria-label="Settings">
+      <!-- Which chain the whole book reads (btc-network.js); first, because
+           every other setting below it -- the data sources above all -- is
+           kept per chain. Filled by the settings script. -->
+      <div class="settings-title">Chain</div>
+      <div class="endpoint-row">
+        <select id="network-select" class="endpoint-select" aria-label="Chain" title="Which chain the book reads"></select>
+      </div>
       <div class="settings-title">Text size</div>
       <!-- One row per region. Every region beyond the body follows it (value
            dimmed) until its own buttons split it off; Reset rejoins them all
@@ -1442,7 +1449,7 @@ import { volumeBookChapter, heightOf, windowStartOf, retargetInside, subsidyAt, 
 import { blockWork, workBetween, formatHashes } from './btc-chainwork.js';
 import { loadNotables, places, placeTitle, blocksEta, appendix } from './btc-contents.js';
 import { queueLabel } from './btc-mempool.js';
-import { NET, nsKey } from './btc-network.js';
+import { NET, NETWORKS, nsKey, switchNetwork } from './btc-network.js';
 import { toSubscript } from './btc-sigla.js';
 import { NOTATION_HTML } from './btc-notation.js';
 import { transactionTemplates } from './btc-templates.js';
@@ -7268,6 +7275,18 @@ document.addEventListener('click', (e) => {
   closeSettings();
 });
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !settingsPanel.classList.contains('hidden')) closeSettings(); });
+
+// The chain the book reads, first in the popover. Choosing another reopens the
+// page on it (switchNetwork, btc-network.js).
+const networkSelect = $('network-select');
+for (const net of Object.values(NETWORKS)) {
+  const opt = document.createElement('option');
+  opt.value = net.id;
+  opt.textContent = net.label;
+  opt.selected = net.id === NET.id;
+  networkSelect.appendChild(opt);
+}
+networkSelect.addEventListener('change', () => switchNetwork(networkSelect.value));
 
 // ── Language popover ──────────────────────────────────────────────────────
 // The masthead "Language" link: which of the engine's languages the book's
