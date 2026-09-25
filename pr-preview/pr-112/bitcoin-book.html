@@ -2106,13 +2106,15 @@ let footnotesLoaded = false;
 // lookup (its block height + position in that block), so results are memoized
 // by txid and `renderGen` lets a citation that resolves after the reader has
 // paged away drop its stale DOM update.
-const citationCache = new Map();   // txid -> Promise<{ height, pos, outputs }>
+const citationCache = new Map();   // txid -> Promise<{ height, pos, hash, outputs }>
 let renderGen = 0;
 
-// txid -> { height, pos, outputs } for the referenced transaction: the merkle
-// proof gives its confirming height and index within that block (the section),
-// while /tx gives its outputs (so a spent output's amount can be shown under
-// the reference). Fetched together, memoized by txid.
+// txid -> { height, pos, hash, outputs } for the referenced transaction: the
+// merkle proof gives its confirming height and index within that block (the
+// section), while /tx gives its outputs (so a spent output's amount can be
+// shown under the reference). Fetched together, memoized by txid. This is the
+// margin's fallback, for when the section's own prevouts could not be read;
+// a priced margin asks resolvePlacement for the place alone.
 // An unmined transaction has no merkle proof and so no settled place in the
 // book -- but its outputs are readable all the same, so it answers with a
 // null placement instead of failing: the amount still prints, and the queue
@@ -2131,24 +2133,61 @@ function resolveCitation(txid) {
       ]);
       if (!mpRes.ok && mpRes.status !== 404) throw new Error(`Esplora returned ${mpRes.status}`);
       const tx = txRes.ok ? await txRes.json() : null;
-      // Which of the transaction's inputs carry a witness, as 1/0 flags in
-      // input order -- the /tx answer has them anyway, and a forward
-      // citation needs them to name the spending input's footnote letter
-      // (the nth witness-bearing input is footnote n). Entries banked
-      // before this was kept simply lack the flags, and the letter is
-      // omitted rather than guessed.
-      const wits = tx ? tx.vin.map((v) => (v.witness && v.witness.length ? 1 : 0)) : null;
       if (!mpRes.ok) {
         citationCache.delete(txid);
-        return { height: null, pos: null, outputs: tx ? tx.vout : null, wits };
+        return { height: null, pos: null, outputs: tx ? tx.vout : null };
       }
       const mp = await mpRes.json();
-      const entry = { height: mp.block_height, pos: mp.pos, outputs: tx ? tx.vout : null, wits };
+      // The confirming block's hash rides along, so following the citation
+      // opens that block directly with this txid seated (goToSection). The
+      // /tx answer also lists every input's prevout value: banked for the
+      // margin, so arriving at the cited section asks for neither again.
+      const hash = tx?.status?.block_hash ?? null;
+      const entry = { height: mp.block_height, pos: mp.pos, hash, outputs: tx ? tx.vout : null };
+      seatTxid(hash, mp.pos, txid);
+      if (tx && Array.isArray(tx.vin) && !prevoutsCache.has(txid)) prevoutsCache.set(txid, Promise.resolve(prevoutsOfTxJson(tx)));
       storePut('citations', txid, entry);
       return entry;
     })().catch((e) => { citationCache.delete(txid); throw e; }));
   }
   return citationCache.get(txid);
+}
+
+// A citation's place alone -- { height, pos, hash } -- for a margin that is
+// already priced (prevoutValues read every amount from the section's own
+// /tx), where the cited transaction's outputs would be fetched for nothing.
+// The merkle proof gives the section and /tx/:txid/status the confirming
+// block's hash: about a kilobyte together, where the cited transaction's
+// own JSON runs to hundreds of KB for a big one. A fuller answer already in
+// hand serves instead; a placement is banked where the contents page banks
+// its own (same shape, the hash riding along). Unmined answers null and is
+// never banked, exactly as resolveCitation.
+const placementCache = new Map();   // txid -> Promise<{ height, pos, hash }>
+function resolvePlacement(txid) {
+  if (citationCache.has(txid)) return citationCache.get(txid);
+  if (!placementCache.has(txid)) {
+    placementCache.set(txid, (async () => {
+      const kept = (await storeGet('placements', txid)) || (await storeGet('citations', txid));
+      if (kept && kept.height != null && kept.pos != null) { seatTxid(kept.hash, kept.pos, txid); return kept; }
+      const [mpRes, stRes] = await Promise.all([
+        esploraFetch(`${ESPLORA}/tx/${txid}/merkle-proof`),
+        esploraFetch(`${ESPLORA}/tx/${txid}/status`),
+      ]);
+      if (!mpRes.ok && mpRes.status !== 404) throw new Error(`Esplora returned ${mpRes.status}`);
+      if (!mpRes.ok) {
+        placementCache.delete(txid);
+        return { height: null, pos: null, hash: null };
+      }
+      const mp = await mpRes.json();
+      const st = stRes.ok ? await stRes.json().catch(() => null) : null;
+      const hash = st && st.confirmed && st.block_height === mp.block_height ? st.block_hash : null;
+      const entry = { height: mp.block_height, pos: mp.pos, hash };
+      seatTxid(hash, mp.pos, txid);
+      storePut('placements', txid, entry);
+      return entry;
+    })().catch((e) => { placementCache.delete(txid); throw e; }));
+  }
+  return placementCache.get(txid);
 }
 
 // toRoman is imported from btc-citation.js (shared with the contents page).
@@ -2234,36 +2273,60 @@ async function resolveCitedWorks(sectionNum, cells, gen) {
   }
 }
 
-async function resolveForwardCitations(txid, cells, gen) {
+// Whether the input spending a script carries a witness, where the script
+// alone settles it: a v0 program or a taproot output is always spent with
+// one, and a script that is no witness program never is. Null where it
+// could go either way -- P2SH (wrapped segwit or not) and any other witness
+// program (pay-to-anchor spends with an empty witness) -- and only the
+// spender's own record can say.
+function spendCarriesWitness(spkHex) {
+  const s = String(spkHex || '').toLowerCase();
+  if (/^(0014[0-9a-f]{40}|0020[0-9a-f]{64}|5120[0-9a-f]{64})$/.test(s)) return true;
+  if (/^a914[0-9a-f]{40}87$/.test(s)) return null;
+  const op = parseInt(s.slice(0, 2), 16), len = parseInt(s.slice(2, 4), 16);
+  const program = (op === 0 || (op >= 0x51 && op <= 0x60)) && len >= 2 && len <= 40 && s.length === 4 + 2 * len;
+  return program ? null : false;
+}
+
+async function resolveForwardCitations(txid, cells, gen, spks = []) {
   try {
     const spends = await loadOutspends(txid);
     await Promise.all(cells.map(async (cell, i) => {
       const sp = spends[i];
       if (!sp || !sp.spent || !sp.txid) return;
       if (!sp.status || !sp.status.confirmed) { await citeDraftSpender(cell, sp, gen); return; }
-      try {
-        const { height, pos, wits } = await resolveCitation(sp.txid);
+      // Resolved as the cell scrolls near, like the margin's own references,
+      // and by the spender's place alone. Whether the spending input carries
+      // a witness is read off this output's script where consensus settles
+      // it, and off the spender's raw bytes where it does not -- banked as
+      // the section they are, so following this very link fetches nothing
+      // more, and about half the size of the spender's /tx.
+      const carries = spendCarriesWitness(spks[i]);
+      lazyForward.observe(cell, async () => { try {
+        const [{ height, pos }, witnessed] = await Promise.all([
+          resolvePlacement(sp.txid),
+          carries ?? loadTxHex(sp.txid)
+            .then((hex) => (parseTransaction(hex).vin[sp.vin]?.witness?.length ?? 0) > 0)
+            .catch(() => false),
+        ]);
         if (gen !== renderGen || height === null) return;   // confirmed a moment ago, not yet provable: no cell rather than a wrong one
         const { volume, book, chapter } = volumeBookChapter(height);
         // The spending input's witness footnote, cited the way the contents
         // cites one: §17.a says the value went to §17 and the authorization
-        // that took it reads at footnote a. The letter is the input's rank
-        // among the spender's witness-bearing inputs; a legacy spend (no
-        // witness), or an archive entry banked before the flags were kept,
-        // cites the bare section.
-        let witMark = '';
-        if (wits && wits[sp.vin]) {
-          const n = wits.slice(0, sp.vin + 1).reduce((a, w) => a + (w ? 1 : 0), 0);
-          witMark = `.${footnoteMark(n)}`;
-        }
+        // that took it reads at footnote a. The letter is the input's own
+        // number, as the spender's page letters its footnotes (renderChapter:
+        // a neighbour's legacy spend never shifts it). An input whose witness
+        // is empty, or whose spender's bytes could not be read, cites the
+        // bare section.
+        const witMark = witnessed ? `.${footnoteMark(sp.vin + 1)}` : '';
         const link = document.createElement('a');
         link.className = 'cite-section-link';
         link.href = `?block=${height}&index=${pos}`;
         link.textContent = `${toRoman(volume)} β${book} ■${chapter} §${pos + 1}${witMark}`;
         link.title = `spent by input ${sp.vin + 1} of ${sp.txid}${witMark ? ` — its witness reads at footnote ${witMark.slice(1)}` : ''}`;
-        link.addEventListener('click', (e) => { e.preventDefault(); goToSection(height, pos, `in-${sp.vin}`); });
+        link.addEventListener('click', (e) => { e.preventDefault(); goToSection(height, pos, `in-${sp.vin}`, sp.txid); });
         cell.append(link);
-      } catch { /* unresolvable spender -- leave the cell empty */ }
+      } catch { /* unresolvable spender -- leave the cell empty */ } });
     }));
   } catch { /* outspends unavailable -- every cell stays empty */ }
 }
@@ -2296,7 +2359,7 @@ async function citeDraftSpender(cell, sp, gen) {
 // book chapter §section.verse" -- the section is the transaction, the verse its
 // output index (e.g. "XII 37 184 §17.2"), the whole of which links to that
 // section.
-function renderCitation(citeBody, height, pos, vout) {
+function renderCitation(citeBody, height, pos, vout, txid = null) {
   const link = document.createElement('a');
   link.className = 'cite-section-link';
   link.href = `?block=${height}&index=${pos}`;
@@ -2304,7 +2367,7 @@ function renderCitation(citeBody, height, pos, vout) {
   // referenceOf): the section it names holds only as long as the queue does.
   link.textContent = `${referenceOf(height)} §${pos + 1}.${vout}`;
   link.title = `go to §${pos + 1}.${vout}`;
-  link.addEventListener('click', (e) => { e.preventDefault(); goToSection(height, pos, `out-${vout}`); });
+  link.addEventListener('click', (e) => { e.preventDefault(); goToSection(height, pos, `out-${vout}`, txid); });
   citeBody.textContent = '';
   citeBody.append(link);
 }
@@ -2329,10 +2392,34 @@ function renderDraftCitation(citeBody, height, txid, vout) {
 // directions mirror each other: following an input's provenance scrolls to the
 // output it spends (out-N), and following an output's forward citation scrolls
 // to the input that spends it (in-N).
-async function goToSection(height, index, scrollId) {
+//
+// A citation knows the transaction it names, so the section opens by its
+// block hash with that txid already seated: the block's core and the
+// transaction's bytes are asked for together, and neither the height lookup
+// nor the block's txid list is asked for at all. The hash is the one the
+// citation's own lookup returned; where a citation banked before it was kept
+// lacks one, the height's hash is resolved (itself banked six deep). A hash
+// whose block cannot be had falls back to the height, which is where the
+// link's href points too.
+async function goToSection(height, index, scrollId, txid = null) {
+  const hash = txid ? (await citedHash(txid)) ?? (await resolveBlockHash(height).catch(() => null)) : null;
+  if (hash && index >= 0) {
+    seatTxid(hash, index, txid);
+    loadTxHex(txid).catch(() => {});   // in flight beside the block; showCurrentTx takes it from the memo
+    const core = await loadBlockCore(hash).catch(() => null);
+    if (core && core.height === Number(height)) {
+      await openLookup(hash, index);
+      await landOnAnchor(scrollId);
+      return;
+    }
+  }
   await openLookup(String(height), index);
   await landOnAnchor(scrollId);
 }
+const citedHash = (txid) => {
+  const p = placementCache.get(txid) || citationCache.get(txid);
+  return p ? p.then((c) => c?.hash ?? null, () => null) : Promise.resolve(null);
+};
 
 // The same move, for a section with no settled coordinate to name it by: a
 // draft's seat shifts under the queue, so the transaction is opened by the
@@ -2442,9 +2529,11 @@ const amountTitle = (sats) => {
 // Resolves to each input's spent value in pending order (satoshis; null
 // where the book could not price it) -- the closing balance line sums them.
 async function resolveCitations(pending, gen) {
-  return Promise.all(pending.map(async ({ citeBody, cite, amtVal, txid, vout }) => {
+  return Promise.all(pending.map(async ({ citeBody, cite, amtVal, txid, vout, priced }) => {
     try {
-      const { height, pos, outputs } = await resolveCitation(txid);
+      // A priced margin needs the place alone; only the fallback, pricing
+      // from the cited transactions themselves, asks for their outputs.
+      const { height, pos, outputs } = await (priced ? resolvePlacement(txid) : resolveCitation(txid));
       if (gen !== renderGen) return null;
       // Mined: the settled section. Unmined: wherever the queue currently
       // drafts it, cited with the expected mark. Neither one prints a txid --
@@ -2454,7 +2543,8 @@ async function resolveCitations(pending, gen) {
       if (gen !== renderGen) return null;
       cite.classList.remove('resolving');
       if (place && place.pos !== null) {
-        renderCitation(citeBody, place.height, place.pos, vout);
+        // Only a mined citation names a seat that holds; a draft's is the queue's.
+        renderCitation(citeBody, place.height, place.pos, vout, height !== null ? txid : null);
         cite.title = height !== null ? `${txid}:${vout}`
           : `${txid}:${vout} — unmined: cited where the queue drafts it now`;
       } else if (place) {
@@ -2477,7 +2567,7 @@ async function resolveCitations(pending, gen) {
       // the line beneath the reference, after the sequence mark, bare like the
       // output amounts opposite: the margin it stands in already says which way
       // the value flows. A draft's outputs read the same as a mined one's.
-      if (amtVal && outputs && outputs[vout]) {
+      if (!priced && amtVal && outputs && outputs[vout]) {
         amtVal.textContent = formatAmount(outputs[vout].value);
         amtVal.title = `the amount this input spends: ${amountTitle(outputs[vout].value)}`;
       }
@@ -2551,6 +2641,29 @@ const lazyCites = (() => {
   };
 })();
 
+// The same deferral for the right margin's forward citations: each cell
+// runs its resolver once, when it first comes within reach of the viewport,
+// and a section left behind drops the rest. Everything at once where the
+// browser has no IntersectionObserver.
+const lazyForward = (() => {
+  const runs = new Map();   // cell -> resolver
+  const io = ('IntersectionObserver' in window)
+    ? new IntersectionObserver((entries, obs) => {
+        for (const e of entries) {
+          if (!e.isIntersecting) continue;
+          obs.unobserve(e.target);
+          const run = runs.get(e.target);
+          runs.delete(e.target);
+          if (run) run();
+        }
+      }, { rootMargin: '600px 0px' })
+    : null;
+  return {
+    reset: () => { if (io) io.disconnect(); runs.clear(); },
+    observe: (el, run) => { if (!io) { run(); return; } runs.set(el, run); io.observe(el); },
+  };
+})();
+
 // A block's ordered txid list, memoized by block hash. It's the heaviest part
 // of a block's metadata -- every transaction hash -- so it's fetched on its own
 // and only when needed: opening one transaction by id doesn't need it (its section
@@ -2585,6 +2698,46 @@ async function ensureTxids(st) {
     }
   }
   return st.txids;
+}
+
+// One section's txid by its seat, without its block's list. Opening or
+// stepping onto a section needs the one txid at that position, and the list
+// is every txid in the block -- hundreds of KB for a busy one -- so the
+// reader asks Esplora for the seat alone (/block/:hash/txid/:index, 64
+// bytes). A list already in hand, in memory or the archive, answers for
+// free; a projected chapter's list is its manifest, which is the only way to
+// address its seats. A seat is fixed by its block's hash, so it is memoized
+// and banked by hash and index; a txid learned another way (opened by id, or
+// cited with its placement) is seated by seatTxid and never asked for.
+const seatCache = new Map();   // `${hash}:${index}` -> Promise<txid>
+function seatTxid(hash, index, txid) {
+  if (!hash || !(index >= 0) || !txid) return;
+  const key = `${hash}:${index}`;
+  if (seatCache.has(key)) return;
+  seatCache.set(key, Promise.resolve(txid));
+  storePut('seats', key, txid);
+}
+async function txidAt(st, index) {
+  if (st.txids) return st.txids[index];
+  if (st.projected) return (await ensureTxids(st))[index];
+  const key = `${st.hash}:${index}`;
+  if (!seatCache.has(key)) {
+    seatCache.set(key, (async () => {
+      const list = txidsCache.has(st.hash)
+        ? await txidsCache.get(st.hash).catch(() => null)
+        : await storeGet('txids', st.hash);
+      if (list) return list[index];
+      const kept = await storeGet('seats', key);
+      if (kept) return kept;
+      const res = await esploraFetch(`${ESPLORA}/block/${st.hash}/txid/${index}`);
+      if (!res.ok) throw new Error(`Esplora returned ${res.status} fetching the transaction at §${index + 1}.`);
+      const txid = (await res.text()).trim().toLowerCase();
+      if (!/^[0-9a-f]{64}$/.test(txid)) throw new Error(`Esplora returned no transaction id for §${index + 1}.`);
+      storePut('seats', key, txid);
+      return txid;
+    })().catch((e) => { seatCache.delete(key); throw e; }));
+  }
+  return seatCache.get(key);
 }
 
 // The immutable core of a block's metadata -- its info and header, everything
@@ -2857,7 +3010,7 @@ function pageTitle() {
 // it never makes a string.
 function fillPrintColophon() {
   const cite = `${referenceOf(state.height)} §${state.index + 1}`;
-  const txid = state.txid || (state.txids && state.txids[state.index]) || '';
+  const txid = (state.txids && state.txids[state.index]) || (state.txidSeat === state.index && state.txid) || '';
   const url = `${location.origin}${location.pathname}?block=${state.height}&index=${state.index}`;
   const name = printableName();
   const colophon = $('print-colophon');
@@ -3544,7 +3697,7 @@ const liveProjection = (() => {
 // an unwritten book has no leaf to open.
 async function loadHeightOrProjected(height, index, tipP) {
   try {
-    return { meta: await loadBlockByHeight(height, { withTxids: index >= 0 }) };
+    return { meta: await loadBlockByHeight(height, { withTxids: false }) };
   } catch (e) {
     const tip = await tipP;
     if (e && e.notFound && tip !== null && height > tip && index >= -1) {
@@ -3556,8 +3709,8 @@ async function loadHeightOrProjected(height, index, tipP) {
 
 // A txid -> the block that confirmed it, plus the transaction's index within
 // that block (its section). The section comes from the merkle proof's position, so
-// opening one transaction never downloads the whole block's txid list -- that's
-// deferred (ensureTxids) until the reader steps Prev/Next. This is what makes
+// opening one transaction never downloads the whole block's txid list, and
+// stepping from it asks for each seat alone (txidAt). This is what makes
 // navigation by reference fast regardless of how large the block is.
 async function loadBlockByTxid(txid) {
   const [txRes, mpRes] = await Promise.all([
@@ -3581,7 +3734,9 @@ async function loadBlockByTxid(txid) {
   const hash = tx.status.block_hash;
   if (mpRes.ok) {
     const meta = await loadBlockMeta(hash, { withTxids: false });
-    return { meta, index: (await mpRes.json()).pos, txid };
+    const index = (await mpRes.json()).pos;
+    seatTxid(hash, index, txid);
+    return { meta, index, txid };
   }
   // No merkle proof -- fall back to locating the tx in the full txid list.
   const meta = await loadBlockMeta(hash);
@@ -3803,8 +3958,18 @@ async function showCurrentTx() {
   // A ghost -- a fee-replaced draft seated beneath its successor -- renders
   // its own body while the seat (list entry, tracking, §) stays the
   // successor's.
-  const txid = state.ghost ? state.ghost
-    : state.txids ? state.txids[state.index] : state.txid;
+  //
+  // A seat with no list in hand is asked for alone (txidAt), and the answer
+  // is kept on the state with the seat it belongs to, so a reader of
+  // state.txid can tell it from the txid of a section stepped away from.
+  let txid = state.ghost;
+  if (!txid) {
+    const st = state, seat = st.index;
+    txid = await txidAt(st, seat);
+    if (st !== state || st.index !== seat) return;   // the reader moved on; the newer turn renders
+    st.txid = txid;
+    st.txidSeat = seat;
+  }
   if (!ready) await init().catch(() => {});
   // Parse, verify, and encode -- or, when the neighbour prefetch already
   // warmed this section, a straight cache hit (see sectionFields). A ghost
@@ -4997,6 +5162,7 @@ function renderChapter(para) {
   const gen = ++renderGen;
   lazyEncode.reset();   // drop chunks still pending from the previous section (body + footnotes)
   lazyCites.reset();    // and the previous section's unresolved margin references
+  lazyForward.reset();  // and forward citations
 
   // Successions are looked up for EVERY section, mined or projected: the
   // reader's own ledger answers at once; the backend's RBF archive
@@ -5438,6 +5604,7 @@ function renderChapter(para) {
           pc.amtVal.title = `the amount this input spends: ${amountTitle(v)}`;
         }
         if (fillTotals) fillTotals(pendingCites.map((pc) => vals[pc.vin]));
+        for (const pc of pendingCites) pc.priced = true;
         lazyCites.observe(pendingCites, gen);
       } else {
         resolveCitations(pendingCites, gen).then((values) => {
@@ -5446,7 +5613,7 @@ function renderChapter(para) {
       }
     });
   }
-  resolveForwardCitations(para.txid, fwdCells, gen);
+  resolveForwardCitations(para.txid, fwdCells, gen, f.outputs.map((o) => o.spkHex));
   resolveCitedWorks(para.num, citedCells, gen);
 
   // The foot region resets, then the balance line takes its band -- the
@@ -5716,12 +5883,12 @@ function labelNav() {
 }
 
 // The txid the reader is looking at: from the loaded list when we have it, else
-// the single transaction opened by id before its block's list was ever
-// fetched. Null on a leaf, and on a ghost -- a fee-replaced draft holds no
+// the one showCurrentTx seated at this index (state.txidSeat says which). Null on a leaf, and on a ghost -- a fee-replaced draft holds no
 // curated seat, its successor does (see syncCommentary).
 function currentTxid() {
   if (!state || state.index < 0 || state.ghost) return null;
-  return state.txids ? state.txids[state.index] : (state.txid || null);
+  if (state.txids) return state.txids[state.index];
+  return state.txidSeat === state.index ? state.txid : null;
 }
 
 // Fit the commentary key to the page in front of the reader: the curated
@@ -6057,7 +6224,7 @@ async function openLookup(input, index = -1) {
       }
       setStatus(SPINNER_HTML + tr('fetching block…'));
       // A chapter-page landing (no section index) skips the heavy txid list;
-      // paging into a section fetches it on demand (ensureTxids). A height
+      // a section is asked for by its seat alone (txidAt). A height
       // past the tip but within the mempool's projection opens as a
       // projected chapter instead of an unwritten one.
       const r = await loadHeightOrProjected(Number(height), index, tipP);
@@ -6066,7 +6233,7 @@ async function openLookup(input, index = -1) {
     } else if (/^[0-9a-f]{64}$/i.test(input)) {
       const hex = input.toLowerCase();
       setStatus(SPINNER_HTML + tr('fetching block…'));
-      const meta = await loadBlockMeta(hex, { withTxids: index >= 0 }).catch(() => null);
+      const meta = await loadBlockMeta(hex, { withTxids: false }).catch(() => null);
       if (meta) {
         state = { ...meta, index: clampIndex(index, meta) };
       } else {
@@ -6083,7 +6250,7 @@ async function openLookup(input, index = -1) {
           if (await stepUnconfirmed(hex)) return;   // opened projected -- already rendered
           throw e;
         }
-        state = { ...loc.meta, index: loc.index, txid: loc.txid };
+        state = { ...loc.meta, index: loc.index, txid: loc.txid, txidSeat: loc.index };
       }
     } else {
       const ref = parseReference(input);
@@ -6137,14 +6304,14 @@ async function futureCommentary(height, message) {
 // onto its first page, backward onto its last section.
 async function stepTx(direction) {
   // Bounds come from txCount and the leaf floor (both known without the txid
-  // list); the list itself is only needed to address a section by position --
-  // fetched on demand here if the reader landed on a leaf without it.
+  // list); a section is addressed by its seat alone (txidAt), so stepping
+  // through a block never asks for its whole list.
   state.ghost = null;   // stepping leaves a ghost behind
   const withinBlock = state.index + direction;
   if (withinBlock >= (state.projected ? -1 : minIndexOf(state.height)) && withinBlock < state.txCount) {
     if (withinBlock >= 0) {
-      try { await ensureTxids(state); }
-      catch (e) { setStatus(e.message || 'Failed to load the transaction list.', 'err'); return; }
+      try { await txidAt(state, withinBlock); }
+      catch (e) { setStatus(e.message || 'Failed to load the transaction.', 'err'); return; }
     }
     state.index = withinBlock;
     try {
@@ -6184,9 +6351,9 @@ async function stepTx(direction) {
   try {
     // Forward lands on the next block's first page (its volume/book leaf when
     // it opens one, else its chapter page) -- no txid list needed until the
-    // reader pages into a section. Backward addresses the previous block's
-    // last transaction by position, so it needs the list now.
-    const next = await loadBlockByHeight(newHeight, { withTxids: direction < 0 });
+    // reader pages into a section. Backward lands on the previous block's
+    // last transaction, which showCurrentTx asks for by its seat.
+    const next = await loadBlockByHeight(newHeight, { withTxids: false });
     state = { ...next, index: direction > 0 ? minIndexOf(newHeight) : next.txCount - 1 };
     await showCurrentTx();
   } catch (e) {
@@ -6231,7 +6398,7 @@ async function stepSectionAcross(direction) {
   }
   setStatus(SPINNER_HTML + tr(direction > 0 ? 'loading next block…' : 'loading previous block…'));
   try {
-    const next = await loadBlockByHeight(newHeight, { withTxids: true });
+    const next = await loadBlockByHeight(newHeight, { withTxids: false });
     state = { ...next, index: direction > 0 ? 0 : next.txCount - 1 };
     await showCurrentTx();
   } catch (e) {
@@ -6381,17 +6548,16 @@ async function runPendingSteps() {
 
   stepping = true;
   try {
-    // Bounds come from txCount; the txid list is fetched only when the burst's
-    // destination addresses a section by position (a chapter-page landing, or
-    // leaving the block, never needs the current block's list).
-    const needList = async () => {
-      try { await ensureTxids(state); return true; }
-      catch (e) { setStatus(e.message || 'Failed to load the transaction list.', 'err'); return false; }
+    // Bounds come from txCount; a section destination is asked for by its
+    // seat alone (txidAt), and a chapter-page landing needs nothing.
+    const needSeat = async (seat) => {
+      try { await txidAt(state, seat); return true; }
+      catch (e) { setStatus(e.message || 'Failed to load the transaction.', 'err'); return false; }
     };
     const floor = state.projected ? -1 : minIndexOf(state.height);
     const target = state.index + steps;
     if (target >= floor && target < state.txCount) {
-      if (target >= 0 && !(await needList())) return;
+      if (target >= 0 && !(await needSeat(target))) return;
       state.index = target;
       try {
         await showCurrentTx();
@@ -6399,7 +6565,7 @@ async function runPendingSteps() {
         setStatus(e.message || 'Failed to load transaction.', 'err');
       }
     } else if (steps > 0 && state.index < state.txCount - 1) {
-      if (!(await needList())) return;
+      if (!(await needSeat(state.txCount - 1))) return;
       state.index = state.txCount - 1;          // overshot forward -- land on the block's last tx
       try { await showCurrentTx(); } catch (e) { setStatus(e.message || 'Failed to load transaction.', 'err'); }
     } else if (steps < 0 && state.index > floor) {
@@ -6533,8 +6699,8 @@ async function descendTo(m) {
   state.ghost = null;
   if (m.idx >= 0) {
     // A remembered section within this chapter.
-    try { await ensureTxids(state); }
-    catch (e) { setStatus(e.message || 'Failed to load the transaction list.', 'err'); return; }
+    try { await txidAt(state, Math.min(m.idx, state.txCount - 1)); }
+    catch (e) { setStatus(e.message || 'Failed to load the transaction.', 'err'); return; }
     state.index = Math.min(m.idx, state.txCount - 1);
     try { await showCurrentTx(); } catch (e) { setStatus(e.message || 'Failed to load transaction.', 'err'); }
     return;
@@ -6704,23 +6870,21 @@ async function prefetchNeighbor(st, direction) {
     if (st.index === -2) await warmBookTargets(target).catch(() => {});
   } else if (direction > 0) {
     if (st.index < st.txCount - 1) {
-      const txids = await ensureTxids(st);
-      await warmSection(txids[st.index + 1]);
+      await warmSection(await txidAt(st, st.index + 1));
     } else {
       // Past the block's last section the swipe lands on the next block's §1:
       // warm its core, head encodes, and first section.
-      const next = await loadBlockByHeight(st.height + 1, { withTxids: true });
+      const next = await loadBlockByHeight(st.height + 1, { withTxids: false });
       warmLeafEncodes(next);
-      await warmSection(next.txids[0]);
+      await warmSection(await txidAt(next, 0));
     }
   } else if (st.index > 0) {
-    const txids = await ensureTxids(st);
-    await warmSection(txids[st.index - 1]);
+    await warmSection(await txidAt(st, st.index - 1));
   } else if (st.height > 0) {
     // §1's swipe-back lands on the previous block's last section.
-    const prev = await loadBlockByHeight(st.height - 1, { withTxids: true });
+    const prev = await loadBlockByHeight(st.height - 1, { withTxids: false });
     warmLeafEncodes(prev);
-    await warmSection(prev.txids[prev.txids.length - 1]);
+    await warmSection(await txidAt(prev, prev.txCount - 1));
   }
 }
 function prefetchNeighbors() {
@@ -6757,8 +6921,8 @@ function prefetchNeighbors() {
     }
     // The vertical descend target from a chapter page is its §1.
     if (st.index === -1) {
-      ensureTxids(st)
-        .then((txids) => warmSection(txids[0]))
+      txidAt(st, 0)
+        .then(warmSection)
         .then(() => { if (gen === prefetchGen) downReady = true; })
         .catch(() => {});
     } else if (st.index === -3) {
