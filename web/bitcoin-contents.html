@@ -692,13 +692,19 @@ function renderAppendix(part) {
   const kept = shelfLedgers().filter((k) => !INDEXED.some((e) => sameAddresses(e.addresses, k.addresses)));
   // The book's own rows first, then each group the book files its rows under
   // (the mining pools) beneath a heading of that name, a step in -- the same
-  // heading a reader's filed keeps stand under.
+  // heading a reader's filed keeps stand under. Last, the reader's own keeps,
+  // together beneath a heading of their own: after a group they would
+  // otherwise read as its last rows. Each steps in from that heading, and
+  // anything they filed under a name of their own a step further.
   for (const l of INDEXED.filter((e) => !e.shelf)) toc.append(ledgerEl(l, false));
   for (const shelf of [...new Set(INDEXED.filter((e) => e.shelf).map((e) => e.shelf))]) {
     toc.append(fileHead(shelf, 0));
     for (const l of INDEXED.filter((e) => e.shelf === shelf)) toc.append(ledgerEl({ ...l, depth: 1 }, false));
   }
-  for (const l of kept) toc.append(ledgerEl(l, true));
+  if (kept.length) {
+    toc.append(fileHead('Bookmarked', 0));
+    for (const l of kept) toc.append(ledgerEl({ ...l, depth: (l.depth || 0) + 1 }, true));
+  }
 }
 
 // A ledger row. These take the dash the unresolved rows take, and for a
