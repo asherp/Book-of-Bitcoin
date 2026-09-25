@@ -24,6 +24,7 @@ import { splitOnSignature, poolOf } from './btc-pools.js';
 import { volumeBookChapter } from './btc-citation.js';
 import { plausibleBlockTime, utcMinute } from './btc-chaintime.js';
 import { BIP39, HP_SPELLS } from './btc-wordlists.js';
+import { NET } from './btc-network.js';
 
 const ROMAN = [[1000, 'M'], [900, 'CM'], [500, 'D'], [400, 'CD'], [100, 'C'], [90, 'XC'], [50, 'L'], [40, 'XL'], [10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I']];
 function toRoman(n) {
@@ -561,7 +562,7 @@ const markToken = (glyph, title) => `<span class="op" title="${title}">${glyph}<
 // else in the book, but here the mark reports a number the miner actually
 // wrote into the bytes, and the chain's own units are what it wrote.
 
-const BIP34_HEIGHT = 227931;         // BIP34's 95% activation -- Bitcoin Core's BIP34Height
+const BIP34_HEIGHT = NET.bip34Height;   // BIP34's activation on the chain being read (btc-network.js)
 const BIP34_MAX_3BYTE = 0x7fffff;    // 8,388,607: the last height a 3-byte CScriptNum holds
 
 // A coinbase scriptSig -> { height, restHex } when it opens with a BIP34
@@ -1327,6 +1328,10 @@ export function composeTransactionFields(parsed, bestOf = 1, lazyData = null, en
       // The signature the margin carries, as { pool, link, text }, or null --
       // a reading, kept out of the passage and available beside it.
       signature,
+      // A coinbase's scriptSig as the chain wrote it, for a reader that names
+      // the pool by mempool's own rule (btc-pool-registry.js), which matches
+      // tags against the raw bytes. Data beside the fields, never displayed.
+      ...(isNullPrevout ? { scriptSigHex: v.scriptSig } : {}),
       sequence: seq.mark, sequenceKind: seq.kind, sequenceTitle: seq.title, sequenceRbf: seq.rbf,
       witnessHex: v.witnessHex || '',
       witnessItems: v.witness || [],

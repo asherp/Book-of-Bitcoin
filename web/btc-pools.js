@@ -50,6 +50,11 @@
 //
 //   layout   the order of the fields the book can name, as observed or as read
 //            out of the template builder's source
+//   addresses  payout addresses the book has read as the pool's -- each seen
+//            receiving the reward of a coinbase that carries the pool's tag --
+//            beside the ones mempool.space's registry lists
+//            (btc-mempool-pools.js). With them the payout is named by its
+//            address and the pool's ledger holds it (btc-pool-registry.js).
 //   builder  whose template software writes it, where that is known
 //   seen     heights this signature was read at, for anything claimed as
 //            observed rather than cited
@@ -67,6 +72,9 @@ export const POOL_SIGNATURES = [
     // The digits some blocks carry after the name may be AntPool's or may be
     // the counter leaning on it; the pattern takes only what is certain.
     patterns: [/Mined [Bb]y AntPool/, /\/AntPool\//],
+    // The reward of every AntPool-tagged coinbase read at 968,427-968,448,
+    // beside a 546-satoshi marker to 37jKPS…; not in mempool's registry.
+    addresses: ['39C7fxSzEACPjM78Z7xdPxhf7mKxJwvfMJ'],
     layout: 'height · bytes · signature · bytes',
     seen: [960464, 960465],
   },
@@ -105,7 +113,23 @@ export const POOL_SIGNATURES = [
     layout: 'height · counter · signature · bytes',
   },
   { name: 'Braiins Pool', link: 'https://braiins.com/pool', patterns: [/\/slush\//], layout: 'height · counter · signature', builder: 'ckpool lineage' },
-  { name: 'ckpool', link: 'https://bitcointalk.org/index.php?topic=5296753', patterns: [/\/ckpool\//, /ckpool/], layout: 'height · counter · signature', builder: 'ckpool' },
+  // ckpool is two things at once: Con Kolivas's own pool (solo.ckpool, whose
+  // blocks carry "/ckpool/" and nothing else) and the mining software a great
+  // many operators run, which writes "ckpool" into every coinbase it builds
+  // beside whatever tag the operator configured. So this signature names the
+  // hand only when no operator's own tag shares the coinbase; `software` marks
+  // it as the fallback poolOf takes last (see poolOf below), which leaves
+  // solo.ckpool's own blocks attributed to it exactly as before.
+  { name: 'ckpool', link: 'https://bitcointalk.org/index.php?topic=5296753', patterns: [/\/ckpool\//, /ckpool/], layout: 'height · counter · signature', builder: 'ckpool', software: true },
+  // Samaritan runs ckpool, so its coinbase carries the software's "ckpool" tag
+  // and the operator's own "Samaritan mining" beside it; the operator is the
+  // hand the book names. (Read on testnet4 at block 153,726.)
+  {
+    name: 'Samaritan mining', link: null, patterns: [/Samaritan mining/, /Samaritan/],
+    layout: 'height · counter · ckpool tag · signature', builder: 'ckpool lineage',
+    // The payout of testnet4 block 153,726's coinbase, its only paid output.
+    addresses: ['tb1q93k8n2snvqau488v5mxv0ycm0atsw5xwae0w74'],
+  },
   { name: 'OCEAN', link: 'https://ocean.xyz/', patterns: [/OCEAN\.XYZ/i], layout: 'height · signature · miner tag · counter', builder: 'DATUM Gateway' },
   { name: 'SpiderPool', link: 'https://www.spiderpool.com/', patterns: [/\/SpiderPool\//, /SpiderPool/] },
   { name: 'Luxor', link: 'https://luxor.tech/', patterns: [/\/LUXOR\//i, /Luxor Tech/] },
@@ -134,7 +158,7 @@ export function findSignature(text, table = POOL_SIGNATURES) {
     for (const pattern of pool.patterns) {
       const m = pattern.exec(text);
       if (!m || !m[0]) continue;
-      const hit = { pool: pool.name, link: pool.link, text: m[0], start: m.index, end: m.index + m[0].length };
+      const hit = { pool: pool.name, link: pool.link, text: m[0], start: m.index, end: m.index + m[0].length, software: Boolean(pool.software) };
       if (!best || hit.start < best.start || (hit.start === best.start && hit.text.length > best.text.length)) best = hit;
       break;                                   // a pool's patterns are ordered; its first hit is its best
     }
@@ -161,10 +185,21 @@ export function splitOnSignature(text, table = POOL_SIGNATURES) {
 // question rather than the page's. Text is decoded by the caller (the book's
 // readable-run scanner), so a signature can never be "found" inside bytes that
 // merely spell it.
+//
+// An operator's own tag names the hand outright. A `software` marker (ckpool,
+// which every operator running it writes) names the hand only when no operator
+// tag shares the coinbase -- so a block carrying both "ckpool" and "Samaritan
+// mining" is Samaritan's, while a solo.ckpool block carrying "ckpool" alone is
+// still ckpool's. This is a precedence across runs, not within one: the margin
+// (splitOnSignature) still quotes every hand it finds, software and operator
+// alike; only the single attribution chooses between them.
 export function poolOf(texts, table = POOL_SIGNATURES) {
+  let fallback = null;
   for (const text of texts) {
     const hit = findSignature(text, table);
-    if (hit) return hit;
+    if (!hit) continue;
+    if (!hit.software) return hit;
+    fallback ??= hit;
   }
-  return null;
+  return fallback;
 }

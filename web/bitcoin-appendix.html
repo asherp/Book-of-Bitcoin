@@ -61,7 +61,9 @@
     window.__appxTurns = { prev: null, next: null };
     const leave = (href, transform, flag, value = '1') => {
       try { sessionStorage.setItem(flag, value); } catch (_) {}
-      const go = () => { location.href = href; };
+      // The chain this page reads rides along (btc-chrome.js's __bookChain; this
+      // script cannot import withChain).
+      const go = () => { location.href = window.__bookChain ? window.__bookChain(href) : href; };
       if (REDUCED) { go(); return; }
       document.body.style.transition = 'transform .2s linear';
       document.body.style.transform = transform;
@@ -591,6 +593,7 @@ import { partLabel, partNumber } from './btc-notables.js';
 await loadNotables();
 const APPENDIX = appendix();
 import { chainTip, MEMPOOL_MIRRORS, readQueue, expectedRevenue, queueLabel, MVB } from './btc-mempool.js';
+import { NET, nsKey, withChain } from './btc-network.js';
 import {
   minedWindow, tallyMines, shareSay, sharePct, MINE_WINDOW, signatureOf,
   networkHashrate, formatHashrate,
@@ -815,7 +818,7 @@ const coinbaseOf = async (blockHash) => {
 // foot).
 const navTo = (href, dir) => {
   try { sessionStorage.setItem('glossia-appendix-entrance', dir); } catch (_) { /* unavailable */ }
-  const go = () => { location.href = href; };
+  const go = () => { location.href = withChain(href); };
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { go(); return; }
   document.body.style.transition = 'transform .2s linear';
   document.body.style.transform = dir === 'drop' ? 'translateY(100vh)' : 'translateY(-100vh)';
@@ -1099,7 +1102,7 @@ function descend() {
   // a chapter of the book, or (from the Consensus leaf) a fork's own leaf.
   const toAppendix = firstChapter.includes('bitcoin-appendix');
   try { sessionStorage.setItem(toAppendix ? 'glossia-appendix-entrance' : 'glossia-book-entrance', toAppendix ? 'down' : '1'); } catch (_) {}
-  const go = () => { location.href = firstChapter; };
+  const go = () => { location.href = withChain(firstChapter); };
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { go(); return; }
   document.body.style.transition = 'transform .2s linear';
   document.body.style.transform = 'translateY(-100vh)';
@@ -1352,8 +1355,8 @@ if (kind === 'mempool' && QUEUE === null) {
 
     const tip = await chainTip();
     const [queue, rev] = await Promise.all([
-      readQueue(tip, ['https://mempool.space/api']),
-      expectedRevenue(tip, ['https://mempool.space/api']),
+      readQueue(tip, [NET.mempool]),
+      expectedRevenue(tip, [NET.mempool]),
     ]);
     const credit = 'what mempool.space is holding at this moment — that node\'s claim about its own queue, '
       + 'not a fact about any block that will ever exist';
@@ -1409,7 +1412,7 @@ if (QUEUE) {
     // Every one of these is a reading of the same cheap queue call.
     if (!TABLE) {
       const tip = await chainTip();
-      const queue = await readQueue(tip, ['https://mempool.space/api']);
+      const queue = await readQueue(tip, [NET.mempool]);
       const first = queue?.blocks?.[0];
       if (!first || tip == null) { setFigures([{ text: 'the queue could not be read just now' }]); return; }
       const reach = pageableDrafts(queue.blocks);
@@ -2335,7 +2338,7 @@ if (bip && blockLeaf == null) {
       if (!marks.has(h)) addExtra(h, { title: placeTitle(p) });
     }
     try {
-      const kept = JSON.parse(localStorage.getItem('glossia-btc-bookmarks'));
+      const kept = JSON.parse(localStorage.getItem(nsKey('glossia-btc-bookmarks')));
       for (const b of Array.isArray(kept) ? kept : []) {
         if (!Number.isInteger(b.height) || b.page) continue;
         addExtra(b.height, { title: String(b.title ?? '').trim() || 'bookmark', bm: true });
@@ -2689,7 +2692,7 @@ if (bip && blockLeaf == null) {
       await inflight;     // and this lets it unwind before the table is cleared
       ballotSort = { by: next.by, dir: next.dir };
       REPLAY = isReplay(ballotSort);
-      try { history.replaceState(null, '', ballotHref()); } catch (_) { /* unavailable */ }
+      try { history.replaceState(null, '', withChain(ballotHref())); } catch (_) { /* unavailable */ }
       paintHeads();
       blocksEl.classList.toggle('bb-sorted', !REPLAY);
       leadEl?.remove();
@@ -3288,7 +3291,7 @@ if (TABLE && QUEUE === 'amount') {
   (async () => {
     const tip = await chainTip();
     if (tip == null) return;
-    const queue = await readQueue(tip, ['https://mempool.space/api']);
+    const queue = await readQueue(tip, [NET.mempool]);
     const reach = pageableDrafts(queue?.blocks);
     if (!reach) return;
     const href = `./bitcoin-book.html?block=${tip + reach}`;

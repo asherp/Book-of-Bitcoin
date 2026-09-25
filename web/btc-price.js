@@ -25,6 +25,8 @@
 // that drift is the valuation's problem, not ours to correct.)
 export const utcDateOf = (ts) => new Date(ts * 1000).toISOString().slice(0, 10);
 
+import { NET } from './btc-network.js';
+
 // ─── the sources ───────────────────────────────────────────────────────
 // Each parses its own wire shape into { perBtc, date } or null. The parsers
 // are pure and exported for the test suite; the fetchers around them are not.
@@ -119,8 +121,12 @@ function writeCache(cache) {
 // Single-flight per source and day (btc-index.js's citePlaceInflight
 // discipline): a screenful of ledger rows sharing a day must share one
 // question, not race duplicates before the answer banks.
+//
+// Off mainnet there is no market to ask: a test chain's coins trade at
+// nothing, so every day answers null without a question being sent.
 const usdInflight = new Map();
 export function usdOn(ts) {
+  if (!NET.hasPrice) return Promise.resolve(null);
   const src = priceSource();
   const key = `${src.id}:${utcDateOf(ts)}`;
   const cache = readCache();

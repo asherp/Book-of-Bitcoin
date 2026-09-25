@@ -17,8 +17,12 @@
 // Ask the browser to treat this origin's storage as persistent -- installed
 // apps are usually granted it silently -- so what is kept here survives
 // storage pressure instead of standing in the "best effort" eviction line.
+import { nsKey } from './btc-network.js';
+
 try { navigator.storage?.persist?.().catch(() => { /* denied: merely evictable */ }); } catch (_) { /* unavailable */ }
-const DB_NAME = 'glossia-btc-archive';
+// One archive per chain: every key here is a hash or a height, and a height
+// names a different block on each. Mainnet's name is unchanged (btc-network.js).
+const DB_NAME = nsKey('glossia-btc-archive');
 const STORES = {
   placements: 4000,   // txid / block hash -> { height, pos }   (contents page)
   citations: 4000,    // txid -> { height, pos, outputs }       (book references)

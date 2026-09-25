@@ -57,3 +57,11 @@
 }
 .update-btn.show { display:inline-block; }
 .update-btn:hover { background:var(--accent-2); border-color:var(--accent-2); }
+
+/* Which chain the page reads (btc-chrome.js), shown only off mainnet so a
+   test chain is never taken for the real one. A label, not a control. */
+.network-badge {
+  display:inline-block; margin-left:12px; vertical-align:baseline;
+  background:var(--accent); color:var(--btn-ink,#17140c); border-radius:4px; padding:4px 8px;
+  font:600 11px/1 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.08em; text-transform:uppercase;
+}

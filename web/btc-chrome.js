@@ -34,6 +34,72 @@
   let installBtn = null;
   let updateBtn = null;
 
+  // The chain the page reads: the one its address names, or mainnet -- the
+  // same rule as btc-network.js, which every module reads; this script is
+  // classic and cannot import it, so it names the key and the networks itself
+  // (tools/network.test.mjs keeps the two in step). It chooses nothing: the
+  // reader chooses in Settings (bitcoin-book.html). The chain read is
+  // remembered for the front door alone (index.html), so reopening the book
+  // returns to it. Marked on the root at once, so a test chain is set apart
+  // before the page paints.
+  const NETWORK_KEY = 'glossia-btc-network';
+  const NETWORKS = [['mainnet', 'Mainnet'], ['testnet4', 'Testnet4']];
+  const isNetwork = (id) => NETWORKS.some((n) => n[0] === id);
+  const network = (() => {
+    try {
+      const asked = new URLSearchParams(location.search).get('network');
+      if (isNetwork(asked)) return asked;
+    } catch (_) { /* no address to read */ }
+    return 'mainnet';
+  })();
+  try { localStorage.setItem(NETWORK_KEY, network); } catch (_) { /* the front door opens on mainnet */ }
+  document.documentElement.setAttribute('data-network', network);
+
+  // Off mainnet, every link to one of the book's own pages names the chain
+  // too, so "Copy link" on a passage, a citation or a contents entry gives an
+  // address that opens on this chain for whoever it is sent to. The links are
+  // built in a hundred places, in markup and in script, so they are named here
+  // once rather than at each: every link the page holds, and every one it adds
+  // or re-points later. Only same-origin links to a page are touched -- never a
+  // fragment on this page, another site, or a file such as the passages'
+  // markdown -- and the rule is withChain's (btc-network.js), written again
+  // here because this script cannot import it; tools/network.test.mjs holds
+  // the two to the same answers. On mainnet nothing is observed or changed.
+  const chainHref = (href) => {
+    const hashAt = href.indexOf('#');
+    const base = hashAt < 0 ? href : href.slice(0, hashAt);
+    const hash = hashAt < 0 ? '' : href.slice(hashAt);
+    if (/[?&]network=/.test(base)) return href;
+    return base + (base.indexOf('?') < 0 ? '?' : '&') + 'network=' + network + hash;
+  };
+  const nameChain = (a) => {
+    const raw = a.getAttribute('href');
+    if (!raw || raw.charAt(0) === '#') return;
+    let target;
+    try { target = new URL(raw, location.href); } catch (_) { return; }
+    if (target.origin !== location.origin || !/(\.html|\/)$/.test(target.pathname)) return;
+    const named = chainHref(raw);
+    if (named !== raw) a.setAttribute('href', named);
+  };
+  if (network !== 'mainnet' && typeof MutationObserver === 'function') {
+    const sweep = (node) => {
+      if (node.nodeType !== 1) return;
+      if (node.tagName === 'A') nameChain(node);
+      node.querySelectorAll('a[href]').forEach(nameChain);
+    };
+    new MutationObserver((records) => {
+      for (const r of records) {
+        if (r.type === 'attributes') { if (r.target.tagName === 'A') nameChain(r.target); }
+        else r.addedNodes.forEach(sweep);
+      }
+    }).observe(document.documentElement, { subtree: true, childList: true, attributes: true, attributeFilter: ['href'] });
+    sweep(document.documentElement);
+  }
+  // The same rule for a classic script that navigates by assigning an address
+  // (the appendix's page turns): modules import withChain instead. Returns a
+  // mainnet address unchanged.
+  window.__bookChain = (href) => (network === 'mainnet' ? href : chainHref(href));
+
   let updateReady = false;
   let updateBehind = null; // e.g. '3 days' — how far behind the running build is
 
@@ -179,6 +245,16 @@
     // Label and aria-label are owned by reflectUpdate (called below), which
     // also renders how far behind the running copy is once that's known.
 
+    // Off mainnet, a quiet label says which chain the page is reading, so a
+    // test chain is never taken for the real one. It is not a control: the
+    // chain is chosen in the reading page's Settings.
+    if (network !== 'mainnet') {
+      const badge = document.createElement('span');
+      badge.className = 'network-badge';
+      badge.textContent = NETWORKS.find((n) => n[0] === network)[1];
+      badge.title = 'The chain this page reads — changed in Settings';
+      title.appendChild(badge);
+    }
     title.appendChild(installBtn);
     title.appendChild(updateBtn);
     reflectInstall();

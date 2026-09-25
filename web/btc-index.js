@@ -26,14 +26,16 @@ import { pathSegments } from './btc-path.js';
 // A ledger folds by it; a bookmark refuses by it; neither spells it itself.
 import { nameKey } from './btc-keepname.js';
 import { tokenizeScript } from './btc-tx.js';
+import { NET, nsKey, addressShape } from './btc-network.js';
+import { poolLedgers } from './btc-pool-registry.js';
 
 // A loose shape test for the address forms the chain has used: base58 P2PKH
 // ('1…') and P2SH ('3…'), and bech32/bech32m ('bc1…', matched lowercase --
-// the all-uppercase QR form is normalized by the caller). Shape only, no
+// the all-uppercase QR form is normalized by the caller); on testnet4 the same
+// forms open 'm'/'n', '2' and 'tb1' (btc-network.js). Shape only, no
 // checksum: its job is routing a query to the index page, whose chain lookup
 // is the real validator.
-export const isAddress = (s) =>
-  /^([13][1-9A-HJ-NP-Za-km-z]{25,34}|bc1[02-9ac-hj-np-z]{11,87})$/.test(s);
+export const isAddress = (s, net = NET) => addressShape(net).test(s);
 
 // A ledger member is a NAME for a set of outputs, and two spellings of one
 // exist: an address (the common case), and a raw scriptPubKey as lowercase
@@ -53,7 +55,12 @@ export const isMember = (s) => isAddress(s) || isScriptHex(s);
 // scriptPubKey hex -- folded into its member list. One list downstream, so
 // every consumer (URL joins, set matching, the store) handles one shape; a
 // member's spelling is re-told where it matters (isAddress / isScriptHex).
-export const INDEXED = CURATED.map((e) => ({
+// The editorial shelf is empty off mainnet: every member there is a mainnet
+// address or script, and none of them names anything on a test chain. After
+// it stand the mining pools, each a ledger of its payout addresses on the
+// chain being read (poolLedgers, btc-pool-registry.js) and filed under one
+// heading, so a pool's payout is shelved and named on either chain.
+export const INDEXED = [...(NET.curated ? CURATED : []), ...poolLedgers()].map((e) => ({
   ...e,
   addresses: [...(e.addresses ?? []), ...(e.scripts ?? [])],
 }));
@@ -62,7 +69,7 @@ export const INDEXED = CURATED.map((e) => ({
 // The reader's own shelf: ledgers kept from their pages, each a titled set
 // of addresses. Older entries kept a single `address`; they read back as
 // one-address ledgers, so nothing already kept is lost to the shape change.
-const KEPT_KEY = 'glossia-btc-ledgers';
+const KEPT_KEY = nsKey('glossia-btc-ledgers');
 export function keptLedgers() {
   try {
     const v = JSON.parse(localStorage.getItem(KEPT_KEY));
@@ -291,10 +298,13 @@ function bech32Polymod(values) {
   }
   return chk;
 }
-function bech32Witness(addr) {
-  const data = [...addr.slice(3)].map((c) => B32.indexOf(c));   // past the 'bc1' hrp+separator
+function bech32Witness(addr, hrp) {
+  const data = [...addr.slice(hrp.length + 1)].map((c) => B32.indexOf(c));   // past the hrp and its '1'
   if (data.includes(-1) || data.length < 7) return null;
-  const hrpExpand = [3, 3, 0, 2, 3];                  // 'bc' expanded, per BIP173
+  // The hrp expanded per BIP173: each character's high bits, a zero, then its
+  // low bits. 'bc' gives [3, 3, 0, 2, 3].
+  const codes = [...hrp].map((c) => c.charCodeAt(0));
+  const hrpExpand = [...codes.map((c) => c >> 5), 0, ...codes.map((c) => c & 31)];
   const version = data[0];
   const constant = version === 0 ? 1 : 0x2bc830a3;    // bech32 for v0, bech32m above
   if (bech32Polymod(hrpExpand.concat(data)) !== constant) return null;
@@ -307,17 +317,17 @@ function bech32Witness(addr) {
   }
   return { version, program };
 }
-export function addressScriptHex(address) {
-  if (address.startsWith('bc1')) {
-    const w = bech32Witness(address);
+export function addressScriptHex(address, net = NET) {
+  if (address.startsWith(net.hrp + '1')) {
+    const w = bech32Witness(address, net.hrp);
     if (!w || !w.program.length) return null;
     const op = w.version === 0 ? '00' : (0x50 + w.version).toString(16);
     return op + w.program.length.toString(16).padStart(2, '0') + toHex(w.program);
   }
   const p = base58Payload(address);
   if (!p) return null;
-  if (p.version === 0x00) return '76a914' + toHex(p.hash) + '88ac';   // P2PKH
-  if (p.version === 0x05) return 'a914' + toHex(p.hash) + '87';       // P2SH
+  if (p.version === net.p2pkh) return '76a914' + toHex(p.hash) + '88ac';   // P2PKH
+  if (p.version === net.p2sh) return 'a914' + toHex(p.hash) + '87';        // P2SH
   return null;
 }
 
@@ -411,9 +421,11 @@ export const reconciled = (data) =>
 // failure -- throttle, block, outage -- collapsed to a nameless
 // "unreachable". Esplora's error responses keep their names, and its
 // per-transaction pagination suits the newest-first backfill.)
-export const DEFAULT_ESPLORA = ['https://blockstream.info/api', 'https://mempool.space/api'];
-const ENDPOINTS_KEY = 'glossia-btc-endpoints';   // custom endpoints: [{label,url}] -- the book page's own store
-const SELECTED_KEY = 'glossia-btc-endpoint';     // preferred endpoint url
+export const DEFAULT_ESPLORA = NET.esplora;
+// Per network: a reader's own node serves one chain, so an endpoint added
+// while reading mainnet must not be asked about testnet4.
+const ENDPOINTS_KEY = nsKey('glossia-btc-endpoints');   // custom endpoints: [{label,url}] -- the book page's own store
+const SELECTED_KEY = nsKey('glossia-btc-endpoint');     // preferred endpoint url
 export function esploraCustom() {
   try {
     const v = JSON.parse(localStorage.getItem(ENDPOINTS_KEY));
@@ -769,9 +781,9 @@ function buildEntries(records) {
 // apps are usually granted it silently -- so what is kept here survives
 // storage pressure instead of standing in the "best effort" eviction line.
 try { navigator.storage?.persist?.().catch(() => { /* denied: merely evictable */ }); } catch (_) { /* unavailable */ }
-const DB_NAME = 'glossia-btc-index';
+const DB_NAME = nsKey('glossia-btc-index');
 const DB_STORE = 'lines';
-const REGISTRY_KEY = 'glossia-btc-index-registry';
+const REGISTRY_KEY = nsKey('glossia-btc-index-registry');
 // The bank keeps the most recently read members and prunes the rest. Its
 // floor is the largest shelved ledger's membership, because a ledger is
 // read as ONE account: a cap below it could never let one be read whole --
@@ -970,7 +982,7 @@ export async function resolveLine(address, onProgress) {
 // comes back marked `stale: true` -- last known, shown quietly -- rather
 // than nothing at all. Kept in localStorage (a few dozen bytes per
 // address), pruned oldest-first past a generous cap.
-const BALANCE_KEY = 'glossia-btc-balances';
+const BALANCE_KEY = nsKey('glossia-btc-balances');
 const BALANCE_TTL = 10 * 60 * 1000;
 const BALANCE_MAX = 48;
 const balanceCache = () => {

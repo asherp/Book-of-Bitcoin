@@ -27,6 +27,7 @@ import { parseYamlSequence } from './btc-yaml.js';
 import { toRoman } from './btc-citation.js';
 import { parseLookup, looksLikeAddress } from './btc-lookup.js';
 import { uiLang } from './btc-strings.js';
+import { NET } from './btc-network.js';
 
 // ─── translations of the editorial layer ─────────────────────────────
 // A curated title or a reading may carry translations, written as suffixed
@@ -407,23 +408,33 @@ let entries = [];
 let parts = [];
 let loading = null;
 
+// The appendix parts the chain fills by itself: the queue, the mines, and the
+// reader's own ledgers. Every other part is written about mainnet's passages.
+const CHAIN_PARTS = new Set(['mempool', 'mines', 'ledgers']);
+
 // Load the index once. Resolves to the entries; on failure resolves to an empty
 // list rather than rejecting, so a page renders the chain either way -- the
 // curation is an annotation on the record, never a gate on reading it. The
 // failure is reported through loadNotables().error for surfaces that want to
 // say so out loud (the table of contents does; the book page does not need to).
+//
+// Off mainnet (btc-network.js) the curated index is not read at all -- its
+// entries cite mainnet heights, and on a test chain those heights are other
+// blocks -- and the appendix keeps only CHAIN_PARTS. What is left is the bare
+// chain, which is also what keeps a test chain's contents as short as the
+// chain is.
 export function loadNotables({ read = fetchRead } = {}) {
   if (!loading) {
     // The contents and its appendix are two files and two failures: a mangled
     // appendix must not cost the reader the volumes, or the other way about.
-    const index = read(NOTABLES_FILE)
+    const index = !NET.curated ? Promise.resolve() : read(NOTABLES_FILE)
       .then((text) => { entries = parseNotables(text); })
       .catch((e) => {
         loadNotables.error = e;
         console.warn('btc-notables: could not read the curated contents —', e.message);
       });
     const back = read(APPENDIX_FILE)
-      .then((text) => { parts = parseAppendix(text); })
+      .then((text) => { parts = parseAppendix(text).filter((p) => NET.curated || CHAIN_PARTS.has(p.kind)); })
       .catch((e) => {
         loadNotables.appendixError = e;
         console.warn('btc-notables: could not read the appendix —', e.message);

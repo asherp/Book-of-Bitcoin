@@ -24,7 +24,9 @@
 // stops rather than writing. A run against an unchanged chain writes nothing.
 //
 // Mainnet only. Testnet's twenty-minute rule lets nBits vary *within* an
-// epoch, which would make the epoch table quietly wrong rather than absent.
+// epoch, which would make the epoch table quietly wrong rather than absent;
+// testnet4's table is tools/fetch-epoch-work-testnet4.mjs, which also counts
+// each epoch's minimum-difficulty blocks.
 
 import { readFile, writeFile } from 'node:fs/promises';
 import { RETARGET_INTERVAL, EPOCH_BITS } from '../web/btc-chainwork.js';

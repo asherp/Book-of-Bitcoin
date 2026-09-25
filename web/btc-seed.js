@@ -16,11 +16,15 @@
 // just leaves the network path in charge, as it always was.
 
 import { storePut } from './btc-store.js';
+import { NET } from './btc-network.js';
 
 const SEED_URL = './passages/seed.json';
 const MARK = 'btc-archive-seeded';   // localStorage: the imported seed's stamp
 
 export function seedArchive() {
+  // The seed is mainnet's curated passages; there is nothing in it for a
+  // test chain's archive, and its heights would name the wrong blocks there.
+  if (!NET.curated) return;
   let done = null;
   try { done = localStorage.getItem(MARK); } catch { return; }   // no storage to mark: don't loop the import
   if (done) return;

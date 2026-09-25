@@ -18,8 +18,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-  bitsToTarget, blockWork, difficultyOf, chainWork, formatWork,
-  workBetween, formatHashes,
+  bitsToTarget, blockWork, difficultyOf, chainWork, chainWorkIn, formatWork,
+  workBetween, formatHashes, MIN_BITS,
   EPOCH_BITS, RETARGET_INTERVAL, LAST_HEIGHT,
   DIFFICULTY_1_TARGET, WORK_PER_DIFFICULTY,
 } from '../web/btc-chainwork.js';
@@ -186,4 +186,23 @@ test('chainwork is what fork choice compares, so it only grows', () => {
     assert.ok(at > previous, `epoch ${e} did not add work`);
     previous = at;
   }
+});
+
+test('an epoch with minimum-difficulty blocks sums whole, and declines in part', () => {
+  // Testnet4's shape (web/btc-chainwork-testnet4.js): an epoch is its own
+  // nBits and a count of blocks that fell to the minimum instead.
+  const own = blockWork('1c3fffc0');
+  const floor = blockWork(MIN_BITS);
+  const epochs = [[MIN_BITS, 0], ['1c3fffc0', 10], ['1c3fffc0', 0]];
+  const first = 2016n * floor;
+  const second = 2006n * own + 10n * floor;
+  assert.equal(chainWorkIn(epochs, 2015), first);
+  assert.equal(chainWorkIn(epochs, 4031), first + second, 'a whole mixed epoch is exact');
+  // Part of the mixed epoch: the table says how many fell, not which.
+  assert.equal(chainWorkIn(epochs, 2016 + 100), null);
+  // Part of a uniform epoch is exact, whether uniform at its own nBits or at the minimum.
+  assert.equal(chainWorkIn(epochs, 4032 + 99), first + second + 100n * own);
+  assert.equal(chainWorkIn(epochs, 99), 100n * floor);
+  // Past the table, nothing.
+  assert.equal(chainWorkIn(epochs, 3 * 2016), null);
 });

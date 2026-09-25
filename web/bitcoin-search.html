@@ -458,6 +458,7 @@ import { isAddress, addressScriptHex, chainWitness, witnessVerdict, witnessDisag
          txHexOf, prevoutsOf } from './btc-index.js';
 import { reference, latinReference, inputMark } from './btc-citation.js';
 import { parseLookup } from './btc-lookup.js';
+import { withChain } from './btc-network.js';
 
 import { termOfScript, titleHtml, suppliedHtml, revealedOf,
          revealedHtml, commitmentOf, commitmentHtml } from './btc-term.js';
@@ -1262,7 +1263,7 @@ const go = async () => {
   if (!q) { input.focus(); return; }
   const found = classify(q);
   const ledger = (member) => {
-    location.href = './bitcoin-ledger.html?address=' + encodeURIComponent(member);
+    location.href = withChain('./bitcoin-ledger.html?address=' + encodeURIComponent(member));
   };
   if (found.kind === 'address') return ledger(found.address);
   if (found.kind === 'script') return ledger(found.script);
@@ -1280,10 +1281,10 @@ const go = async () => {
     return showSpelled(found.spelled, q);      // it does not resolve; the leaf says why
   }
   if (found.kind === 'reference') {
-    location.href = './bitcoin-book.html?ref=' + encodeURIComponent(latinReference(q));
+    location.href = withChain('./bitcoin-book.html?ref=' + encodeURIComponent(latinReference(q)));
     return;
   }
-  location.href = './bitcoin-book.html?block=' + encodeURIComponent(q);
+  location.href = withChain('./bitcoin-book.html?block=' + encodeURIComponent(q));
 };
 document.getElementById('block-btn').addEventListener('click', go);
 input.addEventListener('keydown', (e) => { if (e.key === 'Enter') go(); });
