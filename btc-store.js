@@ -28,6 +28,7 @@ const STORES = {
   citations: 4000,    // txid -> { height, pos, outputs }       (book references)
   blocks: 400,        // block hash -> { block, headerHex }
   txids: 120,         // block hash -> [txid…]  (a big block's list runs to ~100s of KB)
+  seats: 8000,        // `${block hash}:${index}` -> txid  (one section's seat, without its block's list)
   tx: 4000,           // txid -> raw hex
   heights: 8000,      // height -> block hash   (six confirmations deep or more)
   pages: 8000,        // height -> running tx count before it (six confirmations deep or more; btc-pages.js)
@@ -57,7 +58,7 @@ function db() {
     const timer = setTimeout(() => settle(null), OPEN_PATIENCE);
     const finish = (v) => { clearTimeout(timer); settle(v); };
     try {
-      const req = indexedDB.open(DB_NAME, 3);   // v2 added 'pages'; v3 'mined'
+      const req = indexedDB.open(DB_NAME, 4);   // v2 added 'pages'; v3 'mined'; v4 'seats'
       req.onupgradeneeded = () => {
         // Create whatever stores this version knows and the database doesn't --
         // a fresh install builds them all, an upgrade only the newcomers.
