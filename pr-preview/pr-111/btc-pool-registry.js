@@ -20,6 +20,8 @@
 // null, which mempool calls Unknown.
 
 import { MEMPOOL_POOLS, MEMPOOL_POOLS_SOURCE } from './btc-mempool-pools.js';
+import { POOL_SIGNATURES } from './btc-pools.js';
+import { NET, addressShape } from './btc-network.js';
 
 export { MEMPOOL_POOLS, MEMPOOL_POOLS_SOURCE };
 
@@ -76,10 +78,12 @@ export function registryPoolOf({ scriptSig = '', addresses = [] } = {}, pools = 
 //               (btc-pools.js poolOf), for pools the registry does not know
 //
 // Returns { output, name, from }, `from` being 'registry-address',
-// 'registry-tag' or 'table' -- whose reading it is and what it rests on.
+// 'table-address', 'registry-tag' or 'table' -- whose reading it is and what
+// it rests on.
 //
 // The registry is asked first, by mempool's rule. Where it names the pool by
-// an address the coinbase pays, that output is the payout. Where it names the
+// an address the coinbase pays, that output is the payout; so too where the
+// book's own table lists the address (btc-pools.js). Where it names the
 // pool by a tag, or only the book's table does, the tag says who mined the
 // block and nothing about which output is theirs -- so the payout is the
 // output that carries the block's reward: the lone paid address, or the one
@@ -95,6 +99,8 @@ export function payoutPool({ scriptSig = '', outputs = [], tablePool = null } = 
   const paid = [...new Set(addresses.filter(Boolean))];
   const hit = registryPoolOf({ scriptSig, addresses: paid }, pools);
   if (hit?.by === 'address') return { output: addresses.indexOf(hit.matched), name: hit.name, from: 'registry-address' };
+  const known = POOL_SIGNATURES.find((p) => p.addresses?.some((a) => paid.includes(a)));
+  if (known) return { output: addresses.findIndex((a) => known.addresses.includes(a)), name: known.name, from: 'table-address' };
   const name = hit ? hit.name : tablePool;
   if (!name) return null;
   const output = rewardOutput(outputs);
@@ -117,6 +123,40 @@ function rewardOutput(outputs) {
   if (!(total > 0)) return -1;
   const top = payees.reduce((a, b) => (b.sats > a.sats ? b : a));
   return top.sats >= PAYOUT_SHARE * total ? top.index : -1;
+}
+
+// The mining pools as ledgers on the curated shelf, each titled by its pool
+// and filed under one heading (`shelf`) in the contents. A pool's ledger
+// holds the payout addresses mempool.space's registry lists for it and the
+// ones the book's own table has read (btc-pools.js), merged where the two
+// name the same pool, case aside -- and only the addresses the chain being
+// read can hold (btc-network.js), so a pool with none there has no ledger
+// there. Alphabetical: a shelf this long is scanned for a name, not read in
+// order. `said` credits whose reading each ledger is.
+export const POOL_SHELF = 'Mining pools';
+export function poolLedgers(net = NET, pools = MEMPOOL_POOLS, table = POOL_SIGNATURES) {
+  const shape = addressShape(net);
+  const byName = new Map();
+  const add = (name, addresses, source) => {
+    const key = name.trim().toLowerCase();
+    if (!byName.has(key)) byName.set(key, { title: name, addresses: [], sources: new Set() });
+    const ledger = byName.get(key);
+    for (const a of addresses) {
+      if (!shape.test(a) || ledger.addresses.includes(a)) continue;
+      ledger.addresses.push(a);
+      ledger.sources.add(source);
+    }
+  };
+  for (const p of pools) add(p.name, p.addresses, 'registry');
+  for (const p of table) if (p.addresses?.length) add(p.name, p.addresses, 'table');
+  const SAID = { registry: "mempool.space's pool registry", table: "the book's reading of the pool's coinbases" };
+  return [...byName.values()]
+    .filter((l) => l.addresses.length)
+    .sort((a, b) => a.title.localeCompare(b.title, 'en', { sensitivity: 'base' }))
+    .map(({ title, addresses, sources }) => ({
+      title, addresses, shelf: POOL_SHELF,
+      said: `payout addresses, per ${[...sources].map((s) => SAID[s]).join(' and ')}`,
+    }));
 }
 
 // One pool's entry by its registry id or its name (case aside), or null --

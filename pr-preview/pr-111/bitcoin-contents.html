@@ -690,7 +690,14 @@ function renderAppendix(part) {
   // holding every member beneath it -- rather than a heading over them
   // (btc-index.js's shelfLedgers says why the Coldcard hack settles that).
   const kept = shelfLedgers().filter((k) => !INDEXED.some((e) => sameAddresses(e.addresses, k.addresses)));
-  for (const l of INDEXED) toc.append(ledgerEl(l, false));
+  // The book's own rows first, then each group the book files its rows under
+  // (the mining pools) beneath a heading of that name, a step in -- the same
+  // heading a reader's filed keeps stand under.
+  for (const l of INDEXED.filter((e) => !e.shelf)) toc.append(ledgerEl(l, false));
+  for (const shelf of [...new Set(INDEXED.filter((e) => e.shelf).map((e) => e.shelf))]) {
+    toc.append(fileHead(shelf, 0));
+    for (const l of INDEXED.filter((e) => e.shelf === shelf)) toc.append(ledgerEl({ ...l, depth: 1 }, false));
+  }
   for (const l of kept) toc.append(ledgerEl(l, true));
 }
 
@@ -741,6 +748,8 @@ function ledgerEl(ledger, isKept) {
     ? `Unnamed ledger · ${ledger.addresses.length} passages`
     : 'Unnamed ledger';
   t.append(document.createTextNode(ledger.leaf || ledger.name || ledger.title || unnamed));
+  // Whose reading a filed curated row is (a pool's payout addresses, say).
+  if (ledger.said) row.title = ledger.said;
   const r = document.createElement('span');
   r.className = 'toc-ref none';
   r.textContent = '—';
