@@ -157,7 +157,7 @@ test('on testnet4 every module reads testnet4', () => {
     console.log(JSON.stringify({
       net: NET.id, key: nsKey('glossia-btc-bookmarks'),
       mempool: MEMPOOL_MIRRORS, mines: MINES_MIRRORS, esplora: DEFAULT_ESPLORA, ws: WS_URL,
-      curated: INDEXED.length, anchors: HALVING_ANCHORS,
+      curated: INDEXED.filter((e) => !e.shelf).length, pools: INDEXED.filter((e) => e.shelf).map((e) => e.title), anchors: HALVING_ANCHORS,
       lastHeight: LAST_HEIGHT, vendored: TESTNET4_EPOCHS.length,
       genesisEpoch: String(chainWork(1000)), genesisExpected: String(1001n * blockWork(MIN_BITS)),
       book: String(workBetween(e * 2016, e * 2016 + 2015)), bookExpected: String(expected),
@@ -173,6 +173,7 @@ test('on testnet4 every module reads testnet4', () => {
   assert.deepEqual(got.mines, ['https://mempool.space/testnet4/api']);
   assert.equal(got.ws, 'wss://mempool.space/testnet4/api/v1/ws');
   assert.equal(got.curated, 0, 'no curated mainnet ledger is offered on a test chain');
+  assert.ok(got.pools.includes('Samaritan mining'), "the mining pools' testnet4 payouts are shelved there");
   assert.deepEqual(got.anchors, NETWORKS.testnet4.anchors);
   // testnet4's own table, counted with its minimum-difficulty blocks.
   assert.ok(got.vendored > 0, 'no testnet4 epochs are vendored');

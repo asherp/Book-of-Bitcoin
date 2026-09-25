@@ -50,6 +50,11 @@
 //
 //   layout   the order of the fields the book can name, as observed or as read
 //            out of the template builder's source
+//   addresses  payout addresses the book has read as the pool's -- each seen
+//            receiving the reward of a coinbase that carries the pool's tag --
+//            beside the ones mempool.space's registry lists
+//            (btc-mempool-pools.js). With them the payout is named by its
+//            address and the pool's ledger holds it (btc-pool-registry.js).
 //   builder  whose template software writes it, where that is known
 //   seen     heights this signature was read at, for anything claimed as
 //            observed rather than cited
@@ -67,6 +72,9 @@ export const POOL_SIGNATURES = [
     // The digits some blocks carry after the name may be AntPool's or may be
     // the counter leaning on it; the pattern takes only what is certain.
     patterns: [/Mined [Bb]y AntPool/, /\/AntPool\//],
+    // The reward of every AntPool-tagged coinbase read at 968,427-968,448,
+    // beside a 546-satoshi marker to 37jKPS…; not in mempool's registry.
+    addresses: ['39C7fxSzEACPjM78Z7xdPxhf7mKxJwvfMJ'],
     layout: 'height · bytes · signature · bytes',
     seen: [960464, 960465],
   },
@@ -116,7 +124,12 @@ export const POOL_SIGNATURES = [
   // Samaritan runs ckpool, so its coinbase carries the software's "ckpool" tag
   // and the operator's own "Samaritan mining" beside it; the operator is the
   // hand the book names. (Read on testnet4 at block 153,726.)
-  { name: 'Samaritan mining', link: null, patterns: [/Samaritan mining/, /Samaritan/], layout: 'height · counter · ckpool tag · signature', builder: 'ckpool lineage' },
+  {
+    name: 'Samaritan mining', link: null, patterns: [/Samaritan mining/, /Samaritan/],
+    layout: 'height · counter · ckpool tag · signature', builder: 'ckpool lineage',
+    // The payout of testnet4 block 153,726's coinbase, its only paid output.
+    addresses: ['tb1q93k8n2snvqau488v5mxv0ycm0atsw5xwae0w74'],
+  },
   { name: 'OCEAN', link: 'https://ocean.xyz/', patterns: [/OCEAN\.XYZ/i], layout: 'height · signature · miner tag · counter', builder: 'DATUM Gateway' },
   { name: 'SpiderPool', link: 'https://www.spiderpool.com/', patterns: [/\/SpiderPool\//, /SpiderPool/] },
   { name: 'Luxor', link: 'https://luxor.tech/', patterns: [/\/LUXOR\//i, /Luxor Tech/] },

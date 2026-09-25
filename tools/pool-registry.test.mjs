@@ -16,7 +16,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
-import { MEMPOOL_POOLS, MEMPOOL_POOLS_SOURCE, registryPoolOf, registryPool, asciiOf, payoutPool } from '../web/btc-pool-registry.js';
+import { MEMPOOL_POOLS, MEMPOOL_POOLS_SOURCE, registryPoolOf, registryPool, asciiOf, payoutPool, poolLedgers, POOL_SHELF } from '../web/btc-pool-registry.js';
+import { POOL_SIGNATURES } from '../web/btc-pools.js';
 import { NETWORKS, addressShape } from '../web/btc-network.js';
 
 const hex = (s) => Buffer.from(s, 'latin1').toString('hex');
@@ -140,8 +141,11 @@ test("AntPool's payout carries the reward beside a marker, and is named", () => 
   const tag = antpool.tags.find((t) => /^Mined by AntPool$/.test(t)) ?? antpool.tags[0];
   const outputs = [out('37jKPSmbEGwgfacCr2nayn1wTaqMAbA94Z', 546), out('39C7fxSzEACPjM78Z7xdPxhf7mKxJwvfMJ', 313867032),
     out(null), out(null), out(null), out(null), out(null)];
+  // The book's table lists the payout, so its address names it; the marker
+  // is nobody's payout. (Naming it by the tag and the reward alone, as before
+  // the table read the address, is the rule the synthetic cases above hold.)
   assert.deepEqual(payoutPool({ scriptSig: heightPush + hex(tag + ' x6mm0Uwq'), outputs }),
-    { output: 1, name: 'AntPool', from: 'registry-tag' });
+    { output: 1, name: 'AntPool', from: 'table-address' });
 });
 
 test("a pool the registry does not know is named by the book's table: Samaritan's payout", () => {
@@ -151,8 +155,45 @@ test("a pool the registry does not know is named by the book's table: Samaritan'
   const scriptSig = '037e58020004f33db46a048515aa0a0c5806b46a3b000000000000000a636b706f6f6c1053616d61726974616e206d696e696e67';
   const payout = 'tb1q93k8n2snvqau488v5mxv0ycm0atsw5xwae0w74';
   assert.equal(registryPoolOf({ scriptSig, addresses: [payout] }), null, 'mempool calls it Unknown');
+  // The book's table lists this payout, so its address names it.
   assert.deepEqual(payoutPool({ scriptSig, outputs: [out(payout, 5002671077), out(null)], tablePool: 'Samaritan mining' }),
+    { output: 0, name: 'Samaritan mining', from: 'table-address' });
+  // A payout the table has not read is named by the tag and the reward…
+  assert.deepEqual(payoutPool({ scriptSig, outputs: [out('tb1qnew', 5e9), out(null)], tablePool: 'Samaritan mining' }),
     { output: 0, name: 'Samaritan mining', from: 'table' });
-  // The value shared between two payees: even the book's own reading names no output.
-  assert.equal(payoutPool({ scriptSig, outputs: [out(payout, 25e8), out('tb1qother', 25e8)], tablePool: 'Samaritan mining' }), null);
+  // …and not where the value is shared between two payees.
+  assert.equal(payoutPool({ scriptSig, outputs: [out('tb1qnew', 25e8), out('tb1qother', 25e8)], tablePool: 'Samaritan mining' }), null);
+});
+
+test("the book's table lists only addresses a chain can hold", () => {
+  for (const p of POOL_SIGNATURES) {
+    for (const a of p.addresses ?? []) {
+      assert.ok(Object.values(NETWORKS).some((net) => addressShape(net).test(a)), `${p.name}: ${a} is an address`);
+    }
+  }
+});
+
+test('the mining pools stand on the shelf as ledgers, per chain, under one heading', () => {
+  const mainnet = poolLedgers(NETWORKS.mainnet);
+  const testnet4 = poolLedgers(NETWORKS.testnet4);
+  for (const [id, shelf] of [['mainnet', mainnet], ['testnet4', testnet4]]) {
+    const shape = addressShape(NETWORKS[id]);
+    assert.ok(shelf.length, `${id} has pool ledgers`);
+    for (const l of shelf) {
+      assert.equal(l.shelf, POOL_SHELF);
+      assert.ok(l.title && l.addresses.length, `${id}: ${l.title} is named and holds an address`);
+      assert.ok(l.addresses.every((a) => shape.test(a)), `${id}: ${l.title} holds only ${id} addresses`);
+      assert.match(l.said, /^payout addresses, per /, 'whose reading it is');
+    }
+    const titles = shelf.map((l) => l.title);
+    assert.deepEqual(titles, [...titles].sort((a, b) => a.localeCompare(b, 'en', { sensitivity: 'base' })), `${id}: alphabetical`);
+  }
+  // AntPool: the registry's addresses and the one the book read, as one ledger.
+  const antpool = mainnet.find((l) => l.title === 'AntPool');
+  assert.ok(antpool.addresses.includes('39C7fxSzEACPjM78Z7xdPxhf7mKxJwvfMJ'));
+  assert.ok(registryPool('AntPool').addresses.every((a) => antpool.addresses.includes(a)));
+  assert.match(antpool.said, /registry and the book/);
+  // Samaritan: known to the book only, and only on testnet4.
+  assert.deepEqual(testnet4.find((l) => l.title === 'Samaritan mining')?.addresses, ['tb1q93k8n2snvqau488v5mxv0ycm0atsw5xwae0w74']);
+  assert.equal(mainnet.find((l) => l.title === 'Samaritan mining'), undefined);
 });

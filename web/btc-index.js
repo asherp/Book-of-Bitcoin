@@ -27,6 +27,7 @@ import { pathSegments } from './btc-path.js';
 import { nameKey } from './btc-keepname.js';
 import { tokenizeScript } from './btc-tx.js';
 import { NET, nsKey, addressShape } from './btc-network.js';
+import { poolLedgers } from './btc-pool-registry.js';
 
 // A loose shape test for the address forms the chain has used: base58 P2PKH
 // ('1…') and P2SH ('3…'), and bech32/bech32m ('bc1…', matched lowercase --
@@ -54,9 +55,12 @@ export const isMember = (s) => isAddress(s) || isScriptHex(s);
 // scriptPubKey hex -- folded into its member list. One list downstream, so
 // every consumer (URL joins, set matching, the store) handles one shape; a
 // member's spelling is re-told where it matters (isAddress / isScriptHex).
-// Empty off mainnet: every curated member is a mainnet address or script, and
-// none of them names anything on a test chain.
-export const INDEXED = (NET.curated ? CURATED : []).map((e) => ({
+// The editorial shelf is empty off mainnet: every member there is a mainnet
+// address or script, and none of them names anything on a test chain. After
+// it stand the mining pools, each a ledger of its payout addresses on the
+// chain being read (poolLedgers, btc-pool-registry.js) and filed under one
+// heading, so a pool's payout is shelved and named on either chain.
+export const INDEXED = [...(NET.curated ? CURATED : []), ...poolLedgers()].map((e) => ({
   ...e,
   addresses: [...(e.addresses ?? []), ...(e.scripts ?? [])],
 }));
