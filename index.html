@@ -63,10 +63,18 @@ same way.</p>
 (function () {
   var to = './bitcoin-front.html';
   try {
-    var rec = JSON.parse(localStorage.getItem('glossia-btc-last-read'));
+    // The front door returns to the chain last read (btc-network.js), which
+    // the pages remember under this key -- or, given ?network= here, to that
+    // one. The place is kept per chain, testnet4's under its suffix, and the
+    // address this sends to names the chain, since a bare one is mainnet.
+    var asked = /[?&]network=(mainnet|testnet4)(?:&|$)/.exec(location.search);
+    var chain = asked ? asked[1] : localStorage.getItem('glossia-btc-network');
+    var suffix = chain === 'testnet4' ? '-testnet4' : '';
+    var rec = JSON.parse(localStorage.getItem('glossia-btc-last-read' + suffix));
     if (rec && rec.v === 1 && typeof rec.q === 'string' && /^[\w=&%.,:+-]{1,300}$/.test(rec.q)) {
       to = './bitcoin-book.html?' + rec.q;
     }
+    if (suffix) to += (to.indexOf('?') < 0 ? '?' : '&') + 'network=testnet4';
   } catch (e) { /* no storage, or nothing kept: the cover */ }
   location.replace(to + location.hash);
 })();

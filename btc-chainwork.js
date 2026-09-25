@@ -60,12 +60,17 @@
 // which is what consensus needs -- and not a measurement of anyone's
 // electricity.
 //
-// Mainnet only, structurally: the epoch table is mainnet's, and testnet's
-// twenty-minute rule lets nBits vary inside an epoch, so the collapse this
-// file rests on does not hold there.
+// On testnet4 the twenty-minute rule lets a block be mined at the minimum
+// difficulty, so nBits varies inside an epoch and the collapse above does not
+// hold. What replaces it is one more number per epoch: how many of its blocks
+// were mined at the minimum (btc-chainwork-testnet4.js). A whole epoch still
+// sums exactly; a part of one sums only where every block in it weighed the
+// same, and declines otherwise.
 
 import { EPOCH_BITS } from './btc-chainwork-epochs.js';
+import { TESTNET4_EPOCHS } from './btc-chainwork-testnet4.js';
 import { toSuperscript } from './btc-sigla.js';
+import { NET } from './btc-network.js';
 
 export { EPOCH_BITS };
 
@@ -78,10 +83,22 @@ export const DIFFICULTY_1_TARGET = 0xffffn * (1n << 208n);
 // 4,295,032,833 hashes, which is 2^32 plus 65,537 and not 2^32.
 export const WORK_PER_DIFFICULTY = (1n << 256n) / DIFFICULTY_1_TARGET;
 
+// The minimum difficulty a testnet block may fall to: nBits for difficulty 1.
+export const MIN_BITS = '1d00ffff';
+
+// Each vendored epoch as [its nBits, how many of its blocks were mined at
+// MIN_BITS instead], on the network the book is reading. Mainnet has no
+// minimum-difficulty blocks, so every count there is zero.
+const EPOCHS_BY_NETWORK = {
+  mainnet: EPOCH_BITS.map((bits) => [bits, 0]),
+  testnet4: TESTNET4_EPOCHS,
+};
+export const EPOCHS = EPOCHS_BY_NETWORK[NET.id] ?? [];
+
 // The last height the vendored epochs can speak for. Past this the answer is
 // null rather than a guess -- a chapter beyond the table is a chapter this
 // file has no record of, and saying so is the only honest move.
-export const LAST_HEIGHT = EPOCH_BITS.length * RETARGET_INTERVAL - 1;
+export const LAST_HEIGHT = EPOCHS.length * RETARGET_INTERVAL - 1;
 
 // nBits -> the target it packs. Accepts the header's hex or the number, since
 // explorers disagree about which they serve.
@@ -119,19 +136,34 @@ export function difficultyOf(bits) {
 // Every epoch contributes its whole 2016 blocks except the last, which
 // contributes as far as the height asked for. Genesis is a block like any
 // other and is counted; the off-by-one at that end is the easy mistake.
-export function chainWork(height) {
+//
+// A whole epoch is its own blocks at its own nBits and the rest at the
+// minimum. A part of an epoch is exact only where the epoch is uniform -- no
+// minimum-difficulty blocks, or an nBits that is the minimum anyway -- since
+// the table says how many blocks fell to the minimum and not which. Where it
+// is not, the answer is null.
+export function chainWorkIn(epochs, height) {
   const h = Math.floor(Number(height));
-  if (!Number.isFinite(h) || h < 0 || h > LAST_HEIGHT) return null;
+  if (!Number.isFinite(h) || h < 0 || h > epochs.length * RETARGET_INTERVAL - 1) return null;
+  const floor = blockWork(MIN_BITS);
   let total = 0n;
   for (let e = 0; e <= Math.floor(h / RETARGET_INTERVAL); e++) {
-    const first = e * RETARGET_INTERVAL;
-    const last = Math.min(first + RETARGET_INTERVAL - 1, h);
-    const work = blockWork(EPOCH_BITS[e]);
+    const [bits, low] = epochs[e];
+    const work = blockWork(bits);
     if (work == null) return null;
-    total += BigInt(last - first + 1) * work;
+    const count = Math.min(RETARGET_INTERVAL, h - e * RETARGET_INTERVAL + 1);
+    if (count === RETARGET_INTERVAL) {
+      total += BigInt(RETARGET_INTERVAL - low) * work + BigInt(low) * floor;
+    } else if (low === 0 || work === floor) {
+      total += BigInt(count) * work;
+    } else {
+      return null;
+    }
   }
   return total;
 }
+
+export const chainWork = (height) => chainWorkIn(EPOCHS, height);
 
 // The work a run of chapters added, both ends inclusive -- what a book or a
 // volume cost, as against the chainWork above, which is what the chain had

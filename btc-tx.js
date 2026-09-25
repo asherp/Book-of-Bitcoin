@@ -16,6 +16,8 @@
 // lives in whichever earlier transaction created the output — and
 // confirmation/block-height is chain state, not transaction data.
 
+import { NET } from './btc-network.js';
+
 function hexToBytes(hex) {
   const clean = hex.trim();
   const out = new Uint8Array(clean.length / 2);
@@ -395,17 +397,20 @@ function segwitAddrEncode(hrp, witver, witprogBytes) {
 }
 
 // scriptPubKey hex -> { type, address }. address is null for scripts with no
-// standard address form (OP_RETURN, unrecognized templates).
-export async function scriptToAddress(scriptHex) {
+// standard address form (OP_RETURN, unrecognized templates). Spelled for the
+// chain being read (btc-network.js): the same script is 1…/3…/bc1… on mainnet
+// and m…/n…/2…/tb1… on testnet4, and an address spelled for the other chain
+// is refused by every reader of this one (isAddress, btc-index.js).
+export async function scriptToAddress(scriptHex, net = NET) {
   const s = hexToBytes(scriptHex);
 
   // P2PKH: OP_DUP OP_HASH160 <20> OP_EQUALVERIFY OP_CHECKSIG
   if (s.length === 25 && s[0] === 0x76 && s[1] === 0xa9 && s[2] === 0x14 && s[23] === 0x88 && s[24] === 0xac) {
-    return { type: 'p2pkh', address: await base58checkEncode(0x00, s.subarray(3, 23)) };
+    return { type: 'p2pkh', address: await base58checkEncode(net.p2pkh, s.subarray(3, 23)) };
   }
   // P2SH: OP_HASH160 <20> OP_EQUAL
   if (s.length === 23 && s[0] === 0xa9 && s[1] === 0x14 && s[22] === 0x87) {
-    return { type: 'p2sh', address: await base58checkEncode(0x05, s.subarray(2, 22)) };
+    return { type: 'p2sh', address: await base58checkEncode(net.p2sh, s.subarray(2, 22)) };
   }
   // OP_RETURN: no address, carries arbitrary data
   if (s.length > 0 && s[0] === 0x6a) return { type: 'op_return', address: null };
@@ -418,7 +423,7 @@ export async function scriptToAddress(scriptHex) {
       if (s.length === 2 + pushLen && pushLen >= 2 && pushLen <= 40) {
         const prog = s.subarray(2, 2 + pushLen);
         const type = witver === 0 ? (pushLen === 20 ? 'p2wpkh' : 'p2wsh') : (witver === 1 ? 'p2tr' : `witness_v${witver}`);
-        return { type, address: segwitAddrEncode('bc', witver, prog) };
+        return { type, address: segwitAddrEncode(net.hrp, witver, prog) };
       }
     }
   }

@@ -24,7 +24,12 @@
 // same key inline, having to decide where to go before a module could load —
 // tools/lastread.test.mjs keeps that copy in step with this one.
 
-const KEY = 'glossia-btc-last-read';
+import { NET } from './btc-network.js';
+
+// Kept per network (btc-network.js): a place is a height, and a height is a
+// different block on each chain. Mainnet's suffix is empty, so its key is the
+// one every reader already has.
+const KEY = 'glossia-btc-last-read' + NET.suffix;
 const VERSION = 1;
 
 // What a kept query may look like: the characters a URL query is written in,

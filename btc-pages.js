@@ -29,6 +29,7 @@
 // numbers are an annotation over the chain, never a gate on reading it.
 
 import { storeGet, storePut } from './btc-store.js';
+import { NET } from './btc-network.js';
 
 const anchorCache = new Map();   // height -> Promise<number> (in flight or settled)
 const resolvedAnchors = new Map();   // height -> number (settled only; peekAnchor's view)
@@ -38,7 +39,7 @@ const json = async (url) => { const r = await fetch(url); return r.ok ? r.json()
 // Blockchair's aggregation API answers the question directly: the summed
 // transaction_count over blocks 0..h-1, one call.
 async function blockchairAnchor(height) {
-  const j = await json(`https://api.blockchair.com/bitcoin/blocks?a=sum(transaction_count)&q=id(0..${height - 1})`);
+  const j = await json(`https://api.blockchair.com/${NET.blockchair}/blocks?a=sum(transaction_count)&q=id(0..${height - 1})`);
   const row = Array.isArray(j?.data) ? j.data[0] : null;
   return row == null ? NaN : Number(row['sum(transaction_count)'] ?? Object.values(row)[0]);
 }
@@ -55,7 +56,7 @@ async function blockchairAnchor(height) {
 // block arrived between the calls, or the instance capped the window) and
 // the next census source is tried.
 async function mempoolAnchor(height) {
-  const base = 'https://mempool.space/api';
+  const base = NET.mempool;
   const tipRes = await fetch(`${base}/blocks/tip/height`);
   if (!tipRes.ok) return NaN;
   const tip = Number((await tipRes.text()).trim());
@@ -68,8 +69,9 @@ async function mempoolAnchor(height) {
   return Number(whole.totalTx) - Number(tail.totalTx);
 }
 
-// Census sources, tried in order until one gives a plausible answer.
-const CENSUS_SOURCES = [blockchairAnchor, mempoolAnchor];
+// Census sources, tried in order until one gives a plausible answer. Blockchair
+// only where it indexes the chosen chain (btc-network.js).
+const CENSUS_SOURCES = NET.blockchair ? [blockchairAnchor, mempoolAnchor] : [mempoolAnchor];
 
 async function fetchAnchor(height) {
   for (const source of CENSUS_SOURCES) {

@@ -228,7 +228,7 @@ export function scriptFault(hex) {
 //
 // Everything else the grammar takes is ASCII, base58 or bech32 and cannot read
 // as hex at all -- a relative height wears a sign, a citation its sigla or its
-// leading v, base58 spells no 0 and bech32 opens bc1. So those two shapes are
+// leading v, base58 spells no 0 and bech32 opens bc1 (tb1 on testnet4). So those two shapes are
 // the whole of what the script: prefix is still for, and every script the book
 // actually shelves passes here bare, its Mt. Gox void (76a90088ac) included.
 export function isWholeScript(hex) {

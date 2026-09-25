@@ -48,6 +48,7 @@
 // address" use the shape test below.
 
 import { parseReference } from './btc-citation.js';
+import { addressShape } from './btc-network.js';
 
 export const isHeight = (s) => /^[0-9]+$/.test(s);
 export const isRelativeHeight = (s) => /^-[0-9]+$/.test(s);
@@ -61,8 +62,10 @@ export const isScriptQuery = (s) => /^script:(?:[0-9a-fA-F]{2})+$/.test(s);
 
 // Shape alone -- enough to say "this is an address, and addresses are ledger
 // entries", never enough to accept one as valid. base58 (1…, 3…) and bech32
-// (bc1…), at plausible lengths.
-export const looksLikeAddress = (s) => /^(?:[13][a-km-zA-HJ-NP-Z1-9]{25,34}|bc1[02-9ac-hj-np-z]{11,71})$/.test(s);
+// (bc1…) on mainnet, their testnet4 forms (m…, n…, 2…, tb1…) there, at
+// plausible lengths.
+const ADDRESS_SHAPE = addressShape(undefined, '11,71');
+export const looksLikeAddress = (s) => ADDRESS_SHAPE.test(s);
 
 // What a query is, and what it resolves to. `kind` is one of 'height',
 // 'relative', 'hex', 'reference', 'address', or null when the string is none of

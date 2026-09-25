@@ -62,7 +62,9 @@
 // Every reduction carries the moment it was made, and every surface prints
 // it. A queue is a fact about a moment.
 
-export const WS_URL = 'wss://mempool.space/api/v1/ws';
+import { NET, nsKey } from './btc-network.js';
+
+export const WS_URL = NET.mempoolWs;
 // How many of each ranking a leaf shows. The rest are counted, never dropped
 // silently -- the block holds thousands, and a list that stopped without
 // saying so would read as the whole of it.
@@ -71,7 +73,7 @@ export const TOP = 100;
 // turn between the two leaves and back; short enough that nobody reads a
 // stale queue as the present one.
 const KEEP_MS = 120_000;
-const CACHE_KEY = 'glossia-btc-alpha';
+const CACHE_KEY = nsKey('glossia-btc-alpha');   // per network: one chain's queue is not another's
 
 // One transaction of a projected block, out of the compact array the socket
 // sends. Anything malformed is dropped rather than guessed at: a row with no

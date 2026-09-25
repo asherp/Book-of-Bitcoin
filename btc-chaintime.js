@@ -23,15 +23,22 @@
 // real block, the early ones (hashrate doubling every few months) within about
 // six weeks. PLAUSIBLE_WINDOW is set well past the worst of that.
 
+import { NET } from './btc-network.js';
+
 // [height, the block's nTime]. Every entry a halving, so the table needs a new
 // line roughly once every four years and never a correction.
-export const HALVING_ANCHORS = [
+export const MAINNET_ANCHORS = [
   [0, 1231006505],        // 2009-01-03 — genesis
   [210000, 1354116278],   // 2012-11-28
   [420000, 1468082773],   // 2016-07-09
   [630000, 1589225023],   // 2020-05-11
   [840000, 1713571767],   // 2024-04-20
 ];
+
+// The chosen network's anchors. Testnet4 has had no halving, so it carries its
+// own pairs instead (btc-network.js, which says why genesis alone is not
+// enough there).
+export const HALVING_ANCHORS = NET.anchors ?? MAINNET_ANCHORS;
 
 export const BLOCK_INTERVAL = 600;        // the cadence difficulty retargets toward
 
@@ -44,15 +51,17 @@ export const BLOCK_INTERVAL = 600;        // the cadence difficulty retargets to
 // same bytes back and only the hover text differs.
 export const PLAUSIBLE_WINDOW = 90 * 86400;
 
-// A height -> about when it was mined (unix seconds).
-export function expectedBlockTime(height) {
+// A height -> about when it was mined (unix seconds), on the chosen network
+// unless a caller names another chain's anchors (the proofs register dates
+// mainnet heights whichever chain the book is reading).
+export function expectedBlockTime(height, anchors = HALVING_ANCHORS) {
   const h = Math.max(0, Math.floor(Number(height) || 0));
-  for (let i = 1; i < HALVING_ANCHORS.length; i++) {
-    const [h0, t0] = HALVING_ANCHORS[i - 1];
-    const [h1, t1] = HALVING_ANCHORS[i];
+  for (let i = 1; i < anchors.length; i++) {
+    const [h0, t0] = anchors[i - 1];
+    const [h1, t1] = anchors[i];
     if (h <= h1) return Math.round(t0 + ((h - h0) / (h1 - h0)) * (t1 - t0));
   }
-  const [hLast, tLast] = HALVING_ANCHORS[HALVING_ANCHORS.length - 1];
+  const [hLast, tLast] = anchors[anchors.length - 1];
   return tLast + (h - hLast) * BLOCK_INTERVAL;
 }
 

@@ -51,6 +51,7 @@
 
 import { storePutMany, storeEntries } from './btc-store.js';
 import { findSignature } from './btc-pools.js';
+import { NET } from './btc-network.js';
 
 // The pool's own writing, cut to its own extent -- and nothing else.
 //
@@ -90,7 +91,7 @@ const UNSETTLED = 6;
 const PER_CALL = 15;
 // Only a mempool.space-backed mirror serves the v1 block pages; a vanilla
 // Esplora 404s them. Ordered so the one that can answer is asked first.
-export const MINES_MIRRORS = ['https://mempool.space/api'];
+export const MINES_MIRRORS = [NET.mempool];
 
 // How many calls are in flight at once. The window is 135 calls on a cold
 // archive; a handful at a time reads it in a few seconds without leaning on

@@ -42,9 +42,10 @@
 
 import { entryHref } from './btc-contents.js';
 import { volumeBookChapter, toRoman, expectedReference, subsidyAt } from './btc-citation.js';
+import { NET } from './btc-network.js';
 
 export const MVB = 1_000_000;   // one block's worth of virtual bytes
-export const MEMPOOL_MIRRORS = ['https://blockstream.info/api', 'https://mempool.space/api'];
+export const MEMPOOL_MIRRORS = NET.esplora;
 
 // Try a path against each mirror in turn (the v1 paths only answer on a
 // mempool.space-backed mirror; vanilla Esplora 404s and the loop moves on).

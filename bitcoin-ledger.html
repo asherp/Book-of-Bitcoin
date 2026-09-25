@@ -729,6 +729,7 @@ import { INDEXED, isAddress, isScriptHex, keptLedgers, saveKeptLedgers, sameAddr
          DEFAULT_ESPLORA, esploraCustom, esploraSelected, setEsploraSettings } from './btc-index.js';
 import { volumeBookChapter, heightOf, subsidyAt, toRoman, parseReference, latinRefOf, footnoteMark, keepReference } from './btc-citation.js';
 import { usdOn } from './btc-price.js';
+import { nsKey, withChain } from './btc-network.js';
 import { amountUnit, setAmountUnit, ownUnit, formatAmountAs, formatValuation } from './btc-amounts.js';
 import { BIP39, HP_SPELLS } from './btc-wordlists.js';
 // A slash in a name the reader typed is a path: their shelf files, and a
@@ -1041,7 +1042,7 @@ function syncUrl() {
   // reload, or a link shared from here, comes back to the leaf it left.
   try {
     const url = level === 'appendix' ? location.pathname : location.pathname + urlFor(level);
-    history.replaceState(null, '', url);
+    history.replaceState(null, '', withChain(url));
   } catch (_) { /* unavailable */ }
   document.title = level === 'appendix' ? `The βook of βitcoin — ${PART_LABEL}`
     : level === 'ledger' && !qList.length ? 'The βook of βitcoin — The Ledgers'
@@ -1066,7 +1067,7 @@ const downEl = document.getElementById('anth-down');
 const totalsBar = document.getElementById('acct-totals');
 
 const readBookmarks = () => {
-  try { const v = JSON.parse(localStorage.getItem('glossia-btc-bookmarks')); return Array.isArray(v) ? v : []; }
+  try { const v = JSON.parse(localStorage.getItem(nsKey('glossia-btc-bookmarks'))); return Array.isArray(v) ? v : []; }
   catch { return []; }
 };
 // The reader's bookmarked passages, which the ledger hangs in its quarters
@@ -2259,7 +2260,7 @@ const openEntryLeaf = async (alive) => {
   const stampUrl = (s) => {
     try {
       history.replaceState(null, '',
-        `${location.pathname}?address=${urlAddress()}&ref=${latinRef(e.height, s, e.out ?? null)}`);
+        withChain(`${location.pathname}?address=${urlAddress()}&ref=${latinRef(e.height, s, e.out ?? null)}`));
     } catch (_) { /* unavailable */ }
   };
   stampUrl(null);
@@ -2829,7 +2830,7 @@ function ascend() {
 // on the slide.
 function leavePage(href, transform, flag, value = '1') {
   try { sessionStorage.setItem(flag, value); } catch (_) {}
-  const go = () => { location.href = href; };
+  const go = () => { location.href = withChain(href); };
   if (REDUCED_MOTION) { go(); return; }
   document.body.style.transition = 'transform .2s linear';
   document.body.style.transform = transform;
@@ -3090,7 +3091,7 @@ if (pRef) (async () => {
   // the citation and nothing else -- a txid never rides beside (or instead
   // of) the reference that already names the same place.
   if ((pRef.s == null && pRef.o == null) || !qList.length) {
-    location.href = `./bitcoin-book.html?ref=${encodeURIComponent(pQ)}`;
+    location.href = withChain(`./bitcoin-book.html?ref=${encodeURIComponent(pQ)}`);
     return;
   }
   const g = gen;                          // abandon if the reader turns away

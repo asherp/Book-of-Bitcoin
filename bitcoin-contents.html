@@ -118,6 +118,7 @@ a:hover { text-decoration: underline; }
 .leaf-head { text-align:center; padding-bottom:26px; margin-bottom:8px; border-bottom:1px solid var(--rule); }
 .leaf-title { margin:0; font:400 34px/1.15 'Newsreader','Book Sigla',serif; letter-spacing:.01em; color:var(--ink); }
 .leaf-sub { margin-top:10px; font:400 13px/1.5 'IBM Plex Mono','Book Sigla',monospace; letter-spacing:.06em; color:var(--meta); }
+.leaf-sub:empty { display:none; }
 
 /* The door down: from a volume's contents into the volume itself, from an
    appendix's contents into the appendix's own leaf. The same mark, and the
@@ -180,6 +181,7 @@ import { readingsOf } from './btc-commentary.js';
 
 import { minesForContents, largestMines, networkHashrate, formatHashrate } from './btc-mines.js';
 import { readQueue, buildQueue, MVB } from './btc-mempool.js';
+import { NET, nsKey, withChain } from './btc-network.js';
 import { INDEXED, keptLedgers, sameAddresses, shelfLedgers } from './btc-index.js';
 // A slash in a name the reader typed is a path: their own keeps file into a
 // hierarchy, and only theirs do (btc-path.js says why).
@@ -224,22 +226,22 @@ const $ = (id) => document.getElementById(id);
 })();
 const REDUCED_MOTION = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-const BOOKMARKS_KEY = 'glossia-btc-bookmarks';
+const BOOKMARKS_KEY = nsKey('glossia-btc-bookmarks');   // per network: a bookmark is a place on one chain
 const readBookmarks = () => {
   try { const v = JSON.parse(localStorage.getItem(BOOKMARKS_KEY)); return Array.isArray(v) ? v : []; }
   catch { return []; }
 };
 
 // The genesis coinbase places offline -- block 0, first transaction -- so the
-// book opens at I 1 1 §1 without waiting on the network.
-const GENESIS_COINBASE = '4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b';
+// book opens at I 1 1 §1 without waiting on the network. Each chain has its own.
+const GENESIS_COINBASE = NET.genesisCoinbase;
 
 // Every entry is cited by its reference, never its raw id. A block's placement
 // is known offline from its height; a transaction's is resolved the same way the
 // reader resolves a citation -- a /tx/<txid>/merkle-proof gives the confirming
 // block height and the transaction's index (its §section). Tried across the same
 // public mirrors the book uses.
-const ESPLORA_MIRRORS = ['https://blockstream.info/api', 'https://mempool.space/api'];
+const ESPLORA_MIRRORS = NET.esplora;
 // A book-page entry (page: 'book') places at its book with no chapter -- the
 // leaf precedes every chapter of its book in reading order.
 const placeOf = (height, pos, page, vout = null, wn = null) => {
@@ -491,10 +493,8 @@ function leafSub(leaf) {
   if (part.kind === 'consensus') return `The rules the chapters are written under · ${count(part.bips.length, 'fork', 'forks')}`;
   if (part.kind === 'inscriptions') return `Files in witnesses · ${count(part.entries.length, 'inscription', 'inscriptions')}`;
   if (part.kind === 'proofs') return `Works the chain attests · ${count(proofsCount ?? part.entries.length, 'work cited', 'works cited')}`;
-  // The shelf as it is listed, parents included: a filed parent is a ledger
-  // of its own, so it is one of the ledgers the subtitle counts.
-  const kept = shelfLedgers().filter((k) => !INDEXED.some((e) => sameAddresses(e.addresses, k.addresses)));
-  return `Keepers, not chapters · ${count(INDEXED.length + kept.length, 'ledger', 'ledgers')}`;
+  // The ledgers leaf says nothing under its name: its groups head themselves.
+  return '';
 }
 
 // Where a leaf's ▾ goes: a volume's contents descends onto the volume's own
@@ -689,8 +689,21 @@ function renderAppendix(part) {
   // holding every member beneath it -- rather than a heading over them
   // (btc-index.js's shelfLedgers says why the Coldcard hack settles that).
   const kept = shelfLedgers().filter((k) => !INDEXED.some((e) => sameAddresses(e.addresses, k.addresses)));
-  for (const l of INDEXED) toc.append(ledgerEl(l, false));
-  for (const l of kept) toc.append(ledgerEl(l, true));
+  // Three groups, each beneath a heading of its own and stepped in from it --
+  // the heading a reader's filed keeps stand under: the reader's own keeps
+  // first (anything they filed under a name of their own a step further),
+  // then the book's curated shelf, then each group the book files its rows
+  // under (the mining pools). An empty group raises no heading.
+  const group = (label, ledgers, isKept) => {
+    if (!ledgers.length) return;
+    toc.append(fileHead(label, 0));
+    for (const l of ledgers) toc.append(ledgerEl({ ...l, depth: (l.depth || 0) + 1 }, isKept));
+  };
+  group('Bookmarked', kept, true);
+  group('Curated', INDEXED.filter((e) => !e.shelf), false);
+  for (const shelf of [...new Set(INDEXED.filter((e) => e.shelf).map((e) => e.shelf))]) {
+    group(shelf, INDEXED.filter((e) => e.shelf === shelf), false);
+  }
 }
 
 // A ledger row. These take the dash the unresolved rows take, and for a
@@ -740,6 +753,8 @@ function ledgerEl(ledger, isKept) {
     ? `Unnamed ledger · ${ledger.addresses.length} passages`
     : 'Unnamed ledger';
   t.append(document.createTextNode(ledger.leaf || ledger.name || ledger.title || unnamed));
+  // Whose reading a filed curated row is (a pool's payout addresses, say).
+  if (ledger.said) row.title = ledger.said;
   const r = document.createElement('span');
   r.className = 'toc-ref none';
   r.textContent = '—';
@@ -906,7 +921,7 @@ function render() {
   // read. The opening query was copied at load, so rewriting it can't
   // disturb which leaf a still-growing run is aiming for.
   try {
-    history.replaceState(null, '', `${location.pathname}?${leafQuery(leaf)}`);
+    history.replaceState(null, '', withChain(`${location.pathname}?${leafQuery(leaf)}`));
   } catch (_) { /* unavailable */ }
   toc.replaceChildren();
   ensureLive();   // arriving at a leaf is what asks for its own figures
@@ -1028,7 +1043,7 @@ function turnTo(step, dir, axis = 'x') {
 // destination finishes the entrance on arrival.
 function leavePage(href, transform, flag, value = '1') {
   try { sessionStorage.setItem(flag, value); } catch (_) {}
-  const go = () => { location.href = href; };
+  const go = () => { location.href = withChain(href); };
   if (REDUCED_MOTION) { go(); return; }
   document.body.style.transition = 'transform .2s linear';
   document.body.style.transform = transform;
