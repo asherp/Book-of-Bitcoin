@@ -180,6 +180,7 @@ import { allProofs, citeOf, leafOf, estimatedDate, minedDate } from './btc-proof
 import { readingsOf } from './btc-commentary.js';
 
 import { minesForContents, largestMines, networkHashrate, formatHashrate } from './btc-mines.js';
+import { POOL_SHELF } from './btc-pool-registry.js';
 import { readQueue, buildQueue, MVB } from './btc-mempool.js';
 import { NET, nsKey, withChain } from './btc-network.js';
 import { INDEXED, keptLedgers, sameAddresses, shelfLedgers } from './btc-index.js';
@@ -684,25 +685,70 @@ function renderAppendix(part) {
     else toc.append(saying('The proofs are still being read — or could not be. The register itself is one turn down, and a proof of your own can be dropped there either way.'));
     return;
   }
+  // Three groups, each beneath a heading of its own and stepped in from it --
+  // the heading a reader's filed keeps stand under: the reader's own keeps
+  // first (anything they filed under a name of their own a step further),
+  // then the book's curated shelf, then the mining pools. An empty group
+  // raises no heading.
+  const curated = INDEXED.filter((e) => !e.shelf);
+  const pools = INDEXED.filter((e) => e.shelf === POOL_SHELF);
+  const ranked = largestPools(pools);
   // The reader's shelf as they filed it: a slash in a name they typed nests
   // the rows, and a parent is a ledger in its own right -- an openable row
   // holding every member beneath it -- rather than a heading over them
   // (btc-index.js's shelfLedgers says why the Coldcard hack settles that).
-  const kept = shelfLedgers().filter((k) => !INDEXED.some((e) => sameAddresses(e.addresses, k.addresses)));
-  // Three groups, each beneath a heading of its own and stepped in from it --
-  // the heading a reader's filed keeps stand under: the reader's own keeps
-  // first (anything they filed under a name of their own a step further),
-  // then the book's curated shelf, then each group the book files its rows
-  // under (the mining pools). An empty group raises no heading.
+  // A keep is left out only where a row the leaf LISTS already opens the same
+  // account; a keep matching a pool too small to be listed stays theirs.
+  const listed = [...curated, ...(ranked ? ranked.listed : [])];
+  const kept = shelfLedgers().filter((k) => !listed.some((e) => sameAddresses(e.addresses, k.addresses)));
   const group = (label, ledgers, isKept) => {
     if (!ledgers.length) return;
     toc.append(fileHead(label, 0));
     for (const l of ledgers) toc.append(ledgerEl({ ...l, depth: (l.depth || 0) + 1 }, isKept));
   };
   group('Bookmarked', kept, true);
-  group('Curated', INDEXED.filter((e) => !e.shelf), false);
-  for (const shelf of [...new Set(INDEXED.filter((e) => e.shelf).map((e) => e.shelf))]) {
-    group(shelf, INDEXED.filter((e) => e.shelf === shelf), false);
+  group('Curated', curated, false);
+  if (pools.length) poolsGroup(pools, ranked);
+}
+
+// The mining pools, as the Mines leaf ranks them: the pools the last window
+// of chapters shows at or above its floor (largestMines, btc-mines.js), most
+// chapters first, each by its ledger -- mempool.space's attribution, the same
+// reading that leaf credits. Null until the ranking has landed, or where it
+// could not be had. A large pool with no ledger (no payout address on this
+// chain) has nothing to open and is not listed.
+function largestPools(pools) {
+  if (!minesRead) return null;
+  const byName = new Map(pools.map((l) => [l.title.toLowerCase(), l]));
+  const listed = largestMines(minesRead).mines
+    .filter((m) => m.named)
+    .map((m) => byName.get(m.name.toLowerCase()))
+    .filter(Boolean);
+  return { listed, rest: pools.length - listed.length };
+}
+function poolsGroup(pools, ranked) {
+  toc.append(fileHead(POOL_SHELF, 0));
+  if (!ranked) {
+    toc.append(saying(minesReadDone
+      ? 'The pools could not be ranked just now. Every pool\'s ledger is one turn down, on the Ledgers page.'
+      : 'The largest pools are listed once the last window of chapters is counted.'));
+    return;
+  }
+  for (const l of ranked.listed) toc.append(ledgerEl({ ...l, depth: 1 }, false));
+  // As on the Mines leaf, a cap that said nothing would read as "these are all
+  // of them": the rest are one turn down, and this row says so and opens them.
+  if (ranked.rest > 0) {
+    const more = document.createElement('a');
+    more.className = 'toc-entry under-book projected filed';
+    more.style.setProperty('--file-depth', '1');
+    more.href = withChain('./bitcoin-ledger.html');
+    more.title = 'Open the Ledgers page, which holds every pool\'s ledger';
+    const t = document.createElement('span'); t.className = 'toc-title';
+    // With nothing listed above it, "and" would promise rows that are not there.
+    t.textContent = ranked.listed.length ? `and ${ranked.rest} smaller` : `${ranked.rest} pools, none above one per cent`;
+    const r = document.createElement('span'); r.className = 'toc-ref';
+    more.append(t, r);
+    toc.append(more);
   }
 }
 
@@ -1308,10 +1354,29 @@ async function loadQueue() {
 // stay this rare: a reader who never opens Appendix I never asks for a mine.
 let minesAsked = false;
 let queueAsked = false;
+let poolsAsked = false;
 function ensureLive() {
   const kind = leaves()[at]?.part?.kind;
   if (kind === 'mines' && !minesAsked) { minesAsked = true; loadMines(); }
   if (kind === 'mempool' && !queueAsked) { queueAsked = true; loadQueue(); }
+  // The Ledgers leaf lists the largest pools by the same ranking.
+  if (kind === 'ledgers' && !poolsAsked) { poolsAsked = true; readMinesOnce().then(() => render()); }
+}
+
+// The window's ranking of mines, asked once and shared by the two leaves that
+// list pools -- the Mines leaf and the Ledgers leaf's Mining pools group -- so
+// a reader who opens both pays for one reading. `minesRead` holds it once it
+// lands (null where none could be had); `minesReadDone` says it has settled.
+let minesRead = null;
+let minesReadDone = false;
+let minesReadPromise = null;
+function readMinesOnce() {
+  minesReadPromise ??= (async () => {
+    try { minesRead = await minesForContents(await tipHeight()); } catch { minesRead = null; }
+    minesReadDone = true;
+    return minesRead;
+  })();
+  return minesReadPromise;
 }
 
 // The mines, named as cheaply as they can be named (btc-mines.js): the
@@ -1326,7 +1391,7 @@ async function loadMines() {
     minesSummary = minesSummary ? `${rate} · ${minesSummary}` : rate;
     render();
   }).catch(() => { /* the leaf stands without it */ });
-  const read = await minesForContents(await tipHeight()).catch(() => null);
+  const read = await readMinesOnce();
   if (!read) return;                                // nothing listed; the shelf is one turn down
   const { mines, rest } = largestMines(read);
   if (!mines.length) return;
