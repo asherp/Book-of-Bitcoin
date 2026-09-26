@@ -128,3 +128,12 @@ test('a reference link carries its txid unseen, and the book seats it only where
   const proofPage = await read('bitcoin-proof.html');
   assert.equal((proofPage.match(/\$\{txidHint\(proof\.place\)\}/g) || []).length, 2);
 });
+
+test('the tip takes no slot from a section\'s block, header and bytes', () => {
+  assert.match(book, /esploraFetch\(`\$\{ESPLORA\}\/blocks\/tip\/height`, undefined, \{ urgent: true \}\)/);
+  assert.match(book, /if \(!urgent\) active\+\+;/);
+  assert.match(book, /if \(!urgent\) active--;/);
+  assert.match(book, /if \(urgent\) job\(\);\n    else \{ queue\.push\(job\); pump\(\); \}/);
+  // Only the tip jumps the cap; the margin's bursts still queue under it.
+  assert.equal((book.match(/urgent: true/g) || []).length, 1);
+});
