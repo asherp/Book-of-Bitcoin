@@ -2421,6 +2421,25 @@ const citedHash = (txid) => {
   return p ? p.then((c) => c?.hash ?? null, () => null) : Promise.resolve(null);
 };
 
+// A link from another page that names a transaction by id (?txid=, a contents
+// row's) opens the way a citation does. Its place comes from resolvePlacement
+// -- the archive first, where the contents page banks the place it printed,
+// hash and all -- and its bytes are asked for at once, beside the place, so
+// the section opens by block hash with the txid seated (goToSection). This
+// replaces the old landing's serial walk: the id tried as a block hash, then
+// the transaction's whole /tx JSON beside its merkle proof, then the block,
+// then the bytes. A transaction with no settled place (unmined, or a place
+// that could not be read) opens through openLookup as before, which knows
+// the queue's seats and says what went wrong.
+async function openTxid(txid) {
+  const id = String(txid || '').trim().toLowerCase();
+  if (!/^[0-9a-f]{64}$/.test(id)) return openLookup(id);
+  loadTxHex(id).catch(() => {});
+  const place = await resolvePlacement(id).catch(() => null);
+  if (!place || place.height == null || place.pos == null) return openLookup(id);
+  return goToSection(place.height, place.pos, null, id);
+}
+
 // The same move, for a section with no settled coordinate to name it by: a
 // draft's seat shifts under the queue, so the transaction is opened by the
 // one name that does not (openLookup resolves an unmined txid through the
@@ -8651,7 +8670,7 @@ if (pParam) {
   }).catch(() => { /* the lookup's own error handling has the page */ });
 } else if (txidParam) {
   const outRaw = parseInt(params.get('out'), 10);
-  Promise.resolve(openLookup(txidParam)).then(async () => {
+  Promise.resolve(openTxid(txidParam)).then(async () => {
     if (Number.isFinite(outRaw)) $(`out-${outRaw}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     await landOnWitness(params.get('wit'));
   }).catch(() => { /* the lookup's own error handling has the page */ });

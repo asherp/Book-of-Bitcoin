@@ -72,3 +72,20 @@ test('the archive banks seats', () => {
   assert.match(store, /seats: \d+,/);
   assert.match(store, /indexedDB\.open\(DB_NAME, 4\)/);
 });
+
+test('a contents row naming a transaction opens the way a citation does', async () => {
+  const contents = await readFile(new URL('../web/bitcoin-contents.html', import.meta.url), 'utf8');
+  // The book's ?txid= landing places the transaction (archive first) and
+  // opens it seated, its bytes asked for beside the place.
+  assert.match(book, /Promise\.resolve\(openTxid\(txidParam\)\)/);
+  const m = /async function openTxid\(txid\) \{[\s\S]*?\n\}/.exec(book);
+  assert.ok(m, 'the book no longer has a seated ?txid= landing');
+  assert.match(m[0], /loadTxHex\(id\)/);
+  assert.match(m[0], /resolvePlacement\(id\)/);
+  assert.match(m[0], /goToSection\(place\.height, place\.pos, null, id\)/);
+  // The contents page banks the confirming block's hash with the place it
+  // prints, where resolvePlacement reads it.
+  assert.match(contents, /\/tx\/\$\{id\}\/status/);
+  assert.match(contents, /storePut\('placements', id, entry\)/);
+  assert.doesNotMatch(contents, /storePut\('placements', \w+(\.hex)?, \{ height: mp\.block_height, pos: mp\.pos \}\)/, 'a txid placement banked without its hash');
+});
