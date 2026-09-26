@@ -1454,6 +1454,7 @@ import { blockWork, workBetween, formatHashes } from './btc-chainwork.js';
 import { loadNotables, places, placeTitle, blocksEta, appendix } from './btc-contents.js';
 import { queueLabel } from './btc-mempool.js';
 import { NET, NETWORKS, nsKey, switchNetwork, withChain } from './btc-network.js';
+import { NOTABLE_SEATS } from './btc-notable-seats.js';
 import { toSubscript } from './btc-sigla.js';
 import { NOTATION_HTML } from './btc-notation.js';
 import { transactionTemplates } from './btc-templates.js';
@@ -2165,6 +2166,7 @@ function resolveCitation(txid) {
 const placementCache = new Map();   // txid -> Promise<{ height, pos, hash }>
 function resolvePlacement(txid) {
   if (citationCache.has(txid)) return citationCache.get(txid);
+  if (!placementCache.has(txid) && curatedPlaceOf.get(txid)) placementCache.set(txid, Promise.resolve(curatedPlaceOf.get(txid)));
   if (!placementCache.has(txid)) {
     placementCache.set(txid, (async () => {
       const kept = (await storeGet('placements', txid)) || (await storeGet('citations', txid));
@@ -2814,6 +2816,29 @@ async function loadBlockMeta(hash, { withTxids = true } = {}) {
 // within 6 blocks of the tip are never cached, so a reorg can't pin a stale
 // mapping (past 6 confirmations a reorg is not a practical concern).
 const hashByHeight = new Map();
+
+// Every curated section's seat, vendored (btc-notable-seats.js, written by
+// tools/fetch-notable-seats.mjs): its height, index, txid and block hash. Most
+// contents rows name a section by position alone, so without these a row
+// opened height -> hash -> block -> the txid at that seat -> the bytes. Seeded
+// into the three memos those steps read -- the height's hash, the seat's
+// txid, the txid's placement -- every road into a curated section (a contents
+// row, ?ref=, the page foot's walk, an appendix door) opens it the way a
+// followed citation does: the block by hash and the bytes asked for together.
+// In memory only; nothing is written to the archive for them. Mainnet only,
+// as the curated layer is, and every seat is buried six deep or more.
+const curatedPlaceOf = new Map();   // txid -> { height, pos, hash }
+if (NET.curated) {
+  for (const [height, index, txid, hash] of NOTABLE_SEATS) {
+    if (!hashByHeight.has(height)) hashByHeight.set(height, hash);
+    const key = `${hash}:${index}`;
+    if (!seatCache.has(key)) seatCache.set(key, Promise.resolve(txid));
+    // The BIP30 coinbases share a txid across two seats; that txid's merkle
+    // proof names one of them, so it is left to the network rather than
+    // guessed.
+    curatedPlaceOf.set(txid, curatedPlaceOf.has(txid) ? null : { height, pos: index, hash });
+  }
+}
 async function resolveBlockHash(height) {
   const h = Number(height);
   if (hashByHeight.has(h)) return hashByHeight.get(h);
@@ -6270,6 +6295,12 @@ async function openLookup(input, index = -1) {
       // the bytes asked for together. A block already in hand -- a citation
       // opening its section lands here with the core loaded -- asks nothing
       // more.
+      // A curated txid's place is vendored, so it opens at once, no probe.
+      if (curatedPlaceOf.get(hex)) {
+        const c = curatedPlaceOf.get(hex);
+        await goToSection(c.height, c.pos, null, hex);
+        return;
+      }
       const placeP = blockCoreCache.has(hex) ? null : resolvePlacement(hex).catch(() => null);
       const meta = await loadBlockMeta(hex, { withTxids: false }).catch(() => null);
       const place = meta ? null : await placeP;
