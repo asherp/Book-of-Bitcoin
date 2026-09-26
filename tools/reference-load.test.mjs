@@ -89,3 +89,13 @@ test('a contents row naming a transaction opens the way a citation does', async 
   assert.match(contents, /storePut\('placements', id, entry\)/);
   assert.doesNotMatch(contents, /storePut\('placements', \w+(\.hex)?, \{ height: mp\.block_height, pos: mp\.pos \}\)/, 'a txid placement banked without its hash');
 });
+
+test('the prev/next contents walk opens a txid stop seated', () => {
+  const step = /async function contentsStep\(direction\) \{[\s\S]*?\n\}/.exec(book);
+  assert.ok(step, 'contentsStep is gone');
+  assert.match(step[0], /goToSection\(t\.height, index, null, txid\)/);
+  const kick = /function kickTxPlacements\(\) \{[\s\S]*?\n\}/.exec(book);
+  assert.ok(kick, 'kickTxPlacements is gone');
+  assert.match(kick[0], /resolvePlacement\(id\)/, 'the walk places txids with their block hash');
+  assert.doesNotMatch(kick[0], /merkle-proof/);
+});

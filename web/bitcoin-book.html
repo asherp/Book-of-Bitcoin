@@ -5669,7 +5669,7 @@ function renderChapter(para) {
 // archive, the contents page uses -- so those places join the walk as they
 // resolve, offline and for free on every visit after the first.
 const GENESIS_COINBASE = '4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b';
-const txPlacements = new Map();   // txid -> { height, pos }
+const txPlacements = new Map();   // txid -> { height, pos, hash? }
 let txPlacementsKicked = false;
 function kickTxPlacements() {
   if (txPlacementsKicked) return;
@@ -5677,14 +5677,12 @@ function kickTxPlacements() {
   const hexes = [...new Set(places().filter((p) => !p.address && !p.script && /^[0-9a-f]{64}$/i.test(p.id)).map((p) => p.id.toLowerCase()))];
   Promise.all(hexes.map(async (id) => {
     if (id === GENESIS_COINBASE) { txPlacements.set(id, { height: 0, pos: 0 }); return; }
+    // resolvePlacement: the archive first, else the merkle proof with the
+    // confirming block's hash beside it -- banked, and the txid seated, so
+    // stepping onto this stop opens it the way a citation opens (goToSection).
     try {
-      const kept = await storeGet('placements', id);
-      if (kept) { txPlacements.set(id, kept); return; }
-      const res = await esploraFetch(`${ESPLORA}/tx/${id}/merkle-proof`);
-      if (!res.ok) return;
-      const mp = await res.json();
-      txPlacements.set(id, { height: mp.block_height, pos: mp.pos });
-      storePut('placements', id, { height: mp.block_height, pos: mp.pos });
+      const mp = await resolvePlacement(id);
+      if (mp && mp.height != null && mp.pos != null) txPlacements.set(id, mp);
     } catch { /* unresolved: the walk skips this place until a later visit */ }
   })).then(() => { if (state) labelNav(); });   // re-label with the walk complete
 }
@@ -5763,7 +5761,12 @@ async function contentsStep(direction) {
     if (t.tip) { await openLookup('-1'); return; }
     const p = t.place;
     const index = p.page === 'volume' ? -3 : p.page === 'book' ? -2 : t.rank;
-    await openLookup(String(t.height), index);
+    // A stop named by its txid is a section whose transaction is already
+    // known, so it opens seated, as a followed citation does: the block by
+    // hash and the bytes together, with no height lookup and no seat asked.
+    const txid = /^[0-9a-f]{64}$/i.test(p.id) ? p.id.toLowerCase() : null;
+    if (txid && index >= 0) await goToSection(t.height, index, null, txid);
+    else await openLookup(String(t.height), index);
     if (p.out != null) $(`out-${p.out}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     else if (p.wit != null) await landOnWitness(footnoteMark(p.wit));
   } catch (e) { setStatus(e.message || 'Failed to load.', 'err'); }
