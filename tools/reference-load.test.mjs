@@ -75,14 +75,12 @@ test('the archive banks seats', () => {
 
 test('a contents row naming a transaction opens the way a citation does', async () => {
   const contents = await readFile(new URL('../web/bitcoin-contents.html', import.meta.url), 'utf8');
-  // The book's ?txid= landing places the transaction (archive first) and
-  // opens it seated, its bytes asked for beside the place.
-  assert.match(book, /Promise\.resolve\(openTxid\(txidParam\)\)/);
-  const m = /async function openTxid\(txid\) \{[\s\S]*?\n\}/.exec(book);
-  assert.ok(m, 'the book no longer has a seated ?txid= landing');
-  assert.match(m[0], /loadTxHex\(id\)/);
-  assert.match(m[0], /resolvePlacement\(id\)/);
-  assert.match(m[0], /goToSection\(place\.height, place\.pos, null, id\)/);
+  // Any 64-hex lookup (?txid=, the search box, a draft that confirms) asks
+  // for the transaction's place beside the block probe, and a placed
+  // transaction opens seated, as a citation does.
+  assert.match(book, /Promise\.resolve\(openLookup\(txidParam\)\)/);
+  assert.match(book, /const placeP = blockCoreCache\.has\(hex\) \? null : resolvePlacement\(hex\)/);
+  assert.match(book, /await goToSection\(place\.height, place\.pos, null, hex\)/);
   // The contents page banks the confirming block's hash with the place it
   // prints, where resolvePlacement reads it.
   assert.match(contents, /\/tx\/\$\{id\}\/status/);
@@ -98,4 +96,10 @@ test('the prev/next contents walk opens a txid stop seated', () => {
   assert.ok(kick, 'kickTxPlacements is gone');
   assert.match(kick[0], /resolvePlacement\(id\)/, 'the walk places txids with their block hash');
   assert.doesNotMatch(kick[0], /merkle-proof/);
+});
+
+test('a section landing asks for its seat beside the block, not after it', () => {
+  const m = /async function loadHeightOrProjected\(height, index, tipP\) \{[\s\S]*?\n\}/.exec(book);
+  assert.ok(m, 'loadHeightOrProjected is gone');
+  assert.match(m[0], /if \(index >= 0\) txidAt\(\{ hash \}, index\)\.then\(loadTxHex\)/);
 });
