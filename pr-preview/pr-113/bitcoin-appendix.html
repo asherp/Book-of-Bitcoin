@@ -874,7 +874,7 @@ const mineTitle = (slug) => (slug === MINES_UNATTRIBUTED ? 'Unattributed'
 const insHref = (e) => `./bitcoin-appendix.html?part=inscriptions&ins=${e.reveal}`;
 const insItemHref = (e, n) => `${insHref(e)}&item=${n}`;
 const insRef = (e) => `${wholeRef(Number(e.id), e.index + 1)}.${footnoteMark(e.wit)}`;
-const insDoor = (e) => `./bitcoin-book.html?block=${e.id}&index=${e.index}&wit=${footnoteMark(e.wit)}`;
+const insDoor = (e) => `./bitcoin-book.html?block=${e.id}&index=${e.index}&wit=${footnoteMark(e.wit)}&txid=${e.reveal}`;
 
 // An appendix leaf lists nothing: what it gathers lies below it, and below
 // it is the first chapter of what it gathers, read in the book like any
@@ -1871,7 +1871,7 @@ if (ins) {
     const mp = await overMirrors(`/tx/${txid}/merkle-proof`);
     if (!mp || !Number.isFinite(mp.block_height) || !Number.isFinite(mp.pos)) return null;
     let ref = wholeRef(mp.block_height, mp.pos + 1);
-    let href = `./bitcoin-book.html?block=${mp.block_height}&index=${mp.pos}`;
+    let href = `./bitcoin-book.html?block=${mp.block_height}&index=${mp.pos}&txid=${txid}`;
     if (env) {
       const wn = (tx.vin || []).slice(0, env.vin + 1).filter((v) => (v.witness || []).length).length;
       if (wn > 0) { ref += `.${footnoteMark(wn)}`; href += `&wit=${footnoteMark(wn)}`; }

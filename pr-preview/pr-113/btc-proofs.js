@@ -80,8 +80,12 @@ export const attests = async (proof, subjectBytes) =>
 // caller's own rule that a falsy section names no section.)
 export const citeOf = (place) => citation(place.height, place.section || null, place.out ?? null);
 export const hrefOf = (place) => (place.section
-  ? `./bitcoin-book.html?ref=${latinRefOf(place.height, place.section, place.out ?? undefined)}`
+  ? `./bitcoin-book.html?ref=${latinRefOf(place.height, place.section, place.out ?? undefined)}${txidHint(place)}`
   : `./bitcoin-book.html?block=${place.height}`);
+// The section's txid, where the proof's merkle path read one, rides the link
+// as metadata the reader never sees: the book opens the section seated with
+// it, once its own placement agrees (bitcoin-book.html openHinted).
+export const txidHint = (place) => (/^[0-9a-f]{64}$/.test(place.txid || '') ? `&txid=${place.txid}` : '');
 // Reading order, the same order the book itself is in: by chapter, then by
 // section within it. A file's own date has nothing to do with it — where a
 // proof landed is the only order the chain knows.
