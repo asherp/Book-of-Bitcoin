@@ -2321,7 +2321,7 @@ async function resolveForwardCitations(txid, cells, gen, spks = []) {
         const witMark = witnessed ? `.${footnoteMark(sp.vin + 1)}` : '';
         const link = document.createElement('a');
         link.className = 'cite-section-link';
-        link.href = `?block=${height}&index=${pos}`;
+        link.href = `?block=${height}&index=${pos}&txid=${sp.txid}`;
         link.textContent = `${toRoman(volume)} β${book} ■${chapter} §${pos + 1}${witMark}`;
         link.title = `spent by input ${sp.vin + 1} of ${sp.txid}${witMark ? ` — its witness reads at footnote ${witMark.slice(1)}` : ''}`;
         link.addEventListener('click', (e) => { e.preventDefault(); goToSection(height, pos, `in-${sp.vin}`, sp.txid); });
@@ -2362,7 +2362,7 @@ async function citeDraftSpender(cell, sp, gen) {
 function renderCitation(citeBody, height, pos, vout, txid = null) {
   const link = document.createElement('a');
   link.className = 'cite-section-link';
-  link.href = `?block=${height}&index=${pos}`;
+  link.href = `?block=${height}&index=${pos}${txid ? `&txid=${txid}` : ''}`;
   // A citation into a chapter past the tip wears the expected mark □ (see
   // referenceOf): the section it names holds only as long as the queue does.
   link.textContent = `${referenceOf(height)} §${pos + 1}.${vout}`;
@@ -2420,6 +2420,25 @@ const citedHash = (txid) => {
   const p = placementCache.get(txid) || citationCache.get(txid);
   return p ? p.then((c) => c?.hash ?? null, () => null) : Promise.resolve(null);
 };
+
+// A link that names a section by reference (?ref=, ?block=&index=) may also
+// carry that section's txid (&txid=), metadata the linking page held and the
+// reader never sees: the reference is still what the link prints and what the
+// address bar shows once the page opens (updateUrl). With it the section opens
+// as a followed citation does (goToSection) -- the bytes asked for at once
+// beside the place, then the block by hash with the txid seated. The hint is
+// a claim, not a fact: it is seated only where the book's own placement of
+// that txid (resolvePlacement: the archive, else its merkle proof) names the
+// very section the reference does, and otherwise the reference opens as
+// written, the hint dropped.
+async function openHinted(height, index, txid) {
+  const id = String(txid || '').trim().toLowerCase();
+  if (!/^[0-9a-f]{64}$/.test(id) || !(index >= 0) || !/^\d+$/.test(String(height))) return openLookup(String(height), index);
+  loadTxHex(id).catch(() => {});
+  const place = await resolvePlacement(id).catch(() => null);
+  if (place && place.height === Number(height) && place.pos === index) return goToSection(place.height, place.pos, null, id);
+  return openLookup(String(height), index);
+}
 
 // The same move, for a section with no settled coordinate to name it by: a
 // draft's seat shifts under the queue, so the transaction is opened by the
@@ -8668,13 +8687,13 @@ if (pParam) {
   // so landOnWitness can tell §n.a from §n.A. Sending it as a bare number, or
   // as footnoteMark's always-lowercase letter, threw that away.
   const pWit = pParam.wit;
-  Promise.resolve(openLookup(String(pParam.height), pParam.index)).then(async () => {
+  Promise.resolve(openHinted(pParam.height, pParam.index, txidParam)).then(async () => {
     if (pParam.index >= 0) {
       if (pOut != null) $(`out-${pOut}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       if (pWit != null) await landOnWitness(inputMark(pWit, Boolean(pParam.sig)));
     }
   }).catch(() => { /* the lookup's own error handling has the page */ });
-} else if (txidParam) {
+} else if (txidParam && !blockParam) {
   const outRaw = parseInt(params.get('out'), 10);
   Promise.resolve(openLookup(txidParam)).then(async () => {
     if (Number.isFinite(outRaw)) $(`out-${outRaw}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -8686,7 +8705,7 @@ if (pParam) {
   // &out / &wit brings that coordinate to the top once the section is open
   // (the landing a curated row's link makes).
   const outRaw = parseInt(params.get('out'), 10);
-  Promise.resolve(openLookup(blockParam, indexParam)).then(async () => {
+  Promise.resolve(openHinted(blockParam, indexParam, txidParam)).then(async () => {
     if (indexParam >= 0) {
       if (Number.isFinite(outRaw)) $(`out-${outRaw}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       await landOnWitness(params.get('wit'));
