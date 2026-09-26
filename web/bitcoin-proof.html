@@ -228,7 +228,7 @@ mountLangMenu();  // …with the Language item, which any page can now set
 import { loadNotables, appendix } from './btc-contents.js';
 import { partLabel } from './btc-notables.js';
 await loadNotables();
-import { proofByDigest, ladderOf, citeOf, attests, checksumLines, PROOF_DIR } from './btc-proofs.js';
+import { proofByDigest, ladderOf, citeOf, attests, checksumLines, PROOF_DIR, txidHint } from './btc-proofs.js';
 import { readableUtf8Text } from './btc-tx.js';
 import { readingsOf, resolveCommentary, commentaryHtml } from './btc-commentary.js';
 import { reference, latinRefOf } from './btc-citation.js';
@@ -323,7 +323,7 @@ function render(proof) {
     }
     const isRoot = !!rung.isRoot;
     const onChain = rung.kind === 'transaction'
-      ? { href: `./bitcoin-book.html?ref=${latinRefOf(proof.place.height, section, rung.out)}`,
+      ? { href: `./bitcoin-book.html?ref=${latinRefOf(proof.place.height, section, rung.out)}${txidHint(proof.place)}`,
           text: `${reference(proof.place.height)} §${section}${rung.out == null ? '' : `.${rung.out}`}`,
           title: rung.out == null ? 'the transaction this commitment was buried in'
             : `output ${rung.out} of this transaction — the script the commitment sits in` }
@@ -354,7 +354,7 @@ function render(proof) {
   subjectInline(proof);
   commentary(proof);
   turn('./bitcoin-appendix.html?part=proofs', `‹ ${backLabel}`);
-  turn(`./bitcoin-book.html?ref=${latinRefOf(proof.place.height, section)}`, `${citeOf(proof.place)} ›`, true);
+  turn(`./bitcoin-book.html?ref=${latinRefOf(proof.place.height, section)}${txidHint(proof.place)}`, `${citeOf(proof.place)} ›`, true);
 }
 
 // One paragraph: the margin, then the body. A paragraph with nothing on chain

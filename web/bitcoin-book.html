@@ -1454,6 +1454,7 @@ import { blockWork, workBetween, formatHashes } from './btc-chainwork.js';
 import { loadNotables, places, placeTitle, blocksEta, appendix } from './btc-contents.js';
 import { queueLabel } from './btc-mempool.js';
 import { NET, NETWORKS, nsKey, switchNetwork, withChain } from './btc-network.js';
+import { NOTABLE_SEATS } from './btc-notable-seats.js';
 import { toSubscript } from './btc-sigla.js';
 import { NOTATION_HTML } from './btc-notation.js';
 import { transactionTemplates } from './btc-templates.js';
@@ -1787,9 +1788,9 @@ const esploraFetch = (() => {
     return url;
   };
 
-  return (url, opts) => new Promise((resolve, reject) => {
-    queue.push(async () => {
-      active++;
+  return (url, opts, { urgent = false } = {}) => new Promise((resolve, reject) => {
+    const job = async () => {
+      if (!urgent) active++;
       try {
         // Visit each mirror once, starting from the one that last served us.
         const order = ESPLORA_MIRRORS.map((_, i) => (preferred + i) % ESPLORA_MIRRORS.length);
@@ -1831,11 +1832,17 @@ const esploraFetch = (() => {
         // Every mirror failed with a network-level error.
         reject(lastErr || new Error('All Esplora mirrors failed'));
       } finally {
-        active--;
+        if (!urgent) active--;
         pump();
       }
-    });
-    pump();
+    };
+    // An urgent request starts at once and takes no slot: the one tiny
+    // lookup every page turn waits on (the tip), which would otherwise hold
+    // one of the three the section's block, header and bytes are asked in.
+    // It keeps the retry and failover every request gets. Everything else
+    // queues under the cap.
+    if (urgent) job();
+    else { queue.push(job); pump(); }
   });
 })();
 
@@ -2165,6 +2172,7 @@ function resolveCitation(txid) {
 const placementCache = new Map();   // txid -> Promise<{ height, pos, hash }>
 function resolvePlacement(txid) {
   if (citationCache.has(txid)) return citationCache.get(txid);
+  if (!placementCache.has(txid) && curatedPlaceOf.get(txid)) placementCache.set(txid, Promise.resolve(curatedPlaceOf.get(txid)));
   if (!placementCache.has(txid)) {
     placementCache.set(txid, (async () => {
       const kept = (await storeGet('placements', txid)) || (await storeGet('citations', txid));
@@ -2321,7 +2329,7 @@ async function resolveForwardCitations(txid, cells, gen, spks = []) {
         const witMark = witnessed ? `.${footnoteMark(sp.vin + 1)}` : '';
         const link = document.createElement('a');
         link.className = 'cite-section-link';
-        link.href = `?block=${height}&index=${pos}`;
+        link.href = `?block=${height}&index=${pos}&txid=${sp.txid}`;
         link.textContent = `${toRoman(volume)} β${book} ■${chapter} §${pos + 1}${witMark}`;
         link.title = `spent by input ${sp.vin + 1} of ${sp.txid}${witMark ? ` — its witness reads at footnote ${witMark.slice(1)}` : ''}`;
         link.addEventListener('click', (e) => { e.preventDefault(); goToSection(height, pos, `in-${sp.vin}`, sp.txid); });
@@ -2362,7 +2370,7 @@ async function citeDraftSpender(cell, sp, gen) {
 function renderCitation(citeBody, height, pos, vout, txid = null) {
   const link = document.createElement('a');
   link.className = 'cite-section-link';
-  link.href = `?block=${height}&index=${pos}`;
+  link.href = `?block=${height}&index=${pos}${txid ? `&txid=${txid}` : ''}`;
   // A citation into a chapter past the tip wears the expected mark □ (see
   // referenceOf): the section it names holds only as long as the queue does.
   link.textContent = `${referenceOf(height)} §${pos + 1}.${vout}`;
@@ -2420,6 +2428,25 @@ const citedHash = (txid) => {
   const p = placementCache.get(txid) || citationCache.get(txid);
   return p ? p.then((c) => c?.hash ?? null, () => null) : Promise.resolve(null);
 };
+
+// A link that names a section by reference (?ref=, ?block=&index=) may also
+// carry that section's txid (&txid=), metadata the linking page held and the
+// reader never sees: the reference is still what the link prints and what the
+// address bar shows once the page opens (updateUrl). With it the section opens
+// as a followed citation does (goToSection) -- the bytes asked for at once
+// beside the place, then the block by hash with the txid seated. The hint is
+// a claim, not a fact: it is seated only where the book's own placement of
+// that txid (resolvePlacement: the archive, else its merkle proof) names the
+// very section the reference does, and otherwise the reference opens as
+// written, the hint dropped.
+async function openHinted(height, index, txid) {
+  const id = String(txid || '').trim().toLowerCase();
+  if (!/^[0-9a-f]{64}$/.test(id) || !(index >= 0) || !/^\d+$/.test(String(height))) return openLookup(String(height), index);
+  loadTxHex(id).catch(() => {});
+  const place = await resolvePlacement(id).catch(() => null);
+  if (place && place.height === Number(height) && place.pos === index) return goToSection(place.height, place.pos, null, id);
+  return openLookup(String(height), index);
+}
 
 // The same move, for a section with no settled coordinate to name it by: a
 // draft's seat shifts under the queue, so the transaction is opened by the
@@ -2795,6 +2822,29 @@ async function loadBlockMeta(hash, { withTxids = true } = {}) {
 // within 6 blocks of the tip are never cached, so a reorg can't pin a stale
 // mapping (past 6 confirmations a reorg is not a practical concern).
 const hashByHeight = new Map();
+
+// Every curated section's seat, vendored (btc-notable-seats.js, written by
+// tools/fetch-notable-seats.mjs): its height, index, txid and block hash. Most
+// contents rows name a section by position alone, so without these a row
+// opened height -> hash -> block -> the txid at that seat -> the bytes. Seeded
+// into the three memos those steps read -- the height's hash, the seat's
+// txid, the txid's placement -- every road into a curated section (a contents
+// row, ?ref=, the page foot's walk, an appendix door) opens it the way a
+// followed citation does: the block by hash and the bytes asked for together.
+// In memory only; nothing is written to the archive for them. Mainnet only,
+// as the curated layer is, and every seat is buried six deep or more.
+const curatedPlaceOf = new Map();   // txid -> { height, pos, hash }
+if (NET.curated) {
+  for (const [height, index, txid, hash] of NOTABLE_SEATS) {
+    if (!hashByHeight.has(height)) hashByHeight.set(height, hash);
+    const key = `${hash}:${index}`;
+    if (!seatCache.has(key)) seatCache.set(key, Promise.resolve(txid));
+    // The BIP30 coinbases share a txid across two seats; that txid's merkle
+    // proof names one of them, so it is left to the network rather than
+    // guessed.
+    curatedPlaceOf.set(txid, curatedPlaceOf.has(txid) ? null : { height, pos: index, hash });
+  }
+}
 async function resolveBlockHash(height) {
   const h = Number(height);
   if (hashByHeight.has(h)) return hashByHeight.get(h);
@@ -3129,7 +3179,9 @@ async function exportPassage() {
 // The chain tip height, as plain text from Esplora. Opens the book at the most
 // recent chapter when the reader arrives without a specific target.
 async function loadTipHeight() {
-  const res = await esploraFetch(`${ESPLORA}/blocks/tip/height`);
+  // Urgent: every lookup awaits it before painting, and it must not hold one
+  // of the three slots the section's block, header and bytes are asked in.
+  const res = await esploraFetch(`${ESPLORA}/blocks/tip/height`, undefined, { urgent: true });
   if (!res.ok) throw new Error(`Esplora returned ${res.status}.`);
   return (await res.text()).trim();
 }
@@ -3697,7 +3749,13 @@ const liveProjection = (() => {
 // an unwritten book has no leaf to open.
 async function loadHeightOrProjected(height, index, tipP) {
   try {
-    return { meta: await loadBlockByHeight(height, { withTxids: false }) };
+    const hash = await resolveBlockHash(height);
+    // A section landing (?block=&index=, ?ref=, a resumed place) needs the
+    // seat's txid and its bytes as well as the block: asked for beside the
+    // block's core rather than after it, so showCurrentTx takes both from the
+    // memo. A seat past the block's end simply fails and is dropped.
+    if (index >= 0) txidAt({ hash }, index).then(loadTxHex).catch(() => {});
+    return { meta: await loadBlockMeta(hash, { withTxids: false }) };
   } catch (e) {
     const tip = await tipP;
     if (e && e.notFound && tip !== null && height > tip && index >= -1) {
@@ -5650,7 +5708,7 @@ function renderChapter(para) {
 // archive, the contents page uses -- so those places join the walk as they
 // resolve, offline and for free on every visit after the first.
 const GENESIS_COINBASE = '4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b';
-const txPlacements = new Map();   // txid -> { height, pos }
+const txPlacements = new Map();   // txid -> { height, pos, hash? }
 let txPlacementsKicked = false;
 function kickTxPlacements() {
   if (txPlacementsKicked) return;
@@ -5658,14 +5716,12 @@ function kickTxPlacements() {
   const hexes = [...new Set(places().filter((p) => !p.address && !p.script && /^[0-9a-f]{64}$/i.test(p.id)).map((p) => p.id.toLowerCase()))];
   Promise.all(hexes.map(async (id) => {
     if (id === GENESIS_COINBASE) { txPlacements.set(id, { height: 0, pos: 0 }); return; }
+    // resolvePlacement: the archive first, else the merkle proof with the
+    // confirming block's hash beside it -- banked, and the txid seated, so
+    // stepping onto this stop opens it the way a citation opens (goToSection).
     try {
-      const kept = await storeGet('placements', id);
-      if (kept) { txPlacements.set(id, kept); return; }
-      const res = await esploraFetch(`${ESPLORA}/tx/${id}/merkle-proof`);
-      if (!res.ok) return;
-      const mp = await res.json();
-      txPlacements.set(id, { height: mp.block_height, pos: mp.pos });
-      storePut('placements', id, { height: mp.block_height, pos: mp.pos });
+      const mp = await resolvePlacement(id);
+      if (mp && mp.height != null && mp.pos != null) txPlacements.set(id, mp);
     } catch { /* unresolved: the walk skips this place until a later visit */ }
   })).then(() => { if (state) labelNav(); });   // re-label with the walk complete
 }
@@ -5744,7 +5800,12 @@ async function contentsStep(direction) {
     if (t.tip) { await openLookup('-1'); return; }
     const p = t.place;
     const index = p.page === 'volume' ? -3 : p.page === 'book' ? -2 : t.rank;
-    await openLookup(String(t.height), index);
+    // A stop named by its txid is a section whose transaction is already
+    // known, so it opens seated, as a followed citation does: the block by
+    // hash and the bytes together, with no height lookup and no seat asked.
+    const txid = /^[0-9a-f]{64}$/i.test(p.id) ? p.id.toLowerCase() : null;
+    if (txid && index >= 0) await goToSection(t.height, index, null, txid);
+    else await openLookup(String(t.height), index);
     if (p.out != null) $(`out-${p.out}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     else if (p.wit != null) await landOnWitness(footnoteMark(p.wit));
   } catch (e) { setStatus(e.message || 'Failed to load.', 'err'); }
@@ -6233,10 +6294,32 @@ async function openLookup(input, index = -1) {
     } else if (/^[0-9a-f]{64}$/i.test(input)) {
       const hex = input.toLowerCase();
       setStatus(SPINNER_HTML + tr('fetching block…'));
+      // The id may name a block or a transaction, so both are asked at once:
+      // the block itself, and the transaction's place (resolvePlacement --
+      // the archive first, where the contents page banks what it printed,
+      // else its merkle proof and confirming block's hash, about a kilobyte).
+      // A placed transaction then opens the way a followed citation does
+      // (goToSection): its block by hash with the txid seated, the block and
+      // the bytes asked for together. A block already in hand -- a citation
+      // opening its section lands here with the core loaded -- asks nothing
+      // more.
+      // A curated txid's place is vendored, so it opens at once, no probe.
+      if (curatedPlaceOf.get(hex)) {
+        const c = curatedPlaceOf.get(hex);
+        await goToSection(c.height, c.pos, null, hex);
+        return;
+      }
+      const placeP = blockCoreCache.has(hex) ? null : resolvePlacement(hex).catch(() => null);
       const meta = await loadBlockMeta(hex, { withTxids: false }).catch(() => null);
+      const place = meta ? null : await placeP;
       if (meta) {
         state = { ...meta, index: clampIndex(index, meta) };
+      } else if (place && place.height != null && place.pos != null) {
+        await goToSection(place.height, place.pos, null, hex);
+        return;
       } else {
+        // Unmined, or unplaceable just now: the transaction's own record says
+        // which, and the queue may still seat it.
         setStatus(SPINNER_HTML + tr('locating transaction…'));
         let loc;
         try {
@@ -8643,13 +8726,13 @@ if (pParam) {
   // so landOnWitness can tell §n.a from §n.A. Sending it as a bare number, or
   // as footnoteMark's always-lowercase letter, threw that away.
   const pWit = pParam.wit;
-  Promise.resolve(openLookup(String(pParam.height), pParam.index)).then(async () => {
+  Promise.resolve(openHinted(pParam.height, pParam.index, txidParam)).then(async () => {
     if (pParam.index >= 0) {
       if (pOut != null) $(`out-${pOut}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       if (pWit != null) await landOnWitness(inputMark(pWit, Boolean(pParam.sig)));
     }
   }).catch(() => { /* the lookup's own error handling has the page */ });
-} else if (txidParam) {
+} else if (txidParam && !blockParam) {
   const outRaw = parseInt(params.get('out'), 10);
   Promise.resolve(openLookup(txidParam)).then(async () => {
     if (Number.isFinite(outRaw)) $(`out-${outRaw}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -8661,7 +8744,7 @@ if (pParam) {
   // &out / &wit brings that coordinate to the top once the section is open
   // (the landing a curated row's link makes).
   const outRaw = parseInt(params.get('out'), 10);
-  Promise.resolve(openLookup(blockParam, indexParam)).then(async () => {
+  Promise.resolve(openHinted(blockParam, indexParam, txidParam)).then(async () => {
     if (indexParam >= 0) {
       if (Number.isFinite(outRaw)) $(`out-${outRaw}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       await landOnWitness(params.get('wit'));

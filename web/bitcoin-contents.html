@@ -189,6 +189,7 @@ import { INDEXED, keptLedgers, sameAddresses, shelfLedgers } from './btc-index.j
 import { pathForest, pathSegments, pathLabel } from './btc-path.js';
 import { volumeBookChapter, toRoman, fromRoman, heightOf, expectedReference, footnoteMark, keepReference } from './btc-citation.js';
 import { storeGet, storePut } from './btc-store.js';
+import { NOTABLE_SEATS } from './btc-notable-seats.js';
 import { seedArchive } from './btc-seed.js';
 
 // The curated index and its appendix are read from notables.yaml and
@@ -285,15 +286,41 @@ async function resolvePlacement({ id, index, page, out = null }) {
     return height >= 0 ? placeOf(height, index ?? null) : null;
   }
   if (id === GENESIS_COINBASE) return placeOf(0, 0);
+  // A curated txid's place is vendored (btc-notable-seats.js): no merkle proof
+  // to ask for, and the book reads the same table when the row is followed.
+  // Mainnet only, as the curated layer is; a txid seated twice (the BIP30
+  // coinbases) is left to its proof.
+  if (NET.curated) {
+    const seats = NOTABLE_SEATS.filter((r) => r[2] === id);
+    if (seats.length === 1) return placeOf(seats[0][0], seats[0][1]);
+  }
   const kept = await storeGet('placements', id);
   if (kept) return placeOf(kept.height, kept.pos);
+  const mp = await placeTxid(id);
+  return mp && placeOf(mp.height, mp.pos);
+}
+
+// A transaction's place by its merkle proof, banked with the confirming
+// block's hash (/tx/:txid/status, asked for beside the proof). The book reads
+// the same archive entry when this page's row is followed: holding the hash,
+// it opens that block with the txid seated and asks for the block and the
+// transaction's bytes together -- the way it follows a citation -- rather
+// than looking the transaction up again. Null where no mirror could place it.
+async function placeTxid(id) {
   for (const base of ESPLORA_MIRRORS) {
     try {
-      const res = await fetch(`${base}/tx/${id}/merkle-proof`);
-      if (!res.ok) continue;
-      const mp = await res.json();
-      storePut('placements', id, { height: mp.block_height, pos: mp.pos });
-      return placeOf(mp.block_height, mp.pos);
+      const [mpRes, stRes] = await Promise.all([
+        fetch(`${base}/tx/${id}/merkle-proof`),
+        fetch(`${base}/tx/${id}/status`).catch(() => null),
+      ]);
+      if (!mpRes.ok) continue;
+      const mp = await mpRes.json();
+      const st = stRes && stRes.ok ? await stRes.json().catch(() => null) : null;
+      // A hash is kept only where the status names the proof's own block.
+      const hash = st && st.confirmed && st.block_height === mp.block_height ? st.block_hash : null;
+      const entry = { height: mp.block_height, pos: mp.pos, ...(hash ? { hash } : {}) };
+      storePut('placements', id, entry);
+      return entry;
     } catch { /* try the next mirror */ }
   }
   return null;
@@ -322,17 +349,8 @@ async function resolveBookmark(b) {
       }
     } catch { /* try the next mirror */ }
   }
-  for (const base of ESPLORA_MIRRORS) {
-    try {
-      const res = await fetch(`${base}/tx/${b.hex}/merkle-proof`);
-      if (res.ok) {
-        const mp = await res.json();
-        storePut('placements', b.hex, { height: mp.block_height, pos: mp.pos });
-        return placeOf(mp.block_height, mp.pos);
-      }
-    } catch { /* try the next mirror */ }
-  }
-  return null;
+  const mp = await placeTxid(b.hex);
+  return mp && placeOf(mp.height, mp.pos);
 }
 
 // The tail of an entry's citation -- the part its heading hasn't already named.
