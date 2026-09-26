@@ -1788,9 +1788,9 @@ const esploraFetch = (() => {
     return url;
   };
 
-  return (url, opts) => new Promise((resolve, reject) => {
-    queue.push(async () => {
-      active++;
+  return (url, opts, { urgent = false } = {}) => new Promise((resolve, reject) => {
+    const job = async () => {
+      if (!urgent) active++;
       try {
         // Visit each mirror once, starting from the one that last served us.
         const order = ESPLORA_MIRRORS.map((_, i) => (preferred + i) % ESPLORA_MIRRORS.length);
@@ -1832,11 +1832,17 @@ const esploraFetch = (() => {
         // Every mirror failed with a network-level error.
         reject(lastErr || new Error('All Esplora mirrors failed'));
       } finally {
-        active--;
+        if (!urgent) active--;
         pump();
       }
-    });
-    pump();
+    };
+    // An urgent request starts at once and takes no slot: the one tiny
+    // lookup every page turn waits on (the tip), which would otherwise hold
+    // one of the three the section's block, header and bytes are asked in.
+    // It keeps the retry and failover every request gets. Everything else
+    // queues under the cap.
+    if (urgent) job();
+    else { queue.push(job); pump(); }
   });
 })();
 
@@ -3173,7 +3179,9 @@ async function exportPassage() {
 // The chain tip height, as plain text from Esplora. Opens the book at the most
 // recent chapter when the reader arrives without a specific target.
 async function loadTipHeight() {
-  const res = await esploraFetch(`${ESPLORA}/blocks/tip/height`);
+  // Urgent: every lookup awaits it before painting, and it must not hold one
+  // of the three slots the section's block, header and bytes are asked in.
+  const res = await esploraFetch(`${ESPLORA}/blocks/tip/height`, undefined, { urgent: true });
   if (!res.ok) throw new Error(`Esplora returned ${res.status}.`);
   return (await res.text()).trim();
 }
