@@ -1,0 +1,5 @@
+<!-- SPDX-License-Identifier: CC-BY-4.0 -->
+
+The largest deliberate burn on the chain, and the canonical proof-of-burn. In January 2014 the Counterparty protocol issued its XCP token exclusively to whoever destroyed bitcoin: send coins to this address during a fixed window — blocks 278,310 to 283,810 — and the protocol credited XCP in proportion. No sale, no founder allocation; the burn was the whole issuance, announced by its developers on Bitcointalk in January 2014 and executed in public, here.
+
+The address itself is the proof that the coins are gone: the text "1CounterpartyXXXX…" was written before anyone could know whether a key exists for it, and none does by any feasible search. By this book's reading (2 August 2026) the ledger holds 2,130.99778224 ₿ across 3,133 arrivals and no departures — including coins sent after the window closed, which earned their senders nothing at all. What XCP any burn earned, and what it was worth, is Counterparty's record, not this chain's; what this ledger states is only that the coins arrived and cannot leave.
