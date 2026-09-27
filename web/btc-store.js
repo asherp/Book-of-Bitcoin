@@ -24,7 +24,7 @@ try { navigator.storage?.persist?.().catch(() => { /* denied: merely evictable *
 // names a different block on each. Mainnet's name is unchanged (btc-network.js).
 const DB_NAME = nsKey('glossia-btc-archive');
 const STORES = {
-  placements: 4000,   // txid / block hash -> { height, pos }   (contents page)
+  placements: 4000,   // txid / block hash -> { height, pos, hash? }   (contents page; the book reads it to open a row seated)
   citations: 4000,    // txid -> { height, pos, outputs }       (book references)
   blocks: 400,        // block hash -> { block, headerHex }
   txids: 120,         // block hash -> [txid…]  (a big block's list runs to ~100s of KB)

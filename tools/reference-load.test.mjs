@@ -72,3 +72,68 @@ test('the archive banks seats', () => {
   assert.match(store, /seats: \d+,/);
   assert.match(store, /indexedDB\.open\(DB_NAME, 4\)/);
 });
+
+test('a contents row naming a transaction opens the way a citation does', async () => {
+  const contents = await readFile(new URL('../web/bitcoin-contents.html', import.meta.url), 'utf8');
+  // Any 64-hex lookup (?txid=, the search box, a draft that confirms) asks
+  // for the transaction's place beside the block probe, and a placed
+  // transaction opens seated, as a citation does.
+  assert.match(book, /Promise\.resolve\(openLookup\(txidParam\)\)/);
+  assert.match(book, /const placeP = blockCoreCache\.has\(hex\) \? null : resolvePlacement\(hex\)/);
+  assert.match(book, /await goToSection\(place\.height, place\.pos, null, hex\)/);
+  // The contents page banks the confirming block's hash with the place it
+  // prints, where resolvePlacement reads it.
+  assert.match(contents, /\/tx\/\$\{id\}\/status/);
+  assert.match(contents, /storePut\('placements', id, entry\)/);
+  assert.doesNotMatch(contents, /storePut\('placements', \w+(\.hex)?, \{ height: mp\.block_height, pos: mp\.pos \}\)/, 'a txid placement banked without its hash');
+});
+
+test('the prev/next contents walk opens a txid stop seated', () => {
+  const step = /async function contentsStep\(direction\) \{[\s\S]*?\n\}/.exec(book);
+  assert.ok(step, 'contentsStep is gone');
+  assert.match(step[0], /goToSection\(t\.height, index, null, txid\)/);
+  const kick = /function kickTxPlacements\(\) \{[\s\S]*?\n\}/.exec(book);
+  assert.ok(kick, 'kickTxPlacements is gone');
+  assert.match(kick[0], /resolvePlacement\(id\)/, 'the walk places txids with their block hash');
+  assert.doesNotMatch(kick[0], /merkle-proof/);
+});
+
+test('a section landing asks for its seat beside the block, not after it', () => {
+  const m = /async function loadHeightOrProjected\(height, index, tipP\) \{[\s\S]*?\n\}/.exec(book);
+  assert.ok(m, 'loadHeightOrProjected is gone');
+  assert.match(m[0], /if \(index >= 0\) txidAt\(\{ hash \}, index\)\.then\(loadTxHex\)/);
+});
+
+test('a reference link carries its txid unseen, and the book seats it only where its own place agrees', async () => {
+  const read = (f) => readFile(new URL(`../web/${f}`, import.meta.url), 'utf8');
+  const m = /async function openHinted\(height, index, txid\) \{[\s\S]*?\n\}/.exec(book);
+  assert.ok(m, 'the book no longer takes a txid hint');
+  assert.match(m[0], /resolvePlacement\(id\)/);
+  assert.match(m[0], /place\.height === Number\(height\) && place\.pos === index\) return goToSection/);
+  assert.match(book, /openHinted\(pParam\.height, pParam\.index, txidParam\)/);
+  assert.match(book, /openHinted\(blockParam, indexParam, txidParam\)/);
+  // The address bar goes back to the reference alone once the page opens.
+  const upd = /function updateUrl\(\) \{[\s\S]*?\n\}/.exec(book)[0];
+  assert.doesNotMatch(upd, /txid/);
+  // The book's own citations, and the pages that link by reference.
+  assert.match(book, /link\.href = `\?block=\$\{height\}&index=\$\{pos\}\$\{txid \? `&txid=\$\{txid\}` : ''\}`/);
+  assert.match(book, /link\.href = `\?block=\$\{height\}&index=\$\{pos\}&txid=\$\{sp\.txid\}`/);
+  const ledger = await read('bitcoin-ledger.html');
+  assert.equal((ledger.match(/latinRef\(e\.height, pos \+ 1, e\.out \?\? null\)\}&txid=\$\{e\.txid\}/g) || []).length, 2);
+  const appendix = await read('bitcoin-appendix.html');
+  assert.match(appendix, /&txid=\$\{e\.reveal\}/);
+  assert.match(appendix, /index=\$\{mp\.pos\}&txid=\$\{txid\}/);
+  const proofs = await read('btc-proofs.js');
+  assert.match(proofs, /\$\{txidHint\(place\)\}/);
+  const proofPage = await read('bitcoin-proof.html');
+  assert.equal((proofPage.match(/\$\{txidHint\(proof\.place\)\}/g) || []).length, 2);
+});
+
+test('the tip takes no slot from a section\'s block, header and bytes', () => {
+  assert.match(book, /esploraFetch\(`\$\{ESPLORA\}\/blocks\/tip\/height`, undefined, \{ urgent: true \}\)/);
+  assert.match(book, /if \(!urgent\) active\+\+;/);
+  assert.match(book, /if \(!urgent\) active--;/);
+  assert.match(book, /if \(urgent\) job\(\);\n    else \{ queue\.push\(job\); pump\(\); \}/);
+  // Only the tip jumps the cap; the margin's bursts still queue under it.
+  assert.equal((book.match(/urgent: true/g) || []).length, 1);
+});
