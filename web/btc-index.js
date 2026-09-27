@@ -1257,26 +1257,44 @@ export async function sectionOf(txid) {
 // not race duplicates before the placement banks. Settled entries clear,
 // so a failed resolution (mirrors unreachable) is asked again next time
 // while a success answers from the archive forever.
+//
+// `withHash` also banks the confirming block's hash (/tx/:txid/status, asked
+// for beside the proof), as the contents page banks its own: the book, when
+// the link is followed, then opens that block with the txid seated rather
+// than looking the height's hash up first. The search page asks for it; the
+// ledger, which places a transaction per row and whose rows are followed far
+// more rarely than they are printed, does not. A kept placement without the
+// hash asks for the status alone. A hash is kept only where the status names
+// the proof's own block.
 const citePlaceInflight = new Map();
-export function citePlace(txid) {
-  if (!citePlaceInflight.has(txid)) {
-    citePlaceInflight.set(txid, (async () => {
-      const kept = await storeGet('citations', txid) ?? await storeGet('placements', txid);
-      if (kept && Number.isInteger(kept.pos) && Number.isInteger(kept.height)) return kept;
+export function citePlace(txid, { withHash = false } = {}) {
+  const key = withHash ? `${txid}#hash` : txid;
+  if (!citePlaceInflight.has(key)) {
+    citePlaceInflight.set(key, (async () => {
+      const cited = await storeGet('citations', txid);
+      const kept = cited?.hash ? cited : (await storeGet('placements', txid)) ?? cited;
+      const placed = kept && Number.isInteger(kept.pos) && Number.isInteger(kept.height);
+      if (placed && (!withHash || kept.hash)) return kept;
       for (const mirror of esploraMirrors()) {
-        const mp = await esploraJson(mirror, `/tx/${txid}/merkle-proof`);
+        const [mp, st] = await Promise.all([
+          placed ? { block_height: kept.height, pos: kept.pos } : esploraJson(mirror, `/tx/${txid}/merkle-proof`),
+          withHash ? esploraJson(mirror, `/tx/${txid}/status`) : null,
+        ]);
         if (mp && Number.isInteger(mp.pos)) {
-          const rec = { height: mp.block_height, pos: mp.pos };
+          const hash = st && st.confirmed && st.block_height === mp.block_height ? st.block_hash : null;
+          if (placed && !hash) return kept;   // the status could not name it: the place stands as kept
+          // Banked where the book's resolvePlacement looks first.
+          const rec = { height: mp.block_height, pos: mp.pos, ...(hash ? { hash } : {}) };
           storePut('placements', txid, rec);
           return rec;
         }
       }
-      return null;
-    })().finally(() => citePlaceInflight.delete(txid)));
+      return placed ? kept : null;
+    })().finally(() => citePlaceInflight.delete(key)));
   }
-  return citePlaceInflight.get(txid);
+  return citePlaceInflight.get(key);
 }
-export const sectionOfFetched = async (txid) => (await citePlace(txid))?.pos ?? null;
+export const sectionOfFetched = async (txid, opts) => (await citePlace(txid, opts))?.pos ?? null;
 
 // Esplora's plain-text answers (block hash by height, txid by position).
 async function esploraText(mirror, path) {

@@ -1102,9 +1102,12 @@ async function enrichTerm(hex, { address = null, at = '' } = {}) {
     quoted: verdict === 'agrees', opened, spendSection: spend, brought,
     paired: Boolean(witness?.paired), message, ref: refOf(lock), reader, check });
   draw(null, null, null);
+  // Both passages are placed with their confirming block's hash, banked where
+  // the book reads it: following a citation then opens that block with the
+  // txid seated, with no lookup of the height's hash first.
   const [lock, spend, message, checked] = await Promise.all([
-    witness?.found ? sectionOfFetched(witness.txid) : null,
-    opened ? sectionOfFetched(opened.txid) : null,
+    witness?.found ? sectionOfFetched(witness.txid, { withHash: true }) : null,
+    opened ? sectionOfFetched(opened.txid, { withHash: true }) : null,
     signedMessage(hex, opened),
     // The commitment needs nothing from the network -- both halves are in hand
     // the moment the spend is -- but it is taken here with the rest so the card
