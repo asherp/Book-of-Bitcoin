@@ -2271,8 +2271,9 @@ const openEntryLeaf = async (alive) => {
     if (pos == null || !alive()) return;
     citeText += ` §${pos + 1}${e.out != null ? `.${e.out}` : ''}`;
     citeEl.textContent = citeText;
-    // With the § known the reference alone names the place in the reader.
-    citeEl.href = `./bitcoin-book.html?ref=${latinRef(e.height, pos + 1, e.out ?? null)}`;
+    // With the § known the reference names the place in the reader; the
+    // txid rides the href unseen, so the book opens the section seated.
+    citeEl.href = `./bitcoin-book.html?ref=${latinRef(e.height, pos + 1, e.out ?? null)}&txid=${e.txid}`;
     stampUrl(pos + 1);
   });
   // The passage itself: the WHOLE section, reproduced as the book prints
@@ -2678,9 +2679,10 @@ const openEntryLeaf = async (alive) => {
   secP.then((pos) => {
     if (pos == null || !alive()) return;
     cite.textContent += ` §${pos + 1}${e.out != null ? `.${e.out}` : ''}`;
-    // With the § known the reference alone names the place -- the door to
-    // the book carries the citation, not a txid.
-    cite.href = `./bitcoin-book.html?ref=${latinRef(e.height, pos + 1, e.out ?? null)}`;
+    // With the § known the reference names the place -- the door reads as
+    // the citation, and the txid rides its href unseen so the book opens the
+    // section seated (openHinted).
+    cite.href = `./bitcoin-book.html?ref=${latinRef(e.height, pos + 1, e.out ?? null)}&txid=${e.txid}`;
   });
   // Which member of a many-passage ledger this entry paid. It used to print a
   // shortened address, which is the one thing the book never sets in type; an
@@ -3087,9 +3089,8 @@ ensureNowPrice().then((got) => { if (got) openView(); });
 if (pRef) (async () => {
   // A reference without a § names the chapter, not a passage of it -- and
   // a §-reference without a ledger context reads in the manuscript itself.
-  // Either way the book takes the reference whole (?ref=…): the URL carries
-  // the citation and nothing else -- a txid never rides beside (or instead
-  // of) the reference that already names the same place.
+  // Either way the book takes the reference whole (?ref=…). No txid is in
+  // hand here to ride beside it, so the book resolves the section itself.
   if ((pRef.s == null && pRef.o == null) || !qList.length) {
     location.href = withChain(`./bitcoin-book.html?ref=${encodeURIComponent(pQ)}`);
     return;
