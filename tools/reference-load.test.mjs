@@ -88,6 +88,23 @@ test('a contents row naming a transaction opens the way a citation does', async 
   assert.doesNotMatch(contents, /storePut\('placements', \w+(\.hex)?, \{ height: mp\.block_height, pos: mp\.pos \}\)/, 'a txid placement banked without its hash');
 });
 
+test('a search citation is placed with its block hash', async () => {
+  const search = await readFile(new URL('../web/bitcoin-search.html', import.meta.url), 'utf8');
+  const index = await readFile(new URL('../web/btc-index.js', import.meta.url), 'utf8');
+  // Both passages the leaf cites are placed with the confirming block's hash,
+  // banked in placements, where the book's resolvePlacement reads it first.
+  assert.match(search, /sectionOfFetched\(witness\.txid, \{ withHash: true \}\)/);
+  assert.match(search, /sectionOfFetched\(opened\.txid, \{ withHash: true \}\)/);
+  const place = /export function citePlace\(txid, \{ withHash = false \} = \{\}\) \{[\s\S]*?\n\}/.exec(index);
+  assert.ok(place, 'citePlace takes no withHash');
+  assert.match(place[0], /\/tx\/\$\{txid\}\/status/);
+  assert.match(place[0], /st\.block_height === mp\.block_height \? st\.block_hash : null/);
+  assert.match(place[0], /storePut\('placements', txid, rec\)/);
+  // A ?txid= landing waits on the place, not on a block probe, for an id
+  // that cannot be a block hash.
+  assert.match(book, /if \(placeP && !\/\^0\{8\}\/\.test\(hex\)\)/);
+});
+
 test('the prev/next contents walk opens a txid stop seated', () => {
   const step = /async function contentsStep\(direction\) \{[\s\S]*?\n\}/.exec(book);
   assert.ok(step, 'contentsStep is gone');
