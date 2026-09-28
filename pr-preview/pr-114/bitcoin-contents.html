@@ -479,7 +479,6 @@ let proofsCount = null;
 // Every leaf here is the contents of one part, and nothing stands above them
 // summarising the run. The book's own parts are what a reader turns through;
 // the front matter keeps its own leaves, which is where it is named.
-const ERA = heightOf(2, 1, 1);          // 210,000 -- one halving era, one volume
 let lastVolume = 1;                     // grows with the curated entries, then with the tip
 const leaves = () => [
   ...Array.from({ length: lastVolume }, (_, i) => ({ kind: 'volume', volume: i + 1 })),
@@ -488,18 +487,14 @@ const leaves = () => [
 const leafTitle = (leaf) => leaf.kind === 'volume'
   ? `Volume ${toRoman(leaf.volume)}`
   : partLabel(appendix(), leaf.part);
-// One line under the leaf's name, saying what it spans and how much of it
+// One line under an appendix's name, saying what it spans and how much of it
 // there is. Not what the part IS and why it sits outside reading order --
 // that paragraph is written on the appendix's own leaf, one turn down. The
-// contents lists; the leaf explains.
+// contents lists; the leaf explains. A volume's leaf carries no line: its
+// rows are the whole of what it has to say (.leaf-sub:empty hides the slot).
 const count = (n, one, many) => `${n === 0 ? 'nothing' : n} ${n === 1 ? one : many}`;
 function leafSub(leaf) {
-  if (leaf.kind === 'volume') {
-    const from = heightOf(leaf.volume, 1, 1);
-    const n = placedIn(leaf.volume).length;
-    return `Blocks ${from.toLocaleString()}–${(from + ERA - 1).toLocaleString()} · `
-      + (n === 0 ? 'nothing kept yet' : count(n, 'entry', 'entries'));
-  }
+  if (leaf.kind === 'volume') return '';
   const part = leaf.part;
   // These two say a figure, not a sentence about themselves: what the queue
   // is holding, and what the last window was won by. Both read when the leaf
