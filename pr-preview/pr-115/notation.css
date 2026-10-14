@@ -91,8 +91,14 @@
    it, so every row still has exactly one glyph cell and one gloss cell -- the
    pair applyKeyFilter walks. */
 .glyph-row .m .why { display: block; margin-top: .4em; color: var(--meta); }
-/* Data-type letters (p s h r w t) glow gold in the key, as they do on chain. */
+/* Gold is what the chain keeps, here as in the reading: the data letters
+   (p s h r w t) always, and the mark of any row that teaches an opcode --
+   classed .wire by nameOpcodes (btc-key-filter.js) from the same derivation
+   that names it, so the colour cannot say one thing and the name column
+   another. Everything else in the column is the book's own apparatus -- ( ),
+   λ, the margins' marks -- and stays in ink. */
 .glyph-row .g b { color: var(--accent); }
+.glyph-row.wire .g { color: var(--accent); }
 /* The opcode's name, where a row's marks are opcodes: OP_DUP beside ⧉, in the
    same hand the book sets any name the machine gave a thing (an address
    prefix, an encoding -- .mach above). Derived from the row's own marks by
@@ -137,9 +143,12 @@
    hash. White, regular weight marks the ephemeral validator: the operations it
    runs, plus the transaction's own data, which stays unverified until a block
    puts it on chain (where it turns gold). Bold carries the split into a
-   black-and-white print. */
-.pattern-table .op { font-weight: 700; }
-.pattern-table .op-push { font-weight: 400; }
+   black-and-white print. A push count is a figure, not a byte with entropy
+   in it, and takes the quiet colour the reading gives it. The colours are set
+   here and not borrowed from the book page's .op, so the key is the same key
+   on the sigla leaf, which has no .op of its own. */
+.pattern-table .op { color: var(--accent); font-weight: 700; }
+.pattern-table .op-push { color: var(--meta); font-weight: 400; }
 .pattern-table .ph { color: var(--accent); font-style: normal; font-weight: 700; }
 .pattern-table .seq.exec .op, .pattern-table .seq.exec .ph { color: var(--ink); font-weight: 400; }
 .pattern-table .seq.exec .ph.chain { color: var(--accent); font-weight: 700; }

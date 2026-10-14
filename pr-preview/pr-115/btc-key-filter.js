@@ -279,8 +279,10 @@ export function opcodeLabel(names) {
 // Set the name cell on every glyph row of a rendered key: a .n between the
 // mark and its gloss, holding the row's opcode names or nothing. Every row gets
 // one, so a page that lays the rows out as a table has a cell in each column
-// of each row. Returns the set of names it placed, for the page to check
-// against the whole table.
+// of each row. A row that names an opcode is also classed .wire: its mark is
+// a byte the chain keeps, and takes the gold the reading gives it, by the same
+// derivation and never by hand. Returns the set of names it placed, for the
+// page to check against the whole table.
 export function nameOpcodes(keyRoot) {
   const named = new Set();
   if (!keyRoot) return named;
@@ -289,6 +291,7 @@ export function nameOpcodes(keyRoot) {
     if (!g || row.querySelector('.n')) continue;
     const names = rowOpcodes(g.innerHTML, row.dataset.marks || null);
     for (const n of names) named.add(n);
+    if (names.length) row.classList.add('wire');
     const cell = document.createElement('span');
     cell.className = 'n';
     cell.textContent = opcodeLabel(names);
