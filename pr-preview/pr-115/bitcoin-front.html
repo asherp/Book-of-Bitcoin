@@ -170,6 +170,9 @@ body.at-title .title-leaf { min-height: 100vh; cursor: pointer; }
    sheet above its nav bar (see .nav-sheet-body in notation.css); here it simply
    sits in the leaf, so it takes room rather than positioning. */
 .notation-at-rest { margin: 1.5em 0 0; }
+/* The definitions open unheaded, straight off the reference: an h3's clearance
+   above the first group so the reading paragraph is not pressed against it. */
+.notation-at-rest.marks { margin-top: 2.6em; }
 
 /* The key's definitions, laid out as a table: the mark, the opcode it stands
    for where it stands for one, and what it means, one row to a line with the
@@ -285,10 +288,6 @@ body.at-title .title-leaf { min-height: 100vh; cursor: pointer; }
           may stop early — <code>III β2</code> names the whole book, and
           <code>III β2 ■5</code> the whole chapter.</p>
 
-        <h3>The marks</h3>
-        <p>What each mark means, and the opcode it stands for where it stands
-          for one — the same key the book opens over a chapter, here at rest
-          and whole.</p>
         <div id="notation-marks" class="notation-at-rest marks"></div>
         <p class="sig-count" id="sigla-count"></p>
 
