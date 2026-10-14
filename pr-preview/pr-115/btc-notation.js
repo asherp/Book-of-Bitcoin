@@ -22,71 +22,6 @@
 // head's, and the margins'.
 export const NOTATION_MARKS_HTML = `
           <div class="notation-group">
-            <h4>Pushes</h4>
-            <div class="glyph-grid">
-              <div class="glyph-row" data-marks="push:count"><span class="g">²⁰</span><span class="m"><b>push</b> — the bare superscript is the byte count (²⁰ pushes twenty)</span></div>
-              <div class="glyph-row"><span class="g">↧<i>n</i> ⇊<i>n</i> ⤋<i>n</i></span><span class="m">extended push — length in a 1 / 2 / 4-byte prefix</span></div>
-            </div>
-          </div>
-
-          <div class="notation-group">
-            <h4>Numbers</h4>
-            <div class="glyph-grid">
-              <div class="glyph-row"><span class="g">⓪</span><span class="m">push zero</span></div>
-              <div class="glyph-row" data-marks="① ② ③ ④ ⑤ ⑥ ⑦ ⑧ ⑨ ⑩ ⑪ ⑫ ⑬ ⑭ ⑮ ⑯"><span class="g">①–⑯</span><span class="m">push a small number (1–16)</span></div>
-              <div class="glyph-row"><span class="g">⊖</span><span class="m">push minus one</span></div>
-            </div>
-          </div>
-
-          <div class="notation-group">
-            <h4>Stack</h4>
-            <div class="glyph-grid">
-              <div class="glyph-row"><span class="g">⧉</span><span class="m"><b>duplicate</b> the top item</span></div>
-              <div class="glyph-row"><span class="g">⌄</span><span class="m"><b>drop</b> the top item</span></div>
-              <div class="glyph-row"><span class="g">⧉?</span><span class="m">duplicate <b>if nonzero</b></span></div>
-              <div class="glyph-row"><span class="g">⇄</span><span class="m"><b>swap</b> the top two</span></div>
-              <div class="glyph-row"><span class="g">↻</span><span class="m"><b>rotate</b> the top three</span></div>
-              <div class="glyph-row"><span class="g">⇗</span><span class="m"><b>over</b> — copy the second to the top</span></div>
-              <div class="glyph-row"><span class="g">⌦</span><span class="m"><b>nip</b> out the second</span></div>
-              <div class="glyph-row"><span class="g">⇘</span><span class="m"><b>tuck</b> the top beneath the second</span></div>
-              <div class="glyph-row"><span class="g">⇡</span><span class="m"><b>pick</b> — copy the nth item up</span></div>
-              <div class="glyph-row"><span class="g">⥀</span><span class="m"><b>roll</b> — move the nth item up</span></div>
-              <div class="glyph-row"><span class="g">↕</span><span class="m"><b>depth</b> of the stack</span></div>
-              <div class="glyph-row"><span class="g">⇥ ⇤</span><span class="m"><b>shelve / retrieve</b> via the alt stack</span></div>
-              <div class="glyph-row"><span class="g">⌄₂ ⧉₂ ⧉₃ ⇗₂ ↻₂ ⇄₂</span><span class="m">the same, <b>two at a time</b> — the subscript counts the items moved (⧉₃ three)</span></div>
-            </div>
-          </div>
-
-          <div class="notation-group">
-            <h4>Arithmetic &amp; comparison</h4>
-            <div class="glyph-grid">
-              <div class="glyph-row"><span class="g">+ − × ÷ %</span><span class="m">arithmetic on numbers</span></div>
-              <div class="glyph-row"><span class="g">+₁ −₁ ×₂ ÷₂</span><span class="m">by one · by two</span></div>
-              <div class="glyph-row"><span class="g">∓</span><span class="m"><b>negate</b></span></div>
-              <div class="glyph-row"><span class="g">|·|</span><span class="m"><b>absolute value</b></span></div>
-              <div class="glyph-row"><span class="g">⊓ ⊔</span><span class="m"><b>min</b> · <b>max</b></span></div>
-              <div class="glyph-row"><span class="g">∈</span><span class="m"><b>within</b> a range</span></div>
-              <div class="glyph-row"><span class="g">&lt; &gt; ≤ ≥</span><span class="m">comparisons</span></div>
-              <div class="glyph-row"><span class="g">≐ ≑</span><span class="m">numbers equal? · equal, <b>else fail</b></span></div>
-              <div class="glyph-row"><span class="g">≠ ≠₀</span><span class="m">numbers differ · <b>nonzero?</b></span></div>
-              <div class="glyph-row"><span class="g">¬ ∧ ∨</span><span class="m">not · and · or</span></div>
-              <div class="glyph-row"><span class="g">« »</span><span class="m">shift left · right</span></div>
-              <div class="glyph-row"><span class="g">= ≡</span><span class="m">bytes equal? · equal, <b>else fail</b></span></div>
-            </div>
-          </div>
-
-          <div class="notation-group">
-            <h4>Bytes</h4>
-            <div class="glyph-grid">
-              <div class="glyph-row"><span class="g">⧺</span><span class="m"><b>concatenate</b></span></div>
-              <div class="glyph-row"><span class="g">⊂</span><span class="m"><b>substring</b></span></div>
-              <div class="glyph-row"><span class="g">↤ ↦</span><span class="m">keep the <b>left</b> · <b>right</b> part</span></div>
-              <div class="glyph-row"><span class="g">∼ ∩ ∪ ⊻</span><span class="m">bitwise invert · and · or · xor</span></div>
-              <div class="glyph-row"><span class="g">ℓ</span><span class="m"><b>length</b> of the top item</span></div>
-            </div>
-          </div>
-
-          <div class="notation-group">
             <h4>Hashes</h4>
             <div class="glyph-grid">
               <div class="glyph-row"><span class="g">⌖</span><span class="m"><b>address</b> hash · HASH160</span></div>
@@ -113,6 +48,77 @@ export const NOTATION_MARKS_HTML = `
             <div class="glyph-grid">
               <div class="glyph-row"><span class="g">τ</span><span class="m"><b>absolute</b> — not before a fixed time or block</span></div>
               <div class="glyph-row"><span class="g">Δ</span><span class="m"><b>relative</b> — a delay after this coin confirmed</span></div>
+            </div>
+          </div>
+
+          <div class="notation-group">
+            <h4>Stack</h4>
+            <div class="glyph-grid">
+              <div class="glyph-row"><span class="g">⧉</span><span class="m"><b>duplicate</b> the top item</span></div>
+              <div class="glyph-row"><span class="g">⌄</span><span class="m"><b>drop</b> the top item</span></div>
+              <div class="glyph-row"><span class="g">⧉?</span><span class="m">duplicate <b>if nonzero</b></span></div>
+              <div class="glyph-row"><span class="g">⇄</span><span class="m"><b>swap</b> the top two</span></div>
+              <div class="glyph-row"><span class="g">↻</span><span class="m"><b>rotate</b> the top three</span></div>
+              <div class="glyph-row"><span class="g">⇗</span><span class="m"><b>over</b> — copy the second to the top</span></div>
+              <div class="glyph-row"><span class="g">⌦</span><span class="m"><b>nip</b> out the second</span></div>
+              <div class="glyph-row"><span class="g">⇘</span><span class="m"><b>tuck</b> the top beneath the second</span></div>
+              <div class="glyph-row"><span class="g">⇡</span><span class="m"><b>pick</b> — copy the nth item up</span></div>
+              <div class="glyph-row"><span class="g">⥀</span><span class="m"><b>roll</b> — move the nth item up</span></div>
+              <div class="glyph-row"><span class="g">↕</span><span class="m"><b>depth</b> of the stack</span></div>
+              <div class="glyph-row"><span class="g">⇥ ⇤</span><span class="m"><b>shelve / retrieve</b> via the alt stack</span></div>
+              <div class="glyph-row"><span class="g">⌄₂ ⧉₂ ⧉₃ ⇗₂ ↻₂ ⇄₂</span><span class="m">the same, <b>two at a time</b> — the subscript counts the items moved (⧉₃ three)</span></div>
+            </div>
+          </div>
+
+          <div class="notation-group">
+            <h4>Numbers</h4>
+            <div class="glyph-grid">
+              <div class="glyph-row"><span class="g">⓪</span><span class="m">push zero</span></div>
+              <div class="glyph-row" data-marks="① ② ③ ④ ⑤ ⑥ ⑦ ⑧ ⑨ ⑩ ⑪ ⑫ ⑬ ⑭ ⑮ ⑯"><span class="g">①–⑯</span><span class="m">push a small number (1–16)</span></div>
+              <div class="glyph-row"><span class="g">⊖</span><span class="m">push minus one</span></div>
+            </div>
+          </div>
+
+          <div class="notation-group">
+            <h4>Pushes</h4>
+            <div class="glyph-grid">
+              <div class="glyph-row" data-marks="push:count"><span class="g">²⁰</span><span class="m"><b>push</b> — the bare superscript is the byte count (²⁰ pushes twenty)</span></div>
+              <div class="glyph-row"><span class="g">↧<i>n</i> ⇊<i>n</i> ⤋<i>n</i></span><span class="m">extended push — length in a 1 / 2 / 4-byte prefix</span></div>
+            </div>
+          </div>
+
+          <div class="notation-group">
+            <h4>Comparison</h4>
+            <div class="glyph-grid">
+              <div class="glyph-row"><span class="g">&lt; &gt; ≤ ≥</span><span class="m">comparisons</span></div>
+              <div class="glyph-row"><span class="g">≐ ≑</span><span class="m">numbers equal? · equal, <b>else fail</b></span></div>
+              <div class="glyph-row"><span class="g">≠ ≠₀</span><span class="m">numbers differ · <b>nonzero?</b></span></div>
+              <div class="glyph-row"><span class="g">= ≡</span><span class="m">bytes equal? · equal, <b>else fail</b></span></div>
+              <div class="glyph-row"><span class="g">⊓ ⊔</span><span class="m"><b>min</b> · <b>max</b></span></div>
+              <div class="glyph-row"><span class="g">∈</span><span class="m"><b>within</b> a range</span></div>
+            </div>
+          </div>
+
+          <div class="notation-group">
+            <h4>Arithmetic</h4>
+            <div class="glyph-grid">
+              <div class="glyph-row"><span class="g">+ − × ÷ %</span><span class="m">arithmetic on numbers</span></div>
+              <div class="glyph-row"><span class="g">+₁ −₁ ×₂ ÷₂</span><span class="m">by one · by two</span></div>
+              <div class="glyph-row"><span class="g">∓</span><span class="m"><b>negate</b></span></div>
+              <div class="glyph-row"><span class="g">|·|</span><span class="m"><b>absolute value</b></span></div>
+              <div class="glyph-row"><span class="g">¬ ∧ ∨</span><span class="m">not · and · or</span></div>
+              <div class="glyph-row"><span class="g">« »</span><span class="m">shift left · right</span></div>
+            </div>
+          </div>
+
+          <div class="notation-group">
+            <h4>Bytes</h4>
+            <div class="glyph-grid">
+              <div class="glyph-row"><span class="g">⧺</span><span class="m"><b>concatenate</b></span></div>
+              <div class="glyph-row"><span class="g">⊂</span><span class="m"><b>substring</b></span></div>
+              <div class="glyph-row"><span class="g">↤ ↦</span><span class="m">keep the <b>left</b> · <b>right</b> part</span></div>
+              <div class="glyph-row"><span class="g">∼ ∩ ∪ ⊻</span><span class="m">bitwise invert · and · or · xor</span></div>
+              <div class="glyph-row"><span class="g">ℓ</span><span class="m"><b>length</b> of the top item</span></div>
             </div>
           </div>
 
