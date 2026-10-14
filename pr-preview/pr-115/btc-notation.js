@@ -22,6 +22,21 @@
 // head's, and the margins'.
 export const NOTATION_MARKS_HTML = `
           <div class="notation-group">
+            <h4>Data</h4>
+            <div class="glyph-grid">
+              <div class="glyph-row"><span class="g"><b>p</b></span><span class="m"><b>public key</b></span></div>
+              <div class="glyph-row"><span class="g"><b>s</b></span><span class="m"><b>signature</b></span></div>
+              <div class="glyph-row"><span class="g"><b>h</b></span><span class="m"><b>hash</b></span></div>
+              <div class="glyph-row"><span class="g"><b>r</b></span><span class="m"><b>redeem script</b> (inside P2SH)</span></div>
+              <div class="glyph-row"><span class="g"><b>w</b></span><span class="m"><b>witness script</b> (inside P2WSH)</span></div>
+              <div class="glyph-row"><span class="g"><b>t</b></span><span class="m"><b>tapscript</b> (a Taproot leaf)</span></div>
+              <div class="glyph-row"><span class="g"><b>c</b></span><span class="m"><b>control block</b> (a Taproot script-path reveal) — leaf version <b>v</b><i>n</i>, parity subscript, then the internal key <b>p</b></span></div>
+              <div class="glyph-row"><span class="g"><b>⋔</b></span><span class="m"><b>merkle proof</b> — the revealed leaf's path in the taptree</span></div>
+              <div class="glyph-row"><span class="g"><b>a</b></span><span class="m"><b>annex</b> (reserved Taproot spend data)</span></div>
+            </div>
+          </div>
+
+          <div class="notation-group">
             <h4>Hashes</h4>
             <div class="glyph-grid">
               <div class="glyph-row"><span class="g">⌖</span><span class="m"><b>address</b> hash · HASH160</span></div>
@@ -135,21 +150,6 @@ export const NOTATION_MARKS_HTML = `
               <div class="glyph-row"><span class="g">⊘ ⊘₁ ⊘₂</span><span class="m"><b>reserved</b> — invalid if executed</span></div>
               <div class="glyph-row"><span class="g">⊘ᵛ ⊘⟨ ⊘¬⟨</span><span class="m">reserved VER family</span></div>
               <div class="glyph-row"><span class="g">☒</span><span class="m"><b>invalid opcode</b></span></div>
-            </div>
-          </div>
-
-          <div class="notation-group">
-            <h4>Data</h4>
-            <div class="glyph-grid">
-              <div class="glyph-row"><span class="g"><b>p</b></span><span class="m"><b>public key</b></span></div>
-              <div class="glyph-row"><span class="g"><b>s</b></span><span class="m"><b>signature</b></span></div>
-              <div class="glyph-row"><span class="g"><b>h</b></span><span class="m"><b>hash</b></span></div>
-              <div class="glyph-row"><span class="g"><b>r</b></span><span class="m"><b>redeem script</b> (inside P2SH)</span></div>
-              <div class="glyph-row"><span class="g"><b>w</b></span><span class="m"><b>witness script</b> (inside P2WSH)</span></div>
-              <div class="glyph-row"><span class="g"><b>t</b></span><span class="m"><b>tapscript</b> (a Taproot leaf)</span></div>
-              <div class="glyph-row"><span class="g"><b>c</b></span><span class="m"><b>control block</b> (a Taproot script-path reveal) — leaf version <b>v</b><i>n</i>, parity subscript, then the internal key <b>p</b></span></div>
-              <div class="glyph-row"><span class="g"><b>⋔</b></span><span class="m"><b>merkle proof</b> — the revealed leaf's path in the taptree</span></div>
-              <div class="glyph-row"><span class="g"><b>a</b></span><span class="m"><b>annex</b> (reserved Taproot spend data)</span></div>
             </div>
           </div>
 
