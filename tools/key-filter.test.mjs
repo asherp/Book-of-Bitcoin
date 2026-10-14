@@ -16,8 +16,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
-import { lockClause, markGlosses, marksOf, rowShows, isHidden } from '../web/btc-key-filter.js';
-import { NOTATION_HTML } from '../web/btc-notation.js';
+import { lockClause, markGlosses, marksOf, rowShows, isHidden, rowOpcodes, opcodeLabel } from '../web/btc-key-filter.js';
+import { NOTATION_HTML, NOTATION_MARKS_HTML, NOTATION_USE_HTML } from '../web/btc-notation.js';
+import { OPCODE_NAMES } from '../web/btc-sigla.js';
 
 // Every glyph row as the filter sees it: the cell's markup and its data-marks.
 // The gloss runs to the END of the row rather than to the first close, because
@@ -273,4 +274,50 @@ test('what the page has folded away is not on the page', () => {
   const outer = node('hidden', null);
   slide.parentElement = outer;
   assert.equal(isHidden(dup, slide), false);
+});
+
+// ─── naming the opcodes ──────────────────────────────────────────────────
+
+test('the key is its two halves, definitions first', () => {
+  assert.equal(NOTATION_HTML, NOTATION_MARKS_HTML + NOTATION_USE_HTML);
+  // The use half is where the pattern tables are; the definitions set none.
+  assert.ok(!NOTATION_MARKS_HTML.includes('pattern-table'), 'a pattern table has strayed into the definitions');
+  assert.ok(NOTATION_USE_HTML.includes('pattern-table'));
+});
+
+test('every opcode the book knows is named exactly by a definition', () => {
+  // The sigla leaf derives each row's names from its marks, so the one way
+  // the key can under-report is a row that writes an opcode loosely or not at
+  // all. The leaf counts and says so; this pins it at zero.
+  const named = new Set();
+  for (const m of NOTATION_MARKS_HTML.matchAll(
+    /<div class="glyph-row"(?: data-marks="([^"]*)")?><span class="g">(.*?)<\/span>/g)) {
+    for (const n of rowOpcodes(m[2], m[1] ?? null)) named.add(n);
+  }
+  const missing = Object.values(OPCODE_NAMES).filter((n) => !named.has(n));
+  assert.deepEqual(missing, [], 'opcodes no definition names');
+});
+
+test('a row names only the opcodes it writes exactly', () => {
+  assert.deepEqual(rowOpcodes('⧉'), ['OP_DUP']);
+  assert.deepEqual(rowOpcodes('⇥ ⇤'), ['OP_TOALTSTACK', 'OP_FROMALTSTACK']);
+  assert.deepEqual(rowOpcodes('&lt; &gt; ≤ ≥'), ['OP_LESSTHAN', 'OP_GREATERTHAN', 'OP_LESSTHANOREQUAL', 'OP_GREATERTHANOREQUAL']);
+  // A placeholder makes the mark a count or a hash on the page, not the
+  // opcode its glyph also serves: the coinbase's zero run, the chapter
+  // head's hash bits. Neither names OP_0 or OP_HASH256.
+  assert.deepEqual(rowOpcodes('⓪<sup><i>n</i></sup>', 'zero:run'), []);
+  assert.deepEqual(rowOpcodes('⌘<sup><i>m</i></sup>'), []);
+  // A row tied to a template names no mark, and a data letter is no opcode.
+  assert.deepEqual(rowOpcodes('P2PKH', 'tpl:p2pkh'), []);
+  assert.deepEqual(rowOpcodes('<b>p</b>'), []);
+});
+
+test('a family of numbered names folds to its ends in the cell', () => {
+  const ops = (...n) => n.map((x) => `OP_${x}`);
+  assert.equal(opcodeLabel(ops(...Array.from({ length: 16 }, (_, i) => i + 1))), '1–16');
+  assert.equal(opcodeLabel(ops('NOP', 'NOP1', 'NOP4', 'NOP5', 'NOP6', 'NOP7', 'NOP8', 'NOP9', 'NOP10')), 'NOP NOP1 NOP4–NOP10');
+  // Two in a row is not a run worth an ellipsis, and a gap breaks one.
+  assert.equal(opcodeLabel(ops('RESERVED1', 'RESERVED2')), 'RESERVED1 RESERVED2');
+  assert.equal(opcodeLabel(ops('1ADD', '1SUB', '2MUL', '2DIV')), '1ADD 1SUB 2MUL 2DIV');
+  assert.equal(opcodeLabel([]), '');
 });

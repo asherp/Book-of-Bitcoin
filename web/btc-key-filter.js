@@ -16,6 +16,9 @@
 // in full whenever the reader wants the rest of it.
 //
 // The front matter's sigla leaf never calls this. The key at rest stays whole.
+// What it does take from here is the naming at the foot of the file.
+
+import { OPCODE_SYMBOLS, OPCODE_NAMES } from './btc-sigla.js';
 
 // Every element that carries a mark rather than prose: script marks and their
 // data letters, the chapter head's fields, an input's sequence and amount, the
@@ -233,4 +236,63 @@ export function applyKeyFilter(keyRoot, { marks = new Set(), templates = new Set
     const any = [...rows].some((r) => !r.classList.contains('key-cut'));
     setHidden(group, rows.length > 0 && !any);
   }
+}
+
+// ─── naming the opcodes a row teaches ────────────────────────────────────
+
+// The OP_* names behind a row's marks, in the order the row writes them --
+// what the sigla leaf sets beside each definition. Read off the same tokens
+// the filter reads, and only the exact ones: a mark written with a placeholder
+// (⓪ⁿ, ⌘ᵐ) names a count or a hash on the page rather than the opcode its
+// glyph is also used for, and a row tied to a template names no mark at all.
+// Looked up in the renderer's own table, so the name beside a mark here is the
+// name the book puts in that mark's hover; nothing is restated.
+const BYTE_OF_MARK = new Map(Object.entries(OPCODE_SYMBOLS).map(([b, s]) => [s, +b]));
+export function rowOpcodes(glyphHtml, dataMarks = null) {
+  return marksOf(glyphHtml, dataMarks)
+    .filter((t) => t.text !== undefined && !t.loose && BYTE_OF_MARK.has(t.text))
+    .map((t) => OPCODE_NAMES[BYTE_OF_MARK.get(t.text)]);
+}
+
+// Those names as a cell: OP_ dropped (the column says it once), and a run of
+// consecutive numbered names folded to its ends -- 1–16 for the small-number
+// pushes, NOP4–NOP10 -- so the row that teaches a family is not a cell of
+// sixteen figures.
+export function opcodeLabel(names) {
+  const parts = names.map((n) => n.replace(/^OP_/, ''));
+  const split = (p) => { const m = p.match(/^(.*?)(\d+)$/); return m ? [m[1], +m[2]] : null; };
+  const out = [];
+  for (let i = 0; i < parts.length;) {
+    let j = i;
+    const a = split(parts[i]);
+    while (a && j + 1 < parts.length) {
+      const b = split(parts[j + 1]);
+      if (!b || b[0] !== a[0] || b[1] !== a[1] + (j + 1 - i)) break;
+      j++;
+    }
+    out.push(j - i >= 2 ? `${parts[i]}–${parts[j]}` : parts.slice(i, j + 1).join(' '));
+    i = j + 1;
+  }
+  return out.join(' ');
+}
+
+// Set the name cell on every glyph row of a rendered key: a .n between the
+// mark and its gloss, holding the row's opcode names or nothing. Every row gets
+// one, so a page that lays the rows out as a table has a cell in each column
+// of each row. Returns the set of names it placed, for the page to check
+// against the whole table.
+export function nameOpcodes(keyRoot) {
+  const named = new Set();
+  if (!keyRoot) return named;
+  for (const row of keyRoot.querySelectorAll('.glyph-row')) {
+    const g = row.querySelector('.g');
+    if (!g || row.querySelector('.n')) continue;
+    const names = rowOpcodes(g.innerHTML, row.dataset.marks || null);
+    for (const n of names) named.add(n);
+    const cell = document.createElement('span');
+    cell.className = 'n';
+    cell.textContent = opcodeLabel(names);
+    g.after(cell);
+  }
+  return named;
 }

@@ -65,9 +65,10 @@ not mean reading six hundred lines of it first.
   page. Front matter that orients the reader precedes front matter that argues.
   The contents is not on this axis: it is the storey above the volumes, and a
   reader reaches it by ascending back out of one. The sigla leaf carries the reference-format diagram and
-  the whole notation key — the shared glossed groups the book's toggle opens,
-  then the exhaustive opcode index generated from the same tables the book
-  sets scripts with; it lives in the front matter because a chain with no last
+  the whole notation key the book's toggle opens, in two headed halves: the
+  marks defined, laid out as a table with each opcode's name derived beside
+  its mark from the same tables the book sets scripts with, and then the
+  marks in use; it lives in the front matter because a chain with no last
   block has no back for an appendix to sit in. It owns no vertical axis
   deliberately: the contents is the storey above the volumes, so an ascent
   from Volume I lands on Volume I's contents leaf and nowhere else
