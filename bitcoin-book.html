@@ -1391,6 +1391,7 @@ a.footnote-title.is-asset:hover { color: var(--accent-2, #dcb877); text-decorati
     <div id="hash-menu-actions">
       <button type="button" class="hash-menu-item" data-act="copy" role="menuitem">Copy hex</button>
       <button type="button" class="hash-menu-item" data-act="copy-text" role="menuitem">Copy text</button>
+      <button type="button" class="hash-menu-item hidden" data-act="copy-address" role="menuitem">Copy address</button>
       <button type="button" class="hash-menu-item" data-act="copy-link" role="menuitem">Copy link</button>
       <button type="button" class="hash-menu-item hidden" data-act="footnote" role="menuitem">Witness footnote</button>
       <!-- The road to this address's record, and the way to file the address
@@ -1435,6 +1436,7 @@ a.footnote-title.is-asset:hover { color: var(--accent-2, #dcb877); text-decorati
 
 <script type="module">
 import { init, encodeCanonical, MSG_LANGS, bookLang, setBookLang } from './glossia-msg.js';
+import { spell } from './btc-address-form.js';
 import { t as tr, localizeText, localizeAttr, numberName } from './btc-strings.js';
 import { parseTransaction, computeTxid, parseBlockHeader, computeBlockHash, bitsToDifficulty, scriptToAddress } from './btc-tx.js';
 import { payoutPool } from './btc-pool-registry.js';
@@ -1485,8 +1487,8 @@ loadNotables();
 // that transaction actually prints (btc-key-filter.js) and carries the control
 // that puts the rest back.
 // What the sheet is showing, and where the whole of it lives. The key at rest
-// is the front matter's sigla leaf -- the entire alphabet, with the opcode
-// index beside it -- so the sheet points there rather than carrying a second
+// is the front matter's sigla leaf -- the entire alphabet, each opcode named
+// beside its mark -- so the sheet points there rather than carrying a second
 // copy of the same key behind a toggle.
 const KEY_SCOPE_HTML = `
           <div class="key-scope">
@@ -8063,9 +8065,9 @@ function syncBookmarkTitles() {
 // alone. The ribbon is a toggle on the reader's own keep, like every other
 // ribbon -- hollow while unkept (curated or not), filled once kept, removal
 // reverting the name to the curated default or to the bare offer. Clicking
-// the name opens the copy menu: the script's hex, its address (the script's
-// own text in the book's tongue), and the road to the ledger entry this
-// very section wrote. A keep living inside a multi-address ledger is
+// the name opens the copy menu: the script's hex, its text (the script in
+// the book's own hand, opcodes and prose, which the search box reads back),
+// its address, and the road to the ledger entry this very section wrote. A keep living inside a multi-address ledger is
 // managed on the Ledger page, so its ribbon leads there instead of
 // toggling a whole shelf row away.
 // A locking script's menu entry, read off its keep line's dataset at open time.
@@ -8075,12 +8077,22 @@ function syncBookmarkTitles() {
 // address there is still a script to copy — which is the whole reason the body
 // is a handle: a menu that waited for the ledger road would never open on the
 // outputs that have no road.
+// The script in the book's own hand -- opcodes as sigla, each push as the
+// prose the page prints for it -- which is what Copy text hands over, and the
+// one spelling the search box reads back to these exact bytes. The pushes
+// need the engine; without it the marks alone would be legible but would not
+// resolve, so there is no text to offer rather than half of one.
+function spelledScript(hex) {
+  if (!ready) return null;
+  const said = spell(hex, { say: (h) => encodeCanonical(h, bookLang(), BEST_OF).prose });
+  return said && said.complete ? said.text : null;
+}
 function scriptEntry(keepEl) {
   const address = keepEl?.dataset.address || null;
   const hex = keepEl?.dataset.spk || '';
   if (!hex) return null;
   return {
-    hex, prose: address, label: 'locking script', nav: false,
+    hex, prose: spelledScript(hex), address, label: 'locking script', nav: false,
     // The address itself, not only the road to it: the menu files this script
     // into a ledger as well as opening the one it is in, and filing needs the
     // member rather than a URL. Named as the ribbon's own entry names it, so
@@ -8267,6 +8279,7 @@ function suggestTitle(entry) {
 const hashMenu = $('hash-menu');
 const menuCopyBtn = hashMenu.querySelector('[data-act="copy"]');
 const menuCopyTextBtn = hashMenu.querySelector('[data-act="copy-text"]');
+const menuCopyAddressBtn = hashMenu.querySelector('[data-act="copy-address"]');
 const menuCopyLinkBtn = hashMenu.querySelector('[data-act="copy-link"]');
 const menuBmBtn = hashMenu.querySelector('[data-act="bookmark"]');
 const menuFootnoteBtn = hashMenu.querySelector('[data-act="footnote"]');
@@ -8316,6 +8329,12 @@ function openHashMenu(ev, entry, anchorEl) {
   // it, Copy text would offer the same string twice. One rule, no special case:
   // an item that would repeat its neighbour is not an item.
   menuCopyTextBtn.classList.toggle('hidden', !entry.prose || entry.prose === copy.text);
+  // A locking script's address, apart from its text: the text is the script
+  // in the book's hand, the address is other software's spelling of the same
+  // bytes, and a reader pasting into a wallet wants the second. Only a script
+  // has one, and not every script (an OP_RETURN never does).
+  menuCopyAddressBtn.textContent = tr('Copy address');
+  menuCopyAddressBtn.classList.toggle('hidden', !entry.address);
   // The link item is offered only where a link exists to copy: a place the
   // book's own URLs can cite, or a locking script's road to its ledger.
   menuCopyLinkBtn.classList.toggle('hidden', !entryShareUrl(entry));
@@ -8386,11 +8405,19 @@ menuCopyBtn.addEventListener('click', () => {
     setTimeout(closeHashMenu, 650);
   }).catch(closeHashMenu);
 });
-// Copy the Glossia prose itself (the readable encoding), not the raw hex.
+// Copy the readable form itself, not the raw hex: a hash's Glossia prose, a
+// locking script spelled in the book's hand.
 menuCopyTextBtn.addEventListener('click', () => {
   if (!menuEntry) return;
   navigator.clipboard.writeText(menuEntry.prose).then(() => {
     menuCopyTextBtn.textContent = 'Copied ✓';
+    setTimeout(closeHashMenu, 650);
+  }).catch(closeHashMenu);
+});
+menuCopyAddressBtn.addEventListener('click', () => {
+  if (!menuEntry || !menuEntry.address) return;
+  navigator.clipboard.writeText(menuEntry.address).then(() => {
+    menuCopyAddressBtn.textContent = 'Copied ✓';
     setTimeout(closeHashMenu, 650);
   }).catch(closeHashMenu);
 });
