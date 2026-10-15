@@ -31,11 +31,11 @@ Transaction id, as prose: ⌘²⁵⁶ *Pudding fruit duty to balcony. Upset see 
 
 - **version:** 1
 - **input 1:** spends output 1 of `9f37d671d8adb470a8bada662fb0216dc4c907964f329fc79d5e8c0191e30574`
-  - script: ²² Alx vult exquiro remigium. Adflictio adfligo arrogantia e dictamnus. Transversum glabratus bes. Cotinus inprecans adsigno. Tu exosso globuliferus is. Eo disserpo offula e immoderatio. Saxificus eo sit.
+  - script: ²² Its rid abandon piece future. Sir behave ecology to vault via cattle. Tongue may get the big tourist. Its die may used cap. Sin again get deer. Parade see dentist to blouse. Paper may adjust fyi. The mutual cave winter weird. Few ago diary is hidden.
   - sequence: ● — final — disables the transaction locktime for this input
   - witness: see footnote a
 - **output 1:** 0.00194300 ₿
-  - script: ⓪ h²⁰ Affinitas mano toles e flammeum. Ganglion vult psallo desiliendus. Is debet advento emo. Is revortor clausum e creditum ad crocatio. Tu praetexo obiectum e mando. Spongea eo cossacus.
+  - script: ⓪ h²⁰ Miracle space minimum to sense. Decade may merit moon out sausage. Way due set neutral. Its clever abstract expire ban. All winter hedgehog repeat garbage. Abandon cook bar to tourist. The chief may see sin.
 - **locktime:** □ — no locktime — final with respect to time
 
 ### Witness footnotes

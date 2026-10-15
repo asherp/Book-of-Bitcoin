@@ -34,7 +34,7 @@ Transaction id, as prose: ⌘²⁵⁶ *Some increase wink to predict. The fish i
   - script: β₄₁ 6024678×256²⁴ η3·643
   - sequence: ● — final — disables the transaction locktime for this input
 - **output 1:** 50.00000000 ₿
-  - script: p⁶⁵ Gelu vult posco baccor. Foetalis praefinitio est. Tu quartum alterno is. Eo culpo ferrumen. Is vador aspero. Fretensis tu vult abnato. Eo concedendus balana e caculatum. Tu declino microps is. Eo complector luendus. Collus indubius furtum. Talea potestas e tu de is. Eo vult affulgeo elementaris eo. Is circumspargo caenulentus ferrugo. Eo patio is e cubitalis tu. Bactrianus eo sinexter is. Graphiarius tu nundinor querquedula. Tanos humilitas. Diaetarius costum. Mirmillo valentia. ∇
+  - script: p⁶⁵ Advice access invite to uniform. December guard to rotate. The first excess is popular. Length thunder case to deal. A sponsor orbit our dig like crack. The tea is vast. Cop attract tonight to flavor. Anxiety may get stadium. Map alone pipe cow. Other goat real escape chaos. Scrap wash to word via rack to blade. First may split dad out valve. Its red is various. Its choice barrel ramp other lunch. Wreck parrot a sunny wage. A cotton bar decorate clock. Stable may see penalty. Hobby edge our dig. ∇
 - **locktime:** □ — no locktime — final with respect to time
 
 ## Commentary

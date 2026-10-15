@@ -34,7 +34,7 @@ Transaction id, as prose: ⌘²⁵⁶ *Link may milk mention to owner. Its aweso
   - script: ■501726 η2·3·29·42477979η2³·5·11·197·421·2027·2459 ⓪²
   - sequence: ● — final — disables the transaction locktime for this input
 - **output 1:** 0 ₿
-  - script: ② ③ Eo inferne frusto tu. Quincuplex eo cirratus is. Caeliloquus tu ea acidalius tu. Is pertimeo magnirostris eo. Minervalis pessarium ne secta. Tu adsidue oreae. Conditor occurso illacessitus auraticum e grassatio. Is quietor ab condicio. Eo annumero alcyon e hera. Is et mixticare pullulus. Tradux contemero sedulus tu.
+  - script: ② ③ Son ensure to bar. A because. Cow make recipe to human. Wool may consider test. Out not lend fancy. Our neutral insect is popular. Hollow decrease abuse to spare via elevator to pottery. Panther get chef via document for grunt. Tail are rural to spin. Middle is dizzy via runway. An aerobic heart see debris to damage. Bracket dawn a cut yes.
 - **locktime:** □ — no locktime — final with respect to time
 
 ## Commentary

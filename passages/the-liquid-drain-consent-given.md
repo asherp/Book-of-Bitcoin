@@ -34,7 +34,7 @@ Transaction id, as prose: ⌘²⁵⁶ *Number wait to slow. Luggage may hole gig
   - sequence:  — replaceable — signals opt-in RBF
   - witness: see footnote a
 - **output 1:** 0.00001000 ₿
-  - script: ⓪ h²⁰ Ratiocinatio e maximus eo. Tu vult superscribo. Is cuneatim veretilla. Amboiensis regularitas est quernus. Singara rogus e rusticatio. Tu capistro farfarum se tu. Is prophetizo diribitorium e is. Eo assolo colon ad venter.
+  - script: ⓪ h²⁰ Word reject the online junior. Each cop rely to remember for addict. Tent why kite donor. Rough may ready glare. Brick see the cactus to gravity. Poem may set dove out length. Junior set the avocado. Our neck is wrong.
 - **output 2:** 0 ₿
   - script: ¶ ⇊⁸⁹⁷ “-----BEGIN PGP SIGNED MESSAGE-----Hash: SHA512Yes, thank you.-----BEGIN PGP SIGNATURE-----iQIzBAEBCgAdFiEEEXZULamOceEzci73SsjMiGhEotYFAmqeLHQACgkQSsjMiGhEotaWtQ/9EmKfAUQh5HQFPWth6tjwYUVv32E+3O9E2AOOI4lFoTLGRJukD9FJCzjQn4MwX150nwjPjR29CU8VWO5DBOOpSgq/2TSWShkzDkF/BJG0vFZTF7y4mMn05EYvdkLY8ZOl2r/HiVqIOR8/DJo5Ddi2a34l7tzfTsbcq7+otzHmNTsOnmGa9FcBjFQ2VQEwbHhh42eOa/9V0mdExDc5lXbTAWKT0hPxeVRxxPNcQvWbZqrNVdpouAvO4OE02Ld5evmEqupuhIAMYDScDV03M5aRPzvrU5fp+2W1C1+dccq3zbexjfIsHcjQIkhwG8D3gyAYiVM73dlo9NEPL/BdwZBEinHEx/Ff/fYWgD6Ai6LHsb/BBwiCzraG5HWW2tAzzVw+WxHl8f07tL9tP/nRStvSSAmmx4Klc8tnuiYFy+YxAq7A/BpmdSg/PDOIdBMV0v5ryQTV0DNRP8djbzKfrJYsU+/jkffj+Dx5d9PnZQqyOmsJAgtlWdzdOW1Yf2MTYrHmAgzm1S+0j3jS7q8wmgHW1ZFe84Wr1IwamHliQdIWcnzmOR8e2ecJkxBc+1gLYP38c1YVpZ0GvqL/AA5gmgykUkBmZR7RmwAAKyhngzJvWK9Gbrlw2HjRcWK1qvAXZEzdqCDwyxhHPVYMUSmj2URY7lIFLrsTcGBPGlj2H1ow0NU==YUA8-----END PGP SIGNATURE-----”
 - **locktime:** □ — no locktime — final with respect to time

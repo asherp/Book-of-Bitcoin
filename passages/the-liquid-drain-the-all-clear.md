@@ -34,7 +34,7 @@ Transaction id, as prose: ⌘²⁵⁶ *Army may neglect entry. A gown embrace ma
   - sequence:  — replaceable — signals opt-in RBF
   - witness: see footnote a
 - **output 1:** 0.00001000 ₿
-  - script: ⓪ h²⁰ Ratiocinatio e maximus eo. Tu vult superscribo. Is cuneatim veretilla. Amboiensis regularitas est quernus. Singara rogus e rusticatio. Tu capistro farfarum se tu. Is prophetizo diribitorium e is. Eo assolo colon ad venter.
+  - script: ⓪ h²⁰ Word reject the online junior. Each cop rely to remember for addict. Tent why kite donor. Rough may ready glare. Brick see the cactus to gravity. Poem may set dove out length. Junior set the avocado. Our neck is wrong.
 - **output 2:** 0 ₿
   - script: ¶ ⇊⁹³³ “-----BEGIN PGP SIGNED MESSAGE-----Hash: SHA512Bridge nodes are patched, safe to return the funds.-----BEGIN PGP SIGNATURE-----iQIzBAEBCgAdFiEEEXZULamOceEzci73SsjMiGhEotYFAmqefjkACgkQSsjMiGhEotZ48g/+IJMRrScxArSyiHlTvvrNeeUY2V57CAtH6+oGV5uSuP1UuIv7sdrX0plBxWnygxNTsdJrHmv5K59RqDNSKWp1jTso15jQg8T2bT8JaMOwoZyNwAakqEbrfzHc9yK+lTh4/reEZAYuy7HxSbKDCpLCLaRO0TxMf8vAu00dj70Zmuzn+Wo7CV6f8uDG9zBnuDo1yEZ0FAq0V4J3eU0rr++/+MiIARd4U1h2dtiIRpNoUwxKDg13KsBnjTcOH1JzuiAbJ2GyNi0xbrsnfhD39edd6F3UZeI44rRZbVJwHt6Kkmf4ujx81IMIrnklDCnnrjvAQeADAIh/ZLa+6876WfejHk2VV/wQQ4c2ty7XU4mRbYbgXi+bdfcxpDMB1h/JJ9j8eKD0AXA9cYV2Y9VpLP5uBP6SMfOZ2snBlFdlMFJiRWXOhFiZS4fQ3da5VPiU/PVL3f5Ma8rwmXgLq+5YW7XKJo75LyeBUmE66I2Uoz8jc1e+xxUaZ2UxPoNAaq+RG2jJs357r2GSi34NPKX5VmPNQHJsux1GSVgrW0ZAdQG6B1nJ7auVrDoyzpSQF3Fb6BrF4U5CxfClAf+XgwVBcPdD3GsicVgqlaSWJ1XfDCPQzoF1K7QNUF+VPGdYRrm1naGgzEaYFi47V0HaiHWQC/OzLtQaONpcp5r+Xz3HLikZS/o==Kdb4-----END PGP SIGNATURE-----”
 - **locktime:** □ — no locktime — final with respect to time

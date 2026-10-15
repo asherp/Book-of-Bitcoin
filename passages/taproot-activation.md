@@ -34,7 +34,7 @@ Transaction id, as prose: ⌘²⁵⁶ *Match ball gorilla to bachelor. Its bit m
   - sequence: ● — final — disables the transaction locktime for this input
   - witness: see footnote a
 - **output 1:** 0.00030000 ₿
-  - script: ① p³² Cathedra vult subsortitio e is. Eo adgregaturus merx de collaris tu. Phallicus eo inmineo optimas. Tu exsudo is e tu. Eo generatim deformitas. Tu vult delambo repositum. Troxalis stapes. Logos coagito quaranta e legista ab secale. Scriptorius eo vult rufesco deretrarius tu. Imbridus is est.
+  - script: ① p³² Grid how set ten. Gossip moon action to robot for young. People may spray eyebrow. End enact its near cow. The legal winner drill food to exhibit per embrace. A boring son explain to enrich. Zone gather to cancel for a ridge. Its grab real nurse still. Ban ago promote its pop.
 - **output 2:** 0 ₿
   - script: ¶ ¹⁵ “gm taproot 🥕”
 - **locktime:** □ — no locktime — final with respect to time

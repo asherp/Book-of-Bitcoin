@@ -1504,7 +1504,7 @@ Transaction id, as prose: ⌘²⁵⁶ *Spray may get a trial winter. Shoulder dr
   - sequence: ● — final — disables the transaction locktime for this input
   - witness: see footnote rw
 - **output 1:** 398.47573857 ₿
-  - script: ⓪ h²⁰ Ablutio vult interiacio ruminor e protractio. Insperans despicientia ex peristylum. Pulica aborto e segnitas. Tu imminuo is. Eo avariter texanus tu. Is perequito inflammatio e taxo de inpar is. Tu illorsum eo.
+  - script: ⓪ h²⁰ Dash set property to rich. A rude trend is home. Apology surge to inflict for web. Out may achieve crunch. The dig are awesome. Our little pool set our goat to toss. A spider divorce to embody. A twin like the latin.
 - **locktime:** □ — no locktime — final with respect to time
 
 ### Witness footnotes

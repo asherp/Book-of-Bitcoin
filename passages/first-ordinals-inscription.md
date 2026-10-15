@@ -34,7 +34,7 @@ Transaction id, as prose: ⌘²⁵⁶ *An odor demand to argue. Sport surround t
   - sequence:  — replaceable — signals opt-in RBF
   - witness: see footnote a
 - **output 1:** 0.00009678 ₿
-  - script: ⓪ h²⁰ Eo ammisceo conscelero e lacca. Inmissio propatulo frutex. Eo porro erogator. Is vult spurco querimonia. Eo volgaturus gestatio. Haereditas abjungundus adsicco. Uxoricidium sospes refrigerium.
+  - script: ⓪ h²⁰ Gift cloud bamboo to a lobster. Lie may deny tail. Repair is obvious to war. Tax ahead shield tent. A guide foam sibling. Lab may include a middle ban. Yes depart to scale. The song increase load per radar.
 - **locktime:** □ — no locktime — final with respect to time
 
 ### Witness footnotes

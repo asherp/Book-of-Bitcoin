@@ -31,10 +31,10 @@ Transaction id, as prose: ⌘²⁵⁶ *Bet truly tongue menu. A tie may undo to 
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
-  - script: 210000 ⁶ “/P2SH/” 1354116268 ⁸ Is absto armita e procacia. Eo abs clamor. Paedico catechismus e burgravius. Eo veneo sandala se praetextum. ⁷ “/slush/”
+  - script: 210000 ⁶ “/P2SH/” 1354116268 ⁸ Amount due achieve letter. Our acoustic abandon are absurd to athlete. Due may enjoy a warm elite via entry. Master may type to float. ⁷ “/slush/”
   - sequence: ■0 — replaceable; relative locktime 0 blocks after the input's confirmation
 - **output 1:** 38.56295554 ₿
-  - script: ⧉ ⌖ h²⁰ Occipitalis is vult refugio devotus. Villa est sangirensis e pertristis annellus. Eo vapulo ampullor. Hederiger is cotidie tu. Nequedum. Eo brevirostris defensatrix e circumpes. Is perducto compages en exclusivus eo. ≡ ∇
+  - script: ⧉ ⌖ h²⁰ Trophy may cube debate to bullet. Artefact control faint for decline. Blush may see gospel to source. Sense father the fee. Blossom see kingdom to august. Its ten abandon bubble saddle. A sin is fiscal to oval. ≡ ∇
 - **locktime:** □ — no locktime — final with respect to time
 
 ## Commentary

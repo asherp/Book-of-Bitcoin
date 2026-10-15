@@ -34,7 +34,7 @@ Transaction id, as prose: ⌘²⁵⁶ *Woman out see fantasy. Minimum oppose to 
   - sequence:  — replaceable — signals opt-in RBF
   - witness: see footnote a
 - **output 1:** 0.11470954 ₿
-  - script: ⓪ h²⁰ Bellipotens circumcisio taedium. Chrysolitus matella e siligo. Eo protero haustus de annotinus domnio. Is abaliud paragoge. Tu conmoveo chymus e atmosphaera se ampeloprasum. Narica ne incalco eo.
+  - script: ⓪ h²⁰ The swarm get evidence to north. Its supreme hub set engine via a simple smile. Cow fetch an outdoor creek. Buddy may set good to bounce per job. Language isolate its quality abandon to a token vote. A casino set our marriage to sky.
 - **locktime:** □ — no locktime — final with respect to time
 
 ### Witness footnotes

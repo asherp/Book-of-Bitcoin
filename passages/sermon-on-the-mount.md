@@ -34,7 +34,7 @@ Transaction id, as prose: ⌘²⁵⁶ *Such zoo see a talent. Each trade is dire
   - sequence:  — replaceable — signals opt-in RBF
   - witness: see footnote a
 - **output 1:** 0.00010000 ₿
-  - script: ① p³² Sibilatio congruentia e celeritas. Methodicus is excaldo icon. Bugillo vult tridentiger antecessor. Is solet faeneror lamentor. Inflexuosus eo defleo indicina e coniurator. Is babtizo creper quintana. Linimentum est acalyphaceus. Eo coelitus armigera. Is madisonensis iugerum e is.
+  - script: ① p³² Pyramid is digital to embrace. Tax never topple kick. Mention see bacon to exhaust per result. Answer idle to evoke for glass. Out ago ignore its top cop. The set may acquire blast to our far pizza. Each cap may tell spin to dig. Hit may come lyrics. Call game casino to toast. Its wool wear grunt river.
 - **locktime:** □ — no locktime — final with respect to time
 
 ### Witness footnotes

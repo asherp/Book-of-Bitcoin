@@ -34,9 +34,9 @@ Transaction id, as prose: ⌘²⁵⁶ *Drive how get lobster. An aware balcony a
   - sequence:  — replaceable — signals opt-in RBF
   - witness: see footnote a
 - **output 1:** 3,995.99999857 ₿
-  - script: ⓪ h²⁰ Ratiocinatio e maximus eo. Tu vult superscribo. Is cuneatim veretilla. Amboiensis regularitas est quernus. Singara rogus e rusticatio. Tu capistro farfarum se tu. Is prophetizo diribitorium e is. Eo assolo colon ad venter.
+  - script: ⓪ h²⁰ Word reject the online junior. Each cop rely to remember for addict. Tent why kite donor. Rough may ready glare. Brick see the cactus to gravity. Poem may set dove out length. Junior set the avocado. Our neck is wrong.
 - **output 2:** 0.01834922 ₿
-  - script: ⓪ h²⁰ Craticula sit seepensis e horrifer icon. Tu vult flammizare is. Tu sacrilege galactites. Is catervatim aptus eo. Is seresco uncto. Insultus vult invetero istic. Volucris queror coarcto e sensatio.
+  - script: ⓪ h²⁰ Nose set turtle to coin. An ordinary lion evoke our relief. Relief rail to humble per hurdle. A banner hen yes see ability. Mosquito may invite first. Chimney might see length. A vast family may get universe. Its paddle shall set row.
 - **locktime:** □ — no locktime — final with respect to time
 
 ### Witness footnotes

@@ -33,7 +33,7 @@ Transaction id, as prose: ⌘²⁵⁶ *A desert buyer leg visual to raise via fl
   - script: β₃₂ 65535×256²⁶ η2² ⁶⁹ “The Times 03/Jan/2009 Chancellor on brink of second bailout for banks”
   - sequence: ● — final — disables the transaction locktime for this input
 - **output 1:** 50.00000000 ₿
-  - script: p⁶⁵ Eo immo impartiens tu. Eo deprendo monasticus is e eo. Tu relative naticidium. Is vult ingeniculo e flabellatus aeroplanum. Tu patior praenosco en alsius tu. Bavaricus stacta abstergeo subintroeo. Amplexus e syricus tu se eo. Is perdoceo telonium e postulatus. Indamnatus eo parvipendo balbo. Cachla unanimus decempeda. Axula obtorpeo e trivius vojvoda. Dominator milies hydrodendron. Is sacrate iusticia. Eo vult confligendus e dierectus tu. Is iocunde eo. Tu speciatim pusillanimis is. Vernus tu est verbalis. ∇
+  - script: p⁶⁵ Yes afford to detail. Satoshi may giggle torch. Piano see organ to coconut per the vast crime. Yes equip hotel to alarm. Hero pass a bright lie. Guy decorate to essay. Oxygen shift attitude for autumn. Its manual strategy see enemy. Bed remove its average oil. Our vicious cow give snap. Its party topic voyage dwarf. A royal seminar is cheap to a ten. The door is minute. Rough narrow theory to repeat. A far weasel may install cut. Our fyi there relax its whisper. System connect the tired valley. Magnet answer catch to section. ∇
 - **locktime:** □ — no locktime — final with respect to time
 
 ## Commentary

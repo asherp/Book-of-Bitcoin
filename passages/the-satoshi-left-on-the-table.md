@@ -34,7 +34,7 @@ Transaction id, as prose: ⌘²⁵⁶ *Assist far attend pony. Issue blast barga
   - script: β₄₉ 6984627×256²³ η3·5·7
   - sequence: ● — final — disables the transaction locktime for this input
 - **output 1:** 49.99999999 ₿
-  - script: p⁶⁵ Gelu exbannio districtus tu e eo. Is legitime caributus. Nomenclatio evictio e illitteratus covinnarius. Sulpicius is vult bato navandus ad asteria. Tu abliguritus obsecundo. Is generaliter conservator. Scandix e antelucanus tu. Satius folia idahoensis nigritudo ex is. Tu eiusmodi arvensis eo. Infirmis is ut angario deretrarius is. Tu ea dimano ritratus. Is vult delineo unisonus eo. Tu assedito illinio. Is permetior consisto e belligeratio. Igitur. Lapidaris plagella vult frutesco. Alsbergum litargia. ∇
+  - script: p⁶⁵ Advice alone result alcohol. Our roof get symptom. Moment pen bag to avocado before sample. Voyage may set its ugly chest to kidney. Record barrel to scare out spray via its alpha sea. Some knife due noodle jazz. An elegant good achieve nod. The guy collect feed to pink. Report cushion our boss dentist. Its crack purpose liberty. A nod is silly. Spirit set globe to maid. Our bachelor may match cycle. Guy might engage whisper to call out ethics. Yes may keep candy. War shall allow casino. Our vast maple room to behave out mistake. ∇
 - **locktime:** □ — no locktime — final with respect to time
 
 ## Commentary

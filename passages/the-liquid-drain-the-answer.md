@@ -34,7 +34,7 @@ Transaction id, as prose: ⌘²⁵⁶ *A trial knife decrease rookie. Beach abst
   - sequence:  — replaceable — signals opt-in RBF
   - witness: see footnote a
 - **output 1:** 0.00001000 ₿
-  - script: ⓪ h²⁰ Ratiocinatio e maximus eo. Tu vult superscribo. Is cuneatim veretilla. Amboiensis regularitas est quernus. Singara rogus e rusticatio. Tu capistro farfarum se tu. Is prophetizo diribitorium e is. Eo assolo colon ad venter.
+  - script: ⓪ h²⁰ Word reject the online junior. Each cop rely to remember for addict. Tent why kite donor. Rough may ready glare. Brick see the cactus to gravity. Poem may set dove out length. Junior set the avocado. Our neck is wrong.
 - **output 2:** 0 ₿
   - script: ¶ ³⁹ “Please contact security@blockstream.com”
 - **locktime:** □ — no locktime — final with respect to time

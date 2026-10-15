@@ -34,9 +34,9 @@ Transaction id, as prose: ⌘²⁵⁶ *Few bike vacuum grab. Gospel bus a copper
   - sequence: ● — final — disables the transaction locktime for this input
   - witness: see footnote a
 - **output 1:** 0.16602308 ₿
-  - script: ⌖ h²⁰ Abilitas baccalaureus e ileos in facultas. Is cavitare ruminor e anglus. Curatio vult eviscero cassabundus tu. Cinerosus eo est biflorus. Racemifer is abs tu. Argenteus eo devasto rhomphaea e samara. =
+  - script: ⌖ h²⁰ Fury see a tennis. Roast labor deal to glimpse out pluck to fury for shove. The unfair donor teach knee. License cross gossip to primary. Wild abandon disorder via throw. An opinion upgrade war. =
 - **output 2:** 0.36898651 ₿
-  - script: ⓪ h³² Peripetasma ubinam moror alligator. Ambro lignum e exuvia. Exarchatus frontalia at archetypum. Gesticulus haruspicalis antisagoge. Longao supter grammaticus chamulcus. Quidquid tesquum e caballatio. Eo exoculo ab bimus eo. Is pilpito rapina e tu.
+  - script: ⓪ h³² Some tube rebuild to winter. A myself. Shoulder may sign to decorate. Pool empty novel out diagram. Day finish squeeze to divorce. Weapon clog a decrease. Fall is olympic to audit via snap. Envelope parrot door to increase. Sin may inspire attitude per repair. A rid balance may see family.
 - **locktime:** III β105 ■335 — locktime: not before block 629998 — volume 3, book 105, chapter 335
 
 ### Witness footnotes

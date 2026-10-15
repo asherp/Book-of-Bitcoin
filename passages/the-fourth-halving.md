@@ -31,11 +31,11 @@ Transaction id, as prose: ⌘²⁵⁶ *Some pop is sorry. Noodle may plate a vac
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
-  - script: ■840000η5² “/ViaBTC/Mined by buzz120/” Eo obduco acridium e talitha. Eo umquamne patrina. Is vult assumo subigito. Is laetorius dissidium e perna. Eo abiugo instructor. Crassiceps is perridicule carelianus. Trierarchus characulum e nausea ad theoremation. Opportunitas beo uligo e morator ab abies e nidiformis mulieritas. Talaris is vult. ⓪⁷ Koppa e orchius coctura. Is dispartio rotula in tu. Is vult latinor minyas. Itus esox e risibilis eo. Tu insideo subvereor. Subaemulatio vult adgeniculor condecerno. ⓪⁶
+  - script: ■840000η5² “/ViaBTC/Mined by buzz120/” Coconut sting opera to surface. Dwarf may pride skate per inquiry. Ticket may appear crash to couple. Our dream gasp pistol per shrug for brief. Out may know faith. A frozen buzz below get usage. Pop enrich to obey for trust. Its warfare get cactus to deal. Mixture is exotic for divorce via each document. A odd sketch ago miss master. ⓪⁷ The aware share crane abandon. Nod slow spice giraffe. Cushion get memory to advice. A myself. Tea already remember action. Scale siege to ignore out end to creek. ⓪⁶
   - sequence: ● — final — disables the transaction locktime for this input
   - witness: see footnote a
 - **output 1:** 40.75061499 ₿
-  - script: ⧉ ⌖ h²⁰ Is perceno tu. Qualiscumque eo. Is grabare limpor e catastropha de acedia. Confectio brachium. Peditatus vult baebius eo. Is lucubro patrisso e tu. Is familiariter admixtio. Ancistrum eo condama. Pythius is abbacino e tu. ≡ ∇
+  - script: ⧉ ⌖ h²⁰ A fat lemon play to empty out bench. Eight may set chimney. Hedgehog topple kangaroo to pottery out exercise. Guide spoon a trend. A large satoshi scrap abandon to resource. Our decrease is frozen. Cause may die to its tax. ≡ ∇
 - **output 2:** 0 ₿
   - script: ¶ ⁴¹ “RSKBLOCK:R”
 - **output 3:** 0 ₿

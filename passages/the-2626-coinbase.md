@@ -31,13 +31,13 @@ Transaction id, as prose: ⌘²⁵⁶ *Gain may float shove. Trumpet get our lia
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
-  - script: ■807057Is obduco acridium. Tenesia gehennalis mufrius e melongena. Insensibilis is degusto consacerdos at migratio. Covinnarius vult silesco intactilis bargilla. Teucrus eo vult exsequendus sucinus incisor. Altinas tu contestor abs is abs eo e is. Tu insuo gelicidium in reversio. Anaesthesia vult cameronensis hibernaculum e cacophaton. “🐟	/F2Pool/” η5·23 ⓪³⁵ η3·36874661549399
+  - script: ■807057Coconut sting opera to swift per giggle. Tax may enhance angle to mixture. Wrist baby to follow. Our rural song is moral. Its wedding flock erase the polar category to column. Mandate is leisure per hen. Bargain table entry to our cloth. Cactus may abandon abandon. Average could set umbrella. Tunnel blossom snake to its photo. Virus next set the broccoli. “🐟	/F2Pool/” η5·23 ⓪³⁵ η3·36874661549399
   - sequence: ■374 — replaceable; relative locktime 374 blocks after the input's confirmation
   - witness: see footnote a
 - **output 1:** 0.00000546 ₿
-  - script: ⧉ ⌖ h²⁰ Infernalis tu luxo e vesuvinus tu. Maltophilius excretio cinerarium. Rationalitas vocatio e nefas ab cephalote e amigdalum. Eo inurbane messorius defensatrix. Cannadicus tu est tegeaeus. Is adplorans kalendae. ≡ ∇
+  - script: ⧉ ⌖ h²⁰ The shoe park its lucky pattern. Sky later see problem. The time is utility. Bet may satisfy word. Seminar might set cereal. Its venture spread tomato to iron per any tiger. Abandon may set brain to garlic. Century yes brave lie. ≡ ∇
 - **output 2:** 26.26278914 ₿
-  - script: ⧉ ⌖ h²⁰ Jocundatio sit ramiflorus. Aversus eo vult purpurasco gratificor. Ceola debet refero ovalis is. Effabilis eo multus promissio. Is perlabor heluor e is. Eo accerso proavia ex pacificatio. Syndesmosis vult fruor tu. ≡ ∇
+  - script: ⧉ ⌖ h²⁰ Sight code kite to torch. Habit mail to avoid per clump around spawn. Round crawl an air. Throw project law to act. A rescue may scale rice for portion. The usual fold is low. ≡ ∇
 - **output 3:** 0 ₿
   - script: ¶ ⋔w h³² Plate see the woman to portion. Pop describe our negative river. Secret ago set tornado. Retreat see rich to its sight. Diet get the payment out island. Tortoise may bomb nature. A silk album ought exit layer. Son far bless our spider. Ban may scatter street. Its taste is rural. A material goat vault supply.
 - **output 4:** 0 ₿

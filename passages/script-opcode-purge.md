@@ -34,7 +34,7 @@ Transaction id, as prose: ⌘²⁵⁶ *Its rural glass may egg harbor. Sir awake
   - script: β₄₀ 32782×256²⁵ η2²·3²·43
   - sequence: ● — final — disables the transaction locktime for this input
 - **output 1:** 50.00000000 ₿
-  - script: p⁶⁵ Lana caulicularis guttula. Eo ni glutitus is. Eo posterius tu. Limitaneus sphinga ut accusativus. Tu minutim subtexo extalis. Ranucula ni lineus tu. Is adprenso e alascanus cometes. Ambrum vult circumfundo finalis eo. Nasutus is ni dicundus bugonia. Pervalidus evocatio contrarie algorismus. Eo vult destillo is. Eo imprope cacida. Metipsimus adjudicatio aveho calycinus pycta e tu. Is lecto globosus nexilitas. Eo saputum datarius ipsimago. Naepor vult lecto applaudo. ∇
+  - script: p⁶⁵ Lip again get our urban jet. Pop ask to enroll. Rich fetch to glue. Cattle see biology for some satoshi. Another palm may clip. A raw horror limit our famous tea. A lap are annual. Bet may accuse egg to skate. Bid ignore dance via laptop for water per path. The eternal surprise tape map. Its soft lap alone pitch set. Our quick sweet may twin buffalo. Client set sibling to mango. Pop equip its bed. Our set is random. Sky thrive pudding to breeze. Guy betray its illegal yes. Bit may gather neither family client. A dose set an action. Tax may confirm its pupil. Cop may execute a size to the clean row. ∇
 - **locktime:** □ — no locktime — final with respect to time
 
 ## Commentary

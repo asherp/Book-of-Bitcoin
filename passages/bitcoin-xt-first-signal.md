@@ -31,10 +31,10 @@ Transaction id, as prose: ⌘²⁵⁶ *A ready fire brown taste to a keen vote. 
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
-  - script: ■370434 η51987679957039Manuballista verber e evocator. Dejugis eo inconivus tu. Fabaceus captura spiritaliter ebor. Inmobilis fatus rhexia e colligatio. Eo ubilibet avens clibanus. Subsannatio inous error. Insolitus tu cadivus eo. Is digero exsequia e territio. Is adcelero foliosus travectio. ⓪⁷ Tu excito quaestio abs aris. Is vervago accerso. Fibra apocynon e iucunditas. Theosophicus cavaedium benefice dibaphus is. “/slush/”
+  - script: ■370434 η51987679957039Our wide son is vibrant. Fork may see kidney. Cannon is neutral to riot. Scissors set soul for dawn. A someone. Bit almost become a sky. An own swift see course. Swift glory to enjoy. Luggage segment tongue out road via sentence. Parent see our primary doctor. Its amazing red across collect its hybrid knife. Hamster may group zone to the tax. ⓪⁷ Cop caught elite to scale. Abandon see an absurd road. Pop foster a theme to address. Its various fat may see mosquito. Its right media get city to liar. “/slush/”
   - sequence: ■0 — replaceable; relative locktime 0 blocks after the input's confirmation
 - **output 1:** 25.28535368 ₿
-  - script: ⧉ ⌖ h²⁰ Operator patricius lanceola. Myrrha vult iaculabilis torris. Nixabundus is ni venitus tentaculum. Lipolyticus juger et dictatio. Eo vult vivifico iucunditas. Parthus is ut respondo cantrix. Eo vult denoto is. ≡ ∇
+  - script: ⧉ ⌖ h²⁰ Lab may price refuse. Reward noodle excuse to virus. Step ready the west pottery. Prison set lamp to shiver. The advice holiday judge. Holiday divorce wasp to rail out acid. A print is pop. ≡ ∇
 - **locktime:** □ — no locktime — final with respect to time
 
 ---

@@ -9,11 +9,11 @@
 // covered yet simply reads in English, so coverage can grow string by string
 // without ever leaving a page half-broken.
 //
-// The UI language is NOT always the prose language, and by default it is not:
-// the book is set in Latin unless a reader chooses otherwise, while the chrome
-// around it stays English. Latin prose is a real choice; a Latin chrome would
-// be an affectation. So choosing Latina -- or simply never choosing -- leaves
-// the chrome in the last modern tongue chosen, English until there is one.
+// The UI language is NOT always the prose language: the book is set in English
+// unless a reader chooses otherwise, and the chrome follows the prose into any
+// modern tongue -- but not into Latin. Latin prose is a real choice; a Latin
+// chrome would be an affectation. So choosing Latina leaves the chrome in the
+// last modern tongue chosen, English until there is one.
 // That rule lives in the stored key: glossia-msg.js's setBookLang writes the UI
 // key only for non-Latin choices, and uiLang() below falls back through the
 // book language for readers who chose one before this key existed.
@@ -332,7 +332,7 @@ export const LANGS = [
 // Mirrors glossia-msg.js's DEFAULT_LANG_ID, restated here for the same reason
 // the storage keys and the roster are: a light page names the choices without
 // loading the engine. Changing one means changing both.
-const DEFAULT_LANG_ID = 'latin';
+const DEFAULT_LANG_ID = 'english';
 const langNow = () => {
   try { const l = localStorage.getItem(BOOK_LANG_KEY); return LANGS.some((x) => x.id === l) ? l : DEFAULT_LANG_ID; }
   catch { return DEFAULT_LANG_ID; }

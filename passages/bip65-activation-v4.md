@@ -31,10 +31,10 @@ Transaction id, as prose: ⌘²⁵⁶ *Cow seek to vanish. Fix set poem across i
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
-  - script: ■388381“/BIP100/” Idus rhododendron. Tu vult conseptus cloaca. Pes e vanitas. Is illinc eo. Tu belle sona. Eo vult subplantatus affirmo. Chymus coniuro ultrix. Caffaea faenerato is. “/BTCC/ ”
+  - script: ■388381“/BIP100/” Affair used to swear per project. Its mother fix else set our out inmate. Energy cage divorce to asthma. Aid may divert salmon out one. Cactus may speed dune. Fire too get relief. “/BTCC/ ”
   - sequence: ■0 — replaceable; relative locktime 0 blocks after the input's confirmation
 - **output 1:** 25.15227937 ₿
-  - script: ⧉ ⌖ h²⁰ Nardus vult pelamis. Tu protervio e triennium. Tu vult summitto versutia. Eo insterno occupatio. Tu virescens neomexicanus is. Eo conplano porcinus orator e defensatrix. Praedictivus iuramentum vult scaturiens maestitudo. ≡ ∇
+  - script: ⧉ ⌖ h²⁰ Club may lunch its primary. Son flee our sunny crouch to ski. Cigar frost tunnel via rule for hand out panda. Crazy may object legend. Barrel sting abandon to super. Limit better see wagon. ≡ ∇
 - **locktime:** □ — no locktime — final with respect to time
 
 ## Commentary

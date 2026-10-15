@@ -34,9 +34,9 @@ Transaction id, as prose: ⌘²⁵⁶ *Pan okay set its viable bit. Sir oblige s
   - sequence: ○ — not replaceable, but respects the transaction locktime
   - witness: see footnote a
 - **output 1:** 0.00432100 ₿
-  - script: ⧉ ⌖ h²⁰ Saccellus pulvisculus e eo. Tu dispello repudiatio ab socerus. Echios e nullus. Is conmovendus principalis scalpellum. Tangibilis eo morbidus tu. Is restipulor perequito e suburbium. Raudus exos aurigo. ≡ ∇
+  - script: ⧉ ⌖ h²⁰ Pull may get dirt to our whip. Its hidden hand is crazy. Genre set misery to arctic. Rocket may sting stove. Ripple exile favorite to ketchup per wonder. Sport may divorce army to divorce. Out may deliver shoulder. ≡ ∇
 - **output 2:** 0.00432100 ₿
-  - script: ⧉ ⌖ h²⁰ Eo vult inolesco oronteus is e similaris tu. Aurugineus tentorium monoides eo. Is vult sano tu. Is frequenter lavernio. Peregrinus vult inligandus cavannus. Naufragiosus is eo abs socius coctor. Neophytus tu vult discedo e tu. ≡ ∇
+  - script: ⧉ ⌖ h²⁰ Our ban is intact. Jelly may get cargo to jump. System may laugh inside treat like prison. Heart uphold super to snow. Hire may set a grief. Map quick neglect abandon. The student may set symbol. Sky why see its robust express. ≡ ∇
 - **output 3:** 0 ₿
   - script: ¶ ⁷⁰ “Do not be overcome by evil, but overcome evil with good - Romans 12:21”
 - **locktime:** □ — no locktime — final with respect to time

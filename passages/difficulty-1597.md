@@ -31,11 +31,11 @@ Transaction id, as prose: ⌘²⁵⁶ *Glance spice canvas to blanket. Dolphin m
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
-  - script: ■685440Tu ut obduco acridium. Eo tanquam is. Odibilis batillum fornicarius e pugilatio. Cloppus is resupino eo. Naricutum tu imaginor e herpes. Bivium de penniger confugium. Tu vult accenseo reciprocus multivira. Is conparens nacca abs aes. Famulitium ea crabro. Is absum redimiculum e fex. Defensatrix plastrum ab conlecta. Tu vult is abusque solidipes tu. “/F2Pool/” η2·3² “Mined by manasi20s” ⓪¹⁷ η13·956205529 ⓪¹
+  - script: ■685440Coconut sting some opera. Sir surround its digital creek. A dig is chronic. Melody print pottery to whip for alarm. The region puzzle dirt to chest. Some cradle out blast our typical engine. Its real die set its rigid dutch to the trouble. Time point census out cactus. Abandon about see the second. Velvet may pair divorce. Wagon might see day. A out is capable. A length may search tie. Pan else pepper some unit. The solution may get our ear to rub via cut. “/F2Pool/” η2·3² “Mined by manasi20s” ⓪¹⁷ η13·956205529 ⓪¹
   - sequence: ■0 — replaceable; relative locktime 0 blocks after the input's confirmation
   - witness: see footnote a
 - **output 1:** 6.92922309 ₿
-  - script: ⧉ ⌖ h²⁰ Jocundatio sit ramiflorus. Aversus eo vult purpurasco gratificor. Ceola debet refero ovalis is. Effabilis eo multus promissio. Is perlabor heluor e is. Eo accerso proavia ex pacificatio. Syndesmosis vult fruor tu. ≡ ∇
+  - script: ⧉ ⌖ h²⁰ Sight code kite to torch. Habit mail to avoid per clump around spawn. Round crawl an air. Throw project law to act. A rescue may scale rice for portion. The usual fold is low. ≡ ∇
 - **output 2:** 0 ₿
   - script: ¶ ⋔w h³² The aware super soon equal wire. Mixture drum to enrich via child to subject. Cop say to snow. Our public may inform its wall. Pop develop trouble to steel. A yes is rude. Its tower are huge. Cop absorb average to lesson. Exercise auction figure for turtle. Set may enter our dig. The tea must get airport.
 - **output 3:** 0 ₿

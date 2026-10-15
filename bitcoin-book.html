@@ -1940,7 +1940,7 @@ const lazyEncode = (() => {
     czech:   { per: 1.447, base: 3 },
     german:  { per: 1.520, base: 15 },
   };
-  // One fill is tens of milliseconds -- Latin, the default, is the slowest at
+  // One fill is tens of milliseconds -- Latin is the slowest at
   // roughly 65-90 ms a push in the browser's threadless build, since the
   // concurrent best-of draw glossia 0.5.0 added is native-only. So filling
   // every intersecting placeholder in one callback freezes the page for the
@@ -1980,7 +1980,7 @@ const lazyEncode = (() => {
     // typical measure rather than skip, since an unreserved run is the collapse
     // this exists to prevent, and a rough box beats none.
     const perLine = (width && fontPx) ? Math.max(8, width / (fontPx * 0.5) / 7) : 12;
-    const est = WORDS[bookLang()] || WORDS.latin;
+    const est = WORDS[bookLang()] || WORDS.english;
     for (const el of pending) {
       const bytes = Number(el.dataset.bytes);
       if (!bytes) continue;
@@ -4177,13 +4177,26 @@ function attachHashCopy(el, hex, label, prose = el.textContent, vout = null, vin
   }
   if (el.__hashWired) return;
   el.__hashWired = true;
-  const open = (e) => { if (el.__hashMenu) openHashMenu(e, el.__hashMenu, el); };
+  // A link inside the handle answers for itself. An output's amount cell
+  // carries the forward citation and the Citations register's ‡ beneath the
+  // figure, and a click on either is a reader following it, not asking for the
+  // cell's menu -- which otherwise opened over the very move they asked for and
+  // closed as the page scrolled away, a menu seen for an instant. The same
+  // guard stands in attachBodyMenu (the footnote letter ending a scriptSig),
+  // repeated rather than shared so each handle reads whole.
+  const onLink = (e) => {
+    const a = e.target && e.target.closest ? e.target.closest('a[href]') : null;
+    return Boolean(a) && a !== el && el.contains(a);
+  };
+  const open = (e) => { if (el.__hashMenu && !onLink(e)) openHashMenu(e, el.__hashMenu, el); };
   // A mouse click on this focusable element would otherwise scroll it into view
   // (native focus behaviour); that scroll trips the menu's scroll-dismiss and
   // closes it the instant it opens. Suppress the focus scroll on mousedown.
   el.addEventListener('mousedown', (e) => e.preventDefault());
   el.addEventListener('click', open);
-  el.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(e); } });
+  // Checked before preventDefault: Enter on a focused link inside the cell is
+  // the link's to act on, and a prevented keydown would stop it following.
+  el.addEventListener('keydown', (e) => { if ((e.key === 'Enter' || e.key === ' ') && !onLink(e)) { e.preventDefault(); open(e); } });
 }
 
 // The same menu, opened from a script's own text instead of from a mark.
@@ -4203,6 +4216,14 @@ function attachHashCopy(el, hex, label, prose = el.textContent, vout = null, vin
 function attachBodyMenu(el, entryOf, said) {
   el.tabIndex = 0;
   if (said) { el.title = said; el.setAttribute('aria-label', said); }
+  // A link inside the body answers for itself too: the footnote letter that
+  // ends a wrapped segwit input's scriptSig is a road down to its witness, and
+  // a click on it must not also raise the script's menu over the scroll it
+  // starts (attachHashCopy keeps the same rule for the amount cell).
+  const onLink = (e) => {
+    const a = e.target && e.target.closest ? e.target.closest('a[href]') : null;
+    return Boolean(a) && a !== el && el.contains(a);
+  };
   const open = (e) => {
     // A drag that ended here was a selection, not a click on a handle.
     const sel = document.getSelection();
@@ -4211,11 +4232,12 @@ function attachBodyMenu(el, entryOf, said) {
     // a reader who pressed ⧉ was asking what ⧉ means, not for the bytes of the
     // script around it. So the copy menu belongs to the prose alone.
     if (e.target && e.target.closest && e.target.closest('[data-gloss]')) return;
+    if (onLink(e)) return;
     const entry = entryOf();
     if (entry) openHashMenu(e, entry, el);
   };
   el.addEventListener('click', open);
-  el.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(e); } });
+  el.addEventListener('keydown', (e) => { if ((e.key === 'Enter' || e.key === ' ') && !onLink(e)) { e.preventDefault(); open(e); } });
 }
 
 // Strip the hash-menu affordance from a persistent element: the chapter-title

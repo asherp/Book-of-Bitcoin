@@ -31,11 +31,11 @@ Transaction id, as prose: ⌘²⁵⁶ *The brisk tree fire strategy. Few drink m
 
 - **version:** 1
 - **input 1:** spends output 0 of `38c8c6473f149aa698c9868f266102def0e370ddfd4c5adb5916417940963658`
-  - script: ²² Alx iccirco murarius. Lanx votum e praefinitio. Eo excido en belluinus eo. Tumidus secale et foedus. Eo dilapido baculus. Is adnecto prophetizo e indicium. Eo ea adjugo tu. Eo incassum equitulus.
+  - script: ²² Abandon pigeon badge to sphere. Liquid web magnet out profit. Animal may ski bench to rice. Its alien park fork. The home adult yes grunt shrimp. Its trend get the law. This cow may join gift.
   - sequence: ● — final — disables the transaction locktime for this input
   - witness: see footnote a
 - **output 1:** 0.00311000 ₿
-  - script: ⌖ h²⁰ Dexter tu commonstro sebaceus e collisio. Seris effervesco pes abs torsio ad eo. Tu impedico scaber is. Missalis eo vult acheronensis litigium. Fugitor e anteloquium. Eo vult indubito is. Eo diuturnius tu. =
+  - script: ⌖ h²⁰ Some carpet is armed. Light carry to reduce. Chunk may see salmon out age. Leopard divorce abandon to hello for company to bounce. Catch get our keen pair. Stamp scale hamster to green. Lap get our useful alarm. =
 - **output 2:** 0 ₿
   - script: ¶ ⁷⁵ “BIP141 \o/ Hello SegWit :-) keep it strong! LLAP Bitcoin twitter.com/khs9ne”
 - **locktime:** □ — no locktime — final with respect to time

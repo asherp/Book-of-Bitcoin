@@ -31,11 +31,11 @@ Transaction id, as prose: ⌘²⁵⁶ *Limb set our ancient soap to vintage. Yes
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
-  - script: ■774628“1\ Powered by ” “Luxor Tech” η2⁵·11·67 ⓪⁴ Nora orchesta e immersio. Aciditas at admixtio. Tu desum objaceo e usus. Is lubrico perdormisco ob argentaria. Ponticus paragoge lamentum. ⓪⁷
+  - script: ■774628“1\ Powered by ” “Luxor Tech” η2⁵·11·67 ⓪⁴ Airport far get oak. Blur parent to convince out an only abandon. Coyote begin siege to video. Ostrich bubble abandon via hockey. An actual paper is vacant. ⓪⁷
   - sequence: ● — final — disables the transaction locktime for this input
   - witness: see footnote a
 - **output 1:** 6.25875047 ₿
-  - script: ⧉ ⌖ h²⁰ Holocautoma egrediendus adsimulans. Thymus et chelydrus. Carabina sion e pusillitas. Copis adluceo epilepticus ebriamen. Indemnis is inrisurus tu. Dicax trapus circumvectio. Is pure eo. ≡ ∇
+  - script: ⧉ ⌖ h²⁰ Toe host to pigeon via release. Box orient sausage to ocean for double. Warrior may see artist. A bleak check would set soccer. Blossom host its trap. Fluid abandon usage to hero. Our buffalo may set clerk. ≡ ∇
 - **output 2:** 0 ₿
   - script: ¶ ⋔w h³² Our cute pelican may set tennis to retreat. Dolphin see camera out slot for twin. Action recycle to jar. A rule are unfair. Sir carry a base copy. Forward may remind warfare. Addict ought seed its red pot to the die. Guy often thumb yes. Its cap there beef the cheap speed. Ceiling interest inquiry to pigeon.
 - **locktime:** □ — no locktime — final with respect to time

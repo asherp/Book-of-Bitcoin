@@ -34,7 +34,7 @@ Transaction id, as prose: ⌘²⁵⁶ *Hamster pepper stomach to hollow. Our exc
   - script: β₄₄ 946774×256²⁴ ⓪
   - sequence: ● — final — disables the transaction locktime for this input
 - **output 1:** 50.00000000 ₿
-  - script: p⁶⁵ Glos flecto inprimo. Eo rescisco distichon e corruptio. Tibereius daca malo posteriora ad lubricitas. Acerus eo tergo tu e pulcer eo. Exosus is quando clypeum. Matteuca ni libanochrus. Tu segregatim is. Eo cummaxime praeputiatus vacuum. Aurifodina vult conligendus listerianus eo. Tu deargentatus liquidum e planiceps is. Eo patesco graecizo. Tu negito maius panificium. Lasarpicifer direptio vult sallo prophetizo. Macilentia absconsa e foetalis tu ob insubiectus iurandum. ∇
+  - script: p⁶⁵ Advice may set sir. A myself. Sign see gadget to door per coast. Pot too clean flower. Each uncle get dune. Gold ago see any pie. Guy may keep tortoise to next. Boy is immense per sin. Ear may cancel leopard. A myself. An immense bean see the zebra. Bundle are bleak to start. Our pipe barrel to say. Skill cushion to describe for smoke. Ban is vivid to a vibrant dash. Neither lip may get that clay to wool. Goose get its tornado. Cereal may see habit. Our bonus snack soul to call. The hard menu teach interest. Tie may depart eyebrow. Its various cop ignore picture. Cow may obey its sir. ∇
 - **locktime:** □ — no locktime — final with respect to time
 
 ## Commentary

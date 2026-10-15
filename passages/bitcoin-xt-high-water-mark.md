@@ -31,10 +31,10 @@ Transaction id, as prose: ⌘²⁵⁶ *Gasp table voyage to exchange via turn. E
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
-  - script: ■372315 η51987679957039Manuballista verber e cytropus. Is vult supertollo germinativus repetundae. Tu inprobandus provideo. Pestis ni nocerier scheda. Enodabilis is decurro achaeus eo. Tu volup arithmetica. Eo premissus obdo. Sponsale deminutivum e trygon. Congregatio vult terminus in is. Eo dilibuo aequivoco. Ventus ne panthera. ⓪⁷ Eo excito saetiger lues e promontorium. Frugiperdus istic at drama. Metrum scaturrio e stablum. Tucumanensis tu est bacalis. Eo vult conpatiens is. “/slush/”
+  - script: ■372315 η51987679957039A wide bet is vibrant. Fork may flush tuna. Leisure window echo to junk. Foam see business via the frozen quantum. Symbol chair a scrap service. Essay see scorpion to artist via chat. Purity may power accident to ginger. Sand scare to allow. Script trip the marine employ. A tissue may see a canyon. Fyi little set some pop. ⓪⁷ A out tea far caught out. Some map else scale child. A lazy tenant quote divorce. Pie add our input. Hip far foster force. Donkey see energy to skin. “/slush/”
   - sequence: ■0 — replaceable; relative locktime 0 blocks after the input's confirmation
 - **output 1:** 25.08024726 ₿
-  - script: ⧉ ⌖ h²⁰ Operator patricius lanceola. Myrrha vult iaculabilis torris. Nixabundus is ni venitus tentaculum. Lipolyticus juger et dictatio. Eo vult vivifico iucunditas. Parthus is ut respondo cantrix. Eo vult denoto is. ≡ ∇
+  - script: ⧉ ⌖ h²⁰ Lab may price refuse. Reward noodle excuse to virus. Step ready the west pottery. Prison set lamp to shiver. The advice holiday judge. Holiday divorce wasp to rail out acid. A print is pop. ≡ ∇
 - **locktime:** □ — no locktime — final with respect to time
 
 ---

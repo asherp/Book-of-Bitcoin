@@ -31,10 +31,10 @@ Transaction id, as prose: ⌘²⁵⁶ *The vague drum vote army. Finger market o
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
-  - script: ■363725η29 “Mined by AntPool” Clunis thomix e eversio. Necrologium liberatio ex resonatio. Auctionarius tu condescendo abs eo. Is adplaudo praetexo. Tu eme larignus gemellicum. Barbanis vult dialectus. Eo debet seligo erica e is.
+  - script: ■363725η29 “Mined by AntPool” Call out battle minute. Copy may see vintage. The laptop set life. Cap real devote shuffle. Skull abandon army to code. Abandon about number our orange. Burst get the hungry train to yes. Row may suggest great.
   - sequence: ● — final — disables the transaction locktime for this input
 - **output 1:** 25.00000000 ₿
-  - script: ⧉ ⌖ h²⁰ Eo et conluctor daucum. Cursarius enarratio furnarius. Leprosus constrictor sit anaglyfus. Patagonicus tu beverinus is. Talaris eo vult fossilis aviola. Derisorius tu bullicare sugglutio e idololatra. Is compello ob eo. ≡ ∇
+  - script: ⧉ ⌖ h²⁰ News captain action to repeat for error. Female balance tattoo to jelly. Its boss are solar out the square faith. Section reduce its immense balcony. Silver may abandon odor. Our pay are innocent. A tomato may canoe a yes. ≡ ∇
 - **locktime:** □ — no locktime — final with respect to time
 
 ## Commentary

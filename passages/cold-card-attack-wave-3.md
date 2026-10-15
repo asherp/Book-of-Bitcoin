@@ -34,7 +34,7 @@ Transaction id, as prose: ⌘²⁵⁶ *Some tax is rigid. Glare see apple to ski
   - sequence: ● — final — disables the transaction locktime for this input
   - witness: see footnote a
 - **output 1:** 0.00232980 ₿
-  - script: ⓪ h³² Propatulum inpubes tu e mutilus elatio at iactatio. Arbustus livia vult attermino triumphalis is. Anonymus eo vult iento rostrum. Vispellio solet conca e duplex levigatio. Funginus alce vult pylorus. Paschalis eo est pone varus eo. Tu vult congemo is. Tu opipare eo.
+  - script: ⓪ h³² Soup regret its unable lizard. Mushroom inform cop until message to affair. Dilemma may get wood. This slush see faith. A way may set first. Bed twice see the low eagle. A frozen balance fence to leaf. The sick pop scatter to rally. Rescue get an excess crash. Garment may spoon to run.
 - **locktime:** □ — no locktime — final with respect to time
 
 ### Witness footnotes

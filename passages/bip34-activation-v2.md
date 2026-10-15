@@ -31,10 +31,10 @@ Transaction id, as prose: ⌘²⁵⁶ *Fat more set cupboard. An eternal cigar i
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
-  - script: ■227931η2·7 “CoinLab./P2SH/” Idus abs aca e acoros. Figuratio tabulatum ob captor ex samera. Tu moneo is. Eo localiter derisorius arilla. Iniugis lacca partim tu.
+  - script: ■227931η2·7 “CoinLab./P2SH/” Affair theme to abandon per abandon. Miracle below swap shift. Its amazing luggage may see dolphin. Cause set february to face via flavor. Debate may set its sick chat.
   - sequence: ● — final — disables the transaction locktime for this input
 - **output 1:** 25.28700000 ₿
-  - script: ⧉ ⌖ h²⁰ Stertor obrogatio e remansio at errator. Is ceu monedula. Eo vult adhibendus insenesco. Adjunctivus muneratio undecumque baetulus. Tu germane accerso haringus. Eo vult collimo casinus eo. Tu mellifluens is. ≡ ∇
+  - script: ⧉ ⌖ h²⁰ Focus is olympic to test. Tax before carry its copy. Banana see tray to uniform. Jet may teach act. Range behind set jeans. Hire is gold to cause out injury. Each scale get our silly red. The funny slide sketch tea. ≡ ∇
 - **locktime:** □ — no locktime — final with respect to time
 
 ## Commentary

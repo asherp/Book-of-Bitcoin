@@ -34,7 +34,7 @@ Transaction id, as prose: ⌘²⁵⁶ *Stairs fringe dolphin to island. Soda may
   - script: ■420000η3·5 “七彩神仙鱼” “ Chandler Guo loves YangYang Jin.” η2²·4294500154369 “Mined by zzhhzz” ⓪²⁶
   - sequence: ■40089 — replaceable; relative locktime 40089 blocks after the input's confirmation
 - **output 1:** 13.07569681 ₿
-  - script: ⧉ ⌖ h²⁰ Jocundatio sit ramiflorus. Aversus eo vult purpurasco gratificor. Ceola debet refero ovalis is. Effabilis eo multus promissio. Is perlabor heluor e is. Eo accerso proavia ex pacificatio. Syndesmosis vult fruor tu. ≡ ∇
+  - script: ⧉ ⌖ h²⁰ Sight code kite to torch. Habit mail to avoid per clump around spawn. Round crawl an air. Throw project law to act. A rescue may scale rice for portion. The usual fold is low. ≡ ∇
 - **locktime:** Τ1996-02-29 14:24 — locktime: not before 1996-02-29 14:24 UTC (unix 825603862)
 
 ## Commentary

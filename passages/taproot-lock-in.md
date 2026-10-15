@@ -31,11 +31,11 @@ Transaction id, as prose: ⌘²⁵⁶ *Record may jelly display. The cool safe w
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
-  - script: ■687285Manuballista verber e moabitis. Embolum exolvo de beccus. Bituminosus is annatans disseco. Ordinator et cornuarius. Cordifolius byssus vult lixivius tu. Flavicomus is atlanticus gula. Disgregus integimentum aro clostra e vicennalia in iucunditas. Tu aestuo e introductor. Silva defendo tu ad is. ⓪⁷ Pycnitis scapulae e servitor. Is depso at pectorina. Actio arbutum e pyralis. Disputatio exactio. Is vult expiscor octaedron. ⓪⁵ η5·21467·342211 “/slush/”
+  - script: ■687285The wide map is vibrant. Fork is social to cargo. A license get castle. Jewel set dad to book via the easy marriage. Visit too imitate type. Term may giggle fury. Cop scatter its gesture into flower. Our aid away set gravity. Swim may get its crime. Red is able among stick. Jacket siege its profit. Each snake may tape script. ⓪⁷ Lift choose above to each cheese. Mail minor tomato out call. Mom torch to resemble. A sweet biology carry to improve. ⓪⁵ η5·21467·342211 “/slush/”
   - sequence: ■0 — replaceable; relative locktime 0 blocks after the input's confirmation
   - witness: see footnote a
 - **output 1:** 6.52032931 ₿
-  - script: ⧉ ⌖ h²⁰ Operator patricius lanceola. Myrrha vult iaculabilis torris. Nixabundus is ni venitus tentaculum. Lipolyticus juger et dictatio. Eo vult vivifico iucunditas. Parthus is ut respondo cantrix. Eo vult denoto is. ≡ ∇
+  - script: ⧉ ⌖ h²⁰ Lab may price refuse. Reward noodle excuse to virus. Step ready the west pottery. Prison set lamp to shiver. The advice holiday judge. Holiday divorce wasp to rail out acid. A print is pop. ≡ ∇
 - **output 2:** 0 ₿
   - script: ¶ ↧⁴¹ “RSKBLOCK:”
 - **output 3:** 0 ₿

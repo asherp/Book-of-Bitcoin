@@ -31,10 +31,10 @@ Transaction id, as prose: ⌘²⁵⁶ *World get shaft to guitar. Row may collec
 
 - **version:** 1
 - **input 1:** coinbase (∅ — no previous output; new coin)
-  - script: ■404843Aer fabarius pharetra. Tu discrimino physicalis longaeva e epopta. Sobrietas ob theatrum. Omoticus tu abs olivetum. Eo vult rubrico inrisurus. Eo missito calliditas e lanceolatus eo. Is inpellens de tu. “BW Support 8M fisher jinxin	/BW Pool/”
+  - script: ■404843Abandon check to caught for its visa. A gate attack pact. Tea there see an angry trade. A trim are aware. Exhibit may amount abandon. Pie too know a shell. The silly abandon set fever. A camera riot an average. “BW Support 8M fisher jinxin	/BW Pool/”
   - sequence: ● — final — disables the transaction locktime for this input
 - **output 1:** 25.52170126 ₿
-  - script: ⧉ ⌖ h²⁰ Gabalium vult plantago. Ambulator ni scepticus. Sphragis vult sardo bajulo supra insulatus tu. Is extutare peculor e alveolus. Catonium est montanianus se ventralis tu. Eo dissupans e caccabus ex barbaries. ≡ ∇
+  - script: ⧉ ⌖ h²⁰ Ear improve subject to laugh. Each immune finish lap. Its ear before inject the foil. War alter hobby to whale via document. Guy unlock device to cross. Ghost filter to divide. Divorce set sauce for climb. Grab empower a sin. ≡ ∇
 - **locktime:** □ — no locktime — final with respect to time
 
 ---

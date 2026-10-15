@@ -34,7 +34,7 @@ Transaction id, as prose: ⌘²⁵⁶ *Oven set the cabbage to our empty son. Th
   - script: 22355
   - sequence: ● — final — disables the transaction locktime for this input
 - **output 1:** 0.01000000 ₿
-  - script: ⧉ ⌖ h²⁰ Telaria e quinquiplex linarius. Cassinensis eo vult demano ex cedrium se tu. Is vult inretiendus plumeus eo. Perridiculus is assenesco arresto. Eo ni instupeo coreanicus terminus. Exul pala. Dentalis is est sensificus. ≡ ∇
+  - script: ⧉ ⌖ h²⁰ Fork excite a common hit. Pot satisfy hour to animal. October may wire to junk. Guy inspire moment via wealth per ball via reveal. Rose invest winner to the flower. Divorce may shuffle host via an express maple. ≡ ∇
 - **locktime:** □ — no locktime — final with respect to time
 
 ## Commentary

@@ -34,7 +34,7 @@ Transaction id, as prose: ⌘²⁵⁶ *Priority ski bench to dish out plunge. No
   - sequence: ● — final — disables the transaction locktime for this input
   - witness: see footnote a
 - **output 1:** 55.76998378 ₿
-  - script: ⓪ h²⁰ Eo vult denseo confragosus tricennalia. Anormalis is inlusurus honorarius parricus. Autocephalia hordearius succursor e auxiliator. Operatus cerasium abjungundus adfossus. Cerasus specialiter tularensis is.
+  - script: ⓪ h²⁰ Carbon is over to drill via link to an electric agent. Tourist get bean to tent for cabin. Hospital mean voyage to scrap per orchard to lab. Yes reopen its general. Scale may clarify parade. Some lie shall unlock elite.
 - **locktime:** □ — no locktime — final with respect to time
 
 ### Witness footnotes
