@@ -161,6 +161,18 @@ Where this lives today:
   it still holds, the difficulty target in a chapter's frontispiece. This is
   also why `abstractionText` and `applicationText` are gone: with no brackets
   to distinguish them they were `titleText` and `addressText` verbatim.
+- **The key defines before it uses, and names opcodes by derivation.**
+  `NOTATION_HTML` is `NOTATION_MARKS_HTML` (what each mark means) followed by
+  `NOTATION_USE_HTML` (the pattern, terms, address and Lightning tables), and
+  the sigla leaf heads the two halves *The marks* and *In use*, the first laid
+  out as a table: mark, opcode, meaning. No OP_* name is written into the key.
+  `nameOpcodes` (btc-key-filter.js) reads each row's exact marks against
+  `OPCODE_SYMBOLS` and sets the name cell, so a name cannot drift from the
+  hover the book gives the same glyph; a mark written with a placeholder
+  (⓪ⁿ, ⌘ᵐ) names a count on the page, not an opcode, and gets none. What the
+  key is held to instead is coverage — `key-filter.test.mjs` pins that every
+  opcode in the tables is named exactly by some definition — which is why the
+  leaf no longer carries a separate opcode index.
 - **A gloss leads with the reading rule; rationale goes in `.why`.** The key is
   a legend, so the first thing in a `.m` cell is how to read the mark — what ⧉
   gets in four words ("duplicate the top item"). Everything after it is why the

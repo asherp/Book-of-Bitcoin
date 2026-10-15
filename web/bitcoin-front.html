@@ -170,18 +170,25 @@ body.at-title .title-leaf { min-height: 100vh; cursor: pointer; }
    sheet above its nav bar (see .nav-sheet-body in notation.css); here it simply
    sits in the leaf, so it takes room rather than positioning. */
 .notation-at-rest { margin: 1.5em 0 0; }
+/* The definitions open unheaded, straight off the reference: an h3's clearance
+   above the first group so the reading paragraph is not pressed against it. */
+.notation-at-rest.marks { margin-top: 2.6em; }
 
-/* The opcode index: one group at a time, each mark beside the name it stands
-   for. Rendered from the same tables the book renders scripts from. Sigla
-   content like the shared key above it, so it follows the reader's notation
-   type size (--scale-notation, set on <html> by btc-fontscale.js; 1 wherever
-   it isn't) exactly as the key does in notation.css. */
-.sig-group { margin: 2em 0 0; }
-.sig-group > h4 { margin: 0 0 .5em; font: 600 calc(10px * var(--scale-notation, 1))/1 'IBM Plex Mono','Book Sigla', monospace; letter-spacing: .2em; text-transform: uppercase; color: var(--meta); }
-.sig-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); gap: 1px 14px; }
-.sig-row { display: flex; align-items: baseline; gap: 10px; padding: 5px 2px; border-bottom: 1px solid var(--hair); min-width: 0; }
-.sig-mark { flex: none; min-width: 2.1em; text-align: center; font: 500 calc(17px * var(--scale-notation, 1))/1.3 'IBM Plex Mono','Book Sigla', monospace; color: var(--accent-2); }
-.sig-name { flex: 1; min-width: 0; font: 400 calc(12px * var(--scale-notation, 1))/1.35 'IBM Plex Mono','Book Sigla', monospace; color: var(--dim); overflow-wrap: anywhere; }
+/* The key's definitions, laid out as a table: the mark, the opcode it stands
+   for where it stands for one, and what it means, one row to a line with the
+   three columns in step down the group. The sheet sets the same rows as a
+   flowing grid of mark-and-gloss pairs, which suits a panel cut to one
+   transaction; at rest and whole a reader scans a column, so the row goes to
+   display:contents and the group's grid holds the columns. The mark and name
+   columns are capped and wrap rather than widening a whole group to its
+   longest family (the paired stack ops, the no-ops); on a phone every column
+   gives way to keep the gloss readable. Sigla content
+   like the key it is part of, so it follows the reader's notation type size
+   (--scale-notation; 1 wherever it isn't) exactly as notation.css does. */
+.notation-at-rest.marks .glyph-grid { display: grid; grid-template-columns: fit-content(calc(100px * var(--scale-notation, 1))) fit-content(calc(124px * var(--scale-notation, 1))) 1fr; gap: 7px 18px; align-items: baseline; }
+.notation-at-rest.marks .glyph-row { display: contents; }
+.notation-at-rest.marks .glyph-row .g { text-align: left; }
+@media (max-width: 480px) { .notation-at-rest.marks .glyph-grid { grid-template-columns: fit-content(26%) fit-content(30%) 1fr; gap: 7px 12px; } }
 .sig-count { margin-top: 1.6em; font: 400 calc(13.5px * var(--scale-notation, 1))/1.6 'Newsreader','Book Sigla', serif; color: var(--meta); }
 
 /* Leaf navigation, in the section-nav idiom of the book page: previous at the
@@ -222,16 +229,11 @@ body.at-title .title-leaf { min-height: 100vh; cursor: pointer; }
     <section class="leaf" id="leaf-terms" data-name="Terms">
       <header class="page-head"><div class="page-eyebrow">Terms</div></header>
       <div class="leaf-body">
-        <p class="lead">No rights reserved over the text of this book. What
-          follows is where a copyright page would sit, and it is here to say
-          the reverse of what one usually says.</p>
-        <p>The record is not mine to hold. The readings of it are mine only in
-          the sense that my name belongs on them, so that you can weigh them
-          and disagree.</p>
+        <p class="lead">No rights reserved over the text of this book.</p>
         <ul class="terms-list">
-          <li><span class="what">The prose — the chain's own speech, in every language</span><span class="term">Public domain</span></li>
-          <li><span class="what">The sigla — the alphabet that prose is written in</span><span class="term">Public domain</span></li>
-          <li><span class="what">Annotations, names, curation, this preface</span><span class="term">CC BY 4.0</span></li>
+          <li><span class="what">The prose — the chain's own speech, in every language</span><span class="term">CC0 1.0</span></li>
+          <li><span class="what">The sigla — the alphabet that prose is written in</span><span class="term">CC0 1.0</span></li>
+          <li><span class="what">Annotations, names, curation, the preface</span><span class="term">CC BY 4.0</span></li>
           <li><span class="what">Commentary by others</span><span class="term">Theirs</span></li>
           <li><span class="what">The software that renders it</span><span class="term">MIT / Apache-2.0</span></li>
         </ul>
@@ -253,9 +255,6 @@ body.at-title .title-leaf { min-height: 100vh; cursor: pointer; }
     <section class="leaf" id="leaf-sigla" data-name="Sigla">
       <header class="page-head"><div class="page-eyebrow">Sigla</div></header>
       <div class="leaf-body">
-        <p class="lead">Every passage in this book cites itself, and every
-          script in it is set in marks. Both are read here.</p>
-
         <h3>The reference</h3>
         <p>A citation names a place in the chain, one level at a time. Each
           level carries the sign of what it is:</p>
@@ -289,17 +288,13 @@ body.at-title .title-leaf { min-height: 100vh; cursor: pointer; }
           may stop early — <code>III β2</code> names the whole book, and
           <code>III β2 ■5</code> the whole chapter.</p>
 
-        <h3>The marks</h3>
-        <p>What the marks mean, group by group — the same key the book opens
-          over a chapter, here at rest and whole.</p>
-        <div id="notation-key" class="notation-at-rest"></div>
-
-        <h3>Every opcode</h3>
-        <p>The key above glosses the marks worth explaining; this is the index
-          behind it — one line per opcode, families sharing a base glyph and
-          separating by subscript.</p>
-        <div id="sigla-key"></div>
+        <div id="notation-marks" class="notation-at-rest marks"></div>
         <p class="sig-count" id="sigla-count"></p>
+
+        <h3>In use</h3>
+        <p>The marks at work: the locks a passage can be, read as scripts, as
+          terms, as addresses, and as a channel.</p>
+        <div id="notation-use" class="notation-at-rest"></div>
       </div>
     </section>
 
@@ -339,8 +334,9 @@ mountLangMenu();  // …with the Language item, which any page can now set
 // turning through the front matter. Putting it on the horizontal axis as well
 // gave it two positions and made the reader meet the whole run of volumes
 // before they had read what the book is.
-import { OPCODE_SYMBOLS, OPCODE_NAMES, OPCODE_GROUPS } from './btc-sigla.js';
-import { NOTATION_HTML } from './btc-notation.js';
+import { OPCODE_NAMES } from './btc-sigla.js';
+import { nameOpcodes } from './btc-key-filter.js';
+import { NOTATION_MARKS_HTML, NOTATION_USE_HTML } from './btc-notation.js';
 import { renderMarkdown } from './btc-markdown.js';
 import { withChain } from './btc-network.js';
 import './btc-fontscale.js';   // the reader's type size: the sigla leaf's key follows the book page's setting
@@ -488,29 +484,24 @@ document.addEventListener('touchend', (e) => {
   }
 })();
 
-// The shared notation key -- the same markup the book page's toggle opens.
-$('notation-key').innerHTML = NOTATION_HTML;
+// The shared notation key -- the same markup the book page's toggle opens,
+// in two halves so each can be headed: the marks defined, then the marks in
+// use.
+$('notation-marks').innerHTML = NOTATION_MARKS_HTML;
+$('notation-use').innerHTML = NOTATION_USE_HTML;
 
-// The opcode index, straight from the tables the book renders scripts from.
-(function renderSigla() {
-  const esc = (t) => t.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
-  const seen = new Set();
-  $('sigla-key').innerHTML = OPCODE_GROUPS.map((g) => {
-    const rows = g.bytes.map((b) => {
-      seen.add(b);
-      return `<div class="sig-row"><span class="sig-mark">${esc(OPCODE_SYMBOLS[b] || '')}</span>` +
-             `<span class="sig-name">${esc((OPCODE_NAMES[b] || 'OP_UNKNOWN').replace(/^OP_/, ''))}</span></div>`;
-    }).join('');
-    return `<div class="sig-group"><h4>${esc(g.title)}</h4><div class="sig-grid">${rows}</div></div>`;
-  }).join('');
-  // If an opcode is ever added to the tables without being placed in a group,
-  // say so here rather than let the key quietly under-report itself.
-  const all = Object.keys(OPCODE_NAMES).map(Number);
-  const missed = all.filter((b) => !seen.has(b));
+// Each definition names its opcode, read off the row's own marks against the
+// tables the book renders scripts from. The key is prose and could leave an
+// opcode out silently, so the count beneath says whether it did rather than
+// let the key quietly under-report itself.
+(function nameSigla() {
+  const named = nameOpcodes($('notation-marks'));
+  const all = Object.values(OPCODE_NAMES);
+  const missed = all.filter((n) => !named.has(n));
   const n = all.length;
   $('sigla-count').textContent = missed.length
-    ? `${n} opcodes defined; ${missed.length} not yet placed in the key above.`
-    : `${n} opcodes are defined as of this writing, and all ${n} have a mark of their own.`;
+    ? `${n} opcodes defined; ${missed.length} not named above: ${missed.join(', ')}.`
+    : `${n} opcodes are defined as of this writing, and each is named above beside its mark.`;
 })();
 
 show(at);

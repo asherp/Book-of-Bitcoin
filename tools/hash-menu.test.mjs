@@ -22,6 +22,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
 import { reference, inputMark, parseReference } from '../web/btc-citation.js';
+import { spell, read } from '../web/btc-address-form.js';
 
 const bookPage = () => readFile(new URL('../web/bitcoin-book.html', import.meta.url), 'utf8');
 
@@ -406,4 +407,40 @@ test('the witness letter ends the paragraph, inside it', async () => {
   assert.equal(quote.block, 'BLOCKQUOTE');
   assert.equal(quote.holder, 'BLOCKQUOTE', 'the letter ends the quotation’s own block');
   assert.equal(quote.cellKids, 1);
+});
+
+test('a script’s text is the script in the book’s hand, and its address is its own item', async () => {
+  const page = await bookPage();
+  // Copy text on a locking script used to hand over the ADDRESS -- the one
+  // menu where "text" did not mean the book's own form -- and the address had
+  // no item of its own to be found under. Now the text is the script spelled
+  // in sigla and prose, and the address is named as what it is.
+  const builder = /function scriptEntry\(keepEl\) \{[\s\S]*?\n\}/.exec(page)[0];
+  assert.match(builder, /prose: spelledScript\(hex\), address,/, 'the entry carries both, each under its own name');
+  assert.match(page, /data-act="copy-address"/, 'the menu has no address item');
+  assert.match(page, /menuCopyAddressBtn\.classList\.toggle\('hidden', !entry\.address\);/,
+    'the item is offered exactly where an address exists');
+  assert.match(page, /navigator\.clipboard\.writeText\(menuEntry\.address\)/, 'and it copies the address');
+  // The spelling needs the engine for its pushes, and declines rather than
+  // offer marks that would not read back.
+  const speller = /function spelledScript\(hex\) \{[\s\S]*?\n\}/.exec(page);
+  assert.ok(speller, 'the page no longer spells a script');
+  assert.match(speller[0], /if \(!ready\) return null;/, 'no engine, no text');
+  assert.match(speller[0], /said\.complete \? said\.text : null/, 'a half-spelling is no text');
+  // What it copies is what the search box reads: the one spelling that is an
+  // address format in its own right. Run for real, with a stand-in engine
+  // that says a push as a word per byte and hears it back.
+  const say = (h) => h.match(/../g).map((b) => `w${b}`).join(' ');
+  const hear = (prose) => prose.split(' ').map((w) => w.slice(1)).join('');
+  const P2PKH = '76a914' + 'ab'.repeat(20) + '88ac';
+  const said = spell(P2PKH, { say });
+  assert.ok(said.complete);
+  assert.ok(said.text.startsWith('⧉ ⌖ h²⁰ wab'), said.text);
+  assert.equal(read(said.text, { hear }), P2PKH, 'Copy text must read back to the bytes');
+  // The new item is translated wherever the menu's others are.
+  const strings = await readFile(new URL('../web/btc-strings.js', import.meta.url), 'utf8');
+  for (const table of [...strings.matchAll(/^  (\w+): \{$/gm)].map((m) => m[1])) {
+    const body = strings.split(`  ${table}: {`)[1].split('\n  },')[0];
+    if (body.includes("'Copy hex'")) assert.ok(body.includes("'Copy address':"), `${table} lacks 'Copy address'`);
+  }
 });
