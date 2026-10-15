@@ -1940,7 +1940,7 @@ const lazyEncode = (() => {
     czech:   { per: 1.447, base: 3 },
     german:  { per: 1.520, base: 15 },
   };
-  // One fill is tens of milliseconds -- Latin, the default, is the slowest at
+  // One fill is tens of milliseconds -- Latin is the slowest at
   // roughly 65-90 ms a push in the browser's threadless build, since the
   // concurrent best-of draw glossia 0.5.0 added is native-only. So filling
   // every intersecting placeholder in one callback freezes the page for the
@@ -1980,7 +1980,7 @@ const lazyEncode = (() => {
     // typical measure rather than skip, since an unreserved run is the collapse
     // this exists to prevent, and a rough box beats none.
     const perLine = (width && fontPx) ? Math.max(8, width / (fontPx * 0.5) / 7) : 12;
-    const est = WORDS[bookLang()] || WORDS.latin;
+    const est = WORDS[bookLang()] || WORDS.english;
     for (const el of pending) {
       const bytes = Number(el.dataset.bytes);
       if (!bytes) continue;

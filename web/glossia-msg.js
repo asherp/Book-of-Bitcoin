@@ -49,15 +49,16 @@ export const MSG_LANGS = [
   { id: 'czech',   label: 'Čeština',  language: 'czech',   wordlist: 'default', dialect: 'body' },
   { id: 'german',  label: 'Deutsch',  language: 'german',  wordlist: 'default', dialect: 'body' },
 ];
-// The tongue the book is set in for a reader who has not chosen one. Latin: the
-// book is a record first and a reading second, and Latin says so — it is nobody's
-// native tongue now, so its prose reads as what it is, a notation, rather than as
-// a claim about the bytes in a language someone might mistake for commentary.
-// (It is also the shortest: the Latin payload wordlist is 32768 words, 15 bits
-// to English's 11, so the same hash lands in about a quarter fewer words.)
+// The tongue the book is set in for a reader who has not chosen one. English:
+// the chrome around the prose is English until a reader chooses otherwise
+// (btc-strings.js), so an English default opens the book in one language rather
+// than two, and its payload wordlist is BIP39 -- the one a reader holding a seed
+// phrase already knows. Latin stays a real choice a reader can make, and is the
+// shortest (its payload wordlist is 32768 words, 15 bits to English's 11, so the
+// same hash lands in about a quarter fewer words).
 // Named rather than taken from MSG_LANGS[0], so the menu's display order and the
 // default are separate decisions.
-export const DEFAULT_LANG_ID = 'latin';
+export const DEFAULT_LANG_ID = 'english';
 export function msgLangById(id) {
   return MSG_LANGS.find(l => l.id === id)
     || MSG_LANGS.find(l => l.id === DEFAULT_LANG_ID);
