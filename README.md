@@ -16,8 +16,8 @@ omitted.
 
 Like any translation, the phrasing belongs to the language: the connective
 words that make a transaction into a sentence are the translator's grammar, not
-the author's words. The book is set in Latin, and a reader who would rather
-have English, Čeština or Deutsch may say so. The words differ, the record does
+the author's words. The book is set in English, and a reader who would rather
+have Latina, Čeština or Deutsch may say so. The words differ, the record does
 not.
 
 Which is the argument the book exists to make: **a transaction is a form of

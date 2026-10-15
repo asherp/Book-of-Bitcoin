@@ -290,6 +290,48 @@ test('a script is its own handle, and it does not eat the selection', async () =
     'an OP_RETURN has no ledger road, and still has a script to copy');
 });
 
+test('a link inside a handle answers for itself', async () => {
+  const page = await bookPage();
+  // The reader's report: clicking a reference inside a transaction opened a
+  // menu for an instant. The forward citation and the Citations register's ‡
+  // sit inside the output's amount cell, which is the output's own menu
+  // handle; the link's click did its navigation and then bubbled to the cell,
+  // which raised the menu -- over a page already scrolling away from it, so
+  // the scroll-dismiss took it a beat later. A link inside a handle is the
+  // reader following the link, and the handle must not answer too.
+  assert.match(page, /const fwd = document\.createElement\('div'\);\s*fwd\.className = 'fwd-cite';\s*valueCell\.append\(fwd\);/,
+    'the forward citation still sits inside the amount cell this guards');
+  const hash = /function attachHashCopy\([^)]*\) \{[\s\S]*?\n\}/.exec(page);
+  assert.ok(hash, 'the hash handle is gone');
+  assert.match(hash[0], /const open = \(e\) => \{ if \(el\.__hashMenu && !onLink\(e\)\)/, 'a click on an inner link opens no menu');
+  assert.match(hash[0], /&& !onLink\(e\)\) \{ e\.preventDefault\(\); open\(e\); \}/,
+    'Enter on a focused inner link is the link’s to act on, so the guard runs before preventDefault');
+
+  // The body handle's guard, run rather than read: a stub target that reports
+  // itself inside a link, against one that does not.
+  const body = /function attachBodyMenu\(el, entryOf, said\) \{[\s\S]*?\n\}/.exec(page);
+  assert.ok(body, 'the body handle is gone');
+  const fire = (ev) => {
+    const opened = [];
+    const wired = {};
+    const link = {};
+    const el = { addEventListener: (t, f) => { wired[t] = f; }, setAttribute() {}, contains: (n) => n === link };
+    const doc = { getSelection: () => ({ isCollapsed: true }) };
+    Function('el', 'document', 'openHashMenu', 'entryOf', 'said',
+      `${body[0]}\nattachBodyMenu(el, entryOf, said);`)(
+      el, doc, (e, got) => opened.push(got), () => ({ label: 'scriptSig' }), 'a script — click for menu');
+    const target = { closest: (sel) => (ev.inLink && sel === 'a[href]' ? link : null) };
+    const prevented = [];
+    wired[ev.type]({ ...ev, target, preventDefault: () => prevented.push(1) });
+    return { opened: opened.length, prevented: prevented.length };
+  };
+  assert.deepEqual(fire({ type: 'click', inLink: false }), { opened: 1, prevented: 0 }, 'a click on the prose opens the menu');
+  assert.deepEqual(fire({ type: 'click', inLink: true }), { opened: 0, prevented: 0 }, 'a click on the footnote letter is the letter’s');
+  assert.deepEqual(fire({ type: 'keydown', key: 'Enter', inLink: false }), { opened: 1, prevented: 1 });
+  assert.deepEqual(fire({ type: 'keydown', key: 'Enter', inLink: true }), { opened: 0, prevented: 0 },
+    'Enter on the focused letter follows it, unprevented');
+});
+
 test('the letter’s case picks which of an input’s two carriages is meant', async () => {
   const page = await bookPage();
   // A wrapped segwit input carries a scriptSig AND a witness: the scriptSig

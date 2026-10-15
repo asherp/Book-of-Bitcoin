@@ -17,7 +17,7 @@
 // through a queue that yields, so a burst is a progressive fill rather than a
 // frozen page. The reserved box is sized from a measured word count per
 // language, so the table that sizes it must cover every language the book
-// offers — a new tongue with no row would silently reserve by Latin's measure.
+// offers — a new tongue with no row would silently reserve by English's measure.
 //
 // Source-text assertions, like the rest of the reading's tests: the page is one
 // inline module and there is no DOM here to run it in.
