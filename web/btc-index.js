@@ -501,7 +501,7 @@ const chainPage = async (member, lastSeen) => {
 // left out -- the map holds mined history only. An address matches by the
 // name esplora prints beside a standard output; a script member matches the
 // scriptPubKey bytes themselves, which every output carries.
-function esploraTouches(txs, member) {
+export function esploraTouches(txs, member) {
   const byScript = !isAddress(member);
   const paysMember = (o) => (byScript ? o?.scriptpubkey === member : o?.scriptpubkey_address === member);
   const recs = [];
@@ -514,7 +514,7 @@ function esploraTouches(txs, member) {
         if (out === null) out = i;   // the first paying output: the citation's .index
       }
     });
-    for (const i of t.vin || []) if (paysMember(i.prevout)) debit += Number(i.value || 0);
+    for (const i of t.vin || []) if (paysMember(i.prevout)) debit += Number(i.prevout.value || 0);
     recs.push({ height: t.status.block_height, txid: t.txid, time: t.status.block_time || null, credit, debit, out });
   }
   return recs;
@@ -756,7 +756,7 @@ async function chainState(member) {
 // transaction that both receives and spends makes two entries, credit
 // listed first; one that names the address without moving value posts a
 // bare 0, so the map stays as complete as the count it reconciles against.
-function buildEntries(records) {
+export function buildEntries(records) {
   const entries = [];
   for (const r of records) {
     // A credit entry carries its output index -- the .index of a full
