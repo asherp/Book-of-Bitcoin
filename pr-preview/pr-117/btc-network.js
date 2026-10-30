@@ -1,0 +1,149 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+//
+// btc-network.js — which chain the book reads, and everything that differs by
+// it. Every module that fetches from an explorer, keeps chain data, decodes an
+// address or leans on a chain constant takes its answer from here, so the
+// choice is made in one place and read the same way everywhere.
+//
+// The address alone says which chain a page reads: `?network=testnet4` is
+// testnet4, and no `network` at all is mainnet, whatever the reader last
+// read. So a link opens on the chain it was made on, for anyone -- which is
+// why every testnet4 address and link the book writes carries the parameter
+// (withChain below, and btc-chrome.js for the links). The reader's last chain
+// is remembered only for the front door (index.html), so reopening the book
+// returns to it. Changing chain means opening a page on the other chain's
+// address (switchNetwork), so no fetch, archive handle or socket is ever open
+// against one chain while the page believes it is reading another.
+//
+// Mainnet's storage suffix is empty, so every key and database a reader
+// already holds keeps its name; only testnet4's are new. Chain data is kept
+// apart by that suffix because a height or a key means a different block on
+// each chain, and a testnet answer must never overwrite a mainnet one.
+//
+// Safe to import where there is no browser (the tools/ tests): no
+// localStorage and no location reads as mainnet.
+
+// The key the last chain read is remembered under, for the front door.
+// btc-chrome.js (which writes it) and index.html (which reads it) are classic
+// scripts and cannot import this module, so they name the same key
+// themselves -- tools/network.test.mjs keeps the three in step.
+export const NETWORK_KEY = 'glossia-btc-network';
+
+export const NETWORKS = {
+  mainnet: {
+    id: 'mainnet',
+    label: 'Mainnet',
+    // Esplora mirrors, the one that answers first used; a vanilla Esplora
+    // serves the /blocks and /tx paths, only mempool.space the /v1 ones.
+    esplora: ['https://blockstream.info/api', 'https://mempool.space/api'],
+    mempool: 'https://mempool.space/api',
+    mempoolWs: 'wss://mempool.space/api/v1/ws',
+    // Blockchair's path segment for this chain, or null where it has none.
+    blockchair: 'bitcoin',
+    // A market prices mainnet coins and nothing else.
+    hasPrice: true,
+    // The curated layer -- notables, the appendix's citations, commentary, the
+    // named ledgers -- is written about mainnet's passages.
+    curated: true,
+    // Address encoding: the bech32 human-readable part, the base58 version
+    // bytes for P2PKH and P2SH, and the leading characters those bytes spell.
+    hrp: 'bc',
+    p2pkh: 0x00,
+    p2sh: 0x05,
+    base58Lead: '13',
+    genesisCoinbase: '4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b',
+    // The first height whose coinbase must open with its own height (BIP34;
+    // Bitcoin Core's BIP34Height). Below it a coinbase's first bytes are
+    // whatever the miner wrote, and are not read as a height.
+    bip34Height: 227931,
+    // [height, nTime] pairs the chain clock interpolates between; null keeps
+    // btc-chaintime.js's own halving table.
+    anchors: null,
+    suffix: '',
+  },
+  testnet4: {
+    id: 'testnet4',
+    label: 'Testnet4',
+    // Blockstream serves no testnet4 API (its /testnet4/api path answers with
+    // an HTML page), so mempool.space is the only mirror.
+    esplora: ['https://mempool.space/testnet4/api'],
+    mempool: 'https://mempool.space/testnet4/api',
+    mempoolWs: 'wss://mempool.space/testnet4/api/v1/ws',
+    blockchair: null,
+    hasPrice: false,
+    curated: false,
+    hrp: 'tb',
+    p2pkh: 0x6f,
+    p2sh: 0xc4,
+    base58Lead: 'mn2',
+    genesisCoinbase: '7aa0a7ae1e223414cb807e40cd57e667b718e42aaf9306db9102fe28912b7b4e',
+    // Every soft fork is active from block 1 on testnet4, BIP34 among them.
+    bip34Height: 1,
+    // No halving yet, and the twenty-minute rule lets blocks come faster than
+    // ten minutes, so genesis alone puts block 153,726 some 195 days late --
+    // past the clock's plausibility window. The second anchor is that block's
+    // own nTime; past it the clock extrapolates at ten minutes again, and a
+    // newer anchor belongs here as the chain moves on.
+    anchors: [[0, 1714777860], [153726, 1790197567]],
+    suffix: '-testnet4',
+  },
+};
+
+export const DEFAULT_NETWORK = 'mainnet';
+
+// The network a page reads: the one its address names, or mainnet.
+export function chosenNetwork() {
+  try {
+    if (typeof location !== 'undefined') {
+      const asked = new URLSearchParams(location.search).get('network');
+      if (asked && NETWORKS[asked]) return asked;
+    }
+  } catch (_) { /* no URL to read */ }
+  return DEFAULT_NETWORK;
+}
+
+export const NET = NETWORKS[chosenNetwork()];
+
+// Change the chain the book reads: open this page on the other chain's
+// address, and nothing more. The rest of the address is left behind -- it
+// names a place on the chain being left, which on the other is a different
+// block or none at all -- so the page opens bare on the new chain and reads
+// its own place there (the book resumes where the reader last stopped on it).
+export function switchNetwork(id) {
+  if (!NETWORKS[id] || id === NET.id) return;
+  location.assign(withChain(location.pathname, NETWORKS[id]));
+}
+
+// An address this page writes for itself, naming its chain where that is not
+// mainnet. A page's address is what a reader copies and sends, and on another
+// reader's machine a bare one opens on that reader's chain -- block 153,726 of
+// testnet4 would open as block 153,726 of mainnet, a different block, with
+// nothing to say so. Mainnet addresses are returned as they were, so no link
+// already made changes. Appended rather than re-serialized, so the rest of the
+// address keeps its own encoding. btc-chrome.js applies the same rule to every
+// link on a page that points at another of the book's pages (chainHref), since
+// a link is also something a reader copies and sends.
+export function withChain(url, net = NET) {
+  if (net.id === DEFAULT_NETWORK) return url;
+  const hashAt = url.indexOf('#');
+  const base = hashAt < 0 ? url : url.slice(0, hashAt);
+  const hash = hashAt < 0 ? '' : url.slice(hashAt);
+  if (/[?&]network=/.test(base)) return url;
+  return `${base}${base.includes('?') ? '&' : '?'}network=${net.id}${hash}`;
+}
+
+// A storage key or database name for chain data on the chosen network.
+export const nsKey = (key, net = NET) => key + net.suffix;
+
+// The shape of an address on a network: base58 by its leading characters,
+// bech32/bech32m by its human-readable part. Shape only, no checksum. `bech32`
+// is the length range of the data part after the separator. Built once per
+// network and range: it is asked on every keystroke and every ledger member.
+const shapes = new Map();
+export function addressShape(net = NET, bech32 = '11,87') {
+  const key = `${net.id}:${bech32}`;
+  if (!shapes.has(key)) {
+    shapes.set(key, new RegExp(`^(?:[${net.base58Lead}][1-9A-HJ-NP-Za-km-z]{25,34}|${net.hrp}1[02-9ac-hj-np-z]{${bech32}})$`));
+  }
+  return shapes.get(key);
+}
