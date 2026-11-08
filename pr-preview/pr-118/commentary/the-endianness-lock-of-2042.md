@@ -1,0 +1,7 @@
+<!-- SPDX-License-Identifier: CC-BY-4.0 -->
+
+0.0003 ₿ arrives at a script hash on 26 December 2015 — twelve days after BIP65 activated and gave scripts CHECKLOCKTIMEVERIFY, the opcode that holds an output until a stated block height or time. Nothing has spent it since, and by the reading below, nothing can before the morning of 30 April 2042.
+
+The story is in the coinb.in issue tracker (OutCast3k/coinbin issue #35, comments of 27–29 December 2015). The developer weex, testing the new opcode by hand, locked these coins intending them spendable that same evening; the network rejected the spend, and dabura667 read the reason out of the raw transaction: the coins were locked until Wed Apr 30 2042 07:14:30 UTC, because the timestamp had been written into the script with its four bytes in reverse order. The arithmetic closes to the second — the intended value, 1451166600 (26 December 2015, 21:50 UTC), byte-reversed reads 2282454870, which is that 2042 morning exactly. "This is why we have testnet."
+
+One caveat belongs in the reading, because it is the best fact on the page: the script itself is not here. A script hash discloses its script only when spent, the spend that would have printed it is the one the network refused, and no spend can come before 2042 — so the record shows a hash, one arrival, and a decade of silence, and the proof of this story is due, at the earliest, on the morning it names. The evidence for the lock is itself timelocked.
