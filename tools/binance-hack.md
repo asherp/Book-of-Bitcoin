@@ -25,6 +25,8 @@ What this file supports:
 
 - **`web/notables.yaml`** — five entries drafted at the end of this file,
   filed as one group in chain order.
+- **`web/btc-index-data.js`** — the *Binance hack* ledger: the thirty
+  addresses the attacker wrote, listed under *The ledger* below.
 - The editorial rule this file obeys: a story not yet checked against the
   chain stays a note here rather than becoming published commentary.
   Publishing is the assertion.
@@ -178,6 +180,42 @@ is not quoted and nothing is proposed as an entry for it, by the rule the
 Liquid note states: a curated entry titles a passage, and the contents will
 not title what an anonymous party paid a few hundred sats to say about
 this event.
+
+## The ledger
+
+Thirty addresses, every one written as an output by a transaction the
+attacker signed, and no other: the receiver the eleven withdrawals paid,
+the nineteen where the coins rest, and the ten way-stations that each held
+an odd remainder for one position before the next cut spent it. **[verified]**
+Shelved in `btc-index-data.js` as the *Binance hack* ledger, the way the
+Coldcard vaults are: the thief's side only. The exchange's hot wallet is
+not shelved — two million transactions of other people's withdrawals is
+exposure, not legibility, and the shelf's criterion is the latter.
+
+Public-already, by two routes. The receiver `bc1q0mtc2f5…2mnm` and the
+last piece's `bc1qxg0l4p6…9ra` were published by CoinDesk on 30 October,
+within hours, as mempool.space links. **[reported]** The other twenty-eight
+were read off the chain for this file by following the receiver's outputs
+forward (`peel.py`, the sweep and the pieces above), which is how the
+Coldcard vault lists were assembled too: the chain publishes an address
+the moment a transaction pays it, and these are reachable from a published
+one in at most five hops. Every address was checksum-verified with the
+book's own bech32 decoder and its decoded scriptPubKey matched against the
+one the chain carries, all thirty agreeing. **[verified]**
+
+| group | count | holding at 975,011 |
+| --- | --- | --- |
+| the receiver | 1 | 0.00000779 ₿ (onlooker dust) |
+| the 1,000 ₿ pieces | 17 | 17,000 ₿ |
+| the sweep | 1 | 832.49990088 ₿ |
+| the last piece | 1 | 437.69998739 ₿ |
+| the way-stations | 10 | 0 |
+
+The ledger's citations, discovered from the chain at read time, are then
+exactly the thirty transactions this file tables — the eleven withdrawals,
+the nineteen cuts — plus whatever dust arrives, which is why the
+way-stations are shelved though they hold nothing: without them the peel
+chain would read as its two ends.
 
 ## Drafted entries
 

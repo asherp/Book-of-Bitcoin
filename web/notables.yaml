@@ -802,7 +802,9 @@
   id: V β63 ■959 §129
 
 # ── The Binance hack ──────────────────────────────────────────────────────
-# 29 October 2026: 18,270.2 ₿ left one P2WPKH address in eleven transactions,
+# 29 October 2026 (the 'Binance hack' ledger keeps the attacker's addresses;
+# these entries keep the event's places in the chain). 18,270.2 ₿ left one
+# P2WPKH address in eleven transactions,
 # every amount a round tenth of a bitcoin, all confirmed in block 973,732 --
 # and before that block closed, eighteen further transactions had cut the
 # coins into seventeen pieces of exactly 1,000 ₿ and a remainder, at a flat
@@ -832,8 +834,11 @@
 # say a signature was unwanted. The receiver drew onlooker dust with an
 # OP_RETURN the next day; it is not quoted and not kept, by the rule the
 # Liquid drain states above.
-# Chain verification in tools/binance-hack.md. No published reading yet --
-# the outputs are unspent, and how they end is not yet a fact about the chain.
+# Chain verification in tools/binance-hack.md; the thirty addresses the
+# attacker wrote -- the receiver, the nineteen where the coins rest, the ten
+# way-stations between -- are shelved in btc-index-data.js, so the ledger's
+# citations are the whole peel chain. No published reading yet -- the outputs
+# are unspent, and how they end is not yet a fact about the chain.
 - title: The Binance hack/the first withdrawal
   id: V β67 ■677 §147
 - title: The Binance hack/the largest withdrawal
