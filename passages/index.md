@@ -95,3 +95,8 @@ scheme, and how to read passages beyond this curated set.
 - [The Liquid drain/consent given](./the-liquid-drain-consent-given.md) — V β63 ■884 §1278 ([as a page](https://bookofbitcoin.io/V/63/884/1278/))
 - [The Liquid drain/the all-clear](./the-liquid-drain-the-all-clear.md) — V β63 ■931 §1397 ([as a page](https://bookofbitcoin.io/V/63/931/1397/))
 - [The Liquid drain/the return](./the-liquid-drain-the-return.md) — V β63 ■959 §129 ([as a page](https://bookofbitcoin.io/V/63/959/129/))
+- [The Binance hack/the first withdrawal](./the-binance-hack-the-first-withdrawal.md) — V β67 ■677 §147 ([as a page](https://bookofbitcoin.io/V/67/677/147/))
+- [The Binance hack/the largest withdrawal](./the-binance-hack-the-largest-withdrawal.md) — V β67 ■677 §152 ([as a page](https://bookofbitcoin.io/V/67/677/152/))
+- [The Binance hack/the first cut](./the-binance-hack-the-first-cut.md) — V β67 ■677 §2087 ([as a page](https://bookofbitcoin.io/V/67/677/2087/))
+- [The Binance hack/the sweep](./the-binance-hack-the-sweep.md) — V β67 ■677 §2416 ([as a page](https://bookofbitcoin.io/V/67/677/2416/))
+- [The Binance hack/the last piece](./the-binance-hack-the-last-piece.md) — V β67 ■683 §386 ([as a page](https://bookofbitcoin.io/V/67/683/386/))

@@ -217,6 +217,61 @@ export const INDEXED = [
       'bc1q5afm3gphuledrlkh087ctcfcv5kvend89r43uf8d2euhk6t9ymhsmwvd03', 'bc1qs0hglfq77gcxjhkmtt7fm79x53ha0fvl3hk23xx3sdvhke6n4fjsahfckj',
       'bc1qelmf0v2pdywwwwuvtuzy03l57pkvffp7q2a7kj9pw6yd258aw8mqr83870', 'bc1qsdawrjcjf4kk854rx8qsxr8dlnc5ml25g7mmpurs93mv3j8ncw0smsj8yk',
     ] },
+  // The Binance hack of 29 October 2026: the attacker's side of the bitcoin
+  // leg, where the stolen coins sit. 18,270.2 BTC left a Binance hot wallet
+  // in eleven transactions confirmed in block 973,732, all to one fresh
+  // P2WPKH address, and before that block closed the receiver had cut them
+  // into seventeen pieces of exactly 1,000 BTC and two remainders -- the
+  // largest theft on record (~$6.3 billion across sixteen chains, reported),
+  // of which these coins were the one share nobody could freeze. Shape is
+  // the attribution: every withdrawal a round tenth of a bitcoin, every cut
+  // at a flat 500-sat fee, one block holding the event from first withdrawal
+  // to sweep. The exchange's own hot wallet is not shelved: it is two million
+  // transactions of other people's withdrawals, and this shelf keeps the
+  // thief's side only, as the Coldcard ledger does. Sources: the receiver and
+  // the last piece's address published by CoinDesk within hours (30 Oct);
+  // the remaining addresses read off the chain by following the receiver's
+  // own outputs forward, every one checksum-verified and matched against the
+  // scriptPubKey the chain carries. Chain verification in
+  // tools/binance-hack.md; the contents keeps the event's places as "The
+  // Binance hack". BTC figures are what each address held at block 975,011
+  // (8 Nov 2026), not a live balance; none had spent.
+  { title: 'Binance hack',
+    addresses: [
+      // The receiver: all eleven withdrawals paid here, and every cut spent
+      // from here. Empty but for onlooker dust.
+      'bc1q0mtc2f5agpkvlq6hhahmfr3hlr55kyfjhl2mnm',                     // 0.00000779 BTC (dust)
+      // Where the coins rest, in chain order: seventeen pieces of exactly
+      // 1,000 BTC, then the two remainders -- the sweep's 832.5 and the
+      // last piece's 437.7, six chapters on.
+      'bc1q0ts8gaf9ht0rr4u02hr56f8thndqsc4kmkmfv3',                     // 1,000 BTC
+      'bc1qjwdw6vrzq4vf6hckutvx4ucj86awwv99mxnz7w',                     // 1,000 BTC
+      'bc1qdfhmlrdvg4tm87zjl0vyf0xflp5ql50q3g88gw',                     // 1,000 BTC
+      'bc1qz8hdwv8gmml0u96dsvnzsagz6krjyzxmgxupdp',                     // 1,000 BTC
+      'bc1q63qrfrpsg5hh0zzn3kp2xx9vljl7dq7tatsjxp',                     // 1,000 BTC
+      'bc1qs3aej5tmcdz0vctz8y9rjcxtxg8v5385577s56',                     // 1,000 BTC
+      'bc1qs6xnmhar38z44g2za93pv8ygdcwurrh8l87w3v',                     // 1,000 BTC
+      'bc1qm8v88m5fy6kuq9myva2eemwycxqd3e0zcrs2l8',                     // 1,000 BTC
+      'bc1q42flhayrzy3zh8lkyevw8qcjduurt9a35wlsyx',                     // 1,000 BTC
+      'bc1q2wvz0kcsn4hqmajwtey30ud27fl25w8pveznn6',                     // 1,000 BTC
+      'bc1qalwnl7dtaa73fsq5tyn0ghfy3fgfpqkt69tca8',                     // 1,000 BTC
+      'bc1qf5cyvv9w50tx9xx9s3xwsne0z87wvjj9l8a35u',                     // 1,000 BTC
+      'bc1qm2j6v3247khlwzxl7p9vqnfkghcllyhv9wjaat',                     // 1,000 BTC
+      'bc1qxrxujwxfnvz040jw76d26zhjdg5jura7hs968s',                     // 1,000 BTC
+      'bc1qg3nrzpuvq2pxqx74tcrywr09dc208ze96n3t53',                     // 1,000 BTC
+      'bc1qepc70u3u476vgvg3hfcwjgu4mecxe2uchs4lag',                     // 1,000 BTC
+      'bc1qnq6jj9jmlf3945m3l8s0kxnqehrsga300k8t3s',                     // 1,000 BTC
+      'bc1qrg025e2pgx0rwya2kpgtj30972p64jt0hn6zyt',                     // 832.49990088 BTC (the sweep)
+      'bc1qxg0l4p6xc50zuv9cl5f0l0wmaxjpg8wcy7s9ra',                     // 437.69998739 BTC (the last piece)
+      // The remainders' way-stations: each held an odd remainder for one
+      // position before the next cut spent it. Empty now, and shelved so
+      // the ledger's citations are the whole peel chain, not only its ends.
+      'bc1qhuq4genel5cuj00p7ggn30dwnzzjsw8mz3z2je', 'bc1qt8mrl9uchasf7pqhwlz6ezm9g44x7xj0vs6zqz',
+      'bc1qsmvvvvya6ak2gmsjcxc06ns7yrsx7q4x492vf2', 'bc1qvws6kh5vjf7apg7f82wd5av8w2gmfj2zxkm8jc',
+      'bc1qrsrh56k4rpal88w0xpjuul0m78ud62akcwue5e', 'bc1qn43ejagzgxgle394ynmv5sv3f9ydc48qme7t02',
+      'bc1qk8kpt0suefus8zz3fp78w8993frc5x97w423wl', 'bc1q96qkjsye5qruf9yksqdqg09lzdmur7wau2ga6u',
+      'bc1qdyy9q2lrnn5qh3ju996pgt95eesvc38lppdewn', 'bc1q66l8z9htj4cd7pf8nnlc6mrxyssudm6hyg7a2a',
+    ] },
   // ── The hoards ────────────────────────────────────────────────────────
   // Two names whose record runs one way like the incinerators', but for
   // the opposite reason: each presumably has a key, which is the whole
