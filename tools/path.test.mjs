@@ -108,7 +108,7 @@ test('the curated contents files where an editor filed it, and nowhere else', as
   const groups = [];
   const walk = (nodes) => nodes.forEach((n) => { if (n.kind === 'group') { groups.push(n.label); walk(n.nodes); } });
   walk(pathForest(titles.map((title) => ({ title }))));
-  assert.deepEqual(groups, ['BIP91', 'SegWit', 'Cold Card Attack', 'The Liquid drain'],
+  assert.deepEqual(groups, ['BIP91', 'SegWit', 'Cold Card Attack', 'The Liquid drain', 'The Binance hack'],
     'a curated title filed itself by accident — a slash in prose is punctuation, not a path');
 
   const rows = forestRows(pathForest(titles.map((title) => ({ title }))));
@@ -125,6 +125,12 @@ test('the curated contents files where an editor filed it, and nowhere else', as
   assert.deepEqual(rows.filter((r) => r.entry.title.startsWith('The Liquid drain')).map((r) => r.title),
     ['the peg-out', 'the forward', 'first contact', 'the answer',
       'consent asked', 'consent given', 'the all-clear', 'the return']);
+  // The Binance hack is filed the same way, and for the same reason: four of
+  // its five places are one chapter, and the order down the leaf is the
+  // order down the chapter -- withdrawals, cuts, sweep -- then the one piece
+  // that left it.
+  assert.deepEqual(rows.filter((r) => r.entry.title.startsWith('The Binance hack')).map((r) => r.title),
+    ['the first withdrawal', 'the largest withdrawal', 'the first cut', 'the sweep', 'the last piece']);
 });
 
 test('the contents nests first and files the whole listing', async () => {

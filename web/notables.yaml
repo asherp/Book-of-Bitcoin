@@ -801,6 +801,50 @@
 - title: The Liquid drain/the return
   id: V β63 ■959 §129
 
+# ── The Binance hack ──────────────────────────────────────────────────────
+# 29 October 2026: 18,270.2 ₿ left one P2WPKH address in eleven transactions,
+# every amount a round tenth of a bitcoin, all confirmed in block 973,732 --
+# and before that block closed, eighteen further transactions had cut the
+# coins into seventeen pieces of exactly 1,000 ₿ and a remainder, at a flat
+# fee of 500 sats a cut. Six chapters later the last remainder followed.
+# Nothing has moved since. Kept the way the Mt. Gox and Bitfinex thefts are
+# kept: a perfectly formed passage that says nothing about itself, the
+# parties silent. What the chain says instead, and says plainly, is SHAPE --
+# the round amounts, the flat fee, the one chapter holding the whole event
+# from the first withdrawal to the sweep -- which the reading page can show
+# where a newspaper can only assert it.
+#
+# ONE filing, in chain order, five places. Four are one chapter (■677): the
+# withdrawals, the cuts, and the sweep, so a reader opening the first
+# withdrawal reads the whole event by turning the page -- which is why the
+# eleven withdrawals and nineteen cuts are not each an entry. The Coldcard
+# entries made the same choice: a contents names where a story starts. The
+# fifth place is the one piece that left the chapter.
+#
+# What is chain fact and what is reporting: eleven validly signed
+# transactions moved 18,270.2 ₿ from an address with 2.37 million
+# transactions behind it, and nineteen outputs hold 18,270.19988827 ₿ today,
+# unspent -- verified. That the address is Binance's hot wallet, that the
+# withdrawals were unauthorized, how the signing infrastructure was reached,
+# and that the actor was TraderTraitor -- reported, by the exchange, by TRM
+# Labs and Chainalysis, and by an FBI alert, and denied by the DPRK. The
+# title is the name the event is known by, not a finding: the chain cannot
+# say a signature was unwanted. The receiver drew onlooker dust with an
+# OP_RETURN the next day; it is not quoted and not kept, by the rule the
+# Liquid drain states above.
+# Chain verification in tools/binance-hack.md. No published reading yet --
+# the outputs are unspent, and how they end is not yet a fact about the chain.
+- title: The Binance hack/the first withdrawal
+  id: V β67 ■677 §147
+- title: The Binance hack/the largest withdrawal
+  id: V β67 ■677 §152
+- title: The Binance hack/the first cut
+  id: V β67 ■677 §2087
+- title: The Binance hack/the sweep
+  id: V β67 ■677 §2416
+- title: The Binance hack/the last piece
+  id: V β67 ■683 §386
+
 # ── The ledgers ───────────────────────────────────────────────────────────
 # A curated entry may name an ADDRESS instead of a place in the chain. An
 # address is a name rather than a place, so it opens no chapter: the row reads
