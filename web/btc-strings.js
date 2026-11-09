@@ -328,6 +328,7 @@ export const LANGS = [
   { id: 'latin', label: 'Latina' },
   { id: 'czech', label: 'Čeština' },
   { id: 'german', label: 'Deutsch' },
+  { id: 'korean', label: '한국어' },
 ];
 // Mirrors glossia-msg.js's DEFAULT_LANG_ID, restated here for the same reason
 // the storage keys and the roster are: a light page names the choices without

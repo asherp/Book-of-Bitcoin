@@ -48,6 +48,7 @@ export const MSG_LANGS = [
   { id: 'latin',   label: 'Latina',   language: 'latin',   wordlist: 'default', dialect: 'body' },
   { id: 'czech',   label: 'Čeština',  language: 'czech',   wordlist: 'default', dialect: 'body' },
   { id: 'german',  label: 'Deutsch',  language: 'german',  wordlist: 'default', dialect: 'body' },
+  { id: 'korean',  label: '한국어',   language: 'korean',  wordlist: 'default', dialect: 'body' },
 ];
 // The tongue the book is set in for a reader who has not chosen one. English:
 // the chrome around the prose is English until a reader chooses otherwise
