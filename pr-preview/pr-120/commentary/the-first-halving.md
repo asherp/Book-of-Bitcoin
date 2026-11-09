@@ -1,0 +1,5 @@
+<!-- SPDX-License-Identifier: CC-BY-4.0 -->
+
+This coinbase creates 25 coins where every block before it created 50. The subsidy halves every 210,000 blocks — this is the first halving, 28 November 2012 — and the new amount is on this page, in the output's value. Nothing else marks the event: no flag, no signal, just the number. The book's volumes follow these eras, so this block also opens Volume II. Every node checks the amount against the schedule; a coinbase claiming the old 50 would make the whole block invalid.
+
+The output reads more than 25, and the difference is the crowd: a coinbase collects the fees of its block's transactions on top of the subsidy, and 456 sections pressed into the era's first chapter, paying 13.56295554 ₿ between them to stand in it — more than half the new subsidy again, in an era when a block's fees rarely reached a tenth of a coin. So this output, 38.56295554 ₿, records the halving twice over: the halved number, and what people paid to be on the page where it happened.
