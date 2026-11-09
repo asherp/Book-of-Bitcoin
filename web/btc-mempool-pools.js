@@ -34,7 +34,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-export const MEMPOOL_POOLS_SOURCE = {"repo":"mempool/mining-pools","path":"pools-v2.json","commit":null,"fetched":"2026-09-24"};
+export const MEMPOOL_POOLS_SOURCE = {"repo":"mempool/mining-pools","path":"pools-v2.json","commit":"b8b065d3f414de2db00fdbc0cf09c025c8543b07","fetched":"2026-11-09"};
 
 export const MEMPOOL_POOLS = [
   {"id":1,"name":"BlockFills","addresses":["1PzVut5X6Nx7Mv4JHHKPtVM9Jr9LJ4Rbry"],"tags":["/BlockfillsPool/"],"link":"https://www.blockfills.com/mining"},
@@ -42,7 +42,7 @@ export const MEMPOOL_POOLS = [
   {"id":3,"name":"Terra Pool","addresses":["32P5KVSbZYAkVmSHxDd2oBXaSk372rbV7L","3Qqp7LwxmSjPwRaKkDToysJsM3xA4ThqFk","bc1q39dled8an7enuxtmjql3pk7ny8kzvsxhd924sl"],"tags":["terrapool.io","Validated with Clean Energy"],"link":"https://terrapool.io"},
   {"id":4,"name":"Luxor","addresses":["1MkCDCzHpBsYQivp8MxjY5AkTGG1f2baoe","39bitUyBcUu3y3hRTtYprKbTp712t4ZWqK","32BfKjhByDSxx3BM5vUkQ3NQq9csZR6nt6"],"tags":["/LUXOR/","Luxor Tech"],"link":"https://mining.luxor.tech"},
   {"id":5,"name":"1THash","addresses":["147SwRQdpCfj5p8PnfsXV2SsVVpVcz3aPq","15vgygQ7ZsWdvZpctmTZK4673QBHsos6Sh"],"tags":["/1THash&58COIN/","/1THash/"],"link":"https://www.1thash.top"},
-  {"id":6,"name":"BTC.com","addresses":["1Bf9sZvBHPFGVPX71WX2njhd1NXKv5y7v5","34qkc2iac6RsyxZVfyE2S5U5WcRsbg2dpK","3EhLZarJUNSfV6TWMZY1Nh5mi3FMsdHa5U","3NA8hsjfdgVkmmVS9moHmkZsVCoLxUkvvv","bc1qjl8uwezzlech723lpnyuza0h2cdkvxvh54v3dn"],"tags":["/BTC.COM/","/BTC.com/","btccom"],"link":"https://pool.btc.com"},
+  {"id":6,"name":"CloverPool","addresses":["1Bf9sZvBHPFGVPX71WX2njhd1NXKv5y7v5","34qkc2iac6RsyxZVfyE2S5U5WcRsbg2dpK","3EhLZarJUNSfV6TWMZY1Nh5mi3FMsdHa5U","3NA8hsjfdgVkmmVS9moHmkZsVCoLxUkvvv","bc1qjl8uwezzlech723lpnyuza0h2cdkvxvh54v3dn"],"tags":["/BTC.COM/","/BTC.com/","btccom","cloverpool"],"link":"https://cloverpool.com"},
   {"id":7,"name":"Bitfarms","addresses":["3GvEGtnvgeBJ3p3EpdZhvUkxY4pDARkbjd"],"tags":["BITFARMS"],"link":"https://www.bitfarms.io"},
   {"id":8,"name":"Huobi.pool","addresses":["18Zcyxqna6h7Z7bRjhKvGpr8HSfieQWXqj","1EepjXgvWUoRyNvuLSAxjiqZ1QqKGDANLW","1MvYASoHjqynMaMnP7SBmenyEWiLsTqoU6","3HuobiNg2wHjdPU2mQczL9on8WF7hZmaGd"],"tags":["/HuoBi/","/Huobi/"],"link":"https://www.hpt.com"},
   {"id":9,"name":"WAYI.CN","addresses":[],"tags":["/E2M & BTC.TOP/"],"link":"https://www.easy2mine.com"},
@@ -208,4 +208,5 @@ export const MEMPOOL_POOLS = [
   {"id":169,"name":"SoloPool.com","addresses":["bc1qreaftg3lr53nv84dnxhcvchmswevzlp9tdj2jd"],"tags":["/Mined @ SoloPool.Com/"],"link":"https://solopool.com"},
   {"id":170,"name":"Noderunners","addresses":[],"tags":["/Noderunners/"],"link":"https://pool.noderunners.network"},
   {"id":171,"name":"DMND","addresses":[],"tags":["/DMND/"],"link":"https://www.dmnd.work/"},
+  {"id":172,"name":"TrustPool","addresses":[],"tags":["/trustpool/"],"link":"https://trustpool.cc"},
 ];
