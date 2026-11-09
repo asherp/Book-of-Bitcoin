@@ -1927,7 +1927,7 @@ const hashNotationHtml = ({ zeroBits, remainBits }, prose) =>
 // reader never scrolls to are never encoded at all. Structure (type marks, push
 // counts, opcode glyphs) still renders eagerly, so the skeleton is instant.
 const lazyEncode = (() => {
-  // Words a held-back push becomes, by language. Measured on glossia 0.5.0 --
+  // Words a held-back push becomes, by language. Measured on glossia 0.7.0 --
   // the engine build_web.sh pins -- over 32/128/520-byte payloads: a payload
   // word carries a fixed number of bits, so the count is linear in the byte
   // count. `per` is words per byte, `base` the envelope's own few words. This
@@ -1935,10 +1935,13 @@ const lazyEncode = (() => {
   // it needs only to be close, since being out by a line or two costs a small
   // scroll adjustment where collapsing costs the streaming altogether.
   const WORDS = {
-    latin:   { per: 1.074, base: 5 },
-    english: { per: 1.414, base: 16 },
-    czech:   { per: 1.447, base: 3 },
-    german:  { per: 1.520, base: 15 },
+    latin:   { per: 1.002, base: 0 },
+    english: { per: 1.458, base: 4 },
+    czech:   { per: 1.442, base: 11 },
+    german:  { per: 1.547, base: 7 },
+    // Fewer words than bytes: Korean writes each particle onto its noun, so a
+    // payload word and its particle are one word on the page.
+    korean:  { per: 0.911, base: 11 },
   };
   // One fill is tens of milliseconds -- Latin is the slowest at
   // roughly 65-90 ms a push in the browser's threadless build, since the
